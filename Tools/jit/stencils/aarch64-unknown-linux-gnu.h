@@ -9,109 +9,50 @@ emit_shim(
     // Disassembly of section .text:
     //
     // 0000000000000000 <_JIT_ENTRY>:
-    // 0: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000000:  R_AARCH64_ADR_GOT_PAGE       _JIT_EXECUTOR
-    // 4: f9400129      ldr     x9, [x9]
-    // 0000000000000004:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_EXECUTOR
-    // 8: b9400128      ldr     w8, [x9]
-    // c: 37f80068      tbnz    w8, #0x1f, 0x18 <_JIT_ENTRY+0x18>
-    // 10: 11000508      add     w8, w8, #0x1
-    // 14: b9000128      str     w8, [x9]
-    // 18: d102c3ff      sub     sp, sp, #0xb0
-    // 1c: a90957f6      stp     x22, x21, [sp, #0x90]
-    // 20: aa0103f5      mov     x21, x1
-    // 24: aa0203f6      mov     x22, x2
-    // 28: a90a4ff4      stp     x20, x19, [sp, #0xa0]
-    // 2c: aa0003f4      mov     x20, x0
-    // 30: 6d013bef      stp     d15, d14, [sp, #0x10]
-    // 34: 6d0233ed      stp     d13, d12, [sp, #0x20]
-    // 38: 6d032beb      stp     d11, d10, [sp, #0x30]
-    // 3c: 6d0423e9      stp     d9, d8, [sp, #0x40]
-    // 40: a9057bfd      stp     x29, x30, [sp, #0x50]
-    // 44: 910143fd      add     x29, sp, #0x50
-    // 48: a9066ffc      stp     x28, x27, [sp, #0x60]
-    // 4c: a90767fa      stp     x26, x25, [sp, #0x70]
-    // 50: a9085ff8      stp     x24, x23, [sp, #0x80]
-    // 54: f90007e2      str     x2, [sp, #0x8]
-    // 58: 94000000      bl      0x58 <_JIT_ENTRY+0x58>
-    // 0000000000000058:  R_AARCH64_CALL26     _JIT_CONTINUE
-    // 5c: f94007e9      ldr     x9, [sp, #0x8]
-    // 60: 9000000a      adrp    x10, 0x0 <_JIT_ENTRY>
-    // 0000000000000060:  R_AARCH64_ADR_GOT_PAGE       _JIT_EXECUTOR
-    // 64: f9408928      ldr     x8, [x9, #0x110]
-    // 68: f940014a      ldr     x10, [x10]
-    // 0000000000000068:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_EXECUTOR
-    // 6c: f900892a      str     x10, [x9, #0x110]
-    // 70: b9400109      ldr     w9, [x8]
-    // 74: 37f80149      tbnz    w9, #0x1f, 0x9c <_JIT_ENTRY+0x9c>
-    // 78: 71000529      subs    w9, w9, #0x1
-    // 7c: b9000109      str     w9, [x8]
-    // 80: 540000e1      b.ne    0x9c <_JIT_ENTRY+0x9c>
-    // 84: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000084:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 88: aa0003f3      mov     x19, x0
-    // 8c: aa0803e0      mov     x0, x8
-    // 90: f9400129      ldr     x9, [x9]
-    // 0000000000000090:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 94: d63f0120      blr     x9
-    // 98: aa1303e0      mov     x0, x19
-    // 9c: a94a4ff4      ldp     x20, x19, [sp, #0xa0]
-    // a0: a94957f6      ldp     x22, x21, [sp, #0x90]
-    // a4: a9485ff8      ldp     x24, x23, [sp, #0x80]
-    // a8: a94767fa      ldp     x26, x25, [sp, #0x70]
-    // ac: a9466ffc      ldp     x28, x27, [sp, #0x60]
-    // b0: a9457bfd      ldp     x29, x30, [sp, #0x50]
-    // b4: 6d4423e9      ldp     d9, d8, [sp, #0x40]
-    // b8: 6d432beb      ldp     d11, d10, [sp, #0x30]
-    // bc: 6d4233ed      ldp     d13, d12, [sp, #0x20]
-    // c0: 6d413bef      ldp     d15, d14, [sp, #0x10]
-    // c4: 9102c3ff      add     sp, sp, #0xb0
-    // c8: d65f03c0      ret
-    // cc: 00 00 00 00
-    const unsigned char code_body[208] = {
-        0x09, 0x00, 0x00, 0x90, 0x29, 0x01, 0x40, 0xf9,
-        0x28, 0x01, 0x40, 0xb9, 0x68, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x11, 0x28, 0x01, 0x00, 0xb9,
-        0xff, 0xc3, 0x02, 0xd1, 0xf6, 0x57, 0x09, 0xa9,
+    // 0: 6db63bef      stp     d15, d14, [sp, #-0xa0]!
+    // 4: a90857f6      stp     x22, x21, [sp, #0x80]
+    // 8: aa0103f5      mov     x21, x1
+    // c: aa0203f6      mov     x22, x2
+    // 10: a9094ff4      stp     x20, x19, [sp, #0x90]
+    // 14: aa0003f4      mov     x20, x0
+    // 18: 6d0133ed      stp     d13, d12, [sp, #0x10]
+    // 1c: 6d022beb      stp     d11, d10, [sp, #0x20]
+    // 20: 6d0323e9      stp     d9, d8, [sp, #0x30]
+    // 24: a9047bfd      stp     x29, x30, [sp, #0x40]
+    // 28: 910103fd      add     x29, sp, #0x40
+    // 2c: a9056ffc      stp     x28, x27, [sp, #0x50]
+    // 30: a90667fa      stp     x26, x25, [sp, #0x60]
+    // 34: a9075ff8      stp     x24, x23, [sp, #0x70]
+    // 38: 94000000      bl      0x38 <_JIT_ENTRY+0x38>
+    // 0000000000000038:  R_AARCH64_CALL26     _JIT_CONTINUE
+    // 3c: a9494ff4      ldp     x20, x19, [sp, #0x90]
+    // 40: a94857f6      ldp     x22, x21, [sp, #0x80]
+    // 44: a9475ff8      ldp     x24, x23, [sp, #0x70]
+    // 48: a94667fa      ldp     x26, x25, [sp, #0x60]
+    // 4c: a9456ffc      ldp     x28, x27, [sp, #0x50]
+    // 50: a9447bfd      ldp     x29, x30, [sp, #0x40]
+    // 54: 6d4323e9      ldp     d9, d8, [sp, #0x30]
+    // 58: 6d422beb      ldp     d11, d10, [sp, #0x20]
+    // 5c: 6d4133ed      ldp     d13, d12, [sp, #0x10]
+    // 60: 6cca3bef      ldp     d15, d14, [sp], #0xa0
+    // 64: d65f03c0      ret
+    const unsigned char code_body[104] = {
+        0xef, 0x3b, 0xb6, 0x6d, 0xf6, 0x57, 0x08, 0xa9,
         0xf5, 0x03, 0x01, 0xaa, 0xf6, 0x03, 0x02, 0xaa,
-        0xf4, 0x4f, 0x0a, 0xa9, 0xf4, 0x03, 0x00, 0xaa,
-        0xef, 0x3b, 0x01, 0x6d, 0xed, 0x33, 0x02, 0x6d,
-        0xeb, 0x2b, 0x03, 0x6d, 0xe9, 0x23, 0x04, 0x6d,
-        0xfd, 0x7b, 0x05, 0xa9, 0xfd, 0x43, 0x01, 0x91,
-        0xfc, 0x6f, 0x06, 0xa9, 0xfa, 0x67, 0x07, 0xa9,
-        0xf8, 0x5f, 0x08, 0xa9, 0xe2, 0x07, 0x00, 0xf9,
-        0x00, 0x00, 0x00, 0x94, 0xe9, 0x07, 0x40, 0xf9,
-        0x0a, 0x00, 0x00, 0x90, 0x28, 0x89, 0x40, 0xf9,
-        0x4a, 0x01, 0x40, 0xf9, 0x2a, 0x89, 0x00, 0xf9,
-        0x09, 0x01, 0x40, 0xb9, 0x49, 0x01, 0xf8, 0x37,
-        0x29, 0x05, 0x00, 0x71, 0x09, 0x01, 0x00, 0xb9,
-        0xe1, 0x00, 0x00, 0x54, 0x09, 0x00, 0x00, 0x90,
-        0xf3, 0x03, 0x00, 0xaa, 0xe0, 0x03, 0x08, 0xaa,
-        0x29, 0x01, 0x40, 0xf9, 0x20, 0x01, 0x3f, 0xd6,
-        0xe0, 0x03, 0x13, 0xaa, 0xf4, 0x4f, 0x4a, 0xa9,
-        0xf6, 0x57, 0x49, 0xa9, 0xf8, 0x5f, 0x48, 0xa9,
-        0xfa, 0x67, 0x47, 0xa9, 0xfc, 0x6f, 0x46, 0xa9,
-        0xfd, 0x7b, 0x45, 0xa9, 0xe9, 0x23, 0x44, 0x6d,
-        0xeb, 0x2b, 0x43, 0x6d, 0xed, 0x33, 0x42, 0x6d,
-        0xef, 0x3b, 0x41, 0x6d, 0xff, 0xc3, 0x02, 0x91,
-        0xc0, 0x03, 0x5f, 0xd6, 0x00, 0x00, 0x00, 0x00,
+        0xf4, 0x4f, 0x09, 0xa9, 0xf4, 0x03, 0x00, 0xaa,
+        0xed, 0x33, 0x01, 0x6d, 0xeb, 0x2b, 0x02, 0x6d,
+        0xe9, 0x23, 0x03, 0x6d, 0xfd, 0x7b, 0x04, 0xa9,
+        0xfd, 0x03, 0x01, 0x91, 0xfc, 0x6f, 0x05, 0xa9,
+        0xfa, 0x67, 0x06, 0xa9, 0xf8, 0x5f, 0x07, 0xa9,
+        0x00, 0x00, 0x00, 0x94, 0xf4, 0x4f, 0x49, 0xa9,
+        0xf6, 0x57, 0x48, 0xa9, 0xf8, 0x5f, 0x47, 0xa9,
+        0xfa, 0x67, 0x46, 0xa9, 0xfc, 0x6f, 0x45, 0xa9,
+        0xfd, 0x7b, 0x44, 0xa9, 0xe9, 0x23, 0x43, 0x6d,
+        0xeb, 0x2b, 0x42, 0x6d, 0xed, 0x33, 0x41, 0x6d,
+        0xef, 0x3b, 0xca, 0x6c, 0xc0, 0x03, 0x5f, 0xd6,
     };
-    // 0: EXECUTOR
-    // 8: &_Py_Dealloc+0x0
-    const unsigned char data_body[16] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    };
-    memcpy(data, data_body, sizeof(data_body));
-    patch_64(data + 0x0, (uintptr_t)executor);
-    patch_64(data + 0x8, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_33rx(code + 0x0, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x58, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x60, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x68, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x84, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x90, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x38, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -135,14 +76,14 @@ emit__BINARY_OP(
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
     // 14: f9400129      ldr     x9, [x9]
     // 0000000000000014:  R_AARCH64_LD64_GOT_LO12_NC   _PyEval_BinaryOps
-    // 18: a97f66b8      ldp     x24, x25, [x21, #-0x10]
+    // 18: a97f4eb8      ldp     x24, x19, [x21, #-0x10]
     // 1c: f9002295      str     x21, [x20, #0x40]
     // 20: 92403d08      and     x8, x8, #0xffff
     // 24: f8687928      ldr     x8, [x9, x8, lsl #3]
     // 28: aa1803e0      mov     x0, x24
-    // 2c: aa1903e1      mov     x1, x25
+    // 2c: aa1303e1      mov     x1, x19
     // 30: d63f0100      blr     x8
-    // 34: f9402293      ldr     x19, [x20, #0x40]
+    // 34: f9402299      ldr     x25, [x20, #0x40]
     // 38: f900229f      str     xzr, [x20, #0x40]
     // 3c: aa0003f7      mov     x23, x0
     // 40: b9400308      ldr     w8, [x24]
@@ -156,25 +97,25 @@ emit__BINARY_OP(
     // 5c: f9400108      ldr     x8, [x8]
     // 000000000000005c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 60: d63f0100      blr     x8
-    // 64: b9400328      ldr     w8, [x25]
+    // 64: b9400268      ldr     w8, [x19]
     // 68: 37f80088      tbnz    w8, #0x1f, 0x78 <_JIT_ENTRY+0x78>
     // 6c: 71000508      subs    w8, w8, #0x1
-    // 70: b9000328      str     w8, [x25]
+    // 70: b9000268      str     w8, [x19]
     // 74: 540000c0      b.eq    0x8c <_JIT_ENTRY+0x8c>
     // 78: b4000157      cbz     x23, 0xa0 <_JIT_ENTRY+0xa0>
-    // 7c: d1002275      sub     x21, x19, #0x8
-    // 80: f81f0277      stur    x23, [x19, #-0x10]
+    // 7c: d1002335      sub     x21, x25, #0x8
+    // 80: f81f0337      stur    x23, [x25, #-0x10]
     // 84: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 88: 14000000      b       0x88 <_JIT_ENTRY+0x88>
     // 0000000000000088:  R_AARCH64_JUMP26     _JIT_CONTINUE
     // 8c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 000000000000008c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 90: aa1903e0      mov     x0, x25
+    // 90: aa1303e0      mov     x0, x19
     // 94: f9400108      ldr     x8, [x8]
     // 0000000000000094:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 98: d63f0100      blr     x8
     // 9c: b5ffff17      cbnz    x23, 0x7c <_JIT_ENTRY+0x7c>
-    // a0: aa1303f5      mov     x21, x19
+    // a0: d1004335      sub     x21, x25, #0x10
     // a4: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // a8: 14000000      b       0xa8 <_JIT_ENTRY+0xa8>
     // 00000000000000a8:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
@@ -183,24 +124,24 @@ emit__BINARY_OP(
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0x09, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
         0x08, 0x01, 0x40, 0xf9, 0x29, 0x01, 0x40, 0xf9,
-        0xb8, 0x66, 0x7f, 0xa9, 0x95, 0x22, 0x00, 0xf9,
+        0xb8, 0x4e, 0x7f, 0xa9, 0x95, 0x22, 0x00, 0xf9,
         0x08, 0x3d, 0x40, 0x92, 0x28, 0x79, 0x68, 0xf8,
-        0xe0, 0x03, 0x18, 0xaa, 0xe1, 0x03, 0x19, 0xaa,
-        0x00, 0x01, 0x3f, 0xd6, 0x93, 0x22, 0x40, 0xf9,
+        0xe0, 0x03, 0x18, 0xaa, 0xe1, 0x03, 0x13, 0xaa,
+        0x00, 0x01, 0x3f, 0xd6, 0x99, 0x22, 0x40, 0xf9,
         0x9f, 0x22, 0x00, 0xf9, 0xf7, 0x03, 0x00, 0xaa,
         0x08, 0x03, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
         0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
         0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x28, 0x03, 0x40, 0xb9,
+        0x00, 0x01, 0x3f, 0xd6, 0x68, 0x02, 0x40, 0xb9,
         0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x28, 0x03, 0x00, 0xb9, 0xc0, 0x00, 0x00, 0x54,
-        0x57, 0x01, 0x00, 0xb4, 0x75, 0x22, 0x00, 0xd1,
-        0x77, 0x02, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x68, 0x02, 0x00, 0xb9, 0xc0, 0x00, 0x00, 0x54,
+        0x57, 0x01, 0x00, 0xb4, 0x35, 0x23, 0x00, 0xd1,
+        0x37, 0x03, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x19, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
         0x00, 0x01, 0x3f, 0xd6, 0x17, 0xff, 0xff, 0xb5,
-        0xf5, 0x03, 0x13, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x35, 0x43, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
@@ -240,20 +181,20 @@ emit__BINARY_OP_ADD_FLOAT(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: aa1503f3      mov     x19, x21
-    // 8: f85f8ea1      ldr     x1, [x21, #-0x8]!
-    // c: f85f82a0      ldur    x0, [x21, #-0x8]
+    // 4: f85f8ea1      ldr     x1, [x21, #-0x8]!
+    // 8: aa1503f3      mov     x19, x21
+    // c: f85f8e60      ldr     x0, [x19, #-0x8]!
     // 10: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000010:  R_AARCH64_ADR_GOT_PAGE       _PyFloat_FromDouble_ConsumeInputs
-    // 14: 910003fd      mov     x29, sp
-    // 18: fd400821      ldr     d1, [x1, #0x10]
-    // 1c: fd400800      ldr     d0, [x0, #0x10]
+    // 14: fd400820      ldr     d0, [x1, #0x10]
+    // 18: 910003fd      mov     x29, sp
+    // 1c: fd400801      ldr     d1, [x0, #0x10]
     // 20: f9400108      ldr     x8, [x8]
     // 0000000000000020:  R_AARCH64_LD64_GOT_LO12_NC   _PyFloat_FromDouble_ConsumeInputs
-    // 24: 1e612800      fadd    d0, d0, d1
+    // 24: 1e602820      fadd    d0, d1, d0
     // 28: d63f0100      blr     x8
     // 2c: b4000080      cbz     x0, 0x3c <_JIT_ENTRY+0x3c>
-    // 30: f81f0260      stur    x0, [x19, #-0x10]
+    // 30: f9000260      str     x0, [x19]
     // 34: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 38: 14000000      b       0x38 <_JIT_ENTRY+0x38>
     // 0000000000000038:  R_AARCH64_JUMP26     _JIT_CONTINUE
@@ -262,13 +203,13 @@ emit__BINARY_OP_ADD_FLOAT(
     // 44: 14000000      b       0x44 <_JIT_ENTRY+0x44>
     // 0000000000000044:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
     const unsigned char code_body[72] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0xf3, 0x03, 0x15, 0xaa,
-        0xa1, 0x8e, 0x5f, 0xf8, 0xa0, 0x82, 0x5f, 0xf8,
-        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
-        0x21, 0x08, 0x40, 0xfd, 0x00, 0x08, 0x40, 0xfd,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x28, 0x61, 0x1e,
+        0xfd, 0x7b, 0xbf, 0xa9, 0xa1, 0x8e, 0x5f, 0xf8,
+        0xf3, 0x03, 0x15, 0xaa, 0x60, 0x8e, 0x5f, 0xf8,
+        0x08, 0x00, 0x00, 0x90, 0x20, 0x08, 0x40, 0xfd,
+        0xfd, 0x03, 0x00, 0x91, 0x01, 0x08, 0x40, 0xfd,
+        0x08, 0x01, 0x40, 0xf9, 0x20, 0x28, 0x60, 0x1e,
         0x00, 0x01, 0x3f, 0xd6, 0x80, 0x00, 0x00, 0xb4,
-        0x60, 0x02, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x60, 0x02, 0x00, 0xf9, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0xf5, 0x03, 0x13, 0xaa,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
@@ -297,15 +238,15 @@ emit__BINARY_OP_ADD_INT(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: aa1503f3      mov     x19, x21
-    // 8: f85f8eb9      ldr     x25, [x21, #-0x8]!
-    // c: f85f82b8      ldur    x24, [x21, #-0x8]
+    // 4: f85f8eb9      ldr     x25, [x21, #-0x8]!
+    // 8: aa1503f3      mov     x19, x21
+    // c: f85f8e78      ldr     x24, [x19, #-0x8]!
     // 10: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000010:  R_AARCH64_ADR_GOT_PAGE       _PyLong_Add
-    // 14: 910003fd      mov     x29, sp
-    // 18: f9400108      ldr     x8, [x8]
-    // 0000000000000018:  R_AARCH64_LD64_GOT_LO12_NC   _PyLong_Add
-    // 1c: aa1903e1      mov     x1, x25
+    // 14: f9400108      ldr     x8, [x8]
+    // 0000000000000014:  R_AARCH64_LD64_GOT_LO12_NC   _PyLong_Add
+    // 18: aa1903e1      mov     x1, x25
+    // 1c: 910003fd      mov     x29, sp
     // 20: aa1803e0      mov     x0, x24
     // 24: d63f0100      blr     x8
     // 28: b9400328      ldr     w8, [x25]
@@ -336,7 +277,7 @@ emit__BINARY_OP_ADD_INT(
     // 7c: b9000308      str     w8, [x24]
     // 80: 540000a0      b.eq    0x94 <_JIT_ENTRY+0x94>
     // 84: b4000237      cbz     x23, 0xc8 <_JIT_ENTRY+0xc8>
-    // 88: f81f0277      stur    x23, [x19, #-0x10]
+    // 88: f9000277      str     x23, [x19]
     // 8c: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 90: 14000000      b       0x90 <_JIT_ENTRY+0x90>
     // 0000000000000090:  R_AARCH64_JUMP26     _JIT_CONTINUE
@@ -363,10 +304,10 @@ emit__BINARY_OP_ADD_INT(
     // 00000000000000d0:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
     // d4: 00 00 00 00
     const unsigned char code_body[216] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0xf3, 0x03, 0x15, 0xaa,
-        0xb9, 0x8e, 0x5f, 0xf8, 0xb8, 0x82, 0x5f, 0xf8,
-        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
-        0x08, 0x01, 0x40, 0xf9, 0xe1, 0x03, 0x19, 0xaa,
+        0xfd, 0x7b, 0xbf, 0xa9, 0xb9, 0x8e, 0x5f, 0xf8,
+        0xf3, 0x03, 0x15, 0xaa, 0x78, 0x8e, 0x5f, 0xf8,
+        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
+        0xe1, 0x03, 0x19, 0xaa, 0xfd, 0x03, 0x00, 0x91,
         0xe0, 0x03, 0x18, 0xaa, 0x00, 0x01, 0x3f, 0xd6,
         0x28, 0x03, 0x40, 0xb9, 0xf7, 0x03, 0x00, 0xaa,
         0x08, 0x02, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
@@ -380,7 +321,7 @@ emit__BINARY_OP_ADD_INT(
         0x08, 0x03, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
         0xa0, 0x00, 0x00, 0x54, 0x37, 0x02, 0x00, 0xb4,
-        0x77, 0x02, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x77, 0x02, 0x00, 0xf9, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x09, 0x00, 0x00, 0x90,
         0x29, 0x01, 0x40, 0xf9, 0x28, 0x49, 0x54, 0xf9,
         0xa8, 0x00, 0x00, 0xb4, 0x22, 0x4d, 0x54, 0xf9,
@@ -404,8 +345,7 @@ emit__BINARY_OP_ADD_INT(
     patch_64(data + 0x8, (uintptr_t)&_PyRuntime);
     patch_64(data + 0x10, (uintptr_t)&_PyLong_ExactDealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x10, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x18, (uintptr_t)data);
+    patch_aarch64_33rx(code + 0x10, (uintptr_t)data);
     patch_aarch64_33rx(code + 0x40, (uintptr_t)data + 0x8);
     patch_aarch64_21rx(code + 0x60, (uintptr_t)data + 0x10);
     patch_aarch64_12x(code + 0x68, (uintptr_t)data + 0x10);
@@ -428,15 +368,15 @@ emit__BINARY_OP_ADD_UNICODE(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: aa1503f3      mov     x19, x21
-    // 8: f85f8eb9      ldr     x25, [x21, #-0x8]!
-    // c: f85f82b8      ldur    x24, [x21, #-0x8]
+    // 4: f85f8eb9      ldr     x25, [x21, #-0x8]!
+    // 8: aa1503f3      mov     x19, x21
+    // c: f85f8e78      ldr     x24, [x19, #-0x8]!
     // 10: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000010:  R_AARCH64_ADR_GOT_PAGE       PyUnicode_Concat
-    // 14: 910003fd      mov     x29, sp
-    // 18: f9400108      ldr     x8, [x8]
-    // 0000000000000018:  R_AARCH64_LD64_GOT_LO12_NC   PyUnicode_Concat
-    // 1c: aa1903e1      mov     x1, x25
+    // 14: f9400108      ldr     x8, [x8]
+    // 0000000000000014:  R_AARCH64_LD64_GOT_LO12_NC   PyUnicode_Concat
+    // 18: aa1903e1      mov     x1, x25
+    // 1c: 910003fd      mov     x29, sp
     // 20: aa1803e0      mov     x0, x24
     // 24: d63f0100      blr     x8
     // 28: b9400328      ldr     w8, [x25]
@@ -467,7 +407,7 @@ emit__BINARY_OP_ADD_UNICODE(
     // 7c: b9000308      str     w8, [x24]
     // 80: 540000a0      b.eq    0x94 <_JIT_ENTRY+0x94>
     // 84: b4000237      cbz     x23, 0xc8 <_JIT_ENTRY+0xc8>
-    // 88: f81f0277      stur    x23, [x19, #-0x10]
+    // 88: f9000277      str     x23, [x19]
     // 8c: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 90: 14000000      b       0x90 <_JIT_ENTRY+0x90>
     // 0000000000000090:  R_AARCH64_JUMP26     _JIT_CONTINUE
@@ -494,10 +434,10 @@ emit__BINARY_OP_ADD_UNICODE(
     // 00000000000000d0:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
     // d4: 00 00 00 00
     const unsigned char code_body[216] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0xf3, 0x03, 0x15, 0xaa,
-        0xb9, 0x8e, 0x5f, 0xf8, 0xb8, 0x82, 0x5f, 0xf8,
-        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
-        0x08, 0x01, 0x40, 0xf9, 0xe1, 0x03, 0x19, 0xaa,
+        0xfd, 0x7b, 0xbf, 0xa9, 0xb9, 0x8e, 0x5f, 0xf8,
+        0xf3, 0x03, 0x15, 0xaa, 0x78, 0x8e, 0x5f, 0xf8,
+        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
+        0xe1, 0x03, 0x19, 0xaa, 0xfd, 0x03, 0x00, 0x91,
         0xe0, 0x03, 0x18, 0xaa, 0x00, 0x01, 0x3f, 0xd6,
         0x28, 0x03, 0x40, 0xb9, 0xf7, 0x03, 0x00, 0xaa,
         0x08, 0x02, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
@@ -511,7 +451,7 @@ emit__BINARY_OP_ADD_UNICODE(
         0x08, 0x03, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
         0xa0, 0x00, 0x00, 0x54, 0x37, 0x02, 0x00, 0xb4,
-        0x77, 0x02, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x77, 0x02, 0x00, 0xf9, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x09, 0x00, 0x00, 0x90,
         0x29, 0x01, 0x40, 0xf9, 0x28, 0x49, 0x54, 0xf9,
         0xa8, 0x00, 0x00, 0xb4, 0x22, 0x4d, 0x54, 0xf9,
@@ -535,8 +475,7 @@ emit__BINARY_OP_ADD_UNICODE(
     patch_64(data + 0x8, (uintptr_t)&_PyRuntime);
     patch_64(data + 0x10, (uintptr_t)&_PyUnicode_ExactDealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x10, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x18, (uintptr_t)data);
+    patch_aarch64_33rx(code + 0x10, (uintptr_t)data);
     patch_aarch64_33rx(code + 0x40, (uintptr_t)data + 0x8);
     patch_aarch64_21rx(code + 0x60, (uintptr_t)data + 0x10);
     patch_aarch64_12x(code + 0x68, (uintptr_t)data + 0x10);
@@ -566,7 +505,7 @@ emit__BINARY_OP_EXTEND(
     // 000000000000000c:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPERAND0
     // 10: a97f4eb8      ldp     x24, x19, [x21, #-0x10]
     // 14: f9002295      str     x21, [x20, #0x40]
-    // 18: f9400508      ldr     x8, [x8, #0x8]
+    // 18: f9400908      ldr     x8, [x8, #0x10]
     // 1c: aa1803e0      mov     x0, x24
     // 20: aa1303e1      mov     x1, x19
     // 24: d63f0100      blr     x8
@@ -609,7 +548,7 @@ emit__BINARY_OP_EXTEND(
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
         0xb8, 0x4e, 0x7f, 0xa9, 0x95, 0x22, 0x00, 0xf9,
-        0x08, 0x05, 0x40, 0xf9, 0xe0, 0x03, 0x18, 0xaa,
+        0x08, 0x09, 0x40, 0xf9, 0xe0, 0x03, 0x18, 0xaa,
         0xe1, 0x03, 0x13, 0xaa, 0x00, 0x01, 0x3f, 0xd6,
         0x99, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
         0xf7, 0x03, 0x00, 0xaa, 0x08, 0x03, 0x40, 0xb9,
@@ -656,117 +595,117 @@ emit__BINARY_OP_INPLACE_ADD_UNICODE(
     // Disassembly of section .text:
     //
     // 0000000000000000 <_JIT_ENTRY>:
-    // 0: 90000019      adrp    x25, 0x0 <_JIT_ENTRY>
+    // 0: 90000018      adrp    x24, 0x0 <_JIT_ENTRY>
     // 0000000000000000:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPERAND0
-    // 4: aa1503f3      mov     x19, x21
-    // 8: 9101429a      add     x26, x20, #0x50
-    // c: f9400339      ldr     x25, [x25]
+    // 4: 91014299      add     x25, x20, #0x50
+    // 8: aa1503e8      mov     x8, x21
+    // c: f9400318      ldr     x24, [x24]
     // 000000000000000c:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPERAND0
-    // 10: f85f0e78      ldr     x24, [x19, #-0x10]!
-    // 14: f879db48      ldr     x8, [x26, w25, sxtw #3]
-    // 18: eb18011f      cmp     x8, x24
-    // 1c: 54000040      b.eq    0x24 <_JIT_ENTRY+0x24>
-    // 20: 14000000      b       0x20 <_JIT_ENTRY+0x20>
-    // 0000000000000020:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 24: d10083ff      sub     sp, sp, #0x20
-    // 28: b9400308      ldr     w8, [x24]
-    // 2c: f85f82b7      ldur    x23, [x21, #-0x8]
-    // 30: a9017bfd      stp     x29, x30, [sp, #0x10]
-    // 34: 910043fd      add     x29, sp, #0x10
-    // 38: 37f80208      tbnz    w8, #0x1f, 0x78 <_JIT_ENTRY+0x78>
-    // 3c: 71000508      subs    w8, w8, #0x1
-    // 40: b9000308      str     w8, [x24]
-    // 44: 540001a1      b.ne    0x78 <_JIT_ENTRY+0x78>
-    // 48: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000048:  R_AARCH64_ADR_GOT_PAGE       _PyRuntime
-    // 4c: f9400129      ldr     x9, [x9]
-    // 000000000000004c:  R_AARCH64_LD64_GOT_LO12_NC   _PyRuntime
-    // 50: f9544928      ldr     x8, [x9, #0x2890]
-    // 54: b40000a8      cbz     x8, 0x68 <_JIT_ENTRY+0x68>
-    // 58: f9544d22      ldr     x2, [x9, #0x2898]
-    // 5c: aa1803e0      mov     x0, x24
-    // 60: 52800021      mov     w1, #0x1                // =1
-    // 64: d63f0100      blr     x8
-    // 68: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000068:  R_AARCH64_ADR_GOT_PAGE       _PyUnicode_ExactDealloc
-    // 6c: aa1803e0      mov     x0, x24
-    // 70: f9400108      ldr     x8, [x8]
-    // 0000000000000070:  R_AARCH64_LD64_GOT_LO12_NC   _PyUnicode_ExactDealloc
-    // 74: d63f0100      blr     x8
-    // 78: f879db48      ldr     x8, [x26, w25, sxtw #3]
-    // 7c: 910023e0      add     x0, sp, #0x8
-    // 80: aa1703e1      mov     x1, x23
-    // 84: f90007e8      str     x8, [sp, #0x8]
-    // 88: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000088:  R_AARCH64_ADR_GOT_PAGE       PyUnicode_Append
-    // 8c: f9400108      ldr     x8, [x8]
-    // 000000000000008c:  R_AARCH64_LD64_GOT_LO12_NC   PyUnicode_Append
-    // 90: d63f0100      blr     x8
-    // 94: f94007e8      ldr     x8, [sp, #0x8]
-    // 98: f839db48      str     x8, [x26, w25, sxtw #3]
-    // 9c: b94002e9      ldr     w9, [x23]
-    // a0: 37f80229      tbnz    w9, #0x1f, 0xe4 <_JIT_ENTRY+0xe4>
-    // a4: 71000528      subs    w8, w9, #0x1
-    // a8: b90002e8      str     w8, [x23]
-    // ac: 540001a1      b.ne    0xe0 <_JIT_ENTRY+0xe0>
-    // b0: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 00000000000000b0:  R_AARCH64_ADR_GOT_PAGE       _PyRuntime
-    // b4: f9400129      ldr     x9, [x9]
-    // 00000000000000b4:  R_AARCH64_LD64_GOT_LO12_NC   _PyRuntime
-    // b8: f9544928      ldr     x8, [x9, #0x2890]
-    // bc: b40000a8      cbz     x8, 0xd0 <_JIT_ENTRY+0xd0>
-    // c0: f9544d22      ldr     x2, [x9, #0x2898]
-    // c4: aa1703e0      mov     x0, x23
-    // c8: 52800021      mov     w1, #0x1                // =1
-    // cc: d63f0100      blr     x8
-    // d0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000d0:  R_AARCH64_ADR_GOT_PAGE       _PyUnicode_ExactDealloc
-    // d4: aa1703e0      mov     x0, x23
-    // d8: f9400108      ldr     x8, [x8]
-    // 00000000000000d8:  R_AARCH64_LD64_GOT_LO12_NC   _PyUnicode_ExactDealloc
-    // dc: d63f0100      blr     x8
-    // e0: f879db48      ldr     x8, [x26, w25, sxtw #3]
-    // e4: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // e8: 910083ff      add     sp, sp, #0x20
-    // ec: b4000068      cbz     x8, 0xf8 <_JIT_ENTRY+0xf8>
-    // f0: aa1303f5      mov     x21, x19
+    // 10: f85f0eb7      ldr     x23, [x21, #-0x10]!
+    // 14: f878db29      ldr     x9, [x25, w24, sxtw #3]
+    // 18: eb17013f      cmp     x9, x23
+    // 1c: 54000060      b.eq    0x28 <_JIT_ENTRY+0x28>
+    // 20: aa0803f5      mov     x21, x8
+    // 24: 14000000      b       0x24 <_JIT_ENTRY+0x24>
+    // 0000000000000024:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
+    // 28: d10083ff      sub     sp, sp, #0x20
+    // 2c: b94002e9      ldr     w9, [x23]
+    // 30: f85f8113      ldur    x19, [x8, #-0x8]
+    // 34: a9017bfd      stp     x29, x30, [sp, #0x10]
+    // 38: 910043fd      add     x29, sp, #0x10
+    // 3c: 37f80209      tbnz    w9, #0x1f, 0x7c <_JIT_ENTRY+0x7c>
+    // 40: 71000528      subs    w8, w9, #0x1
+    // 44: b90002e8      str     w8, [x23]
+    // 48: 540001a1      b.ne    0x7c <_JIT_ENTRY+0x7c>
+    // 4c: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
+    // 000000000000004c:  R_AARCH64_ADR_GOT_PAGE       _PyRuntime
+    // 50: f9400129      ldr     x9, [x9]
+    // 0000000000000050:  R_AARCH64_LD64_GOT_LO12_NC   _PyRuntime
+    // 54: f9544928      ldr     x8, [x9, #0x2890]
+    // 58: b40000a8      cbz     x8, 0x6c <_JIT_ENTRY+0x6c>
+    // 5c: f9544d22      ldr     x2, [x9, #0x2898]
+    // 60: aa1703e0      mov     x0, x23
+    // 64: 52800021      mov     w1, #0x1                // =1
+    // 68: d63f0100      blr     x8
+    // 6c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 000000000000006c:  R_AARCH64_ADR_GOT_PAGE       _PyUnicode_ExactDealloc
+    // 70: aa1703e0      mov     x0, x23
+    // 74: f9400108      ldr     x8, [x8]
+    // 0000000000000074:  R_AARCH64_LD64_GOT_LO12_NC   _PyUnicode_ExactDealloc
+    // 78: d63f0100      blr     x8
+    // 7c: f878db28      ldr     x8, [x25, w24, sxtw #3]
+    // 80: 910023e0      add     x0, sp, #0x8
+    // 84: aa1303e1      mov     x1, x19
+    // 88: f90007e8      str     x8, [sp, #0x8]
+    // 8c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 000000000000008c:  R_AARCH64_ADR_GOT_PAGE       PyUnicode_Append
+    // 90: f9400108      ldr     x8, [x8]
+    // 0000000000000090:  R_AARCH64_LD64_GOT_LO12_NC   PyUnicode_Append
+    // 94: d63f0100      blr     x8
+    // 98: f94007e8      ldr     x8, [sp, #0x8]
+    // 9c: f838db28      str     x8, [x25, w24, sxtw #3]
+    // a0: b9400269      ldr     w9, [x19]
+    // a4: 37f80229      tbnz    w9, #0x1f, 0xe8 <_JIT_ENTRY+0xe8>
+    // a8: 71000528      subs    w8, w9, #0x1
+    // ac: b9000268      str     w8, [x19]
+    // b0: 540001a1      b.ne    0xe4 <_JIT_ENTRY+0xe4>
+    // b4: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
+    // 00000000000000b4:  R_AARCH64_ADR_GOT_PAGE       _PyRuntime
+    // b8: f9400129      ldr     x9, [x9]
+    // 00000000000000b8:  R_AARCH64_LD64_GOT_LO12_NC   _PyRuntime
+    // bc: f9544928      ldr     x8, [x9, #0x2890]
+    // c0: b40000a8      cbz     x8, 0xd4 <_JIT_ENTRY+0xd4>
+    // c4: f9544d22      ldr     x2, [x9, #0x2898]
+    // c8: aa1303e0      mov     x0, x19
+    // cc: 52800021      mov     w1, #0x1                // =1
+    // d0: d63f0100      blr     x8
+    // d4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000d4:  R_AARCH64_ADR_GOT_PAGE       _PyUnicode_ExactDealloc
+    // d8: aa1303e0      mov     x0, x19
+    // dc: f9400108      ldr     x8, [x8]
+    // 00000000000000dc:  R_AARCH64_LD64_GOT_LO12_NC   _PyUnicode_ExactDealloc
+    // e0: d63f0100      blr     x8
+    // e4: f878db28      ldr     x8, [x25, w24, sxtw #3]
+    // e8: a9417bfd      ldp     x29, x30, [sp, #0x10]
+    // ec: 910083ff      add     sp, sp, #0x20
+    // f0: b4000048      cbz     x8, 0xf8 <_JIT_ENTRY+0xf8>
     // f4: 14000000      b       0xf4 <_JIT_ENTRY+0xf4>
     // 00000000000000f4:  R_AARCH64_JUMP26     _JIT_CONTINUE
     // f8: 14000000      b       0xf8 <_JIT_ENTRY+0xf8>
     // 00000000000000f8:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
     // fc: 00 00 00 00
     const unsigned char code_body[256] = {
-        0x19, 0x00, 0x00, 0x90, 0xf3, 0x03, 0x15, 0xaa,
-        0x9a, 0x42, 0x01, 0x91, 0x39, 0x03, 0x40, 0xf9,
-        0x78, 0x0e, 0x5f, 0xf8, 0x48, 0xdb, 0x79, 0xf8,
-        0x1f, 0x01, 0x18, 0xeb, 0x40, 0x00, 0x00, 0x54,
-        0x00, 0x00, 0x00, 0x14, 0xff, 0x83, 0x00, 0xd1,
-        0x08, 0x03, 0x40, 0xb9, 0xb7, 0x82, 0x5f, 0xf8,
-        0xfd, 0x7b, 0x01, 0xa9, 0xfd, 0x43, 0x00, 0x91,
-        0x08, 0x02, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x08, 0x03, 0x00, 0xb9, 0xa1, 0x01, 0x00, 0x54,
-        0x09, 0x00, 0x00, 0x90, 0x29, 0x01, 0x40, 0xf9,
-        0x28, 0x49, 0x54, 0xf9, 0xa8, 0x00, 0x00, 0xb4,
-        0x22, 0x4d, 0x54, 0xf9, 0xe0, 0x03, 0x18, 0xaa,
-        0x21, 0x00, 0x80, 0x52, 0x00, 0x01, 0x3f, 0xd6,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x18, 0xaa,
+        0x18, 0x00, 0x00, 0x90, 0x99, 0x42, 0x01, 0x91,
+        0xe8, 0x03, 0x15, 0xaa, 0x18, 0x03, 0x40, 0xf9,
+        0xb7, 0x0e, 0x5f, 0xf8, 0x29, 0xdb, 0x78, 0xf8,
+        0x3f, 0x01, 0x17, 0xeb, 0x60, 0x00, 0x00, 0x54,
+        0xf5, 0x03, 0x08, 0xaa, 0x00, 0x00, 0x00, 0x14,
+        0xff, 0x83, 0x00, 0xd1, 0xe9, 0x02, 0x40, 0xb9,
+        0x13, 0x81, 0x5f, 0xf8, 0xfd, 0x7b, 0x01, 0xa9,
+        0xfd, 0x43, 0x00, 0x91, 0x09, 0x02, 0xf8, 0x37,
+        0x28, 0x05, 0x00, 0x71, 0xe8, 0x02, 0x00, 0xb9,
+        0xa1, 0x01, 0x00, 0x54, 0x09, 0x00, 0x00, 0x90,
+        0x29, 0x01, 0x40, 0xf9, 0x28, 0x49, 0x54, 0xf9,
+        0xa8, 0x00, 0x00, 0xb4, 0x22, 0x4d, 0x54, 0xf9,
+        0xe0, 0x03, 0x17, 0xaa, 0x21, 0x00, 0x80, 0x52,
+        0x00, 0x01, 0x3f, 0xd6, 0x08, 0x00, 0x00, 0x90,
+        0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x28, 0xdb, 0x78, 0xf8,
+        0xe0, 0x23, 0x00, 0x91, 0xe1, 0x03, 0x13, 0xaa,
+        0xe8, 0x07, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x48, 0xdb, 0x79, 0xf8, 0xe0, 0x23, 0x00, 0x91,
-        0xe1, 0x03, 0x17, 0xaa, 0xe8, 0x07, 0x00, 0xf9,
-        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xe8, 0x07, 0x40, 0xf9,
-        0x48, 0xdb, 0x39, 0xf8, 0xe9, 0x02, 0x40, 0xb9,
-        0x29, 0x02, 0xf8, 0x37, 0x28, 0x05, 0x00, 0x71,
-        0xe8, 0x02, 0x00, 0xb9, 0xa1, 0x01, 0x00, 0x54,
-        0x09, 0x00, 0x00, 0x90, 0x29, 0x01, 0x40, 0xf9,
-        0x28, 0x49, 0x54, 0xf9, 0xa8, 0x00, 0x00, 0xb4,
-        0x22, 0x4d, 0x54, 0xf9, 0xe0, 0x03, 0x17, 0xaa,
-        0x21, 0x00, 0x80, 0x52, 0x00, 0x01, 0x3f, 0xd6,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x17, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x48, 0xdb, 0x79, 0xf8, 0xfd, 0x7b, 0x41, 0xa9,
-        0xff, 0x83, 0x00, 0x91, 0x68, 0x00, 0x00, 0xb4,
-        0xf5, 0x03, 0x13, 0xaa, 0x00, 0x00, 0x00, 0x14,
+        0xe8, 0x07, 0x40, 0xf9, 0x28, 0xdb, 0x38, 0xf8,
+        0x69, 0x02, 0x40, 0xb9, 0x29, 0x02, 0xf8, 0x37,
+        0x28, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
+        0xa1, 0x01, 0x00, 0x54, 0x09, 0x00, 0x00, 0x90,
+        0x29, 0x01, 0x40, 0xf9, 0x28, 0x49, 0x54, 0xf9,
+        0xa8, 0x00, 0x00, 0xb4, 0x22, 0x4d, 0x54, 0xf9,
+        0xe0, 0x03, 0x13, 0xaa, 0x21, 0x00, 0x80, 0x52,
+        0x00, 0x01, 0x3f, 0xd6, 0x08, 0x00, 0x00, 0x90,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x28, 0xdb, 0x78, 0xf8,
+        0xfd, 0x7b, 0x41, 0xa9, 0xff, 0x83, 0x00, 0x91,
+        0x48, 0x00, 0x00, 0xb4, 0x00, 0x00, 0x00, 0x14,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPERAND0
@@ -787,14 +726,14 @@ emit__BINARY_OP_INPLACE_ADD_UNICODE(
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_21rx(code + 0x0, (uintptr_t)data);
     patch_aarch64_12x(code + 0xc, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x20, state->instruction_starts[instruction->jump_target]);
-    patch_aarch64_33rx(code + 0x48, (uintptr_t)data + 0x8);
-    patch_aarch64_21rx(code + 0x68, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x70, (uintptr_t)data + 0x10);
-    patch_aarch64_33rx(code + 0x88, (uintptr_t)data + 0x18);
-    patch_aarch64_33rx(code + 0xb0, (uintptr_t)data + 0x8);
-    patch_aarch64_21rx(code + 0xd0, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0xd8, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x24, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_33rx(code + 0x4c, (uintptr_t)data + 0x8);
+    patch_aarch64_21rx(code + 0x6c, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x74, (uintptr_t)data + 0x10);
+    patch_aarch64_33rx(code + 0x8c, (uintptr_t)data + 0x18);
+    patch_aarch64_33rx(code + 0xb4, (uintptr_t)data + 0x8);
+    patch_aarch64_21rx(code + 0xd4, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0xdc, (uintptr_t)data + 0x10);
     patch_aarch64_26r(code + 0xf4, (uintptr_t)code + sizeof(code_body));
     patch_aarch64_26r(code + 0xf8, state->instruction_starts[instruction->error_target]);
 }
@@ -811,20 +750,20 @@ emit__BINARY_OP_MULTIPLY_FLOAT(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: aa1503f3      mov     x19, x21
-    // 8: f85f8ea1      ldr     x1, [x21, #-0x8]!
-    // c: f85f82a0      ldur    x0, [x21, #-0x8]
+    // 4: f85f8ea1      ldr     x1, [x21, #-0x8]!
+    // 8: aa1503f3      mov     x19, x21
+    // c: f85f8e60      ldr     x0, [x19, #-0x8]!
     // 10: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000010:  R_AARCH64_ADR_GOT_PAGE       _PyFloat_FromDouble_ConsumeInputs
-    // 14: 910003fd      mov     x29, sp
-    // 18: fd400821      ldr     d1, [x1, #0x10]
-    // 1c: fd400800      ldr     d0, [x0, #0x10]
+    // 14: fd400820      ldr     d0, [x1, #0x10]
+    // 18: 910003fd      mov     x29, sp
+    // 1c: fd400801      ldr     d1, [x0, #0x10]
     // 20: f9400108      ldr     x8, [x8]
     // 0000000000000020:  R_AARCH64_LD64_GOT_LO12_NC   _PyFloat_FromDouble_ConsumeInputs
-    // 24: 1e610800      fmul    d0, d0, d1
+    // 24: 1e600820      fmul    d0, d1, d0
     // 28: d63f0100      blr     x8
     // 2c: b4000080      cbz     x0, 0x3c <_JIT_ENTRY+0x3c>
-    // 30: f81f0260      stur    x0, [x19, #-0x10]
+    // 30: f9000260      str     x0, [x19]
     // 34: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 38: 14000000      b       0x38 <_JIT_ENTRY+0x38>
     // 0000000000000038:  R_AARCH64_JUMP26     _JIT_CONTINUE
@@ -833,13 +772,13 @@ emit__BINARY_OP_MULTIPLY_FLOAT(
     // 44: 14000000      b       0x44 <_JIT_ENTRY+0x44>
     // 0000000000000044:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
     const unsigned char code_body[72] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0xf3, 0x03, 0x15, 0xaa,
-        0xa1, 0x8e, 0x5f, 0xf8, 0xa0, 0x82, 0x5f, 0xf8,
-        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
-        0x21, 0x08, 0x40, 0xfd, 0x00, 0x08, 0x40, 0xfd,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x08, 0x61, 0x1e,
+        0xfd, 0x7b, 0xbf, 0xa9, 0xa1, 0x8e, 0x5f, 0xf8,
+        0xf3, 0x03, 0x15, 0xaa, 0x60, 0x8e, 0x5f, 0xf8,
+        0x08, 0x00, 0x00, 0x90, 0x20, 0x08, 0x40, 0xfd,
+        0xfd, 0x03, 0x00, 0x91, 0x01, 0x08, 0x40, 0xfd,
+        0x08, 0x01, 0x40, 0xf9, 0x20, 0x08, 0x60, 0x1e,
         0x00, 0x01, 0x3f, 0xd6, 0x80, 0x00, 0x00, 0xb4,
-        0x60, 0x02, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x60, 0x02, 0x00, 0xf9, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0xf5, 0x03, 0x13, 0xaa,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
@@ -868,15 +807,15 @@ emit__BINARY_OP_MULTIPLY_INT(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: aa1503f3      mov     x19, x21
-    // 8: f85f8eb9      ldr     x25, [x21, #-0x8]!
-    // c: f85f82b8      ldur    x24, [x21, #-0x8]
+    // 4: f85f8eb9      ldr     x25, [x21, #-0x8]!
+    // 8: aa1503f3      mov     x19, x21
+    // c: f85f8e78      ldr     x24, [x19, #-0x8]!
     // 10: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000010:  R_AARCH64_ADR_GOT_PAGE       _PyLong_Multiply
-    // 14: 910003fd      mov     x29, sp
-    // 18: f9400108      ldr     x8, [x8]
-    // 0000000000000018:  R_AARCH64_LD64_GOT_LO12_NC   _PyLong_Multiply
-    // 1c: aa1903e1      mov     x1, x25
+    // 14: f9400108      ldr     x8, [x8]
+    // 0000000000000014:  R_AARCH64_LD64_GOT_LO12_NC   _PyLong_Multiply
+    // 18: aa1903e1      mov     x1, x25
+    // 1c: 910003fd      mov     x29, sp
     // 20: aa1803e0      mov     x0, x24
     // 24: d63f0100      blr     x8
     // 28: b9400328      ldr     w8, [x25]
@@ -907,7 +846,7 @@ emit__BINARY_OP_MULTIPLY_INT(
     // 7c: b9000308      str     w8, [x24]
     // 80: 540000a0      b.eq    0x94 <_JIT_ENTRY+0x94>
     // 84: b4000237      cbz     x23, 0xc8 <_JIT_ENTRY+0xc8>
-    // 88: f81f0277      stur    x23, [x19, #-0x10]
+    // 88: f9000277      str     x23, [x19]
     // 8c: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 90: 14000000      b       0x90 <_JIT_ENTRY+0x90>
     // 0000000000000090:  R_AARCH64_JUMP26     _JIT_CONTINUE
@@ -934,10 +873,10 @@ emit__BINARY_OP_MULTIPLY_INT(
     // 00000000000000d0:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
     // d4: 00 00 00 00
     const unsigned char code_body[216] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0xf3, 0x03, 0x15, 0xaa,
-        0xb9, 0x8e, 0x5f, 0xf8, 0xb8, 0x82, 0x5f, 0xf8,
-        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
-        0x08, 0x01, 0x40, 0xf9, 0xe1, 0x03, 0x19, 0xaa,
+        0xfd, 0x7b, 0xbf, 0xa9, 0xb9, 0x8e, 0x5f, 0xf8,
+        0xf3, 0x03, 0x15, 0xaa, 0x78, 0x8e, 0x5f, 0xf8,
+        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
+        0xe1, 0x03, 0x19, 0xaa, 0xfd, 0x03, 0x00, 0x91,
         0xe0, 0x03, 0x18, 0xaa, 0x00, 0x01, 0x3f, 0xd6,
         0x28, 0x03, 0x40, 0xb9, 0xf7, 0x03, 0x00, 0xaa,
         0x08, 0x02, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
@@ -951,7 +890,7 @@ emit__BINARY_OP_MULTIPLY_INT(
         0x08, 0x03, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
         0xa0, 0x00, 0x00, 0x54, 0x37, 0x02, 0x00, 0xb4,
-        0x77, 0x02, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x77, 0x02, 0x00, 0xf9, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x09, 0x00, 0x00, 0x90,
         0x29, 0x01, 0x40, 0xf9, 0x28, 0x49, 0x54, 0xf9,
         0xa8, 0x00, 0x00, 0xb4, 0x22, 0x4d, 0x54, 0xf9,
@@ -975,8 +914,7 @@ emit__BINARY_OP_MULTIPLY_INT(
     patch_64(data + 0x8, (uintptr_t)&_PyRuntime);
     patch_64(data + 0x10, (uintptr_t)&_PyLong_ExactDealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x10, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x18, (uintptr_t)data);
+    patch_aarch64_33rx(code + 0x10, (uintptr_t)data);
     patch_aarch64_33rx(code + 0x40, (uintptr_t)data + 0x8);
     patch_aarch64_21rx(code + 0x60, (uintptr_t)data + 0x10);
     patch_aarch64_12x(code + 0x68, (uintptr_t)data + 0x10);
@@ -988,430 +926,12 @@ emit__BINARY_OP_MULTIPLY_INT(
 }
 
 void
-emit__BINARY_OP_SUBTRACT_FLOAT(
+emit__BINARY_OP_SUBSCR_CHECK_FUNC(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
     //
-    // _BINARY_OP_SUBTRACT_FLOAT.o:   file format elf64-littleaarch64
-    //
-    // Disassembly of section .text:
-    //
-    // 0000000000000000 <_JIT_ENTRY>:
-    // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: aa1503f3      mov     x19, x21
-    // 8: f85f8ea1      ldr     x1, [x21, #-0x8]!
-    // c: f85f82a0      ldur    x0, [x21, #-0x8]
-    // 10: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000010:  R_AARCH64_ADR_GOT_PAGE       _PyFloat_FromDouble_ConsumeInputs
-    // 14: 910003fd      mov     x29, sp
-    // 18: fd400821      ldr     d1, [x1, #0x10]
-    // 1c: fd400800      ldr     d0, [x0, #0x10]
-    // 20: f9400108      ldr     x8, [x8]
-    // 0000000000000020:  R_AARCH64_LD64_GOT_LO12_NC   _PyFloat_FromDouble_ConsumeInputs
-    // 24: 1e613800      fsub    d0, d0, d1
-    // 28: d63f0100      blr     x8
-    // 2c: b4000080      cbz     x0, 0x3c <_JIT_ENTRY+0x3c>
-    // 30: f81f0260      stur    x0, [x19, #-0x10]
-    // 34: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 38: 14000000      b       0x38 <_JIT_ENTRY+0x38>
-    // 0000000000000038:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 3c: aa1303f5      mov     x21, x19
-    // 40: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 44: 14000000      b       0x44 <_JIT_ENTRY+0x44>
-    // 0000000000000044:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[72] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0xf3, 0x03, 0x15, 0xaa,
-        0xa1, 0x8e, 0x5f, 0xf8, 0xa0, 0x82, 0x5f, 0xf8,
-        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
-        0x21, 0x08, 0x40, 0xfd, 0x00, 0x08, 0x40, 0xfd,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x38, 0x61, 0x1e,
-        0x00, 0x01, 0x3f, 0xd6, 0x80, 0x00, 0x00, 0xb4,
-        0x60, 0x02, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0xf5, 0x03, 0x13, 0xaa,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-    };
-    // 0: &_PyFloat_FromDouble_ConsumeInputs+0x0
-    const unsigned char data_body[8] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    };
-    memcpy(data, data_body, sizeof(data_body));
-    patch_64(data + 0x0, (uintptr_t)&_PyFloat_FromDouble_ConsumeInputs);
-    memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x10, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x20, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x38, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x44, state->instruction_starts[instruction->error_target]);
-}
-
-void
-emit__BINARY_OP_SUBTRACT_INT(
-    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
-    const _PyUOpInstruction *instruction, jit_state *state)
-{
-    //
-    // _BINARY_OP_SUBTRACT_INT.o:     file format elf64-littleaarch64
-    //
-    // Disassembly of section .text:
-    //
-    // 0000000000000000 <_JIT_ENTRY>:
-    // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: aa1503f3      mov     x19, x21
-    // 8: f85f8eb9      ldr     x25, [x21, #-0x8]!
-    // c: f85f82b8      ldur    x24, [x21, #-0x8]
-    // 10: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000010:  R_AARCH64_ADR_GOT_PAGE       _PyLong_Subtract
-    // 14: 910003fd      mov     x29, sp
-    // 18: f9400108      ldr     x8, [x8]
-    // 0000000000000018:  R_AARCH64_LD64_GOT_LO12_NC   _PyLong_Subtract
-    // 1c: aa1903e1      mov     x1, x25
-    // 20: aa1803e0      mov     x0, x24
-    // 24: d63f0100      blr     x8
-    // 28: b9400328      ldr     w8, [x25]
-    // 2c: aa0003f7      mov     x23, x0
-    // 30: 37f80208      tbnz    w8, #0x1f, 0x70 <_JIT_ENTRY+0x70>
-    // 34: 71000508      subs    w8, w8, #0x1
-    // 38: b9000328      str     w8, [x25]
-    // 3c: 540001a1      b.ne    0x70 <_JIT_ENTRY+0x70>
-    // 40: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000040:  R_AARCH64_ADR_GOT_PAGE       _PyRuntime
-    // 44: f9400129      ldr     x9, [x9]
-    // 0000000000000044:  R_AARCH64_LD64_GOT_LO12_NC   _PyRuntime
-    // 48: f9544928      ldr     x8, [x9, #0x2890]
-    // 4c: b40000a8      cbz     x8, 0x60 <_JIT_ENTRY+0x60>
-    // 50: f9544d22      ldr     x2, [x9, #0x2898]
-    // 54: aa1903e0      mov     x0, x25
-    // 58: 52800021      mov     w1, #0x1                // =1
-    // 5c: d63f0100      blr     x8
-    // 60: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000060:  R_AARCH64_ADR_GOT_PAGE       _PyLong_ExactDealloc
-    // 64: aa1903e0      mov     x0, x25
-    // 68: f9400108      ldr     x8, [x8]
-    // 0000000000000068:  R_AARCH64_LD64_GOT_LO12_NC   _PyLong_ExactDealloc
-    // 6c: d63f0100      blr     x8
-    // 70: b9400308      ldr     w8, [x24]
-    // 74: 37f80088      tbnz    w8, #0x1f, 0x84 <_JIT_ENTRY+0x84>
-    // 78: 71000508      subs    w8, w8, #0x1
-    // 7c: b9000308      str     w8, [x24]
-    // 80: 540000a0      b.eq    0x94 <_JIT_ENTRY+0x94>
-    // 84: b4000237      cbz     x23, 0xc8 <_JIT_ENTRY+0xc8>
-    // 88: f81f0277      stur    x23, [x19, #-0x10]
-    // 8c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 90: 14000000      b       0x90 <_JIT_ENTRY+0x90>
-    // 0000000000000090:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 94: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000094:  R_AARCH64_ADR_GOT_PAGE       _PyRuntime
-    // 98: f9400129      ldr     x9, [x9]
-    // 0000000000000098:  R_AARCH64_LD64_GOT_LO12_NC   _PyRuntime
-    // 9c: f9544928      ldr     x8, [x9, #0x2890]
-    // a0: b40000a8      cbz     x8, 0xb4 <_JIT_ENTRY+0xb4>
-    // a4: f9544d22      ldr     x2, [x9, #0x2898]
-    // a8: aa1803e0      mov     x0, x24
-    // ac: 52800021      mov     w1, #0x1                // =1
-    // b0: d63f0100      blr     x8
-    // b4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000b4:  R_AARCH64_ADR_GOT_PAGE       _PyLong_ExactDealloc
-    // b8: aa1803e0      mov     x0, x24
-    // bc: f9400108      ldr     x8, [x8]
-    // 00000000000000bc:  R_AARCH64_LD64_GOT_LO12_NC   _PyLong_ExactDealloc
-    // c0: d63f0100      blr     x8
-    // c4: b5fffe37      cbnz    x23, 0x88 <_JIT_ENTRY+0x88>
-    // c8: aa1303f5      mov     x21, x19
-    // cc: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // d0: 14000000      b       0xd0 <_JIT_ENTRY+0xd0>
-    // 00000000000000d0:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // d4: 00 00 00 00
-    const unsigned char code_body[216] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0xf3, 0x03, 0x15, 0xaa,
-        0xb9, 0x8e, 0x5f, 0xf8, 0xb8, 0x82, 0x5f, 0xf8,
-        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
-        0x08, 0x01, 0x40, 0xf9, 0xe1, 0x03, 0x19, 0xaa,
-        0xe0, 0x03, 0x18, 0xaa, 0x00, 0x01, 0x3f, 0xd6,
-        0x28, 0x03, 0x40, 0xb9, 0xf7, 0x03, 0x00, 0xaa,
-        0x08, 0x02, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x28, 0x03, 0x00, 0xb9, 0xa1, 0x01, 0x00, 0x54,
-        0x09, 0x00, 0x00, 0x90, 0x29, 0x01, 0x40, 0xf9,
-        0x28, 0x49, 0x54, 0xf9, 0xa8, 0x00, 0x00, 0xb4,
-        0x22, 0x4d, 0x54, 0xf9, 0xe0, 0x03, 0x19, 0xaa,
-        0x21, 0x00, 0x80, 0x52, 0x00, 0x01, 0x3f, 0xd6,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x19, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x08, 0x03, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
-        0xa0, 0x00, 0x00, 0x54, 0x37, 0x02, 0x00, 0xb4,
-        0x77, 0x02, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x09, 0x00, 0x00, 0x90,
-        0x29, 0x01, 0x40, 0xf9, 0x28, 0x49, 0x54, 0xf9,
-        0xa8, 0x00, 0x00, 0xb4, 0x22, 0x4d, 0x54, 0xf9,
-        0xe0, 0x03, 0x18, 0xaa, 0x21, 0x00, 0x80, 0x52,
-        0x00, 0x01, 0x3f, 0xd6, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x37, 0xfe, 0xff, 0xb5,
-        0xf5, 0x03, 0x13, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
-    };
-    // 0: &_PyLong_Subtract+0x0
-    // 8: &_PyRuntime+0x0
-    // 10: &_PyLong_ExactDealloc+0x0
-    const unsigned char data_body[24] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    };
-    memcpy(data, data_body, sizeof(data_body));
-    patch_64(data + 0x0, (uintptr_t)&_PyLong_Subtract);
-    patch_64(data + 0x8, (uintptr_t)&_PyRuntime);
-    patch_64(data + 0x10, (uintptr_t)&_PyLong_ExactDealloc);
-    memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x10, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x18, (uintptr_t)data);
-    patch_aarch64_33rx(code + 0x40, (uintptr_t)data + 0x8);
-    patch_aarch64_21rx(code + 0x60, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x68, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x90, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_33rx(code + 0x94, (uintptr_t)data + 0x8);
-    patch_aarch64_21rx(code + 0xb4, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0xbc, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0xd0, state->instruction_starts[instruction->error_target]);
-}
-
-void
-emit__BINARY_SLICE(
-    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
-    const _PyUOpInstruction *instruction, jit_state *state)
-{
-    //
-    // _BINARY_SLICE.o:       file format elf64-littleaarch64
-    //
-    // Disassembly of section .text:
-    //
-    // 0000000000000000 <_JIT_ENTRY>:
-    // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: a97f06a0      ldp     x0, x1, [x21, #-0x10]
-    // 8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       _PyBuildSlice_ConsumeRefs
-    // c: f85e82b3      ldur    x19, [x21, #-0x18]
-    // 10: f9002295      str     x21, [x20, #0x40]
-    // 14: 910003fd      mov     x29, sp
-    // 18: f9400108      ldr     x8, [x8]
-    // 0000000000000018:  R_AARCH64_LD64_GOT_LO12_NC   _PyBuildSlice_ConsumeRefs
-    // 1c: d63f0100      blr     x8
-    // 20: f9402298      ldr     x24, [x20, #0x40]
-    // 24: f900229f      str     xzr, [x20, #0x40]
-    // 28: b4000320      cbz     x0, 0x8c <_JIT_ENTRY+0x8c>
-    // 2c: d1004308      sub     x8, x24, #0x10
-    // 30: aa0003f5      mov     x21, x0
-    // 34: aa1303e0      mov     x0, x19
-    // 38: f9002288      str     x8, [x20, #0x40]
-    // 3c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000003c:  R_AARCH64_ADR_GOT_PAGE       PyObject_GetItem
-    // 40: aa1503e1      mov     x1, x21
-    // 44: f9400108      ldr     x8, [x8]
-    // 0000000000000044:  R_AARCH64_LD64_GOT_LO12_NC   PyObject_GetItem
-    // 48: d63f0100      blr     x8
-    // 4c: b94002a8      ldr     w8, [x21]
-    // 50: aa0003f7      mov     x23, x0
-    // 54: 37f80108      tbnz    w8, #0x1f, 0x74 <_JIT_ENTRY+0x74>
-    // 58: 71000508      subs    w8, w8, #0x1
-    // 5c: b90002a8      str     w8, [x21]
-    // 60: 540000a1      b.ne    0x74 <_JIT_ENTRY+0x74>
-    // 64: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000064:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 68: aa1503e0      mov     x0, x21
-    // 6c: f9400108      ldr     x8, [x8]
-    // 000000000000006c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 70: d63f0100      blr     x8
-    // 74: f9402288      ldr     x8, [x20, #0x40]
-    // 78: f900229f      str     xzr, [x20, #0x40]
-    // 7c: 91004118      add     x24, x8, #0x10
-    // 80: b9400268      ldr     w8, [x19]
-    // 84: 36f800a8      tbz     w8, #0x1f, 0x98 <_JIT_ENTRY+0x98>
-    // 88: 14000007      b       0xa4 <_JIT_ENTRY+0xa4>
-    // 8c: aa1f03f7      mov     x23, xzr
-    // 90: b9400268      ldr     w8, [x19]
-    // 94: 37f80088      tbnz    w8, #0x1f, 0xa4 <_JIT_ENTRY+0xa4>
-    // 98: 71000508      subs    w8, w8, #0x1
-    // 9c: b9000268      str     w8, [x19]
-    // a0: 540000c0      b.eq    0xb8 <_JIT_ENTRY+0xb8>
-    // a4: b4000157      cbz     x23, 0xcc <_JIT_ENTRY+0xcc>
-    // a8: d1004315      sub     x21, x24, #0x10
-    // ac: f81e8317      stur    x23, [x24, #-0x18]
-    // b0: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // b4: 14000000      b       0xb4 <_JIT_ENTRY+0xb4>
-    // 00000000000000b4:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // b8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000b8:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // bc: aa1303e0      mov     x0, x19
-    // c0: f9400108      ldr     x8, [x8]
-    // 00000000000000c0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // c4: d63f0100      blr     x8
-    // c8: b5ffff17      cbnz    x23, 0xa8 <_JIT_ENTRY+0xa8>
-    // cc: aa1803f5      mov     x21, x24
-    // d0: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // d4: 14000000      b       0xd4 <_JIT_ENTRY+0xd4>
-    // 00000000000000d4:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[216] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0xa0, 0x06, 0x7f, 0xa9,
-        0x08, 0x00, 0x00, 0x90, 0xb3, 0x82, 0x5e, 0xf8,
-        0x95, 0x22, 0x00, 0xf9, 0xfd, 0x03, 0x00, 0x91,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x98, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
-        0x20, 0x03, 0x00, 0xb4, 0x08, 0x43, 0x00, 0xd1,
-        0xf5, 0x03, 0x00, 0xaa, 0xe0, 0x03, 0x13, 0xaa,
-        0x88, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
-        0xe1, 0x03, 0x15, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xa8, 0x02, 0x40, 0xb9,
-        0xf7, 0x03, 0x00, 0xaa, 0x08, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0xa8, 0x02, 0x00, 0xb9,
-        0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x15, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x88, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0x18, 0x41, 0x00, 0x91,
-        0x68, 0x02, 0x40, 0xb9, 0xa8, 0x00, 0xf8, 0x36,
-        0x07, 0x00, 0x00, 0x14, 0xf7, 0x03, 0x1f, 0xaa,
-        0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0xc0, 0x00, 0x00, 0x54, 0x57, 0x01, 0x00, 0xb4,
-        0x15, 0x43, 0x00, 0xd1, 0x17, 0x83, 0x1e, 0xf8,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x17, 0xff, 0xff, 0xb5, 0xf5, 0x03, 0x18, 0xaa,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-    };
-    // 0: &_PyBuildSlice_ConsumeRefs+0x0
-    // 8: &PyObject_GetItem+0x0
-    // 10: &_Py_Dealloc+0x0
-    const unsigned char data_body[24] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    };
-    memcpy(data, data_body, sizeof(data_body));
-    patch_64(data + 0x0, (uintptr_t)&_PyBuildSlice_ConsumeRefs);
-    patch_64(data + 0x8, (uintptr_t)&PyObject_GetItem);
-    patch_64(data + 0x10, (uintptr_t)&_Py_Dealloc);
-    memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x8, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x18, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x3c, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x44, (uintptr_t)data + 0x8);
-    patch_aarch64_21rx(code + 0x64, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x6c, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0xb4, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0xb8, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0xc0, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0xd4, state->instruction_starts[instruction->error_target]);
-}
-
-void
-emit__BINARY_SUBSCR(
-    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
-    const _PyUOpInstruction *instruction, jit_state *state)
-{
-    //
-    // _BINARY_SUBSCR.o:      file format elf64-littleaarch64
-    //
-    // Disassembly of section .text:
-    //
-    // 0000000000000000 <_JIT_ENTRY>:
-    // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: a97f66b8      ldp     x24, x25, [x21, #-0x10]
-    // 8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       PyObject_GetItem
-    // c: f9002295      str     x21, [x20, #0x40]
-    // 10: 910003fd      mov     x29, sp
-    // 14: f9400108      ldr     x8, [x8]
-    // 0000000000000014:  R_AARCH64_LD64_GOT_LO12_NC   PyObject_GetItem
-    // 18: aa1803e0      mov     x0, x24
-    // 1c: aa1903e1      mov     x1, x25
-    // 20: d63f0100      blr     x8
-    // 24: f9402293      ldr     x19, [x20, #0x40]
-    // 28: f900229f      str     xzr, [x20, #0x40]
-    // 2c: aa0003f7      mov     x23, x0
-    // 30: b9400308      ldr     w8, [x24]
-    // 34: 37f80108      tbnz    w8, #0x1f, 0x54 <_JIT_ENTRY+0x54>
-    // 38: 71000508      subs    w8, w8, #0x1
-    // 3c: b9000308      str     w8, [x24]
-    // 40: 540000a1      b.ne    0x54 <_JIT_ENTRY+0x54>
-    // 44: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000044:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 48: aa1803e0      mov     x0, x24
-    // 4c: f9400108      ldr     x8, [x8]
-    // 000000000000004c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 50: d63f0100      blr     x8
-    // 54: b9400328      ldr     w8, [x25]
-    // 58: 37f80088      tbnz    w8, #0x1f, 0x68 <_JIT_ENTRY+0x68>
-    // 5c: 71000508      subs    w8, w8, #0x1
-    // 60: b9000328      str     w8, [x25]
-    // 64: 540000c0      b.eq    0x7c <_JIT_ENTRY+0x7c>
-    // 68: b4000157      cbz     x23, 0x90 <_JIT_ENTRY+0x90>
-    // 6c: d1002275      sub     x21, x19, #0x8
-    // 70: f81f0277      stur    x23, [x19, #-0x10]
-    // 74: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 78: 14000000      b       0x78 <_JIT_ENTRY+0x78>
-    // 0000000000000078:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 7c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000007c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 80: aa1903e0      mov     x0, x25
-    // 84: f9400108      ldr     x8, [x8]
-    // 0000000000000084:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 88: d63f0100      blr     x8
-    // 8c: b5ffff17      cbnz    x23, 0x6c <_JIT_ENTRY+0x6c>
-    // 90: aa1303f5      mov     x21, x19
-    // 94: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 98: 14000000      b       0x98 <_JIT_ENTRY+0x98>
-    // 0000000000000098:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 9c: 00 00 00 00
-    const unsigned char code_body[160] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0xb8, 0x66, 0x7f, 0xa9,
-        0x08, 0x00, 0x00, 0x90, 0x95, 0x22, 0x00, 0xf9,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0xe0, 0x03, 0x18, 0xaa, 0xe1, 0x03, 0x19, 0xaa,
-        0x00, 0x01, 0x3f, 0xd6, 0x93, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xf7, 0x03, 0x00, 0xaa,
-        0x08, 0x03, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
-        0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x28, 0x03, 0x40, 0xb9,
-        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x28, 0x03, 0x00, 0xb9, 0xc0, 0x00, 0x00, 0x54,
-        0x57, 0x01, 0x00, 0xb4, 0x75, 0x22, 0x00, 0xd1,
-        0x77, 0x02, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x19, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x17, 0xff, 0xff, 0xb5,
-        0xf5, 0x03, 0x13, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
-    };
-    // 0: &PyObject_GetItem+0x0
-    // 8: &_Py_Dealloc+0x0
-    const unsigned char data_body[16] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    };
-    memcpy(data, data_body, sizeof(data_body));
-    patch_64(data + 0x0, (uintptr_t)&PyObject_GetItem);
-    patch_64(data + 0x8, (uintptr_t)&_Py_Dealloc);
-    memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x8, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x14, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x44, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x4c, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x78, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x7c, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x84, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x98, state->instruction_starts[instruction->error_target]);
-}
-
-void
-emit__BINARY_SUBSCR_CHECK_FUNC(
-    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
-    const _PyUOpInstruction *instruction, jit_state *state)
-{
-    //
-    // _BINARY_SUBSCR_CHECK_FUNC.o:   file format elf64-littleaarch64
+    // _BINARY_OP_SUBSCR_CHECK_FUNC.o:        file format elf64-littleaarch64
     //
     // Disassembly of section .text:
     //
@@ -1465,23 +985,23 @@ emit__BINARY_SUBSCR_CHECK_FUNC(
 }
 
 void
-emit__BINARY_SUBSCR_DICT(
+emit__BINARY_OP_SUBSCR_DICT(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
     //
-    // _BINARY_SUBSCR_DICT.o: file format elf64-littleaarch64
+    // _BINARY_OP_SUBSCR_DICT.o:      file format elf64-littleaarch64
     //
     // Disassembly of section .text:
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: d10083ff      sub     sp, sp, #0x20
-    // 4: f85f02b9      ldur    x25, [x21, #-0x10]
+    // 4: f85f02b8      ldur    x24, [x21, #-0x10]
     // 8: a9017bfd      stp     x29, x30, [sp, #0x10]
     // c: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
     // 000000000000000c:  R_AARCH64_ADR_GOT_PAGE       PyDict_Type
     // 10: 910043fd      add     x29, sp, #0x10
-    // 14: f9400728      ldr     x8, [x25, #0x8]
+    // 14: f9400708      ldr     x8, [x24, #0x8]
     // 18: f9400129      ldr     x9, [x9]
     // 0000000000000018:  R_AARCH64_LD64_GOT_LO12_NC   PyDict_Type
     // 1c: eb09011f      cmp     x8, x9
@@ -1497,30 +1017,30 @@ emit__BINARY_SUBSCR_DICT(
     // 3c: f9400108      ldr     x8, [x8]
     // 000000000000003c:  R_AARCH64_LD64_GOT_LO12_NC   PyDict_GetItemRef
     // 40: 910023e2      add     x2, sp, #0x8
-    // 44: aa1903e0      mov     x0, x25
+    // 44: aa1803e0      mov     x0, x24
     // 48: aa1303e1      mov     x1, x19
     // 4c: d63f0100      blr     x8
-    // 50: f9402297      ldr     x23, [x20, #0x40]
-    // 54: 2a0003f8      mov     w24, w0
+    // 50: f9402299      ldr     x25, [x20, #0x40]
+    // 54: 2a0003f7      mov     w23, w0
     // 58: f900229f      str     xzr, [x20, #0x40]
     // 5c: 35000100      cbnz    w0, 0x7c <_JIT_ENTRY+0x7c>
-    // 60: f9002297      str     x23, [x20, #0x40]
+    // 60: f9002299      str     x25, [x20, #0x40]
     // 64: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000064:  R_AARCH64_ADR_GOT_PAGE       _PyErr_SetKeyError
     // 68: aa1303e0      mov     x0, x19
     // 6c: f9400108      ldr     x8, [x8]
     // 000000000000006c:  R_AARCH64_LD64_GOT_LO12_NC   _PyErr_SetKeyError
     // 70: d63f0100      blr     x8
-    // 74: f9402297      ldr     x23, [x20, #0x40]
+    // 74: f9402299      ldr     x25, [x20, #0x40]
     // 78: f900229f      str     xzr, [x20, #0x40]
-    // 7c: b9400328      ldr     w8, [x25]
+    // 7c: b9400308      ldr     w8, [x24]
     // 80: 37f80108      tbnz    w8, #0x1f, 0xa0 <_JIT_ENTRY+0xa0>
     // 84: 71000508      subs    w8, w8, #0x1
-    // 88: b9000328      str     w8, [x25]
+    // 88: b9000308      str     w8, [x24]
     // 8c: 540000a1      b.ne    0xa0 <_JIT_ENTRY+0xa0>
     // 90: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000090:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 94: aa1903e0      mov     x0, x25
+    // 94: aa1803e0      mov     x0, x24
     // 98: f9400108      ldr     x8, [x8]
     // 0000000000000098:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 9c: d63f0100      blr     x8
@@ -1529,12 +1049,12 @@ emit__BINARY_SUBSCR_DICT(
     // a8: 71000508      subs    w8, w8, #0x1
     // ac: b9000268      str     w8, [x19]
     // b0: 54000120      b.eq    0xd4 <_JIT_ENTRY+0xd4>
-    // b4: 7100031f      cmp     w24, #0x0
+    // b4: 710002ff      cmp     w23, #0x0
     // b8: 540001ad      b.le    0xec <_JIT_ENTRY+0xec>
     // bc: f94007e8      ldr     x8, [sp, #0x8]
     // c0: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // c4: d10022f5      sub     x21, x23, #0x8
-    // c8: f81f02e8      stur    x8, [x23, #-0x10]
+    // c4: d1002335      sub     x21, x25, #0x8
+    // c8: f81f0328      stur    x8, [x25, #-0x10]
     // cc: 910083ff      add     sp, sp, #0x20
     // d0: 14000000      b       0xd0 <_JIT_ENTRY+0xd0>
     // 00000000000000d0:  R_AARCH64_JUMP26     _JIT_CONTINUE
@@ -1544,46 +1064,46 @@ emit__BINARY_SUBSCR_DICT(
     // dc: f9400108      ldr     x8, [x8]
     // 00000000000000dc:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // e0: d63f0100      blr     x8
-    // e4: 7100031f      cmp     w24, #0x0
+    // e4: 710002ff      cmp     w23, #0x0
     // e8: 54fffeac      b.gt    0xbc <_JIT_ENTRY+0xbc>
     // ec: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // f0: aa1703f5      mov     x21, x23
+    // f0: d1004335      sub     x21, x25, #0x10
     // f4: 910083ff      add     sp, sp, #0x20
     // f8: 14000000      b       0xf8 <_JIT_ENTRY+0xf8>
     // 00000000000000f8:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
     // fc: 00 00 00 00
     const unsigned char code_body[256] = {
-        0xff, 0x83, 0x00, 0xd1, 0xb9, 0x02, 0x5f, 0xf8,
+        0xff, 0x83, 0x00, 0xd1, 0xb8, 0x02, 0x5f, 0xf8,
         0xfd, 0x7b, 0x01, 0xa9, 0x09, 0x00, 0x00, 0x90,
-        0xfd, 0x43, 0x00, 0x91, 0x28, 0x07, 0x40, 0xf9,
+        0xfd, 0x43, 0x00, 0x91, 0x08, 0x07, 0x40, 0xf9,
         0x29, 0x01, 0x40, 0xf9, 0x1f, 0x01, 0x09, 0xeb,
         0x80, 0x00, 0x00, 0x54, 0xfd, 0x7b, 0x41, 0xa9,
         0xff, 0x83, 0x00, 0x91, 0x00, 0x00, 0x00, 0x14,
         0xb3, 0x82, 0x5f, 0xf8, 0x95, 0x22, 0x00, 0xf9,
         0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0xe2, 0x23, 0x00, 0x91, 0xe0, 0x03, 0x19, 0xaa,
+        0xe2, 0x23, 0x00, 0x91, 0xe0, 0x03, 0x18, 0xaa,
         0xe1, 0x03, 0x13, 0xaa, 0x00, 0x01, 0x3f, 0xd6,
-        0x97, 0x22, 0x40, 0xf9, 0xf8, 0x03, 0x00, 0x2a,
+        0x99, 0x22, 0x40, 0xf9, 0xf7, 0x03, 0x00, 0x2a,
         0x9f, 0x22, 0x00, 0xf9, 0x00, 0x01, 0x00, 0x35,
-        0x97, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
+        0x99, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
         0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x97, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0x28, 0x03, 0x40, 0xb9,
+        0x00, 0x01, 0x3f, 0xd6, 0x99, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x08, 0x03, 0x40, 0xb9,
         0x08, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x28, 0x03, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x19, 0xaa,
+        0x08, 0x03, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x18, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
         0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0x20, 0x01, 0x00, 0x54, 0x1f, 0x03, 0x00, 0x71,
+        0x20, 0x01, 0x00, 0x54, 0xff, 0x02, 0x00, 0x71,
         0xad, 0x01, 0x00, 0x54, 0xe8, 0x07, 0x40, 0xf9,
-        0xfd, 0x7b, 0x41, 0xa9, 0xf5, 0x22, 0x00, 0xd1,
-        0xe8, 0x02, 0x1f, 0xf8, 0xff, 0x83, 0x00, 0x91,
+        0xfd, 0x7b, 0x41, 0xa9, 0x35, 0x23, 0x00, 0xd1,
+        0x28, 0x03, 0x1f, 0xf8, 0xff, 0x83, 0x00, 0x91,
         0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
         0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x1f, 0x03, 0x00, 0x71,
+        0x00, 0x01, 0x3f, 0xd6, 0xff, 0x02, 0x00, 0x71,
         0xac, 0xfe, 0xff, 0x54, 0xfd, 0x7b, 0x41, 0xa9,
-        0xf5, 0x03, 0x17, 0xaa, 0xff, 0x83, 0x00, 0x91,
+        0x35, 0x43, 0x00, 0xd1, 0xff, 0x83, 0x00, 0x91,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: &PyDict_Type+0x0
@@ -1617,12 +1137,12 @@ emit__BINARY_SUBSCR_DICT(
 }
 
 void
-emit__BINARY_SUBSCR_INIT_CALL(
+emit__BINARY_OP_SUBSCR_INIT_CALL(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
     //
-    // _BINARY_SUBSCR_INIT_CALL.o:    file format elf64-littleaarch64
+    // _BINARY_OP_SUBSCR_INIT_CALL.o: file format elf64-littleaarch64
     //
     // Disassembly of section .text:
     //
@@ -1659,7 +1179,7 @@ emit__BINARY_SUBSCR_INIT_CALL(
     // 74: b980494d      ldrsw   x13, [x10, #0x48]
     // 78: eb0d019f      cmp     x12, x13
     // 7c: 54ffff8b      b.lt    0x6c <_JIT_ENTRY+0x6c>
-    // 80: 5280004a      mov     w10, #0x2               // =2
+    // 80: 528000ca      mov     w10, #0x6               // =6
     // 84: d1004115      sub     x21, x8, #0x10
     // 88: 3d801520      str     q0, [x9, #0x50]
     // 8c: 7900928a      strh    w10, [x20, #0x48]
@@ -1683,7 +1203,7 @@ emit__BINARY_SUBSCR_INIT_CALL(
         0x4c, 0x00, 0x80, 0x52, 0x7f, 0x85, 0x00, 0xf8,
         0x8c, 0x05, 0x00, 0x91, 0x4d, 0x49, 0x80, 0xb9,
         0x9f, 0x01, 0x0d, 0xeb, 0x8b, 0xff, 0xff, 0x54,
-        0x4a, 0x00, 0x80, 0x52, 0x15, 0x41, 0x00, 0xd1,
+        0xca, 0x00, 0x80, 0x52, 0x15, 0x41, 0x00, 0xd1,
         0x20, 0x15, 0x80, 0x3d, 0x8a, 0x92, 0x00, 0x79,
         0x09, 0x81, 0x1e, 0xf8, 0x00, 0x00, 0x00, 0x14,
     };
@@ -1692,52 +1212,52 @@ emit__BINARY_SUBSCR_INIT_CALL(
 }
 
 void
-emit__BINARY_SUBSCR_LIST_INT(
+emit__BINARY_OP_SUBSCR_LIST_INT(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
     //
-    // _BINARY_SUBSCR_LIST_INT.o:     file format elf64-littleaarch64
+    // _BINARY_OP_SUBSCR_LIST_INT.o:  file format elf64-littleaarch64
     //
     // Disassembly of section .text:
     //
     // 0000000000000000 <_JIT_ENTRY>:
-    // 0: aa1503f3      mov     x19, x21
-    // 4: f85f8eb8      ldr     x24, [x21, #-0x8]!
-    // 8: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       PyLong_Type
-    // c: f9400708      ldr     x8, [x24, #0x8]
+    // 0: aa1503f8      mov     x24, x21
+    // 4: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
+    // 0000000000000004:  R_AARCH64_ADR_GOT_PAGE       PyLong_Type
+    // 8: a9ff5f13      ldp     x19, x23, [x24, #-0x10]!
+    // c: f94006e8      ldr     x8, [x23, #0x8]
     // 10: f9400129      ldr     x9, [x9]
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   PyLong_Type
     // 14: eb09011f      cmp     x8, x9
-    // 18: 54000661      b.ne    0xe4 <_JIT_ENTRY+0xe4>
-    // 1c: f85f82b7      ldur    x23, [x21, #-0x8]
-    // 20: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000020:  R_AARCH64_ADR_GOT_PAGE       PyList_Type
-    // 24: f94006e8      ldr     x8, [x23, #0x8]
-    // 28: f9400129      ldr     x9, [x9]
-    // 0000000000000028:  R_AARCH64_LD64_GOT_LO12_NC   PyList_Type
-    // 2c: eb09011f      cmp     x8, x9
-    // 30: 540005a1      b.ne    0xe4 <_JIT_ENTRY+0xe4>
-    // 34: f9400b08      ldr     x8, [x24, #0x10]
+    // 18: 540006c1      b.ne    0xf0 <_JIT_ENTRY+0xf0>
+    // 1c: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
+    // 000000000000001c:  R_AARCH64_ADR_GOT_PAGE       PyList_Type
+    // 20: f9400668      ldr     x8, [x19, #0x8]
+    // 24: f9400129      ldr     x9, [x9]
+    // 0000000000000024:  R_AARCH64_LD64_GOT_LO12_NC   PyList_Type
+    // 28: eb09011f      cmp     x8, x9
+    // 2c: 54000621      b.ne    0xf0 <_JIT_ENTRY+0xf0>
+    // 30: f9400ae8      ldr     x8, [x23, #0x10]
+    // 34: 927df908      and     x8, x8, #0xfffffffffffffffb
     // 38: f100251f      cmp     x8, #0x9
-    // 3c: 54000542      b.hs    0xe4 <_JIT_ENTRY+0xe4>
-    // 40: b9401b08      ldr     w8, [x24, #0x18]
-    // 44: f9400ae9      ldr     x9, [x23, #0x10]
+    // 3c: 540005a2      b.hs    0xf0 <_JIT_ENTRY+0xf0>
+    // 40: b9401ae8      ldr     w8, [x23, #0x18]
+    // 44: f9400a69      ldr     x9, [x19, #0x10]
     // 48: eb08013f      cmp     x9, x8
-    // 4c: 540004cd      b.le    0xe4 <_JIT_ENTRY+0xe4>
-    // 50: f9400ee9      ldr     x9, [x23, #0x18]
+    // 4c: 5400052d      b.le    0xf0 <_JIT_ENTRY+0xf0>
+    // 50: f9400e69      ldr     x9, [x19, #0x18]
     // 54: f8687939      ldr     x25, [x9, x8, lsl #3]
     // 58: b9400328      ldr     w8, [x25]
     // 5c: 37f80068      tbnz    w8, #0x1f, 0x68 <_JIT_ENTRY+0x68>
     // 60: 11000508      add     w8, w8, #0x1
     // 64: b9000328      str     w8, [x25]
     // 68: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 6c: b9400308      ldr     w8, [x24]
+    // 6c: b94002e8      ldr     w8, [x23]
     // 70: 910003fd      mov     x29, sp
     // 74: 37f80208      tbnz    w8, #0x1f, 0xb4 <_JIT_ENTRY+0xb4>
     // 78: 71000508      subs    w8, w8, #0x1
-    // 7c: b9000308      str     w8, [x24]
+    // 7c: b90002e8      str     w8, [x23]
     // 80: 540001a1      b.ne    0xb4 <_JIT_ENTRY+0xb4>
     // 84: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
     // 0000000000000084:  R_AARCH64_ADR_GOT_PAGE       _PyRuntime
@@ -1746,64 +1266,67 @@ emit__BINARY_SUBSCR_LIST_INT(
     // 8c: f9544928      ldr     x8, [x9, #0x2890]
     // 90: b40000a8      cbz     x8, 0xa4 <_JIT_ENTRY+0xa4>
     // 94: f9544d22      ldr     x2, [x9, #0x2898]
-    // 98: aa1803e0      mov     x0, x24
+    // 98: aa1703e0      mov     x0, x23
     // 9c: 52800021      mov     w1, #0x1                // =1
     // a0: d63f0100      blr     x8
     // a4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 00000000000000a4:  R_AARCH64_ADR_GOT_PAGE       _PyLong_ExactDealloc
-    // a8: aa1803e0      mov     x0, x24
+    // a8: aa1703e0      mov     x0, x23
     // ac: f9400108      ldr     x8, [x8]
     // 00000000000000ac:  R_AARCH64_LD64_GOT_LO12_NC   _PyLong_ExactDealloc
     // b0: d63f0100      blr     x8
-    // b4: b94002e8      ldr     w8, [x23]
-    // b8: 37f80108      tbnz    w8, #0x1f, 0xd8 <_JIT_ENTRY+0xd8>
-    // bc: 71000508      subs    w8, w8, #0x1
-    // c0: b90002e8      str     w8, [x23]
-    // c4: 540000a1      b.ne    0xd8 <_JIT_ENTRY+0xd8>
-    // c8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000c8:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // cc: aa1703e0      mov     x0, x23
-    // d0: f9400108      ldr     x8, [x8]
-    // 00000000000000d0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // d4: d63f0100      blr     x8
-    // d8: f81f0279      stur    x25, [x19, #-0x10]
-    // dc: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // e0: 14000000      b       0xe0 <_JIT_ENTRY+0xe0>
-    // 00000000000000e0:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // e4: aa1303f5      mov     x21, x19
-    // e8: 14000000      b       0xe8 <_JIT_ENTRY+0xe8>
-    // 00000000000000e8:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // ec: 00 00 00 00
-    const unsigned char code_body[240] = {
-        0xf3, 0x03, 0x15, 0xaa, 0xb8, 0x8e, 0x5f, 0xf8,
-        0x09, 0x00, 0x00, 0x90, 0x08, 0x07, 0x40, 0xf9,
+    // b4: f9002298      str     x24, [x20, #0x40]
+    // b8: b9400268      ldr     w8, [x19]
+    // bc: 37f80108      tbnz    w8, #0x1f, 0xdc <_JIT_ENTRY+0xdc>
+    // c0: 71000508      subs    w8, w8, #0x1
+    // c4: b9000268      str     w8, [x19]
+    // c8: 540000a1      b.ne    0xdc <_JIT_ENTRY+0xdc>
+    // cc: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000cc:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // d0: aa1303e0      mov     x0, x19
+    // d4: f9400108      ldr     x8, [x8]
+    // 00000000000000d4:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // d8: d63f0100      blr     x8
+    // dc: f9402295      ldr     x21, [x20, #0x40]
+    // e0: f900229f      str     xzr, [x20, #0x40]
+    // e4: f80086b9      str     x25, [x21], #0x8
+    // e8: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // ec: 14000000      b       0xec <_JIT_ENTRY+0xec>
+    // 00000000000000ec:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // f0: 14000000      b       0xf0 <_JIT_ENTRY+0xf0>
+    // 00000000000000f0:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
+    // f4: 00 00 00 00
+    const unsigned char code_body[248] = {
+        0xf8, 0x03, 0x15, 0xaa, 0x09, 0x00, 0x00, 0x90,
+        0x13, 0x5f, 0xff, 0xa9, 0xe8, 0x06, 0x40, 0xf9,
         0x29, 0x01, 0x40, 0xf9, 0x1f, 0x01, 0x09, 0xeb,
-        0x61, 0x06, 0x00, 0x54, 0xb7, 0x82, 0x5f, 0xf8,
-        0x09, 0x00, 0x00, 0x90, 0xe8, 0x06, 0x40, 0xf9,
-        0x29, 0x01, 0x40, 0xf9, 0x1f, 0x01, 0x09, 0xeb,
-        0xa1, 0x05, 0x00, 0x54, 0x08, 0x0b, 0x40, 0xf9,
-        0x1f, 0x25, 0x00, 0xf1, 0x42, 0x05, 0x00, 0x54,
-        0x08, 0x1b, 0x40, 0xb9, 0xe9, 0x0a, 0x40, 0xf9,
-        0x3f, 0x01, 0x08, 0xeb, 0xcd, 0x04, 0x00, 0x54,
-        0xe9, 0x0e, 0x40, 0xf9, 0x39, 0x79, 0x68, 0xf8,
+        0xc1, 0x06, 0x00, 0x54, 0x09, 0x00, 0x00, 0x90,
+        0x68, 0x06, 0x40, 0xf9, 0x29, 0x01, 0x40, 0xf9,
+        0x1f, 0x01, 0x09, 0xeb, 0x21, 0x06, 0x00, 0x54,
+        0xe8, 0x0a, 0x40, 0xf9, 0x08, 0xf9, 0x7d, 0x92,
+        0x1f, 0x25, 0x00, 0xf1, 0xa2, 0x05, 0x00, 0x54,
+        0xe8, 0x1a, 0x40, 0xb9, 0x69, 0x0a, 0x40, 0xf9,
+        0x3f, 0x01, 0x08, 0xeb, 0x2d, 0x05, 0x00, 0x54,
+        0x69, 0x0e, 0x40, 0xf9, 0x39, 0x79, 0x68, 0xf8,
         0x28, 0x03, 0x40, 0xb9, 0x68, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x11, 0x28, 0x03, 0x00, 0xb9,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x03, 0x40, 0xb9,
+        0xfd, 0x7b, 0xbf, 0xa9, 0xe8, 0x02, 0x40, 0xb9,
         0xfd, 0x03, 0x00, 0x91, 0x08, 0x02, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
+        0x08, 0x05, 0x00, 0x71, 0xe8, 0x02, 0x00, 0xb9,
         0xa1, 0x01, 0x00, 0x54, 0x09, 0x00, 0x00, 0x90,
         0x29, 0x01, 0x40, 0xf9, 0x28, 0x49, 0x54, 0xf9,
         0xa8, 0x00, 0x00, 0xb4, 0x22, 0x4d, 0x54, 0xf9,
-        0xe0, 0x03, 0x18, 0xaa, 0x21, 0x00, 0x80, 0x52,
+        0xe0, 0x03, 0x17, 0xaa, 0x21, 0x00, 0x80, 0x52,
         0x00, 0x01, 0x3f, 0xd6, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xe8, 0x02, 0x40, 0xb9,
-        0x08, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0xe8, 0x02, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x17, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x79, 0x02, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0xf5, 0x03, 0x13, 0xaa,
+        0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x98, 0x22, 0x00, 0xf9,
+        0x68, 0x02, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
+        0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xb9, 0x86, 0x00, 0xf8,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: &PyLong_Type+0x0
@@ -1825,186 +1348,189 @@ emit__BINARY_SUBSCR_LIST_INT(
     patch_64(data + 0x18, (uintptr_t)&_PyLong_ExactDealloc);
     patch_64(data + 0x20, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x8, (uintptr_t)data);
+    patch_aarch64_21rx(code + 0x4, (uintptr_t)data);
     patch_aarch64_12x(code + 0x10, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x20, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x28, (uintptr_t)data + 0x8);
+    patch_aarch64_21rx(code + 0x1c, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x24, (uintptr_t)data + 0x8);
     patch_aarch64_33rx(code + 0x84, (uintptr_t)data + 0x10);
     patch_aarch64_21rx(code + 0xa4, (uintptr_t)data + 0x18);
     patch_aarch64_12x(code + 0xac, (uintptr_t)data + 0x18);
-    patch_aarch64_21rx(code + 0xc8, (uintptr_t)data + 0x20);
-    patch_aarch64_12x(code + 0xd0, (uintptr_t)data + 0x20);
-    patch_aarch64_26r(code + 0xe0, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0xe8, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_21rx(code + 0xcc, (uintptr_t)data + 0x20);
+    patch_aarch64_12x(code + 0xd4, (uintptr_t)data + 0x20);
+    patch_aarch64_26r(code + 0xec, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0xf0, state->instruction_starts[instruction->jump_target]);
 }
 
 void
-emit__BINARY_SUBSCR_STR_INT(
+emit__BINARY_OP_SUBSCR_STR_INT(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
     //
-    // _BINARY_SUBSCR_STR_INT.o:      file format elf64-littleaarch64
+    // _BINARY_OP_SUBSCR_STR_INT.o:   file format elf64-littleaarch64
     //
     // Disassembly of section .text:
     //
     // 0000000000000000 <_JIT_ENTRY>:
-    // 0: aa1503f3      mov     x19, x21
-    // 4: f85f8eb8      ldr     x24, [x21, #-0x8]!
-    // 8: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       PyLong_Type
-    // c: f9400708      ldr     x8, [x24, #0x8]
+    // 0: aa1503f8      mov     x24, x21
+    // 4: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
+    // 0000000000000004:  R_AARCH64_ADR_GOT_PAGE       PyLong_Type
+    // 8: a9ff5f13      ldp     x19, x23, [x24, #-0x10]!
+    // c: f94006e8      ldr     x8, [x23, #0x8]
     // 10: f9400129      ldr     x9, [x9]
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   PyLong_Type
     // 14: eb09011f      cmp     x8, x9
     // 18: 540006a1      b.ne    0xec <_JIT_ENTRY+0xec>
-    // 1c: f85f82b7      ldur    x23, [x21, #-0x8]
-    // 20: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000020:  R_AARCH64_ADR_GOT_PAGE       PyUnicode_Type
-    // 24: f94006e8      ldr     x8, [x23, #0x8]
-    // 28: f9400129      ldr     x9, [x9]
-    // 0000000000000028:  R_AARCH64_LD64_GOT_LO12_NC   PyUnicode_Type
-    // 2c: eb09011f      cmp     x8, x9
-    // 30: 540005e1      b.ne    0xec <_JIT_ENTRY+0xec>
-    // 34: f9400b08      ldr     x8, [x24, #0x10]
+    // 1c: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
+    // 000000000000001c:  R_AARCH64_ADR_GOT_PAGE       PyUnicode_Type
+    // 20: f9400668      ldr     x8, [x19, #0x8]
+    // 24: f9400129      ldr     x9, [x9]
+    // 0000000000000024:  R_AARCH64_LD64_GOT_LO12_NC   PyUnicode_Type
+    // 28: eb09011f      cmp     x8, x9
+    // 2c: 54000601      b.ne    0xec <_JIT_ENTRY+0xec>
+    // 30: f9400ae8      ldr     x8, [x23, #0x10]
+    // 34: 927df908      and     x8, x8, #0xfffffffffffffffb
     // 38: f100251f      cmp     x8, #0x9
     // 3c: 54000582      b.hs    0xec <_JIT_ENTRY+0xec>
-    // 40: b9401b08      ldr     w8, [x24, #0x18]
-    // 44: f9400ae9      ldr     x9, [x23, #0x10]
+    // 40: b9401ae8      ldr     w8, [x23, #0x18]
+    // 44: f9400a69      ldr     x9, [x19, #0x10]
     // 48: eb08013f      cmp     x9, x8
     // 4c: 5400050d      b.le    0xec <_JIT_ENTRY+0xec>
-    // 50: 794046e9      ldrh    w9, [x23, #0x22]
+    // 50: 79404669      ldrh    w9, [x19, #0x22]
     // 54: 1200092a      and     w10, w9, #0x7
     // 58: 7100095f      cmp     w10, #0x2
     // 5c: 540000e0      b.eq    0x78 <_JIT_ENTRY+0x78>
     // 60: 7100055f      cmp     w10, #0x1
     // 64: 54000121      b.ne    0x88 <_JIT_ENTRY+0x88>
     // 68: 37180169      tbnz    w9, #0x3, 0x94 <_JIT_ENTRY+0x94>
-    // 6c: f9401ee9      ldr     x9, [x23, #0x38]
+    // 6c: f9401e69      ldr     x9, [x19, #0x38]
     // 70: 38686939      ldrb    w25, [x9, x8]
     // 74: 1400001c      b       0xe4 <_JIT_ENTRY+0xe4>
     // 78: 371801c9      tbnz    w9, #0x3, 0xb0 <_JIT_ENTRY+0xb0>
-    // 7c: f9401ee9      ldr     x9, [x23, #0x38]
+    // 7c: f9401e69      ldr     x9, [x19, #0x38]
     // 80: 78687939      ldrh    w25, [x9, x8, lsl #1]
     // 84: 14000018      b       0xe4 <_JIT_ENTRY+0xe4>
     // 88: 37180229      tbnz    w9, #0x3, 0xcc <_JIT_ENTRY+0xcc>
-    // 8c: f9401ee9      ldr     x9, [x23, #0x38]
+    // 8c: f9401e69      ldr     x9, [x19, #0x38]
     // 90: 14000014      b       0xe0 <_JIT_ENTRY+0xe0>
     // 94: 721c013f      tst     w9, #0x10
     // 98: 52800509      mov     w9, #0x28               // =40
     // 9c: 5280070a      mov     w10, #0x38              // =56
     // a0: 9a890149      csel    x9, x10, x9, eq
-    // a4: 8b0902e9      add     x9, x23, x9
+    // a4: 8b090269      add     x9, x19, x9
     // a8: 38686939      ldrb    w25, [x9, x8]
     // ac: 1400000e      b       0xe4 <_JIT_ENTRY+0xe4>
     // b0: 721c013f      tst     w9, #0x10
     // b4: 52800509      mov     w9, #0x28               // =40
     // b8: 5280070a      mov     w10, #0x38              // =56
     // bc: 9a890149      csel    x9, x10, x9, eq
-    // c0: 8b0902e9      add     x9, x23, x9
+    // c0: 8b090269      add     x9, x19, x9
     // c4: 78687939      ldrh    w25, [x9, x8, lsl #1]
     // c8: 14000007      b       0xe4 <_JIT_ENTRY+0xe4>
     // cc: 721c013f      tst     w9, #0x10
     // d0: 52800509      mov     w9, #0x28               // =40
     // d4: 5280070a      mov     w10, #0x38              // =56
     // d8: 9a890149      csel    x9, x10, x9, eq
-    // dc: 8b0902e9      add     x9, x23, x9
+    // dc: 8b090269      add     x9, x19, x9
     // e0: b8687939      ldr     w25, [x9, x8, lsl #2]
     // e4: 7102033f      cmp     w25, #0x80
-    // e8: 54000063      b.lo    0xf4 <_JIT_ENTRY+0xf4>
-    // ec: aa1303f5      mov     x21, x19
-    // f0: 14000000      b       0xf0 <_JIT_ENTRY+0xf0>
-    // 00000000000000f0:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // f4: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // f8: 9000001a      adrp    x26, 0x0 <_JIT_ENTRY>
-    // 00000000000000f8:  R_AARCH64_ADR_GOT_PAGE       _PyRuntime
-    // fc: b9400308      ldr     w8, [x24]
-    // 100: 910003fd      mov     x29, sp
-    // 104: f940035a      ldr     x26, [x26]
-    // 0000000000000104:  R_AARCH64_LD64_GOT_LO12_NC   _PyRuntime
-    // 108: 37f801c8      tbnz    w8, #0x1f, 0x140 <_JIT_ENTRY+0x140>
-    // 10c: 71000508      subs    w8, w8, #0x1
-    // 110: b9000308      str     w8, [x24]
-    // 114: 54000161      b.ne    0x140 <_JIT_ENTRY+0x140>
-    // 118: f9544b48      ldr     x8, [x26, #0x2890]
-    // 11c: b40000a8      cbz     x8, 0x130 <_JIT_ENTRY+0x130>
-    // 120: f9544f42      ldr     x2, [x26, #0x2898]
-    // 124: aa1803e0      mov     x0, x24
-    // 128: 52800021      mov     w1, #0x1                // =1
-    // 12c: d63f0100      blr     x8
-    // 130: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000130:  R_AARCH64_ADR_GOT_PAGE       _PyLong_ExactDealloc
-    // 134: aa1803e0      mov     x0, x24
-    // 138: f9400108      ldr     x8, [x8]
-    // 0000000000000138:  R_AARCH64_LD64_GOT_LO12_NC   _PyLong_ExactDealloc
-    // 13c: d63f0100      blr     x8
-    // 140: b94002e8      ldr     w8, [x23]
+    // e8: 54000043      b.lo    0xf0 <_JIT_ENTRY+0xf0>
+    // ec: 14000000      b       0xec <_JIT_ENTRY+0xec>
+    // 00000000000000ec:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
+    // f0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // f4: 90000015      adrp    x21, 0x0 <_JIT_ENTRY>
+    // 00000000000000f4:  R_AARCH64_ADR_GOT_PAGE       _PyRuntime
+    // f8: b94002e8      ldr     w8, [x23]
+    // fc: 910003fd      mov     x29, sp
+    // 100: f94002b5      ldr     x21, [x21]
+    // 0000000000000100:  R_AARCH64_LD64_GOT_LO12_NC   _PyRuntime
+    // 104: 37f801c8      tbnz    w8, #0x1f, 0x13c <_JIT_ENTRY+0x13c>
+    // 108: 71000508      subs    w8, w8, #0x1
+    // 10c: b90002e8      str     w8, [x23]
+    // 110: 54000161      b.ne    0x13c <_JIT_ENTRY+0x13c>
+    // 114: f9544aa8      ldr     x8, [x21, #0x2890]
+    // 118: b40000a8      cbz     x8, 0x12c <_JIT_ENTRY+0x12c>
+    // 11c: f9544ea2      ldr     x2, [x21, #0x2898]
+    // 120: aa1703e0      mov     x0, x23
+    // 124: 52800021      mov     w1, #0x1                // =1
+    // 128: d63f0100      blr     x8
+    // 12c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 000000000000012c:  R_AARCH64_ADR_GOT_PAGE       _PyLong_ExactDealloc
+    // 130: aa1703e0      mov     x0, x23
+    // 134: f9400108      ldr     x8, [x8]
+    // 0000000000000134:  R_AARCH64_LD64_GOT_LO12_NC   _PyLong_ExactDealloc
+    // 138: d63f0100      blr     x8
+    // 13c: f9002298      str     x24, [x20, #0x40]
+    // 140: b9400268      ldr     w8, [x19]
     // 144: 37f80108      tbnz    w8, #0x1f, 0x164 <_JIT_ENTRY+0x164>
     // 148: 71000508      subs    w8, w8, #0x1
-    // 14c: b90002e8      str     w8, [x23]
+    // 14c: b9000268      str     w8, [x19]
     // 150: 540000a1      b.ne    0x164 <_JIT_ENTRY+0x164>
     // 154: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000154:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 158: aa1703e0      mov     x0, x23
+    // 158: aa1303e0      mov     x0, x19
     // 15c: f9400108      ldr     x8, [x8]
     // 000000000000015c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 160: d63f0100      blr     x8
     // 164: 52800608      mov     w8, #0x30               // =48
-    // 168: 9ba86b28      umaddl  x8, w25, w8, x26
-    // 16c: 91404908      add     x8, x8, #0x12, lsl #12  // =0x12000
-    // 170: 910de108      add     x8, x8, #0x378
-    // 174: f81f0268      stur    x8, [x19, #-0x10]
-    // 178: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 17c: 14000000      b       0x17c <_JIT_ENTRY+0x17c>
-    // 000000000000017c:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[384] = {
-        0xf3, 0x03, 0x15, 0xaa, 0xb8, 0x8e, 0x5f, 0xf8,
-        0x09, 0x00, 0x00, 0x90, 0x08, 0x07, 0x40, 0xf9,
+    // 168: 9ba85728      umaddl  x8, w25, w8, x21
+    // 16c: f9402295      ldr     x21, [x20, #0x40]
+    // 170: f900229f      str     xzr, [x20, #0x40]
+    // 174: 91404908      add     x8, x8, #0x12, lsl #12  // =0x12000
+    // 178: 910de108      add     x8, x8, #0x378
+    // 17c: f80086a8      str     x8, [x21], #0x8
+    // 180: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 184: 14000000      b       0x184 <_JIT_ENTRY+0x184>
+    // 0000000000000184:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[392] = {
+        0xf8, 0x03, 0x15, 0xaa, 0x09, 0x00, 0x00, 0x90,
+        0x13, 0x5f, 0xff, 0xa9, 0xe8, 0x06, 0x40, 0xf9,
         0x29, 0x01, 0x40, 0xf9, 0x1f, 0x01, 0x09, 0xeb,
-        0xa1, 0x06, 0x00, 0x54, 0xb7, 0x82, 0x5f, 0xf8,
-        0x09, 0x00, 0x00, 0x90, 0xe8, 0x06, 0x40, 0xf9,
-        0x29, 0x01, 0x40, 0xf9, 0x1f, 0x01, 0x09, 0xeb,
-        0xe1, 0x05, 0x00, 0x54, 0x08, 0x0b, 0x40, 0xf9,
+        0xa1, 0x06, 0x00, 0x54, 0x09, 0x00, 0x00, 0x90,
+        0x68, 0x06, 0x40, 0xf9, 0x29, 0x01, 0x40, 0xf9,
+        0x1f, 0x01, 0x09, 0xeb, 0x01, 0x06, 0x00, 0x54,
+        0xe8, 0x0a, 0x40, 0xf9, 0x08, 0xf9, 0x7d, 0x92,
         0x1f, 0x25, 0x00, 0xf1, 0x82, 0x05, 0x00, 0x54,
-        0x08, 0x1b, 0x40, 0xb9, 0xe9, 0x0a, 0x40, 0xf9,
+        0xe8, 0x1a, 0x40, 0xb9, 0x69, 0x0a, 0x40, 0xf9,
         0x3f, 0x01, 0x08, 0xeb, 0x0d, 0x05, 0x00, 0x54,
-        0xe9, 0x46, 0x40, 0x79, 0x2a, 0x09, 0x00, 0x12,
+        0x69, 0x46, 0x40, 0x79, 0x2a, 0x09, 0x00, 0x12,
         0x5f, 0x09, 0x00, 0x71, 0xe0, 0x00, 0x00, 0x54,
         0x5f, 0x05, 0x00, 0x71, 0x21, 0x01, 0x00, 0x54,
-        0x69, 0x01, 0x18, 0x37, 0xe9, 0x1e, 0x40, 0xf9,
+        0x69, 0x01, 0x18, 0x37, 0x69, 0x1e, 0x40, 0xf9,
         0x39, 0x69, 0x68, 0x38, 0x1c, 0x00, 0x00, 0x14,
-        0xc9, 0x01, 0x18, 0x37, 0xe9, 0x1e, 0x40, 0xf9,
+        0xc9, 0x01, 0x18, 0x37, 0x69, 0x1e, 0x40, 0xf9,
         0x39, 0x79, 0x68, 0x78, 0x18, 0x00, 0x00, 0x14,
-        0x29, 0x02, 0x18, 0x37, 0xe9, 0x1e, 0x40, 0xf9,
+        0x29, 0x02, 0x18, 0x37, 0x69, 0x1e, 0x40, 0xf9,
         0x14, 0x00, 0x00, 0x14, 0x3f, 0x01, 0x1c, 0x72,
         0x09, 0x05, 0x80, 0x52, 0x0a, 0x07, 0x80, 0x52,
-        0x49, 0x01, 0x89, 0x9a, 0xe9, 0x02, 0x09, 0x8b,
+        0x49, 0x01, 0x89, 0x9a, 0x69, 0x02, 0x09, 0x8b,
         0x39, 0x69, 0x68, 0x38, 0x0e, 0x00, 0x00, 0x14,
         0x3f, 0x01, 0x1c, 0x72, 0x09, 0x05, 0x80, 0x52,
         0x0a, 0x07, 0x80, 0x52, 0x49, 0x01, 0x89, 0x9a,
-        0xe9, 0x02, 0x09, 0x8b, 0x39, 0x79, 0x68, 0x78,
+        0x69, 0x02, 0x09, 0x8b, 0x39, 0x79, 0x68, 0x78,
         0x07, 0x00, 0x00, 0x14, 0x3f, 0x01, 0x1c, 0x72,
         0x09, 0x05, 0x80, 0x52, 0x0a, 0x07, 0x80, 0x52,
-        0x49, 0x01, 0x89, 0x9a, 0xe9, 0x02, 0x09, 0x8b,
+        0x49, 0x01, 0x89, 0x9a, 0x69, 0x02, 0x09, 0x8b,
         0x39, 0x79, 0x68, 0xb8, 0x3f, 0x03, 0x02, 0x71,
-        0x63, 0x00, 0x00, 0x54, 0xf5, 0x03, 0x13, 0xaa,
-        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
-        0x1a, 0x00, 0x00, 0x90, 0x08, 0x03, 0x40, 0xb9,
-        0xfd, 0x03, 0x00, 0x91, 0x5a, 0x03, 0x40, 0xf9,
-        0xc8, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x08, 0x03, 0x00, 0xb9, 0x61, 0x01, 0x00, 0x54,
-        0x48, 0x4b, 0x54, 0xf9, 0xa8, 0x00, 0x00, 0xb4,
-        0x42, 0x4f, 0x54, 0xf9, 0xe0, 0x03, 0x18, 0xaa,
-        0x21, 0x00, 0x80, 0x52, 0x00, 0x01, 0x3f, 0xd6,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x18, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xe8, 0x02, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
+        0x43, 0x00, 0x00, 0x54, 0x00, 0x00, 0x00, 0x14,
+        0xfd, 0x7b, 0xbf, 0xa9, 0x15, 0x00, 0x00, 0x90,
+        0xe8, 0x02, 0x40, 0xb9, 0xfd, 0x03, 0x00, 0x91,
+        0xb5, 0x02, 0x40, 0xf9, 0xc8, 0x01, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0xe8, 0x02, 0x00, 0xb9,
-        0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
+        0x61, 0x01, 0x00, 0x54, 0xa8, 0x4a, 0x54, 0xf9,
+        0xa8, 0x00, 0x00, 0xb4, 0xa2, 0x4e, 0x54, 0xf9,
+        0xe0, 0x03, 0x17, 0xaa, 0x21, 0x00, 0x80, 0x52,
+        0x00, 0x01, 0x3f, 0xd6, 0x08, 0x00, 0x00, 0x90,
         0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x98, 0x22, 0x00, 0xf9,
+        0x68, 0x02, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
+        0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
         0x00, 0x01, 0x3f, 0xd6, 0x08, 0x06, 0x80, 0x52,
-        0x28, 0x6b, 0xa8, 0x9b, 0x08, 0x49, 0x40, 0x91,
-        0x08, 0xe1, 0x0d, 0x91, 0x68, 0x02, 0x1f, 0xf8,
+        0x28, 0x57, 0xa8, 0x9b, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x08, 0x49, 0x40, 0x91,
+        0x08, 0xe1, 0x0d, 0x91, 0xa8, 0x86, 0x00, 0xf8,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: &PyLong_Type+0x0
@@ -2026,67 +1552,67 @@ emit__BINARY_SUBSCR_STR_INT(
     patch_64(data + 0x18, (uintptr_t)&_PyLong_ExactDealloc);
     patch_64(data + 0x20, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x8, (uintptr_t)data);
+    patch_aarch64_21rx(code + 0x4, (uintptr_t)data);
     patch_aarch64_12x(code + 0x10, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x20, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x28, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0xf0, state->instruction_starts[instruction->jump_target]);
-    patch_aarch64_21rx(code + 0xf8, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x104, (uintptr_t)data + 0x10);
-    patch_aarch64_21rx(code + 0x130, (uintptr_t)data + 0x18);
-    patch_aarch64_12x(code + 0x138, (uintptr_t)data + 0x18);
+    patch_aarch64_21rx(code + 0x1c, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x24, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0xec, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_21rx(code + 0xf4, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x100, (uintptr_t)data + 0x10);
+    patch_aarch64_21rx(code + 0x12c, (uintptr_t)data + 0x18);
+    patch_aarch64_12x(code + 0x134, (uintptr_t)data + 0x18);
     patch_aarch64_21rx(code + 0x154, (uintptr_t)data + 0x20);
     patch_aarch64_12x(code + 0x15c, (uintptr_t)data + 0x20);
-    patch_aarch64_26r(code + 0x17c, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x184, (uintptr_t)code + sizeof(code_body));
 }
 
 void
-emit__BINARY_SUBSCR_TUPLE_INT(
+emit__BINARY_OP_SUBSCR_TUPLE_INT(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
     //
-    // _BINARY_SUBSCR_TUPLE_INT.o:    file format elf64-littleaarch64
+    // _BINARY_OP_SUBSCR_TUPLE_INT.o: file format elf64-littleaarch64
     //
     // Disassembly of section .text:
     //
     // 0000000000000000 <_JIT_ENTRY>:
-    // 0: aa1503f3      mov     x19, x21
-    // 4: f85f8eb8      ldr     x24, [x21, #-0x8]!
-    // 8: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       PyLong_Type
-    // c: f9400708      ldr     x8, [x24, #0x8]
+    // 0: aa1503f8      mov     x24, x21
+    // 4: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
+    // 0000000000000004:  R_AARCH64_ADR_GOT_PAGE       PyLong_Type
+    // 8: a9ff5f13      ldp     x19, x23, [x24, #-0x10]!
+    // c: f94006e8      ldr     x8, [x23, #0x8]
     // 10: f9400129      ldr     x9, [x9]
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   PyLong_Type
     // 14: eb09011f      cmp     x8, x9
-    // 18: 54000661      b.ne    0xe4 <_JIT_ENTRY+0xe4>
-    // 1c: f85f82b7      ldur    x23, [x21, #-0x8]
-    // 20: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000020:  R_AARCH64_ADR_GOT_PAGE       PyTuple_Type
-    // 24: f94006e8      ldr     x8, [x23, #0x8]
-    // 28: f9400129      ldr     x9, [x9]
-    // 0000000000000028:  R_AARCH64_LD64_GOT_LO12_NC   PyTuple_Type
-    // 2c: eb09011f      cmp     x8, x9
-    // 30: 540005a1      b.ne    0xe4 <_JIT_ENTRY+0xe4>
-    // 34: f9400b08      ldr     x8, [x24, #0x10]
+    // 18: 540006c1      b.ne    0xf0 <_JIT_ENTRY+0xf0>
+    // 1c: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
+    // 000000000000001c:  R_AARCH64_ADR_GOT_PAGE       PyTuple_Type
+    // 20: f9400668      ldr     x8, [x19, #0x8]
+    // 24: f9400129      ldr     x9, [x9]
+    // 0000000000000024:  R_AARCH64_LD64_GOT_LO12_NC   PyTuple_Type
+    // 28: eb09011f      cmp     x8, x9
+    // 2c: 54000621      b.ne    0xf0 <_JIT_ENTRY+0xf0>
+    // 30: f9400ae8      ldr     x8, [x23, #0x10]
+    // 34: 927df908      and     x8, x8, #0xfffffffffffffffb
     // 38: f100251f      cmp     x8, #0x9
-    // 3c: 54000542      b.hs    0xe4 <_JIT_ENTRY+0xe4>
-    // 40: b9401b08      ldr     w8, [x24, #0x18]
-    // 44: f9400ae9      ldr     x9, [x23, #0x10]
+    // 3c: 540005a2      b.hs    0xf0 <_JIT_ENTRY+0xf0>
+    // 40: b9401ae8      ldr     w8, [x23, #0x18]
+    // 44: f9400a69      ldr     x9, [x19, #0x10]
     // 48: eb08013f      cmp     x9, x8
-    // 4c: 540004cd      b.le    0xe4 <_JIT_ENTRY+0xe4>
-    // 50: 8b080ee8      add     x8, x23, x8, lsl #3
+    // 4c: 5400052d      b.le    0xf0 <_JIT_ENTRY+0xf0>
+    // 50: 8b080e68      add     x8, x19, x8, lsl #3
     // 54: f9400d19      ldr     x25, [x8, #0x18]
     // 58: b9400328      ldr     w8, [x25]
     // 5c: 37f80068      tbnz    w8, #0x1f, 0x68 <_JIT_ENTRY+0x68>
     // 60: 11000508      add     w8, w8, #0x1
     // 64: b9000328      str     w8, [x25]
     // 68: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 6c: b9400308      ldr     w8, [x24]
+    // 6c: b94002e8      ldr     w8, [x23]
     // 70: 910003fd      mov     x29, sp
     // 74: 37f80208      tbnz    w8, #0x1f, 0xb4 <_JIT_ENTRY+0xb4>
     // 78: 71000508      subs    w8, w8, #0x1
-    // 7c: b9000308      str     w8, [x24]
+    // 7c: b90002e8      str     w8, [x23]
     // 80: 540001a1      b.ne    0xb4 <_JIT_ENTRY+0xb4>
     // 84: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
     // 0000000000000084:  R_AARCH64_ADR_GOT_PAGE       _PyRuntime
@@ -2095,64 +1621,67 @@ emit__BINARY_SUBSCR_TUPLE_INT(
     // 8c: f9544928      ldr     x8, [x9, #0x2890]
     // 90: b40000a8      cbz     x8, 0xa4 <_JIT_ENTRY+0xa4>
     // 94: f9544d22      ldr     x2, [x9, #0x2898]
-    // 98: aa1803e0      mov     x0, x24
+    // 98: aa1703e0      mov     x0, x23
     // 9c: 52800021      mov     w1, #0x1                // =1
     // a0: d63f0100      blr     x8
     // a4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 00000000000000a4:  R_AARCH64_ADR_GOT_PAGE       _PyLong_ExactDealloc
-    // a8: aa1803e0      mov     x0, x24
+    // a8: aa1703e0      mov     x0, x23
     // ac: f9400108      ldr     x8, [x8]
     // 00000000000000ac:  R_AARCH64_LD64_GOT_LO12_NC   _PyLong_ExactDealloc
     // b0: d63f0100      blr     x8
-    // b4: b94002e8      ldr     w8, [x23]
-    // b8: 37f80108      tbnz    w8, #0x1f, 0xd8 <_JIT_ENTRY+0xd8>
-    // bc: 71000508      subs    w8, w8, #0x1
-    // c0: b90002e8      str     w8, [x23]
-    // c4: 540000a1      b.ne    0xd8 <_JIT_ENTRY+0xd8>
-    // c8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000c8:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // cc: aa1703e0      mov     x0, x23
-    // d0: f9400108      ldr     x8, [x8]
-    // 00000000000000d0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // d4: d63f0100      blr     x8
-    // d8: f81f0279      stur    x25, [x19, #-0x10]
-    // dc: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // e0: 14000000      b       0xe0 <_JIT_ENTRY+0xe0>
-    // 00000000000000e0:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // e4: aa1303f5      mov     x21, x19
-    // e8: 14000000      b       0xe8 <_JIT_ENTRY+0xe8>
-    // 00000000000000e8:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // ec: 00 00 00 00
-    const unsigned char code_body[240] = {
-        0xf3, 0x03, 0x15, 0xaa, 0xb8, 0x8e, 0x5f, 0xf8,
-        0x09, 0x00, 0x00, 0x90, 0x08, 0x07, 0x40, 0xf9,
+    // b4: f9002298      str     x24, [x20, #0x40]
+    // b8: b9400268      ldr     w8, [x19]
+    // bc: 37f80108      tbnz    w8, #0x1f, 0xdc <_JIT_ENTRY+0xdc>
+    // c0: 71000508      subs    w8, w8, #0x1
+    // c4: b9000268      str     w8, [x19]
+    // c8: 540000a1      b.ne    0xdc <_JIT_ENTRY+0xdc>
+    // cc: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000cc:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // d0: aa1303e0      mov     x0, x19
+    // d4: f9400108      ldr     x8, [x8]
+    // 00000000000000d4:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // d8: d63f0100      blr     x8
+    // dc: f9402295      ldr     x21, [x20, #0x40]
+    // e0: f900229f      str     xzr, [x20, #0x40]
+    // e4: f80086b9      str     x25, [x21], #0x8
+    // e8: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // ec: 14000000      b       0xec <_JIT_ENTRY+0xec>
+    // 00000000000000ec:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // f0: 14000000      b       0xf0 <_JIT_ENTRY+0xf0>
+    // 00000000000000f0:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
+    // f4: 00 00 00 00
+    const unsigned char code_body[248] = {
+        0xf8, 0x03, 0x15, 0xaa, 0x09, 0x00, 0x00, 0x90,
+        0x13, 0x5f, 0xff, 0xa9, 0xe8, 0x06, 0x40, 0xf9,
         0x29, 0x01, 0x40, 0xf9, 0x1f, 0x01, 0x09, 0xeb,
-        0x61, 0x06, 0x00, 0x54, 0xb7, 0x82, 0x5f, 0xf8,
-        0x09, 0x00, 0x00, 0x90, 0xe8, 0x06, 0x40, 0xf9,
-        0x29, 0x01, 0x40, 0xf9, 0x1f, 0x01, 0x09, 0xeb,
-        0xa1, 0x05, 0x00, 0x54, 0x08, 0x0b, 0x40, 0xf9,
-        0x1f, 0x25, 0x00, 0xf1, 0x42, 0x05, 0x00, 0x54,
-        0x08, 0x1b, 0x40, 0xb9, 0xe9, 0x0a, 0x40, 0xf9,
-        0x3f, 0x01, 0x08, 0xeb, 0xcd, 0x04, 0x00, 0x54,
-        0xe8, 0x0e, 0x08, 0x8b, 0x19, 0x0d, 0x40, 0xf9,
+        0xc1, 0x06, 0x00, 0x54, 0x09, 0x00, 0x00, 0x90,
+        0x68, 0x06, 0x40, 0xf9, 0x29, 0x01, 0x40, 0xf9,
+        0x1f, 0x01, 0x09, 0xeb, 0x21, 0x06, 0x00, 0x54,
+        0xe8, 0x0a, 0x40, 0xf9, 0x08, 0xf9, 0x7d, 0x92,
+        0x1f, 0x25, 0x00, 0xf1, 0xa2, 0x05, 0x00, 0x54,
+        0xe8, 0x1a, 0x40, 0xb9, 0x69, 0x0a, 0x40, 0xf9,
+        0x3f, 0x01, 0x08, 0xeb, 0x2d, 0x05, 0x00, 0x54,
+        0x68, 0x0e, 0x08, 0x8b, 0x19, 0x0d, 0x40, 0xf9,
         0x28, 0x03, 0x40, 0xb9, 0x68, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x11, 0x28, 0x03, 0x00, 0xb9,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x03, 0x40, 0xb9,
+        0xfd, 0x7b, 0xbf, 0xa9, 0xe8, 0x02, 0x40, 0xb9,
         0xfd, 0x03, 0x00, 0x91, 0x08, 0x02, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
+        0x08, 0x05, 0x00, 0x71, 0xe8, 0x02, 0x00, 0xb9,
         0xa1, 0x01, 0x00, 0x54, 0x09, 0x00, 0x00, 0x90,
         0x29, 0x01, 0x40, 0xf9, 0x28, 0x49, 0x54, 0xf9,
         0xa8, 0x00, 0x00, 0xb4, 0x22, 0x4d, 0x54, 0xf9,
-        0xe0, 0x03, 0x18, 0xaa, 0x21, 0x00, 0x80, 0x52,
+        0xe0, 0x03, 0x17, 0xaa, 0x21, 0x00, 0x80, 0x52,
         0x00, 0x01, 0x3f, 0xd6, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xe8, 0x02, 0x40, 0xb9,
-        0x08, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0xe8, 0x02, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x17, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x79, 0x02, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0xf5, 0x03, 0x13, 0xaa,
+        0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x98, 0x22, 0x00, 0xf9,
+        0x68, 0x02, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
+        0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xb9, 0x86, 0x00, 0xf8,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: &PyLong_Type+0x0
@@ -2174,17 +1703,339 @@ emit__BINARY_SUBSCR_TUPLE_INT(
     patch_64(data + 0x18, (uintptr_t)&_PyLong_ExactDealloc);
     patch_64(data + 0x20, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x8, (uintptr_t)data);
+    patch_aarch64_21rx(code + 0x4, (uintptr_t)data);
     patch_aarch64_12x(code + 0x10, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x20, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x28, (uintptr_t)data + 0x8);
+    patch_aarch64_21rx(code + 0x1c, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x24, (uintptr_t)data + 0x8);
     patch_aarch64_33rx(code + 0x84, (uintptr_t)data + 0x10);
     patch_aarch64_21rx(code + 0xa4, (uintptr_t)data + 0x18);
     patch_aarch64_12x(code + 0xac, (uintptr_t)data + 0x18);
-    patch_aarch64_21rx(code + 0xc8, (uintptr_t)data + 0x20);
-    patch_aarch64_12x(code + 0xd0, (uintptr_t)data + 0x20);
-    patch_aarch64_26r(code + 0xe0, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0xe8, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_21rx(code + 0xcc, (uintptr_t)data + 0x20);
+    patch_aarch64_12x(code + 0xd4, (uintptr_t)data + 0x20);
+    patch_aarch64_26r(code + 0xec, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0xf0, state->instruction_starts[instruction->jump_target]);
+}
+
+void
+emit__BINARY_OP_SUBTRACT_FLOAT(
+    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
+    const _PyUOpInstruction *instruction, jit_state *state)
+{
+    //
+    // _BINARY_OP_SUBTRACT_FLOAT.o:   file format elf64-littleaarch64
+    //
+    // Disassembly of section .text:
+    //
+    // 0000000000000000 <_JIT_ENTRY>:
+    // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 4: f85f8ea1      ldr     x1, [x21, #-0x8]!
+    // 8: aa1503f3      mov     x19, x21
+    // c: f85f8e60      ldr     x0, [x19, #-0x8]!
+    // 10: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000010:  R_AARCH64_ADR_GOT_PAGE       _PyFloat_FromDouble_ConsumeInputs
+    // 14: fd400820      ldr     d0, [x1, #0x10]
+    // 18: 910003fd      mov     x29, sp
+    // 1c: fd400801      ldr     d1, [x0, #0x10]
+    // 20: f9400108      ldr     x8, [x8]
+    // 0000000000000020:  R_AARCH64_LD64_GOT_LO12_NC   _PyFloat_FromDouble_ConsumeInputs
+    // 24: 1e603820      fsub    d0, d1, d0
+    // 28: d63f0100      blr     x8
+    // 2c: b4000080      cbz     x0, 0x3c <_JIT_ENTRY+0x3c>
+    // 30: f9000260      str     x0, [x19]
+    // 34: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 38: 14000000      b       0x38 <_JIT_ENTRY+0x38>
+    // 0000000000000038:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 3c: aa1303f5      mov     x21, x19
+    // 40: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 44: 14000000      b       0x44 <_JIT_ENTRY+0x44>
+    // 0000000000000044:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    const unsigned char code_body[72] = {
+        0xfd, 0x7b, 0xbf, 0xa9, 0xa1, 0x8e, 0x5f, 0xf8,
+        0xf3, 0x03, 0x15, 0xaa, 0x60, 0x8e, 0x5f, 0xf8,
+        0x08, 0x00, 0x00, 0x90, 0x20, 0x08, 0x40, 0xfd,
+        0xfd, 0x03, 0x00, 0x91, 0x01, 0x08, 0x40, 0xfd,
+        0x08, 0x01, 0x40, 0xf9, 0x20, 0x38, 0x60, 0x1e,
+        0x00, 0x01, 0x3f, 0xd6, 0x80, 0x00, 0x00, 0xb4,
+        0x60, 0x02, 0x00, 0xf9, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0xf5, 0x03, 0x13, 0xaa,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+    };
+    // 0: &_PyFloat_FromDouble_ConsumeInputs+0x0
+    const unsigned char data_body[8] = {
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    memcpy(data, data_body, sizeof(data_body));
+    patch_64(data + 0x0, (uintptr_t)&_PyFloat_FromDouble_ConsumeInputs);
+    memcpy(code, code_body, sizeof(code_body));
+    patch_aarch64_21rx(code + 0x10, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x20, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x38, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x44, state->instruction_starts[instruction->error_target]);
+}
+
+void
+emit__BINARY_OP_SUBTRACT_INT(
+    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
+    const _PyUOpInstruction *instruction, jit_state *state)
+{
+    //
+    // _BINARY_OP_SUBTRACT_INT.o:     file format elf64-littleaarch64
+    //
+    // Disassembly of section .text:
+    //
+    // 0000000000000000 <_JIT_ENTRY>:
+    // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 4: f85f8eb9      ldr     x25, [x21, #-0x8]!
+    // 8: aa1503f3      mov     x19, x21
+    // c: f85f8e78      ldr     x24, [x19, #-0x8]!
+    // 10: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000010:  R_AARCH64_ADR_GOT_PAGE       _PyLong_Subtract
+    // 14: f9400108      ldr     x8, [x8]
+    // 0000000000000014:  R_AARCH64_LD64_GOT_LO12_NC   _PyLong_Subtract
+    // 18: aa1903e1      mov     x1, x25
+    // 1c: 910003fd      mov     x29, sp
+    // 20: aa1803e0      mov     x0, x24
+    // 24: d63f0100      blr     x8
+    // 28: b9400328      ldr     w8, [x25]
+    // 2c: aa0003f7      mov     x23, x0
+    // 30: 37f80208      tbnz    w8, #0x1f, 0x70 <_JIT_ENTRY+0x70>
+    // 34: 71000508      subs    w8, w8, #0x1
+    // 38: b9000328      str     w8, [x25]
+    // 3c: 540001a1      b.ne    0x70 <_JIT_ENTRY+0x70>
+    // 40: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
+    // 0000000000000040:  R_AARCH64_ADR_GOT_PAGE       _PyRuntime
+    // 44: f9400129      ldr     x9, [x9]
+    // 0000000000000044:  R_AARCH64_LD64_GOT_LO12_NC   _PyRuntime
+    // 48: f9544928      ldr     x8, [x9, #0x2890]
+    // 4c: b40000a8      cbz     x8, 0x60 <_JIT_ENTRY+0x60>
+    // 50: f9544d22      ldr     x2, [x9, #0x2898]
+    // 54: aa1903e0      mov     x0, x25
+    // 58: 52800021      mov     w1, #0x1                // =1
+    // 5c: d63f0100      blr     x8
+    // 60: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000060:  R_AARCH64_ADR_GOT_PAGE       _PyLong_ExactDealloc
+    // 64: aa1903e0      mov     x0, x25
+    // 68: f9400108      ldr     x8, [x8]
+    // 0000000000000068:  R_AARCH64_LD64_GOT_LO12_NC   _PyLong_ExactDealloc
+    // 6c: d63f0100      blr     x8
+    // 70: b9400308      ldr     w8, [x24]
+    // 74: 37f80088      tbnz    w8, #0x1f, 0x84 <_JIT_ENTRY+0x84>
+    // 78: 71000508      subs    w8, w8, #0x1
+    // 7c: b9000308      str     w8, [x24]
+    // 80: 540000a0      b.eq    0x94 <_JIT_ENTRY+0x94>
+    // 84: b4000237      cbz     x23, 0xc8 <_JIT_ENTRY+0xc8>
+    // 88: f9000277      str     x23, [x19]
+    // 8c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 90: 14000000      b       0x90 <_JIT_ENTRY+0x90>
+    // 0000000000000090:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 94: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
+    // 0000000000000094:  R_AARCH64_ADR_GOT_PAGE       _PyRuntime
+    // 98: f9400129      ldr     x9, [x9]
+    // 0000000000000098:  R_AARCH64_LD64_GOT_LO12_NC   _PyRuntime
+    // 9c: f9544928      ldr     x8, [x9, #0x2890]
+    // a0: b40000a8      cbz     x8, 0xb4 <_JIT_ENTRY+0xb4>
+    // a4: f9544d22      ldr     x2, [x9, #0x2898]
+    // a8: aa1803e0      mov     x0, x24
+    // ac: 52800021      mov     w1, #0x1                // =1
+    // b0: d63f0100      blr     x8
+    // b4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000b4:  R_AARCH64_ADR_GOT_PAGE       _PyLong_ExactDealloc
+    // b8: aa1803e0      mov     x0, x24
+    // bc: f9400108      ldr     x8, [x8]
+    // 00000000000000bc:  R_AARCH64_LD64_GOT_LO12_NC   _PyLong_ExactDealloc
+    // c0: d63f0100      blr     x8
+    // c4: b5fffe37      cbnz    x23, 0x88 <_JIT_ENTRY+0x88>
+    // c8: aa1303f5      mov     x21, x19
+    // cc: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // d0: 14000000      b       0xd0 <_JIT_ENTRY+0xd0>
+    // 00000000000000d0:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // d4: 00 00 00 00
+    const unsigned char code_body[216] = {
+        0xfd, 0x7b, 0xbf, 0xa9, 0xb9, 0x8e, 0x5f, 0xf8,
+        0xf3, 0x03, 0x15, 0xaa, 0x78, 0x8e, 0x5f, 0xf8,
+        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
+        0xe1, 0x03, 0x19, 0xaa, 0xfd, 0x03, 0x00, 0x91,
+        0xe0, 0x03, 0x18, 0xaa, 0x00, 0x01, 0x3f, 0xd6,
+        0x28, 0x03, 0x40, 0xb9, 0xf7, 0x03, 0x00, 0xaa,
+        0x08, 0x02, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x28, 0x03, 0x00, 0xb9, 0xa1, 0x01, 0x00, 0x54,
+        0x09, 0x00, 0x00, 0x90, 0x29, 0x01, 0x40, 0xf9,
+        0x28, 0x49, 0x54, 0xf9, 0xa8, 0x00, 0x00, 0xb4,
+        0x22, 0x4d, 0x54, 0xf9, 0xe0, 0x03, 0x19, 0xaa,
+        0x21, 0x00, 0x80, 0x52, 0x00, 0x01, 0x3f, 0xd6,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x19, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0x08, 0x03, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
+        0xa0, 0x00, 0x00, 0x54, 0x37, 0x02, 0x00, 0xb4,
+        0x77, 0x02, 0x00, 0xf9, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x09, 0x00, 0x00, 0x90,
+        0x29, 0x01, 0x40, 0xf9, 0x28, 0x49, 0x54, 0xf9,
+        0xa8, 0x00, 0x00, 0xb4, 0x22, 0x4d, 0x54, 0xf9,
+        0xe0, 0x03, 0x18, 0xaa, 0x21, 0x00, 0x80, 0x52,
+        0x00, 0x01, 0x3f, 0xd6, 0x08, 0x00, 0x00, 0x90,
+        0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x37, 0xfe, 0xff, 0xb5,
+        0xf5, 0x03, 0x13, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
+    };
+    // 0: &_PyLong_Subtract+0x0
+    // 8: &_PyRuntime+0x0
+    // 10: &_PyLong_ExactDealloc+0x0
+    const unsigned char data_body[24] = {
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    memcpy(data, data_body, sizeof(data_body));
+    patch_64(data + 0x0, (uintptr_t)&_PyLong_Subtract);
+    patch_64(data + 0x8, (uintptr_t)&_PyRuntime);
+    patch_64(data + 0x10, (uintptr_t)&_PyLong_ExactDealloc);
+    memcpy(code, code_body, sizeof(code_body));
+    patch_aarch64_33rx(code + 0x10, (uintptr_t)data);
+    patch_aarch64_33rx(code + 0x40, (uintptr_t)data + 0x8);
+    patch_aarch64_21rx(code + 0x60, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x68, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x90, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_33rx(code + 0x94, (uintptr_t)data + 0x8);
+    patch_aarch64_21rx(code + 0xb4, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0xbc, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0xd0, state->instruction_starts[instruction->error_target]);
+}
+
+void
+emit__BINARY_SLICE(
+    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
+    const _PyUOpInstruction *instruction, jit_state *state)
+{
+    //
+    // _BINARY_SLICE.o:       file format elf64-littleaarch64
+    //
+    // Disassembly of section .text:
+    //
+    // 0000000000000000 <_JIT_ENTRY>:
+    // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 4: a97f06a0      ldp     x0, x1, [x21, #-0x10]
+    // 8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       _PyBuildSlice_ConsumeRefs
+    // c: f85e82b3      ldur    x19, [x21, #-0x18]
+    // 10: f9002295      str     x21, [x20, #0x40]
+    // 14: 910003fd      mov     x29, sp
+    // 18: f9400108      ldr     x8, [x8]
+    // 0000000000000018:  R_AARCH64_LD64_GOT_LO12_NC   _PyBuildSlice_ConsumeRefs
+    // 1c: d63f0100      blr     x8
+    // 20: f9402288      ldr     x8, [x20, #0x40]
+    // 24: b4000340      cbz     x0, 0x8c <_JIT_ENTRY+0x8c>
+    // 28: d1004108      sub     x8, x8, #0x10
+    // 2c: aa0003f7      mov     x23, x0
+    // 30: aa1303e0      mov     x0, x19
+    // 34: f9002288      str     x8, [x20, #0x40]
+    // 38: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000038:  R_AARCH64_ADR_GOT_PAGE       PyObject_GetItem
+    // 3c: aa1703e1      mov     x1, x23
+    // 40: f9400108      ldr     x8, [x8]
+    // 0000000000000040:  R_AARCH64_LD64_GOT_LO12_NC   PyObject_GetItem
+    // 44: d63f0100      blr     x8
+    // 48: b94002e8      ldr     w8, [x23]
+    // 4c: aa0003f8      mov     x24, x0
+    // 50: 37f80108      tbnz    w8, #0x1f, 0x70 <_JIT_ENTRY+0x70>
+    // 54: 71000508      subs    w8, w8, #0x1
+    // 58: b90002e8      str     w8, [x23]
+    // 5c: 540000a1      b.ne    0x70 <_JIT_ENTRY+0x70>
+    // 60: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000060:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 64: aa1703e0      mov     x0, x23
+    // 68: f9400108      ldr     x8, [x8]
+    // 0000000000000068:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 6c: d63f0100      blr     x8
+    // 70: f9402288      ldr     x8, [x20, #0x40]
+    // 74: 91004108      add     x8, x8, #0x10
+    // 78: d1006108      sub     x8, x8, #0x18
+    // 7c: f9002288      str     x8, [x20, #0x40]
+    // 80: b9400268      ldr     w8, [x19]
+    // 84: 36f800e8      tbz     w8, #0x1f, 0xa0 <_JIT_ENTRY+0xa0>
+    // 88: 14000009      b       0xac <_JIT_ENTRY+0xac>
+    // 8c: aa1f03f8      mov     x24, xzr
+    // 90: d1006108      sub     x8, x8, #0x18
+    // 94: f9002288      str     x8, [x20, #0x40]
+    // 98: b9400268      ldr     w8, [x19]
+    // 9c: 37f80088      tbnz    w8, #0x1f, 0xac <_JIT_ENTRY+0xac>
+    // a0: 71000508      subs    w8, w8, #0x1
+    // a4: b9000268      str     w8, [x19]
+    // a8: 540000e0      b.eq    0xc4 <_JIT_ENTRY+0xc4>
+    // ac: f9402295      ldr     x21, [x20, #0x40]
+    // b0: f900229f      str     xzr, [x20, #0x40]
+    // b4: b4000178      cbz     x24, 0xe0 <_JIT_ENTRY+0xe0>
+    // b8: f80086b8      str     x24, [x21], #0x8
+    // bc: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // c0: 14000000      b       0xc0 <_JIT_ENTRY+0xc0>
+    // 00000000000000c0:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // c4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000c4:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // c8: aa1303e0      mov     x0, x19
+    // cc: f9400108      ldr     x8, [x8]
+    // 00000000000000cc:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // d0: d63f0100      blr     x8
+    // d4: f9402295      ldr     x21, [x20, #0x40]
+    // d8: f900229f      str     xzr, [x20, #0x40]
+    // dc: b5fffef8      cbnz    x24, 0xb8 <_JIT_ENTRY+0xb8>
+    // e0: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // e4: 14000000      b       0xe4 <_JIT_ENTRY+0xe4>
+    // 00000000000000e4:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    const unsigned char code_body[232] = {
+        0xfd, 0x7b, 0xbf, 0xa9, 0xa0, 0x06, 0x7f, 0xa9,
+        0x08, 0x00, 0x00, 0x90, 0xb3, 0x82, 0x5e, 0xf8,
+        0x95, 0x22, 0x00, 0xf9, 0xfd, 0x03, 0x00, 0x91,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0x88, 0x22, 0x40, 0xf9, 0x40, 0x03, 0x00, 0xb4,
+        0x08, 0x41, 0x00, 0xd1, 0xf7, 0x03, 0x00, 0xaa,
+        0xe0, 0x03, 0x13, 0xaa, 0x88, 0x22, 0x00, 0xf9,
+        0x08, 0x00, 0x00, 0x90, 0xe1, 0x03, 0x17, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xe8, 0x02, 0x40, 0xb9, 0xf8, 0x03, 0x00, 0xaa,
+        0x08, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0xe8, 0x02, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x17, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0x88, 0x22, 0x40, 0xf9, 0x08, 0x41, 0x00, 0x91,
+        0x08, 0x61, 0x00, 0xd1, 0x88, 0x22, 0x00, 0xf9,
+        0x68, 0x02, 0x40, 0xb9, 0xe8, 0x00, 0xf8, 0x36,
+        0x09, 0x00, 0x00, 0x14, 0xf8, 0x03, 0x1f, 0xaa,
+        0x08, 0x61, 0x00, 0xd1, 0x88, 0x22, 0x00, 0xf9,
+        0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
+        0xe0, 0x00, 0x00, 0x54, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x78, 0x01, 0x00, 0xb4,
+        0xb8, 0x86, 0x00, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xf8, 0xfe, 0xff, 0xb5,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+    };
+    // 0: &_PyBuildSlice_ConsumeRefs+0x0
+    // 8: &PyObject_GetItem+0x0
+    // 10: &_Py_Dealloc+0x0
+    const unsigned char data_body[24] = {
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    memcpy(data, data_body, sizeof(data_body));
+    patch_64(data + 0x0, (uintptr_t)&_PyBuildSlice_ConsumeRefs);
+    patch_64(data + 0x8, (uintptr_t)&PyObject_GetItem);
+    patch_64(data + 0x10, (uintptr_t)&_Py_Dealloc);
+    memcpy(code, code_body, sizeof(code_body));
+    patch_aarch64_21rx(code + 0x8, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x18, (uintptr_t)data);
+    patch_aarch64_21rx(code + 0x38, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x40, (uintptr_t)data + 0x8);
+    patch_aarch64_21rx(code + 0x60, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x68, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0xc0, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0xc4, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0xcc, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0xe4, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -2282,25 +2133,25 @@ emit__BUILD_MAP(
     // 14: f9002295      str     x21, [x20, #0x40]
     // 18: 52800043      mov     w3, #0x2                // =2
     // 1c: 910003fd      mov     x29, sp
-    // 20: cb282759      sub     x25, x26, w8, uxth #1
+    // 20: cb282758      sub     x24, x26, w8, uxth #1
     // 24: cb2832a0      sub     x0, x21, w8, uxth #4
     // 28: 12003d1b      and     w27, w8, #0xffff
-    // 2c: 92403d18      and     x24, x8, #0xffff
+    // 2c: 92403d17      and     x23, x8, #0xffff
     // 30: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000030:  R_AARCH64_ADR_GOT_PAGE       _PyDict_FromItems
     // 34: f9400108      ldr     x8, [x8]
     // 0000000000000034:  R_AARCH64_LD64_GOT_LO12_NC   _PyDict_FromItems
     // 38: 91002002      add     x2, x0, #0x8
-    // 3c: aa1803e4      mov     x4, x24
+    // 3c: aa1703e4      mov     x4, x23
     // 40: d63f0100      blr     x8
-    // 44: f9402293      ldr     x19, [x20, #0x40]
-    // 48: aa0003f7      mov     x23, x0
+    // 44: f9402299      ldr     x25, [x20, #0x40]
+    // 48: aa0003f3      mov     x19, x0
     // 4c: f900229f      str     xzr, [x20, #0x40]
     // 50: 340002bb      cbz     w27, 0xa4 <_JIT_ENTRY+0xa4>
-    // 54: d37cef08      lsl     x8, x24, #4
+    // 54: d37ceee8      lsl     x8, x23, #4
     // 58: 52800029      mov     w9, #0x1                // =1
-    // 5c: aa180538      orr     x24, x9, x24, lsl #1
-    // 60: 8b190d08      add     x8, x8, x25, lsl #3
+    // 5c: aa170537      orr     x23, x9, x23, lsl #1
+    // 60: 8b180d08      add     x8, x8, x24, lsl #3
     // 64: 8b150108      add     x8, x8, x21
     // 68: 90000015      adrp    x21, 0x0 <_JIT_ENTRY>
     // 0000000000000068:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
@@ -2308,8 +2159,8 @@ emit__BUILD_MAP(
     // 000000000000006c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 70: d100211a      sub     x26, x8, #0x8
     // 74: 14000004      b       0x84 <_JIT_ENTRY+0x84>
-    // 78: d1000718      sub     x24, x24, #0x1
-    // 7c: f100071f      cmp     x24, #0x1
+    // 78: d10006f7      sub     x23, x23, #0x1
+    // 7c: f10006ff      cmp     x23, #0x1
     // 80: 54000129      b.ls    0xa4 <_JIT_ENTRY+0xa4>
     // 84: f85f8740      ldr     x0, [x26], #-0x8
     // 88: b9400008      ldr     w8, [x0]
@@ -2319,19 +2170,19 @@ emit__BUILD_MAP(
     // 98: 54ffff01      b.ne    0x78 <_JIT_ENTRY+0x78>
     // 9c: d63f02a0      blr     x21
     // a0: 17fffff6      b       0x78 <_JIT_ENTRY+0x78>
-    // a4: b4000137      cbz     x23, 0xc8 <_JIT_ENTRY+0xc8>
+    // a4: b4000133      cbz     x19, 0xc8 <_JIT_ENTRY+0xc8>
     // a8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 00000000000000a8:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
     // ac: 52800029      mov     w9, #0x1                // =1
     // b0: f9400108      ldr     x8, [x8]
     // 00000000000000b0:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // b4: f8397a77      str     x23, [x19, x25, lsl #3]
+    // b4: f8387b33      str     x19, [x25, x24, lsl #3]
     // b8: cb282528      sub     x8, x9, w8, uxth #1
-    // bc: 8b080e75      add     x21, x19, x8, lsl #3
+    // bc: 8b080f35      add     x21, x25, x8, lsl #3
     // c0: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // c4: 14000000      b       0xc4 <_JIT_ENTRY+0xc4>
     // 00000000000000c4:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // c8: aa1303f5      mov     x21, x19
+    // c8: 8b180f35      add     x21, x25, x24, lsl #3
     // cc: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // d0: 14000000      b       0xd0 <_JIT_ENTRY+0xd0>
     // 00000000000000d0:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
@@ -2341,28 +2192,28 @@ emit__BUILD_MAP(
         0xfa, 0x03, 0x1f, 0xaa, 0x41, 0x00, 0x80, 0x52,
         0x08, 0x01, 0x40, 0xf9, 0x95, 0x22, 0x00, 0xf9,
         0x43, 0x00, 0x80, 0x52, 0xfd, 0x03, 0x00, 0x91,
-        0x59, 0x27, 0x28, 0xcb, 0xa0, 0x32, 0x28, 0xcb,
-        0x1b, 0x3d, 0x00, 0x12, 0x18, 0x3d, 0x40, 0x92,
+        0x58, 0x27, 0x28, 0xcb, 0xa0, 0x32, 0x28, 0xcb,
+        0x1b, 0x3d, 0x00, 0x12, 0x17, 0x3d, 0x40, 0x92,
         0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0x02, 0x20, 0x00, 0x91, 0xe4, 0x03, 0x18, 0xaa,
-        0x00, 0x01, 0x3f, 0xd6, 0x93, 0x22, 0x40, 0xf9,
-        0xf7, 0x03, 0x00, 0xaa, 0x9f, 0x22, 0x00, 0xf9,
-        0xbb, 0x02, 0x00, 0x34, 0x08, 0xef, 0x7c, 0xd3,
-        0x29, 0x00, 0x80, 0x52, 0x38, 0x05, 0x18, 0xaa,
-        0x08, 0x0d, 0x19, 0x8b, 0x08, 0x01, 0x15, 0x8b,
+        0x02, 0x20, 0x00, 0x91, 0xe4, 0x03, 0x17, 0xaa,
+        0x00, 0x01, 0x3f, 0xd6, 0x99, 0x22, 0x40, 0xf9,
+        0xf3, 0x03, 0x00, 0xaa, 0x9f, 0x22, 0x00, 0xf9,
+        0xbb, 0x02, 0x00, 0x34, 0xe8, 0xee, 0x7c, 0xd3,
+        0x29, 0x00, 0x80, 0x52, 0x37, 0x05, 0x17, 0xaa,
+        0x08, 0x0d, 0x18, 0x8b, 0x08, 0x01, 0x15, 0x8b,
         0x15, 0x00, 0x00, 0x90, 0xb5, 0x02, 0x40, 0xf9,
         0x1a, 0x21, 0x00, 0xd1, 0x04, 0x00, 0x00, 0x14,
-        0x18, 0x07, 0x00, 0xd1, 0x1f, 0x07, 0x00, 0xf1,
+        0xf7, 0x06, 0x00, 0xd1, 0xff, 0x06, 0x00, 0xf1,
         0x29, 0x01, 0x00, 0x54, 0x40, 0x87, 0x5f, 0xf8,
         0x08, 0x00, 0x40, 0xb9, 0x68, 0xff, 0xff, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
         0x01, 0xff, 0xff, 0x54, 0xa0, 0x02, 0x3f, 0xd6,
-        0xf6, 0xff, 0xff, 0x17, 0x37, 0x01, 0x00, 0xb4,
+        0xf6, 0xff, 0xff, 0x17, 0x33, 0x01, 0x00, 0xb4,
         0x08, 0x00, 0x00, 0x90, 0x29, 0x00, 0x80, 0x52,
-        0x08, 0x01, 0x40, 0xf9, 0x77, 0x7a, 0x39, 0xf8,
-        0x28, 0x25, 0x28, 0xcb, 0x75, 0x0e, 0x08, 0x8b,
+        0x08, 0x01, 0x40, 0xf9, 0x33, 0x7b, 0x38, 0xf8,
+        0x28, 0x25, 0x28, 0xcb, 0x35, 0x0f, 0x08, 0x8b,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0xf5, 0x03, 0x13, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x35, 0x0f, 0x18, 0x8b, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
@@ -2400,46 +2251,46 @@ emit__BUILD_SET(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: f9002295      str     x21, [x20, #0x40]
+    // 4: 9000001a      adrp    x26, 0x0 <_JIT_ENTRY>
+    // 0000000000000004:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
     // 8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       PySet_New
-    // c: aa1f03e0      mov     x0, xzr
-    // 10: f9400108      ldr     x8, [x8]
-    // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   PySet_New
-    // 14: 910003fd      mov     x29, sp
-    // 18: aa1f03f8      mov     x24, xzr
-    // 1c: d63f0100      blr     x8
-    // 20: f9402293      ldr     x19, [x20, #0x40]
-    // 24: f900229f      str     xzr, [x20, #0x40]
-    // 28: b4000820      cbz     x0, 0x12c <_JIT_ENTRY+0x12c>
-    // 2c: 9000001a      adrp    x26, 0x0 <_JIT_ENTRY>
-    // 000000000000002c:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // 30: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000030:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // 34: aa0003f7      mov     x23, x0
-    // 38: f940035a      ldr     x26, [x26]
-    // 0000000000000038:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 3c: f9400108      ldr     x8, [x8]
-    // 000000000000003c:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 40: cb3a2319      sub     x25, x24, w26, uxth
+    // c: aa1f03f7      mov     x23, xzr
+    // 10: f940035a      ldr     x26, [x26]
+    // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
+    // 14: f9002295      str     x21, [x20, #0x40]
+    // 18: aa1f03e0      mov     x0, xzr
+    // 1c: f9400108      ldr     x8, [x8]
+    // 000000000000001c:  R_AARCH64_LD64_GOT_LO12_NC   PySet_New
+    // 20: 910003fd      mov     x29, sp
+    // 24: cb3a22f8      sub     x24, x23, w26, uxth
+    // 28: d63f0100      blr     x8
+    // 2c: f9402299      ldr     x25, [x20, #0x40]
+    // 30: f900229f      str     xzr, [x20, #0x40]
+    // 34: b40007c0      cbz     x0, 0x12c <_JIT_ENTRY+0x12c>
+    // 38: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000038:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
+    // 3c: aa0003f3      mov     x19, x0
+    // 40: f9400108      ldr     x8, [x8]
+    // 0000000000000040:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
     // 44: 72003d1f      tst     w8, #0xffff
     // 48: 54000640      b.eq    0x110 <_JIT_ENTRY+0x110>
     // 4c: 9000001b      adrp    x27, 0x0 <_JIT_ENTRY>
     // 000000000000004c:  R_AARCH64_ADR_GOT_PAGE       PySet_Add
-    // 50: 2a1f03f8      mov     w24, wzr
-    // 54: aa1903fc      mov     x28, x25
+    // 50: 2a1f03f7      mov     w23, wzr
+    // 54: aa1803fc      mov     x28, x24
     // 58: f940037b      ldr     x27, [x27]
     // 0000000000000058:  R_AARCH64_LD64_GOT_LO12_NC   PySet_Add
     // 5c: 14000003      b       0x68 <_JIT_ENTRY+0x68>
     // 60: b100079c      adds    x28, x28, #0x1
     // 64: 54000142      b.hs    0x8c <_JIT_ENTRY+0x8c>
-    // 68: 35ffffd8      cbnz    w24, 0x60 <_JIT_ENTRY+0x60>
-    // 6c: f9002293      str     x19, [x20, #0x40]
-    // 70: aa1703e0      mov     x0, x23
+    // 68: 35ffffd7      cbnz    w23, 0x60 <_JIT_ENTRY+0x60>
+    // 6c: f9002299      str     x25, [x20, #0x40]
+    // 70: aa1303e0      mov     x0, x19
     // 74: f87c7aa1      ldr     x1, [x21, x28, lsl #3]
     // 78: d63f0360      blr     x27
-    // 7c: f9402293      ldr     x19, [x20, #0x40]
-    // 80: 2a0003f8      mov     w24, w0
+    // 7c: f9402299      ldr     x25, [x20, #0x40]
+    // 80: 2a0003f7      mov     w23, w0
     // 84: f900229f      str     xzr, [x20, #0x40]
     // 88: 17fffff6      b       0x60 <_JIT_ENTRY+0x60>
     // 8c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
@@ -2467,13 +2318,13 @@ emit__BUILD_SET(
     // d4: 54ffff01      b.ne    0xb4 <_JIT_ENTRY+0xb4>
     // d8: d63f0360      blr     x27
     // dc: 17fffff6      b       0xb4 <_JIT_ENTRY+0xb4>
-    // e0: 34000198      cbz     w24, 0x110 <_JIT_ENTRY+0x110>
-    // e4: 8b190e68      add     x8, x19, x25, lsl #3
+    // e0: 34000197      cbz     w23, 0x110 <_JIT_ENTRY+0x110>
+    // e4: 8b180f28      add     x8, x25, x24, lsl #3
     // e8: f9002288      str     x8, [x20, #0x40]
-    // ec: b94002e8      ldr     w8, [x23]
+    // ec: b9400268      ldr     w8, [x19]
     // f0: 37f80088      tbnz    w8, #0x1f, 0x100 <_JIT_ENTRY+0x100>
     // f4: 71000508      subs    w8, w8, #0x1
-    // f8: b90002e8      str     w8, [x23]
+    // f8: b9000268      str     w8, [x19]
     // fc: 54000480      b.eq    0x18c <_JIT_ENTRY+0x18c>
     // 100: f9402295      ldr     x21, [x20, #0x40]
     // 104: f900229f      str     xzr, [x20, #0x40]
@@ -2482,9 +2333,9 @@ emit__BUILD_SET(
     // 000000000000010c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
     // 110: 12003f48      and     w8, w26, #0xffff
     // 114: 52800029      mov     w9, #0x1                // =1
-    // 118: f8397a77      str     x23, [x19, x25, lsl #3]
+    // 118: f8387b33      str     x19, [x25, x24, lsl #3]
     // 11c: 4b080128      sub     w8, w9, w8
-    // 120: 8b28ce75      add     x21, x19, w8, sxtw #3
+    // 120: 8b28cf35      add     x21, x25, w8, sxtw #3
     // 124: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 128: 14000000      b       0x128 <_JIT_ENTRY+0x128>
     // 0000000000000128:  R_AARCH64_JUMP26     _JIT_CONTINUE
@@ -2494,16 +2345,16 @@ emit__BUILD_SET(
     // 0000000000000130:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
     // 134: 72003d1f      tst     w8, #0xffff
     // 138: 54000240      b.eq    0x180 <_JIT_ENTRY+0x180>
-    // 13c: 90000017      adrp    x23, 0x0 <_JIT_ENTRY>
+    // 13c: 90000013      adrp    x19, 0x0 <_JIT_ENTRY>
     // 000000000000013c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
     // 140: 92403d08      and     x8, x8, #0xffff
     // 144: d10022b5      sub     x21, x21, #0x8
-    // 148: f94002f7      ldr     x23, [x23]
+    // 148: f9400273      ldr     x19, [x19]
     // 0000000000000148:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 14c: 91000518      add     x24, x8, #0x1
+    // 14c: 91000517      add     x23, x8, #0x1
     // 150: 14000004      b       0x160 <_JIT_ENTRY+0x160>
-    // 154: d1000718      sub     x24, x24, #0x1
-    // 158: f100071f      cmp     x24, #0x1
+    // 154: d10006f7      sub     x23, x23, #0x1
+    // 158: f10006ff      cmp     x23, #0x1
     // 15c: 54000129      b.ls    0x180 <_JIT_ENTRY+0x180>
     // 160: f85f86a0      ldr     x0, [x21], #-0x8
     // 164: b9400008      ldr     w8, [x0]
@@ -2511,15 +2362,15 @@ emit__BUILD_SET(
     // 16c: 71000508      subs    w8, w8, #0x1
     // 170: b9000008      str     w8, [x0]
     // 174: 54ffff01      b.ne    0x154 <_JIT_ENTRY+0x154>
-    // 178: d63f02e0      blr     x23
+    // 178: d63f0260      blr     x19
     // 17c: 17fffff6      b       0x154 <_JIT_ENTRY+0x154>
-    // 180: aa1303f5      mov     x21, x19
+    // 180: 8b180f35      add     x21, x25, x24, lsl #3
     // 184: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 188: 14000000      b       0x188 <_JIT_ENTRY+0x188>
     // 0000000000000188:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
     // 18c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 000000000000018c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 190: aa1703e0      mov     x0, x23
+    // 190: aa1303e0      mov     x0, x19
     // 194: f9400108      ldr     x8, [x8]
     // 0000000000000194:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 198: d63f0100      blr     x8
@@ -2530,23 +2381,23 @@ emit__BUILD_SET(
     // 00000000000001a8:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
     // 1ac: 00 00 00 00
     const unsigned char code_body[432] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0x95, 0x22, 0x00, 0xf9,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x1f, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0xfd, 0x03, 0x00, 0x91,
-        0xf8, 0x03, 0x1f, 0xaa, 0x00, 0x01, 0x3f, 0xd6,
-        0x93, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
-        0x20, 0x08, 0x00, 0xb4, 0x1a, 0x00, 0x00, 0x90,
-        0x08, 0x00, 0x00, 0x90, 0xf7, 0x03, 0x00, 0xaa,
-        0x5a, 0x03, 0x40, 0xf9, 0x08, 0x01, 0x40, 0xf9,
-        0x19, 0x23, 0x3a, 0xcb, 0x1f, 0x3d, 0x00, 0x72,
+        0xfd, 0x7b, 0xbf, 0xa9, 0x1a, 0x00, 0x00, 0x90,
+        0x08, 0x00, 0x00, 0x90, 0xf7, 0x03, 0x1f, 0xaa,
+        0x5a, 0x03, 0x40, 0xf9, 0x95, 0x22, 0x00, 0xf9,
+        0xe0, 0x03, 0x1f, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0xfd, 0x03, 0x00, 0x91, 0xf8, 0x22, 0x3a, 0xcb,
+        0x00, 0x01, 0x3f, 0xd6, 0x99, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xc0, 0x07, 0x00, 0xb4,
+        0x08, 0x00, 0x00, 0x90, 0xf3, 0x03, 0x00, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0x1f, 0x3d, 0x00, 0x72,
         0x40, 0x06, 0x00, 0x54, 0x1b, 0x00, 0x00, 0x90,
-        0xf8, 0x03, 0x1f, 0x2a, 0xfc, 0x03, 0x19, 0xaa,
+        0xf7, 0x03, 0x1f, 0x2a, 0xfc, 0x03, 0x18, 0xaa,
         0x7b, 0x03, 0x40, 0xf9, 0x03, 0x00, 0x00, 0x14,
         0x9c, 0x07, 0x00, 0xb1, 0x42, 0x01, 0x00, 0x54,
-        0xd8, 0xff, 0xff, 0x35, 0x93, 0x22, 0x00, 0xf9,
-        0xe0, 0x03, 0x17, 0xaa, 0xa1, 0x7a, 0x7c, 0xf8,
-        0x60, 0x03, 0x3f, 0xd6, 0x93, 0x22, 0x40, 0xf9,
-        0xf8, 0x03, 0x00, 0x2a, 0x9f, 0x22, 0x00, 0xf9,
+        0xd7, 0xff, 0xff, 0x35, 0x99, 0x22, 0x00, 0xf9,
+        0xe0, 0x03, 0x13, 0xaa, 0xa1, 0x7a, 0x7c, 0xf8,
+        0x60, 0x03, 0x3f, 0xd6, 0x99, 0x22, 0x40, 0xf9,
+        0xf7, 0x03, 0x00, 0x2a, 0x9f, 0x22, 0x00, 0xf9,
         0xf6, 0xff, 0xff, 0x17, 0x08, 0x00, 0x00, 0x90,
         0x08, 0x01, 0x40, 0xf9, 0x1f, 0x3d, 0x00, 0x72,
         0x40, 0x02, 0x00, 0x54, 0x1b, 0x00, 0x00, 0x90,
@@ -2558,35 +2409,35 @@ emit__BUILD_SET(
         0x68, 0xff, 0xff, 0x37, 0x08, 0x05, 0x00, 0x71,
         0x08, 0x00, 0x00, 0xb9, 0x01, 0xff, 0xff, 0x54,
         0x60, 0x03, 0x3f, 0xd6, 0xf6, 0xff, 0xff, 0x17,
-        0x98, 0x01, 0x00, 0x34, 0x68, 0x0e, 0x19, 0x8b,
-        0x88, 0x22, 0x00, 0xf9, 0xe8, 0x02, 0x40, 0xb9,
+        0x97, 0x01, 0x00, 0x34, 0x28, 0x0f, 0x18, 0x8b,
+        0x88, 0x22, 0x00, 0xf9, 0x68, 0x02, 0x40, 0xb9,
         0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0xe8, 0x02, 0x00, 0xb9, 0x80, 0x04, 0x00, 0x54,
+        0x68, 0x02, 0x00, 0xb9, 0x80, 0x04, 0x00, 0x54,
         0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
         0x48, 0x3f, 0x00, 0x12, 0x29, 0x00, 0x80, 0x52,
-        0x77, 0x7a, 0x39, 0xf8, 0x28, 0x01, 0x08, 0x4b,
-        0x75, 0xce, 0x28, 0x8b, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x33, 0x7b, 0x38, 0xf8, 0x28, 0x01, 0x08, 0x4b,
+        0x35, 0xcf, 0x28, 0x8b, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
         0x08, 0x01, 0x40, 0xf9, 0x1f, 0x3d, 0x00, 0x72,
-        0x40, 0x02, 0x00, 0x54, 0x17, 0x00, 0x00, 0x90,
+        0x40, 0x02, 0x00, 0x54, 0x13, 0x00, 0x00, 0x90,
         0x08, 0x3d, 0x40, 0x92, 0xb5, 0x22, 0x00, 0xd1,
-        0xf7, 0x02, 0x40, 0xf9, 0x18, 0x05, 0x00, 0x91,
-        0x04, 0x00, 0x00, 0x14, 0x18, 0x07, 0x00, 0xd1,
-        0x1f, 0x07, 0x00, 0xf1, 0x29, 0x01, 0x00, 0x54,
+        0x73, 0x02, 0x40, 0xf9, 0x17, 0x05, 0x00, 0x91,
+        0x04, 0x00, 0x00, 0x14, 0xf7, 0x06, 0x00, 0xd1,
+        0xff, 0x06, 0x00, 0xf1, 0x29, 0x01, 0x00, 0x54,
         0xa0, 0x86, 0x5f, 0xf8, 0x08, 0x00, 0x40, 0xb9,
         0x68, 0xff, 0xff, 0x37, 0x08, 0x05, 0x00, 0x71,
         0x08, 0x00, 0x00, 0xb9, 0x01, 0xff, 0xff, 0x54,
-        0xe0, 0x02, 0x3f, 0xd6, 0xf6, 0xff, 0xff, 0x17,
-        0xf5, 0x03, 0x13, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x60, 0x02, 0x3f, 0xd6, 0xf6, 0xff, 0xff, 0x17,
+        0x35, 0x0f, 0x18, 0x8b, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
         0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
         0x9f, 0x22, 0x00, 0xf9, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
-    // 0: &PySet_New+0x0
-    // 8: OPARG
+    // 0: OPARG
+    // 8: &PySet_New+0x0
     // 10: &PySet_Add+0x0
     // 18: &_Py_Dealloc+0x0
     const unsigned char data_body[32] = {
@@ -2596,25 +2447,25 @@ emit__BUILD_SET(
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     };
     memcpy(data, data_body, sizeof(data_body));
-    patch_64(data + 0x0, (uintptr_t)&PySet_New);
-    patch_64(data + 0x8, instruction->oparg);
+    patch_64(data + 0x0, instruction->oparg);
+    patch_64(data + 0x8, (uintptr_t)&PySet_New);
     patch_64(data + 0x10, (uintptr_t)&PySet_Add);
     patch_64(data + 0x18, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x8, (uintptr_t)data);
+    patch_aarch64_21rx(code + 0x4, (uintptr_t)data);
+    patch_aarch64_21rx(code + 0x8, (uintptr_t)data + 0x8);
     patch_aarch64_12x(code + 0x10, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x2c, (uintptr_t)data + 0x8);
-    patch_aarch64_21rx(code + 0x30, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x38, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x3c, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x1c, (uintptr_t)data + 0x8);
+    patch_aarch64_21rx(code + 0x38, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x40, (uintptr_t)data);
     patch_aarch64_21rx(code + 0x4c, (uintptr_t)data + 0x10);
     patch_aarch64_12x(code + 0x58, (uintptr_t)data + 0x10);
-    patch_aarch64_33rx(code + 0x8c, (uintptr_t)data + 0x8);
+    patch_aarch64_33rx(code + 0x8c, (uintptr_t)data);
     patch_aarch64_21rx(code + 0x9c, (uintptr_t)data + 0x18);
     patch_aarch64_12x(code + 0xa8, (uintptr_t)data + 0x18);
     patch_aarch64_26r(code + 0x10c, state->instruction_starts[instruction->error_target]);
     patch_aarch64_26r(code + 0x128, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_33rx(code + 0x12c, (uintptr_t)data + 0x8);
+    patch_aarch64_33rx(code + 0x12c, (uintptr_t)data);
     patch_aarch64_21rx(code + 0x13c, (uintptr_t)data + 0x18);
     patch_aarch64_12x(code + 0x148, (uintptr_t)data + 0x18);
     patch_aarch64_26r(code + 0x188, state->instruction_starts[instruction->error_target]);
@@ -2636,118 +2487,89 @@ emit__BUILD_SLICE(
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000000:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // 4: aa1503f3      mov     x19, x21
-    // 8: f9400108      ldr     x8, [x8]
-    // 0000000000000008:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
+    // 4: f9400108      ldr     x8, [x8]
+    // 0000000000000004:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
+    // 8: cb282eb3      sub     x19, x21, w8, uxth #3
     // c: 12003d08      and     w8, w8, #0xffff
     // 10: 71000d1f      cmp     w8, #0x3
-    // 14: 54000081      b.ne    0x24 <_JIT_ENTRY+0x24>
-    // 18: f85f8277      ldur    x23, [x19, #-0x8]
-    // 1c: 9280005b      mov     x27, #-0x3              // =-3
-    // 20: 14000003      b       0x2c <_JIT_ENTRY+0x2c>
-    // 24: aa1f03f7      mov     x23, xzr
-    // 28: 9280003b      mov     x27, #-0x2              // =-2
-    // 2c: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 30: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000030:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // 34: aa1703e2      mov     x2, x23
-    // 38: 910003fd      mov     x29, sp
-    // 3c: f9400108      ldr     x8, [x8]
-    // 000000000000003c:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 40: f87b7a7a      ldr     x26, [x19, x27, lsl #3]
-    // 44: 12003d08      and     w8, w8, #0xffff
-    // 48: aa1a03e0      mov     x0, x26
-    // 4c: 71000d1f      cmp     w8, #0x3
-    // 50: 1a9f17e8      cset    w8, eq
-    // 54: aa2803e8      mvn     x8, x8
-    // 58: 8b080e75      add     x21, x19, x8, lsl #3
-    // 5c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000005c:  R_AARCH64_ADR_GOT_PAGE       PySlice_New
-    // 60: f94002b9      ldr     x25, [x21]
-    // 64: f9400108      ldr     x8, [x8]
-    // 0000000000000064:  R_AARCH64_LD64_GOT_LO12_NC   PySlice_New
-    // 68: aa1903e1      mov     x1, x25
-    // 6c: d63f0100      blr     x8
-    // 70: b9400348      ldr     w8, [x26]
-    // 74: aa0003f8      mov     x24, x0
-    // 78: 37f80108      tbnz    w8, #0x1f, 0x98 <_JIT_ENTRY+0x98>
-    // 7c: 71000508      subs    w8, w8, #0x1
-    // 80: b9000348      str     w8, [x26]
-    // 84: 540000a1      b.ne    0x98 <_JIT_ENTRY+0x98>
-    // 88: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000088:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 8c: aa1a03e0      mov     x0, x26
-    // 90: f9400108      ldr     x8, [x8]
-    // 0000000000000090:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 94: d63f0100      blr     x8
-    // 98: b9400328      ldr     w8, [x25]
-    // 9c: 37f80108      tbnz    w8, #0x1f, 0xbc <_JIT_ENTRY+0xbc>
-    // a0: 71000508      subs    w8, w8, #0x1
-    // a4: b9000328      str     w8, [x25]
-    // a8: 540000a1      b.ne    0xbc <_JIT_ENTRY+0xbc>
-    // ac: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000ac:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // b0: aa1903e0      mov     x0, x25
-    // b4: f9400108      ldr     x8, [x8]
-    // 00000000000000b4:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // b8: d63f0100      blr     x8
-    // bc: b40000d7      cbz     x23, 0xd4 <_JIT_ENTRY+0xd4>
-    // c0: b94002e8      ldr     w8, [x23]
-    // c4: 37f80088      tbnz    w8, #0x1f, 0xd4 <_JIT_ENTRY+0xd4>
-    // c8: 71000508      subs    w8, w8, #0x1
-    // cc: b90002e8      str     w8, [x23]
-    // d0: 540000a0      b.eq    0xe4 <_JIT_ENTRY+0xe4>
-    // d4: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // d8: b4000138      cbz     x24, 0xfc <_JIT_ENTRY+0xfc>
-    // dc: f83b7a78      str     x24, [x19, x27, lsl #3]
-    // e0: 14000000      b       0xe0 <_JIT_ENTRY+0xe0>
-    // 00000000000000e0:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // e4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000e4:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // e8: aa1703e0      mov     x0, x23
-    // ec: f9400108      ldr     x8, [x8]
-    // 00000000000000ec:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // f0: d63f0100      blr     x8
-    // f4: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // f8: b5ffff38      cbnz    x24, 0xdc <_JIT_ENTRY+0xdc>
-    // fc: aa1303f5      mov     x21, x19
-    // 100: 14000000      b       0x100 <_JIT_ENTRY+0x100>
-    // 0000000000000100:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 104: 00 00 00 00
-    const unsigned char code_body[264] = {
-        0x08, 0x00, 0x00, 0x90, 0xf3, 0x03, 0x15, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x08, 0x3d, 0x00, 0x12,
-        0x1f, 0x0d, 0x00, 0x71, 0x81, 0x00, 0x00, 0x54,
-        0x77, 0x82, 0x5f, 0xf8, 0x5b, 0x00, 0x80, 0x92,
-        0x03, 0x00, 0x00, 0x14, 0xf7, 0x03, 0x1f, 0xaa,
-        0x3b, 0x00, 0x80, 0x92, 0xfd, 0x7b, 0xbf, 0xa9,
-        0x08, 0x00, 0x00, 0x90, 0xe2, 0x03, 0x17, 0xaa,
+    // 14: a9400660      ldp     x0, x1, [x19]
+    // 18: 54000061      b.ne    0x24 <_JIT_ENTRY+0x24>
+    // 1c: f9400a62      ldr     x2, [x19, #0x10]
+    // 20: 14000002      b       0x28 <_JIT_ENTRY+0x28>
+    // 24: aa1f03e2      mov     x2, xzr
+    // 28: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 2c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 000000000000002c:  R_AARCH64_ADR_GOT_PAGE       PySlice_New
+    // 30: 910003fd      mov     x29, sp
+    // 34: f9400108      ldr     x8, [x8]
+    // 0000000000000034:  R_AARCH64_LD64_GOT_LO12_NC   PySlice_New
+    // 38: d63f0100      blr     x8
+    // 3c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 000000000000003c:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
+    // 40: aa0003f7      mov     x23, x0
+    // 44: f9400108      ldr     x8, [x8]
+    // 0000000000000044:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
+    // 48: 72003d1f      tst     w8, #0xffff
+    // 4c: 54000240      b.eq    0x94 <_JIT_ENTRY+0x94>
+    // 50: 90000018      adrp    x24, 0x0 <_JIT_ENTRY>
+    // 0000000000000050:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 54: 92403d08      and     x8, x8, #0xffff
+    // 58: d10022ba      sub     x26, x21, #0x8
+    // 5c: f9400318      ldr     x24, [x24]
+    // 000000000000005c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 60: 91000519      add     x25, x8, #0x1
+    // 64: 14000004      b       0x74 <_JIT_ENTRY+0x74>
+    // 68: d1000739      sub     x25, x25, #0x1
+    // 6c: f100073f      cmp     x25, #0x1
+    // 70: 54000129      b.ls    0x94 <_JIT_ENTRY+0x94>
+    // 74: f85f8740      ldr     x0, [x26], #-0x8
+    // 78: b9400008      ldr     w8, [x0]
+    // 7c: 37ffff68      tbnz    w8, #0x1f, 0x68 <_JIT_ENTRY+0x68>
+    // 80: 71000508      subs    w8, w8, #0x1
+    // 84: b9000008      str     w8, [x0]
+    // 88: 54ffff01      b.ne    0x68 <_JIT_ENTRY+0x68>
+    // 8c: d63f0300      blr     x24
+    // 90: 17fffff6      b       0x68 <_JIT_ENTRY+0x68>
+    // 94: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 98: b4000117      cbz     x23, 0xb8 <_JIT_ENTRY+0xb8>
+    // 9c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 000000000000009c:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
+    // a0: 52800029      mov     w9, #0x1                // =1
+    // a4: f9400108      ldr     x8, [x8]
+    // 00000000000000a4:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
+    // a8: f9000277      str     x23, [x19]
+    // ac: cb282128      sub     x8, x9, w8, uxth
+    // b0: 8b080eb5      add     x21, x21, x8, lsl #3
+    // b4: 14000000      b       0xb4 <_JIT_ENTRY+0xb4>
+    // 00000000000000b4:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // b8: aa1303f5      mov     x21, x19
+    // bc: 14000000      b       0xbc <_JIT_ENTRY+0xbc>
+    // 00000000000000bc:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    const unsigned char code_body[192] = {
+        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
+        0xb3, 0x2e, 0x28, 0xcb, 0x08, 0x3d, 0x00, 0x12,
+        0x1f, 0x0d, 0x00, 0x71, 0x60, 0x06, 0x40, 0xa9,
+        0x61, 0x00, 0x00, 0x54, 0x62, 0x0a, 0x40, 0xf9,
+        0x02, 0x00, 0x00, 0x14, 0xe2, 0x03, 0x1f, 0xaa,
+        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x7a, 0x7a, 0x7b, 0xf8, 0x08, 0x3d, 0x00, 0x12,
-        0xe0, 0x03, 0x1a, 0xaa, 0x1f, 0x0d, 0x00, 0x71,
-        0xe8, 0x17, 0x9f, 0x1a, 0xe8, 0x03, 0x28, 0xaa,
-        0x75, 0x0e, 0x08, 0x8b, 0x08, 0x00, 0x00, 0x90,
-        0xb9, 0x02, 0x40, 0xf9, 0x08, 0x01, 0x40, 0xf9,
-        0xe1, 0x03, 0x19, 0xaa, 0x00, 0x01, 0x3f, 0xd6,
-        0x48, 0x03, 0x40, 0xb9, 0xf8, 0x03, 0x00, 0xaa,
-        0x08, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x48, 0x03, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x1a, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x28, 0x03, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x28, 0x03, 0x00, 0xb9,
-        0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x19, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xd7, 0x00, 0x00, 0xb4,
-        0xe8, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0xe8, 0x02, 0x00, 0xb9,
-        0xa0, 0x00, 0x00, 0x54, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x38, 0x01, 0x00, 0xb4, 0x78, 0x7a, 0x3b, 0xf8,
-        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x38, 0xff, 0xff, 0xb5, 0xf5, 0x03, 0x13, 0xaa,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x01, 0x3f, 0xd6, 0x08, 0x00, 0x00, 0x90,
+        0xf7, 0x03, 0x00, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x1f, 0x3d, 0x00, 0x72, 0x40, 0x02, 0x00, 0x54,
+        0x18, 0x00, 0x00, 0x90, 0x08, 0x3d, 0x40, 0x92,
+        0xba, 0x22, 0x00, 0xd1, 0x18, 0x03, 0x40, 0xf9,
+        0x19, 0x05, 0x00, 0x91, 0x04, 0x00, 0x00, 0x14,
+        0x39, 0x07, 0x00, 0xd1, 0x3f, 0x07, 0x00, 0xf1,
+        0x29, 0x01, 0x00, 0x54, 0x40, 0x87, 0x5f, 0xf8,
+        0x08, 0x00, 0x40, 0xb9, 0x68, 0xff, 0xff, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
+        0x01, 0xff, 0xff, 0x54, 0x00, 0x03, 0x3f, 0xd6,
+        0xf6, 0xff, 0xff, 0x17, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x17, 0x01, 0x00, 0xb4, 0x08, 0x00, 0x00, 0x90,
+        0x29, 0x00, 0x80, 0x52, 0x08, 0x01, 0x40, 0xf9,
+        0x77, 0x02, 0x00, 0xf9, 0x28, 0x21, 0x28, 0xcb,
+        0xb5, 0x0e, 0x08, 0x8b, 0x00, 0x00, 0x00, 0x14,
+        0xf5, 0x03, 0x13, 0xaa, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPARG
     // 8: &PySlice_New+0x0
@@ -2762,20 +2584,17 @@ emit__BUILD_SLICE(
     patch_64(data + 0x8, (uintptr_t)&PySlice_New);
     patch_64(data + 0x10, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x0, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x8, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x30, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x3c, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x5c, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x64, (uintptr_t)data + 0x8);
-    patch_aarch64_21rx(code + 0x88, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x90, (uintptr_t)data + 0x10);
-    patch_aarch64_21rx(code + 0xac, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0xb4, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0xe0, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0xe4, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0xec, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x100, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_33rx(code + 0x0, (uintptr_t)data);
+    patch_aarch64_21rx(code + 0x2c, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x34, (uintptr_t)data + 0x8);
+    patch_aarch64_21rx(code + 0x3c, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x44, (uintptr_t)data);
+    patch_aarch64_21rx(code + 0x50, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x5c, (uintptr_t)data + 0x10);
+    patch_aarch64_21rx(code + 0x9c, (uintptr_t)data);
+    patch_aarch64_12x(code + 0xa4, (uintptr_t)data);
+    patch_aarch64_26r(code + 0xb4, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0xbc, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -2843,10 +2662,10 @@ emit__BUILD_STRING(
     // a4: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // a8: 14000000      b       0xa8 <_JIT_ENTRY+0xa8>
     // 00000000000000a8:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // ac: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // b0: 14000000      b       0xb0 <_JIT_ENTRY+0xb0>
-    // 00000000000000b0:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // b4: 00 00 00 00
+    // ac: aa1303f5      mov     x21, x19
+    // b0: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // b4: 14000000      b       0xb4 <_JIT_ENTRY+0xb4>
+    // 00000000000000b4:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
     const unsigned char code_body[184] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0x09, 0x00, 0x00, 0x90, 0x0a, 0x00, 0x00, 0x90,
@@ -2869,8 +2688,8 @@ emit__BUILD_STRING(
         0x29, 0x00, 0x80, 0x52, 0x08, 0x01, 0x40, 0xf9,
         0x77, 0x02, 0x00, 0xf9, 0x28, 0x21, 0x28, 0xcb,
         0xb5, 0x0e, 0x08, 0x8b, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x14, 0xf5, 0x03, 0x13, 0xaa,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPARG
     // 8: &_PyRuntime+0x0
@@ -2899,7 +2718,7 @@ emit__BUILD_STRING(
     patch_aarch64_21rx(code + 0x8c, (uintptr_t)data);
     patch_aarch64_12x(code + 0x94, (uintptr_t)data);
     patch_aarch64_26r(code + 0xa8, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0xb0, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0xb4, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -2994,8 +2813,8 @@ emit__CALL_BUILTIN_CLASS(
     // c: 910003fd      mov     x29, sp
     // 10: f9400129      ldr     x9, [x9]
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 14: cb292118      sub     x24, x8, w9, uxth
-    // 18: f8787aa0      ldr     x0, [x21, x24, lsl #3]
+    // 14: cb292117      sub     x23, x8, w9, uxth
+    // 18: f8777aa0      ldr     x0, [x21, x23, lsl #3]
     // 1c: f9400408      ldr     x8, [x0, #0x8]
     // 20: 3942ad08      ldrb    w8, [x8, #0xab]
     // 24: 36380788      tbz     w8, #0x7, 0x114 <_JIT_ENTRY+0x114>
@@ -3005,8 +2824,8 @@ emit__CALL_BUILTIN_CLASS(
     // 34: cb292ea9      sub     x9, x21, w9, uxth #3
     // 38: aa1f03e3      mov     x3, xzr
     // 3c: 2a2a03eb      mvn     w11, w10
-    // 40: 93407d79      sxtw    x25, w11
-    // 44: f8797aab      ldr     x11, [x21, x25, lsl #3]
+    // 40: 93407d78      sxtw    x24, w11
+    // 44: f8787aab      ldr     x11, [x21, x24, lsl #3]
     // 48: f9002295      str     x21, [x20, #0x40]
     // 4c: f100017f      cmp     x11, #0x0
     // 50: 928000eb      mov     x11, #-0x8              // =-8
@@ -3014,10 +2833,10 @@ emit__CALL_BUILTIN_CLASS(
     // 58: 9a9f116a      csel    x10, x11, xzr, ne
     // 5c: 8b0a0121      add     x1, x9, x10
     // 60: d63f0100      blr     x8
-    // 64: f9402293      ldr     x19, [x20, #0x40]
+    // 64: f9402299      ldr     x25, [x20, #0x40]
     // 68: f900229f      str     xzr, [x20, #0x40]
-    // 6c: aa0003f7      mov     x23, x0
-    // 70: f8787aa8      ldr     x8, [x21, x24, lsl #3]
+    // 6c: aa0003f3      mov     x19, x0
+    // 70: f8777aa8      ldr     x8, [x21, x23, lsl #3]
     // 74: b9400109      ldr     w9, [x8]
     // 78: 37f80109      tbnz    w9, #0x1f, 0x98 <_JIT_ENTRY+0x98>
     // 7c: 71000529      subs    w9, w9, #0x1
@@ -3029,7 +2848,7 @@ emit__CALL_BUILTIN_CLASS(
     // 90: f9400129      ldr     x9, [x9]
     // 0000000000000090:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 94: d63f0120      blr     x9
-    // 98: f8797aa0      ldr     x0, [x21, x25, lsl #3]
+    // 98: f8787aa0      ldr     x0, [x21, x24, lsl #3]
     // 9c: b4000120      cbz     x0, 0xc0 <_JIT_ENTRY+0xc0>
     // a0: b9400008      ldr     w8, [x0]
     // a4: 37f800e8      tbnz    w8, #0x1f, 0xc0 <_JIT_ENTRY+0xc0>
@@ -3069,13 +2888,13 @@ emit__CALL_BUILTIN_CLASS(
     // 114: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 118: 14000000      b       0x118 <_JIT_ENTRY+0x118>
     // 0000000000000118:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 11c: b40000b7      cbz     x23, 0x130 <_JIT_ENTRY+0x130>
-    // 120: 8b190e75      add     x21, x19, x25, lsl #3
-    // 124: f8387a77      str     x23, [x19, x24, lsl #3]
+    // 11c: b40000b3      cbz     x19, 0x130 <_JIT_ENTRY+0x130>
+    // 120: 8b180f35      add     x21, x25, x24, lsl #3
+    // 124: f8377b33      str     x19, [x25, x23, lsl #3]
     // 128: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 12c: 14000000      b       0x12c <_JIT_ENTRY+0x12c>
     // 000000000000012c:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 130: aa1303f5      mov     x21, x19
+    // 130: 8b170f35      add     x21, x25, x23, lsl #3
     // 134: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 138: 14000000      b       0x138 <_JIT_ENTRY+0x138>
     // 0000000000000138:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
@@ -3083,24 +2902,24 @@ emit__CALL_BUILTIN_CLASS(
     const unsigned char code_body[320] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x09, 0x00, 0x00, 0x90,
         0x28, 0x00, 0x80, 0x92, 0xfd, 0x03, 0x00, 0x91,
-        0x29, 0x01, 0x40, 0xf9, 0x18, 0x21, 0x29, 0xcb,
-        0xa0, 0x7a, 0x78, 0xf8, 0x08, 0x04, 0x40, 0xf9,
+        0x29, 0x01, 0x40, 0xf9, 0x17, 0x21, 0x29, 0xcb,
+        0xa0, 0x7a, 0x77, 0xf8, 0x08, 0x04, 0x40, 0xf9,
         0x08, 0xad, 0x42, 0x39, 0x88, 0x07, 0x38, 0x36,
         0x08, 0xc8, 0x40, 0xf9, 0x48, 0x07, 0x00, 0xb4,
         0x2a, 0x3d, 0x00, 0x12, 0xa9, 0x2e, 0x29, 0xcb,
         0xe3, 0x03, 0x1f, 0xaa, 0xeb, 0x03, 0x2a, 0x2a,
-        0x79, 0x7d, 0x40, 0x93, 0xab, 0x7a, 0x79, 0xf8,
+        0x78, 0x7d, 0x40, 0x93, 0xab, 0x7a, 0x78, 0xf8,
         0x95, 0x22, 0x00, 0xf9, 0x7f, 0x01, 0x00, 0xf1,
         0xeb, 0x00, 0x80, 0x92, 0x42, 0x05, 0x8a, 0x1a,
         0x6a, 0x11, 0x9f, 0x9a, 0x21, 0x01, 0x0a, 0x8b,
-        0x00, 0x01, 0x3f, 0xd6, 0x93, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xf7, 0x03, 0x00, 0xaa,
-        0xa8, 0x7a, 0x78, 0xf8, 0x09, 0x01, 0x40, 0xb9,
+        0x00, 0x01, 0x3f, 0xd6, 0x99, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xf3, 0x03, 0x00, 0xaa,
+        0xa8, 0x7a, 0x77, 0xf8, 0x09, 0x01, 0x40, 0xb9,
         0x09, 0x01, 0xf8, 0x37, 0x29, 0x05, 0x00, 0x71,
         0x09, 0x01, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
         0x09, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x08, 0xaa,
         0x29, 0x01, 0x40, 0xf9, 0x20, 0x01, 0x3f, 0xd6,
-        0xa0, 0x7a, 0x79, 0xf8, 0x20, 0x01, 0x00, 0xb4,
+        0xa0, 0x7a, 0x78, 0xf8, 0x20, 0x01, 0x00, 0xb4,
         0x08, 0x00, 0x40, 0xb9, 0xe8, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
         0x81, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
@@ -3116,10 +2935,10 @@ emit__CALL_BUILTIN_CLASS(
         0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
         0x01, 0xff, 0xff, 0x54, 0x40, 0x03, 0x3f, 0xd6,
         0xf6, 0xff, 0xff, 0x17, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0xb7, 0x00, 0x00, 0xb4,
-        0x75, 0x0e, 0x19, 0x8b, 0x77, 0x7a, 0x38, 0xf8,
+        0x00, 0x00, 0x00, 0x14, 0xb3, 0x00, 0x00, 0xb4,
+        0x35, 0x0f, 0x18, 0x8b, 0x33, 0x7b, 0x37, 0xf8,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0xf5, 0x03, 0x13, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x35, 0x0f, 0x17, 0x8b, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
@@ -3165,10 +2984,10 @@ emit__CALL_BUILTIN_FAST(
     // 10: f9400129      ldr     x9, [x9]
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
     // 14: 910003fd      mov     x29, sp
-    // 18: cb292118      sub     x24, x8, w9, uxth
+    // 18: cb292117      sub     x23, x8, w9, uxth
     // 1c: 12003d2c      and     w12, w9, #0xffff
     // 20: 2a2c03ea      mvn     w10, w12
-    // 24: f8787aa8      ldr     x8, [x21, x24, lsl #3]
+    // 24: f8777aa8      ldr     x8, [x21, x23, lsl #3]
     // 28: f86adaab      ldr     x11, [x21, w10, sxtw #3]
     // 2c: f940050d      ldr     x13, [x8, #0x8]
     // 30: f94001ce      ldr     x14, [x14]
@@ -3184,16 +3003,16 @@ emit__CALL_BUILTIN_FAST(
     // 54: 710201bf      cmp     w13, #0x80
     // 58: 54000681      b.ne    0x128 <_JIT_ENTRY+0x128>
     // 5c: cb292ea9      sub     x9, x21, w9, uxth #3
-    // 60: 93407d59      sxtw    x25, w10
+    // 60: 93407d58      sxtw    x24, w10
     // 64: f940058a      ldr     x10, [x12, #0x8]
     // 68: f9400d00      ldr     x0, [x8, #0x18]
     // 6c: f9002295      str     x21, [x20, #0x40]
     // 70: 8b0b0121      add     x1, x9, x11
     // 74: d63f0140      blr     x10
-    // 78: f9402293      ldr     x19, [x20, #0x40]
+    // 78: f9402299      ldr     x25, [x20, #0x40]
     // 7c: f900229f      str     xzr, [x20, #0x40]
-    // 80: aa0003f7      mov     x23, x0
-    // 84: f8787aa8      ldr     x8, [x21, x24, lsl #3]
+    // 80: aa0003f3      mov     x19, x0
+    // 84: f8777aa8      ldr     x8, [x21, x23, lsl #3]
     // 88: b9400109      ldr     w9, [x8]
     // 8c: 37f80109      tbnz    w9, #0x1f, 0xac <_JIT_ENTRY+0xac>
     // 90: 71000529      subs    w9, w9, #0x1
@@ -3205,7 +3024,7 @@ emit__CALL_BUILTIN_FAST(
     // a4: f9400129      ldr     x9, [x9]
     // 00000000000000a4:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // a8: d63f0120      blr     x9
-    // ac: f8797aa0      ldr     x0, [x21, x25, lsl #3]
+    // ac: f8787aa0      ldr     x0, [x21, x24, lsl #3]
     // b0: b4000120      cbz     x0, 0xd4 <_JIT_ENTRY+0xd4>
     // b4: b9400008      ldr     w8, [x0]
     // b8: 37f800e8      tbnz    w8, #0x1f, 0xd4 <_JIT_ENTRY+0xd4>
@@ -3245,13 +3064,13 @@ emit__CALL_BUILTIN_FAST(
     // 128: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 12c: 14000000      b       0x12c <_JIT_ENTRY+0x12c>
     // 000000000000012c:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 130: b40000b7      cbz     x23, 0x144 <_JIT_ENTRY+0x144>
-    // 134: 8b190e75      add     x21, x19, x25, lsl #3
-    // 138: f8387a77      str     x23, [x19, x24, lsl #3]
+    // 130: b40000b3      cbz     x19, 0x144 <_JIT_ENTRY+0x144>
+    // 134: 8b180f35      add     x21, x25, x24, lsl #3
+    // 138: f8377b33      str     x19, [x25, x23, lsl #3]
     // 13c: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 140: 14000000      b       0x140 <_JIT_ENTRY+0x140>
     // 0000000000000140:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 144: aa1303f5      mov     x21, x19
+    // 144: 8b170f35      add     x21, x25, x23, lsl #3
     // 148: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 14c: 14000000      b       0x14c <_JIT_ENTRY+0x14c>
     // 000000000000014c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
@@ -3259,8 +3078,8 @@ emit__CALL_BUILTIN_FAST(
         0xfd, 0x7b, 0xbf, 0xa9, 0x09, 0x00, 0x00, 0x90,
         0x28, 0x00, 0x80, 0x92, 0x0e, 0x00, 0x00, 0x90,
         0x29, 0x01, 0x40, 0xf9, 0xfd, 0x03, 0x00, 0x91,
-        0x18, 0x21, 0x29, 0xcb, 0x2c, 0x3d, 0x00, 0x12,
-        0xea, 0x03, 0x2c, 0x2a, 0xa8, 0x7a, 0x78, 0xf8,
+        0x17, 0x21, 0x29, 0xcb, 0x2c, 0x3d, 0x00, 0x12,
+        0xea, 0x03, 0x2c, 0x2a, 0xa8, 0x7a, 0x77, 0xf8,
         0xab, 0xda, 0x6a, 0xf8, 0x0d, 0x05, 0x40, 0xf9,
         0xce, 0x01, 0x40, 0xf9, 0x7f, 0x01, 0x00, 0xf1,
         0xeb, 0x00, 0x80, 0x92, 0x82, 0x05, 0x8c, 0x1a,
@@ -3268,16 +3087,16 @@ emit__CALL_BUILTIN_FAST(
         0x01, 0x07, 0x00, 0x54, 0x0c, 0x09, 0x40, 0xf9,
         0x8d, 0x11, 0x40, 0xb9, 0xbf, 0x01, 0x02, 0x71,
         0x81, 0x06, 0x00, 0x54, 0xa9, 0x2e, 0x29, 0xcb,
-        0x59, 0x7d, 0x40, 0x93, 0x8a, 0x05, 0x40, 0xf9,
+        0x58, 0x7d, 0x40, 0x93, 0x8a, 0x05, 0x40, 0xf9,
         0x00, 0x0d, 0x40, 0xf9, 0x95, 0x22, 0x00, 0xf9,
         0x21, 0x01, 0x0b, 0x8b, 0x40, 0x01, 0x3f, 0xd6,
-        0x93, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
-        0xf7, 0x03, 0x00, 0xaa, 0xa8, 0x7a, 0x78, 0xf8,
+        0x99, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0xf3, 0x03, 0x00, 0xaa, 0xa8, 0x7a, 0x77, 0xf8,
         0x09, 0x01, 0x40, 0xb9, 0x09, 0x01, 0xf8, 0x37,
         0x29, 0x05, 0x00, 0x71, 0x09, 0x01, 0x00, 0xb9,
         0xa1, 0x00, 0x00, 0x54, 0x09, 0x00, 0x00, 0x90,
         0xe0, 0x03, 0x08, 0xaa, 0x29, 0x01, 0x40, 0xf9,
-        0x20, 0x01, 0x3f, 0xd6, 0xa0, 0x7a, 0x79, 0xf8,
+        0x20, 0x01, 0x3f, 0xd6, 0xa0, 0x7a, 0x78, 0xf8,
         0x20, 0x01, 0x00, 0xb4, 0x08, 0x00, 0x40, 0xb9,
         0xe8, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
         0x08, 0x00, 0x00, 0xb9, 0x81, 0x00, 0x00, 0x54,
@@ -3294,9 +3113,9 @@ emit__CALL_BUILTIN_FAST(
         0x08, 0x00, 0x00, 0xb9, 0x01, 0xff, 0xff, 0x54,
         0x40, 0x03, 0x3f, 0xd6, 0xf6, 0xff, 0xff, 0x17,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0xb7, 0x00, 0x00, 0xb4, 0x75, 0x0e, 0x19, 0x8b,
-        0x77, 0x7a, 0x38, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0xf5, 0x03, 0x13, 0xaa,
+        0xb3, 0x00, 0x00, 0xb4, 0x35, 0x0f, 0x18, 0x8b,
+        0x33, 0x7b, 0x37, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x35, 0x0f, 0x17, 0x8b,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPARG
@@ -3347,10 +3166,10 @@ emit__CALL_BUILTIN_FAST_WITH_KEYWORDS(
     // 10: f9400129      ldr     x9, [x9]
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
     // 14: 910003fd      mov     x29, sp
-    // 18: cb292118      sub     x24, x8, w9, uxth
+    // 18: cb292117      sub     x23, x8, w9, uxth
     // 1c: 12003d2c      and     w12, w9, #0xffff
     // 20: 2a2c03ea      mvn     w10, w12
-    // 24: f8787aa8      ldr     x8, [x21, x24, lsl #3]
+    // 24: f8777aa8      ldr     x8, [x21, x23, lsl #3]
     // 28: f86adaab      ldr     x11, [x21, w10, sxtw #3]
     // 2c: f940050d      ldr     x13, [x8, #0x8]
     // 30: f94001ce      ldr     x14, [x14]
@@ -3366,17 +3185,17 @@ emit__CALL_BUILTIN_FAST_WITH_KEYWORDS(
     // 54: 710209bf      cmp     w13, #0x82
     // 58: 540006a1      b.ne    0x12c <_JIT_ENTRY+0x12c>
     // 5c: cb292ea9      sub     x9, x21, w9, uxth #3
-    // 60: 93407d59      sxtw    x25, w10
+    // 60: 93407d58      sxtw    x24, w10
     // 64: f940058a      ldr     x10, [x12, #0x8]
     // 68: f9400d00      ldr     x0, [x8, #0x18]
     // 6c: aa1f03e3      mov     x3, xzr
     // 70: f9002295      str     x21, [x20, #0x40]
     // 74: 8b0b0121      add     x1, x9, x11
     // 78: d63f0140      blr     x10
-    // 7c: f9402293      ldr     x19, [x20, #0x40]
+    // 7c: f9402299      ldr     x25, [x20, #0x40]
     // 80: f900229f      str     xzr, [x20, #0x40]
-    // 84: aa0003f7      mov     x23, x0
-    // 88: f8787aa8      ldr     x8, [x21, x24, lsl #3]
+    // 84: aa0003f3      mov     x19, x0
+    // 88: f8777aa8      ldr     x8, [x21, x23, lsl #3]
     // 8c: b9400109      ldr     w9, [x8]
     // 90: 37f80109      tbnz    w9, #0x1f, 0xb0 <_JIT_ENTRY+0xb0>
     // 94: 71000529      subs    w9, w9, #0x1
@@ -3388,7 +3207,7 @@ emit__CALL_BUILTIN_FAST_WITH_KEYWORDS(
     // a8: f9400129      ldr     x9, [x9]
     // 00000000000000a8:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // ac: d63f0120      blr     x9
-    // b0: f8797aa0      ldr     x0, [x21, x25, lsl #3]
+    // b0: f8787aa0      ldr     x0, [x21, x24, lsl #3]
     // b4: b4000120      cbz     x0, 0xd8 <_JIT_ENTRY+0xd8>
     // b8: b9400008      ldr     w8, [x0]
     // bc: 37f800e8      tbnz    w8, #0x1f, 0xd8 <_JIT_ENTRY+0xd8>
@@ -3428,13 +3247,13 @@ emit__CALL_BUILTIN_FAST_WITH_KEYWORDS(
     // 12c: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 130: 14000000      b       0x130 <_JIT_ENTRY+0x130>
     // 0000000000000130:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 134: b40000b7      cbz     x23, 0x148 <_JIT_ENTRY+0x148>
-    // 138: 8b190e75      add     x21, x19, x25, lsl #3
-    // 13c: f8387a77      str     x23, [x19, x24, lsl #3]
+    // 134: b40000b3      cbz     x19, 0x148 <_JIT_ENTRY+0x148>
+    // 138: 8b180f35      add     x21, x25, x24, lsl #3
+    // 13c: f8377b33      str     x19, [x25, x23, lsl #3]
     // 140: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 144: 14000000      b       0x144 <_JIT_ENTRY+0x144>
     // 0000000000000144:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 148: aa1303f5      mov     x21, x19
+    // 148: 8b170f35      add     x21, x25, x23, lsl #3
     // 14c: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 150: 14000000      b       0x150 <_JIT_ENTRY+0x150>
     // 0000000000000150:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
@@ -3443,8 +3262,8 @@ emit__CALL_BUILTIN_FAST_WITH_KEYWORDS(
         0xfd, 0x7b, 0xbf, 0xa9, 0x09, 0x00, 0x00, 0x90,
         0x28, 0x00, 0x80, 0x92, 0x0e, 0x00, 0x00, 0x90,
         0x29, 0x01, 0x40, 0xf9, 0xfd, 0x03, 0x00, 0x91,
-        0x18, 0x21, 0x29, 0xcb, 0x2c, 0x3d, 0x00, 0x12,
-        0xea, 0x03, 0x2c, 0x2a, 0xa8, 0x7a, 0x78, 0xf8,
+        0x17, 0x21, 0x29, 0xcb, 0x2c, 0x3d, 0x00, 0x12,
+        0xea, 0x03, 0x2c, 0x2a, 0xa8, 0x7a, 0x77, 0xf8,
         0xab, 0xda, 0x6a, 0xf8, 0x0d, 0x05, 0x40, 0xf9,
         0xce, 0x01, 0x40, 0xf9, 0x7f, 0x01, 0x00, 0xf1,
         0xeb, 0x00, 0x80, 0x92, 0x82, 0x05, 0x8c, 0x1a,
@@ -3452,17 +3271,17 @@ emit__CALL_BUILTIN_FAST_WITH_KEYWORDS(
         0x21, 0x07, 0x00, 0x54, 0x0c, 0x09, 0x40, 0xf9,
         0x8d, 0x11, 0x40, 0xb9, 0xbf, 0x09, 0x02, 0x71,
         0xa1, 0x06, 0x00, 0x54, 0xa9, 0x2e, 0x29, 0xcb,
-        0x59, 0x7d, 0x40, 0x93, 0x8a, 0x05, 0x40, 0xf9,
+        0x58, 0x7d, 0x40, 0x93, 0x8a, 0x05, 0x40, 0xf9,
         0x00, 0x0d, 0x40, 0xf9, 0xe3, 0x03, 0x1f, 0xaa,
         0x95, 0x22, 0x00, 0xf9, 0x21, 0x01, 0x0b, 0x8b,
-        0x40, 0x01, 0x3f, 0xd6, 0x93, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xf7, 0x03, 0x00, 0xaa,
-        0xa8, 0x7a, 0x78, 0xf8, 0x09, 0x01, 0x40, 0xb9,
+        0x40, 0x01, 0x3f, 0xd6, 0x99, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xf3, 0x03, 0x00, 0xaa,
+        0xa8, 0x7a, 0x77, 0xf8, 0x09, 0x01, 0x40, 0xb9,
         0x09, 0x01, 0xf8, 0x37, 0x29, 0x05, 0x00, 0x71,
         0x09, 0x01, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
         0x09, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x08, 0xaa,
         0x29, 0x01, 0x40, 0xf9, 0x20, 0x01, 0x3f, 0xd6,
-        0xa0, 0x7a, 0x79, 0xf8, 0x20, 0x01, 0x00, 0xb4,
+        0xa0, 0x7a, 0x78, 0xf8, 0x20, 0x01, 0x00, 0xb4,
         0x08, 0x00, 0x40, 0xb9, 0xe8, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
         0x81, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
@@ -3478,10 +3297,10 @@ emit__CALL_BUILTIN_FAST_WITH_KEYWORDS(
         0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
         0x01, 0xff, 0xff, 0x54, 0x40, 0x03, 0x3f, 0xd6,
         0xf6, 0xff, 0xff, 0x17, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0xb7, 0x00, 0x00, 0xb4,
-        0x75, 0x0e, 0x19, 0x8b, 0x77, 0x7a, 0x38, 0xf8,
+        0x00, 0x00, 0x00, 0x14, 0xb3, 0x00, 0x00, 0xb4,
+        0x35, 0x0f, 0x18, 0x8b, 0x33, 0x7b, 0x37, 0xf8,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0xf5, 0x03, 0x13, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x35, 0x0f, 0x17, 0x8b, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
@@ -3531,78 +3350,78 @@ emit__CALL_BUILTIN_O(
     // 10: f9400108      ldr     x8, [x8]
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
     // 14: 12003d0a      and     w10, w8, #0xffff
-    // 18: 2a2a03f9      mvn     w25, w10
-    // 1c: f879daab      ldr     x11, [x21, w25, sxtw #3]
+    // 18: 2a2a03eb      mvn     w11, w10
+    // 1c: f86bdaab      ldr     x11, [x21, w11, sxtw #3]
     // 20: f100017f      cmp     x11, #0x0
     // 24: 1a8a054a      cinc    w10, w10, ne
     // 28: 9a9f1129      csel    x9, x9, xzr, ne
     // 2c: 7100055f      cmp     w10, #0x1
-    // 30: 540006e1      b.ne    0x10c <_JIT_ENTRY+0x10c>
+    // 30: 54000701      b.ne    0x110 <_JIT_ENTRY+0x110>
     // 34: 9280002a      mov     x10, #-0x2              // =-2
     // 38: 9000000c      adrp    x12, 0x0 <_JIT_ENTRY>
     // 0000000000000038:  R_AARCH64_ADR_GOT_PAGE       PyCFunction_Type
-    // 3c: cb28215a      sub     x26, x10, w8, uxth
-    // 40: f87a7aaa      ldr     x10, [x21, x26, lsl #3]
+    // 3c: cb282158      sub     x24, x10, w8, uxth
+    // 40: f8787aaa      ldr     x10, [x21, x24, lsl #3]
     // 44: f940054b      ldr     x11, [x10, #0x8]
     // 48: f940018c      ldr     x12, [x12]
     // 0000000000000048:  R_AARCH64_LD64_GOT_LO12_NC   PyCFunction_Type
     // 4c: eb0c017f      cmp     x11, x12
-    // 50: 540005e1      b.ne    0x10c <_JIT_ENTRY+0x10c>
+    // 50: 54000601      b.ne    0x110 <_JIT_ENTRY+0x110>
     // 54: f940094b      ldr     x11, [x10, #0x10]
     // 58: b940116c      ldr     w12, [x11, #0x10]
     // 5c: 7100219f      cmp     w12, #0x8
-    // 60: 54000561      b.ne    0x10c <_JIT_ENTRY+0x10c>
+    // 60: 54000581      b.ne    0x110 <_JIT_ENTRY+0x110>
     // 64: b94036cc      ldr     w12, [x22, #0x34]
     // 68: 7100019f      cmp     w12, #0x0
-    // 6c: 5400050d      b.le    0x10c <_JIT_ENTRY+0x10c>
+    // 6c: 5400052d      b.le    0x110 <_JIT_ENTRY+0x110>
     // 70: cb282ea8      sub     x8, x21, w8, uxth #3
     // 74: f940056b      ldr     x11, [x11, #0x8]
     // 78: f9400d40      ldr     x0, [x10, #0x18]
     // 7c: 5100058c      sub     w12, w12, #0x1
-    // 80: f8696918      ldr     x24, [x8, x9]
+    // 80: f8696917      ldr     x23, [x8, x9]
     // 84: b90036cc      str     w12, [x22, #0x34]
     // 88: f9002295      str     x21, [x20, #0x40]
-    // 8c: aa1803e1      mov     x1, x24
+    // 8c: aa1703e1      mov     x1, x23
     // 90: d63f0160      blr     x11
     // 94: b94036c8      ldr     w8, [x22, #0x34]
-    // 98: f9402293      ldr     x19, [x20, #0x40]
-    // 9c: aa0003f7      mov     x23, x0
-    // a0: f900229f      str     xzr, [x20, #0x40]
-    // a4: 11000508      add     w8, w8, #0x1
-    // a8: b90036c8      str     w8, [x22, #0x34]
-    // ac: b9400308      ldr     w8, [x24]
-    // b0: 37f80108      tbnz    w8, #0x1f, 0xd0 <_JIT_ENTRY+0xd0>
-    // b4: 71000508      subs    w8, w8, #0x1
-    // b8: b9000308      str     w8, [x24]
-    // bc: 540000a1      b.ne    0xd0 <_JIT_ENTRY+0xd0>
-    // c0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000c0:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // c4: aa1803e0      mov     x0, x24
-    // c8: f9400108      ldr     x8, [x8]
-    // 00000000000000c8:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // cc: d63f0100      blr     x8
-    // d0: f87a7aa0      ldr     x0, [x21, x26, lsl #3]
-    // d4: b9400008      ldr     w8, [x0]
-    // d8: 37f800e8      tbnz    w8, #0x1f, 0xf4 <_JIT_ENTRY+0xf4>
-    // dc: 71000508      subs    w8, w8, #0x1
-    // e0: b9000008      str     w8, [x0]
-    // e4: 54000081      b.ne    0xf4 <_JIT_ENTRY+0xf4>
-    // e8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000e8:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // ec: f9400108      ldr     x8, [x8]
-    // 00000000000000ec:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // f0: d63f0100      blr     x8
-    // f4: b4000117      cbz     x23, 0x114 <_JIT_ENTRY+0x114>
-    // f8: 93407f28      sxtw    x8, w25
-    // fc: f83a7a77      str     x23, [x19, x26, lsl #3]
-    // 100: 8b080e75      add     x21, x19, x8, lsl #3
-    // 104: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 108: 14000000      b       0x108 <_JIT_ENTRY+0x108>
-    // 0000000000000108:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 10c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 110: 14000000      b       0x110 <_JIT_ENTRY+0x110>
-    // 0000000000000110:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 114: aa1303f5      mov     x21, x19
+    // 98: aa0003f3      mov     x19, x0
+    // 9c: 11000508      add     w8, w8, #0x1
+    // a0: b90036c8      str     w8, [x22, #0x34]
+    // a4: b94002e8      ldr     w8, [x23]
+    // a8: 37f80108      tbnz    w8, #0x1f, 0xc8 <_JIT_ENTRY+0xc8>
+    // ac: 71000508      subs    w8, w8, #0x1
+    // b0: b90002e8      str     w8, [x23]
+    // b4: 540000a1      b.ne    0xc8 <_JIT_ENTRY+0xc8>
+    // b8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000b8:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // bc: aa1703e0      mov     x0, x23
+    // c0: f9400108      ldr     x8, [x8]
+    // 00000000000000c0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // c4: d63f0100      blr     x8
+    // c8: f9402288      ldr     x8, [x20, #0x40]
+    // cc: 8b180d08      add     x8, x8, x24, lsl #3
+    // d0: f9002288      str     x8, [x20, #0x40]
+    // d4: f8787aa0      ldr     x0, [x21, x24, lsl #3]
+    // d8: b9400008      ldr     w8, [x0]
+    // dc: 37f800e8      tbnz    w8, #0x1f, 0xf8 <_JIT_ENTRY+0xf8>
+    // e0: 71000508      subs    w8, w8, #0x1
+    // e4: b9000008      str     w8, [x0]
+    // e8: 54000081      b.ne    0xf8 <_JIT_ENTRY+0xf8>
+    // ec: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000ec:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // f0: f9400108      ldr     x8, [x8]
+    // 00000000000000f0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // f4: d63f0100      blr     x8
+    // f8: f9402295      ldr     x21, [x20, #0x40]
+    // fc: f900229f      str     xzr, [x20, #0x40]
+    // 100: b40000d3      cbz     x19, 0x118 <_JIT_ENTRY+0x118>
+    // 104: f80086b3      str     x19, [x21], #0x8
+    // 108: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 10c: 14000000      b       0x10c <_JIT_ENTRY+0x10c>
+    // 000000000000010c:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 110: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 114: 14000000      b       0x114 <_JIT_ENTRY+0x114>
+    // 0000000000000114:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
     // 118: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 11c: 14000000      b       0x11c <_JIT_ENTRY+0x11c>
     // 000000000000011c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
@@ -3610,38 +3429,38 @@ emit__CALL_BUILTIN_O(
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0xe9, 0x00, 0x80, 0x92, 0xfd, 0x03, 0x00, 0x91,
         0x08, 0x01, 0x40, 0xf9, 0x0a, 0x3d, 0x00, 0x12,
-        0xf9, 0x03, 0x2a, 0x2a, 0xab, 0xda, 0x79, 0xf8,
+        0xeb, 0x03, 0x2a, 0x2a, 0xab, 0xda, 0x6b, 0xf8,
         0x7f, 0x01, 0x00, 0xf1, 0x4a, 0x05, 0x8a, 0x1a,
         0x29, 0x11, 0x9f, 0x9a, 0x5f, 0x05, 0x00, 0x71,
-        0xe1, 0x06, 0x00, 0x54, 0x2a, 0x00, 0x80, 0x92,
-        0x0c, 0x00, 0x00, 0x90, 0x5a, 0x21, 0x28, 0xcb,
-        0xaa, 0x7a, 0x7a, 0xf8, 0x4b, 0x05, 0x40, 0xf9,
+        0x01, 0x07, 0x00, 0x54, 0x2a, 0x00, 0x80, 0x92,
+        0x0c, 0x00, 0x00, 0x90, 0x58, 0x21, 0x28, 0xcb,
+        0xaa, 0x7a, 0x78, 0xf8, 0x4b, 0x05, 0x40, 0xf9,
         0x8c, 0x01, 0x40, 0xf9, 0x7f, 0x01, 0x0c, 0xeb,
-        0xe1, 0x05, 0x00, 0x54, 0x4b, 0x09, 0x40, 0xf9,
+        0x01, 0x06, 0x00, 0x54, 0x4b, 0x09, 0x40, 0xf9,
         0x6c, 0x11, 0x40, 0xb9, 0x9f, 0x21, 0x00, 0x71,
-        0x61, 0x05, 0x00, 0x54, 0xcc, 0x36, 0x40, 0xb9,
-        0x9f, 0x01, 0x00, 0x71, 0x0d, 0x05, 0x00, 0x54,
+        0x81, 0x05, 0x00, 0x54, 0xcc, 0x36, 0x40, 0xb9,
+        0x9f, 0x01, 0x00, 0x71, 0x2d, 0x05, 0x00, 0x54,
         0xa8, 0x2e, 0x28, 0xcb, 0x6b, 0x05, 0x40, 0xf9,
         0x40, 0x0d, 0x40, 0xf9, 0x8c, 0x05, 0x00, 0x51,
-        0x18, 0x69, 0x69, 0xf8, 0xcc, 0x36, 0x00, 0xb9,
-        0x95, 0x22, 0x00, 0xf9, 0xe1, 0x03, 0x18, 0xaa,
+        0x17, 0x69, 0x69, 0xf8, 0xcc, 0x36, 0x00, 0xb9,
+        0x95, 0x22, 0x00, 0xf9, 0xe1, 0x03, 0x17, 0xaa,
         0x60, 0x01, 0x3f, 0xd6, 0xc8, 0x36, 0x40, 0xb9,
-        0x93, 0x22, 0x40, 0xf9, 0xf7, 0x03, 0x00, 0xaa,
-        0x9f, 0x22, 0x00, 0xf9, 0x08, 0x05, 0x00, 0x11,
-        0xc8, 0x36, 0x00, 0xb9, 0x08, 0x03, 0x40, 0xb9,
+        0xf3, 0x03, 0x00, 0xaa, 0x08, 0x05, 0x00, 0x11,
+        0xc8, 0x36, 0x00, 0xb9, 0xe8, 0x02, 0x40, 0xb9,
         0x08, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x08, 0x03, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x18, 0xaa,
+        0xe8, 0x02, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x17, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xa0, 0x7a, 0x7a, 0xf8, 0x08, 0x00, 0x40, 0xb9,
-        0xe8, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x08, 0x00, 0x00, 0xb9, 0x81, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x17, 0x01, 0x00, 0xb4,
-        0x28, 0x7f, 0x40, 0x93, 0x77, 0x7a, 0x3a, 0xf8,
-        0x75, 0x0e, 0x08, 0x8b, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0xf5, 0x03, 0x13, 0xaa,
+        0x88, 0x22, 0x40, 0xf9, 0x08, 0x0d, 0x18, 0x8b,
+        0x88, 0x22, 0x00, 0xf9, 0xa0, 0x7a, 0x78, 0xf8,
+        0x08, 0x00, 0x40, 0xb9, 0xe8, 0x00, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
+        0x81, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0xd3, 0x00, 0x00, 0xb4, 0xb3, 0x86, 0x00, 0xf8,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPARG
@@ -3661,11 +3480,11 @@ emit__CALL_BUILTIN_O(
     patch_aarch64_12x(code + 0x10, (uintptr_t)data);
     patch_aarch64_21rx(code + 0x38, (uintptr_t)data + 0x8);
     patch_aarch64_12x(code + 0x48, (uintptr_t)data + 0x8);
-    patch_aarch64_21rx(code + 0xc0, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0xc8, (uintptr_t)data + 0x10);
-    patch_aarch64_33rx(code + 0xe8, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x108, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x110, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_21rx(code + 0xb8, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0xc0, (uintptr_t)data + 0x10);
+    patch_aarch64_33rx(code + 0xec, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x10c, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x114, state->instruction_starts[instruction->jump_target]);
     patch_aarch64_26r(code + 0x11c, state->instruction_starts[instruction->error_target]);
 }
 
@@ -3719,10 +3538,12 @@ emit__CALL_INTRINSIC_1(
     // 74: d63f0100      blr     x8
     // 78: aa1703e0      mov     x0, x23
     // 7c: b5fffef7      cbnz    x23, 0x58 <_JIT_ENTRY+0x58>
-    // 80: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 84: 14000000      b       0x84 <_JIT_ENTRY+0x84>
-    // 0000000000000084:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[136] = {
+    // 80: d10022b5      sub     x21, x21, #0x8
+    // 84: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 88: 14000000      b       0x88 <_JIT_ENTRY+0x88>
+    // 0000000000000088:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 8c: 00 00 00 00
+    const unsigned char code_body[144] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0x09, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x16, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x29, 0x01, 0x40, 0xf9,
@@ -3739,7 +3560,8 @@ emit__CALL_INTRINSIC_1(
         0xf7, 0x03, 0x00, 0xaa, 0xe0, 0x03, 0x13, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
         0xe0, 0x03, 0x17, 0xaa, 0xf7, 0xfe, 0xff, 0xb5,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0xb5, 0x22, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
     // 8: &_PyIntrinsics_UnaryFunctions+0x0
@@ -3761,7 +3583,7 @@ emit__CALL_INTRINSIC_1(
     patch_aarch64_26r(code + 0x60, (uintptr_t)code + sizeof(code_body));
     patch_aarch64_21rx(code + 0x64, (uintptr_t)data + 0x10);
     patch_aarch64_12x(code + 0x70, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x84, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0x88, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -3786,15 +3608,15 @@ emit__CALL_INTRINSIC_2(
     // 14: f9400129      ldr     x9, [x9]
     // 0000000000000014:  R_AARCH64_LD64_GOT_LO12_NC   _PyIntrinsics_BinaryFunctions
     // 18: 910003fd      mov     x29, sp
-    // 1c: a97f66b8      ldp     x24, x25, [x21, #-0x10]
+    // 1c: a97f4eb8      ldp     x24, x19, [x21, #-0x10]
     // 20: f9002295      str     x21, [x20, #0x40]
     // 24: 92403d08      and     x8, x8, #0xffff
     // 28: d37ced08      lsl     x8, x8, #4
     // 2c: aa1803e1      mov     x1, x24
-    // 30: aa1903e2      mov     x2, x25
+    // 30: aa1303e2      mov     x2, x19
     // 34: f8686928      ldr     x8, [x9, x8]
     // 38: d63f0100      blr     x8
-    // 3c: f9402293      ldr     x19, [x20, #0x40]
+    // 3c: f9402299      ldr     x25, [x20, #0x40]
     // 40: f900229f      str     xzr, [x20, #0x40]
     // 44: aa0003f7      mov     x23, x0
     // 48: b9400308      ldr     w8, [x24]
@@ -3808,25 +3630,25 @@ emit__CALL_INTRINSIC_2(
     // 64: f9400108      ldr     x8, [x8]
     // 0000000000000064:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 68: d63f0100      blr     x8
-    // 6c: b9400328      ldr     w8, [x25]
+    // 6c: b9400268      ldr     w8, [x19]
     // 70: 37f80088      tbnz    w8, #0x1f, 0x80 <_JIT_ENTRY+0x80>
     // 74: 71000508      subs    w8, w8, #0x1
-    // 78: b9000328      str     w8, [x25]
+    // 78: b9000268      str     w8, [x19]
     // 7c: 540000c0      b.eq    0x94 <_JIT_ENTRY+0x94>
     // 80: b4000157      cbz     x23, 0xa8 <_JIT_ENTRY+0xa8>
-    // 84: d1002275      sub     x21, x19, #0x8
-    // 88: f81f0277      stur    x23, [x19, #-0x10]
+    // 84: d1002335      sub     x21, x25, #0x8
+    // 88: f81f0337      stur    x23, [x25, #-0x10]
     // 8c: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 90: 14000000      b       0x90 <_JIT_ENTRY+0x90>
     // 0000000000000090:  R_AARCH64_JUMP26     _JIT_CONTINUE
     // 94: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000094:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 98: aa1903e0      mov     x0, x25
+    // 98: aa1303e0      mov     x0, x19
     // 9c: f9400108      ldr     x8, [x8]
     // 000000000000009c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // a0: d63f0100      blr     x8
     // a4: b5ffff17      cbnz    x23, 0x84 <_JIT_ENTRY+0x84>
-    // a8: aa1303f5      mov     x21, x19
+    // a8: d1004335      sub     x21, x25, #0x10
     // ac: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // b0: 14000000      b       0xb0 <_JIT_ENTRY+0xb0>
     // 00000000000000b0:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
@@ -3835,25 +3657,25 @@ emit__CALL_INTRINSIC_2(
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0x09, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x16, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x29, 0x01, 0x40, 0xf9,
-        0xfd, 0x03, 0x00, 0x91, 0xb8, 0x66, 0x7f, 0xa9,
+        0xfd, 0x03, 0x00, 0x91, 0xb8, 0x4e, 0x7f, 0xa9,
         0x95, 0x22, 0x00, 0xf9, 0x08, 0x3d, 0x40, 0x92,
         0x08, 0xed, 0x7c, 0xd3, 0xe1, 0x03, 0x18, 0xaa,
-        0xe2, 0x03, 0x19, 0xaa, 0x28, 0x69, 0x68, 0xf8,
-        0x00, 0x01, 0x3f, 0xd6, 0x93, 0x22, 0x40, 0xf9,
+        0xe2, 0x03, 0x13, 0xaa, 0x28, 0x69, 0x68, 0xf8,
+        0x00, 0x01, 0x3f, 0xd6, 0x99, 0x22, 0x40, 0xf9,
         0x9f, 0x22, 0x00, 0xf9, 0xf7, 0x03, 0x00, 0xaa,
         0x08, 0x03, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
         0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
         0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x28, 0x03, 0x40, 0xb9,
+        0x00, 0x01, 0x3f, 0xd6, 0x68, 0x02, 0x40, 0xb9,
         0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x28, 0x03, 0x00, 0xb9, 0xc0, 0x00, 0x00, 0x54,
-        0x57, 0x01, 0x00, 0xb4, 0x75, 0x22, 0x00, 0xd1,
-        0x77, 0x02, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x68, 0x02, 0x00, 0xb9, 0xc0, 0x00, 0x00, 0x54,
+        0x57, 0x01, 0x00, 0xb4, 0x35, 0x23, 0x00, 0xd1,
+        0x37, 0x03, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x19, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
         0x00, 0x01, 0x3f, 0xd6, 0x17, 0xff, 0xff, 0xb5,
-        0xf5, 0x03, 0x13, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x35, 0x43, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
@@ -3908,7 +3730,7 @@ emit__CALL_ISINSTANCE(
     // 2c: 7100095f      cmp     w10, #0x2
     // 30: 54000141      b.ne    0x58 <_JIT_ENTRY+0x58>
     // 34: 9280002a      mov     x10, #-0x2              // =-2
-    // 38: 528cd90b      mov     w11, #0x66c8            // =26312
+    // 38: 528ce00b      mov     w11, #0x6700            // =26368
     // 3c: cb282158      sub     x24, x10, w8, uxth
     // 40: f9400aca      ldr     x10, [x22, #0x10]
     // 44: 72a0006b      movk    w11, #0x3, lsl #16
@@ -4009,7 +3831,7 @@ emit__CALL_ISINSTANCE(
         0x7f, 0x01, 0x00, 0xf1, 0x4a, 0x05, 0x8a, 0x1a,
         0x29, 0x11, 0x9f, 0x9a, 0x5f, 0x09, 0x00, 0x71,
         0x41, 0x01, 0x00, 0x54, 0x2a, 0x00, 0x80, 0x92,
-        0x0b, 0xd9, 0x8c, 0x52, 0x58, 0x21, 0x28, 0xcb,
+        0x0b, 0xe0, 0x8c, 0x52, 0x58, 0x21, 0x28, 0xcb,
         0xca, 0x0a, 0x40, 0xf9, 0x6b, 0x00, 0xa0, 0x72,
         0xac, 0x7a, 0x78, 0xf8, 0x4a, 0x69, 0x6b, 0xf8,
         0x5f, 0x01, 0x0c, 0xeb, 0x60, 0x00, 0x00, 0x54,
@@ -4099,159 +3921,165 @@ emit__CALL_KW_NON_PY(
     // 4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000004:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
     // 8: 9280002a      mov     x10, #-0x2              // =-2
-    // c: 9280004b      mov     x11, #-0x3              // =-3
+    // c: 910003fd      mov     x29, sp
     // 10: f9400108      ldr     x8, [x8]
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 14: f85f82b8      ldur    x24, [x21, #-0x8]
-    // 18: 910003fd      mov     x29, sp
-    // 1c: 92403d09      and     x9, x8, #0xffff
-    // 20: 12003d1b      and     w27, w8, #0xffff
-    // 24: b9401308      ldr     w8, [x24, #0x10]
-    // 28: cb090159      sub     x25, x10, x9
-    // 2c: cb09017a      sub     x26, x11, x9
-    // 30: 928000e9      mov     x9, #-0x8               // =-8
-    // 34: f8797aaa      ldr     x10, [x21, x25, lsl #3]
-    // 38: f87a7aa0      ldr     x0, [x21, x26, lsl #3]
-    // 3c: f9002295      str     x21, [x20, #0x40]
-    // 40: 9000000b      adrp    x11, 0x0 <_JIT_ENTRY>
-    // 0000000000000040:  R_AARCH64_ADR_GOT_PAGE       PyObject_Vectorcall
-    // 44: aa1803e3      mov     x3, x24
-    // 48: f100015f      cmp     x10, #0x0
-    // 4c: 2a3b03ea      mvn     w10, w27
-    // 50: f940016b      ldr     x11, [x11]
-    // 0000000000000050:  R_AARCH64_LD64_GOT_LO12_NC   PyObject_Vectorcall
-    // 54: 1a9b076c      cinc    w12, w27, ne
-    // 58: 8b2aceaa      add     x10, x21, w10, sxtw #3
-    // 5c: 9a9f1129      csel    x9, x9, xzr, ne
-    // 60: 4b080188      sub     w8, w12, w8
-    // 64: 93407d08      sxtw    x8, w8
-    // 68: 8b090141      add     x1, x10, x9
+    // 14: f85f82b7      ldur    x23, [x21, #-0x8]
+    // 18: 92403d09      and     x9, x8, #0xffff
+    // 1c: 12003d1a      and     w26, w8, #0xffff
+    // 20: b94012e8      ldr     w8, [x23, #0x10]
+    // 24: cb090158      sub     x24, x10, x9
+    // 28: 2a3a03f9      mvn     w25, w26
+    // 2c: aa1703e3      mov     x3, x23
+    // 30: f8787aaa      ldr     x10, [x21, x24, lsl #3]
+    // 34: 8b39ceac      add     x12, x21, w25, sxtw #3
+    // 38: f100015f      cmp     x10, #0x0
+    // 3c: 9280004a      mov     x10, #-0x3              // =-3
+    // 40: 1a9a074b      cinc    w11, w26, ne
+    // 44: cb09015b      sub     x27, x10, x9
+    // 48: 928000e9      mov     x9, #-0x8               // =-8
+    // 4c: 4b080168      sub     w8, w11, w8
+    // 50: f87b7aa0      ldr     x0, [x21, x27, lsl #3]
+    // 54: f9002295      str     x21, [x20, #0x40]
+    // 58: 93407d08      sxtw    x8, w8
+    // 5c: 9000000a      adrp    x10, 0x0 <_JIT_ENTRY>
+    // 000000000000005c:  R_AARCH64_ADR_GOT_PAGE       PyObject_Vectorcall
+    // 60: 9a9f1129      csel    x9, x9, xzr, ne
+    // 64: f940014a      ldr     x10, [x10]
+    // 0000000000000064:  R_AARCH64_LD64_GOT_LO12_NC   PyObject_Vectorcall
+    // 68: 8b090181      add     x1, x12, x9
     // 6c: b2410102      orr     x2, x8, #0x8000000000000000
-    // 70: d63f0160      blr     x11
-    // 74: f9402293      ldr     x19, [x20, #0x40]
-    // 78: f900229f      str     xzr, [x20, #0x40]
-    // 7c: aa0003f7      mov     x23, x0
-    // 80: b9400308      ldr     w8, [x24]
-    // 84: 37f80108      tbnz    w8, #0x1f, 0xa4 <_JIT_ENTRY+0xa4>
-    // 88: 71000508      subs    w8, w8, #0x1
-    // 8c: b9000308      str     w8, [x24]
-    // 90: 540000a1      b.ne    0xa4 <_JIT_ENTRY+0xa4>
-    // 94: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000094:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 98: aa1803e0      mov     x0, x24
-    // 9c: f9400108      ldr     x8, [x8]
-    // 000000000000009c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // a0: d63f0100      blr     x8
-    // a4: f87a7aa0      ldr     x0, [x21, x26, lsl #3]
-    // a8: b9400008      ldr     w8, [x0]
-    // ac: 37f800e8      tbnz    w8, #0x1f, 0xc8 <_JIT_ENTRY+0xc8>
-    // b0: 71000508      subs    w8, w8, #0x1
-    // b4: b9000008      str     w8, [x0]
-    // b8: 54000081      b.ne    0xc8 <_JIT_ENTRY+0xc8>
-    // bc: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000bc:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // c0: f9400108      ldr     x8, [x8]
-    // 00000000000000c0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // c4: d63f0100      blr     x8
-    // c8: f8797aa0      ldr     x0, [x21, x25, lsl #3]
-    // cc: b4000120      cbz     x0, 0xf0 <_JIT_ENTRY+0xf0>
-    // d0: b9400008      ldr     w8, [x0]
-    // d4: 37f800e8      tbnz    w8, #0x1f, 0xf0 <_JIT_ENTRY+0xf0>
-    // d8: 71000508      subs    w8, w8, #0x1
-    // dc: b9000008      str     w8, [x0]
-    // e0: 54000081      b.ne    0xf0 <_JIT_ENTRY+0xf0>
-    // e4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000e4:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // e8: f9400108      ldr     x8, [x8]
-    // 00000000000000e8:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // ec: d63f0100      blr     x8
+    // 70: d63f0140      blr     x10
+    // 74: f9402288      ldr     x8, [x20, #0x40]
+    // 78: aa0003f3      mov     x19, x0
+    // 7c: d1002108      sub     x8, x8, #0x8
+    // 80: f9002288      str     x8, [x20, #0x40]
+    // 84: b94002e8      ldr     w8, [x23]
+    // 88: 37f80108      tbnz    w8, #0x1f, 0xa8 <_JIT_ENTRY+0xa8>
+    // 8c: 71000508      subs    w8, w8, #0x1
+    // 90: b90002e8      str     w8, [x23]
+    // 94: 540000a1      b.ne    0xa8 <_JIT_ENTRY+0xa8>
+    // 98: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000098:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 9c: aa1703e0      mov     x0, x23
+    // a0: f9400108      ldr     x8, [x8]
+    // 00000000000000a0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // a4: d63f0100      blr     x8
+    // a8: f9402297      ldr     x23, [x20, #0x40]
+    // ac: f900229f      str     xzr, [x20, #0x40]
+    // b0: f87b7aa0      ldr     x0, [x21, x27, lsl #3]
+    // b4: b9400008      ldr     w8, [x0]
+    // b8: 37f800e8      tbnz    w8, #0x1f, 0xd4 <_JIT_ENTRY+0xd4>
+    // bc: 71000508      subs    w8, w8, #0x1
+    // c0: b9000008      str     w8, [x0]
+    // c4: 54000081      b.ne    0xd4 <_JIT_ENTRY+0xd4>
+    // c8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000c8:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // cc: f9400108      ldr     x8, [x8]
+    // 00000000000000cc:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // d0: d63f0100      blr     x8
+    // d4: f8787aa0      ldr     x0, [x21, x24, lsl #3]
+    // d8: b4000120      cbz     x0, 0xfc <_JIT_ENTRY+0xfc>
+    // dc: b9400008      ldr     w8, [x0]
+    // e0: 37f800e8      tbnz    w8, #0x1f, 0xfc <_JIT_ENTRY+0xfc>
+    // e4: 71000508      subs    w8, w8, #0x1
+    // e8: b9000008      str     w8, [x0]
+    // ec: 54000081      b.ne    0xfc <_JIT_ENTRY+0xfc>
     // f0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000f0:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
+    // 00000000000000f0:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
     // f4: f9400108      ldr     x8, [x8]
-    // 00000000000000f4:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // f8: 72003d1f      tst     w8, #0xffff
-    // fc: 540002c0      b.eq    0x154 <_JIT_ENTRY+0x154>
-    // 100: 4b1b03e9      neg     w9, w27
-    // 104: 937d7d29      sbfiz   x9, x9, #3, #32
-    // 108: 8b282d29      add     x9, x9, w8, uxth #3
-    // 10c: 92403d08      and     x8, x8, #0xffff
-    // 110: 91000518      add     x24, x8, #0x1
-    // 114: 8b150129      add     x9, x9, x21
-    // 118: 90000015      adrp    x21, 0x0 <_JIT_ENTRY>
-    // 0000000000000118:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 11c: f94002b5      ldr     x21, [x21]
-    // 000000000000011c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 120: d100413b      sub     x27, x9, #0x10
-    // 124: 14000004      b       0x134 <_JIT_ENTRY+0x134>
-    // 128: d1000718      sub     x24, x24, #0x1
-    // 12c: f100071f      cmp     x24, #0x1
-    // 130: 54000129      b.ls    0x154 <_JIT_ENTRY+0x154>
-    // 134: f85f8760      ldr     x0, [x27], #-0x8
-    // 138: b9400008      ldr     w8, [x0]
-    // 13c: 37ffff68      tbnz    w8, #0x1f, 0x128 <_JIT_ENTRY+0x128>
-    // 140: 71000508      subs    w8, w8, #0x1
-    // 144: b9000008      str     w8, [x0]
-    // 148: 54ffff01      b.ne    0x128 <_JIT_ENTRY+0x128>
-    // 14c: d63f02a0      blr     x21
-    // 150: 17fffff6      b       0x128 <_JIT_ENTRY+0x128>
-    // 154: b40000b7      cbz     x23, 0x168 <_JIT_ENTRY+0x168>
-    // 158: 8b190e75      add     x21, x19, x25, lsl #3
-    // 15c: f83a7a77      str     x23, [x19, x26, lsl #3]
-    // 160: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 164: 14000000      b       0x164 <_JIT_ENTRY+0x164>
-    // 0000000000000164:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 168: aa1303f5      mov     x21, x19
-    // 16c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 170: 14000000      b       0x170 <_JIT_ENTRY+0x170>
-    // 0000000000000170:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 174: 00 00 00 00
-    const unsigned char code_body[376] = {
+    // 00000000000000f4:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // f8: d63f0100      blr     x8
+    // fc: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000fc:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
+    // 100: f9400108      ldr     x8, [x8]
+    // 0000000000000100:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
+    // 104: 72003d1f      tst     w8, #0xffff
+    // 108: 540002c0      b.eq    0x160 <_JIT_ENTRY+0x160>
+    // 10c: 4b1a03e9      neg     w9, w26
+    // 110: 937d7d29      sbfiz   x9, x9, #3, #32
+    // 114: 8b282d29      add     x9, x9, w8, uxth #3
+    // 118: 92403d08      and     x8, x8, #0xffff
+    // 11c: 9100051a      add     x26, x8, #0x1
+    // 120: 8b150129      add     x9, x9, x21
+    // 124: 90000015      adrp    x21, 0x0 <_JIT_ENTRY>
+    // 0000000000000124:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 128: f94002b5      ldr     x21, [x21]
+    // 0000000000000128:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 12c: d100413b      sub     x27, x9, #0x10
+    // 130: 14000004      b       0x140 <_JIT_ENTRY+0x140>
+    // 134: d100075a      sub     x26, x26, #0x1
+    // 138: f100075f      cmp     x26, #0x1
+    // 13c: 54000129      b.ls    0x160 <_JIT_ENTRY+0x160>
+    // 140: f85f8760      ldr     x0, [x27], #-0x8
+    // 144: b9400008      ldr     w8, [x0]
+    // 148: 37ffff68      tbnz    w8, #0x1f, 0x134 <_JIT_ENTRY+0x134>
+    // 14c: 71000508      subs    w8, w8, #0x1
+    // 150: b9000008      str     w8, [x0]
+    // 154: 54ffff01      b.ne    0x134 <_JIT_ENTRY+0x134>
+    // 158: d63f02a0      blr     x21
+    // 15c: 17fffff6      b       0x134 <_JIT_ENTRY+0x134>
+    // 160: b40000d3      cbz     x19, 0x178 <_JIT_ENTRY+0x178>
+    // 164: 93407f28      sxtw    x8, w25
+    // 168: f8387af3      str     x19, [x23, x24, lsl #3]
+    // 16c: 8b080ef5      add     x21, x23, x8, lsl #3
+    // 170: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 174: 14000000      b       0x174 <_JIT_ENTRY+0x174>
+    // 0000000000000174:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 178: 8b180ef5      add     x21, x23, x24, lsl #3
+    // 17c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 180: 14000000      b       0x180 <_JIT_ENTRY+0x180>
+    // 0000000000000180:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 184: 00 00 00 00
+    const unsigned char code_body[392] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0x2a, 0x00, 0x80, 0x92, 0x4b, 0x00, 0x80, 0x92,
-        0x08, 0x01, 0x40, 0xf9, 0xb8, 0x82, 0x5f, 0xf8,
-        0xfd, 0x03, 0x00, 0x91, 0x09, 0x3d, 0x40, 0x92,
-        0x1b, 0x3d, 0x00, 0x12, 0x08, 0x13, 0x40, 0xb9,
-        0x59, 0x01, 0x09, 0xcb, 0x7a, 0x01, 0x09, 0xcb,
-        0xe9, 0x00, 0x80, 0x92, 0xaa, 0x7a, 0x79, 0xf8,
-        0xa0, 0x7a, 0x7a, 0xf8, 0x95, 0x22, 0x00, 0xf9,
-        0x0b, 0x00, 0x00, 0x90, 0xe3, 0x03, 0x18, 0xaa,
-        0x5f, 0x01, 0x00, 0xf1, 0xea, 0x03, 0x3b, 0x2a,
-        0x6b, 0x01, 0x40, 0xf9, 0x6c, 0x07, 0x9b, 0x1a,
-        0xaa, 0xce, 0x2a, 0x8b, 0x29, 0x11, 0x9f, 0x9a,
-        0x88, 0x01, 0x08, 0x4b, 0x08, 0x7d, 0x40, 0x93,
-        0x41, 0x01, 0x09, 0x8b, 0x02, 0x01, 0x41, 0xb2,
-        0x60, 0x01, 0x3f, 0xd6, 0x93, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xf7, 0x03, 0x00, 0xaa,
-        0x08, 0x03, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
-        0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xa0, 0x7a, 0x7a, 0xf8,
-        0x08, 0x00, 0x40, 0xb9, 0xe8, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x81, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
+        0x2a, 0x00, 0x80, 0x92, 0xfd, 0x03, 0x00, 0x91,
+        0x08, 0x01, 0x40, 0xf9, 0xb7, 0x82, 0x5f, 0xf8,
+        0x09, 0x3d, 0x40, 0x92, 0x1a, 0x3d, 0x00, 0x12,
+        0xe8, 0x12, 0x40, 0xb9, 0x58, 0x01, 0x09, 0xcb,
+        0xf9, 0x03, 0x3a, 0x2a, 0xe3, 0x03, 0x17, 0xaa,
+        0xaa, 0x7a, 0x78, 0xf8, 0xac, 0xce, 0x39, 0x8b,
+        0x5f, 0x01, 0x00, 0xf1, 0x4a, 0x00, 0x80, 0x92,
+        0x4b, 0x07, 0x9a, 0x1a, 0x5b, 0x01, 0x09, 0xcb,
+        0xe9, 0x00, 0x80, 0x92, 0x68, 0x01, 0x08, 0x4b,
+        0xa0, 0x7a, 0x7b, 0xf8, 0x95, 0x22, 0x00, 0xf9,
+        0x08, 0x7d, 0x40, 0x93, 0x0a, 0x00, 0x00, 0x90,
+        0x29, 0x11, 0x9f, 0x9a, 0x4a, 0x01, 0x40, 0xf9,
+        0x81, 0x01, 0x09, 0x8b, 0x02, 0x01, 0x41, 0xb2,
+        0x40, 0x01, 0x3f, 0xd6, 0x88, 0x22, 0x40, 0xf9,
+        0xf3, 0x03, 0x00, 0xaa, 0x08, 0x21, 0x00, 0xd1,
+        0x88, 0x22, 0x00, 0xf9, 0xe8, 0x02, 0x40, 0xb9,
+        0x08, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0xe8, 0x02, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x17, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xa0, 0x7a, 0x79, 0xf8, 0x20, 0x01, 0x00, 0xb4,
-        0x08, 0x00, 0x40, 0xb9, 0xe8, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x81, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0x97, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0xa0, 0x7a, 0x7b, 0xf8, 0x08, 0x00, 0x40, 0xb9,
+        0xe8, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x08, 0x00, 0x00, 0xb9, 0x81, 0x00, 0x00, 0x54,
         0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0x1f, 0x3d, 0x00, 0x72, 0xc0, 0x02, 0x00, 0x54,
-        0xe9, 0x03, 0x1b, 0x4b, 0x29, 0x7d, 0x7d, 0x93,
-        0x29, 0x2d, 0x28, 0x8b, 0x08, 0x3d, 0x40, 0x92,
-        0x18, 0x05, 0x00, 0x91, 0x29, 0x01, 0x15, 0x8b,
-        0x15, 0x00, 0x00, 0x90, 0xb5, 0x02, 0x40, 0xf9,
-        0x3b, 0x41, 0x00, 0xd1, 0x04, 0x00, 0x00, 0x14,
-        0x18, 0x07, 0x00, 0xd1, 0x1f, 0x07, 0x00, 0xf1,
-        0x29, 0x01, 0x00, 0x54, 0x60, 0x87, 0x5f, 0xf8,
-        0x08, 0x00, 0x40, 0xb9, 0x68, 0xff, 0xff, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x01, 0xff, 0xff, 0x54, 0xa0, 0x02, 0x3f, 0xd6,
-        0xf6, 0xff, 0xff, 0x17, 0xb7, 0x00, 0x00, 0xb4,
-        0x75, 0x0e, 0x19, 0x8b, 0x77, 0x7a, 0x3a, 0xf8,
+        0x00, 0x01, 0x3f, 0xd6, 0xa0, 0x7a, 0x78, 0xf8,
+        0x20, 0x01, 0x00, 0xb4, 0x08, 0x00, 0x40, 0xb9,
+        0xe8, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x08, 0x00, 0x00, 0xb9, 0x81, 0x00, 0x00, 0x54,
+        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x08, 0x00, 0x00, 0x90,
+        0x08, 0x01, 0x40, 0xf9, 0x1f, 0x3d, 0x00, 0x72,
+        0xc0, 0x02, 0x00, 0x54, 0xe9, 0x03, 0x1a, 0x4b,
+        0x29, 0x7d, 0x7d, 0x93, 0x29, 0x2d, 0x28, 0x8b,
+        0x08, 0x3d, 0x40, 0x92, 0x1a, 0x05, 0x00, 0x91,
+        0x29, 0x01, 0x15, 0x8b, 0x15, 0x00, 0x00, 0x90,
+        0xb5, 0x02, 0x40, 0xf9, 0x3b, 0x41, 0x00, 0xd1,
+        0x04, 0x00, 0x00, 0x14, 0x5a, 0x07, 0x00, 0xd1,
+        0x5f, 0x07, 0x00, 0xf1, 0x29, 0x01, 0x00, 0x54,
+        0x60, 0x87, 0x5f, 0xf8, 0x08, 0x00, 0x40, 0xb9,
+        0x68, 0xff, 0xff, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x08, 0x00, 0x00, 0xb9, 0x01, 0xff, 0xff, 0x54,
+        0xa0, 0x02, 0x3f, 0xd6, 0xf6, 0xff, 0xff, 0x17,
+        0xd3, 0x00, 0x00, 0xb4, 0x28, 0x7f, 0x40, 0x93,
+        0xf3, 0x7a, 0x38, 0xf8, 0xf5, 0x0e, 0x08, 0x8b,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0xf5, 0x03, 0x13, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
+        0xf5, 0x0e, 0x18, 0x8b, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
@@ -4269,16 +4097,16 @@ emit__CALL_KW_NON_PY(
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_21rx(code + 0x4, (uintptr_t)data);
     patch_aarch64_12x(code + 0x10, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x40, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x50, (uintptr_t)data + 0x8);
-    patch_aarch64_21rx(code + 0x94, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x9c, (uintptr_t)data + 0x10);
-    patch_aarch64_33rx(code + 0xbc, (uintptr_t)data + 0x10);
-    patch_aarch64_33rx(code + 0xe4, (uintptr_t)data + 0x10);
-    patch_aarch64_33rx(code + 0xf0, (uintptr_t)data);
-    patch_aarch64_33rx(code + 0x118, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x164, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x170, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0x5c, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x64, (uintptr_t)data + 0x8);
+    patch_aarch64_21rx(code + 0x98, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0xa0, (uintptr_t)data + 0x10);
+    patch_aarch64_33rx(code + 0xc8, (uintptr_t)data + 0x10);
+    patch_aarch64_33rx(code + 0xf0, (uintptr_t)data + 0x10);
+    patch_aarch64_33rx(code + 0xfc, (uintptr_t)data);
+    patch_aarch64_33rx(code + 0x124, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x174, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x180, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -4300,15 +4128,15 @@ emit__CALL_LEN(
     // 10: f9400108      ldr     x8, [x8]
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
     // 14: 12003d0a      and     w10, w8, #0xffff
-    // 18: 2a2a03f9      mvn     w25, w10
-    // 1c: f879daab      ldr     x11, [x21, w25, sxtw #3]
+    // 18: 2a2a03eb      mvn     w11, w10
+    // 1c: f86bdaab      ldr     x11, [x21, w11, sxtw #3]
     // 20: f100017f      cmp     x11, #0x0
     // 24: 1a8a054a      cinc    w10, w10, ne
     // 28: 9a9f1129      csel    x9, x9, xzr, ne
     // 2c: 7100055f      cmp     w10, #0x1
     // 30: 54000141      b.ne    0x58 <_JIT_ENTRY+0x58>
     // 34: 9280002a      mov     x10, #-0x2              // =-2
-    // 38: 528cda0b      mov     w11, #0x66d0            // =26320
+    // 38: 528ce10b      mov     w11, #0x6708            // =26376
     // 3c: cb282158      sub     x24, x10, w8, uxth
     // 40: f9400aca      ldr     x10, [x22, #0x10]
     // 44: 72a0006b      movk    w11, #0x3, lsl #16
@@ -4320,116 +4148,109 @@ emit__CALL_LEN(
     // 5c: 14000000      b       0x5c <_JIT_ENTRY+0x5c>
     // 000000000000005c:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
     // 60: cb282ea8      sub     x8, x21, w8, uxth #3
-    // 64: f8696917      ldr     x23, [x8, x9]
+    // 64: f8696913      ldr     x19, [x8, x9]
     // 68: f9002295      str     x21, [x20, #0x40]
     // 6c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 000000000000006c:  R_AARCH64_ADR_GOT_PAGE       PyObject_Size
     // 70: f9400108      ldr     x8, [x8]
     // 0000000000000070:  R_AARCH64_LD64_GOT_LO12_NC   PyObject_Size
-    // 74: aa1703e0      mov     x0, x23
+    // 74: aa1303e0      mov     x0, x19
     // 78: d63f0100      blr     x8
-    // 7c: f9402293      ldr     x19, [x20, #0x40]
+    // 7c: f9402297      ldr     x23, [x20, #0x40]
     // 80: f900229f      str     xzr, [x20, #0x40]
-    // 84: b7f80420      tbnz    x0, #0x3f, 0x108 <_JIT_ENTRY+0x108>
+    // 84: b7f804a0      tbnz    x0, #0x3f, 0x118 <_JIT_ENTRY+0x118>
     // 88: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000088:  R_AARCH64_ADR_GOT_PAGE       PyLong_FromSsize_t
     // 8c: f9400108      ldr     x8, [x8]
     // 000000000000008c:  R_AARCH64_LD64_GOT_LO12_NC   PyLong_FromSsize_t
     // 90: d63f0100      blr     x8
-    // 94: b4000400      cbz     x0, 0x114 <_JIT_ENTRY+0x114>
-    // 98: b94002e8      ldr     w8, [x23]
-    // 9c: 37f80148      tbnz    w8, #0x1f, 0xc4 <_JIT_ENTRY+0xc4>
-    // a0: 71000508      subs    w8, w8, #0x1
-    // a4: b90002e8      str     w8, [x23]
-    // a8: 540000e1      b.ne    0xc4 <_JIT_ENTRY+0xc4>
-    // ac: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000ac:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // b0: aa0003fa      mov     x26, x0
-    // b4: aa1703e0      mov     x0, x23
-    // b8: f9400108      ldr     x8, [x8]
-    // 00000000000000b8:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // bc: d63f0100      blr     x8
-    // c0: aa1a03e0      mov     x0, x26
-    // c4: f8787aa8      ldr     x8, [x21, x24, lsl #3]
-    // c8: 93407f35      sxtw    x21, w25
-    // cc: b9400109      ldr     w9, [x8]
-    // d0: 37f80149      tbnz    w9, #0x1f, 0xf8 <_JIT_ENTRY+0xf8>
-    // d4: 71000529      subs    w9, w9, #0x1
-    // d8: b9000109      str     w9, [x8]
-    // dc: 540000e1      b.ne    0xf8 <_JIT_ENTRY+0xf8>
-    // e0: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 00000000000000e0:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // e4: aa0003f7      mov     x23, x0
-    // e8: aa0803e0      mov     x0, x8
-    // ec: f9400129      ldr     x9, [x9]
-    // 00000000000000ec:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // f0: d63f0120      blr     x9
-    // f4: aa1703e0      mov     x0, x23
-    // f8: 8b150e75      add     x21, x19, x21, lsl #3
-    // fc: f8387a60      str     x0, [x19, x24, lsl #3]
-    // 100: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 104: 14000000      b       0x104 <_JIT_ENTRY+0x104>
-    // 0000000000000104:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 108: aa1303f5      mov     x21, x19
-    // 10c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 110: 14000000      b       0x110 <_JIT_ENTRY+0x110>
-    // 0000000000000110:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 114: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000114:  R_AARCH64_ADR_GOT_PAGE       _JIT_EXECUTOR
-    // 118: f9400108      ldr     x8, [x8]
-    // 0000000000000118:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_EXECUTOR
-    // 11c: f9002293      str     x19, [x20, #0x40]
-    // 120: f9008ac8      str     x8, [x22, #0x110]
-    // 124: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 128: d65f03c0      ret
-    // 12c: 00 00 00 00
-    const unsigned char code_body[304] = {
+    // 94: b4000420      cbz     x0, 0x118 <_JIT_ENTRY+0x118>
+    // 98: f9002297      str     x23, [x20, #0x40]
+    // 9c: b9400268      ldr     w8, [x19]
+    // a0: 37f80148      tbnz    w8, #0x1f, 0xc8 <_JIT_ENTRY+0xc8>
+    // a4: 71000508      subs    w8, w8, #0x1
+    // a8: b9000268      str     w8, [x19]
+    // ac: 540000e1      b.ne    0xc8 <_JIT_ENTRY+0xc8>
+    // b0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000b0:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // b4: aa0003f7      mov     x23, x0
+    // b8: aa1303e0      mov     x0, x19
+    // bc: f9400108      ldr     x8, [x8]
+    // 00000000000000bc:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // c0: d63f0100      blr     x8
+    // c4: aa1703e0      mov     x0, x23
+    // c8: f9402288      ldr     x8, [x20, #0x40]
+    // cc: 8b180d08      add     x8, x8, x24, lsl #3
+    // d0: f9002288      str     x8, [x20, #0x40]
+    // d4: f8787aa8      ldr     x8, [x21, x24, lsl #3]
+    // d8: b9400109      ldr     w9, [x8]
+    // dc: 37f80149      tbnz    w9, #0x1f, 0x104 <_JIT_ENTRY+0x104>
+    // e0: 71000529      subs    w9, w9, #0x1
+    // e4: b9000109      str     w9, [x8]
+    // e8: 540000e1      b.ne    0x104 <_JIT_ENTRY+0x104>
+    // ec: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
+    // 00000000000000ec:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // f0: aa0003f3      mov     x19, x0
+    // f4: aa0803e0      mov     x0, x8
+    // f8: f9400129      ldr     x9, [x9]
+    // 00000000000000f8:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // fc: d63f0120      blr     x9
+    // 100: aa1303e0      mov     x0, x19
+    // 104: f9402295      ldr     x21, [x20, #0x40]
+    // 108: f900229f      str     xzr, [x20, #0x40]
+    // 10c: f80086a0      str     x0, [x21], #0x8
+    // 110: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 114: 14000000      b       0x114 <_JIT_ENTRY+0x114>
+    // 0000000000000114:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 118: aa1703f5      mov     x21, x23
+    // 11c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 120: 14000000      b       0x120 <_JIT_ENTRY+0x120>
+    // 0000000000000120:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 124: 00 00 00 00
+    const unsigned char code_body[296] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0xe9, 0x00, 0x80, 0x92, 0xfd, 0x03, 0x00, 0x91,
         0x08, 0x01, 0x40, 0xf9, 0x0a, 0x3d, 0x00, 0x12,
-        0xf9, 0x03, 0x2a, 0x2a, 0xab, 0xda, 0x79, 0xf8,
+        0xeb, 0x03, 0x2a, 0x2a, 0xab, 0xda, 0x6b, 0xf8,
         0x7f, 0x01, 0x00, 0xf1, 0x4a, 0x05, 0x8a, 0x1a,
         0x29, 0x11, 0x9f, 0x9a, 0x5f, 0x05, 0x00, 0x71,
         0x41, 0x01, 0x00, 0x54, 0x2a, 0x00, 0x80, 0x92,
-        0x0b, 0xda, 0x8c, 0x52, 0x58, 0x21, 0x28, 0xcb,
+        0x0b, 0xe1, 0x8c, 0x52, 0x58, 0x21, 0x28, 0xcb,
         0xca, 0x0a, 0x40, 0xf9, 0x6b, 0x00, 0xa0, 0x72,
         0xac, 0x7a, 0x78, 0xf8, 0x4a, 0x69, 0x6b, 0xf8,
         0x5f, 0x01, 0x0c, 0xeb, 0x60, 0x00, 0x00, 0x54,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0xa8, 0x2e, 0x28, 0xcb, 0x17, 0x69, 0x69, 0xf8,
+        0xa8, 0x2e, 0x28, 0xcb, 0x13, 0x69, 0x69, 0xf8,
         0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
-        0x08, 0x01, 0x40, 0xf9, 0xe0, 0x03, 0x17, 0xaa,
-        0x00, 0x01, 0x3f, 0xd6, 0x93, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0x20, 0x04, 0xf8, 0xb7,
+        0x08, 0x01, 0x40, 0xf9, 0xe0, 0x03, 0x13, 0xaa,
+        0x00, 0x01, 0x3f, 0xd6, 0x97, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xa0, 0x04, 0xf8, 0xb7,
         0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x00, 0x04, 0x00, 0xb4,
-        0xe8, 0x02, 0x40, 0xb9, 0x48, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0xe8, 0x02, 0x00, 0xb9,
-        0xe1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0xfa, 0x03, 0x00, 0xaa, 0xe0, 0x03, 0x17, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xe0, 0x03, 0x1a, 0xaa, 0xa8, 0x7a, 0x78, 0xf8,
-        0x35, 0x7f, 0x40, 0x93, 0x09, 0x01, 0x40, 0xb9,
-        0x49, 0x01, 0xf8, 0x37, 0x29, 0x05, 0x00, 0x71,
-        0x09, 0x01, 0x00, 0xb9, 0xe1, 0x00, 0x00, 0x54,
-        0x09, 0x00, 0x00, 0x90, 0xf7, 0x03, 0x00, 0xaa,
-        0xe0, 0x03, 0x08, 0xaa, 0x29, 0x01, 0x40, 0xf9,
-        0x20, 0x01, 0x3f, 0xd6, 0xe0, 0x03, 0x17, 0xaa,
-        0x75, 0x0e, 0x15, 0x8b, 0x60, 0x7a, 0x38, 0xf8,
+        0x00, 0x01, 0x3f, 0xd6, 0x20, 0x04, 0x00, 0xb4,
+        0x97, 0x22, 0x00, 0xf9, 0x68, 0x02, 0x40, 0xb9,
+        0x48, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x68, 0x02, 0x00, 0xb9, 0xe1, 0x00, 0x00, 0x54,
+        0x08, 0x00, 0x00, 0x90, 0xf7, 0x03, 0x00, 0xaa,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0xe0, 0x03, 0x17, 0xaa,
+        0x88, 0x22, 0x40, 0xf9, 0x08, 0x0d, 0x18, 0x8b,
+        0x88, 0x22, 0x00, 0xf9, 0xa8, 0x7a, 0x78, 0xf8,
+        0x09, 0x01, 0x40, 0xb9, 0x49, 0x01, 0xf8, 0x37,
+        0x29, 0x05, 0x00, 0x71, 0x09, 0x01, 0x00, 0xb9,
+        0xe1, 0x00, 0x00, 0x54, 0x09, 0x00, 0x00, 0x90,
+        0xf3, 0x03, 0x00, 0xaa, 0xe0, 0x03, 0x08, 0xaa,
+        0x29, 0x01, 0x40, 0xf9, 0x20, 0x01, 0x3f, 0xd6,
+        0xe0, 0x03, 0x13, 0xaa, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xa0, 0x86, 0x00, 0xf8,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0xf5, 0x03, 0x13, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0x08, 0x01, 0x40, 0xf9, 0x93, 0x22, 0x00, 0xf9,
-        0xc8, 0x8a, 0x00, 0xf9, 0xfd, 0x7b, 0xc1, 0xa8,
-        0xc0, 0x03, 0x5f, 0xd6, 0x00, 0x00, 0x00, 0x00,
+        0xf5, 0x03, 0x17, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
     // 8: &PyObject_Size+0x0
     // 10: &PyLong_FromSsize_t+0x0
     // 18: &_Py_Dealloc+0x0
-    // 20: EXECUTOR
-    const unsigned char data_body[40] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    const unsigned char data_body[32] = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -4440,20 +4261,18 @@ emit__CALL_LEN(
     patch_64(data + 0x8, (uintptr_t)&PyObject_Size);
     patch_64(data + 0x10, (uintptr_t)&PyLong_FromSsize_t);
     patch_64(data + 0x18, (uintptr_t)&_Py_Dealloc);
-    patch_64(data + 0x20, (uintptr_t)executor);
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_21rx(code + 0x4, (uintptr_t)data);
     patch_aarch64_12x(code + 0x10, (uintptr_t)data);
     patch_aarch64_26r(code + 0x5c, state->instruction_starts[instruction->jump_target]);
     patch_aarch64_33rx(code + 0x6c, (uintptr_t)data + 0x8);
     patch_aarch64_33rx(code + 0x88, (uintptr_t)data + 0x10);
-    patch_aarch64_21rx(code + 0xac, (uintptr_t)data + 0x18);
-    patch_aarch64_12x(code + 0xb8, (uintptr_t)data + 0x18);
-    patch_aarch64_21rx(code + 0xe0, (uintptr_t)data + 0x18);
-    patch_aarch64_12x(code + 0xec, (uintptr_t)data + 0x18);
-    patch_aarch64_26r(code + 0x104, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x110, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_33rx(code + 0x114, (uintptr_t)data + 0x20);
+    patch_aarch64_21rx(code + 0xb0, (uintptr_t)data + 0x18);
+    patch_aarch64_12x(code + 0xbc, (uintptr_t)data + 0x18);
+    patch_aarch64_21rx(code + 0xec, (uintptr_t)data + 0x18);
+    patch_aarch64_12x(code + 0xf8, (uintptr_t)data + 0x18);
+    patch_aarch64_26r(code + 0x114, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x120, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -4467,105 +4286,117 @@ emit__CALL_LIST_APPEND(
     // Disassembly of section .text:
     //
     // 0000000000000000 <_JIT_ENTRY>:
-    // 0: 528cdb08      mov     w8, #0x66d8             // =26328
+    // 0: 528ce208      mov     w8, #0x6710             // =26384
     // 4: f9400ac9      ldr     x9, [x22, #0x10]
-    // 8: aa1503f3      mov     x19, x21
+    // 8: aa1503f8      mov     x24, x21
     // c: 72a00068      movk    w8, #0x3, lsl #16
-    // 10: f85e8e77      ldr     x23, [x19, #-0x18]!
-    // 14: f8686928      ldr     x8, [x9, x8]
-    // 18: eb17011f      cmp     x8, x23
-    // 1c: 540000a1      b.ne    0x30 <_JIT_ENTRY+0x30>
-    // 20: f9400678      ldr     x24, [x19, #0x8]
-    // 24: f9400708      ldr     x8, [x24, #0x8]
+    // 10: f85f0f17      ldr     x23, [x24, #-0x10]!
+    // 14: f85f8313      ldur    x19, [x24, #-0x8]
+    // 18: f8686928      ldr     x8, [x9, x8]
+    // 1c: eb13011f      cmp     x8, x19
+    // 20: 54000081      b.ne    0x30 <_JIT_ENTRY+0x30>
+    // 24: f94006e8      ldr     x8, [x23, #0x8]
     // 28: 3942ad08      ldrb    w8, [x8, #0xab]
     // 2c: 37080048      tbnz    w8, #0x1, 0x34 <_JIT_ENTRY+0x34>
     // 30: 14000000      b       0x30 <_JIT_ENTRY+0x30>
     // 0000000000000030:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
     // 34: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 38: f9400b08      ldr     x8, [x24, #0x10]
-    // 3c: f9401309      ldr     x9, [x24, #0x20]
+    // 38: f9400ae8      ldr     x8, [x23, #0x10]
+    // 3c: f94012e9      ldr     x9, [x23, #0x20]
     // 40: 910003fd      mov     x29, sp
-    // 44: f9400a61      ldr     x1, [x19, #0x10]
+    // 44: f9400701      ldr     x1, [x24, #0x8]
     // 48: eb08013f      cmp     x9, x8
-    // 4c: 5400012d      b.le    0x70 <_JIT_ENTRY+0x70>
-    // 50: f9400f09      ldr     x9, [x24, #0x18]
+    // 4c: 5400014d      b.le    0x74 <_JIT_ENTRY+0x74>
+    // 50: f9400ee9      ldr     x9, [x23, #0x18]
     // 54: 9100050a      add     x10, x8, #0x1
     // 58: 52800039      mov     w25, #0x1               // =1
-    // 5c: f9000b0a      str     x10, [x24, #0x10]
+    // 5c: f9000aea      str     x10, [x23, #0x10]
     // 60: f8287921      str     x1, [x9, x8, lsl #3]
-    // 64: b9400308      ldr     w8, [x24]
-    // 68: 36f80148      tbz     w8, #0x1f, 0x90 <_JIT_ENTRY+0x90>
-    // 6c: 14000010      b       0xac <_JIT_ENTRY+0xac>
-    // 70: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000070:  R_AARCH64_ADR_GOT_PAGE       _PyList_AppendTakeRefListResize
-    // 74: aa1803e0      mov     x0, x24
-    // 78: f9400108      ldr     x8, [x8]
-    // 0000000000000078:  R_AARCH64_LD64_GOT_LO12_NC   _PyList_AppendTakeRefListResize
-    // 7c: d63f0100      blr     x8
-    // 80: 7100001f      cmp     w0, #0x0
-    // 84: 1a9f17f9      cset    w25, eq
-    // 88: b9400308      ldr     w8, [x24]
-    // 8c: 37f80108      tbnz    w8, #0x1f, 0xac <_JIT_ENTRY+0xac>
-    // 90: 71000508      subs    w8, w8, #0x1
-    // 94: b9000308      str     w8, [x24]
-    // 98: 540000a1      b.ne    0xac <_JIT_ENTRY+0xac>
-    // 9c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000009c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // a0: aa1803e0      mov     x0, x24
-    // a4: f9400108      ldr     x8, [x8]
-    // 00000000000000a4:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // a8: d63f0100      blr     x8
-    // ac: b94002e8      ldr     w8, [x23]
-    // b0: 37f80088      tbnz    w8, #0x1f, 0xc0 <_JIT_ENTRY+0xc0>
-    // b4: 71000508      subs    w8, w8, #0x1
-    // b8: b90002e8      str     w8, [x23]
-    // bc: 540000a0      b.eq    0xd0 <_JIT_ENTRY+0xd0>
-    // c0: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // c4: 36000139      tbz     w25, #0x0, 0xe8 <_JIT_ENTRY+0xe8>
-    // c8: aa1303f5      mov     x21, x19
-    // cc: 14000000      b       0xcc <_JIT_ENTRY+0xcc>
-    // 00000000000000cc:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // d0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000d0:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // d4: aa1703e0      mov     x0, x23
-    // d8: f9400108      ldr     x8, [x8]
-    // 00000000000000d8:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // dc: d63f0100      blr     x8
-    // e0: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // e4: 3707ff39      tbnz    w25, #0x0, 0xc8 <_JIT_ENTRY+0xc8>
-    // e8: 14000000      b       0xe8 <_JIT_ENTRY+0xe8>
-    // 00000000000000e8:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // ec: 00 00 00 00
-    const unsigned char code_body[240] = {
-        0x08, 0xdb, 0x8c, 0x52, 0xc9, 0x0a, 0x40, 0xf9,
-        0xf3, 0x03, 0x15, 0xaa, 0x68, 0x00, 0xa0, 0x72,
-        0x77, 0x8e, 0x5e, 0xf8, 0x28, 0x69, 0x68, 0xf8,
-        0x1f, 0x01, 0x17, 0xeb, 0xa1, 0x00, 0x00, 0x54,
-        0x78, 0x06, 0x40, 0xf9, 0x08, 0x07, 0x40, 0xf9,
+    // 64: f9002298      str     x24, [x20, #0x40]
+    // 68: b94002e8      ldr     w8, [x23]
+    // 6c: 36f80168      tbz     w8, #0x1f, 0x98 <_JIT_ENTRY+0x98>
+    // 70: 14000011      b       0xb4 <_JIT_ENTRY+0xb4>
+    // 74: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000074:  R_AARCH64_ADR_GOT_PAGE       _PyList_AppendTakeRefListResize
+    // 78: aa1703e0      mov     x0, x23
+    // 7c: f9400108      ldr     x8, [x8]
+    // 000000000000007c:  R_AARCH64_LD64_GOT_LO12_NC   _PyList_AppendTakeRefListResize
+    // 80: d63f0100      blr     x8
+    // 84: 7100001f      cmp     w0, #0x0
+    // 88: 1a9f17f9      cset    w25, eq
+    // 8c: f9002298      str     x24, [x20, #0x40]
+    // 90: b94002e8      ldr     w8, [x23]
+    // 94: 37f80108      tbnz    w8, #0x1f, 0xb4 <_JIT_ENTRY+0xb4>
+    // 98: 71000508      subs    w8, w8, #0x1
+    // 9c: b90002e8      str     w8, [x23]
+    // a0: 540000a1      b.ne    0xb4 <_JIT_ENTRY+0xb4>
+    // a4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000a4:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // a8: aa1703e0      mov     x0, x23
+    // ac: f9400108      ldr     x8, [x8]
+    // 00000000000000ac:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // b0: d63f0100      blr     x8
+    // b4: f9402288      ldr     x8, [x20, #0x40]
+    // b8: d1002108      sub     x8, x8, #0x8
+    // bc: f9002288      str     x8, [x20, #0x40]
+    // c0: b9400268      ldr     w8, [x19]
+    // c4: 37f80088      tbnz    w8, #0x1f, 0xd4 <_JIT_ENTRY+0xd4>
+    // c8: 71000508      subs    w8, w8, #0x1
+    // cc: b9000268      str     w8, [x19]
+    // d0: 540000c0      b.eq    0xe8 <_JIT_ENTRY+0xe8>
+    // d4: f9402295      ldr     x21, [x20, #0x40]
+    // d8: f900229f      str     xzr, [x20, #0x40]
+    // dc: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // e0: 36000159      tbz     w25, #0x0, 0x108 <_JIT_ENTRY+0x108>
+    // e4: 14000000      b       0xe4 <_JIT_ENTRY+0xe4>
+    // 00000000000000e4:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // e8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000e8:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // ec: aa1303e0      mov     x0, x19
+    // f0: f9400108      ldr     x8, [x8]
+    // 00000000000000f0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // f4: d63f0100      blr     x8
+    // f8: f9402295      ldr     x21, [x20, #0x40]
+    // fc: f900229f      str     xzr, [x20, #0x40]
+    // 100: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 104: 3707ff19      tbnz    w25, #0x0, 0xe4 <_JIT_ENTRY+0xe4>
+    // 108: 14000000      b       0x108 <_JIT_ENTRY+0x108>
+    // 0000000000000108:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 10c: 00 00 00 00
+    const unsigned char code_body[272] = {
+        0x08, 0xe2, 0x8c, 0x52, 0xc9, 0x0a, 0x40, 0xf9,
+        0xf8, 0x03, 0x15, 0xaa, 0x68, 0x00, 0xa0, 0x72,
+        0x17, 0x0f, 0x5f, 0xf8, 0x13, 0x83, 0x5f, 0xf8,
+        0x28, 0x69, 0x68, 0xf8, 0x1f, 0x01, 0x13, 0xeb,
+        0x81, 0x00, 0x00, 0x54, 0xe8, 0x06, 0x40, 0xf9,
         0x08, 0xad, 0x42, 0x39, 0x48, 0x00, 0x08, 0x37,
         0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
-        0x08, 0x0b, 0x40, 0xf9, 0x09, 0x13, 0x40, 0xf9,
-        0xfd, 0x03, 0x00, 0x91, 0x61, 0x0a, 0x40, 0xf9,
-        0x3f, 0x01, 0x08, 0xeb, 0x2d, 0x01, 0x00, 0x54,
-        0x09, 0x0f, 0x40, 0xf9, 0x0a, 0x05, 0x00, 0x91,
-        0x39, 0x00, 0x80, 0x52, 0x0a, 0x0b, 0x00, 0xf9,
-        0x21, 0x79, 0x28, 0xf8, 0x08, 0x03, 0x40, 0xb9,
-        0x48, 0x01, 0xf8, 0x36, 0x10, 0x00, 0x00, 0x14,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x18, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x1f, 0x00, 0x00, 0x71, 0xf9, 0x17, 0x9f, 0x1a,
-        0x08, 0x03, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
+        0xe8, 0x0a, 0x40, 0xf9, 0xe9, 0x12, 0x40, 0xf9,
+        0xfd, 0x03, 0x00, 0x91, 0x01, 0x07, 0x40, 0xf9,
+        0x3f, 0x01, 0x08, 0xeb, 0x4d, 0x01, 0x00, 0x54,
+        0xe9, 0x0e, 0x40, 0xf9, 0x0a, 0x05, 0x00, 0x91,
+        0x39, 0x00, 0x80, 0x52, 0xea, 0x0a, 0x00, 0xf9,
+        0x21, 0x79, 0x28, 0xf8, 0x98, 0x22, 0x00, 0xf9,
+        0xe8, 0x02, 0x40, 0xb9, 0x68, 0x01, 0xf8, 0x36,
+        0x11, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
+        0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x1f, 0x00, 0x00, 0x71,
+        0xf9, 0x17, 0x9f, 0x1a, 0x98, 0x22, 0x00, 0xf9,
+        0xe8, 0x02, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0xe8, 0x02, 0x00, 0xb9,
         0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xe8, 0x02, 0x40, 0xb9,
-        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0xe8, 0x02, 0x00, 0xb9, 0xa0, 0x00, 0x00, 0x54,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x39, 0x01, 0x00, 0x36,
-        0xf5, 0x03, 0x13, 0xaa, 0x00, 0x00, 0x00, 0x14,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x17, 0xaa,
+        0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x88, 0x22, 0x40, 0xf9,
+        0x08, 0x21, 0x00, 0xd1, 0x88, 0x22, 0x00, 0xf9,
+        0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
+        0xc0, 0x00, 0x00, 0x54, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x59, 0x01, 0x00, 0x36, 0x00, 0x00, 0x00, 0x14,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x39, 0xff, 0x07, 0x37,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x19, 0xff, 0x07, 0x37,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: &_PyList_AppendTakeRefListResize+0x0
@@ -4579,14 +4410,14 @@ emit__CALL_LIST_APPEND(
     patch_64(data + 0x8, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_26r(code + 0x30, state->instruction_starts[instruction->jump_target]);
-    patch_aarch64_21rx(code + 0x70, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x78, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x9c, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0xa4, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0xcc, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0xd0, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0xd8, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0xe8, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0x74, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x7c, (uintptr_t)data);
+    patch_aarch64_21rx(code + 0xa4, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0xac, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0xe4, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0xe8, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0xf0, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x108, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -4610,10 +4441,10 @@ emit__CALL_METHOD_DESCRIPTOR_FAST(
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
     // 14: 928000ee      mov     x14, #-0x8              // =-8
     // 18: 910003fd      mov     x29, sp
-    // 1c: cb2a2118      sub     x24, x8, w10, uxth
+    // 1c: cb2a2117      sub     x23, x8, w10, uxth
     // 20: 12003d49      and     w9, w10, #0xffff
     // 24: 2a2903e8      mvn     w8, w9
-    // 28: f8787aac      ldr     x12, [x21, x24, lsl #3]
+    // 28: f8777aac      ldr     x12, [x21, x23, lsl #3]
     // 2c: f868daab      ldr     x11, [x21, w8, sxtw #3]
     // 30: f940058d      ldr     x13, [x12, #0x8]
     // 34: f94001ef      ldr     x15, [x15]
@@ -4638,17 +4469,17 @@ emit__CALL_METHOD_DESCRIPTOR_FAST(
     // 7c: 14000000      b       0x7c <_JIT_ENTRY+0x7c>
     // 000000000000007c:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
     // 80: 0b0b0129      add     w9, w9, w11
-    // 84: 93407d19      sxtw    x25, w8
+    // 84: 93407d18      sxtw    x24, w8
     // 88: f94005a8      ldr     x8, [x13, #0x8]
     // 8c: 51000529      sub     w9, w9, #0x1
     // 90: 91002141      add     x1, x10, #0x8
     // 94: f9002295      str     x21, [x20, #0x40]
     // 98: 93407d22      sxtw    x2, w9
     // 9c: d63f0100      blr     x8
-    // a0: f9402293      ldr     x19, [x20, #0x40]
+    // a0: f9402299      ldr     x25, [x20, #0x40]
     // a4: f900229f      str     xzr, [x20, #0x40]
-    // a8: aa0003f7      mov     x23, x0
-    // ac: f8787aa8      ldr     x8, [x21, x24, lsl #3]
+    // a8: aa0003f3      mov     x19, x0
+    // ac: f8777aa8      ldr     x8, [x21, x23, lsl #3]
     // b0: b9400109      ldr     w9, [x8]
     // b4: 37f80109      tbnz    w9, #0x1f, 0xd4 <_JIT_ENTRY+0xd4>
     // b8: 71000529      subs    w9, w9, #0x1
@@ -4660,7 +4491,7 @@ emit__CALL_METHOD_DESCRIPTOR_FAST(
     // cc: f9400129      ldr     x9, [x9]
     // 00000000000000cc:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // d0: d63f0120      blr     x9
-    // d4: f8797aa0      ldr     x0, [x21, x25, lsl #3]
+    // d4: f8787aa0      ldr     x0, [x21, x24, lsl #3]
     // d8: b4000120      cbz     x0, 0xfc <_JIT_ENTRY+0xfc>
     // dc: b9400008      ldr     w8, [x0]
     // e0: 37f800e8      tbnz    w8, #0x1f, 0xfc <_JIT_ENTRY+0xfc>
@@ -4697,13 +4528,13 @@ emit__CALL_METHOD_DESCRIPTOR_FAST(
     // 144: 54ffff01      b.ne    0x124 <_JIT_ENTRY+0x124>
     // 148: d63f0340      blr     x26
     // 14c: 17fffff6      b       0x124 <_JIT_ENTRY+0x124>
-    // 150: b40000b7      cbz     x23, 0x164 <_JIT_ENTRY+0x164>
-    // 154: 8b190e75      add     x21, x19, x25, lsl #3
-    // 158: f8387a77      str     x23, [x19, x24, lsl #3]
+    // 150: b40000b3      cbz     x19, 0x164 <_JIT_ENTRY+0x164>
+    // 154: 8b180f35      add     x21, x25, x24, lsl #3
+    // 158: f8377b33      str     x19, [x25, x23, lsl #3]
     // 15c: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 160: 14000000      b       0x160 <_JIT_ENTRY+0x160>
     // 0000000000000160:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 164: aa1303f5      mov     x21, x19
+    // 164: 8b170f35      add     x21, x25, x23, lsl #3
     // 168: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 16c: 14000000      b       0x16c <_JIT_ENTRY+0x16c>
     // 000000000000016c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
@@ -4711,9 +4542,9 @@ emit__CALL_METHOD_DESCRIPTOR_FAST(
         0xfd, 0x7b, 0xbf, 0xa9, 0x0a, 0x00, 0x00, 0x90,
         0x28, 0x00, 0x80, 0x92, 0x0f, 0x00, 0x00, 0x90,
         0x4a, 0x01, 0x40, 0xf9, 0xee, 0x00, 0x80, 0x92,
-        0xfd, 0x03, 0x00, 0x91, 0x18, 0x21, 0x2a, 0xcb,
+        0xfd, 0x03, 0x00, 0x91, 0x17, 0x21, 0x2a, 0xcb,
         0x49, 0x3d, 0x00, 0x12, 0xe8, 0x03, 0x29, 0x2a,
-        0xac, 0x7a, 0x78, 0xf8, 0xab, 0xda, 0x68, 0xf8,
+        0xac, 0x7a, 0x77, 0xf8, 0xab, 0xda, 0x68, 0xf8,
         0x8d, 0x05, 0x40, 0xf9, 0xef, 0x01, 0x40, 0xf9,
         0x7f, 0x01, 0x00, 0xf1, 0xeb, 0x07, 0x9f, 0x1a,
         0xce, 0x11, 0x9f, 0x9a, 0xbf, 0x01, 0x0f, 0xeb,
@@ -4724,17 +4555,17 @@ emit__CALL_METHOD_DESCRIPTOR_FAST(
         0x40, 0x01, 0x40, 0xf9, 0x0e, 0x04, 0x40, 0xf9,
         0xdf, 0x01, 0x0c, 0xeb, 0x60, 0x00, 0x00, 0x54,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0x29, 0x01, 0x0b, 0x0b, 0x19, 0x7d, 0x40, 0x93,
+        0x29, 0x01, 0x0b, 0x0b, 0x18, 0x7d, 0x40, 0x93,
         0xa8, 0x05, 0x40, 0xf9, 0x29, 0x05, 0x00, 0x51,
         0x41, 0x21, 0x00, 0x91, 0x95, 0x22, 0x00, 0xf9,
         0x22, 0x7d, 0x40, 0x93, 0x00, 0x01, 0x3f, 0xd6,
-        0x93, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
-        0xf7, 0x03, 0x00, 0xaa, 0xa8, 0x7a, 0x78, 0xf8,
+        0x99, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0xf3, 0x03, 0x00, 0xaa, 0xa8, 0x7a, 0x77, 0xf8,
         0x09, 0x01, 0x40, 0xb9, 0x09, 0x01, 0xf8, 0x37,
         0x29, 0x05, 0x00, 0x71, 0x09, 0x01, 0x00, 0xb9,
         0xa1, 0x00, 0x00, 0x54, 0x09, 0x00, 0x00, 0x90,
         0xe0, 0x03, 0x08, 0xaa, 0x29, 0x01, 0x40, 0xf9,
-        0x20, 0x01, 0x3f, 0xd6, 0xa0, 0x7a, 0x79, 0xf8,
+        0x20, 0x01, 0x3f, 0xd6, 0xa0, 0x7a, 0x78, 0xf8,
         0x20, 0x01, 0x00, 0xb4, 0x08, 0x00, 0x40, 0xb9,
         0xe8, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
         0x08, 0x00, 0x00, 0xb9, 0x81, 0x00, 0x00, 0x54,
@@ -4750,9 +4581,9 @@ emit__CALL_METHOD_DESCRIPTOR_FAST(
         0x68, 0xff, 0xff, 0x37, 0x08, 0x05, 0x00, 0x71,
         0x08, 0x00, 0x00, 0xb9, 0x01, 0xff, 0xff, 0x54,
         0x40, 0x03, 0x3f, 0xd6, 0xf6, 0xff, 0xff, 0x17,
-        0xb7, 0x00, 0x00, 0xb4, 0x75, 0x0e, 0x19, 0x8b,
-        0x77, 0x7a, 0x38, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0xf5, 0x03, 0x13, 0xaa,
+        0xb3, 0x00, 0x00, 0xb4, 0x35, 0x0f, 0x18, 0x8b,
+        0x33, 0x7b, 0x37, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x35, 0x0f, 0x17, 0x8b,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPARG
@@ -4804,10 +4635,10 @@ emit__CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
     // 14: 928000ee      mov     x14, #-0x8              // =-8
     // 18: 910003fd      mov     x29, sp
-    // 1c: cb2a2118      sub     x24, x8, w10, uxth
+    // 1c: cb2a2117      sub     x23, x8, w10, uxth
     // 20: 12003d49      and     w9, w10, #0xffff
     // 24: 2a2903e8      mvn     w8, w9
-    // 28: f8787aac      ldr     x12, [x21, x24, lsl #3]
+    // 28: f8777aac      ldr     x12, [x21, x23, lsl #3]
     // 2c: f868daab      ldr     x11, [x21, w8, sxtw #3]
     // 30: f940058d      ldr     x13, [x12, #0x8]
     // 34: f94001ef      ldr     x15, [x15]
@@ -4832,7 +4663,7 @@ emit__CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(
     // 7c: 14000000      b       0x7c <_JIT_ENTRY+0x7c>
     // 000000000000007c:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
     // 80: 0b0b0129      add     w9, w9, w11
-    // 84: 93407d19      sxtw    x25, w8
+    // 84: 93407d18      sxtw    x24, w8
     // 88: f94005a8      ldr     x8, [x13, #0x8]
     // 8c: 51000529      sub     w9, w9, #0x1
     // 90: 91002141      add     x1, x10, #0x8
@@ -4840,10 +4671,10 @@ emit__CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(
     // 98: 93407d22      sxtw    x2, w9
     // 9c: f9002295      str     x21, [x20, #0x40]
     // a0: d63f0100      blr     x8
-    // a4: f9402293      ldr     x19, [x20, #0x40]
+    // a4: f9402299      ldr     x25, [x20, #0x40]
     // a8: f900229f      str     xzr, [x20, #0x40]
-    // ac: aa0003f7      mov     x23, x0
-    // b0: f8787aa8      ldr     x8, [x21, x24, lsl #3]
+    // ac: aa0003f3      mov     x19, x0
+    // b0: f8777aa8      ldr     x8, [x21, x23, lsl #3]
     // b4: b9400109      ldr     w9, [x8]
     // b8: 37f80109      tbnz    w9, #0x1f, 0xd8 <_JIT_ENTRY+0xd8>
     // bc: 71000529      subs    w9, w9, #0x1
@@ -4855,7 +4686,7 @@ emit__CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(
     // d0: f9400129      ldr     x9, [x9]
     // 00000000000000d0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // d4: d63f0120      blr     x9
-    // d8: f8797aa0      ldr     x0, [x21, x25, lsl #3]
+    // d8: f8787aa0      ldr     x0, [x21, x24, lsl #3]
     // dc: b4000120      cbz     x0, 0x100 <_JIT_ENTRY+0x100>
     // e0: b9400008      ldr     w8, [x0]
     // e4: 37f800e8      tbnz    w8, #0x1f, 0x100 <_JIT_ENTRY+0x100>
@@ -4892,13 +4723,13 @@ emit__CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(
     // 148: 54ffff01      b.ne    0x128 <_JIT_ENTRY+0x128>
     // 14c: d63f0340      blr     x26
     // 150: 17fffff6      b       0x128 <_JIT_ENTRY+0x128>
-    // 154: b40000b7      cbz     x23, 0x168 <_JIT_ENTRY+0x168>
-    // 158: 8b190e75      add     x21, x19, x25, lsl #3
-    // 15c: f8387a77      str     x23, [x19, x24, lsl #3]
+    // 154: b40000b3      cbz     x19, 0x168 <_JIT_ENTRY+0x168>
+    // 158: 8b180f35      add     x21, x25, x24, lsl #3
+    // 15c: f8377b33      str     x19, [x25, x23, lsl #3]
     // 160: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 164: 14000000      b       0x164 <_JIT_ENTRY+0x164>
     // 0000000000000164:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 168: aa1303f5      mov     x21, x19
+    // 168: 8b170f35      add     x21, x25, x23, lsl #3
     // 16c: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 170: 14000000      b       0x170 <_JIT_ENTRY+0x170>
     // 0000000000000170:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
@@ -4907,9 +4738,9 @@ emit__CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(
         0xfd, 0x7b, 0xbf, 0xa9, 0x0a, 0x00, 0x00, 0x90,
         0x28, 0x00, 0x80, 0x92, 0x0f, 0x00, 0x00, 0x90,
         0x4a, 0x01, 0x40, 0xf9, 0xee, 0x00, 0x80, 0x92,
-        0xfd, 0x03, 0x00, 0x91, 0x18, 0x21, 0x2a, 0xcb,
+        0xfd, 0x03, 0x00, 0x91, 0x17, 0x21, 0x2a, 0xcb,
         0x49, 0x3d, 0x00, 0x12, 0xe8, 0x03, 0x29, 0x2a,
-        0xac, 0x7a, 0x78, 0xf8, 0xab, 0xda, 0x68, 0xf8,
+        0xac, 0x7a, 0x77, 0xf8, 0xab, 0xda, 0x68, 0xf8,
         0x8d, 0x05, 0x40, 0xf9, 0xef, 0x01, 0x40, 0xf9,
         0x7f, 0x01, 0x00, 0xf1, 0xeb, 0x07, 0x9f, 0x1a,
         0xce, 0x11, 0x9f, 0x9a, 0xbf, 0x01, 0x0f, 0xeb,
@@ -4920,18 +4751,18 @@ emit__CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(
         0x40, 0x01, 0x40, 0xf9, 0x0e, 0x04, 0x40, 0xf9,
         0xdf, 0x01, 0x0c, 0xeb, 0x60, 0x00, 0x00, 0x54,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0x29, 0x01, 0x0b, 0x0b, 0x19, 0x7d, 0x40, 0x93,
+        0x29, 0x01, 0x0b, 0x0b, 0x18, 0x7d, 0x40, 0x93,
         0xa8, 0x05, 0x40, 0xf9, 0x29, 0x05, 0x00, 0x51,
         0x41, 0x21, 0x00, 0x91, 0xe3, 0x03, 0x1f, 0xaa,
         0x22, 0x7d, 0x40, 0x93, 0x95, 0x22, 0x00, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x93, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xf7, 0x03, 0x00, 0xaa,
-        0xa8, 0x7a, 0x78, 0xf8, 0x09, 0x01, 0x40, 0xb9,
+        0x00, 0x01, 0x3f, 0xd6, 0x99, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xf3, 0x03, 0x00, 0xaa,
+        0xa8, 0x7a, 0x77, 0xf8, 0x09, 0x01, 0x40, 0xb9,
         0x09, 0x01, 0xf8, 0x37, 0x29, 0x05, 0x00, 0x71,
         0x09, 0x01, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
         0x09, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x08, 0xaa,
         0x29, 0x01, 0x40, 0xf9, 0x20, 0x01, 0x3f, 0xd6,
-        0xa0, 0x7a, 0x79, 0xf8, 0x20, 0x01, 0x00, 0xb4,
+        0xa0, 0x7a, 0x78, 0xf8, 0x20, 0x01, 0x00, 0xb4,
         0x08, 0x00, 0x40, 0xb9, 0xe8, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
         0x81, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
@@ -4946,10 +4777,10 @@ emit__CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS(
         0x08, 0x00, 0x40, 0xb9, 0x68, 0xff, 0xff, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
         0x01, 0xff, 0xff, 0x54, 0x40, 0x03, 0x3f, 0xd6,
-        0xf6, 0xff, 0xff, 0x17, 0xb7, 0x00, 0x00, 0xb4,
-        0x75, 0x0e, 0x19, 0x8b, 0x77, 0x7a, 0x38, 0xf8,
+        0xf6, 0xff, 0xff, 0x17, 0xb3, 0x00, 0x00, 0xb4,
+        0x35, 0x0f, 0x18, 0x8b, 0x33, 0x7b, 0x37, 0xf8,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0xf5, 0x03, 0x13, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x35, 0x0f, 0x17, 0x8b, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
@@ -4999,36 +4830,36 @@ emit__CALL_METHOD_DESCRIPTOR_NOARGS(
     // 10: f9400108      ldr     x8, [x8]
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
     // 14: 12003d0a      and     w10, w8, #0xffff
-    // 18: 2a2a03f9      mvn     w25, w10
-    // 1c: f879daab      ldr     x11, [x21, w25, sxtw #3]
+    // 18: 2a2a03eb      mvn     w11, w10
+    // 1c: f86bdaab      ldr     x11, [x21, w11, sxtw #3]
     // 20: f100017f      cmp     x11, #0x0
     // 24: 1a8a054a      cinc    w10, w10, ne
     // 28: 9a9f1129      csel    x9, x9, xzr, ne
     // 2c: 7100055f      cmp     w10, #0x1
-    // 30: 54000761      b.ne    0x11c <_JIT_ENTRY+0x11c>
+    // 30: 54000781      b.ne    0x120 <_JIT_ENTRY+0x120>
     // 34: 9280002a      mov     x10, #-0x2              // =-2
     // 38: 9000000c      adrp    x12, 0x0 <_JIT_ENTRY>
     // 0000000000000038:  R_AARCH64_ADR_GOT_PAGE       PyMethodDescr_Type
-    // 3c: cb28215a      sub     x26, x10, w8, uxth
-    // 40: f87a7aaa      ldr     x10, [x21, x26, lsl #3]
+    // 3c: cb282158      sub     x24, x10, w8, uxth
+    // 40: f8787aaa      ldr     x10, [x21, x24, lsl #3]
     // 44: f940054b      ldr     x11, [x10, #0x8]
     // 48: f940018c      ldr     x12, [x12]
     // 0000000000000048:  R_AARCH64_LD64_GOT_LO12_NC   PyMethodDescr_Type
     // 4c: eb0c017f      cmp     x11, x12
-    // 50: 54000661      b.ne    0x11c <_JIT_ENTRY+0x11c>
+    // 50: 54000681      b.ne    0x120 <_JIT_ENTRY+0x120>
     // 54: cb282ea8      sub     x8, x21, w8, uxth #3
     // 58: f8696913      ldr     x19, [x8, x9]
     // 5c: f9400948      ldr     x8, [x10, #0x10]
     // 60: f9400669      ldr     x9, [x19, #0x8]
     // 64: eb08013f      cmp     x9, x8
-    // 68: 540005a1      b.ne    0x11c <_JIT_ENTRY+0x11c>
+    // 68: 540005c1      b.ne    0x120 <_JIT_ENTRY+0x120>
     // 6c: f9401548      ldr     x8, [x10, #0x28]
     // 70: b9401109      ldr     w9, [x8, #0x10]
     // 74: 7100113f      cmp     w9, #0x4
-    // 78: 54000521      b.ne    0x11c <_JIT_ENTRY+0x11c>
+    // 78: 54000541      b.ne    0x120 <_JIT_ENTRY+0x120>
     // 7c: b94036c9      ldr     w9, [x22, #0x34]
     // 80: 7100013f      cmp     w9, #0x0
-    // 84: 540004cd      b.le    0x11c <_JIT_ENTRY+0x11c>
+    // 84: 540004ed      b.le    0x120 <_JIT_ENTRY+0x120>
     // 88: f9400508      ldr     x8, [x8, #0x8]
     // 8c: 51000529      sub     w9, w9, #0x1
     // 90: aa1303e0      mov     x0, x19
@@ -5037,44 +4868,44 @@ emit__CALL_METHOD_DESCRIPTOR_NOARGS(
     // 9c: f9002295      str     x21, [x20, #0x40]
     // a0: d63f0100      blr     x8
     // a4: b94036c8      ldr     w8, [x22, #0x34]
-    // a8: f9402297      ldr     x23, [x20, #0x40]
-    // ac: aa0003f8      mov     x24, x0
-    // b0: f900229f      str     xzr, [x20, #0x40]
-    // b4: 11000508      add     w8, w8, #0x1
-    // b8: b90036c8      str     w8, [x22, #0x34]
-    // bc: b9400268      ldr     w8, [x19]
-    // c0: 37f80108      tbnz    w8, #0x1f, 0xe0 <_JIT_ENTRY+0xe0>
-    // c4: 71000508      subs    w8, w8, #0x1
-    // c8: b9000268      str     w8, [x19]
-    // cc: 540000a1      b.ne    0xe0 <_JIT_ENTRY+0xe0>
-    // d0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000d0:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // d4: aa1303e0      mov     x0, x19
-    // d8: f9400108      ldr     x8, [x8]
-    // 00000000000000d8:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // dc: d63f0100      blr     x8
-    // e0: f87a7aa0      ldr     x0, [x21, x26, lsl #3]
-    // e4: b9400008      ldr     w8, [x0]
-    // e8: 37f800e8      tbnz    w8, #0x1f, 0x104 <_JIT_ENTRY+0x104>
-    // ec: 71000508      subs    w8, w8, #0x1
-    // f0: b9000008      str     w8, [x0]
-    // f4: 54000081      b.ne    0x104 <_JIT_ENTRY+0x104>
-    // f8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000f8:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // fc: f9400108      ldr     x8, [x8]
-    // 00000000000000fc:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 100: d63f0100      blr     x8
-    // 104: b4000118      cbz     x24, 0x124 <_JIT_ENTRY+0x124>
-    // 108: 93407f28      sxtw    x8, w25
-    // 10c: f83a7af8      str     x24, [x23, x26, lsl #3]
-    // 110: 8b080ef5      add     x21, x23, x8, lsl #3
-    // 114: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 118: 14000000      b       0x118 <_JIT_ENTRY+0x118>
-    // 0000000000000118:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 11c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 120: 14000000      b       0x120 <_JIT_ENTRY+0x120>
-    // 0000000000000120:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 124: aa1703f5      mov     x21, x23
+    // a8: aa0003f7      mov     x23, x0
+    // ac: 11000508      add     w8, w8, #0x1
+    // b0: b90036c8      str     w8, [x22, #0x34]
+    // b4: b9400268      ldr     w8, [x19]
+    // b8: 37f80108      tbnz    w8, #0x1f, 0xd8 <_JIT_ENTRY+0xd8>
+    // bc: 71000508      subs    w8, w8, #0x1
+    // c0: b9000268      str     w8, [x19]
+    // c4: 540000a1      b.ne    0xd8 <_JIT_ENTRY+0xd8>
+    // c8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000c8:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // cc: aa1303e0      mov     x0, x19
+    // d0: f9400108      ldr     x8, [x8]
+    // 00000000000000d0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // d4: d63f0100      blr     x8
+    // d8: f9402288      ldr     x8, [x20, #0x40]
+    // dc: 8b180d08      add     x8, x8, x24, lsl #3
+    // e0: f9002288      str     x8, [x20, #0x40]
+    // e4: f8787aa0      ldr     x0, [x21, x24, lsl #3]
+    // e8: b9400008      ldr     w8, [x0]
+    // ec: 37f800e8      tbnz    w8, #0x1f, 0x108 <_JIT_ENTRY+0x108>
+    // f0: 71000508      subs    w8, w8, #0x1
+    // f4: b9000008      str     w8, [x0]
+    // f8: 54000081      b.ne    0x108 <_JIT_ENTRY+0x108>
+    // fc: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000fc:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 100: f9400108      ldr     x8, [x8]
+    // 0000000000000100:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 104: d63f0100      blr     x8
+    // 108: f9402295      ldr     x21, [x20, #0x40]
+    // 10c: f900229f      str     xzr, [x20, #0x40]
+    // 110: b40000d7      cbz     x23, 0x128 <_JIT_ENTRY+0x128>
+    // 114: f80086b7      str     x23, [x21], #0x8
+    // 118: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 11c: 14000000      b       0x11c <_JIT_ENTRY+0x11c>
+    // 000000000000011c:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 120: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 124: 14000000      b       0x124 <_JIT_ENTRY+0x124>
+    // 0000000000000124:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
     // 128: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 12c: 14000000      b       0x12c <_JIT_ENTRY+0x12c>
     // 000000000000012c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
@@ -5082,40 +4913,40 @@ emit__CALL_METHOD_DESCRIPTOR_NOARGS(
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0xe9, 0x00, 0x80, 0x92, 0xfd, 0x03, 0x00, 0x91,
         0x08, 0x01, 0x40, 0xf9, 0x0a, 0x3d, 0x00, 0x12,
-        0xf9, 0x03, 0x2a, 0x2a, 0xab, 0xda, 0x79, 0xf8,
+        0xeb, 0x03, 0x2a, 0x2a, 0xab, 0xda, 0x6b, 0xf8,
         0x7f, 0x01, 0x00, 0xf1, 0x4a, 0x05, 0x8a, 0x1a,
         0x29, 0x11, 0x9f, 0x9a, 0x5f, 0x05, 0x00, 0x71,
-        0x61, 0x07, 0x00, 0x54, 0x2a, 0x00, 0x80, 0x92,
-        0x0c, 0x00, 0x00, 0x90, 0x5a, 0x21, 0x28, 0xcb,
-        0xaa, 0x7a, 0x7a, 0xf8, 0x4b, 0x05, 0x40, 0xf9,
+        0x81, 0x07, 0x00, 0x54, 0x2a, 0x00, 0x80, 0x92,
+        0x0c, 0x00, 0x00, 0x90, 0x58, 0x21, 0x28, 0xcb,
+        0xaa, 0x7a, 0x78, 0xf8, 0x4b, 0x05, 0x40, 0xf9,
         0x8c, 0x01, 0x40, 0xf9, 0x7f, 0x01, 0x0c, 0xeb,
-        0x61, 0x06, 0x00, 0x54, 0xa8, 0x2e, 0x28, 0xcb,
+        0x81, 0x06, 0x00, 0x54, 0xa8, 0x2e, 0x28, 0xcb,
         0x13, 0x69, 0x69, 0xf8, 0x48, 0x09, 0x40, 0xf9,
         0x69, 0x06, 0x40, 0xf9, 0x3f, 0x01, 0x08, 0xeb,
-        0xa1, 0x05, 0x00, 0x54, 0x48, 0x15, 0x40, 0xf9,
+        0xc1, 0x05, 0x00, 0x54, 0x48, 0x15, 0x40, 0xf9,
         0x09, 0x11, 0x40, 0xb9, 0x3f, 0x11, 0x00, 0x71,
-        0x21, 0x05, 0x00, 0x54, 0xc9, 0x36, 0x40, 0xb9,
-        0x3f, 0x01, 0x00, 0x71, 0xcd, 0x04, 0x00, 0x54,
+        0x41, 0x05, 0x00, 0x54, 0xc9, 0x36, 0x40, 0xb9,
+        0x3f, 0x01, 0x00, 0x71, 0xed, 0x04, 0x00, 0x54,
         0x08, 0x05, 0x40, 0xf9, 0x29, 0x05, 0x00, 0x51,
         0xe0, 0x03, 0x13, 0xaa, 0xe1, 0x03, 0x1f, 0xaa,
         0xc9, 0x36, 0x00, 0xb9, 0x95, 0x22, 0x00, 0xf9,
         0x00, 0x01, 0x3f, 0xd6, 0xc8, 0x36, 0x40, 0xb9,
-        0x97, 0x22, 0x40, 0xf9, 0xf8, 0x03, 0x00, 0xaa,
-        0x9f, 0x22, 0x00, 0xf9, 0x08, 0x05, 0x00, 0x11,
+        0xf7, 0x03, 0x00, 0xaa, 0x08, 0x05, 0x00, 0x11,
         0xc8, 0x36, 0x00, 0xb9, 0x68, 0x02, 0x40, 0xb9,
         0x08, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
         0x68, 0x02, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
         0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xa0, 0x7a, 0x7a, 0xf8, 0x08, 0x00, 0x40, 0xb9,
-        0xe8, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x08, 0x00, 0x00, 0xb9, 0x81, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x18, 0x01, 0x00, 0xb4,
-        0x28, 0x7f, 0x40, 0x93, 0xf8, 0x7a, 0x3a, 0xf8,
-        0xf5, 0x0e, 0x08, 0x8b, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0xf5, 0x03, 0x17, 0xaa,
+        0x88, 0x22, 0x40, 0xf9, 0x08, 0x0d, 0x18, 0x8b,
+        0x88, 0x22, 0x00, 0xf9, 0xa0, 0x7a, 0x78, 0xf8,
+        0x08, 0x00, 0x40, 0xb9, 0xe8, 0x00, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
+        0x81, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0xd7, 0x00, 0x00, 0xb4, 0xb7, 0x86, 0x00, 0xf8,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPARG
@@ -5135,11 +4966,11 @@ emit__CALL_METHOD_DESCRIPTOR_NOARGS(
     patch_aarch64_12x(code + 0x10, (uintptr_t)data);
     patch_aarch64_21rx(code + 0x38, (uintptr_t)data + 0x8);
     patch_aarch64_12x(code + 0x48, (uintptr_t)data + 0x8);
-    patch_aarch64_21rx(code + 0xd0, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0xd8, (uintptr_t)data + 0x10);
-    patch_aarch64_33rx(code + 0xf8, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x118, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x120, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_21rx(code + 0xc8, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0xd0, (uintptr_t)data + 0x10);
+    patch_aarch64_33rx(code + 0xfc, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x11c, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x124, state->instruction_starts[instruction->jump_target]);
     patch_aarch64_26r(code + 0x12c, state->instruction_starts[instruction->error_target]);
 }
 
@@ -5155,150 +4986,170 @@ emit__CALL_METHOD_DESCRIPTOR_O(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 4: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
     // 0000000000000004:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // 8: 928000e9      mov     x9, #-0x8               // =-8
+    // 8: 928000ea      mov     x10, #-0x8              // =-8
     // c: 910003fd      mov     x29, sp
-    // 10: f9400108      ldr     x8, [x8]
+    // 10: f9400129      ldr     x9, [x9]
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 14: 12003d0a      and     w10, w8, #0xffff
-    // 18: 2a2a03fa      mvn     w26, w10
-    // 1c: f87adaab      ldr     x11, [x21, w26, sxtw #3]
-    // 20: f100017f      cmp     x11, #0x0
-    // 24: 1a8a054a      cinc    w10, w10, ne
-    // 28: 9a9f1129      csel    x9, x9, xzr, ne
-    // 2c: 7100095f      cmp     w10, #0x2
+    // 14: 12003d2b      and     w11, w9, #0xffff
+    // 18: 2a2b03e8      mvn     w8, w11
+    // 1c: f868daac      ldr     x12, [x21, w8, sxtw #3]
+    // 20: f100019f      cmp     x12, #0x0
+    // 24: 1a8b056c      cinc    w12, w11, ne
+    // 28: 9a9f114b      csel    x11, x10, xzr, ne
+    // 2c: 7100099f      cmp     w12, #0x2
     // 30: 540002e1      b.ne    0x8c <_JIT_ENTRY+0x8c>
     // 34: 9280002a      mov     x10, #-0x2              // =-2
-    // 38: 9000000c      adrp    x12, 0x0 <_JIT_ENTRY>
+    // 38: 9000000d      adrp    x13, 0x0 <_JIT_ENTRY>
     // 0000000000000038:  R_AARCH64_ADR_GOT_PAGE       PyMethodDescr_Type
-    // 3c: cb28215b      sub     x27, x10, w8, uxth
-    // 40: f87b7aab      ldr     x11, [x21, x27, lsl #3]
-    // 44: f940056a      ldr     x10, [x11, #0x8]
-    // 48: f940018c      ldr     x12, [x12]
+    // 3c: cb292157      sub     x23, x10, w9, uxth
+    // 40: f8777aac      ldr     x12, [x21, x23, lsl #3]
+    // 44: f940058a      ldr     x10, [x12, #0x8]
+    // 48: f94001ad      ldr     x13, [x13]
     // 0000000000000048:  R_AARCH64_LD64_GOT_LO12_NC   PyMethodDescr_Type
-    // 4c: eb0c015f      cmp     x10, x12
+    // 4c: eb0d015f      cmp     x10, x13
     // 50: 540001e1      b.ne    0x8c <_JIT_ENTRY+0x8c>
-    // 54: f940156a      ldr     x10, [x11, #0x28]
-    // 58: b940114c      ldr     w12, [x10, #0x10]
-    // 5c: 7100219f      cmp     w12, #0x8
+    // 54: f940158a      ldr     x10, [x12, #0x28]
+    // 58: b940114d      ldr     w13, [x10, #0x10]
+    // 5c: 710021bf      cmp     w13, #0x8
     // 60: 54000161      b.ne    0x8c <_JIT_ENTRY+0x8c>
-    // 64: b94036cc      ldr     w12, [x22, #0x34]
-    // 68: 7100019f      cmp     w12, #0x0
+    // 64: b94036cd      ldr     w13, [x22, #0x34]
+    // 68: 710001bf      cmp     w13, #0x0
     // 6c: 5400010d      b.le    0x8c <_JIT_ENTRY+0x8c>
-    // 70: cb282ea8      sub     x8, x21, w8, uxth #3
-    // 74: 8b090108      add     x8, x8, x9
-    // 78: f9400969      ldr     x9, [x11, #0x10]
-    // 7c: f9400119      ldr     x25, [x8]
-    // 80: f940072b      ldr     x11, [x25, #0x8]
-    // 84: eb09017f      cmp     x11, x9
+    // 70: cb292ea9      sub     x9, x21, w9, uxth #3
+    // 74: 8b0b0129      add     x9, x9, x11
+    // 78: f940098b      ldr     x11, [x12, #0x10]
+    // 7c: f9400120      ldr     x0, [x9]
+    // 80: f940040c      ldr     x12, [x0, #0x8]
+    // 84: eb0b019f      cmp     x12, x11
     // 88: 54000060      b.eq    0x94 <_JIT_ENTRY+0x94>
     // 8c: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 90: 14000000      b       0x90 <_JIT_ENTRY+0x90>
     // 0000000000000090:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 94: f9400518      ldr     x24, [x8, #0x8]
-    // 98: f9400548      ldr     x8, [x10, #0x8]
-    // 9c: 51000589      sub     w9, w12, #0x1
-    // a0: aa1903e0      mov     x0, x25
-    // a4: b90036c9      str     w9, [x22, #0x34]
-    // a8: aa1803e1      mov     x1, x24
-    // ac: f9002295      str     x21, [x20, #0x40]
-    // b0: d63f0100      blr     x8
-    // b4: b94036c8      ldr     w8, [x22, #0x34]
-    // b8: f9402293      ldr     x19, [x20, #0x40]
-    // bc: aa0003f7      mov     x23, x0
-    // c0: f900229f      str     xzr, [x20, #0x40]
-    // c4: 11000508      add     w8, w8, #0x1
-    // c8: b90036c8      str     w8, [x22, #0x34]
-    // cc: b9400328      ldr     w8, [x25]
-    // d0: 37f80108      tbnz    w8, #0x1f, 0xf0 <_JIT_ENTRY+0xf0>
-    // d4: 71000508      subs    w8, w8, #0x1
-    // d8: b9000328      str     w8, [x25]
+    // 94: f9400521      ldr     x1, [x9, #0x8]
+    // 98: f9400549      ldr     x9, [x10, #0x8]
+    // 9c: 93407d18      sxtw    x24, w8
+    // a0: 510005a8      sub     w8, w13, #0x1
+    // a4: f9002295      str     x21, [x20, #0x40]
+    // a8: b90036c8      str     w8, [x22, #0x34]
+    // ac: d63f0120      blr     x9
+    // b0: b94036c8      ldr     w8, [x22, #0x34]
+    // b4: f9402299      ldr     x25, [x20, #0x40]
+    // b8: aa0003f3      mov     x19, x0
+    // bc: f900229f      str     xzr, [x20, #0x40]
+    // c0: 11000508      add     w8, w8, #0x1
+    // c4: b90036c8      str     w8, [x22, #0x34]
+    // c8: f8777aa8      ldr     x8, [x21, x23, lsl #3]
+    // cc: b9400109      ldr     w9, [x8]
+    // d0: 37f80109      tbnz    w9, #0x1f, 0xf0 <_JIT_ENTRY+0xf0>
+    // d4: 71000529      subs    w9, w9, #0x1
+    // d8: b9000109      str     w9, [x8]
     // dc: 540000a1      b.ne    0xf0 <_JIT_ENTRY+0xf0>
-    // e0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // e0: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
     // 00000000000000e0:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // e4: aa1903e0      mov     x0, x25
-    // e8: f9400108      ldr     x8, [x8]
+    // e4: aa0803e0      mov     x0, x8
+    // e8: f9400129      ldr     x9, [x9]
     // 00000000000000e8:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // ec: d63f0100      blr     x8
-    // f0: b9400308      ldr     w8, [x24]
-    // f4: 37f80108      tbnz    w8, #0x1f, 0x114 <_JIT_ENTRY+0x114>
-    // f8: 71000508      subs    w8, w8, #0x1
-    // fc: b9000308      str     w8, [x24]
-    // 100: 540000a1      b.ne    0x114 <_JIT_ENTRY+0x114>
-    // 104: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000104:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 108: aa1803e0      mov     x0, x24
-    // 10c: f9400108      ldr     x8, [x8]
-    // 000000000000010c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 110: d63f0100      blr     x8
-    // 114: f87b7aa0      ldr     x0, [x21, x27, lsl #3]
-    // 118: b9400008      ldr     w8, [x0]
-    // 11c: 37f800e8      tbnz    w8, #0x1f, 0x138 <_JIT_ENTRY+0x138>
-    // 120: 71000508      subs    w8, w8, #0x1
-    // 124: b9000008      str     w8, [x0]
-    // 128: 54000081      b.ne    0x138 <_JIT_ENTRY+0x138>
-    // 12c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000012c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 130: f9400108      ldr     x8, [x8]
-    // 0000000000000130:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 134: d63f0100      blr     x8
-    // 138: b40000d7      cbz     x23, 0x150 <_JIT_ENTRY+0x150>
-    // 13c: 93407f48      sxtw    x8, w26
-    // 140: f83b7a77      str     x23, [x19, x27, lsl #3]
-    // 144: 8b080e75      add     x21, x19, x8, lsl #3
-    // 148: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 14c: 14000000      b       0x14c <_JIT_ENTRY+0x14c>
-    // 000000000000014c:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 150: aa1303f5      mov     x21, x19
-    // 154: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 158: 14000000      b       0x158 <_JIT_ENTRY+0x158>
-    // 0000000000000158:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 15c: 00 00 00 00
-    const unsigned char code_body[352] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xe9, 0x00, 0x80, 0x92, 0xfd, 0x03, 0x00, 0x91,
-        0x08, 0x01, 0x40, 0xf9, 0x0a, 0x3d, 0x00, 0x12,
-        0xfa, 0x03, 0x2a, 0x2a, 0xab, 0xda, 0x7a, 0xf8,
-        0x7f, 0x01, 0x00, 0xf1, 0x4a, 0x05, 0x8a, 0x1a,
-        0x29, 0x11, 0x9f, 0x9a, 0x5f, 0x09, 0x00, 0x71,
+    // ec: d63f0120      blr     x9
+    // f0: f8787aa0      ldr     x0, [x21, x24, lsl #3]
+    // f4: b4000120      cbz     x0, 0x118 <_JIT_ENTRY+0x118>
+    // f8: b9400008      ldr     w8, [x0]
+    // fc: 37f800e8      tbnz    w8, #0x1f, 0x118 <_JIT_ENTRY+0x118>
+    // 100: 71000508      subs    w8, w8, #0x1
+    // 104: b9000008      str     w8, [x0]
+    // 108: 54000081      b.ne    0x118 <_JIT_ENTRY+0x118>
+    // 10c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 000000000000010c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 110: f9400108      ldr     x8, [x8]
+    // 0000000000000110:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 114: d63f0100      blr     x8
+    // 118: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000118:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
+    // 11c: f9400108      ldr     x8, [x8]
+    // 000000000000011c:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
+    // 120: 72003d1f      tst     w8, #0xffff
+    // 124: 54000240      b.eq    0x16c <_JIT_ENTRY+0x16c>
+    // 128: 9000001a      adrp    x26, 0x0 <_JIT_ENTRY>
+    // 0000000000000128:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 12c: 92403d08      and     x8, x8, #0xffff
+    // 130: d10022b5      sub     x21, x21, #0x8
+    // 134: f940035a      ldr     x26, [x26]
+    // 0000000000000134:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 138: 9100051b      add     x27, x8, #0x1
+    // 13c: 14000004      b       0x14c <_JIT_ENTRY+0x14c>
+    // 140: d100077b      sub     x27, x27, #0x1
+    // 144: f100077f      cmp     x27, #0x1
+    // 148: 54000129      b.ls    0x16c <_JIT_ENTRY+0x16c>
+    // 14c: f85f86a0      ldr     x0, [x21], #-0x8
+    // 150: b9400008      ldr     w8, [x0]
+    // 154: 37ffff68      tbnz    w8, #0x1f, 0x140 <_JIT_ENTRY+0x140>
+    // 158: 71000508      subs    w8, w8, #0x1
+    // 15c: b9000008      str     w8, [x0]
+    // 160: 54ffff01      b.ne    0x140 <_JIT_ENTRY+0x140>
+    // 164: d63f0340      blr     x26
+    // 168: 17fffff6      b       0x140 <_JIT_ENTRY+0x140>
+    // 16c: b40000b3      cbz     x19, 0x180 <_JIT_ENTRY+0x180>
+    // 170: 8b180f35      add     x21, x25, x24, lsl #3
+    // 174: f8377b33      str     x19, [x25, x23, lsl #3]
+    // 178: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 17c: 14000000      b       0x17c <_JIT_ENTRY+0x17c>
+    // 000000000000017c:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 180: 8b170f35      add     x21, x25, x23, lsl #3
+    // 184: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 188: 14000000      b       0x188 <_JIT_ENTRY+0x188>
+    // 0000000000000188:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 18c: 00 00 00 00
+    const unsigned char code_body[400] = {
+        0xfd, 0x7b, 0xbf, 0xa9, 0x09, 0x00, 0x00, 0x90,
+        0xea, 0x00, 0x80, 0x92, 0xfd, 0x03, 0x00, 0x91,
+        0x29, 0x01, 0x40, 0xf9, 0x2b, 0x3d, 0x00, 0x12,
+        0xe8, 0x03, 0x2b, 0x2a, 0xac, 0xda, 0x68, 0xf8,
+        0x9f, 0x01, 0x00, 0xf1, 0x6c, 0x05, 0x8b, 0x1a,
+        0x4b, 0x11, 0x9f, 0x9a, 0x9f, 0x09, 0x00, 0x71,
         0xe1, 0x02, 0x00, 0x54, 0x2a, 0x00, 0x80, 0x92,
-        0x0c, 0x00, 0x00, 0x90, 0x5b, 0x21, 0x28, 0xcb,
-        0xab, 0x7a, 0x7b, 0xf8, 0x6a, 0x05, 0x40, 0xf9,
-        0x8c, 0x01, 0x40, 0xf9, 0x5f, 0x01, 0x0c, 0xeb,
-        0xe1, 0x01, 0x00, 0x54, 0x6a, 0x15, 0x40, 0xf9,
-        0x4c, 0x11, 0x40, 0xb9, 0x9f, 0x21, 0x00, 0x71,
-        0x61, 0x01, 0x00, 0x54, 0xcc, 0x36, 0x40, 0xb9,
-        0x9f, 0x01, 0x00, 0x71, 0x0d, 0x01, 0x00, 0x54,
-        0xa8, 0x2e, 0x28, 0xcb, 0x08, 0x01, 0x09, 0x8b,
-        0x69, 0x09, 0x40, 0xf9, 0x19, 0x01, 0x40, 0xf9,
-        0x2b, 0x07, 0x40, 0xf9, 0x7f, 0x01, 0x09, 0xeb,
+        0x0d, 0x00, 0x00, 0x90, 0x57, 0x21, 0x29, 0xcb,
+        0xac, 0x7a, 0x77, 0xf8, 0x8a, 0x05, 0x40, 0xf9,
+        0xad, 0x01, 0x40, 0xf9, 0x5f, 0x01, 0x0d, 0xeb,
+        0xe1, 0x01, 0x00, 0x54, 0x8a, 0x15, 0x40, 0xf9,
+        0x4d, 0x11, 0x40, 0xb9, 0xbf, 0x21, 0x00, 0x71,
+        0x61, 0x01, 0x00, 0x54, 0xcd, 0x36, 0x40, 0xb9,
+        0xbf, 0x01, 0x00, 0x71, 0x0d, 0x01, 0x00, 0x54,
+        0xa9, 0x2e, 0x29, 0xcb, 0x29, 0x01, 0x0b, 0x8b,
+        0x8b, 0x09, 0x40, 0xf9, 0x20, 0x01, 0x40, 0xf9,
+        0x0c, 0x04, 0x40, 0xf9, 0x9f, 0x01, 0x0b, 0xeb,
         0x60, 0x00, 0x00, 0x54, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x18, 0x05, 0x40, 0xf9,
-        0x48, 0x05, 0x40, 0xf9, 0x89, 0x05, 0x00, 0x51,
-        0xe0, 0x03, 0x19, 0xaa, 0xc9, 0x36, 0x00, 0xb9,
-        0xe1, 0x03, 0x18, 0xaa, 0x95, 0x22, 0x00, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xc8, 0x36, 0x40, 0xb9,
-        0x93, 0x22, 0x40, 0xf9, 0xf7, 0x03, 0x00, 0xaa,
-        0x9f, 0x22, 0x00, 0xf9, 0x08, 0x05, 0x00, 0x11,
-        0xc8, 0x36, 0x00, 0xb9, 0x28, 0x03, 0x40, 0xb9,
-        0x08, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x28, 0x03, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x19, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x08, 0x03, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
-        0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xa0, 0x7a, 0x7b, 0xf8,
+        0x00, 0x00, 0x00, 0x14, 0x21, 0x05, 0x40, 0xf9,
+        0x49, 0x05, 0x40, 0xf9, 0x18, 0x7d, 0x40, 0x93,
+        0xa8, 0x05, 0x00, 0x51, 0x95, 0x22, 0x00, 0xf9,
+        0xc8, 0x36, 0x00, 0xb9, 0x20, 0x01, 0x3f, 0xd6,
+        0xc8, 0x36, 0x40, 0xb9, 0x99, 0x22, 0x40, 0xf9,
+        0xf3, 0x03, 0x00, 0xaa, 0x9f, 0x22, 0x00, 0xf9,
+        0x08, 0x05, 0x00, 0x11, 0xc8, 0x36, 0x00, 0xb9,
+        0xa8, 0x7a, 0x77, 0xf8, 0x09, 0x01, 0x40, 0xb9,
+        0x09, 0x01, 0xf8, 0x37, 0x29, 0x05, 0x00, 0x71,
+        0x09, 0x01, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
+        0x09, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x08, 0xaa,
+        0x29, 0x01, 0x40, 0xf9, 0x20, 0x01, 0x3f, 0xd6,
+        0xa0, 0x7a, 0x78, 0xf8, 0x20, 0x01, 0x00, 0xb4,
         0x08, 0x00, 0x40, 0xb9, 0xe8, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
         0x81, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xd7, 0x00, 0x00, 0xb4, 0x48, 0x7f, 0x40, 0x93,
-        0x77, 0x7a, 0x3b, 0xf8, 0x75, 0x0e, 0x08, 0x8b,
+        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
+        0x1f, 0x3d, 0x00, 0x72, 0x40, 0x02, 0x00, 0x54,
+        0x1a, 0x00, 0x00, 0x90, 0x08, 0x3d, 0x40, 0x92,
+        0xb5, 0x22, 0x00, 0xd1, 0x5a, 0x03, 0x40, 0xf9,
+        0x1b, 0x05, 0x00, 0x91, 0x04, 0x00, 0x00, 0x14,
+        0x7b, 0x07, 0x00, 0xd1, 0x7f, 0x07, 0x00, 0xf1,
+        0x29, 0x01, 0x00, 0x54, 0xa0, 0x86, 0x5f, 0xf8,
+        0x08, 0x00, 0x40, 0xb9, 0x68, 0xff, 0xff, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
+        0x01, 0xff, 0xff, 0x54, 0x40, 0x03, 0x3f, 0xd6,
+        0xf6, 0xff, 0xff, 0x17, 0xb3, 0x00, 0x00, 0xb4,
+        0x35, 0x0f, 0x18, 0x8b, 0x33, 0x7b, 0x37, 0xf8,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0xf5, 0x03, 0x13, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x35, 0x0f, 0x17, 0x8b, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
@@ -5321,11 +5172,12 @@ emit__CALL_METHOD_DESCRIPTOR_O(
     patch_aarch64_26r(code + 0x90, state->instruction_starts[instruction->jump_target]);
     patch_aarch64_21rx(code + 0xe0, (uintptr_t)data + 0x10);
     patch_aarch64_12x(code + 0xe8, (uintptr_t)data + 0x10);
-    patch_aarch64_21rx(code + 0x104, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x10c, (uintptr_t)data + 0x10);
-    patch_aarch64_33rx(code + 0x12c, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x14c, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x158, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_33rx(code + 0x10c, (uintptr_t)data + 0x10);
+    patch_aarch64_33rx(code + 0x118, (uintptr_t)data);
+    patch_aarch64_21rx(code + 0x128, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x134, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x17c, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x188, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -5348,12 +5200,12 @@ emit__CALL_NON_PY_GENERAL(
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
     // 14: 910003fd      mov     x29, sp
     // 18: 12003d09      and     w9, w8, #0xffff
-    // 1c: cb282178      sub     x24, x11, w8, uxth
+    // 1c: cb282177      sub     x23, x11, w8, uxth
     // 20: cb282ea8      sub     x8, x21, w8, uxth #3
     // 24: 2a2903ea      mvn     w10, w9
     // 28: f86adaab      ldr     x11, [x21, w10, sxtw #3]
-    // 2c: 93407d59      sxtw    x25, w10
-    // 30: f8787aa0      ldr     x0, [x21, x24, lsl #3]
+    // 2c: 93407d58      sxtw    x24, w10
+    // 30: f8777aa0      ldr     x0, [x21, x23, lsl #3]
     // 34: 928000ea      mov     x10, #-0x8              // =-8
     // 38: f9002295      str     x21, [x20, #0x40]
     // 3c: f100017f      cmp     x11, #0x0
@@ -5366,10 +5218,10 @@ emit__CALL_NON_PY_GENERAL(
     // 50: 8b0a0101      add     x1, x8, x10
     // 54: b2410122      orr     x2, x9, #0x8000000000000000
     // 58: d63f0160      blr     x11
-    // 5c: f9402293      ldr     x19, [x20, #0x40]
+    // 5c: f9402299      ldr     x25, [x20, #0x40]
     // 60: f900229f      str     xzr, [x20, #0x40]
-    // 64: aa0003f7      mov     x23, x0
-    // 68: f8787aa8      ldr     x8, [x21, x24, lsl #3]
+    // 64: aa0003f3      mov     x19, x0
+    // 68: f8777aa8      ldr     x8, [x21, x23, lsl #3]
     // 6c: b9400109      ldr     w9, [x8]
     // 70: 37f80109      tbnz    w9, #0x1f, 0x90 <_JIT_ENTRY+0x90>
     // 74: 71000529      subs    w9, w9, #0x1
@@ -5381,7 +5233,7 @@ emit__CALL_NON_PY_GENERAL(
     // 88: f9400129      ldr     x9, [x9]
     // 0000000000000088:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 8c: d63f0120      blr     x9
-    // 90: f8797aa0      ldr     x0, [x21, x25, lsl #3]
+    // 90: f8787aa0      ldr     x0, [x21, x24, lsl #3]
     // 94: b4000120      cbz     x0, 0xb8 <_JIT_ENTRY+0xb8>
     // 98: b9400008      ldr     w8, [x0]
     // 9c: 37f800e8      tbnz    w8, #0x1f, 0xb8 <_JIT_ENTRY+0xb8>
@@ -5418,13 +5270,13 @@ emit__CALL_NON_PY_GENERAL(
     // 100: 54ffff01      b.ne    0xe0 <_JIT_ENTRY+0xe0>
     // 104: d63f0340      blr     x26
     // 108: 17fffff6      b       0xe0 <_JIT_ENTRY+0xe0>
-    // 10c: b40000b7      cbz     x23, 0x120 <_JIT_ENTRY+0x120>
-    // 110: 8b190e75      add     x21, x19, x25, lsl #3
-    // 114: f8387a77      str     x23, [x19, x24, lsl #3]
+    // 10c: b40000b3      cbz     x19, 0x120 <_JIT_ENTRY+0x120>
+    // 110: 8b180f35      add     x21, x25, x24, lsl #3
+    // 114: f8377b33      str     x19, [x25, x23, lsl #3]
     // 118: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 11c: 14000000      b       0x11c <_JIT_ENTRY+0x11c>
     // 000000000000011c:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 120: aa1303f5      mov     x21, x19
+    // 120: 8b170f35      add     x21, x25, x23, lsl #3
     // 124: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 128: 14000000      b       0x128 <_JIT_ENTRY+0x128>
     // 0000000000000128:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
@@ -5433,22 +5285,22 @@ emit__CALL_NON_PY_GENERAL(
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0x2b, 0x00, 0x80, 0x92, 0xe3, 0x03, 0x1f, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0xfd, 0x03, 0x00, 0x91,
-        0x09, 0x3d, 0x00, 0x12, 0x78, 0x21, 0x28, 0xcb,
+        0x09, 0x3d, 0x00, 0x12, 0x77, 0x21, 0x28, 0xcb,
         0xa8, 0x2e, 0x28, 0xcb, 0xea, 0x03, 0x29, 0x2a,
-        0xab, 0xda, 0x6a, 0xf8, 0x59, 0x7d, 0x40, 0x93,
-        0xa0, 0x7a, 0x78, 0xf8, 0xea, 0x00, 0x80, 0x92,
+        0xab, 0xda, 0x6a, 0xf8, 0x58, 0x7d, 0x40, 0x93,
+        0xa0, 0x7a, 0x77, 0xf8, 0xea, 0x00, 0x80, 0x92,
         0x95, 0x22, 0x00, 0xf9, 0x7f, 0x01, 0x00, 0xf1,
         0x0b, 0x00, 0x00, 0x90, 0x4a, 0x11, 0x9f, 0x9a,
         0x29, 0x05, 0x89, 0x1a, 0x6b, 0x01, 0x40, 0xf9,
         0x01, 0x01, 0x0a, 0x8b, 0x22, 0x01, 0x41, 0xb2,
-        0x60, 0x01, 0x3f, 0xd6, 0x93, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xf7, 0x03, 0x00, 0xaa,
-        0xa8, 0x7a, 0x78, 0xf8, 0x09, 0x01, 0x40, 0xb9,
+        0x60, 0x01, 0x3f, 0xd6, 0x99, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xf3, 0x03, 0x00, 0xaa,
+        0xa8, 0x7a, 0x77, 0xf8, 0x09, 0x01, 0x40, 0xb9,
         0x09, 0x01, 0xf8, 0x37, 0x29, 0x05, 0x00, 0x71,
         0x09, 0x01, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
         0x09, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x08, 0xaa,
         0x29, 0x01, 0x40, 0xf9, 0x20, 0x01, 0x3f, 0xd6,
-        0xa0, 0x7a, 0x79, 0xf8, 0x20, 0x01, 0x00, 0xb4,
+        0xa0, 0x7a, 0x78, 0xf8, 0x20, 0x01, 0x00, 0xb4,
         0x08, 0x00, 0x40, 0xb9, 0xe8, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
         0x81, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
@@ -5463,10 +5315,10 @@ emit__CALL_NON_PY_GENERAL(
         0x08, 0x00, 0x40, 0xb9, 0x68, 0xff, 0xff, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
         0x01, 0xff, 0xff, 0x54, 0x40, 0x03, 0x3f, 0xd6,
-        0xf6, 0xff, 0xff, 0x17, 0xb7, 0x00, 0x00, 0xb4,
-        0x75, 0x0e, 0x19, 0x8b, 0x77, 0x7a, 0x38, 0xf8,
+        0xf6, 0xff, 0xff, 0x17, 0xb3, 0x00, 0x00, 0xb4,
+        0x35, 0x0f, 0x18, 0x8b, 0x33, 0x7b, 0x37, 0xf8,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0xf5, 0x03, 0x13, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x35, 0x0f, 0x17, 0x8b, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
@@ -5521,59 +5373,62 @@ emit__CALL_STR_1(
     // 24: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 28: 14000000      b       0x28 <_JIT_ENTRY+0x28>
     // 0000000000000028:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 2c: f85f82b7      ldur    x23, [x21, #-0x8]
+    // 2c: f85f82b3      ldur    x19, [x21, #-0x8]
     // 30: f9002295      str     x21, [x20, #0x40]
     // 34: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000034:  R_AARCH64_ADR_GOT_PAGE       PyObject_Str
     // 38: f9400108      ldr     x8, [x8]
     // 0000000000000038:  R_AARCH64_LD64_GOT_LO12_NC   PyObject_Str
-    // 3c: aa1703e0      mov     x0, x23
+    // 3c: aa1303e0      mov     x0, x19
     // 40: d63f0100      blr     x8
-    // 44: f9402293      ldr     x19, [x20, #0x40]
-    // 48: f900229f      str     xzr, [x20, #0x40]
-    // 4c: b94002e8      ldr     w8, [x23]
-    // 50: 37f80148      tbnz    w8, #0x1f, 0x78 <_JIT_ENTRY+0x78>
-    // 54: 71000508      subs    w8, w8, #0x1
-    // 58: b90002e8      str     w8, [x23]
-    // 5c: 540000e1      b.ne    0x78 <_JIT_ENTRY+0x78>
-    // 60: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000060:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 64: aa0003f5      mov     x21, x0
-    // 68: aa1703e0      mov     x0, x23
-    // 6c: f9400108      ldr     x8, [x8]
-    // 000000000000006c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 70: d63f0100      blr     x8
-    // 74: aa1503e0      mov     x0, x21
-    // 78: b40000a0      cbz     x0, 0x8c <_JIT_ENTRY+0x8c>
-    // 7c: d1004275      sub     x21, x19, #0x10
-    // 80: f81e8260      stur    x0, [x19, #-0x18]
-    // 84: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 88: 14000000      b       0x88 <_JIT_ENTRY+0x88>
-    // 0000000000000088:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 8c: aa1303f5      mov     x21, x19
-    // 90: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 94: 14000000      b       0x94 <_JIT_ENTRY+0x94>
-    // 0000000000000094:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[152] = {
+    // 44: f9402288      ldr     x8, [x20, #0x40]
+    // 48: d1006108      sub     x8, x8, #0x18
+    // 4c: f9002288      str     x8, [x20, #0x40]
+    // 50: b9400268      ldr     w8, [x19]
+    // 54: 37f80148      tbnz    w8, #0x1f, 0x7c <_JIT_ENTRY+0x7c>
+    // 58: 71000508      subs    w8, w8, #0x1
+    // 5c: b9000268      str     w8, [x19]
+    // 60: 540000e1      b.ne    0x7c <_JIT_ENTRY+0x7c>
+    // 64: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000064:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 68: aa0003f5      mov     x21, x0
+    // 6c: aa1303e0      mov     x0, x19
+    // 70: f9400108      ldr     x8, [x8]
+    // 0000000000000070:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 74: d63f0100      blr     x8
+    // 78: aa1503e0      mov     x0, x21
+    // 7c: f9402295      ldr     x21, [x20, #0x40]
+    // 80: f900229f      str     xzr, [x20, #0x40]
+    // 84: b4000080      cbz     x0, 0x94 <_JIT_ENTRY+0x94>
+    // 88: f80086a0      str     x0, [x21], #0x8
+    // 8c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 90: 14000000      b       0x90 <_JIT_ENTRY+0x90>
+    // 0000000000000090:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 94: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 98: 14000000      b       0x98 <_JIT_ENTRY+0x98>
+    // 0000000000000098:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 9c: 00 00 00 00
+    const unsigned char code_body[160] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0xa8, 0x02, 0x5f, 0xf8,
         0xfd, 0x03, 0x00, 0x91, 0xc8, 0x00, 0x00, 0xb5,
         0x09, 0x00, 0x00, 0x90, 0xa8, 0x82, 0x5e, 0xf8,
         0x29, 0x01, 0x40, 0xf9, 0x1f, 0x01, 0x09, 0xeb,
         0x60, 0x00, 0x00, 0x54, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0xb7, 0x82, 0x5f, 0xf8,
+        0x00, 0x00, 0x00, 0x14, 0xb3, 0x82, 0x5f, 0xf8,
         0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
-        0x08, 0x01, 0x40, 0xf9, 0xe0, 0x03, 0x17, 0xaa,
-        0x00, 0x01, 0x3f, 0xd6, 0x93, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xe8, 0x02, 0x40, 0xb9,
-        0x48, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0xe8, 0x02, 0x00, 0xb9, 0xe1, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0xf5, 0x03, 0x00, 0xaa,
-        0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xe0, 0x03, 0x15, 0xaa,
-        0xa0, 0x00, 0x00, 0xb4, 0x75, 0x42, 0x00, 0xd1,
-        0x60, 0x82, 0x1e, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0xf5, 0x03, 0x13, 0xaa,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0x08, 0x01, 0x40, 0xf9, 0xe0, 0x03, 0x13, 0xaa,
+        0x00, 0x01, 0x3f, 0xd6, 0x88, 0x22, 0x40, 0xf9,
+        0x08, 0x61, 0x00, 0xd1, 0x88, 0x22, 0x00, 0xf9,
+        0x68, 0x02, 0x40, 0xb9, 0x48, 0x01, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
+        0xe1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
+        0xf5, 0x03, 0x00, 0xaa, 0xe0, 0x03, 0x13, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xe0, 0x03, 0x15, 0xaa, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x80, 0x00, 0x00, 0xb4,
+        0xa0, 0x86, 0x00, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: &PyUnicode_Type+0x0
     // 8: &PyObject_Str+0x0
@@ -5592,10 +5447,10 @@ emit__CALL_STR_1(
     patch_aarch64_12x(code + 0x18, (uintptr_t)data);
     patch_aarch64_26r(code + 0x28, state->instruction_starts[instruction->jump_target]);
     patch_aarch64_33rx(code + 0x34, (uintptr_t)data + 0x8);
-    patch_aarch64_21rx(code + 0x60, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x6c, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x88, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x94, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0x64, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x70, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x90, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x98, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -5623,59 +5478,62 @@ emit__CALL_TUPLE_1(
     // 24: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 28: 14000000      b       0x28 <_JIT_ENTRY+0x28>
     // 0000000000000028:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 2c: f85f82b7      ldur    x23, [x21, #-0x8]
+    // 2c: f85f82b3      ldur    x19, [x21, #-0x8]
     // 30: f9002295      str     x21, [x20, #0x40]
     // 34: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000034:  R_AARCH64_ADR_GOT_PAGE       PySequence_Tuple
     // 38: f9400108      ldr     x8, [x8]
     // 0000000000000038:  R_AARCH64_LD64_GOT_LO12_NC   PySequence_Tuple
-    // 3c: aa1703e0      mov     x0, x23
+    // 3c: aa1303e0      mov     x0, x19
     // 40: d63f0100      blr     x8
-    // 44: f9402293      ldr     x19, [x20, #0x40]
-    // 48: f900229f      str     xzr, [x20, #0x40]
-    // 4c: b94002e8      ldr     w8, [x23]
-    // 50: 37f80148      tbnz    w8, #0x1f, 0x78 <_JIT_ENTRY+0x78>
-    // 54: 71000508      subs    w8, w8, #0x1
-    // 58: b90002e8      str     w8, [x23]
-    // 5c: 540000e1      b.ne    0x78 <_JIT_ENTRY+0x78>
-    // 60: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000060:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 64: aa0003f5      mov     x21, x0
-    // 68: aa1703e0      mov     x0, x23
-    // 6c: f9400108      ldr     x8, [x8]
-    // 000000000000006c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 70: d63f0100      blr     x8
-    // 74: aa1503e0      mov     x0, x21
-    // 78: b40000a0      cbz     x0, 0x8c <_JIT_ENTRY+0x8c>
-    // 7c: d1004275      sub     x21, x19, #0x10
-    // 80: f81e8260      stur    x0, [x19, #-0x18]
-    // 84: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 88: 14000000      b       0x88 <_JIT_ENTRY+0x88>
-    // 0000000000000088:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 8c: aa1303f5      mov     x21, x19
-    // 90: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 94: 14000000      b       0x94 <_JIT_ENTRY+0x94>
-    // 0000000000000094:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[152] = {
+    // 44: f9402288      ldr     x8, [x20, #0x40]
+    // 48: d1006108      sub     x8, x8, #0x18
+    // 4c: f9002288      str     x8, [x20, #0x40]
+    // 50: b9400268      ldr     w8, [x19]
+    // 54: 37f80148      tbnz    w8, #0x1f, 0x7c <_JIT_ENTRY+0x7c>
+    // 58: 71000508      subs    w8, w8, #0x1
+    // 5c: b9000268      str     w8, [x19]
+    // 60: 540000e1      b.ne    0x7c <_JIT_ENTRY+0x7c>
+    // 64: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000064:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 68: aa0003f5      mov     x21, x0
+    // 6c: aa1303e0      mov     x0, x19
+    // 70: f9400108      ldr     x8, [x8]
+    // 0000000000000070:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 74: d63f0100      blr     x8
+    // 78: aa1503e0      mov     x0, x21
+    // 7c: f9402295      ldr     x21, [x20, #0x40]
+    // 80: f900229f      str     xzr, [x20, #0x40]
+    // 84: b4000080      cbz     x0, 0x94 <_JIT_ENTRY+0x94>
+    // 88: f80086a0      str     x0, [x21], #0x8
+    // 8c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 90: 14000000      b       0x90 <_JIT_ENTRY+0x90>
+    // 0000000000000090:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 94: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 98: 14000000      b       0x98 <_JIT_ENTRY+0x98>
+    // 0000000000000098:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 9c: 00 00 00 00
+    const unsigned char code_body[160] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0xa8, 0x02, 0x5f, 0xf8,
         0xfd, 0x03, 0x00, 0x91, 0xc8, 0x00, 0x00, 0xb5,
         0x09, 0x00, 0x00, 0x90, 0xa8, 0x82, 0x5e, 0xf8,
         0x29, 0x01, 0x40, 0xf9, 0x1f, 0x01, 0x09, 0xeb,
         0x60, 0x00, 0x00, 0x54, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0xb7, 0x82, 0x5f, 0xf8,
+        0x00, 0x00, 0x00, 0x14, 0xb3, 0x82, 0x5f, 0xf8,
         0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
-        0x08, 0x01, 0x40, 0xf9, 0xe0, 0x03, 0x17, 0xaa,
-        0x00, 0x01, 0x3f, 0xd6, 0x93, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xe8, 0x02, 0x40, 0xb9,
-        0x48, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0xe8, 0x02, 0x00, 0xb9, 0xe1, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0xf5, 0x03, 0x00, 0xaa,
-        0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xe0, 0x03, 0x15, 0xaa,
-        0xa0, 0x00, 0x00, 0xb4, 0x75, 0x42, 0x00, 0xd1,
-        0x60, 0x82, 0x1e, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0xf5, 0x03, 0x13, 0xaa,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0x08, 0x01, 0x40, 0xf9, 0xe0, 0x03, 0x13, 0xaa,
+        0x00, 0x01, 0x3f, 0xd6, 0x88, 0x22, 0x40, 0xf9,
+        0x08, 0x61, 0x00, 0xd1, 0x88, 0x22, 0x00, 0xf9,
+        0x68, 0x02, 0x40, 0xb9, 0x48, 0x01, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
+        0xe1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
+        0xf5, 0x03, 0x00, 0xaa, 0xe0, 0x03, 0x13, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xe0, 0x03, 0x15, 0xaa, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x80, 0x00, 0x00, 0xb4,
+        0xa0, 0x86, 0x00, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: &PyTuple_Type+0x0
     // 8: &PySequence_Tuple+0x0
@@ -5694,10 +5552,10 @@ emit__CALL_TUPLE_1(
     patch_aarch64_12x(code + 0x18, (uintptr_t)data);
     patch_aarch64_26r(code + 0x28, state->instruction_starts[instruction->jump_target]);
     patch_aarch64_33rx(code + 0x34, (uintptr_t)data + 0x8);
-    patch_aarch64_21rx(code + 0x60, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x6c, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x88, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x94, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0x64, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x70, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x90, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x98, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -5712,61 +5570,64 @@ emit__CALL_TYPE_1(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: aa1503e8      mov     x8, x21
-    // 4: f85f0ea9      ldr     x9, [x21, #-0x10]!
+    // 4: f85f0d09      ldr     x9, [x8, #-0x10]!
     // 8: b50000c9      cbnz    x9, 0x20 <_JIT_ENTRY+0x20>
     // c: 9000000a      adrp    x10, 0x0 <_JIT_ENTRY>
     // 000000000000000c:  R_AARCH64_ADR_GOT_PAGE       PyType_Type
-    // 10: f85e8109      ldur    x9, [x8, #-0x18]
+    // 10: f85e82a9      ldur    x9, [x21, #-0x18]
     // 14: f940014a      ldr     x10, [x10]
     // 0000000000000014:  R_AARCH64_LD64_GOT_LO12_NC   PyType_Type
     // 18: eb0a013f      cmp     x9, x10
-    // 1c: 54000060      b.eq    0x28 <_JIT_ENTRY+0x28>
-    // 20: aa0803f5      mov     x21, x8
-    // 24: 14000000      b       0x24 <_JIT_ENTRY+0x24>
-    // 0000000000000024:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 28: f94006a0      ldr     x0, [x21, #0x8]
-    // 2c: f9400413      ldr     x19, [x0, #0x8]
-    // 30: b9400269      ldr     w9, [x19]
-    // 34: 37f80069      tbnz    w9, #0x1f, 0x40 <_JIT_ENTRY+0x40>
-    // 38: 11000529      add     w9, w9, #0x1
-    // 3c: b9000269      str     w9, [x19]
-    // 40: aa0803f7      mov     x23, x8
+    // 1c: 54000040      b.eq    0x24 <_JIT_ENTRY+0x24>
+    // 20: 14000000      b       0x20 <_JIT_ENTRY+0x20>
+    // 0000000000000020:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
+    // 24: f9400500      ldr     x0, [x8, #0x8]
+    // 28: f9400409      ldr     x9, [x0, #0x8]
+    // 2c: b940012a      ldr     w10, [x9]
+    // 30: 37f8006a      tbnz    w10, #0x1f, 0x3c <_JIT_ENTRY+0x3c>
+    // 34: 1100054a      add     w10, w10, #0x1
+    // 38: b900012a      str     w10, [x9]
+    // 3c: f81e82a9      stur    x9, [x21, #-0x18]
+    // 40: f9002288      str     x8, [x20, #0x40]
     // 44: b9400008      ldr     w8, [x0]
     // 48: 37f80088      tbnz    w8, #0x1f, 0x58 <_JIT_ENTRY+0x58>
     // 4c: 71000508      subs    w8, w8, #0x1
     // 50: b9000008      str     w8, [x0]
-    // 54: 54000060      b.eq    0x60 <_JIT_ENTRY+0x60>
-    // 58: f81e82f3      stur    x19, [x23, #-0x18]
-    // 5c: 14000000      b       0x5c <_JIT_ENTRY+0x5c>
-    // 000000000000005c:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 60: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 64: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000064:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 68: 910003fd      mov     x29, sp
-    // 6c: f9400108      ldr     x8, [x8]
-    // 000000000000006c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 70: d63f0100      blr     x8
-    // 74: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 78: f81e82f3      stur    x19, [x23, #-0x18]
-    // 7c: 14000000      b       0x7c <_JIT_ENTRY+0x7c>
-    // 000000000000007c:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[128] = {
-        0xe8, 0x03, 0x15, 0xaa, 0xa9, 0x0e, 0x5f, 0xf8,
+    // 54: 54000080      b.eq    0x64 <_JIT_ENTRY+0x64>
+    // 58: f9402295      ldr     x21, [x20, #0x40]
+    // 5c: f900229f      str     xzr, [x20, #0x40]
+    // 60: 14000000      b       0x60 <_JIT_ENTRY+0x60>
+    // 0000000000000060:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 64: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 68: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000068:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 6c: 910003fd      mov     x29, sp
+    // 70: f9400108      ldr     x8, [x8]
+    // 0000000000000070:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 74: d63f0100      blr     x8
+    // 78: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 7c: f9402295      ldr     x21, [x20, #0x40]
+    // 80: f900229f      str     xzr, [x20, #0x40]
+    // 84: 14000000      b       0x84 <_JIT_ENTRY+0x84>
+    // 0000000000000084:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[136] = {
+        0xe8, 0x03, 0x15, 0xaa, 0x09, 0x0d, 0x5f, 0xf8,
         0xc9, 0x00, 0x00, 0xb5, 0x0a, 0x00, 0x00, 0x90,
-        0x09, 0x81, 0x5e, 0xf8, 0x4a, 0x01, 0x40, 0xf9,
-        0x3f, 0x01, 0x0a, 0xeb, 0x60, 0x00, 0x00, 0x54,
-        0xf5, 0x03, 0x08, 0xaa, 0x00, 0x00, 0x00, 0x14,
-        0xa0, 0x06, 0x40, 0xf9, 0x13, 0x04, 0x40, 0xf9,
-        0x69, 0x02, 0x40, 0xb9, 0x69, 0x00, 0xf8, 0x37,
-        0x29, 0x05, 0x00, 0x11, 0x69, 0x02, 0x00, 0xb9,
-        0xf7, 0x03, 0x08, 0xaa, 0x08, 0x00, 0x40, 0xb9,
+        0xa9, 0x82, 0x5e, 0xf8, 0x4a, 0x01, 0x40, 0xf9,
+        0x3f, 0x01, 0x0a, 0xeb, 0x40, 0x00, 0x00, 0x54,
+        0x00, 0x00, 0x00, 0x14, 0x00, 0x05, 0x40, 0xf9,
+        0x09, 0x04, 0x40, 0xf9, 0x2a, 0x01, 0x40, 0xb9,
+        0x6a, 0x00, 0xf8, 0x37, 0x4a, 0x05, 0x00, 0x11,
+        0x2a, 0x01, 0x00, 0xb9, 0xa9, 0x82, 0x1e, 0xf8,
+        0x88, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x40, 0xb9,
         0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x08, 0x00, 0x00, 0xb9, 0x60, 0x00, 0x00, 0x54,
-        0xf3, 0x82, 0x1e, 0xf8, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
-        0xf3, 0x82, 0x1e, 0xf8, 0x00, 0x00, 0x00, 0x14,
+        0x08, 0x00, 0x00, 0xb9, 0x80, 0x00, 0x00, 0x54,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
+        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: &PyType_Type+0x0
     // 8: &_Py_Dealloc+0x0
@@ -5780,11 +5641,11 @@ emit__CALL_TYPE_1(
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_21rx(code + 0xc, (uintptr_t)data);
     patch_aarch64_12x(code + 0x14, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x24, state->instruction_starts[instruction->jump_target]);
-    patch_aarch64_26r(code + 0x5c, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x64, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x6c, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x7c, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x20, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_26r(code + 0x60, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x68, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x70, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x84, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -5805,28 +5666,28 @@ emit__CHECK_AND_ALLOCATE_OBJECT(
     // c: f9400108      ldr     x8, [x8]
     // 000000000000000c:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
     // 10: 12003d08      and     w8, w8, #0xffff
-    // 14: 2a2803f8      mvn     w24, w8
-    // 18: f878daa9      ldr     x9, [x21, w24, sxtw #3]
-    // 1c: b5000669      cbnz    x9, 0xe8 <_JIT_ENTRY+0xe8>
+    // 14: 2a2803f7      mvn     w23, w8
+    // 18: f877daa9      ldr     x9, [x21, w23, sxtw #3]
+    // 1c: b50006a9      cbnz    x9, 0xf0 <_JIT_ENTRY+0xf0>
     // 20: 12800029      mov     w9, #-0x2               // =-2
-    // 24: 4b080137      sub     w23, w9, w8
-    // 28: f877daa0      ldr     x0, [x21, w23, sxtw #3]
+    // 24: 4b080133      sub     w19, w9, w8
+    // 28: f873daa0      ldr     x0, [x21, w19, sxtw #3]
     // 2c: f9400408      ldr     x8, [x0, #0x8]
     // 30: 3942ad08      ldrb    w8, [x8, #0xab]
-    // 34: 363805a8      tbz     w8, #0x7, 0xe8 <_JIT_ENTRY+0xe8>
+    // 34: 363805e8      tbz     w8, #0x7, 0xf0 <_JIT_ENTRY+0xf0>
     // 38: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
     // 0000000000000038:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPERAND0
     // 3c: b9418008      ldr     w8, [x0, #0x180]
     // 40: f9400129      ldr     x9, [x9]
     // 0000000000000040:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPERAND0
     // 44: 6b09011f      cmp     w8, w9
-    // 48: 54000501      b.ne    0xe8 <_JIT_ENTRY+0xe8>
+    // 48: 54000541      b.ne    0xf0 <_JIT_ENTRY+0xf0>
     // 4c: f9407ac8      ldr     x8, [x22, #0xf0]
-    // 50: b40004c8      cbz     x8, 0xe8 <_JIT_ENTRY+0xe8>
-    // 54: f941d019      ldr     x25, [x0, #0x3a0]
+    // 50: b4000508      cbz     x8, 0xf0 <_JIT_ENTRY+0xf0>
+    // 54: f941d018      ldr     x24, [x0, #0x3a0]
     // 58: 9000000a      adrp    x10, 0x0 <_JIT_ENTRY>
     // 0000000000000058:  R_AARCH64_ADR_GOT_PAGE       _Py_InitCleanup
-    // 5c: f9401b29      ldr     x9, [x25, #0x30]
+    // 5c: f9401b09      ldr     x9, [x24, #0x30]
     // 60: f940014a      ldr     x10, [x10]
     // 0000000000000060:  R_AARCH64_LD64_GOT_LO12_NC   _Py_InitCleanup
     // 64: f9407ecb      ldr     x11, [x22, #0xf8]
@@ -5835,7 +5696,7 @@ emit__CHECK_AND_ALLOCATE_OBJECT(
     // 70: cb080168      sub     x8, x11, x8
     // 74: 8b090149      add     x9, x10, x9
     // 78: eb880d3f      cmp     x9, x8, asr #3
-    // 7c: 5400036a      b.ge    0xe8 <_JIT_ENTRY+0xe8>
+    // 7c: 540003aa      b.ge    0xf0 <_JIT_ENTRY+0xf0>
     // 80: f9002295      str     x21, [x20, #0x40]
     // 84: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000084:  R_AARCH64_ADR_GOT_PAGE       PyType_GenericAlloc
@@ -5843,70 +5704,73 @@ emit__CHECK_AND_ALLOCATE_OBJECT(
     // 8c: f9400108      ldr     x8, [x8]
     // 000000000000008c:  R_AARCH64_LD64_GOT_LO12_NC   PyType_GenericAlloc
     // 90: d63f0100      blr     x8
-    // 94: f9402293      ldr     x19, [x20, #0x40]
+    // 94: f9402288      ldr     x8, [x20, #0x40]
     // 98: f900229f      str     xzr, [x20, #0x40]
-    // 9c: b40002a0      cbz     x0, 0xf0 <_JIT_ENTRY+0xf0>
-    // a0: f838daa0      str     x0, [x21, w24, sxtw #3]
-    // a4: b9400328      ldr     w8, [x25]
-    // a8: f877daa0      ldr     x0, [x21, w23, sxtw #3]
-    // ac: 37f80068      tbnz    w8, #0x1f, 0xb8 <_JIT_ENTRY+0xb8>
-    // b0: 11000508      add     w8, w8, #0x1
-    // b4: b9000328      str     w8, [x25]
-    // b8: f837dab9      str     x25, [x21, w23, sxtw #3]
-    // bc: b9400008      ldr     w8, [x0]
-    // c0: 37f800e8      tbnz    w8, #0x1f, 0xdc <_JIT_ENTRY+0xdc>
-    // c4: 71000508      subs    w8, w8, #0x1
-    // c8: b9000008      str     w8, [x0]
-    // cc: 54000081      b.ne    0xdc <_JIT_ENTRY+0xdc>
-    // d0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000d0:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // d4: f9400108      ldr     x8, [x8]
-    // 00000000000000d4:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // d8: d63f0100      blr     x8
-    // dc: aa1303f5      mov     x21, x19
-    // e0: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // e4: 14000000      b       0xe4 <_JIT_ENTRY+0xe4>
-    // 00000000000000e4:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 9c: b40002e0      cbz     x0, 0xf8 <_JIT_ENTRY+0xf8>
+    // a0: f837daa0      str     x0, [x21, w23, sxtw #3]
+    // a4: b9400309      ldr     w9, [x24]
+    // a8: f873daa0      ldr     x0, [x21, w19, sxtw #3]
+    // ac: 37f80069      tbnz    w9, #0x1f, 0xb8 <_JIT_ENTRY+0xb8>
+    // b0: 11000529      add     w9, w9, #0x1
+    // b4: b9000309      str     w9, [x24]
+    // b8: f833dab8      str     x24, [x21, w19, sxtw #3]
+    // bc: f9002288      str     x8, [x20, #0x40]
+    // c0: b9400008      ldr     w8, [x0]
+    // c4: 37f800e8      tbnz    w8, #0x1f, 0xe0 <_JIT_ENTRY+0xe0>
+    // c8: 71000508      subs    w8, w8, #0x1
+    // cc: b9000008      str     w8, [x0]
+    // d0: 54000081      b.ne    0xe0 <_JIT_ENTRY+0xe0>
+    // d4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000d4:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // d8: f9400108      ldr     x8, [x8]
+    // 00000000000000d8:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // dc: d63f0100      blr     x8
+    // e0: f9402295      ldr     x21, [x20, #0x40]
+    // e4: f900229f      str     xzr, [x20, #0x40]
     // e8: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // ec: 14000000      b       0xec <_JIT_ENTRY+0xec>
-    // 00000000000000ec:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // f0: aa1303f5      mov     x21, x19
-    // f4: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // f8: 14000000      b       0xf8 <_JIT_ENTRY+0xf8>
-    // 00000000000000f8:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // fc: 00 00 00 00
-    const unsigned char code_body[256] = {
+    // 00000000000000ec:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // f0: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // f4: 14000000      b       0xf4 <_JIT_ENTRY+0xf4>
+    // 00000000000000f4:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
+    // f8: aa0803f5      mov     x21, x8
+    // fc: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 100: 14000000      b       0x100 <_JIT_ENTRY+0x100>
+    // 0000000000000100:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 104: 00 00 00 00
+    const unsigned char code_body[264] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x08, 0x3d, 0x00, 0x12, 0xf8, 0x03, 0x28, 0x2a,
-        0xa9, 0xda, 0x78, 0xf8, 0x69, 0x06, 0x00, 0xb5,
-        0x29, 0x00, 0x80, 0x12, 0x37, 0x01, 0x08, 0x4b,
-        0xa0, 0xda, 0x77, 0xf8, 0x08, 0x04, 0x40, 0xf9,
-        0x08, 0xad, 0x42, 0x39, 0xa8, 0x05, 0x38, 0x36,
+        0x08, 0x3d, 0x00, 0x12, 0xf7, 0x03, 0x28, 0x2a,
+        0xa9, 0xda, 0x77, 0xf8, 0xa9, 0x06, 0x00, 0xb5,
+        0x29, 0x00, 0x80, 0x12, 0x33, 0x01, 0x08, 0x4b,
+        0xa0, 0xda, 0x73, 0xf8, 0x08, 0x04, 0x40, 0xf9,
+        0x08, 0xad, 0x42, 0x39, 0xe8, 0x05, 0x38, 0x36,
         0x09, 0x00, 0x00, 0x90, 0x08, 0x80, 0x41, 0xb9,
         0x29, 0x01, 0x40, 0xf9, 0x1f, 0x01, 0x09, 0x6b,
-        0x01, 0x05, 0x00, 0x54, 0xc8, 0x7a, 0x40, 0xf9,
-        0xc8, 0x04, 0x00, 0xb4, 0x19, 0xd0, 0x41, 0xf9,
-        0x0a, 0x00, 0x00, 0x90, 0x29, 0x1b, 0x40, 0xf9,
+        0x41, 0x05, 0x00, 0x54, 0xc8, 0x7a, 0x40, 0xf9,
+        0x08, 0x05, 0x00, 0xb4, 0x18, 0xd0, 0x41, 0xf9,
+        0x0a, 0x00, 0x00, 0x90, 0x09, 0x1b, 0x40, 0xf9,
         0x4a, 0x01, 0x40, 0xf9, 0xcb, 0x7e, 0x40, 0xf9,
         0x29, 0x4d, 0x80, 0xb9, 0x4a, 0x4d, 0x80, 0xb9,
         0x68, 0x01, 0x08, 0xcb, 0x49, 0x01, 0x09, 0x8b,
-        0x3f, 0x0d, 0x88, 0xeb, 0x6a, 0x03, 0x00, 0x54,
+        0x3f, 0x0d, 0x88, 0xeb, 0xaa, 0x03, 0x00, 0x54,
         0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
         0xe1, 0x03, 0x1f, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x93, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xa0, 0x02, 0x00, 0xb4,
-        0xa0, 0xda, 0x38, 0xf8, 0x28, 0x03, 0x40, 0xb9,
-        0xa0, 0xda, 0x77, 0xf8, 0x68, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x11, 0x28, 0x03, 0x00, 0xb9,
-        0xb9, 0xda, 0x37, 0xf8, 0x08, 0x00, 0x40, 0xb9,
-        0xe8, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x08, 0x00, 0x00, 0xb9, 0x81, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xf5, 0x03, 0x13, 0xaa,
+        0x00, 0x01, 0x3f, 0xd6, 0x88, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xe0, 0x02, 0x00, 0xb4,
+        0xa0, 0xda, 0x37, 0xf8, 0x09, 0x03, 0x40, 0xb9,
+        0xa0, 0xda, 0x73, 0xf8, 0x69, 0x00, 0xf8, 0x37,
+        0x29, 0x05, 0x00, 0x11, 0x09, 0x03, 0x00, 0xb9,
+        0xb8, 0xda, 0x33, 0xf8, 0x88, 0x22, 0x00, 0xf9,
+        0x08, 0x00, 0x40, 0xb9, 0xe8, 0x00, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
+        0x81, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0xf5, 0x03, 0x13, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
+        0xf5, 0x03, 0x08, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
@@ -5936,10 +5800,10 @@ emit__CHECK_AND_ALLOCATE_OBJECT(
     patch_aarch64_12x(code + 0x60, (uintptr_t)data + 0x10);
     patch_aarch64_21rx(code + 0x84, (uintptr_t)data + 0x18);
     patch_aarch64_12x(code + 0x8c, (uintptr_t)data + 0x18);
-    patch_aarch64_33rx(code + 0xd0, (uintptr_t)data + 0x20);
-    patch_aarch64_26r(code + 0xe4, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0xec, state->instruction_starts[instruction->jump_target]);
-    patch_aarch64_26r(code + 0xf8, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_33rx(code + 0xd4, (uintptr_t)data + 0x20);
+    patch_aarch64_26r(code + 0xec, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0xf4, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_26r(code + 0x100, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -6241,7 +6105,7 @@ emit__CHECK_EG_MATCH(
     // 90: 37f80088      tbnz    w8, #0x1f, 0xa0 <_JIT_ENTRY+0xa0>
     // 94: 71000508      subs    w8, w8, #0x1
     // 98: b9000268      str     w8, [x19]
-    // 9c: 540004e0      b.eq    0x138 <_JIT_ENTRY+0x138>
+    // 9c: 54000500      b.eq    0x13c <_JIT_ENTRY+0x13c>
     // a0: 37f80478      tbnz    w24, #0x1f, 0x12c <_JIT_ENTRY+0x12c>
     // a4: f94007e0      ldr     x0, [sp, #0x8]
     // a8: b4000420      cbz     x0, 0x12c <_JIT_ENTRY+0x12c>
@@ -6283,31 +6147,33 @@ emit__CHECK_EG_MATCH(
     // 11c: 37f80088      tbnz    w8, #0x1f, 0x12c <_JIT_ENTRY+0x12c>
     // 120: 71000508      subs    w8, w8, #0x1
     // 124: b9000268      str     w8, [x19]
-    // 128: 54000140      b.eq    0x150 <_JIT_ENTRY+0x150>
+    // 128: 54000160      b.eq    0x154 <_JIT_ENTRY+0x154>
     // 12c: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // 130: 910083ff      add     sp, sp, #0x20
-    // 134: 14000000      b       0x134 <_JIT_ENTRY+0x134>
-    // 0000000000000134:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 138: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000138:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 13c: aa1303e0      mov     x0, x19
-    // 140: f9400108      ldr     x8, [x8]
-    // 0000000000000140:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 144: d63f0100      blr     x8
-    // 148: 36fffaf8      tbz     w24, #0x1f, 0xa4 <_JIT_ENTRY+0xa4>
-    // 14c: 17fffff8      b       0x12c <_JIT_ENTRY+0x12c>
-    // 150: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000150:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 154: aa1303e0      mov     x0, x19
-    // 158: f9400108      ldr     x8, [x8]
-    // 0000000000000158:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 15c: d63f0100      blr     x8
-    // 160: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // 164: 910083ff      add     sp, sp, #0x20
-    // 168: 14000000      b       0x168 <_JIT_ENTRY+0x168>
-    // 0000000000000168:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 16c: 00 00 00 00
-    const unsigned char code_body[368] = {
+    // 130: d10042b5      sub     x21, x21, #0x10
+    // 134: 910083ff      add     sp, sp, #0x20
+    // 138: 14000000      b       0x138 <_JIT_ENTRY+0x138>
+    // 0000000000000138:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 13c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 000000000000013c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 140: aa1303e0      mov     x0, x19
+    // 144: f9400108      ldr     x8, [x8]
+    // 0000000000000144:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 148: d63f0100      blr     x8
+    // 14c: 36fffad8      tbz     w24, #0x1f, 0xa4 <_JIT_ENTRY+0xa4>
+    // 150: 17fffff7      b       0x12c <_JIT_ENTRY+0x12c>
+    // 154: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000154:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 158: aa1303e0      mov     x0, x19
+    // 15c: f9400108      ldr     x8, [x8]
+    // 000000000000015c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 160: d63f0100      blr     x8
+    // 164: a9417bfd      ldp     x29, x30, [sp, #0x10]
+    // 168: d10042b5      sub     x21, x21, #0x10
+    // 16c: 910083ff      add     sp, sp, #0x20
+    // 170: 14000000      b       0x170 <_JIT_ENTRY+0x170>
+    // 0000000000000170:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 174: 00 00 00 00
+    const unsigned char code_body[376] = {
         0xff, 0x83, 0x00, 0xd1, 0xb7, 0x4e, 0x7f, 0xa9,
         0x08, 0x00, 0x00, 0x90, 0xfd, 0x7b, 0x01, 0xa9,
         0xe0, 0x03, 0x16, 0xaa, 0xfd, 0x43, 0x00, 0x91,
@@ -6327,7 +6193,7 @@ emit__CHECK_EG_MATCH(
         0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
         0x00, 0x01, 0x3f, 0xd6, 0x68, 0x02, 0x40, 0xb9,
         0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x68, 0x02, 0x00, 0xb9, 0xe0, 0x04, 0x00, 0x54,
+        0x68, 0x02, 0x00, 0xb9, 0x00, 0x05, 0x00, 0x54,
         0x78, 0x04, 0xf8, 0x37, 0xe0, 0x07, 0x40, 0xf9,
         0x20, 0x04, 0x00, 0xb4, 0x08, 0x00, 0x00, 0x90,
         0x08, 0x01, 0x40, 0xf9, 0x1f, 0x00, 0x08, 0xeb,
@@ -6345,14 +6211,15 @@ emit__CHECK_EG_MATCH(
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
         0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0x40, 0x01, 0x00, 0x54, 0xfd, 0x7b, 0x41, 0xa9,
-        0xff, 0x83, 0x00, 0x91, 0x00, 0x00, 0x00, 0x14,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xf8, 0xfa, 0xff, 0x36, 0xf8, 0xff, 0xff, 0x17,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xfd, 0x7b, 0x41, 0xa9, 0xff, 0x83, 0x00, 0x91,
+        0x60, 0x01, 0x00, 0x54, 0xfd, 0x7b, 0x41, 0xa9,
+        0xb5, 0x42, 0x00, 0xd1, 0xff, 0x83, 0x00, 0x91,
+        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0xd8, 0xfa, 0xff, 0x36,
+        0xf7, 0xff, 0xff, 0x17, 0x08, 0x00, 0x00, 0x90,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0x41, 0xa9,
+        0xb5, 0x42, 0x00, 0xd1, 0xff, 0x83, 0x00, 0x91,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: &_PyEval_CheckExceptStarTypeValid+0x0
@@ -6385,12 +6252,12 @@ emit__CHECK_EG_MATCH(
     patch_aarch64_26r(code + 0xf0, (uintptr_t)code + sizeof(code_body));
     patch_aarch64_21rx(code + 0x108, (uintptr_t)data + 0x10);
     patch_aarch64_12x(code + 0x110, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x134, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_21rx(code + 0x138, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x140, (uintptr_t)data + 0x10);
-    patch_aarch64_21rx(code + 0x150, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x158, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x168, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0x138, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0x13c, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x144, (uintptr_t)data + 0x10);
+    patch_aarch64_21rx(code + 0x154, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x15c, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x170, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -6459,21 +6326,23 @@ emit__CHECK_EXC_MATCH(
     // a4: 37f80088      tbnz    w8, #0x1f, 0xb4 <_JIT_ENTRY+0xb4>
     // a8: 71000508      subs    w8, w8, #0x1
     // ac: b9000268      str     w8, [x19]
-    // b0: 54000060      b.eq    0xbc <_JIT_ENTRY+0xbc>
-    // b4: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // b8: 14000000      b       0xb8 <_JIT_ENTRY+0xb8>
-    // 00000000000000b8:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // bc: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000bc:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // c0: aa1303e0      mov     x0, x19
-    // c4: f9400108      ldr     x8, [x8]
-    // 00000000000000c4:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // c8: d63f0100      blr     x8
-    // cc: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // d0: 14000000      b       0xd0 <_JIT_ENTRY+0xd0>
-    // 00000000000000d0:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // d4: 00 00 00 00
-    const unsigned char code_body[216] = {
+    // b0: 54000080      b.eq    0xc0 <_JIT_ENTRY+0xc0>
+    // b4: d10022b5      sub     x21, x21, #0x8
+    // b8: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // bc: 14000000      b       0xbc <_JIT_ENTRY+0xbc>
+    // 00000000000000bc:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // c0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000c0:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // c4: aa1303e0      mov     x0, x19
+    // c8: f9400108      ldr     x8, [x8]
+    // 00000000000000c8:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // cc: d63f0100      blr     x8
+    // d0: d10022b5      sub     x21, x21, #0x8
+    // d4: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // d8: 14000000      b       0xd8 <_JIT_ENTRY+0xd8>
+    // 00000000000000d8:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // dc: 00 00 00 00
+    const unsigned char code_body[224] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0xb7, 0x4e, 0x7f, 0xa9,
         0x08, 0x00, 0x00, 0x90, 0x95, 0x22, 0x00, 0xf9,
         0xe0, 0x03, 0x16, 0xaa, 0xfd, 0x03, 0x00, 0x91,
@@ -6496,10 +6365,11 @@ emit__CHECK_EXC_MATCH(
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
         0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0x60, 0x00, 0x00, 0x54, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x80, 0x00, 0x00, 0x54, 0xb5, 0x22, 0x00, 0xd1,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xb5, 0x22, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: &_PyEval_CheckExceptTypeValid+0x0
@@ -6532,10 +6402,10 @@ emit__CHECK_EXC_MATCH(
     patch_aarch64_12x(code + 0x88, (uintptr_t)data + 0x18);
     patch_aarch64_12x(code + 0x8c, (uintptr_t)data + 0x20);
     patch_aarch64_26r(code + 0x9c, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0xb8, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_21rx(code + 0xbc, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0xc4, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0xd0, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0xbc, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0xc0, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0xc8, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0xd8, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -7531,34 +7401,34 @@ emit__COMPARE_OP(
     // c: 910003fd      mov     x29, sp
     // 10: f9400339      ldr     x25, [x25]
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 14: a97f5eb8      ldp     x24, x23, [x21, #-0x10]
+    // 14: a97f62b7      ldp     x23, x24, [x21, #-0x10]
     // 18: f9002295      str     x21, [x20, #0x40]
     // 1c: 53053f22      ubfx    w2, w25, #5, #11
     // 20: f9400108      ldr     x8, [x8]
     // 0000000000000020:  R_AARCH64_LD64_GOT_LO12_NC   PyObject_RichCompare
-    // 24: aa1803e0      mov     x0, x24
-    // 28: aa1703e1      mov     x1, x23
+    // 24: aa1703e0      mov     x0, x23
+    // 28: aa1803e1      mov     x1, x24
     // 2c: d63f0100      blr     x8
     // 30: f9402295      ldr     x21, [x20, #0x40]
     // 34: f900229f      str     xzr, [x20, #0x40]
     // 38: aa0003f3      mov     x19, x0
-    // 3c: b9400308      ldr     w8, [x24]
+    // 3c: b94002e8      ldr     w8, [x23]
     // 40: 37f80108      tbnz    w8, #0x1f, 0x60 <_JIT_ENTRY+0x60>
     // 44: 71000508      subs    w8, w8, #0x1
-    // 48: b9000308      str     w8, [x24]
+    // 48: b90002e8      str     w8, [x23]
     // 4c: 540000a1      b.ne    0x60 <_JIT_ENTRY+0x60>
     // 50: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000050:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 54: aa1803e0      mov     x0, x24
+    // 54: aa1703e0      mov     x0, x23
     // 58: f9400108      ldr     x8, [x8]
     // 0000000000000058:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 5c: d63f0100      blr     x8
-    // 60: b94002e8      ldr     w8, [x23]
+    // 60: b9400308      ldr     w8, [x24]
     // 64: 37f80088      tbnz    w8, #0x1f, 0x74 <_JIT_ENTRY+0x74>
     // 68: 71000508      subs    w8, w8, #0x1
-    // 6c: b90002e8      str     w8, [x23]
+    // 6c: b9000308      str     w8, [x24]
     // 70: 540003e0      b.eq    0xec <_JIT_ENTRY+0xec>
-    // 74: b40005b3      cbz     x19, 0x128 <_JIT_ENTRY+0x128>
+    // 74: b4000473      cbz     x19, 0x100 <_JIT_ENTRY+0x100>
     // 78: 12003f28      and     w8, w25, #0xffff
     // 7c: 372000a8      tbnz    w8, #0x4, 0x90 <_JIT_ENTRY+0x90>
     // 80: d10042b5      sub     x21, x21, #0x10
@@ -7578,10 +7448,10 @@ emit__COMPARE_OP(
     // ac: 37f80088      tbnz    w8, #0x1f, 0xbc <_JIT_ENTRY+0xbc>
     // b0: 71000508      subs    w8, w8, #0x1
     // b4: b9000268      str     w8, [x19]
-    // b8: 54000260      b.eq    0x104 <_JIT_ENTRY+0x104>
+    // b8: 540002a0      b.eq    0x10c <_JIT_ENTRY+0x10c>
     // bc: f9402295      ldr     x21, [x20, #0x40]
     // c0: f900229f      str     xzr, [x20, #0x40]
-    // c4: 37f80320      tbnz    w0, #0x1f, 0x128 <_JIT_ENTRY+0x128>
+    // c4: 37f80200      tbnz    w0, #0x1f, 0x104 <_JIT_ENTRY+0x104>
     // c8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 00000000000000c8:  R_AARCH64_ADR_GOT_PAGE       _Py_TrueStruct
     // cc: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
@@ -7598,42 +7468,44 @@ emit__COMPARE_OP(
     // 00000000000000e8:  R_AARCH64_JUMP26     _JIT_CONTINUE
     // ec: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 00000000000000ec:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // f0: aa1703e0      mov     x0, x23
+    // f0: aa1803e0      mov     x0, x24
     // f4: f9400108      ldr     x8, [x8]
     // 00000000000000f4:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // f8: d63f0100      blr     x8
     // fc: b5fffbf3      cbnz    x19, 0x78 <_JIT_ENTRY+0x78>
-    // 100: 1400000a      b       0x128 <_JIT_ENTRY+0x128>
-    // 104: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000104:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 108: 2a0003f5      mov     w21, w0
-    // 10c: aa1303e0      mov     x0, x19
-    // 110: f9400108      ldr     x8, [x8]
-    // 0000000000000110:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 114: d63f0100      blr     x8
-    // 118: 2a1503e0      mov     w0, w21
-    // 11c: f9402295      ldr     x21, [x20, #0x40]
-    // 120: f900229f      str     xzr, [x20, #0x40]
-    // 124: 36fffd20      tbz     w0, #0x1f, 0xc8 <_JIT_ENTRY+0xc8>
-    // 128: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 12c: 14000000      b       0x12c <_JIT_ENTRY+0x12c>
-    // 000000000000012c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[304] = {
+    // 100: d10042b5      sub     x21, x21, #0x10
+    // 104: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 108: 14000000      b       0x108 <_JIT_ENTRY+0x108>
+    // 0000000000000108:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 10c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 000000000000010c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 110: 2a0003f5      mov     w21, w0
+    // 114: aa1303e0      mov     x0, x19
+    // 118: f9400108      ldr     x8, [x8]
+    // 0000000000000118:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 11c: d63f0100      blr     x8
+    // 120: 2a1503e0      mov     w0, w21
+    // 124: f9402295      ldr     x21, [x20, #0x40]
+    // 128: f900229f      str     xzr, [x20, #0x40]
+    // 12c: 36fffce0      tbz     w0, #0x1f, 0xc8 <_JIT_ENTRY+0xc8>
+    // 130: 17fffff5      b       0x104 <_JIT_ENTRY+0x104>
+    // 134: 00 00 00 00
+    const unsigned char code_body[312] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x19, 0x00, 0x00, 0x90,
         0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
-        0x39, 0x03, 0x40, 0xf9, 0xb8, 0x5e, 0x7f, 0xa9,
+        0x39, 0x03, 0x40, 0xf9, 0xb7, 0x62, 0x7f, 0xa9,
         0x95, 0x22, 0x00, 0xf9, 0x22, 0x3f, 0x05, 0x53,
-        0x08, 0x01, 0x40, 0xf9, 0xe0, 0x03, 0x18, 0xaa,
-        0xe1, 0x03, 0x17, 0xaa, 0x00, 0x01, 0x3f, 0xd6,
+        0x08, 0x01, 0x40, 0xf9, 0xe0, 0x03, 0x17, 0xaa,
+        0xe1, 0x03, 0x18, 0xaa, 0x00, 0x01, 0x3f, 0xd6,
         0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
-        0xf3, 0x03, 0x00, 0xaa, 0x08, 0x03, 0x40, 0xb9,
+        0xf3, 0x03, 0x00, 0xaa, 0xe8, 0x02, 0x40, 0xb9,
         0x08, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x08, 0x03, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x18, 0xaa,
+        0xe8, 0x02, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x17, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xe8, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0xe8, 0x02, 0x00, 0xb9,
-        0xe0, 0x03, 0x00, 0x54, 0xb3, 0x05, 0x00, 0xb4,
+        0x08, 0x03, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
+        0xe0, 0x03, 0x00, 0x54, 0x73, 0x04, 0x00, 0xb4,
         0x28, 0x3f, 0x00, 0x12, 0xa8, 0x00, 0x20, 0x37,
         0xb5, 0x42, 0x00, 0xd1, 0xb3, 0x86, 0x00, 0xf8,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
@@ -7642,21 +7514,22 @@ emit__COMPARE_OP(
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
         0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0x60, 0x02, 0x00, 0x54, 0x95, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0x20, 0x03, 0xf8, 0x37,
+        0xa0, 0x02, 0x00, 0x54, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x02, 0xf8, 0x37,
         0x08, 0x00, 0x00, 0x90, 0x09, 0x00, 0x00, 0x90,
         0x1f, 0x00, 0x00, 0x71, 0x08, 0x01, 0x40, 0xf9,
         0x29, 0x01, 0x40, 0xf9, 0x33, 0x01, 0x88, 0x9a,
         0xb3, 0x86, 0x00, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
         0x00, 0x01, 0x3f, 0xd6, 0xf3, 0xfb, 0xff, 0xb5,
-        0x0a, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
+        0xb5, 0x42, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
         0xf5, 0x03, 0x00, 0x2a, 0xe0, 0x03, 0x13, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
         0xe0, 0x03, 0x15, 0x2a, 0x95, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0x20, 0xfd, 0xff, 0x36,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0x9f, 0x22, 0x00, 0xf9, 0xe0, 0xfc, 0xff, 0x36,
+        0xf5, 0xff, 0xff, 0x17, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
     // 8: &PyObject_RichCompare+0x0
@@ -7695,9 +7568,9 @@ emit__COMPARE_OP(
     patch_aarch64_26r(code + 0xe8, (uintptr_t)code + sizeof(code_body));
     patch_aarch64_21rx(code + 0xec, (uintptr_t)data + 0x10);
     patch_aarch64_12x(code + 0xf4, (uintptr_t)data + 0x10);
-    patch_aarch64_21rx(code + 0x104, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x110, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x12c, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0x108, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0x10c, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x118, (uintptr_t)data + 0x10);
 }
 
 void
@@ -8181,36 +8054,36 @@ emit__CONTAINS_OP(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: a97f66b8      ldp     x24, x25, [x21, #-0x10]
+    // 4: a97f4eb7      ldp     x23, x19, [x21, #-0x10]
     // 8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       PySequence_Contains
     // c: f9002295      str     x21, [x20, #0x40]
     // 10: 910003fd      mov     x29, sp
     // 14: f9400108      ldr     x8, [x8]
     // 0000000000000014:  R_AARCH64_LD64_GOT_LO12_NC   PySequence_Contains
-    // 18: aa1903e0      mov     x0, x25
-    // 1c: aa1803e1      mov     x1, x24
+    // 18: aa1303e0      mov     x0, x19
+    // 1c: aa1703e1      mov     x1, x23
     // 20: d63f0100      blr     x8
-    // 24: f9402293      ldr     x19, [x20, #0x40]
+    // 24: f9402298      ldr     x24, [x20, #0x40]
     // 28: f900229f      str     xzr, [x20, #0x40]
-    // 2c: 2a0003f7      mov     w23, w0
-    // 30: b9400308      ldr     w8, [x24]
+    // 2c: 2a0003f5      mov     w21, w0
+    // 30: b94002e8      ldr     w8, [x23]
     // 34: 37f80108      tbnz    w8, #0x1f, 0x54 <_JIT_ENTRY+0x54>
     // 38: 71000508      subs    w8, w8, #0x1
-    // 3c: b9000308      str     w8, [x24]
+    // 3c: b90002e8      str     w8, [x23]
     // 40: 540000a1      b.ne    0x54 <_JIT_ENTRY+0x54>
     // 44: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000044:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 48: aa1803e0      mov     x0, x24
+    // 48: aa1703e0      mov     x0, x23
     // 4c: f9400108      ldr     x8, [x8]
     // 000000000000004c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 50: d63f0100      blr     x8
-    // 54: b9400328      ldr     w8, [x25]
+    // 54: b9400268      ldr     w8, [x19]
     // 58: 37f80088      tbnz    w8, #0x1f, 0x68 <_JIT_ENTRY+0x68>
     // 5c: 71000508      subs    w8, w8, #0x1
-    // 60: b9000328      str     w8, [x25]
+    // 60: b9000268      str     w8, [x19]
     // 64: 540001c0      b.eq    0x9c <_JIT_ENTRY+0x9c>
-    // 68: 37f80257      tbnz    w23, #0x1f, 0xb0 <_JIT_ENTRY+0xb0>
+    // 68: 37f80255      tbnz    w21, #0x1f, 0xb0 <_JIT_ENTRY+0xb0>
     // 6c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 000000000000006c:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
     // 70: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
@@ -8223,49 +8096,49 @@ emit__CONTAINS_OP(
     // 000000000000007c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_TrueStruct
     // 80: f940014a      ldr     x10, [x10]
     // 0000000000000080:  R_AARCH64_LD64_GOT_LO12_NC   _Py_FalseStruct
-    // 84: d1002275      sub     x21, x19, #0x8
-    // 88: 6b2822ff      cmp     w23, w8, uxth
+    // 84: 6b2822bf      cmp     w21, w8, uxth
+    // 88: d1002315      sub     x21, x24, #0x8
     // 8c: 9a890148      csel    x8, x10, x9, eq
-    // 90: f81f0268      stur    x8, [x19, #-0x10]
+    // 90: f81f0308      stur    x8, [x24, #-0x10]
     // 94: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 98: 14000000      b       0x98 <_JIT_ENTRY+0x98>
     // 0000000000000098:  R_AARCH64_JUMP26     _JIT_CONTINUE
     // 9c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 000000000000009c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // a0: aa1903e0      mov     x0, x25
+    // a0: aa1303e0      mov     x0, x19
     // a4: f9400108      ldr     x8, [x8]
     // 00000000000000a4:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // a8: d63f0100      blr     x8
-    // ac: 36fffe17      tbz     w23, #0x1f, 0x6c <_JIT_ENTRY+0x6c>
-    // b0: aa1303f5      mov     x21, x19
+    // ac: 36fffe15      tbz     w21, #0x1f, 0x6c <_JIT_ENTRY+0x6c>
+    // b0: d1004315      sub     x21, x24, #0x10
     // b4: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // b8: 14000000      b       0xb8 <_JIT_ENTRY+0xb8>
     // 00000000000000b8:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
     // bc: 00 00 00 00
     const unsigned char code_body[192] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0xb8, 0x66, 0x7f, 0xa9,
+        0xfd, 0x7b, 0xbf, 0xa9, 0xb7, 0x4e, 0x7f, 0xa9,
         0x08, 0x00, 0x00, 0x90, 0x95, 0x22, 0x00, 0xf9,
         0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0xe0, 0x03, 0x19, 0xaa, 0xe1, 0x03, 0x18, 0xaa,
-        0x00, 0x01, 0x3f, 0xd6, 0x93, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xf7, 0x03, 0x00, 0x2a,
-        0x08, 0x03, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
+        0xe0, 0x03, 0x13, 0xaa, 0xe1, 0x03, 0x17, 0xaa,
+        0x00, 0x01, 0x3f, 0xd6, 0x98, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xf5, 0x03, 0x00, 0x2a,
+        0xe8, 0x02, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0xe8, 0x02, 0x00, 0xb9,
         0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x28, 0x03, 0x40, 0xb9,
+        0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x68, 0x02, 0x40, 0xb9,
         0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x28, 0x03, 0x00, 0xb9, 0xc0, 0x01, 0x00, 0x54,
-        0x57, 0x02, 0xf8, 0x37, 0x08, 0x00, 0x00, 0x90,
+        0x68, 0x02, 0x00, 0xb9, 0xc0, 0x01, 0x00, 0x54,
+        0x55, 0x02, 0xf8, 0x37, 0x08, 0x00, 0x00, 0x90,
         0x09, 0x00, 0x00, 0x90, 0x0a, 0x00, 0x00, 0x90,
         0x08, 0x01, 0x40, 0xf9, 0x29, 0x01, 0x40, 0xf9,
-        0x4a, 0x01, 0x40, 0xf9, 0x75, 0x22, 0x00, 0xd1,
-        0xff, 0x22, 0x28, 0x6b, 0x48, 0x01, 0x89, 0x9a,
-        0x68, 0x02, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x4a, 0x01, 0x40, 0xf9, 0xbf, 0x22, 0x28, 0x6b,
+        0x15, 0x23, 0x00, 0xd1, 0x48, 0x01, 0x89, 0x9a,
+        0x08, 0x03, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x19, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x17, 0xfe, 0xff, 0x36,
-        0xf5, 0x03, 0x13, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x15, 0xfe, 0xff, 0x36,
+        0x15, 0x43, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: &PySequence_Contains+0x0
@@ -8315,11 +8188,11 @@ emit__CONTAINS_OP_DICT(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: f85f82b9      ldur    x25, [x21, #-0x8]
+    // 4: f85f82b3      ldur    x19, [x21, #-0x8]
     // 8: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
     // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       PyDict_Type
     // c: 910003fd      mov     x29, sp
-    // 10: f9400728      ldr     x8, [x25, #0x8]
+    // 10: f9400668      ldr     x8, [x19, #0x8]
     // 14: f9400129      ldr     x9, [x9]
     // 0000000000000014:  R_AARCH64_LD64_GOT_LO12_NC   PyDict_Type
     // 18: eb09011f      cmp     x8, x9
@@ -8327,35 +8200,35 @@ emit__CONTAINS_OP_DICT(
     // 20: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 24: 14000000      b       0x24 <_JIT_ENTRY+0x24>
     // 0000000000000024:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 28: f85f02b8      ldur    x24, [x21, #-0x10]
+    // 28: f85f02b7      ldur    x23, [x21, #-0x10]
     // 2c: f9002295      str     x21, [x20, #0x40]
     // 30: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000030:  R_AARCH64_ADR_GOT_PAGE       PyDict_Contains
     // 34: f9400108      ldr     x8, [x8]
     // 0000000000000034:  R_AARCH64_LD64_GOT_LO12_NC   PyDict_Contains
-    // 38: aa1903e0      mov     x0, x25
-    // 3c: aa1803e1      mov     x1, x24
+    // 38: aa1303e0      mov     x0, x19
+    // 3c: aa1703e1      mov     x1, x23
     // 40: d63f0100      blr     x8
-    // 44: f9402293      ldr     x19, [x20, #0x40]
+    // 44: f9402298      ldr     x24, [x20, #0x40]
     // 48: f900229f      str     xzr, [x20, #0x40]
-    // 4c: 2a0003f7      mov     w23, w0
-    // 50: b9400308      ldr     w8, [x24]
+    // 4c: 2a0003f5      mov     w21, w0
+    // 50: b94002e8      ldr     w8, [x23]
     // 54: 37f80108      tbnz    w8, #0x1f, 0x74 <_JIT_ENTRY+0x74>
     // 58: 71000508      subs    w8, w8, #0x1
-    // 5c: b9000308      str     w8, [x24]
+    // 5c: b90002e8      str     w8, [x23]
     // 60: 540000a1      b.ne    0x74 <_JIT_ENTRY+0x74>
     // 64: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000064:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 68: aa1803e0      mov     x0, x24
+    // 68: aa1703e0      mov     x0, x23
     // 6c: f9400108      ldr     x8, [x8]
     // 000000000000006c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 70: d63f0100      blr     x8
-    // 74: b9400328      ldr     w8, [x25]
+    // 74: b9400268      ldr     w8, [x19]
     // 78: 37f80088      tbnz    w8, #0x1f, 0x88 <_JIT_ENTRY+0x88>
     // 7c: 71000508      subs    w8, w8, #0x1
-    // 80: b9000328      str     w8, [x25]
+    // 80: b9000268      str     w8, [x19]
     // 84: 540001c0      b.eq    0xbc <_JIT_ENTRY+0xbc>
-    // 88: 37f80257      tbnz    w23, #0x1f, 0xd0 <_JIT_ENTRY+0xd0>
+    // 88: 37f80255      tbnz    w21, #0x1f, 0xd0 <_JIT_ENTRY+0xd0>
     // 8c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 000000000000008c:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
     // 90: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
@@ -8368,53 +8241,53 @@ emit__CONTAINS_OP_DICT(
     // 000000000000009c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_TrueStruct
     // a0: f940014a      ldr     x10, [x10]
     // 00000000000000a0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_FalseStruct
-    // a4: d1002275      sub     x21, x19, #0x8
-    // a8: 6b2822ff      cmp     w23, w8, uxth
+    // a4: 6b2822bf      cmp     w21, w8, uxth
+    // a8: d1002315      sub     x21, x24, #0x8
     // ac: 9a890148      csel    x8, x10, x9, eq
-    // b0: f81f0268      stur    x8, [x19, #-0x10]
+    // b0: f81f0308      stur    x8, [x24, #-0x10]
     // b4: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // b8: 14000000      b       0xb8 <_JIT_ENTRY+0xb8>
     // 00000000000000b8:  R_AARCH64_JUMP26     _JIT_CONTINUE
     // bc: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 00000000000000bc:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // c0: aa1903e0      mov     x0, x25
+    // c0: aa1303e0      mov     x0, x19
     // c4: f9400108      ldr     x8, [x8]
     // 00000000000000c4:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // c8: d63f0100      blr     x8
-    // cc: 36fffe17      tbz     w23, #0x1f, 0x8c <_JIT_ENTRY+0x8c>
-    // d0: aa1303f5      mov     x21, x19
+    // cc: 36fffe15      tbz     w21, #0x1f, 0x8c <_JIT_ENTRY+0x8c>
+    // d0: d1004315      sub     x21, x24, #0x10
     // d4: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // d8: 14000000      b       0xd8 <_JIT_ENTRY+0xd8>
     // 00000000000000d8:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
     // dc: 00 00 00 00
     const unsigned char code_body[224] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0xb9, 0x82, 0x5f, 0xf8,
+        0xfd, 0x7b, 0xbf, 0xa9, 0xb3, 0x82, 0x5f, 0xf8,
         0x09, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
-        0x28, 0x07, 0x40, 0xf9, 0x29, 0x01, 0x40, 0xf9,
+        0x68, 0x06, 0x40, 0xf9, 0x29, 0x01, 0x40, 0xf9,
         0x1f, 0x01, 0x09, 0xeb, 0x60, 0x00, 0x00, 0x54,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0xb8, 0x02, 0x5f, 0xf8, 0x95, 0x22, 0x00, 0xf9,
+        0xb7, 0x02, 0x5f, 0xf8, 0x95, 0x22, 0x00, 0xf9,
         0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0xe0, 0x03, 0x19, 0xaa, 0xe1, 0x03, 0x18, 0xaa,
-        0x00, 0x01, 0x3f, 0xd6, 0x93, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xf7, 0x03, 0x00, 0x2a,
-        0x08, 0x03, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
+        0xe0, 0x03, 0x13, 0xaa, 0xe1, 0x03, 0x17, 0xaa,
+        0x00, 0x01, 0x3f, 0xd6, 0x98, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xf5, 0x03, 0x00, 0x2a,
+        0xe8, 0x02, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0xe8, 0x02, 0x00, 0xb9,
         0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x28, 0x03, 0x40, 0xb9,
+        0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x68, 0x02, 0x40, 0xb9,
         0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x28, 0x03, 0x00, 0xb9, 0xc0, 0x01, 0x00, 0x54,
-        0x57, 0x02, 0xf8, 0x37, 0x08, 0x00, 0x00, 0x90,
+        0x68, 0x02, 0x00, 0xb9, 0xc0, 0x01, 0x00, 0x54,
+        0x55, 0x02, 0xf8, 0x37, 0x08, 0x00, 0x00, 0x90,
         0x09, 0x00, 0x00, 0x90, 0x0a, 0x00, 0x00, 0x90,
         0x08, 0x01, 0x40, 0xf9, 0x29, 0x01, 0x40, 0xf9,
-        0x4a, 0x01, 0x40, 0xf9, 0x75, 0x22, 0x00, 0xd1,
-        0xff, 0x22, 0x28, 0x6b, 0x48, 0x01, 0x89, 0x9a,
-        0x68, 0x02, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x4a, 0x01, 0x40, 0xf9, 0xbf, 0x22, 0x28, 0x6b,
+        0x15, 0x23, 0x00, 0xd1, 0x48, 0x01, 0x89, 0x9a,
+        0x08, 0x03, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x19, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x17, 0xfe, 0xff, 0x36,
-        0xf5, 0x03, 0x13, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x15, 0xfe, 0xff, 0x36,
+        0x15, 0x43, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: &PyDict_Type+0x0
@@ -8469,13 +8342,13 @@ emit__CONTAINS_OP_SET(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: f85f82b9      ldur    x25, [x21, #-0x8]
+    // 4: f85f82b3      ldur    x19, [x21, #-0x8]
     // 8: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
     // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       PySet_Type
     // c: 9000000a      adrp    x10, 0x0 <_JIT_ENTRY>
     // 000000000000000c:  R_AARCH64_ADR_GOT_PAGE       PyFrozenSet_Type
     // 10: 910003fd      mov     x29, sp
-    // 14: f9400728      ldr     x8, [x25, #0x8]
+    // 14: f9400668      ldr     x8, [x19, #0x8]
     // 18: f9400129      ldr     x9, [x9]
     // 0000000000000018:  R_AARCH64_LD64_GOT_LO12_NC   PySet_Type
     // 1c: f940014a      ldr     x10, [x10]
@@ -8483,35 +8356,35 @@ emit__CONTAINS_OP_SET(
     // 20: eb09011f      cmp     x8, x9
     // 24: fa4a1104      ccmp    x8, x10, #0x4, ne
     // 28: 540004c1      b.ne    0xc0 <_JIT_ENTRY+0xc0>
-    // 2c: f85f02b8      ldur    x24, [x21, #-0x10]
+    // 2c: f85f02b7      ldur    x23, [x21, #-0x10]
     // 30: f9002295      str     x21, [x20, #0x40]
     // 34: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000034:  R_AARCH64_ADR_GOT_PAGE       _PySet_Contains
     // 38: f9400108      ldr     x8, [x8]
     // 0000000000000038:  R_AARCH64_LD64_GOT_LO12_NC   _PySet_Contains
-    // 3c: aa1903e0      mov     x0, x25
-    // 40: aa1803e1      mov     x1, x24
+    // 3c: aa1303e0      mov     x0, x19
+    // 40: aa1703e1      mov     x1, x23
     // 44: d63f0100      blr     x8
-    // 48: f9402293      ldr     x19, [x20, #0x40]
+    // 48: f9402298      ldr     x24, [x20, #0x40]
     // 4c: f900229f      str     xzr, [x20, #0x40]
-    // 50: 2a0003f7      mov     w23, w0
-    // 54: b9400308      ldr     w8, [x24]
+    // 50: 2a0003f5      mov     w21, w0
+    // 54: b94002e8      ldr     w8, [x23]
     // 58: 37f80108      tbnz    w8, #0x1f, 0x78 <_JIT_ENTRY+0x78>
     // 5c: 71000508      subs    w8, w8, #0x1
-    // 60: b9000308      str     w8, [x24]
+    // 60: b90002e8      str     w8, [x23]
     // 64: 540000a1      b.ne    0x78 <_JIT_ENTRY+0x78>
     // 68: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000068:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 6c: aa1803e0      mov     x0, x24
+    // 6c: aa1703e0      mov     x0, x23
     // 70: f9400108      ldr     x8, [x8]
     // 0000000000000070:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 74: d63f0100      blr     x8
-    // 78: b9400328      ldr     w8, [x25]
+    // 78: b9400268      ldr     w8, [x19]
     // 7c: 37f80088      tbnz    w8, #0x1f, 0x8c <_JIT_ENTRY+0x8c>
     // 80: 71000508      subs    w8, w8, #0x1
-    // 84: b9000328      str     w8, [x25]
+    // 84: b9000268      str     w8, [x19]
     // 88: 54000200      b.eq    0xc8 <_JIT_ENTRY+0xc8>
-    // 8c: 37f80297      tbnz    w23, #0x1f, 0xdc <_JIT_ENTRY+0xdc>
+    // 8c: 37f80295      tbnz    w21, #0x1f, 0xdc <_JIT_ENTRY+0xdc>
     // 90: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000090:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
     // 94: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
@@ -8524,10 +8397,10 @@ emit__CONTAINS_OP_SET(
     // 00000000000000a0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_TrueStruct
     // a4: f940014a      ldr     x10, [x10]
     // 00000000000000a4:  R_AARCH64_LD64_GOT_LO12_NC   _Py_FalseStruct
-    // a8: d1002275      sub     x21, x19, #0x8
-    // ac: 6b2822ff      cmp     w23, w8, uxth
+    // a8: 6b2822bf      cmp     w21, w8, uxth
+    // ac: d1002315      sub     x21, x24, #0x8
     // b0: 9a890148      csel    x8, x10, x9, eq
-    // b4: f81f0268      stur    x8, [x19, #-0x10]
+    // b4: f81f0308      stur    x8, [x24, #-0x10]
     // b8: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // bc: 14000000      b       0xbc <_JIT_ENTRY+0xbc>
     // 00000000000000bc:  R_AARCH64_JUMP26     _JIT_CONTINUE
@@ -8536,44 +8409,44 @@ emit__CONTAINS_OP_SET(
     // 00000000000000c4:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
     // c8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 00000000000000c8:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // cc: aa1903e0      mov     x0, x25
+    // cc: aa1303e0      mov     x0, x19
     // d0: f9400108      ldr     x8, [x8]
     // 00000000000000d0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // d4: d63f0100      blr     x8
-    // d8: 36fffdd7      tbz     w23, #0x1f, 0x90 <_JIT_ENTRY+0x90>
-    // dc: aa1303f5      mov     x21, x19
+    // d8: 36fffdd5      tbz     w21, #0x1f, 0x90 <_JIT_ENTRY+0x90>
+    // dc: d1004315      sub     x21, x24, #0x10
     // e0: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // e4: 14000000      b       0xe4 <_JIT_ENTRY+0xe4>
     // 00000000000000e4:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
     const unsigned char code_body[232] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0xb9, 0x82, 0x5f, 0xf8,
+        0xfd, 0x7b, 0xbf, 0xa9, 0xb3, 0x82, 0x5f, 0xf8,
         0x09, 0x00, 0x00, 0x90, 0x0a, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x28, 0x07, 0x40, 0xf9,
+        0xfd, 0x03, 0x00, 0x91, 0x68, 0x06, 0x40, 0xf9,
         0x29, 0x01, 0x40, 0xf9, 0x4a, 0x01, 0x40, 0xf9,
         0x1f, 0x01, 0x09, 0xeb, 0x04, 0x11, 0x4a, 0xfa,
-        0xc1, 0x04, 0x00, 0x54, 0xb8, 0x02, 0x5f, 0xf8,
+        0xc1, 0x04, 0x00, 0x54, 0xb7, 0x02, 0x5f, 0xf8,
         0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
-        0x08, 0x01, 0x40, 0xf9, 0xe0, 0x03, 0x19, 0xaa,
-        0xe1, 0x03, 0x18, 0xaa, 0x00, 0x01, 0x3f, 0xd6,
-        0x93, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
-        0xf7, 0x03, 0x00, 0x2a, 0x08, 0x03, 0x40, 0xb9,
+        0x08, 0x01, 0x40, 0xf9, 0xe0, 0x03, 0x13, 0xaa,
+        0xe1, 0x03, 0x17, 0xaa, 0x00, 0x01, 0x3f, 0xd6,
+        0x98, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0xf5, 0x03, 0x00, 0x2a, 0xe8, 0x02, 0x40, 0xb9,
         0x08, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x08, 0x03, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x18, 0xaa,
+        0xe8, 0x02, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x17, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x28, 0x03, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x28, 0x03, 0x00, 0xb9,
-        0x00, 0x02, 0x00, 0x54, 0x97, 0x02, 0xf8, 0x37,
+        0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
+        0x00, 0x02, 0x00, 0x54, 0x95, 0x02, 0xf8, 0x37,
         0x08, 0x00, 0x00, 0x90, 0x09, 0x00, 0x00, 0x90,
         0x0a, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
         0x29, 0x01, 0x40, 0xf9, 0x4a, 0x01, 0x40, 0xf9,
-        0x75, 0x22, 0x00, 0xd1, 0xff, 0x22, 0x28, 0x6b,
-        0x48, 0x01, 0x89, 0x9a, 0x68, 0x02, 0x1f, 0xf8,
+        0xbf, 0x22, 0x28, 0x6b, 0x15, 0x23, 0x00, 0xd1,
+        0x48, 0x01, 0x89, 0x9a, 0x08, 0x03, 0x1f, 0xf8,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x19, 0xaa,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xd7, 0xfd, 0xff, 0x36, 0xf5, 0x03, 0x13, 0xaa,
+        0xd5, 0xfd, 0xff, 0x36, 0x15, 0x43, 0x00, 0xd1,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: &PySet_Type+0x0
@@ -8648,47 +8521,56 @@ emit__CONVERT_VALUE(
     // 24: f8687928      ldr     x8, [x9, x8, lsl #3]
     // 28: f9002295      str     x21, [x20, #0x40]
     // 2c: d63f0100      blr     x8
-    // 30: f9402295      ldr     x21, [x20, #0x40]
-    // 34: f900229f      str     xzr, [x20, #0x40]
-    // 38: b9400268      ldr     w8, [x19]
-    // 3c: 37f80088      tbnz    w8, #0x1f, 0x4c <_JIT_ENTRY+0x4c>
-    // 40: 71000508      subs    w8, w8, #0x1
-    // 44: b9000268      str     w8, [x19]
-    // 48: 540000a0      b.eq    0x5c <_JIT_ENTRY+0x5c>
-    // 4c: b4000160      cbz     x0, 0x78 <_JIT_ENTRY+0x78>
-    // 50: f81f82a0      stur    x0, [x21, #-0x8]
-    // 54: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 58: 14000000      b       0x58 <_JIT_ENTRY+0x58>
-    // 0000000000000058:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 5c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000005c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 60: aa0003f7      mov     x23, x0
-    // 64: aa1303e0      mov     x0, x19
-    // 68: f9400108      ldr     x8, [x8]
-    // 0000000000000068:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 6c: d63f0100      blr     x8
-    // 70: aa1703e0      mov     x0, x23
-    // 74: b5fffef7      cbnz    x23, 0x50 <_JIT_ENTRY+0x50>
-    // 78: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 7c: 14000000      b       0x7c <_JIT_ENTRY+0x7c>
-    // 000000000000007c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[128] = {
+    // 30: f9402288      ldr     x8, [x20, #0x40]
+    // 34: d1002108      sub     x8, x8, #0x8
+    // 38: f9002288      str     x8, [x20, #0x40]
+    // 3c: b9400268      ldr     w8, [x19]
+    // 40: 37f80088      tbnz    w8, #0x1f, 0x50 <_JIT_ENTRY+0x50>
+    // 44: 71000508      subs    w8, w8, #0x1
+    // 48: b9000268      str     w8, [x19]
+    // 4c: 540000e0      b.eq    0x68 <_JIT_ENTRY+0x68>
+    // 50: f9402295      ldr     x21, [x20, #0x40]
+    // 54: f900229f      str     xzr, [x20, #0x40]
+    // 58: b40001a0      cbz     x0, 0x8c <_JIT_ENTRY+0x8c>
+    // 5c: f80086a0      str     x0, [x21], #0x8
+    // 60: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 64: 14000000      b       0x64 <_JIT_ENTRY+0x64>
+    // 0000000000000064:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 68: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000068:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 6c: aa0003f5      mov     x21, x0
+    // 70: aa1303e0      mov     x0, x19
+    // 74: f9400108      ldr     x8, [x8]
+    // 0000000000000074:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 78: d63f0100      blr     x8
+    // 7c: aa1503e0      mov     x0, x21
+    // 80: f9402295      ldr     x21, [x20, #0x40]
+    // 84: f900229f      str     xzr, [x20, #0x40]
+    // 88: b5fffea0      cbnz    x0, 0x5c <_JIT_ENTRY+0x5c>
+    // 8c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 90: 14000000      b       0x90 <_JIT_ENTRY+0x90>
+    // 0000000000000090:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 94: 00 00 00 00
+    const unsigned char code_body[152] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0x09, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
         0x08, 0x01, 0x40, 0xf9, 0x29, 0x01, 0x40, 0xf9,
         0xb3, 0x82, 0x5f, 0xf8, 0x08, 0x3d, 0x40, 0x92,
         0xe0, 0x03, 0x13, 0xaa, 0x28, 0x79, 0x68, 0xf8,
         0x95, 0x22, 0x00, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0x88, 0x22, 0x40, 0xf9, 0x08, 0x21, 0x00, 0xd1,
+        0x88, 0x22, 0x00, 0xf9, 0x68, 0x02, 0x40, 0xb9,
+        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x68, 0x02, 0x00, 0xb9, 0xe0, 0x00, 0x00, 0x54,
         0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
-        0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0xa0, 0x00, 0x00, 0x54, 0x60, 0x01, 0x00, 0xb4,
-        0xa0, 0x82, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xf7, 0x03, 0x00, 0xaa, 0xe0, 0x03, 0x13, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xe0, 0x03, 0x17, 0xaa, 0xf7, 0xfe, 0xff, 0xb5,
+        0xa0, 0x01, 0x00, 0xb4, 0xa0, 0x86, 0x00, 0xf8,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0x08, 0x00, 0x00, 0x90, 0xf5, 0x03, 0x00, 0xaa,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0xe0, 0x03, 0x15, 0xaa,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0xa0, 0xfe, 0xff, 0xb5, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
     // 8: &_PyEval_ConversionFuncs+0x0
@@ -8707,10 +8589,10 @@ emit__CONVERT_VALUE(
     patch_aarch64_21rx(code + 0x8, (uintptr_t)data + 0x8);
     patch_aarch64_12x(code + 0x10, (uintptr_t)data);
     patch_aarch64_12x(code + 0x14, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x58, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x5c, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x68, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x7c, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0x64, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x68, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x74, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x90, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -9010,24 +8892,25 @@ emit__DELETE_ATTR(
     // 44: 37f80088      tbnz    w8, #0x1f, 0x54 <_JIT_ENTRY+0x54>
     // 48: 71000508      subs    w8, w8, #0x1
     // 4c: b9000268      str     w8, [x19]
-    // 50: 54000080      b.eq    0x60 <_JIT_ENTRY+0x60>
-    // 54: 34000120      cbz     w0, 0x78 <_JIT_ENTRY+0x78>
-    // 58: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 5c: 14000000      b       0x5c <_JIT_ENTRY+0x5c>
-    // 000000000000005c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 60: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000060:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 64: 2a0003f7      mov     w23, w0
-    // 68: aa1303e0      mov     x0, x19
-    // 6c: f9400108      ldr     x8, [x8]
-    // 000000000000006c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 70: d63f0100      blr     x8
-    // 74: 35ffff37      cbnz    w23, 0x58 <_JIT_ENTRY+0x58>
+    // 50: 540000a0      b.eq    0x64 <_JIT_ENTRY+0x64>
+    // 54: d10022b5      sub     x21, x21, #0x8
+    // 58: 34000140      cbz     w0, 0x80 <_JIT_ENTRY+0x80>
+    // 5c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 60: 14000000      b       0x60 <_JIT_ENTRY+0x60>
+    // 0000000000000060:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 64: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000064:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 68: 2a0003f7      mov     w23, w0
+    // 6c: aa1303e0      mov     x0, x19
+    // 70: f9400108      ldr     x8, [x8]
+    // 0000000000000070:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 74: d63f0100      blr     x8
     // 78: d10022b5      sub     x21, x21, #0x8
-    // 7c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 80: 14000000      b       0x80 <_JIT_ENTRY+0x80>
-    // 0000000000000080:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[128] = {
+    // 7c: 35ffff17      cbnz    w23, 0x5c <_JIT_ENTRY+0x5c>
+    // 80: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 84: 14000000      b       0x84 <_JIT_ENTRY+0x84>
+    // 0000000000000084:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[136] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x88, 0x02, 0x40, 0xf9,
         0x09, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
         0x08, 0x11, 0x40, 0xf9, 0x29, 0x01, 0x40, 0xf9,
@@ -9038,12 +8921,13 @@ emit__DELETE_ATTR(
         0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
         0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0x80, 0x00, 0x00, 0x54, 0x20, 0x01, 0x00, 0x34,
+        0xa0, 0x00, 0x00, 0x54, 0xb5, 0x22, 0x00, 0xd1,
+        0x40, 0x01, 0x00, 0x34, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
+        0xf7, 0x03, 0x00, 0x2a, 0xe0, 0x03, 0x13, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xb5, 0x22, 0x00, 0xd1, 0x17, 0xff, 0xff, 0x35,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0x08, 0x00, 0x00, 0x90, 0xf7, 0x03, 0x00, 0x2a,
-        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x37, 0xff, 0xff, 0x35,
-        0xb5, 0x22, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
     };
     // 0: OPARG
     // 8: &PyObject_DelAttr+0x0
@@ -9061,9 +8945,10 @@ emit__DELETE_ATTR(
     patch_aarch64_21rx(code + 0x8, (uintptr_t)data);
     patch_aarch64_12x(code + 0x14, (uintptr_t)data);
     patch_aarch64_33rx(code + 0x2c, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x5c, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_21rx(code + 0x60, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x6c, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x60, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0x64, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x70, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x84, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -9192,76 +9077,83 @@ emit__DELETE_FAST(
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
     // 14: 92403d21      and     x1, x9, #0xffff
     // 18: f8617900      ldr     x0, [x8, x1, lsl #3]
-    // 1c: b4000120      cbz     x0, 0x40 <_JIT_ENTRY+0x40>
+    // 1c: b4000180      cbz     x0, 0x4c <_JIT_ENTRY+0x4c>
     // 20: f821791f      str     xzr, [x8, x1, lsl #3]
-    // 24: b9400008      ldr     w8, [x0]
-    // 28: 37f80088      tbnz    w8, #0x1f, 0x38 <_JIT_ENTRY+0x38>
-    // 2c: 71000508      subs    w8, w8, #0x1
-    // 30: b9000008      str     w8, [x0]
-    // 34: 54000300      b.eq    0x94 <_JIT_ENTRY+0x94>
-    // 38: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 3c: 14000000      b       0x3c <_JIT_ENTRY+0x3c>
-    // 000000000000003c:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 40: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000040:  R_AARCH64_ADR_GOT_PAGE       PyExc_UnboundLocalError
-    // 44: f9400108      ldr     x8, [x8]
-    // 0000000000000044:  R_AARCH64_LD64_GOT_LO12_NC   PyExc_UnboundLocalError
-    // 48: f9400289      ldr     x9, [x20]
-    // 4c: f9002295      str     x21, [x20, #0x40]
-    // 50: f9400113      ldr     x19, [x8]
-    // 54: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000054:  R_AARCH64_ADR_GOT_PAGE       PyTuple_GetItem
-    // 58: f9403120      ldr     x0, [x9, #0x60]
-    // 5c: f9400108      ldr     x8, [x8]
-    // 000000000000005c:  R_AARCH64_LD64_GOT_LO12_NC   PyTuple_GetItem
-    // 60: d63f0100      blr     x8
-    // 64: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000064:  R_AARCH64_ADR_GOT_PAGE       _PyEval_FormatExcCheckArg
-    // 68: aa0003e3      mov     x3, x0
-    // 6c: 90000002      adrp    x2, 0x0 <_JIT_ENTRY>
-    // 000000000000006c:  R_AARCH64_ADR_PREL_PG_HI21   .rodata.str1.1
-    // 70: 91000042      add     x2, x2, #0x0
-    // 0000000000000070:  R_AARCH64_ADD_ABS_LO12_NC    .rodata.str1.1
-    // 74: f9400108      ldr     x8, [x8]
-    // 0000000000000074:  R_AARCH64_LD64_GOT_LO12_NC   _PyEval_FormatExcCheckArg
-    // 78: aa1603e0      mov     x0, x22
-    // 7c: aa1303e1      mov     x1, x19
-    // 80: d63f0100      blr     x8
-    // 84: f9402295      ldr     x21, [x20, #0x40]
-    // 88: f900229f      str     xzr, [x20, #0x40]
-    // 8c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 90: 14000000      b       0x90 <_JIT_ENTRY+0x90>
-    // 0000000000000090:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 94: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000094:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 98: f9400108      ldr     x8, [x8]
-    // 0000000000000098:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 9c: d63f0100      blr     x8
-    // a0: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // a4: 14000000      b       0xa4 <_JIT_ENTRY+0xa4>
-    // 00000000000000a4:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[168] = {
+    // 24: f9002295      str     x21, [x20, #0x40]
+    // 28: b9400008      ldr     w8, [x0]
+    // 2c: 37f80088      tbnz    w8, #0x1f, 0x3c <_JIT_ENTRY+0x3c>
+    // 30: 71000508      subs    w8, w8, #0x1
+    // 34: b9000008      str     w8, [x0]
+    // 38: 54000340      b.eq    0xa0 <_JIT_ENTRY+0xa0>
+    // 3c: f9402295      ldr     x21, [x20, #0x40]
+    // 40: f900229f      str     xzr, [x20, #0x40]
+    // 44: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 48: 14000000      b       0x48 <_JIT_ENTRY+0x48>
+    // 0000000000000048:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 4c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 000000000000004c:  R_AARCH64_ADR_GOT_PAGE       PyExc_UnboundLocalError
+    // 50: f9400108      ldr     x8, [x8]
+    // 0000000000000050:  R_AARCH64_LD64_GOT_LO12_NC   PyExc_UnboundLocalError
+    // 54: f9400289      ldr     x9, [x20]
+    // 58: f9002295      str     x21, [x20, #0x40]
+    // 5c: f9400113      ldr     x19, [x8]
+    // 60: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000060:  R_AARCH64_ADR_GOT_PAGE       PyTuple_GetItem
+    // 64: f9403120      ldr     x0, [x9, #0x60]
+    // 68: f9400108      ldr     x8, [x8]
+    // 0000000000000068:  R_AARCH64_LD64_GOT_LO12_NC   PyTuple_GetItem
+    // 6c: d63f0100      blr     x8
+    // 70: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000070:  R_AARCH64_ADR_GOT_PAGE       _PyEval_FormatExcCheckArg
+    // 74: aa0003e3      mov     x3, x0
+    // 78: 90000002      adrp    x2, 0x0 <_JIT_ENTRY>
+    // 0000000000000078:  R_AARCH64_ADR_PREL_PG_HI21   .rodata.str1.1
+    // 7c: 91000042      add     x2, x2, #0x0
+    // 000000000000007c:  R_AARCH64_ADD_ABS_LO12_NC    .rodata.str1.1
+    // 80: f9400108      ldr     x8, [x8]
+    // 0000000000000080:  R_AARCH64_LD64_GOT_LO12_NC   _PyEval_FormatExcCheckArg
+    // 84: aa1603e0      mov     x0, x22
+    // 88: aa1303e1      mov     x1, x19
+    // 8c: d63f0100      blr     x8
+    // 90: f9402295      ldr     x21, [x20, #0x40]
+    // 94: f900229f      str     xzr, [x20, #0x40]
+    // 98: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 9c: 14000000      b       0x9c <_JIT_ENTRY+0x9c>
+    // 000000000000009c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // a0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000a0:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // a4: f9400108      ldr     x8, [x8]
+    // 00000000000000a4:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // a8: d63f0100      blr     x8
+    // ac: f9402295      ldr     x21, [x20, #0x40]
+    // b0: f900229f      str     xzr, [x20, #0x40]
+    // b4: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // b8: 14000000      b       0xb8 <_JIT_ENTRY+0xb8>
+    // 00000000000000b8:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[184] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x09, 0x00, 0x00, 0x90,
         0x88, 0x42, 0x01, 0x91, 0xfd, 0x03, 0x00, 0x91,
         0x29, 0x01, 0x40, 0xf9, 0x21, 0x3d, 0x40, 0x92,
-        0x00, 0x79, 0x61, 0xf8, 0x20, 0x01, 0x00, 0xb4,
-        0x1f, 0x79, 0x21, 0xf8, 0x08, 0x00, 0x40, 0xb9,
-        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x08, 0x00, 0x00, 0xb9, 0x00, 0x03, 0x00, 0x54,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0x89, 0x02, 0x40, 0xf9, 0x95, 0x22, 0x00, 0xf9,
-        0x13, 0x01, 0x40, 0xf9, 0x08, 0x00, 0x00, 0x90,
-        0x20, 0x31, 0x40, 0xf9, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x08, 0x00, 0x00, 0x90,
-        0xe3, 0x03, 0x00, 0xaa, 0x02, 0x00, 0x00, 0x90,
-        0x42, 0x00, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0xe0, 0x03, 0x16, 0xaa, 0xe1, 0x03, 0x13, 0xaa,
-        0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
+        0x00, 0x79, 0x61, 0xf8, 0x80, 0x01, 0x00, 0xb4,
+        0x1f, 0x79, 0x21, 0xf8, 0x95, 0x22, 0x00, 0xf9,
+        0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
+        0x40, 0x03, 0x00, 0x54, 0x95, 0x22, 0x40, 0xf9,
         0x9f, 0x22, 0x00, 0xf9, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
+        0x08, 0x01, 0x40, 0xf9, 0x89, 0x02, 0x40, 0xf9,
+        0x95, 0x22, 0x00, 0xf9, 0x13, 0x01, 0x40, 0xf9,
+        0x08, 0x00, 0x00, 0x90, 0x20, 0x31, 0x40, 0xf9,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0x08, 0x00, 0x00, 0x90, 0xe3, 0x03, 0x00, 0xaa,
+        0x02, 0x00, 0x00, 0x90, 0x42, 0x00, 0x00, 0x91,
+        0x08, 0x01, 0x40, 0xf9, 0xe0, 0x03, 0x16, 0xaa,
+        0xe1, 0x03, 0x13, 0xaa, 0x00, 0x01, 0x3f, 0xd6,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xfd, 0x7b, 0xc1, 0xa8,
     };
     // 0: "cannot access local variable '%s' where it is not associated with a value\x00"
     // 4a: 00 00 00 00 00 00
@@ -9296,17 +9188,16 @@ emit__DELETE_FAST(
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_21rx(code + 0x4, (uintptr_t)data + 0x50);
     patch_aarch64_12x(code + 0x10, (uintptr_t)data + 0x50);
-    patch_aarch64_26r(code + 0x3c, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_33rx(code + 0x40, (uintptr_t)data + 0x58);
-    patch_aarch64_21rx(code + 0x54, (uintptr_t)data + 0x60);
-    patch_aarch64_12x(code + 0x5c, (uintptr_t)data + 0x60);
-    patch_aarch64_21rx(code + 0x64, (uintptr_t)data + 0x68);
-    patch_aarch64_21r(code + 0x6c, (uintptr_t)data);
-    patch_aarch64_12(code + 0x70, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x74, (uintptr_t)data + 0x68);
-    patch_aarch64_26r(code + 0x90, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_33rx(code + 0x94, (uintptr_t)data + 0x70);
-    patch_aarch64_26r(code + 0xa4, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x48, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_33rx(code + 0x4c, (uintptr_t)data + 0x58);
+    patch_aarch64_21rx(code + 0x60, (uintptr_t)data + 0x60);
+    patch_aarch64_12x(code + 0x68, (uintptr_t)data + 0x60);
+    patch_aarch64_21rx(code + 0x70, (uintptr_t)data + 0x68);
+    patch_aarch64_21r(code + 0x78, (uintptr_t)data);
+    patch_aarch64_12(code + 0x7c, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x80, (uintptr_t)data + 0x68);
+    patch_aarch64_26r(code + 0x9c, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_33rx(code + 0xa0, (uintptr_t)data + 0x70);
 }
 
 void
@@ -9592,27 +9483,27 @@ emit__DELETE_SUBSCR(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: a97f4eb8      ldp     x24, x19, [x21, #-0x10]
+    // 4: a97f4eb7      ldp     x23, x19, [x21, #-0x10]
     // 8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       PyObject_DelItem
     // c: f9002295      str     x21, [x20, #0x40]
     // 10: 910003fd      mov     x29, sp
     // 14: f9400108      ldr     x8, [x8]
     // 0000000000000014:  R_AARCH64_LD64_GOT_LO12_NC   PyObject_DelItem
-    // 18: aa1803e0      mov     x0, x24
+    // 18: aa1703e0      mov     x0, x23
     // 1c: aa1303e1      mov     x1, x19
     // 20: d63f0100      blr     x8
     // 24: f9402295      ldr     x21, [x20, #0x40]
     // 28: f900229f      str     xzr, [x20, #0x40]
-    // 2c: 2a0003f7      mov     w23, w0
-    // 30: b9400308      ldr     w8, [x24]
+    // 2c: 2a0003f8      mov     w24, w0
+    // 30: b94002e8      ldr     w8, [x23]
     // 34: 37f80108      tbnz    w8, #0x1f, 0x54 <_JIT_ENTRY+0x54>
     // 38: 71000508      subs    w8, w8, #0x1
-    // 3c: b9000308      str     w8, [x24]
+    // 3c: b90002e8      str     w8, [x23]
     // 40: 540000a1      b.ne    0x54 <_JIT_ENTRY+0x54>
     // 44: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000044:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 48: aa1803e0      mov     x0, x24
+    // 48: aa1703e0      mov     x0, x23
     // 4c: f9400108      ldr     x8, [x8]
     // 000000000000004c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 50: d63f0100      blr     x8
@@ -9620,41 +9511,43 @@ emit__DELETE_SUBSCR(
     // 58: 37f80088      tbnz    w8, #0x1f, 0x68 <_JIT_ENTRY+0x68>
     // 5c: 71000508      subs    w8, w8, #0x1
     // 60: b9000268      str     w8, [x19]
-    // 64: 54000080      b.eq    0x74 <_JIT_ENTRY+0x74>
-    // 68: 34000117      cbz     w23, 0x88 <_JIT_ENTRY+0x88>
-    // 6c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 70: 14000000      b       0x70 <_JIT_ENTRY+0x70>
-    // 0000000000000070:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 74: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000074:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 78: aa1303e0      mov     x0, x19
-    // 7c: f9400108      ldr     x8, [x8]
-    // 000000000000007c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 80: d63f0100      blr     x8
-    // 84: 35ffff57      cbnz    w23, 0x6c <_JIT_ENTRY+0x6c>
+    // 64: 540000a0      b.eq    0x78 <_JIT_ENTRY+0x78>
+    // 68: d10042b5      sub     x21, x21, #0x10
+    // 6c: 34000138      cbz     w24, 0x90 <_JIT_ENTRY+0x90>
+    // 70: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 74: 14000000      b       0x74 <_JIT_ENTRY+0x74>
+    // 0000000000000074:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 78: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000078:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 7c: aa1303e0      mov     x0, x19
+    // 80: f9400108      ldr     x8, [x8]
+    // 0000000000000080:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 84: d63f0100      blr     x8
     // 88: d10042b5      sub     x21, x21, #0x10
-    // 8c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 90: 14000000      b       0x90 <_JIT_ENTRY+0x90>
-    // 0000000000000090:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[144] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0xb8, 0x4e, 0x7f, 0xa9,
+    // 8c: 35ffff38      cbnz    w24, 0x70 <_JIT_ENTRY+0x70>
+    // 90: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 94: 14000000      b       0x94 <_JIT_ENTRY+0x94>
+    // 0000000000000094:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[152] = {
+        0xfd, 0x7b, 0xbf, 0xa9, 0xb7, 0x4e, 0x7f, 0xa9,
         0x08, 0x00, 0x00, 0x90, 0x95, 0x22, 0x00, 0xf9,
         0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0xe0, 0x03, 0x18, 0xaa, 0xe1, 0x03, 0x13, 0xaa,
+        0xe0, 0x03, 0x17, 0xaa, 0xe1, 0x03, 0x13, 0xaa,
         0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xf7, 0x03, 0x00, 0x2a,
-        0x08, 0x03, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
+        0x9f, 0x22, 0x00, 0xf9, 0xf8, 0x03, 0x00, 0x2a,
+        0xe8, 0x02, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0xe8, 0x02, 0x00, 0xb9,
         0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
         0x00, 0x01, 0x3f, 0xd6, 0x68, 0x02, 0x40, 0xb9,
         0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x68, 0x02, 0x00, 0xb9, 0x80, 0x00, 0x00, 0x54,
-        0x17, 0x01, 0x00, 0x34, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x57, 0xff, 0xff, 0x35,
-        0xb5, 0x42, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x68, 0x02, 0x00, 0xb9, 0xa0, 0x00, 0x00, 0x54,
+        0xb5, 0x42, 0x00, 0xd1, 0x38, 0x01, 0x00, 0x34,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xb5, 0x42, 0x00, 0xd1, 0x38, 0xff, 0xff, 0x35,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: &PyObject_DelItem+0x0
     // 8: &_Py_Dealloc+0x0
@@ -9670,9 +9563,10 @@ emit__DELETE_SUBSCR(
     patch_aarch64_12x(code + 0x14, (uintptr_t)data);
     patch_aarch64_21rx(code + 0x44, (uintptr_t)data + 0x8);
     patch_aarch64_12x(code + 0x4c, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x70, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_21rx(code + 0x74, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x7c, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x74, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0x78, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x80, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x94, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -9762,7 +9656,7 @@ emit__DICT_MERGE(
     // 54: 37f80088      tbnz    w8, #0x1f, 0x64 <_JIT_ENTRY+0x64>
     // 58: 71000508      subs    w8, w8, #0x1
     // 5c: b9000268      str     w8, [x19]
-    // 60: 54000280      b.eq    0xb0 <_JIT_ENTRY+0xb0>
+    // 60: 540002a0      b.eq    0xb4 <_JIT_ENTRY+0xb4>
     // 64: d10022b5      sub     x21, x21, #0x8
     // 68: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 6c: 14000000      b       0x6c <_JIT_ENTRY+0x6c>
@@ -9782,31 +9676,33 @@ emit__DICT_MERGE(
     // 98: 37f80088      tbnz    w8, #0x1f, 0xa8 <_JIT_ENTRY+0xa8>
     // 9c: 71000508      subs    w8, w8, #0x1
     // a0: b9000268      str     w8, [x19]
-    // a4: 54000140      b.eq    0xcc <_JIT_ENTRY+0xcc>
-    // a8: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // ac: 14000000      b       0xac <_JIT_ENTRY+0xac>
-    // 00000000000000ac:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // b0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000b0:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // b4: aa1303e0      mov     x0, x19
-    // b8: f9400108      ldr     x8, [x8]
-    // 00000000000000b8:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // bc: d63f0100      blr     x8
-    // c0: d10022b5      sub     x21, x21, #0x8
-    // c4: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // c8: 14000000      b       0xc8 <_JIT_ENTRY+0xc8>
-    // 00000000000000c8:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // cc: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000cc:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // d0: aa1303e0      mov     x0, x19
-    // d4: f9400108      ldr     x8, [x8]
-    // 00000000000000d4:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // d8: d63f0100      blr     x8
-    // dc: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // e0: 14000000      b       0xe0 <_JIT_ENTRY+0xe0>
-    // 00000000000000e0:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // e4: 00 00 00 00
-    const unsigned char code_body[232] = {
+    // a4: 54000160      b.eq    0xd0 <_JIT_ENTRY+0xd0>
+    // a8: d10022b5      sub     x21, x21, #0x8
+    // ac: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // b0: 14000000      b       0xb0 <_JIT_ENTRY+0xb0>
+    // 00000000000000b0:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // b4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000b4:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // b8: aa1303e0      mov     x0, x19
+    // bc: f9400108      ldr     x8, [x8]
+    // 00000000000000bc:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // c0: d63f0100      blr     x8
+    // c4: d10022b5      sub     x21, x21, #0x8
+    // c8: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // cc: 14000000      b       0xcc <_JIT_ENTRY+0xcc>
+    // 00000000000000cc:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // d0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000d0:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // d4: aa1303e0      mov     x0, x19
+    // d8: f9400108      ldr     x8, [x8]
+    // 00000000000000d8:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // dc: d63f0100      blr     x8
+    // e0: d10022b5      sub     x21, x21, #0x8
+    // e4: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // e8: 14000000      b       0xe8 <_JIT_ENTRY+0xe8>
+    // 00000000000000e8:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // ec: 00 00 00 00
+    const unsigned char code_body[240] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0x69, 0x00, 0x80, 0x12, 0x42, 0x00, 0x80, 0x52,
         0x08, 0x01, 0x40, 0xf9, 0xb3, 0x82, 0x5f, 0xf8,
@@ -9819,7 +9715,7 @@ emit__DICT_MERGE(
         0x9f, 0x22, 0x00, 0xf9, 0x20, 0x01, 0xf8, 0x37,
         0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0x80, 0x02, 0x00, 0x54, 0xb5, 0x22, 0x00, 0xd1,
+        0xa0, 0x02, 0x00, 0x54, 0xb5, 0x22, 0x00, 0xd1,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
         0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
         0xe0, 0x03, 0x16, 0xaa, 0x08, 0x01, 0x40, 0xf9,
@@ -9827,14 +9723,15 @@ emit__DICT_MERGE(
         0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
         0x9f, 0x22, 0x00, 0xf9, 0x68, 0x02, 0x40, 0xb9,
         0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x68, 0x02, 0x00, 0xb9, 0x40, 0x01, 0x00, 0x54,
+        0x68, 0x02, 0x00, 0xb9, 0x60, 0x01, 0x00, 0x54,
+        0xb5, 0x22, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0xb5, 0x22, 0x00, 0xd1,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
         0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
         0xb5, 0x22, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
@@ -9859,13 +9756,13 @@ emit__DICT_MERGE(
     patch_aarch64_26r(code + 0x6c, (uintptr_t)code + sizeof(code_body));
     patch_aarch64_21rx(code + 0x74, (uintptr_t)data + 0x10);
     patch_aarch64_12x(code + 0x7c, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0xac, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_21rx(code + 0xb0, (uintptr_t)data + 0x18);
-    patch_aarch64_12x(code + 0xb8, (uintptr_t)data + 0x18);
-    patch_aarch64_26r(code + 0xc8, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0xcc, (uintptr_t)data + 0x18);
-    patch_aarch64_12x(code + 0xd4, (uintptr_t)data + 0x18);
-    patch_aarch64_26r(code + 0xe0, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0xb0, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0xb4, (uintptr_t)data + 0x18);
+    patch_aarch64_12x(code + 0xbc, (uintptr_t)data + 0x18);
+    patch_aarch64_26r(code + 0xcc, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0xd0, (uintptr_t)data + 0x18);
+    patch_aarch64_12x(code + 0xd8, (uintptr_t)data + 0x18);
+    patch_aarch64_26r(code + 0xe8, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -9904,7 +9801,7 @@ emit__DICT_UPDATE(
     // 48: 37f80088      tbnz    w8, #0x1f, 0x58 <_JIT_ENTRY+0x58>
     // 4c: 71000508      subs    w8, w8, #0x1
     // 50: b9000268      str     w8, [x19]
-    // 54: 54000480      b.eq    0xe4 <_JIT_ENTRY+0xe4>
+    // 54: 540004a0      b.eq    0xe8 <_JIT_ENTRY+0xe8>
     // 58: d10022b5      sub     x21, x21, #0x8
     // 5c: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 60: 14000000      b       0x60 <_JIT_ENTRY+0x60>
@@ -9948,30 +9845,32 @@ emit__DICT_UPDATE(
     // cc: 37f80088      tbnz    w8, #0x1f, 0xdc <_JIT_ENTRY+0xdc>
     // d0: 71000508      subs    w8, w8, #0x1
     // d4: b9000268      str     w8, [x19]
-    // d8: 54000140      b.eq    0x100 <_JIT_ENTRY+0x100>
-    // dc: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // e0: 14000000      b       0xe0 <_JIT_ENTRY+0xe0>
-    // 00000000000000e0:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // e4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000e4:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // e8: aa1303e0      mov     x0, x19
-    // ec: f9400108      ldr     x8, [x8]
-    // 00000000000000ec:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // f0: d63f0100      blr     x8
-    // f4: d10022b5      sub     x21, x21, #0x8
-    // f8: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // fc: 14000000      b       0xfc <_JIT_ENTRY+0xfc>
-    // 00000000000000fc:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 100: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000100:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 104: aa1303e0      mov     x0, x19
-    // 108: f9400108      ldr     x8, [x8]
-    // 0000000000000108:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 10c: d63f0100      blr     x8
-    // 110: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 114: 14000000      b       0x114 <_JIT_ENTRY+0x114>
-    // 0000000000000114:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[280] = {
+    // d8: 54000160      b.eq    0x104 <_JIT_ENTRY+0x104>
+    // dc: d10022b5      sub     x21, x21, #0x8
+    // e0: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // e4: 14000000      b       0xe4 <_JIT_ENTRY+0xe4>
+    // 00000000000000e4:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // e8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000e8:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // ec: aa1303e0      mov     x0, x19
+    // f0: f9400108      ldr     x8, [x8]
+    // 00000000000000f0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // f4: d63f0100      blr     x8
+    // f8: d10022b5      sub     x21, x21, #0x8
+    // fc: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 100: 14000000      b       0x100 <_JIT_ENTRY+0x100>
+    // 0000000000000100:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 104: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000104:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 108: aa1303e0      mov     x0, x19
+    // 10c: f9400108      ldr     x8, [x8]
+    // 000000000000010c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 110: d63f0100      blr     x8
+    // 114: d10022b5      sub     x21, x21, #0x8
+    // 118: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 11c: 14000000      b       0x11c <_JIT_ENTRY+0x11c>
+    // 000000000000011c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    const unsigned char code_body[288] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
         0xb3, 0x82, 0x5f, 0xf8, 0xe8, 0x03, 0x28, 0x2a,
@@ -9982,7 +9881,7 @@ emit__DICT_UPDATE(
         0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
         0x20, 0x01, 0xf8, 0x37, 0x68, 0x02, 0x40, 0xb9,
         0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x68, 0x02, 0x00, 0xb9, 0x80, 0x04, 0x00, 0x54,
+        0x68, 0x02, 0x00, 0xb9, 0xa0, 0x04, 0x00, 0x54,
         0xb5, 0x22, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
         0xe0, 0x03, 0x16, 0xaa, 0x08, 0x01, 0x40, 0xf9,
@@ -9999,13 +9898,14 @@ emit__DICT_UPDATE(
         0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
         0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0x40, 0x01, 0x00, 0x54, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xb5, 0x22, 0x00, 0xd1,
+        0x60, 0x01, 0x00, 0x54, 0xb5, 0x22, 0x00, 0xd1,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
         0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xb5, 0x22, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0xb5, 0x22, 0x00, 0xd1,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: "'%.200s' object is not a mapping\x00"
@@ -10053,163 +9953,13 @@ emit__DICT_UPDATE(
     patch_aarch64_12x(code + 0x9c, (uintptr_t)data + 0x48);
     patch_aarch64_21rx(code + 0xb0, (uintptr_t)data + 0x50);
     patch_aarch64_12x(code + 0xb8, (uintptr_t)data + 0x50);
-    patch_aarch64_26r(code + 0xe0, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_21rx(code + 0xe4, (uintptr_t)data + 0x58);
-    patch_aarch64_12x(code + 0xec, (uintptr_t)data + 0x58);
-    patch_aarch64_26r(code + 0xfc, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x100, (uintptr_t)data + 0x58);
-    patch_aarch64_12x(code + 0x108, (uintptr_t)data + 0x58);
-    patch_aarch64_26r(code + 0x114, state->instruction_starts[instruction->error_target]);
-}
-
-void
-emit__DYNAMIC_EXIT(
-    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
-    const _PyUOpInstruction *instruction, jit_state *state)
-{
-    //
-    // _DYNAMIC_EXIT.o:       file format elf64-littleaarch64
-    //
-    // Disassembly of section .text:
-    //
-    // 0000000000000000 <_JIT_ENTRY>:
-    // 0: d10083ff      sub     sp, sp, #0x20
-    // 4: a9017bfd      stp     x29, x30, [sp, #0x10]
-    // 8: 90000017      adrp    x23, 0x0 <_JIT_ENTRY>
-    // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       _JIT_EXECUTOR
-    // c: 910043fd      add     x29, sp, #0x10
-    // 10: f94002f7      ldr     x23, [x23]
-    // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_EXECUTOR
-    // 14: f9401e93      ldr     x19, [x20, #0x38]
-    // 18: f9008ad7      str     x23, [x22, #0x110]
-    // 1c: 39400268      ldrb    w8, [x19]
-    // 20: 7103fd1f      cmp     w8, #0xff
-    // 24: 54000340      b.eq    0x8c <_JIT_ENTRY+0x8c>
-    // 28: 90000018      adrp    x24, 0x0 <_JIT_ENTRY>
-    // 0000000000000028:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPERAND0
-    // 2c: f9400318      ldr     x24, [x24]
-    // 000000000000002c:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPERAND0
-    // 30: 79400b08      ldrh    w8, [x24, #0x4]
-    // 34: 71003d1f      cmp     w8, #0xf
-    // 38: 54000442      b.hs    0xc0 <_JIT_ENTRY+0xc0>
-    // 3c: f9002295      str     x21, [x20, #0x40]
-    // 40: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000040:  R_AARCH64_ADR_GOT_PAGE       _PyOptimizer_Optimize
-    // 44: 910023e3      add     x3, sp, #0x8
-    // 48: f9400108      ldr     x8, [x8]
-    // 0000000000000048:  R_AARCH64_LD64_GOT_LO12_NC   _PyOptimizer_Optimize
-    // 4c: aa1403e0      mov     x0, x20
-    // 50: aa1303e1      mov     x1, x19
-    // 54: aa1503e2      mov     x2, x21
-    // 58: 2a1f03e4      mov     w4, wzr
-    // 5c: d63f0100      blr     x8
-    // 60: f9402295      ldr     x21, [x20, #0x40]
-    // 64: 7100001f      cmp     w0, #0x0
-    // 68: f900229f      str     xzr, [x20, #0x40]
-    // 6c: 5400038d      b.le    0xdc <_JIT_ENTRY+0xdc>
-    // 70: f94007e8      ldr     x8, [sp, #0x8]
-    // 74: 529fff89      mov     w9, #0xfffc             // =65532
-    // 78: 79000b09      strh    w9, [x24, #0x4]
-    // 7c: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // 80: f9403d00      ldr     x0, [x8, #0x78]
-    // 84: 910083ff      add     sp, sp, #0x20
-    // 88: d61f0000      br      x0
-    // 8c: f9400288      ldr     x8, [x20]
-    // 90: 39400669      ldrb    w9, [x19, #0x1]
-    // 94: f9404d08      ldr     x8, [x8, #0x98]
-    // 98: 8b090d08      add     x8, x8, x9, lsl #3
-    // 9c: f9400508      ldr     x8, [x8, #0x8]
-    // a0: b9400109      ldr     w9, [x8]
-    // a4: 37fffec9      tbnz    w9, #0x1f, 0x7c <_JIT_ENTRY+0x7c>
-    // a8: 11000529      add     w9, w9, #0x1
-    // ac: b9000109      str     w9, [x8]
-    // b0: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // b4: f9403d00      ldr     x0, [x8, #0x78]
-    // b8: 910083ff      add     sp, sp, #0x20
-    // bc: d61f0000      br      x0
-    // c0: 51004108      sub     w8, w8, #0x10
-    // c4: 79000b08      strh    w8, [x24, #0x4]
-    // c8: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // cc: aa1303e0      mov     x0, x19
-    // d0: f9002295      str     x21, [x20, #0x40]
-    // d4: 910083ff      add     sp, sp, #0x20
-    // d8: d65f03c0      ret
-    // dc: 79400b08      ldrh    w8, [x24, #0x4]
-    // e0: 52800409      mov     w9, #0x20               // =32
-    // e4: 92400d08      and     x8, x8, #0xf
-    // e8: 1ac82129      lsl     w9, w9, w8
-    // ec: 1100050a      add     w10, w8, #0x1
-    // f0: 7100311f      cmp     w8, #0xc
-    // f4: 12800068      mov     w8, #-0x4               // =-4
-    // f8: 51004129      sub     w9, w9, #0x10
-    // fc: 2a0a0129      orr     w9, w9, w10
-    // 100: 1a883128      csel    w8, w9, w8, lo
-    // 104: 79000b08      strh    w8, [x24, #0x4]
-    // 108: 36fffe00      tbz     w0, #0x1f, 0xc8 <_JIT_ENTRY+0xc8>
-    // 10c: aa1f03f3      mov     x19, xzr
-    // 110: f9008ad7      str     x23, [x22, #0x110]
-    // 114: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // 118: aa1303e0      mov     x0, x19
-    // 11c: f9002295      str     x21, [x20, #0x40]
-    // 120: 910083ff      add     sp, sp, #0x20
-    // 124: d65f03c0      ret
-    const unsigned char code_body[296] = {
-        0xff, 0x83, 0x00, 0xd1, 0xfd, 0x7b, 0x01, 0xa9,
-        0x17, 0x00, 0x00, 0x90, 0xfd, 0x43, 0x00, 0x91,
-        0xf7, 0x02, 0x40, 0xf9, 0x93, 0x1e, 0x40, 0xf9,
-        0xd7, 0x8a, 0x00, 0xf9, 0x68, 0x02, 0x40, 0x39,
-        0x1f, 0xfd, 0x03, 0x71, 0x40, 0x03, 0x00, 0x54,
-        0x18, 0x00, 0x00, 0x90, 0x18, 0x03, 0x40, 0xf9,
-        0x08, 0x0b, 0x40, 0x79, 0x1f, 0x3d, 0x00, 0x71,
-        0x42, 0x04, 0x00, 0x54, 0x95, 0x22, 0x00, 0xf9,
-        0x08, 0x00, 0x00, 0x90, 0xe3, 0x23, 0x00, 0x91,
-        0x08, 0x01, 0x40, 0xf9, 0xe0, 0x03, 0x14, 0xaa,
-        0xe1, 0x03, 0x13, 0xaa, 0xe2, 0x03, 0x15, 0xaa,
-        0xe4, 0x03, 0x1f, 0x2a, 0x00, 0x01, 0x3f, 0xd6,
-        0x95, 0x22, 0x40, 0xf9, 0x1f, 0x00, 0x00, 0x71,
-        0x9f, 0x22, 0x00, 0xf9, 0x8d, 0x03, 0x00, 0x54,
-        0xe8, 0x07, 0x40, 0xf9, 0x89, 0xff, 0x9f, 0x52,
-        0x09, 0x0b, 0x00, 0x79, 0xfd, 0x7b, 0x41, 0xa9,
-        0x00, 0x3d, 0x40, 0xf9, 0xff, 0x83, 0x00, 0x91,
-        0x00, 0x00, 0x1f, 0xd6, 0x88, 0x02, 0x40, 0xf9,
-        0x69, 0x06, 0x40, 0x39, 0x08, 0x4d, 0x40, 0xf9,
-        0x08, 0x0d, 0x09, 0x8b, 0x08, 0x05, 0x40, 0xf9,
-        0x09, 0x01, 0x40, 0xb9, 0xc9, 0xfe, 0xff, 0x37,
-        0x29, 0x05, 0x00, 0x11, 0x09, 0x01, 0x00, 0xb9,
-        0xfd, 0x7b, 0x41, 0xa9, 0x00, 0x3d, 0x40, 0xf9,
-        0xff, 0x83, 0x00, 0x91, 0x00, 0x00, 0x1f, 0xd6,
-        0x08, 0x41, 0x00, 0x51, 0x08, 0x0b, 0x00, 0x79,
-        0xfd, 0x7b, 0x41, 0xa9, 0xe0, 0x03, 0x13, 0xaa,
-        0x95, 0x22, 0x00, 0xf9, 0xff, 0x83, 0x00, 0x91,
-        0xc0, 0x03, 0x5f, 0xd6, 0x08, 0x0b, 0x40, 0x79,
-        0x09, 0x04, 0x80, 0x52, 0x08, 0x0d, 0x40, 0x92,
-        0x29, 0x21, 0xc8, 0x1a, 0x0a, 0x05, 0x00, 0x11,
-        0x1f, 0x31, 0x00, 0x71, 0x68, 0x00, 0x80, 0x12,
-        0x29, 0x41, 0x00, 0x51, 0x29, 0x01, 0x0a, 0x2a,
-        0x28, 0x31, 0x88, 0x1a, 0x08, 0x0b, 0x00, 0x79,
-        0x00, 0xfe, 0xff, 0x36, 0xf3, 0x03, 0x1f, 0xaa,
-        0xd7, 0x8a, 0x00, 0xf9, 0xfd, 0x7b, 0x41, 0xa9,
-        0xe0, 0x03, 0x13, 0xaa, 0x95, 0x22, 0x00, 0xf9,
-        0xff, 0x83, 0x00, 0x91, 0xc0, 0x03, 0x5f, 0xd6,
-    };
-    // 0: EXECUTOR
-    // 8: OPERAND0
-    // 10: &_PyOptimizer_Optimize+0x0
-    const unsigned char data_body[24] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    };
-    memcpy(data, data_body, sizeof(data_body));
-    patch_64(data + 0x0, (uintptr_t)executor);
-    patch_64(data + 0x8, instruction->operand0);
-    patch_64(data + 0x10, (uintptr_t)&_PyOptimizer_Optimize);
-    memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x8, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x10, (uintptr_t)data);
-    patch_aarch64_33rx(code + 0x28, (uintptr_t)data + 0x8);
-    patch_aarch64_21rx(code + 0x40, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x48, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0xe4, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0xe8, (uintptr_t)data + 0x58);
+    patch_aarch64_12x(code + 0xf0, (uintptr_t)data + 0x58);
+    patch_aarch64_26r(code + 0x100, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x104, (uintptr_t)data + 0x58);
+    patch_aarch64_12x(code + 0x10c, (uintptr_t)data + 0x58);
+    patch_aarch64_26r(code + 0x11c, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -10224,31 +9974,38 @@ emit__END_FOR(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: f85f8ea0      ldr     x0, [x21, #-0x8]!
-    // 4: b9400008      ldr     w8, [x0]
-    // 8: 37f80088      tbnz    w8, #0x1f, 0x18 <_JIT_ENTRY+0x18>
-    // c: 71000508      subs    w8, w8, #0x1
-    // 10: b9000008      str     w8, [x0]
-    // 14: 54000040      b.eq    0x1c <_JIT_ENTRY+0x1c>
-    // 18: 14000000      b       0x18 <_JIT_ENTRY+0x18>
-    // 0000000000000018:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 1c: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 20: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000020:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 24: 910003fd      mov     x29, sp
-    // 28: f9400108      ldr     x8, [x8]
-    // 0000000000000028:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 2c: d63f0100      blr     x8
-    // 30: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 34: 14000000      b       0x34 <_JIT_ENTRY+0x34>
-    // 0000000000000034:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[56] = {
-        0xa0, 0x8e, 0x5f, 0xf8, 0x08, 0x00, 0x40, 0xb9,
-        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x08, 0x00, 0x00, 0xb9, 0x40, 0x00, 0x00, 0x54,
-        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
-        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+    // 4: f9002295      str     x21, [x20, #0x40]
+    // 8: b9400008      ldr     w8, [x0]
+    // c: 37f80088      tbnz    w8, #0x1f, 0x1c <_JIT_ENTRY+0x1c>
+    // 10: 71000508      subs    w8, w8, #0x1
+    // 14: b9000008      str     w8, [x0]
+    // 18: 54000080      b.eq    0x28 <_JIT_ENTRY+0x28>
+    // 1c: f9402295      ldr     x21, [x20, #0x40]
+    // 20: f900229f      str     xzr, [x20, #0x40]
+    // 24: 14000000      b       0x24 <_JIT_ENTRY+0x24>
+    // 0000000000000024:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 28: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 2c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 000000000000002c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 30: 910003fd      mov     x29, sp
+    // 34: f9400108      ldr     x8, [x8]
+    // 0000000000000034:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 38: d63f0100      blr     x8
+    // 3c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 40: f9402295      ldr     x21, [x20, #0x40]
+    // 44: f900229f      str     xzr, [x20, #0x40]
+    // 48: 14000000      b       0x48 <_JIT_ENTRY+0x48>
+    // 0000000000000048:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[72] = {
+        0xa0, 0x8e, 0x5f, 0xf8, 0x95, 0x22, 0x00, 0xf9,
+        0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
+        0x80, 0x00, 0x00, 0x54, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
+        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
+        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
     };
     // 0: &_Py_Dealloc+0x0
     const unsigned char data_body[8] = {
@@ -10257,10 +10014,9 @@ emit__END_FOR(
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x0, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_26r(code + 0x18, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x20, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x28, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x34, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x24, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x2c, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x34, (uintptr_t)data);
 }
 
 void
@@ -10331,53 +10087,43 @@ emit__ERROR_POP_N(
     // Disassembly of section .text:
     //
     // 0000000000000000 <_JIT_ENTRY>:
-    // 0: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000000:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPERAND0
-    // 4: f9400288      ldr     x8, [x20]
-    // 8: 9000000a      adrp    x10, 0x0 <_JIT_ENTRY>
-    // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // c: f9400129      ldr     x9, [x9]
-    // 000000000000000c:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPERAND0
-    // 10: f940014a      ldr     x10, [x10]
-    // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 14: 9000000b      adrp    x11, 0x0 <_JIT_ENTRY>
-    // 0000000000000014:  R_AARCH64_ADR_GOT_PAGE       _JIT_EXECUTOR
-    // 18: f940016b      ldr     x11, [x11]
-    // 0000000000000018:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_EXECUTOR
-    // 1c: aa1f03e0      mov     x0, xzr
-    // 20: 8b294508      add     x8, x8, w9, uxtw #1
-    // 24: cb2a2ea9      sub     x9, x21, w10, uxth #3
-    // 28: f9008acb      str     x11, [x22, #0x110]
-    // 2c: 91034108      add     x8, x8, #0xd0
-    // 30: a903a688      stp     x8, x9, [x20, #0x38]
-    // 34: d65f03c0      ret
-    const unsigned char code_body[56] = {
-        0x09, 0x00, 0x00, 0x90, 0x88, 0x02, 0x40, 0xf9,
-        0x0a, 0x00, 0x00, 0x90, 0x29, 0x01, 0x40, 0xf9,
-        0x4a, 0x01, 0x40, 0xf9, 0x0b, 0x00, 0x00, 0x90,
-        0x6b, 0x01, 0x40, 0xf9, 0xe0, 0x03, 0x1f, 0xaa,
-        0x08, 0x45, 0x29, 0x8b, 0xa9, 0x2e, 0x2a, 0xcb,
-        0xcb, 0x8a, 0x00, 0xf9, 0x08, 0x41, 0x03, 0x91,
-        0x88, 0xa6, 0x03, 0xa9, 0xc0, 0x03, 0x5f, 0xd6,
+    // 0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000000:  R_AARCH64_ADR_GOT_PAGE       _JIT_EXECUTOR
+    // 4: aa1f03e0      mov     x0, xzr
+    // 8: f9400108      ldr     x8, [x8]
+    // 0000000000000008:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_EXECUTOR
+    // c: f9008ac8      str     x8, [x22, #0x110]
+    // 10: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000010:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPERAND0
+    // 14: f9400108      ldr     x8, [x8]
+    // 0000000000000014:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPERAND0
+    // 18: f9400289      ldr     x9, [x20]
+    // 1c: 8b284528      add     x8, x9, w8, uxtw #1
+    // 20: 91034108      add     x8, x8, #0xd0
+    // 24: a903d688      stp     x8, x21, [x20, #0x38]
+    // 28: d65f03c0      ret
+    // 2c: 00 00 00 00
+    const unsigned char code_body[48] = {
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x1f, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0xc8, 0x8a, 0x00, 0xf9,
+        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
+        0x89, 0x02, 0x40, 0xf9, 0x28, 0x45, 0x28, 0x8b,
+        0x08, 0x41, 0x03, 0x91, 0x88, 0xd6, 0x03, 0xa9,
+        0xc0, 0x03, 0x5f, 0xd6, 0x00, 0x00, 0x00, 0x00,
     };
-    // 0: OPERAND0
-    // 8: OPARG
-    // 10: EXECUTOR
-    const unsigned char data_body[24] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    // 0: EXECUTOR
+    // 8: OPERAND0
+    const unsigned char data_body[16] = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     };
     memcpy(data, data_body, sizeof(data_body));
-    patch_64(data + 0x0, instruction->operand0);
-    patch_64(data + 0x8, instruction->oparg);
-    patch_64(data + 0x10, (uintptr_t)executor);
+    patch_64(data + 0x0, (uintptr_t)executor);
+    patch_64(data + 0x8, instruction->operand0);
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_21rx(code + 0x0, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x8, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0xc, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x10, (uintptr_t)data + 0x8);
-    patch_aarch64_33rx(code + 0x14, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x8, (uintptr_t)data);
+    patch_aarch64_33rx(code + 0x10, (uintptr_t)data + 0x8);
 }
 
 void
@@ -10490,182 +10236,196 @@ emit__EXIT_TRACE(
     // c: 910043fd      add     x29, sp, #0x10
     // 10: f94002f7      ldr     x23, [x23]
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPERAND0
-    // 14: f9400299      ldr     x25, [x20]
-    // 18: f900229f      str     xzr, [x20, #0x40]
-    // 1c: b94002e8      ldr     w8, [x23]
-    // 20: f94006e0      ldr     x0, [x23, #0x8]
-    // 24: 8b080728      add     x8, x25, x8, lsl #1
-    // 28: 91034113      add     x19, x8, #0xd0
-    // 2c: b40001a0      cbz     x0, 0x60 <_JIT_ENTRY+0x60>
-    // 30: 39408808      ldrb    w8, [x0, #0x22]
-    // 34: 37000128      tbnz    w8, #0x0, 0x58 <_JIT_ENTRY+0x58>
-    // 38: 529fff98      mov     w24, #0xfffc            // =65532
-    // 3c: f90006ff      str     xzr, [x23, #0x8]
-    // 40: 79000af8      strh    w24, [x23, #0x4]
-    // 44: b9400008      ldr     w8, [x0]
-    // 48: 37f80428      tbnz    w8, #0x1f, 0xcc <_JIT_ENTRY+0xcc>
-    // 4c: 71000508      subs    w8, w8, #0x1
-    // 50: b9000008      str     w8, [x0]
-    // 54: 540007a0      b.eq    0x148 <_JIT_ENTRY+0x148>
-    // 58: f94006e8      ldr     x8, [x23, #0x8]
-    // 5c: b50005e8      cbnz    x8, 0x118 <_JIT_ENTRY+0x118>
-    // 60: 79400af8      ldrh    w24, [x23, #0x4]
-    // 64: 71003f1f      cmp     w24, #0xf
-    // 68: 54000322      b.hs    0xcc <_JIT_ENTRY+0xcc>
-    // 6c: 39400268      ldrb    w8, [x19]
-    // 70: 7103fd1f      cmp     w8, #0xff
-    // 74: 54000400      b.eq    0xf4 <_JIT_ENTRY+0xf4>
-    // 78: 90000019      adrp    x25, 0x0 <_JIT_ENTRY>
-    // 0000000000000078:  R_AARCH64_ADR_GOT_PAGE       _JIT_EXECUTOR
-    // 7c: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 000000000000007c:  R_AARCH64_ADR_GOT_PAGE       _PyOptimizer_Optimize
-    // 80: 910023e3      add     x3, sp, #0x8
-    // 84: f9400339      ldr     x25, [x25]
-    // 0000000000000084:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_EXECUTOR
-    // 88: f9002295      str     x21, [x20, #0x40]
-    // 8c: aa1403e0      mov     x0, x20
-    // 90: aa1303e1      mov     x1, x19
-    // 94: aa1503e2      mov     x2, x21
-    // 98: 39408b28      ldrb    w8, [x25, #0x22]
-    // 9c: f9400129      ldr     x9, [x9]
-    // 000000000000009c:  R_AARCH64_LD64_GOT_LO12_NC   _PyOptimizer_Optimize
-    // a0: 53027d08      lsr     w8, w8, #2
-    // a4: 11000504      add     w4, w8, #0x1
-    // a8: d63f0120      blr     x9
-    // ac: f9402295      ldr     x21, [x20, #0x40]
-    // b0: 7100001f      cmp     w0, #0x0
-    // b4: f900229f      str     xzr, [x20, #0x40]
-    // b8: 5400054d      b.le    0x160 <_JIT_ENTRY+0x160>
-    // bc: f94007e8      ldr     x8, [sp, #0x8]
-    // c0: 529fff89      mov     w9, #0xfffc             // =65532
-    // c4: 79000ae9      strh    w9, [x23, #0x4]
-    // c8: 14000013      b       0x114 <_JIT_ENTRY+0x114>
-    // cc: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 00000000000000cc:  R_AARCH64_ADR_GOT_PAGE       _JIT_EXECUTOR
-    // d0: 51004308      sub     w8, w24, #0x10
-    // d4: f9400129      ldr     x9, [x9]
-    // 00000000000000d4:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_EXECUTOR
-    // d8: 79000ae8      strh    w8, [x23, #0x4]
-    // dc: f9008ac9      str     x9, [x22, #0x110]
-    // e0: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // e4: aa1303e0      mov     x0, x19
-    // e8: f9002295      str     x21, [x20, #0x40]
-    // ec: 910083ff      add     sp, sp, #0x20
-    // f0: d65f03c0      ret
-    // f4: f9404f28      ldr     x8, [x25, #0x98]
-    // f8: 39400669      ldrb    w9, [x19, #0x1]
-    // fc: 8b090d08      add     x8, x8, x9, lsl #3
-    // 100: f9400508      ldr     x8, [x8, #0x8]
-    // 104: b9400109      ldr     w9, [x8]
-    // 108: 37f80069      tbnz    w9, #0x1f, 0x114 <_JIT_ENTRY+0x114>
-    // 10c: 11000529      add     w9, w9, #0x1
-    // 110: b9000109      str     w9, [x8]
-    // 114: f90006e8      str     x8, [x23, #0x8]
-    // 118: b9400109      ldr     w9, [x8]
-    // 11c: 37f80089      tbnz    w9, #0x1f, 0x12c <_JIT_ENTRY+0x12c>
-    // 120: 11000529      add     w9, w9, #0x1
-    // 124: b9000109      str     w9, [x8]
-    // 128: f94006e8      ldr     x8, [x23, #0x8]
-    // 12c: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 000000000000012c:  R_AARCH64_ADR_GOT_PAGE       _JIT_EXECUTOR
-    // 130: f9400129      ldr     x9, [x9]
-    // 0000000000000130:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_EXECUTOR
-    // 134: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // 138: f9403d00      ldr     x0, [x8, #0x78]
-    // 13c: f9008ac9      str     x9, [x22, #0x110]
-    // 140: 910083ff      add     sp, sp, #0x20
-    // 144: d61f0000      br      x0
-    // 148: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000148:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 14c: f9400108      ldr     x8, [x8]
-    // 000000000000014c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 150: d63f0100      blr     x8
-    // 154: f94006e8      ldr     x8, [x23, #0x8]
-    // 158: b5fffe08      cbnz    x8, 0x118 <_JIT_ENTRY+0x118>
-    // 15c: 17ffffc1      b       0x60 <_JIT_ENTRY+0x60>
-    // 160: 71002f1f      cmp     w24, #0xb
-    // 164: 54000148      b.hi    0x18c <_JIT_ENTRY+0x18c>
-    // 168: 52800048      mov     w8, #0x2                // =2
-    // 16c: 11000709      add     w9, w24, #0x1
-    // 170: 1ad82108      lsl     w8, w8, w24
-    // 174: 531c6d08      lsl     w8, w8, #4
-    // 178: 51004108      sub     w8, w8, #0x10
-    // 17c: 2a090108      orr     w8, w8, w9
-    // 180: 79000ae8      strh    w8, [x23, #0x4]
-    // 184: 36f800c0      tbz     w0, #0x1f, 0x19c <_JIT_ENTRY+0x19c>
-    // 188: 14000004      b       0x198 <_JIT_ENTRY+0x198>
-    // 18c: 529fff88      mov     w8, #0xfffc             // =65532
-    // 190: 79000ae8      strh    w8, [x23, #0x4]
-    // 194: 36f80040      tbz     w0, #0x1f, 0x19c <_JIT_ENTRY+0x19c>
-    // 198: aa1f03f3      mov     x19, xzr
-    // 19c: f9008ad9      str     x25, [x22, #0x110]
-    // 1a0: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // 1a4: aa1303e0      mov     x0, x19
-    // 1a8: f9002295      str     x21, [x20, #0x40]
-    // 1ac: 910083ff      add     sp, sp, #0x20
-    // 1b0: d65f03c0      ret
-    // 1b4: 00 00 00 00
-    const unsigned char code_body[440] = {
+    // 14: f9400298      ldr     x24, [x20]
+    // 18: f94006e0      ldr     x0, [x23, #0x8]
+    // 1c: b94002f3      ldr     w19, [x23]
+    // 20: b4000800      cbz     x0, 0x120 <_JIT_ENTRY+0x120>
+    // 24: 39408808      ldrb    w8, [x0, #0x22]
+    // 28: 37000608      tbnz    w8, #0x0, 0xe8 <_JIT_ENTRY+0xe8>
+    // 2c: 529fff88      mov     w8, #0xfffc             // =65532
+    // 30: f9002295      str     x21, [x20, #0x40]
+    // 34: 79000ae8      strh    w8, [x23, #0x4]
+    // 38: f90006ff      str     xzr, [x23, #0x8]
+    // 3c: b9400008      ldr     w8, [x0]
+    // 40: 37f806c8      tbnz    w8, #0x1f, 0x118 <_JIT_ENTRY+0x118>
+    // 44: 71000508      subs    w8, w8, #0x1
+    // 48: b9000008      str     w8, [x0]
+    // 4c: 54000081      b.ne    0x5c <_JIT_ENTRY+0x5c>
+    // 50: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000050:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 54: f9400108      ldr     x8, [x8]
+    // 0000000000000054:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 58: d63f0100      blr     x8
+    // 5c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 000000000000005c:  R_AARCH64_ADR_GOT_PAGE       _JIT_EXECUTOR
+    // 60: f94006e0      ldr     x0, [x23, #0x8]
+    // 64: f9400108      ldr     x8, [x8]
+    // 0000000000000064:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_EXECUTOR
+    // 68: f9402295      ldr     x21, [x20, #0x40]
+    // 6c: f900229f      str     xzr, [x20, #0x40]
+    // 70: f9008ac8      str     x8, [x22, #0x110]
+    // 74: b5000400      cbnz    x0, 0xf4 <_JIT_ENTRY+0xf4>
+    // 78: 79400af9      ldrh    w25, [x23, #0x4]
+    // 7c: 8b130708      add     x8, x24, x19, lsl #1
+    // 80: 71003f3f      cmp     w25, #0xf
+    // 84: 91034113      add     x19, x8, #0xd0
+    // 88: 540005c2      b.hs    0x140 <_JIT_ENTRY+0x140>
+    // 8c: 39400268      ldrb    w8, [x19]
+    // 90: 7103fd1f      cmp     w8, #0xff
+    // 94: 54000640      b.eq    0x15c <_JIT_ENTRY+0x15c>
+    // 98: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000098:  R_AARCH64_ADR_GOT_PAGE       _JIT_EXECUTOR
+    // 9c: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
+    // 000000000000009c:  R_AARCH64_ADR_GOT_PAGE       _PyOptimizer_Optimize
+    // a0: 910023e2      add     x2, sp, #0x8
+    // a4: f9400108      ldr     x8, [x8]
+    // 00000000000000a4:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_EXECUTOR
+    // a8: f9002295      str     x21, [x20, #0x40]
+    // ac: aa1403e0      mov     x0, x20
+    // b0: aa1303e1      mov     x1, x19
+    // b4: 39408908      ldrb    w8, [x8, #0x22]
+    // b8: f9400129      ldr     x9, [x9]
+    // 00000000000000b8:  R_AARCH64_LD64_GOT_LO12_NC   _PyOptimizer_Optimize
+    // bc: 53027d08      lsr     w8, w8, #2
+    // c0: 11000503      add     w3, w8, #0x1
+    // c4: d63f0120      blr     x9
+    // c8: f9402295      ldr     x21, [x20, #0x40]
+    // cc: 7100001f      cmp     w0, #0x0
+    // d0: f900229f      str     xzr, [x20, #0x40]
+    // d4: 540005cd      b.le    0x18c <_JIT_ENTRY+0x18c>
+    // d8: f94007e0      ldr     x0, [sp, #0x8]
+    // dc: 529fff88      mov     w8, #0xfffc             // =65532
+    // e0: 79000ae8      strh    w8, [x23, #0x4]
+    // e4: 14000026      b       0x17c <_JIT_ENTRY+0x17c>
+    // e8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000e8:  R_AARCH64_ADR_GOT_PAGE       _JIT_EXECUTOR
+    // ec: f9400108      ldr     x8, [x8]
+    // 00000000000000ec:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_EXECUTOR
+    // f0: f9008ac8      str     x8, [x22, #0x110]
+    // f4: b9400008      ldr     w8, [x0]
+    // f8: 37f80088      tbnz    w8, #0x1f, 0x108 <_JIT_ENTRY+0x108>
+    // fc: 11000508      add     w8, w8, #0x1
+    // 100: b9000008      str     w8, [x0]
+    // 104: f94006e0      ldr     x0, [x23, #0x8]
+    // 108: a9417bfd      ldp     x29, x30, [sp, #0x10]
+    // 10c: f9403c00      ldr     x0, [x0, #0x78]
+    // 110: 910083ff      add     sp, sp, #0x20
+    // 114: d61f0000      br      x0
+    // 118: f9402295      ldr     x21, [x20, #0x40]
+    // 11c: f900229f      str     xzr, [x20, #0x40]
+    // 120: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000120:  R_AARCH64_ADR_GOT_PAGE       _JIT_EXECUTOR
+    // 124: f9400108      ldr     x8, [x8]
+    // 0000000000000124:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_EXECUTOR
+    // 128: f9008ac8      str     x8, [x22, #0x110]
+    // 12c: 79400af9      ldrh    w25, [x23, #0x4]
+    // 130: 8b130708      add     x8, x24, x19, lsl #1
+    // 134: 71003f3f      cmp     w25, #0xf
+    // 138: 91034113      add     x19, x8, #0xd0
+    // 13c: 54fffa83      b.lo    0x8c <_JIT_ENTRY+0x8c>
+    // 140: 51004328      sub     w8, w25, #0x10
+    // 144: f9002295      str     x21, [x20, #0x40]
+    // 148: 79000ae8      strh    w8, [x23, #0x4]
+    // 14c: a9417bfd      ldp     x29, x30, [sp, #0x10]
+    // 150: aa1303e0      mov     x0, x19
+    // 154: 910083ff      add     sp, sp, #0x20
+    // 158: d65f03c0      ret
+    // 15c: f9404f08      ldr     x8, [x24, #0x98]
+    // 160: 39400669      ldrb    w9, [x19, #0x1]
+    // 164: 8b090d08      add     x8, x8, x9, lsl #3
+    // 168: f9400500      ldr     x0, [x8, #0x8]
+    // 16c: b9400008      ldr     w8, [x0]
+    // 170: 37f80068      tbnz    w8, #0x1f, 0x17c <_JIT_ENTRY+0x17c>
+    // 174: 11000508      add     w8, w8, #0x1
+    // 178: b9000008      str     w8, [x0]
+    // 17c: f90006e0      str     x0, [x23, #0x8]
+    // 180: b9400008      ldr     w8, [x0]
+    // 184: 36fffbc8      tbz     w8, #0x1f, 0xfc <_JIT_ENTRY+0xfc>
+    // 188: 17ffffe0      b       0x108 <_JIT_ENTRY+0x108>
+    // 18c: 71002f3f      cmp     w25, #0xb
+    // 190: 54000108      b.hi    0x1b0 <_JIT_ENTRY+0x1b0>
+    // 194: 52800048      mov     w8, #0x2                // =2
+    // 198: 11000729      add     w9, w25, #0x1
+    // 19c: 1ad92108      lsl     w8, w8, w25
+    // 1a0: 531c6d08      lsl     w8, w8, #4
+    // 1a4: 51004108      sub     w8, w8, #0x10
+    // 1a8: 2a090108      orr     w8, w8, w9
+    // 1ac: 14000002      b       0x1b4 <_JIT_ENTRY+0x1b4>
+    // 1b0: 529fff88      mov     w8, #0xfffc             // =65532
+    // 1b4: 7100001f      cmp     w0, #0x0
+    // 1b8: 79000ae8      strh    w8, [x23, #0x4]
+    // 1bc: 9a9f0273      csel    x19, x19, xzr, eq
+    // 1c0: f9002295      str     x21, [x20, #0x40]
+    // 1c4: a9417bfd      ldp     x29, x30, [sp, #0x10]
+    // 1c8: aa1303e0      mov     x0, x19
+    // 1cc: 910083ff      add     sp, sp, #0x20
+    // 1d0: d65f03c0      ret
+    // 1d4: 00 00 00 00
+    const unsigned char code_body[472] = {
         0xff, 0x83, 0x00, 0xd1, 0xfd, 0x7b, 0x01, 0xa9,
         0x17, 0x00, 0x00, 0x90, 0xfd, 0x43, 0x00, 0x91,
-        0xf7, 0x02, 0x40, 0xf9, 0x99, 0x02, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xe8, 0x02, 0x40, 0xb9,
-        0xe0, 0x06, 0x40, 0xf9, 0x28, 0x07, 0x08, 0x8b,
-        0x13, 0x41, 0x03, 0x91, 0xa0, 0x01, 0x00, 0xb4,
-        0x08, 0x88, 0x40, 0x39, 0x28, 0x01, 0x00, 0x37,
-        0x98, 0xff, 0x9f, 0x52, 0xff, 0x06, 0x00, 0xf9,
-        0xf8, 0x0a, 0x00, 0x79, 0x08, 0x00, 0x40, 0xb9,
-        0x28, 0x04, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x08, 0x00, 0x00, 0xb9, 0xa0, 0x07, 0x00, 0x54,
-        0xe8, 0x06, 0x40, 0xf9, 0xe8, 0x05, 0x00, 0xb5,
-        0xf8, 0x0a, 0x40, 0x79, 0x1f, 0x3f, 0x00, 0x71,
-        0x22, 0x03, 0x00, 0x54, 0x68, 0x02, 0x40, 0x39,
-        0x1f, 0xfd, 0x03, 0x71, 0x00, 0x04, 0x00, 0x54,
-        0x19, 0x00, 0x00, 0x90, 0x09, 0x00, 0x00, 0x90,
-        0xe3, 0x23, 0x00, 0x91, 0x39, 0x03, 0x40, 0xf9,
-        0x95, 0x22, 0x00, 0xf9, 0xe0, 0x03, 0x14, 0xaa,
-        0xe1, 0x03, 0x13, 0xaa, 0xe2, 0x03, 0x15, 0xaa,
-        0x28, 0x8b, 0x40, 0x39, 0x29, 0x01, 0x40, 0xf9,
-        0x08, 0x7d, 0x02, 0x53, 0x04, 0x05, 0x00, 0x11,
-        0x20, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
-        0x1f, 0x00, 0x00, 0x71, 0x9f, 0x22, 0x00, 0xf9,
-        0x4d, 0x05, 0x00, 0x54, 0xe8, 0x07, 0x40, 0xf9,
-        0x89, 0xff, 0x9f, 0x52, 0xe9, 0x0a, 0x00, 0x79,
-        0x13, 0x00, 0x00, 0x14, 0x09, 0x00, 0x00, 0x90,
-        0x08, 0x43, 0x00, 0x51, 0x29, 0x01, 0x40, 0xf9,
-        0xe8, 0x0a, 0x00, 0x79, 0xc9, 0x8a, 0x00, 0xf9,
-        0xfd, 0x7b, 0x41, 0xa9, 0xe0, 0x03, 0x13, 0xaa,
-        0x95, 0x22, 0x00, 0xf9, 0xff, 0x83, 0x00, 0x91,
-        0xc0, 0x03, 0x5f, 0xd6, 0x28, 0x4f, 0x40, 0xf9,
-        0x69, 0x06, 0x40, 0x39, 0x08, 0x0d, 0x09, 0x8b,
-        0x08, 0x05, 0x40, 0xf9, 0x09, 0x01, 0x40, 0xb9,
-        0x69, 0x00, 0xf8, 0x37, 0x29, 0x05, 0x00, 0x11,
-        0x09, 0x01, 0x00, 0xb9, 0xe8, 0x06, 0x00, 0xf9,
-        0x09, 0x01, 0x40, 0xb9, 0x89, 0x00, 0xf8, 0x37,
-        0x29, 0x05, 0x00, 0x11, 0x09, 0x01, 0x00, 0xb9,
-        0xe8, 0x06, 0x40, 0xf9, 0x09, 0x00, 0x00, 0x90,
-        0x29, 0x01, 0x40, 0xf9, 0xfd, 0x7b, 0x41, 0xa9,
-        0x00, 0x3d, 0x40, 0xf9, 0xc9, 0x8a, 0x00, 0xf9,
-        0xff, 0x83, 0x00, 0x91, 0x00, 0x00, 0x1f, 0xd6,
+        0xf7, 0x02, 0x40, 0xf9, 0x98, 0x02, 0x40, 0xf9,
+        0xe0, 0x06, 0x40, 0xf9, 0xf3, 0x02, 0x40, 0xb9,
+        0x00, 0x08, 0x00, 0xb4, 0x08, 0x88, 0x40, 0x39,
+        0x08, 0x06, 0x00, 0x37, 0x88, 0xff, 0x9f, 0x52,
+        0x95, 0x22, 0x00, 0xf9, 0xe8, 0x0a, 0x00, 0x79,
+        0xff, 0x06, 0x00, 0xf9, 0x08, 0x00, 0x40, 0xb9,
+        0xc8, 0x06, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x08, 0x00, 0x00, 0xb9, 0x81, 0x00, 0x00, 0x54,
         0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xe8, 0x06, 0x40, 0xf9,
-        0x08, 0xfe, 0xff, 0xb5, 0xc1, 0xff, 0xff, 0x17,
-        0x1f, 0x2f, 0x00, 0x71, 0x48, 0x01, 0x00, 0x54,
-        0x48, 0x00, 0x80, 0x52, 0x09, 0x07, 0x00, 0x11,
-        0x08, 0x21, 0xd8, 0x1a, 0x08, 0x6d, 0x1c, 0x53,
-        0x08, 0x41, 0x00, 0x51, 0x08, 0x01, 0x09, 0x2a,
-        0xe8, 0x0a, 0x00, 0x79, 0xc0, 0x00, 0xf8, 0x36,
-        0x04, 0x00, 0x00, 0x14, 0x88, 0xff, 0x9f, 0x52,
-        0xe8, 0x0a, 0x00, 0x79, 0x40, 0x00, 0xf8, 0x36,
-        0xf3, 0x03, 0x1f, 0xaa, 0xd9, 0x8a, 0x00, 0xf9,
-        0xfd, 0x7b, 0x41, 0xa9, 0xe0, 0x03, 0x13, 0xaa,
-        0x95, 0x22, 0x00, 0xf9, 0xff, 0x83, 0x00, 0x91,
+        0x00, 0x01, 0x3f, 0xd6, 0x08, 0x00, 0x00, 0x90,
+        0xe0, 0x06, 0x40, 0xf9, 0x08, 0x01, 0x40, 0xf9,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0xc8, 0x8a, 0x00, 0xf9, 0x00, 0x04, 0x00, 0xb5,
+        0xf9, 0x0a, 0x40, 0x79, 0x08, 0x07, 0x13, 0x8b,
+        0x3f, 0x3f, 0x00, 0x71, 0x13, 0x41, 0x03, 0x91,
+        0xc2, 0x05, 0x00, 0x54, 0x68, 0x02, 0x40, 0x39,
+        0x1f, 0xfd, 0x03, 0x71, 0x40, 0x06, 0x00, 0x54,
+        0x08, 0x00, 0x00, 0x90, 0x09, 0x00, 0x00, 0x90,
+        0xe2, 0x23, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
+        0x95, 0x22, 0x00, 0xf9, 0xe0, 0x03, 0x14, 0xaa,
+        0xe1, 0x03, 0x13, 0xaa, 0x08, 0x89, 0x40, 0x39,
+        0x29, 0x01, 0x40, 0xf9, 0x08, 0x7d, 0x02, 0x53,
+        0x03, 0x05, 0x00, 0x11, 0x20, 0x01, 0x3f, 0xd6,
+        0x95, 0x22, 0x40, 0xf9, 0x1f, 0x00, 0x00, 0x71,
+        0x9f, 0x22, 0x00, 0xf9, 0xcd, 0x05, 0x00, 0x54,
+        0xe0, 0x07, 0x40, 0xf9, 0x88, 0xff, 0x9f, 0x52,
+        0xe8, 0x0a, 0x00, 0x79, 0x26, 0x00, 0x00, 0x14,
+        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
+        0xc8, 0x8a, 0x00, 0xf9, 0x08, 0x00, 0x40, 0xb9,
+        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x11,
+        0x08, 0x00, 0x00, 0xb9, 0xe0, 0x06, 0x40, 0xf9,
+        0xfd, 0x7b, 0x41, 0xa9, 0x00, 0x3c, 0x40, 0xf9,
+        0xff, 0x83, 0x00, 0x91, 0x00, 0x00, 0x1f, 0xd6,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
+        0xc8, 0x8a, 0x00, 0xf9, 0xf9, 0x0a, 0x40, 0x79,
+        0x08, 0x07, 0x13, 0x8b, 0x3f, 0x3f, 0x00, 0x71,
+        0x13, 0x41, 0x03, 0x91, 0x83, 0xfa, 0xff, 0x54,
+        0x28, 0x43, 0x00, 0x51, 0x95, 0x22, 0x00, 0xf9,
+        0xe8, 0x0a, 0x00, 0x79, 0xfd, 0x7b, 0x41, 0xa9,
+        0xe0, 0x03, 0x13, 0xaa, 0xff, 0x83, 0x00, 0x91,
+        0xc0, 0x03, 0x5f, 0xd6, 0x08, 0x4f, 0x40, 0xf9,
+        0x69, 0x06, 0x40, 0x39, 0x08, 0x0d, 0x09, 0x8b,
+        0x00, 0x05, 0x40, 0xf9, 0x08, 0x00, 0x40, 0xb9,
+        0x68, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x11,
+        0x08, 0x00, 0x00, 0xb9, 0xe0, 0x06, 0x00, 0xf9,
+        0x08, 0x00, 0x40, 0xb9, 0xc8, 0xfb, 0xff, 0x36,
+        0xe0, 0xff, 0xff, 0x17, 0x3f, 0x2f, 0x00, 0x71,
+        0x08, 0x01, 0x00, 0x54, 0x48, 0x00, 0x80, 0x52,
+        0x29, 0x07, 0x00, 0x11, 0x08, 0x21, 0xd9, 0x1a,
+        0x08, 0x6d, 0x1c, 0x53, 0x08, 0x41, 0x00, 0x51,
+        0x08, 0x01, 0x09, 0x2a, 0x02, 0x00, 0x00, 0x14,
+        0x88, 0xff, 0x9f, 0x52, 0x1f, 0x00, 0x00, 0x71,
+        0xe8, 0x0a, 0x00, 0x79, 0x73, 0x02, 0x9f, 0x9a,
+        0x95, 0x22, 0x00, 0xf9, 0xfd, 0x7b, 0x41, 0xa9,
+        0xe0, 0x03, 0x13, 0xaa, 0xff, 0x83, 0x00, 0x91,
         0xc0, 0x03, 0x5f, 0xd6, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPERAND0
-    // 8: EXECUTOR
-    // 10: &_PyOptimizer_Optimize+0x0
-    // 18: &_Py_Dealloc+0x0
+    // 8: &_Py_Dealloc+0x0
+    // 10: EXECUTOR
+    // 18: &_PyOptimizer_Optimize+0x0
     const unsigned char data_body[32] = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -10674,20 +10434,21 @@ emit__EXIT_TRACE(
     };
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x0, instruction->operand0);
-    patch_64(data + 0x8, (uintptr_t)executor);
-    patch_64(data + 0x10, (uintptr_t)&_PyOptimizer_Optimize);
-    patch_64(data + 0x18, (uintptr_t)&_Py_Dealloc);
+    patch_64(data + 0x8, (uintptr_t)&_Py_Dealloc);
+    patch_64(data + 0x10, (uintptr_t)executor);
+    patch_64(data + 0x18, (uintptr_t)&_PyOptimizer_Optimize);
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_21rx(code + 0x8, (uintptr_t)data);
     patch_aarch64_12x(code + 0x10, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x78, (uintptr_t)data + 0x8);
-    patch_aarch64_21rx(code + 0x7c, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x84, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x9c, (uintptr_t)data + 0x10);
-    patch_aarch64_21rx(code + 0xcc, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0xd4, (uintptr_t)data + 0x8);
-    patch_aarch64_33rx(code + 0x12c, (uintptr_t)data + 0x8);
-    patch_aarch64_33rx(code + 0x148, (uintptr_t)data + 0x18);
+    patch_aarch64_33rx(code + 0x50, (uintptr_t)data + 0x8);
+    patch_aarch64_21rx(code + 0x5c, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x64, (uintptr_t)data + 0x10);
+    patch_aarch64_21rx(code + 0x98, (uintptr_t)data + 0x10);
+    patch_aarch64_21rx(code + 0x9c, (uintptr_t)data + 0x18);
+    patch_aarch64_12x(code + 0xa4, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0xb8, (uintptr_t)data + 0x18);
+    patch_aarch64_33rx(code + 0xe8, (uintptr_t)data + 0x10);
+    patch_aarch64_33rx(code + 0x120, (uintptr_t)data + 0x10);
 }
 
 void
@@ -10723,24 +10484,29 @@ emit__EXPAND_METHOD(
     // 44: 1100054a      add     w10, w10, #0x1
     // 48: b900012a      str     w10, [x9]
     // 4c: f828daa9      str     x9, [x21, w8, sxtw #3]
-    // 50: b9400008      ldr     w8, [x0]
-    // 54: 37f80088      tbnz    w8, #0x1f, 0x64 <_JIT_ENTRY+0x64>
-    // 58: 71000508      subs    w8, w8, #0x1
-    // 5c: b9000008      str     w8, [x0]
-    // 60: 54000040      b.eq    0x68 <_JIT_ENTRY+0x68>
-    // 64: 14000000      b       0x64 <_JIT_ENTRY+0x64>
-    // 0000000000000064:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 68: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 6c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000006c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 70: 910003fd      mov     x29, sp
-    // 74: f9400108      ldr     x8, [x8]
-    // 0000000000000074:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 78: d63f0100      blr     x8
-    // 7c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 80: 14000000      b       0x80 <_JIT_ENTRY+0x80>
-    // 0000000000000080:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[128] = {
+    // 50: f9002295      str     x21, [x20, #0x40]
+    // 54: b9400008      ldr     w8, [x0]
+    // 58: 37f80088      tbnz    w8, #0x1f, 0x68 <_JIT_ENTRY+0x68>
+    // 5c: 71000508      subs    w8, w8, #0x1
+    // 60: b9000008      str     w8, [x0]
+    // 64: 54000080      b.eq    0x74 <_JIT_ENTRY+0x74>
+    // 68: f9402295      ldr     x21, [x20, #0x40]
+    // 6c: f900229f      str     xzr, [x20, #0x40]
+    // 70: 14000000      b       0x70 <_JIT_ENTRY+0x70>
+    // 0000000000000070:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 74: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 78: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000078:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 7c: 910003fd      mov     x29, sp
+    // 80: f9400108      ldr     x8, [x8]
+    // 0000000000000080:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 84: d63f0100      blr     x8
+    // 88: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 8c: f9402295      ldr     x21, [x20, #0x40]
+    // 90: f900229f      str     xzr, [x20, #0x40]
+    // 94: 14000000      b       0x94 <_JIT_ENTRY+0x94>
+    // 0000000000000094:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[152] = {
         0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
         0x0b, 0x3d, 0x00, 0x12, 0x28, 0x00, 0x80, 0x12,
         0x08, 0x01, 0x0b, 0x4b, 0xeb, 0x03, 0x2b, 0x2a,
@@ -10751,12 +10517,15 @@ emit__EXPAND_METHOD(
         0xa0, 0xda, 0x68, 0xf8, 0x2a, 0x01, 0x40, 0xb9,
         0x6a, 0x00, 0xf8, 0x37, 0x4a, 0x05, 0x00, 0x11,
         0x2a, 0x01, 0x00, 0xb9, 0xa9, 0xda, 0x28, 0xf8,
-        0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x40, 0x00, 0x00, 0x54, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x40, 0xb9,
+        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x08, 0x00, 0x00, 0xb9, 0x80, 0x00, 0x00, 0x54,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
+        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPARG
     // 8: &_Py_Dealloc+0x0
@@ -10769,9 +10538,10 @@ emit__EXPAND_METHOD(
     patch_64(data + 0x8, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_33rx(code + 0x0, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x64, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x6c, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x74, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x70, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x78, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x80, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x94, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -10807,24 +10577,29 @@ emit__EXPAND_METHOD_KW(
     // 44: 1100054a      add     w10, w10, #0x1
     // 48: b900012a      str     w10, [x9]
     // 4c: f8287aa9      str     x9, [x21, x8, lsl #3]
-    // 50: b9400008      ldr     w8, [x0]
-    // 54: 37f80088      tbnz    w8, #0x1f, 0x64 <_JIT_ENTRY+0x64>
-    // 58: 71000508      subs    w8, w8, #0x1
-    // 5c: b9000008      str     w8, [x0]
-    // 60: 54000040      b.eq    0x68 <_JIT_ENTRY+0x68>
-    // 64: 14000000      b       0x64 <_JIT_ENTRY+0x64>
-    // 0000000000000064:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 68: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 6c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000006c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 70: 910003fd      mov     x29, sp
-    // 74: f9400108      ldr     x8, [x8]
-    // 0000000000000074:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 78: d63f0100      blr     x8
-    // 7c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 80: 14000000      b       0x80 <_JIT_ENTRY+0x80>
-    // 0000000000000080:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[128] = {
+    // 50: f9002295      str     x21, [x20, #0x40]
+    // 54: b9400008      ldr     w8, [x0]
+    // 58: 37f80088      tbnz    w8, #0x1f, 0x68 <_JIT_ENTRY+0x68>
+    // 5c: 71000508      subs    w8, w8, #0x1
+    // 60: b9000008      str     w8, [x0]
+    // 64: 54000080      b.eq    0x74 <_JIT_ENTRY+0x74>
+    // 68: f9402295      ldr     x21, [x20, #0x40]
+    // 6c: f900229f      str     xzr, [x20, #0x40]
+    // 70: 14000000      b       0x70 <_JIT_ENTRY+0x70>
+    // 0000000000000070:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 74: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 78: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000078:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 7c: 910003fd      mov     x29, sp
+    // 80: f9400108      ldr     x8, [x8]
+    // 0000000000000080:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 84: d63f0100      blr     x8
+    // 88: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 8c: f9402295      ldr     x21, [x20, #0x40]
+    // 90: f900229f      str     xzr, [x20, #0x40]
+    // 94: 14000000      b       0x94 <_JIT_ENTRY+0x94>
+    // 0000000000000094:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[152] = {
         0x08, 0x00, 0x00, 0x90, 0x2c, 0x00, 0x80, 0x92,
         0x08, 0x01, 0x40, 0xf9, 0x0a, 0x3d, 0x40, 0x92,
         0x48, 0x00, 0x80, 0x92, 0x08, 0x01, 0x0a, 0xcb,
@@ -10835,12 +10610,15 @@ emit__EXPAND_METHOD_KW(
         0x09, 0x08, 0x40, 0xf9, 0x2a, 0x01, 0x40, 0xb9,
         0x6a, 0x00, 0xf8, 0x37, 0x4a, 0x05, 0x00, 0x11,
         0x2a, 0x01, 0x00, 0xb9, 0xa9, 0x7a, 0x28, 0xf8,
-        0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x40, 0x00, 0x00, 0x54, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x40, 0xb9,
+        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x08, 0x00, 0x00, 0xb9, 0x80, 0x00, 0x00, 0x54,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
+        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPARG
     // 8: &_Py_Dealloc+0x0
@@ -10854,9 +10632,10 @@ emit__EXPAND_METHOD_KW(
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_21rx(code + 0x0, (uintptr_t)data);
     patch_aarch64_12x(code + 0x8, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x64, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x6c, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x74, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x70, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x78, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x80, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x94, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -10927,67 +10706,76 @@ emit__FORMAT_SIMPLE(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: f85f82b3      ldur    x19, [x21, #-0x8]
-    // 8: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       PyUnicode_Type
-    // c: 910003fd      mov     x29, sp
-    // 10: f9400668      ldr     x8, [x19, #0x8]
-    // 14: f9400129      ldr     x9, [x9]
-    // 0000000000000014:  R_AARCH64_LD64_GOT_LO12_NC   PyUnicode_Type
-    // 18: eb09011f      cmp     x8, x9
-    // 1c: 54000200      b.eq    0x5c <_JIT_ENTRY+0x5c>
-    // 20: f9002295      str     x21, [x20, #0x40]
-    // 24: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000024:  R_AARCH64_ADR_GOT_PAGE       PyObject_Format
-    // 28: aa1303e0      mov     x0, x19
-    // 2c: f9400108      ldr     x8, [x8]
-    // 000000000000002c:  R_AARCH64_LD64_GOT_LO12_NC   PyObject_Format
-    // 30: aa1f03e1      mov     x1, xzr
-    // 34: d63f0100      blr     x8
-    // 38: f9402295      ldr     x21, [x20, #0x40]
-    // 3c: f900229f      str     xzr, [x20, #0x40]
-    // 40: b9400268      ldr     w8, [x19]
-    // 44: 37f80088      tbnz    w8, #0x1f, 0x54 <_JIT_ENTRY+0x54>
-    // 48: 71000508      subs    w8, w8, #0x1
-    // 4c: b9000268      str     w8, [x19]
-    // 50: 540000c0      b.eq    0x68 <_JIT_ENTRY+0x68>
-    // 54: b4000180      cbz     x0, 0x84 <_JIT_ENTRY+0x84>
-    // 58: aa0003f3      mov     x19, x0
-    // 5c: f81f82b3      stur    x19, [x21, #-0x8]
-    // 60: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 64: 14000000      b       0x64 <_JIT_ENTRY+0x64>
-    // 0000000000000064:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 68: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000068:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 6c: aa0003f7      mov     x23, x0
-    // 70: aa1303e0      mov     x0, x19
-    // 74: f9400108      ldr     x8, [x8]
-    // 0000000000000074:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 78: d63f0100      blr     x8
-    // 7c: aa1703e0      mov     x0, x23
-    // 80: b5fffed7      cbnz    x23, 0x58 <_JIT_ENTRY+0x58>
-    // 84: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 88: 14000000      b       0x88 <_JIT_ENTRY+0x88>
-    // 0000000000000088:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 8c: 00 00 00 00
-    const unsigned char code_body[144] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0xb3, 0x82, 0x5f, 0xf8,
-        0x09, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
-        0x68, 0x06, 0x40, 0xf9, 0x29, 0x01, 0x40, 0xf9,
-        0x1f, 0x01, 0x09, 0xeb, 0x00, 0x02, 0x00, 0x54,
-        0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0xe1, 0x03, 0x1f, 0xaa, 0x00, 0x01, 0x3f, 0xd6,
-        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+    // 4: aa1503e8      mov     x8, x21
+    // 8: f85f8eb3      ldr     x19, [x21, #-0x8]!
+    // c: 9000000a      adrp    x10, 0x0 <_JIT_ENTRY>
+    // 000000000000000c:  R_AARCH64_ADR_GOT_PAGE       PyUnicode_Type
+    // 10: 910003fd      mov     x29, sp
+    // 14: f9400669      ldr     x9, [x19, #0x8]
+    // 18: f940014a      ldr     x10, [x10]
+    // 0000000000000018:  R_AARCH64_LD64_GOT_LO12_NC   PyUnicode_Type
+    // 1c: eb0a013f      cmp     x9, x10
+    // 20: 54000260      b.eq    0x6c <_JIT_ENTRY+0x6c>
+    // 24: f9002288      str     x8, [x20, #0x40]
+    // 28: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000028:  R_AARCH64_ADR_GOT_PAGE       PyObject_Format
+    // 2c: aa1303e0      mov     x0, x19
+    // 30: f9400108      ldr     x8, [x8]
+    // 0000000000000030:  R_AARCH64_LD64_GOT_LO12_NC   PyObject_Format
+    // 34: aa1f03e1      mov     x1, xzr
+    // 38: d63f0100      blr     x8
+    // 3c: f9402288      ldr     x8, [x20, #0x40]
+    // 40: d1002108      sub     x8, x8, #0x8
+    // 44: f9002288      str     x8, [x20, #0x40]
+    // 48: b9400268      ldr     w8, [x19]
+    // 4c: 37f80088      tbnz    w8, #0x1f, 0x5c <_JIT_ENTRY+0x5c>
+    // 50: 71000508      subs    w8, w8, #0x1
+    // 54: b9000268      str     w8, [x19]
+    // 58: 54000100      b.eq    0x78 <_JIT_ENTRY+0x78>
+    // 5c: f9402295      ldr     x21, [x20, #0x40]
+    // 60: f900229f      str     xzr, [x20, #0x40]
+    // 64: b40001c0      cbz     x0, 0x9c <_JIT_ENTRY+0x9c>
+    // 68: aa0003f3      mov     x19, x0
+    // 6c: f80086b3      str     x19, [x21], #0x8
+    // 70: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 74: 14000000      b       0x74 <_JIT_ENTRY+0x74>
+    // 0000000000000074:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 78: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000078:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 7c: aa0003f5      mov     x21, x0
+    // 80: aa1303e0      mov     x0, x19
+    // 84: f9400108      ldr     x8, [x8]
+    // 0000000000000084:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 88: d63f0100      blr     x8
+    // 8c: aa1503e0      mov     x0, x21
+    // 90: f9402295      ldr     x21, [x20, #0x40]
+    // 94: f900229f      str     xzr, [x20, #0x40]
+    // 98: b5fffe80      cbnz    x0, 0x68 <_JIT_ENTRY+0x68>
+    // 9c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // a0: 14000000      b       0xa0 <_JIT_ENTRY+0xa0>
+    // 00000000000000a0:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // a4: 00 00 00 00
+    const unsigned char code_body[168] = {
+        0xfd, 0x7b, 0xbf, 0xa9, 0xe8, 0x03, 0x15, 0xaa,
+        0xb3, 0x8e, 0x5f, 0xf8, 0x0a, 0x00, 0x00, 0x90,
+        0xfd, 0x03, 0x00, 0x91, 0x69, 0x06, 0x40, 0xf9,
+        0x4a, 0x01, 0x40, 0xf9, 0x3f, 0x01, 0x0a, 0xeb,
+        0x60, 0x02, 0x00, 0x54, 0x88, 0x22, 0x00, 0xf9,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0xe1, 0x03, 0x1f, 0xaa,
+        0x00, 0x01, 0x3f, 0xd6, 0x88, 0x22, 0x40, 0xf9,
+        0x08, 0x21, 0x00, 0xd1, 0x88, 0x22, 0x00, 0xf9,
         0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0xc0, 0x00, 0x00, 0x54, 0x80, 0x01, 0x00, 0xb4,
-        0xf3, 0x03, 0x00, 0xaa, 0xb3, 0x82, 0x1f, 0xf8,
+        0x00, 0x01, 0x00, 0x54, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xc0, 0x01, 0x00, 0xb4,
+        0xf3, 0x03, 0x00, 0xaa, 0xb3, 0x86, 0x00, 0xf8,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0x08, 0x00, 0x00, 0x90, 0xf7, 0x03, 0x00, 0xaa,
+        0x08, 0x00, 0x00, 0x90, 0xf5, 0x03, 0x00, 0xaa,
         0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xe0, 0x03, 0x17, 0xaa,
-        0xd7, 0xfe, 0xff, 0xb5, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x01, 0x3f, 0xd6, 0xe0, 0x03, 0x15, 0xaa,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0x80, 0xfe, 0xff, 0xb5, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: &PyUnicode_Type+0x0
@@ -11003,14 +10791,14 @@ emit__FORMAT_SIMPLE(
     patch_64(data + 0x8, (uintptr_t)&PyObject_Format);
     patch_64(data + 0x10, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x8, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x14, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x24, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x2c, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x64, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x68, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x74, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x88, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0xc, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x18, (uintptr_t)data);
+    patch_aarch64_21rx(code + 0x28, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x30, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x74, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x78, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x84, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0xa0, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -11025,7 +10813,7 @@ emit__FORMAT_WITH_SPEC(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: a97f66b8      ldp     x24, x25, [x21, #-0x10]
+    // 4: a97f4eb8      ldp     x24, x19, [x21, #-0x10]
     // 8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       PyObject_Format
     // c: f9002295      str     x21, [x20, #0x40]
@@ -11033,9 +10821,9 @@ emit__FORMAT_WITH_SPEC(
     // 14: f9400108      ldr     x8, [x8]
     // 0000000000000014:  R_AARCH64_LD64_GOT_LO12_NC   PyObject_Format
     // 18: aa1803e0      mov     x0, x24
-    // 1c: aa1903e1      mov     x1, x25
+    // 1c: aa1303e1      mov     x1, x19
     // 20: d63f0100      blr     x8
-    // 24: f9402293      ldr     x19, [x20, #0x40]
+    // 24: f9402299      ldr     x25, [x20, #0x40]
     // 28: f900229f      str     xzr, [x20, #0x40]
     // 2c: aa0003f7      mov     x23, x0
     // 30: b9400308      ldr     w8, [x24]
@@ -11049,49 +10837,49 @@ emit__FORMAT_WITH_SPEC(
     // 4c: f9400108      ldr     x8, [x8]
     // 000000000000004c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 50: d63f0100      blr     x8
-    // 54: b9400328      ldr     w8, [x25]
+    // 54: b9400268      ldr     w8, [x19]
     // 58: 37f80088      tbnz    w8, #0x1f, 0x68 <_JIT_ENTRY+0x68>
     // 5c: 71000508      subs    w8, w8, #0x1
-    // 60: b9000328      str     w8, [x25]
+    // 60: b9000268      str     w8, [x19]
     // 64: 540000c0      b.eq    0x7c <_JIT_ENTRY+0x7c>
     // 68: b4000157      cbz     x23, 0x90 <_JIT_ENTRY+0x90>
-    // 6c: d1002275      sub     x21, x19, #0x8
-    // 70: f81f0277      stur    x23, [x19, #-0x10]
+    // 6c: d1002335      sub     x21, x25, #0x8
+    // 70: f81f0337      stur    x23, [x25, #-0x10]
     // 74: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 78: 14000000      b       0x78 <_JIT_ENTRY+0x78>
     // 0000000000000078:  R_AARCH64_JUMP26     _JIT_CONTINUE
     // 7c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 000000000000007c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 80: aa1903e0      mov     x0, x25
+    // 80: aa1303e0      mov     x0, x19
     // 84: f9400108      ldr     x8, [x8]
     // 0000000000000084:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 88: d63f0100      blr     x8
     // 8c: b5ffff17      cbnz    x23, 0x6c <_JIT_ENTRY+0x6c>
-    // 90: aa1303f5      mov     x21, x19
+    // 90: d1004335      sub     x21, x25, #0x10
     // 94: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 98: 14000000      b       0x98 <_JIT_ENTRY+0x98>
     // 0000000000000098:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
     // 9c: 00 00 00 00
     const unsigned char code_body[160] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0xb8, 0x66, 0x7f, 0xa9,
+        0xfd, 0x7b, 0xbf, 0xa9, 0xb8, 0x4e, 0x7f, 0xa9,
         0x08, 0x00, 0x00, 0x90, 0x95, 0x22, 0x00, 0xf9,
         0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0xe0, 0x03, 0x18, 0xaa, 0xe1, 0x03, 0x19, 0xaa,
-        0x00, 0x01, 0x3f, 0xd6, 0x93, 0x22, 0x40, 0xf9,
+        0xe0, 0x03, 0x18, 0xaa, 0xe1, 0x03, 0x13, 0xaa,
+        0x00, 0x01, 0x3f, 0xd6, 0x99, 0x22, 0x40, 0xf9,
         0x9f, 0x22, 0x00, 0xf9, 0xf7, 0x03, 0x00, 0xaa,
         0x08, 0x03, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
         0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
         0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x28, 0x03, 0x40, 0xb9,
+        0x00, 0x01, 0x3f, 0xd6, 0x68, 0x02, 0x40, 0xb9,
         0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x28, 0x03, 0x00, 0xb9, 0xc0, 0x00, 0x00, 0x54,
-        0x57, 0x01, 0x00, 0xb4, 0x75, 0x22, 0x00, 0xd1,
-        0x77, 0x02, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x68, 0x02, 0x00, 0xb9, 0xc0, 0x00, 0x00, 0x54,
+        0x57, 0x01, 0x00, 0xb4, 0x35, 0x23, 0x00, 0xd1,
+        0x37, 0x03, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x19, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
         0x00, 0x01, 0x3f, 0xd6, 0x17, 0xff, 0xff, 0xb5,
-        0xf5, 0x03, 0x13, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x35, 0x43, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: &PyObject_Format+0x0
@@ -11349,13 +11137,13 @@ emit__GET_AITER(
     // 3c: 37f80088      tbnz    w8, #0x1f, 0x4c <_JIT_ENTRY+0x4c>
     // 40: 71000508      subs    w8, w8, #0x1
     // 44: b9000268      str     w8, [x19]
-    // 48: 54000720      b.eq    0x12c <_JIT_ENTRY+0x12c>
-    // 4c: b40007b7      cbz     x23, 0x140 <_JIT_ENTRY+0x140>
+    // 48: 54000760      b.eq    0x134 <_JIT_ENTRY+0x134>
+    // 4c: b4000377      cbz     x23, 0xb8 <_JIT_ENTRY+0xb8>
     // 50: f94006e8      ldr     x8, [x23, #0x8]
     // 54: f9402909      ldr     x9, [x8, #0x50]
-    // 58: b4000349      cbz     x9, 0xc0 <_JIT_ENTRY+0xc0>
+    // 58: b4000369      cbz     x9, 0xc4 <_JIT_ENTRY+0xc4>
     // 5c: f9400929      ldr     x9, [x9, #0x10]
-    // 60: b4000309      cbz     x9, 0xc0 <_JIT_ENTRY+0xc0>
+    // 60: b4000329      cbz     x9, 0xc4 <_JIT_ENTRY+0xc4>
     // 64: f81f82b7      stur    x23, [x21, #-0x8]
     // 68: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 6c: 14000000      b       0x6c <_JIT_ENTRY+0x6c>
@@ -11383,69 +11171,70 @@ emit__GET_AITER(
     // a8: 37f80088      tbnz    w8, #0x1f, 0xb8 <_JIT_ENTRY+0xb8>
     // ac: 71000508      subs    w8, w8, #0x1
     // b0: b9000268      str     w8, [x19]
-    // b4: 54000300      b.eq    0x114 <_JIT_ENTRY+0x114>
-    // b8: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // bc: 14000000      b       0xbc <_JIT_ENTRY+0xbc>
-    // 00000000000000bc:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // c0: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 00000000000000c0:  R_AARCH64_ADR_GOT_PAGE       PyExc_TypeError
-    // c4: d10022aa      sub     x10, x21, #0x8
-    // c8: 90000002      adrp    x2, 0x0 <_JIT_ENTRY>
-    // 00000000000000c8:  R_AARCH64_ADR_PREL_PG_HI21   .rodata.str1.1+0x41
-    // cc: 91000042      add     x2, x2, #0x0
-    // 00000000000000cc:  R_AARCH64_ADD_ABS_LO12_NC    .rodata.str1.1+0x41
-    // d0: f9400129      ldr     x9, [x9]
-    // 00000000000000d0:  R_AARCH64_LD64_GOT_LO12_NC   PyExc_TypeError
-    // d4: f9400d03      ldr     x3, [x8, #0x18]
-    // d8: f900228a      str     x10, [x20, #0x40]
-    // dc: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000dc:  R_AARCH64_ADR_GOT_PAGE       _PyErr_Format
-    // e0: aa1603e0      mov     x0, x22
-    // e4: f9400121      ldr     x1, [x9]
-    // e8: f9400108      ldr     x8, [x8]
-    // 00000000000000e8:  R_AARCH64_LD64_GOT_LO12_NC   _PyErr_Format
-    // ec: d63f0100      blr     x8
-    // f0: b94002e8      ldr     w8, [x23]
-    // f4: 37f80088      tbnz    w8, #0x1f, 0x104 <_JIT_ENTRY+0x104>
-    // f8: 71000508      subs    w8, w8, #0x1
-    // fc: b90002e8      str     w8, [x23]
-    // 100: 54000240      b.eq    0x148 <_JIT_ENTRY+0x148>
-    // 104: f9402295      ldr     x21, [x20, #0x40]
-    // 108: f900229f      str     xzr, [x20, #0x40]
-    // 10c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 110: 14000000      b       0x110 <_JIT_ENTRY+0x110>
-    // 0000000000000110:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 114: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000114:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 118: aa1303e0      mov     x0, x19
-    // 11c: f9400108      ldr     x8, [x8]
-    // 000000000000011c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 120: d63f0100      blr     x8
-    // 124: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 128: 14000000      b       0x128 <_JIT_ENTRY+0x128>
-    // 0000000000000128:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 12c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000012c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 130: aa1303e0      mov     x0, x19
-    // 134: f9400108      ldr     x8, [x8]
-    // 0000000000000134:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 138: d63f0100      blr     x8
-    // 13c: b5fff8b7      cbnz    x23, 0x50 <_JIT_ENTRY+0x50>
-    // 140: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 144: 14000000      b       0x144 <_JIT_ENTRY+0x144>
-    // 0000000000000144:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 148: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000148:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 14c: aa1703e0      mov     x0, x23
-    // 150: f9400108      ldr     x8, [x8]
-    // 0000000000000150:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 154: d63f0100      blr     x8
-    // 158: f9402295      ldr     x21, [x20, #0x40]
-    // 15c: f900229f      str     xzr, [x20, #0x40]
-    // 160: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 164: 14000000      b       0x164 <_JIT_ENTRY+0x164>
-    // 0000000000000164:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[360] = {
+    // b4: 54000320      b.eq    0x118 <_JIT_ENTRY+0x118>
+    // b8: d10022b5      sub     x21, x21, #0x8
+    // bc: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // c0: 14000000      b       0xc0 <_JIT_ENTRY+0xc0>
+    // 00000000000000c0:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // c4: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
+    // 00000000000000c4:  R_AARCH64_ADR_GOT_PAGE       PyExc_TypeError
+    // c8: d10022aa      sub     x10, x21, #0x8
+    // cc: 90000002      adrp    x2, 0x0 <_JIT_ENTRY>
+    // 00000000000000cc:  R_AARCH64_ADR_PREL_PG_HI21   .rodata.str1.1+0x41
+    // d0: 91000042      add     x2, x2, #0x0
+    // 00000000000000d0:  R_AARCH64_ADD_ABS_LO12_NC    .rodata.str1.1+0x41
+    // d4: f9400129      ldr     x9, [x9]
+    // 00000000000000d4:  R_AARCH64_LD64_GOT_LO12_NC   PyExc_TypeError
+    // d8: f9400d03      ldr     x3, [x8, #0x18]
+    // dc: f900228a      str     x10, [x20, #0x40]
+    // e0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000e0:  R_AARCH64_ADR_GOT_PAGE       _PyErr_Format
+    // e4: aa1603e0      mov     x0, x22
+    // e8: f9400121      ldr     x1, [x9]
+    // ec: f9400108      ldr     x8, [x8]
+    // 00000000000000ec:  R_AARCH64_LD64_GOT_LO12_NC   _PyErr_Format
+    // f0: d63f0100      blr     x8
+    // f4: b94002e8      ldr     w8, [x23]
+    // f8: 37f80088      tbnz    w8, #0x1f, 0x108 <_JIT_ENTRY+0x108>
+    // fc: 71000508      subs    w8, w8, #0x1
+    // 100: b90002e8      str     w8, [x23]
+    // 104: 54000240      b.eq    0x14c <_JIT_ENTRY+0x14c>
+    // 108: f9402295      ldr     x21, [x20, #0x40]
+    // 10c: f900229f      str     xzr, [x20, #0x40]
+    // 110: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 114: 14000000      b       0x114 <_JIT_ENTRY+0x114>
+    // 0000000000000114:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 118: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000118:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 11c: aa1303e0      mov     x0, x19
+    // 120: f9400108      ldr     x8, [x8]
+    // 0000000000000120:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 124: d63f0100      blr     x8
+    // 128: d10022b5      sub     x21, x21, #0x8
+    // 12c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 130: 14000000      b       0x130 <_JIT_ENTRY+0x130>
+    // 0000000000000130:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 134: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000134:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 138: aa1303e0      mov     x0, x19
+    // 13c: f9400108      ldr     x8, [x8]
+    // 000000000000013c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 140: d63f0100      blr     x8
+    // 144: b5fff877      cbnz    x23, 0x50 <_JIT_ENTRY+0x50>
+    // 148: 17ffffdc      b       0xb8 <_JIT_ENTRY+0xb8>
+    // 14c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 000000000000014c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 150: aa1703e0      mov     x0, x23
+    // 154: f9400108      ldr     x8, [x8]
+    // 0000000000000154:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 158: d63f0100      blr     x8
+    // 15c: f9402295      ldr     x21, [x20, #0x40]
+    // 160: f900229f      str     xzr, [x20, #0x40]
+    // 164: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 168: 14000000      b       0x168 <_JIT_ENTRY+0x168>
+    // 0000000000000168:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 16c: 00 00 00 00
+    const unsigned char code_body[368] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0xb3, 0x82, 0x5f, 0xf8,
         0xfd, 0x03, 0x00, 0x91, 0x68, 0x06, 0x40, 0xf9,
         0x09, 0x29, 0x40, 0xf9, 0xe9, 0x02, 0x00, 0xb4,
@@ -11455,10 +11244,10 @@ emit__GET_AITER(
         0x9f, 0x22, 0x00, 0xf9, 0xf7, 0x03, 0x00, 0xaa,
         0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0x20, 0x07, 0x00, 0x54, 0xb7, 0x07, 0x00, 0xb4,
+        0x60, 0x07, 0x00, 0x54, 0x77, 0x03, 0x00, 0xb4,
         0xe8, 0x06, 0x40, 0xf9, 0x09, 0x29, 0x40, 0xf9,
-        0x49, 0x03, 0x00, 0xb4, 0x29, 0x09, 0x40, 0xf9,
-        0x09, 0x03, 0x00, 0xb4, 0xb7, 0x82, 0x1f, 0xf8,
+        0x69, 0x03, 0x00, 0xb4, 0x29, 0x09, 0x40, 0xf9,
+        0x29, 0x03, 0x00, 0xb4, 0xb7, 0x82, 0x1f, 0xf8,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
         0x09, 0x00, 0x00, 0x90, 0x02, 0x00, 0x00, 0x90,
         0x42, 0x00, 0x00, 0x91, 0x29, 0x01, 0x40, 0xf9,
@@ -11468,29 +11257,30 @@ emit__GET_AITER(
         0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
         0x9f, 0x22, 0x00, 0xf9, 0x68, 0x02, 0x40, 0xb9,
         0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x68, 0x02, 0x00, 0xb9, 0x00, 0x03, 0x00, 0x54,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0x09, 0x00, 0x00, 0x90, 0xaa, 0x22, 0x00, 0xd1,
-        0x02, 0x00, 0x00, 0x90, 0x42, 0x00, 0x00, 0x91,
-        0x29, 0x01, 0x40, 0xf9, 0x03, 0x0d, 0x40, 0xf9,
-        0x8a, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x16, 0xaa, 0x21, 0x01, 0x40, 0xf9,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xe8, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0xe8, 0x02, 0x00, 0xb9,
-        0x40, 0x02, 0x00, 0x54, 0x95, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xb7, 0xf8, 0xff, 0xb5,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x17, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0x68, 0x02, 0x00, 0xb9, 0x20, 0x03, 0x00, 0x54,
+        0xb5, 0x22, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x09, 0x00, 0x00, 0x90,
+        0xaa, 0x22, 0x00, 0xd1, 0x02, 0x00, 0x00, 0x90,
+        0x42, 0x00, 0x00, 0x91, 0x29, 0x01, 0x40, 0xf9,
+        0x03, 0x0d, 0x40, 0xf9, 0x8a, 0x22, 0x00, 0xf9,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x16, 0xaa,
+        0x21, 0x01, 0x40, 0xf9, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0xe8, 0x02, 0x40, 0xb9,
+        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0xe8, 0x02, 0x00, 0xb9, 0x40, 0x02, 0x00, 0x54,
         0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xb5, 0x22, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x77, 0xf8, 0xff, 0xb5,
+        0xdc, 0xff, 0xff, 0x17, 0x08, 0x00, 0x00, 0x90,
+        0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: "'async for' requires an object with __aiter__ method, got %.100s\x00'async for' received an object from __aiter__ that does not implement __anext__: %.100s\x00"
     // 99: 00 00 00 00 00 00 00
@@ -11534,23 +11324,22 @@ emit__GET_AITER(
     patch_aarch64_12x(code + 0x7c, (uintptr_t)data + 0xa0);
     patch_aarch64_21rx(code + 0x88, (uintptr_t)data + 0xa8);
     patch_aarch64_12x(code + 0x94, (uintptr_t)data + 0xa8);
-    patch_aarch64_26r(code + 0xbc, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_21rx(code + 0xc0, (uintptr_t)data + 0xa0);
-    patch_aarch64_21r(code + 0xc8, (uintptr_t)data + 0x41);
-    patch_aarch64_12(code + 0xcc, (uintptr_t)data + 0x41);
-    patch_aarch64_12x(code + 0xd0, (uintptr_t)data + 0xa0);
-    patch_aarch64_21rx(code + 0xdc, (uintptr_t)data + 0xa8);
-    patch_aarch64_12x(code + 0xe8, (uintptr_t)data + 0xa8);
-    patch_aarch64_26r(code + 0x110, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_21rx(code + 0x114, (uintptr_t)data + 0xb0);
-    patch_aarch64_12x(code + 0x11c, (uintptr_t)data + 0xb0);
-    patch_aarch64_26r(code + 0x128, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_21rx(code + 0x12c, (uintptr_t)data + 0xb0);
-    patch_aarch64_12x(code + 0x134, (uintptr_t)data + 0xb0);
-    patch_aarch64_26r(code + 0x144, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_21rx(code + 0x148, (uintptr_t)data + 0xb0);
-    patch_aarch64_12x(code + 0x150, (uintptr_t)data + 0xb0);
-    patch_aarch64_26r(code + 0x164, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0xc0, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0xc4, (uintptr_t)data + 0xa0);
+    patch_aarch64_21r(code + 0xcc, (uintptr_t)data + 0x41);
+    patch_aarch64_12(code + 0xd0, (uintptr_t)data + 0x41);
+    patch_aarch64_12x(code + 0xd4, (uintptr_t)data + 0xa0);
+    patch_aarch64_21rx(code + 0xe0, (uintptr_t)data + 0xa8);
+    patch_aarch64_12x(code + 0xec, (uintptr_t)data + 0xa8);
+    patch_aarch64_26r(code + 0x114, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0x118, (uintptr_t)data + 0xb0);
+    patch_aarch64_12x(code + 0x120, (uintptr_t)data + 0xb0);
+    patch_aarch64_26r(code + 0x130, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0x134, (uintptr_t)data + 0xb0);
+    patch_aarch64_12x(code + 0x13c, (uintptr_t)data + 0xb0);
+    patch_aarch64_21rx(code + 0x14c, (uintptr_t)data + 0xb0);
+    patch_aarch64_12x(code + 0x154, (uintptr_t)data + 0xb0);
+    patch_aarch64_26r(code + 0x168, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -11653,10 +11442,10 @@ emit__GET_AWAITABLE(
     // 68: d63f0100      blr     x8
     // 6c: aa1703e0      mov     x0, x23
     // 70: b5fffef7      cbnz    x23, 0x4c <_JIT_ENTRY+0x4c>
-    // 74: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 78: 14000000      b       0x78 <_JIT_ENTRY+0x78>
-    // 0000000000000078:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 7c: 00 00 00 00
+    // 74: d10022b5      sub     x21, x21, #0x8
+    // 78: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 7c: 14000000      b       0x7c <_JIT_ENTRY+0x7c>
+    // 000000000000007c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
     const unsigned char code_body[128] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0x09, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
@@ -11672,8 +11461,8 @@ emit__GET_AWAITABLE(
         0x08, 0x00, 0x00, 0x90, 0xf7, 0x03, 0x00, 0xaa,
         0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
         0x00, 0x01, 0x3f, 0xd6, 0xe0, 0x03, 0x17, 0xaa,
-        0xf7, 0xfe, 0xff, 0xb5, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
+        0xf7, 0xfe, 0xff, 0xb5, 0xb5, 0x22, 0x00, 0xd1,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPARG
     // 8: &_PyEval_GetAwaitable+0x0
@@ -11695,7 +11484,7 @@ emit__GET_AWAITABLE(
     patch_aarch64_26r(code + 0x54, (uintptr_t)code + sizeof(code_body));
     patch_aarch64_21rx(code + 0x58, (uintptr_t)data + 0x10);
     patch_aarch64_12x(code + 0x64, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x78, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0x7c, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -11740,10 +11529,12 @@ emit__GET_ITER(
     // 5c: d63f0100      blr     x8
     // 60: aa1703e0      mov     x0, x23
     // 64: b5fffef7      cbnz    x23, 0x40 <_JIT_ENTRY+0x40>
-    // 68: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 6c: 14000000      b       0x6c <_JIT_ENTRY+0x6c>
-    // 000000000000006c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[112] = {
+    // 68: d10022b5      sub     x21, x21, #0x8
+    // 6c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 70: 14000000      b       0x70 <_JIT_ENTRY+0x70>
+    // 0000000000000070:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 74: 00 00 00 00
+    const unsigned char code_body[120] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0xb3, 0x82, 0x5f, 0xf8,
         0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
         0x08, 0x01, 0x40, 0xf9, 0xfd, 0x03, 0x00, 0x91,
@@ -11757,7 +11548,8 @@ emit__GET_ITER(
         0xf7, 0x03, 0x00, 0xaa, 0xe0, 0x03, 0x13, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
         0xe0, 0x03, 0x17, 0xaa, 0xf7, 0xfe, 0xff, 0xb5,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0xb5, 0x22, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: &PyObject_GetIter+0x0
     // 8: &_Py_Dealloc+0x0
@@ -11773,7 +11565,7 @@ emit__GET_ITER(
     patch_aarch64_26r(code + 0x48, (uintptr_t)code + sizeof(code_body));
     patch_aarch64_21rx(code + 0x4c, (uintptr_t)data + 0x8);
     patch_aarch64_12x(code + 0x58, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x6c, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0x70, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -12034,7 +11826,7 @@ emit__GUARD_BINARY_OP_EXTEND(
     // 000000000000000c:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPERAND0
     // 10: a97f06a0      ldp     x0, x1, [x21, #-0x10]
     // 14: f9002295      str     x21, [x20, #0x40]
-    // 18: f9400108      ldr     x8, [x8]
+    // 18: f9400508      ldr     x8, [x8, #0x8]
     // 1c: d63f0100      blr     x8
     // 20: f9402295      ldr     x21, [x20, #0x40]
     // 24: f900229f      str     xzr, [x20, #0x40]
@@ -12050,7 +11842,7 @@ emit__GUARD_BINARY_OP_EXTEND(
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
         0xa0, 0x06, 0x7f, 0xa9, 0x95, 0x22, 0x00, 0xf9,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0x08, 0x05, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
         0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
         0x60, 0x00, 0x00, 0x34, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xc1, 0xa8,
@@ -12513,38 +12305,44 @@ emit__GUARD_IS_NONE_POP(
     // 8: f9400108      ldr     x8, [x8]
     // 0000000000000008:  R_AARCH64_LD64_GOT_LO12_NC   _Py_NoneStruct
     // c: eb08001f      cmp     x0, x8
-    // 10: 540000e0      b.eq    0x2c <_JIT_ENTRY+0x2c>
-    // 14: b9400008      ldr     w8, [x0]
-    // 18: 37f80088      tbnz    w8, #0x1f, 0x28 <_JIT_ENTRY+0x28>
-    // 1c: 71000508      subs    w8, w8, #0x1
-    // 20: b9000008      str     w8, [x0]
-    // 24: 54000060      b.eq    0x30 <_JIT_ENTRY+0x30>
-    // 28: 14000000      b       0x28 <_JIT_ENTRY+0x28>
-    // 0000000000000028:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 2c: 14000000      b       0x2c <_JIT_ENTRY+0x2c>
-    // 000000000000002c:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 30: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 34: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000034:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 38: 910003fd      mov     x29, sp
-    // 3c: f9400108      ldr     x8, [x8]
-    // 000000000000003c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 40: d63f0100      blr     x8
-    // 44: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 48: 14000000      b       0x48 <_JIT_ENTRY+0x48>
-    // 0000000000000048:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 4c: 00 00 00 00
-    const unsigned char code_body[80] = {
+    // 10: 54000140      b.eq    0x38 <_JIT_ENTRY+0x38>
+    // 14: f9002295      str     x21, [x20, #0x40]
+    // 18: b9400008      ldr     w8, [x0]
+    // 1c: 37f80088      tbnz    w8, #0x1f, 0x2c <_JIT_ENTRY+0x2c>
+    // 20: 71000508      subs    w8, w8, #0x1
+    // 24: b9000008      str     w8, [x0]
+    // 28: 540000a0      b.eq    0x3c <_JIT_ENTRY+0x3c>
+    // 2c: f9402295      ldr     x21, [x20, #0x40]
+    // 30: f900229f      str     xzr, [x20, #0x40]
+    // 34: 14000000      b       0x34 <_JIT_ENTRY+0x34>
+    // 0000000000000034:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
+    // 38: 14000000      b       0x38 <_JIT_ENTRY+0x38>
+    // 0000000000000038:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 3c: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 40: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000040:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 44: 910003fd      mov     x29, sp
+    // 48: f9400108      ldr     x8, [x8]
+    // 0000000000000048:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 4c: d63f0100      blr     x8
+    // 50: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 54: f9402295      ldr     x21, [x20, #0x40]
+    // 58: f900229f      str     xzr, [x20, #0x40]
+    // 5c: 14000000      b       0x5c <_JIT_ENTRY+0x5c>
+    // 000000000000005c:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
+    const unsigned char code_body[96] = {
         0x08, 0x00, 0x00, 0x90, 0xa0, 0x8e, 0x5f, 0xf8,
         0x08, 0x01, 0x40, 0xf9, 0x1f, 0x00, 0x08, 0xeb,
-        0xe0, 0x00, 0x00, 0x54, 0x08, 0x00, 0x40, 0xb9,
-        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x08, 0x00, 0x00, 0xb9, 0x60, 0x00, 0x00, 0x54,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
+        0x40, 0x01, 0x00, 0x54, 0x95, 0x22, 0x00, 0xf9,
+        0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
+        0xa0, 0x00, 0x00, 0x54, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
+        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
+        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: &_Py_NoneStruct+0x0
     // 8: &_Py_Dealloc+0x0
@@ -12558,11 +12356,11 @@ emit__GUARD_IS_NONE_POP(
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_21rx(code + 0x0, (uintptr_t)data);
     patch_aarch64_12x(code + 0x8, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x28, state->instruction_starts[instruction->jump_target]);
-    patch_aarch64_26r(code + 0x2c, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x34, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x3c, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x48, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_26r(code + 0x34, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_26r(code + 0x38, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x40, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x48, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x5c, state->instruction_starts[instruction->jump_target]);
 }
 
 void
@@ -12577,50 +12375,56 @@ emit__GUARD_IS_NOT_NONE_POP(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: f85f8eb3      ldr     x19, [x21, #-0x8]!
-    // 4: b9400268      ldr     w8, [x19]
-    // 8: 37f80088      tbnz    w8, #0x1f, 0x18 <_JIT_ENTRY+0x18>
-    // c: 71000508      subs    w8, w8, #0x1
-    // 10: b9000268      str     w8, [x19]
-    // 14: 540000c0      b.eq    0x2c <_JIT_ENTRY+0x2c>
-    // 18: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000018:  R_AARCH64_ADR_GOT_PAGE       _Py_NoneStruct
-    // 1c: f9400108      ldr     x8, [x8]
-    // 000000000000001c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_NoneStruct
-    // 20: eb08027f      cmp     x19, x8
-    // 24: 540001a0      b.eq    0x58 <_JIT_ENTRY+0x58>
-    // 28: 14000000      b       0x28 <_JIT_ENTRY+0x28>
-    // 0000000000000028:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 2c: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 30: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000030:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 34: aa1303e0      mov     x0, x19
-    // 38: 910003fd      mov     x29, sp
-    // 3c: f9400108      ldr     x8, [x8]
-    // 000000000000003c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 40: d63f0100      blr     x8
-    // 44: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 48: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000048:  R_AARCH64_ADR_GOT_PAGE       _Py_NoneStruct
-    // 4c: f9400108      ldr     x8, [x8]
-    // 000000000000004c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_NoneStruct
-    // 50: eb08027f      cmp     x19, x8
-    // 54: 54fffea1      b.ne    0x28 <_JIT_ENTRY+0x28>
-    // 58: 14000000      b       0x58 <_JIT_ENTRY+0x58>
-    // 0000000000000058:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 5c: 00 00 00 00
-    const unsigned char code_body[96] = {
-        0xb3, 0x8e, 0x5f, 0xf8, 0x68, 0x02, 0x40, 0xb9,
-        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x68, 0x02, 0x00, 0xb9, 0xc0, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0x7f, 0x02, 0x08, 0xeb, 0xa0, 0x01, 0x00, 0x54,
-        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0x7f, 0x02, 0x08, 0xeb, 0xa1, 0xfe, 0xff, 0x54,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
+    // 4: f9002295      str     x21, [x20, #0x40]
+    // 8: b9400268      ldr     w8, [x19]
+    // c: 37f80088      tbnz    w8, #0x1f, 0x1c <_JIT_ENTRY+0x1c>
+    // 10: 71000508      subs    w8, w8, #0x1
+    // 14: b9000268      str     w8, [x19]
+    // 18: 54000100      b.eq    0x38 <_JIT_ENTRY+0x38>
+    // 1c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 000000000000001c:  R_AARCH64_ADR_GOT_PAGE       _Py_NoneStruct
+    // 20: f9400108      ldr     x8, [x8]
+    // 0000000000000020:  R_AARCH64_LD64_GOT_LO12_NC   _Py_NoneStruct
+    // 24: f9402295      ldr     x21, [x20, #0x40]
+    // 28: f900229f      str     xzr, [x20, #0x40]
+    // 2c: eb08027f      cmp     x19, x8
+    // 30: 540001e0      b.eq    0x6c <_JIT_ENTRY+0x6c>
+    // 34: 14000000      b       0x34 <_JIT_ENTRY+0x34>
+    // 0000000000000034:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 38: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 3c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 000000000000003c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 40: aa1303e0      mov     x0, x19
+    // 44: 910003fd      mov     x29, sp
+    // 48: f9400108      ldr     x8, [x8]
+    // 0000000000000048:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 4c: d63f0100      blr     x8
+    // 50: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 54: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000054:  R_AARCH64_ADR_GOT_PAGE       _Py_NoneStruct
+    // 58: f9400108      ldr     x8, [x8]
+    // 0000000000000058:  R_AARCH64_LD64_GOT_LO12_NC   _Py_NoneStruct
+    // 5c: f9402295      ldr     x21, [x20, #0x40]
+    // 60: f900229f      str     xzr, [x20, #0x40]
+    // 64: eb08027f      cmp     x19, x8
+    // 68: 54fffe61      b.ne    0x34 <_JIT_ENTRY+0x34>
+    // 6c: 14000000      b       0x6c <_JIT_ENTRY+0x6c>
+    // 000000000000006c:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
+    const unsigned char code_body[112] = {
+        0xb3, 0x8e, 0x5f, 0xf8, 0x95, 0x22, 0x00, 0xf9,
+        0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
+        0x00, 0x01, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
+        0x08, 0x01, 0x40, 0xf9, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x7f, 0x02, 0x08, 0xeb,
+        0xe0, 0x01, 0x00, 0x54, 0x00, 0x00, 0x00, 0x14,
+        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
+        0xe0, 0x03, 0x13, 0xaa, 0xfd, 0x03, 0x00, 0x91,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x08, 0x00, 0x00, 0x90,
+        0x08, 0x01, 0x40, 0xf9, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x7f, 0x02, 0x08, 0xeb,
+        0x61, 0xfe, 0xff, 0x54, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: &_Py_NoneStruct+0x0
     // 8: &_Py_Dealloc+0x0
@@ -12632,12 +12436,12 @@ emit__GUARD_IS_NOT_NONE_POP(
     patch_64(data + 0x0, (uintptr_t)&_Py_NoneStruct);
     patch_64(data + 0x8, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_33rx(code + 0x18, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x28, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x30, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x3c, (uintptr_t)data + 0x8);
-    patch_aarch64_33rx(code + 0x48, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x58, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_33rx(code + 0x1c, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x34, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x3c, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x48, (uintptr_t)data + 0x8);
+    patch_aarch64_33rx(code + 0x54, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x6c, state->instruction_starts[instruction->jump_target]);
 }
 
 void
@@ -13176,7 +12980,7 @@ emit__IMPORT_NAME(
     // 18: f9401108      ldr     x8, [x8, #0x20]
     // 1c: f9400129      ldr     x9, [x9]
     // 000000000000001c:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 20: a97f66b8      ldp     x24, x25, [x21, #-0x10]
+    // 20: a97f4eb8      ldp     x24, x19, [x21, #-0x10]
     // 24: 8b292d08      add     x8, x8, w9, uxth #3
     // 28: f9400d02      ldr     x2, [x8, #0x18]
     // 2c: f9002295      str     x21, [x20, #0x40]
@@ -13184,10 +12988,10 @@ emit__IMPORT_NAME(
     // 0000000000000030:  R_AARCH64_ADR_GOT_PAGE       _PyEval_ImportName
     // 34: f9400108      ldr     x8, [x8]
     // 0000000000000034:  R_AARCH64_LD64_GOT_LO12_NC   _PyEval_ImportName
-    // 38: aa1903e3      mov     x3, x25
+    // 38: aa1303e3      mov     x3, x19
     // 3c: aa1803e4      mov     x4, x24
     // 40: d63f0100      blr     x8
-    // 44: f9402293      ldr     x19, [x20, #0x40]
+    // 44: f9402299      ldr     x25, [x20, #0x40]
     // 48: f900229f      str     xzr, [x20, #0x40]
     // 4c: aa0003f7      mov     x23, x0
     // 50: b9400308      ldr     w8, [x24]
@@ -13201,25 +13005,25 @@ emit__IMPORT_NAME(
     // 6c: f9400108      ldr     x8, [x8]
     // 000000000000006c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 70: d63f0100      blr     x8
-    // 74: b9400328      ldr     w8, [x25]
+    // 74: b9400268      ldr     w8, [x19]
     // 78: 37f80088      tbnz    w8, #0x1f, 0x88 <_JIT_ENTRY+0x88>
     // 7c: 71000508      subs    w8, w8, #0x1
-    // 80: b9000328      str     w8, [x25]
+    // 80: b9000268      str     w8, [x19]
     // 84: 540000c0      b.eq    0x9c <_JIT_ENTRY+0x9c>
     // 88: b4000157      cbz     x23, 0xb0 <_JIT_ENTRY+0xb0>
-    // 8c: d1002275      sub     x21, x19, #0x8
-    // 90: f81f0277      stur    x23, [x19, #-0x10]
+    // 8c: d1002335      sub     x21, x25, #0x8
+    // 90: f81f0337      stur    x23, [x25, #-0x10]
     // 94: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 98: 14000000      b       0x98 <_JIT_ENTRY+0x98>
     // 0000000000000098:  R_AARCH64_JUMP26     _JIT_CONTINUE
     // 9c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 000000000000009c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // a0: aa1903e0      mov     x0, x25
+    // a0: aa1303e0      mov     x0, x19
     // a4: f9400108      ldr     x8, [x8]
     // 00000000000000a4:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // a8: d63f0100      blr     x8
     // ac: b5ffff17      cbnz    x23, 0x8c <_JIT_ENTRY+0x8c>
-    // b0: aa1303f5      mov     x21, x19
+    // b0: d1004335      sub     x21, x25, #0x10
     // b4: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // b8: 14000000      b       0xb8 <_JIT_ENTRY+0xb8>
     // 00000000000000b8:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
@@ -13229,25 +13033,25 @@ emit__IMPORT_NAME(
         0x09, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x16, 0xaa,
         0xe1, 0x03, 0x14, 0xaa, 0xfd, 0x03, 0x00, 0x91,
         0x08, 0x11, 0x40, 0xf9, 0x29, 0x01, 0x40, 0xf9,
-        0xb8, 0x66, 0x7f, 0xa9, 0x08, 0x2d, 0x29, 0x8b,
+        0xb8, 0x4e, 0x7f, 0xa9, 0x08, 0x2d, 0x29, 0x8b,
         0x02, 0x0d, 0x40, 0xf9, 0x95, 0x22, 0x00, 0xf9,
         0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0xe3, 0x03, 0x19, 0xaa, 0xe4, 0x03, 0x18, 0xaa,
-        0x00, 0x01, 0x3f, 0xd6, 0x93, 0x22, 0x40, 0xf9,
+        0xe3, 0x03, 0x13, 0xaa, 0xe4, 0x03, 0x18, 0xaa,
+        0x00, 0x01, 0x3f, 0xd6, 0x99, 0x22, 0x40, 0xf9,
         0x9f, 0x22, 0x00, 0xf9, 0xf7, 0x03, 0x00, 0xaa,
         0x08, 0x03, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
         0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
         0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x28, 0x03, 0x40, 0xb9,
+        0x00, 0x01, 0x3f, 0xd6, 0x68, 0x02, 0x40, 0xb9,
         0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x28, 0x03, 0x00, 0xb9, 0xc0, 0x00, 0x00, 0x54,
-        0x57, 0x01, 0x00, 0xb4, 0x75, 0x22, 0x00, 0xd1,
-        0x77, 0x02, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x68, 0x02, 0x00, 0xb9, 0xc0, 0x00, 0x00, 0x54,
+        0x57, 0x01, 0x00, 0xb4, 0x35, 0x23, 0x00, 0xd1,
+        0x37, 0x03, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x19, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
         0x00, 0x01, 0x3f, 0xd6, 0x17, 0xff, 0xff, 0xb5,
-        0xf5, 0x03, 0x13, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x35, 0x43, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
@@ -13307,24 +13111,29 @@ emit__INIT_CALL_BOUND_METHOD_EXACT_ARGS(
     // 44: 1100054a      add     w10, w10, #0x1
     // 48: b900012a      str     w10, [x9]
     // 4c: f828daa9      str     x9, [x21, w8, sxtw #3]
-    // 50: b9400008      ldr     w8, [x0]
-    // 54: 37f80088      tbnz    w8, #0x1f, 0x64 <_JIT_ENTRY+0x64>
-    // 58: 71000508      subs    w8, w8, #0x1
-    // 5c: b9000008      str     w8, [x0]
-    // 60: 54000040      b.eq    0x68 <_JIT_ENTRY+0x68>
-    // 64: 14000000      b       0x64 <_JIT_ENTRY+0x64>
-    // 0000000000000064:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 68: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 6c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000006c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 70: 910003fd      mov     x29, sp
-    // 74: f9400108      ldr     x8, [x8]
-    // 0000000000000074:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 78: d63f0100      blr     x8
-    // 7c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 80: 14000000      b       0x80 <_JIT_ENTRY+0x80>
-    // 0000000000000080:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[128] = {
+    // 50: f9002295      str     x21, [x20, #0x40]
+    // 54: b9400008      ldr     w8, [x0]
+    // 58: 37f80088      tbnz    w8, #0x1f, 0x68 <_JIT_ENTRY+0x68>
+    // 5c: 71000508      subs    w8, w8, #0x1
+    // 60: b9000008      str     w8, [x0]
+    // 64: 54000080      b.eq    0x74 <_JIT_ENTRY+0x74>
+    // 68: f9402295      ldr     x21, [x20, #0x40]
+    // 6c: f900229f      str     xzr, [x20, #0x40]
+    // 70: 14000000      b       0x70 <_JIT_ENTRY+0x70>
+    // 0000000000000070:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 74: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 78: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000078:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 7c: 910003fd      mov     x29, sp
+    // 80: f9400108      ldr     x8, [x8]
+    // 0000000000000080:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 84: d63f0100      blr     x8
+    // 88: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 8c: f9402295      ldr     x21, [x20, #0x40]
+    // 90: f900229f      str     xzr, [x20, #0x40]
+    // 94: 14000000      b       0x94 <_JIT_ENTRY+0x94>
+    // 0000000000000094:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[152] = {
         0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
         0x0b, 0x3d, 0x00, 0x12, 0x28, 0x00, 0x80, 0x12,
         0x08, 0x01, 0x0b, 0x4b, 0xeb, 0x03, 0x2b, 0x2a,
@@ -13335,12 +13144,15 @@ emit__INIT_CALL_BOUND_METHOD_EXACT_ARGS(
         0xa0, 0xda, 0x68, 0xf8, 0x2a, 0x01, 0x40, 0xb9,
         0x6a, 0x00, 0xf8, 0x37, 0x4a, 0x05, 0x00, 0x11,
         0x2a, 0x01, 0x00, 0xb9, 0xa9, 0xda, 0x28, 0xf8,
-        0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x40, 0x00, 0x00, 0x54, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x40, 0xb9,
+        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x08, 0x00, 0x00, 0xb9, 0x80, 0x00, 0x00, 0x54,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
+        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPARG
     // 8: &_Py_Dealloc+0x0
@@ -13353,9 +13165,10 @@ emit__INIT_CALL_BOUND_METHOD_EXACT_ARGS(
     patch_64(data + 0x8, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_33rx(code + 0x0, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x64, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x6c, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x74, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x70, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x78, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x80, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x94, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -14427,54 +14240,51 @@ emit__LIST_APPEND(
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000000:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // 4: aa1503f3      mov     x19, x21
-    // 8: f9400108      ldr     x8, [x8]
-    // 0000000000000008:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // c: f85f8e61      ldr     x1, [x19, #-0x8]!
-    // 10: 2a2803e8      mvn     w8, w8
-    // 14: 531d7108      lsl     w8, w8, #3
-    // 18: b26db108      orr     x8, x8, #0xfffffffffff80000
-    // 1c: f8686aa0      ldr     x0, [x21, x8]
-    // 20: f9400808      ldr     x8, [x0, #0x10]
-    // 24: f9401009      ldr     x9, [x0, #0x20]
-    // 28: eb08013f      cmp     x9, x8
-    // 2c: 540000ed      b.le    0x48 <_JIT_ENTRY+0x48>
-    // 30: f9400c09      ldr     x9, [x0, #0x18]
-    // 34: 9100050a      add     x10, x8, #0x1
-    // 38: f900080a      str     x10, [x0, #0x10]
-    // 3c: f8287921      str     x1, [x9, x8, lsl #3]
-    // 40: aa1303f5      mov     x21, x19
-    // 44: 14000000      b       0x44 <_JIT_ENTRY+0x44>
-    // 0000000000000044:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 48: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000004c:  R_AARCH64_ADR_GOT_PAGE       _PyList_AppendTakeRefListResize
-    // 50: 910003fd      mov     x29, sp
-    // 54: f9400108      ldr     x8, [x8]
-    // 0000000000000054:  R_AARCH64_LD64_GOT_LO12_NC   _PyList_AppendTakeRefListResize
-    // 58: d63f0100      blr     x8
-    // 5c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 60: 37f80060      tbnz    w0, #0x1f, 0x6c <_JIT_ENTRY+0x6c>
-    // 64: aa1303f5      mov     x21, x19
-    // 68: 14000000      b       0x68 <_JIT_ENTRY+0x68>
-    // 0000000000000068:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 6c: 14000000      b       0x6c <_JIT_ENTRY+0x6c>
-    // 000000000000006c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[112] = {
-        0x08, 0x00, 0x00, 0x90, 0xf3, 0x03, 0x15, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x61, 0x8e, 0x5f, 0xf8,
+    // 4: f9400108      ldr     x8, [x8]
+    // 0000000000000004:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
+    // 8: 2a2803e8      mvn     w8, w8
+    // c: 531d7108      lsl     w8, w8, #3
+    // 10: b26db108      orr     x8, x8, #0xfffffffffff80000
+    // 14: f8686aa0      ldr     x0, [x21, x8]
+    // 18: f85f8ea1      ldr     x1, [x21, #-0x8]!
+    // 1c: f9400808      ldr     x8, [x0, #0x10]
+    // 20: f9401009      ldr     x9, [x0, #0x20]
+    // 24: eb08013f      cmp     x9, x8
+    // 28: 540000cd      b.le    0x40 <_JIT_ENTRY+0x40>
+    // 2c: f9400c09      ldr     x9, [x0, #0x18]
+    // 30: 9100050a      add     x10, x8, #0x1
+    // 34: f900080a      str     x10, [x0, #0x10]
+    // 38: f8287921      str     x1, [x9, x8, lsl #3]
+    // 3c: 14000000      b       0x3c <_JIT_ENTRY+0x3c>
+    // 000000000000003c:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 40: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 44: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000044:  R_AARCH64_ADR_GOT_PAGE       _PyList_AppendTakeRefListResize
+    // 48: 910003fd      mov     x29, sp
+    // 4c: f9400108      ldr     x8, [x8]
+    // 000000000000004c:  R_AARCH64_LD64_GOT_LO12_NC   _PyList_AppendTakeRefListResize
+    // 50: d63f0100      blr     x8
+    // 54: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 58: 37f80040      tbnz    w0, #0x1f, 0x60 <_JIT_ENTRY+0x60>
+    // 5c: 14000000      b       0x5c <_JIT_ENTRY+0x5c>
+    // 000000000000005c:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 60: 14000000      b       0x60 <_JIT_ENTRY+0x60>
+    // 0000000000000060:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 64: 00 00 00 00
+    const unsigned char code_body[104] = {
+        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
         0xe8, 0x03, 0x28, 0x2a, 0x08, 0x71, 0x1d, 0x53,
         0x08, 0xb1, 0x6d, 0xb2, 0xa0, 0x6a, 0x68, 0xf8,
-        0x08, 0x08, 0x40, 0xf9, 0x09, 0x10, 0x40, 0xf9,
-        0x3f, 0x01, 0x08, 0xeb, 0xed, 0x00, 0x00, 0x54,
-        0x09, 0x0c, 0x40, 0xf9, 0x0a, 0x05, 0x00, 0x91,
-        0x0a, 0x08, 0x00, 0xf9, 0x21, 0x79, 0x28, 0xf8,
-        0xf5, 0x03, 0x13, 0xaa, 0x00, 0x00, 0x00, 0x14,
+        0xa1, 0x8e, 0x5f, 0xf8, 0x08, 0x08, 0x40, 0xf9,
+        0x09, 0x10, 0x40, 0xf9, 0x3f, 0x01, 0x08, 0xeb,
+        0xcd, 0x00, 0x00, 0x54, 0x09, 0x0c, 0x40, 0xf9,
+        0x0a, 0x05, 0x00, 0x91, 0x0a, 0x08, 0x00, 0xf9,
+        0x21, 0x79, 0x28, 0xf8, 0x00, 0x00, 0x00, 0x14,
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
         0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x60, 0x00, 0xf8, 0x37, 0xf5, 0x03, 0x13, 0xaa,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x14,
+        0x40, 0x00, 0xf8, 0x37, 0x00, 0x00, 0x00, 0x14,
+        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
     // 8: &_PyList_AppendTakeRefListResize+0x0
@@ -14486,13 +14296,12 @@ emit__LIST_APPEND(
     patch_64(data + 0x0, instruction->oparg);
     patch_64(data + 0x8, (uintptr_t)&_PyList_AppendTakeRefListResize);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x0, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x8, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x44, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x4c, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x54, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x68, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x6c, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_33rx(code + 0x0, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x3c, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x44, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x4c, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x5c, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x60, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -14531,7 +14340,7 @@ emit__LIST_EXTEND(
     // 48: 37f80088      tbnz    w8, #0x1f, 0x58 <_JIT_ENTRY+0x58>
     // 4c: 71000508      subs    w8, w8, #0x1
     // 50: b9000268      str     w8, [x19]
-    // 54: 540005c0      b.eq    0x10c <_JIT_ENTRY+0x10c>
+    // 54: 540005e0      b.eq    0x110 <_JIT_ENTRY+0x110>
     // 58: d10022b5      sub     x21, x21, #0x8
     // 5c: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 60: 14000000      b       0x60 <_JIT_ENTRY+0x60>
@@ -14587,30 +14396,32 @@ emit__LIST_EXTEND(
     // f4: 37f80088      tbnz    w8, #0x1f, 0x104 <_JIT_ENTRY+0x104>
     // f8: 71000508      subs    w8, w8, #0x1
     // fc: b9000268      str     w8, [x19]
-    // 100: 54000140      b.eq    0x128 <_JIT_ENTRY+0x128>
-    // 104: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 108: 14000000      b       0x108 <_JIT_ENTRY+0x108>
-    // 0000000000000108:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 10c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000010c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 110: aa1303e0      mov     x0, x19
-    // 114: f9400108      ldr     x8, [x8]
-    // 0000000000000114:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 118: d63f0100      blr     x8
-    // 11c: d10022b5      sub     x21, x21, #0x8
-    // 120: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 124: 14000000      b       0x124 <_JIT_ENTRY+0x124>
-    // 0000000000000124:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 128: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000128:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 12c: aa1303e0      mov     x0, x19
-    // 130: f9400108      ldr     x8, [x8]
-    // 0000000000000130:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 134: d63f0100      blr     x8
-    // 138: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 13c: 14000000      b       0x13c <_JIT_ENTRY+0x13c>
-    // 000000000000013c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[320] = {
+    // 100: 54000160      b.eq    0x12c <_JIT_ENTRY+0x12c>
+    // 104: d10022b5      sub     x21, x21, #0x8
+    // 108: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 10c: 14000000      b       0x10c <_JIT_ENTRY+0x10c>
+    // 000000000000010c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 110: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000110:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 114: aa1303e0      mov     x0, x19
+    // 118: f9400108      ldr     x8, [x8]
+    // 0000000000000118:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 11c: d63f0100      blr     x8
+    // 120: d10022b5      sub     x21, x21, #0x8
+    // 124: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 128: 14000000      b       0x128 <_JIT_ENTRY+0x128>
+    // 0000000000000128:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 12c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 000000000000012c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 130: aa1303e0      mov     x0, x19
+    // 134: f9400108      ldr     x8, [x8]
+    // 0000000000000134:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 138: d63f0100      blr     x8
+    // 13c: d10022b5      sub     x21, x21, #0x8
+    // 140: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 144: 14000000      b       0x144 <_JIT_ENTRY+0x144>
+    // 0000000000000144:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    const unsigned char code_body[328] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
         0xb3, 0x82, 0x5f, 0xf8, 0xe8, 0x03, 0x28, 0x2a,
@@ -14621,7 +14432,7 @@ emit__LIST_EXTEND(
         0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
         0x20, 0x01, 0x00, 0xb4, 0x68, 0x02, 0x40, 0xb9,
         0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x68, 0x02, 0x00, 0xb9, 0xc0, 0x05, 0x00, 0x54,
+        0x68, 0x02, 0x00, 0xb9, 0xe0, 0x05, 0x00, 0x54,
         0xb5, 0x22, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x17, 0x00, 0x00, 0x90,
         0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x16, 0xaa,
@@ -14643,13 +14454,14 @@ emit__LIST_EXTEND(
         0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
         0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0x40, 0x01, 0x00, 0x54, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xb5, 0x22, 0x00, 0xd1,
+        0x60, 0x01, 0x00, 0x54, 0xb5, 0x22, 0x00, 0xd1,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
         0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xb5, 0x22, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0xb5, 0x22, 0x00, 0xd1,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: 'Value after * must be an iterable, not %.200s\x00'
@@ -14703,13 +14515,13 @@ emit__LIST_EXTEND(
     patch_aarch64_21r(code + 0xcc, (uintptr_t)data);
     patch_aarch64_12(code + 0xd0, (uintptr_t)data);
     patch_aarch64_33rx(code + 0xdc, (uintptr_t)data + 0x60);
-    patch_aarch64_26r(code + 0x108, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_21rx(code + 0x10c, (uintptr_t)data + 0x68);
-    patch_aarch64_12x(code + 0x114, (uintptr_t)data + 0x68);
-    patch_aarch64_26r(code + 0x124, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x128, (uintptr_t)data + 0x68);
-    patch_aarch64_12x(code + 0x130, (uintptr_t)data + 0x68);
-    patch_aarch64_26r(code + 0x13c, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0x10c, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0x110, (uintptr_t)data + 0x68);
+    patch_aarch64_12x(code + 0x118, (uintptr_t)data + 0x68);
+    patch_aarch64_26r(code + 0x128, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x12c, (uintptr_t)data + 0x68);
+    patch_aarch64_12x(code + 0x134, (uintptr_t)data + 0x68);
+    patch_aarch64_26r(code + 0x144, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -14744,18 +14556,18 @@ emit__LOAD_ATTR(
     // 3c: f9400108      ldr     x8, [x8]
     // 000000000000003c:  R_AARCH64_LD64_GOT_LO12_NC   PyObject_GetAttr
     // 40: d63f0100      blr     x8
-    // 44: f9402295      ldr     x21, [x20, #0x40]
+    // 44: f9402298      ldr     x24, [x20, #0x40]
     // 48: f900229f      str     xzr, [x20, #0x40]
     // 4c: b9400268      ldr     w8, [x19]
     // 50: 37f80088      tbnz    w8, #0x1f, 0x60 <_JIT_ENTRY+0x60>
     // 54: 71000508      subs    w8, w8, #0x1
     // 58: b9000268      str     w8, [x19]
-    // 5c: 54000540      b.eq    0x104 <_JIT_ENTRY+0x104>
-    // 60: b4000600      cbz     x0, 0x120 <_JIT_ENTRY+0x120>
-    // 64: f81f82a0      stur    x0, [x21, #-0x8]
-    // 68: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // 6c: 120002e8      and     w8, w23, #0x1
-    // 70: 8b284eb5      add     x21, x21, w8, uxtw #3
+    // 5c: 540004e0      b.eq    0xf8 <_JIT_ENTRY+0xf8>
+    // 60: b40005a0      cbz     x0, 0x114 <_JIT_ENTRY+0x114>
+    // 64: a9417bfd      ldp     x29, x30, [sp, #0x10]
+    // 68: 120002e8      and     w8, w23, #0x1
+    // 6c: 8b284f15      add     x21, x24, w8, uxtw #3
+    // 70: f81f8300      stur    x0, [x24, #-0x8]
     // 74: 910083ff      add     sp, sp, #0x20
     // 78: 14000000      b       0x78 <_JIT_ENTRY+0x78>
     // 0000000000000078:  R_AARCH64_JUMP26     _JIT_CONTINUE
@@ -14768,52 +14580,49 @@ emit__LOAD_ATTR(
     // 90: f9400108      ldr     x8, [x8]
     // 0000000000000090:  R_AARCH64_LD64_GOT_LO12_NC   _PyObject_GetMethod
     // 94: d63f0100      blr     x8
-    // 98: f9402295      ldr     x21, [x20, #0x40]
+    // 98: f9402298      ldr     x24, [x20, #0x40]
     // 9c: f900229f      str     xzr, [x20, #0x40]
-    // a0: 34000100      cbz     w0, 0xc0 <_JIT_ENTRY+0xc0>
-    // a4: f94007e8      ldr     x8, [sp, #0x8]
-    // a8: a93fcea8      stp     x8, x19, [x21, #-0x8]
-    // ac: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // b0: 120002e8      and     w8, w23, #0x1
-    // b4: 8b284eb5      add     x21, x21, w8, uxtw #3
-    // b8: 910083ff      add     sp, sp, #0x20
-    // bc: 14000000      b       0xbc <_JIT_ENTRY+0xbc>
-    // 00000000000000bc:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // c0: b9400268      ldr     w8, [x19]
-    // c4: 37f80108      tbnz    w8, #0x1f, 0xe4 <_JIT_ENTRY+0xe4>
-    // c8: 71000508      subs    w8, w8, #0x1
-    // cc: b9000268      str     w8, [x19]
-    // d0: 540000a1      b.ne    0xe4 <_JIT_ENTRY+0xe4>
-    // d4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000d4:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // d8: aa1303e0      mov     x0, x19
-    // dc: f9400108      ldr     x8, [x8]
-    // 00000000000000dc:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // e0: d63f0100      blr     x8
-    // e4: f94007e8      ldr     x8, [sp, #0x8]
-    // e8: b40001c8      cbz     x8, 0x120 <_JIT_ENTRY+0x120>
-    // ec: a93ffea8      stp     x8, xzr, [x21, #-0x8]
-    // f0: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // f4: 120002e8      and     w8, w23, #0x1
-    // f8: 8b284eb5      add     x21, x21, w8, uxtw #3
-    // fc: 910083ff      add     sp, sp, #0x20
-    // 100: 14000000      b       0x100 <_JIT_ENTRY+0x100>
-    // 0000000000000100:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 104: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000104:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 108: aa0003f8      mov     x24, x0
-    // 10c: aa1303e0      mov     x0, x19
-    // 110: f9400108      ldr     x8, [x8]
-    // 0000000000000110:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 114: d63f0100      blr     x8
-    // 118: aa1803e0      mov     x0, x24
-    // 11c: b5fffa58      cbnz    x24, 0x64 <_JIT_ENTRY+0x64>
-    // 120: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // 124: 910083ff      add     sp, sp, #0x20
-    // 128: 14000000      b       0x128 <_JIT_ENTRY+0x128>
-    // 0000000000000128:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 12c: 00 00 00 00
-    const unsigned char code_body[304] = {
+    // a0: 34000060      cbz     w0, 0xac <_JIT_ENTRY+0xac>
+    // a4: f94007e0      ldr     x0, [sp, #0x8]
+    // a8: 1400000d      b       0xdc <_JIT_ENTRY+0xdc>
+    // ac: b9400268      ldr     w8, [x19]
+    // b0: 37f80108      tbnz    w8, #0x1f, 0xd0 <_JIT_ENTRY+0xd0>
+    // b4: 71000508      subs    w8, w8, #0x1
+    // b8: b9000268      str     w8, [x19]
+    // bc: 540000a1      b.ne    0xd0 <_JIT_ENTRY+0xd0>
+    // c0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000c0:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // c4: aa1303e0      mov     x0, x19
+    // c8: f9400108      ldr     x8, [x8]
+    // 00000000000000c8:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // cc: d63f0100      blr     x8
+    // d0: f94007e0      ldr     x0, [sp, #0x8]
+    // d4: b4000200      cbz     x0, 0x114 <_JIT_ENTRY+0x114>
+    // d8: aa1f03f3      mov     x19, xzr
+    // dc: f90002b3      str     x19, [x21]
+    // e0: a9417bfd      ldp     x29, x30, [sp, #0x10]
+    // e4: 120002e8      and     w8, w23, #0x1
+    // e8: 8b284f15      add     x21, x24, w8, uxtw #3
+    // ec: f81f8300      stur    x0, [x24, #-0x8]
+    // f0: 910083ff      add     sp, sp, #0x20
+    // f4: 14000000      b       0xf4 <_JIT_ENTRY+0xf4>
+    // 00000000000000f4:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // f8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000f8:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // fc: aa0003f5      mov     x21, x0
+    // 100: aa1303e0      mov     x0, x19
+    // 104: f9400108      ldr     x8, [x8]
+    // 0000000000000104:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 108: d63f0100      blr     x8
+    // 10c: aa1503e0      mov     x0, x21
+    // 110: b5fffab5      cbnz    x21, 0x64 <_JIT_ENTRY+0x64>
+    // 114: a9417bfd      ldp     x29, x30, [sp, #0x10]
+    // 118: d1002315      sub     x21, x24, #0x8
+    // 11c: 910083ff      add     sp, sp, #0x20
+    // 120: 14000000      b       0x120 <_JIT_ENTRY+0x120>
+    // 0000000000000120:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 124: 00 00 00 00
+    const unsigned char code_body[296] = {
         0xff, 0x83, 0x00, 0xd1, 0xfd, 0x7b, 0x01, 0xa9,
         0x17, 0x00, 0x00, 0x90, 0xfd, 0x43, 0x00, 0x91,
         0xf7, 0x02, 0x40, 0xf9, 0x88, 0x02, 0x40, 0xf9,
@@ -14822,35 +14631,34 @@ emit__LOAD_ATTR(
         0x01, 0x0d, 0x40, 0xf9, 0x97, 0x02, 0x00, 0x37,
         0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
         0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x98, 0x22, 0x40, 0xf9,
         0x9f, 0x22, 0x00, 0xf9, 0x68, 0x02, 0x40, 0xb9,
         0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x68, 0x02, 0x00, 0xb9, 0x40, 0x05, 0x00, 0x54,
-        0x00, 0x06, 0x00, 0xb4, 0xa0, 0x82, 0x1f, 0xf8,
-        0xfd, 0x7b, 0x41, 0xa9, 0xe8, 0x02, 0x00, 0x12,
-        0xb5, 0x4e, 0x28, 0x8b, 0xff, 0x83, 0x00, 0x91,
+        0x68, 0x02, 0x00, 0xb9, 0xe0, 0x04, 0x00, 0x54,
+        0xa0, 0x05, 0x00, 0xb4, 0xfd, 0x7b, 0x41, 0xa9,
+        0xe8, 0x02, 0x00, 0x12, 0x15, 0x4f, 0x28, 0x8b,
+        0x00, 0x83, 0x1f, 0xf8, 0xff, 0x83, 0x00, 0x91,
         0x00, 0x00, 0x00, 0x14, 0xff, 0x07, 0x00, 0xf9,
         0x08, 0x00, 0x00, 0x90, 0xe2, 0x23, 0x00, 0x91,
         0x95, 0x22, 0x00, 0xf9, 0xe0, 0x03, 0x13, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
-        0x00, 0x01, 0x00, 0x34, 0xe8, 0x07, 0x40, 0xf9,
-        0xa8, 0xce, 0x3f, 0xa9, 0xfd, 0x7b, 0x41, 0xa9,
-        0xe8, 0x02, 0x00, 0x12, 0xb5, 0x4e, 0x28, 0x8b,
-        0xff, 0x83, 0x00, 0x91, 0x00, 0x00, 0x00, 0x14,
-        0x68, 0x02, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xe8, 0x07, 0x40, 0xf9,
-        0xc8, 0x01, 0x00, 0xb4, 0xa8, 0xfe, 0x3f, 0xa9,
-        0xfd, 0x7b, 0x41, 0xa9, 0xe8, 0x02, 0x00, 0x12,
-        0xb5, 0x4e, 0x28, 0x8b, 0xff, 0x83, 0x00, 0x91,
-        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xf8, 0x03, 0x00, 0xaa, 0xe0, 0x03, 0x13, 0xaa,
+        0x98, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0x60, 0x00, 0x00, 0x34, 0xe0, 0x07, 0x40, 0xf9,
+        0x0d, 0x00, 0x00, 0x14, 0x68, 0x02, 0x40, 0xb9,
+        0x08, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x68, 0x02, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xe0, 0x03, 0x18, 0xaa, 0x58, 0xfa, 0xff, 0xb5,
-        0xfd, 0x7b, 0x41, 0xa9, 0xff, 0x83, 0x00, 0x91,
+        0xe0, 0x07, 0x40, 0xf9, 0x00, 0x02, 0x00, 0xb4,
+        0xf3, 0x03, 0x1f, 0xaa, 0xb3, 0x02, 0x00, 0xf9,
+        0xfd, 0x7b, 0x41, 0xa9, 0xe8, 0x02, 0x00, 0x12,
+        0x15, 0x4f, 0x28, 0x8b, 0x00, 0x83, 0x1f, 0xf8,
+        0xff, 0x83, 0x00, 0x91, 0x00, 0x00, 0x00, 0x14,
+        0x08, 0x00, 0x00, 0x90, 0xf5, 0x03, 0x00, 0xaa,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0xe0, 0x03, 0x15, 0xaa,
+        0xb5, 0xfa, 0xff, 0xb5, 0xfd, 0x7b, 0x41, 0xa9,
+        0x15, 0x23, 0x00, 0xd1, 0xff, 0x83, 0x00, 0x91,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
@@ -14876,22 +14684,21 @@ emit__LOAD_ATTR(
     patch_aarch64_26r(code + 0x78, (uintptr_t)code + sizeof(code_body));
     patch_aarch64_21rx(code + 0x80, (uintptr_t)data + 0x10);
     patch_aarch64_12x(code + 0x90, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0xbc, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0xd4, (uintptr_t)data + 0x18);
-    patch_aarch64_12x(code + 0xdc, (uintptr_t)data + 0x18);
-    patch_aarch64_26r(code + 0x100, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x104, (uintptr_t)data + 0x18);
-    patch_aarch64_12x(code + 0x110, (uintptr_t)data + 0x18);
-    patch_aarch64_26r(code + 0x128, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0xc0, (uintptr_t)data + 0x18);
+    patch_aarch64_12x(code + 0xc8, (uintptr_t)data + 0x18);
+    patch_aarch64_26r(code + 0xf4, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0xf8, (uintptr_t)data + 0x18);
+    patch_aarch64_12x(code + 0x104, (uintptr_t)data + 0x18);
+    patch_aarch64_26r(code + 0x120, state->instruction_starts[instruction->error_target]);
 }
 
 void
-emit__LOAD_ATTR_CLASS_0(
+emit__LOAD_ATTR_CLASS(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
     //
-    // _LOAD_ATTR_CLASS_0.o:  file format elf64-littleaarch64
+    // _LOAD_ATTR_CLASS.o:    file format elf64-littleaarch64
     //
     // Disassembly of section .text:
     //
@@ -14955,85 +14762,12 @@ emit__LOAD_ATTR_CLASS_0(
 }
 
 void
-emit__LOAD_ATTR_CLASS_1(
+emit__LOAD_ATTR_INSTANCE_VALUE(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
     //
-    // _LOAD_ATTR_CLASS_1.o:  file format elf64-littleaarch64
-    //
-    // Disassembly of section .text:
-    //
-    // 0000000000000000 <_JIT_ENTRY>:
-    // 0: 90000017      adrp    x23, 0x0 <_JIT_ENTRY>
-    // 0000000000000000:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPERAND0
-    // 4: aa1503f3      mov     x19, x21
-    // 8: f94002f7      ldr     x23, [x23]
-    // 0000000000000008:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPERAND0
-    // c: f85f82a0      ldur    x0, [x21, #-0x8]
-    // 10: b94002e8      ldr     w8, [x23]
-    // 14: 37f80068      tbnz    w8, #0x1f, 0x20 <_JIT_ENTRY+0x20>
-    // 18: 11000508      add     w8, w8, #0x1
-    // 1c: b90002e8      str     w8, [x23]
-    // 20: b9400008      ldr     w8, [x0]
-    // 24: 37f80088      tbnz    w8, #0x1f, 0x34 <_JIT_ENTRY+0x34>
-    // 28: 71000508      subs    w8, w8, #0x1
-    // 2c: b9000008      str     w8, [x0]
-    // 30: 54000080      b.eq    0x40 <_JIT_ENTRY+0x40>
-    // 34: 91002275      add     x21, x19, #0x8
-    // 38: a93ffe77      stp     x23, xzr, [x19, #-0x8]
-    // 3c: 14000000      b       0x3c <_JIT_ENTRY+0x3c>
-    // 000000000000003c:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 40: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 44: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000044:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 48: 910003fd      mov     x29, sp
-    // 4c: f9400108      ldr     x8, [x8]
-    // 000000000000004c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 50: d63f0100      blr     x8
-    // 54: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 58: 91002275      add     x21, x19, #0x8
-    // 5c: a93ffe77      stp     x23, xzr, [x19, #-0x8]
-    // 60: 14000000      b       0x60 <_JIT_ENTRY+0x60>
-    // 0000000000000060:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[96] = {
-        0x17, 0x00, 0x00, 0x90, 0xf3, 0x03, 0x15, 0xaa,
-        0xf7, 0x02, 0x40, 0xf9, 0xa0, 0x82, 0x5f, 0xf8,
-        0xe8, 0x02, 0x40, 0xb9, 0x68, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x11, 0xe8, 0x02, 0x00, 0xb9,
-        0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x80, 0x00, 0x00, 0x54, 0x75, 0x22, 0x00, 0x91,
-        0x77, 0xfe, 0x3f, 0xa9, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x75, 0x22, 0x00, 0x91, 0x77, 0xfe, 0x3f, 0xa9,
-    };
-    // 0: OPERAND0
-    // 8: &_Py_Dealloc+0x0
-    const unsigned char data_body[16] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    };
-    memcpy(data, data_body, sizeof(data_body));
-    patch_64(data + 0x0, instruction->operand0);
-    patch_64(data + 0x8, (uintptr_t)&_Py_Dealloc);
-    memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x0, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x8, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x3c, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x44, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x4c, (uintptr_t)data + 0x8);
-}
-
-void
-emit__LOAD_ATTR_INSTANCE_VALUE_0(
-    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
-    const _PyUOpInstruction *instruction, jit_state *state)
-{
-    //
-    // _LOAD_ATTR_INSTANCE_VALUE_0.o: file format elf64-littleaarch64
+    // _LOAD_ATTR_INSTANCE_VALUE.o:   file format elf64-littleaarch64
     //
     // Disassembly of section .text:
     //
@@ -15044,130 +14778,53 @@ emit__LOAD_ATTR_INSTANCE_VALUE_0(
     // 0000000000000004:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPERAND0
     // 8: f85f82a0      ldur    x0, [x21, #-0x8]
     // c: 92403d08      and     x8, x8, #0xffff
-    // 10: f8686813      ldr     x19, [x0, x8]
-    // 14: b4000193      cbz     x19, 0x44 <_JIT_ENTRY+0x44>
-    // 18: b9400268      ldr     w8, [x19]
-    // 1c: 37f80068      tbnz    w8, #0x1f, 0x28 <_JIT_ENTRY+0x28>
-    // 20: 11000508      add     w8, w8, #0x1
-    // 24: b9000268      str     w8, [x19]
-    // 28: b9400008      ldr     w8, [x0]
-    // 2c: 37f80088      tbnz    w8, #0x1f, 0x3c <_JIT_ENTRY+0x3c>
-    // 30: 71000508      subs    w8, w8, #0x1
-    // 34: b9000008      str     w8, [x0]
-    // 38: 54000080      b.eq    0x48 <_JIT_ENTRY+0x48>
-    // 3c: f81f82b3      stur    x19, [x21, #-0x8]
-    // 40: 14000000      b       0x40 <_JIT_ENTRY+0x40>
-    // 0000000000000040:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 44: 14000000      b       0x44 <_JIT_ENTRY+0x44>
-    // 0000000000000044:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 48: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000004c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 50: 910003fd      mov     x29, sp
-    // 54: f9400108      ldr     x8, [x8]
-    // 0000000000000054:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 58: d63f0100      blr     x8
-    // 5c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 60: f81f82b3      stur    x19, [x21, #-0x8]
-    // 64: 14000000      b       0x64 <_JIT_ENTRY+0x64>
-    // 0000000000000064:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[104] = {
-        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0xa0, 0x82, 0x5f, 0xf8, 0x08, 0x3d, 0x40, 0x92,
-        0x13, 0x68, 0x68, 0xf8, 0x93, 0x01, 0x00, 0xb4,
-        0x68, 0x02, 0x40, 0xb9, 0x68, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x11, 0x68, 0x02, 0x00, 0xb9,
-        0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x80, 0x00, 0x00, 0x54, 0xb3, 0x82, 0x1f, 0xf8,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
-        0xb3, 0x82, 0x1f, 0xf8, 0x00, 0x00, 0x00, 0x14,
-    };
-    // 0: OPERAND0
-    // 8: &_Py_Dealloc+0x0
-    const unsigned char data_body[16] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    };
-    memcpy(data, data_body, sizeof(data_body));
-    patch_64(data + 0x0, instruction->operand0);
-    patch_64(data + 0x8, (uintptr_t)&_Py_Dealloc);
-    memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_33rx(code + 0x0, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x40, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x44, state->instruction_starts[instruction->jump_target]);
-    patch_aarch64_21rx(code + 0x4c, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x54, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x64, (uintptr_t)code + sizeof(code_body));
-}
-
-void
-emit__LOAD_ATTR_INSTANCE_VALUE_1(
-    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
-    const _PyUOpInstruction *instruction, jit_state *state)
-{
-    //
-    // _LOAD_ATTR_INSTANCE_VALUE_1.o: file format elf64-littleaarch64
-    //
-    // Disassembly of section .text:
-    //
-    // 0000000000000000 <_JIT_ENTRY>:
-    // 0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000000:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPERAND0
-    // 4: f9400108      ldr     x8, [x8]
-    // 0000000000000004:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPERAND0
-    // 8: f85f82a0      ldur    x0, [x21, #-0x8]
-    // c: 92403d08      and     x8, x8, #0xffff
-    // 10: f8686813      ldr     x19, [x0, x8]
-    // 14: b40001d3      cbz     x19, 0x4c <_JIT_ENTRY+0x4c>
-    // 18: b9400268      ldr     w8, [x19]
-    // 1c: 37f80068      tbnz    w8, #0x1f, 0x28 <_JIT_ENTRY+0x28>
-    // 20: 11000508      add     w8, w8, #0x1
-    // 24: b9000268      str     w8, [x19]
-    // 28: b9400008      ldr     w8, [x0]
-    // 2c: 37f80088      tbnz    w8, #0x1f, 0x3c <_JIT_ENTRY+0x3c>
-    // 30: 71000508      subs    w8, w8, #0x1
-    // 34: b9000008      str     w8, [x0]
-    // 38: 540000c0      b.eq    0x50 <_JIT_ENTRY+0x50>
-    // 3c: aa1503e8      mov     x8, x21
-    // 40: 910022b5      add     x21, x21, #0x8
-    // 44: a93ffd13      stp     x19, xzr, [x8, #-0x8]
-    // 48: 14000000      b       0x48 <_JIT_ENTRY+0x48>
-    // 0000000000000048:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 10: f8686808      ldr     x8, [x0, x8]
+    // 14: b40001e8      cbz     x8, 0x50 <_JIT_ENTRY+0x50>
+    // 18: b9400109      ldr     w9, [x8]
+    // 1c: 37f80069      tbnz    w9, #0x1f, 0x28 <_JIT_ENTRY+0x28>
+    // 20: 11000529      add     w9, w9, #0x1
+    // 24: b9000109      str     w9, [x8]
+    // 28: f81f82a8      stur    x8, [x21, #-0x8]
+    // 2c: f9002295      str     x21, [x20, #0x40]
+    // 30: b9400008      ldr     w8, [x0]
+    // 34: 37f80088      tbnz    w8, #0x1f, 0x44 <_JIT_ENTRY+0x44>
+    // 38: 71000508      subs    w8, w8, #0x1
+    // 3c: b9000008      str     w8, [x0]
+    // 40: 540000a0      b.eq    0x54 <_JIT_ENTRY+0x54>
+    // 44: f9402295      ldr     x21, [x20, #0x40]
+    // 48: f900229f      str     xzr, [x20, #0x40]
     // 4c: 14000000      b       0x4c <_JIT_ENTRY+0x4c>
-    // 000000000000004c:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 50: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 54: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000054:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 58: 910003fd      mov     x29, sp
-    // 5c: f9400108      ldr     x8, [x8]
-    // 000000000000005c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 60: d63f0100      blr     x8
-    // 64: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 68: aa1503e8      mov     x8, x21
-    // 6c: 910022b5      add     x21, x21, #0x8
-    // 70: a93ffd13      stp     x19, xzr, [x8, #-0x8]
+    // 000000000000004c:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 50: 14000000      b       0x50 <_JIT_ENTRY+0x50>
+    // 0000000000000050:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
+    // 54: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 58: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000058:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 5c: 910003fd      mov     x29, sp
+    // 60: f9400108      ldr     x8, [x8]
+    // 0000000000000060:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 64: d63f0100      blr     x8
+    // 68: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 6c: f9402295      ldr     x21, [x20, #0x40]
+    // 70: f900229f      str     xzr, [x20, #0x40]
     // 74: 14000000      b       0x74 <_JIT_ENTRY+0x74>
     // 0000000000000074:  R_AARCH64_JUMP26     _JIT_CONTINUE
     const unsigned char code_body[120] = {
         0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
         0xa0, 0x82, 0x5f, 0xf8, 0x08, 0x3d, 0x40, 0x92,
-        0x13, 0x68, 0x68, 0xf8, 0xd3, 0x01, 0x00, 0xb4,
-        0x68, 0x02, 0x40, 0xb9, 0x68, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x11, 0x68, 0x02, 0x00, 0xb9,
+        0x08, 0x68, 0x68, 0xf8, 0xe8, 0x01, 0x00, 0xb4,
+        0x09, 0x01, 0x40, 0xb9, 0x69, 0x00, 0xf8, 0x37,
+        0x29, 0x05, 0x00, 0x11, 0x09, 0x01, 0x00, 0xb9,
+        0xa8, 0x82, 0x1f, 0xf8, 0x95, 0x22, 0x00, 0xf9,
         0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0xc0, 0x00, 0x00, 0x54, 0xe8, 0x03, 0x15, 0xaa,
-        0xb5, 0x22, 0x00, 0x91, 0x13, 0xfd, 0x3f, 0xa9,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
-        0xe8, 0x03, 0x15, 0xaa, 0xb5, 0x22, 0x00, 0x91,
-        0x13, 0xfd, 0x3f, 0xa9, 0x00, 0x00, 0x00, 0x14,
+        0xa0, 0x00, 0x00, 0x54, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
+        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
+        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPERAND0
     // 8: &_Py_Dealloc+0x0
@@ -15180,10 +14837,10 @@ emit__LOAD_ATTR_INSTANCE_VALUE_1(
     patch_64(data + 0x8, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_33rx(code + 0x0, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x48, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x4c, state->instruction_starts[instruction->jump_target]);
-    patch_aarch64_21rx(code + 0x54, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x5c, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x4c, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x50, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_21rx(code + 0x58, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x60, (uintptr_t)data + 0x8);
     patch_aarch64_26r(code + 0x74, (uintptr_t)code + sizeof(code_body));
 }
 
@@ -15340,7 +14997,7 @@ emit__LOAD_ATTR_MODULE(
     // 20: 8b090108      add     x8, x8, x9
     // 24: 8b2a3108      add     x8, x8, w10, uxth #4
     // 28: f9401513      ldr     x19, [x8, #0x28]
-    // 2c: b4000253      cbz     x19, 0x74 <_JIT_ENTRY+0x74>
+    // 2c: b4000193      cbz     x19, 0x5c <_JIT_ENTRY+0x5c>
     // 30: b9400268      ldr     w8, [x19]
     // 34: 37f80068      tbnz    w8, #0x1f, 0x40 <_JIT_ENTRY+0x40>
     // 38: 11000508      add     w8, w8, #0x1
@@ -15349,79 +15006,57 @@ emit__LOAD_ATTR_MODULE(
     // 44: 37f80088      tbnz    w8, #0x1f, 0x54 <_JIT_ENTRY+0x54>
     // 48: 71000508      subs    w8, w8, #0x1
     // 4c: b9000008      str     w8, [x0]
-    // 50: 54000140      b.eq    0x78 <_JIT_ENTRY+0x78>
-    // 54: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000054:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // 58: f9400129      ldr     x9, [x9]
-    // 0000000000000058:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 5c: f81f82b3      stur    x19, [x21, #-0x8]
-    // 60: 12000128      and     w8, w9, #0x1
-    // 64: 36000049      tbz     w9, #0x0, 0x6c <_JIT_ENTRY+0x6c>
-    // 68: f90002bf      str     xzr, [x21]
-    // 6c: 8b284eb5      add     x21, x21, w8, uxtw #3
-    // 70: 14000000      b       0x70 <_JIT_ENTRY+0x70>
-    // 0000000000000070:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 74: 14000000      b       0x74 <_JIT_ENTRY+0x74>
-    // 0000000000000074:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 78: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 7c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000007c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 80: 910003fd      mov     x29, sp
-    // 84: f9400108      ldr     x8, [x8]
-    // 0000000000000084:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 88: d63f0100      blr     x8
-    // 8c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 90: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000090:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // 94: f9400129      ldr     x9, [x9]
-    // 0000000000000094:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 98: f81f82b3      stur    x19, [x21, #-0x8]
-    // 9c: 12000128      and     w8, w9, #0x1
-    // a0: 3707fe49      tbnz    w9, #0x0, 0x68 <_JIT_ENTRY+0x68>
-    // a4: 17fffff2      b       0x6c <_JIT_ENTRY+0x6c>
-    const unsigned char code_body[168] = {
+    // 50: 54000080      b.eq    0x60 <_JIT_ENTRY+0x60>
+    // 54: f81f82b3      stur    x19, [x21, #-0x8]
+    // 58: 14000000      b       0x58 <_JIT_ENTRY+0x58>
+    // 0000000000000058:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 5c: 14000000      b       0x5c <_JIT_ENTRY+0x5c>
+    // 000000000000005c:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
+    // 60: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 64: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000064:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 68: 910003fd      mov     x29, sp
+    // 6c: f9400108      ldr     x8, [x8]
+    // 000000000000006c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 70: d63f0100      blr     x8
+    // 74: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 78: f81f82b3      stur    x19, [x21, #-0x8]
+    // 7c: 14000000      b       0x7c <_JIT_ENTRY+0x7c>
+    // 000000000000007c:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[128] = {
         0xa0, 0x82, 0x5f, 0xf8, 0x2a, 0x00, 0x80, 0x52,
         0x08, 0x08, 0x40, 0xf9, 0x08, 0x11, 0x40, 0xf9,
         0x09, 0x25, 0x40, 0x39, 0x49, 0x21, 0xc9, 0x9a,
         0x0a, 0x00, 0x00, 0x90, 0x4a, 0x01, 0x40, 0xf9,
         0x08, 0x01, 0x09, 0x8b, 0x08, 0x31, 0x2a, 0x8b,
-        0x13, 0x15, 0x40, 0xf9, 0x53, 0x02, 0x00, 0xb4,
+        0x13, 0x15, 0x40, 0xf9, 0x93, 0x01, 0x00, 0xb4,
         0x68, 0x02, 0x40, 0xb9, 0x68, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x11, 0x68, 0x02, 0x00, 0xb9,
         0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x40, 0x01, 0x00, 0x54, 0x09, 0x00, 0x00, 0x90,
-        0x29, 0x01, 0x40, 0xf9, 0xb3, 0x82, 0x1f, 0xf8,
-        0x28, 0x01, 0x00, 0x12, 0x49, 0x00, 0x00, 0x36,
-        0xbf, 0x02, 0x00, 0xf9, 0xb5, 0x4e, 0x28, 0x8b,
+        0x80, 0x00, 0x00, 0x54, 0xb3, 0x82, 0x1f, 0xf8,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x14,
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
         0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x09, 0x00, 0x00, 0x90, 0x29, 0x01, 0x40, 0xf9,
-        0xb3, 0x82, 0x1f, 0xf8, 0x28, 0x01, 0x00, 0x12,
-        0x49, 0xfe, 0x07, 0x37, 0xf2, 0xff, 0xff, 0x17,
+        0xb3, 0x82, 0x1f, 0xf8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPERAND0
-    // 8: OPARG
-    // 10: &_Py_Dealloc+0x0
-    const unsigned char data_body[24] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    // 8: &_Py_Dealloc+0x0
+    const unsigned char data_body[16] = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     };
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x0, instruction->operand0);
-    patch_64(data + 0x8, instruction->oparg);
-    patch_64(data + 0x10, (uintptr_t)&_Py_Dealloc);
+    patch_64(data + 0x8, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_33rx(code + 0x18, (uintptr_t)data);
-    patch_aarch64_33rx(code + 0x54, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x70, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x74, state->instruction_starts[instruction->jump_target]);
-    patch_aarch64_21rx(code + 0x7c, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x84, (uintptr_t)data + 0x10);
-    patch_aarch64_33rx(code + 0x90, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x58, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x5c, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_21rx(code + 0x64, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x6c, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x7c, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -15435,101 +15070,85 @@ emit__LOAD_ATTR_MODULE_FROM_KEYS(
     // Disassembly of section .text:
     //
     // 0000000000000000 <_JIT_ENTRY>:
-    // 0: aa1503f3      mov     x19, x21
-    // 4: f85f8ea8      ldr     x8, [x21, #-0x8]!
-    // 8: 5280002a      mov     w10, #0x1               // =1
-    // c: 39402509      ldrb    w9, [x8, #0x9]
-    // 10: 9ac92149      lsl     x9, x10, x9
-    // 14: 9000000a      adrp    x10, 0x0 <_JIT_ENTRY>
+    // 0: aa1503e8      mov     x8, x21
+    // 4: f85f8ea9      ldr     x9, [x21, #-0x8]!
+    // 8: 5280002b      mov     w11, #0x1               // =1
+    // c: 3940252a      ldrb    w10, [x9, #0x9]
+    // 10: 9aca216a      lsl     x10, x11, x10
+    // 14: 9000000b      adrp    x11, 0x0 <_JIT_ENTRY>
     // 0000000000000014:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPERAND0
-    // 18: f940014a      ldr     x10, [x10]
+    // 18: f940016b      ldr     x11, [x11]
     // 0000000000000018:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPERAND0
-    // 1c: 8b090108      add     x8, x8, x9
-    // 20: 8b2a3108      add     x8, x8, w10, uxth #4
-    // 24: f9401517      ldr     x23, [x8, #0x28]
-    // 28: b4000277      cbz     x23, 0x74 <_JIT_ENTRY+0x74>
-    // 2c: b94002e8      ldr     w8, [x23]
+    // 1c: 8b0a0129      add     x9, x9, x10
+    // 20: 8b2b3129      add     x9, x9, w11, uxth #4
+    // 24: f9401529      ldr     x9, [x9, #0x28]
+    // 28: b4000209      cbz     x9, 0x68 <_JIT_ENTRY+0x68>
+    // 2c: b940012a      ldr     w10, [x9]
     // 30: f85f82a0      ldur    x0, [x21, #-0x8]
-    // 34: 37f80068      tbnz    w8, #0x1f, 0x40 <_JIT_ENTRY+0x40>
-    // 38: 11000508      add     w8, w8, #0x1
-    // 3c: b90002e8      str     w8, [x23]
-    // 40: b9400008      ldr     w8, [x0]
-    // 44: 37f80088      tbnz    w8, #0x1f, 0x54 <_JIT_ENTRY+0x54>
-    // 48: 71000508      subs    w8, w8, #0x1
-    // 4c: b9000008      str     w8, [x0]
-    // 50: 54000140      b.eq    0x78 <_JIT_ENTRY+0x78>
-    // 54: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000054:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // 58: f9400129      ldr     x9, [x9]
-    // 0000000000000058:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 5c: f81f0277      stur    x23, [x19, #-0x10]
-    // 60: 12000128      and     w8, w9, #0x1
-    // 64: 36000049      tbz     w9, #0x0, 0x6c <_JIT_ENTRY+0x6c>
-    // 68: f90002bf      str     xzr, [x21]
-    // 6c: 8b284eb5      add     x21, x21, w8, uxtw #3
-    // 70: 14000000      b       0x70 <_JIT_ENTRY+0x70>
-    // 0000000000000070:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 74: 14000000      b       0x74 <_JIT_ENTRY+0x74>
-    // 0000000000000074:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 78: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 7c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000007c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 80: 910003fd      mov     x29, sp
-    // 84: f9400108      ldr     x8, [x8]
-    // 0000000000000084:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 88: d63f0100      blr     x8
-    // 8c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 90: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000090:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // 94: f9400129      ldr     x9, [x9]
-    // 0000000000000094:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 98: f81f0277      stur    x23, [x19, #-0x10]
-    // 9c: 12000128      and     w8, w9, #0x1
-    // a0: 3707fe49      tbnz    w9, #0x0, 0x68 <_JIT_ENTRY+0x68>
-    // a4: 17fffff2      b       0x6c <_JIT_ENTRY+0x6c>
-    const unsigned char code_body[168] = {
-        0xf3, 0x03, 0x15, 0xaa, 0xa8, 0x8e, 0x5f, 0xf8,
-        0x2a, 0x00, 0x80, 0x52, 0x09, 0x25, 0x40, 0x39,
-        0x49, 0x21, 0xc9, 0x9a, 0x0a, 0x00, 0x00, 0x90,
-        0x4a, 0x01, 0x40, 0xf9, 0x08, 0x01, 0x09, 0x8b,
-        0x08, 0x31, 0x2a, 0x8b, 0x17, 0x15, 0x40, 0xf9,
-        0x77, 0x02, 0x00, 0xb4, 0xe8, 0x02, 0x40, 0xb9,
-        0xa0, 0x82, 0x5f, 0xf8, 0x68, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x11, 0xe8, 0x02, 0x00, 0xb9,
+    // 34: 37f8006a      tbnz    w10, #0x1f, 0x40 <_JIT_ENTRY+0x40>
+    // 38: 1100054a      add     w10, w10, #0x1
+    // 3c: b900012a      str     w10, [x9]
+    // 40: f81f0109      stur    x9, [x8, #-0x10]
+    // 44: f9002295      str     x21, [x20, #0x40]
+    // 48: b9400008      ldr     w8, [x0]
+    // 4c: 37f80088      tbnz    w8, #0x1f, 0x5c <_JIT_ENTRY+0x5c>
+    // 50: 71000508      subs    w8, w8, #0x1
+    // 54: b9000008      str     w8, [x0]
+    // 58: 540000a0      b.eq    0x6c <_JIT_ENTRY+0x6c>
+    // 5c: f9402295      ldr     x21, [x20, #0x40]
+    // 60: f900229f      str     xzr, [x20, #0x40]
+    // 64: 14000000      b       0x64 <_JIT_ENTRY+0x64>
+    // 0000000000000064:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 68: 14000000      b       0x68 <_JIT_ENTRY+0x68>
+    // 0000000000000068:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
+    // 6c: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 70: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000070:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 74: 910003fd      mov     x29, sp
+    // 78: f9400108      ldr     x8, [x8]
+    // 0000000000000078:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 7c: d63f0100      blr     x8
+    // 80: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 84: f9402295      ldr     x21, [x20, #0x40]
+    // 88: f900229f      str     xzr, [x20, #0x40]
+    // 8c: 14000000      b       0x8c <_JIT_ENTRY+0x8c>
+    // 000000000000008c:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[144] = {
+        0xe8, 0x03, 0x15, 0xaa, 0xa9, 0x8e, 0x5f, 0xf8,
+        0x2b, 0x00, 0x80, 0x52, 0x2a, 0x25, 0x40, 0x39,
+        0x6a, 0x21, 0xca, 0x9a, 0x0b, 0x00, 0x00, 0x90,
+        0x6b, 0x01, 0x40, 0xf9, 0x29, 0x01, 0x0a, 0x8b,
+        0x29, 0x31, 0x2b, 0x8b, 0x29, 0x15, 0x40, 0xf9,
+        0x09, 0x02, 0x00, 0xb4, 0x2a, 0x01, 0x40, 0xb9,
+        0xa0, 0x82, 0x5f, 0xf8, 0x6a, 0x00, 0xf8, 0x37,
+        0x4a, 0x05, 0x00, 0x11, 0x2a, 0x01, 0x00, 0xb9,
+        0x09, 0x01, 0x1f, 0xf8, 0x95, 0x22, 0x00, 0xf9,
         0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x40, 0x01, 0x00, 0x54, 0x09, 0x00, 0x00, 0x90,
-        0x29, 0x01, 0x40, 0xf9, 0x77, 0x02, 0x1f, 0xf8,
-        0x28, 0x01, 0x00, 0x12, 0x49, 0x00, 0x00, 0x36,
-        0xbf, 0x02, 0x00, 0xf9, 0xb5, 0x4e, 0x28, 0x8b,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x09, 0x00, 0x00, 0x90, 0x29, 0x01, 0x40, 0xf9,
-        0x77, 0x02, 0x1f, 0xf8, 0x28, 0x01, 0x00, 0x12,
-        0x49, 0xfe, 0x07, 0x37, 0xf2, 0xff, 0xff, 0x17,
+        0xa0, 0x00, 0x00, 0x54, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
+        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
+        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPERAND0
-    // 8: OPARG
-    // 10: &_Py_Dealloc+0x0
-    const unsigned char data_body[24] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    // 8: &_Py_Dealloc+0x0
+    const unsigned char data_body[16] = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     };
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x0, instruction->operand0);
-    patch_64(data + 0x8, instruction->oparg);
-    patch_64(data + 0x10, (uintptr_t)&_Py_Dealloc);
+    patch_64(data + 0x8, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_33rx(code + 0x14, (uintptr_t)data);
-    patch_aarch64_33rx(code + 0x54, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x70, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x74, state->instruction_starts[instruction->jump_target]);
-    patch_aarch64_21rx(code + 0x7c, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x84, (uintptr_t)data + 0x10);
-    patch_aarch64_33rx(code + 0x90, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x64, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x68, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_21rx(code + 0x70, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x78, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x8c, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -15775,12 +15394,12 @@ emit__LOAD_ATTR_PROPERTY_FRAME(
 }
 
 void
-emit__LOAD_ATTR_SLOT_0(
+emit__LOAD_ATTR_SLOT(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
 {
     //
-    // _LOAD_ATTR_SLOT_0.o:   file format elf64-littleaarch64
+    // _LOAD_ATTR_SLOT.o:     file format elf64-littleaarch64
     //
     // Disassembly of section .text:
     //
@@ -15852,89 +15471,6 @@ emit__LOAD_ATTR_SLOT_0(
 }
 
 void
-emit__LOAD_ATTR_SLOT_1(
-    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
-    const _PyUOpInstruction *instruction, jit_state *state)
-{
-    //
-    // _LOAD_ATTR_SLOT_1.o:   file format elf64-littleaarch64
-    //
-    // Disassembly of section .text:
-    //
-    // 0000000000000000 <_JIT_ENTRY>:
-    // 0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000000:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPERAND0
-    // 4: f9400108      ldr     x8, [x8]
-    // 0000000000000004:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPERAND0
-    // 8: f85f82a0      ldur    x0, [x21, #-0x8]
-    // c: 92403d08      and     x8, x8, #0xffff
-    // 10: f8686813      ldr     x19, [x0, x8]
-    // 14: b40001d3      cbz     x19, 0x4c <_JIT_ENTRY+0x4c>
-    // 18: b9400268      ldr     w8, [x19]
-    // 1c: 37f80068      tbnz    w8, #0x1f, 0x28 <_JIT_ENTRY+0x28>
-    // 20: 11000508      add     w8, w8, #0x1
-    // 24: b9000268      str     w8, [x19]
-    // 28: b9400008      ldr     w8, [x0]
-    // 2c: 37f80088      tbnz    w8, #0x1f, 0x3c <_JIT_ENTRY+0x3c>
-    // 30: 71000508      subs    w8, w8, #0x1
-    // 34: b9000008      str     w8, [x0]
-    // 38: 540000c0      b.eq    0x50 <_JIT_ENTRY+0x50>
-    // 3c: aa1503e8      mov     x8, x21
-    // 40: 910022b5      add     x21, x21, #0x8
-    // 44: a93ffd13      stp     x19, xzr, [x8, #-0x8]
-    // 48: 14000000      b       0x48 <_JIT_ENTRY+0x48>
-    // 0000000000000048:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 4c: 14000000      b       0x4c <_JIT_ENTRY+0x4c>
-    // 000000000000004c:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 50: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 54: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000054:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 58: 910003fd      mov     x29, sp
-    // 5c: f9400108      ldr     x8, [x8]
-    // 000000000000005c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 60: d63f0100      blr     x8
-    // 64: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 68: aa1503e8      mov     x8, x21
-    // 6c: 910022b5      add     x21, x21, #0x8
-    // 70: a93ffd13      stp     x19, xzr, [x8, #-0x8]
-    // 74: 14000000      b       0x74 <_JIT_ENTRY+0x74>
-    // 0000000000000074:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[120] = {
-        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0xa0, 0x82, 0x5f, 0xf8, 0x08, 0x3d, 0x40, 0x92,
-        0x13, 0x68, 0x68, 0xf8, 0xd3, 0x01, 0x00, 0xb4,
-        0x68, 0x02, 0x40, 0xb9, 0x68, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x11, 0x68, 0x02, 0x00, 0xb9,
-        0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0xc0, 0x00, 0x00, 0x54, 0xe8, 0x03, 0x15, 0xaa,
-        0xb5, 0x22, 0x00, 0x91, 0x13, 0xfd, 0x3f, 0xa9,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
-        0xe8, 0x03, 0x15, 0xaa, 0xb5, 0x22, 0x00, 0x91,
-        0x13, 0xfd, 0x3f, 0xa9, 0x00, 0x00, 0x00, 0x14,
-    };
-    // 0: OPERAND0
-    // 8: &_Py_Dealloc+0x0
-    const unsigned char data_body[16] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    };
-    memcpy(data, data_body, sizeof(data_body));
-    patch_64(data + 0x0, instruction->operand0);
-    patch_64(data + 0x8, (uintptr_t)&_Py_Dealloc);
-    memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_33rx(code + 0x0, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x48, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x4c, state->instruction_starts[instruction->jump_target]);
-    patch_aarch64_21rx(code + 0x54, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x5c, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x74, (uintptr_t)code + sizeof(code_body));
-}
-
-void
 emit__LOAD_ATTR_WITH_HINT(
     unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
     const _PyUOpInstruction *instruction, jit_state *state)
@@ -15955,86 +15491,77 @@ emit__LOAD_ATTR_WITH_HINT(
     // 14: f9400d0a      ldr     x10, [x8, #0x18]
     // 18: 92403d29      and     x9, x9, #0xffff
     // 1c: eb09015f      cmp     x10, x9
-    // 20: 54000289      b.ls    0x70 <_JIT_ENTRY+0x70>
+    // 20: 54000269      b.ls    0x6c <_JIT_ENTRY+0x6c>
     // 24: 3940290a      ldrb    w10, [x8, #0xa]
     // 28: 7100055f      cmp     w10, #0x1
-    // 2c: 54000221      b.ne    0x70 <_JIT_ENTRY+0x70>
-    // 30: 9000000a      adrp    x10, 0x0 <_JIT_ENTRY>
-    // 0000000000000030:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // 34: 5280002d      mov     w13, #0x1               // =1
-    // 38: f940014a      ldr     x10, [x10]
-    // 0000000000000038:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 3c: 3940250b      ldrb    w11, [x8, #0x9]
-    // 40: f940028c      ldr     x12, [x20]
-    // 44: 12003d57      and     w23, w10, #0xffff
-    // 48: 9acb21aa      lsl     x10, x13, x11
-    // 4c: f940118b      ldr     x11, [x12, #0x20]
-    // 50: 53017eec      lsr     w12, w23, #1
-    // 54: 8b0a0108      add     x8, x8, x10
-    // 58: 8b2c4d6a      add     x10, x11, w12, uxtw #3
-    // 5c: 8b091108      add     x8, x8, x9, lsl #4
-    // 60: f9400d49      ldr     x9, [x10, #0x18]
-    // 64: f8420d0a      ldr     x10, [x8, #0x20]!
-    // 68: eb09015f      cmp     x10, x9
-    // 6c: 54000040      b.eq    0x74 <_JIT_ENTRY+0x74>
-    // 70: 14000000      b       0x70 <_JIT_ENTRY+0x70>
-    // 0000000000000070:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 74: f9400518      ldr     x24, [x8, #0x8]
-    // 78: b4ffffd8      cbz     x24, 0x70 <_JIT_ENTRY+0x70>
-    // 7c: b9400308      ldr     w8, [x24]
-    // 80: f85f82a0      ldur    x0, [x21, #-0x8]
-    // 84: 37f80068      tbnz    w8, #0x1f, 0x90 <_JIT_ENTRY+0x90>
-    // 88: 11000508      add     w8, w8, #0x1
-    // 8c: b9000308      str     w8, [x24]
-    // 90: b9400008      ldr     w8, [x0]
-    // 94: 37f80148      tbnz    w8, #0x1f, 0xbc <_JIT_ENTRY+0xbc>
-    // 98: 71000508      subs    w8, w8, #0x1
-    // 9c: b9000008      str     w8, [x0]
-    // a0: 540000e1      b.ne    0xbc <_JIT_ENTRY+0xbc>
-    // a4: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // a8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000a8:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // ac: 910003fd      mov     x29, sp
-    // b0: f9400108      ldr     x8, [x8]
-    // 00000000000000b0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // b4: d63f0100      blr     x8
-    // b8: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // bc: 120002e8      and     w8, w23, #0x1
-    // c0: f81f0278      stur    x24, [x19, #-0x10]
-    // c4: 36000057      tbz     w23, #0x0, 0xcc <_JIT_ENTRY+0xcc>
-    // c8: f90002bf      str     xzr, [x21]
-    // cc: 8b284e68      add     x8, x19, w8, uxtw #3
-    // d0: d1002115      sub     x21, x8, #0x8
-    // d4: 14000000      b       0xd4 <_JIT_ENTRY+0xd4>
-    // 00000000000000d4:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[216] = {
+    // 2c: 54000201      b.ne    0x6c <_JIT_ENTRY+0x6c>
+    // 30: 3940250b      ldrb    w11, [x8, #0x9]
+    // 34: 9000000c      adrp    x12, 0x0 <_JIT_ENTRY>
+    // 0000000000000034:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
+    // 38: f940028a      ldr     x10, [x20]
+    // 3c: f940018c      ldr     x12, [x12]
+    // 000000000000003c:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
+    // 40: 5280002d      mov     w13, #0x1               // =1
+    // 44: 9acb21ab      lsl     x11, x13, x11
+    // 48: f940114a      ldr     x10, [x10, #0x20]
+    // 4c: 53013d8c      ubfx    w12, w12, #1, #15
+    // 50: 8b0b0108      add     x8, x8, x11
+    // 54: 8b2c4d4a      add     x10, x10, w12, uxtw #3
+    // 58: 8b091108      add     x8, x8, x9, lsl #4
+    // 5c: f9400d49      ldr     x9, [x10, #0x18]
+    // 60: f8420d0a      ldr     x10, [x8, #0x20]!
+    // 64: eb09015f      cmp     x10, x9
+    // 68: 54000040      b.eq    0x70 <_JIT_ENTRY+0x70>
+    // 6c: 14000000      b       0x6c <_JIT_ENTRY+0x6c>
+    // 000000000000006c:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
+    // 70: f9400517      ldr     x23, [x8, #0x8]
+    // 74: b4ffffd7      cbz     x23, 0x6c <_JIT_ENTRY+0x6c>
+    // 78: b94002e8      ldr     w8, [x23]
+    // 7c: f85f82a0      ldur    x0, [x21, #-0x8]
+    // 80: 37f80068      tbnz    w8, #0x1f, 0x8c <_JIT_ENTRY+0x8c>
+    // 84: 11000508      add     w8, w8, #0x1
+    // 88: b90002e8      str     w8, [x23]
+    // 8c: b9400008      ldr     w8, [x0]
+    // 90: 37f80148      tbnz    w8, #0x1f, 0xb8 <_JIT_ENTRY+0xb8>
+    // 94: 71000508      subs    w8, w8, #0x1
+    // 98: b9000008      str     w8, [x0]
+    // 9c: 540000e1      b.ne    0xb8 <_JIT_ENTRY+0xb8>
+    // a0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // a4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000a4:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // a8: 910003fd      mov     x29, sp
+    // ac: f9400108      ldr     x8, [x8]
+    // 00000000000000ac:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // b0: d63f0100      blr     x8
+    // b4: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // b8: f81f0277      stur    x23, [x19, #-0x10]
+    // bc: 14000000      b       0xbc <_JIT_ENTRY+0xbc>
+    // 00000000000000bc:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[192] = {
         0xf3, 0x03, 0x15, 0xaa, 0xa8, 0x8e, 0x5f, 0xf8,
         0x09, 0x00, 0x00, 0x90, 0x08, 0x11, 0x40, 0xf9,
         0x29, 0x01, 0x40, 0xf9, 0x0a, 0x0d, 0x40, 0xf9,
         0x29, 0x3d, 0x40, 0x92, 0x5f, 0x01, 0x09, 0xeb,
-        0x89, 0x02, 0x00, 0x54, 0x0a, 0x29, 0x40, 0x39,
-        0x5f, 0x05, 0x00, 0x71, 0x21, 0x02, 0x00, 0x54,
-        0x0a, 0x00, 0x00, 0x90, 0x2d, 0x00, 0x80, 0x52,
-        0x4a, 0x01, 0x40, 0xf9, 0x0b, 0x25, 0x40, 0x39,
-        0x8c, 0x02, 0x40, 0xf9, 0x57, 0x3d, 0x00, 0x12,
-        0xaa, 0x21, 0xcb, 0x9a, 0x8b, 0x11, 0x40, 0xf9,
-        0xec, 0x7e, 0x01, 0x53, 0x08, 0x01, 0x0a, 0x8b,
-        0x6a, 0x4d, 0x2c, 0x8b, 0x08, 0x11, 0x09, 0x8b,
-        0x49, 0x0d, 0x40, 0xf9, 0x0a, 0x0d, 0x42, 0xf8,
-        0x5f, 0x01, 0x09, 0xeb, 0x40, 0x00, 0x00, 0x54,
-        0x00, 0x00, 0x00, 0x14, 0x18, 0x05, 0x40, 0xf9,
-        0xd8, 0xff, 0xff, 0xb4, 0x08, 0x03, 0x40, 0xb9,
-        0xa0, 0x82, 0x5f, 0xf8, 0x68, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x11, 0x08, 0x03, 0x00, 0xb9,
-        0x08, 0x00, 0x40, 0xb9, 0x48, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0xe1, 0x00, 0x00, 0x54, 0xfd, 0x7b, 0xbf, 0xa9,
-        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xfd, 0x7b, 0xc1, 0xa8, 0xe8, 0x02, 0x00, 0x12,
-        0x78, 0x02, 0x1f, 0xf8, 0x57, 0x00, 0x00, 0x36,
-        0xbf, 0x02, 0x00, 0xf9, 0x68, 0x4e, 0x28, 0x8b,
-        0x15, 0x21, 0x00, 0xd1, 0x00, 0x00, 0x00, 0x14,
+        0x69, 0x02, 0x00, 0x54, 0x0a, 0x29, 0x40, 0x39,
+        0x5f, 0x05, 0x00, 0x71, 0x01, 0x02, 0x00, 0x54,
+        0x0b, 0x25, 0x40, 0x39, 0x0c, 0x00, 0x00, 0x90,
+        0x8a, 0x02, 0x40, 0xf9, 0x8c, 0x01, 0x40, 0xf9,
+        0x2d, 0x00, 0x80, 0x52, 0xab, 0x21, 0xcb, 0x9a,
+        0x4a, 0x11, 0x40, 0xf9, 0x8c, 0x3d, 0x01, 0x53,
+        0x08, 0x01, 0x0b, 0x8b, 0x4a, 0x4d, 0x2c, 0x8b,
+        0x08, 0x11, 0x09, 0x8b, 0x49, 0x0d, 0x40, 0xf9,
+        0x0a, 0x0d, 0x42, 0xf8, 0x5f, 0x01, 0x09, 0xeb,
+        0x40, 0x00, 0x00, 0x54, 0x00, 0x00, 0x00, 0x14,
+        0x17, 0x05, 0x40, 0xf9, 0xd7, 0xff, 0xff, 0xb4,
+        0xe8, 0x02, 0x40, 0xb9, 0xa0, 0x82, 0x5f, 0xf8,
+        0x68, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x11,
+        0xe8, 0x02, 0x00, 0xb9, 0x08, 0x00, 0x40, 0xb9,
+        0x48, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x08, 0x00, 0x00, 0xb9, 0xe1, 0x00, 0x00, 0x54,
+        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
+        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x77, 0x02, 0x1f, 0xf8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPERAND0
     // 8: OPARG
@@ -16051,12 +15578,12 @@ emit__LOAD_ATTR_WITH_HINT(
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_21rx(code + 0x8, (uintptr_t)data);
     patch_aarch64_12x(code + 0x10, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x30, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x38, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x70, state->instruction_starts[instruction->jump_target]);
-    patch_aarch64_21rx(code + 0xa8, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0xb0, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0xd4, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x34, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x3c, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x6c, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_21rx(code + 0xa4, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0xac, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0xbc, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -16342,86 +15869,6 @@ emit__LOAD_CONST_INLINE_BORROW(
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_33rx(code + 0x0, (uintptr_t)data);
     patch_aarch64_26r(code + 0xc, (uintptr_t)code + sizeof(code_body));
-}
-
-void
-emit__LOAD_CONST_INLINE_BORROW_WITH_NULL(
-    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
-    const _PyUOpInstruction *instruction, jit_state *state)
-{
-    //
-    // _LOAD_CONST_INLINE_BORROW_WITH_NULL.o: file format elf64-littleaarch64
-    //
-    // Disassembly of section .text:
-    //
-    // 0000000000000000 <_JIT_ENTRY>:
-    // 0: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000000:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPERAND0
-    // 4: aa1503e8      mov     x8, x21
-    // 8: 910042b5      add     x21, x21, #0x10
-    // c: f9400129      ldr     x9, [x9]
-    // 000000000000000c:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPERAND0
-    // 10: a9007d09      stp     x9, xzr, [x8]
-    // 14: 14000000      b       0x14 <_JIT_ENTRY+0x14>
-    // 0000000000000014:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[24] = {
-        0x09, 0x00, 0x00, 0x90, 0xe8, 0x03, 0x15, 0xaa,
-        0xb5, 0x42, 0x00, 0x91, 0x29, 0x01, 0x40, 0xf9,
-        0x09, 0x7d, 0x00, 0xa9, 0x00, 0x00, 0x00, 0x14,
-    };
-    // 0: OPERAND0
-    const unsigned char data_body[8] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    };
-    memcpy(data, data_body, sizeof(data_body));
-    patch_64(data + 0x0, instruction->operand0);
-    memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x0, (uintptr_t)data);
-    patch_aarch64_12x(code + 0xc, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x14, (uintptr_t)code + sizeof(code_body));
-}
-
-void
-emit__LOAD_CONST_INLINE_WITH_NULL(
-    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
-    const _PyUOpInstruction *instruction, jit_state *state)
-{
-    //
-    // _LOAD_CONST_INLINE_WITH_NULL.o:        file format elf64-littleaarch64
-    //
-    // Disassembly of section .text:
-    //
-    // 0000000000000000 <_JIT_ENTRY>:
-    // 0: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000000:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPERAND0
-    // 4: aa1503e8      mov     x8, x21
-    // 8: f9400129      ldr     x9, [x9]
-    // 0000000000000008:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPERAND0
-    // c: b940012a      ldr     w10, [x9]
-    // 10: 37f8006a      tbnz    w10, #0x1f, 0x1c <_JIT_ENTRY+0x1c>
-    // 14: 1100054a      add     w10, w10, #0x1
-    // 18: b900012a      str     w10, [x9]
-    // 1c: 91004115      add     x21, x8, #0x10
-    // 20: a9007d09      stp     x9, xzr, [x8]
-    // 24: 14000000      b       0x24 <_JIT_ENTRY+0x24>
-    // 0000000000000024:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[40] = {
-        0x09, 0x00, 0x00, 0x90, 0xe8, 0x03, 0x15, 0xaa,
-        0x29, 0x01, 0x40, 0xf9, 0x2a, 0x01, 0x40, 0xb9,
-        0x6a, 0x00, 0xf8, 0x37, 0x4a, 0x05, 0x00, 0x11,
-        0x2a, 0x01, 0x00, 0xb9, 0x15, 0x41, 0x00, 0x91,
-        0x09, 0x7d, 0x00, 0xa9, 0x00, 0x00, 0x00, 0x14,
-    };
-    // 0: OPERAND0
-    const unsigned char data_body[8] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    };
-    memcpy(data, data_body, sizeof(data_body));
-    patch_64(data + 0x0, instruction->operand0);
-    memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x0, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x8, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x24, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -16999,64 +16446,72 @@ emit__LOAD_FROM_DICT_OR_DEREF(
     // 3c: d63f0100      blr     x8
     // 40: f9402295      ldr     x21, [x20, #0x40]
     // 44: f900229f      str     xzr, [x20, #0x40]
-    // 48: 37f805a0      tbnz    w0, #0x1f, 0xfc <_JIT_ENTRY+0xfc>
+    // 48: 37f806a0      tbnz    w0, #0x1f, 0x11c <_JIT_ENTRY+0x11c>
     // 4c: f94007e8      ldr     x8, [sp, #0x8]
-    // 50: b40000e8      cbz     x8, 0x6c <_JIT_ENTRY+0x6c>
-    // 54: b9400269      ldr     w9, [x19]
-    // 58: 36f80229      tbz     w9, #0x1f, 0x9c <_JIT_ENTRY+0x9c>
-    // 5c: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // 60: f81f82a8      stur    x8, [x21, #-0x8]
-    // 64: 910083ff      add     sp, sp, #0x20
-    // 68: 14000000      b       0x68 <_JIT_ENTRY+0x68>
-    // 0000000000000068:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 6c: 92403ee8      and     x8, x23, #0xffff
-    // 70: 8b080e88      add     x8, x20, x8, lsl #3
-    // 74: f9402908      ldr     x8, [x8, #0x50]
-    // 78: f9400908      ldr     x8, [x8, #0x10]
-    // 7c: b4000288      cbz     x8, 0xcc <_JIT_ENTRY+0xcc>
-    // 80: b9400109      ldr     w9, [x8]
-    // 84: 37f80069      tbnz    w9, #0x1f, 0x90 <_JIT_ENTRY+0x90>
-    // 88: 11000529      add     w9, w9, #0x1
-    // 8c: b9000109      str     w9, [x8]
-    // 90: f90007e8      str     x8, [sp, #0x8]
-    // 94: b9400269      ldr     w9, [x19]
-    // 98: 37fffe29      tbnz    w9, #0x1f, 0x5c <_JIT_ENTRY+0x5c>
-    // 9c: 71000529      subs    w9, w9, #0x1
-    // a0: b9000269      str     w9, [x19]
-    // a4: 54fffdc1      b.ne    0x5c <_JIT_ENTRY+0x5c>
-    // a8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000a8:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // ac: aa1303e0      mov     x0, x19
-    // b0: f9400108      ldr     x8, [x8]
-    // 00000000000000b0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // b4: d63f0100      blr     x8
-    // b8: f94007e8      ldr     x8, [sp, #0x8]
-    // bc: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // c0: f81f82a8      stur    x8, [x21, #-0x8]
-    // c4: 910083ff      add     sp, sp, #0x20
-    // c8: 14000000      b       0xc8 <_JIT_ENTRY+0xc8>
-    // 00000000000000c8:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // cc: f90007ff      str     xzr, [sp, #0x8]
-    // d0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000d0:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // d4: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 00000000000000d4:  R_AARCH64_ADR_GOT_PAGE       _PyEval_FormatExcUnbound
-    // d8: f9400108      ldr     x8, [x8]
-    // 00000000000000d8:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // dc: f9002295      str     x21, [x20, #0x40]
-    // e0: f9400281      ldr     x1, [x20]
-    // e4: f9400129      ldr     x9, [x9]
-    // 00000000000000e4:  R_AARCH64_LD64_GOT_LO12_NC   _PyEval_FormatExcUnbound
-    // e8: aa1603e0      mov     x0, x22
-    // ec: 12003d02      and     w2, w8, #0xffff
-    // f0: d63f0120      blr     x9
-    // f4: f9402295      ldr     x21, [x20, #0x40]
-    // f8: f900229f      str     xzr, [x20, #0x40]
-    // fc: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // 100: 910083ff      add     sp, sp, #0x20
-    // 104: 14000000      b       0x104 <_JIT_ENTRY+0x104>
-    // 0000000000000104:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[264] = {
+    // 50: b4000168      cbz     x8, 0x7c <_JIT_ENTRY+0x7c>
+    // 54: d10022a9      sub     x9, x21, #0x8
+    // 58: f9002289      str     x9, [x20, #0x40]
+    // 5c: b9400269      ldr     w9, [x19]
+    // 60: 36f802a9      tbz     w9, #0x1f, 0xb4 <_JIT_ENTRY+0xb4>
+    // 64: f9402295      ldr     x21, [x20, #0x40]
+    // 68: a9417bfd      ldp     x29, x30, [sp, #0x10]
+    // 6c: f900229f      str     xzr, [x20, #0x40]
+    // 70: f80086a8      str     x8, [x21], #0x8
+    // 74: 910083ff      add     sp, sp, #0x20
+    // 78: 14000000      b       0x78 <_JIT_ENTRY+0x78>
+    // 0000000000000078:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 7c: 92403ee8      and     x8, x23, #0xffff
+    // 80: 8b080e88      add     x8, x20, x8, lsl #3
+    // 84: f9402908      ldr     x8, [x8, #0x50]
+    // 88: f9400908      ldr     x8, [x8, #0x10]
+    // 8c: b4000308      cbz     x8, 0xec <_JIT_ENTRY+0xec>
+    // 90: b9400109      ldr     w9, [x8]
+    // 94: 37f80069      tbnz    w9, #0x1f, 0xa0 <_JIT_ENTRY+0xa0>
+    // 98: 11000529      add     w9, w9, #0x1
+    // 9c: b9000109      str     w9, [x8]
+    // a0: f90007e8      str     x8, [sp, #0x8]
+    // a4: d10022a9      sub     x9, x21, #0x8
+    // a8: f9002289      str     x9, [x20, #0x40]
+    // ac: b9400269      ldr     w9, [x19]
+    // b0: 37fffda9      tbnz    w9, #0x1f, 0x64 <_JIT_ENTRY+0x64>
+    // b4: 71000529      subs    w9, w9, #0x1
+    // b8: b9000269      str     w9, [x19]
+    // bc: 54fffd41      b.ne    0x64 <_JIT_ENTRY+0x64>
+    // c0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000c0:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // c4: aa1303e0      mov     x0, x19
+    // c8: f9400108      ldr     x8, [x8]
+    // 00000000000000c8:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // cc: d63f0100      blr     x8
+    // d0: f94007e8      ldr     x8, [sp, #0x8]
+    // d4: f9402295      ldr     x21, [x20, #0x40]
+    // d8: a9417bfd      ldp     x29, x30, [sp, #0x10]
+    // dc: f900229f      str     xzr, [x20, #0x40]
+    // e0: f80086a8      str     x8, [x21], #0x8
+    // e4: 910083ff      add     sp, sp, #0x20
+    // e8: 14000000      b       0xe8 <_JIT_ENTRY+0xe8>
+    // 00000000000000e8:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // ec: f90007ff      str     xzr, [sp, #0x8]
+    // f0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000f0:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
+    // f4: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
+    // 00000000000000f4:  R_AARCH64_ADR_GOT_PAGE       _PyEval_FormatExcUnbound
+    // f8: f9400108      ldr     x8, [x8]
+    // 00000000000000f8:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
+    // fc: f9002295      str     x21, [x20, #0x40]
+    // 100: f9400281      ldr     x1, [x20]
+    // 104: f9400129      ldr     x9, [x9]
+    // 0000000000000104:  R_AARCH64_LD64_GOT_LO12_NC   _PyEval_FormatExcUnbound
+    // 108: aa1603e0      mov     x0, x22
+    // 10c: 12003d02      and     w2, w8, #0xffff
+    // 110: d63f0120      blr     x9
+    // 114: f9402295      ldr     x21, [x20, #0x40]
+    // 118: f900229f      str     xzr, [x20, #0x40]
+    // 11c: a9417bfd      ldp     x29, x30, [sp, #0x10]
+    // 120: 910083ff      add     sp, sp, #0x20
+    // 124: 14000000      b       0x124 <_JIT_ENTRY+0x124>
+    // 0000000000000124:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    const unsigned char code_body[296] = {
         0xff, 0x83, 0x00, 0xd1, 0x88, 0x02, 0x40, 0xf9,
         0xfd, 0x7b, 0x01, 0xa9, 0x17, 0x00, 0x00, 0x90,
         0xe2, 0x23, 0x00, 0x91, 0xfd, 0x43, 0x00, 0x91,
@@ -17066,22 +16521,26 @@ emit__LOAD_FROM_DICT_OR_DEREF(
         0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
         0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
-        0xa0, 0x05, 0xf8, 0x37, 0xe8, 0x07, 0x40, 0xf9,
-        0xe8, 0x00, 0x00, 0xb4, 0x69, 0x02, 0x40, 0xb9,
-        0x29, 0x02, 0xf8, 0x36, 0xfd, 0x7b, 0x41, 0xa9,
-        0xa8, 0x82, 0x1f, 0xf8, 0xff, 0x83, 0x00, 0x91,
+        0xa0, 0x06, 0xf8, 0x37, 0xe8, 0x07, 0x40, 0xf9,
+        0x68, 0x01, 0x00, 0xb4, 0xa9, 0x22, 0x00, 0xd1,
+        0x89, 0x22, 0x00, 0xf9, 0x69, 0x02, 0x40, 0xb9,
+        0xa9, 0x02, 0xf8, 0x36, 0x95, 0x22, 0x40, 0xf9,
+        0xfd, 0x7b, 0x41, 0xa9, 0x9f, 0x22, 0x00, 0xf9,
+        0xa8, 0x86, 0x00, 0xf8, 0xff, 0x83, 0x00, 0x91,
         0x00, 0x00, 0x00, 0x14, 0xe8, 0x3e, 0x40, 0x92,
         0x88, 0x0e, 0x08, 0x8b, 0x08, 0x29, 0x40, 0xf9,
-        0x08, 0x09, 0x40, 0xf9, 0x88, 0x02, 0x00, 0xb4,
+        0x08, 0x09, 0x40, 0xf9, 0x08, 0x03, 0x00, 0xb4,
         0x09, 0x01, 0x40, 0xb9, 0x69, 0x00, 0xf8, 0x37,
         0x29, 0x05, 0x00, 0x11, 0x09, 0x01, 0x00, 0xb9,
-        0xe8, 0x07, 0x00, 0xf9, 0x69, 0x02, 0x40, 0xb9,
-        0x29, 0xfe, 0xff, 0x37, 0x29, 0x05, 0x00, 0x71,
-        0x69, 0x02, 0x00, 0xb9, 0xc1, 0xfd, 0xff, 0x54,
+        0xe8, 0x07, 0x00, 0xf9, 0xa9, 0x22, 0x00, 0xd1,
+        0x89, 0x22, 0x00, 0xf9, 0x69, 0x02, 0x40, 0xb9,
+        0xa9, 0xfd, 0xff, 0x37, 0x29, 0x05, 0x00, 0x71,
+        0x69, 0x02, 0x00, 0xb9, 0x41, 0xfd, 0xff, 0x54,
         0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xe8, 0x07, 0x40, 0xf9, 0xfd, 0x7b, 0x41, 0xa9,
-        0xa8, 0x82, 0x1f, 0xf8, 0xff, 0x83, 0x00, 0x91,
+        0xe8, 0x07, 0x40, 0xf9, 0x95, 0x22, 0x40, 0xf9,
+        0xfd, 0x7b, 0x41, 0xa9, 0x9f, 0x22, 0x00, 0xf9,
+        0xa8, 0x86, 0x00, 0xf8, 0xff, 0x83, 0x00, 0x91,
         0x00, 0x00, 0x00, 0x14, 0xff, 0x07, 0x00, 0xf9,
         0x08, 0x00, 0x00, 0x90, 0x09, 0x00, 0x00, 0x90,
         0x08, 0x01, 0x40, 0xf9, 0x95, 0x22, 0x00, 0xf9,
@@ -17110,15 +16569,15 @@ emit__LOAD_FROM_DICT_OR_DEREF(
     patch_aarch64_21rx(code + 0xc, (uintptr_t)data);
     patch_aarch64_12x(code + 0x1c, (uintptr_t)data);
     patch_aarch64_33rx(code + 0x34, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x68, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0xa8, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0xb0, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0xc8, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0xd0, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0xd4, (uintptr_t)data + 0x18);
-    patch_aarch64_12x(code + 0xd8, (uintptr_t)data);
-    patch_aarch64_12x(code + 0xe4, (uintptr_t)data + 0x18);
-    patch_aarch64_26r(code + 0x104, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0x78, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0xc0, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0xc8, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0xe8, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0xf0, (uintptr_t)data);
+    patch_aarch64_21rx(code + 0xf4, (uintptr_t)data + 0x18);
+    patch_aarch64_12x(code + 0xf8, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x104, (uintptr_t)data + 0x18);
+    patch_aarch64_26r(code + 0x124, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -17133,17 +16592,17 @@ emit__LOAD_GLOBAL(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: 90000017      adrp    x23, 0x0 <_JIT_ENTRY>
+    // 4: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
     // 0000000000000004:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // 8: aa1503e3      mov     x3, x21
-    // c: 910003fd      mov     x29, sp
-    // 10: f94002f7      ldr     x23, [x23]
+    // 8: f9400288      ldr     x8, [x20]
+    // c: aa1503e3      mov     x3, x21
+    // 10: f9400129      ldr     x9, [x9]
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 14: f9400288      ldr     x8, [x20]
-    // 18: aa1503f3      mov     x19, x21
-    // 1c: a9418680      ldp     x0, x1, [x20, #0x18]
-    // 20: f9401108      ldr     x8, [x8, #0x20]
-    // 24: 53013ee9      ubfx    w9, w23, #1, #15
+    // 14: a9418680      ldp     x0, x1, [x20, #0x18]
+    // 18: f9401108      ldr     x8, [x8, #0x20]
+    // 1c: 910003fd      mov     x29, sp
+    // 20: aa1503f3      mov     x19, x21
+    // 24: 53013d29      ubfx    w9, w9, #1, #15
     // 28: 8b294d08      add     x8, x8, w9, uxtw #3
     // 2c: f9400d02      ldr     x2, [x8, #0x18]
     // 30: f9002295      str     x21, [x20, #0x40]
@@ -17155,35 +16614,29 @@ emit__LOAD_GLOBAL(
     // 40: f9402295      ldr     x21, [x20, #0x40]
     // 44: f900229f      str     xzr, [x20, #0x40]
     // 48: f9400268      ldr     x8, [x19]
-    // 4c: b4000128      cbz     x8, 0x70 <_JIT_ENTRY+0x70>
-    // 50: 12003ee9      and     w9, w23, #0xffff
-    // 54: 12000128      and     w8, w9, #0x1
-    // 58: 36000049      tbz     w9, #0x0, 0x60 <_JIT_ENTRY+0x60>
-    // 5c: f90006bf      str     xzr, [x21, #0x8]
-    // 60: 8b284ea8      add     x8, x21, w8, uxtw #3
-    // 64: 91002115      add     x21, x8, #0x8
-    // 68: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 6c: 14000000      b       0x6c <_JIT_ENTRY+0x6c>
-    // 000000000000006c:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 70: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 74: 14000000      b       0x74 <_JIT_ENTRY+0x74>
-    // 0000000000000074:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[120] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0x17, 0x00, 0x00, 0x90,
-        0xe3, 0x03, 0x15, 0xaa, 0xfd, 0x03, 0x00, 0x91,
-        0xf7, 0x02, 0x40, 0xf9, 0x88, 0x02, 0x40, 0xf9,
-        0xf3, 0x03, 0x15, 0xaa, 0x80, 0x86, 0x41, 0xa9,
-        0x08, 0x11, 0x40, 0xf9, 0xe9, 0x3e, 0x01, 0x53,
+    // 4c: b4000088      cbz     x8, 0x5c <_JIT_ENTRY+0x5c>
+    // 50: 910022b5      add     x21, x21, #0x8
+    // 54: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 58: 14000000      b       0x58 <_JIT_ENTRY+0x58>
+    // 0000000000000058:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 5c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 60: 14000000      b       0x60 <_JIT_ENTRY+0x60>
+    // 0000000000000060:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 64: 00 00 00 00
+    const unsigned char code_body[104] = {
+        0xfd, 0x7b, 0xbf, 0xa9, 0x09, 0x00, 0x00, 0x90,
+        0x88, 0x02, 0x40, 0xf9, 0xe3, 0x03, 0x15, 0xaa,
+        0x29, 0x01, 0x40, 0xf9, 0x80, 0x86, 0x41, 0xa9,
+        0x08, 0x11, 0x40, 0xf9, 0xfd, 0x03, 0x00, 0x91,
+        0xf3, 0x03, 0x15, 0xaa, 0x29, 0x3d, 0x01, 0x53,
         0x08, 0x4d, 0x29, 0x8b, 0x02, 0x0d, 0x40, 0xf9,
         0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
         0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
-        0x68, 0x02, 0x40, 0xf9, 0x28, 0x01, 0x00, 0xb4,
-        0xe9, 0x3e, 0x00, 0x12, 0x28, 0x01, 0x00, 0x12,
-        0x49, 0x00, 0x00, 0x36, 0xbf, 0x06, 0x00, 0xf9,
-        0xa8, 0x4e, 0x28, 0x8b, 0x15, 0x21, 0x00, 0x91,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0x68, 0x02, 0x40, 0xf9, 0x88, 0x00, 0x00, 0xb4,
+        0xb5, 0x22, 0x00, 0x91, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
     // 8: &_PyEval_LoadGlobalStackRef+0x0
@@ -17198,8 +16651,8 @@ emit__LOAD_GLOBAL(
     patch_aarch64_21rx(code + 0x4, (uintptr_t)data);
     patch_aarch64_12x(code + 0x10, (uintptr_t)data);
     patch_aarch64_33rx(code + 0x34, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x6c, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x74, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0x58, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x60, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -17225,55 +16678,37 @@ emit__LOAD_GLOBAL_BUILTINS(
     // 1c: 8b090108      add     x8, x8, x9
     // 20: 8b2a3108      add     x8, x8, w10, uxth #4
     // 24: f9401508      ldr     x8, [x8, #0x28]
-    // 28: b40001c8      cbz     x8, 0x60 <_JIT_ENTRY+0x60>
+    // 28: b40000e8      cbz     x8, 0x44 <_JIT_ENTRY+0x44>
     // 2c: b9400109      ldr     w9, [x8]
     // 30: 37f80069      tbnz    w9, #0x1f, 0x3c <_JIT_ENTRY+0x3c>
     // 34: 11000529      add     w9, w9, #0x1
     // 38: b9000109      str     w9, [x8]
-    // 3c: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 000000000000003c:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // 40: f9400129      ldr     x9, [x9]
-    // 0000000000000040:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 44: f90002a8      str     x8, [x21]
-    // 48: 12000128      and     w8, w9, #0x1
-    // 4c: 36000049      tbz     w9, #0x0, 0x54 <_JIT_ENTRY+0x54>
-    // 50: f90006bf      str     xzr, [x21, #0x8]
-    // 54: 8b284ea8      add     x8, x21, w8, uxtw #3
-    // 58: 91002115      add     x21, x8, #0x8
-    // 5c: 14000000      b       0x5c <_JIT_ENTRY+0x5c>
-    // 000000000000005c:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 60: 14000000      b       0x60 <_JIT_ENTRY+0x60>
-    // 0000000000000060:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 64: 00 00 00 00
-    const unsigned char code_body[104] = {
+    // 3c: f80086a8      str     x8, [x21], #0x8
+    // 40: 14000000      b       0x40 <_JIT_ENTRY+0x40>
+    // 0000000000000040:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 44: 14000000      b       0x44 <_JIT_ENTRY+0x44>
+    // 0000000000000044:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
+    const unsigned char code_body[72] = {
         0x88, 0x12, 0x40, 0xf9, 0x2a, 0x00, 0x80, 0x52,
         0x08, 0x11, 0x40, 0xf9, 0x09, 0x25, 0x40, 0x39,
         0x49, 0x21, 0xc9, 0x9a, 0x0a, 0x00, 0x00, 0x90,
         0x4a, 0x01, 0x40, 0xf9, 0x08, 0x01, 0x09, 0x8b,
         0x08, 0x31, 0x2a, 0x8b, 0x08, 0x15, 0x40, 0xf9,
-        0xc8, 0x01, 0x00, 0xb4, 0x09, 0x01, 0x40, 0xb9,
+        0xe8, 0x00, 0x00, 0xb4, 0x09, 0x01, 0x40, 0xb9,
         0x69, 0x00, 0xf8, 0x37, 0x29, 0x05, 0x00, 0x11,
-        0x09, 0x01, 0x00, 0xb9, 0x09, 0x00, 0x00, 0x90,
-        0x29, 0x01, 0x40, 0xf9, 0xa8, 0x02, 0x00, 0xf9,
-        0x28, 0x01, 0x00, 0x12, 0x49, 0x00, 0x00, 0x36,
-        0xbf, 0x06, 0x00, 0xf9, 0xa8, 0x4e, 0x28, 0x8b,
-        0x15, 0x21, 0x00, 0x91, 0x00, 0x00, 0x00, 0x14,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
+        0x09, 0x01, 0x00, 0xb9, 0xa8, 0x86, 0x00, 0xf8,
+        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPERAND0
-    // 8: OPARG
-    const unsigned char data_body[16] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    const unsigned char data_body[8] = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     };
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x0, instruction->operand0);
-    patch_64(data + 0x8, instruction->oparg);
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_33rx(code + 0x14, (uintptr_t)data);
-    patch_aarch64_33rx(code + 0x3c, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x5c, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x60, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_26r(code + 0x40, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x44, state->instruction_starts[instruction->jump_target]);
 }
 
 void
@@ -17288,8 +16723,8 @@ emit__LOAD_GLOBAL_BUILTINS_FROM_KEYS(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: aa1503e8      mov     x8, x21
-    // 4: f85f8ea9      ldr     x9, [x21, #-0x8]!
-    // 8: 5280002b      mov     w11, #0x1               // =1
+    // 4: 5280002b      mov     w11, #0x1               // =1
+    // 8: f85f8d09      ldr     x9, [x8, #-0x8]!
     // c: 3940252a      ldrb    w10, [x9, #0x9]
     // 10: 9aca216a      lsl     x10, x11, x10
     // 14: 9000000b      adrp    x11, 0x0 <_JIT_ENTRY>
@@ -17299,55 +16734,40 @@ emit__LOAD_GLOBAL_BUILTINS_FROM_KEYS(
     // 1c: 8b0a0129      add     x9, x9, x10
     // 20: 8b2b3129      add     x9, x9, w11, uxth #4
     // 24: f9401529      ldr     x9, [x9, #0x28]
-    // 28: b40001c9      cbz     x9, 0x60 <_JIT_ENTRY+0x60>
-    // 2c: b940012a      ldr     w10, [x9]
-    // 30: 37f8006a      tbnz    w10, #0x1f, 0x3c <_JIT_ENTRY+0x3c>
-    // 34: 1100054a      add     w10, w10, #0x1
-    // 38: b900012a      str     w10, [x9]
-    // 3c: 9000000a      adrp    x10, 0x0 <_JIT_ENTRY>
-    // 000000000000003c:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // 40: f940014a      ldr     x10, [x10]
-    // 0000000000000040:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 44: f90002a9      str     x9, [x21]
-    // 48: 12000149      and     w9, w10, #0x1
-    // 4c: 3600004a      tbz     w10, #0x0, 0x54 <_JIT_ENTRY+0x54>
-    // 50: f900011f      str     xzr, [x8]
-    // 54: 8b294ea8      add     x8, x21, w9, uxtw #3
-    // 58: 91002115      add     x21, x8, #0x8
-    // 5c: 14000000      b       0x5c <_JIT_ENTRY+0x5c>
-    // 000000000000005c:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 60: 14000000      b       0x60 <_JIT_ENTRY+0x60>
-    // 0000000000000060:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 64: 00 00 00 00
-    const unsigned char code_body[104] = {
-        0xe8, 0x03, 0x15, 0xaa, 0xa9, 0x8e, 0x5f, 0xf8,
-        0x2b, 0x00, 0x80, 0x52, 0x2a, 0x25, 0x40, 0x39,
+    // 28: b40000e9      cbz     x9, 0x44 <_JIT_ENTRY+0x44>
+    // 2c: b9400128      ldr     w8, [x9]
+    // 30: 37f80068      tbnz    w8, #0x1f, 0x3c <_JIT_ENTRY+0x3c>
+    // 34: 11000508      add     w8, w8, #0x1
+    // 38: b9000128      str     w8, [x9]
+    // 3c: f81f82a9      stur    x9, [x21, #-0x8]
+    // 40: 14000000      b       0x40 <_JIT_ENTRY+0x40>
+    // 0000000000000040:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 44: aa0803f5      mov     x21, x8
+    // 48: 14000000      b       0x48 <_JIT_ENTRY+0x48>
+    // 0000000000000048:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
+    // 4c: 00 00 00 00
+    const unsigned char code_body[80] = {
+        0xe8, 0x03, 0x15, 0xaa, 0x2b, 0x00, 0x80, 0x52,
+        0x09, 0x8d, 0x5f, 0xf8, 0x2a, 0x25, 0x40, 0x39,
         0x6a, 0x21, 0xca, 0x9a, 0x0b, 0x00, 0x00, 0x90,
         0x6b, 0x01, 0x40, 0xf9, 0x29, 0x01, 0x0a, 0x8b,
         0x29, 0x31, 0x2b, 0x8b, 0x29, 0x15, 0x40, 0xf9,
-        0xc9, 0x01, 0x00, 0xb4, 0x2a, 0x01, 0x40, 0xb9,
-        0x6a, 0x00, 0xf8, 0x37, 0x4a, 0x05, 0x00, 0x11,
-        0x2a, 0x01, 0x00, 0xb9, 0x0a, 0x00, 0x00, 0x90,
-        0x4a, 0x01, 0x40, 0xf9, 0xa9, 0x02, 0x00, 0xf9,
-        0x49, 0x01, 0x00, 0x12, 0x4a, 0x00, 0x00, 0x36,
-        0x1f, 0x01, 0x00, 0xf9, 0xa8, 0x4e, 0x29, 0x8b,
-        0x15, 0x21, 0x00, 0x91, 0x00, 0x00, 0x00, 0x14,
+        0xe9, 0x00, 0x00, 0xb4, 0x28, 0x01, 0x40, 0xb9,
+        0x68, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x11,
+        0x28, 0x01, 0x00, 0xb9, 0xa9, 0x82, 0x1f, 0xf8,
+        0x00, 0x00, 0x00, 0x14, 0xf5, 0x03, 0x08, 0xaa,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPERAND0
-    // 8: OPARG
-    const unsigned char data_body[16] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    const unsigned char data_body[8] = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     };
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x0, instruction->operand0);
-    patch_64(data + 0x8, instruction->oparg);
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_33rx(code + 0x14, (uintptr_t)data);
-    patch_aarch64_33rx(code + 0x3c, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x5c, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x60, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_26r(code + 0x40, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x48, state->instruction_starts[instruction->jump_target]);
 }
 
 void
@@ -17373,55 +16793,37 @@ emit__LOAD_GLOBAL_MODULE(
     // 1c: 8b090108      add     x8, x8, x9
     // 20: 8b2a3108      add     x8, x8, w10, uxth #4
     // 24: f9401508      ldr     x8, [x8, #0x28]
-    // 28: b40001c8      cbz     x8, 0x60 <_JIT_ENTRY+0x60>
+    // 28: b40000e8      cbz     x8, 0x44 <_JIT_ENTRY+0x44>
     // 2c: b9400109      ldr     w9, [x8]
     // 30: 37f80069      tbnz    w9, #0x1f, 0x3c <_JIT_ENTRY+0x3c>
     // 34: 11000529      add     w9, w9, #0x1
     // 38: b9000109      str     w9, [x8]
-    // 3c: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 000000000000003c:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // 40: f9400129      ldr     x9, [x9]
-    // 0000000000000040:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 44: f90002a8      str     x8, [x21]
-    // 48: 12000128      and     w8, w9, #0x1
-    // 4c: 36000049      tbz     w9, #0x0, 0x54 <_JIT_ENTRY+0x54>
-    // 50: f90006bf      str     xzr, [x21, #0x8]
-    // 54: 8b284ea8      add     x8, x21, w8, uxtw #3
-    // 58: 91002115      add     x21, x8, #0x8
-    // 5c: 14000000      b       0x5c <_JIT_ENTRY+0x5c>
-    // 000000000000005c:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 60: 14000000      b       0x60 <_JIT_ENTRY+0x60>
-    // 0000000000000060:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 64: 00 00 00 00
-    const unsigned char code_body[104] = {
+    // 3c: f80086a8      str     x8, [x21], #0x8
+    // 40: 14000000      b       0x40 <_JIT_ENTRY+0x40>
+    // 0000000000000040:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 44: 14000000      b       0x44 <_JIT_ENTRY+0x44>
+    // 0000000000000044:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
+    const unsigned char code_body[72] = {
         0x88, 0x0e, 0x40, 0xf9, 0x2a, 0x00, 0x80, 0x52,
         0x08, 0x11, 0x40, 0xf9, 0x09, 0x25, 0x40, 0x39,
         0x49, 0x21, 0xc9, 0x9a, 0x0a, 0x00, 0x00, 0x90,
         0x4a, 0x01, 0x40, 0xf9, 0x08, 0x01, 0x09, 0x8b,
         0x08, 0x31, 0x2a, 0x8b, 0x08, 0x15, 0x40, 0xf9,
-        0xc8, 0x01, 0x00, 0xb4, 0x09, 0x01, 0x40, 0xb9,
+        0xe8, 0x00, 0x00, 0xb4, 0x09, 0x01, 0x40, 0xb9,
         0x69, 0x00, 0xf8, 0x37, 0x29, 0x05, 0x00, 0x11,
-        0x09, 0x01, 0x00, 0xb9, 0x09, 0x00, 0x00, 0x90,
-        0x29, 0x01, 0x40, 0xf9, 0xa8, 0x02, 0x00, 0xf9,
-        0x28, 0x01, 0x00, 0x12, 0x49, 0x00, 0x00, 0x36,
-        0xbf, 0x06, 0x00, 0xf9, 0xa8, 0x4e, 0x28, 0x8b,
-        0x15, 0x21, 0x00, 0x91, 0x00, 0x00, 0x00, 0x14,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
+        0x09, 0x01, 0x00, 0xb9, 0xa8, 0x86, 0x00, 0xf8,
+        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPERAND0
-    // 8: OPARG
-    const unsigned char data_body[16] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    const unsigned char data_body[8] = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     };
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x0, instruction->operand0);
-    patch_64(data + 0x8, instruction->oparg);
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_33rx(code + 0x14, (uintptr_t)data);
-    patch_aarch64_33rx(code + 0x3c, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x5c, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x60, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_26r(code + 0x40, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x44, state->instruction_starts[instruction->jump_target]);
 }
 
 void
@@ -17436,8 +16838,8 @@ emit__LOAD_GLOBAL_MODULE_FROM_KEYS(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: aa1503e8      mov     x8, x21
-    // 4: f85f8ea9      ldr     x9, [x21, #-0x8]!
-    // 8: 5280002b      mov     w11, #0x1               // =1
+    // 4: 5280002b      mov     w11, #0x1               // =1
+    // 8: f85f8d09      ldr     x9, [x8, #-0x8]!
     // c: 3940252a      ldrb    w10, [x9, #0x9]
     // 10: 9aca216a      lsl     x10, x11, x10
     // 14: 9000000b      adrp    x11, 0x0 <_JIT_ENTRY>
@@ -17447,55 +16849,40 @@ emit__LOAD_GLOBAL_MODULE_FROM_KEYS(
     // 1c: 8b0a0129      add     x9, x9, x10
     // 20: 8b2b3129      add     x9, x9, w11, uxth #4
     // 24: f9401529      ldr     x9, [x9, #0x28]
-    // 28: b40001c9      cbz     x9, 0x60 <_JIT_ENTRY+0x60>
-    // 2c: b940012a      ldr     w10, [x9]
-    // 30: 37f8006a      tbnz    w10, #0x1f, 0x3c <_JIT_ENTRY+0x3c>
-    // 34: 1100054a      add     w10, w10, #0x1
-    // 38: b900012a      str     w10, [x9]
-    // 3c: 9000000a      adrp    x10, 0x0 <_JIT_ENTRY>
-    // 000000000000003c:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // 40: f940014a      ldr     x10, [x10]
-    // 0000000000000040:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 44: f90002a9      str     x9, [x21]
-    // 48: 12000149      and     w9, w10, #0x1
-    // 4c: 3600004a      tbz     w10, #0x0, 0x54 <_JIT_ENTRY+0x54>
-    // 50: f900011f      str     xzr, [x8]
-    // 54: 8b294ea8      add     x8, x21, w9, uxtw #3
-    // 58: 91002115      add     x21, x8, #0x8
-    // 5c: 14000000      b       0x5c <_JIT_ENTRY+0x5c>
-    // 000000000000005c:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 60: 14000000      b       0x60 <_JIT_ENTRY+0x60>
-    // 0000000000000060:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 64: 00 00 00 00
-    const unsigned char code_body[104] = {
-        0xe8, 0x03, 0x15, 0xaa, 0xa9, 0x8e, 0x5f, 0xf8,
-        0x2b, 0x00, 0x80, 0x52, 0x2a, 0x25, 0x40, 0x39,
+    // 28: b40000e9      cbz     x9, 0x44 <_JIT_ENTRY+0x44>
+    // 2c: b9400128      ldr     w8, [x9]
+    // 30: 37f80068      tbnz    w8, #0x1f, 0x3c <_JIT_ENTRY+0x3c>
+    // 34: 11000508      add     w8, w8, #0x1
+    // 38: b9000128      str     w8, [x9]
+    // 3c: f81f82a9      stur    x9, [x21, #-0x8]
+    // 40: 14000000      b       0x40 <_JIT_ENTRY+0x40>
+    // 0000000000000040:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 44: aa0803f5      mov     x21, x8
+    // 48: 14000000      b       0x48 <_JIT_ENTRY+0x48>
+    // 0000000000000048:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
+    // 4c: 00 00 00 00
+    const unsigned char code_body[80] = {
+        0xe8, 0x03, 0x15, 0xaa, 0x2b, 0x00, 0x80, 0x52,
+        0x09, 0x8d, 0x5f, 0xf8, 0x2a, 0x25, 0x40, 0x39,
         0x6a, 0x21, 0xca, 0x9a, 0x0b, 0x00, 0x00, 0x90,
         0x6b, 0x01, 0x40, 0xf9, 0x29, 0x01, 0x0a, 0x8b,
         0x29, 0x31, 0x2b, 0x8b, 0x29, 0x15, 0x40, 0xf9,
-        0xc9, 0x01, 0x00, 0xb4, 0x2a, 0x01, 0x40, 0xb9,
-        0x6a, 0x00, 0xf8, 0x37, 0x4a, 0x05, 0x00, 0x11,
-        0x2a, 0x01, 0x00, 0xb9, 0x0a, 0x00, 0x00, 0x90,
-        0x4a, 0x01, 0x40, 0xf9, 0xa9, 0x02, 0x00, 0xf9,
-        0x49, 0x01, 0x00, 0x12, 0x4a, 0x00, 0x00, 0x36,
-        0x1f, 0x01, 0x00, 0xf9, 0xa8, 0x4e, 0x29, 0x8b,
-        0x15, 0x21, 0x00, 0x91, 0x00, 0x00, 0x00, 0x14,
+        0xe9, 0x00, 0x00, 0xb4, 0x28, 0x01, 0x40, 0xb9,
+        0x68, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x11,
+        0x28, 0x01, 0x00, 0xb9, 0xa9, 0x82, 0x1f, 0xf8,
+        0x00, 0x00, 0x00, 0x14, 0xf5, 0x03, 0x08, 0xaa,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPERAND0
-    // 8: OPARG
-    const unsigned char data_body[16] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    const unsigned char data_body[8] = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     };
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x0, instruction->operand0);
-    patch_64(data + 0x8, instruction->oparg);
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_33rx(code + 0x14, (uintptr_t)data);
-    patch_aarch64_33rx(code + 0x3c, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x5c, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x60, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_26r(code + 0x40, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x48, state->instruction_starts[instruction->jump_target]);
 }
 
 void
@@ -18012,11 +17399,11 @@ emit__LOAD_SUPER_ATTR_ATTR(
     // 3c: aa1703e0      mov     x0, x23
     // 40: f9400129      ldr     x9, [x9]
     // 0000000000000040:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 44: f85f82b9      ldur    x25, [x21, #-0x8]
+    // 44: f85f82b8      ldur    x24, [x21, #-0x8]
     // 48: aa1f03e3      mov     x3, xzr
     // 4c: f9401108      ldr     x8, [x8, #0x20]
     // 50: 53023d29      ubfx    w9, w9, #2, #14
-    // 54: aa1903e1      mov     x1, x25
+    // 54: aa1803e1      mov     x1, x24
     // 58: 8b294d08      add     x8, x8, w9, uxtw #3
     // 5c: f9400d02      ldr     x2, [x8, #0x18]
     // 60: f9002295      str     x21, [x20, #0x40]
@@ -18026,7 +17413,7 @@ emit__LOAD_SUPER_ATTR_ATTR(
     // 0000000000000068:  R_AARCH64_LD64_GOT_LO12_NC   _PySuper_Lookup
     // 6c: d63f0100      blr     x8
     // 70: b9400348      ldr     w8, [x26]
-    // 74: f9402298      ldr     x24, [x20, #0x40]
+    // 74: f9402299      ldr     x25, [x20, #0x40]
     // 78: aa0003f3      mov     x19, x0
     // 7c: f900229f      str     xzr, [x20, #0x40]
     // 80: 37f80128      tbnz    w8, #0x1f, 0xa4 <_JIT_ENTRY+0xa4>
@@ -18053,24 +17440,24 @@ emit__LOAD_SUPER_ATTR_ATTR(
     // c0: f9400108      ldr     x8, [x8]
     // 00000000000000c0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // c4: d63f0100      blr     x8
-    // c8: b9400328      ldr     w8, [x25]
+    // c8: b9400308      ldr     w8, [x24]
     // cc: 37f80108      tbnz    w8, #0x1f, 0xec <_JIT_ENTRY+0xec>
     // d0: 71000508      subs    w8, w8, #0x1
-    // d4: b9000328      str     w8, [x25]
+    // d4: b9000308      str     w8, [x24]
     // d8: 540000a1      b.ne    0xec <_JIT_ENTRY+0xec>
     // dc: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 00000000000000dc:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // e0: aa1903e0      mov     x0, x25
+    // e0: aa1803e0      mov     x0, x24
     // e4: f9400108      ldr     x8, [x8]
     // 00000000000000e4:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // e8: d63f0100      blr     x8
     // ec: b40000b3      cbz     x19, 0x100 <_JIT_ENTRY+0x100>
-    // f0: d1004315      sub     x21, x24, #0x10
-    // f4: f81e8313      stur    x19, [x24, #-0x18]
+    // f0: d1004335      sub     x21, x25, #0x10
+    // f4: f81e8333      stur    x19, [x25, #-0x18]
     // f8: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // fc: 14000000      b       0xfc <_JIT_ENTRY+0xfc>
     // 00000000000000fc:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 100: aa1803f5      mov     x21, x24
+    // 100: d1006335      sub     x21, x25, #0x18
     // 104: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 108: 14000000      b       0x108 <_JIT_ENTRY+0x108>
     // 0000000000000108:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
@@ -18084,13 +17471,13 @@ emit__LOAD_SUPER_ATTR_ATTR(
         0x68, 0x00, 0x38, 0x37, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x09, 0x00, 0x00, 0x90,
         0x88, 0x02, 0x40, 0xf9, 0xe0, 0x03, 0x17, 0xaa,
-        0x29, 0x01, 0x40, 0xf9, 0xb9, 0x82, 0x5f, 0xf8,
+        0x29, 0x01, 0x40, 0xf9, 0xb8, 0x82, 0x5f, 0xf8,
         0xe3, 0x03, 0x1f, 0xaa, 0x08, 0x11, 0x40, 0xf9,
-        0x29, 0x3d, 0x02, 0x53, 0xe1, 0x03, 0x19, 0xaa,
+        0x29, 0x3d, 0x02, 0x53, 0xe1, 0x03, 0x18, 0xaa,
         0x08, 0x4d, 0x29, 0x8b, 0x02, 0x0d, 0x40, 0xf9,
         0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x48, 0x03, 0x40, 0xb9, 0x98, 0x22, 0x40, 0xf9,
+        0x48, 0x03, 0x40, 0xb9, 0x99, 0x22, 0x40, 0xf9,
         0xf3, 0x03, 0x00, 0xaa, 0x9f, 0x22, 0x00, 0xf9,
         0x28, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
         0x48, 0x03, 0x00, 0xb9, 0xc1, 0x00, 0x00, 0x54,
@@ -18101,14 +17488,14 @@ emit__LOAD_SUPER_ATTR_ATTR(
         0xe8, 0x02, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
         0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x17, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x28, 0x03, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x28, 0x03, 0x00, 0xb9,
+        0x08, 0x03, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
         0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x19, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
         0x00, 0x01, 0x3f, 0xd6, 0xb3, 0x00, 0x00, 0xb4,
-        0x15, 0x43, 0x00, 0xd1, 0x13, 0x83, 0x1e, 0xf8,
+        0x35, 0x43, 0x00, 0xd1, 0x33, 0x83, 0x1e, 0xf8,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0xf5, 0x03, 0x18, 0xaa, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x35, 0x63, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: &PySuper_Type+0x0
@@ -18166,8 +17553,8 @@ emit__LOAD_SUPER_ATTR_METHOD(
     // 14: 910043fd      add     x29, sp, #0x10
     // 18: eb19011f      cmp     x8, x25
     // 1c: 540000a1      b.ne    0x30 <_JIT_ENTRY+0x30>
-    // 20: f85f02b8      ldur    x24, [x21, #-0x10]
-    // 24: f9400708      ldr     x8, [x24, #0x8]
+    // 20: f85f02b3      ldur    x19, [x21, #-0x10]
+    // 24: f9400668      ldr     x8, [x19, #0x8]
     // 28: 3942ad08      ldrb    w8, [x8, #0xab]
     // 2c: 37380088      tbnz    w8, #0x7, 0x3c <_JIT_ENTRY+0x3c>
     // 30: a9417bfd      ldp     x29, x30, [sp, #0x10]
@@ -18177,14 +17564,14 @@ emit__LOAD_SUPER_ATTR_METHOD(
     // 3c: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
     // 000000000000003c:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
     // 40: f9400288      ldr     x8, [x20]
-    // 44: aa1803e0      mov     x0, x24
+    // 44: aa1303e0      mov     x0, x19
     // 48: f9400129      ldr     x9, [x9]
     // 0000000000000048:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 4c: f85f82b3      ldur    x19, [x21, #-0x8]
+    // 4c: f85f82b7      ldur    x23, [x21, #-0x8]
     // 50: f9401108      ldr     x8, [x8, #0x20]
     // 54: 53023d29      ubfx    w9, w9, #2, #14
-    // 58: f940066a      ldr     x10, [x19, #0x8]
-    // 5c: aa1303e1      mov     x1, x19
+    // 58: f94006ea      ldr     x10, [x23, #0x8]
+    // 5c: aa1703e1      mov     x1, x23
     // 60: 8b294d08      add     x8, x8, w9, uxtw #3
     // 64: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
     // 0000000000000064:  R_AARCH64_ADR_GOT_PAGE       PyObject_GenericGetAttr
@@ -18202,112 +17589,118 @@ emit__LOAD_SUPER_ATTR_METHOD(
     // 8c: f9400108      ldr     x8, [x8]
     // 000000000000008c:  R_AARCH64_LD64_GOT_LO12_NC   _PySuper_Lookup
     // 90: d63f0100      blr     x8
-    // 94: f9402297      ldr     x23, [x20, #0x40]
+    // 94: f9402298      ldr     x24, [x20, #0x40]
     // 98: f900229f      str     xzr, [x20, #0x40]
-    // 9c: b4000580      cbz     x0, 0x14c <_JIT_ENTRY+0x14c>
+    // 9c: b4000620      cbz     x0, 0x160 <_JIT_ENTRY+0x160>
     // a0: b85fc3a8      ldur    w8, [x29, #-0x4]
-    // a4: 350001a8      cbnz    w8, 0xd8 <_JIT_ENTRY+0xd8>
-    // a8: b9400268      ldr     w8, [x19]
-    // ac: 37f80148      tbnz    w8, #0x1f, 0xd4 <_JIT_ENTRY+0xd4>
-    // b0: 71000508      subs    w8, w8, #0x1
-    // b4: b9000268      str     w8, [x19]
-    // b8: 540000e1      b.ne    0xd4 <_JIT_ENTRY+0xd4>
-    // bc: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000bc:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // c0: aa0003f5      mov     x21, x0
-    // c4: aa1303e0      mov     x0, x19
-    // c8: f9400108      ldr     x8, [x8]
-    // 00000000000000c8:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // cc: d63f0100      blr     x8
-    // d0: aa1503e0      mov     x0, x21
-    // d4: aa1f03f3      mov     x19, xzr
-    // d8: b9400308      ldr     w8, [x24]
-    // dc: 37f80148      tbnz    w8, #0x1f, 0x104 <_JIT_ENTRY+0x104>
-    // e0: 71000508      subs    w8, w8, #0x1
-    // e4: b9000308      str     w8, [x24]
-    // e8: 540000e1      b.ne    0x104 <_JIT_ENTRY+0x104>
-    // ec: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000ec:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // f0: aa0003f5      mov     x21, x0
-    // f4: aa1803e0      mov     x0, x24
-    // f8: f9400108      ldr     x8, [x8]
-    // 00000000000000f8:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // fc: d63f0100      blr     x8
-    // 100: aa1503e0      mov     x0, x21
-    // 104: b9400328      ldr     w8, [x25]
-    // 108: 37f80188      tbnz    w8, #0x1f, 0x138 <_JIT_ENTRY+0x138>
-    // 10c: 71000508      subs    w8, w8, #0x1
-    // 110: b9000328      str     w8, [x25]
-    // 114: 54000121      b.ne    0x138 <_JIT_ENTRY+0x138>
-    // 118: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000118:  R_AARCH64_ADR_GOT_PAGE       PySuper_Type
-    // 11c: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 000000000000011c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 120: aa0003f5      mov     x21, x0
-    // 124: f9400108      ldr     x8, [x8]
-    // 0000000000000124:  R_AARCH64_LD64_GOT_LO12_NC   PySuper_Type
-    // 128: f9400129      ldr     x9, [x9]
-    // 0000000000000128:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 12c: aa0803e0      mov     x0, x8
-    // 130: d63f0120      blr     x9
-    // 134: aa1503e0      mov     x0, x21
-    // 138: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // 13c: d10022f5      sub     x21, x23, #0x8
-    // 140: a93ecee0      stp     x0, x19, [x23, #-0x18]
-    // 144: 910083ff      add     sp, sp, #0x20
-    // 148: 14000000      b       0x148 <_JIT_ENTRY+0x148>
-    // 0000000000000148:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // a4: 35000248      cbnz    w8, 0xec <_JIT_ENTRY+0xec>
+    // a8: d1002308      sub     x8, x24, #0x8
+    // ac: f9002288      str     x8, [x20, #0x40]
+    // b0: b94002e8      ldr     w8, [x23]
+    // b4: 37f80148      tbnz    w8, #0x1f, 0xdc <_JIT_ENTRY+0xdc>
+    // b8: 71000508      subs    w8, w8, #0x1
+    // bc: b90002e8      str     w8, [x23]
+    // c0: 540000e1      b.ne    0xdc <_JIT_ENTRY+0xdc>
+    // c4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000c4:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // c8: aa0003f5      mov     x21, x0
+    // cc: aa1703e0      mov     x0, x23
+    // d0: f9400108      ldr     x8, [x8]
+    // 00000000000000d0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // d4: d63f0100      blr     x8
+    // d8: aa1503e0      mov     x0, x21
+    // dc: f9402288      ldr     x8, [x20, #0x40]
+    // e0: aa1f03f7      mov     x23, xzr
+    // e4: f900229f      str     xzr, [x20, #0x40]
+    // e8: 91002118      add     x24, x8, #0x8
+    // ec: b9400328      ldr     w8, [x25]
+    // f0: 37f80188      tbnz    w8, #0x1f, 0x120 <_JIT_ENTRY+0x120>
+    // f4: 71000508      subs    w8, w8, #0x1
+    // f8: b9000328      str     w8, [x25]
+    // fc: 54000121      b.ne    0x120 <_JIT_ENTRY+0x120>
+    // 100: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000100:  R_AARCH64_ADR_GOT_PAGE       PySuper_Type
+    // 104: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
+    // 0000000000000104:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 108: aa0003f5      mov     x21, x0
+    // 10c: f9400108      ldr     x8, [x8]
+    // 000000000000010c:  R_AARCH64_LD64_GOT_LO12_NC   PySuper_Type
+    // 110: f9400129      ldr     x9, [x9]
+    // 0000000000000110:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 114: aa0803e0      mov     x0, x8
+    // 118: d63f0120      blr     x9
+    // 11c: aa1503e0      mov     x0, x21
+    // 120: b9400268      ldr     w8, [x19]
+    // 124: 37f80148      tbnz    w8, #0x1f, 0x14c <_JIT_ENTRY+0x14c>
+    // 128: 71000508      subs    w8, w8, #0x1
+    // 12c: b9000268      str     w8, [x19]
+    // 130: 540000e1      b.ne    0x14c <_JIT_ENTRY+0x14c>
+    // 134: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000134:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 138: aa0003f5      mov     x21, x0
+    // 13c: aa1303e0      mov     x0, x19
+    // 140: f9400108      ldr     x8, [x8]
+    // 0000000000000140:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 144: d63f0100      blr     x8
+    // 148: aa1503e0      mov     x0, x21
     // 14c: a9417bfd      ldp     x29, x30, [sp, #0x10]
-    // 150: aa1703f5      mov     x21, x23
-    // 154: 910083ff      add     sp, sp, #0x20
-    // 158: 14000000      b       0x158 <_JIT_ENTRY+0x158>
-    // 0000000000000158:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 15c: 00 00 00 00
-    const unsigned char code_body[352] = {
+    // 150: d1002315      sub     x21, x24, #0x8
+    // 154: a93edf00      stp     x0, x23, [x24, #-0x18]
+    // 158: 910083ff      add     sp, sp, #0x20
+    // 15c: 14000000      b       0x15c <_JIT_ENTRY+0x15c>
+    // 000000000000015c:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 160: a9417bfd      ldp     x29, x30, [sp, #0x10]
+    // 164: aa1803f5      mov     x21, x24
+    // 168: 910083ff      add     sp, sp, #0x20
+    // 16c: 14000000      b       0x16c <_JIT_ENTRY+0x16c>
+    // 000000000000016c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    const unsigned char code_body[368] = {
         0xff, 0x83, 0x00, 0xd1, 0xfd, 0x7b, 0x01, 0xa9,
         0x19, 0x00, 0x00, 0x90, 0xa8, 0x82, 0x5e, 0xf8,
         0x39, 0x03, 0x40, 0xf9, 0xfd, 0x43, 0x00, 0x91,
         0x1f, 0x01, 0x19, 0xeb, 0xa1, 0x00, 0x00, 0x54,
-        0xb8, 0x02, 0x5f, 0xf8, 0x08, 0x07, 0x40, 0xf9,
+        0xb3, 0x02, 0x5f, 0xf8, 0x68, 0x06, 0x40, 0xf9,
         0x08, 0xad, 0x42, 0x39, 0x88, 0x00, 0x38, 0x37,
         0xfd, 0x7b, 0x41, 0xa9, 0xff, 0x83, 0x00, 0x91,
         0x00, 0x00, 0x00, 0x14, 0x09, 0x00, 0x00, 0x90,
-        0x88, 0x02, 0x40, 0xf9, 0xe0, 0x03, 0x18, 0xaa,
-        0x29, 0x01, 0x40, 0xf9, 0xb3, 0x82, 0x5f, 0xf8,
+        0x88, 0x02, 0x40, 0xf9, 0xe0, 0x03, 0x13, 0xaa,
+        0x29, 0x01, 0x40, 0xf9, 0xb7, 0x82, 0x5f, 0xf8,
         0x08, 0x11, 0x40, 0xf9, 0x29, 0x3d, 0x02, 0x53,
-        0x6a, 0x06, 0x40, 0xf9, 0xe1, 0x03, 0x13, 0xaa,
+        0xea, 0x06, 0x40, 0xf9, 0xe1, 0x03, 0x17, 0xaa,
         0x08, 0x4d, 0x29, 0x8b, 0x09, 0x00, 0x00, 0x90,
         0x29, 0x01, 0x40, 0xf9, 0x4a, 0x49, 0x40, 0xf9,
         0xbf, 0xc3, 0x1f, 0xb8, 0x02, 0x0d, 0x40, 0xf9,
         0xa8, 0x13, 0x00, 0xd1, 0x95, 0x22, 0x00, 0xf9,
         0x5f, 0x01, 0x09, 0xeb, 0x03, 0x01, 0x9f, 0x9a,
         0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x97, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0x80, 0x05, 0x00, 0xb4,
-        0xa8, 0xc3, 0x5f, 0xb8, 0xa8, 0x01, 0x00, 0x35,
-        0x68, 0x02, 0x40, 0xb9, 0x48, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
+        0x00, 0x01, 0x3f, 0xd6, 0x98, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x20, 0x06, 0x00, 0xb4,
+        0xa8, 0xc3, 0x5f, 0xb8, 0x48, 0x02, 0x00, 0x35,
+        0x08, 0x23, 0x00, 0xd1, 0x88, 0x22, 0x00, 0xf9,
+        0xe8, 0x02, 0x40, 0xb9, 0x48, 0x01, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0xe8, 0x02, 0x00, 0xb9,
         0xe1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0xf5, 0x03, 0x00, 0xaa, 0xe0, 0x03, 0x13, 0xaa,
+        0xf5, 0x03, 0x00, 0xaa, 0xe0, 0x03, 0x17, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xe0, 0x03, 0x15, 0xaa, 0xf3, 0x03, 0x1f, 0xaa,
-        0x08, 0x03, 0x40, 0xb9, 0x48, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
-        0xe1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0xf5, 0x03, 0x00, 0xaa, 0xe0, 0x03, 0x18, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xe0, 0x03, 0x15, 0xaa, 0x28, 0x03, 0x40, 0xb9,
+        0xe0, 0x03, 0x15, 0xaa, 0x88, 0x22, 0x40, 0xf9,
+        0xf7, 0x03, 0x1f, 0xaa, 0x9f, 0x22, 0x00, 0xf9,
+        0x18, 0x21, 0x00, 0x91, 0x28, 0x03, 0x40, 0xb9,
         0x88, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
         0x28, 0x03, 0x00, 0xb9, 0x21, 0x01, 0x00, 0x54,
         0x08, 0x00, 0x00, 0x90, 0x09, 0x00, 0x00, 0x90,
         0xf5, 0x03, 0x00, 0xaa, 0x08, 0x01, 0x40, 0xf9,
         0x29, 0x01, 0x40, 0xf9, 0xe0, 0x03, 0x08, 0xaa,
         0x20, 0x01, 0x3f, 0xd6, 0xe0, 0x03, 0x15, 0xaa,
-        0xfd, 0x7b, 0x41, 0xa9, 0xf5, 0x22, 0x00, 0xd1,
-        0xe0, 0xce, 0x3e, 0xa9, 0xff, 0x83, 0x00, 0x91,
-        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0x41, 0xa9,
-        0xf5, 0x03, 0x17, 0xaa, 0xff, 0x83, 0x00, 0x91,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
+        0x68, 0x02, 0x40, 0xb9, 0x48, 0x01, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
+        0xe1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
+        0xf5, 0x03, 0x00, 0xaa, 0xe0, 0x03, 0x13, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xe0, 0x03, 0x15, 0xaa, 0xfd, 0x7b, 0x41, 0xa9,
+        0x15, 0x23, 0x00, 0xd1, 0x00, 0xdf, 0x3e, 0xa9,
+        0xff, 0x83, 0x00, 0x91, 0x00, 0x00, 0x00, 0x14,
+        0xfd, 0x7b, 0x41, 0xa9, 0xf5, 0x03, 0x18, 0xaa,
+        0xff, 0x83, 0x00, 0x91, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: &PySuper_Type+0x0
     // 8: OPARG
@@ -18335,16 +17728,16 @@ emit__LOAD_SUPER_ATTR_METHOD(
     patch_aarch64_12x(code + 0x48, (uintptr_t)data + 0x8);
     patch_aarch64_33rx(code + 0x64, (uintptr_t)data + 0x10);
     patch_aarch64_33rx(code + 0x88, (uintptr_t)data + 0x18);
-    patch_aarch64_21rx(code + 0xbc, (uintptr_t)data + 0x20);
-    patch_aarch64_12x(code + 0xc8, (uintptr_t)data + 0x20);
-    patch_aarch64_21rx(code + 0xec, (uintptr_t)data + 0x20);
-    patch_aarch64_12x(code + 0xf8, (uintptr_t)data + 0x20);
-    patch_aarch64_21rx(code + 0x118, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x11c, (uintptr_t)data + 0x20);
-    patch_aarch64_12x(code + 0x124, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x128, (uintptr_t)data + 0x20);
-    patch_aarch64_26r(code + 0x148, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x158, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0xc4, (uintptr_t)data + 0x20);
+    patch_aarch64_12x(code + 0xd0, (uintptr_t)data + 0x20);
+    patch_aarch64_21rx(code + 0x100, (uintptr_t)data);
+    patch_aarch64_21rx(code + 0x104, (uintptr_t)data + 0x20);
+    patch_aarch64_12x(code + 0x10c, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x110, (uintptr_t)data + 0x20);
+    patch_aarch64_21rx(code + 0x134, (uintptr_t)data + 0x20);
+    patch_aarch64_12x(code + 0x140, (uintptr_t)data + 0x20);
+    patch_aarch64_26r(code + 0x15c, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x16c, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -18359,130 +17752,114 @@ emit__MAKE_CALLARGS_A_TUPLE(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000004:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // 8: 910003fd      mov     x29, sp
-    // c: f9400108      ldr     x8, [x8]
-    // 000000000000000c:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 10: 12000117      and     w23, w8, #0x1
-    // 14: 37000068      tbnz    w8, #0x0, 0x20 <_JIT_ENTRY+0x20>
-    // 18: aa1f03f8      mov     x24, xzr
-    // 1c: 14000002      b       0x24 <_JIT_ENTRY+0x24>
-    // 20: f85f82b8      ldur    x24, [x21, #-0x8]
-    // 24: 2a3703f9      mvn     w25, w23
-    // 28: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000028:  R_AARCH64_ADR_GOT_PAGE       PyTuple_Type
-    // 2c: f879dab3      ldr     x19, [x21, w25, sxtw #3]
-    // 30: f9400668      ldr     x8, [x19, #0x8]
-    // 34: f9400129      ldr     x9, [x9]
-    // 0000000000000034:  R_AARCH64_LD64_GOT_LO12_NC   PyTuple_Type
-    // 38: eb09011f      cmp     x8, x9
-    // 3c: 54000400      b.eq    0xbc <_JIT_ENTRY+0xbc>
-    // 40: 521e7ae8      eor     w8, w23, #0xfffffffd
-    // 44: aa1603e0      mov     x0, x22
-    // 48: aa1303e2      mov     x2, x19
-    // 4c: f868daa1      ldr     x1, [x21, w8, sxtw #3]
-    // 50: f9002295      str     x21, [x20, #0x40]
-    // 54: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000054:  R_AARCH64_ADR_GOT_PAGE       _Py_Check_ArgsIterable
-    // 58: f9400108      ldr     x8, [x8]
-    // 0000000000000058:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Check_ArgsIterable
-    // 5c: d63f0100      blr     x8
-    // 60: f9402295      ldr     x21, [x20, #0x40]
-    // 64: f900229f      str     xzr, [x20, #0x40]
-    // 68: 37f80340      tbnz    w0, #0x1f, 0xd0 <_JIT_ENTRY+0xd0>
-    // 6c: f9002295      str     x21, [x20, #0x40]
-    // 70: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000070:  R_AARCH64_ADR_GOT_PAGE       PySequence_Tuple
-    // 74: aa1303e0      mov     x0, x19
-    // 78: f9400108      ldr     x8, [x8]
-    // 0000000000000078:  R_AARCH64_LD64_GOT_LO12_NC   PySequence_Tuple
-    // 7c: d63f0100      blr     x8
-    // 80: f9402295      ldr     x21, [x20, #0x40]
-    // 84: f900229f      str     xzr, [x20, #0x40]
-    // 88: b4000240      cbz     x0, 0xd0 <_JIT_ENTRY+0xd0>
-    // 8c: b9400268      ldr     w8, [x19]
-    // 90: 37f80148      tbnz    w8, #0x1f, 0xb8 <_JIT_ENTRY+0xb8>
-    // 94: 71000508      subs    w8, w8, #0x1
-    // 98: b9000268      str     w8, [x19]
-    // 9c: 540000e1      b.ne    0xb8 <_JIT_ENTRY+0xb8>
-    // a0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000a0:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // a4: aa0003fa      mov     x26, x0
-    // a8: aa1303e0      mov     x0, x19
-    // ac: f9400108      ldr     x8, [x8]
-    // 00000000000000ac:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // b0: d63f0100      blr     x8
-    // b4: aa1a03e0      mov     x0, x26
-    // b8: aa0003f3      mov     x19, x0
-    // bc: f839dab3      str     x19, [x21, w25, sxtw #3]
-    // c0: 34000057      cbz     w23, 0xc8 <_JIT_ENTRY+0xc8>
-    // c4: f81f82b8      stur    x24, [x21, #-0x8]
-    // c8: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // cc: 14000000      b       0xcc <_JIT_ENTRY+0xcc>
-    // 00000000000000cc:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // d0: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // d4: 14000000      b       0xd4 <_JIT_ENTRY+0xd4>
-    // 00000000000000d4:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[216] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x17, 0x01, 0x00, 0x12, 0x68, 0x00, 0x00, 0x37,
-        0xf8, 0x03, 0x1f, 0xaa, 0x02, 0x00, 0x00, 0x14,
-        0xb8, 0x82, 0x5f, 0xf8, 0xf9, 0x03, 0x37, 0x2a,
-        0x09, 0x00, 0x00, 0x90, 0xb3, 0xda, 0x79, 0xf8,
+    // 4: a97f5eb3      ldp     x19, x23, [x21, #-0x10]
+    // 8: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
+    // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       PyTuple_Type
+    // c: 910003fd      mov     x29, sp
+    // 10: f9400668      ldr     x8, [x19, #0x8]
+    // 14: f9400129      ldr     x9, [x9]
+    // 0000000000000014:  R_AARCH64_LD64_GOT_LO12_NC   PyTuple_Type
+    // 18: eb09011f      cmp     x8, x9
+    // 1c: 54000480      b.eq    0xac <_JIT_ENTRY+0xac>
+    // 20: f85e02a1      ldur    x1, [x21, #-0x20]
+    // 24: f9002295      str     x21, [x20, #0x40]
+    // 28: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000028:  R_AARCH64_ADR_GOT_PAGE       _Py_Check_ArgsIterable
+    // 2c: f9400108      ldr     x8, [x8]
+    // 000000000000002c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Check_ArgsIterable
+    // 30: aa1603e0      mov     x0, x22
+    // 34: aa1303e2      mov     x2, x19
+    // 38: d63f0100      blr     x8
+    // 3c: f9402295      ldr     x21, [x20, #0x40]
+    // 40: f900229f      str     xzr, [x20, #0x40]
+    // 44: 37f803a0      tbnz    w0, #0x1f, 0xb8 <_JIT_ENTRY+0xb8>
+    // 48: f9002295      str     x21, [x20, #0x40]
+    // 4c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 000000000000004c:  R_AARCH64_ADR_GOT_PAGE       PySequence_Tuple
+    // 50: aa1303e0      mov     x0, x19
+    // 54: f9400108      ldr     x8, [x8]
+    // 0000000000000054:  R_AARCH64_LD64_GOT_LO12_NC   PySequence_Tuple
+    // 58: d63f0100      blr     x8
+    // 5c: f9402295      ldr     x21, [x20, #0x40]
+    // 60: f900229f      str     xzr, [x20, #0x40]
+    // 64: b40002a0      cbz     x0, 0xb8 <_JIT_ENTRY+0xb8>
+    // 68: d10042a8      sub     x8, x21, #0x10
+    // 6c: f9002288      str     x8, [x20, #0x40]
+    // 70: b9400268      ldr     w8, [x19]
+    // 74: 37f80148      tbnz    w8, #0x1f, 0x9c <_JIT_ENTRY+0x9c>
+    // 78: 71000508      subs    w8, w8, #0x1
+    // 7c: b9000268      str     w8, [x19]
+    // 80: 540000e1      b.ne    0x9c <_JIT_ENTRY+0x9c>
+    // 84: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000084:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 88: aa0003f5      mov     x21, x0
+    // 8c: aa1303e0      mov     x0, x19
+    // 90: f9400108      ldr     x8, [x8]
+    // 0000000000000090:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 94: d63f0100      blr     x8
+    // 98: aa1503e0      mov     x0, x21
+    // 9c: f9402288      ldr     x8, [x20, #0x40]
+    // a0: aa0003f3      mov     x19, x0
+    // a4: f900229f      str     xzr, [x20, #0x40]
+    // a8: 91004115      add     x21, x8, #0x10
+    // ac: a93f5eb3      stp     x19, x23, [x21, #-0x10]
+    // b0: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // b4: 14000000      b       0xb4 <_JIT_ENTRY+0xb4>
+    // 00000000000000b4:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // b8: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // bc: 14000000      b       0xbc <_JIT_ENTRY+0xbc>
+    // 00000000000000bc:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    const unsigned char code_body[192] = {
+        0xfd, 0x7b, 0xbf, 0xa9, 0xb3, 0x5e, 0x7f, 0xa9,
+        0x09, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
         0x68, 0x06, 0x40, 0xf9, 0x29, 0x01, 0x40, 0xf9,
-        0x1f, 0x01, 0x09, 0xeb, 0x00, 0x04, 0x00, 0x54,
-        0xe8, 0x7a, 0x1e, 0x52, 0xe0, 0x03, 0x16, 0xaa,
-        0xe2, 0x03, 0x13, 0xaa, 0xa1, 0xda, 0x68, 0xf8,
+        0x1f, 0x01, 0x09, 0xeb, 0x80, 0x04, 0x00, 0x54,
+        0xa1, 0x02, 0x5e, 0xf8, 0x95, 0x22, 0x00, 0xf9,
+        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
+        0xe0, 0x03, 0x16, 0xaa, 0xe2, 0x03, 0x13, 0xaa,
+        0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xa0, 0x03, 0xf8, 0x37,
         0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
-        0x40, 0x03, 0xf8, 0x37, 0x95, 0x22, 0x00, 0xf9,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
-        0x40, 0x02, 0x00, 0xb4, 0x68, 0x02, 0x40, 0xb9,
-        0x48, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x68, 0x02, 0x00, 0xb9, 0xe1, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0xfa, 0x03, 0x00, 0xaa,
         0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xe0, 0x03, 0x1a, 0xaa,
-        0xf3, 0x03, 0x00, 0xaa, 0xb3, 0xda, 0x39, 0xf8,
-        0x57, 0x00, 0x00, 0x34, 0xb8, 0x82, 0x1f, 0xf8,
+        0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xa0, 0x02, 0x00, 0xb4,
+        0xa8, 0x42, 0x00, 0xd1, 0x88, 0x22, 0x00, 0xf9,
+        0x68, 0x02, 0x40, 0xb9, 0x48, 0x01, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
+        0xe1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
+        0xf5, 0x03, 0x00, 0xaa, 0xe0, 0x03, 0x13, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xe0, 0x03, 0x15, 0xaa, 0x88, 0x22, 0x40, 0xf9,
+        0xf3, 0x03, 0x00, 0xaa, 0x9f, 0x22, 0x00, 0xf9,
+        0x15, 0x41, 0x00, 0x91, 0xb3, 0x5e, 0x3f, 0xa9,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
-    // 0: OPARG
-    // 8: &PyTuple_Type+0x0
-    // 10: &_Py_Check_ArgsIterable+0x0
-    // 18: &PySequence_Tuple+0x0
-    // 20: &_Py_Dealloc+0x0
-    const unsigned char data_body[40] = {
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    // 0: &PyTuple_Type+0x0
+    // 8: &_Py_Check_ArgsIterable+0x0
+    // 10: &PySequence_Tuple+0x0
+    // 18: &_Py_Dealloc+0x0
+    const unsigned char data_body[32] = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     };
     memcpy(data, data_body, sizeof(data_body));
-    patch_64(data + 0x0, instruction->oparg);
-    patch_64(data + 0x8, (uintptr_t)&PyTuple_Type);
-    patch_64(data + 0x10, (uintptr_t)&_Py_Check_ArgsIterable);
-    patch_64(data + 0x18, (uintptr_t)&PySequence_Tuple);
-    patch_64(data + 0x20, (uintptr_t)&_Py_Dealloc);
+    patch_64(data + 0x0, (uintptr_t)&PyTuple_Type);
+    patch_64(data + 0x8, (uintptr_t)&_Py_Check_ArgsIterable);
+    patch_64(data + 0x10, (uintptr_t)&PySequence_Tuple);
+    patch_64(data + 0x18, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x4, (uintptr_t)data);
-    patch_aarch64_12x(code + 0xc, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x28, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x34, (uintptr_t)data + 0x8);
-    patch_aarch64_33rx(code + 0x54, (uintptr_t)data + 0x10);
-    patch_aarch64_21rx(code + 0x70, (uintptr_t)data + 0x18);
-    patch_aarch64_12x(code + 0x78, (uintptr_t)data + 0x18);
-    patch_aarch64_21rx(code + 0xa0, (uintptr_t)data + 0x20);
-    patch_aarch64_12x(code + 0xac, (uintptr_t)data + 0x20);
-    patch_aarch64_26r(code + 0xcc, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0xd4, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0x8, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x14, (uintptr_t)data);
+    patch_aarch64_33rx(code + 0x28, (uintptr_t)data + 0x8);
+    patch_aarch64_21rx(code + 0x4c, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x54, (uintptr_t)data + 0x10);
+    patch_aarch64_21rx(code + 0x84, (uintptr_t)data + 0x18);
+    patch_aarch64_12x(code + 0x90, (uintptr_t)data + 0x18);
+    patch_aarch64_26r(code + 0xb4, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0xbc, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -18510,45 +17887,53 @@ emit__MAKE_CELL(
     // 20: f9400108      ldr     x8, [x8]
     // 0000000000000020:  R_AARCH64_LD64_GOT_LO12_NC   PyCell_New
     // 24: d63f0100      blr     x8
-    // 28: b4000180      cbz     x0, 0x58 <_JIT_ENTRY+0x58>
+    // 28: b40001e0      cbz     x0, 0x64 <_JIT_ENTRY+0x64>
     // 2c: aa0003e8      mov     x8, x0
     // 30: f8777a60      ldr     x0, [x19, x23, lsl #3]
     // 34: f8377a68      str     x8, [x19, x23, lsl #3]
-    // 38: b40000c0      cbz     x0, 0x50 <_JIT_ENTRY+0x50>
-    // 3c: b9400008      ldr     w8, [x0]
-    // 40: 37f80088      tbnz    w8, #0x1f, 0x50 <_JIT_ENTRY+0x50>
-    // 44: 71000508      subs    w8, w8, #0x1
-    // 48: b9000008      str     w8, [x0]
-    // 4c: 540000a0      b.eq    0x60 <_JIT_ENTRY+0x60>
-    // 50: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 54: 14000000      b       0x54 <_JIT_ENTRY+0x54>
-    // 0000000000000054:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 58: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 5c: 14000000      b       0x5c <_JIT_ENTRY+0x5c>
-    // 000000000000005c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 60: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000060:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 64: f9400108      ldr     x8, [x8]
-    // 0000000000000064:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 68: d63f0100      blr     x8
-    // 6c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 70: 14000000      b       0x70 <_JIT_ENTRY+0x70>
-    // 0000000000000070:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[112] = {
+    // 38: f9002295      str     x21, [x20, #0x40]
+    // 3c: b40000c0      cbz     x0, 0x54 <_JIT_ENTRY+0x54>
+    // 40: b9400008      ldr     w8, [x0]
+    // 44: 37f80088      tbnz    w8, #0x1f, 0x54 <_JIT_ENTRY+0x54>
+    // 48: 71000508      subs    w8, w8, #0x1
+    // 4c: b9000008      str     w8, [x0]
+    // 50: 540000e0      b.eq    0x6c <_JIT_ENTRY+0x6c>
+    // 54: f9402295      ldr     x21, [x20, #0x40]
+    // 58: f900229f      str     xzr, [x20, #0x40]
+    // 5c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 60: 14000000      b       0x60 <_JIT_ENTRY+0x60>
+    // 0000000000000060:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 64: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 68: 14000000      b       0x68 <_JIT_ENTRY+0x68>
+    // 0000000000000068:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 6c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 000000000000006c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 70: f9400108      ldr     x8, [x8]
+    // 0000000000000070:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 74: d63f0100      blr     x8
+    // 78: f9402295      ldr     x21, [x20, #0x40]
+    // 7c: f900229f      str     xzr, [x20, #0x40]
+    // 80: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 84: 14000000      b       0x84 <_JIT_ENTRY+0x84>
+    // 0000000000000084:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[136] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0x93, 0x42, 0x01, 0x91, 0xfd, 0x03, 0x00, 0x91,
         0x08, 0x01, 0x40, 0xf9, 0x17, 0x3d, 0x40, 0x92,
         0x08, 0x00, 0x00, 0x90, 0x60, 0x7a, 0x77, 0xf8,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x80, 0x01, 0x00, 0xb4, 0xe8, 0x03, 0x00, 0xaa,
+        0xe0, 0x01, 0x00, 0xb4, 0xe8, 0x03, 0x00, 0xaa,
         0x60, 0x7a, 0x77, 0xf8, 0x68, 0x7a, 0x37, 0xf8,
-        0xc0, 0x00, 0x00, 0xb4, 0x08, 0x00, 0x40, 0xb9,
-        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x08, 0x00, 0x00, 0xb9, 0xa0, 0x00, 0x00, 0x54,
+        0x95, 0x22, 0x00, 0xf9, 0xc0, 0x00, 0x00, 0xb4,
+        0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
+        0xe0, 0x00, 0x00, 0x54, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
     };
     // 0: OPARG
     // 8: &PyCell_New+0x0
@@ -18567,9 +17952,10 @@ emit__MAKE_CELL(
     patch_aarch64_12x(code + 0x10, (uintptr_t)data);
     patch_aarch64_21rx(code + 0x18, (uintptr_t)data + 0x8);
     patch_aarch64_12x(code + 0x20, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x54, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x5c, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_33rx(code + 0x60, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x60, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x68, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_33rx(code + 0x6c, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x84, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -18594,55 +17980,61 @@ emit__MAKE_FUNCTION(
     // 18: 910003fd      mov     x29, sp
     // 1c: aa1303e0      mov     x0, x19
     // 20: d63f0100      blr     x8
-    // 24: f9402295      ldr     x21, [x20, #0x40]
-    // 28: f900229f      str     xzr, [x20, #0x40]
-    // 2c: aa0003f7      mov     x23, x0
-    // 30: b9400268      ldr     w8, [x19]
-    // 34: 37f80088      tbnz    w8, #0x1f, 0x44 <_JIT_ENTRY+0x44>
-    // 38: 71000508      subs    w8, w8, #0x1
-    // 3c: b9000268      str     w8, [x19]
-    // 40: 54000140      b.eq    0x68 <_JIT_ENTRY+0x68>
-    // 44: b40001d7      cbz     x23, 0x7c <_JIT_ENTRY+0x7c>
-    // 48: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000048:  R_AARCH64_ADR_GOT_PAGE       _PyFunction_SetVersion
-    // 4c: b9405e61      ldr     w1, [x19, #0x5c]
-    // 50: aa1703e0      mov     x0, x23
-    // 54: f9400108      ldr     x8, [x8]
-    // 0000000000000054:  R_AARCH64_LD64_GOT_LO12_NC   _PyFunction_SetVersion
-    // 58: d63f0100      blr     x8
-    // 5c: f81f82b7      stur    x23, [x21, #-0x8]
-    // 60: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 64: 14000000      b       0x64 <_JIT_ENTRY+0x64>
-    // 0000000000000064:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 68: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000068:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 6c: aa1303e0      mov     x0, x19
-    // 70: f9400108      ldr     x8, [x8]
-    // 0000000000000070:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 74: d63f0100      blr     x8
-    // 78: b5fffe97      cbnz    x23, 0x48 <_JIT_ENTRY+0x48>
-    // 7c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 80: 14000000      b       0x80 <_JIT_ENTRY+0x80>
-    // 0000000000000080:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 84: 00 00 00 00
-    const unsigned char code_body[136] = {
+    // 24: f9402288      ldr     x8, [x20, #0x40]
+    // 28: aa0003f7      mov     x23, x0
+    // 2c: d1002108      sub     x8, x8, #0x8
+    // 30: f9002288      str     x8, [x20, #0x40]
+    // 34: b9400268      ldr     w8, [x19]
+    // 38: 37f80088      tbnz    w8, #0x1f, 0x48 <_JIT_ENTRY+0x48>
+    // 3c: 71000508      subs    w8, w8, #0x1
+    // 40: b9000268      str     w8, [x19]
+    // 44: 54000180      b.eq    0x74 <_JIT_ENTRY+0x74>
+    // 48: f9402295      ldr     x21, [x20, #0x40]
+    // 4c: f900229f      str     xzr, [x20, #0x40]
+    // 50: b4000217      cbz     x23, 0x90 <_JIT_ENTRY+0x90>
+    // 54: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000054:  R_AARCH64_ADR_GOT_PAGE       _PyFunction_SetVersion
+    // 58: b9405e61      ldr     w1, [x19, #0x5c]
+    // 5c: aa1703e0      mov     x0, x23
+    // 60: f9400108      ldr     x8, [x8]
+    // 0000000000000060:  R_AARCH64_LD64_GOT_LO12_NC   _PyFunction_SetVersion
+    // 64: d63f0100      blr     x8
+    // 68: f80086b7      str     x23, [x21], #0x8
+    // 6c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 70: 14000000      b       0x70 <_JIT_ENTRY+0x70>
+    // 0000000000000070:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 74: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000074:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 78: aa1303e0      mov     x0, x19
+    // 7c: f9400108      ldr     x8, [x8]
+    // 000000000000007c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 80: d63f0100      blr     x8
+    // 84: f9402295      ldr     x21, [x20, #0x40]
+    // 88: f900229f      str     xzr, [x20, #0x40]
+    // 8c: b5fffe57      cbnz    x23, 0x54 <_JIT_ENTRY+0x54>
+    // 90: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 94: 14000000      b       0x94 <_JIT_ENTRY+0x94>
+    // 0000000000000094:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    const unsigned char code_body[152] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0xb3, 0x82, 0x5f, 0xf8,
         0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
         0x81, 0x0e, 0x40, 0xf9, 0x08, 0x01, 0x40, 0xf9,
         0xfd, 0x03, 0x00, 0x91, 0xe0, 0x03, 0x13, 0xaa,
-        0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xf7, 0x03, 0x00, 0xaa,
-        0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0x40, 0x01, 0x00, 0x54, 0xd7, 0x01, 0x00, 0xb4,
-        0x08, 0x00, 0x00, 0x90, 0x61, 0x5e, 0x40, 0xb9,
-        0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xb7, 0x82, 0x1f, 0xf8,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
+        0x00, 0x01, 0x3f, 0xd6, 0x88, 0x22, 0x40, 0xf9,
+        0xf7, 0x03, 0x00, 0xaa, 0x08, 0x21, 0x00, 0xd1,
+        0x88, 0x22, 0x00, 0xf9, 0x68, 0x02, 0x40, 0xb9,
+        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x68, 0x02, 0x00, 0xb9, 0x80, 0x01, 0x00, 0x54,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0x17, 0x02, 0x00, 0xb4, 0x08, 0x00, 0x00, 0x90,
+        0x61, 0x5e, 0x40, 0xb9, 0xe0, 0x03, 0x17, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x97, 0xfe, 0xff, 0xb5, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
+        0xb7, 0x86, 0x00, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x57, 0xfe, 0xff, 0xb5,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: &PyFunction_New+0x0
     // 8: &_PyFunction_SetVersion+0x0
@@ -18659,12 +18051,12 @@ emit__MAKE_FUNCTION(
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_21rx(code + 0xc, (uintptr_t)data);
     patch_aarch64_12x(code + 0x14, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x48, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x54, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x64, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x68, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x70, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x80, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0x54, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x60, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x70, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x74, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x7c, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x94, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -18679,7 +18071,7 @@ emit__MAKE_WARM(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: f9400ac8      ldr     x8, [x22, #0x10]
-    // 4: 528cdf09      mov     w9, #0x66f8             // =26360
+    // 4: 528ce609      mov     w9, #0x6730             // =26416
     // 8: 9000000a      adrp    x10, 0x0 <_JIT_ENTRY>
     // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       _JIT_EXECUTOR
     // c: 72a00069      movk    w9, #0x3, lsl #16
@@ -18699,7 +18091,7 @@ emit__MAKE_WARM(
     // 40: 14000000      b       0x40 <_JIT_ENTRY+0x40>
     // 0000000000000040:  R_AARCH64_JUMP26     _JIT_CONTINUE
     const unsigned char code_body[64] = {
-        0xc8, 0x0a, 0x40, 0xf9, 0x09, 0xdf, 0x8c, 0x52,
+        0xc8, 0x0a, 0x40, 0xf9, 0x09, 0xe6, 0x8c, 0x52,
         0x0a, 0x00, 0x00, 0x90, 0x69, 0x00, 0xa0, 0x72,
         0x4a, 0x01, 0x40, 0xf9, 0x2c, 0x00, 0x80, 0x52,
         0x0b, 0x69, 0x69, 0xf8, 0x4c, 0x8d, 0x00, 0x39,
@@ -18746,13 +18138,13 @@ emit__MAP_ADD(
     // 28: f9400108      ldr     x8, [x8]
     // 0000000000000028:  R_AARCH64_LD64_GOT_LO12_NC   _PyDict_SetItem_Take2
     // 2c: d63f0100      blr     x8
-    // 30: f9402295      ldr     x21, [x20, #0x40]
+    // 30: f9402288      ldr     x8, [x20, #0x40]
     // 34: f900229f      str     xzr, [x20, #0x40]
-    // 38: 34000060      cbz     w0, 0x44 <_JIT_ENTRY+0x44>
-    // 3c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 40: 14000000      b       0x40 <_JIT_ENTRY+0x40>
-    // 0000000000000040:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 44: d10042b5      sub     x21, x21, #0x10
+    // 38: d1004115      sub     x21, x8, #0x10
+    // 3c: 34000060      cbz     w0, 0x48 <_JIT_ENTRY+0x48>
+    // 40: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 44: 14000000      b       0x44 <_JIT_ENTRY+0x44>
+    // 0000000000000044:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
     // 48: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 4c: 14000000      b       0x4c <_JIT_ENTRY+0x4c>
     // 000000000000004c:  R_AARCH64_JUMP26     _JIT_CONTINUE
@@ -18763,9 +18155,9 @@ emit__MAP_ADD(
         0x28, 0x21, 0x28, 0xcb, 0xa0, 0x7a, 0x68, 0xf8,
         0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
-        0x60, 0x00, 0x00, 0x34, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0xb5, 0x42, 0x00, 0xd1,
+        0x88, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0x15, 0x41, 0x00, 0xd1, 0x60, 0x00, 0x00, 0x34,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPARG
@@ -18781,7 +18173,7 @@ emit__MAP_ADD(
     patch_aarch64_21rx(code + 0x4, (uintptr_t)data);
     patch_aarch64_12x(code + 0x10, (uintptr_t)data);
     patch_aarch64_33rx(code + 0x24, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x40, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0x44, state->instruction_starts[instruction->error_target]);
     patch_aarch64_26r(code + 0x4c, (uintptr_t)code + sizeof(code_body));
 }
 
@@ -18797,10 +18189,10 @@ emit__MATCH_CLASS(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: a97f6ab8      ldp     x24, x26, [x21, #-0x10]
+    // 4: a97f66b7      ldp     x23, x25, [x21, #-0x10]
     // 8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // c: f85e82b9      ldur    x25, [x21, #-0x18]
+    // c: f85e82b8      ldur    x24, [x21, #-0x18]
     // 10: f9400108      ldr     x8, [x8]
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
     // 14: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
@@ -18811,102 +18203,102 @@ emit__MATCH_CLASS(
     // 24: f9400129      ldr     x9, [x9]
     // 0000000000000024:  R_AARCH64_LD64_GOT_LO12_NC   _PyEval_MatchClass
     // 28: 92403d03      and     x3, x8, #0xffff
-    // 2c: aa1903e1      mov     x1, x25
-    // 30: aa1803e2      mov     x2, x24
-    // 34: aa1a03e4      mov     x4, x26
+    // 2c: aa1803e1      mov     x1, x24
+    // 30: aa1703e2      mov     x2, x23
+    // 34: aa1903e4      mov     x4, x25
     // 38: d63f0120      blr     x9
-    // 3c: f9402293      ldr     x19, [x20, #0x40]
+    // 3c: f940229a      ldr     x26, [x20, #0x40]
     // 40: f900229f      str     xzr, [x20, #0x40]
-    // 44: aa0003f7      mov     x23, x0
-    // 48: b9400328      ldr     w8, [x25]
+    // 44: aa0003f3      mov     x19, x0
+    // 48: b9400308      ldr     w8, [x24]
     // 4c: 37f80108      tbnz    w8, #0x1f, 0x6c <_JIT_ENTRY+0x6c>
     // 50: 71000508      subs    w8, w8, #0x1
-    // 54: b9000328      str     w8, [x25]
+    // 54: b9000308      str     w8, [x24]
     // 58: 540000a1      b.ne    0x6c <_JIT_ENTRY+0x6c>
     // 5c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 000000000000005c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 60: aa1903e0      mov     x0, x25
+    // 60: aa1803e0      mov     x0, x24
     // 64: f9400108      ldr     x8, [x8]
     // 0000000000000064:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 68: d63f0100      blr     x8
-    // 6c: b9400308      ldr     w8, [x24]
+    // 6c: b94002e8      ldr     w8, [x23]
     // 70: 37f80108      tbnz    w8, #0x1f, 0x90 <_JIT_ENTRY+0x90>
     // 74: 71000508      subs    w8, w8, #0x1
-    // 78: b9000308      str     w8, [x24]
+    // 78: b90002e8      str     w8, [x23]
     // 7c: 540000a1      b.ne    0x90 <_JIT_ENTRY+0x90>
     // 80: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000080:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 84: aa1803e0      mov     x0, x24
+    // 84: aa1703e0      mov     x0, x23
     // 88: f9400108      ldr     x8, [x8]
     // 0000000000000088:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 8c: d63f0100      blr     x8
-    // 90: b9400348      ldr     w8, [x26]
+    // 90: b9400328      ldr     w8, [x25]
     // 94: 37f80088      tbnz    w8, #0x1f, 0xa4 <_JIT_ENTRY+0xa4>
     // 98: 71000508      subs    w8, w8, #0x1
-    // 9c: b9000348      str     w8, [x26]
+    // 9c: b9000328      str     w8, [x25]
     // a0: 540000c0      b.eq    0xb8 <_JIT_ENTRY+0xb8>
-    // a4: b4000157      cbz     x23, 0xcc <_JIT_ENTRY+0xcc>
-    // a8: d1004275      sub     x21, x19, #0x10
-    // ac: f81e8277      stur    x23, [x19, #-0x18]
+    // a4: b4000153      cbz     x19, 0xcc <_JIT_ENTRY+0xcc>
+    // a8: d1004355      sub     x21, x26, #0x10
+    // ac: f81e8353      stur    x19, [x26, #-0x18]
     // b0: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // b4: 14000000      b       0xb4 <_JIT_ENTRY+0xb4>
     // 00000000000000b4:  R_AARCH64_JUMP26     _JIT_CONTINUE
     // b8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 00000000000000b8:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // bc: aa1a03e0      mov     x0, x26
+    // bc: aa1903e0      mov     x0, x25
     // c0: f9400108      ldr     x8, [x8]
     // 00000000000000c0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // c4: d63f0100      blr     x8
-    // c8: b5ffff17      cbnz    x23, 0xa8 <_JIT_ENTRY+0xa8>
+    // c8: b5ffff13      cbnz    x19, 0xa8 <_JIT_ENTRY+0xa8>
     // cc: f9403ac8      ldr     x8, [x22, #0x70]
     // d0: b40000c8      cbz     x8, 0xe8 <_JIT_ENTRY+0xe8>
     // d4: f9400508      ldr     x8, [x8, #0x8]
     // d8: b4000088      cbz     x8, 0xe8 <_JIT_ENTRY+0xe8>
-    // dc: aa1303f5      mov     x21, x19
+    // dc: d1006355      sub     x21, x26, #0x18
     // e0: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // e4: 14000000      b       0xe4 <_JIT_ENTRY+0xe4>
     // 00000000000000e4:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // e8: 90000017      adrp    x23, 0x0 <_JIT_ENTRY>
+    // e8: 90000013      adrp    x19, 0x0 <_JIT_ENTRY>
     // 00000000000000e8:  R_AARCH64_ADR_GOT_PAGE       _Py_NoneStruct
-    // ec: f94002f7      ldr     x23, [x23]
+    // ec: f9400273      ldr     x19, [x19]
     // 00000000000000ec:  R_AARCH64_LD64_GOT_LO12_NC   _Py_NoneStruct
-    // f0: d1004275      sub     x21, x19, #0x10
-    // f4: f81e8277      stur    x23, [x19, #-0x18]
+    // f0: d1004355      sub     x21, x26, #0x10
+    // f4: f81e8353      stur    x19, [x26, #-0x18]
     // f8: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // fc: 14000000      b       0xfc <_JIT_ENTRY+0xfc>
     // 00000000000000fc:  R_AARCH64_JUMP26     _JIT_CONTINUE
     const unsigned char code_body[256] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0xb8, 0x6a, 0x7f, 0xa9,
-        0x08, 0x00, 0x00, 0x90, 0xb9, 0x82, 0x5e, 0xf8,
+        0xfd, 0x7b, 0xbf, 0xa9, 0xb7, 0x66, 0x7f, 0xa9,
+        0x08, 0x00, 0x00, 0x90, 0xb8, 0x82, 0x5e, 0xf8,
         0x08, 0x01, 0x40, 0xf9, 0x09, 0x00, 0x00, 0x90,
         0x95, 0x22, 0x00, 0xf9, 0xe0, 0x03, 0x16, 0xaa,
         0xfd, 0x03, 0x00, 0x91, 0x29, 0x01, 0x40, 0xf9,
-        0x03, 0x3d, 0x40, 0x92, 0xe1, 0x03, 0x19, 0xaa,
-        0xe2, 0x03, 0x18, 0xaa, 0xe4, 0x03, 0x1a, 0xaa,
-        0x20, 0x01, 0x3f, 0xd6, 0x93, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xf7, 0x03, 0x00, 0xaa,
-        0x28, 0x03, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x28, 0x03, 0x00, 0xb9,
+        0x03, 0x3d, 0x40, 0x92, 0xe1, 0x03, 0x18, 0xaa,
+        0xe2, 0x03, 0x17, 0xaa, 0xe4, 0x03, 0x19, 0xaa,
+        0x20, 0x01, 0x3f, 0xd6, 0x9a, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xf3, 0x03, 0x00, 0xaa,
+        0x08, 0x03, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
         0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x19, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x08, 0x03, 0x40, 0xb9,
+        0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0xe8, 0x02, 0x40, 0xb9,
         0x08, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x08, 0x03, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x18, 0xaa,
+        0xe8, 0x02, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x17, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x48, 0x03, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x48, 0x03, 0x00, 0xb9,
-        0xc0, 0x00, 0x00, 0x54, 0x57, 0x01, 0x00, 0xb4,
-        0x75, 0x42, 0x00, 0xd1, 0x77, 0x82, 0x1e, 0xf8,
+        0x28, 0x03, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x28, 0x03, 0x00, 0xb9,
+        0xc0, 0x00, 0x00, 0x54, 0x53, 0x01, 0x00, 0xb4,
+        0x55, 0x43, 0x00, 0xd1, 0x53, 0x83, 0x1e, 0xf8,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x1a, 0xaa,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x19, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x17, 0xff, 0xff, 0xb5, 0xc8, 0x3a, 0x40, 0xf9,
+        0x13, 0xff, 0xff, 0xb5, 0xc8, 0x3a, 0x40, 0xf9,
         0xc8, 0x00, 0x00, 0xb4, 0x08, 0x05, 0x40, 0xf9,
-        0x88, 0x00, 0x00, 0xb4, 0xf5, 0x03, 0x13, 0xaa,
+        0x88, 0x00, 0x00, 0xb4, 0x55, 0x63, 0x00, 0xd1,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0x17, 0x00, 0x00, 0x90, 0xf7, 0x02, 0x40, 0xf9,
-        0x75, 0x42, 0x00, 0xd1, 0x77, 0x82, 0x1e, 0xf8,
+        0x13, 0x00, 0x00, 0x90, 0x73, 0x02, 0x40, 0xf9,
+        0x55, 0x43, 0x00, 0xd1, 0x53, 0x83, 0x1e, 0xf8,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPARG
@@ -19145,22 +18537,29 @@ emit__MAYBE_EXPAND_METHOD(
     // 64: 1100054a      add     w10, w10, #0x1
     // 68: b900012a      str     w10, [x9]
     // 6c: f828daa9      str     x9, [x21, w8, sxtw #3]
-    // 70: b9400008      ldr     w8, [x0]
-    // 74: 37fffdc8      tbnz    w8, #0x1f, 0x2c <_JIT_ENTRY+0x2c>
-    // 78: 71000508      subs    w8, w8, #0x1
-    // 7c: b9000008      str     w8, [x0]
-    // 80: 54fffd61      b.ne    0x2c <_JIT_ENTRY+0x2c>
-    // 84: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 88: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000088:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 8c: 910003fd      mov     x29, sp
-    // 90: f9400108      ldr     x8, [x8]
-    // 0000000000000090:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 94: d63f0100      blr     x8
-    // 98: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 9c: 14000000      b       0x9c <_JIT_ENTRY+0x9c>
-    // 000000000000009c:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[160] = {
+    // 70: f9002295      str     x21, [x20, #0x40]
+    // 74: b9400008      ldr     w8, [x0]
+    // 78: 37f80088      tbnz    w8, #0x1f, 0x88 <_JIT_ENTRY+0x88>
+    // 7c: 71000508      subs    w8, w8, #0x1
+    // 80: b9000008      str     w8, [x0]
+    // 84: 54000080      b.eq    0x94 <_JIT_ENTRY+0x94>
+    // 88: f9402295      ldr     x21, [x20, #0x40]
+    // 8c: f900229f      str     xzr, [x20, #0x40]
+    // 90: 14000000      b       0x90 <_JIT_ENTRY+0x90>
+    // 0000000000000090:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 94: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 98: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000098:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 9c: 910003fd      mov     x29, sp
+    // a0: f9400108      ldr     x8, [x8]
+    // 00000000000000a0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // a4: d63f0100      blr     x8
+    // a8: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // ac: f9402295      ldr     x21, [x20, #0x40]
+    // b0: f900229f      str     xzr, [x20, #0x40]
+    // b4: 14000000      b       0xb4 <_JIT_ENTRY+0xb4>
+    // 00000000000000b4:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[184] = {
         0x09, 0x00, 0x00, 0x90, 0x28, 0x00, 0x80, 0x12,
         0x0c, 0x00, 0x00, 0x90, 0x29, 0x01, 0x40, 0xf9,
         0x2a, 0x3d, 0x00, 0x12, 0x08, 0x01, 0x0a, 0x4b,
@@ -19175,12 +18574,15 @@ emit__MAYBE_EXPAND_METHOD(
         0xa0, 0xda, 0x68, 0xf8, 0x2a, 0x01, 0x40, 0xb9,
         0x6a, 0x00, 0xf8, 0x37, 0x4a, 0x05, 0x00, 0x11,
         0x2a, 0x01, 0x00, 0xb9, 0xa9, 0xda, 0x28, 0xf8,
-        0x08, 0x00, 0x40, 0xb9, 0xc8, 0xfd, 0xff, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x61, 0xfd, 0xff, 0x54, 0xfd, 0x7b, 0xbf, 0xa9,
+        0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x40, 0xb9,
+        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x08, 0x00, 0x00, 0xb9, 0x80, 0x00, 0x00, 0x54,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
         0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPARG
     // 8: &PyMethod_Type+0x0
@@ -19200,9 +18602,10 @@ emit__MAYBE_EXPAND_METHOD(
     patch_aarch64_12x(code + 0xc, (uintptr_t)data);
     patch_aarch64_12x(code + 0x20, (uintptr_t)data + 0x8);
     patch_aarch64_26r(code + 0x2c, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x88, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x90, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x9c, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x90, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x98, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0xa0, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0xb4, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -19216,82 +18619,97 @@ emit__MAYBE_EXPAND_METHOD_KW(
     // Disassembly of section .text:
     //
     // 0000000000000000 <_JIT_ENTRY>:
-    // 0: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 0000000000000000:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // 4: 92800048      mov     x8, #-0x3               // =-3
-    // 8: 9000000c      adrp    x12, 0x0 <_JIT_ENTRY>
-    // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       PyMethod_Type
-    // c: f9400129      ldr     x9, [x9]
-    // 000000000000000c:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 10: 92403d2a      and     x10, x9, #0xffff
-    // 14: cb0a0108      sub     x8, x8, x10
-    // 18: f8687aa9      ldr     x9, [x21, x8, lsl #3]
-    // 1c: f940052b      ldr     x11, [x9, #0x8]
-    // 20: f940018c      ldr     x12, [x12]
-    // 0000000000000020:  R_AARCH64_LD64_GOT_LO12_NC   PyMethod_Type
-    // 24: f85f82b3      ldur    x19, [x21, #-0x8]
-    // 28: eb0c017f      cmp     x11, x12
-    // 2c: 54000060      b.eq    0x38 <_JIT_ENTRY+0x38>
-    // 30: f81f82b3      stur    x19, [x21, #-0x8]
-    // 34: 14000000      b       0x34 <_JIT_ENTRY+0x34>
-    // 0000000000000034:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 38: 9280002b      mov     x11, #-0x2              // =-2
-    // 3c: cb0a016a      sub     x10, x11, x10
-    // 40: f86a7aab      ldr     x11, [x21, x10, lsl #3]
-    // 44: b5ffff6b      cbnz    x11, 0x30 <_JIT_ENTRY+0x30>
-    // 48: f9400d2b      ldr     x11, [x9, #0x18]
-    // 4c: aa0903e0      mov     x0, x9
-    // 50: b940016c      ldr     w12, [x11]
-    // 54: 37f8008c      tbnz    w12, #0x1f, 0x64 <_JIT_ENTRY+0x64>
-    // 58: 1100058c      add     w12, w12, #0x1
-    // 5c: b900016c      str     w12, [x11]
-    // 60: f8687aa0      ldr     x0, [x21, x8, lsl #3]
-    // 64: f82a7aab      str     x11, [x21, x10, lsl #3]
-    // 68: f9400929      ldr     x9, [x9, #0x10]
-    // 6c: b940012a      ldr     w10, [x9]
-    // 70: 37f8006a      tbnz    w10, #0x1f, 0x7c <_JIT_ENTRY+0x7c>
-    // 74: 1100054a      add     w10, w10, #0x1
-    // 78: b900012a      str     w10, [x9]
-    // 7c: f8287aa9      str     x9, [x21, x8, lsl #3]
-    // 80: b9400008      ldr     w8, [x0]
-    // 84: 37fffd68      tbnz    w8, #0x1f, 0x30 <_JIT_ENTRY+0x30>
-    // 88: 71000508      subs    w8, w8, #0x1
-    // 8c: b9000008      str     w8, [x0]
-    // 90: 54fffd01      b.ne    0x30 <_JIT_ENTRY+0x30>
-    // 94: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 98: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000098:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 9c: 910003fd      mov     x29, sp
-    // a0: f9400108      ldr     x8, [x8]
-    // 00000000000000a0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // a4: d63f0100      blr     x8
-    // a8: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 4: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
+    // 0000000000000004:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
+    // 8: 92800048      mov     x8, #-0x3               // =-3
+    // c: 9000000c      adrp    x12, 0x0 <_JIT_ENTRY>
+    // 000000000000000c:  R_AARCH64_ADR_GOT_PAGE       PyMethod_Type
+    // 10: f9400129      ldr     x9, [x9]
+    // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
+    // 14: 910003fd      mov     x29, sp
+    // 18: 92403d2a      and     x10, x9, #0xffff
+    // 1c: cb0a0108      sub     x8, x8, x10
+    // 20: f8687aa9      ldr     x9, [x21, x8, lsl #3]
+    // 24: f940052b      ldr     x11, [x9, #0x8]
+    // 28: f940018c      ldr     x12, [x12]
+    // 0000000000000028:  R_AARCH64_LD64_GOT_LO12_NC   PyMethod_Type
+    // 2c: f85f82b3      ldur    x19, [x21, #-0x8]
+    // 30: eb0c017f      cmp     x11, x12
+    // 34: 54000080      b.eq    0x44 <_JIT_ENTRY+0x44>
+    // 38: f81f82b3      stur    x19, [x21, #-0x8]
+    // 3c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 40: 14000000      b       0x40 <_JIT_ENTRY+0x40>
+    // 0000000000000040:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 44: 9280002b      mov     x11, #-0x2              // =-2
+    // 48: cb0a016a      sub     x10, x11, x10
+    // 4c: f86a7aab      ldr     x11, [x21, x10, lsl #3]
+    // 50: b5ffff4b      cbnz    x11, 0x38 <_JIT_ENTRY+0x38>
+    // 54: f9400d2b      ldr     x11, [x9, #0x18]
+    // 58: aa0903e0      mov     x0, x9
+    // 5c: b940016c      ldr     w12, [x11]
+    // 60: 37f8008c      tbnz    w12, #0x1f, 0x70 <_JIT_ENTRY+0x70>
+    // 64: 1100058c      add     w12, w12, #0x1
+    // 68: b900016c      str     w12, [x11]
+    // 6c: f8687aa0      ldr     x0, [x21, x8, lsl #3]
+    // 70: f82a7aab      str     x11, [x21, x10, lsl #3]
+    // 74: f9400929      ldr     x9, [x9, #0x10]
+    // 78: b940012a      ldr     w10, [x9]
+    // 7c: 37f8006a      tbnz    w10, #0x1f, 0x88 <_JIT_ENTRY+0x88>
+    // 80: 1100054a      add     w10, w10, #0x1
+    // 84: b900012a      str     w10, [x9]
+    // 88: f8287aa9      str     x9, [x21, x8, lsl #3]
+    // 8c: f9002295      str     x21, [x20, #0x40]
+    // 90: b9400008      ldr     w8, [x0]
+    // 94: 37f80088      tbnz    w8, #0x1f, 0xa4 <_JIT_ENTRY+0xa4>
+    // 98: 71000508      subs    w8, w8, #0x1
+    // 9c: b9000008      str     w8, [x0]
+    // a0: 540000c0      b.eq    0xb8 <_JIT_ENTRY+0xb8>
+    // a4: f9402295      ldr     x21, [x20, #0x40]
+    // a8: f900229f      str     xzr, [x20, #0x40]
     // ac: f81f82b3      stur    x19, [x21, #-0x8]
-    // b0: 14000000      b       0xb0 <_JIT_ENTRY+0xb0>
-    // 00000000000000b0:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[176] = {
-        0x09, 0x00, 0x00, 0x90, 0x48, 0x00, 0x80, 0x92,
-        0x0c, 0x00, 0x00, 0x90, 0x29, 0x01, 0x40, 0xf9,
+    // b0: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // b4: 14000000      b       0xb4 <_JIT_ENTRY+0xb4>
+    // 00000000000000b4:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // b8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000b8:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // bc: f9400108      ldr     x8, [x8]
+    // 00000000000000bc:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // c0: d63f0100      blr     x8
+    // c4: f9402295      ldr     x21, [x20, #0x40]
+    // c8: f900229f      str     xzr, [x20, #0x40]
+    // cc: f81f82b3      stur    x19, [x21, #-0x8]
+    // d0: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // d4: 14000000      b       0xd4 <_JIT_ENTRY+0xd4>
+    // 00000000000000d4:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[216] = {
+        0xfd, 0x7b, 0xbf, 0xa9, 0x09, 0x00, 0x00, 0x90,
+        0x48, 0x00, 0x80, 0x92, 0x0c, 0x00, 0x00, 0x90,
+        0x29, 0x01, 0x40, 0xf9, 0xfd, 0x03, 0x00, 0x91,
         0x2a, 0x3d, 0x40, 0x92, 0x08, 0x01, 0x0a, 0xcb,
         0xa9, 0x7a, 0x68, 0xf8, 0x2b, 0x05, 0x40, 0xf9,
         0x8c, 0x01, 0x40, 0xf9, 0xb3, 0x82, 0x5f, 0xf8,
-        0x7f, 0x01, 0x0c, 0xeb, 0x60, 0x00, 0x00, 0x54,
-        0xb3, 0x82, 0x1f, 0xf8, 0x00, 0x00, 0x00, 0x14,
-        0x2b, 0x00, 0x80, 0x92, 0x6a, 0x01, 0x0a, 0xcb,
-        0xab, 0x7a, 0x6a, 0xf8, 0x6b, 0xff, 0xff, 0xb5,
-        0x2b, 0x0d, 0x40, 0xf9, 0xe0, 0x03, 0x09, 0xaa,
-        0x6c, 0x01, 0x40, 0xb9, 0x8c, 0x00, 0xf8, 0x37,
-        0x8c, 0x05, 0x00, 0x11, 0x6c, 0x01, 0x00, 0xb9,
-        0xa0, 0x7a, 0x68, 0xf8, 0xab, 0x7a, 0x2a, 0xf8,
-        0x29, 0x09, 0x40, 0xf9, 0x2a, 0x01, 0x40, 0xb9,
-        0x6a, 0x00, 0xf8, 0x37, 0x4a, 0x05, 0x00, 0x11,
-        0x2a, 0x01, 0x00, 0xb9, 0xa9, 0x7a, 0x28, 0xf8,
-        0x08, 0x00, 0x40, 0xb9, 0x68, 0xfd, 0xff, 0x37,
+        0x7f, 0x01, 0x0c, 0xeb, 0x80, 0x00, 0x00, 0x54,
+        0xb3, 0x82, 0x1f, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x2b, 0x00, 0x80, 0x92,
+        0x6a, 0x01, 0x0a, 0xcb, 0xab, 0x7a, 0x6a, 0xf8,
+        0x4b, 0xff, 0xff, 0xb5, 0x2b, 0x0d, 0x40, 0xf9,
+        0xe0, 0x03, 0x09, 0xaa, 0x6c, 0x01, 0x40, 0xb9,
+        0x8c, 0x00, 0xf8, 0x37, 0x8c, 0x05, 0x00, 0x11,
+        0x6c, 0x01, 0x00, 0xb9, 0xa0, 0x7a, 0x68, 0xf8,
+        0xab, 0x7a, 0x2a, 0xf8, 0x29, 0x09, 0x40, 0xf9,
+        0x2a, 0x01, 0x40, 0xb9, 0x6a, 0x00, 0xf8, 0x37,
+        0x4a, 0x05, 0x00, 0x11, 0x2a, 0x01, 0x00, 0xb9,
+        0xa9, 0x7a, 0x28, 0xf8, 0x95, 0x22, 0x00, 0xf9,
+        0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x01, 0xfd, 0xff, 0x54, 0xfd, 0x7b, 0xbf, 0xa9,
-        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xfd, 0x7b, 0xc1, 0xa8, 0xb3, 0x82, 0x1f, 0xf8,
+        0xc0, 0x00, 0x00, 0x54, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xb3, 0x82, 0x1f, 0xf8,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xb3, 0x82, 0x1f, 0xf8,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPARG
     // 8: &PyMethod_Type+0x0
@@ -19306,13 +18724,14 @@ emit__MAYBE_EXPAND_METHOD_KW(
     patch_64(data + 0x8, (uintptr_t)&PyMethod_Type);
     patch_64(data + 0x10, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_21rx(code + 0x0, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x8, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0xc, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x20, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x34, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x98, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0xa0, (uintptr_t)data + 0x10);
+    patch_aarch64_21rx(code + 0x4, (uintptr_t)data);
+    patch_aarch64_21rx(code + 0xc, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x10, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x28, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0x40, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0xb4, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_33rx(code + 0xb8, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0xd4, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -19471,62 +18890,54 @@ emit__POP_TOP_LOAD_CONST_INLINE_BORROW(
     // Disassembly of section .text:
     //
     // 0000000000000000 <_JIT_ENTRY>:
-    // 0: f85f82a0      ldur    x0, [x21, #-0x8]
-    // 4: b9400008      ldr     w8, [x0]
-    // 8: 37f80088      tbnz    w8, #0x1f, 0x18 <_JIT_ENTRY+0x18>
-    // c: 71000508      subs    w8, w8, #0x1
-    // 10: b9000008      str     w8, [x0]
-    // 14: 540000a0      b.eq    0x28 <_JIT_ENTRY+0x28>
-    // 18: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000018:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPERAND0
-    // 1c: f9400108      ldr     x8, [x8]
-    // 000000000000001c:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPERAND0
-    // 20: f81f82a8      stur    x8, [x21, #-0x8]
-    // 24: 14000000      b       0x24 <_JIT_ENTRY+0x24>
-    // 0000000000000024:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 28: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 2c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000002c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 30: 910003fd      mov     x29, sp
-    // 34: f9400108      ldr     x8, [x8]
-    // 0000000000000034:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 38: d63f0100      blr     x8
-    // 3c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 40: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000040:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPERAND0
-    // 44: f9400108      ldr     x8, [x8]
-    // 0000000000000044:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPERAND0
-    // 48: f81f82a8      stur    x8, [x21, #-0x8]
-    // 4c: 14000000      b       0x4c <_JIT_ENTRY+0x4c>
-    // 000000000000004c:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[80] = {
-        0xa0, 0x82, 0x5f, 0xf8, 0x08, 0x00, 0x40, 0xb9,
-        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x08, 0x00, 0x00, 0xb9, 0xa0, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0xa8, 0x82, 0x1f, 0xf8, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0xa8, 0x82, 0x1f, 0xf8, 0x00, 0x00, 0x00, 0x14,
+    // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 4: f85f8ea0      ldr     x0, [x21, #-0x8]!
+    // 8: f9002295      str     x21, [x20, #0x40]
+    // c: 910003fd      mov     x29, sp
+    // 10: b9400008      ldr     w8, [x0]
+    // 14: 37f800e8      tbnz    w8, #0x1f, 0x30 <_JIT_ENTRY+0x30>
+    // 18: 71000508      subs    w8, w8, #0x1
+    // 1c: b9000008      str     w8, [x0]
+    // 20: 54000081      b.ne    0x30 <_JIT_ENTRY+0x30>
+    // 24: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000024:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 28: f9400108      ldr     x8, [x8]
+    // 0000000000000028:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 2c: d63f0100      blr     x8
+    // 30: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000030:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPERAND0
+    // 34: f9402295      ldr     x21, [x20, #0x40]
+    // 38: f9400108      ldr     x8, [x8]
+    // 0000000000000038:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPERAND0
+    // 3c: f900229f      str     xzr, [x20, #0x40]
+    // 40: f80086a8      str     x8, [x21], #0x8
+    // 44: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 48: 14000000      b       0x48 <_JIT_ENTRY+0x48>
+    // 0000000000000048:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[72] = {
+        0xfd, 0x7b, 0xbf, 0xa9, 0xa0, 0x8e, 0x5f, 0xf8,
+        0x95, 0x22, 0x00, 0xf9, 0xfd, 0x03, 0x00, 0x91,
+        0x08, 0x00, 0x40, 0xb9, 0xe8, 0x00, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
+        0x81, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0x08, 0x00, 0x00, 0x90, 0x95, 0x22, 0x40, 0xf9,
+        0x08, 0x01, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0xa8, 0x86, 0x00, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
     };
-    // 0: OPERAND0
-    // 8: &_Py_Dealloc+0x0
+    // 0: &_Py_Dealloc+0x0
+    // 8: OPERAND0
     const unsigned char data_body[16] = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     };
     memcpy(data, data_body, sizeof(data_body));
-    patch_64(data + 0x0, instruction->operand0);
-    patch_64(data + 0x8, (uintptr_t)&_Py_Dealloc);
+    patch_64(data + 0x0, (uintptr_t)&_Py_Dealloc);
+    patch_64(data + 0x8, instruction->operand0);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_33rx(code + 0x18, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x24, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x2c, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x34, (uintptr_t)data + 0x8);
-    patch_aarch64_33rx(code + 0x40, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x4c, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_33rx(code + 0x24, (uintptr_t)data);
+    patch_aarch64_21rx(code + 0x30, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x38, (uintptr_t)data + 0x8);
 }
 
 void
@@ -19633,6 +19044,42 @@ emit__PUSH_NULL(
     };
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_26r(code + 0x4, (uintptr_t)code + sizeof(code_body));
+}
+
+void
+emit__PUSH_NULL_CONDITIONAL(
+    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,
+    const _PyUOpInstruction *instruction, jit_state *state)
+{
+    //
+    // _PUSH_NULL_CONDITIONAL.o:      file format elf64-littleaarch64
+    //
+    // Disassembly of section .text:
+    //
+    // 0000000000000000 <_JIT_ENTRY>:
+    // 0: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
+    // 0000000000000000:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
+    // 4: f9400129      ldr     x9, [x9]
+    // 0000000000000004:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
+    // 8: 12000128      and     w8, w9, #0x1
+    // c: 36000049      tbz     w9, #0x0, 0x14 <_JIT_ENTRY+0x14>
+    // 10: f90002bf      str     xzr, [x21]
+    // 14: 8b284eb5      add     x21, x21, w8, uxtw #3
+    // 18: 14000000      b       0x18 <_JIT_ENTRY+0x18>
+    // 0000000000000018:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[24] = {
+        0x09, 0x00, 0x00, 0x90, 0x29, 0x01, 0x40, 0xf9,
+        0x28, 0x01, 0x00, 0x12, 0x49, 0x00, 0x00, 0x36,
+        0xbf, 0x02, 0x00, 0xf9, 0xb5, 0x4e, 0x28, 0x8b,
+    };
+    // 0: OPARG
+    const unsigned char data_body[8] = {
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    };
+    memcpy(data, data_body, sizeof(data_body));
+    patch_64(data + 0x0, instruction->oparg);
+    memcpy(code, code_body, sizeof(code_body));
+    patch_aarch64_33rx(code + 0x0, (uintptr_t)data);
 }
 
 void
@@ -19750,107 +19197,116 @@ emit__PY_FRAME_KW(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 4: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
     // 0000000000000004:  R_AARCH64_ADR_GOT_PAGE       _JIT_OPARG
-    // 8: 92800049      mov     x9, #-0x3               // =-3
-    // c: 9280002b      mov     x11, #-0x2              // =-2
-    // 10: f9400108      ldr     x8, [x8]
+    // 8: 92800048      mov     x8, #-0x3               // =-3
+    // c: 9280002c      mov     x12, #-0x2              // =-2
+    // 10: f9400129      ldr     x9, [x9]
     // 0000000000000010:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
     // 14: f85f82b3      ldur    x19, [x21, #-0x8]
     // 18: aa1f03e2      mov     x2, xzr
     // 1c: 910003fd      mov     x29, sp
-    // 20: 92403d0a      and     x10, x8, #0xffff
-    // 24: 12003d0c      and     w12, w8, #0xffff
-    // 28: b940126d      ldr     w13, [x19, #0x10]
-    // 2c: cb0a0137      sub     x23, x9, x10
-    // 30: cb0a0168      sub     x8, x11, x10
-    // 34: 2a2c03eb      mvn     w11, w12
-    // 38: f8777aa9      ldr     x9, [x21, x23, lsl #3]
-    // 3c: f8687aa8      ldr     x8, [x21, x8, lsl #3]
-    // 40: f940192a      ldr     x10, [x9, #0x30]
-    // 44: f100011f      cmp     x8, #0x0
-    // 48: 8b2bcea8      add     x8, x21, w11, sxtw #3
-    // 4c: 1a8c058b      cinc    w11, w12, ne
-    // 50: 3940c14e      ldrb    w14, [x10, #0x30]
-    // 54: 928000ea      mov     x10, #-0x8              // =-8
-    // 58: 4b0d016b      sub     w11, w11, w13
-    // 5c: 9a9f114a      csel    x10, x10, xzr, ne
-    // 60: 370000ce      tbnz    w14, #0x0, 0x78 <_JIT_ENTRY+0x78>
-    // 64: f9400922      ldr     x2, [x9, #0x10]
-    // 68: b9400049      ldr     w9, [x2]
-    // 6c: 37f80069      tbnz    w9, #0x1f, 0x78 <_JIT_ENTRY+0x78>
-    // 70: 11000529      add     w9, w9, #0x1
-    // 74: b9000049      str     w9, [x2]
+    // 20: 92403d2b      and     x11, x9, #0xffff
+    // 24: 12003d2d      and     w13, w9, #0xffff
+    // 28: b940126e      ldr     w14, [x19, #0x10]
+    // 2c: cb0b0108      sub     x8, x8, x11
+    // 30: cb0b0197      sub     x23, x12, x11
+    // 34: 2a2d03ec      mvn     w12, w13
+    // 38: f8687aaa      ldr     x10, [x21, x8, lsl #3]
+    // 3c: f8777aa9      ldr     x9, [x21, x23, lsl #3]
+    // 40: f940194b      ldr     x11, [x10, #0x30]
+    // 44: f100013f      cmp     x9, #0x0
+    // 48: 8b2ccea9      add     x9, x21, w12, sxtw #3
+    // 4c: 1a8d05ac      cinc    w12, w13, ne
+    // 50: 3940c16f      ldrb    w15, [x11, #0x30]
+    // 54: 928000eb      mov     x11, #-0x8              // =-8
+    // 58: 4b0e018c      sub     w12, w12, w14
+    // 5c: 9a9f116b      csel    x11, x11, xzr, ne
+    // 60: 370000cf      tbnz    w15, #0x0, 0x78 <_JIT_ENTRY+0x78>
+    // 64: f9400942      ldr     x2, [x10, #0x10]
+    // 68: b940004a      ldr     w10, [x2]
+    // 6c: 37f8006a      tbnz    w10, #0x1f, 0x78 <_JIT_ENTRY+0x78>
+    // 70: 1100054a      add     w10, w10, #0x1
+    // 74: b900004a      str     w10, [x2]
     // 78: f9002295      str     x21, [x20, #0x40]
-    // 7c: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 000000000000007c:  R_AARCH64_ADR_GOT_PAGE       _PyEvalFramePushAndInit
-    // 80: 93407d64      sxtw    x4, w11
-    // 84: f8777aa1      ldr     x1, [x21, x23, lsl #3]
-    // 88: f9400129      ldr     x9, [x9]
-    // 0000000000000088:  R_AARCH64_LD64_GOT_LO12_NC   _PyEvalFramePushAndInit
-    // 8c: 8b0a0103      add     x3, x8, x10
-    // 90: aa1603e0      mov     x0, x22
+    // 7c: 93407d84      sxtw    x4, w12
+    // 80: 8b0b0123      add     x3, x9, x11
+    // 84: f8687aa1      ldr     x1, [x21, x8, lsl #3]
+    // 88: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000088:  R_AARCH64_ADR_GOT_PAGE       _PyEvalFramePushAndInit
+    // 8c: aa1603e0      mov     x0, x22
+    // 90: f9400108      ldr     x8, [x8]
+    // 0000000000000090:  R_AARCH64_LD64_GOT_LO12_NC   _PyEvalFramePushAndInit
     // 94: aa1303e5      mov     x5, x19
     // 98: aa1403e6      mov     x6, x20
-    // 9c: d63f0120      blr     x9
-    // a0: f9402295      ldr     x21, [x20, #0x40]
-    // a4: f900229f      str     xzr, [x20, #0x40]
-    // a8: b9400268      ldr     w8, [x19]
-    // ac: 37f80088      tbnz    w8, #0x1f, 0xbc <_JIT_ENTRY+0xbc>
-    // b0: 71000508      subs    w8, w8, #0x1
-    // b4: b9000268      str     w8, [x19]
-    // b8: 540000c0      b.eq    0xd0 <_JIT_ENTRY+0xd0>
-    // bc: 8b170eb5      add     x21, x21, x23, lsl #3
-    // c0: b4000180      cbz     x0, 0xf0 <_JIT_ENTRY+0xf0>
-    // c4: f80086a0      str     x0, [x21], #0x8
-    // c8: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // cc: 14000000      b       0xcc <_JIT_ENTRY+0xcc>
-    // 00000000000000cc:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // d0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000d0:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // d4: aa0003f8      mov     x24, x0
-    // d8: aa1303e0      mov     x0, x19
-    // dc: f9400108      ldr     x8, [x8]
-    // 00000000000000dc:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // e0: d63f0100      blr     x8
-    // e4: aa1803e0      mov     x0, x24
-    // e8: 8b170eb5      add     x21, x21, x23, lsl #3
-    // ec: b5fffed8      cbnz    x24, 0xc4 <_JIT_ENTRY+0xc4>
-    // f0: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // f4: 14000000      b       0xf4 <_JIT_ENTRY+0xf4>
-    // 00000000000000f4:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[248] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0x49, 0x00, 0x80, 0x92, 0x2b, 0x00, 0x80, 0x92,
-        0x08, 0x01, 0x40, 0xf9, 0xb3, 0x82, 0x5f, 0xf8,
+    // 9c: d63f0100      blr     x8
+    // a0: f9402288      ldr     x8, [x20, #0x40]
+    // a4: d1002108      sub     x8, x8, #0x8
+    // a8: f9002288      str     x8, [x20, #0x40]
+    // ac: b9400268      ldr     w8, [x19]
+    // b0: 37f80088      tbnz    w8, #0x1f, 0xc0 <_JIT_ENTRY+0xc0>
+    // b4: 71000508      subs    w8, w8, #0x1
+    // b8: b9000268      str     w8, [x19]
+    // bc: 54000100      b.eq    0xdc <_JIT_ENTRY+0xdc>
+    // c0: f9402288      ldr     x8, [x20, #0x40]
+    // c4: f900229f      str     xzr, [x20, #0x40]
+    // c8: 8b170d15      add     x21, x8, x23, lsl #3
+    // cc: b40001c0      cbz     x0, 0x104 <_JIT_ENTRY+0x104>
+    // d0: f80086a0      str     x0, [x21], #0x8
+    // d4: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // d8: 14000000      b       0xd8 <_JIT_ENTRY+0xd8>
+    // 00000000000000d8:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // dc: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000dc:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // e0: aa0003f5      mov     x21, x0
+    // e4: aa1303e0      mov     x0, x19
+    // e8: f9400108      ldr     x8, [x8]
+    // 00000000000000e8:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // ec: d63f0100      blr     x8
+    // f0: aa1503e0      mov     x0, x21
+    // f4: f9402288      ldr     x8, [x20, #0x40]
+    // f8: f900229f      str     xzr, [x20, #0x40]
+    // fc: 8b170d15      add     x21, x8, x23, lsl #3
+    // 100: b5fffe80      cbnz    x0, 0xd0 <_JIT_ENTRY+0xd0>
+    // 104: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 108: 14000000      b       0x108 <_JIT_ENTRY+0x108>
+    // 0000000000000108:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 10c: 00 00 00 00
+    const unsigned char code_body[272] = {
+        0xfd, 0x7b, 0xbf, 0xa9, 0x09, 0x00, 0x00, 0x90,
+        0x48, 0x00, 0x80, 0x92, 0x2c, 0x00, 0x80, 0x92,
+        0x29, 0x01, 0x40, 0xf9, 0xb3, 0x82, 0x5f, 0xf8,
         0xe2, 0x03, 0x1f, 0xaa, 0xfd, 0x03, 0x00, 0x91,
-        0x0a, 0x3d, 0x40, 0x92, 0x0c, 0x3d, 0x00, 0x12,
-        0x6d, 0x12, 0x40, 0xb9, 0x37, 0x01, 0x0a, 0xcb,
-        0x68, 0x01, 0x0a, 0xcb, 0xeb, 0x03, 0x2c, 0x2a,
-        0xa9, 0x7a, 0x77, 0xf8, 0xa8, 0x7a, 0x68, 0xf8,
-        0x2a, 0x19, 0x40, 0xf9, 0x1f, 0x01, 0x00, 0xf1,
-        0xa8, 0xce, 0x2b, 0x8b, 0x8b, 0x05, 0x8c, 0x1a,
-        0x4e, 0xc1, 0x40, 0x39, 0xea, 0x00, 0x80, 0x92,
-        0x6b, 0x01, 0x0d, 0x4b, 0x4a, 0x11, 0x9f, 0x9a,
-        0xce, 0x00, 0x00, 0x37, 0x22, 0x09, 0x40, 0xf9,
-        0x49, 0x00, 0x40, 0xb9, 0x69, 0x00, 0xf8, 0x37,
-        0x29, 0x05, 0x00, 0x11, 0x49, 0x00, 0x00, 0xb9,
-        0x95, 0x22, 0x00, 0xf9, 0x09, 0x00, 0x00, 0x90,
-        0x64, 0x7d, 0x40, 0x93, 0xa1, 0x7a, 0x77, 0xf8,
-        0x29, 0x01, 0x40, 0xf9, 0x03, 0x01, 0x0a, 0x8b,
-        0xe0, 0x03, 0x16, 0xaa, 0xe5, 0x03, 0x13, 0xaa,
-        0xe6, 0x03, 0x14, 0xaa, 0x20, 0x01, 0x3f, 0xd6,
-        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
-        0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0xc0, 0x00, 0x00, 0x54, 0xb5, 0x0e, 0x17, 0x8b,
-        0x80, 0x01, 0x00, 0xb4, 0xa0, 0x86, 0x00, 0xf8,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0x08, 0x00, 0x00, 0x90, 0xf8, 0x03, 0x00, 0xaa,
-        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xe0, 0x03, 0x18, 0xaa,
-        0xb5, 0x0e, 0x17, 0x8b, 0xd8, 0xfe, 0xff, 0xb5,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0x2b, 0x3d, 0x40, 0x92, 0x2d, 0x3d, 0x00, 0x12,
+        0x6e, 0x12, 0x40, 0xb9, 0x08, 0x01, 0x0b, 0xcb,
+        0x97, 0x01, 0x0b, 0xcb, 0xec, 0x03, 0x2d, 0x2a,
+        0xaa, 0x7a, 0x68, 0xf8, 0xa9, 0x7a, 0x77, 0xf8,
+        0x4b, 0x19, 0x40, 0xf9, 0x3f, 0x01, 0x00, 0xf1,
+        0xa9, 0xce, 0x2c, 0x8b, 0xac, 0x05, 0x8d, 0x1a,
+        0x6f, 0xc1, 0x40, 0x39, 0xeb, 0x00, 0x80, 0x92,
+        0x8c, 0x01, 0x0e, 0x4b, 0x6b, 0x11, 0x9f, 0x9a,
+        0xcf, 0x00, 0x00, 0x37, 0x42, 0x09, 0x40, 0xf9,
+        0x4a, 0x00, 0x40, 0xb9, 0x6a, 0x00, 0xf8, 0x37,
+        0x4a, 0x05, 0x00, 0x11, 0x4a, 0x00, 0x00, 0xb9,
+        0x95, 0x22, 0x00, 0xf9, 0x84, 0x7d, 0x40, 0x93,
+        0x23, 0x01, 0x0b, 0x8b, 0xa1, 0x7a, 0x68, 0xf8,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x16, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0xe5, 0x03, 0x13, 0xaa,
+        0xe6, 0x03, 0x14, 0xaa, 0x00, 0x01, 0x3f, 0xd6,
+        0x88, 0x22, 0x40, 0xf9, 0x08, 0x21, 0x00, 0xd1,
+        0x88, 0x22, 0x00, 0xf9, 0x68, 0x02, 0x40, 0xb9,
+        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x68, 0x02, 0x00, 0xb9, 0x00, 0x01, 0x00, 0x54,
+        0x88, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0x15, 0x0d, 0x17, 0x8b, 0xc0, 0x01, 0x00, 0xb4,
+        0xa0, 0x86, 0x00, 0xf8, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
+        0xf5, 0x03, 0x00, 0xaa, 0xe0, 0x03, 0x13, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xe0, 0x03, 0x15, 0xaa, 0x88, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x15, 0x0d, 0x17, 0x8b,
+        0x80, 0xfe, 0xff, 0xb5, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
     // 8: &_PyEvalFramePushAndInit+0x0
@@ -19867,12 +19323,12 @@ emit__PY_FRAME_KW(
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_21rx(code + 0x4, (uintptr_t)data);
     patch_aarch64_12x(code + 0x10, (uintptr_t)data);
-    patch_aarch64_21rx(code + 0x7c, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x88, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0xcc, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0xd0, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0xdc, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0xf4, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0x88, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x90, (uintptr_t)data + 0x8);
+    patch_aarch64_26r(code + 0xd8, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0xdc, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0xe8, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x108, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -20561,24 +20017,25 @@ emit__SET_ADD(
     // 44: 37f80088      tbnz    w8, #0x1f, 0x54 <_JIT_ENTRY+0x54>
     // 48: 71000508      subs    w8, w8, #0x1
     // 4c: b9000268      str     w8, [x19]
-    // 50: 54000080      b.eq    0x60 <_JIT_ENTRY+0x60>
-    // 54: 34000120      cbz     w0, 0x78 <_JIT_ENTRY+0x78>
-    // 58: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 5c: 14000000      b       0x5c <_JIT_ENTRY+0x5c>
-    // 000000000000005c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 60: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000060:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 64: 2a0003f7      mov     w23, w0
-    // 68: aa1303e0      mov     x0, x19
-    // 6c: f9400108      ldr     x8, [x8]
-    // 000000000000006c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 70: d63f0100      blr     x8
-    // 74: 35ffff37      cbnz    w23, 0x58 <_JIT_ENTRY+0x58>
+    // 50: 540000a0      b.eq    0x64 <_JIT_ENTRY+0x64>
+    // 54: d10022b5      sub     x21, x21, #0x8
+    // 58: 34000140      cbz     w0, 0x80 <_JIT_ENTRY+0x80>
+    // 5c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 60: 14000000      b       0x60 <_JIT_ENTRY+0x60>
+    // 0000000000000060:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 64: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000064:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 68: 2a0003f7      mov     w23, w0
+    // 6c: aa1303e0      mov     x0, x19
+    // 70: f9400108      ldr     x8, [x8]
+    // 0000000000000070:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 74: d63f0100      blr     x8
     // 78: d10022b5      sub     x21, x21, #0x8
-    // 7c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 80: 14000000      b       0x80 <_JIT_ENTRY+0x80>
-    // 0000000000000080:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[128] = {
+    // 7c: 35ffff17      cbnz    w23, 0x5c <_JIT_ENTRY+0x5c>
+    // 80: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 84: 14000000      b       0x84 <_JIT_ENTRY+0x84>
+    // 0000000000000084:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[136] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
         0xb3, 0x82, 0x5f, 0xf8, 0xe8, 0x03, 0x28, 0x2a,
@@ -20589,12 +20046,13 @@ emit__SET_ADD(
         0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
         0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0x80, 0x00, 0x00, 0x54, 0x20, 0x01, 0x00, 0x34,
+        0xa0, 0x00, 0x00, 0x54, 0xb5, 0x22, 0x00, 0xd1,
+        0x40, 0x01, 0x00, 0x34, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
+        0xf7, 0x03, 0x00, 0x2a, 0xe0, 0x03, 0x13, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xb5, 0x22, 0x00, 0xd1, 0x17, 0xff, 0xff, 0x35,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0x08, 0x00, 0x00, 0x90, 0xf7, 0x03, 0x00, 0x2a,
-        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x37, 0xff, 0xff, 0x35,
-        0xb5, 0x22, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
     };
     // 0: OPARG
     // 8: &PySet_Add+0x0
@@ -20612,9 +20070,10 @@ emit__SET_ADD(
     patch_aarch64_21rx(code + 0x4, (uintptr_t)data);
     patch_aarch64_12x(code + 0xc, (uintptr_t)data);
     patch_aarch64_33rx(code + 0x2c, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x5c, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_21rx(code + 0x60, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x6c, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x60, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0x64, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x70, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x84, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -20736,8 +20195,8 @@ emit__SET_UPDATE(
     // 48: 71000508      subs    w8, w8, #0x1
     // 4c: b9000268      str     w8, [x19]
     // 50: 540000a0      b.eq    0x64 <_JIT_ENTRY+0x64>
-    // 54: 37f80140      tbnz    w0, #0x1f, 0x7c <_JIT_ENTRY+0x7c>
-    // 58: d10022b5      sub     x21, x21, #0x8
+    // 54: d10022b5      sub     x21, x21, #0x8
+    // 58: 37f80140      tbnz    w0, #0x1f, 0x80 <_JIT_ENTRY+0x80>
     // 5c: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 60: 14000000      b       0x60 <_JIT_ENTRY+0x60>
     // 0000000000000060:  R_AARCH64_JUMP26     _JIT_CONTINUE
@@ -20748,11 +20207,11 @@ emit__SET_UPDATE(
     // 70: f9400108      ldr     x8, [x8]
     // 0000000000000070:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 74: d63f0100      blr     x8
-    // 78: 36ffff17      tbz     w23, #0x1f, 0x58 <_JIT_ENTRY+0x58>
-    // 7c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 80: 14000000      b       0x80 <_JIT_ENTRY+0x80>
-    // 0000000000000080:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 84: 00 00 00 00
+    // 78: d10022b5      sub     x21, x21, #0x8
+    // 7c: 36ffff17      tbz     w23, #0x1f, 0x5c <_JIT_ENTRY+0x5c>
+    // 80: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 84: 14000000      b       0x84 <_JIT_ENTRY+0x84>
+    // 0000000000000084:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
     const unsigned char code_body[136] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
@@ -20764,13 +20223,13 @@ emit__SET_UPDATE(
         0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
         0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0xa0, 0x00, 0x00, 0x54, 0x40, 0x01, 0xf8, 0x37,
-        0xb5, 0x22, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
+        0xa0, 0x00, 0x00, 0x54, 0xb5, 0x22, 0x00, 0xd1,
+        0x40, 0x01, 0xf8, 0x37, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
         0xf7, 0x03, 0x00, 0x2a, 0xe0, 0x03, 0x13, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x17, 0xff, 0xff, 0x36, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
+        0xb5, 0x22, 0x00, 0xd1, 0x17, 0xff, 0xff, 0x36,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPARG
     // 8: &_PySet_Update+0x0
@@ -20791,7 +20250,7 @@ emit__SET_UPDATE(
     patch_aarch64_26r(code + 0x60, (uintptr_t)code + sizeof(code_body));
     patch_aarch64_21rx(code + 0x64, (uintptr_t)data + 0x10);
     patch_aarch64_12x(code + 0x70, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x80, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0x84, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -20805,42 +20264,42 @@ emit__START_EXECUTOR(
     // Disassembly of section .text:
     //
     // 0000000000000000 <_JIT_ENTRY>:
-    // 0: f9408ac0      ldr     x0, [x22, #0x110]
-    // 4: f9002295      str     x21, [x20, #0x40]
-    // 8: b9400008      ldr     w8, [x0]
-    // c: 37f80088      tbnz    w8, #0x1f, 0x1c <_JIT_ENTRY+0x1c>
-    // 10: 71000508      subs    w8, w8, #0x1
-    // 14: b9000008      str     w8, [x0]
-    // 18: 540000a0      b.eq    0x2c <_JIT_ENTRY+0x2c>
-    // 1c: f9402295      ldr     x21, [x20, #0x40]
-    // 20: f900229f      str     xzr, [x20, #0x40]
-    // 24: f9008adf      str     xzr, [x22, #0x110]
-    // 28: 14000000      b       0x28 <_JIT_ENTRY+0x28>
-    // 0000000000000028:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 2c: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 30: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000030:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 34: 910003fd      mov     x29, sp
-    // 38: f9400108      ldr     x8, [x8]
-    // 0000000000000038:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 3c: d63f0100      blr     x8
-    // 40: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 44: f9402295      ldr     x21, [x20, #0x40]
-    // 48: f900229f      str     xzr, [x20, #0x40]
-    // 4c: f9008adf      str     xzr, [x22, #0x110]
+    // 0: f9002295      str     x21, [x20, #0x40]
+    // 4: f9408ac0      ldr     x0, [x22, #0x110]
+    // 8: b40000e0      cbz     x0, 0x24 <_JIT_ENTRY+0x24>
+    // c: f9008adf      str     xzr, [x22, #0x110]
+    // 10: b9400008      ldr     w8, [x0]
+    // 14: 37f80088      tbnz    w8, #0x1f, 0x24 <_JIT_ENTRY+0x24>
+    // 18: 71000508      subs    w8, w8, #0x1
+    // 1c: b9000008      str     w8, [x0]
+    // 20: 54000080      b.eq    0x30 <_JIT_ENTRY+0x30>
+    // 24: f9402295      ldr     x21, [x20, #0x40]
+    // 28: f900229f      str     xzr, [x20, #0x40]
+    // 2c: 14000000      b       0x2c <_JIT_ENTRY+0x2c>
+    // 000000000000002c:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 30: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 34: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000034:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 38: 910003fd      mov     x29, sp
+    // 3c: f9400108      ldr     x8, [x8]
+    // 000000000000003c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 40: d63f0100      blr     x8
+    // 44: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 48: f9402295      ldr     x21, [x20, #0x40]
+    // 4c: f900229f      str     xzr, [x20, #0x40]
     // 50: 14000000      b       0x50 <_JIT_ENTRY+0x50>
     // 0000000000000050:  R_AARCH64_JUMP26     _JIT_CONTINUE
     const unsigned char code_body[80] = {
-        0xc0, 0x8a, 0x40, 0xf9, 0x95, 0x22, 0x00, 0xf9,
+        0x95, 0x22, 0x00, 0xf9, 0xc0, 0x8a, 0x40, 0xf9,
+        0xe0, 0x00, 0x00, 0xb4, 0xdf, 0x8a, 0x00, 0xf9,
         0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0xa0, 0x00, 0x00, 0x54, 0x95, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xdf, 0x8a, 0x00, 0xf9,
-        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
-        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x95, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xdf, 0x8a, 0x00, 0xf9,
+        0x80, 0x00, 0x00, 0x54, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
+        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
+        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
     };
     // 0: &_Py_Dealloc+0x0
     const unsigned char data_body[8] = {
@@ -20849,9 +20308,9 @@ emit__START_EXECUTOR(
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x0, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_26r(code + 0x28, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x30, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x38, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x2c, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x34, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x3c, (uintptr_t)data);
 }
 
 void
@@ -20873,7 +20332,7 @@ emit__STORE_ATTR(
     // 10: f9401108      ldr     x8, [x8, #0x20]
     // 14: f9400129      ldr     x9, [x9]
     // 0000000000000014:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
-    // 18: a97f4eb8      ldp     x24, x19, [x21, #-0x10]
+    // 18: a97f4eb7      ldp     x23, x19, [x21, #-0x10]
     // 1c: 8b292d08      add     x8, x8, w9, uxth #3
     // 20: f9400d01      ldr     x1, [x8, #0x18]
     // 24: f9002295      str     x21, [x20, #0x40]
@@ -20882,19 +20341,19 @@ emit__STORE_ATTR(
     // 2c: f9400108      ldr     x8, [x8]
     // 000000000000002c:  R_AARCH64_LD64_GOT_LO12_NC   PyObject_SetAttr
     // 30: aa1303e0      mov     x0, x19
-    // 34: aa1803e2      mov     x2, x24
+    // 34: aa1703e2      mov     x2, x23
     // 38: d63f0100      blr     x8
     // 3c: f9402295      ldr     x21, [x20, #0x40]
     // 40: f900229f      str     xzr, [x20, #0x40]
-    // 44: 2a0003f7      mov     w23, w0
-    // 48: b9400308      ldr     w8, [x24]
+    // 44: 2a0003f8      mov     w24, w0
+    // 48: b94002e8      ldr     w8, [x23]
     // 4c: 37f80108      tbnz    w8, #0x1f, 0x6c <_JIT_ENTRY+0x6c>
     // 50: 71000508      subs    w8, w8, #0x1
-    // 54: b9000308      str     w8, [x24]
+    // 54: b90002e8      str     w8, [x23]
     // 58: 540000a1      b.ne    0x6c <_JIT_ENTRY+0x6c>
     // 5c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 000000000000005c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 60: aa1803e0      mov     x0, x24
+    // 60: aa1703e0      mov     x0, x23
     // 64: f9400108      ldr     x8, [x8]
     // 0000000000000064:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 68: d63f0100      blr     x8
@@ -20902,44 +20361,46 @@ emit__STORE_ATTR(
     // 70: 37f80088      tbnz    w8, #0x1f, 0x80 <_JIT_ENTRY+0x80>
     // 74: 71000508      subs    w8, w8, #0x1
     // 78: b9000268      str     w8, [x19]
-    // 7c: 54000080      b.eq    0x8c <_JIT_ENTRY+0x8c>
-    // 80: 34000117      cbz     w23, 0xa0 <_JIT_ENTRY+0xa0>
-    // 84: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 88: 14000000      b       0x88 <_JIT_ENTRY+0x88>
-    // 0000000000000088:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 8c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000008c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 90: aa1303e0      mov     x0, x19
-    // 94: f9400108      ldr     x8, [x8]
-    // 0000000000000094:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 98: d63f0100      blr     x8
-    // 9c: 35ffff57      cbnz    w23, 0x84 <_JIT_ENTRY+0x84>
+    // 7c: 540000a0      b.eq    0x90 <_JIT_ENTRY+0x90>
+    // 80: d10042b5      sub     x21, x21, #0x10
+    // 84: 34000138      cbz     w24, 0xa8 <_JIT_ENTRY+0xa8>
+    // 88: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 8c: 14000000      b       0x8c <_JIT_ENTRY+0x8c>
+    // 000000000000008c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 90: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000090:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 94: aa1303e0      mov     x0, x19
+    // 98: f9400108      ldr     x8, [x8]
+    // 0000000000000098:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 9c: d63f0100      blr     x8
     // a0: d10042b5      sub     x21, x21, #0x10
-    // a4: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // a8: 14000000      b       0xa8 <_JIT_ENTRY+0xa8>
-    // 00000000000000a8:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[168] = {
+    // a4: 35ffff38      cbnz    w24, 0x88 <_JIT_ENTRY+0x88>
+    // a8: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // ac: 14000000      b       0xac <_JIT_ENTRY+0xac>
+    // 00000000000000ac:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[176] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x88, 0x02, 0x40, 0xf9,
         0x09, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
         0x08, 0x11, 0x40, 0xf9, 0x29, 0x01, 0x40, 0xf9,
-        0xb8, 0x4e, 0x7f, 0xa9, 0x08, 0x2d, 0x29, 0x8b,
+        0xb7, 0x4e, 0x7f, 0xa9, 0x08, 0x2d, 0x29, 0x8b,
         0x01, 0x0d, 0x40, 0xf9, 0x95, 0x22, 0x00, 0xf9,
         0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0xe0, 0x03, 0x13, 0xaa, 0xe2, 0x03, 0x18, 0xaa,
+        0xe0, 0x03, 0x13, 0xaa, 0xe2, 0x03, 0x17, 0xaa,
         0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xf7, 0x03, 0x00, 0x2a,
-        0x08, 0x03, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
+        0x9f, 0x22, 0x00, 0xf9, 0xf8, 0x03, 0x00, 0x2a,
+        0xe8, 0x02, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0xe8, 0x02, 0x00, 0xb9,
         0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
         0x00, 0x01, 0x3f, 0xd6, 0x68, 0x02, 0x40, 0xb9,
         0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x68, 0x02, 0x00, 0xb9, 0x80, 0x00, 0x00, 0x54,
-        0x17, 0x01, 0x00, 0x34, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x57, 0xff, 0xff, 0x35,
-        0xb5, 0x42, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x68, 0x02, 0x00, 0xb9, 0xa0, 0x00, 0x00, 0x54,
+        0xb5, 0x42, 0x00, 0xd1, 0x38, 0x01, 0x00, 0x34,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xb5, 0x42, 0x00, 0xd1, 0x38, 0xff, 0xff, 0x35,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPARG
     // 8: &PyObject_SetAttr+0x0
@@ -20959,9 +20420,10 @@ emit__STORE_ATTR(
     patch_aarch64_33rx(code + 0x28, (uintptr_t)data + 0x8);
     patch_aarch64_21rx(code + 0x5c, (uintptr_t)data + 0x10);
     patch_aarch64_12x(code + 0x64, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x88, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_21rx(code + 0x8c, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x94, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x8c, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0x90, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x98, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0xac, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -20997,18 +20459,18 @@ emit__STORE_ATTR_INSTANCE_VALUE(
     // 44: 3900052b      strb    w11, [x9, #0x1]
     // 48: 382c6948      strb    w8, [x10, x12]
     // 4c: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 50: b9400008      ldr     w8, [x0]
+    // 50: f9002295      str     x21, [x20, #0x40]
     // 54: 910003fd      mov     x29, sp
-    // 58: 37f800e8      tbnz    w8, #0x1f, 0x74 <_JIT_ENTRY+0x74>
-    // 5c: 71000508      subs    w8, w8, #0x1
-    // 60: b9000008      str     w8, [x0]
-    // 64: 54000081      b.ne    0x74 <_JIT_ENTRY+0x74>
-    // 68: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000068:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 6c: f9400108      ldr     x8, [x8]
-    // 000000000000006c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 70: d63f0100      blr     x8
-    // 74: f9002295      str     x21, [x20, #0x40]
+    // 58: b9400008      ldr     w8, [x0]
+    // 5c: 37f800e8      tbnz    w8, #0x1f, 0x78 <_JIT_ENTRY+0x78>
+    // 60: 71000508      subs    w8, w8, #0x1
+    // 64: b9000008      str     w8, [x0]
+    // 68: 54000081      b.ne    0x78 <_JIT_ENTRY+0x78>
+    // 6c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 000000000000006c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 70: f9400108      ldr     x8, [x8]
+    // 0000000000000070:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 74: d63f0100      blr     x8
     // 78: b40000d3      cbz     x19, 0x90 <_JIT_ENTRY+0x90>
     // 7c: b9400268      ldr     w8, [x19]
     // 80: 37f80088      tbnz    w8, #0x1f, 0x90 <_JIT_ENTRY+0x90>
@@ -21042,11 +20504,11 @@ emit__STORE_ATTR_INSTANCE_VALUE(
         0x6a, 0x0d, 0x0a, 0x8b, 0x08, 0x7d, 0x03, 0x53,
         0x8b, 0x05, 0x00, 0x11, 0x2b, 0x05, 0x00, 0x39,
         0x48, 0x69, 0x2c, 0x38, 0xfd, 0x7b, 0xbf, 0xa9,
-        0x08, 0x00, 0x40, 0xb9, 0xfd, 0x03, 0x00, 0x91,
-        0xe8, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x08, 0x00, 0x00, 0xb9, 0x81, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x00, 0xf9,
+        0x95, 0x22, 0x00, 0xf9, 0xfd, 0x03, 0x00, 0x91,
+        0x08, 0x00, 0x40, 0xb9, 0xe8, 0x00, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
+        0x81, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
         0xd3, 0x00, 0x00, 0xb4, 0x68, 0x02, 0x40, 0xb9,
         0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
         0x68, 0x02, 0x00, 0xb9, 0xa0, 0x00, 0x00, 0x54,
@@ -21068,7 +20530,7 @@ emit__STORE_ATTR_INSTANCE_VALUE(
     patch_64(data + 0x8, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_33rx(code + 0x4, (uintptr_t)data);
-    patch_aarch64_33rx(code + 0x68, (uintptr_t)data + 0x8);
+    patch_aarch64_33rx(code + 0x6c, (uintptr_t)data + 0x8);
     patch_aarch64_26r(code + 0x9c, (uintptr_t)code + sizeof(code_body));
     patch_aarch64_21rx(code + 0xa0, (uintptr_t)data + 0x8);
     patch_aarch64_12x(code + 0xa8, (uintptr_t)data + 0x8);
@@ -21096,17 +20558,17 @@ emit__STORE_ATTR_SLOT(
     // 14: 92403d08      and     x8, x8, #0xffff
     // 18: f8686813      ldr     x19, [x0, x8]
     // 1c: f8286809      str     x9, [x0, x8]
-    // 20: b9400008      ldr     w8, [x0]
-    // 24: 37f800e8      tbnz    w8, #0x1f, 0x40 <_JIT_ENTRY+0x40>
-    // 28: 71000508      subs    w8, w8, #0x1
-    // 2c: b9000008      str     w8, [x0]
-    // 30: 54000081      b.ne    0x40 <_JIT_ENTRY+0x40>
-    // 34: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000034:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 38: f9400108      ldr     x8, [x8]
-    // 0000000000000038:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 3c: d63f0100      blr     x8
-    // 40: f9002295      str     x21, [x20, #0x40]
+    // 20: f9002295      str     x21, [x20, #0x40]
+    // 24: b9400008      ldr     w8, [x0]
+    // 28: 37f800e8      tbnz    w8, #0x1f, 0x44 <_JIT_ENTRY+0x44>
+    // 2c: 71000508      subs    w8, w8, #0x1
+    // 30: b9000008      str     w8, [x0]
+    // 34: 54000081      b.ne    0x44 <_JIT_ENTRY+0x44>
+    // 38: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000038:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 3c: f9400108      ldr     x8, [x8]
+    // 000000000000003c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 40: d63f0100      blr     x8
     // 44: b40000d3      cbz     x19, 0x5c <_JIT_ENTRY+0x5c>
     // 48: b9400268      ldr     w8, [x19]
     // 4c: 37f80088      tbnz    w8, #0x1f, 0x5c <_JIT_ENTRY+0x5c>
@@ -21134,11 +20596,11 @@ emit__STORE_ATTR_SLOT(
         0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
         0xa9, 0x02, 0xff, 0xa9, 0x08, 0x3d, 0x40, 0x92,
         0x13, 0x68, 0x68, 0xf8, 0x09, 0x68, 0x28, 0xf8,
-        0x08, 0x00, 0x40, 0xb9, 0xe8, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x81, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x95, 0x22, 0x00, 0xf9, 0xd3, 0x00, 0x00, 0xb4,
+        0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x40, 0xb9,
+        0xe8, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x08, 0x00, 0x00, 0xb9, 0x81, 0x00, 0x00, 0x54,
+        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0xd3, 0x00, 0x00, 0xb4,
         0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
         0xa0, 0x00, 0x00, 0x54, 0x95, 0x22, 0x40, 0xf9,
@@ -21160,7 +20622,7 @@ emit__STORE_ATTR_SLOT(
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_21rx(code + 0x4, (uintptr_t)data);
     patch_aarch64_12x(code + 0xc, (uintptr_t)data);
-    patch_aarch64_33rx(code + 0x34, (uintptr_t)data + 0x8);
+    patch_aarch64_33rx(code + 0x38, (uintptr_t)data + 0x8);
     patch_aarch64_26r(code + 0x68, (uintptr_t)code + sizeof(code_body));
     patch_aarch64_21rx(code + 0x6c, (uintptr_t)data + 0x8);
     patch_aarch64_12x(code + 0x74, (uintptr_t)data + 0x8);
@@ -21225,37 +20687,36 @@ emit__STORE_ATTR_WITH_HINT(
     // 0000000000000098:  R_AARCH64_LD64_GOT_LO12_NC   _PyDict_SendEvent
     // 9c: d63f0100      blr     x8
     // a0: f9402295      ldr     x21, [x20, #0x40]
-    // a4: f900229f      str     xzr, [x20, #0x40]
+    // a4: d10042a8      sub     x8, x21, #0x10
     // a8: f9000738      str     x24, [x25, #0x8]
-    // ac: b9400268      ldr     w8, [x19]
-    // b0: 37f80108      tbnz    w8, #0x1f, 0xd0 <_JIT_ENTRY+0xd0>
-    // b4: 71000508      subs    w8, w8, #0x1
-    // b8: b9000268      str     w8, [x19]
-    // bc: 540000a1      b.ne    0xd0 <_JIT_ENTRY+0xd0>
-    // c0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000c0:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // c4: aa1303e0      mov     x0, x19
-    // c8: f9400108      ldr     x8, [x8]
-    // 00000000000000c8:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // cc: d63f0100      blr     x8
-    // d0: d10042a8      sub     x8, x21, #0x10
-    // d4: f9002288      str     x8, [x20, #0x40]
-    // d8: b94002e8      ldr     w8, [x23]
-    // dc: 37f80108      tbnz    w8, #0x1f, 0xfc <_JIT_ENTRY+0xfc>
-    // e0: 71000508      subs    w8, w8, #0x1
-    // e4: b90002e8      str     w8, [x23]
-    // e8: 540000a1      b.ne    0xfc <_JIT_ENTRY+0xfc>
-    // ec: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000ec:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // f0: aa1703e0      mov     x0, x23
-    // f4: f9400108      ldr     x8, [x8]
-    // 00000000000000f4:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // f8: d63f0100      blr     x8
-    // fc: f9402295      ldr     x21, [x20, #0x40]
-    // 100: f900229f      str     xzr, [x20, #0x40]
-    // 104: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 108: 14000000      b       0x108 <_JIT_ENTRY+0x108>
-    // 0000000000000108:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // ac: f9002288      str     x8, [x20, #0x40]
+    // b0: b9400268      ldr     w8, [x19]
+    // b4: 37f80108      tbnz    w8, #0x1f, 0xd4 <_JIT_ENTRY+0xd4>
+    // b8: 71000508      subs    w8, w8, #0x1
+    // bc: b9000268      str     w8, [x19]
+    // c0: 540000a1      b.ne    0xd4 <_JIT_ENTRY+0xd4>
+    // c4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000c4:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // c8: aa1303e0      mov     x0, x19
+    // cc: f9400108      ldr     x8, [x8]
+    // 00000000000000cc:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // d0: d63f0100      blr     x8
+    // d4: b94002e8      ldr     w8, [x23]
+    // d8: 37f80108      tbnz    w8, #0x1f, 0xf8 <_JIT_ENTRY+0xf8>
+    // dc: 71000508      subs    w8, w8, #0x1
+    // e0: b90002e8      str     w8, [x23]
+    // e4: 540000a1      b.ne    0xf8 <_JIT_ENTRY+0xf8>
+    // e8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000e8:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // ec: aa1703e0      mov     x0, x23
+    // f0: f9400108      ldr     x8, [x8]
+    // 00000000000000f0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // f4: d63f0100      blr     x8
+    // f8: f9402295      ldr     x21, [x20, #0x40]
+    // fc: f900229f      str     xzr, [x20, #0x40]
+    // 100: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 104: 14000000      b       0x104 <_JIT_ENTRY+0x104>
+    // 0000000000000104:  R_AARCH64_JUMP26     _JIT_CONTINUE
     const unsigned char code_body[264] = {
         0xb3, 0x82, 0x5f, 0xf8, 0x62, 0x82, 0x5e, 0xf8,
         0x02, 0x03, 0x00, 0xb4, 0x48, 0x10, 0x40, 0xf9,
@@ -21277,19 +20738,19 @@ emit__STORE_ATTR_WITH_HINT(
         0xe0, 0x00, 0x00, 0x34, 0x08, 0x00, 0x00, 0x90,
         0x21, 0x00, 0x80, 0x52, 0xe4, 0x03, 0x18, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
-        0x38, 0x07, 0x00, 0xf9, 0x68, 0x02, 0x40, 0xb9,
-        0x08, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x68, 0x02, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xa8, 0x42, 0x00, 0xd1, 0x88, 0x22, 0x00, 0xf9,
-        0xe8, 0x02, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0xe8, 0x02, 0x00, 0xb9,
+        0x95, 0x22, 0x40, 0xf9, 0xa8, 0x42, 0x00, 0xd1,
+        0x38, 0x07, 0x00, 0xf9, 0x88, 0x22, 0x00, 0xf9,
+        0x68, 0x02, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
         0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xfd, 0x7b, 0xc1, 0xa8,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0xe8, 0x02, 0x40, 0xb9,
+        0x08, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0xe8, 0x02, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x17, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPERAND0
     // 8: OPARG
@@ -21313,10 +20774,11 @@ emit__STORE_ATTR_WITH_HINT(
     patch_aarch64_26r(code + 0x68, state->instruction_starts[instruction->jump_target]);
     patch_aarch64_21rx(code + 0x8c, (uintptr_t)data + 0x10);
     patch_aarch64_12x(code + 0x98, (uintptr_t)data + 0x10);
-    patch_aarch64_21rx(code + 0xc0, (uintptr_t)data + 0x18);
-    patch_aarch64_12x(code + 0xc8, (uintptr_t)data + 0x18);
-    patch_aarch64_21rx(code + 0xec, (uintptr_t)data + 0x18);
-    patch_aarch64_12x(code + 0xf4, (uintptr_t)data + 0x18);
+    patch_aarch64_21rx(code + 0xc4, (uintptr_t)data + 0x18);
+    patch_aarch64_12x(code + 0xcc, (uintptr_t)data + 0x18);
+    patch_aarch64_21rx(code + 0xe8, (uintptr_t)data + 0x18);
+    patch_aarch64_12x(code + 0xf0, (uintptr_t)data + 0x18);
+    patch_aarch64_26r(code + 0x104, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -21413,38 +20875,45 @@ emit__STORE_FAST(
     // 4: f9400108      ldr     x8, [x8]
     // 0000000000000004:  R_AARCH64_LD64_GOT_LO12_NC   _JIT_OPARG
     // 8: f85f8ea9      ldr     x9, [x21, #-0x8]!
-    // c: 8b282e88      add     x8, x20, w8, uxth #3
-    // 10: f9402900      ldr     x0, [x8, #0x50]
-    // 14: f9002909      str     x9, [x8, #0x50]
-    // 18: b40000c0      cbz     x0, 0x30 <_JIT_ENTRY+0x30>
-    // 1c: b9400008      ldr     w8, [x0]
-    // 20: 37f80088      tbnz    w8, #0x1f, 0x30 <_JIT_ENTRY+0x30>
-    // 24: 71000508      subs    w8, w8, #0x1
-    // 28: b9000008      str     w8, [x0]
-    // 2c: 54000040      b.eq    0x34 <_JIT_ENTRY+0x34>
-    // 30: 14000000      b       0x30 <_JIT_ENTRY+0x30>
-    // 0000000000000030:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 34: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 38: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000038:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 3c: 910003fd      mov     x29, sp
-    // 40: f9400108      ldr     x8, [x8]
-    // 0000000000000040:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 44: d63f0100      blr     x8
-    // 48: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 4c: 14000000      b       0x4c <_JIT_ENTRY+0x4c>
-    // 000000000000004c:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[80] = {
+    // c: f9002295      str     x21, [x20, #0x40]
+    // 10: 8b282e88      add     x8, x20, w8, uxth #3
+    // 14: f9402900      ldr     x0, [x8, #0x50]
+    // 18: f9002909      str     x9, [x8, #0x50]
+    // 1c: b40000c0      cbz     x0, 0x34 <_JIT_ENTRY+0x34>
+    // 20: b9400008      ldr     w8, [x0]
+    // 24: 37f80088      tbnz    w8, #0x1f, 0x34 <_JIT_ENTRY+0x34>
+    // 28: 71000508      subs    w8, w8, #0x1
+    // 2c: b9000008      str     w8, [x0]
+    // 30: 54000080      b.eq    0x40 <_JIT_ENTRY+0x40>
+    // 34: f9402295      ldr     x21, [x20, #0x40]
+    // 38: f900229f      str     xzr, [x20, #0x40]
+    // 3c: 14000000      b       0x3c <_JIT_ENTRY+0x3c>
+    // 000000000000003c:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 40: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 44: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000044:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 48: 910003fd      mov     x29, sp
+    // 4c: f9400108      ldr     x8, [x8]
+    // 000000000000004c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 50: d63f0100      blr     x8
+    // 54: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 58: f9402295      ldr     x21, [x20, #0x40]
+    // 5c: f900229f      str     xzr, [x20, #0x40]
+    // 60: 14000000      b       0x60 <_JIT_ENTRY+0x60>
+    // 0000000000000060:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[96] = {
         0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
-        0xa9, 0x8e, 0x5f, 0xf8, 0x88, 0x2e, 0x28, 0x8b,
-        0x00, 0x29, 0x40, 0xf9, 0x09, 0x29, 0x00, 0xf9,
-        0xc0, 0x00, 0x00, 0xb4, 0x08, 0x00, 0x40, 0xb9,
-        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x08, 0x00, 0x00, 0xb9, 0x40, 0x00, 0x00, 0x54,
-        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
-        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0xa9, 0x8e, 0x5f, 0xf8, 0x95, 0x22, 0x00, 0xf9,
+        0x88, 0x2e, 0x28, 0x8b, 0x00, 0x29, 0x40, 0xf9,
+        0x09, 0x29, 0x00, 0xf9, 0xc0, 0x00, 0x00, 0xb4,
+        0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
+        0x80, 0x00, 0x00, 0x54, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
+        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
+        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
     };
     // 0: OPARG
     // 8: &_Py_Dealloc+0x0
@@ -21457,10 +20926,9 @@ emit__STORE_FAST(
     patch_64(data + 0x8, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
     patch_aarch64_33rx(code + 0x0, (uintptr_t)data);
-    patch_aarch64_26r(code + 0x30, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x38, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0x40, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x4c, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x3c, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x44, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0x4c, (uintptr_t)data + 0x8);
 }
 
 void
@@ -21476,34 +20944,42 @@ emit__STORE_FAST_0(
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: f85f8ea8      ldr     x8, [x21, #-0x8]!
     // 4: f9402a80      ldr     x0, [x20, #0x50]
-    // 8: f9002a88      str     x8, [x20, #0x50]
-    // c: b40000c0      cbz     x0, 0x24 <_JIT_ENTRY+0x24>
-    // 10: b9400008      ldr     w8, [x0]
-    // 14: 37f80088      tbnz    w8, #0x1f, 0x24 <_JIT_ENTRY+0x24>
-    // 18: 71000508      subs    w8, w8, #0x1
-    // 1c: b9000008      str     w8, [x0]
-    // 20: 54000040      b.eq    0x28 <_JIT_ENTRY+0x28>
-    // 24: 14000000      b       0x24 <_JIT_ENTRY+0x24>
-    // 0000000000000024:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 28: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 2c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000002c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 30: 910003fd      mov     x29, sp
-    // 34: f9400108      ldr     x8, [x8]
-    // 0000000000000034:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 38: d63f0100      blr     x8
-    // 3c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 40: 14000000      b       0x40 <_JIT_ENTRY+0x40>
-    // 0000000000000040:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[64] = {
+    // 8: f9002295      str     x21, [x20, #0x40]
+    // c: f9002a88      str     x8, [x20, #0x50]
+    // 10: b40000c0      cbz     x0, 0x28 <_JIT_ENTRY+0x28>
+    // 14: b9400008      ldr     w8, [x0]
+    // 18: 37f80088      tbnz    w8, #0x1f, 0x28 <_JIT_ENTRY+0x28>
+    // 1c: 71000508      subs    w8, w8, #0x1
+    // 20: b9000008      str     w8, [x0]
+    // 24: 54000080      b.eq    0x34 <_JIT_ENTRY+0x34>
+    // 28: f9402295      ldr     x21, [x20, #0x40]
+    // 2c: f900229f      str     xzr, [x20, #0x40]
+    // 30: 14000000      b       0x30 <_JIT_ENTRY+0x30>
+    // 0000000000000030:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 34: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 38: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000038:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 3c: 910003fd      mov     x29, sp
+    // 40: f9400108      ldr     x8, [x8]
+    // 0000000000000040:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 44: d63f0100      blr     x8
+    // 48: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 4c: f9402295      ldr     x21, [x20, #0x40]
+    // 50: f900229f      str     xzr, [x20, #0x40]
+    // 54: 14000000      b       0x54 <_JIT_ENTRY+0x54>
+    // 0000000000000054:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[88] = {
         0xa8, 0x8e, 0x5f, 0xf8, 0x80, 0x2a, 0x40, 0xf9,
-        0x88, 0x2a, 0x00, 0xf9, 0xc0, 0x00, 0x00, 0xb4,
-        0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x40, 0x00, 0x00, 0x54, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x95, 0x22, 0x00, 0xf9, 0x88, 0x2a, 0x00, 0xf9,
+        0xc0, 0x00, 0x00, 0xb4, 0x08, 0x00, 0x40, 0xb9,
+        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x08, 0x00, 0x00, 0xb9, 0x80, 0x00, 0x00, 0x54,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
+        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: &_Py_Dealloc+0x0
     const unsigned char data_body[8] = {
@@ -21512,9 +20988,10 @@ emit__STORE_FAST_0(
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x0, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_26r(code + 0x24, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x2c, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x34, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x30, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x38, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x40, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x54, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -21530,34 +21007,42 @@ emit__STORE_FAST_1(
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: f85f8ea8      ldr     x8, [x21, #-0x8]!
     // 4: f9402e80      ldr     x0, [x20, #0x58]
-    // 8: f9002e88      str     x8, [x20, #0x58]
-    // c: b40000c0      cbz     x0, 0x24 <_JIT_ENTRY+0x24>
-    // 10: b9400008      ldr     w8, [x0]
-    // 14: 37f80088      tbnz    w8, #0x1f, 0x24 <_JIT_ENTRY+0x24>
-    // 18: 71000508      subs    w8, w8, #0x1
-    // 1c: b9000008      str     w8, [x0]
-    // 20: 54000040      b.eq    0x28 <_JIT_ENTRY+0x28>
-    // 24: 14000000      b       0x24 <_JIT_ENTRY+0x24>
-    // 0000000000000024:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 28: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 2c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000002c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 30: 910003fd      mov     x29, sp
-    // 34: f9400108      ldr     x8, [x8]
-    // 0000000000000034:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 38: d63f0100      blr     x8
-    // 3c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 40: 14000000      b       0x40 <_JIT_ENTRY+0x40>
-    // 0000000000000040:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[64] = {
+    // 8: f9002295      str     x21, [x20, #0x40]
+    // c: f9002e88      str     x8, [x20, #0x58]
+    // 10: b40000c0      cbz     x0, 0x28 <_JIT_ENTRY+0x28>
+    // 14: b9400008      ldr     w8, [x0]
+    // 18: 37f80088      tbnz    w8, #0x1f, 0x28 <_JIT_ENTRY+0x28>
+    // 1c: 71000508      subs    w8, w8, #0x1
+    // 20: b9000008      str     w8, [x0]
+    // 24: 54000080      b.eq    0x34 <_JIT_ENTRY+0x34>
+    // 28: f9402295      ldr     x21, [x20, #0x40]
+    // 2c: f900229f      str     xzr, [x20, #0x40]
+    // 30: 14000000      b       0x30 <_JIT_ENTRY+0x30>
+    // 0000000000000030:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 34: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 38: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000038:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 3c: 910003fd      mov     x29, sp
+    // 40: f9400108      ldr     x8, [x8]
+    // 0000000000000040:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 44: d63f0100      blr     x8
+    // 48: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 4c: f9402295      ldr     x21, [x20, #0x40]
+    // 50: f900229f      str     xzr, [x20, #0x40]
+    // 54: 14000000      b       0x54 <_JIT_ENTRY+0x54>
+    // 0000000000000054:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[88] = {
         0xa8, 0x8e, 0x5f, 0xf8, 0x80, 0x2e, 0x40, 0xf9,
-        0x88, 0x2e, 0x00, 0xf9, 0xc0, 0x00, 0x00, 0xb4,
-        0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x40, 0x00, 0x00, 0x54, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x95, 0x22, 0x00, 0xf9, 0x88, 0x2e, 0x00, 0xf9,
+        0xc0, 0x00, 0x00, 0xb4, 0x08, 0x00, 0x40, 0xb9,
+        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x08, 0x00, 0x00, 0xb9, 0x80, 0x00, 0x00, 0x54,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
+        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: &_Py_Dealloc+0x0
     const unsigned char data_body[8] = {
@@ -21566,9 +21051,10 @@ emit__STORE_FAST_1(
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x0, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_26r(code + 0x24, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x2c, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x34, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x30, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x38, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x40, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x54, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -21584,34 +21070,42 @@ emit__STORE_FAST_2(
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: f85f8ea8      ldr     x8, [x21, #-0x8]!
     // 4: f9403280      ldr     x0, [x20, #0x60]
-    // 8: f9003288      str     x8, [x20, #0x60]
-    // c: b40000c0      cbz     x0, 0x24 <_JIT_ENTRY+0x24>
-    // 10: b9400008      ldr     w8, [x0]
-    // 14: 37f80088      tbnz    w8, #0x1f, 0x24 <_JIT_ENTRY+0x24>
-    // 18: 71000508      subs    w8, w8, #0x1
-    // 1c: b9000008      str     w8, [x0]
-    // 20: 54000040      b.eq    0x28 <_JIT_ENTRY+0x28>
-    // 24: 14000000      b       0x24 <_JIT_ENTRY+0x24>
-    // 0000000000000024:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 28: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 2c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000002c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 30: 910003fd      mov     x29, sp
-    // 34: f9400108      ldr     x8, [x8]
-    // 0000000000000034:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 38: d63f0100      blr     x8
-    // 3c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 40: 14000000      b       0x40 <_JIT_ENTRY+0x40>
-    // 0000000000000040:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[64] = {
+    // 8: f9002295      str     x21, [x20, #0x40]
+    // c: f9003288      str     x8, [x20, #0x60]
+    // 10: b40000c0      cbz     x0, 0x28 <_JIT_ENTRY+0x28>
+    // 14: b9400008      ldr     w8, [x0]
+    // 18: 37f80088      tbnz    w8, #0x1f, 0x28 <_JIT_ENTRY+0x28>
+    // 1c: 71000508      subs    w8, w8, #0x1
+    // 20: b9000008      str     w8, [x0]
+    // 24: 54000080      b.eq    0x34 <_JIT_ENTRY+0x34>
+    // 28: f9402295      ldr     x21, [x20, #0x40]
+    // 2c: f900229f      str     xzr, [x20, #0x40]
+    // 30: 14000000      b       0x30 <_JIT_ENTRY+0x30>
+    // 0000000000000030:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 34: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 38: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000038:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 3c: 910003fd      mov     x29, sp
+    // 40: f9400108      ldr     x8, [x8]
+    // 0000000000000040:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 44: d63f0100      blr     x8
+    // 48: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 4c: f9402295      ldr     x21, [x20, #0x40]
+    // 50: f900229f      str     xzr, [x20, #0x40]
+    // 54: 14000000      b       0x54 <_JIT_ENTRY+0x54>
+    // 0000000000000054:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[88] = {
         0xa8, 0x8e, 0x5f, 0xf8, 0x80, 0x32, 0x40, 0xf9,
-        0x88, 0x32, 0x00, 0xf9, 0xc0, 0x00, 0x00, 0xb4,
-        0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x40, 0x00, 0x00, 0x54, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x95, 0x22, 0x00, 0xf9, 0x88, 0x32, 0x00, 0xf9,
+        0xc0, 0x00, 0x00, 0xb4, 0x08, 0x00, 0x40, 0xb9,
+        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x08, 0x00, 0x00, 0xb9, 0x80, 0x00, 0x00, 0x54,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
+        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: &_Py_Dealloc+0x0
     const unsigned char data_body[8] = {
@@ -21620,9 +21114,10 @@ emit__STORE_FAST_2(
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x0, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_26r(code + 0x24, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x2c, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x34, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x30, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x38, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x40, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x54, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -21638,34 +21133,42 @@ emit__STORE_FAST_3(
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: f85f8ea8      ldr     x8, [x21, #-0x8]!
     // 4: f9403680      ldr     x0, [x20, #0x68]
-    // 8: f9003688      str     x8, [x20, #0x68]
-    // c: b40000c0      cbz     x0, 0x24 <_JIT_ENTRY+0x24>
-    // 10: b9400008      ldr     w8, [x0]
-    // 14: 37f80088      tbnz    w8, #0x1f, 0x24 <_JIT_ENTRY+0x24>
-    // 18: 71000508      subs    w8, w8, #0x1
-    // 1c: b9000008      str     w8, [x0]
-    // 20: 54000040      b.eq    0x28 <_JIT_ENTRY+0x28>
-    // 24: 14000000      b       0x24 <_JIT_ENTRY+0x24>
-    // 0000000000000024:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 28: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 2c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000002c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 30: 910003fd      mov     x29, sp
-    // 34: f9400108      ldr     x8, [x8]
-    // 0000000000000034:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 38: d63f0100      blr     x8
-    // 3c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 40: 14000000      b       0x40 <_JIT_ENTRY+0x40>
-    // 0000000000000040:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[64] = {
+    // 8: f9002295      str     x21, [x20, #0x40]
+    // c: f9003688      str     x8, [x20, #0x68]
+    // 10: b40000c0      cbz     x0, 0x28 <_JIT_ENTRY+0x28>
+    // 14: b9400008      ldr     w8, [x0]
+    // 18: 37f80088      tbnz    w8, #0x1f, 0x28 <_JIT_ENTRY+0x28>
+    // 1c: 71000508      subs    w8, w8, #0x1
+    // 20: b9000008      str     w8, [x0]
+    // 24: 54000080      b.eq    0x34 <_JIT_ENTRY+0x34>
+    // 28: f9402295      ldr     x21, [x20, #0x40]
+    // 2c: f900229f      str     xzr, [x20, #0x40]
+    // 30: 14000000      b       0x30 <_JIT_ENTRY+0x30>
+    // 0000000000000030:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 34: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 38: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000038:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 3c: 910003fd      mov     x29, sp
+    // 40: f9400108      ldr     x8, [x8]
+    // 0000000000000040:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 44: d63f0100      blr     x8
+    // 48: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 4c: f9402295      ldr     x21, [x20, #0x40]
+    // 50: f900229f      str     xzr, [x20, #0x40]
+    // 54: 14000000      b       0x54 <_JIT_ENTRY+0x54>
+    // 0000000000000054:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[88] = {
         0xa8, 0x8e, 0x5f, 0xf8, 0x80, 0x36, 0x40, 0xf9,
-        0x88, 0x36, 0x00, 0xf9, 0xc0, 0x00, 0x00, 0xb4,
-        0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x40, 0x00, 0x00, 0x54, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x95, 0x22, 0x00, 0xf9, 0x88, 0x36, 0x00, 0xf9,
+        0xc0, 0x00, 0x00, 0xb4, 0x08, 0x00, 0x40, 0xb9,
+        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x08, 0x00, 0x00, 0xb9, 0x80, 0x00, 0x00, 0x54,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
+        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: &_Py_Dealloc+0x0
     const unsigned char data_body[8] = {
@@ -21674,9 +21177,10 @@ emit__STORE_FAST_3(
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x0, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_26r(code + 0x24, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x2c, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x34, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x30, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x38, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x40, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x54, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -21692,34 +21196,42 @@ emit__STORE_FAST_4(
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: f85f8ea8      ldr     x8, [x21, #-0x8]!
     // 4: f9403a80      ldr     x0, [x20, #0x70]
-    // 8: f9003a88      str     x8, [x20, #0x70]
-    // c: b40000c0      cbz     x0, 0x24 <_JIT_ENTRY+0x24>
-    // 10: b9400008      ldr     w8, [x0]
-    // 14: 37f80088      tbnz    w8, #0x1f, 0x24 <_JIT_ENTRY+0x24>
-    // 18: 71000508      subs    w8, w8, #0x1
-    // 1c: b9000008      str     w8, [x0]
-    // 20: 54000040      b.eq    0x28 <_JIT_ENTRY+0x28>
-    // 24: 14000000      b       0x24 <_JIT_ENTRY+0x24>
-    // 0000000000000024:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 28: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 2c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000002c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 30: 910003fd      mov     x29, sp
-    // 34: f9400108      ldr     x8, [x8]
-    // 0000000000000034:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 38: d63f0100      blr     x8
-    // 3c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 40: 14000000      b       0x40 <_JIT_ENTRY+0x40>
-    // 0000000000000040:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[64] = {
+    // 8: f9002295      str     x21, [x20, #0x40]
+    // c: f9003a88      str     x8, [x20, #0x70]
+    // 10: b40000c0      cbz     x0, 0x28 <_JIT_ENTRY+0x28>
+    // 14: b9400008      ldr     w8, [x0]
+    // 18: 37f80088      tbnz    w8, #0x1f, 0x28 <_JIT_ENTRY+0x28>
+    // 1c: 71000508      subs    w8, w8, #0x1
+    // 20: b9000008      str     w8, [x0]
+    // 24: 54000080      b.eq    0x34 <_JIT_ENTRY+0x34>
+    // 28: f9402295      ldr     x21, [x20, #0x40]
+    // 2c: f900229f      str     xzr, [x20, #0x40]
+    // 30: 14000000      b       0x30 <_JIT_ENTRY+0x30>
+    // 0000000000000030:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 34: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 38: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000038:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 3c: 910003fd      mov     x29, sp
+    // 40: f9400108      ldr     x8, [x8]
+    // 0000000000000040:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 44: d63f0100      blr     x8
+    // 48: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 4c: f9402295      ldr     x21, [x20, #0x40]
+    // 50: f900229f      str     xzr, [x20, #0x40]
+    // 54: 14000000      b       0x54 <_JIT_ENTRY+0x54>
+    // 0000000000000054:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[88] = {
         0xa8, 0x8e, 0x5f, 0xf8, 0x80, 0x3a, 0x40, 0xf9,
-        0x88, 0x3a, 0x00, 0xf9, 0xc0, 0x00, 0x00, 0xb4,
-        0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x40, 0x00, 0x00, 0x54, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x95, 0x22, 0x00, 0xf9, 0x88, 0x3a, 0x00, 0xf9,
+        0xc0, 0x00, 0x00, 0xb4, 0x08, 0x00, 0x40, 0xb9,
+        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x08, 0x00, 0x00, 0xb9, 0x80, 0x00, 0x00, 0x54,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
+        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: &_Py_Dealloc+0x0
     const unsigned char data_body[8] = {
@@ -21728,9 +21240,10 @@ emit__STORE_FAST_4(
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x0, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_26r(code + 0x24, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x2c, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x34, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x30, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x38, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x40, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x54, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -21746,34 +21259,42 @@ emit__STORE_FAST_5(
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: f85f8ea8      ldr     x8, [x21, #-0x8]!
     // 4: f9403e80      ldr     x0, [x20, #0x78]
-    // 8: f9003e88      str     x8, [x20, #0x78]
-    // c: b40000c0      cbz     x0, 0x24 <_JIT_ENTRY+0x24>
-    // 10: b9400008      ldr     w8, [x0]
-    // 14: 37f80088      tbnz    w8, #0x1f, 0x24 <_JIT_ENTRY+0x24>
-    // 18: 71000508      subs    w8, w8, #0x1
-    // 1c: b9000008      str     w8, [x0]
-    // 20: 54000040      b.eq    0x28 <_JIT_ENTRY+0x28>
-    // 24: 14000000      b       0x24 <_JIT_ENTRY+0x24>
-    // 0000000000000024:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 28: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 2c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000002c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 30: 910003fd      mov     x29, sp
-    // 34: f9400108      ldr     x8, [x8]
-    // 0000000000000034:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 38: d63f0100      blr     x8
-    // 3c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 40: 14000000      b       0x40 <_JIT_ENTRY+0x40>
-    // 0000000000000040:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[64] = {
+    // 8: f9002295      str     x21, [x20, #0x40]
+    // c: f9003e88      str     x8, [x20, #0x78]
+    // 10: b40000c0      cbz     x0, 0x28 <_JIT_ENTRY+0x28>
+    // 14: b9400008      ldr     w8, [x0]
+    // 18: 37f80088      tbnz    w8, #0x1f, 0x28 <_JIT_ENTRY+0x28>
+    // 1c: 71000508      subs    w8, w8, #0x1
+    // 20: b9000008      str     w8, [x0]
+    // 24: 54000080      b.eq    0x34 <_JIT_ENTRY+0x34>
+    // 28: f9402295      ldr     x21, [x20, #0x40]
+    // 2c: f900229f      str     xzr, [x20, #0x40]
+    // 30: 14000000      b       0x30 <_JIT_ENTRY+0x30>
+    // 0000000000000030:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 34: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 38: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000038:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 3c: 910003fd      mov     x29, sp
+    // 40: f9400108      ldr     x8, [x8]
+    // 0000000000000040:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 44: d63f0100      blr     x8
+    // 48: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 4c: f9402295      ldr     x21, [x20, #0x40]
+    // 50: f900229f      str     xzr, [x20, #0x40]
+    // 54: 14000000      b       0x54 <_JIT_ENTRY+0x54>
+    // 0000000000000054:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[88] = {
         0xa8, 0x8e, 0x5f, 0xf8, 0x80, 0x3e, 0x40, 0xf9,
-        0x88, 0x3e, 0x00, 0xf9, 0xc0, 0x00, 0x00, 0xb4,
-        0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x40, 0x00, 0x00, 0x54, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x95, 0x22, 0x00, 0xf9, 0x88, 0x3e, 0x00, 0xf9,
+        0xc0, 0x00, 0x00, 0xb4, 0x08, 0x00, 0x40, 0xb9,
+        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x08, 0x00, 0x00, 0xb9, 0x80, 0x00, 0x00, 0x54,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
+        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: &_Py_Dealloc+0x0
     const unsigned char data_body[8] = {
@@ -21782,9 +21303,10 @@ emit__STORE_FAST_5(
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x0, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_26r(code + 0x24, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x2c, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x34, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x30, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x38, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x40, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x54, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -21800,34 +21322,42 @@ emit__STORE_FAST_6(
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: f85f8ea8      ldr     x8, [x21, #-0x8]!
     // 4: f9404280      ldr     x0, [x20, #0x80]
-    // 8: f9004288      str     x8, [x20, #0x80]
-    // c: b40000c0      cbz     x0, 0x24 <_JIT_ENTRY+0x24>
-    // 10: b9400008      ldr     w8, [x0]
-    // 14: 37f80088      tbnz    w8, #0x1f, 0x24 <_JIT_ENTRY+0x24>
-    // 18: 71000508      subs    w8, w8, #0x1
-    // 1c: b9000008      str     w8, [x0]
-    // 20: 54000040      b.eq    0x28 <_JIT_ENTRY+0x28>
-    // 24: 14000000      b       0x24 <_JIT_ENTRY+0x24>
-    // 0000000000000024:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 28: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 2c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000002c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 30: 910003fd      mov     x29, sp
-    // 34: f9400108      ldr     x8, [x8]
-    // 0000000000000034:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 38: d63f0100      blr     x8
-    // 3c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 40: 14000000      b       0x40 <_JIT_ENTRY+0x40>
-    // 0000000000000040:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[64] = {
+    // 8: f9002295      str     x21, [x20, #0x40]
+    // c: f9004288      str     x8, [x20, #0x80]
+    // 10: b40000c0      cbz     x0, 0x28 <_JIT_ENTRY+0x28>
+    // 14: b9400008      ldr     w8, [x0]
+    // 18: 37f80088      tbnz    w8, #0x1f, 0x28 <_JIT_ENTRY+0x28>
+    // 1c: 71000508      subs    w8, w8, #0x1
+    // 20: b9000008      str     w8, [x0]
+    // 24: 54000080      b.eq    0x34 <_JIT_ENTRY+0x34>
+    // 28: f9402295      ldr     x21, [x20, #0x40]
+    // 2c: f900229f      str     xzr, [x20, #0x40]
+    // 30: 14000000      b       0x30 <_JIT_ENTRY+0x30>
+    // 0000000000000030:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 34: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 38: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000038:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 3c: 910003fd      mov     x29, sp
+    // 40: f9400108      ldr     x8, [x8]
+    // 0000000000000040:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 44: d63f0100      blr     x8
+    // 48: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 4c: f9402295      ldr     x21, [x20, #0x40]
+    // 50: f900229f      str     xzr, [x20, #0x40]
+    // 54: 14000000      b       0x54 <_JIT_ENTRY+0x54>
+    // 0000000000000054:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[88] = {
         0xa8, 0x8e, 0x5f, 0xf8, 0x80, 0x42, 0x40, 0xf9,
-        0x88, 0x42, 0x00, 0xf9, 0xc0, 0x00, 0x00, 0xb4,
-        0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x40, 0x00, 0x00, 0x54, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x95, 0x22, 0x00, 0xf9, 0x88, 0x42, 0x00, 0xf9,
+        0xc0, 0x00, 0x00, 0xb4, 0x08, 0x00, 0x40, 0xb9,
+        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x08, 0x00, 0x00, 0xb9, 0x80, 0x00, 0x00, 0x54,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
+        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: &_Py_Dealloc+0x0
     const unsigned char data_body[8] = {
@@ -21836,9 +21366,10 @@ emit__STORE_FAST_6(
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x0, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_26r(code + 0x24, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x2c, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x34, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x30, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x38, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x40, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x54, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -21854,34 +21385,42 @@ emit__STORE_FAST_7(
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: f85f8ea8      ldr     x8, [x21, #-0x8]!
     // 4: f9404680      ldr     x0, [x20, #0x88]
-    // 8: f9004688      str     x8, [x20, #0x88]
-    // c: b40000c0      cbz     x0, 0x24 <_JIT_ENTRY+0x24>
-    // 10: b9400008      ldr     w8, [x0]
-    // 14: 37f80088      tbnz    w8, #0x1f, 0x24 <_JIT_ENTRY+0x24>
-    // 18: 71000508      subs    w8, w8, #0x1
-    // 1c: b9000008      str     w8, [x0]
-    // 20: 54000040      b.eq    0x28 <_JIT_ENTRY+0x28>
-    // 24: 14000000      b       0x24 <_JIT_ENTRY+0x24>
-    // 0000000000000024:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // 28: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 2c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000002c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 30: 910003fd      mov     x29, sp
-    // 34: f9400108      ldr     x8, [x8]
-    // 0000000000000034:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 38: d63f0100      blr     x8
-    // 3c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 40: 14000000      b       0x40 <_JIT_ENTRY+0x40>
-    // 0000000000000040:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[64] = {
+    // 8: f9002295      str     x21, [x20, #0x40]
+    // c: f9004688      str     x8, [x20, #0x88]
+    // 10: b40000c0      cbz     x0, 0x28 <_JIT_ENTRY+0x28>
+    // 14: b9400008      ldr     w8, [x0]
+    // 18: 37f80088      tbnz    w8, #0x1f, 0x28 <_JIT_ENTRY+0x28>
+    // 1c: 71000508      subs    w8, w8, #0x1
+    // 20: b9000008      str     w8, [x0]
+    // 24: 54000080      b.eq    0x34 <_JIT_ENTRY+0x34>
+    // 28: f9402295      ldr     x21, [x20, #0x40]
+    // 2c: f900229f      str     xzr, [x20, #0x40]
+    // 30: 14000000      b       0x30 <_JIT_ENTRY+0x30>
+    // 0000000000000030:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 34: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 38: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000038:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 3c: 910003fd      mov     x29, sp
+    // 40: f9400108      ldr     x8, [x8]
+    // 0000000000000040:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 44: d63f0100      blr     x8
+    // 48: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 4c: f9402295      ldr     x21, [x20, #0x40]
+    // 50: f900229f      str     xzr, [x20, #0x40]
+    // 54: 14000000      b       0x54 <_JIT_ENTRY+0x54>
+    // 0000000000000054:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[88] = {
         0xa8, 0x8e, 0x5f, 0xf8, 0x80, 0x46, 0x40, 0xf9,
-        0x88, 0x46, 0x00, 0xf9, 0xc0, 0x00, 0x00, 0xb4,
-        0x08, 0x00, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x00, 0x00, 0xb9,
-        0x40, 0x00, 0x00, 0x54, 0x00, 0x00, 0x00, 0x14,
-        0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
-        0xfd, 0x03, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x95, 0x22, 0x00, 0xf9, 0x88, 0x46, 0x00, 0xf9,
+        0xc0, 0x00, 0x00, 0xb4, 0x08, 0x00, 0x40, 0xb9,
+        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x08, 0x00, 0x00, 0xb9, 0x80, 0x00, 0x00, 0x54,
+        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
+        0x00, 0x00, 0x00, 0x14, 0xfd, 0x7b, 0xbf, 0xa9,
+        0x08, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: &_Py_Dealloc+0x0
     const unsigned char data_body[8] = {
@@ -21890,9 +21429,10 @@ emit__STORE_FAST_7(
     memcpy(data, data_body, sizeof(data_body));
     patch_64(data + 0x0, (uintptr_t)&_Py_Dealloc);
     memcpy(code, code_body, sizeof(code_body));
-    patch_aarch64_26r(code + 0x24, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0x2c, (uintptr_t)data);
-    patch_aarch64_12x(code + 0x34, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x30, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x38, (uintptr_t)data);
+    patch_aarch64_12x(code + 0x40, (uintptr_t)data);
+    patch_aarch64_26r(code + 0x54, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -21931,23 +21471,24 @@ emit__STORE_GLOBAL(
     // 48: 37f80088      tbnz    w8, #0x1f, 0x58 <_JIT_ENTRY+0x58>
     // 4c: 71000508      subs    w8, w8, #0x1
     // 50: b9000268      str     w8, [x19]
-    // 54: 54000080      b.eq    0x64 <_JIT_ENTRY+0x64>
-    // 58: 34000120      cbz     w0, 0x7c <_JIT_ENTRY+0x7c>
-    // 5c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 60: 14000000      b       0x60 <_JIT_ENTRY+0x60>
-    // 0000000000000060:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 64: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000064:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 68: 2a0003f7      mov     w23, w0
-    // 6c: aa1303e0      mov     x0, x19
-    // 70: f9400108      ldr     x8, [x8]
-    // 0000000000000070:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 74: d63f0100      blr     x8
-    // 78: 35ffff37      cbnz    w23, 0x5c <_JIT_ENTRY+0x5c>
+    // 54: 540000a0      b.eq    0x68 <_JIT_ENTRY+0x68>
+    // 58: d10022b5      sub     x21, x21, #0x8
+    // 5c: 34000140      cbz     w0, 0x84 <_JIT_ENTRY+0x84>
+    // 60: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 64: 14000000      b       0x64 <_JIT_ENTRY+0x64>
+    // 0000000000000064:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 68: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000068:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 6c: 2a0003f7      mov     w23, w0
+    // 70: aa1303e0      mov     x0, x19
+    // 74: f9400108      ldr     x8, [x8]
+    // 0000000000000074:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 78: d63f0100      blr     x8
     // 7c: d10022b5      sub     x21, x21, #0x8
-    // 80: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 84: 14000000      b       0x84 <_JIT_ENTRY+0x84>
-    // 0000000000000084:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 80: 35ffff17      cbnz    w23, 0x60 <_JIT_ENTRY+0x60>
+    // 84: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 88: 14000000      b       0x88 <_JIT_ENTRY+0x88>
+    // 0000000000000088:  R_AARCH64_JUMP26     _JIT_CONTINUE
     const unsigned char code_body[136] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x88, 0x02, 0x40, 0xf9,
         0x09, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
@@ -21959,13 +21500,13 @@ emit__STORE_GLOBAL(
         0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
         0x9f, 0x22, 0x00, 0xf9, 0x68, 0x02, 0x40, 0xb9,
         0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x68, 0x02, 0x00, 0xb9, 0x80, 0x00, 0x00, 0x54,
-        0x20, 0x01, 0x00, 0x34, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0xf7, 0x03, 0x00, 0x2a, 0xe0, 0x03, 0x13, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x37, 0xff, 0xff, 0x35, 0xb5, 0x22, 0x00, 0xd1,
+        0x68, 0x02, 0x00, 0xb9, 0xa0, 0x00, 0x00, 0x54,
+        0xb5, 0x22, 0x00, 0xd1, 0x40, 0x01, 0x00, 0x34,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0x08, 0x00, 0x00, 0x90, 0xf7, 0x03, 0x00, 0x2a,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0xb5, 0x22, 0x00, 0xd1,
+        0x17, 0xff, 0xff, 0x35, 0xfd, 0x7b, 0xc1, 0xa8,
     };
     // 0: OPARG
     // 8: &PyDict_SetItem+0x0
@@ -21983,10 +21524,9 @@ emit__STORE_GLOBAL(
     patch_aarch64_21rx(code + 0x8, (uintptr_t)data);
     patch_aarch64_12x(code + 0x14, (uintptr_t)data);
     patch_aarch64_33rx(code + 0x30, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x60, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_21rx(code + 0x64, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x70, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x84, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x64, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0x68, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x74, (uintptr_t)data + 0x10);
 }
 
 void
@@ -22020,12 +21560,12 @@ emit__STORE_NAME(
     // 0000000000000034:  R_AARCH64_LD64_GOT_LO12_NC   PyDict_Type
     // 38: f9002295      str     x21, [x20, #0x40]
     // 3c: eb09011f      cmp     x8, x9
-    // 40: 540002e0      b.eq    0x9c <_JIT_ENTRY+0x9c>
+    // 40: 54000300      b.eq    0xa0 <_JIT_ENTRY+0xa0>
     // 44: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000044:  R_AARCH64_ADR_GOT_PAGE       PyObject_SetItem
     // 48: f9400108      ldr     x8, [x8]
     // 0000000000000048:  R_AARCH64_LD64_GOT_LO12_NC   PyObject_SetItem
-    // 4c: 14000016      b       0xa4 <_JIT_ENTRY+0xa4>
+    // 4c: 14000017      b       0xa8 <_JIT_ENTRY+0xa8>
     // 50: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000050:  R_AARCH64_ADR_GOT_PAGE       PyExc_SystemError
     // 54: 90000002      adrp    x2, 0x0 <_JIT_ENTRY>
@@ -22048,51 +21588,53 @@ emit__STORE_NAME(
     // 84: 37f80088      tbnz    w8, #0x1f, 0x94 <_JIT_ENTRY+0x94>
     // 88: 71000508      subs    w8, w8, #0x1
     // 8c: b9000268      str     w8, [x19]
-    // 90: 54000360      b.eq    0xfc <_JIT_ENTRY+0xfc>
-    // 94: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 98: 14000000      b       0x98 <_JIT_ENTRY+0x98>
-    // 0000000000000098:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 9c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000009c:  R_AARCH64_ADR_GOT_PAGE       PyDict_SetItem
-    // a0: f9400108      ldr     x8, [x8]
-    // 00000000000000a0:  R_AARCH64_LD64_GOT_LO12_NC   PyDict_SetItem
-    // a4: aa0303e1      mov     x1, x3
-    // a8: aa1303e2      mov     x2, x19
-    // ac: d63f0100      blr     x8
-    // b0: f9402295      ldr     x21, [x20, #0x40]
-    // b4: f900229f      str     xzr, [x20, #0x40]
-    // b8: b9400268      ldr     w8, [x19]
-    // bc: 37f80088      tbnz    w8, #0x1f, 0xcc <_JIT_ENTRY+0xcc>
-    // c0: 71000508      subs    w8, w8, #0x1
-    // c4: b9000268      str     w8, [x19]
-    // c8: 54000080      b.eq    0xd8 <_JIT_ENTRY+0xd8>
-    // cc: 34000120      cbz     w0, 0xf0 <_JIT_ENTRY+0xf0>
-    // d0: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // d4: 14000000      b       0xd4 <_JIT_ENTRY+0xd4>
-    // 00000000000000d4:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // d8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000d8:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // dc: 2a0003f7      mov     w23, w0
-    // e0: aa1303e0      mov     x0, x19
-    // e4: f9400108      ldr     x8, [x8]
-    // 00000000000000e4:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // e8: d63f0100      blr     x8
-    // ec: 35ffff37      cbnz    w23, 0xd0 <_JIT_ENTRY+0xd0>
-    // f0: d10022b5      sub     x21, x21, #0x8
-    // f4: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // f8: 14000000      b       0xf8 <_JIT_ENTRY+0xf8>
-    // 00000000000000f8:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    // fc: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000fc:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 100: aa1303e0      mov     x0, x19
-    // 104: f9400108      ldr     x8, [x8]
-    // 0000000000000104:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 108: d63f0100      blr     x8
-    // 10c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 110: 14000000      b       0x110 <_JIT_ENTRY+0x110>
-    // 0000000000000110:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 114: 00 00 00 00
-    const unsigned char code_body[280] = {
+    // 90: 540003a0      b.eq    0x104 <_JIT_ENTRY+0x104>
+    // 94: d10022b5      sub     x21, x21, #0x8
+    // 98: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 9c: 14000000      b       0x9c <_JIT_ENTRY+0x9c>
+    // 000000000000009c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // a0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000a0:  R_AARCH64_ADR_GOT_PAGE       PyDict_SetItem
+    // a4: f9400108      ldr     x8, [x8]
+    // 00000000000000a4:  R_AARCH64_LD64_GOT_LO12_NC   PyDict_SetItem
+    // a8: aa0303e1      mov     x1, x3
+    // ac: aa1303e2      mov     x2, x19
+    // b0: d63f0100      blr     x8
+    // b4: f9402295      ldr     x21, [x20, #0x40]
+    // b8: f900229f      str     xzr, [x20, #0x40]
+    // bc: b9400268      ldr     w8, [x19]
+    // c0: 37f80088      tbnz    w8, #0x1f, 0xd0 <_JIT_ENTRY+0xd0>
+    // c4: 71000508      subs    w8, w8, #0x1
+    // c8: b9000268      str     w8, [x19]
+    // cc: 540000a0      b.eq    0xe0 <_JIT_ENTRY+0xe0>
+    // d0: d10022b5      sub     x21, x21, #0x8
+    // d4: 34000140      cbz     w0, 0xfc <_JIT_ENTRY+0xfc>
+    // d8: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // dc: 14000000      b       0xdc <_JIT_ENTRY+0xdc>
+    // 00000000000000dc:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // e0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000e0:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // e4: 2a0003f7      mov     w23, w0
+    // e8: aa1303e0      mov     x0, x19
+    // ec: f9400108      ldr     x8, [x8]
+    // 00000000000000ec:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // f0: d63f0100      blr     x8
+    // f4: d10022b5      sub     x21, x21, #0x8
+    // f8: 35ffff17      cbnz    w23, 0xd8 <_JIT_ENTRY+0xd8>
+    // fc: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 100: 14000000      b       0x100 <_JIT_ENTRY+0x100>
+    // 0000000000000100:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 104: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000104:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 108: aa1303e0      mov     x0, x19
+    // 10c: f9400108      ldr     x8, [x8]
+    // 000000000000010c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 110: d63f0100      blr     x8
+    // 114: d10022b5      sub     x21, x21, #0x8
+    // 118: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 11c: 14000000      b       0x11c <_JIT_ENTRY+0x11c>
+    // 000000000000011c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    const unsigned char code_body[288] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x88, 0x02, 0x40, 0xf9,
         0x09, 0x00, 0x00, 0x90, 0xfd, 0x03, 0x00, 0x91,
         0x08, 0x11, 0x40, 0xf9, 0x29, 0x01, 0x40, 0xf9,
@@ -22101,8 +21643,8 @@ emit__STORE_NAME(
         0x40, 0x01, 0x00, 0xb4, 0x09, 0x00, 0x00, 0x90,
         0x08, 0x04, 0x40, 0xf9, 0x29, 0x01, 0x40, 0xf9,
         0x95, 0x22, 0x00, 0xf9, 0x1f, 0x01, 0x09, 0xeb,
-        0xe0, 0x02, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0x08, 0x01, 0x40, 0xf9, 0x16, 0x00, 0x00, 0x14,
+        0x00, 0x03, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
+        0x08, 0x01, 0x40, 0xf9, 0x17, 0x00, 0x00, 0x14,
         0x08, 0x00, 0x00, 0x90, 0x02, 0x00, 0x00, 0x90,
         0x42, 0x00, 0x00, 0x91, 0x08, 0x01, 0x40, 0xf9,
         0x95, 0x22, 0x00, 0xf9, 0xe0, 0x03, 0x16, 0xaa,
@@ -22111,23 +21653,24 @@ emit__STORE_NAME(
         0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
         0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0x60, 0x03, 0x00, 0x54, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
-        0x08, 0x01, 0x40, 0xf9, 0xe1, 0x03, 0x03, 0xaa,
-        0xe2, 0x03, 0x13, 0xaa, 0x00, 0x01, 0x3f, 0xd6,
-        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
-        0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0x80, 0x00, 0x00, 0x54, 0x20, 0x01, 0x00, 0x34,
+        0xa0, 0x03, 0x00, 0x54, 0xb5, 0x22, 0x00, 0xd1,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0x08, 0x00, 0x00, 0x90, 0x08, 0x01, 0x40, 0xf9,
+        0xe1, 0x03, 0x03, 0xaa, 0xe2, 0x03, 0x13, 0xaa,
+        0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0x68, 0x02, 0x40, 0xb9,
+        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x68, 0x02, 0x00, 0xb9, 0xa0, 0x00, 0x00, 0x54,
+        0xb5, 0x22, 0x00, 0xd1, 0x40, 0x01, 0x00, 0x34,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
         0x08, 0x00, 0x00, 0x90, 0xf7, 0x03, 0x00, 0x2a,
         0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x37, 0xff, 0xff, 0x35,
-        0xb5, 0x22, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x01, 0x3f, 0xd6, 0xb5, 0x22, 0x00, 0xd1,
+        0x17, 0xff, 0xff, 0x35, 0xfd, 0x7b, 0xc1, 0xa8,
         0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
         0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x01, 0x3f, 0xd6, 0xb5, 0x22, 0x00, 0xd1,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: 'no locals found when storing %R\x00'
     // 20: OPARG
@@ -22169,15 +21712,15 @@ emit__STORE_NAME(
     patch_aarch64_12(code + 0x58, (uintptr_t)data);
     patch_aarch64_12x(code + 0x5c, (uintptr_t)data + 0x38);
     patch_aarch64_33rx(code + 0x6c, (uintptr_t)data + 0x40);
-    patch_aarch64_26r(code + 0x98, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_33rx(code + 0x9c, (uintptr_t)data + 0x48);
-    patch_aarch64_26r(code + 0xd4, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_21rx(code + 0xd8, (uintptr_t)data + 0x50);
-    patch_aarch64_12x(code + 0xe4, (uintptr_t)data + 0x50);
-    patch_aarch64_26r(code + 0xf8, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_21rx(code + 0xfc, (uintptr_t)data + 0x50);
-    patch_aarch64_12x(code + 0x104, (uintptr_t)data + 0x50);
-    patch_aarch64_26r(code + 0x110, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0x9c, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_33rx(code + 0xa0, (uintptr_t)data + 0x48);
+    patch_aarch64_26r(code + 0xdc, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0xe0, (uintptr_t)data + 0x50);
+    patch_aarch64_12x(code + 0xec, (uintptr_t)data + 0x50);
+    patch_aarch64_26r(code + 0x100, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_21rx(code + 0x104, (uintptr_t)data + 0x50);
+    patch_aarch64_12x(code + 0x10c, (uintptr_t)data + 0x50);
+    patch_aarch64_26r(code + 0x11c, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -22195,35 +21738,35 @@ emit__STORE_SLICE(
     // 4: a97f06a0      ldp     x0, x1, [x21, #-0x10]
     // 8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       _PyBuildSlice_ConsumeRefs
-    // c: a97e4eb7      ldp     x23, x19, [x21, #-0x20]
+    // c: a97e4eb8      ldp     x24, x19, [x21, #-0x20]
     // 10: 910003fd      mov     x29, sp
     // 14: f9002295      str     x21, [x20, #0x40]
     // 18: f9400108      ldr     x8, [x8]
     // 0000000000000018:  R_AARCH64_LD64_GOT_LO12_NC   _PyBuildSlice_ConsumeRefs
     // 1c: d63f0100      blr     x8
     // 20: f9402295      ldr     x21, [x20, #0x40]
-    // 24: aa0003f8      mov     x24, x0
+    // 24: aa0003f7      mov     x23, x0
     // 28: f900229f      str     xzr, [x20, #0x40]
     // 2c: b4000320      cbz     x0, 0x90 <_JIT_ENTRY+0x90>
     // 30: d10042a8      sub     x8, x21, #0x10
     // 34: aa1303e0      mov     x0, x19
-    // 38: aa1803e1      mov     x1, x24
+    // 38: aa1703e1      mov     x1, x23
     // 3c: f9002288      str     x8, [x20, #0x40]
     // 40: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000040:  R_AARCH64_ADR_GOT_PAGE       PyObject_SetItem
-    // 44: aa1703e2      mov     x2, x23
+    // 44: aa1803e2      mov     x2, x24
     // 48: f9400108      ldr     x8, [x8]
     // 0000000000000048:  R_AARCH64_LD64_GOT_LO12_NC   PyObject_SetItem
     // 4c: d63f0100      blr     x8
-    // 50: b9400308      ldr     w8, [x24]
+    // 50: b94002e8      ldr     w8, [x23]
     // 54: 37f80148      tbnz    w8, #0x1f, 0x7c <_JIT_ENTRY+0x7c>
     // 58: 71000508      subs    w8, w8, #0x1
-    // 5c: b9000308      str     w8, [x24]
+    // 5c: b90002e8      str     w8, [x23]
     // 60: 540000e1      b.ne    0x7c <_JIT_ENTRY+0x7c>
     // 64: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000064:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
     // 68: 2a0003f5      mov     w21, w0
-    // 6c: aa1803e0      mov     x0, x24
+    // 6c: aa1703e0      mov     x0, x23
     // 70: f9400108      ldr     x8, [x8]
     // 0000000000000070:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 74: d63f0100      blr     x8
@@ -22231,16 +21774,16 @@ emit__STORE_SLICE(
     // 7c: f9402288      ldr     x8, [x20, #0x40]
     // 80: 7100001f      cmp     w0, #0x0
     // 84: f900229f      str     xzr, [x20, #0x40]
-    // 88: 1a9f17f8      cset    w24, eq
+    // 88: 1a9f17f7      cset    w23, eq
     // 8c: 91004115      add     x21, x8, #0x10
-    // 90: b94002e8      ldr     w8, [x23]
+    // 90: b9400308      ldr     w8, [x24]
     // 94: 37f80108      tbnz    w8, #0x1f, 0xb4 <_JIT_ENTRY+0xb4>
     // 98: 71000508      subs    w8, w8, #0x1
-    // 9c: b90002e8      str     w8, [x23]
+    // 9c: b9000308      str     w8, [x24]
     // a0: 540000a1      b.ne    0xb4 <_JIT_ENTRY+0xb4>
     // a4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 00000000000000a4:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // a8: aa1703e0      mov     x0, x23
+    // a8: aa1803e0      mov     x0, x24
     // ac: f9400108      ldr     x8, [x8]
     // 00000000000000ac:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // b0: d63f0100      blr     x8
@@ -22249,8 +21792,8 @@ emit__STORE_SLICE(
     // bc: 71000508      subs    w8, w8, #0x1
     // c0: b9000268      str     w8, [x19]
     // c4: 540000a0      b.eq    0xd8 <_JIT_ENTRY+0xd8>
-    // c8: 36000138      tbz     w24, #0x0, 0xec <_JIT_ENTRY+0xec>
-    // cc: d10082b5      sub     x21, x21, #0x20
+    // c8: d10082b5      sub     x21, x21, #0x20
+    // cc: 36000137      tbz     w23, #0x0, 0xf0 <_JIT_ENTRY+0xf0>
     // d0: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // d4: 14000000      b       0xd4 <_JIT_ENTRY+0xd4>
     // 00000000000000d4:  R_AARCH64_JUMP26     _JIT_CONTINUE
@@ -22260,43 +21803,43 @@ emit__STORE_SLICE(
     // e0: f9400108      ldr     x8, [x8]
     // 00000000000000e0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // e4: d63f0100      blr     x8
-    // e8: 3707ff38      tbnz    w24, #0x0, 0xcc <_JIT_ENTRY+0xcc>
-    // ec: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // f0: 14000000      b       0xf0 <_JIT_ENTRY+0xf0>
-    // 00000000000000f0:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // f4: 00 00 00 00
+    // e8: d10082b5      sub     x21, x21, #0x20
+    // ec: 3707ff37      tbnz    w23, #0x0, 0xd0 <_JIT_ENTRY+0xd0>
+    // f0: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // f4: 14000000      b       0xf4 <_JIT_ENTRY+0xf4>
+    // 00000000000000f4:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
     const unsigned char code_body[248] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0xa0, 0x06, 0x7f, 0xa9,
-        0x08, 0x00, 0x00, 0x90, 0xb7, 0x4e, 0x7e, 0xa9,
+        0x08, 0x00, 0x00, 0x90, 0xb8, 0x4e, 0x7e, 0xa9,
         0xfd, 0x03, 0x00, 0x91, 0x95, 0x22, 0x00, 0xf9,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x95, 0x22, 0x40, 0xf9, 0xf8, 0x03, 0x00, 0xaa,
+        0x95, 0x22, 0x40, 0xf9, 0xf7, 0x03, 0x00, 0xaa,
         0x9f, 0x22, 0x00, 0xf9, 0x20, 0x03, 0x00, 0xb4,
         0xa8, 0x42, 0x00, 0xd1, 0xe0, 0x03, 0x13, 0xaa,
-        0xe1, 0x03, 0x18, 0xaa, 0x88, 0x22, 0x00, 0xf9,
-        0x08, 0x00, 0x00, 0x90, 0xe2, 0x03, 0x17, 0xaa,
+        0xe1, 0x03, 0x17, 0xaa, 0x88, 0x22, 0x00, 0xf9,
+        0x08, 0x00, 0x00, 0x90, 0xe2, 0x03, 0x18, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x08, 0x03, 0x40, 0xb9, 0x48, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
+        0xe8, 0x02, 0x40, 0xb9, 0x48, 0x01, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0xe8, 0x02, 0x00, 0xb9,
         0xe1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0xf5, 0x03, 0x00, 0x2a, 0xe0, 0x03, 0x18, 0xaa,
+        0xf5, 0x03, 0x00, 0x2a, 0xe0, 0x03, 0x17, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
         0xe0, 0x03, 0x15, 0x2a, 0x88, 0x22, 0x40, 0xf9,
         0x1f, 0x00, 0x00, 0x71, 0x9f, 0x22, 0x00, 0xf9,
-        0xf8, 0x17, 0x9f, 0x1a, 0x15, 0x41, 0x00, 0x91,
-        0xe8, 0x02, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0xe8, 0x02, 0x00, 0xb9,
+        0xf7, 0x17, 0x9f, 0x1a, 0x15, 0x41, 0x00, 0x91,
+        0x08, 0x03, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
         0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
         0x00, 0x01, 0x3f, 0xd6, 0x68, 0x02, 0x40, 0xb9,
         0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
         0x68, 0x02, 0x00, 0xb9, 0xa0, 0x00, 0x00, 0x54,
-        0x38, 0x01, 0x00, 0x36, 0xb5, 0x82, 0x00, 0xd1,
+        0xb5, 0x82, 0x00, 0xd1, 0x37, 0x01, 0x00, 0x36,
         0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
         0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x38, 0xff, 0x07, 0x37, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
+        0xb5, 0x82, 0x00, 0xd1, 0x37, 0xff, 0x07, 0x37,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: &_PyBuildSlice_ConsumeRefs+0x0
     // 8: &PyObject_SetItem+0x0
@@ -22322,7 +21865,7 @@ emit__STORE_SLICE(
     patch_aarch64_26r(code + 0xd4, (uintptr_t)code + sizeof(code_body));
     patch_aarch64_21rx(code + 0xd8, (uintptr_t)data + 0x10);
     patch_aarch64_12x(code + 0xe0, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0xf0, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0xf4, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -22337,40 +21880,40 @@ emit__STORE_SUBSCR(
     //
     // 0000000000000000 <_JIT_ENTRY>:
     // 0: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 4: a97f4eb8      ldp     x24, x19, [x21, #-0x10]
+    // 4: a97f4eb7      ldp     x23, x19, [x21, #-0x10]
     // 8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000008:  R_AARCH64_ADR_GOT_PAGE       PyObject_SetItem
-    // c: f85e82b9      ldur    x25, [x21, #-0x18]
+    // c: f85e82b8      ldur    x24, [x21, #-0x18]
     // 10: f9002295      str     x21, [x20, #0x40]
     // 14: 910003fd      mov     x29, sp
     // 18: f9400108      ldr     x8, [x8]
     // 0000000000000018:  R_AARCH64_LD64_GOT_LO12_NC   PyObject_SetItem
-    // 1c: aa1803e0      mov     x0, x24
+    // 1c: aa1703e0      mov     x0, x23
     // 20: aa1303e1      mov     x1, x19
-    // 24: aa1903e2      mov     x2, x25
+    // 24: aa1803e2      mov     x2, x24
     // 28: d63f0100      blr     x8
     // 2c: f9402295      ldr     x21, [x20, #0x40]
     // 30: f900229f      str     xzr, [x20, #0x40]
-    // 34: 2a0003f7      mov     w23, w0
-    // 38: b9400328      ldr     w8, [x25]
+    // 34: 2a0003f9      mov     w25, w0
+    // 38: b9400308      ldr     w8, [x24]
     // 3c: 37f80108      tbnz    w8, #0x1f, 0x5c <_JIT_ENTRY+0x5c>
     // 40: 71000508      subs    w8, w8, #0x1
-    // 44: b9000328      str     w8, [x25]
+    // 44: b9000308      str     w8, [x24]
     // 48: 540000a1      b.ne    0x5c <_JIT_ENTRY+0x5c>
     // 4c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 000000000000004c:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 50: aa1903e0      mov     x0, x25
+    // 50: aa1803e0      mov     x0, x24
     // 54: f9400108      ldr     x8, [x8]
     // 0000000000000054:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 58: d63f0100      blr     x8
-    // 5c: b9400308      ldr     w8, [x24]
+    // 5c: b94002e8      ldr     w8, [x23]
     // 60: 37f80108      tbnz    w8, #0x1f, 0x80 <_JIT_ENTRY+0x80>
     // 64: 71000508      subs    w8, w8, #0x1
-    // 68: b9000308      str     w8, [x24]
+    // 68: b90002e8      str     w8, [x23]
     // 6c: 540000a1      b.ne    0x80 <_JIT_ENTRY+0x80>
     // 70: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
     // 0000000000000070:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 74: aa1803e0      mov     x0, x24
+    // 74: aa1703e0      mov     x0, x23
     // 78: f9400108      ldr     x8, [x8]
     // 0000000000000078:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 7c: d63f0100      blr     x8
@@ -22378,47 +21921,48 @@ emit__STORE_SUBSCR(
     // 84: 37f80088      tbnz    w8, #0x1f, 0x94 <_JIT_ENTRY+0x94>
     // 88: 71000508      subs    w8, w8, #0x1
     // 8c: b9000268      str     w8, [x19]
-    // 90: 54000080      b.eq    0xa0 <_JIT_ENTRY+0xa0>
-    // 94: 34000117      cbz     w23, 0xb4 <_JIT_ENTRY+0xb4>
-    // 98: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 9c: 14000000      b       0x9c <_JIT_ENTRY+0x9c>
-    // 000000000000009c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // a0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000a0:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // a4: aa1303e0      mov     x0, x19
-    // a8: f9400108      ldr     x8, [x8]
-    // 00000000000000a8:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // ac: d63f0100      blr     x8
-    // b0: 35ffff57      cbnz    w23, 0x98 <_JIT_ENTRY+0x98>
+    // 90: 540000a0      b.eq    0xa4 <_JIT_ENTRY+0xa4>
+    // 94: d10062b5      sub     x21, x21, #0x18
+    // 98: 34000139      cbz     w25, 0xbc <_JIT_ENTRY+0xbc>
+    // 9c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // a0: 14000000      b       0xa0 <_JIT_ENTRY+0xa0>
+    // 00000000000000a0:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // a4: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000a4:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // a8: aa1303e0      mov     x0, x19
+    // ac: f9400108      ldr     x8, [x8]
+    // 00000000000000ac:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // b0: d63f0100      blr     x8
     // b4: d10062b5      sub     x21, x21, #0x18
-    // b8: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // bc: 14000000      b       0xbc <_JIT_ENTRY+0xbc>
-    // 00000000000000bc:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // b8: 35ffff39      cbnz    w25, 0x9c <_JIT_ENTRY+0x9c>
+    // bc: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // c0: 14000000      b       0xc0 <_JIT_ENTRY+0xc0>
+    // 00000000000000c0:  R_AARCH64_JUMP26     _JIT_CONTINUE
     const unsigned char code_body[192] = {
-        0xfd, 0x7b, 0xbf, 0xa9, 0xb8, 0x4e, 0x7f, 0xa9,
-        0x08, 0x00, 0x00, 0x90, 0xb9, 0x82, 0x5e, 0xf8,
+        0xfd, 0x7b, 0xbf, 0xa9, 0xb7, 0x4e, 0x7f, 0xa9,
+        0x08, 0x00, 0x00, 0x90, 0xb8, 0x82, 0x5e, 0xf8,
         0x95, 0x22, 0x00, 0xf9, 0xfd, 0x03, 0x00, 0x91,
-        0x08, 0x01, 0x40, 0xf9, 0xe0, 0x03, 0x18, 0xaa,
-        0xe1, 0x03, 0x13, 0xaa, 0xe2, 0x03, 0x19, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0xe0, 0x03, 0x17, 0xaa,
+        0xe1, 0x03, 0x13, 0xaa, 0xe2, 0x03, 0x18, 0xaa,
         0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
-        0x9f, 0x22, 0x00, 0xf9, 0xf7, 0x03, 0x00, 0x2a,
-        0x28, 0x03, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x28, 0x03, 0x00, 0xb9,
+        0x9f, 0x22, 0x00, 0xf9, 0xf9, 0x03, 0x00, 0x2a,
+        0x08, 0x03, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0x08, 0x03, 0x00, 0xb9,
         0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x19, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x08, 0x03, 0x40, 0xb9,
+        0xe0, 0x03, 0x18, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0xe8, 0x02, 0x40, 0xb9,
         0x08, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0x08, 0x03, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x18, 0xaa,
+        0xe8, 0x02, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x17, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
         0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
         0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0x80, 0x00, 0x00, 0x54, 0x17, 0x01, 0x00, 0x34,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x57, 0xff, 0xff, 0x35, 0xb5, 0x62, 0x00, 0xd1,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0xa0, 0x00, 0x00, 0x54, 0xb5, 0x62, 0x00, 0xd1,
+        0x39, 0x01, 0x00, 0x34, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
+        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0xb5, 0x62, 0x00, 0xd1,
+        0x39, 0xff, 0xff, 0x35, 0xfd, 0x7b, 0xc1, 0xa8,
     };
     // 0: &PyObject_SetItem+0x0
     // 8: &_Py_Dealloc+0x0
@@ -22436,10 +21980,9 @@ emit__STORE_SUBSCR(
     patch_aarch64_12x(code + 0x54, (uintptr_t)data + 0x8);
     patch_aarch64_21rx(code + 0x70, (uintptr_t)data + 0x8);
     patch_aarch64_12x(code + 0x78, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x9c, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_21rx(code + 0xa0, (uintptr_t)data + 0x8);
-    patch_aarch64_12x(code + 0xa8, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0xbc, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0xa0, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0xa4, (uintptr_t)data + 0x8);
+    patch_aarch64_12x(code + 0xac, (uintptr_t)data + 0x8);
 }
 
 void
@@ -22474,30 +22017,35 @@ emit__STORE_SUBSCR_DICT(
     // 38: f9400108      ldr     x8, [x8]
     // 0000000000000038:  R_AARCH64_LD64_GOT_LO12_NC   _PyDict_SetItem_Take2
     // 3c: d63f0100      blr     x8
-    // 40: f9402295      ldr     x21, [x20, #0x40]
-    // 44: f900229f      str     xzr, [x20, #0x40]
-    // 48: b9400268      ldr     w8, [x19]
-    // 4c: 37f80088      tbnz    w8, #0x1f, 0x5c <_JIT_ENTRY+0x5c>
-    // 50: 71000508      subs    w8, w8, #0x1
-    // 54: b9000268      str     w8, [x19]
-    // 58: 54000080      b.eq    0x68 <_JIT_ENTRY+0x68>
-    // 5c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 60: 34000120      cbz     w0, 0x84 <_JIT_ENTRY+0x84>
-    // 64: 14000000      b       0x64 <_JIT_ENTRY+0x64>
-    // 0000000000000064:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 68: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 0000000000000068:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // 6c: 2a0003f7      mov     w23, w0
-    // 70: aa1303e0      mov     x0, x19
-    // 74: f9400108      ldr     x8, [x8]
-    // 0000000000000074:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // 78: d63f0100      blr     x8
-    // 7c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 80: 35ffff37      cbnz    w23, 0x64 <_JIT_ENTRY+0x64>
-    // 84: d10062b5      sub     x21, x21, #0x18
-    // 88: 14000000      b       0x88 <_JIT_ENTRY+0x88>
-    // 0000000000000088:  R_AARCH64_JUMP26     _JIT_CONTINUE
-    const unsigned char code_body[136] = {
+    // 40: f9402288      ldr     x8, [x20, #0x40]
+    // 44: d1006108      sub     x8, x8, #0x18
+    // 48: f9002288      str     x8, [x20, #0x40]
+    // 4c: b9400268      ldr     w8, [x19]
+    // 50: 37f80088      tbnz    w8, #0x1f, 0x60 <_JIT_ENTRY+0x60>
+    // 54: 71000508      subs    w8, w8, #0x1
+    // 58: b9000268      str     w8, [x19]
+    // 5c: 540000c0      b.eq    0x74 <_JIT_ENTRY+0x74>
+    // 60: f9402295      ldr     x21, [x20, #0x40]
+    // 64: f900229f      str     xzr, [x20, #0x40]
+    // 68: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 6c: 34000180      cbz     w0, 0x9c <_JIT_ENTRY+0x9c>
+    // 70: 14000000      b       0x70 <_JIT_ENTRY+0x70>
+    // 0000000000000070:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 74: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 0000000000000074:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // 78: 2a0003f5      mov     w21, w0
+    // 7c: aa1303e0      mov     x0, x19
+    // 80: f9400108      ldr     x8, [x8]
+    // 0000000000000080:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // 84: d63f0100      blr     x8
+    // 88: 2a1503e0      mov     w0, w21
+    // 8c: f9402295      ldr     x21, [x20, #0x40]
+    // 90: f900229f      str     xzr, [x20, #0x40]
+    // 94: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 98: 35fffec0      cbnz    w0, 0x70 <_JIT_ENTRY+0x70>
+    // 9c: 14000000      b       0x9c <_JIT_ENTRY+0x9c>
+    // 000000000000009c:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    const unsigned char code_body[160] = {
         0xb3, 0x02, 0x5f, 0xf8, 0x09, 0x00, 0x00, 0x90,
         0x68, 0x06, 0x40, 0xf9, 0x29, 0x01, 0x40, 0xf9,
         0x1f, 0x01, 0x09, 0xeb, 0x40, 0x00, 0x00, 0x54,
@@ -22506,15 +22054,18 @@ emit__STORE_SUBSCR_DICT(
         0x08, 0x00, 0x00, 0x90, 0x95, 0x22, 0x00, 0xf9,
         0xe0, 0x03, 0x13, 0xaa, 0xfd, 0x03, 0x00, 0x91,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0x88, 0x22, 0x40, 0xf9, 0x08, 0x61, 0x00, 0xd1,
+        0x88, 0x22, 0x00, 0xf9, 0x68, 0x02, 0x40, 0xb9,
+        0x88, 0x00, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x68, 0x02, 0x00, 0xb9, 0xc0, 0x00, 0x00, 0x54,
         0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
-        0x68, 0x02, 0x40, 0xb9, 0x88, 0x00, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0x68, 0x02, 0x00, 0xb9,
-        0x80, 0x00, 0x00, 0x54, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x20, 0x01, 0x00, 0x34, 0x00, 0x00, 0x00, 0x14,
-        0x08, 0x00, 0x00, 0x90, 0xf7, 0x03, 0x00, 0x2a,
-        0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x37, 0xff, 0xff, 0x35, 0xb5, 0x62, 0x00, 0xd1,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x80, 0x01, 0x00, 0x34,
+        0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
+        0xf5, 0x03, 0x00, 0x2a, 0xe0, 0x03, 0x13, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0xe0, 0x03, 0x15, 0x2a, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xfd, 0x7b, 0xc1, 0xa8,
+        0xc0, 0xfe, 0xff, 0x35, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: &PyDict_Type+0x0
     // 8: &_PyDict_SetItem_Take2+0x0
@@ -22534,9 +22085,10 @@ emit__STORE_SUBSCR_DICT(
     patch_aarch64_26r(code + 0x18, state->instruction_starts[instruction->jump_target]);
     patch_aarch64_21rx(code + 0x28, (uintptr_t)data + 0x8);
     patch_aarch64_12x(code + 0x38, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x64, state->instruction_starts[instruction->error_target]);
-    patch_aarch64_21rx(code + 0x68, (uintptr_t)data + 0x10);
-    patch_aarch64_12x(code + 0x74, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x70, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_21rx(code + 0x74, (uintptr_t)data + 0x10);
+    patch_aarch64_12x(code + 0x80, (uintptr_t)data + 0x10);
+    patch_aarch64_26r(code + 0x9c, (uintptr_t)code + sizeof(code_body));
 }
 
 void
@@ -22550,123 +22102,123 @@ emit__STORE_SUBSCR_LIST_INT(
     // Disassembly of section .text:
     //
     // 0000000000000000 <_JIT_ENTRY>:
-    // 0: aa1503f8      mov     x24, x21
+    // 0: aa1503f9      mov     x25, x21
     // 4: 9000000a      adrp    x10, 0x0 <_JIT_ENTRY>
     // 0000000000000004:  R_AARCH64_ADR_GOT_PAGE       PyLong_Type
-    // 8: f85e8f08      ldr     x8, [x24, #-0x18]!
-    // c: f9400b17      ldr     x23, [x24, #0x10]
-    // 10: f94006e9      ldr     x9, [x23, #0x8]
+    // 8: f85e8f28      ldr     x8, [x25, #-0x18]!
+    // c: f9400b38      ldr     x24, [x25, #0x10]
+    // 10: f9400709      ldr     x9, [x24, #0x8]
     // 14: f940014a      ldr     x10, [x10]
     // 0000000000000014:  R_AARCH64_LD64_GOT_LO12_NC   PyLong_Type
     // 18: eb0a013f      cmp     x9, x10
-    // 1c: 54000761      b.ne    0x108 <_JIT_ENTRY+0x108>
-    // 20: f9400713      ldr     x19, [x24, #0x8]
+    // 1c: 54000781      b.ne    0x10c <_JIT_ENTRY+0x10c>
+    // 20: f9400733      ldr     x19, [x25, #0x8]
     // 24: 9000000a      adrp    x10, 0x0 <_JIT_ENTRY>
     // 0000000000000024:  R_AARCH64_ADR_GOT_PAGE       PyList_Type
     // 28: f9400669      ldr     x9, [x19, #0x8]
     // 2c: f940014a      ldr     x10, [x10]
     // 000000000000002c:  R_AARCH64_LD64_GOT_LO12_NC   PyList_Type
     // 30: eb0a013f      cmp     x9, x10
-    // 34: 540006a1      b.ne    0x108 <_JIT_ENTRY+0x108>
-    // 38: f9400ae9      ldr     x9, [x23, #0x10]
-    // 3c: f100253f      cmp     x9, #0x9
-    // 40: 54000642      b.hs    0x108 <_JIT_ENTRY+0x108>
-    // 44: b9401ae9      ldr     w9, [x23, #0x18]
-    // 48: f9400a6a      ldr     x10, [x19, #0x10]
-    // 4c: eb09015f      cmp     x10, x9
-    // 50: 540005cd      b.le    0x108 <_JIT_ENTRY+0x108>
-    // 54: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
-    // 58: f9400e6a      ldr     x10, [x19, #0x18]
-    // 5c: 910003fd      mov     x29, sp
-    // 60: f8697955      ldr     x21, [x10, x9, lsl #3]
-    // 64: f8297948      str     x8, [x10, x9, lsl #3]
-    // 68: b94002e8      ldr     w8, [x23]
-    // 6c: 37f80208      tbnz    w8, #0x1f, 0xac <_JIT_ENTRY+0xac>
-    // 70: 71000508      subs    w8, w8, #0x1
-    // 74: b90002e8      str     w8, [x23]
-    // 78: 540001a1      b.ne    0xac <_JIT_ENTRY+0xac>
-    // 7c: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
-    // 000000000000007c:  R_AARCH64_ADR_GOT_PAGE       _PyRuntime
-    // 80: f9400129      ldr     x9, [x9]
-    // 0000000000000080:  R_AARCH64_LD64_GOT_LO12_NC   _PyRuntime
-    // 84: f9544928      ldr     x8, [x9, #0x2890]
-    // 88: b40000a8      cbz     x8, 0x9c <_JIT_ENTRY+0x9c>
-    // 8c: f9544d22      ldr     x2, [x9, #0x2898]
-    // 90: aa1703e0      mov     x0, x23
-    // 94: 52800021      mov     w1, #0x1                // =1
-    // 98: d63f0100      blr     x8
-    // 9c: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 000000000000009c:  R_AARCH64_ADR_GOT_PAGE       _PyLong_ExactDealloc
-    // a0: aa1703e0      mov     x0, x23
-    // a4: f9400108      ldr     x8, [x8]
-    // 00000000000000a4:  R_AARCH64_LD64_GOT_LO12_NC   _PyLong_ExactDealloc
-    // a8: d63f0100      blr     x8
-    // ac: b9400268      ldr     w8, [x19]
-    // b0: 37f80108      tbnz    w8, #0x1f, 0xd0 <_JIT_ENTRY+0xd0>
-    // b4: 71000508      subs    w8, w8, #0x1
-    // b8: b9000268      str     w8, [x19]
-    // bc: 540000a1      b.ne    0xd0 <_JIT_ENTRY+0xd0>
-    // c0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000c0:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // c4: aa1303e0      mov     x0, x19
-    // c8: f9400108      ldr     x8, [x8]
-    // 00000000000000c8:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // cc: d63f0100      blr     x8
-    // d0: f9002298      str     x24, [x20, #0x40]
-    // d4: b94002a8      ldr     w8, [x21]
-    // d8: 37f80108      tbnz    w8, #0x1f, 0xf8 <_JIT_ENTRY+0xf8>
-    // dc: 71000508      subs    w8, w8, #0x1
-    // e0: b90002a8      str     w8, [x21]
-    // e4: 540000a1      b.ne    0xf8 <_JIT_ENTRY+0xf8>
-    // e8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
-    // 00000000000000e8:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
-    // ec: aa1503e0      mov     x0, x21
-    // f0: f9400108      ldr     x8, [x8]
-    // 00000000000000f0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
-    // f4: d63f0100      blr     x8
-    // f8: f9402295      ldr     x21, [x20, #0x40]
-    // fc: f900229f      str     xzr, [x20, #0x40]
-    // 100: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 104: 14000000      b       0x104 <_JIT_ENTRY+0x104>
-    // 0000000000000104:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 34: 540006c1      b.ne    0x10c <_JIT_ENTRY+0x10c>
+    // 38: f9400b09      ldr     x9, [x24, #0x10]
+    // 3c: 927df929      and     x9, x9, #0xfffffffffffffffb
+    // 40: f100253f      cmp     x9, #0x9
+    // 44: 54000642      b.hs    0x10c <_JIT_ENTRY+0x10c>
+    // 48: b9401b09      ldr     w9, [x24, #0x18]
+    // 4c: f9400a6a      ldr     x10, [x19, #0x10]
+    // 50: eb09015f      cmp     x10, x9
+    // 54: 540005cd      b.le    0x10c <_JIT_ENTRY+0x10c>
+    // 58: a9bf7bfd      stp     x29, x30, [sp, #-0x10]!
+    // 5c: f9400e6a      ldr     x10, [x19, #0x18]
+    // 60: 910003fd      mov     x29, sp
+    // 64: f8697957      ldr     x23, [x10, x9, lsl #3]
+    // 68: f8297948      str     x8, [x10, x9, lsl #3]
+    // 6c: b9400308      ldr     w8, [x24]
+    // 70: 37f80208      tbnz    w8, #0x1f, 0xb0 <_JIT_ENTRY+0xb0>
+    // 74: 71000508      subs    w8, w8, #0x1
+    // 78: b9000308      str     w8, [x24]
+    // 7c: 540001a1      b.ne    0xb0 <_JIT_ENTRY+0xb0>
+    // 80: 90000009      adrp    x9, 0x0 <_JIT_ENTRY>
+    // 0000000000000080:  R_AARCH64_ADR_GOT_PAGE       _PyRuntime
+    // 84: f9400129      ldr     x9, [x9]
+    // 0000000000000084:  R_AARCH64_LD64_GOT_LO12_NC   _PyRuntime
+    // 88: f9544928      ldr     x8, [x9, #0x2890]
+    // 8c: b40000a8      cbz     x8, 0xa0 <_JIT_ENTRY+0xa0>
+    // 90: f9544d22      ldr     x2, [x9, #0x2898]
+    // 94: aa1803e0      mov     x0, x24
+    // 98: 52800021      mov     w1, #0x1                // =1
+    // 9c: d63f0100      blr     x8
+    // a0: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000a0:  R_AARCH64_ADR_GOT_PAGE       _PyLong_ExactDealloc
+    // a4: aa1803e0      mov     x0, x24
+    // a8: f9400108      ldr     x8, [x8]
+    // 00000000000000a8:  R_AARCH64_LD64_GOT_LO12_NC   _PyLong_ExactDealloc
+    // ac: d63f0100      blr     x8
+    // b0: f9002299      str     x25, [x20, #0x40]
+    // b4: b9400268      ldr     w8, [x19]
+    // b8: 37f80108      tbnz    w8, #0x1f, 0xd8 <_JIT_ENTRY+0xd8>
+    // bc: 71000508      subs    w8, w8, #0x1
+    // c0: b9000268      str     w8, [x19]
+    // c4: 540000a1      b.ne    0xd8 <_JIT_ENTRY+0xd8>
+    // c8: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000c8:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // cc: aa1303e0      mov     x0, x19
+    // d0: f9400108      ldr     x8, [x8]
+    // 00000000000000d0:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // d4: d63f0100      blr     x8
+    // d8: b94002e8      ldr     w8, [x23]
+    // dc: 37f80108      tbnz    w8, #0x1f, 0xfc <_JIT_ENTRY+0xfc>
+    // e0: 71000508      subs    w8, w8, #0x1
+    // e4: b90002e8      str     w8, [x23]
+    // e8: 540000a1      b.ne    0xfc <_JIT_ENTRY+0xfc>
+    // ec: 90000008      adrp    x8, 0x0 <_JIT_ENTRY>
+    // 00000000000000ec:  R_AARCH64_ADR_GOT_PAGE       _Py_Dealloc
+    // f0: aa1703e0      mov     x0, x23
+    // f4: f9400108      ldr     x8, [x8]
+    // 00000000000000f4:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
+    // f8: d63f0100      blr     x8
+    // fc: f9402295      ldr     x21, [x20, #0x40]
+    // 100: f900229f      str     xzr, [x20, #0x40]
+    // 104: a8c17bfd      ldp     x29, x30, [sp], #0x10
     // 108: 14000000      b       0x108 <_JIT_ENTRY+0x108>
-    // 0000000000000108:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
-    // 10c: 00 00 00 00
+    // 0000000000000108:  R_AARCH64_JUMP26     _JIT_CONTINUE
+    // 10c: 14000000      b       0x10c <_JIT_ENTRY+0x10c>
+    // 000000000000010c:  R_AARCH64_JUMP26     _JIT_JUMP_TARGET
     const unsigned char code_body[272] = {
-        0xf8, 0x03, 0x15, 0xaa, 0x0a, 0x00, 0x00, 0x90,
-        0x08, 0x8f, 0x5e, 0xf8, 0x17, 0x0b, 0x40, 0xf9,
-        0xe9, 0x06, 0x40, 0xf9, 0x4a, 0x01, 0x40, 0xf9,
-        0x3f, 0x01, 0x0a, 0xeb, 0x61, 0x07, 0x00, 0x54,
-        0x13, 0x07, 0x40, 0xf9, 0x0a, 0x00, 0x00, 0x90,
+        0xf9, 0x03, 0x15, 0xaa, 0x0a, 0x00, 0x00, 0x90,
+        0x28, 0x8f, 0x5e, 0xf8, 0x38, 0x0b, 0x40, 0xf9,
+        0x09, 0x07, 0x40, 0xf9, 0x4a, 0x01, 0x40, 0xf9,
+        0x3f, 0x01, 0x0a, 0xeb, 0x81, 0x07, 0x00, 0x54,
+        0x33, 0x07, 0x40, 0xf9, 0x0a, 0x00, 0x00, 0x90,
         0x69, 0x06, 0x40, 0xf9, 0x4a, 0x01, 0x40, 0xf9,
-        0x3f, 0x01, 0x0a, 0xeb, 0xa1, 0x06, 0x00, 0x54,
-        0xe9, 0x0a, 0x40, 0xf9, 0x3f, 0x25, 0x00, 0xf1,
-        0x42, 0x06, 0x00, 0x54, 0xe9, 0x1a, 0x40, 0xb9,
-        0x6a, 0x0a, 0x40, 0xf9, 0x5f, 0x01, 0x09, 0xeb,
-        0xcd, 0x05, 0x00, 0x54, 0xfd, 0x7b, 0xbf, 0xa9,
-        0x6a, 0x0e, 0x40, 0xf9, 0xfd, 0x03, 0x00, 0x91,
-        0x55, 0x79, 0x69, 0xf8, 0x48, 0x79, 0x29, 0xf8,
-        0xe8, 0x02, 0x40, 0xb9, 0x08, 0x02, 0xf8, 0x37,
-        0x08, 0x05, 0x00, 0x71, 0xe8, 0x02, 0x00, 0xb9,
-        0xa1, 0x01, 0x00, 0x54, 0x09, 0x00, 0x00, 0x90,
-        0x29, 0x01, 0x40, 0xf9, 0x28, 0x49, 0x54, 0xf9,
-        0xa8, 0x00, 0x00, 0xb4, 0x22, 0x4d, 0x54, 0xf9,
-        0xe0, 0x03, 0x17, 0xaa, 0x21, 0x00, 0x80, 0x52,
-        0x00, 0x01, 0x3f, 0xd6, 0x08, 0x00, 0x00, 0x90,
-        0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
-        0x00, 0x01, 0x3f, 0xd6, 0x68, 0x02, 0x40, 0xb9,
+        0x3f, 0x01, 0x0a, 0xeb, 0xc1, 0x06, 0x00, 0x54,
+        0x09, 0x0b, 0x40, 0xf9, 0x29, 0xf9, 0x7d, 0x92,
+        0x3f, 0x25, 0x00, 0xf1, 0x42, 0x06, 0x00, 0x54,
+        0x09, 0x1b, 0x40, 0xb9, 0x6a, 0x0a, 0x40, 0xf9,
+        0x5f, 0x01, 0x09, 0xeb, 0xcd, 0x05, 0x00, 0x54,
+        0xfd, 0x7b, 0xbf, 0xa9, 0x6a, 0x0e, 0x40, 0xf9,
+        0xfd, 0x03, 0x00, 0x91, 0x57, 0x79, 0x69, 0xf8,
+        0x48, 0x79, 0x29, 0xf8, 0x08, 0x03, 0x40, 0xb9,
+        0x08, 0x02, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
+        0x08, 0x03, 0x00, 0xb9, 0xa1, 0x01, 0x00, 0x54,
+        0x09, 0x00, 0x00, 0x90, 0x29, 0x01, 0x40, 0xf9,
+        0x28, 0x49, 0x54, 0xf9, 0xa8, 0x00, 0x00, 0xb4,
+        0x22, 0x4d, 0x54, 0xf9, 0xe0, 0x03, 0x18, 0xaa,
+        0x21, 0x00, 0x80, 0x52, 0x00, 0x01, 0x3f, 0xd6,
+        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x18, 0xaa,
+        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
+        0x99, 0x22, 0x00, 0xf9, 0x68, 0x02, 0x40, 0xb9,
         0x08, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
         0x68, 0x02, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
         0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x13, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x98, 0x22, 0x00, 0xf9, 0xa8, 0x02, 0x40, 0xb9,
-        0x08, 0x01, 0xf8, 0x37, 0x08, 0x05, 0x00, 0x71,
-        0xa8, 0x02, 0x00, 0xb9, 0xa1, 0x00, 0x00, 0x54,
-        0x08, 0x00, 0x00, 0x90, 0xe0, 0x03, 0x15, 0xaa,
-        0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0x95, 0x22, 0x40, 0xf9, 0x9f, 0x22, 0x00, 0xf9,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
+        0xe8, 0x02, 0x40, 0xb9, 0x08, 0x01, 0xf8, 0x37,
+        0x08, 0x05, 0x00, 0x71, 0xe8, 0x02, 0x00, 0xb9,
+        0xa1, 0x00, 0x00, 0x54, 0x08, 0x00, 0x00, 0x90,
+        0xe0, 0x03, 0x17, 0xaa, 0x08, 0x01, 0x40, 0xf9,
+        0x00, 0x01, 0x3f, 0xd6, 0x95, 0x22, 0x40, 0xf9,
+        0x9f, 0x22, 0x00, 0xf9, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: &PyLong_Type+0x0
     // 8: &PyList_Type+0x0
@@ -22691,15 +22243,15 @@ emit__STORE_SUBSCR_LIST_INT(
     patch_aarch64_12x(code + 0x14, (uintptr_t)data);
     patch_aarch64_21rx(code + 0x24, (uintptr_t)data + 0x8);
     patch_aarch64_12x(code + 0x2c, (uintptr_t)data + 0x8);
-    patch_aarch64_33rx(code + 0x7c, (uintptr_t)data + 0x10);
-    patch_aarch64_21rx(code + 0x9c, (uintptr_t)data + 0x18);
-    patch_aarch64_12x(code + 0xa4, (uintptr_t)data + 0x18);
-    patch_aarch64_21rx(code + 0xc0, (uintptr_t)data + 0x20);
-    patch_aarch64_12x(code + 0xc8, (uintptr_t)data + 0x20);
-    patch_aarch64_21rx(code + 0xe8, (uintptr_t)data + 0x20);
-    patch_aarch64_12x(code + 0xf0, (uintptr_t)data + 0x20);
-    patch_aarch64_26r(code + 0x104, (uintptr_t)code + sizeof(code_body));
-    patch_aarch64_26r(code + 0x108, state->instruction_starts[instruction->jump_target]);
+    patch_aarch64_33rx(code + 0x80, (uintptr_t)data + 0x10);
+    patch_aarch64_21rx(code + 0xa0, (uintptr_t)data + 0x18);
+    patch_aarch64_12x(code + 0xa8, (uintptr_t)data + 0x18);
+    patch_aarch64_21rx(code + 0xc8, (uintptr_t)data + 0x20);
+    patch_aarch64_12x(code + 0xd0, (uintptr_t)data + 0x20);
+    patch_aarch64_21rx(code + 0xec, (uintptr_t)data + 0x20);
+    patch_aarch64_12x(code + 0xf4, (uintptr_t)data + 0x20);
+    patch_aarch64_26r(code + 0x108, (uintptr_t)code + sizeof(code_body));
+    patch_aarch64_26r(code + 0x10c, state->instruction_starts[instruction->jump_target]);
 }
 
 void
@@ -22819,10 +22371,12 @@ emit__TO_BOOL(
     // 74: d63f0100      blr     x8
     // 78: 2a1703e0      mov     w0, w23
     // 7c: 36fffe37      tbz     w23, #0x1f, 0x40 <_JIT_ENTRY+0x40>
-    // 80: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 84: 14000000      b       0x84 <_JIT_ENTRY+0x84>
-    // 0000000000000084:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[136] = {
+    // 80: d10022b5      sub     x21, x21, #0x8
+    // 84: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 88: 14000000      b       0x88 <_JIT_ENTRY+0x88>
+    // 0000000000000088:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 8c: 00 00 00 00
+    const unsigned char code_body[144] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0xb3, 0x82, 0x5f, 0xf8,
         0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
         0x08, 0x01, 0x40, 0xf9, 0xfd, 0x03, 0x00, 0x91,
@@ -22839,7 +22393,8 @@ emit__TO_BOOL(
         0xf7, 0x03, 0x00, 0x2a, 0xe0, 0x03, 0x13, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
         0xe0, 0x03, 0x17, 0x2a, 0x37, 0xfe, 0xff, 0x36,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0xb5, 0x22, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: &PyObject_IsTrue+0x0
     // 8: &_Py_TrueStruct+0x0
@@ -22865,7 +22420,7 @@ emit__TO_BOOL(
     patch_aarch64_26r(code + 0x60, (uintptr_t)code + sizeof(code_body));
     patch_aarch64_21rx(code + 0x64, (uintptr_t)data + 0x18);
     patch_aarch64_12x(code + 0x70, (uintptr_t)data + 0x18);
-    patch_aarch64_26r(code + 0x84, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0x88, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -23317,10 +22872,12 @@ emit__UNARY_INVERT(
     // 5c: d63f0100      blr     x8
     // 60: aa1703e0      mov     x0, x23
     // 64: b5fffef7      cbnz    x23, 0x40 <_JIT_ENTRY+0x40>
-    // 68: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 6c: 14000000      b       0x6c <_JIT_ENTRY+0x6c>
-    // 000000000000006c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[112] = {
+    // 68: d10022b5      sub     x21, x21, #0x8
+    // 6c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 70: 14000000      b       0x70 <_JIT_ENTRY+0x70>
+    // 0000000000000070:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 74: 00 00 00 00
+    const unsigned char code_body[120] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0xb3, 0x82, 0x5f, 0xf8,
         0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
         0x08, 0x01, 0x40, 0xf9, 0xfd, 0x03, 0x00, 0x91,
@@ -23334,7 +22891,8 @@ emit__UNARY_INVERT(
         0xf7, 0x03, 0x00, 0xaa, 0xe0, 0x03, 0x13, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
         0xe0, 0x03, 0x17, 0xaa, 0xf7, 0xfe, 0xff, 0xb5,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0xb5, 0x22, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: &PyNumber_Invert+0x0
     // 8: &_Py_Dealloc+0x0
@@ -23350,7 +22908,7 @@ emit__UNARY_INVERT(
     patch_aarch64_26r(code + 0x48, (uintptr_t)code + sizeof(code_body));
     patch_aarch64_21rx(code + 0x4c, (uintptr_t)data + 0x8);
     patch_aarch64_12x(code + 0x58, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x6c, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0x70, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -23395,10 +22953,12 @@ emit__UNARY_NEGATIVE(
     // 5c: d63f0100      blr     x8
     // 60: aa1703e0      mov     x0, x23
     // 64: b5fffef7      cbnz    x23, 0x40 <_JIT_ENTRY+0x40>
-    // 68: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 6c: 14000000      b       0x6c <_JIT_ENTRY+0x6c>
-    // 000000000000006c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[112] = {
+    // 68: d10022b5      sub     x21, x21, #0x8
+    // 6c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 70: 14000000      b       0x70 <_JIT_ENTRY+0x70>
+    // 0000000000000070:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 74: 00 00 00 00
+    const unsigned char code_body[120] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0xb3, 0x82, 0x5f, 0xf8,
         0x95, 0x22, 0x00, 0xf9, 0x08, 0x00, 0x00, 0x90,
         0x08, 0x01, 0x40, 0xf9, 0xfd, 0x03, 0x00, 0x91,
@@ -23412,7 +22972,8 @@ emit__UNARY_NEGATIVE(
         0xf7, 0x03, 0x00, 0xaa, 0xe0, 0x03, 0x13, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
         0xe0, 0x03, 0x17, 0xaa, 0xf7, 0xfe, 0xff, 0xb5,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0xb5, 0x22, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: &PyNumber_Negative+0x0
     // 8: &_Py_Dealloc+0x0
@@ -23428,7 +22989,7 @@ emit__UNARY_NEGATIVE(
     patch_aarch64_26r(code + 0x48, (uintptr_t)code + sizeof(code_body));
     patch_aarch64_21rx(code + 0x4c, (uintptr_t)data + 0x8);
     patch_aarch64_12x(code + 0x58, (uintptr_t)data + 0x8);
-    patch_aarch64_26r(code + 0x6c, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0x70, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -23531,10 +23092,10 @@ emit__UNPACK_EX(
     // 0000000000000080:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 84: d63f0100      blr     x8
     // 88: 35fffef9      cbnz    w25, 0x64 <_JIT_ENTRY+0x64>
-    // 8c: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 90: 14000000      b       0x90 <_JIT_ENTRY+0x90>
-    // 0000000000000090:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    // 94: 00 00 00 00
+    // 8c: d10022b5      sub     x21, x21, #0x8
+    // 90: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 94: 14000000      b       0x94 <_JIT_ENTRY+0x94>
+    // 0000000000000094:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
     const unsigned char code_body[152] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x08, 0x00, 0x00, 0x90,
         0xe0, 0x03, 0x16, 0xaa, 0xfd, 0x03, 0x00, 0x91,
@@ -23553,8 +23114,8 @@ emit__UNPACK_EX(
         0x00, 0x00, 0x00, 0x14, 0x08, 0x00, 0x00, 0x90,
         0xf9, 0x03, 0x00, 0x2a, 0xe0, 0x03, 0x17, 0xaa,
         0x08, 0x01, 0x40, 0xf9, 0x00, 0x01, 0x3f, 0xd6,
-        0xf9, 0xfe, 0xff, 0x35, 0xfd, 0x7b, 0xc1, 0xa8,
-        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
+        0xf9, 0xfe, 0xff, 0x35, 0xb5, 0x22, 0x00, 0xd1,
+        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
     };
     // 0: OPARG
     // 8: &_PyEval_UnpackIterableStackRef+0x0
@@ -23576,7 +23137,7 @@ emit__UNPACK_EX(
     patch_aarch64_26r(code + 0x70, (uintptr_t)code + sizeof(code_body));
     patch_aarch64_21rx(code + 0x74, (uintptr_t)data + 0x10);
     patch_aarch64_12x(code + 0x80, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x90, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0x94, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -23631,10 +23192,12 @@ emit__UNPACK_SEQUENCE(
     // 000000000000007c:  R_AARCH64_LD64_GOT_LO12_NC   _Py_Dealloc
     // 80: d63f0100      blr     x8
     // 84: 35fffed8      cbnz    w24, 0x5c <_JIT_ENTRY+0x5c>
-    // 88: a8c17bfd      ldp     x29, x30, [sp], #0x10
-    // 8c: 14000000      b       0x8c <_JIT_ENTRY+0x8c>
-    // 000000000000008c:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
-    const unsigned char code_body[144] = {
+    // 88: d10022b5      sub     x21, x21, #0x8
+    // 8c: a8c17bfd      ldp     x29, x30, [sp], #0x10
+    // 90: 14000000      b       0x90 <_JIT_ENTRY+0x90>
+    // 0000000000000090:  R_AARCH64_JUMP26     _JIT_ERROR_TARGET
+    // 94: 00 00 00 00
+    const unsigned char code_body[152] = {
         0xfd, 0x7b, 0xbf, 0xa9, 0x17, 0x00, 0x00, 0x90,
         0xe8, 0x03, 0x15, 0xaa, 0xe0, 0x03, 0x16, 0xaa,
         0xf7, 0x02, 0x40, 0xf9, 0x13, 0x8d, 0x5f, 0xf8,
@@ -23652,7 +23215,8 @@ emit__UNPACK_SEQUENCE(
         0x08, 0x00, 0x00, 0x90, 0xf8, 0x03, 0x00, 0x2a,
         0xe0, 0x03, 0x13, 0xaa, 0x08, 0x01, 0x40, 0xf9,
         0x00, 0x01, 0x3f, 0xd6, 0xd8, 0xfe, 0xff, 0x35,
-        0xfd, 0x7b, 0xc1, 0xa8, 0x00, 0x00, 0x00, 0x14,
+        0xb5, 0x22, 0x00, 0xd1, 0xfd, 0x7b, 0xc1, 0xa8,
+        0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00,
     };
     // 0: OPARG
     // 8: &_PyEval_UnpackIterableStackRef+0x0
@@ -23674,7 +23238,7 @@ emit__UNPACK_SEQUENCE(
     patch_aarch64_26r(code + 0x6c, (uintptr_t)code + sizeof(code_body));
     patch_aarch64_21rx(code + 0x70, (uintptr_t)data + 0x10);
     patch_aarch64_12x(code + 0x7c, (uintptr_t)data + 0x10);
-    patch_aarch64_26r(code + 0x8c, state->instruction_starts[instruction->error_target]);
+    patch_aarch64_26r(code + 0x90, state->instruction_starts[instruction->error_target]);
 }
 
 void
@@ -24225,7 +23789,7 @@ typedef struct {
     symbol_mask trampoline_mask;
 } StencilGroup;
 
-static const StencilGroup shim = {emit_shim, 208, 16, {0}};
+static const StencilGroup shim = {emit_shim, 104, 0, {0}};
 
 static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [_BINARY_OP] = {emit__BINARY_OP, 176, 24, {0}},
@@ -24236,48 +23800,47 @@ static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [_BINARY_OP_INPLACE_ADD_UNICODE] = {emit__BINARY_OP_INPLACE_ADD_UNICODE, 256, 32, {0}},
     [_BINARY_OP_MULTIPLY_FLOAT] = {emit__BINARY_OP_MULTIPLY_FLOAT, 72, 8, {0}},
     [_BINARY_OP_MULTIPLY_INT] = {emit__BINARY_OP_MULTIPLY_INT, 216, 24, {0}},
+    [_BINARY_OP_SUBSCR_CHECK_FUNC] = {emit__BINARY_OP_SUBSCR_CHECK_FUNC, 104, 0, {0}},
+    [_BINARY_OP_SUBSCR_DICT] = {emit__BINARY_OP_SUBSCR_DICT, 256, 32, {0}},
+    [_BINARY_OP_SUBSCR_INIT_CALL] = {emit__BINARY_OP_SUBSCR_INIT_CALL, 152, 0, {0}},
+    [_BINARY_OP_SUBSCR_LIST_INT] = {emit__BINARY_OP_SUBSCR_LIST_INT, 248, 40, {0}},
+    [_BINARY_OP_SUBSCR_STR_INT] = {emit__BINARY_OP_SUBSCR_STR_INT, 392, 40, {0}},
+    [_BINARY_OP_SUBSCR_TUPLE_INT] = {emit__BINARY_OP_SUBSCR_TUPLE_INT, 248, 40, {0}},
     [_BINARY_OP_SUBTRACT_FLOAT] = {emit__BINARY_OP_SUBTRACT_FLOAT, 72, 8, {0}},
     [_BINARY_OP_SUBTRACT_INT] = {emit__BINARY_OP_SUBTRACT_INT, 216, 24, {0}},
-    [_BINARY_SLICE] = {emit__BINARY_SLICE, 216, 24, {0}},
-    [_BINARY_SUBSCR] = {emit__BINARY_SUBSCR, 160, 16, {0}},
-    [_BINARY_SUBSCR_CHECK_FUNC] = {emit__BINARY_SUBSCR_CHECK_FUNC, 104, 0, {0}},
-    [_BINARY_SUBSCR_DICT] = {emit__BINARY_SUBSCR_DICT, 256, 32, {0}},
-    [_BINARY_SUBSCR_INIT_CALL] = {emit__BINARY_SUBSCR_INIT_CALL, 152, 0, {0}},
-    [_BINARY_SUBSCR_LIST_INT] = {emit__BINARY_SUBSCR_LIST_INT, 240, 40, {0}},
-    [_BINARY_SUBSCR_STR_INT] = {emit__BINARY_SUBSCR_STR_INT, 384, 40, {0}},
-    [_BINARY_SUBSCR_TUPLE_INT] = {emit__BINARY_SUBSCR_TUPLE_INT, 240, 40, {0}},
+    [_BINARY_SLICE] = {emit__BINARY_SLICE, 232, 24, {0}},
     [_BUILD_LIST] = {emit__BUILD_LIST, 88, 16, {0}},
     [_BUILD_MAP] = {emit__BUILD_MAP, 216, 24, {0}},
     [_BUILD_SET] = {emit__BUILD_SET, 432, 32, {0}},
-    [_BUILD_SLICE] = {emit__BUILD_SLICE, 264, 24, {0}},
+    [_BUILD_SLICE] = {emit__BUILD_SLICE, 192, 24, {0}},
     [_BUILD_STRING] = {emit__BUILD_STRING, 184, 32, {0}},
     [_BUILD_TUPLE] = {emit__BUILD_TUPLE, 88, 16, {0}},
     [_CALL_BUILTIN_CLASS] = {emit__CALL_BUILTIN_CLASS, 320, 16, {0}},
     [_CALL_BUILTIN_FAST] = {emit__CALL_BUILTIN_FAST, 336, 24, {0}},
     [_CALL_BUILTIN_FAST_WITH_KEYWORDS] = {emit__CALL_BUILTIN_FAST_WITH_KEYWORDS, 344, 24, {0}},
     [_CALL_BUILTIN_O] = {emit__CALL_BUILTIN_O, 288, 24, {0}},
-    [_CALL_INTRINSIC_1] = {emit__CALL_INTRINSIC_1, 136, 24, {0}},
+    [_CALL_INTRINSIC_1] = {emit__CALL_INTRINSIC_1, 144, 24, {0}},
     [_CALL_INTRINSIC_2] = {emit__CALL_INTRINSIC_2, 184, 24, {0}},
     [_CALL_ISINSTANCE] = {emit__CALL_ISINSTANCE, 360, 40, {0}},
-    [_CALL_KW_NON_PY] = {emit__CALL_KW_NON_PY, 376, 24, {0}},
-    [_CALL_LEN] = {emit__CALL_LEN, 304, 40, {0}},
-    [_CALL_LIST_APPEND] = {emit__CALL_LIST_APPEND, 240, 16, {0}},
+    [_CALL_KW_NON_PY] = {emit__CALL_KW_NON_PY, 392, 24, {0}},
+    [_CALL_LEN] = {emit__CALL_LEN, 296, 32, {0}},
+    [_CALL_LIST_APPEND] = {emit__CALL_LIST_APPEND, 272, 16, {0}},
     [_CALL_METHOD_DESCRIPTOR_FAST] = {emit__CALL_METHOD_DESCRIPTOR_FAST, 368, 24, {0}},
     [_CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS] = {emit__CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS, 376, 24, {0}},
     [_CALL_METHOD_DESCRIPTOR_NOARGS] = {emit__CALL_METHOD_DESCRIPTOR_NOARGS, 304, 24, {0}},
-    [_CALL_METHOD_DESCRIPTOR_O] = {emit__CALL_METHOD_DESCRIPTOR_O, 352, 24, {0}},
+    [_CALL_METHOD_DESCRIPTOR_O] = {emit__CALL_METHOD_DESCRIPTOR_O, 400, 24, {0}},
     [_CALL_NON_PY_GENERAL] = {emit__CALL_NON_PY_GENERAL, 304, 24, {0}},
-    [_CALL_STR_1] = {emit__CALL_STR_1, 152, 24, {0}},
-    [_CALL_TUPLE_1] = {emit__CALL_TUPLE_1, 152, 24, {0}},
-    [_CALL_TYPE_1] = {emit__CALL_TYPE_1, 128, 16, {0}},
-    [_CHECK_AND_ALLOCATE_OBJECT] = {emit__CHECK_AND_ALLOCATE_OBJECT, 256, 40, {0}},
+    [_CALL_STR_1] = {emit__CALL_STR_1, 160, 24, {0}},
+    [_CALL_TUPLE_1] = {emit__CALL_TUPLE_1, 160, 24, {0}},
+    [_CALL_TYPE_1] = {emit__CALL_TYPE_1, 136, 16, {0}},
+    [_CHECK_AND_ALLOCATE_OBJECT] = {emit__CHECK_AND_ALLOCATE_OBJECT, 264, 40, {0}},
     [_CHECK_ATTR_CLASS] = {emit__CHECK_ATTR_CLASS, 48, 8, {0}},
     [_CHECK_ATTR_METHOD_LAZY_DICT] = {emit__CHECK_ATTR_METHOD_LAZY_DICT, 32, 8, {0}},
     [_CHECK_ATTR_MODULE_PUSH_KEYS] = {emit__CHECK_ATTR_MODULE_PUSH_KEYS, 72, 16, {0}},
     [_CHECK_ATTR_WITH_HINT] = {emit__CHECK_ATTR_WITH_HINT, 24, 0, {0}},
     [_CHECK_CALL_BOUND_METHOD_EXACT_ARGS] = {emit__CHECK_CALL_BOUND_METHOD_EXACT_ARGS, 64, 16, {0}},
-    [_CHECK_EG_MATCH] = {emit__CHECK_EG_MATCH, 368, 40, {0}},
-    [_CHECK_EXC_MATCH] = {emit__CHECK_EXC_MATCH, 216, 40, {0}},
+    [_CHECK_EG_MATCH] = {emit__CHECK_EG_MATCH, 376, 40, {0}},
+    [_CHECK_EXC_MATCH] = {emit__CHECK_EXC_MATCH, 224, 40, {0}},
     [_CHECK_FUNCTION] = {emit__CHECK_FUNCTION, 32, 8, {0}},
     [_CHECK_FUNCTION_EXACT_ARGS] = {emit__CHECK_FUNCTION_EXACT_ARGS, 64, 8, {0}},
     [_CHECK_FUNCTION_VERSION] = {emit__CHECK_FUNCTION_VERSION, 72, 24, {0}},
@@ -24295,43 +23858,42 @@ static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [_CHECK_STACK_SPACE_OPERAND] = {emit__CHECK_STACK_SPACE_OPERAND, 56, 8, {0}},
     [_CHECK_VALIDITY] = {emit__CHECK_VALIDITY, 24, 8, {0}},
     [_CHECK_VALIDITY_AND_SET_IP] = {emit__CHECK_VALIDITY_AND_SET_IP, 32, 16, {0}},
-    [_COMPARE_OP] = {emit__COMPARE_OP, 304, 48, {0}},
+    [_COMPARE_OP] = {emit__COMPARE_OP, 312, 48, {0}},
     [_COMPARE_OP_FLOAT] = {emit__COMPARE_OP_FLOAT, 232, 40, {0}},
     [_COMPARE_OP_INT] = {emit__COMPARE_OP_INT, 280, 40, {0}},
     [_COMPARE_OP_STR] = {emit__COMPARE_OP_STR, 232, 48, {0}},
     [_CONTAINS_OP] = {emit__CONTAINS_OP, 192, 40, {0}},
     [_CONTAINS_OP_DICT] = {emit__CONTAINS_OP_DICT, 224, 48, {0}},
     [_CONTAINS_OP_SET] = {emit__CONTAINS_OP_SET, 232, 56, {0}},
-    [_CONVERT_VALUE] = {emit__CONVERT_VALUE, 128, 24, {0}},
+    [_CONVERT_VALUE] = {emit__CONVERT_VALUE, 152, 24, {0}},
     [_COPY] = {emit__COPY, 40, 8, {0}},
     [_COPY_FREE_VARS] = {emit__COPY_FREE_VARS, 96, 8, {0}},
     [_CREATE_INIT_FRAME] = {emit__CREATE_INIT_FRAME, 264, 40, {0}},
-    [_DELETE_ATTR] = {emit__DELETE_ATTR, 128, 24, {0}},
+    [_DELETE_ATTR] = {emit__DELETE_ATTR, 136, 24, {0}},
     [_DELETE_DEREF] = {emit__DELETE_DEREF, 152, 24, {0}},
-    [_DELETE_FAST] = {emit__DELETE_FAST, 168, 120, {0}},
+    [_DELETE_FAST] = {emit__DELETE_FAST, 184, 120, {0}},
     [_DELETE_GLOBAL] = {emit__DELETE_GLOBAL, 152, 64, {0}},
     [_DELETE_NAME] = {emit__DELETE_NAME, 192, 104, {0}},
-    [_DELETE_SUBSCR] = {emit__DELETE_SUBSCR, 144, 16, {0}},
+    [_DELETE_SUBSCR] = {emit__DELETE_SUBSCR, 152, 16, {0}},
     [_DEOPT] = {emit__DEOPT, 40, 16, {0}},
-    [_DICT_MERGE] = {emit__DICT_MERGE, 232, 32, {0}},
-    [_DICT_UPDATE] = {emit__DICT_UPDATE, 280, 96, {0}},
-    [_DYNAMIC_EXIT] = {emit__DYNAMIC_EXIT, 296, 24, {0}},
-    [_END_FOR] = {emit__END_FOR, 56, 8, {0}},
+    [_DICT_MERGE] = {emit__DICT_MERGE, 240, 32, {0}},
+    [_DICT_UPDATE] = {emit__DICT_UPDATE, 288, 96, {0}},
+    [_END_FOR] = {emit__END_FOR, 72, 8, {0}},
     [_END_SEND] = {emit__END_SEND, 72, 8, {0}},
-    [_ERROR_POP_N] = {emit__ERROR_POP_N, 56, 24, {0}},
+    [_ERROR_POP_N] = {emit__ERROR_POP_N, 48, 16, {0}},
     [_EXIT_INIT_CHECK] = {emit__EXIT_INIT_CHECK, 96, 72, {0}},
-    [_EXIT_TRACE] = {emit__EXIT_TRACE, 440, 32, {0}},
-    [_EXPAND_METHOD] = {emit__EXPAND_METHOD, 128, 16, {0}},
-    [_EXPAND_METHOD_KW] = {emit__EXPAND_METHOD_KW, 128, 16, {0}},
+    [_EXIT_TRACE] = {emit__EXIT_TRACE, 472, 32, {0}},
+    [_EXPAND_METHOD] = {emit__EXPAND_METHOD, 152, 16, {0}},
+    [_EXPAND_METHOD_KW] = {emit__EXPAND_METHOD_KW, 152, 16, {0}},
     [_FATAL_ERROR] = {emit__FATAL_ERROR, 40, 48, {0}},
-    [_FORMAT_SIMPLE] = {emit__FORMAT_SIMPLE, 144, 24, {0}},
+    [_FORMAT_SIMPLE] = {emit__FORMAT_SIMPLE, 168, 24, {0}},
     [_FORMAT_WITH_SPEC] = {emit__FORMAT_WITH_SPEC, 160, 16, {0}},
     [_FOR_ITER_GEN_FRAME] = {emit__FOR_ITER_GEN_FRAME, 112, 24, {0}},
     [_FOR_ITER_TIER_TWO] = {emit__FOR_ITER_TIER_TWO, 184, 32, {0}},
-    [_GET_AITER] = {emit__GET_AITER, 360, 184, {0}},
+    [_GET_AITER] = {emit__GET_AITER, 368, 184, {0}},
     [_GET_ANEXT] = {emit__GET_ANEXT, 64, 8, {0}},
     [_GET_AWAITABLE] = {emit__GET_AWAITABLE, 128, 24, {0}},
-    [_GET_ITER] = {emit__GET_ITER, 112, 16, {0}},
+    [_GET_ITER] = {emit__GET_ITER, 120, 16, {0}},
     [_GET_LEN] = {emit__GET_LEN, 80, 16, {0}},
     [_GET_YIELD_FROM_ITER] = {emit__GET_YIELD_FROM_ITER, 240, 120, {0}},
     [_GUARD_BINARY_OP_EXTEND] = {emit__GUARD_BINARY_OP_EXTEND, 64, 8, {0}},
@@ -24344,8 +23906,8 @@ static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [_GUARD_GLOBALS_VERSION] = {emit__GUARD_GLOBALS_VERSION, 56, 16, {0}},
     [_GUARD_GLOBALS_VERSION_PUSH_KEYS] = {emit__GUARD_GLOBALS_VERSION_PUSH_KEYS, 64, 16, {0}},
     [_GUARD_IS_FALSE_POP] = {emit__GUARD_IS_FALSE_POP, 24, 8, {0}},
-    [_GUARD_IS_NONE_POP] = {emit__GUARD_IS_NONE_POP, 80, 16, {0}},
-    [_GUARD_IS_NOT_NONE_POP] = {emit__GUARD_IS_NOT_NONE_POP, 96, 16, {0}},
+    [_GUARD_IS_NONE_POP] = {emit__GUARD_IS_NONE_POP, 96, 16, {0}},
+    [_GUARD_IS_NOT_NONE_POP] = {emit__GUARD_IS_NOT_NONE_POP, 112, 16, {0}},
     [_GUARD_IS_TRUE_POP] = {emit__GUARD_IS_TRUE_POP, 24, 8, {0}},
     [_GUARD_KEYS_VERSION] = {emit__GUARD_KEYS_VERSION, 40, 8, {0}},
     [_GUARD_NOS_FLOAT] = {emit__GUARD_NOS_FLOAT, 32, 8, {0}},
@@ -24359,7 +23921,7 @@ static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [_GUARD_TYPE_VERSION_AND_LOCK] = {emit__GUARD_TYPE_VERSION_AND_LOCK, 40, 8, {0}},
     [_IMPORT_FROM] = {emit__IMPORT_FROM, 88, 16, {0}},
     [_IMPORT_NAME] = {emit__IMPORT_NAME, 192, 24, {0}},
-    [_INIT_CALL_BOUND_METHOD_EXACT_ARGS] = {emit__INIT_CALL_BOUND_METHOD_EXACT_ARGS, 128, 16, {0}},
+    [_INIT_CALL_BOUND_METHOD_EXACT_ARGS] = {emit__INIT_CALL_BOUND_METHOD_EXACT_ARGS, 152, 16, {0}},
     [_INIT_CALL_PY_EXACT_ARGS] = {emit__INIT_CALL_PY_EXACT_ARGS, 352, 8, {0}},
     [_INIT_CALL_PY_EXACT_ARGS_0] = {emit__INIT_CALL_PY_EXACT_ARGS_0, 152, 0, {0}},
     [_INIT_CALL_PY_EXACT_ARGS_1] = {emit__INIT_CALL_PY_EXACT_ARGS_1, 160, 0, {0}},
@@ -24375,31 +23937,26 @@ static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [_ITER_NEXT_RANGE] = {emit__ITER_NEXT_RANGE, 72, 8, {0}},
     [_ITER_NEXT_TUPLE] = {emit__ITER_NEXT_TUPLE, 48, 0, {0}},
     [_JUMP_TO_TOP] = {emit__JUMP_TO_TOP, 8, 0, {0}},
-    [_LIST_APPEND] = {emit__LIST_APPEND, 112, 16, {0}},
-    [_LIST_EXTEND] = {emit__LIST_EXTEND, 320, 112, {0}},
-    [_LOAD_ATTR] = {emit__LOAD_ATTR, 304, 32, {0}},
-    [_LOAD_ATTR_CLASS_0] = {emit__LOAD_ATTR_CLASS_0, 88, 16, {0}},
-    [_LOAD_ATTR_CLASS_1] = {emit__LOAD_ATTR_CLASS_1, 96, 16, {0}},
-    [_LOAD_ATTR_INSTANCE_VALUE_0] = {emit__LOAD_ATTR_INSTANCE_VALUE_0, 104, 16, {0}},
-    [_LOAD_ATTR_INSTANCE_VALUE_1] = {emit__LOAD_ATTR_INSTANCE_VALUE_1, 120, 16, {0}},
+    [_LIST_APPEND] = {emit__LIST_APPEND, 104, 16, {0}},
+    [_LIST_EXTEND] = {emit__LIST_EXTEND, 328, 112, {0}},
+    [_LOAD_ATTR] = {emit__LOAD_ATTR, 296, 32, {0}},
+    [_LOAD_ATTR_CLASS] = {emit__LOAD_ATTR_CLASS, 88, 16, {0}},
+    [_LOAD_ATTR_INSTANCE_VALUE] = {emit__LOAD_ATTR_INSTANCE_VALUE, 120, 16, {0}},
     [_LOAD_ATTR_METHOD_LAZY_DICT] = {emit__LOAD_ATTR_METHOD_LAZY_DICT, 40, 8, {0}},
     [_LOAD_ATTR_METHOD_NO_DICT] = {emit__LOAD_ATTR_METHOD_NO_DICT, 40, 8, {0}},
     [_LOAD_ATTR_METHOD_WITH_VALUES] = {emit__LOAD_ATTR_METHOD_WITH_VALUES, 40, 8, {0}},
-    [_LOAD_ATTR_MODULE] = {emit__LOAD_ATTR_MODULE, 168, 24, {0}},
-    [_LOAD_ATTR_MODULE_FROM_KEYS] = {emit__LOAD_ATTR_MODULE_FROM_KEYS, 168, 24, {0}},
+    [_LOAD_ATTR_MODULE] = {emit__LOAD_ATTR_MODULE, 128, 16, {0}},
+    [_LOAD_ATTR_MODULE_FROM_KEYS] = {emit__LOAD_ATTR_MODULE_FROM_KEYS, 144, 16, {0}},
     [_LOAD_ATTR_NONDESCRIPTOR_NO_DICT] = {emit__LOAD_ATTR_NONDESCRIPTOR_NO_DICT, 80, 16, {0}},
     [_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = {emit__LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, 80, 16, {0}},
     [_LOAD_ATTR_PROPERTY_FRAME] = {emit__LOAD_ATTR_PROPERTY_FRAME, 224, 8, {0}},
-    [_LOAD_ATTR_SLOT_0] = {emit__LOAD_ATTR_SLOT_0, 104, 16, {0}},
-    [_LOAD_ATTR_SLOT_1] = {emit__LOAD_ATTR_SLOT_1, 120, 16, {0}},
-    [_LOAD_ATTR_WITH_HINT] = {emit__LOAD_ATTR_WITH_HINT, 216, 24, {0}},
+    [_LOAD_ATTR_SLOT] = {emit__LOAD_ATTR_SLOT, 104, 16, {0}},
+    [_LOAD_ATTR_WITH_HINT] = {emit__LOAD_ATTR_WITH_HINT, 192, 24, {0}},
     [_LOAD_BUILD_CLASS] = {emit__LOAD_BUILD_CLASS, 152, 64, {0}},
     [_LOAD_COMMON_CONSTANT] = {emit__LOAD_COMMON_CONSTANT, 40, 24, {0}},
     [_LOAD_CONST_IMMORTAL] = {emit__LOAD_CONST_IMMORTAL, 32, 8, {0}},
     [_LOAD_CONST_INLINE] = {emit__LOAD_CONST_INLINE, 32, 8, {0}},
     [_LOAD_CONST_INLINE_BORROW] = {emit__LOAD_CONST_INLINE_BORROW, 16, 8, {0}},
-    [_LOAD_CONST_INLINE_BORROW_WITH_NULL] = {emit__LOAD_CONST_INLINE_BORROW_WITH_NULL, 24, 8, {0}},
-    [_LOAD_CONST_INLINE_WITH_NULL] = {emit__LOAD_CONST_INLINE_WITH_NULL, 40, 8, {0}},
     [_LOAD_CONST_MORTAL] = {emit__LOAD_CONST_MORTAL, 48, 8, {0}},
     [_LOAD_DEREF] = {emit__LOAD_DEREF, 112, 16, {0}},
     [_LOAD_FAST] = {emit__LOAD_FAST, 40, 8, {0}},
@@ -24413,12 +23970,12 @@ static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [_LOAD_FAST_7] = {emit__LOAD_FAST_7, 24, 0, {0}},
     [_LOAD_FAST_AND_CLEAR] = {emit__LOAD_FAST_AND_CLEAR, 24, 8, {0}},
     [_LOAD_FAST_CHECK] = {emit__LOAD_FAST_CHECK, 144, 112, {0}},
-    [_LOAD_FROM_DICT_OR_DEREF] = {emit__LOAD_FROM_DICT_OR_DEREF, 264, 32, {0}},
-    [_LOAD_GLOBAL] = {emit__LOAD_GLOBAL, 120, 16, {0}},
-    [_LOAD_GLOBAL_BUILTINS] = {emit__LOAD_GLOBAL_BUILTINS, 104, 16, {0}},
-    [_LOAD_GLOBAL_BUILTINS_FROM_KEYS] = {emit__LOAD_GLOBAL_BUILTINS_FROM_KEYS, 104, 16, {0}},
-    [_LOAD_GLOBAL_MODULE] = {emit__LOAD_GLOBAL_MODULE, 104, 16, {0}},
-    [_LOAD_GLOBAL_MODULE_FROM_KEYS] = {emit__LOAD_GLOBAL_MODULE_FROM_KEYS, 104, 16, {0}},
+    [_LOAD_FROM_DICT_OR_DEREF] = {emit__LOAD_FROM_DICT_OR_DEREF, 296, 32, {0}},
+    [_LOAD_GLOBAL] = {emit__LOAD_GLOBAL, 104, 16, {0}},
+    [_LOAD_GLOBAL_BUILTINS] = {emit__LOAD_GLOBAL_BUILTINS, 72, 8, {0}},
+    [_LOAD_GLOBAL_BUILTINS_FROM_KEYS] = {emit__LOAD_GLOBAL_BUILTINS_FROM_KEYS, 80, 8, {0}},
+    [_LOAD_GLOBAL_MODULE] = {emit__LOAD_GLOBAL_MODULE, 72, 8, {0}},
+    [_LOAD_GLOBAL_MODULE_FROM_KEYS] = {emit__LOAD_GLOBAL_MODULE_FROM_KEYS, 80, 8, {0}},
     [_LOAD_LOCALS] = {emit__LOAD_LOCALS, 96, 32, {0}},
     [_LOAD_NAME] = {emit__LOAD_NAME, 88, 16, {0}},
     [_LOAD_SMALL_INT] = {emit__LOAD_SMALL_INT, 40, 16, {0}},
@@ -24428,27 +23985,28 @@ static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [_LOAD_SMALL_INT_3] = {emit__LOAD_SMALL_INT_3, 24, 8, {0}},
     [_LOAD_SPECIAL] = {emit__LOAD_SPECIAL, 200, 40, {0}},
     [_LOAD_SUPER_ATTR_ATTR] = {emit__LOAD_SUPER_ATTR_ATTR, 272, 32, {0}},
-    [_LOAD_SUPER_ATTR_METHOD] = {emit__LOAD_SUPER_ATTR_METHOD, 352, 40, {0}},
-    [_MAKE_CALLARGS_A_TUPLE] = {emit__MAKE_CALLARGS_A_TUPLE, 216, 40, {0}},
-    [_MAKE_CELL] = {emit__MAKE_CELL, 112, 24, {0}},
-    [_MAKE_FUNCTION] = {emit__MAKE_FUNCTION, 136, 24, {0}},
+    [_LOAD_SUPER_ATTR_METHOD] = {emit__LOAD_SUPER_ATTR_METHOD, 368, 40, {0}},
+    [_MAKE_CALLARGS_A_TUPLE] = {emit__MAKE_CALLARGS_A_TUPLE, 192, 32, {0}},
+    [_MAKE_CELL] = {emit__MAKE_CELL, 136, 24, {0}},
+    [_MAKE_FUNCTION] = {emit__MAKE_FUNCTION, 152, 24, {0}},
     [_MAKE_WARM] = {emit__MAKE_WARM, 64, 8, {0}},
     [_MAP_ADD] = {emit__MAP_ADD, 80, 16, {0}},
     [_MATCH_CLASS] = {emit__MATCH_CLASS, 256, 32, {0}},
     [_MATCH_KEYS] = {emit__MATCH_KEYS, 64, 8, {0}},
     [_MATCH_MAPPING] = {emit__MATCH_MAPPING, 48, 16, {0}},
     [_MATCH_SEQUENCE] = {emit__MATCH_SEQUENCE, 48, 16, {0}},
-    [_MAYBE_EXPAND_METHOD] = {emit__MAYBE_EXPAND_METHOD, 160, 24, {0}},
-    [_MAYBE_EXPAND_METHOD_KW] = {emit__MAYBE_EXPAND_METHOD_KW, 176, 24, {0}},
+    [_MAYBE_EXPAND_METHOD] = {emit__MAYBE_EXPAND_METHOD, 184, 24, {0}},
+    [_MAYBE_EXPAND_METHOD_KW] = {emit__MAYBE_EXPAND_METHOD_KW, 216, 24, {0}},
     [_NOP] = {emit__NOP, 0, 0, {0}},
     [_POP_EXCEPT] = {emit__POP_EXCEPT, 112, 16, {0}},
     [_POP_TOP] = {emit__POP_TOP, 56, 8, {0}},
-    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = {emit__POP_TOP_LOAD_CONST_INLINE_BORROW, 80, 16, {0}},
+    [_POP_TOP_LOAD_CONST_INLINE_BORROW] = {emit__POP_TOP_LOAD_CONST_INLINE_BORROW, 72, 16, {0}},
     [_PUSH_EXC_INFO] = {emit__PUSH_EXC_INFO, 64, 8, {0}},
     [_PUSH_FRAME] = {emit__PUSH_FRAME, 40, 0, {0}},
     [_PUSH_NULL] = {emit__PUSH_NULL, 8, 0, {0}},
+    [_PUSH_NULL_CONDITIONAL] = {emit__PUSH_NULL_CONDITIONAL, 24, 8, {0}},
     [_PY_FRAME_GENERAL] = {emit__PY_FRAME_GENERAL, 176, 16, {0}},
-    [_PY_FRAME_KW] = {emit__PY_FRAME_KW, 248, 24, {0}},
+    [_PY_FRAME_KW] = {emit__PY_FRAME_KW, 272, 24, {0}},
     [_REPLACE_WITH_TRUE] = {emit__REPLACE_WITH_TRUE, 80, 16, {0}},
     [_RESUME_CHECK] = {emit__RESUME_CHECK, 32, 0, {0}},
     [_RETURN_GENERATOR] = {emit__RETURN_GENERATOR, 360, 16, {0}},
@@ -24456,44 +24014,44 @@ static const StencilGroup stencil_groups[MAX_UOP_ID + 1] = {
     [_SAVE_RETURN_OFFSET] = {emit__SAVE_RETURN_OFFSET, 16, 8, {0}},
     [_SEND_GEN_FRAME] = {emit__SEND_GEN_FRAME, 120, 24, {0}},
     [_SETUP_ANNOTATIONS] = {emit__SETUP_ANNOTATIONS, 312, 104, {0}},
-    [_SET_ADD] = {emit__SET_ADD, 128, 24, {0}},
+    [_SET_ADD] = {emit__SET_ADD, 136, 24, {0}},
     [_SET_FUNCTION_ATTRIBUTE] = {emit__SET_FUNCTION_ATTRIBUTE, 40, 16, {0}},
     [_SET_IP] = {emit__SET_IP, 16, 8, {0}},
     [_SET_UPDATE] = {emit__SET_UPDATE, 136, 24, {0}},
     [_START_EXECUTOR] = {emit__START_EXECUTOR, 80, 8, {0}},
-    [_STORE_ATTR] = {emit__STORE_ATTR, 168, 24, {0}},
+    [_STORE_ATTR] = {emit__STORE_ATTR, 176, 24, {0}},
     [_STORE_ATTR_INSTANCE_VALUE] = {emit__STORE_ATTR_INSTANCE_VALUE, 192, 16, {0}},
     [_STORE_ATTR_SLOT] = {emit__STORE_ATTR_SLOT, 136, 16, {0}},
     [_STORE_ATTR_WITH_HINT] = {emit__STORE_ATTR_WITH_HINT, 264, 32, {0}},
     [_STORE_DEREF] = {emit__STORE_DEREF, 112, 16, {0}},
-    [_STORE_FAST] = {emit__STORE_FAST, 80, 16, {0}},
-    [_STORE_FAST_0] = {emit__STORE_FAST_0, 64, 8, {0}},
-    [_STORE_FAST_1] = {emit__STORE_FAST_1, 64, 8, {0}},
-    [_STORE_FAST_2] = {emit__STORE_FAST_2, 64, 8, {0}},
-    [_STORE_FAST_3] = {emit__STORE_FAST_3, 64, 8, {0}},
-    [_STORE_FAST_4] = {emit__STORE_FAST_4, 64, 8, {0}},
-    [_STORE_FAST_5] = {emit__STORE_FAST_5, 64, 8, {0}},
-    [_STORE_FAST_6] = {emit__STORE_FAST_6, 64, 8, {0}},
-    [_STORE_FAST_7] = {emit__STORE_FAST_7, 64, 8, {0}},
+    [_STORE_FAST] = {emit__STORE_FAST, 96, 16, {0}},
+    [_STORE_FAST_0] = {emit__STORE_FAST_0, 88, 8, {0}},
+    [_STORE_FAST_1] = {emit__STORE_FAST_1, 88, 8, {0}},
+    [_STORE_FAST_2] = {emit__STORE_FAST_2, 88, 8, {0}},
+    [_STORE_FAST_3] = {emit__STORE_FAST_3, 88, 8, {0}},
+    [_STORE_FAST_4] = {emit__STORE_FAST_4, 88, 8, {0}},
+    [_STORE_FAST_5] = {emit__STORE_FAST_5, 88, 8, {0}},
+    [_STORE_FAST_6] = {emit__STORE_FAST_6, 88, 8, {0}},
+    [_STORE_FAST_7] = {emit__STORE_FAST_7, 88, 8, {0}},
     [_STORE_GLOBAL] = {emit__STORE_GLOBAL, 136, 24, {0}},
-    [_STORE_NAME] = {emit__STORE_NAME, 280, 88, {0}},
+    [_STORE_NAME] = {emit__STORE_NAME, 288, 88, {0}},
     [_STORE_SLICE] = {emit__STORE_SLICE, 248, 24, {0}},
     [_STORE_SUBSCR] = {emit__STORE_SUBSCR, 192, 16, {0}},
-    [_STORE_SUBSCR_DICT] = {emit__STORE_SUBSCR_DICT, 136, 24, {0}},
+    [_STORE_SUBSCR_DICT] = {emit__STORE_SUBSCR_DICT, 160, 24, {0}},
     [_STORE_SUBSCR_LIST_INT] = {emit__STORE_SUBSCR_LIST_INT, 272, 40, {0}},
     [_SWAP] = {emit__SWAP, 32, 8, {0}},
     [_TIER2_RESUME_CHECK] = {emit__TIER2_RESUME_CHECK, 16, 0, {0}},
-    [_TO_BOOL] = {emit__TO_BOOL, 136, 32, {0}},
+    [_TO_BOOL] = {emit__TO_BOOL, 144, 32, {0}},
     [_TO_BOOL_BOOL] = {emit__TO_BOOL_BOOL, 32, 8, {0}},
     [_TO_BOOL_INT] = {emit__TO_BOOL_INT, 136, 32, {0}},
     [_TO_BOOL_LIST] = {emit__TO_BOOL_LIST, 104, 32, {0}},
     [_TO_BOOL_NONE] = {emit__TO_BOOL_NONE, 40, 16, {0}},
     [_TO_BOOL_STR] = {emit__TO_BOOL_STR, 144, 40, {0}},
-    [_UNARY_INVERT] = {emit__UNARY_INVERT, 112, 16, {0}},
-    [_UNARY_NEGATIVE] = {emit__UNARY_NEGATIVE, 112, 16, {0}},
+    [_UNARY_INVERT] = {emit__UNARY_INVERT, 120, 16, {0}},
+    [_UNARY_NEGATIVE] = {emit__UNARY_NEGATIVE, 120, 16, {0}},
     [_UNARY_NOT] = {emit__UNARY_NOT, 32, 16, {0}},
     [_UNPACK_EX] = {emit__UNPACK_EX, 152, 24, {0}},
-    [_UNPACK_SEQUENCE] = {emit__UNPACK_SEQUENCE, 144, 24, {0}},
+    [_UNPACK_SEQUENCE] = {emit__UNPACK_SEQUENCE, 152, 24, {0}},
     [_UNPACK_SEQUENCE_LIST] = {emit__UNPACK_SEQUENCE_LIST, 208, 24, {0}},
     [_UNPACK_SEQUENCE_TUPLE] = {emit__UNPACK_SEQUENCE_TUPLE, 208, 24, {0}},
     [_UNPACK_SEQUENCE_TWO_TUPLE] = {emit__UNPACK_SEQUENCE_TWO_TUPLE, 152, 16, {0}},
