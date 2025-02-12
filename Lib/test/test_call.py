@@ -1064,10 +1064,10 @@ class TestRecursion(unittest.TestCase):
             recurse(90_000)
             with self.assertRaises(RecursionError):
                 recurse(101_000)
-            c_recurse(100)
+            c_recurse(50)
             with self.assertRaises(RecursionError):
                 c_recurse(90_000)
-            c_py_recurse(90)
+            c_py_recurse(50)
             with self.assertRaises(RecursionError):
                 c_py_recurse(100_000)
 

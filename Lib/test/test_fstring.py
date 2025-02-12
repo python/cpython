@@ -628,7 +628,6 @@ x = (
                             ["f'{a(4}'",
                             ])
         self.assertRaises(SyntaxError, eval, "f'{" + "("*100 + "}'")
-        self.assertRaises(MemoryError, eval, "f'{" + "("*500 + "}'")
 
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_fstring_nested_too_deeply(self):

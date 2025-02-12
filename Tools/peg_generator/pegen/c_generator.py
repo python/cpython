@@ -44,7 +44,7 @@ EXTENSION_PREFIX = """\
 #    define MAXSTACK 4000
 #  endif
 #else
-#  define MAXSTACK 6000
+#  define MAXSTACK 4000
 #endif
 
 """
