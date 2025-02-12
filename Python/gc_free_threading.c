@@ -564,8 +564,8 @@ typedef struct {
 } gc_span_stack_t;
 
 typedef struct {
-    unsigned int in;
-    unsigned int out;
+    Py_ssize_t in;
+    Py_ssize_t out;
     _PyObjectStack stack;
     gc_span_stack_t spans;
     PyObject *buffer[BUFFER_SIZE];
@@ -574,14 +574,14 @@ typedef struct {
 
 
 // Returns number of entries in buffer
-static inline unsigned int
+static inline Py_ssize_t
 gc_mark_buffer_len(gc_mark_args_t *args)
 {
     return args->in - args->out;
 }
 
 // Returns number of free entry slots in buffer
-static inline unsigned int
+static inline Py_ssize_t
 gc_mark_buffer_avail(gc_mark_args_t *args)
 {
     return BUFFER_SIZE - gc_mark_buffer_len(args);
@@ -1074,13 +1074,13 @@ mark_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
         return true;
     }
 
-    _PyObject_ASSERT_WITH_MSG(op, gc_get_refs(op) >= 0,
-                                  "refcount is too small");
-
     if (gc_is_alive(op) || !gc_is_unreachable(op)) {
         // Object was already marked as reachable.
         return true;
     }
+
+    _PyObject_ASSERT_WITH_MSG(op, gc_get_refs(op) >= 0,
+                                  "refcount is too small");
 
     // GH-129236: If we've seen an active frame without a valid stack pointer,
     // then we can't collect objects with deferred references because we may
