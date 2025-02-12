@@ -618,6 +618,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(origin)
         STRUCT_FOR_ID(out_fd)
         STRUCT_FOR_ID(outgoing)
+        STRUCT_FOR_ID(outpath)
         STRUCT_FOR_ID(overlapped)
         STRUCT_FOR_ID(owner)
         STRUCT_FOR_ID(pages)

@@ -18,7 +18,7 @@ except ImportError:
     _testinternalcapi = None
 
 from test import support
-from test.support import os_helper, script_helper
+from test.support import os_helper, script_helper, skip_emscripten_stack_overflow
 from test.support.ast_helper import ASTTestMixin
 from test.test_ast.utils import to_tuple
 from test.test_ast.snippets import (
@@ -745,6 +745,7 @@ class AST_Tests(unittest.TestCase):
         enum._test_simple_enum(_Precedence, ast._Precedence)
 
     @support.cpython_only
+    @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
         fail_depth = support.exceeds_recursion_limit()
         crash_depth = 100_000
@@ -1661,6 +1662,7 @@ Module(
         exec(code, ns)
         self.assertIn('sleep', ns)
 
+    @skip_emscripten_stack_overflow()
     def test_recursion_direct(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
         e.operand = e
@@ -1668,6 +1670,7 @@ Module(
             with support.infinite_recursion():
                 compile(ast.Expression(e), "<test>", "eval")
 
+    @skip_emscripten_stack_overflow()
     def test_recursion_indirect(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
         f = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
@@ -3275,16 +3278,6 @@ class ASTOptimiziationTests(unittest.TestCase):
             ))
 
             self.assert_ast(code % (left, right), non_optimized_target, optimized_target)
-
-    def test_folding_subscript(self):
-        code = "(1,)[0]"
-
-        non_optimized_target = self.wrap_expr(
-            ast.Subscript(value=ast.Tuple(elts=[ast.Constant(value=1)]), slice=ast.Constant(value=0))
-        )
-        optimized_target = self.wrap_expr(ast.Constant(value=1))
-
-        self.assert_ast(code, non_optimized_target, optimized_target)
 
     def test_folding_type_param_in_function_def(self):
         code = "def foo[%s = 1 + 1](): pass"
