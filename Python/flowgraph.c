@@ -1428,31 +1428,42 @@ fold_tuple_of_constants(basicblock *bb, int n, PyObject *consts, PyObject *const
 }
 
 #define MIN_CONST_SEQUENCE_SIZE 3
-/* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cN, BUILD_LIST N
-   with BUILD_LIST 0, LOAD_CONST (c1, c2, ... cN), LIST_EXTEND 1,
-   or BUILD_SET & SET_UPDATE respectively.
+/*
+Optimize literal list/set for:
+    1. "for" loop, comprehension or "in"/"not in" tests:
+           Change literal list or set of constants into constant
+           tuple or frozenset respectively. Change literal list of
+           non-constants into tuple.
+    2. Constant literal lists/set with length >= MIN_CONST_SEQUENCE_SIZE:
+           Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cN, BUILD_LIST N
+           with BUILD_LIST 0, LOAD_CONST (c1, c2, ... cN), LIST_EXTEND 1,
+           or BUILD_SET & SET_UPDATE respectively.
 */
 static int
-optimize_if_const_list_or_set(basicblock *bb, int n, PyObject *consts, PyObject *const_cache)
+optimize_list_or_set_literal(basicblock *bb, int i, int nextop,
+                             PyObject *consts, PyObject *const_cache)
 {
     assert(PyDict_CheckExact(const_cache));
     assert(PyList_CheckExact(consts));
-    cfg_instr *instr = &bb->b_instr[n];
+    cfg_instr *instr = &bb->b_instr[i];
     assert(instr->i_opcode == BUILD_LIST || instr->i_opcode == BUILD_SET);
+    bool contains_or_iter_literal = nextop == GET_ITER || nextop == CONTAINS_OP;
     int seq_size = instr->i_oparg;
-    if (seq_size < MIN_CONST_SEQUENCE_SIZE) {
+    if (seq_size < MIN_CONST_SEQUENCE_SIZE && !contains_or_iter_literal) {
         return SUCCESS;
     }
     PyObject *newconst;
-    RETURN_IF_ERROR(get_constant_sequence(bb, n-1, seq_size, consts, &newconst));
+    RETURN_IF_ERROR(get_constant_sequence(bb, i-1, seq_size, consts, &newconst));
     if (newconst == NULL) {
         /* not a const sequence */
+        if (contains_or_iter_literal && instr->i_opcode == BUILD_LIST) {
+            /* convert list iterable to tuple */
+            INSTR_SET_OP1(instr, BUILD_TUPLE, instr->i_oparg);
+        }
         return SUCCESS;
     }
     assert(PyTuple_CheckExact(newconst) && PyTuple_GET_SIZE(newconst) == seq_size);
-    int build = instr->i_opcode;
-    int extend = build == BUILD_LIST ? LIST_EXTEND : SET_UPDATE;
-    if (build == BUILD_SET) {
+    if (instr->i_opcode == BUILD_SET) {
         PyObject *frozenset = PyFrozenSet_New(newconst);
         if (frozenset == NULL) {
             Py_DECREF(newconst);
@@ -1462,11 +1473,16 @@ optimize_if_const_list_or_set(basicblock *bb, int n, PyObject *consts, PyObject 
     }
     int index = add_const(newconst, consts, const_cache);
     RETURN_IF_ERROR(index);
-    nop_out(bb, n-1, seq_size);
-    assert(n >= 2);
-    INSTR_SET_OP1(&bb->b_instr[n-2], build, 0);
-    INSTR_SET_OP1(&bb->b_instr[n-1], LOAD_CONST, index);
-    INSTR_SET_OP1(&bb->b_instr[n], extend, 1);
+    nop_out(bb, i-1, seq_size);
+    if (contains_or_iter_literal) {
+        INSTR_SET_OP1(instr, LOAD_CONST, index);
+    }
+    else {
+        assert(i >= 2);
+        INSTR_SET_OP1(&bb->b_instr[i-2], instr->i_opcode, 0);
+        INSTR_SET_OP1(&bb->b_instr[i-1], LOAD_CONST, index);
+        INSTR_SET_OP1(&bb->b_instr[i], instr->i_opcode == BUILD_LIST ? LIST_EXTEND : SET_UPDATE, 1);
+    }
     return SUCCESS;
 }
 
@@ -1556,41 +1572,6 @@ error:
     Py_XDECREF(o);
     Py_XDECREF(key);
     return ERROR;
-}
-
-static int
-optimize_if_const_list_or_set_iter(basicblock *bb, int n,
-                                   PyObject *consts, PyObject *const_cache)
-{
-    cfg_instr *instr = &bb->b_instr[n];
-    assert(instr->i_opcode == BUILD_LIST || instr->i_opcode == BUILD_SET);
-    assert(n + 1 < bb->b_iused);
-    cfg_instr *next = &bb->b_instr[n + 1];
-    assert(next->i_opcode == GET_ITER || next->i_opcode == CONTAINS_OP);
-    int seq_size = instr->i_oparg;
-    PyObject *newconst;
-    RETURN_IF_ERROR(get_constant_sequence(bb, n-1, seq_size, consts, &newconst));
-    if (newconst == NULL) {
-        /* not a const sequence */
-        if (instr->i_opcode == BUILD_LIST) {
-            /* even if not const list, it is still changed to build tuple */
-            INSTR_SET_OP1(instr, BUILD_TUPLE, instr->i_oparg);
-        }
-        return SUCCESS;
-    }
-    if (instr->i_opcode == BUILD_SET) {
-        PyObject *frozenset = PyFrozenSet_New(newconst);
-        if (frozenset == NULL) {
-            Py_DECREF(newconst);
-            return ERROR;
-        }
-        Py_SETREF(newconst, frozenset);
-    }
-    int index = add_const(newconst, consts, const_cache);
-    RETURN_IF_ERROR(index);
-    nop_out(bb, n-1, seq_size);
-    INSTR_SET_OP1(instr, LOAD_CONST, index);
-    return SUCCESS;
 }
 
 #define VISITED (-1)
@@ -1958,12 +1939,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 break;
             case BUILD_LIST:
             case BUILD_SET:
-                if (nextop == GET_ITER || nextop == CONTAINS_OP) {
-                    RETURN_IF_ERROR(optimize_if_const_list_or_set_iter(bb, i, consts, const_cache));
-                }
-                else {
-                    RETURN_IF_ERROR(optimize_if_const_list_or_set(bb, i, consts, const_cache));
-                }
+                RETURN_IF_ERROR(optimize_list_or_set_literal(bb, i, nextop, consts, const_cache));
                 break;
             case POP_JUMP_IF_NOT_NONE:
             case POP_JUMP_IF_NONE:
