@@ -6524,13 +6524,15 @@ class TestSyncManagerTypes(unittest.TestCase):
         self.run_worker(self._test_set_operator_methods, o)
         o = self.manager.set()
         self.run_worker(self._test_set_miscellaneous, o)
-        self.assertRaises(RemoteError, self.manager.set, 1234)
+
+    def test_set_init(self):
         o = self.manager.set({'a', 'b', 'c'})
         self.assertSetEqual(o, {'a', 'b', 'c'})
         o = self.manager.set(["a", "b", "c"])
         self.assertSetEqual(o, {"a", "b", "c"})
         o = self.manager.set({"a": 1, "b": 2, "c": 3})
         self.assertSetEqual(o, {"a", "b", "c"})
+        self.assertRaises(RemoteError, self.manager.set, 1234)
 
     def test_set_contain_all_method(self):
         o = self.manager.set()
