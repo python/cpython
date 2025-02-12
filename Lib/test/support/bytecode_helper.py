@@ -77,9 +77,6 @@ class CompilationStepTestCase(unittest.TestCase):
         self.assertIsInstance(expected, list)
         actual = actual_seq.get_instructions()
         expected = self.seq_from_insts(expected).get_instructions()
-        if len(expected) == 9 and len(actual) == 7:
-            print('actual', actual)
-            print('expected', expected)
         self.assertEqual(len(actual), len(expected))
 
         # compare instructions
