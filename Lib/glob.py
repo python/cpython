@@ -223,6 +223,10 @@ class _GlobberBase:
         raise NotImplementedError
 
     @staticmethod
+    def scandir_cwd():
+        raise NotImplementedError
+
+    @staticmethod
     def scandir_fd(fd, prefix):
         raise NotImplementedError
 
@@ -309,11 +313,11 @@ class _GlobberBase:
             select_next = self.selector(parts)
 
         def select_wildcard(path, dir_fd=None, rel_path=None, exists=False, empty=False):
-            fd = None
             close_fd = False
             try:
                 if dir_fd is None:
-                    entries = self.scandir(path)
+                    fd = None
+                    entries = self.scandir(path) if path else self.scandir_cwd()
                 elif not rel_path:
                     fd = dir_fd
                     entries = self.scandir_fd(fd, path)
@@ -395,7 +399,7 @@ class _GlobberBase:
                     return
                 elif dir_fd is None:
                     fd = None
-                    entries = self.scandir(path)
+                    entries = self.scandir(path) if path else self.scandir_cwd()
                 elif not rel_path:
                     fd = dir_fd
                     entries = self.scandir_fd(fd, path)
@@ -466,17 +470,18 @@ class _StringGlobber(_GlobberBase):
 
     @staticmethod
     def scandir(path):
-        if path:
-            # We must close the scandir() object before proceeding to
-            # avoid exhausting file descriptors when globbing deep trees.
-            with os.scandir(path) as scandir_it:
-                entries = list(scandir_it)
-            return ((entry, entry.name, entry.path) for entry in entries)
-        else:
-            with os.scandir() as scandir_it:
-                entries = list(scandir_it)
-            # Suppress leading dot when scanning current directory.
-            return ((entry, entry.name, entry.name) for entry in entries)
+        # We must close the scandir() object before proceeding to
+        # avoid exhausting file descriptors when globbing deep trees.
+        with os.scandir(path) as scandir_it:
+            entries = list(scandir_it)
+        return ((entry, entry.name, entry.path) for entry in entries)
+
+    @staticmethod
+    def scandir_cwd():
+        with os.scandir() as scandir_it:
+            entries = list(scandir_it)
+        # Suppress leading dot when scanning current directory.
+        return ((entry, entry.name, entry.name) for entry in entries)
 
     @staticmethod
     def scandir_fd(fd, prefix):
