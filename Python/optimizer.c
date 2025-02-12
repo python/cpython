@@ -671,7 +671,7 @@ translate_bytecode_to_trace(
                         if (trace_stack_depth == 0) {
                             DPRINTF(2, "Trace stack underflow\n");
                             OPT_STAT_INC(trace_stack_underflow);
-                            goto done;
+                            return 0;
                         }
                     }
                     uint32_t orig_oparg = oparg;  // For OPARG_TOP/BOTTOM
