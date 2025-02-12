@@ -179,13 +179,15 @@ slightly different way:
    .. versionadded:: 3.14
       The *commands* argument.
 
-.. function:: post_mortem(traceback=None)
+.. function:: post_mortem(t=None)
 
-   Enter post-mortem debugging of the given *traceback* object.  If no
-   *traceback* is given, it uses the one of the exception that is currently
-   being handled (an exception must be being handled if the default is to be
-   used).
+   Enter post-mortem debugging of the given exception or
+   :ref:`traceback object <traceback-objects>`. If no value is given, it uses
+   the exception that is currently being handled, or raises ``ValueError`` if
+   there isn’t one.
 
+   .. versionchanged:: 3.13
+      Support for exception objects was added.
 
 .. function:: pm()
 
@@ -695,6 +697,17 @@ can be overridden by the local file.
 .. pdbcommand:: q(uit)
 
    Quit from the debugger.  The program being executed is aborted.
+   An end-of-file input is equivalent to :pdbcmd:`quit`.
+
+   A confirmation prompt will be shown if the debugger is invoked in
+   ``'inline'`` mode. Either ``y``, ``Y``, ``<Enter>`` or ``EOF``
+   will confirm the quit.
+
+   .. versionchanged:: 3.14
+      A confirmation prompt will be shown if the debugger is invoked in
+      ``'inline'`` mode. After the confirmation, the debugger will call
+      :func:`sys.exit` immediately, instead of raising :exc:`bdb.BdbQuit`
+      in the next trace event.
 
 .. pdbcommand:: debug code
 
