@@ -77,6 +77,7 @@ jobs:
 
       - name: Native Windows (debug)
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
+        shell: cmd
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.5
           ./PCbuild/build.bat --tail-call-interp -d -p ${{ matrix.architecture }} "/p:PlatformToolset=clangcl" "/p:LLVMToolsVersion=19.1.5" "/p:LLVMInstallDir=C:\Program Files\LLVM"
@@ -85,6 +86,7 @@ jobs:
       # No tests (yet):
       - name: Emulated Windows (release)
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
+        shell: cmd
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.5
           ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }} "/p:PlatformToolset=clangcl" "/p:LLVMToolsVersion=19.1.5" "/p:LLVMInstallDir=C:\Program Files\LLVM"
