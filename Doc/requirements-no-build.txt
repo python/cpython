@@ -1,7 +1,0 @@
--r requirements.txt
-
-# Requirements when not running the build Python,
-# such as optional native extensions.
-
-# Needed to support generating social cards in sphinxext-opengraph.
---only-binary matplotlib

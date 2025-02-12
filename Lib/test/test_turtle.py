@@ -570,6 +570,9 @@ class TestTurtle(unittest.TestCase):
         with patch_screen():
             self.turtle = turtle.Turtle()
 
+        # Reset the Screen singleton to avoid reference leaks
+        self.addCleanup(setattr, turtle.Turtle, '_screen', None)
+
     def test_begin_end_fill(self):
         self.assertFalse(self.turtle.filling())
         self.turtle.begin_fill()

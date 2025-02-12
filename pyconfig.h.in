@@ -1718,6 +1718,9 @@
 /* The version of SunOS/Solaris as reported by `uname -r' without the dot. */
 #undef Py_SUNOS_VERSION
 
+/* Define if the C compiler supports efficient proper tail calls. */
+#undef Py_TAIL_CALL_INTERP
+
 /* Define if you want to enable tracing references for debugging purpose */
 #undef Py_TRACE_REFS
 

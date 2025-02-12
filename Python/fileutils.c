@@ -1842,14 +1842,6 @@ Py_fopen(PyObject *path, const char *mode)
 }
 
 
-// Deprecated alias to Py_fopen() kept for backward compatibility
-FILE*
-_Py_fopen_obj(PyObject *path, const char *mode)
-{
-    return Py_fopen(path, mode);
-}
-
-
 // Call fclose().
 //
 // On Windows, files opened by Py_fopen() in the Python DLL must be closed by
