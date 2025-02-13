@@ -1020,7 +1020,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertRaises(TypeError,
             exec,
             "pass",
-            closure=object())
+            closure=int)
 
         # should fail: correct closure= argument isn't allowed
         # when the source is a string
