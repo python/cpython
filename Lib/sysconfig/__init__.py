@@ -726,7 +726,7 @@ def get_platform():
                                                 get_config_vars(),
                                                 osname, release, machine)
 
-    return '-'.join(filter(None, (osname, release, machine)))
+    return '-'.join(map(str, filter(None, (osname, release, machine))))
 
 
 def get_python_version():
