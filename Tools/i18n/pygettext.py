@@ -434,7 +434,7 @@ class GettextVisitor(ast.NodeVisitor):
         if first_index is None:
             return []
         return comments[first_index:]
-    
+
     def _is_translator_comment(self, comment):
         return comment.startswith(tuple(self.options.comment_tags))
 
