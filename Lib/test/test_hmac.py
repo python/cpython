@@ -61,12 +61,18 @@ class CreatorMixin:
     def hmac_new(self, key, msg=None, digestmod=None):
         raise NotImplementedError
 
+    def bind_hmac_new(self, digestmod):
+        return functools.partial(self.hmac_new, digestmod=digestmod)
+
 
 class DigestMixin:
     """Mixin exposing a method computing a HMAC digest."""
 
     def hmac_digest(self, key, msg=None, digestmod=None):
         raise NotImplementedError
+
+    def bind_hmac_digest(self, digestmod):
+        return functools.partial(self.hmac_digest, digestmod=digestmod)
 
 
 class ThroughObjectMixin(ModuleMixin, CreatorMixin, DigestMixin):
@@ -533,82 +539,185 @@ class OpenSSLRFCTestCase(OpenSSLTestVectorsMixin, RFCTestCasesMixin,
             setattr(cls, name, func)
 
 
-class ConstructorTestCase(unittest.TestCase):
-    expected = (
-        "6c845b47f52b3b47f6590c502db7825aad757bf4fadc8fa972f7cd2e76a5bdeb"
-    )
+class DigestModTestCaseMixin(CreatorMixin, DigestMixin):
 
-    @hashlib_helper.requires_hashdigest('sha256')
-    def test_normal(self):
-        # Standard constructor call.
-        try:
-            hmac.HMAC(b"key", digestmod='sha256')
-        except Exception:
-            self.fail("Standard constructor call raised exception.")
+    def make_digestmod_cases(self, func, digestmods):
+        return [
+            *[
+                (func, args, dict(digestmod=digestmod))
+                for args in [(self.key,), (self.key, self.msg)]
+                for digestmod in digestmods
+            ],
+            *[
+                (func, (self.key,), dict(msg=self.msg, digestmod=digestmod))
+                for digestmod in digestmods
+            ],
+        ]
 
-    @hashlib_helper.requires_hashdigest('sha256')
-    def test_with_str_key(self):
-        # Pass a key of type str, which is an error, because it expects a key
-        # of type bytes
-        with self.assertRaises(TypeError):
-            h = hmac.HMAC("key", digestmod='sha256')
+    def assert_raises_missing_digestmod(self):
+        return self.assertRaisesRegex(TypeError, "Missing required.*digestmod")
 
-    @hashlib_helper.requires_hashdigest('sha256')
-    def test_dot_new_with_str_key(self):
-        # Pass a key of type str, which is an error, because it expects a key
-        # of type bytes
-        with self.assertRaises(TypeError):
-            h = hmac.new("key", digestmod='sha256')
+    def assert_raises_invalid_digestmod(self):
+        return self.assertRaisesRegex(ValueError, "[Uu]nsupported.*")
 
-    @hashlib_helper.requires_hashdigest('sha256')
-    def test_withtext(self):
-        # Constructor call with text.
-        try:
-            h = hmac.HMAC(b"key", b"hash this!", digestmod='sha256')
-        except Exception:
-            self.fail("Constructor call with text argument raised exception.")
-        self.assertEqual(h.hexdigest(), self.expected)
+    def test_constructor_missing_digestmod(self):
+        catcher = self.assert_raises_missing_digestmod
+        self.do_test_constructor_missing_digestmod(catcher)
 
-    @hashlib_helper.requires_hashdigest('sha256')
-    def test_with_bytearray(self):
-        try:
-            h = hmac.HMAC(bytearray(b"key"), bytearray(b"hash this!"),
-                          digestmod="sha256")
-        except Exception:
-            self.fail("Constructor call with bytearray arguments raised exception.")
-        self.assertEqual(h.hexdigest(), self.expected)
+    def test_constructor_invalid_digestmod(self):
+        catcher = self.assert_raises_invalid_digestmod
+        self.do_test_constructor_invalid_digestmod(catcher)
 
-    @hashlib_helper.requires_hashdigest('sha256')
-    def test_with_memoryview_msg(self):
-        try:
-            h = hmac.HMAC(b"key", memoryview(b"hash this!"), digestmod="sha256")
-        except Exception:
-            self.fail("Constructor call with memoryview msg raised exception.")
-        self.assertEqual(h.hexdigest(), self.expected)
+    def do_test_constructor_missing_digestmod(self, catcher):
+        for func, args, kwds in self.cases_missing_digestmod_in_constructor():
+            with self.subTest(args=args, kwds=kwds), catcher():
+                func(*args, **kwds)
 
-    @hashlib_helper.requires_hashdigest('sha256')
-    def test_withmodule(self):
-        # Constructor call with text and digest module.
-        try:
-            h = hmac.HMAC(b"key", b"", hashlib.sha256)
-        except Exception:
-            self.fail("Constructor call with hashlib.sha256 raised exception.")
+    def do_test_constructor_invalid_digestmod(self, catcher):
+        for func, args, kwds in self.cases_invalid_digestmod_in_constructor():
+            with self.subTest(args=args, kwds=kwds), catcher():
+                func(*args, **kwds)
 
-    @hashlib_helper.requires_hashlib()
-    def test_internal_types(self):
-        # internal C types like are not constructable
-        check_disallow_instantiation(self, _hashlib.HMAC)
-        with self.assertRaisesRegex(TypeError, "immutable type"):
-            _hashlib.HMAC.value = None
+    def cases_missing_digestmod_in_constructor(self):
+        raise NotImplementedError
+
+    def cases_invalid_digestmod_in_constructor(self):
+        raise NotImplementedError
+
+
+class ConstructorTestCaseMixin(CreatorMixin, DigestMixin, CheckerMixin):
+    """HMAC constructor tests based on HMAC-SHA-2/256."""
+
+    key = b"key"
+    msg = b"hash this!"
+    res = "6c845b47f52b3b47f6590c502db7825aad757bf4fadc8fa972f7cd2e76a5bdeb"
+
+    def do_test_constructor(self, hmac_on_key_and_msg):
+        self.do_test_constructor_invalid_types(hmac_on_key_and_msg)
+        self.do_test_constructor_supported_types(hmac_on_key_and_msg)
+
+    def do_test_constructor_invalid_types(self, hmac_on_key_and_msg):
+        self.assertRaises(TypeError, hmac_on_key_and_msg, 1)
+        self.assertRaises(TypeError, hmac_on_key_and_msg, "key")
+
+        self.assertRaises(TypeError, hmac_on_key_and_msg, b"key", 1)
+        self.assertRaises(TypeError, hmac_on_key_and_msg, b"key", "msg")
+
+    def do_test_constructor_supported_types(self, hmac_on_key_and_msg):
+        for tp_key in [bytes, bytearray]:
+            for tp_msg in [bytes, bytearray, memoryview]:
+                with self.subTest(tp_key=tp_key, tp_msg=tp_msg):
+                    h = hmac_on_key_and_msg(tp_key(self.key), tp_msg(self.msg))
+                    self.assertEqual(h.name, "hmac-sha256")
+                    self.assertEqual(h.hexdigest(), self.res)
+
+    @hashlib_helper.requires_hashdigest("sha256")
+    def test_constructor(self):
+        self.do_test_constructor(self.bind_hmac_new("sha256"))
+
+    @hashlib_helper.requires_hashdigest("sha256")
+    def test_digest(self):
+        digest = self.hmac_digest(self.key, self.msg, "sha256")
+        self.assertEqual(digest, binascii.unhexlify(self.res))
+
+
+class PyConstructorBaseMixin(PyModuleMixin,
+                             DigestModTestCaseMixin,
+                             ConstructorTestCaseMixin):
+
+    def cases_missing_digestmod_in_constructor(self):
+        func, key, msg = self.hmac_new, b'key', b'msg'
+        cases = self.make_digestmod_cases(func, ['', None, False])
+        return [*cases, (func, (key,), {}), (func, (key, msg), {})]
+
+    def cases_invalid_digestmod_in_constructor(self):
+        return self.make_digestmod_cases(self.hmac_new, ['unknown'])
 
     @requires_builtin_sha2()
-    def test_with_sha2(self):
-        h = hmac.HMAC(b"key", b"hash this!", digestmod=sha2.sha256)
-        self.assertEqual(h.hexdigest(), self.expected)
-        self.assertEqual(h.name, "hmac-sha256")
+    def test_constructor_with_module(self):
+        self.do_test_constructor(self.bind_hmac_new(sha2.sha256))
 
-        digest = hmac.digest(b"key", b"hash this!", sha2.sha256)
-        self.assertEqual(digest, binascii.unhexlify(self.expected))
+    @requires_builtin_sha2()
+    def test_digest_with_module(self):
+        digest = self.hmac_digest(self.key, self.msg, sha2.sha256)
+        self.assertEqual(digest, binascii.unhexlify(self.res))
+
+
+class PyConstructorTestCase(ThroughObjectMixin, PyConstructorBaseMixin,
+                            unittest.TestCase):
+    """Test the hmac.HMAC() pure Python constructor."""
+
+
+class PyModuleConstructorTestCase(ThroughModuleAPIMixin, PyConstructorBaseMixin,
+                                  unittest.TestCase):
+    """Test the hmac.new() constructor function."""
+
+    def test_hmac_digest_digestmod_parameter(self):
+        func = self.hmac_digest
+
+        def raiser():
+            raise RuntimeError("custom exception")
+
+        with self.assertRaisesRegex(RuntimeError, "custom exception"):
+            func(b'key', b'msg', raiser)
+
+        with self.assertRaisesRegex(ValueError, 'hash type'):
+            func(b'key', b'msg', 'unknown')
+
+        with self.assertRaisesRegex(AttributeError, 'new'):
+            func(b'key', b'msg', 1234)
+        with self.assertRaisesRegex(AttributeError, 'new'):
+            func(b'key', b'msg', None)
+
+
+class ExtensionConstructorTestCaseMixin(DigestModTestCaseMixin,
+                                        ConstructorTestCaseMixin):
+    obj_type = None
+    exc_type = None
+
+    def test_internal_types(self):
+        # internal C types are immutable and cannot be instantiated
+        check_disallow_instantiation(self, self.obj_type)
+        with self.assertRaisesRegex(TypeError, "immutable type"):
+            self.obj_type.value = None
+
+    def assert_digestmod_error(self):
+        self.assertIsSubclass(self.exc_type, ValueError)
+        return self.assertRaises(self.exc_type)
+
+    def test_constructor_missing_digestmod(self):
+        self.do_test_constructor_missing_digestmod(self.assert_digestmod_error)
+
+    def test_constructor_invalid_digestmod(self):
+        self.do_test_constructor_invalid_digestmod(self.assert_digestmod_error)
+
+    def cases_missing_digestmod_in_constructor(self):
+        func, key, msg = self.hmac_new, b'key', b'msg'
+        cases = self.make_digestmod_cases(func, ['', None, False])
+        return [*cases, (func, (key,), {}), (func, (key, msg), {})]
+
+    def cases_invalid_digestmod_in_constructor(self):
+        return self.make_digestmod_cases(self.hmac_new, ['unknown', 1234])
+
+
+class OpenSSLConstructorTestCase(ThroughOpenSSLAPIMixin,
+                                 ExtensionConstructorTestCaseMixin,
+                                 unittest.TestCase):
+
+    @property
+    def obj_type(self):
+        return _hashlib.HMAC
+
+    @property
+    def exc_type(self):
+        return _hashlib.UnsupportedDigestmodError
+
+    def test_hmac_digest_digestmod_parameter(self):
+        # TODO(picnixz): remove default arguments in _hashlib.hmac_digest()
+        # since the return value is not a HMAC object but a bytes object.
+        for value in [object, 'unknown', 1234, None]:
+            with self.subTest(value=value), self.assert_digestmod_error():
+                self.hmac_digest(b'key', b'msg', value)
 
 
 class SanityTestCaseMixin(CreatorMixin):
