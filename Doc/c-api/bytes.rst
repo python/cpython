@@ -219,3 +219,71 @@ called with a non-bytes parameter.
    reallocation fails, the original bytes object at *\*bytes* is deallocated,
    *\*bytes* is set to ``NULL``, :exc:`MemoryError` is set, and ``-1`` is
    returned.
+
+PyBytesWriter
+^^^^^^^^^^^^^
+
+.. versionadded:: next
+
+.. c:type:: PyBytesWriter
+
+   A Python :class:`bytes` writer instance created by
+   :c:func:`PyBytesWriter_Create`.
+
+   The instance must be destroyed by :c:func:`PyBytesWriter_Finish` or
+   :c:func:`PyBytesWriter_Discard`.
+
+.. c:function:: void* PyBytesWriter_Create(PyBytesWriter **writer, Py_ssize_t alloc)
+
+   Create a :c:type:`PyBytesWriter` to write *alloc* bytes.
+
+   On success, return non-``NULL`` buffer where bytes can be written.
+   On error, set an exception and return ``NULL``.
+
+   *alloc* must be positive or zero.
+
+.. c:function:: void PyBytesWriter_Discard(PyBytesWriter *writer)
+
+   Discard a :c:type:`PyBytesWriter` created by :c:func:`PyBytesWriter_Create`.
+
+   The writer instance is invalid after the call.
+
+.. c:function:: PyObject* PyBytesWriter_Finish(PyBytesWriter *writer, void *buf)
+
+   Finish a :c:type:`PyBytesWriter` created by :c:func:`PyBytesWriter_Create`.
+
+   On success, return a Python :class:`bytes` object.
+   On error, set an exception and return ``NULL``.
+
+   The writer instance is invalid after the call.
+
+.. c:function:: void* PyBytesWriter_Extend(PyBytesWriter *writer, void *buf, Py_ssize_t extend)
+
+   Extend the buffer by *extend* bytes.
+
+   On success, return non-``NULL`` buffer where bytes can be written.
+   On error, set an exception and return ``NULL``.
+
+   *extend* must be positive or zero.
+
+.. c:function:: void* PyBytesWriter_WriteBytes(PyBytesWriter *writer, void *buf, const char *bytes, Py_ssize_t size)
+
+   Extend the buffer by *size* bytes and write *bytes* into the writer.
+
+   If *size* is equal to ``-1``, call ``strlen(bytes)`` to get the
+   string length.
+
+   On success, return non-``NULL`` buffer.
+   On error, set an exception and return ``NULL``.
+
+.. c:function:: void* PyBytesWriter_Format(PyBytesWriter *writer, void *buf, const char *format, ...)
+
+   Similar to ``PyBytes_FromFormat()``, but write the output directly
+   into the writer.
+
+   On success, return non-``NULL`` buffer.
+   On error, set an exception and return ``NULL``.
+
+.. c:function:: Py_ssize_t PyBytesWriter_GetAllocated(PyBytesWriter *writer)
+
+   Get the number of allocated bytes.
