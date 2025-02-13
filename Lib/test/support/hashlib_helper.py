@@ -8,6 +8,10 @@ except ImportError:
     _hashlib = None
 
 
+def requires_hashlib():
+    return unittest.skipIf(_hashlib is None, "requires _hashlib")
+
+
 def requires_hashdigest(digestname, openssl=None, usedforsecurity=True):
     """Decorator raising SkipTest if a hashing algorithm is not available
 
@@ -44,7 +48,7 @@ def requires_hashdigest(digestname, openssl=None, usedforsecurity=True):
                     hashlib.new(digestname, usedforsecurity=usedforsecurity)
             except ValueError:
                 raise unittest.SkipTest(
-                    f"hash digest '{digestname}' is not available."
+                    f"hash digest {digestname!r} is not available."
                 )
             return func_or_class(*args, **kwargs)
         return wrapper
