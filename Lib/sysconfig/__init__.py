@@ -667,6 +667,7 @@ def get_platform():
     # Set for cross builds explicitly
     if "_PYTHON_HOST_PLATFORM" in os.environ:
         osname, _, machine = os.environ["_PYTHON_HOST_PLATFORM"].partition('-')
+        release = None
     else:
         # Try to distinguish various flavours of Unix
         osname, host, release, version, machine = os.uname()
@@ -725,7 +726,7 @@ def get_platform():
                                                 get_config_vars(),
                                                 osname, release, machine)
 
-    return f"{osname}-{release}-{machine}"
+    return '-'.join(filter(None, (osname, release, machine)))
 
 
 def get_python_version():
