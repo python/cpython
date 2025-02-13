@@ -7,12 +7,22 @@
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 
 
+/* See PEP 765 */
 typedef struct {
+    bool in_finally;
+    bool in_funcdef;
+    bool in_loop;
+} ControlFlowInFinallyState;
+
+typedef struct {
+    PyObject *filename;
     int optimize;
     int ff_features;
 
     int recursion_depth;            /* current recursion depth */
     int recursion_limit;            /* recursion limit */
+
+    ControlFlowInFinallyState cf_finally;
 } _PyASTOptimizeState;
 
 #define ENTER_RECURSIVE(ST) \
@@ -28,6 +38,82 @@ typedef struct {
     do { \
         --(ST)->recursion_depth; \
     } while(0)
+
+
+static ControlFlowInFinallyState
+overwrite_state(_PyASTOptimizeState *state, bool finally, bool funcdef, bool loop)
+{
+    ControlFlowInFinallyState saved = state->cf_finally;
+    state->cf_finally.in_finally = finally;
+    state->cf_finally.in_funcdef = funcdef;
+    state->cf_finally.in_loop = loop;
+    return saved;
+}
+
+static int
+restore_state(_PyASTOptimizeState *state, ControlFlowInFinallyState *saved)
+{
+    state->cf_finally = *saved;
+    return 1;
+}
+
+static int
+control_flow_in_finally_warning(const char *kw, stmt_ty n, _PyASTOptimizeState *state)
+{
+    PyObject *msg = PyUnicode_FromFormat("'%s' in a 'finally' block", kw);
+    if (msg == NULL) {
+        return 0;
+    }
+    int ret = _PyErr_EmitSyntaxWarning(msg, state->filename, n->lineno,
+                                       n->col_offset + 1, n->end_lineno,
+                                       n->end_col_offset + 1);
+    Py_DECREF(msg);
+    return ret < 0 ? 0 : 1;
+}
+
+static int
+before_return(_PyASTOptimizeState *state, stmt_ty node_)
+{
+    if (state->cf_finally.in_finally && ! state->cf_finally.in_funcdef) {
+        if (!control_flow_in_finally_warning("return", node_, state)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int
+before_loop_exit(_PyASTOptimizeState *state, stmt_ty node_, const char *kw)
+{
+    if (state->cf_finally.in_finally && ! state->cf_finally.in_loop) {
+        if (!control_flow_in_finally_warning(kw, node_, state)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+#define RESTORE_STATE_CHECKED(S, CFS) \
+    if (!restore_state((S), (CFS))) { \
+        return 0; \
+    }
+
+#define BEFORE_FINALLY(S) overwrite_state((S), true, false, false)
+#define AFTER_FINALLY(S, CFS) RESTORE_STATE_CHECKED((S), (CFS))
+#define BEFORE_FUNC_BODY(S) overwrite_state((S), false, true, false)
+#define AFTER_FUNC_BODY(S, CFS) RESTORE_STATE_CHECKED((S), (CFS))
+#define BEFORE_LOOP_BODY(S) overwrite_state((S), false, false, true)
+#define AFTER_LOOP_BODY(S, CFS) RESTORE_STATE_CHECKED((S), (CFS))
+
+#define BEFORE_RETURN(S, N) \
+    if (!before_return((S), (N))) { \
+        return 0; \
+    }
+
+#define BEFORE_LOOP_EXIT(S, N, KW) \
+    if (!before_loop_exit((S), (N), (KW))) { \
+        return 0; \
+    }
 
 static int
 make_const(expr_ty node, PyObject *val, PyArena *arena)
@@ -825,24 +911,30 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     ENTER_RECURSIVE(state);
     switch (node_->kind) {
-    case FunctionDef_kind:
+    case FunctionDef_kind: {
         CALL_SEQ(astfold_type_param, type_param, node_->v.FunctionDef.type_params);
         CALL(astfold_arguments, arguments_ty, node_->v.FunctionDef.args);
+        ControlFlowInFinallyState saved_state = BEFORE_FUNC_BODY(state);
         CALL(astfold_body, asdl_seq, node_->v.FunctionDef.body);
+        AFTER_FUNC_BODY(state, &saved_state);
         CALL_SEQ(astfold_expr, expr, node_->v.FunctionDef.decorator_list);
         if (!(state->ff_features & CO_FUTURE_ANNOTATIONS)) {
             CALL_OPT(astfold_expr, expr_ty, node_->v.FunctionDef.returns);
         }
         break;
-    case AsyncFunctionDef_kind:
+    }
+    case AsyncFunctionDef_kind: {
         CALL_SEQ(astfold_type_param, type_param, node_->v.AsyncFunctionDef.type_params);
         CALL(astfold_arguments, arguments_ty, node_->v.AsyncFunctionDef.args);
+        ControlFlowInFinallyState saved_state = BEFORE_FUNC_BODY(state);
         CALL(astfold_body, asdl_seq, node_->v.AsyncFunctionDef.body);
+        AFTER_FUNC_BODY(state, &saved_state);
         CALL_SEQ(astfold_expr, expr, node_->v.AsyncFunctionDef.decorator_list);
         if (!(state->ff_features & CO_FUTURE_ANNOTATIONS)) {
             CALL_OPT(astfold_expr, expr_ty, node_->v.AsyncFunctionDef.returns);
         }
         break;
+    }
     case ClassDef_kind:
         CALL_SEQ(astfold_type_param, type_param, node_->v.ClassDef.type_params);
         CALL_SEQ(astfold_expr, expr, node_->v.ClassDef.bases);
@@ -851,6 +943,7 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL_SEQ(astfold_expr, expr, node_->v.ClassDef.decorator_list);
         break;
     case Return_kind:
+        BEFORE_RETURN(state, node_);
         CALL_OPT(astfold_expr, expr_ty, node_->v.Return.value);
         break;
     case Delete_kind:
@@ -876,23 +969,32 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL_SEQ(astfold_type_param, type_param, node_->v.TypeAlias.type_params);
         CALL(astfold_expr, expr_ty, node_->v.TypeAlias.value);
         break;
-    case For_kind:
+    case For_kind: {
         CALL(astfold_expr, expr_ty, node_->v.For.target);
         CALL(astfold_expr, expr_ty, node_->v.For.iter);
+        ControlFlowInFinallyState saved_state = BEFORE_LOOP_BODY(state);
         CALL_SEQ(astfold_stmt, stmt, node_->v.For.body);
+        AFTER_LOOP_BODY(state, &saved_state);
         CALL_SEQ(astfold_stmt, stmt, node_->v.For.orelse);
         break;
-    case AsyncFor_kind:
+    }
+    case AsyncFor_kind: {
         CALL(astfold_expr, expr_ty, node_->v.AsyncFor.target);
         CALL(astfold_expr, expr_ty, node_->v.AsyncFor.iter);
+        ControlFlowInFinallyState saved_state = BEFORE_LOOP_BODY(state);
         CALL_SEQ(astfold_stmt, stmt, node_->v.AsyncFor.body);
+        AFTER_LOOP_BODY(state, &saved_state);
         CALL_SEQ(astfold_stmt, stmt, node_->v.AsyncFor.orelse);
         break;
-    case While_kind:
+    }
+    case While_kind: {
         CALL(astfold_expr, expr_ty, node_->v.While.test);
+        ControlFlowInFinallyState saved_state = BEFORE_LOOP_BODY(state);
         CALL_SEQ(astfold_stmt, stmt, node_->v.While.body);
+        AFTER_LOOP_BODY(state, &saved_state);
         CALL_SEQ(astfold_stmt, stmt, node_->v.While.orelse);
         break;
+    }
     case If_kind:
         CALL(astfold_expr, expr_ty, node_->v.If.test);
         CALL_SEQ(astfold_stmt, stmt, node_->v.If.body);
@@ -910,18 +1012,24 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL_OPT(astfold_expr, expr_ty, node_->v.Raise.exc);
         CALL_OPT(astfold_expr, expr_ty, node_->v.Raise.cause);
         break;
-    case Try_kind:
+    case Try_kind: {
         CALL_SEQ(astfold_stmt, stmt, node_->v.Try.body);
         CALL_SEQ(astfold_excepthandler, excepthandler, node_->v.Try.handlers);
         CALL_SEQ(astfold_stmt, stmt, node_->v.Try.orelse);
+        ControlFlowInFinallyState saved_state = BEFORE_FINALLY(state);
         CALL_SEQ(astfold_stmt, stmt, node_->v.Try.finalbody);
+        AFTER_FINALLY(state, &saved_state);
         break;
-    case TryStar_kind:
+    }
+    case TryStar_kind: {
         CALL_SEQ(astfold_stmt, stmt, node_->v.TryStar.body);
         CALL_SEQ(astfold_excepthandler, excepthandler, node_->v.TryStar.handlers);
         CALL_SEQ(astfold_stmt, stmt, node_->v.TryStar.orelse);
+        ControlFlowInFinallyState saved_state = BEFORE_FINALLY(state);
         CALL_SEQ(astfold_stmt, stmt, node_->v.TryStar.finalbody);
+        AFTER_FINALLY(state, &saved_state);
         break;
+    }
     case Assert_kind:
         CALL(astfold_expr, expr_ty, node_->v.Assert.test);
         CALL_OPT(astfold_expr, expr_ty, node_->v.Assert.msg);
@@ -933,14 +1041,18 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL(astfold_expr, expr_ty, node_->v.Match.subject);
         CALL_SEQ(astfold_match_case, match_case, node_->v.Match.cases);
         break;
+    case Break_kind:
+        BEFORE_LOOP_EXIT(state, node_, "break");
+        break;
+    case Continue_kind:
+        BEFORE_LOOP_EXIT(state, node_, "continue");
+        break;
     // The following statements don't contain any subexpressions to be folded
     case Import_kind:
     case ImportFrom_kind:
     case Global_kind:
     case Nonlocal_kind:
     case Pass_kind:
-    case Break_kind:
-    case Continue_kind:
         break;
     // No default case, so the compiler will emit a warning if new statement
     // kinds are added without being handled here
@@ -1045,12 +1157,15 @@ astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
 #undef CALL_SEQ
 
 int
-_PyAST_Optimize(mod_ty mod, PyArena *arena, int optimize, int ff_features)
+_PyAST_Optimize(mod_ty mod, PyArena *arena, PyObject *filename, int optimize,
+                int ff_features)
 {
     PyThreadState *tstate;
     int starting_recursion_depth;
 
     _PyASTOptimizeState state;
+    memset(&state, 0, sizeof(_PyASTOptimizeState));
+    state.filename = filename;
     state.optimize = optimize;
     state.ff_features = ff_features;
 

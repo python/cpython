@@ -126,7 +126,7 @@ compiler_setup(compiler *c, mod_ty mod, PyObject *filename,
     c->c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c->c_save_nested_seqs = false;
 
-    if (!_PyAST_Optimize(mod, arena, c->c_optimize, merged)) {
+    if (!_PyAST_Optimize(mod, arena, filename, c->c_optimize, merged)) {
         return ERROR;
     }
     c->c_st = _PySymtable_Build(mod, filename, &c->c_future);
@@ -1397,7 +1397,7 @@ _PyCompile_AstOptimize(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
     if (optimize == -1) {
         optimize = _Py_GetConfig()->optimization_level;
     }
-    if (!_PyAST_Optimize(mod, arena, optimize, flags)) {
+    if (!_PyAST_Optimize(mod, arena, filename, optimize, flags)) {
         return -1;
     }
     return 0;
