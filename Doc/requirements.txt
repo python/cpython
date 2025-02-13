@@ -16,6 +16,6 @@ sphinx-notfound-page==1.0.0
 
 # The theme used by the documentation is stored separately, so we need
 # to install that as well.
-python-docs-theme>=2023.3.1,!=2023.7
+python-docs-theme==2025.2
 
 -c constraints.txt
