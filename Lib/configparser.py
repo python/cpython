@@ -581,10 +581,11 @@ class _LineParser:
         return '' if any(map(string.startswith, self.comments.full)) else True
 
     def _strip_inline(self, string):
+        match = None
         if self.comments.inline:
             match = self.comments.inline.search(string)
-            if match:
-                return string[:match.start()].rstrip()
+        if match:
+            return string[:match.start()].rstrip()
         return string
 
 
@@ -654,17 +655,14 @@ class RawConfigParser(MutableMapping):
             else:
                 self._optcre = re.compile(self._OPT_TMPL.format(delim=d),
                                           re.VERBOSE)
-        comment_prefixes = tuple(comment_prefixes or ())
-        if inline_comment_prefixes:
-            # prefix at the beginning of the line or following a space
-            inline_comment_cre = re.compile(
-                '|'.join(fr'(^|\s)({re.escape(prefix)})'
-                for prefix in inline_comment_prefixes))
-        else:
-            inline_comment_cre = None
+        # prefix at the beginning of the line or following a space
+        inline_tmpl = lambda prefix: fr'(^|\s)({re.escape(prefix)})'
+        inline_comm = '|'.join(map(inline_tmpl, inline_comment_prefixes or ()))
+        # optional cre used with _LineParser for best performance (gh-128641)
+        inline_comment_cre = re.compile(inline_comm) if inline_comm else None
         self._comments = types.SimpleNamespace(
-            full=comment_prefixes,
             inline=inline_comment_cre,
+            full=tuple(comment_prefixes or ())
         )
         self._strict = strict
         self._allow_no_value = allow_no_value

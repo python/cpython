@@ -1,1 +1,1 @@
-Improve performance of :meth:`configparser.ConfigParser.read` by up to 45%.
+Restore :meth:`configparser.ConfigParser.read` performance.
