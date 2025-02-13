@@ -292,7 +292,7 @@ class AbstractEventLoop:
 
     # Method scheduling a coroutine object: create a task.
 
-    def create_task(self, coro, *, name=None, context=None):
+    def create_task(self, coro, **kwargs):
         raise NotImplementedError
 
     # Methods for interacting with threads.

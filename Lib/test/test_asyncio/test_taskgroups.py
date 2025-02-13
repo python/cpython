@@ -1081,6 +1081,18 @@ class BaseTestTaskGroup:
         # cancellation happens here and error is more understandable
         await asyncio.sleep(0)
 
+    async def test_name(self):
+        name = None
+
+        async def asyncfn():
+            nonlocal name
+            name = asyncio.current_task().get_name()
+
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(asyncfn(), name="example name")
+
+        self.assertEqual(name, "example name")
+
 
 class TestTaskGroup(BaseTestTaskGroup, unittest.IsolatedAsyncioTestCase):
     loop_factory = asyncio.EventLoop
