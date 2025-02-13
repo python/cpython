@@ -397,7 +397,7 @@ do {                                                   \
     stack_pointer = _PyFrame_GetStackPointer(frame);   \
     if (next_instr == NULL) {                          \
         next_instr = frame->instr_ptr;                 \
-        goto error;                                    \
+        JUMP_TO_LABEL(error);                          \
     }                                                  \
     DISPATCH();                                        \
 } while (0)

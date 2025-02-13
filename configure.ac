@@ -1986,15 +1986,8 @@ if test "$Py_LTO" = 'true' ; then
           # Any changes made here should be reflected in the GCC+Darwin case below
           if test $Py_LTO_POLICY = default
           then
-            # Check that ThinLTO is accepted.
-            AX_CHECK_COMPILE_FLAG([-flto=thin],[
-              LTOFLAGS="-flto=thin -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
-              LTOCFLAGS="-flto=thin"
-              ],[
-              LTOFLAGS="-flto -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
-              LTOCFLAGS="-flto"
-              ]
-            )
+            LTOFLAGS="-flto -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
+            LTOCFLAGS="-flto"
           else
             LTOFLAGS="-flto=${Py_LTO_POLICY} -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
             LTOCFLAGS="-flto=${Py_LTO_POLICY}"
@@ -2003,8 +1996,7 @@ if test "$Py_LTO" = 'true' ; then
         *)
           if test $Py_LTO_POLICY = default
           then
-            # Check that ThinLTO is accepted
-            AX_CHECK_COMPILE_FLAG([-flto=thin],[LTOFLAGS="-flto=thin"],[LTOFLAGS="-flto"])
+            LTOFLAGS="-flto"
           else
             LTOFLAGS="-flto=${Py_LTO_POLICY}"
           fi
@@ -7032,19 +7024,6 @@ then
 fi
 ],
 [AC_MSG_RESULT([no value specified])])
-
-# Do not enable tail-calling interpreter if tier 2 is enabled.
-AS_VAR_IF(
-  [tier2_flags],
-  [],
-  [
-    case "$ac_cv_tail_call" in yes*)
-      AC_DEFINE([Py_TAIL_CALL_INTERP], [1],
-      [Define if the C compiler supports efficient proper tail calls.])
-    esac
-  ],
-  []
-)
 
 
 case $ac_sys_system in
