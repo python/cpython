@@ -1,0 +1,1 @@
+Make ``bytearray`` iterator safe under :term:`free threading`.
