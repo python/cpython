@@ -1014,15 +1014,15 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             three_freevars.__globals__,
             closure=my_closure)
 
-        # should fail: incorrect closure isn't allowed
-        # when source is a string
+        # should fail: anything passed to closure= isn't allowed
+        # when the source is a string
         self.assertRaises(TypeError,
             exec,
             "pass",
             closure=object())
 
-        # should fail: correct closure isn't allowed
-        # when source is a string
+        # should fail: correct closure= argument isn't allowed
+        # when the source is a string
         self.assertRaises(TypeError,
             exec,
             "pass",
