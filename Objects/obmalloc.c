@@ -1439,13 +1439,14 @@ get_mimalloc_allocated_blocks(PyInterpreterState *interp)
 {
     size_t allocated_blocks = 0;
 #ifdef Py_GIL_DISABLED
-    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, t) {
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, t) {
         _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)t;
         for (int i = 0; i < _Py_MIMALLOC_HEAP_COUNT; i++) {
             mi_heap_t *heap = &tstate->mimalloc.heaps[i];
             mi_heap_visit_blocks(heap, false, &count_blocks, &allocated_blocks);
         }
     }
+    _Py_FOR_EACH_TSTATE_END(interp);
 
     mi_abandoned_pool_t *pool = &interp->mimalloc.abandoned_pool;
     for (uint8_t tag = 0; tag < _Py_MIMALLOC_HEAP_COUNT; tag++) {

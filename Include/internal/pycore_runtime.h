@@ -164,6 +164,11 @@ typedef struct pyruntimestate {
         _Py_AuditHookEntry *head;
     } audit_hooks;
 
+#ifdef HAVE_FORK
+    // Guarded by multiple global locks.
+    PyThread_ident_t fork_tid;
+#endif
+
     struct _py_object_runtime_state object_state;
     struct _Py_float_runtime_state float_state;
     struct _Py_unicode_runtime_state unicode_state;
