@@ -1261,6 +1261,202 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         self.cfg_optimization_test(same, same, consts=[])
 
+    def test_optimize_literal_list_for_iter(self):
+        # for _ in [1, 2]: pass  ==>  for _ in (1, 2): pass
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BUILD_LIST', 2, 0),
+            ('GET_ITER', None, 0),
+            start := self.Label(),
+            ('FOR_ITER', end := self.Label(), 0),
+            ('STORE_FAST', 0, 0),
+            ('JUMP', start, 0),
+            end,
+            ('END_FOR', None, 0),
+            ('POP_ITER', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_CONST', 1, 0),
+            ('GET_ITER', None, 0),
+            start := self.Label(),
+            ('FOR_ITER', end := self.Label(), 0),
+            ('STORE_FAST', 0, 0),
+            ('JUMP', start, 0),
+            end,
+            ('END_FOR', None, 0),
+            ('POP_ITER', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None, (1, 2)])
+
+        # for _ in [1, x]: pass  ==>  for _ in (1, x): pass
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 0, 0),
+            ('BUILD_LIST', 2, 0),
+            ('GET_ITER', None, 0),
+            start := self.Label(),
+            ('FOR_ITER', end := self.Label(), 0),
+            ('STORE_FAST', 0, 0),
+            ('JUMP', start, 0),
+            end,
+            ('END_FOR', None, 0),
+            ('POP_ITER', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 0, 0),
+            ('BUILD_TUPLE', 2, 0),
+            ('GET_ITER', None, 0),
+            start := self.Label(),
+            ('FOR_ITER', end := self.Label(), 0),
+            ('STORE_FAST', 0, 0),
+            ('JUMP', start, 0),
+            end,
+            ('END_FOR', None, 0),
+            ('POP_ITER', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None])
+
+    def test_optimize_literal_set_for_iter(self):
+        # for _ in {1, 2}: pass  ==>  for _ in (1, 2): pass
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BUILD_SET', 2, 0),
+            ('GET_ITER', None, 0),
+            start := self.Label(),
+            ('FOR_ITER', end := self.Label(), 0),
+            ('STORE_FAST', 0, 0),
+            ('JUMP', start, 0),
+            end,
+            ('END_FOR', None, 0),
+            ('POP_ITER', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_CONST', 1, 0),
+            ('GET_ITER', None, 0),
+            start := self.Label(),
+            ('FOR_ITER', end := self.Label(), 0),
+            ('STORE_FAST', 0, 0),
+            ('JUMP', start, 0),
+            end,
+            ('END_FOR', None, 0),
+            ('POP_ITER', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None, frozenset({1, 2})])
+
+        # non constant literal set is not changed
+        # for _ in {1, x}: pass  ==>  for _ in {1, x}: pass
+        same = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 0, 0),
+            ('BUILD_SET', 2, 0),
+            ('GET_ITER', None, 0),
+            start := self.Label(),
+            ('FOR_ITER', end := self.Label(), 0),
+            ('STORE_FAST', 0, 0),
+            ('JUMP', start, 0),
+            end,
+            ('END_FOR', None, 0),
+            ('POP_ITER', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(same, same, consts=[None], expected_consts=[None])
+
+    def test_optimize_literal_list_contains(self):
+        # x in [1, 2]  ==>  x in (1, 2)
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BUILD_LIST', 2, 0),
+            ('CONTAINS_OP', 0, 0),
+            ('POP_TOP', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_CONST', 1, 0),
+            ('CONTAINS_OP', 0, 0),
+            ('POP_TOP', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None, (1, 2)])
+
+        # x in [1, y]  ==>  x in (1, y)
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 1, 0),
+            ('BUILD_LIST', 2, 0),
+            ('CONTAINS_OP', 0, 0),
+            ('POP_TOP', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 1, 0),
+            ('BUILD_TUPLE', 2, 0),
+            ('CONTAINS_OP', 0, 0),
+            ('POP_TOP', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None])
+
+    def test_optimize_literal_set_contains(self):
+        # x in {1, 2}  ==>  x in (1, 2)
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BUILD_SET', 2, 0),
+            ('CONTAINS_OP', 0, 0),
+            ('POP_TOP', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_CONST', 1, 0),
+            ('CONTAINS_OP', 0, 0),
+            ('POP_TOP', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None, frozenset({1, 2})])
+
+        # non constant literal set is not changed
+        # x in {1, y}  ==>  x in {1, y}
+        same = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 1, 0),
+            ('BUILD_SET', 2, 0),
+            ('CONTAINS_OP', 0, 0),
+            ('POP_TOP', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(same, same, consts=[None], expected_consts=[None])
 
     def test_conditional_jump_forward_const_condition(self):
         # The unreachable branch of the jump is removed, the jump
