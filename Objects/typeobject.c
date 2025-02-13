@@ -2251,7 +2251,9 @@ _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
     if (PyType_IS_GC(type)) {
         _PyObject_GC_Link(obj);
     }
-    memset(obj, '\0', size);
+    // Zero out the object after the PyObject header. The header fields are
+    // initialized by _PyObject_Init[Var]().
+    memset((char *)obj + sizeof(PyObject), 0, size - sizeof(PyObject));
 
     if (type->tp_itemsize == 0) {
         _PyObject_Init(obj, type);

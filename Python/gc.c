@@ -2310,11 +2310,12 @@ PyObject *
 PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *tp, size_t extra_size)
 {
     size_t presize = _PyType_PreHeaderSize(tp);
-    PyObject *op = gc_alloc(tp, _PyObject_SIZE(tp) + extra_size, presize);
+    size_t size = _PyObject_SIZE(tp) + extra_size;
+    PyObject *op = gc_alloc(tp, size, presize);
     if (op == NULL) {
         return NULL;
     }
-    memset(op, 0, _PyObject_SIZE(tp) + extra_size);
+    memset((char *)op + sizeof(PyObject), 0, size - sizeof(PyObject));
     _PyObject_Init(op, tp);
     return op;
 }
