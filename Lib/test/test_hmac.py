@@ -611,20 +611,38 @@ class ConstructorTestCase(unittest.TestCase):
         self.assertEqual(digest, binascii.unhexlify(self.expected))
 
 
-class SanityTestCase(unittest.TestCase):
+class SanityTestCaseMixin(CreatorMixin):
+    hmac_class = None
 
     @hashlib_helper.requires_hashdigest('sha256')
-    def test_exercise_all_methods(self):
-        # Exercising all methods once.
-        # This must not raise any exceptions
-        try:
-            h = hmac.HMAC(b"my secret key", digestmod="sha256")
-            h.update(b"compute the hash of this text!")
-            h.digest()
-            h.hexdigest()
-            h.copy()
-        except Exception:
-            self.fail("Exception raised during normal usage of HMAC class.")
+    def test_methods(self):
+        h = self.hmac_new(b"my secret key", digestmod="sha256")
+        self.check(h)
+
+    def check(self, h):
+        self.assertIsInstance(h, self.hmac_class)
+        self.assertIsNone(h.update(b"compute the hash of this text!"))
+        self.assertIsInstance(h.digest(), bytes)
+        self.assertIsInstance(h.hexdigest(), str)
+        self.assertIsInstance(h.copy(), self.hmac_class)
+
+
+class PySanityTestCase(ThroughObjectMixin, PyModuleMixin, SanityTestCaseMixin,
+                       unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.hmac_class = cls.hmac.HMAC
+
+
+class OpenSSLSanityTestCase(ThroughOpenSSLAPIMixin, SanityTestCaseMixin,
+                            unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.hmac_class = _hashlib.HMAC
 
 
 class UpdateTestCaseMixin:
