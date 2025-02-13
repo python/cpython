@@ -5,6 +5,8 @@ import sysconfig
 import string
 import unittest
 
+from test.support import is_emscripten, is_wasi
+
 
 class FormatTestsBase:
     @property
@@ -89,6 +91,7 @@ needs_installed_python = unittest.skipIf(
 
 
 @unittest.skipIf(os.name != 'posix', 'Feature only implemented on POSIX right now')
+@unittest.skipIf(is_wasi or is_emscripten, 'Feature not available on WebAssembly builds')
 class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
     """Test CPython's install details file implementation."""
 
