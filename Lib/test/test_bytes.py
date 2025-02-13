@@ -11,12 +11,15 @@ import sys
 import copy
 import functools
 import pickle
+import sysconfig
 import tempfile
 import textwrap
+import threading
 import unittest
 
 import test.support
 from test.support import import_helper
+from test.support import threading_helper
 from test.support import warnings_helper
 import test.string_tests
 import test.list_tests
@@ -2183,6 +2186,40 @@ class ByteArraySubclassWithSlotsTest(SubclassTest, unittest.TestCase):
 class BytesSubclassTest(SubclassTest, unittest.TestCase):
     basetype = bytes
     type2test = BytesSubclass
+
+
+class FreeThreadingTest(unittest.TestCase):
+    @unittest.skipUnless(sysconfig.get_config_var('Py_GIL_DISABLED'),
+                         'this test can only possibly fail with GIL disabled')
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_free_threading_bytearrayiter(self):
+        # Non-deterministic but good chance to fail if bytearrayiter is not free-threading safe.
+        # We are fishing for a "Assertion failed: object has negative ref count".
+
+        def iter_next(b, it):
+            b.wait()
+            list(it)
+
+        def check(funcs, it):
+            barrier = threading.Barrier(len(funcs))
+            threads = []
+
+            for func in funcs:
+                thread = threading.Thread(target=func, args=(barrier, it))
+
+                threads.append(thread)
+
+            with threading_helper.start_threads(threads):
+                pass
+
+            for thread in threads:
+                threading_helper.join_thread(thread)
+
+        for _ in range(10):
+            ba = bytearray(b'0' * 0x4000)  # this is a load-bearing variable, do not remove
+
+            check([iter_next] * 10, iter(ba))
 
 
 if __name__ == "__main__":
