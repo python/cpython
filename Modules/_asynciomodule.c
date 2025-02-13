@@ -413,11 +413,21 @@ future_ensure_alive(FutureObj *fut)
         }                                                           \
     } while(0);
 
+static void unregister_task(asyncio_state *state, TaskObj *task);
 
 static int
 future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(fut);
+
+    assert(fut->fut_state != STATE_PENDING);
+
+    if (Task_Check(state, fut)) {
+        // remove task from linked-list of tasks
+        // as it is finished now
+        TaskObj *task = (TaskObj *)fut;
+        unregister_task(state, task);
+    }
 
     if (fut->fut_callback0 != NULL) {
         /* There's a 1st callback */
@@ -4030,6 +4040,7 @@ add_tasks_llist(struct llist_node *head, PyListObject *tasks)
     struct llist_node *node;
     llist_for_each_safe(node, head) {
         TaskObj *task = llist_data(node, TaskObj, task_node);
+        assert(task->task_state == STATE_PENDING);
         // The linked list holds borrowed references to task
         // as such it is possible that the task is concurrently
         // deallocated while added to this list.
