@@ -27,16 +27,6 @@ except ImportError:
     sha256_module = None
 
 
-def ignore_warning(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore",
-                                    category=DeprecationWarning)
-            return func(*args, **kwargs)
-    return wrapper
-
-
 class TestVectorsTestCase(unittest.TestCase):
 
     def assert_hmac_internals(
