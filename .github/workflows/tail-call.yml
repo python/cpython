@@ -80,7 +80,10 @@ jobs:
         shell: cmd
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.5
-          ./PCbuild/build.bat --tail-call-interp -d -p ${{ matrix.architecture }} "/p:PlatformToolset=clangcl" "/p:LLVMToolsVersion=19.1.5" "/p:LLVMInstallDir=C:\Program Files\LLVM"
+          set PlatformToolset=clangcl
+          set LLVMToolsVersion=19.1.5
+          set LLVMInstallDir=C:\Program Files\LLVM
+          ./PCbuild/build.bat --tail-call-interp -d -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat -d -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       # No tests (yet):
@@ -89,7 +92,10 @@ jobs:
         shell: cmd
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.5
-          ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }} "/p:PlatformToolset=clangcl" "/p:LLVMToolsVersion=19.1.5" "/p:LLVMInstallDir=C:\Program Files\LLVM"
+          set PlatformToolset=clangcl
+          set LLVMToolsVersion=19.1.5
+          set LLVMInstallDir=C:\Program Files\LLVM
+          ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }}
 
         # The `find` line is required as a result of https://github.com/actions/runner-images/issues/9966.
         # This is a bug in the macOS runner image where the pre-installed Python is installed in the same
