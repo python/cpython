@@ -2856,35 +2856,22 @@ static PyObject *
 bytearrayiter_next(PyObject *self)
 {
     bytesiterobject *it = _bytesiterobject_CAST(self);
-    int val;
+    PyByteArrayObject *seq;
 
     assert(it != NULL);
-    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
-    if (index < 0) {
+    seq = it->it_seq;
+    if (seq == NULL)
         return NULL;
-    }
-    PyByteArrayObject *seq = it->it_seq;
     assert(PyByteArray_Check(seq));
 
-    Py_BEGIN_CRITICAL_SECTION(seq);
-    if (index < PyByteArray_GET_SIZE(seq)) {
-        val = (unsigned char)PyByteArray_AS_STRING(seq)[index];
+    if (it->it_index < PyByteArray_GET_SIZE(seq)) {
+        return _PyLong_FromUnsignedChar(
+            (unsigned char)PyByteArray_AS_STRING(seq)[it->it_index++]);
     }
-    else {
-        val = -1;
-    }
-    Py_END_CRITICAL_SECTION();
 
-    if (val == -1) {
-        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, -1);
-#ifndef Py_GIL_DISABLED
-        it->it_seq = NULL;
-        Py_DECREF(seq);
-#endif
-        return NULL;
-    }
-    FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index + 1);
-    return _PyLong_FromUnsignedChar((unsigned char)val);
+    it->it_seq = NULL;
+    Py_DECREF(seq);
+    return NULL;
 }
 
 static PyObject *
@@ -2892,9 +2879,8 @@ bytearrayiter_length_hint(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     bytesiterobject *it = _bytesiterobject_CAST(self);
     Py_ssize_t len = 0;
-    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
-    if (index >= 0) {
-        len = PyByteArray_GET_SIZE(it->it_seq) - index;
+    if (it->it_seq) {
+        len = PyByteArray_GET_SIZE(it->it_seq) - it->it_index;
         if (len < 0) {
             len = 0;
         }
@@ -2914,41 +2900,27 @@ bytearrayiter_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
      * call must be before access of iterator pointers.
      * see issue #101765 */
     bytesiterobject *it = _bytesiterobject_CAST(self);
-    PyObject *ret = NULL;
-    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
-    if (index >= 0) {
-        Py_BEGIN_CRITICAL_SECTION(it->it_seq);
-        if (index <= PyByteArray_GET_SIZE(it->it_seq)) {
-            ret = Py_BuildValue("N(O)n", iter, it->it_seq, index);
-        }
-        Py_END_CRITICAL_SECTION();
+    if (it->it_seq != NULL) {
+        return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
+    } else {
+        return Py_BuildValue("N(())", iter);
     }
-    if (ret == NULL) {
-        ret = Py_BuildValue("N(())", iter);
-    }
-    return ret;
 }
 
 static PyObject *
 bytearrayiter_setstate(PyObject *self, PyObject *state)
 {
     Py_ssize_t index = PyLong_AsSsize_t(state);
-    if (index == -1 && PyErr_Occurred()) {
+    if (index == -1 && PyErr_Occurred())
         return NULL;
-    }
 
     bytesiterobject *it = _bytesiterobject_CAST(self);
-    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index) >= 0) {
-        if (index < -1) {
-            index = -1;
-        }
-        else {
-            Py_ssize_t size = PyByteArray_GET_SIZE(it->it_seq);
-            if (index > size) {
-                index = size; /* iterator at end */
-            }
-        }
-        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index);
+    if (it->it_seq != NULL) {
+        if (index < 0)
+            index = 0;
+        else if (index > PyByteArray_GET_SIZE(it->it_seq))
+            index = PyByteArray_GET_SIZE(it->it_seq); /* iterator exhausted */
+        it->it_index = index;
     }
     Py_RETURN_NONE;
 }
@@ -3010,7 +2982,7 @@ bytearray_iter(PyObject *seq)
     it = PyObject_GC_New(bytesiterobject, &PyByteArrayIter_Type);
     if (it == NULL)
         return NULL;
-    it->it_index = 0;  // -1 indicates exhausted
+    it->it_index = 0;
     it->it_seq = (PyByteArrayObject *)Py_NewRef(seq);
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
