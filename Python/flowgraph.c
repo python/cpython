@@ -2612,18 +2612,6 @@ optimize_load_fast(cfg_builder *g)
                     break;
                 }
 
-                case RETURN_VALUE: {
-                    // We need to return a new reference so there is no point
-                    // optimizing the instruction that produced the returned
-                    // reference.
-                    ref r = ref_stack_pop(&refs);
-                    if (r.local != NOT_LOCAL) {
-                        assert(r.instr >= 0);
-                        has_killed_refs[r.instr] = true;
-                    }
-                    break;
-                }
-
                 case STORE_FAST: {
                     kill_local(has_killed_refs, block->b_iused, &refs, oparg);
                     ref_stack_pop(&refs);
