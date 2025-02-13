@@ -1484,7 +1484,6 @@ class ExceptionTests(unittest.TestCase):
         self.assertIn(b'Done.', out)
 
 
-    @support.thread_unsafe("sys.setrecursionlimit")
     def test_recursion_in_except_handler(self):
 
         def set_relative_recursion_limit(n):
