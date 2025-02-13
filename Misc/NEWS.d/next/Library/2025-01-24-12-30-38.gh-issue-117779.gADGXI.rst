@@ -1,0 +1,1 @@
+Fix reading duplicated entries in :mod:`zipfile` by name.
