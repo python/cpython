@@ -991,7 +991,7 @@ class BytesIO(BufferedIOBase):
         except BlockingIOError:
             pass
 
-        # Buffer must be
+        # Remove all excess bytes.
         self._buffer.resize(self._pos)
         return found_eof
 

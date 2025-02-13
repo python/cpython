@@ -716,7 +716,6 @@ static PyObject *
 _io_FileIO_readall_impl(fileio *self)
 /*[clinic end generated code: output=faa0292b213b4022 input=dbdc137f55602834]*/
 {
-    Py_ssize_t pos = 0;
     PyObject* estimate_obj = Py_None;
     PyObject *args[3] = {NULL, NULL, NULL};
     PyObject *fn_name = NULL;
@@ -729,6 +728,7 @@ _io_FileIO_readall_impl(fileio *self)
     }
 
     if (self->stat_atopen != NULL && self->stat_atopen->st_size >= 0) {
+        Py_ssize_t pos = 0;
         Py_ssize_t estimate = self->stat_atopen->st_size;
         /* While a lot of code does open().read() to get the whole contents
            of a file it is possible a caller seeks/reads a ways into the file
@@ -808,7 +808,8 @@ _io_FileIO_readall_impl(fileio *self)
         goto leave;
     }
 
-    if (!PyBool_Check(found_eof) && !PyBool_Check(result)) {
+    /* Read was blocked (didn't get to end, and didn't find data) */
+    if (!PyObject_IsTrue(result) && !PyObject_IsTrue(found_eof)) {
         Py_DECREF(result);
         result = Py_None;
     }
