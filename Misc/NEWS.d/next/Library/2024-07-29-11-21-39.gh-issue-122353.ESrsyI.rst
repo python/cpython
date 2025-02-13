@@ -1,0 +1,2 @@
+Handle :exc:`ValueError`\s raised by OS-related functions during import if
+``sys.path`` contains invalid path names. Patch by Bénédikt Tran.
