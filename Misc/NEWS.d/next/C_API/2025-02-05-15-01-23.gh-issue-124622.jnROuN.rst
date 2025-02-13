@@ -1,0 +1,3 @@
+Add :c:func:`PyGILState_EnsureOrFail` function: similar to
+:c:func:`PyGILState_Ensure`, but return ``-1`` if the thread must exit.
+Patch by Victor Stinner.
