@@ -563,7 +563,7 @@ pymain_run_stdin(PyConfig *config)
         return (run != 0);
     }
     int run = pymain_run_module(L"_pyrepl", 0);
-    return (run != 0);
+    return run;
 }
 
 
