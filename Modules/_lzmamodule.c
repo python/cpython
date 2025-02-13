@@ -126,6 +126,9 @@ typedef struct {
     PyThread_type_lock lock;
 } Decompressor;
 
+#define Compressor_CAST(op)     ((Compressor *)(op))
+#define Decompressor_CAST(op)   ((Decompressor *)(op))
+
 /* Helper functions. */
 
 static int
@@ -857,14 +860,15 @@ error:
 }
 
 static void
-Compressor_dealloc(Compressor *self)
+Compressor_dealloc(PyObject *op)
 {
+    Compressor *self = Compressor_CAST(op);
     lzma_end(&self->lzs);
     if (self->lock != NULL) {
         PyThread_free_lock(self->lock);
     }
     PyTypeObject *tp = Py_TYPE(self);
-    tp->tp_free((PyObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -875,7 +879,7 @@ static PyMethodDef Compressor_methods[] = {
 };
 
 static int
-Compressor_traverse(Compressor *self, visitproc visit, void *arg)
+Compressor_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
@@ -1304,8 +1308,9 @@ error:
 }
 
 static void
-Decompressor_dealloc(Decompressor *self)
+Decompressor_dealloc(PyObject *op)
 {
+    Decompressor *self = Decompressor_CAST(op);
     if(self->input_buffer != NULL)
         PyMem_Free(self->input_buffer);
 
@@ -1315,12 +1320,12 @@ Decompressor_dealloc(Decompressor *self)
         PyThread_free_lock(self->lock);
     }
     PyTypeObject *tp = Py_TYPE(self);
-    tp->tp_free((PyObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
 static int
-Decompressor_traverse(Decompressor *self, visitproc visit, void *arg)
+Decompressor_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
@@ -1633,7 +1638,7 @@ lzma_clear(PyObject *module)
 static void
 lzma_free(void *module)
 {
-    lzma_clear((PyObject *)module);
+    (void)lzma_clear((PyObject *)module);
 }
 
 static PyModuleDef _lzmamodule = {
