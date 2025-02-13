@@ -623,7 +623,7 @@ Object Protocol
       Objects that are immortal in one CPython version are not guaranteed to
       be immortal in another.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. c:function:: int PyUnstable_TryIncRef(PyObject *obj)
 
