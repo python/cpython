@@ -3229,10 +3229,16 @@ class TestStack(unittest.TestCase):
     def test_walk_stack(self):
         def deeper():
             return list(traceback.walk_stack(None))
-        s1 = list(traceback.walk_stack(None))
-        s2 = deeper()
+        s1, s2 = list(traceback.walk_stack(None)), deeper()
         self.assertEqual(len(s2) - len(s1), 1)
         self.assertEqual(s2[1:], s1)
+
+    def test_walk_innermost_frame(self):
+        def inner():
+            return list(traceback.walk_stack(None))
+        frames = inner()
+        innermost_frame, _ = frames[0]
+        self.assertEqual(innermost_frame.f_code.co_name, "inner")
 
     def test_walk_tb(self):
         try:

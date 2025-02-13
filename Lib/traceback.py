@@ -380,10 +380,14 @@ def walk_stack(f):
     current stack is used. Usually used with StackSummary.extract.
     """
     if f is None:
-        f = sys._getframe().f_back.f_back.f_back.f_back
-    while f is not None:
-        yield f, f.f_lineno
-        f = f.f_back
+        f = sys._getframe().f_back
+
+    def walk_stack_generator(frame):
+        while frame is not None:
+            yield frame, frame.f_lineno
+            frame = frame.f_back
+
+    return walk_stack_generator(f)
 
 
 def walk_tb(tb):
