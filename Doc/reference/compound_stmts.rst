@@ -420,16 +420,15 @@ is executed.  If there is a saved exception it is re-raised at the end of the
 :keyword:`!finally` clause.  If the :keyword:`!finally` clause raises another
 exception, the saved exception is set as the context of the new exception.
 If the :keyword:`!finally` clause executes a :keyword:`return`, :keyword:`break`
-or :keyword:`continue` statement, the saved exception is discarded.
+or :keyword:`continue` statement, the saved exception is discarded. For example,
+this function returns 42.
 
-   >>> def f():
-   ...     try:
-   ...         1/0
-   ...     finally:
-   ...         return 42
-   ...
-   >>> f()
-   42
+.. code::
+   def f():
+       try:
+           1/0
+       finally:
+           return 42
 
 The exception information is not available to the program during execution of
 the :keyword:`!finally` clause.
@@ -446,16 +445,14 @@ statement, the :keyword:`!finally` clause is also executed 'on the way out.'
 The return value of a function is determined by the last :keyword:`return`
 statement executed.  Since the :keyword:`!finally` clause always executes, a
 :keyword:`!return` statement executed in the :keyword:`!finally` clause will
-always be the last one executed::
+always be the last one executed. The following function returns 'finally'.
 
-   >>> def foo():
-   ...     try:
-   ...         return 'try'
-   ...     finally:
-   ...         return 'finally'
-   ...
-   >>> foo()
-   'finally'
+.. code::
+   def foo():
+       try:
+           return 'try'
+       finally:
+           return 'finally'
 
 .. versionchanged:: 3.8
    Prior to Python 3.8, a :keyword:`continue` statement was illegal in the
