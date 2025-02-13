@@ -2259,7 +2259,6 @@ strings.");
 static PyObject *
 s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
-    char *buf;
     PyStructObject *soself;
     _structmodulestate *state = get_struct_state_structinst(self);
 
@@ -2275,21 +2274,23 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
 
     /* Allocate a new string */
-    _PyBytesWriter writer;
-    _PyBytesWriter_Init(&writer);
-    buf = _PyBytesWriter_Alloc(&writer, soself->s_size);
+    PyBytesWriter *writer;
+    char *buf = PyBytesWriter_Create(&writer, soself->s_size);
     if (buf == NULL) {
-        _PyBytesWriter_Dealloc(&writer);
-        return NULL;
+        goto error;
     }
 
     /* Call the guts */
-    if ( s_pack_internal(soself, args, 0, buf, state) != 0 ) {
-        _PyBytesWriter_Dealloc(&writer);
-        return NULL;
+    if (s_pack_internal(soself, args, 0, buf, state) != 0) {
+        goto error;
     }
+    buf += soself->s_size;
 
-    return _PyBytesWriter_Finish(&writer, buf + soself->s_size);
+    return PyBytesWriter_Finish(writer, buf);
+
+error:
+    PyBytesWriter_Discard(writer);
+    return NULL;
 }
 
 PyDoc_STRVAR(s_pack_into__doc__,
