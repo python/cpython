@@ -939,7 +939,6 @@ class BytesIO(BufferedIOBase):
         # byte which returns size 0. Oversize the buffer by 1 byte so the
         # I/O can be completed with two read() calls (one for all data, one
         # for EOF) without needing to resize the buffer.
-        # FIXME(cmaloney): This should probably be a memoryview....
         target_read = None
         if estimate is not None:
             target_read = int(estimate) + 1
@@ -954,16 +953,14 @@ class BytesIO(BufferedIOBase):
             if limit < 0:
                 raise ValueError(f"limit must be larger than 0, got {limit}")
 
-        # Expand buffer to get target read in one read when possible.
         if limit is not None:
             target_read = min(target_read, limit)
 
-        # Expand so target read definitely fits.
+        # Expand buffer to get target read in one read when possible.
         if len(self._buffer) < target_read + self._pos:
             self._buffer.resize(self._pos + target_read)
 
-        # File descriptor
-        if isinstance(file, int):
+        if isinstance(file, int):  # File descriptor
             read_fn = lambda: os.readinto(file, memoryview(self._buffer)[self._pos:])
         elif file_readinto := getattr(file, "readinto", None):
             read_fn = lambda: file_readinto(memoryview(self._buffer)[self._pos:])
