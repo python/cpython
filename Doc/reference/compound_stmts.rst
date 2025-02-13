@@ -424,6 +424,7 @@ or :keyword:`continue` statement, the saved exception is discarded. For example,
 this function returns 42.
 
 .. code::
+
    def f():
        try:
            1/0
@@ -448,6 +449,7 @@ statement executed.  Since the :keyword:`!finally` clause always executes, a
 always be the last one executed. The following function returns 'finally'.
 
 .. code::
+
    def foo():
        try:
            return 'try'
