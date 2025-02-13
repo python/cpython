@@ -2077,10 +2077,7 @@ class TestLRU:
                 return n
             return fib(n-1) + fib(n-2)
 
-        try:
-            fib(100)
-        except RecursionError:
-            fib(50)
+        fib(100)
         if self.module == c_functools:
             fib.cache_clear()
             with support.infinite_recursion():
