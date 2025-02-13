@@ -504,6 +504,11 @@ http
   module allow the browser to apply its default dark mode.
   (Contributed by Yorik Hansen in :gh:`123430`.)
 
+* Added support for HTTP single-part range requests on files to
+  :class:`~http.server.SimpleHTTPRequestHandler`, as specified in
+  :rfc:`9110#section-14`.
+  (Contributed by Andy Ling in :gh:`86809`.)
+
 
 imaplib
 -------
@@ -1272,6 +1277,10 @@ Changes in the Python API
   This temporary change affects other threads.
   (Contributed by Serhiy Storchaka in :gh:`69998`.)
 
+* The :meth:`BaseHTTPRequestHandler.send_error <http.server.BaseHTTPRequestHandler.send_error>`
+  method has a new optional parameter *extra_headers*.
+  Subclasses should update their implementations to accept this new parameter.
+  (Contributed by Andy Ling in :gh:`86809`.)
 
 Build changes
 =============
