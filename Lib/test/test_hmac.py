@@ -27,6 +27,99 @@ def requires_builtin_sha2():
     return unittest.skipIf(sha2 is None, "requires _sha2")
 
 
+class ModuleMixin:
+    hmac = None
+
+
+class PyModuleMixin(ModuleMixin):
+    """Pure Python implementation of HMAC.
+
+    The underlying hash functions may be OpenSSL-based or HACL* based,
+    depending on whether OpenSSL is present or not.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.hmac = import_fresh_module('hmac', blocked=['_hashlib', '_hmac'])
+
+
+@unittest.skip("no builtin implementation for HMAC for now")
+class BuiltinModuleMixin(ModuleMixin):
+    # TODO(picnixz): uncomment once HACL* HMAC is here
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.hmac = import_fresh_module('_hmac')
+
+
+class CreatorMixin:
+    """Mixin exposing a method creating a HMAC object."""
+
+    def hmac_new(self, key, msg=None, digestmod=None):
+        raise NotImplementedError
+
+
+class DigestMixin:
+    """Mixin exposing a method computing a HMAC digest."""
+
+    def hmac_digest(self, key, msg=None, digestmod=None):
+        raise NotImplementedError
+
+
+class ThroughObjectMixin(ModuleMixin, CreatorMixin, DigestMixin):
+    """Mixin delegating to hmac.HMAC() and hmac.HMAC(...).digest()."""
+
+    def hmac_new(self, key, msg=None, digestmod=None):
+        return self.hmac.HMAC(key, msg, digestmod=digestmod)
+
+    def hmac_digest(self, key, msg=None, digestmod=None):
+        return self.hmac_new(key, msg, digestmod).digest()
+
+
+class ThroughModuleAPIMixin(ModuleMixin, CreatorMixin, DigestMixin):
+    """Mixin delegating to hmac.new() and hmac.digest()."""
+
+    def hmac_new(self, key, msg=None, digestmod=None):
+        return self.hmac.new(key, msg, digestmod=digestmod)
+
+    def hmac_digest(self, key, msg=None, digestmod=None):
+        return self.hmac.digest(key, msg, digest=digestmod)
+
+
+@hashlib_helper.requires_hashlib()
+class ThroughOpenSSLAPIMixin(CreatorMixin, DigestMixin):
+    """Mixin delegating to _hashlib.hmac_new() and _hashlib.hmac_digest()."""
+
+    def hmac_new(self, key, msg=None, digestmod=None):
+        return _hashlib.hmac_new(key, msg, digestmod=digestmod)
+
+    def hmac_digest(self, key, msg=None, digestmod=None):
+        return _hashlib.hmac_digest(key, msg, digest=digestmod)
+
+
+class ThroughBuiltinAPIMixin(ThroughModuleAPIMixin, BuiltinModuleMixin):
+    """Mixin delegating to _hmac.new() and _hmac.digest()."""
+
+
+class CheckerMixin:
+    """Mixin for checking HMAC objects (pure Python, OpenSSL or built-in)."""
+
+    def check_object(self, h, digest, hashname, digest_size, block_size):
+        self.check_internals(h, hashname, digest_size, block_size)
+        self.check_hexdigest(h, digest, digest_size)
+
+    def check_internals(self, h, hashname, digest_size, block_size):
+        self.assertEqual(h.name, f"hmac-{hashname}")
+        self.assertEqual(h.digest_size, digest_size)
+        self.assertEqual(h.block_size, block_size)
+
+    def check_hexdigest(self, h, digest, digest_size):
+        self.assertEqual(len(h.digest()), digest_size)
+        self.assertEqual(h.hexdigest().upper(), digest.upper())
+
+
 class TestVectorsTestCase(unittest.TestCase):
 
     def assert_hmac_internals(
