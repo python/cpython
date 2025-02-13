@@ -154,11 +154,11 @@ def write_uop(
                 var.defined = False
             storage = emitter.emit_tokens(override, storage, None)
             out.start_line()
-            storage.flush(out, cast_type="JitOptSymbol *")
+            storage.flush(out)
         else:
             emit_default(out, uop, stack)
             out.start_line()
-            stack.flush(out, cast_type="JitOptSymbol *")
+            stack.flush(out)
     except StackError as ex:
         raise analysis_error(ex.args[0], prototype.body[0]) # from None
 
@@ -201,7 +201,7 @@ def generate_abstract_interpreter(
             declare_variables(override, out, skip_inputs=False)
         else:
             declare_variables(uop, out, skip_inputs=True)
-        stack = Stack(False)
+        stack = Stack(extract_bits=False, cast_type="JitOptSymbol *")
         write_uop(override, uop, out, stack, debug, skip_inputs=(override is None))
         out.start_line()
         out.emit("break;\n")
