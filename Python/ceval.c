@@ -304,36 +304,108 @@ Py_SetRecursionLimit(int new_limit)
     _PyEval_StartTheWorld(interp);
 }
 
+int
+Py_ReachedRecursionLimit(PyThreadState *tstate, int margin_count)
+{
+    return _Py_ReachedRecursionLimit(tstate, margin_count);
+}
+
+void
+_Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
+{
+    char here;
+    uintptr_t here_addr = (uintptr_t)&here;
+    if (here_addr < tstate->c_stack_hard_limit) {
+        Py_FatalError("Unchecked stack overflow.");
+    }
+}
+
+#if defined(__s390x__)
+#  define Py_C_STACK_SIZE 320000
+#elif defined(_WIN32) && defined(_M_ARM64)
+#  define Py_C_STACK_SIZE 400000
+#elif defined(_WIN32)
+#  define Py_C_STACK_SIZE 1200000
+#elif defined(__ANDROID__)
+#  define Py_C_STACK_SIZE 1200000
+#elif defined(__sparc__)
+   // test_descr crashed on sparc64 with >7000 but let's keep a margin of error.
+#  define Py_C_STACK_SIZE 1600000
+#elif defined(__wasi__)
+   /* Web assembly has two stacks, so this isn't really the stack depth */
+#  define Py_C_STACK_SIZE 50000
+#elif defined(__hppa__) || defined(__powerpc64__)
+   // test_descr crashed with >8000 but let's keep a margin of error.
+#  define Py_C_STACK_SIZE 2000000
+#else
+#  define Py_C_STACK_SIZE 5000000
+#endif
+
+void
+_Py_InitializeRecursionCheck(PyThreadState *tstate)
+{
+    char here;
+    uintptr_t here_addr = (uintptr_t)&here;
+    tstate->c_stack_top = here_addr;
+#ifdef USE_STACKCHECK
+    if (_PyOS_CheckStack(PYOS_STACK_MARGIN * 2) == 0) {
+        tstate->c_stack_soft_limit = here_addr - PYOS_STACK_MARGIN_BYTES;
+        return;
+    }
+    int margin = PYOS_STACK_MARGIN;
+    assert(tstate->c_stack_soft_limit != UINTPTR_MAX);
+    if (_PyOS_CheckStack(margin)) {
+        margin = PYOS_STACK_MARGIN/2;
+    }
+    else {
+        if (_PyOS_CheckStack(PYOS_STACK_MARGIN*3/2) == 0) {
+            margin = PYOS_STACK_MARGIN*3/2;
+        }
+    }
+    tstate->c_stack_hard_limit = here_addr - margin * sizeof(void *);
+    tstate->c_stack_soft_limit = tstate->c_stack_hard_limit + PYOS_STACK_MARGIN_BYTES;
+#else
+    assert(tstate->c_stack_soft_limit == UINTPTR_MAX);
+    tstate->c_stack_soft_limit = here_addr - Py_C_STACK_SIZE;
+    tstate->c_stack_hard_limit = here_addr - (Py_C_STACK_SIZE + PYOS_STACK_MARGIN_BYTES);
+#endif
+}
+
 /* The function _Py_EnterRecursiveCallTstate() only calls _Py_CheckRecursiveCall()
    if the recursion_depth reaches recursion_limit. */
 int
 _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
-#ifdef USE_STACKCHECK
-    if (PyOS_CheckStack()) {
-        ++tstate->c_recursion_remaining;
-        _PyErr_SetString(tstate, PyExc_MemoryError, "Stack overflow");
-        return -1;
+    char here;
+    uintptr_t here_addr = (uintptr_t)&here;
+    assert(tstate->c_stack_soft_limit != 0);
+    if (tstate->c_stack_hard_limit == 0) {
+        _Py_InitializeRecursionCheck(tstate);
     }
-#endif
+    if (here_addr >= tstate->c_stack_soft_limit) {
+        return 0;
+    }
+    assert(tstate->c_stack_hard_limit != 0);
+    if (here_addr < tstate->c_stack_hard_limit) {
+        /* Overflowing while handling an overflow. Give up. */
+        int kbytes_used = (tstate->c_stack_top - here_addr)/1024;
+        char buffer[80];
+        snprintf(buffer, 80, "Unrecoverable stack overflow (used %d kB)%s", kbytes_used, where);
+        Py_FatalError(buffer);
+    }
     if (tstate->recursion_headroom) {
-        if (tstate->c_recursion_remaining < -50) {
-            /* Overflowing while handling an overflow. Give up. */
-            Py_FatalError("Cannot recover from stack overflow.");
-        }
+        return 0;
     }
     else {
-        if (tstate->c_recursion_remaining <= 0) {
-            tstate->recursion_headroom++;
-            _PyErr_Format(tstate, PyExc_RecursionError,
-                        "maximum recursion depth exceeded%s",
-                        where);
-            tstate->recursion_headroom--;
-            ++tstate->c_recursion_remaining;
-            return -1;
-        }
+        int kbytes_used = (tstate->c_stack_top - here_addr)/1024;
+        tstate->recursion_headroom++;
+        _PyErr_Format(tstate, PyExc_RecursionError,
+                    "Stack overflow (used %d kB)%s",
+                    kbytes_used,
+                    where);
+        tstate->recursion_headroom--;
+        return -1;
     }
-    return 0;
 }
 
 
@@ -761,11 +833,6 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 }
 
 
-/* _PyEval_EvalFrameDefault() is a *big* function,
- * so consume 3 units of C stack */
-#define PY_EVAL_C_STACK_UNITS 2
-
-
 /* _PyEval_EvalFrameDefault is too large to optimize for speed with PGO on MSVC.
  */
 #if (defined(_MSC_VER) && \
@@ -837,8 +904,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.previous = tstate->current_frame;
     frame->previous = &entry_frame;
     tstate->current_frame = frame;
-
-    tstate->c_recursion_remaining -= (PY_EVAL_C_STACK_UNITS - 1);
 
     /* support for generator.throw() */
     if (throwflag) {
@@ -998,7 +1063,6 @@ early_exit:
     assert(frame->owner == FRAME_OWNED_BY_INTERPRETER);
     /* Restore previous frame and exit */
     tstate->current_frame = frame->previous;
-    tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
     return NULL;
 }
 
@@ -1562,11 +1626,9 @@ clear_thread_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     // _PyThreadState_PopFrame, since f_code is already cleared at that point:
     assert((PyObject **)frame + _PyFrame_GetCode(frame)->co_framesize ==
         tstate->datastack_top);
-    tstate->c_recursion_remaining--;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     _PyFrame_ClearExceptCode(frame);
     PyStackRef_CLEAR(frame->f_executable);
-    tstate->c_recursion_remaining++;
     _PyThreadState_PopFrame(tstate, frame);
 }
 
@@ -1579,11 +1641,9 @@ clear_gen_frame(PyThreadState *tstate, _PyInterpreterFrame * frame)
     assert(tstate->exc_info == &gen->gi_exc_state);
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;
-    tstate->c_recursion_remaining--;
     assert(frame->frame_obj == NULL || frame->frame_obj->f_frame == frame);
     _PyFrame_ClearExceptCode(frame);
     _PyErr_ClearExcState(&gen->gi_exc_state);
-    tstate->c_recursion_remaining++;
     frame->previous = NULL;
 }
 

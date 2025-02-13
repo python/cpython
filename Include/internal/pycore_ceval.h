@@ -193,18 +193,11 @@ extern void _PyEval_DeactivateOpCache(void);
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 
-#ifdef USE_STACKCHECK
-/* With USE_STACKCHECK macro defined, trigger stack checks in
-   _Py_CheckRecursiveCall() on every 64th call to _Py_EnterRecursiveCall. */
 static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
-    return (tstate->c_recursion_remaining-- < 0
-            || (tstate->c_recursion_remaining & 63) == 0);
+    char here;
+    uintptr_t here_addr = (uintptr_t)&here;
+    return here_addr < tstate->c_stack_soft_limit;
 }
-#else
-static inline int _Py_MakeRecCheck(PyThreadState *tstate) {
-    return tstate->c_recursion_remaining-- < 0;
-}
-#endif
 
 // Export for '_json' shared extension, used via _Py_EnterRecursiveCall()
 // static inline function.
@@ -220,23 +213,30 @@ static inline int _Py_EnterRecursiveCallTstate(PyThreadState *tstate,
     return (_Py_MakeRecCheck(tstate) && _Py_CheckRecursiveCall(tstate, where));
 }
 
-static inline void _Py_EnterRecursiveCallTstateUnchecked(PyThreadState *tstate)  {
-    assert(tstate->c_recursion_remaining > 0);
-    tstate->c_recursion_remaining--;
-}
-
 static inline int _Py_EnterRecursiveCall(const char *where) {
     PyThreadState *tstate = _PyThreadState_GET();
     return _Py_EnterRecursiveCallTstate(tstate, where);
 }
 
-static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate)  {
-    tstate->c_recursion_remaining++;
+static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate) {
+    (void)tstate;
+}
+
+PyAPI_FUNC(void) _Py_InitializeRecursionCheck(PyThreadState *tstate);
+
+static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate, int margin_count)  {
+    char here;
+    uintptr_t here_addr = (uintptr_t)&here;
+    if (here_addr > tstate->c_stack_soft_limit + margin_count * PYOS_STACK_MARGIN_BYTES) {
+        return 0;
+    }
+    if (tstate->c_stack_hard_limit == 0) {
+        _Py_InitializeRecursionCheck(tstate);
+    }
+    return here_addr <= tstate->c_stack_soft_limit + margin_count * PYOS_STACK_MARGIN_BYTES;
 }
 
 static inline void _Py_LeaveRecursiveCall(void)  {
-    PyThreadState *tstate = _PyThreadState_GET();
-    _Py_LeaveRecursiveCallTstate(tstate);
 }
 
 extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);
@@ -327,6 +327,7 @@ void _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 
 PyAPI_FUNC(PyObject *) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value);
 
+extern int _PyOS_CheckStack(int words);
 
 #ifdef __cplusplus
 }

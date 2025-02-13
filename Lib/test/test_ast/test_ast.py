@@ -747,9 +747,8 @@ class AST_Tests(unittest.TestCase):
     @support.cpython_only
     @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
-        fail_depth = support.exceeds_recursion_limit()
-        crash_depth = 100_000
-        success_depth = int(support.get_c_recursion_limit() * 0.8)
+        crash_depth = 200_000
+        success_depth = 200
         if _testinternalcapi is not None:
             remaining = _testinternalcapi.get_c_recursion_remaining()
             success_depth = min(success_depth, remaining)
@@ -757,13 +756,13 @@ class AST_Tests(unittest.TestCase):
         def check_limit(prefix, repeated):
             expect_ok = prefix + repeated * success_depth
             ast.parse(expect_ok)
-            for depth in (fail_depth, crash_depth):
-                broken = prefix + repeated * depth
-                details = "Compiling ({!r} + {!r} * {})".format(
-                            prefix, repeated, depth)
-                with self.assertRaises(RecursionError, msg=details):
-                    with support.infinite_recursion():
-                        ast.parse(broken)
+
+            broken = prefix + repeated * crash_depth
+            details = "Compiling ({!r} + {!r} * {})".format(
+                        prefix, repeated, crash_depth)
+            with self.assertRaises(RecursionError, msg=details):
+                with support.infinite_recursion():
+                    ast.parse(broken)
 
         check_limit("a", "()")
         check_limit("a", ".b")

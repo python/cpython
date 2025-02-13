@@ -115,7 +115,10 @@ static PyObject*
 get_c_recursion_remaining(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return PyLong_FromLong(tstate->c_recursion_remaining);
+    char here;
+    uintptr_t here_addr = (uintptr_t)&here;
+    int remaining = (int)((here_addr - tstate->c_stack_soft_limit)/PYOS_STACK_MARGIN_BYTES * 50);
+    return PyLong_FromLong(remaining);
 }
 
 
