@@ -379,16 +379,12 @@ def ensure_different_files(source, target):
     try:
         source_file_id = source.info._file_id
         target_file_id = target.info._file_id
-        source_device_id = source.info._device_id
-        target_device_id = target.info._device_id
     except AttributeError:
         if source != target:
             return
     else:
         try:
             if source_file_id() != target_file_id():
-                return
-            if source_device_id() != target_device_id():
                 return
         except (OSError, ValueError):
             return
@@ -447,12 +443,9 @@ class _PathInfoBase:
         return S_IMODE(self._stat(follow_symlinks=follow_symlinks).st_mode)
 
     def _file_id(self, *, follow_symlinks=True):
-        """Returns the identifier of the file (unique for a device ID)."""
-        return self._stat(follow_symlinks=follow_symlinks).st_ino
-
-    def _device_id(self, *, follow_symlinks=True):
-        """Returns the identifier of the device on which the file resides."""
-        return self._stat(follow_symlinks=follow_symlinks).st_dev
+        """Returns the identifier of the file."""
+        st = self._stat(follow_symlinks=follow_symlinks)
+        return st.st_dev, st.st_ino
 
     def _access_time_ns(self, *, follow_symlinks=True):
         """Return the access time in nanoseconds."""
