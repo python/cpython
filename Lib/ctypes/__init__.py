@@ -12,6 +12,7 @@ from _ctypes import __version__ as _ctypes_version
 from _ctypes import RTLD_LOCAL, RTLD_GLOBAL
 from _ctypes import ArgumentError
 from _ctypes import SIZEOF_TIME_T
+from _ctypes import CField
 
 from struct import calcsize as _calcsize
 
