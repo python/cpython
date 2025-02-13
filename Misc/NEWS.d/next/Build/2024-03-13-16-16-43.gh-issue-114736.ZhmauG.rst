@@ -1,1 +1,0 @@
-Have WASI builds use WASI SDK 21.

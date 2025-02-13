@@ -1,8 +1,9 @@
-from parsing import (
+from parsing import (  # noqa: F401
     InstDef,
     Macro,
     Pseudo,
     Family,
+    LabelDef,
     Parser,
     Context,
     CacheEffect,
@@ -12,6 +13,7 @@ from parsing import (
     AstNode,
 )
 
+CodeDef = InstDef | LabelDef
 
 def prettify_filename(filename: str) -> str:
     # Make filename more user-friendly and less platform-specific,

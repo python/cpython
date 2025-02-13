@@ -1,5 +1,5 @@
-:mod:`pty` --- Pseudo-terminal utilities
-========================================
+:mod:`!pty` --- Pseudo-terminal utilities
+=========================================
 
 .. module:: pty
    :platform: Unix

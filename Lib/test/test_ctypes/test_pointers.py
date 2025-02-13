@@ -1,4 +1,3 @@
-import _ctypes_test
 import array
 import ctypes
 import sys
@@ -10,6 +9,8 @@ from ctypes import (CDLL, CFUNCTYPE, Structure,
                     c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulong, c_longlong, c_ulonglong,
                     c_float, c_double)
+from test.support import import_helper
+_ctypes_test = import_helper.import_module("_ctypes_test")
 from ._support import (_CData, PyCPointerType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
                        Py_TPFLAGS_IMMUTABLETYPE)
 

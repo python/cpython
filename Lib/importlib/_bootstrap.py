@@ -526,7 +526,7 @@ def _load_module_shim(self, fullname):
 
     """
     msg = ("the load_module() method is deprecated and slated for removal in "
-          "Python 3.12; use exec_module() instead")
+           "Python 3.15; use exec_module() instead")
     _warnings.warn(msg, DeprecationWarning)
     spec = spec_from_loader(fullname, self)
     if fullname in sys.modules:
@@ -1134,7 +1134,7 @@ class FrozenImporter:
         # part of the importer), instead of here (the finder part).
         # The loader is the usual place to get the data that will
         # be loaded into the module.  (For example, see _LoaderBasics
-        # in _bootstra_external.py.)  Most importantly, this importer
+        # in _bootstrap_external.py.)  Most importantly, this importer
         # is simpler if we wait to get the data.
         # However, getting as much data in the finder as possible
         # to later load the module is okay, and sometimes important.
@@ -1241,7 +1241,6 @@ def _find_spec(name, path, target=None):
     """Find a module's spec."""
     meta_path = sys.meta_path
     if meta_path is None:
-        # PyImport_Cleanup() is running or has been called.
         raise ImportError("sys.meta_path is None, Python is likely "
                           "shutting down")
 

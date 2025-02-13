@@ -1,2 +1,0 @@
-:class:`_io.WindowsConsoleIO` now emit a warning if a boolean value is
-passed as a filedescriptor argument.

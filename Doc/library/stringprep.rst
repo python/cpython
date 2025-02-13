@@ -1,5 +1,5 @@
-:mod:`stringprep` --- Internet String Preparation
-=================================================
+:mod:`!stringprep` --- Internet String Preparation
+==================================================
 
 .. module:: stringprep
    :synopsis: String preparation, as per RFC 3453

@@ -71,8 +71,8 @@ static PyObject *
 bool_invert(PyObject *v)
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "Bitwise inversion '~' on bool is deprecated. This "
-                     "returns the bitwise inversion of the underlying int "
+                     "Bitwise inversion '~' on bool is deprecated and will be removed in "
+                     "Python 3.16. This returns the bitwise inversion of the underlying int "
                      "object and is usually not what you expect from negating "
                      "a bool. Use the 'not' operator for boolean negation or "
                      "~int(x) if you really want the bitwise inversion of the "

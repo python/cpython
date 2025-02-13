@@ -908,87 +908,85 @@ class Differ:
         + abcdefGhijkl
         ?    ^  ^  ^
         """
-
-        # don't synch up unless the lines have a similarity score of at
-        # least cutoff; best_ratio tracks the best score seen so far
-        best_ratio, cutoff = 0.74, 0.75
+        # Don't synch up unless the lines have a similarity score above
+        # cutoff. Previously only the smallest pair was handled here,
+        # and if there are many pairs with the best ratio, recursion
+        # could grow very deep, and runtime cubic. See:
+        # https://github.com/python/cpython/issues/119105
+        #
+        # Later, more pathological cases prompted removing recursion
+        # entirely.
+        cutoff = 0.74999
         cruncher = SequenceMatcher(self.charjunk)
-        eqi, eqj = None, None   # 1st indices of equal lines (if any)
+        crqr = cruncher.real_quick_ratio
+        cqr = cruncher.quick_ratio
+        cr = cruncher.ratio
 
-        # search for the pair that matches best without being identical
-        # (identical lines must be junk lines, & we don't want to synch up
-        # on junk -- unless we have to)
+        WINDOW = 10
+        best_i = best_j = None
+        dump_i, dump_j = alo, blo # smallest indices not yet resolved
         for j in range(blo, bhi):
-            bj = b[j]
-            cruncher.set_seq2(bj)
-            for i in range(alo, ahi):
-                ai = a[i]
-                if ai == bj:
-                    if eqi is None:
-                        eqi, eqj = i, j
-                    continue
-                cruncher.set_seq1(ai)
-                # computing similarity is expensive, so use the quick
-                # upper bounds first -- have seen this speed up messy
-                # compares by a factor of 3.
-                # note that ratio() is only expensive to compute the first
-                # time it's called on a sequence pair; the expensive part
-                # of the computation is cached by cruncher
-                if cruncher.real_quick_ratio() > best_ratio and \
-                      cruncher.quick_ratio() > best_ratio and \
-                      cruncher.ratio() > best_ratio:
-                    best_ratio, best_i, best_j = cruncher.ratio(), i, j
-        if best_ratio < cutoff:
-            # no non-identical "pretty close" pair
-            if eqi is None:
-                # no identical pair either -- treat it as a straight replace
-                yield from self._plain_replace(a, alo, ahi, b, blo, bhi)
-                return
-            # no close pair, but an identical pair -- synch up on that
-            best_i, best_j, best_ratio = eqi, eqj, 1.0
-        else:
-            # there's a close pair, so forget the identical pair (if any)
-            eqi = None
+            cruncher.set_seq2(b[j])
+            # Search the corresponding i's within WINDOW for rhe highest
+            # ratio greater than `cutoff`.
+            aequiv = alo + (j - blo)
+            arange = range(max(aequiv - WINDOW, dump_i),
+                           min(aequiv + WINDOW + 1, ahi))
+            if not arange: # likely exit if `a` is shorter than `b`
+                break
+            best_ratio = cutoff
+            for i in arange:
+                cruncher.set_seq1(a[i])
+                # Ordering by cheapest to most expensive ratio is very
+                # valuable, most often getting out early.
+                if (crqr() > best_ratio
+                      and cqr() > best_ratio
+                      and cr() > best_ratio):
+                    best_i, best_j, best_ratio = i, j, cr()
 
-        # a[best_i] very similar to b[best_j]; eqi is None iff they're not
-        # identical
+            if best_i is None:
+                # found nothing to synch on yet - move to next j
+                continue
 
-        # pump out diffs from before the synch point
-        yield from self._fancy_helper(a, alo, best_i, b, blo, best_j)
+            # pump out straight replace from before this synch pair
+            yield from self._fancy_helper(a, dump_i, best_i,
+                                          b, dump_j, best_j)
+            # do intraline marking on the synch pair
+            aelt, belt = a[best_i], b[best_j]
+            if aelt != belt:
+                # pump out a '-', '?', '+', '?' quad for the synched lines
+                atags = btags = ""
+                cruncher.set_seqs(aelt, belt)
+                for tag, ai1, ai2, bj1, bj2 in cruncher.get_opcodes():
+                    la, lb = ai2 - ai1, bj2 - bj1
+                    if tag == 'replace':
+                        atags += '^' * la
+                        btags += '^' * lb
+                    elif tag == 'delete':
+                        atags += '-' * la
+                    elif tag == 'insert':
+                        btags += '+' * lb
+                    elif tag == 'equal':
+                        atags += ' ' * la
+                        btags += ' ' * lb
+                    else:
+                        raise ValueError('unknown tag %r' % (tag,))
+                yield from self._qformat(aelt, belt, atags, btags)
+            else:
+                # the synch pair is identical
+                yield '  ' + aelt
+            dump_i, dump_j = best_i + 1, best_j + 1
+            best_i = best_j = None
 
-        # do intraline marking on the synch pair
-        aelt, belt = a[best_i], b[best_j]
-        if eqi is None:
-            # pump out a '-', '?', '+', '?' quad for the synched lines
-            atags = btags = ""
-            cruncher.set_seqs(aelt, belt)
-            for tag, ai1, ai2, bj1, bj2 in cruncher.get_opcodes():
-                la, lb = ai2 - ai1, bj2 - bj1
-                if tag == 'replace':
-                    atags += '^' * la
-                    btags += '^' * lb
-                elif tag == 'delete':
-                    atags += '-' * la
-                elif tag == 'insert':
-                    btags += '+' * lb
-                elif tag == 'equal':
-                    atags += ' ' * la
-                    btags += ' ' * lb
-                else:
-                    raise ValueError('unknown tag %r' % (tag,))
-            yield from self._qformat(aelt, belt, atags, btags)
-        else:
-            # the synch pair is identical
-            yield '  ' + aelt
-
-        # pump out diffs from after the synch point
-        yield from self._fancy_helper(a, best_i+1, ahi, b, best_j+1, bhi)
+        # pump out straight replace from after the last synch pair
+        yield from self._fancy_helper(a, dump_i, ahi,
+                                      b, dump_j, bhi)
 
     def _fancy_helper(self, a, alo, ahi, b, blo, bhi):
         g = []
         if alo < ahi:
             if blo < bhi:
-                g = self._fancy_replace(a, alo, ahi, b, blo, bhi)
+                g = self._plain_replace(a, alo, ahi, b, blo, bhi)
             else:
                 g = self._dump('-', a, alo, ahi)
         elif blo < bhi:
@@ -1266,6 +1264,12 @@ def _check_types(a, b, *args):
     if b and not isinstance(b[0], str):
         raise TypeError('lines to compare must be str, not %s (%r)' %
                         (type(b[0]).__name__, b[0]))
+    if isinstance(a, str):
+        raise TypeError('input must be a sequence of strings, not %s' %
+                        type(a).__name__)
+    if isinstance(b, str):
+        raise TypeError('input must be a sequence of strings, not %s' %
+                        type(b).__name__)
     for arg in args:
         if not isinstance(arg, str):
             raise TypeError('all arguments must be str, not: %r' % (arg,))
@@ -1628,13 +1632,22 @@ _file_template = """
 </html>"""
 
 _styles = """
+        :root {color-scheme: light dark}
         table.diff {font-family:Courier; border:medium;}
         .diff_header {background-color:#e0e0e0}
         td.diff_header {text-align:right}
         .diff_next {background-color:#c0c0c0}
-        .diff_add {background-color:#aaffaa}
+        .diff_add {background-color:palegreen}
         .diff_chg {background-color:#ffff77}
-        .diff_sub {background-color:#ffaaaa}"""
+        .diff_sub {background-color:#ffaaaa}
+
+        @media (prefers-color-scheme: dark) {
+            .diff_header {background-color:#666}
+            .diff_next {background-color:#393939}
+            .diff_add {background-color:darkgreen}
+            .diff_chg {background-color:#847415}
+            .diff_sub {background-color:darkred}
+        }"""
 
 _table_template = """
     <table class="diff" id="difflib_chg_%(prefix)s_top"

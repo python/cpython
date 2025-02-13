@@ -246,9 +246,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 3.0.13",
-              url="https://www.openssl.org/source/openssl-3.0.13.tar.gz",
-              checksum='88525753f79d3bec27d2fa7c66aa0b92b3aa9498dafd93d7cfa4b3780cdae313',
+              name="OpenSSL 3.0.15",
+              url="https://github.com/openssl/openssl/releases/download/openssl-3.0.15/openssl-3.0.15.tar.gz",
+              checksum='23c666d0edf20f14249b3d8f0368acaee9ab585b09e1de82107c66e1f3ec9533',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -264,10 +264,10 @@ def library_recipes():
             tk_patches = ['backport_gh71383_fix.patch', 'tk868_on_10_8_10_9.patch', 'backport_gh110950_fix.patch']
 
         else:
-            tcl_tk_ver='8.6.14'
-            tcl_checksum='5880225babf7954c58d4fb0f5cf6279104ce1cd6aa9b71e9a6322540e1c4de66'
+            tcl_tk_ver='8.6.15'
+            tcl_checksum='861e159753f2e2fbd6ec1484103715b0be56be3357522b858d3cbb5f893ffef1'
 
-            tk_checksum='8ffdb720f47a6ca6107eac2dd877e30b0ef7fac14f3a84ebbd0b3612cee41a94'
+            tk_checksum='550969f35379f952b3020f3ab7b9dd5bfd11c1ef7c9b7c6a75f5c49aca793fec'
             tk_patches = []
 
 
@@ -325,32 +325,32 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="NCurses 5.9",
-              url="http://ftp.gnu.org/pub/gnu/ncurses/ncurses-5.9.tar.gz",
-              checksum='8cb9c412e5f2d96bc6f459aa8c6282a1',
+              name="NCurses 6.5",
+              url="https://ftp.gnu.org/gnu/ncurses/ncurses-6.5.tar.gz",
+              checksum="136d91bc269a9a5785e5f9e980bc76ab57428f604ce3e5a5a90cebc767971cc6",
               configure_pre=[
+                  "--datadir=/usr/share",
+                  "--disable-lib-suffixes",
+                  "--disable-db-install",
+                  "--disable-mixed-case",
+                  "--enable-overwrite",
                   "--enable-widec",
+                  f"--libdir=/Library/Frameworks/Python.framework/Versions/{getVersion()}/lib",
+                  "--sharedstatedir=/usr/com",
+                  "--sysconfdir=/etc",
+                  "--with-default-terminfo-dir=/usr/share/terminfo",
+                  "--with-shared",
+                  "--with-terminfo-dirs=/usr/share/terminfo",
+                  "--without-ada",
                   "--without-cxx",
                   "--without-cxx-binding",
-                  "--without-ada",
-                  "--without-curses-h",
-                  "--enable-shared",
-                  "--with-shared",
+                  "--without-cxx-shared",
                   "--without-debug",
-                  "--without-normal",
-                  "--without-tests",
                   "--without-manpages",
-                  "--datadir=/usr/share",
-                  "--sysconfdir=/etc",
-                  "--sharedstatedir=/usr/com",
-                  "--with-terminfo-dirs=/usr/share/terminfo",
-                  "--with-default-terminfo-dir=/usr/share/terminfo",
-                  "--libdir=/Library/Frameworks/Python.framework/Versions/%s/lib"%(getVersion(),),
+                  "--without-normal",
+                  "--without-progs",
+                  "--without-tests",
               ],
-              patchscripts=[
-                  ("ftp://ftp.invisible-island.net/ncurses//5.9/ncurses-5.9-20120616-patch.sh.bz2",
-                   "f54bf02a349f96a7c4f0d00922f3a0d4"),
-                   ],
               useLDFlags=False,
               install='make && make install DESTDIR=%s && cd %s/usr/local/lib && ln -fs ../../../Library/Frameworks/Python.framework/Versions/%s/lib/lib* .'%(
                   shellQuote(os.path.join(WORKDIR, 'libraries')),
@@ -359,9 +359,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.45.1",
-              url="https://sqlite.org/2024/sqlite-autoconf-3450100.tar.gz",
-              checksum="cd9c27841b7a5932c9897651e20b86c701dd740556989b01ca596fcfa3d49a0a",
+              name="SQLite 3.45.3",
+              url="https://sqlite.org/2024/sqlite-autoconf-3450300.tar.gz",
+              checksum="b2809ca53124c19c60f42bf627736eae011afdcc205bb48270a5ee9a38191531",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -376,6 +376,15 @@ def library_recipes():
                   '--enable-static=yes',
                   '--disable-readline',
                   '--disable-dependency-tracking',
+              ]
+          ),
+          dict(
+              name="libmpdec 4.0.0",
+              url="https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.0.tar.gz",
+              checksum="942445c3245b22730fd41a67a7c5c231d11cb1b9936b9c0f76334fb7d0b4468c",
+              configure_pre=[
+                  "--disable-cxx",
+                  "MACHINE=universal",
               ]
           ),
         ])
@@ -1150,6 +1159,7 @@ def buildPython():
     print(" NOTE: --with-mimalloc=no pending resolution of weak linking issues")
     runCommand("%s -C --enable-framework --enable-universalsdk=/ "
                "--with-mimalloc=no "
+               "--with-system-libmpdec "
                "--with-universal-archs=%s "
                "%s "
                "%s "

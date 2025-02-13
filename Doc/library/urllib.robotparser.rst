@@ -1,5 +1,5 @@
-:mod:`urllib.robotparser` ---  Parser for robots.txt
-====================================================
+:mod:`!urllib.robotparser` ---  Parser for robots.txt
+=====================================================
 
 .. module:: urllib.robotparser
    :synopsis: Load a robots.txt file and answer questions about

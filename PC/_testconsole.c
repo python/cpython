@@ -1,10 +1,10 @@
 /* Testing module for multi-phase initialization of extension modules (PEP 489)
  */
 
-// Need limited C API version 3.12 for Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+// Need limited C API version 3.13 for Py_mod_gil
 #include "pyconfig.h"   // Py_GIL_DISABLED
 #ifndef Py_GIL_DISABLED
-#  define Py_LIMITED_API 0x030c0000
+#  define Py_LIMITED_API 0x030d0000
 #endif
 
 #include "Python.h"
@@ -31,6 +31,7 @@ static int execfunc(PyObject *m)
 PyModuleDef_Slot testconsole_slots[] = {
     {Py_mod_exec, execfunc},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL},
 };
 

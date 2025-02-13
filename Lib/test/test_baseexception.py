@@ -78,6 +78,9 @@ class ExceptionClassTests(unittest.TestCase):
                 last_depth = depth
         finally:
             inheritance_tree.close()
+
+        # Underscore-prefixed (private) exceptions don't need to be documented
+        exc_set = set(e for e in exc_set if not e.startswith('_'))
         self.assertEqual(len(exc_set), 0, "%s not accounted for" % exc_set)
 
     interface_tests = ("length", "args", "str", "repr")

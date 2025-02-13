@@ -12,6 +12,7 @@ import unittest
 from test import support
 from test.support import os_helper
 from test.support.os_helper import TESTFN
+from test.support.import_helper import import_module
 
 ALL_CJKENCODINGS = [
 # _codecs_cn
@@ -212,7 +213,7 @@ class Test_IncrementalEncoder(unittest.TestCase):
     @support.cpython_only
     def test_subinterp(self):
         # bpo-42846: Test a CJK codec in a subinterpreter
-        import _testcapi
+        _testcapi = import_module("_testcapi")
         encoding = 'cp932'
         text = "Python の開発は、1990 年ごろから開始されています。"
         code = textwrap.dedent("""

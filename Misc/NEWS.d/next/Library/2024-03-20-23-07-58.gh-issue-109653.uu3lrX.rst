@@ -1,2 +1,0 @@
-Deferred select imports in importlib.metadata and importlib.resources for a
-14% speedup.

@@ -11,7 +11,7 @@
                         EnableFeatureSelection="yes"
                         Permanent="yes"
                         Visible="yes"
-                        InstallCondition="(InstallAllUsers or InstallLauncherAllUsers) and Include_launcher and not DetectedLauncher">
+                        InstallCondition="(InstallAllUsers or InstallLauncherAllUsers) and Include_launcher and not BlockedLauncher">
                 <?if $(var.Platform)~="ARM64" ?>
                 <MsiProperty Name="ARM64_SHELLEXT" Value="1" />
                 <?endif ?>
@@ -25,7 +25,7 @@
                         EnableFeatureSelection="yes"
                         Permanent="yes"
                         Visible="yes"
-                        InstallCondition="not (InstallAllUsers or InstallLauncherAllUsers) and Include_launcher and not DetectedLauncher">
+                        InstallCondition="not (InstallAllUsers or InstallLauncherAllUsers) and Include_launcher and not BlockedLauncher">
                 <?if $(var.Platform)~="ARM64" ?>
                 <MsiProperty Name="ARM64_SHELLEXT" Value="1" />
                 <?endif ?>

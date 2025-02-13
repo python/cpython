@@ -1,2 +1,0 @@
-:class:`configparser.ConfigParser` now accepts unnamed sections before named
-ones, if configured to do so.

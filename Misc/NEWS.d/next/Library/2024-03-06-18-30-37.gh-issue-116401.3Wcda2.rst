@@ -1,2 +1,0 @@
-Fix blocking :func:`os.fwalk` and :func:`shutil.rmtree` on opening named
-pipe.

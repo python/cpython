@@ -1,7 +1,7 @@
 .. _idle:
 
-IDLE
-====
+IDLE --- Python editor and shell
+================================
 
 .. moduleauthor:: Guido van Rossum <guido@python.org>
 
@@ -11,6 +11,9 @@ IDLE
    single: IDLE
    single: Python Editor
    single: Integrated Development Environment
+
+..
+   Remember to update Lib/idlelib/help.html with idlelib.help.copy_source() when modifying this file.
 
 --------------
 
@@ -429,7 +432,7 @@ Several non-character keys move the cursor and possibly
 delete characters.  Deletion does not puts text on the clipboard,
 but IDLE has an undo list.  Wherever this doc discusses keys,
 'C' refers to the :kbd:`Control` key on Windows and
-Unix and the :kbd:`Command` key on macOS.  (And all such dicussions
+Unix and the :kbd:`Command` key on macOS.  (And all such discussions
 assume that the keys have not been re-bound to something else.)
 
 * Arrow keys move the cursor one character or line.
@@ -971,8 +974,8 @@ information.  The only current default extension is zzdummy, an example
 also used for testing.
 
 
-idlelib
--------
+idlelib --- implementation of IDLE application
+----------------------------------------------
 
 .. module:: idlelib
    :synopsis: Implementation package for the IDLE shell/editor.

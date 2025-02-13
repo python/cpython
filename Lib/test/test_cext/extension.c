@@ -37,18 +37,29 @@ static PyMethodDef _testcext_methods[] = {
 
 
 static int
-_testcext_exec(PyObject *module)
+_testcext_exec(
+#ifdef __STDC_VERSION__
+    PyObject *module
+#else
+    PyObject *Py_UNUSED(module)
+#endif
+    )
 {
 #ifdef __STDC_VERSION__
     if (PyModule_AddIntMacro(module, __STDC_VERSION__) < 0) {
         return -1;
     }
 #endif
+
+    // test Py_BUILD_ASSERT() and Py_BUILD_ASSERT_EXPR()
+    Py_BUILD_ASSERT(sizeof(int) == sizeof(unsigned int));
+    assert(Py_BUILD_ASSERT_EXPR(sizeof(int) == sizeof(unsigned int)) == 0);
+
     return 0;
 }
 
 static PyModuleDef_Slot _testcext_slots[] = {
-    {Py_mod_exec, _testcext_exec},
+    {Py_mod_exec, (void*)_testcext_exec},
     {0, NULL}
 };
 

@@ -12,12 +12,10 @@ from analyzer import (
 from generators_common import (
     DEFAULT_INPUT,
     ROOT,
-    root_relative_path,
     write_header,
 )
 from cwriter import CWriter
 from typing import TextIO
-
 
 
 DEFAULT_OUTPUT = ROOT / "Lib/_opcode_metadata.py"

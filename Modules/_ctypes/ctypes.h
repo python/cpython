@@ -2,6 +2,26 @@
 #   include <alloca.h>
 #endif
 
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
+
+// Do we support C99 complex types in ffi?
+// For Apple's libffi, this must be determined at runtime (see gh-128156).
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
+#   include "../_complex.h"       // complex
+#   if USING_APPLE_OS_LIBFFI && defined(__has_builtin)
+#       if __has_builtin(__builtin_available)
+#           define Py_FFI_COMPLEX_AVAILABLE __builtin_available(macOS 10.15, *)
+#       else
+#           define Py_FFI_COMPLEX_AVAILABLE 1
+#       endif
+#   else
+#       define Py_FFI_COMPLEX_AVAILABLE 1
+#   endif
+#else
+#   define Py_FFI_COMPLEX_AVAILABLE 0
+#endif
+
 #ifndef MS_WIN32
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -70,18 +90,56 @@ typedef struct {
     PyObject *swapped_suffix;
 } ctypes_state;
 
-extern ctypes_state global_state;
 
-#define GLOBAL_STATE() (&global_state)
+extern struct PyModuleDef _ctypesmodule;
 
+
+static inline ctypes_state *
+get_module_state(PyObject *module)
+{
+    void *state = _PyModule_GetState(module);
+    assert(state != NULL);
+    return (ctypes_state *)state;
+}
+
+static inline ctypes_state *
+get_module_state_by_class(PyTypeObject *cls)
+{
+    ctypes_state *state = (ctypes_state *)_PyType_GetModuleState(cls);
+    assert(state != NULL);
+    return state;
+}
+
+static inline ctypes_state *
+get_module_state_by_def(PyTypeObject *cls)
+{
+    PyObject *mod = PyType_GetModuleByDef(cls, &_ctypesmodule);
+    assert(mod != NULL);
+    return get_module_state(mod);
+}
+
+
+extern PyType_Spec pyctype_type_spec;
 extern PyType_Spec carg_spec;
 extern PyType_Spec cfield_spec;
 extern PyType_Spec cthunk_spec;
 
 typedef struct tagPyCArgObject PyCArgObject;
+#define _PyCArgObject_CAST(op)  ((PyCArgObject *)(op))
+
 typedef struct tagCDataObject CDataObject;
-typedef PyObject *(* GETFUNC)(void *, Py_ssize_t size);
-typedef PyObject *(* SETFUNC)(void *, PyObject *value, Py_ssize_t size);
+#define _CDataObject_CAST(op)   ((CDataObject *)(op))
+
+// GETFUNC: convert the C value at *ptr* to Python object, return the object
+// SETFUNC: write content of the PyObject *value* to the location at *ptr*;
+//   return a new reference to either *value*, or None for simple types
+//   (see _CTYPES_DEBUG_KEEP).
+// Note that the *size* arg can have different meanings depending on context:
+//     for string-like arrays it's the size in bytes
+//     for int-style fields it's either the type size, or bitfiled info
+//         that can be unpacked using the LOW_BIT & NUM_BITS macros.
+typedef PyObject *(* GETFUNC)(void *ptr, Py_ssize_t size);
+typedef PyObject *(* SETFUNC)(void *ptr, PyObject *value, Py_ssize_t size);
 typedef PyCArgObject *(* PARAMFUNC)(ctypes_state *st, CDataObject *obj);
 
 /* A default buffer in CDataObject, which can be used for small C types.  If
@@ -134,6 +192,8 @@ typedef struct {
     ffi_type *ffi_restype;
     ffi_type *atypes[1];
 } CThunkObject;
+
+#define _CThunkObject_CAST(op)          ((CThunkObject *)(op))
 #define CThunk_CheckExact(st, v)        Py_IS_TYPE(v, st->PyCThunk_Type)
 
 typedef struct {
@@ -167,6 +227,8 @@ typedef struct {
     PyObject *paramflags;
 } PyCFuncPtrObject;
 
+#define _PyCFuncPtrObject_CAST(op)  ((PyCFuncPtrObject *)(op))
+
 extern int PyCStructUnionType_update_stginfo(PyObject *fields, PyObject *type, int isStruct);
 extern int PyType_stginfo(PyTypeObject *self, Py_ssize_t *psize, Py_ssize_t *palign, Py_ssize_t *plength);
 extern int PyObject_stginfo(PyObject *self, Py_ssize_t *psize, Py_ssize_t *palign, Py_ssize_t *plength);
@@ -181,13 +243,6 @@ extern int PyObject_stginfo(PyObject *self, Py_ssize_t *psize, Py_ssize_t *palig
 #define PyCSimpleTypeObject_Check(st, v)       PyObject_TypeCheck((v), (st)->PyCSimpleType_Type)
 
 extern struct fielddesc *_ctypes_get_fielddesc(const char *fmt);
-
-
-extern PyObject *
-PyCField_FromDesc(ctypes_state *st, PyObject *desc, Py_ssize_t index,
-                Py_ssize_t *pfield_size, int bitsize, int *pbitofs,
-                Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
-                int pack, int is_big_endian);
 
 extern PyObject *PyCData_AtAddress(ctypes_state *st, PyObject *type, void *buf);
 extern PyObject *PyCData_FromBytes(ctypes_state *st, PyObject *type, char *data, Py_ssize_t length);
@@ -213,24 +268,31 @@ extern CThunkObject *_ctypes_alloc_callback(ctypes_state *st,
 /* a table entry describing a predefined ctypes type */
 struct fielddesc {
     char code;
+    ffi_type *pffi_type; /* always statically allocated */
     SETFUNC setfunc;
     GETFUNC getfunc;
-    ffi_type *pffi_type; /* always statically allocated */
     SETFUNC setfunc_swapped;
     GETFUNC getfunc_swapped;
 };
 
-typedef struct {
+// Get all single-character type codes (for use in error messages)
+extern char *_ctypes_get_simple_type_chars(void);
+
+typedef struct CFieldObject {
     PyObject_HEAD
     Py_ssize_t offset;
     Py_ssize_t size;
     Py_ssize_t index;                   /* Index into CDataObject's
                                        object array */
-    PyObject *proto;                    /* a type or NULL */
+    PyObject *proto;                    /* underlying ctype; must have StgInfo */
     GETFUNC getfunc;                    /* getter function if proto is NULL */
     SETFUNC setfunc;                    /* setter function if proto is NULL */
     int anonymous;
+
+    PyObject *name;                     /* exact PyUnicode */
 } CFieldObject;
+
+#define _CFieldObject_CAST(op)  ((CFieldObject *)(op))
 
 /****************************************************************
  StgInfo
@@ -302,6 +364,7 @@ typedef struct {
     PyObject *converters;       /* tuple([t.from_param for t in argtypes]) */
     PyObject *restype;          /* CDataObject or NULL */
     PyObject *checker;
+    PyObject *module;
     int flags;                  /* calling convention and such */
 
     /* pep3118 fields, pointers need PyMem_Free */
@@ -313,6 +376,7 @@ typedef struct {
 } StgInfo;
 
 extern int PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info);
+extern void ctype_clear_stginfo(StgInfo *info);
 
 typedef int(* PPROC)(void);
 
@@ -338,8 +402,6 @@ PyObject *_ctypes_callproc(ctypes_state *st,
 
 #define TYPEFLAG_ISPOINTER 0x100
 #define TYPEFLAG_HASPOINTER 0x200
-#define TYPEFLAG_HASUNION 0x400
-#define TYPEFLAG_HASBITFIELD 0x800
 
 #define DICTFLAG_FINAL 0x1000
 
@@ -358,10 +420,17 @@ struct tagPyCArgObject {
         double d;
         float f;
         void *p;
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
+        double complex C;
+        float complex E;
+        long double complex F;
+#endif
     } value;
     PyObject *obj;
     Py_ssize_t size; /* for the 'V' tag */
 };
+
+#define _PyCArgObject_CAST(op)  ((PyCArgObject *)(op))
 
 #define PyCArg_CheckExact(st, v)        Py_IS_TYPE(v, st->PyCArg_Type)
 extern PyCArgObject *PyCArgObject_new(ctypes_state *st);
@@ -383,23 +452,13 @@ struct basespec {
     char *adr;
 };
 
-extern char basespec_string[];
-
 extern ffi_type *_ctypes_get_ffi_type(ctypes_state *st, PyObject *obj);
-
-extern char *_ctypes_conversion_encoding;
-extern char *_ctypes_conversion_errors;
-
 
 extern void _ctypes_free_closure(void *);
 extern void *_ctypes_alloc_closure(void);
 
 extern PyObject *PyCData_FromBaseObj(ctypes_state *st, PyObject *type,
                                      PyObject *base, Py_ssize_t index, char *adr);
-extern char *_ctypes_alloc_format_string(const char *prefix, const char *suffix);
-extern char *_ctypes_alloc_format_string_with_shape(int ndim,
-                                                const Py_ssize_t *shape,
-                                                const char *prefix, const char *suffix);
 
 extern int _ctypes_simple_instance(ctypes_state *st, PyObject *obj);
 
@@ -464,6 +523,27 @@ PyStgInfo_FromAny(ctypes_state *state, PyObject *obj, StgInfo **result)
     return _stginfo_from_type(state, Py_TYPE(obj), result);
 }
 
+/* A variant of PyStgInfo_FromType that doesn't need the state,
+ * so it can be called from finalization functions when the module
+ * state is torn down.
+ */
+static inline StgInfo *
+_PyStgInfo_FromType_NoState(PyObject *type)
+{
+    PyTypeObject *PyCType_Type;
+    if (PyType_GetBaseByToken(Py_TYPE(type), &pyctype_type_spec, &PyCType_Type) < 0) {
+        return NULL;
+    }
+    if (PyCType_Type == NULL) {
+        PyErr_Format(PyExc_TypeError, "expected a ctypes type, got '%N'", type);
+        return NULL;
+    }
+
+    StgInfo *info = PyObject_GetTypeData(type, PyCType_Type);
+    Py_DECREF(PyCType_Type);
+    return info;
+}
+
 // Initialize StgInfo on a newly created type
 static inline StgInfo *
 PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
@@ -481,6 +561,60 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
                      type->tp_name);
         return NULL;
     }
+    PyObject *module = PyType_GetModule(state->PyCType_Type);
+    if (!module) {
+        return NULL;
+    }
+    info->module = Py_NewRef(module);
+
     info->initialized = 1;
     return info;
+}
+
+/* See discussion in gh-128490. The plan here is to eventually use a per-object
+ * lock rather than a critical section, but that work is for later. */
+#ifdef Py_GIL_DISABLED
+#  define LOCK_PTR(self) Py_BEGIN_CRITICAL_SECTION(self)
+#  define UNLOCK_PTR(self) Py_END_CRITICAL_SECTION()
+#else
+/*
+ * Dummy functions instead of macros so that 'self' can be
+ * unused in the caller without triggering a compiler warning.
+ */
+static inline void LOCK_PTR(CDataObject *Py_UNUSED(self)) {}
+static inline void UNLOCK_PTR(CDataObject *Py_UNUSED(self)) {}
+#endif
+
+static inline void
+locked_memcpy_to(CDataObject *self, void *buf, Py_ssize_t size)
+{
+    LOCK_PTR(self);
+    (void)memcpy(self->b_ptr, buf, size);
+    UNLOCK_PTR(self);
+}
+
+static inline void
+locked_memcpy_from(void *buf, CDataObject *self, Py_ssize_t size)
+{
+    LOCK_PTR(self);
+    (void)memcpy(buf, self->b_ptr, size);
+    UNLOCK_PTR(self);
+}
+
+static inline void *
+locked_deref(CDataObject *self)
+{
+    void *ptr;
+    LOCK_PTR(self);
+    ptr = *(void **)self->b_ptr;
+    UNLOCK_PTR(self);
+    return ptr;
+}
+
+static inline void
+locked_deref_assign(CDataObject *self, void *new_ptr)
+{
+    LOCK_PTR(self);
+    *(void **)self->b_ptr = new_ptr;
+    UNLOCK_PTR(self);
 }

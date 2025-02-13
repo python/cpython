@@ -1,5 +1,5 @@
-:mod:`stat` --- Interpreting :func:`~os.stat` results
-=====================================================
+:mod:`!stat` --- Interpreting :func:`~os.stat` results
+======================================================
 
 .. module:: stat
    :synopsis: Utilities for interpreting the results of os.stat(),
