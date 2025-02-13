@@ -55,6 +55,9 @@ def generate_data(schema_version):
 
     data['implementation'] = vars(sys.implementation)
     data['implementation']['version'] = version_info_to_dict(sys.implementation.version)
+    # Fix cross-compilation
+    if '_multiarch' in data['implementation']:
+        data['implementation']['_multiarch'] = sysconfig.get_config_var('MULTIARCH')
 
     data['abi']['flags'] = list(sys.abiflags)
 
