@@ -1,0 +1,7 @@
+Fix bug in the folding of rfc2047 encoded-words when flattening an email message
+using a modern email policy. Previously when an encoded-word was too long
+for a line, it would be decoded, split across lines, and re-encoded. But commas
+and other special characters in the original text could be left unencoded and
+unquoted. This could theoretically be used to spoof header lines using
+a carefully constructed encoded-word if the resulting rendered email was
+transmitted or re-parsed.
