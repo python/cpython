@@ -410,6 +410,7 @@ get_py_runtime(pid_t pid)
 {
     uintptr_t address = search_map_for_section(pid, "PyRuntime", "libpython");
     if (address == 0) {
+        PyErr_Clear();
         address = search_map_for_section(pid, "PyRuntime", "python");
     }
     return address;
@@ -778,6 +779,7 @@ parse_coro_chain(
     }
 
     if (PyList_Append(render_to, name)) {
+        Py_DECREF(name);
         return -1;
     }
     Py_DECREF(name);
@@ -955,7 +957,6 @@ parse_task(
     if (PyList_Append(render_to, result)) {
         goto err;
     }
-    Py_DECREF(result);
 
     PyObject *awaited_by = PyList_New(0);
     if (awaited_by == NULL) {
@@ -973,6 +974,7 @@ parse_task(
     ) {
         goto err;
     }
+    Py_DECREF(result);
 
     return 0;
 
@@ -1457,6 +1459,13 @@ get_stack_trace(PyObject* self, PyObject* args)
     }
 
     uintptr_t runtime_start_address = get_py_runtime(pid);
+    if (runtime_start_address == 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(
+                PyExc_RuntimeError, "Failed to get .PyRuntime address");
+        }
+        return NULL;
+    }
     struct _Py_DebugOffsets local_debug_offsets;
 
     if (read_offsets(pid, &runtime_start_address, &local_debug_offsets)) {
@@ -1510,6 +1519,13 @@ get_async_stack_trace(PyObject* self, PyObject* args)
     }
 
     uintptr_t runtime_start_address = get_py_runtime(pid);
+    if (runtime_start_address == 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(
+                PyExc_RuntimeError, "Failed to get .PyRuntime address");
+        }
+        return NULL;
+    }
     struct _Py_DebugOffsets local_debug_offsets;
 
     if (read_offsets(pid, &runtime_start_address, &local_debug_offsets)) {
@@ -1527,6 +1543,7 @@ get_async_stack_trace(PyObject* self, PyObject* args)
     }
     PyObject* calls = PyList_New(0);
     if (calls == NULL) {
+        Py_DECREF(result);
         return NULL;
     }
     if (PyList_SetItem(result, 0, calls)) { /* steals ref to 'calls' */

@@ -1683,7 +1683,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       :meth:`io.BufferedIOBase.readinto`, :meth:`io.BufferedIOBase.read`, or
       :meth:`io.TextIOBase.read`
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. function:: sendfile(out_fd, in_fd, offset, count)
