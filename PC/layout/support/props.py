@@ -82,7 +82,6 @@ PROPS_TEMPLATE = r"""<?xml version="1.0" encoding="utf-8"?>
 
 def get_props_layout(ns):
     if ns.include_all or ns.include_props:
-        # TODO: Filter contents of props file according to included/excluded items
         d = dict(PROPS_DATA)
         if not d.get("PYTHON_PLATFORM"):
             d["PYTHON_PLATFORM"] = {
@@ -91,5 +90,13 @@ def get_props_layout(ns):
                 "arm32": "ARM",
                 "arm64": "ARM64",
             }[ns.arch]
+        # Filtering logic based on the included/excluded items in ns
+        if not ns.include_all:
+            if not ns.include_exe:
+                d["PYTHON_TARGET"] = d["PYTHON_TARGET"].replace('python*.exe', '')
+            if not ns.include_dll:
+                d["PYTHON_TARGET"] = d["PYTHON_TARGET"].replace('python*.dll', '')
+            if not ns.include_libs:
+                d["PYTHON_TARGET"] = ""
         props = PROPS_TEMPLATE.format_map(d)
         yield "python.props", ("python.props", props.encode("utf-8"))
