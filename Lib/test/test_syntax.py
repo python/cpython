@@ -168,6 +168,18 @@ SyntaxError: expected 'else' after 'if' expression
 Traceback (most recent call last):
 SyntaxError: expected 'else' after 'if' expression
 
+>>> x = 1 if 1 else pass
+Traceback (most recent call last):
+SyntaxError: expected expression after 'else', but statement is given
+
+>>> x = pass if 1 else 1
+Traceback (most recent call last):
+SyntaxError: expected expression before 'if', but statement is given
+
+>>> x = pass if 1 else pass
+Traceback (most recent call last):
+SyntaxError: expected expression before 'if', but statement is given
+
 >>> if True:
 ...     print("Hello"
 ...
