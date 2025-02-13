@@ -51,9 +51,42 @@ handler.  Code to create and run the server looks like this::
    .. versionadded:: 3.7
 
 
-The :class:`HTTPServer` and :class:`ThreadingHTTPServer` must be given
-a *RequestHandlerClass* on instantiation, of which this module
-provides three different variants:
+.. class:: HTTPSServer(server_address, RequestHandlerClass, \
+                       bind_and_activate=True, *, certfile, keyfile=None, \
+                       password=None, alpn_protocols=None)
+
+   This class is a :class:`HTTPServer` subclass with a wrapped socket using the
+   :mod:`ssl`, if the :mod:`ssl` module is not available the class will not
+   initialize.
+
+   The *certfile* argument is required and is the path to the SSL
+   certificate chain file. The *keyfile* is the path to its private key. But
+   private keys are often protected and wrapped with PKCS #8, so we provide
+   *password* argument for that case.
+
+   The *alpn_protocols* argument, if provided, should be a sequence of strings
+   specifying the Application-Layer Protocol Negotiation (ALPN) protocols
+   supported by the server. ALPN allows the server and client to negotiate
+   the application protocol during the TLS handshake. By default, it is set
+   to ``["http/1.1"]``, meaning the server will support HTTP/1.1.
+
+   .. versionadded:: next
+
+.. class:: ThreadingHTTPSServer(server_address, RequestHandlerClass, \
+                       bind_and_activate=True, *, certfile, keyfile=None, \
+                       password=None, alpn_protocols=None)
+
+   This class is identical to :class:`HTTPSServer` but uses threads to handle
+   requests by using the :class:`~socketserver.ThreadingMixIn`. This is
+   analogue of :class:`ThreadingHTTPServer` class only using
+   :class:`HTTPSServer`.
+
+   .. versionadded:: next
+
+
+The :class:`HTTPServer`, :class:`ThreadingHTTPServer`, :class:`HTTPSServer` and
+:class:`ThreadingHTTPSServer` must be given a *RequestHandlerClass* on
+instantiation, of which this module provides three different variants:
 
 .. class:: BaseHTTPRequestHandler(request, client_address, server)
 
@@ -461,6 +494,21 @@ following command runs an HTTP/1.1 conformant server::
 
 .. versionchanged:: 3.11
    Added the ``--protocol`` option.
+
+The server can also support TLS encryption. The options ``--tls-cert`` and
+``--tls-key`` allow specifying a TLS certificate chain and private key for
+secure HTTPS connections. Use ``--tls-password-file`` option if private keys are
+passphrase-protected. For example, the following command runs the server with
+TLS enabled::
+
+        python -m http.server --tls-cert fullchain.pem
+
+Or if a separate file with private key passphrase-protected::
+
+        python -m http.server --tls-cert cert.pem --tls-key key.pem --tls-password-file password.txt
+
+.. versionchanged:: next
+   Added the ``--tls-cert``, ``--tls-key`` and ``--tls-password-file`` options.
 
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
 
