@@ -1,0 +1,2 @@
+Remove deprecated in 3.7 support for returning non-complex/float types in
+__complex__/__float__().
