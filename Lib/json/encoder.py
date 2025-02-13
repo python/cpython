@@ -260,22 +260,29 @@ class JSONEncoder(object):
                 self.skipkeys, _one_shot)
         return _iterencode(o, 0)
 
-class _JsonBuffer(list):
+class _JsonBuffer:
 
     def __init__(self):
-        self.size=0
+        self.chunks = []
+        self.size = 0
 
-    def add_json(self, j):
-        self.append(j)
+    def append(self, j):
+        self.chunks.append(j)
         self.size += len(j)
 
+    def __iadd__(self, x):
+        self.append(x)
+        return self
+
     def needs_yield(self):
-        return self.size > 10_000 or len(self) > 100
+        return self.size > 10_000 or len(self.chunks) >=1000
 
     def value(self):
-        return ''.join(self)
-    def reset(self):
-        self.clear()
+        x= ''.join(self.chunks)
+        self._reset()
+        return x
+    def _reset(self):
+        self.chunks.clear()
         self.size=0
 buf = _JsonBuffer()
 
@@ -297,7 +304,6 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
 
 
     def _iterencode_list(lst, _current_indent_level):
-        buf = _JsonBuffer()
         if not lst:
             yield '[]'
             return
@@ -306,6 +312,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             if markerid in markers:
                 raise ValueError("Circular reference detected")
             markers[markerid] = lst
+        buf = _JsonBuffer()
         buf.append('[')
         if _indent is not None:
             _current_indent_level += 1
@@ -336,31 +343,30 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                     # see comment above for int
                     buf.append( _floatstr(value))
                 else:
-                    yield buf.value()
                     if isinstance(value, (list, tuple)):
                         chunks = _iterencode_list(value, _current_indent_level)
                     elif isinstance(value, dict):
                         chunks = _iterencode_dict(value, _current_indent_level)
                     else:
                         chunks = _iterencode(value, _current_indent_level)
-                    yield from chunks
-                    buf.reset()
+                    for c in chunks:
+                        buf.append(c)
+                        if buf.needs_yield():
+                            yield buf.value()
                 if buf.needs_yield():
                     yield buf.value()
-                    buf.reset()
-
             except GeneratorExit:
-                yield from buf
+                yield buf.value()
                 raise
             except BaseException as exc:
-                yield from buf
+                yield buf.value()
                 exc.add_note(f'when serializing {type(lst).__name__} item {i}')
                 raise
         if newline_indent is not None:
             _current_indent_level -= 1
             buf.append( '\n' + _indent * _current_indent_level)
         buf.append(']')
-        yield from buf
+        yield buf.value()
         if markers is not None:
             del markers[markerid]
 
@@ -373,12 +379,16 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             if markerid in markers:
                 raise ValueError("Circular reference detected")
             markers[markerid] = dct
-        buf = '{'
+
+        #buf = '{'
+        buf = _JsonBuffer(); buf.append('{')
+
         if _indent is not None:
             _current_indent_level += 1
             newline_indent = '\n' + _indent * _current_indent_level
             item_separator = _item_separator + newline_indent
-            buf += newline_indent
+            buf +=(newline_indent)
+            #buf.append(newline_indent)
         else:
             newline_indent = None
             item_separator = _item_separator
@@ -407,56 +417,79 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             elif _skipkeys:
                 continue
             else:
-                yield buf
+                #yield buf
+                yield buf.value()
                 raise TypeError(f'keys must be str, int, float, bool or None, '
                                 f'not {key.__class__.__name__}')
             if first:
                 first = False
             else:
-                buf += item_separator
-            buf += _encoder(key)
-            buf += _key_separator
+                buf +=item_separator
+                #buf.append(item_separator)
+            buf.append(_encoder(key) + _key_separator)
+            #buf.append(_key_separator)
+            #buf.append(_encoder(key))
+            #buf.append(_key_separator)
             try:
                 if isinstance(value, str):
-                    buf += _encoder(value)
+                    buf.append(_encoder(value))
+                    #buf.append(_encoder(value))
                 elif value is None:
-                    buf += 'null'
+                    buf +='null'
+                    #buf.append('null')
                 elif value is True:
-                    buf += 'true'
+                    buf +='true'
+                    #buf.append('true')
                 elif value is False:
-                    buf += 'false'
+                    buf.append('false')
+                    #buf.append('false')
                 elif isinstance(value, int):
                     # see comment for int/float in _make_iterencode
-                    buf += _intstr(value)
+                    buf.append(_intstr(value))
+                    #buf.append(_intstr(value))
                 elif isinstance(value, float):
                     # see comment for int/float in _make_iterencode
-                    buf += _floatstr(value)
+                    buf.append( _floatstr(value))
+                    #buf.append( _floatstr(value))
                 else:
-                    yield buf
+                    #yield buf
+                    #yield buf.value()
                     if isinstance(value, (list, tuple)):
                         chunks = _iterencode_list(value, _current_indent_level)
+                        #chunks=list(chunks)
+                        #print(f'_iterencode_list: returned {len(chunks)}')
                     elif isinstance(value, dict):
                         chunks = _iterencode_dict(value, _current_indent_level)
                     else:
                         chunks = _iterencode(value, _current_indent_level)
-                    yield from chunks
-                    buf = ''
+                    #yield from chunks
+                    #buf = ''
+                    #buf = _JsonBuffer()
+                    for c in chunks:
+                         buf.append(c)
+                         if buf.needs_yield():
+                             yield buf.value()
+                            # buf.reset()
+
             except GeneratorExit:
-                yield buf
+                #yield buf
+                yield buf.value()
                 raise
             except BaseException as exc:
                 exc.add_note(f'when serializing {type(dct).__name__} item {key!r}')
-                yield buf
+                #yield buf
+                yield buf.value()
                 raise
-            if len(buf) > 1024:
-                yield buf
-                buf = ''
-        yield buf
+        #yield buf
+        yield buf.value()
 
         if newline_indent is not None:
             _current_indent_level -= 1
             yield '\n' + _indent * _current_indent_level
+            #buf.append( '\n' + _indent * _current_indent_level)
         yield '}'
+        #buf.append('}')
+        #yield buf.value()
         if markers is not None:
             del markers[markerid]
 
@@ -478,7 +511,10 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         elif isinstance(o, (list, tuple)):
             yield from _iterencode_list(o, _current_indent_level)
         elif isinstance(o, dict):
-            yield from _iterencode_dict(o, _current_indent_level)
+            z=_iterencode_dict(o, _current_indent_level)
+            #z=list(z); print(f'_iterencode_dict: {len(z)}')
+            #print(f'  --> {list(map(len, z))} ')
+            yield from z
         else:
             if markers is not None:
                 markerid = id(o)
