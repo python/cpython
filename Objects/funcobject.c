@@ -2,10 +2,11 @@
 /* Function object implementation */
 
 #include "Python.h"
-#include "pycore_ceval.h"         // _PyEval_BuiltinsFromGlobals()
-#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
-#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "pycore_pyerrors.h"      // _PyErr_Occurred()
+#include "pycore_dict.h"                // _Py_INCREF_DICT()
+#include "pycore_long.h"                // _PyLong_GetOne()
+#include "pycore_modsupport.h"          // _PyArg_NoKeywords()
+#include "pycore_object.h"              // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"            // _PyErr_Occurred()
 
 
 static const char *
@@ -582,6 +583,13 @@ static PyMemberDef func_memberlist[] = {
     {NULL}  /* Sentinel */
 };
 
+/*[clinic input]
+class function "PyFunctionObject *" "&PyFunction_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=70af9c90aa2e71b0]*/
+
+#include "clinic/funcobject.c.h"
+
 static PyObject *
 func_get_code(PyFunctionObject *op, void *Py_UNUSED(ignored))
 {
@@ -763,20 +771,87 @@ func_set_kwdefaults(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignor
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+function.__annotate__
+
+Get the code object for a function.
+[clinic start generated code]*/
+
 static PyObject *
-func_get_annotations(PyFunctionObject *op, void *Py_UNUSED(ignored))
+function___annotate___get_impl(PyFunctionObject *self)
+/*[clinic end generated code: output=5ec7219ff2bda9e6 input=7f3db11e3c3329f3]*/
 {
-    if (op->func_annotations == NULL) {
-        op->func_annotations = PyDict_New();
-        if (op->func_annotations == NULL)
+    if (self->func_annotate == NULL) {
+        Py_RETURN_NONE;
+    }
+    return Py_NewRef(self->func_annotate);
+}
+
+/*[clinic input]
+@critical_section
+@setter
+function.__annotate__
+[clinic start generated code]*/
+
+static int
+function___annotate___set_impl(PyFunctionObject *self, PyObject *value)
+/*[clinic end generated code: output=05b7dfc07ada66cd input=eb6225e358d97448]*/
+{
+    if (value == NULL) {
+        PyErr_SetString(PyExc_TypeError,
+            "__annotate__ cannot be deleted");
+        return -1;
+    }
+    if (Py_IsNone(value)) {
+        Py_XSETREF(self->func_annotate, value);
+        return 0;
+    }
+    else if (PyCallable_Check(value)) {
+        Py_XSETREF(self->func_annotate, Py_XNewRef(value));
+        Py_CLEAR(self->func_annotations);
+        return 0;
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError,
+            "__annotate__ must be callable or None");
+        return -1;
+    }
+}
+
+/*[clinic input]
+@critical_section
+@getter
+function.__annotations__
+
+Dict of annotations in a function object.
+[clinic start generated code]*/
+
+static PyObject *
+function___annotations___get_impl(PyFunctionObject *self)
+/*[clinic end generated code: output=a4cf4c884c934cbb input=92643d7186c1ad0c]*/
+{
+    PyObject *d = NULL;
+    if (self->func_annotations == NULL &&
+        (self->func_annotate == NULL || !PyCallable_Check(self->func_annotate))) {
+        self->func_annotations = PyDict_New();
+        if (self->func_annotations == NULL)
             return NULL;
     }
-    PyObject *d = func_get_annotation_dict(op);
+    d = func_get_annotation_dict(self);
     return Py_XNewRef(d);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+function.__annotations__
+[clinic start generated code]*/
+
 static int
-func_set_annotations(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
+function___annotations___set_impl(PyFunctionObject *self, PyObject *value)
+/*[clinic end generated code: output=a61795d4a95eede4 input=5302641f686f0463]*/
 {
     if (value == Py_None)
         value = NULL;
@@ -788,23 +863,40 @@ func_set_annotations(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(igno
             "__annotations__ must be set to a dict object");
         return -1;
     }
-    Py_XSETREF(op->func_annotations, Py_XNewRef(value));
+    Py_XSETREF(self->func_annotations, Py_XNewRef(value));
+    Py_CLEAR(self->func_annotate);
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+function.__type_params__
+
+Get the declared type parameters for a function.
+[clinic start generated code]*/
+
 static PyObject *
-func_get_type_params(PyFunctionObject *op, void *Py_UNUSED(ignored))
+function___type_params___get_impl(PyFunctionObject *self)
+/*[clinic end generated code: output=eb844d7ffca517a8 input=0864721484293724]*/
 {
-    if (op->func_typeparams == NULL) {
+    if (self->func_typeparams == NULL) {
         return PyTuple_New(0);
     }
 
-    assert(PyTuple_Check(op->func_typeparams));
-    return Py_NewRef(op->func_typeparams);
+    assert(PyTuple_Check(self->func_typeparams));
+    return Py_NewRef(self->func_typeparams);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+function.__type_params__
+[clinic start generated code]*/
+
 static int
-func_set_type_params(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
+function___type_params___set_impl(PyFunctionObject *self, PyObject *value)
+/*[clinic end generated code: output=038b4cda220e56fb input=3862fbd4db2b70e8]*/
 {
     /* Not legal to del f.__type_params__ or to set it to anything
      * other than a tuple object. */
@@ -813,7 +905,7 @@ func_set_type_params(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(igno
                         "__type_params__ must be set to a tuple");
         return -1;
     }
-    Py_XSETREF(op->func_typeparams, Py_NewRef(value));
+    Py_XSETREF(self->func_typeparams, Py_NewRef(value));
     return 0;
 }
 
@@ -829,27 +921,17 @@ _Py_set_function_type_params(PyThreadState *Py_UNUSED(ignored), PyObject *func,
 }
 
 static PyGetSetDef func_getsetlist[] = {
-    {"__code__", (getter)func_get_code, (setter)func_set_code},
-    {"__defaults__", (getter)func_get_defaults,
-     (setter)func_set_defaults},
-    {"__kwdefaults__", (getter)func_get_kwdefaults,
-     (setter)func_set_kwdefaults},
-    {"__annotations__", (getter)func_get_annotations,
-     (setter)func_set_annotations},
+    {"__code__", func_get_code, func_set_code},
+    {"__defaults__", func_get_defaults, func_set_defaults},
+    {"__kwdefaults__", func_get_kwdefaults, func_set_kwdefaults},
+    FUNCTION___ANNOTATIONS___GETSETDEF
+    FUNCTION___ANNOTATE___GETSETDEF
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
-    {"__name__", (getter)func_get_name, (setter)func_set_name},
-    {"__qualname__", (getter)func_get_qualname, (setter)func_set_qualname},
-    {"__type_params__", (getter)func_get_type_params,
-     (setter)func_set_type_params},
+    {"__name__", func_get_name, func_set_name},
+    {"__qualname__", func_get_qualname, func_set_qualname},
+    FUNCTION___TYPE_PARAMS___GETSETDEF
     {NULL} /* Sentinel */
 };
-
-/*[clinic input]
-class function "PyFunctionObject *" "&PyFunction_Type"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=70af9c90aa2e71b0]*/
-
-#include "clinic/funcobject.c.h"
 
 /* function.__new__() maintains the following invariants for closures.
    The closure must correspond to the free variables of the code object.
