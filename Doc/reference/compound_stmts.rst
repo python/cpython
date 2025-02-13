@@ -420,7 +420,7 @@ is executed.  If there is a saved exception it is re-raised at the end of the
 :keyword:`!finally` clause.  If the :keyword:`!finally` clause raises another
 exception, the saved exception is set as the context of the new exception.
 If the :keyword:`!finally` clause executes a :keyword:`return`, :keyword:`break`
-or :keyword:`continue` statement, the saved exception is discarded::
+or :keyword:`continue` statement, the saved exception is discarded.
 
    >>> def f():
    ...     try:
@@ -460,6 +460,11 @@ always be the last one executed::
 .. versionchanged:: 3.8
    Prior to Python 3.8, a :keyword:`continue` statement was illegal in the
    :keyword:`!finally` clause due to a problem with the implementation.
+
+.. versionchanged:: 3.14
+   The compiler emits a :exc:`SyntaxWarning` when a :keyword:`return`,
+   :keyword:`break` or :keyword:`continue` appears in a :keyword:`!finally`
+   block (see :pep:`765`).
 
 
 .. _with:

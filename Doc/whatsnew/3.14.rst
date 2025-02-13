@@ -68,6 +68,7 @@ Summary -- release highlights
 * :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
 * :ref:`A new type of interpreter  <whatsnew314-tail-call>`
+* :ref:`PEP 765: Disallow return/break/continue that exit a finally block <whatsnew314-pep765>`
 
 
 New features
@@ -306,6 +307,15 @@ Other language changes
 * The iOS testbed is now able to stream test output while the test is running.
   The testbed can also be used to run the test suite of projects other than
   CPython itself. (Contributed by Russell Keith-Magee in :gh:`127592`.)
+
+.. _whatsnew314-pep765:
+
+PEP 765: Disallow return/break/continue that exit a finally block
+-----------------------------------------------------------------
+
+The compiler emits a ``SyntaxWarning`` when a ``return``, ``break`` or
+``continue`` statements appears where it exits a ``finally`` block.
+This change in is specified in :pep:`765`.
 
 New modules
 ===========
