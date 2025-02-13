@@ -1195,6 +1195,16 @@ class DictProxy(_BaseDictProxy):
 
 collections.abc.MutableMapping.register(_BaseDictProxy)
 
+_set_proxy_methods = set(dir(set)) - set(dir(object))
+_set_proxy_methods = sorted(_set_proxy_methods)
+_BaseSetProxy = MakeProxyType("_BaseSetProxy", _set_proxy_methods)
+del _set_proxy_methods
+
+class SetProxy(_BaseSetProxy):
+    __class_getitem__ = classmethod(types.GenericAlias)
+
+collections.abc.MutableMapping.register(_BaseSetProxy)
+
 ArrayProxy = MakeProxyType('ArrayProxy', (
     '__len__', '__getitem__', '__setitem__'
     ))
@@ -1248,7 +1258,7 @@ SyncManager.register('dict', dict, DictProxy)
 SyncManager.register('Value', Value, ValueProxy)
 SyncManager.register('Array', Array, ArrayProxy)
 SyncManager.register('Namespace', Namespace, NamespaceProxy)
-
+SyncManager.register('set', set, SetProxy)
 # types returned by methods of PoolProxy
 SyncManager.register('Iterator', proxytype=IteratorProxy, create_method=False)
 SyncManager.register('AsyncResult', create_method=False)
