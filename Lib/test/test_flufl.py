@@ -47,6 +47,19 @@ class FLUFLTests(unittest.TestCase):
         self.assertEqual(cm.exception.lineno, 1)
         self.assertEqual(cm.exception.offset, len(code) - 4)
 
+    def test_barry_as_bdfl_relative_import(self):
+        code = "from .__future__ import barry_as_FLUFL;2 {0} 3"
+        compile(code.format('!='), '<FLUFL test>', 'exec')
+        with self.assertRaises(SyntaxError) as cm:
+            compile(code.format('<>'), '<BDFL test>', 'exec')
+        self.assertRegex(str(cm.exception), "<BDFL test>")
+        self.assertIn('2 <> 3', cm.exception.text)
+        self.assertEqual(cm.exception.filename, '<BDFL test>')
+        self.assertEqual(cm.exception.lineno, 1)
+        self.assertEqual(cm.exception.offset, len(code) - 4)
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
