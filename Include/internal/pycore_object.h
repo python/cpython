@@ -74,6 +74,7 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
     {                                               \
         .ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL,  \
         .ob_flags = _Py_STATICALLY_ALLOCATED_FLAG,  \
+        .ob_gc_bits = _PyGC_BITS_DEFERRED,          \
         .ob_type = (type)                           \
     }
 #else
@@ -612,7 +613,7 @@ _Py_TryIncrefCompare(PyObject **src, PyObject *op)
 static inline int
 _Py_TryIncrefCompareStackRef(PyObject **src, PyObject *op, _PyStackRef *out)
 {
-    if (_Py_IsImmortal(op) || _PyObject_HasDeferredRefcount(op)) {
+    if (_PyObject_HasDeferredRefcount(op)) {
         *out = (_PyStackRef){ .bits = (intptr_t)op | Py_TAG_DEFERRED };
         return 1;
     }

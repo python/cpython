@@ -1590,7 +1590,7 @@ _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t h
                 *value_addr = PyStackRef_NULL;
                 return DKIX_EMPTY;
             }
-            if (_Py_IsImmortal(value) || _PyObject_HasDeferredRefcount(value)) {
+            if (_PyObject_HasDeferredRefcount(value)) {
                 *value_addr =  (_PyStackRef){ .bits = (uintptr_t)value | Py_TAG_DEFERRED };
                 return ix;
             }
