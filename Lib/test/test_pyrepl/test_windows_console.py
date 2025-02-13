@@ -22,15 +22,42 @@ try:
         MOVE_UP,
         MOVE_DOWN,
         ERASE_IN_LINE,
+        INPUT_RECORD,
+        ConsoleEvent,
+        KeyEvent,
+        Char,
+        KEY_EVENT
     )
 except ImportError:
     pass
 
 
+def make_input_record(character: str, repeat_count: int = 1, virtual_keycode: int = 0):
+    assert len(character) == 1
+
+    rec = INPUT_RECORD()
+    rec.EventType = KEY_EVENT
+    rec.Event = ConsoleEvent()
+    rec.Event.KeyEvent = KeyEvent()
+
+    rec.Event.KeyEvent.bKeyDown = True
+    rec.Event.KeyEvent.wRepeatCount = repeat_count
+    rec.Event.KeyEvent.wVirtualKeyCode = virtual_keycode  # Only used for special keys (see VK_MAP in windows_console.py)
+    rec.Event.KeyEvent.wVirtualScanCode = 0  # Not used by WindowsConsole
+    rec.Event.KeyEvent.uChar = Char()
+    rec.Event.KeyEvent.uChar.UnicodeChar = character
+    rec.Event.KeyEvent.dwControlKeyState = False
+    return rec
+
+
 class WindowsConsoleTests(TestCase):
-    def console(self, events, **kwargs) -> Console:
+    def console(self, events, mock_input_record=False, **kwargs) -> Console:
         console = WindowsConsole()
-        console.get_event = MagicMock(side_effect=events)
+        if mock_input_record:
+            # Mock the lower level _read_input method instead of get_event
+            console._read_input = MagicMock(side_effect=events)
+        else:
+            console.get_event = MagicMock(side_effect=events)
         console._scroll = MagicMock()
         console._hide_cursor = MagicMock()
         console._show_cursor = MagicMock()
@@ -49,6 +76,9 @@ class WindowsConsoleTests(TestCase):
     def handle_events(self, events: Iterable[Event], **kwargs):
         return handle_all_events(events, partial(self.console, **kwargs))
 
+    def handle_input_records(self, input_records: Iterable[INPUT_RECORD], **kwargs):
+        return handle_all_events(input_records, partial(self.console, mock_input_record=True, **kwargs))
+
     def handle_events_narrow(self, events):
         return self.handle_events(events, width=5)
 
@@ -57,6 +87,21 @@ class WindowsConsoleTests(TestCase):
 
     def handle_events_height_3(self, events):
         return self.handle_events(events, height=3)
+
+    def test_key_records_no_repeat(self):
+        input_records = [make_input_record(c) for c in "12+34"]
+        _, con = self.handle_input_records(input_records)
+        expected_calls = [call(c.encode()) for c in "12+34"]
+        con.out.write.assert_has_calls(expected_calls)
+        con.restore()
+
+    def test_key_records_with_repeat(self):
+        input_records = [make_input_record(c, 2) for c in "12+34"]
+        input_records.append(make_input_record("5", 3))
+        _, con = self.handle_input_records(input_records)
+        expected_calls = [call(c.encode()) for c in "1122++3344555"]
+        con.out.write.assert_has_calls(expected_calls)
+        con.restore()
 
     def test_simple_addition(self):
         code = "12+34"
