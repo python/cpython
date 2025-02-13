@@ -5,8 +5,6 @@ may change at any time.
 """
 
 import sys
-import warnings
-import struct
 
 from _ctypes import CField, buffer_info
 import ctypes

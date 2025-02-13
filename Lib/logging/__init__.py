@@ -23,7 +23,7 @@ Copyright (C) 2001-2022 Vinay Sajip. All Rights Reserved.
 To use, simply 'import logging' and log away!
 """
 
-import sys, os, time, io, re, traceback, warnings, weakref, collections.abc
+import sys, os, time, io, re, traceback, weakref, collections.abc
 
 from types import GenericAlias
 from string import Template
@@ -1531,6 +1531,7 @@ class Logger(Filterer):
             self._log(WARNING, msg, args, **kwargs)
 
     def warn(self, msg, *args, **kwargs):
+        import warnings
         warnings.warn("The 'warn' method is deprecated, "
             "use 'warning' instead", DeprecationWarning, 2)
         self.warning(msg, *args, **kwargs)
@@ -1912,6 +1913,7 @@ class LoggerAdapter(object):
         self.log(WARNING, msg, *args, **kwargs)
 
     def warn(self, msg, *args, **kwargs):
+        import warnings
         warnings.warn("The 'warn' method is deprecated, "
             "use 'warning' instead", DeprecationWarning, 2)
         self.warning(msg, *args, **kwargs)
@@ -2180,6 +2182,7 @@ def warning(msg, *args, **kwargs):
     root.warning(msg, *args, **kwargs)
 
 def warn(msg, *args, **kwargs):
+    import warnings
     warnings.warn("The 'warn' function is deprecated, "
         "use 'warning' instead", DeprecationWarning, 2)
     warning(msg, *args, **kwargs)
@@ -2299,6 +2302,7 @@ def _showwarning(message, category, filename, lineno, file=None, line=None):
         if _warnings_showwarning is not None:
             _warnings_showwarning(message, category, filename, lineno, file, line)
     else:
+        import warnings
         s = warnings.formatwarning(message, category, filename, lineno, line)
         logger = getLogger("py.warnings")
         if not logger.handlers:
@@ -2316,9 +2320,11 @@ def captureWarnings(capture):
     global _warnings_showwarning
     if capture:
         if _warnings_showwarning is None:
+            import warnings
             _warnings_showwarning = warnings.showwarning
             warnings.showwarning = _showwarning
     else:
         if _warnings_showwarning is not None:
+            import warnings
             warnings.showwarning = _warnings_showwarning
             _warnings_showwarning = None
