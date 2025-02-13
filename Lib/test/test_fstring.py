@@ -15,6 +15,7 @@ import re
 import types
 import decimal
 import unittest
+import warnings
 from test import support
 from test.support.os_helper import temp_cwd
 from test.support.script_helper import assert_python_failure, assert_python_ok
@@ -1650,8 +1651,9 @@ x = (
         #self.assertEqual(f'X{x =       }Y', 'Xx\t=\t'+repr(x)+'Y')
 
     def test_debug_expressions_are_raw_strings(self):
-
-        self.assertEqual(f'{b"\N{OX}"=}', 'b"\\N{OX}"=b\'\\\\N{OX}\'')
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', SyntaxWarning)
+            self.assertEqual(eval("""f'{b"\\N{OX}"=}'"""), 'b"\\N{OX}"=b\'\\\\N{OX}\'')
         self.assertEqual(f'{r"\xff"=}', 'r"\\xff"=\'\\\\xff\'')
         self.assertEqual(f'{r"\n"=}', 'r"\\n"=\'\\\\n\'')
         self.assertEqual(f"{'\''=}", "'\\''=\"'\"")
