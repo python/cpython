@@ -230,33 +230,69 @@ def clone_testbed(
     shutil.copytree(source, target, symlinks=True)
     print(" done")
 
+    xc_framework_path = target / "Python.xcframework"
+    sim_framework_path = xc_framework_path / "ios-arm64_x86_64-simulator"
     if framework is not None:
         if framework.suffix == ".xcframework":
             print("  Installing XCFramework...", end="", flush=True)
-            xc_framework_path = (target / "Python.xcframework").resolve()
             if xc_framework_path.is_dir():
                 shutil.rmtree(xc_framework_path)
             else:
-                xc_framework_path.unlink()
+                xc_framework_path.unlink(missing_ok=True)
             xc_framework_path.symlink_to(
                 framework.relative_to(xc_framework_path.parent, walk_up=True)
             )
             print(" done")
         else:
             print("  Installing simulator framework...", end="", flush=True)
-            sim_framework_path = (
-                target / "Python.xcframework" / "ios-arm64_x86_64-simulator"
-            ).resolve()
             if sim_framework_path.is_dir():
                 shutil.rmtree(sim_framework_path)
             else:
-                sim_framework_path.unlink()
+                sim_framework_path.unlink(missing_ok=True)
             sim_framework_path.symlink_to(
                 framework.relative_to(sim_framework_path.parent, walk_up=True)
             )
             print(" done")
     else:
-        print("  Using pre-existing iOS framework.")
+        if (
+            xc_framework_path.is_symlink()
+            and not xc_framework_path.readlink().is_absolute()
+        ):
+            # XCFramework is a relative symlink. Rewrite the symlink relative
+            # to the new location.
+            print("  Rewriting symlink to XCframework...", end="", flush=True)
+            orig_xc_framework_path = (
+                source
+                / xc_framework_path.readlink()
+            ).resolve()
+            xc_framework_path.unlink()
+            xc_framework_path.symlink_to(
+                orig_xc_framework_path.relative_to(
+                    xc_framework_path.parent, walk_up=True
+                )
+            )
+            print(" done")
+        elif (
+            sim_framework_path.is_symlink()
+            and not sim_framework_path.readlink().is_absolute()
+        ):
+            print("  Rewriting symlink to simulator framework...", end="", flush=True)
+            # Simulator framework is a relative symlink. Rewrite the symlink
+            # relative to the new location.
+            orig_sim_framework_path = (
+                source
+                / "Python.XCframework"
+                / sim_framework_path.readlink()
+            ).resolve()
+            sim_framework_path.unlink()
+            sim_framework_path.symlink_to(
+                orig_sim_framework_path.relative_to(
+                    sim_framework_path.parent, walk_up=True
+                )
+            )
+            print(" done")
+        else:
+            print("  Using pre-existing iOS framework.")
 
     for app_src in apps:
         print(f"  Installing app {app_src.name!r}...", end="", flush=True)
@@ -372,8 +408,8 @@ def main():
 
     if context.subcommand == "clone":
         clone_testbed(
-            source=Path(__file__).parent,
-            target=Path(context.location),
+            source=Path(__file__).parent.resolve(),
+            target=Path(context.location).resolve(),
             framework=Path(context.framework).resolve() if context.framework else None,
             apps=[Path(app) for app in context.apps],
         )
