@@ -133,6 +133,10 @@ return_section_address(
 
         cmd = (struct segment_command_64*)((void*)cmd + cmd->cmdsize);
     }
+
+    // We should not be here, but if we are there, we should say about this
+    PyErr_SetString(
+        PyExc_RuntimeError, "Cannot find section address.\n");
     return 0;
 }
 
@@ -188,6 +192,7 @@ search_section_in_file(
 
     munmap(map, fs.st_size);
     if (close(fd) != 0) {
+        // This might hide one of the above exceptions, maybe we should chain them?
         PyErr_SetFromErrno(PyExc_OSError);
     }
     return result;
@@ -217,7 +222,9 @@ search_map_for_section(pid_t pid, const char* secname, const char* substr) {
 
     mach_port_t proc_ref = pid_to_task(pid);
     if (proc_ref == 0) {
-        PyErr_SetString(PyExc_PermissionError, "Cannot get task for PID");
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_PermissionError, "Cannot get task for PID");
+        }
         return 0;
     }
 
@@ -260,6 +267,8 @@ search_map_for_section(pid_t pid, const char* secname, const char* substr) {
 
         address += size;
     }
+
+    PyErr_SetString(PyExc_RuntimeError, "mach_vm_region failed");
     return 0;
 }
 
@@ -306,6 +315,7 @@ find_map_start_address(pid_t pid, char* result_filename, const char* map)
 
     if (!match_found) {
         map_filename[0] = '\0';
+        PyErr_SetString(PyExc_RuntimeError, "Cannot find map start address for map: %s", map);
     }
 
     return result_address;
@@ -401,6 +411,7 @@ exit:
 static uintptr_t
 search_map_for_section(pid_t pid, const char* secname, const char* map)
 {
+    PyErr_SetString(PyExc_NotImplementedError, "Not supported not this platform");
     return 0;
 }
 #endif
@@ -792,6 +803,9 @@ parse_coro_chain(
         pid,
         coro_address + offsets->gen_object.gi_frame_state,
         &gi_frame_state);
+    if (err) {
+        return -1;
+    }
 
     if (gi_frame_state == FRAME_SUSPENDED_YIELD_FROM) {
         char owner;
