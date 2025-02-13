@@ -2,29 +2,29 @@ import binascii
 import functools
 import hmac
 import hashlib
+import test.support.hashlib_helper as hashlib_helper
 import unittest
 import unittest.mock
 import warnings
-
-from test.support import hashlib_helper, check_disallow_instantiation
-
 from _operator import _compare_digest as operator_compare_digest
+from test.support import check_disallow_instantiation
+from test.support.import_helper import import_fresh_module
 
 try:
-    import _hashlib as _hashopenssl
-    from _hashlib import HMAC as C_HMAC
-    from _hashlib import hmac_new as c_hmac_new
+    import _hashlib
     from _hashlib import compare_digest as openssl_compare_digest
 except ImportError:
-    _hashopenssl = None
-    C_HMAC = None
-    c_hmac_new = None
+    _hashlib = None
     openssl_compare_digest = None
 
 try:
-    import _sha256 as sha256_module
+    import _sha2 as sha2
 except ImportError:
-    sha256_module = None
+    sha2 = None
+
+
+def requires_builtin_sha2():
+    return unittest.skipIf(sha2 is None, "requires _sha2")
 
 
 class TestVectorsTestCase(unittest.TestCase):
@@ -88,6 +88,7 @@ class TestVectorsTestCase(unittest.TestCase):
             h, digest, hashname, digest_size, block_size
         )
 
+        c_hmac_new = getattr(_hashlib, 'hmac_new', None)
         if c_hmac_new is not None:
             h = c_hmac_new(key, data, digestmod=hashname)
             self.assert_hmac_internals(
@@ -100,7 +101,7 @@ class TestVectorsTestCase(unittest.TestCase):
             h.update(data)
             self.assertEqual(h.hexdigest().upper(), digest.upper())
 
-            func = getattr(_hashopenssl, f"openssl_{hashname}")
+            func = getattr(_hashlib, f"openssl_{hashname}")
             h = c_hmac_new(key, data, digestmod=func)
             self.assert_hmac_internals(
                 h, digest, hashname, digest_size, block_size
@@ -435,20 +436,20 @@ class ConstructorTestCase(unittest.TestCase):
         except Exception:
             self.fail("Constructor call with hashlib.sha256 raised exception.")
 
-    @unittest.skipUnless(C_HMAC is not None, 'need _hashlib')
+    @hashlib_helper.requires_hashlib()
     def test_internal_types(self):
-        # internal types like _hashlib.C_HMAC are not constructable
-        check_disallow_instantiation(self, C_HMAC)
+        # internal C types like are not constructable
+        check_disallow_instantiation(self, _hashlib.HMAC)
         with self.assertRaisesRegex(TypeError, "immutable type"):
-            C_HMAC.value = None
+            _hashlib.HMAC.value = None
 
-    @unittest.skipUnless(sha256_module is not None, 'need _sha256')
-    def test_with_sha256_module(self):
-        h = hmac.HMAC(b"key", b"hash this!", digestmod=sha256_module.sha256)
+    @requires_builtin_sha2()
+    def test_with_sha2(self):
+        h = hmac.HMAC(b"key", b"hash this!", digestmod=sha2.sha256)
         self.assertEqual(h.hexdigest(), self.expected)
         self.assertEqual(h.name, "hmac-sha256")
 
-        digest = hmac.digest(b"key", b"hash this!", sha256_module.sha256)
+        digest = hmac.digest(b"key", b"hash this!", sha2.sha256)
         self.assertEqual(digest, binascii.unhexlify(self.expected))
 
 
@@ -503,7 +504,7 @@ class CopyTestCase(unittest.TestCase):
                         "No real copy of the attribute 'outer'.")
         self.assertIs(h1._hmac, None)
 
-    @unittest.skipIf(_hashopenssl is None, "test requires _hashopenssl")
+    @hashlib_helper.requires_hashlib()
     @hashlib_helper.requires_hashdigest('sha256')
     def test_realcopy_hmac(self):
         h1 = hmac.HMAC.__new__(hmac.HMAC)
@@ -549,7 +550,7 @@ class CompareDigestTestCase(unittest.TestCase):
     def test_operator_compare_digest(self):
         self._test_compare_digest(operator_compare_digest)
 
-    @unittest.skipIf(openssl_compare_digest is None, "test requires _hashlib")
+    @hashlib_helper.requires_hashlib()
     def test_openssl_compare_digest(self):
         self._test_compare_digest(openssl_compare_digest)
 
