@@ -703,25 +703,6 @@ _io_FileIO_readinto_impl(fileio *self, PyTypeObject *cls, Py_buffer *buffer)
     return PyLong_FromSsize_t(n);
 }
 
-static size_t
-new_buffersize(fileio *self, size_t currentsize)
-{
-    size_t addend;
-
-    /* Expand the buffer by an amount proportional to the current size,
-       giving us amortized linear-time behavior.  For bigger sizes, use a
-       less-than-double growth factor to avoid excessive allocation. */
-    assert(currentsize <= PY_SSIZE_T_MAX);
-    if (currentsize > LARGE_BUFFER_CUTOFF_SIZE)
-        addend = currentsize >> 3;
-    else
-        addend = 256 + currentsize;
-    if (addend < SMALLCHUNK)
-        /* Avoid tiny read() calls. */
-        addend = SMALLCHUNK;
-    return addend + currentsize;
-}
-
 /*[clinic input]
 _io.FileIO.readall
 
@@ -737,7 +718,11 @@ _io_FileIO_readall_impl(fileio *self)
 {
     Py_ssize_t pos = 0;
     PyObject* estimate_obj = Py_None;
-    PyObject* result = NULL;
+    PyObject *args[3] = {NULL, NULL, NULL};
+    PyObject *fn_name = NULL;
+    PyObject *keyword = NULL;
+    PyObject *result = NULL;
+    PyObject *found_eof = NULL;
 
     if (self->fd < 0) {
         return err_closed();
@@ -771,42 +756,70 @@ _io_FileIO_readall_impl(fileio *self)
         }
     }
 
-    /*
-    bio = io.BytesIO();
-    found_eof = bio.readfrom(self->fd, estimate=estimate)
-    result = bio.getvalue()
-    return result if result or found_eof else None
-    */
-
-    /* Use BytesIO.readfrom(fd, estimate=estimate) */
-    PyObject *bytesio_class = PyImport_ImportModuleAttrString("io", "BytesIO");
+    /* bio = io.BytesIO();
+       found_eof = bio.readfrom(self->fd, estimate=estimate) */
+    PyObject *bytesio_class = PyImport_ImportModuleAttrString("_io", "BytesIO");
     if (!bytesio_class) {
+        Py_DECREF(estimate_obj);
         return NULL;
     }
-    PyObject *bio = _Py_CallNoArgs(bytesio_class);
-    Py_DECREF(bytesioclass);
-    if (!bio) {
+    args[2] = estimate_obj;
+    estimate_obj = NULL;
+
+    args[0] = PyObject_CallNoArgs(bytesio_class);
+    Py_DECREF(bytesio_class);
+    bytesio_class = NULL;
+    if (!args[0]) {
+        Py_DECREF(estimate_obj);
         return  NULL;
     }
 
-    // FIXME: self._fd, estimate=estimate
-    // self->fd, estimate=estimate, limit=_PY_READ_MAX
-    PyObject *args[] = {estimate_obj, }
-    PyObject *found_eof = PyObject_VectorcallMethod(bytesio_class, "readfrom");
-    if (!found_eof) {
-        Py_DCREF(bytesio_class);
-        return NULL;
+    args[1] = PyLong_FromLong(self->fd);
+    if(!args[1]) {
+        goto leave;
     }
-    PyObject *result = PyObject_CallMethodNoArgs(bytesio_class, &_Py_ID(getvalue));
-    if (!getvalue) {
-        return NULL;
+    fn_name = PyUnicode_InternFromString("readfrom");
+    if (!fn_name) {
+        goto leave;
+    }
+    keyword = Py_BuildValue("(s)", "estimate");
+    if (!keyword) {
+        goto leave;
+    }
+    found_eof = PyObject_VectorcallMethod(
+        fn_name,
+        args,
+        2 | PY_VECTORCALL_ARGUMENTS_OFFSET,
+        keyword
+    );
+    if (!found_eof) {
+        goto leave;
     }
 
-    Py_DECREF(bytesio_class);
-    if (!bio) {
-        return NULL;
+    /* result = bio.getvalue()
+       return result if result or found_eof else None */
+    Py_DECREF(keyword);
+    keyword = PyUnicode_InternFromString("getvalue");
+    if (!keyword) {
+        goto leave;
     }
-    _PyObject_Call(bio, )
+    result = PyObject_CallMethodNoArgs(args[0], keyword);
+    if (!result) {
+        goto leave;
+    }
+
+    if (!PyBool_Check(found_eof) && !PyBool_Check(result)) {
+        Py_DECREF(result);
+        result = Py_None;
+    }
+
+leave:
+    Py_XDECREF(args[0]);
+    Py_XDECREF(args[1]);
+    Py_XDECREF(args[2]);
+    Py_XDECREF(fn_name);
+    Py_XDECREF(keyword);
+    Py_XDECREF(found_eof);
     return result;
 }
 
