@@ -575,9 +575,6 @@ also be used to improve performance.
    .. versionchanged:: 3.12
       Use ThinLTO as the default optimization policy on Clang if the compiler accepts the flag.
 
-   .. versionchanged:: next
-      Revert to using full LTO as the default optimization policy on Clang.
-
 .. option:: --enable-bolt
 
    Enable usage of the `BOLT post-link binary optimizer

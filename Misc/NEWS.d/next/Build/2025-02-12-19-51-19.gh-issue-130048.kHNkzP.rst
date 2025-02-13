@@ -1,1 +1,0 @@
-CPython now uses Full LTO as the default link time optimization policy on Clang. This reverts an earlier change in CPython 3.12.
