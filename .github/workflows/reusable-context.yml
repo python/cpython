@@ -26,6 +26,9 @@ on:  # yamllint disable-line rule:truthy
       run-tests:
         description: Whether to run the regular tests
         value: ${{ jobs.compute-changes.outputs.run-tests  }}  # bool
+      run-windows-tests:
+        description: Whether to run the Windows tests
+        value: ${{ jobs.compute-changes.outputs.run-windows-tests }}  # bool
       run-windows-msi:
         description: Whether to run the MSI installer smoke tests
         value: ${{ jobs.compute-changes.outputs.run-windows-msi }}  # bool
@@ -44,6 +47,7 @@ jobs:
       run-docs: ${{ steps.changes.outputs.run-docs }}
       run-tests: ${{ steps.changes.outputs.run-tests }}
       run-windows-msi: ${{ steps.changes.outputs.run-windows-msi }}
+      run-windows-tests: ${{ steps.changes.outputs.run-windows-tests }}
     steps:
     - name: Set up Python
       uses: actions/setup-python@v5

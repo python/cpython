@@ -581,11 +581,13 @@ gc_mark_buffer_len(gc_mark_args_t *args)
 }
 
 // Returns number of free entry slots in buffer
+#ifndef NDEBUG
 static inline unsigned int
 gc_mark_buffer_avail(gc_mark_args_t *args)
 {
     return BUFFER_SIZE - gc_mark_buffer_len(args);
 }
+#endif
 
 static inline bool
 gc_mark_buffer_is_empty(gc_mark_args_t *args)
@@ -1074,13 +1076,13 @@ mark_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
         return true;
     }
 
-    _PyObject_ASSERT_WITH_MSG(op, gc_get_refs(op) >= 0,
-                                  "refcount is too small");
-
     if (gc_is_alive(op) || !gc_is_unreachable(op)) {
         // Object was already marked as reachable.
         return true;
     }
+
+    _PyObject_ASSERT_WITH_MSG(op, gc_get_refs(op) >= 0,
+                                  "refcount is too small");
 
     // GH-129236: If we've seen an active frame without a valid stack pointer,
     // then we can't collect objects with deferred references because we may
@@ -1178,10 +1180,10 @@ move_legacy_finalizer_reachable(struct collection_state *state);
 static void
 gc_prime_from_spans(gc_mark_args_t *args)
 {
-    Py_ssize_t space = BUFFER_HI - gc_mark_buffer_len(args);
+    unsigned int space = BUFFER_HI - gc_mark_buffer_len(args);
     // there should always be at least this amount of space
     assert(space <= gc_mark_buffer_avail(args));
-    assert(space > 0);
+    assert(space <= BUFFER_HI);
     gc_span_t entry = args->spans.stack[--args->spans.size];
     // spans on the stack should always have one or more elements
     assert(entry.start < entry.end);
@@ -2593,11 +2595,12 @@ PyObject *
 PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *tp, size_t extra_size)
 {
     size_t presize = _PyType_PreHeaderSize(tp);
-    PyObject *op = gc_alloc(tp, _PyObject_SIZE(tp) + extra_size, presize);
+    size_t size = _PyObject_SIZE(tp) + extra_size;
+    PyObject *op = gc_alloc(tp, size, presize);
     if (op == NULL) {
         return NULL;
     }
-    memset(op, 0, _PyObject_SIZE(tp) + extra_size);
+    memset((char *)op + sizeof(PyObject), 0, size - sizeof(PyObject));
     _PyObject_Init(op, tp);
     return op;
 }
