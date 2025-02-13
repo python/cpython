@@ -1279,6 +1279,10 @@ Build changes
 * GNU Autoconf 2.72 is now required to generate :file:`configure`.
   (Contributed by Erlend Aasland in :gh:`115765`.)
 
+* CPython now uses Full LTO as the default link time optimization policy
+  on Clang. This reverts an earlier change in CPython 3.12.
+  (Contributed by Ken Jin in :gh:`130049`.)
+
 .. _whatsnew314-pep761:
 
 PEP 761: Discontinuation of PGP signatures
