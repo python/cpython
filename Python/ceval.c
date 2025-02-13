@@ -318,11 +318,33 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
     }
 }
 
+#if defined(__s390x__)
+#  define Py_C_STACK_SIZE 320000
+#elif defined(_WIN32) && defined(_M_ARM64)
+#  define Py_C_STACK_SIZE 400000
+#elif defined(_WIN32)
+#  define Py_C_STACK_SIZE 1200000
+#elif defined(__ANDROID__)
+#  define Py_C_STACK_SIZE 1200000
+#elif defined(__sparc__)
+   // test_descr crashed on sparc64 with >7000 but let's keep a margin of error.
+#  define Py_C_STACK_SIZE 1600000
+#elif defined(__wasi__)
+   // Based on wasmtime 16.
+#  define Py_C_STACK_SIZE 2000000
+#elif defined(__hppa__) || defined(__powerpc64__)
+   // test_descr crashed with >8000 but let's keep a margin of error.
+#  define Py_C_STACK_SIZE 2000000
+#else
+#  define Py_C_STACK_SIZE 5000000
+#endif
+
 void
 _Py_InitializeRecursionCheck(PyThreadState *tstate)
 {
     char here;
     uintptr_t here_addr = (uintptr_t)&here;
+    tstate->c_stack_top = here_addr;
 #ifdef USE_STACKCHECK
     if (_PyOS_CheckStack(PYOS_STACK_MARGIN * 2) == 0) {
         tstate->c_stack_soft_limit = here_addr - PYOS_STACK_MARGIN_BYTES;
@@ -364,15 +386,20 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     assert(tstate->c_stack_hard_limit != 0);
     if (here_addr < tstate->c_stack_hard_limit) {
         /* Overflowing while handling an overflow. Give up. */
-        Py_FatalError("Cannot recover from stack overflow.");
+        int kbytes_used = (tstate->c_stack_top - here_addr)/1024;
+        char buffer[80];
+        snprintf(buffer, 80, "Unrecoverable stack overflow (used %dkb)%s", kbytes_used, where);
+        Py_FatalError(buffer);
     }
     if (tstate->recursion_headroom) {
         return 0;
     }
     else {
+        int kbytes_used = (tstate->c_stack_top - here_addr)/1024;
         tstate->recursion_headroom++;
         _PyErr_Format(tstate, PyExc_RecursionError,
-                    "maximum recursion depth exceeded%s",
+                    "Stack overflow (used %dkb)S%s",
+                    kbytes_used,
                     where);
         tstate->recursion_headroom--;
         return -1;

@@ -113,6 +113,7 @@ struct _ts {
     int py_recursion_limit;
 
     // These are addresses, but we need to convert to ints to avoid UB.
+    uintptr_t c_stack_top;
     uintptr_t c_stack_soft_limit;
     uintptr_t c_stack_hard_limit;
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */
@@ -204,48 +205,6 @@ struct _ts {
     PyObject *threading_local_sentinel;
 };
 
-
-#if defined(__s390x__)
-#  define Py_C_STACK_SIZE 320000
-#elif defined(_WIN32) && defined(_M_ARM64)
-#  define Py_C_STACK_SIZE 400000
-#elif defined(_WIN32)
-#  define Py_C_STACK_SIZE 1200000
-#elif defined(__ANDROID__)
-   // On an ARM64 emulator, API level 34 was OK with 10000, but API level 21
-   // crashed in test_compiler_recursion_limit.
-#  define Py_C_STACK_SIZE 1200000
-#elif defined(__sparc__)
-   // test_descr crashed on sparc64 with >7000 but let's keep a margin of error.
-#  define Py_C_STACK_SIZE 1600000
-#elif defined(__wasi__)
-   // Based on wasmtime 16.
-#  define Py_C_STACK_SIZE 2000000
-#elif defined(__hppa__) || defined(__powerpc64__)
-   // test_descr crashed with >8000 but let's keep a margin of error.
-#  define Py_C_STACK_SIZE 2000000
-#else
-   // This value is duplicated in Lib/test/support/__init__.py
-#  define Py_C_STACK_SIZE 5000000
-#endif
-
-
-#ifdef Py_DEBUG
-   // A debug build is likely built with low optimization level which implies
-   // higher stack memory usage than a release build: use a lower limit.
-#  if defined(__has_feature)  /* Clang */
-    // Clang debug builds use a lot of stack space
-#    define Py_C_RECURSION_LIMIT (Py_C_STACK_SIZE / 4000)
-#  else
-#    define Py_C_RECURSION_LIMIT (Py_C_STACK_SIZE / 2000)
-#  endif
-#elif defined(_Py_ADDRESS_SANITIZER)
-#  define Py_C_RECURSION_LIMIT (Py_C_STACK_SIZE / 600)
-#else
-#  define Py_C_RECURSION_LIMIT (Py_C_STACK_SIZE / 300)
-#endif
-
-
 /* other API */
 
 /* Similar to PyThreadState_Get(), but don't issue a fatal error
@@ -258,7 +217,6 @@ _PyThreadState_UncheckedGet(void)
 {
     return PyThreadState_GetUnchecked();
 }
-
 
 // Disable tracing and profiling.
 PyAPI_FUNC(void) PyThreadState_EnterTracing(PyThreadState *tstate);
