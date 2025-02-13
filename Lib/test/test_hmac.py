@@ -695,126 +695,133 @@ class CopyTestCase(unittest.TestCase):
                          "Hexdigest of copy doesn't match original hexdigest.")
 
 
-class CompareDigestTestCase(unittest.TestCase):
+class CompareDigestMixin:
 
-    def test_hmac_compare_digest(self):
-        self._test_compare_digest(hmac.compare_digest)
+    def compare_digest(self, a, b):
+        raise NotImplementedError
+
+    def assert_digest_equal(self, a, b):
+        with self.subTest(a=a, b=b):
+            self.assertTrue(self.compare_digest(a, b))
+        with self.subTest(a=b, b=a):
+            self.assertTrue(self.compare_digest(b, a))
+
+    def assert_digest_not_equal(self, a, b):
+        with self.subTest(a=a, b=b):
+            self.assertFalse(self.compare_digest(a, b))
+        with self.subTest(a=b, b=a):
+            self.assertFalse(self.compare_digest(b, a))
+
+    def test_exceptions(self):
+        for a, b in [
+            # Testing input type exception handling
+            (100, 200), (100, b"foobar"), ("foobar", b"foobar"),
+            # non-ASCII strings
+            ("fooä", "fooä")
+        ]:
+            self.assertRaises(TypeError, self.compare_digest, a, b)
+            self.assertRaises(TypeError, self.compare_digest, b, a)
+
+    def test_bytes(self):
+        # Testing bytes of different lengths
+        a, b = b"foobar", b"foo"
+        self.assert_digest_not_equal(a, b)
+        a, b = b"\xde\xad\xbe\xef", b"\xde\xad"
+        self.assert_digest_not_equal(a, b)
+
+        # Testing bytes of same lengths, different values
+        a, b = b"foobar", b"foobaz"
+        self.assert_digest_not_equal(a, b)
+        a, b = b"\xde\xad\xbe\xef", b"\xab\xad\x1d\xea"
+        self.assert_digest_not_equal(a, b)
+
+        # Testing bytes of same lengths, same values
+        a, b = b"foobar", b"foobar"
+        self.assert_digest_equal(a, b)
+        a, b = b"\xde\xad\xbe\xef", b"\xde\xad\xbe\xef"
+        self.assert_digest_equal(a, b)
+
+    def test_bytearray(self):
+        # Testing bytearrays of same lengths, same values
+        a, b = bytearray(b"foobar"), bytearray(b"foobar")
+        self.assert_digest_equal(a, b)
+
+        # Testing bytearrays of different lengths
+        a, b = bytearray(b"foobar"), bytearray(b"foo")
+        self.assert_digest_not_equal(a, b)
+
+        # Testing bytearrays of same lengths, different values
+        a, b = bytearray(b"foobar"), bytearray(b"foobaz")
+        self.assert_digest_not_equal(a, b)
+
+    def test_mixed_types(self):
+        # Testing byte and bytearray of same lengths, same values
+        a, b = bytearray(b"foobar"), b"foobar"
+        self.assert_digest_equal(a, b)
+
+        # Testing byte bytearray of different lengths
+        a, b = bytearray(b"foobar"), b"foo"
+        self.assert_digest_not_equal(a, b)
+
+        # Testing byte and bytearray of same lengths, different values
+        a, b = bytearray(b"foobar"), b"foobaz"
+        self.assert_digest_not_equal(a, b)
+
+    def test_string(self):
+        # Testing str of same lengths
+        a, b = "foobar", "foobar"
+        self.assert_digest_equal(a, b)
+
+        # Testing str of different lengths
+        a, b = "foo", "foobar"
+        self.assert_digest_not_equal(a, b)
+
+        # Testing str of same lengths, different values
+        a, b = "foobar", "foobaz"
+        self.assert_digest_not_equal(a, b)
+
+    def test_string_subclass(self):
+        class S(str):
+            def __eq__(self, other):
+                raise ValueError("should not be called")
+
+        a, b = S("foobar"), S("foobar")
+        self.assert_digest_equal(a, b)
+        a, b = S("foobar"), "foobar"
+        self.assert_digest_equal(a, b)
+        a, b = S("foobar"), S("foobaz")
+        self.assert_digest_not_equal(a, b)
+
+    def test_bytes_subclass(self):
+        class B(bytes):
+            def __eq__(self, other):
+                raise ValueError("should not be called")
+
+        a, b = B(b"foobar"), B(b"foobar")
+        self.assert_digest_equal(a, b)
+        a, b = B(b"foobar"), b"foobar"
+        self.assert_digest_equal(a, b)
+        a, b = B(b"foobar"), B(b"foobaz")
+        self.assert_digest_not_equal(a, b)
+
+
+class HMACCompareDigestTestCase(CompareDigestMixin, unittest.TestCase):
+    compare_digest = hmac.compare_digest
+
+    def test_compare_digest_func(self):
         if openssl_compare_digest is not None:
             self.assertIs(hmac.compare_digest, openssl_compare_digest)
         else:
             self.assertIs(hmac.compare_digest, operator_compare_digest)
 
-    def test_operator_compare_digest(self):
-        self._test_compare_digest(operator_compare_digest)
 
-    @hashlib_helper.requires_hashlib()
-    def test_openssl_compare_digest(self):
-        self._test_compare_digest(openssl_compare_digest)
+@hashlib_helper.requires_hashlib()
+class OpenSSLCompareDigestTestCase(CompareDigestMixin, unittest.TestCase):
+    compare_digest = openssl_compare_digest
 
-    def _test_compare_digest(self, compare_digest):
-        # Testing input type exception handling
-        a, b = 100, 200
-        self.assertRaises(TypeError, compare_digest, a, b)
-        a, b = 100, b"foobar"
-        self.assertRaises(TypeError, compare_digest, a, b)
-        a, b = b"foobar", 200
-        self.assertRaises(TypeError, compare_digest, a, b)
-        a, b = "foobar", b"foobar"
-        self.assertRaises(TypeError, compare_digest, a, b)
-        a, b = b"foobar", "foobar"
-        self.assertRaises(TypeError, compare_digest, a, b)
 
-        # Testing bytes of different lengths
-        a, b = b"foobar", b"foo"
-        self.assertFalse(compare_digest(a, b))
-        a, b = b"\xde\xad\xbe\xef", b"\xde\xad"
-        self.assertFalse(compare_digest(a, b))
-
-        # Testing bytes of same lengths, different values
-        a, b = b"foobar", b"foobaz"
-        self.assertFalse(compare_digest(a, b))
-        a, b = b"\xde\xad\xbe\xef", b"\xab\xad\x1d\xea"
-        self.assertFalse(compare_digest(a, b))
-
-        # Testing bytes of same lengths, same values
-        a, b = b"foobar", b"foobar"
-        self.assertTrue(compare_digest(a, b))
-        a, b = b"\xde\xad\xbe\xef", b"\xde\xad\xbe\xef"
-        self.assertTrue(compare_digest(a, b))
-
-        # Testing bytearrays of same lengths, same values
-        a, b = bytearray(b"foobar"), bytearray(b"foobar")
-        self.assertTrue(compare_digest(a, b))
-
-        # Testing bytearrays of different lengths
-        a, b = bytearray(b"foobar"), bytearray(b"foo")
-        self.assertFalse(compare_digest(a, b))
-
-        # Testing bytearrays of same lengths, different values
-        a, b = bytearray(b"foobar"), bytearray(b"foobaz")
-        self.assertFalse(compare_digest(a, b))
-
-        # Testing byte and bytearray of same lengths, same values
-        a, b = bytearray(b"foobar"), b"foobar"
-        self.assertTrue(compare_digest(a, b))
-        self.assertTrue(compare_digest(b, a))
-
-        # Testing byte bytearray of different lengths
-        a, b = bytearray(b"foobar"), b"foo"
-        self.assertFalse(compare_digest(a, b))
-        self.assertFalse(compare_digest(b, a))
-
-        # Testing byte and bytearray of same lengths, different values
-        a, b = bytearray(b"foobar"), b"foobaz"
-        self.assertFalse(compare_digest(a, b))
-        self.assertFalse(compare_digest(b, a))
-
-        # Testing str of same lengths
-        a, b = "foobar", "foobar"
-        self.assertTrue(compare_digest(a, b))
-
-        # Testing str of different lengths
-        a, b = "foo", "foobar"
-        self.assertFalse(compare_digest(a, b))
-
-        # Testing bytes of same lengths, different values
-        a, b = "foobar", "foobaz"
-        self.assertFalse(compare_digest(a, b))
-
-        # Testing error cases
-        a, b = "foobar", b"foobar"
-        self.assertRaises(TypeError, compare_digest, a, b)
-        a, b = b"foobar", "foobar"
-        self.assertRaises(TypeError, compare_digest, a, b)
-        a, b = b"foobar", 1
-        self.assertRaises(TypeError, compare_digest, a, b)
-        a, b = 100, 200
-        self.assertRaises(TypeError, compare_digest, a, b)
-        a, b = "fooä", "fooä"
-        self.assertRaises(TypeError, compare_digest, a, b)
-
-        # subclasses are supported by ignore __eq__
-        class mystr(str):
-            def __eq__(self, other):
-                return False
-
-        a, b = mystr("foobar"), mystr("foobar")
-        self.assertTrue(compare_digest(a, b))
-        a, b = mystr("foobar"), "foobar"
-        self.assertTrue(compare_digest(a, b))
-        a, b = mystr("foobar"), mystr("foobaz")
-        self.assertFalse(compare_digest(a, b))
-
-        class mybytes(bytes):
-            def __eq__(self, other):
-                return False
-
-        a, b = mybytes(b"foobar"), mybytes(b"foobar")
-        self.assertTrue(compare_digest(a, b))
-        a, b = mybytes(b"foobar"), b"foobar"
-        self.assertTrue(compare_digest(a, b))
-        a, b = mybytes(b"foobar"), mybytes(b"foobaz")
-        self.assertFalse(compare_digest(a, b))
+class OperatorCompareDigestTestCase(CompareDigestMixin, unittest.TestCase):
+    compare_digest = operator_compare_digest
 
 
 if __name__ == "__main__":
