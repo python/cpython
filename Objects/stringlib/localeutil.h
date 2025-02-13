@@ -47,7 +47,7 @@ InsertThousandsGrouping_fill(_PyUnicodeWriter *writer, Py_ssize_t *buffer_pos,
                              PyObject *digits, Py_ssize_t *digits_pos,
                              Py_ssize_t n_chars, Py_ssize_t n_zeros,
                              PyObject *thousands_sep, Py_ssize_t thousands_sep_len,
-                             Py_UCS4 *maxchar)
+                             Py_UCS4 *maxchar, int forward)
 {
     if (!writer) {
         /* if maxchar > 127, maxchar is already set */
@@ -59,24 +59,39 @@ InsertThousandsGrouping_fill(_PyUnicodeWriter *writer, Py_ssize_t *buffer_pos,
     }
 
     if (thousands_sep) {
-        *buffer_pos -= thousands_sep_len;
-
+        if (!forward) {
+            *buffer_pos -= thousands_sep_len;
+        }
         /* Copy the thousands_sep chars into the buffer. */
         _PyUnicode_FastCopyCharacters(writer->buffer, *buffer_pos,
                                       thousands_sep, 0,
                                       thousands_sep_len);
+        if (forward) {
+            *buffer_pos += thousands_sep_len;
+        }
     }
 
-    *buffer_pos -= n_chars;
-    *digits_pos -= n_chars;
+    if (!forward) {
+        *buffer_pos -= n_chars;
+        *digits_pos -= n_chars;
+    }
     _PyUnicode_FastCopyCharacters(writer->buffer, *buffer_pos,
                                   digits, *digits_pos,
                                   n_chars);
+    if (forward) {
+        *buffer_pos += n_chars;
+        *digits_pos += n_chars;
+    }
 
     if (n_zeros) {
-        *buffer_pos -= n_zeros;
+        if (!forward) {
+            *buffer_pos -= n_zeros;
+        }
         int kind = PyUnicode_KIND(writer->buffer);
         void *data = PyUnicode_DATA(writer->buffer);
         unicode_fill(kind, data, '0', *buffer_pos, n_zeros);
+        if (forward) {
+            *buffer_pos += n_zeros;
+        }
     }
 }
