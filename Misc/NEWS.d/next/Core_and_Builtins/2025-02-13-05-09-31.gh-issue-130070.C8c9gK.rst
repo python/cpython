@@ -1,0 +1,2 @@
+``exec()`` called with a string ``source`` argument and non-``None`` ``closure`` argument no longer fails with a segmentation
+fault. Patch by Bartosz Sławecki.

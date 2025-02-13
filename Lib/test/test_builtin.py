@@ -985,6 +985,13 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(result, 2520)
 
         # should fail: closure isn't allowed
+        # when source is a string
+        self.assertRaises(TypeError,
+            exec,
+            "pass",
+            closure=my_closure)
+
+        # should fail: closure isn't allowed
         # for functions without free vars
         self.assertRaises(TypeError,
             exec,
