@@ -87,8 +87,8 @@ class PropertyTests(unittest.TestCase):
         self.assertEqual(base.spam, 10)
         self.assertEqual(base._spam, 10)
         delattr(base, "spam")
-        self.assertTrue(not hasattr(base, "spam"))
-        self.assertTrue(not hasattr(base, "_spam"))
+        self.assertNotHasAttr(base, "spam")
+        self.assertNotHasAttr(base, "_spam")
         base.spam = 20
         self.assertEqual(base.spam, 20)
         self.assertEqual(base._spam, 20)

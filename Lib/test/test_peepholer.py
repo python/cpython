@@ -261,7 +261,7 @@ class TestTranforms(BytecodeTestCase):
                 else:
                     self.assertInBytecode(code, 'LOAD_CONST', elem)
                 for instr in dis.get_instructions(code):
-                    self.assertFalse(instr.opname.startswith('BINARY_'))
+                    self.assertNotStartsWith(instr.opname, 'BINARY_')
                 self.check_lnotab(code)
 
         # Verify that unfoldables are skipped
@@ -323,7 +323,7 @@ class TestTranforms(BytecodeTestCase):
                 else:
                     self.assertInBytecode(code, 'LOAD_CONST', elem)
                 for instr in dis.get_instructions(code):
-                    self.assertFalse(instr.opname.startswith('UNARY_'))
+                    self.assertNotStartsWith(instr.opname, 'UNARY_')
                 self.check_lnotab(code)
 
         # Check that -0.0 works after marshaling
@@ -331,7 +331,7 @@ class TestTranforms(BytecodeTestCase):
             return -(1.0-1.0)
 
         for instr in dis.get_instructions(negzero):
-            self.assertFalse(instr.opname.startswith('UNARY_'))
+            self.assertNotStartsWith(instr.opname, 'UNARY_')
         self.check_lnotab(negzero)
 
         # Verify that unfoldables are skipped
@@ -476,9 +476,9 @@ class TestTranforms(BytecodeTestCase):
             with self.subTest(e=e):
                 code = compile(e, '', 'single')
                 for instr in dis.get_instructions(code):
-                    self.assertFalse(instr.opname.startswith('UNARY_'))
-                    self.assertFalse(instr.opname.startswith('BINARY_'))
-                    self.assertFalse(instr.opname.startswith('BUILD_'))
+                    self.assertNotStartsWith(instr.opname, 'UNARY_')
+                    self.assertNotStartsWith(instr.opname, 'BINARY_')
+                    self.assertNotStartsWith(instr.opname, 'BUILD_')
                 self.check_lnotab(code)
 
     def test_constant_folding_small_int(self):
