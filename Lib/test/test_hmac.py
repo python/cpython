@@ -634,65 +634,53 @@ class UpdateTestCase(unittest.TestCase):
             h.update("invalid update")
 
 
+@hashlib_helper.requires_hashdigest('sha256')
 class CopyTestCase(unittest.TestCase):
 
-    @hashlib_helper.requires_hashdigest('sha256')
     def test_attributes_old(self):
         # Testing if attributes are of same type.
         h1 = hmac.HMAC.__new__(hmac.HMAC)
         h1._init_old(b"key", b"msg", digestmod="sha256")
         h2 = h1.copy()
-        self.assertEqual(type(h1._inner), type(h2._inner),
-                         "Types of inner don't match.")
-        self.assertEqual(type(h1._outer), type(h2._outer),
-                         "Types of outer don't match.")
+        self.assertEqual(type(h1._inner), type(h2._inner))
+        self.assertEqual(type(h1._outer), type(h2._outer))
 
-    @hashlib_helper.requires_hashdigest('sha256')
     def test_realcopy_old(self):
         # Testing if the copy method created a real copy.
         h1 = hmac.HMAC.__new__(hmac.HMAC)
         h1._init_old(b"key", b"msg", digestmod="sha256")
+        self.assertIsNone(h1._hmac)
+
         h2 = h1.copy()
+        self.assertIsNone(h2._hmac)
         # Using id() in case somebody has overridden __eq__/__ne__.
-        self.assertTrue(id(h1) != id(h2), "No real copy of the HMAC instance.")
-        self.assertTrue(id(h1._inner) != id(h2._inner),
-                        "No real copy of the attribute 'inner'.")
-        self.assertTrue(id(h1._outer) != id(h2._outer),
-                        "No real copy of the attribute 'outer'.")
-        self.assertIs(h1._hmac, None)
+        self.assertNotEqual(id(h1), id(h2))
+        self.assertNotEqual(id(h1._inner), id(h2._inner))
+        self.assertNotEqual(id(h1._outer), id(h2._outer))
 
     @hashlib_helper.requires_hashlib()
-    @hashlib_helper.requires_hashdigest('sha256')
     def test_realcopy_hmac(self):
         h1 = hmac.HMAC.__new__(hmac.HMAC)
         h1._init_hmac(b"key", b"msg", digestmod="sha256")
         h2 = h1.copy()
-        self.assertTrue(id(h1._hmac) != id(h2._hmac))
+        self.assertNotEqual(id(h1._hmac), id(h2._hmac))
 
-    @hashlib_helper.requires_hashdigest('sha256')
     def test_equality(self):
         # Testing if the copy has the same digests.
         h1 = hmac.HMAC(b"key", digestmod="sha256")
         h1.update(b"some random text")
         h2 = h1.copy()
-        self.assertEqual(h1.digest(), h2.digest(),
-                         "Digest of copy doesn't match original digest.")
-        self.assertEqual(h1.hexdigest(), h2.hexdigest(),
-                         "Hexdigest of copy doesn't match original hexdigest.")
+        self.assertEqual(h1.digest(), h2.digest())
+        self.assertEqual(h1.hexdigest(), h2.hexdigest())
 
-    @hashlib_helper.requires_hashdigest('sha256')
     def test_equality_new(self):
         # Testing if the copy has the same digests with hmac.new().
         h1 = hmac.new(b"key", digestmod="sha256")
         h1.update(b"some random text")
         h2 = h1.copy()
-        self.assertTrue(
-            id(h1) != id(h2), "No real copy of the HMAC instance."
-        )
-        self.assertEqual(h1.digest(), h2.digest(),
-                         "Digest of copy doesn't match original digest.")
-        self.assertEqual(h1.hexdigest(), h2.hexdigest(),
-                         "Hexdigest of copy doesn't match original hexdigest.")
+        self.assertNotEqual(id(h1), id(h2))
+        self.assertEqual(h1.digest(), h2.digest())
+        self.assertEqual(h1.hexdigest(), h2.hexdigest())
 
 
 class CompareDigestMixin:
