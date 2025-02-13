@@ -120,6 +120,138 @@ class CheckerMixin:
         self.assertEqual(h.hexdigest().upper(), digest.upper())
 
 
+class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
+    """Mixin class for all test vectors test cases."""
+
+    def hmac_new_by_name(self, key, msg=None, hashname=None):
+        """Alternative implementation of hmac_new()."""
+        self.assertIsInstance(hashname, str | None)
+        return self.hmac_new(key, msg, digestmod=hashname)
+
+    def hmac_digest_by_name(self, key, msg=None, hashname=None):
+        """Alternative implementation of hmac_digest()."""
+        self.assertIsInstance(hashname, str | None)
+        return self.hmac_digest(key, msg, digestmod=hashname)
+
+    def assert_hmac(
+        self, key, msg, digest, hashfunc, hashname, digest_size, block_size
+    ):
+        digestmods = list(filter(None, [hashfunc, hashname]))
+        self.assertNotEqual(digestmods, [],
+                            "at least one implementation must be tested")
+        for digestmod in digestmods:
+            with self.subTest(digestmod=digestmod):
+                self.assert_hmac_new(
+                    key, msg, digest, digestmod,
+                    hashname, digest_size, block_size
+                )
+                self.assert_hmac_digest(
+                    key, msg, digest, digestmod, digest_size
+                )
+                self.assert_hmac_cases(
+                    key, msg, digest, digestmod,
+                    hashname, digest_size, block_size
+                )
+
+        self.assert_hmac_new_by_name(
+            key, msg, digest, hashname, digest_size, block_size
+        )
+        self.assert_hmac_digest_by_new(
+            key, msg, digest, hashname, digest_size
+        )
+
+    def assert_hmac_new(
+        self, key, msg, digest, digestmod, hashname, digest_size, block_size
+    ):
+        self._check_hmac_new(
+            key, msg, digest, hashname, digest_size, block_size,
+            hmac_new_func=self.hmac_new,
+            hmac_new_kwds={'digestmod': digestmod},
+        )
+
+    def assert_hmac_new_by_name(
+        self, key, msg, digest, hashname, digest_size, block_size
+    ):
+        self._check_hmac_new(
+            key, msg, digest, hashname, digest_size, block_size,
+            hmac_new_func=self.hmac_new_by_name,
+            hmac_new_kwds={'hashname': hashname},
+        )
+
+    def _check_hmac_new(
+        self, key, msg, digest, hashname, digest_size, block_size,
+        hmac_new_func, hmac_new_kwds,
+    ):
+        h = hmac_new_func(key, msg, **hmac_new_kwds)
+        self.check_object(h, digest, hashname, digest_size, block_size)
+
+        def hmac_new_feed(*args):
+            h = hmac_new_func(key, *args, **hmac_new_kwds)
+            h.update(msg)
+            self.check_hexdigest(h, digest, digest_size)
+
+        with self.subTest('no initial message'):
+            hmac_new_feed()
+        with self.subTest('initial message is empty'):
+            hmac_new_feed(b'')
+        with self.subTest('initial message is None'):
+            hmac_new_feed(None)
+
+    def assert_hmac_cases(
+        self, key, msg, digest, hashimpl, hashname, digest_size, block_size
+    ):
+        """Extra tests that can be added in subclasses."""
+
+    def assert_hmac_digest(
+        self, key, msg, digest, digestmod, digest_size,
+    ):
+        d = self.hmac_digest(key, msg, digestmod=digestmod)
+        self.assertEqual(len(d), digest_size)
+        self.assertEqual(d, binascii.unhexlify(digest))
+
+    def assert_hmac_digest_by_new(
+        self, key, msg, digest, hashname, digest_size
+    ):
+        self.assertIsInstance(hashname, str | None)
+        d = self.hmac_digest_by_name(key, msg, hashname=hashname)
+        self.assertEqual(len(d), digest_size)
+        self.assertEqual(d, binascii.unhexlify(digest))
+
+
+class PyTestVectorsMixin(PyModuleMixin, TestVectorsMixin):
+
+    def assert_hmac_cases(
+        self, key, msg, digest, digestmod, hashname, digest_size, block_size
+    ):
+        h1 = self.hmac.HMAC(key, digestmod=digestmod)
+        h2 = h1.copy()
+        h2.update(b"test update should not affect original")
+        h1.update(msg)
+        self.check_object(h1, digest, hashname, digest_size, block_size)
+
+        h = self.hmac.HMAC.__new__(self.hmac.HMAC)
+        h._init_old(key, msg, digestmod=digestmod)
+        self.check_object(h, digest, hashname, digest_size, block_size)
+
+
+class OpenSSLTestVectorsMixin(TestVectorsMixin):
+
+    def hmac_new(self, key, msg=None, digestmod=None):
+        return _hashlib.hmac_new(key, msg, digestmod=digestmod)
+
+    def hmac_digest(self, key, msg=None, digestmod=None):
+        return _hashlib.hmac_digest(key, msg, digest=digestmod)
+
+    def hmac_new_by_name(self, key, msg=None, hashname=None):
+        # ignore 'digestmod' and use the exact openssl function
+        openssl_func = getattr(_hashlib, f"openssl_{hashname}")
+        return self.hmac_new(key, msg, digestmod=openssl_func)
+
+    def hmac_digest_by_name(self, key, msg=None, hashname=None):
+        openssl_func = getattr(_hashlib, f"openssl_{hashname}")
+        return self.hmac_digest(key, msg, digestmod=openssl_func)
+
+
 class TestVectorsTestCase(unittest.TestCase):
 
     def assert_hmac_internals(
