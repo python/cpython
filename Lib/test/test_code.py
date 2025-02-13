@@ -30,7 +30,7 @@ cellvars: ()
 freevars: ('x',)
 nlocals: 1
 flags: 19
-consts: ('None',)
+consts: ()
 
 >>> def h(x, y):
 ...     a = x + y
@@ -50,7 +50,7 @@ cellvars: ()
 freevars: ()
 nlocals: 5
 flags: 3
-consts: ('None',)
+consts: ()
 
 >>> def attrs(obj):
 ...     print(obj.attr1)
@@ -104,7 +104,7 @@ cellvars: ()
 freevars: ()
 nlocals: 3
 flags: 3
-consts: ('None',)
+consts: ()
 
 >>> def posonly_args(a,b,/,c):
 ...     return a,b,c
@@ -121,7 +121,7 @@ cellvars: ()
 freevars: ()
 nlocals: 3
 flags: 3
-consts: ('None',)
+consts: ()
 
 >>> def has_docstring(x: str):
 ...     'This is a one-line doc string'
