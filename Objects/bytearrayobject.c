@@ -5,7 +5,6 @@
 #include "pycore_bytes_methods.h"
 #include "pycore_bytesobject.h"
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
-#include "pycore_critical_section.h"
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
 #include "pycore_long.h"          // _PyLong_FromUnsignedChar()
@@ -2530,14 +2529,12 @@ bytearrayiter_next(PyObject *self)
     PyByteArrayObject *seq = it->it_seq;
     assert(PyByteArray_Check(seq));
 
-    Py_BEGIN_CRITICAL_SECTION(seq);
     if (index < PyByteArray_GET_SIZE(seq)) {
         val = (unsigned char)PyByteArray_AS_STRING(seq)[index];
     }
     else {
         val = -1;
     }
-    Py_END_CRITICAL_SECTION();
 
     if (val == -1) {
         FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, -1);
@@ -2581,11 +2578,9 @@ bytearrayiter_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyObject *ret = NULL;
     Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
     if (index >= 0) {
-        Py_BEGIN_CRITICAL_SECTION(it->it_seq);
         if (index <= PyByteArray_GET_SIZE(it->it_seq)) {
             ret = Py_BuildValue("N(O)n", iter, it->it_seq, index);
         }
-        Py_END_CRITICAL_SECTION();
     }
     if (ret == NULL) {
         ret = Py_BuildValue("N(())", iter);
