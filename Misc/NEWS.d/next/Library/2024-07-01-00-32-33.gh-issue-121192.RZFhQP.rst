@@ -1,0 +1,2 @@
+Add fast path to :func:`copy.deepcopy` for empty lists, tuples, dicts, sets
+or frozensets.
