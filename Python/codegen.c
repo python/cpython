@@ -5359,6 +5359,126 @@ codegen_slice(compiler *c, expr_ty s)
 #define MATCH_VALUE_EXPR(N) \
     ((N)->kind == Constant_kind || (N)->kind == Attribute_kind)
 
+#define IS_CONST_EXPR(N) \
+    ((N)->kind == Constant_kind)
+
+#define CONST_EXPR_VALUE(N) \
+    ((N)->v.Constant.value)
+
+#define IS_COMPLEX_CONST_EXPR(N) \
+    (IS_CONST_EXPR(N) && PyComplex_CheckExact(CONST_EXPR_VALUE(N)))
+
+#define IS_NUMERIC_CONST_EXPR(N) \
+    (IS_CONST_EXPR(N) && (PyLong_CheckExact(CONST_EXPR_VALUE(N)) || PyFloat_CheckExact(CONST_EXPR_VALUE(N))))
+
+#define IS_UNARY_EXPR(N) \
+    ((N)->kind == UnaryOp_kind)
+
+#define UNARY_EXPR_OP(N) \
+    ((N)->v.UnaryOp.op)
+
+#define UNARY_EXPR_OPERAND(N) \
+    ((N)->v.UnaryOp.operand)
+
+#define UNARY_EXPR_OPERAND_CONST_VALUE(N) \
+    (CONST_EXPR_VALUE(UNARY_EXPR_OPERAND(N)))
+
+#define IS_UNARY_SUB_EXPR(N) \
+    (IS_UNARY_EXPR(N) && UNARY_EXPR_OP(N) == USub)
+
+#define IS_NUMERIC_UNARY_CONST_EXPR(N) \
+    (IS_UNARY_SUB_EXPR(N) && IS_NUMERIC_CONST_EXPR(UNARY_EXPR_OPERAND(N)))
+
+#define IS_COMPLEX_UNARY_CONST_EXPR(N) \
+    (IS_UNARY_SUB_EXPR(N) && IS_COMPLEX_CONST_EXPR(UNARY_EXPR_OPERAND(N)))
+
+#define BINARY_EXPR(N) \
+    ((N)->v.BinOp)
+
+#define BINARY_EXPR_OP(N) \
+    (BINARY_EXPR(N).op)
+
+#define BINARY_EXPR_LEFT(N) \
+    (BINARY_EXPR(N).left)
+
+#define BINARY_EXPR_RIGHT(N) \
+    (BINARY_EXPR(N).right)
+
+#define IS_BINARY_EXPR(N) \
+    ((N)->kind == BinOp_kind)
+
+#define IS_BINARY_ADD_EXPR(N) \
+    (IS_BINARY_EXPR(N) && BINARY_EXPR_OP(N) == Add)
+
+#define IS_BINARY_SUB_EXPR(N) \
+    (IS_BINARY_EXPR(N) && BINARY_EXPR_OP(N) == Sub)
+
+#define IS_MATCH_NUMERIC_OR_COMPLEX_UNARY_CONST_EXPR(N) \
+    (IS_NUMERIC_UNARY_CONST_EXPR(N) || IS_COMPLEX_UNARY_CONST_EXPR(N))
+
+#define IS_MATCH_COMPLEX_BINARY_CONST_EXPR(N) \
+    ( \
+        (IS_BINARY_ADD_EXPR(N) || IS_BINARY_SUB_EXPR(N)) \
+        && (IS_NUMERIC_UNARY_CONST_EXPR(BINARY_EXPR_LEFT(N)) || IS_CONST_EXPR(BINARY_EXPR_LEFT(N))) \
+        && IS_COMPLEX_CONST_EXPR(BINARY_EXPR_RIGHT(N)) \
+    )
+
+static void
+fold_node(expr_ty node, PyObject *folded)
+{
+    assert(!IS_CONST_EXPR(node));
+    node->kind = Constant_kind;
+    node->v.Constant.kind = NULL;
+    node->v.Constant.value = folded;
+}
+
+static int
+fold_const_unary_or_complex_expr(expr_ty e)
+{
+    assert(IS_MATCH_NUMERIC_OR_COMPLEX_UNARY_CONST_EXPR(e));
+    PyObject *constant = UNARY_EXPR_OPERAND_CONST_VALUE(e);
+    assert(UNARY_EXPR_OP(e) == USub);
+    PyObject* folded = PyNumber_Negative(constant);
+    if (folded == NULL) {
+        return ERROR;
+    }
+    fold_node(e, folded);
+    return SUCCESS;
+}
+
+static int
+fold_const_binary_complex_expr(expr_ty e)
+{
+    assert(IS_MATCH_COMPLEX_BINARY_CONST_EXPR(e));
+    expr_ty left_expr = BINARY_EXPR_LEFT(e);
+    if (IS_NUMERIC_UNARY_CONST_EXPR(left_expr)) {
+        RETURN_IF_ERROR(fold_const_unary_or_complex_expr(left_expr));
+    }
+    assert(IS_CONST_EXPR(BINARY_EXPR_LEFT(e)));
+    operator_ty op = BINARY_EXPR_OP(e);
+    PyObject *left = CONST_EXPR_VALUE(BINARY_EXPR_LEFT(e));
+    PyObject *right = CONST_EXPR_VALUE(BINARY_EXPR_RIGHT(e));
+    assert(op == Add || op == Sub);
+    PyObject *folded = op == Add ? PyNumber_Add(left, right) : PyNumber_Subtract(left, right);
+    if (folded == NULL) {
+        return ERROR;
+    }
+    fold_node(e, folded);
+    return SUCCESS;
+}
+
+static int
+try_fold_unary_or_binary_complex_const_expr(expr_ty e)
+{
+    if (IS_MATCH_NUMERIC_OR_COMPLEX_UNARY_CONST_EXPR(e)) {
+        return fold_const_unary_or_complex_expr(e);
+    }
+    if (IS_MATCH_COMPLEX_BINARY_CONST_EXPR(e)) {
+        return fold_const_binary_complex_expr(e);
+    }
+    return SUCCESS;
+}
+
 // Allocate or resize pc->fail_pop to allow for n items to be popped on failure.
 static int
 ensure_fail_pop(compiler *c, pattern_context *pc, Py_ssize_t n)
@@ -5688,7 +5808,7 @@ codegen_pattern_mapping_key(compiler *c, PyObject *seen, pattern_ty p, Py_ssize_
         location loc = LOC((pattern_ty) asdl_seq_GET(patterns, i));
         return _PyCompile_Error(c, loc, e);
     }
-
+    RETURN_IF_ERROR(try_fold_unary_or_binary_complex_const_expr(key));
     if (key->kind == Constant_kind) {
         int in_seen = PySet_Contains(seen, key->v.Constant.value);
         RETURN_IF_ERROR(in_seen);
@@ -6022,6 +6142,7 @@ codegen_pattern_value(compiler *c, pattern_ty p, pattern_context *pc)
 {
     assert(p->kind == MatchValue_kind);
     expr_ty value = p->v.MatchValue.value;
+    RETURN_IF_ERROR(try_fold_unary_or_binary_complex_const_expr(value));
     if (!MATCH_VALUE_EXPR(value)) {
         const char *e = "patterns may only match literals and attribute lookups";
         return _PyCompile_Error(c, LOC(p), e);

@@ -89,6 +89,13 @@ class CompilationStepTestCase(unittest.TestCase):
             idx = max([p[0] for p in enumerate(exp) if p[1] != -1])
             self.assertEqual(exp[:idx], act[:idx])
 
+    def assertNotInInstructionSequence(self, seq, expected_opcode):
+        self.assertIn(expected_opcode, dis.opmap)
+        for instr in seq.get_instructions():
+            opcode, *_ = instr
+            if dis.opmap[expected_opcode] == opcode:
+                self.fail(f"{expected_opcode} appears in instructions sequence.")
+
     def resolveAndRemoveLabels(self, insts):
         idx = 0
         res = []
@@ -138,8 +145,8 @@ class CompilationStepTestCase(unittest.TestCase):
 @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
 class CodegenTestCase(CompilationStepTestCase):
 
-    def generate_code(self, ast):
-        insts, _ = _testinternalcapi.compiler_codegen(ast, "my_file.py", 0)
+    def generate_code(self, ast, optimize_ast=True):
+        insts, _ = _testinternalcapi.compiler_codegen(ast, "my_file.py", 0, 0, optimize_ast)
         return insts
 
 

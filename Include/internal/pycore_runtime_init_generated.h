@@ -1122,6 +1122,7 @@ extern "C" {
     INIT_ID(opener), \
     INIT_ID(operation), \
     INIT_ID(optimize), \
+    INIT_ID(optimize_ast), \
     INIT_ID(options), \
     INIT_ID(order), \
     INIT_ID(origin), \
