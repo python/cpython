@@ -32,10 +32,8 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
         def callback():
             global return_code
             global repl_future
-            global keyboard_interrupted
 
             repl_future = None
-            keyboard_interrupted = False
 
             func = types.FunctionType(code, self.locals)
             try:
@@ -45,7 +43,6 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
                 self.loop.stop()
                 return
             except KeyboardInterrupt as ex:
-                keyboard_interrupted = True
                 future.set_exception(ex)
                 return
             except BaseException as ex:
@@ -71,10 +68,7 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
             self.loop.stop()
             return
         except BaseException:
-            if keyboard_interrupted:
-                self.write("\nKeyboardInterrupt\n")
-            else:
-                self.showtraceback()
+            self.showtraceback()
 
 
 class REPLThread(threading.Thread):
@@ -160,7 +154,6 @@ if __name__ == '__main__':
     console = AsyncIOInteractiveConsole(repl_locals, loop)
 
     repl_future = None
-    keyboard_interrupted = False
 
     try:
         import readline  # NoQA
@@ -192,7 +185,6 @@ if __name__ == '__main__':
         try:
             loop.run_forever()
         except KeyboardInterrupt:
-            keyboard_interrupted = True
             if repl_future and not repl_future.done():
                 repl_future.cancel()
             repl_thread.interrupt()
