@@ -2161,6 +2161,14 @@ class SectionlessTestCase(unittest.TestCase):
         self.assertEqual('1', cfg2[configparser.UNNAMED_SECTION]['a'])
         self.assertEqual('2', cfg2[configparser.UNNAMED_SECTION]['b'])
 
+    def test_empty_unnamed_section(self):
+        cfg = configparser.ConfigParser(allow_unnamed_section=True)
+        cfg.add_section(configparser.UNNAMED_SECTION)
+        cfg.add_section('section')
+        output = io.StringIO()
+        cfg.write(output)
+        self.assertEqual(output.getvalue(), '[section]\n\n')
+
     def test_add_section(self):
         cfg = configparser.ConfigParser(allow_unnamed_section=True)
         cfg.add_section(configparser.UNNAMED_SECTION)
