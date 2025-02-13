@@ -1,2 +1,2 @@
 Clarify syntax error messages for conditional expressions if statement
-specified in body and orelse parts.
+specified before ``if`` or after ``else`` keywords.

@@ -174,26 +174,30 @@ Improved error messages
          ^^^^^^^
      ValueError: too many values to unpack (expected 3, got 4)
 
-* If a statement (:keyword:`!pass`, :keyword:`!del`, :keyword:`!return`, :keyword:`!yield`,
-  :keyword:`!raise`, :keyword:`!break`, :keyword:`!continue`, :keyword:`!assert`)
-  is passed to the :ref:`if_expr`, then the error message highlights where
-  the :token:`~python-grammar:expression` is required.
 
-  .. code-block:: pycon
+* If a statement (:keyword:`pass`, :keyword:`del`, :keyword:`return`,
+  :keyword:`yield`, :keyword:`raise`, :keyword:`break`, :keyword:`continue`,
+  :keyword:`assert`, :keyword:`import`, :keyword:`from`) is passed to the
+  :ref:`if_expr` after :keyword:`else`, or one of the :keyword:`pass`,
+  :keyword:`break`, :keyword:`continue` is passed before :keyword:`if`, then the
+  error message highlights where the :token:`~python-grammar:expression` is
+  required. (Contributed by Sergey Miryanov in :gh:`129515`.)
+
+  .. code-block:: python
 
      >>> x = 1 if True else pass
      Traceback (most recent call last):
        File "<string>", line 1
          x = 1 if True else pass
                             ^^^^
-     SyntaxError: statement given where 'orelse' expression required
+     SyntaxError: expected expression after 'else', but statement is given
 
      >>> x = continue if True else break
      Traceback (most recent call last):
        File "<string>", line 1
          x = continue if True else break
              ^^^^^^^^
-     SyntaxError: statement given where 'body' expression required
+     SyntaxError: expected expression before 'if', but statement is given
 
 
 * When incorrectly closed strings are detected, the error message suggests

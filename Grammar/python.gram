@@ -1196,11 +1196,10 @@ invalid_expression:
         _PyPegen_check_legacy_stmt(p, a) ? NULL : p->tokens[p->mark-1]->level == 0 ? NULL :
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Perhaps you forgot a comma?") }
    | a=disjunction 'if' b=disjunction !('else'|':') { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "expected 'else' after 'if' expression") }
-   | a=disjunction 'if' b=disjunction 'else' c[stmt_ty]=(
-        return_stmt | raise_stmt | pass_stmt | del_stmt | yield_stmt | assert_stmt | break_stmt | continue_stmt) {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION (c, "statement given where 'orelse' expression required") }
+   | a=disjunction 'if' b=disjunction 'else' !expression {
+        RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("expected expression after 'else', but statement is given") }
    | a[stmt_ty]=(pass_stmt|break_stmt|continue_stmt) 'if' b=disjunction 'else' c=simple_stmt {
-        RAISE_SYNTAX_ERROR_KNOWN_LOCATION (a, "statement given where 'body' expression required") }
+        RAISE_SYNTAX_ERROR_KNOWN_LOCATION (a, "expected expression before 'if', but statement is given") }
    | a='lambda' [lambda_params] b=':' &FSTRING_MIDDLE  {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "f-string: lambda expressions are not allowed without parentheses") }
 

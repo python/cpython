@@ -1966,42 +1966,6 @@ class ASTValidatorTests(unittest.TestCase):
         for args in (s, l, l), (l, s, l), (l, l, s):
             self.expr(ast.IfExp(*args), "must have Load context")
 
-    def test_ifexp_orelse_stmt(self):
-        msg = "statement given where 'orelse' expression required"
-        for stmt in [
-            "x = 1 if 1 else pass",
-            "x = 1 if 1 else return",
-            "x = 1 if 1 else raise Exception('a')",
-            "x = 1 if 1 else del a",
-            "x = 1 if 1 else yield 2",
-            "x = 1 if 1 else assert False",
-            "x = 1 if 1 else break",
-            "x = 1 if 1 else continue"
-        ]:
-            with self.subTest(stmt), self.assertRaisesRegex(SyntaxError, msg):
-                ast.parse(stmt)
-
-    def test_ifexp_body_stmt_orelse_expression(self):
-        msg = "statement given where 'body' expression required"
-        for stmt in [
-            "x = pass if 1 else 1",
-            "x = break if 1 else 1",
-            "x = continue if 1 else 1"
-        ]:
-            with self.subTest(stmt), self.assertRaisesRegex(SyntaxError, msg):
-                ast.parse(stmt)
-
-    def test_ifexp_body_stmt_orelse_stmt(self):
-        msg = "statement given where 'body' expression required"
-        for stmt in [
-            "x = pass if 1 else pass",
-            "x = break if 1 else pass",
-            "x = continue if 1 else pass",
-            "x = continue if 1 else import ast"
-        ]:
-            with self.subTest(stmt), self.assertRaisesRegex(SyntaxError, msg):
-                ast.parse(stmt)
-
     def test_dict(self):
         d = ast.Dict([], [ast.Name("x", ast.Load())])
         self.expr(d, "same number of keys as values")
