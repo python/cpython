@@ -666,16 +666,16 @@ def get_platform():
 
     # Set for cross builds explicitly
     if "_PYTHON_HOST_PLATFORM" in os.environ:
-        return os.environ["_PYTHON_HOST_PLATFORM"]
+        osname, _, machine = os.environ["_PYTHON_HOST_PLATFORM"].partition('-')
+    else:
+        # Try to distinguish various flavours of Unix
+        osname, host, release, version, machine = os.uname()
 
-    # Try to distinguish various flavours of Unix
-    osname, host, release, version, machine = os.uname()
-
-    # Convert the OS name to lowercase, remove '/' characters, and translate
-    # spaces (for "Power Macintosh")
-    osname = osname.lower().replace('/', '')
-    machine = machine.replace(' ', '_')
-    machine = machine.replace('/', '-')
+        # Convert the OS name to lowercase, remove '/' characters, and translate
+        # spaces (for "Power Macintosh")
+        osname = osname.lower().replace('/', '')
+        machine = machine.replace(' ', '_')
+        machine = machine.replace('/', '-')
 
     if osname[:5] == "linux":
         if sys.platform == "android":
