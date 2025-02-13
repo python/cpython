@@ -5,7 +5,7 @@ import sysconfig
 import string
 import unittest
 
-from test.support import is_emscripten, is_wasi
+from test.support import is_android, is_apple_mobile, is_emscripten, is_wasi
 
 
 class FormatTestsBase:
@@ -117,6 +117,7 @@ class CPythonBuildDetailsTests(unittest.TestCase, FormatTestsBase):
     # Override generic format tests with tests for our specific implemenation.
 
     @needs_installed_python
+    @unittest.skipIf(is_android or is_apple_mobile, 'Android and iOS run tests via a custom testbed method that changes sys.executable')
     def test_base_interpreter(self):
         value = self.key('base_interpreter')
 
