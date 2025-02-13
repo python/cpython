@@ -390,7 +390,7 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
         /* Overflowing while handling an overflow. Give up. */
         int kbytes_used = (tstate->c_stack_top - here_addr)/1024;
         char buffer[80];
-        snprintf(buffer, 80, "Unrecoverable stack overflow (used %dkb)%s", kbytes_used, where);
+        snprintf(buffer, 80, "Unrecoverable stack overflow (used %d kB)%s", kbytes_used, where);
         Py_FatalError(buffer);
     }
     if (tstate->recursion_headroom) {
@@ -400,7 +400,7 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
         int kbytes_used = (tstate->c_stack_top - here_addr)/1024;
         tstate->recursion_headroom++;
         _PyErr_Format(tstate, PyExc_RecursionError,
-                    "Stack overflow (used %dkb)S%s",
+                    "Stack overflow (used %d kB)%s",
                     kbytes_used,
                     where);
         tstate->recursion_headroom--;
