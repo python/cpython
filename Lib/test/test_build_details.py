@@ -75,7 +75,6 @@ class FormatTestsBase:
         for key, value in self.key('implementation').items():
             with self.subTest(part=key):
                 if key == 'version':
-                    # XXX: Actually compare the values.
                     self.assertEqual(len(value), len(sys.implementation.version))
                     for part_name, part_value in value.items():
                         self.assertEqual(getattr(sys.implementation.version, part_name), part_value)
