@@ -2,7 +2,7 @@ import collections.abc
 import copy
 import pickle
 import unittest
-from test.support import skip_emscripten_stack_overflow
+from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow
 
 class DictSetTest(unittest.TestCase):
 
@@ -277,6 +277,7 @@ class DictSetTest(unittest.TestCase):
         # Again.
         self.assertIsInstance(r, str)
 
+    @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_deeply_nested_repr(self):
         d = {}

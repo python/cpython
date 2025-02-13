@@ -594,6 +594,7 @@ class DictTest(unittest.TestCase):
         d = {1: BadRepr()}
         self.assertRaises(Exc, repr, d)
 
+    @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     def test_repr_deep(self):
         d = {}

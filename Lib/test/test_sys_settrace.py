@@ -3042,11 +3042,11 @@ class TestExtendedArgs(unittest.TestCase):
                 return (
                     {}
                 )
-        """.format("\n+\n".join(f"var{i}\n" for i in range(count)))
+        """.format("\n,\n".join(f"var{i}\n" for i in range(count)))
         ns = {f"var{i}": i for i in range(count)}
         exec(code, ns)
         counts = self.count_traces(ns["f"])
-        self.assertEqual(counts, {'call': 1, 'line': count * 2, 'return': 1})
+        self.assertEqual(counts, {'call': 1, 'line': count * 2 + 1, 'return': 1})
 
 
 class TestEdgeCases(unittest.TestCase):

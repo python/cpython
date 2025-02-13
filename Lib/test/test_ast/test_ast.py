@@ -18,7 +18,8 @@ except ImportError:
     _testinternalcapi = None
 
 from test import support
-from test.support import os_helper, script_helper, skip_emscripten_stack_overflow
+from test.support import os_helper, script_helper
+from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow
 from test.support.ast_helper import ASTTestMixin
 from test.test_ast.utils import to_tuple
 from test.test_ast.snippets import (
@@ -745,6 +746,7 @@ class AST_Tests(unittest.TestCase):
         enum._test_simple_enum(_Precedence, ast._Precedence)
 
     @support.cpython_only
+    @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
         crash_depth = 200_000
