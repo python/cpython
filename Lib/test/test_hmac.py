@@ -2,6 +2,7 @@ import binascii
 import functools
 import hmac
 import hashlib
+import random
 import test.support.hashlib_helper as hashlib_helper
 import unittest
 import unittest.mock
@@ -626,12 +627,47 @@ class SanityTestCase(unittest.TestCase):
             self.fail("Exception raised during normal usage of HMAC class.")
 
 
-class UpdateTestCase(unittest.TestCase):
-    @hashlib_helper.requires_hashdigest('sha256')
-    def test_with_str_update(self):
-        with self.assertRaises(TypeError):
-            h = hmac.new(b"key", digestmod='sha256')
-            h.update("invalid update")
+class UpdateTestCaseMixin:
+
+    def HMAC(self, key, msg=None):
+        raise NotImplementedError
+
+    def test_update(self):
+        key, msg = random.randbytes(16), random.randbytes(16)
+        with self.subTest(key=key, msg=msg):
+            h1 = self.HMAC(key, msg)
+
+            h2 = self.HMAC(key)
+            h2.update(msg)
+
+            self.assertEqual(h1.digest(), h2.digest())
+            self.assertEqual(h1.hexdigest(), h2.hexdigest())
+
+    def test_update_exceptions(self):
+        h = self.HMAC(b"key")
+        for msg in ['invalid msg', 123, (), []]:
+            with self.subTest(msg=msg):
+                self.assertRaises(TypeError, h.update, msg)
+
+
+@hashlib_helper.requires_hashdigest('sha256')
+class PyUpdateTestCase(UpdateTestCaseMixin, unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.hmac = import_fresh_module('hmac', blocked=['_hashlib'])
+
+    def HMAC(self, key, msg=None):
+        return self.hmac.HMAC(key, msg, digestmod='sha256')
+
+
+@hashlib_helper.requires_hashlib()
+@hashlib_helper.requires_hashdigest('sha256', openssl=True)
+class OpenSSLUpdateTestCase(UpdateTestCaseMixin, unittest.TestCase):
+
+    def HMAC(self, key, msg=None):
+        return hmac.new(key, msg, digestmod='sha256')
 
 
 @hashlib_helper.requires_hashdigest('sha256')
