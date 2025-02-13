@@ -985,13 +985,6 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(result, 2520)
 
         # should fail: closure isn't allowed
-        # when source is a string
-        self.assertRaises(TypeError,
-            exec,
-            "pass",
-            closure=my_closure)
-
-        # should fail: closure isn't allowed
         # for functions without free vars
         self.assertRaises(TypeError,
             exec,
@@ -1019,6 +1012,20 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             exec,
             three_freevars.__code__,
             three_freevars.__globals__,
+            closure=my_closure)
+
+        # should fail: incorrect closure isn't allowed
+        # when source is a string
+        self.assertRaises(TypeError,
+            exec,
+            "pass",
+            closure=object())
+
+        # should fail: correct closure isn't allowed
+        # when source is a string
+        self.assertRaises(TypeError,
+            exec,
+            "pass",
             closure=my_closure)
 
         # should fail: closure tuple with one non-cell-var
