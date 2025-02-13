@@ -34,7 +34,6 @@ import queue
 import re
 import struct
 import threading
-import traceback
 
 from socketserver import ThreadingTCPServer, StreamRequestHandler
 
@@ -994,6 +993,7 @@ def listen(port=DEFAULT_LOGGING_CONFIG_PORT, verify=None):
                             try:
                                 fileConfig(file)
                             except Exception:
+                                import traceback
                                 traceback.print_exc()
                     if self.server.ready:
                         self.server.ready.set()

@@ -7,7 +7,6 @@
 
 import builtins
 import sys
-import traceback
 from codeop import CommandCompiler, compile_command
 
 __all__ = ["InteractiveInterpreter", "InteractiveConsole", "interact",
@@ -161,6 +160,7 @@ class InteractiveInterpreter:
     def _excepthook(self, typ, value, tb):
         # This method is being overwritten in
         # _pyrepl.console.InteractiveColoredConsole
+        import traceback
         lines = traceback.format_exception(typ, value, tb)
         self.write(''.join(lines))
 
