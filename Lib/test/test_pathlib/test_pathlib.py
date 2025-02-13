@@ -75,7 +75,7 @@ class UnsupportedOperationTest(unittest.TestCase):
 # Tests for the pure classes.
 #
 
-class PurePathTest(test_pathlib_abc.DummyJoinablePathTest):
+class PurePathTest(test_pathlib_abc.JoinablePathTest):
     cls = pathlib.PurePath
 
     # Make sure any symbolic links in the base test path are resolved.
@@ -1002,7 +1002,7 @@ class PurePathSubclassTest(PurePathTest):
 # Tests for the concrete classes.
 #
 
-class PathTest(test_pathlib_abc.DummyRWPathTest, PurePathTest):
+class PathTest(test_pathlib_abc.RWPathTest, PurePathTest):
     """Tests for the FS-accessing functionalities of the Path classes."""
     cls = pathlib.Path
     can_symlink = os_helper.can_symlink()
@@ -3119,7 +3119,7 @@ class PathTest(test_pathlib_abc.DummyRWPathTest, PurePathTest):
             P('c:/').group()
 
 
-class PathWalkTest(test_pathlib_abc.DummyReadablePathWalkTest):
+class PathWalkTest(test_pathlib_abc.ReadablePathWalkTest):
     cls = pathlib.Path
     base = PathTest.base
     can_symlink = PathTest.can_symlink
