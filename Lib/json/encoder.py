@@ -295,24 +295,24 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             separator = _item_separator
         for i, value in enumerate(lst):
             if i:
-                buf = separator
+                buf += separator
             try:
                 if isinstance(value, str):
-                    yield buf + _encoder(value)
+                    buf += _encoder(value)
                 elif value is None:
-                    yield buf + 'null'
+                    buf += 'null'
                 elif value is True:
-                    yield buf + 'true'
+                    buf += 'true'
                 elif value is False:
-                    yield buf + 'false'
+                    buf += 'false'
                 elif isinstance(value, int):
                     # Subclasses of int/float may override __repr__, but we still
                     # want to encode them as integers/floats in JSON. One example
                     # within the standard library is IntEnum.
-                    yield buf + _intstr(value)
+                    buf += _intstr(value)
                 elif isinstance(value, float):
                     # see comment above for int
-                    yield buf + _floatstr(value)
+                    buf += _floatstr(value)
                 else:
                     yield buf
                     if isinstance(value, (list, tuple)):
@@ -322,11 +322,19 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                     else:
                         chunks = _iterencode(value, _current_indent_level)
                     yield from chunks
+                    buf = ''
+                if len(buf)> 1024:
+                    yield buf
+                    buf = ''
+
             except GeneratorExit:
+                yield buf
                 raise
             except BaseException as exc:
+                yield buf
                 exc.add_note(f'when serializing {type(lst).__name__} item {i}')
                 raise
+        yield buf
         if newline_indent is not None:
             _current_indent_level -= 1
             yield '\n' + _indent * _current_indent_level
