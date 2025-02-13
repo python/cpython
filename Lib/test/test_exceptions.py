@@ -2303,7 +2303,7 @@ class SyntaxErrorTests(unittest.TestCase):
         )
         err = run_script(source.encode('cp437'))
         self.assertEqual(err[-3], '    "┬ó┬ó┬ó┬ó┬ó┬ó" + f(4, x for x in range(1))')
-        self.assertEqual(err[-2], '                          ^^^^^^^^^^^^^^^^^^^')
+        self.assertEqual(err[-2], '                            ^^^')
 
         # Check backwards tokenizer errors
         source = '# -*- coding: ascii -*-\n\n(\n'
