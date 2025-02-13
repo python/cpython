@@ -36,6 +36,7 @@ extern int _PyCompile_AstOptimize(
 extern int _PyAST_Optimize(
     struct _mod *,
     struct _arena *arena,
+    PyObject *filename,
     int optimize,
     int ff_features);
 
