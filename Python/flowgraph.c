@@ -1429,10 +1429,10 @@ fold_tuple_of_constants(basicblock *bb, int n, PyObject *consts, PyObject *const
 
 #define MIN_CONST_SEQUENCE_SIZE 3
 /*
-Optimize literal list/set for:
+Optimize lists and sets for:
     1. "for" loop, comprehension or "in"/"not in" tests:
            Change literal list or set of constants into constant
-           tuple or frozenset respectively. Change literal list of
+           tuple or frozenset respectively. Change list of
            non-constants into tuple.
     2. Constant literal lists/set with length >= MIN_CONST_SEQUENCE_SIZE:
            Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cN, BUILD_LIST N
@@ -1440,24 +1440,23 @@ Optimize literal list/set for:
            or BUILD_SET & SET_UPDATE respectively.
 */
 static int
-optimize_list_or_set_literal(basicblock *bb, int i, int nextop,
-                             PyObject *consts, PyObject *const_cache)
+optimize_lists_and_sets(basicblock *bb, int i, int nextop,
+                        PyObject *consts, PyObject *const_cache)
 {
     assert(PyDict_CheckExact(const_cache));
     assert(PyList_CheckExact(consts));
     cfg_instr *instr = &bb->b_instr[i];
     assert(instr->i_opcode == BUILD_LIST || instr->i_opcode == BUILD_SET);
-    bool contains_or_iter_literal = nextop == GET_ITER || nextop == CONTAINS_OP;
+    bool contains_or_iter = nextop == GET_ITER || nextop == CONTAINS_OP;
     int seq_size = instr->i_oparg;
-    if (seq_size < MIN_CONST_SEQUENCE_SIZE && !contains_or_iter_literal) {
+    if (seq_size < MIN_CONST_SEQUENCE_SIZE && !contains_or_iter) {
         return SUCCESS;
     }
     PyObject *newconst;
     RETURN_IF_ERROR(get_constant_sequence(bb, i-1, seq_size, consts, &newconst));
-    if (newconst == NULL) {
-        /* not a const sequence */
-        if (contains_or_iter_literal && instr->i_opcode == BUILD_LIST) {
-            /* convert list iterable to tuple */
+    if (newconst == NULL) {    /* not a const sequence */
+        if (contains_or_iter && instr->i_opcode == BUILD_LIST) {
+            /* iterate over a tuple instead of list */
             INSTR_SET_OP1(instr, BUILD_TUPLE, instr->i_oparg);
         }
         return SUCCESS;
@@ -1474,11 +1473,12 @@ optimize_list_or_set_literal(basicblock *bb, int i, int nextop,
     int index = add_const(newconst, consts, const_cache);
     RETURN_IF_ERROR(index);
     nop_out(bb, i-1, seq_size);
-    if (contains_or_iter_literal) {
+    if (contains_or_iter) {
         INSTR_SET_OP1(instr, LOAD_CONST, index);
     }
     else {
         assert(i >= 2);
+        assert(instr->i_opcode == BUILD_LIST || instr->i_opcode == BUILD_SET);
         INSTR_SET_OP1(&bb->b_instr[i-2], instr->i_opcode, 0);
         INSTR_SET_OP1(&bb->b_instr[i-1], LOAD_CONST, index);
         INSTR_SET_OP1(&bb->b_instr[i], instr->i_opcode == BUILD_LIST ? LIST_EXTEND : SET_UPDATE, 1);
@@ -1939,7 +1939,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 break;
             case BUILD_LIST:
             case BUILD_SET:
-                RETURN_IF_ERROR(optimize_list_or_set_literal(bb, i, nextop, consts, const_cache));
+                RETURN_IF_ERROR(optimize_lists_and_sets(bb, i, nextop, consts, const_cache));
                 break;
             case POP_JUMP_IF_NOT_NONE:
             case POP_JUMP_IF_NONE:
