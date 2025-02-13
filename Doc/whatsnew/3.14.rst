@@ -1,4 +1,3 @@
-
 ****************************
   What's new in Python 3.14
 ****************************
@@ -166,7 +165,7 @@ Improved error messages
   error message prints the received number of values in more cases than before.
   (Contributed by Tushar Sadhwani in :gh:`122239`.)
 
-  .. code-block:: pycon
+  .. code-block:: python
 
      >>> x, y, z = 1, 2, 3, 4
      Traceback (most recent call last):
@@ -174,6 +173,17 @@ Improved error messages
          x, y, z = 1, 2, 3, 4
          ^^^^^^^
      ValueError: too many values to unpack (expected 3, got 4)
+
+
+* When incorrectly closed strings are detected, the error message suggests
+  that the string may be intended to be part of the string. (Contributed by
+  Pablo Galindo in :gh:`88535`.)
+
+  .. code-block:: python
+
+    >>> "The interesting object "The important object" is very important"
+    Traceback (most recent call last):
+    SyntaxError: invalid syntax. Is this intended to be part of the string?
 
 
 .. _whatsnew314-pep741:
@@ -361,6 +371,13 @@ concurrent.futures
   incompatible *fork* start method you must explicitly request it by
   supplying a *mp_context* to :class:`concurrent.futures.ProcessPoolExecutor`.
   (Contributed by Gregory P.  Smith in :gh:`84559`.)
+
+contextvars
+-----------
+
+* Support context manager protocol by :class:`contextvars.Token`.
+  (Contributed by Andrew Svetlov in :gh:`129889`.)
+
 
 ctypes
 ------

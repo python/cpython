@@ -1612,7 +1612,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     else {
         PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
         if (dictptr != NULL) {
-            dict = *dictptr;
+            dict = FT_ATOMIC_LOAD_PTR_ACQUIRE(*dictptr);
         }
         else {
             dict = NULL;
@@ -2994,6 +2994,11 @@ _Py_Dealloc(PyObject *op)
     destructor dealloc = type->tp_dealloc;
 #ifdef Py_DEBUG
     PyThreadState *tstate = _PyThreadState_GET();
+#ifndef Py_GIL_DISABLED
+    /* This assertion doesn't hold for the free-threading build, as
+     * PyStackRef_CLOSE_SPECIALIZED is not implemented */
+    assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
+#endif
     PyObject *old_exc = tstate != NULL ? tstate->current_exception : NULL;
     // Keep the old exception type alive to prevent undefined behavior
     // on (tstate->curexc_type != old_exc_type) below
