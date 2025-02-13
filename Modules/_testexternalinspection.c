@@ -232,15 +232,15 @@ search_map_for_section(pid_t pid, const char* secname, const char* substr) {
                    &count,
                    &object_name) == KERN_SUCCESS)
     {
-        int path_len = proc_regionfilename(
-            pid, address, map_filename, MAXPATHLEN);
-        if (path_len == 0) {
+        if ((region_info.protection & VM_PROT_READ) == 0
+            || (region_info.protection & VM_PROT_EXECUTE) == 0) {
             address += size;
             continue;
         }
 
-        if ((region_info.protection & VM_PROT_READ) == 0
-            || (region_info.protection & VM_PROT_EXECUTE) == 0) {
+        int path_len = proc_regionfilename(
+            pid, address, map_filename, MAXPATHLEN);
+        if (path_len == 0) {
             address += size;
             continue;
         }
@@ -382,6 +382,10 @@ search_map_for_section(pid_t pid, const char* secname, const char* map)
                 first_load_segment->p_vaddr % first_load_segment->p_align
             );
         result = start_address + (uintptr_t)section->sh_addr - elf_load_addr;
+    }
+    else {
+        PyErr_Format(PyExc_KeyError,
+                     "cannot find map for section %s", secname);
     }
 
 exit:
@@ -774,6 +778,7 @@ parse_coro_chain(
     }
 
     if (PyList_Append(render_to, name)) {
+        Py_DECREF(name);
         return -1;
     }
     Py_DECREF(name);
@@ -951,7 +956,6 @@ parse_task(
     if (PyList_Append(render_to, result)) {
         goto err;
     }
-    Py_DECREF(result);
 
     PyObject *awaited_by = PyList_New(0);
     if (awaited_by == NULL) {
@@ -969,6 +973,7 @@ parse_task(
     ) {
         goto err;
     }
+    Py_DECREF(result);
 
     return 0;
 
@@ -1523,6 +1528,7 @@ get_async_stack_trace(PyObject* self, PyObject* args)
     }
     PyObject* calls = PyList_New(0);
     if (calls == NULL) {
+        Py_DECREF(result);
         return NULL;
     }
     if (PyList_SetItem(result, 0, calls)) { /* steals ref to 'calls' */
