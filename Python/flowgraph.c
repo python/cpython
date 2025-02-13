@@ -2506,7 +2506,7 @@ ref_stack_fini(ref_stack *stack)
 }
 
 static void
-kill_local(bool *has_killed_refs, Py_ssize_t size, ref_stack *refs, int local)
+kill_local(bool *has_killed_refs, ref_stack *refs, int local)
 {
     for (Py_ssize_t i = 0; i < refs->size; i++) {
         ref r = ref_stack_at(refs, i);
@@ -2613,14 +2613,14 @@ optimize_load_fast(cfg_builder *g)
                 }
 
                 case STORE_FAST: {
-                    kill_local(has_killed_refs, block->b_iused, &refs, oparg);
+                    kill_local(has_killed_refs, &refs, oparg);
                     ref_stack_pop(&refs);
                     break;
                 }
 
                 case STORE_FAST_STORE_FAST: {
-                    kill_local(has_killed_refs, block->b_iused, &refs, oparg >> 4);
-                    kill_local(has_killed_refs, block->b_iused, &refs, oparg & 15);
+                    kill_local(has_killed_refs, &refs, oparg >> 4);
+                    kill_local(has_killed_refs, &refs, oparg & 15);
                     ref_stack_pop(&refs);
                     ref_stack_pop(&refs);
                     break;
