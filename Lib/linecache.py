@@ -45,14 +45,14 @@ def getlines(filename, module_globals=None):
         return []
 
 
-def _getline_from_code(filename, lineno, module_globals=None):
-    lines = _getlines_from_code(filename, module_globals)
+def _getline_from_code(filename, lineno):
+    lines = _getlines_from_code(filename)
     if 1 <= lineno <= len(lines):
         return lines[lineno - 1]
     return ''
 
 
-def _getlines_from_code(code, module_globals=None):
+def _getlines_from_code(code):
     code_id = id(code)
     if code_id in _interactive_cache:
         entry = _interactive_cache[code_id]
