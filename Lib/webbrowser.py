@@ -575,6 +575,8 @@ if sys.platform[:3] == "win":
     class WindowsDefault(BaseBrowser):
         def open(self, url, new=0, autoraise=True):
             sys.audit("webbrowser.open", url)
+            if url.startswith("file:"):
+                return False
             try:
                 os.startfile(url)
             except OSError:
@@ -595,6 +597,8 @@ if sys.platform == 'darwin':
 
         def open(self, url, new=0, autoraise=True):
             sys.audit("webbrowser.open", url)
+            if url.startswith("file:"):
+                return False
             url = url.replace('"', '%22')
             if self.name == 'default':
                 script = f'open location "{url}"'  # opens in default browser
@@ -626,6 +630,8 @@ if sys.platform == "ios":
     class IOSBrowser(BaseBrowser):
         def open(self, url, new=0, autoraise=True):
             sys.audit("webbrowser.open", url)
+            if url.startswith("file:"):
+                return False
             # If ctypes isn't available, we can't open a browser
             if objc is None:
                 return False
