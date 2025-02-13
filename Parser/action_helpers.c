@@ -1694,3 +1694,18 @@ _PyPegen_concatenate_strings(Parser *p, asdl_expr_seq *strings,
     assert(current_pos == n_elements);
     return _PyAST_JoinedStr(values, lineno, col_offset, end_lineno, end_col_offset, p->arena);
 }
+
+stmt_ty
+_PyPegen_checked_future_import(Parser *p, identifier module, asdl_alias_seq * names, int level,
+                  			   int lineno, int col_offset, int end_lineno, int end_col_offset,
+                      		   PyArena *arena) {
+    if (level == 0 && PyUnicode_CompareWithASCIIString(module, "__future__") == 0) {
+        for (Py_ssize_t i = 0; i < asdl_seq_LEN(names); i++) {
+            alias_ty alias = asdl_seq_GET(names, i);
+            if (PyUnicode_CompareWithASCIIString(alias->name, "barry_as_FLUFL") == 0) {
+                p->flags |= PyPARSE_BARRY_AS_BDFL;
+            }
+        }
+    }
+    return _PyAST_ImportFrom(module, names, level, lineno, col_offset, end_lineno, end_col_offset, arena);
+}
