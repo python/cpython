@@ -1,0 +1,5 @@
+Add *follow_wrapped* parameter to :func:`doctest.DocTestFinder.find` to
+unwrap objects before searching them for doctests.
+
+Add :func:`functools.update_wrapper` call to constructor of
+:class:`functools.singledispatchmethod` to let it be searched by doctest.

@@ -1366,7 +1366,7 @@ DocTestFinder objects
    :class:`DocTestFinder` defines the following method:
 
 
-   .. method:: find(obj[, name][, module][, globs][, extraglobs])
+   .. method:: find(obj[, name][, module][, globs][, extraglobs][, follow_wrapped])
 
       Return a list of the :class:`DocTest`\ s that are defined by *obj*'s
       docstring, or by any of its contained objects' docstrings.
@@ -1402,6 +1402,12 @@ DocTestFinder objects
       specified, or ``{}`` otherwise.  If *extraglobs* is not specified, then it
       defaults to ``{}``.
 
+      If *follow_wrapped* is ``True``, :func:`inspect.unwrap` is used to unwrap
+      all objects before they are searched for doctests.
+
+      .. versionchanged:: 3.14
+         The *follow_wrapped* parameter was added.
+         Pass ``False`` to search objects for doctests without unwrapping them first.
 
 .. _doctest-doctestparser:
 

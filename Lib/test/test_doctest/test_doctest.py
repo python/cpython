@@ -123,6 +123,22 @@ class SampleClass:
         """
         return "hello"
 
+    @functools.singledispatchmethod
+    def a_singledispatchmethod(self, arg):
+        """
+        >>> print(SampleClass(30).a_singledispatchmethod(30))
+        int
+        >>> print(SampleClass(30).a_singledispatchmethod("30"))
+        base
+        """
+        return "base"
+
+    @a_singledispatchmethod.register(int)
+    def _(self, arg):
+        return "int"
+
+    del _
+
     class NestedClass:
         """
         >>> x = SampleClass.NestedClass(5)
@@ -528,6 +544,7 @@ methods, classmethods, staticmethods, properties, and nested classes.
      1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_property
+     2  SampleClass.a_singledispatchmethod
      1  SampleClass.a_staticmethod
      1  SampleClass.double
      1  SampleClass.get
@@ -585,6 +602,7 @@ functions, classes, and the `__test__` dictionary, if it exists:
      1  some_module.SampleClass.a_cached_property
      2  some_module.SampleClass.a_classmethod
      1  some_module.SampleClass.a_property
+     2  some_module.SampleClass.a_singledispatchmethod
      1  some_module.SampleClass.a_staticmethod
      1  some_module.SampleClass.double
      1  some_module.SampleClass.get
@@ -642,6 +660,7 @@ By default, an object with no doctests doesn't create any tests:
      1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_property
+     2  SampleClass.a_singledispatchmethod
      1  SampleClass.a_staticmethod
      1  SampleClass.double
      1  SampleClass.get
@@ -664,6 +683,7 @@ displays.
      1  SampleClass.a_cached_property
      2  SampleClass.a_classmethod
      1  SampleClass.a_property
+     2  SampleClass.a_singledispatchmethod
      1  SampleClass.a_staticmethod
      1  SampleClass.double
      1  SampleClass.get
