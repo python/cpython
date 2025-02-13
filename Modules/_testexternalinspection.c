@@ -411,7 +411,7 @@ exit:
 static uintptr_t
 search_map_for_section(pid_t pid, const char* secname, const char* map)
 {
-    PyErr_SetString(PyExc_NotImplementedError, "Not supported not this platform");
+    PyErr_SetString(PyExc_NotImplementedError, "Not supported on this platform");
     return 0;
 }
 #endif
