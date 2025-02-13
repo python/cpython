@@ -351,12 +351,12 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             if markerid in markers:
                 raise ValueError("Circular reference detected")
             markers[markerid] = dct
-        yield '{'
+        buf = '{'
         if _indent is not None:
             _current_indent_level += 1
             newline_indent = '\n' + _indent * _current_indent_level
             item_separator = _item_separator + newline_indent
-            yield newline_indent
+            buf += newline_indent
         else:
             newline_indent = None
             item_separator = _item_separator
@@ -385,30 +385,32 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             elif _skipkeys:
                 continue
             else:
+                yield buf
                 raise TypeError(f'keys must be str, int, float, bool or None, '
                                 f'not {key.__class__.__name__}')
             if first:
                 first = False
             else:
-                yield item_separator
-            yield _encoder(key)
-            yield _key_separator
+                buf += item_separator
+            buf += _encoder(key)
+            buf += _key_separator
             try:
                 if isinstance(value, str):
-                    yield _encoder(value)
+                    buf += _encoder(value)
                 elif value is None:
-                    yield 'null'
+                    buf += 'null'
                 elif value is True:
-                    yield 'true'
+                    buf += 'true'
                 elif value is False:
-                    yield 'false'
+                    buf += 'false'
                 elif isinstance(value, int):
                     # see comment for int/float in _make_iterencode
-                    yield _intstr(value)
+                    buf += _intstr(value)
                 elif isinstance(value, float):
                     # see comment for int/float in _make_iterencode
-                    yield _floatstr(value)
+                    buf += _floatstr(value)
                 else:
+                    yield buf
                     if isinstance(value, (list, tuple)):
                         chunks = _iterencode_list(value, _current_indent_level)
                     elif isinstance(value, dict):
@@ -416,11 +418,19 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                     else:
                         chunks = _iterencode(value, _current_indent_level)
                     yield from chunks
+                    buf = ''
             except GeneratorExit:
+                yield buf
                 raise
             except BaseException as exc:
                 exc.add_note(f'when serializing {type(dct).__name__} item {key!r}')
+                yield buf
                 raise
+            if len(buf) > 1024:
+                yield buf
+                buf = ''
+        yield buf
+
         if newline_indent is not None:
             _current_indent_level -= 1
             yield '\n' + _indent * _current_indent_level
