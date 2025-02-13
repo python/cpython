@@ -260,6 +260,26 @@ class JSONEncoder(object):
                 self.skipkeys, _one_shot)
         return _iterencode(o, 0)
 
+class _JsonBuffer(list):
+
+    def __init__(self):
+        self.size=0
+
+    def add_json(self, j):
+        self.append(j)
+        self.size += len(j)
+
+    def needs_yield(self):
+        return self.size > 10_000 or len(self) > 100
+
+    def value(self):
+        return ''.join(self)
+    def reset(self):
+        self.clear()
+        self.size=0
+buf = _JsonBuffer()
+
+
 def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         _key_separator, _item_separator, _sort_keys, _skipkeys, _one_shot,
         ## HACK: hand-optimized bytecode; turn globals into locals
@@ -275,7 +295,9 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         _intstr=int.__repr__,
     ):
 
+
     def _iterencode_list(lst, _current_indent_level):
+        buf = _JsonBuffer()
         if not lst:
             yield '[]'
             return
@@ -284,37 +306,37 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             if markerid in markers:
                 raise ValueError("Circular reference detected")
             markers[markerid] = lst
-        buf = '['
+        buf.append('[')
         if _indent is not None:
             _current_indent_level += 1
             newline_indent = '\n' + _indent * _current_indent_level
             separator = _item_separator + newline_indent
-            buf += newline_indent
+            buf.append(newline_indent)
         else:
             newline_indent = None
             separator = _item_separator
         for i, value in enumerate(lst):
             if i:
-                buf += separator
+                buf.append(separator)
             try:
                 if isinstance(value, str):
-                    buf += _encoder(value)
+                    buf.append(_encoder(value))
                 elif value is None:
-                    buf += 'null'
+                    buf.append('null')
                 elif value is True:
-                    buf += 'true'
+                    buf.append('true')
                 elif value is False:
-                    buf += 'false'
+                    buf.append( 'false')
                 elif isinstance(value, int):
                     # Subclasses of int/float may override __repr__, but we still
                     # want to encode them as integers/floats in JSON. One example
                     # within the standard library is IntEnum.
-                    buf += _intstr(value)
+                    buf.append(_intstr(value))
                 elif isinstance(value, float):
                     # see comment above for int
-                    buf += _floatstr(value)
+                    buf.append( _floatstr(value))
                 else:
-                    yield buf
+                    yield buf.value()
                     if isinstance(value, (list, tuple)):
                         chunks = _iterencode_list(value, _current_indent_level)
                     elif isinstance(value, dict):
@@ -322,23 +344,23 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                     else:
                         chunks = _iterencode(value, _current_indent_level)
                     yield from chunks
-                    buf = ''
-                if len(buf)> 1024:
-                    yield buf
-                    buf = ''
+                    buf.reset()
+                if buf.needs_yield():
+                    yield buf.value()
+                    buf.reset()
 
             except GeneratorExit:
-                yield buf
+                yield from buf
                 raise
             except BaseException as exc:
-                yield buf
+                yield from buf
                 exc.add_note(f'when serializing {type(lst).__name__} item {i}')
                 raise
-        yield buf
         if newline_indent is not None:
             _current_indent_level -= 1
-            yield '\n' + _indent * _current_indent_level
-        yield ']'
+            buf.append( '\n' + _indent * _current_indent_level)
+        buf.append(']')
+        yield from buf
         if markers is not None:
             del markers[markerid]
 
