@@ -13,6 +13,7 @@ TSAN_TESTS = [
     'test_importlib',
     'test_io',
     'test_logging',
+    'test_opcache',
     'test_queue',
     'test_signal',
     'test_socket',
@@ -20,6 +21,7 @@ TSAN_TESTS = [
     'test_ssl',
     'test_syslog',
     'test_thread',
+    'test_thread_local_bytecode',
     'test_threadedtempfile',
     'test_threading',
     'test_threading_local',
@@ -33,6 +35,7 @@ TSAN_TESTS = [
 # the regression test runner with the `--parallel-threads` option enabled.
 TSAN_PARALLEL_TESTS = [
     'test_abc',
+    'test_hashlib',
 ]
 
 
