@@ -111,14 +111,10 @@ class DecompressReader(io.RawIOBase):
         return data
 
     def readall(self):
-        chunks = []
-        # sys.maxsize means the max length of output buffer is unlimited,
-        # so that the whole input buffer can be decompressed within one
-        # .decompress() call.
-        while data := self.read(sys.maxsize):
-            chunks.append(data)
-
-        return b"".join(chunks)
+        # FIXME(cmaloney): non blocking support?
+        bio = io.BytesIO()
+        bio.readfrom(self)
+        return bio.getvalue()
 
     # Rewind the file to the beginning of the data stream.
     def _rewind(self):

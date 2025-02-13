@@ -962,10 +962,20 @@ class BytesIO(BufferedIOBase):
         if len(self._buffer) < target_read + self._pos:
             self._buffer.resize(self._pos + target_read)
 
+        # File descriptor
+        if isinstance(file, int):
+            read_fn = lambda: os.readinto(file, memoryview(self._buffer)[self._pos:])
+        elif file_readinto := getattr(file, "readinto", None):
+            read_fn = lambda: file_readinto(memoryview(self._buffer)[self._pos:])
+        elif file_read := getattr(file, "read", None):
+            def read_fn():
+                data = file_read(len(self._buffer) - self._pos)
+                self._buffer[self._pos:self._pos + len(data)] = data
+
         found_eof = False
         start_pos = self._pos
         try:
-            while n := os.readinto(file, memoryview(self._buffer)[self._pos:]):
+            while n := read_fn():
                 self._pos += n
                 # Expand buffer if needed.
                 if len(self._buffer) - self._pos <= 0:
