@@ -1,0 +1,1 @@
+Added colored printing for ``python -m test`` without the ``-j`` flag.
