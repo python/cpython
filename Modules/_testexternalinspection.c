@@ -315,7 +315,7 @@ find_map_start_address(pid_t pid, char* result_filename, const char* map)
 
     if (!match_found) {
         map_filename[0] = '\0';
-        PyErr_SetString(PyExc_RuntimeError, "Cannot find map start address for map: %s", map);
+        PyErr_Format(PyExc_RuntimeError, "Cannot find map start address for map: %s", map);
     }
 
     return result_address;
