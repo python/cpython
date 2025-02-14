@@ -344,8 +344,8 @@ _Py_UpdateRecursionLimits(PyThreadState *tstate)
 {
     char here;
     uintptr_t here_addr = (uintptr_t)&here;
-    int to_probe = PYOS_STACK_MARGIN_BYTES * 2;
 #ifdef USE_STACKCHECK
+    int to_probe = PYOS_STACK_MARGIN_BYTES * 2;
     if (tstate->c_stack_top == 0) {
         assert(tstate->c_stack_soft_limit == UINTPTR_MAX);
         tstate->c_stack_top = _Py_SIZE_ROUND_UP(here_addr, 4096);
@@ -355,7 +355,7 @@ _Py_UpdateRecursionLimits(PyThreadState *tstate)
     int depth;
     uintptr_t implicit_hard_limit = tstate->c_stack_soft_limit - PYOS_STACK_MARGIN_BYTES;
     _Py_StackProbe(implicit_hard_limit, to_probe, &depth);
-    tstate->c_stack_soft_limit = implicit_hard_limit - depth + PYOS_STACK_MARGIN_BYTES * 2; 
+    tstate->c_stack_soft_limit = implicit_hard_limit - depth + PYOS_STACK_MARGIN_BYTES * 2;
     if (depth != to_probe) {
         tstate->c_stack_hard_limit = tstate->c_stack_soft_limit - PYOS_STACK_MARGIN_BYTES;
     }

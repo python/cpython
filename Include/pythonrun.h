@@ -21,8 +21,8 @@ PyAPI_FUNC(void) PyErr_DisplayException(PyObject *);
 /* Stuff with no proper home (yet) */
 PyAPI_DATA(int) (*PyOS_InputHook)(void);
 
-/* Stack size, in "pointers". This must be large enough, so 
- * no two calls to check recursion depth are more than this far 
+/* Stack size, in "pointers". This must be large enough, so
+ * no two calls to check recursion depth are more than this far
  * apart. In practice, that means it must be larger than the C
  * stack consumption of PyEval_EvalDefault */
 #if defined(Py_DEBUG) && defined(WIN32)
