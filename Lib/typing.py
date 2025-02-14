@@ -2240,7 +2240,8 @@ def Annotated(self, *params):
         assert Annotated[Annotated[T, Ann1, Ann2], Ann3] == Annotated[T, Ann1, Ann2, Ann3]
 
       However, this does not apply to Annotated types referenced through
-      a type alias::
+      a type alias, to avoid forcing evaluation of the underlying
+      TypeAliasType::
 
         type A[T] = Annotated[T, Ann1, Ann2]
         assert Annotated[A[T], Ann3] != Annotated[T, Ann1, Ann2, Ann3]
