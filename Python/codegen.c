@@ -5076,7 +5076,7 @@ codegen_augassign(compiler *c, stmt_ty s)
             VISIT(c, expr, e->v.Subscript.slice);
             ADDOP_I(c, loc, COPY, 2);
             ADDOP_I(c, loc, COPY, 2);
-            ADDOP(c, loc, BINARY_SUBSCR);
+            ADDOP_I(c, loc, BINARY_OP, NB_SUBSCR);
         }
         break;
     case Name_kind:
@@ -5242,7 +5242,6 @@ codegen_subscript(compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     expr_context_ty ctx = e->v.Subscript.ctx;
-    int op = 0;
 
     if (ctx == Load) {
         RETURN_IF_ERROR(check_subscripter(c, e->v.Subscript.value));
@@ -5265,12 +5264,16 @@ codegen_subscript(compiler *c, expr_ty e)
     else {
         VISIT(c, expr, e->v.Subscript.slice);
         switch (ctx) {
-            case Load:    op = BINARY_SUBSCR; break;
-            case Store:   op = STORE_SUBSCR; break;
-            case Del:     op = DELETE_SUBSCR; break;
+            case Load:
+                ADDOP_I(c, loc, BINARY_OP, NB_SUBSCR);
+                break;
+            case Store:
+                ADDOP(c, loc, STORE_SUBSCR);
+                break;
+            case Del:
+                ADDOP(c, loc, DELETE_SUBSCR);
+                break;
         }
-        assert(op);
-        ADDOP(c, loc, op);
     }
     return SUCCESS;
 }
@@ -5502,7 +5505,7 @@ pattern_helper_sequence_unpack(compiler *c, location loc,
     return SUCCESS;
 }
 
-// Like pattern_helper_sequence_unpack, but uses BINARY_SUBSCR instead of
+// Like pattern_helper_sequence_unpack, but uses BINARY_OP/NB_SUBSCR instead of
 // UNPACK_SEQUENCE / UNPACK_EX. This is more efficient for patterns with a
 // starred wildcard like [first, *_] / [first, *_, last] / [*_, last] / etc.
 static int
@@ -5533,7 +5536,7 @@ pattern_helper_sequence_subscr(compiler *c, location loc,
             ADDOP_LOAD_CONST_NEW(c, loc, PyLong_FromSsize_t(size - i));
             ADDOP_BINARY(c, loc, Sub);
         }
-        ADDOP(c, loc, BINARY_SUBSCR);
+        ADDOP_I(c, loc, BINARY_OP, NB_SUBSCR);
         RETURN_IF_ERROR(codegen_pattern_subpattern(c, pattern, pc));
     }
     // Pop the subject, we're done with it:

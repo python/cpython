@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import TextIO
 
 from analyzer import (
     Instruction,
@@ -154,28 +153,31 @@ class Emitter:
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
-        self.out.emit_at("DEOPT_IF", tkn)
+        self.out.start_line()
+        self.out.emit("if (")
         lparen = next(tkn_iter)
-        self.emit(lparen)
         assert lparen.kind == "LPAREN"
         first_tkn = tkn_iter.peek()
         emit_to(self.out, tkn_iter, "RPAREN")
+        self.emit(") {\n")
         next(tkn_iter)  # Semi colon
-        self.out.emit(", ")
         assert inst is not None
         assert inst.family is not None
-        self.out.emit(inst.family.name)
-        self.out.emit(");\n")
+        family_name = inst.family.name
+        self.emit(f"UPDATE_MISS_STATS({family_name});\n")
+        self.emit(f"assert(_PyOpcode_Deopt[opcode] == ({family_name}));\n")
+        self.emit(f"JUMP_TO_PREDICTED({family_name});\n")
+        self.emit("}\n")
         return not always_true(first_tkn)
 
     exit_if = deopt_if
 
     def goto_error(self, offset: int, label: str, storage: Storage) -> str:
         if offset > 0:
-            return f"goto pop_{offset}_{label};"
+            return f"JUMP_TO_LABEL(pop_{offset}_{label});"
         if offset < 0:
             storage.copy().flush(self.out)
-        return f"goto {label};"
+        return f"JUMP_TO_LABEL({label});"
 
     def error_if(
         self,
@@ -241,29 +243,13 @@ class Emitter:
         next(tkn_iter)
         next(tkn_iter)
         next(tkn_iter)
-        self.out.emit_at("", tkn)
-        for var in storage.inputs:
-            if not var.defined:
-                continue
-            if var.name == "null":
-                continue
-            close = "PyStackRef_CLOSE"
-            if "null" in var.name or var.condition and var.condition != "1":
-                close = "PyStackRef_XCLOSE"
-            if var.size:
-                if var.size == "1":
-                    self.out.emit(f"{close}({var.name}[0]);\n")
-                else:
-                    self.out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
-                    self.out.emit(f"{close}({var.name}[_i]);\n")
-                    self.out.emit("}\n")
-            elif var.condition:
-                if var.condition != "0":
-                    self.out.emit(f"{close}({var.name});\n")
-            else:
-                self.out.emit(f"{close}({var.name});\n")
-        for input in storage.inputs:
-            input.defined = False
+        try:
+            storage.close_inputs(self.out)
+        except StackError as ex:
+            raise analysis_error(ex.args[0], tkn)
+        except Exception as ex:
+            ex.args = (ex.args[0] + str(tkn),)
+            raise
         return True
 
     def kill_inputs(
@@ -299,7 +285,9 @@ class Emitter:
                 var.defined = False
                 break
         else:
-            raise analysis_error(f"'{name}' is not a live input-only variable", name_tkn)
+            raise analysis_error(
+                f"'{name}' is not a live input-only variable", name_tkn
+            )
         return True
 
     def stackref_kill(
@@ -342,7 +330,7 @@ class Emitter:
         self.out.emit(comma)
         dealloc = next(tkn_iter)
         if dealloc.kind != "IDENTIFIER":
-             raise analysis_error("Expected identifier", dealloc)
+            raise analysis_error("Expected identifier", dealloc)
         self.out.emit(dealloc)
         if name.kind == "IDENTIFIER":
             escapes = dealloc.text not in NON_ESCAPING_DEALLOCS
@@ -410,8 +398,10 @@ class Emitter:
                 self.emit_save(storage)
         elif storage.spilled:
             raise analysis_error("Cannot jump from spilled label without reloading the stack pointer", goto)
-        self.out.emit(goto)
+        self.out.start_line()
+        self.out.emit("JUMP_TO_LABEL(")
         self.out.emit(label)
+        self.out.emit(")")
 
     def emit_save(self, storage: Storage) -> None:
         storage.save(self.out)
@@ -514,7 +504,7 @@ class Emitter:
                 self.emit(next(tkn_iter))
                 maybe_if = tkn_iter.peek()
                 if maybe_if and maybe_if.kind == "IF":
-                    #Emit extra braces around the if to get scoping right
+                    # Emit extra braces around the if to get scoping right
                     self.emit(" {\n")
                     self.emit(next(tkn_iter))
                     else_reachable, rbrace, else_storage = self._emit_if(tkn_iter, uop, storage, inst)
@@ -603,7 +593,7 @@ class Emitter:
                 elif tkn.kind == "GOTO":
                     label_tkn = next(tkn_iter)
                     self.goto_label(tkn, label_tkn, storage)
-                    reachable = False;
+                    reachable = False
                 elif tkn.kind == "IDENTIFIER":
                     if tkn.text in self._replacers:
                         if not self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst):

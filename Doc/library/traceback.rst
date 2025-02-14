@@ -257,6 +257,11 @@ Module-Level Functions
 
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.14
+      This function previously returned a generator that would walk the stack
+      when first iterated over. The generator returned now is the state of the
+      stack when ``walk_stack`` is called.
+
 .. function:: walk_tb(tb)
 
    Walk a traceback following :attr:`~traceback.tb_next` yielding the frame and
