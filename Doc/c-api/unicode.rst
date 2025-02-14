@@ -256,13 +256,8 @@ the Python configuration.
 
 .. c:function:: int Py_UNICODE_ISPRINTABLE(Py_UCS4 ch)
 
-   Return ``1`` or ``0`` depending on whether *ch* is a printable character.
-   Nonprintable characters are those characters defined in the Unicode character
-   database as "Other" or "Separator", excepting the ASCII space (0x20) which is
-   considered printable.  (Note that printable characters in this context are
-   those which should not be escaped when :func:`repr` is invoked on a string.
-   It has no bearing on the handling of strings written to :data:`sys.stdout` or
-   :data:`sys.stderr`.)
+   Return ``1`` or ``0`` depending on whether *ch* is a printable character,
+   in the sense of :meth:`str.isprintable`.
 
 
 These APIs can be used for fast direct character conversions:
@@ -1350,6 +1345,13 @@ the user settings on the machine running the codec.
    *consumed* is not ``NULL``, :c:func:`PyUnicode_DecodeMBCSStateful` will not decode
    trailing lead byte and the number of bytes that have been decoded will be stored
    in *consumed*.
+
+
+.. c:function:: PyObject* PyUnicode_DecodeCodePageStateful(int code_page, const char *str, \
+                              Py_ssize_t size, const char *errors, Py_ssize_t *consumed)
+
+   Similar to :c:func:`PyUnicode_DecodeMBCSStateful`, except uses the code page
+   specified by *code_page*.
 
 
 .. c:function:: PyObject* PyUnicode_AsMBCSString(PyObject *unicode)

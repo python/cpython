@@ -1,1 +1,0 @@
-Fix a crash when setting state on an exhausted :class:`array.array` iterator.
