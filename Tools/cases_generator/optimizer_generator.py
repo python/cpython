@@ -36,10 +36,10 @@ def validate_uop(override: Uop, uop: Uop) -> None:
 
 def type_name(var: StackItem) -> str:
     if var.is_array():
-        return f"_Py_UopsSymbol **"
+        return f"JitOptSymbol **"
     if var.type:
         return var.type
-    return f"_Py_UopsSymbol *"
+    return f"JitOptSymbol *"
 
 
 def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
@@ -112,6 +112,9 @@ class OptimizerEmitter(Emitter):
     def emit_reload(self, storage: Storage) -> None:
         pass
 
+    def goto_label(self, goto: Token, label: Token, storage: Storage) -> None:
+        self.out.emit(goto)
+        self.out.emit(label)
 
 def write_uop(
     override: Uop | None,
@@ -126,7 +129,7 @@ def write_uop(
     try:
         out.start_line()
         if override:
-            code_list, storage = Storage.for_uop(stack, prototype, extract_bits=False)
+            code_list, storage = Storage.for_uop(stack, prototype)
             for code in code_list:
                 out.emit(code)
         if debug:
@@ -145,17 +148,17 @@ def write_uop(
                         cast = f"uint{cache.size*16}_t"
                     out.emit(f"{type}{cache.name} = ({cast})this_instr->operand0;\n")
         if override:
-            emitter = OptimizerEmitter(out)
+            emitter = OptimizerEmitter(out, {})
             # No reference management of inputs needed.
             for var in storage.inputs:  # type: ignore[possibly-undefined]
                 var.defined = False
             storage = emitter.emit_tokens(override, storage, None)
             out.start_line()
-            storage.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=False)
+            storage.flush(out)
         else:
             emit_default(out, uop, stack)
             out.start_line()
-            stack.flush(out, cast_type="_Py_UopsSymbol *", extract_bits=False)
+            stack.flush(out)
     except StackError as ex:
         raise analysis_error(ex.args[0], prototype.body[0]) # from None
 
@@ -198,7 +201,7 @@ def generate_abstract_interpreter(
             declare_variables(override, out, skip_inputs=False)
         else:
             declare_variables(uop, out, skip_inputs=True)
-        stack = Stack()
+        stack = Stack(extract_bits=False, cast_type="JitOptSymbol *")
         write_uop(override, uop, out, stack, debug, skip_inputs=(override is None))
         out.start_line()
         out.emit("break;\n")
