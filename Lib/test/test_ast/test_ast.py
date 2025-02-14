@@ -3081,21 +3081,6 @@ class ASTMainTests(unittest.TestCase):
 
 
 class ASTOptimiziationTests(unittest.TestCase):
-    binop = {
-        "+": ast.Add(),
-        "-": ast.Sub(),
-        "*": ast.Mult(),
-        "/": ast.Div(),
-        "%": ast.Mod(),
-        "<<": ast.LShift(),
-        ">>": ast.RShift(),
-        "|": ast.BitOr(),
-        "^": ast.BitXor(),
-        "&": ast.BitAnd(),
-        "//": ast.FloorDiv(),
-        "**": ast.Pow(),
-    }
-
     unaryop = {
         "~": ast.Invert(),
         "+": ast.UAdd(),
@@ -3297,6 +3282,74 @@ class ASTOptimiziationTests(unittest.TestCase):
                 )
             )
             self.assert_ast(result_code, non_optimized_target, optimized_target)
+
+    def test_folding_match_case_allowed_expressions(self):
+        source = textwrap.dedent("""
+        match 0:
+            case -0:                                   pass
+            case -0.1:                                 pass
+            case -0j:                                  pass
+            case 1 + 2j:                               pass
+            case 1 - 2j:                               pass
+            case 1.1 + 2.1j:                           pass
+            case 1.1 - 2.1j:                           pass
+            case -0 + 1j:                              pass
+            case -0 - 1j:                              pass
+            case -0.1 + 1.1j:                          pass
+            case -0.1 - 1.1j:                          pass
+            case {-0: 0}:                              pass
+            case {-0.1: 0}:                            pass
+            case {-0j: 0}:                             pass
+            case {1 + 2j: 0}:                          pass
+            case {1 - 2j: 0}:                          pass
+            case {1.1 + 2.1j: 0}:                      pass
+            case {1.1 - 2.1j: 0}:                      pass
+            case {-0 + 1j: 0}:                         pass
+            case {-0 - 1j: 0}:                         pass
+            case {-0.1 + 1.1j: 0}:                     pass
+            case {-0.1 - 1.1j: 0}:                     pass
+            case {-0: 0, 0 + 1j: 0, 0.1 + 1j: 0}:      pass
+        """)
+        expected_constants = (
+            0,
+            -0.1,
+            complex(0, -0),
+            complex(1, 2),
+            complex(1, -2),
+            complex(1.1, 2.1),
+            complex(1.1, -2.1),
+            complex(-0, 1),
+            complex(-0, -1),
+            complex(-0.1, 1.1),
+            complex(-0.1, -1.1),
+            (0, ),
+            (-0.1, ),
+            (complex(0, -0), ),
+            (complex(1, 2), ),
+            (complex(1, -2), ),
+            (complex(1.1, 2.1), ),
+            (complex(1.1, -2.1), ),
+            (complex(-0, 1), ),
+            (complex(-0, -1), ),
+            (complex(-0.1, 1.1), ),
+            (complex(-0.1, -1.1), ),
+            (0, complex(0, 1), complex(0.1, 1))
+        )
+        consts = iter(expected_constants)
+        tree = ast.parse(source, optimize=1)
+        match_stmt = tree.body[0]
+        for case in match_stmt.cases:
+            pattern = case.pattern
+            if isinstance(pattern, ast.MatchValue):
+                self.assertIsInstance(pattern.value, ast.Constant)
+                self.assertEqual(pattern.value.value, next(consts))
+            elif isinstance(pattern, ast.MatchMapping):
+                keys = iter(next(consts))
+                for key in pattern.keys:
+                    self.assertIsInstance(key, ast.Constant)
+                    self.assertEqual(key.value, next(keys))
+            else:
+                self.fail(f"Expected ast.MatchValue or ast.MatchMapping, found: {type(pattern)}")
 
 
 if __name__ == '__main__':
