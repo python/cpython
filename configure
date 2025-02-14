@@ -8766,8 +8766,55 @@ printf "%s\n" "$as_me: llvm-ar found via xcrun: ${LLVM_AR}" >&6;}
           # Any changes made here should be reflected in the GCC+Darwin case below
           if test $Py_LTO_POLICY = default
           then
-            LTOFLAGS="-flto -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
-            LTOCFLAGS="-flto"
+            # Check that ThinLTO is accepted.
+            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -flto=thin" >&5
+printf %s "checking whether C compiler accepts -flto=thin... " >&6; }
+if test ${ax_cv_check_cflags___flto_thin+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -flto=thin"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___flto_thin=yes
+else case e in #(
+  e) ax_cv_check_cflags___flto_thin=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___flto_thin" >&5
+printf "%s\n" "$ax_cv_check_cflags___flto_thin" >&6; }
+if test "x$ax_cv_check_cflags___flto_thin" = xyes
+then :
+
+              LTOFLAGS="-flto=thin -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
+              LTOCFLAGS="-flto=thin"
+
+else case e in #(
+  e)
+              LTOFLAGS="-flto -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
+              LTOCFLAGS="-flto"
+
+             ;;
+esac
+fi
+
           else
             LTOFLAGS="-flto=${Py_LTO_POLICY} -Wl,-export_dynamic -Wl,-object_path_lto,\"\$@\".lto"
             LTOCFLAGS="-flto=${Py_LTO_POLICY}"
@@ -8776,7 +8823,48 @@ printf "%s\n" "$as_me: llvm-ar found via xcrun: ${LLVM_AR}" >&6;}
         *)
           if test $Py_LTO_POLICY = default
           then
-            LTOFLAGS="-flto"
+            # Check that ThinLTO is accepted
+            { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -flto=thin" >&5
+printf %s "checking whether C compiler accepts -flto=thin... " >&6; }
+if test ${ax_cv_check_cflags___flto_thin+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -flto=thin"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___flto_thin=yes
+else case e in #(
+  e) ax_cv_check_cflags___flto_thin=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___flto_thin" >&5
+printf "%s\n" "$ax_cv_check_cflags___flto_thin" >&6; }
+if test "x$ax_cv_check_cflags___flto_thin" = xyes
+then :
+  LTOFLAGS="-flto=thin"
+else case e in #(
+  e) LTOFLAGS="-flto" ;;
+esac
+fi
+
           else
             LTOFLAGS="-flto=${Py_LTO_POLICY}"
           fi

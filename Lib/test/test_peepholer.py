@@ -535,6 +535,83 @@ class TestTranforms(BytecodeTestCase):
                     self.assertInBytecode(code, 'BINARY_OP', argval=subscr_argval)
                 self.check_lnotab(code)
 
+    def test_constant_folding_remove_nop_location(self):
+        sources = [
+            """
+            (-
+             -
+             -
+             1)
+            """,
+
+            """
+            (1
+             +
+             2
+             +
+             3)
+            """,
+
+            """
+            (1,
+             2,
+             3)[0]
+            """,
+
+            """
+            [1,
+             2,
+             3]
+            """,
+
+            """
+            {1,
+             2,
+             3}
+            """,
+
+            """
+            1 in [
+               1,
+               2,
+               3
+            ]
+            """,
+
+            """
+            1 in {
+               1,
+               2,
+               3
+            }
+            """,
+
+            """
+            for _ in [1,
+                      2,
+                      3]:
+                pass
+            """,
+
+            """
+            for _ in [1,
+                      2,
+                      x]:
+                pass
+            """,
+
+            """
+            for _ in {1,
+                      2,
+                      3}:
+                pass
+            """
+        ]
+
+        for source in sources:
+            code = compile(textwrap.dedent(source), '', 'single')
+            self.assertNotInBytecode(code, 'NOP')
+
     def test_in_literal_list(self):
         def containtest():
             return x in [a, b]
