@@ -197,6 +197,19 @@ writer_extend(PyObject *self_raw, PyObject *args)
 
 
 static PyObject*
+writer_get_remaining(PyObject *self_raw, PyObject *Py_UNUSED(args))
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    Py_ssize_t size = PyBytesWriter_GetRemaining(self->writer, self->buf);
+    return PyLong_FromSsize_t(size);
+}
+
+
+static PyObject*
 writer_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
 {
     WriterObject *self = (WriterObject *)self_raw;
@@ -214,6 +227,7 @@ static PyMethodDef writer_methods[] = {
     {"write_bytes", _PyCFunction_CAST(writer_write_bytes), METH_VARARGS},
     {"format_i", _PyCFunction_CAST(writer_format_i), METH_VARARGS},
     {"extend", _PyCFunction_CAST(writer_extend), METH_VARARGS},
+    {"get_remaining", _PyCFunction_CAST(writer_get_remaining), METH_NOARGS},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
     {NULL,              NULL}           /* sentinel */
 };

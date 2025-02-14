@@ -284,6 +284,14 @@ PyBytesWriter
    On success, return non-``NULL`` buffer.
    On error, set an exception and return ``NULL``.
 
+.. c:function:: Py_ssize_t PyBytesWriter_GetRemaining(PyBytesWriter *writer, void *buf)
+
+   Get the number of remaining bytes to write.
+
+   It is the difference between total allocated bytes (bytes allocated by
+   :c:func:`PyBytesWriter_Create` and :c:func:`PyBytesWriter_Extend`) and the
+   current position in the buffer.
+
 .. c:function:: Py_ssize_t PyBytesWriter_GetAllocated(PyBytesWriter *writer)
 
    Get the number of allocated bytes.

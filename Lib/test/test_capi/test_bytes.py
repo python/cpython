@@ -297,6 +297,7 @@ class PyBytesWriterTest(unittest.TestCase):
     def test_empty(self):
         # Test PyBytesWriter_Create()
         writer = self.create_writer(0)
+        self.assertEqual(writer.get_remaining(), 0)
         self.assertEqual(writer.finish(), b'')
 
     def test_write_bytes(self):
@@ -317,22 +318,26 @@ class PyBytesWriterTest(unittest.TestCase):
         writer = self.create_writer(0)
         writer.extend(20, b'number=123456')
         writer.extend(0, b'')
+        self.assertEqual(writer.get_remaining(), 7)
         self.assertEqual(writer.finish(), b'number=123456')
 
         writer = self.create_writer(0)
         writer.extend(0, b'')
         writer.extend(20, b'number=123456')
+        self.assertEqual(writer.get_remaining(), 7)
         self.assertEqual(writer.finish(), b'number=123456')
 
         writer = self.create_writer(0)
         writer.extend(10, b'number=')
         writer.extend(10, b'123456')
+        self.assertEqual(writer.get_remaining(), 7)
         self.assertEqual(writer.finish(), b'number=123456')
 
         writer = self.create_writer(0)
         writer.extend(10, b'number=')
         writer.extend(0, b'')
         writer.extend(10, b'123456')
+        self.assertEqual(writer.get_remaining(), 7)
         self.assertEqual(writer.finish(), b'number=123456')
 
         writer = self.create_writer(0)
@@ -340,6 +345,7 @@ class PyBytesWriterTest(unittest.TestCase):
         writer.extend(10, b'=')
         writer.extend(10, b'123')
         writer.extend(10, b'456')
+        self.assertEqual(writer.get_remaining(), 27)
         self.assertEqual(writer.finish(), b'number=123456')
 
     def test_format(self):

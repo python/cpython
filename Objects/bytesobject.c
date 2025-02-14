@@ -3628,6 +3628,14 @@ error:
 
 
 Py_ssize_t
+PyBytesWriter_GetRemaining(PyBytesWriter *writer, void *buf)
+{
+    Py_ssize_t pos = (char*)buf - byteswriter_start(writer);
+    return writer->size - pos;
+}
+
+
+Py_ssize_t
 PyBytesWriter_GetAllocated(PyBytesWriter *writer)
 {
     if (writer->obj == NULL) {

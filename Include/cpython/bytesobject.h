@@ -55,6 +55,9 @@ PyAPI_FUNC(PyObject*) PyBytesWriter_Finish(
     PyBytesWriter *writer,
     void *buf);
 
+PyAPI_FUNC(Py_ssize_t) PyBytesWriter_GetRemaining(
+    PyBytesWriter *writer,
+    void *buf);
 PyAPI_FUNC(Py_ssize_t) PyBytesWriter_GetAllocated(
     PyBytesWriter *writer);
 PyAPI_FUNC(void*) PyBytesWriter_Extend(
