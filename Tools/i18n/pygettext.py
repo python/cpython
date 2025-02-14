@@ -348,7 +348,8 @@ class GettextVisitor(ast.NodeVisitor):
             return
 
         self.filename = filename
-        self.comments = get_source_comments(source)
+        if self.options.comment_tags:
+            self.comments = get_source_comments(source)
         self.visit(module_tree)
 
     def visit_Module(self, node):
@@ -436,7 +437,7 @@ class GettextVisitor(ast.NodeVisitor):
         return comments[first_index:]
 
     def _is_translator_comment(self, comment):
-        return comment.startswith(tuple(self.options.comment_tags))
+        return comment.startswith(self.options.comment_tags)
 
     def _add_message(
             self, lineno, msgid, msgid_plural=None, msgctxt=None, *,
@@ -633,6 +634,8 @@ def main():
                     options.nodocstrings[line[:-1]] = 1
             finally:
                 fp.close()
+
+    options.comment_tags = tuple(options.comment_tags)
 
     # calculate escapes
     make_escapes(not options.escape)
