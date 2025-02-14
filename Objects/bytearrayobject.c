@@ -531,6 +531,7 @@ bytearray_setslice_linear(PyByteArrayObject *self,
                           Py_ssize_t lo, Py_ssize_t hi,
                           char *bytes, Py_ssize_t bytes_len)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     Py_ssize_t avail = hi - lo;
     char *buf = PyByteArray_AS_STRING(self);
     Py_ssize_t growth = bytes_len - avail;
@@ -614,6 +615,7 @@ static int
 bytearray_setslice(PyByteArrayObject *self, Py_ssize_t lo, Py_ssize_t hi,
                PyObject *values)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     Py_ssize_t needed;
     void *bytes;
     Py_buffer vbytes;
