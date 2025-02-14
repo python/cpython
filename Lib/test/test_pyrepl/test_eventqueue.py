@@ -2,6 +2,7 @@ import tempfile
 import unittest
 import sys
 from unittest.mock import patch
+from test import support
 
 try:
     from _pyrepl.console import Event
@@ -123,10 +124,10 @@ class EventQueueTestBase:
         self.assertEqual(eq.events[2].data, "Z")
 
 
-@unittest.skipIf(sys.platform == "win32", "No Unix event queue on Windows")
-@patch("_pyrepl.curses.tigetstr", lambda x: b"")
+@unittest.skipIf(support.MS_WINDOWS, "No Unix event queue on Windows")
 class TestUnixEventQueue(EventQueueTestBase, unittest.TestCase):
     def setUp(self):
+        self.enterContext(patch("_pyrepl.curses.tigetstr", lambda x: b""))
         self.file = tempfile.TemporaryFile()
 
     def tearDown(self) -> None:
@@ -136,8 +137,7 @@ class TestUnixEventQueue(EventQueueTestBase, unittest.TestCase):
         return unix_eventqueue.EventQueue(self.file.fileno(), "utf-8")
 
 
-@unittest.skipIf(sys.platform != "win32", "No Windows event queue on Unix")
-@patch("_pyrepl.curses.tigetstr", lambda x: b"")
+@unittest.skipUnless(support.MS_WINDOWS, "No Windows event queue on Unix")
 class TestWindowsEventQueue(EventQueueTestBase, unittest.TestCase):
     def make_eventqueue(self) -> base_eventqueue.BaseEventQueue:
         return windows_eventqueue.EventQueue("utf-8")
