@@ -975,9 +975,8 @@ dummy_func(
         }
 
         inst(SET_ADD, (set, unused[oparg-1], v -- set, unused[oparg-1])) {
-            int err = PySet_Add(PyStackRef_AsPyObjectBorrow(set),
-                                PyStackRef_AsPyObjectBorrow(v));
-            PyStackRef_CLOSE(v);
+            int err = _PySet_AddTakeRef((PySetObject *)PyStackRef_AsPyObjectBorrow(set),
+                                PyStackRef_AsPyObjectSteal(v));
             ERROR_IF(err, error);
         }
 
@@ -1911,22 +1910,11 @@ dummy_func(
         }
 
         inst(BUILD_SET, (values[oparg] -- set)) {
-            PyObject *set_o = PySet_New(NULL);
+            PyObject *set_o = _PySet_FromStackRefSteal(values, oparg);
             if (set_o == NULL) {
-                DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
-            int err = 0;
-            for (int i = 0; i < oparg; i++) {
-                if (err == 0) {
-                    err = PySet_Add(set_o, PyStackRef_AsPyObjectBorrow(values[i]));
-                }
-            }
-            DECREF_INPUTS();
-            if (err != 0) {
-                Py_DECREF(set_o);
-                ERROR_IF(true, error);
-            }
+            INPUTS_DEAD();
             set = PyStackRef_FromPyObjectStealMortal(set_o);
         }
 
