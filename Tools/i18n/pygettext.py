@@ -67,7 +67,8 @@ Options:
     -k word
     --keyword=word
         Keywords to look for in addition to the default set, which are:
-        %(DEFAULTKEYWORDS)s
+        _, gettext, ngettext, pgettext, npgettext, dgettext, dngettext,
+        dpgettext, and dnpgettext.
 
         You can have multiple -k flags on the command line.
 
@@ -169,7 +170,7 @@ msgstr ""
 
 
 def usage(code, msg=''):
-    print(__doc__ % globals(), file=sys.stderr)
+    print(__doc__, file=sys.stderr)
     if msg:
         print(msg, file=sys.stderr)
     sys.exit(code)
