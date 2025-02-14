@@ -535,7 +535,7 @@ class TestTranforms(BytecodeTestCase):
                     self.assertInBytecode(code, 'BINARY_OP', argval=subscr_argval)
                 self.check_lnotab(code)
 
-    def test_constant_folding_reset_nop_location(self):
+    def test_constant_folding_remove_nop_location(self):
         sources = [
             """
             (-
