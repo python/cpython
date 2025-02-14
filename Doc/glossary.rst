@@ -942,8 +942,7 @@ Glossary
       have no ``__init__.py`` file.
 
       Namespace packages allow several individually installable packages to have a common parent package.
-      On the other hand, namespace packages have several drawbacks and pitfalls.
-      Use :term:`regular package` always when it fits your needs.
+      Otherwise, it is recommended to use a :term:`regular package`.
 
       For more information, see :pep:`420` and :ref:`reference-namespace-package`.
 
