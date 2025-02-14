@@ -1,3 +1,0 @@
-Fix support of STRING and GLOBAL opcodes with non-ASCII arguments in
-:mod:`pickletools`. :func:`pickletools.dis` now outputs non-ASCII bytes in
-STRING, BINSTRING and SHORT_BINSTRING arguments as escaped (``\xXX``).

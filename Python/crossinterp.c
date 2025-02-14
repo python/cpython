@@ -342,6 +342,11 @@ _copy_string_obj_raw(PyObject *strobj, Py_ssize_t *p_size)
         return NULL;
     }
 
+    if (size != (Py_ssize_t)strlen(str)) {
+        PyErr_SetString(PyExc_ValueError, "found embedded NULL character");
+        return NULL;
+    }
+
     char *copied = PyMem_RawMalloc(size+1);
     if (copied == NULL) {
         PyErr_NoMemory();
@@ -363,12 +368,9 @@ _convert_exc_to_TracebackException(PyObject *exc, PyObject **p_tbexc)
     PyObject *create = NULL;
 
     // This is inspired by _PyErr_Display().
-    PyObject *tbmod = PyImport_ImportModule("traceback");
-    if (tbmod == NULL) {
-        return -1;
-    }
-    PyObject *tbexc_type = PyObject_GetAttrString(tbmod, "TracebackException");
-    Py_DECREF(tbmod);
+    PyObject *tbexc_type = PyImport_ImportModuleAttrString(
+        "traceback",
+        "TracebackException");
     if (tbexc_type == NULL) {
         return -1;
     }
@@ -779,7 +781,8 @@ _PyXI_excinfo_Apply(_PyXI_excinfo *info, PyObject *exctype)
         PyObject *exc = PyErr_GetRaisedException();
         if (PyObject_SetAttrString(exc, "_errdisplay", tbexc) < 0) {
 #ifdef Py_DEBUG
-            PyErr_FormatUnraisable("Exception ignored when setting _errdisplay");
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "setting _errdisplay");
 #endif
             PyErr_Clear();
         }

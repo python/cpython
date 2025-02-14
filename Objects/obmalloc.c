@@ -2909,10 +2909,18 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
 static inline void
 _PyMem_DebugCheckGIL(const char *func)
 {
-    if (!PyGILState_Check()) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate == NULL) {
+#ifndef Py_GIL_DISABLED
         _Py_FatalErrorFunc(func,
                            "Python memory allocator called "
                            "without holding the GIL");
+#else
+        _Py_FatalErrorFunc(func,
+                           "Python memory allocator called "
+                           "without an active thread state. "
+                           "Are you trying to call it inside of a Py_BEGIN_ALLOW_THREADS block?");
+#endif
     }
 }
 
@@ -3289,12 +3297,12 @@ static bool _collect_alloc_stats(
 static void
 py_mimalloc_print_stats(FILE *out)
 {
-    fprintf(out, "Small block threshold = %zd, in %u size classes.\n",
-        MI_SMALL_OBJ_SIZE_MAX, MI_BIN_HUGE);
-    fprintf(out, "Medium block threshold = %zd\n",
-            MI_MEDIUM_OBJ_SIZE_MAX);
-    fprintf(out, "Large object max size = %zd\n",
-            MI_LARGE_OBJ_SIZE_MAX);
+    fprintf(out, "Small block threshold = %zu, in %u size classes.\n",
+        (size_t)MI_SMALL_OBJ_SIZE_MAX, MI_BIN_HUGE);
+    fprintf(out, "Medium block threshold = %zu\n",
+            (size_t)MI_MEDIUM_OBJ_SIZE_MAX);
+    fprintf(out, "Large object max size = %zu\n",
+            (size_t)MI_LARGE_OBJ_SIZE_MAX);
 
     mi_heap_t *heap = mi_heap_get_default();
     struct _alloc_stats stats;
