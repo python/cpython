@@ -1309,6 +1309,10 @@ def _find_and_load_unlocked(name, import_):
     if parent:
         if parent not in sys.modules:
             _call_with_frames_removed(import_, parent)
+        # Crazy side-effects!
+        module = sys.modules.get(name)
+        if module is not None:
+            return module
         parent_module = sys.modules[parent]
         try:
             path = parent_module.__path__
@@ -1318,7 +1322,7 @@ def _find_and_load_unlocked(name, import_):
         parent_spec = parent_module.__spec__
         if getattr(parent_spec, '_initializing', False):
             _call_with_frames_removed(import_, parent)
-        # Crazy side-effects!
+        # Crazy side-effects (again)!
         module = sys.modules.get(name)
         if module is not None:
             return module
