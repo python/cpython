@@ -334,6 +334,7 @@ def collect_os(info_add):
         "_PYTHON_HOST_PLATFORM",
         "_PYTHON_PROJECT_BASE",
         "_PYTHON_SYSCONFIGDATA_NAME",
+        "_PYTHON_SYSCONFIGDATA_PATH",
         "__PYVENV_LAUNCHER__",
 
         # Sanitizer options

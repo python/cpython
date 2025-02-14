@@ -226,7 +226,7 @@ clear_current_module(PyInterpreterState *interp, PyObject *expected)
     goto finally;
 
 error:
-    PyErr_WriteUnraisable(NULL);
+    PyErr_FormatUnraisable("Exception ignored while clearing _datetime module");
 
 finally:
     PyErr_SetRaisedException(exc);
@@ -637,17 +637,19 @@ check_date_args(int year, int month, int day)
 {
 
     if (year < MINYEAR || year > MAXYEAR) {
-        PyErr_Format(PyExc_ValueError, "year %i is out of range", year);
+        PyErr_Format(PyExc_ValueError,
+                     "year must be in %d..%d, not %d", MINYEAR, MAXYEAR, year);
         return -1;
     }
     if (month < 1 || month > 12) {
-        PyErr_SetString(PyExc_ValueError,
-                        "month must be in 1..12");
+        PyErr_Format(PyExc_ValueError,
+                     "month must be in 1..12, not %d", month);
         return -1;
     }
-    if (day < 1 || day > days_in_month(year, month)) {
-        PyErr_SetString(PyExc_ValueError,
-                        "day is out of range for month");
+    int dim = days_in_month(year, month);
+    if (day < 1 || day > dim) {
+        PyErr_Format(PyExc_ValueError,
+                     "day must be in 1..%d, not %d", dim, day);
         return -1;
     }
     return 0;
@@ -660,28 +662,25 @@ static int
 check_time_args(int h, int m, int s, int us, int fold)
 {
     if (h < 0 || h > 23) {
-        PyErr_SetString(PyExc_ValueError,
-                        "hour must be in 0..23");
+        PyErr_Format(PyExc_ValueError, "hour must be in 0..23, not %i", h);
         return -1;
     }
     if (m < 0 || m > 59) {
-        PyErr_SetString(PyExc_ValueError,
-                        "minute must be in 0..59");
+        PyErr_Format(PyExc_ValueError, "minute must be in 0..59, not %i", m);
         return -1;
     }
     if (s < 0 || s > 59) {
-        PyErr_SetString(PyExc_ValueError,
-                        "second must be in 0..59");
+        PyErr_Format(PyExc_ValueError, "second must be in 0..59, not %i", s);
         return -1;
     }
     if (us < 0 || us > 999999) {
-        PyErr_SetString(PyExc_ValueError,
-                        "microsecond must be in 0..999999");
+        PyErr_Format(PyExc_ValueError,
+                     "microsecond must be in 0..999999, not %i", us);
         return -1;
     }
     if (fold != 0 && fold != 1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "fold must be either 0 or 1");
+        PyErr_Format(PyExc_ValueError,
+                     "fold must be either 0 or 1, not %i", fold);
         return -1;
     }
     return 0;
@@ -1435,8 +1434,7 @@ new_timezone(PyObject *offset, PyObject *name)
         GET_TD_DAYS(offset) < -1 || GET_TD_DAYS(offset) >= 1) {
         PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
                      " strictly between -timedelta(hours=24) and"
-                     " timedelta(hours=24),"
-                     " not %R.", offset);
+                     " timedelta(hours=24), not %R", offset);
         return NULL;
     }
 
@@ -1505,10 +1503,10 @@ call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
                 GET_TD_SECONDS(offset) == 0 &&
                 GET_TD_MICROSECONDS(offset) < 1) ||
             GET_TD_DAYS(offset) < -1 || GET_TD_DAYS(offset) >= 1) {
-            Py_DECREF(offset);
             PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
                          " strictly between -timedelta(hours=24) and"
-                         " timedelta(hours=24).");
+                         " timedelta(hours=24), not %R", offset);
+            Py_DECREF(offset);
             return NULL;
         }
     }
@@ -1747,7 +1745,7 @@ make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
     PyObject *tzinfo = get_tzinfo_member(object);
 
     if (tzinfo == Py_None || tzinfo == NULL) {
-        return PyBytes_FromStringAndSize(NULL, 0);
+        return PyUnicode_FromStringAndSize(NULL, 0);
     }
 
     assert(tzinfoarg != NULL);
@@ -1758,7 +1756,7 @@ make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
                          tzinfoarg) < 0)
         return NULL;
 
-    return PyBytes_FromStringAndSize(buf, strlen(buf));
+    return PyUnicode_FromString(buf);
 }
 
 static PyObject *
@@ -1766,7 +1764,7 @@ make_Zreplacement(PyObject *object, PyObject *tzinfoarg)
 {
     PyObject *temp;
     PyObject *tzinfo = get_tzinfo_member(object);
-    PyObject *Zreplacement = PyUnicode_FromStringAndSize(NULL, 0);
+    PyObject *Zreplacement = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
 
     if (Zreplacement == NULL)
         return NULL;
@@ -1815,7 +1813,7 @@ make_freplacement(PyObject *object)
     else
         sprintf(freplacement, "%06d", 0);
 
-    return PyBytes_FromStringAndSize(freplacement, strlen(freplacement));
+    return PyUnicode_FromString(freplacement);
 }
 
 /* I sure don't want to reproduce the strftime code from the time module,
@@ -1836,94 +1834,61 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     PyObject *Zreplacement = NULL;      /* py string, replacement for %Z */
     PyObject *freplacement = NULL;      /* py string, replacement for %f */
 
-    const char *pin;            /* pointer to next char in input format */
-    Py_ssize_t flen;            /* length of input format */
-    char ch;                    /* next char in input format */
-
-    PyObject *newfmt = NULL;            /* py string, the output format */
-    char *pnew;         /* pointer to available byte in output format */
-    size_t totalnew;            /* number bytes total in output format buffer,
-                               exclusive of trailing \0 */
-    size_t usednew;     /* number bytes used so far in output format buffer */
-
-    const char *ptoappend;      /* ptr to string to append to output buffer */
-    Py_ssize_t ntoappend;       /* # of bytes to append to output buffer */
-
-#ifdef Py_NORMALIZE_CENTURY
-    /* Buffer of maximum size of formatted year permitted by long. */
-    char buf[SIZEOF_LONG * 5 / 2 + 2
-#ifdef Py_STRFTIME_C99_SUPPORT
-    /* Need 6 more to accommodate dashes, 2-digit month and day for %F. */
-             + 6
-#endif
-    ];
-#endif
-
     assert(object && format && timetuple);
     assert(PyUnicode_Check(format));
-    /* Convert the input format to a C string and size */
-    pin = PyUnicode_AsUTF8AndSize(format, &flen);
-    if (!pin)
-        return NULL;
 
-    PyObject *strftime = _PyImport_GetModuleAttrString("time", "strftime");
+    PyObject *strftime = PyImport_ImportModuleAttrString("time", "strftime");
     if (strftime == NULL) {
-        goto Done;
+        return NULL;
     }
 
     /* Scan the input format, looking for %z/%Z/%f escapes, building
      * a new format.  Since computing the replacements for those codes
      * is expensive, don't unless they're actually used.
      */
-    if (flen > INT_MAX - 1) {
-        PyErr_NoMemory();
-        goto Done;
+
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        goto Error;
     }
 
-    totalnew = flen + 1;        /* realistic if no %z/%Z */
-    newfmt = PyBytes_FromStringAndSize(NULL, totalnew);
-    if (newfmt == NULL) goto Done;
-    pnew = PyBytes_AsString(newfmt);
-    usednew = 0;
-
-    while ((ch = *pin++) != '\0') {
-        if (ch != '%') {
-            ptoappend = pin - 1;
-            ntoappend = 1;
+    Py_ssize_t flen = PyUnicode_GET_LENGTH(format);
+    Py_ssize_t i = 0;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = 0;
+    while (i != flen) {
+        i = PyUnicode_FindChar(format, '%', i, flen, 1);
+        if (i < 0) {
+            assert(!PyErr_Occurred());
+            break;
         }
-        else if ((ch = *pin++) == '\0') {
-        /* Null byte follows %, copy only '%'.
-         *
-         * Back the pin up one char so that we catch the null check
-         * the next time through the loop.*/
-            pin--;
-            ptoappend = pin - 1;
-            ntoappend = 1;
+        end = i;
+        i++;
+        if (i == flen) {
+            break;
         }
+        Py_UCS4 ch = PyUnicode_READ_CHAR(format, i);
+        i++;
         /* A % has been seen and ch is the character after it. */
-        else if (ch == 'z') {
+        PyObject *replacement = NULL;
+        if (ch == 'z') {
             /* %z -> +HHMM */
             if (zreplacement == NULL) {
                 zreplacement = make_somezreplacement(object, "", tzinfoarg);
                 if (zreplacement == NULL)
-                    goto Done;
+                    goto Error;
             }
-            assert(zreplacement != NULL);
-            assert(PyBytes_Check(zreplacement));
-            ptoappend = PyBytes_AS_STRING(zreplacement);
-            ntoappend = PyBytes_GET_SIZE(zreplacement);
+            replacement = zreplacement;
         }
-        else if (ch == ':' && *pin == 'z' && pin++) {
+        else if (ch == ':' && i < flen && PyUnicode_READ_CHAR(format, i) == 'z') {
             /* %:z -> +HH:MM */
+            i++;
             if (colonzreplacement == NULL) {
                 colonzreplacement = make_somezreplacement(object, ":", tzinfoarg);
                 if (colonzreplacement == NULL)
-                    goto Done;
+                    goto Error;
             }
-            assert(colonzreplacement != NULL);
-            assert(PyBytes_Check(colonzreplacement));
-            ptoappend = PyBytes_AS_STRING(colonzreplacement);
-            ntoappend = PyBytes_GET_SIZE(colonzreplacement);
+            replacement = colonzreplacement;
         }
         else if (ch == 'Z') {
             /* format tzname */
@@ -1931,130 +1896,118 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
                 Zreplacement = make_Zreplacement(object,
                                                  tzinfoarg);
                 if (Zreplacement == NULL)
-                    goto Done;
+                    goto Error;
             }
-            assert(Zreplacement != NULL);
-            assert(PyUnicode_Check(Zreplacement));
-            ptoappend = PyUnicode_AsUTF8AndSize(Zreplacement,
-                                                  &ntoappend);
-            if (ptoappend == NULL)
-                goto Done;
+            replacement = Zreplacement;
         }
         else if (ch == 'f') {
             /* format microseconds */
             if (freplacement == NULL) {
                 freplacement = make_freplacement(object);
                 if (freplacement == NULL)
-                    goto Done;
+                    goto Error;
             }
-            assert(freplacement != NULL);
-            assert(PyBytes_Check(freplacement));
-            ptoappend = PyBytes_AS_STRING(freplacement);
-            ntoappend = PyBytes_GET_SIZE(freplacement);
+            replacement = freplacement;
         }
 #ifdef Py_NORMALIZE_CENTURY
         else if (ch == 'Y' || ch == 'G'
-#ifdef Py_STRFTIME_C99_SUPPORT
                  || ch == 'F' || ch == 'C'
-#endif
         ) {
             /* 0-pad year with century as necessary */
             PyObject *item = PySequence_GetItem(timetuple, 0);
             if (item == NULL) {
-                goto Done;
+                goto Error;
             }
             long year_long = PyLong_AsLong(item);
             Py_DECREF(item);
             if (year_long == -1 && PyErr_Occurred()) {
-                goto Done;
+                goto Error;
             }
             /* Note that datetime(1000, 1, 1).strftime('%G') == '1000' so year
                1000 for %G can go on the fast path. */
             if (year_long >= 1000) {
-                goto PassThrough;
+                continue;
             }
             if (ch == 'G') {
                 PyObject *year_str = PyObject_CallFunction(strftime, "sO",
                                                            "%G", timetuple);
                 if (year_str == NULL) {
-                    goto Done;
+                    goto Error;
                 }
                 PyObject *year = PyNumber_Long(year_str);
                 Py_DECREF(year_str);
                 if (year == NULL) {
-                    goto Done;
+                    goto Error;
                 }
                 year_long = PyLong_AsLong(year);
                 Py_DECREF(year);
                 if (year_long == -1 && PyErr_Occurred()) {
-                    goto Done;
+                    goto Error;
                 }
             }
-            ntoappend = PyOS_snprintf(buf, sizeof(buf),
-#ifdef Py_STRFTIME_C99_SUPPORT
+            /* Buffer of maximum size of formatted year permitted by long.
+             * +6 to accommodate dashes, 2-digit month and day for %F. */
+            char buf[SIZEOF_LONG * 5 / 2 + 2 + 6];
+            Py_ssize_t n = PyOS_snprintf(buf, sizeof(buf),
                                       ch == 'F' ? "%04ld-%%m-%%d" :
-#endif
                                       "%04ld", year_long);
-#ifdef Py_STRFTIME_C99_SUPPORT
             if (ch == 'C') {
-                ntoappend -= 2;
+                n -= 2;
             }
-#endif
-            ptoappend = buf;
+            if (PyUnicodeWriter_WriteSubstring(writer, format, start, end) < 0) {
+                goto Error;
+            }
+            start = i;
+            if (PyUnicodeWriter_WriteUTF8(writer, buf, n) < 0) {
+                goto Error;
+            }
+            continue;
         }
 #endif
         else {
             /* percent followed by something else */
-#ifdef Py_NORMALIZE_CENTURY
- PassThrough:
-#endif
-            ptoappend = pin - 2;
-            ntoappend = 2;
-        }
-
-        /* Append the ntoappend chars starting at ptoappend to
-         * the new format.
-         */
-        if (ntoappend == 0)
             continue;
-        assert(ptoappend != NULL);
-        assert(ntoappend > 0);
-        while (usednew + ntoappend > totalnew) {
-            if (totalnew > (PY_SSIZE_T_MAX >> 1)) { /* overflow */
-                PyErr_NoMemory();
-                goto Done;
-            }
-            totalnew <<= 1;
-            if (_PyBytes_Resize(&newfmt, totalnew) < 0)
-                goto Done;
-            pnew = PyBytes_AsString(newfmt) + usednew;
         }
-        memcpy(pnew, ptoappend, ntoappend);
-        pnew += ntoappend;
-        usednew += ntoappend;
-        assert(usednew <= totalnew);
+        assert(replacement != NULL);
+        assert(PyUnicode_Check(replacement));
+        if (PyUnicodeWriter_WriteSubstring(writer, format, start, end) < 0) {
+            goto Error;
+        }
+        start = i;
+        if (PyUnicodeWriter_WriteStr(writer, replacement) < 0) {
+            goto Error;
+        }
     }  /* end while() */
 
-    if (_PyBytes_Resize(&newfmt, usednew) < 0)
-        goto Done;
-    {
-        PyObject *format;
-
-        format = PyUnicode_FromString(PyBytes_AS_STRING(newfmt));
-        if (format != NULL) {
-            result = PyObject_CallFunctionObjArgs(strftime,
-                                                   format, timetuple, NULL);
-            Py_DECREF(format);
+    PyObject *newformat;
+    if (start == 0) {
+        PyUnicodeWriter_Discard(writer);
+        newformat = Py_NewRef(format);
+    }
+    else {
+        if (PyUnicodeWriter_WriteSubstring(writer, format, start, flen) < 0) {
+            goto Error;
+        }
+        newformat = PyUnicodeWriter_Finish(writer);
+        if (newformat == NULL) {
+            goto Done;
         }
     }
+    result = PyObject_CallFunctionObjArgs(strftime,
+                                          newformat, timetuple, NULL);
+    Py_DECREF(newformat);
+
  Done:
     Py_XDECREF(freplacement);
     Py_XDECREF(zreplacement);
     Py_XDECREF(colonzreplacement);
     Py_XDECREF(Zreplacement);
-    Py_XDECREF(newfmt);
     Py_XDECREF(strftime);
     return result;
+
+ Error:
+    PyUnicodeWriter_Discard(writer);
+    goto Done;
 }
 
 /* ---------------------------------------------------------------------------
@@ -2067,7 +2020,7 @@ static PyObject *
 time_time(void)
 {
     PyObject *result = NULL;
-    PyObject *time = _PyImport_GetModuleAttrString("time", "time");
+    PyObject *time = PyImport_ImportModuleAttrString("time", "time");
 
     if (time != NULL) {
         result = PyObject_CallNoArgs(time);
@@ -2085,7 +2038,7 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
     PyObject *struct_time;
     PyObject *result;
 
-    struct_time = _PyImport_GetModuleAttrString("time", "struct_time");
+    struct_time = PyImport_ImportModuleAttrString("time", "struct_time");
     if (struct_time == NULL) {
         return NULL;
     }
@@ -2306,7 +2259,7 @@ get_float_as_integer_ratio(PyObject *floatobj)
     if (!PyTuple_Check(ratio)) {
         PyErr_Format(PyExc_TypeError,
                      "unexpected return type from as_integer_ratio(): "
-                     "expected tuple, got '%.200s'",
+                     "expected tuple, not '%.200s'",
                      Py_TYPE(ratio)->tp_name);
         Py_DECREF(ratio);
         return NULL;
@@ -2921,7 +2874,7 @@ delta_bool(PyDateTime_Delta *self)
 static PyObject *
 delta_repr(PyDateTime_Delta *self)
 {
-    PyObject *args = PyUnicode_FromString("");
+    PyObject *args = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
 
     if (args == NULL) {
         return NULL;
@@ -3427,7 +3380,8 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
     int rv = iso_to_ymd(year, week, day, &year, &month, &day);
 
     if (rv == -4) {
-        PyErr_Format(PyExc_ValueError, "Year is out of range: %d", year);
+        PyErr_Format(PyExc_ValueError,
+                     "year must be in %d..%d, not %d", MINYEAR, MAXYEAR, year);
         return NULL;
     }
 
@@ -3437,7 +3391,7 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
     }
 
     if (rv == -3) {
-        PyErr_Format(PyExc_ValueError, "Invalid day: %d (range is [1, 7])",
+        PyErr_Format(PyExc_ValueError, "Invalid weekday: %d (range is [1, 7])",
                      day);
         return NULL;
     }
@@ -4423,8 +4377,7 @@ timezone_fromutc(PyDateTime_TimeZone *self, PyDateTime_DateTime *dt)
         return NULL;
     }
     if (!HASTZINFO(dt) || dt->tzinfo != (PyObject *)self) {
-        PyErr_SetString(PyExc_ValueError, "fromutc: dt.tzinfo "
-                        "is not self");
+        PyErr_SetString(PyExc_ValueError, "fromutc: dt.tzinfo is not self");
         return NULL;
     }
 
@@ -4993,7 +4946,7 @@ datetime.time.replace
     minute: int(c_default="TIME_GET_MINUTE(self)") = unchanged
     second: int(c_default="TIME_GET_SECOND(self)") = unchanged
     microsecond: int(c_default="TIME_GET_MICROSECOND(self)") = unchanged
-    tzinfo: object(c_default="HASTZINFO(self) ? self->tzinfo : Py_None") = unchanged
+    tzinfo: object(c_default="HASTZINFO(self) ? ((PyDateTime_Time *)self)->tzinfo : Py_None") = unchanged
     *
     fold: int(c_default="TIME_GET_FOLD(self)") = unchanged
 
@@ -5004,7 +4957,7 @@ static PyObject *
 datetime_time_replace_impl(PyDateTime_Time *self, int hour, int minute,
                            int second, int microsecond, PyObject *tzinfo,
                            int fold)
-/*[clinic end generated code: output=0b89a44c299e4f80 input=9b6a35b1e704b0ca]*/
+/*[clinic end generated code: output=0b89a44c299e4f80 input=abf23656e8df4e97]*/
 {
     return new_time_subclass_fold_ex(hour, minute, second, microsecond, tzinfo,
                                      fold, (PyObject *)Py_TYPE(self));
@@ -5397,7 +5350,8 @@ utc_to_seconds(int year, int month, int day,
 
     /* ymd_to_ord() doesn't support year <= 0 */
     if (year < MINYEAR || year > MAXYEAR) {
-        PyErr_Format(PyExc_ValueError, "year %i is out of range", year);
+        PyErr_Format(PyExc_ValueError,
+                     "year must be in %d..%d, not %d", MINYEAR, MAXYEAR, year);
         return -1;
     }
 
@@ -6495,7 +6449,7 @@ datetime.datetime.replace
     minute: int(c_default="DATE_GET_MINUTE(self)") = unchanged
     second: int(c_default="DATE_GET_SECOND(self)") = unchanged
     microsecond: int(c_default="DATE_GET_MICROSECOND(self)") = unchanged
-    tzinfo: object(c_default="HASTZINFO(self) ? self->tzinfo : Py_None") = unchanged
+    tzinfo: object(c_default="HASTZINFO(self) ? ((PyDateTime_DateTime *)self)->tzinfo : Py_None") = unchanged
     *
     fold: int(c_default="DATE_GET_FOLD(self)") = unchanged
 
@@ -6507,7 +6461,7 @@ datetime_datetime_replace_impl(PyDateTime_DateTime *self, int year,
                                int month, int day, int hour, int minute,
                                int second, int microsecond, PyObject *tzinfo,
                                int fold)
-/*[clinic end generated code: output=00bc96536833fddb input=9b38253d56d9bcad]*/
+/*[clinic end generated code: output=00bc96536833fddb input=fd972762d604d3e7]*/
 {
     return new_datetime_subclass_fold_ex(year, month, day, hour, minute,
                                          second, microsecond, tzinfo, fold,

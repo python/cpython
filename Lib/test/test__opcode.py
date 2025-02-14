@@ -38,6 +38,13 @@ class OpListTests(unittest.TestCase):
         opcodes = [dis.opmap[opname] for opname in names]
         self.check_bool_function_result(_opcode.is_valid, opcodes, True)
 
+    def test_opmaps(self):
+        def check_roundtrip(name, map):
+            return self.assertEqual(opcode.opname[map[name]], name)
+
+        check_roundtrip('BINARY_OP', opcode.opmap)
+        check_roundtrip('BINARY_OP_ADD_INT', opcode._specialized_opmap)
+
     def test_oplists(self):
         def check_function(self, func, expected):
             for op in [-10, 520]:
@@ -58,8 +65,7 @@ class OpListTests(unittest.TestCase):
 class StackEffectTests(unittest.TestCase):
     def test_stack_effect(self):
         self.assertEqual(stack_effect(dis.opmap['POP_TOP']), -1)
-        self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 0), -1)
-        self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 1), -1)
+        self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 2), -1)
         self.assertEqual(stack_effect(dis.opmap['BUILD_SLICE'], 3), -2)
         self.assertRaises(ValueError, stack_effect, 30000)
         # All defined opcodes
@@ -117,7 +123,7 @@ class SpecializationStatsTests(unittest.TestCase):
             if opcode._inline_cache_entries.get(op, 0)
         ]
         self.assertIn('load_attr', specialized_opcodes)
-        self.assertIn('binary_subscr', specialized_opcodes)
+        self.assertIn('binary_op', specialized_opcodes)
 
         stats = _opcode.get_specialization_stats()
         if stats is not None:

@@ -843,8 +843,9 @@ typedef struct {
 } AST_object;
 
 static void
-ast_dealloc(AST_object *self)
+ast_dealloc(PyObject *op)
 {
+    AST_object *self = (AST_object*)op;
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
@@ -856,16 +857,18 @@ ast_dealloc(AST_object *self)
 }
 
 static int
-ast_traverse(AST_object *self, visitproc visit, void *arg)
+ast_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    AST_object *self = (AST_object*)op;
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     return 0;
 }
 
 static int
-ast_clear(AST_object *self)
+ast_clear(PyObject *op)
 {
+    AST_object *self = (AST_object*)op;
     Py_CLEAR(self->dict);
     return 0;
 }
@@ -881,19 +884,17 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
     Py_ssize_t i, numfields = 0;
     int res = -1;
     PyObject *key, *value, *fields, *attributes = NULL, *remaining_fields = NULL;
-    if (PyObject_GetOptionalAttr((PyObject*)Py_TYPE(self), state->_fields, &fields) < 0) {
+
+    fields = PyObject_GetAttr((PyObject*)Py_TYPE(self), state->_fields);
+    if (fields == NULL) {
         goto cleanup;
     }
-    if (fields) {
-        numfields = PySequence_Size(fields);
-        if (numfields == -1) {
-            goto cleanup;
-        }
-        remaining_fields = PySet_New(fields);
+
+    numfields = PySequence_Size(fields);
+    if (numfields == -1) {
+        goto cleanup;
     }
-    else {
-        remaining_fields = PySet_New(NULL);
-    }
+    remaining_fields = PySet_New(fields);
     if (remaining_fields == NULL) {
         goto cleanup;
     }
@@ -1461,10 +1462,11 @@ ast_repr_list(PyObject *list, int depth)
         return PyObject_Repr(list);
     }
 
-    _PyUnicodeWriter writer;
-    _PyUnicodeWriter_Init(&writer);
-    writer.overallocate = 1;
     PyObject *items[2] = {NULL, NULL};
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        goto error;
+    }
 
     items[0] = PySequence_GetItem(list, 0);
     if (!items[0]) {
@@ -1478,52 +1480,54 @@ ast_repr_list(PyObject *list, int depth)
     }
 
     bool is_list = PyList_Check(list);
-    if (_PyUnicodeWriter_WriteChar(&writer, is_list ? '[' : '(') < 0) {
+    if (PyUnicodeWriter_WriteChar(writer, is_list ? '[' : '(') < 0) {
         goto error;
     }
 
     for (Py_ssize_t i = 0; i < Py_MIN(length, 2); i++) {
-        PyObject *item = items[i];
-        PyObject *item_repr;
-
-        if (PyType_IsSubtype(Py_TYPE(item), (PyTypeObject *)state->AST_type)) {
-            item_repr = ast_repr_max_depth((AST_object*)item, depth - 1);
-        } else {
-            item_repr = PyObject_Repr(item);
-        }
-        if (!item_repr) {
-            goto error;
-        }
         if (i > 0) {
-            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
                 goto error;
             }
         }
-        if (_PyUnicodeWriter_WriteStr(&writer, item_repr) < 0) {
-            Py_DECREF(item_repr);
-            goto error;
-        }
-        if (i == 0 && length > 2) {
-            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ...", 5) < 0) {
+
+        PyObject *item = items[i];
+        if (PyType_IsSubtype(Py_TYPE(item), (PyTypeObject *)state->AST_type)) {
+            PyObject *item_repr;
+            item_repr = ast_repr_max_depth((AST_object*)item, depth - 1);
+            if (!item_repr) {
+                goto error;
+            }
+            if (PyUnicodeWriter_WriteStr(writer, item_repr) < 0) {
                 Py_DECREF(item_repr);
                 goto error;
             }
+            Py_DECREF(item_repr);
+        } else {
+            if (PyUnicodeWriter_WriteRepr(writer, item) < 0) {
+                goto error;
+            }
         }
-        Py_DECREF(item_repr);
+
+        if (i == 0 && length > 2) {
+            if (PyUnicodeWriter_WriteUTF8(writer, ", ...", 5) < 0) {
+                goto error;
+            }
+        }
     }
 
-    if (_PyUnicodeWriter_WriteChar(&writer, is_list ? ']' : ')') < 0) {
+    if (PyUnicodeWriter_WriteChar(writer, is_list ? ']' : ')') < 0) {
         goto error;
     }
 
     Py_XDECREF(items[0]);
     Py_XDECREF(items[1]);
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 
 error:
     Py_XDECREF(items[0]);
     Py_XDECREF(items[1]);
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 
@@ -1567,14 +1571,15 @@ ast_repr_max_depth(AST_object *self, int depth)
     }
 
     const char* tp_name = Py_TYPE(self)->tp_name;
-    _PyUnicodeWriter writer;
-    _PyUnicodeWriter_Init(&writer);
-    writer.overallocate = 1;
-
-    if (_PyUnicodeWriter_WriteASCIIString(&writer, tp_name, strlen(tp_name)) < 0) {
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
         goto error;
     }
-    if (_PyUnicodeWriter_WriteChar(&writer, '(') < 0) {
+
+    if (PyUnicodeWriter_WriteUTF8(writer, tp_name, -1) < 0) {
+        goto error;
+    }
+    if (PyUnicodeWriter_WriteChar(writer, '(') < 0) {
         goto error;
     }
 
@@ -1605,18 +1610,17 @@ ast_repr_max_depth(AST_object *self, int depth)
 
         if (!value_repr) {
             Py_DECREF(name);
-            Py_DECREF(value);
             goto error;
         }
 
         if (i > 0) {
-            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
                 Py_DECREF(name);
                 Py_DECREF(value_repr);
                 goto error;
             }
         }
-        if (_PyUnicodeWriter_WriteStr(&writer, name) < 0) {
+        if (PyUnicodeWriter_WriteStr(writer, name) < 0) {
             Py_DECREF(name);
             Py_DECREF(value_repr);
             goto error;
@@ -1624,11 +1628,11 @@ ast_repr_max_depth(AST_object *self, int depth)
 
         Py_DECREF(name);
 
-        if (_PyUnicodeWriter_WriteChar(&writer, '=') < 0) {
+        if (PyUnicodeWriter_WriteChar(writer, '=') < 0) {
             Py_DECREF(value_repr);
             goto error;
         }
-        if (_PyUnicodeWriter_WriteStr(&writer, value_repr) < 0) {
+        if (PyUnicodeWriter_WriteStr(writer, value_repr) < 0) {
             Py_DECREF(value_repr);
             goto error;
         }
@@ -1636,24 +1640,24 @@ ast_repr_max_depth(AST_object *self, int depth)
         Py_DECREF(value_repr);
     }
 
-    if (_PyUnicodeWriter_WriteChar(&writer, ')') < 0) {
+    if (PyUnicodeWriter_WriteChar(writer, ')') < 0) {
         goto error;
     }
     Py_ReprLeave((PyObject *)self);
     Py_DECREF(fields);
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 
 error:
     Py_ReprLeave((PyObject *)self);
     Py_DECREF(fields);
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 
 static PyObject *
-ast_repr(AST_object *self)
+ast_repr(PyObject *self)
 {
-    return ast_repr_max_depth(self, 3);
+    return ast_repr_max_depth((AST_object*)self, 3);
 }
 
 static PyType_Slot AST_type_slots[] = {
@@ -1847,8 +1851,9 @@ static int add_ast_fields(struct ast_state *state)
 
         self.file.write(textwrap.dedent('''
             static int
-            init_types(struct ast_state *state)
+            init_types(void *arg)
             {
+                struct ast_state *state = arg;
                 if (init_identifiers(state) < 0) {
                     return -1;
                 }
@@ -2239,8 +2244,6 @@ def generate_ast_fini(module_state, f):
     for s in module_state:
         f.write("    Py_CLEAR(state->" + s + ');\n')
     f.write(textwrap.dedent("""
-                Py_CLEAR(_Py_INTERP_CACHED_OBJECT(interp, str_replace_inf));
-
                 state->finalized = 1;
                 state->once = (_PyOnceFlag){0};
             }
@@ -2296,7 +2299,7 @@ def generate_module_def(mod, metadata, f, internal_h):
         };
 
         // Forward declaration
-        static int init_types(struct ast_state *state);
+        static int init_types(void *arg);
 
         static struct ast_state*
         get_ast_state(void)

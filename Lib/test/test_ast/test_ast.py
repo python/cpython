@@ -18,7 +18,7 @@ except ImportError:
     _testinternalcapi = None
 
 from test import support
-from test.support import os_helper, script_helper
+from test.support import os_helper, script_helper, skip_emscripten_stack_overflow
 from test.support.ast_helper import ASTTestMixin
 from test.test_ast.utils import to_tuple
 from test.test_ast.snippets import (
@@ -83,6 +83,23 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(TypeError):
             # "ast.AST constructor takes 0 positional arguments"
             ast.AST(2)
+
+    def test_AST_fields_NULL_check(self):
+        # See: https://github.com/python/cpython/issues/126105
+        old_value = ast.AST._fields
+
+        def cleanup():
+            ast.AST._fields = old_value
+        self.addCleanup(cleanup)
+
+        del ast.AST._fields
+
+        msg = "type object 'ast.AST' has no attribute '_fields'"
+        # Both examples used to crash:
+        with self.assertRaisesRegex(AttributeError, msg):
+            ast.AST(arg1=123)
+        with self.assertRaisesRegex(AttributeError, msg):
+            ast.AST()
 
     def test_AST_garbage_collection(self):
         class X:
@@ -728,6 +745,7 @@ class AST_Tests(unittest.TestCase):
         enum._test_simple_enum(_Precedence, ast._Precedence)
 
     @support.cpython_only
+    @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
         fail_depth = support.exceeds_recursion_limit()
         crash_depth = 100_000
@@ -788,6 +806,13 @@ class AST_Tests(unittest.TestCase):
         for test, snapshot in zip(ast_repr_get_test_cases(), snapshots, strict=True):
             with self.subTest(test_input=test):
                 self.assertEqual(repr(ast.parse(test)), snapshot)
+
+    def test_repr_large_input_crash(self):
+        # gh-125010: Fix use-after-free in ast repr()
+        source = "0x0" + "e" * 10_000
+        with self.assertRaisesRegex(ValueError,
+                                    r"Exceeds the limit \(\d+ digits\)"):
+            repr(ast.Constant(value=eval(source)))
 
 
 class CopyTests(unittest.TestCase):
@@ -1637,6 +1662,7 @@ Module(
         exec(code, ns)
         self.assertIn('sleep', ns)
 
+    @skip_emscripten_stack_overflow()
     def test_recursion_direct(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
         e.operand = e
@@ -1644,6 +1670,7 @@ Module(
             with support.infinite_recursion():
                 compile(ast.Expression(e), "<test>", "eval")
 
+    @skip_emscripten_stack_overflow()
     def test_recursion_indirect(self):
         e = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
         f = ast.UnaryOp(op=ast.Not(), lineno=0, col_offset=0, operand=ast.Constant(1))
@@ -2252,7 +2279,7 @@ class ConstantTests(unittest.TestCase):
                          "got an invalid type in Constant: list")
 
     def test_singletons(self):
-        for const in (None, False, True, Ellipsis, b'', frozenset()):
+        for const in (None, False, True, Ellipsis, b''):
             with self.subTest(const=const):
                 value = self.compile_constant(const)
                 self.assertIs(value, const)
@@ -2296,7 +2323,7 @@ class ConstantTests(unittest.TestCase):
         co = compile(tree, '<string>', 'exec')
         consts = []
         for instr in dis.get_instructions(co):
-            if instr.opname == 'LOAD_CONST' or instr.opname == 'RETURN_CONST':
+            if instr.opcode in dis.hasconst:
                 consts.append(instr.argval)
         return consts
 
@@ -2304,7 +2331,7 @@ class ConstantTests(unittest.TestCase):
     def test_load_const(self):
         consts = [None,
                   True, False,
-                  124,
+                  1000,
                   2.0,
                   3j,
                   "unicode",
@@ -3209,56 +3236,6 @@ class ASTOptimiziationTests(unittest.TestCase):
 
         non_optimized_target = self.wrap_expr(ast.Tuple(elts=[ast.Constant(1)]))
         optimized_target = self.wrap_expr(ast.Constant(value=(1,)))
-
-        self.assert_ast(code, non_optimized_target, optimized_target)
-
-    def test_folding_comparator(self):
-        code = "1 %s %s1%s"
-        operators = [("in", ast.In()), ("not in", ast.NotIn())]
-        braces = [
-            ("[", "]", ast.List, (1,)),
-            ("{", "}", ast.Set, frozenset({1})),
-        ]
-        for left, right, non_optimized_comparator, optimized_comparator in braces:
-            for op, node in operators:
-                non_optimized_target = self.wrap_expr(ast.Compare(
-                    left=ast.Constant(1), ops=[node],
-                    comparators=[non_optimized_comparator(elts=[ast.Constant(1)])]
-                ))
-                optimized_target = self.wrap_expr(ast.Compare(
-                    left=ast.Constant(1), ops=[node],
-                    comparators=[ast.Constant(value=optimized_comparator)]
-                ))
-                self.assert_ast(code % (op, left, right), non_optimized_target, optimized_target)
-
-    def test_folding_iter(self):
-        code = "for _ in %s1%s: pass"
-        braces = [
-            ("[", "]", ast.List, (1,)),
-            ("{", "}", ast.Set, frozenset({1})),
-        ]
-
-        for left, right, ast_cls, optimized_iter in braces:
-            non_optimized_target = self.wrap_statement(ast.For(
-                target=ast.Name(id="_", ctx=ast.Store()),
-                iter=ast_cls(elts=[ast.Constant(1)]),
-                body=[ast.Pass()]
-            ))
-            optimized_target = self.wrap_statement(ast.For(
-                target=ast.Name(id="_", ctx=ast.Store()),
-                iter=ast.Constant(value=optimized_iter),
-                body=[ast.Pass()]
-            ))
-
-            self.assert_ast(code % (left, right), non_optimized_target, optimized_target)
-
-    def test_folding_subscript(self):
-        code = "(1,)[0]"
-
-        non_optimized_target = self.wrap_expr(
-            ast.Subscript(value=ast.Tuple(elts=[ast.Constant(value=1)]), slice=ast.Constant(value=0))
-        )
-        optimized_target = self.wrap_expr(ast.Constant(value=1))
 
         self.assert_ast(code, non_optimized_target, optimized_target)
 
