@@ -70,3 +70,9 @@ _('foo'  # i18n: This comment should be ignored
 # i18n: This is a translator comment
 _('xyzzy')
 _('thud')
+
+
+## i18n: This is a translator comment
+# # i18n: This is another translator comment
+### ###    i18n: This is yet another translator comment
+_('foos')

@@ -144,6 +144,7 @@ import glob
 import importlib.machinery
 import importlib.util
 import os
+import re
 import sys
 import time
 import tokenize
@@ -329,7 +330,9 @@ def get_source_comments(source):
     comments = {}
     for token in tokenize.tokenize(BytesIO(source).readline):
         if token.type == tokenize.COMMENT:
-            comments[token.start[0]] = token.string.removeprefix('#').strip()
+            # Remove any leading combination of '#' and whitespace
+            comment = re.sub(r'^[#\s]+', '', token.string)
+            comments[token.start[0]] = comment
     return comments
 
 
