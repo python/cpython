@@ -1487,6 +1487,9 @@ optimize_lists_and_sets(basicblock *bb, int i, int nextop,
     else {
         assert(i >= 2);
         assert(instr->i_opcode == BUILD_LIST || instr->i_opcode == BUILD_SET);
+
+        INSTR_SET_LOC(&bb->b_instr[i-2], instr->i_loc);
+
         INSTR_SET_OP1(&bb->b_instr[i-2], instr->i_opcode, 0);
         INSTR_SET_OP1(&bb->b_instr[i-1], LOAD_CONST, index);
         INSTR_SET_OP1(&bb->b_instr[i], instr->i_opcode == BUILD_LIST ? LIST_EXTEND : SET_UPDATE, 1);
