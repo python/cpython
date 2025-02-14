@@ -2533,10 +2533,6 @@ bytearrayiter_next(PyObject *self)
         val = (unsigned char)PyByteArray_AS_STRING(seq)[index];
     }
     else {
-        val = -1;
-    }
-
-    if (val == -1) {
         FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, -1);
 #ifndef Py_GIL_DISABLED
         it->it_seq = NULL;
