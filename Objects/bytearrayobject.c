@@ -184,7 +184,12 @@ PyByteArray_Resize(PyObject *self, Py_ssize_t requested_size)
     assert(self != NULL);
     assert(PyByteArray_Check(self));
     assert(logical_offset <= alloc);
-    assert(requested_size >= 0);
+
+    if (requested_size < 0) {
+        PyErr_Format(PyExc_ValueError,
+            "Can only resize to positive sizes, got %zd", requested_size);
+        return -1;
+    }
 
     if (requested_size == Py_SIZE(self)) {
         return 0;
@@ -1389,6 +1394,31 @@ bytearray_removesuffix_impl(PyByteArrayObject *self, Py_buffer *suffix)
 
 
 /*[clinic input]
+bytearray.resize
+    size: Py_ssize_t
+        New size to resize to..
+    /
+Resize the internal buffer of bytearray to len.
+[clinic start generated code]*/
+
+static PyObject *
+bytearray_resize_impl(PyByteArrayObject *self, Py_ssize_t size)
+/*[clinic end generated code: output=f73524922990b2d9 input=75fd4d17c4aa47d3]*/
+{
+    Py_ssize_t start_size = PyByteArray_GET_SIZE(self);
+    int result = PyByteArray_Resize((PyObject *)self, size);
+    if (result < 0) {
+        return NULL;
+    }
+    // Set new bytes to null bytes
+    if (size > start_size) {
+        memset(PyByteArray_AS_STRING(self) + start_size, 0, size - start_size);
+    }
+    Py_RETURN_NONE;
+}
+
+
+/*[clinic input]
 bytearray.translate
 
     table: object
@@ -2113,8 +2143,9 @@ PyDoc_STRVAR(alloc_doc,
 Return the number of bytes actually allocated.");
 
 static PyObject *
-bytearray_alloc(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
+bytearray_alloc(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyByteArrayObject *self = _PyByteArray_CAST(op);
     return PyLong_FromSsize_t(self->ob_alloc);
 }
 
@@ -2313,7 +2344,7 @@ static PyBufferProcs bytearray_as_buffer = {
 };
 
 static PyMethodDef bytearray_methods[] = {
-    {"__alloc__", (PyCFunction)bytearray_alloc, METH_NOARGS, alloc_doc},
+    {"__alloc__", bytearray_alloc, METH_NOARGS, alloc_doc},
     BYTEARRAY_REDUCE_METHODDEF
     BYTEARRAY_REDUCE_EX_METHODDEF
     BYTEARRAY_SIZEOF_METHODDEF
@@ -2360,6 +2391,7 @@ static PyMethodDef bytearray_methods[] = {
     BYTEARRAY_REPLACE_METHODDEF
     BYTEARRAY_REMOVEPREFIX_METHODDEF
     BYTEARRAY_REMOVESUFFIX_METHODDEF
+    BYTEARRAY_RESIZE_METHODDEF
     BYTEARRAY_REVERSE_METHODDEF
     BYTEARRAY_RFIND_METHODDEF
     BYTEARRAY_RINDEX_METHODDEF
@@ -2464,24 +2496,29 @@ typedef struct {
     PyByteArrayObject *it_seq; /* Set to NULL when iterator is exhausted */
 } bytesiterobject;
 
+#define _bytesiterobject_CAST(op)   ((bytesiterobject *)(op))
+
 static void
-bytearrayiter_dealloc(bytesiterobject *it)
+bytearrayiter_dealloc(PyObject *self)
 {
+    bytesiterobject *it = _bytesiterobject_CAST(self);
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
     PyObject_GC_Del(it);
 }
 
 static int
-bytearrayiter_traverse(bytesiterobject *it, visitproc visit, void *arg)
+bytearrayiter_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    bytesiterobject *it = _bytesiterobject_CAST(self);
     Py_VISIT(it->it_seq);
     return 0;
 }
 
 static PyObject *
-bytearrayiter_next(bytesiterobject *it)
+bytearrayiter_next(PyObject *self)
 {
+    bytesiterobject *it = _bytesiterobject_CAST(self);
     PyByteArrayObject *seq;
 
     assert(it != NULL);
@@ -2501,8 +2538,9 @@ bytearrayiter_next(bytesiterobject *it)
 }
 
 static PyObject *
-bytearrayiter_length_hint(bytesiterobject *it, PyObject *Py_UNUSED(ignored))
+bytearrayiter_length_hint(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    bytesiterobject *it = _bytesiterobject_CAST(self);
     Py_ssize_t len = 0;
     if (it->it_seq) {
         len = PyByteArray_GET_SIZE(it->it_seq) - it->it_index;
@@ -2517,14 +2555,14 @@ PyDoc_STRVAR(length_hint_doc,
     "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-bytearrayiter_reduce(bytesiterobject *it, PyObject *Py_UNUSED(ignored))
+bytearrayiter_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
 
     /* _PyEval_GetBuiltin can invoke arbitrary code,
      * call must be before access of iterator pointers.
      * see issue #101765 */
-
+    bytesiterobject *it = _bytesiterobject_CAST(self);
     if (it->it_seq != NULL) {
         return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
     } else {
@@ -2533,11 +2571,13 @@ bytearrayiter_reduce(bytesiterobject *it, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-bytearrayiter_setstate(bytesiterobject *it, PyObject *state)
+bytearrayiter_setstate(PyObject *self, PyObject *state)
 {
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
+
+    bytesiterobject *it = _bytesiterobject_CAST(self);
     if (it->it_seq != NULL) {
         if (index < 0)
             index = 0;
@@ -2551,11 +2591,11 @@ bytearrayiter_setstate(bytesiterobject *it, PyObject *state)
 PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
 
 static PyMethodDef bytearrayiter_methods[] = {
-    {"__length_hint__", (PyCFunction)bytearrayiter_length_hint, METH_NOARGS,
+    {"__length_hint__", bytearrayiter_length_hint, METH_NOARGS,
      length_hint_doc},
-     {"__reduce__",      (PyCFunction)bytearrayiter_reduce, METH_NOARGS,
+     {"__reduce__",     bytearrayiter_reduce, METH_NOARGS,
      bytearray_reduce__doc__},
-    {"__setstate__",    (PyCFunction)bytearrayiter_setstate, METH_O,
+    {"__setstate__",    bytearrayiter_setstate, METH_O,
      setstate_doc},
     {NULL, NULL} /* sentinel */
 };
@@ -2566,7 +2606,7 @@ PyTypeObject PyByteArrayIter_Type = {
     sizeof(bytesiterobject),           /* tp_basicsize */
     0,                                 /* tp_itemsize */
     /* methods */
-    (destructor)bytearrayiter_dealloc, /* tp_dealloc */
+    bytearrayiter_dealloc,             /* tp_dealloc */
     0,                                 /* tp_vectorcall_offset */
     0,                                 /* tp_getattr */
     0,                                 /* tp_setattr */
@@ -2583,12 +2623,12 @@ PyTypeObject PyByteArrayIter_Type = {
     0,                                 /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
     0,                                 /* tp_doc */
-    (traverseproc)bytearrayiter_traverse,  /* tp_traverse */
+    bytearrayiter_traverse,            /* tp_traverse */
     0,                                 /* tp_clear */
     0,                                 /* tp_richcompare */
     0,                                 /* tp_weaklistoffset */
     PyObject_SelfIter,                 /* tp_iter */
-    (iternextfunc)bytearrayiter_next,  /* tp_iternext */
+    bytearrayiter_next,                /* tp_iternext */
     bytearrayiter_methods,             /* tp_methods */
     0,
 };

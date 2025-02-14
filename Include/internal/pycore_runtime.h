@@ -172,7 +172,7 @@ typedef struct pyruntimestate {
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
     // Used in "Python/emscripten_trampoline.c" to choose between type
     // reflection trampoline and EM_JS trampoline.
-    bool wasm_type_reflection_available;
+    int (*emscripten_count_args_function)(PyCFunctionWithKeywords func);
 #endif
 
     /* All the objects that are shared by the runtime's interpreters. */

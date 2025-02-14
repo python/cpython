@@ -59,11 +59,18 @@ The constants defined in this module are:
    String of ASCII characters which are considered punctuation characters
    in the ``C`` locale: ``!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~``.
 
+
 .. data:: printable
 
-   String of ASCII characters which are considered printable.  This is a
-   combination of :const:`digits`, :const:`ascii_letters`, :const:`punctuation`,
-   and :const:`whitespace`.
+   String of ASCII characters which are considered printable by Python.
+   This is a combination of :const:`digits`, :const:`ascii_letters`,
+   :const:`punctuation`, and :const:`whitespace`.
+
+   .. note::
+
+      By design, :meth:`string.printable.isprintable() <str.isprintable>`
+      returns :const:`False`. In particular, ``string.printable`` is not
+      printable in the POSIX sense (see :manpage:`LC_CTYPE <locale(5)>`).
 
 
 .. data:: whitespace

@@ -681,7 +681,7 @@ loops that truncate the stream.
    consumed from the input iterator and there is no way to access it.
    This could be an issue if an application wants to further consume the
    input iterator after *takewhile* has been run to exhaustion.  To work
-   around this problem, consider using `more-iterools before_and_after()
+   around this problem, consider using `more-itertools before_and_after()
    <https://more-itertools.readthedocs.io/en/stable/api.html#more_itertools.before_and_after>`_
    instead.
 
@@ -838,10 +838,10 @@ and :term:`generators <generator>` which incur interpreter overhead.
 
 .. testcode::
 
-   from collections import deque
+   from collections import Counter, deque
    from contextlib import suppress
    from functools import reduce
-   from math import sumprod, isqrt
+   from math import comb, prod, sumprod, isqrt
    from operator import itemgetter, getitem, mul, neg
 
    def take(n, iterable):
@@ -1126,6 +1126,12 @@ The following recipes have a more mathematical flavor:
        for prime in set(factor(n)):
            n -= n // prime
        return n
+
+   def multinomial(*counts):
+       "Number of distinct arrangements of a multiset."
+       # Counter('abracadabra').values() -> 5 2 1 1 2
+       # multinomial(5, 2, 1, 1, 2) → 83160
+       return prod(map(comb, accumulate(counts), counts))
 
 
 .. doctest::
@@ -1729,6 +1735,12 @@ The following recipes have a more mathematical flavor:
     '0'
     >>> ''.join(it)
     'DEF1'
+
+    >>> multinomial(5, 2, 1, 1, 2)
+    83160
+    >>> word = 'coffee'
+    >>> multinomial(*Counter(word).values()) == len(set(permutations(word)))
+    True
 
 
 .. testcode::

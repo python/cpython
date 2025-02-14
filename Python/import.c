@@ -594,7 +594,8 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
     if (PyList_SetSlice(MODULES_BY_INDEX(interp),
                         0, PyList_GET_SIZE(MODULES_BY_INDEX(interp)),
                         NULL)) {
-        PyErr_FormatUnraisable("Exception ignored on clearing interpreters module list");
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "clearing interpreters module list");
     }
 }
 
@@ -1176,9 +1177,10 @@ hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
         return NULL;
     }
 
-    strncpy(key, str1_data, str1_len);
+    memcpy(key, str1_data, str1_len);
     key[str1_len] = sep;
-    strncpy(key + str1_len + 1, str2_data, str2_len + 1);
+    memcpy(key + str1_len + 1, str2_data, str2_len);
+    key[size - 1] = '\0';
     assert(strlen(key) == size - 1);
     return key;
 }
@@ -4079,13 +4081,15 @@ _PyImport_FiniCore(PyInterpreterState *interp)
     int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
 
     if (_PySys_ClearAttrString(interp, "meta_path", verbose) < 0) {
-        PyErr_FormatUnraisable("Exception ignored on clearing sys.meta_path");
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "clearing sys.meta_path");
     }
 
     // XXX Pull in most of finalize_modules() in pylifecycle.c.
 
     if (_PySys_ClearAttrString(interp, "modules", verbose) < 0) {
-        PyErr_FormatUnraisable("Exception ignored on clearing sys.modules");
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "clearing sys.modules");
     }
 
     _PyImport_ClearCore(interp);
@@ -4110,7 +4114,7 @@ init_zipimport(PyThreadState *tstate, int verbose)
         PySys_WriteStderr("# installing zipimport hook\n");
     }
 
-    PyObject *zipimporter = _PyImport_GetModuleAttrString("zipimport", "zipimporter");
+    PyObject *zipimporter = PyImport_ImportModuleAttrString("zipimport", "zipimporter");
     if (zipimporter == NULL) {
         _PyErr_Clear(tstate); /* No zipimporter object -- okay */
         if (verbose) {
@@ -4160,10 +4164,12 @@ _PyImport_FiniExternal(PyInterpreterState *interp)
     // XXX Uninstall importlib metapath importers here?
 
     if (_PySys_ClearAttrString(interp, "path_importer_cache", verbose) < 0) {
-        PyErr_FormatUnraisable("Exception ignored on clearing sys.path_importer_cache");
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "clearing sys.path_importer_cache");
     }
     if (_PySys_ClearAttrString(interp, "path_hooks", verbose) < 0) {
-        PyErr_FormatUnraisable("Exception ignored on clearing sys.path_hooks");
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "clearing sys.path_hooks");
     }
 }
 
@@ -4173,7 +4179,7 @@ _PyImport_FiniExternal(PyInterpreterState *interp)
 /******************/
 
 PyObject *
-_PyImport_GetModuleAttr(PyObject *modname, PyObject *attrname)
+PyImport_ImportModuleAttr(PyObject *modname, PyObject *attrname)
 {
     PyObject *mod = PyImport_Import(modname);
     if (mod == NULL) {
@@ -4185,7 +4191,7 @@ _PyImport_GetModuleAttr(PyObject *modname, PyObject *attrname)
 }
 
 PyObject *
-_PyImport_GetModuleAttrString(const char *modname, const char *attrname)
+PyImport_ImportModuleAttrString(const char *modname, const char *attrname)
 {
     PyObject *pmodname = PyUnicode_FromString(modname);
     if (pmodname == NULL) {
@@ -4196,7 +4202,7 @@ _PyImport_GetModuleAttrString(const char *modname, const char *attrname)
         Py_DECREF(pmodname);
         return NULL;
     }
-    PyObject *result = _PyImport_GetModuleAttr(pmodname, pattrname);
+    PyObject *result = PyImport_ImportModuleAttr(pmodname, pattrname);
     Py_DECREF(pattrname);
     Py_DECREF(pmodname);
     return result;
@@ -4687,7 +4693,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
      * code relies on fp still being open. */
     FILE *fp;
     if (file != NULL) {
-        fp = _Py_fopen_obj(info.filename, "r");
+        fp = Py_fopen(info.filename, "r");
         if (fp == NULL) {
             goto finally;
         }
