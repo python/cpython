@@ -87,7 +87,8 @@ class Test_pygettext(unittest.TestCase):
         self.maxDiff = None
         self.assertEqual(normalize_POT_file(expected), normalize_POT_file(actual))
 
-    def extract_from_str(self, module_content, *, args=(), strict=True, with_stderr=False):
+    def extract_from_str(self, module_content, *, args=(), strict=True,
+                         with_stderr=False, raw=False):
         """Return all msgids extracted from module_content."""
         filename = 'test.py'
         with temp_cwd(None):
@@ -98,10 +99,11 @@ class Test_pygettext(unittest.TestCase):
                 self.assertEqual(res.err, b'')
             with open('messages.pot', encoding='utf-8') as fp:
                 data = fp.read()
-        msgids = self.get_msgids(data)
+        if not raw:
+            data = self.get_msgids(data)
         if not with_stderr:
-            return msgids
-        return msgids, res.err
+            return data
+        return data, res.err
 
     def extract_docstrings_from_str(self, module_content):
         """Return all docstrings extracted from module_content."""
@@ -431,6 +433,20 @@ class Test_pygettext(unittest.TestCase):
             "*** test.py:2: Expected at least 2 positional argument(s) in gettext call, got 1\n"
             "*** test.py:3: Variable positional arguments are not allowed in gettext calls\n"
         )
+
+    def test_extract_all_comments(self):
+        """
+        Test that the --add-comments option without an
+        explicit tag extracts all translator comments.
+        """
+
+        for arg in ('--add-comments', '-c'):
+            with self.subTest(arg=arg):
+                data = self.extract_from_str(dedent('''\
+                # Translator comment
+                _("foo")
+                '''), args=(arg,), raw=True)
+                self.assertIn('#. Translator comment', data)
 
 
 def update_POT_snapshots():

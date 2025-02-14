@@ -547,8 +547,8 @@ def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            'ac:d:DEhk:Kno:p:S:Vvw:x:X:',
-            ['extract-all', 'add-comments=', 'default-domain=', 'escape',
+            'ac::d:DEhk:Kno:p:S:Vvw:x:X:',
+            ['extract-all', 'add-comments=?', 'default-domain=', 'escape',
              'help', 'keyword=', 'no-default-keywords',
              'add-location', 'no-location', 'output=', 'output-dir=',
              'style=', 'verbose', 'version', 'width=', 'exclude-file=',
