@@ -1424,7 +1424,7 @@ _PyCodec_SurrogateEscapeUnicodeDecodeError(PyObject *exc)
     Py_DECREF(obj);
 
     if (consumed == 0) {
-        /* codec complained about ASCII byte. */
+        /* Codec complained about ASCII byte. */
         PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
         return NULL;
     }
