@@ -88,7 +88,9 @@ writer_init(PyObject *self_raw, PyObject *args, PyObject *kwargs)
     }
 
     Py_ssize_t alloc;
-    if (!PyArg_ParseTuple(args, "n", &alloc)) {
+    char *str;
+    Py_ssize_t str_size;
+    if (!PyArg_ParseTuple(args, "ny#", &alloc, &str, &str_size)) {
         return -1;
     }
 
@@ -96,6 +98,10 @@ writer_init(PyObject *self_raw, PyObject *args, PyObject *kwargs)
     if (self->buf == NULL) {
         return -1;
     }
+
+    memcpy(self->buf, str, str_size);
+    self->buf += str_size;
+
     return 0;
 }
 

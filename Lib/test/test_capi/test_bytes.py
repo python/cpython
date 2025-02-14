@@ -291,14 +291,24 @@ class CAPITest(unittest.TestCase):
 
 
 class PyBytesWriterTest(unittest.TestCase):
-    def create_writer(self, alloc):
-        return _testcapi.PyBytesWriter(alloc)
+    def create_writer(self, alloc, string=b''):
+        return _testcapi.PyBytesWriter(alloc, string)
 
     def test_empty(self):
         # Test PyBytesWriter_Create()
         writer = self.create_writer(0)
         self.assertEqual(writer.get_remaining(), 0)
         self.assertEqual(writer.finish(), b'')
+
+    def test_abc(self):
+        # Test PyBytesWriter_Create()
+        writer = self.create_writer(3, b'abc')
+        self.assertEqual(writer.get_remaining(), 0)
+        self.assertEqual(writer.finish(), b'abc')
+
+        writer = self.create_writer(10, b'abc')
+        self.assertEqual(writer.get_remaining(), 7)
+        self.assertEqual(writer.finish(), b'abc')
 
     def test_write_bytes(self):
         # Test PyBytesWriter_WriteBytes()
@@ -352,6 +362,7 @@ class PyBytesWriterTest(unittest.TestCase):
         # Test PyBytesWriter_Format()
         writer = self.create_writer(0)
         writer.format_i(123456)
+        self.assertEqual(writer.get_remaining(), 0)
         self.assertEqual(writer.finish(), b'123456')
 
 

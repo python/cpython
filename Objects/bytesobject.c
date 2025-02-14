@@ -215,10 +215,15 @@ bytes_fromformat(PyBytesWriter *writer, char *s,
 
 #define WRITE_BYTES(str) \
     do { \
-        s = PyBytesWriter_WriteBytes(writer, s, (str), strlen(str)); \
-        if (s == NULL) { \
-            goto error; \
+        Py_ssize_t len = strlen(str); \
+        if (len > 2) { \
+            s = PyBytesWriter_Extend(writer, s, len - 2); \
+            if (s == NULL) { \
+                goto error; \
+            } \
         } \
+        memcpy(s, (str), len); \
+        s += len; \
     } while (0)
 
     for (f = format; *f; f++) {
@@ -355,7 +360,10 @@ bytes_fromformat(PyBytesWriter *writer, char *s,
 
         default:
             /* invalid format string: copy unformatted string and exit */
-            WRITE_BYTES(p);
+            s = PyBytesWriter_WriteBytes(writer, s, p, strlen(p));
+            if (s == NULL) {
+                goto error;
+            }
             goto done;
         }
     }
