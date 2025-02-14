@@ -1552,35 +1552,6 @@ _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyComp
 #include <malloc.h>
 #include <excpt.h>
 
-void _Py_StackProbe(uintptr_t from, int bytes, int *probed)
-{
-    assert((bytes & 4095) == 0);
-    int depth = 4096;
-    char here;
-    uintptr_t here_addr = (uintptr_t)&here;
-    __try
-    {
-        while (depth <= bytes) {
-            uintptr_t probe_point = from - depth + 64;
-            if (probe_point < here_addr) {
-                /* alloca throws a stack overflow exception if there's
-                 * not enough space left on the stack */
-                alloca(here_addr - probe_point);
-            }
-            *probed = depth;
-            depth += 4096;
-        }
-    }
-    __except (GetExceptionCode() == STATUS_STACK_OVERFLOW ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
-    {
-        int errcode = _resetstkoflw();
-        if (errcode == 0)
-        {
-            Py_FatalError("Could not reset the stack!");
-        }
-    }
-}
-
 /*
  * Return non-zero when we run out of memory on the stack; zero otherwise.
  */
@@ -1588,11 +1559,11 @@ int PyOS_CheckStack(void)
 {
     char here;
     uintptr_t here_addr = (uintptr_t)&here;
-    uintptr_t from = _Py_SIZE_ROUND_UP(here_addr, 4096);
-    int depth;
-    _Py_StackProbe(from, PYOS_STACK_MARGIN_BYTES*2, &depth);
-    assert(depth <= PYOS_STACK_MARGIN_BYTES*2);
-    if (depth == PYOS_STACK_MARGIN_BYTES*2) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate->c_stack_hard_limit == 0) {
+        _Py_InitializeRecursionLimits(tstate);
+    }
+    if (here_addr >= tstate->c_stack_soft_limit) {
         return 0;
     }
     else {

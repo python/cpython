@@ -323,7 +323,7 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 #if defined(__s390x__)
 #  define Py_C_STACK_SIZE 320000
 #elif defined(_WIN32)
-   // Don't define Py_C_STACK_SIZE, use probing instead
+   // Don't define Py_C_STACK_SIZE, ask the O/S
 #elif defined(__ANDROID__)
 #  define Py_C_STACK_SIZE 1200000
 #elif defined(__sparc__)
@@ -340,7 +340,7 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 #endif
 
 void
-_Py_UpdateRecursionLimits(PyThreadState *tstate)
+_Py_InitializeRecursionLimits(PyThreadState *tstate)
 {
 #ifdef WIN32
     ULONG_PTR low, high;
@@ -368,7 +368,7 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     uintptr_t here_addr = (uintptr_t)&here;
     assert(tstate->c_stack_soft_limit != 0);
     if (tstate->c_stack_hard_limit == 0) {
-        _Py_UpdateRecursionLimits(tstate);
+        _Py_InitializeRecursionLimits(tstate);
     }
     if (here_addr >= tstate->c_stack_soft_limit) {
         return 0;
