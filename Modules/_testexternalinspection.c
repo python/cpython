@@ -410,6 +410,7 @@ get_py_runtime(pid_t pid)
 {
     uintptr_t address = search_map_for_section(pid, "PyRuntime", "libpython");
     if (address == 0) {
+        PyErr_Clear();
         address = search_map_for_section(pid, "PyRuntime", "python");
     }
     return address;
@@ -1458,6 +1459,13 @@ get_stack_trace(PyObject* self, PyObject* args)
     }
 
     uintptr_t runtime_start_address = get_py_runtime(pid);
+    if (runtime_start_address == 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(
+                PyExc_RuntimeError, "Failed to get .PyRuntime address");
+        }
+        return NULL;
+    }
     struct _Py_DebugOffsets local_debug_offsets;
 
     if (read_offsets(pid, &runtime_start_address, &local_debug_offsets)) {
@@ -1511,6 +1519,13 @@ get_async_stack_trace(PyObject* self, PyObject* args)
     }
 
     uintptr_t runtime_start_address = get_py_runtime(pid);
+    if (runtime_start_address == 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(
+                PyExc_RuntimeError, "Failed to get .PyRuntime address");
+        }
+        return NULL;
+    }
     struct _Py_DebugOffsets local_debug_offsets;
 
     if (read_offsets(pid, &runtime_start_address, &local_debug_offsets)) {

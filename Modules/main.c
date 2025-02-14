@@ -99,7 +99,7 @@ static int
 pymain_err_print(int *exitcode_p)
 {
     int exitcode;
-    if (_Py_HandleSystemExit(&exitcode)) {
+    if (_Py_HandleSystemExitAndKeyboardInterrupt(&exitcode)) {
         *exitcode_p = exitcode;
         return 1;
     }
@@ -292,11 +292,7 @@ pymain_start_pyrepl_no_main(void)
         goto done;
     }
     if (!PyDict_SetItemString(kwargs, "pythonstartup", _PyLong_GetOne())) {
-        _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
         console_result = PyObject_Call(console, empty_tuple, kwargs);
-        if (!console_result && PyErr_Occurred() == PyExc_KeyboardInterrupt) {
-            _PyRuntime.signals.unhandled_keyboard_interrupt = 1;
-        }
         if (console_result == NULL) {
             res = pymain_exit_err_print();
         }
@@ -338,11 +334,7 @@ pymain_run_module(const wchar_t *modname, int set_argv0)
         Py_DECREF(module);
         return pymain_exit_err_print();
     }
-    _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
     result = PyObject_Call(runmodule, runargs, NULL);
-    if (!result && PyErr_Occurred() == PyExc_KeyboardInterrupt) {
-        _PyRuntime.signals.unhandled_keyboard_interrupt = 1;
-    }
     Py_DECREF(runmodule);
     Py_DECREF(module);
     Py_DECREF(runargs);
@@ -762,6 +754,8 @@ int
 Py_RunMain(void)
 {
     int exitcode = 0;
+
+    _PyRuntime.signals.unhandled_keyboard_interrupt = 0;
 
     pymain_run_python(&exitcode);
 
