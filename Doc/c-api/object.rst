@@ -613,3 +613,95 @@ Object Protocol
 
    .. versionadded:: 3.14
 
+.. c:function:: int PyUnstable_IsImmortal(PyObject *obj)
+
+   This function returns non-zero if *obj* is :term:`immortal`, and zero
+   otherwise. This function cannot fail.
+
+   .. note::
+
+      Objects that are immortal in one CPython version are not guaranteed to
+      be immortal in another.
+
+   .. versionadded:: 3.14
+
+.. c:function:: int PyUnstable_TryIncRef(PyObject *obj)
+
+   Increments the reference count of *obj* if it is not zero.  Returns ``1``
+   if the object's reference count was successfully incremented. Otherwise,
+   this function returns ``0``.
+
+   :c:func:`PyUnstable_EnableTryIncRef` must have been called
+   earlier on *obj* or this function may spuriously return ``0`` in the
+   :term:`free threading` build.
+
+   This function is logically equivalent to the following C code, except that
+   it behaves atomically in the :term:`free threading` build::
+
+      if (Py_REFCNT(op) > 0) {
+         Py_INCREF(op);
+         return 1;
+      }
+      return 0;
+
+   This is intended as a building block for managing weak references
+   without the overhead of a Python :ref:`weak reference object <weakrefobjects>`.
+
+   Typically, correct use of this function requires support from *obj*'s
+   deallocator (:c:member:`~PyTypeObject.tp_dealloc`).
+   For example, the following sketch could be adapted to implement a
+   "weakmap" that works like a :py:class:`~weakref.WeakValueDictionary`
+   for a specific type:
+
+   .. code-block:: c
+
+      PyMutex mutex;
+
+      PyObject *
+      add_entry(weakmap_key_type *key, PyObject *value)
+      {
+          PyUnstable_EnableTryIncRef(value);
+          weakmap_type weakmap = ...;
+          PyMutex_Lock(&mutex);
+          weakmap_add_entry(weakmap, key, value);
+          PyMutex_Unlock(&mutex);
+          Py_RETURN_NONE;
+      }
+
+      PyObject *
+      get_value(weakmap_key_type *key)
+      {
+          weakmap_type weakmap = ...;
+          PyMutex_Lock(&mutex);
+          PyObject *result = weakmap_find(weakmap, key);
+          if (PyUnstable_TryIncRef(result)) {
+              // `result` is safe to use
+              PyMutex_Unlock(&mutex);
+              return result;
+          }
+          // if we get here, `result` is starting to be garbage-collected,
+          // but has not been removed from the weakmap yet
+          PyMutex_Unlock(&mutex);
+          return NULL;
+      }
+
+      // tp_dealloc function for weakmap values
+      void
+      value_dealloc(PyObject *value)
+      {
+          weakmap_type weakmap = ...;
+          PyMutex_Lock(&mutex);
+          weakmap_remove_value(weakmap, value);
+
+          ...
+          PyMutex_Unlock(&mutex);
+      }
+
+   .. versionadded:: 3.14
+
+.. c:function:: void PyUnstable_EnableTryIncRef(PyObject *obj)
+
+   Enables subsequent uses of :c:func:`PyUnstable_TryIncRef` on *obj*.  The
+   caller must hold a :term:`strong reference` to *obj* when calling this.
+
+   .. versionadded:: 3.14
