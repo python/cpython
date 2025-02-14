@@ -31,7 +31,7 @@ from .console import Event
 from .trace import trace
 
 class BaseEventQueue:
-    def __init__(self, encoding: str, keymap_dict=dict[bytes, str]) -> None:
+    def __init__(self, encoding: str, keymap_dict: dict[bytes, str]) -> None:
         self.compiled_keymap = keymap.compile_keymap(keymap_dict)
         self.keymap = self.compiled_keymap
         trace("keymap {k!r}", k=self.keymap)
