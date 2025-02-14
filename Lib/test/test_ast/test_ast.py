@@ -147,18 +147,17 @@ class AST_Tests(unittest.TestCase):
                         self.assertEqual(res.body[0].value.id, expected)
 
     def test_optimization_levels_const_folding(self):
-        folded = ('Expr', (1, 0, 1, 5), ('Constant', (1, 0, 1, 5), 3, None))
-        not_folded = ('Expr', (1, 0, 1, 5),
-                         ('BinOp', (1, 0, 1, 5),
-                             ('Constant', (1, 0, 1, 1), 1, None),
-                             ('Add',),
-                             ('Constant', (1, 4, 1, 5), 2, None)))
+        folded = ('Expr', (1, 0, 1, 6), ('Constant', (1, 0, 1, 6), (1, 2), None))
+        not_folded = ('Expr', (1, 0, 1, 6),
+                         ('Tuple', (1, 0, 1, 6),
+                             [('Constant', (1, 1, 1, 2), 1, None),
+                             ('Constant', (1, 4, 1, 5), 2, None)], ('Load',)))
 
         cases = [(-1, not_folded), (0, not_folded), (1, folded), (2, folded)]
         for (optval, expected) in cases:
             with self.subTest(optval=optval):
-                tree1 = ast.parse("1 + 2", optimize=optval)
-                tree2 = ast.parse(ast.parse("1 + 2"), optimize=optval)
+                tree1 = ast.parse("(1, 2)", optimize=optval)
+                tree2 = ast.parse(ast.parse("(1, 2)"), optimize=optval)
                 for tree in [tree1, tree2]:
                     res = to_tuple(tree.body[0])
                     self.assertEqual(res, expected)
@@ -3134,32 +3133,6 @@ class ASTOptimiziationTests(unittest.TestCase):
             f"{ast.dump(optimized_tree)}",
         )
 
-    def create_binop(self, operand, left=ast.Constant(1), right=ast.Constant(1)):
-            return ast.BinOp(left=left, op=self.binop[operand], right=right)
-
-    def test_folding_binop(self):
-        code = "1 %s 1"
-        operators = self.binop.keys()
-
-        for op in operators:
-            result_code = code % op
-            non_optimized_target = self.wrap_expr(self.create_binop(op))
-            optimized_target = self.wrap_expr(ast.Constant(value=eval(result_code)))
-
-            with self.subTest(
-                result_code=result_code,
-                non_optimized_target=non_optimized_target,
-                optimized_target=optimized_target
-            ):
-                self.assert_ast(result_code, non_optimized_target, optimized_target)
-
-        # Multiplication of constant tuples must be folded
-        code = "(1,) * 3"
-        non_optimized_target = self.wrap_expr(self.create_binop("*", ast.Tuple(elts=[ast.Constant(value=1)]), ast.Constant(value=3)))
-        optimized_target = self.wrap_expr(ast.Constant(eval(code)))
-
-        self.assert_ast(code, non_optimized_target, optimized_target)
-
     def test_folding_unaryop(self):
         code = "%s1"
         operators = self.unaryop.keys()
@@ -3240,9 +3213,9 @@ class ASTOptimiziationTests(unittest.TestCase):
         self.assert_ast(code, non_optimized_target, optimized_target)
 
     def test_folding_type_param_in_function_def(self):
-        code = "def foo[%s = 1 + 1](): pass"
+        code = "def foo[%s = (1, 2)](): pass"
 
-        unoptimized_binop = self.create_binop("+")
+        unoptimized_tuple = ast.Tuple(elts=[ast.Constant(1), ast.Constant(2)])
         unoptimized_type_params = [
             ("T", "T", ast.TypeVar),
             ("**P", "P", ast.ParamSpec),
@@ -3256,7 +3229,7 @@ class ASTOptimiziationTests(unittest.TestCase):
                     name='foo',
                     args=ast.arguments(),
                     body=[ast.Pass()],
-                    type_params=[type_param(name=name, default_value=ast.Constant(2))]
+                    type_params=[type_param(name=name, default_value=ast.Constant((1, 2)))]
                 )
             )
             non_optimized_target = self.wrap_statement(
@@ -3264,15 +3237,15 @@ class ASTOptimiziationTests(unittest.TestCase):
                     name='foo',
                     args=ast.arguments(),
                     body=[ast.Pass()],
-                    type_params=[type_param(name=name, default_value=unoptimized_binop)]
+                    type_params=[type_param(name=name, default_value=unoptimized_tuple)]
                 )
             )
             self.assert_ast(result_code, non_optimized_target, optimized_target)
 
     def test_folding_type_param_in_class_def(self):
-        code = "class foo[%s = 1 + 1]: pass"
+        code = "class foo[%s = (1, 2)]: pass"
 
-        unoptimized_binop = self.create_binop("+")
+        unoptimized_tuple = ast.Tuple(elts=[ast.Constant(1), ast.Constant(2)])
         unoptimized_type_params = [
             ("T", "T", ast.TypeVar),
             ("**P", "P", ast.ParamSpec),
@@ -3285,22 +3258,22 @@ class ASTOptimiziationTests(unittest.TestCase):
                 ast.ClassDef(
                     name='foo',
                     body=[ast.Pass()],
-                    type_params=[type_param(name=name, default_value=ast.Constant(2))]
+                    type_params=[type_param(name=name, default_value=ast.Constant((1, 2)))]
                 )
             )
             non_optimized_target = self.wrap_statement(
                 ast.ClassDef(
                     name='foo',
                     body=[ast.Pass()],
-                    type_params=[type_param(name=name, default_value=unoptimized_binop)]
+                    type_params=[type_param(name=name, default_value=unoptimized_tuple)]
                 )
             )
             self.assert_ast(result_code, non_optimized_target, optimized_target)
 
     def test_folding_type_param_in_type_alias(self):
-        code = "type foo[%s = 1 + 1] = 1"
+        code = "type foo[%s = (1, 2)] = 1"
 
-        unoptimized_binop = self.create_binop("+")
+        unoptimized_tuple = ast.Tuple(elts=[ast.Constant(1), ast.Constant(2)])
         unoptimized_type_params = [
             ("T", "T", ast.TypeVar),
             ("**P", "P", ast.ParamSpec),
@@ -3312,14 +3285,14 @@ class ASTOptimiziationTests(unittest.TestCase):
             optimized_target = self.wrap_statement(
                 ast.TypeAlias(
                     name=ast.Name(id='foo', ctx=ast.Store()),
-                    type_params=[type_param(name=name, default_value=ast.Constant(2))],
+                    type_params=[type_param(name=name, default_value=ast.Constant((1, 2)))],
                     value=ast.Constant(value=1),
                 )
             )
             non_optimized_target = self.wrap_statement(
                 ast.TypeAlias(
                     name=ast.Name(id='foo', ctx=ast.Store()),
-                    type_params=[type_param(name=name, default_value=unoptimized_binop)],
+                    type_params=[type_param(name=name, default_value=unoptimized_tuple)],
                     value=ast.Constant(value=1),
                 )
             )
