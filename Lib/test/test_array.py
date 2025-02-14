@@ -1683,8 +1683,7 @@ class FreeThreadingTest(unittest.TestCase):
     # Non-deterministic, but at least one of these things will fail if
     # array module is not free-thread safe.
 
-    @unittest.skipUnless(sysconfig.get_config_var('Py_GIL_DISABLED'),
-                         'this test can only fail with GIL disabled')
+    @unittest.skipUnless(support.Py_GIL_DISABLED, 'this test can only possibly fail with GIL disabled')
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_free_threading(self):
