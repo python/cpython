@@ -18,6 +18,7 @@ import threading
 import unittest
 
 import test.support
+from test import support
 from test.support import import_helper
 from test.support import threading_helper
 from test.support import warnings_helper
@@ -2189,8 +2190,7 @@ class BytesSubclassTest(SubclassTest, unittest.TestCase):
 
 
 class FreeThreadingTest(unittest.TestCase):
-    @unittest.skipUnless(sysconfig.get_config_var('Py_GIL_DISABLED'),
-                         'this test can only possibly fail with GIL disabled')
+    @unittest.skipUnless(support.Py_GIL_DISABLED, 'this test can only possibly fail with GIL disabled')
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_free_threading_bytearrayiter(self):
