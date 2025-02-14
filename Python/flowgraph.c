@@ -126,6 +126,16 @@ is_jump(cfg_instr *i)
         _instr__ptr_->i_oparg = 0; \
     } while (0);
 
+/* No args, reset lineno*/
+#define INSTR_SET_OP0_RESET_LINENO(I, OP) \
+    do { \
+        assert(!OPCODE_HAS_ARG(OP)); \
+        cfg_instr *_instr__ptr_ = (I); \
+        _instr__ptr_->i_opcode = (OP); \
+        _instr__ptr_->i_oparg = 0; \
+        _instr__ptr_->i_loc.lineno = -1; \
+    } while (0);
+
 /***** Blocks *****/
 
 /* Returns the offset of the next instruction in the current block's
