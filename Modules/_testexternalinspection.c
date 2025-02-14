@@ -232,15 +232,15 @@ search_map_for_section(pid_t pid, const char* secname, const char* substr) {
                    &count,
                    &object_name) == KERN_SUCCESS)
     {
-        int path_len = proc_regionfilename(
-            pid, address, map_filename, MAXPATHLEN);
-        if (path_len == 0) {
+        if ((region_info.protection & VM_PROT_READ) == 0
+            || (region_info.protection & VM_PROT_EXECUTE) == 0) {
             address += size;
             continue;
         }
 
-        if ((region_info.protection & VM_PROT_READ) == 0
-            || (region_info.protection & VM_PROT_EXECUTE) == 0) {
+        int path_len = proc_regionfilename(
+            pid, address, map_filename, MAXPATHLEN);
+        if (path_len == 0) {
             address += size;
             continue;
         }
@@ -383,6 +383,10 @@ search_map_for_section(pid_t pid, const char* secname, const char* map)
             );
         result = start_address + (uintptr_t)section->sh_addr - elf_load_addr;
     }
+    else {
+        PyErr_Format(PyExc_KeyError,
+                     "cannot find map for section %s", secname);
+    }
 
 exit:
     if (close(fd) != 0) {
@@ -406,6 +410,7 @@ get_py_runtime(pid_t pid)
 {
     uintptr_t address = search_map_for_section(pid, "PyRuntime", "libpython");
     if (address == 0) {
+        PyErr_Clear();
         address = search_map_for_section(pid, "PyRuntime", "python");
     }
     return address;
@@ -414,7 +419,11 @@ get_py_runtime(pid_t pid)
 static uintptr_t
 get_async_debug(pid_t pid)
 {
-    return search_map_for_section(pid, "AsyncioDebug", "_asyncio.cpython");
+    uintptr_t result = search_map_for_section(pid, "AsyncioDebug", "_asyncio.cpython");
+    if (result == 0 && !PyErr_Occurred()) {
+        PyErr_SetString(PyExc_RuntimeError, "Cannot find AsyncioDebug section");
+    }
+    return result;
 }
 
 
@@ -561,6 +570,16 @@ read_int(pid_t pid, uintptr_t address, int *result)
 }
 
 static int
+read_unsigned_long(pid_t pid, uintptr_t address, unsigned long *result)
+{
+    int bytes_read = read_memory(pid, address, sizeof(unsigned long), result);
+    if (bytes_read < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+static int
 read_pyobj(pid_t pid, uintptr_t address, PyObject *ptr_addr)
 {
     int bytes_read = read_memory(pid, address, sizeof(PyObject), ptr_addr);
@@ -627,7 +646,7 @@ read_py_long(pid_t pid, _Py_DebugOffsets* offsets, uintptr_t address)
         return 0;
     }
 
-    char *digits = (char *)PyMem_RawMalloc(size * sizeof(digit));
+    digit *digits = (digit *)PyMem_RawMalloc(size * sizeof(digit));
     if (!digits) {
         PyErr_NoMemory();
         return -1;
@@ -645,16 +664,13 @@ read_py_long(pid_t pid, _Py_DebugOffsets* offsets, uintptr_t address)
 
     long value = 0;
 
+    // In theory this can overflow, but because of llvm/llvm-project#16778
+    // we can't use __builtin_mul_overflow because it fails to link with
+    // __muloti4 on aarch64. In practice this is fine because all we're
+    // testing here are task numbers that would fit in a single byte.
     for (ssize_t i = 0; i < size; ++i) {
-        long long factor;
-        if (__builtin_mul_overflow(digits[i], (1UL << (ssize_t)(shift * i)),
-                                   &factor)
-        ) {
-            goto error;
-        }
-        if (__builtin_add_overflow(value, factor, &value)) {
-            goto error;
-        }
+        long long factor = digits[i] * (1UL << (ssize_t)(shift * i));
+        value += factor;
     }
     PyMem_RawFree(digits);
     if (negative) {
@@ -693,8 +709,8 @@ parse_task_name(
         return NULL;
     }
 
-    int flags;
-    err = read_int(
+    unsigned long flags;
+    err = read_unsigned_long(
         pid,
         (uintptr_t)task_name_obj.ob_type + offsets->type_object.tp_flags,
         &flags);
@@ -763,6 +779,7 @@ parse_coro_chain(
     }
 
     if (PyList_Append(render_to, name)) {
+        Py_DECREF(name);
         return -1;
     }
     Py_DECREF(name);
@@ -940,7 +957,6 @@ parse_task(
     if (PyList_Append(render_to, result)) {
         goto err;
     }
-    Py_DECREF(result);
 
     PyObject *awaited_by = PyList_New(0);
     if (awaited_by == NULL) {
@@ -958,6 +974,7 @@ parse_task(
     ) {
         goto err;
     }
+    Py_DECREF(result);
 
     return 0;
 
@@ -1442,6 +1459,13 @@ get_stack_trace(PyObject* self, PyObject* args)
     }
 
     uintptr_t runtime_start_address = get_py_runtime(pid);
+    if (runtime_start_address == 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(
+                PyExc_RuntimeError, "Failed to get .PyRuntime address");
+        }
+        return NULL;
+    }
     struct _Py_DebugOffsets local_debug_offsets;
 
     if (read_offsets(pid, &runtime_start_address, &local_debug_offsets)) {
@@ -1495,6 +1519,13 @@ get_async_stack_trace(PyObject* self, PyObject* args)
     }
 
     uintptr_t runtime_start_address = get_py_runtime(pid);
+    if (runtime_start_address == 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(
+                PyExc_RuntimeError, "Failed to get .PyRuntime address");
+        }
+        return NULL;
+    }
     struct _Py_DebugOffsets local_debug_offsets;
 
     if (read_offsets(pid, &runtime_start_address, &local_debug_offsets)) {
@@ -1512,6 +1543,7 @@ get_async_stack_trace(PyObject* self, PyObject* args)
     }
     PyObject* calls = PyList_New(0);
     if (calls == NULL) {
+        Py_DECREF(result);
         return NULL;
     }
     if (PyList_SetItem(result, 0, calls)) { /* steals ref to 'calls' */
