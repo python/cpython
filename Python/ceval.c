@@ -135,6 +135,7 @@
 static void
 dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
 {
+    _PyFrame_SetStackPointer(frame, stack_pointer);
     _PyStackRef *stack_base = _PyFrame_Stackbase(frame);
     PyObject *exc = PyErr_GetRaisedException();
     printf("    stack=[");
@@ -165,6 +166,7 @@ dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
     printf("]\n");
     fflush(stdout);
     PyErr_SetRaisedException(exc);
+    _PyFrame_GetStackPointer(frame);
 }
 
 static void
@@ -764,15 +766,11 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 #define PY_EVAL_C_STACK_UNITS 2
 
 
-/* _PyEval_EvalFrameDefault is too large to optimize for speed with PGO on MSVC
-   when the JIT is enabled or GIL is disabled. Disable that optimization around
-   this function only. If this is fixed upstream, we should gate this on the
-   version of MSVC.
+/* _PyEval_EvalFrameDefault is too large to optimize for speed with PGO on MSVC.
  */
 #if (defined(_MSC_VER) && \
-     defined(_Py_USING_PGO) && \
-     (defined(_Py_JIT) || \
-      defined(Py_GIL_DISABLED)))
+     (_MSC_VER < 1943) && \
+     defined(_Py_USING_PGO))
 #define DO_NOT_OPTIMIZE_INTERP_LOOP
 #endif
 
@@ -803,6 +801,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #ifndef Py_TAIL_CALL_INTERP
     uint8_t opcode;    /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
+    assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
 #endif
     _PyInterpreterFrame entry_frame;
 
@@ -862,8 +861,8 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         /* Because this avoids the RESUME, we need to update instrumentation */
         _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
         next_instr = frame->instr_ptr;
-        stack_pointer = _PyFrame_GetStackPointer(frame);
         monitor_throw(tstate, frame, next_instr);
+        stack_pointer = _PyFrame_GetStackPointer(frame);
 #if Py_TAIL_CALL_INTERP
         return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0);
 #else
@@ -2016,7 +2015,7 @@ _PyEval_ExceptionGroupMatch(_PyInterpreterFrame *frame, PyObject* exc_value,
 */
 
 int
-_PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v_stackref,
+_PyEval_UnpackIterableStackRef(PyThreadState *tstate, PyObject *v,
                        int argcnt, int argcntafter, _PyStackRef *sp)
 {
     int i = 0, j = 0;
@@ -2024,8 +2023,6 @@ _PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v_stackref,
     PyObject *it;  /* iter(v) */
     PyObject *w;
     PyObject *l = NULL; /* variable list */
-
-    PyObject *v = PyStackRef_AsPyObjectBorrow(v_stackref);
     assert(v != NULL);
 
     it = PyObject_GetIter(v);

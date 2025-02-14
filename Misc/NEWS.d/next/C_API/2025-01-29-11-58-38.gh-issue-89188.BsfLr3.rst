@@ -1,3 +1,0 @@
-Implement :c:func:`PyUnicode_KIND` and :c:func:`PyUnicode_DATA` as function,
-in addition to the macros with the same names. The macros rely on C bit
-fields which have compiler-specific layout. Patch by Victor Stinner.
