@@ -439,7 +439,6 @@ class Test_pygettext(unittest.TestCase):
         Test that the --add-comments option without an
         explicit tag extracts all translator comments.
         """
-
         for arg in ('--add-comments', '-c'):
             with self.subTest(arg=arg):
                 data = self.extract_from_str(dedent('''\
