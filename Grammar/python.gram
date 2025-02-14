@@ -394,14 +394,14 @@ for_stmt[stmt_ty]:
 
 with_stmt[stmt_ty]:
     | invalid_with_stmt_indent
-    | 'with' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' tc=[TYPE_COMMENT] b=block {
-       _PyAST_With(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
-    | 'with' a[asdl_withitem_seq*]=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
-        _PyAST_With(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA) }
-    | 'async' 'with' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' ':' b=block {
-       CHECK_VERSION(stmt_ty, 5, "Async with statements are", _PyAST_AsyncWith(a, b, NULL, EXTRA)) }
-    | 'async' 'with' a[asdl_withitem_seq*]=','.with_item+ ':' tc=[TYPE_COMMENT] b=block {
-       CHECK_VERSION(stmt_ty, 5, "Async with statements are", _PyAST_AsyncWith(a, b, NEW_TYPE_COMMENT(p, tc), EXTRA)) }
+    | start='with' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' end=':' tc=[TYPE_COMMENT] b=block {
+       _PyAST_With(a, b, NEW_TYPE_COMMENT(p, tc), HEADER(start, end), EXTRA) }
+    | start='with' a[asdl_withitem_seq*]=','.with_item+ end=':' tc=[TYPE_COMMENT] b=block {
+        _PyAST_With(a, b, NEW_TYPE_COMMENT(p, tc), HEADER(start, end), EXTRA) }
+    | start='async' 'with' '(' a[asdl_withitem_seq*]=','.with_item+ ','? ')' end=':' b=block {
+       CHECK_VERSION(stmt_ty, 5, "Async with statements are", _PyAST_AsyncWith(a, b, NULL, HEADER(start, end), EXTRA)) }
+    | start='async' 'with' a[asdl_withitem_seq*]=','.with_item+ end=':' tc=[TYPE_COMMENT] b=block {
+       CHECK_VERSION(stmt_ty, 5, "Async with statements are", _PyAST_AsyncWith(a, b, NEW_TYPE_COMMENT(p, tc), HEADER(start, end), EXTRA)) }
     | invalid_with_stmt
 
 with_item[withitem_ty]:
