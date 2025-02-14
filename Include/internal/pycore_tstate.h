@@ -21,6 +21,10 @@ typedef struct _PyThreadStateImpl {
     // semi-public fields are in PyThreadState.
     PyThreadState base;
 
+    // The reference count field is used to synchronize deallocation of the
+    // thread state during runtime finalization.
+    Py_ssize_t refcount;
+
     // These are addresses, but we need to convert to ints to avoid UB.
     uintptr_t c_stack_top;
     uintptr_t c_stack_soft_limit;

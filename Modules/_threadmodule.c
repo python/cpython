@@ -333,9 +333,6 @@ thread_run(void *boot_raw)
     // _PyRuntimeState_SetFinalizing() is called. At this point, all Python
     // threads must exit, except of the thread calling Py_Finalize() which
     // holds the GIL and must not exit.
-    //
-    // At this stage, tstate can be a dangling pointer (point to freed memory),
-    // it's ok to call _PyThreadState_MustExit() with a dangling pointer.
     if (_PyThreadState_MustExit(tstate)) {
         // Don't call PyThreadState_Clear() nor _PyThreadState_DeleteCurrent().
         // These functions are called on tstate indirectly by Py_Finalize()
