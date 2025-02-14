@@ -532,6 +532,7 @@ fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
     return make_const(node, newval, arena);
 }
 
+
 static int astfold_mod(mod_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
@@ -759,7 +760,6 @@ astfold_comprehension(comprehension_ty node_, PyArena *ctx_, _PyASTOptimizeState
     CALL(astfold_expr, expr_ty, node_->target);
     CALL(astfold_expr, expr_ty, node_->iter);
     CALL_SEQ(astfold_expr, expr, node_->ifs);
-
     return 1;
 }
 
