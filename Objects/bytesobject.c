@@ -2833,6 +2833,7 @@ _PyBytes_FromList(PyObject *x)
         return NULL;
     }
 
+    Py_ssize_t extend = 1;
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(x); i++) {
         PyObject *item = PyList_GET_ITEM(x, i);
         Py_INCREF(item);
@@ -2849,12 +2850,15 @@ _PyBytes_FromList(PyObject *x)
 
         if (i >= size) {
             // The list was extended by a previous PyNumber_AsSsize_t() call
-            Py_ssize_t extend = PyBytesWriter_GetAllocated(writer) - size + 1;
             str = PyBytesWriter_Extend(writer, str, extend);
             if (str == NULL) {
                 goto error;
             }
             size += extend;
+
+            if (extend <= PY_SSIZE_T_MAX / 2) {
+                extend *= 2;
+            }
         }
         *str++ = (char) value;
     }
@@ -2910,6 +2914,7 @@ _PyBytes_FromIterator(PyObject *it, PyObject *x)
     }
 
     /* Run the iterator to exhaustion */
+    Py_ssize_t extend = 1;
     for (Py_ssize_t i = 0; ; i++) {
         PyObject *item;
         Py_ssize_t value;
@@ -2938,12 +2943,15 @@ _PyBytes_FromIterator(PyObject *it, PyObject *x)
         /* Append the byte */
         if (i >= size) {
             // The list was extended by a previous PyNumber_AsSsize_t() call
-            Py_ssize_t extend = PyBytesWriter_GetAllocated(writer) - size + 1;
             str = PyBytesWriter_Extend(writer, str, extend);
             if (str == NULL) {
                 goto error;
             }
             size += extend;
+
+            if (extend <= PY_SSIZE_T_MAX / 2) {
+                extend *= 2;
+            }
         }
         *str++ = (char) value;
     }
@@ -3640,21 +3648,6 @@ PyBytesWriter_GetRemaining(PyBytesWriter *writer, void *buf)
 {
     Py_ssize_t pos = (char*)buf - byteswriter_start(writer);
     return writer->size - pos;
-}
-
-
-Py_ssize_t
-PyBytesWriter_GetAllocated(PyBytesWriter *writer)
-{
-    if (writer->obj == NULL) {
-        return sizeof(writer->small_buffer);
-    }
-    else if (writer->use_bytearray) {
-        return PyByteArray_GET_SIZE(writer->obj);
-    }
-    else {
-        return PyBytes_GET_SIZE(writer->obj);
-    }
 }
 
 

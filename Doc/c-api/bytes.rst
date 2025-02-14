@@ -291,7 +291,3 @@ PyBytesWriter
    It is the difference between total allocated bytes (bytes allocated by
    :c:func:`PyBytesWriter_Create` and :c:func:`PyBytesWriter_Extend`) and the
    current position in the buffer.
-
-.. c:function:: Py_ssize_t PyBytesWriter_GetAllocated(PyBytesWriter *writer)
-
-   Get the number of allocated bytes.
