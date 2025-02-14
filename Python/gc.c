@@ -994,7 +994,8 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
         /* copy-paste of weakrefobject.c's handle_callback() */
         temp = PyObject_CallOneArg(callback, (PyObject *)wr);
         if (temp == NULL) {
-            PyErr_WriteUnraisable(callback);
+            PyErr_FormatUnraisable("Exception ignored on "
+                                   "calling weakref callback %R", callback);
         }
         else {
             Py_DECREF(temp);
@@ -1476,7 +1477,7 @@ mark_stacks(PyInterpreterState *interp, PyGC_Head *visited, int visited_space, b
     while (ts) {
         _PyInterpreterFrame *frame = ts->current_frame;
         while (frame) {
-            if (frame->owner == FRAME_OWNED_BY_CSTACK) {
+            if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
                 frame = frame->previous;
                 continue;
             }
@@ -1779,7 +1780,7 @@ do_gc_callback(GCState *gcstate, const char *phase,
             "collected", stats->collected,
             "uncollectable", stats->uncollectable);
         if (info == NULL) {
-            PyErr_FormatUnraisable("Exception ignored on invoking gc callbacks");
+            PyErr_FormatUnraisable("Exception ignored while invoking gc callbacks");
             return;
         }
     }
@@ -1787,7 +1788,7 @@ do_gc_callback(GCState *gcstate, const char *phase,
     PyObject *phase_obj = PyUnicode_FromString(phase);
     if (phase_obj == NULL) {
         Py_XDECREF(info);
-        PyErr_FormatUnraisable("Exception ignored on invoking gc callbacks");
+        PyErr_FormatUnraisable("Exception ignored while invoking gc callbacks");
         return;
     }
 
@@ -1797,7 +1798,8 @@ do_gc_callback(GCState *gcstate, const char *phase,
         Py_INCREF(cb); /* make sure cb doesn't go away */
         r = PyObject_Vectorcall(cb, stack, 2, NULL);
         if (r == NULL) {
-            PyErr_WriteUnraisable(cb);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "calling GC callback %R", cb);
         }
         else {
             Py_DECREF(r);
@@ -1994,6 +1996,7 @@ Py_ssize_t
 _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
 {
     GCState *gcstate = &tstate->interp->gc;
+    assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
 
     int expected = 0;
     if (!_Py_atomic_compare_exchange_int(&gcstate->collecting, &expected, 1)) {
@@ -2086,13 +2089,14 @@ _PyGC_DumpShutdownStats(PyInterpreterState *interp)
                                      "gc", NULL, message,
                                      PyList_GET_SIZE(gcstate->garbage)))
         {
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored in GC shutdown");
         }
         if (gcstate->debug & _PyGC_DEBUG_UNCOLLECTABLE) {
             PyObject *repr = NULL, *bytes = NULL;
             repr = PyObject_Repr(gcstate->garbage);
             if (!repr || !(bytes = PyUnicode_EncodeFSDefault(repr))) {
-                PyErr_WriteUnraisable(gcstate->garbage);
+                PyErr_FormatUnraisable("Exception ignored in GC shutdown "
+                                       "while formatting garbage");
             }
             else {
                 PySys_WriteStderr(
@@ -2306,11 +2310,12 @@ PyObject *
 PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *tp, size_t extra_size)
 {
     size_t presize = _PyType_PreHeaderSize(tp);
-    PyObject *op = gc_alloc(tp, _PyObject_SIZE(tp) + extra_size, presize);
+    size_t size = _PyObject_SIZE(tp) + extra_size;
+    PyObject *op = gc_alloc(tp, size, presize);
     if (op == NULL) {
         return NULL;
     }
-    memset(op, 0, _PyObject_SIZE(tp) + extra_size);
+    memset((char *)op + sizeof(PyObject), 0, size - sizeof(PyObject));
     _PyObject_Init(op, tp);
     return op;
 }
@@ -2344,9 +2349,12 @@ PyObject_GC_Del(void *op)
 #ifdef Py_DEBUG
         PyObject *exc = PyErr_GetRaisedException();
         if (PyErr_WarnExplicitFormat(PyExc_ResourceWarning, "gc", 0,
-                                     "gc", NULL, "Object of type %s is not untracked before destruction",
-                                     Py_TYPE(op)->tp_name)) {
-            PyErr_WriteUnraisable(NULL);
+                                     "gc", NULL,
+                                     "Object of type %s is not untracked "
+                                     "before destruction",
+                                     Py_TYPE(op)->tp_name))
+        {
+            PyErr_FormatUnraisable("Exception ignored on object deallocation");
         }
         PyErr_SetRaisedException(exc);
 #endif
