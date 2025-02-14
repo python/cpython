@@ -1348,8 +1348,6 @@ add_const(PyObject *newconst, PyObject *consts, PyObject *const_cache)
     return (int)index;
 }
 
-ant_sequence(cfg_instr *inst, int n)
-=======
 /*
    Walk basic block backwards starting from "start" trying to collect "size" number of
    subsequent constants from instructions loading constants into new tuple ignoring NOP's in between.
@@ -1435,7 +1433,7 @@ fold_tuple_of_constants(basicblock *bb, int n, PyObject *consts, PyObject *const
     int index = add_const(newconst, consts, const_cache);
     RETURN_IF_ERROR(index);
     nop_out(bb, n-1, seq_size);
-    INSTR_SET_OP1(&bb->b_instr[n], LOAD_CONST, index)
+    INSTR_SET_OP1(&bb->b_instr[n], LOAD_CONST, index);
     return SUCCESS;
 }
 
@@ -1950,12 +1948,6 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 RETURN_IF_ERROR(fold_tuple_of_constants(bb, i, consts, const_cache));
                 break;
             case BUILD_LIST:
-                if (i >= oparg && !is_constant_sequence(inst-oparg, oparg)
-                    && (nextop == CONTAINS_OP || nextop == GET_ITER)) {
-                    INSTR_SET_OP1(inst, BUILD_TUPLE, oparg);
-                    break;
-                }
-                _Py_FALLTHROUGH;
             case BUILD_SET:
                 RETURN_IF_ERROR(optimize_lists_and_sets(bb, i, nextop, consts, const_cache));
                 break;
