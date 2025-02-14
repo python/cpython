@@ -1403,7 +1403,7 @@ These can be used as types in annotations. They all support subscription using
         ]
 
      However, this does not apply to ``Annotated`` types referenced through a type
-     alias::
+     alias, to avoid forcing evaluation of the underlying :class:`TypeAliasType`::
 
         type From3To10[T] = Annotated[T, ValueRange(3, 10)]
         assert Annotated[From3To10[int], ctype("char")] != Annotated[
