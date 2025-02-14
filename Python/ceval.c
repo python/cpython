@@ -322,10 +322,8 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 
 #if defined(__s390x__)
 #  define Py_C_STACK_SIZE 320000
-#elif defined(_WIN32) && defined(_M_ARM64)
-#  define Py_C_STACK_SIZE 400000
 #elif defined(_WIN32)
-#  define Py_C_STACK_SIZE 1200000
+   // Don't define Py_C_STACK_SIZE, use probing instead
 #elif defined(__ANDROID__)
 #  define Py_C_STACK_SIZE 1200000
 #elif defined(__sparc__)
@@ -342,32 +340,30 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 #endif
 
 void
-_Py_InitializeRecursionCheck(PyThreadState *tstate)
+_Py_UpdateRecursionLimits(PyThreadState *tstate)
 {
     char here;
     uintptr_t here_addr = (uintptr_t)&here;
-    tstate->c_stack_top = here_addr;
+    int to_probe = PYOS_STACK_MARGIN_BYTES * 2;
 #ifdef USE_STACKCHECK
-    if (_PyOS_CheckStack(PYOS_STACK_MARGIN * 2) == 0) {
-        tstate->c_stack_soft_limit = here_addr - PYOS_STACK_MARGIN_BYTES;
-        return;
+    if (tstate->c_stack_top == 0) {
+        assert(tstate->c_stack_soft_limit == UINTPTR_MAX);
+        tstate->c_stack_top = _Py_SIZE_ROUND_UP(here_addr, 4096);
+        tstate->c_stack_soft_limit = tstate->c_stack_top;
+        to_probe = PYOS_STACK_MARGIN_BYTES * 4;
     }
-    int margin = PYOS_STACK_MARGIN;
-    assert(tstate->c_stack_soft_limit != UINTPTR_MAX);
-    if (_PyOS_CheckStack(margin)) {
-        margin = PYOS_STACK_MARGIN/2;
+    int depth;
+    uintptr_t implicit_hard_limit = tstate->c_stack_soft_limit - PYOS_STACK_MARGIN_BYTES;
+    _Py_StackProbe(implicit_hard_limit, to_probe, &depth);
+    tstate->c_stack_soft_limit = implicit_hard_limit - depth + PYOS_STACK_MARGIN_BYTES * 2; 
+    if (depth != to_probe) {
+        tstate->c_stack_hard_limit = tstate->c_stack_soft_limit - PYOS_STACK_MARGIN_BYTES;
     }
-    else {
-        if (_PyOS_CheckStack(PYOS_STACK_MARGIN*3/2) == 0) {
-            margin = PYOS_STACK_MARGIN*3/2;
-        }
-    }
-    tstate->c_stack_hard_limit = here_addr - margin * sizeof(void *);
-    tstate->c_stack_soft_limit = tstate->c_stack_hard_limit + PYOS_STACK_MARGIN_BYTES;
 #else
-    assert(tstate->c_stack_soft_limit == UINTPTR_MAX);
-    tstate->c_stack_soft_limit = here_addr - Py_C_STACK_SIZE;
-    tstate->c_stack_hard_limit = here_addr - (Py_C_STACK_SIZE + PYOS_STACK_MARGIN_BYTES);
+    assert(tstate->c_stack_top == 0);
+    tstate->c_stack_top = _Py_SIZE_ROUND_UP(here_addr, 4096);
+    tstate->c_stack_soft_limit = tstate->c_stack_top - Py_C_STACK_SIZE;
+    tstate->c_stack_hard_limit = tstate->c_stack_top - (Py_C_STACK_SIZE + PYOS_STACK_MARGIN_BYTES);
 #endif
 }
 
@@ -380,7 +376,7 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     uintptr_t here_addr = (uintptr_t)&here;
     assert(tstate->c_stack_soft_limit != 0);
     if (tstate->c_stack_hard_limit == 0) {
-        _Py_InitializeRecursionCheck(tstate);
+        _Py_UpdateRecursionLimits(tstate);
     }
     if (here_addr >= tstate->c_stack_soft_limit) {
         return 0;
@@ -388,7 +384,7 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     assert(tstate->c_stack_hard_limit != 0);
     if (here_addr < tstate->c_stack_hard_limit) {
         /* Overflowing while handling an overflow. Give up. */
-        int kbytes_used = (tstate->c_stack_top - here_addr)/1024;
+        int kbytes_used = (int)(tstate->c_stack_top - here_addr)/1024;
         char buffer[80];
         snprintf(buffer, 80, "Unrecoverable stack overflow (used %d kB)%s", kbytes_used, where);
         Py_FatalError(buffer);
@@ -397,7 +393,7 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
         return 0;
     }
     else {
-        int kbytes_used = (tstate->c_stack_top - here_addr)/1024;
+        int kbytes_used = (int)(tstate->c_stack_top - here_addr)/1024;
         tstate->recursion_headroom++;
         _PyErr_Format(tstate, PyExc_RecursionError,
                     "Stack overflow (used %d kB)%s",

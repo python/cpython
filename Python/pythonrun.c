@@ -1552,14 +1552,24 @@ _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyComp
 #include <malloc.h>
 #include <excpt.h>
 
-int _PyOS_CheckStack(int words)
+void _Py_StackProbe(uintptr_t from, int bytes, int *probed)
 {
+    assert((bytes & 4095) == 0);
+    int depth = 4096;
+    char here;
+    uintptr_t here_addr = (uintptr_t)&here;
     __try
     {
-        /* alloca throws a stack overflow exception if there's
-           not enough space left on the stack */
-        alloca(words * sizeof(void *));
-        return 0;
+        while (depth <= bytes) {
+            uintptr_t probe_point = from - depth + 64;
+            if (probe_point < here_addr) {
+                /* alloca throws a stack overflow exception if there's
+                 * not enough space left on the stack */
+                alloca(here_addr - probe_point);
+            }
+            *probed = depth;
+            depth += 4096;
+        }
     }
     __except (GetExceptionCode() == STATUS_STACK_OVERFLOW ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
     {
@@ -1569,7 +1579,6 @@ int _PyOS_CheckStack(int words)
             Py_FatalError("Could not reset the stack!");
         }
     }
-    return 1;
 }
 
 /*
@@ -1577,7 +1586,18 @@ int _PyOS_CheckStack(int words)
  */
 int PyOS_CheckStack(void)
 {
-    return _PyOS_CheckStack(PYOS_STACK_MARGIN);
+    char here;
+    uintptr_t here_addr = (uintptr_t)&here;
+    uintptr_t from = _Py_SIZE_ROUND_UP(here_addr, 4096);
+    int depth;
+    _Py_StackProbe(from, PYOS_STACK_MARGIN_BYTES*2, &depth);
+    assert(depth <= PYOS_STACK_MARGIN_BYTES*2);
+    if (depth == PYOS_STACK_MARGIN_BYTES*2) {
+        return 0;
+    }
+    else {
+        return -1;
+    }
 }
 
 #endif /* WIN32 && _MSC_VER */

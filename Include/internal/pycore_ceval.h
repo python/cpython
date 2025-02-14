@@ -222,7 +222,7 @@ static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate) {
     (void)tstate;
 }
 
-PyAPI_FUNC(void) _Py_InitializeRecursionCheck(PyThreadState *tstate);
+PyAPI_FUNC(void) _Py_UpdateRecursionLimits(PyThreadState *tstate);
 
 static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate, int margin_count)  {
     char here;
@@ -231,7 +231,7 @@ static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate, int margin_co
         return 0;
     }
     if (tstate->c_stack_hard_limit == 0) {
-        _Py_InitializeRecursionCheck(tstate);
+        _Py_UpdateRecursionLimits(tstate);
     }
     return here_addr <= tstate->c_stack_soft_limit + margin_count * PYOS_STACK_MARGIN_BYTES;
 }
@@ -327,7 +327,7 @@ void _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 
 PyAPI_FUNC(PyObject *) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value);
 
-extern int _PyOS_CheckStack(int words);
+extern void _Py_StackProbe(uintptr_t from, int bytes, int *probed);
 
 #ifdef __cplusplus
 }
