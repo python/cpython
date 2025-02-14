@@ -1,1 +1,3 @@
-TODO
+Fix a race condition where importing setuptools or other packages that modify
+:data:`sys.meta_path` could cause concurrent imports to fail with a
+:exc:`ModuleNotFoundError`.
