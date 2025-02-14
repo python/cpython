@@ -18,12 +18,9 @@
 # CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
-from collections import deque
-
-from . import keymap
-from .console import Event
 from . import curses
 from .trace import trace
+from .base_eventqueue import BaseEventQueue
 from termios import tcgetattr, VERASE
 import os
 
@@ -70,83 +67,10 @@ def get_terminal_keycodes() -> dict[bytes, str]:
     keycodes.update(CTRL_ARROW_KEYCODES)
     return keycodes
 
-class EventQueue:
+class EventQueue(BaseEventQueue):
     def __init__(self, fd: int, encoding: str) -> None:
-        self.keycodes = get_terminal_keycodes()
+        keycodes = get_terminal_keycodes()
         if os.isatty(fd):
             backspace = tcgetattr(fd)[6][VERASE]
-            self.keycodes[backspace] = "backspace"
-        self.compiled_keymap = keymap.compile_keymap(self.keycodes)
-        self.keymap = self.compiled_keymap
-        trace("keymap {k!r}", k=self.keymap)
-        self.encoding = encoding
-        self.events: deque[Event] = deque()
-        self.buf = bytearray()
-
-    def get(self) -> Event | None:
-        """
-        Retrieves the next event from the queue.
-        """
-        if self.events:
-            return self.events.popleft()
-        else:
-            return None
-
-    def empty(self) -> bool:
-        """
-        Checks if the queue is empty.
-        """
-        return not self.events
-
-    def flush_buf(self) -> bytearray:
-        """
-        Flushes the buffer and returns its contents.
-        """
-        old = self.buf
-        self.buf = bytearray()
-        return old
-
-    def insert(self, event: Event) -> None:
-        """
-        Inserts an event into the queue.
-        """
-        trace('added event {event}', event=event)
-        self.events.append(event)
-
-    def push(self, char: int | bytes) -> None:
-        """
-        Processes a character by updating the buffer and handling special key mappings.
-        """
-        ord_char = char if isinstance(char, int) else ord(char)
-        char = bytes(bytearray((ord_char,)))
-        self.buf.append(ord_char)
-        if char in self.keymap:
-            if self.keymap is self.compiled_keymap:
-                #sanity check, buffer is empty when a special key comes
-                assert len(self.buf) == 1
-            k = self.keymap[char]
-            trace('found map {k!r}', k=k)
-            if isinstance(k, dict):
-                self.keymap = k
-            else:
-                self.insert(Event('key', k, self.flush_buf()))
-                self.keymap = self.compiled_keymap
-
-        elif self.buf and self.buf[0] == 27:  # escape
-            # escape sequence not recognized by our keymap: propagate it
-            # outside so that i can be recognized as an M-... key (see also
-            # the docstring in keymap.py
-            trace('unrecognized escape sequence, propagating...')
-            self.keymap = self.compiled_keymap
-            self.insert(Event('key', '\033', bytearray(b'\033')))
-            for _c in self.flush_buf()[1:]:
-                self.push(_c)
-
-        else:
-            try:
-                decoded = bytes(self.buf).decode(self.encoding)
-            except UnicodeError:
-                return
-            else:
-                self.insert(Event('key', decoded, self.flush_buf()))
-            self.keymap = self.compiled_keymap
+            keycodes[backspace] = "backspace"
+        BaseEventQueue.__init__(self, encoding, keycodes)
