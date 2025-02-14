@@ -1402,6 +1402,14 @@ These can be used as types in annotations. They all support subscription using
             int, ValueRange(3, 10), ctype("char")
         ]
 
+     However, this does not apply to ``Annotated`` types referenced through a type
+     alias::
+
+        type From3To10[T] = Annotated[T, ValueRange(3, 10)]
+        assert Annotated[From3To10[int], ctype("char")] != Annotated[
+            int, ValueRange(3, 10), ctype("char")
+        ]
+
    * Duplicated metadata elements are not removed::
 
         assert Annotated[int, ValueRange(3, 10)] != Annotated[
