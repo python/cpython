@@ -2474,11 +2474,9 @@ bytearray_join_impl(PyByteArrayObject *self, PyObject *iterable_of_bytes)
 /*[clinic end generated code: output=0ced382b5846a7ee input=49627e07ca31ca26]*/
 {
     PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(self);
     self->ob_exports++; // this protects `self` from being cleared/resized if `iterable_of_bytes` is a custom iterator
     ret = stringlib_bytes_join((PyObject*)self, iterable_of_bytes);
     self->ob_exports--; // unexport `self`
-    Py_END_CRITICAL_SECTION();
     return ret;
 }
 
