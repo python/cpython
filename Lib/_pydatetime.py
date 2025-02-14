@@ -404,7 +404,7 @@ _FRACTION_CORRECTION = [100000, 10000, 1000, 100, 10]
 
 
 def _parse_hh_mm_ss_ff(tstr):
-    # Parses things of the form HH[:?MM[:?SS[{.,}fff[fff]]]]
+    # Parses things of the form HH[:?MM[:?SS[{.,:}fff[fff]]]]
     len_str = len(tstr)
 
     time_comps = [0, 0, 0, 0]
@@ -430,8 +430,8 @@ def _parse_hh_mm_ss_ff(tstr):
         pos += has_sep
 
     if pos < len_str:
-        if tstr[pos] not in '.,':
-            raise ValueError("Invalid microsecond component")
+        if tstr[pos] not in '.,:':
+            raise ValueError("Invalid microsecond separator")
         else:
             pos += 1
 
@@ -489,7 +489,7 @@ def _parse_isoformat_time(tstr):
         # HH:MM:SS            len: 8
         # HH:MM:SS.f+         len: 10+
 
-        if len(tzstr) in (0, 1, 3):
+        if len(tzstr) in (0, 1, 3) or tstr[tz_pos-1] == 'Z':
             raise ValueError("Malformed time zone string")
 
         tz_comps = _parse_hh_mm_ss_ff(tzstr)

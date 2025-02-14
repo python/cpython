@@ -1,0 +1,3 @@
+Make the occurrence of :meth:`datetime.time.fromisoformat` and
+:meth:`datetime.datetime.fromisoformat` methods errors more consistent in
+both implementations. Patch by Semyon Moroz.
