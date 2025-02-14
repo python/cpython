@@ -365,6 +365,12 @@ class PyBytesWriterTest(unittest.TestCase):
         self.assertEqual(writer.get_remaining(), 0)
         self.assertEqual(writer.finish(), b'123456')
 
+    def test_example_center(self):
+        self.assertEqual(_testcapi.byteswriter_center(0, b'writer'),
+                         b'writer')
+        self.assertEqual(_testcapi.byteswriter_center(3, b'writer'),
+                         b'   writer   ')
+
 
 if __name__ == "__main__":
     unittest.main()

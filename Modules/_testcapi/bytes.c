@@ -254,9 +254,63 @@ static PyType_Spec Writer_spec = {
 };
 
 
+static PyObject *
+byteswriter_center_example(Py_ssize_t spaces, char *str, Py_ssize_t str_size)
+{
+    PyBytesWriter *writer;
+    char *buf = PyBytesWriter_Create(&writer, spaces * 2);
+    if (buf == NULL) {
+        goto error;
+    }
+    assert(PyBytesWriter_GetRemaining(writer, buf) == spaces * 2);
+
+    // Add left spaces
+    memset(buf, ' ', spaces);
+    buf += spaces;
+    assert(PyBytesWriter_GetRemaining(writer, buf) == spaces);
+
+    // Copy string
+    buf = PyBytesWriter_Extend(writer, buf, str_size);
+    if (buf == NULL) {
+        goto error;
+    }
+    assert(PyBytesWriter_GetRemaining(writer, buf) == spaces + str_size);
+
+    memcpy(buf, str, str_size);
+    buf += str_size;
+    assert(PyBytesWriter_GetRemaining(writer, buf) == spaces);
+
+    // Add right spaces
+    memset(buf, ' ', spaces);
+    buf += spaces;
+    assert(PyBytesWriter_GetRemaining(writer, buf) == 0);
+
+    return PyBytesWriter_Finish(writer, buf);
+
+error:
+    PyBytesWriter_Discard(writer);
+    return NULL;
+}
+
+
+static PyObject *
+byteswriter_center(PyObject *Py_UNUSED(module), PyObject *args)
+{
+    Py_ssize_t spaces;
+    char *str;
+    Py_ssize_t str_size;
+    if (!PyArg_ParseTuple(args, "ny#", &spaces, &str, &str_size)) {
+        return NULL;
+    }
+
+    return byteswriter_center_example(spaces, str, str_size);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"bytes_resize", bytes_resize, METH_VARARGS},
     {"bytes_join", bytes_join, METH_VARARGS},
+    {"byteswriter_center", byteswriter_center, METH_VARARGS},
     {NULL},
 };
 
