@@ -1388,10 +1388,10 @@ get_constant_sequence(basicblock *bb, int start, int size,
 
 /*
   Walk basic block backwards starting from "start" and change "count" number of
-  non-NOP instructions to NOP's and set their i_loc info to "location" if provided.
+  non-NOP instructions to NOP's and set their location to NO_LOCATION.
 */
 static void
-nop_out(basicblock *bb, int start, int count, _Py_SourceLocation *location)
+nop_out(basicblock *bb, int start, int count)
 {
     assert(start < bb->b_iused);
     for (; count > 0; start--) {
@@ -1401,9 +1401,7 @@ nop_out(basicblock *bb, int start, int count, _Py_SourceLocation *location)
             continue;
         }
         INSTR_SET_OP0(instr, NOP);
-        if (location != NULL) {
-            INSTR_SET_LOC(instr, *location);
-        }
+        INSTR_SET_LOC(instr, NO_LOCATION);
         count--;
     }
 }
@@ -1432,7 +1430,7 @@ fold_tuple_of_constants(basicblock *bb, int n, PyObject *consts, PyObject *const
     assert(PyTuple_CheckExact(newconst) && PyTuple_GET_SIZE(newconst) == seq_size);
     int index = add_const(newconst, consts, const_cache);
     RETURN_IF_ERROR(index);
-    nop_out(bb, n-1, seq_size, &instr->i_loc);
+    nop_out(bb, n-1, seq_size);
     INSTR_SET_OP1(instr, LOAD_CONST, index);
     return SUCCESS;
 }
@@ -1482,7 +1480,7 @@ optimize_lists_and_sets(basicblock *bb, int i, int nextop,
     }
     int index = add_const(newconst, consts, const_cache);
     RETURN_IF_ERROR(index);
-    nop_out(bb, i-1, seq_size, &instr->i_loc);
+    nop_out(bb, i-1, seq_size);
     if (contains_or_iter) {
         INSTR_SET_OP1(instr, LOAD_CONST, index);
     }
@@ -1545,7 +1543,7 @@ optimize_if_const_binop(basicblock *bb, int i, PyObject *consts, PyObject *const
     }
     int newopcode, newoparg;
     RETURN_IF_ERROR(newop_from_folded(newconst, consts, const_cache, &newopcode, &newoparg));
-    nop_out(bb, i-1, 2, &binop->i_loc);
+    nop_out(bb, i-1, 2);
     INSTR_SET_OP1(binop, newopcode, newoparg);
     return SUCCESS;
 }
