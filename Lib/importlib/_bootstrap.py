@@ -1301,7 +1301,6 @@ def _sanity_check(name, package, level):
 
 
 _ERR_MSG_PREFIX = 'No module named '
-_ERR_MSG = _ERR_MSG_PREFIX + '{!r}'
 
 def _find_and_load_unlocked(name, import_):
     path = None
@@ -1310,9 +1309,6 @@ def _find_and_load_unlocked(name, import_):
     if parent:
         if parent not in sys.modules:
             _call_with_frames_removed(import_, parent)
-        # Crazy side-effects!
-        if name in sys.modules:
-            return sys.modules[name]
         parent_module = sys.modules[parent]
         try:
             path = parent_module.__path__
@@ -1320,6 +1316,12 @@ def _find_and_load_unlocked(name, import_):
             msg = f'{_ERR_MSG_PREFIX}{name!r}; {parent!r} is not a package'
             raise ModuleNotFoundError(msg, name=name) from None
         parent_spec = parent_module.__spec__
+        if getattr(parent_spec, '_initializing', False):
+            _call_with_frames_removed(import_, parent)
+        # Crazy side-effects!
+        module = sys.modules.get(name)
+        if module is not None:
+            return module
         child = name.rpartition('.')[2]
     spec = _find_spec(name, path)
     if spec is None:
