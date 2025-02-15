@@ -1762,11 +1762,15 @@ eval_const_unaryop(PyObject *operand, int op, bool unarypos)
 }
 
 static void
-remove_redundant_to_bool(basicblock *bb, int start)
+remove_to_bool_sequence(basicblock *bb, int start)
 {
     assert(start >= 0);
     for (;start < bb->b_iused; start++) {
         cfg_instr *curr = &bb->b_instr[start];
+        if (curr->i_opcode == NOP) {
+            /* should not happen, but just in case */
+            continue;
+        }
         if (curr->i_opcode == TO_BOOL) {
             INSTR_SET_OP0(curr, NOP);
             continue;
@@ -1799,8 +1803,9 @@ maybe_unary_not_cancel_out(basicblock *bb, int i, int nextop)
     assert(instr->i_opcode == UNARY_NOT);
     if (nextop == UNARY_NOT) {
         INSTR_SET_OP0(instr, NOP);
-        assert(i < bb->b_iused);
-        cfg_instr *next = &bb->b_instr[i+1];
+        int nexi = i + 1;
+        assert(nexi >= 0 && nexi < bb->b_iused);
+        cfg_instr *next = &bb->b_instr[nexi];
         assert(next->i_opcode == nextop);
         INSTR_SET_OP0(next, NOP);
         return true;
@@ -1829,7 +1834,6 @@ optimize_unary_not_is_contains(basicblock *bb, int i, int nextop)
 {
     cfg_instr *instr = &bb->b_instr[i];
     assert(instr->i_opcode == UNARY_NOT);
-    remove_redundant_to_bool(bb, i+1);
     cfg_instr *target = find_unary_not_target(bb, i-1);
     if (target == NULL) {
         return false;
@@ -1864,6 +1868,7 @@ optimize_if_const_unaryop(basicblock *bb, int i, int nextop,
             /* nothing more to do here */
             return SUCCESS;
         }
+        remove_to_bool_sequence(bb, i+1);
         if (optimize_unary_not_is_contains(bb, i, nextop)) {
             /* if optimized, no need to continue */
             return SUCCESS;
@@ -1875,6 +1880,10 @@ optimize_if_const_unaryop(basicblock *bb, int i, int nextop,
     assert(PyTuple_Size(seq) == 1);
     PyObject *operand = PyTuple_GET_ITEM(seq, 0);
     PyObject *newconst = eval_const_unaryop(operand, instr->i_opcode, unarypos);
+    if (instr->i_opcode == UNARY_NOT) {
+        /* we eliminated TO_BOOL's so we must return boolean */
+        assert(PyBool_Check(newconst));
+    }
     Py_DECREF(seq);
     return make_const(newconst, bb, i, 1, consts, const_cache);
 }
