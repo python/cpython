@@ -446,7 +446,7 @@ http
 
   * ``--tls-cert <path>``: Path to the TLS certificate file.
   * ``--tls-key <path>``: Optional path to the private key file.
-  * ``--tls-password-file <path>``: Optional path to the password for the private key.
+  * ``--tls-password-file <path>``: Optional path to the password file for the private key.
 
   (Contributed by Semyon Moroz in :gh:`85162`.)
 
