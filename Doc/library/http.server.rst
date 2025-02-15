@@ -65,6 +65,10 @@ handler.  Code to create and run the server looks like this::
    A *password* can be specified for files protected and wrapped with PKCS#8,
    but beware that this could possibly expose hardcoded passwords in clear.
 
+   .. seealso:: You can learn more about how SSL works because the *certfile*,
+   *keyfile* and *password* parameters are passed to the
+   :meth:`ssl.SSLContext.load_cert_chain`.
+
    When specified, the *alpn_protocols* argument must be a sequence of strings
    specifying the "Application-Layer Protocol Negotiation" (ALPN) protocols
    supported by the server. ALPN allows the server and the client to negotiate
