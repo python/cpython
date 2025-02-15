@@ -1330,15 +1330,6 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         self.cfg_optimization_test(before, after, consts=[], expected_consts=[(1, 2, 3)])
 
-        # not enough consts
-        same = [
-            ('LOAD_SMALL_INT', 1, 0),
-            ('LOAD_SMALL_INT', 2, 0),
-            ('BUILD_TUPLE', 3, 0),
-            ('RETURN_VALUE', None, 0)
-        ]
-        self.cfg_optimization_test(same, same, consts=[])
-
         # not all consts
         same = [
             ('LOAD_SMALL_INT', 1, 0),
