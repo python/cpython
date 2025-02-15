@@ -2485,7 +2485,7 @@ class OtherTests(unittest.TestCase):
         unlink(TESTFN)
         unlink(TESTFN2)
 
-@unittest.skipIf(sys.platform == "win32", "Requires file permissions")
+@unittest.skipIf(sys.platform == "win32" or sys.platform == "wasi", "Requires file permissions")
 class TestsPermissionExtraction(unittest.TestCase):
     def setUp(self):
         os.mkdir(TESTFNDIR)
