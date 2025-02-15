@@ -1,0 +1,2 @@
+Support extracting constant f-strings (f-strings not containing formatted
+values) in :program:`pygettext.py`.
