@@ -658,6 +658,7 @@ jobs:
             build_asan,
             build_tsan,
             test_hypothesis,
+            cross-build-linux,
             '
             || ''
           }}
