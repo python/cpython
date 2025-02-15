@@ -383,14 +383,14 @@ class BaseHTTPSServerTestCase(BaseTestCase):
             server.server_close()
 
     def test_invalid_certdata(self):
-        invalid_certdata_examples = (
+        invalid_certdata = [
             (self.BADCERT, None, None),
             (self.EMPTYCERT, None, None),
             (self.ONLYCERT, None, None),
             (self.ONLYKEY, None, None),
             (self.ONLYKEY, self.ONLYCERT, None),
             (self.CERTFILE_PROTECTED, None, "badpass"),
-        )
+        ]
         for cerfile, keyfile, password in invalid_certdata:
             with self.assertRaises(ssl.SSLError):
                 HTTPSServer(
