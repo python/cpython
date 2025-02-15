@@ -513,11 +513,13 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("class X(*args, **kwargs):\n    pass")
 
     def test_fstrings(self):
-        self.check_src_roundtrip("f'-{f'*{f'+{f'.{x}.'}+'}*'}-'")
-        self.check_src_roundtrip("f'\\u2028{'x'}'")
+        self.check_src_roundtrip('''f\'\'\'-{f"""*{f"+{f'.{x}.'}+"}*"""}-\'\'\'''')
+        self.check_src_roundtrip('''f\'-{f\'\'\'*{f"""+{f".{f'{x}'}."}+"""}*\'\'\'}-\'''')
+        self.check_src_roundtrip('''f\'-{f\'*{f\'\'\'+{f""".{f"{f'{x}'}"}."""}+\'\'\'}*\'}-\'''')
+        self.check_src_roundtrip('''f"\\u2028{'x'}"''')
         self.check_src_roundtrip(r"f'{x}\n'")
-        self.check_src_roundtrip("f'{'\\n'}\\n'")
-        self.check_src_roundtrip("f'{f'{x}\\n'}\\n'")
+        self.check_src_roundtrip('''f"{'\\n'}\\n"''')
+        self.check_src_roundtrip('''f"{f'{x}\\n'}\\n"''')
 
     def test_docstrings(self):
         docstrings = (
@@ -651,7 +653,9 @@ class CosmeticTestCase(ASTTestCase):
 
     def test_backslash_in_format_spec(self):
         import re
-        msg = re.escape("invalid escape sequence '\\ '")
+        msg = re.escape('"\\ " is an invalid escape sequence. '
+                        'Such sequences will not work in the future. '
+                        'Did you mean "\\\\ "? A raw string is also an option.')
         with self.assertWarnsRegex(SyntaxWarning, msg):
             self.check_ast_roundtrip("""f"{x:\\ }" """)
         self.check_ast_roundtrip("""f"{x:\\n}" """)

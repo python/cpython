@@ -73,7 +73,7 @@ an event loop:
 
    Set *loop* as the current event loop for the current OS thread.
 
-   .. deprecated:: next
+   .. deprecated:: 3.14
       The :func:`set_event_loop` function is deprecated and will be removed
       in Python 3.16.
 
@@ -246,6 +246,9 @@ Scheduling callbacks
    another thread, this function *must* be used, since :meth:`call_soon` is not
    thread-safe.
 
+   This function is safe to be called from a reentrant context or signal handler,
+   however, it is not safe or fruitful to use the returned handle in such contexts.
+
    Raises :exc:`RuntimeError` if called on a loop that's been closed.
    This can happen on a secondary thread when the main application is
    shutting down.
@@ -389,9 +392,9 @@ Creating Futures and Tasks
 
    If *factory* is ``None`` the default task factory will be set.
    Otherwise, *factory* must be a *callable* with the signature matching
-   ``(loop, coro, context=None)``, where *loop* is a reference to the active
+   ``(loop, coro, **kwargs)``, where *loop* is a reference to the active
    event loop, and *coro* is a coroutine object.  The callable
-   must return a :class:`asyncio.Future`-compatible object.
+   must pass on all *kwargs*, and return a :class:`asyncio.Task`-compatible object.
 
 .. method:: loop.get_task_factory()
 
@@ -967,6 +970,9 @@ Watching file descriptors
    invoke *callback* with the specified arguments once *fd* is available for
    reading.
 
+   Any preexisting callback registered for *fd* is cancelled and replaced by
+   *callback*.
+
 .. method:: loop.remove_reader(fd)
 
    Stop monitoring the *fd* file descriptor for read availability. Returns
@@ -977,6 +983,9 @@ Watching file descriptors
    Start monitoring the *fd* file descriptor for write availability and
    invoke *callback* with the specified arguments once *fd* is available for
    writing.
+
+   Any preexisting callback registered for *fd* is cancelled and replaced by
+   *callback*.
 
    Use :func:`functools.partial` :ref:`to pass keyword arguments
    <asyncio-pass-keywords>` to *callback*.

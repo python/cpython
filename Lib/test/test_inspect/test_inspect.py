@@ -1,4 +1,5 @@
 from annotationlib import Format, ForwardRef
+import asyncio
 import builtins
 import collections
 import copy
@@ -885,6 +886,7 @@ class TestGetsourceStdlib(unittest.TestCase):
         self.assertEqual(src.splitlines(True), lines)
 
 class TestGetsourceInteractive(unittest.TestCase):
+    @support.force_not_colorized
     def test_getclasses_interactive(self):
         # bpo-44648: simulate a REPL session;
         # there is no `__file__` in the __main__ module
@@ -2790,6 +2792,10 @@ class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
 
     async def asyncTearDown(self):
         await self.asyncgen.aclose()
+
+    @classmethod
+    def tearDownClass(cls):
+        asyncio._set_event_loop_policy(None)
 
     def _asyncgenstate(self):
         return inspect.getasyncgenstate(self.asyncgen)
