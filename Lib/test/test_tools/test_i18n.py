@@ -464,6 +464,17 @@ class Test_pygettext(unittest.TestCase):
                 self.assertIn('#. foo: comment', data)
                 self.assertIn('#. bar: comment', data)
 
+    def test_comments_not_extracted_without_tags(self):
+        """
+        Test that translator comments are not extracted without
+        specifying --add-comments.
+        """
+        data = self.extract_from_str(dedent('''\
+        # Translator comment
+        _("foo")
+        '''), raw=True)
+        self.assertNotIn('#.', data)
+
 
 def update_POT_snapshots():
     for input_file in DATA_DIR.glob('*.py'):
