@@ -560,20 +560,15 @@ class _ReadState:
         self.errors = list()
 
 
-class _LineParser:
+class _Line(str):
+    __slots__ = 'clean', 'has_comments'
 
-    def __init__(self, comments):
-        self.comments = comments
+    def __new__(cls, val, *args, **kwargs):
+        return super().__new__(cls, val)
 
-    @property
-    def value(self):
-        return self._value
-
-    @value.setter
-    def value(self, text):
-        self._value = text
-        trimmed = text.strip()
-        self.clean = self.comments.strip(trimmed)
+    def __init__(self, val, comments):
+        trimmed = val.strip()
+        self.clean = comments.strip(trimmed)
         self.has_comments = trimmed != self.clean
 
 
@@ -593,6 +588,9 @@ class _CommentSpec:
 
     def strip(self, text):
         return self.pattern.sub('', text).rstrip()
+
+    def load(self, text):
+        return _Line(text, self)
 
 
 class RawConfigParser(MutableMapping):
@@ -1063,9 +1061,8 @@ class RawConfigParser(MutableMapping):
 
     def _read_inner(self, fp, fpname):
         st = _ReadState()
-        line = _LineParser(self._comments)
 
-        for st.lineno, line.value in enumerate(fp, start=1):
+        for st.lineno, line in enumerate(map(self._comments.load, fp), start=1):
             if not line.clean:
                 if self._empty_lines_in_values:
                     # add empty line to the value, but only if there was no
@@ -1080,7 +1077,7 @@ class RawConfigParser(MutableMapping):
                     st.indent_level = sys.maxsize
                 continue
 
-            first_nonspace = self.NONSPACECRE.search(line.value)
+            first_nonspace = self.NONSPACECRE.search(line)
             st.cur_indent_level = first_nonspace.start() if first_nonspace else 0
 
             if self._handle_continuation_line(st, line, fpname):
@@ -1096,7 +1093,7 @@ class RawConfigParser(MutableMapping):
             st.cur_indent_level > st.indent_level)
         if is_continue:
             if st.cursect[st.optname] is None:
-                raise MultilineContinuationError(fpname, st.lineno, line.value)
+                raise MultilineContinuationError(fpname, st.lineno, line)
             st.cursect[st.optname].append(line.clean)
         return is_continue
 
@@ -1110,7 +1107,7 @@ class RawConfigParser(MutableMapping):
         mo = self.SECTCRE.match(line.clean)
 
         if not mo and st.cursect is None:
-            raise MissingSectionHeaderError(fpname, st.lineno, line.value)
+            raise MissingSectionHeaderError(fpname, st.lineno, line)
 
         self._handle_header(st, mo.group('header'), fpname) if mo else self._handle_option(st, line, fpname)
 
@@ -1142,12 +1139,12 @@ class RawConfigParser(MutableMapping):
             # exception but keep going. the exception will be
             # raised at the end of the file and will contain a
             # list of all bogus lines
-            st.errors.append(ParsingError(fpname, st.lineno, line.value))
+            st.errors.append(ParsingError(fpname, st.lineno, line))
             return
 
         st.optname, vi, optval = mo.group('option', 'vi', 'value')
         if not st.optname:
-            st.errors.append(ParsingError(fpname, st.lineno, line.value))
+            st.errors.append(ParsingError(fpname, st.lineno, line))
         st.optname = self.optionxform(st.optname.rstrip())
         if (self._strict and
             (st.sectname, st.optname) in st.elements_added):
