@@ -1373,7 +1373,7 @@ if __name__ == '__main__':
         try:
             with open(args.tls_password_file, "r", encoding="utf-8") as f:
                 tls_key_password = f.read().strip()
-        except (OSError, IOError) as e:
+        except OSError as e:
             parser.error(f"Failed to read TLS password file: {e}")
 
     if args.cgi:
