@@ -224,7 +224,9 @@ configuration mechanisms).
 A new type of interpreter
 -------------------------
 
-A new type of interpreter based on tail calls has been added to CPython.
+A new type of interpreter has been added to CPython.
+It uses tail calls between small C functions that implement individual
+Python opcodes, rather than one large C case statement.
 For certain newer compilers, this interpreter provides
 significantly better performance. Preliminary numbers on our machines suggest
 anywhere from -3% to 30% faster Python code, and a geometric mean of 9-15%
