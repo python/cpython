@@ -365,19 +365,19 @@ class BaseHTTPSServerTestCase(BaseTestCase):
         return self.connection.getresponse()
 
     def test_valid_certdata(self):
-        valid_certdata_examples = (
+        valid_certdata= [
             (self.CERTFILE, None, None),
             (self.CERTFILE, self.CERTFILE, None),
             (self.CERTFILE_PROTECTED, None, self.KEY_PASSWORD),
             (self.ONLYCERT, self.ONLYKEY_PROTECTED, self.KEY_PASSWORD),
-        )
-        for data in valid_certdata_examples:
+        ]
+        for certfile, keyfile, password in valid_certdata:
             server = HTTPSServer(
                 ('localhost', 0),
                 BaseHTTPRequestHandler,
-                certfile=data[0],
-                keyfile=data[1],
-                password=data[2],
+                certfile=certfile,
+                keyfile=keyfile,
+                password=password,
             )
             self.assertIsInstance(server, HTTPSServer)
             server.server_close()
