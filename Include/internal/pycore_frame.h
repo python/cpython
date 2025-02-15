@@ -156,6 +156,13 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     for (int i = 0; i < stacktop; i++) {
         dest->localsplus[i] = _PyStackRef_StealIfUnborrowed(src->localsplus[i]);
     }
+    // XXX - More efficient version of this?
+    if (_PyStackRef_IsBorrowed(dest->f_executable)) {
+        Py_INCREF(PyStackRef_AsPyObjectBorrow(dest->f_executable));
+    }
+    if (_PyStackRef_IsBorrowed(dest->f_funcobj)) {
+        Py_INCREF(PyStackRef_AsPyObjectBorrow(dest->f_funcobj));
+    }
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
     dest->previous = NULL;
