@@ -405,6 +405,9 @@ ZipFile Objects
    .. versionchanged:: 3.6.2
       The *path* parameter accepts a :term:`path-like object`.
 
+   .. versionchanged:: next
+      The *preserve_permissions* parameter was added.
+
 
 .. method:: ZipFile.extractall(path=None, members=None, pwd=None, \
                             preserve_permissions=PreserveMode.NONE)
@@ -434,6 +437,9 @@ ZipFile Objects
 
    .. versionchanged:: 3.6.2
       The *path* parameter accepts a :term:`path-like object`.
+
+   .. versionchanged:: next
+      The *preserve_permissions* parameter was added.
 
 
 .. method:: ZipFile.printdir()
