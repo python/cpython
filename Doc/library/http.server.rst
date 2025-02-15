@@ -498,15 +498,21 @@ following command runs an HTTP/1.1 conformant server::
 
 The server can also support TLS encryption. The options ``--tls-cert`` and
 ``--tls-key`` allow specifying a TLS certificate chain and private key for
-secure HTTPS connections. Use ``--tls-password-file`` option if private keys are
-passphrase-protected. For example, the following command runs the server with
-TLS enabled::
+secure HTTPS connections. For example, the following command runs the server with
+TLS enabled:
 
-        python -m http.server --tls-cert fullchain.pem
+.. code-block:: bash
 
-Or if a separate file with private key passphrase-protected::
+   python -m http.server --tls-cert fullchain.pem
 
-        python -m http.server --tls-cert cert.pem --tls-key key.pem --tls-password-file password.txt
+Use ``--tls-password-file`` option if private keys are password-protected:
+
+.. code-block::
+
+   python -m http.server \
+          --tls-cert cert.pem \
+          --tls-key key.pem \
+          --tls-password-file password.txt
 
 .. versionchanged:: next
    Added the ``--tls-cert``, ``--tls-key`` and ``--tls-password-file`` options.
