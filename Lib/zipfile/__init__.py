@@ -1886,7 +1886,6 @@ class ZipFile:
 
         if preserve_permissions == PreserveMode.SAFE:
             mode = (member.external_attr >> 16) & 0o777
-
         elif preserve_permissions == PreserveMode.ALL:
             mode = (member.external_attr >> 16) & 0xFFFF
 
