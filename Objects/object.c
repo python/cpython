@@ -2538,6 +2538,7 @@ _Py_SetImmortalUntracked(PyObject *op)
     op->ob_tid = _Py_UNOWNED_TID;
     op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
     op->ob_ref_shared = 0;
+    _Py_atomic_or_uint8(&op->ob_gc_bits, _PyGC_BITS_DEFERRED);
 #else
     op->ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
 #endif

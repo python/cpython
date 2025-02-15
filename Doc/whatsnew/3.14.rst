@@ -224,7 +224,9 @@ configuration mechanisms).
 A new type of interpreter
 -------------------------
 
-A new type of interpreter based on tail calls has been added to CPython.
+A new type of interpreter has been added to CPython.
+It uses tail calls between small C functions that implement individual
+Python opcodes, rather than one large C case statement.
 For certain newer compilers, this interpreter provides
 significantly better performance. Preliminary numbers on our machines suggest
 anywhere from -3% to 30% faster Python code, and a geometric mean of 9-15%
@@ -1278,10 +1280,6 @@ Build changes
 
 * GNU Autoconf 2.72 is now required to generate :file:`configure`.
   (Contributed by Erlend Aasland in :gh:`115765`.)
-
-* CPython now uses Full LTO as the default link time optimization policy
-  on Clang. This reverts an earlier change in CPython 3.12.
-  (Contributed by Ken Jin in :gh:`130049`.)
 
 .. _whatsnew314-pep761:
 
