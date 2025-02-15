@@ -154,7 +154,6 @@ import itertools
 import os
 import re
 import sys
-import types
 
 __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",
@@ -574,19 +573,30 @@ class _LineParser:
     def value(self, string):
         self._value = string
         string = string.strip()
-        self.clean = self._strip_full(string) and self._strip_inline(string)
+        self.clean = self.comments.strip(string)
         self.has_comments = string != self.clean
 
-    def _strip_full(self, string):
-        return '' if any(map(string.startswith, self.comments.full)) else True
 
-    def _strip_inline(self, string):
-        match = None
-        if self.comments.inline:
-            match = self.comments.inline.search(string)
-        if match:
-            return string[:match.start()].rstrip()
-        return string
+class _CommentSpec:
+    def __init__(self, full_prefixes, inline_prefixes):
+        if not full_prefixes and not inline_prefixes:
+            # performance optimization when no prefixes (gh-128641)
+            self.strip = lambda text: text
+            return
+        full_patterns = (
+            # prefix at the beginning of a line
+            fr'^({re.escape(prefix)}).*'
+            for prefix in full_prefixes
+        )
+        inline_patterns = (
+            # prefix at the beginning of the line or following a space
+            fr'(^|\s)({re.escape(prefix)}.*)'
+            for prefix in inline_prefixes
+            )
+        self.pattern = re.compile('|'.join(itertools.chain(full_patterns, inline_patterns)))
+
+    def strip(self, text):
+        return self.pattern.sub('', text).rstrip()
 
 
 class RawConfigParser(MutableMapping):
@@ -655,15 +665,7 @@ class RawConfigParser(MutableMapping):
             else:
                 self._optcre = re.compile(self._OPT_TMPL.format(delim=d),
                                           re.VERBOSE)
-        # prefix at the beginning of the line or following a space
-        inline_tmpl = lambda prefix: fr'(^|\s)({re.escape(prefix)})'
-        inline_comm = '|'.join(map(inline_tmpl, inline_comment_prefixes or ()))
-        # optional cre used with _LineParser for best performance (gh-128641)
-        inline_comment_cre = re.compile(inline_comm) if inline_comm else None
-        self._comments = types.SimpleNamespace(
-            inline=inline_comment_cre,
-            full=tuple(comment_prefixes or ())
-        )
+        self._comments = _CommentSpec(comment_prefixes or (), inline_comment_prefixes or ())
         self._strict = strict
         self._allow_no_value = allow_no_value
         self._empty_lines_in_values = empty_lines_in_values
