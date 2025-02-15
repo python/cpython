@@ -1,4 +1,4 @@
-#ifndef Py_TAIL_CALL_INTERP
+#if !Py_TAIL_CALL_INTERP
 static void *opcode_targets[256] = {
     &&TARGET_CACHE,
     &&TARGET_BINARY_SLICE,
