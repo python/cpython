@@ -483,7 +483,6 @@ class TestTranforms(BytecodeTestCase):
 
     def test_constant_folding_small_int(self):
         tests = [
-            # subscript
             ('(0, )[0]', 0),
             ('(1 + 2, )[0]', 3),
             ('(2 + 2 * 2, )[0]', 6),
@@ -494,7 +493,18 @@ class TestTranforms(BytecodeTestCase):
             ('(256, )[0]', None),
             ('(1000, )[0]', None),
             ('(1 - 2, )[0]', None),
+            ('255 + 0', 255),
             ('255 + 1', None),
+            ('-1', None),
+            ('--1', 1),
+            ('--255', 255),
+            ('--256', None),
+            ('~1', None),
+            ('~~1', 1),
+            ('~~255', 255),
+            ('~~256', None),
+            ('++255', 255),
+            ('++256', None),
         ]
         for expr, oparg in tests:
             with self.subTest(expr=expr, oparg=oparg):
@@ -504,6 +514,9 @@ class TestTranforms(BytecodeTestCase):
                 else:
                     self.assertNotInBytecode(code, 'LOAD_SMALL_INT')
                 self.check_lnotab(code)
+
+    def test_folding_unaryop(self):
+        pass
 
     def test_folding_binop(self):
         add = get_binop_argval('NB_ADD')
@@ -1225,14 +1238,21 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         self.assertEqual(f(), frozenset(range(40)))
 
     def test_multiple_foldings(self):
-        # (1, (2 + 2 * 2 // 2 - 2, )[0], )  ==>  (1, 2)
+        # (1, (--2 + ++2 * 2 // 2 - 2, )[0], ~~3, not not True)  ==>  (1, 2, 3, True)
+        intrinsic_positive = 5
         before = [
             ('LOAD_SMALL_INT', 1, 0),
             ('NOP', None, 0),
             ('LOAD_SMALL_INT', 2, 0),
+            ('UNARY_NEGATIVE', None, 0),
+            ('NOP', None, 0),
+            ('UNARY_NEGATIVE', None, 0),
             ('NOP', None, 0),
             ('NOP', None, 0),
             ('LOAD_SMALL_INT', 2, 0),
+            ('CALL_INTRINSIC_1', intrinsic_positive, 0),
+            ('NOP', None, 0),
+            ('CALL_INTRINSIC_1', intrinsic_positive, 0),
             ('BINARY_OP', get_binop_argval('NB_MULTIPLY')),
             ('LOAD_SMALL_INT', 2, 0),
             ('NOP', None, 0),
@@ -1242,18 +1262,34 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('BINARY_OP', get_binop_argval('NB_ADD')),
             ('NOP', None, 0),
             ('LOAD_SMALL_INT', 2, 0),
+            ('NOP', None, 0),
             ('BINARY_OP', get_binop_argval('NB_SUBTRACT')),
+            ('NOP', None, 0),
             ('BUILD_TUPLE', 1, 0),
             ('LOAD_SMALL_INT', 0, 0),
             ('BINARY_OP', get_binop_argval('NB_SUBSCR'), 0),
-            ('BUILD_TUPLE', 2, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('NOP', None, 0),
+            ('UNARY_INVERT', None, 0),
+            ('NOP', None, 0),
+            ('UNARY_INVERT', None, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('NOP', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('NOP', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('NOP', None, 0),
+            ('BUILD_TUPLE', 4, 0),
+            ('NOP', None, 0),
             ('RETURN_VALUE', None, 0)
         ]
         after = [
             ('LOAD_CONST', 1, 0),
             ('RETURN_VALUE', None, 0)
         ]
-        self.cfg_optimization_test(before, after, consts=[], expected_consts=[(2,), (1, 2)])
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[-2, (1, 2, 3, True)])
 
     def test_build_empty_tuple(self):
         before = [
@@ -1600,6 +1636,89 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('RETURN_VALUE', None, 0),
         ]
         self.cfg_optimization_test(same, same, consts=[None], expected_consts=[None])
+
+    def test_optimize_unary_not_to_bool(self):
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('UNARY_NOT', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('UNARY_NOT', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None])
+
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('UNARY_NOT', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[False])
+
+        is_ = 0
+        isnot = 1
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('IS_OP', is_, 0),
+            ('UNARY_NOT', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('IS_OP', isnot, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None])
+
+        in_ = 0
+        notin = 1
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('CONTAINS_OP', in_, 0),
+            ('UNARY_NOT', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('CONTAINS_OP', notin, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None])
+
+    def test_optimize_if_const_unaryop(self):
+        pass
+
+    def test_optimize_if_const_binop(self):
+        pass
 
     def test_conditional_jump_forward_const_condition(self):
         # The unreachable branch of the jump is removed, the jump
