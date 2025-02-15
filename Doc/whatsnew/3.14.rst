@@ -441,10 +441,8 @@ http
   (Contributed by Yorik Hansen in :gh:`123430`.)
 
 * The :mod:`http.server` module now supports serving over HTTPS using the
-  new :class:`http.server.HTTPSServer`. This class is a subclass of
-  :class:`http.server.HTTPServer` that enables TLS encryption with the
-  :mod:`ssl` module. To use HTTPS from the command line, new options have been
-  added to ``python -m http.server``:
+  new :class:`http.server.HTTPSServer`. Furthermore, the following command-line
+  options have been added to ``python -m http.server``:
 
   * ``--tls-cert <path>``: Path to the TLS certificate file.
   * ``--tls-key <path>``: Optional path to the private key file.
