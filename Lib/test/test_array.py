@@ -1891,9 +1891,6 @@ class FreeThreadingTest(unittest.TestCase):
             with threading_helper.start_threads(threads):
                 pass
 
-            for thread in threads:
-                threading_helper.join_thread(thread)
-
         check([pop1] * 10)
         check([pop1] + [subscr0] * 10)
         check([append1] * 10)

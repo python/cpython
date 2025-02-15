@@ -147,6 +147,7 @@ enum machine_format_code {
 static int
 array_resize(arrayobject *self, Py_ssize_t newsize)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     char *items;
     size_t _new_size;
 
@@ -687,6 +688,7 @@ newarrayobject(PyTypeObject *type, Py_ssize_t size, const struct arraydescr *des
 static PyObject *
 getarrayitem(PyObject *op, Py_ssize_t i)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
 #ifndef NDEBUG
     array_state *state = find_array_state_by_type(Py_TYPE(op));
     assert(array_Check(op, state));
@@ -700,6 +702,7 @@ getarrayitem(PyObject *op, Py_ssize_t i)
 static int
 ins1(arrayobject *self, Py_ssize_t where, PyObject *v)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     char *items;
     Py_ssize_t n = Py_SIZE(self);
     if (v == NULL) {
@@ -911,6 +914,7 @@ array_item(PyObject *op, Py_ssize_t i)
 static PyObject *
 array_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(a);
     array_state *state = find_array_state_by_type(Py_TYPE(a));
     arrayobject *np;
 
@@ -1071,6 +1075,7 @@ array_repeat(PyObject *op, Py_ssize_t n)
 static int
 array_del_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(a);
     char *item;
     Py_ssize_t d; /* Change in size */
     if (ilow < 0)
@@ -1104,7 +1109,7 @@ array_del_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
 }
 
 static int
-array_ass_item_lock_held(PyObject *op, Py_ssize_t i, PyObject *v)
+setarrayitem(PyObject *op, Py_ssize_t i, PyObject *v)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     arrayobject *a = arrayobject_CAST(op);
@@ -1123,24 +1128,16 @@ array_ass_item(PyObject *op, Py_ssize_t i, PyObject *v)
 {
     int ret;
     Py_BEGIN_CRITICAL_SECTION(op);
-    ret = array_ass_item_lock_held(op, i, v);
+    ret = setarrayitem(op, i, v);
     Py_END_CRITICAL_SECTION();
     return ret;
 }
 
 static int
-setarrayitem(PyObject *a, Py_ssize_t i, PyObject *v)
-{
-#ifndef NDEBUG
-    array_state *state = find_array_state_by_type(Py_TYPE(a));
-    assert(array_Check(a, state));
-#endif
-    return array_ass_item(a, i, v);
-}
-
-static int
 array_iter_extend(arrayobject *self, PyObject *bb)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(bb);
     PyObject *it, *v;
 
     it = PyObject_GetIter(bb);
@@ -2647,12 +2644,12 @@ static int
 array_ass_subscr_lock_held(PyObject *op, PyObject* item, PyObject* value)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+    #ifdef Py_DEBUG
+        if (value != NULL) {
+            _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(value);
+        }
+    #endif
     arrayobject *self = arrayobject_CAST(op);
-#ifdef Py_DEBUG
-    if (value != NULL) {
-        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(value);
-    }
-#endif
     Py_ssize_t start, stop, step, slicelength, needed;
     array_state* state = find_array_state_by_type(Py_TYPE(self));
     arrayobject* other;
@@ -3316,11 +3313,9 @@ array_arrayiterator___reduce___impl(arrayiterobject *self, PyTypeObject *cls)
     PyObject *ret = NULL;
     Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->index);
     if (index >= 0) {
-        Py_BEGIN_CRITICAL_SECTION(self->ao);
         if (index <= Py_SIZE(self->ao)) {
             ret = Py_BuildValue("N(O)n", func, self->ao, index);
         }
-        Py_END_CRITICAL_SECTION();
     }
     if (ret == NULL) {
         ret = Py_BuildValue("N(())", func);
