@@ -51,8 +51,8 @@ handler.  Code to create and run the server looks like this::
    .. versionadded:: 3.7
 
 
-.. class:: HTTPSServer(server_address, RequestHandlerClass, \
-                       bind_and_activate=True, *, certfile, keyfile=None, \
+.. class:: HTTPSServer(server_address, RequestHandlerClass,\
+                       bind_and_activate=True, *, certfile, keyfile=None,\
                        password=None, alpn_protocols=None)
 
    Subclass of :class:`HTTPServer` with a wrapped socket using the :mod:`ssl` module.
