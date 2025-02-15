@@ -570,11 +570,11 @@ class _LineParser:
         return self._value
 
     @value.setter
-    def value(self, string):
-        self._value = string
-        string = string.strip()
-        self.clean = self.comments.strip(string)
-        self.has_comments = string != self.clean
+    def value(self, text):
+        self._value = text
+        trimmed = text.strip()
+        self.clean = self.comments.strip(trimmed)
+        self.has_comments = trimmed != self.clean
 
 
 class _CommentSpec:
