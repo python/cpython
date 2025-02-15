@@ -131,6 +131,12 @@ class AST_Tests(unittest.TestCase):
             tree = ast.parse(snippet)
             compile(tree, '<string>', 'exec')
 
+    def test_parse_invalid_ast(self):
+        # see gh-130139
+        for optval in (-1, 0, 1, 2):
+            self.assertRaises(TypeError, ast.parse, ast.Constant(42),
+                              optimize=optval)
+
     def test_optimization_levels__debug__(self):
         cases = [(-1, '__debug__'), (0, '__debug__'), (1, False), (2, False)]
         for (optval, expected) in cases:
