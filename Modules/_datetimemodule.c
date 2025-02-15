@@ -226,7 +226,7 @@ clear_current_module(PyInterpreterState *interp, PyObject *expected)
     goto finally;
 
 error:
-    PyErr_WriteUnraisable(NULL);
+    PyErr_FormatUnraisable("Exception ignored while clearing _datetime module");
 
 finally:
     PyErr_SetRaisedException(exc);
@@ -637,17 +637,19 @@ check_date_args(int year, int month, int day)
 {
 
     if (year < MINYEAR || year > MAXYEAR) {
-        PyErr_Format(PyExc_ValueError, "year %i is out of range", year);
+        PyErr_Format(PyExc_ValueError,
+                     "year must be in %d..%d, not %d", MINYEAR, MAXYEAR, year);
         return -1;
     }
     if (month < 1 || month > 12) {
-        PyErr_SetString(PyExc_ValueError,
-                        "month must be in 1..12");
+        PyErr_Format(PyExc_ValueError,
+                     "month must be in 1..12, not %d", month);
         return -1;
     }
-    if (day < 1 || day > days_in_month(year, month)) {
-        PyErr_SetString(PyExc_ValueError,
-                        "day is out of range for month");
+    int dim = days_in_month(year, month);
+    if (day < 1 || day > dim) {
+        PyErr_Format(PyExc_ValueError,
+                     "day must be in 1..%d, not %d", dim, day);
         return -1;
     }
     return 0;
@@ -660,28 +662,25 @@ static int
 check_time_args(int h, int m, int s, int us, int fold)
 {
     if (h < 0 || h > 23) {
-        PyErr_SetString(PyExc_ValueError,
-                        "hour must be in 0..23");
+        PyErr_Format(PyExc_ValueError, "hour must be in 0..23, not %i", h);
         return -1;
     }
     if (m < 0 || m > 59) {
-        PyErr_SetString(PyExc_ValueError,
-                        "minute must be in 0..59");
+        PyErr_Format(PyExc_ValueError, "minute must be in 0..59, not %i", m);
         return -1;
     }
     if (s < 0 || s > 59) {
-        PyErr_SetString(PyExc_ValueError,
-                        "second must be in 0..59");
+        PyErr_Format(PyExc_ValueError, "second must be in 0..59, not %i", s);
         return -1;
     }
     if (us < 0 || us > 999999) {
-        PyErr_SetString(PyExc_ValueError,
-                        "microsecond must be in 0..999999");
+        PyErr_Format(PyExc_ValueError,
+                     "microsecond must be in 0..999999, not %i", us);
         return -1;
     }
     if (fold != 0 && fold != 1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "fold must be either 0 or 1");
+        PyErr_Format(PyExc_ValueError,
+                     "fold must be either 0 or 1, not %i", fold);
         return -1;
     }
     return 0;
@@ -1435,8 +1434,7 @@ new_timezone(PyObject *offset, PyObject *name)
         GET_TD_DAYS(offset) < -1 || GET_TD_DAYS(offset) >= 1) {
         PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
                      " strictly between -timedelta(hours=24) and"
-                     " timedelta(hours=24),"
-                     " not %R.", offset);
+                     " timedelta(hours=24), not %R", offset);
         return NULL;
     }
 
@@ -1505,10 +1503,10 @@ call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
                 GET_TD_SECONDS(offset) == 0 &&
                 GET_TD_MICROSECONDS(offset) < 1) ||
             GET_TD_DAYS(offset) < -1 || GET_TD_DAYS(offset) >= 1) {
-            Py_DECREF(offset);
             PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
                          " strictly between -timedelta(hours=24) and"
-                         " timedelta(hours=24).");
+                         " timedelta(hours=24), not %R", offset);
+            Py_DECREF(offset);
             return NULL;
         }
     }
@@ -1839,7 +1837,7 @@ wrap_strftime(PyObject *object, PyObject *format, PyObject *timetuple,
     assert(object && format && timetuple);
     assert(PyUnicode_Check(format));
 
-    PyObject *strftime = _PyImport_GetModuleAttrString("time", "strftime");
+    PyObject *strftime = PyImport_ImportModuleAttrString("time", "strftime");
     if (strftime == NULL) {
         return NULL;
     }
@@ -2022,7 +2020,7 @@ static PyObject *
 time_time(void)
 {
     PyObject *result = NULL;
-    PyObject *time = _PyImport_GetModuleAttrString("time", "time");
+    PyObject *time = PyImport_ImportModuleAttrString("time", "time");
 
     if (time != NULL) {
         result = PyObject_CallNoArgs(time);
@@ -2040,7 +2038,7 @@ build_struct_time(int y, int m, int d, int hh, int mm, int ss, int dstflag)
     PyObject *struct_time;
     PyObject *result;
 
-    struct_time = _PyImport_GetModuleAttrString("time", "struct_time");
+    struct_time = PyImport_ImportModuleAttrString("time", "struct_time");
     if (struct_time == NULL) {
         return NULL;
     }
@@ -2261,7 +2259,7 @@ get_float_as_integer_ratio(PyObject *floatobj)
     if (!PyTuple_Check(ratio)) {
         PyErr_Format(PyExc_TypeError,
                      "unexpected return type from as_integer_ratio(): "
-                     "expected tuple, got '%.200s'",
+                     "expected tuple, not '%.200s'",
                      Py_TYPE(ratio)->tp_name);
         Py_DECREF(ratio);
         return NULL;
@@ -3382,7 +3380,8 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
     int rv = iso_to_ymd(year, week, day, &year, &month, &day);
 
     if (rv == -4) {
-        PyErr_Format(PyExc_ValueError, "Year is out of range: %d", year);
+        PyErr_Format(PyExc_ValueError,
+                     "year must be in %d..%d, not %d", MINYEAR, MAXYEAR, year);
         return NULL;
     }
 
@@ -3392,7 +3391,7 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
     }
 
     if (rv == -3) {
-        PyErr_Format(PyExc_ValueError, "Invalid day: %d (range is [1, 7])",
+        PyErr_Format(PyExc_ValueError, "Invalid weekday: %d (range is [1, 7])",
                      day);
         return NULL;
     }
@@ -4378,8 +4377,7 @@ timezone_fromutc(PyDateTime_TimeZone *self, PyDateTime_DateTime *dt)
         return NULL;
     }
     if (!HASTZINFO(dt) || dt->tzinfo != (PyObject *)self) {
-        PyErr_SetString(PyExc_ValueError, "fromutc: dt.tzinfo "
-                        "is not self");
+        PyErr_SetString(PyExc_ValueError, "fromutc: dt.tzinfo is not self");
         return NULL;
     }
 
@@ -5352,7 +5350,8 @@ utc_to_seconds(int year, int month, int day,
 
     /* ymd_to_ord() doesn't support year <= 0 */
     if (year < MINYEAR || year > MAXYEAR) {
-        PyErr_Format(PyExc_ValueError, "year %i is out of range", year);
+        PyErr_Format(PyExc_ValueError,
+                     "year must be in %d..%d, not %d", MINYEAR, MAXYEAR, year);
         return -1;
     }
 
