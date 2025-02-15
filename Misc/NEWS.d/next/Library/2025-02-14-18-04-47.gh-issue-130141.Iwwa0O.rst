@@ -1,0 +1,2 @@
+Fix incorrect selector fd removal if :class:`!asyncio._SelectorTransport` is
+resurrected from GC for .close().
