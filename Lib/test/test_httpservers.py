@@ -344,9 +344,10 @@ class BaseHTTPSServerTestCase(BaseTestCase):
     ONLYKEY = certdata_file("ssl_key.pem")
     CERTFILE_PROTECTED = certdata_file("keycert.passwd.pem")
     ONLYKEY_PROTECTED = certdata_file("ssl_key.passwd.pem")
-    KEY_PASSWORD = "somepass"
     EMPTYCERT = certdata_file("nullcert.pem")
     BADCERT = certdata_file("badcert.pem")
+    KEY_PASSWORD = "somepass"
+    BADPASSWORD = "badpass"
 
     tls = (ONLYCERT, ONLYKEY, None)  # values by default
 
@@ -390,16 +391,16 @@ class BaseHTTPSServerTestCase(BaseTestCase):
             (self.ONLYCERT, None, None),
             (self.ONLYKEY, None, None),
             (self.ONLYKEY, self.ONLYCERT, None),
-            (self.CERTFILE_PROTECTED, None, "badpass"),
+            (self.CERTFILE_PROTECTED, None, self.BADPASSWORD),
         ]
         for cerfile, keyfile, password in invalid_certdata:
             with self.assertRaises(ssl.SSLError):
                 HTTPSServer(
                     ('localhost', 0),
                     self.request_handler,
-                    certfile=data[0],
-                    keyfile=data[1],
-                    password=data[2],
+                    certfile=cerfile,
+                    keyfile=keyfile,
+                    password=password,
                 )
 
 
