@@ -1792,6 +1792,22 @@ find_unary_not_target(basicblock *bb, int start)
     return NULL;
 }
 
+static bool
+maybe_unary_not_cancel_out(basicblock *bb, int i, int nextop)
+{
+    cfg_instr *instr = &bb->b_instr[i];
+    assert(instr->i_opcode == UNARY_NOT);
+    if (nextop == UNARY_NOT) {
+        INSTR_SET_OP0(instr, NOP);
+        assert(i < bb->b_iused);
+        cfg_instr *next = &bb->b_instr[i+1];
+        assert(next->i_opcode == nextop);
+        INSTR_SET_OP0(next, NOP);
+        return true;
+    }
+    return false;
+}
+
 /* Replace:
        IS_OP(is)
        UNARY_NOT
@@ -1808,20 +1824,21 @@ find_unary_not_target(basicblock *bb, int start)
        NOP
     or vice versa ("not in" to "in").
 */
-static void
-optimize_unary_not(basicblock *bb, int i, int nextop)
+static bool
+optimize_unary_not_is_contains(basicblock *bb, int i, int nextop)
 {
     cfg_instr *instr = &bb->b_instr[i];
     assert(instr->i_opcode == UNARY_NOT);
     remove_redundant_to_bool(bb, i+1);
     cfg_instr *target = find_unary_not_target(bb, i-1);
     if (target == NULL) {
-        return;
+        return false;
     }
     int inverted = target->i_oparg ^ 1;
     assert(inverted == 0 || inverted == 1);
     INSTR_SET_OP1(target, target->i_opcode, inverted);
     INSTR_SET_OP0(instr, NOP);
+    return true;
 }
 
 static int
@@ -1843,7 +1860,14 @@ optimize_if_const_unaryop(basicblock *bb, int i, int nextop,
         );
     }
     if (instr->i_opcode == UNARY_NOT) {
-        optimize_unary_not(bb, i, nextop);
+        if (maybe_unary_not_cancel_out(bb, i, nextop)) {
+            /* nothing more to do here */
+            return SUCCESS;
+        }
+        if (optimize_unary_not_is_contains(bb, i, nextop)) {
+            /* if optimized, no need to continue */
+            return SUCCESS;
+        }
     }
     PyObject *seq;
     RETURN_IF_ERROR(get_constant_sequence(bb, i-1, 1, consts, &seq));
