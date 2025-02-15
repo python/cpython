@@ -170,7 +170,9 @@ class HTTPSServer(HTTPServer):
             ["http/1.1"] if alpn_protocols is None else alpn_protocols
         )
 
-        super().__init__(server_address, RequestHandlerClass, bind_and_activate)
+        super().__init__(server_address,
+                         RequestHandlerClass,
+                         bind_and_activate)
 
     def server_activate(self):
         """Wrap the socket in SSLSocket."""
