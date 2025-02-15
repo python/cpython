@@ -44,8 +44,10 @@ class TestColorizeFunction(unittest.TestCase):
                 check({'TERM': ''}, fallback, fallback)
                 check({'FORCE_COLOR': '1'}, fallback, True)
                 check({'FORCE_COLOR': '0'}, fallback, True)
+                check({'FORCE_COLOR': ''}, fallback, fallback)
                 check({'NO_COLOR': '1'}, fallback, False)
                 check({'NO_COLOR': '0'}, fallback, False)
+                check({'NO_COLOR': ''}, fallback, fallback)
 
             check({'TERM': 'dumb', 'FORCE_COLOR': '1'}, False, True)
             check({'FORCE_COLOR': '1', 'NO_COLOR': '1'}, True, False)

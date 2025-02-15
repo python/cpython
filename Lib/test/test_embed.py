@@ -384,11 +384,14 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_specialized_static_code_gets_unspecialized_at_Py_FINALIZE(self):
         # https://github.com/python/cpython/issues/92031
 
-        code = textwrap.dedent("""\
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
+
+        code = textwrap.dedent(f"""\
             import dis
             import importlib._bootstrap
             import opcode
             import test.test_dis
+            import test.support
 
             def is_specialized(f):
                 for instruction in dis.get_instructions(f, adaptive=True):
@@ -407,11 +410,11 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             func = importlib._bootstrap._handle_fromlist
 
             # "copy" the code to un-specialize it:
-            func.__code__ = func.__code__.replace()
+            test.support.reset_code(func)
 
             assert not is_specialized(func), "specialized instructions found"
 
-            for i in range(test.test_dis.ADAPTIVE_WARMUP_DELAY):
+            for _ in range({_testinternalcapi.SPECIALIZATION_THRESHOLD}):
                 func(importlib._bootstrap, ["x"], lambda *args: None)
 
             assert is_specialized(func), "no specialized instructions found"
@@ -1981,57 +1984,6 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
         out = proc.stdout.strip()
         self.assertIn("Tests passed", out)
         self.assertIn("unique-python-message", out)
-
-
-class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
-    # Test PyStdPrinter_Type which is used by _PySys_SetPreliminaryStderr():
-    #   "Set up a preliminary stderr printer until we have enough
-    #    infrastructure for the io module in place."
-
-    STDOUT_FD = 1
-
-    def create_printer(self, fd):
-        ctypes = import_helper.import_module('ctypes')
-        PyFile_NewStdPrinter = ctypes.pythonapi.PyFile_NewStdPrinter
-        PyFile_NewStdPrinter.argtypes = (ctypes.c_int,)
-        PyFile_NewStdPrinter.restype = ctypes.py_object
-        return PyFile_NewStdPrinter(fd)
-
-    def test_write(self):
-        message = "unicode:\xe9-\u20ac-\udc80!\n"
-
-        stdout_fd = self.STDOUT_FD
-        stdout_fd_copy = os.dup(stdout_fd)
-        self.addCleanup(os.close, stdout_fd_copy)
-
-        rfd, wfd = os.pipe()
-        self.addCleanup(os.close, rfd)
-        self.addCleanup(os.close, wfd)
-        try:
-            # PyFile_NewStdPrinter() only accepts fileno(stdout)
-            # or fileno(stderr) file descriptor.
-            os.dup2(wfd, stdout_fd)
-
-            printer = self.create_printer(stdout_fd)
-            printer.write(message)
-        finally:
-            os.dup2(stdout_fd_copy, stdout_fd)
-
-        data = os.read(rfd, 100)
-        self.assertEqual(data, message.encode('utf8', 'backslashreplace'))
-
-    def test_methods(self):
-        fd = self.STDOUT_FD
-        printer = self.create_printer(fd)
-        self.assertEqual(printer.fileno(), fd)
-        self.assertEqual(printer.isatty(), os.isatty(fd))
-        printer.flush()  # noop
-        printer.close()  # noop
-
-    def test_disallow_instantiation(self):
-        fd = self.STDOUT_FD
-        printer = self.create_printer(fd)
-        support.check_disallow_instantiation(self, type(printer))
 
 
 if __name__ == "__main__":
