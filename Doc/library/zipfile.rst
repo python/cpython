@@ -371,7 +371,7 @@ ZipFile Objects
 
 
 .. method:: ZipFile.extract(member, path=None, pwd=None, \
-                            preserve_permissions=zipfile.PreserveMode.NONE)
+                            preserve_permissions=PreserveMode.NONE)
 
    Extract a member from the archive to the current working directory; *member*
    must be its full name or a :class:`ZipInfo` object.  Its file information is
@@ -407,7 +407,7 @@ ZipFile Objects
 
 
 .. method:: ZipFile.extractall(path=None, members=None, pwd=None, \
-                            preserve_permissions=zipfile.PreserveMode.NONE)
+                            preserve_permissions=PreserveMode.NONE)
 
    Extract all members from the archive to the current working directory.  *path*
    specifies a different directory to extract to.  *members* is optional and must
