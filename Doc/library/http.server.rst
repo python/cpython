@@ -65,11 +65,12 @@ handler.  Code to create and run the server looks like this::
    A *password* can be specified for files protected and wrapped with PKCS#8,
    but beware that this could possibly expose hardcoded passwords in clear.
 
-   The *alpn_protocols* argument, if provided, should be a sequence of strings
-   specifying the Application-Layer Protocol Negotiation (ALPN) protocols
-   supported by the server. ALPN allows the server and client to negotiate
-   the application protocol during the TLS handshake. By default, it is set
-   to ``["http/1.1"]``, meaning the server will support HTTP/1.1.
+   When specified, the *alpn_protocols* argument must be a sequence of strings
+   specifying the "Application-Layer Protocol Negotiation" (ALPN) protocols
+   supported by the server. ALPN allows the server and the client to negotiate
+   the application protocol during the TLS handshake.
+
+   By default, it is set to ``["http/1.1"]``, meaning the server supports HTTP/1.1.
 
    .. versionadded:: next
 
