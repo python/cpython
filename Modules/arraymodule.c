@@ -151,8 +151,7 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
     char *items;
     size_t _new_size;
 
-    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(self->ob_exports) > 0 &&
-                                     newsize != Py_SIZE(self)) {
+    if (self->ob_exports > 0 && newsize != Py_SIZE(self)) {
         PyErr_SetString(PyExc_BufferError,
             "cannot resize an array that is exporting buffers");
         return -1;
@@ -746,7 +745,7 @@ array_dealloc(PyObject *op)
     PyObject_GC_UnTrack(op);
 
     arrayobject *self = arrayobject_CAST(op);
-    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(self->ob_exports) > 0) {
+    if (self->ob_exports > 0) {
         PyErr_SetString(PyExc_SystemError,
                         "deallocated array object has exported buffers");
         PyErr_Print();
@@ -1093,7 +1092,7 @@ array_del_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     /* Issue #4509: If the array has exported buffers and the slice
        assignment would change the size of the array, fail early to make
        sure we don't modify it. */
-    if (d != 0 && FT_ATOMIC_LOAD_SSIZE_RELAXED(a->ob_exports) > 0) {
+    if (d != 0 && a->ob_exports > 0) {
         PyErr_SetString(PyExc_BufferError,
             "cannot resize an array that is exporting buffers");
         return -1;
@@ -2726,8 +2725,7 @@ array_ass_subscr_lock_held(PyObject *op, PyObject* item, PyObject* value)
     /* Issue #4509: If the array has exported buffers and the slice
        assignment would change the size of the array, fail early to make
        sure we don't modify it. */
-    if ((needed == 0 || slicelength != needed) &&
-         FT_ATOMIC_LOAD_SSIZE_RELAXED(self->ob_exports) > 0) {
+    if ((needed == 0 || slicelength != needed) && self->ob_exports > 0) {
         PyErr_SetString(PyExc_BufferError,
             "cannot resize an array that is exporting buffers");
         return -1;
@@ -2864,11 +2862,7 @@ array_buffer_getbuf_lock_held(PyObject *op, Py_buffer *view, int flags)
 #endif
     }
 
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_add_ssize(&self->ob_exports, 1);
-#else
     self->ob_exports++;
-#endif
     return 0;
 }
 
@@ -2885,13 +2879,11 @@ array_buffer_getbuf(PyObject *op, Py_buffer *view, int flags)
 static void
 array_buffer_relbuf(PyObject *op, Py_buffer *Py_UNUSED(view))
 {
+    Py_BEGIN_CRITICAL_SECTION(op);
     arrayobject *self = arrayobject_CAST(op);
-#ifdef Py_GIL_DISABLED
-    assert(_Py_atomic_add_ssize(&self->ob_exports, -1) >= 1);
-#else
     self->ob_exports--;
     assert(self->ob_exports >= 0);
-#endif
+    Py_END_CRITICAL_SECTION();
 }
 
 static PyObject *
