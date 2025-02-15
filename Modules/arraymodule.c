@@ -3267,8 +3267,7 @@ arrayiter_next(PyObject *op)
     else {
         FT_ATOMIC_STORE_SSIZE_RELAXED(it->index, -1);
 #ifndef Py_GIL_DISABLED
-        it->ao = NULL;
-        Py_DECREF(ao);
+        Py_CLEAR(it->ao);
 #endif
     }
     return ret;
