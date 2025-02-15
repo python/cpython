@@ -31,7 +31,7 @@ from io import BytesIO, StringIO
 import unittest
 from test import support
 from test.support import (
-    is_apple, os_helper, requires_subprocess, threading_helper, import_helper
+    is_apple, import_helper, os_helper, requires_subprocess, threading_helper
 )
 
 try:
@@ -52,6 +52,7 @@ class NoLogRequestHandler:
 
 class DummyRequestHandler(NoLogRequestHandler, SimpleHTTPRequestHandler):
     pass
+
 
 def create_https_server(
     certfile,
@@ -377,8 +378,7 @@ class BaseHTTPSServerTestCase(BaseTestCase):
 
     tls = (ONLYCERT, ONLYKEY, None)  # values by default
 
-    class request_handler(NoLogRequestHandler, SimpleHTTPRequestHandler):
-        pass
+    request_handler = DummyRequestHandler
 
     def test_get(self):
         response = self.request('/')
@@ -400,9 +400,9 @@ class BaseHTTPSServerTestCase(BaseTestCase):
             (self.ONLYCERT, self.ONLYKEY_PROTECTED, self.KEY_PASSWORD),
         ]
         for certfile, keyfile, password in valid_certdata:
-            with self.subTest(certfile=certfile,
-                              keyfile=keyfile,
-                              password=password):
+            with self.subTest(
+                certfile=certfile, keyfile=keyfile, password=password
+            ):
                 server = create_https_server(certfile, keyfile, password)
                 self.assertIsInstance(server, HTTPSServer)
                 server.server_close()
@@ -417,9 +417,9 @@ class BaseHTTPSServerTestCase(BaseTestCase):
             (self.CERTFILE_PROTECTED, None, self.BADPASSWORD),
         ]
         for certfile, keyfile, password in invalid_certdata:
-            with self.subTest(certfile=certfile,
-                              keyfile=keyfile,
-                              password=password):
+            with self.subTest(
+                certfile=certfile, keyfile=keyfile, password=password
+            ):
                 with self.assertRaises(ssl.SSLError):
                     create_https_server(certfile, keyfile, password)
 

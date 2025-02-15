@@ -172,18 +172,14 @@ class HTTPSServer(HTTPServer):
     def server_activate(self):
         """Wrap the socket in SSLSocket."""
         super().server_activate()
-
         context = self._create_context()
         self.socket = context.wrap_socket(self.socket, server_side=True)
 
     def _create_context(self):
         """Create a secure SSL context."""
         context = self.ssl.create_default_context(self.ssl.Purpose.CLIENT_AUTH)
-        context.load_cert_chain(certfile=self.certfile,
-                                keyfile=self.keyfile,
-                                password=self.password)
+        context.load_cert_chain(self.certfile, self.keyfile, self.password)
         context.set_alpn_protocols(self.alpn_protocols)
-
         return context
 
 
