@@ -158,14 +158,17 @@ class HTTPSServer(HTTPServer):
         try:
             import ssl
         except ImportError:
-            raise RuntimeError("SSL module is missing; HTTPS support is unavailable")
+            raise RuntimeError("SSL module is missing; "
+                               "HTTPS support is unavailable")
 
         self.ssl = ssl
         self.certfile = certfile
         self.keyfile = keyfile
         self.password = password
         # Support by default HTTP/1.1
-        self.alpn_protocols = ["http/1.1"] if alpn_protocols is None else alpn_protocols
+        self.alpn_protocols = (
+            ["http/1.1"] if alpn_protocols is None else alpn_protocols
+        )
 
         super().__init__(server_address, RequestHandlerClass, bind_and_activate)
 
