@@ -20,6 +20,10 @@ class GrammarVisitor:
     def visit(self, node: Any, *args: Any, **kwargs: Any) -> Any:
         """Visit a node."""
         method = "visit_" + node.__class__.__name__
+        if len(node.__class__.__name__) == 1:
+            method = "visit_single_" + node.__class__.__name__
+        elif len(node.__class__.__name__) > 1:
+            method = "visit_multi_" + node.__class__.__name__
         visitor = getattr(self, method, self.generic_visit)
         return visitor(node, *args, **kwargs)
 
