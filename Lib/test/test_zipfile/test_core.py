@@ -52,7 +52,7 @@ def get_files(test):
         test.assertFalse(f.closed)
 
 def isroot():
-    if sys.platform == "win32":
+    if sys.platform == "win32" or sys.platform == "wasi":
         return False
 
     return os.getuid() == 0
