@@ -391,7 +391,7 @@ class BaseHTTPSServerTestCase(BaseTestCase):
             (self.ONLYKEY, self.ONLYCERT, None),
             (self.CERTFILE_PROTECTED, None, "badpass"),
         )
-        for data in invalid_certdata_examples:
+        for cerfile, keyfile, password in invalid_certdata:
             with self.assertRaises(ssl.SSLError):
                 HTTPSServer(
                     ('localhost', 0),
