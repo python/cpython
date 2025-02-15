@@ -1356,7 +1356,7 @@ if __name__ == '__main__':
     parser.add_argument('--tls-key', metavar='PATH',
                         help='path to the TLS key file')
     parser.add_argument('--tls-password-file', metavar='PATH',
-                        help='file containing the password for the TLS key')
+                        help='path to the password file for the TLS key')
     parser.add_argument('port', default=8000, type=int, nargs='?',
                         help='bind to this port '
                              '(default: %(default)s)')
