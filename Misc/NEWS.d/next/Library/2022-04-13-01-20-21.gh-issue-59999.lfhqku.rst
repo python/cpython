@@ -1,1 +1,1 @@
-Add options to preserve file permissions in :meth:`ZipFile.extract`
+Add options to preserve file permissions in :meth:`zipfile.ZipFile.extract` and :meth:`zipfile.ZipFile.extractall`
