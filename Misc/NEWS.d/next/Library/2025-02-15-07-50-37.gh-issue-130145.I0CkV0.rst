@@ -1,1 +1,1 @@
-Fix :meth:`asyncio.AbstractEventloop.run_forever` when another loop is already running.
+Fix :meth:`!asyncio.AbstractEventloop.run_forever` when another loop is already running.
