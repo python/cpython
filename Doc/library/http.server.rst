@@ -57,7 +57,7 @@ handler.  Code to create and run the server looks like this::
 
    Subclass of :class:`HTTPServer` with a wrapped socket using the :mod:`ssl` module.
    If the :mod:`ssl` module is not available, instantiating a :class:`!HTTPSServer`
-   object fails with an :exc:`RuntimeError`.
+   object fails with a :exc:`RuntimeError`.
 
    The *certfile* argument is the path to the SSL certificate chain file,
    and the *keyfile* is the path to file containing the private key.

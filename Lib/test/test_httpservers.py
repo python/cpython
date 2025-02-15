@@ -50,6 +50,24 @@ class NoLogRequestHandler:
         return ''
 
 
+class DummyRequestHandler(NoLogRequestHandler, SimpleHTTPRequestHandler):
+    pass
+
+def create_https_server(
+    certfile,
+    keyfile=None,
+    password=None,
+    *,
+    address=('localhost', 0),
+    request_handler=DummyRequestHandler,
+
+):
+    return HTTPSServer(
+        address, request_handler,
+        certfile=certfile, keyfile=keyfile, password=password
+    )
+
+
 class TestServerThread(threading.Thread):
     def __init__(self, test_object, request_handler, tls=None):
         threading.Thread.__init__(self)
@@ -336,23 +354,6 @@ class BaseHTTPServerTestCase(BaseTestCase):
 
 def certdata_file(*path):
     return os.path.join(os.path.dirname(__file__), "certdata", *path)
-
-class DummyRequestHandler(NoLogRequestHandler, SimpleHTTPRequestHandler):
-    pass
-
-def create_https_server(
-    certfile,
-    keyfile=None,
-    password=None,
-    *,
-    address=('localhost', 0),
-    request_handler=DummyRequestHandler,
-
-):
-    return HTTPSServer(
-        address, request_handler,
-        certfile=certfile, keyfile=keyfile, password=password
-    )
 
 
 @unittest.skipIf(ssl is None, "requires ssl")
