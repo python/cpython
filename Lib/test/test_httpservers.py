@@ -64,6 +64,7 @@ class TestServerThread(threading.Thread):
                 self.request_handler,
                 certfile=self.tls[0],
                 keyfile=self.tls[1],
+                password=self.tls[2],
             )
         else:
             self.server = HTTPServer(('localhost', 0), self.request_handler)
@@ -333,10 +334,19 @@ class BaseHTTPServerTestCase(BaseTestCase):
 
 @unittest.skipIf(ssl is None, 'No ssl module')
 class BaseHTTPSServerTestCase(BaseTestCase):
-    tls = (
-        os.path.join(os.path.dirname(__file__), "certdata", "ssl_cert.pem"),
-        os.path.join(os.path.dirname(__file__), "certdata", "ssl_key.pem"),
-    )
+    def _data_file(*name):
+        return os.path.join(os.path.dirname(__file__), "certdata", *name)
+
+    CERTFILE = _data_file("keycert.pem")
+    ONLYCERT = _data_file("ssl_cert.pem")
+    ONLYKEY = _data_file("ssl_key.pem")
+    CERTFILE_PROTECTED = _data_file("keycert.passwd.pem")
+    ONLYKEY_PROTECTED = _data_file("ssl_key.passwd.pem")
+    KEY_PASSWORD = "somepass"
+    EMPTYCERT = _data_file("nullcert.pem")
+    BADCERT = _data_file("badcert.pem")
+
+    tls = (ONLYCERT, ONLYKEY, None) # values by default
 
     class request_handler(NoLogRequestHandler, SimpleHTTPRequestHandler):
         pass
@@ -353,6 +363,43 @@ class BaseHTTPSServerTestCase(BaseTestCase):
         )
         self.connection.request(method, uri, body, headers)
         return self.connection.getresponse()
+
+    def test_valid_certdata(self):
+        valid_certdata_examples = (
+            (self.CERTFILE, None, None),
+            (self.CERTFILE, self.CERTFILE, None),
+            (self.CERTFILE_PROTECTED, None, self.KEY_PASSWORD),
+            (self.ONLYCERT, self.ONLYKEY_PROTECTED, self.KEY_PASSWORD),
+        )
+        for data in valid_certdata_examples:
+            server = HTTPSServer(
+                ('localhost', 0),
+                BaseHTTPRequestHandler,
+                certfile=data[0],
+                keyfile=data[1],
+                password=data[2],
+            )
+            self.assertIsInstance(server, HTTPSServer)
+            server.server_close()
+
+    def test_invalid_certdata(self):
+        invalid_certdata_examples = (
+            (self.BADCERT, None, None),
+            (self.EMPTYCERT, None, None),
+            (self.ONLYCERT, None, None),
+            (self.ONLYKEY, None, None),
+            (self.ONLYKEY, self.ONLYCERT, None),
+            (self.CERTFILE_PROTECTED, None, "badpass"),
+        )
+        for data in invalid_certdata_examples:
+            with self.assertRaises(ssl.SSLError):
+                HTTPSServer(
+                    ('localhost', 0),
+                    self.request_handler,
+                    certfile=data[0],
+                    keyfile=data[1],
+                    password=data[2],
+                )
 
 
 class RequestHandlerLoggingTestCase(BaseTestCase):
