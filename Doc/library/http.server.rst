@@ -79,9 +79,8 @@ handler.  Code to create and run the server looks like this::
                                 password=None, alpn_protocols=None)
 
    This class is identical to :class:`HTTPSServer` but uses threads to handle
-   requests by using the :class:`~socketserver.ThreadingMixIn`. This is
-   analogue of :class:`ThreadingHTTPServer` class only using
-   :class:`HTTPSServer`.
+   requests by inheriting from :class:`~socketserver.ThreadingMixIn`. This is
+   analogous to :class:`ThreadingHTTPServer` only using :class:`HTTPSServer`.
 
    .. versionadded:: next
 
