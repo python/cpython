@@ -159,7 +159,7 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
                 self.assert_hmac_digest(
                     key, msg, digest, digestmod, digest_size
                 )
-                self.assert_hmac_cases(
+                self.assert_hmac_extra_cases(
                     key, msg, digest, digestmod,
                     hashname, digest_size, block_size
                 )
@@ -208,11 +208,6 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
         with self.subTest('initial message is None'):
             hmac_new_feed(None)
 
-    def assert_hmac_cases(
-        self, key, msg, digest, hashimpl, hashname, digest_size, block_size
-    ):
-        """Extra tests that can be added in subclasses."""
-
     def assert_hmac_digest(
         self, key, msg, digest, digestmod, digest_size,
     ):
@@ -228,17 +223,25 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
         self.assertEqual(len(d), digest_size)
         self.assertEqual(d, binascii.unhexlify(digest))
 
-
-class PyTestVectorsMixin(PyModuleMixin, TestVectorsMixin):
-
-    def assert_hmac_cases(
+    def assert_hmac_extra_cases(
         self, key, msg, digest, digestmod, hashname, digest_size, block_size
     ):
-        h1 = self.hmac.HMAC(key, digestmod=digestmod)
+        """Extra tests that can be added in subclasses."""
+        h1 = self.hmac_new(key, digestmod=digestmod)
         h2 = h1.copy()
         h2.update(b"test update should not affect original")
         h1.update(msg)
         self.check_object(h1, digest, hashname, digest_size, block_size)
+
+
+class PyTestVectorsMixin(PyModuleMixin, TestVectorsMixin):
+
+    def assert_hmac_extra_cases(
+        self, key, msg, digest, digestmod, hashname, digest_size, block_size
+    ):
+        super().assert_hmac_extra_cases(
+            key, msg, digest, digestmod, hashname, digest_size, block_size
+        )
 
         h = self.hmac.HMAC.__new__(self.hmac.HMAC)
         h._init_old(key, msg, digestmod=digestmod)
