@@ -290,6 +290,7 @@ other languages), but it's more similar to pattern matching in
 languages like Rust or Haskell. Only the first pattern that matches
 gets executed and it can also extract components (sequence elements
 or object attributes) from the value into variables.
+If no case matches, none of the branches is executed.
 
 The simplest form compares a subject value against one or more literals::
 
