@@ -2866,14 +2866,19 @@ bytearrayiter_next(PyObject *self)
     PyByteArrayObject *seq = it->it_seq;
     assert(PyByteArray_Check(seq));
 
-    if (index < PyByteArray_GET_SIZE(seq)) {
+    Py_BEGIN_CRITICAL_SECTION(seq);
+    if (index < Py_SIZE(seq)) {
         val = (unsigned char)PyByteArray_AS_STRING(seq)[index];
     }
     else {
+        val = -1;
+    }
+    Py_END_CRITICAL_SECTION();
+
+    if (val == -1) {
         FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, -1);
 #ifndef Py_GIL_DISABLED
-        it->it_seq = NULL;
-        Py_DECREF(seq);
+        Py_CLEAR(it->it_seq);
 #endif
         return NULL;
     }

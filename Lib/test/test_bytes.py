@@ -2455,9 +2455,6 @@ class FreeThreadingTest(unittest.TestCase):
             with threading_helper.start_threads(threads):
                 pass
 
-            for thread in threads:
-                threading_helper.join_thread(thread)
-
         # hard errors
 
         check([clear] + [reduce] * 10)
@@ -2541,9 +2538,6 @@ class FreeThreadingTest(unittest.TestCase):
 
             with threading_helper.start_threads(threads):
                 pass
-
-            for thread in threads:
-                threading_helper.join_thread(thread)
 
         for _ in range(10):
             ba = bytearray(b'0' * 0x4000)  # this is a load-bearing variable, do not remove
