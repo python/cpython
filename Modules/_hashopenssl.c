@@ -1575,8 +1575,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
 
     HMAC_CTX *ctx = HMAC_CTX_new();
     if (ctx == NULL) {
-        _setException(PyExc_ValueError, NULL);
-        return NULL;
+        return PyErr_NoMemory();
     }
 
     int ok = HMAC_Init_ex(ctx, key->buf, (int)key->len, digest, NULL);
@@ -1670,14 +1669,14 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
 
     HMAC_CTX *ctx = HMAC_CTX_new();
     if (ctx == NULL) {
-        return _setException(PyExc_ValueError, NULL);
+        return PyErr_NoMemory();
     }
     if (!locked_HMAC_CTX_copy(ctx, self)) {
         HMAC_CTX_free(ctx);
         return _setException(PyExc_ValueError, NULL);
     }
 
-    retval = (HMACobject *)PyObject_New(HMACobject, Py_TYPE(self));
+    retval = PyObject_New(HMACobject, Py_TYPE(self));
     if (retval == NULL) {
         HMAC_CTX_free(ctx);
         return NULL;
