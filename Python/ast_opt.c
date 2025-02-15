@@ -869,6 +869,7 @@ fold_const_unary_or_complex_expr(expr_ty node, PyArena *ctx_,
     assert(IS_MATCH_NUMERIC_OR_COMPLEX_UNARY_CONST_EXPR(node));
     PyObject *constant = UNARY_EXPR_OPERAND_CONST_VALUE(node);
     assert(UNARY_EXPR_OP(node) == USub);
+    assert(constant != NULL);
     PyObject* folded = PyNumber_Negative(constant);
     return make_const(node, folded, ctx_);
 }
@@ -887,6 +888,7 @@ fold_const_binary_complex_expr(expr_ty node, PyArena *ctx_, _PyASTOptimizeState 
     PyObject *left = CONST_EXPR_VALUE(BINARY_EXPR_LEFT(node));
     PyObject *right = CONST_EXPR_VALUE(BINARY_EXPR_RIGHT(node));
     assert(op == Add || op == Sub);
+    assert(left != NULL && right != NULL);
     PyObject *folded = op == Add ? PyNumber_Add(left, right) : PyNumber_Subtract(left, right);
     return make_const(node, folded, ctx_);
 }
