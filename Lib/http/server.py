@@ -83,9 +83,10 @@ XXX To do:
 __version__ = "0.6"
 
 __all__ = [
-    "HTTPServer", "ThreadingHTTPServer", "BaseHTTPRequestHandler",
-    "SimpleHTTPRequestHandler", "CGIHTTPRequestHandler", "HTTPSServer",
-    "ThreadingHTTPSServer",
+    "HTTPServer", "ThreadingHTTPServer",
+    "HTTPSServer", "ThreadingHTTPSServer",
+    "BaseHTTPRequestHandler", "SimpleHTTPRequestHandler",
+    "CGIHTTPRequestHandler",
 ]
 
 import copy
@@ -148,6 +149,56 @@ class HTTPServer(socketserver.TCPServer):
 
 class ThreadingHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
     daemon_threads = True
+
+
+class HTTPSServer(HTTPServer):
+    def __init__(self, server_address, RequestHandlerClass,
+                 bind_and_activate=True, *, certfile, keyfile=None,
+                 password=None, alpn_protocols=None):
+        try:
+            import ssl
+        except ImportError:
+            raise RuntimeError("SSL module is missing; HTTPS support is unavailable")
+
+        self.ssl = ssl
+        self.certfile = certfile
+        self.keyfile = keyfile
+        self.password = password
+        # Support by default HTTP/1.1
+        self.alpn_protocols = ["http/1.1"] if alpn_protocols is None else alpn_protocols
+
+        super().__init__(server_address, RequestHandlerClass, bind_and_activate)
+
+    def server_activate(self):
+        """Wrap the socket in SSLSocket."""
+        super().server_activate()
+
+        context = self._create_context()
+        self.socket = context.wrap_socket(self.socket, server_side=True)
+
+    def _create_context(self):
+        """Create a secure SSL context."""
+        context = self.ssl.create_default_context(self.ssl.Purpose.CLIENT_AUTH)
+        context.load_cert_chain(certfile=self.certfile,
+                                keyfile=self.keyfile,
+                                password=self.password)
+        context.set_alpn_protocols(self.alpn_protocols)
+
+        return context
+
+
+class ThreadingHTTPSServer(socketserver.ThreadingMixIn, HTTPSServer):
+    daemon_threads = True
+
+
+def _get_best_family(*address):
+    infos = socket.getaddrinfo(
+        *address,
+        type=socket.SOCK_STREAM,
+        flags=socket.AI_PASSIVE,
+    )
+    family, type, proto, canonname, sockaddr = next(iter(infos))
+    return family, sockaddr
 
 
 class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
@@ -1250,56 +1301,6 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                 self.log_error("CGI script exit status %#x", status)
             else:
                 self.log_message("CGI script exited OK")
-
-
-class HTTPSServer(HTTPServer):
-    def __init__(self, server_address, RequestHandlerClass,
-                 bind_and_activate=True, *, certfile, keyfile=None,
-                 password=None, alpn_protocols=None):
-        try:
-            import ssl
-        except ImportError:
-            raise RuntimeError("SSL module is missing; HTTPS support is unavailable")
-
-        self.ssl = ssl
-        self.certfile = certfile
-        self.keyfile = keyfile
-        self.password = password
-        # Support by default HTTP/1.1
-        self.alpn_protocols = ["http/1.1"] if alpn_protocols is None else alpn_protocols
-
-        super().__init__(server_address, RequestHandlerClass, bind_and_activate)
-
-    def server_activate(self):
-        """Wrap the socket in SSLSocket."""
-        super().server_activate()
-
-        context = self._create_context()
-        self.socket = context.wrap_socket(self.socket, server_side=True)
-
-    def _create_context(self):
-        """Create a secure SSL context."""
-        context = self.ssl.create_default_context(self.ssl.Purpose.CLIENT_AUTH)
-        context.load_cert_chain(certfile=self.certfile,
-                                keyfile=self.keyfile,
-                                password=self.password)
-        context.set_alpn_protocols(self.alpn_protocols)
-
-        return context
-
-
-class ThreadingHTTPSServer(socketserver.ThreadingMixIn, HTTPSServer):
-    daemon_threads = True
-
-
-def _get_best_family(*address):
-    infos = socket.getaddrinfo(
-        *address,
-        type=socket.SOCK_STREAM,
-        flags=socket.AI_PASSIVE,
-    )
-    family, type, proto, canonname, sockaddr = next(iter(infos))
-    return family, sockaddr
 
 
 def test(HandlerClass=BaseHTTPRequestHandler,

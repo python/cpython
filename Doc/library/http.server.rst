@@ -61,7 +61,7 @@ handler.  Code to create and run the server looks like this::
 
    The *certfile* argument is the path to the SSL certificate chain file,
    and the *keyfile* is the path to file containing the private key.
-   
+
    A *password* can be specified for files protected and wrapped with PKCS#8,
    but beware that this could possibly expose hardcoded passwords in clear.
 
