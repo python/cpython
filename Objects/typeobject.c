@@ -9564,6 +9564,7 @@ add_tp_new_wrapper(PyTypeObject *type)
     if (func == NULL) {
         return -1;
     }
+    _PyObject_SetDeferredRefcount(func);
     r = PyDict_SetItem(dict, &_Py_ID(__new__), func);
     Py_DECREF(func);
     return r;
