@@ -3004,6 +3004,22 @@ class GetEventLoopTestsMixin:
                 self.loop.run_until_complete(main()),
                 'hello')
 
+    def test_get_running_loop_already_running(self):
+        async def main():
+            running_loop = asyncio.get_running_loop()
+            loop = asyncio.new_event_loop()
+            try:
+                loop.run_forever()
+            except RuntimeError:
+                pass
+            else:
+                self.fail("RuntimeError not raised")
+
+            self.assertIs(asyncio.get_running_loop(), running_loop)
+
+        self.loop.run_until_complete(main())
+
+
     def test_get_event_loop_returns_running_loop(self):
         class TestError(Exception):
             pass
