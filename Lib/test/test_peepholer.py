@@ -311,6 +311,7 @@ class TestTranforms(BytecodeTestCase):
         for line, elem in (
             ('-0.5', -0.5),                     # unary negative
             ('-0.0', -0.0),                     # -0.0
+            ('-(1.0-1.0)', -0.0),               # -0.0 after folding
             ('-0', 0),                          # -0
             ('~-2', 1),                         # unary invert
             ('+1', 1),                          # unary positive
@@ -324,6 +325,14 @@ class TestTranforms(BytecodeTestCase):
                 for instr in dis.get_instructions(code):
                     self.assertFalse(instr.opname.startswith('UNARY_'))
                 self.check_lnotab(code)
+
+        # Check that -0.0 works after marshaling
+        def negzero():
+            return -(1.0-1.0)
+
+        for instr in dis.get_instructions(negzero):
+            self.assertFalse(instr.opname.startswith('UNARY_'))
+        self.check_lnotab(negzero)
 
         # Verify that unfoldables are skipped
         for line, elem, opname in (
