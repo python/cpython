@@ -29,6 +29,8 @@ def requires_builtin_sha2():
 
 
 class ModuleMixin:
+    """Mixin with a HMAC module implementation."""
+
     hmac = None
 
 
@@ -47,7 +49,7 @@ class PyModuleMixin(ModuleMixin):
 
 @unittest.skip("no builtin implementation for HMAC for now")
 class BuiltinModuleMixin(ModuleMixin):
-    # TODO(picnixz): uncomment once HACL* HMAC is here
+    """Built-in HACL* implementation of HMAC."""
 
     @classmethod
     def setUpClass(cls):
@@ -62,6 +64,7 @@ class CreatorMixin:
         raise NotImplementedError
 
     def bind_hmac_new(self, digestmod):
+        """Return a specialization of hmac_new() with a bound digestmod."""
         return functools.partial(self.hmac_new, digestmod=digestmod)
 
 
@@ -72,11 +75,12 @@ class DigestMixin:
         raise NotImplementedError
 
     def bind_hmac_digest(self, digestmod):
+        """Return a specialization of hmac_digest() with a bound digestmod."""
         return functools.partial(self.hmac_digest, digestmod=digestmod)
 
 
 class ThroughObjectMixin(ModuleMixin, CreatorMixin, DigestMixin):
-    """Mixin delegating to hmac.HMAC() and hmac.HMAC(...).digest()."""
+    """Mixin delegating to <module>.HMAC() and <module>.HMAC(...).digest()."""
 
     def hmac_new(self, key, msg=None, digestmod=None):
         return self.hmac.HMAC(key, msg, digestmod=digestmod)
@@ -86,7 +90,7 @@ class ThroughObjectMixin(ModuleMixin, CreatorMixin, DigestMixin):
 
 
 class ThroughModuleAPIMixin(ModuleMixin, CreatorMixin, DigestMixin):
-    """Mixin delegating to hmac.new() and hmac.digest()."""
+    """Mixin delegating to <module>.new() and <module>.digest()."""
 
     def hmac_new(self, key, msg=None, digestmod=None):
         return self.hmac.new(key, msg, digestmod=digestmod)
