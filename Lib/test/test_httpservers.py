@@ -31,7 +31,7 @@ from io import BytesIO, StringIO
 import unittest
 from test import support
 from test.support import (
-    is_apple, os_helper, requires_subprocess, threading_helper
+    is_apple, os_helper, requires_subprocess, threading_helper, import_helper
 )
 
 try:
@@ -68,6 +68,15 @@ def create_https_server(
     )
 
 
+class TestSSLDisabled(unittest.TestCase):
+    def test_https_server_raises_runtime_error(self):
+        with import_helper.isolated_modules():
+            sys.modules['ssl'] = None
+            certfile = certdata_file("keycert.pem")
+            with self.assertRaises(RuntimeError):
+                create_https_server(certfile)
+
+
 class TestServerThread(threading.Thread):
     def __init__(self, test_object, request_handler, tls=None):
         threading.Thread.__init__(self)
@@ -77,12 +86,10 @@ class TestServerThread(threading.Thread):
 
     def run(self):
         if self.tls:
-            self.server = HTTPSServer(
-                ('localhost', 0),
-                self.request_handler,
-                certfile=self.tls[0],
-                keyfile=self.tls[1],
-                password=self.tls[2],
+            certfile, keyfile, password = self.tls
+            self.server = create_https_server(
+                certfile, keyfile, password,
+                request_handler=self.request_handler,
             )
         else:
             self.server = HTTPServer(('localhost', 0), self.request_handler)
@@ -393,7 +400,9 @@ class BaseHTTPSServerTestCase(BaseTestCase):
             (self.ONLYCERT, self.ONLYKEY_PROTECTED, self.KEY_PASSWORD),
         ]
         for certfile, keyfile, password in valid_certdata:
-            with self.subTest(certfile=certfile, keyfile=keyfile):
+            with self.subTest(certfile=certfile,
+                              keyfile=keyfile,
+                              password=password):
                 server = create_https_server(certfile, keyfile, password)
                 self.assertIsInstance(server, HTTPSServer)
                 server.server_close()
@@ -408,7 +417,9 @@ class BaseHTTPSServerTestCase(BaseTestCase):
             (self.CERTFILE_PROTECTED, None, self.BADPASSWORD),
         ]
         for certfile, keyfile, password in invalid_certdata:
-            with self.subTest(certfile=certfile, keyfile=keyfile):
+            with self.subTest(certfile=certfile,
+                              keyfile=keyfile,
+                              password=password):
                 with self.assertRaises(ssl.SSLError):
                     create_https_server(certfile, keyfile, password)
 
