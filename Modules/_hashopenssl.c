@@ -1740,6 +1740,7 @@ _hmac_digest(HMACobject *self, unsigned char *buf, unsigned int len)
         return 0;
     }
     if (!locked_HMAC_CTX_copy(temp_ctx, self)) {
+        HMAC_CTX_free(temp_ctx);
         _setException(PyExc_ValueError, NULL);
         return 0;
     }
