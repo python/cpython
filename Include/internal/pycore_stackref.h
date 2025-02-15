@@ -231,6 +231,16 @@ _PyStackRef_StealIfUnborrowed(_PyStackRef stackref)
     return stackref;
 }
 
+static inline bool
+_PyStackRef_IsBorrowed(_PyStackRef stackref)
+{
+    if (PyStackRef_IsNull(stackref) || !PyStackRef_IsDeferred(stackref)) {
+        return false;
+    }
+    PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
+    return !(_Py_IsImmortal(obj) || _PyObject_HasDeferredRefcount(obj));
+}
+
 static inline _PyStackRef
 PyStackRef_FromPyObjectNew(PyObject *obj)
 {
