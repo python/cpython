@@ -1354,7 +1354,7 @@ if __name__ == '__main__':
     parser.add_argument('--tls-cert', metavar='PATH',
                         help='path to the TLS certificate chain file')
     parser.add_argument('--tls-key', metavar='PATH',
-                        help='path to the TLS key')
+                        help='path to the TLS key file')
     parser.add_argument('--tls-password-file', metavar='PATH',
                         help='file containing the password for the TLS key')
     parser.add_argument('port', default=8000, type=int, nargs='?',
