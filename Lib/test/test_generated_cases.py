@@ -1756,7 +1756,7 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(BALANCED) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BALANCED;
             (void)(opcode);
             #endif
