@@ -1314,11 +1314,11 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     ServerClass.address_family, addr = _get_best_family(bind, port)
     HandlerClass.protocol_version = protocol
 
-    if not tls_cert:
-        server = ServerClass(addr, HandlerClass)
-    else:
+    if tls_cert:
         server = ThreadingHTTPSServer(addr, HandlerClass, certfile=tls_cert,
                                       keyfile=tls_key, password=tls_password)
+    else:
+        server = ServerClass(addr, HandlerClass)
 
     with server as httpd:
         host, port = httpd.socket.getsockname()[:2]
