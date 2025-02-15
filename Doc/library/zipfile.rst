@@ -139,14 +139,14 @@ The module defines the following items:
 
 .. data:: PreserveMode.NONE
 
-    Constant for use in :meth:`extractall` and :meth:`extract` methods. Do not
+    Constant for use in :meth:`ZipFile.extractall` and :meth:`ZipFile.extract` methods. Do not
     preserve permissions of zipped files.
 
     .. versionadded:: next
 
 .. data:: PreserveMode.SAFE
 
-    Constant for use in :meth:`extractall` and :meth:`extract` methods.
+    Constant for use in :meth:`ZipFile.extractall` and :meth:`ZipFile.extract` methods.
     Preserve safe subset of permissions of the zipped files only: permissions
     for reading, writing, execution for user, group and others.
 
@@ -154,7 +154,7 @@ The module defines the following items:
 
 .. data:: PreserveMode.ALL
 
-    Constant for use in :meth:`extractall` and :meth:`extract` methods.
+    Constant for use in :meth:`ZipFile.extractall` and :meth:`ZipFile.extract` methods.
     Preserve all the permissions of the zipped files, including unsafe ones:
     UID bit (:data:`stat.S_ISUID`), group UID bit (:data:`stat.S_ISGID`),
     sticky bit (:data:`stat.S_ISVTX`).
