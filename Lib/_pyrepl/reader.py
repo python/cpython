@@ -577,7 +577,7 @@ class Reader:
         cur_x = self.screeninfo[i][0]
         while cur_x < x:
             if self.screeninfo[i][1][j] == 0:
-                j += 1  # prevent infinite loop
+                j += 1  # prevent potential future infinite loop
                 continue
             cur_x += self.screeninfo[i][1][j]
             j += 1
