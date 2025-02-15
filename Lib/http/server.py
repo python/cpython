@@ -1352,7 +1352,7 @@ if __name__ == '__main__':
                         help='conform to this HTTP version '
                              '(default: %(default)s)')
     parser.add_argument('--tls-cert', metavar='PATH',
-                        help='path to the TLS certificate')
+                        help='path to the TLS certificate chain file')
     parser.add_argument('--tls-key', metavar='PATH',
                         help='path to the TLS key')
     parser.add_argument('--tls-password-file', metavar='PATH',
