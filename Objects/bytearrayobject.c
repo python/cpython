@@ -264,7 +264,7 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
 
     obj->ob_bytes = obj->ob_start = sval;
     Py_SET_SIZE(self, size);
-    obj->ob_alloc = alloc;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(obj->ob_alloc, alloc);
     obj->ob_bytes[size] = '\0'; /* Trailing null byte */
 
     return 0;
