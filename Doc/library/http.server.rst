@@ -507,7 +507,7 @@ TLS enabled:
 
 Use ``--tls-password-file`` option if private keys are password-protected:
 
-.. code-block::
+.. code-block:: bash
 
    python -m http.server \
           --tls-cert cert.pem \
