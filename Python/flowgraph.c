@@ -23,6 +23,11 @@
         return ERROR;       \
     }
 
+#define RETURN_IF_NOT_CONST_SEQ(X)  \
+    if ((X) == NULL) {              \
+        return SUCCESS;               \
+    }
+
 #define DEFAULT_BLOCK_SIZE 16
 
 typedef _Py_SourceLocation location;
@@ -1406,6 +1411,47 @@ nop_out(basicblock *bb, int start, int count)
     }
 }
 
+/* Determine opcode & oparg for freshly folded constant.
+   Steals reference to "newconst".
+*/
+static int
+newop_from_folded(PyObject *newconst, PyObject *consts,
+                  PyObject *const_cache, int *newopcode, int *newoparg)
+{
+    if (PyLong_CheckExact(newconst)) {
+        int overflow;
+        long val = PyLong_AsLongAndOverflow(newconst, &overflow);
+        if (!overflow && _PY_IS_SMALL_INT(val)) {
+            *newopcode = LOAD_SMALL_INT;
+            *newoparg = val;
+            return SUCCESS;
+        }
+    }
+    *newopcode = LOAD_CONST;
+    *newoparg = add_const(newconst, consts, const_cache);
+    RETURN_IF_ERROR(*newoparg);
+    return SUCCESS;
+}
+
+/* Steals reference to "newconst" */
+static int
+make_const(PyObject *newconst, basicblock *bb,
+           int i, int nop, PyObject *consts, PyObject *const_cache)
+{
+    if (newconst == NULL) {
+        if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
+            return ERROR;
+        }
+        PyErr_Clear();
+        return SUCCESS;
+    }
+    int newopcode, newoparg;
+    RETURN_IF_ERROR(newop_from_folded(newconst, consts, const_cache, &newopcode, &newoparg));
+    nop_out(bb, i-1, nop);
+    INSTR_SET_OP1(&bb->b_instr[i], newopcode, newoparg);
+    return SUCCESS;
+}
+
 /* Replace LOAD_CONST c1, LOAD_CONST c2 ... LOAD_CONST cn, BUILD_TUPLE n
    with    LOAD_CONST (c1, c2, ... cn).
    The consts table must still be in list form so that the
@@ -1413,26 +1459,19 @@ nop_out(basicblock *bb, int start, int count)
    Called with codestr pointing to the first LOAD_CONST.
 */
 static int
-fold_tuple_of_constants(basicblock *bb, int n, PyObject *consts, PyObject *const_cache)
+fold_tuple_of_constants(basicblock *bb, int i, PyObject *consts, PyObject *const_cache)
 {
     /* Pre-conditions */
     assert(PyDict_CheckExact(const_cache));
     assert(PyList_CheckExact(consts));
-    cfg_instr *instr = &bb->b_instr[n];
+    cfg_instr *instr = &bb->b_instr[i];
     assert(instr->i_opcode == BUILD_TUPLE);
     int seq_size = instr->i_oparg;
     PyObject *newconst;
-    RETURN_IF_ERROR(get_constant_sequence(bb, n-1, seq_size, consts, &newconst));
-    if (newconst == NULL) {
-        /* not a const sequence */
-        return SUCCESS;
-    }
-    assert(PyTuple_CheckExact(newconst) && PyTuple_GET_SIZE(newconst) == seq_size);
-    int index = add_const(newconst, consts, const_cache);
-    RETURN_IF_ERROR(index);
-    nop_out(bb, n-1, seq_size);
-    INSTR_SET_OP1(instr, LOAD_CONST, index);
-    return SUCCESS;
+    RETURN_IF_ERROR(get_constant_sequence(bb, i-1, seq_size, consts, &newconst));
+    RETURN_IF_NOT_CONST_SEQ(newconst);
+    assert(PyTuple_Size(newconst) == seq_size);
+    return make_const(newconst, bb, i, seq_size, consts, const_cache);
 }
 
 #define MIN_CONST_SEQUENCE_SIZE 3
@@ -1469,7 +1508,7 @@ optimize_lists_and_sets(basicblock *bb, int i, int nextop,
         }
         return SUCCESS;
     }
-    assert(PyTuple_CheckExact(newconst) && PyTuple_GET_SIZE(newconst) == seq_size);
+    assert(PyTuple_Size(newconst) == seq_size);
     if (instr->i_opcode == BUILD_SET) {
         PyObject *frozenset = PyFrozenSet_New(newconst);
         if (frozenset == NULL) {
@@ -1494,26 +1533,6 @@ optimize_lists_and_sets(basicblock *bb, int i, int nextop,
         INSTR_SET_OP1(&bb->b_instr[i-1], LOAD_CONST, index);
         INSTR_SET_OP1(&bb->b_instr[i], instr->i_opcode == BUILD_LIST ? LIST_EXTEND : SET_UPDATE, 1);
     }
-    return SUCCESS;
-}
-
-/* Determine opcode & oparg for freshly folded constant. */
-static int
-newop_from_folded(PyObject *newconst, PyObject *consts,
-                  PyObject *const_cache, int *newopcode, int *newoparg)
-{
-    if (PyLong_CheckExact(newconst)) {
-        int overflow;
-        long val = PyLong_AsLongAndOverflow(newconst, &overflow);
-        if (!overflow && _PY_IS_SMALL_INT(val)) {
-            *newopcode = LOAD_SMALL_INT;
-            *newoparg = val;
-            return SUCCESS;
-        }
-    }
-    *newopcode = LOAD_CONST;
-    *newoparg = add_const(newconst, consts, const_cache);
-    RETURN_IF_ERROR(*newoparg);
     return SUCCESS;
 }
 
@@ -1701,26 +1720,139 @@ optimize_if_const_binop(basicblock *bb, int i, PyObject *consts, PyObject *const
     assert(binop->i_opcode == BINARY_OP);
     PyObject *pair;
     RETURN_IF_ERROR(get_constant_sequence(bb, i-1, 2, consts, &pair));
-    if (pair == NULL) {
-        return SUCCESS;
-    }
-    assert(PyTuple_CheckExact(pair) && PyTuple_Size(pair) == 2);
+    RETURN_IF_NOT_CONST_SEQ(pair);
+    assert(PyTuple_Size(pair) == 2);
     PyObject *left = PyTuple_GET_ITEM(pair, 0);
     PyObject *right = PyTuple_GET_ITEM(pair, 1);
     PyObject *newconst = eval_const_binop(left, binop->i_oparg, right);
     Py_DECREF(pair);
-    if (newconst == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
-            return ERROR;
-        }
-        PyErr_Clear();
-        return SUCCESS;
+    return make_const(newconst, bb, i, 2, consts, const_cache);
+}
+
+static PyObject*
+unary_not(PyObject *v)
+{
+    int r = PyObject_IsTrue(v);
+    if (r < 0)
+        return NULL;
+    return PyBool_FromLong(!r);
+}
+
+static PyObject *
+eval_const_unaryop(PyObject *operand, int op, bool unarypos)
+{
+    if (unarypos) {
+        return PyNumber_Positive(operand);
     }
-    int newopcode, newoparg;
-    RETURN_IF_ERROR(newop_from_folded(newconst, consts, const_cache, &newopcode, &newoparg));
-    nop_out(bb, i-1, 2);
-    INSTR_SET_OP1(binop, newopcode, newoparg);
-    return SUCCESS;
+    PyObject *result;
+    switch (op) {
+        case UNARY_NEGATIVE:
+            result = PyNumber_Negative(operand);
+            break;
+        case UNARY_INVERT:
+            result = PyNumber_Invert(operand);
+            break;
+        case UNARY_NOT:
+            result = unary_not(operand);
+            break;
+        default:
+            Py_UNREACHABLE();
+    }
+    return result;
+}
+
+static void
+remove_redundant_to_bool(basicblock *bb, int start)
+{
+    assert(start >= 0);
+    for (;start < bb->b_iused; start++) {
+        cfg_instr *curr = &bb->b_instr[start];
+        if (curr->i_opcode == TO_BOOL) {
+            INSTR_SET_OP0(curr, NOP);
+            continue;
+        }
+        break;
+    }
+}
+
+cfg_instr *
+find_unary_not_target(basicblock *bb, int start)
+{
+    assert(start < bb->b_iused);
+    for (; start >= 0; start--) {
+        cfg_instr *instr = &bb->b_instr[start];
+        if (instr->i_opcode == NOP) {
+            continue;
+        }
+        if (instr->i_opcode == IS_OP || instr->i_opcode == CONTAINS_OP) {
+            return instr;
+        }
+        break;
+    }
+    return NULL;
+}
+
+/* Replace:
+       IS_OP(is)
+       UNARY_NOT
+    with:
+       IS_OP(is not)
+       NOP
+    or vice versa ("is not" to "is").
+
+    And:
+       CONTAINS_OP(in)
+       UNARY_NOT
+    with:
+       CONTAINS_OP(not in)
+       NOP
+    or vice versa ("not in" to "in").
+*/
+static void
+optimize_unary_not(basicblock *bb, int i, int nextop)
+{
+    cfg_instr *instr = &bb->b_instr[i];
+    assert(instr->i_opcode == UNARY_NOT);
+    remove_redundant_to_bool(bb, i+1);
+    cfg_instr *target = find_unary_not_target(bb, i-1);
+    if (target == NULL) {
+        return;
+    }
+    int inverted = target->i_oparg ^ 1;
+    assert(inverted == 0 || inverted == 1);
+    INSTR_SET_OP1(target, target->i_opcode, inverted);
+    INSTR_SET_OP0(instr, NOP);
+}
+
+static int
+optimize_if_const_unaryop(basicblock *bb, int i, int nextop,
+                          PyObject *consts, PyObject *const_cache, bool unarypos)
+{
+    cfg_instr *instr = &bb->b_instr[i];
+    if (unarypos) {
+        assert(
+            instr->i_opcode == CALL_INTRINSIC_1
+            && instr->i_oparg == INTRINSIC_UNARY_POSITIVE
+        );
+    }
+    else {
+        assert(
+            instr->i_opcode == UNARY_NEGATIVE
+            || instr->i_opcode == UNARY_INVERT
+            || instr->i_opcode == UNARY_NOT
+        );
+    }
+    if (instr->i_opcode == UNARY_NOT) {
+        optimize_unary_not(bb, i, nextop);
+    }
+    PyObject *seq;
+    RETURN_IF_ERROR(get_constant_sequence(bb, i-1, 1, consts, &seq));
+    RETURN_IF_NOT_CONST_SEQ(seq);
+    assert(PyTuple_Size(seq) == 1);
+    PyObject *operand = PyTuple_GET_ITEM(seq, 0);
+    PyObject *newconst = eval_const_unaryop(operand, instr->i_opcode, unarypos);
+    Py_DECREF(seq);
+    return make_const(newconst, bb, i, 1, consts, const_cache);
 }
 
 #define VISITED (-1)
@@ -2203,21 +2335,17 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 }
                 break;
             case UNARY_NOT:
-                if (nextop == TO_BOOL) {
-                    INSTR_SET_OP0(inst, NOP);
-                    INSTR_SET_OP0(&bb->b_instr[i + 1], UNARY_NOT);
-                    continue;
-                }
-                if (nextop == UNARY_NOT) {
-                    INSTR_SET_OP0(inst, NOP);
-                    INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
-                    continue;
-                }
+            case UNARY_INVERT:
+            case UNARY_NEGATIVE:
+                RETURN_IF_ERROR(optimize_if_const_unaryop(bb, i, nextop, consts, const_cache, false));
                 break;
             case CALL_INTRINSIC_1:
                 // for _ in (*foo, *bar) -> for _ in [*foo, *bar]
                 if (oparg == INTRINSIC_LIST_TO_TUPLE && nextop == GET_ITER) {
                     INSTR_SET_OP0(inst, NOP);
+                }
+                else if (oparg == INTRINSIC_UNARY_POSITIVE) {
+                    RETURN_IF_ERROR(optimize_if_const_unaryop(bb, i, nextop, consts, const_cache, true));
                 }
                 break;
             case BINARY_OP:

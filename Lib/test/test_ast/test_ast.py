@@ -3081,12 +3081,6 @@ class ASTMainTests(unittest.TestCase):
 
 
 class ASTOptimiziationTests(unittest.TestCase):
-    unaryop = {
-        "~": ast.Invert(),
-        "+": ast.UAdd(),
-        "-": ast.USub(),
-    }
-
     def wrap_expr(self, expr):
         return ast.Module(body=[ast.Expr(value=expr)])
 
@@ -3117,57 +3111,6 @@ class ASTOptimiziationTests(unittest.TestCase):
             f"{ast.dump(optimized_target)} must equal "
             f"{ast.dump(optimized_tree)}",
         )
-
-    def test_folding_unaryop(self):
-        code = "%s1"
-        operators = self.unaryop.keys()
-
-        def create_unaryop(operand):
-            return ast.UnaryOp(op=self.unaryop[operand], operand=ast.Constant(1))
-
-        for op in operators:
-            result_code = code % op
-            non_optimized_target = self.wrap_expr(create_unaryop(op))
-            optimized_target = self.wrap_expr(ast.Constant(eval(result_code)))
-
-            with self.subTest(
-                result_code=result_code,
-                non_optimized_target=non_optimized_target,
-                optimized_target=optimized_target
-            ):
-                self.assert_ast(result_code, non_optimized_target, optimized_target)
-
-    def test_folding_not(self):
-        code = "not (1 %s (1,))"
-        operators = {
-            "in": ast.In(),
-            "is": ast.Is(),
-        }
-        opt_operators = {
-            "is": ast.IsNot(),
-            "in": ast.NotIn(),
-        }
-
-        def create_notop(operand):
-            return ast.UnaryOp(op=ast.Not(), operand=ast.Compare(
-                left=ast.Constant(value=1),
-                ops=[operators[operand]],
-                comparators=[ast.Tuple(elts=[ast.Constant(value=1)])]
-            ))
-
-        for op in operators.keys():
-            result_code = code % op
-            non_optimized_target = self.wrap_expr(create_notop(op))
-            optimized_target = self.wrap_expr(
-                ast.Compare(left=ast.Constant(1), ops=[opt_operators[op]], comparators=[ast.Constant(value=(1,))])
-            )
-
-            with self.subTest(
-                result_code=result_code,
-                non_optimized_target=non_optimized_target,
-                optimized_target=optimized_target
-            ):
-                self.assert_ast(result_code, non_optimized_target, optimized_target)
 
     def test_folding_format(self):
         code = "'%s' % (a,)"

@@ -66,76 +66,6 @@ has_starred(asdl_expr_seq *elts)
     return 0;
 }
 
-
-static PyObject*
-unary_not(PyObject *v)
-{
-    int r = PyObject_IsTrue(v);
-    if (r < 0)
-        return NULL;
-    return PyBool_FromLong(!r);
-}
-
-static int
-fold_unaryop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
-{
-    expr_ty arg = node->v.UnaryOp.operand;
-
-    if (arg->kind != Constant_kind) {
-        /* Fold not into comparison */
-        if (node->v.UnaryOp.op == Not && arg->kind == Compare_kind &&
-                asdl_seq_LEN(arg->v.Compare.ops) == 1) {
-            /* Eq and NotEq are often implemented in terms of one another, so
-               folding not (self == other) into self != other breaks implementation
-               of !=. Detecting such cases doesn't seem worthwhile.
-               Python uses </> for 'is subset'/'is superset' operations on sets.
-               They don't satisfy not folding laws. */
-            cmpop_ty op = asdl_seq_GET(arg->v.Compare.ops, 0);
-            switch (op) {
-            case Is:
-                op = IsNot;
-                break;
-            case IsNot:
-                op = Is;
-                break;
-            case In:
-                op = NotIn;
-                break;
-            case NotIn:
-                op = In;
-                break;
-            // The remaining comparison operators can't be safely inverted
-            case Eq:
-            case NotEq:
-            case Lt:
-            case LtE:
-            case Gt:
-            case GtE:
-                op = 0; // The AST enums leave "0" free as an "unused" marker
-                break;
-            // No default case, so the compiler will emit a warning if new
-            // comparison operators are added without being handled here
-            }
-            if (op) {
-                asdl_seq_SET(arg->v.Compare.ops, 0, op);
-                COPY_NODE(node, arg);
-                return 1;
-            }
-        }
-        return 1;
-    }
-
-    typedef PyObject *(*unary_op)(PyObject*);
-    static const unary_op ops[] = {
-        [Invert] = PyNumber_Invert,
-        [Not] = unary_not,
-        [UAdd] = PyNumber_Positive,
-        [USub] = PyNumber_Negative,
-    };
-    PyObject *newval = ops[node->v.UnaryOp.op](arg->v.Constant.value);
-    return make_const(node, newval, arena);
-}
-
 static expr_ty
 parse_literal(PyObject *fmt, Py_ssize_t *ppos, PyArena *arena)
 {
@@ -506,7 +436,6 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         break;
     case UnaryOp_kind:
         CALL(astfold_expr, expr_ty, node_->v.UnaryOp.operand);
-        CALL(fold_unaryop, expr_ty, node_);
         break;
     case Lambda_kind:
         CALL(astfold_arguments, arguments_ty, node_->v.Lambda.args);
