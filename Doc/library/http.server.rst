@@ -55,9 +55,9 @@ handler.  Code to create and run the server looks like this::
                        bind_and_activate=True, *, certfile, keyfile=None, \
                        password=None, alpn_protocols=None)
 
-   This class is a :class:`HTTPServer` subclass with a wrapped socket using the
-   :mod:`ssl`, if the :mod:`ssl` module is not available the class will not
-   initialize.
+   Subclass of :class:`HTTPServer` with a wrapped socket using the :mod:`ssl` module.
+   If the :mod:`ssl` module is not available, instantiating an :class:`!HTTPSServer`
+   object fails with an :exc:`ImportError`.
 
    The *certfile* argument is required and is the path to the SSL
    certificate chain file. The *keyfile* is the path to its private key. But
