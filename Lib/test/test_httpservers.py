@@ -346,7 +346,7 @@ class BaseHTTPSServerTestCase(BaseTestCase):
     EMPTYCERT = _data_file("nullcert.pem")
     BADCERT = _data_file("badcert.pem")
 
-    tls = (ONLYCERT, ONLYKEY, None) # values by default
+    tls = (ONLYCERT, ONLYKEY, None)  # values by default
 
     class request_handler(NoLogRequestHandler, SimpleHTTPRequestHandler):
         pass
