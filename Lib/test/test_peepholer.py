@@ -479,10 +479,13 @@ class TestTranforms(BytecodeTestCase):
             ('(1 + 2, )[0]', 3),
             ('(2 + 2 * 2, )[0]', 6),
             ('(1, (1 + 2 + 3, ))[1][0]', 6),
+            ('1 + 2', 3),
+            ('2 + 2 * 2 // 2 - 2', 2),
             ('(255, )[0]', 255),
             ('(256, )[0]', None),
             ('(1000, )[0]', None),
             ('(1 - 2, )[0]', None),
+            ('255 + 1', None),
         ]
         for expr, oparg in tests:
             with self.subTest(expr=expr, oparg=oparg):
@@ -493,37 +496,85 @@ class TestTranforms(BytecodeTestCase):
                     self.assertNotInBytecode(code, 'LOAD_SMALL_INT')
                 self.check_lnotab(code)
 
-    def test_folding_subscript(self):
+    def test_folding_binop(self):
+        add = get_binop_argval('NB_ADD')
+        sub = get_binop_argval('NB_SUBTRACT')
+        mul = get_binop_argval('NB_MULTIPLY')
+        div = get_binop_argval('NB_TRUE_DIVIDE')
+        floor = get_binop_argval('NB_FLOOR_DIVIDE')
+        rem = get_binop_argval('NB_REMAINDER')
+        pow = get_binop_argval('NB_POWER')
+        lshift = get_binop_argval('NB_LSHIFT')
+        rshift = get_binop_argval('NB_RSHIFT')
+        or_ = get_binop_argval('NB_OR')
+        and_ = get_binop_argval('NB_AND')
+        xor = get_binop_argval('NB_XOR')
+        subscr = get_binop_argval('NB_SUBSCR')
         tests = [
-            ('(1, )[0]', False),
-            ('(1, )[-1]', False),
-            ('(1 + 2, )[0]', False),
-            ('(1, (1, 2))[1][1]', False),
-            ('(1, 2)[2-1]', False),
-            ('(1, (1, 2))[1][2-1]', False),
-            ('(1, (1, 2))[1:6][0][2-1]', False),
-            ('"a"[0]', False),
-            ('("a" + "b")[1]', False),
-            ('("a" + "b", )[0][1]', False),
-            ('("a" * 10)[9]', False),
-            ('(1, )[1]', True),
-            ('(1, )[-2]', True),
-            ('"a"[1]', True),
-            ('"a"[-2]', True),
-            ('("a" + "b")[2]', True),
-            ('("a" + "b", )[0][2]', True),
-            ('("a" + "b", )[1][0]', True),
-            ('("a" * 10)[10]', True),
-            ('(1, (1, 2))[2:6][0][2-1]', True),
+            ('1 + 2', False, add),
+            ('1 + 2 + 3', False, add),
+            ('1 + ""', True, add),
+            ('1 - 2', False, sub),
+            ('1 - 2 - 3', False, sub),
+            ('1 - ""', True, sub),
+            ('2 * 2', False, mul),
+            ('2 * 2 * 2', False, mul),
+            ('2 / 2', False, div),
+            ('2 / 2 / 2', False, div),
+            ('2 / ""', True, div),
+            ('2 // 2', False, floor),
+            ('2 // 2 // 2', False, floor),
+            ('2 // ""', True, floor),
+            ('2 % 2', False, rem),
+            ('2 % 2 % 2', False, rem),
+            ('2 % ()', True, rem),
+            ('2 ** 2', False, pow),
+            ('2 ** 2 ** 2', False, pow),
+            ('2 ** ""', True, pow),
+            ('2 << 2', False, lshift),
+            ('2 << 2 << 2', False, lshift),
+            ('2 << ""', True, lshift),
+            ('2 >> 2', False, rshift),
+            ('2 >> 2 >> 2', False, rshift),
+            ('2 >> ""', True, rshift),
+            ('2 | 2', False, or_),
+            ('2 | 2 | 2', False, or_),
+            ('2 | ""', True, or_),
+            ('2 & 2', False, and_),
+            ('2 & 2 & 2', False, and_),
+            ('2 & ""', True, and_),
+            ('2 ^ 2', False, xor),
+            ('2 ^ 2 ^ 2', False, xor),
+            ('2 ^ ""', True, xor),
+            ('(1, )[0]', False, subscr),
+            ('(1, )[-1]', False, subscr),
+            ('(1 + 2, )[0]', False, subscr),
+            ('(1, (1, 2))[1][1]', False, subscr),
+            ('(1, 2)[2-1]', False, subscr),
+            ('(1, (1, 2))[1][2-1]', False, subscr),
+            ('(1, (1, 2))[1:6][0][2-1]', False, subscr),
+            ('"a"[0]', False, subscr),
+            ('("a" + "b")[1]', False, subscr),
+            ('("a" + "b", )[0][1]', False, subscr),
+            ('("a" * 10)[9]', False, subscr),
+            ('(1, )[1]', True, subscr),
+            ('(1, )[-2]', True, subscr),
+            ('"a"[1]', True, subscr),
+            ('"a"[-2]', True, subscr),
+            ('("a" + "b")[2]', True, subscr),
+            ('("a" + "b", )[0][2]', True, subscr),
+            ('("a" + "b", )[1][0]', True, subscr),
+            ('("a" * 10)[10]', True, subscr),
+            ('(1, (1, 2))[2:6][0][2-1]', True, subscr),
+
         ]
-        subscr_argval = get_binop_argval('NB_SUBSCR')
-        for expr, has_error in tests:
+        for expr, has_error, nb_op in tests:
             with self.subTest(expr=expr, has_error=has_error):
                 code = compile(expr, '', 'single')
                 if not has_error:
-                    self.assertNotInBytecode(code, 'BINARY_OP', argval=subscr_argval)
+                    self.assertNotInBytecode(code, 'BINARY_OP', argval=nb_op)
                 else:
-                    self.assertInBytecode(code, 'BINARY_OP', argval=subscr_argval)
+                    self.assertInBytecode(code, 'BINARY_OP', argval=nb_op)
                 self.check_lnotab(code)
 
     def test_constant_folding_remove_nop_location(self):
@@ -1165,9 +1216,24 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         self.assertEqual(f(), frozenset(range(40)))
 
     def test_multiple_foldings(self):
+        # (1, (2 + 2 * 2 // 2 - 2, )[0], )  ==>  (1, 2)
         before = [
             ('LOAD_SMALL_INT', 1, 0),
+            ('NOP', None, 0),
             ('LOAD_SMALL_INT', 2, 0),
+            ('NOP', None, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', get_binop_argval('NB_MULTIPLY')),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('NOP', None, 0),
+            ('BINARY_OP', get_binop_argval('NB_FLOOR_DIVIDE')),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', get_binop_argval('NB_ADD')),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', get_binop_argval('NB_SUBTRACT')),
             ('BUILD_TUPLE', 1, 0),
             ('LOAD_SMALL_INT', 0, 0),
             ('BINARY_OP', get_binop_argval('NB_SUBSCR'), 0),
