@@ -28,6 +28,9 @@ _("""Hello,
     multiline!
 """)
 
+# F-strings without formatted values are allowed
+_(f"f-strings!")
+
 # Invalid arguments
 _()
 _(None)
@@ -38,6 +41,7 @@ _({"invalid"})
 _("string"[3])
 _("string"[:3])
 _({"string": "foo"})
+_(f"Hello, {world}!")
 
 # pygettext does not allow keyword arguments, but both xgettext and pybabel do
 _(x="kwargs are not allowed!")

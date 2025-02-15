@@ -364,12 +364,13 @@ class GettextVisitor(ast.NodeVisitor):
         msg_data = {}
         for position, arg_type in spec.items():
             arg = node.args[position]
-            if not self._is_string_const(arg):
+            value = self._parse_string_const(arg)
+            if value is None:
                 print(f'*** {self.filename}:{arg.lineno}: Expected a string '
                       f'constant for argument {position + 1}, '
                       f'got {ast.unparse(arg)}', file=sys.stderr)
                 return
-            msg_data[arg_type] = arg.value
+            msg_data[arg_type] = value
 
         lineno = node.lineno
         self._add_message(lineno, **msg_data)
@@ -413,8 +414,26 @@ class GettextVisitor(ast.NodeVisitor):
             case _:
                 return None
 
-    def _is_string_const(self, node):
-        return isinstance(node, ast.Constant) and isinstance(node.value, str)
+    def _parse_string_const(self, node):
+        value = self._parse_literal_string(node)
+        if value is not None:
+            return value
+        return self._parse_literal_fstring(node)
+
+    def _parse_literal_fstring(self, node):
+        if not isinstance(node, ast.JoinedStr):
+            return None
+        parts = []
+        for value in node.values:
+            part = self._parse_literal_string(value)
+            if part is None:
+                return None
+            parts.append(part)
+        return ''.join(parts)
+
+    def _parse_literal_string(self, node):
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            return node.value
 
 def write_pot_file(messages, options, fp):
     timestamp = time.strftime('%Y-%m-%d %H:%M%z')
