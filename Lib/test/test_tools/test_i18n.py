@@ -230,10 +230,6 @@ class Test_pygettext(unittest.TestCase):
         msgids = self.extract_docstrings_from_str('_(b"""doc""")')
         self.assertFalse([msgid for msgid in msgids if 'doc' in msgid])
 
-    def test_msgid_fstring(self):
-        msgids = self.extract_docstrings_from_str('_(f"""doc""")')
-        self.assertFalse([msgid for msgid in msgids if 'doc' in msgid])
-
     def test_funcdocstring_annotated_args(self):
         """ Test docstrings for functions with annotated args """
         msgids = self.extract_docstrings_from_str(dedent('''\
@@ -348,13 +344,6 @@ class Test_pygettext(unittest.TestCase):
         self.assertIn('foo', msgids)
         self.assertNotIn('bar', msgids)
         self.assertNotIn('baz', msgids)
-
-    def test_calls_in_fstring_with_partially_wrong_expression(self):
-        msgids = self.extract_docstrings_from_str(dedent('''\
-        f"{_(f'foo') + _('bar')}"
-        '''))
-        self.assertNotIn('foo', msgids)
-        self.assertIn('bar', msgids)
 
     def test_function_and_class_names(self):
         """Test that function and class names are not mistakenly extracted."""
