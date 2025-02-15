@@ -583,7 +583,7 @@ class _CommentSpec:
             # prefix at the beginning of the line or following a space
             fr'(^|\s)({re.escape(prefix)}.*)'
             for prefix in inline_prefixes
-            )
+        )
         self.pattern = re.compile('|'.join(itertools.chain(full_patterns, inline_patterns)))
 
     def strip(self, text):
