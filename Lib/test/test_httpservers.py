@@ -356,10 +356,9 @@ class BaseHTTPSServerTestCase(BaseTestCase):
         self.assertEqual(response.status, HTTPStatus.OK)
 
     def request(self, uri, method='GET', body=None, headers={}):
+        context = ssl._create_unverified_context()
         self.connection = http.client.HTTPSConnection(
-            self.HOST,
-            self.PORT,
-            context=ssl._create_unverified_context()
+            self.HOST, self.PORT, context=context
         )
         self.connection.request(method, uri, body, headers)
         return self.connection.getresponse()
