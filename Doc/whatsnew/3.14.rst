@@ -428,6 +428,10 @@ decimal
   :meth:`Decimal.from_number() <decimal.Decimal.from_number>`.
   (Contributed by Serhiy Storchaka in :gh:`121798`.)
 
+* Expose :func:`decimal.IEEEContext` to support creation of contexts
+  corresponding to the IEEE 754 (2008) decimal interchange formats.
+  (Contributed by Sergey B Kirpichev in :gh:`53032`.)
+
 difflib
 -------
 
