@@ -57,7 +57,7 @@ handler.  Code to create and run the server looks like this::
 
    Subclass of :class:`HTTPServer` with a wrapped socket using the :mod:`ssl` module.
    If the :mod:`ssl` module is not available, instantiating a :class:`!HTTPSServer`
-   object fails with an :exc:`ImportError`.
+   object fails with an :exc:`RuntimeError`.
 
    The *certfile* argument is the path to the SSL certificate chain file,
    and the *keyfile* is the path to file containing the private key.
@@ -498,7 +498,7 @@ following command runs an HTTP/1.1 conformant server::
 
 The server can also support TLS encryption. The options ``--tls-cert`` and
 ``--tls-key`` allow specifying a TLS certificate chain and a private key for
-secure HTTPS connections. For example, the following command runs the server with
+HTTPS connections. For example, the following command runs the server with
 TLS enabled:
 
 .. code-block:: bash
