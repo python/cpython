@@ -377,8 +377,8 @@ def _sanitize_filename(filename):
     return filename
 
 
-# Options for preserving file permissions upon extraction
 class PreserveMode(enum.Enum):
+    """Options for preserving file permissions upon extraction."""
     NONE = enum.auto()
     SAFE = enum.auto()
     ALL = enum.auto()
@@ -1887,7 +1887,7 @@ class ZipFile:
         if preserve_permissions == PreserveMode.SAFE:
             mode = (member.external_attr >> 16) & 0o777
 
-        if preserve_permissions == PreserveMode.ALL:
+        elif preserve_permissions == PreserveMode.ALL:
             mode = (member.external_attr >> 16) & 0xFFFF
 
         os.chmod(targetpath, mode)
