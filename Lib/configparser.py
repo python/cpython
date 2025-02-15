@@ -579,10 +579,6 @@ class _LineParser:
 
 class _CommentSpec:
     def __init__(self, full_prefixes, inline_prefixes):
-        if not full_prefixes and not inline_prefixes:
-            # performance optimization when no prefixes (gh-128641)
-            self.strip = lambda text: text
-            return
         full_patterns = (
             # prefix at the beginning of a line
             fr'^({re.escape(prefix)}).*'
