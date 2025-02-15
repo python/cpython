@@ -374,7 +374,7 @@ class _UnnamedSection:
 
     def __repr__(self):
         return "<UNNAMED_SECTION>"
-    
+
 class InvalidWriteError(Error):
     """Raised when attempting to write data that the parser would read back differently.
     ex: writing a key which begins with the section header pattern would read back as a
@@ -1222,9 +1222,9 @@ class RawConfigParser(MutableMapping):
         if value.lower() not in self.BOOLEAN_STATES:
             raise ValueError('Not a boolean: %s' % value)
         return self.BOOLEAN_STATES[value.lower()]
-    
+
     def _validate_key_contents(self, key):
-        """Raises an InvalidWriteError for any keys containing 
+        """Raises an InvalidWriteError for any keys containing
         delimiters or that match the section header pattern"""
         if re.match(self.SECTCRE, key):
             raise InvalidWriteError("Cannot write keys matching section pattern")

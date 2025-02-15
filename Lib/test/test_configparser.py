@@ -2175,7 +2175,7 @@ class SectionlessTestCase(unittest.TestCase):
             configparser.ConfigParser().add_section(configparser.UNNAMED_SECTION)
 
 class InvalidInputTestCase(unittest.TestCase):
-    """Tests for issue #65697, where configparser will write configs 
+    """Tests for issue #65697, where configparser will write configs
     it parses back differently. Ex: keys containing delimiters or
     matching the section pattern"""
 
@@ -2187,7 +2187,7 @@ class InvalidInputTestCase(unittest.TestCase):
         with self.assertRaises(configparser.InvalidWriteError):
             cfg.write(output)
         output.close()
-    
+
     def test_section_bracket_in_key(self):
         cfg = configparser.ConfigParser()
         cfg.add_section('section1')
