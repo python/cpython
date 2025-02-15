@@ -191,16 +191,6 @@ class ThreadingHTTPSServer(socketserver.ThreadingMixIn, HTTPSServer):
     daemon_threads = True
 
 
-def _get_best_family(*address):
-    infos = socket.getaddrinfo(
-        *address,
-        type=socket.SOCK_STREAM,
-        flags=socket.AI_PASSIVE,
-    )
-    family, type, proto, canonname, sockaddr = next(iter(infos))
-    return family, sockaddr
-
-
 class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
 
     """HTTP request handler base class.
@@ -1301,6 +1291,16 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                 self.log_error("CGI script exit status %#x", status)
             else:
                 self.log_message("CGI script exited OK")
+
+
+def _get_best_family(*address):
+    infos = socket.getaddrinfo(
+        *address,
+        type=socket.SOCK_STREAM,
+        flags=socket.AI_PASSIVE,
+    )
+    family, type, proto, canonname, sockaddr = next(iter(infos))
+    return family, sockaddr
 
 
 def test(HandlerClass=BaseHTTPRequestHandler,
