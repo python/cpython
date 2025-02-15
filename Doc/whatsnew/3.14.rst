@@ -174,7 +174,7 @@ Improved error messages
          ^^^^^^^
      ValueError: too many values to unpack (expected 3, got 4)
 
-* ``elif`` statements that follow an ``else`` block now have a specific error message.
+* :keyword:`elif` statements that follow an :keyword:`else` block now have a specific error message.
   (Contributed by Steele Farnsworth in :gh:`129902`.)
 
   .. code-block:: pycon
@@ -189,7 +189,6 @@ Improved error messages
         elif who is None:
         ^^^^
       SyntaxError: 'elif' block follows an 'else' block
-
 
 * When incorrectly closed strings are detected, the error message suggests
   that the string may be intended to be part of the string. (Contributed by
