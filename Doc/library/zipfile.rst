@@ -410,7 +410,7 @@ ZipFile Objects
 
 
 .. method:: ZipFile.extractall(path=None, members=None, pwd=None, \
-                            preserve_permissions=PreserveMode.NONE)
+                               preserve_permissions=PreserveMode.NONE)
 
    Extract all members from the archive to the current working directory.  *path*
    specifies a different directory to extract to.  *members* is optional and must
