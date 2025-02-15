@@ -1637,28 +1637,54 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         self.cfg_optimization_test(same, same, consts=[None], expected_consts=[None])
 
-    def test_optimize_unary_not_to_bool(self):
+    def test_optimize_unary_not(self):
+        # test folding
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('UNARY_NOT', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[False])
+
+        # test cancel out
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test eliminate to bool
         before = [
             ('LOAD_NAME', 0, 0),
             ('UNARY_NOT', None, 0),
             ('TO_BOOL', None, 0),
             ('TO_BOOL', None, 0),
             ('TO_BOOL', None, 0),
-            ('LOAD_CONST', 0, 0),
             ('RETURN_VALUE', None, 0),
         ]
         after = [
             ('LOAD_NAME', 0, 0),
             ('UNARY_NOT', None, 0),
-            ('LOAD_CONST', 0, 0),
             ('RETURN_VALUE', None, 0),
         ]
-        self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None])
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
 
+        # test folding & elimitnate to bool
         before = [
             ('LOAD_SMALL_INT', 1, 0),
             ('UNARY_NOT', None, 0),
-            ('TO_BOOL', None, 0),
             ('TO_BOOL', None, 0),
             ('TO_BOOL', None, 0),
             ('TO_BOOL', None, 0),
@@ -1670,8 +1696,43 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         self.cfg_optimization_test(before, after, consts=[], expected_consts=[False])
 
-        is_ = 0
-        isnot = 1
+        # test cancel out & eliminate to bool (to bool stays)
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('TO_BOOL', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('TO_BOOL', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        is_ = in_ = 0
+        isnot = notin = 1
+
+        # test is/isnot
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('IS_OP', is_, 0),
+            ('UNARY_NOT', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('IS_OP', isnot, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test is/isnot eliminate to bool
         before = [
             ('LOAD_NAME', 0, 0),
             ('LOAD_NAME', 1, 0),
@@ -1680,20 +1741,85 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('TO_BOOL', None, 0),
             ('TO_BOOL', None, 0),
             ('TO_BOOL', None, 0),
-            ('LOAD_CONST', 0, 0),
             ('RETURN_VALUE', None, 0),
         ]
         after = [
             ('LOAD_NAME', 0, 0),
             ('LOAD_NAME', 1, 0),
             ('IS_OP', isnot, 0),
-            ('LOAD_CONST', 0, 0),
             ('RETURN_VALUE', None, 0),
         ]
-        self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None])
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
 
-        in_ = 0
-        notin = 1
+        # test in/notin
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('CONTAINS_OP', in_, 0),
+            ('UNARY_NOT', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('CONTAINS_OP', notin, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test in/notin cancel out
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('CONTAINS_OP', in_, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('CONTAINS_OP', in_, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test in/notin
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('CONTAINS_OP', in_, 0),
+            ('UNARY_NOT', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('CONTAINS_OP', notin, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test in/notin cancel out eliminate to bool (to bool stays) (maybe optimize later ???)
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('CONTAINS_OP', in_, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('TO_BOOL', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('CONTAINS_OP', in_, 0),
+            ('TO_BOOL', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test in/notin eliminate to bool
         before = [
             ('LOAD_NAME', 0, 0),
             ('LOAD_NAME', 1, 0),
@@ -1702,17 +1828,34 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('TO_BOOL', None, 0),
             ('TO_BOOL', None, 0),
             ('TO_BOOL', None, 0),
-            ('LOAD_CONST', 0, 0),
             ('RETURN_VALUE', None, 0),
         ]
         after = [
             ('LOAD_NAME', 0, 0),
             ('LOAD_NAME', 1, 0),
             ('CONTAINS_OP', notin, 0),
-            ('LOAD_CONST', 0, 0),
             ('RETURN_VALUE', None, 0),
         ]
-        self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None])
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+         # test in/notin cancel out eliminate to bool (to bool stays) (maybe optimize later ???)
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('CONTAINS_OP', in_, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('TO_BOOL', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('CONTAINS_OP', in_, 0),
+            ('TO_BOOL', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
 
     def test_optimize_if_const_unaryop(self):
         pass
