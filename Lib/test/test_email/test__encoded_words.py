@@ -130,6 +130,13 @@ class TestDecode(TestEmailBase):
                    # XXX Should this be a new Defect instead?
                    defects = [errors.CharsetError])
 
+    def test_invalid_character_in_charset(self):
+        self._test('=?utf-8\udce2\udc80\udc9d?q?foo=ACbar?=',
+                   b'foo\xacbar'.decode('ascii', 'surrogateescape'),
+                   charset = 'utf-8\udce2\udc80\udc9d',
+                   # XXX Should this be a new Defect instead?
+                   defects = [errors.CharsetError])
+
     def test_q_nonascii(self):
         self._test('=?utf-8?q?=C3=89ric?=',
                    'Éric',

@@ -10,7 +10,7 @@ responses, with a status code, headers, and a body.  In some contexts,
 an application may want to handle an exception like a regular
 response.
 """
-
+import io
 import urllib.response
 
 __all__ = ['URLError', 'HTTPError', 'ContentTooShortError']
@@ -42,12 +42,9 @@ class HTTPError(URLError, urllib.response.addinfourl):
         self.hdrs = hdrs
         self.fp = fp
         self.filename = url
-        # The addinfourl classes depend on fp being a valid file
-        # object.  In some cases, the HTTPError may not have a valid
-        # file object.  If this happens, the simplest workaround is to
-        # not initialize the base classes.
-        if fp is not None:
-            self.__super_init(fp, hdrs, url, code)
+        if fp is None:
+            fp = io.BytesIO()
+        self.__super_init(fp, hdrs, url, code)
 
     def __str__(self):
         return 'HTTP Error %s: %s' % (self.code, self.msg)

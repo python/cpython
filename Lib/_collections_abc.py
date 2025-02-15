@@ -6,6 +6,32 @@
 Unit tests are in test_collections.
 """
 
+############ Maintenance notes #########################################
+#
+# ABCs are different from other standard library modules in that they
+# specify compliance tests.  In general, once an ABC has been published,
+# new methods (either abstract or concrete) cannot be added.
+#
+# Though classes that inherit from an ABC would automatically receive a
+# new mixin method, registered classes would become non-compliant and
+# violate the contract promised by ``isinstance(someobj, SomeABC)``.
+#
+# Though irritating, the correct procedure for adding new abstract or
+# mixin methods is to create a new ABC as a subclass of the previous
+# ABC.  For example, union(), intersection(), and difference() cannot
+# be added to Set but could go into a new ABC that extends Set.
+#
+# Because they are so hard to change, new ABCs should have their APIs
+# carefully thought through prior to publication.
+#
+# Since ABCMeta only checks for the presence of methods, it is possible
+# to alter the signature of a method by adding optional arguments
+# or changing parameters names.  This is still a bit dubious but at
+# least it won't cause isinstance() to return an incorrect result.
+#
+#
+#######################################################################
+
 from abc import ABCMeta, abstractmethod
 import sys
 
@@ -23,7 +49,7 @@ __all__ = ["Awaitable", "Coroutine",
            "Mapping", "MutableMapping",
            "MappingView", "KeysView", "ItemsView", "ValuesView",
            "Sequence", "MutableSequence",
-           "ByteString",
+           "Buffer",
            ]
 
 # This module has been renamed from collections.abc to _collections_abc to
@@ -59,6 +85,10 @@ dict_values = type({}.values())
 dict_items = type({}.items())
 ## misc ##
 mappingproxy = type(type.__dict__)
+def _get_framelocalsproxy():
+    return type(sys._getframe().f_locals)
+framelocalsproxy = _get_framelocalsproxy()
+del _get_framelocalsproxy
 generator = type((lambda: (yield))())
 ## coroutine ##
 async def _coro(): pass
@@ -413,6 +443,21 @@ class Collection(Sized, Iterable, Container):
         return NotImplemented
 
 
+class Buffer(metaclass=ABCMeta):
+
+    __slots__ = ()
+
+    @abstractmethod
+    def __buffer__(self, flags: int, /) -> memoryview:
+        raise NotImplementedError
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is Buffer:
+            return _check_methods(C, "__buffer__")
+        return NotImplemented
+
+
 class _CallableGenericAlias(GenericAlias):
     """ Represent `Callable[argtypes, resulttype]`.
 
@@ -440,9 +485,10 @@ class _CallableGenericAlias(GenericAlias):
     def __repr__(self):
         if len(self.__args__) == 2 and _is_param_expr(self.__args__[0]):
             return super().__repr__()
+        from annotationlib import value_to_string
         return (f'collections.abc.Callable'
-                f'[[{", ".join([_type_repr(a) for a in self.__args__[:-1]])}], '
-                f'{_type_repr(self.__args__[-1])}]')
+                f'[[{", ".join([value_to_string(a) for a in self.__args__[:-1]])}], '
+                f'{value_to_string(self.__args__[-1])}]')
 
     def __reduce__(self):
         args = self.__args__
@@ -455,14 +501,7 @@ class _CallableGenericAlias(GenericAlias):
         # rather than the default types.GenericAlias object.  Most of the
         # code is copied from typing's _GenericAlias and the builtin
         # types.GenericAlias.
-
         if not isinstance(item, tuple):
-            item = (item,)
-        # A special case in PEP 612 where if X = Callable[P, int],
-        # then X[int, str] == X[[int, str]].
-        if (len(self.__parameters__) == 1
-                and _is_param_expr(self.__parameters__[0])
-                and item and not _is_param_expr(item[0])):
             item = (item,)
 
         new_args = super().__getitem__(item).__args__
@@ -485,24 +524,6 @@ def _is_param_expr(obj):
     obj = type(obj)
     names = ('ParamSpec', '_ConcatenateGenericAlias')
     return obj.__module__ == 'typing' and any(obj.__name__ == name for name in names)
-
-def _type_repr(obj):
-    """Return the repr() of an object, special-casing types (internal helper).
-
-    Copied from :mod:`typing` since collections.abc
-    shouldn't depend on that module.
-    """
-    if isinstance(obj, GenericAlias):
-        return repr(obj)
-    if isinstance(obj, type):
-        if obj.__module__ == 'builtins':
-            return obj.__qualname__
-        return f'{obj.__module__}.{obj.__qualname__}'
-    if obj is Ellipsis:
-        return '...'
-    if isinstance(obj, FunctionType):
-        return obj.__name__
-    return repr(obj)
 
 
 class Callable(metaclass=ABCMeta):
@@ -803,6 +824,7 @@ class Mapping(Collection):
     __reversed__ = None
 
 Mapping.register(mappingproxy)
+Mapping.register(framelocalsproxy)
 
 
 class MappingView(Sized):
@@ -940,7 +962,7 @@ class MutableMapping(Mapping):
 
     def update(self, other=(), /, **kwds):
         ''' D.update([E, ]**F) -> None.  Update D from mapping/iterable E and F.
-            If E present and has a .keys() method, does:     for k in E: D[k] = E[k]
+            If E present and has a .keys() method, does:     for k in E.keys(): D[k] = E[k]
             If E present and lacks .keys() method, does:     for (k, v) in E: D[k] = v
             In either case, this is followed by: for k, v in F.items(): D[k] = v
         '''
@@ -1035,20 +1057,9 @@ class Sequence(Reversible, Collection):
 
 Sequence.register(tuple)
 Sequence.register(str)
+Sequence.register(bytes)
 Sequence.register(range)
 Sequence.register(memoryview)
-
-
-class ByteString(Sequence):
-    """This unifies bytes and bytearray.
-
-    XXX Should add all their methods.
-    """
-
-    __slots__ = ()
-
-ByteString.register(bytes)
-ByteString.register(bytearray)
 
 
 class MutableSequence(Sequence):
@@ -1118,4 +1129,4 @@ class MutableSequence(Sequence):
 
 
 MutableSequence.register(list)
-MutableSequence.register(bytearray)  # Multiply inheriting, see ByteString
+MutableSequence.register(bytearray)

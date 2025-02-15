@@ -1,3 +1,0 @@
-Add script ``Tools/scripts/generate_re_casefix.py`` and the make target
-``regen-re`` for generating additional data for case-insensitive matching
-according to the current Unicode version.

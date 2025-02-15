@@ -27,7 +27,7 @@ invalid targets. Patch by Pablo Galindo
 .. nonce: 3TmTSw
 .. section: Core and Builtins
 
-:c:func:`_PyErr_ChainStackItem` no longer normalizes ``exc_info`` (including
+:c:func:`!_PyErr_ChainStackItem` no longer normalizes ``exc_info`` (including
 setting the traceback on the exception instance) because ``exc_info`` is
 always normalized.
 
@@ -350,7 +350,7 @@ Galindo.
 .. section: Library
 
 Fix possible crash when getting an attribute of
-class:`xml.etree.ElementTree.Element` simultaneously with replacing the
+:class:`xml.etree.ElementTree.Element` simultaneously with replacing the
 ``attrib`` dict.
 
 ..
@@ -440,7 +440,7 @@ Added missing kw_only parameter to dataclasses.make_dataclass().
 .. nonce: aGyr1I
 .. section: Library
 
-The :meth:`turtle.RawTurtle.settiltangle` is deprecated since Python 3.1, it
+The :meth:`!turtle.RawTurtle.settiltangle` is deprecated since Python 3.1, it
 now emits a deprecation warning and will be removed in Python 3.13.
 
 Use :meth:`turtle.RawTurtle.tiltangle` instead.
@@ -615,7 +615,7 @@ Launch GNOME web browsers via gio tool instead of obsolete gvfs-open
 .. section: Library
 
 On Windows, :func:`time.sleep` now uses a waitable timer which supports
-high-resolution timers. Patch by Dong-hee Na and Eryk Sun.
+high-resolution timers. Patch by Donghee Na and Eryk Sun.
 
 ..
 

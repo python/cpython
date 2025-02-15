@@ -126,7 +126,7 @@ class AutoFileTests:
         # it must also return None if an exception was given
         try:
             1/0
-        except:
+        except ZeroDivisionError:
             self.assertEqual(self.f.__exit__(*sys.exc_info()), None)
 
     def testReadWhenWriting(self):
@@ -217,7 +217,7 @@ class OtherFileTests:
             self._checkBufferSize(1)
 
     def testTruncateOnWindows(self):
-        # SF bug <http://www.python.org/sf/801631>
+        # SF bug <https://bugs.python.org/issue801631>
         # "file.truncate fault on windows"
 
         f = self.open(TESTFN, 'wb')

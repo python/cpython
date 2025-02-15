@@ -1,5 +1,5 @@
-:mod:`calendar` --- General calendar-related functions
-======================================================
+:mod:`!calendar` --- General calendar-related functions
+=======================================================
 
 .. module:: calendar
    :synopsis: Functions for working with calendars, including some emulation
@@ -38,13 +38,33 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
    itself. This is the job of subclasses.
 
 
-   :class:`Calendar` instances have the following methods:
+   :class:`Calendar` instances have the following methods and attributes:
+
+   .. attribute:: firstweekday
+
+      The first weekday as an integer (0--6).
+
+      This property can also be set and read using
+      :meth:`~Calendar.setfirstweekday` and
+      :meth:`~Calendar.getfirstweekday` respectively.
+
+   .. method:: getfirstweekday()
+
+      Return an :class:`int` for the current first weekday (0--6).
+
+      Identical to reading the :attr:`~Calendar.firstweekday` property.
+
+   .. method:: setfirstweekday(firstweekday)
+
+      Set the first weekday to *firstweekday*, passed as an :class:`int` (0--6)
+
+      Identical to setting the :attr:`~Calendar.firstweekday` property.
 
    .. method:: iterweekdays()
 
       Return an iterator for the week day numbers that will be used for one
       week.  The first value from the iterator will be the same as the value of
-      the :attr:`firstweekday` property.
+      the :attr:`~Calendar.firstweekday` property.
 
 
    .. method:: itermonthdates(year, month)
@@ -138,6 +158,36 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    :class:`TextCalendar` instances have the following methods:
 
+
+   .. method:: formatday(theday, weekday, width)
+
+      Return a string representing a single day formatted with the given *width*.
+      If *theday* is ``0``, return a string of spaces of
+      the specified width, representing an empty day. The *weekday* parameter
+      is unused.
+
+   .. method:: formatweek(theweek, w=0)
+
+      Return a single week in a string with no newline. If *w* is provided, it
+      specifies the width of the date columns, which are centered. Depends
+      on the first weekday as specified in the constructor or set by the
+      :meth:`setfirstweekday` method.
+
+
+   .. method:: formatweekday(weekday, width)
+
+      Return a string representing the name of a single weekday formatted to
+      the specified *width*. The *weekday* parameter is an integer representing
+      the day of the week, where ``0`` is Monday and ``6`` is Sunday.
+
+
+   .. method:: formatweekheader(width)
+
+      Return a string containing the header row of weekday names, formatted
+      with the given *width* for each column. The names depend on the locale
+      settings and are padded to the specified width.
+
+
    .. method:: formatmonth(theyear, themonth, w=0, l=0)
 
       Return a month's calendar in a multi-line string. If *w* is provided, it
@@ -145,6 +195,14 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       given, it specifies the number of lines that each week will use. Depends
       on the first weekday as specified in the constructor or set by the
       :meth:`setfirstweekday` method.
+
+
+   .. method:: formatmonthname(theyear, themonth, width=0, withyear=True)
+
+      Return a string representing the month's name centered within the
+      specified *width*. If *withyear* is ``True``, include the year in the
+      output. The *theyear* and *themonth* parameters specify the year
+      and month for the name to be formatted respectively.
 
 
    .. method:: prmonth(theyear, themonth, w=0, l=0)
@@ -194,6 +252,13 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       cascading style sheet to be used. :const:`None` can be passed if no style
       sheet should be used. *encoding* specifies the encoding to be used for the
       output (defaulting to the system default encoding).
+
+
+   .. method:: formatmonthname(theyear, themonth, withyear=True)
+
+      Return a month name as an HTML table row. If *withyear* is true the year
+      will be included in the row, otherwise just the month name will be
+      used.
 
 
    :class:`!HTMLCalendar` has the following attributes you can override to
@@ -289,7 +354,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
 .. note::
 
-   The constructor, :meth:`formatweekday` and :meth:`formatmonthname` methods
+   The constructor, :meth:`!formatweekday` and :meth:`!formatmonthname` methods
    of these two classes temporarily change the ``LC_TIME`` locale to the given
    *locale*. Because the current locale is a process-wide setting, they are
    not thread-safe.
@@ -358,7 +423,7 @@ For simple text calendars this module provides the following functions.
 
 .. function:: month(theyear, themonth, w=0, l=0)
 
-   Returns a month's calendar in a multi-line string using the :meth:`formatmonth`
+   Returns a month's calendar in a multi-line string using the :meth:`~TextCalendar.formatmonth`
    of the :class:`TextCalendar` class.
 
 
@@ -370,7 +435,7 @@ For simple text calendars this module provides the following functions.
 .. function:: calendar(year, w=2, l=1, c=6, m=3)
 
    Returns a 3-column calendar for an entire year as a multi-line string using
-   the :meth:`formatyear` of the :class:`TextCalendar` class.
+   the :meth:`~TextCalendar.formatyear` of the :class:`TextCalendar` class.
 
 
 .. function:: timegm(tuple)
@@ -386,26 +451,22 @@ The :mod:`calendar` module exports the following data attributes:
 
 .. data:: day_name
 
-   An array that represents the days of the week in the current locale.
+   A sequence that represents the days of the week in the current locale,
+   where Monday is day number 0.
+
+       >>> import calendar
+       >>> list(calendar.day_name)
+       ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 
 .. data:: day_abbr
 
-   An array that represents the abbreviated days of the week in the current locale.
+   A sequence that represents the abbreviated days of the week in the current locale,
+   where Mon is day number 0.
 
-
-.. data:: month_name
-
-   An array that represents the months of the year in the current locale.  This
-   follows normal convention of January being month number 1, so it has a length of
-   13 and  ``month_name[0]`` is the empty string.
-
-
-.. data:: month_abbr
-
-   An array that represents the abbreviated months of the year in the current
-   locale.  This follows normal convention of January being month number 1, so it
-   has a length of 13 and  ``month_abbr[0]`` is the empty string.
+       >>> import calendar
+       >>> list(calendar.day_abbr)
+       ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 .. data:: MONDAY
           TUESDAY
@@ -415,7 +476,91 @@ The :mod:`calendar` module exports the following data attributes:
           SATURDAY
           SUNDAY
 
-   Aliases for day numbers, where ``MONDAY`` is ``0`` and ``SUNDAY`` is ``6``.
+   Aliases for the days of the week,
+   where ``MONDAY`` is ``0`` and ``SUNDAY`` is ``6``.
+
+   .. versionadded:: 3.12
+
+
+.. class:: Day
+
+   Enumeration defining days of the week as integer constants.
+   The members of this enumeration are exported to the module scope as
+   :data:`MONDAY` through :data:`SUNDAY`.
+
+   .. versionadded:: 3.12
+
+
+.. data:: month_name
+
+   A sequence that represents the months of the year in the current locale.  This
+   follows normal convention of January being month number 1, so it has a length of
+   13 and ``month_name[0]`` is the empty string.
+
+       >>> import calendar
+       >>> list(calendar.month_name)
+       ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
+
+.. data:: month_abbr
+
+   A sequence that represents the abbreviated months of the year in the current
+   locale.  This follows normal convention of January being month number 1, so it
+   has a length of 13 and  ``month_abbr[0]`` is the empty string.
+
+       >>> import calendar
+       >>> list(calendar.month_abbr)
+       ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+.. data:: JANUARY
+          FEBRUARY
+          MARCH
+          APRIL
+          MAY
+          JUNE
+          JULY
+          AUGUST
+          SEPTEMBER
+          OCTOBER
+          NOVEMBER
+          DECEMBER
+
+   Aliases for the months of the year,
+   where ``JANUARY`` is ``1`` and ``DECEMBER`` is ``12``.
+
+   .. versionadded:: 3.12
+
+
+.. class:: Month
+
+   Enumeration defining months of the year as integer constants.
+   The members of this enumeration are exported to the module scope as
+   :data:`JANUARY` through :data:`DECEMBER`.
+
+   .. versionadded:: 3.12
+
+
+The :mod:`calendar` module defines the following exceptions:
+
+.. exception:: IllegalMonthError(month)
+
+   A subclass of :exc:`ValueError`,
+   raised when the given month number is outside of the range 1-12 (inclusive).
+
+   .. attribute:: month
+
+      The invalid month number.
+
+
+.. exception:: IllegalWeekdayError(weekday)
+
+   A subclass of :exc:`ValueError`,
+   raised when the given weekday number is outside of the range 0-6 (inclusive).
+
+   .. attribute:: weekday
+
+      The invalid weekday number.
+
 
 .. seealso::
 
@@ -425,3 +570,156 @@ The :mod:`calendar` module exports the following data attributes:
 
    Module :mod:`time`
       Low-level time related functions.
+
+
+.. _calendar-cli:
+
+Command-line usage
+------------------
+
+.. versionadded:: 2.5
+
+The :mod:`calendar` module can be executed as a script from the command line
+to interactively print a calendar.
+
+.. code-block:: shell
+
+   python -m calendar [-h] [-L LOCALE] [-e ENCODING] [-t {text,html}]
+                      [-w WIDTH] [-l LINES] [-s SPACING] [-m MONTHS] [-c CSS]
+                      [-f FIRST_WEEKDAY] [year] [month]
+
+
+For example, to print a calendar for the year 2000:
+
+.. code-block:: console
+
+   $ python -m calendar 2000
+                                     2000
+
+         January                   February                   March
+   Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su
+                   1  2          1  2  3  4  5  6             1  2  3  4  5
+    3  4  5  6  7  8  9       7  8  9 10 11 12 13       6  7  8  9 10 11 12
+   10 11 12 13 14 15 16      14 15 16 17 18 19 20      13 14 15 16 17 18 19
+   17 18 19 20 21 22 23      21 22 23 24 25 26 27      20 21 22 23 24 25 26
+   24 25 26 27 28 29 30      28 29                     27 28 29 30 31
+   31
+
+          April                      May                       June
+   Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su
+                   1  2       1  2  3  4  5  6  7                1  2  3  4
+    3  4  5  6  7  8  9       8  9 10 11 12 13 14       5  6  7  8  9 10 11
+   10 11 12 13 14 15 16      15 16 17 18 19 20 21      12 13 14 15 16 17 18
+   17 18 19 20 21 22 23      22 23 24 25 26 27 28      19 20 21 22 23 24 25
+   24 25 26 27 28 29 30      29 30 31                  26 27 28 29 30
+
+           July                     August                  September
+   Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su
+                   1  2          1  2  3  4  5  6                   1  2  3
+    3  4  5  6  7  8  9       7  8  9 10 11 12 13       4  5  6  7  8  9 10
+   10 11 12 13 14 15 16      14 15 16 17 18 19 20      11 12 13 14 15 16 17
+   17 18 19 20 21 22 23      21 22 23 24 25 26 27      18 19 20 21 22 23 24
+   24 25 26 27 28 29 30      28 29 30 31               25 26 27 28 29 30
+   31
+
+         October                   November                  December
+   Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su      Mo Tu We Th Fr Sa Su
+                      1             1  2  3  4  5                   1  2  3
+    2  3  4  5  6  7  8       6  7  8  9 10 11 12       4  5  6  7  8  9 10
+    9 10 11 12 13 14 15      13 14 15 16 17 18 19      11 12 13 14 15 16 17
+   16 17 18 19 20 21 22      20 21 22 23 24 25 26      18 19 20 21 22 23 24
+   23 24 25 26 27 28 29      27 28 29 30               25 26 27 28 29 30 31
+   30 31
+
+
+The following options are accepted:
+
+.. program:: calendar
+
+
+.. option:: --help, -h
+
+   Show the help message and exit.
+
+
+.. option:: --locale LOCALE, -L LOCALE
+
+   The locale to use for month and weekday names.
+   Defaults to English.
+
+
+.. option:: --encoding ENCODING, -e ENCODING
+
+   The encoding to use for output.
+   :option:`--encoding` is required if :option:`--locale` is set.
+
+
+.. option:: --type {text,html}, -t {text,html}
+
+   Print the calendar to the terminal as text,
+   or as an HTML document.
+
+
+.. option:: --first-weekday FIRST_WEEKDAY, -f FIRST_WEEKDAY
+
+   The weekday to start each week.
+   Must be a number between 0 (Monday) and 6 (Sunday).
+   Defaults to 0.
+
+   .. versionadded:: 3.13
+
+.. option:: year
+
+   The year to print the calendar for.
+   Defaults to the current year.
+
+
+.. option:: month
+
+   The month of the specified :option:`year` to print the calendar for.
+   Must be a number between 1 and 12,
+   and may only be used in text mode.
+   Defaults to printing a calendar for the full year.
+
+
+*Text-mode options:*
+
+.. option:: --width WIDTH, -w WIDTH
+
+   The width of the date column in terminal columns.
+   The date is printed centred in the column.
+   Any value lower than 2 is ignored.
+   Defaults to 2.
+
+
+.. option:: --lines LINES, -l LINES
+
+   The number of lines for each week in terminal rows.
+   The date is printed top-aligned.
+   Any value lower than 1 is ignored.
+   Defaults to 1.
+
+
+.. option:: --spacing SPACING, -s SPACING
+
+   The space between months in columns.
+   Any value lower than 2 is ignored.
+   Defaults to 6.
+
+
+.. option:: --months MONTHS, -m MONTHS
+
+   The number of months printed per row.
+   Defaults to 3.
+
+.. versionchanged:: 3.14
+   By default, today's date is highlighted in color and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
+
+*HTML-mode options:*
+
+.. option:: --css CSS, -c CSS
+
+   The path of a CSS stylesheet to use for the calendar.
+   This must either be relative to the generated HTML,
+   or an absolute HTTP or ``file:///`` URL.

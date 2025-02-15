@@ -8,8 +8,10 @@ import enum
 import io
 import os
 import pickle
+import random
 import sys
 import weakref
+from itertools import product
 from unittest import mock
 
 py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
@@ -19,7 +21,7 @@ def importable(name):
     try:
         __import__(name)
         return True
-    except:
+    except ModuleNotFoundError:
         return False
 
 
@@ -31,6 +33,47 @@ def mock_get_command_stdout(data):
 
 class BaseTestUUID:
     uuid = None
+
+    def test_nil_uuid(self):
+        nil_uuid = self.uuid.NIL
+
+        s = '00000000-0000-0000-0000-000000000000'
+        i = 0
+        self.assertEqual(nil_uuid, self.uuid.UUID(s))
+        self.assertEqual(nil_uuid, self.uuid.UUID(int=i))
+        self.assertEqual(nil_uuid.int, i)
+        self.assertEqual(str(nil_uuid), s)
+        # The Nil UUID falls within the range of the Apollo NCS variant as per
+        # RFC 9562.
+        # See https://www.rfc-editor.org/rfc/rfc9562.html#section-5.9-4
+        self.assertEqual(nil_uuid.variant, self.uuid.RESERVED_NCS)
+        # A version field of all zeros is "Unused" in RFC 9562, but the version
+        # field also only applies to the 10xx variant, i.e. the variant
+        # specified in RFC 9562. As such, because the Nil UUID falls under a
+        # different variant, its version is considered undefined.
+        # See https://www.rfc-editor.org/rfc/rfc9562.html#table2
+        self.assertIsNone(nil_uuid.version)
+
+    def test_max_uuid(self):
+        max_uuid = self.uuid.MAX
+
+        s = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
+        i = (1 << 128) - 1
+        self.assertEqual(max_uuid, self.uuid.UUID(s))
+        self.assertEqual(max_uuid, self.uuid.UUID(int=i))
+        self.assertEqual(max_uuid.int, i)
+        self.assertEqual(str(max_uuid), s)
+        # The Max UUID falls within the range of the "yet-to-be defined" future
+        # UUID variant as per RFC 9562.
+        # See https://www.rfc-editor.org/rfc/rfc9562.html#section-5.10-4
+        self.assertEqual(max_uuid.variant, self.uuid.RESERVED_FUTURE)
+        # A version field of all ones is "Reserved for future definition" in
+        # RFC 9562, but the version field also only applies to the 10xx
+        # variant, i.e. the variant specified in RFC 9562. As such, because the
+        # Max UUID falls under a different variant, its version is considered
+        # undefined.
+        # See https://www.rfc-editor.org/rfc/rfc9562.html#table2
+        self.assertIsNone(max_uuid.version)
 
     def test_safe_uuid_enum(self):
         class CheckedSafeUUID(enum.Enum):
@@ -267,7 +310,7 @@ class BaseTestUUID:
 
         # Version number out of range.
         badvalue(lambda: self.uuid.UUID('00'*16, version=0))
-        badvalue(lambda: self.uuid.UUID('00'*16, version=6))
+        badvalue(lambda: self.uuid.UUID('00'*16, version=42))
 
         # Integer value out of range.
         badvalue(lambda: self.uuid.UUID(int=-1))
@@ -530,7 +573,14 @@ class BaseTestUUID:
     @support.requires_mac_ver(10, 5)
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
     def test_uuid1_safe(self):
-        if not self.uuid._has_uuid_generate_time_safe:
+        try:
+            import _uuid
+        except ImportError:
+            has_uuid_generate_time_safe = False
+        else:
+            has_uuid_generate_time_safe = _uuid.has_uuid_generate_time_safe
+
+        if not has_uuid_generate_time_safe or not self.uuid._generate_time_safe:
             self.skipTest('requires uuid_generate_time_safe(3)')
 
         u = self.uuid.uuid1()
@@ -546,7 +596,6 @@ class BaseTestUUID:
         """
         if os.name != 'posix':
             self.skipTest('POSIX-only test')
-        self.uuid._load_system_functions()
         f = self.uuid._generate_time_safe
         if f is None:
             self.skipTest('need uuid._generate_time_safe')
@@ -581,8 +630,7 @@ class BaseTestUUID:
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
 
     def test_uuid1_time(self):
-        with mock.patch.object(self.uuid, '_has_uuid_generate_time_safe', False), \
-             mock.patch.object(self.uuid, '_generate_time_safe', None), \
+        with mock.patch.object(self.uuid, '_generate_time_safe', None), \
              mock.patch.object(self.uuid, '_last_timestamp', None), \
              mock.patch.object(self.uuid, 'getnode', return_value=93328246233727), \
              mock.patch('time.time_ns', return_value=1545052026752910643), \
@@ -590,8 +638,7 @@ class BaseTestUUID:
             u = self.uuid.uuid1()
             self.assertEqual(u, self.uuid.UUID('a7a55b92-01fc-11e9-94c5-54e1acf6da7f'))
 
-        with mock.patch.object(self.uuid, '_has_uuid_generate_time_safe', False), \
-             mock.patch.object(self.uuid, '_generate_time_safe', None), \
+        with mock.patch.object(self.uuid, '_generate_time_safe', None), \
              mock.patch.object(self.uuid, '_last_timestamp', None), \
              mock.patch('time.time_ns', return_value=1545052026752910643):
             u = self.uuid.uuid1(node=93328246233727, clock_seq=5317)
@@ -600,7 +647,22 @@ class BaseTestUUID:
     def test_uuid3(self):
         equal = self.assertEqual
 
-        # Test some known version-3 UUIDs.
+        # Test some known version-3 UUIDs with name passed as a byte object
+        for u, v in [(self.uuid.uuid3(self.uuid.NAMESPACE_DNS, b'python.org'),
+                      '6fa459ea-ee8a-3ca4-894e-db77e160355e'),
+                     (self.uuid.uuid3(self.uuid.NAMESPACE_URL, b'http://python.org/'),
+                      '9fe8e8c4-aaa8-32a9-a55c-4535a88b748d'),
+                     (self.uuid.uuid3(self.uuid.NAMESPACE_OID, b'1.3.6.1'),
+                      'dd1a1cef-13d5-368a-ad82-eca71acd4cd1'),
+                     (self.uuid.uuid3(self.uuid.NAMESPACE_X500, b'c=ca'),
+                      '658d3002-db6b-3040-a1d1-8ddd7d189a4d'),
+                    ]:
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 3)
+            equal(u, self.uuid.UUID(v))
+            equal(str(u), v)
+
+        # Test some known version-3 UUIDs with name passed as a string
         for u, v in [(self.uuid.uuid3(self.uuid.NAMESPACE_DNS, 'python.org'),
                       '6fa459ea-ee8a-3ca4-894e-db77e160355e'),
                      (self.uuid.uuid3(self.uuid.NAMESPACE_URL, 'http://python.org/'),
@@ -632,7 +694,22 @@ class BaseTestUUID:
     def test_uuid5(self):
         equal = self.assertEqual
 
-        # Test some known version-5 UUIDs.
+        # Test some known version-5 UUIDs with names given as byte objects
+        for u, v in [(self.uuid.uuid5(self.uuid.NAMESPACE_DNS, b'python.org'),
+                      '886313e1-3b8a-5372-9b90-0c9aee199e5d'),
+                     (self.uuid.uuid5(self.uuid.NAMESPACE_URL, b'http://python.org/'),
+                      '4c565f0d-3f5a-5890-b41b-20cf47701c5e'),
+                     (self.uuid.uuid5(self.uuid.NAMESPACE_OID, b'1.3.6.1'),
+                      '1447fa61-5277-5fef-a9b3-fbc6e44f4af3'),
+                     (self.uuid.uuid5(self.uuid.NAMESPACE_X500, b'c=ca'),
+                      'cc957dd1-a972-5349-98cd-874190002798'),
+                    ]:
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 5)
+            equal(u, self.uuid.UUID(v))
+            equal(str(u), v)
+
+        # Test some known version-5 UUIDs with names given as strings
         for u, v in [(self.uuid.uuid5(self.uuid.NAMESPACE_DNS, 'python.org'),
                       '886313e1-3b8a-5372-9b90-0c9aee199e5d'),
                      (self.uuid.uuid5(self.uuid.NAMESPACE_URL, 'http://python.org/'),
@@ -646,6 +723,41 @@ class BaseTestUUID:
             equal(u.version, 5)
             equal(u, self.uuid.UUID(v))
             equal(str(u), v)
+
+    def test_uuid8(self):
+        equal = self.assertEqual
+        u = self.uuid.uuid8()
+
+        equal(u.variant, self.uuid.RFC_4122)
+        equal(u.version, 8)
+
+        for (_, hi, mid, lo) in product(
+            range(10),  # repeat 10 times
+            [None, 0, random.getrandbits(48)],
+            [None, 0, random.getrandbits(12)],
+            [None, 0, random.getrandbits(62)],
+        ):
+            u = self.uuid.uuid8(hi, mid, lo)
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 8)
+            if hi is not None:
+                equal((u.int >> 80) & 0xffffffffffff, hi)
+            if mid is not None:
+                equal((u.int >> 64) & 0xfff, mid)
+            if lo is not None:
+                equal(u.int & 0x3fffffffffffffff, lo)
+
+    def test_uuid8_uniqueness(self):
+        # Test that UUIDv8-generated values are unique (up to a negligible
+        # probability of failure). There are 122 bits of entropy and assuming
+        # that the underlying mt-19937-based random generator is sufficiently
+        # good, it is unlikely to have a collision of two UUIDs.
+        N = 1000
+        uuids = {self.uuid.uuid8() for _ in range(N)}
+        self.assertEqual(len(uuids), N)
+
+        versions = {u.version for u in uuids}
+        self.assertSetEqual(versions, {8})
 
     @support.requires_fork()
     def testIssue8621(self):
@@ -674,6 +786,67 @@ class BaseTestUUID:
         strong = self.uuid.uuid4()
         weak = weakref.ref(strong)
         self.assertIs(strong, weak())
+
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid3", "-n", "@dns"])
+    @mock.patch('sys.stderr', new_callable=io.StringIO)
+    def test_cli_namespace_required_for_uuid3(self, mock_err):
+        with self.assertRaises(SystemExit) as cm:
+            self.uuid.main()
+
+        # Check that exception code is the same as argparse.ArgumentParser.error
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("error: Incorrect number of arguments", mock_err.getvalue())
+
+    @mock.patch.object(sys, "argv", ["", "-u", "uuid3", "-N", "python.org"])
+    @mock.patch('sys.stderr', new_callable=io.StringIO)
+    def test_cli_name_required_for_uuid3(self, mock_err):
+        with self.assertRaises(SystemExit) as cm:
+            self.uuid.main()
+        # Check that exception code is the same as argparse.ArgumentParser.error
+        self.assertEqual(cm.exception.code, 2)
+        self.assertIn("error: Incorrect number of arguments", mock_err.getvalue())
+
+    @mock.patch.object(sys, "argv", [""])
+    def test_cli_uuid4_outputted_with_no_args(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output uuid should be in the format of uuid4
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 4)
+
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid3", "-n", "@dns", "-N", "python.org"])
+    def test_cli_uuid3_ouputted_with_valid_namespace_and_name(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output should be in the form of uuid5
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 3)
+
+    @mock.patch.object(sys, "argv",
+                       ["", "-u", "uuid5", "-n", "@dns", "-N", "python.org"])
+    def test_cli_uuid5_ouputted_with_valid_namespace_and_name(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip()
+        uuid_output = self.uuid.UUID(output)
+
+        # Output should be in the form of uuid5
+        self.assertEqual(output, str(uuid_output))
+        self.assertEqual(uuid_output.version, 5)
+
 
 class TestUUIDWithoutExtModule(BaseTestUUID, unittest.TestCase):
     uuid = py_uuid

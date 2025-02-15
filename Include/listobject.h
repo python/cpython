@@ -23,12 +23,15 @@ PyAPI_DATA(PyTypeObject) PyListRevIter_Type;
 
 #define PyList_Check(op) \
     PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_LIST_SUBCLASS)
-#define PyList_CheckExact(op) Py_IS_TYPE(op, &PyList_Type)
+#define PyList_CheckExact(op) Py_IS_TYPE((op), &PyList_Type)
 
 PyAPI_FUNC(PyObject *) PyList_New(Py_ssize_t size);
 PyAPI_FUNC(Py_ssize_t) PyList_Size(PyObject *);
 
 PyAPI_FUNC(PyObject *) PyList_GetItem(PyObject *, Py_ssize_t);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(PyObject *) PyList_GetItemRef(PyObject *, Py_ssize_t);
+#endif
 PyAPI_FUNC(int) PyList_SetItem(PyObject *, Py_ssize_t, PyObject *);
 PyAPI_FUNC(int) PyList_Insert(PyObject *, Py_ssize_t, PyObject *);
 PyAPI_FUNC(int) PyList_Append(PyObject *, PyObject *);

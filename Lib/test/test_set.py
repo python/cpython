@@ -427,7 +427,7 @@ class TestSet(TestJointOps, unittest.TestCase):
         self.assertRaises(KeyError, self.s.remove, self.thetype(self.word))
 
     def test_remove_keyerror_unpacking(self):
-        # bug:  www.python.org/sf/1576657
+        # https://bugs.python.org/issue1576657
         for v1 in ['Q', (1,)]:
             try:
                 self.s.remove(v1)
@@ -635,10 +635,16 @@ class TestSet(TestJointOps, unittest.TestCase):
         myset >= myobj
         self.assertTrue(myobj.le_called)
 
-    @unittest.skipUnless(hasattr(set, "test_c_api"),
-                         'C API test only available in a debug build')
-    def test_c_api(self):
-        self.assertEqual(set().test_c_api(), True)
+    def test_set_membership(self):
+        myfrozenset = frozenset(range(3))
+        myset = {myfrozenset, "abc", 1}
+        self.assertIn(set(range(3)), myset)
+        self.assertNotIn(set(range(1)), myset)
+        myset.discard(set(range(3)))
+        self.assertEqual(myset, {"abc", 1})
+        self.assertRaises(KeyError, myset.remove, set(range(1)))
+        self.assertRaises(KeyError, myset.remove, set(range(3)))
+
 
 class SetSubclass(set):
     pass
@@ -1022,17 +1028,13 @@ class TestBasicOpsBytes(TestBasicOps, unittest.TestCase):
 
 class TestBasicOpsMixedStringBytes(TestBasicOps, unittest.TestCase):
     def setUp(self):
-        self._warning_filters = warnings_helper.check_warnings()
-        self._warning_filters.__enter__()
+        self.enterContext(warnings_helper.check_warnings())
         warnings.simplefilter('ignore', BytesWarning)
         self.case   = "string and bytes set"
         self.values = ["a", "b", b"a", b"b"]
         self.set    = set(self.values)
         self.dup    = set(self.values)
         self.length = 4
-
-    def tearDown(self):
-        self._warning_filters.__exit__(None, None, None)
 
     def test_repr(self):
         self.check_repr_against_values()

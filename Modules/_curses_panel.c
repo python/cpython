@@ -10,11 +10,22 @@ static const char PyCursesVersion[] = "2.1";
 
 /* Includes */
 
+// clinic/_curses_panel.c.h uses internal pycore_modsupport.h API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 
 #include "py_curses.h"
 
-#include <panel.h>
+#if defined(HAVE_NCURSESW_PANEL_H)
+#  include <ncursesw/panel.h>
+#elif defined(HAVE_NCURSES_PANEL_H)
+#  include <ncurses/panel.h>
+#elif defined(HAVE_PANEL_H)
+#  include <panel.h>
+#endif
 
 typedef struct {
     PyObject *PyCursesError;
@@ -51,7 +62,7 @@ _curses_panel_traverse(PyObject *mod, visitproc visit, void *arg)
 static void
 _curses_panel_free(void *mod)
 {
-    _curses_panel_clear((PyObject *) mod);
+    (void)_curses_panel_clear((PyObject *)mod);
 }
 
 /* Utility Functions */
@@ -89,6 +100,8 @@ typedef struct {
     PANEL *pan;
     PyCursesWindowObject *wo;   /* for reference counts */
 } PyCursesPanelObject;
+
+#define _PyCursesPanelObject_CAST(op)   ((PyCursesPanelObject *)(op))
 
 /* Some helper functions. The problem is that there's always a window
    associated with a panel. To ensure that Python's GC doesn't pull
@@ -261,15 +274,15 @@ PyCursesPanel_New(_curses_panel_state *state, PANEL *pan,
         Py_DECREF(po);
         return NULL;
     }
-    po->wo = wo;
-    Py_INCREF(wo);
+    po->wo = (PyCursesWindowObject*)Py_NewRef(wo);
     return (PyObject *)po;
 }
 
 static void
-PyCursesPanel_Dealloc(PyCursesPanelObject *po)
+PyCursesPanel_Dealloc(PyObject *self)
 {
     PyObject *tp, *obj;
+    PyCursesPanelObject *po = _PyCursesPanelObject_CAST(self);
 
     tp = (PyObject *) Py_TYPE(po);
     obj = (PyObject *) panel_userptr(po->pan);
@@ -313,8 +326,7 @@ _curses_panel_panel_above_impl(PyCursesPanelObject *self)
                         "panel_above: can't find Panel Object");
         return NULL;
     }
-    Py_INCREF(po);
-    return (PyObject *)po;
+    return Py_NewRef(po);
 }
 
 /* panel_below(NULL) returns the top panel in the stack. To get
@@ -344,8 +356,7 @@ _curses_panel_panel_below_impl(PyCursesPanelObject *self)
                         "panel_below: can't find Panel Object");
         return NULL;
     }
-    Py_INCREF(po);
-    return (PyObject *)po;
+    return Py_NewRef(po);
 }
 
 /*[clinic input]
@@ -394,8 +405,7 @@ static PyObject *
 _curses_panel_panel_window_impl(PyCursesPanelObject *self)
 /*[clinic end generated code: output=5f05940d4106b4cb input=6067353d2c307901]*/
 {
-    Py_INCREF(self->wo);
-    return (PyObject *)self->wo;
+    return Py_NewRef(self->wo);
 }
 
 /*[clinic input]
@@ -428,8 +438,7 @@ _curses_panel_panel_replace_impl(PyCursesPanelObject *self,
         PyErr_SetString(state->PyCursesError, "replace_panel() returned ERR");
         return NULL;
     }
-    Py_INCREF(win);
-    Py_SETREF(po->wo, win);
+    Py_SETREF(po->wo, (PyCursesWindowObject*)Py_NewRef(win));
     Py_RETURN_NONE;
 }
 
@@ -486,8 +495,7 @@ _curses_panel_panel_userptr_impl(PyCursesPanelObject *self,
         return NULL;
     }
 
-    Py_INCREF(obj);
-    return obj;
+    return Py_NewRef(obj);
 }
 
 
@@ -555,8 +563,7 @@ _curses_panel_bottom_panel_impl(PyObject *module)
                         "panel_above: can't find Panel Object");
         return NULL;
     }
-    Py_INCREF(po);
-    return (PyObject *)po;
+    return Py_NewRef(po);
 }
 
 /*[clinic input]
@@ -614,8 +621,7 @@ _curses_panel_top_panel_impl(PyObject *module)
                         "panel_below: can't find Panel Object");
         return NULL;
     }
-    Py_INCREF(po);
-    return (PyObject *)po;
+    return Py_NewRef(po);
 }
 
 /*[clinic input]
@@ -670,9 +676,7 @@ _curses_panel_exec(PyObject *mod)
     state->PyCursesError = PyErr_NewException(
         "_curses_panel.error", NULL, NULL);
 
-    Py_INCREF(state->PyCursesError);
-    if (PyModule_AddObject(mod, "error", state->PyCursesError) < 0) {
-        Py_DECREF(state->PyCursesError);
+    if (PyModule_AddObjectRef(mod, "error", state->PyCursesError) < 0) {
         return -1;
     }
 
@@ -699,6 +703,10 @@ _curses_panel_exec(PyObject *mod)
 
 static PyModuleDef_Slot _curses_slots[] = {
     {Py_mod_exec, _curses_panel_exec},
+    // XXX gh-103092: fix isolation.
+    {Py_mod_multiple_interpreters, Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED},
+    //{Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

@@ -21,22 +21,21 @@ from . import context
 from . import process
 from . import util
 
-# Try to import the mp.synchronize module cleanly, if it fails
-# raise ImportError for platforms lacking a working sem_open implementation.
-# See issue 3770
+# TODO: Do any platforms still lack a functioning sem_open?
 try:
     from _multiprocessing import SemLock, sem_unlink
-except (ImportError):
+except ImportError:
     raise ImportError("This platform lacks a functioning sem_open" +
-                      " implementation, therefore, the required" +
-                      " synchronization primitives needed will not" +
-                      " function, see issue 3770.")
+                      " implementation. https://github.com/python/cpython/issues/48020.")
 
 #
 # Constants
 #
 
-RECURSIVE_MUTEX, SEMAPHORE = list(range(2))
+# These match the enum in Modules/_multiprocessing/semaphore.c
+RECURSIVE_MUTEX = 0
+SEMAPHORE = 1
+
 SEM_VALUE_MAX = _multiprocessing.SemLock.SEM_VALUE_MAX
 
 #
@@ -50,8 +49,8 @@ class SemLock(object):
     def __init__(self, kind, value, maxvalue, *, ctx):
         if ctx is None:
             ctx = context._default_context.get_context()
-        name = ctx.get_start_method()
-        unlink_now = sys.platform == 'win32' or name == 'fork'
+        self._is_fork_ctx = ctx.get_start_method() == 'fork'
+        unlink_now = sys.platform == 'win32' or self._is_fork_ctx
         for i in range(100):
             try:
                 sl = self._semlock = _multiprocessing.SemLock(
@@ -103,6 +102,11 @@ class SemLock(object):
         if sys.platform == 'win32':
             h = context.get_spawning_popen().duplicate_for_child(sl.handle)
         else:
+            if self._is_fork_ctx:
+                raise RuntimeError('A SemLock created in a fork context is being '
+                                   'shared with a process in a spawn context. This is '
+                                   'not supported. Please use the same context to create '
+                                   'multiprocessing objects and Process.')
             h = sl.handle
         return (h, sl.kind, sl.maxvalue, sl.name)
 
@@ -110,6 +114,8 @@ class SemLock(object):
         self._semlock = _multiprocessing.SemLock._rebuild(*state)
         util.debug('recreated blocker with handle %r' % state[0])
         self._make_methods()
+        # Ensure that deserialized SemLock can be serialized again (gh-108520).
+        self._is_fork_ctx = False
 
     @staticmethod
     def _make_name():
@@ -167,7 +173,7 @@ class Lock(SemLock):
                 name = process.current_process().name
                 if threading.current_thread().name != 'MainThread':
                     name += '|' + threading.current_thread().name
-            elif self._semlock._get_value() == 1:
+            elif not self._semlock._is_zero():
                 name = 'None'
             elif self._semlock._count() > 0:
                 name = 'SomeOtherThread'
@@ -193,7 +199,7 @@ class RLock(SemLock):
                 if threading.current_thread().name != 'MainThread':
                     name += '|' + threading.current_thread().name
                 count = self._semlock._count()
-            elif self._semlock._get_value() == 1:
+            elif not self._semlock._is_zero():
                 name, count = 'None', 0
             elif self._semlock._count() > 0:
                 name, count = 'SomeOtherThread', 'nonzero'
@@ -353,7 +359,7 @@ class Event(object):
                 return True
             return False
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         set_status = 'set' if self.is_set() else 'unset'
         return f"<{type(self).__qualname__} at {id(self):#x} {set_status}>"
 #

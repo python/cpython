@@ -1,3 +1,0 @@
-Add :option:`--enable-wasm-pthreads` to enable pthreads support for WASM
-builds. ``Emscripten/node`` no longer has threading enabled by default.
-Include additional file systems.
