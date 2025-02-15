@@ -74,9 +74,9 @@ handler.  Code to create and run the server looks like this::
 
    .. versionadded:: next
 
-.. class:: ThreadingHTTPSServer(server_address, RequestHandlerClass, \
-                       bind_and_activate=True, *, certfile, keyfile=None, \
-                       password=None, alpn_protocols=None)
+.. class:: ThreadingHTTPSServer(server_address, RequestHandlerClass,\
+                                bind_and_activate=True, *, certfile, keyfile=None,\
+                                password=None, alpn_protocols=None)
 
    This class is identical to :class:`HTTPSServer` but uses threads to handle
    requests by using the :class:`~socketserver.ThreadingMixIn`. This is
