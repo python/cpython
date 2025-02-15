@@ -56,7 +56,7 @@ handler.  Code to create and run the server looks like this::
                        password=None, alpn_protocols=None)
 
    Subclass of :class:`HTTPServer` with a wrapped socket using the :mod:`ssl` module.
-   If the :mod:`ssl` module is not available, instantiating an :class:`!HTTPSServer`
+   If the :mod:`ssl` module is not available, instantiating a :class:`!HTTPSServer`
    object fails with an :exc:`ImportError`.
 
    The *certfile* argument is the path to the SSL certificate chain file,
@@ -497,7 +497,7 @@ following command runs an HTTP/1.1 conformant server::
    Added the ``--protocol`` option.
 
 The server can also support TLS encryption. The options ``--tls-cert`` and
-``--tls-key`` allow specifying a TLS certificate chain and private key for
+``--tls-key`` allow specifying a TLS certificate chain and a private key for
 secure HTTPS connections. For example, the following command runs the server with
 TLS enabled:
 
@@ -505,7 +505,7 @@ TLS enabled:
 
    python -m http.server --tls-cert fullchain.pem
 
-Use ``--tls-password-file`` option if private keys are password-protected:
+Use the ``--tls-password-file`` option if private keys are password-protected:
 
 .. code-block:: bash
 
