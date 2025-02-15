@@ -332,19 +332,21 @@ class BaseHTTPServerTestCase(BaseTestCase):
             self.assertEqual(b'', data)
 
 
-@unittest.skipIf(ssl is None, 'No ssl module')
-class BaseHTTPSServerTestCase(BaseTestCase):
-    def _data_file(*name):
-        return os.path.join(os.path.dirname(__file__), "certdata", *name)
+def certdata_file(*path):
+    return os.path.join(os.path.dirname(__file__), "certdata", *path)
 
-    CERTFILE = _data_file("keycert.pem")
-    ONLYCERT = _data_file("ssl_cert.pem")
-    ONLYKEY = _data_file("ssl_key.pem")
-    CERTFILE_PROTECTED = _data_file("keycert.passwd.pem")
-    ONLYKEY_PROTECTED = _data_file("ssl_key.passwd.pem")
+
+@unittest.skipIf(ssl is None, "requires ssl")
+class BaseHTTPSServerTestCase(BaseTestCase):
+
+    CERTFILE = certdata_file("keycert.pem")
+    ONLYCERT = certdata_file("ssl_cert.pem")
+    ONLYKEY = certdata_file("ssl_key.pem")
+    CERTFILE_PROTECTED = certdata_file("keycert.passwd.pem")
+    ONLYKEY_PROTECTED = certdata_file("ssl_key.passwd.pem")
     KEY_PASSWORD = "somepass"
-    EMPTYCERT = _data_file("nullcert.pem")
-    BADCERT = _data_file("badcert.pem")
+    EMPTYCERT = certdata_file("nullcert.pem")
+    BADCERT = certdata_file("badcert.pem")
 
     tls = (ONLYCERT, ONLYKEY, None)  # values by default
 
