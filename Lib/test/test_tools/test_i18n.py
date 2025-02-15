@@ -447,6 +447,23 @@ class Test_pygettext(unittest.TestCase):
                 '''), args=(arg,), raw=True)
                 self.assertIn('#. Translator comment', data)
 
+    def test_comments_with_multiple_tags(self):
+        """
+        Test that multiple --add-comments tags can be specified.
+        """
+        for arg in ('--add-comments={}', '-c{}'):
+            with self.subTest(arg=arg):
+                args = (arg.format('foo:'), arg.format('bar:'))
+                data = self.extract_from_str(dedent('''\
+                # foo: comment
+                _("foo")
+
+                # bar: comment
+                _("bar")
+                '''), args=args, raw=True)
+                self.assertIn('#. foo: comment', data)
+                self.assertIn('#. bar: comment', data)
+
 
 def update_POT_snapshots():
     for input_file in DATA_DIR.glob('*.py'):
