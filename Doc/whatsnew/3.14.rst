@@ -178,8 +178,8 @@ Improved error messages
 * If a statement (:keyword:`pass`, :keyword:`del`, :keyword:`return`,
   :keyword:`yield`, :keyword:`raise`, :keyword:`break`, :keyword:`continue`,
   :keyword:`assert`, :keyword:`import`, :keyword:`from`) is passed to the
-  :ref:`if_expr` after :keyword:`else`, or one of the :keyword:`pass`,
-  :keyword:`break`, :keyword:`continue` is passed before :keyword:`if`, then the
+  :ref:`if_expr` after :keyword:`else`, or one of :keyword:`pass`,
+  :keyword:`break`, or :keyword:`continue` is passed before :keyword:`if`, then the
   error message highlights where the :token:`~python-grammar:expression` is
   required. (Contributed by Sergey Miryanov in :gh:`129515`.)
 
