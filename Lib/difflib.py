@@ -1040,7 +1040,7 @@ class Differ:
 
 def IS_LINE_JUNK(line, pat=None):
     r"""
-    Return True for ignorable line: iff `line` is blank or contains a single '#'.
+    Return True for ignorable line: if `line` is blank or contains a single '#'.
 
     Examples:
 
@@ -1052,9 +1052,9 @@ def IS_LINE_JUNK(line, pat=None):
     False
     """
 
-    return (line.strip() in ('', '#')
-            if pat is None
-            else pat(line) is not None)
+    if pat is None:
+        return line.strip() == '' or line.strip() == '#'
+    return pat(line) is not None
 
 def IS_CHARACTER_JUNK(ch, ws=" \t"):
     r"""
