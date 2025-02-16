@@ -529,7 +529,7 @@ file then shutil will silently fallback on using less efficient
 .. versionchanged:: 3.14
     Solaris now uses :func:`os.sendfile`.
 
-.. versionchanged:: next
+.. versionchanged:: 3.14
    Copy-on-write or server-side copy may be used internally via
    :func:`os.copy_file_range` on supported Linux filesystems.
 
