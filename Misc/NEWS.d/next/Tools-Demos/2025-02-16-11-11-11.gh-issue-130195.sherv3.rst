@@ -1,0 +1,1 @@
+Remove unimplemented `-a`/`--extract-all` option from pygettext.
