@@ -42,6 +42,10 @@ Usage: pygettext [options] inputfile ...
 
 Options:
 
+    -a
+    --extract-all
+        Not implemented and will be removed in a future version.
+
     -d name
     --default-domain=name
         Rename the default output file from messages.pot to name.pot.
@@ -469,8 +473,8 @@ def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            'd:DEhk:Kno:p:S:Vvw:x:X:',
-            ['default-domain=', 'escape', 'help',
+            'ad:DEhk:Kno:p:S:Vvw:x:X:',
+            ['extract-all', 'default-domain=', 'escape', 'help',
              'keyword=', 'no-default-keywords',
              'add-location', 'no-location', 'output=', 'output-dir=',
              'style=', 'verbose', 'version', 'width=', 'exclude-file=',
@@ -485,6 +489,7 @@ def main():
         GNU = 1
         SOLARIS = 2
         # defaults
+        extractall = 0 # FIXME: currently this option has no effect at all.
         escape = 0
         keywords = []
         outpath = ''
@@ -506,6 +511,9 @@ def main():
     for opt, arg in opts:
         if opt in ('-h', '--help'):
             usage(0)
+        elif opt in ('-a', '--extract-all'):
+            print("WARNING: -a/--extract-all is not implemented and will be removed in a future version", file=sys.stderr)
+            options.extractall = 1
         elif opt in ('-d', '--default-domain'):
             options.outfile = arg + '.pot'
         elif opt in ('-E', '--escape'):
