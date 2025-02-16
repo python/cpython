@@ -835,6 +835,9 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
         goto error;
     if (is_ast) {
         if ((flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST) {
+            if (PyAst_CheckMode(source, compile_mode) < 0) {
+                goto error;
+            }
             // return an un-optimized AST
             result = Py_NewRef(source);
         }

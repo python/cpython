@@ -907,6 +907,7 @@ type_param_ty _PyAST_TypeVarTuple(identifier name, expr_ty default_value, int
 
 
 PyObject* PyAST_mod2obj(mod_ty t);
+int PyAst_CheckMode(PyObject *ast, int mode);
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);
 int PyAST_Check(PyObject* obj);
 
