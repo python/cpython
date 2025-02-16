@@ -1038,9 +1038,7 @@ class Differ:
 # remaining is that perhaps it was really the case that " volatile"
 # was inserted after "private".  I can live with that <wink>.
 
-import re
-
-def IS_LINE_JUNK(line, pat=re.compile(r"\s*(?:#\s*)?$").match):
+def IS_LINE_JUNK(line):
     r"""
     Return True for ignorable line: iff `line` is blank or contains a single '#'.
 
@@ -1054,7 +1052,7 @@ def IS_LINE_JUNK(line, pat=re.compile(r"\s*(?:#\s*)?$").match):
     False
     """
 
-    return pat(line) is not None
+    return line.strip() == "" or line.lstrip().rstrip() == "#"
 
 def IS_CHARACTER_JUNK(ch, ws=" \t"):
     r"""
@@ -2027,7 +2025,6 @@ class HtmlDiff(object):
                      replace('\1','</span>'). \
                      replace('\t','&nbsp;')
 
-del re
 
 def restore(delta, which):
     r"""
