@@ -34,11 +34,11 @@ of three ways.
 
    .. testcode::
 
-       class C(Sequence):                      # Direct inheritance
-           def __init__(self): ...             # Extra method not required by the ABC
-           def __getitem__(self, index):  ...  # Required abstract method
-           def __len__(self):  ...             # Required abstract method
-           def count(self, value): ...         # Optionally override a mixin method
+      class C(Sequence):                      # Direct inheritance
+          def __init__(self): ...             # Extra method not required by the ABC
+          def __getitem__(self, index):  ...  # Required abstract method
+          def __len__(self):  ...             # Required abstract method
+          def count(self, value): ...         # Optionally override a mixin method
 
    .. doctest::
 
@@ -57,14 +57,14 @@ of three ways.
 
    .. testcode::
 
-       class D:                                 # No inheritance
-           def __init__(self): ...              # Extra method not required by the ABC
-           def __getitem__(self, index):  ...   # Abstract method
-           def __len__(self):  ...              # Abstract method
-           def count(self, value): ...          # Mixin method
-           def index(self, value): ...          # Mixin method
+      class D:                                 # No inheritance
+          def __init__(self): ...              # Extra method not required by the ABC
+          def __getitem__(self, index):  ...   # Abstract method
+          def __len__(self):  ...              # Abstract method
+          def count(self, value): ...          # Mixin method
+          def index(self, value): ...          # Mixin method
 
-       Sequence.register(D)                     # Register instead of inherit
+      Sequence.register(D)                     # Register instead of inherit
 
    .. doctest::
 
@@ -84,9 +84,9 @@ of three ways.
 
    .. testcode::
 
-       class E:
-           def __iter__(self): ...
-           def __next__(self): ...
+      class E:
+          def __iter__(self): ...
+          def __next__(self): ...
 
    .. doctest::
 
