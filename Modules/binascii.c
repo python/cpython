@@ -1299,9 +1299,11 @@ binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, Py_buffer *chars,
 
         if (foldnuls && value == 0) {
             *ascii_data++ = 'z';
-        } else if (foldspaces && value == 0x20202020) {
+        }
+        else if (foldspaces && value == 0x20202020) {
             *ascii_data++ = 'y';
-        } else {
+        }
+        else {
             for (j = 0; j < 5 ; j++) {
                 ascii_data[4 - j] = table[value % 85];
                 value /= 85;
