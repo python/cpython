@@ -197,7 +197,7 @@ class TestReader(TestCase):
                 Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
                 Event(evt="key", data="\x05", raw=bytearray(b"\x1bO5")),
                 # a double new line in-block should terminate the block
-                # even if its followed by whitespace
+                # even if its followed by whitespace
                 Event(evt="key", data="\n", raw=bytearray(b"\n")),
                 Event(evt="key", data="\n", raw=bytearray(b"\n")),
             ],

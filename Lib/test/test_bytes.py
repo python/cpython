@@ -1386,7 +1386,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         self.assertIsNone(ba.resize(10))
         self.assertEqual(ba, bytearray(b'\0' * 10))
 
-        # Subclass
+        # Subclass
         ba = ByteArraySubclass(b'abcdef')
         self.assertIsNone(ba.resize(3))
         self.assertEqual(ba, bytearray(b'abc'))
