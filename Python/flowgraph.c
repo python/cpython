@@ -1768,7 +1768,6 @@ remove_to_bool_sequence(basicblock *bb, int start)
     for (;start < bb->b_iused; start++) {
         cfg_instr *curr = &bb->b_instr[start];
         if (curr->i_opcode == NOP) {
-            /* should not happen, but just in case */
             continue;
         }
         if (curr->i_opcode == TO_BOOL) {
@@ -1794,23 +1793,6 @@ find_unary_not_target(basicblock *bb, int start)
         break;
     }
     return NULL;
-}
-
-static bool
-maybe_unary_not_cancel_out(basicblock *bb, int i, int nextop)
-{
-    cfg_instr *instr = &bb->b_instr[i];
-    assert(instr->i_opcode == UNARY_NOT);
-    if (nextop == UNARY_NOT) {
-        INSTR_SET_OP0(instr, NOP);
-        int nexi = i + 1;
-        assert(nexi >= 0 && nexi < bb->b_iused);
-        cfg_instr *next = &bb->b_instr[nexi];
-        assert(next->i_opcode == nextop);
-        INSTR_SET_OP0(next, NOP);
-        return true;
-    }
-    return false;
 }
 
 /* Replace:
@@ -1845,6 +1827,29 @@ optimize_unary_not_is_contains(basicblock *bb, int i, int nextop)
     return true;
 }
 
+static bool
+optimize_unary_not_non_const(basicblock *bb, int i, int nextop)
+{
+    assert(i >= 0 && i < bb->b_iused);
+    cfg_instr *instr = &bb->b_instr[i];
+    assert(instr->i_opcode == UNARY_NOT);
+    if (nextop == UNARY_NOT) {  /* subsequent UNARY_NOT is no-op */
+        INSTR_SET_OP0(instr, NOP);
+        int nexti = i + 1;
+        assert(nexti >= 1 && nexti < bb->b_iused);
+        cfg_instr *next = &bb->b_instr[nexti];
+        assert(next->i_opcode == nextop);
+        INSTR_SET_OP0(next, NOP);
+        if (find_unary_not_target(bb, i-1) != NULL) {
+            /* IS_OP & CONTAINS_OP don't need TO_BOOL conversion */
+            remove_to_bool_sequence(bb, i+1);
+        }
+        return true;
+    }
+    remove_to_bool_sequence(bb, i+1);
+    return optimize_unary_not_is_contains(bb, i, nextop);
+}
+
 static int
 optimize_if_const_unaryop(basicblock *bb, int i, int nextop,
                           PyObject *consts, PyObject *const_cache, bool unarypos)
@@ -1863,16 +1868,8 @@ optimize_if_const_unaryop(basicblock *bb, int i, int nextop,
             || instr->i_opcode == UNARY_NOT
         );
     }
-    if (instr->i_opcode == UNARY_NOT) {
-        if (maybe_unary_not_cancel_out(bb, i, nextop)) {
-            /* nothing more to do here */
-            return SUCCESS;
-        }
-        remove_to_bool_sequence(bb, i+1);
-        if (optimize_unary_not_is_contains(bb, i, nextop)) {
-            /* if optimized, no need to continue */
-            return SUCCESS;
-        }
+    if (instr->i_opcode == UNARY_NOT && optimize_unary_not_non_const(bb, i, nextop)) {
+        return SUCCESS;
     }
     PyObject *seq;
     RETURN_IF_ERROR(get_constant_sequence(bb, i-1, 1, consts, &seq));
@@ -1881,7 +1878,6 @@ optimize_if_const_unaryop(basicblock *bb, int i, int nextop,
     PyObject *operand = PyTuple_GET_ITEM(seq, 0);
     PyObject *newconst = eval_const_unaryop(operand, instr->i_opcode, unarypos);
     if (instr->i_opcode == UNARY_NOT) {
-        /* we eliminated TO_BOOL's so we must return boolean */
         assert(PyBool_Check(newconst));
     }
     Py_DECREF(seq);
