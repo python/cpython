@@ -1239,6 +1239,93 @@ binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
     return rv;
 }
 
+/*[clinic input]
+binascii.b2a_base85
+
+    data: Py_buffer
+    chars: Py_buffer
+    pad: bool = False
+    foldnuls: bool = False
+    foldspaces: bool = False
+
+Utility method used by the base64 module to encode a85/b85 data
+
+    data: bytes
+    chars: 85 bytes conversion table
+    pad: use NULL-paded input if necessary
+    foldnuls: replace NULL chunks by 'z'
+    foldspaces: replace space-only chucks by 'y'
+
+[clinic start generated code]*/
+
+static PyObject *
+binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, Py_buffer *chars,
+                         int pad, int foldnuls, int foldspaces)
+/*[clinic end generated code: output=0a92b3c535580aa0 input=a2d8ae712ed5adba]*/
+{
+    if (chars->len != 85) {
+        PyErr_SetString(PyExc_ValueError,
+                        "chars must be exactly 85 bytes long");
+        return NULL;
+    }
+
+    _PyBytesWriter writer;
+    _PyBytesWriter_Init(&writer);
+
+    const size_t bin_len = data->len;
+
+    // Allocate up to maxium encoded length, adjusted at end
+    const size_t ascii_len = ((bin_len + 3) / 4) * 5;
+
+    unsigned char *ascii_data = _PyBytesWriter_Alloc(&writer, ascii_len);
+    if (ascii_data == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    const unsigned char *table = chars->buf;
+    const unsigned char *bin_data = data->buf;
+
+    size_t i, j;
+    for (i = 0; i < bin_len; i += 4) {
+        const size_t chunk_size = (bin_len - i >= 4) ? 4 : (bin_len - i);
+
+        // translate chunk to 32bit integer
+        uint32_t value = 0;
+        for (j = 0; j < chunk_size; j++) {
+            value = (value << 8) | bin_data[i + j];
+        }
+        value <<= (4 - chunk_size) * 8;
+
+        if (foldnuls && value == 0) {
+            *ascii_data++ = 'z';
+        } else if (foldspaces && value == 0x20202020) {
+            *ascii_data++ = 'y';
+        } else {
+            for (j = 0; j < 5 ; j++) {
+                ascii_data[4 - j] = table[value % 85];
+                value /= 85;
+            }
+            ascii_data += 5;
+        }
+    }
+
+    // In case `i` went over the input size, we may need to shorten the output
+    const size_t overflow = (i - bin_len);
+
+    if (overflow && !pad && foldnuls && ascii_data[-1] == 'z') {
+        ascii_data--;
+        memset(ascii_data, table[0], 5);
+        ascii_data += 5;
+    }
+
+    if (!pad) {
+        ascii_data -= overflow;
+    }
+
+    return _PyBytesWriter_Finish(&writer, ascii_data);
+}
+
 /* List of functions defined in the module */
 
 static struct PyMethodDef binascii_module_methods[] = {
@@ -1246,6 +1333,7 @@ static struct PyMethodDef binascii_module_methods[] = {
     BINASCII_B2A_UU_METHODDEF
     BINASCII_A2B_BASE64_METHODDEF
     BINASCII_B2A_BASE64_METHODDEF
+    BINASCII_B2A_BASE85_METHODDEF
     BINASCII_A2B_HEX_METHODDEF
     BINASCII_B2A_HEX_METHODDEF
     BINASCII_HEXLIFY_METHODDEF

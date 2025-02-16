@@ -774,4 +774,113 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=9ed7fbeec13c6606 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(binascii_b2a_base85__doc__,
+"b2a_base85($module, /, data, chars, pad=False, foldnuls=False,\n"
+"           foldspaces=False)\n"
+"--\n"
+"\n"
+"Utility method used by the base64 module to encode a85/b85 data\n"
+"\n"
+"    data: bytes\n"
+"    chars: 85 bytes conversion table\n"
+"    pad: use NULL-paded input if necessary\n"
+"    foldnuls: replace NULL chunks by \'z\'\n"
+"    foldspaces: replace space-only chucks by \'y\'");
+
+#define BINASCII_B2A_BASE85_METHODDEF    \
+    {"b2a_base85", _PyCFunction_CAST(binascii_b2a_base85), METH_FASTCALL|METH_KEYWORDS, binascii_b2a_base85__doc__},
+
+static PyObject *
+binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, Py_buffer *chars,
+                         int pad, int foldnuls, int foldspaces);
+
+static PyObject *
+binascii_b2a_base85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 5
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(data), &_Py_ID(chars), &_Py_ID(pad), &_Py_ID(foldnuls), &_Py_ID(foldspaces), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"data", "chars", "pad", "foldnuls", "foldspaces", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "b2a_base85",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
+    Py_buffer data = {NULL, NULL};
+    Py_buffer chars = {NULL, NULL};
+    int pad = 0;
+    int foldnuls = 0;
+    int foldspaces = 0;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 5, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &chars, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[2]) {
+        pad = PyObject_IsTrue(args[2]);
+        if (pad < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[3]) {
+        foldnuls = PyObject_IsTrue(args[3]);
+        if (foldnuls < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    foldspaces = PyObject_IsTrue(args[4]);
+    if (foldspaces < 0) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = binascii_b2a_base85_impl(module, &data, &chars, pad, foldnuls, foldspaces);
+
+exit:
+    /* Cleanup for data */
+    if (data.obj) {
+       PyBuffer_Release(&data);
+    }
+    /* Cleanup for chars */
+    if (chars.obj) {
+       PyBuffer_Release(&chars);
+    }
+
+    return return_value;
+}
+/*[clinic end generated code: output=ae4488d2f300a0ff input=a9049054013a1b77]*/
