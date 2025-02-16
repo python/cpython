@@ -528,6 +528,7 @@ class BaseXYTestCase(unittest.TestCase):
                 b"""0123456789!@#0^&*();:<>,. []{}""":
                 b"""VPa!sWoBn+X=-b1ZEkOHadLBXb#`}nd3r%YLqtVJM@UIZOH55pPf$@("""
                 b"""Q&d$}S6EqEFflSSG&MFiI5{CeBQRbjDkv#CIy^osE+AW7dwl""",
+            b"paddu\xc7": b'aA9O*b;k',
             b'no padding..': b'Zf_uPVPs@!Zf7no',
             b'zero compression\x00\x00\x00\x00': b'dS!BNAY*TBaB^jHb7^mG00000',
             b'zero compression\x00\x00\x00': b'dS!BNAY*TBaB^jHb7^mG0000',
