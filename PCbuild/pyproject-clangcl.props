@@ -2,19 +2,37 @@
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <__PyprojectClangCl_Props_Imported>true</__PyprojectClangCl_Props_Imported>
-    
-    <!-- TODO: Py_IntDir is TreatAsLocalProperty. How to get it here? Just redefined atm :( -->
-    <!-- maybe this will go anyway, since we're going to use $(OutDir)instrumented ... -->
-    <ClangProfileDir>$(MSBuildThisFileDirectory)obj\$(MajorVersionNumber)$(MinorVersionNumber)$(ArchName)_PGInstrument\__clang_profiles\</ClangProfileDir>
-    <ClangProfileDir>$(ClangProfileDir.Replace(`\\`, `\`))</ClangProfileDir>
   </PropertyGroup>
+
+  <ItemGroup>
+    <_profrawFiles Include="$(OutDir)instrumented\$(TargetName)_*.profraw" />
+  </ItemGroup>
+
+  <Target Name="EnsureClangProfileData" BeforeTargets="PrepareForBuild"
+          Condition="'$(SupportPGO)' and $(Configuration) == 'PGUpdate'">
+    <Error Text="PGO run did not succeed (no $(TargetName)_*.profraw files) and there is no data to merge"
+           Condition="$(RequirePGCFiles) == 'true' and @(_profrawFiles) == ''" />
+  </Target>
+
+  <Target Name="MergeClangProfileData" BeforeTargets="PrepareForBuild"
+          Condition="'$(SupportPGO)' and $(Configuration) == 'PGUpdate'"
+          Inputs="@(_profrawFiles)"
+          Outputs="@(_profrawFiles->'$(OutDir)instrumented\profdata.profdata')">
+    <Exec
+      Command='"$(LLVMInstallDir)\bin\llvm-profdata.exe" merge -output=$(OutDir)instrumented\profdata.profdata $(OutDir)instrumented\*_*.profraw' />
+  </Target>
+
+  <Target Name="CleanClangProfileData" BeforeTargets="Clean">
+    <Delete Files="@(_profrawFiles->'$(OutDir)instrumented\%(Filename)%(Extension)')" TreatErrorsAsWarnings="true" />
+    <Delete Files="$(OutDir)instrumented\profdata.profdata" TreatErrorsAsWarnings="true" />
+  </Target>
 
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalOptions>-Wno-deprecated-non-prototype -Wno-unused-label -Wno-pointer-sign -Wno-incompatible-pointer-types-discards-qualifiers -Wno-unused-function %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="$(Configuration) != 'Debug'">-flto %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="$(SupportPGO) and $(Configuration) == 'PGInstrument'">-fprofile-instr-generate=$(ClangProfileDir)\default_%m.profraw %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="$(SupportPGO) and $(Configuration) == 'PGUpdate'">-fprofile-instr-use=$(ClangProfileDir)\profdata.profdata %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="$(SupportPGO) and $(Configuration) == 'PGInstrument'">-fprofile-instr-generate=$(OutDir)$(TargetName)_%m.profraw %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="$(SupportPGO) and $(Configuration) == 'PGUpdate'">-fprofile-instr-use=$(OutDir)instrumented\profdata.profdata %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
   </ItemDefinitionGroup>
 

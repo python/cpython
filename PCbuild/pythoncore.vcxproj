@@ -716,26 +716,6 @@
     <Delete Files="$(IntDir)pyconfig.h;$(OutDir)pyconfig.h" />
   </Target>
 
-  <Target Name="EnsureClangProfileDir" BeforeTargets="PrepareForBuild"
-          Condition="$(PlatformToolset) == 'ClangCL' and $(Configuration) == 'PGInstrument' and !Exists($(ClangProfileDir))"> 
-    <MakeDir Directories="$(ClangProfileDir)" />
-  </Target>
-
-  <Target Name="CleanClangProfileDir"  BeforeTargets="PrepareForBuild"
-          Condition="$(PlatformToolset) == 'ClangCL' and $(Configuration) == 'PGInstrument' and Exists($(ClangProfileDir))">
-     <ItemGroup>
-       <FilesToDelete Include="$(ClangProfileDir)\*.*"/>
-     </ItemGroup>
-    <Delete Files="@(FilesToDelete)" TreatErrorsAsWarnings="true" />
-  </Target>
-
-  <Target Name="MergeClangProfileData" BeforeTargets="PrepareForBuild"
-          Condition="$(PlatformToolset) == 'ClangCL' and $(Configuration) == 'PGUpdate'">
-    <Message Importance="high" Text="Merging clang profile data in $(ClangProfileDir)" />
-    <Exec
-      Command='"$(LLVMInstallDir)\bin\llvm-profdata.exe" merge -output=$(ClangProfileDir)\profdata.profdata $(ClangProfileDir)\default_*.profraw' />
-  </Target>
-  
   <Target Name="_GetBuildInfo" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <GIT Condition="$(GIT) == ''">git</GIT>
