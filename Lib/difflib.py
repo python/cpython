@@ -1053,7 +1053,8 @@ def IS_LINE_JUNK(line, pat=None):
     """
 
     if pat is None:
-        return line.strip() == '' or line.strip() == '#'
+        stripped = line.strip()
+        return stripped == '' or stripped == '#'
     return pat(line) is not None
 
 def IS_CHARACTER_JUNK(ch, ws=" \t"):
