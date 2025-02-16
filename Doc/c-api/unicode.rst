@@ -1399,11 +1399,32 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    set.  Separators are not included in the resulting list.
 
 
+.. c:function:: PyObject* PyUnicode_RSplit(PyObject *unicode, PyObject *sep, Py_ssize_t maxsplit)
+
+   Similar to :c:func:`PyUnicode_Split`, but splitting will be done beginning
+   at the end of the string.
+
+
 .. c:function:: PyObject* PyUnicode_Splitlines(PyObject *unicode, int keepends)
 
    Split a Unicode string at line breaks, returning a list of Unicode strings.
    CRLF is considered to be one line break.  If *keepends* is ``0``, the Line break
    characters are not included in the resulting strings.
+
+
+.. c:function:: PyObject* PyUnicode_Partition(PyObject *unicode, PyObject *sep)
+
+   Split the string at the first occurrence of sep, and return a 3-tuple containing
+   the part before the separator, the separator itself, and the part after the separator.
+   If the separator is not found, return a 3-tuple containing the string itself,
+   followed by two empty strings.
+
+
+.. c:function:: PyObject* PyUnicode_RPartition(PyObject *unicode, PyObject *sep)
+
+   Similar to :c:func:`PyUnicode_Partition`, but split the string at the last
+   occurrence of sep. If the separator is not found, return a 3-tuple containing
+   two empty strings, followed by the string itself.
 
 
 .. c:function:: PyObject* PyUnicode_Join(PyObject *separator, PyObject *seq)
