@@ -44,7 +44,7 @@ Options:
 
     -a
     --extract-all
-        Not implemented and will be removed in a future version.
+        This option does not do anything and will be removed in a future version.
 
     -d name
     --default-domain=name
