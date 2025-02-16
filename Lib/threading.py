@@ -3,7 +3,6 @@
 import os as _os
 import sys as _sys
 import _thread
-import warnings
 
 from time import monotonic as _time
 from _weakrefset import WeakSet
@@ -133,6 +132,7 @@ def RLock(*args, **kwargs):
 
     """
     if args or kwargs:
+        import warnings
         warnings.warn(
             'Passing arguments to RLock is deprecated and will be removed in 3.15',
             DeprecationWarning,
@@ -694,7 +694,7 @@ class Barrier:
 
         """
         if parties < 1:
-            raise ValueError("parties must be > 0")
+            raise ValueError("parties must be >= 1")
         self._cond = Condition(Lock())
         self._action = action
         self._timeout = timeout

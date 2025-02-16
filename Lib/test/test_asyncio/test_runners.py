@@ -19,7 +19,7 @@ def interrupt_self():
     _thread.interrupt_main()
 
 
-class TestPolicy(asyncio.AbstractEventLoopPolicy):
+class TestPolicy(asyncio._AbstractEventLoopPolicy):
 
     def __init__(self, loop_factory):
         self.loop_factory = loop_factory

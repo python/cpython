@@ -419,7 +419,9 @@ Connection: close
 Content-Type: text/html; charset=iso-8859-1
 ''', mock_close=True)
         try:
-            self.assertRaises(OSError, urllib.request.urlopen, "http://python.org/")
+            with self.assertRaises(urllib.error.HTTPError) as cm:
+                urllib.request.urlopen("http://python.org/")
+            cm.exception.close()
         finally:
             self.unfakehttp()
 
@@ -434,8 +436,9 @@ Content-Type: text/html; charset=iso-8859-1
 ''', mock_close=True)
         try:
             msg = "Redirection to url 'file:"
-            with self.assertRaisesRegex(urllib.error.HTTPError, msg):
+            with self.assertRaisesRegex(urllib.error.HTTPError, msg) as cm:
                 urllib.request.urlopen("http://python.org/")
+            cm.exception.close()
         finally:
             self.unfakehttp()
 
@@ -448,8 +451,9 @@ Location: file://guidocomputer.athome.com:/python/license
 Connection: close
 ''', mock_close=True)
             try:
-                self.assertRaises(urllib.error.HTTPError, urllib.request.urlopen,
-                    "http://something")
+                with self.assertRaises(urllib.error.HTTPError) as cm:
+                    urllib.request.urlopen("http://something")
+                cm.exception.close()
             finally:
                 self.unfakehttp()
 
@@ -529,10 +533,11 @@ class urlopen_DataTests(unittest.TestCase):
             "QOjdAAAAAXNSR0IArs4c6QAAAA9JREFUCNdj%0AYGBg%2BP//PwAGAQL%2BCm8 "
             "vHgAAAABJRU5ErkJggg%3D%3D%0A%20")
 
-        self.text_url_resp = urllib.request.urlopen(self.text_url)
-        self.text_url_base64_resp = urllib.request.urlopen(
-            self.text_url_base64)
-        self.image_url_resp = urllib.request.urlopen(self.image_url)
+        self.text_url_resp = self.enterContext(
+            urllib.request.urlopen(self.text_url))
+        self.text_url_base64_resp = self.enterContext(
+            urllib.request.urlopen(self.text_url_base64))
+        self.image_url_resp = self.enterContext(urllib.request.urlopen(self.image_url))
 
     def test_interface(self):
         # Make sure object returned by urlopen() has the specified methods
@@ -548,8 +553,10 @@ class urlopen_DataTests(unittest.TestCase):
             [('text/plain', ''), ('charset', 'ISO-8859-1')])
         self.assertEqual(self.image_url_resp.info()['content-length'],
             str(len(self.image)))
-        self.assertEqual(urllib.request.urlopen("data:,").info().get_params(),
+        r = urllib.request.urlopen("data:,")
+        self.assertEqual(r.info().get_params(),
             [('text/plain', ''), ('charset', 'US-ASCII')])
+        r.close()
 
     def test_geturl(self):
         self.assertEqual(self.text_url_resp.geturl(), self.text_url)

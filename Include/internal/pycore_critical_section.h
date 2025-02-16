@@ -145,6 +145,12 @@ _PyCriticalSection_Pop(PyCriticalSection *c)
 static inline void
 _PyCriticalSection_End(PyCriticalSection *c)
 {
+    // If the mutex is NULL, we used the fast path in
+    // _PyCriticalSection_BeginSlow for locks already held in the top-most
+    // critical section, and we shouldn't unlock or pop this critical section.
+    if (c->_cs_mutex == NULL) {
+        return;
+    }
     PyMutex_Unlock(c->_cs_mutex);
     _PyCriticalSection_Pop(c);
 }
@@ -199,6 +205,14 @@ _PyCriticalSection2_Begin(PyCriticalSection2 *c, PyObject *a, PyObject *b)
 static inline void
 _PyCriticalSection2_End(PyCriticalSection2 *c)
 {
+    // if mutex1 is NULL, we used the fast path in
+    // _PyCriticalSection_BeginSlow for mutexes that are already held,
+    // which should only happen when mutex1 and mutex2 were the same mutex,
+    // and mutex2 should also be NULL.
+    if (c->_cs_base._cs_mutex == NULL) {
+        assert(c->_cs_mutex2 == NULL);
+        return;
+    }
     if (c->_cs_mutex2) {
         PyMutex_Unlock(c->_cs_mutex2);
     }
