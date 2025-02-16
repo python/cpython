@@ -1778,7 +1778,7 @@ remove_to_bool_sequence(basicblock *bb, int start)
     }
 }
 
-cfg_instr *
+static cfg_instr *
 find_unary_not_target(basicblock *bb, int start)
 {
     assert(start < bb->b_iused);
