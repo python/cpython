@@ -516,7 +516,26 @@ class TestTranforms(BytecodeTestCase):
                 self.check_lnotab(code)
 
     def test_folding_unaryop(self):
-        pass
+        intrinsic_positive = 5
+        tests = [
+            ('---1', 'UNARY_NEGATIVE', None, True),
+            ('---""', 'UNARY_NEGATIVE', None, False),
+            ('~~~1', 'UNARY_INVERT', None, True),
+            ('~~~""', 'UNARY_INVERT', None, False),
+            ('not not True', 'UNARY_NOT', None, True),
+            ('not not x', 'UNARY_NOT', None, False),
+            ('+++1', 'CALL_INTRINSIC_1', intrinsic_positive, True),
+            ('+++x', 'CALL_INTRINSIC_1', intrinsic_positive, False),
+        ]
+
+        for expr, opcode, oparg, optimized in tests:
+            with self.subTest(expr=expr, optimized=optimized):
+                code = compile(expr, '', 'single')
+                if optimized:
+                    self.assertNotInBytecode(code, opcode, argval=oparg)
+                else:
+                    self.assertInBytecode(code, opcode, argval=oparg)
+                self.check_lnotab(code)
 
     def test_folding_binop(self):
         add = get_binop_argval('NB_ADD')
