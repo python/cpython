@@ -44,7 +44,7 @@ Options:
 
     -a
     --extract-all
-        This option does not do anything and will be removed in a future version.
+        Currently not implemented and may be removed in a future version.
 
     -d name
     --default-domain=name
@@ -512,7 +512,8 @@ def main():
         if opt in ('-h', '--help'):
             usage(0)
         elif opt in ('-a', '--extract-all'):
-            print("WARNING: -a/--extract-all is not implemented and will be removed in a future version", file=sys.stderr)
+            print("WARNING: -a/--extract-all is not yet implemented and may be removed or implemented in a future version",
+                  file=sys.stderr)
             options.extractall = 1
         elif opt in ('-d', '--default-domain'):
             options.outfile = arg + '.pot'
