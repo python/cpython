@@ -19,11 +19,12 @@ class GrammarError(Exception):
 class GrammarVisitor:
     def visit(self, node: Any, *args: Any, **kwargs: Any) -> Any:
         """Visit a node."""
-        method = "visit_" + node.__class__.__name__
+        node_cls = node.__class__.__name__
+        method = f"visit_{node_cls}"
         if len(node.__class__.__name__) == 1:
-            method = "visit_single_" + node.__class__.__name__
+            method = f"visit_single_{node_cls}"
         elif len(node.__class__.__name__) > 1:
-            method = "visit_multi_" + node.__class__.__name__
+            method = f"visit_multi_{node_cls}"
         visitor = getattr(self, method, self.generic_visit)
         return visitor(node, *args, **kwargs)
 
