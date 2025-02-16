@@ -460,9 +460,13 @@ class Test_pygettext(unittest.TestCase):
 
                 # bar: comment
                 _("bar")
+
+                # baz: comment
+                _("baz")
                 '''), args=args, raw=True)
                 self.assertIn('#. foo: comment', data)
                 self.assertIn('#. bar: comment', data)
+                self.assertNotIn('#. baz: comment', data)
 
     def test_comments_not_extracted_without_tags(self):
         """
