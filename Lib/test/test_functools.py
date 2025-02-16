@@ -1490,6 +1490,16 @@ class TestCache:
             self.module._CacheInfo(hits=0, misses=0, maxsize=None, currsize=0))
 
 
+class TestCachePy(TestCache, unittest.TestCase):
+    module = py_functools
+
+
+@unittest.skipUnless(c_functools, 'requires the C _functools module')
+class TestCacheC(TestCache, unittest.TestCase):
+    if c_functools:
+        module = c_functools
+
+
 class TestLRU:
 
     def test_lru(self):
