@@ -1286,16 +1286,20 @@ binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, Py_buffer *chars,
     const unsigned char *table = chars->buf;
     const unsigned char *bin_data = data->buf;
 
-    size_t i, j;
-    for (i = 0; i < bin_len; i += 4) {
-        const size_t chunk_size = (bin_len - i >= 4) ? 4 : (bin_len - i);
+    size_t i = 0 ;
+    int padding = 0;
 
-        // translate chunk to 32bit integer
+    while (i < bin_len) {
+        // translate each 4 byte chunk to 32bit integer
         uint32_t value = 0;
-        for (j = 0; j < chunk_size; j++) {
-            value = (value << 8) | bin_data[i + j];
+        for (int cnt = 24; cnt >= 0; cnt -= 8) {
+            value |= bin_data[i] << cnt;
+            if (++i == bin_len) {
+                // Number of bytes under the 4 bytes rounded value
+                padding = cnt / 8;
+                break;
+            }
         }
-        value <<= (4 - chunk_size) * 8;
 
         if (foldnuls && value == 0) {
             *ascii_data++ = 'z';
@@ -1304,7 +1308,7 @@ binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, Py_buffer *chars,
             *ascii_data++ = 'y';
         }
         else {
-            for (j = 0; j < 5 ; j++) {
+            for (int j = 0; j < 5 ; j++) {
                 ascii_data[4 - j] = table[value % 85];
                 value /= 85;
             }
@@ -1312,17 +1316,14 @@ binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, Py_buffer *chars,
         }
     }
 
-    // In case `i` went over the input size, we may need to shorten the output
-    const size_t overflow = (i - bin_len);
-
-    if (overflow && !pad && foldnuls && ascii_data[-1] == 'z') {
+    if (padding && !pad && foldnuls && ascii_data[-1] == 'z') {
         ascii_data--;
         memset(ascii_data, table[0], 5);
         ascii_data += 5;
     }
 
     if (!pad) {
-        ascii_data -= overflow;
+        ascii_data -= padding;
     }
 
     return _PyBytesWriter_Finish(&writer, ascii_data);
