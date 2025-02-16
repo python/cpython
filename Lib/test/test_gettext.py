@@ -402,7 +402,7 @@ class GNUTranslationsClassPluralFormsTestCase(PluralFormsTests, GettextBaseTest)
             numbers_only=False)
 
 
-class PluralFormsInternalTestCase:
+class PluralFormsInternalTestCase(unittest.TestCase):
     # Examples from http://www.gnu.org/software/gettext/manual/gettext.html
 
     def test_ja(self):
