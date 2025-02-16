@@ -2752,23 +2752,9 @@ PyGILState_Check(void)
 }
 
 
-int
-PyThreadState_Ensure(PyInterpreterState *interp)
+static int
+tstate_ensure(PyInterpreterState *interp, PyThreadState *tcur)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-
-    /* Note that we do not auto-init Python here - apart from
-       potential races with 2 threads auto-initializing, pep-311
-       spells out other issues.  Embedders are expected to have
-       called Py_Initialize(). */
-
-    /* Ensure that _PyEval_InitThreads() and _PyGILState_Init() have been
-       called by Py_Initialize() */
-    assert(_PyEval_ThreadsInitialized());
-    assert(gilstate_tss_initialized(runtime));
-    assert(runtime->gilstate.autoInterpreterState != NULL);
-
-    PyThreadState *tcur = gilstate_tss_get(runtime);
     int has_gil;
     if (tcur == NULL) {
         /* Create a new Python thread state for this thread */
@@ -2807,11 +2793,36 @@ PyThreadState_Ensure(PyInterpreterState *interp)
 }
 
 
+int
+PyThreadState_Ensure(PyInterpreterState *interp)
+{
+    assert(_PyEval_ThreadsInitialized());
+
+    PyThreadState *tcur = current_fast_get();
+    return tstate_ensure(interp, tcur);
+}
+
+
 PyGILState_STATE
 PyGILState_Ensure(void)
 {
+    _PyRuntimeState *runtime = &_PyRuntime;
+
+    /* Note that we do not auto-init Python here - apart from
+       potential races with 2 threads auto-initializing, pep-311
+       spells out other issues.  Embedders are expected to have
+       called Py_Initialize(). */
+
+    /* Ensure that _PyEval_InitThreads() and _PyGILState_Init() have been
+       called by Py_Initialize() */
+    assert(_PyEval_ThreadsInitialized());
+    assert(gilstate_tss_initialized(runtime));
+    assert(runtime->gilstate.autoInterpreterState != NULL);
+
     PyInterpreterState *interp = _PyRuntime.gilstate.autoInterpreterState;
-    int result = PyThreadState_Ensure(interp);
+    PyThreadState *tcur = gilstate_tss_get(runtime);
+
+    int result = tstate_ensure(interp, tcur);
     if (result < 0) {
         PyThread_hang_thread();
     }
