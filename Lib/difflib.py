@@ -1052,7 +1052,9 @@ def IS_LINE_JUNK(line, pat=None):
     False
     """
 
-    return line.strip() in ('', '#')
+    return (line.strip() in ('', '#')
+            if pat is None
+            else pat(line) is not None)
 
 def IS_CHARACTER_JUNK(ch, ws=" \t"):
     r"""
