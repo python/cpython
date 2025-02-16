@@ -1732,6 +1732,23 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
 
+        # test is/isnot cancel out
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('IS_OP', is_, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('IS_OP', is_, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
         # test is/isnot eliminate to bool
         before = [
             ('LOAD_NAME', 0, 0),
@@ -1747,6 +1764,26 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_NAME', 0, 0),
             ('LOAD_NAME', 1, 0),
             ('IS_OP', isnot, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test is/isnot cancel out eliminate to bool
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('IS_OP', is_, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('IS_OP', is_, 0),
             ('RETURN_VALUE', None, 0),
         ]
         self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
@@ -1784,42 +1821,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
 
-        # test in/notin
-        before = [
-            ('LOAD_NAME', 0, 0),
-            ('LOAD_NAME', 1, 0),
-            ('CONTAINS_OP', in_, 0),
-            ('UNARY_NOT', None, 0),
-            ('RETURN_VALUE', None, 0),
-        ]
-        after = [
-            ('LOAD_NAME', 0, 0),
-            ('LOAD_NAME', 1, 0),
-            ('CONTAINS_OP', notin, 0),
-            ('RETURN_VALUE', None, 0),
-        ]
-        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
-
-        # test in/notin cancel out eliminate to bool (to bool stays) (maybe optimize later ???)
-        before = [
-            ('LOAD_NAME', 0, 0),
-            ('LOAD_NAME', 1, 0),
-            ('CONTAINS_OP', in_, 0),
-            ('UNARY_NOT', None, 0),
-            ('UNARY_NOT', None, 0),
-            ('TO_BOOL', None, 0),
-            ('RETURN_VALUE', None, 0),
-        ]
-        after = [
-            ('LOAD_NAME', 0, 0),
-            ('LOAD_NAME', 1, 0),
-            ('CONTAINS_OP', in_, 0),
-            ('TO_BOOL', None, 0),
-            ('RETURN_VALUE', None, 0),
-        ]
-        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
-
-        # test in/notin eliminate to bool
+        # test is/isnot eliminate to bool
         before = [
             ('LOAD_NAME', 0, 0),
             ('LOAD_NAME', 1, 0),
@@ -1838,7 +1840,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
 
-         # test in/notin cancel out eliminate to bool (to bool stays) (maybe optimize later ???)
+        # test in/notin cancel out eliminate to bool
         before = [
             ('LOAD_NAME', 0, 0),
             ('LOAD_NAME', 1, 0),
@@ -1852,7 +1854,6 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_NAME', 0, 0),
             ('LOAD_NAME', 1, 0),
             ('CONTAINS_OP', in_, 0),
-            ('TO_BOOL', None, 0),
             ('RETURN_VALUE', None, 0),
         ]
         self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
@@ -1861,7 +1862,215 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         pass
 
     def test_optimize_if_const_binop(self):
-        pass
+        add = get_binop_argval('NB_ADD')
+        sub = get_binop_argval('NB_SUBTRACT')
+        mul = get_binop_argval('NB_MULTIPLY')
+        div = get_binop_argval('NB_TRUE_DIVIDE')
+        floor = get_binop_argval('NB_FLOOR_DIVIDE')
+        rem = get_binop_argval('NB_REMAINDER')
+        pow = get_binop_argval('NB_POWER')
+        lshift = get_binop_argval('NB_LSHIFT')
+        rshift = get_binop_argval('NB_RSHIFT')
+        or_ = get_binop_argval('NB_OR')
+        and_ = get_binop_argval('NB_AND')
+        xor = get_binop_argval('NB_XOR')
+        subscr = get_binop_argval('NB_SUBSCR')
+
+        # test add
+        before = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', add, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', add, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 6, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test sub
+        before = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', sub, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', sub, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[-2])
+
+        # test mul
+        before = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', mul, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', mul, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 8, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test div
+        before = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', div, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', div, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_CONST', 1, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[1.0, 0.5])
+
+        # test floor
+        before = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', floor, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', floor, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 0, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test rem
+        before = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', rem, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', rem, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 0, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test pow
+        before = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', pow, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', pow, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 16, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test lshift
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('BINARY_OP', lshift, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('BINARY_OP', lshift, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 4, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test rshift
+        before = [
+            ('LOAD_SMALL_INT', 4, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('BINARY_OP', rshift, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('BINARY_OP', rshift, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test or
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', or_, 0),
+            ('LOAD_SMALL_INT', 4, 0),
+            ('BINARY_OP', or_, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 7, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test and
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('BINARY_OP', and_, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('BINARY_OP', and_, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test xor
+        before = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', xor, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', xor, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test subscr
+        before = [
+            ('LOAD_CONST', 0, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('BINARY_OP', subscr, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', subscr, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 3, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[(1, (1, 2, 3))], expected_consts=[(1, (1, 2, 3))])
+
 
     def test_conditional_jump_forward_const_condition(self):
         # The unreachable branch of the jump is removed, the jump
