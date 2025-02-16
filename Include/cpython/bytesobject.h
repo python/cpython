@@ -65,7 +65,7 @@ PyAPI_FUNC(void*) PyBytesWriter_Extend(
 PyAPI_FUNC(void*) PyBytesWriter_WriteBytes(
     PyBytesWriter *writer,
     void *buf,
-    const char *bytes,
+    const void *bytes,
     Py_ssize_t size);
 PyAPI_FUNC(void*) PyBytesWriter_Format(
     PyBytesWriter *writer,

@@ -254,6 +254,8 @@ static PyType_Spec Writer_spec = {
 };
 
 
+// Similar to bytes.center() with a different API: spaces are number of
+// whitespaces added to the left and to the right.
 static PyObject *
 byteswriter_center_example(Py_ssize_t spaces, char *str, Py_ssize_t str_size)
 {

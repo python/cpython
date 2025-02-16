@@ -3675,7 +3675,7 @@ PyBytesWriter_Extend(PyBytesWriter *writer, void *buf, Py_ssize_t extend)
 
 void*
 PyBytesWriter_WriteBytes(PyBytesWriter *writer, void *buf,
-                         const char *bytes, Py_ssize_t size)
+                         const void *bytes, Py_ssize_t size)
 {
     if (size < 0) {
         size = strlen(bytes);
