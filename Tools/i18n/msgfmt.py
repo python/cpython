@@ -116,6 +116,15 @@ def make(filename, outfile):
         print(msg, file=sys.stderr)
         sys.exit(1)
 
+    # Check for UTF-8 BOM
+    if lines[0].startswith(b'\xef\xbb\xbf'):
+        print(
+            f"The file {infile} starts with a UTF-8 BOM which is not allowed in .po files.\n"
+            "Please save the file without a BOM and try again.",
+            file=sys.stderr
+        )
+        sys.exit(1)
+
     section = msgctxt = None
     fuzzy = 0
 
