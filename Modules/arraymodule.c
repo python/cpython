@@ -2642,15 +2642,15 @@ array_subscr(PyObject *op, PyObject *item)
 static int
 array_ass_subscr_lock_held(PyObject *op, PyObject* item, PyObject* value)
 {
+    array_state* state = find_array_state_by_type(Py_TYPE(op));
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
-    #ifdef Py_DEBUG
-        if (value != NULL) {
-            _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(value);
-        }
-    #endif
+#ifdef Py_DEBUG
+    if (value != NULL && array_Check(value, state)) {
+        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(value);
+    }
+#endif
     arrayobject *self = arrayobject_CAST(op);
     Py_ssize_t start, stop, step, slicelength, needed;
-    array_state* state = find_array_state_by_type(Py_TYPE(self));
     arrayobject* other;
     int itemsize;
 
@@ -2808,15 +2808,16 @@ static int
 array_ass_subscr(PyObject *op, PyObject* item, PyObject* value)
 {
     int ret;
-    if (value == NULL) {
-        Py_BEGIN_CRITICAL_SECTION(op);
-        ret = array_ass_subscr_lock_held(op, item, value);
-        Py_END_CRITICAL_SECTION();
-    }
-    else {
+    array_state* state = find_array_state_by_type(Py_TYPE(op));
+    if (value != NULL && array_Check(value, state)) {
         Py_BEGIN_CRITICAL_SECTION2(op, value);
         ret = array_ass_subscr_lock_held(op, item, value);
         Py_END_CRITICAL_SECTION2();
+    }
+    else {
+        Py_BEGIN_CRITICAL_SECTION(op);
+        ret = array_ass_subscr_lock_held(op, item, value);
+        Py_END_CRITICAL_SECTION();
     }
     return ret;
 }
