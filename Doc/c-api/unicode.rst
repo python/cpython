@@ -1414,17 +1414,17 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
 
 .. c:function:: PyObject* PyUnicode_Partition(PyObject *unicode, PyObject *sep)
 
-   Split the string at the first occurrence of sep, and return a 3-tuple containing
-   the part before the separator, the separator itself, and the part after the separator.
-   If the separator is not found, return a 3-tuple containing the string itself,
-   followed by two empty strings.
+   Split the string at the first occurrence of *sep*, and return a 3-tuple
+   containing the part before the separator, the separator itself, and the part
+   after the separator. If the separator is not found, return a 3-tuple
+   containing the string itself, followed by two empty strings.
 
 
 .. c:function:: PyObject* PyUnicode_RPartition(PyObject *unicode, PyObject *sep)
 
-   Similar to :c:func:`PyUnicode_Partition`, but split the string at the last
-   occurrence of sep. If the separator is not found, return a 3-tuple containing
-   two empty strings, followed by the string itself.
+   Similar to :c:func:`PyUnicode_Partition`, but split a Unicode string at the
+   last occurrence of *sep*. If the separator is not found, return a 3-tuple
+   containing two empty strings, followed by the string itself.
 
 
 .. c:function:: PyObject* PyUnicode_Join(PyObject *separator, PyObject *seq)
