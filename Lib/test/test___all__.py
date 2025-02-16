@@ -37,6 +37,7 @@ class AllTest(unittest.TestCase):
             (".* (module|package)", DeprecationWarning),
             (".* (module|package)", PendingDeprecationWarning),
             ("", ResourceWarning),
+            ("", SyntaxWarning),
             quiet=True):
             try:
                 exec("import %s" % modname, names)

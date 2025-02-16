@@ -18,6 +18,7 @@ typedef struct {
     PyObject *filename;
     int optimize;
     int ff_features;
+    int syntax_check_only;
 
     int recursion_depth;            /* current recursion depth */
     int recursion_limit;            /* recursion limit */
@@ -165,6 +166,9 @@ unary_not(PyObject *v)
 static int
 fold_unaryop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
+    if (state->syntax_check_only) {
+        return 1;
+    }
     expr_ty arg = node->v.UnaryOp.operand;
 
     if (arg->kind != Constant_kind) {
@@ -548,6 +552,9 @@ optimize_format(expr_ty node, PyObject *fmt, asdl_expr_seq *elts, PyArena *arena
 static int
 fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
+    if (state->syntax_check_only) {
+        return 1;
+    }
     expr_ty lhs, rhs;
     lhs = node->v.BinOp.left;
     rhs = node->v.BinOp.right;
@@ -644,6 +651,9 @@ make_const_tuple(asdl_expr_seq *elts)
 static int
 fold_tuple(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
+    if (state->syntax_check_only) {
+        return 1;
+    }
     PyObject *newval;
 
     if (node->v.Tuple.ctx != Load)
@@ -849,6 +859,9 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL(fold_tuple, expr_ty, node_);
         break;
     case Name_kind:
+        if (state->syntax_check_only) {
+            break;
+        }
         if (node_->v.Name.ctx == Load &&
                 _PyUnicode_EqualToASCIIString(node_->v.Name.id, "__debug__")) {
             LEAVE_RECURSIVE(state);
@@ -1158,7 +1171,7 @@ astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
 
 int
 _PyAST_Optimize(mod_ty mod, PyArena *arena, PyObject *filename, int optimize,
-                int ff_features)
+                int ff_features, int syntax_check_only)
 {
     PyThreadState *tstate;
     int starting_recursion_depth;
@@ -1168,6 +1181,7 @@ _PyAST_Optimize(mod_ty mod, PyArena *arena, PyObject *filename, int optimize,
     state.filename = filename;
     state.optimize = optimize;
     state.ff_features = ff_features;
+    state.syntax_check_only = syntax_check_only;
 
     /* Setup recursion depth check counters */
     tstate = _PyThreadState_GET();
