@@ -413,6 +413,12 @@ class Test_pygettext(unittest.TestCase):
             self.assertIn(f'msgid "{text2}"', data)
             self.assertNotIn(text3, data)
 
+    def test_help_text(self):
+        """Test that the help text is displayed."""
+        res = assert_python_ok(self.script, '--help')
+        self.assertEqual(res.out, b'')
+        self.assertIn(b'pygettext -- Python equivalent of xgettext(1)', res.err)
+
     def test_error_messages(self):
         """Test that pygettext outputs error messages to stderr."""
         stderr = self.get_stderr(dedent('''\
