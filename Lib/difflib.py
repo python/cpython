@@ -1052,7 +1052,7 @@ def IS_LINE_JUNK(line, pat=None):
     False
     """
 
-    return line.strip() == "" or line.lstrip().rstrip() == "#"
+    return line.strip() in ('', '#')
 
 def IS_CHARACTER_JUNK(ch, ws=" \t"):
     r"""
