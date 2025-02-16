@@ -11,7 +11,7 @@
   <Target Name="EnsureClangProfileData" BeforeTargets="PrepareForBuild"
           Condition="'$(SupportPGO)' and $(Configuration) == 'PGUpdate'">
     <Error Text="PGO run did not succeed (no $(TargetName)_*.profraw files) and there is no data to merge"
-           Condition="$(RequirePGCFiles) == 'true' and @(_profrawFiles) == ''" />
+           Condition="$(RequireProfileData) == 'true' and @(_profrawFiles) == ''" />
   </Target>
 
   <Target Name="MergeClangProfileData" BeforeTargets="PrepareForBuild"
