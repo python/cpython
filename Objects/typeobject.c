@@ -9906,14 +9906,8 @@ SLOT1(slot_nb_inplace_remainder, __imod__, PyObject *)
 static PyObject *
 slot_nb_inplace_power(PyObject *self, PyObject * arg1, PyObject *arg2)
 {
-    if (1||arg2 == Py_None) {
-        PyObject *stack[2] = {self, arg1};
-        return vectorcall_method(&_Py_ID(__ipow__), stack, 2);
-    }
-    else {
-        PyObject *stack[3] = {self, arg1, arg2};
-        return vectorcall_method(&_Py_ID(__ipow__), stack, 3);
-    }
+    PyObject *stack[2] = {self, arg1};
+    return vectorcall_method(&_Py_ID(__ipow__), stack, 2);
 }
 SLOT1(slot_nb_inplace_lshift, __ilshift__, PyObject *)
 SLOT1(slot_nb_inplace_rshift, __irshift__, PyObject *)
