@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from itertools import starmap
 from typing import TYPE_CHECKING
 
+from babel.lists import format_list
 from docutils import nodes
 from sphinx import addnodes
 from sphinx.locale import _ as sphinx_gettext
@@ -68,14 +70,15 @@ class Availability(SphinxDirective):
             refwarn=True,
         )
         sep = nodes.Text(": ")
-        parsed, msgs = self.state.inline_text(self.arguments[0], self.lineno)
+        platforms = self.parse_platforms()
+        platforms_text = f"{format_list(list(starmap(_format_platform, platforms.items())), locale=self.config.language)}."
+        parsed, msgs = self.state.inline_text(platforms_text, self.lineno)
         pnode = nodes.paragraph(title, "", refnode, sep, *parsed, *msgs)
         self.set_source_info(pnode)
         cnode = nodes.container("", pnode, classes=["availability"])
         self.set_source_info(cnode)
         if self.content:
             self.state.nested_parse(self.content, self.content_offset, cnode)
-        self.parse_platforms()
 
         return [cnode]
 
@@ -114,6 +117,14 @@ class Availability(SphinxDirective):
             )
 
         return platforms
+
+
+def _format_platform(platform: str, version: str | bool) -> str:
+    if version is True:
+        return platform
+    if not version:
+        return sphinx_gettext("not {platform}").format(platform=platform)
+    return f"{platform} ≥ {version}"
 
 
 def setup(app: Sphinx) -> ExtensionMetadata:
