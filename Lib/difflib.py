@@ -1038,7 +1038,7 @@ class Differ:
 # remaining is that perhaps it was really the case that " volatile"
 # was inserted after "private".  I can live with that <wink>.
 
-def IS_LINE_JUNK(line):
+def IS_LINE_JUNK(line, pat=None):
     r"""
     Return True for ignorable line: iff `line` is blank or contains a single '#'.
 
