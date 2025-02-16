@@ -1741,6 +1741,7 @@ unary_not(PyObject *v)
 static PyObject *
 eval_const_unaryop(PyObject *operand, int op, bool unarypos)
 {
+    assert(operand != NULL);
     if (unarypos) {
         return PyNumber_Positive(operand);
     }
@@ -1846,6 +1847,7 @@ optimize_unary_not_non_const(basicblock *bb, int i, int nextop)
         }
         return true;
     }
+    /* single UNARY_NOT doesn't need TO_BOOL conversion */
     remove_to_bool_sequence(bb, i+1);
     return optimize_unary_not_is_contains(bb, i, nextop);
 }
