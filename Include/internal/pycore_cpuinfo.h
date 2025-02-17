@@ -107,14 +107,11 @@ def get_member_mask(bit):
     val = format(1 << bit, '008x')
     return f'= 0x{val},'
 
-# BUG(picnixz): Clinic does not like when commented lines have empty lines.
-#               so we use '::' for now to indicate an empty line.
-# ::
 # The enumeration is rendered as follows:
-# ::
+#
 #   <INDENT><MEMBER_NAME> <TAB>= 0x<MASK>, <TAB>// bit = BIT
 #   ^       ^             ^    ^   ^       ^    ^
-# ::
+#
 # where ^ indicates a column that is a multiple of 4, <MASK> has
 # exactly 8 characters and <BIT> has at most 2 characters.
 
@@ -189,7 +186,7 @@ for group, values in data.items():
     Py_CPUID_MASK_EDX_L7S1_AVX_VNNI_INT8        = 0x00000010,   // bit = 4
     Py_CPUID_MASK_EDX_L7S1_AVX_NE_CONVERT       = 0x00000020,   // bit = 5
     Py_CPUID_MASK_EDX_L7S1_AVX_VNNI_INT16       = 0x00000400,   // bit = 10
-/*[python end generated code: output=e53c5376296af250 input=46c9e43c1f6f5cf9]*/
+/*[python end generated code: output=e53c5376296af250 input=4102387db46d5787]*/
 } py_cpuid_feature_mask;
 // fmt: on
 
