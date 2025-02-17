@@ -567,62 +567,6 @@ fold_tuple(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
     return make_const(node, newval, arena);
 }
 
-/* Change literal list or set of constants into constant
-   tuple or frozenset respectively.  Change literal list of
-   non-constants into tuple.
-   Used for right operand of "in" and "not in" tests and for iterable
-   in "for" loop and comprehensions.
-*/
-static int
-fold_iter(expr_ty arg, PyArena *arena, _PyASTOptimizeState *state)
-{
-    PyObject *newval;
-    if (arg->kind == List_kind) {
-        /* First change a list into tuple. */
-        asdl_expr_seq *elts = arg->v.List.elts;
-        if (has_starred(elts)) {
-            return 1;
-        }
-        expr_context_ty ctx = arg->v.List.ctx;
-        arg->kind = Tuple_kind;
-        arg->v.Tuple.elts = elts;
-        arg->v.Tuple.ctx = ctx;
-        /* Try to create a constant tuple. */
-        newval = make_const_tuple(elts);
-    }
-    else if (arg->kind == Set_kind) {
-        newval = make_const_tuple(arg->v.Set.elts);
-        if (newval) {
-            Py_SETREF(newval, PyFrozenSet_New(newval));
-        }
-    }
-    else {
-        return 1;
-    }
-    return make_const(arg, newval, arena);
-}
-
-static int
-fold_compare(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
-{
-    asdl_int_seq *ops;
-    asdl_expr_seq *args;
-    Py_ssize_t i;
-
-    ops = node->v.Compare.ops;
-    args = node->v.Compare.comparators;
-    /* Change literal list or set in 'in' or 'not in' into
-       tuple or frozenset respectively. */
-    i = asdl_seq_LEN(ops) - 1;
-    int op = asdl_seq_GET(ops, i);
-    if (op == In || op == NotIn) {
-        if (!fold_iter((expr_ty)asdl_seq_GET(args, i), arena, state)) {
-            return 0;
-        }
-    }
-    return 1;
-}
-
 static int astfold_mod(mod_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
@@ -783,7 +727,6 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Compare_kind:
         CALL(astfold_expr, expr_ty, node_->v.Compare.left);
         CALL_SEQ(astfold_expr, expr, node_->v.Compare.comparators);
-        CALL(fold_compare, expr_ty, node_);
         break;
     case Call_kind:
         CALL(astfold_expr, expr_ty, node_->v.Call.func);
@@ -852,8 +795,6 @@ astfold_comprehension(comprehension_ty node_, PyArena *ctx_, _PyASTOptimizeState
     CALL(astfold_expr, expr_ty, node_->target);
     CALL(astfold_expr, expr_ty, node_->iter);
     CALL_SEQ(astfold_expr, expr, node_->ifs);
-
-    CALL(fold_iter, expr_ty, node_->iter);
     return 1;
 }
 
@@ -940,8 +881,6 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL(astfold_expr, expr_ty, node_->v.For.iter);
         CALL_SEQ(astfold_stmt, stmt, node_->v.For.body);
         CALL_SEQ(astfold_stmt, stmt, node_->v.For.orelse);
-
-        CALL(fold_iter, expr_ty, node_->v.For.iter);
         break;
     case AsyncFor_kind:
         CALL(astfold_expr, expr_ty, node_->v.AsyncFor.target);
