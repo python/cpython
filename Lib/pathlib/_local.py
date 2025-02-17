@@ -19,7 +19,7 @@ try:
 except ImportError:
     grp = None
 
-from pathlib._os import LocalCopyReader, LocalCopyWriter, PathInfo, DirEntryInfo
+from pathlib._os import LocalCopyWriter, PathInfo, DirEntryInfo, ensure_different_files
 
 
 __all__ = [
@@ -1083,7 +1083,6 @@ class Path(PurePath):
             target = self.with_segments(target)
         return target
 
-    _copy_reader = property(LocalCopyReader)
     _copy_writer = property(LocalCopyWriter)
 
     def copy(self, target, follow_symlinks=True, dirs_exist_ok=False,
@@ -1127,7 +1126,7 @@ class Path(PurePath):
         except TypeError:
             pass
         else:
-            target._copy_writer._ensure_different_file(self)
+            ensure_different_files(self, target)
             try:
                 return self.replace(target)
             except OSError as err:
