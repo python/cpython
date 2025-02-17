@@ -102,7 +102,7 @@ class _Target(typing.Generic[_S, _R]):
         raise NotImplementedError(type(self))
 
     def _handle_relocation(
-        self, base: int, relocation: _R, raw: bytes
+        self, base: int, relocation: _R, raw: bytes | bytearray
     ) -> _stencils.Hole:
         raise NotImplementedError(type(self))
 
@@ -275,7 +275,10 @@ class _COFF(
         return _stencils.symbol_to_value(name)
 
     def _handle_relocation(
-        self, base: int, relocation: _schema.COFFRelocation, raw: bytes
+        self,
+        base: int,
+        relocation: _schema.COFFRelocation,
+        raw: bytes | bytearray,
     ) -> _stencils.Hole:
         match relocation:
             case {
@@ -366,7 +369,10 @@ class _ELF(
             }, section_type
 
     def _handle_relocation(
-        self, base: int, relocation: _schema.ELFRelocation, raw: bytes
+        self,
+        base: int,
+        relocation: _schema.ELFRelocation,
+        raw: bytes | bytearray,
     ) -> _stencils.Hole:
         symbol: str | None
         match relocation:
@@ -442,7 +448,10 @@ class _MachO(
             stencil.holes.append(hole)
 
     def _handle_relocation(
-        self, base: int, relocation: _schema.MachORelocation, raw: bytes
+        self,
+        base: int,
+        relocation: _schema.MachORelocation,
+        raw: bytes | bytearray,
     ) -> _stencils.Hole:
         symbol: str | None
         match relocation:
