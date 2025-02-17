@@ -2410,25 +2410,6 @@ def test_DocFileSuite():
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=3 errors=0 failures=2>
 
-       Support for using a package's __loader__.get_data() is also
-       provided.
-
-         >>> import unittest, pkgutil, test
-         >>> added_loader = False
-         >>> if not hasattr(test, '__loader__'):
-         ...     test.__loader__ = pkgutil.get_loader(test)
-         ...     added_loader = True
-         >>> try:
-         ...     suite = doctest.DocFileSuite('test_doctest.txt',
-         ...                                  'test_doctest2.txt',
-         ...                                  'test_doctest4.txt',
-         ...                                  package='test.test_doctest')
-         ...     suite.run(unittest.TestResult())
-         ... finally:
-         ...     if added_loader:
-         ...         del test.__loader__
-         <unittest.result.TestResult run=3 errors=0 failures=2>
-
        '/' should be used as a path separator.  It will be converted
        to a native separator at run time:
 
@@ -2879,7 +2860,7 @@ Test the verbose output:
     >>> _colorize.COLORIZE = save_colorize
 """
 
-class TestImporter(importlib.abc.MetaPathFinder, importlib.abc.ResourceLoader):
+class TestImporter(importlib.abc.MetaPathFinder):
 
     def find_spec(self, fullname, path, target=None):
         return importlib.util.spec_from_file_location(fullname, path, loader=self)
@@ -2887,6 +2868,12 @@ class TestImporter(importlib.abc.MetaPathFinder, importlib.abc.ResourceLoader):
     def get_data(self, path):
         with open(path, mode='rb') as f:
             return f.read()
+
+    def exec_module(self, module):
+        raise ImportError
+
+    def create_module(self, spec):
+        return None
 
 class TestHook:
 

@@ -144,6 +144,17 @@ Classes
 
       The exact values of these strings may change in future versions of Python.
 
+   .. attribute:: VALUE_WITH_FAKE_GLOBALS
+      :value: 4
+
+      Special value used to signal that an annotate function is being
+      evaluated in a special environment with fake globals. When passed this
+      value, annotate functions should either return the same value as for
+      the :attr:`Format.VALUE` format, or raise :exc:`NotImplementedError`
+      to signal that they do not support execution in this environment.
+      This format is only used internally and should not be passed to
+      the functions in this module.
+
    .. versionadded:: 3.14
 
 .. class:: ForwardRef

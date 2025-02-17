@@ -196,6 +196,7 @@ iteration of the loop::
     Found an odd number 9
 
 .. _tut-for-else:
+.. _break-and-continue-statements-and-else-clauses-on-loops:
 
 :keyword:`!else` Clauses on Loops
 =================================

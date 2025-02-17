@@ -192,6 +192,10 @@ top-level directory where Python was built. On Windows,
 executing :program:`rt.bat` from your :file:`PCbuild` directory will run all
 regression tests.
 
+.. versionadded:: 3.14
+   Output is colorized by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
+
 
 :mod:`test.support` --- Utilities for the Python test suite
 ===========================================================
@@ -787,6 +791,11 @@ The :mod:`test.support` module defines the following functions:
 
    Decorator for invoking :func:`check_impl_detail` on *guards*.  If that
    returns ``False``, then uses *msg* as the reason for skipping the test.
+
+.. decorator:: thread_unsafe(reason=None)
+
+   Decorator for marking tests as thread-unsafe.  This test always runs in one
+   thread even when invoked with ``--parallel-threads``.
 
 
 .. decorator:: no_tracing

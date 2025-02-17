@@ -301,12 +301,21 @@ PyErr_SetString(PyObject *exception, const char *string)
     _PyErr_SetString(tstate, exception, string);
 }
 
+void
+_PyErr_SetLocaleString(PyObject *exception, const char *string)
+{
+    PyObject *value = PyUnicode_DecodeLocale(string, "surrogateescape");
+    if (value != NULL) {
+        PyErr_SetObject(exception, value);
+        Py_DECREF(value);
+    }
+}
 
 PyObject* _Py_HOT_FUNCTION
 PyErr_Occurred(void)
 {
-    /* The caller must hold the GIL. */
-    assert(PyGILState_Check());
+    /* The caller must hold a thread state. */
+    _Py_AssertHoldsTstate();
 
     PyThreadState *tstate = _PyThreadState_GET();
     return _PyErr_Occurred(tstate);
@@ -1624,7 +1633,7 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
     PyObject *hook_args = make_unraisable_hook_args(
         tstate, exc_type, exc_value, exc_tb, err_msg, obj);
     if (hook_args == NULL) {
-        err_msg_str = ("Exception ignored on building "
+        err_msg_str = ("Exception ignored while building "
                        "sys.unraisablehook arguments");
         goto error;
     }
@@ -1972,7 +1981,7 @@ _PyErr_ProgramDecodedTextObject(PyObject *filename, int lineno, const char* enco
         return NULL;
     }
 
-    FILE *fp = _Py_fopen_obj(filename, "r" PY_STDIOTEXTMODE);
+    FILE *fp = Py_fopen(filename, "r" PY_STDIOTEXTMODE);
     if (fp == NULL) {
         PyErr_Clear();
         return NULL;

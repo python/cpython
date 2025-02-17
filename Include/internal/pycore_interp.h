@@ -16,7 +16,7 @@ extern "C" {
 #include "pycore_code.h"          // struct callable_cache
 #include "pycore_codecs.h"        // struct codecs_state
 #include "pycore_context.h"       // struct _Py_context_state
-#include "pycore_crossinterp.h"   // struct _xidregistry
+#include "pycore_crossinterp.h"   // _PyXI_state_t
 #include "pycore_dict_state.h"    // struct _Py_dict_state
 #include "pycore_dtoa.h"          // struct _dtoa_state
 #include "pycore_exceptions.h"    // struct _Py_exc_state
@@ -26,13 +26,15 @@ extern "C" {
 #include "pycore_genobject.h"     // _PyGen_FetchStopIterationValue
 #include "pycore_global_objects.h"// struct _Py_interp_cached_objects
 #include "pycore_import.h"        // struct _import_state
+#include "pycore_index_pool.h"     // _PyIndexPool
 #include "pycore_instruments.h"   // _PY_MONITORING_EVENTS
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_mimalloc.h"      // struct _mimalloc_interp_state
 #include "pycore_object_state.h"  // struct _py_object_state
-#include "pycore_optimizer.h"     // _PyOptimizerObject
+#include "pycore_optimizer.h"     // _PyExecutorObject
 #include "pycore_obmalloc.h"      // struct _obmalloc_state
 #include "pycore_qsbr.h"          // struct _qsbr_state
+#include "pycore_stackref.h"      // Py_STACKREF_DEBUG
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_tuple.h"         // struct _Py_tuple_state
 #include "pycore_uniqueid.h"      // struct _Py_unique_id_pool
@@ -129,6 +131,7 @@ struct _is {
         uint64_t next_unique_id;
         /* The linked list of threads, newest first. */
         PyThreadState *head;
+        _PyThreadStateImpl *preallocated;
         /* The thread currently executing in the __main__ module, if any. */
         PyThreadState *main;
         /* Used in Modules/_threadmodule.c. */
@@ -204,7 +207,7 @@ struct _is {
     freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
 
     /* cross-interpreter data and utils */
-    struct _xi_state xi;
+    _PyXI_state_t xi;
 
 #ifdef HAVE_FORK
     PyObject *before_forkers;
@@ -222,7 +225,15 @@ struct _is {
     struct _brc_state brc;  // biased reference counting state
     struct _Py_unique_id_pool unique_ids;  // object ids for per-thread refcounts
     PyMutex weakref_locks[NUM_WEAKREF_LIST_LOCKS];
+    _PyIndexPool tlbc_indices;
 #endif
+    // Per-interpreter list of tasks, any lingering tasks from thread
+    // states gets added here and removed from the corresponding
+    // thread state's list.
+    struct llist_node asyncio_tasks_head;
+    // `asyncio_tasks_lock` is used when tasks are moved
+    // from thread's list to interpreter's list.
+    PyMutex asyncio_tasks_lock;
 
     // Per-interpreter state for the obmalloc allocator.  For the main
     // interpreter and for all interpreters that don't have their
@@ -258,7 +269,7 @@ struct _is {
     struct ast_state ast;
     struct types_state types;
     struct callable_cache callable_cache;
-    _PyOptimizerObject *optimizer;
+    bool jit;
     _PyExecutorObject *executor_list_head;
     size_t trace_run_counter;
     _rare_events rare_events;
@@ -276,9 +287,17 @@ struct _is {
     struct _Py_interp_cached_objects cached_objects;
     struct _Py_interp_static_objects static_objects;
 
+    Py_ssize_t _interactive_src_count;
+
     /* the initial PyInterpreterState.threads.head */
     _PyThreadStateImpl _initial_thread;
-    Py_ssize_t _interactive_src_count;
+    // _initial_thread should be the last field of PyInterpreterState.
+    // See https://github.com/python/cpython/issues/127117.
+
+#if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
+    uint64_t next_stackref;
+    _Py_hashtable_t *stackref_debug_table;
+#endif
 };
 
 
@@ -328,43 +347,6 @@ extern void _PyInterpreterState_SetWhence(
     long whence);
 
 extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp);
-
-// Get a copy of the current interpreter configuration.
-//
-// Return 0 on success. Raise an exception and return -1 on error.
-//
-// The caller must initialize 'config', using PyConfig_InitPythonConfig()
-// for example.
-//
-// Python must be preinitialized to call this method.
-// The caller must hold the GIL.
-//
-// Once done with the configuration, PyConfig_Clear() must be called to clear
-// it.
-//
-// Export for '_testinternalcapi' shared extension.
-PyAPI_FUNC(int) _PyInterpreterState_GetConfigCopy(
-    struct PyConfig *config);
-
-// Set the configuration of the current interpreter.
-//
-// This function should be called during or just after the Python
-// initialization.
-//
-// Update the sys module with the new configuration. If the sys module was
-// modified directly after the Python initialization, these changes are lost.
-//
-// Some configuration like faulthandler or warnoptions can be updated in the
-// configuration, but don't reconfigure Python (don't enable/disable
-// faulthandler and don't reconfigure warnings filters).
-//
-// Return 0 on success. Raise an exception and return -1 on error.
-//
-// The configuration should come from _PyInterpreterState_GetConfigCopy().
-//
-// Export for '_testinternalcapi' shared extension.
-PyAPI_FUNC(int) _PyInterpreterState_SetConfig(
-    const struct PyConfig *config);
 
 
 /*

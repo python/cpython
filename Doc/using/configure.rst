@@ -29,7 +29,7 @@ Features and minimum versions required to build CPython:
 
 * Tcl/Tk 8.5.12 for the :mod:`tkinter` module.
 
-* Autoconf 2.71 and aclocal 1.16.5 are required to regenerate the
+* Autoconf 2.72 and aclocal 1.16.5 are required to regenerate the
   :file:`configure` script.
 
 .. versionchanged:: 3.1
@@ -57,6 +57,9 @@ Features and minimum versions required to build CPython:
 
 .. versionchanged:: 3.13
    Autoconf 2.71, aclocal 1.16.5 and SQLite 3.15.2 are now required.
+
+.. versionchanged:: 3.14
+   Autoconf 2.72 is now required.
 
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
@@ -297,6 +300,23 @@ General Options
 
    .. versionadded:: 3.13
 
+.. option:: --enable-experimental-jit=[no|yes|yes-off|interpreter]
+
+   Indicate how to integrate the :ref:`JIT compiler <whatsnew313-jit-compiler>`.
+
+   * ``no`` - build the interpreter without the JIT.
+   * ``yes`` - build the interpreter with the JIT.
+   * ``yes-off`` - build the interpreter with the JIT but disable it by default.
+   * ``interpreter`` - build the interpreter without the JIT, but with the tier 2 enabled interpreter.
+
+   By convention, ``--enable-experimental-jit`` is a shorthand for ``--enable-experimental-jit=yes``.
+
+   .. note::
+
+      When building CPython with JIT enabled, ensure that your system has Python 3.11 or later installed.
+
+   .. versionadded:: 3.13
+
 .. option:: PKG_CONFIG
 
    Path to ``pkg-config`` utility.
@@ -440,15 +460,6 @@ Options for third-party dependencies
 
 WebAssembly Options
 -------------------
-
-.. option:: --with-emscripten-target=[browser|node]
-
-   Set build flavor for ``wasm32-emscripten``.
-
-   * ``browser`` (default): preload minimal stdlib, default MEMFS.
-   * ``node``: NODERAWFS and pthread support.
-
-   .. versionadded:: 3.11
 
 .. option:: --enable-wasm-dynamic-linking
 
@@ -606,6 +617,16 @@ also be used to improve performance.
 
    Enable computed gotos in evaluation loop (enabled by default on supported
    compilers).
+
+.. option:: --with-tail-call-interp
+
+   Enable interpreters using tail calls in CPython. If enabled, enabling PGO
+   (:option:`--enable-optimizations`) is highly recommended. This option specifically
+   requires a C compiler with proper tail call support, and the
+   `preserve_none <https://clang.llvm.org/docs/AttributeReference.html#preserve-none>`_
+   calling convention. For example, Clang 19 and newer supports this feature.
+
+   .. versionadded:: 3.14
 
 .. option:: --without-mimalloc
 
@@ -1084,7 +1105,8 @@ CPython project) this is usually the ``all`` target. The
 all`` will build. The three choices are:
 
 * ``profile-opt`` (configured with ``--enable-optimizations``)
-* ``build_wasm`` (configured with ``--with-emscripten-target``)
+* ``build_wasm`` (chosen if the host platform matches ``wasm32-wasi*`` or
+  ``wasm32-emscripten``)
 * ``build_all`` (configured without explicitly using either of the others)
 
 Depending on the most recent source file changes, Make will rebuild
@@ -1142,11 +1164,19 @@ make test
 ^^^^^^^^^
 
 Build the ``all`` target and run the Python test suite with the
-``--fast-ci`` option. Variables:
+``--fast-ci`` option without GUI tests. Variables:
 
 * ``TESTOPTS``: additional regrtest command-line options.
 * ``TESTPYTHONOPTS``: additional Python command-line options.
 * ``TESTTIMEOUT``: timeout in seconds (default: 10 minutes).
+
+
+make ci
+^^^^^^^
+
+This is similar to ``make test``, but uses the ``-ugui`` to also run GUI tests.
+
+.. versionadded:: 3.14
 
 
 make buildbottest

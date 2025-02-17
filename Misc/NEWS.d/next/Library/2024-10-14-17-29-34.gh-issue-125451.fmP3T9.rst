@@ -1,2 +1,0 @@
-Fix deadlock when :class:`concurrent.futures.ProcessPoolExecutor` shuts down
-concurrently with an error when feeding a job to a worker process.

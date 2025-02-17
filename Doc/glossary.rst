@@ -115,7 +115,7 @@ Glossary
       :keyword:`yield` expression.
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
-      location execution state (including local variables and pending
+      execution state (including local variables and pending
       try-statements).  When the *asynchronous generator iterator* effectively
       resumes with another awaitable returned by :meth:`~object.__anext__`, it
       picks up where it left off.  See :pep:`492` and :pep:`525`.
@@ -564,7 +564,7 @@ Glossary
       An object created by a :term:`generator` function.
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
-      location execution state (including local variables and pending
+      execution state (including local variables and pending
       try-statements).  When the *generator iterator* resumes, it picks up where
       it left off (in contrast to functions which start fresh on every
       invocation).
@@ -657,6 +657,9 @@ Glossary
       If an object is immortal, its :term:`reference count` is never modified,
       and therefore it is never deallocated while the interpreter is running.
       For example, :const:`True` and :const:`None` are immortal in CPython.
+
+      Immortal objects can be identified via :func:`sys._is_immortal`, or
+      via :c:func:`PyUnstable_IsImmortal` in the C API.
 
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
@@ -811,9 +814,11 @@ Glossary
       processed.
 
    loader
-      An object that loads a module. It must define a method named
-      :meth:`load_module`. A loader is typically returned by a
-      :term:`finder`. See also:
+      An object that loads a module.
+      It must define the :meth:`!exec_module` and :meth:`!create_module` methods
+      to implement the :class:`~importlib.abc.Loader` interface.
+      A loader is typically returned by a :term:`finder`.
+      See also:
 
       * :ref:`finders-and-loaders`
       * :class:`importlib.abc.Loader`
@@ -934,10 +939,15 @@ Glossary
       modules, respectively.
 
    namespace package
-      A :pep:`420` :term:`package` which serves only as a container for
-      subpackages.  Namespace packages may have no physical representation,
+      A :term:`package` which serves only as a container for subpackages.
+      Namespace packages may have no physical representation,
       and specifically are not like a :term:`regular package` because they
       have no ``__init__.py`` file.
+
+      Namespace packages allow several individually installable packages to have a common parent package.
+      Otherwise, it is recommended to use a :term:`regular package`.
+
+      For more information, see :pep:`420` and :ref:`reference-namespace-package`.
 
       See also :term:`module`.
 

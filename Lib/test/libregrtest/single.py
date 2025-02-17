@@ -7,6 +7,7 @@ import time
 import traceback
 import unittest
 
+from _colorize import get_colors  # type: ignore[import-not-found]
 from test import support
 from test.support import threading_helper
 
@@ -16,6 +17,7 @@ from .runtests import RunTests
 from .save_env import saved_test_environment
 from .setup import setup_tests
 from .testresult import get_test_runner
+from .parallel_case import ParallelTestCase
 from .utils import (
     TestName,
     clear_caches, remove_testfn, abs_module_name, print_warning)
@@ -26,14 +28,17 @@ from .utils import (
 PROGRESS_MIN_TIME = 30.0   # seconds
 
 
-def run_unittest(test_mod):
+def run_unittest(test_mod, runtests: RunTests):
     loader = unittest.TestLoader()
     tests = loader.loadTestsFromModule(test_mod)
+
     for error in loader.errors:
         print(error, file=sys.stderr)
     if loader.errors:
         raise Exception("errors while loading tests")
     _filter_suite(tests, match_test)
+    if runtests.parallel_threads:
+        _parallelize_tests(tests, runtests.parallel_threads)
     return _run_suite(tests)
 
 def _filter_suite(suite, pred):
@@ -46,6 +51,28 @@ def _filter_suite(suite, pred):
         else:
             if pred(test):
                 newtests.append(test)
+    suite._tests = newtests
+
+def _parallelize_tests(suite, parallel_threads: int):
+    def is_thread_unsafe(test):
+        test_method = getattr(test, test._testMethodName)
+        instance = test_method.__self__
+        return (getattr(test_method, "__unittest_thread_unsafe__", False) or
+                getattr(instance, "__unittest_thread_unsafe__", False))
+
+    newtests: list[object] = []
+    for test in suite._tests:
+        if isinstance(test, unittest.TestSuite):
+            _parallelize_tests(test, parallel_threads)
+            newtests.append(test)
+            continue
+
+        if is_thread_unsafe(test):
+            # Don't parallelize thread-unsafe tests
+            newtests.append(test)
+            continue
+
+        newtests.append(ParallelTestCase(test, parallel_threads))
     suite._tests = newtests
 
 def _run_suite(suite):
@@ -132,7 +159,7 @@ def _load_run_test(result: TestResult, runtests: RunTests) -> None:
         raise Exception(f"Module {test_name} defines test_main() which "
                         f"is no longer supported by regrtest")
     def test_func():
-        return run_unittest(test_mod)
+        return run_unittest(test_mod, runtests)
 
     try:
         regrtest_runner(result, test_func, runtests)
@@ -161,6 +188,8 @@ def _load_run_test(result: TestResult, runtests: RunTests) -> None:
 def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
                              display_failure: bool = True) -> None:
     # Handle exceptions, detect environment changes.
+    stdout = get_colors(file=sys.stdout)
+    stderr = get_colors(file=sys.stderr)
 
     # Reset the environment_altered flag to detect if a test altered
     # the environment
@@ -181,18 +210,24 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
             _load_run_test(result, runtests)
     except support.ResourceDenied as exc:
         if not quiet and not pgo:
-            print(f"{test_name} skipped -- {exc}", flush=True)
+            print(
+                f"{stdout.YELLOW}{test_name} skipped -- {exc}{stdout.RESET}",
+                flush=True,
+            )
         result.state = State.RESOURCE_DENIED
         return
     except unittest.SkipTest as exc:
         if not quiet and not pgo:
-            print(f"{test_name} skipped -- {exc}", flush=True)
+            print(
+                f"{stdout.YELLOW}{test_name} skipped -- {exc}{stdout.RESET}",
+                flush=True,
+            )
         result.state = State.SKIPPED
         return
     except support.TestFailedWithDetails as exc:
-        msg = f"test {test_name} failed"
+        msg = f"{stderr.RED}test {test_name} failed{stderr.RESET}"
         if display_failure:
-            msg = f"{msg} -- {exc}"
+            msg = f"{stderr.RED}{msg} -- {exc}{stderr.RESET}"
         print(msg, file=sys.stderr, flush=True)
         result.state = State.FAILED
         result.errors = exc.errors
@@ -200,9 +235,9 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
         result.stats = exc.stats
         return
     except support.TestFailed as exc:
-        msg = f"test {test_name} failed"
+        msg = f"{stderr.RED}test {test_name} failed{stderr.RESET}"
         if display_failure:
-            msg = f"{msg} -- {exc}"
+            msg = f"{stderr.RED}{msg} -- {exc}{stderr.RESET}"
         print(msg, file=sys.stderr, flush=True)
         result.state = State.FAILED
         result.stats = exc.stats
@@ -217,8 +252,11 @@ def _runtest_env_changed_exc(result: TestResult, runtests: RunTests,
     except:
         if not pgo:
             msg = traceback.format_exc()
-            print(f"test {test_name} crashed -- {msg}",
-                  file=sys.stderr, flush=True)
+            print(
+                f"{stderr.RED}test {test_name} crashed -- {msg}{stderr.RESET}",
+                file=sys.stderr,
+                flush=True,
+            )
         result.state = State.UNCAUGHT_EXC
         return
 
@@ -300,6 +338,9 @@ def run_single_test(test_name: TestName, runtests: RunTests) -> TestResult:
     If runtests.use_junit, xml_data is a list containing each generated
     testsuite element.
     """
+    ansi = get_colors(file=sys.stderr)
+    red, reset, yellow = ansi.BOLD_RED, ansi.RESET, ansi.YELLOW
+
     start_time = time.perf_counter()
     result = TestResult(test_name)
     pgo = runtests.pgo
@@ -308,7 +349,7 @@ def run_single_test(test_name: TestName, runtests: RunTests) -> TestResult:
     except:
         if not pgo:
             msg = traceback.format_exc()
-            print(f"test {test_name} crashed -- {msg}",
+            print(f"{red}test {test_name} crashed -- {msg}{reset}",
                   file=sys.stderr, flush=True)
         result.state = State.UNCAUGHT_EXC
 

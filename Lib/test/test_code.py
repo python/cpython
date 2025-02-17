@@ -17,7 +17,7 @@ cellvars: ('x',)
 freevars: ()
 nlocals: 2
 flags: 3
-consts: ('None', '<code object g>')
+consts: ('<code object g>',)
 
 >>> dump(f(4).__code__)
 name: g
@@ -86,7 +86,7 @@ varnames: ()
 cellvars: ()
 freevars: ()
 nlocals: 0
-flags: 3
+flags: 67108867
 consts: ("'doc string'", 'None')
 
 >>> def keywordonly_args(a,b,*,k1):
@@ -123,6 +123,75 @@ nlocals: 3
 flags: 3
 consts: ('None',)
 
+>>> def has_docstring(x: str):
+...     'This is a one-line doc string'
+...     x += x
+...     x += "hello world"
+...     # co_flags should be 0x4000003 = 67108867
+...     return x
+
+>>> dump(has_docstring.__code__)
+name: has_docstring
+argcount: 1
+posonlyargcount: 0
+kwonlyargcount: 0
+names: ()
+varnames: ('x',)
+cellvars: ()
+freevars: ()
+nlocals: 1
+flags: 67108867
+consts: ("'This is a one-line doc string'", "'hello world'")
+
+>>> async def async_func_docstring(x: str, y: str):
+...     "This is a docstring from async function"
+...     import asyncio
+...     await asyncio.sleep(1)
+...     # co_flags should be 0x4000083 = 67108995
+...     return x + y
+
+>>> dump(async_func_docstring.__code__)
+name: async_func_docstring
+argcount: 2
+posonlyargcount: 0
+kwonlyargcount: 0
+names: ('asyncio', 'sleep')
+varnames: ('x', 'y', 'asyncio')
+cellvars: ()
+freevars: ()
+nlocals: 3
+flags: 67108995
+consts: ("'This is a docstring from async function'", 'None')
+
+>>> def no_docstring(x, y, z):
+...     return x + "hello" + y + z + "world"
+
+>>> dump(no_docstring.__code__)
+name: no_docstring
+argcount: 3
+posonlyargcount: 0
+kwonlyargcount: 0
+names: ()
+varnames: ('x', 'y', 'z')
+cellvars: ()
+freevars: ()
+nlocals: 3
+flags: 3
+consts: ("'hello'", "'world'")
+
+>>> class class_with_docstring:
+...     '''This is a docstring for class'''
+...     '''This line is not docstring'''
+...     pass
+
+>>> print(class_with_docstring.__doc__)
+This is a docstring for class
+
+>>> class class_without_docstring:
+...     pass
+
+>>> print(class_without_docstring.__doc__)
+None
 """
 
 import copy
@@ -146,6 +215,8 @@ from test.support.script_helper import assert_python_ok
 from test.support import threading_helper, import_helper
 from test.support.bytecode_helper import instructions_with_positions
 from opcode import opmap, opname
+from _testcapi import code_offset_to_line
+
 COPY_FREE_VARS = opmap['COPY_FREE_VARS']
 
 
@@ -254,10 +325,11 @@ class CodeTest(unittest.TestCase):
             return x
         code = func.__code__
 
-        # different co_name, co_varnames, co_consts
+        # Different co_name, co_varnames, co_consts.
+        # Must have the same number of constants and
+        # variables or we get crashes.
         def func2():
             y = 2
-            z = 3
             return y
         code2 = func2.__code__
 
@@ -357,14 +429,14 @@ class CodeTest(unittest.TestCase):
         def foo():
             pass
 
-        # assert that opcode 229 is invalid
-        self.assertEqual(opname[229], '<229>')
+        # assert that opcode 135 is invalid
+        self.assertEqual(opname[135], '<135>')
 
-        # change first opcode to 0xeb (=229)
+        # change first opcode to 0x87 (=135)
         foo.__code__ = foo.__code__.replace(
-            co_code=b'\xe5' + foo.__code__.co_code[1:])
+            co_code=b'\x87' + foo.__code__.co_code[1:])
 
-        msg = "unknown opcode 229"
+        msg = "unknown opcode 135"
         with self.assertRaisesRegex(SystemError, msg):
             foo()
 
@@ -798,6 +870,71 @@ class CodeLocationTest(unittest.TestCase):
             3 * [(42, 42, None, None)],
         )
 
+    @cpython_only
+    def test_docstring_under_o2(self):
+        code = textwrap.dedent('''
+            def has_docstring(x, y):
+                """This is a first-line doc string"""
+                """This is a second-line doc string"""
+                a = x + y
+                b = x - y
+                return a, b
+
+
+            def no_docstring(x):
+                def g(y):
+                    return x + y
+                return g
+
+
+            async def async_func():
+                """asynf function doc string"""
+                pass
+
+
+            for func in [has_docstring, no_docstring(4), async_func]:
+                assert(func.__doc__ is None)
+            ''')
+
+        rc, out, err = assert_python_ok('-OO', '-c', code)
+
+    def test_co_branches(self):
+
+        def get_line_branches(func):
+            code = func.__code__
+            base = code.co_firstlineno
+            return [
+                (
+                    code_offset_to_line(code, src) - base,
+                    code_offset_to_line(code, left) - base,
+                    code_offset_to_line(code, right) - base
+                ) for (src, left, right) in
+                code.co_branches()
+            ]
+
+        def simple(x):
+            if x:
+                A
+            else:
+                B
+
+        self.assertEqual(
+            get_line_branches(simple),
+            [(1,2,4)])
+
+        def with_extended_args(x):
+            if x:
+                A.x; A.x; A.x; A.x; A.x; A.x;
+                A.x; A.x; A.x; A.x; A.x; A.x;
+                A.x; A.x; A.x; A.x; A.x; A.x;
+                A.x; A.x; A.x; A.x; A.x; A.x;
+                A.x; A.x; A.x; A.x; A.x; A.x;
+            else:
+                B
+
+        self.assertEqual(
+            get_line_branches(with_extended_args),
+            [(1,2,8)])
 
 if check_impl_detail(cpython=True) and ctypes is not None:
     py = ctypes.pythonapi

@@ -82,7 +82,7 @@ PyAPI_FUNC(PyObject *) _PyInterpreterState_GetIDObject(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_SetRunningMain(PyInterpreterState *);
 PyAPI_FUNC(void) _PyInterpreterState_SetNotRunningMain(PyInterpreterState *);
 PyAPI_FUNC(int) _PyInterpreterState_IsRunningMain(PyInterpreterState *);
-PyAPI_FUNC(int) _PyInterpreterState_FailIfRunningMain(PyInterpreterState *);
+PyAPI_FUNC(void) _PyErr_SetInterpreterAlreadyRunning(void);
 
 extern int _PyThreadState_IsRunningMain(PyThreadState *);
 extern void _PyInterpreterState_ReinitRunningMain(PyThreadState *);
@@ -141,6 +141,12 @@ _PyThreadState_GET(void)
 #endif
 }
 
+static inline int
+_PyThreadState_IsAttached(PyThreadState *tstate)
+{
+    return (_Py_atomic_load_int_relaxed(&tstate->state) == _Py_THREAD_ATTACHED);
+}
+
 // Attaches the current thread to the interpreter.
 //
 // This may block while acquiring the GIL (if the GIL is enabled) or while
@@ -176,18 +182,26 @@ extern void _PyEval_StartTheWorldAll(_PyRuntimeState *runtime);
 // Perform a stop-the-world pause for threads in the specified interpreter.
 //
 // NOTE: This is a no-op outside of Py_GIL_DISABLED builds.
-extern void _PyEval_StopTheWorld(PyInterpreterState *interp);
-extern void _PyEval_StartTheWorld(PyInterpreterState *interp);
+extern PyAPI_FUNC(void) _PyEval_StopTheWorld(PyInterpreterState *interp);
+extern PyAPI_FUNC(void) _PyEval_StartTheWorld(PyInterpreterState *interp);
 
 
 static inline void
 _Py_EnsureFuncTstateNotNULL(const char *func, PyThreadState *tstate)
 {
     if (tstate == NULL) {
+#ifndef Py_GIL_DISABLED
         _Py_FatalErrorFunc(func,
             "the function must be called with the GIL held, "
             "after Python initialization and before Python finalization, "
             "but the GIL is released (the current Python thread state is NULL)");
+#else
+        _Py_FatalErrorFunc(func,
+            "the function must be called with an active thread state, "
+            "after Python initialization and before Python finalization, "
+            "but it was called without an active thread state. "
+            "Are you trying to call the C API inside of a Py_BEGIN_ALLOW_THREADS block?");
+#endif
     }
 }
 
@@ -263,6 +277,15 @@ extern int _PyOS_InterruptOccurred(PyThreadState *tstate);
 #define HEAD_UNLOCK(runtime) \
     PyMutex_Unlock(&(runtime)->interpreters.mutex)
 
+#define _Py_FOR_EACH_TSTATE_UNLOCKED(interp, t) \
+    for (PyThreadState *t = interp->threads.head; t; t = t->next)
+#define _Py_FOR_EACH_TSTATE_BEGIN(interp, t) \
+    HEAD_LOCK(interp->runtime); \
+    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, t)
+#define _Py_FOR_EACH_TSTATE_END(interp) \
+    HEAD_UNLOCK(interp->runtime)
+
+
 // Get the configuration of the current interpreter.
 // The caller must hold the GIL.
 // Export for test_peg_generator.
@@ -276,6 +299,19 @@ PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 //
 // See also PyInterpreterState_Get() and _PyInterpreterState_GET().
 extern PyInterpreterState* _PyGILState_GetInterpreterStateUnsafe(void);
+
+#ifndef NDEBUG
+/* Modern equivalent of assert(PyGILState_Check()) */
+static inline void
+_Py_AssertHoldsTstateFunc(const char *func)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _Py_EnsureFuncTstateNotNULL(func, tstate);
+}
+#define _Py_AssertHoldsTstate() _Py_AssertHoldsTstateFunc(__func__)
+#else
+#define _Py_AssertHoldsTstate()
+#endif
 
 #ifdef __cplusplus
 }
