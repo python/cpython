@@ -1556,12 +1556,6 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
                        PyObject *digestmod)
 /*[clinic end generated code: output=c20d9e4d9ed6d219 input=5f4071dcc7f34362]*/
 {
-    PyTypeObject *type = get_hashlib_state(module)->HMACtype;
-    PY_EVP_MD *digest;
-    HMAC_CTX *ctx = NULL;
-    HMACobject *self = NULL;
-    int r;
-
     if (key->len > INT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "key is too long.");
@@ -1569,53 +1563,47 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
     }
 
     if (digestmod == NULL) {
-        PyErr_SetString(
-            PyExc_TypeError, "Missing required parameter 'digestmod'.");
+        PyErr_SetString(PyExc_TypeError,
+                        "Missing required parameter 'digestmod'.");
         return NULL;
     }
 
-    digest = py_digest_by_digestmod(module, digestmod, Py_ht_mac);
+    PY_EVP_MD *digest = py_digest_by_digestmod(module, digestmod, Py_ht_mac);
     if (digest == NULL) {
         return NULL;
     }
 
-    ctx = HMAC_CTX_new();
+    HMAC_CTX *ctx = HMAC_CTX_new();
     if (ctx == NULL) {
-        _setException(PyExc_ValueError, NULL);
-        goto error;
+        return PyErr_NoMemory();
     }
 
-    r = HMAC_Init_ex(
-        ctx,
-        (const char*)key->buf,
-        (int)key->len,
-        digest,
-        NULL /*impl*/);
+    int ok = HMAC_Init_ex(ctx, key->buf, (int)key->len, digest, NULL);
     PY_EVP_MD_free(digest);
-    if (r == 0) {
+    if (!ok) {
+        HMAC_CTX_free(ctx);
         _setException(PyExc_ValueError, NULL);
-        goto error;
+        return NULL;
     }
 
-    self = (HMACobject *)PyObject_New(HMACobject, type);
+    _hashlibstate *state = get_hashlib_state(module);
+    HMACobject *self = PyObject_New(HMACobject, state->HMACtype);
     if (self == NULL) {
-        goto error;
+        HMAC_CTX_free(ctx);
+        return NULL;
     }
 
     self->ctx = ctx;
     HASHLIB_INIT_MUTEX(self);
 
     if ((msg_obj != NULL) && (msg_obj != Py_None)) {
-        if (!_hmac_update(self, msg_obj))
-            goto error;
+        if (!_hmac_update(self, msg_obj)) {
+            Py_DECREF(self);  // this also frees the HMAC context
+            return NULL;
+        }
     }
 
-    return (PyObject*)self;
-
-error:
-    if (ctx) HMAC_CTX_free(ctx);
-    if (self) PyObject_Free(self);
-    return NULL;
+    return (PyObject *)self;
 }
 
 /* helper functions */
@@ -1681,14 +1669,14 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
 
     HMAC_CTX *ctx = HMAC_CTX_new();
     if (ctx == NULL) {
-        return _setException(PyExc_ValueError, NULL);
+        return PyErr_NoMemory();
     }
     if (!locked_HMAC_CTX_copy(ctx, self)) {
         HMAC_CTX_free(ctx);
         return _setException(PyExc_ValueError, NULL);
     }
 
-    retval = (HMACobject *)PyObject_New(HMACobject, Py_TYPE(self));
+    retval = PyObject_New(HMACobject, Py_TYPE(self));
     if (retval == NULL) {
         HMAC_CTX_free(ctx);
         return NULL;
@@ -1703,7 +1691,10 @@ static void
 _hmac_dealloc(HMACobject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    HMAC_CTX_free(self->ctx);
+    if (self->ctx != NULL) {
+        HMAC_CTX_free(self->ctx);
+        self->ctx = NULL;
+    }
     PyObject_Free(self);
     Py_DECREF(tp);
 }
@@ -1748,6 +1739,7 @@ _hmac_digest(HMACobject *self, unsigned char *buf, unsigned int len)
         return 0;
     }
     if (!locked_HMAC_CTX_copy(temp_ctx, self)) {
+        HMAC_CTX_free(temp_ctx);
         _setException(PyExc_ValueError, NULL);
         return 0;
     }
