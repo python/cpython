@@ -17,13 +17,13 @@ from pathlib import PurePath, Path
 from pathlib._os import magic_open, CopyWriter
 
 
-def _explode_path(path):
+def _explode_path(path, parser):
     """
     Split the path into a 2-tuple (anchor, parts), where *anchor* is the
     uppermost parent of the path (equivalent to path.parents[-1]), and
     *parts* is a reversed list of parts following the anchor.
     """
-    split = path.parser.split
+    split = parser.split
     path = str(path)
     parent, name = split(path)
     names = []
@@ -68,7 +68,7 @@ class JoinablePath(ABC):
     @property
     def anchor(self):
         """The concatenation of the drive and root, or ''."""
-        return _explode_path(self)[0]
+        return _explode_path(self, self.parser)[0]
 
     @property
     def name(self):
@@ -140,7 +140,7 @@ class JoinablePath(ABC):
     def parts(self):
         """An object providing sequence-like access to the
         components in the filesystem path."""
-        anchor, parts = _explode_path(self)
+        anchor, parts = _explode_path(self, self.parser)
         if anchor:
             parts.append(anchor)
         return tuple(reversed(parts))
@@ -192,12 +192,12 @@ class JoinablePath(ABC):
         Return True if this path matches the given glob-style pattern. The
         pattern is matched against the entire path.
         """
-        if not hasattr(pattern, 'with_segments'):
-            pattern = self.with_segments(pattern)
         if case_sensitive is None:
             case_sensitive = self.parser.normcase('Aa') == 'Aa'
-        globber = _PathGlobber(pattern.parser.sep, case_sensitive, recursive=True)
-        match = globber.compile(str(pattern))
+        sep = self.parser.sep
+        anchor, parts = _explode_path(pattern, self.parser)
+        globber = _PathGlobber(sep, case_sensitive, recursive=True)
+        match = globber.compile(anchor + sep.join(reversed(parts)))
         return match(str(self)) is not None
 
 
@@ -286,9 +286,7 @@ class ReadablePath(JoinablePath):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
-        if not hasattr(pattern, 'with_segments'):
-            pattern = self.with_segments(pattern)
-        anchor, parts = _explode_path(pattern)
+        anchor, parts = _explode_path(pattern, self.parser)
         if anchor:
             raise NotImplementedError("Non-relative patterns are unsupported")
         case_sensitive_default = self.parser.normcase('Aa') == 'Aa'
@@ -348,9 +346,6 @@ class ReadablePath(JoinablePath):
         """
         Recursively copy this file or directory tree to the given destination.
         """
-        if not hasattr(target, 'with_segments'):
-            target = self.with_segments(target)
-
         # Delegate to the target path's CopyWriter object.
         try:
             create = target._copy_writer._create
@@ -366,10 +361,8 @@ class ReadablePath(JoinablePath):
         name = self.name
         if not name:
             raise ValueError(f"{self!r} has an empty name")
-        elif hasattr(target_dir, 'with_segments'):
-            target = target_dir / name
         else:
-            target = self.with_segments(target_dir, name)
+            target = target_dir / name
         return self.copy(target, follow_symlinks=follow_symlinks,
                          dirs_exist_ok=dirs_exist_ok,
                          preserve_metadata=preserve_metadata)
