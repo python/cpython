@@ -5329,9 +5329,8 @@ dnl accelerators, parallelism, etc.) all support copy, lets not assume.
 
 AS_CASE([$ac_sys_system],
   [WASI], [
-            PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0] [
-              AC_DEFINE([HAVE_ZLIB_COPY], [1])
-            ])
+            ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+            ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
             BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
             BINASCII_LIBS=""
           ],
