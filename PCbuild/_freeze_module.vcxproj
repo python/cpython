@@ -92,6 +92,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -fno-lto</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
