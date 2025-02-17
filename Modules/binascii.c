@@ -1240,7 +1240,7 @@ binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
 }
 
 /*[clinic input]
-binascii.b2a_base85
+binascii._b2a_base85
 
     data: Py_buffer
     chars: Py_buffer
@@ -1259,9 +1259,10 @@ Utility method used by the base64 module to encode a85/b85 data
 [clinic start generated code]*/
 
 static PyObject *
-binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, Py_buffer *chars,
-                         int pad, int foldnuls, int foldspaces)
-/*[clinic end generated code: output=0a92b3c535580aa0 input=a2d8ae712ed5adba]*/
+binascii__b2a_base85_impl(PyObject *module, Py_buffer *data,
+                          Py_buffer *chars, int pad, int foldnuls,
+                          int foldspaces)
+/*[clinic end generated code: output=cefe84c300ad7314 input=3c8faf77b992dcc2]*/
 {
     if (chars->len != 85) {
         PyErr_SetString(PyExc_ValueError,
@@ -1336,7 +1337,7 @@ static struct PyMethodDef binascii_module_methods[] = {
     BINASCII_B2A_UU_METHODDEF
     BINASCII_A2B_BASE64_METHODDEF
     BINASCII_B2A_BASE64_METHODDEF
-    BINASCII_B2A_BASE85_METHODDEF
+    BINASCII__B2A_BASE85_METHODDEF
     BINASCII_A2B_HEX_METHODDEF
     BINASCII_B2A_HEX_METHODDEF
     BINASCII_HEXLIFY_METHODDEF

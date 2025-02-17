@@ -775,9 +775,9 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(binascii_b2a_base85__doc__,
-"b2a_base85($module, /, data, chars, pad=False, foldnuls=False,\n"
-"           foldspaces=False)\n"
+PyDoc_STRVAR(binascii__b2a_base85__doc__,
+"_b2a_base85($module, /, data, chars, pad=False, foldnuls=False,\n"
+"            foldspaces=False)\n"
 "--\n"
 "\n"
 "Utility method used by the base64 module to encode a85/b85 data\n"
@@ -788,15 +788,16 @@ PyDoc_STRVAR(binascii_b2a_base85__doc__,
 "    foldnuls: replace NULL chunks by \'z\'\n"
 "    foldspaces: replace space-only chucks by \'y\'");
 
-#define BINASCII_B2A_BASE85_METHODDEF    \
-    {"b2a_base85", _PyCFunction_CAST(binascii_b2a_base85), METH_FASTCALL|METH_KEYWORDS, binascii_b2a_base85__doc__},
+#define BINASCII__B2A_BASE85_METHODDEF    \
+    {"_b2a_base85", _PyCFunction_CAST(binascii__b2a_base85), METH_FASTCALL|METH_KEYWORDS, binascii__b2a_base85__doc__},
 
 static PyObject *
-binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, Py_buffer *chars,
-                         int pad, int foldnuls, int foldspaces);
+binascii__b2a_base85_impl(PyObject *module, Py_buffer *data,
+                          Py_buffer *chars, int pad, int foldnuls,
+                          int foldspaces);
 
 static PyObject *
-binascii_b2a_base85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+binascii__b2a_base85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -820,7 +821,7 @@ binascii_b2a_base85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     static const char * const _keywords[] = {"data", "chars", "pad", "foldnuls", "foldspaces", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "b2a_base85",
+        .fname = "_b2a_base85",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -869,7 +870,7 @@ binascii_b2a_base85(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
         goto exit;
     }
 skip_optional_pos:
-    return_value = binascii_b2a_base85_impl(module, &data, &chars, pad, foldnuls, foldspaces);
+    return_value = binascii__b2a_base85_impl(module, &data, &chars, pad, foldnuls, foldspaces);
 
 exit:
     /* Cleanup for data */
@@ -883,4 +884,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ae4488d2f300a0ff input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a1f5ae9968e8e52d input=a9049054013a1b77]*/

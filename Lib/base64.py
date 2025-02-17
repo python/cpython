@@ -302,8 +302,8 @@ def _85encode(b, chars, chars2, pad=False, foldnuls=False, foldspaces=False):
     if not isinstance(b, bytes_types):
         b = memoryview(b).tobytes()
 
-    return binascii.b2a_base85(b, chars=chars, pad=pad,
-                               foldnuls=foldnuls, foldspaces=foldspaces)
+    return binascii._b2a_base85(b, chars=chars, pad=pad,
+                                foldnuls=foldnuls, foldspaces=foldspaces)
 
 def a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
     """Encode bytes-like object b using Ascii85 and return a bytes object.
