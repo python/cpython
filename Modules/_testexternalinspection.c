@@ -222,9 +222,6 @@ search_map_for_section(pid_t pid, const char* secname, const char* substr) {
 
     mach_port_t proc_ref = pid_to_task(pid);
     if (proc_ref == 0) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_PermissionError, "Cannot get task for PID");
-        }
         return 0;
     }
 
