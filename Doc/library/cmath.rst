@@ -79,7 +79,7 @@ rectangular coordinates to polar coordinates and back.
 .. function:: polar(z)
 
    Return the representation of *z* in polar coordinates.  Returns a
-   pair ``(r, phi)`` where *r* is the modulus of *z* and phi is the
+   pair ``(r, phi)`` where *r* is the modulus of *z* and *phi* is the
    phase of *z*.  ``polar(z)`` is equivalent to ``(abs(z),
    phase(z))``.
 
@@ -101,7 +101,7 @@ Power and logarithmic functions
 
 .. function:: log(z[, base])
 
-   Returns the logarithm of *z* to the given *base*. If the *base* is not
+   Return the logarithm of *z* to the given *base*. If the *base* is not
    specified, returns the natural logarithm of *z*. There is one branch cut,
    from 0 along the negative real axis to -∞.
 
