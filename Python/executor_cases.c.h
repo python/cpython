@@ -801,16 +801,16 @@
             assert(PyLong_CheckExact(right_o));
             STAT_INC(BINARY_OP, hit);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            res = _PyLong_Add((PyLongObject *)left_o, (PyLongObject *)right_o);
+            PyObject *res_o = _PyLong_Add((PyLongObject *)left_o, (PyLongObject *)right_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             PyStackRef_CLOSE_SPECIALIZED(right, _PyLong_ExactDealloc);
             PyStackRef_CLOSE_SPECIALIZED(left, _PyLong_ExactDealloc);
-            if (PyStackRef_IsNull(res)) {
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
+            if (res_o == NULL) {
+                stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
                 JUMP_TO_ERROR();
             }
+            res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());

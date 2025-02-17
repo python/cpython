@@ -339,12 +339,6 @@ static const _PyStackRef PyStackRef_NULL = { .bits = PyStackRef_NULL_BITS };
 #define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) | Py_TAG_IMMORTAL })
 #define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) | Py_TAG_IMMORTAL })
 
-// #define PyStackRef_IsTrue(ref) ((ref).bits == (((uintptr_t)&_Py_TrueStruct) | Py_TAG_IMMORTAL))
-// #define PyStackRef_IsFalse(ref) ((ref).bits == (((uintptr_t)&_Py_FalseStruct) | Py_TAG_IMMORTAL))
-// #define
-
-/* We should be able to guarantee that the tag bits are set for immortal objects */
-
 #define PyStackRef_IsTrue(REF) ((REF).bits == (((uintptr_t)&_Py_TrueStruct) | Py_TAG_IMMORTAL))
 #define PyStackRef_IsFalse(REF) ((REF).bits == (((uintptr_t)&_Py_FalseStruct) | Py_TAG_IMMORTAL))
 #define PyStackRef_IsNone(REF) ((REF).bits == (((uintptr_t)&_Py_NoneStruct) | Py_TAG_IMMORTAL))

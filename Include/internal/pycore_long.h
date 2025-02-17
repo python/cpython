@@ -113,7 +113,7 @@ PyAPI_DATA(PyObject*) _PyLong_Rshift(PyObject *, int64_t);
 // Export for 'math' shared extension
 PyAPI_DATA(PyObject*) _PyLong_Lshift(PyObject *, int64_t);
 
-PyAPI_FUNC(_PyStackRef) _PyLong_Add(PyLongObject *left, PyLongObject *right);
+PyAPI_FUNC(PyObject*) _PyLong_Add(PyLongObject *left, PyLongObject *right);
 PyAPI_FUNC(PyObject*) _PyLong_Multiply(PyLongObject *left, PyLongObject *right);
 PyAPI_FUNC(PyObject*) _PyLong_Subtract(PyLongObject *left, PyLongObject *right);
 

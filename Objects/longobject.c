@@ -315,27 +315,6 @@ _PyLong_FromSTwoDigits(stwodigits x)
     return (PyLongObject*)_PyLong_FromLarge(x);
 }
 
-/* Create a new int object from a C word-sized int, return a stackref */
-static inline _PyStackRef
-_PyLongRef_FromSTwoDigitsRef(stwodigits x)
-{
-    if (IS_SMALL_INT(x)) {
-        return PyStackRef_FromPyObjectImmortal(get_small_int((sdigit)x));
-    }
-    assert(x != 0);
-    PyObject *res;
-    if (is_medium_int(x)) {
-        res = _PyLong_FromMedium((sdigit)x);
-    }
-    else {
-        res = _PyLong_FromLarge(x);
-    }
-    if (res == NULL) {
-        return PyStackRef_NULL;
-    }
-    return PyStackRef_FromPyObjectStealMortal(res);
-}
-
 /* If a freshly-allocated int is already shared, it must
    be a small integer, so negating it must go to PyLong_FromLong */
 Py_LOCAL_INLINE(void)
@@ -3897,14 +3876,10 @@ long_add(PyLongObject *a, PyLongObject *b)
     return z;
 }
 
-_PyStackRef
+PyObject *
 _PyLong_Add(PyLongObject *a, PyLongObject *b)
 {
-    if (_PyLong_BothAreCompact(a, b)) {
-        stwodigits z = medium_value(a) + medium_value(b);
-        return _PyLongRef_FromSTwoDigitsRef(z);
-    }
-    return PyStackRef_FromPyObjectSteal((PyObject*)long_add(a, b));
+    return (PyObject*)long_add(a, b);
 }
 
 static PyObject *
