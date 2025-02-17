@@ -3533,6 +3533,8 @@ class TestDateTime(TestDate):
             '2009-04-32T24:00:00.000000',  # Day is invalid before wrapping due to 24:00
             '2009-13-01T24:00:00.000000',  # Month is invalid before wrapping due to 24:00
             '9999-12-31T24:00:00.000000',  # Year is invalid after wrapping due to 24:00
+            '2009-04-19T12:30:45+00:90:00', # Time zone field out from range
+            '2009-04-19T12:30:45+00:00:90', # Time zone field out from range
         ]
 
         for bad_str in bad_strs:
@@ -4725,6 +4727,11 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             '12:30:45.123456+12:00:30a',    # Extra at end of full time
             '12.5',                     # Decimal mark at end of hour
             '12:30,5',                  # Decimal mark at end of minute
+            '24:00:00.000001',          # Has non-zero microseconds on 24:00
+            '24:00:01.000000',          # Has non-zero seconds on 24:00
+            '24:01:00.000000',          # Has non-zero minutes on 24:00
+            '12:30:45+00:90:00',        # Time zone field out from range
+            '12:30:45+00:00:90',        # Time zone field out from range
         ]
 
         for bad_str in bad_strs:
