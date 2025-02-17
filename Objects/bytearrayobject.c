@@ -329,6 +329,7 @@ static PyObject *
 bytearray_iconcat_lock_held(PyObject *op, PyObject *other)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
     PyByteArrayObject *self = _PyByteArray_CAST(op);
 
     Py_buffer vo;
@@ -358,9 +359,9 @@ static PyObject *
 bytearray_iconcat(PyObject *op, PyObject *other)
 {
     PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
+    Py_BEGIN_CRITICAL_SECTION2(op, other);
     ret = bytearray_iconcat_lock_held(op, other);
-    Py_END_CRITICAL_SECTION();
+    Py_END_CRITICAL_SECTION2();
     return ret;
 }
 

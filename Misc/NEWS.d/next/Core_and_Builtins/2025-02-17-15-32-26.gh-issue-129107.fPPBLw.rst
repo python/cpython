@@ -1,1 +1,1 @@
-Fix two more :class:`bytearray` functions for :term:`free-threading`.
+Fix two more :class:`bytearray` functions for :term:`free threading`.
