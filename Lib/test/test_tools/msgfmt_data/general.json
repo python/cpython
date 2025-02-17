@@ -4,6 +4,32 @@
         "Project-Id-Version: PACKAGE VERSION\nPOT-Creation-Date: 2024-10-26 18:06+0200\nPO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\nLast-Translator: FULL NAME <EMAIL@ADDRESS>\nLanguage-Team: LANGUAGE <LL@li.org>\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\n"
     ],
     [
+        "\n newlines \n",
+        "\n translated \n"
+    ],
+    [
+        "\"escapes\"",
+        "\"translated\""
+    ],
+    [
+        "Multilinestring",
+        "Multilinetranslation"
+    ],
+    [
+        [
+            "One email sent.",
+            0
+        ],
+        "One email sent."
+    ],
+    [
+        [
+            "One email sent.",
+            1
+        ],
+        "%d emails sent."
+    ],
+    [
         [
             "abc\u0004One email sent.",
             0
@@ -24,32 +50,6 @@
     [
         "bar",
         "baz"
-    ],
-    [
-        "xyz\u0004\n newlines \n",
-        "\n translated \n"
-    ],
-    [
-        "xyz\u0004\"escapes\"",
-        "\"translated\""
-    ],
-    [
-        "xyz\u0004Multilinestring",
-        "Multilinetranslation"
-    ],
-    [
-        [
-            "xyz\u0004One email sent.",
-            0
-        ],
-        "One email sent."
-    ],
-    [
-        [
-            "xyz\u0004One email sent.",
-            1
-        ],
-        "%d emails sent."
     ],
     [
         "xyz\u0004foo",
