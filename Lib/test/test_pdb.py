@@ -1762,6 +1762,8 @@ def test_pdb_invalid_arg():
     ...     'a = 3',
     ...     'll 4',
     ...     'step 1',
+    ...     'p',
+    ...     'enable ',
     ...     'continue'
     ... ]):
     ...     test_function()
@@ -1776,6 +1778,12 @@ def test_pdb_invalid_arg():
     (Pdb) step 1
     *** Invalid argument: 1
           Usage: s(tep)
+    (Pdb) p
+    *** Argument is required for this command
+          Usage: p expression
+    (Pdb) enable 
+    *** Argument is required for this command
+          Usage: enable bpnumber [bpnumber ...]
     (Pdb) continue
     """
 
