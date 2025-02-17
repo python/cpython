@@ -458,26 +458,24 @@ class BaseEventLoop(events.AbstractEventLoop):
         """Create a Future object attached to the loop."""
         return futures.Future(loop=self)
 
-    def create_task(self, coro, *, name=None, context=None):
+    def create_task(self, coro, **kwargs):
         """Schedule a coroutine object.
 
         Return a task object.
         """
         self._check_closed()
-        if self._task_factory is None:
-            task = tasks.Task(coro, loop=self, name=name, context=context)
-            if task._source_traceback:
-                del task._source_traceback[-1]
-        else:
-            if context is None:
-                # Use legacy API if context is not needed
-                task = self._task_factory(self, coro)
-            else:
-                task = self._task_factory(self, coro, context=context)
+        if self._task_factory is not None:
+            return self._task_factory(self, coro, **kwargs)
 
-            task.set_name(name)
-
-        return task
+        task = tasks.Task(coro, loop=self, **kwargs)
+        if task._source_traceback:
+            del task._source_traceback[-1]
+        try:
+            return task
+        finally:
+            # gh-128552: prevent a refcycle of
+            # task.exception().__traceback__->BaseEventLoop.create_task->task
+            del task
 
     def set_task_factory(self, factory):
         """Set a task factory that will be used by loop.create_task().
@@ -485,9 +483,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         If factory is None the default task factory will be set.
 
         If factory is a callable, it should have a signature matching
-        '(loop, coro)', where 'loop' will be a reference to the active
-        event loop, 'coro' will be a coroutine object.  The callable
-        must return a Future.
+        '(loop, coro, **kwargs)', where 'loop' will be a reference to the active
+        event loop, 'coro' will be a coroutine object, and **kwargs will be
+        arbitrary keyword arguments that should be passed on to Task.
+        The callable must return a Task.
         """
         if factory is not None and not callable(factory):
             raise TypeError('task factory must be a callable or None')
@@ -672,8 +671,8 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def run_forever(self):
         """Run until stop() is called."""
+        self._run_forever_setup()
         try:
-            self._run_forever_setup()
             while True:
                 self._run_once()
                 if self._stopping:
@@ -873,7 +872,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._check_closed()
         if self._debug:
             self._check_callback(callback, 'call_soon_threadsafe')
-        handle = self._call_soon(callback, args, context)
+        handle = events._ThreadSafeHandle(callback, args, self, context)
+        self._ready.append(handle)
+        if handle._source_traceback:
+            del handle._source_traceback[-1]
         if handle._source_traceback:
             del handle._source_traceback[-1]
         self._write_to_self()
@@ -1585,7 +1587,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                     if reuse_address:
                         sock.setsockopt(
                             socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
-                    if reuse_port:
+                    # Since Linux 6.12.9, SO_REUSEPORT is not allowed
+                    # on other address families than AF_INET/AF_INET6.
+                    if reuse_port and af in (socket.AF_INET, socket.AF_INET6):
                         _set_reuseport(sock)
                     if keep_alive:
                         sock.setsockopt(

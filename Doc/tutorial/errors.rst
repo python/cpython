@@ -23,7 +23,7 @@ complaint you get while you are still learning Python::
                   ^^^^^
    SyntaxError: invalid syntax
 
-The parser repeats the offending line and displays little 'arrow's pointing
+The parser repeats the offending line and displays little arrows pointing
 at the token in the line where the error was detected.  The error may be
 caused by the absence of a token *before* the indicated token.  In the
 example, the error is detected at the function :func:`print`, since a colon
@@ -464,7 +464,7 @@ A more complicated example::
    executing finally clause
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-       divide("2", "0")
+       divide("2", "1")
        ~~~~~~^^^^^^^^^^
      File "<stdin>", line 3, in divide
        result = x / y

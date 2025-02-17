@@ -1,7 +1,9 @@
 import itertools
+import os
 import sys
 import unittest
 from functools import partial
+from test.support import os_helper
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, ANY
 
@@ -312,3 +314,14 @@ class TestConsole(TestCase):
         )
         console.restore()
         con.restore()
+
+    def test_getheightwidth_with_invalid_environ(self, _os_write):
+        # gh-128636
+        console = UnixConsole()
+        with os_helper.EnvironmentVarGuard() as env:
+            env["LINES"] = ""
+            self.assertIsInstance(console.getheightwidth(), tuple)
+            env["COLUMNS"] = ""
+            self.assertIsInstance(console.getheightwidth(), tuple)
+            os.environ = []
+            self.assertIsInstance(console.getheightwidth(), tuple)

@@ -138,8 +138,8 @@ def make_build_python(context):
 
 def unpack_deps(host):
     deps_url = "https://github.com/beeware/cpython-android-source-deps/releases/download"
-    for name_ver in ["bzip2-1.0.8-1", "libffi-3.4.4-2", "openssl-3.0.15-0",
-                     "sqlite-3.45.1-0", "xz-5.4.6-0"]:
+    for name_ver in ["bzip2-1.0.8-2", "libffi-3.4.4-3", "openssl-3.0.15-4",
+                     "sqlite-3.45.3-3", "xz-5.4.6-1"]:
         filename = f"{name_ver}-{host}.tar.gz"
         download(f"{deps_url}/{name_ver}/{filename}")
         run(["tar", "-xf", filename])
@@ -189,12 +189,13 @@ def configure_host_python(context):
 
 def make_host_python(context):
     # The CFLAGS and LDFLAGS set in android-env include the prefix dir, so
-    # delete any previously-installed Python libs and include files to prevent
-    # them being used during the build.
+    # delete any previous Python installation to prevent it being used during
+    # the build.
     host_dir = subdir(context.host)
     prefix_dir = host_dir / "prefix"
     delete_glob(f"{prefix_dir}/include/python*")
     delete_glob(f"{prefix_dir}/lib/libpython*")
+    delete_glob(f"{prefix_dir}/lib/python*")
 
     os.chdir(host_dir / "build")
     run(["make", "-j", str(os.cpu_count())], host=context.host)

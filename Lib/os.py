@@ -765,17 +765,6 @@ class _Environ(MutableMapping):
         new.update(self)
         return new
 
-    if _exists("_create_environ"):
-        def refresh(self):
-            data = _create_environ()
-            if name == 'nt':
-                data = {self.encodekey(key): value
-                        for key, value in data.items()}
-
-            # modify in-place to keep os.environb in sync
-            self._data.clear()
-            self._data.update(data)
-
 def _create_environ_mapping():
     if name == 'nt':
         # Where Env Var Names Must Be UPPERCASE
@@ -808,6 +797,20 @@ def _create_environ_mapping():
 # unicode environ
 environ = _create_environ_mapping()
 del _create_environ_mapping
+
+
+if _exists("_create_environ"):
+    def reload_environ():
+        data = _create_environ()
+        if name == 'nt':
+            encodekey = environ.encodekey
+            data = {encodekey(key): value
+                    for key, value in data.items()}
+
+        # modify in-place to keep os.environb in sync
+        env_data = environ._data
+        env_data.clear()
+        env_data.update(data)
 
 
 def getenv(key, default=None):

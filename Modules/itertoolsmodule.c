@@ -3235,7 +3235,7 @@ typedef struct {
 
 fast_mode:  when cnt an integer < PY_SSIZE_T_MAX and no step is specified.
 
-    assert(cnt != PY_SSIZE_T_MAX && long_cnt == NULL && long_step==PyLong(1));
+    assert(long_cnt == NULL && long_step==PyLong(1));
     Advances with:  cnt += 1
     When count hits PY_SSIZE_T_MAX, switch to slow_mode.
 
@@ -3322,7 +3322,7 @@ itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,
     else
         cnt = PY_SSIZE_T_MAX;
 
-    assert((cnt != PY_SSIZE_T_MAX && long_cnt == NULL && fast_mode) ||
+    assert((long_cnt == NULL && fast_mode) ||
            (cnt == PY_SSIZE_T_MAX && long_cnt != NULL && !fast_mode));
     assert(!fast_mode ||
            (PyLong_Check(long_step) && PyLong_AS_LONG(long_step) == 1));
@@ -3415,7 +3415,7 @@ count_next(countobject *lz)
 static PyObject *
 count_repr(countobject *lz)
 {
-    if (lz->cnt != PY_SSIZE_T_MAX)
+    if (lz->long_cnt == NULL)
         return PyUnicode_FromFormat("%s(%zd)",
                                     _PyType_Name(Py_TYPE(lz)), lz->cnt);
 

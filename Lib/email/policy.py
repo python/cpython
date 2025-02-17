@@ -119,13 +119,13 @@ class EmailPolicy(Policy):
         """+
         The name is parsed as everything up to the ':' and returned unmodified.
         The value is determined by stripping leading whitespace off the
-        remainder of the first line, joining all subsequent lines together, and
+        remainder of the first line joined with all subsequent lines, and
         stripping any trailing carriage return or linefeed characters.  (This
         is the same as Compat32).
 
         """
         name, value = sourcelines[0].split(':', 1)
-        value = value.lstrip(' \t') + ''.join(sourcelines[1:])
+        value = ''.join((value, *sourcelines[1:])).lstrip(' \t\r\n')
         return (name, value.rstrip('\r\n'))
 
     def header_store_parse(self, name, value):
