@@ -1762,96 +1762,6 @@ eval_const_unaryop(PyObject *operand, int op, bool unarypos)
     return result;
 }
 
-static void
-remove_to_bool_sequence(basicblock *bb, int start)
-{
-    assert(start >= 0);
-    for (;start < bb->b_iused; start++) {
-        cfg_instr *curr = &bb->b_instr[start];
-        if (curr->i_opcode == NOP) {
-            continue;
-        }
-        if (curr->i_opcode == TO_BOOL) {
-            INSTR_SET_OP0(curr, NOP);
-            continue;
-        }
-        break;
-    }
-}
-
-static cfg_instr *
-find_unary_not_target(basicblock *bb, int start)
-{
-    assert(start < bb->b_iused);
-    for (; start >= 0; start--) {
-        cfg_instr *instr = &bb->b_instr[start];
-        if (instr->i_opcode == NOP) {
-            continue;
-        }
-        if (instr->i_opcode == IS_OP || instr->i_opcode == CONTAINS_OP) {
-            return instr;
-        }
-        break;
-    }
-    return NULL;
-}
-
-/* Replace:
-       IS_OP(is)
-       UNARY_NOT
-    with:
-       IS_OP(is not)
-       NOP
-    or vice versa ("is not" to "is").
-
-    And:
-       CONTAINS_OP(in)
-       UNARY_NOT
-    with:
-       CONTAINS_OP(not in)
-       NOP
-    or vice versa ("not in" to "in").
-*/
-static bool
-optimize_unary_not_is_contains(basicblock *bb, int i, int nextop)
-{
-    cfg_instr *instr = &bb->b_instr[i];
-    assert(instr->i_opcode == UNARY_NOT);
-    cfg_instr *target = find_unary_not_target(bb, i-1);
-    if (target == NULL) {
-        return false;
-    }
-    int inverted = target->i_oparg ^ 1;
-    assert(inverted == 0 || inverted == 1);
-    INSTR_SET_OP1(target, target->i_opcode, inverted);
-    INSTR_SET_OP0(instr, NOP);
-    return true;
-}
-
-static bool
-optimize_unary_not_non_const(basicblock *bb, int i, int nextop)
-{
-    assert(i >= 0 && i < bb->b_iused);
-    cfg_instr *instr = &bb->b_instr[i];
-    assert(instr->i_opcode == UNARY_NOT);
-    if (nextop == UNARY_NOT) {  /* subsequent UNARY_NOT is no-op */
-        INSTR_SET_OP0(instr, NOP);
-        int nexti = i + 1;
-        assert(nexti >= 1 && nexti < bb->b_iused);
-        cfg_instr *next = &bb->b_instr[nexti];
-        assert(next->i_opcode == nextop);
-        INSTR_SET_OP0(next, NOP);
-        if (find_unary_not_target(bb, i-1) != NULL) {
-            /* IS_OP & CONTAINS_OP don't need TO_BOOL conversion */
-            remove_to_bool_sequence(bb, i+1);
-        }
-        return true;
-    }
-    /* single UNARY_NOT doesn't need TO_BOOL conversion */
-    remove_to_bool_sequence(bb, i+1);
-    return optimize_unary_not_is_contains(bb, i, nextop);
-}
-
 static int
 optimize_if_const_unaryop(basicblock *bb, int i, int nextop,
                           PyObject *consts, PyObject *const_cache, bool unarypos)
@@ -1869,9 +1779,6 @@ optimize_if_const_unaryop(basicblock *bb, int i, int nextop,
             || instr->i_opcode == UNARY_INVERT
             || instr->i_opcode == UNARY_NOT
         );
-    }
-    if (instr->i_opcode == UNARY_NOT && optimize_unary_not_non_const(bb, i, nextop)) {
-        return SUCCESS;
     }
     PyObject *seq;
     RETURN_IF_ERROR(get_constant_sequence(bb, i-1, 1, consts, &seq));
@@ -2358,6 +2265,13 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                     INSTR_SET_OP1(&bb->b_instr[i + 1], opcode, oparg);
                     continue;
                 }
+                if (nextop == UNARY_NOT) {
+                    INSTR_SET_OP0(inst, NOP);
+                    int inverted = oparg ^ 1;
+                    assert(inverted == 0 || inverted == 1);
+                    INSTR_SET_OP1(&bb->b_instr[i + 1], opcode, inverted);
+                    continue;
+                }
                 break;
             case TO_BOOL:
                 if (nextop == TO_BOOL) {
@@ -2368,6 +2282,18 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
             case UNARY_NOT:
             case UNARY_INVERT:
             case UNARY_NEGATIVE:
+                if (opcode == UNARY_NOT) {
+                    if (nextop == TO_BOOL) {
+                        INSTR_SET_OP0(inst, NOP);
+                        INSTR_SET_OP0(&bb->b_instr[i + 1], UNARY_NOT);
+                        continue;
+                    }
+                    if (nextop == UNARY_NOT) {
+                        INSTR_SET_OP0(inst, NOP);
+                        INSTR_SET_OP0(&bb->b_instr[i + 1], NOP);
+                        continue;
+                    }
+                }
                 RETURN_IF_ERROR(optimize_if_const_unaryop(bb, i, nextop, consts, const_cache, false));
                 break;
             case CALL_INTRINSIC_1:
