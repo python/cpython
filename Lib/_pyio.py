@@ -926,6 +926,82 @@ class BytesIO(BufferedIOBase):
         """
         return self.read(size)
 
+    def readfrom(self, file, /, *, estimate=None, limit=None):
+        """Efficiently read from the provided file and return True if hit end.
+
+        Returns True if and only if a read into a non-zero length buffer
+        returns 0 bytes. On most systems this indicates end of file / stream.
+        """
+        if self.closed:
+            raise ValueError("read from closed file")
+
+        # In order to detect end of file, need a read() of at least 1
+        # byte which returns size 0. Oversize the buffer by 1 byte so the
+        # I/O can be completed with two read() calls (one for all data, one
+        # for EOF) without needing to resize the buffer.
+        target_read = None
+        if estimate is not None:
+            target_read = int(estimate) + 1
+        else:
+            target_read = DEFAULT_BUFFER_SIZE
+
+        # Cap to limit
+        if limit is not None:
+            limit = int(limit)
+            if limit == 0:  # Nothing to read.
+                return False
+            if limit < 0:
+                raise ValueError(f"limit must be larger than 0, got {limit}")
+
+        if limit is not None:
+            target_read = min(target_read, limit)
+
+        # Expand buffer to get target read in one read when possible.
+        if len(self._buffer) < target_read + self._pos:
+            self._buffer.resize(self._pos + target_read)
+
+        if isinstance(file, int):  # File descriptor
+            read_fn = lambda: os.readinto(file, memoryview(self._buffer)[self._pos:])
+        elif file_readinto := getattr(file, "readinto", None):
+            read_fn = lambda: file_readinto(memoryview(self._buffer)[self._pos:])
+        elif file_read := getattr(file, "read", None):
+            def read_fn():
+                data = file_read(len(self._buffer) - self._pos)
+                self._buffer[self._pos:self._pos + len(data)] = data
+
+        found_eof = False
+        start_pos = self._pos
+        try:
+            while n := read_fn():
+                self._pos += n
+                # Expand buffer if needed.
+                if len(self._buffer) - self._pos <= 0:
+                    bytes_read = self._pos - start_pos
+                    target_read = _new_buffersize(bytes_read)
+
+                    # Keep buffer size <= limit, so only need to check against
+                    # limit when resizing.
+                    if limit is not None:
+                        remaining = limit - bytes_read
+                        if remaining <= 0:
+                            assert remaining == 0, "should never pass limit"
+                            break
+                        target_read = min(remaining, target_read)
+
+                    self._buffer.resize(target_read + len(self._buffer))
+
+            else:
+                assert len(self._buffer) - self._pos >= 1, \
+                    "os.readinto buffer size 0 will result in erroneous EOF / returns 0"
+                found_eof = True
+
+        except BlockingIOError:
+            pass
+
+        # Remove all excess bytes.
+        self._buffer.resize(self._pos)
+        return found_eof
+
     def write(self, b):
         if self.closed:
             raise ValueError("write to closed file")
@@ -1666,38 +1742,22 @@ class FileIO(RawIOBase):
         """
         self._checkClosed()
         self._checkReadable()
-        if self._stat_atopen is None or self._stat_atopen.st_size <= 0:
-            bufsize = DEFAULT_BUFFER_SIZE
-        else:
-            # In order to detect end of file, need a read() of at least 1
-            # byte which returns size 0. Oversize the buffer by 1 byte so the
-            # I/O can be completed with two read() calls (one for all data, one
-            # for EOF) without needing to resize the buffer.
-            bufsize = self._stat_atopen.st_size + 1
-
-            if self._stat_atopen.st_size > 65536:
+        estimate = None
+        if self._stat_atopen and self._stat_atopen.st_size >= 0:
+            estimate = self._stat_atopen.st_size
+            if estimate > 65536:
                 try:
                     pos = os.lseek(self._fd, 0, SEEK_CUR)
-                    if self._stat_atopen.st_size >= pos:
-                        bufsize = self._stat_atopen.st_size - pos + 1
+                    estimate = estimate - pos if estimate > pos else 0
                 except OSError:
                     pass
 
-        result = bytearray(bufsize)
-        bytes_read = 0
-        try:
-            while n := os.readinto(self._fd, memoryview(result)[bytes_read:]):
-                bytes_read += n
-                if bytes_read >= len(result):
-                    result.resize(_new_buffersize(bytes_read))
-        except BlockingIOError:
-            if not bytes_read:
-                return None
+        bio = BytesIO()
+        found_eof = bio.readfrom(self._fd, estimate=estimate)
+        result = bio.getvalue()
+        # No limit in readfrom, so not finding eof indicates blocked.
+        return result if result or found_eof else None
 
-        assert len(result) - bytes_read >= 1, \
-            "os.readinto buffer size 0 will result in erroneous EOF / returns 0"
-        result.resize(bytes_read)
-        return bytes(result)
 
     def readinto(self, buffer):
         """Same as RawIOBase.readinto()."""
