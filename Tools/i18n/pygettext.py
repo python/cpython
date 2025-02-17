@@ -44,7 +44,7 @@ Options:
 
     -a
     --extract-all
-        Currently not implemented and may be removed in a future version.
+        Deprecated: Not implemented and will be removed in a future version.
 
     -d name
     --default-domain=name
@@ -512,7 +512,7 @@ def main():
         if opt in ('-h', '--help'):
             usage(0)
         elif opt in ('-a', '--extract-all'):
-            print("WARNING: -a/--extract-all is not yet implemented and may be removed or implemented in a future version",
+            print("DepreciationWarning: -a/--extract-all is not implemented and will be removed in a future version",
                   file=sys.stderr)
             options.extractall = 1
         elif opt in ('-d', '--default-domain'):
