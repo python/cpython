@@ -302,16 +302,6 @@ class ReadablePath(JoinablePath):
         select = globber.selector(parts)
         return select(self.joinpath(''))
 
-    def rglob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
-        """Recursively yield all existing files (of any kind, including
-        directories) matching the given relative pattern, anywhere in
-        this subtree.
-        """
-        if not isinstance(pattern, JoinablePath):
-            pattern = self.with_segments(pattern)
-        pattern = '**' / pattern
-        return self.glob(pattern, case_sensitive=case_sensitive, recurse_symlinks=recurse_symlinks)
-
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
         paths = [self]
