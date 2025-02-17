@@ -1,0 +1,3 @@
+Clarify that hashlib's SHA1 is no longer a FIPS secure algorithm. Clarify that
+hashlib has a mixture of cryptographically secure and non cryptographically
+secure hash algorithms. Patch by Eli Schwartz.
