@@ -635,13 +635,14 @@ x = (
         def raises_syntax_or_memory_error(txt):
             try:
                 eval(txt)
-                self.fail("No exception raised")
             except SyntaxError:
                 pass
             except MemoryError:
                 pass
             except Exception as ex:
                 self.fail(f"Should raise SyntaxError or MemoryError, not {type(ex)}")
+            else:
+                self.fail("No exception raised")
 
         raises_syntax_or_memory_error('f"{1+2:{1+2:{1+1:{1}}}}"')
 
