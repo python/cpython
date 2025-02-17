@@ -3255,8 +3255,9 @@ class ASTOptimiziationTests(unittest.TestCase):
             case {-0.1 - 1.1j: 0}:                     pass
             case {-0: 0, 0 + 1j: 0, 0.1 + 1j: 0}:      pass
             case [-0, -0.1, -0j, -0.1j]:               pass
-            case [[-0, -0.1], [-0j, -0.1j]]:               pass
-            case ((-0, -0.1), (-0j, -0.1j)):               pass
+            case (-0, -0.1, -0j, -0.1j):               pass
+            case [[-0, -0.1], [-0j, -0.1j]]:           pass
+            case ((-0, -0.1), (-0j, -0.1j)):           pass
         """)
         expected_constants = (
             0,
