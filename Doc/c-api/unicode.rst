@@ -1414,7 +1414,7 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
 
 .. c:function:: PyObject* PyUnicode_Partition(PyObject *unicode, PyObject *sep)
 
-   Split the Unicode string at the first occurrence of *sep*, and return
+   Split a Unicode string at the first occurrence of *sep*, and return
    a 3-tuple containing the part before the separator, the separator itself,
    and the part after the separator. If the separator is not found,
    return a 3-tuple containing the string itself, followed by two empty strings.
