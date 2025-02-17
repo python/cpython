@@ -369,14 +369,14 @@ static inline void PyStackRef_CheckValid(_PyStackRef ref) {
 
 #endif
 
-/* Does this ref have an embedded refcount */
+/* Does this ref not have an embedded refcount and refer to a mortal object? */
 static inline int
 PyStackRef_IsUncountedMortal(_PyStackRef ref)
 {
     return (ref.bits & Py_TAG_BITS) == 0;
 }
 
-/* Does this ref have an embedded refcount and refer to a mortal object (NULL is not mortal) */
+/* Does this ref have an embedded refcount and refer to a mortal object (NULL is not mortal)? */
 static inline bool
 PyStackRef_IsCountedMortal(_PyStackRef ref)
 {
