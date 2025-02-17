@@ -183,7 +183,7 @@ Improved error messages
   error message highlights where the :token:`~python-grammar:expression` is
   required. (Contributed by Sergey Miryanov in :gh:`129515`.)
 
-  .. code-block:: python
+  .. code-block:: pycon
 
      >>> x = 1 if True else pass
      Traceback (most recent call last):

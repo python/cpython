@@ -2877,32 +2877,42 @@ while 1:
 
     def test_ifexp_else_stmt(self):
         msg = "expected expression after 'else', but statement is given"
-        self._check_error("x = 1 if 1 else pass", msg)
-        self._check_error("x = 1 if 1 else return", msg)
-        self._check_error("x = 1 if 1 else return 2", msg)
-        self._check_error("x = 1 if 1 else raise Exception('a')", msg)
-        self._check_error("x = 1 if 1 else del a", msg)
-        self._check_error("x = 1 if 1 else yield 2", msg)
-        self._check_error("x = 1 if 1 else assert False", msg)
-        self._check_error("x = 1 if 1 else break", msg)
-        self._check_error("x = 1 if 1 else continue", msg)
-        self._check_error("x = 1 if 1 else import", msg)
-        self._check_error("x = 1 if 1 else import ast", msg)
-        self._check_error("x = 1 if 1 else from", msg)
-        self._check_error("x = 1 if 1 else from ast import *", msg)
+
+        for stmt in [
+            "pass",
+            "return",
+            "return 2",
+            "raise Exception('a')",
+            "del a",
+            "yield 2",
+            "assert False",
+            "break",
+            "continue",
+            "import",
+            "import ast",
+            "from",
+            "from ast import *"
+        ]:
+            self._check_error(f"x = 1 if 1 else {stmt}", msg)
 
     def test_ifexp_body_stmt_else_expression(self):
         msg = "expected expression before 'if', but statement is given"
-        self._check_error("x = pass if 1 else 1", msg)
-        self._check_error("x = break if 1 else 1", msg)
-        self._check_error("x = continue if 1 else 1", msg)
+
+        for stmt in [
+            "pass",
+            "break",
+            "continue"
+        ]:
+            self._check_error(f"x = {stmt} if 1 else 1", msg)
 
     def test_ifexp_body_stmt_else_stmt(self):
         msg = "expected expression before 'if', but statement is given"
-        self._check_error("x = pass if 1 else pass", msg)
-        self._check_error("x = break if 1 else pass", msg)
-        self._check_error("x = continue if 1 else pass", msg)
-        self._check_error("x = continue if 1 else import ast", msg)
+        for lhs_stmt, rhs_stmt in [
+            ("pass", "pass"),
+            ("break", "pass"),
+            ("continue", "import ast")
+        ]:
+            self._check_error(f"x = {lhs_stmt} if 1 else {rhs_stmt}", msg)
 
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())
