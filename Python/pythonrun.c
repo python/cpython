@@ -1538,24 +1538,20 @@ _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyComp
 /*
  * Return non-zero when we run out of memory on the stack; zero otherwise.
  */
-int
-PyOS_CheckStack(void)
+int PyOS_CheckStack(void)
 {
-    __try {
-        /* alloca throws a stack overflow exception if there's
-           not enough space left on the stack */
-        alloca(PYOS_STACK_MARGIN * sizeof(void*));
-        return 0;
-    } __except (GetExceptionCode() == STATUS_STACK_OVERFLOW ?
-                    EXCEPTION_EXECUTE_HANDLER :
-            EXCEPTION_CONTINUE_SEARCH) {
-        int errcode = _resetstkoflw();
-        if (errcode == 0)
-        {
-            Py_FatalError("Could not reset the stack!");
-        }
+    char here;
+    uintptr_t here_addr = (uintptr_t)&here;
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate->c_stack_hard_limit == 0) {
+        _Py_InitializeRecursionLimits(tstate);
     }
-    return 1;
+    if (here_addr >= tstate->c_stack_soft_limit) {
+        return 0;
+    }
+    else {
+        return -1;
+    }
 }
 
 #endif /* WIN32 && _MSC_VER */

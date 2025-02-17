@@ -3040,6 +3040,7 @@ async def f():
             with self.subTest(case=case):
                 self.assertRaises(tokenize.TokenError, get_tokens, case)
 
+    @support.skip_wasi_stack_overflow()
     def test_max_indent(self):
         MAXINDENT = 100
 

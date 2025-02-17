@@ -10,24 +10,14 @@
 typedef struct {
     int optimize;
     int ff_features;
-
-    int recursion_depth;            /* current recursion depth */
-    int recursion_limit;            /* recursion limit */
 } _PyASTOptimizeState;
 
-#define ENTER_RECURSIVE(ST) \
-    do { \
-        if (++(ST)->recursion_depth > (ST)->recursion_limit) { \
-            PyErr_SetString(PyExc_RecursionError, \
-                "maximum recursion depth exceeded during compilation"); \
-            return 0; \
-        } \
-    } while(0)
+#define ENTER_RECURSIVE() \
+if (Py_EnterRecursiveCall(" during compilation")) { \
+    return 0; \
+}
 
-#define LEAVE_RECURSIVE(ST) \
-    do { \
-        --(ST)->recursion_depth; \
-    } while(0)
+#define LEAVE_RECURSIVE() Py_LeaveRecursiveCall();
 
 static int
 make_const(expr_ty node, PyObject *val, PyArena *arena)
@@ -668,7 +658,7 @@ astfold_mod(mod_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 static int
 astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
-    ENTER_RECURSIVE(state);
+    ENTER_RECURSIVE();
     switch (node_->kind) {
     case BoolOp_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.BoolOp.values);
@@ -765,7 +755,7 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case Name_kind:
         if (node_->v.Name.ctx == Load &&
                 _PyUnicode_EqualToASCIIString(node_->v.Name.id, "__debug__")) {
-            LEAVE_RECURSIVE(state);
+            LEAVE_RECURSIVE();
             return make_const(node_, PyBool_FromLong(!state->optimize), ctx_);
         }
         break;
@@ -778,7 +768,7 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     // No default case, so the compiler will emit a warning if new expression
     // kinds are added without being handled here
     }
-    LEAVE_RECURSIVE(state);;
+    LEAVE_RECURSIVE();
     return 1;
 }
 
@@ -823,7 +813,7 @@ astfold_arg(arg_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 static int
 astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
-    ENTER_RECURSIVE(state);
+    ENTER_RECURSIVE();
     switch (node_->kind) {
     case FunctionDef_kind:
         CALL_SEQ(astfold_type_param, type_param, node_->v.FunctionDef.type_params);
@@ -945,7 +935,7 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     // No default case, so the compiler will emit a warning if new statement
     // kinds are added without being handled here
     }
-    LEAVE_RECURSIVE(state);
+    LEAVE_RECURSIVE();
     return 1;
 }
 
@@ -977,7 +967,7 @@ astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     // Currently, this is really only used to form complex/negative numeric
     // constants in MatchValue and MatchMapping nodes
     // We still recurse into all subexpressions and subpatterns anyway
-    ENTER_RECURSIVE(state);
+    ENTER_RECURSIVE();
     switch (node_->kind) {
         case MatchValue_kind:
             CALL(astfold_expr, expr_ty, node_->v.MatchValue.value);
@@ -1009,7 +999,7 @@ astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     // No default case, so the compiler will emit a warning if new pattern
     // kinds are added without being handled here
     }
-    LEAVE_RECURSIVE(state);
+    LEAVE_RECURSIVE();
     return 1;
 }
 
@@ -1047,34 +1037,12 @@ astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
 int
 _PyAST_Optimize(mod_ty mod, PyArena *arena, int optimize, int ff_features)
 {
-    PyThreadState *tstate;
-    int starting_recursion_depth;
-
     _PyASTOptimizeState state;
     state.optimize = optimize;
     state.ff_features = ff_features;
 
-    /* Setup recursion depth check counters */
-    tstate = _PyThreadState_GET();
-    if (!tstate) {
-        return 0;
-    }
-    /* Be careful here to prevent overflow. */
-    int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
-    starting_recursion_depth = recursion_depth;
-    state.recursion_depth = starting_recursion_depth;
-    state.recursion_limit = Py_C_RECURSION_LIMIT;
-
     int ret = astfold_mod(mod, arena, &state);
     assert(ret || PyErr_Occurred());
-
-    /* Check that the recursion depth counting balanced correctly */
-    if (ret && state.recursion_depth != starting_recursion_depth) {
-        PyErr_Format(PyExc_SystemError,
-            "AST optimizer recursion depth mismatch (before=%d, after=%d)",
-            starting_recursion_depth, state.recursion_depth);
-        return 0;
-    }
 
     return ret;
 }
