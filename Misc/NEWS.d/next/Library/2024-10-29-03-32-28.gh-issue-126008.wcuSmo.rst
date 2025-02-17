@@ -1,0 +1,1 @@
+Fix an incorrect return value type when getting resource value of ttk widgets.
