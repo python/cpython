@@ -29,6 +29,10 @@ Pending Removal in Python 3.15
   * The :option:`!--cgi` flag to the :program:`python -m http.server`
     command-line interface has been deprecated since Python 3.13.
 
+* :mod:`importlib`:
+
+  * ``load_module()`` method: use ``exec_module()`` instead.
+
 * :class:`locale`:
 
   * The :func:`~locale.getdefaultlocale` function

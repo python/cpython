@@ -302,6 +302,18 @@ class CEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase)
 
        self.run_coro(run())
 
+    def test_name(self):
+        name = None
+        async def coro():
+            nonlocal name
+            name = asyncio.current_task().get_name()
+
+        async def main():
+            task = self.loop.create_task(coro(), name="test name")
+            self.assertEqual(name, "test name")
+            await task
+
+        self.run_coro(coro())
 
 class AsyncTaskCounter:
     def __init__(self, loop, *, task_class, eager):
