@@ -21450,20 +21450,6 @@ fi
 
 
 
-
-
-  if test "$ac_sys_system" = "Emscripten" -a -z "$ZLIB_CFLAGS" -a -z "$ZLIB_LIBS"
-then :
-
-    ZLIB_CFLAGS="-sUSE_ZLIB"
-    ZLIB_LIBS="-sUSE_ZLIB"
-
-fi
-
-
-
-
-
 pkg_failed=no
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for zlib >= 1.2.0" >&5
 printf %s "checking for zlib >= 1.2.0... " >&6; }
@@ -21523,23 +21509,20 @@ fi
         echo "$ZLIB_PKG_ERRORS" >&5
 
 
-  save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-    CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
-    LIBS="$LIBS $ZLIB_LIBS"
-           for ac_header in zlib.h
+         for ac_header in zlib.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
 if test "x$ac_cv_header_zlib_h" = xyes
 then :
   printf "%s\n" "#define HAVE_ZLIB_H 1" >>confdefs.h
 
-      py_check_lib_save_LIBS=$LIBS
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
+    save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
 printf %s "checking for gzread in -lz... " >&6; }
 if test ${ac_cv_lib_z_gzread+y}
 then :
@@ -21584,28 +21567,10 @@ fi
 printf "%s\n" "$ac_cv_lib_z_gzread" >&6; }
 if test "x$ac_cv_lib_z_gzread" = xyes
 then :
-  have_zlib=yes
-else case e in #(
-  e) have_zlib=no ;;
-esac
-fi
 
-LIBS=$py_check_lib_save_LIBS
-
-
-else case e in #(
-  e) have_zlib=no ;;
-esac
-fi
-
-done
-    if test "x$have_zlib" = xyes
-then :
-
-      ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-      ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
-      py_check_lib_save_LIBS=$LIBS
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
+        ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+        ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 printf %s "checking for inflateCopy in -lz... " >&6; }
 if test ${ac_cv_lib_z_inflateCopy+y}
 then :
@@ -21654,10 +21619,14 @@ then :
 
 fi
 
-LIBS=$py_check_lib_save_LIBS
 
-
+else case e in #(
+  e)
+        as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
+       ;;
+esac
 fi
+
 
 CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
@@ -21665,28 +21634,34 @@ LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
 
+
+else case e in #(
+  e)
+      as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
+   ;;
+esac
+fi
+
+done
 
 elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
-  save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-    CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
-    LIBS="$LIBS $ZLIB_LIBS"
-           for ac_header in zlib.h
+         for ac_header in zlib.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
 if test "x$ac_cv_header_zlib_h" = xyes
 then :
   printf "%s\n" "#define HAVE_ZLIB_H 1" >>confdefs.h
 
-      py_check_lib_save_LIBS=$LIBS
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
+    save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
 printf %s "checking for gzread in -lz... " >&6; }
 if test ${ac_cv_lib_z_gzread+y}
 then :
@@ -21731,28 +21706,10 @@ fi
 printf "%s\n" "$ac_cv_lib_z_gzread" >&6; }
 if test "x$ac_cv_lib_z_gzread" = xyes
 then :
-  have_zlib=yes
-else case e in #(
-  e) have_zlib=no ;;
-esac
-fi
 
-LIBS=$py_check_lib_save_LIBS
-
-
-else case e in #(
-  e) have_zlib=no ;;
-esac
-fi
-
-done
-    if test "x$have_zlib" = xyes
-then :
-
-      ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-      ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
-      py_check_lib_save_LIBS=$LIBS
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
+        ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+        ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 printf %s "checking for inflateCopy in -lz... " >&6; }
 if test ${ac_cv_lib_z_inflateCopy+y}
 then :
@@ -21801,10 +21758,14 @@ then :
 
 fi
 
-LIBS=$py_check_lib_save_LIBS
 
-
+else case e in #(
+  e)
+        as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
+       ;;
+esac
 fi
+
 
 CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
@@ -21812,6 +21773,15 @@ LDFLAGS=$save_LDFLAGS
 LIBS=$save_LIBS
 
 
+
+else case e in #(
+  e)
+      as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
+   ;;
+esac
+fi
+
+done
 
 else
         ZLIB_CFLAGS=$pkg_cv_ZLIB_CFLAGS
@@ -21819,17 +21789,8 @@ else
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 
-  have_zlib=yes
     printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
-
-fi
-
-if test "x$have_zlib" = xyes
-then :
-
-  BINASCII_CFLAGS="-DUSE_ZLIB_CRC32 $ZLIB_CFLAGS"
-  BINASCII_LIBS="$ZLIB_LIBS"
 
 fi
 
@@ -32621,33 +32582,9 @@ printf "%s\n" "$py_cv_module__uuid" >&6; }
 
 
 
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module zlib" >&5
-printf %s "checking for stdlib extension module zlib... " >&6; }
         if test "$py_cv_module_zlib" != "n/a"
 then :
-
-    if true
-then :
-  if test "$have_zlib" = yes
-then :
   py_cv_module_zlib=yes
-else case e in #(
-  e) py_cv_module_zlib=missing ;;
-esac
-fi
-else case e in #(
-  e) py_cv_module_zlib=disabled ;;
-esac
-fi
-
-fi
-  as_fn_append MODULE_BLOCK "MODULE_ZLIB_STATE=$py_cv_module_zlib$as_nl"
-  if test "x$py_cv_module_zlib" = xyes
-then :
-
-    as_fn_append MODULE_BLOCK "MODULE_ZLIB_CFLAGS=$ZLIB_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_ZLIB_LDFLAGS=$ZLIB_LIBS$as_nl"
-
 fi
    if test "$py_cv_module_zlib" = yes; then
   MODULE_ZLIB_TRUE=
@@ -32657,8 +32594,14 @@ else
   MODULE_ZLIB_FALSE=
 fi
 
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module_zlib" >&5
-printf "%s\n" "$py_cv_module_zlib" >&6; }
+  as_fn_append MODULE_BLOCK "MODULE_ZLIB_STATE=$py_cv_module_zlib$as_nl"
+  if test "x$py_cv_module_zlib" = xyes
+then :
+
+    as_fn_append MODULE_BLOCK "MODULE_ZLIB_CFLAGS=$ZLIB_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_ZLIB_LDFLAGS=$ZLIB_LIBS$as_nl"
+
+fi
 
 
         if test "$py_cv_module_binascii" != "n/a"
@@ -32677,8 +32620,8 @@ fi
   if test "x$py_cv_module_binascii" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE_BINASCII_CFLAGS=$BINASCII_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_BINASCII_LDFLAGS=$BINASCII_LIBS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_BINASCII_CFLAGS=$ZLIB_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_BINASCII_LDFLAGS=$ZLIB_LIBS$as_nl"
 
 fi
 
