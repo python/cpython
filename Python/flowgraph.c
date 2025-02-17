@@ -1766,11 +1766,8 @@ optimize_if_const_unaryop(basicblock *bb, int i,
         instr->i_opcode == UNARY_NEGATIVE
         || instr->i_opcode == UNARY_INVERT
         || instr->i_opcode == UNARY_NOT
-        || instr->i_opcode == CALL_INTRINSIC_1
+        || (instr->i_opcode == CALL_INTRINSIC_1 && instr->i_oparg == INTRINSIC_UNARY_POSITIVE)
     );
-    if (instr->i_opcode == CALL_INTRINSIC_1) {
-        assert(instr->i_oparg == INTRINSIC_UNARY_POSITIVE);
-    }
     PyObject *seq;
     RETURN_IF_ERROR(get_constant_sequence(bb, i-1, UNARYOP_OPERAND_COUNT, consts, &seq));
     RETURN_SUCCESS_IF_NULL(seq);
