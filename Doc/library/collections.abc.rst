@@ -28,81 +28,80 @@ An :func:`issubclass` or :func:`isinstance` test for an interface works in one
 of three ways.
 
 1) A newly written class can inherit directly from one of the
-abstract base classes.  The class must supply the required abstract
-methods.  The remaining mixin methods come from inheritance and can be
-overridden if desired.  Other methods may be added as needed:
+   abstract base classes.  The class must supply the required abstract
+   methods.  The remaining mixin methods come from inheritance and can be
+   overridden if desired.  Other methods may be added as needed:
 
-.. testcode::
+   .. testcode::
 
-    class C(Sequence):                      # Direct inheritance
-        def __init__(self): ...             # Extra method not required by the ABC
-        def __getitem__(self, index):  ...  # Required abstract method
-        def __len__(self):  ...             # Required abstract method
-        def count(self, value): ...         # Optionally override a mixin method
+      class C(Sequence):                      # Direct inheritance
+          def __init__(self): ...             # Extra method not required by the ABC
+          def __getitem__(self, index):  ...  # Required abstract method
+          def __len__(self):  ...             # Required abstract method
+          def count(self, value): ...         # Optionally override a mixin method
 
-.. doctest::
+   .. doctest::
 
-   >>> issubclass(C, Sequence)
-   True
-   >>> isinstance(C(), Sequence)
-   True
+      >>> issubclass(C, Sequence)
+      True
+      >>> isinstance(C(), Sequence)
+      True
 
 2) Existing classes and built-in classes can be registered as "virtual
-subclasses" of the ABCs.  Those classes should define the full API
-including all of the abstract methods and all of the mixin methods.
-This lets users rely on :func:`issubclass` or :func:`isinstance` tests
-to determine whether the full interface is supported.  The exception to
-this rule is for methods that are automatically inferred from the rest
-of the API:
+   subclasses" of the ABCs.  Those classes should define the full API
+   including all of the abstract methods and all of the mixin methods.
+   This lets users rely on :func:`issubclass` or :func:`isinstance` tests
+   to determine whether the full interface is supported.  The exception to
+   this rule is for methods that are automatically inferred from the rest
+   of the API:
 
-.. testcode::
+   .. testcode::
 
-    class D:                                 # No inheritance
-        def __init__(self): ...              # Extra method not required by the ABC
-        def __getitem__(self, index):  ...   # Abstract method
-        def __len__(self):  ...              # Abstract method
-        def count(self, value): ...          # Mixin method
-        def index(self, value): ...          # Mixin method
+      class D:                                 # No inheritance
+          def __init__(self): ...              # Extra method not required by the ABC
+          def __getitem__(self, index):  ...   # Abstract method
+          def __len__(self):  ...              # Abstract method
+          def count(self, value): ...          # Mixin method
+          def index(self, value): ...          # Mixin method
 
-    Sequence.register(D)                     # Register instead of inherit
+      Sequence.register(D)                     # Register instead of inherit
 
-.. doctest::
+   .. doctest::
 
-   >>> issubclass(D, Sequence)
-   True
-   >>> isinstance(D(), Sequence)
-   True
+      >>> issubclass(D, Sequence)
+      True
+      >>> isinstance(D(), Sequence)
+      True
 
-In this example, class :class:`!D` does not need to define
-``__contains__``, ``__iter__``, and ``__reversed__`` because the
-:ref:`in-operator <comparisons>`, the :term:`iteration <iterable>`
-logic, and the :func:`reversed` function automatically fall back to
-using ``__getitem__`` and ``__len__``.
+   In this example, class :class:`!D` does not need to define
+   ``__contains__``, ``__iter__``, and ``__reversed__`` because the
+   :ref:`in-operator <comparisons>`, the :term:`iteration <iterable>`
+   logic, and the :func:`reversed` function automatically fall back to
+   using ``__getitem__`` and ``__len__``.
 
 3) Some simple interfaces are directly recognizable by the presence of
-the required methods (unless those methods have been set to
-:const:`None`):
+   the required methods (unless those methods have been set to :const:`None`):
 
-.. testcode::
+   .. testcode::
 
-    class E:
-        def __iter__(self): ...
-        def __next__(self): ...
+      class E:
+          def __iter__(self): ...
+          def __next__(self): ...
 
-.. doctest::
+   .. doctest::
 
-   >>> issubclass(E, Iterable)
-   True
-   >>> isinstance(E(), Iterable)
-   True
+      >>> issubclass(E, Iterable)
+      True
+      >>> isinstance(E(), Iterable)
+      True
 
-Complex interfaces do not support this last technique because an
-interface is more than just the presence of method names.  Interfaces
-specify semantics and relationships between methods that cannot be
-inferred solely from the presence of specific method names.  For
-example, knowing that a class supplies ``__getitem__``, ``__len__``, and
-``__iter__`` is insufficient for distinguishing a :class:`Sequence` from
-a :class:`Mapping`.
+   Complex interfaces do not support this last technique because an
+   interface is more than just the presence of method names.  Interfaces
+   specify semantics and relationships between methods that cannot be
+   inferred solely from the presence of specific method names.  For
+   example, knowing that a class supplies ``__getitem__``, ``__len__``, and
+   ``__iter__`` is insufficient for distinguishing a :class:`Sequence` from
+   a :class:`Mapping`.
 
 .. versionadded:: 3.9
    These abstract classes now support ``[]``. See :ref:`types-genericalias`
