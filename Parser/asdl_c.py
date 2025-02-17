@@ -2166,11 +2166,35 @@ PyObject* PyAST_mod2obj(mod_ty t)
 }
 
 /* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
-mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
+int PyAst_CheckMode(PyObject *ast, int mode)
 {
     const char * const req_name[] = {"Module", "Expression", "Interactive"};
-    int isinstance;
 
+    struct ast_state *state = get_ast_state();
+    if (state == NULL) {
+        return -1;
+    }
+
+    PyObject *req_type[3];
+    req_type[0] = state->Module_type;
+    req_type[1] = state->Expression_type;
+    req_type[2] = state->Interactive_type;
+
+    assert(0 <= mode && mode <= 2);
+    int isinstance = PyObject_IsInstance(ast, req_type[mode]);
+    if (isinstance == -1) {
+        return -1;
+    }
+    if (!isinstance) {
+        PyErr_Format(PyExc_TypeError, "expected %s node, got %.400s",
+                     req_name[mode], _PyType_Name(Py_TYPE(ast)));
+        return -1;
+    }
+    return 0;
+}
+
+mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
+{
     if (PySys_Audit("compile", "OO", ast, Py_None) < 0) {
         return NULL;
     }
@@ -2180,19 +2204,7 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
         return NULL;
     }
 
-    PyObject *req_type[3];
-    req_type[0] = state->Module_type;
-    req_type[1] = state->Expression_type;
-    req_type[2] = state->Interactive_type;
-
-    assert(0 <= mode && mode <= 2);
-
-    isinstance = PyObject_IsInstance(ast, req_type[mode]);
-    if (isinstance == -1)
-        return NULL;
-    if (!isinstance) {
-        PyErr_Format(PyExc_TypeError, "expected %s node, got %.400s",
-                     req_name[mode], _PyType_Name(Py_TYPE(ast)));
+    if (PyAst_CheckMode(ast, mode) < 0) {
         return NULL;
     }
 
@@ -2356,6 +2368,7 @@ def write_header(mod, metadata, f):
     f.write(textwrap.dedent("""
 
         PyObject* PyAST_mod2obj(mod_ty t);
+        int PyAst_CheckMode(PyObject *ast, int mode);
         mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);
         int PyAST_Check(PyObject* obj);
 
