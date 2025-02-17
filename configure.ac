@@ -5327,29 +5327,37 @@ AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy; zlib 
 dnl 2022-03: Until we know if third party zlib modules people use (for hardware
 dnl accelerators, parallelism, etc.) all support copy, lets not assume.
 
-PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
-  dnl zlib 1.2.0 (2003) added inflateCopy
-  AC_DEFINE([HAVE_ZLIB_COPY], [1])
-], [
-  AC_CHECK_HEADERS([zlib.h], [
-    WITH_SAVE_ENV([
-      AC_CHECK_LIB([z], [gzread], [
-        ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-        ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
-        AC_CHECK_LIB([z], [inflateCopy], [AC_DEFINE([HAVE_ZLIB_COPY], [1])])
+AS_CASE([$ac_sys_system],
+  [WASI],
+    [
+      dnl WASM does not have zlib
+      BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
+    ],
+    [
+      PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
+        dnl zlib 1.2.0 (2003) added inflateCopy
+        AC_DEFINE([HAVE_ZLIB_COPY], [1])
       ], [
-        AC_MSG_ERROR([m4_normalize([
-          zlib.h and libz are required. Install your OS's zlib-devel or
-          zlib1g-dev equivalent library or get it from https://zlib.net/.
-        ])])
-      ])
-    ])
-    ], [
-      AC_MSG_ERROR([m4_normalize([
-        zlib.h and libz are required. Install your OS's zlib-devel or
-        zlib1g-dev equivalent library or get it from https://zlib.net/.
-     ])])
-  ])
+        AC_CHECK_HEADERS([zlib.h], [
+          WITH_SAVE_ENV([
+            AC_CHECK_LIB([z], [gzread], [
+              ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+              ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+              AC_CHECK_LIB([z], [inflateCopy], [AC_DEFINE([HAVE_ZLIB_COPY], [1])])
+            ], [
+              AC_MSG_ERROR([m4_normalize([
+                zlib.h and libz are required. Install your OS's zlib-devel or
+                zlib1g-dev equivalent library or get it from https://zlib.net/.
+              ])])
+            ])
+          ])
+          ], [
+            AC_MSG_ERROR([m4_normalize([
+              zlib.h and libz are required. Install your OS's zlib-devel or
+              zlib1g-dev equivalent library or get it from https://zlib.net/.
+           ])])
+        ])
+      ]
 ])
 
 dnl detect bzip2 from Emscripten emport
