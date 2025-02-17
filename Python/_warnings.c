@@ -240,12 +240,12 @@ warnings_lock(PyInterpreterState *interp)
     _PyRecursiveMutex_Lock(&st->lock);
 }
 
-static inline void
+static inline int
 warnings_unlock(PyInterpreterState *interp)
 {
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
-    _PyRecursiveMutex_Unlock(&st->lock);
+    return _PyRecursiveMutex_TryUnlock(&st->lock);
 }
 
 static inline bool
@@ -284,7 +284,10 @@ warnings_release_lock_impl(PyObject *module)
     if (interp == NULL) {
         return NULL;
     }
-    warnings_unlock(interp);
+    if (warnings_unlock(interp) < 0) {
+        PyErr_SetString(PyExc_RuntimeError, "cannot release un-acquired lock");
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
@@ -1445,7 +1448,8 @@ _PyErr_WarnUnawaitedAgenMethod(PyAsyncGenObject *agen, PyObject *method)
                           "coroutine method %R of %R was never awaited",
                           method, agen->ag_qualname) < 0)
     {
-        PyErr_WriteUnraisable((PyObject *)agen);
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "finalizing async generator %R", agen);
     }
     PyErr_SetRaisedException(exc);
 }
@@ -1487,14 +1491,17 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
     }
 
     if (PyErr_Occurred()) {
-        PyErr_WriteUnraisable(coro);
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "finalizing coroutine %R", coro);
     }
+
     if (!warned) {
         if (_PyErr_WarnFormat(coro, PyExc_RuntimeWarning, 1,
                               "coroutine '%S' was never awaited",
                               ((PyCoroObject *)coro)->cr_qualname) < 0)
         {
-            PyErr_WriteUnraisable(coro);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "finalizing coroutine %R", coro);
         }
     }
 }

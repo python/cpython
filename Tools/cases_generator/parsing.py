@@ -153,6 +153,7 @@ class Pseudo(Node):
 @dataclass
 class LabelDef(Node):
     name: str
+    spilled: bool
     block: Block
 
 
@@ -176,12 +177,15 @@ class Parser(PLexer):
 
     @contextual
     def label_def(self) -> LabelDef | None:
+        spilled = False
+        if self.expect(lx.SPILLED):
+            spilled = True
         if self.expect(lx.LABEL):
             if self.expect(lx.LPAREN):
                 if tkn := self.expect(lx.IDENTIFIER):
                     if self.expect(lx.RPAREN):
                         if block := self.block():
-                            return LabelDef(tkn.text, block)
+                            return LabelDef(tkn.text, spilled, block)
         return None
 
     @contextual
