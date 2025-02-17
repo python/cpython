@@ -268,7 +268,7 @@ search_map_for_section(pid_t pid, const char* secname, const char* substr) {
         address += size;
     }
 
-    PyErr_SetString(PyExc_RuntimeError, "mach_vm_region failed");
+    PyErr_SetString(PyExc_RuntimeError, "mach_vm_region failed to find the section");
     return 0;
 }
 
