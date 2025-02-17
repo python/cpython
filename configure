@@ -21535,9 +21535,9 @@ printf "%s\n" "yes" >&6; }
 
               printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
+              BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
+              BINASCII_LIBS=""
 
-            BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
-            BINASCII_LIBS=""
            ;; #(
   *) :
       ZLIB_CFLAGS C compiler flags for ZLIB, overriding pkg-config
