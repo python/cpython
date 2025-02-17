@@ -1781,7 +1781,7 @@ def test_pdb_invalid_arg():
     (Pdb) p
     *** Argument is required for this command
           Usage: p expression
-    (Pdb) enable 
+    (Pdb) enable
     *** Argument is required for this command
           Usage: enable bpnumber [bpnumber ...]
     (Pdb) continue
