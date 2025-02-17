@@ -51,7 +51,7 @@ INIT_LOOPS = 4
 MAX_HASH_SEED = 4294967295
 
 ABI_THREAD = 't' if sysconfig.get_config_var('Py_GIL_DISABLED') else ''
-# PLATSTDLIB_LANDMARK copied from Modules/getpath.py
+# PLATSTDLIB_LANDMARK copied from Modules/getpath.py
 if os.name == 'nt':
     PLATSTDLIB_LANDMARK = f'{sys.platlibdir}'
 else:
