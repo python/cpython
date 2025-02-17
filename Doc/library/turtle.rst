@@ -1325,7 +1325,7 @@ Filling
       >>> turtle.circle(80)
       >>> turtle.end_fill()
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. function:: begin_fill()
@@ -1713,7 +1713,7 @@ Special Turtle methods
       ...     turtle.right(60)
       ...     turtle.forward(100)
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. function:: begin_poly()
@@ -2008,7 +2008,7 @@ Animation control
       ...         fd(dist)
       ...         rt(90)
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. function:: delay(delay=None)
