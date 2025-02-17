@@ -163,6 +163,7 @@ dump_item(_PyStackRef item)
 static void
 dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
 {
+    _PyFrame_SetStackPointer(frame, stack_pointer);
     _PyStackRef *locals_base = _PyFrame_GetLocalsArray(frame);
     _PyStackRef *stack_base = _PyFrame_Stackbase(frame);
     PyObject *exc = PyErr_GetRaisedException();

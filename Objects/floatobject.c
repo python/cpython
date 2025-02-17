@@ -151,18 +151,18 @@ _PyStackRef _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef righ
     PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
     if (Py_REFCNT(left_o) == 1) {
         ((PyFloatObject *)left_o)->ob_fval = value;
-        PyStackRef_CLOSE(right);
+        PyStackRef_CLOSE_SPECIALIZED(right, _PyFloat_ExactDealloc);
         return left;
     }
     else if (Py_REFCNT(right_o) == 1)  {
         ((PyFloatObject *)right_o)->ob_fval = value;
-        PyStackRef_CLOSE(left);
+        PyStackRef_CLOSE_SPECIALIZED(left, _PyFloat_ExactDealloc);
         return right;
     }
     else {
         PyObject *result = PyFloat_FromDouble(value);
-        PyStackRef_CLOSE(left);
-        PyStackRef_CLOSE(right);
+        PyStackRef_CLOSE_SPECIALIZED(left, _PyFloat_ExactDealloc);
+        PyStackRef_CLOSE_SPECIALIZED(right, _PyFloat_ExactDealloc);
         if (result == NULL) {
             return PyStackRef_NULL;
         }

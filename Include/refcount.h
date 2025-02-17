@@ -398,7 +398,23 @@ static inline void Py_DECREF_MORTAL(const char *filename, int lineno, PyObject *
     }
 }
 #define Py_DECREF_MORTAL(op) Py_DECREF_MORTAL(__FILE__, __LINE__, _PyObject_CAST(op))
-#define Py_DECREF_MORTAL_SPECIALIZED(op, destruct) Py_DECREF_MORTAL(op)
+
+
+
+static inline void _Py_DECREF_MORTAL_SPECIALIZED(const char *filename, int lineno, PyObject *op, destructor destruct)
+{
+    if (op->ob_refcnt <= 0) {
+        _Py_NegativeRefcount(filename, lineno, op);
+    }
+    _Py_DECREF_STAT_INC();
+    if (!_Py_IsImmortal(op)) {
+        _Py_DECREF_DecRefTotal();
+    }
+    if (--op->ob_refcnt == 0) {
+        destruct(op);
+    }
+}
+#define Py_DECREF_MORTAL_SPECIALIZED(op, destruct) _Py_DECREF_MORTAL_SPECIALIZED(__FILE__, __LINE__, op, destruct)
 
 static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 {
