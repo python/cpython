@@ -5328,10 +5328,15 @@ dnl 2022-03: Until we know if third party zlib modules people use (for hardware
 dnl accelerators, parallelism, etc.) all support copy, lets not assume.
 
 AS_CASE([$ac_sys_system],
-  [WASI], [],
+  [WASI], [
+            BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
+            BINASCII_LIBS=""
+          ],
 [PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
   dnl zlib 1.2.0 (2003) added inflateCopy
   AC_DEFINE([HAVE_ZLIB_COPY], [1])
+  BINASCII_CFLAGS="$ZLIB_CFLAGS"
+  BINASCII_LIBS="$ZLIB_LIBS"
 ], [
   AC_CHECK_HEADERS([zlib.h], [
     WITH_SAVE_ENV([
@@ -7937,7 +7942,7 @@ PY_STDLIB_MOD([_uuid],
 dnl compression libs
 PY_STDLIB_MOD_SIMPLE([zlib], [$ZLIB_CFLAGS], [$ZLIB_LIBS])
 dnl binascii uses zlib for optimized crc32.
-PY_STDLIB_MOD_SIMPLE([binascii], [$ZLIB_CFLAGS], [$ZLIB_LIBS])
+PY_STDLIB_MOD_SIMPLE([binascii], [$BINASCII_CFLAGS], [$BINASCII_LIBS])
 PY_STDLIB_MOD([_bz2], [], [test "$have_bzip2" = yes],
   [$BZIP2_CFLAGS], [$BZIP2_LIBS])
 PY_STDLIB_MOD([_lzma], [], [test "$have_liblzma" = yes],

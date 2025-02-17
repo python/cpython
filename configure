@@ -21451,7 +21451,10 @@ fi
 
 case $ac_sys_system in #(
   WASI) :
-     ;; #(
+
+            BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
+            BINASCII_LIBS=""
+           ;; #(
   *) :
 
 pkg_failed=no
@@ -21795,6 +21798,8 @@ printf "%s\n" "yes" >&6; }
 
     printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
+  BINASCII_CFLAGS="$ZLIB_CFLAGS"
+  BINASCII_LIBS="$ZLIB_LIBS"
 
 fi
  ;;
@@ -32626,8 +32631,8 @@ fi
   if test "x$py_cv_module_binascii" = xyes
 then :
 
-    as_fn_append MODULE_BLOCK "MODULE_BINASCII_CFLAGS=$ZLIB_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE_BINASCII_LDFLAGS=$ZLIB_LIBS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_BINASCII_CFLAGS=$BINASCII_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE_BINASCII_LDFLAGS=$BINASCII_LIBS$as_nl"
 
 fi
 
