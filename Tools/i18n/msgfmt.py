@@ -35,6 +35,8 @@ from email.parser import HeaderParser
 
 __version__ = "1.2"
 
+import codecs
+
 MESSAGES = {}
 
 
@@ -117,7 +119,7 @@ def make(filename, outfile):
         sys.exit(1)
 
     # Check for UTF-8 BOM
-    if lines[0].startswith(b'\xef\xbb\xbf'):
+    if lines[0].startswith(codecs.BOM_UTF8):
         print(
             f"The file {infile} starts with a UTF-8 BOM which is not allowed in .po files.\n"
             "Please save the file without a BOM and try again.",
