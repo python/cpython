@@ -869,7 +869,7 @@ class DocTestFinder:
         self._recurse = recurse
         self._exclude_empty = exclude_empty
 
-    def find(self, obj, name=None, module=None, globs=None, extraglobs=None):
+    def find(self, obj, name=None, module=None, globs=None, extraglobs=None, follow_wrapped=True):
         """
         Return a list of the DocTests that are defined by the given
         object's docstring, or by any of its contained objects'
@@ -904,6 +904,9 @@ class DocTestFinder:
         to {}.
 
         """
+        if follow_wrapped:
+            obj = inspect.unwrap(obj)
+
         # If name was not specified, then extract it from the object.
         if name is None:
             name = getattr(obj, '__name__', None)
@@ -963,7 +966,7 @@ class DocTestFinder:
 
         # Recursively explore `obj`, extracting DocTests.
         tests = []
-        self._find(tests, obj, name, module, source_lines, globs, {})
+        self._find(tests, obj, name, module, source_lines, globs, follow_wrapped, {})
         # Sort the tests by alpha order of names, for consistency in
         # verbose-mode output.  This was a feature of doctest in Pythons
         # <= 2.3 that got lost by accident in 2.4.  It was repaired in
@@ -1000,24 +1003,16 @@ class DocTestFinder:
         else:
             raise ValueError("object must be a class or function")
 
-    def _is_routine(self, obj):
-        """
-        Safely unwrap objects and determine if they are functions.
-        """
-        maybe_routine = obj
-        try:
-            maybe_routine = inspect.unwrap(maybe_routine)
-        except ValueError:
-            pass
-        return inspect.isroutine(maybe_routine)
-
-    def _find(self, tests, obj, name, module, source_lines, globs, seen):
+    def _find(self, tests, obj, name, module, source_lines, globs, follow_wrapped, seen):
         """
         Find tests for the given object and any contained objects, and
         add them to `tests`.
         """
         if self._verbose:
             print('Finding tests in %s' % name)
+
+        if follow_wrapped:
+            obj = inspect.unwrap(obj)
 
         # If we've already processed this object, then ignore it.
         if id(obj) in seen:
@@ -1035,10 +1030,10 @@ class DocTestFinder:
                 valname = '%s.%s' % (name, valname)
 
                 # Recurse to functions & classes.
-                if ((self._is_routine(val) or inspect.isclass(val)) and
+                if ((inspect.isroutine(val) or inspect.isclass(val)) and
                     self._from_module(module, val)):
                     self._find(tests, val, valname, module, source_lines,
-                               globs, seen)
+                               globs, follow_wrapped, seen)
 
         # Look for tests in a module's __test__ dictionary.
         if inspect.ismodule(obj) and self._recurse:
@@ -1055,7 +1050,7 @@ class DocTestFinder:
                                      (type(val),))
                 valname = '%s.__test__.%s' % (name, valname)
                 self._find(tests, val, valname, module, source_lines,
-                           globs, seen)
+                           globs, follow_wrapped, seen)
 
         # Look for tests in a class's contained objects.
         if inspect.isclass(obj) and self._recurse:
@@ -1070,7 +1065,7 @@ class DocTestFinder:
                       self._from_module(module, val)):
                     valname = '%s.%s' % (name, valname)
                     self._find(tests, val, valname, module, source_lines,
-                               globs, seen)
+                               globs, follow_wrapped, seen)
 
     def _get_test(self, obj, name, module, globs, source_lines):
         """
@@ -1142,7 +1137,6 @@ class DocTestFinder:
             obj = obj.fget
         if inspect.isfunction(obj) and getattr(obj, '__doc__', None):
             # We don't use `docstring` var here, because `obj` can be changed.
-            obj = inspect.unwrap(obj)
             try:
                 obj = obj.__code__
             except AttributeError:
