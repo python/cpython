@@ -801,9 +801,9 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.assertEqual(str(cm.exception),
                 "type object 'List' has no attribute 'spam'")
         with self.assertRaises(self.failureException) as cm:
-            self.assertHasAttr(sys, 'spam')
+            self.assertHasAttr(sys, 'nonexistent')
         self.assertEqual(str(cm.exception),
-                "module 'sys' has no attribute 'spam'")
+                "module 'sys' has no attribute 'nonexistent'")
 
         with self.assertRaises(self.failureException) as cm:
             self.assertHasAttr(a, 'y', 'ababahalamaha')

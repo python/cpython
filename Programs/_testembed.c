@@ -1791,48 +1791,6 @@ static int test_init_warnoptions(void)
 }
 
 
-static int tune_config(void)
-{
-    PyConfig config;
-    PyConfig_InitPythonConfig(&config);
-    if (_PyInterpreterState_GetConfigCopy(&config) < 0) {
-        PyConfig_Clear(&config);
-        PyErr_Print();
-        return -1;
-    }
-
-    config.bytes_warning = 2;
-
-    if (_PyInterpreterState_SetConfig(&config) < 0) {
-        PyConfig_Clear(&config);
-        return -1;
-    }
-    PyConfig_Clear(&config);
-    return 0;
-}
-
-
-static int test_init_set_config(void)
-{
-    // Initialize core
-    PyConfig config;
-    PyConfig_InitIsolatedConfig(&config);
-    config_set_string(&config, &config.program_name, PROGRAM_NAME);
-    config.bytes_warning = 0;
-    init_from_config_clear(&config);
-
-    // Tune the configuration using _PyInterpreterState_SetConfig()
-    if (tune_config() < 0) {
-        PyErr_Print();
-        return 1;
-    }
-
-    dump_config();
-    Py_Finalize();
-    return 0;
-}
-
-
 static int initconfig_getint(PyInitConfig *config, const char *name)
 {
     int64_t value;
@@ -2445,7 +2403,6 @@ static struct TestCase TestCases[] = {
     {"test_init_setpythonhome", test_init_setpythonhome},
     {"test_init_is_python_build", test_init_is_python_build},
     {"test_init_warnoptions", test_init_warnoptions},
-    {"test_init_set_config", test_init_set_config},
     {"test_initconfig_api", test_initconfig_api},
     {"test_initconfig_get_api", test_initconfig_get_api},
     {"test_initconfig_exit", test_initconfig_exit},

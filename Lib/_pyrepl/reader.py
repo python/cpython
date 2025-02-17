@@ -587,10 +587,11 @@ class Reader:
     def pos2xy(self) -> tuple[int, int]:
         """Return the x, y coordinates of position 'pos'."""
         # this *is* incomprehensible, yes.
-        y = 0
+        p, y = 0, 0
+        l2: list[int] = []
         pos = self.pos
         assert 0 <= pos <= len(self.buffer)
-        if pos == len(self.buffer):
+        if pos == len(self.buffer) and len(self.screeninfo) > 0:
             y = len(self.screeninfo) - 1
             p, l2 = self.screeninfo[y]
             return p + sum(l2) + l2.count(0), y
