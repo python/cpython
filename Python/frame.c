@@ -52,6 +52,9 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
     _PyInterpreterFrame *new_frame = (_PyInterpreterFrame *)f->_f_frame_data;
     _PyFrame_Copy(frame, new_frame);
+    // _PyFrame_Copy takes the reference to the executable,
+    // so we need to restore it.
+    frame->f_executable = PyStackRef_DUP(new_frame->f_executable);
     f->f_frame = new_frame;
     new_frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
     if (_PyFrame_IsIncomplete(new_frame)) {
@@ -111,9 +114,6 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
         PyFrameObject *f = frame->frame_obj;
         frame->frame_obj = NULL;
         if (Py_REFCNT(f) > 1) {
-            // take_ownership takes the reference to the executable,
-            // so we need to incref it.
-            PyStackRef_AsPyObjectNew(frame->f_executable);
             take_ownership(f, frame);
             Py_DECREF(f);
             return;
