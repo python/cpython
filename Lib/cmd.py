@@ -42,12 +42,15 @@ listings of documented functions, miscellaneous topics, and undocumented
 functions respectively.
 """
 
-import string, sys
+import sys
 
 __all__ = ["Cmd"]
 
 PROMPT = '(Cmd) '
-IDENTCHARS = string.ascii_letters + string.digits + '_'
+IDENTCHARS = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+              'abcdefghijklmnopqrstuvwxyz'
+              '0123456789'
+              '_')
 
 class Cmd:
     """A simple framework for writing line-oriented command interpreters.
