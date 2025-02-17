@@ -120,7 +120,7 @@ Ellipsis Object
 
 .. c:var:: PyTypeObject PyEllipsis_Type
 
-   The type of Python ``Ellipsis`` object.  Same as :class:`types.EllipsisType`
+   The type of Python :const:`Ellipsis` object.  Same as :class:`types.EllipsisType`
    in the Python layer.
 
 
