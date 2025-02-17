@@ -360,7 +360,7 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
     ULONG guarantee = 0;
     SetThreadStackGuarantee(&guarantee);
     _tstate->c_stack_hard_limit = ((uintptr_t)low) + guarantee + PYOS_STACK_MARGIN_BYTES;
-    _tstate->c_stack_soft_limit = tstate->c_stack_hard_limit + PYOS_STACK_MARGIN_BYTES;
+    _tstate->c_stack_soft_limit = _tstate->c_stack_hard_limit + PYOS_STACK_MARGIN_BYTES;
 #else
     char here;
     uintptr_t here_addr = (uintptr_t)&here;
