@@ -1758,7 +1758,7 @@ def test_pdb_invalid_arg():
     >>> def test_function():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
 
-    >>> with PdbTestInput([
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     'a = 3',
     ...     'll 4',
     ...     'step 1',
