@@ -111,6 +111,11 @@ PyAPI_FUNC(PyGILState_STATE) PyGILState_Ensure(void);
 */
 PyAPI_FUNC(void) PyGILState_Release(PyGILState_STATE);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+/* New in 3.14 */
+PyAPI_FUNC(int) PyGILState_EnsureOrFail(PyGILState_STATE *state);
+#endif
+
 /* Helper/diagnostic function - get the current thread state for
    this thread.  May return NULL if no GILState API has been used
    on the current thread.  Note that the main thread always has such a
