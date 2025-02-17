@@ -66,199 +66,6 @@ has_starred(asdl_expr_seq *elts)
     return 0;
 }
 
-
-static PyObject*
-unary_not(PyObject *v)
-{
-    int r = PyObject_IsTrue(v);
-    if (r < 0)
-        return NULL;
-    return PyBool_FromLong(!r);
-}
-
-static int
-fold_unaryop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
-{
-    expr_ty arg = node->v.UnaryOp.operand;
-
-    if (arg->kind != Constant_kind) {
-        /* Fold not into comparison */
-        if (node->v.UnaryOp.op == Not && arg->kind == Compare_kind &&
-                asdl_seq_LEN(arg->v.Compare.ops) == 1) {
-            /* Eq and NotEq are often implemented in terms of one another, so
-               folding not (self == other) into self != other breaks implementation
-               of !=. Detecting such cases doesn't seem worthwhile.
-               Python uses </> for 'is subset'/'is superset' operations on sets.
-               They don't satisfy not folding laws. */
-            cmpop_ty op = asdl_seq_GET(arg->v.Compare.ops, 0);
-            switch (op) {
-            case Is:
-                op = IsNot;
-                break;
-            case IsNot:
-                op = Is;
-                break;
-            case In:
-                op = NotIn;
-                break;
-            case NotIn:
-                op = In;
-                break;
-            // The remaining comparison operators can't be safely inverted
-            case Eq:
-            case NotEq:
-            case Lt:
-            case LtE:
-            case Gt:
-            case GtE:
-                op = 0; // The AST enums leave "0" free as an "unused" marker
-                break;
-            // No default case, so the compiler will emit a warning if new
-            // comparison operators are added without being handled here
-            }
-            if (op) {
-                asdl_seq_SET(arg->v.Compare.ops, 0, op);
-                COPY_NODE(node, arg);
-                return 1;
-            }
-        }
-        return 1;
-    }
-
-    typedef PyObject *(*unary_op)(PyObject*);
-    static const unary_op ops[] = {
-        [Invert] = PyNumber_Invert,
-        [Not] = unary_not,
-        [UAdd] = PyNumber_Positive,
-        [USub] = PyNumber_Negative,
-    };
-    PyObject *newval = ops[node->v.UnaryOp.op](arg->v.Constant.value);
-    return make_const(node, newval, arena);
-}
-
-/* Check whether a collection doesn't containing too much items (including
-   subcollections).  This protects from creating a constant that needs
-   too much time for calculating a hash.
-   "limit" is the maximal number of items.
-   Returns the negative number if the total number of items exceeds the
-   limit.  Otherwise returns the limit minus the total number of items.
-*/
-
-static Py_ssize_t
-check_complexity(PyObject *obj, Py_ssize_t limit)
-{
-    if (PyTuple_Check(obj)) {
-        Py_ssize_t i;
-        limit -= PyTuple_GET_SIZE(obj);
-        for (i = 0; limit >= 0 && i < PyTuple_GET_SIZE(obj); i++) {
-            limit = check_complexity(PyTuple_GET_ITEM(obj, i), limit);
-        }
-        return limit;
-    }
-    return limit;
-}
-
-#define MAX_INT_SIZE           128  /* bits */
-#define MAX_COLLECTION_SIZE    256  /* items */
-#define MAX_STR_SIZE          4096  /* characters */
-#define MAX_TOTAL_ITEMS       1024  /* including nested collections */
-
-static PyObject *
-safe_multiply(PyObject *v, PyObject *w)
-{
-    if (PyLong_Check(v) && PyLong_Check(w) &&
-        !_PyLong_IsZero((PyLongObject *)v) && !_PyLong_IsZero((PyLongObject *)w)
-    ) {
-        int64_t vbits = _PyLong_NumBits(v);
-        int64_t wbits = _PyLong_NumBits(w);
-        assert(vbits >= 0);
-        assert(wbits >= 0);
-        if (vbits + wbits > MAX_INT_SIZE) {
-            return NULL;
-        }
-    }
-    else if (PyLong_Check(v) && PyTuple_Check(w)) {
-        Py_ssize_t size = PyTuple_GET_SIZE(w);
-        if (size) {
-            long n = PyLong_AsLong(v);
-            if (n < 0 || n > MAX_COLLECTION_SIZE / size) {
-                return NULL;
-            }
-            if (n && check_complexity(w, MAX_TOTAL_ITEMS / n) < 0) {
-                return NULL;
-            }
-        }
-    }
-    else if (PyLong_Check(v) && (PyUnicode_Check(w) || PyBytes_Check(w))) {
-        Py_ssize_t size = PyUnicode_Check(w) ? PyUnicode_GET_LENGTH(w) :
-                                               PyBytes_GET_SIZE(w);
-        if (size) {
-            long n = PyLong_AsLong(v);
-            if (n < 0 || n > MAX_STR_SIZE / size) {
-                return NULL;
-            }
-        }
-    }
-    else if (PyLong_Check(w) &&
-             (PyTuple_Check(v) || PyUnicode_Check(v) || PyBytes_Check(v)))
-    {
-        return safe_multiply(w, v);
-    }
-
-    return PyNumber_Multiply(v, w);
-}
-
-static PyObject *
-safe_power(PyObject *v, PyObject *w)
-{
-    if (PyLong_Check(v) && PyLong_Check(w) &&
-        !_PyLong_IsZero((PyLongObject *)v) && _PyLong_IsPositive((PyLongObject *)w)
-    ) {
-        int64_t vbits = _PyLong_NumBits(v);
-        size_t wbits = PyLong_AsSize_t(w);
-        assert(vbits >= 0);
-        if (wbits == (size_t)-1) {
-            return NULL;
-        }
-        if ((uint64_t)vbits > MAX_INT_SIZE / wbits) {
-            return NULL;
-        }
-    }
-
-    return PyNumber_Power(v, w, Py_None);
-}
-
-static PyObject *
-safe_lshift(PyObject *v, PyObject *w)
-{
-    if (PyLong_Check(v) && PyLong_Check(w) &&
-        !_PyLong_IsZero((PyLongObject *)v) && !_PyLong_IsZero((PyLongObject *)w)
-    ) {
-        int64_t vbits = _PyLong_NumBits(v);
-        size_t wbits = PyLong_AsSize_t(w);
-        assert(vbits >= 0);
-        if (wbits == (size_t)-1) {
-            return NULL;
-        }
-        if (wbits > MAX_INT_SIZE || (uint64_t)vbits > MAX_INT_SIZE - wbits) {
-            return NULL;
-        }
-    }
-
-    return PyNumber_Lshift(v, w);
-}
-
-static PyObject *
-safe_mod(PyObject *v, PyObject *w)
-{
-    if (PyUnicode_Check(v) || PyBytes_Check(v)) {
-        return NULL;
-    }
-
-    return PyNumber_Remainder(v, w);
-}
-
-
 static expr_ty
 parse_literal(PyObject *fmt, Py_ssize_t *ppos, PyArena *arena)
 {
@@ -478,58 +285,7 @@ fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
         return optimize_format(node, lv, rhs->v.Tuple.elts, arena);
     }
 
-    if (rhs->kind != Constant_kind) {
-        return 1;
-    }
-
-    PyObject *rv = rhs->v.Constant.value;
-    PyObject *newval = NULL;
-
-    switch (node->v.BinOp.op) {
-    case Add:
-        newval = PyNumber_Add(lv, rv);
-        break;
-    case Sub:
-        newval = PyNumber_Subtract(lv, rv);
-        break;
-    case Mult:
-        newval = safe_multiply(lv, rv);
-        break;
-    case Div:
-        newval = PyNumber_TrueDivide(lv, rv);
-        break;
-    case FloorDiv:
-        newval = PyNumber_FloorDivide(lv, rv);
-        break;
-    case Mod:
-        newval = safe_mod(lv, rv);
-        break;
-    case Pow:
-        newval = safe_power(lv, rv);
-        break;
-    case LShift:
-        newval = safe_lshift(lv, rv);
-        break;
-    case RShift:
-        newval = PyNumber_Rshift(lv, rv);
-        break;
-    case BitOr:
-        newval = PyNumber_Or(lv, rv);
-        break;
-    case BitXor:
-        newval = PyNumber_Xor(lv, rv);
-        break;
-    case BitAnd:
-        newval = PyNumber_And(lv, rv);
-        break;
-    // No builtin constants implement the following operators
-    case MatMult:
-        return 1;
-    // No default case, so the compiler will emit a warning if new binary
-    // operators are added without being handled here
-    }
-
-    return make_const(node, newval, arena);
+    return 1;
 }
 
 static PyObject*
@@ -680,7 +436,6 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         break;
     case UnaryOp_kind:
         CALL(astfold_expr, expr_ty, node_->v.UnaryOp.operand);
-        CALL(fold_unaryop, expr_ty, node_);
         break;
     case Lambda_kind:
         CALL(astfold_arguments, arguments_ty, node_->v.Lambda.args);
@@ -971,6 +726,119 @@ astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     return 1;
 }
 
+#define IS_CONST_EXPR(N) \
+    ((N)->kind == Constant_kind)
+
+#define CONST_EXPR_VALUE(N) \
+    ((N)->v.Constant.value)
+
+#define IS_COMPLEX_CONST_EXPR(N) \
+    (IS_CONST_EXPR(N) && PyComplex_CheckExact(CONST_EXPR_VALUE(N)))
+
+#define IS_NUMERIC_CONST_EXPR(N) \
+    (IS_CONST_EXPR(N) && (PyLong_CheckExact(CONST_EXPR_VALUE(N)) || PyFloat_CheckExact(CONST_EXPR_VALUE(N))))
+
+#define IS_UNARY_EXPR(N) \
+    ((N)->kind == UnaryOp_kind)
+
+#define UNARY_EXPR_OP(N) \
+    ((N)->v.UnaryOp.op)
+
+#define UNARY_EXPR_OPERAND(N) \
+    ((N)->v.UnaryOp.operand)
+
+#define UNARY_EXPR_OPERAND_CONST_VALUE(N) \
+    (CONST_EXPR_VALUE(UNARY_EXPR_OPERAND(N)))
+
+#define IS_UNARY_SUB_EXPR(N) \
+    (IS_UNARY_EXPR(N) && UNARY_EXPR_OP(N) == USub)
+
+#define IS_MATCH_NUMERIC_UNARY_CONST_EXPR(N) \
+    (IS_UNARY_SUB_EXPR(N) && IS_NUMERIC_CONST_EXPR(UNARY_EXPR_OPERAND(N)))
+
+#define IS_MATCH_COMPLEX_UNARY_CONST_EXPR(N) \
+    (IS_UNARY_SUB_EXPR(N) && IS_COMPLEX_CONST_EXPR(UNARY_EXPR_OPERAND(N)))
+
+#define BINARY_EXPR(N) \
+    ((N)->v.BinOp)
+
+#define BINARY_EXPR_OP(N) \
+    (BINARY_EXPR(N).op)
+
+#define BINARY_EXPR_LEFT(N) \
+    (BINARY_EXPR(N).left)
+
+#define BINARY_EXPR_RIGHT(N) \
+    (BINARY_EXPR(N).right)
+
+#define IS_BINARY_EXPR(N) \
+    ((N)->kind == BinOp_kind)
+
+#define IS_BINARY_ADD_EXPR(N) \
+    (IS_BINARY_EXPR(N) && BINARY_EXPR_OP(N) == Add)
+
+#define IS_BINARY_SUB_EXPR(N) \
+    (IS_BINARY_EXPR(N) && BINARY_EXPR_OP(N) == Sub)
+
+#define IS_MATCH_NUMERIC_OR_COMPLEX_UNARY_CONST_EXPR(N) \
+    (IS_MATCH_NUMERIC_UNARY_CONST_EXPR(N) || IS_MATCH_COMPLEX_UNARY_CONST_EXPR(N))
+
+#define IS_MATCH_COMPLEX_BINARY_CONST_EXPR(N) \
+    ( \
+        (IS_BINARY_ADD_EXPR(N) || IS_BINARY_SUB_EXPR(N)) \
+        && (IS_MATCH_NUMERIC_UNARY_CONST_EXPR(BINARY_EXPR_LEFT(N)) || IS_NUMERIC_CONST_EXPR(BINARY_EXPR_LEFT(N))) \
+        && IS_COMPLEX_CONST_EXPR(BINARY_EXPR_RIGHT(N)) \
+    )
+
+
+static int
+fold_const_unary_or_complex_expr(expr_ty node, PyArena *ctx_,
+                                 _PyASTOptimizeState * Py_UNUSED(state))
+{
+    assert(IS_MATCH_NUMERIC_OR_COMPLEX_UNARY_CONST_EXPR(node));
+    PyObject *constant = UNARY_EXPR_OPERAND_CONST_VALUE(node);
+    assert(UNARY_EXPR_OP(node) == USub);
+    assert(constant != NULL);
+    PyObject* folded = PyNumber_Negative(constant);
+    return make_const(node, folded, ctx_);
+}
+
+static int
+fold_const_binary_complex_expr(expr_ty node, PyArena *ctx_, _PyASTOptimizeState *state)
+{
+    assert(IS_MATCH_COMPLEX_BINARY_CONST_EXPR(node));
+    expr_ty left_expr = BINARY_EXPR_LEFT(node);
+    if (IS_MATCH_NUMERIC_UNARY_CONST_EXPR(left_expr)) {
+        CALL(fold_const_unary_or_complex_expr, expr_ty, left_expr);
+    }
+    /* must have folded if left was IS_MATCH_NUMERIC_UNARY_CONST_EXPR */
+    assert(IS_CONST_EXPR(BINARY_EXPR_LEFT(node)));
+    operator_ty op = BINARY_EXPR_OP(node);
+    PyObject *left = CONST_EXPR_VALUE(BINARY_EXPR_LEFT(node));
+    PyObject *right = CONST_EXPR_VALUE(BINARY_EXPR_RIGHT(node));
+    assert(op == Add || op == Sub);
+    assert(left != NULL && right != NULL);
+    PyObject *folded = op == Add ? PyNumber_Add(left, right) : PyNumber_Subtract(left, right);
+    return make_const(node, folded, ctx_);
+}
+
+static int
+fold_pattern_match_value(expr_ty node, PyArena *ctx_, _PyASTOptimizeState *state)
+{
+    switch (node->kind)
+    {
+        case UnaryOp_kind:
+            CALL(fold_const_unary_or_complex_expr, expr_ty, node);
+            break;
+        case BinOp_kind:
+            CALL(fold_const_binary_complex_expr, expr_ty, node);
+            break;
+        default:
+            break;
+    }
+    return 1;
+}
+
 static int
 astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
@@ -980,7 +848,7 @@ astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     ENTER_RECURSIVE(state);
     switch (node_->kind) {
         case MatchValue_kind:
-            CALL(astfold_expr, expr_ty, node_->v.MatchValue.value);
+            CALL(fold_pattern_match_value, expr_ty, node_->v.MatchValue.value);
             break;
         case MatchSingleton_kind:
             break;
@@ -988,7 +856,7 @@ astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
             CALL_SEQ(astfold_pattern, pattern, node_->v.MatchSequence.patterns);
             break;
         case MatchMapping_kind:
-            CALL_SEQ(astfold_expr, expr, node_->v.MatchMapping.keys);
+            CALL_SEQ(fold_pattern_match_value, expr, node_->v.MatchMapping.keys);
             CALL_SEQ(astfold_pattern, pattern, node_->v.MatchMapping.patterns);
             break;
         case MatchClass_kind:

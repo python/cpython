@@ -555,7 +555,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(type(glob['ticker']()), AsyncGeneratorType)
 
     def test_compile_ast(self):
-        args = ("a*(1+2)", "f.py", "exec")
+        args = ("a*(1,2)", "f.py", "exec")
         raw = compile(*args, flags = ast.PyCF_ONLY_AST).body[0]
         opt1 = compile(*args, flags = ast.PyCF_OPTIMIZED_AST).body[0]
         opt2 = compile(ast.parse(args[0]), *args[1:], flags = ast.PyCF_OPTIMIZED_AST).body[0]
@@ -566,17 +566,14 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             self.assertIsInstance(tree.value.left, ast.Name)
             self.assertEqual(tree.value.left.id, 'a')
 
-        raw_right = raw.value.right  # expect BinOp(1, '+', 2)
-        self.assertIsInstance(raw_right, ast.BinOp)
-        self.assertIsInstance(raw_right.left, ast.Constant)
-        self.assertEqual(raw_right.left.value, 1)
-        self.assertIsInstance(raw_right.right, ast.Constant)
-        self.assertEqual(raw_right.right.value, 2)
+        raw_right = raw.value.right  # expect Tuple((1, 2))
+        self.assertIsInstance(raw_right, ast.Tuple)
+        self.assertListEqual([elt.value for elt in raw_right.elts], [1, 2])
 
         for opt in [opt1, opt2]:
-            opt_right = opt.value.right  # expect Constant(3)
+            opt_right = opt.value.right  # expect Constant((1,2))
             self.assertIsInstance(opt_right, ast.Constant)
-            self.assertEqual(opt_right.value, 3)
+            self.assertEqual(opt_right.value, (1, 2))
 
     def test_delattr(self):
         sys.spam = 1
