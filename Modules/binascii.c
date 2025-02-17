@@ -1290,8 +1290,9 @@ binascii__b2a_base85_impl(PyObject *module, Py_buffer *data,
     size_t i = 0 ;
     int padding = 0;
 
+    // Conversion largely inspired from git base85 implementation
     while (i < bin_len) {
-        // translate each 4 byte chunk to 32bit integer
+        // Translate each 4 byte chunk to 32bit integer
         uint32_t value = 0;
         for (int cnt = 24; cnt >= 0; cnt -= 8) {
             value |= bin_data[i] << cnt;
@@ -1302,6 +1303,7 @@ binascii__b2a_base85_impl(PyObject *module, Py_buffer *data,
             }
         }
 
+        // Handle NULL only and space-only cases (specific to ASCII85)
         if (foldnuls && value == 0) {
             *ascii_data++ = 'z';
         }
@@ -1317,6 +1319,7 @@ binascii__b2a_base85_impl(PyObject *module, Py_buffer *data,
         }
     }
 
+    // Expand the last folded null in case it did not fill a full chunk
     if (padding && !pad && foldnuls && ascii_data[-1] == 'z') {
         ascii_data--;
         memset(ascii_data, table[0], 5);
