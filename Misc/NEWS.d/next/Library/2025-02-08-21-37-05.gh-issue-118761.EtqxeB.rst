@@ -1,0 +1,2 @@
+Improve import time of :mod:`locale` using lazy import ``re``. Patch by
+Semyon Moroz.
