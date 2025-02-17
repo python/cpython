@@ -1,0 +1,1 @@
+Added support for :class:`ctypes.c_bool` for structs/unions that have an endianness opposite of the current system.
