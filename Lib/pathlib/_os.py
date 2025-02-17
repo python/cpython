@@ -211,7 +211,7 @@ class CopyWriter:
     def __init__(self, path):
         self._path = path
 
-    def _create_metadata(self, source, follow_symlinks=True):
+    def _copy_metadata(self, source, follow_symlinks=True):
         """Copy metadata from the given path to our path."""
         pass
 
@@ -239,7 +239,7 @@ class CopyWriter:
                 dst._copy_writer._create_file(src, preserve_metadata)
 
         if preserve_metadata:
-            self._create_metadata(source)
+            self._copy_metadata(source)
 
     def _create_file(self, source, preserve_metadata):
         """Copy the given file to our path."""
@@ -255,13 +255,13 @@ class CopyWriter:
                         f'Directory does not exist: {self._path}') from e
                 raise
         if preserve_metadata:
-            self._create_metadata(source)
+            self._copy_metadata(source)
 
     def _create_symlink(self, source, preserve_metadata):
         """Copy the given symbolic link to our path."""
         self._path.symlink_to(source.readlink())
         if preserve_metadata:
-            self._create_metadata(source, follow_symlinks=False)
+            self._copy_metadata(source, follow_symlinks=False)
 
 
 def ensure_distinct_paths(source, target):
@@ -290,7 +290,7 @@ class LocalCopyWriter(CopyWriter):
     """
     __slots__ = ()
 
-    def _create_metadata(self, source, follow_symlinks=True):
+    def _copy_metadata(self, source, follow_symlinks=True):
         """Copy metadata from the given path to our path."""
         target = self._path
         info = source.info
@@ -369,7 +369,7 @@ class LocalCopyWriter(CopyWriter):
             """Copy the given symlink to the given target."""
             self._path.symlink_to(source.readlink(), source.is_dir())
             if preserve_metadata:
-                self._create_metadata(source, follow_symlinks=False)
+                self._copy_metadata(source, follow_symlinks=False)
 
 
 def ensure_different_files(source, target):
