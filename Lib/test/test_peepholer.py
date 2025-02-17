@@ -523,7 +523,7 @@ class TestTranforms(BytecodeTestCase):
             ('~~~1', 'UNARY_INVERT', None, True),
             ('~~~""', 'UNARY_INVERT', None, False),
             ('not not True', 'UNARY_NOT', None, True),
-            ('not not x', 'UNARY_NOT', None, False),
+            ('not not x', 'UNARY_NOT', None, True),  # this should be optimized regardless of constant or not
             ('+++1', 'CALL_INTRINSIC_1', intrinsic_positive, True),
             ('+++x', 'CALL_INTRINSIC_1', intrinsic_positive, False),
         ]
