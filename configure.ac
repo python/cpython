@@ -5329,35 +5329,38 @@ dnl accelerators, parallelism, etc.) all support copy, lets not assume.
 
 AS_CASE([$ac_sys_system],
   [WASI], [
+            PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
+              AC_DEFINE([HAVE_ZLIB_COPY], [1])
+            ]
             BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
             BINASCII_LIBS=""
           ],
-[PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
-  dnl zlib 1.2.0 (2003) added inflateCopy
-  AC_DEFINE([HAVE_ZLIB_COPY], [1])
-  BINASCII_CFLAGS="$ZLIB_CFLAGS"
-  BINASCII_LIBS="$ZLIB_LIBS"
-], [
-  AC_CHECK_HEADERS([zlib.h], [
-    WITH_SAVE_ENV([
-      AC_CHECK_LIB([z], [gzread], [
-        ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-        ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
-        AC_CHECK_LIB([z], [inflateCopy], [AC_DEFINE([HAVE_ZLIB_COPY], [1])])
+  [PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
+    dnl zlib 1.2.0 (2003) added inflateCopy
+    AC_DEFINE([HAVE_ZLIB_COPY], [1])
+    BINASCII_CFLAGS="$ZLIB_CFLAGS"
+    BINASCII_LIBS="$ZLIB_LIBS"
+  ], [
+    AC_CHECK_HEADERS([zlib.h], [
+      WITH_SAVE_ENV([
+        AC_CHECK_LIB([z], [gzread], [
+          ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+          ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+          AC_CHECK_LIB([z], [inflateCopy], [AC_DEFINE([HAVE_ZLIB_COPY], [1])])
+        ], [
+          AC_MSG_ERROR([m4_normalize([
+            zlib.h and libz are required. Install your OS's zlib-devel or
+            zlib1g-dev equivalent library or get it from https://zlib.net/.
+          ])])
+        ])
+      ])
       ], [
         AC_MSG_ERROR([m4_normalize([
           zlib.h and libz are required. Install your OS's zlib-devel or
           zlib1g-dev equivalent library or get it from https://zlib.net/.
-        ])])
-      ])
+       ])])
     ])
-    ], [
-      AC_MSG_ERROR([m4_normalize([
-        zlib.h and libz are required. Install your OS's zlib-devel or
-        zlib1g-dev equivalent library or get it from https://zlib.net/.
-     ])])
   ])
-])
 ])
 
 dnl detect bzip2 from Emscripten emport
