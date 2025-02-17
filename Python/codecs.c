@@ -1381,7 +1381,6 @@ _PyCodec_SurrogateEscapeUnicodeEncodeError(PyObject *exc)
 
     char *outp = PyBytes_AsString(res);
     for (Py_ssize_t i = start; i < end; i++) {
-        /* object is guaranteed to be "ready" */
         Py_UCS4 ch = PyUnicode_READ_CHAR(obj, i);
         if (ch < 0xdc80 || ch > 0xdcff) {
             /* Not a UTF-8b surrogate, fail with original exception. */
