@@ -2274,7 +2274,7 @@ fast_scan_many_locals(basicblock *entryblock, int nlocals)
 }
 
 static int
-remove_unused_consts(basicblock *entryblock, PyObject *consts)
+remove_unused_consts(basicblock *entryblock, PyObject *consts, unsigned has_docstring)
 {
     assert(PyList_CheckExact(consts));
     Py_ssize_t nconsts = PyList_GET_SIZE(consts);
@@ -2290,11 +2290,15 @@ remove_unused_consts(basicblock *entryblock, PyObject *consts)
     if (index_map == NULL) {
         goto end;
     }
-    for (Py_ssize_t i = 1; i < nconsts; i++) {
+    for (Py_ssize_t i = 0; i < nconsts; i++) {
         index_map[i] = -1;
     }
     // The first constant may be docstring; keep it always.
-    index_map[0] = 0;
+    if (has_docstring) {
+        assert(PyList_Size(consts) >= 1);
+        assert(PyUnicode_CheckExact(PyList_GET_ITEM(consts, 0)));
+        index_map[0] = 0;
+    }
 
     /* mark used consts */
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
@@ -2757,7 +2761,7 @@ resolve_line_numbers(cfg_builder *g, int firstlineno)
 
 int
 _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
-                        int nlocals, int nparams, int firstlineno)
+                        int nlocals, int nparams, int firstlineno, unsigned has_docstring)
 {
     assert(cfg_builder_check(g));
     /** Preprocessing **/
@@ -2768,7 +2772,7 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
 
     /** Optimization **/
     RETURN_IF_ERROR(optimize_cfg(g, consts, const_cache, firstlineno));
-    RETURN_IF_ERROR(remove_unused_consts(g->g_entryblock, consts));
+    RETURN_IF_ERROR(remove_unused_consts(g->g_entryblock, consts, has_docstring));
     RETURN_IF_ERROR(
         add_checks_for_loads_of_uninitialized_variables(
             g->g_entryblock, nlocals, nparams));
@@ -3184,7 +3188,7 @@ _PyCompile_OptimizeCfg(PyObject *seq, PyObject *consts, int nlocals)
     }
     int nparams = 0, firstlineno = 1;
     if (_PyCfg_OptimizeCodeUnit(g, consts, const_cache, nlocals,
-                                nparams, firstlineno) < 0) {
+                                nparams, firstlineno, 0) < 0) {
         goto error;
     }
     res = cfg_to_instruction_sequence(g);
