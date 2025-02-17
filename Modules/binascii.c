@@ -1308,8 +1308,8 @@ binascii_b2a_base85_impl(PyObject *module, Py_buffer *data, Py_buffer *chars,
             *ascii_data++ = 'y';
         }
         else {
-            for (int j = 0; j < 5 ; j++) {
-                ascii_data[4 - j] = table[value % 85];
+            for (int j = 4; j >= 0; j--) {
+                ascii_data[j] = table[value % 85];
                 value /= 85;
             }
             ascii_data += 5;
