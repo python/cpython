@@ -707,6 +707,11 @@ static int
 bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *values)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
+#ifdef Py_DEBUG
+    if (values != NULL) {
+        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(values);
+    }
+#endif
     PyByteArrayObject *self = _PyByteArray_CAST(op);
     Py_ssize_t start, stop, step, slicelen;
     char *buf = PyByteArray_AS_STRING(self);
@@ -864,9 +869,16 @@ static int
 bytearray_ass_subscript(PyObject *op, PyObject *index, PyObject *values)
 {
     int ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytearray_ass_subscript_lock_held(op, index, values);
-    Py_END_CRITICAL_SECTION();
+    if (values != NULL) {
+        Py_BEGIN_CRITICAL_SECTION2(op, values);
+        ret = bytearray_ass_subscript_lock_held(op, index, values);
+        Py_END_CRITICAL_SECTION2();
+    }
+    else {
+        Py_BEGIN_CRITICAL_SECTION(op);
+        ret = bytearray_ass_subscript_lock_held(op, index, values);
+        Py_END_CRITICAL_SECTION();
+    }
     return ret;
 }
 
@@ -2742,6 +2754,7 @@ static PyObject *
 bytearray_mod_lock_held(PyObject *v, PyObject *w)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(v);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(w);
     if (!PyByteArray_Check(v))
         Py_RETURN_NOTIMPLEMENTED;
     return _PyBytes_FormatEx(PyByteArray_AS_STRING(v), PyByteArray_GET_SIZE(v), w, 1);
@@ -2751,9 +2764,9 @@ static PyObject *
 bytearray_mod(PyObject *v, PyObject *w)
 {
     PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(v);
+    Py_BEGIN_CRITICAL_SECTION2(v, w);
     ret = bytearray_mod_lock_held(v, w);
-    Py_END_CRITICAL_SECTION();
+    Py_END_CRITICAL_SECTION2();
     return ret;
 }
 
