@@ -1,10 +1,8 @@
 import re
 import pickle
 import unittest
-import warnings
 import importlib
 import importlib.metadata
-import contextlib
 from test.support import os_helper
 
 try:
@@ -13,7 +11,6 @@ except ImportError:
     from .stubs import fake_filesystem_unittest as ffs
 
 from . import fixtures
-from ._context import suppress
 from ._path import Symlink
 from importlib.metadata import (
     Distribution,
@@ -26,13 +23,6 @@ from importlib.metadata import (
     packages_distributions,
     version,
 )
-
-
-@contextlib.contextmanager
-def suppress_known_deprecation():
-    with warnings.catch_warnings(record=True) as ctx:
-        warnings.simplefilter('default', category=DeprecationWarning)
-        yield ctx
 
 
 class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
@@ -59,9 +49,6 @@ class BasicTests(fixtures.DistInfoPkg, unittest.TestCase):
 
         assert "metadata" in str(ctx.exception)
 
-    # expected to fail until ABC is enforced
-    @suppress(AssertionError)
-    @suppress_known_deprecation()
     def test_abc_enforced(self):
         with self.assertRaises(TypeError):
             type('DistributionSubclass', (Distribution,), {})()
@@ -144,6 +131,31 @@ class NameNormalizationTests(fixtures.OnSysPath, fixtures.SiteDir, unittest.Test
         after = list(_unique(distributions()))
 
         assert len(after) == len(before)
+
+
+class InvalidMetadataTests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
+    @staticmethod
+    def make_pkg(name, files=dict(METADATA="VERSION: 1.0")):
+        """
+        Create metadata for a dist-info package with name and files.
+        """
+        return {
+            f'{name}.dist-info': files,
+        }
+
+    def test_valid_dists_preferred(self):
+        """
+        Dists with metadata should be preferred when discovered by name.
+
+        Ref python/importlib_metadata#489.
+        """
+        # create three dists with the valid one in the middle (lexicographically)
+        # such that on most file systems, the valid one is never naturally first.
+        fixtures.build_files(self.make_pkg('foo-4.0', files={}), self.site_dir)
+        fixtures.build_files(self.make_pkg('foo-4.1'), self.site_dir)
+        fixtures.build_files(self.make_pkg('foo-4.2', files={}), self.site_dir)
+        dist = Distribution.from_name('foo')
+        assert dist.version == "1.0"
 
 
 class NonASCIITests(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
