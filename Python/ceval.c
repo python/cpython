@@ -309,13 +309,14 @@ _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count)
 {
     char here;
     uintptr_t here_addr = (uintptr_t)&here;
-    if (here_addr > tstate->c_stack_soft_limit + margin_count * PYOS_STACK_MARGIN_BYTES) {
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    if (here_addr > _tstate->c_stack_soft_limit + margin_count * PYOS_STACK_MARGIN_BYTES) {
         return 0;
     }
-    if (tstate->c_stack_hard_limit == 0) {
+    if (_tstate->c_stack_hard_limit == 0) {
         _Py_InitializeRecursionLimits(tstate);
     }
-    return here_addr <= tstate->c_stack_soft_limit + margin_count * PYOS_STACK_MARGIN_BYTES;
+    return here_addr <= _tstate->c_stack_soft_limit + margin_count * PYOS_STACK_MARGIN_BYTES;
 }
 
 void
@@ -323,7 +324,8 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 {
     char here;
     uintptr_t here_addr = (uintptr_t)&here;
-    if (here_addr < tstate->c_stack_hard_limit) {
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    if (here_addr < _tstate->c_stack_hard_limit) {
         Py_FatalError("Unchecked stack overflow.");
     }
 }
@@ -350,20 +352,21 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 void
 _Py_InitializeRecursionLimits(PyThreadState *tstate)
 {
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
 #ifdef WIN32
     ULONG_PTR low, high;
     GetCurrentThreadStackLimits(&low, &high);
-    tstate->c_stack_top = (uintptr_t)high;
+    _tstate->c_stack_top = (uintptr_t)high;
     ULONG guarantee = 0;
     SetThreadStackGuarantee(&guarantee);
-    tstate->c_stack_hard_limit = ((uintptr_t)low) + guarantee + PYOS_STACK_MARGIN_BYTES;
-    tstate->c_stack_soft_limit = tstate->c_stack_hard_limit + PYOS_STACK_MARGIN_BYTES;
+    _tstate->c_stack_hard_limit = ((uintptr_t)low) + guarantee + PYOS_STACK_MARGIN_BYTES;
+    _tstate->c_stack_soft_limit = tstate->c_stack_hard_limit + PYOS_STACK_MARGIN_BYTES;
 #else
     char here;
     uintptr_t here_addr = (uintptr_t)&here;
-    tstate->c_stack_top = _Py_SIZE_ROUND_UP(here_addr, 4096);
-    tstate->c_stack_soft_limit = tstate->c_stack_top - Py_C_STACK_SIZE;
-    tstate->c_stack_hard_limit = tstate->c_stack_top - (Py_C_STACK_SIZE + PYOS_STACK_MARGIN_BYTES);
+    _tstate->c_stack_top = _Py_SIZE_ROUND_UP(here_addr, 4096);
+    _tstate->c_stack_soft_limit = _tstate->c_stack_top - Py_C_STACK_SIZE;
+    _tstate->c_stack_hard_limit = _tstate->c_stack_top - (Py_C_STACK_SIZE + PYOS_STACK_MARGIN_BYTES);
 #endif
 }
 
@@ -372,19 +375,20 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
 int
 _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     char here;
     uintptr_t here_addr = (uintptr_t)&here;
-    assert(tstate->c_stack_soft_limit != 0);
-    if (tstate->c_stack_hard_limit == 0) {
+    assert(_tstate->c_stack_soft_limit != 0);
+    if (_tstate->c_stack_hard_limit == 0) {
         _Py_InitializeRecursionLimits(tstate);
     }
-    if (here_addr >= tstate->c_stack_soft_limit) {
+    if (here_addr >= _tstate->c_stack_soft_limit) {
         return 0;
     }
-    assert(tstate->c_stack_hard_limit != 0);
-    if (here_addr < tstate->c_stack_hard_limit) {
+    assert(_tstate->c_stack_hard_limit != 0);
+    if (here_addr < _tstate->c_stack_hard_limit) {
         /* Overflowing while handling an overflow. Give up. */
-        int kbytes_used = (int)(tstate->c_stack_top - here_addr)/1024;
+        int kbytes_used = (int)(_tstate->c_stack_top - here_addr)/1024;
         char buffer[80];
         snprintf(buffer, 80, "Unrecoverable stack overflow (used %d kB)%s", kbytes_used, where);
         Py_FatalError(buffer);
@@ -393,7 +397,7 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
         return 0;
     }
     else {
-        int kbytes_used = (int)(tstate->c_stack_top - here_addr)/1024;
+        int kbytes_used = (int)(_tstate->c_stack_top - here_addr)/1024;
         tstate->recursion_headroom++;
         _PyErr_Format(tstate, PyExc_RecursionError,
                     "Stack overflow (used %d kB)%s",
