@@ -1293,6 +1293,7 @@ loads_const(int opcode)
     return OPCODE_HAS_CONST(opcode) || opcode == LOAD_SMALL_INT;
 }
 
+/* Returns new reference */
 static PyObject*
 get_const_value(int opcode, int oparg, PyObject *co_consts)
 {
@@ -1386,10 +1387,10 @@ nop_out(cfg_instr **instrs, int size)
     }
 }
 
-/* Steals reference to "newconst" */
-static int
-instr_make_load_const(cfg_instr *instr, PyObject *newconst,
-                      PyObject *consts, PyObject *const_cache)
+/* Does not steal reference to "newconst" */
+static bool
+maybe_instr_make_load_smallint(cfg_instr *instr, PyObject *newconst,
+                               PyObject *consts, PyObject *const_cache)
 {
     if (PyLong_CheckExact(newconst)) {
         int overflow;
@@ -1397,8 +1398,21 @@ instr_make_load_const(cfg_instr *instr, PyObject *newconst,
         if (!overflow && _PY_IS_SMALL_INT(val)) {
             assert(_Py_IsImmortal(newconst));
             INSTR_SET_OP1(instr, LOAD_SMALL_INT, (int)val);
-            return SUCCESS;
+            return true;
         }
+    }
+    return false;
+}
+
+
+/* Steals reference to "newconst" */
+static int
+instr_make_load_const(cfg_instr *instr, PyObject *newconst,
+                      PyObject *consts, PyObject *const_cache)
+{
+    if (maybe_instr_make_load_smallint(instr, newconst, consts, const_cache)) {
+        assert(instr->i_opcode == LOAD_SMALL_INT);
+        return SUCCESS;
     }
     int oparg = add_const(newconst, consts, const_cache);
     RETURN_IF_ERROR(oparg);
@@ -2038,6 +2052,13 @@ basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb, PyObject *
     int oparg = 0;
     for (int i = 0; i < bb->b_iused; i++) {
         cfg_instr *inst = &bb->b_instr[i];
+        if (inst->i_opcode == LOAD_CONST) {
+            PyObject *constant = get_const_value(inst->i_opcode, inst->i_oparg, consts);
+            if (maybe_instr_make_load_smallint(inst, constant, consts, const_cache)) {
+                assert(inst->i_opcode == LOAD_SMALL_INT);
+            }
+            Py_DECREF(constant);
+        }
         bool is_copy_of_load_const = (opcode == LOAD_CONST &&
                                       inst->i_opcode == COPY &&
                                       inst->i_oparg == 1);
