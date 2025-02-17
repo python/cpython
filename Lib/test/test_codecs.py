@@ -3256,7 +3256,11 @@ class CodePageTest(unittest.TestCase):
             codecs.code_page_decode, self.CP_UTF8, b'\xff', 'strict', True)
 
     def check_decode(self, cp, tests):
-        for raw, errors, expected in tests:
+        for raw, errors, expected, *rest in tests:
+            if rest:
+                altexpected, = rest
+            else:
+                altexpected = expected
             if expected is not None:
                 try:
                     decoded = codecs.code_page_decode(cp, raw, errors, True)
@@ -3273,8 +3277,21 @@ class CodePageTest(unittest.TestCase):
                 self.assertRaises(UnicodeDecodeError,
                     codecs.code_page_decode, cp, raw, errors, True)
 
+            if altexpected is not None:
+                decoded = raw.decode(f'cp{cp}', errors)
+                self.assertEqual(decoded, altexpected,
+                    '%a.decode("cp%s", %r)=%a != %a'
+                    % (raw, cp, errors, decoded, altexpected))
+            else:
+                self.assertRaises(UnicodeDecodeError,
+                    raw.decode, f'cp{cp}', errors)
+
     def check_encode(self, cp, tests):
-        for text, errors, expected in tests:
+        for text, errors, expected, *rest in tests:
+            if rest:
+                altexpected, = rest
+            else:
+                altexpected = expected
             if expected is not None:
                 try:
                     encoded = codecs.code_page_encode(cp, text, errors)
@@ -3285,18 +3302,26 @@ class CodePageTest(unittest.TestCase):
                     '%a.encode("cp%s", %r)=%a != %a'
                     % (text, cp, errors, encoded[0], expected))
                 self.assertEqual(encoded[1], len(text))
+
+                encoded = text.encode(f'cp{cp}', errors)
+                self.assertEqual(encoded, altexpected,
+                    '%a.encode("cp%s", %r)=%a != %a'
+                    % (text, cp, errors, encoded, altexpected))
             else:
                 self.assertRaises(UnicodeEncodeError,
                     codecs.code_page_encode, cp, text, errors)
+                self.assertRaises(UnicodeEncodeError,
+                    text.encode, f'cp{cp}', errors)
 
     def test_cp932(self):
         self.check_encode(932, (
             ('abc', 'strict', b'abc'),
             ('\uff44\u9a3e', 'strict', b'\x82\x84\xe9\x80'),
+            ('\uf8f3', 'strict', b'\xff'),
             # test error handlers
             ('\xff', 'strict', None),
             ('[\xff]', 'ignore', b'[]'),
-            ('[\xff]', 'replace', b'[y]'),
+            ('[\xff]', 'replace', b'[y]', b'[?]'),
             ('[\u20ac]', 'replace', b'[?]'),
             ('[\xff]', 'backslashreplace', b'[\\xff]'),
             ('[\xff]', 'namereplace',
@@ -3310,12 +3335,12 @@ class CodePageTest(unittest.TestCase):
             (b'abc', 'strict', 'abc'),
             (b'\x82\x84\xe9\x80', 'strict', '\uff44\u9a3e'),
             # invalid bytes
-            (b'[\xff]', 'strict', None),
-            (b'[\xff]', 'ignore', '[]'),
-            (b'[\xff]', 'replace', '[\ufffd]'),
-            (b'[\xff]', 'backslashreplace', '[\\xff]'),
-            (b'[\xff]', 'surrogateescape', '[\udcff]'),
-            (b'[\xff]', 'surrogatepass', None),
+            (b'[\xff]', 'strict', None, '[\uf8f3]'),
+            (b'[\xff]', 'ignore', '[]', '[\uf8f3]'),
+            (b'[\xff]', 'replace', '[\ufffd]', '[\uf8f3]'),
+            (b'[\xff]', 'backslashreplace', '[\\xff]', '[\uf8f3]'),
+            (b'[\xff]', 'surrogateescape', '[\udcff]', '[\uf8f3]'),
+            (b'[\xff]', 'surrogatepass', None, '[\uf8f3]'),
             (b'\x81\x00abc', 'strict', None),
             (b'\x81\x00abc', 'ignore', '\x00abc'),
             (b'\x81\x00abc', 'replace', '\ufffd\x00abc'),
@@ -3330,7 +3355,7 @@ class CodePageTest(unittest.TestCase):
             # test error handlers
             ('\u0141', 'strict', None),
             ('\u0141', 'ignore', b''),
-            ('\u0141', 'replace', b'L'),
+            ('\u0141', 'replace', b'L', b'?'),
             ('\udc98', 'surrogateescape', b'\x98'),
             ('\udc98', 'surrogatepass', None),
         ))
@@ -3338,6 +3363,59 @@ class CodePageTest(unittest.TestCase):
             (b'abc', 'strict', 'abc'),
             (b'\xe9\x80', 'strict', '\xe9\u20ac'),
             (b'\xff', 'strict', '\xff'),
+        ))
+
+    def test_cp708(self):
+        self.check_encode(708, (
+            ('abc2%', 'strict', b'abc2%'),
+            ('\u060c\u0621\u064a', 'strict',  b'\xac\xc1\xea'),
+            ('\u2562\xe7\xa0', 'strict',  b'\x86\x87\xff'),
+            ('\x9a\x9f', 'strict', b'\x9a\x9f'),
+            ('\u256b', 'strict', b'\xc0'),
+            # test error handlers
+            ('[\u0662]', 'strict',  None),
+            ('[\u0662]', 'ignore',  b'[]'),
+            ('[\u0662]', 'replace',  b'[?]'),
+            ('\udca0', 'surrogateescape', b'\xa0'),
+            ('\udca0', 'surrogatepass', None),
+        ))
+        self.check_decode(708, (
+            (b'abc2%', 'strict', 'abc2%'),
+            (b'\xac\xc1\xea', 'strict', '\u060c\u0621\u064a'),
+            (b'\x86\x87\xff', 'strict', '\u2562\xe7\xa0'),
+            (b'\x9a\x9f', 'strict', '\x9a\x9f'),
+            (b'\xc0', 'strict', '\u256b'),
+            # test error handlers
+            (b'\xa0', 'strict', None),
+            (b'[\xa0]', 'ignore', '[]'),
+            (b'[\xa0]', 'replace', '[\ufffd]'),
+            (b'[\xa0]', 'backslashreplace', '[\\xa0]'),
+            (b'[\xa0]', 'surrogateescape', '[\udca0]'),
+            (b'[\xa0]', 'surrogatepass', None),
+        ))
+
+    def test_cp20106(self):
+        self.check_encode(20106, (
+            ('abc', 'strict', b'abc'),
+            ('\xa7\xc4\xdf', 'strict',  b'@[~'),
+            # test error handlers
+            ('@', 'strict', None),
+            ('@', 'ignore', b''),
+            ('@', 'replace', b'?'),
+            ('\udcbf', 'surrogateescape', b'\xbf'),
+            ('\udcbf', 'surrogatepass', None),
+        ))
+        self.check_decode(20106, (
+            (b'abc', 'strict', 'abc'),
+            (b'@[~', 'strict', '\xa7\xc4\xdf'),
+            (b'\xe1\xfe', 'strict', 'a\xdf'),
+            # test error handlers
+            (b'(\xbf)', 'strict', None),
+            (b'(\xbf)', 'ignore', '()'),
+            (b'(\xbf)', 'replace', '(\ufffd)'),
+            (b'(\xbf)', 'backslashreplace', '(\\xbf)'),
+            (b'(\xbf)', 'surrogateescape', '(\udcbf)'),
+            (b'(\xbf)', 'surrogatepass', None),
         ))
 
     def test_cp_utf7(self):
@@ -3412,17 +3490,15 @@ class CodePageTest(unittest.TestCase):
                                           False)
         self.assertEqual(decoded, ('abc', 3))
 
-    def test_mbcs_alias(self):
-        # Check that looking up our 'default' codepage will return
-        # mbcs when we don't have a more specific one available
-        code_page = 99_999
-        name = f'cp{code_page}'
-        with mock.patch('_winapi.GetACP', return_value=code_page):
-            try:
-                codec = codecs.lookup(name)
-                self.assertEqual(codec.name, 'mbcs')
-            finally:
-                codecs.unregister(name)
+    def test_mbcs_code_page(self):
+        # Check that codec for the current Windows (ANSII) code page is
+        # always available.
+        try:
+            from _winapi import GetACP
+        except ImportError:
+            self.skipTest('requires _winapi.GetACP')
+        cp = GetACP()
+        codecs.lookup(f'cp{cp}')
 
     @support.bigmemtest(size=2**31, memuse=7, dry_run=False)
     def test_large_input(self, size):

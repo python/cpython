@@ -1,3 +1,4 @@
+import collections.abc
 import concurrent.futures
 import contextvars
 import functools
@@ -350,6 +351,19 @@ class ContextTest(unittest.TestCase):
 
         ctx1.run(ctx1_fun)
 
+    def test_context_isinstance(self):
+        ctx = contextvars.Context()
+        self.assertIsInstance(ctx, collections.abc.Mapping)
+        self.assertTrue(issubclass(contextvars.Context, collections.abc.Mapping))
+
+        mapping_methods = (
+            '__contains__', '__eq__', '__getitem__', '__iter__', '__len__',
+            '__ne__', 'get', 'items', 'keys', 'values',
+        )
+        for name in mapping_methods:
+            with self.subTest(name=name):
+                self.assertTrue(callable(getattr(ctx, name)))
+
     @isolated_context
     @threading_helper.requires_working_threading()
     def test_context_threads_1(self):
@@ -368,6 +382,115 @@ class ContextTest(unittest.TestCase):
         finally:
             tp.shutdown()
         self.assertEqual(results, list(range(10)))
+
+    def test_token_contextmanager_with_default(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            with c.set(36):
+                self.assertEqual(c.get(), 36)
+
+            self.assertEqual(c.get(), 42)
+
+        ctx.run(fun)
+
+    def test_token_contextmanager_without_default(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c')
+
+        def fun():
+            with c.set(36):
+                self.assertEqual(c.get(), 36)
+
+            with self.assertRaisesRegex(LookupError, "<ContextVar name='c'"):
+                c.get()
+
+        ctx.run(fun)
+
+    def test_token_contextmanager_on_exception(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            with c.set(36):
+                self.assertEqual(c.get(), 36)
+                raise ValueError("custom exception")
+
+            self.assertEqual(c.get(), 42)
+
+        with self.assertRaisesRegex(ValueError, "custom exception"):
+            ctx.run(fun)
+
+    def test_token_contextmanager_reentrant(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            token = c.set(36)
+            with self.assertRaisesRegex(
+                    RuntimeError,
+                    "<Token .+ has already been used once"
+            ):
+                with token:
+                    with token:
+                        self.assertEqual(c.get(), 36)
+
+            self.assertEqual(c.get(), 42)
+
+        ctx.run(fun)
+
+    def test_token_contextmanager_multiple_c_set(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            with c.set(36):
+                self.assertEqual(c.get(), 36)
+                c.set(24)
+                self.assertEqual(c.get(), 24)
+                c.set(12)
+                self.assertEqual(c.get(), 12)
+
+            self.assertEqual(c.get(), 42)
+
+        ctx.run(fun)
+
+    def test_token_contextmanager_with_explicit_reset_the_same_token(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            with self.assertRaisesRegex(
+                    RuntimeError,
+                    "<Token .+ has already been used once"
+            ):
+                with c.set(36) as token:
+                    self.assertEqual(c.get(), 36)
+                    c.reset(token)
+
+                    self.assertEqual(c.get(), 42)
+
+            self.assertEqual(c.get(), 42)
+
+        ctx.run(fun)
+
+    def test_token_contextmanager_with_explicit_reset_another_token(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            with c.set(36):
+                self.assertEqual(c.get(), 36)
+
+                token = c.set(24)
+                self.assertEqual(c.get(), 24)
+                c.reset(token)
+                self.assertEqual(c.get(), 36)
+
+            self.assertEqual(c.get(), 42)
+
+        ctx.run(fun)
 
 
 # HAMT Tests

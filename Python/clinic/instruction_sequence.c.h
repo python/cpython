@@ -51,7 +51,7 @@ InstructionSequenceType_use_label_impl(_PyInstructionSequence *self,
                                        int label);
 
 static PyObject *
-InstructionSequenceType_use_label(_PyInstructionSequence *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+InstructionSequenceType_use_label(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -82,7 +82,8 @@ InstructionSequenceType_use_label(_PyInstructionSequence *self, PyObject *const 
     PyObject *argsbuf[1];
     int label;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -90,7 +91,7 @@ InstructionSequenceType_use_label(_PyInstructionSequence *self, PyObject *const 
     if (label == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = InstructionSequenceType_use_label_impl(self, label);
+    return_value = InstructionSequenceType_use_label_impl((_PyInstructionSequence *)self, label);
 
 exit:
     return return_value;
@@ -112,7 +113,7 @@ InstructionSequenceType_addop_impl(_PyInstructionSequence *self, int opcode,
                                    int end_lineno, int end_col_offset);
 
 static PyObject *
-InstructionSequenceType_addop(_PyInstructionSequence *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+InstructionSequenceType_addop(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -148,7 +149,8 @@ InstructionSequenceType_addop(_PyInstructionSequence *self, PyObject *const *arg
     int end_lineno;
     int end_col_offset;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 6, 6, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 6, /*maxpos*/ 6, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -176,7 +178,7 @@ InstructionSequenceType_addop(_PyInstructionSequence *self, PyObject *const *arg
     if (end_col_offset == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = InstructionSequenceType_addop_impl(self, opcode, oparg, lineno, col_offset, end_lineno, end_col_offset);
+    return_value = InstructionSequenceType_addop_impl((_PyInstructionSequence *)self, opcode, oparg, lineno, col_offset, end_lineno, end_col_offset);
 
 exit:
     return return_value;
@@ -195,12 +197,12 @@ static int
 InstructionSequenceType_new_label_impl(_PyInstructionSequence *self);
 
 static PyObject *
-InstructionSequenceType_new_label(_PyInstructionSequence *self, PyObject *Py_UNUSED(ignored))
+InstructionSequenceType_new_label(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     int _return_value;
 
-    _return_value = InstructionSequenceType_new_label_impl(self);
+    _return_value = InstructionSequenceType_new_label_impl((_PyInstructionSequence *)self);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -224,7 +226,7 @@ InstructionSequenceType_add_nested_impl(_PyInstructionSequence *self,
                                         PyObject *nested);
 
 static PyObject *
-InstructionSequenceType_add_nested(_PyInstructionSequence *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+InstructionSequenceType_add_nested(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -255,12 +257,13 @@ InstructionSequenceType_add_nested(_PyInstructionSequence *self, PyObject *const
     PyObject *argsbuf[1];
     PyObject *nested;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     nested = args[0];
-    return_value = InstructionSequenceType_add_nested_impl(self, nested);
+    return_value = InstructionSequenceType_add_nested_impl((_PyInstructionSequence *)self, nested);
 
 exit:
     return return_value;
@@ -279,9 +282,9 @@ static PyObject *
 InstructionSequenceType_get_nested_impl(_PyInstructionSequence *self);
 
 static PyObject *
-InstructionSequenceType_get_nested(_PyInstructionSequence *self, PyObject *Py_UNUSED(ignored))
+InstructionSequenceType_get_nested(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return InstructionSequenceType_get_nested_impl(self);
+    return InstructionSequenceType_get_nested_impl((_PyInstructionSequence *)self);
 }
 
 PyDoc_STRVAR(InstructionSequenceType_get_instructions__doc__,
@@ -297,8 +300,8 @@ static PyObject *
 InstructionSequenceType_get_instructions_impl(_PyInstructionSequence *self);
 
 static PyObject *
-InstructionSequenceType_get_instructions(_PyInstructionSequence *self, PyObject *Py_UNUSED(ignored))
+InstructionSequenceType_get_instructions(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return InstructionSequenceType_get_instructions_impl(self);
+    return InstructionSequenceType_get_instructions_impl((_PyInstructionSequence *)self);
 }
-/*[clinic end generated code: output=8809d7aa11d9b2bb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e6b5d05bde008cc2 input=a9049054013a1b77]*/

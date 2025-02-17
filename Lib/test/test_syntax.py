@@ -312,6 +312,12 @@ SyntaxError: did you forget parentheses around the comprehension target?
 Traceback (most recent call last):
 SyntaxError: did you forget parentheses around the comprehension target?
 
+# Incorrectly closed strings
+
+>>> "The interesting object "The important object" is very important"
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Is this intended to be part of the string?
+
 # Missing commas in literals collections should not
 # produce special error messages regarding missing
 # parentheses, but about missing commas instead

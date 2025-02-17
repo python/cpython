@@ -8,7 +8,7 @@
 
 This module provides access to some variables used or maintained by the
 interpreter and to functions that interact strongly with the interpreter. It is
-always available.
+always available. Unless explicitly noted otherwise, all variables are read-only.
 
 
 .. data:: abiflags
@@ -130,27 +130,26 @@ always available.
 
 .. data:: base_exec_prefix
 
-   Set during Python startup, before ``site.py`` is run, to the same value as
-   :data:`exec_prefix`. If not running in a
-   :ref:`virtual environment <venv-def>`, the values will stay the same; if
-   ``site.py`` finds that a virtual environment is in use, the values of
-   :data:`prefix` and :data:`exec_prefix` will be changed to point to the
-   virtual environment, whereas :data:`base_prefix` and
-   :data:`base_exec_prefix` will remain pointing to the base Python
-   installation (the one which the virtual environment was created from).
+   Equivalent to :data:`exec_prefix`, but refering to the base Python installation.
+
+   When running under :ref:`sys-path-init-virtual-environments`,
+   :data:`exec_prefix` gets overwritten to the virtual environment prefix.
+   :data:`base_exec_prefix`, conversely, does not change, and always points to
+   the base Python installation.
+   Refer to :ref:`sys-path-init-virtual-environments` for more information.
 
    .. versionadded:: 3.3
 
 
 .. data:: base_prefix
 
-   Set during Python startup, before ``site.py`` is run, to the same value as
-   :data:`prefix`. If not running in a :ref:`virtual environment <venv-def>`, the values
-   will stay the same; if ``site.py`` finds that a virtual environment is in
-   use, the values of :data:`prefix` and :data:`exec_prefix` will be changed to
-   point to the virtual environment, whereas :data:`base_prefix` and
-   :data:`base_exec_prefix` will remain pointing to the base Python
-   installation (the one which the virtual environment was created from).
+   Equivalent to :data:`prefix`, but refering to the base Python installation.
+
+   When running under :ref:`virtual environment <venv-def>`,
+   :data:`prefix` gets overwritten to the virtual environment prefix.
+   :data:`base_prefix`, conversely, does not change, and always points to
+   the base Python installation.
+   Refer to :ref:`sys-path-init-virtual-environments` for more information.
 
    .. versionadded:: 3.3
 
@@ -483,11 +482,19 @@ always available.
 
    .. note::
 
-      If a :ref:`virtual environment <venv-def>` is in effect, this
-      value will be changed in ``site.py`` to point to the virtual environment.
-      The value for the Python installation will still be available, via
-      :data:`base_exec_prefix`.
+      If a :ref:`virtual environment <venv-def>` is in effect, this :data:`exec_prefix`
+      will point to the virtual environment. The value for the Python installation
+      will still be available, via :data:`base_exec_prefix`.
+      Refer to :ref:`sys-path-init-virtual-environments` for more information.
 
+   .. versionchanged:: 3.14
+
+      When running under a :ref:`virtual environment <venv-def>`,
+      :data:`prefix` and :data:`exec_prefix` are now set to the virtual
+      environment prefix by the :ref:`path initialization <sys-path-init>`,
+      instead of :mod:`site`. This means that :data:`prefix` and
+      :data:`exec_prefix` always point to the virtual environment, even when
+      :mod:`site` is disabled (:option:`-S`).
 
 .. data:: executable
 
@@ -848,6 +855,11 @@ always available.
    reflect the actual number of references.  Consequently, do not rely
    on the returned value to be accurate, other than a value of 0 or 1.
 
+   .. impl-detail::
+
+      :term:`Immortal <immortal>` objects with a large reference count can be
+      identified via :func:`_is_immortal`.
+
    .. versionchanged:: 3.12
       Immortal objects have very large refcounts that do not match
       the actual number of references to the object.
@@ -944,7 +956,7 @@ always available.
       This function should be used for specialized purposes only.
       It is not guaranteed to exist in all implementations of Python.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
 
       The result may include objects from other interpreters.
 
@@ -1257,6 +1269,24 @@ always available.
 
    .. versionadded:: 3.12
 
+.. function:: _is_immortal(op)
+
+   Return :const:`True` if the given object is :term:`immortal`, :const:`False`
+   otherwise.
+
+   .. note::
+
+      Objects that are immortal (and thus return ``True`` upon being passed
+      to this function) are not guaranteed to be immortal in future versions,
+      and vice versa for mortal objects.
+
+   .. versionadded:: 3.14
+
+   .. impl-detail::
+
+      This function should be used for specialized purposes only.
+      It is not guaranteed to exist in all implementations of Python.
+
 .. function:: _is_interned(string)
 
    Return :const:`True` if the given string is "interned", :const:`False`
@@ -1415,6 +1445,7 @@ always available.
    AIX              ``'aix'``
    Android          ``'android'``
    Emscripten       ``'emscripten'``
+   FreeBSD          ``'freebsd'``
    iOS              ``'ios'``
    Linux            ``'linux'``
    macOS            ``'darwin'``
@@ -1425,12 +1456,12 @@ always available.
 
    On Unix systems not listed in the table, the value is the lowercased OS name
    as returned by ``uname -s``, with the first part of the version as returned by
-   ``uname -r`` appended, e.g. ``'sunos5'`` or ``'freebsd8'``, *at the time
-   when Python was built*.  Unless you want to test for a specific system
-   version, it is therefore recommended to use the following idiom::
+   ``uname -r`` appended, e.g. ``'sunos5'``, *at the time when Python was built*.
+   Unless you want to test for a specific system version, it is therefore
+   recommended to use the following idiom::
 
-      if sys.platform.startswith('freebsd'):
-          # FreeBSD-specific code here...
+      if sys.platform.startswith('sunos'):
+          # SunOS-specific code here...
 
    .. versionchanged:: 3.3
       On Linux, :data:`sys.platform` doesn't contain the major version anymore.
@@ -1443,6 +1474,10 @@ always available.
    .. versionchanged:: 3.13
       On Android, :data:`sys.platform` now returns ``'android'`` rather than
       ``'linux'``.
+
+   .. versionchanged:: 3.14
+      On FreeBSD, :data:`sys.platform` doesn't contain the major version anymore.
+      It is always ``'freebsd'``, instead of ``'freebsd13'`` or ``'freebsd14'``.
 
    .. seealso::
 
@@ -1483,10 +1518,21 @@ always available.
    argument to the :program:`configure` script.  See
    :ref:`installation_paths` for derived paths.
 
-   .. note:: If a :ref:`virtual environment <venv-def>` is in effect, this
-      value will be changed in ``site.py`` to point to the virtual
-      environment. The value for the Python installation will still be
-      available, via :data:`base_prefix`.
+   .. note::
+
+      If a :ref:`virtual environment <venv-def>` is in effect, this :data:`prefix`
+      will point to the virtual environment. The value for the Python installation
+      will still be available, via :data:`base_prefix`.
+      Refer to :ref:`sys-path-init-virtual-environments` for more information.
+
+   .. versionchanged:: 3.14
+
+      When running under a :ref:`virtual environment <venv-def>`,
+      :data:`prefix` and :data:`exec_prefix` are now set to the virtual
+      environment prefix by the :ref:`path initialization <sys-path-init>`,
+      instead of :mod:`site`. This means that :data:`prefix` and
+      :data:`exec_prefix` always point to the virtual environment, even when
+      :mod:`site` is disabled (:option:`-S`).
 
 
 .. data:: ps1

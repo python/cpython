@@ -259,8 +259,8 @@ Condition
 
       Note that a task *may* return from this call spuriously,
       which is why the caller should always re-check the state
-      and be prepared to :meth:`wait` again. For this reason, you may
-      prefer to use :meth:`wait_for` instead.
+      and be prepared to :meth:`~Condition.wait` again. For this reason, you may
+      prefer to use :meth:`~Condition.wait_for` instead.
 
    .. coroutinemethod:: wait_for(predicate)
 
@@ -268,7 +268,7 @@ Condition
 
       The predicate must be a callable which result will be
       interpreted as a boolean value.  The method will repeatedly
-      :meth:`wait` until the predicate evaluates to *true*. The final value is the
+      :meth:`~Condition.wait` until the predicate evaluates to *true*. The final value is the
       return value.
 
 
@@ -434,7 +434,7 @@ Barrier
    .. coroutinemethod:: abort()
 
       Put the barrier into a broken state.  This causes any active or future
-      calls to :meth:`wait` to fail with the :class:`BrokenBarrierError`.
+      calls to :meth:`~Barrier.wait` to fail with the :class:`BrokenBarrierError`.
       Use this for example if one of the tasks needs to abort, to avoid infinite
       waiting tasks.
 

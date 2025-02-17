@@ -256,13 +256,8 @@ the Python configuration.
 
 .. c:function:: int Py_UNICODE_ISPRINTABLE(Py_UCS4 ch)
 
-   Return ``1`` or ``0`` depending on whether *ch* is a printable character.
-   Nonprintable characters are those characters defined in the Unicode character
-   database as "Other" or "Separator", excepting the ASCII space (0x20) which is
-   considered printable.  (Note that printable characters in this context are
-   those which should not be escaped when :func:`repr` is invoked on a string.
-   It has no bearing on the handling of strings written to :data:`sys.stdout` or
-   :data:`sys.stderr`.)
+   Return ``1`` or ``0`` depending on whether *ch* is a printable character,
+   in the sense of :meth:`str.isprintable`.
 
 
 These APIs can be used for fast direct character conversions:
@@ -786,16 +781,25 @@ Functions encoding to and decoding from the :term:`filesystem encoding and
 error handler` (:pep:`383` and :pep:`529`).
 
 To encode file names to :class:`bytes` during argument parsing, the ``"O&"``
-converter should be used, passing :c:func:`PyUnicode_FSConverter` as the
+converter should be used, passing :c:func:`!PyUnicode_FSConverter` as the
 conversion function:
 
 .. c:function:: int PyUnicode_FSConverter(PyObject* obj, void* result)
 
-   ParseTuple converter: encode :class:`str` objects -- obtained directly or
+   :ref:`PyArg_Parse\* converter <arg-parsing>`: encode :class:`str` objects -- obtained directly or
    through the :class:`os.PathLike` interface -- to :class:`bytes` using
    :c:func:`PyUnicode_EncodeFSDefault`; :class:`bytes` objects are output as-is.
-   *result* must be a :c:expr:`PyBytesObject*` which must be released when it is
-   no longer used.
+   *result* must be an address of a C variable of type :c:expr:`PyObject*`
+   (or :c:expr:`PyBytesObject*`).
+   On success, set the variable to a new :term:`strong reference` to
+   a :ref:`bytes object <bytesobjects>` which must be released
+   when it is no longer used and return a non-zero value
+   (:c:macro:`Py_CLEANUP_SUPPORTED`).
+   Embedded null bytes are not allowed in the result.
+   On failure, return ``0`` with an exception set.
+
+   If *obj* is ``NULL``, the function releases a strong reference
+   stored in the variable referred by *result* and returns ``1``.
 
    .. versionadded:: 3.1
 
@@ -803,16 +807,26 @@ conversion function:
       Accepts a :term:`path-like object`.
 
 To decode file names to :class:`str` during argument parsing, the ``"O&"``
-converter should be used, passing :c:func:`PyUnicode_FSDecoder` as the
+converter should be used, passing :c:func:`!PyUnicode_FSDecoder` as the
 conversion function:
 
 .. c:function:: int PyUnicode_FSDecoder(PyObject* obj, void* result)
 
-   ParseTuple converter: decode :class:`bytes` objects -- obtained either
+   :ref:`PyArg_Parse\* converter <arg-parsing>`: decode :class:`bytes` objects -- obtained either
    directly or indirectly through the :class:`os.PathLike` interface -- to
    :class:`str` using :c:func:`PyUnicode_DecodeFSDefaultAndSize`; :class:`str`
-   objects are output as-is. *result* must be a :c:expr:`PyUnicodeObject*` which
-   must be released when it is no longer used.
+   objects are output as-is.
+   *result* must be an address of a C variable of type :c:expr:`PyObject*`
+   (or :c:expr:`PyUnicodeObject*`).
+   On success, set the variable to a new :term:`strong reference` to
+   a :ref:`Unicode object <unicodeobjects>` which must be released
+   when it is no longer used and return a non-zero value
+   (:c:macro:`Py_CLEANUP_SUPPORTED`).
+   Embedded null characters are not allowed in the result.
+   On failure, return ``0`` with an exception set.
+
+   If *obj* is ``NULL``, release the strong reference
+   to the object referred to by *result* and return ``1``.
 
    .. versionadded:: 3.2
 
@@ -1034,6 +1048,15 @@ These are the UTF-8 codec APIs:
 .. c:function:: const char* PyUnicode_AsUTF8(PyObject *unicode)
 
    As :c:func:`PyUnicode_AsUTF8AndSize`, but does not store the size.
+
+   .. warning::
+
+      This function does not have any special behavior for
+      `null characters <https://en.wikipedia.org/wiki/Null_character>`_ embedded within
+      *unicode*. As a result, strings containing null characters will remain in the returned
+      string, which some C functions might interpret as the end of the string, leading to
+      truncation. If truncation is an issue, it is recommended to use :c:func:`PyUnicode_AsUTF8AndSize`
+      instead.
 
    .. versionadded:: 3.3
 
@@ -1324,6 +1347,13 @@ the user settings on the machine running the codec.
    in *consumed*.
 
 
+.. c:function:: PyObject* PyUnicode_DecodeCodePageStateful(int code_page, const char *str, \
+                              Py_ssize_t size, const char *errors, Py_ssize_t *consumed)
+
+   Similar to :c:func:`PyUnicode_DecodeMBCSStateful`, except uses the code page
+   specified by *code_page*.
+
+
 .. c:function:: PyObject* PyUnicode_AsMBCSString(PyObject *unicode)
 
    Encode a Unicode object using MBCS and return the result as Python bytes
@@ -1588,6 +1618,11 @@ object.
 
    Create a Unicode writer instance.
 
+   *length* must be greater than or equal to ``0``.
+
+   If *length* is greater than ``0``, preallocate an internal buffer of
+   *length* characters.
+
    Set an exception and return ``NULL`` on error.
 
 .. c:function:: PyObject* PyUnicodeWriter_Finish(PyUnicodeWriter *writer)
@@ -1596,11 +1631,15 @@ object.
 
    Set an exception and return ``NULL`` on error.
 
+   The writer instance is invalid after this call.
+
 .. c:function:: void PyUnicodeWriter_Discard(PyUnicodeWriter *writer)
 
    Discard the internal Unicode buffer and destroy the writer instance.
 
    If *writer* is ``NULL``, no operation is performed.
+
+   The writer instance is invalid after this call.
 
 .. c:function:: int PyUnicodeWriter_WriteChar(PyUnicodeWriter *writer, Py_UCS4 ch)
 
