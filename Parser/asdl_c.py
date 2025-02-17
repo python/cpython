@@ -1462,10 +1462,11 @@ ast_repr_list(PyObject *list, int depth)
         return PyObject_Repr(list);
     }
 
-    _PyUnicodeWriter writer;
-    _PyUnicodeWriter_Init(&writer);
-    writer.overallocate = 1;
     PyObject *items[2] = {NULL, NULL};
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
+        goto error;
+    }
 
     items[0] = PySequence_GetItem(list, 0);
     if (!items[0]) {
@@ -1479,52 +1480,54 @@ ast_repr_list(PyObject *list, int depth)
     }
 
     bool is_list = PyList_Check(list);
-    if (_PyUnicodeWriter_WriteChar(&writer, is_list ? '[' : '(') < 0) {
+    if (PyUnicodeWriter_WriteChar(writer, is_list ? '[' : '(') < 0) {
         goto error;
     }
 
     for (Py_ssize_t i = 0; i < Py_MIN(length, 2); i++) {
-        PyObject *item = items[i];
-        PyObject *item_repr;
-
-        if (PyType_IsSubtype(Py_TYPE(item), (PyTypeObject *)state->AST_type)) {
-            item_repr = ast_repr_max_depth((AST_object*)item, depth - 1);
-        } else {
-            item_repr = PyObject_Repr(item);
-        }
-        if (!item_repr) {
-            goto error;
-        }
         if (i > 0) {
-            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
                 goto error;
             }
         }
-        if (_PyUnicodeWriter_WriteStr(&writer, item_repr) < 0) {
-            Py_DECREF(item_repr);
-            goto error;
-        }
-        if (i == 0 && length > 2) {
-            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ...", 5) < 0) {
+
+        PyObject *item = items[i];
+        if (PyType_IsSubtype(Py_TYPE(item), (PyTypeObject *)state->AST_type)) {
+            PyObject *item_repr;
+            item_repr = ast_repr_max_depth((AST_object*)item, depth - 1);
+            if (!item_repr) {
+                goto error;
+            }
+            if (PyUnicodeWriter_WriteStr(writer, item_repr) < 0) {
                 Py_DECREF(item_repr);
                 goto error;
             }
+            Py_DECREF(item_repr);
+        } else {
+            if (PyUnicodeWriter_WriteRepr(writer, item) < 0) {
+                goto error;
+            }
         }
-        Py_DECREF(item_repr);
+
+        if (i == 0 && length > 2) {
+            if (PyUnicodeWriter_WriteUTF8(writer, ", ...", 5) < 0) {
+                goto error;
+            }
+        }
     }
 
-    if (_PyUnicodeWriter_WriteChar(&writer, is_list ? ']' : ')') < 0) {
+    if (PyUnicodeWriter_WriteChar(writer, is_list ? ']' : ')') < 0) {
         goto error;
     }
 
     Py_XDECREF(items[0]);
     Py_XDECREF(items[1]);
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 
 error:
     Py_XDECREF(items[0]);
     Py_XDECREF(items[1]);
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 
@@ -1568,14 +1571,15 @@ ast_repr_max_depth(AST_object *self, int depth)
     }
 
     const char* tp_name = Py_TYPE(self)->tp_name;
-    _PyUnicodeWriter writer;
-    _PyUnicodeWriter_Init(&writer);
-    writer.overallocate = 1;
-
-    if (_PyUnicodeWriter_WriteASCIIString(&writer, tp_name, strlen(tp_name)) < 0) {
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
+    if (writer == NULL) {
         goto error;
     }
-    if (_PyUnicodeWriter_WriteChar(&writer, '(') < 0) {
+
+    if (PyUnicodeWriter_WriteUTF8(writer, tp_name, -1) < 0) {
+        goto error;
+    }
+    if (PyUnicodeWriter_WriteChar(writer, '(') < 0) {
         goto error;
     }
 
@@ -1610,13 +1614,13 @@ ast_repr_max_depth(AST_object *self, int depth)
         }
 
         if (i > 0) {
-            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
+            if (PyUnicodeWriter_WriteUTF8(writer, ", ", 2) < 0) {
                 Py_DECREF(name);
                 Py_DECREF(value_repr);
                 goto error;
             }
         }
-        if (_PyUnicodeWriter_WriteStr(&writer, name) < 0) {
+        if (PyUnicodeWriter_WriteStr(writer, name) < 0) {
             Py_DECREF(name);
             Py_DECREF(value_repr);
             goto error;
@@ -1624,11 +1628,11 @@ ast_repr_max_depth(AST_object *self, int depth)
 
         Py_DECREF(name);
 
-        if (_PyUnicodeWriter_WriteChar(&writer, '=') < 0) {
+        if (PyUnicodeWriter_WriteChar(writer, '=') < 0) {
             Py_DECREF(value_repr);
             goto error;
         }
-        if (_PyUnicodeWriter_WriteStr(&writer, value_repr) < 0) {
+        if (PyUnicodeWriter_WriteStr(writer, value_repr) < 0) {
             Py_DECREF(value_repr);
             goto error;
         }
@@ -1636,17 +1640,17 @@ ast_repr_max_depth(AST_object *self, int depth)
         Py_DECREF(value_repr);
     }
 
-    if (_PyUnicodeWriter_WriteChar(&writer, ')') < 0) {
+    if (PyUnicodeWriter_WriteChar(writer, ')') < 0) {
         goto error;
     }
     Py_ReprLeave((PyObject *)self);
     Py_DECREF(fields);
-    return _PyUnicodeWriter_Finish(&writer);
+    return PyUnicodeWriter_Finish(writer);
 
 error:
     Py_ReprLeave((PyObject *)self);
     Py_DECREF(fields);
-    _PyUnicodeWriter_Dealloc(&writer);
+    PyUnicodeWriter_Discard(writer);
     return NULL;
 }
 
@@ -2162,11 +2166,35 @@ PyObject* PyAST_mod2obj(mod_ty t)
 }
 
 /* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
-mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
+int PyAst_CheckMode(PyObject *ast, int mode)
 {
     const char * const req_name[] = {"Module", "Expression", "Interactive"};
-    int isinstance;
 
+    struct ast_state *state = get_ast_state();
+    if (state == NULL) {
+        return -1;
+    }
+
+    PyObject *req_type[3];
+    req_type[0] = state->Module_type;
+    req_type[1] = state->Expression_type;
+    req_type[2] = state->Interactive_type;
+
+    assert(0 <= mode && mode <= 2);
+    int isinstance = PyObject_IsInstance(ast, req_type[mode]);
+    if (isinstance == -1) {
+        return -1;
+    }
+    if (!isinstance) {
+        PyErr_Format(PyExc_TypeError, "expected %s node, got %.400s",
+                     req_name[mode], _PyType_Name(Py_TYPE(ast)));
+        return -1;
+    }
+    return 0;
+}
+
+mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
+{
     if (PySys_Audit("compile", "OO", ast, Py_None) < 0) {
         return NULL;
     }
@@ -2176,19 +2204,7 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
         return NULL;
     }
 
-    PyObject *req_type[3];
-    req_type[0] = state->Module_type;
-    req_type[1] = state->Expression_type;
-    req_type[2] = state->Interactive_type;
-
-    assert(0 <= mode && mode <= 2);
-
-    isinstance = PyObject_IsInstance(ast, req_type[mode]);
-    if (isinstance == -1)
-        return NULL;
-    if (!isinstance) {
-        PyErr_Format(PyExc_TypeError, "expected %s node, got %.400s",
-                     req_name[mode], _PyType_Name(Py_TYPE(ast)));
+    if (PyAst_CheckMode(ast, mode) < 0) {
         return NULL;
     }
 
@@ -2352,6 +2368,7 @@ def write_header(mod, metadata, f):
     f.write(textwrap.dedent("""
 
         PyObject* PyAST_mod2obj(mod_ty t);
+        int PyAst_CheckMode(PyObject *ast, int mode);
         mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);
         int PyAST_Check(PyObject* obj);
 

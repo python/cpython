@@ -15,6 +15,9 @@ on:
         required: true
         type: string
 
+env:
+  FORCE_COLOR: 1
+
 jobs:
   build_macos:
     name: build and test (${{ inputs.os }})

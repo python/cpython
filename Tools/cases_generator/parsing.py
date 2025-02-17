@@ -150,8 +150,14 @@ class Pseudo(Node):
     targets: list[str]  # opcodes this can be replaced by
     as_sequence: bool
 
+@dataclass
+class LabelDef(Node):
+    name: str
+    spilled: bool
+    block: Block
 
-AstNode = InstDef | Macro | Pseudo | Family
+
+AstNode = InstDef | Macro | Pseudo | Family | LabelDef
 
 
 class Parser(PLexer):
@@ -165,6 +171,21 @@ class Parser(PLexer):
             return pseudo
         if inst := self.inst_def():
             return inst
+        if label := self.label_def():
+            return label
+        return None
+
+    @contextual
+    def label_def(self) -> LabelDef | None:
+        spilled = False
+        if self.expect(lx.SPILLED):
+            spilled = True
+        if self.expect(lx.LABEL):
+            if self.expect(lx.LPAREN):
+                if tkn := self.expect(lx.IDENTIFIER):
+                    if self.expect(lx.RPAREN):
+                        if block := self.block():
+                            return LabelDef(tkn.text, spilled, block)
         return None
 
     @contextual

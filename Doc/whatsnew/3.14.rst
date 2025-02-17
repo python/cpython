@@ -1,4 +1,3 @@
-
 ****************************
   What's new in Python 3.14
 ****************************
@@ -68,6 +67,7 @@ Summary -- release highlights
 * :ref:`PEP 649: deferred evaluation of annotations <whatsnew314-pep649>`
 * :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
+* :ref:`A new type of interpreter  <whatsnew314-tail-call>`
 
 
 New features
@@ -165,7 +165,7 @@ Improved error messages
   error message prints the received number of values in more cases than before.
   (Contributed by Tushar Sadhwani in :gh:`122239`.)
 
-  .. code-block:: pycon
+  .. code-block:: python
 
      >>> x, y, z = 1, 2, 3, 4
      Traceback (most recent call last):
@@ -173,6 +173,17 @@ Improved error messages
          x, y, z = 1, 2, 3, 4
          ^^^^^^^
      ValueError: too many values to unpack (expected 3, got 4)
+
+
+* When incorrectly closed strings are detected, the error message suggests
+  that the string may be intended to be part of the string. (Contributed by
+  Pablo Galindo in :gh:`88535`.)
+
+  .. code-block:: python
+
+    >>> "The interesting object "The important object" is very important"
+    Traceback (most recent call last):
+    SyntaxError: invalid syntax. Is this intended to be part of the string?
 
 
 .. _whatsnew314-pep741:
@@ -207,6 +218,44 @@ configuration mechanisms).
 
 .. seealso::
    :pep:`741`.
+
+.. _whatsnew314-tail-call:
+
+A new type of interpreter
+-------------------------
+
+A new type of interpreter has been added to CPython.
+It uses tail calls between small C functions that implement individual
+Python opcodes, rather than one large C case statement.
+For certain newer compilers, this interpreter provides
+significantly better performance. Preliminary numbers on our machines suggest
+anywhere from -3% to 30% faster Python code, and a geometric mean of 9-15%
+faster on ``pyperformance`` depending on platform and architecture. The
+baseline is Python 3.14 built with Clang 19 without this new interpreter.
+
+This interpreter currently only works with Clang 19 and newer
+on x86-64 and AArch64 architectures. However, we expect
+that a future release of GCC will support this as well.
+
+This feature is opt-in for now. We highly recommend enabling profile-guided
+optimization with the new interpreter as it is the only configuration we have
+tested and can validate its improved performance.
+For further information on how to build Python, see
+:option:`--with-tail-call-interp`.
+
+.. note::
+
+   This is not to be confused with `tail call optimization`__ of Python
+   functions, which is currently not implemented in CPython.
+
+   This new interpreter type is an internal implementation detail of the CPython
+   interpreter.  It doesn't change the visible behavior of Python programs at
+   all.  It can improve their performance, but doesn't change anything else.
+
+   __ https://en.wikipedia.org/wiki/Tail_call
+
+(Contributed by Ken Jin in :gh:`128563`, with ideas on how to implement this
+in CPython by Mark Shannon, Garrett Gu, Haoran Xu, and Josh Haberman.)
 
 
 Other language changes
@@ -297,6 +346,10 @@ ast
 * The ``repr()`` output for AST nodes now includes more information.
   (Contributed by Tomas R in :gh:`116022`.)
 
+* :func:`ast.parse`, when called with an AST as input, now always verifies
+  that the root node type is appropriate.
+  (Contributed by Irit Katriel in :gh:`130139`.)
+
 
 calendar
 --------
@@ -325,12 +378,19 @@ concurrent.futures
   supplying a *mp_context* to :class:`concurrent.futures.ProcessPoolExecutor`.
   (Contributed by Gregory P.  Smith in :gh:`84559`.)
 
+contextvars
+-----------
+
+* Support context manager protocol by :class:`contextvars.Token`.
+  (Contributed by Andrew Svetlov in :gh:`129889`.)
+
+
 ctypes
 ------
 
 * The layout of :ref:`bit fields <ctypes-bit-fields-in-structures-unions>`
   in :class:`~ctypes.Structure` and :class:`~ctypes.Union`
-  now matches platform defaults (GCC/Clang or MVSC) more closely.
+  now matches platform defaults (GCC/Clang or MSVC) more closely.
   In particular, fields no longer overlap.
   (Contributed by Matthias Görgens in :gh:`97702`.)
 
@@ -351,6 +411,15 @@ ctypes
   callback functions that are passed dynamically-sized buffers.
   (Contributed by Rian Hunter in :gh:`112018`.)
 
+* Complex types, :class:`~ctypes.c_float_complex`,
+  :class:`~ctypes.c_double_complex` and :class:`~ctypes.c_longdouble_complex`,
+  are now available if both the compiler and the ``libffi`` library support
+  complex C types.
+  (Contributed by Sergey B Kirpichev in :gh:`61103`).
+
+* Add :func:`ctypes.util.dllist` for listing the shared libraries
+  loaded by the current process.
+  (Contributed by Brian Ward in :gh:`119349`.)
 
 datetime
 --------
@@ -364,6 +433,13 @@ decimal
 * Add alternative :class:`~decimal.Decimal` constructor
   :meth:`Decimal.from_number() <decimal.Decimal.from_number>`.
   (Contributed by Serhiy Storchaka in :gh:`121798`.)
+
+difflib
+-------
+
+* Comparison pages with highlighted changes generated by the
+  :class:`difflib.HtmlDiff` class now support dark mode.
+  (Contributed by Jiahao Li in :gh:`129939`.)
 
 dis
 ---
@@ -435,6 +511,14 @@ http
   (Contributed by Yorik Hansen in :gh:`123430`.)
 
 
+imaplib
+-------
+
+* Add :meth:`IMAP4.idle() <imaplib.IMAP4.idle>`, implementing the IMAP4
+  ``IDLE`` command as defined in :rfc:`2177`.
+  (Contributed by Forest in :gh:`55454`.)
+
+
 inspect
 -------
 
@@ -449,7 +533,6 @@ inspect
 * Add function :func:`inspect.ispackage` to determine whether an object is a
   :term:`package` or not.
   (Contributed by Zhikang Yan in :gh:`125634`.)
-
 
 
 io
@@ -555,6 +638,10 @@ os
   to the :mod:`os` module.
   (Contributed by James Roy in :gh:`127688`.)
 
+* Add the :func:`os.readinto` function to read into a
+  :ref:`buffer object <bufferobjects>` from a file descriptor.
+  (Contributed by Cody Maloney in :gh:`129205`.)
+
 
 pathlib
 -------
@@ -568,6 +655,14 @@ pathlib
   * :meth:`~pathlib.Path.move_into` moves *into* a destination directory.
 
   (Contributed by Barney Gale in :gh:`73991`.)
+
+* Add :attr:`pathlib.Path.info` attribute, which stores an object
+  implementing the :class:`pathlib.types.PathInfo` protocol (also new). The
+  object supports querying the file type and internally caching
+  :func:`~os.stat` results. Path objects generated by
+  :meth:`~pathlib.Path.iterdir` are initialized with file type information
+  gleaned from scanning the parent directory.
+  (Contributed by Barney Gale in :gh:`125413`.)
 
 
 pdb
@@ -583,6 +678,11 @@ pdb
 * Add a new argument *mode* to :class:`pdb.Pdb`. Disable the ``restart``
   command when :mod:`pdb` is in ``inline`` mode.
   (Contributed by Tian Gao in :gh:`123757`.)
+
+* A confirmation prompt will be shown when the user tries to quit :mod:`pdb`
+  in ``inline`` mode. ``y``, ``Y``, ``<Enter>`` or ``EOF`` will confirm
+  the quit and call :func:`sys.exit`, instead of raising :exc:`bdb.BdbQuit`.
+  (Contributed by Tian Gao in :gh:`124704`.)
 
 
 pickle
@@ -600,7 +700,6 @@ platform
 --------
 
 * Add :func:`platform.invalidate_caches` to invalidate the cached results.
-
   (Contributed by Bénédikt Tran in :gh:`122549`.)
 
 
@@ -638,6 +737,13 @@ sys
 * The previously undocumented special function :func:`sys.getobjects`,
   which only exists in specialized builds of Python, may now return objects
   from other interpreters than the one it's called in.
+
+* Add :func:`sys._is_immortal` for determining if an object is :term:`immortal`.
+  (Contributed by Peter Bierma in :gh:`128509`.)
+
+* On FreeBSD, :data:`sys.platform` doesn't contain the major version anymore.
+  It is always ``'freebsd'``, instead of ``'freebsd13'`` or ``'freebsd14'``.
+
 
 sys.monitoring
 --------------
@@ -717,6 +823,10 @@ urllib
 uuid
 ----
 
+* :const:`uuid.NIL` and :const:`uuid.MAX` are now available to represent the
+  Nil and Max UUID formats as defined by :rfc:`9562`.
+  (Contributed by Nick Pope in :gh:`128427`.)
+
 * Add support for UUID versions 6 and 8 via :func:`uuid.uuid6` and
   :func:`uuid.uuid8` respectively, as specified in :rfc:`9562`.
   (Contributed by Bénédikt Tran in :gh:`89083`.)
@@ -728,8 +838,12 @@ zipinfo
 * Added :func:`ZipInfo._for_archive <zipfile.ZipInfo._for_archive>`
   to resolve suitable defaults for a :class:`~zipfile.ZipInfo` object
   as used by :func:`ZipFile.writestr <zipfile.ZipFile.writestr>`.
-
   (Contributed by Bénédikt Tran in :gh:`123424`.)
+
+* :meth:`zipfile.ZipFile.writestr` now respect ``SOURCE_DATE_EPOCH`` that
+  distributions can set centrally and have build tools consume this in order
+  to produce reproducible output.
+  (Contributed by Jiahao Li in :gh:`91279`.)
 
 .. Add improved modules above alphabetically, not here at the end.
 
@@ -744,6 +858,11 @@ asyncio
   reduces memory usage.
   (Contributed by Kumar Aditya in :gh:`107803`.)
 
+* :mod:`asyncio` has new utility functions for introspecting and printing
+  the program's call graph: :func:`asyncio.capture_call_graph` and
+  :func:`asyncio.print_call_graph`.
+  (Contributed by Yury Selivanov, Pablo Galindo Salgado, and Łukasz Langa
+  in :gh:`91048`.)
 
 base64
 ------
@@ -841,6 +960,14 @@ Deprecated
   write new code.  The :mod:`subprocess` module is recommended instead.
   (Contributed by Victor Stinner in :gh:`120743`.)
 
+* :mod:`pdb`:
+  The undocumented ``pdb.Pdb.curframe_locals`` attribute is now a deprecated
+  read-only property. The low overhead dynamic frame locals access added in
+  Python 3.13 by PEP 667 means the frame locals cache reference previously
+  stored in this attribute is no longer needed. Derived debuggers should access
+  ``pdb.Pdb.curframe.f_locals`` directly in Python 3.13 and later versions.
+  (Contributed by Tian Gao in :gh:`124369` and :gh:`125951`.)
+
 * :mod:`symtable`:
   Deprecate :meth:`symtable.Class.get_methods` due to the lack of interest.
   (Contributed by Bénédikt Tran in :gh:`119698`.)
@@ -904,7 +1031,6 @@ ast
   * :attr:`!ast.Constant.s`
 
   Use :attr:`!ast.Constant.value` instead.
-
   (Contributed by Alex Waygood in :gh:`119562`.)
 
 asyncio
@@ -1113,7 +1239,6 @@ urllib
   :func:`~urllib.request.urlretrieve`. Customizations to the opener
   classes can be replaced by passing customized handlers to
   :func:`~urllib.request.build_opener`.
-
   (Contributed by Barney Gale in :gh:`84850`.)
 
 Others
@@ -1128,6 +1253,12 @@ Others
   integer must implement either :meth:`~object.__int__` or
   :meth:`~object.__index__`. (Contributed by Mark Dickinson in :gh:`119743`.)
 
+
+CPython Bytecode Changes
+========================
+
+* Replaced the opcode ``BINARY_SUBSCR`` by :opcode:`BINARY_OP` with oparg ``NB_SUBSCR``.
+  (Contributed by Irit Katriel in :gh:`100239`.)
 
 Porting to Python 3.14
 ======================
@@ -1198,16 +1329,6 @@ New features
   which has an ambiguous return value.
   (Contributed by Irit Katriel and Erlend Aasland in :gh:`105201`.)
 
-* :c:func:`Py_Finalize` now deletes all interned strings. This
-  is backwards incompatible to any C-Extension that holds onto an interned
-  string after a call to :c:func:`Py_Finalize` and is then reused after a
-  call to :c:func:`Py_Initialize`.  Any issues arising from this behavior will
-  normally result in crashes during the execution of the subsequent call to
-  :c:func:`Py_Initialize` from accessing uninitialized memory. To fix, use
-  an address sanitizer to identify any use-after-free coming from
-  an interned string and deallocate it during module shutdown.
-  (Contributed by Eddie Elizondo in :gh:`113601`.)
-
 * Add :c:func:`PyLong_IsPositive`, :c:func:`PyLong_IsNegative`
   and :c:func:`PyLong_IsZero` for checking if :c:type:`PyLongObject`
   is positive, negative, or zero, respectively.
@@ -1272,7 +1393,7 @@ New features
   * :c:func:`PyLongWriter_Finish`;
   * :c:func:`PyLongWriter_Discard`.
 
-  (Contributed by Victor Stinner in :gh:`102471`.)
+  (Contributed by Sergey B Kirpichev and Victor Stinner in :gh:`102471`.)
 
 * Add :c:func:`PyType_GetBaseByToken` and :c:data:`Py_tp_token` slot for easier
   superclass identification, which attempts to resolve the `type checking issue
@@ -1283,17 +1404,11 @@ New features
   test if two strings are equal.
   (Contributed by Victor Stinner in :gh:`124502`.)
 
-
 * Add :c:func:`PyType_Freeze` function to make a type immutable.
   (Contributed by Victor Stinner in :gh:`121654`.)
 
 * Add :c:func:`PyUnstable_Object_EnableDeferredRefcount` for enabling
   deferred reference counting, as outlined in :pep:`703`.
-
-* The :ref:`Unicode Exception Objects <unicodeexceptions>` C API
-  now raises a :exc:`TypeError` if its exception argument is not
-  a :exc:`UnicodeError` object.
-  (Contributed by Bénédikt Tran in :gh:`127691`.)
 
 * Add :c:func:`PyMonitoring_FireBranchLeftEvent` and
   :c:func:`PyMonitoring_FireBranchRightEvent` for generating
@@ -1310,14 +1425,46 @@ New features
   bit-packing Python version numbers.
   (Contributed by Petr Viktorin in :gh:`128629`.)
 
+* Add :c:func:`PyUnstable_IsImmortal` for determining whether an object is :term:`immortal`,
+  for debugging purposes.
 
-Porting to Python 3.14
-----------------------
+* Add :c:func:`PyImport_ImportModuleAttr` and
+  :c:func:`PyImport_ImportModuleAttrString` helper functions to import a module
+  and get an attribute of the module.
+  (Contributed by Victor Stinner in :gh:`128911`.)
+
+
+Limited C API changes
+---------------------
 
 * In the limited C API 3.14 and newer, :c:func:`Py_TYPE` and
   :c:func:`Py_REFCNT` are now implemented as an opaque function call to hide
   implementation details.
   (Contributed by Victor Stinner in :gh:`120600` and :gh:`124127`.)
+
+* Remove :c:func:`PySequence_Fast` from the limited C API, since this function
+  has to be used with :c:macro:`PySequence_Fast_GET_ITEM` which never worked
+  in the limited C API.
+  (Contributed by Victor Stinner in :gh:`91417`.)
+
+
+Porting to Python 3.14
+----------------------
+
+* :c:func:`Py_Finalize` now deletes all interned strings. This
+  is backwards incompatible to any C-Extension that holds onto an interned
+  string after a call to :c:func:`Py_Finalize` and is then reused after a
+  call to :c:func:`Py_Initialize`.  Any issues arising from this behavior will
+  normally result in crashes during the execution of the subsequent call to
+  :c:func:`Py_Initialize` from accessing uninitialized memory. To fix, use
+  an address sanitizer to identify any use-after-free coming from
+  an interned string and deallocate it during module shutdown.
+  (Contributed by Eddie Elizondo in :gh:`113601`.)
+
+* The :ref:`Unicode Exception Objects <unicodeexceptions>` C API
+  now raises a :exc:`TypeError` if its exception argument is not
+  a :exc:`UnicodeError` object.
+  (Contributed by Bénédikt Tran in :gh:`127691`.)
 
 * Private functions promoted to public C APIs:
 
@@ -1344,6 +1491,8 @@ Porting to Python 3.14
 .. _pythoncapi-compat project: https://github.com/python/pythoncapi-compat/
 
 
+.. _whatsnew314-c-api-deprecated:
+
 Deprecated
 ----------
 
@@ -1363,19 +1512,46 @@ Deprecated
 
 .. Add C API deprecations above alphabetically, not here at the end.
 
-.. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
-
-.. include:: ../deprecations/c-api-pending-removal-in-future.rst
-
 * The ``PyMonitoring_FireBranchEvent`` function is deprecated and should
   be replaced with calls to :c:func:`PyMonitoring_FireBranchLeftEvent`
   and :c:func:`PyMonitoring_FireBranchRightEvent`.
+
+* The following private functions are deprecated and planned for removal in
+  Python 3.18:
+
+  * :c:func:`!_PyBytes_Join`: use :c:func:`PyBytes_Join`.
+  * :c:func:`!_PyDict_GetItemStringWithError`: use :c:func:`PyDict_GetItemStringRef`.
+  * :c:func:`!_PyDict_Pop()`: use :c:func:`PyDict_Pop`.
+  * :c:func:`!_PyLong_Sign()`: use :c:func:`PyLong_GetSign`.
+  * :c:func:`!_PyLong_FromDigits` and :c:func:`!_PyLong_New`:
+    use :c:func:`PyLongWriter_Create`.
+  * :c:func:`!_PyThreadState_UncheckedGet`: use :c:func:`PyThreadState_GetUnchecked`.
+  * :c:func:`!_PyUnicode_AsString`: use :c:func:`PyUnicode_AsUTF8`.
+  * :c:func:`!_Py_HashPointer`: use :c:func:`Py_HashPointer`.
+  * :c:func:`!_Py_fopen_obj`: use :c:func:`Py_fopen`.
+
+  The `pythoncapi-compat project`_ can be used to get these new public
+  functions on Python 3.13 and older.
+  (Contributed by Victor Stinner in :gh:`128863`.)
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-future.rst
+
+
+.. _whatsnew314-c-api-removed:
 
 Removed
 -------
 
 * Creating :c:data:`immutable types <Py_TPFLAGS_IMMUTABLETYPE>` with mutable
   bases was deprecated since 3.12 and now raises a :exc:`TypeError`.
+
+* Remove ``PyDictObject.ma_version_tag`` member which was deprecated since
+  Python 3.12. Use the :c:func:`PyDict_AddWatcher` API instead.
+  (Contributed by Sam Gross in :gh:`124296`.)
 
 * Remove the private ``_Py_InitializeMain()`` function. It was a
   :term:`provisional API` added to Python 3.8 by :pep:`587`.
