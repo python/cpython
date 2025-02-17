@@ -703,6 +703,7 @@ class TestInterpreterPrepareMain(TestBase):
         with self.assertRaises(ExecutionFailed):
             interp.exec('print(spam)')
 
+    @support.skip_if_sanitizer('gh-129824: file descriptor race', thread=True)
     def test_running(self):
         interp = interpreters.create()
         interp.prepare_main({'spam': True})
@@ -1530,6 +1531,7 @@ class LowLevelTests(TestBase):
             whence = eval(text)
             self.assertEqual(whence, _interpreters.WHENCE_LEGACY_CAPI)
 
+    @support.skip_if_sanitizer('gh-129824: file descriptor race', thread=True)
     def test_is_running(self):
         def check(interpid, expected):
             with self.assertRaisesRegex(InterpreterError, 'unrecognized'):

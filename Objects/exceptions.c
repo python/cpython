@@ -4231,7 +4231,8 @@ _PyExc_InitTypes(PyInterpreterState *interp)
             return -1;
         }
         if (exc->tp_new == BaseException_new
-            && exc->tp_init == (initproc)BaseException_init)
+            && exc->tp_init == (initproc)BaseException_init
+            && _Py_IsMainInterpreter(interp))
         {
             exc->tp_vectorcall = BaseException_vectorcall;
         }
