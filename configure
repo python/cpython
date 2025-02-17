@@ -1996,6 +1996,15 @@ Some influential environment variables:
   X11_LIBS    linker flags for X11, overriding pkg-config
   GDBM_CFLAGS C compiler flags for gdbm
   GDBM_LIBS   additional linker flags for gdbm
+  ZLIB_CFLAGS C compiler flags for ZLIB, overriding pkg-config
+  ZLIB_LIBS   linker flags for ZLIB, overriding pkg-config
+  BZIP2_CFLAGS
+              C compiler flags for BZIP2, overriding pkg-config
+  BZIP2_LIBS  linker flags for BZIP2, overriding pkg-config
+  LIBLZMA_CFLAGS
+              C compiler flags for LIBLZMA, overriding pkg-config
+  LIBLZMA_LIBS
+              linker flags for LIBLZMA, overriding pkg-config
   LIBREADLINE_CFLAGS
               C compiler flags for LIBREADLINE, overriding pkg-config
   LIBREADLINE_LIBS
@@ -21445,19 +21454,34 @@ case $ac_sys_system in #(
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for zlib >= 1.2.0" >&5
-printf %s "checking for zlib >= 1.2.0... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for zlib >= 1.2.0
+              printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+
+            " >&5
+printf %s "checking for zlib >= 1.2.0
+              printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+
+            ... " >&6; }
 
 if test -n "$ZLIB_CFLAGS"; then
     pkg_cv_ZLIB_CFLAGS="$ZLIB_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"zlib >= 1.2.0\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "zlib >= 1.2.0") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"zlib >= 1.2.0
+              printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+
+            \""; } >&5
+  ($PKG_CONFIG --exists --print-errors "zlib >= 1.2.0
+              printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+
+            ") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_ZLIB_CFLAGS=`$PKG_CONFIG --cflags "zlib >= 1.2.0" 2>/dev/null`
+  pkg_cv_ZLIB_CFLAGS=`$PKG_CONFIG --cflags "zlib >= 1.2.0
+              printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+
+            " 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -21469,12 +21493,21 @@ if test -n "$ZLIB_LIBS"; then
     pkg_cv_ZLIB_LIBS="$ZLIB_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"zlib >= 1.2.0\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "zlib >= 1.2.0") 2>&5
+    { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"zlib >= 1.2.0
+              printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+
+            \""; } >&5
+  ($PKG_CONFIG --exists --print-errors "zlib >= 1.2.0
+              printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+
+            ") 2>&5
   ac_status=$?
   printf "%s\n" "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_ZLIB_LIBS=`$PKG_CONFIG --libs "zlib >= 1.2.0" 2>/dev/null`
+  pkg_cv_ZLIB_LIBS=`$PKG_CONFIG --libs "zlib >= 1.2.0
+              printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+
+            " 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -21495,14 +21528,23 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-                ZLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "zlib >= 1.2.0" 2>&1`
+                ZLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "zlib >= 1.2.0
+              printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+
+            " 2>&1`
         else
-                ZLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "zlib >= 1.2.0" 2>&1`
+                ZLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "zlib >= 1.2.0
+              printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+
+            " 2>&1`
         fi
         # Put the nasty error message in config.log where it belongs
         echo "$ZLIB_PKG_ERRORS" >&5
 
-        as_fn_error $? "Package requirements (zlib >= 1.2.0) were not met:
+        as_fn_error $? "Package requirements (zlib >= 1.2.0
+              printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+
+            ) were not met:
 
 $ZLIB_PKG_ERRORS
 
@@ -21533,15 +21575,11 @@ else
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 
-              printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
-
-              BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
-              BINASCII_LIBS=""
-
+fi
+            BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
+            BINASCII_LIBS=""
            ;; #(
   *) :
-      ZLIB_CFLAGS C compiler flags for ZLIB, overriding pkg-config
-  ZLIB_LIBS   linker flags for ZLIB, overriding pkg-config
 
 pkg_failed=no
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for zlib >= 1.2.0" >&5
@@ -21905,9 +21943,6 @@ fi
 
 
 
-  BZIP2_CFLAGS
-              C compiler flags for BZIP2, overriding pkg-config
-  BZIP2_LIBS  linker flags for BZIP2, overriding pkg-config
 
 pkg_failed=no
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for bzip2" >&5
@@ -22156,10 +22191,6 @@ printf "%s\n" "yes" >&6; }
         have_bzip2=yes
 fi
 
-  LIBLZMA_CFLAGS
-              C compiler flags for LIBLZMA, overriding pkg-config
-  LIBLZMA_LIBS
-              linker flags for LIBLZMA, overriding pkg-config
 
 pkg_failed=no
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for liblzma" >&5
@@ -23651,8 +23682,7 @@ then :
 
 else case e in #(
   e) case " $LIBOBJS " in
-  *" dup2.$ac_objext "*
-fi ;;
+  *" dup2.$ac_objext "* ) ;;
   *) LIBOBJS="$LIBOBJS dup2.$ac_objext"
  ;;
 esac
