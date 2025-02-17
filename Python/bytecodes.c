@@ -3538,7 +3538,6 @@ dummy_func(
                     arguments, total_args, NULL, frame
                 );
                 ERROR_IF(new_frame == NULL, error);
-                // Manipulate stack directly since we leave using DISPATCH_INLINED().
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
                 SYNC_SP();

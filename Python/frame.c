@@ -111,7 +111,7 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
         PyFrameObject *f = frame->frame_obj;
         frame->frame_obj = NULL;
         if (Py_REFCNT(f) > 1) {
-            // Take ownership takes the reference to the executable,
+            // take_ownership takes the reference to the executable,
             // so we need to incref it.
             PyStackRef_AsPyObjectNew(frame->f_executable);
             take_ownership(f, frame);
