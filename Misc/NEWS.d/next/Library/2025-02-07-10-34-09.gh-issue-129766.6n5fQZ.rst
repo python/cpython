@@ -1,2 +1,0 @@
-Fix crash in :mod:`warnings`, when calling ``_release_lock()`` with no
-existing lock.
