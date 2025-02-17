@@ -732,7 +732,7 @@ astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 #define CONST_EXPR_VALUE(N) \
     ((N)->v.Constant.value)
 
-#define IS_COMPLEX_CONST_EXPR(N) \
+#define IS_CONST_COMPLEX_EXPR(N) \
     (IS_CONST_EXPR(N) && PyComplex_CheckExact(CONST_EXPR_VALUE(N)))
 
 #define IS_NUMERIC_CONST_EXPR(N) \
@@ -757,7 +757,7 @@ astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     (IS_UNARY_SUB_EXPR(N) && IS_NUMERIC_CONST_EXPR(UNARY_EXPR_OPERAND(N)))
 
 #define IS_MATCH_COMPLEX_UNARY_CONST_EXPR(N) \
-    (IS_UNARY_SUB_EXPR(N) && IS_COMPLEX_CONST_EXPR(UNARY_EXPR_OPERAND(N)))
+    (IS_UNARY_SUB_EXPR(N) && IS_CONST_COMPLEX_EXPR(UNARY_EXPR_OPERAND(N)))
 
 #define BINARY_EXPR(N) \
     ((N)->v.BinOp)
@@ -787,7 +787,7 @@ astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     ( \
         (IS_BINARY_ADD_EXPR(N) || IS_BINARY_SUB_EXPR(N)) \
         && (IS_MATCH_NUMERIC_UNARY_CONST_EXPR(BINARY_EXPR_LEFT(N)) || IS_NUMERIC_CONST_EXPR(BINARY_EXPR_LEFT(N))) \
-        && IS_COMPLEX_CONST_EXPR(BINARY_EXPR_RIGHT(N)) \
+        && IS_CONST_COMPLEX_EXPR(BINARY_EXPR_RIGHT(N)) \
     )
 
 

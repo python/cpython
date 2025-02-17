@@ -3232,6 +3232,7 @@ class ASTOptimiziationTests(unittest.TestCase):
             case -0:                                   pass
             case -0.1:                                 pass
             case -0j:                                  pass
+            case -0.1j:                                pass
             case 1 + 2j:                               pass
             case 1 - 2j:                               pass
             case 1.1 + 2.1j:                           pass
@@ -3243,6 +3244,7 @@ class ASTOptimiziationTests(unittest.TestCase):
             case {-0: 0}:                              pass
             case {-0.1: 0}:                            pass
             case {-0j: 0}:                             pass
+            case {-0.1j: 0}:                           pass
             case {1 + 2j: 0}:                          pass
             case {1 - 2j: 0}:                          pass
             case {1.1 + 2.1j: 0}:                      pass
@@ -3252,11 +3254,15 @@ class ASTOptimiziationTests(unittest.TestCase):
             case {-0.1 + 1.1j: 0}:                     pass
             case {-0.1 - 1.1j: 0}:                     pass
             case {-0: 0, 0 + 1j: 0, 0.1 + 1j: 0}:      pass
+            case [-0, -0.1, -0j, -0.1j]:               pass
+            case [[-0, -0.1], [-0j, -0.1j]]:               pass
+            case ((-0, -0.1), (-0j, -0.1j)):               pass
         """)
         expected_constants = (
             0,
             -0.1,
             complex(0, -0),
+            complex(0, -0.1),
             complex(1, 2),
             complex(1, -2),
             complex(1.1, 2.1),
@@ -3268,6 +3274,7 @@ class ASTOptimiziationTests(unittest.TestCase):
             (0, ),
             (-0.1, ),
             (complex(0, -0), ),
+            (complex(0, -0.1), ),
             (complex(1, 2), ),
             (complex(1, -2), ),
             (complex(1.1, 2.1), ),
@@ -3276,7 +3283,31 @@ class ASTOptimiziationTests(unittest.TestCase):
             (complex(-0, -1), ),
             (complex(-0.1, 1.1), ),
             (complex(-0.1, -1.1), ),
-            (0, complex(0, 1), complex(0.1, 1))
+            (0, complex(0, 1), complex(0.1, 1)),
+            (
+                0,
+                -0.1,
+                complex(0, -0),
+                complex(0, -0.1),
+            ),
+            (
+                0,
+                -0.1,
+                complex(0, -0),
+                complex(0, -0.1),
+            ),
+            (
+                0,
+                -0.1,
+                complex(0, -0),
+                complex(0, -0.1),
+            ),
+            (
+                0,
+                -0.1,
+                complex(0, -0),
+                complex(0, -0.1),
+            )
         )
         consts = iter(expected_constants)
         tree = ast.parse(source, optimize=1)
@@ -3291,6 +3322,17 @@ class ASTOptimiziationTests(unittest.TestCase):
                 for key in pattern.keys:
                     self.assertIsInstance(key, ast.Constant)
                     self.assertEqual(key.value, next(keys))
+            elif isinstance(pattern, ast.MatchSequence):
+                values = iter(next(consts))
+                for pat in pattern.patterns:
+                    if isinstance(pat, ast.MatchValue):
+                        self.assertEqual(pat.value.value, next(values))
+                    elif isinstance(pat, ast.MatchSequence):
+                        for p in pat.patterns:
+                            self.assertIsInstance(p, ast.MatchValue)
+                            self.assertEqual(p.value.value, next(values))
+                    else:
+                        self.fail(f"Expected ast.MatchValue or ast.MatchSequence, found: {type(pat)}")
             else:
                 self.fail(f"Expected ast.MatchValue or ast.MatchMapping, found: {type(pattern)}")
 
