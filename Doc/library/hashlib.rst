@@ -55,11 +55,14 @@ hash supplied more than 2047 bytes of data at once in its constructor or
 .. index:: single: OpenSSL; (use in module hashlib)
 
 Constructors for hash algorithms that are always present in this module are
-:func:`sha1`, :func:`sha224`, :func:`sha256`, :func:`sha384`, :func:`sha512`,
+:func:`md5`, :func:`sha1`, :func:`sha224`, :func:`sha256`, :func:`sha384`, :func:`sha512`,
 :func:`sha3_224`, :func:`sha3_256`, :func:`sha3_384`, :func:`sha3_512`,
 :func:`shake_128`, :func:`shake_256`, :func:`blake2b`, and :func:`blake2s`.
-:func:`md5` is normally available as well, though it may be missing or blocked
-if you are using a rare "FIPS compliant" build of Python.
+Some of these may be missing or blocked if you are running in an environment
+with OpenSSL's "FIPS mode" configured to exclude some hash algorithms from its
+default provider and are using a Python runtime built with that in mind.  Such
+environments are unusual.
+
 These correspond to :data:`algorithms_guaranteed`.
 
 Additional algorithms may also be available if your Python distribution's
@@ -119,7 +122,7 @@ More condensed:
 Constructors
 ------------
 
-.. function:: new(name[, data], *, usedforsecurity=True)
+.. function:: new(name[, data], \*, usedforsecurity=True)
 
    Is a generic constructor that takes the string *name* of the desired
    algorithm as its first parameter.  It also exists to allow access to the
@@ -134,16 +137,16 @@ Using :func:`new` with an algorithm name:
    '031edd7d41651593c5fe5c006fa5752b37fddff7bc4e843aa6af0c950f4b9406'
 
 
-.. function:: md5([, data], *, usedforsecurity=True)
-.. function:: sha1([, data], *, usedforsecurity=True)
-.. function:: sha224([, data], *, usedforsecurity=True)
-.. function:: sha256([, data], *, usedforsecurity=True)
-.. function:: sha384([, data], *, usedforsecurity=True)
-.. function:: sha512([, data], *, usedforsecurity=True)
-.. function:: sha3_224([, data], *, usedforsecurity=True)
-.. function:: sha3_256([, data], *, usedforsecurity=True)
-.. function:: sha3_384([, data], *, usedforsecurity=True)
-.. function:: sha3_512([, data], *, usedforsecurity=True)
+.. function:: md5([, data], \*, usedforsecurity=True)
+.. function:: sha1([, data], \*, usedforsecurity=True)
+.. function:: sha224([, data], \*, usedforsecurity=True)
+.. function:: sha256([, data], \*, usedforsecurity=True)
+.. function:: sha384([, data], \*, usedforsecurity=True)
+.. function:: sha512([, data], \*, usedforsecurity=True)
+.. function:: sha3_224([, data], \*, usedforsecurity=True)
+.. function:: sha3_256([, data], \*, usedforsecurity=True)
+.. function:: sha3_384([, data], \*, usedforsecurity=True)
+.. function:: sha3_512([, data], \*, usedforsecurity=True)
 
 Named constructors such as these are faster than passing an algorithm name to
 :func:`new`.
@@ -156,9 +159,10 @@ Hashlib provides the following constant module attributes:
 .. data:: algorithms_guaranteed
 
    A set containing the names of the hash algorithms guaranteed to be supported
-   by this module on all platforms.  Note that 'md5' is in this list despite
-   some upstream vendors offering an odd "FIPS compliant" Python build that
-   excludes it.
+   by this module on all platforms.  Note that the guarantees do not hold true
+   in the face of vendors offering "FIPS compliant" Python builds that exclude
+   some algorithms entirely.  Similarly when OpenSSL is used and its FIPS mode
+   configuration disables some in the default provider.
 
    .. versionadded:: 3.2
 
