@@ -1,5 +1,6 @@
 """Tests for the Tools/i18n/msgfmt.py tool."""
 
+import json
 import sys
 import unittest
 from gettext import GNUTranslations
@@ -117,6 +118,15 @@ def update_catalog_snapshots():
     for po_file in data_dir.glob('*.po'):
         mo_file = po_file.with_suffix('.mo')
         compile_messages(po_file, mo_file)
+        # Create a human-readable JSON file which is
+        # easier to review than the binary .mo file.
+        with open(mo_file, 'rb') as f:
+            translations = GNUTranslations(f)
+        catalog_file = po_file.with_suffix('.json')
+        with open(catalog_file, 'w') as f:
+            data = list(translations._catalog.items())
+            json.dump(data, f, indent=4)
+            f.write('\n')
 
 
 if __name__ == '__main__':
