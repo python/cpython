@@ -1,0 +1,2 @@
+Improve performance of :c:func:`PyFloat_Pack4`, :c:func:`PyFloat_Pack8`, :c:func:`PyFloat_Unpack4` and :c:func:`PyFloat_Unpack8`.
+
