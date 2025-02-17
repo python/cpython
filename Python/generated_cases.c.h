@@ -689,6 +689,7 @@
                 JUMP_TO_PREDICTED(BINARY_OP);
             }
             STAT_INC(BINARY_OP, hit);
+            res = PyStackRef_FromPyObjectSteal(res_o);
             #else
             if (index >= PyList_GET_SIZE(list)) {
                 UPDATE_MISS_STATS(BINARY_OP);

@@ -869,6 +869,7 @@ dummy_func(
             PyObject *res_o = _PyList_GetItemRef((PyListObject*)list, index);
             DEOPT_IF(res_o == NULL);
             STAT_INC(BINARY_OP, hit);
+            res = PyStackRef_FromPyObjectSteal(res_o);
 #else
             DEOPT_IF(index >= PyList_GET_SIZE(list));
             STAT_INC(BINARY_OP, hit);

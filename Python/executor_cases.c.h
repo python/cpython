@@ -1242,6 +1242,7 @@
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(BINARY_OP, hit);
+            res = PyStackRef_FromPyObjectSteal(res_o);
             #else
             if (index >= PyList_GET_SIZE(list)) {
                 UOP_STAT_INC(uopcode, miss);

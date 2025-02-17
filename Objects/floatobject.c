@@ -138,8 +138,8 @@ PyFloat_FromDouble(double fval)
 
 _PyStackRef _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value)
 {
-    PyStackRef_CLOSE(left);
-    PyStackRef_CLOSE(right);
+    PyStackRef_CLOSE_SPECIALIZED(left, _PyFloat_ExactDealloc);
+    PyStackRef_CLOSE_SPECIALIZED(right, _PyFloat_ExactDealloc);
     return PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(value));
 }
 
