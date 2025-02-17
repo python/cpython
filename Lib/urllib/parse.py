@@ -610,31 +610,22 @@ def urljoin(base, url, allow_fragments=True):
         return _coerce_result(_urlunsplit(scheme, netloc, path,
                                           query, fragment))
 
-    base_parts = bpath.split('/')
-    if base_parts[-1] != '':
-        # the last item is not a directory, so will not be taken into account
-        # in resolving the relative path
-        del base_parts[-1]
-
     # for rfc3986, ignore all base path should the first character be root.
-    if path[:1] == '/':
-        segments = path.split('/')
-    else:
-        segments = base_parts + path.split('/')
-        # filter out elements that would cause redundant slashes on re-joining
-        # the resolved_path
-        segments[1:-1] = filter(None, segments[1:-1])
+    if path[:1] != '/' and '/' in bpath:
+        path = bpath.rsplit('/', 1)[0] + '/' + path
+
+    path = _remove_dot_segments(path)
+    return _coerce_result(_urlunsplit(scheme, netloc, path, query, fragment))
+
+def _remove_dot_segments(path):
+    segments = path.split('/')
+    min_len = 0 if segments[0] else 1
 
     resolved_path = []
-
     for seg in segments:
         if seg == '..':
-            try:
+            if len(resolved_path) > min_len:
                 resolved_path.pop()
-            except IndexError:
-                # ignore any .. segments that would otherwise cause an IndexError
-                # when popped from resolved_path if resolving for rfc3986
-                pass
         elif seg == '.':
             continue
         else:
@@ -645,9 +636,7 @@ def urljoin(base, url, allow_fragments=True):
         # then we need to append the trailing '/'
         resolved_path.append('')
 
-    return _coerce_result(_urlunsplit(scheme, netloc, '/'.join(
-        resolved_path) or '/', query, fragment))
-
+    return '/'.join(resolved_path)
 
 def urldefrag(url):
     """Removes any existing fragment from URL.
