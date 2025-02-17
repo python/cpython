@@ -830,7 +830,7 @@ unicode_result_unchanged(PyObject *unicode)
 /* Implementation of the "backslashreplace" error handler for 8-bit encodings:
    ASCII, Latin1, UTF-8, etc. */
 static char*
-backslashreplace(_PyBytesWriter *writer, char *str,
+backslashreplace(PyBytesWriter *writer, char *str,
                  PyObject *unicode, Py_ssize_t collstart, Py_ssize_t collend)
 {
     Py_ssize_t size, i;
@@ -863,7 +863,7 @@ backslashreplace(_PyBytesWriter *writer, char *str,
         size += incr;
     }
 
-    str = _PyBytesWriter_Prepare(writer, str, size);
+    str = PyBytesWriter_Extend(writer, str, size);
     if (str == NULL)
         return NULL;
 
@@ -896,7 +896,7 @@ backslashreplace(_PyBytesWriter *writer, char *str,
 /* Implementation of the "xmlcharrefreplace" error handler for 8-bit encodings:
    ASCII, Latin1, UTF-8, etc. */
 static char*
-xmlcharrefreplace(_PyBytesWriter *writer, char *str,
+xmlcharrefreplace(PyBytesWriter *writer, char *str,
                   PyObject *unicode, Py_ssize_t collstart, Py_ssize_t collend)
 {
     Py_ssize_t size, i;
@@ -937,7 +937,7 @@ xmlcharrefreplace(_PyBytesWriter *writer, char *str,
         size += incr;
     }
 
-    str = _PyBytesWriter_Prepare(writer, str, size);
+    str = PyBytesWriter_Extend(writer, str, size);
     if (str == NULL)
         return NULL;
 
@@ -5844,7 +5844,7 @@ unicode_encode_utf8(PyObject *unicode, _Py_error_handler error_handler,
     const void *data = PyUnicode_DATA(unicode);
     Py_ssize_t size = PyUnicode_GET_LENGTH(unicode);
 
-    _PyBytesWriter writer;
+    PyBytesWriter *writer = NULL;
     char *end;
 
     switch (kind) {
@@ -5864,10 +5864,10 @@ unicode_encode_utf8(PyObject *unicode, _Py_error_handler error_handler,
     }
 
     if (end == NULL) {
-        _PyBytesWriter_Dealloc(&writer);
+        PyBytesWriter_Discard(writer);
         return NULL;
     }
-    return _PyBytesWriter_Finish(&writer, end);
+    return PyBytesWriter_Finish(writer, end);
 }
 
 static int
@@ -5881,7 +5881,7 @@ unicode_fill_utf8(PyObject *unicode)
     const void *data = PyUnicode_DATA(unicode);
     Py_ssize_t size = PyUnicode_GET_LENGTH(unicode);
 
-    _PyBytesWriter writer;
+    PyBytesWriter *writer = NULL;
     char *end;
 
     switch (kind) {
@@ -5901,17 +5901,16 @@ unicode_fill_utf8(PyObject *unicode)
         break;
     }
     if (end == NULL) {
-        _PyBytesWriter_Dealloc(&writer);
+        PyBytesWriter_Discard(writer);
         return -1;
     }
 
-    const char *start = writer.use_small_buffer ? writer.small_buffer :
-                    PyBytes_AS_STRING(writer.buffer);
+    const char *start = _PyBytesWriter_Start(writer);
     Py_ssize_t len = end - start;
 
     char *cache = PyMem_Malloc(len + 1);
     if (cache == NULL) {
-        _PyBytesWriter_Dealloc(&writer);
+        PyBytesWriter_Discard(writer);
         PyErr_NoMemory();
         return -1;
     }
@@ -5919,7 +5918,7 @@ unicode_fill_utf8(PyObject *unicode)
     cache[len] = '\0';
     PyUnicode_SET_UTF8_LENGTH(unicode, len);
     PyUnicode_SET_UTF8(unicode, cache);
-    _PyBytesWriter_Dealloc(&writer);
+    PyBytesWriter_Discard(writer);
     return 0;
 }
 
@@ -7354,7 +7353,6 @@ unicode_encode_ucs1(PyObject *unicode,
     _Py_error_handler error_handler = _Py_ERROR_UNKNOWN;
     PyObject *rep = NULL;
     /* output object */
-    _PyBytesWriter writer;
 
     size = PyUnicode_GET_LENGTH(unicode);
     kind = PyUnicode_KIND(unicode);
@@ -7364,10 +7362,11 @@ unicode_encode_ucs1(PyObject *unicode,
     if (size == 0)
         return PyBytes_FromStringAndSize(NULL, 0);
 
-    _PyBytesWriter_Init(&writer);
-    str = _PyBytesWriter_Alloc(&writer, size);
-    if (str == NULL)
+    PyBytesWriter *writer;
+    str = PyBytesWriter_Create(&writer, size);
+    if (str == NULL) {
         return NULL;
+    }
 
     while (pos < size) {
         Py_UCS4 ch = PyUnicode_READ(kind, data, pos);
@@ -7388,9 +7387,6 @@ unicode_encode_ucs1(PyObject *unicode,
             while ((collend < size) && (PyUnicode_READ(kind, data, collend) >= limit))
                 ++collend;
 
-            /* Only overallocate the buffer if it's not the last write */
-            writer.overallocate = (collend < size);
-
             /* cache callback name lookup (if not done yet, i.e. it's the first error) */
             if (error_handler == _Py_ERROR_UNKNOWN)
                 error_handler = _Py_GetErrorHandler(errors);
@@ -7409,9 +7405,7 @@ unicode_encode_ucs1(PyObject *unicode,
                 break;
 
             case _Py_ERROR_BACKSLASHREPLACE:
-                /* subtract preallocated bytes */
-                writer.min_size -= (collend - collstart);
-                str = backslashreplace(&writer, str,
+                str = backslashreplace(writer, str,
                                        unicode, collstart, collend);
                 if (str == NULL)
                     goto onError;
@@ -7419,9 +7413,7 @@ unicode_encode_ucs1(PyObject *unicode,
                 break;
 
             case _Py_ERROR_XMLCHARREFREPLACE:
-                /* subtract preallocated bytes */
-                writer.min_size -= (collend - collstart);
-                str = xmlcharrefreplace(&writer, str,
+                str = xmlcharrefreplace(writer, str,
                                         unicode, collstart, collend);
                 if (str == NULL)
                     goto onError;
@@ -7452,24 +7444,17 @@ unicode_encode_ucs1(PyObject *unicode,
                     goto onError;
 
                 if (newpos < collstart) {
-                    writer.overallocate = 1;
-                    str = _PyBytesWriter_Prepare(&writer, str,
-                                                 collstart - newpos);
+                    str = PyBytesWriter_Extend(writer, str,
+                                               collstart - newpos);
                     if (str == NULL)
                         goto onError;
-                }
-                else {
-                    /* subtract preallocated bytes */
-                    writer.min_size -= newpos - collstart;
-                    /* Only overallocate the buffer if it's not the last write */
-                    writer.overallocate = (newpos < size);
                 }
 
                 if (PyBytes_Check(rep)) {
                     /* Directly copy bytes result to output. */
-                    str = _PyBytesWriter_WriteBytes(&writer, str,
-                                                    PyBytes_AS_STRING(rep),
-                                                    PyBytes_GET_SIZE(rep));
+                    str = PyBytesWriter_WriteBytes(writer, str,
+                                                   PyBytes_AS_STRING(rep),
+                                                   PyBytes_GET_SIZE(rep));
                 }
                 else {
                     assert(PyUnicode_Check(rep));
@@ -7484,9 +7469,9 @@ unicode_encode_ucs1(PyObject *unicode,
                         goto onError;
                     }
                     assert(PyUnicode_KIND(rep) == PyUnicode_1BYTE_KIND);
-                    str = _PyBytesWriter_WriteBytes(&writer, str,
-                                                    PyUnicode_DATA(rep),
-                                                    PyUnicode_GET_LENGTH(rep));
+                    str = PyBytesWriter_WriteBytes(writer, str,
+                                                   PyUnicode_DATA(rep),
+                                                   PyUnicode_GET_LENGTH(rep));
                 }
                 if (str == NULL)
                     goto onError;
@@ -7494,20 +7479,16 @@ unicode_encode_ucs1(PyObject *unicode,
                 pos = newpos;
                 Py_CLEAR(rep);
             }
-
-            /* If overallocation was disabled, ensure that it was the last
-               write. Otherwise, we missed an optimization */
-            assert(writer.overallocate || pos == size);
         }
     }
 
     Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
-    return _PyBytesWriter_Finish(&writer, str);
+    return PyBytesWriter_Finish(writer, str);
 
   onError:
     Py_XDECREF(rep);
-    _PyBytesWriter_Dealloc(&writer);
+    PyBytesWriter_Discard(writer);
     Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
     return NULL;
