@@ -129,6 +129,7 @@ typedef struct _optimization_stats {
     uint64_t inner_loop;
     uint64_t recursive_call;
     uint64_t low_confidence;
+    uint64_t unknown_callee;
     uint64_t executors_invalidated;
     UOpStats opcode[PYSTATS_MAX_UOP_ID + 1];
     uint64_t unsupported_opcode[256];
