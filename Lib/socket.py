@@ -78,7 +78,7 @@ __all__.extend(os._get_exports_list(_socket))
 IntEnum._convert_(
         'AddressFamily',
         __name__,
-        lambda C: C.isupper() and C.startswith('AF_'))
+        lambda C: C.startswith('AF_'))
 
 IntEnum._convert_(
         'SocketKind',
