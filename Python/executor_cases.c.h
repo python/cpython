@@ -5426,7 +5426,7 @@
                 JUMP_TO_JUMP_TARGET();
             }
             // CPython promises to check all non-vectorcall function calls.
-            if (_Py_ReachedRecursionLimit(tstate, 0)) {
+            if (_Py_ReachedRecursionLimit(tstate)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
@@ -5812,7 +5812,7 @@
                 JUMP_TO_JUMP_TARGET();
             }
             // CPython promises to check all non-vectorcall function calls.
-            if (_Py_ReachedRecursionLimit(tstate, 0)) {
+            if (_Py_ReachedRecursionLimit(tstate)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
@@ -5982,7 +5982,7 @@
                 JUMP_TO_JUMP_TARGET();
             }
             // CPython promises to check all non-vectorcall function calls.
-            if (_Py_ReachedRecursionLimit(tstate, 0)) {
+            if (_Py_ReachedRecursionLimit(tstate)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }

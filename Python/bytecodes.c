@@ -3970,7 +3970,7 @@ dummy_func(
             EXIT_IF(!PyCFunction_CheckExact(callable_o));
             EXIT_IF(PyCFunction_GET_FLAGS(callable_o) != METH_O);
             // CPython promises to check all non-vectorcall function calls.
-            EXIT_IF(_Py_ReachedRecursionLimit(tstate, 0));
+            EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
             _PyStackRef arg = args[0];
@@ -4163,7 +4163,7 @@ dummy_func(
             PyMethodDef *meth = method->d_method;
             EXIT_IF(meth->ml_flags != METH_O);
             // CPython promises to check all non-vectorcall function calls.
-            EXIT_IF(_Py_ReachedRecursionLimit(tstate, 0));
+            EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             _PyStackRef arg_stackref = arguments[1];
             _PyStackRef self_stackref = arguments[0];
             EXIT_IF(!Py_IS_TYPE(PyStackRef_AsPyObjectBorrow(self_stackref),
@@ -4244,7 +4244,7 @@ dummy_func(
             EXIT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
             EXIT_IF(meth->ml_flags != METH_NOARGS);
             // CPython promises to check all non-vectorcall function calls.
-            EXIT_IF(_Py_ReachedRecursionLimit(tstate, 0));
+            EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
             PyObject *res_o = _PyCFunction_TrampolineCall(cfunc, self, NULL);

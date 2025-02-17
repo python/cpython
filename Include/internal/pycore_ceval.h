@@ -224,16 +224,16 @@ static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate) {
 
 PyAPI_FUNC(void) _Py_InitializeRecursionLimits(PyThreadState *tstate);
 
-static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate, int margin_count)  {
+static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
     char here;
     uintptr_t here_addr = (uintptr_t)&here;
-    if (here_addr > tstate->c_stack_soft_limit + margin_count * PYOS_STACK_MARGIN_BYTES) {
+    if (here_addr > tstate->c_stack_soft_limit) {
         return 0;
     }
     if (tstate->c_stack_hard_limit == 0) {
         _Py_InitializeRecursionLimits(tstate);
     }
-    return here_addr <= tstate->c_stack_soft_limit + margin_count * PYOS_STACK_MARGIN_BYTES;
+    return here_addr <= tstate->c_stack_soft_limit;
 }
 
 static inline void _Py_LeaveRecursiveCall(void)  {

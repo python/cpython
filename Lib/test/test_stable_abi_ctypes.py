@@ -904,7 +904,6 @@ SYMBOL_NAMES = (
     "Py_PACK_FULL_VERSION",
     "Py_PACK_VERSION",
     "Py_REFCNT",
-    "Py_ReachedRecursionLimit",
     "Py_ReprEnter",
     "Py_ReprLeave",
     "Py_SetPath",

@@ -2222,7 +2222,7 @@
                     JUMP_TO_PREDICTED(CALL);
                 }
                 // CPython promises to check all non-vectorcall function calls.
-                if (_Py_ReachedRecursionLimit(tstate, 0)) {
+                if (_Py_ReachedRecursionLimit(tstate)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
@@ -3598,7 +3598,7 @@
                     JUMP_TO_PREDICTED(CALL);
                 }
                 // CPython promises to check all non-vectorcall function calls.
-                if (_Py_ReachedRecursionLimit(tstate, 0)) {
+                if (_Py_ReachedRecursionLimit(tstate)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
@@ -3694,7 +3694,7 @@
                     JUMP_TO_PREDICTED(CALL);
                 }
                 // CPython promises to check all non-vectorcall function calls.
-                if (_Py_ReachedRecursionLimit(tstate, 0)) {
+                if (_Py_ReachedRecursionLimit(tstate)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);

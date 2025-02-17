@@ -60,8 +60,6 @@ PyAPI_FUNC(int) Py_GetRecursionLimit(void);
 PyAPI_FUNC(int) Py_EnterRecursiveCall(const char *where);
 PyAPI_FUNC(void) Py_LeaveRecursiveCall(void);
 
-PyAPI_FUNC(int) Py_ReachedRecursionLimit(PyThreadState *tstate, int margin_count);
-
 PyAPI_FUNC(const char *) PyEval_GetFuncName(PyObject *);
 PyAPI_FUNC(const char *) PyEval_GetFuncDesc(PyObject *);
 

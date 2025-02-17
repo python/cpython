@@ -2545,5 +2545,3 @@
     added = '3.14'
 [function.Py_PACK_VERSION]
     added = '3.14'
-[function.Py_ReachedRecursionLimit]
-    added = '3.14'

@@ -305,9 +305,17 @@ Py_SetRecursionLimit(int new_limit)
 }
 
 int
-Py_ReachedRecursionLimit(PyThreadState *tstate, int margin_count)
+_Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count)
 {
-    return _Py_ReachedRecursionLimit(tstate, margin_count);
+    char here;
+    uintptr_t here_addr = (uintptr_t)&here;
+    if (here_addr > tstate->c_stack_soft_limit + margin_count * PYOS_STACK_MARGIN_BYTES) {
+        return 0;
+    }
+    if (tstate->c_stack_hard_limit == 0) {
+        _Py_InitializeRecursionLimits(tstate);
+    }
+    return here_addr <= tstate->c_stack_soft_limit + margin_count * PYOS_STACK_MARGIN_BYTES;
 }
 
 void
