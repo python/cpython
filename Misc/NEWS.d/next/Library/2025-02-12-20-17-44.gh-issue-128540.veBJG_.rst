@@ -1,0 +1,2 @@
+Fixed :func:`webbrowser.open` with ``file:`` URLs may launching editor
+instead of browser
