@@ -4734,6 +4734,7 @@ Pickler_clear(PyObject *op)
     Py_CLEAR(self->output_buffer);
     Py_CLEAR(self->write);
     Py_CLEAR(self->persistent_id);
+    Py_CLEAR(self->persistent_id_attr);
     Py_CLEAR(self->dispatch_table);
     Py_CLEAR(self->fast_memo);
     Py_CLEAR(self->reducer_override);
@@ -4764,6 +4765,7 @@ Pickler_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->write);
     Py_VISIT(self->persistent_id);
+    Py_VISIT(self->persistent_id_attr);
     Py_VISIT(self->dispatch_table);
     Py_VISIT(self->fast_memo);
     Py_VISIT(self->reducer_override);
@@ -7243,6 +7245,7 @@ Unpickler_clear(PyObject *op)
     Py_CLEAR(self->peek);
     Py_CLEAR(self->stack);
     Py_CLEAR(self->persistent_load);
+    Py_CLEAR(self->persistent_load_attr);
     Py_CLEAR(self->buffers);
     if (self->buffer.buf != NULL) {
         PyBuffer_Release(&self->buffer);
@@ -7283,6 +7286,7 @@ Unpickler_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(self->peek);
     Py_VISIT(self->stack);
     Py_VISIT(self->persistent_load);
+    Py_VISIT(self->persistent_load_attr);
     Py_VISIT(self->buffers);
     PyObject **memo = self->memo;
     if (memo) {
