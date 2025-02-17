@@ -112,7 +112,7 @@ struct _ts {
     int py_recursion_remaining;
     int py_recursion_limit;
 
-    int c_recursion_remaining;
+    int c_recursion_remaining; /* Retained for backwards compatibility. Do not use */
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */
 
     /* 'tracing' keeps track of the execution depth when tracing/profiling.

@@ -1543,10 +1543,11 @@ int PyOS_CheckStack(void)
     char here;
     uintptr_t here_addr = (uintptr_t)&here;
     PyThreadState *tstate = _PyThreadState_GET();
-    if (tstate->c_stack_hard_limit == 0) {
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    if (_tstate->c_stack_hard_limit == 0) {
         _Py_InitializeRecursionLimits(tstate);
     }
-    if (here_addr >= tstate->c_stack_soft_limit) {
+    if (here_addr >= _tstate->c_stack_soft_limit) {
         return 0;
     }
     else {
