@@ -374,7 +374,10 @@ class NetworkTestCase(unittest.TestCase):
     def test_can_fetch(self):
         self.assertTrue(self.parser.can_fetch('*', self.url('elsewhere')))
         self.assertFalse(self.parser.can_fetch('Nutch', self.base_url))
-        self.assertFalse(self.parser.can_fetch('Nutch', self.url('brian')))
+        # The robots.txt in this test case disallows '/' only except /brian
+        # against Nutch. So, Nutch should be allowed to access brian per
+        # the section 2.2.2 in https://www.rfc-editor.org/rfc/rfc9309.html
+        self.assertTrue(self.parser.can_fetch('Nutch', self.url('brian')))
         self.assertFalse(self.parser.can_fetch('Nutch', self.url('webstats')))
         self.assertFalse(self.parser.can_fetch('*', self.url('webstats')))
         self.assertTrue(self.parser.can_fetch('*', self.base_url))
