@@ -1026,9 +1026,6 @@ class singledispatchmethod:
         self.dispatcher = singledispatch(func)
         self.func = func
 
-        import weakref # see comment in singledispatch function
-        self._method_cache = weakref.WeakKeyDictionary()
-
     def register(self, cls, method=None):
         """generic_method.register(cls, func) -> func
 
@@ -1037,36 +1034,50 @@ class singledispatchmethod:
         return self.dispatcher.register(cls, func=method)
 
     def __get__(self, obj, cls=None):
-        if self._method_cache is not None:
-            try:
-                _method = self._method_cache[obj]
-            except TypeError:
-                self._method_cache = None
-            except KeyError:
-                pass
-            else:
-                return _method
-
-        dispatch = self.dispatcher.dispatch
-        funcname = getattr(self.func, '__name__', 'singledispatchmethod method')
-        def _method(*args, **kwargs):
-            if not args:
-                raise TypeError(f'{funcname} requires at least '
-                                '1 positional argument')
-            return dispatch(args[0].__class__).__get__(obj, cls)(*args, **kwargs)
-
-        _method.__isabstractmethod__ = self.__isabstractmethod__
-        _method.register = self.register
-        update_wrapper(_method, self.func)
-
-        if self._method_cache is not None:
-            self._method_cache[obj] = _method
-
-        return _method
+        return _singledispatchmethod_get(self, obj, cls)
 
     @property
     def __isabstractmethod__(self):
         return getattr(self.func, '__isabstractmethod__', False)
+
+
+class _singledispatchmethod_get:
+    def __init__(self, unbound, obj, cls):
+        self._unbound = unbound
+        self._dispatch = unbound.dispatcher.dispatch
+        self._obj = obj
+        self._cls = cls
+        # Set instance attributes which cannot be handled in __getattr__()
+        # because they conflict with type descriptors.
+        func = unbound.func
+        try:
+            self.__module__ = func.__module__
+        except AttributeError:
+            pass
+        try:
+            self.__doc__ = func.__doc__
+        except AttributeError:
+            pass
+
+    def __call__(self, /, *args, **kwargs):
+        if not args:
+            funcname = getattr(self._unbound.func, '__name__',
+                               'singledispatchmethod method')
+            raise TypeError(f'{funcname} requires at least '
+                            '1 positional argument')
+        return self._dispatch(args[0].__class__).__get__(self._obj, self._cls)(*args, **kwargs)
+
+    def __getattr__(self, name):
+        # Resolve these attributes lazily to speed up creation of
+        # the _singledispatchmethod_get instance.
+        if name not in {'__name__', '__qualname__', '__isabstractmethod__',
+                        '__annotations__', '__type_params__'}:
+            raise AttributeError
+        return getattr(self._unbound.func, name)
+
+    @property
+    def register(self):
+        return self._unbound.register
 
 
 ################################################################################
