@@ -44,7 +44,7 @@ Options:
 
     -a
     --extract-all
-        Extract all strings.
+        Currently not implemented and may be removed in a future version.
 
     -cTAG
     --add-comments=TAG
@@ -590,6 +590,8 @@ def main():
         if opt in ('-h', '--help'):
             usage(0)
         elif opt in ('-a', '--extract-all'):
+            print("WARNING: -a/--extract-all is not yet implemented and may be removed or implemented in a future version",
+                  file=sys.stderr)
             options.extractall = 1
         elif opt in ('-c', '--add-comments'):
             options.comment_tags.add(arg)
