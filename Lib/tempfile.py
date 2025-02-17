@@ -37,7 +37,6 @@ __all__ = [
 # Imports.
 
 import functools as _functools
-import warnings as _warnings
 import io as _io
 import os as _os
 import shutil as _shutil
@@ -480,7 +479,8 @@ class _TemporaryFileCloser:
         close_called = self.close_called
         self.cleanup()
         if not close_called:
-            _warnings.warn(self.warn_message, ResourceWarning)
+            import warnings
+            warnings.warn(self.warn_message, ResourceWarning)
 
 
 class _TemporaryFileWrapper:
@@ -769,7 +769,8 @@ class SpooledTemporaryFile(_io.IOBase):
 
     def __del__(self):
         if not self.closed:
-            _warnings.warn(
+            import warnings
+            warnings.warn(
                 "Unclosed file {!r}".format(self),
                 ResourceWarning,
                 stacklevel=2,
@@ -953,7 +954,8 @@ class TemporaryDirectory:
     def _cleanup(cls, name, warn_message, ignore_errors=False, delete=True):
         if delete:
             cls._rmtree(name, ignore_errors=ignore_errors)
-            _warnings.warn(warn_message, ResourceWarning)
+            import warnings
+            warnings.warn(warn_message, ResourceWarning)
 
     def __repr__(self):
         return "<{} {!r}>".format(self.__class__.__name__, self.name)

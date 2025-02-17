@@ -33,7 +33,6 @@ Compile():
 """
 
 import __future__
-import warnings
 
 _features = [getattr(__future__, fname)
              for fname in __future__.all_feature_names]
@@ -56,6 +55,8 @@ def _maybe_compile(compiler, source, filename, symbol):
     else:
         if symbol != "eval":
             source = "pass"     # Replace it with a 'pass' statement
+
+    import warnings
 
     # Disable compiler warnings when checking for incomplete input.
     with warnings.catch_warnings():

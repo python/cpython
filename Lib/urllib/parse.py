@@ -36,7 +36,6 @@ import functools
 import math
 import re
 import types
-import warnings
 import ipaddress
 
 __all__ = ["urlparse", "urlunparse", "urljoin", "urldefrag",
@@ -825,6 +824,7 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
             qs = bytes(memoryview(qs))
         except TypeError:
             if not qs:
+                import warnings
                 warnings.warn(f"Accepting {type(qs).__name__} objects with "
                               f"false value in urllib.parse.parse_qsl() is "
                               f"deprecated as of 3.14",
@@ -1081,6 +1081,7 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
 
 
 def to_bytes(url):
+    import warnings
     warnings.warn("urllib.parse.to_bytes() is deprecated as of 3.8",
                   DeprecationWarning, stacklevel=2)
     return _to_bytes(url)
@@ -1114,6 +1115,7 @@ def unwrap(url):
 
 
 def splittype(url):
+    import warnings
     warnings.warn("urllib.parse.splittype() is deprecated as of 3.8, "
                   "use urllib.parse.urlparse() instead",
                   DeprecationWarning, stacklevel=2)
@@ -1135,6 +1137,7 @@ def _splittype(url):
 
 
 def splithost(url):
+    import warnings
     warnings.warn("urllib.parse.splithost() is deprecated as of 3.8, "
                   "use urllib.parse.urlparse() instead",
                   DeprecationWarning, stacklevel=2)
@@ -1158,6 +1161,7 @@ def _splithost(url):
 
 
 def splituser(host):
+    import warnings
     warnings.warn("urllib.parse.splituser() is deprecated as of 3.8, "
                   "use urllib.parse.urlparse() instead",
                   DeprecationWarning, stacklevel=2)
@@ -1171,6 +1175,7 @@ def _splituser(host):
 
 
 def splitpasswd(user):
+    import warnings
     warnings.warn("urllib.parse.splitpasswd() is deprecated as of 3.8, "
                   "use urllib.parse.urlparse() instead",
                   DeprecationWarning, stacklevel=2)
@@ -1184,6 +1189,7 @@ def _splitpasswd(user):
 
 
 def splitport(host):
+    import warnings
     warnings.warn("urllib.parse.splitport() is deprecated as of 3.8, "
                   "use urllib.parse.urlparse() instead",
                   DeprecationWarning, stacklevel=2)
@@ -1207,6 +1213,7 @@ def _splitport(host):
 
 
 def splitnport(host, defport=-1):
+    import warnings
     warnings.warn("urllib.parse.splitnport() is deprecated as of 3.8, "
                   "use urllib.parse.urlparse() instead",
                   DeprecationWarning, stacklevel=2)
@@ -1231,6 +1238,7 @@ def _splitnport(host, defport=-1):
 
 
 def splitquery(url):
+    import warnings
     warnings.warn("urllib.parse.splitquery() is deprecated as of 3.8, "
                   "use urllib.parse.urlparse() instead",
                   DeprecationWarning, stacklevel=2)
@@ -1246,6 +1254,7 @@ def _splitquery(url):
 
 
 def splittag(url):
+    import warnings
     warnings.warn("urllib.parse.splittag() is deprecated as of 3.8, "
                   "use urllib.parse.urlparse() instead",
                   DeprecationWarning, stacklevel=2)
@@ -1261,6 +1270,7 @@ def _splittag(url):
 
 
 def splitattr(url):
+    import warnings
     warnings.warn("urllib.parse.splitattr() is deprecated as of 3.8, "
                   "use urllib.parse.urlparse() instead",
                   DeprecationWarning, stacklevel=2)
@@ -1275,6 +1285,7 @@ def _splitattr(url):
 
 
 def splitvalue(attr):
+    import warnings
     warnings.warn("urllib.parse.splitvalue() is deprecated as of 3.8, "
                   "use urllib.parse.parse_qsl() instead",
                   DeprecationWarning, stacklevel=2)

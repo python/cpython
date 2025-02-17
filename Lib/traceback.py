@@ -5,7 +5,6 @@ import itertools
 import linecache
 import sys
 import textwrap
-import warnings
 from contextlib import suppress
 import _colorize
 from _colorize import ANSIColors
@@ -1182,6 +1181,7 @@ class TracebackException:
 
     @property
     def exc_type(self):
+        import warnings
         warnings.warn('Deprecated in 3.13. Use exc_type_str instead.',
                       DeprecationWarning, stacklevel=2)
         return self._exc_type

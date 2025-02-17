@@ -6,7 +6,6 @@ import itertools
 import pathlib
 import operator
 import re
-import warnings
 import zipfile
 from collections.abc import Iterator
 
@@ -194,6 +193,7 @@ def _ensure_traversable(path):
     if not isinstance(path, str):
         return path
 
+    import warnings
     warnings.warn(
         "String arguments are deprecated. Pass a Traversable instead.",
         DeprecationWarning,
