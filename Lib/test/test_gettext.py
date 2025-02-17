@@ -517,11 +517,17 @@ class PluralFormsInternalTestCase(unittest.TestCase):
     def test_invalid_syntax(self):
         invalid_expressions = [
             'x>1', '(n>1', 'n>1)', '42**42**42', '0xa', '1.0', '1e2',
-            'n>0x1', '+n', '-n', 'n()', 'n(1)', '1+', 'nn', 'n n',
+            'n>0x1', '+n', '-n', 'n()', 'n(1)', '1+', 'nn', 'n n', 'n ? 1 2'
         ]
         for expr in invalid_expressions:
             with self.assertRaises(ValueError):
                 gettext.c2py(expr)
+
+    def test_negation(self):
+        f = gettext.c2py('!!!n')
+        self.assertEqual(f(0), 1)
+        self.assertEqual(f(1), 0)
+        self.assertEqual(f(2), 0)
 
     def test_nested_condition_operator(self):
         self.assertEqual(gettext.c2py('n?1?2:3:4')(0), 4)
