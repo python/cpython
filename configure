@@ -21449,6 +21449,10 @@ fi
 
 
 
+case $ac_sys_system in #(
+  WASI) :
+     ;; #(
+  *) :
 
 pkg_failed=no
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for zlib >= 1.2.0" >&5
@@ -21793,6 +21797,8 @@ printf "%s\n" "yes" >&6; }
 
 
 fi
+ ;;
+esac
 
 
 

@@ -5327,7 +5327,9 @@ AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy; zlib 
 dnl 2022-03: Until we know if third party zlib modules people use (for hardware
 dnl accelerators, parallelism, etc.) all support copy, lets not assume.
 
-PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
+AS_CASE([$ac_sys_system],
+  [WASI], [],
+[PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
   dnl zlib 1.2.0 (2003) added inflateCopy
   AC_DEFINE([HAVE_ZLIB_COPY], [1])
 ], [
@@ -5350,6 +5352,7 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
         zlib1g-dev equivalent library or get it from https://zlib.net/.
      ])])
   ])
+])
 ])
 
 dnl detect bzip2 from Emscripten emport
