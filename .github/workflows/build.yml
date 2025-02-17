@@ -154,7 +154,7 @@ jobs:
       Windows
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
     needs: build-context
-    if: fromJSON(needs.build-context.outputs.run-tests)
+    if: fromJSON(needs.build-context.outputs.run-windows-tests)
     strategy:
       fail-fast: false
       matrix:
@@ -247,13 +247,13 @@ jobs:
         - true
         os:
         - ubuntu-24.04
-        - ubuntu-24.04-arm
+        - ubuntu-22.04-arm
         exclude:
         # Do not test BOLT with free-threading, to conserve resources
         - bolt: true
           free-threading: true
         # BOLT currently crashes during instrumentation on aarch64
-        - os: ubuntu-24.04-arm
+        - os: ubuntu-22.04-arm
           bolt: true
     uses: ./.github/workflows/reusable-ubuntu.yml
     with:
@@ -621,6 +621,7 @@ jobs:
     - build_wasi
     - build_windows
     - build_windows_msi
+    - cross-build-linux
     - test_hypothesis
     - build_asan
     - build_tsan
@@ -654,10 +655,17 @@ jobs:
             build_ubuntu,
             build_ubuntu_ssltests,
             build_wasi,
-            build_windows,
             build_asan,
             build_tsan,
             test_hypothesis,
+            cross-build-linux,
+            '
+            || ''
+          }}
+          ${{
+            !fromJSON(needs.build-context.outputs.run-windows-tests)
+            && '
+            build_windows,
             '
             || ''
           }}
