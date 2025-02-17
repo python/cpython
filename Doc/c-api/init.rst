@@ -1279,6 +1279,7 @@ with sub-interpreters:
       Hangs the current thread, rather than terminating it, if called while the
       interpreter is finalizing.
 
+
 .. c:function:: void PyGILState_Release(PyGILState_STATE)
 
    Release any resources previously acquired.  After this call, Python's state will
@@ -1497,6 +1498,36 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    extensions should use to store interpreter-specific state information.
 
    .. versionadded:: 3.8
+
+
+.. c:function:: int PyThreadState_Ensure(PyInterpreterState *interp)
+
+   Similar to :c:func:`PyGILState_Ensure`, except that it returns with a status
+   code even in the case of failure, and takes an interpreter state.
+   Specifically, it returns a status code (``>= 0``) when the operation
+   succeeded, and returns ``-1`` on failure.
+
+   On success, the thread state must be released by
+   :c:func:`PyThreadState_Release`.
+
+   In the case of failure, it is *unsafe* to use the Python API following the
+   call. Releasing the obtained *state* via :c:func:`PyGILState_Release` should
+   only be done in the case of success.
+
+   .. versionadded:: next
+
+
+.. c:function:: void PyThreadState_Release(int state)
+
+   Release any resources previously acquired.  After this call, Python's state
+   will be the same as it was prior to the corresponding
+   :c:func:`PyThreadState_Ensure` call (but generally this state will be
+   unknown to the caller).
+
+   Every call to :c:func:`PyThreadState_Ensure` must be matched by a call to
+   :c:func:`PyThreadState_Release` on the same thread.
+
+   .. versionadded:: next
 
 
 .. c:function:: PyObject* PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)

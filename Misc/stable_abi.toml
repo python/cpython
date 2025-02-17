@@ -2545,3 +2545,7 @@
     added = '3.14'
 [function.Py_PACK_VERSION]
     added = '3.14'
+[function.PyThreadState_Ensure]
+    added = '3.14'
+[function.PyThreadState_Release]
+    added = '3.14'

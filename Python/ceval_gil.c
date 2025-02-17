@@ -277,12 +277,15 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate, int final_release)
 
 /* Take the GIL.
 
+   Return 0 on success.
+   Return -1 if the thread must exit.
+
    The function saves errno at entry and restores its value at exit.
    It may hang rather than return if the interpreter has been finalized.
 
    tstate must be non-NULL. */
-static void
-take_gil(PyThreadState *tstate)
+static int
+take_gil_or_fail(PyThreadState *tstate)
 {
     int err = errno;
 
@@ -304,7 +307,7 @@ take_gil(PyThreadState *tstate)
            C++. gh-87135: The best that can be done is to hang the thread as
            the public APIs calling this have no error reporting mechanism (!).
          */
-        PyThread_hang_thread();
+        goto tstate_must_exit;
     }
 
     assert(_PyThreadState_CheckConsistency(tstate));
@@ -312,7 +315,7 @@ take_gil(PyThreadState *tstate)
     struct _gil_runtime_state *gil = interp->ceval.gil;
 #ifdef Py_GIL_DISABLED
     if (!_Py_atomic_load_int_relaxed(&gil->enabled)) {
-        return;
+        goto done;
     }
 #endif
 
@@ -348,9 +351,7 @@ take_gil(PyThreadState *tstate)
                 if (drop_requested) {
                     _Py_unset_eval_breaker_bit(holder_tstate, _PY_GIL_DROP_REQUEST_BIT);
                 }
-                // gh-87135: hang the thread as *thread_exit() is not a safe
-                // API. It lacks stack unwind and local variable destruction.
-                PyThread_hang_thread();
+                goto tstate_must_exit;
             }
             assert(_PyThreadState_CheckConsistency(tstate));
 
@@ -366,7 +367,7 @@ take_gil(PyThreadState *tstate)
         // return.
         COND_SIGNAL(gil->cond);
         MUTEX_UNLOCK(gil->mutex);
-        return;
+        goto done;
     }
 #endif
 
@@ -401,7 +402,7 @@ take_gil(PyThreadState *tstate)
         /* tstate could be a dangling pointer, so don't pass it to
            drop_gil(). */
         drop_gil(interp, NULL, 1);
-        PyThread_hang_thread();
+        goto tstate_must_exit;
     }
     assert(_PyThreadState_CheckConsistency(tstate));
 
@@ -411,8 +412,25 @@ take_gil(PyThreadState *tstate)
 
     MUTEX_UNLOCK(gil->mutex);
 
+#ifdef Py_GIL_DISABLED
+done:
+#endif
     errno = err;
-    return;
+    return 0;
+
+tstate_must_exit:
+    errno = err;
+    return -1;
+}
+
+static void
+take_gil(PyThreadState *tstate)
+{
+    if (take_gil_or_fail(tstate) < 0) {
+        // gh-87135: hang the thread as *thread_exit() is not a safe
+        // API. It lacks stack unwind and local variable destruction.
+        PyThread_hang_thread();
+    }
 }
 
 void _PyEval_SetSwitchInterval(unsigned long microseconds)
@@ -586,6 +604,13 @@ _PyEval_AcquireLock(PyThreadState *tstate)
     take_gil(tstate);
 }
 
+int
+_PyEval_AcquireLockOrFail(PyThreadState *tstate)
+{
+    _Py_EnsureTstateNotNULL(tstate);
+    return take_gil_or_fail(tstate);
+}
+
 void
 _PyEval_ReleaseLock(PyInterpreterState *interp,
                     PyThreadState *tstate,
@@ -641,19 +666,32 @@ PyEval_SaveThread(void)
     return tstate;
 }
 
-void
-PyEval_RestoreThread(PyThreadState *tstate)
+
+int
+_PyEval_RestoreThreadOrFail(PyThreadState *tstate)
 {
 #ifdef MS_WINDOWS
     int err = GetLastError();
 #endif
 
     _Py_EnsureTstateNotNULL(tstate);
-    _PyThreadState_Attach(tstate);
+    if (_PyThreadState_AttachOrFail(tstate) < 0) {
+        return -1;
+    }
 
 #ifdef MS_WINDOWS
     SetLastError(err);
 #endif
+    return 0;
+}
+
+
+void
+PyEval_RestoreThread(PyThreadState *tstate)
+{
+    if (_PyEval_RestoreThreadOrFail(tstate) < 0) {
+        PyThread_hang_thread();
+    }
 }
 
 

@@ -1263,19 +1263,23 @@ typedef struct {
     PyThread_type_lock start_event;
     PyThread_type_lock exit_event;
     PyObject *callback;
+    PyInterpreterState *interp;
 } test_c_thread_t;
 
 static void
 temporary_c_thread(void *data)
 {
     test_c_thread_t *test_c_thread = data;
-    PyGILState_STATE state;
     PyObject *res;
 
     PyThread_release_lock(test_c_thread->start_event);
 
     /* Allocate a Python thread state for this thread */
-    state = PyGILState_Ensure();
+    int state = PyThreadState_Ensure(test_c_thread->interp);
+    if (state < 0) {
+        fprintf(stderr, "ERROR: PyThreadState_Ensure() failed");
+        abort();
+    }
 
     res = PyObject_CallNoArgs(test_c_thread->callback);
     Py_CLEAR(test_c_thread->callback);
@@ -1288,7 +1292,7 @@ temporary_c_thread(void *data)
     }
 
     /* Destroy the Python thread state for this thread */
-    PyGILState_Release(state);
+    PyThreadState_Release(state);
 
     PyThread_release_lock(test_c_thread->exit_event);
 }
@@ -1310,6 +1314,7 @@ call_in_temporary_c_thread(PyObject *self, PyObject *args)
     test_c_thread.start_event = PyThread_allocate_lock();
     test_c_thread.exit_event = PyThread_allocate_lock();
     test_c_thread.callback = NULL;
+    test_c_thread.interp = PyInterpreterState_Get();
     if (!test_c_thread.start_event || !test_c_thread.exit_event) {
         PyErr_SetString(PyExc_RuntimeError, "could not allocate lock");
         goto exit;
