@@ -1344,7 +1344,6 @@
                         assert(WITHIN_STACK_BOUNDS());
                         JUMP_TO_LABEL(error);
                     }
-                    // Manipulate stack directly since we leave using DISPATCH_INLINED().
                     // The frame has stolen all the arguments from the stack,
                     // so there is no need to clean them up.
                     stack_pointer += -2 - oparg;
@@ -6115,7 +6114,6 @@
                         assert(WITHIN_STACK_BOUNDS());
                         JUMP_TO_LABEL(error);
                     }
-                    // Manipulate stack directly since we leave using DISPATCH_INLINED().
                     // The frame has stolen all the arguments from the stack,
                     // so there is no need to clean them up.
                     stack_pointer += -2 - oparg;

@@ -371,14 +371,14 @@ static inline void PyStackRef_CheckValid(_PyStackRef ref) {
 
 /* Does this ref have an embedded refcount */
 static inline int
-PyStackRef_HasCount(_PyStackRef ref)
+PyStackRef_IsUncountedMortal(_PyStackRef ref)
 {
-    return ref.bits & Py_TAG_REFCNT;
+    return (ref.bits & Py_TAG_BITS) == 0;
 }
 
 /* Does this ref have an embedded refcount and refer to a mortal object (NULL is not mortal) */
 static inline bool
-PyStackRef_HasCountAndMortal(_PyStackRef ref)
+PyStackRef_IsCountedMortal(_PyStackRef ref)
 {
     return (ref.bits & Py_TAG_BITS) == Py_TAG_REFCNT;
 }
@@ -399,11 +399,11 @@ PyStackRef_AsPyObjectBorrow(_PyStackRef ref)
 static inline PyObject *
 PyStackRef_AsPyObjectSteal(_PyStackRef ref)
 {
-    if (PyStackRef_HasCount(ref)) {
-        return Py_NewRef(BITS_TO_PTR_MASKED(ref));
+    if (PyStackRef_IsUncountedMortal(ref)) {
+        return BITS_TO_PTR(ref);
     }
     else {
-        return BITS_TO_PTR(ref);
+        return Py_NewRef(BITS_TO_PTR_MASKED(ref));
     }
 }
 
@@ -456,16 +456,10 @@ PyStackRef_FromPyObjectImmortal(PyObject *obj)
 }
 
 static inline _PyStackRef
-PyStackRef_WithCount(_PyStackRef ref)
-{
-    return (_PyStackRef){ .bits = ref.bits | Py_TAG_REFCNT };
-}
-
-static inline _PyStackRef
 PyStackRef_DUP(_PyStackRef ref)
 {
     assert(!PyStackRef_IsNull(ref));
-    if (!PyStackRef_HasCount(ref)) {
+    if (PyStackRef_IsUncountedMortal(ref)) {
         Py_INCREF_MORTAL(BITS_TO_PTR(ref));
     }
     return ref;
@@ -474,13 +468,13 @@ PyStackRef_DUP(_PyStackRef ref)
 static inline bool
 PyStackRef_IsHeapSafe(_PyStackRef ref)
 {
-    return !PyStackRef_HasCountAndMortal(ref);
+    return !PyStackRef_IsCountedMortal(ref);
 }
 
 static inline _PyStackRef
 PyStackRef_MakeHeapSafe(_PyStackRef ref)
 {
-    if (!PyStackRef_HasCountAndMortal(ref)) {
+    if (!PyStackRef_IsCountedMortal(ref)) {
         return ref;
     }
     PyObject *obj = BITS_TO_PTR_MASKED(ref);
@@ -494,7 +488,7 @@ static inline void
 PyStackRef_CLOSE(_PyStackRef ref)
 {
     assert(!PyStackRef_IsNull(ref));
-    if (!PyStackRef_HasCount(ref)) {
+    if (PyStackRef_IsUncountedMortal(ref)) {
         Py_DECREF_MORTAL(BITS_TO_PTR(ref));
     }
 }
@@ -503,7 +497,7 @@ static inline void
 PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct)
 {
     assert(!PyStackRef_IsNull(ref));
-    if (!PyStackRef_HasCount(ref)) {
+    if (PyStackRef_IsUncountedMortal(ref)) {
         Py_DECREF_MORTAL_SPECIALIZED(BITS_TO_PTR(ref), destruct);
     }
 }
@@ -512,7 +506,7 @@ static inline void
 PyStackRef_XCLOSE(_PyStackRef ref)
 {
     assert(ref.bits != 0);
-    if (!PyStackRef_HasCount(ref)) {
+    if (PyStackRef_IsUncountedMortal(ref)) {
         assert(!PyStackRef_IsNull(ref));
         Py_DECREF_MORTAL(BITS_TO_PTR(ref));
     }
