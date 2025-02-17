@@ -298,27 +298,12 @@ _A85END = b"~>"
 
 def _85encode(b, chars, chars2, pad=False, foldnuls=False, foldspaces=False):
     # Helper function for a85encode and b85encode
+    # chars2 is now unused
     if not isinstance(b, bytes_types):
         b = memoryview(b).tobytes()
 
-    padding = (-len(b)) % 4
-    if padding:
-        b = b + b'\0' * padding
-    words = struct.Struct('!%dI' % (len(b) // 4)).unpack(b)
-
-    chunks = [b'z' if foldnuls and not word else
-              b'y' if foldspaces and word == 0x20202020 else
-              (chars2[word // 614125] +
-               chars2[word // 85 % 7225] +
-               chars[word % 85])
-              for word in words]
-
-    if padding and not pad:
-        if chunks[-1] == b'z':
-            chunks[-1] = chars[0] * 5
-        chunks[-1] = chunks[-1][:-padding]
-
-    return b''.join(chunks)
+    return binascii.b2a_base85(b, chars=chars, pad=pad,
+                               foldnuls=foldnuls, foldspaces=foldspaces)
 
 def a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
     """Encode bytes-like object b using Ascii85 and return a bytes object.
@@ -337,14 +322,13 @@ def a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
     adobe controls whether the encoded byte sequence is framed with <~ and ~>,
     which is used by the Adobe implementation.
     """
-    global _a85chars, _a85chars2
+    global _a85chars
     # Delay the initialization of tables to not waste memory
     # if the function is never called
-    if _a85chars2 is None:
+    if _a85chars is None:
         _a85chars = [bytes((i,)) for i in range(33, 118)]
-        _a85chars2 = [(a + b) for a in _a85chars for b in _a85chars]
 
-    result = _85encode(b, _a85chars, _a85chars2, pad, True, foldspaces)
+    result = _85encode(b, b''.join(_a85chars), None, pad, True, foldspaces)
 
     if adobe:
         result = _A85START + result
@@ -445,13 +429,12 @@ def b85encode(b, pad=False):
     If pad is true, the input is padded with b'\\0' so its length is a multiple of
     4 bytes before encoding.
     """
-    global _b85chars, _b85chars2
+    global _b85chars
     # Delay the initialization of tables to not waste memory
     # if the function is never called
-    if _b85chars2 is None:
+    if _b85chars is None:
         _b85chars = [bytes((i,)) for i in _b85alphabet]
-        _b85chars2 = [(a + b) for a in _b85chars for b in _b85chars]
-    return _85encode(b, _b85chars, _b85chars2, pad)
+    return _85encode(b, _b85alphabet, None, pad)
 
 def b85decode(b):
     """Decode the base85-encoded bytes-like object or ASCII string b
