@@ -1036,7 +1036,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
 /*[clinic end generated code: output=1c64519cd859c2f0 input=c99a1472c425d66d]*/
 {
     Py_ssize_t i;
-    PyObject *it, *copyable, *copyfunc, *result;
+    PyObject *it, *to, *result;
 
     if (n < 0) {
         PyErr_SetString(PyExc_ValueError, "n must be >= 0");
@@ -1053,41 +1053,23 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
         return NULL;
     }
 
-    if (PyObject_GetOptionalAttr(it, &_Py_ID(__copy__), &copyfunc) < 0) {
-        Py_DECREF(it);
+    itertools_state *state = get_module_state(module);
+    to = tee_fromiterable(state, it);
+    Py_DECREF(it);
+    if (to == NULL) {
         Py_DECREF(result);
         return NULL;
     }
-    if (copyfunc != NULL) {
-        copyable = it;
-    }
-    else {
-        itertools_state *state = get_module_state(module);
-        copyable = tee_fromiterable(state, it);
-        Py_DECREF(it);
-        if (copyable == NULL) {
-            Py_DECREF(result);
-            return NULL;
-        }
-        copyfunc = PyObject_GetAttr(copyable, &_Py_ID(__copy__));
-        if (copyfunc == NULL) {
-            Py_DECREF(copyable);
-            Py_DECREF(result);
-            return NULL;
-        }
-    }
 
-    PyTuple_SET_ITEM(result, 0, copyable);
+    PyTuple_SET_ITEM(result, 0, to);
     for (i = 1; i < n; i++) {
-        copyable = _PyObject_CallNoArgs(copyfunc);
-        if (copyable == NULL) {
-            Py_DECREF(copyfunc);
+        to = tee_copy((teeobject *)to, NULL);
+        if (to == NULL) {
             Py_DECREF(result);
             return NULL;
         }
-        PyTuple_SET_ITEM(result, i, copyable);
+        PyTuple_SET_ITEM(result, i, to);
     }
-    Py_DECREF(copyfunc);
     return result;
 }
 
@@ -3253,7 +3235,7 @@ typedef struct {
 
 fast_mode:  when cnt an integer < PY_SSIZE_T_MAX and no step is specified.
 
-    assert(cnt != PY_SSIZE_T_MAX && long_cnt == NULL && long_step==PyLong(1));
+    assert(long_cnt == NULL && long_step==PyLong(1));
     Advances with:  cnt += 1
     When count hits PY_SSIZE_T_MAX, switch to slow_mode.
 
@@ -3340,7 +3322,7 @@ itertools_count_impl(PyTypeObject *type, PyObject *long_cnt,
     else
         cnt = PY_SSIZE_T_MAX;
 
-    assert((cnt != PY_SSIZE_T_MAX && long_cnt == NULL && fast_mode) ||
+    assert((long_cnt == NULL && fast_mode) ||
            (cnt == PY_SSIZE_T_MAX && long_cnt != NULL && !fast_mode));
     assert(!fast_mode ||
            (PyLong_Check(long_step) && PyLong_AS_LONG(long_step) == 1));
@@ -3433,7 +3415,7 @@ count_next(countobject *lz)
 static PyObject *
 count_repr(countobject *lz)
 {
-    if (lz->cnt != PY_SSIZE_T_MAX)
+    if (lz->long_cnt == NULL)
         return PyUnicode_FromFormat("%s(%zd)",
                                     _PyType_Name(Py_TYPE(lz)), lz->cnt);
 

@@ -6,7 +6,7 @@
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
     <!--
     Use the latest available version of Visual Studio to build. To override
-    this and build with an earlier version, pass "/p:PlatformToolset=v100"
+    this and build with an earlier version, pass "/p:PlatformToolset=v141"
     (for example) when building.
 
     We set BasePlatformToolset for ICC's benefit, it's otherwise ignored.
@@ -14,10 +14,6 @@
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VisualStudioVersion)' == '17.0'">v143</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VisualStudioVersion)' == '16.0'">v142</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and ('$(MSBuildToolsVersion)' == '15.0' or '$(VisualStudioVersion)' == '15.0')">v141</BasePlatformToolset>
-    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath14)' != ''">v140</BasePlatformToolset>
-    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath12)' != ''">v120</BasePlatformToolset>
-    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath11)' != ''">v110</BasePlatformToolset>
-    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath10)' != ''">v100</BasePlatformToolset>
 
     <PlatformToolset Condition="'$(PlatformToolset)' == ''">$(BasePlatformToolset)</PlatformToolset>
     <ICCBuild>false</ICCBuild>
@@ -75,8 +71,8 @@
     <libffiOutDir Condition="$(libffiOutDir) == ''">$(libffiDir)$(ArchName)\</libffiOutDir>
     <libffiIncludeDir Condition="$(libffiIncludeDir) == ''">$(libffiOutDir)include</libffiIncludeDir>
     <mpdecimalDir Condition="$(mpdecimalDir) == ''">$(ExternalsDir)\mpdecimal-4.0.0\</mpdecimalDir>
-    <opensslDir Condition="$(opensslDir) == ''">$(ExternalsDir)openssl-3.0.13\</opensslDir>
-    <opensslOutDir Condition="$(opensslOutDir) == ''">$(ExternalsDir)openssl-bin-3.0.13\$(ArchName)\</opensslOutDir>
+    <opensslDir Condition="$(opensslDir) == ''">$(ExternalsDir)openssl-3.0.15\</opensslDir>
+    <opensslOutDir Condition="$(opensslOutDir) == ''">$(ExternalsDir)openssl-bin-3.0.15\$(ArchName)\</opensslOutDir>
     <opensslIncludeDir Condition="$(opensslIncludeDir) == ''">$(opensslOutDir)include</opensslIncludeDir>
     <nasmDir Condition="$(nasmDir) == ''">$(ExternalsDir)\nasm-2.11.06\</nasmDir>
     <zlibDir Condition="$(zlibDir) == ''">$(ExternalsDir)\zlib-1.3.1\</zlibDir>

@@ -130,7 +130,9 @@ enum XML_Error {
   /* Added in 2.3.0. */
   XML_ERROR_NO_BUFFER,
   /* Added in 2.4.0. */
-  XML_ERROR_AMPLIFICATION_LIMIT_BREACH
+  XML_ERROR_AMPLIFICATION_LIMIT_BREACH,
+  /* Added in 2.6.4. */
+  XML_ERROR_NOT_STARTED,
 };
 
 enum XML_Content_Type {
@@ -1066,7 +1068,7 @@ XML_SetReparseDeferralEnabled(XML_Parser parser, XML_Bool enabled);
 */
 #define XML_MAJOR_VERSION 2
 #define XML_MINOR_VERSION 6
-#define XML_MICRO_VERSION 2
+#define XML_MICRO_VERSION 4
 
 #ifdef __cplusplus
 }

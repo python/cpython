@@ -1,18 +1,26 @@
 import com.android.build.api.variant.*
+import kotlin.math.max
 
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
 
-val PYTHON_DIR = File(projectDir, "../../..").canonicalPath
+val PYTHON_DIR = file("../../..").canonicalPath
 val PYTHON_CROSS_DIR = "$PYTHON_DIR/cross-build"
+
 val ABIS = mapOf(
     "arm64-v8a" to "aarch64-linux-android",
     "x86_64" to "x86_64-linux-android",
-)
+).filter { file("$PYTHON_CROSS_DIR/${it.value}").exists() }
+if (ABIS.isEmpty()) {
+    throw GradleException(
+        "No Android ABIs found in $PYTHON_CROSS_DIR: see Android/README.md " +
+        "for building instructions."
+    )
+}
 
-val PYTHON_VERSION = File("$PYTHON_DIR/Include/patchlevel.h").useLines {
+val PYTHON_VERSION = file("$PYTHON_DIR/Include/patchlevel.h").useLines {
     for (line in it) {
         val match = """#define PY_VERSION\s+"(\d+\.\d+)""".toRegex().find(line)
         if (match != null) {
@@ -24,22 +32,45 @@ val PYTHON_VERSION = File("$PYTHON_DIR/Include/patchlevel.h").useLines {
 
 
 android {
+    val androidEnvFile = file("../../android-env.sh").absoluteFile
+
     namespace = "org.python.testbed"
     compileSdk = 34
 
     defaultConfig {
         applicationId = "org.python.testbed"
-        minSdk = 21
+
+        minSdk = androidEnvFile.useLines {
+            for (line in it) {
+                """api_level:=(\d+)""".toRegex().find(line)?.let {
+                    return@useLines it.groupValues[1].toInt()
+                }
+            }
+            throw GradleException("Failed to find API level in $androidEnvFile")
+        }
         targetSdk = 34
+
         versionCode = 1
         versionName = "1.0"
 
         ndk.abiFilters.addAll(ABIS.keys)
         externalNativeBuild.cmake.arguments(
             "-DPYTHON_CROSS_DIR=$PYTHON_CROSS_DIR",
-            "-DPYTHON_VERSION=$PYTHON_VERSION")
+            "-DPYTHON_VERSION=$PYTHON_VERSION",
+            "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
+        )
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    ndkVersion = androidEnvFile.useLines {
+        for (line in it) {
+            """ndk_version=(\S+)""".toRegex().find(line)?.let {
+                return@useLines it.groupValues[1]
+            }
+        }
+        throw GradleException("Failed to find NDK version in $androidEnvFile")
+    }
     externalNativeBuild.cmake {
         path("src/main/c/CMakeLists.txt")
     }
@@ -55,41 +86,81 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+
+    testOptions {
+        managedDevices {
+            localDevices {
+                create("minVersion") {
+                    device = "Small Phone"
+
+                    // Managed devices have a minimum API level of 27.
+                    apiLevel = max(27, defaultConfig.minSdk!!)
+
+                    // ATD devices are smaller and faster, but have a minimum
+                    // API level of 30.
+                    systemImageSource = if (apiLevel >= 30) "aosp-atd" else "aosp"
+                }
+
+                create("maxVersion") {
+                    device = "Small Phone"
+                    apiLevel = defaultConfig.targetSdk!!
+                    systemImageSource = "aosp-atd"
+                }
+            }
+
+            // If the previous test run succeeded and nothing has changed,
+            // Gradle thinks there's no need to run it again. Override that.
+            afterEvaluate {
+                (localDevices.names + listOf("connected")).forEach {
+                    tasks.named("${it}DebugAndroidTest") {
+                        outputs.upToDateWhen { false }
+                    }
+                }
+            }
+        }
+    }
 }
 
 dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test:rules:1.5.0")
 }
 
 
 // Create some custom tasks to copy Python and its standard library from
 // elsewhere in the repository.
 androidComponents.onVariants { variant ->
+    val pyPlusVer = "python$PYTHON_VERSION"
     generateTask(variant, variant.sources.assets!!) {
         into("python") {
-            for (triplet in ABIS.values) {
-                for (subDir in listOf("include", "lib")) {
-                    into(subDir) {
-                        from("$PYTHON_CROSS_DIR/$triplet/prefix/$subDir")
-                        include("python$PYTHON_VERSION/**")
-                        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-                    }
+            into("include/$pyPlusVer") {
+                for (triplet in ABIS.values) {
+                    from("$PYTHON_CROSS_DIR/$triplet/prefix/include/$pyPlusVer")
                 }
+                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
             }
-            into("lib/python$PYTHON_VERSION") {
-                // Uncomment this to pick up edits from the source directory
-                // without having to rerun `make install`.
-                // from("$PYTHON_DIR/Lib")
-                // duplicatesStrategy = DuplicatesStrategy.INCLUDE
+
+            into("lib/$pyPlusVer") {
+                // To aid debugging, the source directory takes priority.
+                from("$PYTHON_DIR/Lib")
+
+                // The cross-build directory provides ABI-specific files such as
+                // sysconfigdata.
+                for (triplet in ABIS.values) {
+                    from("$PYTHON_CROSS_DIR/$triplet/prefix/lib/$pyPlusVer")
+                }
 
                 into("site-packages") {
                     from("$projectDir/src/main/python")
                 }
+
+                duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+                exclude("**/__pycache__")
             }
         }
-        exclude("**/__pycache__")
     }
 
     generateTask(variant, variant.sources.jniLibs!!) {

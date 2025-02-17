@@ -526,7 +526,7 @@ def _load_module_shim(self, fullname):
 
     """
     msg = ("the load_module() method is deprecated and slated for removal in "
-          "Python 3.12; use exec_module() instead")
+           "Python 3.15; use exec_module() instead")
     _warnings.warn(msg, DeprecationWarning)
     spec = spec_from_loader(fullname, self)
     if fullname in sys.modules:
@@ -1241,7 +1241,6 @@ def _find_spec(name, path, target=None):
     """Find a module's spec."""
     meta_path = sys.meta_path
     if meta_path is None:
-        # PyImport_Cleanup() is running or has been called.
         raise ImportError("sys.meta_path is None, Python is likely "
                           "shutting down")
 

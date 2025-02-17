@@ -13,13 +13,13 @@ import itertools
 import os
 import sys
 import sysconfig
+import tempfile
 import threading
 import unittest
 import warnings
 from test import support
 from test.support import _4G, bigmemtest
 from test.support.import_helper import import_fresh_module
-from test.support import os_helper
 from test.support import requires_resource
 from test.support import threading_helper
 from http.client import HTTPException
@@ -253,6 +253,7 @@ class HashLibTestCase(unittest.TestCase):
     def test_new_upper_to_lower(self):
         self.assertEqual(hashlib.new("SHA256").name, "sha256")
 
+    @support.thread_unsafe("modifies sys.modules")
     def test_get_builtin_constructor(self):
         get_builtin_constructor = getattr(hashlib,
                                           '__get_builtin_constructor')
@@ -368,6 +369,17 @@ class HashLibTestCase(unittest.TestCase):
         h.update(b"hello world")
         self.assertEqual(h.hexdigest(), "e2d4535e3b613135c14f2fe4e026d7ad8d569db44901740beffa30d430acb038")
 
+    @requires_resource('cpu')
+    def test_blake2_update_over_4gb(self):
+        # blake2s or blake2b doesn't matter based on how our C code is structured, this tests the
+        # common loop macro logic.
+        zero_1mb = b"\0" * 1024 * 1024
+        h = hashlib.blake2s()
+        for i in range(0, 4096):
+            h.update(zero_1mb)
+        h.update(b"hello world")
+        self.assertEqual(h.hexdigest(), "8a268e83dd30528bc0907fa2008c91de8f090a0b6e0e60a5ff0d999d8485526f")
+
     def check(self, name, data, hexdigest, shake=False, **kwargs):
         length = len(hexdigest)//2
         hexdigest = hexdigest.lower()
@@ -403,21 +415,18 @@ class HashLibTestCase(unittest.TestCase):
         digests = [name]
         digests.extend(self.constructors_to_test[name])
 
-        with open(os_helper.TESTFN, "wb") as f:
+        with tempfile.TemporaryFile() as f:
             f.write(data)
 
-        try:
             for digest in digests:
                 buf = io.BytesIO(data)
                 buf.seek(0)
                 self.assertEqual(
                     hashlib.file_digest(buf, digest).hexdigest(), hexdigest
                 )
-                with open(os_helper.TESTFN, "rb") as f:
-                    digestobj = hashlib.file_digest(f, digest)
+                f.seek(0)
+                digestobj = hashlib.file_digest(f, digest)
                 self.assertEqual(digestobj.hexdigest(), hexdigest)
-        finally:
-            os.unlink(os_helper.TESTFN)
 
     def check_no_unicode(self, algorithm_name):
         # Unicode objects are not allowed as input.
@@ -1161,29 +1170,29 @@ class KDFTests(unittest.TestCase):
     def test_file_digest(self):
         data = b'a' * 65536
         d1 = hashlib.sha256()
-        self.addCleanup(os.unlink, os_helper.TESTFN)
-        with open(os_helper.TESTFN, "wb") as f:
+        with tempfile.NamedTemporaryFile(delete_on_close=False) as fp:
             for _ in range(10):
                 d1.update(data)
-                f.write(data)
+                fp.write(data)
+            fp.close()
 
-        with open(os_helper.TESTFN, "rb") as f:
-            d2 = hashlib.file_digest(f, hashlib.sha256)
+            with open(fp.name, "rb") as f:
+                d2 = hashlib.file_digest(f, hashlib.sha256)
 
-        self.assertEqual(d1.hexdigest(), d2.hexdigest())
-        self.assertEqual(d1.name, d2.name)
-        self.assertIs(type(d1), type(d2))
+            self.assertEqual(d1.hexdigest(), d2.hexdigest())
+            self.assertEqual(d1.name, d2.name)
+            self.assertIs(type(d1), type(d2))
+
+            with self.assertRaises(ValueError):
+                with open(fp.name, "r") as f:
+                    hashlib.file_digest(f, "sha256")
+
+            with self.assertRaises(ValueError):
+                with open(fp.name, "wb") as f:
+                    hashlib.file_digest(f, "sha256")
 
         with self.assertRaises(ValueError):
             hashlib.file_digest(None, "sha256")
-
-        with self.assertRaises(ValueError):
-            with open(os_helper.TESTFN, "r") as f:
-                hashlib.file_digest(f, "sha256")
-
-        with self.assertRaises(ValueError):
-            with open(os_helper.TESTFN, "wb") as f:
-                hashlib.file_digest(f, "sha256")
 
 
 if __name__ == "__main__":

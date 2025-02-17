@@ -1,11 +1,19 @@
 import itertools
+import os
+import sys
+import unittest
 from functools import partial
+from test.support import os_helper
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, ANY
 
 from .support import handle_all_events, code_to_events
-from _pyrepl.console import Event
-from _pyrepl.unix_console import UnixConsole
+
+try:
+    from _pyrepl.console import Event
+    from _pyrepl.unix_console import UnixConsole
+except ImportError:
+    pass
 
 
 def unix_console(events, **kwargs):
@@ -67,6 +75,7 @@ TERM_CAPABILITIES = {
 }
 
 
+@unittest.skipIf(sys.platform == "win32", "No Unix event queue on Windows")
 @patch("_pyrepl.curses.tigetstr", lambda s: TERM_CAPABILITIES.get(s))
 @patch(
     "_pyrepl.curses.tparm",
@@ -132,7 +141,6 @@ class TestConsole(TestCase):
         _os_write.assert_any_call(ANY, b"\n")
         _os_write.assert_any_call(ANY, b"4")
         con.restore()
-
 
     def test_cursor_left(self, _os_write):
         code = "1"
@@ -306,3 +314,14 @@ class TestConsole(TestCase):
         )
         console.restore()
         con.restore()
+
+    def test_getheightwidth_with_invalid_environ(self, _os_write):
+        # gh-128636
+        console = UnixConsole()
+        with os_helper.EnvironmentVarGuard() as env:
+            env["LINES"] = ""
+            self.assertIsInstance(console.getheightwidth(), tuple)
+            env["COLUMNS"] = ""
+            self.assertIsInstance(console.getheightwidth(), tuple)
+            os.environ = []
+            self.assertIsInstance(console.getheightwidth(), tuple)

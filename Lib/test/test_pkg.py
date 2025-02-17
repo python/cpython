@@ -94,7 +94,7 @@ class TestPkg(unittest.TestCase):
     def test_1(self):
         hier = [("t1", None), ("t1 __init__.py", "")]
         self.mkhier(hier)
-        import t1
+        import t1  # noqa: F401
 
     def test_2(self):
         hier = [
@@ -124,7 +124,7 @@ class TestPkg(unittest.TestCase):
 
         from t2 import sub
         from t2.sub import subsub
-        from t2.sub.subsub import spam
+        from t2.sub.subsub import spam  # noqa: F401
         self.assertEqual(sub.__name__, "t2.sub")
         self.assertEqual(subsub.__name__, "t2.sub.subsub")
         self.assertEqual(sub.subsub.__name__, "t2.sub.subsub")

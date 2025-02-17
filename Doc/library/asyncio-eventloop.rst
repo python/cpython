@@ -59,13 +59,23 @@ an event loop:
    instead of using these lower level functions to manually create and close an
    event loop.
 
-   .. deprecated:: 3.12
-      Deprecation warning is emitted if there is no current event loop.
-      In some future Python release this will become an error.
+   .. versionchanged:: 3.14
+      Raises a :exc:`RuntimeError` if there is no current event loop.
+
+   .. note::
+
+      The :mod:`!asyncio` policy system is deprecated and will be removed
+      in Python 3.16; from there on, this function will always return the
+      running event loop.
+
 
 .. function:: set_event_loop(loop)
 
    Set *loop* as the current event loop for the current OS thread.
+
+   .. deprecated:: 3.14
+      The :func:`set_event_loop` function is deprecated and will be removed
+      in Python 3.16.
 
 .. function:: new_event_loop()
 
@@ -126,7 +136,7 @@ Running and stopping the loop
 
    Run the event loop until :meth:`stop` is called.
 
-   If :meth:`stop` is called before :meth:`run_forever()` is called,
+   If :meth:`stop` is called before :meth:`run_forever` is called,
    the loop will poll the I/O selector once with a timeout of zero,
    run all callbacks scheduled in response to I/O events (and
    those that were already scheduled), and then exit.
@@ -165,7 +175,7 @@ Running and stopping the loop
 .. coroutinemethod:: loop.shutdown_asyncgens()
 
    Schedule all currently open :term:`asynchronous generator` objects to
-   close with an :meth:`~agen.aclose()` call.  After calling this method,
+   close with an :meth:`~agen.aclose` call.  After calling this method,
    the event loop will issue a warning if a new asynchronous generator
    is iterated. This should be used to reliably finalize all scheduled
    asynchronous generators.
@@ -235,6 +245,9 @@ Scheduling callbacks
    A thread-safe variant of :meth:`call_soon`. When scheduling callbacks from
    another thread, this function *must* be used, since :meth:`call_soon` is not
    thread-safe.
+
+   This function is safe to be called from a reentrant context or signal handler,
+   however, it is not safe or fruitful to use the returned handle in such contexts.
 
    Raises :exc:`RuntimeError` if called on a loop that's been closed.
    This can happen on a secondary thread when the main application is
@@ -379,9 +392,9 @@ Creating Futures and Tasks
 
    If *factory* is ``None`` the default task factory will be set.
    Otherwise, *factory* must be a *callable* with the signature matching
-   ``(loop, coro, context=None)``, where *loop* is a reference to the active
+   ``(loop, coro, **kwargs)``, where *loop* is a reference to the active
    event loop, and *coro* is a coroutine object.  The callable
-   must return a :class:`asyncio.Future`-compatible object.
+   must pass on all *kwargs*, and return a :class:`asyncio.Task`-compatible object.
 
 .. method:: loop.get_task_factory()
 
@@ -957,6 +970,9 @@ Watching file descriptors
    invoke *callback* with the specified arguments once *fd* is available for
    reading.
 
+   Any preexisting callback registered for *fd* is cancelled and replaced by
+   *callback*.
+
 .. method:: loop.remove_reader(fd)
 
    Stop monitoring the *fd* file descriptor for read availability. Returns
@@ -967,6 +983,9 @@ Watching file descriptors
    Start monitoring the *fd* file descriptor for write availability and
    invoke *callback* with the specified arguments once *fd* is available for
    writing.
+
+   Any preexisting callback registered for *fd* is cancelled and replaced by
+   *callback*.
 
    Use :func:`functools.partial` :ref:`to pass keyword arguments
    <asyncio-pass-keywords>` to *callback*.
@@ -1155,6 +1174,14 @@ DNS
 
    Asynchronous version of :meth:`socket.getnameinfo`.
 
+.. note::
+   Both *getaddrinfo* and *getnameinfo* internally utilize their synchronous
+   versions through the loop's default thread pool executor.
+   When this executor is saturated, these methods may experience delays,
+   which higher-level networking libraries may report as increased timeouts.
+   To mitigate this, consider using a custom executor for other user tasks,
+   or setting a default executor with a larger number of workers.
+
 .. versionchanged:: 3.7
    Both *getaddrinfo* and *getnameinfo* methods were always documented
    to return a coroutine, but prior to Python 3.7 they were, in fact,
@@ -1254,6 +1281,9 @@ Executing code in thread or process pools
 
    The *executor* argument should be an :class:`concurrent.futures.Executor`
    instance. The default executor is used if *executor* is ``None``.
+   The default executor can be set by :meth:`loop.set_default_executor`,
+   otherwise, a :class:`concurrent.futures.ThreadPoolExecutor` will be
+   lazy-initialized and used by :func:`run_in_executor` if needed.
 
    Example::
 
@@ -1294,6 +1324,12 @@ Executing code in thread or process pools
                   pool, cpu_bound)
               print('custom process pool', result)
 
+          # 4. Run in a custom interpreter pool:
+          with concurrent.futures.InterpreterPoolExecutor() as pool:
+              result = await loop.run_in_executor(
+                  pool, cpu_bound)
+              print('custom interpreter pool', result)
+
       if __name__ == '__main__':
           asyncio.run(main())
 
@@ -1318,7 +1354,8 @@ Executing code in thread or process pools
 
    Set *executor* as the default executor used by :meth:`run_in_executor`.
    *executor* must be an instance of
-   :class:`~concurrent.futures.ThreadPoolExecutor`.
+   :class:`~concurrent.futures.ThreadPoolExecutor`, which includes
+   :class:`~concurrent.futures.InterpreterPoolExecutor`.
 
    .. versionchanged:: 3.11
       *executor* must be an instance of
@@ -1391,7 +1428,7 @@ Allows customizing how exceptions are handled in the event loop.
 
        This method should not be overloaded in subclassed
        event loops.  For custom exception handling, use
-       the :meth:`set_exception_handler()` method.
+       the :meth:`set_exception_handler` method.
 
 Enabling debug mode
 ^^^^^^^^^^^^^^^^^^^
@@ -1474,7 +1511,7 @@ async/await code consider using the high-level
    * *stdin* can be any of these:
 
      * a file-like object
-     * an existing file descriptor (a positive integer), for example those created with :meth:`os.pipe()`
+     * an existing file descriptor (a positive integer), for example those created with :meth:`os.pipe`
      * the :const:`subprocess.PIPE` constant (default) which will create a new
        pipe and connect it,
      * the value ``None`` which will make the subprocess inherit the file
@@ -1760,12 +1797,11 @@ By default asyncio is configured to use :class:`EventLoop`.
       import asyncio
       import selectors
 
-      class MyPolicy(asyncio.DefaultEventLoopPolicy):
-         def new_event_loop(self):
-            selector = selectors.SelectSelector()
-            return asyncio.SelectorEventLoop(selector)
+      async def main():
+         ...
 
-      asyncio.set_event_loop_policy(MyPolicy())
+      loop_factory = lambda: asyncio.SelectorEventLoop(selectors.SelectSelector())
+      asyncio.run(main(), loop_factory=loop_factory)
 
 
    .. availability:: Unix, Windows.
@@ -1780,7 +1816,7 @@ By default asyncio is configured to use :class:`EventLoop`.
    .. seealso::
 
       `MSDN documentation on I/O Completion Ports
-      <https://docs.microsoft.com/en-ca/windows/desktop/FileIO/i-o-completion-ports>`_.
+      <https://learn.microsoft.com/windows/win32/fileio/i-o-completion-ports>`_.
 
 .. class:: EventLoop
 

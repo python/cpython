@@ -31,11 +31,13 @@ from .support.props import *
 from .support.nuspec import *
 
 TEST_PYDS_ONLY = FileStemSet("xxlimited", "xxlimited_35", "_ctypes_test", "_test*")
+TEST_DLLS_ONLY = set()
 TEST_DIRS_ONLY = FileNameSet("test", "tests")
 
 IDLE_DIRS_ONLY = FileNameSet("idlelib")
 
-TCLTK_PYDS_ONLY = FileStemSet("tcl*", "tk*", "_tkinter", "zlib1")
+TCLTK_PYDS_ONLY = FileStemSet("_tkinter")
+TCLTK_DLLS_ONLY = FileStemSet("tcl*", "tk*", "zlib1")
 TCLTK_DIRS_ONLY = FileNameSet("tkinter", "turtledemo")
 TCLTK_FILES_ONLY = FileNameSet("turtle.py")
 
@@ -121,7 +123,7 @@ def get_tcltk_lib(ns):
 
 
 def get_layout(ns):
-    def in_build(f, dest="", new_name=None):
+    def in_build(f, dest="", new_name=None, no_lib=False):
         n, _, x = f.rpartition(".")
         n = new_name or n
         src = ns.build / f
@@ -136,7 +138,7 @@ def get_layout(ns):
             pdb = src.with_suffix(".pdb")
             if pdb.is_file():
                 yield dest + n + ".pdb", pdb
-        if ns.include_dev:
+        if ns.include_dev and not no_lib:
             lib = src.with_suffix(".lib")
             if lib.is_file():
                 yield "libs/" + n + ".lib", lib
@@ -202,7 +204,9 @@ def get_layout(ns):
 
     yield "LICENSE.txt", ns.build / "LICENSE.txt"
 
-    for dest, src in rglob(ns.build, "*.pyd"):
+    dest = "" if ns.flat_dlls else "DLLs/"
+
+    for _, src in rglob(ns.build, "*.pyd"):
         if ns.include_freethreaded:
             if not src.match("*.cp*t-win*.pyd"):
                 continue
@@ -217,14 +221,18 @@ def get_layout(ns):
             continue
         if src in TCLTK_PYDS_ONLY and not ns.include_tcltk:
             continue
-        yield from in_build(src.name, dest="" if ns.flat_dlls else "DLLs/")
+        yield from in_build(src.name, dest=dest, no_lib=True)
 
-    for dest, src in rglob(ns.build, "*.dll"):
+    for _, src in rglob(ns.build, "*.dll"):
         if src.stem.endswith("_d") != bool(ns.debug) and src not in REQUIRED_DLLS:
             continue
         if src in EXCLUDE_FROM_DLLS:
             continue
-        yield from in_build(src.name, dest="" if ns.flat_dlls else "DLLs/")
+        if src in TEST_DLLS_ONLY and not ns.include_tests:
+            continue
+        if src in TCLTK_DLLS_ONLY and not ns.include_tcltk:
+            continue
+        yield from in_build(src.name, dest=dest, no_lib=True)
 
     if ns.zip_lib:
         zip_name = PYTHON_ZIP_NAME

@@ -3,6 +3,7 @@ import os
 import sys
 import tempfile
 import unittest
+from test import support
 from test.support.import_helper import import_module
 
 termios = import_module('termios')
@@ -18,10 +19,16 @@ class TestFunctions(unittest.TestCase):
         tmp = self.enterContext(tempfile.TemporaryFile(mode='wb', buffering=0))
         self.bad_fd = tmp.fileno()
 
-    def assertRaisesTermiosError(self, errno, callable, *args):
+    def assertRaisesTermiosError(self, err, callable, *args):
+        # Some versions of Android return EACCES when calling termios functions
+        # on a regular file.
+        errs = [err]
+        if sys.platform == 'android' and err == errno.ENOTTY:
+            errs.append(errno.EACCES)
+
         with self.assertRaises(termios.error) as cm:
             callable(*args)
-        self.assertEqual(cm.exception.args[0], errno)
+        self.assertIn(cm.exception.args[0], errs)
 
     def test_tcgetattr(self):
         attrs = termios.tcgetattr(self.fd)
@@ -90,16 +97,18 @@ class TestFunctions(unittest.TestCase):
         self.assertRaises(TypeError, termios.tcsetattr, object(), termios.TCSANOW, attrs)
         self.assertRaises(TypeError, termios.tcsetattr, self.fd, termios.TCSANOW)
 
+    @support.skip_android_selinux('tcsendbreak')
     def test_tcsendbreak(self):
         try:
             termios.tcsendbreak(self.fd, 1)
         except termios.error as exc:
-            if exc.args[0] == errno.ENOTTY and sys.platform.startswith('freebsd'):
+            if exc.args[0] == errno.ENOTTY and sys.platform.startswith(('freebsd', "netbsd")):
                 self.skipTest('termios.tcsendbreak() is not supported '
                               'with pseudo-terminals (?) on this platform')
             raise
         termios.tcsendbreak(self.stream, 1)
 
+    @support.skip_android_selinux('tcsendbreak')
     def test_tcsendbreak_errors(self):
         self.assertRaises(OverflowError, termios.tcsendbreak, self.fd, 2**1000)
         self.assertRaises(TypeError, termios.tcsendbreak, self.fd, 0.0)
@@ -110,10 +119,12 @@ class TestFunctions(unittest.TestCase):
         self.assertRaises(TypeError, termios.tcsendbreak, object(), 0)
         self.assertRaises(TypeError, termios.tcsendbreak, self.fd)
 
+    @support.skip_android_selinux('tcdrain')
     def test_tcdrain(self):
         termios.tcdrain(self.fd)
         termios.tcdrain(self.stream)
 
+    @support.skip_android_selinux('tcdrain')
     def test_tcdrain_errors(self):
         self.assertRaisesTermiosError(errno.ENOTTY, termios.tcdrain, self.bad_fd)
         self.assertRaises(ValueError, termios.tcdrain, -1)
@@ -136,12 +147,14 @@ class TestFunctions(unittest.TestCase):
         self.assertRaises(TypeError, termios.tcflush, object(), termios.TCIFLUSH)
         self.assertRaises(TypeError, termios.tcflush, self.fd)
 
+    @support.skip_android_selinux('tcflow')
     def test_tcflow(self):
         termios.tcflow(self.fd, termios.TCOOFF)
         termios.tcflow(self.fd, termios.TCOON)
         termios.tcflow(self.fd, termios.TCIOFF)
         termios.tcflow(self.fd, termios.TCION)
 
+    @support.skip_android_selinux('tcflow')
     def test_tcflow_errors(self):
         self.assertRaisesTermiosError(errno.EINVAL, termios.tcflow, self.fd, -1)
         self.assertRaises(OverflowError, termios.tcflow, self.fd, 2**1000)
@@ -210,6 +223,15 @@ class TestModule(unittest.TestCase):
         self.assertIsInstance(termios.NCCS, int)
         self.assertLess(termios.VTIME, termios.NCCS)
         self.assertLess(termios.VMIN, termios.NCCS)
+
+    def test_ioctl_constants(self):
+        # gh-119770: ioctl() constants must be positive
+        for name in dir(termios):
+            if not name.startswith('TIO'):
+                continue
+            value = getattr(termios, name)
+            with self.subTest(name=name):
+                self.assertGreaterEqual(value, 0)
 
     def test_exception(self):
         self.assertTrue(issubclass(termios.error, Exception))

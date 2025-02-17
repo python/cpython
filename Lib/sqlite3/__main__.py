@@ -65,7 +65,6 @@ class SqliteInteractiveConsole(InteractiveConsole):
 def main(*args):
     parser = ArgumentParser(
         description="Python sqlite3 CLI",
-        prog="python -m sqlite3",
     )
     parser.add_argument(
         "filename", type=str, default=":memory:", nargs="?",
@@ -117,7 +116,7 @@ def main(*args):
             # No SQL provided; start the REPL.
             console = SqliteInteractiveConsole(con)
             try:
-                import readline
+                import readline  # noqa: F401
             except ImportError:
                 pass
             console.interact(banner, exitmsg="")

@@ -21,7 +21,6 @@
 #include "pycore_uop_metadata.h"
 #include "pycore_dict.h"
 #include "pycore_long.h"
-#include "cpython/optimizer.h"
 #include "pycore_optimizer.h"
 #include "pycore_object.h"
 #include "pycore_dict.h"
@@ -53,32 +52,25 @@
     #define DPRINTF(level, ...)
 #endif
 
-
-
-static inline bool
-op_is_end(uint32_t opcode)
-{
-    return opcode == _EXIT_TRACE || opcode == _JUMP_TO_TOP;
-}
-
 static int
 get_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
     PyDictObject *d = (PyDictObject *)dict;
-    return (d->ma_version_tag >> DICT_MAX_WATCHERS) & ((1 << DICT_WATCHED_MUTATION_BITS)-1);
+    return (d->_ma_watcher_tag >> DICT_MAX_WATCHERS) & ((1 << DICT_WATCHED_MUTATION_BITS)-1);
 }
 
 static void
 increment_mutations(PyObject* dict) {
     assert(PyDict_CheckExact(dict));
     PyDictObject *d = (PyDictObject *)dict;
-    d->ma_version_tag += (1 << DICT_MAX_WATCHERS);
+    d->_ma_watcher_tag += (1 << DICT_MAX_WATCHERS);
 }
 
 /* The first two dict watcher IDs are reserved for CPython,
  * so we don't need to check that they haven't been used */
 #define BUILTINS_WATCHER_ID 0
 #define GLOBALS_WATCHER_ID  1
+#define TYPE_WATCHER_ID  0
 
 static int
 globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
@@ -92,29 +84,41 @@ globals_watcher_callback(PyDict_WatchEvent event, PyObject* dict,
     return 0;
 }
 
+static int
+type_watcher_callback(PyTypeObject* type)
+{
+    _Py_Executors_InvalidateDependency(_PyInterpreterState_GET(), type, 1);
+    PyType_Unwatch(TYPE_WATCHER_ID, (PyObject *)type);
+    return 0;
+}
+
 static PyObject *
 convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
 {
-    assert(inst->opcode == _LOAD_GLOBAL_MODULE || inst->opcode == _LOAD_GLOBAL_BUILTINS || inst->opcode == _LOAD_ATTR_MODULE);
+    assert(inst->opcode == _LOAD_GLOBAL_MODULE || inst->opcode == _LOAD_GLOBAL_BUILTINS || inst->opcode == _LOAD_ATTR_MODULE_FROM_KEYS);
     assert(PyDict_CheckExact(obj));
     PyDictObject *dict = (PyDictObject *)obj;
     assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
     PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
-    assert(inst->operand <= UINT16_MAX);
-    if ((int)inst->operand >= dict->ma_keys->dk_nentries) {
+    assert(inst->operand0 <= UINT16_MAX);
+    if ((int)inst->operand0 >= dict->ma_keys->dk_nentries) {
         return NULL;
     }
-    PyObject *res = entries[inst->operand].me_value;
+    PyObject *res = entries[inst->operand0].me_value;
     if (res == NULL) {
         return NULL;
     }
     if (_Py_IsImmortal(res)) {
-        inst->opcode = (inst->oparg & 1) ? _LOAD_CONST_INLINE_BORROW_WITH_NULL : _LOAD_CONST_INLINE_BORROW;
+        inst->opcode = _LOAD_CONST_INLINE_BORROW;
     }
     else {
-        inst->opcode = (inst->oparg & 1) ? _LOAD_CONST_INLINE_WITH_NULL : _LOAD_CONST_INLINE;
+        inst->opcode = _LOAD_CONST_INLINE;
     }
-    inst->operand = (uint64_t)res;
+    if (inst->oparg & 1) {
+        assert(inst[1].opcode == _PUSH_NULL_CONDITIONAL);
+        assert(inst[1].oparg & 1);
+    }
+    inst->operand0 = (uint64_t)res;
     return res;
 }
 
@@ -125,10 +129,30 @@ incorrect_keys(_PyUOpInstruction *inst, PyObject *obj)
         return 1;
     }
     PyDictObject *dict = (PyDictObject *)obj;
-    if (dict->ma_keys->dk_version != inst->operand) {
+    if (dict->ma_keys->dk_version != inst->operand0) {
         return 1;
     }
     return 0;
+}
+
+static int
+check_next_uop(_PyUOpInstruction *buffer, int size, int pc, uint16_t expected)
+{
+    if (pc + 1 >= size) {
+        DPRINTF(1, "Cannot rewrite %s at pc %d: buffer too small\n",
+                _PyOpcode_uop_name[buffer[pc].opcode], pc);
+        return 0;
+    }
+    uint16_t next_opcode = buffer[pc + 1].opcode;
+    if (next_opcode != expected) {
+        DPRINTF(1,
+                "Cannot rewrite %s at pc %d: unexpected next opcode %s, "
+                "expected %s\n",
+                _PyOpcode_uop_name[buffer[pc].opcode], pc,
+                _PyOpcode_uop_name[next_opcode], _PyOpcode_uop_name[expected]);
+        return 0;
+    }
+    return 1;
 }
 
 /* Returns 1 if successfully optimized
@@ -145,7 +169,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
         return 1;
     }
     PyObject *globals = frame->f_globals;
-    PyFunctionObject *function = (PyFunctionObject *)frame->f_funcobj;
+    PyFunctionObject *function = _PyFrame_GetFunction(frame);
     assert(PyFunction_Check(function));
     assert(function->func_builtins == builtins);
     assert(function->func_globals == globals);
@@ -167,16 +191,23 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
     if (interp->dict_state.watchers[GLOBALS_WATCHER_ID] == NULL) {
         interp->dict_state.watchers[GLOBALS_WATCHER_ID] = globals_watcher_callback;
     }
+    if (interp->type_watchers[TYPE_WATCHER_ID] == NULL) {
+        interp->type_watchers[TYPE_WATCHER_ID] = type_watcher_callback;
+    }
     for (int pc = 0; pc < buffer_size; pc++) {
         _PyUOpInstruction *inst = &buffer[pc];
         int opcode = inst->opcode;
         switch(opcode) {
-            case _GUARD_BUILTINS_VERSION:
+            case _GUARD_BUILTINS_VERSION_PUSH_KEYS:
                 if (incorrect_keys(inst, builtins)) {
                     OPT_STAT_INC(remove_globals_incorrect_keys);
                     return 0;
                 }
                 if (interp->rare_events.builtin_dict >= _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
+                    continue;
+                }
+                if (!check_next_uop(buffer, buffer_size, pc,
+                                    _LOAD_GLOBAL_BUILTINS_FROM_KEYS)) {
                     continue;
                 }
                 if ((builtins_watched & 1) == 0) {
@@ -188,17 +219,27 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 }
                 else {
                     buffer[pc].opcode = _CHECK_FUNCTION;
-                    buffer[pc].operand = function_version;
+                    buffer[pc].operand0 = function_version;
                     function_checked |= 1;
                 }
+                // We're no longer pushing the builtins keys; rewrite the
+                // instruction that consumed the keys to load them from the
+                // frame.
+                buffer[pc + 1].opcode = _LOAD_GLOBAL_BUILTINS;
                 break;
             case _GUARD_GLOBALS_VERSION:
+            case _GUARD_GLOBALS_VERSION_PUSH_KEYS:
                 if (incorrect_keys(inst, globals)) {
                     OPT_STAT_INC(remove_globals_incorrect_keys);
                     return 0;
                 }
                 uint64_t watched_mutations = get_mutations(globals);
                 if (watched_mutations >= _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
+                    continue;
+                }
+                if (opcode == _GUARD_GLOBALS_VERSION_PUSH_KEYS &&
+                    !check_next_uop(buffer, buffer_size, pc,
+                                    _LOAD_GLOBAL_MODULE_FROM_KEYS)) {
                     continue;
                 }
                 if ((globals_watched & 1) == 0) {
@@ -211,8 +252,14 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 }
                 else {
                     buffer[pc].opcode = _CHECK_FUNCTION;
-                    buffer[pc].operand = function_version;
+                    buffer[pc].operand0 = function_version;
                     function_checked |= 1;
+                }
+                if (opcode == _GUARD_GLOBALS_VERSION_PUSH_KEYS) {
+                    // We're no longer pushing the globals keys; rewrite the
+                    // instruction that consumed the keys to load them from the
+                    // frame.
+                    buffer[pc + 1].opcode = _LOAD_GLOBAL_MODULE;
                 }
                 break;
             case _LOAD_GLOBAL_BUILTINS:
@@ -230,7 +277,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 builtins_watched <<= 1;
                 globals_watched <<= 1;
                 function_checked <<= 1;
-                uint64_t operand = buffer[pc].operand;
+                uint64_t operand = buffer[pc].operand0;
                 if (operand == 0 || (operand & 1)) {
                     // It's either a code object or NULL, so bail
                     return 1;
@@ -253,12 +300,12 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 }
                 break;
             }
-            case _POP_FRAME:
+            case _RETURN_VALUE:
             {
                 builtins_watched >>= 1;
                 globals_watched >>= 1;
                 function_checked >>= 1;
-                uint64_t operand = buffer[pc].operand;
+                uint64_t operand = buffer[pc].operand0;
                 if (operand == 0 || (operand & 1)) {
                     // It's either a code object or NULL, so bail
                     return 1;
@@ -274,10 +321,10 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 break;
             }
             case _CHECK_FUNCTION_EXACT_ARGS:
-                prechecked_function_version = (uint32_t)buffer[pc].operand;
+                prechecked_function_version = (uint32_t)buffer[pc].operand0;
                 break;
             default:
-                if (op_is_end(opcode)) {
+                if (is_terminator(inst)) {
                     return 1;
                 }
                 break;
@@ -289,13 +336,18 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 
 
 #define STACK_LEVEL()     ((int)(stack_pointer - ctx->frame->stack))
+#define STACK_SIZE()      ((int)(ctx->frame->stack_len))
+
+#define WITHIN_STACK_BOUNDS() \
+    (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE())
+
 
 #define GETLOCAL(idx)          ((ctx->frame->locals[idx]))
 
 #define REPLACE_OP(INST, OP, ARG, OPERAND)    \
     INST->opcode = OP;            \
     INST->oparg = ARG;            \
-    INST->operand = OPERAND;
+    INST->operand0 = OPERAND;
 
 /* Shortened forms for convenience, used in optimizer_bytecodes.c */
 #define sym_is_not_null _Py_uop_sym_is_not_null
@@ -310,21 +362,27 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_has_type _Py_uop_sym_has_type
 #define sym_get_type _Py_uop_sym_get_type
 #define sym_matches_type _Py_uop_sym_matches_type
+#define sym_matches_type_version _Py_uop_sym_matches_type_version
 #define sym_set_null(SYM) _Py_uop_sym_set_null(ctx, SYM)
 #define sym_set_non_null(SYM) _Py_uop_sym_set_non_null(ctx, SYM)
 #define sym_set_type(SYM, TYPE) _Py_uop_sym_set_type(ctx, SYM, TYPE)
+#define sym_set_type_version(SYM, VERSION) _Py_uop_sym_set_type_version(ctx, SYM, VERSION)
 #define sym_set_const(SYM, CNST) _Py_uop_sym_set_const(ctx, SYM, CNST)
 #define sym_is_bottom _Py_uop_sym_is_bottom
 #define sym_truthiness _Py_uop_sym_truthiness
 #define frame_new _Py_uop_frame_new
 #define frame_pop _Py_uop_frame_pop
+#define sym_new_tuple _Py_uop_sym_new_tuple
+#define sym_tuple_getitem _Py_uop_sym_tuple_getitem
+#define sym_tuple_length _Py_uop_sym_tuple_length
+#define sym_is_immortal _Py_uop_sym_is_immortal
 
 static int
 optimize_to_bool(
     _PyUOpInstruction *this_instr,
-    _Py_UOpsContext *ctx,
-    _Py_UopsSymbol *value,
-    _Py_UopsSymbol **result_ptr)
+    JitOptContext *ctx,
+    JitOptSymbol *value,
+    JitOptSymbol **result_ptr)
 {
     if (sym_matches_type(value, &PyBool_Type)) {
         REPLACE_OP(this_instr, _NOP, 0, 0);
@@ -351,15 +409,15 @@ eliminate_pop_guard(_PyUOpInstruction *this_instr, bool exit)
     }
 }
 
-/* _PUSH_FRAME/_POP_FRAME's operand can be 0, a PyFunctionObject *, or a
+/* _PUSH_FRAME/_RETURN_VALUE's operand can be 0, a PyFunctionObject *, or a
  * PyCodeObject *. Retrieve the code object if possible.
  */
 static PyCodeObject *
 get_code(_PyUOpInstruction *op)
 {
-    assert(op->opcode == _PUSH_FRAME || op->opcode == _POP_FRAME || op->opcode == _RETURN_GENERATOR);
+    assert(op->opcode == _PUSH_FRAME || op->opcode == _RETURN_VALUE || op->opcode == _RETURN_GENERATOR);
     PyCodeObject *co = NULL;
-    uint64_t operand = op->operand;
+    uint64_t operand = op->operand0;
     if (operand == 0) {
         return NULL;
     }
@@ -375,6 +433,30 @@ get_code(_PyUOpInstruction *op)
     return co;
 }
 
+static PyCodeObject *
+get_code_with_logging(_PyUOpInstruction *op)
+{
+    PyCodeObject *co = NULL;
+    uint64_t push_operand = op->operand0;
+    if (push_operand & 1) {
+        co = (PyCodeObject *)(push_operand & ~1);
+        DPRINTF(3, "code=%p ", co);
+        assert(PyCode_Check(co));
+    }
+    else {
+        PyFunctionObject *func = (PyFunctionObject *)push_operand;
+        DPRINTF(3, "func=%p ", func);
+        if (func == NULL) {
+            DPRINTF(3, "\n");
+            DPRINTF(1, "Missing function\n");
+            return NULL;
+        }
+        co = (PyCodeObject *)func->func_code;
+        DPRINTF(3, "code=%p ", co);
+    }
+    return co;
+}
+
 /* 1 for success, 0 for not ready, cannot error at the moment. */
 static int
 optimize_uops(
@@ -386,8 +468,8 @@ optimize_uops(
 )
 {
 
-    _Py_UOpsContext context;
-    _Py_UOpsContext *ctx = &context;
+    JitOptContext context;
+    JitOptContext *ctx = &context;
     uint32_t opcode = UINT16_MAX;
     int curr_space = 0;
     int max_space = 0;
@@ -395,7 +477,7 @@ optimize_uops(
     _PyUOpInstruction *corresponding_check_stack = NULL;
 
     _Py_uop_abstractcontext_init(ctx);
-    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, ctx->n_consumed, 0, curr_stacklen);
+    _Py_UOpsAbstractFrame *frame = _Py_uop_frame_new(ctx, co, curr_stacklen, NULL, 0);
     if (frame == NULL) {
         return -1;
     }
@@ -412,7 +494,7 @@ optimize_uops(
 
         int oparg = this_instr->oparg;
         opcode = this_instr->opcode;
-        _Py_UopsSymbol **stack_pointer = ctx->frame->stack_pointer;
+        JitOptSymbol **stack_pointer = ctx->frame->stack_pointer;
 
 #ifdef Py_DEBUG
         if (get_lltrace() >= 3) {
@@ -460,7 +542,7 @@ optimize_uops(
         assert(max_space <= INT_MAX);
         assert(max_space <= INT32_MAX);
         first_valid_check_stack->opcode = _CHECK_STACK_SPACE_OPERAND;
-        first_valid_check_stack->operand = max_space;
+        first_valid_check_stack->operand0 = max_space;
     }
     return trace_len;
 

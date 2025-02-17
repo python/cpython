@@ -277,7 +277,7 @@ Command to format a paragraph.
 Debug menu:
 
 JIT (Just-In-Time) stack viewer toggle -- if set, the stack viewer
-automaticall pops up when you get a traceback.
+automatically pops up when you get a traceback.
 
 Windows menu:
 

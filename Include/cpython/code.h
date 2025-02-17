@@ -8,12 +8,14 @@
 extern "C" {
 #endif
 
+/* Total tool ids available */
+#define  _PY_MONITORING_TOOL_IDS 8
 /* Count of all local monitoring events */
-#define  _PY_MONITORING_LOCAL_EVENTS 10
+#define  _PY_MONITORING_LOCAL_EVENTS 11
 /* Count of all "real" monitoring events (not derived from other events) */
-#define _PY_MONITORING_UNGROUPED_EVENTS 15
+#define _PY_MONITORING_UNGROUPED_EVENTS 16
 /* Count of all  monitoring events */
-#define _PY_MONITORING_EVENTS 17
+#define _PY_MONITORING_EVENTS 19
 
 /* Tables of which tools are active for each monitored event. */
 typedef struct _Py_LocalMonitors {
@@ -24,58 +26,6 @@ typedef struct _Py_GlobalMonitors {
     uint8_t tools[_PY_MONITORING_UNGROUPED_EVENTS];
 } _Py_GlobalMonitors;
 
-typedef struct {
-    union {
-        struct {
-            uint16_t backoff : 4;
-            uint16_t value : 12;
-        };
-        uint16_t as_counter;  // For printf("%#x", ...)
-    };
-} _Py_BackoffCounter;
-
-/* Each instruction in a code object is a fixed-width value,
- * currently 2 bytes: 1-byte opcode + 1-byte oparg.  The EXTENDED_ARG
- * opcode allows for larger values but the current limit is 3 uses
- * of EXTENDED_ARG (see Python/compile.c), for a maximum
- * 32-bit value.  This aligns with the note in Python/compile.c
- * (compiler_addop_i_line) indicating that the max oparg value is
- * 2**32 - 1, rather than INT_MAX.
- */
-
-typedef union {
-    uint16_t cache;
-    struct {
-        uint8_t code;
-        uint8_t arg;
-    } op;
-    _Py_BackoffCounter counter;  // First cache entry of specializable op
-} _Py_CODEUNIT;
-
-
-/* These macros only remain defined for compatibility. */
-#define _Py_OPCODE(word) ((word).op.code)
-#define _Py_OPARG(word) ((word).op.arg)
-
-static inline _Py_CODEUNIT
-_py_make_codeunit(uint8_t opcode, uint8_t oparg)
-{
-    // No designated initialisers because of C++ compat
-    _Py_CODEUNIT word;
-    word.op.code = opcode;
-    word.op.arg = oparg;
-    return word;
-}
-
-static inline void
-_py_set_opcode(_Py_CODEUNIT *word, uint8_t opcode)
-{
-    word->op.code = opcode;
-}
-
-#define _Py_MAKE_CODEUNIT(opcode, oparg) _py_make_codeunit((opcode), (oparg))
-#define _Py_SET_OPCODE(word, opcode) _py_set_opcode(&(word), (opcode))
-
 
 typedef struct {
     PyObject *_co_code;
@@ -85,11 +35,12 @@ typedef struct {
 } _PyCoCached;
 
 /* Ancillary data structure used for instrumentation.
-   Line instrumentation creates an array of
-   these. One entry per code unit.*/
+   Line instrumentation creates this with sufficient
+   space for one entry per code unit. The total size
+   of the data will be `bytes_per_entry * Py_SIZE(code)` */
 typedef struct {
-    uint8_t original_opcode;
-    int8_t line_delta;
+    uint8_t bytes_per_entry;
+    uint8_t data[1];
 } _PyCoLineInstrumentationData;
 
 
@@ -109,6 +60,8 @@ typedef struct {
     _Py_LocalMonitors active_monitors;
     /* The tools that are to be notified for events for the matching code unit */
     uint8_t *tools;
+    /* The version of tools when they instrument the code */
+    uintptr_t tool_versions[_PY_MONITORING_TOOL_IDS];
     /* Information to support line events */
     _PyCoLineInstrumentationData *lines;
     /* The tools that are to be notified for line events for the matching code unit */
@@ -119,6 +72,24 @@ typedef struct {
     /* The tools that are to be notified for instruction events for the matching code unit */
     uint8_t *per_instruction_tools;
 } _PyCoMonitoringData;
+
+#ifdef Py_GIL_DISABLED
+
+/* Each thread specializes a thread-local copy of the bytecode in free-threaded
+ * builds. These copies are stored on the code object in a `_PyCodeArray`. The
+ * first entry in the array always points to the "main" copy of the bytecode
+ * that is stored at the end of the code object.
+ */
+typedef struct {
+    Py_ssize_t size;
+    char *entries[1];
+} _PyCodeArray;
+
+#define _PyCode_DEF_THREAD_LOCAL_BYTECODE() \
+    _PyCodeArray *co_tlbc;
+#else
+#define _PyCode_DEF_THREAD_LOCAL_BYTECODE()
+#endif
 
 // To avoid repeating ourselves in deepfreeze.py, all PyCodeObject members are
 // defined in this macro:
@@ -161,7 +132,8 @@ typedef struct {
                                                                                \
     /* redundant values (derived from co_localsplusnames and                   \
        co_localspluskinds) */                                                  \
-    int co_nlocalsplus;           /* number of local + cell + free variables */ \
+    int co_nlocalsplus;           /* number of spaces for holding local, cell, \
+                                     and free variables */                     \
     int co_framesize;             /* Size of frame in words */                 \
     int co_nlocals;               /* number of local variables */              \
     int co_ncellvars;             /* total number of cell variables */         \
@@ -180,11 +152,13 @@ typedef struct {
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
     uintptr_t _co_instrumentation_version; /* current instrumentation version */ \
     _PyCoMonitoringData *_co_monitoring; /* Monitoring data */                 \
+    Py_ssize_t _co_unique_id;     /* ID used for per-thread refcounting */   \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     /* Scratch space for extra data relating to the code object.               \
        Type is a void* to keep the format private in codeobject.c to force     \
        people to go through the proper APIs. */                                \
     void *co_extra;                                                            \
+    _PyCode_DEF_THREAD_LOCAL_BYTECODE()                                        \
     char co_code_adaptive[(SIZE)];                                             \
 }
 
@@ -221,6 +195,14 @@ struct PyCodeObject _PyCode_DEF(1);
 
 #define CO_NO_MONITORING_EVENTS 0x2000000
 
+/* Whether the code object has a docstring,
+   If so, it will be the first item in co_consts
+*/
+#define CO_HAS_DOCSTRING 0x4000000
+
+/* A function defined in class scope */
+#define CO_METHOD  0x8000000
+
 /* This should be defined if a future statement modifies the syntax.
    For example, when a keyword is added.
 */
@@ -245,9 +227,6 @@ static inline int PyUnstable_Code_GetFirstFree(PyCodeObject *op) {
 Py_DEPRECATED(3.13) static inline int PyCode_GetFirstFree(PyCodeObject *op) {
     return PyUnstable_Code_GetFirstFree(op);
 }
-
-#define _PyCode_CODE(CO) _Py_RVALUE((_Py_CODEUNIT *)(CO)->co_code_adaptive)
-#define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
 
 /* Unstable public interface */
 PyAPI_FUNC(PyCodeObject *) PyUnstable_Code_New(

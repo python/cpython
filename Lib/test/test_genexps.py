@@ -223,7 +223,7 @@ Verify exception propagation
         next(g)
       File "<pyshell#35>", line 1, in <generator expression>
         g = (10 // i for i in (5, 0, 2))
-    ZeroDivisionError: integer division or modulo by zero
+    ZeroDivisionError: division by zero
     >>> next(g)
     Traceback (most recent call last):
       File "<pyshell#38>", line 1, in -toplevel-

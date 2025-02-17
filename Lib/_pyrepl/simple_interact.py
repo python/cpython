@@ -25,24 +25,35 @@ allowing multiline input and multiline history entries.
 
 from __future__ import annotations
 
-import _colorize  # type: ignore[import-not-found]
 import _sitebuiltins
 import linecache
+import functools
+import os
 import sys
 import code
-import ast
-from types import ModuleType
 
 from .readline import _get_reader, multiline_input
-from .unix_console import _error
 
+TYPE_CHECKING = False
+
+if TYPE_CHECKING:
+    from typing import Any
+
+
+_error: tuple[type[Exception], ...] | type[Exception]
+try:
+    from .unix_console import _error
+except ModuleNotFoundError:
+    from .windows_console import _error
 
 def check() -> str:
     """Returns the error message if there is a problem initializing the state."""
     try:
         _get_reader()
     except _error as e:
-        return str(e) or repr(e) or "unknown error"
+        if term := os.environ.get("TERM", ""):
+            term = f"; TERM={term}"
+        return str(str(e) or repr(e) or "unknown error") + term
     return ""
 
 
@@ -66,64 +77,42 @@ REPL_COMMANDS = {
     "exit": _sitebuiltins.Quitter('exit', ''),
     "quit": _sitebuiltins.Quitter('quit' ,''),
     "copyright": _sitebuiltins._Printer('copyright', sys.copyright),
-    "help": "help",
+    "help": _sitebuiltins._Helper(),
     "clear": _clear_screen,
+    "\x1a": _sitebuiltins.Quitter('\x1a', ''),
 }
 
-class InteractiveColoredConsole(code.InteractiveConsole):
-    def __init__(
-        self,
-        locals: dict[str, object] | None = None,
-        filename: str = "<console>",
-        *,
-        local_exit: bool = False,
-    ) -> None:
-        super().__init__(locals=locals, filename=filename, local_exit=local_exit)  # type: ignore[call-arg]
-        self.can_colorize = _colorize.can_colorize()
 
-    def showsyntaxerror(self, filename=None):
-        super().showsyntaxerror(colorize=self.can_colorize)
-
-    def showtraceback(self):
-        super().showtraceback(colorize=self.can_colorize)
-
-    def runsource(self, source, filename="<input>", symbol="single"):
-        try:
-            tree = ast.parse(source)
-        except (OverflowError, SyntaxError, ValueError):
-            self.showsyntaxerror(filename)
+def _more_lines(console: code.InteractiveConsole, unicodetext: str) -> bool:
+    # ooh, look at the hack:
+    src = _strip_final_indent(unicodetext)
+    try:
+        code = console.compile(src, "<stdin>", "single")
+    except (OverflowError, SyntaxError, ValueError):
+        lines = src.splitlines(keepends=True)
+        if len(lines) == 1:
             return False
-        if tree.body:
-            *_, last_stmt = tree.body
-        for stmt in tree.body:
-            wrapper = ast.Interactive if stmt is last_stmt else ast.Module
-            the_symbol = symbol if stmt is last_stmt else "exec"
-            item = wrapper([stmt])
-            try:
-                code = compile(item, filename, the_symbol)
-            except (OverflowError, ValueError):
-                    self.showsyntaxerror(filename)
-                    return False
 
-            if code is None:
-                return True
-
-            self.runcode(code)
-        return False
+        last_line = lines[-1]
+        was_indented = last_line.startswith((" ", "\t"))
+        not_empty = last_line.strip() != ""
+        incomplete = not last_line.endswith("\n")
+        return (was_indented or not_empty) and incomplete
+    else:
+        return code is None
 
 
 def run_multiline_interactive_console(
-    mainmodule: ModuleType | None= None, future_flags: int = 0
+    console: code.InteractiveConsole,
+    *,
+    future_flags: int = 0,
 ) -> None:
-    import __main__
     from .readline import _setup
-    _setup()
-
-    mainmodule = mainmodule or __main__
-    console = InteractiveColoredConsole(mainmodule.__dict__, filename="<stdin>")
+    _setup(console.locals)
     if future_flags:
         console.compile.compiler.flags |= future_flags
 
+    more_lines = functools.partial(_more_lines, console)
     input_n = 0
 
     def maybe_run_command(statement: str) -> bool:
@@ -135,31 +124,13 @@ def run_multiline_interactive_console(
         reader.history.pop()  # skip internal commands in history
         command = REPL_COMMANDS[statement]
         if callable(command):
-            command()
+            # Make sure that history does not change because of commands
+            with reader.suspend_history():
+                command()
             return True
-
-        if isinstance(command, str):
-            # Internal readline commands require a prepared reader like
-            # inside multiline_input.
-            reader.prepare()
-            reader.refresh()
-            reader.do_cmd((command, [statement]))
-            reader.restore()
-            return True
-
         return False
 
-    def more_lines(unicodetext: str) -> bool:
-        # ooh, look at the hack:
-        src = _strip_final_indent(unicodetext)
-        try:
-            code = console.compile(src, "<stdin>", "single")
-        except (OverflowError, SyntaxError, ValueError):
-            return False
-        else:
-            return code is None
-
-    while 1:
+    while True:
         try:
             try:
                 sys.stdout.flush()
@@ -182,6 +153,13 @@ def run_multiline_interactive_console(
             assert not more
             input_n += 1
         except KeyboardInterrupt:
+            r = _get_reader()
+            if r.input_trans is r.isearch_trans:
+                r.do_cmd(("isearch-end", [""]))
+            r.pos = len(r.get_unicode())
+            r.dirty = True
+            r.refresh()
+            r.in_bracketed_paste = False
             console.write("\nKeyboardInterrupt\n")
             console.resetbuffer()
         except MemoryError:

@@ -171,17 +171,16 @@ overlapped_dealloc(OverlappedObject *self)
         {
             /* The operation is no longer pending -- nothing to do. */
         }
-        else if (_Py_IsInterpreterFinalizing(_PyInterpreterState_GET()))
-        {
+        else if (_Py_IsInterpreterFinalizing(_PyInterpreterState_GET())) {
             /* The operation is still pending -- give a warning.  This
                will probably only happen on Windows XP. */
             PyErr_SetString(PyExc_PythonFinalizationError,
                             "I/O operations still in flight while destroying "
                             "Overlapped object, the process may crash");
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored while deallocating "
+                                   "overlapped operation %R", self);
         }
-        else
-        {
+        else {
             /* The operation is still pending, but the process is
                probably about to exit, so we need not worry too much
                about memory leaks.  Leaking self prevents a potential
@@ -224,7 +223,6 @@ create_converter('LPCVOID', '" F_POINTER "')
 
 create_converter('BOOL', 'i') # F_BOOL used previously (always 'i')
 create_converter('DWORD', 'k') # F_DWORD is always "k" (which is much shorter)
-create_converter('LPCTSTR', 's')
 create_converter('UINT', 'I') # F_UINT used previously (always 'I')
 
 class LPCWSTR_converter(Py_UNICODE_converter):
@@ -259,7 +257,7 @@ class LPVOID_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = HANDLE_TO_PYNUM(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=ef52a757a1830d92]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=da0a4db751936ee7]*/
 
 #include "clinic/_winapi.c.h"
 
@@ -530,7 +528,7 @@ _winapi_CreateFile_impl(PyObject *module, LPCWSTR file_name,
 {
     HANDLE handle;
 
-    if (PySys_Audit("_winapi.CreateFile", "uIIII",
+    if (PySys_Audit("_winapi.CreateFile", "ukkkk",
                     file_name, desired_access, share_mode,
                     creation_disposition, flags_and_attributes) < 0) {
         return INVALID_HANDLE_VALUE;
@@ -777,7 +775,7 @@ _winapi_CreateMutexW_impl(PyObject *module,
 /*[clinic input]
 _winapi.CreateNamedPipe -> HANDLE
 
-    name: LPCTSTR
+    name: LPCWSTR
     open_mode: DWORD
     pipe_mode: DWORD
     max_instances: DWORD
@@ -789,25 +787,25 @@ _winapi.CreateNamedPipe -> HANDLE
 [clinic start generated code]*/
 
 static HANDLE
-_winapi_CreateNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD open_mode,
+_winapi_CreateNamedPipe_impl(PyObject *module, LPCWSTR name, DWORD open_mode,
                              DWORD pipe_mode, DWORD max_instances,
                              DWORD out_buffer_size, DWORD in_buffer_size,
                              DWORD default_timeout,
                              LPSECURITY_ATTRIBUTES security_attributes)
-/*[clinic end generated code: output=80f8c07346a94fbc input=5a73530b84d8bc37]*/
+/*[clinic end generated code: output=7d6fde93227680ba input=5bd4e4a55639ee02]*/
 {
     HANDLE handle;
 
-    if (PySys_Audit("_winapi.CreateNamedPipe", "uII",
+    if (PySys_Audit("_winapi.CreateNamedPipe", "ukk",
                     name, open_mode, pipe_mode) < 0) {
         return INVALID_HANDLE_VALUE;
     }
 
     Py_BEGIN_ALLOW_THREADS
-    handle = CreateNamedPipe(name, open_mode, pipe_mode,
-                             max_instances, out_buffer_size,
-                             in_buffer_size, default_timeout,
-                             security_attributes);
+    handle = CreateNamedPipeW(name, open_mode, pipe_mode,
+                              max_instances, out_buffer_size,
+                              in_buffer_size, default_timeout,
+                              security_attributes);
     Py_END_ALLOW_THREADS
 
     if (handle == INVALID_HANDLE_VALUE)
@@ -1049,7 +1047,7 @@ getenvironment(PyObject* environment)
     }
 
     normalized_environment = normalize_environment(environment);
-    if (normalize_environment == NULL) {
+    if (normalized_environment == NULL) {
         return NULL;
     }
 
@@ -1790,7 +1788,7 @@ _winapi_OpenEventW_impl(PyObject *module, DWORD desired_access,
 {
     HANDLE handle;
 
-    if (PySys_Audit("_winapi.OpenEventW", "Iu", desired_access, name) < 0) {
+    if (PySys_Audit("_winapi.OpenEventW", "ku", desired_access, name) < 0) {
         return INVALID_HANDLE_VALUE;
     }
 
@@ -1821,7 +1819,7 @@ _winapi_OpenMutexW_impl(PyObject *module, DWORD desired_access,
 {
     HANDLE handle;
 
-    if (PySys_Audit("_winapi.OpenMutexW", "Iu", desired_access, name) < 0) {
+    if (PySys_Audit("_winapi.OpenMutexW", "ku", desired_access, name) < 0) {
         return INVALID_HANDLE_VALUE;
     }
 
@@ -1882,7 +1880,7 @@ _winapi_OpenProcess_impl(PyObject *module, DWORD desired_access,
 {
     HANDLE handle;
 
-    if (PySys_Audit("_winapi.OpenProcess", "II",
+    if (PySys_Audit("_winapi.OpenProcess", "kk",
                     process_id, desired_access) < 0) {
         return INVALID_HANDLE_VALUE;
     }
@@ -2236,19 +2234,19 @@ _winapi_VirtualQuerySize_impl(PyObject *module, LPCVOID address)
 /*[clinic input]
 _winapi.WaitNamedPipe
 
-    name: LPCTSTR
+    name: LPCWSTR
     timeout: DWORD
     /
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_WaitNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD timeout)
-/*[clinic end generated code: output=c2866f4439b1fe38 input=36fc781291b1862c]*/
+_winapi_WaitNamedPipe_impl(PyObject *module, LPCWSTR name, DWORD timeout)
+/*[clinic end generated code: output=e161e2e630b3e9c2 input=099a4746544488fa]*/
 {
     BOOL success;
 
     Py_BEGIN_ALLOW_THREADS
-    success = WaitNamedPipe(name, timeout);
+    success = WaitNamedPipeW(name, timeout);
     Py_END_ALLOW_THREADS
 
     if (!success)
@@ -2318,7 +2316,7 @@ _winapi_BatchedWaitForMultipleObjects_impl(PyObject *module,
                                            BOOL wait_all, DWORD milliseconds)
 /*[clinic end generated code: output=d21c1a4ad0a252fd input=7e196f29005dc77b]*/
 {
-    Py_ssize_t thread_count = 0, handle_count = 0, i, j;
+    Py_ssize_t thread_count = 0, handle_count = 0, i;
     Py_ssize_t nhandles;
     BatchedWaitData *thread_data[MAXIMUM_WAIT_OBJECTS];
     HANDLE handles[MAXIMUM_WAIT_OBJECTS];
@@ -2379,7 +2377,7 @@ _winapi_BatchedWaitForMultipleObjects_impl(PyObject *module,
         if (data->handle_count > MAXIMUM_WAIT_OBJECTS - 1) {
             data->handle_count = MAXIMUM_WAIT_OBJECTS - 1;
         }
-        for (j = 0; j < data->handle_count; ++i, ++j) {
+        for (DWORD j = 0; j < data->handle_count; ++i, ++j) {
             PyObject *v = PySequence_GetItem(handle_seq, i);
             if (!v || !PyArg_Parse(v, F_HANDLE, &data->handles[j])) {
                 Py_XDECREF(v);
@@ -2527,7 +2525,7 @@ _winapi_BatchedWaitForMultipleObjects_impl(PyObject *module,
         if (triggered_indices) {
             for (i = 0; i < thread_count; ++i) {
                 Py_ssize_t triggered = (Py_ssize_t)thread_data[i]->result - WAIT_OBJECT_0;
-                if (triggered >= 0 && triggered < thread_data[i]->handle_count - 1) {
+                if (triggered >= 0 && (size_t)triggered < thread_data[i]->handle_count - 1) {
                     PyObject *v = PyLong_FromSsize_t(thread_data[i]->handle_base + triggered);
                     if (!v || PyList_Append(triggered_indices, v) < 0) {
                         Py_XDECREF(v);
@@ -2804,7 +2802,7 @@ _winapi__mimetypes_read_windows_registry_impl(PyObject *module,
         }
 
         err = RegOpenKeyExW(hkcr, ext, 0, KEY_READ, &subkey);
-        if (err == ERROR_FILE_NOT_FOUND) {
+        if (err == ERROR_FILE_NOT_FOUND || err == ERROR_ACCESS_DENIED) {
             err = ERROR_SUCCESS;
             continue;
         } else if (err != ERROR_SUCCESS) {
@@ -2917,7 +2915,7 @@ _winapi_CopyFile2_impl(PyObject *module, LPCWSTR existing_file_name,
     HRESULT hr;
     COPYFILE2_EXTENDED_PARAMETERS params = { sizeof(COPYFILE2_EXTENDED_PARAMETERS) };
 
-    if (PySys_Audit("_winapi.CopyFile2", "uuI",
+    if (PySys_Audit("_winapi.CopyFile2", "uuk",
                     existing_file_name, new_file_name, flags) < 0) {
         return NULL;
     }
@@ -3167,6 +3165,11 @@ static int winapi_exec(PyObject *m)
     #define COPY_FILE_REQUEST_COMPRESSED_TRAFFIC 0x10000000
 #endif
     WINAPI_CONSTANT(F_DWORD, COPY_FILE_REQUEST_COMPRESSED_TRAFFIC);
+#ifndef COPY_FILE_DIRECTORY
+    // Only defined in newer WinSDKs
+    #define COPY_FILE_DIRECTORY 0x00000080
+#endif
+    WINAPI_CONSTANT(F_DWORD, COPY_FILE_DIRECTORY);
 
     WINAPI_CONSTANT(F_DWORD, COPYFILE2_CALLBACK_CHUNK_STARTED);
     WINAPI_CONSTANT(F_DWORD, COPYFILE2_CALLBACK_CHUNK_FINISHED);

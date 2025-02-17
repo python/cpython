@@ -21,7 +21,7 @@ from test.support import requires_subprocess, socket_helper
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class StreamTests(test_utils.TestCase):
@@ -50,7 +50,7 @@ class StreamTests(test_utils.TestCase):
         self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
         f = reader.read()
         data = self.loop.run_until_complete(f)
-        self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+        self.assertEndsWith(data, b'\r\n\r\nTest message')
         writer.close()
         self.assertEqual(messages, [])
 
@@ -71,11 +71,11 @@ class StreamTests(test_utils.TestCase):
         try:
             reader, writer = self.loop.run_until_complete(open_connection_fut)
         finally:
-            asyncio.set_event_loop(None)
+            asyncio._set_event_loop(None)
         writer.write(b'GET / HTTP/1.0\r\n\r\n')
         f = reader.read()
         data = self.loop.run_until_complete(f)
-        self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+        self.assertEndsWith(data, b'\r\n\r\nTest message')
 
         writer.close()
         self.assertEqual(messages, [])
@@ -822,52 +822,6 @@ class StreamTests(test_utils.TestCase):
         self.assertEqual(msg1, b"hello world 1!\n")
         self.assertEqual(msg2, b"hello world 2!\n")
 
-    @unittest.skipIf(sys.platform == 'win32', "Don't have pipes")
-    @requires_subprocess()
-    def test_read_all_from_pipe_reader(self):
-        # See asyncio issue 168.  This test is derived from the example
-        # subprocess_attach_read_pipe.py, but we configure the
-        # StreamReader's limit so that twice it is less than the size
-        # of the data writer.  Also we must explicitly attach a child
-        # watcher to the event loop.
-
-        code = """\
-import os, sys
-fd = int(sys.argv[1])
-os.write(fd, b'data')
-os.close(fd)
-"""
-        rfd, wfd = os.pipe()
-        args = [sys.executable, '-c', code, str(wfd)]
-
-        pipe = open(rfd, 'rb', 0)
-        reader = asyncio.StreamReader(loop=self.loop, limit=1)
-        protocol = asyncio.StreamReaderProtocol(reader, loop=self.loop)
-        transport, _ = self.loop.run_until_complete(
-            self.loop.connect_read_pipe(lambda: protocol, pipe))
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore', DeprecationWarning)
-            watcher = asyncio.SafeChildWatcher()
-        watcher.attach_loop(self.loop)
-        try:
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                asyncio.set_child_watcher(watcher)
-            create = asyncio.create_subprocess_exec(
-                *args,
-                pass_fds={wfd},
-            )
-            proc = self.loop.run_until_complete(create)
-            self.loop.run_until_complete(proc.wait())
-        finally:
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore', DeprecationWarning)
-                asyncio.set_child_watcher(None)
-
-        os.close(wfd)
-        data = self.loop.run_until_complete(reader.read(-1))
-        self.assertEqual(data, b'data')
-
     def test_streamreader_constructor_without_loop(self):
         with self.assertRaisesRegex(RuntimeError, 'no current event loop'):
             asyncio.StreamReader()
@@ -885,8 +839,8 @@ os.close(fd)
         # asyncio issue #184: Ensure that StreamReaderProtocol constructor
         # retrieves the current loop if the loop parameter is not set
         # Deprecated in 3.10, undeprecated in 3.12
-        self.addCleanup(asyncio.set_event_loop, None)
-        asyncio.set_event_loop(self.loop)
+        self.addCleanup(asyncio._set_event_loop, None)
+        asyncio._set_event_loop(self.loop)
         reader = asyncio.StreamReader()
         self.assertIs(reader._loop, self.loop)
 
@@ -909,8 +863,8 @@ os.close(fd)
         # asyncio issue #184: Ensure that StreamReaderProtocol constructor
         # retrieves the current loop if the loop parameter is not set
         # Deprecated in 3.10, undeprecated in 3.12
-        self.addCleanup(asyncio.set_event_loop, None)
-        asyncio.set_event_loop(self.loop)
+        self.addCleanup(asyncio._set_event_loop, None)
+        asyncio._set_event_loop(self.loop)
         reader = mock.Mock()
         protocol = asyncio.StreamReaderProtocol(reader)
         self.assertIs(protocol._loop, self.loop)
@@ -1048,7 +1002,7 @@ os.close(fd)
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
             f = rd.read()
             data = self.loop.run_until_complete(f)
-            self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+            self.assertEndsWith(data, b'\r\n\r\nTest message')
             self.assertFalse(wr.is_closing())
             wr.close()
             self.assertTrue(wr.is_closing())
@@ -1074,7 +1028,7 @@ os.close(fd)
             data = await rd.readline()
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
             data = await rd.read()
-            self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+            self.assertEndsWith(data, b'\r\n\r\nTest message')
             wr.close()
             await wr.wait_closed()
 
@@ -1094,7 +1048,7 @@ os.close(fd)
             data = await rd.readline()
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
             data = await rd.read()
-            self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+            self.assertEndsWith(data, b'\r\n\r\nTest message')
             wr.close()
             with self.assertRaises(ConnectionResetError):
                 wr.write(b'data')
@@ -1135,12 +1089,12 @@ os.close(fd)
             data = await rd.readline()
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
             data = await rd.read()
-            self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+            self.assertEndsWith(data, b'\r\n\r\nTest message')
             with self.assertWarns(ResourceWarning) as cm:
                 del wr
                 gc.collect()
                 self.assertEqual(len(cm.warnings), 1)
-                self.assertTrue(str(cm.warnings[0].message).startswith("unclosed <StreamWriter"))
+                self.assertStartsWith(str(cm.warnings[0].message), "unclosed <StreamWriter")
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
@@ -1158,7 +1112,7 @@ os.close(fd)
             data = await rd.readline()
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
             data = await rd.read()
-            self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+            self.assertEndsWith(data, b'\r\n\r\nTest message')
 
             # Make "loop is closed" occur first before "del wr" for this test.
             self.loop.stop()
@@ -1190,7 +1144,7 @@ os.close(fd)
                 del wr
                 gc.collect()
                 self.assertEqual(len(cm.warnings), 1)
-                self.assertTrue(str(cm.warnings[0].message).startswith("unclosed <StreamWriter"))
+                self.assertStartsWith(str(cm.warnings[0].message), "unclosed <StreamWriter")
 
         async def outer():
             srv = await asyncio.start_server(inner, socket_helper.HOSTv4, 0)
@@ -1245,6 +1199,24 @@ os.close(fd)
             asyncio.current_task().cancel()
         messages = self._basetest_unhandled_exceptions(handle_echo)
         self.assertEqual(messages, [])
+
+    def test_open_connection_happy_eyeball_refcycles(self):
+        port = socket_helper.find_unused_port()
+        async def main():
+            exc = None
+            try:
+                await asyncio.open_connection(
+                    host="localhost",
+                    port=port,
+                    happy_eyeballs_delay=0.25,
+                )
+            except* OSError as excs:
+                # can't use assertRaises because that clears frames
+                exc = excs.exceptions[0]
+            self.assertIsNotNone(exc)
+            self.assertListEqual(gc.get_referrers(exc), [main_coro])
+        main_coro = main()
+        asyncio.run(main_coro)
 
 
 if __name__ == '__main__':

@@ -639,11 +639,9 @@ class IOTest(unittest.TestCase):
 
     def test_with_open(self):
         for bufsize in (0, 100):
-            f = None
             with self.open(os_helper.TESTFN, "wb", bufsize) as f:
                 f.write(b"xxx")
             self.assertEqual(f.closed, True)
-            f = None
             try:
                 with self.open(os_helper.TESTFN, "wb", bufsize) as f:
                     1/0
@@ -1149,6 +1147,21 @@ class TestIOCTypes(unittest.TestCase):
     def test_disallow_instantiation(self):
         _io = self._io
         support.check_disallow_instantiation(self, _io._BytesIOBuffer)
+
+    def test_stringio_setstate(self):
+        # gh-127182: Calling __setstate__() with invalid arguments must not crash
+        obj = self._io.StringIO()
+        with self.assertRaisesRegex(
+            TypeError,
+            'initial_value must be str or None, not int',
+        ):
+            obj.__setstate__((1, '', 0, {}))
+
+        obj.__setstate__((None, '', 0, {}))  # should not crash
+        self.assertEqual(obj.getvalue(), '')
+
+        obj.__setstate__(('', '', 0, {}))
+        self.assertEqual(obj.getvalue(), '')
 
 class PyIOTest(IOTest):
     pass
@@ -2879,14 +2892,12 @@ class TextIOWrapperTest(unittest.TestCase):
 
     @unittest.skipIf(sys.flags.utf8_mode, "utf-8 mode is enabled")
     def test_default_encoding(self):
-        old_environ = dict(os.environ)
-        try:
+        with os_helper.EnvironmentVarGuard() as env:
             # try to get a user preferred encoding different than the current
             # locale encoding to check that TextIOWrapper() uses the current
             # locale encoding and not the user preferred encoding
             for key in ('LC_ALL', 'LANG', 'LC_CTYPE'):
-                if key in os.environ:
-                    del os.environ[key]
+                env.unset(key)
 
             current_locale_encoding = locale.getencoding()
             b = self.BytesIO()
@@ -2894,9 +2905,6 @@ class TextIOWrapperTest(unittest.TestCase):
                 warnings.simplefilter("ignore", EncodingWarning)
                 t = self.TextIOWrapper(b)
             self.assertEqual(t.encoding, current_locale_encoding)
-        finally:
-            os.environ.clear()
-            os.environ.update(old_environ)
 
     def test_encoding(self):
         # Check the encoding attribute is always set, and valid
@@ -3919,6 +3927,23 @@ class TextIOWrapperTest(unittest.TestCase):
         f.write(res)
         self.assertEqual(res + f.readline(), 'foo\nbar\n')
 
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    @unittest.skipIf(support.is_emscripten, "Fixed in next Emscripten release after 4.0.1")
+    def test_read_non_blocking(self):
+        import os
+        r, w = os.pipe()
+        try:
+            os.set_blocking(r, False)
+            with self.io.open(r, 'rt') as textfile:
+                r = None
+                # Nothing has been written so a non-blocking read raises a BlockingIOError exception.
+                with self.assertRaises(BlockingIOError):
+                    textfile.read()
+        finally:
+            if r is not None:
+                os.close(r)
+            os.close(w)
+
 
 class MemviewBytesIO(io.BytesIO):
     '''A BytesIO object whose read method returns memoryviews
@@ -4015,6 +4040,28 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         t.write("ghi")
         t.write("x"*chunk_size)
         self.assertEqual([b"abcdef", b"ghi", b"x"*chunk_size], buf._write_stack)
+
+    def test_issue119506(self):
+        chunk_size = 8192
+
+        class MockIO(self.MockRawIO):
+            written = False
+            def write(self, data):
+                if not self.written:
+                    self.written = True
+                    t.write("middle")
+                return super().write(data)
+
+        buf = MockIO()
+        t = self.TextIOWrapper(buf)
+        t.write("abc")
+        t.write("def")
+        # writing data which size >= chunk_size cause flushing buffer before write.
+        t.write("g" * chunk_size)
+        t.flush()
+
+        self.assertEqual([b"abcdef", b"middle", b"g"*chunk_size],
+                         buf._write_stack)
 
 
 class PyTextIOWrapperTest(TextIOWrapperTest):

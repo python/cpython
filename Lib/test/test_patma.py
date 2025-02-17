@@ -1,6 +1,7 @@
 import array
 import collections
 import dataclasses
+import dis
 import enum
 import inspect
 import sys
@@ -3014,6 +3015,13 @@ class TestSyntaxErrors(unittest.TestCase):
                 pass
         """)
 
+    def test_multiple_assignments_to_name_in_pattern_6(self):
+        self.assert_syntax_error("""
+        match ...:
+            case a as a + 1:  # NAME and expression with no ()
+                pass
+        """)
+
     def test_multiple_starred_names_in_sequence_pattern_0(self):
         self.assert_syntax_error("""
         match ...:
@@ -3377,6 +3385,24 @@ class TestValueErrors(unittest.TestCase):
         self.assertIs(y, None)
         self.assertIs(z, None)
 
+class TestSourceLocations(unittest.TestCase):
+    def test_jump_threading(self):
+        # See gh-123048
+        def f():
+            x = 0
+            v = 1
+            match v:
+                case 1:
+                    if x < 0:
+                        x = 1
+                case 2:
+                    if x < 0:
+                        x = 1
+            x += 1
+
+        for inst in dis.get_instructions(f):
+            if inst.opcode in dis.hasjump:
+                self.assertIsNotNone(inst.positions.lineno, "jump without location")
 
 class TestTracing(unittest.TestCase):
 

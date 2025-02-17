@@ -320,7 +320,7 @@ parse_internal_render_format_spec(PyObject *obj,
                 format->thousands_separators = LT_UNDER_FOUR_LOCALE;
                 break;
             }
-            /* fall through */
+            _Py_FALLTHROUGH;
         default:
             invalid_thousands_separator_type(format->thousands_separators, format->type);
             return 0;
@@ -740,7 +740,7 @@ get_locale_info(enum LocaleType type, LocaleInfo *locale_info)
         break;
     case LT_NO_LOCALE:
         locale_info->decimal_point = PyUnicode_FromOrdinal('.');
-        locale_info->thousands_sep = PyUnicode_New(0, 0);
+        locale_info->thousands_sep = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
         if (!locale_info->decimal_point || !locale_info->thousands_sep)
             return -1;
         locale_info->grouping = no_grouping;

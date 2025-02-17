@@ -412,8 +412,8 @@ The following exceptions are the exceptions that are usually raised.
    represented.  This cannot occur for integers (which would rather raise
    :exc:`MemoryError` than give up).  However, for historical reasons,
    OverflowError is sometimes raised for integers that are outside a required
-   range.   Because of the lack of standardization of floating point exception
-   handling in C, most floating point operations are not checked.
+   range.   Because of the lack of standardization of floating-point exception
+   handling in C, most floating-point operations are not checked.
 
 
 .. exception:: PythonFinalizationError
@@ -562,9 +562,13 @@ The following exceptions are the exceptions that are usually raised.
 
    Raised when the interpreter finds an internal error, but the situation does not
    look so serious to cause it to abandon all hope. The associated value is a
-   string indicating what went wrong (in low-level terms).
+   string indicating what went wrong (in low-level terms). In :term:`CPython`,
+   this could be raised by incorrectly using Python's C API, such as returning
+   a ``NULL`` value without an exception set.
 
-   You should report this to the author or maintainer of your Python interpreter.
+   If you're confident that this exception wasn't your fault, or the fault of
+   a package you're using, you should report this to the author or maintainer
+   of your Python interpreter.
    Be sure to report the version of the Python interpreter (``sys.version``; it is
    also printed at the start of an interactive Python session), the exact error
    message (the exception's associated value) and if possible the source of the
@@ -644,9 +648,15 @@ The following exceptions are the exceptions that are usually raised.
 
        The first index of invalid data in :attr:`object`.
 
+       This value should not be negative as it is interpreted as an
+       absolute offset but this constraint is not enforced at runtime.
+
    .. attribute:: end
 
        The index after the last invalid data in :attr:`object`.
+
+       This value should not be negative as it is interpreted as an
+       absolute offset but this constraint is not enforced at runtime.
 
 
 .. exception:: UnicodeEncodeError
@@ -989,7 +999,8 @@ their subgroups based on the types of the contained exceptions.
       Returns an exception group with the same :attr:`message`, but which
       wraps the exceptions in ``excs``.
 
-      This method is used by :meth:`subgroup` and :meth:`split`. A
+      This method is used by :meth:`subgroup` and :meth:`split`, which
+      are used in various contexts to break up an exception group. A
       subclass needs to override it in order to make :meth:`subgroup`
       and :meth:`split` return instances of the subclass rather
       than :exc:`ExceptionGroup`.

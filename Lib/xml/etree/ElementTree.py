@@ -201,7 +201,7 @@ class Element:
 
     def __bool__(self):
         warnings.warn(
-            "Testing an element's truth value will raise an exception in "
+            "Testing an element's truth value will always return True in "
             "future versions.  "
             "Use specific 'len(elem)' or 'elem is not None' test instead.",
             DeprecationWarning, stacklevel=2

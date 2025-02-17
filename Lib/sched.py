@@ -11,7 +11,7 @@ substituting time and sleep from built-in module time, or you can
 implement simulated time by writing your own functions.  This can
 also be used to integrate scheduling with STDWIN events; the delay
 function is allowed to modify the queue.  Time can be expressed as
-integers or floating point numbers, as long as it is consistent.
+integers or floating-point numbers, as long as it is consistent.
 
 Events are specified by tuples (time, priority, action, argument, kwargs).
 As in UNIX, lower priority numbers mean higher priority; in this

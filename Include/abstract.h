@@ -397,13 +397,23 @@ PyAPI_FUNC(int) PyIter_Check(PyObject *);
    This function always succeeds. */
 PyAPI_FUNC(int) PyAIter_Check(PyObject *);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+/* Return 1 and set 'item' to the next item of 'iter' on success.
+ * Return 0 and set 'item' to NULL when there are no remaining values.
+ * Return -1, set 'item' to NULL and set an exception on error.
+ */
+PyAPI_FUNC(int) PyIter_NextItem(PyObject *iter, PyObject **item);
+#endif
+
 /* Takes an iterator object and calls its tp_iternext slot,
    returning the next value.
 
    If the iterator is exhausted, this returns NULL without setting an
    exception.
 
-   NULL with an exception means an error occurred. */
+   NULL with an exception means an error occurred.
+
+   Prefer PyIter_NextItem() instead. */
 PyAPI_FUNC(PyObject *) PyIter_Next(PyObject *);
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030A0000
@@ -715,31 +725,6 @@ PyAPI_FUNC(PyObject *) PySequence_Tuple(PyObject *o);
 /* Returns the sequence 'o' as a list on success, and NULL on failure.
    This is equivalent to the Python expression: list(o) */
 PyAPI_FUNC(PyObject *) PySequence_List(PyObject *o);
-
-/* Return the sequence 'o' as a list, unless it's already a tuple or list.
-
-   Use PySequence_Fast_GET_ITEM to access the members of this list, and
-   PySequence_Fast_GET_SIZE to get its length.
-
-   Returns NULL on failure.  If the object does not support iteration, raises a
-   TypeError exception with 'm' as the message text. */
-PyAPI_FUNC(PyObject *) PySequence_Fast(PyObject *o, const char* m);
-
-/* Return the size of the sequence 'o', assuming that 'o' was returned by
-   PySequence_Fast and is not NULL. */
-#define PySequence_Fast_GET_SIZE(o) \
-    (PyList_Check(o) ? PyList_GET_SIZE(o) : PyTuple_GET_SIZE(o))
-
-/* Return the 'i'-th element of the sequence 'o', assuming that o was returned
-   by PySequence_Fast, and that i is within bounds. */
-#define PySequence_Fast_GET_ITEM(o, i)\
-     (PyList_Check(o) ? PyList_GET_ITEM((o), (i)) : PyTuple_GET_ITEM((o), (i)))
-
-/* Return a pointer to the underlying item array for
-   an object returned by PySequence_Fast */
-#define PySequence_Fast_ITEMS(sf) \
-    (PyList_Check(sf) ? ((PyListObject *)(sf))->ob_item \
-                      : ((PyTupleObject *)(sf))->ob_item)
 
 /* Return the number of occurrences on value on 'o', that is, return
    the number of keys for which o[key] == value.

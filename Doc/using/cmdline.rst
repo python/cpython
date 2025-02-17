@@ -24,7 +24,7 @@ Command line
 
 When invoking Python, you may specify any of these options::
 
-    python [-bBdEhiIOqsSuvVWx?] [-c command | -m module-name | script | - ] [args]
+    python [-bBdEhiIOPqRsSuvVWx?] [-c command | -m module-name | script | - ] [args]
 
 The most common use case is, of course, a simple invocation of a script::
 
@@ -447,6 +447,7 @@ Miscellaneous options
        -Wdefault  # Warn once per call location
        -Werror    # Convert to exceptions
        -Walways   # Warn every time
+       -Wall      # Same as -Walways
        -Wmodule   # Warn once per calling module
        -Wonce     # Warn once per Python process
        -Wignore   # Never warn
@@ -621,9 +622,9 @@ Miscellaneous options
      .. versionadded:: 3.13
 
    * :samp:`-X gil={0,1}` forces the GIL to be disabled or enabled,
-     respectively. Only available in builds configured with
+     respectively. Setting to ``0`` is only available in builds configured with
      :option:`--disable-gil`. See also :envvar:`PYTHON_GIL` and
-     :ref:`free-threaded-cpython`.
+     :ref:`whatsnew313-free-threaded-cpython`.
 
      .. versionadded:: 3.13
 
@@ -661,14 +662,6 @@ output. To control the color output only in the Python interpreter, the
 :envvar:`PYTHON_COLORS` environment variable can be used. This variable takes
 precedence over ``NO_COLOR``, which in turn takes precedence over
 ``FORCE_COLOR``.
-
-.. Apparently this how you hack together a formatted link:
-
-.. |FORCE_COLOR| replace:: ``FORCE_COLOR``
-.. _FORCE_COLOR: https://force-color.org/
-
-.. |NO_COLOR| replace:: ``NO_COLOR``
-.. _NO_COLOR: https://no-color.org/
 
 Options you shouldn't use
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -791,6 +784,15 @@ conflict.
 
    This variable can also be modified by Python code using :data:`os.environ`
    to force inspect mode on program termination.
+
+   .. audit-event:: cpython.run_stdin "" ""
+
+   .. versionchanged:: 3.12.5 (also 3.11.10, 3.10.15, 3.9.20, and 3.8.20)
+      Emits audit events.
+
+   .. versionchanged:: 3.13
+      Uses PyREPL if possible, in which case :envvar:`PYTHONSTARTUP` is
+      also executed. Emits audit events.
 
 
 .. envvar:: PYTHONUNBUFFERED
@@ -915,6 +917,7 @@ conflict.
        PYTHONWARNINGS=default  # Warn once per call location
        PYTHONWARNINGS=error    # Convert to exceptions
        PYTHONWARNINGS=always   # Warn every time
+       PYTHONWARNINGS=all      # Same as PYTHONWARNINGS=always
        PYTHONWARNINGS=module   # Warn once per calling module
        PYTHONWARNINGS=once     # Warn once per Python process
        PYTHONWARNINGS=ignore   # Never warn
@@ -1020,7 +1023,7 @@ conflict.
    'surrogatepass' are used.
 
    This may also be enabled at runtime with
-   :func:`sys._enablelegacywindowsfsencoding()`.
+   :func:`sys._enablelegacywindowsfsencoding`.
 
    .. availability:: Windows.
 
@@ -1192,7 +1195,7 @@ conflict.
 
 .. envvar:: PYTHON_BASIC_REPL
 
-   If this variable is set to ``1``, the interpreter will not attempt to
+   If this variable is set to any value, the interpreter will not attempt to
    load the Python-based :term:`REPL` that requires :mod:`curses` and
    :mod:`readline`, and will instead use the traditional parser-based
    :term:`REPL`.
@@ -1210,12 +1213,11 @@ conflict.
 .. envvar:: PYTHON_GIL
 
    If this variable is set to ``1``, the global interpreter lock (GIL) will be
-   forced on. Setting it to ``0`` forces the GIL off.
+   forced on. Setting it to ``0`` forces the GIL off (needs Python configured with
+   the :option:`--disable-gil` build option).
 
    See also the :option:`-X gil <-X>` command-line option, which takes
-   precedence over this variable, and :ref:`free-threaded-cpython`.
-
-   Needs Python configured with the :option:`--disable-gil` build option.
+   precedence over this variable, and :ref:`whatsnew313-free-threaded-cpython`.
 
    .. versionadded:: 3.13
 

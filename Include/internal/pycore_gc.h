@@ -8,15 +8,13 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_freelist.h"   // _PyFreeListState
-
 /* GC information is stored BEFORE the object structure. */
 typedef struct {
-    // Pointer to next object in the list.
+    // Tagged pointer to next object in the list.
     // 0 means the object is not tracked
     uintptr_t _gc_next;
 
-    // Pointer to previous object in the list.
+    // Tagged pointer to previous object in the list.
     // Lowest two bits are used for flags documented later.
     uintptr_t _gc_prev;
 } PyGC_Head;
@@ -47,13 +45,13 @@ static inline PyObject* _Py_FROM_GC(PyGC_Head *gc) {
  * the per-object lock.
  */
 #ifdef Py_GIL_DISABLED
-#  define _PyGC_BITS_TRACKED        (1)     // Tracked by the GC
-#  define _PyGC_BITS_FINALIZED      (2)     // tp_finalize was called
-#  define _PyGC_BITS_UNREACHABLE    (4)
-#  define _PyGC_BITS_FROZEN         (8)
-#  define _PyGC_BITS_SHARED         (16)
-#  define _PyGC_BITS_SHARED_INLINE  (32)
-#  define _PyGC_BITS_DEFERRED       (64)    // Use deferred reference counting
+#  define _PyGC_BITS_TRACKED        (1<<0)     // Tracked by the GC
+#  define _PyGC_BITS_FINALIZED      (1<<1)     // tp_finalize was called
+#  define _PyGC_BITS_UNREACHABLE    (1<<2)
+#  define _PyGC_BITS_FROZEN         (1<<3)
+#  define _PyGC_BITS_SHARED         (1<<4)
+#  define _PyGC_BITS_ALIVE          (1<<5)    // Reachable from a known root.
+#  define _PyGC_BITS_DEFERRED       (1<<6)    // Use deferred reference counting
 #endif
 
 #ifdef Py_GIL_DISABLED
@@ -121,30 +119,13 @@ static inline void _PyObject_GC_SET_SHARED(PyObject *op) {
 }
 #define _PyObject_GC_SET_SHARED(op) _PyObject_GC_SET_SHARED(_Py_CAST(PyObject*, op))
 
-/* True if the memory of the object is shared between multiple
- * threads and needs special purpose when freeing due to
- * the possibility of in-flight lock-free reads occurring.
- * Objects with this bit that are GC objects will automatically
- * delay-freed by PyObject_GC_Del. */
-static inline int _PyObject_GC_IS_SHARED_INLINE(PyObject *op) {
-    return _PyObject_HAS_GC_BITS(op, _PyGC_BITS_SHARED_INLINE);
-}
-#define _PyObject_GC_IS_SHARED_INLINE(op) \
-    _PyObject_GC_IS_SHARED_INLINE(_Py_CAST(PyObject*, op))
-
-static inline void _PyObject_GC_SET_SHARED_INLINE(PyObject *op) {
-    _PyObject_SET_GC_BITS(op, _PyGC_BITS_SHARED_INLINE);
-}
-#define _PyObject_GC_SET_SHARED_INLINE(op) \
-    _PyObject_GC_SET_SHARED_INLINE(_Py_CAST(PyObject*, op))
-
 #endif
 
 /* Bit flags for _gc_prev */
 /* Bit 0 is set when tp_finalize is called */
-#define _PyGC_PREV_MASK_FINALIZED  1
+#define _PyGC_PREV_MASK_FINALIZED  ((uintptr_t)1)
 /* Bit 1 is set when the object is in generation which is GCed currently. */
-#define _PyGC_PREV_MASK_COLLECTING 2
+#define _PyGC_PREV_MASK_COLLECTING ((uintptr_t)2)
 
 /* Bit 0 in _gc_next is the old space bit.
  * It is set as follows:
@@ -304,6 +285,11 @@ struct gc_generation_stats {
     Py_ssize_t uncollectable;
 };
 
+enum _GCPhase {
+    GC_PHASE_MARK = 0,
+    GC_PHASE_COLLECT = 1
+};
+
 struct _gc_runtime_state {
     /* List of objects that still need to be cleaned up, singly linked
      * via their gc headers' gc_prev pointers.  */
@@ -331,6 +317,7 @@ struct _gc_runtime_state {
     Py_ssize_t work_to_do;
     /* Which of the old spaces is the visited space */
     int visited_space;
+    int phase;
 
 #ifdef Py_GIL_DISABLED
     /* This is the number of objects that survived the last full
@@ -345,17 +332,8 @@ struct _gc_runtime_state {
        the first time. */
     Py_ssize_t long_lived_pending;
 
-    /* gh-117783: Deferred reference counting is not fully implemented yet, so
-       as a temporary measure we treat objects using deferred referenence
-       counting as immortal. */
-    struct {
-        /* Immortalize objects instead of marking them as using deferred
-           reference counting. */
-        int enabled;
-
-        /* Set enabled=1 when the first background thread is created. */
-        int enable_on_thread_created;
-    } immortalize;
+    /* True if gc.freeze() has been used. */
+    int freeze_active;
 #endif
 };
 
@@ -387,9 +365,25 @@ extern void _PyGC_ClearAllFreeLists(PyInterpreterState *interp);
 extern void _Py_ScheduleGC(PyThreadState *tstate);
 extern void _Py_RunGC(PyThreadState *tstate);
 
+union _PyStackRef;
+
+// GC visit callback for tracked interpreter frames
+extern int _PyGC_VisitFrameStack(struct _PyInterpreterFrame *frame, visitproc visit, void *arg);
+extern int _PyGC_VisitStackRef(union _PyStackRef *ref, visitproc visit, void *arg);
+
+// Like Py_VISIT but for _PyStackRef fields
+#define _Py_VISIT_STACKREF(ref)                                         \
+    do {                                                                \
+        if (!PyStackRef_IsNull(ref)) {                                  \
+            int vret = _PyGC_VisitStackRef(&(ref), visit, arg);         \
+            if (vret)                                                   \
+                return vret;                                            \
+        }                                                               \
+    } while (0)
+
 #ifdef Py_GIL_DISABLED
-// gh-117783: Immortalize objects that use deferred reference counting
-extern void _PyGC_ImmortalizeDeferredObjects(PyInterpreterState *interp);
+extern void _PyGC_VisitObjectsWorldStopped(PyInterpreterState *interp,
+                                           gcvisitobjects_t callback, void *arg);
 #endif
 
 #ifdef __cplusplus

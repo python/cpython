@@ -22,7 +22,7 @@
     something like a data file that lives next to the ``__init__.py``
     file of the package. The purpose of this class is to help abstract
     out the accessing of such data files so that it does not matter if
-    the package and its data file(s) are stored in a e.g. zip file
+    the package and its data file(s) are stored e.g. in a zip file
     versus on the file system.
 
     For any of methods of this class, a *resource* argument is
@@ -43,7 +43,7 @@
     :const:`None`. An object compatible with this ABC should only be
     returned when the specified module is a package.
 
-    .. deprecated-removed:: 3.12 3.14
+    .. deprecated:: 3.12
        Use :class:`importlib.resources.abc.TraversableResources` instead.
 
     .. abstractmethod:: open_resource(resource)

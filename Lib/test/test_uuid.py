@@ -8,8 +8,10 @@ import enum
 import io
 import os
 import pickle
+import random
 import sys
 import weakref
+from itertools import product
 from unittest import mock
 
 py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
@@ -19,7 +21,7 @@ def importable(name):
     try:
         __import__(name)
         return True
-    except:
+    except ModuleNotFoundError:
         return False
 
 
@@ -31,6 +33,47 @@ def mock_get_command_stdout(data):
 
 class BaseTestUUID:
     uuid = None
+
+    def test_nil_uuid(self):
+        nil_uuid = self.uuid.NIL
+
+        s = '00000000-0000-0000-0000-000000000000'
+        i = 0
+        self.assertEqual(nil_uuid, self.uuid.UUID(s))
+        self.assertEqual(nil_uuid, self.uuid.UUID(int=i))
+        self.assertEqual(nil_uuid.int, i)
+        self.assertEqual(str(nil_uuid), s)
+        # The Nil UUID falls within the range of the Apollo NCS variant as per
+        # RFC 9562.
+        # See https://www.rfc-editor.org/rfc/rfc9562.html#section-5.9-4
+        self.assertEqual(nil_uuid.variant, self.uuid.RESERVED_NCS)
+        # A version field of all zeros is "Unused" in RFC 9562, but the version
+        # field also only applies to the 10xx variant, i.e. the variant
+        # specified in RFC 9562. As such, because the Nil UUID falls under a
+        # different variant, its version is considered undefined.
+        # See https://www.rfc-editor.org/rfc/rfc9562.html#table2
+        self.assertIsNone(nil_uuid.version)
+
+    def test_max_uuid(self):
+        max_uuid = self.uuid.MAX
+
+        s = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
+        i = (1 << 128) - 1
+        self.assertEqual(max_uuid, self.uuid.UUID(s))
+        self.assertEqual(max_uuid, self.uuid.UUID(int=i))
+        self.assertEqual(max_uuid.int, i)
+        self.assertEqual(str(max_uuid), s)
+        # The Max UUID falls within the range of the "yet-to-be defined" future
+        # UUID variant as per RFC 9562.
+        # See https://www.rfc-editor.org/rfc/rfc9562.html#section-5.10-4
+        self.assertEqual(max_uuid.variant, self.uuid.RESERVED_FUTURE)
+        # A version field of all ones is "Reserved for future definition" in
+        # RFC 9562, but the version field also only applies to the 10xx
+        # variant, i.e. the variant specified in RFC 9562. As such, because the
+        # Max UUID falls under a different variant, its version is considered
+        # undefined.
+        # See https://www.rfc-editor.org/rfc/rfc9562.html#table2
+        self.assertIsNone(max_uuid.version)
 
     def test_safe_uuid_enum(self):
         class CheckedSafeUUID(enum.Enum):
@@ -267,7 +310,7 @@ class BaseTestUUID:
 
         # Version number out of range.
         badvalue(lambda: self.uuid.UUID('00'*16, version=0))
-        badvalue(lambda: self.uuid.UUID('00'*16, version=6))
+        badvalue(lambda: self.uuid.UUID('00'*16, version=42))
 
         # Integer value out of range.
         badvalue(lambda: self.uuid.UUID(int=-1))
@@ -680,6 +723,41 @@ class BaseTestUUID:
             equal(u.version, 5)
             equal(u, self.uuid.UUID(v))
             equal(str(u), v)
+
+    def test_uuid8(self):
+        equal = self.assertEqual
+        u = self.uuid.uuid8()
+
+        equal(u.variant, self.uuid.RFC_4122)
+        equal(u.version, 8)
+
+        for (_, hi, mid, lo) in product(
+            range(10),  # repeat 10 times
+            [None, 0, random.getrandbits(48)],
+            [None, 0, random.getrandbits(12)],
+            [None, 0, random.getrandbits(62)],
+        ):
+            u = self.uuid.uuid8(hi, mid, lo)
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 8)
+            if hi is not None:
+                equal((u.int >> 80) & 0xffffffffffff, hi)
+            if mid is not None:
+                equal((u.int >> 64) & 0xfff, mid)
+            if lo is not None:
+                equal(u.int & 0x3fffffffffffffff, lo)
+
+    def test_uuid8_uniqueness(self):
+        # Test that UUIDv8-generated values are unique (up to a negligible
+        # probability of failure). There are 122 bits of entropy and assuming
+        # that the underlying mt-19937-based random generator is sufficiently
+        # good, it is unlikely to have a collision of two UUIDs.
+        N = 1000
+        uuids = {self.uuid.uuid8() for _ in range(N)}
+        self.assertEqual(len(uuids), N)
+
+        versions = {u.version for u in uuids}
+        self.assertSetEqual(versions, {8})
 
     @support.requires_fork()
     def testIssue8621(self):

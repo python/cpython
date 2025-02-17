@@ -6,8 +6,7 @@ import sys
 import difflib
 import gc
 from functools import wraps
-import asyncio
-from test.support import import_helper, requires_subprocess
+from test.support import import_helper, requires_subprocess, run_no_yield_async_fn
 import contextlib
 import os
 import tempfile
@@ -18,8 +17,6 @@ try:
     import _testinternalcapi
 except ImportError:
     _testinternalcapi = None
-
-support.requires_working_socket(module=True)
 
 class tracecontext:
     """Context manager that traces its enter and exit."""
@@ -1650,15 +1647,15 @@ class TraceTestCase(unittest.TestCase):
         EXPECTED_EVENTS = [
             (0, 'call'),
             (2, 'line'),
-            (1, 'line'),
             (-3, 'call'),
             (-2, 'line'),
             (-2, 'return'),
-            (4, 'line'),
             (1, 'line'),
+            (4, 'line'),
+            (2, 'line'),
             (-2, 'call'),
             (-2, 'return'),
-            (1, 'return'),
+            (2, 'return'),
         ]
 
         # C level events should be the same as expected and the same as Python level.
@@ -2067,10 +2064,9 @@ class JumpTestCase(unittest.TestCase):
                 stack.enter_context(self.assertRaisesRegex(*error))
             if warning is not None:
                 stack.enter_context(self.assertWarnsRegex(*warning))
-            asyncio.run(func(output))
+            run_no_yield_async_fn(func, output)
 
         sys.settrace(None)
-        asyncio.set_event_loop_policy(None)
         self.compare_jump_output(expected, output)
 
     def jump_test(jumpFrom, jumpTo, expected, error=None, event='line', warning=None):
@@ -2857,7 +2853,7 @@ output.append(4)
         output.append(1)
         1 / 0
 
-    @jump_test(3, 2, [2, 5], event='return')
+    @jump_test(3, 2, [2, 2, 5], event='return')
     def test_jump_from_yield(output):
         def gen():
             output.append(2)

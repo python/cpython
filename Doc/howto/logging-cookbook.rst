@@ -1267,11 +1267,8 @@ to adapt in your own applications.
 
 You could also write your own handler which uses the :class:`~multiprocessing.Lock`
 class from the :mod:`multiprocessing` module to serialize access to the
-file from your processes. The existing :class:`FileHandler` and subclasses do
-not make use of :mod:`multiprocessing` at present, though they may do so in the
-future. Note that at present, the :mod:`multiprocessing` module does not provide
-working lock functionality on all platforms (see
-https://bugs.python.org/issue3770).
+file from your processes. The stdlib :class:`FileHandler` and subclasses do
+not make use of :mod:`multiprocessing`.
 
 .. currentmodule:: logging.handlers
 
@@ -2950,7 +2947,7 @@ When run, this produces a file with exactly two lines:
 .. code-block:: none
 
     28/01/2015 07:21:23|INFO|Sample message|
-    28/01/2015 07:21:23|ERROR|ZeroDivisionError: integer division or modulo by zero|'Traceback (most recent call last):\n  File "logtest7.py", line 30, in main\n    x = 1 / 0\nZeroDivisionError: integer division or modulo by zero'|
+    28/01/2015 07:21:23|ERROR|ZeroDivisionError: division by zero|'Traceback (most recent call last):\n  File "logtest7.py", line 30, in main\n    x = 1 / 0\nZeroDivisionError: division by zero'|
 
 While the above treatment is simplistic, it points the way to how exception
 information can be formatted to your liking. The :mod:`traceback` module may be
@@ -4022,7 +4019,7 @@ As you can see, this output isn't ideal. That's because the underlying code
 which writes to ``sys.stderr`` makes multiple writes, each of which results in a
 separate logged line (for example, the last three lines above). To get around
 this problem, you need to buffer things and only output log lines when newlines
-are seen. Let's use a slghtly better implementation of ``LoggerWriter``:
+are seen. Let's use a slightly better implementation of ``LoggerWriter``:
 
 .. code-block:: python
 

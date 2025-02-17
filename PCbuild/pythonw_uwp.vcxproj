@@ -108,7 +108,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="..\PC\pyconw.ico" />
+    <None Include="..\PC\icons\pythonw.ico" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\pythonw_exe.rc" />

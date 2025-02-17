@@ -49,3 +49,11 @@ ac_cv_func_preadv=no
 ac_cv_func_readv=no
 ac_cv_func_pwritev=no
 ac_cv_func_writev=no
+
+# WASI SDK 22 added multiple stubs which we don't implement.
+# https://github.com/python/cpython/issues/120371
+ac_cv_func_chmod=no
+ac_cv_func_fchmod=no
+ac_cv_func_fchmodat=no
+ac_cv_func_statvfs=no
+ac_cv_func_fstatvfs=no

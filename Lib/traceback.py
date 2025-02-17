@@ -15,7 +15,7 @@ __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_tb', 'print_exc', 'format_exc', 'print_exception',
            'print_last', 'print_stack', 'print_tb', 'clear_frames',
            'FrameSummary', 'StackSummary', 'TracebackException',
-           'walk_stack', 'walk_tb']
+           'walk_stack', 'walk_tb', 'print_list']
 
 #
 # Formatting and printing lists of traceback lines.
@@ -135,7 +135,7 @@ BUILTIN_EXCEPTION_LIMIT = object()
 
 def _print_exception_bltin(exc, /):
     file = sys.stderr if sys.stderr is not None else sys.__stderr__
-    colorize = _colorize.can_colorize()
+    colorize = _colorize.can_colorize(file=file)
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
 
@@ -380,10 +380,14 @@ def walk_stack(f):
     current stack is used. Usually used with StackSummary.extract.
     """
     if f is None:
-        f = sys._getframe().f_back.f_back.f_back.f_back
-    while f is not None:
-        yield f, f.f_lineno
-        f = f.f_back
+        f = sys._getframe().f_back
+
+    def walk_stack_generator(frame):
+        while frame is not None:
+            yield frame, frame.f_lineno
+            frame = frame.f_back
+
+    return walk_stack_generator(f)
 
 
 def walk_tb(tb):
@@ -698,6 +702,8 @@ class StackSummary(list):
         with suppress(SyntaxError, ImportError):
             import ast
             tree = ast.parse('\n'.join(all_lines))
+            if not tree.body:
+                return False
             statement = tree.body[0]
             value = None
             def _spawns_full_line(value):
@@ -1281,7 +1287,7 @@ class TracebackException:
             filename_suffix = ' ({})'.format(self.filename)
 
         text = self.text
-        if text is not None:
+        if isinstance(text, str):
             # text  = "   foo\n"
             # rtext = "   foo"
             # ltext =    "foo"
@@ -1290,13 +1296,24 @@ class TracebackException:
             spaces = len(rtext) - len(ltext)
             if self.offset is None:
                 yield '    {}\n'.format(ltext)
-            else:
+            elif isinstance(self.offset, int):
                 offset = self.offset
-                end_offset = self.end_offset if self.end_offset not in {None, 0} else offset
+                if self.lineno == self.end_lineno:
+                    end_offset = (
+                        self.end_offset
+                        if (
+                            isinstance(self.end_offset, int)
+                            and self.end_offset != 0
+                        )
+                        else offset
+                    )
+                else:
+                    end_offset = len(rtext) + 1
+
                 if self.text and offset > len(self.text):
-                    offset = len(self.text) + 1
+                    offset = len(rtext) + 1
                 if self.text and end_offset > len(self.text):
-                    end_offset = len(self.text) + 1
+                    end_offset = len(rtext) + 1
                 if offset >= end_offset or end_offset < 0:
                     end_offset = offset + 1
 
@@ -1422,7 +1439,7 @@ class TracebackException:
                            f'+---------------- {title} ----------------\n')
                     _ctx.exception_group_depth += 1
                     if not truncated:
-                        yield from exc.exceptions[i].format(chain=chain, _ctx=_ctx)
+                        yield from exc.exceptions[i].format(chain=chain, _ctx=_ctx, colorize=colorize)
                     else:
                         remaining = num_excs - self.max_group_width
                         plural = 's' if remaining > 1 else ''

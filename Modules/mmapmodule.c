@@ -486,7 +486,7 @@ mmap_read_line_method(mmap_object *self,
 
     remaining = (self->pos < self->size) ? self->size - self->pos : 0;
     if (!remaining)
-        return PyBytes_FromString("");
+        return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     start = self->data + self->pos;
 
     if (safe_memchr(&eol, start, '\n', remaining) < 0) {
@@ -1274,7 +1274,7 @@ mmap_subscript(mmap_object *self, PyObject *item)
 
         CHECK_VALID(NULL);
         if (slicelen <= 0)
-            return PyBytes_FromStringAndSize("", 0);
+            return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
         else if (step == 1)
             return _safe_PyBytes_FromStringAndSize(self->data + start, slicelen);
         else {
