@@ -8,7 +8,7 @@ import random
 import sys
 from test.support import bigmemtest, _1G, _4G, is_s390x
 
-zlib = import_helper.import_module('zlib', required_on=('linux', 'darwin', 'win32', 'cygwin'))
+zlib = import_helper.import_module('zlib', required_on=('linux', 'android', 'ios', 'darwin', 'win32', 'cygwin'))
 
 # Building CPython without zlib is not supported except WASI.
 #
