@@ -871,6 +871,8 @@ class _SelectorTransport(transports._FlowControlMixin,
     def __del__(self, _warn=warnings.warn):
         if self._sock is not None:
             _warn(f"unclosed transport {self!r}", ResourceWarning, source=self)
+            self._closing = True
+            self._buffer.clear()
             self._sock.close()
             if self._server is not None:
                 self._server._detach(self)
