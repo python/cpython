@@ -1,0 +1,2 @@
+Improve import time of :mod:`dataclasses` by lazy importing :mod:`re`,
+:mod:`copy`, :mod:`inspect` and :mod:`annotationlib`. Patch by Semyon Moroz.
