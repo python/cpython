@@ -307,6 +307,13 @@ Other language changes
   The testbed can also be used to run the test suite of projects other than
   CPython itself. (Contributed by Russell Keith-Magee in :gh:`127592`.)
 
+* :option:`-X importtime <-X>` now accepts value ``2``, which indicates that
+  an ``importtime`` entry should also be printed if an imported module has
+  already been loaded. The ``self`` and ``cumulative`` times for such entries
+  are replaced by the string ``cached``.
+  (Contributed by Noah Kim in :gh:`118655`.)
+
+
 New modules
 ===========
 
