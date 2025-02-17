@@ -7940,7 +7940,8 @@ PY_STDLIB_MOD([_uuid],
   [$LIBUUID_CFLAGS], [$LIBUUID_LIBS])
 
 dnl compression libs
-PY_STDLIB_MOD_SIMPLE([zlib], [$ZLIB_CFLAGS], [$ZLIB_LIBS])
+PY_STDLIB_MOD([zlib], [], [test "$ac_sys_system" != WASI],
+  [$ZLIB_CFLAGS], [$ZLIB_LIBS])
 dnl binascii uses zlib for optimized crc32.
 PY_STDLIB_MOD_SIMPLE([binascii], [$BINASCII_CFLAGS], [$BINASCII_LIBS])
 PY_STDLIB_MOD([_bz2], [], [test "$have_bzip2" = yes],
