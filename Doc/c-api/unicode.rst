@@ -1418,6 +1418,7 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    a 3-tuple containing the part before the separator, the separator itself,
    and the part after the separator. If the separator is not found,
    return a 3-tuple containing the string itself, followed by two empty strings.
+
    *sep* must not be empty.
 
 
@@ -1425,8 +1426,9 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
 
    Similar to :c:func:`PyUnicode_Partition`, but split a Unicode string at the
    last occurrence of *sep*. If the separator is not found, return a 3-tuple
-   containing two empty strings, followed by the string itself.  *sep* must
-   not be empty.
+   containing two empty strings, followed by the string itself.
+
+   *sep* must not be empty.
 
 
 .. c:function:: PyObject* PyUnicode_Join(PyObject *separator, PyObject *seq)
