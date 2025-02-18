@@ -31,7 +31,7 @@ extern "C" {
 #include "pycore_list.h"          // struct _Py_list_state
 #include "pycore_mimalloc.h"      // struct _mimalloc_interp_state
 #include "pycore_object_state.h"  // struct _py_object_state
-#include "pycore_optimizer.h"     // _PyOptimizerObject
+#include "pycore_optimizer.h"     // _PyExecutorObject
 #include "pycore_obmalloc.h"      // struct _obmalloc_state
 #include "pycore_qsbr.h"          // struct _qsbr_state
 #include "pycore_stackref.h"      // Py_STACKREF_DEBUG
@@ -227,6 +227,13 @@ struct _is {
     PyMutex weakref_locks[NUM_WEAKREF_LIST_LOCKS];
     _PyIndexPool tlbc_indices;
 #endif
+    // Per-interpreter list of tasks, any lingering tasks from thread
+    // states gets added here and removed from the corresponding
+    // thread state's list.
+    struct llist_node asyncio_tasks_head;
+    // `asyncio_tasks_lock` is used when tasks are moved
+    // from thread's list to interpreter's list.
+    PyMutex asyncio_tasks_lock;
 
     // Per-interpreter state for the obmalloc allocator.  For the main
     // interpreter and for all interpreters that don't have their
@@ -262,7 +269,7 @@ struct _is {
     struct ast_state ast;
     struct types_state types;
     struct callable_cache callable_cache;
-    _PyOptimizerObject *optimizer;
+    bool jit;
     _PyExecutorObject *executor_list_head;
     size_t trace_run_counter;
     _rare_events rare_events;

@@ -334,14 +334,10 @@ extern void _Py_Specialize_LoadSuperAttr(_PyStackRef global_super, _PyStackRef c
                                          _Py_CODEUNIT *instr, int load_method);
 extern void _Py_Specialize_LoadAttr(_PyStackRef owner, _Py_CODEUNIT *instr,
                                     PyObject *name);
-extern void _Py_Specialize_LoadMethod(_PyStackRef owner, _Py_CODEUNIT *instr,
-                                      PyObject *name);
 extern void _Py_Specialize_StoreAttr(_PyStackRef owner, _Py_CODEUNIT *instr,
                                      PyObject *name);
 extern void _Py_Specialize_LoadGlobal(PyObject *globals, PyObject *builtins,
                                       _Py_CODEUNIT *instr, PyObject *name);
-extern void _Py_Specialize_BinarySubscr(_PyStackRef sub, _PyStackRef container,
-                                        _Py_CODEUNIT *instr);
 extern void _Py_Specialize_StoreSubscr(_PyStackRef container, _PyStackRef sub,
                                        _Py_CODEUNIT *instr);
 extern void _Py_Specialize_Call(_PyStackRef callable, _Py_CODEUNIT *instr,
@@ -375,6 +371,7 @@ extern void _Py_Specialize_ContainsOp(_PyStackRef value, _Py_CODEUNIT *instr);
     do { if (_Py_stats && PyFunction_Check(callable)) _Py_stats->call_stats.eval_calls[name]++; } while (0)
 #define GC_STAT_ADD(gen, name, n) do { if (_Py_stats) _Py_stats->gc_stats[(gen)].name += (n); } while (0)
 #define OPT_STAT_INC(name) do { if (_Py_stats) _Py_stats->optimization_stats.name++; } while (0)
+#define OPT_STAT_ADD(name, n) do { if (_Py_stats) _Py_stats->optimization_stats.name += (n); } while (0)
 #define UOP_STAT_INC(opname, name) do { if (_Py_stats) { assert(opname < 512); _Py_stats->optimization_stats.opcode[opname].name++; } } while (0)
 #define UOP_PAIR_INC(uopcode, lastuop)                                              \
     do {                                                                            \
@@ -410,6 +407,7 @@ PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
 #define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) ((void)0)
 #define GC_STAT_ADD(gen, name, n) ((void)0)
 #define OPT_STAT_INC(name) ((void)0)
+#define OPT_STAT_ADD(name, n) ((void)0)
 #define UOP_STAT_INC(opname, name) ((void)0)
 #define UOP_PAIR_INC(uopcode, lastuop) ((void)0)
 #define OPT_UNSUPPORTED_OPCODE(opname) ((void)0)
@@ -586,6 +584,7 @@ typedef int (*binaryopguardfunc)(PyObject *lhs, PyObject *rhs);
 typedef PyObject *(*binaryopactionfunc)(PyObject *lhs, PyObject *rhs);
 
 typedef struct {
+    int oparg;
     binaryopguardfunc guard;
     binaryopactionfunc action;
 } _PyBinaryOpSpecializationDescr;

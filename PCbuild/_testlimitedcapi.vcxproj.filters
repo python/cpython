@@ -30,6 +30,7 @@
     <ClCompile Include="..\Modules\_testlimitedcapi\unicode.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\vectorcall_limited.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\version.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\file.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi.c" />
   </ItemGroup>
   <ItemGroup>
