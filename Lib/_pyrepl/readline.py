@@ -35,6 +35,7 @@ import os
 from site import gethistoryfile
 import sys
 from rlcompleter import Completer as RLCompleter
+from .fancycompleter import Completer as FancyCompleter
 
 from . import commands, historical_reader
 from .completing_reader import CompletingReader
@@ -609,7 +610,8 @@ def _setup(namespace: Mapping[str, Any]) -> None:
     if not isinstance(namespace, dict):
         namespace = dict(namespace)
     _wrapper.config.module_completer = ModuleCompleter(namespace)
-    _wrapper.config.readline_completer = RLCompleter(namespace).complete
+    completer_cls = RLCompleter if os.getenv("PYTHON_BASIC_COMPLETER") else FancyCompleter
+    _wrapper.config.readline_completer = completer_cls(namespace).complete
 
     # this is not really what readline.c does.  Better than nothing I guess
     import builtins
