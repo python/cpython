@@ -71,6 +71,24 @@ class TestList(TestCase):
         for reader in readers:
             reader.join()
 
+    def test_list_iterator_reduce(self):
+        l = list(range(100))
+
+        for it in [iter(l), iter(reversed(l))]:
+
+            def reduce():
+                for i in range(100):
+                    it.__reduce__()
+
+            def setstate():
+                for i in range(100):
+                    it.__setstate__(i)
+
+            t1 = Thread(target=reduce)
+            t2 = Thread(target=setstate)
+
+            with threading_helper.start_threads([t1, t2]):
+                pass
 
 if __name__ == "__main__":
     unittest.main()

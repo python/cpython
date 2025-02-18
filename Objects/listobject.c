@@ -3988,12 +3988,12 @@ listiter_setstate(PyObject *self, PyObject *state)
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
-    if (it->it_seq != NULL) {
+    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index) >= 0) {
         if (index < -1)
             index = -1;
         else if (index > PyList_GET_SIZE(it->it_seq))
             index = PyList_GET_SIZE(it->it_seq); /* iterator exhausted */
-        it->it_index = index;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index);
     }
     Py_RETURN_NONE;
 }
@@ -4140,12 +4140,12 @@ listreviter_setstate(PyObject *self, PyObject *state)
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
-    if (it->it_seq != NULL) {
+    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index) >= 0) {
         if (index < -1)
             index = -1;
         else if (index > PyList_GET_SIZE(it->it_seq) - 1)
             index = PyList_GET_SIZE(it->it_seq) - 1;
-        it->it_index = index;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index);
     }
     Py_RETURN_NONE;
 }
