@@ -8,6 +8,7 @@ Colorful TAB completion for Python prompt
 from __future__ import with_statement
 from __future__ import print_function
 
+from _pyrepl import readline
 import rlcompleter
 import sys
 import types
@@ -105,10 +106,7 @@ class Color:
 class DefaultConfig:
 
     consider_getitems = True
-    prefer_pyrepl = True
     use_colors = 'auto'
-    readline = None  # set by setup()
-    using_pyrepl = False  # overwritten by find_pyrepl
 
     color_by_type = {
         types.BuiltinMethodType: Color.turquoise,
@@ -138,50 +136,12 @@ class DefaultConfig:
         ((BaseException,), Color.red),
     ]
 
-    def find_pyrepl(self):
-        try:
-            import pyrepl.readline
-            import pyrepl.completing_reader
-        except ImportError:
-            return None
-        self.using_pyrepl = True
-        if hasattr(pyrepl.completing_reader, 'stripcolor'):
-            # modern version of pyrepl
-            return pyrepl.readline, True
-        else:
-            return pyrepl.readline, False
-
-    def find_pyreadline(self):
-        try:
-            import readline
-            import pyreadline  # noqa: F401  # XXX: needed really?
-            from pyreadline.modes import basemode
-        except ImportError:
-            return None
-        if hasattr(basemode, 'stripcolor'):
-            # modern version of pyreadline; see:
-            # https://github.com/pyreadline/pyreadline/pull/48
-            return readline, True
-        else:
-            return readline, False
-
-    def find_best_readline(self):
-        if self.prefer_pyrepl:
-            result = self.find_pyrepl()
-            if result:
-                return result
-        if sys.platform == 'win32':
-            result = self.find_pyreadline()
-            if result:
-                return result
-        import readline
-        return readline, False  # by default readline does not support colors
 
     def setup(self):
-        self.readline, supports_color = self.find_best_readline()
+        import _colorize
         if self.use_colors == 'auto':
-            #self.use_colors = supports_color
-            self.use_colors = True
+            colors = _colorize.get_colors()
+            self.use_colors = colors.RED != ""
 
 
 def my_execfile(filename, mydict):
@@ -242,19 +202,21 @@ class Completer(rlcompleter.Completer, ConfigurableClass):
     """
 
     DefaultConfig = DefaultConfig
-    config_filename = '.fancycompleterrc.py'
+    config_filename = '.fancycompleterrc.py.xxx'
 
     def __init__(self, namespace=None, Config=None):
         rlcompleter.Completer.__init__(self, namespace)
         self.config = self.get_config(Config)
         self.config.setup()
-        readline = self.config.readline
-        if hasattr(readline, '_setup'):
+
+        # XXX: double check what happens in this case once fancycompleter works
+        if False and hasattr(readline, '_setup'):
             # this is needed to offer pyrepl a better chance to patch
             # raw_input. Usually, it does at import time, but is we are under
             # pytest with output captured, at import time we don't have a
             # terminal and thus the raw_input hook is not installed
             readline._setup()
+
         if self.config.use_colors:
             readline.parse_and_bind('set dont-escape-ctrl-chars on')
         if self.config.consider_getitems:
