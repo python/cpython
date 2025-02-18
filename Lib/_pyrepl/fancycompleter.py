@@ -1,5 +1,9 @@
+#   Copyright 2010-2025 Antonio Cuni
+#                       Daniel Hahler
+#
+#                        All Rights Reserved
 """
-fancycompleter: colorful TAB completion for Python prompt
+Colorful TAB completion for Python prompt
 """
 from __future__ import with_statement
 from __future__ import print_function
