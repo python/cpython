@@ -5344,10 +5344,9 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
 AS_CASE([$ac_sys_system],
   [WASI], [
     dnl WASI: Do not use zlib for binascii
-    BINASCII_CFLAGS="-DNO_USE_ZLIB"
+    BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
     BINASCII_LIBS=""
-  ],
-  [
+  ], [
     AS_VAR_IF([have_zlib], [yes], [
       BINASCII_CFLAGS="$ZLIB_CFLAGS"
       BINASCII_LIBS="$ZLIB_LIBS"

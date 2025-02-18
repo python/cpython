@@ -21812,7 +21812,7 @@ fi
 case $ac_sys_system in #(
   WASI) :
 
-        BINASCII_CFLAGS="-DNO_USE_ZLIB"
+        BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
     BINASCII_LIBS=""
    ;; #(
   *) :
