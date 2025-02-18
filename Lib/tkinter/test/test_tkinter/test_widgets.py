@@ -651,7 +651,7 @@ class TextTest(AbstractWidgetTest, unittest.TestCase):
             self.checkParam(widget, 'tabs', (10.2, 20.7, '1i', '2i'))
         self.checkParam(widget, 'tabs', '10.2 20.7 1i 2i',
                         expected=(10.2, 20.7, '1i', '2i')
-                                 if get_tk_patchlevel(self.root) >= (8, 6, 14)
+                                 if get_tk_patchlevel() >= (8, 6, 14)
                                  else ('10.2', '20.7', '1i', '2i'))
         self.checkParam(widget, 'tabs', '2c left 4c 6c center',
                         expected=('2c', 'left', '4c', '6c', 'center'))
@@ -832,7 +832,7 @@ class ListboxTest(AbstractWidgetTest, unittest.TestCase):
             widget.itemconfigure()
         with self.assertRaisesRegex(TclError, 'bad listbox index "red"'):
             widget.itemconfigure('red')
-        if get_tk_patchlevel(self.root) >= (8, 6, 14):
+        if get_tk_patchlevel() >= (8, 6, 14):
             prefix = ('background', '', '', '')
         else:
             prefix = ('background', 'background', 'Background', '')
