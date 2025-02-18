@@ -106,10 +106,16 @@ class FancyCompleterTests(unittest.TestCase):
         compl = Completer({'foobar': 1, 'foobazzz': 2}, ColorConfig)
         self.assertEqual(compl.global_matches('foo'), ['fooba'])
         matches = compl.global_matches('fooba')
+
+        # these are the fake escape sequences which are needed so that
+        # readline displays the matches in the proper order
+        N0 = f"\x1b[000;00m"
+        N1 = f"\x1b[001;00m"
+
         self.assertEqual(set(matches), {
             ' ',
-            '\x1b[001;00m\x1b[33;01mfoobazzz\x1b[00m',
-            '\x1b[000;00m\x1b[33;01mfoobar\x1b[00m',
+            f'{N0}{ANSIColors.BOLD_YELLOW}foobar{ANSIColors.RESET}',
+            f'{N1}{ANSIColors.BOLD_YELLOW}foobazzz{ANSIColors.RESET}',
         })
         self.assertEqual(compl.global_matches('foobaz'), ['foobazzz'])
         self.assertEqual(compl.global_matches('nothing'), [])
