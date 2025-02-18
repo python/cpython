@@ -2913,15 +2913,11 @@ bytearrayiter_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
      * call must be before access of iterator pointers.
      * see issue #101765 */
     bytesiterobject *it = _bytesiterobject_CAST(self);
-    PyObject *ret = NULL;
     Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
     if (index >= 0) {
-        ret = Py_BuildValue("N(O)n", iter, it->it_seq, index);
+        return Py_BuildValue("N(O)n", iter, it->it_seq, index);
     }
-    if (ret == NULL) {
-        ret = Py_BuildValue("N(())", iter);
-    }
-    return ret;
+    return Py_BuildValue("N(())", iter);
 }
 
 static PyObject *
