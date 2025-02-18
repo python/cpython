@@ -117,7 +117,7 @@ class Completer(rlcompleter.Completer):
                 try:
                     values.append(eval(name, self.namespace))
                 except Exception as exc:
-                    values.append(exc)
+                    values.append(None)
         if self.config.use_colors and names:
             return self.colorize_matches(names, values)
         return names

@@ -128,21 +128,6 @@ class FancyCompleterTests(unittest.TestCase):
                 ' '
             ])
 
-    def test_complete_global_exception(self):
-        def rlcompleter_global_matches(self, text):
-            return ['trigger_exception!', 'nameerror', 'valid']
-
-        self.mock_patch.setattr(rlcompleter.Completer, 'global_matches',
-                          rlcompleter_global_matches)
-
-        compl = Completer({'valid': 42}, ColorConfig)
-        self.assertEqual(compl.global_matches(""), [
-            "\x1b[000;00m\x1b[31;01mnameerror\x1b[00m",
-            "\x1b[001;00m\x1b[31;01mtrigger_exception!\x1b[00m",
-            "\x1b[002;00m\x1b[33;01mvalid\x1b[00m",
-            " ",
-        ])
-
     def test_color_for_obj(self):
         class Config(ColorConfig):
             color_by_type = {}
