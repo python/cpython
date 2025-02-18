@@ -86,7 +86,7 @@ The following options are accepted:
 
 .. program:: dis
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Display usage and exit.
 
