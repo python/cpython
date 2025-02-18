@@ -1,2 +1,2 @@
 Improve speed of :func:`ftplib.parse150` by replacing :mod:`re` with
-``.find()`` method. Patch by Semyon Moroz.
+:func:`find` method. Patch by Semyon Moroz.
