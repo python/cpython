@@ -3534,6 +3534,7 @@ class TestDateTime(TestDate):
             '2009-13-01T24:00:00.000000',  # Month is invalid before wrapping due to 24:00
             '9999-12-31T24:00:00.000000',  # Year is invalid after wrapping due to 24:00
             '2009-04-19T12:30Z12:00',      # Extra time zone info after Z
+            '2009-04-19T12:30:45:334034',  # Invalid microsecond separator
         ]
 
         for bad_str in bad_strs:
@@ -4660,7 +4661,6 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             ('000000.000000', self.theclass(0, 0)),
             ('00:00:00.000000', self.theclass(0, 0)),
             ('00:00:00,100000', self.theclass(0, 0, 0, 100000)),
-            ('00:00:00:100000', self.theclass(0, 0, 0, 100000)),
             ('1200', self.theclass(12, 0)),
             ('12:00', self.theclass(12, 0)),
             ('120000', self.theclass(12, 0)),
@@ -4729,6 +4729,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             '12.5',                     # Decimal mark at end of hour
             '12:30,5',                  # Decimal mark at end of minute
             '12:30:45.123456Z12:00',    # Extra time zone info after Z
+            '12:30:45:334034',          # Invalid microsecond separator
         ]
 
         for bad_str in bad_strs:

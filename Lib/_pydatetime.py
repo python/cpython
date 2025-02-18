@@ -404,7 +404,7 @@ _FRACTION_CORRECTION = [100000, 10000, 1000, 100, 10]
 
 
 def _parse_hh_mm_ss_ff(tstr):
-    # Parses things of the form HH[:?MM[:?SS[{.,:}fff[fff]]]]
+    # Parses things of the form HH[:?MM[:?SS[{.,}fff[fff]]]]
     len_str = len(tstr)
 
     time_comps = [0, 0, 0, 0]
@@ -430,7 +430,7 @@ def _parse_hh_mm_ss_ff(tstr):
         pos += has_sep
 
     if pos < len_str:
-        if tstr[pos] not in '.,:':
+        if tstr[pos] not in '.,':
             raise ValueError("Invalid microsecond separator")
         else:
             pos += 1
