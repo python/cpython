@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 // Define this to get precise tracking of stackrefs.
-#define Py_STACKREF_DEBUG 1
+// #define Py_STACKREF_DEBUG 1
 
 #ifndef Py_BUILD_CORE
 #  error "this header requires Py_BUILD_CORE define"

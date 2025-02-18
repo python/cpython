@@ -228,7 +228,8 @@ dummy_func(void) {
         {
             assert(PyLong_CheckExact(sym_get_const(left)));
             assert(PyLong_CheckExact(sym_get_const(right)));
-            PyObject *temp = PyNumber_Add(sym_get_const(left), sym_get_const(right));
+            PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(left),
+                                         (PyLongObject *)sym_get_const(right));
             if (temp == NULL) {
                 goto error;
             }
