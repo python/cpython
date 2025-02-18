@@ -9,37 +9,12 @@ from __future__ import with_statement
 from __future__ import print_function
 
 from _pyrepl import readline
+from _colorize import ANSIColors
 import rlcompleter
 import sys
 import types
 import os.path
 from itertools import count
-
-class Color:
-    black = '30'
-    darkred = '31'
-    darkgreen = '32'
-    brown = '33'
-    darkblue = '34'
-    purple = '35'
-    teal = '36'
-    lightgray = '37'
-    darkgray = '30;01'
-    red = '31;01'
-    green = '32;01'
-    yellow = '33;01'
-    blue = '34;01'
-    fuchsia = '35;01'
-    turquoise = '36;01'
-    white = '37;01'
-
-    @classmethod
-    def set(cls, color, string):
-        try:
-            color = getattr(cls, color)
-        except AttributeError:
-            pass
-        return '\x1b[%sm%s\x1b[00m' % (color, string)
 
 
 class DefaultConfig:
@@ -48,30 +23,30 @@ class DefaultConfig:
     use_colors = 'auto'
 
     color_by_type = {
-        types.BuiltinMethodType: Color.turquoise,
-        types.MethodType: Color.turquoise,
-        type((42).__add__): Color.turquoise,
-        type(int.__add__): Color.turquoise,
-        type(str.replace): Color.turquoise,
+        types.BuiltinMethodType: ANSIColors.BOLD_TEAL,
+        types.MethodType: ANSIColors.BOLD_TEAL,
+        type((42).__add__): ANSIColors.BOLD_TEAL,
+        type(int.__add__): ANSIColors.BOLD_TEAL,
+        type(str.replace): ANSIColors.BOLD_TEAL,
 
-        types.FunctionType: Color.blue,
-        types.BuiltinFunctionType: Color.blue,
+        types.FunctionType: ANSIColors.BOLD_BLUE,
+        types.BuiltinFunctionType: ANSIColors.BOLD_BLUE,
 
-        type: Color.fuchsia,
+        type: ANSIColors.BOLD_MAGENTA,
 
-        types.ModuleType: Color.teal,
-        type(None): Color.lightgray,
-        str: Color.green,
-        bytes: Color.green,
-        int: Color.yellow,
-        float: Color.yellow,
-        complex: Color.yellow,
-        bool: Color.yellow,
+        types.ModuleType: ANSIColors.TEAL,
+        type(None): ANSIColors.GREY,
+        str: ANSIColors.BOLD_GREEN,
+        bytes: ANSIColors.BOLD_GREEN,
+        int: ANSIColors.BOLD_YELLOW,
+        float: ANSIColors.BOLD_YELLOW,
+        complex: ANSIColors.BOLD_YELLOW,
+        bool: ANSIColors.BOLD_YELLOW,
     }
     # Fallback to look up colors by `isinstance` when not matched
     # via color_by_type.
     color_by_baseclass = [
-        ((BaseException,), Color.red),
+        ((BaseException,), ANSIColors.BOLD_RED),
     ]
 
 
@@ -230,10 +205,11 @@ class Completer(rlcompleter.Completer):
                     color = _color
                     break
             else:
-                color = '00'
+                color = ANSIColors.RESET
         # hack: prepend an (increasing) fake escape sequence,
         # so that readline can sort the matches correctly.
-        return '\x1b[%03d;00m' % i + Color.set(color, name)
+        N = f"\x1b[{i:03d};00m"
+        return f"{N}{color}{name}{ANSIColors.RESET}"
 
 
 def commonprefix(names, base=''):
