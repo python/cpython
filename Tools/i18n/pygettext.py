@@ -590,7 +590,8 @@ def main():
         if opt in ('-h', '--help'):
             usage(0)
         elif opt in ('-a', '--extract-all'):
-            print("DeprecationWarning: -a/--extract-all is not implemented and will be removed in a future version",
+            print("DeprecationWarning: -a/--extract-all is not implemented "
+                  "and will be removed in a future version",
                   file=sys.stderr)
             options.extractall = 1
         elif opt in ('-c', '--add-comments'):
