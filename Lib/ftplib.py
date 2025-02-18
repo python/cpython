@@ -796,7 +796,7 @@ def parse150(resp):
         raise error_reply(resp)
 
     start = resp.find('(')
-    end = resp.find(' bytes)')
+    end = resp.lower().find(' bytes)')
 
     if start == -1 or end == -1 or start >= end:
         return None
