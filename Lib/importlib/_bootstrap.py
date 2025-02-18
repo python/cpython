@@ -1244,7 +1244,7 @@ def _find_spec(name, path, target=None):
         raise ImportError("sys.meta_path is None, Python is likely "
                           "shutting down")
 
-    # gh-130094: copy sys.meta_path so that we have a consistent view of the
+    # gh-130094: Copy sys.meta_path so that we have a consistent view of the
     # list while iterating over it.
     meta_path = list(meta_path)
     if not meta_path:
