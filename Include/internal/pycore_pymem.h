@@ -132,6 +132,11 @@ static inline void _PyObject_XDecRefDelayed(PyObject *obj)
 // Periodically process delayed free requests.
 extern void _PyMem_ProcessDelayed(PyThreadState *tstate);
 
+extern void * _PyMem_DefaultRawMalloc(size_t);
+extern void * _PyMem_DefaultRawCalloc(size_t, size_t);
+extern void * _PyMem_DefaultRawRealloc(void *, size_t);
+extern void _PyMem_DefaultRawFree(void *);
+extern wchar_t * _PyMem_DefaultRawWcsdup(const wchar_t *str);
 
 // Periodically process delayed free requests when the world is stopped.
 // Notify of any objects whic should be freeed.
