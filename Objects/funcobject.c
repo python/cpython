@@ -2,6 +2,7 @@
 /* Function object implementation */
 
 #include "Python.h"
+#include "pycore_ceval.h"               // _PyEval_BuiltinsFromGlobals()
 #include "pycore_dict.h"                // _Py_INCREF_DICT()
 #include "pycore_long.h"                // _PyLong_GetOne()
 #include "pycore_modsupport.h"          // _PyArg_NoKeywords()
@@ -591,8 +592,9 @@ class function "PyFunctionObject *" "&PyFunction_Type"
 #include "clinic/funcobject.c.h"
 
 static PyObject *
-func_get_code(PyFunctionObject *op, void *Py_UNUSED(ignored))
+func_get_code(PyObject *self, void *Py_UNUSED(ignored))
 {
+    PyFunctionObject* op = _PyFunction_CAST(self);
     if (PySys_Audit("object.__getattr__", "Os", op, "__code__") < 0) {
         return NULL;
     }
@@ -601,8 +603,9 @@ func_get_code(PyFunctionObject *op, void *Py_UNUSED(ignored))
 }
 
 static int
-func_set_code(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
+func_set_code(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
+    PyFunctionObject* op = _PyFunction_CAST(self);
     Py_ssize_t nclosure;
     int nfree;
 
@@ -651,14 +654,16 @@ func_set_code(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-func_get_name(PyFunctionObject *op, void *Py_UNUSED(ignored))
+func_get_name(PyObject *self, void *Py_UNUSED(ignored))
 {
+    PyFunctionObject* op = _PyFunction_CAST(self);
     return Py_NewRef(op->func_name);
 }
 
 static int
-func_set_name(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
+func_set_name(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
+    PyFunctionObject * op = _PyFunction_CAST(self);
     /* Not legal to del f.func_name or to set it to anything
      * other than a string object. */
     if (value == NULL || !PyUnicode_Check(value)) {
@@ -671,14 +676,16 @@ func_set_name(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-func_get_qualname(PyFunctionObject *op, void *Py_UNUSED(ignored))
+func_get_qualname(PyObject *self, void *Py_UNUSED(ignored))
 {
+    PyFunctionObject *op = _PyFunction_CAST(self);
     return Py_NewRef(op->func_qualname);
 }
 
 static int
-func_set_qualname(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
+func_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
+    PyFunctionObject *op = _PyFunction_CAST(self);
     /* Not legal to del f.__qualname__ or to set it to anything
      * other than a string object. */
     if (value == NULL || !PyUnicode_Check(value)) {
@@ -691,8 +698,9 @@ func_set_qualname(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored
 }
 
 static PyObject *
-func_get_defaults(PyFunctionObject *op, void *Py_UNUSED(ignored))
+func_get_defaults(PyObject *self, void *Py_UNUSED(ignored))
 {
+    PyFunctionObject * op = _PyFunction_CAST(self);
     if (PySys_Audit("object.__getattr__", "Os", op, "__defaults__") < 0) {
         return NULL;
     }
@@ -703,8 +711,9 @@ func_get_defaults(PyFunctionObject *op, void *Py_UNUSED(ignored))
 }
 
 static int
-func_set_defaults(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
+func_set_defaults(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
+    PyFunctionObject *op = _PyFunction_CAST(self);
     /* Legal to del f.func_defaults.
      * Can only set func_defaults to NULL or a tuple. */
     if (value == Py_None)
@@ -731,8 +740,9 @@ func_set_defaults(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored
 }
 
 static PyObject *
-func_get_kwdefaults(PyFunctionObject *op, void *Py_UNUSED(ignored))
+func_get_kwdefaults(PyObject *self, void *Py_UNUSED(ignored))
 {
+    PyFunctionObject * op = _PyFunction_CAST(self);
     if (PySys_Audit("object.__getattr__", "Os",
                     op, "__kwdefaults__") < 0) {
         return NULL;
@@ -744,8 +754,9 @@ func_get_kwdefaults(PyFunctionObject *op, void *Py_UNUSED(ignored))
 }
 
 static int
-func_set_kwdefaults(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignored))
+func_set_kwdefaults(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
 {
+    PyFunctionObject* op = _PyFunction_CAST(self);
     if (value == Py_None)
         value = NULL;
     /* Legal to del f.func_kwdefaults.
@@ -771,54 +782,6 @@ func_set_kwdefaults(PyFunctionObject *op, PyObject *value, void *Py_UNUSED(ignor
     return 0;
 }
 
-/*[clinic input]
-@critical_section
-@getter
-function.__annotate__
-
-Get the code object for a function.
-[clinic start generated code]*/
-
-static PyObject *
-function___annotate___get_impl(PyFunctionObject *self)
-/*[clinic end generated code: output=5ec7219ff2bda9e6 input=7f3db11e3c3329f3]*/
-{
-    if (self->func_annotate == NULL) {
-        Py_RETURN_NONE;
-    }
-    return Py_NewRef(self->func_annotate);
-}
-
-/*[clinic input]
-@critical_section
-@setter
-function.__annotate__
-[clinic start generated code]*/
-
-static int
-function___annotate___set_impl(PyFunctionObject *self, PyObject *value)
-/*[clinic end generated code: output=05b7dfc07ada66cd input=eb6225e358d97448]*/
-{
-    if (value == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-            "__annotate__ cannot be deleted");
-        return -1;
-    }
-    if (Py_IsNone(value)) {
-        Py_XSETREF(self->func_annotate, value);
-        return 0;
-    }
-    else if (PyCallable_Check(value)) {
-        Py_XSETREF(self->func_annotate, Py_XNewRef(value));
-        Py_CLEAR(self->func_annotations);
-        return 0;
-    }
-    else {
-        PyErr_SetString(PyExc_TypeError,
-            "__annotate__ must be callable or None");
-        return -1;
-    }
-}
 
 /*[clinic input]
 @critical_section
@@ -833,8 +796,7 @@ function___annotations___get_impl(PyFunctionObject *self)
 /*[clinic end generated code: output=a4cf4c884c934cbb input=92643d7186c1ad0c]*/
 {
     PyObject *d = NULL;
-    if (self->func_annotations == NULL &&
-        (self->func_annotate == NULL || !PyCallable_Check(self->func_annotate))) {
+    if (self->func_annotations == NULL) {
         self->func_annotations = PyDict_New();
         if (self->func_annotations == NULL)
             return NULL;
@@ -864,7 +826,6 @@ function___annotations___set_impl(PyFunctionObject *self, PyObject *value)
         return -1;
     }
     Py_XSETREF(self->func_annotations, Py_XNewRef(value));
-    Py_CLEAR(self->func_annotate);
     return 0;
 }
 
@@ -925,7 +886,6 @@ static PyGetSetDef func_getsetlist[] = {
     {"__defaults__", func_get_defaults, func_set_defaults},
     {"__kwdefaults__", func_get_kwdefaults, func_set_kwdefaults},
     FUNCTION___ANNOTATIONS___GETSETDEF
-    FUNCTION___ANNOTATE___GETSETDEF
     {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
     {"__name__", func_get_name, func_set_name},
     {"__qualname__", func_get_qualname, func_set_qualname},
