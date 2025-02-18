@@ -2521,11 +2521,19 @@ class FreeThreadingTest(unittest.TestCase):
     @threading_helper.requires_working_threading()
     def test_free_threading_bytearrayiter(self):
         # Non-deterministic but good chance to fail if bytearrayiter is not free-threading safe.
-        # We are fishing for a "Assertion failed: object has negative ref count".
+        # We are fishing for a "Assertion failed: object has negative ref count" and tsan races.
 
         def iter_next(b, it):
             b.wait()
             list(it)
+
+        def iter_reduce(b, it):
+            b.wait()
+            it.__reduce__()
+
+        def iter_setstate(b, it):
+            b.wait()
+            it.__setstate__(0)
 
         def check(funcs, it):
             barrier = threading.Barrier(len(funcs))
@@ -2543,6 +2551,8 @@ class FreeThreadingTest(unittest.TestCase):
             ba = bytearray(b'0' * 0x4000)  # this is a load-bearing variable, do not remove
 
             check([iter_next] * 10, iter(ba))
+            check([iter_next] + [iter_reduce] * 10, iter(ba))  # for tsan
+            check([iter_next] + [iter_setstate] * 10, iter(ba))  # for tsan
 
 
 if __name__ == "__main__":
