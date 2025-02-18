@@ -21450,6 +21450,20 @@ fi
 
 
 
+
+
+  if test "$ac_sys_system" = "Emscripten" -a -z "$ZLIB_CFLAGS" -a -z "$ZLIB_LIBS"
+then :
+
+    ZLIB_CFLAGS="-sUSE_ZLIB"
+    ZLIB_LIBS="-sUSE_ZLIB"
+
+fi
+
+
+
+
+
 pkg_failed=no
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for zlib >= 1.2.0" >&5
 printf %s "checking for zlib >= 1.2.0... " >&6; }
@@ -21808,31 +21822,27 @@ printf "%s\n" "yes" >&6; }
   have_zlib=yes
   printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
+
 fi
 case $ac_sys_system in #(
   WASI) :
 
-        BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
+    BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
     BINASCII_LIBS=""
-    have_zlib=no
    ;; #(
   *) :
 
-    if test "x$have_zlib" = xyes
-then :
+    if test "$have_zlib" != "yes"; then
+      as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
+    fi
+    BINASCII_CFLAGS="$ZLIB_CFLAGS"
+    BINASCII_LIBS="$ZLIB_LIBS"
 
-      BINASCII_CFLAGS="$ZLIB_CFLAGS"
-      BINASCII_LIBS="$ZLIB_LIBS"
-
-else case e in #(
-  e)
-       as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
+ ;; #(
+  *) :
      ;;
 esac
-fi
 
- ;;
-esac
 
 
 
