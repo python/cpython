@@ -5321,25 +5321,27 @@ if test "$ac_cv_have_lchflags" = yes ; then
   AC_DEFINE([HAVE_LCHFLAGS], [1],
             [Define to 1 if you have the 'lchflags' function.])
 fi
-
 dnl Check for compression libraries
 AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy; zlib 1.2.0 (2003) added inflateCopy.])
 dnl 2022-03: Until we know if third party zlib modules people use (for hardware
 dnl accelerators, parallelism, etc.) all support copy, lets not assume.
 
-PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
-  dnl zlib 1.2.0 (2003) added inflateCopy
-  AC_DEFINE([HAVE_ZLIB_COPY], [1])
-]
-
 AS_CASE([$ac_sys_system],
   [WASI], [
-            dnl For WASI we use the internal CRC32.
-            BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
-            BINASCII_LIBS=""
-            ZLIB_TEST="[test 1 = 0]"
-          ],
+    dnl Skip pkg-config check for zlib on WASI
+    ZLIB_CFLAGS=""
+    ZLIB_LIBS=""
+    BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
+    BINASCII_LIBS=""
+    ZLIB_TEST="[test 1 = 0]"
+  ],
   [
+    PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
+      AC_DEFINE([HAVE_ZLIB_COPY], [1])
+    ], [
+      AC_MSG_ERROR([zlib >= 1.2.0 not found via pkg-config. Install zlib-devel.])
+    ])
+
     ZLIB_TEST="[test 1 = 1]"
     BINASCII_CFLAGS="$ZLIB_CFLAGS"
     BINASCII_LIBS="$ZLIB_LIBS"
@@ -5363,8 +5365,8 @@ AS_CASE([$ac_sys_system],
           zlib1g-dev equivalent library or get it from https://zlib.net/.
        ])])
     ])
-  ])
-])
+  ]
+)
 
 dnl detect bzip2 from Emscripten emport
 PY_CHECK_EMSCRIPTEN_PORT([BZIP2], [-sUSE_BZIP2])
