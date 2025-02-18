@@ -1,3 +1,4 @@
-Make the occurrence of :meth:`datetime.time.fromisoformat` and
-:meth:`datetime.datetime.fromisoformat` methods errors more consistent in
-both implementations. Patch by Semyon Moroz.
+Forbid the use of colon ("`:`") as a fractional component separator and other
+improvements to the consistency of error raising between the C and Python
+implementaitons of :meth:`datetime.time.fromisoformat` and
+:meth:`datetime.datetime.fromisoformat`. Patch by Semyon Moroz.
