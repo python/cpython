@@ -5149,7 +5149,11 @@ class TestSignatureBind(unittest.TestCase):
     def call(func, *args, **kwargs):
         sig = inspect.signature(func)
         ba = sig.bind(*args, **kwargs)
-        return func(*ba.args, **ba.kwargs)
+        # Prevent unexpected success of assertRaises(TypeError, ...)
+        try:
+            return func(*ba.args, **ba.kwargs)
+        except TypeError as e:
+            raise AssertionError from e
 
     def test_signature_bind_empty(self):
         def test():
@@ -5349,7 +5353,7 @@ class TestSignatureBind(unittest.TestCase):
         self.assertEqual(self.call(test, 1, 2, c_po=4),
                          (1, 2, 3, 42, 50, {'c_po': 4}))
 
-        with self.assertRaisesRegex(TypeError, "missing 2 required positional arguments"):
+        with self.assertRaisesRegex(TypeError, "missing a required positional-only argument: 'a_po'"):
             self.call(test, a_po=1, b_po=2)
 
         def without_var_kwargs(c_po=3, d_po=4, /):
