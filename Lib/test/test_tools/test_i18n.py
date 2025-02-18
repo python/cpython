@@ -82,6 +82,60 @@ class Test_pygettext(unittest.TestCase):
 
         return msgids
 
+    def assert_POT_equal(self, expected, actual):
+        """Check if two POT files are equal"""
+        self.maxDiff = None
+        self.assertEqual(normalize_POT_file(expected), normalize_POT_file(actual))
+
+    def extract_from_str(self, module_content, *, args=(), strict=True, with_stderr=False):
+        """Return all msgids extracted from module_content."""
+        filename = 'test.py'
+        with temp_cwd(None):
+            with open(filename, 'w', encoding='utf-8') as fp:
+                fp.write(module_content)
+            res = assert_python_ok('-Xutf8', self.script, *args, filename)
+            if strict:
+                self.assertEqual(res.err, b'')
+            with open('messages.pot', encoding='utf-8') as fp:
+                data = fp.read()
+        msgids = self.get_msgids(data)
+        if not with_stderr:
+            return msgids
+        return msgids, res.err
+
+    def extract_docstrings_from_str(self, module_content):
+        """Return all docstrings extracted from module_content."""
+        return self.extract_from_str(module_content, args=('--docstrings',), strict=False)
+
+    def get_stderr(self, module_content):
+        return self.extract_from_str(module_content, strict=False, with_stderr=True)[1]
+
+    def test_header(self):
+        """Make sure the required fields are in the header, according to:
+           http://www.gnu.org/software/gettext/manual/gettext.html#Header-Entry
+        """
+        with temp_cwd(None) as cwd:
+            assert_python_ok('-Xutf8', self.script)
+            with open('messages.pot', encoding='utf-8') as fp:
+                data = fp.read()
+            header = self.get_header(data)
+
+            self.assertIn("Project-Id-Version", header)
+            self.assertIn("POT-Creation-Date", header)
+            self.assertIn("PO-Revision-Date", header)
+            self.assertIn("Last-Translator", header)
+            self.assertIn("Language-Team", header)
+            self.assertIn("MIME-Version", header)
+            self.assertIn("Content-Type", header)
+            self.assertIn("Content-Transfer-Encoding", header)
+            self.assertIn("Generated-By", header)
+
+            # not clear if these should be required in POT (template) files
+            #self.assertIn("Report-Msgid-Bugs-To", header)
+            #self.assertIn("Language", header)
+
+            #"Plural-Forms" is optional
+
     def test_msgid(self):
         msgids = self.extract_docstrings_from_str(
                 '''_("""doc""" r'str' u"ing")''')
@@ -165,60 +219,6 @@ class Test_pygettext(unittest.TestCase):
         '''))
         self.assertNotIn('foo', msgids)
         self.assertIn('bar', msgids)
-
-    def assert_POT_equal(self, expected, actual):
-        """Check if two POT files are equal"""
-        self.maxDiff = None
-        self.assertEqual(normalize_POT_file(expected), normalize_POT_file(actual))
-
-    def extract_from_str(self, module_content, *, args=(), strict=True, with_stderr=False):
-        """Return all msgids extracted from module_content."""
-        filename = 'test.py'
-        with temp_cwd(None):
-            with open(filename, 'w', encoding='utf-8') as fp:
-                fp.write(module_content)
-            res = assert_python_ok('-Xutf8', self.script, *args, filename)
-            if strict:
-                self.assertEqual(res.err, b'')
-            with open('messages.pot', encoding='utf-8') as fp:
-                data = fp.read()
-        msgids = self.get_msgids(data)
-        if not with_stderr:
-            return msgids
-        return msgids, res.err
-
-    def extract_docstrings_from_str(self, module_content):
-        """Return all docstrings extracted from module_content."""
-        return self.extract_from_str(module_content, args=('--docstrings',), strict=False)
-
-    def get_stderr(self, module_content):
-        return self.extract_from_str(module_content, strict=False, with_stderr=True)[1]
-
-    def test_header(self):
-        """Make sure the required fields are in the header, according to:
-           http://www.gnu.org/software/gettext/manual/gettext.html#Header-Entry
-        """
-        with temp_cwd(None) as cwd:
-            assert_python_ok('-Xutf8', self.script)
-            with open('messages.pot', encoding='utf-8') as fp:
-                data = fp.read()
-            header = self.get_header(data)
-
-            self.assertIn("Project-Id-Version", header)
-            self.assertIn("POT-Creation-Date", header)
-            self.assertIn("PO-Revision-Date", header)
-            self.assertIn("Last-Translator", header)
-            self.assertIn("Language-Team", header)
-            self.assertIn("MIME-Version", header)
-            self.assertIn("Content-Type", header)
-            self.assertIn("Content-Transfer-Encoding", header)
-            self.assertIn("Generated-By", header)
-
-            # not clear if these should be required in POT (template) files
-            #self.assertIn("Report-Msgid-Bugs-To", header)
-            #self.assertIn("Language", header)
-
-            #"Plural-Forms" is optional
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
