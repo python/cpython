@@ -1,0 +1,1 @@
+Allow the user to choose how to quit pdb in 'inline' mode.  The user may now choose between killing the process and raising BdbQuit.  This change restores the ability to return to the REPL from a pdb session.
