@@ -5327,10 +5327,12 @@ AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy; zlib 
 dnl 2022-03: Until we know if third party zlib modules people use (for hardware
 dnl accelerators, parallelism, etc.) all support copy, lets not assume.
 
+dnl For Emscripten/WASI builds, set up zlib flags correctly.
+PY_CHECK_EMSCRIPTEN_PORT([ZLIB], [-sUSE_ZLIB])
+
 AS_CASE([$ac_sys_system],
   [WASI], [
-            ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-            ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+            dnl For WASI we use the internal CRC32.
             BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
             BINASCII_LIBS=""
           ],

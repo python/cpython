@@ -21449,12 +21449,24 @@ fi
 
 
 
+
+
+
+  if test "$ac_sys_system" = "Emscripten" -a -z "$ZLIB_CFLAGS" -a -z "$ZLIB_LIBS"
+then :
+
+    ZLIB_CFLAGS="-sUSE_ZLIB"
+    ZLIB_LIBS="-sUSE_ZLIB"
+
+fi
+
+
+
+
 case $ac_sys_system in #(
   WASI) :
 
-            ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-            ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
-            BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
+                        BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
             BINASCII_LIBS=""
            ;; #(
   *) :
