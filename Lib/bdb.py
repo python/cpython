@@ -217,8 +217,10 @@ class Bdb:
         self.backend = backend
         if backend == 'monitoring':
             self.monitoring_tracer = _MonitoringTracer()
-        else:
+        elif backend == 'settrace':
             self.monitoring_tracer = None
+        else:
+            raise ValueError(f"Invalid backend '{backend}'")
 
         self._load_breaks()
 
@@ -240,13 +242,13 @@ class Bdb:
         return canonic
 
     def start_trace(self, trace_dispatch):
-        if self.backend == 'monitoring':
+        if self.monitoring_tracer:
             self.monitoring_tracer.start_trace(trace_dispatch)
         else:
             sys.settrace(self.trace_dispatch)
 
     def stop_trace(self):
-        if self.backend == 'monitoring':
+        if self.monitoring_tracer:
             self.monitoring_tracer.stop_trace()
         else:
             sys.settrace(None)
@@ -532,7 +534,7 @@ class Bdb:
             frame = self.enterframe
             while frame is not None:
                 frame.f_trace_opcodes = trace_opcodes
-                if self.backend == 'monitoring':
+                if self.monitoring_tracer:
                     self.monitoring_tracer.set_trace_opcodes(frame, trace_opcodes)
                 if frame is self.botframe:
                     break
