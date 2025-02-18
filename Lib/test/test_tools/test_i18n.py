@@ -82,6 +82,90 @@ class Test_pygettext(unittest.TestCase):
 
         return msgids
 
+    def test_msgid(self):
+        msgids = self.extract_docstrings_from_str(
+                '''_("""doc""" r'str' u"ing")''')
+        self.assertIn('docstring', msgids)
+
+    def test_msgid_bytes(self):
+        msgids = self.extract_docstrings_from_str('_(b"""doc""")')
+        self.assertFalse([msgid for msgid in msgids if 'doc' in msgid])
+
+    def test_msgid_fstring(self):
+        msgids = self.extract_docstrings_from_str('_(f"""doc""")')
+        self.assertFalse([msgid for msgid in msgids if 'doc' in msgid])
+
+
+    def test_calls_in_fstrings(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_('foo bar')}"
+        '''))
+        self.assertIn('foo bar', msgids)
+
+    def test_calls_in_fstrings_raw(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        rf"{_('foo bar')}"
+        '''))
+        self.assertIn('foo bar', msgids)
+
+    def test_calls_in_fstrings_nested(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"""{f'{_("foo bar")}'}"""
+        '''))
+        self.assertIn('foo bar', msgids)
+
+    def test_calls_in_fstrings_attribute(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{obj._('foo bar')}"
+        '''))
+        self.assertIn('foo bar', msgids)
+
+    def test_calls_in_fstrings_with_call_on_call(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{type(str)('foo bar')}"
+        '''))
+        self.assertNotIn('foo bar', msgids)
+
+    def test_calls_in_fstrings_with_format(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_('foo {bar}').format(bar='baz')}"
+        '''))
+        self.assertIn('foo {bar}', msgids)
+
+    def test_calls_in_fstrings_with_wrong_input_1(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_(f'foo {bar}')}"
+        '''))
+        self.assertFalse([msgid for msgid in msgids if 'foo {bar}' in msgid])
+
+    def test_calls_in_fstrings_with_wrong_input_2(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_(1)}"
+        '''))
+        self.assertNotIn(1, msgids)
+
+    def test_calls_in_fstring_with_multiple_args(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_('foo', 'bar')}"
+        '''))
+        self.assertIn('foo', msgids)
+        self.assertNotIn('bar', msgids)
+
+    def test_calls_in_fstring_with_keyword_args(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_('foo', bar='baz')}"
+        '''))
+        self.assertIn('foo', msgids)
+        self.assertNotIn('bar', msgids)
+        self.assertNotIn('baz', msgids)
+
+    def test_calls_in_fstring_with_partially_wrong_expression(self):
+        msgids = self.extract_docstrings_from_str(dedent('''\
+        f"{_(f'foo') + _('bar')}"
+        '''))
+        self.assertNotIn('foo', msgids)
+        self.assertIn('bar', msgids)
+
     def assert_POT_equal(self, expected, actual):
         """Check if two POT files are equal"""
         self.maxDiff = None
