@@ -21448,16 +21448,6 @@ printf "%s\n" "#define HAVE_LCHFLAGS 1" >>confdefs.h
 fi
 
 
-case $ac_sys_system in #(
-  WASI) :
-
-        ZLIB_CFLAGS=""
-    ZLIB_LIBS=""
-    BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
-    BINASCII_LIBS=""
-    ZLIB_TEST="test 1 = 0"
-   ;; #(
-  *) :
 
 
 pkg_failed=no
@@ -21519,29 +21509,14 @@ fi
         echo "$ZLIB_PKG_ERRORS" >&5
 
 
-      as_fn_error $? "zlib >= 1.2.0 not found via pkg-config. Install zlib-devel." "$LINENO" 5
-
-elif test $pkg_failed = untried; then
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
-printf "%s\n" "no" >&6; }
-
-      as_fn_error $? "zlib >= 1.2.0 not found via pkg-config. Install zlib-devel." "$LINENO" 5
-
-else
-        ZLIB_CFLAGS=$pkg_cv_ZLIB_CFLAGS
-        ZLIB_LIBS=$pkg_cv_ZLIB_LIBS
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-
-      printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
 
 
-fi
-
-    ZLIB_TEST="test 1 = 1"
-    BINASCII_CFLAGS="$ZLIB_CFLAGS"
-    BINASCII_LIBS="$ZLIB_LIBS"
-
+    CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
+    LIBS="$LIBS $ZLIB_LIBS"
            for ac_header in zlib.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
@@ -21549,13 +21524,8 @@ if test "x$ac_cv_header_zlib_h" = xyes
 then :
   printf "%s\n" "#define HAVE_ZLIB_H 1" >>confdefs.h
 
-      save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
+      py_check_lib_save_LIBS=$LIBS
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
 printf %s "checking for gzread in -lz... " >&6; }
 if test ${ac_cv_lib_z_gzread+y}
 then :
@@ -21600,10 +21570,28 @@ fi
 printf "%s\n" "$ac_cv_lib_z_gzread" >&6; }
 if test "x$ac_cv_lib_z_gzread" = xyes
 then :
+  have_zlib=yes
+else case e in #(
+  e) have_zlib=no ;;
+esac
+fi
 
-          ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-          ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
-          { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
+LIBS=$py_check_lib_save_LIBS
+
+
+else case e in #(
+  e) have_zlib=no ;;
+esac
+fi
+
+done
+    if test "x$have_zlib" = xyes
+then :
+
+      ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+      ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+      py_check_lib_save_LIBS=$LIBS
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 printf %s "checking for inflateCopy in -lz... " >&6; }
 if test ${ac_cv_lib_z_inflateCopy+y}
 then :
@@ -21652,14 +21640,10 @@ then :
 
 fi
 
+LIBS=$py_check_lib_save_LIBS
 
-else case e in #(
-  e)
-          as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
-         ;;
-esac
+
 fi
-
 
 CFLAGS=$save_CFLAGS
 CPPFLAGS=$save_CPPFLAGS
@@ -21668,14 +21652,184 @@ LIBS=$save_LIBS
 
 
 
+elif test $pkg_failed = untried; then
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+
+  save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+    CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
+    LIBS="$LIBS $ZLIB_LIBS"
+           for ac_header in zlib.h
+do :
+  ac_fn_c_check_header_compile "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
+if test "x$ac_cv_header_zlib_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_ZLIB_H 1" >>confdefs.h
+
+      py_check_lib_save_LIBS=$LIBS
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
+printf %s "checking for gzread in -lz... " >&6; }
+if test ${ac_cv_lib_z_gzread+y}
+then :
+  printf %s "(cached) " >&6
 else case e in #(
-  e)
-        as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
-     ;;
+  e) ac_check_lib_save_LIBS=$LIBS
+LIBS="-lz  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.
+   The 'extern "C"' is for builds by C++ compilers;
+   although this is not generally supported in C code supporting it here
+   has little cost and some practical benefit (sr 110532).  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char gzread (void);
+int
+main (void)
+{
+return gzread ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_z_gzread=yes
+else case e in #(
+  e) ac_cv_lib_z_gzread=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_gzread" >&5
+printf "%s\n" "$ac_cv_lib_z_gzread" >&6; }
+if test "x$ac_cv_lib_z_gzread" = xyes
+then :
+  have_zlib=yes
+else case e in #(
+  e) have_zlib=no ;;
+esac
+fi
+
+LIBS=$py_check_lib_save_LIBS
+
+
+else case e in #(
+  e) have_zlib=no ;;
 esac
 fi
 
 done
+    if test "x$have_zlib" = xyes
+then :
+
+      ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+      ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+      py_check_lib_save_LIBS=$LIBS
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
+printf %s "checking for inflateCopy in -lz... " >&6; }
+if test ${ac_cv_lib_z_inflateCopy+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) ac_check_lib_save_LIBS=$LIBS
+LIBS="-lz  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.
+   The 'extern "C"' is for builds by C++ compilers;
+   although this is not generally supported in C code supporting it here
+   has little cost and some practical benefit (sr 110532).  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char inflateCopy (void);
+int
+main (void)
+{
+return inflateCopy ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_z_inflateCopy=yes
+else case e in #(
+  e) ac_cv_lib_z_inflateCopy=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_inflateCopy" >&5
+printf "%s\n" "$ac_cv_lib_z_inflateCopy" >&6; }
+if test "x$ac_cv_lib_z_inflateCopy" = xyes
+then :
+  printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+
+fi
+
+LIBS=$py_check_lib_save_LIBS
+
+
+fi
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+else
+        ZLIB_CFLAGS=$pkg_cv_ZLIB_CFLAGS
+        ZLIB_LIBS=$pkg_cv_ZLIB_LIBS
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+
+  have_zlib=yes
+  printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+
+
+fi
+case $host_os in #(
+  WASI) :
+
+        BINASCII_CFLAGS="-DNO_USE_ZLIB"
+    BINASCII_LIBS=""
+   ;; #(
+  *) :
+
+    if test "x$have_zlib" = xyes
+then :
+
+      BINASCII_CFLAGS="$ZLIB_CFLAGS"
+      BINASCII_LIBS="$ZLIB_LIBS"
+
+else case e in #(
+  e)
+       as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
+     ;;
+esac
+fi
 
  ;;
 esac
@@ -32475,7 +32629,7 @@ then :
 
     if true
 then :
-  if $ZLIB_TEST
+  if test "$have_zlib" = yes
 then :
   py_cv_module_zlib=yes
 else case e in #(
@@ -34987,4 +35141,3 @@ if test "$ac_cv_header_stdatomic_h" != "yes"; then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Your compiler or platform does have a working C11 stdatomic.h. A future version of Python may require stdatomic.h." >&5
 printf "%s\n" "$as_me: Your compiler or platform does have a working C11 stdatomic.h. A future version of Python may require stdatomic.h." >&6;}
 fi
-
