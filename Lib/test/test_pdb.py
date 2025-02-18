@@ -4299,6 +4299,14 @@ class PdbTestInline(unittest.TestCase):
         stdout, stderr = self._run_script(script, commands)
         self.assertIn("2", stdout)
         self.assertIn("Quit anyway", stdout)
+        # Closing stdin will quit the debugger anyway so we need to confirm
+        # it's the quit command that does the job
+        # call/return event will print --Call-- and --Return--
+        self.assertNotIn("--", stdout)
+        # Normal exit should not print anything to stderr
+        self.assertEqual(stderr, "")
+        # The quit prompt should be printed exactly twice
+        self.assertEqual(stdout.count("Quit anyway"), 2)
 
 
 @support.requires_subprocess()
