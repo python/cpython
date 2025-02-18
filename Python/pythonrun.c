@@ -1534,13 +1534,11 @@ _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyComp
 /*
  * Return non-zero when we run out of memory on the stack; zero otherwise.
  */
-int PyOS_CheckStack(void)
+int
+PyOS_CheckStack(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    if (_Py_ReachedRecursionLimit(tstate)) {
-        return -1;
-    }
-    return 0;
+    return _Py_ReachedRecursionLimit(tstate);
 }
 
 #endif /* USE_STACKCHECK */
