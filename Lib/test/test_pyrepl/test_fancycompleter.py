@@ -121,19 +121,14 @@ class FancyCompleterTests(unittest.TestCase):
         self.assertEqual(compl.global_matches('nothing'), [])
 
     def test_complete_global_colored_exception(self):
-        compl = Completer({'tryme': ValueError()}, ColorConfig)
-        if sys.version_info >= (3, 6):
-            self.assertEqual(compl.global_matches('try'), [
-                '\x1b[000;00m\x1b[37mtry:\x1b[00m',
-                '\x1b[001;00m\x1b[31;01mtryme\x1b[00m',
-                ' '
-            ])
-        else:
-            self.assertEqual(compl.global_matches('try'), [
-                '\x1b[000;00m\x1b[37mtry\x1b[00m',
-                '\x1b[001;00m\x1b[31;01mtryme\x1b[00m',
-                ' '
-            ])
+        compl = Completer({'tryme': 42}, ColorConfig)
+        N0 = f"\x1b[000;00m"
+        N1 = f"\x1b[001;00m"
+        self.assertEqual(compl.global_matches('try'), [
+            f'{N0}{ANSIColors.GREY}try:{ANSIColors.RESET}',
+            f'{N1}{ANSIColors.BOLD_YELLOW}tryme{ANSIColors.RESET}',
+            ' '
+        ])
 
     def test_complete_with_indexer(self):
         compl = Completer({'lst': [None, 2, 3]}, ConfigForTest)
