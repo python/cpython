@@ -5506,15 +5506,27 @@
             {
                 iter = stack_pointer[-1];
                 PyGenObject *gen = (PyGenObject *)PyStackRef_AsPyObjectBorrow(iter);
-                DEOPT_IF(Py_TYPE(gen) != &PyGen_Type, FOR_ITER);
+                if (Py_TYPE(gen) != &PyGen_Type) {
+                    UPDATE_MISS_STATS(FOR_ITER);
+                    assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
+                    JUMP_TO_PREDICTED(FOR_ITER);
+                }
                 #ifdef Py_GIL_DISABLED
                 // Since generators can't be used by multiple threads anyway we
                 // don't need to deopt here, but this lets us work on making
                 // generators thread-safe without necessarily having to
                 // specialize them thread-safely as well.
-                DEOPT_IF(!_PyObject_IsUniquelyReferenced((PyObject *)gen), FOR_ITER);
+                if (!_PyObject_IsUniquelyReferenced((PyObject *)gen)) {
+                    UPDATE_MISS_STATS(FOR_ITER);
+                    assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
+                    JUMP_TO_PREDICTED(FOR_ITER);
+                }
                 #endif
-                DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING, FOR_ITER);
+                if (gen->gi_frame_state >= FRAME_EXECUTING) {
+                    UPDATE_MISS_STATS(FOR_ITER);
+                    assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
+                    JUMP_TO_PREDICTED(FOR_ITER);
+                }
                 STAT_INC(FOR_ITER, hit);
                 gen_frame = &gen->gi_iframe;
                 _PyFrame_StackPush(gen_frame, PyStackRef_None);
@@ -5562,12 +5574,24 @@
             {
                 iter = stack_pointer[-1];
                 PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-                DEOPT_IF(Py_TYPE(iter_o) != &PyListIter_Type, FOR_ITER);
+                if (Py_TYPE(iter_o) != &PyListIter_Type) {
+                    UPDATE_MISS_STATS(FOR_ITER);
+                    assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
+                    JUMP_TO_PREDICTED(FOR_ITER);
+                }
                 #ifdef Py_GIL_DISABLED
-                DEOPT_IF(!_PyObject_IsUniquelyReferenced(iter_o), FOR_ITER);
+                if (!_PyObject_IsUniquelyReferenced(iter_o)) {
+                    UPDATE_MISS_STATS(FOR_ITER);
+                    assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
+                    JUMP_TO_PREDICTED(FOR_ITER);
+                }
                 _PyListIterObject *it = (_PyListIterObject *)iter_o;
-                DEOPT_IF(!_Py_IsOwnedByCurrentThread((PyObject *)it->it_seq) ||
-                    !_PyObject_GC_IS_SHARED(it->it_seq), FOR_ITER);
+                if (!_Py_IsOwnedByCurrentThread((PyObject *)it->it_seq) ||
+                    !_PyObject_GC_IS_SHARED(it->it_seq)) {
+                    UPDATE_MISS_STATS(FOR_ITER);
+                    assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
+                    JUMP_TO_PREDICTED(FOR_ITER);
+                }
                 #endif
             }
             // _ITER_JUMP_LIST
@@ -5615,7 +5639,11 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 // A negative result means we lost a race with another thread
                 // and we need to take the slow path.
-                DEOPT_IF(result < 0, FOR_ITER);
+                if (result < 0) {
+                    UPDATE_MISS_STATS(FOR_ITER);
+                    assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
+                    JUMP_TO_PREDICTED(FOR_ITER);
+                }
                 if (result == 0) {
                     it->it_index = -1;
                     /* Jump forward oparg, then skip following END_FOR instruction */
@@ -5652,9 +5680,17 @@
             {
                 iter = stack_pointer[-1];
                 _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
-                DEOPT_IF(Py_TYPE(r) != &PyRangeIter_Type, FOR_ITER);
+                if (Py_TYPE(r) != &PyRangeIter_Type) {
+                    UPDATE_MISS_STATS(FOR_ITER);
+                    assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
+                    JUMP_TO_PREDICTED(FOR_ITER);
+                }
                 #ifdef Py_GIL_DISABLED
-                DEOPT_IF(!_PyObject_IsUniquelyReferenced((PyObject *)r), FOR_ITER);
+                if (!_PyObject_IsUniquelyReferenced((PyObject *)r)) {
+                    UPDATE_MISS_STATS(FOR_ITER);
+                    assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
+                    JUMP_TO_PREDICTED(FOR_ITER);
+                }
                 #endif
             }
             // _ITER_JUMP_RANGE
@@ -5712,9 +5748,17 @@
             {
                 iter = stack_pointer[-1];
                 PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-                DEOPT_IF(Py_TYPE(iter_o) != &PyTupleIter_Type, FOR_ITER);
+                if (Py_TYPE(iter_o) != &PyTupleIter_Type) {
+                    UPDATE_MISS_STATS(FOR_ITER);
+                    assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
+                    JUMP_TO_PREDICTED(FOR_ITER);
+                }
                 #ifdef Py_GIL_DISABLED
-                DEOPT_IF(!_PyObject_IsUniquelyReferenced(iter_o), FOR_ITER);
+                if (!_PyObject_IsUniquelyReferenced(iter_o)) {
+                    UPDATE_MISS_STATS(FOR_ITER);
+                    assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
+                    JUMP_TO_PREDICTED(FOR_ITER);
+                }
                 #endif
             }
             // _ITER_JUMP_TUPLE
