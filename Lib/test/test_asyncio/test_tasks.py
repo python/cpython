@@ -2254,7 +2254,7 @@ class BaseTaskTests:
             asyncio.wait([]))
 
     def test_log_destroyed_pending_task(self):
-        loop = asyncio.new_event_loop()
+
         async def kill_me(loop):
             future = self.new_future(loop)
             await future
@@ -2263,19 +2263,19 @@ class BaseTaskTests:
             raise Exception("code never reached")
 
         mock_handler = mock.Mock()
-        loop.set_debug(True)
-        loop.set_exception_handler(mock_handler)
+        self.loop.set_debug(True)
+        self.loop.set_exception_handler(mock_handler)
 
         # schedule the task
-        coro = kill_me(loop)
-        task = self.new_task(loop, coro)
+        coro = kill_me(self.loop)
+        task = self.new_task(self.loop, coro)
 
-        self.assertEqual(self.all_tasks(loop=loop), {task})
+        self.assertEqual(self.all_tasks(loop=self.loop), {task})
 
         asyncio._set_event_loop(None)
 
         # execute the task so it waits for future
-        loop.run_until_complete(asyncio.sleep(0.1))
+        self.loop.run_until_complete(asyncio.sleep(0))
 
         coro = None
         source_traceback = task._source_traceback
@@ -2284,7 +2284,7 @@ class BaseTaskTests:
         # no more reference to kill_me() task: the task is destroyed by the GC
         support.gc_collect()
 
-        mock_handler.assert_called_with(loop, {
+        mock_handler.assert_called_with(self.loop, {
             'message': 'Task was destroyed but it is pending!',
             'task': mock.ANY,
             'source_traceback': source_traceback,
@@ -2293,9 +2293,7 @@ class BaseTaskTests:
         # task got resurrected by the exception handler
         support.gc_collect()
 
-        self.assertEqual(self.all_tasks(loop=loop), set())
-
-        loop.close()
+        self.assertEqual(self.all_tasks(loop=self.loop), set())
 
     def test_task_not_crash_without_finalization(self):
         Task = self.__class__.Task
