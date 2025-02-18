@@ -17,13 +17,13 @@
   <Target Name="MergeClangProfileData" BeforeTargets="PrepareForBuild"
           Condition="'$(SupportPGO)' and $(Configuration) == 'PGUpdate'"
           Inputs="@(_profrawFiles)"
-          Outputs="@(_profrawFiles->'$(OutDir)instrumented\profdata.profdata')">
+          Outputs="$(OutDir)instrumented\profdata.profdata">
     <Exec
-      Command='"$(LLVMInstallDir)\bin\llvm-profdata.exe" merge -output=$(OutDir)instrumented\profdata.profdata $(OutDir)instrumented\*_*.profraw' />
+      Command='"$(LLVMInstallDir)\bin\llvm-profdata.exe" merge -output="$(OutDir)instrumented\profdata.profdata" "$(OutDir)instrumented\*_*.profraw"' />
   </Target>
 
   <Target Name="CleanClangProfileData" BeforeTargets="Clean">
-    <Delete Files="@(_profrawFiles->'$(OutDir)instrumented\%(Filename)%(Extension)')" TreatErrorsAsWarnings="true" />
+    <Delete Files="@(_profrawFiles)" TreatErrorsAsWarnings="true" />
     <Delete Files="$(OutDir)instrumented\profdata.profdata" TreatErrorsAsWarnings="true" />
   </Target>
 
