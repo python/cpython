@@ -3538,10 +3538,13 @@ dummy_func(
                     tstate, callable[0], locals,
                     arguments, total_args, NULL, frame
                 );
-                ERROR_IF(new_frame == NULL, error);
+                // Manipulate stack directly since we leave using DISPATCH_INLINED().
+                SYNC_SP();
                 // The frame has stolen all the arguments from the stack,
                 // so there is no need to clean them up.
-                SYNC_SP();
+                if (new_frame == NULL) {
+                    ERROR_NO_POP();
+                }
                 frame->return_offset = INSTRUCTION_SIZE;
                 DISPATCH_INLINED(new_frame);
             }

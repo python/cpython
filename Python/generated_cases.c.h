@@ -1337,15 +1337,14 @@
                         arguments, total_args, NULL, frame
                     );
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (new_frame == NULL) {
-                        stack_pointer += -2 - oparg;
-                        assert(WITHIN_STACK_BOUNDS());
-                        JUMP_TO_LABEL(error);
-                    }
-                    // The frame has stolen all the arguments from the stack,
-                    // so there is no need to clean them up.
+                    // Manipulate stack directly since we leave using DISPATCH_INLINED().
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
+                    // The frame has stolen all the arguments from the stack,
+                    // so there is no need to clean them up.
+                    if (new_frame == NULL) {
+                        JUMP_TO_LABEL(error);
+                    }
                     frame->return_offset = 4 ;
                     DISPATCH_INLINED(new_frame);
                 }
@@ -6105,15 +6104,14 @@
                         arguments, total_args, NULL, frame
                     );
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    if (new_frame == NULL) {
-                        stack_pointer += -2 - oparg;
-                        assert(WITHIN_STACK_BOUNDS());
-                        JUMP_TO_LABEL(error);
-                    }
-                    // The frame has stolen all the arguments from the stack,
-                    // so there is no need to clean them up.
+                    // Manipulate stack directly since we leave using DISPATCH_INLINED().
                     stack_pointer += -2 - oparg;
                     assert(WITHIN_STACK_BOUNDS());
+                    // The frame has stolen all the arguments from the stack,
+                    // so there is no need to clean them up.
+                    if (new_frame == NULL) {
+                        JUMP_TO_LABEL(error);
+                    }
                     frame->return_offset = 4 ;
                     DISPATCH_INLINED(new_frame);
                 }
