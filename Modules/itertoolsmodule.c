@@ -929,7 +929,7 @@ tee_traverse(PyObject *op, visitproc visit, void *arg)
 {
     teeobject *to = teeobject_CAST(op);
     Py_VISIT(Py_TYPE(to));
-    Py_VISIT(to->dataobj);
+    Py_VISIT((PyObject *)to->dataobj);
     return 0;
 }
 
