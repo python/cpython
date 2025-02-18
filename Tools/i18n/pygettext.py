@@ -46,6 +46,12 @@ Options:
     --extract-all
         Extract all strings.
 
+    -cTAG
+    --add-comments=TAG
+        Extract translator comments.  Comments must start with TAG and
+        must precede the gettext call.  Multiple -cTAG options are allowed.
+        In that case, any comment matching any of the TAGs will be extracted.
+
     -d name
     --default-domain=name
         Rename the default output file from messages.pot to name.pot.
@@ -141,7 +147,9 @@ import importlib.util
 import os
 import sys
 import time
+import tokenize
 from dataclasses import dataclass, field
+from io import BytesIO
 from operator import itemgetter
 
 __version__ = '1.5'
@@ -302,12 +310,30 @@ class Message:
     msgctxt: str | None
     locations: set[Location] = field(default_factory=set)
     is_docstring: bool = False
+    comments: list[str] = field(default_factory=list)
 
-    def add_location(self, filename, lineno, msgid_plural=None, *, is_docstring=False):
+    def add_location(self, filename, lineno, msgid_plural=None, *,
+                     is_docstring=False, comments=None):
         if self.msgid_plural is None:
             self.msgid_plural = msgid_plural
         self.locations.add(Location(filename, lineno))
         self.is_docstring |= is_docstring
+        if comments:
+            self.comments.extend(comments)
+
+
+def get_source_comments(source):
+    """
+    Return a dictionary mapping line numbers to
+    comments in the source code.
+    """
+    comments = {}
+    for token in tokenize.tokenize(BytesIO(source).readline):
+        if token.type == tokenize.COMMENT:
+            # Remove any leading combination of '#' and whitespace
+            comment = token.string.lstrip('# \t')
+            comments[token.start[0]] = comment
+    return comments
 
 
 class GettextVisitor(ast.NodeVisitor):
@@ -316,10 +342,18 @@ class GettextVisitor(ast.NodeVisitor):
         self.options = options
         self.filename = None
         self.messages = {}
+        self.comments = {}
 
-    def visit_file(self, node, filename):
+    def visit_file(self, source, filename):
+        try:
+            module_tree = ast.parse(source)
+        except SyntaxError:
+            return
+
         self.filename = filename
-        self.visit(node)
+        if self.options.comment_tags:
+            self.comments = get_source_comments(source)
+        self.visit(module_tree)
 
     def visit_Module(self, node):
         self._extract_docstring(node)
@@ -372,13 +406,50 @@ class GettextVisitor(ast.NodeVisitor):
             msg_data[arg_type] = arg.value
 
         lineno = node.lineno
-        self._add_message(lineno, **msg_data)
+        comments = self._extract_comments(node)
+        self._add_message(lineno, **msg_data, comments=comments)
+
+    def _extract_comments(self, node):
+        """Extract translator comments.
+
+        Translator comments must precede the gettext call and
+        start with one of the comment prefixes defined by
+        --add-comments=TAG. See the tests for examples.
+        """
+        if not self.options.comment_tags:
+            return []
+
+        comments = []
+        lineno = node.lineno - 1
+        # Collect an unbroken sequence of comments starting from
+        # the line above the gettext call.
+        while lineno >= 1:
+            comment = self.comments.get(lineno)
+            if comment is None:
+                break
+            comments.append(comment)
+            lineno -= 1
+
+        # Find the first translator comment in the sequence and
+        # return all comments starting from that comment.
+        comments = comments[::-1]
+        first_index = next((i for i, comment in enumerate(comments)
+                            if self._is_translator_comment(comment)), None)
+        if first_index is None:
+            return []
+        return comments[first_index:]
+
+    def _is_translator_comment(self, comment):
+        return comment.startswith(self.options.comment_tags)
 
     def _add_message(
             self, lineno, msgid, msgid_plural=None, msgctxt=None, *,
-            is_docstring=False):
+            is_docstring=False, comments=None):
         if msgid in self.options.toexclude:
             return
+
+        if not comments:
+            comments = []
 
         key = self._key_for(msgid, msgctxt)
         message = self.messages.get(key)
@@ -388,6 +459,7 @@ class GettextVisitor(ast.NodeVisitor):
                 lineno,
                 msgid_plural,
                 is_docstring=is_docstring,
+                comments=comments,
             )
         else:
             self.messages[key] = Message(
@@ -396,6 +468,7 @@ class GettextVisitor(ast.NodeVisitor):
                 msgctxt=msgctxt,
                 locations={Location(self.filename, lineno)},
                 is_docstring=is_docstring,
+                comments=comments,
             )
 
     @staticmethod
@@ -435,6 +508,10 @@ def write_pot_file(messages, options, fp):
 
     for key, locations in sorted_keys:
         msg = messages[key]
+
+        for comment in msg.comments:
+            print(f'#. {comment}', file=fp)
+
         if options.writelocations:
             # location comments are different b/w Solaris and GNU:
             if options.locationstyle == options.SOLARIS:
@@ -473,9 +550,9 @@ def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            'ad:DEhk:Kno:p:S:Vvw:x:X:',
-            ['extract-all', 'default-domain=', 'escape', 'help',
-             'keyword=', 'no-default-keywords',
+            'ac::d:DEhk:Kno:p:S:Vvw:x:X:',
+            ['extract-all', 'add-comments=?', 'default-domain=', 'escape',
+             'help', 'keyword=', 'no-default-keywords',
              'add-location', 'no-location', 'output=', 'output-dir=',
              'style=', 'verbose', 'version', 'width=', 'exclude-file=',
              'docstrings', 'no-docstrings',
@@ -501,6 +578,7 @@ def main():
         excludefilename = ''
         docstrings = 0
         nodocstrings = {}
+        comment_tags = set()
 
     options = Options()
     locations = {'gnu' : options.GNU,
@@ -513,6 +591,8 @@ def main():
             usage(0)
         elif opt in ('-a', '--extract-all'):
             options.extractall = 1
+        elif opt in ('-c', '--add-comments'):
+            options.comment_tags.add(arg)
         elif opt in ('-d', '--default-domain'):
             options.outfile = arg + '.pot'
         elif opt in ('-E', '--escape'):
@@ -558,6 +638,8 @@ def main():
             finally:
                 fp.close()
 
+    options.comment_tags = tuple(options.comment_tags)
+
     # calculate escapes
     make_escapes(not options.escape)
 
@@ -600,12 +682,7 @@ def main():
             with open(filename, 'rb') as fp:
                 source = fp.read()
 
-        try:
-            module_tree = ast.parse(source)
-        except SyntaxError:
-            continue
-
-        visitor.visit_file(module_tree, filename)
+        visitor.visit_file(source, filename)
 
     # write the output
     if options.outfile == '-':

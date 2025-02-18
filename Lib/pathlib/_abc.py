@@ -11,16 +11,10 @@ Three base classes are defined here -- JoinablePath, ReadablePath and
 WritablePath.
 """
 
-import functools
 from abc import ABC, abstractmethod
 from glob import _PathGlobber, _no_recurse_symlinks
 from pathlib import PurePath, Path
-from pathlib._os import magic_open, CopyReader, CopyWriter
-
-
-@functools.cache
-def _is_case_sensitive(parser):
-    return parser.normcase('Aa') == 'Aa'
+from pathlib._os import magic_open, CopyWriter
 
 
 def _explode_path(path):
@@ -201,7 +195,7 @@ class JoinablePath(ABC):
         if not isinstance(pattern, JoinablePath):
             pattern = self.with_segments(pattern)
         if case_sensitive is None:
-            case_sensitive = _is_case_sensitive(self.parser)
+            case_sensitive = self.parser.normcase('Aa') == 'Aa'
         globber = _PathGlobber(pattern.parser.sep, case_sensitive, recursive=True)
         match = globber.compile(str(pattern))
         return match(str(self)) is not None
@@ -297,27 +291,16 @@ class ReadablePath(JoinablePath):
         anchor, parts = _explode_path(pattern)
         if anchor:
             raise NotImplementedError("Non-relative patterns are unsupported")
+        case_sensitive_default = self.parser.normcase('Aa') == 'Aa'
         if case_sensitive is None:
-            case_sensitive = _is_case_sensitive(self.parser)
-            case_pedantic = False
-        elif case_sensitive == _is_case_sensitive(self.parser):
+            case_sensitive = case_sensitive_default
             case_pedantic = False
         else:
-            case_pedantic = True
+            case_pedantic = case_sensitive_default != case_sensitive
         recursive = True if recurse_symlinks else _no_recurse_symlinks
         globber = _PathGlobber(self.parser.sep, case_sensitive, case_pedantic, recursive)
         select = globber.selector(parts)
         return select(self.joinpath(''))
-
-    def rglob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
-        """Recursively yield all existing files (of any kind, including
-        directories) matching the given relative pattern, anywhere in
-        this subtree.
-        """
-        if not isinstance(pattern, JoinablePath):
-            pattern = self.with_segments(pattern)
-        pattern = '**' / pattern
-        return self.glob(pattern, case_sensitive=case_sensitive, recurse_symlinks=recurse_symlinks)
 
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
@@ -359,8 +342,6 @@ class ReadablePath(JoinablePath):
         Return the path to which the symbolic link points.
         """
         raise NotImplementedError
-
-    _copy_reader = property(CopyReader)
 
     def copy(self, target, follow_symlinks=True, dirs_exist_ok=False,
              preserve_metadata=False):
