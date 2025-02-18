@@ -207,13 +207,13 @@ class Completer(rlcompleter.Completer):
             return ['%s.%s' % (expr, prefix)]  # autocomplete prefix
 
         if self.config.use_colors:
-            return self.color_matches(names, values)
+            return self.colorize_matches(names, values)
 
         if prefix:
             names += [' ']
         return names
 
-    def color_matches(self, names, values):
+    def colorize_matches(self, names, values):
         matches = [self.color_for_obj(i, name, obj)
                    for i, name, obj
                    in zip(count(), names, values)]
