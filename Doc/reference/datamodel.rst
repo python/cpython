@@ -3356,10 +3356,15 @@ left undefined.
    is called if ``type(x).__sub__(x, y)`` returns :data:`NotImplemented` or ``type(y)``
    is a subclass of ``type(x)``. [#]_
 
-   .. index:: pair: built-in function; pow
+   Note that :meth:`__rpow__` should be defined to accept an optional third
+   argument if the ternary version of the built-in :func:`pow` function
+   is to be supported.
 
-   Note that ternary :func:`pow` will not try calling :meth:`__rpow__` (the
-   coercion rules would become too complicated).
+   .. versionchanged:: next
+
+      Ternary :func:`pow` now try calling :meth:`~object.__rpow__` if necessary.
+      Previously it was only called in binary :func:`!pow` and the binary
+      power operator.
 
    .. note::
 

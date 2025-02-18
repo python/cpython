@@ -1,0 +1,4 @@
+Ternary :func:`pow` now try calling :meth:`~object.__rpow__` if
+necessary.
+Previously it was only called in binary :func:`!pow` and the binary
+power operator.
