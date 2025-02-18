@@ -422,9 +422,11 @@ class UnparseTestCase(ASTTestCase):
             self.check_ast_roundtrip(f"'''{docstring}'''")
 
     def test_constant_tuples(self):
-        self.check_src_roundtrip(ast.Module([ast.Constant(value=(1,))]), "(1,)")
+        locs = ast.fix_missing_locations
         self.check_src_roundtrip(
-            ast.Module([ast.Constant(value=(1, 2, 3))]), "(1, 2, 3)"
+            locs(ast.Module([ast.Expr(ast.Constant(value=(1,)))])), "(1,)")
+        self.check_src_roundtrip(
+            locs(ast.Module([ast.Expr(ast.Constant(value=(1, 2, 3)))])), "(1, 2, 3)"
         )
 
     def test_function_type(self):
