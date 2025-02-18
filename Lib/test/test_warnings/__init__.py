@@ -24,10 +24,13 @@ import warnings as original_warnings
 from warnings import deprecated
 
 
-py_warnings = import_helper.import_fresh_module('warnings',
-                                                blocked=['_warnings'])
-c_warnings = import_helper.import_fresh_module('warnings',
-                                               fresh=['_warnings'])
+py_warnings = import_helper.import_fresh_module('_py_warnings')
+py_warnings._set_module(py_warnings)
+
+c_warnings = import_helper.import_fresh_module(
+    "warnings", fresh=["_warnings", "_py_warnings"]
+)
+c_warnings._set_module(c_warnings)
 
 @contextmanager
 def warnings_state(module):
