@@ -5349,6 +5349,7 @@ AS_CASE([$ac_sys_system],
   [WASI], [
     BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
     BINASCII_LIBS=""
+    have_zlib=no
   ],
   [*], [
     if test "$have_zlib" != "yes"; then
