@@ -100,8 +100,9 @@ class _MonitoringTracer:
                     return sys.monitoring.DISABLE
                 else:
                     return ret
-            except Exception:
+            except BaseException:
                 self.stop_trace()
+                sys._getframe().f_back.f_trace = None
                 raise
             finally:
                 self._disable_current_event = False
