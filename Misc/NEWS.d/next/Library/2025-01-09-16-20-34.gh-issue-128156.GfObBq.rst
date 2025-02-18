@@ -1,3 +1,0 @@
-When using macOS system ``libffi``, support for complex types in
-:mod:`ctypes` is now checked at runtime (macOS 10.15 or newer). The types
-must also be available at build time.
