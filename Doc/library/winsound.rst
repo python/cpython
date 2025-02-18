@@ -13,7 +13,14 @@
 --------------
 
 The :mod:`winsound` module provides access to the basic sound-playing machinery
-provided by Windows platforms.  It includes functions and several constants.
+provided by Windows platforms.
+
+.. _functions:
+
+Functions
+------------------
+
+This module offers the following functions:
 
 
 .. function:: Beep(frequency, duration)
@@ -45,6 +52,11 @@ provided by Windows platforms.  It includes functions and several constants.
    fallback if a sound cannot be played otherwise.  If the system indicates an
    error, :exc:`RuntimeError` is raised.
 
+
+.. _constants:
+
+Constants
+------------------
 
 .. data:: SND_FILENAME
 
