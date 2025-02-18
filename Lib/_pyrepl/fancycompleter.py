@@ -82,55 +82,7 @@ class DefaultConfig:
             self.use_colors = colors.RED != ""
 
 
-def my_execfile(filename, mydict):
-    with open(filename) as f:
-        code = compile(f.read(), filename, 'exec')
-        exec(code, mydict)
-
-
-class ConfigurableClass:
-    DefaultConfig = None
-    config_filename = None
-
-    def get_config(self, Config):
-        if Config is not None:
-            return Config()
-        # try to load config from the ~/filename file
-        filename = '~/' + self.config_filename
-        rcfile = os.path.normpath(os.path.expanduser(filename))
-        if not os.path.exists(rcfile):
-            return self.DefaultConfig()
-
-        mydict = {}
-        try:
-            my_execfile(rcfile, mydict)
-        except Exception as exc:
-            import traceback
-
-            sys.stderr.write("** error when importing %s: %r **\n" % (filename, exc))
-            traceback.print_tb(sys.exc_info()[2])
-            return self.DefaultConfig()
-
-        try:
-            Config = mydict["Config"]
-        except KeyError:
-            return self.DefaultConfig()
-
-        try:
-            return Config()
-        except Exception as exc:
-            err = "error when setting up Config from %s: %s" % (filename, exc)
-            tb = sys.exc_info()[2]
-            if tb and tb.tb_next:
-                tb = tb.tb_next
-                err_fname = tb.tb_frame.f_code.co_filename
-                err_lnum = tb.tb_lineno
-                err += " (%s:%d)" % (err_fname, err_lnum,)
-            sys.stderr.write("** %s **\n" % err)
-        return self.DefaultConfig()
-
-
-class Completer(rlcompleter.Completer, ConfigurableClass):
+class Completer(rlcompleter.Completer):
     """
     When doing someting like a.b.<TAB>, display only the attributes of
     b instead of the full a.b.attr string.
@@ -142,9 +94,9 @@ class Completer(rlcompleter.Completer, ConfigurableClass):
     DefaultConfig = DefaultConfig
     config_filename = '.fancycompleterrc.py.xxx'
 
-    def __init__(self, namespace=None, Config=None):
+    def __init__(self, namespace=None, Config=DefaultConfig):
         rlcompleter.Completer.__init__(self, namespace)
-        self.config = self.get_config(Config)
+        self.config = Config()
         self.config.setup()
 
         # XXX: double check what happens in this case once fancycompleter works
