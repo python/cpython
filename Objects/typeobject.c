@@ -5038,6 +5038,26 @@ _PyType_GetModuleByDef2(PyTypeObject *left, PyTypeObject *right,
     return module;
 }
 
+PyObject *
+_PyType_GetModuleByDef3(PyTypeObject *left, PyTypeObject *right, PyTypeObject *third,
+                        PyModuleDef *def)
+{
+    PyObject *module = get_module_by_def(left, def);
+    if (module == NULL) {
+        module = get_module_by_def(right, def);
+        if (module == NULL) {
+            module = get_module_by_def(third, def);
+            if (module == NULL) {
+                PyErr_Format(
+                    PyExc_TypeError,
+                    "PyType_GetModuleByDef: No superclass of '%s', '%s' nor '%s' has "
+                    "the given module", left->tp_name, right->tp_name, third->tp_name);
+            }
+        }
+    }
+    return module;
+}
+
 void *
 PyObject_GetTypeData(PyObject *obj, PyTypeObject *cls)
 {

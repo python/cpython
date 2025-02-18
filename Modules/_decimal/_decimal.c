@@ -143,19 +143,10 @@ find_state_left_or_right(PyObject *left, PyObject *right)
 static inline decimal_state *
 find_state_ternary(PyObject *left, PyObject *right, PyObject *modulus)
 {
-    PyTypeObject *base;
-    if (PyType_GetBaseByToken(Py_TYPE(left), &dec_spec, &base) != 1) {
-        assert(!PyErr_Occurred());
-        if (PyType_GetBaseByToken(Py_TYPE(right), &dec_spec, &base) != 1) {
-            assert(!PyErr_Occurred());
-            PyType_GetBaseByToken(Py_TYPE(modulus), &dec_spec, &base);
-        }
-    }
-    assert(base != NULL);
-    void *state = _PyType_GetModuleState(base);
-    assert(state != NULL);
-    Py_DECREF(base);
-    return (decimal_state *)state;
+    PyObject *mod = _PyType_GetModuleByDef3(Py_TYPE(left), Py_TYPE(right), Py_TYPE(modulus),
+                                            &_decimal_module);
+    assert(mod != NULL);
+    return get_module_state(mod);
 }
 
 
