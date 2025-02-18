@@ -429,14 +429,14 @@ class CodeTest(unittest.TestCase):
         def foo():
             pass
 
-        # assert that opcode 229 is invalid
-        self.assertEqual(opname[229], '<229>')
+        # assert that opcode 135 is invalid
+        self.assertEqual(opname[135], '<135>')
 
-        # change first opcode to 0xeb (=229)
+        # change first opcode to 0x87 (=135)
         foo.__code__ = foo.__code__.replace(
-            co_code=b'\xe5' + foo.__code__.co_code[1:])
+            co_code=b'\x87' + foo.__code__.co_code[1:])
 
-        msg = "unknown opcode 229"
+        msg = "unknown opcode 135"
         with self.assertRaisesRegex(SystemError, msg):
             foo()
 

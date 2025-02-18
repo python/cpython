@@ -945,7 +945,7 @@ The ``errors`` module has the following attributes:
 
    The parser was tried to be stopped or suspended before it started.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. rubric:: Footnotes
