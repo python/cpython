@@ -180,7 +180,8 @@ class DefaultConfig:
     def setup(self):
         self.readline, supports_color = self.find_best_readline()
         if self.use_colors == 'auto':
-            self.use_colors = supports_color
+            #self.use_colors = supports_color
+            self.use_colors = True
 
 
 def my_execfile(filename, mydict):
