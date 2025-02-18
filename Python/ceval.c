@@ -779,7 +779,7 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 /* This setting is reversed below following _PyEval_EvalFrameDefault */
 #endif
 
-#ifdef Py_TAIL_CALL_INTERP
+#if Py_TAIL_CALL_INTERP
 #include "opcode_targets.h"
 #include "generated_cases.c.h"
 #endif
@@ -790,7 +790,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     _Py_EnsureTstateNotNULL(tstate);
     CALL_STAT_INC(pyeval_calls);
 
-#if USE_COMPUTED_GOTOS && !defined(Py_TAIL_CALL_INTERP)
+#if USE_COMPUTED_GOTOS && !Py_TAIL_CALL_INTERP
 /* Import the static jump table */
 #include "opcode_targets.h"
 #endif
@@ -863,7 +863,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         next_instr = frame->instr_ptr;
         monitor_throw(tstate, frame, next_instr);
         stack_pointer = _PyFrame_GetStackPointer(frame);
-#ifdef Py_TAIL_CALL_INTERP
+#if Py_TAIL_CALL_INTERP
         return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0);
 #else
         goto error;
@@ -876,7 +876,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     const _PyUOpInstruction *next_uop = NULL;
 #endif
 
-#ifdef Py_TAIL_CALL_INTERP
+#if Py_TAIL_CALL_INTERP
     return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0);
 #else
     goto start_frame;
