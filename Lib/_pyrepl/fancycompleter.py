@@ -15,27 +15,6 @@ import types
 import os.path
 from itertools import count
 
-PY3K = sys.version_info[0] >= 3
-
-# python3 compatibility
-# ---------------------
-try:
-    from itertools import izip
-except ImportError:
-    izip = zip
-
-try:
-    from types import ClassType
-except ImportError:
-    ClassType = type
-
-try:
-    unicode
-except NameError:
-    unicode = str
-
-# ----------------------
-
 class Color:
     black = '30'
     darkred = '31'
@@ -78,13 +57,12 @@ class DefaultConfig:
         types.FunctionType: Color.blue,
         types.BuiltinFunctionType: Color.blue,
 
-        ClassType: Color.fuchsia,
         type: Color.fuchsia,
 
         types.ModuleType: Color.teal,
         type(None): Color.lightgray,
         str: Color.green,
-        unicode: Color.green,
+        bytes: Color.green,
         int: Color.yellow,
         float: Color.yellow,
         complex: Color.yellow,
@@ -257,12 +235,6 @@ class Completer(rlcompleter.Completer, ConfigurableClass):
                     except Exception:
                         val = None  # Include even if attribute not set
 
-                    if not PY3K and isinstance(word, unicode):
-                        # this is needed because pyrepl doesn't like unicode
-                        # completions: as soon as it finds something which is not str,
-                        # it stops.
-                        word = word.encode('utf-8')
-
                     names.append(word)
                     values.append(val)
             if names or not noprefix:
@@ -292,7 +264,7 @@ class Completer(rlcompleter.Completer, ConfigurableClass):
     def color_matches(self, names, values):
         matches = [self.color_for_obj(i, name, obj)
                    for i, name, obj
-                   in izip(count(), names, values)]
+                   in zip(count(), names, values)]
         # We add a space at the end to prevent the automatic completion of the
         # common prefix, which is the ANSI ESCAPE sequence.
         return matches + [' ']
