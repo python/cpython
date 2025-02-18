@@ -21670,7 +21670,7 @@ LIBS=$save_LIBS
 
 else case e in #(
   e)
-      as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
+        as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
      ;;
 esac
 fi
