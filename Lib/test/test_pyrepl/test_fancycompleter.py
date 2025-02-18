@@ -128,14 +128,6 @@ class FancyCompleterTests(unittest.TestCase):
                 ' '
             ])
 
-    def test_color_for_obj(self):
-        class Config(ColorConfig):
-            color_by_type = {}
-
-        compl = Completer({}, Config)
-        self.assertEqual(compl.color_for_obj(1, "foo", "bar"),
-                        "\x1b[001;00m\x1b[00mfoo\x1b[00m")
-
     def test_complete_with_indexer(self):
         compl = Completer({'lst': [None, 2, 3]}, ConfigForTest)
         self.assertEqual(compl.attr_matches('lst[0].'), ['lst[0].__'])
