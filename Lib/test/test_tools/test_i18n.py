@@ -136,6 +136,25 @@ class Test_pygettext(unittest.TestCase):
 
             #"Plural-Forms" is optional
 
+    @unittest.skipIf(sys.platform.startswith('aix'),
+                     'bpo-29972: broken test on AIX')
+    def test_POT_Creation_Date(self):
+        """ Match the date format from xgettext for POT-Creation-Date """
+        from datetime import datetime
+        with temp_cwd(None) as cwd:
+            assert_python_ok('-Xutf8', self.script)
+            with open('messages.pot', encoding='utf-8') as fp:
+                data = fp.read()
+            header = self.get_header(data)
+            creationDate = header['POT-Creation-Date']
+
+            # peel off the escaped newline at the end of string
+            if creationDate.endswith('\\n'):
+                creationDate = creationDate[:-len('\\n')]
+
+            # This will raise if the date format does not exactly match.
+            datetime.strptime(creationDate, '%Y-%m-%d %H:%M%z')
+
     def test_msgid(self):
         msgids = self.extract_docstrings_from_str(
                 '''_("""doc""" r'str' u"ing")''')
@@ -219,26 +238,6 @@ class Test_pygettext(unittest.TestCase):
         '''))
         self.assertNotIn('foo', msgids)
         self.assertIn('bar', msgids)
-
-    @unittest.skipIf(sys.platform.startswith('aix'),
-                     'bpo-29972: broken test on AIX')
-    def test_POT_Creation_Date(self):
-        """ Match the date format from xgettext for POT-Creation-Date """
-        from datetime import datetime
-        with temp_cwd(None) as cwd:
-            assert_python_ok('-Xutf8', self.script)
-            with open('messages.pot', encoding='utf-8') as fp:
-                data = fp.read()
-            header = self.get_header(data)
-            creationDate = header['POT-Creation-Date']
-
-            # peel off the escaped newline at the end of string
-            if creationDate.endswith('\\n'):
-                creationDate = creationDate[:-len('\\n')]
-
-            # This will raise if the date format does not exactly match.
-            datetime.strptime(creationDate, '%Y-%m-%d %H:%M%z')
-
 
     def test_function_and_class_names(self):
         """Test that function and class names are not mistakenly extracted."""
