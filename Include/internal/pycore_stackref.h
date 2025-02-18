@@ -179,7 +179,6 @@ PyStackRef_MakeHeapSafe(_PyStackRef ref)
         PyStackRef_XCLOSE(_tmp_old_op); \
     } while (0)
 
-
 static inline _PyStackRef
 _PyStackRef_FromPyObjectStealMortal(PyObject *obj, const char *filename, int linenumber)
 {
@@ -561,6 +560,14 @@ PyStackRef_XCLOSE(_PyStackRef ref)
         Py_DECREF_MORTAL(BITS_TO_PTR(ref));
     }
 }
+
+#define PyStackRef_CLEAR(REF) \
+    do { \
+        _PyStackRef *_tmp_op_ptr = &(REF); \
+        _PyStackRef _tmp_old_op = (*_tmp_op_ptr); \
+        *_tmp_op_ptr = PyStackRef_NULL; \
+        PyStackRef_XCLOSE(_tmp_old_op); \
+    } while (0)
 
 
 #endif // Py_GIL_DISABLED

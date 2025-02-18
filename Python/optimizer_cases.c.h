@@ -310,7 +310,8 @@
                 assert(PyLong_CheckExact(sym_get_const(right)));
                 stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
-                PyObject *temp = PyNumber_Add(sym_get_const(left), sym_get_const(right));
+                PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(left),
+                    (PyLongObject *)sym_get_const(right));
                 if (temp == NULL) {
                     goto error;
                 }

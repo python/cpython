@@ -916,6 +916,7 @@ dummy_func(
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o = PyTuple_GET_ITEM(tuple, index);
             assert(res_o != NULL);
+            PyStackRef_CLOSE_SPECIALIZED(sub_st, _PyLong_ExactDealloc);
             res = PyStackRef_FromPyObjectNew(res_o);
             DECREF_INPUTS();
         }
