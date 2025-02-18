@@ -38,12 +38,6 @@ class DefaultConfig:
         complex: ANSIColors.BOLD_YELLOW,
         bool: ANSIColors.BOLD_YELLOW,
     }
-    # Fallback to look up colors by `isinstance` when not matched
-    # via color_by_type.
-    color_by_baseclass = [
-        ((BaseException,), ANSIColors.BOLD_RED),
-    ]
-
 
     def setup(self):
         import _colorize
@@ -60,10 +54,6 @@ class Completer(rlcompleter.Completer):
     Optionally, display the various completions in different colors
     depending on the type.
     """
-
-    DefaultConfig = DefaultConfig
-    config_filename = '.fancycompleterrc.py.xxx'
-
     def __init__(self, namespace=None, Config=DefaultConfig):
         rlcompleter.Completer.__init__(self, namespace)
         self.config = Config()
@@ -193,14 +183,7 @@ class Completer(rlcompleter.Completer):
 
     def color_for_obj(self, i, name, value):
         t = type(value)
-        color = self.config.color_by_type.get(t, None)
-        if color is None:
-            for x, _color in self.config.color_by_baseclass:
-                if isinstance(value, x):
-                    color = _color
-                    break
-            else:
-                color = ANSIColors.RESET
+        color = self.config.color_by_type.get(t, ANSIColors.RESET)
         # hack: prepend an (increasing) fake escape sequence,
         # so that readline can sort the matches correctly.
         N = f"\x1b[{i:03d};00m"
