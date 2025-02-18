@@ -131,6 +131,12 @@ class AST_Tests(unittest.TestCase):
             tree = ast.parse(snippet)
             compile(tree, '<string>', 'exec')
 
+    def test_parse_invalid_ast(self):
+        # see gh-130139
+        for optval in (-1, 0, 1, 2):
+            self.assertRaises(TypeError, ast.parse, ast.Constant(42),
+                              optimize=optval)
+
     def test_optimization_levels__debug__(self):
         cases = [(-1, '__debug__'), (0, '__debug__'), (1, False), (2, False)]
         for (optval, expected) in cases:
@@ -3238,46 +3244,6 @@ class ASTOptimiziationTests(unittest.TestCase):
         optimized_target = self.wrap_expr(ast.Constant(value=(1,)))
 
         self.assert_ast(code, non_optimized_target, optimized_target)
-
-    def test_folding_comparator(self):
-        code = "1 %s %s1%s"
-        operators = [("in", ast.In()), ("not in", ast.NotIn())]
-        braces = [
-            ("[", "]", ast.List, (1,)),
-            ("{", "}", ast.Set, frozenset({1})),
-        ]
-        for left, right, non_optimized_comparator, optimized_comparator in braces:
-            for op, node in operators:
-                non_optimized_target = self.wrap_expr(ast.Compare(
-                    left=ast.Constant(1), ops=[node],
-                    comparators=[non_optimized_comparator(elts=[ast.Constant(1)])]
-                ))
-                optimized_target = self.wrap_expr(ast.Compare(
-                    left=ast.Constant(1), ops=[node],
-                    comparators=[ast.Constant(value=optimized_comparator)]
-                ))
-                self.assert_ast(code % (op, left, right), non_optimized_target, optimized_target)
-
-    def test_folding_iter(self):
-        code = "for _ in %s1%s: pass"
-        braces = [
-            ("[", "]", ast.List, (1,)),
-            ("{", "}", ast.Set, frozenset({1})),
-        ]
-
-        for left, right, ast_cls, optimized_iter in braces:
-            non_optimized_target = self.wrap_statement(ast.For(
-                target=ast.Name(id="_", ctx=ast.Store()),
-                iter=ast_cls(elts=[ast.Constant(1)]),
-                body=[ast.Pass()]
-            ))
-            optimized_target = self.wrap_statement(ast.For(
-                target=ast.Name(id="_", ctx=ast.Store()),
-                iter=ast.Constant(value=optimized_iter),
-                body=[ast.Pass()]
-            ))
-
-            self.assert_ast(code % (left, right), non_optimized_target, optimized_target)
 
     def test_folding_type_param_in_function_def(self):
         code = "def foo[%s = 1 + 1](): pass"

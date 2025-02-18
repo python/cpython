@@ -1801,10 +1801,12 @@ def test_pdb_invalid_arg():
     >>> def test_function():
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
 
-    >>> with PdbTestInput([
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
     ...     'a = 3',
     ...     'll 4',
     ...     'step 1',
+    ...     'p',
+    ...     'enable ',
     ...     'continue'
     ... ]):
     ...     test_function()
@@ -1819,6 +1821,12 @@ def test_pdb_invalid_arg():
     (Pdb) step 1
     *** Invalid argument: 1
           Usage: s(tep)
+    (Pdb) p
+    *** Argument is required for this command
+          Usage: p expression
+    (Pdb) enable
+    *** Argument is required for this command
+          Usage: enable bpnumber [bpnumber ...]
     (Pdb) continue
     """
 
