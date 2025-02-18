@@ -5,7 +5,7 @@ extern "C" {
 #endif
 
 // Define this to get precise tracking of stackrefs.
-// #define Py_STACKREF_DEBUG 1
+#define Py_STACKREF_DEBUG 1
 
 #ifndef Py_BUILD_CORE
 #  error "this header requires Py_BUILD_CORE define"
@@ -144,6 +144,16 @@ PyStackRef_CLOSE(_PyStackRef ref)
     Py_DECREF(obj);
 }
 
+static inline void
+PyStackRef_XCLOSE(_PyStackRef ref)
+{
+    if (PyStackRef_IsNull(ref)) {
+        return;
+    }
+    PyObject *obj = _Py_stackref_close(ref);
+    Py_DECREF(obj);
+}
+
 static inline _PyStackRef
 _PyStackRef_DUP(_PyStackRef ref, const char *filename, int linenumber)
 {
@@ -153,7 +163,47 @@ _PyStackRef_DUP(_PyStackRef ref, const char *filename, int linenumber)
 }
 #define PyStackRef_DUP(REF) _PyStackRef_DUP(REF, __FILE__, __LINE__)
 
-#define PyStackRef_CLOSE_SPECIALIZED(stackref, dealloc) PyStackRef_CLOSE(stackref)
+extern void PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct);
+
+static inline _PyStackRef
+PyStackRef_MakeHeapSafe(_PyStackRef ref)
+{
+    return ref;
+}
+
+#define PyStackRef_CLEAR(REF) \
+    do { \
+        _PyStackRef *_tmp_op_ptr = &(REF); \
+        _PyStackRef _tmp_old_op = (*_tmp_op_ptr); \
+        *_tmp_op_ptr = PyStackRef_NULL; \
+        PyStackRef_XCLOSE(_tmp_old_op); \
+    } while (0)
+
+
+static inline _PyStackRef
+_PyStackRef_FromPyObjectStealMortal(PyObject *obj, const char *filename, int linenumber)
+{
+    assert(!_Py_IsImmortal(obj));
+    return _Py_stackref_create(obj, filename, linenumber);
+}
+#define PyStackRef_FromPyObjectStealMortal(obj) _PyStackRef_FromPyObjectStealMortal(_PyObject_CAST(obj), __FILE__, __LINE__)
+
+static inline bool
+PyStackRef_IsMortal(_PyStackRef ref)
+{
+    PyObject *obj = _Py_stackref_get_object(ref);
+    if (obj == NULL) {
+        return false;
+    }
+    return _Py_IsImmortal(obj);
+}
+
+static inline int
+PyStackRef_IsHeapSafe(_PyStackRef ref)
+{
+    return 1;
+}
+
 
 #else
 
@@ -512,13 +562,6 @@ PyStackRef_XCLOSE(_PyStackRef ref)
     }
 }
 
-#define PyStackRef_CLEAR(REF) \
-    do { \
-        _PyStackRef *_tmp_op_ptr = &(REF); \
-        _PyStackRef _tmp_old_op = (*_tmp_op_ptr); \
-        *_tmp_op_ptr = PyStackRef_NULL; \
-        PyStackRef_XCLOSE(_tmp_old_op); \
-    } while (0)
 
 #endif // Py_GIL_DISABLED
 
@@ -526,13 +569,13 @@ PyStackRef_XCLOSE(_PyStackRef ref)
 
 #define PyStackRef_Is(a, b) (((a).bits & (~Py_TAG_BITS)) == ((b).bits & (~Py_TAG_BITS)))
 
-// Converts a PyStackRef back to a PyObject *, converting the
-// stackref to a new reference.
-#define PyStackRef_AsPyObjectNew(stackref) Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref))
+#endif // !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
 
 #define PyStackRef_TYPE(stackref) Py_TYPE(PyStackRef_AsPyObjectBorrow(stackref))
 
-#endif // !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
+// Converts a PyStackRef back to a PyObject *, converting the
+// stackref to a new reference.
+#define PyStackRef_AsPyObjectNew(stackref) Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref))
 
 // StackRef type checks
 

@@ -157,7 +157,7 @@ dump_item(_PyStackRef item)
         PyErr_Clear();
     }
     // Don't call __repr__(), it might recurse into the interpreter.
-    printf("<%s at %p>", Py_TYPE(obj)->tp_name, (void *)(item.bits));
+    printf("<%s at %p>", Py_TYPE(obj)->tp_name, (void *)obj);
 }
 
 static void
