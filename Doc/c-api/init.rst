@@ -1511,7 +1511,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    :c:func:`PyThreadState_Release`.
 
    In the case of failure, it is *unsafe* to use the Python API following the
-   call. Releasing the obtained *state* via :c:func:`PyGILState_Release` should
+   call. Releasing the obtained *state* via :c:func:`PyGILState_Release` must
    only be done in the case of success.
 
    .. versionadded:: next
