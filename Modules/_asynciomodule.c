@@ -2234,7 +2234,7 @@ enter_task(PyObject *loop, PyObject *task)
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
 
     if (ts->asyncio_running_loop != loop) {
-        PyErr_Format(PyExc_RuntimeError, "loop mismatch");
+        PyErr_Format(PyExc_RuntimeError, "loop %R is not the running loop", loop);
         return -1;
     }
 
@@ -2257,7 +2257,7 @@ leave_task(PyObject *loop, PyObject *task)
     _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
 
     if (ts->asyncio_running_loop != loop) {
-        PyErr_Format(PyExc_RuntimeError, "loop mismatch");
+        PyErr_Format(PyExc_RuntimeError, "loop %R is not the running loop", loop);
         return -1;
     }
 
