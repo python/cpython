@@ -21539,7 +21539,7 @@ else
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 
-            printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+    printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
 
 
@@ -21555,6 +21555,7 @@ case $ac_sys_system in #(
     ZLIB_TEST="test 1 = 1"
     BINASCII_CFLAGS="$ZLIB_CFLAGS"
     BINASCII_LIBS="$ZLIB_LIBS"
+
            for ac_header in zlib.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
