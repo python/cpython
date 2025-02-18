@@ -145,14 +145,14 @@ class CalledProcessError(SubprocessError):
     def __str__(self):
         if self.returncode and self.returncode < 0:
             try:
-                return "Command '%s' died with %r." % (
-                        self.cmd, signal.Signals(-self.returncode))
+                return "Command '%s' died with %r:\n%s" % (
+                        self.cmd, signal.Signals(-self.returncode), self.stderr)
             except ValueError:
-                return "Command '%s' died with unknown signal %d." % (
-                        self.cmd, -self.returncode)
+                return "Command '%s' died with unknown signal %d:\n%s" % (
+                        self.cmd, -self.returncode, self.stderr)
         else:
-            return "Command '%s' returned non-zero exit status %d." % (
-                    self.cmd, self.returncode)
+            return "Command '%s' returned non-zero exit status %d:\n%s" % (
+                    self.cmd, self.returncode, self.stderr)
 
     @property
     def stdout(self):
