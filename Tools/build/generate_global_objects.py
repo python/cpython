@@ -29,7 +29,6 @@ IDENTIFIERS = [
     'defaultaction',
     'filters',
     'onceregistry',
-    '_warnings_context',
 
     # from WRAP_METHOD() in Objects/weakrefobject.c
     '__bytes__',

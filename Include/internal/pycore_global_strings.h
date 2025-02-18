@@ -265,7 +265,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(_type_)
         STRUCT_FOR_ID(_uninitialized_submodules)
         STRUCT_FOR_ID(_warn_unawaited_coroutine)
-        STRUCT_FOR_ID(_warnings_context)
         STRUCT_FOR_ID(_xoptions)
         STRUCT_FOR_ID(abs_tol)
         STRUCT_FOR_ID(access)

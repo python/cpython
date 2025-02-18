@@ -774,7 +774,6 @@ extern "C" {
     INIT_ID(_type_), \
     INIT_ID(_uninitialized_submodules), \
     INIT_ID(_warn_unawaited_coroutine), \
-    INIT_ID(_warnings_context), \
     INIT_ID(_xoptions), \
     INIT_ID(abs_tol), \
     INIT_ID(access), \
