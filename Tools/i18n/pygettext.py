@@ -44,7 +44,7 @@ Options:
 
     -a
     --extract-all
-        Extract all strings.
+        Deprecated: Not implemented and will be removed in a future version.
 
     -cTAG
     --add-comments=TAG
@@ -590,6 +590,8 @@ def main():
         if opt in ('-h', '--help'):
             usage(0)
         elif opt in ('-a', '--extract-all'):
+            print("DepreciationWarning: -a/--extract-all is not implemented and will be removed in a future version",
+                  file=sys.stderr)
             options.extractall = 1
         elif opt in ('-c', '--add-comments'):
             options.comment_tags.add(arg)
