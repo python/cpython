@@ -28,7 +28,7 @@ class StandardTtkOptionsTests(StandardOptionsTests):
 
     def test_configure_padding(self):
         widget = self.create()
-        if get_tk_patchlevel(self.root) < (8, 6, 14):
+        if get_tk_patchlevel() < (8, 6, 14):
             def padding_conv(value):
                 self.assertIsInstance(value, tuple)
                 return tuple(map(str, value))
