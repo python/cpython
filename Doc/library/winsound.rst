@@ -8,6 +8,8 @@
 .. moduleauthor:: Toby Dickenson <htrd90@zepler.org>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
+**Source code:** :source:`PC/winsound.c`
+
 --------------
 
 The :mod:`winsound` module provides access to the basic sound-playing machinery
