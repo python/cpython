@@ -1,1 +1,0 @@
-Fix several bugs in extraction by switching to an AST parser in :program:`pygettext`.

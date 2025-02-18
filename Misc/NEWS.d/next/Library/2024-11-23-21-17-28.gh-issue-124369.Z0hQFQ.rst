@@ -1,1 +1,0 @@
-Deprecate ``pdb.Pdb.curframe_locals``
