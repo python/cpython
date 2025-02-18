@@ -1451,7 +1451,7 @@ class ExceptionTests(unittest.TestCase):
             next(generator)
             recursionlimit = sys.getrecursionlimit()
             try:
-                recurse(100_000)
+                recurse(support.exceeds_recursion_limit())
             finally:
                 sys.setrecursionlimit(recursionlimit)
                 print('Done.')

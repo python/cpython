@@ -2082,7 +2082,7 @@ class TestLRU:
             fib.cache_clear()
             with support.infinite_recursion():
                 with self.assertRaises(RecursionError):
-                    fib(100_000)
+                    fib(support.exceeds_recursion_limit())
 
 
 @py_functools.lru_cache()

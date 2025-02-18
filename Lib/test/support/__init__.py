@@ -56,7 +56,7 @@ __all__ = [
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
-    "Py_DEBUG", "skip_on_s390x",
+    "Py_DEBUG", "exceeds_recursion_limit", "skip_on_s390x",
     "requires_jit_enabled",
     "requires_jit_disabled",
     "force_not_colorized",
@@ -2624,6 +2624,12 @@ def adjust_int_max_str_digits(max_digits):
         yield
     finally:
         sys.set_int_max_str_digits(current)
+
+
+def exceeds_recursion_limit():
+    """For recursion tests, easily exceeds default recursion limit."""
+    return 100_000
+
 
 # Windows doesn't have os.uname() but it doesn't support s390x.
 is_s390x = hasattr(os, 'uname') and os.uname().machine == 's390x'
