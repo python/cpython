@@ -2916,9 +2916,7 @@ bytearrayiter_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyObject *ret = NULL;
     Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
     if (index >= 0) {
-        if (index <= PyByteArray_GET_SIZE(it->it_seq)) {
-            ret = Py_BuildValue("N(O)n", iter, it->it_seq, index);
-        }
+        ret = Py_BuildValue("N(O)n", iter, it->it_seq, index);
     }
     if (ret == NULL) {
         ret = Py_BuildValue("N(())", iter);
