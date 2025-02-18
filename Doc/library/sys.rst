@@ -602,9 +602,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
         - :option:`-X thread_inherit_context <-X>` and
           :envvar:`PYTHON_THREAD_INHERIT_CONTEXT`
 
-      * - .. attribute:: flags.thread_safe_warnings
+      * - .. attribute:: flags.context_aware_warnings
         - :option:`-X thread_inherit_context <-X>` and
-          :envvar:`PYTHON_THREAD_SAFE_WARNINGS`
+          :envvar:`PYTHON_CONTEXT_AWARE_WARNINGS`
 
 
    .. versionchanged:: 3.2
@@ -640,7 +640,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       Added the ``thread_inherit_context`` attribute.
 
    .. versionchanged:: 3.14
-      Added the ``thread_safe_warnings`` attribute.
+      Added the ``context_aware_warnings`` attribute.
 
 
 .. data:: float_info

@@ -46,7 +46,7 @@ _filters_version = 1
 # If true, catch_warnings() will use a context var to hold the modified
 # filters list.  Otherwise, catch_warnings() will operate on the 'filters'
 # global of the warnings module.
-_use_context = sys.flags.thread_safe_warnings
+_use_context = sys.flags.context_aware_warnings
 
 
 class _Context:

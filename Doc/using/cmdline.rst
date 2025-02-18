@@ -637,11 +637,11 @@ Miscellaneous options
 
      .. versionadded:: 3.14
 
-   * :samp:`-X thread_safe_warnings={0,1}` causes the
+   * :samp:`-X context_aware_warnings={0,1}` causes the
      :class:`warnings.catch_warnings` context manager to use a
      :class:`~contextvars.ContextVar` to store warnings filter state.  If
      unset, the value of this option defaults to ``1`` on free-threaded builds
-     and to ``0`` otherwise.  See also :envvar:`PYTHON_THREAD_SAFE_WARNINGS`.
+     and to ``0`` otherwise.  See also :envvar:`PYTHON_CONTEXT_AWARE_WARNINGS`.
 
      .. versionadded:: 3.14
 
@@ -1248,13 +1248,13 @@ conflict.
 
    .. versionadded:: 3.14
 
-.. envvar:: PYTHON_THREAD_SAFE_WARNINGS
+.. envvar:: PYTHON_CONTEXT_AWARE_WARNINGS
 
    If set to ``1`` then the :class:`warnings.catch_warnings` context
    manager will use a :class:`~contextvars.ContextVar` to store warnings
    filter state.  If unset, this variable defaults to ``1`` on
    free-threaded builds and to ``0`` otherwise.  See :option:`-X
-   thread_safe_warnings<-X>`.
+   context_aware_warnings<-X>`.
 
    .. versionadded:: 3.14
 

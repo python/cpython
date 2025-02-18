@@ -1846,7 +1846,7 @@ class SizeofTest(unittest.TestCase):
         # XXX
         # sys.flags
         # FIXME: The +3 is for the 'gil', 'thread_inherit_context' and
-        # 'thread_safe_warnings' flags and will not be necessary once
+        # 'context_aware_warnings' flags and will not be necessary once
         # gh-122575 is fixed
         check(sys.flags, vsize('') + self.P * (3 + len(sys.flags)))
 

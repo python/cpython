@@ -328,9 +328,9 @@ of deprecated code.
 
     .. note::
 
-        See :ref:`warning-thread-safe` for details on the thread-safety of the
-        :class:`catch_warnings` context manager when used in multi-threaded
-        programs.
+        See :ref:`warning-concurrent-safe` for details on the
+        concurrency-safety of the :class:`catch_warnings` context manager when
+        used in programs using multiple threads or async functions.
 
 .. _warning-testing:
 
@@ -370,9 +370,9 @@ results.
 
     .. note::
 
-        See :ref:`warning-thread-safe` for details on the thread-safety of the
-        :class:`catch_warnings` context manager when used in multi-threaded
-        programs.
+        See :ref:`warning-concurrent-safe` for details on the
+        concurrency-safety of the :class:`catch_warnings` context manager when
+        used in programs using multiple threads or async functions.
 
 When testing multiple operations that raise the same kind of warning, it
 is important to test them in a manner that confirms each operation is raising
@@ -620,9 +620,9 @@ Available Context Managers
 
     .. note::
 
-        See :ref:`warning-thread-safe` for details on the thread-safety of the
-        :class:`catch_warnings` context manager when used in multi-threaded
-        programs.
+        See :ref:`warning-concurrent-safe` for details on the
+        concurrency-safety of the :class:`catch_warnings` context manager when
+        used in programs using multiple threads or async functions.
 
 
     .. versionchanged:: 3.11
@@ -630,21 +630,25 @@ Available Context Managers
         Added the *action*, *category*, *lineno*, and *append* parameters.
 
 
-.. _warning-thread-safe:
+.. _warning-concurrent-safe:
 
-Thread-safety of Context Managers
----------------------------------
+Concurrent safety of Context Managers
+-------------------------------------
 
-The behavior of :class:`catch_warnings` context manager depends on the value
-of the :data:`sys.flags.thread_safe_warnings` flag.  If the flag is true, the
-context manager behaves in a thread-safe fashion and otherwise not.  Being
-thread-safe means that behavior is predictable in a multi-threaded program.
-For free-threaded builds, the flag defaults to true, and false otherwise.
+The behavior of :class:`catch_warnings` context manager depends on the
+:data:`sys.flags.context_aware_warnings` flag.  If the flag is true, the
+context manager behaves in a concurrent-safe fashion and otherwise not.
+Concurrent-safe means that it is both thread-safe and safe to use within
+:ref:`asyncio coroutines <coroutine>` and tasks.  Being thread-safe means
+that behavior is predictable in a multi-threaded program.  The flag defaults
+to true for free-threaded builds and false otherwise.
 
-If the :data:`~sys.flags.thread_safe_warnings` flag is false, then
+If the :data:`~sys.flags.context_aware_warnings` flag is false, then
 :class:`catch_warnings` will modify the global attributes of the
-:mod:`warnings` module.  This is not thread-safe.  If two or more threads use
-the context manager at the same time, the behavior is undefined.
+:mod:`warnings` module.  This is not safe if used within a concurrent program
+(using multiple threads or using asyncio coroutines).  For example, if two
+or more threads use the :class:`catch_warnings` class at the same time, the
+behavior is undefined.
 
 If the flag is true, :class:`catch_warnings` will not modify global
 attributes and will instead use a :class:`~contextvars.ContextVar` to
@@ -655,16 +659,16 @@ thread-safe.
 The *record* parameter of the context handler also behaves differently
 depending on the value of the flag.  When *record* is true and the flag is
 false, the context manager works by replacing and then later restoring the
-module's :func:`showwarning` function.  This is not thread-safe.
+module's :func:`showwarning` function.  That is not concurrent-safe.
 
 When *record* is true and the flag is false, the :func:`showwarning` function
 is not replaced.  The recording status is instead indicated by an internal
 property in the context variable.  In this case, the :func:`showwarning`
 function will not be restored when exiting the context handler.
 
-The :data:`~sys.flags.thread_safe_warnings` flag can be set the :option:`-X
-thread_safe_warnings<-X>` command-line option or by the
-:envvar:`PYTHON_THREAD_SAFE_WARNINGS` environment variable.
+The :data:`~sys.flags.context_aware_warnings` flag can be set the :option:`-X
+context_aware_warnings<-X>` command-line option or by the
+:envvar:`PYTHON_CONTEXT_AWARE_WARNINGS` environment variable.
 
     .. note::
 
@@ -681,6 +685,6 @@ thread_safe_warnings<-X>` command-line option or by the
 
 .. versionchanged:: 3.14
 
-   Added the :data:`sys.flags.thread_safe_warnings` flag and the use of a
+   Added the :data:`sys.flags.context_aware_warnings` flag and the use of a
    context variable for :class:`catch_warnings` if the flag is true.  Previous
    versions of Python acted as if the flag was always set to false.
