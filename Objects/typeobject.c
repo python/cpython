@@ -9628,7 +9628,7 @@ FUNCNAME(PyObject *self, PyObject *other) \
 { \
     PyObject* stack[2]; \
     PyThreadState *tstate = _PyThreadState_GET(); \
-    int do_other = /*(void*)TESTFUNC != (void*)slot_nb_power &&*/ !Py_IS_TYPE(self, Py_TYPE(other)) && \
+    int do_other = !Py_IS_TYPE(self, Py_TYPE(other)) && \
         Py_TYPE(other)->tp_as_number != NULL && \
         Py_TYPE(other)->tp_as_number->SLOTNAME == TESTFUNC; \
     if (Py_TYPE(self)->tp_as_number != NULL && \
