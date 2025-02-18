@@ -5,15 +5,10 @@
 """
 Colorful TAB completion for Python prompt
 """
-from __future__ import with_statement
-from __future__ import print_function
-
 from _pyrepl import readline
 from _colorize import ANSIColors
 import rlcompleter
-import sys
 import types
-import os.path
 from itertools import count
 
 
@@ -124,7 +119,7 @@ class Completer(rlcompleter.Completer):
                 except Exception as exc:
                     values.append(exc)
         if self.config.use_colors and names:
-            return self.color_matches(names, values)
+            return self.colorize_matches(names, values)
         return names
 
     def attr_matches(self, text):
