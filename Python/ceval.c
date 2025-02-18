@@ -43,11 +43,6 @@
 
 #include <stdbool.h>              // bool
 
-#ifdef Py_DEBUG
-   /* For debugging the interpreter: */
-#  define LLTRACE  1      /* Low-level trace feature */
-#endif
-
 #if !defined(Py_BUILD_CORE)
 #  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
 #endif
@@ -136,10 +131,11 @@
 #endif
 
 
-#ifdef LLTRACE
+#ifdef Py_DEBUG
 static void
 dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
 {
+    _PyFrame_SetStackPointer(frame, stack_pointer);
     _PyStackRef *stack_base = _PyFrame_Stackbase(frame);
     PyObject *exc = PyErr_GetRaisedException();
     printf("    stack=[");
@@ -170,6 +166,7 @@ dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
     printf("]\n");
     fflush(stdout);
     PyErr_SetRaisedException(exc);
+    _PyFrame_GetStackPointer(frame);
 }
 
 static void
@@ -367,6 +364,7 @@ const binaryfunc _PyEval_BinaryOps[] = {
     [NB_INPLACE_SUBTRACT] = PyNumber_InPlaceSubtract,
     [NB_INPLACE_TRUE_DIVIDE] = PyNumber_InPlaceTrueDivide,
     [NB_INPLACE_XOR] = PyNumber_InPlaceXor,
+    [NB_SUBSCR] = PyObject_GetItem,
 };
 
 const conversion_func _PyEval_ConversionFuncs[4] = {
@@ -768,7 +766,20 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 #define PY_EVAL_C_STACK_UNITS 2
 
 
-#ifdef Py_TAIL_CALL_INTERP
+/* _PyEval_EvalFrameDefault is too large to optimize for speed with PGO on MSVC.
+ */
+#if (defined(_MSC_VER) && \
+     (_MSC_VER < 1943) && \
+     defined(_Py_USING_PGO))
+#define DO_NOT_OPTIMIZE_INTERP_LOOP
+#endif
+
+#ifdef DO_NOT_OPTIMIZE_INTERP_LOOP
+#  pragma optimize("t", off)
+/* This setting is reversed below following _PyEval_EvalFrameDefault */
+#endif
+
+#if Py_TAIL_CALL_INTERP
 #include "opcode_targets.h"
 #include "generated_cases.c.h"
 #endif
@@ -779,7 +790,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     _Py_EnsureTstateNotNULL(tstate);
     CALL_STAT_INC(pyeval_calls);
 
-#if USE_COMPUTED_GOTOS && !defined(Py_TAIL_CALL_INTERP)
+#if USE_COMPUTED_GOTOS && !Py_TAIL_CALL_INTERP
 /* Import the static jump table */
 #include "opcode_targets.h"
 #endif
@@ -790,6 +801,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #ifndef Py_TAIL_CALL_INTERP
     uint8_t opcode;    /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
+    assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
 #endif
     _PyInterpreterFrame entry_frame;
 
@@ -818,7 +830,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.owner = FRAME_OWNED_BY_INTERPRETER;
     entry_frame.visited = 0;
     entry_frame.return_offset = 0;
-#ifdef LLTRACE
+#ifdef Py_DEBUG
     entry_frame.lltrace = 0;
 #endif
     /* Push frame */
@@ -849,9 +861,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         /* Because this avoids the RESUME, we need to update instrumentation */
         _Py_Instrument(_PyFrame_GetCode(frame), tstate->interp);
         next_instr = frame->instr_ptr;
-        stack_pointer = _PyFrame_GetStackPointer(frame);
         monitor_throw(tstate, frame, next_instr);
-#ifdef Py_TAIL_CALL_INTERP
+        stack_pointer = _PyFrame_GetStackPointer(frame);
+#if Py_TAIL_CALL_INTERP
         return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0);
 #else
         goto error;
@@ -864,7 +876,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     const _PyUOpInstruction *next_uop = NULL;
 #endif
 
-#ifdef Py_TAIL_CALL_INTERP
+#if Py_TAIL_CALL_INTERP
     return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0);
 #else
     goto start_frame;
@@ -883,9 +895,6 @@ enter_tier_two:
 
 #undef LOAD_IP
 #define LOAD_IP(UNUSED) (void)0
-
-#undef GOTO_ERROR
-#define GOTO_ERROR(LABEL) goto LABEL ## _tier_two
 
 #ifdef Py_STATS
 // Disable these macros that apply to Tier 1 stats when we are in Tier 2
@@ -962,45 +971,16 @@ jump_to_error_target:
                _PyOpcode_OpName[frame->instr_ptr->op.code]);
     }
 #endif
-    assert (next_uop[-1].format == UOP_FORMAT_JUMP);
+    assert(next_uop[-1].format == UOP_FORMAT_JUMP);
     uint16_t target = uop_get_error_target(&next_uop[-1]);
     next_uop = current_executor->trace + target;
     goto tier2_dispatch;
-
-error_tier_two:
-    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    assert(next_uop[-1].format == UOP_FORMAT_TARGET);
-    frame->return_offset = 0;  // Don't leave this random
-    Py_DECREF(current_executor);
-    tstate->previous_executor = NULL;
-    next_instr = frame->instr_ptr;
-    goto error;
 
 jump_to_jump_target:
     assert(next_uop[-1].format == UOP_FORMAT_JUMP);
     target = uop_get_jump_target(&next_uop[-1]);
     next_uop = current_executor->trace + target;
     goto tier2_dispatch;
-
-exit_to_tier1_dynamic:
-    next_instr = frame->instr_ptr;
-    goto goto_to_tier1;
-exit_to_tier1:
-    assert(next_uop[-1].format == UOP_FORMAT_TARGET);
-    next_instr = next_uop[-1].target + _PyFrame_GetBytecode(frame);
-goto_to_tier1:
-#ifdef Py_DEBUG
-    if (frame->lltrace >= 2) {
-        printf("DEOPT: [UOp ");
-        _PyUOpPrint(&next_uop[-1]);
-        printf(" -> %s]\n",
-               _PyOpcode_OpName[next_instr->op.code]);
-    }
-#endif
-    OPT_HIST(trace_uop_execution_counter, trace_run_length_hist);
-    Py_DECREF(current_executor);
-    tstate->previous_executor = NULL;
-    DISPATCH();
 
 #endif  // _Py_JIT
 
@@ -1021,6 +1001,10 @@ early_exit:
     tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
     return NULL;
 }
+
+#ifdef DO_NOT_OPTIMIZE_INTERP_LOOP
+#  pragma optimize("", on)
+#endif
 
 #if defined(__GNUC__)
 #  pragma GCC diagnostic pop
@@ -2031,7 +2015,7 @@ _PyEval_ExceptionGroupMatch(_PyInterpreterFrame *frame, PyObject* exc_value,
 */
 
 int
-_PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v_stackref,
+_PyEval_UnpackIterableStackRef(PyThreadState *tstate, PyObject *v,
                        int argcnt, int argcntafter, _PyStackRef *sp)
 {
     int i = 0, j = 0;
@@ -2039,8 +2023,6 @@ _PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v_stackref,
     PyObject *it;  /* iter(v) */
     PyObject *w;
     PyObject *l = NULL; /* variable list */
-
-    PyObject *v = PyStackRef_AsPyObjectBorrow(v_stackref);
     assert(v != NULL);
 
     it = PyObject_GetIter(v);

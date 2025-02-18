@@ -97,23 +97,23 @@ The following options are accepted:
 
 .. program:: dis
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Display usage and exit.
 
-.. cmdoption:: -C, --show-caches
+.. option:: -C, --show-caches
 
    Show inline caches.
 
-.. cmdoption:: -O, --show-offsets
+.. option:: -O, --show-offsets
 
    Show offsets of instructions.
 
-.. cmdoption:: -P, --show-positions
+.. option:: -P, --show-positions
 
    Show positions of instructions in the source code.
 
-.. cmdoption:: -S, --specialized
+.. option:: -S, --specialized
 
    Show specialized bytecode.
 
@@ -703,15 +703,8 @@ not have to be) the original ``STACK[-2]``.
       STACK.append(lhs op rhs)
 
    .. versionadded:: 3.11
-
-
-.. opcode:: BINARY_SUBSCR
-
-   Implements::
-
-      key = STACK.pop()
-      container = STACK.pop()
-      STACK.append(container[key])
+   .. versionchanged:: 3.14
+      With oparg :``NB_SUBSCR``, implements binary subscript (replaces opcode ``BINARY_SUBSCR``)
 
 
 .. opcode:: STORE_SUBSCR
