@@ -16,6 +16,7 @@ struct _warnings_runtime_state {
     PyObject *default_action; /* String */
     _PyRecursiveMutex lock;
     long filters_version;
+    PyObject *context;
 };
 
 extern int _PyWarnings_InitState(PyInterpreterState *interp);

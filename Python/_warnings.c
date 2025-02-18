@@ -67,6 +67,7 @@ warnings_clear_state(WarningsState *st)
     Py_CLEAR(st->filters);
     Py_CLEAR(st->once_registry);
     Py_CLEAR(st->default_action);
+    Py_CLEAR(st->context);
 }
 
 #ifndef Py_DEBUG
@@ -150,6 +151,13 @@ _PyWarnings_InitState(PyInterpreterState *interp)
     if (st->default_action == NULL) {
         st->default_action = PyUnicode_FromString("default");
         if (st->default_action == NULL) {
+            return -1;
+        }
+    }
+
+    if (st->context == NULL) {
+        st->context = PyContextVar_New("_warnings_context", NULL);
+        if (st->context == NULL) {
             return -1;
         }
     }
@@ -257,30 +265,12 @@ warnings_lock_held(WarningsState *st)
 static PyObject *
 get_warnings_context(PyInterpreterState *interp)
 {
-    PyObject *ctx_var = GET_WARNINGS_ATTR(interp, _warnings_context, 0);
-    if (ctx_var == NULL) {
-        if (!PyErr_Occurred()) {
-            // likely that the 'warnings' module doesn't exist anymore
-            Py_RETURN_NONE;
-        }
-        else {
-            return NULL;
-        }
-    }
-    if (!PyContextVar_CheckExact(ctx_var)) {
-        PyErr_Format(PyExc_TypeError,
-                     MODULE_NAME "._warnings_context must be a ContextVar, "
-                     "not '%.200s'",
-                     Py_TYPE(ctx_var)->tp_name);
-        Py_DECREF(ctx_var);
-        return NULL;
-    }
+    WarningsState *st = warnings_get_state(interp);
+    assert(PyContextVar_CheckExact(st->context));
     PyObject *ctx;
-    if (PyContextVar_Get(ctx_var, NULL, &ctx) < 0) {
-        Py_DECREF(ctx_var);
+    if (PyContextVar_Get(st->context, NULL, &ctx) < 0) {
         return NULL;
     }
-    Py_DECREF(ctx_var);
     if (ctx == NULL) {
         Py_RETURN_NONE;
     }
@@ -1650,6 +1640,9 @@ warnings_module_exec(PyObject *module)
         return -1;
     }
     if (PyModule_AddObjectRef(module, "_defaultaction", st->default_action) < 0) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(module, "_warnings_context", st->context) < 0) {
         return -1;
     }
     return 0;
