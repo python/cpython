@@ -5325,12 +5325,9 @@ fi
 dnl Check for compression libraries
 AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy; zlib 1.2.0 (2003) added inflateCopy.])
 
-PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0],
-[
+PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
   have_zlib=yes
-  AC_DEFINE([HAVE_ZLIB_COPY], [1])
-],
-[
+  AC_DEFINE([HAVE_ZLIB_COPY], [1])], [
   WITH_SAVE_ENV([
     CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
     LIBS="$LIBS $ZLIB_LIBS"
@@ -5344,7 +5341,7 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0],
     ])
   ])
 ])
-AS_CASE([$host_os],
+AS_CASE([$ac_sys_system],
   [WASI], [
     dnl WASI: Do not use zlib for binascii
     BINASCII_CFLAGS="-DNO_USE_ZLIB"

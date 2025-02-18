@@ -21808,9 +21808,8 @@ printf "%s\n" "yes" >&6; }
   have_zlib=yes
   printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
-
 fi
-case $host_os in #(
+case $ac_sys_system in #(
   WASI) :
 
         BINASCII_CFLAGS="-DNO_USE_ZLIB"
