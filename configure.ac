@@ -5327,21 +5327,23 @@ AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy; zlib 
 dnl 2022-03: Until we know if third party zlib modules people use (for hardware
 dnl accelerators, parallelism, etc.) all support copy, lets not assume.
 
-dnl For Emscripten/WASI builds, set up zlib flags correctly.
-PY_CHECK_EMSCRIPTEN_PORT([ZLIB], [-sUSE_ZLIB])
+PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
+  dnl zlib 1.2.0 (2003) added inflateCopy
+  AC_DEFINE([HAVE_ZLIB_COPY], [1])
+]
 
 AS_CASE([$ac_sys_system],
   [WASI], [
             dnl For WASI we use the internal CRC32.
             BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
             BINASCII_LIBS=""
+            ZLIB_TEST="[test 1 = 0]"
           ],
-  [PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
-    dnl zlib 1.2.0 (2003) added inflateCopy
-    AC_DEFINE([HAVE_ZLIB_COPY], [1])
+  [
+    ZLIB_TEST="[test 1 = 1]"
     BINASCII_CFLAGS="$ZLIB_CFLAGS"
     BINASCII_LIBS="$ZLIB_LIBS"
-  ], [
+
     AC_CHECK_HEADERS([zlib.h], [
       WITH_SAVE_ENV([
         AC_CHECK_LIB([z], [gzread], [
@@ -7944,8 +7946,7 @@ PY_STDLIB_MOD([_uuid],
   [$LIBUUID_CFLAGS], [$LIBUUID_LIBS])
 
 dnl compression libs
-PY_STDLIB_MOD([zlib], [], [test "$ac_sys_system" != WASI],
-  [$ZLIB_CFLAGS], [$ZLIB_LIBS])
+PY_STDLIB_MOD([zlib], [], [$ZLIB_TEST], [$ZLIB_CFLAGS], [$ZLIB_LIBS])
 dnl binascii uses zlib for optimized crc32.
 PY_STDLIB_MOD_SIMPLE([binascii], [$BINASCII_CFLAGS], [$BINASCII_LIBS])
 PY_STDLIB_MOD([_bz2], [], [test "$have_bzip2" = yes],

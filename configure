@@ -21450,27 +21450,6 @@ fi
 
 
 
-
-
-  if test "$ac_sys_system" = "Emscripten" -a -z "$ZLIB_CFLAGS" -a -z "$ZLIB_LIBS"
-then :
-
-    ZLIB_CFLAGS="-sUSE_ZLIB"
-    ZLIB_LIBS="-sUSE_ZLIB"
-
-fi
-
-
-
-
-case $ac_sys_system in #(
-  WASI) :
-
-                        BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
-            BINASCII_LIBS=""
-           ;; #(
-  *) :
-
 pkg_failed=no
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for zlib >= 1.2.0" >&5
 printf %s "checking for zlib >= 1.2.0... " >&6; }
@@ -21529,295 +21508,191 @@ fi
         # Put the nasty error message in config.log where it belongs
         echo "$ZLIB_PKG_ERRORS" >&5
 
+        as_fn_error $? "Package requirements (zlib >= 1.2.0) were not met:
 
-           for ac_header in zlib.h
-do :
-  ac_fn_c_check_header_compile "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_zlib_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_ZLIB_H 1" >>confdefs.h
+$ZLIB_PKG_ERRORS
 
-      save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
+Consider adjusting the PKG_CONFIG_PATH environment variable if you
+installed software in a non-standard prefix.
 
-
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
-printf %s "checking for gzread in -lz... " >&6; }
-if test ${ac_cv_lib_z_gzread+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lz  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.
-   The 'extern "C"' is for builds by C++ compilers;
-   although this is not generally supported in C code supporting it here
-   has little cost and some practical benefit (sr 110532).  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char gzread (void);
-int
-main (void)
-{
-return gzread ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_z_gzread=yes
-else case e in #(
-  e) ac_cv_lib_z_gzread=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_gzread" >&5
-printf "%s\n" "$ac_cv_lib_z_gzread" >&6; }
-if test "x$ac_cv_lib_z_gzread" = xyes
-then :
-
-          ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-          ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
-          { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
-printf %s "checking for inflateCopy in -lz... " >&6; }
-if test ${ac_cv_lib_z_inflateCopy+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lz  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.
-   The 'extern "C"' is for builds by C++ compilers;
-   although this is not generally supported in C code supporting it here
-   has little cost and some practical benefit (sr 110532).  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char inflateCopy (void);
-int
-main (void)
-{
-return inflateCopy ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_z_inflateCopy=yes
-else case e in #(
-  e) ac_cv_lib_z_inflateCopy=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_inflateCopy" >&5
-printf "%s\n" "$ac_cv_lib_z_inflateCopy" >&6; }
-if test "x$ac_cv_lib_z_inflateCopy" = xyes
-then :
-  printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
-
-fi
-
-
-else case e in #(
-  e)
-          as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
-         ;;
-esac
-fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-
-else case e in #(
-  e)
-        as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
-     ;;
-esac
-fi
-
-done
-
+Alternatively, you may set the environment variables ZLIB_CFLAGS
+and ZLIB_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details." "$LINENO" 5
 elif test $pkg_failed = untried; then
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
+        { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
+as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
+is in your PATH or set the PKG_CONFIG environment variable to the full
+path to pkg-config.
 
-           for ac_header in zlib.h
-do :
-  ac_fn_c_check_header_compile "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_zlib_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_ZLIB_H 1" >>confdefs.h
+Alternatively, you may set the environment variables ZLIB_CFLAGS
+and ZLIB_LIBS to avoid the need to call pkg-config.
+See the pkg-config man page for more details.
 
-      save_CFLAGS=$CFLAGS
-save_CPPFLAGS=$CPPFLAGS
-save_LDFLAGS=$LDFLAGS
-save_LIBS=$LIBS
-
-
-        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
-printf %s "checking for gzread in -lz... " >&6; }
-if test ${ac_cv_lib_z_gzread+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lz  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.
-   The 'extern "C"' is for builds by C++ compilers;
-   although this is not generally supported in C code supporting it here
-   has little cost and some practical benefit (sr 110532).  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char gzread (void);
-int
-main (void)
-{
-return gzread ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_z_gzread=yes
-else case e in #(
-  e) ac_cv_lib_z_gzread=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_gzread" >&5
-printf "%s\n" "$ac_cv_lib_z_gzread" >&6; }
-if test "x$ac_cv_lib_z_gzread" = xyes
-then :
-
-          ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
-          ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
-          { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
-printf %s "checking for inflateCopy in -lz... " >&6; }
-if test ${ac_cv_lib_z_inflateCopy+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) ac_check_lib_save_LIBS=$LIBS
-LIBS="-lz  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.
-   The 'extern "C"' is for builds by C++ compilers;
-   although this is not generally supported in C code supporting it here
-   has little cost and some practical benefit (sr 110532).  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char inflateCopy (void);
-int
-main (void)
-{
-return inflateCopy ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"
-then :
-  ac_cv_lib_z_inflateCopy=yes
-else case e in #(
-  e) ac_cv_lib_z_inflateCopy=no ;;
-esac
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_inflateCopy" >&5
-printf "%s\n" "$ac_cv_lib_z_inflateCopy" >&6; }
-if test "x$ac_cv_lib_z_inflateCopy" = xyes
-then :
-  printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
-
-fi
-
-
-else case e in #(
-  e)
-          as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
-         ;;
-esac
-fi
-
-
-CFLAGS=$save_CFLAGS
-CPPFLAGS=$save_CPPFLAGS
-LDFLAGS=$save_LDFLAGS
-LIBS=$save_LIBS
-
-
-
-else case e in #(
-  e)
-        as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
-     ;;
-esac
-fi
-
-done
-
+To get pkg-config, see <http://pkg-config.freedesktop.org/>.
+See 'config.log' for more details" "$LINENO" 5; }
 else
         ZLIB_CFLAGS=$pkg_cv_ZLIB_CFLAGS
         ZLIB_LIBS=$pkg_cv_ZLIB_LIBS
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
 
-        printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+            printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
+
+
+case $ac_sys_system in #(
+  WASI) :
+
+                        BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
+            BINASCII_LIBS=""
+            ZLIB_TEST="test 1 = 0"
+           ;; #(
+  *) :
+
+    ZLIB_TEST="test 1 = 1"
     BINASCII_CFLAGS="$ZLIB_CFLAGS"
     BINASCII_LIBS="$ZLIB_LIBS"
+           for ac_header in zlib.h
+do :
+  ac_fn_c_check_header_compile "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
+if test "x$ac_cv_header_zlib_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_ZLIB_H 1" >>confdefs.h
+
+      save_CFLAGS=$CFLAGS
+save_CPPFLAGS=$CPPFLAGS
+save_LDFLAGS=$LDFLAGS
+save_LIBS=$LIBS
+
+
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gzread in -lz" >&5
+printf %s "checking for gzread in -lz... " >&6; }
+if test ${ac_cv_lib_z_gzread+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) ac_check_lib_save_LIBS=$LIBS
+LIBS="-lz  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.
+   The 'extern "C"' is for builds by C++ compilers;
+   although this is not generally supported in C code supporting it here
+   has little cost and some practical benefit (sr 110532).  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char gzread (void);
+int
+main (void)
+{
+return gzread ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_z_gzread=yes
+else case e in #(
+  e) ac_cv_lib_z_gzread=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_gzread" >&5
+printf "%s\n" "$ac_cv_lib_z_gzread" >&6; }
+if test "x$ac_cv_lib_z_gzread" = xyes
+then :
+
+          ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
+          ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+          { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
+printf %s "checking for inflateCopy in -lz... " >&6; }
+if test ${ac_cv_lib_z_inflateCopy+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) ac_check_lib_save_LIBS=$LIBS
+LIBS="-lz  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.
+   The 'extern "C"' is for builds by C++ compilers;
+   although this is not generally supported in C code supporting it here
+   has little cost and some practical benefit (sr 110532).  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char inflateCopy (void);
+int
+main (void)
+{
+return inflateCopy ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"
+then :
+  ac_cv_lib_z_inflateCopy=yes
+else case e in #(
+  e) ac_cv_lib_z_inflateCopy=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_z_inflateCopy" >&5
+printf "%s\n" "$ac_cv_lib_z_inflateCopy" >&6; }
+if test "x$ac_cv_lib_z_inflateCopy" = xyes
+then :
+  printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
 fi
- ;;
+
+
+else case e in #(
+  e)
+          as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
+         ;;
 esac
+fi
+
+
+CFLAGS=$save_CFLAGS
+CPPFLAGS=$save_CPPFLAGS
+LDFLAGS=$save_LDFLAGS
+LIBS=$save_LIBS
+
+
+
+else case e in #(
+  e)
+        as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
+     ;;
+esac
+fi
+
+done
+   ;;
+esac
+]
+fi
 
 
 
@@ -32614,7 +32489,7 @@ then :
 
     if true
 then :
-  if test "$ac_sys_system" != WASI
+  if $ZLIB_TEST
 then :
   py_cv_module_zlib=yes
 else case e in #(
