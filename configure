@@ -21814,6 +21814,7 @@ case $ac_sys_system in #(
 
         BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
     BINASCII_LIBS=""
+    have_zlib=no
    ;; #(
   *) :
 

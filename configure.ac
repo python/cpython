@@ -5346,6 +5346,7 @@ AS_CASE([$ac_sys_system],
     dnl WASI: Do not use zlib for binascii
     BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
     BINASCII_LIBS=""
+    have_zlib=no
   ], [
     AS_VAR_IF([have_zlib], [yes], [
       BINASCII_CFLAGS="$ZLIB_CFLAGS"
