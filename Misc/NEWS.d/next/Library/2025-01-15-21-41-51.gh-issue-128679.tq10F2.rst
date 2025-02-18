@@ -1,3 +1,0 @@
-:mod:`tracemalloc`: Fix race conditions when :func:`tracemalloc.stop` is
-called by a thread, while other threads are tracing memory allocations.
-Patch by Victor Stinner.
