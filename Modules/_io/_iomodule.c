@@ -367,10 +367,10 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         if (blksize_obj == NULL)
             goto error;
         buffering = PyLong_AsLong(blksize_obj);
-        buffering = Py_MAX(Py_MIN(buffering, 8192 * 1024), DEFAULT_BUFFER_SIZE);
         Py_DECREF(blksize_obj);
         if (buffering == -1 && PyErr_Occurred())
             goto error;
+        buffering = Py_MAX(Py_MIN(buffering, 8192 * 1024), DEFAULT_BUFFER_SIZE);
     }
     if (buffering < 0) {
         PyErr_SetString(PyExc_ValueError,
