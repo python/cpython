@@ -1,2 +1,0 @@
-Fix :mod:`pydoc` for methods with the ``__module__`` attribute equal to
-``None``.
