@@ -53,6 +53,7 @@ class AllTest(unittest.TestCase):
             with warnings_helper.check_warnings(
                 ("", DeprecationWarning),
                 ("", ResourceWarning),
+                ("", SyntaxWarning),
                 quiet=True):
                 try:
                     exec("from %s import *" % modname, names)
