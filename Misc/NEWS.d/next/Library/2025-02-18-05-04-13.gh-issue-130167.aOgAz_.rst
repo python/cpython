@@ -1,0 +1,2 @@
+Improve speed of :func:`inspect.formatannotation` by replacing :mod:`re`
+with ``.replace()`` method. Patch by Semyon Moroz.
