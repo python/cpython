@@ -2272,10 +2272,12 @@ class BaseTaskTests:
 
         self.assertEqual(self.all_tasks(loop=self.loop), {task})
 
-        asyncio._set_event_loop(None)
 
         # execute the task so it waits for future
-        self.loop.run_until_complete(asyncio.sleep(0))
+        asyncio._set_running_loop(self.loop)
+        self.loop._run_once()
+        asyncio._set_running_loop(None)
+        self.assertEqual(len(self.loop._ready), 0)
 
         coro = None
         source_traceback = task._source_traceback
