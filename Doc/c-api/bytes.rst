@@ -237,6 +237,9 @@ PyBytesWriter
 
    Create a :c:type:`PyBytesWriter` to write *alloc* bytes.
 
+   If *alloc* is greater than zero, allocate *alloc* bytes for the returned
+   buffer.
+
    On success, return non-``NULL`` buffer where bytes can be written.
    On error, set an exception and return ``NULL``.
 
@@ -259,7 +262,9 @@ PyBytesWriter
 
 .. c:function:: void* PyBytesWriter_Extend(PyBytesWriter *writer, void *buf, Py_ssize_t extend)
 
-   Extend the buffer by *extend* bytes.
+   Add *extend* bytes to the buffer: allocate *extend* bytes in addition to
+   bytes already allocated by previous :c:func:`PyBytesWriter_Create` and
+   :c:func:`PyBytesWriter_Extend` calls.
 
    On success, return non-``NULL`` buffer where bytes can be written.
    On error, set an exception and return ``NULL``.
