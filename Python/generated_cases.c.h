@@ -8,7 +8,7 @@
 #endif
 #define TIER_ONE 1
 
-#ifndef Py_TAIL_CALL_INTERP
+#if !Py_TAIL_CALL_INTERP
 #if !USE_COMPUTED_GOTOS
     dispatch_opcode:
         switch (opcode)
@@ -4409,7 +4409,7 @@
             last_sent_val = stack_pointer[-2];
             sub_iter = stack_pointer[-3];
             PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
-            #ifndef Py_TAIL_CALL_INTERP
+            #if !Py_TAIL_CALL_INTERP
             assert(throwflag);
             #endif
             assert(exc_value && PyExceptionInstance_Check(exc_value));
@@ -11929,7 +11929,7 @@
         }
 
             /* END INSTRUCTIONS */
-#ifndef Py_TAIL_CALL_INTERP
+#if !Py_TAIL_CALL_INTERP
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:
 #else
