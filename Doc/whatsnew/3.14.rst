@@ -307,6 +307,12 @@ Other language changes
   The testbed can also be used to run the test suite of projects other than
   CPython itself. (Contributed by Russell Keith-Magee in :gh:`127592`.)
 
+* The :meth:`~object.__ipow__` method should be defined to accept an optional
+  third argument (as it was documented) to support non-``None`` third argument
+  in :c:func:`PyNumber_InPlacePower` which no longer ignored if
+  :meth:`!__ipow__` is defined.
+  (Contributed by Serhiy Storchaka in :gh:`86069`.)
+
 New modules
 ===========
 
