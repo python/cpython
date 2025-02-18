@@ -1,6 +1,7 @@
 import unittest
 import sys
 
+from _colorize import ANSIColors
 import _pyrepl.readline
 from _pyrepl.fancycompleter import Completer, DefaultConfig, commonprefix
 
@@ -70,8 +71,8 @@ class FancyCompleterTests(unittest.TestCase):
         matches = compl.attr_matches('a.__')
         self.assertGreater(len(matches), 2)
         expected_color = compl.config.color_by_type.get(type(compl.__class__))
-        self.assertEqual(expected_color, '35;01')
-        expected_part = Color.set(expected_color, '__class__')
+        self.assertEqual(expected_color, ANSIColors.BOLD_MAGENTA)
+        expected_part = f'{expected_color}__class__{ANSIColors.RESET}'
         for match in matches:
             if expected_part in match:
                 break
