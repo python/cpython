@@ -1528,36 +1528,20 @@ _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyComp
 }
 
 #if defined(USE_STACKCHECK)
-#if defined(WIN32) && defined(_MSC_VER)
 
-/* Stack checking for Microsoft C */
-
-#include <malloc.h>
-#include <excpt.h>
+/* Stack checking */
 
 /*
  * Return non-zero when we run out of memory on the stack; zero otherwise.
  */
 int PyOS_CheckStack(void)
 {
-    char here;
-    uintptr_t here_addr = (uintptr_t)&here;
     PyThreadState *tstate = _PyThreadState_GET();
-    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    if (_tstate->c_stack_hard_limit == 0) {
-        _Py_InitializeRecursionLimits(tstate);
-    }
-    if (here_addr >= _tstate->c_stack_soft_limit) {
-        return 0;
-    }
-    else {
+    if (_Py_ReachedRecursionLimit(tstate)) {
         return -1;
     }
+    return 0;
 }
-
-#endif /* WIN32 && _MSC_VER */
-
-/* Alternate implementations can be added here... */
 
 #endif /* USE_STACKCHECK */
 

@@ -337,13 +337,11 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 #elif defined(__ANDROID__)
 #  define Py_C_STACK_SIZE 1200000
 #elif defined(__sparc__)
-   // test_descr crashed on sparc64 with >7000 but let's keep a margin of error.
 #  define Py_C_STACK_SIZE 1600000
 #elif defined(__wasi__)
    /* Web assembly has two stacks, so this isn't really the stack depth */
 #  define Py_C_STACK_SIZE 100000
 #elif defined(__hppa__) || defined(__powerpc64__)
-   // test_descr crashed with >8000 but let's keep a margin of error.
 #  define Py_C_STACK_SIZE 2000000
 #else
 #  define Py_C_STACK_SIZE 5000000

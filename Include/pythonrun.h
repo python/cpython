@@ -33,8 +33,6 @@ PyAPI_DATA(int) (*PyOS_InputHook)(void);
 #define PYOS_STACK_MARGIN_BYTES (PYOS_STACK_MARGIN * sizeof(void *))
 
 #if defined(WIN32)
-/* Enable stack checking under Microsoft C */
-// When changing the platforms, ensure PyOS_CheckStack() docs are still correct
 #define USE_STACKCHECK
 #endif
 
