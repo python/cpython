@@ -59,10 +59,10 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     assert(stacktop >= _PyFrame_GetCode(frame)->co_nlocalsplus);
     // XXX - Maybe more optimal sequence to do here
     if (_PyStackRef_IsBorrowed(frame->f_executable)) {
-        Py_INCREF(PyStackRef_AsPyObjectBorrow(frame->f_executable));
+        frame->f_executable = PyStackRef_FromPyObjectNew(PyStackRef_AsPyObjectBorrow(frame->f_executable));
     }
     if (_PyStackRef_IsBorrowed(frame->f_funcobj)) {
-        Py_INCREF(PyStackRef_AsPyObjectBorrow(frame->f_funcobj));
+        frame->f_funcobj = PyStackRef_FromPyObjectNew(PyStackRef_AsPyObjectBorrow(frame->f_funcobj));
     }
     for (int i = 0; i < stacktop; i++) {
         frame->localsplus[i] = _PyStackRef_StealIfUnborrowed(frame->localsplus[i]);

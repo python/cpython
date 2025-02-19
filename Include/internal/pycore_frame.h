@@ -158,10 +158,10 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     }
     // XXX - More efficient version of this?
     if (_PyStackRef_IsBorrowed(dest->f_executable)) {
-        Py_INCREF(PyStackRef_AsPyObjectBorrow(dest->f_executable));
+        dest->f_executable = PyStackRef_FromPyObjectNew(PyStackRef_AsPyObjectBorrow(dest->f_executable));
     }
     if (_PyStackRef_IsBorrowed(dest->f_funcobj)) {
-        Py_INCREF(PyStackRef_AsPyObjectBorrow(dest->f_funcobj));
+        dest->f_funcobj = PyStackRef_FromPyObjectNew(PyStackRef_AsPyObjectBorrow(dest->f_funcobj));
     }
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
