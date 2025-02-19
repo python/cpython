@@ -1,1 +1,1 @@
-Fix regression in `traceback.print_last()`.
+Fix regression in ``traceback.print_last()``.
