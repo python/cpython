@@ -217,10 +217,10 @@ def print_last(limit=None, file=None, chain=True):
         raise ValueError("no last exception")
 
     if hasattr(sys, "last_exc"):
-        print_exception(sys.last_exc, limit, file, chain)
+        print_exception(sys.last_exc, limit=limit, file=file, chain=chain)
     else:
         print_exception(sys.last_type, sys.last_value, sys.last_traceback,
-                        limit, file, chain)
+                        limit=limit, file=file, chain=chain)
 
 
 #
