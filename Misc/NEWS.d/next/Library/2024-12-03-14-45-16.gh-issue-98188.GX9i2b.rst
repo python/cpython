@@ -1,3 +1,0 @@
-Fix an issue in :meth:`email.message.Message.get_payload` where data
-cannot be decoded if the Content Transfer Encoding mechanism contains
-trailing whitespaces or additional junk text. Patch by Hui Liu.

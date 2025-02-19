@@ -58,7 +58,7 @@ Features and minimum versions required to build CPython:
 .. versionchanged:: 3.13
    Autoconf 2.71, aclocal 1.16.5 and SQLite 3.15.2 are now required.
 
-.. versionchanged:: next
+.. versionchanged:: 3.14
    Autoconf 2.72 is now required.
 
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
@@ -310,6 +310,10 @@ General Options
    * ``interpreter`` - build the interpreter without the JIT, but with the tier 2 enabled interpreter.
 
    By convention, ``--enable-experimental-jit`` is a shorthand for ``--enable-experimental-jit=yes``.
+
+   .. note::
+
+      When building CPython with JIT enabled, ensure that your system has Python 3.11 or later installed.
 
    .. versionadded:: 3.13
 
@@ -613,6 +617,16 @@ also be used to improve performance.
 
    Enable computed gotos in evaluation loop (enabled by default on supported
    compilers).
+
+.. option:: --with-tail-call-interp
+
+   Enable interpreters using tail calls in CPython. If enabled, enabling PGO
+   (:option:`--enable-optimizations`) is highly recommended. This option specifically
+   requires a C compiler with proper tail call support, and the
+   `preserve_none <https://clang.llvm.org/docs/AttributeReference.html#preserve-none>`_
+   calling convention. For example, Clang 19 and newer supports this feature.
+
+   .. versionadded:: 3.14
 
 .. option:: --without-mimalloc
 

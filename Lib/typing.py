@@ -1024,7 +1024,7 @@ def evaluate_forward_ref(
     owner=None,
     globals=None,
     locals=None,
-    type_params=None,
+    type_params=_sentinel,
     format=annotationlib.Format.VALUE,
     _recursive_guard=frozenset(),
 ):
