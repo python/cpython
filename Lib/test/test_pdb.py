@@ -11,6 +11,7 @@ import subprocess
 import textwrap
 import linecache
 import zipapp
+import zipfile
 
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
@@ -4198,6 +4199,38 @@ def bœr():
             ]))
             self.assertIn('42', stdout)
             self.assertIn('return x + 1', stdout)
+
+    def test_zipimport(self):
+        with os_helper.temp_dir() as temp_dir:
+            os.mkdir(os.path.join(temp_dir, 'source'))
+            zipmodule = textwrap.dedent(
+                """
+                def bar(x):
+                    return x + 1
+                """
+            )
+            script = textwrap.dedent(
+                f"""
+                import sys; sys.path.insert(0, '{os.path.join(temp_dir, 'zipmodule.zip')}')
+                import foo
+                foo.bar(41)
+                """
+            )
+
+            with zipfile.ZipFile(os.path.join(temp_dir, 'zipmodule.zip'), 'w') as zf:
+                zf.writestr('foo.py', zipmodule)
+            with open(os.path.join(temp_dir, 'script.py'), 'w') as f:
+                f.write(script)
+
+            stdout, _ = self._run_pdb([os.path.join(temp_dir, 'script.py')], '\n'.join([
+                'n',
+                'n',
+                'b foo.bar',
+                'c',
+                'p x + x',
+                'q'
+            ]))
+            self.assertIn('82', stdout)
 
 
 class ChecklineTests(unittest.TestCase):
