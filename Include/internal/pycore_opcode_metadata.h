@@ -2360,7 +2360,7 @@ _PyOpcode_macro_expansion[256] = {
     [LOAD_FAST_LOAD_FAST] = { .nuops = 2, .uops = { { _LOAD_FAST, 5, 0 }, { _LOAD_FAST, 6, 0 } } },
     [LOAD_FROM_DICT_OR_DEREF] = { .nuops = 1, .uops = { { _LOAD_FROM_DICT_OR_DEREF, 0, 0 } } },
     [LOAD_GLOBAL] = { .nuops = 2, .uops = { { _LOAD_GLOBAL, 0, 3 }, { _PUSH_NULL_CONDITIONAL, 0, 3 } } },
-    [LOAD_GLOBAL_BUILTIN] = { .nuops = 4, .uops = { { _GUARD_GLOBALS_VERSION, 1, 1 }, { _GUARD_BUILTINS_VERSION_PUSH_KEYS, 1, 2 }, { _LOAD_GLOBAL_BUILTINS_FROM_KEYS, 1, 3 }, { _PUSH_NULL_CONDITIONAL, 0, 4 } } },
+    [LOAD_GLOBAL_BUILTIN] = { .nuops = 4, .uops = { { _GUARD_GLOBALS_VERSION, 1, 1 }, { _LOAD_GLOBAL_BUILTINS, 1, 2 }, { _LOAD_GLOBAL_BUILTINS, OPERAND1_1, 3 }, { _PUSH_NULL_CONDITIONAL, 0, 4 } } },
     [LOAD_GLOBAL_MODULE] = { .nuops = 4, .uops = { { _NOP, 0, 1 }, { _LOAD_GLOBAL_MODULE, 1, 1 }, { _LOAD_GLOBAL_MODULE, OPERAND1_1, 3 }, { _PUSH_NULL_CONDITIONAL, 0, 4 } } },
     [LOAD_LOCALS] = { .nuops = 1, .uops = { { _LOAD_LOCALS, 0, 0 } } },
     [LOAD_NAME] = { .nuops = 1, .uops = { { _LOAD_NAME, 0, 0 } } },

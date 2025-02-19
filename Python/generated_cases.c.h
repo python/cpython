@@ -9007,7 +9007,6 @@
             next_instr += 5;
             INSTRUCTION_STATS(LOAD_GLOBAL_BUILTIN);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
-            PyDictKeysObject *builtins_keys;
             _PyStackRef res;
             _PyStackRef null = PyStackRef_NULL;
             /* Skip 1 cache entry */
@@ -9028,9 +9027,10 @@
                 }
                 assert(DK_IS_UNICODE(keys));
             }
-            // _GUARD_BUILTINS_VERSION_PUSH_KEYS
+            // _LOAD_GLOBAL_BUILTINS
             {
                 uint16_t version = read_u16(&this_instr[3].cache);
+                uint16_t index = read_u16(&this_instr[4].cache);
                 PyDictObject *dict = (PyDictObject *)BUILTINS();
                 if (!PyDict_CheckExact(dict)) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
@@ -9043,13 +9043,8 @@
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
                     JUMP_TO_PREDICTED(LOAD_GLOBAL);
                 }
-                builtins_keys = keys;
-                assert(DK_IS_UNICODE(builtins_keys));
-            }
-            // _LOAD_GLOBAL_BUILTINS_FROM_KEYS
-            {
-                uint16_t index = read_u16(&this_instr[4].cache);
-                PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(builtins_keys);
+                assert(DK_IS_UNICODE(keys));
+                PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
                 PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
                 if (res_o == NULL) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
@@ -9063,9 +9058,9 @@
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
                     JUMP_TO_PREDICTED(LOAD_GLOBAL);
                 }
-                #else
-                Py_INCREF(res_o);
                 res = PyStackRef_FromPyObjectSteal(res_o);
+                #else
+                res = PyStackRef_FromPyObjectNew(res_o);
                 #endif
                 STAT_INC(LOAD_GLOBAL, hit);
             }

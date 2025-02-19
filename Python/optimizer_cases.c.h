@@ -941,21 +941,12 @@
             break;
         }
 
-        case _GUARD_BUILTINS_VERSION_PUSH_KEYS: {
-            JitOptSymbol *builtins_keys;
-            uint16_t version = (uint16_t)this_instr->operand0;
-            builtins_keys = sym_new_unknown(ctx);
-            (void)version;
-            stack_pointer[0] = builtins_keys;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _LOAD_GLOBAL_BUILTINS_FROM_KEYS: {
+        case _LOAD_GLOBAL_BUILTINS: {
             JitOptSymbol *res;
             res = sym_new_not_null(ctx);
-            stack_pointer[-1] = res;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -2429,15 +2420,6 @@
         }
 
         case _CHECK_FUNCTION: {
-            break;
-        }
-
-        case _LOAD_GLOBAL_BUILTINS: {
-            JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 

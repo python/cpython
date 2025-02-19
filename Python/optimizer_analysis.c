@@ -100,7 +100,7 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
     PyDictObject *dict = (PyDictObject *)obj;
     assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
     PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
-    int64_t index = inst->opcode == _LOAD_GLOBAL_MODULE ? inst->operand1 : inst->operand0;
+    int64_t index = inst->opcode == _LOAD_ATTR_MODULE_FROM_KEYS ? inst->operand0 : inst->operand1;
     assert(index <= UINT16_MAX);
     if ((int)index >= dict->ma_keys->dk_nentries) {
         return NULL;
@@ -199,35 +199,6 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
         _PyUOpInstruction *inst = &buffer[pc];
         int opcode = inst->opcode;
         switch(opcode) {
-            case _GUARD_BUILTINS_VERSION_PUSH_KEYS:
-                if (incorrect_keys(inst, builtins)) {
-                    OPT_STAT_INC(remove_globals_incorrect_keys);
-                    return 0;
-                }
-                if (interp->rare_events.builtin_dict >= _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
-                    continue;
-                }
-                if (!check_next_uop(buffer, buffer_size, pc,
-                                    _LOAD_GLOBAL_BUILTINS_FROM_KEYS)) {
-                    continue;
-                }
-                if ((builtins_watched & 1) == 0) {
-                    PyDict_Watch(BUILTINS_WATCHER_ID, builtins);
-                    builtins_watched |= 1;
-                }
-                if (function_checked & 1) {
-                    buffer[pc].opcode = NOP;
-                }
-                else {
-                    buffer[pc].opcode = _CHECK_FUNCTION;
-                    buffer[pc].operand0 = function_version;
-                    function_checked |= 1;
-                }
-                // We're no longer pushing the builtins keys; rewrite the
-                // instruction that consumed the keys to load them from the
-                // frame.
-                buffer[pc + 1].opcode = _LOAD_GLOBAL_BUILTINS;
-                break;
             case _GUARD_GLOBALS_VERSION:
                 if (incorrect_keys(inst, globals)) {
                     OPT_STAT_INC(remove_globals_incorrect_keys);
@@ -251,7 +222,18 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                 }
                 break;
             case _LOAD_GLOBAL_BUILTINS:
-                if (function_checked & globals_watched & builtins_watched & 1) {
+                if (incorrect_keys(inst, builtins)) {
+                    OPT_STAT_INC(remove_globals_incorrect_keys);
+                    return 0;
+                }
+                if (interp->rare_events.builtin_dict >= _Py_MAX_ALLOWED_BUILTINS_MODIFICATIONS) {
+                    continue;
+                }
+                if ((builtins_watched & 1) == 0) {
+                    PyDict_Watch(BUILTINS_WATCHER_ID, builtins);
+                    builtins_watched |= 1;
+                }
+                if (function_checked & globals_watched & 1) {
                     convert_global_to_const(inst, builtins);
                 }
                 break;
@@ -268,7 +250,6 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                     _Py_BloomFilter_Add(dependencies, globals);
                     globals_watched |= 1;
                 }
-                assert(globals_watched & 1);
                 if ((function_checked & 1) == 0 && buffer[pc-1].opcode == _NOP) {
                     buffer[pc-1].opcode = _CHECK_FUNCTION;
                     buffer[pc-1].operand0 = function_version;

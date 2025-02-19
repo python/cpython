@@ -888,11 +888,6 @@ dummy_func(void) {
         ctx->done = true;
     }
 
-    op(_GUARD_BUILTINS_VERSION_PUSH_KEYS, (version/1 -- builtins_keys)) {
-        builtins_keys = sym_new_unknown(ctx);
-        (void)version;
-    }
-
     op(_REPLACE_WITH_TRUE, (value -- res)) {
         res = sym_new_const(ctx, Py_True);
     }
