@@ -8656,17 +8656,15 @@
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
+                PyDictKeysObject *dk = FT_ATOMIC_LOAD_PTR(dict->ma_keys);
                 assert(PyDict_CheckExact((PyObject *)dict));
+                #ifdef Py_GIL_DISABLED
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyDict_EnsureSharedOnRead(dict);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                #endif
                 PyObject *attr_o;
-                if (!LOCK_OBJECT(dict)) {
-                    if (true) {
-                        UPDATE_MISS_STATS(LOAD_ATTR);
-                        assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
-                        JUMP_TO_PREDICTED(LOAD_ATTR);
-                    }
-                }
-                if (hint >= (size_t)dict->ma_keys->dk_nentries) {
-                    UNLOCK_OBJECT(dict);
+                if (hint >= (size_t)FT_ATOMIC_LOAD_SSIZE_RELAXED(dk->dk_nentries)) {
                     if (true) {
                         UPDATE_MISS_STATS(LOAD_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
@@ -8674,26 +8672,23 @@
                     }
                 }
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-                if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
-                    UNLOCK_OBJECT(dict);
+                if (dk->dk_kind != DICT_KEYS_UNICODE) {
                     if (true) {
                         UPDATE_MISS_STATS(LOAD_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                         JUMP_TO_PREDICTED(LOAD_ATTR);
                     }
                 }
-                PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
-                if (ep->me_key != name) {
-                    UNLOCK_OBJECT(dict);
+                PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dk) + hint;
+                if (FT_ATOMIC_LOAD_PTR_RELAXED(ep->me_key) != name) {
                     if (true) {
                         UPDATE_MISS_STATS(LOAD_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                         JUMP_TO_PREDICTED(LOAD_ATTR);
                     }
                 }
-                attr_o = ep->me_value;
+                attr_o = FT_ATOMIC_LOAD_PTR(ep->me_value);
                 if (attr_o == NULL) {
-                    UNLOCK_OBJECT(dict);
                     if (true) {
                         UPDATE_MISS_STATS(LOAD_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
@@ -8701,8 +8696,17 @@
                     }
                 }
                 STAT_INC(LOAD_ATTR, hit);
+                #ifdef Py_GIL_DISABLED
+                if (!_Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr)) {
+                    if (true) {
+                        UPDATE_MISS_STATS(LOAD_ATTR);
+                        assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
+                        JUMP_TO_PREDICTED(LOAD_ATTR);
+                    }
+                }
+                #else
                 attr = PyStackRef_FromPyObjectNew(attr_o);
-                UNLOCK_OBJECT(dict);
+                #endif
                 stack_pointer[-1] = attr;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(owner);
