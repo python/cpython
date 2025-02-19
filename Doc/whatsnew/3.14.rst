@@ -350,6 +350,11 @@ ast
   that the root node type is appropriate.
   (Contributed by Irit Katriel in :gh:`130139`.)
 
+bdb
+---
+
+* The :mod:`bdb` module now supports the :mod:`sys.monitoring` backend.
+  (Contributed by Tian Gao in :gh:`124533`.)
 
 calendar
 --------
@@ -684,6 +689,12 @@ pdb
   the quit and call :func:`sys.exit`, instead of raising :exc:`bdb.BdbQuit`.
   (Contributed by Tian Gao in :gh:`124704`.)
 
+* :mod:`pdb` now supports two backends: :func:`sys.settrace` and
+  :mod:`sys.monitoring`. Using :mod:`pdb` CLI or :func:`breakpoint` will
+  always use the :mod:`sys.monitoring` backend. Explicitly instantiating
+  :class:`pdb.Pdb` and its derived classes will use the :func:`sys.settrace`
+  backend by default, which is configurable.
+  (Contributed by Tian Gao in :gh:`124533`.)
 
 pickle
 ------
