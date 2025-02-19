@@ -4211,7 +4211,7 @@ def bœr():
             )
             script = textwrap.dedent(
                 f"""
-                import sys; sys.path.insert(0, '{os.path.join(temp_dir, 'zipmodule.zip')}')
+                import sys; sys.path.insert(0, {repr(os.path.join(temp_dir, 'zipmodule.zip'))})
                 import foo
                 foo.bar(41)
                 """
