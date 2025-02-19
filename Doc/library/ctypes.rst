@@ -689,7 +689,7 @@ This matches what ``#pragma pack(n)`` does in MSVC.
 
 It is also possible to set a minimum alignment for how the subclass itself is packed in the
 same way ``#pragma align(n)`` works in MSVC.
-This can be achieved by specifying a ::attr:`~Structure._align_` class attribute
+This can be achieved by specifying a :attr:`~Structure._align_` class attribute
 in the subclass definition.
 
 :mod:`ctypes` uses the native byte order for Structures and Unions.  To build
