@@ -2267,9 +2267,10 @@
             break;
         }
 
-        case _GUARD_GLOBALS_VERSION_PUSH_KEYS: {
-            PyDictKeysObject *globals_keys;
+        case _LOAD_GLOBAL_MODULE: {
+            _PyStackRef res;
             uint16_t version = (uint16_t)CURRENT_OPERAND0();
+            uint16_t index = (uint16_t)CURRENT_OPERAND1();
             PyDictObject *dict = (PyDictObject *)GLOBALS();
             if (!PyDict_CheckExact(dict)) {
                 UOP_STAT_INC(uopcode, miss);
@@ -2280,9 +2281,26 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            globals_keys = keys;
-            assert(DK_IS_UNICODE(globals_keys));
-            stack_pointer[0].bits = (uintptr_t)globals_keys;
+            assert(DK_IS_UNICODE(keys));
+            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
+            assert(index < DK_SIZE(keys));
+            PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
+            if (res_o == NULL) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            #if Py_GIL_DISABLED
+            int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
+            if (!increfed) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            #else
+            res = PyStackRef_FromPyObjectNew(res_o);
+            #endif
+            STAT_INC(LOAD_GLOBAL, hit);
+            stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -2304,36 +2322,6 @@
             builtins_keys = keys;
             assert(DK_IS_UNICODE(builtins_keys));
             stack_pointer[0].bits = (uintptr_t)builtins_keys;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _LOAD_GLOBAL_MODULE_FROM_KEYS: {
-            PyDictKeysObject *globals_keys;
-            _PyStackRef res;
-            globals_keys = (PyDictKeysObject *)stack_pointer[-1].bits;
-            uint16_t index = (uint16_t)CURRENT_OPERAND0();
-            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(globals_keys);
-            PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            if (res_o == NULL) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            #if Py_GIL_DISABLED
-            int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
-            if (!increfed) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            #else
-            Py_INCREF(res_o);
-            res = PyStackRef_FromPyObjectSteal(res_o);
-            #endif
-            STAT_INC(LOAD_GLOBAL, hit);
-            stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -3395,7 +3383,7 @@
             break;
         }
 
-        /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 because it has unused cache entries */
+        /* _LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN is not a viable micro-op for tier 2 because it has too many cache entries */
 
         case _GUARD_DORV_NO_DICT: {
             _PyStackRef owner;
@@ -6875,24 +6863,6 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            break;
-        }
-
-        case _LOAD_GLOBAL_MODULE: {
-            _PyStackRef res;
-            uint16_t index = (uint16_t)CURRENT_OPERAND0();
-            PyDictObject *dict = (PyDictObject *)GLOBALS();
-            PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
-            PyObject *res_o = entries[index].me_value;
-            if (res_o == NULL) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            Py_INCREF(res_o);
-            res = PyStackRef_FromPyObjectSteal(res_o);
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 

@@ -932,12 +932,10 @@
             break;
         }
 
-        case _GUARD_GLOBALS_VERSION_PUSH_KEYS: {
-            JitOptSymbol *globals_keys;
-            uint16_t version = (uint16_t)this_instr->operand0;
-            globals_keys = sym_new_unknown(ctx);
-            (void)version;
-            stack_pointer[0] = globals_keys;
+        case _LOAD_GLOBAL_MODULE: {
+            JitOptSymbol *res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -951,13 +949,6 @@
             stack_pointer[0] = builtins_keys;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _LOAD_GLOBAL_MODULE_FROM_KEYS: {
-            JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
-            stack_pointer[-1] = res;
             break;
         }
 
@@ -2438,15 +2429,6 @@
         }
 
         case _CHECK_FUNCTION: {
-            break;
-        }
-
-        case _LOAD_GLOBAL_MODULE: {
-            JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 

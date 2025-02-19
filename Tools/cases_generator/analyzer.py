@@ -215,7 +215,7 @@ class Uop:
         if self.properties.needs_this:
             return "uses the 'this_instr' variable"
         if len([c for c in self.caches if c.name != "unused"]) > 2:
-            return "has unused cache entries"
+            return "has too many cache entries"
         if self.properties.error_with_pop and self.properties.error_without_pop:
             return "has both popping and not-popping errors"
         return None
@@ -416,10 +416,14 @@ def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
     caches: list[parser.CacheEffect] = [
         i for i in inputs if isinstance(i, parser.CacheEffect)
     ]
-    for cache in caches:
-        if cache.name == "unused":
+    if caches:
+        if caches[0].name == "unused":
             raise analysis_error(
-                "Unused cache entry in op. Move to enclosing macro.", cache.tokens[0]
+                "First cache entry in op is unused. Move to enclosing macro.", cache.tokens[0]
+            )
+        if caches[-1].name == "unused":
+            raise analysis_error(
+                "Last cache entry in op is unused. Move to enclosing macro.", cache.tokens[0]
             )
     return [CacheEntry(i.name, int(i.size)) for i in caches]
 
