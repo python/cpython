@@ -661,8 +661,8 @@ depending on the value of the flag.  When *record* is true and the flag is
 false, the context manager works by replacing and then later restoring the
 module's :func:`showwarning` function.  That is not concurrent-safe.
 
-When *record* is true and the flag is false, the :func:`showwarning` function
-is not replaced.  The recording status is instead indicated by an internal
+When *record* is true and the flag is true, the :func:`showwarning` function
+is not replaced.  Instead, the recording status is indicated by an internal
 property in the context variable.  In this case, the :func:`showwarning`
 function will not be restored when exiting the context handler.
 
