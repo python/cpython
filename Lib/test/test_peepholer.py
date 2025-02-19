@@ -2264,12 +2264,12 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             return [
                        lbl2 := self.Label(),
                        ('LOAD_NAME', 0, 10),
+                       ('POP_TOP', None, 10),
                        (op1, lbl1 := self.Label(), lno1),
                        ('LOAD_NAME', 1, 20),
                        lbl1,
                        (op2, lbl2, lno2),
                    ]
-
 
         for op1 in ('JUMP', 'JUMP_NO_INTERRUPT'):
             for op2 in ('JUMP', 'JUMP_NO_INTERRUPT'):
@@ -2280,6 +2280,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
                     op = 'JUMP' if 'JUMP' in (op1, op2) else 'JUMP_NO_INTERRUPT'
                     expected_insts = [
                         ('LOAD_NAME', 0, 10),
+                        ('POP_TOP', None, 10),
                         ('NOP', None, 4),
                         (op, 0, 5),
                     ]
@@ -2296,6 +2297,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
                         op = 'JUMP' if 'JUMP' in (op1, op2) else 'JUMP_NO_INTERRUPT'
                         expected_insts = [
                             ('LOAD_NAME', 0, 10),
+                            ('POP_TOP', None, 10),
                             (op, 0, lno),
                         ]
                         self.cfg_optimization_test(insts, expected_insts, consts=list(range(5)))
