@@ -327,8 +327,12 @@ void _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 
 PyAPI_FUNC(PyObject *) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value);
 
-extern int _PyEval_AcquireLockOrFail(PyThreadState *tstate);
-extern int _PyEval_RestoreThreadOrFail(PyThreadState *tstate);
+extern int _PyEval_AcquireLockOrFail(
+    PyThreadState *tstate,
+    const char **errmsg);
+extern int _PyEval_RestoreThreadOrFail(
+    PyThreadState *tstate,
+    const char **errmsg);
 
 #ifdef __cplusplus
 }

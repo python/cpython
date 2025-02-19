@@ -1275,9 +1275,10 @@ temporary_c_thread(void *data)
     PyThread_release_lock(test_c_thread->start_event);
 
     /* Allocate a Python thread state for this thread */
-    int state = PyThreadState_Ensure(test_c_thread->interp);
+    const char *errmsg;
+    int state = PyThreadState_Ensure(test_c_thread->interp, &errmsg);
     if (state < 0) {
-        fprintf(stderr, "ERROR: PyThreadState_Ensure() failed");
+        fprintf(stderr, "ERROR: PyThreadState_Ensure() failed: %s", errmsg);
         abort();
     }
 

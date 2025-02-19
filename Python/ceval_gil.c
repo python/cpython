@@ -285,7 +285,7 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate, int final_release)
 
    tstate must be non-NULL. */
 static int
-take_gil_or_fail(PyThreadState *tstate)
+take_gil_or_fail(PyThreadState *tstate, const char **errmsg)
 {
     int err = errno;
 
@@ -419,6 +419,9 @@ done:
     return 0;
 
 tstate_must_exit:
+    if (errmsg) {
+        *errmsg = "Python is being finalized";
+    }
     errno = err;
     return -1;
 }
@@ -426,7 +429,7 @@ tstate_must_exit:
 static void
 take_gil(PyThreadState *tstate)
 {
-    if (take_gil_or_fail(tstate) < 0) {
+    if (take_gil_or_fail(tstate, NULL) < 0) {
         // gh-87135: hang the thread as *thread_exit() is not a safe
         // API. It lacks stack unwind and local variable destruction.
         PyThread_hang_thread();
@@ -605,10 +608,10 @@ _PyEval_AcquireLock(PyThreadState *tstate)
 }
 
 int
-_PyEval_AcquireLockOrFail(PyThreadState *tstate)
+_PyEval_AcquireLockOrFail(PyThreadState *tstate, const char **errmsg)
 {
     _Py_EnsureTstateNotNULL(tstate);
-    return take_gil_or_fail(tstate);
+    return take_gil_or_fail(tstate, errmsg);
 }
 
 void
@@ -668,14 +671,14 @@ PyEval_SaveThread(void)
 
 
 int
-_PyEval_RestoreThreadOrFail(PyThreadState *tstate)
+_PyEval_RestoreThreadOrFail(PyThreadState *tstate, const char **errmsg)
 {
 #ifdef MS_WINDOWS
     int err = GetLastError();
 #endif
 
     _Py_EnsureTstateNotNULL(tstate);
-    if (_PyThreadState_AttachOrFail(tstate) < 0) {
+    if (_PyThreadState_AttachOrFail(tstate, errmsg) < 0) {
         return -1;
     }
 
@@ -689,7 +692,7 @@ _PyEval_RestoreThreadOrFail(PyThreadState *tstate)
 void
 PyEval_RestoreThread(PyThreadState *tstate)
 {
-    if (_PyEval_RestoreThreadOrFail(tstate) < 0) {
+    if (_PyEval_RestoreThreadOrFail(tstate, NULL) < 0) {
         PyThread_hang_thread();
     }
 }

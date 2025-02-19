@@ -2071,7 +2071,7 @@ tstate_wait_attach(PyThreadState *tstate)
 }
 
 int
-_PyThreadState_AttachOrFail(PyThreadState *tstate)
+_PyThreadState_AttachOrFail(PyThreadState *tstate, const char **errmsg)
 {
 #if defined(Py_DEBUG)
     // This is called from PyEval_RestoreThread(). Similar
@@ -2086,7 +2086,7 @@ _PyThreadState_AttachOrFail(PyThreadState *tstate)
 
 
     while (1) {
-        if (_PyEval_AcquireLockOrFail(tstate) < 0) {
+        if (_PyEval_AcquireLockOrFail(tstate, errmsg) < 0) {
             return -1;
         }
 
@@ -2129,7 +2129,7 @@ _PyThreadState_AttachOrFail(PyThreadState *tstate)
 void
 _PyThreadState_Attach(PyThreadState *tstate)
 {
-    if (_PyThreadState_AttachOrFail(tstate) < 0) {
+    if (_PyThreadState_AttachOrFail(tstate, NULL) < 0) {
         PyThread_hang_thread();
     }
 }
@@ -2753,7 +2753,8 @@ PyGILState_Check(void)
 
 
 static int
-tstate_ensure(PyInterpreterState *interp, PyThreadState *tcur)
+tstate_ensure(PyInterpreterState *interp, PyThreadState *tcur,
+              const char **errmsg)
 {
     int has_gil;
     if (tcur == NULL) {
@@ -2777,7 +2778,7 @@ tstate_ensure(PyInterpreterState *interp, PyThreadState *tcur)
     }
 
     if (!has_gil) {
-        if (_PyEval_RestoreThreadOrFail(tcur) < 0) {
+        if (_PyEval_RestoreThreadOrFail(tcur, errmsg) < 0) {
             return -1;
         }
     }
@@ -2789,17 +2790,20 @@ tstate_ensure(PyInterpreterState *interp, PyThreadState *tcur)
     */
     ++tcur->gilstate_counter;
 
+    if (errmsg) {
+        *errmsg = NULL;
+    }
     return has_gil ? PyGILState_LOCKED : PyGILState_UNLOCKED;
 }
 
 
 int
-PyThreadState_Ensure(PyInterpreterState *interp)
+PyThreadState_Ensure(PyInterpreterState *interp, const char **errmsg)
 {
     assert(_PyEval_ThreadsInitialized());
 
     PyThreadState *tcur = current_fast_get();
-    return tstate_ensure(interp, tcur);
+    return tstate_ensure(interp, tcur, errmsg);
 }
 
 
@@ -2822,7 +2826,7 @@ PyGILState_Ensure(void)
     PyInterpreterState *interp = _PyRuntime.gilstate.autoInterpreterState;
     PyThreadState *tcur = gilstate_tss_get(runtime);
 
-    int result = tstate_ensure(interp, tcur);
+    int result = tstate_ensure(interp, tcur, NULL);
     if (result < 0) {
         PyThread_hang_thread();
     }

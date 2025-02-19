@@ -113,7 +113,9 @@ PyAPI_FUNC(void) PyGILState_Release(PyGILState_STATE);
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
 /* New in 3.14 */
-PyAPI_FUNC(int) PyThreadState_Ensure(PyInterpreterState *interp);
+PyAPI_FUNC(int) PyThreadState_Ensure(
+    PyInterpreterState *interp,
+    const char **errmsg);
 PyAPI_FUNC(void) PyThreadState_Release(int state);
 #endif
 
