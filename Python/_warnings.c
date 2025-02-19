@@ -288,7 +288,7 @@ get_warnings_context_filters(PyInterpreterState *interp)
         Py_DECREF(ctx);
         Py_RETURN_NONE;
     }
-    PyObject *context_filters = PyObject_GetAttrString(ctx, "_filters");
+    PyObject *context_filters = PyObject_GetAttr(ctx, &_Py_ID(_filters));
     Py_DECREF(ctx);
     if (context_filters == NULL) {
         return NULL;
