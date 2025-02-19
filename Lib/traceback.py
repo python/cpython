@@ -176,7 +176,7 @@ def _safe_string(value, what, func=str):
 # --
 
 def print_exc(limit=None, file=None, chain=True):
-    """Shorthand for 'print_exception(sys.exception(), limit, file, chain)'."""
+    """Shorthand for 'print_exception(sys.exception(), limit=limit, file=file, chain=chain)'."""
     print_exception(sys.exception(), limit=limit, file=file, chain=chain)
 
 def format_exc(limit=None, chain=True):
@@ -184,15 +184,15 @@ def format_exc(limit=None, chain=True):
     return "".join(format_exception(sys.exception(), limit=limit, chain=chain))
 
 def print_last(limit=None, file=None, chain=True):
-    """This is a shorthand for 'print_exception(sys.last_exc, limit, file, chain)'."""
+    """This is a shorthand for 'print_exception(sys.last_exc, limit=limit, file=file, chain=chain)'."""
     if not hasattr(sys, "last_exc") and not hasattr(sys, "last_type"):
         raise ValueError("no last exception")
 
     if hasattr(sys, "last_exc"):
-        print_exception(sys.last_exc, limit, file, chain)
+        print_exception(sys.last_exc, limit=limit, file=file, chain=chain)
     else:
         print_exception(sys.last_type, sys.last_value, sys.last_traceback,
-                        limit, file, chain)
+                        limit=limit, file=file, chain=chain)
 
 
 #
