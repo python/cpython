@@ -1821,6 +1821,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             return eval(arg, self.curframe.f_globals, self.curframe.f_locals)
         except:
+            if not arg:
+                self.error("Missing argument to command!")
+                raise
             self._error_exc()
             raise
 
