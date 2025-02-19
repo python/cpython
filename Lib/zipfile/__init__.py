@@ -14,12 +14,8 @@ import sys
 import threading
 import time
 
-try:
-    import zlib # We may need its compression method
-    crc32 = zlib.crc32
-except ImportError:
-    zlib = None
-    crc32 = binascii.crc32
+import zlib
+crc32 = zlib.crc32
 
 try:
     import bz2 # We may need its compression method
@@ -771,12 +767,8 @@ compressor_names = {
 }
 
 def _check_compression(compression):
-    if compression == ZIP_STORED:
+    if compression in (ZIP_STORED, ZIP_DEFLATED):
         pass
-    elif compression == ZIP_DEFLATED:
-        if not zlib:
-            raise RuntimeError(
-                "Compression requires the (missing) zlib module")
     elif compression == ZIP_BZIP2:
         if not bz2:
             raise RuntimeError(
