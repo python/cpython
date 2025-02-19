@@ -1726,6 +1726,9 @@ class ThreadingTest:
         self.finish1 = threading.Event()
         self.finish2 = threading.Event()
 
+        # This test wants to start threads with an empty context, no matter
+        # the setting of sys.flags.thread_inherit_context.  We pass the
+        # 'context' argument explicitly with an empty context instance.
         th1 = threading.Thread(target=thfunc1, args=(self,),
                                context=contextvars.Context())
         th2 = threading.Thread(target=thfunc2, args=(self,),
