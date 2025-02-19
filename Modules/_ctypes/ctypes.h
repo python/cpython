@@ -5,8 +5,21 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
+// Do we support C99 complex types in ffi?
+// For Apple's libffi, this must be determined at runtime (see gh-128156).
 #if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
 #   include "../_complex.h"       // complex
+#   if USING_APPLE_OS_LIBFFI && defined(__has_builtin)
+#       if __has_builtin(__builtin_available)
+#           define Py_FFI_COMPLEX_AVAILABLE __builtin_available(macOS 10.15, *)
+#       else
+#           define Py_FFI_COMPLEX_AVAILABLE 1
+#       endif
+#   else
+#       define Py_FFI_COMPLEX_AVAILABLE 1
+#   endif
+#else
+#   define Py_FFI_COMPLEX_AVAILABLE 0
 #endif
 
 #ifndef MS_WIN32
@@ -112,7 +125,10 @@ extern PyType_Spec cfield_spec;
 extern PyType_Spec cthunk_spec;
 
 typedef struct tagPyCArgObject PyCArgObject;
+#define _PyCArgObject_CAST(op)  ((PyCArgObject *)(op))
+
 typedef struct tagCDataObject CDataObject;
+#define _CDataObject_CAST(op)   ((CDataObject *)(op))
 
 // GETFUNC: convert the C value at *ptr* to Python object, return the object
 // SETFUNC: write content of the PyObject *value* to the location at *ptr*;
@@ -176,6 +192,8 @@ typedef struct {
     ffi_type *ffi_restype;
     ffi_type *atypes[1];
 } CThunkObject;
+
+#define _CThunkObject_CAST(op)          ((CThunkObject *)(op))
 #define CThunk_CheckExact(st, v)        Py_IS_TYPE(v, st->PyCThunk_Type)
 
 typedef struct {
@@ -208,6 +226,8 @@ typedef struct {
 #endif
     PyObject *paramflags;
 } PyCFuncPtrObject;
+
+#define _PyCFuncPtrObject_CAST(op)  ((PyCFuncPtrObject *)(op))
 
 extern int PyCStructUnionType_update_stginfo(PyObject *fields, PyObject *type, int isStruct);
 extern int PyType_stginfo(PyTypeObject *self, Py_ssize_t *psize, Py_ssize_t *palign, Py_ssize_t *plength);
@@ -255,6 +275,9 @@ struct fielddesc {
     GETFUNC getfunc_swapped;
 };
 
+// Get all single-character type codes (for use in error messages)
+extern char *_ctypes_get_simple_type_chars(void);
+
 typedef struct CFieldObject {
     PyObject_HEAD
     Py_ssize_t offset;
@@ -268,6 +291,8 @@ typedef struct CFieldObject {
 
     PyObject *name;                     /* exact PyUnicode */
 } CFieldObject;
+
+#define _CFieldObject_CAST(op)  ((CFieldObject *)(op))
 
 /****************************************************************
  StgInfo
@@ -404,6 +429,8 @@ struct tagPyCArgObject {
     PyObject *obj;
     Py_ssize_t size; /* for the 'V' tag */
 };
+
+#define _PyCArgObject_CAST(op)  ((PyCArgObject *)(op))
 
 #define PyCArg_CheckExact(st, v)        Py_IS_TYPE(v, st->PyCArg_Type)
 extern PyCArgObject *PyCArgObject_new(ctypes_state *st);
@@ -542,4 +569,52 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
 
     info->initialized = 1;
     return info;
+}
+
+/* See discussion in gh-128490. The plan here is to eventually use a per-object
+ * lock rather than a critical section, but that work is for later. */
+#ifdef Py_GIL_DISABLED
+#  define LOCK_PTR(self) Py_BEGIN_CRITICAL_SECTION(self)
+#  define UNLOCK_PTR(self) Py_END_CRITICAL_SECTION()
+#else
+/*
+ * Dummy functions instead of macros so that 'self' can be
+ * unused in the caller without triggering a compiler warning.
+ */
+static inline void LOCK_PTR(CDataObject *Py_UNUSED(self)) {}
+static inline void UNLOCK_PTR(CDataObject *Py_UNUSED(self)) {}
+#endif
+
+static inline void
+locked_memcpy_to(CDataObject *self, void *buf, Py_ssize_t size)
+{
+    LOCK_PTR(self);
+    (void)memcpy(self->b_ptr, buf, size);
+    UNLOCK_PTR(self);
+}
+
+static inline void
+locked_memcpy_from(void *buf, CDataObject *self, Py_ssize_t size)
+{
+    LOCK_PTR(self);
+    (void)memcpy(buf, self->b_ptr, size);
+    UNLOCK_PTR(self);
+}
+
+static inline void *
+locked_deref(CDataObject *self)
+{
+    void *ptr;
+    LOCK_PTR(self);
+    ptr = *(void **)self->b_ptr;
+    UNLOCK_PTR(self);
+    return ptr;
+}
+
+static inline void
+locked_deref_assign(CDataObject *self, void *new_ptr)
+{
+    LOCK_PTR(self);
+    *(void **)self->b_ptr = new_ptr;
+    UNLOCK_PTR(self);
 }
