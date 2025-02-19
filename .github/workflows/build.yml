@@ -245,13 +245,13 @@ jobs:
         - true
         os:
         - ubuntu-24.04
-        - ubuntu-22.04-arm
+        - ubuntu-24.04-arm
         exclude:
         # Do not test BOLT with free-threading, to conserve resources
         - bolt: true
           free-threading: true
         # BOLT currently crashes during instrumentation on aarch64
-        - os: ubuntu-22.04-arm
+        - os: ubuntu-24.04-arm
           bolt: true
     uses: ./.github/workflows/reusable-ubuntu.yml
     with:
