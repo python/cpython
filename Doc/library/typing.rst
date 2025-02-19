@@ -433,20 +433,12 @@ The only legal parameters for :class:`type` are classes, :data:`Any`,
 :ref:`type variables <generics>`, and unions of any of these types.
 For example::
 
-   class HeroUser(ProUser): ...
-   class RegularUser(BasicUser): ...
-   class ManagerUser(TeamUser): ...
-
    def new_non_team_user(user_class: type[BasicUser | ProUser]): ...
 
    new_non_team_user(BasicUser)   # OK
    new_non_team_user(ProUser)     # OK
-   new_non_team_user(RegularUser) # OK
-   new_non_team_user(HeroUser)    # OK
 
    new_non_team_user(TeamUser)    # Error: ``type[TeamUser]`` is not a subtype
-                                  # of ``type[BasicUser | ProUser]``
-   new_non_team_user(ManagerUser) # Error: ``type[ManagerUser]`` is not a subtype
                                   # of ``type[BasicUser | ProUser]``
    new_non_team_user(User)        # Also an error
 
