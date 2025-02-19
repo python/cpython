@@ -413,6 +413,7 @@ example::
 Note that ``type[C]`` is covariant::
 
    class User: ...
+   class BasicUser(User): ...
    class ProUser(User): ...
    class TeamUser(User): ...
 
@@ -421,22 +422,31 @@ Note that ``type[C]`` is covariant::
        return user_class()
 
    make_new_user(User)      # OK
-   make_new_user(ProUser)   # Also OK: ``type[ProUser]`` is a subtype of ``type[User]``
-   make_new_user(TeamUser)  # Still fine
+   make_new_user(BasicUser) # Also OK: ``type[BasicUser]`` is a subtype of ``type[User]``
+   make_new_user(ProUser)   # Still fine
+   make_new_user(TeamUser)  # Also fine
    make_new_user(User())    # Error: expected ``type[User]`` but got ``User``
    make_new_user(int)       # Error: ``type[int]`` is not a subtype of ``type[User]``
 
 The only legal parameters for :class:`type` are classes, :data:`Any`,
 :ref:`type variables <generics>`, and unions of any of these types.
 For example::
+   class HeroUser(ProUser): ...
+   class RegularUser(BasicUser): ...
+   class ManagerUser(TeamUser): ...
 
    def new_non_team_user(user_class: type[BasicUser | ProUser]): ...
 
-   new_non_team_user(BasicUser)  # OK
-   new_non_team_user(ProUser)    # OK
-   new_non_team_user(TeamUser)   # Error: ``type[TeamUser]`` is not a subtype
-                                 # of ``type[BasicUser | ProUser]``
-   new_non_team_user(User)       # Also an error
+   new_non_team_user(BasicUser)   # OK
+   new_non_team_user(ProUser)     # OK
+   new_non_team_user(RegularUser) # OK
+   new_non_team_user(HeroUser)    # OK
+
+   new_non_team_user(ManagerUser) # Error: ``type[ManagerUser]`` is not a subtype
+                                  #  of ``type[BasicUser | ProUser]``
+   new_non_team_user(TeamUser)    # Error: ``type[TeamUser]`` is not a subtype
+                                  #  of ``type[BasicUser | ProUser]``
+   new_non_team_user(User)        # Also an error
 
 ``type[Any]`` is equivalent to :class:`type`, which is the root of Python's
 :ref:`metaclass hierarchy <metaclasses>`.
