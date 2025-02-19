@@ -26,7 +26,7 @@ time timemodule.c
 _typing _typingmodule.c
 _weakref _weakref.c
 # used by shutil
-zlib zlibmodule.c
+#zlib zlibmodule.c
 
 # commonly used core modules
 _abc _abc.c

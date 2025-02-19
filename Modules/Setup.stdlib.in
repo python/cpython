@@ -66,6 +66,7 @@
 @MODULE_BINASCII_TRUE@binascii binascii.c
 @MODULE__BZ2_TRUE@_bz2 _bz2module.c
 @MODULE__LZMA_TRUE@_lzma _lzmamodule.c
+@MODULE_ZLIB_TRUE@zlib zlibmodule.c
 
 # dbm/gdbm
 # dbm needs either libndbm, libgdbm_compat, or libdb 5.x
