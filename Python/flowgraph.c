@@ -1416,22 +1416,18 @@ static int
 instr_make_load_const(cfg_instr *instr, PyObject *newconst,
                       PyObject *consts, PyObject *const_cache)
 {
-    int opcode, oparg;
     if (PyLong_CheckExact(newconst)) {
         int overflow;
         long val = PyLong_AsLongAndOverflow(newconst, &overflow);
         if (!overflow && _PY_IS_SMALL_INT(val)) {
             assert(_Py_IsImmortal(newconst));
-            opcode = LOAD_SMALL_INT;
-            oparg = (int)val;
-            goto exit;
+            INSTR_SET_OP1(instr, LOAD_SMALL_INT, (int)val);
+            return SUCCESS;
         }
     }
-    opcode = LOAD_CONST;
-    oparg = add_const(newconst, consts, const_cache);
+    int oparg = add_const(newconst, consts, const_cache);
     RETURN_IF_ERROR(oparg);
-exit:
-    INSTR_SET_OP1(instr, opcode, oparg);
+    INSTR_SET_OP1(instr, LOAD_CONST, oparg);
     return SUCCESS;
 }
 
