@@ -13,9 +13,9 @@ __all__ = ["warn", "warn_explicit", "showwarning",
 # Normally '_wm' is sys.modules['warnings'] but for unit tests it can be
 # a different module.  User code is allowed to reassign global attributes
 # of the 'warnings' module, commonly 'filters' or 'showwarning'. So we
-# need to lookup these global attributes dynamically on the '_wn' object,
+# need to lookup these global attributes dynamically on the '_wm' object,
 # rather than binding them earlier.  The code in this module consistently uses
-# '_wn.<something>' rather than using the globals of this module.  If the
+# '_wm.<something>' rather than using the globals of this module.  If the
 # '_warnings' C extension is in use, some globals are replaced by functions
 # and variables defined in that extension.
 _wm = None
