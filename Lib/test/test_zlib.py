@@ -8,8 +8,15 @@ import random
 import sys
 from test.support import bigmemtest, _1G, _4G, is_s390x
 
+# Building CPython without zlib is not supported except WASI.
+#
+# Anyone who wants build CPython this way should be prepared to patch it,
+# but the core team may help getting those patches to the main branch
+# (as that’s the place where multiple third parties can cooperate).
+#
+# For tests to pass without zlib, this file needs to be removed.
 
-zlib = import_helper.import_module('zlib')
+zlib = import_helper.import_module('zlib', required_on=('linux', 'android', 'ios', 'darwin', 'win32', 'cygwin'))
 
 requires_Compress_copy = unittest.skipUnless(
         hasattr(zlib.compressobj(), "copy"),

@@ -5323,7 +5323,7 @@ if test "$ac_cv_have_lchflags" = yes ; then
 fi
 
 dnl Check for compression libraries
-AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy])
+AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy; zlib 1.2.0 (2003) added inflateCopy.])
 
 dnl detect zlib from Emscripten emport
 PY_CHECK_EMSCRIPTEN_PORT([ZLIB], [-sUSE_ZLIB])
