@@ -98,7 +98,7 @@ class Restart(Exception):
     pass
 
 __all__ = ["run", "pm", "Pdb", "runeval", "runctx", "runcall", "set_trace",
-           "post_mortem", "help"]
+           "post_mortem", "set_default_backend", "get_default_backend", "help"]
 
 
 def find_first_executable_line(code):
