@@ -21450,20 +21450,6 @@ fi
 
 
 
-
-
-  if test "$ac_sys_system" = "Emscripten" -a -z "$ZLIB_CFLAGS" -a -z "$ZLIB_LIBS"
-then :
-
-    ZLIB_CFLAGS="-sUSE_ZLIB"
-    ZLIB_LIBS="-sUSE_ZLIB"
-
-fi
-
-
-
-
-
 pkg_failed=no
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for zlib >= 1.2.0" >&5
 printf %s "checking for zlib >= 1.2.0... " >&6; }
@@ -21604,6 +21590,8 @@ then :
 
       ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
       ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+      BINASCII_CFLAGS="$ZLIB_CFLAGS"
+      BINASCII_LIBS="$ZLIB_LIBS"
       py_check_lib_save_LIBS=$LIBS
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 printf %s "checking for inflateCopy in -lz... " >&6; }
@@ -21751,6 +21739,8 @@ then :
 
       ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
       ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+      BINASCII_CFLAGS="$ZLIB_CFLAGS"
+      BINASCII_LIBS="$ZLIB_LIBS"
       py_check_lib_save_LIBS=$LIBS
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 printf %s "checking for inflateCopy in -lz... " >&6; }
@@ -21825,11 +21815,11 @@ printf "%s\n" "yes" >&6; }
 
 fi
 
-if test "x$have_zlib" = xyes
+if test "x$have_zlib" = xno
 then :
 
-  BINASCII_CFLAGS="-DUSE_ZLIB_CRC32 $ZLIB_CFLAGS"
-  BINASCII_LIBS="$ZLIB_LIBS"
+  BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
+  BINASCII_LIBS=""
 
 fi
 

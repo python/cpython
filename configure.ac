@@ -5325,9 +5325,6 @@ fi
 dnl Check for compression libraries
 AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy; zlib 1.2.0 (2003) added inflateCopy.])
 
-dnl detect zlib from Emscripten emport
-PY_CHECK_EMSCRIPTEN_PORT([ZLIB], [-sUSE_ZLIB])
-
 PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
   have_zlib=yes
   dnl zlib 1.2.0 (2003) added inflateCopy
@@ -5342,15 +5339,17 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
     AS_VAR_IF([have_zlib], [yes], [
       ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
       ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
+      BINASCII_CFLAGS="$ZLIB_CFLAGS"
+      BINASCII_LIBS="$ZLIB_LIBS"
       PY_CHECK_LIB([z], [inflateCopy], [AC_DEFINE([HAVE_ZLIB_COPY], [1])])
     ])
   ])
 ])
 
-dnl binascii can use zlib for optimized crc32.
-AS_VAR_IF([have_zlib], [yes], [
-  BINASCII_CFLAGS="-DUSE_ZLIB_CRC32 $ZLIB_CFLAGS"
-  BINASCII_LIBS="$ZLIB_LIBS"
+dnl wasi does not support zlib
+AS_VAR_IF([have_zlib], [no], [
+  BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
+  BINASCII_LIBS=""
 ])
 
 dnl detect bzip2 from Emscripten emport

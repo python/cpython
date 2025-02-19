@@ -1,2 +1,2 @@
 Make zlib required to build CPython with the exception of WASI.
-(Contributed by Stan Ulbrych in :gh:`xxxxxx`.)
+(Contributed by Stan Ulbrych in :gh:`130297`.)
