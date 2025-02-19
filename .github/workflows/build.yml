@@ -1,26 +1,31 @@
 name: Tests
 
-# bpo-40548: "paths-ignore" is not used to skip documentation-only PRs, because
-# it prevents to mark a job as mandatory. A PR cannot be merged if a job is
-# mandatory but not scheduled because of "paths-ignore".
 on:
+  workflow_dispatch:
   push:
     branches:
-    - master
-    - 3.9
-    - 3.8
-    - 3.7
+    - 'main'
+    - '3.*'
   pull_request:
     branches:
-    - master
-    - 3.9
-    - 3.8
-    - 3.7
+    - 'main'
+    - '3.*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  FORCE_COLOR: 1
 
 jobs:
   check_source:
     name: 'Check for source changes'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       run_tests: ${{ steps.check.outputs.run_tests }}
       run_ssl_tests: ${{ steps.check.outputs.run_ssl_tests }}
@@ -30,8 +35,8 @@ jobs:
         id: check
         run: |
           if [ -z "$GITHUB_BASE_REF" ]; then
-            echo '::set-output name=run_tests::true'
-            echo '::set-output name=run_ssl_tests::true'
+            echo "run_tests=true" >> $GITHUB_OUTPUT
+            echo "run_ssl_tests=true" >> $GITHUB_OUTPUT
           else
             git fetch origin $GITHUB_BASE_REF --depth=1
             # git diff "origin/$GITHUB_BASE_REF..." (3 dots) may be more
@@ -47,19 +52,21 @@ jobs:
             # into the PR branch anyway.
             #
             # https://github.com/python/core-workflow/issues/373
-            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc)' && echo '::set-output name=run_tests::true' || true
-            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qE '(ssl|hashlib|hmac|^.github)' && echo '::set-output name=run_ssl_tests::true' || true
+            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qvE '(\.rst$|^Doc|^Misc)' && echo "run_tests=true" >> $GITHUB_OUTPUT || true
+            git diff --name-only origin/$GITHUB_BASE_REF.. | grep -qE '(ssl|hashlib|hmac|^.github)' && echo "run_ssl_tests=true" >> $GITHUB_OUTPUT || true
           fi
 
   check_abi:
     name: 'Check if the ABI has changed'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04  # 24.04 causes spurious errors
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
-      - name: Install Dependencies
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+      - name: Install dependencies
         run: |
             sudo ./.github/workflows/posix-deps-apt.sh
             sudo apt-get install -yq abigail-tools
@@ -75,16 +82,21 @@ jobs:
 
   check_generated_files:
     name: 'Check if generated files are up to date'
-    runs-on: ubuntu-latest
+    # Don't use ubuntu-latest but a specific version to make the job
+    # reproducible: to get the same tools versions (autoconf, aclocal, ...)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
-      - name: Install Dependencies
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+      - name: Install dependencies
         run: sudo ./.github/workflows/posix-deps-apt.sh
       - name: Add ccache to PATH
-        run: echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
+        run: echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
       - name: Configure ccache action
         uses: hendrikmuhs/ccache-action@v1
       - name: Check Autoconf version 2.69 and aclocal 1.16.3
@@ -183,7 +195,7 @@ jobs:
 
   build_ubuntu:
     name: 'Ubuntu'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true'
     env:
@@ -191,13 +203,13 @@ jobs:
       PYTHONSTRICTEXTENSIONBUILD: 1
     steps:
     - uses: actions/checkout@v4
-    - name: Install Dependencies
+    - name: Install dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Configure OpenSSL env vars
       run: |
-        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> $GITHUB_ENV
-        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
+        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
+        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> "$GITHUB_ENV"
+        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore OpenSSL build'
       id: cache-openssl
       uses: actions/cache@v4
@@ -209,7 +221,7 @@ jobs:
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $MULTISSL_DIR --openssl $OPENSSL_VER --system Linux
     - name: Add ccache to PATH
       run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
+        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure ccache action
       uses: hendrikmuhs/ccache-action@v1
     - name: Configure CPython
@@ -223,7 +235,8 @@ jobs:
 
   build_ubuntu_ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
     needs: check_source
     if: needs.check_source.outputs.run_tests == 'true' && needs.check_source.outputs.run_ssl_tests == 'true'
     strategy:
@@ -237,13 +250,15 @@ jobs:
       LD_LIBRARY_PATH: ${{ github.workspace }}/multissl/openssl/${{ matrix.openssl_ver }}/lib
     steps:
     - uses: actions/checkout@v4
-    - name: Install Dependencies
+      with:
+        persist-credentials: false
+    - name: Install dependencies
       run: sudo ./.github/workflows/posix-deps-apt.sh
     - name: Configure OpenSSL env vars
       run: |
-        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> $GITHUB_ENV
-        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> $GITHUB_ENV
-        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> $GITHUB_ENV
+        echo "MULTISSL_DIR=${GITHUB_WORKSPACE}/multissl" >> "$GITHUB_ENV"
+        echo "OPENSSL_DIR=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}" >> "$GITHUB_ENV"
+        echo "LD_LIBRARY_PATH=${GITHUB_WORKSPACE}/multissl/openssl/${OPENSSL_VER}/lib" >> "$GITHUB_ENV"
     - name: 'Restore OpenSSL build'
       id: cache-openssl
       uses: actions/cache@v4
@@ -255,7 +270,7 @@ jobs:
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $MULTISSL_DIR --openssl $OPENSSL_VER --system Linux
     - name: Add ccache to PATH
       run: |
-        echo "PATH=/usr/lib/ccache:$PATH" >> $GITHUB_ENV
+        echo "PATH=/usr/lib/ccache:$PATH" >> "$GITHUB_ENV"
     - name: Configure ccache action
       uses: hendrikmuhs/ccache-action@v1.2
     - name: Configure CPython
