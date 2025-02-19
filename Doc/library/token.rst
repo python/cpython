@@ -44,11 +44,6 @@ functions.  The functions mirror definitions in the Python C header files.
 
 The token constants are:
 
-.. data:: ENDMARKER
-
-   Token value that indicates the end of input.
-   Used in :ref:`top-level grammar rules <top-level>`.
-
 .. data:: NAME
 
    Token value that indicates an :ref:`identifier <identifiers>`.
@@ -64,6 +59,17 @@ The token constants are:
    The token string is not interpreted: it includes the prefix (if any)
    and the quote characters; escape sequences are included with their
    initial backslash.
+
+.. data:: OP
+
+   A generic token value returned by the :mod:`tokenize` module for
+   :ref:`operators <operators>` and :ref:`delimiters <delimiters>`.
+   See the :mod:`tokenize` module documentation for details.
+
+.. data:: COMMENT
+
+   Token value used to indicate a comment.
+   The parser ignores :data:`!COMMENT` tokens.
 
 .. data:: NEWLINE
 
@@ -85,26 +91,6 @@ The token constants are:
 
    Token value used at the beginning of a :ref:`logical line <logical-lines>`
    to indicate the end of an :ref:`indented block <indentation>`.
-
-.. data:: OP
-
-   A generic token value returned by the :mod:`tokenize` module for
-   :ref:`operator <operators>` and :ref:`delimiter <delimiters>`.
-   See the :mod:`tokenize` module documentation for details.
-
-.. data:: TYPE_IGNORE
-
-   Token value indicating that a ``type: ignore`` comment was recognized.
-   Such tokens are only produced when :func:`ast.parse` is invoked with
-   ``type_comments=True``.
-
-.. data:: TYPE_COMMENT
-
-   Token value indicating that a type comment was recognized.  Such
-   tokens are only produced when :func:`ast.parse` is invoked with
-   ``type_comments=True``.
-
-.. data:: SOFT_KEYWORD
 
 .. data:: FSTRING_START
 
@@ -133,19 +119,10 @@ The token constants are:
       Token value used to indicate the end of a :ref:`f-string <f-strings>`.
       The token string contains the closing quote.
 
-.. data:: COMMENT
+.. data:: ENDMARKER
 
-   Token value used to indicate a comment.
-   The parser ignores :data:`!COMMENT` tokens.
-
-.. data:: ERRORTOKEN
-
-   Token value used to indicate wrong input.
-
-   .. impl-detail::
-
-      The :mod:`tokenize` module generally indicates errors by
-      raising exceptions instead of emitting this token.
+   Token value that indicates the end of input.
+   Used in :ref:`top-level grammar rules <top-level>`.
 
 .. data:: ENCODING
 
@@ -158,14 +135,55 @@ The token constants are:
       This token type isn't used by the C tokenizer but is needed for
       the :mod:`tokenize` module.
 
-The remaining tokens represent literal text; most are :ref:`operators`
-and :ref:`delimiters`:
+
+The following token types are not produced by the :mod:`tokenize` module,
+and are defined for special uses in the tokenizer or parser:
+
+.. data:: TYPE_IGNORE
+
+   Token value indicating that a ``type: ignore`` comment was recognized.
+   Such tokens are produced instead of regular :data:`COMMENT` tokens only when
+   :func:`ast.parse` is invoked with ``type_comments=True``.
+
+.. data:: TYPE_COMMENT
+
+   Token value indicating that a type comment was recognized.
+   Such tokens are produced instead of regular :data:`COMMENT` tokens only when
+   :func:`ast.parse` is invoked with ``type_comments=True``.
+
+.. data:: SOFT_KEYWORD
+
+   Token value indicating a :ref:`soft keyword <soft-keywords>`.
+
+   The tokenizer never produces this value.
+   To check for a soft keyword, pass a :data:`NAME` token's string to
+   :func:`keyword.issoftkeyword`.
+
+.. data:: ERRORTOKEN
+
+   Token value used to indicate wrong input.
+
+   The :mod:`tokenize` module generally indicates errors by
+   raising exceptions instead of emitting this token.
+   It can also emit tokens such as :data:`OP` or :data:`NAME` with strings that
+   are later rejected by the parser.
+
+
+The remaining tokens represent specific :ref:`operators` and :ref:`delimiters`.
+(The :mod:`tokenize` module reports these as :data:`OP`; see ``exact_type``
+in the :mod:`tokenize` documentation for details.)
 
 .. include:: token-list.inc
 
+
+The following are non-token constants:
+
 .. data:: N_TOKENS
 
-.. data:: NT_OFFSET
+   The number of token types defined in this module.
+
+.. NT_OFFSET is deliberately undocumented; if you need it you should be
+   reading the source
 
 .. data:: EXACT_TOKEN_TYPES
 
@@ -189,6 +207,9 @@ and :ref:`delimiters`:
    Added :data:`!AWAIT` and :data:`!ASYNC` tokens back (they're needed
    to support parsing older Python versions for :func:`ast.parse` with
    ``feature_version`` set to 6 or lower).
+
+.. versionchanged:: 3.12
+   Added :data:`EXCLAMATION`.
 
 .. versionchanged:: 3.13
    Removed :data:`!AWAIT` and :data:`!ASYNC` tokens again.
