@@ -285,7 +285,6 @@ get_warnings_context_filters(PyInterpreterState *interp)
         return NULL;
     }
     if (ctx == Py_None) {
-        Py_DECREF(ctx);
         Py_RETURN_NONE;
     }
     PyObject *context_filters = PyObject_GetAttr(ctx, &_Py_ID(_filters));
@@ -509,7 +508,6 @@ get_filter(PyInterpreterState *interp, PyObject *category,
     }
     if (context_filters == Py_None) {
         use_global_filters = true;
-        Py_DECREF(context_filters);
     } else {
         PyObject *context_action = NULL;
         if (!filter_search(interp, category, text, lineno, module, "_warnings_context _filters",
