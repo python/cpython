@@ -38,7 +38,7 @@ jobs:
     - name: 'Set up Python'
       uses: actions/setup-python@v4
       with:
-        python-version: '3'
+        python-version: '3.12'
         cache: 'pip'
         cache-dependency-path: 'Doc/requirements.txt'
     - name: 'Install build dependencies'
@@ -46,10 +46,12 @@ jobs:
     - name: 'Build HTML documentation'
       run: make -C Doc/ SPHINXOPTS="-q" SPHINXERRORHANDLING="-W --keep-going" html
     - name: 'Upload'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: doc-html
         path: Doc/build/html
+        include-hidden-files: true
+        overwrite: true
 
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:
