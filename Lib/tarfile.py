@@ -2694,10 +2694,13 @@ class TarFile(object):
             except SubsequentHeaderError as e:
                 raise ReadError(str(e)) from None
             except Exception as e:
-                import zlib
-                if isinstance(e, zlib.error):
-                    raise ReadError(f'zlib error: {e}') from None
-                else:
+                try:
+                    import zlib
+                    if isinstance(e, zlib.error):
+                        raise ReadError(f'zlib error: {e}') from None
+                    else:
+                        raise e
+                except ImportError:
                     raise e
             break
 
