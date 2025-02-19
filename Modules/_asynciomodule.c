@@ -216,7 +216,7 @@ static PyObject * future_new_iter(PyObject *);
 
 static PyObject *
 task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *result);
-
+static void unregister_task(TaskObj *task);
 
 static void
 clear_task_coro(TaskObj *task)
@@ -409,7 +409,6 @@ future_ensure_alive(FutureObj *fut)
         }                                                           \
     } while(0);
 
-static void unregister_task(asyncio_state *state, TaskObj *task);
 
 static int
 future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
@@ -422,7 +421,7 @@ future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
         // remove task from linked-list of tasks
         // as it is finished now
         TaskObj *task = (TaskObj *)fut;
-        unregister_task(state, task);
+        unregister_task(task);
     }
 
     if (fut->fut_callback0 != NULL) {
@@ -2169,9 +2168,8 @@ static  PyMethodDef TaskWakeupDef = {
 /* ----- Task introspection helpers */
 
 static void
-register_task(asyncio_state *state, TaskObj *task)
+register_task(TaskObj *task)
 {
-    assert(Task_Check(state, task));
     if (task->task_node.next != NULL) {
         // already registered
         assert(task->task_node.prev != NULL);
@@ -2200,9 +2198,8 @@ unregister_task_safe(TaskObj *task)
 }
 
 static void
-unregister_task(asyncio_state *state, TaskObj *task)
+unregister_task(TaskObj *task)
 {
-    assert(Task_Check(state, task));
 #ifdef Py_GIL_DISABLED
     // check if we are in the same thread
     // if so, we can avoid locking
@@ -2396,7 +2393,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     // works correctly in non-owning threads.
     _PyObject_SetMaybeWeakref((PyObject *)self);
 #endif
-    register_task(state, self);
+    register_task(self);
     return 0;
 }
 
@@ -2981,8 +2978,7 @@ TaskObj_dealloc(PyObject *self)
     _PyObject_ResurrectStart(self);
     // Unregister the task here so that even if any subclass of Task
     // which doesn't end up calling TaskObj_finalize not crashes.
-    asyncio_state *state = get_asyncio_state_by_def(self);
-    unregister_task(state, task);
+    unregister_task(task);
 
     PyObject_CallFinalizer(self);
 
@@ -3519,7 +3515,7 @@ task_eager_start(asyncio_state *state, TaskObj *task)
     }
 
     if (task->task_state == STATE_PENDING) {
-        register_task(state, task);
+        register_task(task);
     } else {
         // This seems to really help performance on pyperformance benchmarks
         clear_task_coro(task);
@@ -3710,7 +3706,7 @@ _asyncio__register_task_impl(PyObject *module, PyObject *task)
     if (Task_Check(state, task)) {
         // task is an asyncio.Task instance or subclass, use efficient
         // linked-list implementation.
-        register_task(state, (TaskObj *)task);
+        register_task((TaskObj *)task);
         Py_RETURN_NONE;
     }
     // As task does not inherit from asyncio.Task, fallback to less efficient
@@ -3762,7 +3758,7 @@ _asyncio__unregister_task_impl(PyObject *module, PyObject *task)
 {
     asyncio_state *state = get_asyncio_state(module);
     if (Task_Check(state, task)) {
-        unregister_task(state, (TaskObj *)task);
+        unregister_task((TaskObj *)task);
         Py_RETURN_NONE;
     }
     PyObject *res = PyObject_CallMethodOneArg(state->non_asyncio_tasks,
