@@ -442,9 +442,9 @@ For example::
    new_non_team_user(RegularUser) # OK
    new_non_team_user(HeroUser)    # OK
 
-   new_non_team_user(ManagerUser) # Error: ``type[ManagerUser]`` is not a subtype
-                                  # of ``type[BasicUser | ProUser]``
    new_non_team_user(TeamUser)    # Error: ``type[TeamUser]`` is not a subtype
+                                  # of ``type[BasicUser | ProUser]``
+   new_non_team_user(ManagerUser) # Error: ``type[ManagerUser]`` is not a subtype
                                   # of ``type[BasicUser | ProUser]``
    new_non_team_user(User)        # Also an error
 
