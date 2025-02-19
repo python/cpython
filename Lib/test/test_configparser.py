@@ -2161,6 +2161,14 @@ class SectionlessTestCase(unittest.TestCase):
         self.assertEqual('1', cfg2[configparser.UNNAMED_SECTION]['a'])
         self.assertEqual('2', cfg2[configparser.UNNAMED_SECTION]['b'])
 
+    def test_empty_unnamed_section(self):
+        cfg = configparser.ConfigParser(allow_unnamed_section=True)
+        cfg.add_section(configparser.UNNAMED_SECTION)
+        cfg.add_section('section')
+        output = io.StringIO()
+        cfg.write(output)
+        self.assertEqual(output.getvalue(), '[section]\n\n')
+
     def test_add_section(self):
         cfg = configparser.ConfigParser(allow_unnamed_section=True)
         cfg.add_section(configparser.UNNAMED_SECTION)
@@ -2173,6 +2181,15 @@ class SectionlessTestCase(unittest.TestCase):
 
         with self.assertRaises(configparser.UnnamedSectionDisabledError):
             configparser.ConfigParser().add_section(configparser.UNNAMED_SECTION)
+
+    def test_multiple_configs(self):
+        cfg = configparser.ConfigParser(allow_unnamed_section=True)
+        cfg.read_string('a = 1')
+        cfg.read_string('b = 2')
+
+        self.assertEqual([configparser.UNNAMED_SECTION], cfg.sections())
+        self.assertEqual('1', cfg[configparser.UNNAMED_SECTION]['a'])
+        self.assertEqual('2', cfg[configparser.UNNAMED_SECTION]['b'])
 
 
 class MiscTestCase(unittest.TestCase):

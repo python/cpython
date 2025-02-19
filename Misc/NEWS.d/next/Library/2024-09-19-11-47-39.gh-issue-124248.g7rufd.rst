@@ -1,2 +1,0 @@
-Fixed potential crash when using :mod:`struct` to process zero-width
-'Pascal string' fields (``0p``).

@@ -1,5 +1,5 @@
 from test import support
-from test.support import is_apple_mobile, os_helper, requires_debug_ranges
+from test.support import is_apple_mobile, os_helper, requires_debug_ranges, is_emscripten
 from test.support.script_helper import assert_python_ok
 import array
 import io
@@ -27,6 +27,13 @@ class HelperMixin:
             self.assertEqual(sample, new)
         finally:
             os_helper.unlink(os_helper.TESTFN)
+
+def omit_last_byte(data):
+    """return data[:-1]"""
+    # This file's code is used in CompatibilityTestCase,
+    # but slices need marshal version 5.
+    # Avoid the slice literal.
+    return data[slice(0, -1)]
 
 class IntTestCase(unittest.TestCase, HelperMixin):
     def test_ints(self):
@@ -118,8 +125,7 @@ class CodeTestCase(unittest.TestCase):
     def test_many_codeobjects(self):
         # Issue2957: bad recursion count on code objects
         # more than MAX_MARSHAL_STACK_DEPTH
-        count = support.exceeds_recursion_limit()
-        codes = (ExceptionTestCase.test_exceptions.__code__,) * count
+        codes = (ExceptionTestCase.test_exceptions.__code__,) * 10_000
         marshal.loads(marshal.dumps(codes))
 
     def test_different_filenames(self):
@@ -241,7 +247,8 @@ class BugsTestCase(unittest.TestCase):
     def test_patch_873224(self):
         self.assertRaises(Exception, marshal.loads, b'0')
         self.assertRaises(Exception, marshal.loads, b'f')
-        self.assertRaises(Exception, marshal.loads, marshal.dumps(2**65)[:-1])
+        self.assertRaises(Exception, marshal.loads,
+                          omit_last_byte(marshal.dumps(2**65)))
 
     def test_version_argument(self):
         # Python 2.4.0 crashes for any call to marshal.dumps(x, y)
@@ -286,7 +293,7 @@ class BugsTestCase(unittest.TestCase):
         #if os.name == 'nt' and support.Py_DEBUG:
         if os.name == 'nt':
             MAX_MARSHAL_STACK_DEPTH = 1000
-        elif sys.platform == 'wasi' or is_apple_mobile:
+        elif sys.platform == 'wasi' or is_emscripten or is_apple_mobile:
             MAX_MARSHAL_STACK_DEPTH = 1500
         else:
             MAX_MARSHAL_STACK_DEPTH = 2000
@@ -594,6 +601,19 @@ class InterningTestCase(unittest.TestCase, HelperMixin):
         s2 = sys.intern(s)
         self.assertNotEqual(id(s2), id(s))
 
+class SliceTestCase(unittest.TestCase, HelperMixin):
+    def test_slice(self):
+        for obj in (
+            slice(None), slice(1), slice(1, 2), slice(1, 2, 3),
+            slice({'set'}, ('tuple', {'with': 'dict'}, ), self.helper.__code__)
+        ):
+            with self.subTest(obj=str(obj)):
+                self.helper(obj)
+
+                for version in range(4):
+                    with self.assertRaises(ValueError):
+                        marshal.dumps(obj, version)
+
 @support.cpython_only
 @unittest.skipUnless(_testcapi, 'requires _testcapi')
 class CAPI_TestCase(unittest.TestCase, HelperMixin):
@@ -654,7 +674,7 @@ class CAPI_TestCase(unittest.TestCase, HelperMixin):
             self.assertEqual(r, obj)
 
             with open(os_helper.TESTFN, 'wb') as f:
-                f.write(data[:1])
+                f.write(omit_last_byte(data))
             with self.assertRaises(EOFError):
                 _testcapi.pymarshal_read_last_object_from_file(os_helper.TESTFN)
             os_helper.unlink(os_helper.TESTFN)
@@ -671,7 +691,7 @@ class CAPI_TestCase(unittest.TestCase, HelperMixin):
             self.assertEqual(p, len(data))
 
             with open(os_helper.TESTFN, 'wb') as f:
-                f.write(data[:1])
+                f.write(omit_last_byte(data))
             with self.assertRaises(EOFError):
                 _testcapi.pymarshal_read_object_from_file(os_helper.TESTFN)
             os_helper.unlink(os_helper.TESTFN)

@@ -510,6 +510,7 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
 
     def test_constructor(self):
         eq = self.assertEqual
+        ra = self.assertRaises
         td = timedelta
 
         # Check keyword args to constructor
@@ -532,6 +533,15 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         eq(td(minutes=1.0/60), td(seconds=1))
         eq(td(seconds=0.001), td(milliseconds=1))
         eq(td(milliseconds=0.001), td(microseconds=1))
+
+        # Check type of args to constructor
+        ra(TypeError, lambda: td(weeks='1'))
+        ra(TypeError, lambda: td(days='1'))
+        ra(TypeError, lambda: td(hours='1'))
+        ra(TypeError, lambda: td(minutes='1'))
+        ra(TypeError, lambda: td(seconds='1'))
+        ra(TypeError, lambda: td(milliseconds='1'))
+        ra(TypeError, lambda: td(microseconds='1'))
 
     def test_computations(self):
         eq = self.assertEqual
@@ -1952,6 +1962,23 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             # blow up because other fields are insane.
             self.theclass(base[:2] + bytes([ord_byte]) + base[3:])
 
+    def test_valuerror_messages(self):
+        pattern = re.compile(
+            r"(year|month|day) must be in \d+\.\.\d+, not \d+"
+        )
+        test_cases = [
+            (2009, 1, 32),      # Day out of range
+            (2009, 2, 31),      # Day out of range
+            (2009, 13, 1),      # Month out of range
+            (2009, 0, 1),       # Month out of range
+            (10000, 12, 31),    # Year out of range
+            (0, 12, 31),        # Year out of range
+        ]
+        for case in test_cases:
+            with self.subTest(case):
+                with self.assertRaisesRegex(ValueError, pattern):
+                    self.theclass(*case)
+
     def test_fromisoformat(self):
         # Test that isoformat() is reversible
         base_dates = [
@@ -2949,11 +2976,32 @@ class TestDateTime(TestDate):
             self.assertEqual(t.strftime("%z"), "-0200" + z)
             self.assertEqual(t.strftime("%:z"), "-02:00:" + z)
 
-        # bpo-34482: Check that surrogates don't cause a crash.
-        try:
-            t.strftime('%y\ud800%m %H\ud800%M')
-        except UnicodeEncodeError:
-            pass
+    def test_strftime_special(self):
+        t = self.theclass(2004, 12, 31, 6, 22, 33, 47)
+        s1 = t.strftime('%c')
+        s2 = t.strftime('%B')
+        # gh-52551, gh-78662: Unicode strings should pass through strftime,
+        # independently from locale.
+        self.assertEqual(t.strftime('\U0001f40d'), '\U0001f40d')
+        self.assertEqual(t.strftime('\U0001f4bb%c\U0001f40d%B'), f'\U0001f4bb{s1}\U0001f40d{s2}')
+        self.assertEqual(t.strftime('%c\U0001f4bb%B\U0001f40d'), f'{s1}\U0001f4bb{s2}\U0001f40d')
+        # Lone surrogates should pass through.
+        self.assertEqual(t.strftime('\ud83d'), '\ud83d')
+        self.assertEqual(t.strftime('\udc0d'), '\udc0d')
+        self.assertEqual(t.strftime('\ud83d%c\udc0d%B'), f'\ud83d{s1}\udc0d{s2}')
+        self.assertEqual(t.strftime('%c\ud83d%B\udc0d'), f'{s1}\ud83d{s2}\udc0d')
+        self.assertEqual(t.strftime('%c\udc0d%B\ud83d'), f'{s1}\udc0d{s2}\ud83d')
+        # Surrogate pairs should not recombine.
+        self.assertEqual(t.strftime('\ud83d\udc0d'), '\ud83d\udc0d')
+        self.assertEqual(t.strftime('%c\ud83d\udc0d%B'), f'{s1}\ud83d\udc0d{s2}')
+        # Surrogate-escaped bytes should not recombine.
+        self.assertEqual(t.strftime('\udcf0\udc9f\udc90\udc8d'), '\udcf0\udc9f\udc90\udc8d')
+        self.assertEqual(t.strftime('%c\udcf0\udc9f\udc90\udc8d%B'), f'{s1}\udcf0\udc9f\udc90\udc8d{s2}')
+        # gh-124531: The null character should not terminate the format string.
+        self.assertEqual(t.strftime('\0'), '\0')
+        self.assertEqual(t.strftime('\0'*1000), '\0'*1000)
+        self.assertEqual(t.strftime('\0%c\0%B'), f'\0{s1}\0{s2}')
+        self.assertEqual(t.strftime('%c\0%B\0'), f'{s1}\0{s2}\0')
 
     def test_extract(self):
         dt = self.theclass(2002, 3, 4, 18, 45, 3, 1234)
@@ -3180,6 +3228,24 @@ class TestDateTime(TestDate):
                 self.assertIs(type(res), DateTimeSubclass)
                 self.assertEqual(res.year, 2013)
                 self.assertEqual(res.fold, fold)
+
+    def test_valuerror_messages(self):
+        pattern = re.compile(
+            r"(year|month|day|hour|minute|second) must "
+            r"be in \d+\.\.\d+, not \d+"
+        )
+        test_cases = [
+            (2009, 4, 1, 12, 30, 90),   # Second out of range
+            (2009, 4, 1, 12, 90, 45),   # Minute out of range
+            (2009, 4, 1, 25, 30, 45),   # Hour out of range
+            (2009, 4, 32, 24, 0, 0),    # Day out of range
+            (2009, 13, 1, 24, 0, 0),    # Month out of range
+            (9999, 12, 31, 24, 0, 0),   # Year out of range
+        ]
+        for case in test_cases:
+            with self.subTest(case):
+                with self.assertRaisesRegex(ValueError, pattern):
+                    self.theclass(*case)
 
     def test_fromisoformat_datetime(self):
         # Test that isoformat() is reversible
@@ -3467,11 +3533,32 @@ class TestDateTime(TestDate):
             '2009-04-32T24:00:00.000000',  # Day is invalid before wrapping due to 24:00
             '2009-13-01T24:00:00.000000',  # Month is invalid before wrapping due to 24:00
             '9999-12-31T24:00:00.000000',  # Year is invalid after wrapping due to 24:00
+            '2009-04-19T12:30Z12:00',      # Extra time zone info after Z
+            '2009-04-19T12:30:45:334034',  # Invalid microsecond separator
         ]
 
         for bad_str in bad_strs:
             with self.subTest(bad_str=bad_str):
                 with self.assertRaises(ValueError):
+                    self.theclass.fromisoformat(bad_str)
+
+    def test_fromisoformat_fails_datetime_valueerror(self):
+        pattern = re.compile(
+            r"(year|month|day|hour|minute|second) must "
+            r"be in \d+\.\.\d+, not \d+"
+        )
+        bad_strs = [
+            "2009-04-01T12:30:90",          # Second out of range
+            "2009-04-01T12:90:45",          # Minute out of range
+            "2009-04-01T25:30:45",          # Hour out of range
+            "2009-04-32T24:00:00",          # Day out of range
+            "2009-13-01T24:00:00",          # Month out of range
+            "9999-12-31T24:00:00",          # Year out of range
+        ]
+
+        for bad_str in bad_strs:
+            with self.subTest(bad_str=bad_str):
+                with self.assertRaisesRegex(ValueError, pattern):
                     self.theclass.fromisoformat(bad_str)
 
     def test_fromisoformat_fails_surrogate(self):
@@ -3735,6 +3822,33 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
 
         # gh-85432: The parameter was named "fmt" in the pure-Python impl.
         t.strftime(format="%f")
+
+    def test_strftime_special(self):
+        t = self.theclass(1, 2, 3, 4)
+        s1 = t.strftime('%I%p%Z')
+        s2 = t.strftime('%X')
+        # gh-52551, gh-78662: Unicode strings should pass through strftime,
+        # independently from locale.
+        self.assertEqual(t.strftime('\U0001f40d'), '\U0001f40d')
+        self.assertEqual(t.strftime('\U0001f4bb%I%p%Z\U0001f40d%X'), f'\U0001f4bb{s1}\U0001f40d{s2}')
+        self.assertEqual(t.strftime('%I%p%Z\U0001f4bb%X\U0001f40d'), f'{s1}\U0001f4bb{s2}\U0001f40d')
+        # Lone surrogates should pass through.
+        self.assertEqual(t.strftime('\ud83d'), '\ud83d')
+        self.assertEqual(t.strftime('\udc0d'), '\udc0d')
+        self.assertEqual(t.strftime('\ud83d%I%p%Z\udc0d%X'), f'\ud83d{s1}\udc0d{s2}')
+        self.assertEqual(t.strftime('%I%p%Z\ud83d%X\udc0d'), f'{s1}\ud83d{s2}\udc0d')
+        self.assertEqual(t.strftime('%I%p%Z\udc0d%X\ud83d'), f'{s1}\udc0d{s2}\ud83d')
+        # Surrogate pairs should not recombine.
+        self.assertEqual(t.strftime('\ud83d\udc0d'), '\ud83d\udc0d')
+        self.assertEqual(t.strftime('%I%p%Z\ud83d\udc0d%X'), f'{s1}\ud83d\udc0d{s2}')
+        # Surrogate-escaped bytes should not recombine.
+        self.assertEqual(t.strftime('\udcf0\udc9f\udc90\udc8d'), '\udcf0\udc9f\udc90\udc8d')
+        self.assertEqual(t.strftime('%I%p%Z\udcf0\udc9f\udc90\udc8d%X'), f'{s1}\udcf0\udc9f\udc90\udc8d{s2}')
+        # gh-124531: The null character should not terminate the format string.
+        self.assertEqual(t.strftime('\0'), '\0')
+        self.assertEqual(t.strftime('\0'*1000), '\0'*1000)
+        self.assertEqual(t.strftime('\0%I%p%Z\0%X'), f'\0{s1}\0{s2}')
+        self.assertEqual(t.strftime('%I%p%Z\0%X\0'), f'{s1}\0{s2}\0')
 
     def test_format(self):
         t = self.theclass(1, 2, 3, 4)
@@ -4259,9 +4373,8 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         self.assertRaises(TypeError, t.strftime, "%Z")
 
         # Issue #6697:
-        if '_Fast' in self.__class__.__name__:
-            Badtzname.tz = '\ud800'
-            self.assertRaises(ValueError, t.strftime, "%Z")
+        Badtzname.tz = '\ud800'
+        self.assertEqual(t.strftime("%Z"), '\ud800')
 
     def test_hash_edge_cases(self):
         # Offsets that overflow a basic time.
@@ -4424,6 +4537,21 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         t2 = t2.replace(tzinfo=Varies())
         self.assertTrue(t1 < t2)  # t1's offset counter still going up
 
+    def test_valuerror_messages(self):
+        pattern = re.compile(
+            r"(hour|minute|second|microsecond) must be in \d+\.\.\d+, not \d+"
+        )
+        test_cases = [
+            (12, 30, 90, 9999991),  # Microsecond out of range
+            (12, 30, 90, 000000),   # Second out of range
+            (25, 30, 45, 000000),   # Hour out of range
+            (12, 90, 45, 000000),   # Minute out of range
+        ]
+        for case in test_cases:
+            with self.subTest(case):
+                with self.assertRaisesRegex(ValueError, pattern):
+                    self.theclass(*case)
+
     def test_fromisoformat(self):
         time_examples = [
             (0, 0, 0, 0),
@@ -4532,6 +4660,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             ('00:00:00.000', self.theclass(0, 0)),
             ('000000.000000', self.theclass(0, 0)),
             ('00:00:00.000000', self.theclass(0, 0)),
+            ('00:00:00,100000', self.theclass(0, 0, 0, 100000)),
             ('1200', self.theclass(12, 0)),
             ('12:00', self.theclass(12, 0)),
             ('120000', self.theclass(12, 0)),
@@ -4599,6 +4728,8 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             '12:30:45.123456+12:00:30a',    # Extra at end of full time
             '12.5',                     # Decimal mark at end of hour
             '12:30,5',                  # Decimal mark at end of minute
+            '12:30:45.123456Z12:00',    # Extra time zone info after Z
+            '12:30:45:334034',          # Invalid microsecond separator
         ]
 
         for bad_str in bad_strs:

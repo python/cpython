@@ -20,7 +20,7 @@ This one supports color, multiline editing, history browsing, and
 paste mode.  To disable color, see :ref:`using-on-controlling-color` for
 details.  Function keys provide some additional functionality.
 :kbd:`F1` enters the interactive help browser :mod:`pydoc`.
-:kbd:`F2` allows for browsing command-line history without output nor the
+:kbd:`F2` allows for browsing command-line history with neither output nor the
 :term:`>>>` and :term:`...` prompts. :kbd:`F3` enters "paste mode", which
 makes pasting larger blocks of code easier. Press :kbd:`F3` to return to
 the regular prompt.

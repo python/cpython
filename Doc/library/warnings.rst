@@ -180,6 +180,19 @@ If a warning is reported and doesn't match any registered filter then the
 "default" action is applied (hence its name).
 
 
+
+.. _repeated-warning-suppression-criteria:
+
+Repeated Warning Suppression Criteria
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The filters that suppress repeated warnings apply the following criteria to determine if a warning is considered a repeat:
+
+- ``"default"``: A warning is considered a repeat only if the (*message*, *category*, *module*, *lineno*) are all the same.
+- ``"module"``: A warning is considered a repeat if the (*message*, *category*, *module*) are the same, ignoring the line number.
+- ``"once"``: A warning is considered a repeat if the (*message*, *category*) are the same, ignoring the module and line number.
+
+
 .. _describing-warning-filters:
 
 Describing Warning Filters
@@ -398,7 +411,7 @@ Available Functions
 -------------------
 
 
-.. function:: warn(message, category=None, stacklevel=1, source=None, *, skip_file_prefixes=None)
+.. function:: warn(message, category=None, stacklevel=1, source=None, *, skip_file_prefixes=())
 
    Issue a warning, or maybe ignore it or raise an exception.  The *category*
    argument, if given, must be a :ref:`warning category class <warning-categories>`; it

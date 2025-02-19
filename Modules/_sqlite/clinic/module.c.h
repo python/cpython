@@ -52,7 +52,8 @@ pysqlite_complete_statement(PyObject *module, PyObject *const *args, Py_ssize_t 
     PyObject *argsbuf[1];
     const char *statement;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -208,4 +209,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=457ab0fdbb9e1880 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=db9bf7ecad197343 input=a9049054013a1b77]*/

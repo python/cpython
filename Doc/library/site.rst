@@ -35,7 +35,7 @@ are skipped.  For the tail part, it uses the empty string and then
 :file:`lib/site-packages` (on Windows) or
 :file:`lib/python{X.Y[t]}/site-packages` (on Unix and macOS). (The
 optional suffix "t" indicates the :term:`free threading` build, and is
-appended if ``"t"`` is present in the :attr:`sys.abiflags` constant.)
+appended if ``"t"`` is present in the :data:`sys.abiflags` constant.)
 For each
 of the distinct head-tail combinations, it sees if it refers to an existing
 directory, and if so, adds it to ``sys.path`` and also inspects the newly
@@ -49,14 +49,22 @@ added path for configuration files.
    identified by the "t" suffix in the version-specific directory name, such as
    :file:`lib/python3.13t/`.
 
-If a file named "pyvenv.cfg" exists one directory above sys.executable,
-sys.prefix and sys.exec_prefix are set to that directory and
-it is also checked for site-packages (sys.base_prefix and
-sys.base_exec_prefix will always be the "real" prefixes of the Python
-installation). If "pyvenv.cfg" (a bootstrap configuration file) contains
-the key "include-system-site-packages" set to anything other than "true"
-(case-insensitive), the system-level prefixes will not be
-searched for site-packages; otherwise they will.
+.. versionchanged:: 3.14
+
+   :mod:`site` is no longer responsible for updating :data:`sys.prefix` and
+   :data:`sys.exec_prefix` on :ref:`sys-path-init-virtual-environments`. This is
+   now done during the :ref:`path initialization <sys-path-init>`. As a result,
+   under :ref:`sys-path-init-virtual-environments`, :data:`sys.prefix` and
+   :data:`sys.exec_prefix` no longer depend on the :mod:`site` initialization,
+   and are therefore unaffected by :option:`-S`.
+
+.. _site-virtual-environments-configuration:
+
+When running under a :ref:`virtual environment <sys-path-init-virtual-environments>`,
+the ``pyvenv.cfg`` file in :data:`sys.prefix` is checked for site-specific
+configurations. If the ``include-system-site-packages`` key exists and is set to
+``true`` (case-insensitive), the system-level prefixes will be searched for
+site-packages, otherwise they won't.
 
 .. index::
    single: # (hash); comment

@@ -7,6 +7,7 @@ import pickle
 import random
 import string
 import sys
+import textwrap
 import types
 import unittest
 import warnings
@@ -15,6 +16,7 @@ import weakref
 from copy import deepcopy
 from contextlib import redirect_stdout
 from test import support
+from test.support.script_helper import assert_python_ok
 
 try:
     import _testcapi
@@ -404,14 +406,6 @@ class OperatorsTest(unittest.TestCase):
 
 
 class ClassPropertiesAndMethods(unittest.TestCase):
-
-    def assertHasAttr(self, obj, name):
-        self.assertTrue(hasattr(obj, name),
-                        '%r has no attribute %r' % (obj, name))
-
-    def assertNotHasAttr(self, obj, name):
-        self.assertFalse(hasattr(obj, name),
-                         '%r has unexpected attribute %r' % (obj, name))
 
     def test_python_dicts(self):
         # Testing Python subclass of dict...
@@ -1109,6 +1103,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         with self.assertRaises(TypeError):
             frozenset().__class__ = MyFrozenSet
 
+    @support.thread_unsafe
     def test_slots(self):
         # Testing __slots__...
         class C0(object):
@@ -1618,6 +1613,9 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
             for method in (annotated, unannotated):
                 with self.subTest(deco=deco, method=method):
+                    with self.assertRaises(AttributeError):
+                        del unannotated.__annotations__
+
                     original_annotations = dict(method.__wrapped__.__annotations__)
                     self.assertNotIn('__annotations__', method.__dict__)
                     self.assertEqual(method.__annotations__, original_annotations)
@@ -1643,6 +1641,17 @@ class ClassPropertiesAndMethods(unittest.TestCase):
 
                     del method.__annotate__
                     self.assertIs(method.__annotate__, original_annotate)
+
+    def test_staticmethod_annotations_without_dict_access(self):
+        # gh-125017: this used to crash
+        class Spam:
+            def __new__(cls, x, y):
+                pass
+
+        self.assertEqual(Spam.__new__.__annotations__, {})
+        obj = Spam.__dict__['__new__']
+        self.assertIsInstance(obj, staticmethod)
+        self.assertEqual(obj.__annotations__, {})
 
     @support.refcount_test
     def test_refleaks_in_classmethod___init__(self):
@@ -3225,8 +3234,6 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             class C(base):
                 def __init__(self, value):
                     self.value = int(value)
-                def __cmp__(self_, other):
-                    self.fail("shouldn't call __cmp__")
                 def __eq__(self, other):
                     if isinstance(other, C):
                         return self.value == other.value
@@ -3651,6 +3658,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                            encoding='latin1', errors='replace')
         self.assertEqual(ba, b'abc\xbd?')
 
+    @support.skip_emscripten_stack_overflow()
     def test_recursive_call(self):
         # Testing recursive __call__() by setting to instance of class...
         class A(object):
@@ -3930,6 +3938,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         # it as a leak.
         del C.__del__
 
+    @unittest.skipIf(support.is_emscripten, "Seems to works in Pyodide?")
     def test_slots_trash(self):
         # Testing slot trash...
         # Deallocating deeply nested slotted trash caused stack overflows
@@ -4852,6 +4861,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                 # CALL_METHOD_DESCRIPTOR_O
                 deque.append(thing, thing)
 
+    @support.skip_emscripten_stack_overflow()
     def test_repr_as_str(self):
         # Issue #11603: crash or infinite loop when rebinding __str__ as
         # __repr__.
@@ -5062,7 +5072,6 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                 cls.lst = [2**i for i in range(10000)]
         X.descr
 
-    @support.suppress_immortalization()
     def test_remove_subclass(self):
         # bpo-46417: when the last subclass of a type is deleted,
         # remove_subclass() clears the internal dictionary of subclasses:
@@ -5216,6 +5225,7 @@ class MiscTests(unittest.TestCase):
         # Issue #14199: _PyType_Lookup() has to keep a strong reference to
         # the type MRO because it may be modified during the lookup, if
         # __bases__ is set during the lookup for example.
+        code = textwrap.dedent("""
         class MyKey(object):
             def __hash__(self):
                 return hash('mykey')
@@ -5231,12 +5241,29 @@ class MiscTests(unittest.TestCase):
             mykey = 'from Base2'
             mykey2 = 'from Base2'
 
-        with self.assertWarnsRegex(RuntimeWarning, 'X'):
-            X = type('X', (Base,), {MyKey(): 5})
-        # mykey is read from Base
-        self.assertEqual(X.mykey, 'from Base')
-        # mykey2 is read from Base2 because MyKey.__eq__ has set __bases__
-        self.assertEqual(X.mykey2, 'from Base2')
+        X = type('X', (Base,), {MyKey(): 5})
+
+        bases_before = ",".join([c.__name__ for c in X.__bases__])
+        print(f"before={bases_before}")
+
+        # mykey is initially read from Base, however, the lookup will be perfomed
+        # again if specialization fails. The second lookup will use the new
+        # mro set by __eq__.
+        print(X.mykey)
+
+        bases_after = ",".join([c.__name__ for c in X.__bases__])
+        print(f"after={bases_after}")
+
+        # mykey2 is read from Base2 because MyKey.__eq__ has set __bases_
+        print(f"mykey2={X.mykey2}")
+        """)
+        _, out, err = assert_python_ok("-c", code)
+        err = err.decode()
+        self.assertRegex(err, "RuntimeWarning: .*X")
+        out = out.decode()
+        self.assertRegex(out, "before=Base")
+        self.assertRegex(out, "after=Base2")
+        self.assertRegex(out, "mykey2=from Base2")
 
 
 class PicklingTests(unittest.TestCase):
@@ -5459,6 +5486,7 @@ class PicklingTests(unittest.TestCase):
                                      {pickle.dumps, pickle._dumps},
                                      {pickle.loads, pickle._loads}))
 
+    @support.thread_unsafe
     def test_pickle_slots(self):
         # Tests pickling of classes with __slots__.
 
@@ -5526,6 +5554,7 @@ class PicklingTests(unittest.TestCase):
                 y = pickle_copier.copy(x)
                 self._assert_is_copy(x, y)
 
+    @support.thread_unsafe
     def test_reduce_copying(self):
         # Tests pickling and copying new-style classes and objects.
         global C1

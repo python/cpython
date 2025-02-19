@@ -1,2 +1,0 @@
-Improve the experimental JIT compiler's ability to stay "on trace" when
-encountering highly-biased branches.

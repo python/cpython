@@ -1,2 +1,0 @@
-Skip ``test_gdb`` if the binary is relocated by BOLT.
-Patch by Donghee Na.
