@@ -820,6 +820,61 @@ class AST_Tests(unittest.TestCase):
                                     r"Exceeds the limit \(\d+ digits\)"):
             repr(ast.Constant(value=eval(source)))
 
+    def test_pep_765_warnings(self):
+        srcs = [
+            textwrap.dedent("""
+                 def f():
+                     try:
+                         pass
+                     finally:
+                         return 42
+                 """),
+            textwrap.dedent("""
+                 for x in y:
+                     try:
+                         pass
+                     finally:
+                         break
+                 """),
+            textwrap.dedent("""
+                 for x in y:
+                     try:
+                         pass
+                     finally:
+                         continue
+                 """),
+        ]
+        for src in srcs:
+            with self.assertWarnsRegex(SyntaxWarning, 'finally'):
+                ast.parse(src)
+
+    def test_pep_765_no_warnings(self):
+        srcs = [
+            textwrap.dedent("""
+                 try:
+                     pass
+                 finally:
+                     def f():
+                         return 42
+                 """),
+            textwrap.dedent("""
+                 try:
+                     pass
+                 finally:
+                     for x in y:
+                         break
+                 """),
+            textwrap.dedent("""
+                 try:
+                     pass
+                 finally:
+                     for x in y:
+                         continue
+                 """),
+        ]
+        for src in srcs:
+            ast.parse(src)
+
 
 class CopyTests(unittest.TestCase):
     """Test copying and pickling AST nodes."""
