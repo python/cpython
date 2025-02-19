@@ -220,7 +220,7 @@ PrettyPrinter Objects
    .. versionchanged:: 3.11
       No longer attempts to write to :data:`!sys.stdout` if it is ``None``.
 
-   .. versionchanged:: 3.13
+   .. versionchanged:: next
       Added the *block_style* parameter.
 
 

@@ -673,6 +673,15 @@ platform
   (Contributed by Bénédikt Tran in :gh:`122549`.)
 
 
+pprint
+-----
+
+* Add a *block_style* keyword argument for :func:`pprint.pprint`,
+  :func:`pprint.pformat`, :func:`pprint.pp` by passing on all *kwargs* and
+  :class:`pprint.PrettyPrinter`.
+  (Contributed by Stefan Todoran in :gh:`129274`.)
+
+
 pydoc
 -----
 

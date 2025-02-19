@@ -18,7 +18,6 @@ from collections import deque
 from collections import UserDict, UserList
 from dataclasses import dataclass, field
 from types import SimpleNamespace, MappingProxyType
-from typing import Optional
 
 # list, tuple and dict subclasses that do or don't overwrite __repr__
 class list2(list):
@@ -1143,7 +1142,7 @@ deque([('brown', 2),
             quux: list = field(default_factory=list)
             corge: int = 1
             garply: tuple = (1, 2, 3, 4)
-            waldo: Optional["DummyDataclass"] = None
+            waldo: "DummyDataclass" | None = None
         dummy_dataclass = DummyDataclass(
             foo="foo",
             bar=1.2,
