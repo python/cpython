@@ -442,39 +442,41 @@ math_hypot(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 
     return return_value;
 }
-
 PyDoc_STRVAR(math_sumprod__doc__,
-"sumprod($module, p, q, /)\n"
+"sumprod($module, p, q, /, start=0)\n"
 "--\n"
 "\n"
-"Return the sum of products of values from two iterables p and q.\n"
+"Return the sum of products of values from two iterables p and q,\n"
+"starting from the given initial value (default is 0).\n"
 "\n"
 "Roughly equivalent to:\n"
 "\n"
-"    sum(map(operator.mul, p, q, strict=True))\n"
+"    sum(map(operator.mul, p, q, strict=True), start)\n"
 "\n"
 "For float and mixed int/float inputs, the intermediate products\n"
 "and sums are computed with extended precision.");
 
+
 #define MATH_SUMPROD_METHODDEF    \
     {"sumprod", _PyCFunction_CAST(math_sumprod), METH_FASTCALL, math_sumprod__doc__},
-
-static PyObject *
-math_sumprod_impl(PyObject *module, PyObject *p, PyObject *q);
-
 static PyObject *
 math_sumprod(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *p;
-    PyObject *q;
+    PyObject *p, *q, *start = NULL;
 
-    if (!_PyArg_CheckPositional("sumprod", nargs, 2, 2)) {
+    if (!_PyArg_CheckPositional("sumprod", nargs, 2, 3)) {
         goto exit;
     }
     p = args[0];
     q = args[1];
-    return_value = math_sumprod_impl(module, p, q);
+
+    // If a third argument (start) is provided, use it.
+    if (nargs == 3) {
+        start = args[2];
+    }
+
+    return_value = math_sumprod_impl(module, p, q, start);
 
 exit:
     return return_value;
