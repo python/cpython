@@ -1538,7 +1538,7 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case LOAD_ATTR_MODULE: {
-            *effect = Py_MAX(1, (oparg & 1));
+            *effect = Py_MAX(0, (oparg & 1));
             return 0;
         }
         case LOAD_ATTR_NONDESCRIPTOR_NO_DICT: {
@@ -2343,7 +2343,7 @@ _PyOpcode_macro_expansion[256] = {
     [LOAD_ATTR_METHOD_LAZY_DICT] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _CHECK_ATTR_METHOD_LAZY_DICT, 1, 3 }, { _LOAD_ATTR_METHOD_LAZY_DICT, 4, 5 } } },
     [LOAD_ATTR_METHOD_NO_DICT] = { .nuops = 2, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _LOAD_ATTR_METHOD_NO_DICT, 4, 5 } } },
     [LOAD_ATTR_METHOD_WITH_VALUES] = { .nuops = 4, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, 0, 3 }, { _GUARD_KEYS_VERSION, 2, 3 }, { _LOAD_ATTR_METHOD_WITH_VALUES, 4, 5 } } },
-    [LOAD_ATTR_MODULE] = { .nuops = 3, .uops = { { _CHECK_ATTR_MODULE_PUSH_KEYS, 2, 1 }, { _LOAD_ATTR_MODULE_FROM_KEYS, 1, 3 }, { _PUSH_NULL_CONDITIONAL, 0, 9 } } },
+    [LOAD_ATTR_MODULE] = { .nuops = 3, .uops = { { _LOAD_ATTR_MODULE, 2, 1 }, { _LOAD_ATTR_MODULE, OPERAND1_1, 3 }, { _PUSH_NULL_CONDITIONAL, 0, 9 } } },
     [LOAD_ATTR_NONDESCRIPTOR_NO_DICT] = { .nuops = 2, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _LOAD_ATTR_NONDESCRIPTOR_NO_DICT, 4, 5 } } },
     [LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = { .nuops = 4, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, 0, 3 }, { _GUARD_KEYS_VERSION, 2, 3 }, { _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, 4, 5 } } },
     [LOAD_ATTR_PROPERTY] = { .nuops = 5, .uops = { { _CHECK_PEP_523, 0, 1 }, { _GUARD_TYPE_VERSION, 2, 1 }, { _LOAD_ATTR_PROPERTY_FRAME, 4, 5 }, { _SAVE_RETURN_OFFSET, OPARG_SAVE_RETURN_OFFSET, 9 }, { _PUSH_FRAME, 0, 9 } } },

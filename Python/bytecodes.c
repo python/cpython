@@ -1694,7 +1694,6 @@ dummy_func(
             #if Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
             DEOPT_IF(!increfed);
-            res = PyStackRef_FromPyObjectSteal(res_o);
             #else
             res = PyStackRef_FromPyObjectNew(res_o);
             #endif
@@ -1714,7 +1713,6 @@ dummy_func(
             #if Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompareStackRef(&entries[index].me_value, res_o, &res);
             DEOPT_IF(!increfed);
-            res = PyStackRef_FromPyObjectSteal(res_o);
             #else
             res = PyStackRef_FromPyObjectNew(res_o);
             #endif
@@ -2225,23 +2223,17 @@ dummy_func(
             unused/5 +
             _PUSH_NULL_CONDITIONAL;
 
-        op(_CHECK_ATTR_MODULE_PUSH_KEYS, (dict_version/2, owner -- owner, mod_keys: PyDictKeysObject *)) {
+        op(_LOAD_ATTR_MODULE, (dict_version/2, index/1, owner -- attr)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             DEOPT_IF(Py_TYPE(owner_o)->tp_getattro != PyModule_Type.tp_getattro);
             PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner_o)->md_dict;
             assert(dict != NULL);
             PyDictKeysObject *keys = FT_ATOMIC_LOAD_PTR_ACQUIRE(dict->ma_keys);
             DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(keys->dk_version) != dict_version);
-            mod_keys = keys;
-        }
-
-        op(_LOAD_ATTR_MODULE_FROM_KEYS, (index/1, owner, mod_keys: PyDictKeysObject * -- attr)) {
-            assert(mod_keys->dk_kind == DICT_KEYS_UNICODE);
-            assert(index < FT_ATOMIC_LOAD_SSIZE_RELAXED(mod_keys->dk_nentries));
-            PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(mod_keys) + index;
+            assert(keys->dk_kind == DICT_KEYS_UNICODE);
+            assert(index < FT_ATOMIC_LOAD_SSIZE_RELAXED(keys->dk_nentries));
+            PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(keys) + index;
             PyObject *attr_o = FT_ATOMIC_LOAD_PTR_RELAXED(ep->me_value);
-            // Clear mod_keys from stack in case we need to deopt
-            POP_INPUT(mod_keys);
             DEOPT_IF(attr_o == NULL);
             #ifdef Py_GIL_DISABLED
             int increfed = _Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr);
@@ -2249,8 +2241,7 @@ dummy_func(
                 DEOPT_IF(true);
             }
             #else
-            Py_INCREF(attr_o);
-            attr = PyStackRef_FromPyObjectSteal(attr_o);
+            attr = PyStackRef_FromPyObjectNew(attr_o);
             #endif
             STAT_INC(LOAD_ATTR, hit);
             PyStackRef_CLOSE(owner);
@@ -2258,8 +2249,7 @@ dummy_func(
 
         macro(LOAD_ATTR_MODULE) =
             unused/1 +
-            _CHECK_ATTR_MODULE_PUSH_KEYS +
-            _LOAD_ATTR_MODULE_FROM_KEYS +
+            _LOAD_ATTR_MODULE +
             unused/5 +
             _PUSH_NULL_CONDITIONAL;
 
@@ -5028,6 +5018,11 @@ dummy_func(
             value = PyStackRef_FromPyObjectNew(ptr);
         }
 
+        tier2 pure op (_POP_TOP_LOAD_CONST_INLINE, (ptr/4, pop -- value)) {
+            PyStackRef_CLOSE(pop);
+            value = PyStackRef_FromPyObjectNew(ptr);
+        }
+
         tier2 pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
             value = PyStackRef_FromPyObjectImmortal(ptr);
         }
@@ -5041,20 +5036,6 @@ dummy_func(
             assert(PyStackRef_FunctionCheck(frame->f_funcobj));
             PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
             DEOPT_IF(func->func_version != func_version);
-        }
-
-        tier2 op(_LOAD_ATTR_MODULE, (index/1, owner -- attr)) {
-            PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            PyDictObject *dict = (PyDictObject *)((PyModuleObject *)owner_o)->md_dict;
-            assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
-            assert(index < dict->ma_keys->dk_nentries);
-            PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + index;
-            PyObject *attr_o = ep->me_value;
-            DEOPT_IF(attr_o == NULL);
-            STAT_INC(LOAD_ATTR, hit);
-            Py_INCREF(attr_o);
-            attr = PyStackRef_FromPyObjectSteal(attr_o);
-            DECREF_INPUTS();
         }
 
         tier2 op(_START_EXECUTOR, (executor/4 --)) {

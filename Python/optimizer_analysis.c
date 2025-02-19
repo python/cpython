@@ -93,14 +93,14 @@ type_watcher_callback(PyTypeObject* type)
 }
 
 static PyObject *
-convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
+convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj, bool pop)
 {
-    assert(inst->opcode == _LOAD_GLOBAL_MODULE || inst->opcode == _LOAD_GLOBAL_BUILTINS || inst->opcode == _LOAD_ATTR_MODULE_FROM_KEYS);
+    assert(inst->opcode == _LOAD_GLOBAL_MODULE || inst->opcode == _LOAD_GLOBAL_BUILTINS || inst->opcode == _LOAD_ATTR_MODULE);
     assert(PyDict_CheckExact(obj));
     PyDictObject *dict = (PyDictObject *)obj;
     assert(dict->ma_keys->dk_kind == DICT_KEYS_UNICODE);
     PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(dict->ma_keys);
-    int64_t index = inst->opcode == _LOAD_ATTR_MODULE_FROM_KEYS ? inst->operand0 : inst->operand1;
+    int64_t index = inst->operand1;
     assert(index <= UINT16_MAX);
     if ((int)index >= dict->ma_keys->dk_nentries) {
         return NULL;
@@ -110,10 +110,10 @@ convert_global_to_const(_PyUOpInstruction *inst, PyObject *obj)
         return NULL;
     }
     if (_Py_IsImmortal(res)) {
-        inst->opcode = _LOAD_CONST_INLINE_BORROW;
+        inst->opcode = pop ? _POP_TOP_LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE_BORROW;
     }
     else {
-        inst->opcode = _LOAD_CONST_INLINE;
+        inst->opcode = pop ? _POP_TOP_LOAD_CONST_INLINE : _LOAD_CONST_INLINE;
     }
     if (inst->oparg & 1) {
         assert(inst[1].opcode == _PUSH_NULL_CONDITIONAL);
@@ -234,7 +234,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                     builtins_watched |= 1;
                 }
                 if (function_checked & globals_watched & 1) {
-                    convert_global_to_const(inst, builtins);
+                    convert_global_to_const(inst, builtins, false);
                 }
                 break;
             case _LOAD_GLOBAL_MODULE:
@@ -256,7 +256,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
                     function_checked |= 1;
                 }
                 if (function_checked & 1) {
-                    convert_global_to_const(inst, globals);
+                    convert_global_to_const(inst, globals, false);
                 }
                 break;
             case _PUSH_FRAME:

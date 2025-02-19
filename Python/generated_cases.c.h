@@ -8128,14 +8128,14 @@
             INSTRUCTION_STATS(LOAD_ATTR_MODULE);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
-            PyDictKeysObject *mod_keys;
             _PyStackRef attr;
             _PyStackRef null = PyStackRef_NULL;
             /* Skip 1 cache entry */
-            // _CHECK_ATTR_MODULE_PUSH_KEYS
+            // _LOAD_ATTR_MODULE
             {
                 owner = stack_pointer[-1];
                 uint32_t dict_version = read_u32(&this_instr[2].cache);
+                uint16_t index = read_u16(&this_instr[4].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 if (Py_TYPE(owner_o)->tp_getattro != PyModule_Type.tp_getattro) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
@@ -8150,16 +8150,10 @@
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
-                mod_keys = keys;
-            }
-            // _LOAD_ATTR_MODULE_FROM_KEYS
-            {
-                uint16_t index = read_u16(&this_instr[4].cache);
-                assert(mod_keys->dk_kind == DICT_KEYS_UNICODE);
-                assert(index < FT_ATOMIC_LOAD_SSIZE_RELAXED(mod_keys->dk_nentries));
-                PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(mod_keys) + index;
+                assert(keys->dk_kind == DICT_KEYS_UNICODE);
+                assert(index < FT_ATOMIC_LOAD_SSIZE_RELAXED(keys->dk_nentries));
+                PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(keys) + index;
                 PyObject *attr_o = FT_ATOMIC_LOAD_PTR_RELAXED(ep->me_value);
-                // Clear mod_keys from stack in case we need to deopt
                 if (attr_o == NULL) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
@@ -8175,8 +8169,7 @@
                     }
                 }
                 #else
-                Py_INCREF(attr_o);
-                attr = PyStackRef_FromPyObjectSteal(attr_o);
+                attr = PyStackRef_FromPyObjectNew(attr_o);
                 #endif
                 STAT_INC(LOAD_ATTR, hit);
                 stack_pointer[-1] = attr;
@@ -9058,7 +9051,6 @@
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
                     JUMP_TO_PREDICTED(LOAD_GLOBAL);
                 }
-                res = PyStackRef_FromPyObjectSteal(res_o);
                 #else
                 res = PyStackRef_FromPyObjectNew(res_o);
                 #endif
@@ -9124,7 +9116,6 @@
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
                     JUMP_TO_PREDICTED(LOAD_GLOBAL);
                 }
-                res = PyStackRef_FromPyObjectSteal(res_o);
                 #else
                 res = PyStackRef_FromPyObjectNew(res_o);
                 #endif
