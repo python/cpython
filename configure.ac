@@ -5327,7 +5327,6 @@ AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy; zlib 
 
 PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
   have_zlib=yes
-  dnl zlib 1.2.0 (2003) added inflateCopy
   AC_DEFINE([HAVE_ZLIB_COPY], [1])
 ], [
   WITH_SAVE_ENV([
@@ -5339,18 +5338,27 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
     AS_VAR_IF([have_zlib], [yes], [
       ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
       ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
-      BINASCII_CFLAGS="$ZLIB_CFLAGS"
-      BINASCII_LIBS="$ZLIB_LIBS"
       PY_CHECK_LIB([z], [inflateCopy], [AC_DEFINE([HAVE_ZLIB_COPY], [1])])
     ])
   ])
 ])
-
-dnl wasi does not support zlib
-AS_VAR_IF([have_zlib], [no], [
-  BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
-  BINASCII_LIBS=""
-])
+dnl temporarily throw only errors on builds other than wasi until wasi supports zlib
+AS_CASE([$ac_sys_system],
+  [WASI], [
+    BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
+    BINASCII_LIBS=""
+  ],
+  [*], [
+    if test "$have_zlib" != "yes"; then
+      AC_MSG_ERROR([m4_normalize([
+        zlib.h and libz are required. Install your OS's zlib-devel or
+        zlib1g-dev equivalent library or get it from https://zlib.net/.
+      ])])
+    fi
+    BINASCII_CFLAGS="$ZLIB_CFLAGS"
+    BINASCII_LIBS="$ZLIB_LIBS"
+  ]
+)
 
 dnl detect bzip2 from Emscripten emport
 PY_CHECK_EMSCRIPTEN_PORT([BZIP2], [-sUSE_BZIP2])

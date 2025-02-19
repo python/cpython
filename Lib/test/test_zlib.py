@@ -7,6 +7,7 @@ import pickle
 import random
 import sys
 from test.support import bigmemtest, _1G, _4G, is_s390x
+import importlib
 
 # Building CPython without zlib is not supported except WASI.
 #
@@ -16,7 +17,12 @@ from test.support import bigmemtest, _1G, _4G, is_s390x
 #
 # For tests to pass without zlib, this file needs to be removed.
 
-zlib = import_helper.import_module('zlib', required_on=('linux', 'android', 'ios', 'darwin', 'win32', 'cygwin'))
+try:
+    zlib = importlib.import_module('zlib')
+except ImportError as msg:
+    if sys.platform.startswith('wasi'):
+        raise unittest.SkipTest(str(msg))
+    raise ImportError("Building CPython without zlib is not supported")
 
 requires_Compress_copy = unittest.skipUnless(
         hasattr(zlib.compressobj(), "copy"),

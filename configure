@@ -21590,8 +21590,6 @@ then :
 
       ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
       ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
-      BINASCII_CFLAGS="$ZLIB_CFLAGS"
-      BINASCII_LIBS="$ZLIB_LIBS"
       py_check_lib_save_LIBS=$LIBS
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 printf %s "checking for inflateCopy in -lz... " >&6; }
@@ -21739,8 +21737,6 @@ then :
 
       ZLIB_CFLAGS=${ZLIB_CFLAGS-""}
       ZLIB_LIBS=${ZLIB_LIBS-"-lz"}
-      BINASCII_CFLAGS="$ZLIB_CFLAGS"
-      BINASCII_LIBS="$ZLIB_LIBS"
       py_check_lib_save_LIBS=$LIBS
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for inflateCopy in -lz" >&5
 printf %s "checking for inflateCopy in -lz... " >&6; }
@@ -21810,18 +21806,28 @@ else
 printf "%s\n" "yes" >&6; }
 
   have_zlib=yes
-    printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+  printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
 
 fi
+case $ac_sys_system in #(
+  WASI) :
 
-if test "x$have_zlib" = xno
-then :
+    BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
+    BINASCII_LIBS=""
+   ;; #(
+  *) :
 
-  BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
-  BINASCII_LIBS=""
+    if test "$have_zlib" != "yes"; then
+      as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
+    fi
+    BINASCII_CFLAGS="$ZLIB_CFLAGS"
+    BINASCII_LIBS="$ZLIB_LIBS"
 
-fi
+ ;; #(
+  *) :
+     ;;
+esac
 
 
 
