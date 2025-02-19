@@ -164,10 +164,14 @@ The :mod:`bdb` module also defines two classes:
       Start tracing. For ``'settrace'`` backend, this method is equivalent to
       ``sys.settrace(self.trace_dispatch)``
 
+      .. versionadded:: 3.14
+
    .. method:: stop_trace(self)
 
       Stop tracing. For ``'settrace'`` backend, this method is equivalent to
       ``sys.settrace(None)``
+
+      .. versionadded:: 3.14
 
    .. method:: reset()
 
@@ -397,12 +401,16 @@ The :mod:`bdb` module also defines two classes:
       called. This is helpful when the debugger is not interested in the current
       line.
 
+      .. versionadded:: 3.14
+
    .. method:: restart_events()
 
       Restart all the disabled events. This function is automatically called in
       ``dispatch_*`` methods after ``user_*`` methods are called. If the
       ``dispatch_*`` methods are not overridden, the disabled events will be
       restarted after each user interaction.
+
+      .. versionadded:: 3.14
 
 
    Derived classes and clients can call the following methods to get a data
