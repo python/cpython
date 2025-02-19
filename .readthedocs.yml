@@ -3,6 +3,8 @@
 # clicking on the docs preview link on a PR will result in a 404.
 version: 2
 formats: []
+sphinx:
+  configuration: Doc/conf.py
 build:
   os: "ubuntu-22.04"
   tools:
