@@ -443,9 +443,9 @@ For example::
    new_non_team_user(HeroUser)    # OK
 
    new_non_team_user(ManagerUser) # Error: ``type[ManagerUser]`` is not a subtype
-                                  #  of ``type[BasicUser | ProUser]``
+                                  # of ``type[BasicUser | ProUser]``
    new_non_team_user(TeamUser)    # Error: ``type[TeamUser]`` is not a subtype
-                                  #  of ``type[BasicUser | ProUser]``
+                                  # of ``type[BasicUser | ProUser]``
    new_non_team_user(User)        # Also an error
 
 ``type[Any]`` is equivalent to :class:`type`, which is the root of Python's
