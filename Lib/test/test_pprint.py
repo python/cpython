@@ -1142,7 +1142,6 @@ deque([('brown', 2),
             quux: list = field(default_factory=list)
             corge: int = 1
             garply: tuple = (1, 2, 3, 4)
-            waldo: "DummyDataclass" | None = None
         dummy_dataclass = DummyDataclass(
             foo="foo",
             bar=1.2,
@@ -1151,7 +1150,6 @@ deque([('brown', 2),
             quux=["foo", "bar", "baz"],
             corge=7,
             garply=(1, 2, 3, 4),
-            waldo=None,
         )
 
         dummy_dict = {
@@ -1299,9 +1297,7 @@ deque([('brown', 2),
         qux={'foo': 'bar', 'baz': 123},
         quux=['foo', 'bar', 'baz'],
         corge=7,
-        garply=(1, 2, 3, 4),
-        waldo=None
-
+        garply=(1, 2, 3, 4)
     ),
     'dummy_dict': {
         'foo': 'bar',

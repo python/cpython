@@ -234,8 +234,6 @@ class PrettyPrinter:
         items = [(f.name, getattr(object, f.name)) for f in dataclass_fields(object) if f.repr]
         stream.write(self._format_block_start(cls_name + '(', indent))
         self._format_namespace_items(items, stream, indent, allowance, context, level)
-        if self._block_style:
-            stream.write('\n')
         stream.write(self._format_block_end(')', indent - self._indent_per_level))
 
     _dispatch = {}
