@@ -691,6 +691,39 @@ class GettextCacheTestCase(GettextBaseTest):
         self.assertEqual(t.__class__, DummyGNUTranslations)
 
 
+class FallbackTranslations(gettext.NullTranslations):
+    def gettext(self, *args):
+        return 'gettext'
+    
+    ngettext = pgettext = npgettext = gettext
+
+
+class FallbackTestCase(GettextBaseTest):
+    def test_null_translations_fallback(self):
+        t = gettext.NullTranslations()
+        t.add_fallback(FallbackTranslations())
+        self.assertEqual(t.gettext('foo'), 'gettext')
+        self.assertEqual(t.ngettext('foo', 'foos', 1), 'gettext')
+        self.assertEqual(t.pgettext('context', 'foo'), 'gettext')
+        self.assertEqual(t.npgettext('context', 'foo', 'foos', 1), 'gettext')
+
+    def test_gnu_translations_fallback(self):
+        with open(MOFILE, 'rb') as fp:
+            t = gettext.GNUTranslations(fp)
+        t.add_fallback(FallbackTranslations())
+        self.assertEqual(t.gettext('foo'), 'gettext')
+        self.assertEqual(t.ngettext('foo', 'foos', 1), 'gettext')
+        self.assertEqual(t.pgettext('context', 'foo'), 'gettext')
+        self.assertEqual(t.npgettext('context', 'foo', 'foos', 1), 'gettext')
+
+    def test_nested_fallbacks(self):
+        t = gettext.NullTranslations()
+        t.add_fallback(gettext.NullTranslations())
+        t.add_fallback(gettext.NullTranslations())
+        t.add_fallback(FallbackTranslations())
+        self.assertEqual(t.gettext('foo'), 'gettext')
+
+
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         support.check__all__(self, gettext,
