@@ -729,7 +729,7 @@ platform
 
 
 pprint
------
+------
 
 * Add a *block_style* keyword argument for :func:`pprint.pprint`,
   :func:`pprint.pformat`, :func:`pprint.pp` by passing on all *kwargs* and
