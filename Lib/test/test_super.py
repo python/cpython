@@ -6,7 +6,7 @@ import textwrap
 import threading
 import unittest
 from unittest.mock import patch
-from test.support import import_helper, threading_helper
+from test.support import import_helper, threading_helper, requires_zlib
 
 
 class A:
@@ -342,6 +342,7 @@ class TestSuper(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "argument 1 must be a type"):
             super(1, int)
 
+    @requires_zlib
     def test_shadowed_global(self):
         source = textwrap.dedent(
             """

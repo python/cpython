@@ -8,7 +8,7 @@ from test.support import (verbose, refcount_test,
 from test.support.import_helper import import_module
 from test.support.os_helper import temp_dir, TESTFN, unlink
 from test.support.script_helper import assert_python_ok, make_script
-from test.support import threading_helper, gc_threshold
+from test.support import threading_helper, gc_threshold, requires_zlib
 
 import gc
 import sys
@@ -752,6 +752,7 @@ class GCTests(unittest.TestCase):
         rc, out, err = assert_python_ok('-c', code)
         self.assertEqual(out.strip(), b'__del__ called')
 
+    @requires_zlib
     def test_gc_ordinary_module_at_shutdown(self):
         # Same as above, but with a non-__main__ module.
         with temp_dir() as script_dir:

@@ -497,8 +497,10 @@ def requires_zlib(reason='requires zlib'):
     try:
         import zlib
     except ImportError:
-        zlib = None
-    return unittest.skipUnless(zlib, reason)
+        if sys.platform.startswith('wasi'):
+            zlib = None
+            return unittest.skipUnless(zlib, reason)
+        raise
 
 def requires_gzip(reason='requires gzip'):
     try:

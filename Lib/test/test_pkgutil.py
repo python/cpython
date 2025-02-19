@@ -9,12 +9,16 @@ import pkgutil
 import os
 import os.path
 import tempfile
-import shutil
-import zipfile
 
 from test.support.import_helper import DirsOnSysPath
 from test.support.os_helper import FakePath
 from test.test_importlib.util import uncache
+
+if sys.platform == "wasm":
+    unittest.skip("Zlib unavailable")
+
+import shutil
+import zipfile
 
 # Note: pkgutil.walk_packages is currently tested in test_runpy. This is
 # a hack to get a major issue resolved for 3.3b2. Longer term, it should

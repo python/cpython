@@ -11,11 +11,13 @@ import importlib.util
 import unittest
 import textwrap
 
-from test.support import verbose
+from test.support import verbose, requires_zlib
 from test.support.os_helper import create_empty_file
 from reprlib import repr as r # Don't shadow builtin repr
 from reprlib import Repr
 from reprlib import recursive_repr
+
+from Lib.test.support import requires_zlib
 
 
 def nestedTuple(nesting):
@@ -681,6 +683,7 @@ class LongReprTest(unittest.TestCase):
         elif os.name == 'nt' and verbose:
             print("cached_path_len =", cached_path_len)
 
+    @requires_zlib
     def test_module(self):
         self.maxDiff = None
         self._check_path_limitations(self.pkgname)
@@ -691,6 +694,7 @@ class LongReprTest(unittest.TestCase):
         self.assertEqual(repr(module), "<module %r from %r>" % (module.__name__, module.__file__))
         self.assertEqual(repr(sys), "<module 'sys' (built-in)>")
 
+    @requires_zlib
     def test_type(self):
         self._check_path_limitations('foo')
         eq = self.assertEqual
@@ -709,6 +713,7 @@ class foo(object):
         # tp_repr.  WIBNI we had ::Inline? :)
         pass
 
+    @requires_zlib
     def test_class(self):
         self._check_path_limitations('bar')
         write_file(os.path.join(self.subpkgname, 'bar.py'), '''\
@@ -720,6 +725,7 @@ class bar:
         # Module name may be prefixed with "test.", depending on how run.
         self.assertEqual(repr(bar.bar), "<class '%s.bar'>" % bar.__name__)
 
+    @requires_zlib
     def test_instance(self):
         self._check_path_limitations('baz')
         write_file(os.path.join(self.subpkgname, 'baz.py'), '''\
@@ -732,6 +738,7 @@ class baz:
         self.assertTrue(repr(ibaz).startswith(
             "<%s.baz object at 0x" % baz.__name__))
 
+    @requires_zlib
     def test_method(self):
         self._check_path_limitations('qux')
         eq = self.assertEqual

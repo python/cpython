@@ -6,6 +6,7 @@ from test.support import force_not_colorized
 from test.support import os_helper
 from test.support import script_helper
 from test.support import warnings_helper
+from test.support import requires_zlib
 import unittest
 
 class EOFTestCase(unittest.TestCase):
@@ -45,6 +46,7 @@ class EOFTestCase(unittest.TestCase):
         self.assertEqual(cm.exception.offset, 5)
 
     @force_not_colorized
+    @requires_zlib
     def test_EOFS_with_file(self):
         expect = ("(<string>, line 1)")
         with os_helper.temp_dir() as temp_dir:

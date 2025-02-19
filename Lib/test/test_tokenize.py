@@ -9,7 +9,7 @@ from unittest import TestCase, mock
 from test import support
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
-from test.support import os_helper
+from test.support import os_helper, requires_zlib
 from test.support.script_helper import run_test_script, make_script, run_python_until_end
 
 # Converts a source string into a list of textual representation
@@ -3162,7 +3162,7 @@ async def f():
 
         self.assertEqual(get_tokens(code), get_tokens(code_no_cont))
 
-
+@requires_zlib()
 class CTokenizerBufferTests(unittest.TestCase):
     def test_newline_at_the_end_of_buffer(self):
         # See issue 99581: Make sure that if we need to add a new line at the
