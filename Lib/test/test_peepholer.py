@@ -525,6 +525,8 @@ class TestTranforms(BytecodeTestCase):
             ('not not True', 'UNARY_NOT', None, True),
             ('not not x', 'UNARY_NOT', None, True),  # this should be optimized regardless of constant or not
             ('+++1', 'CALL_INTRINSIC_1', intrinsic_positive, True),
+            ('---x', 'UNARY_NEGATIVE', None, False),
+            ('~~~x', 'UNARY_INVERT', None, False),
             ('+++x', 'CALL_INTRINSIC_1', intrinsic_positive, False),
         ]
 
@@ -1700,7 +1702,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
 
-        # test folding & elimitnate to bool
+        # test folding & eliminate to bool
         before = [
             ('LOAD_SMALL_INT', 1, 0),
             ('UNARY_NOT', None, 0),
@@ -1787,7 +1789,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
 
-        # test is/isnot cancel out eliminate to bool
+        # test is/isnot cancel out & eliminate to bool
         before = [
             ('LOAD_NAME', 0, 0),
             ('LOAD_NAME', 1, 0),
@@ -1840,7 +1842,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
 
-        # test is/isnot eliminate to bool
+        # test is/isnot & eliminate to bool
         before = [
             ('LOAD_NAME', 0, 0),
             ('LOAD_NAME', 1, 0),
@@ -1859,7 +1861,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
 
-        # test in/notin cancel out eliminate to bool
+        # test in/notin cancel out & eliminate to bool
         before = [
             ('LOAD_NAME', 0, 0),
             ('LOAD_NAME', 1, 0),

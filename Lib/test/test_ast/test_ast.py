@@ -3227,115 +3227,65 @@ class ASTOptimiziationTests(unittest.TestCase):
             self.assert_ast(result_code, non_optimized_target, optimized_target)
 
     def test_folding_match_case_allowed_expressions(self):
-        source = textwrap.dedent("""
-        match 0:
-            case -0:                                   pass
-            case -0.1:                                 pass
-            case -0j:                                  pass
-            case -0.1j:                                pass
-            case 1 + 2j:                               pass
-            case 1 - 2j:                               pass
-            case 1.1 + 2.1j:                           pass
-            case 1.1 - 2.1j:                           pass
-            case -0 + 1j:                              pass
-            case -0 - 1j:                              pass
-            case -0.1 + 1.1j:                          pass
-            case -0.1 - 1.1j:                          pass
-            case {-0: 0}:                              pass
-            case {-0.1: 0}:                            pass
-            case {-0j: 0}:                             pass
-            case {-0.1j: 0}:                           pass
-            case {1 + 2j: 0}:                          pass
-            case {1 - 2j: 0}:                          pass
-            case {1.1 + 2.1j: 0}:                      pass
-            case {1.1 - 2.1j: 0}:                      pass
-            case {-0 + 1j: 0}:                         pass
-            case {-0 - 1j: 0}:                         pass
-            case {-0.1 + 1.1j: 0}:                     pass
-            case {-0.1 - 1.1j: 0}:                     pass
-            case {-0: 0, 0 + 1j: 0, 0.1 + 1j: 0}:      pass
-            case [-0, -0.1, -0j, -0.1j]:               pass
-            case (-0, -0.1, -0j, -0.1j):               pass
-            case [[-0, -0.1], [-0j, -0.1j]]:           pass
-            case ((-0, -0.1), (-0j, -0.1j)):           pass
-        """)
-        expected_constants = (
-            0,
-            -0.1,
-            complex(0, -0),
-            complex(0, -0.1),
-            complex(1, 2),
-            complex(1, -2),
-            complex(1.1, 2.1),
-            complex(1.1, -2.1),
-            complex(-0, 1),
-            complex(-0, -1),
-            complex(-0.1, 1.1),
-            complex(-0.1, -1.1),
-            (0, ),
-            (-0.1, ),
-            (complex(0, -0), ),
-            (complex(0, -0.1), ),
-            (complex(1, 2), ),
-            (complex(1, -2), ),
-            (complex(1.1, 2.1), ),
-            (complex(1.1, -2.1), ),
-            (complex(-0, 1), ),
-            (complex(-0, -1), ),
-            (complex(-0.1, 1.1), ),
-            (complex(-0.1, -1.1), ),
-            (0, complex(0, 1), complex(0.1, 1)),
-            (
-                0,
-                -0.1,
-                complex(0, -0),
-                complex(0, -0.1),
-            ),
-            (
-                0,
-                -0.1,
-                complex(0, -0),
-                complex(0, -0.1),
-            ),
-            (
-                0,
-                -0.1,
-                complex(0, -0),
-                complex(0, -0.1),
-            ),
-            (
-                0,
-                -0.1,
-                complex(0, -0),
-                complex(0, -0.1),
-            )
-        )
-        consts = iter(expected_constants)
-        tree = ast.parse(source, optimize=1)
-        match_stmt = tree.body[0]
-        for case in match_stmt.cases:
-            pattern = case.pattern
-            if isinstance(pattern, ast.MatchValue):
-                self.assertIsInstance(pattern.value, ast.Constant)
-                self.assertEqual(pattern.value.value, next(consts))
-            elif isinstance(pattern, ast.MatchMapping):
-                keys = iter(next(consts))
-                for key in pattern.keys:
-                    self.assertIsInstance(key, ast.Constant)
-                    self.assertEqual(key.value, next(keys))
-            elif isinstance(pattern, ast.MatchSequence):
-                values = iter(next(consts))
-                for pat in pattern.patterns:
-                    if isinstance(pat, ast.MatchValue):
-                        self.assertEqual(pat.value.value, next(values))
-                    elif isinstance(pat, ast.MatchSequence):
-                        for p in pat.patterns:
-                            self.assertIsInstance(p, ast.MatchValue)
-                            self.assertEqual(p.value.value, next(values))
-                    else:
-                        self.fail(f"Expected ast.MatchValue or ast.MatchSequence, found: {type(pat)}")
+        def get_match_case_values(node):
+            result = []
+            if isinstance(node, ast.Constant):
+                result.append(node.value)
+            elif isinstance(node, ast.MatchValue):
+                result.extend(get_match_case_values(node.value))
+            elif isinstance(node, ast.MatchMapping):
+                for key in node.keys:
+                    result.extend(get_match_case_values(key))
+            elif isinstance(node, ast.MatchSequence):
+                for pat in node.patterns:
+                    result.extend(get_match_case_values(pat))
             else:
-                self.fail(f"Expected ast.MatchValue or ast.MatchMapping, found: {type(pattern)}")
+                self.fail(f"Unexpected node {node}")
+            return result
+
+        tests = [
+            ("-0", [0]),
+            ("-0.1", [-0.1]),
+            ("-0j", [complex(0, 0)]),
+            ("-0.1j", [complex(0, -0.1)]),
+            ("1 + 2j", [complex(1, 2)]),
+            ("1 - 2j", [complex(1, -2)]),
+            ("1.1 + 2.1j", [complex(1.1, 2.1)]),
+            ("1.1 - 2.1j", [complex(1.1, -2.1)]),
+            ("-0 + 1j", [complex(0, 1)]),
+            ("-0 - 1j", [complex(0, -1)]),
+            ("-0.1 + 1.1j", [complex(-0.1, 1.1)]),
+            ("-0.1 - 1.1j", [complex(-0.1, -1.1)]),
+            ("{-0: 0}", [0]),
+            ("{-0.1: 0}", [-0.1]),
+            ("{-0j: 0}", [complex(0, 0)]),
+            ("{-0.1j: 0}", [complex(0, -0.1)]),
+            ("{1 + 2j: 0}", [complex(1, 2)]),
+            ("{1 - 2j: 0}", [complex(1, -2)]),
+            ("{1.1 + 2.1j: 0}", [complex(1.1, 2.1)]),
+            ("{1.1 - 2.1j: 0}", [complex(1.1, -2.1)]),
+            ("{-0 + 1j: 0}", [complex(0, 1)]),
+            ("{-0 - 1j: 0}", [complex(0, -1)]),
+            ("{-0.1 + 1.1j: 0}", [complex(-0.1, 1.1)]),
+            ("{-0.1 - 1.1j: 0}", [complex(-0.1, -1.1)]),
+            ("{-0: 0, 0 + 1j: 0, 0.1 + 1j: 0}", [0, complex(0, 1), complex(0.1, 1)]),
+            ("[-0, -0.1, -0j, -0.1j]", [0, -0.1, complex(0, 0), complex(0, -0.1)]),
+            ("[[[[-0, -0.1, -0j, -0.1j]]]]", [0, -0.1, complex(0, 0), complex(0, -0.1)]),
+            ("[[-0, -0.1], -0j, -0.1j]", [0, -0.1, complex(0, 0), complex(0, -0.1)]),
+            ("[[-0, -0.1], [-0j, -0.1j]]", [0, -0.1, complex(0, 0), complex(0, -0.1)]),
+            ("(-0, -0.1, -0j, -0.1j)", [0, -0.1, complex(0, 0), complex(0, -0.1)]),
+            ("((((-0, -0.1, -0j, -0.1j))))", [0, -0.1, complex(0, 0), complex(0, -0.1)]),
+            ("((-0, -0.1), -0j, -0.1j)", [0, -0.1, complex(0, 0), complex(0, -0.1)]),
+            ("((-0, -0.1), (-0j, -0.1j))", [0, -0.1, complex(0, 0), complex(0, -0.1)]),
+        ]
+        for match_expr, constants in tests:
+            with self.subTest(match_expr):
+                src = f"match 0:\n\t case {match_expr}: pass"
+                tree = ast.parse(src, optimize=1)
+                match_stmt = tree.body[0]
+                case = match_stmt.cases[0]
+                values = get_match_case_values(case.pattern)
+                self.assertListEqual(constants, values)
 
 
 if __name__ == '__main__':
