@@ -421,10 +421,7 @@ class Random(_random.Random):
             cum_counts = list(_accumulate(counts))
             if len(cum_counts) != n:
                 raise ValueError('The number of counts does not match the population')
-            try:
-                total = cum_counts.pop()
-            except IndexError:
-                total = 0
+            total = cum_counts.pop() if cum_counts else 0
             if not isinstance(total, int):
                 raise TypeError('Counts must be integers')
             if total < 0:
