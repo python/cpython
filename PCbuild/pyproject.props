@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" TreatAsLocalProperty="Py_IntDir">
   <Import Project="python.props" Condition="$(__Python_Props_Imported) != 'true'" />
-  <Import Project="pyproject-clangcl.props" Condition="$(PlatformToolset) == 'ClangCL' and $(__PyprojectClangCl_Props_Imported) != 'true'" />
   <PropertyGroup Label="Globals">
     <__PyProject_Props_Imported>true</__PyProject_Props_Imported>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
@@ -24,6 +23,9 @@
     <SupportSigning Condition="'$(ConfigurationType)' == 'StaticLibrary'">false</SupportSigning>
     <LinkIncremental Condition="$(Configuration) != 'Debug'">false</LinkIncremental>
   </PropertyGroup>
+
+  <!-- We need the above overridden OutDir, so this must be imported after PropertyGroup -->
+  <Import Project="pyproject-clangcl.props" Condition="$(PlatformToolset) == 'ClangCL' and $(__PyprojectClangCl_Props_Imported) != 'true'" />
 
   <PropertyGroup Condition="$(TargetExt) != ''">
     <TargetNameExt>$(TargetName)$(TargetExt)</TargetNameExt>
