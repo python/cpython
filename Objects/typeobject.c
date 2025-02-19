@@ -5627,7 +5627,7 @@ get_local_type_cache(PyTypeObject *type, unsigned int assigned_version)
 
 #define HASH_NAME(name) (((Py_ssize_t)(name)) >> 6)
 
-static bool
+static inline bool
 try_local_cache_lookup(PyTypeObject *type, PyObject *name, PyObject **value, unsigned int *version)
 {
     if (!can_cache_locally(type, name)) {
@@ -5641,7 +5641,13 @@ try_local_cache_lookup(PyTypeObject *type, PyObject *name, PyObject **value, uns
 
     Py_ssize_t index = HASH_NAME(name) % LOCAL_TYPE_CACHE_SIZE;
     Py_ssize_t cur = index;
+#if 0
+    static int probe, count;
+    #endif
     do {
+#if 0
+        local_cache->probes[cur]++;
+#endif
         struct local_type_cache_entry *entry = &local_cache->entries[cur];
         PyObject *entry_name = _Py_atomic_load_ptr_acquire(&entry->name);
         if (entry_name == name) {
@@ -5656,18 +5662,86 @@ try_local_cache_lookup(PyTypeObject *type, PyObject *name, PyObject **value, uns
             if (version) {
                 *version = local_cache->tp_version_tag;
             }
+            
+            #if 0
+            if(hits[cur] - probes[cur] < -50000) {
+                count ++;
+                if(count < 50) {
+                    printf("misfire: %s %s(%p) %ld %s(%p) %ld %d\n", 
+                        type->tp_name, 
+
+                        PyUnicode_AsUTF8(name),
+                        name, 
+                        cur, 
+                        
+                        PyUnicode_AsUTF8(local_cache->entries[index].name), 
+                        local_cache->entries[index].name,
+                        index,
+                        
+                        local_cache->cache_count);
+
+                    static int foo[LOCAL_TYPE_CACHE_SIZE + 1];
+                    for(int j = 2; j<LOCAL_TYPE_CACHE_SIZE + 1; j++) {
+                        for(int i = 0; i<LOCAL_TYPE_CACHE_SIZE + 1; i++) {
+                            foo[i] = 0;
+                        }
+                        for(int i = 0; i<LOCAL_TYPE_CACHE_SIZE; i++) {
+                            PyObject *name = local_cache->entries[i].name;
+                            if (name != NULL) {
+                            Py_ssize_t idx = ((Py_ssize_t)(name)) % j;
+                            foo[idx] += 1;
+                            if(name != NULL) {
+                                //printf("%d %s %p\n", i, PyUnicode_AsUTF8(name), name);
+                            }
+                            }
+                        }
+                        int collisions = 0;
+                        for(int i = 0; i<LOCAL_TYPE_CACHE_SIZE + 1; i++) {
+                            if(foo[i] > 1) {
+                                collisions += foo[i];
+                            }
+                        }
+                        printf("Good match at %d %d\n", j, collisions);
+                    }
+                }
+            }
+            local_cache->hits[cur]++;
+            static int hit_count;
+            hit_count++;
+
+            if((hit_count % 500000) == 0) {
+                printf("Avg %d %d\n", hit_count/LOCAL_TYPE_CACHE_SIZE, probe);
+                for(int i = 0 ;i<LOCAL_TYPE_CACHE_SIZE; i++) {
+                    PyObject *name = local_cache->entries[i].name;
+                    printf("%02x hits: %6d probes: %6d delta: %6d missed: %d %p %s %lx\n", 
+                        i, 
+                        local_cache->hits[i], 
+                        local_cache->probes[i], local_cache->probes[i] - local_cache->hits[i], local_cache->miss[i], 
+                        name, 
+                        name != NULL ? PyUnicode_AsUTF8(name) : "<NULL>",
+                        name != NULL ? (HASH_NAME(name) % LOCAL_TYPE_CACHE_SIZE) : 0);
+                }
+            }
+            #endif
 
             return true;
         }
         else if (entry_name == NULL) {
             break;
         }
+#if 0
+        probe++;
+#endif
         cur = (cur + LOCAL_TYPE_CACHE_PROBE) % LOCAL_TYPE_CACHE_SIZE;
     } while (cur != index);
+#if 0
+    local_cache->miss[index]++;
+#endif
     return false;
 }
 
-static bool
+
+static inline bool
 cache_local_type_lookup(PyTypeObject *type, PyObject *name,
                         PyObject *res, unsigned int assigned_version)
 {
@@ -5692,6 +5766,7 @@ cache_local_type_lookup(PyTypeObject *type, PyObject *name,
                 // Reads from other threads can proceed lock-free.
                 _PyObject_SetMaybeWeakref(res);
             }
+//            printf("Caching %p %lx\n", name, HASH_NAME(name) % LOCAL_TYPE_CACHE_SIZE);
 
             // Value is written first, then name, so when name is read the
             // value is always present.

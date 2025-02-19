@@ -76,9 +76,9 @@ struct type_cache {
 // Type attribute lookup cache which is type-specific. Only used
 // for heap types where we store a small additional cache in free-threaded
 // builds which can be accessed without any locking.
-#define LOCAL_TYPE_CACHE_SIZE 32
-#define LOCAL_TYPE_CACHE_MAX_ENTRIES 24
-#define LOCAL_TYPE_CACHE_PROBE 3
+#define LOCAL_TYPE_CACHE_SIZE 61
+#define LOCAL_TYPE_CACHE_MAX_ENTRIES 48
+#define LOCAL_TYPE_CACHE_PROBE 7
 
 struct local_type_cache_entry {
     PyObject *name;     // reference to exactly a str or NULL
@@ -89,6 +89,9 @@ struct local_type_cache {
     unsigned int tp_version_tag;
     unsigned int cache_count;
     struct local_type_cache_entry entries[LOCAL_TYPE_CACHE_SIZE];
+#if 0
+    int hits[LOCAL_TYPE_CACHE_SIZE], probes[LOCAL_TYPE_CACHE_SIZE], miss[LOCAL_TYPE_CACHE_SIZE];
+#endif
 };
 
 #endif
