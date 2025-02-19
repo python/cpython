@@ -55,7 +55,8 @@ The token constants are:
 
 .. data:: STRING
 
-   Token value that indicates a :ref:`string or byte literal <strings>`.
+   Token value that indicates a :ref:`string or byte literal <strings>`,
+   excluding :ref:`f-strings <f-strings>`.
    The token string is not interpreted: it includes the prefix (if any)
    and the quote characters; escape sequences are included with their
    initial backslash.
@@ -94,29 +95,32 @@ The token constants are:
 
 .. data:: FSTRING_START
 
+   Token value used to indicate the beginning of a
+   :ref:`f-string <f-strings>`.
+
    .. impl-detail::
 
-      Token value used to indicate the beginning of a
-      :ref:`f-string <f-strings>`.
       The token string includes the prefix and the opening quote, but none
       of the contents of the literal.
 
 .. data:: FSTRING_MIDDLE
 
+   Token value used for literal text inside an :ref:`f-string <f-strings>`,
+   including format specifications.
+
    .. impl-detail::
 
-      Token value used for literal text inside an :ref:`f-string <f-strings>`,
-      including format specifications.
-
       Replacement fields (that is, the non-literal parts of f-strings) use
-      the same tokens as other expressions, and are delimited by :data:`LBRACE`
-      and :data:`RBRACE` tokens.
+      the same tokens as other expressions, and are delimited by
+      :data:`LBRACE`, :data:`RBRACE`, :data:`EXCLAMATION` and :data:`COLON`
+      tokens.
 
 .. data:: FSTRING_END
 
+   Token value used to indicate the end of a :ref:`f-string <f-strings>`.
+
    .. impl-detail::
 
-      Token value used to indicate the end of a :ref:`f-string <f-strings>`.
       The token string contains the closing quote.
 
 .. data:: ENDMARKER
@@ -169,14 +173,15 @@ and are defined for special uses in the tokenizer or parser:
    are later rejected by the parser.
 
 
-The remaining tokens represent specific :ref:`operators` and :ref:`delimiters`.
+The remaining tokens represent specific :ref:`operators <operators>` and
+:ref:`delimiters <delimiters>`.
 (The :mod:`tokenize` module reports these as :data:`OP`; see ``exact_type``
 in the :mod:`tokenize` documentation for details.)
 
 .. include:: token-list.inc
 
 
-The following are non-token constants:
+The following non-token constants are provided:
 
 .. data:: N_TOKENS
 
