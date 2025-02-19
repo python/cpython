@@ -694,7 +694,7 @@ class GettextCacheTestCase(GettextBaseTest):
 class FallbackTranslations(gettext.NullTranslations):
     def gettext(self, *args):
         return 'gettext'
-    
+
     ngettext = pgettext = npgettext = gettext
 
 
