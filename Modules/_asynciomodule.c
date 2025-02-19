@@ -2264,8 +2264,8 @@ leave_task(PyObject *loop, PyObject *task)
     if (ts->asyncio_running_task != task) {
         PyErr_Format(
             PyExc_RuntimeError,
-            "Cannot enter into task %R while another " \
-            "task %R is being executed.",
+            "Invalid attempt to leave task %R while " \
+            "task %R is entered.",
             task, ts->asyncio_running_task ? ts->asyncio_running_task : Py_None, NULL);
         return -1;
     }
