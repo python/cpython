@@ -4449,7 +4449,7 @@ def load_tests(loader, tests, pattern):
     def setUpPdbBackend(backend):
         def setUp(test):
             import pdb
-            pdb.Pdb.DEFAULT_BACKEND = backend
+            pdb.set_default_backend(backend)
         return setUp
     tests.addTest(doctest.DocTestSuite(test_pdb, setUp=setUpPdbBackend('monitoring')))
     tests.addTest(doctest.DocTestSuite(test_pdb, setUp=setUpPdbBackend('settrace')))
