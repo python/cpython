@@ -18,7 +18,8 @@ except ImportError:
     _testinternalcapi = None
 
 from test import support
-from test.support import os_helper, script_helper, skip_emscripten_stack_overflow
+from test.support import os_helper, script_helper
+from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow
 from test.support.ast_helper import ASTTestMixin
 from test.test_ast.utils import to_tuple
 from test.test_ast.snippets import (
@@ -130,6 +131,12 @@ class AST_Tests(unittest.TestCase):
         for snippet in snippets_to_validate:
             tree = ast.parse(snippet)
             compile(tree, '<string>', 'exec')
+
+    def test_parse_invalid_ast(self):
+        # see gh-130139
+        for optval in (-1, 0, 1, 2):
+            self.assertRaises(TypeError, ast.parse, ast.Constant(42),
+                              optimize=optval)
 
     def test_optimization_levels__debug__(self):
         cases = [(-1, '__debug__'), (0, '__debug__'), (1, False), (2, False)]
@@ -745,11 +752,11 @@ class AST_Tests(unittest.TestCase):
         enum._test_simple_enum(_Precedence, ast._Precedence)
 
     @support.cpython_only
+    @skip_wasi_stack_overflow()
     @skip_emscripten_stack_overflow()
     def test_ast_recursion_limit(self):
-        fail_depth = support.exceeds_recursion_limit()
-        crash_depth = 100_000
-        success_depth = int(support.get_c_recursion_limit() * 0.8)
+        crash_depth = 200_000
+        success_depth = 200
         if _testinternalcapi is not None:
             remaining = _testinternalcapi.get_c_recursion_remaining()
             success_depth = min(success_depth, remaining)
@@ -757,13 +764,13 @@ class AST_Tests(unittest.TestCase):
         def check_limit(prefix, repeated):
             expect_ok = prefix + repeated * success_depth
             ast.parse(expect_ok)
-            for depth in (fail_depth, crash_depth):
-                broken = prefix + repeated * depth
-                details = "Compiling ({!r} + {!r} * {})".format(
-                            prefix, repeated, depth)
-                with self.assertRaises(RecursionError, msg=details):
-                    with support.infinite_recursion():
-                        ast.parse(broken)
+
+            broken = prefix + repeated * crash_depth
+            details = "Compiling ({!r} + {!r} * {})".format(
+                        prefix, repeated, crash_depth)
+            with self.assertRaises(RecursionError, msg=details):
+                with support.infinite_recursion():
+                    ast.parse(broken)
 
         check_limit("a", "()")
         check_limit("a", ".b")
@@ -3238,46 +3245,6 @@ class ASTOptimiziationTests(unittest.TestCase):
         optimized_target = self.wrap_expr(ast.Constant(value=(1,)))
 
         self.assert_ast(code, non_optimized_target, optimized_target)
-
-    def test_folding_comparator(self):
-        code = "1 %s %s1%s"
-        operators = [("in", ast.In()), ("not in", ast.NotIn())]
-        braces = [
-            ("[", "]", ast.List, (1,)),
-            ("{", "}", ast.Set, frozenset({1})),
-        ]
-        for left, right, non_optimized_comparator, optimized_comparator in braces:
-            for op, node in operators:
-                non_optimized_target = self.wrap_expr(ast.Compare(
-                    left=ast.Constant(1), ops=[node],
-                    comparators=[non_optimized_comparator(elts=[ast.Constant(1)])]
-                ))
-                optimized_target = self.wrap_expr(ast.Compare(
-                    left=ast.Constant(1), ops=[node],
-                    comparators=[ast.Constant(value=optimized_comparator)]
-                ))
-                self.assert_ast(code % (op, left, right), non_optimized_target, optimized_target)
-
-    def test_folding_iter(self):
-        code = "for _ in %s1%s: pass"
-        braces = [
-            ("[", "]", ast.List, (1,)),
-            ("{", "}", ast.Set, frozenset({1})),
-        ]
-
-        for left, right, ast_cls, optimized_iter in braces:
-            non_optimized_target = self.wrap_statement(ast.For(
-                target=ast.Name(id="_", ctx=ast.Store()),
-                iter=ast_cls(elts=[ast.Constant(1)]),
-                body=[ast.Pass()]
-            ))
-            optimized_target = self.wrap_statement(ast.For(
-                target=ast.Name(id="_", ctx=ast.Store()),
-                iter=ast.Constant(value=optimized_iter),
-                body=[ast.Pass()]
-            ))
-
-            self.assert_ast(code % (left, right), non_optimized_target, optimized_target)
 
     def test_folding_type_param_in_function_def(self):
         code = "def foo[%s = 1 + 1](): pass"

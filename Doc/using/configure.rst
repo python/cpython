@@ -626,7 +626,7 @@ also be used to improve performance.
    `preserve_none <https://clang.llvm.org/docs/AttributeReference.html#preserve-none>`_
    calling convention. For example, Clang 19 and newer supports this feature.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. option:: --without-mimalloc
 
