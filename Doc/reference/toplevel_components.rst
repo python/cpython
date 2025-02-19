@@ -111,4 +111,4 @@ string argument to :func:`eval` must have the following form:
    :group: python-grammar
 
    eval: `expressions` NEWLINE* ENDMARKER
-   expressions: ','.`expression`+ [',']
+   expressions: `expression` (',' `expression` )* [',']
