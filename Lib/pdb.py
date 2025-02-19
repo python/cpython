@@ -1761,7 +1761,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except Exception:
             self._error_exc()
         self.message("LEAVING RECURSIVE DEBUGGER")
-        self.start_trace(self.trace_dispatch)
+        self.start_trace()
         self.lastcmd = p.lastcmd
 
     complete_debug = _complete_expression

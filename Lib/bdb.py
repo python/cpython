@@ -242,9 +242,9 @@ class Bdb:
             self.fncache[filename] = canonic
         return canonic
 
-    def start_trace(self, trace_dispatch):
+    def start_trace(self):
         if self.monitoring_tracer:
-            self.monitoring_tracer.start_trace(trace_dispatch)
+            self.monitoring_tracer.start_trace(self.trace_dispatch)
         else:
             sys.settrace(self.trace_dispatch)
 
@@ -615,7 +615,7 @@ class Bdb:
                 frame = frame.f_back
             self.set_stepinstr()
             self.enterframe = None
-        self.start_trace(self.trace_dispatch)
+        self.start_trace()
 
     def set_continue(self):
         """Stop only at breakpoints or when finished.
@@ -900,7 +900,7 @@ class Bdb:
         self.reset()
         if isinstance(cmd, str):
             cmd = compile(cmd, "<string>", "exec")
-        self.start_trace(self.trace_dispatch)
+        self.start_trace()
         try:
             exec(cmd, globals, locals)
         except BdbQuit:
@@ -920,7 +920,7 @@ class Bdb:
         if locals is None:
             locals = globals
         self.reset()
-        self.start_trace(self.trace_dispatch)
+        self.start_trace()
         try:
             return eval(expr, globals, locals)
         except BdbQuit:
@@ -942,7 +942,7 @@ class Bdb:
         Return the result of the function call.
         """
         self.reset()
-        self.start_trace(self.trace_dispatch)
+        self.start_trace()
         res = None
         try:
             res = func(*args, **kwds)
