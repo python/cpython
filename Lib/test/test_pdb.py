@@ -4205,15 +4205,15 @@ def bœr():
             os.mkdir(os.path.join(temp_dir, 'source'))
             zipmodule = textwrap.dedent(
                 """
-                def bar(x):
-                    return x + 1
+                def bar():
+                    pass
                 """
             )
             script = textwrap.dedent(
                 f"""
                 import sys; sys.path.insert(0, {repr(os.path.join(temp_dir, 'zipmodule.zip'))})
                 import foo
-                foo.bar(41)
+                foo.bar()
                 """
             )
 
@@ -4227,10 +4227,10 @@ def bœr():
                 'n',
                 'b foo.bar',
                 'c',
-                'p x + x',
+                'p f"break in {$_frame.f_code.co_name}"',
                 'q'
             ]))
-            self.assertIn('82', stdout)
+            self.assertIn('break in bar', stdout)
 
 
 class ChecklineTests(unittest.TestCase):
