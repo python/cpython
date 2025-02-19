@@ -165,7 +165,7 @@ Improved error messages
   error message prints the received number of values in more cases than before.
   (Contributed by Tushar Sadhwani in :gh:`122239`.)
 
-  .. code-block:: pycon
+  .. code-block:: python
 
      >>> x, y, z = 1, 2, 3, 4
      Traceback (most recent call last):
@@ -173,6 +173,42 @@ Improved error messages
          x, y, z = 1, 2, 3, 4
          ^^^^^^^
      ValueError: too many values to unpack (expected 3, got 4)
+
+
+* If a statement (:keyword:`pass`, :keyword:`del`, :keyword:`return`,
+  :keyword:`yield`, :keyword:`raise`, :keyword:`break`, :keyword:`continue`,
+  :keyword:`assert`, :keyword:`import`, :keyword:`from`) is passed to the
+  :ref:`if_expr` after :keyword:`else`, or one of :keyword:`pass`,
+  :keyword:`break`, or :keyword:`continue` is passed before :keyword:`if`, then the
+  error message highlights where the :token:`~python-grammar:expression` is
+  required. (Contributed by Sergey Miryanov in :gh:`129515`.)
+
+  .. code-block:: pycon
+
+     >>> x = 1 if True else pass
+     Traceback (most recent call last):
+       File "<string>", line 1
+         x = 1 if True else pass
+                            ^^^^
+     SyntaxError: expected expression after 'else', but statement is given
+
+     >>> x = continue if True else break
+     Traceback (most recent call last):
+       File "<string>", line 1
+         x = continue if True else break
+             ^^^^^^^^
+     SyntaxError: expected expression before 'if', but statement is given
+
+
+* When incorrectly closed strings are detected, the error message suggests
+  that the string may be intended to be part of the string. (Contributed by
+  Pablo Galindo in :gh:`88535`.)
+
+  .. code-block:: python
+
+    >>> "The interesting object "The important object" is very important"
+    Traceback (most recent call last):
+    SyntaxError: invalid syntax. Is this intended to be part of the string?
 
 
 .. _whatsnew314-pep741:
@@ -213,7 +249,9 @@ configuration mechanisms).
 A new type of interpreter
 -------------------------
 
-A new type of interpreter based on tail calls has been added to CPython.
+A new type of interpreter has been added to CPython.
+It uses tail calls between small C functions that implement individual
+Python opcodes, rather than one large C case statement.
 For certain newer compilers, this interpreter provides
 significantly better performance. Preliminary numbers on our machines suggest
 anywhere from -3% to 30% faster Python code, and a geometric mean of 9-15%
@@ -332,6 +370,10 @@ ast
 
 * The ``repr()`` output for AST nodes now includes more information.
   (Contributed by Tomas R in :gh:`116022`.)
+
+* :func:`ast.parse`, when called with an AST as input, now always verifies
+  that the root node type is appropriate.
+  (Contributed by Irit Katriel in :gh:`130139`.)
 
 
 calendar
@@ -1415,6 +1457,10 @@ New features
   :c:func:`PyImport_ImportModuleAttrString` helper functions to import a module
   and get an attribute of the module.
   (Contributed by Victor Stinner in :gh:`128911`.)
+
+* Add support for a new ``p`` format unit in :c:func:`Py_BuildValue` that allows to
+  take a C integer and produce a Python :class:`bool` object. (Contributed by
+  Pablo Galindo in :issue:`45325`.)
 
 
 Limited C API changes

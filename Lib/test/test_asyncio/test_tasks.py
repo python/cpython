@@ -2272,10 +2272,8 @@ class BaseTaskTests:
 
         self.assertEqual(self.all_tasks(loop=self.loop), {task})
 
-        asyncio._set_event_loop(None)
-
         # execute the task so it waits for future
-        self.loop._run_once()
+        self.loop.run_until_complete(asyncio.sleep(0))
         self.assertEqual(len(self.loop._ready), 0)
 
         coro = None
