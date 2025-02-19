@@ -35,9 +35,6 @@ extern void _PySet_ClearInternal(PySetObject *so);
 
 PyAPI_FUNC(int) _PySet_AddTakeRef(PySetObject *so, PyObject *key);
 
-PyAPI_FUNC(PyObject *)
-_PySet_FromStackRefSteal(const _PyStackRef *src, Py_ssize_t n);
-
 
 
 #ifdef __cplusplus
