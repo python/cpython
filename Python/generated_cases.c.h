@@ -8,7 +8,7 @@
 #endif
 #define TIER_ONE 1
 
-#ifndef Py_TAIL_CALL_INTERP
+#if !Py_TAIL_CALL_INTERP
 #if !USE_COMPUTED_GOTOS
     dispatch_opcode:
         switch (opcode)
@@ -19,7 +19,7 @@
 
 
         TARGET(BINARY_OP) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP;
             (void)(opcode);
             #endif
@@ -82,7 +82,7 @@
         }
 
         TARGET(BINARY_OP_ADD_FLOAT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_ADD_FLOAT;
             (void)(opcode);
             #endif
@@ -136,7 +136,7 @@
         }
 
         TARGET(BINARY_OP_ADD_INT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_ADD_INT;
             (void)(opcode);
             #endif
@@ -191,7 +191,7 @@
         }
 
         TARGET(BINARY_OP_ADD_UNICODE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_ADD_UNICODE;
             (void)(opcode);
             #endif
@@ -244,7 +244,7 @@
         }
 
         TARGET(BINARY_OP_EXTEND) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_EXTEND;
             (void)(opcode);
             #endif
@@ -308,7 +308,7 @@
         }
 
         TARGET(BINARY_OP_INPLACE_ADD_UNICODE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_INPLACE_ADD_UNICODE;
             (void)(opcode);
             #endif
@@ -395,7 +395,7 @@
         }
 
         TARGET(BINARY_OP_MULTIPLY_FLOAT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_MULTIPLY_FLOAT;
             (void)(opcode);
             #endif
@@ -449,7 +449,7 @@
         }
 
         TARGET(BINARY_OP_MULTIPLY_INT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_MULTIPLY_INT;
             (void)(opcode);
             #endif
@@ -504,7 +504,7 @@
         }
 
         TARGET(BINARY_OP_SUBSCR_DICT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_SUBSCR_DICT;
             (void)(opcode);
             #endif
@@ -561,7 +561,7 @@
         }
 
         TARGET(BINARY_OP_SUBSCR_GETITEM) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_SUBSCR_GETITEM;
             (void)(opcode);
             #endif
@@ -646,7 +646,7 @@
         }
 
         TARGET(BINARY_OP_SUBSCR_LIST_INT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_SUBSCR_LIST_INT;
             (void)(opcode);
             #endif
@@ -716,7 +716,7 @@
         }
 
         TARGET(BINARY_OP_SUBSCR_STR_INT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_SUBSCR_STR_INT;
             (void)(opcode);
             #endif
@@ -778,7 +778,7 @@
         }
 
         TARGET(BINARY_OP_SUBSCR_TUPLE_INT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_SUBSCR_TUPLE_INT;
             (void)(opcode);
             #endif
@@ -836,7 +836,7 @@
         }
 
         TARGET(BINARY_OP_SUBTRACT_FLOAT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_SUBTRACT_FLOAT;
             (void)(opcode);
             #endif
@@ -890,7 +890,7 @@
         }
 
         TARGET(BINARY_OP_SUBTRACT_INT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BINARY_OP_SUBTRACT_INT;
             (void)(opcode);
             #endif
@@ -945,7 +945,7 @@
         }
 
         TARGET(BINARY_SLICE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BINARY_SLICE;
             (void)(opcode);
             #endif
@@ -1005,7 +1005,7 @@
         }
 
         TARGET(BUILD_LIST) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BUILD_LIST;
             (void)(opcode);
             #endif
@@ -1027,7 +1027,7 @@
         }
 
         TARGET(BUILD_MAP) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BUILD_MAP;
             (void)(opcode);
             #endif
@@ -1079,7 +1079,7 @@
         }
 
         TARGET(BUILD_SET) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BUILD_SET;
             (void)(opcode);
             #endif
@@ -1137,7 +1137,7 @@
         }
 
         TARGET(BUILD_SLICE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BUILD_SLICE;
             (void)(opcode);
             #endif
@@ -1172,7 +1172,7 @@
         }
 
         TARGET(BUILD_STRING) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BUILD_STRING;
             (void)(opcode);
             #endif
@@ -1219,7 +1219,7 @@
         }
 
         TARGET(BUILD_TUPLE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = BUILD_TUPLE;
             (void)(opcode);
             #endif
@@ -1241,7 +1241,7 @@
         }
 
         TARGET(CACHE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CACHE;
             (void)(opcode);
             #endif
@@ -1254,7 +1254,7 @@
         }
 
         TARGET(CALL) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL;
             (void)(opcode);
             #endif
@@ -1444,7 +1444,7 @@
         }
 
         TARGET(CALL_ALLOC_AND_ENTER_INIT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_ALLOC_AND_ENTER_INIT;
             (void)(opcode);
             #endif
@@ -1574,7 +1574,7 @@
         }
 
         TARGET(CALL_BOUND_METHOD_EXACT_ARGS) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_BOUND_METHOD_EXACT_ARGS;
             (void)(opcode);
             #endif
@@ -1713,7 +1713,7 @@
         }
 
         TARGET(CALL_BOUND_METHOD_GENERAL) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_BOUND_METHOD_GENERAL;
             (void)(opcode);
             #endif
@@ -1835,7 +1835,7 @@
         }
 
         TARGET(CALL_BUILTIN_CLASS) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_BUILTIN_CLASS;
             (void)(opcode);
             #endif
@@ -1945,7 +1945,7 @@
         }
 
         TARGET(CALL_BUILTIN_FAST) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_BUILTIN_FAST;
             (void)(opcode);
             #endif
@@ -2061,7 +2061,7 @@
         }
 
         TARGET(CALL_BUILTIN_FAST_WITH_KEYWORDS) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_BUILTIN_FAST_WITH_KEYWORDS;
             (void)(opcode);
             #endif
@@ -2178,7 +2178,7 @@
         }
 
         TARGET(CALL_BUILTIN_O) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_BUILTIN_O;
             (void)(opcode);
             #endif
@@ -2273,7 +2273,7 @@
         }
 
         TARGET(CALL_FUNCTION_EX) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_FUNCTION_EX;
             (void)(opcode);
             #endif
@@ -2465,7 +2465,7 @@
         }
 
         TARGET(CALL_INTRINSIC_1) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_INTRINSIC_1;
             (void)(opcode);
             #endif
@@ -2495,7 +2495,7 @@
         }
 
         TARGET(CALL_INTRINSIC_2) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_INTRINSIC_2;
             (void)(opcode);
             #endif
@@ -2534,7 +2534,7 @@
         }
 
         TARGET(CALL_ISINSTANCE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_ISINSTANCE;
             (void)(opcode);
             #endif
@@ -2603,7 +2603,7 @@
         }
 
         TARGET(CALL_KW) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_KW;
             (void)(opcode);
             #endif
@@ -2797,7 +2797,7 @@
         }
 
         TARGET(CALL_KW_BOUND_METHOD) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_KW_BOUND_METHOD;
             (void)(opcode);
             #endif
@@ -2930,7 +2930,7 @@
         }
 
         TARGET(CALL_KW_NON_PY) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_KW_NON_PY;
             (void)(opcode);
             #endif
@@ -3063,7 +3063,7 @@
         }
 
         TARGET(CALL_KW_PY) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_KW_PY;
             (void)(opcode);
             #endif
@@ -3170,7 +3170,7 @@
         }
 
         TARGET(CALL_LEN) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_LEN;
             (void)(opcode);
             #endif
@@ -3237,7 +3237,7 @@
         }
 
         TARGET(CALL_LIST_APPEND) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_LIST_APPEND;
             (void)(opcode);
             #endif
@@ -3301,7 +3301,7 @@
         }
 
         TARGET(CALL_METHOD_DESCRIPTOR_FAST) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_METHOD_DESCRIPTOR_FAST;
             (void)(opcode);
             #endif
@@ -3423,7 +3423,7 @@
         }
 
         TARGET(CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_METHOD_DESCRIPTOR_FAST_WITH_KEYWORDS;
             (void)(opcode);
             #endif
@@ -3545,7 +3545,7 @@
         }
 
         TARGET(CALL_METHOD_DESCRIPTOR_NOARGS) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_METHOD_DESCRIPTOR_NOARGS;
             (void)(opcode);
             #endif
@@ -3648,7 +3648,7 @@
         }
 
         TARGET(CALL_METHOD_DESCRIPTOR_O) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_METHOD_DESCRIPTOR_O;
             (void)(opcode);
             #endif
@@ -3762,7 +3762,7 @@
         }
 
         TARGET(CALL_NON_PY_GENERAL) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_NON_PY_GENERAL;
             (void)(opcode);
             #endif
@@ -3883,7 +3883,7 @@
         }
 
         TARGET(CALL_PY_EXACT_ARGS) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_PY_EXACT_ARGS;
             (void)(opcode);
             #endif
@@ -3994,7 +3994,7 @@
         }
 
         TARGET(CALL_PY_GENERAL) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_PY_GENERAL;
             (void)(opcode);
             #endif
@@ -4090,7 +4090,7 @@
         }
 
         TARGET(CALL_STR_1) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_STR_1;
             (void)(opcode);
             #endif
@@ -4163,7 +4163,7 @@
         }
 
         TARGET(CALL_TUPLE_1) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_TUPLE_1;
             (void)(opcode);
             #endif
@@ -4236,7 +4236,7 @@
         }
 
         TARGET(CALL_TYPE_1) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CALL_TYPE_1;
             (void)(opcode);
             #endif
@@ -4280,7 +4280,7 @@
         }
 
         TARGET(CHECK_EG_MATCH) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CHECK_EG_MATCH;
             (void)(opcode);
             #endif
@@ -4351,7 +4351,7 @@
         }
 
         TARGET(CHECK_EXC_MATCH) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CHECK_EXC_MATCH;
             (void)(opcode);
             #endif
@@ -4388,7 +4388,7 @@
         }
 
         TARGET(CLEANUP_THROW) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CLEANUP_THROW;
             (void)(opcode);
             #endif
@@ -4406,7 +4406,7 @@
             last_sent_val = stack_pointer[-2];
             sub_iter = stack_pointer[-3];
             PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
-            #ifndef Py_TAIL_CALL_INTERP
+            #if !Py_TAIL_CALL_INTERP
             assert(throwflag);
             #endif
             assert(exc_value && PyExceptionInstance_Check(exc_value));
@@ -4447,7 +4447,7 @@
         }
 
         TARGET(COMPARE_OP) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = COMPARE_OP;
             (void)(opcode);
             #endif
@@ -4520,7 +4520,7 @@
         }
 
         TARGET(COMPARE_OP_FLOAT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = COMPARE_OP_FLOAT;
             (void)(opcode);
             #endif
@@ -4572,7 +4572,7 @@
         }
 
         TARGET(COMPARE_OP_INT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = COMPARE_OP_INT;
             (void)(opcode);
             #endif
@@ -4636,7 +4636,7 @@
         }
 
         TARGET(COMPARE_OP_STR) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = COMPARE_OP_STR;
             (void)(opcode);
             #endif
@@ -4689,7 +4689,7 @@
         }
 
         TARGET(CONTAINS_OP) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CONTAINS_OP;
             (void)(opcode);
             #endif
@@ -4749,7 +4749,7 @@
         }
 
         TARGET(CONTAINS_OP_DICT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CONTAINS_OP_DICT;
             (void)(opcode);
             #endif
@@ -4797,7 +4797,7 @@
         }
 
         TARGET(CONTAINS_OP_SET) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CONTAINS_OP_SET;
             (void)(opcode);
             #endif
@@ -4846,7 +4846,7 @@
         }
 
         TARGET(CONVERT_VALUE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = CONVERT_VALUE;
             (void)(opcode);
             #endif
@@ -4878,7 +4878,7 @@
         }
 
         TARGET(COPY) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = COPY;
             (void)(opcode);
             #endif
@@ -4897,7 +4897,7 @@
         }
 
         TARGET(COPY_FREE_VARS) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = COPY_FREE_VARS;
             (void)(opcode);
             #endif
@@ -4919,7 +4919,7 @@
         }
 
         TARGET(DELETE_ATTR) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = DELETE_ATTR;
             (void)(opcode);
             #endif
@@ -4944,7 +4944,7 @@
         }
 
         TARGET(DELETE_DEREF) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = DELETE_DEREF;
             (void)(opcode);
             #endif
@@ -4968,7 +4968,7 @@
         }
 
         TARGET(DELETE_FAST) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = DELETE_FAST;
             (void)(opcode);
             #endif
@@ -4994,7 +4994,7 @@
         }
 
         TARGET(DELETE_GLOBAL) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = DELETE_GLOBAL;
             (void)(opcode);
             #endif
@@ -5020,7 +5020,7 @@
         }
 
         TARGET(DELETE_NAME) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = DELETE_NAME;
             (void)(opcode);
             #endif
@@ -5053,7 +5053,7 @@
         }
 
         TARGET(DELETE_SUBSCR) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = DELETE_SUBSCR;
             (void)(opcode);
             #endif
@@ -5086,7 +5086,7 @@
         }
 
         TARGET(DICT_MERGE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = DICT_MERGE;
             (void)(opcode);
             #endif
@@ -5125,7 +5125,7 @@
         }
 
         TARGET(DICT_UPDATE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = DICT_UPDATE;
             (void)(opcode);
             #endif
@@ -5168,7 +5168,7 @@
         }
 
         TARGET(END_ASYNC_FOR) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = END_ASYNC_FOR;
             (void)(opcode);
             #endif
@@ -5211,7 +5211,7 @@
         }
 
         TARGET(END_FOR) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = END_FOR;
             (void)(opcode);
             #endif
@@ -5233,7 +5233,7 @@
         }
 
         TARGET(END_SEND) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = END_SEND;
             (void)(opcode);
             #endif
@@ -5257,7 +5257,7 @@
         }
 
         TARGET(ENTER_EXECUTOR) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = ENTER_EXECUTOR;
             (void)(opcode);
             #endif
@@ -5296,7 +5296,7 @@
         }
 
         TARGET(EXIT_INIT_CHECK) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = EXIT_INIT_CHECK;
             (void)(opcode);
             #endif
@@ -5320,7 +5320,7 @@
         }
 
         TARGET(EXTENDED_ARG) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = EXTENDED_ARG;
             (void)(opcode);
             #endif
@@ -5336,7 +5336,7 @@
         }
 
         TARGET(FORMAT_SIMPLE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = FORMAT_SIMPLE;
             (void)(opcode);
             #endif
@@ -5375,7 +5375,7 @@
         }
 
         TARGET(FORMAT_WITH_SPEC) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = FORMAT_WITH_SPEC;
             (void)(opcode);
             #endif
@@ -5411,7 +5411,7 @@
         }
 
         TARGET(FOR_ITER) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = FOR_ITER;
             (void)(opcode);
             #endif
@@ -5477,7 +5477,7 @@
         }
 
         TARGET(FOR_ITER_GEN) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = FOR_ITER_GEN;
             (void)(opcode);
             #endif
@@ -5543,7 +5543,7 @@
         }
 
         TARGET(FOR_ITER_LIST) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = FOR_ITER_LIST;
             (void)(opcode);
             #endif
@@ -5604,7 +5604,7 @@
         }
 
         TARGET(FOR_ITER_RANGE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = FOR_ITER_RANGE;
             (void)(opcode);
             #endif
@@ -5659,7 +5659,7 @@
         }
 
         TARGET(FOR_ITER_TUPLE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = FOR_ITER_TUPLE;
             (void)(opcode);
             #endif
@@ -5717,7 +5717,7 @@
         }
 
         TARGET(GET_AITER) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = GET_AITER;
             (void)(opcode);
             #endif
@@ -5778,7 +5778,7 @@
         }
 
         TARGET(GET_ANEXT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = GET_ANEXT;
             (void)(opcode);
             #endif
@@ -5802,7 +5802,7 @@
         }
 
         TARGET(GET_AWAITABLE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = GET_AWAITABLE;
             (void)(opcode);
             #endif
@@ -5831,7 +5831,7 @@
         }
 
         TARGET(GET_ITER) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = GET_ITER;
             (void)(opcode);
             #endif
@@ -5861,7 +5861,7 @@
         }
 
         TARGET(GET_LEN) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = GET_LEN;
             (void)(opcode);
             #endif
@@ -5890,7 +5890,7 @@
         }
 
         TARGET(GET_YIELD_FROM_ITER) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = GET_YIELD_FROM_ITER;
             (void)(opcode);
             #endif
@@ -5943,7 +5943,7 @@
         }
 
         TARGET(IMPORT_FROM) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = IMPORT_FROM;
             (void)(opcode);
             #endif
@@ -5968,7 +5968,7 @@
         }
 
         TARGET(IMPORT_NAME) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = IMPORT_NAME;
             (void)(opcode);
             #endif
@@ -6007,7 +6007,7 @@
         }
 
         TARGET(INSTRUMENTED_CALL) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_CALL;
             (void)(opcode);
             #endif
@@ -6208,7 +6208,7 @@
         }
 
         TARGET(INSTRUMENTED_CALL_FUNCTION_EX) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_CALL_FUNCTION_EX;
             (void)(opcode);
             #endif
@@ -6400,7 +6400,7 @@
         }
 
         TARGET(INSTRUMENTED_CALL_KW) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_CALL_KW;
             (void)(opcode);
             #endif
@@ -6603,7 +6603,7 @@
         }
 
         TARGET(INSTRUMENTED_END_FOR) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_END_FOR;
             (void)(opcode);
             #endif
@@ -6634,7 +6634,7 @@
         }
 
         TARGET(INSTRUMENTED_END_SEND) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_END_SEND;
             (void)(opcode);
             #endif
@@ -6668,7 +6668,7 @@
         }
 
         TARGET(INSTRUMENTED_FOR_ITER) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_FOR_ITER;
             (void)(opcode);
             #endif
@@ -6710,7 +6710,7 @@
         }
 
         TARGET(INSTRUMENTED_INSTRUCTION) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_INSTRUCTION;
             (void)(opcode);
             #endif
@@ -6737,7 +6737,7 @@
         }
 
         TARGET(INSTRUMENTED_JUMP_BACKWARD) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_JUMP_BACKWARD;
             (void)(opcode);
             #endif
@@ -6768,7 +6768,7 @@
         }
 
         TARGET(INSTRUMENTED_JUMP_FORWARD) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_JUMP_FORWARD;
             (void)(opcode);
             #endif
@@ -6782,7 +6782,7 @@
         }
 
         TARGET(INSTRUMENTED_LINE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_LINE;
             (void)(opcode);
             #endif
@@ -6824,7 +6824,7 @@
         }
 
         TARGET(INSTRUMENTED_LOAD_SUPER_ATTR) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_LOAD_SUPER_ATTR;
             (void)(opcode);
             #endif
@@ -6944,7 +6944,7 @@
         }
 
         TARGET(INSTRUMENTED_NOT_TAKEN) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_NOT_TAKEN;
             (void)(opcode);
             #endif
@@ -6960,7 +6960,7 @@
         }
 
         TARGET(INSTRUMENTED_POP_ITER) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_POP_ITER;
             (void)(opcode);
             #endif
@@ -6982,7 +6982,7 @@
         }
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_FALSE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_POP_JUMP_IF_FALSE;
             (void)(opcode);
             #endif
@@ -7003,7 +7003,7 @@
         }
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_NONE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_POP_JUMP_IF_NONE;
             (void)(opcode);
             #endif
@@ -7028,7 +7028,7 @@
         }
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_NOT_NONE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_POP_JUMP_IF_NOT_NONE;
             (void)(opcode);
             #endif
@@ -7051,7 +7051,7 @@
         }
 
         TARGET(INSTRUMENTED_POP_JUMP_IF_TRUE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_POP_JUMP_IF_TRUE;
             (void)(opcode);
             #endif
@@ -7072,7 +7072,7 @@
         }
 
         TARGET(INSTRUMENTED_RESUME) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_RESUME;
             (void)(opcode);
             #endif
@@ -7153,7 +7153,7 @@
         }
 
         TARGET(INSTRUMENTED_RETURN_VALUE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_RETURN_VALUE;
             (void)(opcode);
             #endif
@@ -7203,7 +7203,7 @@
         }
 
         TARGET(INSTRUMENTED_YIELD_VALUE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_YIELD_VALUE;
             (void)(opcode);
             #endif
@@ -7275,7 +7275,7 @@
         }
 
         TARGET(INTERPRETER_EXIT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = INTERPRETER_EXIT;
             (void)(opcode);
             #endif
@@ -7297,7 +7297,7 @@
         }
 
         TARGET(IS_OP) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = IS_OP;
             (void)(opcode);
             #endif
@@ -7330,7 +7330,7 @@
         }
 
         TARGET(JUMP_BACKWARD) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = JUMP_BACKWARD;
             (void)(opcode);
             #endif
@@ -7379,7 +7379,7 @@
         }
 
         TARGET(JUMP_BACKWARD_JIT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = JUMP_BACKWARD_JIT;
             (void)(opcode);
             #endif
@@ -7452,7 +7452,7 @@
         }
 
         TARGET(JUMP_BACKWARD_NO_INTERRUPT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = JUMP_BACKWARD_NO_INTERRUPT;
             (void)(opcode);
             #endif
@@ -7470,7 +7470,7 @@
         }
 
         TARGET(JUMP_BACKWARD_NO_JIT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = JUMP_BACKWARD_NO_JIT;
             (void)(opcode);
             #endif
@@ -7506,7 +7506,7 @@
         }
 
         TARGET(JUMP_FORWARD) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = JUMP_FORWARD;
             (void)(opcode);
             #endif
@@ -7518,7 +7518,7 @@
         }
 
         TARGET(LIST_APPEND) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LIST_APPEND;
             (void)(opcode);
             #endif
@@ -7540,7 +7540,7 @@
         }
 
         TARGET(LIST_EXTEND) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LIST_EXTEND;
             (void)(opcode);
             #endif
@@ -7587,7 +7587,7 @@
         }
 
         TARGET(LOAD_ATTR) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR;
             (void)(opcode);
             #endif
@@ -7683,7 +7683,7 @@
         }
 
         TARGET(LOAD_ATTR_CLASS) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_CLASS;
             (void)(opcode);
             #endif
@@ -7740,7 +7740,7 @@
         }
 
         TARGET(LOAD_ATTR_CLASS_WITH_METACLASS_CHECK) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_CLASS_WITH_METACLASS_CHECK;
             (void)(opcode);
             #endif
@@ -7807,7 +7807,7 @@
         }
 
         TARGET(LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_GETATTRIBUTE_OVERRIDDEN;
             (void)(opcode);
             #endif
@@ -7865,7 +7865,7 @@
         }
 
         TARGET(LOAD_ATTR_INSTANCE_VALUE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_INSTANCE_VALUE;
             (void)(opcode);
             #endif
@@ -7942,7 +7942,7 @@
         }
 
         TARGET(LOAD_ATTR_METHOD_LAZY_DICT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_METHOD_LAZY_DICT;
             (void)(opcode);
             #endif
@@ -7999,7 +7999,7 @@
         }
 
         TARGET(LOAD_ATTR_METHOD_NO_DICT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_METHOD_NO_DICT;
             (void)(opcode);
             #endif
@@ -8045,7 +8045,7 @@
         }
 
         TARGET(LOAD_ATTR_METHOD_WITH_VALUES) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_METHOD_WITH_VALUES;
             (void)(opcode);
             #endif
@@ -8113,7 +8113,7 @@
         }
 
         TARGET(LOAD_ATTR_MODULE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_MODULE;
             (void)(opcode);
             #endif
@@ -8192,7 +8192,7 @@
         }
 
         TARGET(LOAD_ATTR_NONDESCRIPTOR_NO_DICT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_NONDESCRIPTOR_NO_DICT;
             (void)(opcode);
             #endif
@@ -8239,7 +8239,7 @@
         }
 
         TARGET(LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES;
             (void)(opcode);
             #endif
@@ -8307,7 +8307,7 @@
         }
 
         TARGET(LOAD_ATTR_PROPERTY) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_PROPERTY;
             (void)(opcode);
             #endif
@@ -8402,7 +8402,7 @@
         }
 
         TARGET(LOAD_ATTR_SLOT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_SLOT;
             (void)(opcode);
             #endif
@@ -8470,7 +8470,7 @@
         }
 
         TARGET(LOAD_ATTR_WITH_HINT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_ATTR_WITH_HINT;
             (void)(opcode);
             #endif
@@ -8579,7 +8579,7 @@
         }
 
         TARGET(LOAD_BUILD_CLASS) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_BUILD_CLASS;
             (void)(opcode);
             #endif
@@ -8609,7 +8609,7 @@
         }
 
         TARGET(LOAD_COMMON_CONSTANT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_COMMON_CONSTANT;
             (void)(opcode);
             #endif
@@ -8635,7 +8635,7 @@
         }
 
         TARGET(LOAD_CONST) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_CONST;
             (void)(opcode);
             #endif
@@ -8672,7 +8672,7 @@
         }
 
         TARGET(LOAD_CONST_IMMORTAL) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_CONST_IMMORTAL;
             (void)(opcode);
             #endif
@@ -8691,7 +8691,7 @@
         }
 
         TARGET(LOAD_CONST_MORTAL) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_CONST_MORTAL;
             (void)(opcode);
             #endif
@@ -8709,7 +8709,7 @@
         }
 
         TARGET(LOAD_DEREF) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_DEREF;
             (void)(opcode);
             #endif
@@ -8733,7 +8733,7 @@
         }
 
         TARGET(LOAD_FAST) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_FAST;
             (void)(opcode);
             #endif
@@ -8750,7 +8750,7 @@
         }
 
         TARGET(LOAD_FAST_AND_CLEAR) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_FAST_AND_CLEAR;
             (void)(opcode);
             #endif
@@ -8767,7 +8767,7 @@
         }
 
         TARGET(LOAD_FAST_CHECK) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_FAST_CHECK;
             (void)(opcode);
             #endif
@@ -8793,7 +8793,7 @@
         }
 
         TARGET(LOAD_FAST_LOAD_FAST) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_FAST_LOAD_FAST;
             (void)(opcode);
             #endif
@@ -8814,7 +8814,7 @@
         }
 
         TARGET(LOAD_FROM_DICT_OR_DEREF) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_FROM_DICT_OR_DEREF;
             (void)(opcode);
             #endif
@@ -8859,7 +8859,7 @@
         }
 
         TARGET(LOAD_FROM_DICT_OR_GLOBALS) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_FROM_DICT_OR_GLOBALS;
             (void)(opcode);
             #endif
@@ -8939,7 +8939,7 @@
         }
 
         TARGET(LOAD_GLOBAL) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_GLOBAL;
             (void)(opcode);
             #endif
@@ -8993,7 +8993,7 @@
         }
 
         TARGET(LOAD_GLOBAL_BUILTIN) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_GLOBAL_BUILTIN;
             (void)(opcode);
             #endif
@@ -9077,7 +9077,7 @@
         }
 
         TARGET(LOAD_GLOBAL_MODULE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_GLOBAL_MODULE;
             (void)(opcode);
             #endif
@@ -9145,7 +9145,7 @@
         }
 
         TARGET(LOAD_LOCALS) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_LOCALS;
             (void)(opcode);
             #endif
@@ -9169,7 +9169,7 @@
         }
 
         TARGET(LOAD_NAME) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_NAME;
             (void)(opcode);
             #endif
@@ -9192,7 +9192,7 @@
         }
 
         TARGET(LOAD_SMALL_INT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_SMALL_INT;
             (void)(opcode);
             #endif
@@ -9210,7 +9210,7 @@
         }
 
         TARGET(LOAD_SPECIAL) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_SPECIAL;
             (void)(opcode);
             #endif
@@ -9251,7 +9251,7 @@
         }
 
         TARGET(LOAD_SUPER_ATTR) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_SUPER_ATTR;
             (void)(opcode);
             #endif
@@ -9388,7 +9388,7 @@
         }
 
         TARGET(LOAD_SUPER_ATTR_ATTR) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_SUPER_ATTR_ATTR;
             (void)(opcode);
             #endif
@@ -9450,7 +9450,7 @@
         }
 
         TARGET(LOAD_SUPER_ATTR_METHOD) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = LOAD_SUPER_ATTR_METHOD;
             (void)(opcode);
             #endif
@@ -9530,7 +9530,7 @@
         }
 
         TARGET(MAKE_CELL) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = MAKE_CELL;
             (void)(opcode);
             #endif
@@ -9553,7 +9553,7 @@
         }
 
         TARGET(MAKE_FUNCTION) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = MAKE_FUNCTION;
             (void)(opcode);
             #endif
@@ -9586,7 +9586,7 @@
         }
 
         TARGET(MAP_ADD) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = MAP_ADD;
             (void)(opcode);
             #endif
@@ -9619,7 +9619,7 @@
         }
 
         TARGET(MATCH_CLASS) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = MATCH_CLASS;
             (void)(opcode);
             #endif
@@ -9674,7 +9674,7 @@
         }
 
         TARGET(MATCH_KEYS) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = MATCH_KEYS;
             (void)(opcode);
             #endif
@@ -9702,7 +9702,7 @@
         }
 
         TARGET(MATCH_MAPPING) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = MATCH_MAPPING;
             (void)(opcode);
             #endif
@@ -9721,7 +9721,7 @@
         }
 
         TARGET(MATCH_SEQUENCE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = MATCH_SEQUENCE;
             (void)(opcode);
             #endif
@@ -9740,7 +9740,7 @@
         }
 
         TARGET(NOP) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = NOP;
             (void)(opcode);
             #endif
@@ -9751,7 +9751,7 @@
         }
 
         TARGET(NOT_TAKEN) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = NOT_TAKEN;
             (void)(opcode);
             #endif
@@ -9762,7 +9762,7 @@
         }
 
         TARGET(POP_EXCEPT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = POP_EXCEPT;
             (void)(opcode);
             #endif
@@ -9783,7 +9783,7 @@
         }
 
         TARGET(POP_ITER) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = POP_ITER;
             (void)(opcode);
             #endif
@@ -9801,7 +9801,7 @@
         }
 
         TARGET(POP_JUMP_IF_FALSE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = POP_JUMP_IF_FALSE;
             (void)(opcode);
             #endif
@@ -9823,7 +9823,7 @@
         }
 
         TARGET(POP_JUMP_IF_NONE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = POP_JUMP_IF_NONE;
             (void)(opcode);
             #endif
@@ -9867,7 +9867,7 @@
         }
 
         TARGET(POP_JUMP_IF_NOT_NONE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = POP_JUMP_IF_NOT_NONE;
             (void)(opcode);
             #endif
@@ -9911,7 +9911,7 @@
         }
 
         TARGET(POP_JUMP_IF_TRUE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = POP_JUMP_IF_TRUE;
             (void)(opcode);
             #endif
@@ -9933,7 +9933,7 @@
         }
 
         TARGET(POP_TOP) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = POP_TOP;
             (void)(opcode);
             #endif
@@ -9951,7 +9951,7 @@
         }
 
         TARGET(PUSH_EXC_INFO) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = PUSH_EXC_INFO;
             (void)(opcode);
             #endif
@@ -9980,7 +9980,7 @@
         }
 
         TARGET(PUSH_NULL) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = PUSH_NULL;
             (void)(opcode);
             #endif
@@ -9996,7 +9996,7 @@
         }
 
         TARGET(RAISE_VARARGS) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = RAISE_VARARGS;
             (void)(opcode);
             #endif
@@ -10025,7 +10025,7 @@
         }
 
         TARGET(RERAISE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = RERAISE;
             (void)(opcode);
             #endif
@@ -10066,7 +10066,7 @@
         }
 
         TARGET(RESERVED) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = RESERVED;
             (void)(opcode);
             #endif
@@ -10079,7 +10079,7 @@
         }
 
         TARGET(RESUME) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = RESUME;
             (void)(opcode);
             #endif
@@ -10155,7 +10155,7 @@
         }
 
         TARGET(RESUME_CHECK) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = RESUME_CHECK;
             (void)(opcode);
             #endif
@@ -10193,7 +10193,7 @@
         }
 
         TARGET(RETURN_GENERATOR) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = RETURN_GENERATOR;
             (void)(opcode);
             #endif
@@ -10232,7 +10232,7 @@
         }
 
         TARGET(RETURN_VALUE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = RETURN_VALUE;
             (void)(opcode);
             #endif
@@ -10264,7 +10264,7 @@
         }
 
         TARGET(SEND) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = SEND;
             (void)(opcode);
             #endif
@@ -10368,7 +10368,7 @@
         }
 
         TARGET(SEND_GEN) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = SEND_GEN;
             (void)(opcode);
             #endif
@@ -10438,7 +10438,7 @@
         }
 
         TARGET(SETUP_ANNOTATIONS) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = SETUP_ANNOTATIONS;
             (void)(opcode);
             #endif
@@ -10485,7 +10485,7 @@
         }
 
         TARGET(SET_ADD) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = SET_ADD;
             (void)(opcode);
             #endif
@@ -10512,7 +10512,7 @@
         }
 
         TARGET(SET_FUNCTION_ATTRIBUTE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = SET_FUNCTION_ATTRIBUTE;
             (void)(opcode);
             #endif
@@ -10540,7 +10540,7 @@
         }
 
         TARGET(SET_UPDATE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = SET_UPDATE;
             (void)(opcode);
             #endif
@@ -10567,7 +10567,7 @@
         }
 
         TARGET(STORE_ATTR) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = STORE_ATTR;
             (void)(opcode);
             #endif
@@ -10624,7 +10624,7 @@
         }
 
         TARGET(STORE_ATTR_INSTANCE_VALUE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = STORE_ATTR_INSTANCE_VALUE;
             (void)(opcode);
             #endif
@@ -10700,7 +10700,7 @@
         }
 
         TARGET(STORE_ATTR_SLOT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = STORE_ATTR_SLOT;
             (void)(opcode);
             #endif
@@ -10751,7 +10751,7 @@
         }
 
         TARGET(STORE_ATTR_WITH_HINT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = STORE_ATTR_WITH_HINT;
             (void)(opcode);
             #endif
@@ -10851,7 +10851,7 @@
         }
 
         TARGET(STORE_DEREF) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = STORE_DEREF;
             (void)(opcode);
             #endif
@@ -10870,7 +10870,7 @@
         }
 
         TARGET(STORE_FAST) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = STORE_FAST;
             (void)(opcode);
             #endif
@@ -10890,7 +10890,7 @@
         }
 
         TARGET(STORE_FAST_LOAD_FAST) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = STORE_FAST_LOAD_FAST;
             (void)(opcode);
             #endif
@@ -10913,7 +10913,7 @@
         }
 
         TARGET(STORE_FAST_STORE_FAST) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = STORE_FAST_STORE_FAST;
             (void)(opcode);
             #endif
@@ -10944,7 +10944,7 @@
         }
 
         TARGET(STORE_GLOBAL) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = STORE_GLOBAL;
             (void)(opcode);
             #endif
@@ -10969,7 +10969,7 @@
         }
 
         TARGET(STORE_NAME) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = STORE_NAME;
             (void)(opcode);
             #endif
@@ -11015,7 +11015,7 @@
         }
 
         TARGET(STORE_SLICE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = STORE_SLICE;
             (void)(opcode);
             #endif
@@ -11079,7 +11079,7 @@
         }
 
         TARGET(STORE_SUBSCR) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = STORE_SUBSCR;
             (void)(opcode);
             #endif
@@ -11139,7 +11139,7 @@
         }
 
         TARGET(STORE_SUBSCR_DICT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = STORE_SUBSCR_DICT;
             (void)(opcode);
             #endif
@@ -11180,7 +11180,7 @@
         }
 
         TARGET(STORE_SUBSCR_LIST_INT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = STORE_SUBSCR_LIST_INT;
             (void)(opcode);
             #endif
@@ -11246,7 +11246,7 @@
         }
 
         TARGET(SWAP) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = SWAP;
             (void)(opcode);
             #endif
@@ -11265,7 +11265,7 @@
         }
 
         TARGET(TO_BOOL) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = TO_BOOL;
             (void)(opcode);
             #endif
@@ -11317,7 +11317,7 @@
         }
 
         TARGET(TO_BOOL_ALWAYS_TRUE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = TO_BOOL_ALWAYS_TRUE;
             (void)(opcode);
             #endif
@@ -11360,7 +11360,7 @@
         }
 
         TARGET(TO_BOOL_BOOL) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = TO_BOOL_BOOL;
             (void)(opcode);
             #endif
@@ -11384,7 +11384,7 @@
         }
 
         TARGET(TO_BOOL_INT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = TO_BOOL_INT;
             (void)(opcode);
             #endif
@@ -11425,7 +11425,7 @@
         }
 
         TARGET(TO_BOOL_LIST) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = TO_BOOL_LIST;
             (void)(opcode);
             #endif
@@ -11459,7 +11459,7 @@
         }
 
         TARGET(TO_BOOL_NONE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = TO_BOOL_NONE;
             (void)(opcode);
             #endif
@@ -11487,7 +11487,7 @@
         }
 
         TARGET(TO_BOOL_STR) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = TO_BOOL_STR;
             (void)(opcode);
             #endif
@@ -11529,7 +11529,7 @@
         }
 
         TARGET(UNARY_INVERT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = UNARY_INVERT;
             (void)(opcode);
             #endif
@@ -11558,7 +11558,7 @@
         }
 
         TARGET(UNARY_NEGATIVE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = UNARY_NEGATIVE;
             (void)(opcode);
             #endif
@@ -11587,7 +11587,7 @@
         }
 
         TARGET(UNARY_NOT) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = UNARY_NOT;
             (void)(opcode);
             #endif
@@ -11605,7 +11605,7 @@
         }
 
         TARGET(UNPACK_EX) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = UNPACK_EX;
             (void)(opcode);
             #endif
@@ -11632,7 +11632,7 @@
         }
 
         TARGET(UNPACK_SEQUENCE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = UNPACK_SEQUENCE;
             (void)(opcode);
             #endif
@@ -11683,7 +11683,7 @@
         }
 
         TARGET(UNPACK_SEQUENCE_LIST) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = UNPACK_SEQUENCE_LIST;
             (void)(opcode);
             #endif
@@ -11734,7 +11734,7 @@
         }
 
         TARGET(UNPACK_SEQUENCE_TUPLE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = UNPACK_SEQUENCE_TUPLE;
             (void)(opcode);
             #endif
@@ -11776,7 +11776,7 @@
         }
 
         TARGET(UNPACK_SEQUENCE_TWO_TUPLE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = UNPACK_SEQUENCE_TWO_TUPLE;
             (void)(opcode);
             #endif
@@ -11817,7 +11817,7 @@
         }
 
         TARGET(WITH_EXCEPT_START) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = WITH_EXCEPT_START;
             (void)(opcode);
             #endif
@@ -11875,7 +11875,7 @@
         }
 
         TARGET(YIELD_VALUE) {
-            #if defined(Py_TAIL_CALL_INTERP)
+            #if Py_TAIL_CALL_INTERP
             int opcode = YIELD_VALUE;
             (void)(opcode);
             #endif
@@ -11925,7 +11925,7 @@
         }
 
             /* END INSTRUCTIONS */
-#ifndef Py_TAIL_CALL_INTERP
+#if !Py_TAIL_CALL_INTERP
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:
 #else
@@ -12057,7 +12057,7 @@ JUMP_TO_LABEL(error);
             }
             #endif
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #ifdef Py_TAIL_CALL_INTERP
+            #if Py_TAIL_CALL_INTERP
             int opcode;
             #endif
             DISPATCH();
@@ -12104,7 +12104,7 @@ JUMP_TO_LABEL(error);
             assert(!_PyErr_Occurred(tstate));
             #endif
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            #ifdef Py_TAIL_CALL_INTERP
+            #if Py_TAIL_CALL_INTERP
             int opcode;
             #endif
             DISPATCH();
