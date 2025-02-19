@@ -1094,9 +1094,40 @@
             _PyStackRef set;
             values = &stack_pointer[-oparg];
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *set_o = _PySet_FromStackRefSteal(values, oparg);
+            PyObject *set_o = PySet_New(NULL);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (set_o == NULL) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _PyStackRef tmp;
+                for (int _i = oparg; --_i >= 0;) {
+                    tmp = values[_i];
+                    values[_i] = PyStackRef_NULL;
+                    PyStackRef_CLOSE(tmp);
+                }
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -oparg;
+                assert(WITHIN_STACK_BOUNDS());
+                JUMP_TO_LABEL(error);
+            }
+            int err = 0;
+            for (Py_ssize_t i = 0; i < oparg; i++) {
+                _PyStackRef value = values[i];
+                values[i] = PyStackRef_NULL;
+                if (err == 0) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    err = _PySet_AddTakeRef((PySetObject *)set_o, PyStackRef_AsPyObjectSteal(value));
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                }
+                else {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    PyStackRef_CLOSE(value);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                }
+            }
+            if (err) {
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                Py_DECREF(set_o);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
                 stack_pointer += -oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 JUMP_TO_LABEL(error);
