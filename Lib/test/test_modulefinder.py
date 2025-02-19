@@ -350,47 +350,36 @@ class ModuleFinderTest(unittest.TestCase):
         self.assertEqual(bad, missing)
         self.assertEqual(maybe, maybe_missing)
 
-    @support.requires_zlib()
     def test_package(self):
         self._do_test(package_test)
 
-    @support.requires_zlib()
     def test_maybe(self):
         self._do_test(maybe_test)
 
-    @support.requires_zlib()
     def test_maybe_new(self):
         self._do_test(maybe_test_new)
 
-    @support.requires_zlib()
     def test_absolute_imports(self):
         self._do_test(absolute_import_test)
 
-    @support.requires_zlib()
     def test_relative_imports(self):
         self._do_test(relative_import_test)
 
-    @support.requires_zlib()
     def test_relative_imports_2(self):
         self._do_test(relative_import_test_2)
 
-    @support.requires_zlib()
     def test_relative_imports_3(self):
         self._do_test(relative_import_test_3)
 
-    @support.requires_zlib()
     def test_relative_imports_4(self):
         self._do_test(relative_import_test_4)
 
-    @support.requires_zlib()
     def test_syntax_error(self):
         self._do_test(syntax_error_test)
 
-    @support.requires_zlib()
     def test_same_name_as_bad(self):
         self._do_test(same_name_as_bad_test)
 
-    @support.requires_zlib()
     def test_bytecode(self):
         base_path = os.path.join(self.test_dir, 'a')
         source_path = base_path + importlib.machinery.SOURCE_SUFFIXES[0]
@@ -401,7 +390,6 @@ class ModuleFinderTest(unittest.TestCase):
         os.remove(source_path)
         self._do_test(bytecode_test)
 
-    @support.requires_zlib()
     def test_replace_paths(self):
         old_path = os.path.join(self.test_dir, 'a', 'module.py')
         new_path = os.path.join(self.test_dir, 'a', 'spam.py')
@@ -412,7 +400,6 @@ class ModuleFinderTest(unittest.TestCase):
         expected = "co_filename %r changed to %r" % (old_path, new_path)
         self.assertIn(expected, output)
 
-    @support.requires_zlib()
     def test_extended_opargs(self):
         extended_opargs_test = [
             "a",
@@ -426,19 +413,15 @@ b.py
 """ % list(range(2**16))]  # 2**16 constants
         self._do_test(extended_opargs_test)
 
-    @support.requires_zlib()
     def test_coding_default_utf8(self):
         self._do_test(coding_default_utf8_test)
 
-    @support.requires_zlib()
     def test_coding_explicit_utf8(self):
         self._do_test(coding_explicit_utf8_test)
 
-    @support.requires_zlib()
     def test_coding_explicit_cp1252(self):
         self._do_test(coding_explicit_cp1252_test)
 
-    @support.requires_zlib()
     def test_load_module_api(self):
         class CheckLoadModuleApi(modulefinder.ModuleFinder):
             def __init__(self, *args, **kwds):

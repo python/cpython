@@ -6,10 +6,6 @@ import stat
 import sys
 import tempfile
 import unittest
-
-if sys.platform == "wasm":
-    unittest.skip("zlib unavailable")
-
 import zipapp
 import zipfile
 from test.support import requires_zlib

@@ -19,7 +19,6 @@ from test.support import (
     requires_resource,
     requires_subprocess,
     verbose,
-    requires_zlib,
 )
 from test.support.import_helper import forget, make_legacy_pyc, unload
 from test.support.os_helper import create_empty_file, temp_dir, FakePath
@@ -438,19 +437,16 @@ from ..uncle.cousin import nephew
             self._del_pkg(pkg_dir)
         if verbose > 1: print("Module executed successfully")
 
-    @requires_zlib
     def test_run_module(self):
         for depth in range(4):
             if verbose > 1: print("Testing package depth:", depth)
             self._check_module(depth)
 
-    @requires_zlib
     def test_run_module_in_namespace_package(self):
         for depth in range(1, 4):
             if verbose > 1: print("Testing package depth:", depth)
             self._check_module(depth, namespace=True, parent_namespaces=True)
 
-    @requires_zlib
     def test_run_package(self):
         for depth in range(1, 4):
             if verbose > 1: print("Testing package depth:", depth)
@@ -509,7 +505,6 @@ from ..uncle.cousin import nephew
         with self.assertWarnsRegex(RuntimeWarning, r"found in sys\.modules"):
             run_module(package)
 
-    @requires_zlib
     def test_run_package_in_namespace_package(self):
         for depth in range(1, 4):
             if verbose > 1: print("Testing package depth:", depth)
@@ -520,31 +515,26 @@ from ..uncle.cousin import nephew
             if verbose > 1: print("Testing package depth:", depth)
             self._check_package(depth, namespace=True)
 
-    @requires_zlib
     def test_run_namespace_package_in_namespace_package(self):
         for depth in range(1, 4):
             if verbose > 1: print("Testing package depth:", depth)
             self._check_package(depth, namespace=True, parent_namespaces=True)
 
-    @requires_zlib
     def test_run_module_alter_sys(self):
         for depth in range(4):
             if verbose > 1: print("Testing package depth:", depth)
             self._check_module(depth, alter_sys=True)
 
-    @requires_zlib
     def test_run_package_alter_sys(self):
         for depth in range(1, 4):
             if verbose > 1: print("Testing package depth:", depth)
             self._check_package(depth, alter_sys=True)
 
-    @requires_zlib
     def test_explicit_relative_import(self):
         for depth in range(2, 5):
             if verbose > 1: print("Testing relative imports at depth:", depth)
             self._check_relative_imports(depth)
 
-    @requires_zlib
     def test_main_relative_import(self):
         for depth in range(2, 5):
             if verbose > 1: print("Testing main relative imports at depth:", depth)
@@ -666,7 +656,6 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
         msg = re.escape(msg)
         self.assertRaisesRegex(ImportError, msg, run_path, script_name)
 
-    @requires_zlib
     def test_basic_script(self):
         with temp_dir() as script_dir:
             mod_name = 'script'
@@ -674,7 +663,6 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             self._check_script(script_name, "<run_path>", script_name,
                                script_name, expect_spec=False)
 
-    @requires_zlib
     def test_basic_script_with_pathlike_object(self):
         with temp_dir() as script_dir:
             mod_name = 'script'
@@ -684,7 +672,6 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
                                script_name,
                                expect_spec=False)
 
-    @requires_zlib
     def test_basic_script_no_suffix(self):
         with temp_dir() as script_dir:
             mod_name = 'script'
@@ -702,7 +689,6 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             self._check_script(compiled_name, "<run_path>", compiled_name,
                                compiled_name, expect_spec=False)
 
-    @requires_zlib
     def test_directory(self):
         with temp_dir() as script_dir:
             mod_name = '__main__'
@@ -710,7 +696,6 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             self._check_script(script_dir, "<run_path>", script_name,
                                script_dir, mod_name=mod_name)
 
-    @requires_zlib
     def test_directory_compiled(self):
         with temp_dir() as script_dir:
             mod_name = '__main__'
@@ -722,7 +707,6 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
                 self._check_script(script_dir, "<run_path>", legacy_pyc,
                                    script_dir, mod_name=mod_name)
 
-    @requires_zlib
     def test_directory_error(self):
         with temp_dir() as script_dir:
             mod_name = 'not_main'
@@ -730,7 +714,6 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             msg = "can't find '__main__' module in %r" % script_dir
             self._check_import_error(script_dir, msg)
 
-    @requires_zlib
     def test_zipfile(self):
         with temp_dir() as script_dir:
             mod_name = '__main__'
@@ -739,7 +722,6 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             self._check_script(zip_name, "<run_path>", fname, zip_name,
                                mod_name=mod_name, check_loader=False)
 
-    @requires_zlib
     def test_zipfile_compiled(self):
         with temp_dir() as script_dir:
             mod_name = '__main__'
@@ -750,7 +732,6 @@ class RunPathTestCase(unittest.TestCase, CodeExecutionMixin):
             self._check_script(zip_name, "<run_path>", fname, zip_name,
                                mod_name=mod_name, check_loader=False)
 
-    @requires_zlib
     def test_zipfile_error(self):
         with temp_dir() as script_dir:
             mod_name = 'not_main'

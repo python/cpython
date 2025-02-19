@@ -19,8 +19,6 @@ from test.support.script_helper import (
     make_pkg, make_script, make_zip_pkg, make_zip_script,
     assert_python_ok, assert_python_failure, spawn_python, kill_python)
 
-from Lib.test.support import requires_zlib
-
 verbose = support.verbose
 
 example_args = ['test1', 'test2', 'test3']
@@ -222,7 +220,6 @@ class CmdLineTest(unittest.TestCase):
     def test_repl_stderr_flush_separate_stderr(self):
         self.check_repl_stderr_flush(True)
 
-    @requires_zlib
     def test_basic_script(self):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, 'script')
@@ -231,7 +228,6 @@ class CmdLineTest(unittest.TestCase):
                                importlib.machinery.SourceFileLoader,
                                expected_cwd=script_dir)
 
-    @requires_zlib
     def test_script_abspath(self):
         # pass the script using the relative path, expect the absolute path
         # in __file__
@@ -244,7 +240,6 @@ class CmdLineTest(unittest.TestCase):
                                script_dir, None,
                                importlib.machinery.SourceFileLoader)
 
-    @requires_zlib
     def test_script_compiled(self):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, 'script')
@@ -255,7 +250,6 @@ class CmdLineTest(unittest.TestCase):
                                pyc_file, script_dir, None,
                                importlib.machinery.SourcelessFileLoader)
 
-    @requires_zlib
     def test_directory(self):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
@@ -263,7 +257,6 @@ class CmdLineTest(unittest.TestCase):
                                script_dir, '',
                                importlib.machinery.SourceFileLoader)
 
-    @requires_zlib
     def test_directory_compiled(self):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
@@ -279,7 +272,6 @@ class CmdLineTest(unittest.TestCase):
             msg = "can't find '__main__' module in %r" % script_dir
             self._check_import_error(script_dir, msg)
 
-    @requires_zlib
     def test_zipfile(self):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
@@ -287,7 +279,6 @@ class CmdLineTest(unittest.TestCase):
             self._check_script(zip_name, run_name, zip_name, zip_name, '',
                                zipimport.zipimporter)
 
-    @requires_zlib
     def test_zipfile_compiled_timestamp(self):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
@@ -298,7 +289,6 @@ class CmdLineTest(unittest.TestCase):
             self._check_script(zip_name, run_name, zip_name, zip_name, '',
                                zipimport.zipimporter)
 
-    @requires_zlib
     def test_zipfile_compiled_checked_hash(self):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
@@ -309,7 +299,6 @@ class CmdLineTest(unittest.TestCase):
             self._check_script(zip_name, run_name, zip_name, zip_name, '',
                                zipimport.zipimporter)
 
-    @requires_zlib
     def test_zipfile_compiled_unchecked_hash(self):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, '__main__')
@@ -320,7 +309,6 @@ class CmdLineTest(unittest.TestCase):
             self._check_script(zip_name, run_name, zip_name, zip_name, '',
                                zipimport.zipimporter)
 
-    @requires_zlib
     def test_zipfile_error(self):
         with os_helper.temp_dir() as script_dir:
             script_name = _make_test_script(script_dir, 'not_main')
@@ -328,7 +316,6 @@ class CmdLineTest(unittest.TestCase):
             msg = "can't find '__main__' module in %r" % zip_name
             self._check_import_error(zip_name, msg)
 
-    @requires_zlib
     def test_module_in_package(self):
         with os_helper.temp_dir() as script_dir:
             pkg_dir = os.path.join(script_dir, 'test_pkg')
@@ -339,7 +326,6 @@ class CmdLineTest(unittest.TestCase):
                                importlib.machinery.SourceFileLoader,
                                cwd=script_dir)
 
-    @requires_zlib
     def test_module_in_package_in_zipfile(self):
         with os_helper.temp_dir() as script_dir:
             zip_name, run_name = _make_test_zip_pkg(script_dir, 'test_zip', 'test_pkg', 'script')
@@ -355,7 +341,6 @@ class CmdLineTest(unittest.TestCase):
                                zipimport.zipimporter,
                                PYTHONPATH=zip_name, cwd=script_dir)
 
-    @requires_zlib
     def test_package(self):
         with os_helper.temp_dir() as script_dir:
             pkg_dir = os.path.join(script_dir, 'test_pkg')
@@ -366,7 +351,6 @@ class CmdLineTest(unittest.TestCase):
                                importlib.machinery.SourceFileLoader,
                                cwd=script_dir)
 
-    @requires_zlib
     def test_package_compiled(self):
         with os_helper.temp_dir() as script_dir:
             pkg_dir = os.path.join(script_dir, 'test_pkg')
@@ -380,7 +364,6 @@ class CmdLineTest(unittest.TestCase):
                                importlib.machinery.SourcelessFileLoader,
                                cwd=script_dir)
 
-    @requires_zlib
     def test_package_error(self):
         with os_helper.temp_dir() as script_dir:
             pkg_dir = os.path.join(script_dir, 'test_pkg')
@@ -389,7 +372,6 @@ class CmdLineTest(unittest.TestCase):
                    "be directly executed")
             self._check_import_error(["-m", "test_pkg"], msg, cwd=script_dir)
 
-    @requires_zlib
     def test_package_recursion(self):
         with os_helper.temp_dir() as script_dir:
             pkg_dir = os.path.join(script_dir, 'test_pkg')
@@ -401,7 +383,6 @@ class CmdLineTest(unittest.TestCase):
                    "be directly executed")
             self._check_import_error(["-m", "test_pkg"], msg, cwd=script_dir)
 
-    @requires_zlib
     def test_issue8202(self):
         # Make sure package __init__ modules see "-m" in sys.argv0 while
         # searching for the module to execute
@@ -434,7 +415,6 @@ class CmdLineTest(unittest.TestCase):
                     expected = "sys.path[0]==%r" % ''
                     self.assertIn(expected.encode('utf-8'), out)
 
-    @requires_zlib
     def test_issue8202_dash_m_file_ignored(self):
         # Make sure a "-m" file in the current directory
         # does not alter the value of sys.path[0]
@@ -481,7 +461,6 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(rc, 1)
         return err
 
-    @requires_zlib
     def test_dash_m_error_code_is_one(self):
         # If a module is invoked with the -m command line flag
         # and results in an error that the return code to the
@@ -536,7 +515,6 @@ class CmdLineTest(unittest.TestCase):
             self.assertIn(b"Try using 'asyncio' instead "
                           b"of 'asyncio.py' as the module name", err)
 
-    @requires_zlib
     def test_dash_m_init_traceback(self):
         # These were wrapped in an ImportError and tracebacks were
         # suppressed; see Issue 14285
@@ -561,7 +539,6 @@ class CmdLineTest(unittest.TestCase):
             self.assertIn(b'Exception in __main__ module', err)
             self.assertIn(b'Traceback', err)
 
-    @requires_zlib
     def test_pep_409_verbiage(self):
         # Make sure PEP 409 syntax properly suppresses
         # the context of an exception
@@ -580,7 +557,6 @@ class CmdLineTest(unittest.TestCase):
             self.assertTrue(text[1].startswith('  File '))
             self.assertTrue(text[3].startswith('NameError'))
 
-    @requires_zlib
     def test_non_ascii(self):
         # Apple platforms deny the creation of a file with an invalid UTF-8 name.
         # Windows allows creating a name with an arbitrary bytes name, but
@@ -610,7 +586,6 @@ class CmdLineTest(unittest.TestCase):
             'stdout=%r stderr=%r' % (stdout, stderr))
         self.assertEqual(0, rc)
 
-    @requires_zlib
     def test_issue20500_exit_with_exception_value(self):
         script = textwrap.dedent("""\
             import sys
@@ -629,7 +604,6 @@ class CmdLineTest(unittest.TestCase):
             text = stderr.decode('ascii')
             self.assertEqual(text.rstrip(), "some text")
 
-    @requires_zlib
     def test_syntaxerror_unindented_caret_position(self):
         script = "1 + 1 = 2\n"
         with os_helper.temp_dir() as script_dir:
@@ -639,7 +613,6 @@ class CmdLineTest(unittest.TestCase):
             # Confirm that the caret is located under the '=' sign
             self.assertIn("\n    ^^^^^\n", text)
 
-    @requires_zlib
     def test_syntaxerror_indented_caret_position(self):
         script = textwrap.dedent("""\
             if True:
@@ -663,7 +636,6 @@ class CmdLineTest(unittest.TestCase):
             self.assertNotIn("\f", text)
             self.assertIn("\n    1 + 1 = 2\n    ^^^^^\n", text)
 
-    @requires_zlib
     def test_syntaxerror_multi_line_fstring(self):
         script = 'foo = f"""{}\nfoo"""\n'
         with os_helper.temp_dir() as script_dir:
@@ -678,7 +650,6 @@ class CmdLineTest(unittest.TestCase):
                 ],
             )
 
-    @requires_zlib
     def test_syntaxerror_invalid_escape_sequence_multi_line(self):
         script = 'foo = """\\q"""\n'
         with os_helper.temp_dir() as script_dir:
@@ -695,7 +666,6 @@ class CmdLineTest(unittest.TestCase):
                 ],
             )
 
-    @requires_zlib
     def test_syntaxerror_null_bytes(self):
         script = "x = '\0' nothing to see here\n';import os;os.system('echo pwnd')\n"
         with os_helper.temp_dir() as script_dir:
@@ -708,7 +678,6 @@ class CmdLineTest(unittest.TestCase):
                 ],
             )
 
-    @requires_zlib
     def test_syntaxerror_null_bytes_in_multiline_string(self):
         scripts = ["\n'''\nmultilinestring\0\n'''", "\nf'''\nmultilinestring\0\n'''"] # Both normal and f-strings
         with os_helper.temp_dir() as script_dir:
@@ -732,7 +701,6 @@ class CmdLineTest(unittest.TestCase):
             b'ZeroDivisionError: division by zero']
         self.assertEqual(stderr.splitlines(), expected_lines)
 
-    @requires_zlib
     def test_syntaxerror_does_not_crash(self):
         script = "nonlocal x\n"
         with os_helper.temp_dir() as script_dir:
@@ -744,7 +712,6 @@ class CmdLineTest(unittest.TestCase):
                 'SyntaxError: nonlocal declaration not allowed at module level\n',
             ), text)
 
-    @requires_zlib
     def test_consistent_sys_path_for_direct_execution(self):
         # This test case ensures that the following all give the same
         # sys.path configuration:
@@ -776,7 +743,6 @@ class CmdLineTest(unittest.TestCase):
             out_by_dir_isolated = kill_python(p).decode().splitlines()
             self.assertEqual(out_by_dir_isolated, out_by_dir, out_by_name)
 
-    @requires_zlib
     def test_consistent_sys_path_for_module_execution(self):
         # This test case ensures that the following both give the same
         # sys.path configuration:

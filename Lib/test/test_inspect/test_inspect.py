@@ -35,7 +35,7 @@ try:
 except ImportError:
     ThreadPoolExecutor = None
 
-from test.support import cpython_only, import_helper, requires_zlib
+from test.support import cpython_only, import_helper
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
 from test.support import run_no_yield_async_fn
 from test.support.import_helper import DirsOnSysPath, ready_to_import
@@ -6049,7 +6049,6 @@ def foo():
                 inspected_src.splitlines(True)
             )
 
-    @requires_zlib
     def test_getsource_reload(self):
         # see issue 1218234
         with ready_to_import('reload_bug', self.src_before) as (name, path):

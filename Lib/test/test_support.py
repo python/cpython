@@ -20,7 +20,6 @@ from test.support import os_helper
 from test.support import script_helper
 from test.support import socket_helper
 from test.support import warnings_helper
-from test.support import requires_zlib
 
 TESTFN = os_helper.TESTFN
 
@@ -108,7 +107,6 @@ class TestSupport(unittest.TestCase):
             os_helper.rmtree(dirpath)
         self.assertFalse(os.path.exists(dirpath))
 
-    @requires_zlib
     def test_forget(self):
         mod_filename = TESTFN + '.py'
         with open(mod_filename, 'w', encoding="utf-8") as f:

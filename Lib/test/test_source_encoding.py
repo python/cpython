@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from test.support import script_helper, captured_stdout, requires_subprocess, requires_resource, requires_zlib
+from test.support import script_helper, captured_stdout, requires_subprocess, requires_resource
 from test.support.os_helper import TESTFN, unlink, rmtree
 from test.support.import_helper import unload
 import importlib
@@ -114,7 +114,6 @@ class MiscSourceEncodingTest(unittest.TestCase):
         exec(b'# coding: cp949\na = "\xaa\xa7"\n', d)
         self.assertEqual(d['a'], '\u3047')
 
-    @requires_zlib
     def test_file_parse(self):
         # issue1134: all encodings outside latin-1 and utf-8 fail on
         # multiline strings and long lines (>512 columns)

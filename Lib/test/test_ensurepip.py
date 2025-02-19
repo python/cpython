@@ -11,8 +11,6 @@ from pathlib import Path
 import ensurepip
 import ensurepip._uninstall
 
-if sys.platform == "wasm":
-    unittest.skip("zlib unavailable")
 
 class TestPackages(unittest.TestCase):
     def touch(self, directory, filename):

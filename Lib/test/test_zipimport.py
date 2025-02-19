@@ -15,9 +15,6 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 
-if sys.platform == "wasm":
-    unittest.skip("zlib unavailable")
-
 from zipfile import ZipFile, ZipInfo, ZIP_STORED, ZIP_DEFLATED
 
 import zipimport
@@ -26,8 +23,10 @@ import doctest
 import inspect
 import io
 from traceback import extract_tb, extract_stack, print_tb
-import zlib
-
+try:
+    import zlib
+except ImportError:
+    zlib = None
 
 test_src = """\
 def get_name():

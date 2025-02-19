@@ -2,13 +2,9 @@
 
 import unittest
 import unittest.mock
-import sys
-
-if sys.platform == "wasm":
-    unittest.skip("zlib unavailable")
-
 import shutil
 import tempfile
+import sys
 import stat
 import os
 import os.path

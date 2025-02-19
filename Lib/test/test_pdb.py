@@ -10,6 +10,7 @@ import unittest
 import subprocess
 import textwrap
 import linecache
+import zipapp
 
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
@@ -18,11 +19,6 @@ from test.support import force_not_colorized, os_helper
 from test.support.import_helper import import_module
 from test.support.pty_helper import run_pty, FakeInput
 from unittest.mock import patch
-
-if sys.platform == "wasm":
-    unittest.skip("zlib unavailable")
-
-import zipapp
 
 SKIP_CORO_TESTS = False
 

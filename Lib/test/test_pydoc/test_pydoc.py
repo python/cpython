@@ -34,7 +34,7 @@ from test.support.script_helper import (assert_python_ok,
 from test.support import threading_helper
 from test.support import (reap_children, captured_stdout,
                           captured_stderr, is_emscripten, is_wasi,
-                          requires_docstrings, MISSING_C_DOCSTRINGS, requires_zlib)
+                          requires_docstrings, MISSING_C_DOCSTRINGS)
 from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test.test_pydoc import pydoc_mod
 from test.test_pydoc import pydocfodder
@@ -1251,7 +1251,6 @@ class PydocImportTest(PydocBaseTest):
         self.addCleanup(rmtree, TESTFN)
         importlib.invalidate_caches()
 
-    @requires_zlib
     def test_badimport(self):
         # This tests the fix for issue 5230, where if pydoc found the module
         # but the module had an internal import error pydoc would report no doc
@@ -1273,7 +1272,6 @@ class PydocImportTest(PydocBaseTest):
             expected = badimport_pattern % (modname, expectedinmsg)
             self.assertEqual(expected, result)
 
-    @requires_zlib
     def test_apropos_with_bad_package(self):
         # Issue 7425 - pydoc -k failed when bad package on path
         pkgdir = os.path.join(TESTFN, "syntaxerr")
@@ -1295,7 +1293,6 @@ class PydocImportTest(PydocBaseTest):
             self.assertEqual(out.getvalue().strip(), 'syntaxerr')
             self.assertEqual(err.getvalue(), '')
 
-    @requires_zlib
     def test_apropos_with_unreadable_dir(self):
         # Issue 7367 - pydoc -k failed when unreadable dir on path
         self.unreadable_dir = os.path.join(TESTFN, "unreadable")
@@ -1328,7 +1325,6 @@ class PydocImportTest(PydocBaseTest):
         finally:
             os.chmod(pkgdir, current_mode)
 
-    @requires_zlib
     def test_url_search_package_error(self):
         # URL handler search should cope with packages that raise exceptions
         pkgdir = os.path.join(TESTFN, "test_error_package")
@@ -1394,7 +1390,6 @@ class PydocImportTest(PydocBaseTest):
 
         self.assertTrue(result.startswith(expected))
 
-    @requires_zlib
     def test_importfile(self):
         try:
             loaded_pydoc = pydoc.importfile(pydoc.__file__)
