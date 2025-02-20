@@ -703,25 +703,6 @@ _io_FileIO_readinto_impl(fileio *self, PyTypeObject *cls, Py_buffer *buffer)
     return PyLong_FromSsize_t(n);
 }
 
-static size_t
-new_buffersize(fileio *self, size_t currentsize)
-{
-    size_t addend;
-
-    /* Expand the buffer by an amount proportional to the current size,
-       giving us amortized linear-time behavior.  For bigger sizes, use a
-       less-than-double growth factor to avoid excessive allocation. */
-    assert(currentsize <= PY_SSIZE_T_MAX);
-    if (currentsize > LARGE_BUFFER_CUTOFF_SIZE)
-        addend = currentsize >> 3;
-    else
-        addend = 256 + currentsize;
-    if (addend < SMALLCHUNK)
-        /* Avoid tiny read() calls. */
-        addend = SMALLCHUNK;
-    return addend + currentsize;
-}
-
 /*[clinic input]
 _io.FileIO.readall
 
@@ -735,46 +716,26 @@ static PyObject *
 _io_FileIO_readall_impl(fileio *self)
 /*[clinic end generated code: output=faa0292b213b4022 input=dbdc137f55602834]*/
 {
-    Py_off_t pos, end;
-    PyObject *result;
-    Py_ssize_t bytes_read = 0;
-    Py_ssize_t n;
-    size_t bufsize;
+    PyObject* estimate_obj = Py_None;
+    PyObject *args[3] = {NULL, NULL, NULL};
+    PyObject *fn_name = NULL;
+    PyObject *keyword = NULL;
+    PyObject *result = NULL;
+    PyObject *found_eof = NULL;
 
     if (self->fd < 0) {
         return err_closed();
     }
 
-    if (self->stat_atopen != NULL && self->stat_atopen->st_size < _PY_READ_MAX) {
-        end = (Py_off_t)self->stat_atopen->st_size;
-    }
-    else {
-        end = -1;
-    }
-    if (end <= 0) {
-        /* Use a default size and resize as needed. */
-        bufsize = SMALLCHUNK;
-    }
-    else {
-        /* This is probably a real file. */
-        if (end > _PY_READ_MAX - 1) {
-            bufsize = _PY_READ_MAX;
-        }
-        else {
-            /* In order to detect end of file, need a read() of at
-               least 1 byte which returns size 0. Oversize the buffer
-               by 1 byte so the I/O can be completed with two read()
-               calls (one for all data, one for EOF) without needing
-               to resize the buffer. */
-            bufsize = (size_t)end + 1;
-        }
-
+    if (self->stat_atopen != NULL && self->stat_atopen->st_size >= 0) {
+        Py_ssize_t pos = 0;
+        Py_ssize_t estimate = self->stat_atopen->st_size;
         /* While a lot of code does open().read() to get the whole contents
            of a file it is possible a caller seeks/reads a ways into the file
            then calls readall() to get the rest, which would result in allocating
            more than required. Guard against that for larger files where we expect
            the I/O time to dominate anyways while keeping small files fast. */
-        if (bufsize > LARGE_BUFFER_CUTOFF_SIZE) {
+        if (estimate > LARGE_BUFFER_CUTOFF_SIZE) {
             Py_BEGIN_ALLOW_THREADS
             _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
@@ -785,58 +746,81 @@ _io_FileIO_readall_impl(fileio *self)
             _Py_END_SUPPRESS_IPH
             Py_END_ALLOW_THREADS
 
-            if (end >= pos && pos >= 0 && (end - pos) < (_PY_READ_MAX - 1)) {
-                bufsize = (size_t)(end - pos) + 1;
+            if (estimate >= pos) {
+                estimate -= pos;
             }
+        }
+        estimate_obj = PyLong_FromSsize_t(estimate);
+        if(!estimate_obj) {
+            return NULL;
         }
     }
 
-
-    result = PyBytes_FromStringAndSize(NULL, bufsize);
-    if (result == NULL)
+    /* bio = io.BytesIO();
+       found_eof = bio.readfrom(self->fd, estimate=estimate) */
+    PyObject *bytesio_class = PyImport_ImportModuleAttrString("_io", "BytesIO");
+    if (!bytesio_class) {
+        Py_DECREF(estimate_obj);
         return NULL;
+    }
+    args[2] = estimate_obj;
+    estimate_obj = NULL;
 
-    while (1) {
-        if (bytes_read >= (Py_ssize_t)bufsize) {
-            bufsize = new_buffersize(self, bytes_read);
-            if (bufsize > PY_SSIZE_T_MAX || bufsize <= 0) {
-                PyErr_SetString(PyExc_OverflowError,
-                                "unbounded read returned more bytes "
-                                "than a Python bytes object can hold");
-                Py_DECREF(result);
-                return NULL;
-            }
-
-            if (PyBytes_GET_SIZE(result) < (Py_ssize_t)bufsize) {
-                if (_PyBytes_Resize(&result, bufsize) < 0)
-                    return NULL;
-            }
-        }
-
-        n = _Py_read(self->fd,
-                     PyBytes_AS_STRING(result) + bytes_read,
-                     bufsize - bytes_read);
-
-        if (n == 0)
-            break;
-        if (n == -1) {
-            if (errno == EAGAIN) {
-                PyErr_Clear();
-                if (bytes_read > 0)
-                    break;
-                Py_DECREF(result);
-                Py_RETURN_NONE;
-            }
-            Py_DECREF(result);
-            return NULL;
-        }
-        bytes_read += n;
+    args[0] = PyObject_CallNoArgs(bytesio_class);
+    Py_DECREF(bytesio_class);
+    bytesio_class = NULL;
+    if (!args[0]) {
+        Py_DECREF(estimate_obj);
+        return  NULL;
     }
 
-    if (PyBytes_GET_SIZE(result) > bytes_read) {
-        if (_PyBytes_Resize(&result, bytes_read) < 0)
-            return NULL;
+    args[1] = PyLong_FromLong(self->fd);
+    if(!args[1]) {
+        goto leave;
     }
+    fn_name = PyUnicode_InternFromString("readfrom");
+    if (!fn_name) {
+        goto leave;
+    }
+    keyword = Py_BuildValue("(s)", "estimate");
+    if (!keyword) {
+        goto leave;
+    }
+    found_eof = PyObject_VectorcallMethod(
+        fn_name,
+        args,
+        2 | PY_VECTORCALL_ARGUMENTS_OFFSET,
+        keyword
+    );
+    if (!found_eof) {
+        goto leave;
+    }
+
+    /* result = bio.getvalue()
+       return result if result or found_eof else None */
+    Py_DECREF(keyword);
+    keyword = PyUnicode_InternFromString("getvalue");
+    if (!keyword) {
+        goto leave;
+    }
+    result = PyObject_CallMethodNoArgs(args[0], keyword);
+    if (!result) {
+        goto leave;
+    }
+
+    /* Read was blocked (didn't get to end, and didn't find data) */
+    if (!PyObject_IsTrue(result) && !PyObject_IsTrue(found_eof)) {
+        Py_DECREF(result);
+        result = Py_None;
+    }
+
+leave:
+    Py_XDECREF(args[0]);
+    Py_XDECREF(args[1]);
+    Py_XDECREF(args[2]);
+    Py_XDECREF(fn_name);
+    Py_XDECREF(keyword);
+    Py_XDECREF(found_eof);
     return result;
 }
 
