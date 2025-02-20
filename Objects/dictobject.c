@@ -7167,7 +7167,7 @@ static void
 clear_inline_values(PyDictValues *values)
 {
     if (values->valid) {
-        values->valid = 0;
+        FT_ATOMIC_STORE_UINT8(values->valid, 0);
         for (Py_ssize_t i = 0; i < values->capacity; i++) {
             Py_CLEAR(values->values[i]);
         }
