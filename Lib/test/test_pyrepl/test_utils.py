@@ -18,6 +18,10 @@ class TestUtils(TestCase):
             self.assertEqual(wlen(c), 1)
         self.assertEqual(wlen('\x1a'), 2)
 
+        char_east_asian_width_N = chr(3800)
+        self.assertEqual(wlen(char_east_asian_width_N), 1)
+        char_east_asian_width_W = chr(4352)
+        self.assertEqual(wlen(char_east_asian_width_W), 2)
+
         self.assertEqual(wlen('hello'), 5)
-        self.assertEqual(wlen('hello'+'\x1a'), 7)
-        self.assertEqual(wlen('hello'+'\0x1B'), 9)
+        self.assertEqual(wlen('hello' + '\x1a'), 7)
