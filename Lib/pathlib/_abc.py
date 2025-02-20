@@ -192,7 +192,7 @@ class JoinablePath(ABC):
         Return True if this path matches the given glob-style pattern. The
         pattern is matched against the entire path.
         """
-        if not isinstance(pattern, JoinablePath):
+        if not hasattr(pattern, 'with_segments'):
             pattern = self.with_segments(pattern)
         if case_sensitive is None:
             case_sensitive = self.parser.normcase('Aa') == 'Aa'
@@ -286,7 +286,7 @@ class ReadablePath(JoinablePath):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
-        if not isinstance(pattern, JoinablePath):
+        if not hasattr(pattern, 'with_segments'):
             pattern = self.with_segments(pattern)
         anchor, parts = _explode_path(pattern)
         if anchor:
@@ -348,7 +348,7 @@ class ReadablePath(JoinablePath):
         """
         Recursively copy this file or directory tree to the given destination.
         """
-        if not hasattr(target, '_copy_writer'):
+        if not hasattr(target, 'with_segments'):
             target = self.with_segments(target)
 
         # Delegate to the target path's CopyWriter object.
@@ -366,7 +366,7 @@ class ReadablePath(JoinablePath):
         name = self.name
         if not name:
             raise ValueError(f"{self!r} has an empty name")
-        elif hasattr(target_dir, '_copy_writer'):
+        elif hasattr(target_dir, 'with_segments'):
             target = target_dir / name
         else:
             target = self.with_segments(target_dir, name)
