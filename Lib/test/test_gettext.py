@@ -692,36 +692,49 @@ class GettextCacheTestCase(GettextBaseTest):
 
 
 class FallbackTranslations(gettext.NullTranslations):
-    def gettext(self, *args):
-        return 'gettext'
+    def gettext(self, message):
+        return f'gettext: {message}'
 
-    ngettext = pgettext = npgettext = gettext
+    def ngettext(self, msgid1, msgid2, n):
+        return f'ngettext: {msgid1}, {msgid2}, {n}'
+
+    def pgettext(self, context, message):
+        return f'pgettext: {context}, {message}'
+    
+    def npgettext(self, context, msgid1, msgid2, n):
+        return f'npgettext: {context}, {msgid1}, {msgid2}, {n}'
 
 
 class FallbackTestCase(GettextBaseTest):
     def test_null_translations_fallback(self):
         t = gettext.NullTranslations()
         t.add_fallback(FallbackTranslations())
-        self.assertEqual(t.gettext('foo'), 'gettext')
-        self.assertEqual(t.ngettext('foo', 'foos', 1), 'gettext')
-        self.assertEqual(t.pgettext('context', 'foo'), 'gettext')
-        self.assertEqual(t.npgettext('context', 'foo', 'foos', 1), 'gettext')
+        self.assertEqual(t.gettext('foo'), 'gettext: foo')
+        self.assertEqual(t.ngettext('foo', 'foos', 1),
+                         'ngettext: foo, foos, 1')
+        self.assertEqual(t.pgettext('context', 'foo'),
+                         'pgettext: context, foo')
+        self.assertEqual(t.npgettext('context', 'foo', 'foos', 1),
+                         'npgettext: context, foo, foos, 1')
 
     def test_gnu_translations_fallback(self):
         with open(MOFILE, 'rb') as fp:
             t = gettext.GNUTranslations(fp)
         t.add_fallback(FallbackTranslations())
-        self.assertEqual(t.gettext('foo'), 'gettext')
-        self.assertEqual(t.ngettext('foo', 'foos', 1), 'gettext')
-        self.assertEqual(t.pgettext('context', 'foo'), 'gettext')
-        self.assertEqual(t.npgettext('context', 'foo', 'foos', 1), 'gettext')
+        self.assertEqual(t.gettext('foo'), 'gettext: foo')
+        self.assertEqual(t.ngettext('foo', 'foos', 1),
+                         'ngettext: foo, foos, 1')
+        self.assertEqual(t.pgettext('context', 'foo'),
+                         'pgettext: context, foo')
+        self.assertEqual(t.npgettext('context', 'foo', 'foos', 1),
+                         'npgettext: context, foo, foos, 1')
 
     def test_nested_fallbacks(self):
         t = gettext.NullTranslations()
         t.add_fallback(gettext.NullTranslations())
         t.add_fallback(gettext.NullTranslations())
         t.add_fallback(FallbackTranslations())
-        self.assertEqual(t.gettext('foo'), 'gettext')
+        self.assertEqual(t.gettext('foo'), 'gettext: foo')
 
 
 class MiscTestCase(unittest.TestCase):
