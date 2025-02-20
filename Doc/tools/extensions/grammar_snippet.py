@@ -57,51 +57,30 @@ class GrammarSnippetBase(SphinxDirective):
 
     def make_grammar_snippet(
         self, options: dict[str, Any], content: Sequence[str]
-    ) -> list[nodes.paragraph]:
+    ) -> list[addnodes.productionlist]:
         """Create a literal block from options & content."""
 
         group_name = options['group']
-
-        # Docutils elements have a `rawsource` attribute that is supposed to be
-        # set to the original ReST source.
-        # Sphinx does the following with it:
-        # - if it's empty, set it to `self.astext()`
-        # - if it matches `self.astext()` when generating the output,
-        #   apply syntax highlighting (which is based on the plain-text content
-        #   and thus discards internal formatting, like references).
-        # To get around this, we set it to this non-empty string:
-        rawsource = 'You should not see this.'
-
-        literal = nodes.literal_block(
-            rawsource,
-            '',
-            classes=['highlight'],
-        )
-
         node_location = self.get_location()
-        for line in content:
+        productions = [
             self.make_production(
-                line,
-                group_name=group_name,
-                literal=literal,
-                location=node_location,
+                line, group_name=group_name, location=node_location
             )
-        node = nodes.paragraph('', '', literal)
+            for line in content
+        ]
+        node = addnodes.productionlist(
+            '', *productions, support_smartquotes=False
+        )
+        self.set_source_info(node)
         return [node]
 
-    def make_production(
-        self,
-        line: str,
-        *,
-        group_name: str,
-        literal: nodes.literal_block,
-        location: str,
-    ):
+    def make_production(self, line: str, *, group_name: str, location: str):
+        production_node = addnodes.production(line)
         last_pos = 0
         for match in self.grammar_re.finditer(line):
             # Handle text between matches
             if match.start() > last_pos:
-                literal += nodes.Text(line[last_pos : match.start()])
+                production_node += nodes.Text(line[last_pos : match.start()])
             last_pos = match.end()
 
             # Handle matches
@@ -112,18 +91,19 @@ class GrammarSnippetBase(SphinxDirective):
             }
             match group_dict:
                 case {'rule_name': name}:
-                    literal += self.make_name_target(
+                    production_node += self.make_name_target(
                         name=name,
                         production_group=group_name,
                         location=location,
                     )
                 case {'rule_ref': ref_text}:
-                    literal += token_xrefs(ref_text, group_name)
+                    production_node += token_xrefs(ref_text, group_name)
                 case {'single_quoted': name} | {'double_quoted': name}:
-                    literal += snippet_string_node('', name)
+                    production_node += snippet_string_node('', name)
                 case _:
                     raise ValueError('unhandled match')
-        literal += nodes.Text(line[last_pos:] + '\n')
+        production_node += nodes.Text(line[last_pos:] + '\n')
+        return production_node
 
     def make_name_target(
         self,
@@ -182,7 +162,7 @@ class GrammarSnippetDirective(GrammarSnippetBase):
     optional_arguments = 1
     final_argument_whitespace = True
 
-    def run(self) -> list[nodes.paragraph]:
+    def run(self) -> list[addnodes.productionlist]:
         return self.make_grammar_snippet(self.options, self.content)
 
 
@@ -201,7 +181,7 @@ class CompatProductionList(GrammarSnippetBase):
     final_argument_whitespace = True
     option_spec = {}
 
-    def run(self) -> list[nodes.paragraph]:
+    def run(self) -> list[addnodes.productionlist]:
         # The "content" of a productionlist is actually the first and only
         # argument. The first line is the group; the rest is the content lines.
         lines = self.arguments[0].splitlines()
