@@ -425,7 +425,7 @@ class Random(_random.Random):
             if not isinstance(total, int):
                 raise TypeError('Counts must be integers')
             if total < 0:
-                raise ValueError('Total of counts must be non-negative')
+                raise ValueError('Counts must be non-negative')
             selections = self.sample(range(total), k=k)
             bisect = _bisect
             return [population[bisect(cum_counts, s)] for s in selections]
