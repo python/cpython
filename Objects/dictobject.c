@@ -7170,14 +7170,15 @@ set_dict_inline_values(PyObject *obj, PyDictObject *new_dict)
 
     PyDictValues *values = _PyObject_InlineValues(obj);
 
-    Py_XINCREF(new_dict);
-    FT_ATOMIC_STORE_PTR(_PyObject_ManagedDictPointer(obj)->dict, new_dict);
-
     if (values->valid) {
         FT_ATOMIC_STORE_UINT8(values->valid, 0);
         for (Py_ssize_t i = 0; i < values->capacity; i++) {
             Py_CLEAR(values->values[i]);
         }
+    }
+    else {
+        Py_XINCREF(new_dict);
+        FT_ATOMIC_STORE_PTR(_PyObject_ManagedDictPointer(obj)->dict, new_dict);
     }
 }
 
