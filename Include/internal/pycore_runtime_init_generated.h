@@ -871,6 +871,7 @@ extern "C" {
     INIT_ID(coro), \
     INIT_ID(count), \
     INIT_ID(covariant), \
+    INIT_ID(create_only), \
     INIT_ID(cwd), \
     INIT_ID(data), \
     INIT_ID(database), \
