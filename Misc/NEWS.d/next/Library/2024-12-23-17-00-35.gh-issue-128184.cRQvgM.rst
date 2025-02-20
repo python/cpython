@@ -1,0 +1,2 @@
+Fixes :exc:`NameError` when using :func:`dataclasses.dataclass` on classes
+with unresolvable forward references.
