@@ -3309,6 +3309,58 @@ class TestSingleDispatch(unittest.TestCase):
             support.gc_collect()
         self.assertIsNone(r())
 
+    def test_signatures(self):
+        @functools.singledispatch
+        def func(item, arg: int) -> str:
+            return str(item)
+        @func.register
+        def _(item: int, arg: bytes) -> str:
+            return str(item)
+
+        self.assertEqual(str(Signature.from_callable(func)),
+                         '(item, arg: int) -> str')
+
+    def test_method_signatures(self):
+        class A:
+            def m(self, item, arg: int) -> str:
+                return str(item)
+            @classmethod
+            def cm(cls, item, arg: int) -> str:
+                return str(item)
+            @functools.singledispatchmethod
+            def func(self, item, arg: int) -> str:
+                return str(item)
+            @func.register
+            def _(self, item, arg: bytes) -> str:
+                return str(item)
+
+            @functools.singledispatchmethod
+            @classmethod
+            def cls_func(cls, item, arg: int) -> str:
+                return str(arg)
+            @func.register
+            @classmethod
+            def _(cls, item, arg: bytes) -> str:
+                return str(item)
+
+            @functools.singledispatchmethod
+            @staticmethod
+            def static_func(item, arg: int) -> str:
+                return str(arg)
+            @func.register
+            @staticmethod
+            def _(item, arg: bytes) -> str:
+                return str(item)
+
+        self.assertEqual(str(Signature.from_callable(A.func)),
+                         '(self, item, arg: int) -> str')
+        self.assertEqual(str(Signature.from_callable(A().func)),
+                         '(self, item, arg: int) -> str')
+        self.assertEqual(str(Signature.from_callable(A.cls_func)),
+                         '(cls, item, arg: int) -> str')
+        self.assertEqual(str(Signature.from_callable(A.static_func)),
+                         '(item, arg: int) -> str')
+
 
 class CachedCostItem:
     _cost = 1
