@@ -14,7 +14,7 @@ from sphinx.util.nodes import make_id
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-    from typing import Any
+    from typing import Any, Final
 
     from docutils.nodes import Node
     from sphinx.application import Sphinx
@@ -41,6 +41,20 @@ class GrammarSnippetBase(SphinxDirective):
 
     # The option/argument handling is left to the individual classes.
 
+    grammar_re: Final = re.compile(
+        r"""
+            (?P<rule_name>^[a-zA-Z0-9_]+)     # identifier at start of line
+            (?=:)                             # ... followed by a colon
+        |
+            (?P<rule_ref>`[^\s`]+`)           # identifier in backquotes
+        |
+            (?P<single_quoted>'[^']*')        # string in 'quotes'
+        |
+            (?P<double_quoted>"[^"]*")        # string in "quotes"
+        """,
+        re.VERBOSE,
+    )
+
     def make_grammar_snippet(
         self, options: dict[str, Any], content: Sequence[str]
     ) -> list[nodes.paragraph]:
@@ -64,23 +78,9 @@ class GrammarSnippetBase(SphinxDirective):
             classes=['highlight'],
         )
 
-        grammar_re = re.compile(
-            r"""
-                (?P<rule_name>^[a-zA-Z0-9_]+)     # identifier at start of line
-                (?=:)                             # ... followed by a colon
-            |
-                (?P<rule_ref>`[^\s`]+`)           # identifier in backquotes
-            |
-                (?P<single_quoted>'[^']*')        # string in 'quotes'
-            |
-                (?P<double_quoted>"[^"]*")        # string in "quotes"
-            """,
-            re.VERBOSE,
-        )
-
         for line in content:
             last_pos = 0
-            for match in grammar_re.finditer(line):
+            for match in self.grammar_re.finditer(line):
                 # Handle text between matches
                 if match.start() > last_pos:
                     literal += nodes.Text(line[last_pos : match.start()])
