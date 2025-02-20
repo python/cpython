@@ -510,6 +510,16 @@ class TracebackCases(unittest.TestCase):
         traceback.print_exception(Exception("projector"), file=output)
         self.assertEqual(output.getvalue(), "Exception: projector\n")
 
+    def test_print_last(self):
+        self.assertIsNone(getattr(sys, "last_exc", None))
+        try:
+            sys.last_exc = ValueError(42)
+            output = StringIO()
+            traceback.print_last(file=output)
+            self.assertEqual(output.getvalue(), "ValueError: 42\n")
+        finally:
+            sys.last_exc = None
+
     def test_format_exception_exc(self):
         e = Exception("projector")
         output = traceback.format_exception(e)

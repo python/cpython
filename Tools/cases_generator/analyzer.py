@@ -653,7 +653,6 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyUnicode_JoinArray",
     "_Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY",
     "_Py_DECREF_NO_DEALLOC",
-    "_Py_EnterRecursiveCallTstateUnchecked",
     "_Py_ID",
     "_Py_IsImmortal",
     "_Py_LeaveRecursiveCallPy",
@@ -673,6 +672,7 @@ NON_ESCAPING_FUNCTIONS = (
     "initial_temperature_backoff_counter",
     "JUMP_TO_LABEL",
     "restart_backoff_counter",
+    "_Py_ReachedRecursionLimit",
 )
 
 def find_stmt_start(node: parser.CodeDef, idx: int) -> lexer.Token:
