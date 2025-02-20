@@ -467,6 +467,29 @@ class NormalizationTest(unittest.TestCase):
         # Check for bug 834676
         unicodedata.normalize('NFC', '\ud55c\uae00')
 
+    def test_normalize_return_type(self):
+        # gh-129569: normalize() return type must always be str
+        normalize = unicodedata.normalize
+
+        class MyStr(str):
+            pass
+
+        normalization_forms = ("NFC", "NFKC", "NFD", "NFKD")
+        input_strings = (
+            # normalized strings
+            "",
+            "ascii",
+            # unnormalized strings
+            "\u1e0b\u0323",
+            "\u0071\u0307\u0323",
+        )
+
+        for form in normalization_forms:
+            for input_str in input_strings:
+                with self.subTest(form=form, input_str=input_str):
+                    self.assertIs(type(normalize(form, input_str)), str)
+                    self.assertIs(type(normalize(form, MyStr(input_str))), str)
+
 
 if __name__ == "__main__":
     unittest.main()
