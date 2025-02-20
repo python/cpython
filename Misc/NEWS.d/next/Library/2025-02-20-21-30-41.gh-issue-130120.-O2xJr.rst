@@ -1,0 +1,1 @@
+Fix bug where `str(zipfile.Path(zipfile.ZipFile(io.BytesIO(data))))` would raise a `TypeError`
