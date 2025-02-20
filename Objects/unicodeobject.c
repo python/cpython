@@ -11052,6 +11052,34 @@ replace(PyObject *self, PyObject *str1,
     return NULL;
 }
 
+// asdf
+static PyObject *
+reverse(PyObject *string) 
+{
+    if (ensure_unicode(string) < 0)
+        return NULL;
+    
+    Py_ssize_t length = PyUnicode_GET_LENGTH(string);
+    PyObject* reversed = PyUnicode_New(length, PyUnicode_MAX_CHAR_VALUE(string));
+
+    if (reversed == NULL) {
+        return NULL;
+    }
+
+    for (Py_ssize_t i = 0; i < length; i++) {
+        Py_UCS4 ch = PyUnicode_READ_CHAR(string, length - 1 - i);
+        PyUnicode_WriteChar(reversed, i, ch);
+    }
+
+    return reversed;
+}
+
+static PyObject *
+unicode_reverse_impl(PyObject *self)
+{
+    return reverse(self);
+}
+
 /* --- Unicode Object Methods --------------------------------------------- */
 
 /*[clinic input]

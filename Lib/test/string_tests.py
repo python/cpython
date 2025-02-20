@@ -1085,6 +1085,12 @@ class BaseTest:
         self.checkequal('Getint', "getInt", 'title')
         self.checkraises(TypeError, 'hello', 'title', 42)
 
+    def test_reverse(self):
+        self.checkequal('', '', 'reverse')
+        self.checkequal('Hello', 'olleH', 'reverse')
+        self.checkequal('Reversed this string', "gnirts siht desreveR", 'reverse')
+        self.checkraises(TypeError, 'hello', 'reverse', 42)
+
     def test_splitlines(self):
         self.checkequal(['abc', 'def', '', 'ghi'], "abc\ndef\n\rghi", 'splitlines')
         self.checkequal(['abc', 'def', '', 'ghi'], "abc\ndef\n\r\nghi", 'splitlines')

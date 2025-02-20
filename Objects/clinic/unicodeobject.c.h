@@ -997,6 +997,26 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(unicode_reverse__doc__,
+"reverse($self, /)\n"
+"--\n"
+"\n"
+"Return the reverse string.\n"
+"\n"
+"A string is reversed if all characters in the string are in reverse order.");
+
+#define UNICODE_REVERSE_METHODDEF    \
+    {"reverse", (PyCFunction)unicode_reverse, METH_NOARGS, unicode_reverse__doc__},
+
+static PyObject *
+unicode_reverse_impl(PyObject *self);
+
+static PyObject *
+unicode_reverse(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return unicode_reverse_impl(self);
+}
+
 PyDoc_STRVAR(unicode_removeprefix__doc__,
 "removeprefix($self, prefix, /)\n"
 "--\n"
