@@ -2770,6 +2770,9 @@ PyUnicode_FromFormatV:PyObject*::+1:
 PyUnicode_FromFormatV:const char*:format::
 PyUnicode_FromFormatV:va_list:args::
 
+PyUnicode_GetDefaultEncoding:const char*:::
+PyUnicode_GetDefaultEncoding::void::
+
 PyUnicode_GetLength:Py_ssize_t:::
 PyUnicode_GetLength:PyObject*:unicode:0:
 
