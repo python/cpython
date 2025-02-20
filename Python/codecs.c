@@ -1359,76 +1359,91 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
 }
 
 
-static PyObject *
-PyCodec_SurrogateEscapeErrors(PyObject *exc)
-{
-    PyObject *restuple;
-    PyObject *object;
-    Py_ssize_t i;
-    Py_ssize_t start;
-    Py_ssize_t end;
-    PyObject *res;
+// --- handler: 'surrogateescape' ---------------------------------------------
 
-    if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
-        char *outp;
-        if (PyUnicodeEncodeError_GetStart(exc, &start))
-            return NULL;
-        if (PyUnicodeEncodeError_GetEnd(exc, &end))
-            return NULL;
-        if (!(object = PyUnicodeEncodeError_GetObject(exc)))
-            return NULL;
-        res = PyBytes_FromStringAndSize(NULL, end-start);
-        if (!res) {
-            Py_DECREF(object);
-            return NULL;
-        }
-        outp = PyBytes_AsString(res);
-        for (i = start; i < end; i++) {
-            /* object is guaranteed to be "ready" */
-            Py_UCS4 ch = PyUnicode_READ_CHAR(object, i);
-            if (ch < 0xdc80 || ch > 0xdcff) {
-                /* Not a UTF-8b surrogate, fail with original exception */
-                PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
-                Py_DECREF(res);
-                Py_DECREF(object);
-                return NULL;
-            }
-            *outp++ = ch - 0xdc00;
-        }
-        restuple = Py_BuildValue("(On)", res, end);
-        Py_DECREF(res);
-        Py_DECREF(object);
-        return restuple;
+static PyObject *
+_PyCodec_SurrogateEscapeUnicodeEncodeError(PyObject *exc)
+{
+    PyObject *obj;
+    Py_ssize_t start, end, slen;
+    if (_PyUnicodeError_GetParams(exc,
+                                  &obj, NULL,
+                                  &start, &end, &slen, false) < 0)
+    {
+        return NULL;
     }
-    else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
-        PyObject *str;
-        const unsigned char *p;
-        Py_UCS2 ch[4]; /* decode up to 4 bad bytes. */
-        int consumed = 0;
-        if (PyUnicodeDecodeError_GetStart(exc, &start))
-            return NULL;
-        if (PyUnicodeDecodeError_GetEnd(exc, &end))
-            return NULL;
-        if (!(object = PyUnicodeDecodeError_GetObject(exc)))
-            return NULL;
-        p = (const unsigned char*)PyBytes_AS_STRING(object);
-        while (consumed < 4 && consumed < end-start) {
-            /* Refuse to escape ASCII bytes. */
-            if (p[start+consumed] < 128)
-                break;
-            ch[consumed] = 0xdc00 + p[start+consumed];
-            consumed++;
-        }
-        Py_DECREF(object);
-        if (!consumed) {
-            /* codec complained about ASCII byte. */
+
+    PyObject *res = PyBytes_FromStringAndSize(NULL, slen);
+    if (res == NULL) {
+        Py_DECREF(obj);
+        return NULL;
+    }
+
+    char *outp = PyBytes_AsString(res);
+    for (Py_ssize_t i = start; i < end; i++) {
+        Py_UCS4 ch = PyUnicode_READ_CHAR(obj, i);
+        if (ch < 0xdc80 || ch > 0xdcff) {
+            /* Not a UTF-8b surrogate, fail with original exception. */
+            Py_DECREF(obj);
+            Py_DECREF(res);
             PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
             return NULL;
         }
-        str = PyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND, ch, consumed);
-        if (str == NULL)
-            return NULL;
-        return Py_BuildValue("(Nn)", str, start+consumed);
+        *outp++ = ch - 0xdc00;
+    }
+    Py_DECREF(obj);
+
+    return Py_BuildValue("(Nn)", res, end);
+}
+
+
+static PyObject *
+_PyCodec_SurrogateEscapeUnicodeDecodeError(PyObject *exc)
+{
+    PyObject *obj;
+    Py_ssize_t start, end, slen;
+    if (_PyUnicodeError_GetParams(exc,
+                                  &obj, NULL,
+                                  &start, &end, &slen, true) < 0)
+    {
+        return NULL;
+    }
+
+    Py_UCS2 ch[4]; /* decode up to 4 bad bytes. */
+    int consumed = 0;
+    const unsigned char *p = (const unsigned char *)PyBytes_AS_STRING(obj);
+    while (consumed < 4 && consumed < slen) {
+        /* Refuse to escape ASCII bytes. */
+        if (p[start + consumed] < 128) {
+            break;
+        }
+        ch[consumed] = 0xdc00 + p[start + consumed];
+        consumed++;
+    }
+    Py_DECREF(obj);
+
+    if (consumed == 0) {
+        /* Codec complained about ASCII byte. */
+        PyErr_SetObject(PyExceptionInstance_Class(exc), exc);
+        return NULL;
+    }
+
+    PyObject *str = PyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND, ch, consumed);
+    if (str == NULL) {
+        return NULL;
+    }
+    return Py_BuildValue("(Nn)", str, start + consumed);
+}
+
+
+static PyObject *
+PyCodec_SurrogateEscapeErrors(PyObject *exc)
+{
+    if (_PyIsUnicodeEncodeError(exc)) {
+        return _PyCodec_SurrogateEscapeUnicodeEncodeError(exc);
+    }
+    else if (_PyIsUnicodeDecodeError(exc)) {
+        return _PyCodec_SurrogateEscapeUnicodeDecodeError(exc);
     }
     else {
         wrong_exception_type(exc);
@@ -1485,10 +1500,12 @@ surrogatepass_errors(PyObject *Py_UNUSED(self), PyObject *exc)
 }
 
 
-static PyObject *surrogateescape_errors(PyObject *self, PyObject *exc)
+static inline PyObject *
+surrogateescape_errors(PyObject *Py_UNUSED(self), PyObject *exc)
 {
     return PyCodec_SurrogateEscapeErrors(exc);
 }
+
 
 PyStatus
 _PyCodec_InitRegistry(PyInterpreterState *interp)
