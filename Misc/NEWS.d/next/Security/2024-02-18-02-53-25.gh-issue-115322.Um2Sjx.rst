@@ -1,0 +1,4 @@
+The underlying extension modules behind :mod:`readline`:, :mod:`subprocess`,
+and :mod:`ctypes` now raise audit events on previously uncovered code paths
+that could lead to file system access related to C function calling and
+external binary execution.
