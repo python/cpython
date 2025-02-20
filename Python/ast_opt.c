@@ -740,6 +740,8 @@ is_unarynegative_const_numeric_expr(expr_ty node)
     );
 }
 
+#ifndef NDEBUG
+
 static bool
 is_unarynegative_const_complex_expr(expr_ty node)
 {
@@ -771,6 +773,8 @@ is_allowed_match_case_binary_expr(expr_ty node)
         )
     );
 }
+
+#endif
 
 static int
 fold_const_unary_or_complex_expr(expr_ty node, PyArena *ctx_,
