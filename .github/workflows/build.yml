@@ -277,7 +277,6 @@ jobs:
     name: >-
       Ubuntu
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
-      ${{ fromJSON(matrix.bolt) && '(bolt)' || '' }}
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     strategy:
@@ -288,7 +287,6 @@ jobs:
     uses: ./.github/workflows/reusable-ubuntu.yml
     with:
       config_hash: ${{ needs.build-context.outputs.config-hash }}
-      bolt-optimizations: ${{ matrix.bolt }}
       free-threading: ${{ matrix.free-threading }}
 
   build_ubuntu_ssltests:
