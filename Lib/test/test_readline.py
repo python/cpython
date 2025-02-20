@@ -114,6 +114,14 @@ class TestHistoryManipulation (unittest.TestCase):
         # write_history_file can create the target
         readline.write_history_file(hfilename)
 
+        # Negative values should be disallowed
+        with self.assertRaises(ValueError):
+            readline.append_history_file(-42, hfilename)
+
+        # See gh-122431, using the minimum signed integer value caused a segfault
+        with self.assertRaises(ValueError):
+            readline.append_history_file(-2147483648, hfilename)
+
     def test_nonascii_history(self):
         readline.clear_history()
         try:

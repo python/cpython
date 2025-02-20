@@ -136,6 +136,15 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_needs_classdict = 0;
     ste->ste_annotation_block = NULL;
 
+    ste->ste_has_docstring = 0;
+
+    ste->ste_method = 0;
+    if (st->st_cur != NULL &&
+        st->st_cur->ste_type == ClassBlock &&
+        block == FunctionBlock) {
+        ste->ste_method = 1;
+    }
+
     ste->ste_symbols = PyDict_New();
     ste->ste_varnames = PyList_New(0);
     ste->ste_children = PyList_New(0);
@@ -397,7 +406,6 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
     asdl_stmt_seq *seq;
     Py_ssize_t i;
     PyThreadState *tstate;
-    int starting_recursion_depth;
 
     if (st == NULL)
         return NULL;
@@ -414,11 +422,6 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
         _PySymtable_Free(st);
         return NULL;
     }
-    /* Be careful here to prevent overflow. */
-    int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
-    starting_recursion_depth = recursion_depth;
-    st->recursion_depth = starting_recursion_depth;
-    st->recursion_limit = Py_C_RECURSION_LIMIT;
 
     /* Make the initial symbol information gathering pass */
 
@@ -432,6 +435,9 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
     switch (mod->kind) {
     case Module_kind:
         seq = mod->v.Module.body;
+        if (_PyAST_GetDocString(seq)) {
+            st->st_cur->ste_has_docstring = 1;
+        }
         for (i = 0; i < asdl_seq_LEN(seq); i++)
             if (!symtable_visit_stmt(st,
                         (stmt_ty)asdl_seq_GET(seq, i)))
@@ -454,14 +460,6 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
         goto error;
     }
     if (!symtable_exit_block(st)) {
-        _PySymtable_Free(st);
-        return NULL;
-    }
-    /* Check that the recursion depth counting balanced correctly */
-    if (st->recursion_depth != starting_recursion_depth) {
-        PyErr_Format(PyExc_SystemError,
-            "symtable analysis recursion depth mismatch (before=%d, after=%d)",
-            starting_recursion_depth, st->recursion_depth);
         _PySymtable_Free(st);
         return NULL;
     }
@@ -1724,19 +1722,12 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
         } \
     } while(0)
 
-#define ENTER_RECURSIVE(ST) \
-    do { \
-        if (++(ST)->recursion_depth > (ST)->recursion_limit) { \
-            PyErr_SetString(PyExc_RecursionError, \
-                "maximum recursion depth exceeded during compilation"); \
-            return 0; \
-        } \
-    } while(0)
+#define ENTER_RECURSIVE() \
+if (Py_EnterRecursiveCall(" during compilation")) { \
+    return 0; \
+}
 
-#define LEAVE_RECURSIVE(ST) \
-    do { \
-        --(ST)->recursion_depth; \
-    } while(0)
+#define LEAVE_RECURSIVE() Py_LeaveRecursiveCall();
 
 
 static int
@@ -1811,7 +1802,7 @@ maybe_set_ste_coroutine_for_module(struct symtable *st, stmt_ty s)
 static int
 symtable_visit_stmt(struct symtable *st, stmt_ty s)
 {
-    ENTER_RECURSIVE(st);
+    ENTER_RECURSIVE();
     switch (s->kind) {
     case FunctionDef_kind: {
         if (!symtable_add_def(st, s->v.FunctionDef.name, DEF_LOCAL, LOCATION(s)))
@@ -1839,6 +1830,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                            LOCATION(s));
         if (!new_ste) {
             return 0;
+        }
+
+        if (_PyAST_GetDocString(s->v.FunctionDef.body)) {
+            new_ste->ste_has_docstring = 1;
         }
 
         if (!symtable_visit_annotations(st, s, s->v.FunctionDef.args,
@@ -1903,6 +1898,11 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                 return 0;
             }
         }
+
+        if (_PyAST_GetDocString(s->v.ClassDef.body)) {
+            st->st_cur->ste_has_docstring = 1;
+        }
+
         VISIT_SEQ(st, stmt, s->v.ClassDef.body);
         if (!symtable_exit_block(st))
             return 0;
@@ -2168,6 +2168,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             return 0;
         }
 
+        if (_PyAST_GetDocString(s->v.AsyncFunctionDef.body)) {
+            new_ste->ste_has_docstring = 1;
+        }
+
         if (!symtable_visit_annotations(st, s, s->v.AsyncFunctionDef.args,
                                         s->v.AsyncFunctionDef.returns, new_ste)) {
             Py_DECREF(new_ste);
@@ -2210,7 +2214,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_SEQ(st, stmt, s->v.AsyncFor.orelse);
         break;
     }
-    LEAVE_RECURSIVE(st);
+    LEAVE_RECURSIVE();
     return 1;
 }
 
@@ -2333,7 +2337,7 @@ symtable_handle_namedexpr(struct symtable *st, expr_ty e)
 static int
 symtable_visit_expr(struct symtable *st, expr_ty e)
 {
-    ENTER_RECURSIVE(st);
+    ENTER_RECURSIVE();
     switch (e->kind) {
     case NamedExpr_kind:
         if (!symtable_raise_if_annotation_block(st, "named expression", e)) {
@@ -2512,7 +2516,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT_SEQ(st, expr, e->v.Tuple.elts);
         break;
     }
-    LEAVE_RECURSIVE(st);
+    LEAVE_RECURSIVE();
     return 1;
 }
 
@@ -2546,7 +2550,7 @@ symtable_visit_type_param_bound_or_default(
 static int
 symtable_visit_type_param(struct symtable *st, type_param_ty tp)
 {
-    ENTER_RECURSIVE(st);
+    ENTER_RECURSIVE();
     switch(tp->kind) {
     case TypeVar_kind:
         if (!symtable_add_def(st, tp->v.TypeVar.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
@@ -2595,14 +2599,14 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         }
         break;
     }
-    LEAVE_RECURSIVE(st);
+    LEAVE_RECURSIVE();
     return 1;
 }
 
 static int
 symtable_visit_pattern(struct symtable *st, pattern_ty p)
 {
-    ENTER_RECURSIVE(st);
+    ENTER_RECURSIVE();
     switch (p->kind) {
     case MatchValue_kind:
         VISIT(st, expr, p->v.MatchValue.value);
@@ -2651,7 +2655,7 @@ symtable_visit_pattern(struct symtable *st, pattern_ty p)
         VISIT_SEQ(st, pattern, p->v.MatchOr.patterns);
         break;
     }
-    LEAVE_RECURSIVE(st);
+    LEAVE_RECURSIVE();
     return 1;
 }
 

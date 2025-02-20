@@ -982,6 +982,7 @@ extern "C" {
     INIT_ID(hi), \
     INIT_ID(hook), \
     INIT_ID(hour), \
+    INIT_ID(id), \
     INIT_ID(ident), \
     INIT_ID(identity_hint), \
     INIT_ID(ignore), \
@@ -1128,6 +1129,7 @@ extern "C" {
     INIT_ID(origin), \
     INIT_ID(out_fd), \
     INIT_ID(outgoing), \
+    INIT_ID(outpath), \
     INIT_ID(overlapped), \
     INIT_ID(owner), \
     INIT_ID(pages), \
@@ -1231,6 +1233,7 @@ extern "C" {
     INIT_ID(strict_mode), \
     INIT_ID(string), \
     INIT_ID(sub_key), \
+    INIT_ID(subcalls), \
     INIT_ID(symmetric_difference_update), \
     INIT_ID(tabsize), \
     INIT_ID(tag), \
@@ -1248,8 +1251,10 @@ extern "C" {
     INIT_ID(threading), \
     INIT_ID(throw), \
     INIT_ID(timeout), \
+    INIT_ID(timer), \
     INIT_ID(times), \
     INIT_ID(timetuple), \
+    INIT_ID(timeunit), \
     INIT_ID(top), \
     INIT_ID(trace_callback), \
     INIT_ID(traceback), \

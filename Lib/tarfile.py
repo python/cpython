@@ -1760,6 +1760,8 @@ class TarFile(object):
                                 # current position in the archive file
         self.inodes = {}        # dictionary caching the inodes of
                                 # archive members already added
+        self._unames = {}       # Cached mappings of uid -> uname
+        self._gnames = {}       # Cached mappings of gid -> gname
 
         try:
             if self.mode == "r":
@@ -2138,16 +2140,23 @@ class TarFile(object):
         tarinfo.mtime = statres.st_mtime
         tarinfo.type = type
         tarinfo.linkname = linkname
+
+        # Calls to pwd.getpwuid() and grp.getgrgid() tend to be expensive. To
+        # speed things up, cache the resolved usernames and group names.
         if pwd:
-            try:
-                tarinfo.uname = pwd.getpwuid(tarinfo.uid)[0]
-            except KeyError:
-                pass
+            if tarinfo.uid not in self._unames:
+                try:
+                    self._unames[tarinfo.uid] = pwd.getpwuid(tarinfo.uid)[0]
+                except KeyError:
+                    self._unames[tarinfo.uid] = ''
+            tarinfo.uname = self._unames[tarinfo.uid]
         if grp:
-            try:
-                tarinfo.gname = grp.getgrgid(tarinfo.gid)[0]
-            except KeyError:
-                pass
+            if tarinfo.gid not in self._gnames:
+                try:
+                    self._gnames[tarinfo.gid] = grp.getgrgid(tarinfo.gid)[0]
+                except KeyError:
+                    self._gnames[tarinfo.gid] = ''
+            tarinfo.gname = self._gnames[tarinfo.gid]
 
         if type in (CHRTYPE, BLKTYPE):
             if hasattr(os, "major") and hasattr(os, "minor"):

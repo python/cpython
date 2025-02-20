@@ -29,6 +29,10 @@ Pending removal in Python 3.15
   * The :option:`!--cgi` flag to the :program:`python -m http.server`
     command-line interface has been deprecated since Python 3.13.
 
+* :mod:`importlib`:
+
+  * ``load_module()`` method: use ``exec_module()`` instead.
+
 * :class:`locale`:
 
   * The :func:`~locale.getdefaultlocale` function
@@ -51,6 +55,11 @@ Pending removal in Python 3.15
     This function is only useful for Jython support, has a confusing API,
     and is largely untested.
 
+* :mod:`sysconfig`:
+
+  * The ``check_home`` argument of :func:`sysconfig.is_python_build` has been
+    deprecated since Python 3.12.
+
 * :mod:`threading`:
 
   * :func:`~threading.RLock` will take no arguments in Python 3.15.
@@ -58,6 +67,15 @@ Pending removal in Python 3.15
     as the  Python version does not permit any arguments,
     but the C version allows any number of positional or keyword arguments,
     ignoring every argument.
+
+* :mod:`types`:
+
+  * :class:`types.CodeType`: Accessing :attr:`~codeobject.co_lnotab` was
+    deprecated in :pep:`626`
+    since 3.10 and was planned to be removed in 3.12,
+    but it only got a proper :exc:`DeprecationWarning` in 3.12.
+    May be removed in 3.15.
+    (Contributed by Nikita Sobolev in :gh:`101866`.)
 
 * :mod:`typing`:
 
@@ -78,3 +96,9 @@ Pending removal in Python 3.15
     and :meth:`~wave.Wave_read.getmarkers` methods of
     the :class:`~wave.Wave_read` and :class:`~wave.Wave_write` classes
     have been deprecated since Python 3.13.
+
+* :mod:`zipimport`:
+
+  * :meth:`~zipimport.zipimporter.load_module` has been deprecated since
+    Python 3.10. Use :meth:`~zipimport.zipimporter.exec_module` instead.
+    (Contributed by Jiahao Li in :gh:`125746`.)

@@ -17,7 +17,7 @@ from test import support
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 def _fakefunc(f):
@@ -30,6 +30,25 @@ def first_cb():
 
 def last_cb():
     pass
+
+
+class ReachableCode(Exception):
+    """Exception to raise to indicate that some code was reached.
+
+    Use this exception if using mocks is not a good alternative.
+    """
+
+
+class SimpleEvilEventLoop(asyncio.base_events.BaseEventLoop):
+    """Base class for UAF and other evil stuff requiring an evil event loop."""
+
+    def get_debug(self):  # to suppress tracebacks
+        return False
+
+    def __del__(self):
+        # Automatically close the evil event loop to avoid warnings.
+        if not self.is_closed() and not self.is_running():
+            self.close()
 
 
 class DuckFuture:
@@ -159,8 +178,8 @@ class BaseFutureTests:
 
     def test_constructor_use_global_loop(self):
         # Deprecated in 3.10, undeprecated in 3.12
-        asyncio.set_event_loop(self.loop)
-        self.addCleanup(asyncio.set_event_loop, None)
+        asyncio._set_event_loop(self.loop)
+        self.addCleanup(asyncio._set_event_loop, None)
         f = self._new_future()
         self.assertIs(f._loop, self.loop)
         self.assertIs(f.get_loop(), self.loop)
@@ -223,7 +242,7 @@ class BaseFutureTests:
 
     def test_future_cancel_message_getter(self):
         f = self._new_future(loop=self.loop)
-        self.assertTrue(hasattr(f, '_cancel_message'))
+        self.assertHasAttr(f, '_cancel_message')
         self.assertEqual(f._cancel_message, None)
 
         f.cancel('my message')
@@ -547,8 +566,8 @@ class BaseFutureTests:
 
     def test_wrap_future_use_global_loop(self):
         # Deprecated in 3.10, undeprecated in 3.12
-        asyncio.set_event_loop(self.loop)
-        self.addCleanup(asyncio.set_event_loop, None)
+        asyncio._set_event_loop(self.loop)
+        self.addCleanup(asyncio._set_event_loop, None)
         def run(arg):
             return (arg, threading.get_ident())
         ex = concurrent.futures.ThreadPoolExecutor(1)
@@ -948,6 +967,7 @@ class BaseFutureDoneCallbackTests():
         fut.remove_done_callback(evil())
 
     def test_evil_call_soon_list_mutation(self):
+        # see: https://github.com/python/cpython/issues/125969
         called_on_fut_callback0 = False
 
         pad = lambda: ...
@@ -962,9 +982,8 @@ class BaseFutureDoneCallbackTests():
             else:
                 called_on_fut_callback0 = True
 
-        fake_event_loop = lambda: ...
+        fake_event_loop = SimpleEvilEventLoop()
         fake_event_loop.call_soon = evil_call_soon
-        fake_event_loop.get_debug = lambda: False  # suppress traceback
 
         with mock.patch.object(self, 'loop', fake_event_loop):
             fut = self._new_future()
@@ -979,6 +998,74 @@ class BaseFutureDoneCallbackTests():
             # When there are no more callbacks, the Python implementation
             # returns an empty list but the C implementation returns None.
             self.assertIn(fut._callbacks, (None, []))
+
+    def test_use_after_free_on_fut_callback_0_with_evil__eq__(self):
+        # Special thanks to Nico-Posada for the original PoC.
+        # See https://github.com/python/cpython/issues/125966.
+
+        fut = self._new_future()
+
+        class cb_pad:
+            def __eq__(self, other):
+                return True
+
+        class evil(cb_pad):
+            def __eq__(self, other):
+                fut.remove_done_callback(None)
+                return NotImplemented
+
+        fut.add_done_callback(cb_pad())
+        fut.remove_done_callback(evil())
+
+    def test_use_after_free_on_fut_callback_0_with_evil__getattribute__(self):
+        # see: https://github.com/python/cpython/issues/125984
+
+        class EvilEventLoop(SimpleEvilEventLoop):
+            def call_soon(self, *args, **kwargs):
+                super().call_soon(*args, **kwargs)
+                raise ReachableCode
+
+            def __getattribute__(self, name):
+                nonlocal fut_callback_0
+                if name == 'call_soon':
+                    fut.remove_done_callback(fut_callback_0)
+                    del fut_callback_0
+                return object.__getattribute__(self, name)
+
+        evil_loop = EvilEventLoop()
+        with mock.patch.object(self, 'loop', evil_loop):
+            fut = self._new_future()
+            self.assertIs(fut.get_loop(), evil_loop)
+
+            fut_callback_0 = lambda: ...
+            fut.add_done_callback(fut_callback_0)
+            self.assertRaises(ReachableCode, fut.set_result, "boom")
+
+    def test_use_after_free_on_fut_context_0_with_evil__getattribute__(self):
+        # see: https://github.com/python/cpython/issues/125984
+
+        class EvilEventLoop(SimpleEvilEventLoop):
+            def call_soon(self, *args, **kwargs):
+                super().call_soon(*args, **kwargs)
+                raise ReachableCode
+
+            def __getattribute__(self, name):
+                if name == 'call_soon':
+                    # resets the future's event loop
+                    fut.__init__(loop=SimpleEvilEventLoop())
+                return object.__getattribute__(self, name)
+
+        evil_loop = EvilEventLoop()
+        with mock.patch.object(self, 'loop', evil_loop):
+            fut = self._new_future()
+            self.assertIs(fut.get_loop(), evil_loop)
+
+            fut_callback_0 = mock.Mock()
+            fut_context_0 = mock.Mock()
+            fut.add_done_callback(fut_callback_0, context=fut_context_0)
+            del fut_context_0
+            del fut_callback_0
+            self.assertRaises(ReachableCode, fut.set_result, "boom")
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),

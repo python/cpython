@@ -605,7 +605,7 @@ change_locale(int category, char **oldloc)
     /* Keep a copy of the LC_CTYPE locale */
     *oldloc = setlocale(LC_CTYPE, NULL);
     if (!*oldloc) {
-        PyErr_SetString(PyExc_RuntimeError, "faild to get LC_CTYPE locale");
+        PyErr_SetString(PyExc_RuntimeError, "failed to get LC_CTYPE locale");
         return -1;
     }
     *oldloc = _PyMem_Strdup(*oldloc);
@@ -635,6 +635,37 @@ restore_locale(char *oldloc)
         PyMem_Free(oldloc);
     }
 }
+
+#ifdef __GLIBC__
+#if defined(ALT_DIGITS) || defined(ERA)
+static PyObject *
+decode_strings(const char *result, size_t max_count)
+{
+    /* Convert a sequence of NUL-separated C strings to a Python string
+     * containing semicolon separated items. */
+    size_t i = 0;
+    size_t count = 0;
+    for (; count < max_count && result[i]; count++) {
+        i += strlen(result + i) + 1;
+    }
+    char *buf = PyMem_Malloc(i);
+    if (buf == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    memcpy(buf, result, i);
+    /* Replace all NULs with semicolons. */
+    i = 0;
+    while (--count) {
+        i += strlen(buf + i);
+        buf[i++] = ';';
+    }
+    PyObject *pyresult = PyUnicode_DecodeLocale(buf, NULL);
+    PyMem_Free(buf);
+    return pyresult;
+}
+#endif
+#endif
 
 /*[clinic input]
 _locale.nl_langinfo
@@ -668,32 +699,18 @@ _locale_nl_langinfo_impl(PyObject *module, int item)
             }
             PyObject *pyresult;
 #ifdef __GLIBC__
+            /* According to the POSIX specification the result must be
+             * a sequence of semicolon-separated strings.
+             * But in Glibc they are NUL-separated. */
 #ifdef ALT_DIGITS
             if (item == ALT_DIGITS && *result) {
-                /* According to the POSIX specification the result must be
-                 * a sequence of up to 100 semicolon-separated strings.
-                 * But in Glibc they are NUL-separated. */
-                Py_ssize_t i = 0;
-                int count = 0;
-                for (; count < 100 && result[i]; count++) {
-                    i += strlen(result + i) + 1;
-                }
-                char *buf = PyMem_Malloc(i);
-                if (buf == NULL) {
-                    PyErr_NoMemory();
-                    pyresult = NULL;
-                }
-                else {
-                    memcpy(buf, result, i);
-                    /* Replace all NULs with semicolons. */
-                    i = 0;
-                    while (--count) {
-                        i += strlen(buf + i);
-                        buf[i++] = ';';
-                    }
-                    pyresult = PyUnicode_DecodeLocale(buf, NULL);
-                    PyMem_Free(buf);
-                }
+                pyresult = decode_strings(result, 100);
+            }
+            else
+#endif
+#ifdef ERA
+            if (item == ERA && *result) {
+                pyresult = decode_strings(result, SIZE_MAX);
             }
             else
 #endif

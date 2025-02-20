@@ -50,7 +50,8 @@ interpolation_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *conv = Py_None;
     PyObject *format_spec = &_Py_STR(empty);
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 4, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -82,4 +83,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1d6fab1d0e07cbad input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1b9999b820dd5ce2 input=a9049054013a1b77]*/
