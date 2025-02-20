@@ -21819,7 +21819,8 @@ case $ac_sys_system in #(
   *) :
 
     if test "$have_zlib" != "yes"; then
-      as_fn_error $? "zlib.h and libz are required. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." "$LINENO" 5
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: zlib (zlib.h and libz) was not found. Building CPython without zlib is not supported, although it might work for limited use cases. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." >&5
+printf "%s\n" "$as_me: WARNING: zlib (zlib.h and libz) was not found. Building CPython without zlib is not supported, although it might work for limited use cases. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." >&2;}
     fi
     BINASCII_CFLAGS="$ZLIB_CFLAGS"
     BINASCII_LIBS="$ZLIB_LIBS"
