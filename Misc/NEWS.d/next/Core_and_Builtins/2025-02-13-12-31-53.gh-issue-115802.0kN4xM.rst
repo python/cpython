@@ -1,0 +1,2 @@
+Use the more efficient "medium" code model for JIT-compiled code on
+supported platforms.
