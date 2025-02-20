@@ -772,7 +772,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 .. function:: getdefaultencoding()
 
    Return ``'utf-8'``. This is the name of the default string encoding,
-   used in methods like str.encode.
+   used in methods like :meth:`str.encode`.
 
 
 .. function:: getdlopenflags()
