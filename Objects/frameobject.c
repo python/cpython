@@ -28,7 +28,7 @@
 #define OFF(x) offsetof(PyFrameObject, x)
 
 
-// Returns borrowed reference or NULL
+// Returns new reference or NULL
 static PyObject *
 framelocalsproxy_getval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
 {
@@ -57,7 +57,9 @@ framelocalsproxy_getval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
     }
 
     if (cell != NULL) {
-        value = PyCell_GET(cell);
+        value = PyCell_GetRef(cell);
+    } else {
+        Py_XINCREF(value);
     }
 
     if (value == NULL) {
@@ -65,6 +67,17 @@ framelocalsproxy_getval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
     }
 
     return value;
+}
+
+static bool
+framelocalsproxy_hasval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
+{
+    PyObject *value = framelocalsproxy_getval(frame, co, i);
+    if (value == NULL) {
+        return false;
+    }
+    Py_DECREF(value);
+    return true;
 }
 
 static int
@@ -93,7 +106,7 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         if (name == key) {
             if (read) {
-                if (framelocalsproxy_getval(frame->f_frame, co, i) != NULL) {
+                if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
                     return i;
                 }
             } else {
@@ -124,7 +137,7 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
         }
         if (same) {
             if (read) {
-                if (framelocalsproxy_getval(frame->f_frame, co, i) != NULL) {
+                if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
                     return i;
                 }
             } else {
@@ -151,7 +164,7 @@ framelocalsproxy_getitem(PyObject *self, PyObject *key)
     if (i >= 0) {
         PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
         assert(value != NULL);
-        return Py_NewRef(value);
+        return value;
     }
 
     // Okay not in the fast locals, try extra locals
@@ -297,8 +310,7 @@ framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
-        PyObject *val = framelocalsproxy_getval(frame->f_frame, co, i);
-        if (val) {
+        if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
             PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             if (PyList_Append(names, name) < 0) {
                 Py_DECREF(names);
@@ -511,8 +523,10 @@ framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
         if (value) {
             if (PyList_Append(values, value) < 0) {
                 Py_DECREF(values);
+                Py_DECREF(value);
                 return NULL;
             }
+            Py_DECREF(value);
         }
     }
 
@@ -550,16 +564,19 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
             PyObject *pair = PyTuple_Pack(2, name, value);
             if (pair == NULL) {
                 Py_DECREF(items);
+                Py_DECREF(value);
                 return NULL;
             }
 
             if (PyList_Append(items, pair) < 0) {
                 Py_DECREF(items);
                 Py_DECREF(pair);
+                Py_DECREF(value);
                 return NULL;
             }
 
             Py_DECREF(pair);
+            Py_DECREF(value);
         }
     }
 
@@ -601,7 +618,7 @@ framelocalsproxy_length(PyObject *self)
     }
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
-        if (framelocalsproxy_getval(frame->f_frame, co, i) != NULL) {
+        if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
             size++;
         }
     }
@@ -2066,9 +2083,7 @@ _PyFrame_HasHiddenLocals(_PyInterpreterFrame *frame)
         _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
 
         if (kind & CO_FAST_HIDDEN) {
-            PyObject* value = framelocalsproxy_getval(frame, co, i);
-
-            if (value != NULL) {
+            if (framelocalsproxy_hasval(frame, co, i)) {
                 return true;
             }
         }
