@@ -16,7 +16,7 @@
 #include "pycore_parking_lot.h"   // _PyParkingLot_AfterFork()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
 #include "pycore_pylifecycle.h"   // _PyAST_Fini()
-#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
+#include "pycore_pymem.h"         // _PyMem_DebugEnabled()
 #include "pycore_pystate.h"
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_stackref.h"      // Py_STACKREF_DEBUG

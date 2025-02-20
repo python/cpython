@@ -13,7 +13,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pyhash.h"        // _Py_KeyedHash()
 #include "pycore_pylifecycle.h"
-#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
+#include "pycore_pymem.h"         // _PyMem_DefaultRawFree()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
 #include "pycore_time.h"          // _PyTime_AsMicroseconds()
@@ -2387,14 +2387,11 @@ PyImport_ExtendInittab(struct _inittab *newtab)
 
     /* Force default raw memory allocator to get a known allocator to be able
        to release the memory in _PyImport_Fini2() */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
     /* Allocate new memory for the combined table */
     p = NULL;
     if (i + n <= SIZE_MAX / sizeof(struct _inittab) - 1) {
         size_t size = sizeof(struct _inittab) * (i + n + 1);
-        p = PyMem_RawRealloc(inittab_copy, size);
+        p = _PyMem_DefaultRawRealloc(inittab_copy, size);
     }
     if (p == NULL) {
         res = -1;
@@ -2408,9 +2405,7 @@ PyImport_ExtendInittab(struct _inittab *newtab)
     }
     memcpy(p + i, newtab, (n + 1) * sizeof(struct _inittab));
     PyImport_Inittab = inittab_copy = p;
-
 done:
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return res;
 }
 
@@ -2445,7 +2440,7 @@ init_builtin_modules_table(void)
     size++;
 
     /* Make the copy. */
-    struct _inittab *copied = PyMem_RawMalloc(size * sizeof(struct _inittab));
+    struct _inittab *copied = _PyMem_DefaultRawMalloc(size * sizeof(struct _inittab));
     if (copied == NULL) {
         return -1;
     }
@@ -2459,7 +2454,7 @@ fini_builtin_modules_table(void)
 {
     struct _inittab *inittab = INITTAB;
     INITTAB = NULL;
-    PyMem_RawFree(inittab);
+    _PyMem_DefaultRawFree(inittab);
 }
 
 PyObject *
@@ -3977,22 +3972,10 @@ _PyImport_Init(void)
     if (INITTAB != NULL) {
         return _PyStatus_ERR("global import state already initialized");
     }
-
-    PyStatus status = _PyStatus_OK();
-
-    /* Force default raw memory allocator to get a known allocator to be able
-       to release the memory in _PyImport_Fini() */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
     if (init_builtin_modules_table() != 0) {
-        status = PyStatus_NoMemory();
-        goto done;
+        return PyStatus_NoMemory();
     }
-
-done:
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    return status;
+    return _PyStatus_OK();
 }
 
 void
@@ -4003,31 +3986,19 @@ _PyImport_Fini(void)
     // ever dlclose() the module files?
     _extensions_cache_clear_all();
 
-    /* Use the same memory allocator as _PyImport_Init(). */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
     /* Free memory allocated by _PyImport_Init() */
     fini_builtin_modules_table();
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
 void
 _PyImport_Fini2(void)
 {
-    /* Use the same memory allocator than PyImport_ExtendInittab(). */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
     // Reset PyImport_Inittab
     PyImport_Inittab = _PyImport_Inittab;
 
     /* Free memory allocated by PyImport_ExtendInittab() */
-    PyMem_RawFree(inittab_copy);
+    _PyMem_DefaultRawFree(inittab_copy);
     inittab_copy = NULL;
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
 
