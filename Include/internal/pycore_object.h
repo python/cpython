@@ -62,7 +62,7 @@ extern void _Py_ForgetReference(PyObject *);
 PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 
 /* We need to maintain an internal copy of Py{Var}Object_HEAD_INIT to avoid
-   designated initializer conflicts in C++20. If we use the deinition in
+   designated initializer conflicts in C++20. If we use the definition in
    object.h, we will be mixing designated and non-designated initializers in
    pycore objects which is forbiddent in C++20. However, if we then use
    designated initializers in object.h then Extensions without designated break.
@@ -74,6 +74,7 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
     {                                               \
         .ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL,  \
         .ob_flags = _Py_STATICALLY_ALLOCATED_FLAG,  \
+        .ob_gc_bits = _PyGC_BITS_DEFERRED,          \
         .ob_type = (type)                           \
     }
 #else
@@ -121,7 +122,7 @@ PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
 
 extern void _Py_AddRefTotal(PyThreadState *, Py_ssize_t);
 extern PyAPI_FUNC(void) _Py_IncRefTotal(PyThreadState *);
-extern void _Py_DecRefTotal(PyThreadState *);
+extern PyAPI_FUNC(void) _Py_DecRefTotal(PyThreadState *);
 
 #  define _Py_DEC_REFTOTAL(interp) \
     interp->object_state.reftotal--
@@ -612,7 +613,7 @@ _Py_TryIncrefCompare(PyObject **src, PyObject *op)
 static inline int
 _Py_TryIncrefCompareStackRef(PyObject **src, PyObject *op, _PyStackRef *out)
 {
-    if (_Py_IsImmortal(op) || _PyObject_HasDeferredRefcount(op)) {
+    if (_PyObject_HasDeferredRefcount(op)) {
         *out = (_PyStackRef){ .bits = (intptr_t)op | Py_TAG_DEFERRED };
         return 1;
     }
@@ -710,7 +711,7 @@ _PyObject_SetMaybeWeakref(PyObject *op)
     }
 }
 
-extern int _PyObject_ResurrectEndSlow(PyObject *op);
+extern PyAPI_FUNC(int) _PyObject_ResurrectEndSlow(PyObject *op);
 #endif
 
 // Temporarily resurrects an object during deallocation. The refcount is set

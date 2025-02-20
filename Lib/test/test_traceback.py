@@ -376,6 +376,30 @@ class TracebackCases(unittest.TestCase):
             '   ValueError: 0\n',
         ])
 
+    def test_format_exception_group_syntax_error_with_custom_values(self):
+        # See https://github.com/python/cpython/issues/128894
+        for exc in [
+            SyntaxError('error', 'abcd'),
+            SyntaxError('error', [None] * 4),
+            SyntaxError('error', (1, 2, 3, 4)),
+            SyntaxError('error', (1, 2, 3, 4)),
+            SyntaxError('error', (1, 'a', 'b', 2)),
+            # with end_lineno and end_offset:
+            SyntaxError('error', 'abcdef'),
+            SyntaxError('error', [None] * 6),
+            SyntaxError('error', (1, 2, 3, 4, 5, 6)),
+            SyntaxError('error', (1, 'a', 'b', 2, 'c', 'd')),
+        ]:
+            with self.subTest(exc=exc):
+                err = traceback.format_exception_only(exc, show_group=True)
+                # Should not raise an exception:
+                if exc.lineno is not None:
+                    self.assertEqual(len(err), 2)
+                    self.assertTrue(err[0].startswith('  File'))
+                else:
+                    self.assertEqual(len(err), 1)
+                self.assertEqual(err[-1], 'SyntaxError: error\n')
+
     @requires_subprocess()
     @force_not_colorized
     def test_encoded_file(self):
@@ -485,6 +509,12 @@ class TracebackCases(unittest.TestCase):
         output = StringIO()
         traceback.print_exception(Exception("projector"), file=output)
         self.assertEqual(output.getvalue(), "Exception: projector\n")
+
+    def test_print_last(self):
+        with support.swap_attr(sys, 'last_exc', ValueError(42)):
+            output = StringIO()
+            traceback.print_last(file=output)
+            self.assertEqual(output.getvalue(), "ValueError: 42\n")
 
     def test_format_exception_exc(self):
         e = Exception("projector")
@@ -2913,6 +2943,33 @@ class BaseExceptionReportingTests:
         report = self.get_report(exc)
         self.assertEqual(report, expected)
 
+    def test_exception_group_wrapped_naked(self):
+        # See gh-128799
+
+        def exc():
+            try:
+                raise Exception(42)
+            except* Exception as e:
+                raise
+
+        expected = (f'  + Exception Group Traceback (most recent call last):\n'
+                    f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
+                    f'  |     exception_or_callable()\n'
+                    f'  |     ~~~~~~~~~~~~~~~~~~~~~^^\n'
+                    f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 3}, in exc\n'
+                    f'  |     except* Exception as e:\n'
+                    f'  |         raise\n'
+                    f'  | ExceptionGroup:  (1 sub-exception)\n'
+                    f'  +-+---------------- 1 ----------------\n'
+                    f'    | Traceback (most recent call last):\n'
+                    f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 2}, in exc\n'
+                    f'    |     raise Exception(42)\n'
+                    f'    | Exception: 42\n'
+                    f'    +------------------------------------\n')
+
+        report = self.get_report(exc)
+        self.assertEqual(report, expected)
+
     def test_KeyboardInterrupt_at_first_line_of_frame(self):
         # see GH-93249
         def f():
@@ -3178,10 +3235,16 @@ class TestStack(unittest.TestCase):
     def test_walk_stack(self):
         def deeper():
             return list(traceback.walk_stack(None))
-        s1 = list(traceback.walk_stack(None))
-        s2 = deeper()
+        s1, s2 = list(traceback.walk_stack(None)), deeper()
         self.assertEqual(len(s2) - len(s1), 1)
         self.assertEqual(s2[1:], s1)
+
+    def test_walk_innermost_frame(self):
+        def inner():
+            return list(traceback.walk_stack(None))
+        frames = inner()
+        innermost_frame, _ = frames[0]
+        self.assertEqual(innermost_frame.f_code.co_name, "inner")
 
     def test_walk_tb(self):
         try:

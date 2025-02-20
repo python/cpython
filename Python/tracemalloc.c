@@ -3,6 +3,7 @@
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "pycore_initconfig.h"    // _PyStatus_NO_MEMORY()
+#include "pycore_lock.h"          // PyMutex_LockFlags()
 #include "pycore_object.h"        // _PyType_PreHeaderSize()
 #include "pycore_pymem.h"         // _Py_tracemalloc_config
 #include "pycore_runtime.h"       // _Py_ID()
@@ -33,18 +34,12 @@ static int _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event,
 #define allocators _PyRuntime.tracemalloc.allocators
 
 
-#if defined(TRACE_RAW_MALLOC)
 /* This lock is needed because tracemalloc_free() is called without
    the GIL held from PyMem_RawFree(). It cannot acquire the lock because it
    would introduce a deadlock in _PyThreadState_DeleteCurrent(). */
-#  define tables_lock _PyRuntime.tracemalloc.tables_lock
-#  define TABLES_LOCK() PyThread_acquire_lock(tables_lock, 1)
-#  define TABLES_UNLOCK() PyThread_release_lock(tables_lock)
-#else
-   /* variables are protected by the GIL */
-#  define TABLES_LOCK()
-#  define TABLES_UNLOCK()
-#endif
+#define tables_lock _PyRuntime.tracemalloc.tables_lock
+#define TABLES_LOCK() PyMutex_LockFlags(&tables_lock, _Py_LOCK_DONT_DETACH)
+#define TABLES_UNLOCK() PyMutex_Unlock(&tables_lock)
 
 
 #define DEFAULT_DOMAIN 0
@@ -98,9 +93,6 @@ tracemalloc_error(const char *format, ...)
 #endif
 
 
-#if defined(TRACE_RAW_MALLOC)
-#define REENTRANT_THREADLOCAL
-
 #define tracemalloc_reentrant_key _PyRuntime.tracemalloc.reentrant_key
 
 /* Any non-NULL pointer can be used */
@@ -136,25 +128,6 @@ set_reentrant(int reentrant)
         PyThread_tss_set(&tracemalloc_reentrant_key, NULL);
     }
 }
-
-#else
-
-/* TRACE_RAW_MALLOC not defined: variable protected by the GIL */
-static int tracemalloc_reentrant = 0;
-
-static int
-get_reentrant(void)
-{
-    return tracemalloc_reentrant;
-}
-
-static void
-set_reentrant(int reentrant)
-{
-    assert(reentrant != tracemalloc_reentrant);
-    tracemalloc_reentrant = reentrant;
-}
-#endif
 
 
 static Py_uhash_t
@@ -338,13 +311,8 @@ traceback_hash(traceback_t *traceback)
 static void
 traceback_get_frames(traceback_t *traceback)
 {
-    PyThreadState *tstate = PyGILState_GetThisThreadState();
-    if (tstate == NULL) {
-#ifdef TRACE_DEBUG
-        tracemalloc_error("failed to get the current thread state");
-#endif
-        return;
-    }
+    PyThreadState *tstate = _PyThreadState_GET();
+    assert(tstate != NULL);
 
     _PyInterpreterFrame *pyframe = _PyThreadState_GetFrame(tstate);
     while (pyframe) {
@@ -714,7 +682,6 @@ tracemalloc_realloc_gil(void *ctx, void *ptr, size_t new_size)
 }
 
 
-#ifdef TRACE_RAW_MALLOC
 static void*
 tracemalloc_raw_malloc(void *ctx, size_t size)
 {
@@ -734,7 +701,6 @@ tracemalloc_raw_realloc(void *ctx, void *ptr, size_t new_size)
 {
     return tracemalloc_realloc(1, ctx, ptr, new_size);
 }
-#endif   /* TRACE_RAW_MALLOC */
 
 
 static void
@@ -772,20 +738,9 @@ _PyTraceMalloc_Init(void)
 
     PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &allocators.raw);
 
-#ifdef REENTRANT_THREADLOCAL
     if (PyThread_tss_create(&tracemalloc_reentrant_key) != 0) {
         return _PyStatus_NO_MEMORY();
     }
-#endif
-
-#if defined(TRACE_RAW_MALLOC)
-    if (tables_lock == NULL) {
-        tables_lock = PyThread_allocate_lock();
-        if (tables_lock == NULL) {
-            return _PyStatus_NO_MEMORY();
-        }
-    }
-#endif
 
     tracemalloc_filenames = hashtable_new(hashtable_hash_pyobject,
                                           hashtable_compare_unicode,
@@ -831,16 +786,7 @@ tracemalloc_deinit(void)
     _Py_hashtable_destroy(tracemalloc_tracebacks);
     _Py_hashtable_destroy(tracemalloc_filenames);
 
-#if defined(TRACE_RAW_MALLOC)
-    if (tables_lock != NULL) {
-        PyThread_free_lock(tables_lock);
-        tables_lock = NULL;
-    }
-#endif
-
-#ifdef REENTRANT_THREADLOCAL
     PyThread_tss_delete(&tracemalloc_reentrant_key);
-#endif
 }
 
 
@@ -871,7 +817,6 @@ _PyTraceMalloc_Start(int max_nframe)
     }
 
     PyMemAllocatorEx alloc;
-#ifdef TRACE_RAW_MALLOC
     alloc.malloc = tracemalloc_raw_malloc;
     alloc.calloc = tracemalloc_raw_calloc;
     alloc.realloc = tracemalloc_raw_realloc;
@@ -880,7 +825,6 @@ _PyTraceMalloc_Start(int max_nframe)
     alloc.ctx = &allocators.raw;
     PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &allocators.raw);
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &alloc);
-#endif
 
     alloc.malloc = tracemalloc_malloc_gil;
     alloc.calloc = tracemalloc_calloc_gil;
@@ -921,9 +865,7 @@ _PyTraceMalloc_Stop(void)
     tracemalloc_config.tracing = 0;
 
     /* unregister the hook on memory allocators */
-#ifdef TRACE_RAW_MALLOC
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &allocators.raw);
-#endif
     PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &allocators.mem);
     PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &allocators.obj);
 
@@ -1274,7 +1216,6 @@ PyTraceMalloc_Track(unsigned int domain, uintptr_t ptr,
 
     TABLES_UNLOCK();
     PyGILState_Release(gil_state);
-
     return result;
 }
 

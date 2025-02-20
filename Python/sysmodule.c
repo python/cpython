@@ -29,7 +29,7 @@ Data members:
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _PyErr_WriteUnraisableDefaultHook()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
-#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
+#include "pycore_pymem.h"         // _PyMem_DefaultRawFree()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
 #include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
@@ -972,6 +972,23 @@ sys__is_interned_impl(PyObject *module, PyObject *string)
     return PyUnicode_CHECK_INTERNED(string);
 }
 
+/*[clinic input]
+sys._is_immortal -> bool
+
+  op: object
+  /
+
+Return True if the given object is "immortal" per PEP 683.
+
+This function should be used for specialized purposes only.
+[clinic start generated code]*/
+
+static int
+sys__is_immortal_impl(PyObject *module, PyObject *op)
+/*[clinic end generated code: output=c2f5d6a80efb8d1a input=4609c9bf5481db76]*/
+{
+    return PyUnstable_IsImmortal(op);
+}
 
 /*
  * Cached interned string objects used for calling the profile and
@@ -2265,9 +2282,7 @@ sys_activate_stack_trampoline_impl(PyObject *module, const char *backend)
 {
 #ifdef PY_HAVE_PERF_TRAMPOLINE
 #ifdef _Py_JIT
-    _PyOptimizerObject* optimizer = _Py_GetOptimizer();
-    if (optimizer != NULL) {
-        Py_DECREF(optimizer);
+    if (_PyInterpreterState_GET()->jit) {
         PyErr_SetString(PyExc_ValueError, "Cannot activate the perf trampoline if the JIT is active");
         return NULL;
     }
@@ -2590,6 +2605,7 @@ static PyMethodDef sys_methods[] = {
     SYS__GETFRAMEMODULENAME_METHODDEF
     SYS_GETWINDOWSVERSION_METHODDEF
     SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF
+    SYS__IS_IMMORTAL_METHODDEF
     SYS_INTERN_METHODDEF
     SYS__IS_INTERNED_METHODDEF
     SYS_IS_FINALIZING_METHODDEF
@@ -2708,22 +2724,17 @@ _alloc_preinit_entry(const wchar_t *value)
     /* To get this to work, we have to initialize the runtime implicitly */
     _PyRuntime_Initialize();
 
-    /* Force default allocator, so we can ensure that it also gets used to
+    /* Use the default allocator, so we can ensure that it also gets used to
      * destroy the linked list in _clear_preinit_entries.
      */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    _Py_PreInitEntry node = PyMem_RawCalloc(1, sizeof(*node));
+    _Py_PreInitEntry node = _PyMem_DefaultRawCalloc(1, sizeof(*node));
     if (node != NULL) {
-        node->value = _PyMem_RawWcsdup(value);
+        node->value = _PyMem_DefaultRawWcsdup(value);
         if (node->value == NULL) {
-            PyMem_RawFree(node);
+            _PyMem_DefaultRawFree(node);
             node = NULL;
         };
     };
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return node;
 }
 
@@ -2755,15 +2766,12 @@ _clear_preinit_entries(_Py_PreInitEntry *optionlist)
     _Py_PreInitEntry current = *optionlist;
     *optionlist = NULL;
     /* Deallocate the nodes and their contents using the default allocator */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     while (current != NULL) {
         _Py_PreInitEntry next = current->next;
-        PyMem_RawFree(current->value);
-        PyMem_RawFree(current);
+        _PyMem_DefaultRawFree(current->value);
+        _PyMem_DefaultRawFree(current);
         current = next;
     }
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
 
@@ -2849,6 +2857,7 @@ PySys_ResetWarnOptions(void)
 static int
 _PySys_AddWarnOptionWithError(PyThreadState *tstate, PyObject *option)
 {
+    assert(tstate != NULL);
     PyObject *warnoptions = get_warnoptions(tstate);
     if (warnoptions == NULL) {
         return -1;
@@ -2864,11 +2873,11 @@ PyAPI_FUNC(void)
 PySys_AddWarnOptionUnicode(PyObject *option)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+    _Py_EnsureTstateNotNULL(tstate);
+    assert(!_PyErr_Occurred(tstate));
     if (_PySys_AddWarnOptionWithError(tstate, option) < 0) {
         /* No return value, therefore clear error state if possible */
-        if (tstate) {
-            _PyErr_Clear(tstate);
-        }
+        _PyErr_Clear(tstate);
     }
 }
 
