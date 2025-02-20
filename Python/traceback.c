@@ -21,6 +21,9 @@
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // lseek()
 #endif
+#ifdef HAVE_EXECINFO_H
+#  include <execinfo.h>           // backtrace(), backtrace_symbols()
+#endif
 
 
 #define OFF(x) offsetof(PyTracebackObject, x)
@@ -1111,3 +1114,68 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
     return NULL;
 }
 
+#define TRACEBACK_ENTRY_MAX_SIZE 256
+
+static void
+format_entry(char *entry_str, const char *the_entry, Py_ssize_t *length_ptr)
+{
+    int length = PyOS_snprintf(entry_str, TRACEBACK_ENTRY_MAX_SIZE, "  %s\n", the_entry);
+    if (length == TRACEBACK_ENTRY_MAX_SIZE) {
+        /* We exceeded the size, make it look prettier */
+        // Add ellipsis to last 3 characters
+        entry_str[TRACEBACK_ENTRY_MAX_SIZE - 5] = '.';
+        entry_str[TRACEBACK_ENTRY_MAX_SIZE - 4] = '.';
+        entry_str[TRACEBACK_ENTRY_MAX_SIZE - 3] = '.';
+        // Ensure trailing newline
+        entry_str[TRACEBACK_ENTRY_MAX_SIZE - 2] = '\n';
+        // Ensure that it's null-terminated
+        entry_str[TRACEBACK_ENTRY_MAX_SIZE - 1] = '\0';
+    }
+
+    *length_ptr = (Py_ssize_t)length;
+}
+
+/* This is for faulthandler.
+ * Apparently, backtrace() doesn't play well across DLL boundaries on macOS */
+#if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE) && defined(HAVE_BACKTRACE_SYMBOLS)
+void
+_Py_DumpStack(int fd)
+{
+#define BACKTRACE_SIZE 32
+    PUTS(fd, "Current thread's C stack trace (most recent call first):\n");
+    void *callstack[BACKTRACE_SIZE];
+    int frames = backtrace(callstack, BACKTRACE_SIZE);
+    if (frames == 0) {
+        // Some systems won't return anything for the stack trace
+        PUTS(fd, "  <system returned no stack trace>\n");
+        return;
+    }
+
+    char **strings = backtrace_symbols(callstack, BACKTRACE_SIZE);
+    if (strings == NULL) {
+        PUTS(fd, "  <not enough memory to get stack trace>\n");
+        return;
+    }
+    for (int i = 0; i < frames; ++i) {
+        char entry_str[TRACEBACK_ENTRY_MAX_SIZE];
+        Py_ssize_t length;
+        format_entry(entry_str, strings[i], &length);
+        _Py_write_noraise(fd, entry_str, length);
+    }
+
+    if (frames == BACKTRACE_SIZE) {
+        PUTS(fd, "  <truncated rest of calls>\n");
+    }
+
+    free(strings);
+#undef BACKTRACE_SIZE
+#undef TRACEBACK_ENTRY_MAX_SIZE
+}
+#else
+void
+_Py_DumpStack(int fd)
+{
+    PUTS(fd, "Current thread's C stack trace (most recent call first):\n");
+    PUTS(fd, "  <cannot get C stack on this system>\n");
+}
+#endif
