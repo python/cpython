@@ -614,6 +614,25 @@ mimetypes
 
   (Contributed by Hugo van Kemenade in :gh:`85957`.)
 
+* More MIME type changes:
+
+  * :rfc:`2361`: Change type for ``.avi`` to ``video/vnd.avi``
+    and for ``.wav`` to ``audio/vnd.wave``
+  * :rfc:`4337`: Add MPEG-4 ``audio/mp4`` (``.m4a``))
+  * :rfc:`5334`: Add Ogg media (``.oga``, ``.ogg`` and ``.ogx``)
+  * :rfc:`9639`: Add FLAC ``audio/flac`` (``.flac``)
+  * De facto: Add WebM ``audio/webm`` (``.weba``)
+  * `ECMA-376
+    <https://ecma-international.org/publications-and-standards/standards/ecma-376/>`__:
+    Add ``.docx``, ``.pptx`` and ``.xlsx`` types
+  * `OASIS
+    <https://docs.oasis-open.org/office/v1.2/cs01/OpenDocument-v1.2-cs01-part1.html#Appendix_C>`__:
+    Add OpenDocument ``.odg``, ``.odp``, ``.ods`` and ``.odt`` types
+  * `W3C <https://www.w3.org/TR/epub-33/#app-media-type>`__:
+    Add EPUB ``application/epub+zip`` (``.epub``)
+
+  (Contributed by Hugo van Kemenade in :gh:`129965`.)
+
 
 multiprocessing
 ---------------
