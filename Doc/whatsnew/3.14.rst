@@ -1497,21 +1497,23 @@ Porting to Python 3.14
 
 * Private functions promoted to public C APIs:
 
-  * ``_PyBytes_Join()``: :c:func:`PyBytes_Join`;
-  * ``_PyLong_IsNegative()``: :c:func:`PyLong_IsNegative`;
-  * ``_PyLong_IsPositive()``: :c:func:`PyLong_IsPositive`;
-  * ``_PyLong_IsZero()``: :c:func:`PyLong_IsZero`;
-  * ``_PyLong_Sign()``: :c:func:`PyLong_GetSign`;
-  * ``_PyUnicodeWriter_Dealloc()``: :c:func:`PyUnicodeWriter_Discard`;
-  * ``_PyUnicodeWriter_Finish()``: :c:func:`PyUnicodeWriter_Finish`;
-  * ``_PyUnicodeWriter_Init()``: :c:func:`PyUnicodeWriter_Create`;
-  * ``_PyUnicodeWriter_WriteChar()``: :c:func:`PyUnicodeWriter_WriteChar`;
-  * ``_PyUnicodeWriter_WriteStr()``: :c:func:`PyUnicodeWriter_WriteStr`;
-  * ``_PyUnicodeWriter_WriteSubstring()``: :c:func:`PyUnicodeWriter_WriteSubstring`;
-  * ``_PyUnicode_EQ()``: :c:func:`PyUnicode_Equal`;
-  * ``_PyUnicode_Equal()``: :c:func:`PyUnicode_Equal`;
-  * ``_Py_GetConfig()``: :c:func:`PyConfig_Get` and :c:func:`PyConfig_GetInt`;
-  * ``_Py_HashBytes()``: :c:func:`Py_HashBuffer`;
+  * ``_PyBytes_Join()``: :c:func:`PyBytes_Join`.
+  * ``_PyLong_IsNegative()``: :c:func:`PyLong_IsNegative`.
+  * ``_PyLong_IsPositive()``: :c:func:`PyLong_IsPositive`.
+  * ``_PyLong_IsZero()``: :c:func:`PyLong_IsZero`.
+  * ``_PyLong_Sign()``: :c:func:`PyLong_GetSign`.
+  * ``_PyUnicodeWriter_Dealloc()``: :c:func:`PyUnicodeWriter_Discard`.
+  * ``_PyUnicodeWriter_Finish()``: :c:func:`PyUnicodeWriter_Finish`.
+  * ``_PyUnicodeWriter_Init()``: use :c:func:`PyUnicodeWriter_Create`.
+  * ``_PyUnicodeWriter_Prepare()``: (no replacement).
+  * ``_PyUnicodeWriter_PrepareKind()``: (no replacement).
+  * ``_PyUnicodeWriter_WriteChar()``: :c:func:`PyUnicodeWriter_WriteChar`.
+  * ``_PyUnicodeWriter_WriteStr()``: :c:func:`PyUnicodeWriter_WriteStr`.
+  * ``_PyUnicodeWriter_WriteSubstring()``: :c:func:`PyUnicodeWriter_WriteSubstring`.
+  * ``_PyUnicode_EQ()``: :c:func:`PyUnicode_Equal`.
+  * ``_PyUnicode_Equal()``: :c:func:`PyUnicode_Equal`.
+  * ``_Py_GetConfig()``: :c:func:`PyConfig_Get` and :c:func:`PyConfig_GetInt`.
+  * ``_Py_HashBytes()``: :c:func:`Py_HashBuffer`.
   * ``_Py_fopen_obj()``: :c:func:`Py_fopen`.
 
   The `pythoncapi-compat project`_ can be used to get most of these new
@@ -1556,6 +1558,30 @@ Deprecated
     use :c:func:`PyLongWriter_Create`.
   * :c:func:`!_PyThreadState_UncheckedGet`: use :c:func:`PyThreadState_GetUnchecked`.
   * :c:func:`!_PyUnicode_AsString`: use :c:func:`PyUnicode_AsUTF8`.
+  * :c:func:`!_PyUnicodeWriter_Init`:
+    replace ``_PyUnicodeWriter_Init(&writer)`` with
+    :c:func:`writer = PyUnicodeWriter_Create(0) <PyUnicodeWriter_Create>`.
+  * :c:func:`!_PyUnicodeWriter_Finish`:
+    replace ``_PyUnicodeWriter_Finish(&writer)`` with
+    :c:func:`PyUnicodeWriter_Finish(writer) <PyUnicodeWriter_Finish>`.
+  * :c:func:`!_PyUnicodeWriter_Dealloc`:
+    replace ``_PyUnicodeWriter_Dealloc(&writer)`` with
+    :c:func:`PyUnicodeWriter_Discard(writer) <PyUnicodeWriter_Discard>`.
+  * :c:func:`!_PyUnicodeWriter_WriteChar`:
+    replace ``_PyUnicodeWriter_WriteChar(&writer, ch)`` with
+    :c:func:`PyUnicodeWriter_WriteChar(writer, ch) <PyUnicodeWriter_WriteChar>`.
+  * :c:func:`!_PyUnicodeWriter_WriteStr`:
+    replace ``_PyUnicodeWriter_WriteStr(&writer, str)`` with
+    :c:func:`PyUnicodeWriter_WriteStr(writer, str) <PyUnicodeWriter_WriteStr>`.
+  * :c:func:`!_PyUnicodeWriter_WriteSubstring`:
+    replace ``_PyUnicodeWriter_WriteSubstring(&writer, str, start, end)`` with
+    :c:func:`PyUnicodeWriter_WriteSubstring(writer, str, start, end) <PyUnicodeWriter_WriteSubstring>`.
+  * :c:func:`!_PyUnicodeWriter_WriteASCIIString`:
+    replace ``_PyUnicodeWriter_WriteASCIIString(&writer, str)`` with
+    :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.
+  * :c:func:`!_PyUnicodeWriter_WriteLatin1String`:
+    replace ``_PyUnicodeWriter_WriteLatin1String(&writer, str)`` with
+    :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.
   * :c:func:`!_Py_HashPointer`: use :c:func:`Py_HashPointer`.
   * :c:func:`!_Py_fopen_obj`: use :c:func:`Py_fopen`.
 
