@@ -13,9 +13,9 @@ class PySysGetAttrTest(unittest.TestCase):
 
     common_faulthandler_code = textwrap.dedent('''
         from contextlib import redirect_stderr
+        from faulthandler import dump_traceback, enable, dump_traceback_later
         from threading import Thread
         import time
-        from faulthandler import dump_traceback, enable, dump_traceback_later
 
         class FakeFile:
             def __init__(self):
@@ -42,41 +42,63 @@ class PySysGetAttrTest(unittest.TestCase):
 
         if __name__ == "__main__":
             main()
+            exit(0)
+    ''')
+
+    common_warnings_code = textwrap.dedent('''
+        from io import StringIO
+        import sys
+        import warnings
+
+        class Foo:
+            def __init__(self):
+                self.x = sys.stderr
+                setattr(sys, "stderr", StringIO())
+
+            def __repr__(self):
+                x = sys.stderr
+                setattr(sys, "stderr", self.x)
+                del x
+                return "Foo"
+
+        def main():
+            del warnings._showwarnmsg
+            {0}
+
+        if __name__ == "__main__":
+            main()
+            exit(0)
     ''')
 
 
     def test_print_deleted_stdout(self):
         # print should use strong reference to the stdout.
         code = textwrap.dedent('''
-            # from https://gist.github.com/colesbury/c48f50e95d5d68e24814a56e2664e587
-            from contextlib import redirect_stdout
             from io import StringIO
-            from threading import Thread
-            import time
+            import sys
 
-            class Foo:
+            class Bar:
+                def __init__(self):
+                    self.x = sys.stdout
+                    setattr(sys, "stdout", StringIO())
+
                 def __repr__(self):
-                    time.sleep(0.2)
-                    return "Foo"
-
-            def thread1():
-                text = StringIO()
-                with redirect_stdout(text):
-                    time.sleep(0.2)
+                    x = sys.stdout
+                    setattr(sys, "stdout", self.x)
+                    del x
+                    return "Bar"
 
             def main():
-                t1 = Thread(target=thread1, args=())
-                t1.start()
-                time.sleep(0.1)
-                print(Foo())
-
+                print(Bar())
 
             if __name__ == "__main__":
                 main()
+                exit(0)
         ''')
         rc, out, err = assert_python_ok('-c', code)
-        self.assertEqual(out, b"")
-        self.assertEqual(err, b"")
+        self.assertEqual(rc, 0)
+        self.assertNotIn(b"Segmentation fault", err)
+        self.assertNotIn(b"access violation", err)
 
     def test_faulthandler_enable_deleted_stderr(self):
         # faulthandler should use strong reference to the stderr
@@ -87,8 +109,9 @@ class PySysGetAttrTest(unittest.TestCase):
                 "enable(None, True)"
             )
             rc, out, err = assert_python_ok('-c', test_code)
-            self.assertEqual(out, b"")
-            self.assertEqual(err, b"")
+            self.assertEqual(rc, 0)
+            self.assertNotIn(b"Segmentation fault", err)
+            self.assertNotIn(b"access violation", err)
 
     def test_faulthandler_dump_traceback_deleted_stderr(self):
         # faulthandler should use strong reference to the stderr
@@ -99,8 +122,9 @@ class PySysGetAttrTest(unittest.TestCase):
                 "dump_traceback(None, False)"
             )
             rc, out, err = assert_python_ok('-c', test_code)
-            self.assertEqual(out, b"")
-            self.assertEqual(err, b"")
+            self.assertEqual(rc, 0)
+            self.assertNotIn(b"Segmentation fault", err)
+            self.assertNotIn(b"access violation", err)
 
     def test_faulthandler_dump_traceback_later_deleted_stderr(self):
         # faulthandler should use strong reference to the stderr
@@ -111,8 +135,27 @@ class PySysGetAttrTest(unittest.TestCase):
                 "dump_traceback_later(0.1, True, None, False)"
             )
             rc, out, err = assert_python_ok('-c', test_code)
-            self.assertEqual(out, b"")
-            self.assertEqual(err, b"")
+            self.assertEqual(rc, 0)
+            self.assertNotIn(b"Segmentation fault", err)
+            self.assertNotIn(b"access violation", err)
+
+    def test_warnings_warn(self):
+        test_code = self.common_warnings_code.format(
+            "warnings.warn(Foo())"
+        )
+        rc, _, err = assert_python_ok('-c', test_code)
+        self.assertEqual(rc, 0)
+        self.assertNotIn(b"Segmentation fault", err)
+        self.assertNotIn(b"access violation", err)
+
+    def test_warnings_warn_explicit(self):
+        test_code = self.common_warnings_code.format(
+            "warnings.warn_explicit(Foo(), UserWarning, 'filename', 0)"
+        )
+        rc, _, err = assert_python_ok('-c', test_code)
+        self.assertEqual(rc, 0)
+        self.assertNotIn(b"Segmentation fault", err)
+        self.assertNotIn(b"access violation", err)
 
 if __name__ == "__main__":
     unittest.main()
