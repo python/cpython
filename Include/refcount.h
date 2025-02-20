@@ -391,9 +391,7 @@ static inline void Py_DECREF_MORTAL(const char *filename, int lineno, PyObject *
     }
     _Py_DECREF_STAT_INC();
     assert(!_Py_IsStaticImmortal(op));
-    if (!_Py_IsImmortal(op)) {
-        _Py_DECREF_DecRefTotal();
-    }
+    _Py_DECREF_DecRefTotal();
     if (--op->ob_refcnt == 0) {
         _Py_Dealloc(op);
     }
@@ -409,9 +407,7 @@ static inline void _Py_DECREF_MORTAL_SPECIALIZED(const char *filename, int linen
     }
     _Py_DECREF_STAT_INC();
     assert(!_Py_IsStaticImmortal(op));
-    if (!_Py_IsImmortal(op)) {
-        _Py_DECREF_DecRefTotal();
-    }
+    _Py_DECREF_DecRefTotal();
     if (--op->ob_refcnt == 0) {
         destruct(op);
     }

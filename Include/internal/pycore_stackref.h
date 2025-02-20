@@ -402,7 +402,7 @@ static inline void PyStackRef_CheckValid(_PyStackRef ref) {
         case 0:
         case Py_TAG_REFCNT:
             /* Can be immortal if object was made immortal after reference came into existence */
-            assert(obj != NULL && obj != Py_True && obj != Py_False && obj != Py_None);
+            assert(!_Py_IsStaticImmortal(obj));
             break;
         case Py_TAG_IMMORTAL:
             assert(obj == NULL || _Py_IsImmortal(obj));
