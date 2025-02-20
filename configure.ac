@@ -7847,24 +7847,34 @@ AC_SUBST([LIBHACL_CFLAGS])
 # The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
 if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
   dnl This can be extended here to detect e.g. Power8, which HACL* should also support.
-  AX_CHECK_COMPILE_FLAG([-msse -msse2 -msse3 -msse4.1 -msse4.2],[
-    [LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"]
+  # Older versions of the mmintrin headers shipped with clang may error if they are
+  # included without using the corresponding -msse* option. See GH issue #130213.
+  AC_MSG_CHECKING([if __m128i can be used without -msse*])
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([#include <emmintrin.h>
+                      #include <tmmintrin.h>
+                      #include <smmintrin.h>],
+        [__m128i testvar;])],
+    [AC_MSG_RESULT([yes])
+     AX_CHECK_COMPILE_FLAG([-msse -msse2 -msse3 -msse4.1 -msse4.2],[
+        [LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"]
 
-    AC_DEFINE([HACL_CAN_COMPILE_SIMD128], [1], [HACL* library can compile SIMD128 implementations])
+        AC_DEFINE([HACL_CAN_COMPILE_SIMD128], [1], [HACL* library can compile SIMD128 implementations])
 
-    # macOS universal2 builds *support* the -msse etc flags because they're
-    # available on x86_64. However, performance of the HACL SIMD128 implementation
-    # isn't great, so it's disabled on ARM64.
-    AC_MSG_CHECKING([for HACL* SIMD128 implementation])
-    if test "$UNIVERSAL_ARCHS" == "universal2"; then
-      [LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"]
-      AC_MSG_RESULT([universal2])
-    else
-      [LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"]
-      AC_MSG_RESULT([standard])
-    fi
+        # macOS universal2 builds *support* the -msse etc flags because they're
+        # available on x86_64. However, performance of the HACL SIMD128 implementation
+        # isn't great, so it's disabled on ARM64.
+        AC_MSG_CHECKING([for HACL* SIMD128 implementation])
+        if test "$UNIVERSAL_ARCHS" == "universal2"; then
+          [LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"]
+          AC_MSG_RESULT([universal2])
+        else
+          [LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"]
+          AC_MSG_RESULT([standard])
+        fi
 
-  ], [], [-Werror])
+      ], [], [-Werror])
+  ], [AC_MSG_RESULT([no])])
 fi
 AC_SUBST([LIBHACL_SIMD128_FLAGS])
 AC_SUBST([LIBHACL_SIMD128_OBJS])
@@ -7877,23 +7887,31 @@ AC_SUBST([LIBHACL_SIMD128_OBJS])
 # (https://developer.android.com/ndk/guides/abis#86-64), this is safe because we do a
 # runtime CPUID check.
 if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
-  AX_CHECK_COMPILE_FLAG([-mavx2],[
-    [LIBHACL_SIMD256_FLAGS="-mavx2"]
-    AC_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
+  # Some versions of immintrin.h may not provide the __m256i type if no -mavx*
+  # option is used. See GH issue #130213.
+  AC_MSG_CHECKING([if __m256i can be used without -mavx2])
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([#include <immintrin.h>],
+        [__m256i testvar;])],
+    [AC_MSG_RESULT([yes])
+     AX_CHECK_COMPILE_FLAG([-mavx2],[
+        [LIBHACL_SIMD256_FLAGS="-mavx2"]
+        AC_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
 
-    # macOS universal2 builds *support* the -mavx2 compiler flag because it's
-    # available on x86_64; but the HACL SIMD256 build then fails because the
-    # implementation requires symbols that aren't available on ARM64. Use a
-    # wrapped implementation if we're building for universal2.
-    AC_MSG_CHECKING([for HACL* SIMD256 implementation])
-    if test "$UNIVERSAL_ARCHS" == "universal2"; then
-      [LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"]
-      AC_MSG_RESULT([universal2])
-    else
-      [LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"]
-      AC_MSG_RESULT([standard])
-    fi
-  ], [], [-Werror])
+        # macOS universal2 builds *support* the -mavx2 compiler flag because it's
+        # available on x86_64; but the HACL SIMD256 build then fails because the
+        # implementation requires symbols that aren't available on ARM64. Use a
+        # wrapped implementation if we're building for universal2.
+        AC_MSG_CHECKING([for HACL* SIMD256 implementation])
+        if test "$UNIVERSAL_ARCHS" == "universal2"; then
+          [LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"]
+          AC_MSG_RESULT([universal2])
+        else
+          [LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"]
+          AC_MSG_RESULT([standard])
+        fi
+      ], [], [-Werror])
+    ], [AC_MSG_RESULT([no])])
 fi
 AC_SUBST([LIBHACL_SIMD256_FLAGS])
 AC_SUBST([LIBHACL_SIMD256_OBJS])

@@ -32076,7 +32076,28 @@ esac
 # Android.
 # The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
 if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2" >&5
+    # Older versions of the mmintrin headers shipped with clang may error if they are
+  # included without using the corresponding -msse* option. See GH issue #130213.
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if __m128i can be used without -msse*" >&5
+printf %s "checking if __m128i can be used without -msse*... " >&6; }
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <emmintrin.h>
+                      #include <tmmintrin.h>
+                      #include <smmintrin.h>
+int
+main (void)
+{
+__m128i testvar;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2" >&5
 printf %s "checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2... " >&6; }
 if test ${ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2+y}
 then :
@@ -32112,26 +32133,26 @@ printf "%s\n" "$ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2
 if test "x$ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2" = xyes
 then :
 
-    LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"
+        LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"
 
 
 printf "%s\n" "#define HACL_CAN_COMPILE_SIMD128 1" >>confdefs.h
 
 
-    # macOS universal2 builds *support* the -msse etc flags because they're
-    # available on x86_64. However, performance of the HACL SIMD128 implementation
-    # isn't great, so it's disabled on ARM64.
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for HACL* SIMD128 implementation" >&5
+        # macOS universal2 builds *support* the -msse etc flags because they're
+        # available on x86_64. However, performance of the HACL SIMD128 implementation
+        # isn't great, so it's disabled on ARM64.
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for HACL* SIMD128 implementation" >&5
 printf %s "checking for HACL* SIMD128 implementation... " >&6; }
-    if test "$UNIVERSAL_ARCHS" == "universal2"; then
-      LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: universal2" >&5
+        if test "$UNIVERSAL_ARCHS" == "universal2"; then
+          LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"
+          { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: universal2" >&5
 printf "%s\n" "universal2" >&6; }
-    else
-      LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: standard" >&5
+        else
+          LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"
+          { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: standard" >&5
 printf "%s\n" "standard" >&6; }
-    fi
+        fi
 
 
 else case e in #(
@@ -32139,6 +32160,13 @@ else case e in #(
 esac
 fi
 
+
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; } ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
 
@@ -32151,7 +32179,26 @@ fi
 # (https://developer.android.com/ndk/guides/abis#86-64), this is safe because we do a
 # runtime CPUID check.
 if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx2" >&5
+  # Some versions of immintrin.h may not provide the __m256i type if no -mavx*
+  # option is used. See GH issue #130213.
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if __m256i can be used without -mavx2" >&5
+printf %s "checking if __m256i can be used without -mavx2... " >&6; }
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <immintrin.h>
+int
+main (void)
+{
+__m256i testvar;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx2" >&5
 printf %s "checking whether C compiler accepts -mavx2... " >&6; }
 if test ${ax_cv_check_cflags__Werror__mavx2+y}
 then :
@@ -32187,32 +32234,39 @@ printf "%s\n" "$ax_cv_check_cflags__Werror__mavx2" >&6; }
 if test "x$ax_cv_check_cflags__Werror__mavx2" = xyes
 then :
 
-    LIBHACL_SIMD256_FLAGS="-mavx2"
+        LIBHACL_SIMD256_FLAGS="-mavx2"
 
 printf "%s\n" "#define HACL_CAN_COMPILE_SIMD256 1" >>confdefs.h
 
 
-    # macOS universal2 builds *support* the -mavx2 compiler flag because it's
-    # available on x86_64; but the HACL SIMD256 build then fails because the
-    # implementation requires symbols that aren't available on ARM64. Use a
-    # wrapped implementation if we're building for universal2.
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for HACL* SIMD256 implementation" >&5
+        # macOS universal2 builds *support* the -mavx2 compiler flag because it's
+        # available on x86_64; but the HACL SIMD256 build then fails because the
+        # implementation requires symbols that aren't available on ARM64. Use a
+        # wrapped implementation if we're building for universal2.
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for HACL* SIMD256 implementation" >&5
 printf %s "checking for HACL* SIMD256 implementation... " >&6; }
-    if test "$UNIVERSAL_ARCHS" == "universal2"; then
-      LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: universal2" >&5
+        if test "$UNIVERSAL_ARCHS" == "universal2"; then
+          LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"
+          { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: universal2" >&5
 printf "%s\n" "universal2" >&6; }
-    else
-      LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: standard" >&5
+        else
+          LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"
+          { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: standard" >&5
 printf "%s\n" "standard" >&6; }
-    fi
+        fi
 
 else case e in #(
   e) : ;;
 esac
 fi
 
+
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; } ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
 
