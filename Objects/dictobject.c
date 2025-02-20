@@ -1590,7 +1590,7 @@ _Py_dict_lookup_threadsafe_stackref(PyDictObject *mp, PyObject *key, Py_hash_t h
                 *value_addr = PyStackRef_NULL;
                 return DKIX_EMPTY;
             }
-            if (_Py_IsImmortal(value) || _PyObject_HasDeferredRefcount(value)) {
+            if (_PyObject_HasDeferredRefcount(value)) {
                 *value_addr =  (_PyStackRef){ .bits = (uintptr_t)value | Py_TAG_DEFERRED };
                 return ix;
             }
@@ -3793,7 +3793,7 @@ dict_dict_merge(PyInterpreterState *interp, PyDictObject *mp, PyDictObject *othe
 
             ensure_shared_on_resize(mp);
             dictkeys_decref(interp, mp->ma_keys, IS_DICT_SHARED(mp));
-            mp->ma_keys = keys;
+            set_keys(mp, keys);
             STORE_USED(mp, other->ma_used);
             ASSERT_CONSISTENT(mp);
 
@@ -7351,7 +7351,7 @@ PyObject_ClearManagedDict(PyObject *obj)
     if (set_or_clear_managed_dict(obj, NULL, true) < 0) {
         /* Must be out of memory */
         assert(PyErr_Occurred() == PyExc_MemoryError);
-        PyErr_FormatUnraisable("Exception ignored when "
+        PyErr_FormatUnraisable("Exception ignored while "
                                "clearing an object managed dict");
         /* Clear the dict */
         PyDictObject *dict = _PyObject_GetManagedDict(obj);

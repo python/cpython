@@ -51,7 +51,7 @@ INIT_LOOPS = 4
 MAX_HASH_SEED = 4294967295
 
 ABI_THREAD = 't' if sysconfig.get_config_var('Py_GIL_DISABLED') else ''
-# PLATSTDLIB_LANDMARK copied from Modules/getpath.py
+# PLATSTDLIB_LANDMARK copied from Modules/getpath.py
 if os.name == 'nt':
     PLATSTDLIB_LANDMARK = f'{sys.platlibdir}'
 else:
@@ -391,6 +391,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             import importlib._bootstrap
             import opcode
             import test.test_dis
+            import test.support
 
             def is_specialized(f):
                 for instruction in dis.get_instructions(f, adaptive=True):
@@ -409,7 +410,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
             func = importlib._bootstrap._handle_fromlist
 
             # "copy" the code to un-specialize it:
-            func.__code__ = func.__code__.replace()
+            test.support.reset_code(func)
 
             assert not is_specialized(func), "specialized instructions found"
 
