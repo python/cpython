@@ -29,7 +29,7 @@ Data members:
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _PyErr_WriteUnraisableDefaultHook()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
-#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
+#include "pycore_pymem.h"         // _PyMem_DefaultRawFree()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
 #include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
@@ -2724,22 +2724,17 @@ _alloc_preinit_entry(const wchar_t *value)
     /* To get this to work, we have to initialize the runtime implicitly */
     _PyRuntime_Initialize();
 
-    /* Force default allocator, so we can ensure that it also gets used to
+    /* Use the default allocator, so we can ensure that it also gets used to
      * destroy the linked list in _clear_preinit_entries.
      */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    _Py_PreInitEntry node = PyMem_RawCalloc(1, sizeof(*node));
+    _Py_PreInitEntry node = _PyMem_DefaultRawCalloc(1, sizeof(*node));
     if (node != NULL) {
-        node->value = _PyMem_RawWcsdup(value);
+        node->value = _PyMem_DefaultRawWcsdup(value);
         if (node->value == NULL) {
-            PyMem_RawFree(node);
+            _PyMem_DefaultRawFree(node);
             node = NULL;
         };
     };
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return node;
 }
 
@@ -2771,15 +2766,12 @@ _clear_preinit_entries(_Py_PreInitEntry *optionlist)
     _Py_PreInitEntry current = *optionlist;
     *optionlist = NULL;
     /* Deallocate the nodes and their contents using the default allocator */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     while (current != NULL) {
         _Py_PreInitEntry next = current->next;
-        PyMem_RawFree(current->value);
-        PyMem_RawFree(current);
+        _PyMem_DefaultRawFree(current->value);
+        _PyMem_DefaultRawFree(current);
         current = next;
     }
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
 
