@@ -726,101 +726,46 @@ astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     return 1;
 }
 
-static bool
-is_unarynegative_const_numeric_expr(expr_ty node)
-{
-    return (
-        node->kind == UnaryOp_kind
-        && node->v.UnaryOp.op == USub
-        && node->v.UnaryOp.operand->kind == Constant_kind
-        && (
-            PyLong_CheckExact(node->v.UnaryOp.operand->v.Constant.value)
-            || PyFloat_CheckExact(node->v.UnaryOp.operand->v.Constant.value)
-        )
-    );
-}
-
-#ifndef NDEBUG
-
-static bool
-is_unarynegative_const_complex_expr(expr_ty node)
-{
-    return (
-        node->kind == UnaryOp_kind
-        && node->v.UnaryOp.op == USub
-        && node->v.UnaryOp.operand->kind == Constant_kind
-        && PyComplex_CheckExact(node->v.UnaryOp.operand->v.Constant.value)
-    );
-}
-
-static bool
-is_allowed_match_case_binary_expr(expr_ty node)
-{
-    return (
-        node->kind == BinOp_kind
-        && (node->v.BinOp.op == Add || node->v.BinOp.op == Sub)
-        && node->v.BinOp.right->kind == Constant_kind
-        && PyComplex_CheckExact(node->v.BinOp.right->v.Constant.value)
-        && (
-            is_unarynegative_const_numeric_expr(node->v.BinOp.left)
-            || (
-                node->v.BinOp.left->kind == Constant_kind
-                && (
-                    PyLong_CheckExact(node->v.BinOp.left->v.Constant.value)
-                    || PyFloat_CheckExact(node->v.BinOp.left->v.Constant.value)
-                )
-            )
-        )
-    );
-}
-
-#endif
-
 static int
-fold_const_unary_or_complex_expr(expr_ty node, PyArena *ctx_,
-                                 _PyASTOptimizeState * Py_UNUSED(state))
-{
-    assert(
-        is_unarynegative_const_numeric_expr(node)
-        || is_unarynegative_const_complex_expr(node)
-    );
-    PyObject *constant = node->v.UnaryOp.operand->v.Constant.value;
-    assert(constant != NULL);
-    assert(node->v.UnaryOp.op == USub);
-    PyObject* folded = PyNumber_Negative(constant);
-    return make_const(node, folded, ctx_);
-}
-
-static int
-fold_const_binary_complex_expr(expr_ty node, PyArena *ctx_, _PyASTOptimizeState *state)
-{
-    assert(is_allowed_match_case_binary_expr(node));
-    expr_ty left_expr = node->v.BinOp.left;
-    if (is_unarynegative_const_numeric_expr(left_expr)) {
-        CALL(fold_const_unary_or_complex_expr, expr_ty, left_expr);
-    }
-    /* must have folded left expr by now */
-    assert(left_expr->kind == Constant_kind);
-    operator_ty op = node->v.BinOp.op;
-    PyObject *left = left_expr->v.Constant.value;
-    PyObject *right = node->v.BinOp.right->v.Constant.value;
-    assert(left != NULL && right != NULL);
-    assert(op == Add || op == Sub);
-    PyObject *folded = op == Add ? PyNumber_Add(left, right) : PyNumber_Subtract(left, right);
-    return make_const(node, folded, ctx_);
-}
-
-static int
-fold_pattern_match_value(expr_ty node, PyArena *ctx_, _PyASTOptimizeState *state)
+try_fold_pattern_match_value(expr_ty node, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     switch (node->kind)
     {
         case UnaryOp_kind:
-            CALL(fold_const_unary_or_complex_expr, expr_ty, node);
-            break;
+        {
+            if (node->v.UnaryOp.op != USub &&
+                node->v.UnaryOp.operand->kind != Constant_kind) {
+                return 1;
+            }
+            PyObject *operand = node->v.UnaryOp.operand->v.Constant.value;
+            if (!PyLong_CheckExact(operand) &&
+                !PyFloat_CheckExact(operand) &&
+                !PyComplex_CheckExact(operand)) {
+                return 1;
+            }
+            PyObject *folded = PyNumber_Negative(operand);
+            return make_const(node, folded, ctx_);
+        }
         case BinOp_kind:
-            CALL(fold_const_binary_complex_expr, expr_ty, node);
-            break;
+        {
+            operator_ty op = node->v.BinOp.op;
+            if (op != Add && op != Sub) {
+                return 1;
+            }
+            CALL(try_fold_pattern_match_value, expr_ty, node->v.BinOp.left);
+            if (node->v.BinOp.left->kind != Constant_kind &&
+                node->v.BinOp.right->kind != Constant_kind) {
+                return 1;
+            }
+            PyObject *left = node->v.BinOp.left->v.Constant.value;
+            PyObject *right = node->v.BinOp.right->v.Constant.value;
+            if (!PyComplex_CheckExact(right) ||
+                (!PyLong_CheckExact(left) && !PyFloat_CheckExact(left))) {
+                return 1;
+            }
+            PyObject *folded = op == Add ? PyNumber_Add(left, right) : PyNumber_Subtract(left, right);
+            return make_const(node, folded, ctx_);
+        }
         default:
             break;
     }
@@ -836,7 +781,7 @@ astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     ENTER_RECURSIVE(state);
     switch (node_->kind) {
         case MatchValue_kind:
-            CALL(fold_pattern_match_value, expr_ty, node_->v.MatchValue.value);
+            CALL(try_fold_pattern_match_value, expr_ty, node_->v.MatchValue.value);
             break;
         case MatchSingleton_kind:
             break;
@@ -844,7 +789,7 @@ astfold_pattern(pattern_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
             CALL_SEQ(astfold_pattern, pattern, node_->v.MatchSequence.patterns);
             break;
         case MatchMapping_kind:
-            CALL_SEQ(fold_pattern_match_value, expr, node_->v.MatchMapping.keys);
+            CALL_SEQ(try_fold_pattern_match_value, expr, node_->v.MatchMapping.keys);
             CALL_SEQ(astfold_pattern, pattern, node_->v.MatchMapping.patterns);
             break;
         case MatchClass_kind:
