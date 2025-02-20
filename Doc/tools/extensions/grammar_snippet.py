@@ -78,13 +78,24 @@ class GrammarSnippetBase(SphinxDirective):
             classes=['highlight'],
         )
 
+        node_location = self.get_location()
         for line in content:
-            self.make_production(line, group_name=group_name, literal=literal)
+            self.make_production(
+                line,
+                group_name=group_name,
+                literal=literal,
+                location=node_location,
+            )
         node = nodes.paragraph('', '', literal)
         return [node]
 
     def make_production(
-        self, line: str, *, group_name: str, literal: nodes.literal_block
+        self,
+        line: str,
+        *,
+        group_name: str,
+        literal: nodes.literal_block,
+        location: str,
     ):
         last_pos = 0
         for match in self.grammar_re.finditer(line):
@@ -101,8 +112,10 @@ class GrammarSnippetBase(SphinxDirective):
             }
             match group_dict:
                 case {'rule_name': name}:
-                    literal += self.make_link_target_for_token(
-                        group_name, name
+                    literal += self.make_name_target(
+                        name=name,
+                        production_group=group_name,
+                        location=location,
                     )
                 case {'rule_ref': ref_text}:
                     literal += token_xrefs(ref_text, group_name)
@@ -112,26 +125,28 @@ class GrammarSnippetBase(SphinxDirective):
                     raise ValueError('unhandled match')
         literal += nodes.Text(line[last_pos:] + '\n')
 
-    def make_link_target_for_token(
-        self, group_name: str, name: str
+    def make_name_target(
+        self,
+        *,
+        name: str,
+        production_group: str,
+        location: str,
     ) -> addnodes.literal_strong:
-        """Return a literal node which is a link target for the given token."""
-        name_node = addnodes.literal_strong()
+        """Make a link target for the given production."""
 
         # Cargo-culted magic to make `name_node` a link target
         # similar to Sphinx `production`.
         # This needs to be the same as what Sphinx does
         # to avoid breaking existing links.
-        domain = self.env.domains['std']
-        obj_name = f"{group_name}:{name}"
-        prefix = f'grammar-token-{group_name}'
+
+        name_node = addnodes.literal_strong(name, name)
+        prefix = f'grammar-token-{production_group}'
         node_id = make_id(self.env, self.state.document, prefix, name)
         name_node['ids'].append(node_id)
         self.state.document.note_implicit_target(name_node, name_node)
-        domain.note_object('token', obj_name, node_id, location=name_node)
-
-        text_node = nodes.Text(name)
-        name_node += text_node
+        obj_name = f'{production_group}:{name}' if production_group else name
+        std = self.env.domains.standard_domain
+        std.note_object('token', obj_name, node_id, location=location)
         return name_node
 
 
