@@ -79,39 +79,38 @@ class GrammarSnippetBase(SphinxDirective):
         )
 
         for line in content:
-            last_pos = 0
-            for match in self.grammar_re.finditer(line):
-                # Handle text between matches
-                if match.start() > last_pos:
-                    literal += nodes.Text(line[last_pos : match.start()])
-                last_pos = match.end()
-
-                # Handle matches
-                group_dict = {
-                    name: content
-                    for name, content in match.groupdict().items()
-                    if content is not None
-                }
-                match group_dict:
-                    case {'rule_name': name}:
-                        literal += self.make_link_target_for_token(
-                            group_name, name
-                        )
-                    case {'rule_ref': ref_text}:
-                        literal += token_xrefs(ref_text, group_name)
-                    case {'single_quoted': name} | {'double_quoted': name}:
-                        literal += snippet_string_node('', name)
-                    case _:
-                        raise ValueError('unhandled match')
-            literal += nodes.Text(line[last_pos:] + '\n')
-
-        node = nodes.paragraph(
-            '',
-            '',
-            literal,
-        )
-
+            self.make_production(line, group_name=group_name, literal=literal)
+        node = nodes.paragraph('', '', literal)
         return [node]
+
+    def make_production(
+        self, line: str, *, group_name: str, literal: nodes.literal_block
+    ):
+        last_pos = 0
+        for match in self.grammar_re.finditer(line):
+            # Handle text between matches
+            if match.start() > last_pos:
+                literal += nodes.Text(line[last_pos : match.start()])
+            last_pos = match.end()
+
+            # Handle matches
+            group_dict = {
+                name: content
+                for name, content in match.groupdict().items()
+                if content is not None
+            }
+            match group_dict:
+                case {'rule_name': name}:
+                    literal += self.make_link_target_for_token(
+                        group_name, name
+                    )
+                case {'rule_ref': ref_text}:
+                    literal += token_xrefs(ref_text, group_name)
+                case {'single_quoted': name} | {'double_quoted': name}:
+                    literal += snippet_string_node('', name)
+                case _:
+                    raise ValueError('unhandled match')
+        literal += nodes.Text(line[last_pos:] + '\n')
 
     def make_link_target_for_token(
         self, group_name: str, name: str
