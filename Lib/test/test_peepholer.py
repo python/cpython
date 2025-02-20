@@ -540,84 +540,72 @@ class TestTranforms(BytecodeTestCase):
                 self.check_lnotab(code)
 
     def test_folding_binop(self):
-        add = get_binop_argval('NB_ADD')
-        sub = get_binop_argval('NB_SUBTRACT')
-        mul = get_binop_argval('NB_MULTIPLY')
-        div = get_binop_argval('NB_TRUE_DIVIDE')
-        floor = get_binop_argval('NB_FLOOR_DIVIDE')
-        rem = get_binop_argval('NB_REMAINDER')
-        pow = get_binop_argval('NB_POWER')
-        lshift = get_binop_argval('NB_LSHIFT')
-        rshift = get_binop_argval('NB_RSHIFT')
-        or_ = get_binop_argval('NB_OR')
-        and_ = get_binop_argval('NB_AND')
-        xor = get_binop_argval('NB_XOR')
-        subscr = get_binop_argval('NB_SUBSCR')
         tests = [
-            ('1 + 2', False, add),
-            ('1 + 2 + 3', False, add),
-            ('1 + ""', True, add),
-            ('1 - 2', False, sub),
-            ('1 - 2 - 3', False, sub),
-            ('1 - ""', True, sub),
-            ('2 * 2', False, mul),
-            ('2 * 2 * 2', False, mul),
-            ('2 / 2', False, div),
-            ('2 / 2 / 2', False, div),
-            ('2 / ""', True, div),
-            ('2 // 2', False, floor),
-            ('2 // 2 // 2', False, floor),
-            ('2 // ""', True, floor),
-            ('2 % 2', False, rem),
-            ('2 % 2 % 2', False, rem),
-            ('2 % ()', True, rem),
-            ('2 ** 2', False, pow),
-            ('2 ** 2 ** 2', False, pow),
-            ('2 ** ""', True, pow),
-            ('2 << 2', False, lshift),
-            ('2 << 2 << 2', False, lshift),
-            ('2 << ""', True, lshift),
-            ('2 >> 2', False, rshift),
-            ('2 >> 2 >> 2', False, rshift),
-            ('2 >> ""', True, rshift),
-            ('2 | 2', False, or_),
-            ('2 | 2 | 2', False, or_),
-            ('2 | ""', True, or_),
-            ('2 & 2', False, and_),
-            ('2 & 2 & 2', False, and_),
-            ('2 & ""', True, and_),
-            ('2 ^ 2', False, xor),
-            ('2 ^ 2 ^ 2', False, xor),
-            ('2 ^ ""', True, xor),
-            ('(1, )[0]', False, subscr),
-            ('(1, )[-1]', False, subscr),
-            ('(1 + 2, )[0]', False, subscr),
-            ('(1, (1, 2))[1][1]', False, subscr),
-            ('(1, 2)[2-1]', False, subscr),
-            ('(1, (1, 2))[1][2-1]', False, subscr),
-            ('(1, (1, 2))[1:6][0][2-1]', False, subscr),
-            ('"a"[0]', False, subscr),
-            ('("a" + "b")[1]', False, subscr),
-            ('("a" + "b", )[0][1]', False, subscr),
-            ('("a" * 10)[9]', False, subscr),
-            ('(1, )[1]', True, subscr),
-            ('(1, )[-2]', True, subscr),
-            ('"a"[1]', True, subscr),
-            ('"a"[-2]', True, subscr),
-            ('("a" + "b")[2]', True, subscr),
-            ('("a" + "b", )[0][2]', True, subscr),
-            ('("a" + "b", )[1][0]', True, subscr),
-            ('("a" * 10)[10]', True, subscr),
-            ('(1, (1, 2))[2:6][0][2-1]', True, subscr),
+            ('1 + 2', False, 'NB_ADD'),
+            ('1 + 2 + 3', False, 'NB_ADD'),
+            ('1 + ""', True, 'NB_ADD'),
+            ('1 - 2', False, 'NB_SUBTRACT'),
+            ('1 - 2 - 3', False, 'NB_SUBTRACT'),
+            ('1 - ""', True, 'NB_SUBTRACT'),
+            ('2 * 2', False, 'NB_MULTIPLY'),
+            ('2 * 2 * 2', False, 'NB_MULTIPLY'),
+            ('2 / 2', False, 'NB_TRUE_DIVIDE'),
+            ('2 / 2 / 2', False, 'NB_TRUE_DIVIDE'),
+            ('2 / ""', True, 'NB_TRUE_DIVIDE'),
+            ('2 // 2', False, 'NB_FLOOR_DIVIDE'),
+            ('2 // 2 // 2', False, 'NB_FLOOR_DIVIDE'),
+            ('2 // ""', True, 'NB_FLOOR_DIVIDE'),
+            ('2 % 2', False, 'NB_REMAINDER'),
+            ('2 % 2 % 2', False, 'NB_REMAINDER'),
+            ('2 % ()', True, 'NB_REMAINDER'),
+            ('2 ** 2', False, 'NB_POWER'),
+            ('2 ** 2 ** 2', False, 'NB_POWER'),
+            ('2 ** ""', True, 'NB_POWER'),
+            ('2 << 2', False, 'NB_LSHIFT'),
+            ('2 << 2 << 2', False, 'NB_LSHIFT'),
+            ('2 << ""', True, 'NB_LSHIFT'),
+            ('2 >> 2', False, 'NB_RSHIFT'),
+            ('2 >> 2 >> 2', False, 'NB_RSHIFT'),
+            ('2 >> ""', True, 'NB_RSHIFT'),
+            ('2 | 2', False, 'NB_OR'),
+            ('2 | 2 | 2', False, 'NB_OR'),
+            ('2 | ""', True, 'NB_OR'),
+            ('2 & 2', False, 'NB_AND'),
+            ('2 & 2 & 2', False, 'NB_AND'),
+            ('2 & ""', True, 'NB_AND'),
+            ('2 ^ 2', False, 'NB_XOR'),
+            ('2 ^ 2 ^ 2', False, 'NB_XOR'),
+            ('2 ^ ""', True, 'NB_XOR'),
+            ('(1, )[0]', False, 'NB_SUBSCR'),
+            ('(1, )[-1]', False, 'NB_SUBSCR'),
+            ('(1 + 2, )[0]', False, 'NB_SUBSCR'),
+            ('(1, (1, 2))[1][1]', False, 'NB_SUBSCR'),
+            ('(1, 2)[2-1]', False, 'NB_SUBSCR'),
+            ('(1, (1, 2))[1][2-1]', False, 'NB_SUBSCR'),
+            ('(1, (1, 2))[1:6][0][2-1]', False, 'NB_SUBSCR'),
+            ('"a"[0]', False, 'NB_SUBSCR'),
+            ('("a" + "b")[1]', False, 'NB_SUBSCR'),
+            ('("a" + "b", )[0][1]', False, 'NB_SUBSCR'),
+            ('("a" * 10)[9]', False, 'NB_SUBSCR'),
+            ('(1, )[1]', True, 'NB_SUBSCR'),
+            ('(1, )[-2]', True, 'NB_SUBSCR'),
+            ('"a"[1]', True, 'NB_SUBSCR'),
+            ('"a"[-2]', True, 'NB_SUBSCR'),
+            ('("a" + "b")[2]', True, 'NB_SUBSCR'),
+            ('("a" + "b", )[0][2]', True, 'NB_SUBSCR'),
+            ('("a" + "b", )[1][0]', True, 'NB_SUBSCR'),
+            ('("a" * 10)[10]', True, 'NB_SUBSCR'),
+            ('(1, (1, 2))[2:6][0][2-1]', True, 'NB_SUBSCR'),
 
         ]
         for expr, has_error, nb_op in tests:
             with self.subTest(expr=expr, has_error=has_error):
                 code = compile(expr, '', 'single')
+                nb_op_val = get_binop_argval(nb_op)
                 if not has_error:
-                    self.assertNotInBytecode(code, 'BINARY_OP', argval=nb_op)
+                    self.assertNotInBytecode(code, 'BINARY_OP', argval=nb_op_val)
                 else:
-                    self.assertInBytecode(code, 'BINARY_OP', argval=nb_op)
+                    self.assertInBytecode(code, 'BINARY_OP', argval=nb_op_val)
                 self.check_lnotab(code)
 
     def test_constant_folding_remove_nop_location(self):
@@ -1258,7 +1246,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             }
         self.assertEqual(f(), frozenset(range(40)))
 
-    def test_multiple_foldings(self):
+    def test_nested_const_foldings(self):
         # (1, (--2 + ++2 * 2 // 2 - 2, )[0], ~~3, not not True)  ==>  (1, 2, 3, True)
         intrinsic_positive = 5
         before = [
