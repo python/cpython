@@ -726,79 +726,63 @@ astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     return 1;
 }
 
-#define IS_CONST_EXPR(N) \
-    ((N)->kind == Constant_kind)
+static bool
+is_unarynegative_const_numeric_expr(expr_ty node)
+{
+    return (
+        node->kind == UnaryOp_kind
+        && node->v.UnaryOp.op == USub
+        && node->v.UnaryOp.operand->kind == Constant_kind
+        && (
+            PyLong_CheckExact(node->v.UnaryOp.operand->v.Constant.value)
+            || PyFloat_CheckExact(node->v.UnaryOp.operand->v.Constant.value)
+        )
+    );
+}
 
-#define CONST_EXPR_VALUE(N) \
-    ((N)->v.Constant.value)
+static bool
+is_unarynegative_const_complex_expr(expr_ty node)
+{
+    return (
+        node->kind == UnaryOp_kind
+        && node->v.UnaryOp.op == USub
+        && node->v.UnaryOp.operand->kind == Constant_kind
+        && PyComplex_CheckExact(node->v.UnaryOp.operand->v.Constant.value)
+    );
+}
 
-#define IS_CONST_COMPLEX_EXPR(N) \
-    (IS_CONST_EXPR(N) && PyComplex_CheckExact(CONST_EXPR_VALUE(N)))
-
-#define IS_NUMERIC_CONST_EXPR(N) \
-    (IS_CONST_EXPR(N) && (PyLong_CheckExact(CONST_EXPR_VALUE(N)) || PyFloat_CheckExact(CONST_EXPR_VALUE(N))))
-
-#define IS_UNARY_EXPR(N) \
-    ((N)->kind == UnaryOp_kind)
-
-#define UNARY_EXPR_OP(N) \
-    ((N)->v.UnaryOp.op)
-
-#define UNARY_EXPR_OPERAND(N) \
-    ((N)->v.UnaryOp.operand)
-
-#define UNARY_EXPR_OPERAND_CONST_VALUE(N) \
-    (CONST_EXPR_VALUE(UNARY_EXPR_OPERAND(N)))
-
-#define IS_UNARY_SUB_EXPR(N) \
-    (IS_UNARY_EXPR(N) && UNARY_EXPR_OP(N) == USub)
-
-#define IS_MATCH_NUMERIC_UNARY_CONST_EXPR(N) \
-    (IS_UNARY_SUB_EXPR(N) && IS_NUMERIC_CONST_EXPR(UNARY_EXPR_OPERAND(N)))
-
-#define IS_MATCH_COMPLEX_UNARY_CONST_EXPR(N) \
-    (IS_UNARY_SUB_EXPR(N) && IS_CONST_COMPLEX_EXPR(UNARY_EXPR_OPERAND(N)))
-
-#define BINARY_EXPR(N) \
-    ((N)->v.BinOp)
-
-#define BINARY_EXPR_OP(N) \
-    (BINARY_EXPR(N).op)
-
-#define BINARY_EXPR_LEFT(N) \
-    (BINARY_EXPR(N).left)
-
-#define BINARY_EXPR_RIGHT(N) \
-    (BINARY_EXPR(N).right)
-
-#define IS_BINARY_EXPR(N) \
-    ((N)->kind == BinOp_kind)
-
-#define IS_BINARY_ADD_EXPR(N) \
-    (IS_BINARY_EXPR(N) && BINARY_EXPR_OP(N) == Add)
-
-#define IS_BINARY_SUB_EXPR(N) \
-    (IS_BINARY_EXPR(N) && BINARY_EXPR_OP(N) == Sub)
-
-#define IS_MATCH_NUMERIC_OR_COMPLEX_UNARY_CONST_EXPR(N) \
-    (IS_MATCH_NUMERIC_UNARY_CONST_EXPR(N) || IS_MATCH_COMPLEX_UNARY_CONST_EXPR(N))
-
-#define IS_MATCH_COMPLEX_BINARY_CONST_EXPR(N) \
-    ( \
-        (IS_BINARY_ADD_EXPR(N) || IS_BINARY_SUB_EXPR(N)) \
-        && (IS_MATCH_NUMERIC_UNARY_CONST_EXPR(BINARY_EXPR_LEFT(N)) || IS_NUMERIC_CONST_EXPR(BINARY_EXPR_LEFT(N))) \
-        && IS_CONST_COMPLEX_EXPR(BINARY_EXPR_RIGHT(N)) \
-    )
-
+static bool
+is_allowed_match_case_binary_expr(expr_ty node)
+{
+    return (
+        node->kind == BinOp_kind
+        && (node->v.BinOp.op == Add || node->v.BinOp.op == Sub)
+        && node->v.BinOp.right->kind == Constant_kind
+        && PyComplex_CheckExact(node->v.BinOp.right->v.Constant.value)
+        && (
+            is_unarynegative_const_numeric_expr(node->v.BinOp.left)
+            || (
+                node->v.BinOp.left->kind == Constant_kind
+                && (
+                    PyLong_CheckExact(node->v.BinOp.left->v.Constant.value)
+                    || PyFloat_CheckExact(node->v.BinOp.left->v.Constant.value)
+                )
+            )
+        )
+    );
+}
 
 static int
 fold_const_unary_or_complex_expr(expr_ty node, PyArena *ctx_,
                                  _PyASTOptimizeState * Py_UNUSED(state))
 {
-    assert(IS_MATCH_NUMERIC_OR_COMPLEX_UNARY_CONST_EXPR(node));
-    PyObject *constant = UNARY_EXPR_OPERAND_CONST_VALUE(node);
-    assert(UNARY_EXPR_OP(node) == USub);
+    assert(
+        is_unarynegative_const_numeric_expr(node)
+        || is_unarynegative_const_complex_expr(node)
+    );
+    PyObject *constant = node->v.UnaryOp.operand->v.Constant.value;
     assert(constant != NULL);
+    assert(node->v.UnaryOp.op == USub);
     PyObject* folded = PyNumber_Negative(constant);
     return make_const(node, folded, ctx_);
 }
@@ -806,18 +790,18 @@ fold_const_unary_or_complex_expr(expr_ty node, PyArena *ctx_,
 static int
 fold_const_binary_complex_expr(expr_ty node, PyArena *ctx_, _PyASTOptimizeState *state)
 {
-    assert(IS_MATCH_COMPLEX_BINARY_CONST_EXPR(node));
-    expr_ty left_expr = BINARY_EXPR_LEFT(node);
-    if (IS_MATCH_NUMERIC_UNARY_CONST_EXPR(left_expr)) {
+    assert(is_allowed_match_case_binary_expr(node));
+    expr_ty left_expr = node->v.BinOp.left;
+    if (is_unarynegative_const_numeric_expr(left_expr)) {
         CALL(fold_const_unary_or_complex_expr, expr_ty, left_expr);
     }
-    /* must have folded if left was IS_MATCH_NUMERIC_UNARY_CONST_EXPR */
-    assert(IS_CONST_EXPR(BINARY_EXPR_LEFT(node)));
-    operator_ty op = BINARY_EXPR_OP(node);
-    PyObject *left = CONST_EXPR_VALUE(BINARY_EXPR_LEFT(node));
-    PyObject *right = CONST_EXPR_VALUE(BINARY_EXPR_RIGHT(node));
-    assert(op == Add || op == Sub);
+    /* must have folded left expr by now */
+    assert(left_expr->kind == Constant_kind);
+    operator_ty op = node->v.BinOp.op;
+    PyObject *left = left_expr->v.Constant.value;
+    PyObject *right = node->v.BinOp.right->v.Constant.value;
     assert(left != NULL && right != NULL);
+    assert(op == Add || op == Sub);
     PyObject *folded = op == Add ? PyNumber_Add(left, right) : PyNumber_Subtract(left, right);
     return make_const(node, folded, ctx_);
 }
