@@ -730,11 +730,25 @@ class FallbackTestCase(GettextBaseTest):
                          'npgettext: context, foo, foos, 1')
 
     def test_nested_fallbacks(self):
+        class NestedFallback(gettext.NullTranslations):
+            def gettext(self, message):
+                return 'fallback 1'
+
+        class NestedFallback2(gettext.NullTranslations):
+            def pgettext(self, context, message):
+                return 'fallback 2'
+
+        class NestedFallback3(gettext.NullTranslations):
+            def ngettext(self, msgid1, msgid2, n):
+                return 'fallback 3'
+
         t = gettext.NullTranslations()
-        t.add_fallback(gettext.NullTranslations())
-        t.add_fallback(gettext.NullTranslations())
-        t.add_fallback(FallbackTranslations())
-        self.assertEqual(t.gettext('foo'), 'gettext: foo')
+        t.add_fallback(NestedFallback())
+        t.add_fallback(NestedFallback2())
+        t.add_fallback(NestedFallback3())
+        self.assertEqual(t.gettext('foo'), 'fallback 1')
+        self.assertEqual(t.pgettext('context', 'foo'), 'fallback 2')
+        self.assertEqual(t.ngettext('foo', 'foos', 1), 'fallback 3')
 
 
 class MiscTestCase(unittest.TestCase):
