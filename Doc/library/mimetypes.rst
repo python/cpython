@@ -202,7 +202,8 @@ than one MIME-type database; it provides an interface similar to the one of the
 .. class:: MimeTypes(filenames=(), strict=True)
 
    This class represents a MIME-types database.  By default, it provides access to
-   the same database as the rest of this module. The initial database is a copy of
+   the same database as the rest of this module, except for the types loaded from
+   system files.  The initial database is a copy of
    that provided by the module, and may be extended by loading additional
    :file:`mime.types`\ -style files into the database using the :meth:`read` or
    :meth:`readfp` methods.  The mapping dictionaries may also be cleared before
