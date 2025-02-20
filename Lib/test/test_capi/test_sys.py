@@ -19,6 +19,62 @@ class CAPITest(unittest.TestCase):
 
     maxDiff = None
 
+    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
+    def test_sys_getattr(self):
+        # Test PySys_GetAttr()
+        sys_getattr = _testlimitedcapi.sys_getattr
+
+        self.assertIs(sys_getattr('stdout'), sys.stdout)
+        with support.swap_attr(sys, '\U0001f40d', 42):
+            self.assertEqual(sys_getattr('\U0001f40d'), 42)
+
+        with self.assertRaisesRegex(RuntimeError, r'lost sys\.nonexisting'):
+            sys_getattr('nonexisting')
+        self.assertRaises(TypeError, sys_getattr, 1)
+        self.assertRaises(TypeError, sys_getattr, [])
+        # CRASHES sys_getattr(NULL)
+
+    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
+    def test_sys_getattrstring(self):
+        # Test PySys_GetAttrString()
+        getattrstring = _testlimitedcapi.sys_getattrstring
+
+        self.assertIs(getattrstring(b'stdout'), sys.stdout)
+        with support.swap_attr(sys, '\U0001f40d', 42):
+            self.assertEqual(getattrstring('\U0001f40d'.encode()), 42)
+
+        with self.assertRaisesRegex(RuntimeError, r'lost sys\.nonexisting'):
+            getattrstring(b'nonexisting')
+        self.assertRaises(UnicodeDecodeError, getattrstring, b'\xff')
+        # CRASHES getattrstring(NULL)
+
+    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
+    def test_sys_getoptionalattr(self):
+        # Test PySys_GetOptionalAttr()
+        getoptionalattr = _testlimitedcapi.sys_getoptionalattr
+
+        self.assertIs(getoptionalattr('stdout'), sys.stdout)
+        with support.swap_attr(sys, '\U0001f40d', 42):
+            self.assertEqual(getoptionalattr('\U0001f40d'), 42)
+
+        self.assertIs(getoptionalattr('nonexisting'), AttributeError)
+        self.assertRaises(TypeError, getoptionalattr, 1)
+        self.assertRaises(TypeError, getoptionalattr, [])
+        # CRASHES getoptionalattr(NULL)
+
+    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
+    def test_sys_getoptionalattrstring(self):
+        # Test PySys_GetOptionalAttrString()
+        getoptionalattrstring = _testlimitedcapi.sys_getoptionalattrstring
+
+        self.assertIs(getoptionalattrstring(b'stdout'), sys.stdout)
+        with support.swap_attr(sys, '\U0001f40d', 42):
+            self.assertEqual(getoptionalattrstring('\U0001f40d'.encode()), 42)
+
+        self.assertIs(getoptionalattrstring(b'nonexisting'), AttributeError)
+        self.assertRaises(UnicodeDecodeError, getoptionalattrstring, b'\xff')
+        # CRASHES getoptionalattrstring(NULL)
+
     @support.cpython_only
     @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_sys_getobject(self):
