@@ -307,8 +307,8 @@ Other language changes
   The testbed can also be used to run the test suite of projects other than
   CPython itself. (Contributed by Russell Keith-Magee in :gh:`127592`.)
 
-* Ternary :func:`pow` now try calling :meth:`~object.__rpow__` if necessary.
-  Previously it was only called in binary :func:`!pow` and the binary
+* Three-argument :func:`pow` now try calling :meth:`~object.__rpow__` if necessary.
+  Previously it was only called in two-argument :func:`!pow` and the binary
   power operator.
   (Contributed by Serhiy Storchaka in :gh:`130104`.)
 

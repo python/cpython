@@ -3319,7 +3319,7 @@ left undefined.
    :meth:`__divmod__` method should be the equivalent to using
    :meth:`__floordiv__` and :meth:`__mod__`; it should not be related to
    :meth:`__truediv__`.  Note that :meth:`__pow__` should be defined to accept
-   an optional third argument if the ternary version of the built-in :func:`pow`
+   an optional third argument if the three-argument version of the built-in :func:`pow`
    function is to be supported.
 
    If one of those methods does not support the operation with the supplied
@@ -3357,13 +3357,13 @@ left undefined.
    is a subclass of ``type(x)``. [#]_
 
    Note that :meth:`__rpow__` should be defined to accept an optional third
-   argument if the ternary version of the built-in :func:`pow` function
+   argument if the three-argument version of the built-in :func:`pow` function
    is to be supported.
 
    .. versionchanged:: next
 
-      Ternary :func:`pow` now try calling :meth:`~object.__rpow__` if necessary.
-      Previously it was only called in binary :func:`!pow` and the binary
+      Three-argument :func:`pow` now try calling :meth:`~object.__rpow__` if necessary.
+      Previously it was only called in two-argument :func:`!pow` and the binary
       power operator.
 
    .. note::
