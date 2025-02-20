@@ -375,7 +375,7 @@ PyStackRef_AsStrongReference(_PyStackRef stackref)
 // With GIL
 
 #define Py_TAG_BITS 3
-#define Py_TAG_IMMORTAL 3
+#define Py_TAG_IMMORTAL _Py_IMMORTAL_FLAGS
 #define Py_TAG_REFCNT 1
 #define BITS_TO_PTR(REF) ((PyObject *)((REF).bits))
 #define BITS_TO_PTR_MASKED(REF) ((PyObject *)(((REF).bits) & (~Py_TAG_BITS)))
@@ -460,7 +460,12 @@ static inline _PyStackRef
 PyStackRef_FromPyObjectSteal(PyObject *obj)
 {
     assert(obj != NULL);
+    unsigned int tag;
+#if SIZEOF_VOID_P > 4
+    tag = obj->ob_flags & Py_TAG_BITS;
+#else
     unsigned int tag = _Py_IsImmortal(obj) ? Py_TAG_IMMORTAL : 0;
+#endif
     _PyStackRef ref = ((_PyStackRef){.bits = ((uintptr_t)(obj)) | tag});
     PyStackRef_CheckValid(ref);
     return ref;

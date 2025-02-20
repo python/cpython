@@ -20,7 +20,8 @@ cleanup during runtime finalization.
 */
 
 /* Leave the low bits for refcount overflow for old stable ABI code */
-#define _Py_STATICALLY_ALLOCATED_FLAG (1 << 7)
+#define _Py_STATICALLY_ALLOCATED_FLAG 4
+#define _Py_IMMORTAL_FLAGS 3
 
 #if SIZEOF_VOID_P > 4
 /*
@@ -43,7 +44,8 @@ be done by checking the bit sign flag in the lower 32 bits.
 
 */
 #define _Py_IMMORTAL_INITIAL_REFCNT (3UL << 30)
-#define _Py_STATIC_IMMORTAL_INITIAL_REFCNT ((Py_ssize_t)(_Py_IMMORTAL_INITIAL_REFCNT | (((Py_ssize_t)_Py_STATICALLY_ALLOCATED_FLAG) << 32)))
+#define _Py_STATIC_FLAG_BITS ((Py_ssize_t)(_Py_STATICALLY_ALLOCATED_FLAG | _Py_IMMORTAL_FLAGS))
+#define _Py_STATIC_IMMORTAL_INITIAL_REFCNT (((Py_ssize_t)_Py_IMMORTAL_INITIAL_REFCNT) | (_Py_STATIC_FLAG_BITS << 48))
 
 #else
 /*
@@ -113,7 +115,6 @@ PyAPI_FUNC(Py_ssize_t) Py_REFCNT(PyObject *ob);
     #  define Py_REFCNT(ob) _Py_REFCNT(_PyObject_CAST(ob))
     #endif
 #endif
-
 
 static inline Py_ALWAYS_INLINE int _Py_IsImmortal(PyObject *op)
 {
