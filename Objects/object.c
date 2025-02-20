@@ -119,11 +119,11 @@ get_reftotal(PyInterpreterState *interp)
        since we can't determine which interpreter updated it. */
     Py_ssize_t total = REFTOTAL(interp);
 #ifdef Py_GIL_DISABLED
-    _Py_FOR_EACH_TSTATE_UNLOCKED(interp, p) {
-        /* This may race with other threads modifications to their reftotal */
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
         _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)p;
         total += _Py_atomic_load_ssize_relaxed(&tstate_impl->reftotal);
     }
+    _Py_FOR_EACH_TSTATE_END(interp);
 #endif
     return total;
 }
@@ -317,10 +317,7 @@ _Py_GetLegacyRefTotal(void)
 Py_ssize_t
 _PyInterpreterState_GetRefTotal(PyInterpreterState *interp)
 {
-    HEAD_LOCK(&_PyRuntime);
-    Py_ssize_t total = get_reftotal(interp);
-    HEAD_UNLOCK(&_PyRuntime);
-    return total;
+    return get_reftotal(interp);
 }
 
 #endif /* Py_REF_DEBUG */
