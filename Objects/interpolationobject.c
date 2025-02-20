@@ -250,3 +250,9 @@ _PyInterpolation_FromStackRefSteal(_PyStackRef *values)
     Py_DECREF(args);
     return interpolation;
 }
+
+PyObject *
+_PyInterpolation_GetValue(PyObject *interpolation)
+{
+    return ((interpolationobject *) interpolation)->value;
+}

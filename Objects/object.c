@@ -2398,6 +2398,7 @@ static PyTypeObject* static_types[] = {
     &_PyNoDefault_Type,
     &_PyInterpolation_Type,
     &_PyTemplate_Type,
+    &_PyTemplateIter_Type,
 
     // subclasses: _PyTypes_FiniTypes() deallocates them before their base
     // class

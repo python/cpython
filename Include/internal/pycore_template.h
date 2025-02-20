@@ -12,6 +12,7 @@ extern "C" {
 #include "pycore_stackref.h"    // _PyStackRef
 
 extern PyTypeObject _PyTemplate_Type;
+extern PyTypeObject _PyTemplateIter_Type;
 
 PyAPI_FUNC(PyObject *) _PyTemplate_FromValues(PyObject **values, Py_ssize_t n);
 PyAPI_FUNC(PyObject *) _PyTemplate_FromListStackRef(_PyStackRef ref);
