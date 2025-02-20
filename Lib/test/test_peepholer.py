@@ -1650,18 +1650,20 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         # test folding
         before = [
             ('LOAD_SMALL_INT', 1, 0),
+            ('TO_BOOL', None, 0),
             ('UNARY_NOT', None, 0),
             ('RETURN_VALUE', None, 0),
         ]
         after = [
-            ('LOAD_CONST', 0, 0),
+            ('LOAD_CONST', 1, 0),
             ('RETURN_VALUE', None, 0),
         ]
-        self.cfg_optimization_test(before, after, consts=[], expected_consts=[False])
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[True, False])
 
         # test cancel out
         before = [
-            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 0, 0),
+            ('TO_BOOL', None, 0),
             ('UNARY_NOT', None, 0),
             ('UNARY_NOT', None, 0),
             ('UNARY_NOT', None, 0),
@@ -1669,7 +1671,8 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('RETURN_VALUE', None, 0),
         ]
         after = [
-            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 0, 0),
+            ('TO_BOOL', None, 0),
             ('RETURN_VALUE', None, 0),
         ]
         self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
@@ -1677,6 +1680,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         # test eliminate to bool
         before = [
             ('LOAD_NAME', 0, 0),
+            ('TO_BOOL', None, 0),
             ('UNARY_NOT', None, 0),
             ('TO_BOOL', None, 0),
             ('TO_BOOL', None, 0),
@@ -1685,29 +1689,48 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         after = [
             ('LOAD_NAME', 0, 0),
+            ('TO_BOOL', None, 0),
             ('UNARY_NOT', None, 0),
             ('RETURN_VALUE', None, 0),
         ]
         self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
 
-        # test folding & eliminate to bool
+        # test folding & cancel out
         before = [
             ('LOAD_SMALL_INT', 1, 0),
+            ('TO_BOOL', None, 0),
             ('UNARY_NOT', None, 0),
-            ('TO_BOOL', None, 0),
-            ('TO_BOOL', None, 0),
-            ('TO_BOOL', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
             ('RETURN_VALUE', None, 0),
         ]
         after = [
             ('LOAD_CONST', 0, 0),
             ('RETURN_VALUE', None, 0),
         ]
-        self.cfg_optimization_test(before, after, consts=[], expected_consts=[False])
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[True])
 
-        # test cancel out & eliminate to bool (to bool stays)
+        # test folding & eliminate to bool
         before = [
             ('LOAD_SMALL_INT', 1, 0),
+            ('TO_BOOL', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_CONST', 1, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[True, False])
+
+        # test cancel out & eliminate to bool (to bool stays as we are not iterating to a fixed point)
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('TO_BOOL', None, 0),
             ('UNARY_NOT', None, 0),
             ('UNARY_NOT', None, 0),
             ('UNARY_NOT', None, 0),
@@ -1716,7 +1739,8 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('RETURN_VALUE', None, 0),
         ]
         after = [
-            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 0, 0),
+            ('TO_BOOL', None, 0),
             ('TO_BOOL', None, 0),
             ('RETURN_VALUE', None, 0),
         ]
