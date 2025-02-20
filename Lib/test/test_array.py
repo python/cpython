@@ -3,16 +3,21 @@
 """
 
 import collections.abc
+import io
 import unittest
 from test import support
 from test.support import import_helper
 from test.support import os_helper
+from test.support import threading_helper
 from test.support import _2G
 import weakref
 import pickle
 import operator
+import random
 import struct
 import sys
+import sysconfig
+import threading
 import warnings
 
 import array
@@ -1671,6 +1676,267 @@ class LargeArrayTest(unittest.TestCase):
         list(it)
         it.__setstate__(0)
         self.assertRaises(StopIteration, next, it)
+
+
+class FreeThreadingTest(unittest.TestCase):
+    # Test pretty much everything that can break under free-threading.
+    # Non-deterministic, but at least one of these things will fail if
+    # array module is not free-thread safe.
+
+    @unittest.skipUnless(support.Py_GIL_DISABLED, 'this test can only possibly fail with GIL disabled')
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_free_threading(self):
+        def pop1(b, a):  # MODIFIES!
+            b.wait()
+            try: a.pop()
+            except IndexError: pass
+
+        def append1(b, a):  # MODIFIES!
+            b.wait()
+            a.append(2)
+
+        def insert1(b, a):  # MODIFIES!
+            b.wait()
+            a.insert(0, 2)
+
+        def extend(b, a):  # MODIFIES!
+            c = array.array('i', [2])
+            b.wait()
+            a.extend(c)
+
+        def extend2(b, a, c):  # MODIFIES!
+            b.wait()
+            a.extend(c)
+
+        def inplace_concat(b, a):  # MODIFIES!
+            c = array.array('i', [2])
+            b.wait()
+            a += c
+
+        def inplace_concat2(b, a, c):  # MODIFIES!
+            b.wait()
+            a += c
+
+        def inplace_repeat2(b, a):  # MODIFIES!
+            b.wait()
+            a *= 2
+
+        def clear(b, a, *args):  # MODIFIES!
+            b.wait()
+            a.clear()
+
+        def clear2(b, a, c):  # MODIFIES c!
+            b.wait()
+            try: c.clear()
+            except BufferError: pass
+
+        def remove1(b, a):  # MODIFIES!
+            b.wait()
+            try: a.remove(1)
+            except ValueError: pass
+
+        def fromunicode(b, a):  # MODIFIES!
+            b.wait()
+            a.fromunicode('test')
+
+        def frombytes(b, a):  # MODIFIES!
+            b.wait()
+            a.frombytes(b'0000')
+
+        def frombytes2(b, a, c):  # MODIFIES!
+            b.wait()
+            a.frombytes(c)
+
+        def fromlist(b, a):  # MODIFIES!
+            n = random.randint(0, 100)
+            b.wait()
+            a.fromlist([2] * n)
+
+        def ass_subscr2(b, a, c):  # MODIFIES!
+            b.wait()
+            a[:] = c
+
+        def ass0(b, a):  # modifies inplace
+            b.wait()
+            try: a[0] = 0
+            except IndexError: pass
+
+        def byteswap(b, a):  # modifies inplace
+            b.wait()
+            a.byteswap()
+
+        def tounicode(b, a):
+            b.wait()
+            a.tounicode()
+
+        def tobytes(b, a):
+            b.wait()
+            a.tobytes()
+
+        def tolist(b, a):
+            b.wait()
+            a.tolist()
+
+        def tofile(b, a):
+            f = io.BytesIO()
+            b.wait()
+            a.tofile(f)
+
+        def reduce_ex2(b, a):
+            b.wait()
+            a.__reduce_ex__(2)
+
+        def reduce_ex3(b, a):
+            b.wait()
+            c = a.__reduce_ex__(3)
+            assert not c[1] or 0xdd not in c[1][3]
+
+        def copy(b, a):
+            b.wait()
+            c = a.__copy__()
+            assert not c or 0xdd not in c
+
+        def repr1(b, a):
+            b.wait()
+            repr(a)
+
+        def repeat2(b, a):
+            b.wait()
+            a * 2
+
+        def count1(b, a):
+            b.wait()
+            a.count(1)
+
+        def index1(b, a):
+            b.wait()
+            try: a.index(1)
+            except ValueError: pass
+
+        def contains1(b, a):
+            b.wait()
+            try: 1 in a
+            except ValueError: pass
+
+        def subscr0(b, a):
+            b.wait()
+            try: a[0]
+            except IndexError: pass
+
+        def concat(b, a):
+            b.wait()
+            a + a
+
+        def concat2(b, a, c):
+            b.wait()
+            a + c
+
+        def richcmplhs(b, a):
+            c = a[:]
+            b.wait()
+            a == c
+
+        def richcmprhs(b, a):
+            c = a[:]
+            b.wait()
+            c == a
+
+        def new(b, a):
+            tc = a.typecode
+            b.wait()
+            array.array(tc, a)
+
+        def repr_(b, a):
+            b.wait()
+            repr(a)
+
+        def irepeat(b, a):  # MODIFIES!
+            b.wait()
+            a *= 2
+
+        def newi(b, l):
+            b.wait()
+            array.array('i', l)
+
+        def fromlistl(b, a, l):  # MODIFIES!
+            b.wait()
+            a.fromlist(l)
+
+        def fromlistlclear(b, a, l):  # MODIFIES LIST!
+            b.wait()
+            l.clear()
+
+        def iter_next(b, a, it):  # MODIFIES ITERATOR!
+            b.wait()
+            list(it)
+
+        def iter_reduce(b, a, it):
+            b.wait()
+            c = it.__reduce__()
+            assert not c[1] or 0xdd not in c[1][0]
+
+        def check(funcs, a=None, *args):
+            if a is None:
+                a = array.array('i', [1])
+
+            barrier = threading.Barrier(len(funcs))
+            threads = []
+
+            for func in funcs:
+                thread = threading.Thread(target=func, args=(barrier, a, *args))
+
+                threads.append(thread)
+
+            with threading_helper.start_threads(threads):
+                pass
+
+        check([pop1] * 10)
+        check([pop1] + [subscr0] * 10)
+        check([append1] * 10)
+        check([insert1] * 10)
+        check([pop1] + [index1] * 10)
+        check([pop1] + [contains1] * 10)
+        check([insert1] + [repeat2] * 10)
+        check([pop1] + [repr1] * 10)
+        check([inplace_repeat2] * 10)
+        check([byteswap] * 10)
+        check([insert1] + [clear] * 10)
+        check([pop1] + [count1] * 10)
+        check([remove1] * 10)
+        check([clear] + [copy] * 10, array.array('B', b'0' * 0x400000))
+        check([pop1] + [reduce_ex2] * 10)
+        check([clear] + [reduce_ex3] * 10, array.array('B', b'0' * 0x400000))
+        check([pop1] + [tobytes] * 10)
+        check([pop1] + [tolist] * 10)
+        check([clear, tounicode] * 10, array.array('w', 'a'*10000))
+        check([clear, tofile] * 10, array.array('w', 'a'*10000))
+        check([clear] + [extend] * 10)
+        check([clear] + [inplace_concat] * 10)
+        check([clear] + [concat] * 10, array.array('w', 'a'*10000))
+        check([fromunicode] * 10, array.array('w', 'a'))
+        check([frombytes] * 10)
+        check([fromlist] * 10)
+        check([clear] + [richcmplhs] * 10, array.array('i', [1]*10000))
+        check([clear] + [richcmprhs] * 10, array.array('i', [1]*10000))
+        check([clear, ass0] * 10, array.array('i', [1]*10000))  # to test array_ass_item must disable Py_mp_ass_subscript
+        check([clear] + [new] * 10, array.array('w', 'a'*10000))
+        check([clear] + [repr_] * 10, array.array('B', b'0' * 0x40000))
+        check([clear] + [repr_] * 10, array.array('B', b'0' * 0x40000))
+        check([clear] + [irepeat] * 10, array.array('B', b'0' * 0x40000))
+        check([clear] + [iter_reduce] * 10, a := array.array('B', b'0' * 0x400), iter(a))
+
+        # make sure we handle non-self objects correctly
+        check([clear] + [newi] * 10, [2] * random.randint(0, 100))
+        check([fromlistlclear] + [fromlistl] * 10, array.array('i', [1]), [2] * random.randint(0, 100))
+        check([clear2] + [concat2] * 10, array.array('w', 'a'*10000), array.array('w', 'a'*10000))
+        check([clear2] + [inplace_concat2] * 10, array.array('w', 'a'*10000), array.array('w', 'a'*10000))
+        check([clear2] + [extend2] * 10, array.array('w', 'a'*10000), array.array('w', 'a'*10000))
+        check([clear2] + [ass_subscr2] * 10, array.array('w', 'a'*10000), array.array('w', 'a'*10000))
+        check([clear2] + [frombytes2] * 10, array.array('w', 'a'*10000), array.array('B', b'a'*10000))
+
+        # iterator stuff
+        check([clear] + [iter_next] * 10, a := array.array('i', [1] * 10), iter(a))
 
 
 if __name__ == "__main__":
