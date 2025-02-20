@@ -1,0 +1,2 @@
+Don't redefine ``_Py_NO_SANITIZE_UNDEFINED`` when compiling with a recent
+GCC version and undefined sanitizer enabled.
