@@ -838,14 +838,14 @@ configured ports clash with something else in your test environment.
 The default configuration uses a TCP socket on port 9020. You can use a Unix
 Domain socket instead of a TCP socket by doing the following:
 
-#. In `listener.json`, add a `socket` key with the path to the domain socket
-   you want to use. If this key is present, the listener listens on the
-   corresponding domain socket and not on a TCP socket (the `port` key is
+#. In :file:`listener.json`, add a ``socket`` key with the path to the domain
+   socket you want to use. If this key is present, the listener listens on the
+   corresponding domain socket and not on a TCP socket (the ``port`` key is
    ignored).
 
-#. In `webapp.json`, change the socket handler configuration dictionary so that
-   the `host` value is the path to the domain socket, and set the `port` value
-   to `null`.
+#. In :file:`webapp.json`, change the socket handler configuration dictionary
+   so that the ``host`` value is the path to the domain socket, and set the
+   ``port`` value to `null`.
 
 
 .. currentmodule:: logging
