@@ -1314,7 +1314,7 @@ Build changes
   It is still technically possible to build CPython without it for special needs, like bootstrapping.
   Such builds are not supported, but we can accept pull requests to keep them working.
   As an exception, zlib is not required on WASI.
-  (Contributed by Stan Ulbrych in :gh:`130297`.)
+  (Contributed by Stan Ulbrych and Gregory P. Smith in :gh:`91246`.)
 
 .. _whatsnew314-pep761:
 

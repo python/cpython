@@ -5350,9 +5350,12 @@ AS_CASE([$ac_sys_system],
   ],
   [*], [
     if test "$have_zlib" != "yes"; then
-      AC_MSG_ERROR([m4_normalize([
-        zlib.h and libz are required. Install your OS's zlib-devel or
-        zlib1g-dev equivalent library or get it from https://zlib.net/.
+      AC_MSG_WARN([m4_normalize([
+        zlib (zlib.h and libz) was not found. Building CPython
+        without zlib is not supported, although it might work
+        for limited use cases.
+        Install your OS's zlib-devel or zlib1g-dev equivalent
+        library or get it from https://zlib.net/.
       ])])
     fi
     BINASCII_CFLAGS="$ZLIB_CFLAGS"
