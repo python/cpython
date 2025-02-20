@@ -175,6 +175,31 @@ Improved error messages
      ValueError: too many values to unpack (expected 3, got 4)
 
 
+* If a statement (:keyword:`pass`, :keyword:`del`, :keyword:`return`,
+  :keyword:`yield`, :keyword:`raise`, :keyword:`break`, :keyword:`continue`,
+  :keyword:`assert`, :keyword:`import`, :keyword:`from`) is passed to the
+  :ref:`if_expr` after :keyword:`else`, or one of :keyword:`pass`,
+  :keyword:`break`, or :keyword:`continue` is passed before :keyword:`if`, then the
+  error message highlights where the :token:`~python-grammar:expression` is
+  required. (Contributed by Sergey Miryanov in :gh:`129515`.)
+
+  .. code-block:: pycon
+
+     >>> x = 1 if True else pass
+     Traceback (most recent call last):
+       File "<string>", line 1
+         x = 1 if True else pass
+                            ^^^^
+     SyntaxError: expected expression after 'else', but statement is given
+
+     >>> x = continue if True else break
+     Traceback (most recent call last):
+       File "<string>", line 1
+         x = continue if True else break
+             ^^^^^^^^
+     SyntaxError: expected expression before 'if', but statement is given
+
+
 * When incorrectly closed strings are detected, the error message suggests
   that the string may be intended to be part of the string. (Contributed by
   Pablo Galindo in :gh:`88535`.)
@@ -1432,6 +1457,10 @@ New features
   :c:func:`PyImport_ImportModuleAttrString` helper functions to import a module
   and get an attribute of the module.
   (Contributed by Victor Stinner in :gh:`128911`.)
+
+* Add support for a new ``p`` format unit in :c:func:`Py_BuildValue` that allows to
+  take a C integer and produce a Python :class:`bool` object. (Contributed by
+  Pablo Galindo in :issue:`45325`.)
 
 
 Limited C API changes
