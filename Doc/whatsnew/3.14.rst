@@ -175,6 +175,31 @@ Improved error messages
      ValueError: too many values to unpack (expected 3, got 4)
 
 
+* If a statement (:keyword:`pass`, :keyword:`del`, :keyword:`return`,
+  :keyword:`yield`, :keyword:`raise`, :keyword:`break`, :keyword:`continue`,
+  :keyword:`assert`, :keyword:`import`, :keyword:`from`) is passed to the
+  :ref:`if_expr` after :keyword:`else`, or one of :keyword:`pass`,
+  :keyword:`break`, or :keyword:`continue` is passed before :keyword:`if`, then the
+  error message highlights where the :token:`~python-grammar:expression` is
+  required. (Contributed by Sergey Miryanov in :gh:`129515`.)
+
+  .. code-block:: pycon
+
+     >>> x = 1 if True else pass
+     Traceback (most recent call last):
+       File "<string>", line 1
+         x = 1 if True else pass
+                            ^^^^
+     SyntaxError: expected expression after 'else', but statement is given
+
+     >>> x = continue if True else break
+     Traceback (most recent call last):
+       File "<string>", line 1
+         x = continue if True else break
+             ^^^^^^^^
+     SyntaxError: expected expression before 'if', but statement is given
+
+
 * When incorrectly closed strings are detected, the error message suggests
   that the string may be intended to be part of the string. (Contributed by
   Pablo Galindo in :gh:`88535`.)
@@ -224,7 +249,9 @@ configuration mechanisms).
 A new type of interpreter
 -------------------------
 
-A new type of interpreter based on tail calls has been added to CPython.
+A new type of interpreter has been added to CPython.
+It uses tail calls between small C functions that implement individual
+Python opcodes, rather than one large C case statement.
 For certain newer compilers, this interpreter provides
 significantly better performance. Preliminary numbers on our machines suggest
 anywhere from -3% to 30% faster Python code, and a geometric mean of 9-15%
@@ -343,6 +370,10 @@ ast
 
 * The ``repr()`` output for AST nodes now includes more information.
   (Contributed by Tomas R in :gh:`116022`.)
+
+* :func:`ast.parse`, when called with an AST as input, now always verifies
+  that the root node type is appropriate.
+  (Contributed by Irit Katriel in :gh:`130139`.)
 
 
 calendar
@@ -1427,6 +1458,10 @@ New features
   and get an attribute of the module.
   (Contributed by Victor Stinner in :gh:`128911`.)
 
+* Add support for a new ``p`` format unit in :c:func:`Py_BuildValue` that allows to
+  take a C integer and produce a Python :class:`bool` object. (Contributed by
+  Pablo Galindo in :issue:`45325`.)
+
 
 Limited C API changes
 ---------------------
@@ -1462,21 +1497,23 @@ Porting to Python 3.14
 
 * Private functions promoted to public C APIs:
 
-  * ``_PyBytes_Join()``: :c:func:`PyBytes_Join`;
-  * ``_PyLong_IsNegative()``: :c:func:`PyLong_IsNegative`;
-  * ``_PyLong_IsPositive()``: :c:func:`PyLong_IsPositive`;
-  * ``_PyLong_IsZero()``: :c:func:`PyLong_IsZero`;
-  * ``_PyLong_Sign()``: :c:func:`PyLong_GetSign`;
-  * ``_PyUnicodeWriter_Dealloc()``: :c:func:`PyUnicodeWriter_Discard`;
-  * ``_PyUnicodeWriter_Finish()``: :c:func:`PyUnicodeWriter_Finish`;
-  * ``_PyUnicodeWriter_Init()``: :c:func:`PyUnicodeWriter_Create`;
-  * ``_PyUnicodeWriter_WriteChar()``: :c:func:`PyUnicodeWriter_WriteChar`;
-  * ``_PyUnicodeWriter_WriteStr()``: :c:func:`PyUnicodeWriter_WriteStr`;
-  * ``_PyUnicodeWriter_WriteSubstring()``: :c:func:`PyUnicodeWriter_WriteSubstring`;
-  * ``_PyUnicode_EQ()``: :c:func:`PyUnicode_Equal`;
-  * ``_PyUnicode_Equal()``: :c:func:`PyUnicode_Equal`;
-  * ``_Py_GetConfig()``: :c:func:`PyConfig_Get` and :c:func:`PyConfig_GetInt`;
-  * ``_Py_HashBytes()``: :c:func:`Py_HashBuffer`;
+  * ``_PyBytes_Join()``: :c:func:`PyBytes_Join`.
+  * ``_PyLong_IsNegative()``: :c:func:`PyLong_IsNegative`.
+  * ``_PyLong_IsPositive()``: :c:func:`PyLong_IsPositive`.
+  * ``_PyLong_IsZero()``: :c:func:`PyLong_IsZero`.
+  * ``_PyLong_Sign()``: :c:func:`PyLong_GetSign`.
+  * ``_PyUnicodeWriter_Dealloc()``: :c:func:`PyUnicodeWriter_Discard`.
+  * ``_PyUnicodeWriter_Finish()``: :c:func:`PyUnicodeWriter_Finish`.
+  * ``_PyUnicodeWriter_Init()``: use :c:func:`PyUnicodeWriter_Create`.
+  * ``_PyUnicodeWriter_Prepare()``: (no replacement).
+  * ``_PyUnicodeWriter_PrepareKind()``: (no replacement).
+  * ``_PyUnicodeWriter_WriteChar()``: :c:func:`PyUnicodeWriter_WriteChar`.
+  * ``_PyUnicodeWriter_WriteStr()``: :c:func:`PyUnicodeWriter_WriteStr`.
+  * ``_PyUnicodeWriter_WriteSubstring()``: :c:func:`PyUnicodeWriter_WriteSubstring`.
+  * ``_PyUnicode_EQ()``: :c:func:`PyUnicode_Equal`.
+  * ``_PyUnicode_Equal()``: :c:func:`PyUnicode_Equal`.
+  * ``_Py_GetConfig()``: :c:func:`PyConfig_Get` and :c:func:`PyConfig_GetInt`.
+  * ``_Py_HashBytes()``: :c:func:`Py_HashBuffer`.
   * ``_Py_fopen_obj()``: :c:func:`Py_fopen`.
 
   The `pythoncapi-compat project`_ can be used to get most of these new
@@ -1521,6 +1558,30 @@ Deprecated
     use :c:func:`PyLongWriter_Create`.
   * :c:func:`!_PyThreadState_UncheckedGet`: use :c:func:`PyThreadState_GetUnchecked`.
   * :c:func:`!_PyUnicode_AsString`: use :c:func:`PyUnicode_AsUTF8`.
+  * :c:func:`!_PyUnicodeWriter_Init`:
+    replace ``_PyUnicodeWriter_Init(&writer)`` with
+    :c:func:`writer = PyUnicodeWriter_Create(0) <PyUnicodeWriter_Create>`.
+  * :c:func:`!_PyUnicodeWriter_Finish`:
+    replace ``_PyUnicodeWriter_Finish(&writer)`` with
+    :c:func:`PyUnicodeWriter_Finish(writer) <PyUnicodeWriter_Finish>`.
+  * :c:func:`!_PyUnicodeWriter_Dealloc`:
+    replace ``_PyUnicodeWriter_Dealloc(&writer)`` with
+    :c:func:`PyUnicodeWriter_Discard(writer) <PyUnicodeWriter_Discard>`.
+  * :c:func:`!_PyUnicodeWriter_WriteChar`:
+    replace ``_PyUnicodeWriter_WriteChar(&writer, ch)`` with
+    :c:func:`PyUnicodeWriter_WriteChar(writer, ch) <PyUnicodeWriter_WriteChar>`.
+  * :c:func:`!_PyUnicodeWriter_WriteStr`:
+    replace ``_PyUnicodeWriter_WriteStr(&writer, str)`` with
+    :c:func:`PyUnicodeWriter_WriteStr(writer, str) <PyUnicodeWriter_WriteStr>`.
+  * :c:func:`!_PyUnicodeWriter_WriteSubstring`:
+    replace ``_PyUnicodeWriter_WriteSubstring(&writer, str, start, end)`` with
+    :c:func:`PyUnicodeWriter_WriteSubstring(writer, str, start, end) <PyUnicodeWriter_WriteSubstring>`.
+  * :c:func:`!_PyUnicodeWriter_WriteASCIIString`:
+    replace ``_PyUnicodeWriter_WriteASCIIString(&writer, str)`` with
+    :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.
+  * :c:func:`!_PyUnicodeWriter_WriteLatin1String`:
+    replace ``_PyUnicodeWriter_WriteLatin1String(&writer, str)`` with
+    :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.
   * :c:func:`!_Py_HashPointer`: use :c:func:`Py_HashPointer`.
   * :c:func:`!_Py_fopen_obj`: use :c:func:`Py_fopen`.
 

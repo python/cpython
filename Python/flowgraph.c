@@ -126,6 +126,12 @@ is_jump(cfg_instr *i)
         _instr__ptr_->i_oparg = 0; \
     } while (0);
 
+#define INSTR_SET_LOC(I, LOC) \
+    do { \
+        cfg_instr *_instr__ptr_ = (I); \
+        _instr__ptr_->i_loc = (LOC); \
+    } while (0);
+
 /***** Blocks *****/
 
 /* Returns the offset of the next instruction in the current block's
@@ -1382,7 +1388,7 @@ get_constant_sequence(basicblock *bb, int start, int size,
 
 /*
   Walk basic block backwards starting from "start" and change "count" number of
-  non-NOP instructions to NOP's.
+  non-NOP instructions to NOP's and set their location to NO_LOCATION.
 */
 static void
 nop_out(basicblock *bb, int start, int count)
@@ -1390,10 +1396,12 @@ nop_out(basicblock *bb, int start, int count)
     assert(start < bb->b_iused);
     for (; count > 0; start--) {
         assert(start >= 0);
-        if (bb->b_instr[start].i_opcode == NOP) {
+        cfg_instr *instr = &bb->b_instr[start];
+        if (instr->i_opcode == NOP) {
             continue;
         }
-        INSTR_SET_OP0(&bb->b_instr[start], NOP);
+        INSTR_SET_OP0(instr, NOP);
+        INSTR_SET_LOC(instr, NO_LOCATION);
         count--;
     }
 }
@@ -1423,7 +1431,7 @@ fold_tuple_of_constants(basicblock *bb, int n, PyObject *consts, PyObject *const
     int index = add_const(newconst, consts, const_cache);
     RETURN_IF_ERROR(index);
     nop_out(bb, n-1, seq_size);
-    INSTR_SET_OP1(&bb->b_instr[n], LOAD_CONST, index);
+    INSTR_SET_OP1(instr, LOAD_CONST, index);
     return SUCCESS;
 }
 
@@ -1479,38 +1487,14 @@ optimize_lists_and_sets(basicblock *bb, int i, int nextop,
     else {
         assert(i >= 2);
         assert(instr->i_opcode == BUILD_LIST || instr->i_opcode == BUILD_SET);
+
+        INSTR_SET_LOC(&bb->b_instr[i-2], instr->i_loc);
+
         INSTR_SET_OP1(&bb->b_instr[i-2], instr->i_opcode, 0);
         INSTR_SET_OP1(&bb->b_instr[i-1], LOAD_CONST, index);
         INSTR_SET_OP1(&bb->b_instr[i], instr->i_opcode == BUILD_LIST ? LIST_EXTEND : SET_UPDATE, 1);
     }
     return SUCCESS;
-}
-
-/*
-  Walk basic block backwards starting from "start" to collect instruction pair
-  that loads consts skipping NOP's in between.
-*/
-static bool
-find_load_const_pair(basicblock *bb, int start, cfg_instr **first, cfg_instr **second)
-{
-    cfg_instr *second_load_const = NULL;
-    while (start >= 0) {
-        cfg_instr *inst = &bb->b_instr[start--];
-        if (inst->i_opcode == NOP) {
-            continue;
-        }
-        if (!loads_const(inst->i_opcode)) {
-            return false;
-        }
-        if (second_load_const == NULL) {
-            second_load_const = inst;
-            continue;
-        }
-        *first = inst;
-        *second = second_load_const;
-        return true;
-    }
-    return false;
 }
 
 /* Determine opcode & oparg for freshly folded constant. */
@@ -1534,27 +1518,25 @@ newop_from_folded(PyObject *newconst, PyObject *consts,
 }
 
 static int
-optimize_if_const_op(basicblock *bb, int n, PyObject *consts, PyObject *const_cache)
+optimize_if_const_binop(basicblock *bb, int i, PyObject *consts, PyObject *const_cache)
 {
-    cfg_instr *subscr = &bb->b_instr[n];
-    assert(subscr->i_opcode == BINARY_OP);
-    if (subscr->i_oparg != NB_SUBSCR) {
+    cfg_instr *binop = &bb->b_instr[i];
+    assert(binop->i_opcode == BINARY_OP);
+    if (binop->i_oparg != NB_SUBSCR) {
         /* TODO: support other binary ops */
         return SUCCESS;
     }
-    cfg_instr *arg, *idx;
-    if (!find_load_const_pair(bb, n-1, &arg, &idx)) {
+    PyObject *pair;
+    RETURN_IF_ERROR(get_constant_sequence(bb, i-1, 2, consts, &pair));
+    if (pair == NULL) {
         return SUCCESS;
     }
-    PyObject *o = NULL, *key = NULL;
-    if ((o = get_const_value(arg->i_opcode, arg->i_oparg, consts)) == NULL
-        || (key = get_const_value(idx->i_opcode, idx->i_oparg, consts)) == NULL)
-    {
-        goto error;
-    }
-    PyObject *newconst = PyObject_GetItem(o, key);
-    Py_DECREF(o);
-    Py_DECREF(key);
+    assert(PyTuple_CheckExact(pair) && PyTuple_Size(pair) == 2);
+    PyObject *left = PyTuple_GET_ITEM(pair, 0);
+    PyObject *right = PyTuple_GET_ITEM(pair, 1);
+    assert(left != NULL && right != NULL);
+    PyObject *newconst = PyObject_GetItem(left, right);
+    Py_DECREF(pair);
     if (newconst == NULL) {
         if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
             return ERROR;
@@ -1564,14 +1546,9 @@ optimize_if_const_op(basicblock *bb, int n, PyObject *consts, PyObject *const_ca
     }
     int newopcode, newoparg;
     RETURN_IF_ERROR(newop_from_folded(newconst, consts, const_cache, &newopcode, &newoparg));
-    INSTR_SET_OP1(subscr, newopcode, newoparg);
-    INSTR_SET_OP0(arg, NOP);
-    INSTR_SET_OP0(idx, NOP);
+    nop_out(bb, i-1, 2);
+    INSTR_SET_OP1(binop, newopcode, newoparg);
     return SUCCESS;
-error:
-    Py_XDECREF(o);
-    Py_XDECREF(key);
-    return ERROR;
 }
 
 #define VISITED (-1)
@@ -2072,7 +2049,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 }
                 break;
             case BINARY_OP:
-                RETURN_IF_ERROR(optimize_if_const_op(bb, i, consts, const_cache));
+                RETURN_IF_ERROR(optimize_if_const_binop(bb, i, consts, const_cache));
                 break;
         }
     }
