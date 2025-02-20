@@ -9,7 +9,8 @@ import os
 import _opcode
 
 from test.support import (script_helper, requires_specialization,
-                          import_helper, Py_GIL_DISABLED, requires_jit_enabled)
+                          import_helper, Py_GIL_DISABLED, requires_jit_enabled,
+                          reset_code)
 
 _testinternalcapi = import_helper.import_module("_testinternalcapi")
 
@@ -19,11 +20,11 @@ from _testinternalcapi import TIER2_THRESHOLD
 @contextlib.contextmanager
 def clear_executors(func):
     # Clear executors in func before and after running a block
-    func.__code__ = func.__code__.replace()
+    reset_code(func)
     try:
         yield
     finally:
-        func.__code__ = func.__code__.replace()
+        reset_code(func)
 
 
 def get_first_executor(func):
@@ -1159,6 +1160,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         self.assertIn("_RETURN_GENERATOR", get_opnames(ex))
 
+    @unittest.skip("Tracing into generators currently isn't supported.")
     def test_for_iter_gen(self):
         def gen(n):
             for i in range(n):

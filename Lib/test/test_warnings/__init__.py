@@ -1432,6 +1432,17 @@ class PyEnvironmentVariableTests(EnvironmentVariableTests, unittest.TestCase):
     module = py_warnings
 
 
+class LocksTest(unittest.TestCase):
+    @support.cpython_only
+    @unittest.skipUnless(c_warnings, 'C module is required')
+    def test_release_lock_no_lock(self):
+        with self.assertRaisesRegex(
+            RuntimeError,
+            'cannot release un-acquired lock',
+        ):
+            c_warnings._release_lock()
+
+
 class _DeprecatedTest(BaseTest, unittest.TestCase):
 
     """Test _deprecated()."""

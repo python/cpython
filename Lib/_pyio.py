@@ -937,10 +937,8 @@ class BytesIO(BufferedIOBase):
             return 0
         pos = self._pos
         if pos > len(self._buffer):
-            # Inserts null bytes between the current end of the file
-            # and the new write position.
-            padding = b'\x00' * (pos - len(self._buffer))
-            self._buffer += padding
+            # Pad buffer to pos with null bytes.
+            self._buffer.resize(pos)
         self._buffer[pos:pos + n] = b
         self._pos += n
         return n
@@ -1062,9 +1060,6 @@ class BufferedReader(_BufferedIOMixin):
                 if chunk is None:
                     return buf[pos:] or None
                 else:
-                    # Avoid slice + copy if there is no data in buf
-                    if not buf:
-                        return chunk
                     return buf[pos:] + chunk
             chunks = [buf[pos:]]  # Strip the consumed bytes.
             current_size = 0
@@ -1459,6 +1454,17 @@ class BufferedRandom(BufferedWriter, BufferedReader):
         return BufferedWriter.write(self, b)
 
 
+def _new_buffersize(bytes_read):
+    # Parallels _io/fileio.c new_buffersize
+    if bytes_read > 65536:
+        addend = bytes_read >> 3
+    else:
+        addend = 256 + bytes_read
+    if addend < DEFAULT_BUFFER_SIZE:
+        addend = DEFAULT_BUFFER_SIZE
+    return bytes_read + addend
+
+
 class FileIO(RawIOBase):
     _fd = -1
     _created = False
@@ -1679,29 +1685,18 @@ class FileIO(RawIOBase):
 
         result = bytearray(bufsize)
         bytes_read = 0
-        while True:
-            if bytes_read >= bufsize:
-                # Parallels _io/fileio.c new_buffersize
-                if bufsize > 65536:
-                    addend = bufsize >> 3
-                else:
-                    addend = bufsize + 256
-                if addend < DEFAULT_BUFFER_SIZE:
-                    addend = DEFAULT_BUFFER_SIZE
-                bufsize += addend
-                result[bytes_read:bufsize] = b'\0'
-            assert bufsize - bytes_read > 0, "Should always try and read at least one byte"
-            try:
-                n = os.readinto(self._fd, memoryview(result)[bytes_read:])
-            except BlockingIOError:
-                if bytes_read > 0:
-                    break
+        try:
+            while n := os.readinto(self._fd, memoryview(result)[bytes_read:]):
+                bytes_read += n
+                if bytes_read >= len(result):
+                    result.resize(_new_buffersize(bytes_read))
+        except BlockingIOError:
+            if not bytes_read:
                 return None
-            if n == 0:  # reached the end of the file
-                break
-            bytes_read += n
 
-        del result[bytes_read:]
+        assert len(result) - bytes_read >= 1, \
+            "os.readinto buffer size 0 will result in erroneous EOF / returns 0"
+        result.resize(bytes_read)
         return bytes(result)
 
     def readinto(self, buffer):

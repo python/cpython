@@ -422,9 +422,9 @@ class UnparseTestCase(ASTTestCase):
             self.check_ast_roundtrip(f"'''{docstring}'''")
 
     def test_constant_tuples(self):
-        self.check_src_roundtrip(ast.Constant(value=(1,), kind=None), "(1,)")
+        self.check_src_roundtrip(ast.Module([ast.Constant(value=(1,))]), "(1,)")
         self.check_src_roundtrip(
-            ast.Constant(value=(1, 2, 3), kind=None), "(1, 2, 3)"
+            ast.Module([ast.Constant(value=(1, 2, 3))]), "(1, 2, 3)"
         )
 
     def test_function_type(self):
@@ -513,11 +513,13 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("class X(*args, **kwargs):\n    pass")
 
     def test_fstrings(self):
-        self.check_src_roundtrip("f'-{f'*{f'+{f'.{x}.'}+'}*'}-'")
-        self.check_src_roundtrip("f'\\u2028{'x'}'")
+        self.check_src_roundtrip('''f\'\'\'-{f"""*{f"+{f'.{x}.'}+"}*"""}-\'\'\'''')
+        self.check_src_roundtrip('''f\'-{f\'\'\'*{f"""+{f".{f'{x}'}."}+"""}*\'\'\'}-\'''')
+        self.check_src_roundtrip('''f\'-{f\'*{f\'\'\'+{f""".{f"{f'{x}'}"}."""}+\'\'\'}*\'}-\'''')
+        self.check_src_roundtrip('''f"\\u2028{'x'}"''')
         self.check_src_roundtrip(r"f'{x}\n'")
-        self.check_src_roundtrip("f'{'\\n'}\\n'")
-        self.check_src_roundtrip("f'{f'{x}\\n'}\\n'")
+        self.check_src_roundtrip('''f"{'\\n'}\\n"''')
+        self.check_src_roundtrip('''f"{f'{x}\\n'}\\n"''')
 
     def test_docstrings(self):
         docstrings = (
