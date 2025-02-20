@@ -55,13 +55,6 @@ struct _Py_mem_interp_free_queue {
     struct llist_node head;  // queue of _mem_work_chunk items
 };
 
-/* Set the memory allocator of the specified domain to the default.
-   Save the old allocator into *old_alloc if it's non-NULL.
-   Return on success, or return -1 if the domain is unknown. */
-extern int _PyMem_SetDefaultAllocator(
-    PyMemAllocatorDomain domain,
-    PyMemAllocatorEx *old_alloc);
-
 /* Special bytes broadcast into debug memory blocks at appropriate times.
    Strings of these are unlikely to be valid addresses, floats, ints or
    7-bit ASCII.

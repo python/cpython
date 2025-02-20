@@ -555,17 +555,6 @@ static const int pydebug = 0;
 #endif
 
 int
-_PyMem_SetDefaultAllocator(PyMemAllocatorDomain domain,
-                           PyMemAllocatorEx *old_alloc)
-{
-    PyMutex_Lock(&ALLOCATORS_MUTEX);
-    int res = set_default_allocator_unlocked(domain, pydebug, old_alloc);
-    PyMutex_Unlock(&ALLOCATORS_MUTEX);
-    return res;
-}
-
-
-int
 _PyMem_GetAllocatorName(const char *name, PyMemAllocatorName *allocator)
 {
     if (name == NULL || *name == '\0') {
