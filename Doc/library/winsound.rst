@@ -13,11 +13,11 @@
 --------------
 
 The :mod:`winsound` module provides access to the basic sound-playing machinery
-provided by Windows platforms.
+provided by Windows platforms.  It includes functions and several constants.
 
 
 Functions
-------------------
+---------
 
 .. function:: Beep(frequency, duration)
 
@@ -50,7 +50,7 @@ Functions
 
 
 Constants
-------------------
+---------
 
 .. data:: SND_FILENAME
 
