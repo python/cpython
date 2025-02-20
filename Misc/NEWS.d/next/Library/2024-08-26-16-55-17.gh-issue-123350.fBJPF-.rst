@@ -1,0 +1,1 @@
+Add ``--json`` output option to the ``python -m sysconfig`` script.
