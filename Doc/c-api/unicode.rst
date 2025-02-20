@@ -612,6 +612,11 @@ APIs:
    decref'ing the returned objects.
 
 
+.. c:function:: const char* PyUnicode_GetDefaultEncoding(void)
+
+   Return the default encoding format of the string.
+
+
 .. c:function:: Py_ssize_t PyUnicode_GetLength(PyObject *unicode)
 
    Return the length of the Unicode object, in code points.
