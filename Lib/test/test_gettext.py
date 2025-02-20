@@ -700,7 +700,7 @@ class FallbackTranslations(gettext.NullTranslations):
 
     def pgettext(self, context, message):
         return f'pgettext: {context}, {message}'
-    
+
     def npgettext(self, context, msgid1, msgid2, n):
         return f'npgettext: {context}, {msgid1}, {msgid2}, {n}'
 
