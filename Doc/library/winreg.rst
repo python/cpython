@@ -25,7 +25,7 @@ to explicitly close them.
 .. _functions:
 
 Functions
-------------------
+---------
 
 This module offers the following functions:
 
@@ -536,7 +536,7 @@ This module offers the following functions:
 .. _constants:
 
 Constants
-------------------
+---------
 
 The following constants are defined for use in many :mod:`winreg` functions.
 
