@@ -245,10 +245,10 @@ template_interpolations_concat(PyObject *left, PyObject *right) {
 }
 
 static PyObject *
-template_add_template_str(templateobject *template, PyObject *str)
+template_strings_append_str(PyObject *strings, PyObject *str)
 {
-    Py_ssize_t stringslen = PyTuple_GET_SIZE(template->strings);
-    PyObject *string = PyTuple_GET_ITEM(template->strings, stringslen - 1);
+    Py_ssize_t stringslen = PyTuple_GET_SIZE(strings);
+    PyObject *string = PyTuple_GET_ITEM(strings, stringslen - 1);
     PyObject *concat = PyUnicode_Concat(string, str);
     if (concat == NULL) {
         return NULL;
@@ -261,25 +261,18 @@ template_add_template_str(templateobject *template, PyObject *str)
     }
 
     for (Py_ssize_t i = 0; i < stringslen - 1; i++) {
-        PyTuple_SET_ITEM(newstrings, i, Py_NewRef(PyTuple_GET_ITEM(template->strings, i)));
+        PyTuple_SET_ITEM(newstrings, i, Py_NewRef(PyTuple_GET_ITEM(strings, i)));
     }
     PyTuple_SET_ITEM(newstrings, stringslen - 1, concat);
 
-    PyObject *newinterpolations = template_interpolations_copy(template->interpolations);
-    if (newinterpolations == NULL) {
-        // No need to decref concat here since it's in newstrings
-        Py_DECREF(newstrings);
-        return NULL;
-    }
-
-    return template_from_strings_interpolations(Py_TYPE(template), newstrings, newinterpolations);
+    return newstrings;
 }
 
 static PyObject *
-template_add_str_template(templateobject *template, PyObject *str)
+template_strings_prepend_str(PyObject *strings, PyObject *str)
 {
-    Py_ssize_t stringslen = PyTuple_GET_SIZE(template->strings);
-    PyObject *string = PyTuple_GET_ITEM(template->strings, 0);
+    Py_ssize_t stringslen = PyTuple_GET_SIZE(strings);
+    PyObject *string = PyTuple_GET_ITEM(strings, 0);
     PyObject *concat = PyUnicode_Concat(str, string);
     if (concat == NULL) {
         return NULL;
@@ -293,26 +286,19 @@ template_add_str_template(templateobject *template, PyObject *str)
 
     PyTuple_SET_ITEM(newstrings, 0, concat);
     for (Py_ssize_t i = 1; i < stringslen; i++) {
-        PyTuple_SET_ITEM(newstrings, i, Py_NewRef(PyTuple_GET_ITEM(template->strings, i)));
+        PyTuple_SET_ITEM(newstrings, i, Py_NewRef(PyTuple_GET_ITEM(strings, i)));
     }
 
-    PyObject *newinterpolations = template_interpolations_copy(template->interpolations);
-    if (newinterpolations == NULL) {
-        // No need to decref concat here since it's in newstrings
-        Py_DECREF(newstrings);
-        return NULL;
-    }
-
-    return template_from_strings_interpolations(Py_TYPE(template), newstrings, newinterpolations);
+    return newstrings;
 }
 
 static PyObject *
-template_add_templates(templateobject *self, templateobject *other)
+template_strings_concat(PyObject *left, PyObject *right)
 {
-    Py_ssize_t left_stringslen = PyTuple_GET_SIZE(self->strings);
-    PyObject *left_laststring = PyTuple_GET_ITEM(self->strings, left_stringslen - 1);
-    Py_ssize_t right_stringslen = PyTuple_GET_SIZE(other->strings);
-    PyObject *right_firststring = PyTuple_GET_ITEM(other->strings, 0);
+    Py_ssize_t left_stringslen = PyTuple_GET_SIZE(left);
+    PyObject *left_laststring = PyTuple_GET_ITEM(left, left_stringslen - 1);
+    Py_ssize_t right_stringslen = PyTuple_GET_SIZE(right);
+    PyObject *right_firststring = PyTuple_GET_ITEM(right, 0);
 
     PyObject *concat = PyUnicode_Concat(left_laststring, right_firststring);
     if (concat == NULL) {
@@ -327,16 +313,26 @@ template_add_templates(templateobject *self, templateobject *other)
 
     Py_ssize_t index = 0;
     for (Py_ssize_t i = 0; i < left_stringslen - 1; i++) {
-        PyTuple_SET_ITEM(newstrings, index++, Py_NewRef(PyTuple_GET_ITEM(self->strings, i)));
+        PyTuple_SET_ITEM(newstrings, index++, Py_NewRef(PyTuple_GET_ITEM(left, i)));
     }
     PyTuple_SET_ITEM(newstrings, index++, concat);
     for (Py_ssize_t i = 1; i < right_stringslen; i++) {
-        PyTuple_SET_ITEM(newstrings, index++, Py_NewRef(PyTuple_GET_ITEM(other->strings, i)));
+        PyTuple_SET_ITEM(newstrings, index++, Py_NewRef(PyTuple_GET_ITEM(right, i)));
+    }
+
+    return newstrings;
+}
+
+static PyObject *
+template_concat_templates(templateobject *self, templateobject *other)
+{
+    PyObject *newstrings = template_strings_concat(self->strings, other->strings);
+    if (newstrings == NULL) {
+        return NULL;
     }
 
     PyObject *newinterpolations = template_interpolations_concat(self->interpolations, other->interpolations);
     if (newinterpolations == NULL) {
-        // No need to decref concat here since it's in newstrings
         Py_DECREF(newstrings);
         return NULL;
     }
@@ -345,17 +341,51 @@ template_add_templates(templateobject *self, templateobject *other)
 }
 
 static PyObject *
-template_add(PyObject *self, PyObject *other)
+template_concat_template_str(templateobject *self, PyObject *str)
+{
+    PyObject *newstrings = template_strings_append_str(self->strings, str);
+    if (newstrings == NULL) {
+        return NULL;
+    }
+
+    PyObject *newinterpolations = template_interpolations_copy(self->interpolations);
+    if (newinterpolations == NULL) {
+        Py_DECREF(newstrings);
+        return NULL;
+    }
+
+    return template_from_strings_interpolations(Py_TYPE(self), newstrings, newinterpolations);
+}
+
+static PyObject *
+template_concat_str_template(templateobject *self, PyObject *str)
+{
+    PyObject *newstrings = template_strings_prepend_str(self->strings, str);
+    if (newstrings == NULL) {
+        return NULL;
+    }
+
+    PyObject *newinterpolations = template_interpolations_copy(self->interpolations);
+    if (newinterpolations == NULL) {
+        Py_DECREF(newstrings);
+        return NULL;
+    }
+
+    return template_from_strings_interpolations(Py_TYPE(self), newstrings, newinterpolations);
+}
+
+static PyObject *
+template_concat(PyObject *self, PyObject *other)
 {
     if (PyObject_TypeCheck(self, &_PyTemplate_Type) &&
             PyObject_TypeCheck(other, &_PyTemplate_Type)) {
-        return template_add_templates((templateobject *) self, (templateobject *) other);
+        return template_concat_templates((templateobject *) self, (templateobject *) other);
     }
     else if (PyObject_TypeCheck(self, &_PyTemplate_Type) && PyUnicode_Check(other)) {
-        return template_add_template_str((templateobject *) self, other);
+        return template_concat_template_str((templateobject *) self, other);
     }
     else if (PyUnicode_Check(self) && PyObject_TypeCheck(other, &_PyTemplate_Type)) {
-        return template_add_str_template((templateobject *) other, self);
+        return template_concat_str_template((templateobject *) other, self);
     }
     else {
         Py_RETURN_NOTIMPLEMENTED;
@@ -402,8 +432,8 @@ static PyGetSetDef template_getset[] = {
     {NULL},
 };
 
-static PyNumberMethods template_as_number = {
-    .nb_add = template_add,
+static PySequenceMethods template_as_sequence = {
+    .sq_concat = template_concat,
 };
 
 PyTypeObject _PyTemplate_Type = {
@@ -413,7 +443,7 @@ PyTypeObject _PyTemplate_Type = {
     .tp_basicsize = sizeof(templateobject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | _Py_TPFLAGS_MATCH_SELF,
-    .tp_as_number = &template_as_number,
+    .tp_as_sequence = &template_as_sequence,
     .tp_new = (newfunc) template_new,
     .tp_dealloc = (destructor) template_dealloc,
     .tp_repr = (reprfunc) template_repr,
