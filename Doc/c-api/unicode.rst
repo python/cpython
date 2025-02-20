@@ -614,7 +614,7 @@ APIs:
 
 .. c:function:: const char* PyUnicode_GetDefaultEncoding(void)
 
-   Return the default encoding format of the string.
+   Return a ``"utf-8"`` string constant.
 
 
 .. c:function:: Py_ssize_t PyUnicode_GetLength(PyObject *unicode)
