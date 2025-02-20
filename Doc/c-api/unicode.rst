@@ -1398,11 +1398,19 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    separator.  At most *maxsplit* splits will be done.  If negative, no limit is
    set.  Separators are not included in the resulting list.
 
+   On error, return ``NULL`` with an exception set.
+
+   Equivalent to :py:meth:`str.split`.
+
 
 .. c:function:: PyObject* PyUnicode_RSplit(PyObject *unicode, PyObject *sep, Py_ssize_t maxsplit)
 
    Similar to :c:func:`PyUnicode_Split`, but splitting will be done beginning
    at the end of the string.
+
+   On error, return ``NULL`` with an exception set.
+
+   Equivalent to :py:meth:`str.rsplit`.
 
 
 .. c:function:: PyObject* PyUnicode_Splitlines(PyObject *unicode, int keepends)
@@ -1421,6 +1429,10 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
 
    *sep* must not be empty.
 
+   On error, return ``NULL`` with an exception set.
+
+   Equivalent to :py:meth:`str.partition`.
+
 
 .. c:function:: PyObject* PyUnicode_RPartition(PyObject *unicode, PyObject *sep)
 
@@ -1429,6 +1441,10 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    containing two empty strings, followed by the string itself.
 
    *sep* must not be empty.
+
+   On error, return ``NULL`` with an exception set.
+
+   Equivalent to :py:meth:`str.rpartition`.
 
 
 .. c:function:: PyObject* PyUnicode_Join(PyObject *separator, PyObject *seq)
