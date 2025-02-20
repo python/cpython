@@ -854,7 +854,7 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    , a default reasonable value is chosen.
    *reuse_port* dictates whether to set the :data:`SO_REUSEPORT` socket option.
 
-   If *dualstack_ipv6* is true and the platform supports it the socket will
+   If *dualstack_ipv6* is true, *family* is :data:`AF_INET6` and the platform supports it the socket will
    be able to accept both IPv4 and IPv6 connections, else it will raise
    :exc:`ValueError`. Most POSIX platforms and Windows are supposed to support
    this functionality.
