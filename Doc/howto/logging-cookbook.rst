@@ -845,7 +845,7 @@ Domain socket instead of a TCP socket by doing the following:
 
 #. In :file:`webapp.json`, change the socket handler configuration dictionary
    so that the ``host`` value is the path to the domain socket, and set the
-   ``port`` value to `null`.
+   ``port`` value to ``null``.
 
 
 .. currentmodule:: logging
