@@ -2642,6 +2642,7 @@ class TestSingleDispatch(unittest.TestCase):
                 """My function docstring"""
                 return str(arg)
 
+        prefix = A.__qualname__ + '.'
         for meth in (
             A.func,
             A().func,
@@ -2651,6 +2652,7 @@ class TestSingleDispatch(unittest.TestCase):
             A().static_func
         ):
             with self.subTest(meth=meth):
+                self.assertEqual(meth.__qualname__, prefix + meth.__name__)
                 self.assertEqual(meth.__doc__,
                                  ('My function docstring'
                                   if support.HAVE_DOCSTRINGS
@@ -2945,6 +2947,115 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(f([1.0]), "default")
         self.assertEqual(f(""), "default")
         self.assertEqual(f(b""), "default")
+
+    def test_method_equal_instances(self):
+        # gh-127750: Reference to self was cached
+        class A:
+            def __eq__(self, other):
+                return True
+            def __hash__(self):
+                return 1
+            @functools.singledispatchmethod
+            def t(self, arg):
+                return self
+
+        a = A()
+        b = A()
+        self.assertIs(a.t(1), a)
+        self.assertIs(b.t(2), b)
+
+    def test_method_bad_hash(self):
+        class A:
+            def __eq__(self, other):
+                raise AssertionError
+            def __hash__(self):
+                raise AssertionError
+            @functools.singledispatchmethod
+            def t(self, arg):
+                pass
+
+        # Should not raise
+        A().t(1)
+        hash(A().t)
+        A().t == A().t
+
+    def test_method_no_reference_loops(self):
+        # gh-127750: Created a strong reference to self
+        class A:
+            @functools.singledispatchmethod
+            def t(self, arg):
+                return weakref.ref(self)
+
+        a = A()
+        r = a.t(1)
+        self.assertIsNotNone(r())
+        del a  # delete a after a.t
+        if not support.check_impl_detail(cpython=True):
+            support.gc_collect()
+        self.assertIsNone(r())
+
+        a = A()
+        t = a.t
+        del a # delete a before a.t
+        support.gc_collect()
+        r = t(1)
+        self.assertIsNotNone(r())
+        del t
+        if not support.check_impl_detail(cpython=True):
+            support.gc_collect()
+        self.assertIsNone(r())
+
+    def test_signatures(self):
+        @functools.singledispatch
+        def func(item, arg: int) -> str:
+            return str(item)
+        @func.register
+        def _(item: int, arg: bytes) -> str:
+            return str(item)
+
+        self.assertEqual(str(Signature.from_callable(func)),
+                         '(item, arg: int) -> str')
+
+    def test_method_signatures(self):
+        class A:
+            def m(self, item, arg: int) -> str:
+                return str(item)
+            @classmethod
+            def cm(cls, item, arg: int) -> str:
+                return str(item)
+            @functools.singledispatchmethod
+            def func(self, item, arg: int) -> str:
+                return str(item)
+            @func.register
+            def _(self, item, arg: bytes) -> str:
+                return str(item)
+
+            @functools.singledispatchmethod
+            @classmethod
+            def cls_func(cls, item, arg: int) -> str:
+                return str(arg)
+            @func.register
+            @classmethod
+            def _(cls, item, arg: bytes) -> str:
+                return str(item)
+
+            @functools.singledispatchmethod
+            @staticmethod
+            def static_func(item, arg: int) -> str:
+                return str(arg)
+            @func.register
+            @staticmethod
+            def _(item, arg: bytes) -> str:
+                return str(item)
+
+        self.assertEqual(str(Signature.from_callable(A.func)),
+                         '(self, item, arg: int) -> str')
+        self.assertEqual(str(Signature.from_callable(A().func)),
+                         '(self, item, arg: int) -> str')
+        self.assertEqual(str(Signature.from_callable(A.cls_func)),
+                         '(cls, item, arg: int) -> str')
+        self.assertEqual(str(Signature.from_callable(A.static_func)),
+                         '(item, arg: int) -> str')
 
 
 class CachedCostItem:
