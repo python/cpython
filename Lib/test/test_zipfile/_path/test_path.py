@@ -454,8 +454,14 @@ class TestPath(unittest.TestCase):
 
         # .name and .parent should still work on subs
         sub = root / "b"
-        assert sub.name == "b"
+        self.assertEqual(sub.name, "b")
         assert sub.parent
+
+        # It should be possible to get the repr and str
+        self.assertEqual(str(root), ":memory:/")
+        self.assertEqual(repr(root), "Path(None, '')")
+        self.assertEqual(str(sub), ":memory:/b/")
+        self.assertEqual(repr(sub), "Path(None, 'b/')")
 
     @pass_alpharep
     def test_match_and_glob(self, alpharep):
