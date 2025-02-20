@@ -1076,6 +1076,10 @@ class _singledispatchmethod_get:
         return getattr(self._unbound.func, name)
 
     @property
+    def __wrapped__(self):
+        return self._unbound.func
+
+    @property
     def register(self):
         return self._unbound.register
 

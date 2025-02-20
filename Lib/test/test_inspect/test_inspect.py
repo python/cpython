@@ -415,6 +415,27 @@ class TestPredicates(IsTestBase):
         # partial
         self.assertTrue(inspect.isroutine(functools.partial(mod.spam)))
 
+    def test_isroutine_singledispatch(self):
+        self.assertTrue(inspect.isroutine(functools.singledispatch(mod.spam)))
+
+        class A:
+            @functools.singledispatchmethod
+            def method(self, arg):
+                pass
+            @functools.singledispatchmethod
+            @classmethod
+            def class_method(cls, arg):
+                pass
+            @functools.singledispatchmethod
+            @staticmethod
+            def static_method(arg):
+                pass
+
+        self.assertTrue(inspect.isroutine(A.method))
+        self.assertTrue(inspect.isroutine(A().method))
+        self.assertTrue(inspect.isroutine(A.static_method))
+        self.assertTrue(inspect.isroutine(A.class_method))
+
     def test_isclass(self):
         self.istest(inspect.isclass, 'mod.StupidGit')
         self.assertTrue(inspect.isclass(list))

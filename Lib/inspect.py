@@ -447,7 +447,8 @@ def isroutine(object):
             or isfunction(object)
             or ismethod(object)
             or ismethoddescriptor(object)
-            or ismethodwrapper(object))
+            or ismethodwrapper(object)
+            or isinstance(object, functools._singledispatchmethod_get))
 
 def isabstract(object):
     """Return true if the object is an abstract base class (ABC)."""
