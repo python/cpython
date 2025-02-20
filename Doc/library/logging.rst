@@ -563,6 +563,7 @@ subclasses. However, the :meth:`!__init__` method in subclasses needs to call
    .. method:: Handler.setFormatter(fmt)
 
       Sets the :class:`Formatter` for this handler to *fmt*.
+      The *fmt* argument must be a :class:`Formatter` instance or ``None``.
 
 
    .. method:: Handler.addFilter(filter)
