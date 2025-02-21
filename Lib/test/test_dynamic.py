@@ -134,7 +134,7 @@ class RebindBuiltinsTests(unittest.TestCase):
 
         self.assertEqual(foo(), 7)
 
-    @unittest.skipIf(is_wasi and Py_DEBUG, "requires too much stack")
+    @unittest.skipIf(is_wasi, "requires too much stack")
     def test_load_global_specialization_failure_keeps_oparg(self):
         # https://github.com/python/cpython/issues/91625
         class MyGlobals(dict):

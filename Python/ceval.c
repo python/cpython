@@ -338,7 +338,7 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 #  define Py_C_STACK_SIZE 1600000
 #elif defined(__wasi__)
    /* Web assembly has two stacks, so this isn't really the stack depth */
-#  define Py_C_STACK_SIZE 100000
+#  define Py_C_STACK_SIZE 80000
 #elif defined(__hppa__) || defined(__powerpc64__)
 #  define Py_C_STACK_SIZE 2000000
 #else
