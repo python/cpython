@@ -2535,10 +2535,10 @@ optimize_load_fast(cfg_builder *g)
     int status;
     ref_stack refs = {0};
     bool *has_killed_refs = NULL;
-    basicblock *entryblock = g->g_entryblock;
-    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
+    for (basicblock *b = g->g_block_list; b != NULL; b = b->b_list) {
         b->b_startdepth = -1;
     }
+    basicblock *entryblock = g->g_entryblock;
     basicblock **blocks = make_cfg_traversal_stack(entryblock);
     if (blocks == NULL) {
         status = ERROR;
