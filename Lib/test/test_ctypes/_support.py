@@ -22,6 +22,14 @@ Py_TPFLAGS_DISALLOW_INSTANTIATION = 1 << 7
 Py_TPFLAGS_IMMUTABLETYPE = 1 << 8
 
 
+def is_underaligned(ctype):
+    """Return true when type's alignment is less than its size.
+
+    A famous example is 64-bit int on 32-bit x86.
+    """
+    return ctypes.alignment(ctype) < ctypes.sizeof(ctype)
+
+
 class StructCheckMixin:
     def check_struct(self, structure):
         """Assert that a structure is well-formed"""
@@ -70,8 +78,14 @@ class StructCheckMixin:
                 # byte_size
                 self.assertEqual(field.byte_size, ctypes.sizeof(field.type))
                 self.assertGreaterEqual(field.byte_size, 0)
-                self.assertLessEqual(field.byte_offset + field.byte_size,
-                                     cls_size)
+
+                # Check that the field is inside the struct.
+                # See gh-130410 for why this is skipped for bitfields of
+                # underaligned types. Later in this function (see `bit_end`)
+                # we assert that the value *bits* are inside the struct.
+                if not (field.is_bitfield and is_underaligned(field.type)):
+                    self.assertLessEqual(field.byte_offset + field.byte_size,
+                                         cls_size)
 
                 # size
                 self.assertGreaterEqual(field.size, 0)
