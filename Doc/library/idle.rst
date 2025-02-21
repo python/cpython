@@ -666,7 +666,7 @@ IDLE can be invoked from the command line with various options. The general synt
 
 .. code-block:: bash
 
-   python -m idlelib idle [options] [file ...]
+   python -m idlelib [options] [file ...]
 
 The following options are available:
 
