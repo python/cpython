@@ -2534,9 +2534,16 @@ optimize_load_fast(cfg_builder *g)
 {
     int status;
     ref_stack refs = {0};
-    bool *has_killed_refs = NULL;
+    int max_instrs = 0;
     for (basicblock *b = g->g_block_list; b != NULL; b = b->b_list) {
         b->b_startdepth = -1;
+        max_instrs = Py_MAX(max_instrs, b->b_iused);
+    }
+    size_t has_killed_refs_size = max_instrs * sizeof(bool);
+    bool *has_killed_refs = PyMem_Calloc(max_instrs, has_killed_refs_size);
+    if (has_killed_refs == NULL) {
+        PyErr_NoMemory();
+        return ERROR;
     }
     basicblock *entryblock = g->g_entryblock;
     basicblock **blocks = make_cfg_traversal_stack(entryblock);
@@ -2556,17 +2563,7 @@ optimize_load_fast(cfg_builder *g)
 
         // Reset state that tracks which instructions produce references to
         // locals that are on the stack while the local is overwritten.
-        int size = sizeof(*has_killed_refs) * block->b_iused;
-        bool *p = PyMem_Realloc(has_killed_refs, size);
-        if (p == NULL) {
-            PyErr_NoMemory();
-            status = ERROR;
-            goto done;
-        }
-        else {
-            has_killed_refs = p;
-        }
-        memset(has_killed_refs, 0, size);
+        memset(has_killed_refs, 0, has_killed_refs_size);
 
         // Reset the stack of refs. We don't track references on the stack
         // across basic blocks, but the bytecode will expect their
