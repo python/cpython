@@ -933,34 +933,34 @@ unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
     if (PyUnicode_GET_LENGTH(input) == 0) {
         /* Special case empty input strings, since resizing
            them  later would cause internal errors. */
-        return Py_NewRef(input);
+        return PyUnicode_FromObject(input);
     }
 
     if (PyUnicode_CompareWithASCIIString(form, "NFC") == 0) {
         if (is_normalized_quickcheck(self, input,
                                      true,  false, true) == YES) {
-            return Py_NewRef(input);
+            return PyUnicode_FromObject(input);
         }
         return nfc_nfkc(self, input, 0);
     }
     if (PyUnicode_CompareWithASCIIString(form, "NFKC") == 0) {
         if (is_normalized_quickcheck(self, input,
                                      true,  true,  true) == YES) {
-            return Py_NewRef(input);
+            return PyUnicode_FromObject(input);
         }
         return nfc_nfkc(self, input, 1);
     }
     if (PyUnicode_CompareWithASCIIString(form, "NFD") == 0) {
         if (is_normalized_quickcheck(self, input,
                                      false, false, true) == YES) {
-            return Py_NewRef(input);
+            return PyUnicode_FromObject(input);
         }
         return nfd_nfkd(self, input, 0);
     }
     if (PyUnicode_CompareWithASCIIString(form, "NFKD") == 0) {
         if (is_normalized_quickcheck(self, input,
                                      false, true,  true) == YES) {
-            return Py_NewRef(input);
+            return PyUnicode_FromObject(input);
         }
         return nfd_nfkd(self, input, 1);
     }
