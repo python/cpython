@@ -1962,6 +1962,23 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             # blow up because other fields are insane.
             self.theclass(base[:2] + bytes([ord_byte]) + base[3:])
 
+    def test_valuerror_messages(self):
+        pattern = re.compile(
+            r"(year|month|day) must be in \d+\.\.\d+, not \d+"
+        )
+        test_cases = [
+            (2009, 1, 32),      # Day out of range
+            (2009, 2, 31),      # Day out of range
+            (2009, 13, 1),      # Month out of range
+            (2009, 0, 1),       # Month out of range
+            (10000, 12, 31),    # Year out of range
+            (0, 12, 31),        # Year out of range
+        ]
+        for case in test_cases:
+            with self.subTest(case):
+                with self.assertRaisesRegex(ValueError, pattern):
+                    self.theclass(*case)
+
     def test_fromisoformat(self):
         # Test that isoformat() is reversible
         base_dates = [
@@ -3212,6 +3229,24 @@ class TestDateTime(TestDate):
                 self.assertEqual(res.year, 2013)
                 self.assertEqual(res.fold, fold)
 
+    def test_valuerror_messages(self):
+        pattern = re.compile(
+            r"(year|month|day|hour|minute|second) must "
+            r"be in \d+\.\.\d+, not \d+"
+        )
+        test_cases = [
+            (2009, 4, 1, 12, 30, 90),   # Second out of range
+            (2009, 4, 1, 12, 90, 45),   # Minute out of range
+            (2009, 4, 1, 25, 30, 45),   # Hour out of range
+            (2009, 4, 32, 24, 0, 0),    # Day out of range
+            (2009, 13, 1, 24, 0, 0),    # Month out of range
+            (9999, 12, 31, 24, 0, 0),   # Year out of range
+        ]
+        for case in test_cases:
+            with self.subTest(case):
+                with self.assertRaisesRegex(ValueError, pattern):
+                    self.theclass(*case)
+
     def test_fromisoformat_datetime(self):
         # Test that isoformat() is reversible
         base_dates = [
@@ -3498,11 +3533,32 @@ class TestDateTime(TestDate):
             '2009-04-32T24:00:00.000000',  # Day is invalid before wrapping due to 24:00
             '2009-13-01T24:00:00.000000',  # Month is invalid before wrapping due to 24:00
             '9999-12-31T24:00:00.000000',  # Year is invalid after wrapping due to 24:00
+            '2009-04-19T12:30Z12:00',      # Extra time zone info after Z
+            '2009-04-19T12:30:45:334034',  # Invalid microsecond separator
         ]
 
         for bad_str in bad_strs:
             with self.subTest(bad_str=bad_str):
                 with self.assertRaises(ValueError):
+                    self.theclass.fromisoformat(bad_str)
+
+    def test_fromisoformat_fails_datetime_valueerror(self):
+        pattern = re.compile(
+            r"(year|month|day|hour|minute|second) must "
+            r"be in \d+\.\.\d+, not \d+"
+        )
+        bad_strs = [
+            "2009-04-01T12:30:90",          # Second out of range
+            "2009-04-01T12:90:45",          # Minute out of range
+            "2009-04-01T25:30:45",          # Hour out of range
+            "2009-04-32T24:00:00",          # Day out of range
+            "2009-13-01T24:00:00",          # Month out of range
+            "9999-12-31T24:00:00",          # Year out of range
+        ]
+
+        for bad_str in bad_strs:
+            with self.subTest(bad_str=bad_str):
+                with self.assertRaisesRegex(ValueError, pattern):
                     self.theclass.fromisoformat(bad_str)
 
     def test_fromisoformat_fails_surrogate(self):
@@ -4481,6 +4537,21 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         t2 = t2.replace(tzinfo=Varies())
         self.assertTrue(t1 < t2)  # t1's offset counter still going up
 
+    def test_valuerror_messages(self):
+        pattern = re.compile(
+            r"(hour|minute|second|microsecond) must be in \d+\.\.\d+, not \d+"
+        )
+        test_cases = [
+            (12, 30, 90, 9999991),  # Microsecond out of range
+            (12, 30, 90, 000000),   # Second out of range
+            (25, 30, 45, 000000),   # Hour out of range
+            (12, 90, 45, 000000),   # Minute out of range
+        ]
+        for case in test_cases:
+            with self.subTest(case):
+                with self.assertRaisesRegex(ValueError, pattern):
+                    self.theclass(*case)
+
     def test_fromisoformat(self):
         time_examples = [
             (0, 0, 0, 0),
@@ -4589,6 +4660,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             ('00:00:00.000', self.theclass(0, 0)),
             ('000000.000000', self.theclass(0, 0)),
             ('00:00:00.000000', self.theclass(0, 0)),
+            ('00:00:00,100000', self.theclass(0, 0, 0, 100000)),
             ('1200', self.theclass(12, 0)),
             ('12:00', self.theclass(12, 0)),
             ('120000', self.theclass(12, 0)),
@@ -4656,6 +4728,8 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             '12:30:45.123456+12:00:30a',    # Extra at end of full time
             '12.5',                     # Decimal mark at end of hour
             '12:30,5',                  # Decimal mark at end of minute
+            '12:30:45.123456Z12:00',    # Extra time zone info after Z
+            '12:30:45:334034',          # Invalid microsecond separator
         ]
 
         for bad_str in bad_strs:

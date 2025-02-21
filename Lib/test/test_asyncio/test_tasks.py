@@ -2272,10 +2272,8 @@ class BaseTaskTests:
 
         self.assertEqual(self.all_tasks(loop=self.loop), {task})
 
-        asyncio._set_event_loop(None)
-
         # execute the task so it waits for future
-        self.loop._run_once()
+        self.loop.run_until_complete(asyncio.sleep(0))
         self.assertEqual(len(self.loop._ready), 0)
 
         coro = None
@@ -2296,6 +2294,22 @@ class BaseTaskTests:
 
         self.assertEqual(self.all_tasks(loop=self.loop), set())
 
+    def test_task_not_crash_without_finalization(self):
+        Task = self.__class__.Task
+
+        class Subclass(Task):
+            def __del__(self):
+                pass
+
+        async def coro():
+            await asyncio.sleep(0.01)
+
+        task = Subclass(coro(), loop = self.loop)
+        task._log_destroy_pending = False
+
+        del task
+
+        support.gc_collect()
 
     @mock.patch('asyncio.base_events.logger')
     def test_tb_logger_not_called_after_cancel(self, m_log):

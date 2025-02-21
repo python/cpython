@@ -41,6 +41,7 @@ jobs:
           - aarch64-apple-darwin/clang
           - x86_64-unknown-linux-gnu/gcc
           - aarch64-unknown-linux-gnu/gcc
+          - free-threading
         llvm:
           - 19
         include:
@@ -64,7 +65,10 @@ jobs:
             runner: ubuntu-24.04
           - target: aarch64-unknown-linux-gnu/gcc
             architecture: aarch64
-            runner: ubuntu-22.04-arm
+            runner: ubuntu-24.04-arm
+          - target: free-threading
+            architecture: x86_64
+            runner: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -105,11 +109,20 @@ jobs:
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       - name: Native Linux (release)
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && matrix.target != 'free-threading'
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
           CC=clang-19 ./configure --with-tail-call-interp
+          make all --jobs 4
+          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+
+      - name: Native Linux with free-threading (release)
+        if: matrix.target == 'free-threading'
+        run: |
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
+          CC=clang-19 ./configure --with-tail-call-interp --disable-gil
           make all --jobs 4
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
