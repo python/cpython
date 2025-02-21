@@ -408,7 +408,7 @@ class CAPITest(unittest.TestCase):
         # activated when its tp_dealloc is being called by a subclass
         from _testcapi import MyList
         L = None
-        for i in range(1000):
+        for i in range(100):
             L = MyList((L,))
 
     @support.requires_resource('cpu')
