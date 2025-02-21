@@ -1796,7 +1796,7 @@
             }
             STAT_INC(SEND, hit);
             gen_frame = &gen->gi_iframe;
-            _PyFrame_StackPush(gen_frame, v);
+            _PyFrame_StackPush(gen_frame, _PyStackRef_StealIfUnborrowed(v));
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
             tstate->exc_info = &gen->gi_exc_state;
@@ -1843,7 +1843,7 @@
             #endif
             stack_pointer = _PyFrame_GetStackPointer(frame);
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-            value = temp;
+            value = _PyStackRef_StealIfUnborrowed(temp);
             LLTRACE_RESUME_FRAME();
             stack_pointer[0] = value;
             stack_pointer += 1;

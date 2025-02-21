@@ -7314,7 +7314,7 @@
                 #endif
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-                value = temp;
+                value = _PyStackRef_StealIfUnborrowed(temp);
                 LLTRACE_RESUME_FRAME();
             }
             stack_pointer[0] = value;
@@ -10362,6 +10362,7 @@
                 PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
                 PyObject *retval_o;
                 assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+                _PyStackRef tmp = _PyStackRef_StealIfUnborrowed(v);
                 if ((tstate->interp->eval_frame == NULL) &&
                     (Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type) &&
                     ((PyGenObject *)receiver_o)->gi_frame_state < FRAME_EXECUTING)
@@ -10369,7 +10370,7 @@
                     PyGenObject *gen = (PyGenObject *)receiver_o;
                     _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
                     STACK_SHRINK(1);
-                    _PyFrame_StackPush(gen_frame, v);
+                    _PyFrame_StackPush(gen_frame, tmp);
                     gen->gi_frame_state = FRAME_EXECUTING;
                     gen->gi_exc_state.previous_item = tstate->exc_info;
                     tstate->exc_info = &gen->gi_exc_state;
@@ -10380,15 +10381,19 @@
                     DISPATCH_INLINED(gen_frame);
                 }
                 if (PyStackRef_IsNone(v) && PyIter_Check(receiver_o)) {
+                    stack_pointer += -1;
+                    assert(WITHIN_STACK_BOUNDS());
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     retval_o = Py_TYPE(receiver_o)->tp_iternext(receiver_o);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                 }
                 else {
+                    stack_pointer += -1;
+                    assert(WITHIN_STACK_BOUNDS());
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     retval_o = PyObject_CallMethodOneArg(receiver_o,
                         &_Py_ID(send),
-                        PyStackRef_AsPyObjectBorrow(v));
+                        PyStackRef_AsPyObjectBorrow(tmp));
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                 }
                 if (retval_o == NULL) {
@@ -10408,18 +10413,14 @@
                         JUMPBY(oparg);
                     }
                     else {
-                        stack_pointer += -1;
-                        assert(WITHIN_STACK_BOUNDS());
                         _PyFrame_SetStackPointer(frame, stack_pointer);
-                        PyStackRef_CLOSE(v);
+                        PyStackRef_CLOSE(tmp);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         JUMP_TO_LABEL(error);
                     }
                 }
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(v);
+                PyStackRef_CLOSE(tmp);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 retval = PyStackRef_FromPyObjectSteal(retval_o);
             }
@@ -10470,7 +10471,7 @@
                 }
                 STAT_INC(SEND, hit);
                 gen_frame = &gen->gi_iframe;
-                _PyFrame_StackPush(gen_frame, v);
+                _PyFrame_StackPush(gen_frame, _PyStackRef_StealIfUnborrowed(v));
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
@@ -11974,7 +11975,7 @@
             #endif
             stack_pointer = _PyFrame_GetStackPointer(frame);
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-            value = temp;
+            value = _PyStackRef_StealIfUnborrowed(temp);
             LLTRACE_RESUME_FRAME();
             stack_pointer[0] = value;
             stack_pointer += 1;
