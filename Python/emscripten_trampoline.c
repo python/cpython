@@ -78,6 +78,10 @@ EM_JS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
 //     )
 // )
 addOnPreRun(() => {
+    let isIOS = /iPad|iPhone|iPod/.test(navigator.platform);
+    if (isIOS) {
+        return;
+    }
     // Try to initialize countArgsFunc
     const code = new Uint8Array([
         0x00, 0x61, 0x73, 0x6d, // \0asm magic number
