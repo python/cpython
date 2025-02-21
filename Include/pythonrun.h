@@ -25,7 +25,9 @@ PyAPI_DATA(int) (*PyOS_InputHook)(void);
  * no two calls to check recursion depth are more than this far
  * apart. In practice, that means it must be larger than the C
  * stack consumption of PyEval_EvalDefault */
-#if defined(Py_DEBUG) && defined(WIN32)
+#if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER)
+#  define PYOS_STACK_MARGIN 4096
+#elif defined(Py_DEBUG) && defined(WIN32)
 #  define PYOS_STACK_MARGIN 3072
 #else
 #  define PYOS_STACK_MARGIN 2048
