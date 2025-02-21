@@ -1,0 +1,2 @@
+Added wasm MIME type to
+:attr:`http.server.SimpleHTTPRequestHandler.extensions_map`.

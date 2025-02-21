@@ -669,6 +669,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         '.Z': 'application/octet-stream',
         '.bz2': 'application/x-bzip2',
         '.xz': 'application/x-xz',
+        '.wasm': 'application/wasm',
     }
 
     def __init__(self, *args, directory=None, **kwargs):
