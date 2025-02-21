@@ -70,6 +70,63 @@ class PySysGetAttrTest(unittest.TestCase):
             exit(0)
     ''')
 
+    common_input_code = textwrap.dedent('''
+        import sys
+
+        class FakeIO:
+            def write(self, str):
+                pass
+            def flush(self):
+                pass
+            def fileno(self):
+                return 0
+
+        class CrashStdin:
+            def __init__(self):
+                self.stdin = sys.stdin
+                setattr(sys, "stdin", FakeIO())
+
+            def __repr__(self):
+                stdin = sys.stdin
+                setattr(sys, "stdin", self.stdin)
+                del stdin
+                return "CrashStdin"
+
+        class CrashStdout:
+            def __init__(self):
+                self.stdout = sys.stdout
+                setattr(sys, "stdout", FakeIO())
+
+            def __repr__(self):
+                stdout = sys.stdout
+                setattr(sys, "stdout", self.stdout)
+                del stdout
+                return "CrashStdout"
+
+            class CrashStderr:
+                def __init__(self):
+                    self.stderr = sys.stderr
+                    setattr(sys, "stderr", FakeIO())
+
+                def __repr__(self):
+                    stderr = sys.stderr
+                    setattr(sys, "stderr", self.stderr)
+                    del stderr
+                    return "CrashStderr"
+
+            def audit(event, args):
+                if event == 'builtins.input':
+                    repr(args)
+
+        def main():
+            {0}
+            input({1})
+
+        if __name__ == "__main__":
+            main()
+
+    ''')
+
 
     def test_print_deleted_stdout(self):
         # print should use strong reference to the stdout.
@@ -151,6 +208,36 @@ class PySysGetAttrTest(unittest.TestCase):
     def test_warnings_warn_explicit(self):
         test_code = self.common_warnings_code.format(
             "warnings.warn_explicit(Foo(), UserWarning, 'filename', 0)"
+        )
+        rc, _, err = assert_python_ok('-c', test_code)
+        self.assertEqual(rc, 0)
+        self.assertNotIn(b"Segmentation fault", err)
+        self.assertNotIn(b"access violation", err)
+
+    def test_input_stdin(self):
+        test_code = self.common_input_code.format(
+            "",
+            "CrashStdin()"
+        )
+        rc, _, err = assert_python_ok('-c', test_code)
+        self.assertEqual(rc, 0)
+        self.assertNotIn(b"Segmentation fault", err)
+        self.assertNotIn(b"access violation", err)
+
+    def test_input_stdout(self):
+        test_code = self.common_input_code.format(
+            "",
+            "CrashStdout()"
+        )
+        rc, _, err = assert_python_ok('-c', test_code)
+        self.assertEqual(rc, 0)
+        self.assertNotIn(b"Segmentation fault", err)
+        self.assertNotIn(b"access violation", err)
+
+    def test_input_stderr(self):
+        test_code = self.common_input_code.format(
+            "sys.addaudithook(audit)",
+            "CrashStderr()"
         )
         rc, _, err = assert_python_ok('-c', test_code)
         self.assertEqual(rc, 0)
