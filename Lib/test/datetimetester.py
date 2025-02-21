@@ -2860,6 +2860,8 @@ class TestDateTime(TestDate):
 
         strptime = self.theclass.strptime
 
+        self.assertEqual(strptime("+01", "%z").utcoffset(), 1 * HOUR)
+        self.assertEqual(strptime("-10", "%z").utcoffset(), -10 * HOUR)
         self.assertEqual(strptime("+0002", "%z").utcoffset(), 2 * MINUTE)
         self.assertEqual(strptime("-0002", "%z").utcoffset(), -2 * MINUTE)
         self.assertEqual(
@@ -3958,6 +3960,8 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
 
     def test_strptime_tz(self):
         strptime = self.theclass.strptime
+        self.assertEqual(strptime("+01", "%z").utcoffset(), 1 * HOUR)
+        self.assertEqual(strptime("-10", "%z").utcoffset(), -10 * HOUR)
         self.assertEqual(strptime("+0002", "%z").utcoffset(), 2 * MINUTE)
         self.assertEqual(strptime("-0002", "%z").utcoffset(), -2 * MINUTE)
         self.assertEqual(
