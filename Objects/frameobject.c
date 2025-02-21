@@ -58,7 +58,8 @@ framelocalsproxy_getval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
 
     if (cell != NULL) {
         value = PyCell_GetRef((PyCellObject *)cell);
-    } else {
+    }
+    else {
         Py_XINCREF(value);
     }
 
