@@ -581,12 +581,6 @@ jobs:
             build_windows,
             build_asan,
             build_tsan,
-            '
-            || ''
-          }}
-          ${{
-            !fromJSON(needs.build-context.outputs.run_hypothesis)
-            && '
             test_hypothesis,
             '
             || ''
