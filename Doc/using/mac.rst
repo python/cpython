@@ -107,7 +107,7 @@ Close this terminal window and the installer window.
 
 A default install will include:
 
-* A |usemac_applications_folder_name| folder in your :file:`Applications` folder. In here
+* A |python_version_literal| folder in your :file:`Applications` folder. In here
   you find :program:`IDLE`, the development environment that is a standard part of official
   Python distributions; and :program:`Python Launcher`, which handles double-clicking Python
   scripts from the macOS `Finder <https://support.apple.com/en-us/HT201732>`_.
@@ -134,7 +134,7 @@ How to run a Python script
 
 There are two ways to invoke the Python interpreter.
 If you are familiar with using a Unix shell in a terminal
-window, you can invoke |usemac_python_x_dot_y_literal| or ``python3`` optionally
+window, you can invoke |python_x_dot_y_literal| or ``python3`` optionally
 followed by one or more command line options (described in :ref:`using-on-general`).
 The Python tutorial also has a useful section on
 :ref:`using Python interactively from a shell <tut-interac>`.
@@ -153,7 +153,7 @@ for more information.
 To run a Python script file from the terminal window, you can
 invoke the interpreter with the name of the script file:
 
-    |usemac_python_x_dot_y_literal| ``myscript.py``
+    |python_x_dot_y_literal| ``myscript.py``
 
 To run your script from the Finder, you can either:
 
@@ -261,7 +261,7 @@ Installing Free-threaded Binaries
 
 The ``python.org`` :ref:`Python for macOS <getting-and-installing-macpython>`
 installer package can optionally install an additional build of
-Python |usemac_x_dot_y| that supports :pep:`703`, the experimental free-threading feature
+Python |version| that supports :pep:`703`, the experimental free-threading feature
 (running with the :term:`global interpreter lock` disabled).
 Check the release page on ``python.org`` for possible updated information.
 
@@ -275,8 +275,8 @@ step of the installer as described above.
 If the box next to the **Free-threaded Python** package name is checked,
 a separate :file:`PythonT.framework` will also be installed
 alongside the normal :file:`Python.framework` in :file:`/Library/Frameworks`.
-This configuration allows a free-threaded Python |usemac_x_dot_y| build to co-exist
-on your system with a traditional (GIL only) Python |usemac_x_dot_y| build with
+This configuration allows a free-threaded Python |version| build to co-exist
+on your system with a traditional (GIL only) Python |version| build with
 minimal risk while installing or testing. This installation layout is itself
 experimental and is subject to change in future releases.
 
