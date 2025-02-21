@@ -6939,6 +6939,7 @@ store_instance_attr_lock_held(PyObject *obj, PyDictValues *values,
         PyErr_Format(PyExc_AttributeError,
                         "'%.100s' object has no attribute '%U'",
                         Py_TYPE(obj)->tp_name, name);
+        _PyObject_SetAttributeErrorContext(obj, name);
         return -1;
     }
 
