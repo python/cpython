@@ -978,14 +978,14 @@ See :source:`Mac/README.rst`.
 
    Options:
 
-   * ``universal2``;
-   * ``32-bit``;
-   * ``64-bit``;
-   * ``3-way``;
-   * ``intel``;
-   * ``intel-32``;
-   * ``intel-64``;
-   * ``all``.
+   * ``universal2`` (supports x86-64 and arm64; supports ``universal2`` wheels);
+   * ``32-bit`` (supports PPC and i386; supports ``fat`` wheels);
+   * ``64-bit``  (supports PPC64 and x86-64; supports ``fat64`` wheels);
+   * ``3-way`` (supports i386, PPC and x86-64; supports ``fat3`` wheels);
+   * ``intel`` (supports i386 and x86-64; supports ``intel`` wheels);
+   * ``intel-32`` (supports i386; supports ``i386`` wheels);
+   * ``intel-64`` (supports x86-64; supports ``x86-64`` wheels);
+   * ``all``  (supports PPC, i386, PPC64 and x86-64; supports ``universal`` wheels).
 
 .. option:: --with-framework-name=FRAMEWORK
 
