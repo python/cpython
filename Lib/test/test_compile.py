@@ -715,7 +715,7 @@ class TestSpecifics(unittest.TestCase):
         # Compiler frames are small
         limit = 100
         fail_depth = limit * 1500
-        crash_depth = limit * 3000
+        crash_depth = limit * 5000
         success_depth = limit
 
         def check_limit(prefix, repeated, mode="single"):

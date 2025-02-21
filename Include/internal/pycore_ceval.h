@@ -193,9 +193,18 @@ extern void _PyEval_DeactivateOpCache(void);
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 
-static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
+static inline uintptr_t
+_Py_get_machine_stack_pointer(void) {
+#if defined(__GNUC__) || defined(__clang__)
+    return (uintptr_t)__builtin_frame_address(0);
+#else
     char here;
-    uintptr_t here_addr = (uintptr_t)&here;
+    return (uintptr_t)&here;
+#endif
+}
+
+static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     return here_addr < _tstate->c_stack_soft_limit;
 }
@@ -226,8 +235,7 @@ static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate) {
 PyAPI_FUNC(void) _Py_InitializeRecursionLimits(PyThreadState *tstate);
 
 static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
-    char here;
-    uintptr_t here_addr = (uintptr_t)&here;
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     if (here_addr > _tstate->c_stack_soft_limit) {
         return 0;
