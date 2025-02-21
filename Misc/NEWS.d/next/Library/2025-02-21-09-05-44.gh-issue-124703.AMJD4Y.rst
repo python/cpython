@@ -1,0 +1,1 @@
+Restore the ability to easily return to the REPL from a pdb session after calling ``breakpoint`` or ``set_trace``.
