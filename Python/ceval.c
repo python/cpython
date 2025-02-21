@@ -360,7 +360,7 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
     _tstate->c_stack_hard_limit = ((uintptr_t)low) + guarantee + PYOS_STACK_MARGIN_BYTES;
     _tstate->c_stack_soft_limit = _tstate->c_stack_hard_limit + PYOS_STACK_MARGIN_BYTES;
 #else
-#  if defined(_GNU_SOURCE)
+#  if defined(HAVE_PTHREAD_GETATTR_NP)
     size_t stack_size, guard_size;
     void *stack_addr;
     pthread_attr_t attr;
