@@ -1244,10 +1244,9 @@ ConfigParser Objects
       *space_around_delimiters* is true, delimiters between
       keys and values are surrounded by spaces.
 
-      Raises InvalidWriteError if this would write a representation which cannot
-      be accurately parsed by a future :meth:`read` call from this parser. For
-      example, writing a key that starts with the :attr:`ConfigParser.SECTCRE` pattern
-      would read back as a section header, not a key.
+      .. versionchanged:: 3.14
+         Raises InvalidWriteError if this would write a representation which cannot
+         be accurately parsed by a future :meth:`read` call from this parser.
 
    .. note::
 
@@ -1466,8 +1465,12 @@ Exceptions
 
 .. exception:: InvalidWriteError
 
-   Exception raised when attempting to write a file which the parser cannot
-   accurately read back.
+   Exception raised when an attempted :meth:`ConfigParser.write` would not be parsed
+   accurately with a future :meth:`ConfigParser.read` call.
+
+   Ex: Writing a key beginning with the :attr:`ConfigParser.SECTCRE` pattern
+   would parse as a section header when read. Attempting to write this will raise
+   this exception.
 
    .. versionadded:: 3.14
 
