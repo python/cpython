@@ -734,7 +734,8 @@ fold_const_match_patterns(expr_ty node, PyArena *ctx_, _PyASTOptimizeState *stat
         case UnaryOp_kind:
         {
             if (node->v.UnaryOp.op == USub &&
-                node->v.UnaryOp.operand->kind == Constant_kind) {
+                node->v.UnaryOp.operand->kind == Constant_kind)
+            {
                 PyObject *operand = node->v.UnaryOp.operand->v.Constant.value;
                 PyObject *folded = PyNumber_Negative(operand);
                 return make_const(node, folded, ctx_);
@@ -745,7 +746,8 @@ fold_const_match_patterns(expr_ty node, PyArena *ctx_, _PyASTOptimizeState *stat
         {
             operator_ty op = node->v.BinOp.op;
             if ((op == Add || op == Sub) &&
-                node->v.BinOp.right->kind == Constant_kind) {
+                node->v.BinOp.right->kind == Constant_kind)
+            {
                 CALL(fold_const_match_patterns, expr_ty, node->v.BinOp.left);
                 if (node->v.BinOp.left->kind == Constant_kind) {
                     PyObject *left = node->v.BinOp.left->v.Constant.value;

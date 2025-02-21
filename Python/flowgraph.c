@@ -1515,13 +1515,10 @@ optimize_lists_and_sets(basicblock *bb, int i, int nextop,
     return SUCCESS;
 }
 
-/* Check whether a collection doesn't contain too many items (including
-   subcollections).  This protects from creating a constant that needs
-   too much time for calculating a hash.
-   "limit" is the maximal number of items.
-   Returns the negative number if the total number of items exceeds the
-   limit.  Otherwise returns the limit minus the total number of items.
-*/
+/* Check whether the total number of items in the (possibly nested) collection obj exceeds
+ * limit. Return a negative number if it does, and a non-negative number otherwise.
+ * Used to avoid creating constants which are slow to hash.
+ */
 static Py_ssize_t
 const_folding_check_complexity(PyObject *obj, Py_ssize_t limit)
 {
@@ -1743,11 +1740,11 @@ eval_const_unaryop(PyObject *operand, int opcode, int oparg)
         case UNARY_INVERT:
             result = PyNumber_Invert(operand);
             break;
-        case UNARY_NOT:
-        {
+        case UNARY_NOT: {
             int r = PyObject_IsTrue(operand);
-            if (r < 0)
+            if (r < 0) {
                 return NULL;
+            }
             result = PyBool_FromLong(!r);
             break;
         }
@@ -1773,7 +1770,7 @@ fold_const_unaryop(basicblock *bb, int i, PyObject *consts, PyObject *const_cach
     PyObject *seq;
     RETURN_IF_ERROR(get_constant_sequence(bb, i-1, UNARYOP_OPERAND_COUNT, consts, &seq));
     if (seq == NULL) {
-        /* not a const sequence */
+        /* not a const */
         return SUCCESS;
     }
     assert(PyTuple_Size(seq) == UNARYOP_OPERAND_COUNT);
