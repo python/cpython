@@ -20,13 +20,6 @@ the Pythons provided by the CPython release team for download from
 the `python.org website <https://www.python.org/downloads/>`_. See
 :ref:`alternative_bundles` for some other options.
 
-.. |usemac_x_dot_y| replace:: 3.13
-.. |usemac_python_x_dot_y_literal| replace:: ``python3.13``
-.. |usemac_python_x_dot_y_t_literal| replace:: ``python3.13t``
-.. |usemac_python_x_dot_y_t_literal_config| replace:: ``python3.13t-config``
-.. |usemac_applications_folder_name| replace:: ``Python 3.13``
-.. |usemac_applications_folder_version| replace:: ``/Applications/Python 3.13/``
-
 .. _getting-osx:
 .. _getting-and-installing-macpython:
 

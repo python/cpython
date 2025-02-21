@@ -87,6 +87,13 @@ rst_epilog = f"""
 .. _FORCE_COLOR: https://force-color.org/
 .. |NO_COLOR| replace:: ``NO_COLOR``
 .. _NO_COLOR: https://no-color.org/
+
+.. |usemac_x_dot_y| replace:: {version}
+.. |usemac_python_x_dot_y_literal| replace:: ``python{version}``
+.. |usemac_python_x_dot_y_t_literal| replace:: ``python{version}t``
+.. |usemac_python_x_dot_y_t_literal_config| replace:: ``python{version}t-config``
+.. |usemac_applications_folder_name| replace:: ``Python {version}``
+.. |usemac_applications_folder_version| replace:: ``/Applications/Python {version}/``
 """
 
 # There are two options for replacing |today|. Either, you set today to some
