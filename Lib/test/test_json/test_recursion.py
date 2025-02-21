@@ -74,13 +74,13 @@ class TestRecursion:
         # accelerations are used. See #12017
         with self.assertRaises(RecursionError):
             with support.infinite_recursion():
-                self.loads('{"a":' * 100000 + '1' + '}' * 100000)
+                self.loads('{"a":' * 200000 + '1' + '}' * 200000)
         with self.assertRaises(RecursionError):
             with support.infinite_recursion():
-                self.loads('{"a":' * 100000 + '[1]' + '}' * 100000)
+                self.loads('{"a":' * 200000 + '[1]' + '}' * 200000)
         with self.assertRaises(RecursionError):
             with support.infinite_recursion():
-                self.loads('[' * 100000 + '1' + ']' * 100000)
+                self.loads('[' * 200000 + '1' + ']' * 200000)
 
     @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
