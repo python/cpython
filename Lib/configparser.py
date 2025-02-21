@@ -161,9 +161,9 @@ __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "InterpolationMissingOptionError", "InterpolationSyntaxError",
            "ParsingError", "MissingSectionHeaderError",
            "MultilineContinuationError", "UnnamedSectionDisabledError",
-           "ConfigParser", "RawConfigParser",
+           "InvalidWriteError", "ConfigParser", "RawConfigParser",
            "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
-           "SectionProxy", "ConverterMapping", "InvalidWriteError",
+           "SectionProxy", "ConverterMapping",
            "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH", "UNNAMED_SECTION")
 
 _default_dict = dict
