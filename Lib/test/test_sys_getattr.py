@@ -127,6 +127,37 @@ class PySysGetAttrTest(unittest.TestCase):
 
     ''')
 
+    unraisable_hook_code = textwrap.dedent('''
+        import sys
+
+        class UnraisableHookInitiator:
+            def __del__(self):
+                raise Exception('1')
+
+        class UnraisableHook:
+            def __call__(self, *args, **kwds):
+                print('X', *args)
+
+            def __repr__(self):
+                h = sys.unraisablehook
+                setattr(sys, 'unraisablehook', sys.__unraisablehook__)
+                del h
+                return 'UnraisableHook'
+
+        def audit(event, args):
+            repr(args)
+
+        def main():
+            sys.addaudithook(audit)
+            setattr(sys, 'unraisablehook', UnraisableHook())
+            x = UnraisableHookInitiator()
+            del x
+
+        if __name__ == "__main__":
+            main()
+
+    ''')
+
 
     def test_print_deleted_stdout(self):
         # print should use strong reference to the stdout.
@@ -239,6 +270,13 @@ class PySysGetAttrTest(unittest.TestCase):
             "sys.addaudithook(audit)",
             "CrashStderr()"
         )
+        rc, _, err = assert_python_ok('-c', test_code)
+        self.assertEqual(rc, 0)
+        self.assertNotIn(b"Segmentation fault", err)
+        self.assertNotIn(b"access violation", err)
+
+    def test_errors_unraisablehook(self):
+        test_code = self.unraisable_hook_code
         rc, _, err = assert_python_ok('-c', test_code)
         self.assertEqual(rc, 0)
         self.assertNotIn(b"Segmentation fault", err)
