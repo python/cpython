@@ -33,15 +33,15 @@ Major contributors since 2005:
 
 - 2005: Tal Einat
 - 2010: Terry Jan Reedy (current maintainer)
-- 2013: Roger Serwys
+- 2013: Roger Serwy
 - 2014: Saimadhav Heblikar
 - 2015: Mark Roseman
 - 2017: Louie Lu, Cheryl Sabella, and Serhiy Storchaka
 
 For additional details refer to NEWS.txt and Changelog.
 
-Please contact the IDLE maintainer (kbk@shore.net) to have yourself included
-here if you are one of those we missed!
+If we missed you, feel free to submit a PR with a summary of
+contributions (for instance, at least 5 merged PRs).
 
 
 

@@ -1,2 +1,0 @@
-Add :meth:`memoryview.index` to :class:`memoryview` objects. Patch by
-Bénédikt Tran.

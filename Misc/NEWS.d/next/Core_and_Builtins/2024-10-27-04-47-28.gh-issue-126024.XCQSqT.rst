@@ -1,2 +1,0 @@
-Optimize decoding of short UTF-8 sequences containing non-ASCII characters
-by approximately 15%.

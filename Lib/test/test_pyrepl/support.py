@@ -101,16 +101,6 @@ handle_events_narrow_console = partial(
 )
 
 
-def make_clean_env() -> dict[str, str]:
-    clean_env = os.environ.copy()
-    for k in clean_env.copy():
-        if k.startswith("PYTHON"):
-            clean_env.pop(k)
-    clean_env.pop("FORCE_COLOR", None)
-    clean_env.pop("NO_COLOR", None)
-    return clean_env
-
-
 class FakeConsole(Console):
     def __init__(self, events, encoding="utf-8") -> None:
         self.events = iter(events)

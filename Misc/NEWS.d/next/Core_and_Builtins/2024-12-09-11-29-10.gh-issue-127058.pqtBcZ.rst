@@ -1,3 +1,0 @@
-``PySequence_Tuple`` now creates the resulting tuple atomically, preventing
-partially created tuples being visible to the garbage collector or through
-``gc.get_referrers()``

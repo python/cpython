@@ -104,7 +104,7 @@ def strace_python(code, strace_flags, check=True):
         return StraceResult(
             strace_returncode=-1,
             python_returncode=-1,
-            event_bytes=f"error({reason},details={details}) = -1".encode('utf-8'),
+            event_bytes= f"error({reason},details={details!r}) = -1".encode('utf-8'),
             stdout=res.out if res else b"",
             stderr=res.err if res else b"")
 
@@ -179,9 +179,10 @@ def get_syscalls(code, strace_flags, prelude="", cleanup="",
 @cache
 def _can_strace():
     res = strace_python("import sys; sys.exit(0)", [], check=False)
-    assert res.events(), "Should have parsed multiple calls"
-
-    return res.strace_returncode == 0 and res.python_returncode == 0
+    if res.strace_returncode == 0 and res.python_returncode == 0:
+        assert res.events(), "Should have parsed multiple calls"
+        return True
+    return False
 
 
 def requires_strace():

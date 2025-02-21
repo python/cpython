@@ -59,11 +59,18 @@ The constants defined in this module are:
    String of ASCII characters which are considered punctuation characters
    in the ``C`` locale: ``!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~``.
 
+
 .. data:: printable
 
-   String of ASCII characters which are considered printable.  This is a
-   combination of :const:`digits`, :const:`ascii_letters`, :const:`punctuation`,
-   and :const:`whitespace`.
+   String of ASCII characters which are considered printable by Python.
+   This is a combination of :const:`digits`, :const:`ascii_letters`,
+   :const:`punctuation`, and :const:`whitespace`.
+
+   .. note::
+
+      By design, :meth:`string.printable.isprintable() <str.isprintable>`
+      returns :const:`False`. In particular, ``string.printable`` is not
+      printable in the POSIX sense (see :manpage:`LC_CTYPE <locale(5)>`).
 
 
 .. data:: whitespace
@@ -409,7 +416,9 @@ conversions, trailing zeros are not removed from the result.
 
 .. index:: single: , (comma); in string formatting
 
-The ``','`` option signals the use of a comma for a thousands separator.
+The ``','`` option signals the use of a comma for a thousands separator for
+floating-point presentation types and for integer presentation type ``'d'``.
+For other presentation types, this option is an error.
 For a locale aware separator, use the ``'n'`` integer presentation type
 instead.
 

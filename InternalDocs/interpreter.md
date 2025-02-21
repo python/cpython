@@ -20,7 +20,7 @@ When the interpreter's
 [`PyEval_EvalCode()`](https://docs.python.org/3.14/c-api/veryhigh.html#c.PyEval_EvalCode)
 function is called to execute a `CodeObject`, it constructs a [`Frame`](frames.md) and calls
 [`_PyEval_EvalFrame()`](https://docs.python.org/3.14/c-api/veryhigh.html#c.PyEval_EvalCode)
-to execute the code object in this frame. The frame hold the dynamic state of the
+to execute the code object in this frame. The frame holds the dynamic state of the
 `CodeObject`'s execution, including the instruction pointer, the globals and builtins.
 It also has a reference to the `CodeObject` itself.
 
@@ -105,7 +105,7 @@ snippet decode a complete instruction:
 For various reasons we'll get to later (mostly efficiency, given that `EXTENDED_ARG`
 is rare) the actual code is different.
 
-## Jumps
+## Jumps
 
 Note that when the `switch` statement is reached, `next_instr` (the "instruction offset")
 already points to the next instruction.
@@ -153,9 +153,9 @@ More information about the use of inline caches can be found in
 Most instructions read or write some data in the form of object references (`PyObject *`).
 The CPython bytecode interpreter is a stack machine, meaning that its instructions operate
 by pushing data onto and popping it off the stack.
-The stack is forms part of the frame for the code object. Its maximum depth is calculated
+The stack forms part of the frame for the code object. Its maximum depth is calculated
 by the compiler and stored in the `co_stacksize` field of the code object, so that the
-stack can be pre-allocated is a contiguous array of `PyObject*` pointers, when the frame
+stack can be pre-allocated as a contiguous array of `PyObject*` pointers, when the frame
 is created.
 
 The stack effects of each instruction are also exposed through the
@@ -462,7 +462,7 @@ set of values that allows them to:
 2. Perform the operation quickly.
 
 This requires that the set of values is chosen such that membership can be
-tested quickly and that membership is sufficient to allow the operation to
+tested quickly and that membership is sufficient to allow the operation to be
 performed quickly.
 
 For example, `LOAD_GLOBAL_MODULE` is specialized for `globals()`
