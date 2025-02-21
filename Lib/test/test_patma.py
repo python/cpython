@@ -6,6 +6,7 @@ import enum
 import inspect
 import sys
 import unittest
+from test import support
 
 
 @dataclasses.dataclass
