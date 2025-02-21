@@ -666,13 +666,14 @@ IDLE can be invoked from the command line with various options. The general synt
 
 .. code-block:: bash
 
-   idle [options] [file ...]
+   python -m idlelib idle [options] [file ...]
 
 The following options are available:
 
 .. option:: -c <command>
 
-   Run the specified Python command in the shell window. For example:
+   Run the specified Python command in the shell window. For example, pass ``-c "print('Hello, World!')"``.
+On Windows, the outer quotes must be double quotes as shown.
 
    .. code-block:: bash
 
