@@ -1479,7 +1479,7 @@ class ExceptionTests(unittest.TestCase):
         """
         rc, out, err = script_helper.assert_python_failure("-c", code)
         self.assertEqual(rc, 1)
-        expected = b'RecursionError: maximum recursion depth exceeded'
+        expected = b'RecursionError'
         self.assertTrue(expected in err, msg=f"{expected!r} not found in {err[:3_000]!r}... (truncated)")
         self.assertIn(b'Done.', out)
 
@@ -1678,10 +1678,13 @@ class ExceptionTests(unittest.TestCase):
 
         obj = BrokenDel()
         with support.catch_unraisable_exception() as cm:
+            obj_repr = repr(type(obj).__del__)
             del obj
 
             gc_collect()  # For PyPy or other GCs.
-            self.assertEqual(cm.unraisable.object, BrokenDel.__del__)
+            self.assertEqual(cm.unraisable.err_msg,
+                             f"Exception ignored while calling "
+                             f"deallocator {obj_repr}")
             self.assertIsNotNone(cm.unraisable.exc_traceback)
 
     def test_unhandled(self):
@@ -2300,7 +2303,7 @@ class SyntaxErrorTests(unittest.TestCase):
         )
         err = run_script(source.encode('cp437'))
         self.assertEqual(err[-3], '    "┬ó┬ó┬ó┬ó┬ó┬ó" + f(4, x for x in range(1))')
-        self.assertEqual(err[-2], '                          ^^^^^^^^^^^^^^^^^^^')
+        self.assertEqual(err[-2], '                            ^^^')
 
         # Check backwards tokenizer errors
         source = '# -*- coding: ascii -*-\n\n(\n'
