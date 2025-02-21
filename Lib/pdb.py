@@ -1758,7 +1758,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         Quit from the debugger. The program being executed is aborted.
         """
-        if self.mode == 'inline':
+        in_repl_session = hasattr(sys, 'ps1')
+        if self.mode == 'inline' and not in_repl_session:
             while True:
                 try:
                     reply = input('Quitting pdb will kill the process. Quit anyway? [y/n] ')

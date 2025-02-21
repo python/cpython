@@ -19,6 +19,7 @@ from test import support
 from test.support import force_not_colorized, os_helper
 from test.support.import_helper import import_module
 from test.support.pty_helper import run_pty, FakeInput
+from test.support.script_helper import kill_python
 from unittest.mock import patch
 
 SKIP_CORO_TESTS = False
@@ -4340,6 +4341,45 @@ class PdbTestInline(unittest.TestCase):
         self.assertEqual(stderr, "")
         # The quit prompt should be printed exactly twice
         self.assertEqual(stdout.count("Quit anyway"), 2)
+
+
+def spawn_repl():
+    """Run the basic Python REPL. Returns a Popen object."""
+    # This function is based on the function "spawn_repl" in test_repl.py.
+    # See comments there for the rationale for the command line args.
+    stdin_fname = os.path.join(os.path.dirname(sys.executable), '<stdin>')
+    proc = subprocess.Popen(
+        [stdin_fname, '-I', '-i'],
+        env={'PYTHON_BASIC_REPL': '1'},
+        executable=sys.executable,
+        text=True,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    )
+    return proc
+
+
+@support.force_not_colorized_test_class
+@support.requires_subprocess()
+class TestREPLSession(unittest.TestCase):
+    def test_return_from_inline_mode_to_REPL(self):
+        # Issue #124703: Raise BdbQuit when exiting pdb in REPL session.
+        # This allows the REPL session to continue.
+        user_input = """
+            x = 'Spam'
+            import pdb
+            pdb.set_trace(commands=['x * 3', 'q'])
+            print('Afterward')
+        """
+        p = spawn_repl()
+        p.stdin.write(textwrap.dedent(user_input))
+        output = kill_python(p)
+        self.assertIn('SpamSpamSpam', output)
+        self.assertNotIn('Quit anyway', output)
+        self.assertIn('BdbQuit', output)
+        self.assertIn('Afterward', output)
+        self.assertEqual(p.returncode, 0)
 
 
 @support.requires_subprocess()
