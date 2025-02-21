@@ -3236,12 +3236,6 @@ through the object's keys; for sequences, it should iterate through the values.
    values as for the :meth:`__getitem__` method.
 
 
-.. method:: object.__missing__(self, key)
-
-   Called by :class:`dict`\ .\ :meth:`__getitem__` to implement ``self[key]`` for dict subclasses
-   when key is not in the dictionary.
-
-
 .. method:: object.__iter__(self)
 
    This method is called when an :term:`iterator` is required for a container.
