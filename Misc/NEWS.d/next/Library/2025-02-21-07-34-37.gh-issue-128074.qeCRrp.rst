@@ -1,0 +1,3 @@
+Update input time zone format from ``±HHMM[SS[.ffffff]]`` to
+``±HH[MM[SS[.ffffff]]]`` for :meth:`date.strptime`, :meth:`datetime.strptime`
+and :meth:`time.strptime` methods. Patch by Semyon Moroz.
