@@ -381,9 +381,7 @@ Python/pylifecycle.c	-	INTERPRETER_TRAMPOLINE_CODEDEF	-
 Python/pystate.c	-	initial	-
 Python/specialize.c	-	adaptive_opcodes	-
 Python/specialize.c	-	cache_requirements	-
-Python/specialize.c	-	compactlongs_specs	-
-Python/specialize.c	-	float_compactlong_specs	-
-Python/specialize.c	-	compactlong_float_specs	-
+Python/specialize.c	-	binaryop_extend_descrs	-
 Python/stdlib_module_names.h	-	_Py_stdlib_module_names	-
 Python/sysmodule.c	-	perf_map_state	-
 Python/sysmodule.c	-	_PySys_ImplCacheTag	-

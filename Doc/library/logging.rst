@@ -562,7 +562,8 @@ subclasses. However, the :meth:`!__init__` method in subclasses needs to call
 
    .. method:: Handler.setFormatter(fmt)
 
-      Sets the :class:`Formatter` for this handler to *fmt*.
+      Sets the formatter for this handler to *fmt*.
+      The *fmt* argument must be a :class:`Formatter` instance or ``None``.
 
 
    .. method:: Handler.addFilter(filter)
@@ -592,10 +593,12 @@ subclasses. However, the :meth:`!__init__` method in subclasses needs to call
 
    .. method:: Handler.close()
 
-      Tidy up any resources used by the handler. This version does no output but
-      removes the handler from an internal list of handlers which is closed when
-      :func:`shutdown` is called. Subclasses should ensure that this gets called
-      from overridden :meth:`close` methods.
+      Tidy up any resources used by the handler. This version does no output
+      but removes the handler from an internal map of handlers, which is used
+      for handler lookup by name.
+
+      Subclasses should ensure that this gets called from overridden :meth:`close`
+      methods.
 
 
    .. method:: Handler.handle(record)
