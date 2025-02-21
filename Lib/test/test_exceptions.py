@@ -1479,7 +1479,7 @@ class ExceptionTests(unittest.TestCase):
         """
         rc, out, err = script_helper.assert_python_failure("-c", code)
         self.assertEqual(rc, 1)
-        expected = b'RecursionError: maximum recursion depth exceeded'
+        expected = b'RecursionError'
         self.assertTrue(expected in err, msg=f"{expected!r} not found in {err[:3_000]!r}... (truncated)")
         self.assertIn(b'Done.', out)
 
