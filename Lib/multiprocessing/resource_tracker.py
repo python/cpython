@@ -213,7 +213,10 @@ class ResourceTracker(object):
             nbytes, len(msg))
 
     def __del__(self):
-        self._stop()
+        try:
+            self._stop()
+        except:
+            pass
 
 
 _resource_tracker = ResourceTracker()
