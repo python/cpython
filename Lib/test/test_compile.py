@@ -714,8 +714,8 @@ class TestSpecifics(unittest.TestCase):
     def test_compiler_recursion_limit(self):
         # Compiler frames are small
         limit = 100
-        fail_depth = limit * 1000
-        crash_depth = limit * 2000
+        fail_depth = limit * 1500
+        crash_depth = limit * 3000
         success_depth = limit
 
         def check_limit(prefix, repeated, mode="single"):
