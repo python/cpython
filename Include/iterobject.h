@@ -7,6 +7,7 @@ extern "C" {
 
 PyAPI_DATA(PyTypeObject) PySeqIter_Type;
 PyAPI_DATA(PyTypeObject) PyCallIter_Type;
+PyAPI_DATA(PyTypeObject) PySeqAIter_Type;
 
 #define PySeqIter_Check(op) Py_IS_TYPE((op), &PySeqIter_Type)
 
@@ -16,6 +17,11 @@ PyAPI_FUNC(PyObject *) PySeqIter_New(PyObject *);
 #define PyCallIter_Check(op) Py_IS_TYPE((op), &PyCallIter_Type)
 
 PyAPI_FUNC(PyObject *) PyCallIter_New(PyObject *, PyObject *);
+
+
+#define PySeqAIter_Check(op) Py_IS_TYPE((op), &PySeqAIter_Type)
+
+PyAPI_FUNC(PyObject *) PySeqAIter_New(PyObject *);
 
 #ifdef __cplusplus
 }
