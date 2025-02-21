@@ -984,7 +984,7 @@ See :source:`Mac/README.rst`.
    * ``3-way`` (supports i386, PPC and x86-64; supports ``fat3`` wheels);
    * ``intel`` (supports i386 and x86-64; supports ``intel`` wheels);
    * ``intel-32`` (supports i386; supports ``i386`` wheels);
-   * ``intel-64`` (supports x86-64; supports ``x86-64`` wheels);
+   * ``intel-64`` (supports x86-64; supports ``x86_64`` wheels);
    * ``all``  (supports PPC, i386, PPC64 and x86-64; supports ``universal`` wheels).
 
 .. option:: --with-framework-name=FRAMEWORK
