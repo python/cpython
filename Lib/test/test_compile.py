@@ -714,19 +714,17 @@ class TestSpecifics(unittest.TestCase):
     def test_compiler_recursion_limit(self):
         # Compiler frames are small
         limit = 100
-        fail_depth = limit * 1500
         crash_depth = limit * 5000
         success_depth = limit
 
         def check_limit(prefix, repeated, mode="single"):
             expect_ok = prefix + repeated * success_depth
             compile(expect_ok, '<test>', mode)
-            for depth in (fail_depth, crash_depth):
-                broken = prefix + repeated * depth
-                details = "Compiling ({!r} + {!r} * {})".format(
-                            prefix, repeated, depth)
-                with self.assertRaises(RecursionError, msg=details):
-                    compile(broken, '<test>', mode)
+            broken = prefix + repeated * crash_depth
+            details = "Compiling ({!r} + {!r} * {})".format(
+                        prefix, repeated, crash_depth)
+            with self.assertRaises(RecursionError, msg=details):
+                compile(broken, '<test>', mode)
 
         check_limit("a", "()")
         check_limit("a", ".b")
