@@ -57,7 +57,7 @@ Clicking on the **Continue** button brings up the **Read Me** for this installer
 Besides other important information, the **Read Me** documents which Python version is
 going to be installed and on what versions of macOS it is supported. You may need
 to scroll through to read the whole file. By default, this **Read Me** will also be
-installed in |usemac_applications_folder_version| and available to read anytime.
+installed in |applications_python_version_literal| and available to read anytime.
 
 .. image:: mac_installer_02_readme.png
 
@@ -90,7 +90,7 @@ When the installation is complete, the **Summary** window will appear.
 .. image:: mac_installer_06_summary.png
 
 Double-click on the :command:`Install Certificates.command`
-icon or file in the |usemac_applications_folder_version| window to complete the
+icon or file in the |applications_python_version_literal| window to complete the
 installation.
 
 .. image:: mac_installer_07_applications.png
@@ -283,38 +283,38 @@ experimental and is subject to change in future releases.
 Known cautions and limitations:
 
 - The **UNIX command-line tools** package, which is selected by default,
-  will install links in :file:`/usr/local/bin` for |usemac_python_x_dot_y_t_literal|,
-  the free-threaded interpreter, and |usemac_python_x_dot_y_t_literal_config|,
+  will install links in :file:`/usr/local/bin` for |python_x_dot_y_t_literal|,
+  the free-threaded interpreter, and |python_x_dot_y_t_literal_config|,
   a configuration utility which may be useful for package builders.
   Since :file:`/usr/local/bin` is typically included in your shell ``PATH``,
   in most cases no changes to your ``PATH`` environment variables should
-  be needed to use |usemac_python_x_dot_y_t_literal|.
+  be needed to use |python_x_dot_y_t_literal|.
 
 - For this release, the **Shell profile updater** package and the
-  :file:`Update Shell Profile.command` in |usemac_applications_folder_version|
+  :file:`Update Shell Profile.command` in |applications_python_version_literal|
   do not support the free-threaded package.
 
 - The free-threaded build and the traditional build have separate search
   paths and separate :file:`site-packages` directories so, by default,
   if you need a package available in both builds, it may need to be installed in both.
   The free-threaded package will install a separate instance of :program:`pip` for use
-  with |usemac_python_x_dot_y_t_literal|.
+  with |python_x_dot_y_t_literal|.
 
   - To install a package using :command:`pip` without a :command:`venv`:
 
-        |usemac_python_x_dot_y_t_literal| ``-m pip install <package_name>``
+        |python_x_dot_y_t_literal| ``-m pip install <package_name>``
 
 - When working with multiple Python environments, it is usually safest and easiest
   to :ref:`create and use virtual environments <tut-venv>`.
   This can avoid possible command name conflicts and confusion about which Python is in use:
 
-      |usemac_python_x_dot_y_t_literal| ``-m venv <venv_name>``
+      |python_x_dot_y_t_literal| ``-m venv <venv_name>``
 
   then :command:`activate`.
 
 - To run a free-threaded version of IDLE:
 
-      |usemac_python_x_dot_y_t_literal| ``-m idlelib``
+      |python_x_dot_y_t_literal| ``-m idlelib``
 
 - The interpreters in both builds respond to the same
   :ref:`PYTHON environment variables <using-on-envvars>`
@@ -330,7 +330,7 @@ Known cautions and limitations:
   thus it only needs to be run once.
 
 - If you cannot depend on the link in ``/usr/local/bin`` pointing to the
-  ``python.org`` free-threaded |usemac_python_x_dot_y_t_literal| (for example, if you want
+  ``python.org`` free-threaded |python_x_dot_y_t_literal| (for example, if you want
   to install your own version there or some other distribution does),
   you can explicitly set your shell ``PATH`` environment variable to
   include the ``PythonT`` framework ``bin`` directory:
