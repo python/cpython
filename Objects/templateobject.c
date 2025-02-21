@@ -341,9 +341,9 @@ template_concat_templates(templateobject *self, templateobject *other)
 }
 
 static PyObject *
-template_concat_template_str(templateobject *self, PyObject *str)
+template_concat_template_str(templateobject *self, PyObject *other)
 {
-    PyObject *newstrings = template_strings_append_str(self->strings, str);
+    PyObject *newstrings = template_strings_append_str(self->strings, other);
     if (newstrings == NULL) {
         return NULL;
     }
@@ -358,9 +358,9 @@ template_concat_template_str(templateobject *self, PyObject *str)
 }
 
 static PyObject *
-template_concat_str_template(templateobject *self, PyObject *str)
+template_concat_str_template(templateobject *self, PyObject *other)
 {
-    PyObject *newstrings = template_strings_prepend_str(self->strings, str);
+    PyObject *newstrings = template_strings_prepend_str(self->strings, other);
     if (newstrings == NULL) {
         return NULL;
     }
@@ -374,8 +374,8 @@ template_concat_str_template(templateobject *self, PyObject *str)
     return template_from_strings_interpolations(Py_TYPE(self), newstrings, newinterpolations);
 }
 
-static PyObject *
-template_concat(PyObject *self, PyObject *other)
+PyObject *
+_PyTemplate_Concat(PyObject *self, PyObject *other)
 {
     if (PyObject_TypeCheck(self, &_PyTemplate_Type) &&
             PyObject_TypeCheck(other, &_PyTemplate_Type)) {
@@ -433,7 +433,7 @@ static PyGetSetDef template_getset[] = {
 };
 
 static PySequenceMethods template_as_sequence = {
-    .sq_concat = template_concat,
+    .sq_concat = _PyTemplate_Concat,
 };
 
 PyTypeObject _PyTemplate_Type = {

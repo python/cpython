@@ -14,6 +14,8 @@ extern "C" {
 extern PyTypeObject _PyTemplate_Type;
 extern PyTypeObject _PyTemplateIter_Type;
 
+extern PyObject *_PyTemplate_Concat(PyObject *self, PyObject *other);
+
 PyAPI_FUNC(PyObject *) _PyTemplate_FromValues(PyObject **values, Py_ssize_t n);
 PyAPI_FUNC(PyObject *) _PyTemplate_FromListStackRef(_PyStackRef ref);
 

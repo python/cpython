@@ -58,6 +58,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_unicodeobject_generated.h"  // _PyUnicode_InitStaticStrings()
+#include "pycore_template.h"      // _PyTemplate_Type
 
 #include "stringlib/eq.h"         // unicode_eq()
 #include <stddef.h>               // ptrdiff_t
@@ -11614,10 +11615,16 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
         return NULL;
 
     if (!PyUnicode_Check(right)) {
-        PyErr_Format(PyExc_TypeError,
-                     "can only concatenate str (not \"%.200s\") to str",
-                     Py_TYPE(right)->tp_name);
-        return NULL;
+        if (PyObject_TypeCheck(right, &_PyTemplate_Type)) {
+            // str + tstring is implemented in the tstring type
+            return _PyTemplate_Concat(left, right);
+        }
+        else {
+            PyErr_Format(PyExc_TypeError,
+                "can only concatenate str (not \"%.200s\") to str",
+                Py_TYPE(right)->tp_name);
+            return NULL;
+        }
     }
 
     /* Shortcuts */
