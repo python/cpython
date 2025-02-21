@@ -2600,6 +2600,12 @@ optimize_load_fast(cfg_builder *g)
                     break;
                 }
 
+                case LOAD_FAST_AND_CLEAR: {
+                    kill_local(has_killed_refs, &refs, oparg);
+                    ref_stack_push(&refs, (ref){i, oparg});
+                    break;
+                }
+
                 case LOAD_FAST_LOAD_FAST: {
                     if (ref_stack_push(&refs, (ref){i, oparg >> 4}) < 0) {
                         status = ERROR;
@@ -2615,6 +2621,13 @@ optimize_load_fast(cfg_builder *g)
                 case STORE_FAST: {
                     kill_local(has_killed_refs, &refs, oparg);
                     ref_stack_pop(&refs);
+                    break;
+                }
+
+                case STORE_FAST_LOAD_FAST: {
+                    kill_local(has_killed_refs, &refs, oparg >> 4);
+                    ref_stack_pop(&refs);
+                    ref_stack_push(&refs, (ref){i, oparg & 15});
                     break;
                 }
 
