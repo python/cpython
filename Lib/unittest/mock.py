@@ -628,7 +628,9 @@ class NonCallableMock(Base):
     side_effect = property(__get_side_effect, __set_side_effect)
 
 
-    def reset_mock(self, visited=None, *, return_value=False, side_effect=False):
+    def reset_mock(self, visited=None, *,
+                   return_value: bool = False,
+                   side_effect: bool = False):
         "Restore the mock object to its initial state."
         if visited is None:
             visited = []
@@ -2228,7 +2230,7 @@ class MagicMock(MagicMixin, Mock):
         self._mock_add_spec(spec, spec_set)
         self._mock_set_magics()
 
-    def reset_mock(self, /, *args, return_value=False, **kwargs):
+    def reset_mock(self, /, *args, return_value: bool = False, **kwargs):
         if (
             return_value
             and self._mock_name
