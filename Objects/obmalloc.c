@@ -344,6 +344,68 @@ void _PyMem_DebugFree(void *ctx, void *p);
 #define PYDBGOBJ_ALLOC \
     {&_PyRuntime.allocators.debug.obj, _PyMem_DebugMalloc, _PyMem_DebugCalloc, _PyMem_DebugRealloc, _PyMem_DebugFree}
 
+/* default raw allocator (not swappable) */
+
+void *
+_PyMem_DefaultRawMalloc(size_t size)
+{
+#ifdef Py_DEBUG
+    return _PyMem_DebugRawMalloc(&_PyRuntime.allocators.debug.raw, size);
+#else
+    return _PyMem_RawMalloc(NULL, size);
+#endif
+}
+
+void *
+_PyMem_DefaultRawCalloc(size_t nelem, size_t elsize)
+{
+#ifdef Py_DEBUG
+    return _PyMem_DebugRawCalloc(&_PyRuntime.allocators.debug.raw, nelem, elsize);
+#else
+    return _PyMem_RawCalloc(NULL, nelem, elsize);
+#endif
+}
+
+void *
+_PyMem_DefaultRawRealloc(void *ptr, size_t size)
+{
+#ifdef Py_DEBUG
+    return _PyMem_DebugRawRealloc(&_PyRuntime.allocators.debug.raw, ptr, size);
+#else
+    return _PyMem_RawRealloc(NULL, ptr, size);
+#endif
+}
+
+void
+_PyMem_DefaultRawFree(void *ptr)
+{
+#ifdef Py_DEBUG
+    _PyMem_DebugRawFree(&_PyRuntime.allocators.debug.raw, ptr);
+#else
+    _PyMem_RawFree(NULL, ptr);
+#endif
+}
+
+wchar_t*
+_PyMem_DefaultRawWcsdup(const wchar_t *str)
+{
+    assert(str != NULL);
+
+    size_t len = wcslen(str);
+    if (len > (size_t)PY_SSIZE_T_MAX / sizeof(wchar_t) - 1) {
+        return NULL;
+    }
+
+    size_t size = (len + 1) * sizeof(wchar_t);
+    wchar_t *str2 = _PyMem_DefaultRawMalloc(size);
+    if (str2 == NULL) {
+        return NULL;
+    }
+
+    memcpy(str2, str, size);
+    return str2;
+}
+
 /* the low-level virtual memory allocator */
 
 #ifdef WITH_PYMALLOC
@@ -491,17 +553,6 @@ static const int pydebug = 1;
 #else
 static const int pydebug = 0;
 #endif
-
-int
-_PyMem_SetDefaultAllocator(PyMemAllocatorDomain domain,
-                           PyMemAllocatorEx *old_alloc)
-{
-    PyMutex_Lock(&ALLOCATORS_MUTEX);
-    int res = set_default_allocator_unlocked(domain, pydebug, old_alloc);
-    PyMutex_Unlock(&ALLOCATORS_MUTEX);
-    return res;
-}
-
 
 int
 _PyMem_GetAllocatorName(const char *name, PyMemAllocatorName *allocator)
