@@ -168,6 +168,18 @@ SyntaxError: expected 'else' after 'if' expression
 Traceback (most recent call last):
 SyntaxError: expected 'else' after 'if' expression
 
+>>> x = 1 if 1 else pass
+Traceback (most recent call last):
+SyntaxError: expected expression after 'else', but statement is given
+
+>>> x = pass if 1 else 1
+Traceback (most recent call last):
+SyntaxError: expected expression before 'if', but statement is given
+
+>>> x = pass if 1 else pass
+Traceback (most recent call last):
+SyntaxError: expected expression before 'if', but statement is given
+
 >>> if True:
 ...     print("Hello"
 ...
@@ -311,6 +323,12 @@ SyntaxError: did you forget parentheses around the comprehension target?
 >>> {x,y for x,y in range(100)}
 Traceback (most recent call last):
 SyntaxError: did you forget parentheses around the comprehension target?
+
+# Incorrectly closed strings
+
+>>> "The interesting object "The important object" is very important"
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Is this intended to be part of the string?
 
 # Missing commas in literals collections should not
 # produce special error messages regarding missing
@@ -2857,6 +2875,44 @@ while 1:
             end_offset=15 + len("obj.attr"),
         )
 
+    def test_ifexp_else_stmt(self):
+        msg = "expected expression after 'else', but statement is given"
+
+        for stmt in [
+            "pass",
+            "return",
+            "return 2",
+            "raise Exception('a')",
+            "del a",
+            "yield 2",
+            "assert False",
+            "break",
+            "continue",
+            "import",
+            "import ast",
+            "from",
+            "from ast import *"
+        ]:
+            self._check_error(f"x = 1 if 1 else {stmt}", msg)
+
+    def test_ifexp_body_stmt_else_expression(self):
+        msg = "expected expression before 'if', but statement is given"
+
+        for stmt in [
+            "pass",
+            "break",
+            "continue"
+        ]:
+            self._check_error(f"x = {stmt} if 1 else 1", msg)
+
+    def test_ifexp_body_stmt_else_stmt(self):
+        msg = "expected expression before 'if', but statement is given"
+        for lhs_stmt, rhs_stmt in [
+            ("pass", "pass"),
+            ("break", "pass"),
+            ("continue", "import ast")
+        ]:
+            self._check_error(f"x = {lhs_stmt} if 1 else {rhs_stmt}", msg)
 
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())
