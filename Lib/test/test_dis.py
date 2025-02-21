@@ -1425,9 +1425,9 @@ class DisWithFileTests(DisTests):
 
 
 if dis.code_info.__doc__ is None:
-    code_info_consts = "0: None"
+    code_info_consts = ""
 else:
-    code_info_consts = "0: 'Formatted details of methods, functions, or code.'"
+    code_info_consts = "Constants:\n   0: 'Formatted details of methods, functions, or code.'"
 
 code_info_code_info = f"""\
 Name:              code_info
@@ -1438,8 +1438,7 @@ Kw-only arguments: 0
 Number of locals:  1
 Stack size:        \\d+
 Flags:             OPTIMIZED, NEWLOCALS, HAS_DOCSTRING
-Constants:
-   {code_info_consts}
+{code_info_consts}
 Names:
    0: _format_code_info
    1: _get_code_object
@@ -1546,8 +1545,6 @@ Kw-only arguments: 0
 Number of locals:  0
 Stack size:        \\d+
 Flags:             0x0
-Constants:
-   0: None
 Names:
    0: x"""
 

@@ -22,7 +22,7 @@ void _PyCfgBuilder_Free(struct _PyCfgBuilder *g);
 int _PyCfgBuilder_CheckSize(struct _PyCfgBuilder* g);
 
 int _PyCfg_OptimizeCodeUnit(struct _PyCfgBuilder *g, PyObject *consts, PyObject *const_cache,
-                            int nlocals, int nparams, int firstlineno);
+                            int nlocals, int nparams, int firstlineno, unsigned has_docstring);
 
 struct _PyCfgBuilder* _PyCfg_FromInstructionSequence(_PyInstructionSequence *seq);
 int _PyCfg_ToInstructionSequence(struct _PyCfgBuilder *g, _PyInstructionSequence *seq);

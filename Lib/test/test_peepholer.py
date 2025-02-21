@@ -1134,16 +1134,16 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         expected_insts = [
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
-            ('LOAD_CONST', 1, 13),
+            ('LOAD_CONST', 0, 13),
             ('RETURN_VALUE', None, 13),
             lbl,
-            ('LOAD_CONST', 2, 14),
+            ('LOAD_CONST', 1, 14),
             ('RETURN_VALUE', None, 14),
         ]
         self.cfg_optimization_test(insts,
                                    expected_insts,
                                    consts=[0, 1, 2, 3, 4],
-                                   expected_consts=[0, 2, 3])
+                                   expected_consts=[2, 3])
 
     def test_list_exceeding_stack_use_guideline(self):
         def f():
@@ -1184,10 +1184,10 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('RETURN_VALUE', None, 0)
         ]
         after = [
-            ('LOAD_CONST', 1, 0),
+            ('LOAD_CONST', 0, 0),
             ('RETURN_VALUE', None, 0)
         ]
-        self.cfg_optimization_test(before, after, consts=[], expected_consts=[(2,), (1, 2)])
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[(1, 2)])
 
     def test_build_empty_tuple(self):
         before = [
@@ -1550,13 +1550,13 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         expected_insts = [
             ('NOP', None, 11),
             ('NOP', None, 12),
-            ('LOAD_CONST', 1, 14),
+            ('LOAD_CONST', 0, 14),
             ('RETURN_VALUE', None, 14),
         ]
         self.cfg_optimization_test(insts,
                                    expected_insts,
                                    consts=[0, 1, 2, 3, 4],
-                                   expected_consts=[0, 3])
+                                   expected_consts=[3])
 
     def test_conditional_jump_backward_non_const_condition(self):
         insts = [
@@ -1595,18 +1595,18 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         insts = [
             ('SETUP_FINALLY', handler := self.Label(), 10),
             ('POP_BLOCK', None, -1),
-            ('LOAD_CONST', 1, 11),
+            ('LOAD_CONST', 0, 11),
             ('RETURN_VALUE', None, 11),
             handler,
-            ('LOAD_CONST', 2, 12),
+            ('LOAD_CONST', 1, 12),
             ('RETURN_VALUE', None, 12),
         ]
         expected_insts = [
             ('SETUP_FINALLY', handler := self.Label(), 10),
-            ('LOAD_CONST', 1, 11),
+            ('LOAD_CONST', 0, 11),
             ('RETURN_VALUE', None, 11),
             handler,
-            ('LOAD_CONST', 2, 12),
+            ('LOAD_CONST', 1, 12),
             ('RETURN_VALUE', None, 12),
         ]
         self.cfg_optimization_test(insts, expected_insts, consts=list(range(5)))

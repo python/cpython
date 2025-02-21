@@ -1325,7 +1325,7 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     assert(u->u_metadata.u_firstlineno);
 
     if (_PyCfg_OptimizeCodeUnit(g, consts, const_cache, nlocals,
-                                nparams, u->u_metadata.u_firstlineno) < 0) {
+                                nparams, u->u_metadata.u_firstlineno, u->u_ste->ste_has_docstring) < 0) {
         goto error;
     }
 
