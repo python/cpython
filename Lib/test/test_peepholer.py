@@ -347,6 +347,28 @@ class TestTranforms(BytecodeTestCase):
                 self.assertInBytecode(code, opname)
                 self.check_lnotab(code)
 
+    def test_folding_of_tuples_on_constants(self):
+        tests =[
+            ('()', True, 0),
+            ('(1, 2, 3)', True, 3),
+            ('("a", "b", "c")', True, 3),
+            ('(1, a)', False, 2),
+            ('(a, b, c)', False, 3),
+            ('(1, (2, 3))', True, 2),
+            ('(a, (b, c))', False, 2),
+            ('(1, [], {})', False, 3),
+            (repr(tuple(range(30))), True, 30),
+            ('(1, (2, (3, (4, (5)))))', True, 2)
+        ]
+        for expr, is_const, length in tests:
+            with self.subTest(expr=expr, is_const=is_const, length=length):
+                code = compile(expr, '', 'eval')
+                if is_const:
+                    self.assertNotInBytecode(code, 'BUILD_TUPLE', length)
+                    self.assertInBytecode(code, 'LOAD_CONST', eval(expr))
+                else:
+                    self.assertInBytecode(code, 'BUILD_TUPLE', length)
+
     def test_elim_extra_return(self):
         # RETURN LOAD_CONST None RETURN  -->  RETURN
         def f(x):
