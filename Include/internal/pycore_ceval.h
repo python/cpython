@@ -195,7 +195,7 @@ extern void _PyEval_DeactivateOpCache(void);
 
 static inline uintptr_t
 _Py_get_machine_stack_pointer(void) {
-#if defined(__GNUC__) || defined(__clang__)
+#if _Py__has_builtin(__builtin_frame_address)
     return (uintptr_t)__builtin_frame_address(0);
 #else
     char here;
