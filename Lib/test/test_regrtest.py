@@ -42,6 +42,17 @@ if not support.has_subprocess_support:
 ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
 ROOT_DIR = os.path.abspath(os.path.normpath(ROOT_DIR))
 LOG_PREFIX = r'[0-9]+:[0-9]+:[0-9]+ (?:load avg: [0-9]+\.[0-9]{2} )?'
+RESULT_REGEX = (
+    'passed',
+    'failed',
+    'skipped',
+    'interrupted',
+    'env changed',
+    'timed out',
+    'ran no tests',
+    'worker non-zero exit code',
+)
+RESULT_REGEX = fr'(?:{"|".join(RESULT_REGEX)})'
 
 EXITCODE_BAD_TEST = 2
 EXITCODE_ENV_CHANGED = 3
@@ -555,8 +566,8 @@ class BaseTestCase(unittest.TestCase):
         self.assertRegex(output, regex)
 
     def parse_executed_tests(self, output):
-        regex = (r'^%s\[ *[0-9]+(?:/ *[0-9]+)*\] (%s)'
-                 % (LOG_PREFIX, self.TESTNAME_REGEX))
+        regex = (fr'^{LOG_PREFIX}\[ *[0-9]+(?:/ *[0-9]+)*\] '
+                 fr'({self.TESTNAME_REGEX}) {RESULT_REGEX}')
         parser = re.finditer(regex, output, re.MULTILINE)
         return list(match.group(1) for match in parser)
 
