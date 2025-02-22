@@ -407,13 +407,13 @@ Opening network connections
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. method:: loop.create_connection(protocol_factory, \
-                          host=None, port=None, *, ssl=None, \
-                          family=0, proto=0, flags=0, sock=None, \
-                          local_addr=None, server_hostname=None, \
-                          ssl_handshake_timeout=None, \
-                          ssl_shutdown_timeout=None, \
-                          happy_eyeballs_delay=None, interleave=None, \
-                          all_errors=False)
+                 host=None, port=None, *, ssl=None, \
+                 family=0, proto=0, flags=0, sock=None, \
+                 local_addr=None, server_hostname=None, \
+                 ssl_handshake_timeout=None, \
+                 ssl_shutdown_timeout=None, \
+                 happy_eyeballs_delay=None, interleave=None, \
+                 all_errors=False)
    :async:
 
    Open a streaming transport connection to a given
@@ -561,10 +561,11 @@ Opening network connections
       that can be used directly in async/await code.
 
 .. method:: loop.create_datagram_endpoint(protocol_factory, \
-                        local_addr=None, remote_addr=None, *, \
-                        family=0, proto=0, flags=0, \
-                        reuse_port=None, \
-                        allow_broadcast=None, sock=None)
+               local_addr=None, remote_addr=None, *, \
+               family=0, proto=0, flags=0, \
+               reuse_port=None, \
+               allow_broadcast=None, sock=None)
+   :async:
 
    Create a datagram connection.
 
@@ -646,9 +647,9 @@ Opening network connections
       3.7.6 and 3.6.10, has been entirely removed.
 
 .. method:: loop.create_unix_connection(protocol_factory, \
-                        path=None, *, ssl=None, sock=None, \
-                        server_hostname=None, ssl_handshake_timeout=None, \
-                        ssl_shutdown_timeout=None)
+               path=None, *, ssl=None, sock=None, \
+               server_hostname=None, ssl_handshake_timeout=None, \
+               ssl_shutdown_timeout=None)
    :async:
 
    Create a Unix connection.
@@ -683,15 +684,15 @@ Creating network servers
 .. _loop_create_server:
 
 .. method:: loop.create_server(protocol_factory, \
-                        host=None, port=None, *, \
-                        family=socket.AF_UNSPEC, \
-                        flags=socket.AI_PASSIVE, \
-                        sock=None, backlog=100, ssl=None, \
-                        reuse_address=None, reuse_port=None, \
-                        keep_alive=None, \
-                        ssl_handshake_timeout=None, \
-                        ssl_shutdown_timeout=None, \
-                        start_serving=True)
+               host=None, port=None, *, \
+               family=socket.AF_UNSPEC, \
+               flags=socket.AI_PASSIVE, \
+               sock=None, backlog=100, ssl=None, \
+               reuse_address=None, reuse_port=None, \
+               keep_alive=None, \
+               ssl_handshake_timeout=None, \
+               ssl_shutdown_timeout=None, \
+               start_serving=True)
    :async:
 
    Create a TCP server (socket type :const:`~socket.SOCK_STREAM`) listening
@@ -801,10 +802,10 @@ Creating network servers
 
 
 .. method:: loop.create_unix_server(protocol_factory, path=None, \
-                          *, sock=None, backlog=100, ssl=None, \
-                          ssl_handshake_timeout=None, \
-                          ssl_shutdown_timeout=None, \
-                          start_serving=True, cleanup_socket=True)
+                 *, sock=None, backlog=100, ssl=None, \
+                 ssl_handshake_timeout=None, \
+                 ssl_shutdown_timeout=None, \
+                 start_serving=True, cleanup_socket=True)
    :async:
 
    Similar to :meth:`loop.create_server` but works with the
@@ -839,8 +840,8 @@ Creating network servers
 
 
 .. method:: loop.connect_accepted_socket(protocol_factory, \
-                        sock, *, ssl=None, ssl_handshake_timeout=None, \
-                        ssl_shutdown_timeout=None)
+               sock, *, ssl=None, ssl_handshake_timeout=None, \
+               ssl_shutdown_timeout=None)
    :async:
 
    Wrap an already accepted connection into a transport/protocol pair.
@@ -890,7 +891,7 @@ Transferring files
 ^^^^^^^^^^^^^^^^^^
 
 .. method:: loop.sendfile(transport, file, \
-                                   offset=0, count=None, *, fallback=True)
+                          offset=0, count=None, *, fallback=True)
    :async:
 
    Send a *file* over a *transport*.  Return the total number of bytes
@@ -921,9 +922,9 @@ TLS Upgrade
 ^^^^^^^^^^^
 
 .. method:: loop.start_tls(transport, protocol, \
-                        sslcontext, *, server_side=False, \
-                        server_hostname=None, ssl_handshake_timeout=None, \
-                        ssl_shutdown_timeout=None)
+               sslcontext, *, server_side=False, \
+               server_hostname=None, ssl_handshake_timeout=None, \
+               ssl_shutdown_timeout=None)
    :async:
 
    Upgrade an existing transport-based connection to TLS.
@@ -1148,7 +1149,7 @@ convenient.
       :meth:`loop.create_server` and :func:`start_server`.
 
 .. method:: loop.sock_sendfile(sock, file, offset=0, count=None, \
-                                        *, fallback=True)
+                               *, fallback=True)
    :async:
 
    Send a file using high-performance :mod:`os.sendfile` if possible.
@@ -1184,7 +1185,7 @@ DNS
 ^^^
 
 .. method:: loop.getaddrinfo(host, port, *, family=0, \
-                        type=0, proto=0, flags=0)
+               type=0, proto=0, flags=0)
    :async:
 
    Asynchronous version of :meth:`socket.getaddrinfo`.
@@ -1503,8 +1504,8 @@ async/await code consider using the high-level
 .. _loop_subprocess_exec:
 
 .. method:: loop.subprocess_exec(protocol_factory, *args, \
-                      stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
-                      stderr=subprocess.PIPE, **kwargs)
+             stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
+             stderr=subprocess.PIPE, **kwargs)
    :async:
 
    Create a subprocess from one or more string arguments specified by
@@ -1586,8 +1587,8 @@ async/await code consider using the high-level
    *protocol* is an object instantiated by the *protocol_factory*.
 
 .. method:: loop.subprocess_shell(protocol_factory, cmd, *, \
-                        stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
-                        stderr=subprocess.PIPE, **kwargs)
+               stdin=subprocess.PIPE, stdout=subprocess.PIPE, \
+               stderr=subprocess.PIPE, **kwargs)
    :async:
 
    Create a subprocess from *cmd*, which can be a :class:`str` or a

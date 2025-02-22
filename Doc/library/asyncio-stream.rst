@@ -49,11 +49,11 @@ and work with streams:
 
 
 .. function:: open_connection(host=None, port=None, *, \
-                          limit=None, ssl=None, family=0, proto=0, \
-                          flags=0, sock=None, local_addr=None, \
-                          server_hostname=None, ssl_handshake_timeout=None, \
-                          ssl_shutdown_timeout=None, \
-                          happy_eyeballs_delay=None, interleave=None)
+                 limit=None, ssl=None, family=0, proto=0, \
+                 flags=0, sock=None, local_addr=None, \
+                 server_hostname=None, ssl_handshake_timeout=None, \
+                 ssl_shutdown_timeout=None, \
+                 happy_eyeballs_delay=None, interleave=None)
    :async:
 
    Establish a network connection and return a pair of
@@ -89,13 +89,13 @@ and work with streams:
 
 
 .. function:: start_server(client_connected_cb, host=None, \
-                          port=None, *, limit=None, \
-                          family=socket.AF_UNSPEC, \
-                          flags=socket.AI_PASSIVE, sock=None, \
-                          backlog=100, ssl=None, reuse_address=None, \
-                          reuse_port=None, keep_alive=None, \
-                          ssl_handshake_timeout=None, \
-                          ssl_shutdown_timeout=None, start_serving=True)
+                 port=None, *, limit=None, \
+                 family=socket.AF_UNSPEC, \
+                 flags=socket.AI_PASSIVE, sock=None, \
+                 backlog=100, ssl=None, reuse_address=None, \
+                 reuse_port=None, keep_alive=None, \
+                 ssl_handshake_timeout=None, \
+                 ssl_shutdown_timeout=None, start_serving=True)
    :async:
 
    Start a socket server.
@@ -138,8 +138,8 @@ and work with streams:
 .. rubric:: Unix Sockets
 
 .. function:: open_unix_connection(path=None, *, limit=None, \
-                        ssl=None, sock=None, server_hostname=None, \
-                        ssl_handshake_timeout=None, ssl_shutdown_timeout=None)
+               ssl=None, sock=None, server_hostname=None, \
+               ssl_handshake_timeout=None, ssl_shutdown_timeout=None)
    :async:
 
    Establish a Unix socket connection and return a pair of
@@ -169,9 +169,9 @@ and work with streams:
 
 
 .. function:: start_unix_server(client_connected_cb, path=None, \
-                          *, limit=None, sock=None, backlog=100, ssl=None, \
-                          ssl_handshake_timeout=None, \
-                          ssl_shutdown_timeout=None, start_serving=True)
+                 *, limit=None, sock=None, backlog=100, ssl=None, \
+                 ssl_handshake_timeout=None, \
+                 ssl_shutdown_timeout=None, start_serving=True)
    :async:
 
    Start a Unix socket server.
@@ -372,7 +372,7 @@ StreamWriter
       returns immediately.
 
    .. method:: start_tls(sslcontext, *, server_hostname=None, \
-                          ssl_handshake_timeout=None, ssl_shutdown_timeout=None)
+                         ssl_handshake_timeout=None, ssl_shutdown_timeout=None)
       :async:
 
       Upgrade an existing stream-based connection to TLS.

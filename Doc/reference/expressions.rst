@@ -786,7 +786,7 @@ which are used to control the execution of a generator function.
 
 
 .. method:: agen.athrow(value)
-                     agen.athrow(type[, value[, traceback]])
+            agen.athrow(type[, value[, traceback]])
    :async:
 
    Returns an awaitable that raises an exception of type ``type`` at the point
