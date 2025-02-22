@@ -94,7 +94,8 @@ and work with streams:
                  flags=socket.AI_PASSIVE, sock=None, \
                  backlog=100, ssl=None, reuse_address=None, \
                  reuse_port=None, ssl_handshake_timeout=None, \
-                          ssl_shutdown_timeout=None, start_serving=True):async:
+                 ssl_shutdown_timeout=None, start_serving=True)
+   :async:
 
    Start a socket server.
 

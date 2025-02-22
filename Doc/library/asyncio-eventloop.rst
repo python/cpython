@@ -681,7 +681,8 @@ Creating network servers
                         reuse_address=None, reuse_port=None, \
                         ssl_handshake_timeout=None, \
                         ssl_shutdown_timeout=None, \
-                        start_serving=True):async:
+                        start_serving=True)
+   :async:
 
    Create a TCP server (socket type :const:`~socket.SOCK_STREAM`) listening
    on *port* of the *host* address.
