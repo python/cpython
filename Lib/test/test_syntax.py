@@ -2629,13 +2629,20 @@ if x:
     def test_disallowed_type_param_names(self):
         # See gh-128632
 
-        for name in ('__class__', '__classdict__', '__classcell__', '__classdictcell__'):
-            self._check_error(f"class A[{name}]: pass",
-                            f"reserved name '{name}' cannot be used for type parameter")
-            self._check_error(f"def f[{name}](): pass",
-                            f"reserved name '{name}' cannot be used for type parameter")
-            self._check_error(f"type T[{name}] = tuple[{name}]",
-                            f"reserved name '{name}' cannot be used for type parameter")
+        self._check_error(f"class A[__classdict__]: pass",
+                        f"reserved name '__classdict__' cannot be used for type parameter")
+        self._check_error(f"def f[__classdict__](): pass",
+                        f"reserved name '__classdict__' cannot be used for type parameter")
+        self._check_error(f"type T[__classdict__] = tuple[__classdict__]",
+                        f"reserved name '__classdict__' cannot be used for type parameter")
+
+        # These compilations are here to make sure __class__, __classcell__ and __classdictcell__
+        # don't break in the future like __classdict__ did in this case.
+        for name in ('__class__', '__classcell__', '__classdictcell__'):
+            compile(f"""
+class A:
+    class B[{name}]: pass
+                """, "<testcase>", mode="exec")
 
     @support.cpython_only
     def test_nested_named_except_blocks(self):

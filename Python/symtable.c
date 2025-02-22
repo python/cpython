@@ -2517,10 +2517,7 @@ symtable_visit_type_param_bound_or_default(
     struct symtable *st, expr_ty e, identifier name,
     type_param_ty tp, const char *ste_scope_info)
 {
-    if (_PyUnicode_Equal(name, &_Py_ID(__class__)) ||
-        _PyUnicode_Equal(name, &_Py_ID(__classdict__)) ||
-        _PyUnicode_Equal(name, &_Py_ID(__classcell__)) ||
-        _PyUnicode_Equal(name, &_Py_ID(__classdictcell__))) {
+    if (_PyUnicode_Equal(name, &_Py_ID(__classdict__))) {
 
         PyObject *error_msg = PyUnicode_FromFormat("reserved name '%U' cannot be "
                                                    "used for type parameter", name);
