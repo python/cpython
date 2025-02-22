@@ -4441,6 +4441,30 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn(b'42', output)
 
+    def test_multiline_indent_completion(self):
+        script = textwrap.dedent("""
+            import pdb; pdb.Pdb().set_trace()
+        """)
+
+        # \t should always complete a 4-space indent
+        # This piece of code will raise an IndentationError or a SyntaxError
+        # if the completion is not working as expected
+        input = b"def func():\n"
+        input += b"\ta = 1\n"
+        input += b" \ta += 1\n"
+        input += b"  \ta += 1\n"
+        input += b"   \tif a > 0:\n"
+        input += b"        a += 1\n"
+        input += b"\t\treturn a\n"
+        input += b"\n"
+        input += b"func()\n"
+        input += b"c\n"
+        
+        output = run_pty(script, input)
+
+        self.assertIn(b'4', output)
+        self.assertNotIn(b'Error', output)
+
 
 def load_tests(loader, tests, pattern):
     from test import test_pdb
