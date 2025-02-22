@@ -4364,7 +4364,7 @@ def spawn_repl():
 @support.requires_subprocess()
 class TestREPLSession(unittest.TestCase):
     def test_return_from_inline_mode_to_REPL(self):
-        # Issue #124703: Raise BdbQuit when exiting pdb in REPL session.
+        # GH-124703: Raise BdbQuit when exiting pdb in REPL session.
         # This allows the REPL session to continue.
         user_input = """
             x = 'Spam'
