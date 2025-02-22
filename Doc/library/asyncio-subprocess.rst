@@ -61,8 +61,9 @@ See also the `Examples`_ subsection.
 Creating Subprocesses
 =====================
 
-.. coroutinefunction:: create_subprocess_exec(program, *args, stdin=None, \
+.. function:: create_subprocess_exec(program, *args, stdin=None, \
                           stdout=None, stderr=None, limit=None, **kwds)
+   :async:
 
    Create a subprocess.
 
@@ -79,8 +80,9 @@ Creating Subprocesses
       Removed the *loop* parameter.
 
 
-.. coroutinefunction:: create_subprocess_shell(cmd, stdin=None, \
+.. function:: create_subprocess_shell(cmd, stdin=None, \
                           stdout=None, stderr=None, limit=None, **kwds)
+   :async:
 
    Run the *cmd* shell command.
 
@@ -188,7 +190,8 @@ their completion.
    See also the :ref:`Subprocess and Threads <asyncio-subprocess-threads>`
    section.
 
-   .. coroutinemethod:: wait()
+   .. method:: wait()
+      :async:
 
       Wait for the child process to terminate.
 
@@ -202,7 +205,8 @@ their completion.
          more data. Use the :meth:`communicate` method when using pipes
          to avoid this condition.
 
-   .. coroutinemethod:: communicate(input=None)
+   .. method:: communicate(input=None)
+      :async:
 
       Interact with process:
 
