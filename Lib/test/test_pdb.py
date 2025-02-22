@@ -11,6 +11,7 @@ import subprocess
 import textwrap
 import linecache
 import zipapp
+import zipfile
 
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
@@ -4207,6 +4208,38 @@ def bœr():
             self.assertIn('42', stdout)
             self.assertIn('return x + 1', stdout)
 
+    def test_zipimport(self):
+        with os_helper.temp_dir() as temp_dir:
+            os.mkdir(os.path.join(temp_dir, 'source'))
+            zipmodule = textwrap.dedent(
+                """
+                def bar():
+                    pass
+                """
+            )
+            script = textwrap.dedent(
+                f"""
+                import sys; sys.path.insert(0, {repr(os.path.join(temp_dir, 'zipmodule.zip'))})
+                import foo
+                foo.bar()
+                """
+            )
+
+            with zipfile.ZipFile(os.path.join(temp_dir, 'zipmodule.zip'), 'w') as zf:
+                zf.writestr('foo.py', zipmodule)
+            with open(os.path.join(temp_dir, 'script.py'), 'w') as f:
+                f.write(script)
+
+            stdout, _ = self._run_pdb([os.path.join(temp_dir, 'script.py')], '\n'.join([
+                'n',
+                'n',
+                'b foo.bar',
+                'c',
+                'p f"break in {$_frame.f_code.co_name}"',
+                'q'
+            ]))
+            self.assertIn('break in bar', stdout)
+
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):
@@ -4299,6 +4332,14 @@ class PdbTestInline(unittest.TestCase):
         stdout, stderr = self._run_script(script, commands)
         self.assertIn("2", stdout)
         self.assertIn("Quit anyway", stdout)
+        # Closing stdin will quit the debugger anyway so we need to confirm
+        # it's the quit command that does the job
+        # call/return event will print --Call-- and --Return--
+        self.assertNotIn("--", stdout)
+        # Normal exit should not print anything to stderr
+        self.assertEqual(stderr, "")
+        # The quit prompt should be printed exactly twice
+        self.assertEqual(stdout.count("Quit anyway"), 2)
 
 
 @support.requires_subprocess()
