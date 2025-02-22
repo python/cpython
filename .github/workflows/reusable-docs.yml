@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build_doc:
+  build-doc:
     name: 'Docs'
     runs-on: ubuntu-latest
     timeout-minutes: 60
