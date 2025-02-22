@@ -4279,6 +4279,8 @@ class ChecklineTests(unittest.TestCase):
                 self.assertFalse(db.checkline(os_helper.TESTFN, lineno))
 
 
+QUIT_PROMPT_QUESTION = "Quit anyway"
+
 @support.requires_subprocess()
 class PdbTestInline(unittest.TestCase):
     @unittest.skipIf(sys.flags.safe_path,
@@ -4332,7 +4334,7 @@ class PdbTestInline(unittest.TestCase):
 
         stdout, stderr = self._run_script(script, commands)
         self.assertIn("2", stdout)
-        self.assertIn("Quit anyway", stdout)
+        self.assertIn(QUIT_PROMPT_QUESTION, stdout)
         # Closing stdin will quit the debugger anyway so we need to confirm
         # it's the quit command that does the job
         # call/return event will print --Call-- and --Return--
@@ -4340,7 +4342,7 @@ class PdbTestInline(unittest.TestCase):
         # Normal exit should not print anything to stderr
         self.assertEqual(stderr, "")
         # The quit prompt should be printed exactly twice
-        self.assertEqual(stdout.count("Quit anyway"), 2)
+        self.assertEqual(stdout.count(QUIT_PROMPT_QUESTION), 2)
 
 
 def spawn_repl():
@@ -4369,15 +4371,15 @@ class TestREPLSession(unittest.TestCase):
             x = 'Spam'
             import pdb
             pdb.set_trace(commands=['x * 3', 'q'])
-            print('Afterward')
+            x[::-1] * 3
         """
         p = spawn_repl()
         p.stdin.write(textwrap.dedent(user_input))
         output = kill_python(p)
         self.assertIn('SpamSpamSpam', output)
-        self.assertNotIn('Quit anyway', output)
+        self.assertNotIn(QUIT_PROMPT_QUESTION, output)
         self.assertIn('BdbQuit', output)
-        self.assertIn('Afterward', output)
+        self.assertIn('mapSmapSmapS', output)
         self.assertEqual(p.returncode, 0)
 
 
