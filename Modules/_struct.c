@@ -2056,7 +2056,7 @@ unpackiter_traverse(PyObject *op, visitproc visit, void *arg)
 }
 
 static PyObject *
-unpackiter_len(PyObject *op, PyObject *Py_UNUSED(args))
+unpackiter_len(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     Py_ssize_t len;
     unpackiterobject *self = unpackiterobject_CAST(op);
