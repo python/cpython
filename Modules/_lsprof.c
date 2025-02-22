@@ -56,6 +56,8 @@ typedef struct {
     PyObject* missing;
 } ProfilerObject;
 
+#define ProfilerObject_CAST(op) ((ProfilerObject *)(op))
+
 #define POF_ENABLED     0x001
 #define POF_SUBCALLS    0x002
 #define POF_BUILTINS    0x004
@@ -97,7 +99,8 @@ static PyTime_t CallExternalTimer(ProfilerObject *pObj)
     pObj->flags &= ~POF_EXT_TIMER;
 
     if (o == NULL) {
-        PyErr_WriteUnraisable(pObj->externalTimer);
+        PyErr_FormatUnraisable("Exception ignored while calling "
+                               "_lsprof timer %R", pObj->externalTimer);
         return 0;
     }
 
@@ -116,7 +119,8 @@ static PyTime_t CallExternalTimer(ProfilerObject *pObj)
     }
     Py_DECREF(o);
     if (err < 0) {
-        PyErr_WriteUnraisable(pObj->externalTimer);
+        PyErr_FormatUnraisable("Exception ignored while calling "
+                               "_lsprof timer %R", pObj->externalTimer);
         return 0;
     }
     return result;
@@ -775,39 +779,52 @@ _lsprof_Profiler_enable_impl(ProfilerObject *self, int subcalls,
         return NULL;
     }
 
-    PyObject* monitoring = _PyImport_GetModuleAttrString("sys", "monitoring");
+    PyObject* monitoring = PyImport_ImportModuleAttrString("sys", "monitoring");
     if (!monitoring) {
         return NULL;
     }
 
-    if (PyObject_CallMethod(monitoring, "use_tool_id", "is", self->tool_id, "cProfile") == NULL) {
+    PyObject *check = PyObject_CallMethod(monitoring,
+                                          "use_tool_id", "is",
+                                          self->tool_id, "cProfile");
+    if (check == NULL) {
         PyErr_Format(PyExc_ValueError, "Another profiling tool is already active");
-        Py_DECREF(monitoring);
-        return NULL;
+        goto error;
     }
+    Py_DECREF(check);
 
     for (int i = 0; callback_table[i].callback_method; i++) {
+        int event = (1 << callback_table[i].event);
         PyObject* callback = PyObject_GetAttrString((PyObject*)self, callback_table[i].callback_method);
         if (!callback) {
-            Py_DECREF(monitoring);
-            return NULL;
+            goto error;
         }
-        Py_XDECREF(PyObject_CallMethod(monitoring, "register_callback", "iiO", self->tool_id,
-                                       (1 << callback_table[i].event),
-                                       callback));
+        PyObject *register_result = PyObject_CallMethod(monitoring, "register_callback",
+                                                        "iiO", self->tool_id,
+                                                        event, callback);
         Py_DECREF(callback);
-        all_events |= (1 << callback_table[i].event);
+        if (register_result == NULL) {
+            goto error;
+        }
+        Py_DECREF(register_result);
+        all_events |= event;
     }
 
-    if (!PyObject_CallMethod(monitoring, "set_events", "ii", self->tool_id, all_events)) {
-        Py_DECREF(monitoring);
-        return NULL;
+    PyObject *event_result = PyObject_CallMethod(monitoring, "set_events", "ii",
+                                                 self->tool_id, all_events);
+    if (event_result == NULL) {
+        goto error;
     }
 
+    Py_DECREF(event_result);
     Py_DECREF(monitoring);
 
     self->flags |= POF_ENABLED;
     Py_RETURN_NONE;
+
+error:
+    Py_DECREF(monitoring);
+    return NULL;
 }
 
 static void
@@ -844,7 +861,7 @@ _lsprof_Profiler_disable_impl(ProfilerObject *self)
     }
     if (self->flags & POF_ENABLED) {
         PyObject* result = NULL;
-        PyObject* monitoring = _PyImport_GetModuleAttrString("sys", "monitoring");
+        PyObject* monitoring = PyImport_ImportModuleAttrString("sys", "monitoring");
 
         if (!monitoring) {
             return NULL;
@@ -906,29 +923,32 @@ _lsprof_Profiler_clear_impl(ProfilerObject *self)
 }
 
 static int
-profiler_traverse(ProfilerObject *op, visitproc visit, void *arg)
+profiler_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    ProfilerObject *self = ProfilerObject_CAST(op);
     Py_VISIT(Py_TYPE(op));
-    Py_VISIT(op->externalTimer);
+    Py_VISIT(self->externalTimer);
     return 0;
 }
 
 static void
-profiler_dealloc(ProfilerObject *op)
+profiler_dealloc(PyObject *op)
 {
-    PyObject_GC_UnTrack(op);
-    if (op->flags & POF_ENABLED) {
+    ProfilerObject *self = ProfilerObject_CAST(op);
+    PyObject_GC_UnTrack(self);
+    if (self->flags & POF_ENABLED) {
         PyThreadState *tstate = _PyThreadState_GET();
         if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
-            PyErr_FormatUnraisable("Exception ignored when destroying _lsprof profiler");
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "destroying _lsprof profiler");
         }
     }
 
-    flush_unmatched(op);
-    clearEntries(op);
-    Py_XDECREF(op->externalTimer);
-    PyTypeObject *tp = Py_TYPE(op);
-    tp->tp_free(op);
+    flush_unmatched(self);
+    clearEntries(self);
+    Py_XDECREF(self->externalTimer);
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -960,7 +980,7 @@ profiler_init_impl(ProfilerObject *self, PyObject *timer, double timeunit,
     Py_XSETREF(self->externalTimer, Py_XNewRef(timer));
     self->tool_id = PY_MONITORING_PROFILER_ID;
 
-    PyObject* monitoring = _PyImport_GetModuleAttrString("sys", "monitoring");
+    PyObject* monitoring = PyImport_ImportModuleAttrString("sys", "monitoring");
     if (!monitoring) {
         return -1;
     }
@@ -1029,7 +1049,7 @@ _lsprof_clear(PyObject *module)
 static void
 _lsprof_free(void *module)
 {
-    _lsprof_clear((PyObject *)module);
+    (void)_lsprof_clear((PyObject *)module);
 }
 
 static int

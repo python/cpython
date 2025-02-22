@@ -13,6 +13,7 @@
 #include "pycore_pythonrun.h"     // _Py_SourceAsString()
 #include "pycore_sysmodule.h"     // _PySys_GetAttr()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_cell.h"          // PyCell_GetRef()
 
 #include "clinic/bltinmodule.c.h"
 
@@ -209,7 +210,7 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
         PyObject *margs[3] = {name, bases, ns};
         cls = PyObject_VectorcallDict(meta, margs, 3, mkw);
         if (cls != NULL && PyType_Check(cls) && PyCell_Check(cell)) {
-            PyObject *cell_cls = PyCell_GET(cell);
+            PyObject *cell_cls = PyCell_GetRef((PyCellObject *)cell);
             if (cell_cls != cls) {
                 if (cell_cls == NULL) {
                     const char *msg =
@@ -221,8 +222,12 @@ builtin___build_class__(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
                         "__class__ set to %.200R defining %.200R as %.200R";
                     PyErr_Format(PyExc_TypeError, msg, cell_cls, name, cls);
                 }
+                Py_XDECREF(cell_cls);
                 Py_SETREF(cls, NULL);
                 goto error;
+            }
+            else {
+                Py_DECREF(cell_cls);
             }
         }
     }
@@ -489,6 +494,8 @@ typedef struct {
     PyObject *it;
 } filterobject;
 
+#define _filterobject_CAST(op)      ((filterobject *)(op))
+
 static PyObject *
 filter_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -554,8 +561,9 @@ filter_vectorcall(PyObject *type, PyObject * const*args,
 }
 
 static void
-filter_dealloc(filterobject *lz)
+filter_dealloc(PyObject *self)
 {
+    filterobject *lz = _filterobject_CAST(self);
     PyObject_GC_UnTrack(lz);
     Py_TRASHCAN_BEGIN(lz, filter_dealloc)
     Py_XDECREF(lz->func);
@@ -565,16 +573,18 @@ filter_dealloc(filterobject *lz)
 }
 
 static int
-filter_traverse(filterobject *lz, visitproc visit, void *arg)
+filter_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    filterobject *lz = _filterobject_CAST(self);
     Py_VISIT(lz->it);
     Py_VISIT(lz->func);
     return 0;
 }
 
 static PyObject *
-filter_next(filterobject *lz)
+filter_next(PyObject *self)
 {
+    filterobject *lz = _filterobject_CAST(self);
     PyObject *item;
     PyObject *it = lz->it;
     long ok;
@@ -608,15 +618,16 @@ filter_next(filterobject *lz)
 }
 
 static PyObject *
-filter_reduce(filterobject *lz, PyObject *Py_UNUSED(ignored))
+filter_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    filterobject *lz = _filterobject_CAST(self);
     return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->func, lz->it);
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyMethodDef filter_methods[] = {
-    {"__reduce__", _PyCFunction_CAST(filter_reduce), METH_NOARGS, reduce_doc},
+    {"__reduce__", filter_reduce, METH_NOARGS, reduce_doc},
     {NULL,           NULL}           /* sentinel */
 };
 
@@ -633,7 +644,7 @@ PyTypeObject PyFilter_Type = {
     sizeof(filterobject),               /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
-    (destructor)filter_dealloc,         /* tp_dealloc */
+    filter_dealloc,                     /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -651,12 +662,12 @@ PyTypeObject PyFilter_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
     filter_doc,                         /* tp_doc */
-    (traverseproc)filter_traverse,      /* tp_traverse */
+    filter_traverse,                    /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)filter_next,          /* tp_iternext */
+    filter_next,                        /* tp_iternext */
     filter_methods,                     /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */
@@ -669,7 +680,7 @@ PyTypeObject PyFilter_Type = {
     PyType_GenericAlloc,                /* tp_alloc */
     filter_new,                         /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
-    .tp_vectorcall = (vectorcallfunc)filter_vectorcall
+    .tp_vectorcall = filter_vectorcall
 };
 
 
@@ -824,6 +835,9 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
         goto error;
     if (is_ast) {
         if ((flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST) {
+            if (PyAst_CheckMode(source, compile_mode) < 0) {
+                goto error;
+            }
             // return an un-optimized AST
             result = Py_NewRef(source);
         }
@@ -1314,6 +1328,8 @@ typedef struct {
     int strict;
 } mapobject;
 
+#define _mapobject_CAST(op)     ((mapobject *)(op))
+
 static PyObject *
 map_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -1417,8 +1433,9 @@ map_vectorcall(PyObject *type, PyObject * const*args,
 }
 
 static void
-map_dealloc(mapobject *lz)
+map_dealloc(PyObject *self)
 {
+    mapobject *lz = _mapobject_CAST(self);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->iters);
     Py_XDECREF(lz->func);
@@ -1426,16 +1443,18 @@ map_dealloc(mapobject *lz)
 }
 
 static int
-map_traverse(mapobject *lz, visitproc visit, void *arg)
+map_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    mapobject *lz = _mapobject_CAST(self);
     Py_VISIT(lz->iters);
     Py_VISIT(lz->func);
     return 0;
 }
 
 static PyObject *
-map_next(mapobject *lz)
+map_next(PyObject *self)
 {
+    mapobject *lz = _mapobject_CAST(self);
     Py_ssize_t i;
     PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
     PyObject **stack;
@@ -1518,8 +1537,9 @@ check:
 }
 
 static PyObject *
-map_reduce(mapobject *lz, PyObject *Py_UNUSED(ignored))
+map_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    mapobject *lz = _mapobject_CAST(self);
     Py_ssize_t numargs = PyTuple_GET_SIZE(lz->iters);
     PyObject *args = PyTuple_New(numargs+1);
     Py_ssize_t i;
@@ -1540,19 +1560,20 @@ map_reduce(mapobject *lz, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
 
 static PyObject *
-map_setstate(mapobject *lz, PyObject *state)
+map_setstate(PyObject *self, PyObject *state)
 {
     int strict = PyObject_IsTrue(state);
     if (strict < 0) {
         return NULL;
     }
+    mapobject *lz = _mapobject_CAST(self);
     lz->strict = strict;
     Py_RETURN_NONE;
 }
 
 static PyMethodDef map_methods[] = {
-    {"__reduce__", _PyCFunction_CAST(map_reduce), METH_NOARGS, reduce_doc},
-    {"__setstate__", _PyCFunction_CAST(map_setstate), METH_O, setstate_doc},
+    {"__reduce__", map_reduce, METH_NOARGS, reduce_doc},
+    {"__setstate__", map_setstate, METH_O, setstate_doc},
     {NULL,           NULL}           /* sentinel */
 };
 
@@ -1573,7 +1594,7 @@ PyTypeObject PyMap_Type = {
     sizeof(mapobject),                  /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
-    (destructor)map_dealloc,            /* tp_dealloc */
+    map_dealloc,                        /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -1591,12 +1612,12 @@ PyTypeObject PyMap_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
     map_doc,                            /* tp_doc */
-    (traverseproc)map_traverse,         /* tp_traverse */
+    map_traverse,                       /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)map_next,     /* tp_iternext */
+    map_next,                           /* tp_iternext */
     map_methods,                        /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */
@@ -1609,7 +1630,7 @@ PyTypeObject PyMap_Type = {
     PyType_GenericAlloc,                /* tp_alloc */
     map_new,                            /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
-    .tp_vectorcall = (vectorcallfunc)map_vectorcall
+    .tp_vectorcall = map_vectorcall
 };
 
 
@@ -2127,7 +2148,7 @@ builtin_pow_impl(PyObject *module, PyObject *base, PyObject *exp,
 /*[clinic input]
 print as builtin_print
 
-    *args: object
+    *args: array
     sep: object(c_default="Py_None") = ' '
         string inserted between values, default a space.
     end: object(c_default="Py_None") = '\n'
@@ -2142,9 +2163,10 @@ Prints the values to a stream, or to sys.stdout by default.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
-                   PyObject *end, PyObject *file, int flush)
-/*[clinic end generated code: output=3cfc0940f5bc237b input=c143c575d24fe665]*/
+builtin_print_impl(PyObject *module, PyObject * const *args,
+                   Py_ssize_t args_length, PyObject *sep, PyObject *end,
+                   PyObject *file, int flush)
+/*[clinic end generated code: output=3cb7e5b66f1a8547 input=66ea4de1605a2437]*/
 {
     int i, err;
 
@@ -2181,7 +2203,7 @@ builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
         return NULL;
     }
 
-    for (i = 0; i < PyTuple_GET_SIZE(args); i++) {
+    for (i = 0; i < args_length; i++) {
         if (i > 0) {
             if (sep == NULL) {
                 err = PyFile_WriteString(" ", file);
@@ -2193,7 +2215,7 @@ builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
                 return NULL;
             }
         }
-        err = PyFile_WriteObject(PyTuple_GET_ITEM(args, i), file, Py_PRINT_RAW);
+        err = PyFile_WriteObject(args[i], file, Py_PRINT_RAW);
         if (err) {
             return NULL;
         }
@@ -2828,7 +2850,6 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 double value = PyLong_AsDouble(item);
                 if (value != -1.0 || !PyErr_Occurred()) {
                     re_sum = cs_add(re_sum, value);
-                    im_sum.hi += 0.0;
                     Py_DECREF(item);
                     continue;
                 }
@@ -2841,7 +2862,6 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
             if (PyFloat_Check(item)) {
                 double value = PyFloat_AS_DOUBLE(item);
                 re_sum = cs_add(re_sum, value);
-                im_sum.hi += 0.0;
                 _Py_DECREF_SPECIALIZED(item, _PyFloat_ExactDealloc);
                 continue;
             }
@@ -2961,6 +2981,8 @@ typedef struct {
     int strict;
 } zipobject;
 
+#define _zipobject_CAST(op)     ((zipobject *)(op))
+
 static PyObject *
 zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -3029,8 +3051,9 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static void
-zip_dealloc(zipobject *lz)
+zip_dealloc(PyObject *self)
 {
+    zipobject *lz = _zipobject_CAST(self);
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->ittuple);
     Py_XDECREF(lz->result);
@@ -3038,16 +3061,19 @@ zip_dealloc(zipobject *lz)
 }
 
 static int
-zip_traverse(zipobject *lz, visitproc visit, void *arg)
+zip_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    zipobject *lz = _zipobject_CAST(self);
     Py_VISIT(lz->ittuple);
     Py_VISIT(lz->result);
     return 0;
 }
 
 static PyObject *
-zip_next(zipobject *lz)
+zip_next(PyObject *self)
 {
+    zipobject *lz = _zipobject_CAST(self);
+
     Py_ssize_t i;
     Py_ssize_t tuplesize = lz->tuplesize;
     PyObject *result = lz->result;
@@ -3137,8 +3163,9 @@ check:
 }
 
 static PyObject *
-zip_reduce(zipobject *lz, PyObject *Py_UNUSED(ignored))
+zip_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    zipobject *lz = _zipobject_CAST(self);
     /* Just recreate the zip with the internal iterator tuple */
     if (lz->strict) {
         return PyTuple_Pack(3, Py_TYPE(lz), lz->ittuple, Py_True);
@@ -3147,19 +3174,20 @@ zip_reduce(zipobject *lz, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-zip_setstate(zipobject *lz, PyObject *state)
+zip_setstate(PyObject *self, PyObject *state)
 {
     int strict = PyObject_IsTrue(state);
     if (strict < 0) {
         return NULL;
     }
+    zipobject *lz = _zipobject_CAST(self);
     lz->strict = strict;
     Py_RETURN_NONE;
 }
 
 static PyMethodDef zip_methods[] = {
-    {"__reduce__", _PyCFunction_CAST(zip_reduce), METH_NOARGS, reduce_doc},
-    {"__setstate__", _PyCFunction_CAST(zip_setstate), METH_O, setstate_doc},
+    {"__reduce__", zip_reduce, METH_NOARGS, reduce_doc},
+    {"__setstate__", zip_setstate, METH_O, setstate_doc},
     {NULL}  /* sentinel */
 };
 
@@ -3184,7 +3212,7 @@ PyTypeObject PyZip_Type = {
     sizeof(zipobject),                  /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
-    (destructor)zip_dealloc,            /* tp_dealloc */
+    zip_dealloc,                        /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -3202,12 +3230,12 @@ PyTypeObject PyZip_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
     zip_doc,                            /* tp_doc */
-    (traverseproc)zip_traverse,    /* tp_traverse */
+    zip_traverse,                       /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)zip_next,     /* tp_iternext */
+    zip_next,                           /* tp_iternext */
     zip_methods,                        /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */
@@ -3335,7 +3363,7 @@ _PyBuiltin_Init(PyInterpreterState *interp)
     SETBUILTIN("False",                 Py_False);
     SETBUILTIN("True",                  Py_True);
     SETBUILTIN("bool",                  &PyBool_Type);
-    SETBUILTIN("memoryview",        &PyMemoryView_Type);
+    SETBUILTIN("memoryview",            &PyMemoryView_Type);
     SETBUILTIN("bytearray",             &PyByteArray_Type);
     SETBUILTIN("bytes",                 &PyBytes_Type);
     SETBUILTIN("classmethod",           &PyClassMethod_Type);

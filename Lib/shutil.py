@@ -49,6 +49,7 @@ COPY_BUFSIZE = 1024 * 1024 if _WINDOWS else 256 * 1024
 # https://bugs.python.org/issue43743#msg393429
 _USE_CP_SENDFILE = (hasattr(os, "sendfile")
                     and sys.platform.startswith(("linux", "android", "sunos")))
+_USE_CP_COPY_FILE_RANGE = hasattr(os, "copy_file_range")
 _HAS_FCOPYFILE = posix and hasattr(posix, "_fcopyfile")  # macOS
 
 # CMD defaults in Windows 10
@@ -107,6 +108,66 @@ def _fastcopy_fcopyfile(fsrc, fdst, flags):
         else:
             raise err from None
 
+def _determine_linux_fastcopy_blocksize(infd):
+    """Determine blocksize for fastcopying on Linux.
+
+    Hopefully the whole file will be copied in a single call.
+    The copying itself should be performed in a loop 'till EOF is
+    reached (0 return) so a blocksize smaller or bigger than the actual
+    file size should not make any difference, also in case the file
+    content changes while being copied.
+    """
+    try:
+        blocksize = max(os.fstat(infd).st_size, 2 ** 23)  # min 8 MiB
+    except OSError:
+        blocksize = 2 ** 27  # 128 MiB
+    # On 32-bit architectures truncate to 1 GiB to avoid OverflowError,
+    # see gh-82500.
+    if sys.maxsize < 2 ** 32:
+        blocksize = min(blocksize, 2 ** 30)
+    return blocksize
+
+def _fastcopy_copy_file_range(fsrc, fdst):
+    """Copy data from one regular mmap-like fd to another by using
+    a high-performance copy_file_range(2) syscall that gives filesystems
+    an opportunity to implement the use of reflinks or server-side copy.
+
+    This should work on Linux >= 4.5 only.
+    """
+    try:
+        infd = fsrc.fileno()
+        outfd = fdst.fileno()
+    except Exception as err:
+        raise _GiveupOnFastCopy(err)  # not a regular file
+
+    blocksize = _determine_linux_fastcopy_blocksize(infd)
+    offset = 0
+    while True:
+        try:
+            n_copied = os.copy_file_range(infd, outfd, blocksize, offset_dst=offset)
+        except OSError as err:
+            # ...in oder to have a more informative exception.
+            err.filename = fsrc.name
+            err.filename2 = fdst.name
+
+            if err.errno == errno.ENOSPC:  # filesystem is full
+                raise err from None
+
+            # Give up on first call and if no data was copied.
+            if offset == 0 and os.lseek(outfd, 0, os.SEEK_CUR) == 0:
+                raise _GiveupOnFastCopy(err)
+
+            raise err
+        else:
+            if n_copied == 0:
+                # If no bytes have been copied yet, copy_file_range
+                # might silently fail.
+                # https://lore.kernel.org/linux-fsdevel/20210126233840.GG4626@dread.disaster.area/T/#m05753578c7f7882f6e9ffe01f981bc223edef2b0
+                if offset == 0:
+                    raise _GiveupOnFastCopy()
+                break
+            offset += n_copied
+
 def _fastcopy_sendfile(fsrc, fdst):
     """Copy data from one regular mmap-like fd to another by using
     high-performance sendfile(2) syscall.
@@ -128,20 +189,7 @@ def _fastcopy_sendfile(fsrc, fdst):
     except Exception as err:
         raise _GiveupOnFastCopy(err)  # not a regular file
 
-    # Hopefully the whole file will be copied in a single call.
-    # sendfile() is called in a loop 'till EOF is reached (0 return)
-    # so a bufsize smaller or bigger than the actual file size
-    # should not make any difference, also in case the file content
-    # changes while being copied.
-    try:
-        blocksize = max(os.fstat(infd).st_size, 2 ** 23)  # min 8MiB
-    except OSError:
-        blocksize = 2 ** 27  # 128MiB
-    # On 32-bit architectures truncate to 1GiB to avoid OverflowError,
-    # see bpo-38319.
-    if sys.maxsize < 2 ** 32:
-        blocksize = min(blocksize, 2 ** 30)
-
+    blocksize = _determine_linux_fastcopy_blocksize(infd)
     offset = 0
     while True:
         try:
@@ -266,12 +314,20 @@ def copyfile(src, dst, *, follow_symlinks=True):
                         except _GiveupOnFastCopy:
                             pass
                     # Linux / Android / Solaris
-                    elif _USE_CP_SENDFILE:
-                        try:
-                            _fastcopy_sendfile(fsrc, fdst)
-                            return dst
-                        except _GiveupOnFastCopy:
-                            pass
+                    elif _USE_CP_SENDFILE or _USE_CP_COPY_FILE_RANGE:
+                        # reflink may be implicit in copy_file_range.
+                        if _USE_CP_COPY_FILE_RANGE:
+                            try:
+                                _fastcopy_copy_file_range(fsrc, fdst)
+                                return dst
+                            except _GiveupOnFastCopy:
+                                pass
+                        if _USE_CP_SENDFILE:
+                            try:
+                                _fastcopy_sendfile(fsrc, fdst)
+                                return dst
+                            except _GiveupOnFastCopy:
+                                pass
                     # Windows, see:
                     # https://github.com/python/cpython/pull/7160#discussion_r195405230
                     elif _WINDOWS and file_size > 0:
@@ -1550,21 +1606,21 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     if sys.platform == "win32":
         # PATHEXT is necessary to check on Windows.
         pathext_source = os.getenv("PATHEXT") or _WIN_DEFAULT_PATHEXT
-        pathext = [ext for ext in pathext_source.split(os.pathsep) if ext]
+        pathext = pathext_source.split(os.pathsep)
+        pathext = [ext.rstrip('.') for ext in pathext if ext]
 
         if use_bytes:
             pathext = [os.fsencode(ext) for ext in pathext]
 
-        files = ([cmd] + [cmd + ext for ext in pathext])
+        files = [cmd + ext for ext in pathext]
 
-        # gh-109590. If we are looking for an executable, we need to look
-        # for a PATHEXT match. The first cmd is the direct match
-        # (e.g. python.exe instead of python)
-        # Check that direct match first if and only if the extension is in PATHEXT
-        # Otherwise check it last
-        suffix = os.path.splitext(files[0])[1].upper()
-        if mode & os.X_OK and not any(suffix == ext.upper() for ext in pathext):
-            files.append(files.pop(0))
+        # If X_OK in mode, simulate the cmd.exe behavior: look at direct
+        # match if and only if the extension is in PATHEXT.
+        # If X_OK not in mode, simulate the first result of where.exe:
+        # always look at direct match before a PATHEXT match.
+        normcmd = cmd.upper()
+        if not (mode & os.X_OK) or any(normcmd.endswith(ext.upper()) for ext in pathext):
+            files.insert(0, cmd)
     else:
         # On other platforms you don't have things like PATHEXT to tell you
         # what file suffixes are executable, so just pass on cmd as-is.
@@ -1573,7 +1629,7 @@ def which(cmd, mode=os.F_OK | os.X_OK, path=None):
     seen = set()
     for dir in path:
         normdir = os.path.normcase(dir)
-        if not normdir in seen:
+        if normdir not in seen:
             seen.add(normdir)
             for thefile in files:
                 name = os.path.join(dir, thefile)

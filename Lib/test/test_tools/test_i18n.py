@@ -87,16 +87,30 @@ class Test_pygettext(unittest.TestCase):
         self.maxDiff = None
         self.assertEqual(normalize_POT_file(expected), normalize_POT_file(actual))
 
-    def extract_docstrings_from_str(self, module_content):
-        """ utility: return all msgids extracted from module_content """
-        filename = 'test_docstrings.py'
-        with temp_cwd(None) as cwd:
+    def extract_from_str(self, module_content, *, args=(), strict=True,
+                         with_stderr=False, raw=False):
+        """Return all msgids extracted from module_content."""
+        filename = 'test.py'
+        with temp_cwd(None):
             with open(filename, 'w', encoding='utf-8') as fp:
                 fp.write(module_content)
-            assert_python_ok('-Xutf8', self.script, '-D', filename)
+            res = assert_python_ok('-Xutf8', self.script, *args, filename)
+            if strict:
+                self.assertEqual(res.err, b'')
             with open('messages.pot', encoding='utf-8') as fp:
                 data = fp.read()
-        return self.get_msgids(data)
+        if not raw:
+            data = self.get_msgids(data)
+        if not with_stderr:
+            return data
+        return data, res.err
+
+    def extract_docstrings_from_str(self, module_content):
+        """Return all docstrings extracted from module_content."""
+        return self.extract_from_str(module_content, args=('--docstrings',), strict=False)
+
+    def get_stderr(self, module_content):
+        return self.extract_from_str(module_content, strict=False, with_stderr=True)[1]
 
     def test_header(self):
         """Make sure the required fields are in the header, according to:
@@ -326,14 +340,14 @@ class Test_pygettext(unittest.TestCase):
         msgids = self.extract_docstrings_from_str(dedent('''\
         f"{_('foo', 'bar')}"
         '''))
-        self.assertNotIn('foo', msgids)
+        self.assertIn('foo', msgids)
         self.assertNotIn('bar', msgids)
 
     def test_calls_in_fstring_with_keyword_args(self):
         msgids = self.extract_docstrings_from_str(dedent('''\
         f"{_('foo', bar='baz')}"
         '''))
-        self.assertNotIn('foo', msgids)
+        self.assertIn('foo', msgids)
         self.assertNotIn('bar', msgids)
         self.assertNotIn('baz', msgids)
 
@@ -344,6 +358,23 @@ class Test_pygettext(unittest.TestCase):
         self.assertNotIn('foo', msgids)
         self.assertIn('bar', msgids)
 
+    def test_function_and_class_names(self):
+        """Test that function and class names are not mistakenly extracted."""
+        msgids = self.extract_from_str(dedent('''\
+        def _(x):
+            pass
+
+        def _(x="foo"):
+            pass
+
+        async def _(x):
+            pass
+
+        class _(object):
+            pass
+        '''))
+        self.assertEqual(msgids, [''])
+
     def test_pygettext_output(self):
         """Test that the pygettext output exactly matches snapshots."""
         for input_file in DATA_DIR.glob('*.py'):
@@ -352,7 +383,8 @@ class Test_pygettext(unittest.TestCase):
                 contents = input_file.read_text(encoding='utf-8')
                 with temp_cwd(None):
                     Path(input_file.name).write_text(contents)
-                    assert_python_ok('-Xutf8', self.script, '--docstrings', input_file.name)
+                    assert_python_ok('-Xutf8', self.script, '--docstrings',
+                                     '--add-comments=i18n:', input_file.name)
                     output = Path('messages.pot').read_text(encoding='utf-8')
 
                 expected = output_file.read_text(encoding='utf-8')
@@ -384,6 +416,75 @@ class Test_pygettext(unittest.TestCase):
             self.assertIn(f'msgid "{text2}"', data)
             self.assertNotIn(text3, data)
 
+    def test_help_text(self):
+        """Test that the help text is displayed."""
+        res = assert_python_ok(self.script, '--help')
+        self.assertEqual(res.out, b'')
+        self.assertIn(b'pygettext -- Python equivalent of xgettext(1)', res.err)
+
+    def test_error_messages(self):
+        """Test that pygettext outputs error messages to stderr."""
+        stderr = self.get_stderr(dedent('''\
+        _(1+2)
+        ngettext('foo')
+        dgettext(*args, 'foo')
+        '''))
+
+        # Normalize line endings on Windows
+        stderr = stderr.decode('utf-8').replace('\r', '')
+
+        self.assertEqual(
+            stderr,
+            "*** test.py:1: Expected a string constant for argument 1, got 1 + 2\n"
+            "*** test.py:2: Expected at least 2 positional argument(s) in gettext call, got 1\n"
+            "*** test.py:3: Variable positional arguments are not allowed in gettext calls\n"
+        )
+
+    def test_extract_all_comments(self):
+        """
+        Test that the --add-comments option without an
+        explicit tag extracts all translator comments.
+        """
+        for arg in ('--add-comments', '-c'):
+            with self.subTest(arg=arg):
+                data = self.extract_from_str(dedent('''\
+                # Translator comment
+                _("foo")
+                '''), args=(arg,), raw=True)
+                self.assertIn('#. Translator comment', data)
+
+    def test_comments_with_multiple_tags(self):
+        """
+        Test that multiple --add-comments tags can be specified.
+        """
+        for arg in ('--add-comments={}', '-c{}'):
+            with self.subTest(arg=arg):
+                args = (arg.format('foo:'), arg.format('bar:'))
+                data = self.extract_from_str(dedent('''\
+                # foo: comment
+                _("foo")
+
+                # bar: comment
+                _("bar")
+
+                # baz: comment
+                _("baz")
+                '''), args=args, raw=True)
+                self.assertIn('#. foo: comment', data)
+                self.assertIn('#. bar: comment', data)
+                self.assertNotIn('#. baz: comment', data)
+
+    def test_comments_not_extracted_without_tags(self):
+        """
+        Test that translator comments are not extracted without
+        specifying --add-comments.
+        """
+        data = self.extract_from_str(dedent('''\
+        # Translator comment
+        _("foo")
+        '''), raw=True)
+        self.assertNotIn('#.', data)
+
 
 def update_POT_snapshots():
     for input_file in DATA_DIR.glob('*.py'):
@@ -391,7 +492,8 @@ def update_POT_snapshots():
         contents = input_file.read_bytes()
         with temp_cwd(None):
             Path(input_file.name).write_bytes(contents)
-            assert_python_ok('-Xutf8', Test_pygettext.script, '--docstrings', input_file.name)
+            assert_python_ok('-Xutf8', Test_pygettext.script, '--docstrings',
+                             '--add-comments=i18n:', input_file.name)
             output = Path('messages.pot').read_text(encoding='utf-8')
 
         output = normalize_POT_file(output)
