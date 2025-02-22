@@ -536,10 +536,8 @@ def extract_from_snapshots():
             Path(input_file.name).write_bytes(contents)
             assert_python_ok('-Xutf8', Test_pygettext.script, *args,
                              input_file.name)
-            yield (
-                input_file,
-                output_file, Path('messages.pot').read_text(encoding='utf-8')
-            )
+            yield (input_file, output_file,
+                   Path('messages.pot').read_text(encoding='utf-8'))
 
 
 def update_POT_snapshots():
