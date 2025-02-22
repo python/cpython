@@ -417,12 +417,8 @@ dummy_func(void) {
             // removed and the narrowed value to be invalid:
             if (next_opcode == _GUARD_IS_FALSE_POP) {
                 sym_set_const(value, Py_GetConstant(Py_CONSTANT_ZERO));
-                res = sym_new_type(ctx, &PyLong_Type);
+                res = sym_new_type(ctx, &PyBool_Type);
             }
-            // else if (next_opcode == _GUARD_IS_TRUE_POP) {
-            //     sym_set_const(value, Py_True);
-            //     res = sym_new_type(ctx, &PyBool_Type);
-            // }
         }
     }
 
