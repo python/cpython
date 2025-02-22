@@ -358,14 +358,16 @@ class UUID:
     def time(self):
         if self.version == 6:
             # time_hi (32) | time_mid (16) | ver (4) | time_lo (12) | ... (64)
-            time_hi, time_lo = self.int >> 96, (self.int >> 64) & 0x0fff
+            time_hi = self.int >> 96
+            time_lo = (self.int >> 64) & 0x0fff
             return time_hi << 28 | (self.time_mid << 12) | time_lo
         else:
             # time_low (32) | time_mid (16) | ver (4) | time_hi (12) | ... (64)
             #
             # For compatibility purposes, we do not warn or raise when the
             # version is not 1 (timestamp is irrelevant to other versions).
-            time_hi, time_lo = (self.int >> 64) & 0x0fff, self.int >> 96
+            time_hi = (self.int >> 64) & 0x0fff
+            time_lo = self.int >> 96
             return time_hi << 48 | (self.time_mid << 32) | time_lo
 
     @property

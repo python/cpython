@@ -797,19 +797,24 @@ class BaseTestUUID:
         # since this is done in test_uuid1_eui64().
         self.assertLessEqual(self.uuid.uuid6().node.bit_length(), 48)
 
-        equal = self.assertEqual
-        equal(self.uuid.uuid6(0).node, 0)
-        equal(self.uuid.uuid6(0xffff_ffff_ffff).node, 0xffff_ffff_ffff)
+        self.assertEqual(self.uuid.uuid6(0).node, 0)
 
+        # tests with explicit values
+        max_node = 0xffff_ffff_ffff
+        self.assertEqual(self.uuid.uuid6(max_node).node, max_node)
+        big_node = 0xE_1234_5678_ABCD  # 52-bit node
+        res_node = 0x0_1234_5678_ABCD  # truncated to 48 bits
+        self.assertEqual(self.uuid.uuid6(big_node).node, res_node)
+
+        # randomized tests
         for _ in range(10):
-            for node in (
-                random.getrandbits(24),
-                random.getrandbits(48),
-                random.getrandbits(72),  # node with > 48 bits is truncated
-            ):
-                with self.subTest(node):
+            # node with > 48 bits is truncated
+            for b in [24, 48, 72]:
+                node = (1 << (b - 1)) | random.getrandbits(b)
+                with self.subTest(node=node, bitlen=b):
+                    self.assertEqual(node.bit_length(), b)
                     u = self.uuid.uuid6(node=node)
-                    equal(u.node, node & 0xffff_ffff_ffff)
+                    self.assertEqual(u.node, node & 0xffff_ffff_ffff)
 
     def test_uuid6_clock_seq(self):
         # Make sure the supplied clock sequence appears in the UUID.
@@ -821,16 +826,21 @@ class BaseTestUUID:
 
         u = self.uuid.uuid6()
         self.assertLessEqual(get_clock_seq(u).bit_length(), 14)
-        equal = self.assertEqual
 
+        # tests with explicit values
+        big_clock_seq = 0xffff  # 16-bit clock sequence
+        res_clock_seq = 0x3fff  # truncated to 14 bits
+        u = self.uuid.uuid6(clock_seq=big_clock_seq)
+        self.assertEqual(get_clock_seq(u), res_clock_seq)
+
+        # some randomized tests
         for _ in range(10):
-            for clock_seq in (
-                random.getrandbits(7),
-                random.getrandbits(14),
-                random.getrandbits(28),  # clock_seq with > 14 bits is truncated
-            ):
+            # clock_seq with > 14 bits is truncated
+            for b in [7, 14, 28]:
                 node = random.getrandbits(48)
-                with self.subTest(node=node, clock_seq=clock_seq):
+                clock_seq = (1 << (b - 1)) | random.getrandbits(b)
+                with self.subTest(node=node, clock_seq=clock_seq, bitlen=b):
+                    self.assertEqual(clock_seq.bit_length(), b)
                     u = self.uuid.uuid6(node=node, clock_seq=clock_seq)
                     self.assertEqual(get_clock_seq(u), clock_seq & 0x3fff)
 
