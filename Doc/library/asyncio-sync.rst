@@ -67,7 +67,8 @@ Lock
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
-   .. coroutinemethod:: acquire()
+   .. method:: acquire()
+      :async:
 
       Acquire the lock.
 
@@ -137,7 +138,8 @@ Event
 
       asyncio.run(main())
 
-   .. coroutinemethod:: wait()
+   .. method:: wait()
+      :async:
 
       Wait until the event is set.
 
@@ -207,7 +209,8 @@ Condition
        finally:
            cond.release()
 
-   .. coroutinemethod:: acquire()
+   .. method:: acquire()
+      :async:
 
       Acquire the underlying lock.
 
@@ -245,7 +248,8 @@ Condition
       When invoked on an unlocked lock, a :exc:`RuntimeError` is
       raised.
 
-   .. coroutinemethod:: wait()
+   .. method:: wait()
+      :async:
 
       Wait until notified.
 
@@ -257,7 +261,8 @@ Condition
       Once awakened, the Condition re-acquires its lock and this method
       returns ``True``.
 
-   .. coroutinemethod:: wait_for(predicate)
+   .. method:: wait_for(predicate)
+      :async:
 
       Wait until a predicate becomes *true*.
 
@@ -307,7 +312,8 @@ Semaphore
        finally:
            sem.release()
 
-   .. coroutinemethod:: acquire()
+   .. method:: acquire()
+      :async:
 
       Acquire a semaphore.
 
@@ -395,7 +401,8 @@ Barrier
 
    .. versionadded:: 3.11
 
-   .. coroutinemethod:: wait()
+   .. method:: wait()
+      :async:
 
       Pass the barrier. When all the tasks party to the barrier have called
       this function, they are all unblocked simultaneously.
@@ -419,14 +426,16 @@ Barrier
       barrier is broken or reset while a task is waiting.
       It could raise a :exc:`CancelledError` if a task is cancelled.
 
-   .. coroutinemethod:: reset()
+   .. method:: reset()
+      :async:
 
       Return the barrier to the default, empty state.  Any tasks waiting on it
       will receive the :class:`BrokenBarrierError` exception.
 
       If a barrier is broken it may be better to just leave it and create a new one.
 
-   .. coroutinemethod:: abort()
+   .. method:: abort()
+      :async:
 
       Put the barrier into a broken state.  This causes any active or future
       calls to :meth:`~Barrier.wait` to fail with the :class:`BrokenBarrierError`.

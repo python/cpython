@@ -71,30 +71,11 @@ def gh_issue_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):
     return [refnode], []
 
 
-class PyCoroutineMixin(object):
-    def handle_signature(self, sig, signode):
-        ret = super(PyCoroutineMixin, self).handle_signature(sig, signode)
-        signode.insert(0, addnodes.desc_annotation('coroutine ', 'coroutine '))
-        return ret
-
-
 class PyAwaitableMixin(object):
     def handle_signature(self, sig, signode):
         ret = super(PyAwaitableMixin, self).handle_signature(sig, signode)
         signode.insert(0, addnodes.desc_annotation('awaitable ', 'awaitable '))
         return ret
-
-
-class PyCoroutineFunction(PyCoroutineMixin, PyFunction):
-    def run(self):
-        self.name = 'py:function'
-        return PyFunction.run(self)
-
-
-class PyCoroutineMethod(PyCoroutineMixin, PyMethod):
-    def run(self):
-        self.name = 'py:method'
-        return PyMethod.run(self)
 
 
 class PyAwaitableFunction(PyAwaitableMixin, PyFunction):
@@ -256,8 +237,6 @@ def setup(app):
     app.add_object_type('monitoring-event', 'monitoring-event', '%s (monitoring event)', parse_monitoring_event)
     app.add_object_type('2to3fixer', '2to3fixer', '%s (2to3 fixer)')
 
-    app.add_directive_to_domain('py', 'coroutinefunction', PyCoroutineFunction)
-    app.add_directive_to_domain('py', 'coroutinemethod', PyCoroutineMethod)
     app.add_directive_to_domain('py', 'awaitablefunction', PyAwaitableFunction)
     app.add_directive_to_domain('py', 'awaitablemethod', PyAwaitableMethod)
     app.connect('env-check-consistency', patch_pairindextypes)
