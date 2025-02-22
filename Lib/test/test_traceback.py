@@ -4017,12 +4017,14 @@ class SuggestionFormattingTestBase:
             (CaseChangeOverSubstitution, "'BLuch'?"),
         ]:
             obj = cls()
-            
+
             if operation == "getattr":
                 actual = self.get_suggestion(obj, 'bluch')
             elif operation == "delattr":
                 actual = self.get_suggestion(lambda: delattr(obj, 'bluch'))
-            
+            else:
+                raise ValueError(f"operation '{operation}' not recognized")
+
             self.assertIn(suggestion, actual)
 
     def test_getattr_suggestions(self):
@@ -4044,6 +4046,8 @@ class SuggestionFormattingTestBase:
             self.assertIn("'bluch'", self.get_suggestion(lambda: delattr(obj, 'blach')))
             self.assertIn("'bluch'", self.get_suggestion(lambda: delattr(obj, '_luch')))
             self.assertIn("'bluch'", self.get_suggestion(lambda: delattr(obj, '_bluch')))
+        else:
+            raise ValueError(f"operation '{operation}' not recognized")
 
         class B:
             _bluch = None
@@ -4062,6 +4066,8 @@ class SuggestionFormattingTestBase:
             self.assertIn("'_bluch'", self.get_suggestion(lambda: delattr(obj, '_blach')))
             self.assertIn("'_bluch'", self.get_suggestion(lambda: delattr(obj, '_luch')))
             self.assertNotIn("'_bluch'", self.get_suggestion(lambda: delattr(obj, 'bluch')))
+        else:
+            raise ValueError(f"operation '{operation}' not recognized")
 
     def test_getattr_suggestions_underscored(self):
         self.run_underscored_tests("getattr")
@@ -4078,6 +4084,8 @@ class SuggestionFormattingTestBase:
             actual = self.get_suggestion(obj, 'somethingverywrong')
         elif operation == "delattr":
             actual = self.get_suggestion(lambda: delattr(obj, 'somethingverywrong'))
+        else:
+            raise ValueError(f"operation '{operation}' not recognized")
         self.assertNotIn("blech", actual)
 
     def test_getattr_suggestions_do_not_trigger_for_long_attributes(self):
@@ -4097,6 +4105,8 @@ class SuggestionFormattingTestBase:
                     actual = self.get_suggestion(MyClass, name)
                 elif operation == "delattr":
                     actual = self.get_suggestion(lambda: delattr(obj, name))
+                else:
+                    raise ValueError(f"operation '{operation}' not recognized")
                 self.assertNotIn("Did you mean", actual)
                 self.assertNotIn("'vvv", actual)
                 self.assertNotIn("'mom'", actual)
@@ -4123,6 +4133,8 @@ class SuggestionFormattingTestBase:
             actual = self.get_suggestion(obj, 'bluch')
         elif operation == "delattr":
             actual = self.get_suggestion(lambda: delattr(obj, 'bluch'))
+        else:
+            raise ValueError(f"operation '{operation}' not recognized")
         self.assertNotIn("blech", actual)
 
     def test_getattr_suggestions_do_not_trigger_for_big_dicts(self):
@@ -4130,7 +4142,7 @@ class SuggestionFormattingTestBase:
 
     def test_delattr_suggestions_do_not_trigger_for_big_dicts(self):
         self.run_do_not_trigger_for_big_dicts_tests("delattr")
-    
+
     def test_getattr_suggestions_no_args(self):
         class A:
             blech = None
