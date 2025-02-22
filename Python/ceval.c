@@ -364,9 +364,11 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
     void *stack_addr;
     pthread_attr_t attr;
     int err = pthread_getattr_np(pthread_self(), &attr);
-    err |= pthread_attr_getguardsize(&attr, &guard_size);
-    err |= pthread_attr_getstack(&attr, &stack_addr, &stack_size);
-    err |= pthread_attr_destroy(&attr);
+    if (err == 0) {
+        err = pthread_attr_getguardsize(&attr, &guard_size);
+        err |= pthread_attr_getstack(&attr, &stack_addr, &stack_size);
+        err |= pthread_attr_destroy(&attr);
+    }
     if (err == 0) {
         uintptr_t base = ((uintptr_t)stack_addr) + guard_size;
         _tstate->c_stack_top = base + stack_size;

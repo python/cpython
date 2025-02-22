@@ -721,8 +721,7 @@ class TestSpecifics(unittest.TestCase):
             expect_ok = prefix + repeated * success_depth
             compile(expect_ok, '<test>', mode)
             broken = prefix + repeated * crash_depth
-            details = "Compiling ({!r} + {!r} * {})".format(
-                        prefix, repeated, crash_depth)
+            details = f"Compiling ({prefix!r} + {repeated!r} * {crash_depth})"
             with self.assertRaises(RecursionError, msg=details):
                 compile(broken, '<test>', mode)
 
