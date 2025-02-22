@@ -1010,7 +1010,7 @@ set_version_unlocked(PyTypeObject *tp, unsigned int version)
         _Py_atomic_add_uint16(&tp->tp_versions_used, 1);
     }
 #endif
-    FT_ATOMIC_STORE_UINT32_RELAXED(tp->tp_version_tag, version);
+    FT_ATOMIC_STORE_UINT_RELAXED(tp->tp_version_tag, version);
 #ifndef Py_GIL_DISABLED
     if (version != 0) {
         PyTypeObject **slot =
@@ -1039,7 +1039,8 @@ type_modified_unlocked(PyTypeObject *type)
        We don't assign new version tags eagerly, but only as
        needed.
      */
-    if (FT_ATOMIC_LOAD_UINT_RELAXED(type->tp_version_tag) == 0) {
+    ASSERT_TYPE_LOCK_HELD();
+    if (type->tp_version_tag == 0) {
         return;
     }
     // Cannot modify static builtin types.
@@ -1085,7 +1086,8 @@ type_modified_unlocked(PyTypeObject *type)
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // This field *must* be invalidated if the type is modified (see the
         // comment on struct _specialization_cache):
-        ((PyHeapTypeObject *)type)->_spec_cache.getitem = NULL;
+        FT_ATOMIC_STORE_PTR_RELAXED(
+            ((PyHeapTypeObject *)type)->_spec_cache.getitem, NULL);
     }
 }
 
@@ -1093,7 +1095,7 @@ void
 PyType_Modified(PyTypeObject *type)
 {
     // Quick check without the lock held
-    if (type->tp_version_tag == 0) {
+    if (FT_ATOMIC_LOAD_UINT_RELAXED(type->tp_version_tag) == 0) {
         return;
     }
 
@@ -1166,7 +1168,8 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // This field *must* be invalidated if the type is modified (see the
         // comment on struct _specialization_cache):
-        ((PyHeapTypeObject *)type)->_spec_cache.getitem = NULL;
+        FT_ATOMIC_STORE_PTR_RELAXED(
+            ((PyHeapTypeObject *)type)->_spec_cache.getitem, NULL);
     }
 }
 
@@ -2248,7 +2251,9 @@ _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
     if (PyType_IS_GC(type)) {
         _PyObject_GC_Link(obj);
     }
-    memset(obj, '\0', size);
+    // Zero out the object after the PyObject header. The header fields are
+    // initialized by _PyObject_Init[Var]().
+    memset((char *)obj + sizeof(PyObject), 0, size - sizeof(PyObject));
 
     if (type->tp_itemsize == 0) {
         _PyObject_Init(obj, type);
@@ -9559,6 +9564,7 @@ add_tp_new_wrapper(PyTypeObject *type)
     if (func == NULL) {
         return -1;
     }
+    _PyObject_SetDeferredRefcount(func);
     r = PyDict_SetItem(dict, &_Py_ID(__new__), func);
     Py_DECREF(func);
     return r;
