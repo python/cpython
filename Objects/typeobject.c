@@ -1331,7 +1331,7 @@ _PyType_Name(PyTypeObject *type)
     return s;
 }
 
-static inline PyObject *
+static PyObject *
 type_name(PyObject *tp, void *Py_UNUSED(closure))
 {
     PyTypeObject *type = PyTypeObject_CAST(tp);
@@ -1344,7 +1344,7 @@ type_name(PyObject *tp, void *Py_UNUSED(closure))
     }
 }
 
-static inline PyObject *
+static PyObject *
 type_qualname(PyObject *tp, void *Py_UNUSED(closure))
 {
     PyTypeObject *type = PyTypeObject_CAST(tp);
@@ -1466,7 +1466,7 @@ _PyType_GetFullyQualifiedName(PyTypeObject *type, char sep)
         return PyUnicode_FromString(type->tp_name);
     }
 
-    PyObject *qualname = type_qualname((PyObject *)type, NULL);
+    PyObject *qualname = Py_NewRef(((PyHeapTypeObject *)type)->ht_qualname);
     if (qualname == NULL) {
         return NULL;
     }
@@ -1498,7 +1498,7 @@ PyType_GetFullyQualifiedName(PyTypeObject *type)
     return _PyType_GetFullyQualifiedName(type, '.');
 }
 
-static inline PyObject *
+static PyObject *
 type_abstractmethods(PyObject *tp, void *Py_UNUSED(closure))
 {
     PyTypeObject *type = PyTypeObject_CAST(tp);
