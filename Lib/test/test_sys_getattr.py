@@ -158,6 +158,33 @@ class PySysGetAttrTest(unittest.TestCase):
 
     ''')
 
+    flush_std_files_common_code = textwrap.dedent('''
+        import sys
+
+        class FakeIO:
+            def __init__(self, what):
+                self.what = what
+            def write(self, str):
+                pass
+            def flush(self):
+                pass
+            def fileno(self):
+                return 0
+
+            @property
+            def closed(self):
+                stdfile = getattr(sys, self.what)
+                setattr(sys, self.what, getattr(sys, "__" + self.what + "__"))
+                del stdfile
+                return False
+
+        def main():
+            setattr(sys, '{0}', FakeIO('{0}'))
+
+        if __name__ == "__main__":
+            main()
+    ''')
+
 
     def test_print_deleted_stdout(self):
         # print should use strong reference to the stdout.
@@ -277,6 +304,20 @@ class PySysGetAttrTest(unittest.TestCase):
 
     def test_errors_unraisablehook(self):
         test_code = self.unraisable_hook_code
+        rc, _, err = assert_python_ok('-c', test_code)
+        self.assertEqual(rc, 0)
+        self.assertNotIn(b"Segmentation fault", err)
+        self.assertNotIn(b"access violation", err)
+
+    def test_py_finalize_flush_std_files_stdout(self):
+        test_code = self.flush_std_files_common_code.format("stdout")
+        rc, _, err = assert_python_ok('-c', test_code)
+        self.assertEqual(rc, 0)
+        self.assertNotIn(b"Segmentation fault", err)
+        self.assertNotIn(b"access violation", err)
+
+    def test_py_finalize_flush_std_files_stderr(self):
+        test_code = self.flush_std_files_common_code.format("stderr")
         rc, _, err = assert_python_ok('-c', test_code)
         self.assertEqual(rc, 0)
         self.assertNotIn(b"Segmentation fault", err)
