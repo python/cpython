@@ -1807,7 +1807,7 @@ aliases.
 
    .. doctest::
 
-        >>> print(ast.dump(ast.parse("type Alias[**P = (int, str)] = Callable[P, int]"), indent=4))
+        >>> print(ast.dump(ast.parse("type Alias[**P = [int, str]] = Callable[P, int]"), indent=4))
         Module(
             body=[
                 TypeAlias(
@@ -1815,7 +1815,7 @@ aliases.
                     type_params=[
                         ParamSpec(
                             name='P',
-                            default_value=Tuple(
+                            default_value=List(
                                 elts=[
                                     Name(id='int', ctx=Load()),
                                     Name(id='str', ctx=Load())],

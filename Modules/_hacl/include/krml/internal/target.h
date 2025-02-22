@@ -19,6 +19,20 @@
 #  define inline __inline__
 #endif
 
+/* There is no support for aligned_alloc() in macOS before Catalina, so
+ * let's make a macro to use _mm_malloc() and _mm_free() functions
+ * from mm_malloc.h. */
+#if defined(__APPLE__) && defined(__MACH__)
+#  include <AvailabilityMacros.h>
+#  if defined(MAC_OS_X_VERSION_MIN_REQUIRED) &&                                \
+   (MAC_OS_X_VERSION_MIN_REQUIRED < 101500)
+#    include <mm_malloc.h>
+#    define LEGACY_MACOS
+#  else
+#    undef LEGACY_MACOS
+#endif
+#endif
+
 /******************************************************************************/
 /* Macros that KaRaMeL will generate.                                         */
 /******************************************************************************/
@@ -133,6 +147,8 @@
       defined(_MSC_VER) ||                                                     \
       (defined(__MINGW32__) && defined(__MINGW64_VERSION_MAJOR)))
 #    define KRML_ALIGNED_MALLOC(X, Y) _aligned_malloc(Y, X)
+#  elif defined(LEGACY_MACOS)
+#    define KRML_ALIGNED_MALLOC(X, Y) _mm_malloc(Y, X)
 #  else
 #    define KRML_ALIGNED_MALLOC(X, Y) aligned_alloc(X, Y)
 #  endif
@@ -150,6 +166,8 @@
       defined(_MSC_VER) ||                                                     \
       (defined(__MINGW32__) && defined(__MINGW64_VERSION_MAJOR)))
 #    define KRML_ALIGNED_FREE(X) _aligned_free(X)
+#  elif defined(LEGACY_MACOS)
+#    define KRML_ALIGNED_FREE(X) _mm_free(X)
 #  else
 #    define KRML_ALIGNED_FREE(X) free(X)
 #  endif

@@ -6,8 +6,7 @@ import sys
 import difflib
 import gc
 from functools import wraps
-import asyncio
-from test.support import import_helper, requires_subprocess
+from test.support import import_helper, requires_subprocess, run_no_yield_async_fn
 import contextlib
 import os
 import tempfile
@@ -18,8 +17,6 @@ try:
     import _testinternalcapi
 except ImportError:
     _testinternalcapi = None
-
-support.requires_working_socket(module=True)
 
 class tracecontext:
     """Context manager that traces its enter and exit."""
@@ -2067,10 +2064,9 @@ class JumpTestCase(unittest.TestCase):
                 stack.enter_context(self.assertRaisesRegex(*error))
             if warning is not None:
                 stack.enter_context(self.assertWarnsRegex(*warning))
-            asyncio.run(func(output))
+            run_no_yield_async_fn(func, output)
 
         sys.settrace(None)
-        asyncio.set_event_loop_policy(None)
         self.compare_jump_output(expected, output)
 
     def jump_test(jumpFrom, jumpTo, expected, error=None, event='line', warning=None):
@@ -3039,18 +3035,18 @@ class TestExtendedArgs(unittest.TestCase):
 
     def test_trace_lots_of_globals(self):
 
-        count = min(1000, int(support.get_c_recursion_limit() * 0.8))
+        count = 1000
 
         code = """if 1:
             def f():
                 return (
                     {}
                 )
-        """.format("\n+\n".join(f"var{i}\n" for i in range(count)))
+        """.format("\n,\n".join(f"var{i}\n" for i in range(count)))
         ns = {f"var{i}": i for i in range(count)}
         exec(code, ns)
         counts = self.count_traces(ns["f"])
-        self.assertEqual(counts, {'call': 1, 'line': count * 2, 'return': 1})
+        self.assertEqual(counts, {'call': 1, 'line': count * 2 + 1, 'return': 1})
 
 
 class TestEdgeCases(unittest.TestCase):

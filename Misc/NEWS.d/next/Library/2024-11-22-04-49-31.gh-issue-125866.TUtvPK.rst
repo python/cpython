@@ -1,2 +1,0 @@
-:func:`urllib.request.pathname2url` and :func:`~urllib.request.url2pathname`
-no longer convert Windows drive letters to uppercase.
