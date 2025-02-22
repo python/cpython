@@ -1503,10 +1503,10 @@ class TestUopsOptimization(unittest.TestCase):
         def f(n):
             trace = []
             for i in range(n):
-                empty = ""
+                dummy = "aaa"
                 # Hopefully the optimizer can't guess what the value is.
                 # f is always "", but we can only prove that it's a string:
-                f = empty + empty
+                f = dummy[:0]
                 trace.append("A")
                 if not f:  # Kept.
                     trace.append("B")
