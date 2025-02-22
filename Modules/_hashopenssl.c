@@ -1556,6 +1556,11 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
                        PyObject *digestmod)
 /*[clinic end generated code: output=c20d9e4d9ed6d219 input=5f4071dcc7f34362]*/
 {
+    PY_EVP_MD *digest = NULL;
+    HMAC_CTX *ctx = NULL;
+    HMACobject *self = NULL;
+    int r;
+
     if (key->len > INT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "key is too long.");
@@ -1568,42 +1573,45 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
         return NULL;
     }
 
-    PY_EVP_MD *digest = py_digest_by_digestmod(module, digestmod, Py_ht_mac);
+    digest = py_digest_by_digestmod(module, digestmod, Py_ht_mac);
     if (digest == NULL) {
         return NULL;
     }
 
-    HMAC_CTX *ctx = HMAC_CTX_new();
+    ctx = HMAC_CTX_new();
     if (ctx == NULL) {
-        return PyErr_NoMemory();
+        PyErr_NoMemory();
+        goto error;
     }
 
-    int ok = HMAC_Init_ex(ctx, key->buf, (int)key->len, digest, NULL);
+    r = HMAC_Init_ex(ctx, key->buf, (int)key->len, digest, NULL /* impl */);
     PY_EVP_MD_free(digest);
-    if (!ok) {
-        HMAC_CTX_free(ctx);
+    if (!r) {
         _setException(PyExc_ValueError, NULL);
-        return NULL;
+        goto error;
     }
 
     _hashlibstate *state = get_hashlib_state(module);
-    HMACobject *self = PyObject_New(HMACobject, state->HMACtype);
+    self = PyObject_New(HMACobject, state->HMACtype);
     if (self == NULL) {
-        HMAC_CTX_free(ctx);
-        return NULL;
+        goto error;
     }
 
     self->ctx = ctx;
+    ctx = NULL;  // 'ctx' is now owned by 'self'
     HASHLIB_INIT_MUTEX(self);
 
     if ((msg_obj != NULL) && (msg_obj != Py_None)) {
         if (!_hmac_update(self, msg_obj)) {
-            Py_DECREF(self);  // this also frees the HMAC context
-            return NULL;
+            goto error;
         }
     }
-
     return (PyObject *)self;
+
+error:
+    if (ctx) HMAC_CTX_free(ctx);
+    Py_XDECREF(self);
+    return NULL;
 }
 
 /* helper functions */
