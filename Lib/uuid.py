@@ -362,7 +362,7 @@ class UUID:
             time_lo = (self.int >> 64) & 0x0fff
             return time_hi << 28 | (self.time_mid << 12) | time_lo
         else:
-            # time_low (32) | time_mid (16) | ver (4) | time_hi (12) | ... (64)
+            # time_lo (32) | time_mid (16) | ver (4) | time_hi (12) | ... (64)
             #
             # For compatibility purposes, we do not warn or raise when the
             # version is not 1 (timestamp is irrelevant to other versions).
