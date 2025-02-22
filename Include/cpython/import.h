@@ -21,3 +21,10 @@ struct _frozen {
    collection of frozen modules: */
 
 PyAPI_DATA(const struct _frozen *) PyImport_FrozenModules;
+
+PyAPI_FUNC(PyObject*) PyImport_ImportModuleAttr(
+    PyObject *mod_name,
+    PyObject *attr_name);
+PyAPI_FUNC(PyObject*) PyImport_ImportModuleAttrString(
+    const char *mod_name,
+    const char *attr_name);

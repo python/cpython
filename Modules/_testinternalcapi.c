@@ -115,7 +115,11 @@ static PyObject*
 get_c_recursion_remaining(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return PyLong_FromLong(tstate->c_recursion_remaining);
+    char here;
+    uintptr_t here_addr = (uintptr_t)&here;
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    int remaining = (int)((here_addr - _tstate->c_stack_soft_limit)/PYOS_STACK_MARGIN_BYTES * 50);
+    return PyLong_FromLong(remaining);
 }
 
 
@@ -950,38 +954,13 @@ get_co_framesize(PyObject *self, PyObject *arg)
     return PyLong_FromLong(code->co_framesize);
 }
 
+static PyObject *
+jit_enabled(PyObject *self, PyObject *arg)
+{
+    return PyBool_FromLong(_PyInterpreterState_GET()->jit);
+}
+
 #ifdef _Py_TIER2
-
-static PyObject *
-new_uop_optimizer(PyObject *self, PyObject *arg)
-{
-    return _PyOptimizer_NewUOpOptimizer();
-}
-
-static PyObject *
-set_optimizer(PyObject *self, PyObject *opt)
-{
-    if (opt == Py_None) {
-        opt = NULL;
-    }
-    if (_Py_SetTier2Optimizer((_PyOptimizerObject*)opt) < 0) {
-        return NULL;
-    }
-    Py_RETURN_NONE;
-}
-
-static PyObject *
-get_optimizer(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    PyObject *opt = NULL;
-#ifdef _Py_TIER2
-    opt = (PyObject *)_Py_GetOptimizer();
-#endif
-    if (opt == NULL) {
-        Py_RETURN_NONE;
-    }
-    return opt;
-}
 
 static PyObject *
 add_executor_dependency(PyObject *self, PyObject *args)
@@ -2047,10 +2026,8 @@ static PyMethodDef module_functions[] = {
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
+    {"jit_enabled", jit_enabled,  METH_NOARGS, NULL},
 #ifdef _Py_TIER2
-    {"get_optimizer", get_optimizer,  METH_NOARGS, NULL},
-    {"set_optimizer", set_optimizer,  METH_O, NULL},
-    {"new_uop_optimizer", new_uop_optimizer, METH_NOARGS, NULL},
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
     {"invalidate_executors", invalidate_executors, METH_O, NULL},
 #endif
@@ -2162,6 +2139,21 @@ module_exec(PyObject *module)
 
     if (PyModule_Add(module, "TIER2_THRESHOLD",
                         PyLong_FromLong(JUMP_BACKWARD_INITIAL_VALUE + 1)) < 0) {
+        return 1;
+    }
+
+    if (PyModule_Add(module, "SPECIALIZATION_THRESHOLD",
+                        PyLong_FromLong(ADAPTIVE_WARMUP_VALUE + 1)) < 0) {
+        return 1;
+    }
+
+    if (PyModule_Add(module, "SPECIALIZATION_COOLDOWN",
+                        PyLong_FromLong(ADAPTIVE_COOLDOWN_VALUE + 1)) < 0) {
+        return 1;
+    }
+
+    if (PyModule_Add(module, "SHARED_KEYS_MAX_SIZE",
+                        PyLong_FromLong(SHARED_KEYS_MAX_SIZE)) < 0) {
         return 1;
     }
 
