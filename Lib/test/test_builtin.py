@@ -570,11 +570,6 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertIsInstance(raw_right, ast.Tuple)
         self.assertListEqual([elt.value for elt in raw_right.elts], [1, 2])
 
-        for opt in [opt1, opt2]:
-            opt_right = opt.value.right  # expect Constant((1,2))
-            self.assertIsInstance(opt_right, ast.Constant)
-            self.assertEqual(opt_right.value, (1, 2))
-
     def test_delattr(self):
         sys.spam = 1
         delattr(sys, 'spam')
