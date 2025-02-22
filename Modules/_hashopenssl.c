@@ -1556,7 +1556,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
                        PyObject *digestmod)
 /*[clinic end generated code: output=c20d9e4d9ed6d219 input=5f4071dcc7f34362]*/
 {
-    PY_EVP_MD *digest = NULL;
+    PY_EVP_MD *digest;
     HMAC_CTX *ctx = NULL;
     HMACobject *self = NULL;
     int r;
@@ -1586,7 +1586,7 @@ _hashlib_hmac_new_impl(PyObject *module, Py_buffer *key, PyObject *msg_obj,
 
     r = HMAC_Init_ex(ctx, key->buf, (int)key->len, digest, NULL /* impl */);
     PY_EVP_MD_free(digest);
-    if (!r) {
+    if (r == 0) {
         _setException(PyExc_ValueError, NULL);
         goto error;
     }
