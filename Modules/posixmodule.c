@@ -16385,13 +16385,12 @@ ScandirIterator_finalize(PyObject *op)
 static void
 ScandirIterator_dealloc(PyObject *op)
 {
-    ScandirIterator *iterator = ScandirIterator_CAST(op);
-    PyTypeObject *tp = Py_TYPE(iterator);
+    PyTypeObject *tp = Py_TYPE(op);
     if (PyObject_CallFinalizerFromDealloc(op) < 0)
         return;
 
     freefunc free_func = PyType_GetSlot(tp, Py_tp_free);
-    free_func(iterator);
+    free_func(op);
     Py_DECREF(tp);
 }
 
