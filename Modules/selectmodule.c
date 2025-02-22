@@ -1985,7 +1985,7 @@ kqueue_queue_err_closed(void)
 }
 
 static PyObject *
-kqueue_tracking_after_fork(PyObject *module, PyObject *Py_UNUSED(args)) {
+kqueue_tracking_after_fork(PyObject *module, PyObject *Py_UNUSED(dummy)) {
     _selectstate *state = get_select_state(module);
     _kqueue_list_item *item = state->kqueue_open_list;
     state->kqueue_open_list = NULL;
