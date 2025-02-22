@@ -1062,7 +1062,7 @@ checkShebang(SearchInfo *search)
     }
 
     DWORD bytesRead = 0;
-    char buffer[4096];
+    unsigned char buffer[4096];
     if (!ReadFile(hFile, buffer, sizeof(buffer), &bytesRead, NULL)) {
         debug(L"# Failed to read %s for shebang parsing (0x%08X)\n",
               scriptFile, GetLastError());
@@ -1075,7 +1075,7 @@ checkShebang(SearchInfo *search)
     free(scriptFile);
 
 
-    char *b = buffer;
+    unsigned char *b = buffer;
     bool onlyUtf8 = false;
     if (bytesRead > 3 && *b == 0xEF) {
         if (*++b == 0xBB && *++b == 0xBF) {
@@ -1096,13 +1096,13 @@ checkShebang(SearchInfo *search)
     ++b;
     --bytesRead;
     while (--bytesRead > 0 && isspace(*++b)) { }
-    char *start = b;
+    const unsigned char *start = b;
     while (--bytesRead > 0 && *++b != '\r' && *b != '\n') { }
     wchar_t *shebang;
     int shebangLength;
     // We add 1 when bytesRead==0, as in that case we hit EOF and b points
     // to the last character in the file, not the newline
-    int exitCode = _decodeShebang(search, start, (int)(b - start + (bytesRead == 0)), onlyUtf8, &shebang, &shebangLength);
+    int exitCode = _decodeShebang(search, (const char*)start, (int)(b - start + (bytesRead == 0)), onlyUtf8, &shebang, &shebangLength);
     if (exitCode) {
         return exitCode;
     }
