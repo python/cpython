@@ -1,5 +1,6 @@
 """Test the datetime module."""
 import bisect
+import contextlib
 import copy
 import decimal
 import io
@@ -6557,6 +6558,16 @@ class ZoneInfoTest(unittest.TestCase):
                 ldt = tz.fromutc(udt.replace(tzinfo=tz))
                 self.assertEqual(ldt.fold, 0)
 
+    @contextlib.contextmanager
+    def _change_tz(new_tzinfo):
+        try:
+            with os_helper.EnvironmentVarGuard() as env:
+                env["TZ"] = new_tzinfo
+                _time.tzset()
+                yield
+        finally:
+            _time.tzset()
+
     @unittest.skipUnless(
         hasattr(_time, "tzset"), "time module has no attribute tzset"
     )
@@ -6571,9 +6582,7 @@ class ZoneInfoTest(unittest.TestCase):
                 self.zonename.startswith('right/')):
             self.skipTest("Skipping %s" % self.zonename)
         tz = self.tz
-        with os_helper.EnvironmentVarGuard() as env:
-            env.set('TZ', self.zonename)
-            _time.tzset()
+        with self._change_tz(self.zonename):
             try:
                 for udt, shift in tz.transitions():
                     if udt.year >= 2037:
