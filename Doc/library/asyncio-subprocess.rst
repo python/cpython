@@ -236,7 +236,7 @@ their completion.
 
       .. versionchanged:: 3.12
 
-         *stdin* gets closed when `input=None` too.
+         *stdin* gets closed when ``input=None`` too.
 
    .. method:: send_signal(signal)
 
