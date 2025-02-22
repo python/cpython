@@ -98,16 +98,12 @@ typedef struct {
 
 #define CHARACTER_DATA_BUFFER_SIZE 8192
 
-typedef const void* xmlhandler;
+typedef const void *xmlhandler;
 typedef void (*xmlhandlersetter)(XML_Parser self, xmlhandler handler);
 
 struct HandlerInfo {
     const char *name;
-    // To avoid UBSan failures, we cannot use the 'xmlhandlersetter' type,
-    // as the signature of the setters will not be compatible. However, we
-    // can safely convert the pointers since a setter function will be passed
-    // a correct handler.
-    const void *setter;
+    xmlhandlersetter setter;
     xmlhandler handler;
     PyGetSetDef getset;
 };
@@ -2215,8 +2211,11 @@ clear_handlers(xmlparseobject *self, int initial)
 
 static struct HandlerInfo handler_info[] = {
 
+    // The cast to `xmlhandlersetter` is needed as the signature of XML
+    // handler functions is not compatible with `xmlhandlersetter` since
+    // their second parameter is narrower than a `const void *`.
 #define HANDLER_INFO(name) \
-    {#name, XML_Set##name, my_##name},
+    {#name, (xmlhandlersetter)XML_Set##name, my_##name},
 
     HANDLER_INFO(StartElementHandler)
     HANDLER_INFO(EndElementHandler)
