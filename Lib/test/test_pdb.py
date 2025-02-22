@@ -4449,16 +4449,18 @@ class PdbTestReadline(unittest.TestCase):
         # \t should always complete a 4-space indent
         # This piece of code will raise an IndentationError or a SyntaxError
         # if the completion is not working as expected
-        input = b"def func():\n"
-        input += b"\ta = 1\n"
-        input += b" \ta += 1\n"
-        input += b"  \ta += 1\n"
-        input += b"   \tif a > 0:\n"
-        input += b"        a += 1\n"
-        input += b"\t\treturn a\n"
-        input += b"\n"
-        input += b"func()\n"
-        input += b"c\n"
+        input = textwrap.dedent("""\
+            def func():
+            \ta = 1
+             \ta += 1
+              \ta += 1
+               \tif a > 0:
+                    a += 1
+            \t\treturn a
+
+            func()
+            c
+        """).encode()
 
         output = run_pty(script, input)
 
