@@ -4350,7 +4350,6 @@ def spawn_repl():
     stdin_fname = os.path.join(os.path.dirname(sys.executable), '<stdin>')
     proc = subprocess.Popen(
         [stdin_fname, '-I', '-i'],
-        env={'PYTHON_BASIC_REPL': '1'},
         executable=sys.executable,
         text=True,
         stdin=subprocess.PIPE,
