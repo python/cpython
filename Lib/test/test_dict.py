@@ -1487,9 +1487,9 @@ class DictTest(unittest.TestCase):
                 self.assertGreaterEqual(eq_count, 1)
 
     def test_overwrite_managed_dict(self):
-        # GH-130327: Overwriting an object's managed dict incorrectly stored
-        # the new dictionary in the managed dict pointer for objects supporting
-        # inline values, leading to early clearing of the dictionary
+        # GH-130327: Overwriting an object's managed dictionary with another object's
+        # skipped traversal in favor of inline values, causing the GC to believe that
+        # the __dict__ wasn't reachable.
         import gc
 
         class Shenanigans:
