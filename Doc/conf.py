@@ -38,9 +38,7 @@ extensions = [
 ]
 
 # Skip if downstream redistributors haven't installed them
-_OPTIONAL_EXTENSIONS = (
-    'sphinxext.opengraph',
-)
+_OPTIONAL_EXTENSIONS = ('sphinxext.opengraph',)
 for optional_ext in _OPTIONAL_EXTENSIONS:
     try:
         if find_spec(optional_ext) is not None:
