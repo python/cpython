@@ -335,23 +335,20 @@ Known cautions and limitations:
   you can explicitly set your shell ``PATH`` environment variable to
   include the ``PythonT`` framework ``bin`` directory:
 
-  .. code-block:: sh
-
-     export PATH="/Library/Frameworks/PythonT.framework/Versions/3.13/bin":"$PATH"
+  |usemac_export_path|
 
   The traditional framework installation by default does something similar,
   except for :file:`Python.framework`. Be aware that having both framework ``bin``
   directories in ``PATH`` can lead to confusion if there are duplicate names
-  like ``python3.13`` in both; which one is actually used depends on the order
+  like |python_x_dot_y_literal| in both; which one is actually used depends on the order
   they appear in ``PATH``. The ``which python3.x`` or ``which python3.xt``
   commands can show which path is being used. Using virtual environments
   can help avoid such ambiguities. Another option might be to create
   a shell :command:`alias` to the desired interpreter, like:
 
-  .. code-block:: sh
+  |usemac_alias_py_x_dot_y|
 
-     alias py3.13="/Library/Frameworks/Python.framework/Versions/3.13/bin/python3.13"
-     alias py3.13t="/Library/Frameworks/PythonT.framework/Versions/3.13/bin/python3.13t"
+  |usemac_alias_py_x_dot_y_t|
 
 Installing using the command line
 ---------------------------------

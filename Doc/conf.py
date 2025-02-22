@@ -83,6 +83,9 @@ rst_epilog = f"""
 .. |python_x_dot_y_t_literal_config| replace:: ``python{version}t-config``
 .. |applications_python_version_literal| replace:: ``/Applications/Python {version}/``
 .. |usr_local_bin_python_x_dot_y_literal| replace:: ``/usr/local/bin/python{version}``
+.. |usemac_export_path| replace:: ``export PATH="/Library/Frameworks/PythonT.framework/Versions/{version}/bin":"$PATH"``
+.. |usemac_alias_py_x_dot_y| replace:: ``alias py{version}="/Library/Frameworks/Python.framework/Versions/{version}/bin/python{version}"``
+.. |usemac_alias_py_x_dot_y_t| replace:: ``alias py{version}t="/Library/Frameworks/PythonT.framework/Versions/{version}/bin/python{version}t"``
 
 .. Apparently this how you hack together a formatted link:
    (https://www.docutils.org/docs/ref/rst/directives.html#replacement-text)
