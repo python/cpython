@@ -21,7 +21,7 @@ from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support.import_helper import forget
-from test.support import force_not_colorized
+from test.support import force_not_colorized, force_not_colorized_test_class
 
 import json
 import textwrap
@@ -86,7 +86,7 @@ class TracebackCases(unittest.TestCase):
         err = self.get_exception_format(self.syntax_error_with_caret,
                                         SyntaxError)
         self.assertEqual(len(err), 4)
-        self.assertTrue(err[1].strip() == "return x!")
+        self.assertEqual(err[1].strip(), "return x!")
         self.assertIn("^", err[2]) # third line has caret
         self.assertEqual(err[1].find("!"), err[2].find("^")) # in the right place
         self.assertEqual(err[2].count("^"), 1)
@@ -376,6 +376,30 @@ class TracebackCases(unittest.TestCase):
             '   ValueError: 0\n',
         ])
 
+    def test_format_exception_group_syntax_error_with_custom_values(self):
+        # See https://github.com/python/cpython/issues/128894
+        for exc in [
+            SyntaxError('error', 'abcd'),
+            SyntaxError('error', [None] * 4),
+            SyntaxError('error', (1, 2, 3, 4)),
+            SyntaxError('error', (1, 2, 3, 4)),
+            SyntaxError('error', (1, 'a', 'b', 2)),
+            # with end_lineno and end_offset:
+            SyntaxError('error', 'abcdef'),
+            SyntaxError('error', [None] * 6),
+            SyntaxError('error', (1, 2, 3, 4, 5, 6)),
+            SyntaxError('error', (1, 'a', 'b', 2, 'c', 'd')),
+        ]:
+            with self.subTest(exc=exc):
+                err = traceback.format_exception_only(exc, show_group=True)
+                # Should not raise an exception:
+                if exc.lineno is not None:
+                    self.assertEqual(len(err), 2)
+                    self.assertTrue(err[0].startswith('  File'))
+                else:
+                    self.assertEqual(len(err), 1)
+                self.assertEqual(err[-1], 'SyntaxError: error\n')
+
     @requires_subprocess()
     @force_not_colorized
     def test_encoded_file(self):
@@ -419,16 +443,10 @@ class TracebackCases(unittest.TestCase):
             err_line = "raise RuntimeError('{0}')".format(message_ascii)
             err_msg = "RuntimeError: {0}".format(message_ascii)
 
-            self.assertIn(("line %s" % lineno), stdout[1],
-                "Invalid line number: {0!r} instead of {1}".format(
-                    stdout[1], lineno))
-            self.assertTrue(stdout[2].endswith(err_line),
-                "Invalid traceback line: {0!r} instead of {1!r}".format(
-                    stdout[2], err_line))
+            self.assertIn("line %s" % lineno, stdout[1])
+            self.assertEndsWith(stdout[2], err_line)
             actual_err_msg = stdout[3]
-            self.assertTrue(actual_err_msg == err_msg,
-                "Invalid error message: {0!r} instead of {1!r}".format(
-                    actual_err_msg, err_msg))
+            self.assertEqual(actual_err_msg, err_msg)
 
         do_test("", "foo", "ascii", 3)
         for charset in ("ascii", "iso-8859-1", "utf-8", "GBK"):
@@ -491,6 +509,12 @@ class TracebackCases(unittest.TestCase):
         output = StringIO()
         traceback.print_exception(Exception("projector"), file=output)
         self.assertEqual(output.getvalue(), "Exception: projector\n")
+
+    def test_print_last(self):
+        with support.swap_attr(sys, 'last_exc', ValueError(42)):
+            output = StringIO()
+            traceback.print_last(file=output)
+            self.assertEqual(output.getvalue(), "ValueError: 42\n")
 
     def test_format_exception_exc(self):
         e = Exception("projector")
@@ -1712,6 +1736,7 @@ class TracebackErrorLocationCaretTestBase:
 
 
 @requires_debug_ranges()
+@force_not_colorized_test_class
 class PurePythonTracebackErrorCaretTests(
     PurePythonExceptionFormattingMixin,
     TracebackErrorLocationCaretTestBase,
@@ -1725,6 +1750,7 @@ class PurePythonTracebackErrorCaretTests(
 
 @cpython_only
 @requires_debug_ranges()
+@force_not_colorized_test_class
 class CPythonTracebackErrorCaretTests(
     CAPIExceptionFormattingMixin,
     TracebackErrorLocationCaretTestBase,
@@ -1736,6 +1762,7 @@ class CPythonTracebackErrorCaretTests(
 
 @cpython_only
 @requires_debug_ranges()
+@force_not_colorized_test_class
 class CPythonTracebackLegacyErrorCaretTests(
     CAPIExceptionFormattingLegacyMixin,
     TracebackErrorLocationCaretTestBase,
@@ -1806,9 +1833,9 @@ class TracebackFormatMixin:
         banner = tb_lines[0]
         self.assertEqual(len(tb_lines), 5)
         location, source_line = tb_lines[-2], tb_lines[-1]
-        self.assertTrue(banner.startswith('Traceback'))
-        self.assertTrue(location.startswith('  File'))
-        self.assertTrue(source_line.startswith('    raise'))
+        self.assertStartsWith(banner, 'Traceback')
+        self.assertStartsWith(location, '  File')
+        self.assertStartsWith(source_line, '    raise')
 
     def test_traceback_format(self):
         self.check_traceback_format()
@@ -2149,10 +2176,12 @@ context_message = (
 boundaries = re.compile(
     '(%s|%s)' % (re.escape(cause_message), re.escape(context_message)))
 
+@force_not_colorized_test_class
 class TestTracebackFormat(unittest.TestCase, TracebackFormatMixin):
     pass
 
 @cpython_only
+@force_not_colorized_test_class
 class TestFallbackTracebackFormat(unittest.TestCase, TracebackFormatMixin):
     DEBUG_RANGES = False
     def setUp(self) -> None:
@@ -2185,12 +2214,12 @@ class BaseExceptionReportingTests:
     def check_zero_div(self, msg):
         lines = msg.splitlines()
         if has_no_debug_ranges():
-            self.assertTrue(lines[-3].startswith('  File'))
+            self.assertStartsWith(lines[-3], '  File')
             self.assertIn('1/0 # In zero_div', lines[-2])
         else:
-            self.assertTrue(lines[-4].startswith('  File'))
+            self.assertStartsWith(lines[-4], '  File')
             self.assertIn('1/0 # In zero_div', lines[-3])
-        self.assertTrue(lines[-1].startswith('ZeroDivisionError'), lines[-1])
+        self.assertStartsWith(lines[-1], 'ZeroDivisionError')
 
     def test_simple(self):
         try:
@@ -2200,12 +2229,12 @@ class BaseExceptionReportingTests:
         lines = self.get_report(e).splitlines()
         if has_no_debug_ranges():
             self.assertEqual(len(lines), 4)
-            self.assertTrue(lines[3].startswith('ZeroDivisionError'))
+            self.assertStartsWith(lines[3], 'ZeroDivisionError')
         else:
             self.assertEqual(len(lines), 5)
-            self.assertTrue(lines[4].startswith('ZeroDivisionError'))
-        self.assertTrue(lines[0].startswith('Traceback'))
-        self.assertTrue(lines[1].startswith('  File'))
+            self.assertStartsWith(lines[4], 'ZeroDivisionError')
+        self.assertStartsWith(lines[0], 'Traceback')
+        self.assertStartsWith(lines[1], '  File')
         self.assertIn('1/0 # Marker', lines[2])
 
     def test_cause(self):
@@ -2246,9 +2275,9 @@ class BaseExceptionReportingTests:
             e = _
         lines = self.get_report(e).splitlines()
         self.assertEqual(len(lines), 4)
-        self.assertTrue(lines[3].startswith('ZeroDivisionError'))
-        self.assertTrue(lines[0].startswith('Traceback'))
-        self.assertTrue(lines[1].startswith('  File'))
+        self.assertStartsWith(lines[3], 'ZeroDivisionError')
+        self.assertStartsWith(lines[0], 'Traceback')
+        self.assertStartsWith(lines[1], '  File')
         self.assertIn('ZeroDivisionError from None', lines[2])
 
     def test_cause_and_context(self):
@@ -2914,6 +2943,33 @@ class BaseExceptionReportingTests:
         report = self.get_report(exc)
         self.assertEqual(report, expected)
 
+    def test_exception_group_wrapped_naked(self):
+        # See gh-128799
+
+        def exc():
+            try:
+                raise Exception(42)
+            except* Exception as e:
+                raise
+
+        expected = (f'  + Exception Group Traceback (most recent call last):\n'
+                    f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
+                    f'  |     exception_or_callable()\n'
+                    f'  |     ~~~~~~~~~~~~~~~~~~~~~^^\n'
+                    f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 3}, in exc\n'
+                    f'  |     except* Exception as e:\n'
+                    f'  |         raise\n'
+                    f'  | ExceptionGroup:  (1 sub-exception)\n'
+                    f'  +-+---------------- 1 ----------------\n'
+                    f'    | Traceback (most recent call last):\n'
+                    f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 2}, in exc\n'
+                    f'    |     raise Exception(42)\n'
+                    f'    | Exception: 42\n'
+                    f'    +------------------------------------\n')
+
+        report = self.get_report(exc)
+        self.assertEqual(report, expected)
+
     def test_KeyboardInterrupt_at_first_line_of_frame(self):
         # see GH-93249
         def f():
@@ -2940,6 +2996,7 @@ class BaseExceptionReportingTests:
         self.assertEqual(report, expected)
 
 
+@force_not_colorized_test_class
 class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
     #
     # This checks reporting through the 'traceback' module, with both
@@ -2956,6 +3013,7 @@ class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
         return s
 
 
+@force_not_colorized_test_class
 class CExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
     #
     # This checks built-in reporting by the interpreter.
@@ -3177,10 +3235,16 @@ class TestStack(unittest.TestCase):
     def test_walk_stack(self):
         def deeper():
             return list(traceback.walk_stack(None))
-        s1 = list(traceback.walk_stack(None))
-        s2 = deeper()
+        s1, s2 = list(traceback.walk_stack(None)), deeper()
         self.assertEqual(len(s2) - len(s1), 1)
         self.assertEqual(s2[1:], s1)
+
+    def test_walk_innermost_frame(self):
+        def inner():
+            return list(traceback.walk_stack(None))
+        frames = inner()
+        innermost_frame, _ = frames[0]
+        self.assertEqual(innermost_frame.f_code.co_name, "inner")
 
     def test_walk_tb(self):
         try:

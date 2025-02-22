@@ -1,11 +1,10 @@
 import annotationlib
-import asyncio
 import textwrap
 import types
 import unittest
 import pickle
 import weakref
-from test.support import requires_working_socket, check_syntax_error, run_code
+from test.support import check_syntax_error, run_code, run_no_yield_async_fn
 
 from typing import Generic, NoDefault, Sequence, TypeAliasType, TypeVar, TypeVarTuple, ParamSpec, get_args
 
@@ -1051,7 +1050,6 @@ class TypeParamsTypeVarTest(unittest.TestCase):
         self.assertIsInstance(c, TypeVar)
         self.assertEqual(c.__name__, "C")
 
-    @requires_working_socket()
     def test_typevar_coroutine(self):
         def get_coroutine[A]():
             async def coroutine[B]():
@@ -1060,8 +1058,7 @@ class TypeParamsTypeVarTest(unittest.TestCase):
 
         co = get_coroutine()
 
-        self.addCleanup(asyncio.set_event_loop_policy, None)
-        a, b = asyncio.run(co())
+        a, b = run_no_yield_async_fn(co)
 
         self.assertIsInstance(a, TypeVar)
         self.assertEqual(a.__name__, "A")
