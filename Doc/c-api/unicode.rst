@@ -614,8 +614,11 @@ APIs:
 
 .. c:function:: const char* PyUnicode_GetDefaultEncoding(void)
 
-   Return a ``"utf-8"`` string constant, which corresponds to the
-   :func:`~sys.getdefaultencoding` function in Python.
+   Return the name of the default string encoding, ``"utf-8"``.
+   See :func:`sys.getdefaultencoding`.
+
+   The returned string does not need to be freed, and is valid
+   until interpreter shutdown.
 
 
 .. c:function:: Py_ssize_t PyUnicode_GetLength(PyObject *unicode)
