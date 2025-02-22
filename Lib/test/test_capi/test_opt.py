@@ -1442,7 +1442,7 @@ class TestUopsOptimization(unittest.TestCase):
             trace = []
             for i in range(n):
                 # zero is always (int) 0, but we can only prove that it's a integer:
-                zero = i - i # at this point python knows f is an int, but doesnt know that it is 0 (we know it is 0 though)
+                zero = i - i
                 trace.append("A")
                 if not zero:  # Kept.
                     trace.append("B")
