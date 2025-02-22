@@ -115,14 +115,14 @@ Module-Level Functions
 
 .. function:: print_exc(limit=None, file=None, chain=True)
 
-   This is a shorthand for ``print_exception(sys.exception(), limit, file,
-   chain)``.
+   This is a shorthand for ``print_exception(sys.exception(), limit=limit, file=file,
+   chain=chain)``.
 
 
 .. function:: print_last(limit=None, file=None, chain=True)
 
-   This is a shorthand for ``print_exception(sys.last_exc, limit, file,
-   chain)``.  In general it will work only after an exception has reached
+   This is a shorthand for ``print_exception(sys.last_exc, limit=limit, file=file,
+   chain=chain)``.  In general it will work only after an exception has reached
    an interactive prompt (see :data:`sys.last_exc`).
 
 
