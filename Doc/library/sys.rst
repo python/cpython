@@ -895,7 +895,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. function:: getswitchinterval()
 
-   Return the interpreter's "thread switch interval"; see
+   Return the interpreter's "thread switch interval" in seconds; see
    :func:`setswitchinterval`.
 
    .. versionadded:: 3.2
