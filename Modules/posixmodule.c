@@ -16334,7 +16334,7 @@ ScandirIterator_iternext(PyObject *op)
 #endif
 
 static PyObject *
-ScandirIterator_close(PyObject *op, PyObject *Py_UNUSED(ignored))
+ScandirIterator_close(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     ScandirIterator *self = ScandirIterator_CAST(op);
     ScandirIterator_closedir(self);
@@ -16342,7 +16342,7 @@ ScandirIterator_close(PyObject *op, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-ScandirIterator_enter(PyObject *self, PyObject *Py_UNUSED(ignored))
+ScandirIterator_enter(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     return Py_NewRef(self);
 }
