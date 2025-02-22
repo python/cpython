@@ -673,7 +673,6 @@ The following options are available:
 .. option:: -c <command>
 
    Run the specified Python command in the shell window. For example, pass ``-c "print('Hello, World!')"``.
-
 On Windows, the outer quotes must be double quotes as shown.
 
 .. option:: -d
