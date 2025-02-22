@@ -1469,7 +1469,7 @@ _PyType_GetFullyQualifiedName(PyTypeObject *type, char sep)
         return PyUnicode_FromString(type->tp_name);
     }
 
-    PyObject *qualname = Py_NewRef(((PyHeapTypeObject *)type)->ht_qualname);
+    PyObject *qualname = type_qualname((PyObject *)type, NULL);
     if (qualname == NULL) {
         return NULL;
     }
