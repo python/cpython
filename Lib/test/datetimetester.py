@@ -6559,6 +6559,7 @@ class ZoneInfoTest(unittest.TestCase):
                 self.assertEqual(ldt.fold, 0)
 
     @contextlib.contextmanager
+    @staticmethod
     def _change_tz(new_tzinfo):
         try:
             with os_helper.EnvironmentVarGuard() as env:
@@ -6591,7 +6592,7 @@ class ZoneInfoTest(unittest.TestCase):
                         break
                     s0 = (udt - datetime(1970, 1, 1)) // SEC
                     ss = shift // SEC   # shift seconds
-                    for x in [-40 * 3600, -20*3600, -1, 0,
+                    for x in [-40 * 3600, -20 * 3600, -1, 0,
                               ss - 1, ss + 20 * 3600, ss + 40 * 3600]:
                         s = s0 + x
                         sdt = datetime.fromtimestamp(s)
