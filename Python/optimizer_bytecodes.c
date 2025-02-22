@@ -439,7 +439,7 @@ dummy_func(void) {
             // removed and the narrowed value to be invalid:
             if (next_opcode == _GUARD_IS_FALSE_POP) {
                 sym_set_const(value, Py_GetConstant(Py_CONSTANT_EMPTY_STR));
-                res = sym_new_type(ctx, &PyUnicode_Type);
+                res = sym_new_type(ctx, &PyBool_Type);
             }
         }
     }

@@ -227,7 +227,7 @@
                 if (next_opcode == _GUARD_IS_FALSE_POP) {
                     stack_pointer[-1] = res;
                     sym_set_const(value, Py_GetConstant(Py_CONSTANT_EMPTY_STR));
-                    res = sym_new_type(ctx, &PyUnicode_Type);
+                    res = sym_new_type(ctx, &PyBool_Type);
                 }
             }
             stack_pointer[-1] = res;
