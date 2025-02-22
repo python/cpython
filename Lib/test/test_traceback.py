@@ -4178,6 +4178,104 @@ class SuggestionFormattingTestBase:
         actual = self.get_suggestion(A(), 'blech')
         self.assertNotIn("Did you mean", actual)
 
+    def test_delattr_suggestions(self):
+        class Substitution:
+            noise = more_noise = a = bc = None
+            blech = None
+
+        class Elimination:
+            noise = more_noise = a = bc = None
+            blch = None
+
+        class Addition:
+            noise = more_noise = a = bc = None
+            bluchin = None
+
+        class SubstitutionOverElimination:
+            blach = None
+            bluc = None
+
+        class SubstitutionOverAddition:
+            blach = None
+            bluchi = None
+
+        class EliminationOverAddition:
+            blucha = None
+            bluc = None
+
+        class CaseChangeOverSubstitution:
+            Luch = None
+            fluch = None
+            BLuch = None
+
+        for cls, suggestion in [
+            (Addition, "'bluchin'?"),
+            (Substitution, "'blech'?"),
+            (Elimination, "'blch'?"),
+            (Addition, "'bluchin'?"),
+            (SubstitutionOverElimination, "'blach'?"),
+            (SubstitutionOverAddition, "'blach'?"),
+            (EliminationOverAddition, "'bluc'?"),
+            (CaseChangeOverSubstitution, "'BLuch'?"),
+        ]:
+            obj = cls()
+            def callable():
+                delattr(obj, 'bluch')
+            actual = self.get_suggestion(callable)
+            self.assertIn(suggestion, actual)
+
+    def test_delattr_suggestions_underscored(self):
+        class A:
+            bluch = None
+
+        obj = A()
+        self.assertIn("'bluch'", self.get_suggestion(lambda: delattr(obj, 'blach')))
+        self.assertIn("'bluch'", self.get_suggestion(lambda: delattr(obj, '_luch')))
+        self.assertIn("'bluch'", self.get_suggestion(lambda: delattr(obj, '_bluch')))
+
+        class B:
+            _bluch = None
+
+        obj = B()
+        self.assertIn("'_bluch'", self.get_suggestion(lambda: delattr(obj, '_blach')))
+        self.assertIn("'_bluch'", self.get_suggestion(lambda: delattr(obj, '_luch')))
+        self.assertNotIn("'_bluch'", self.get_suggestion(lambda: delattr(obj, 'bluch')))
+
+    def test_delattr_suggestions_do_not_trigger_for_long_attributes(self):
+        class A:
+            blech = None
+
+        obj = A()
+        actual = self.get_suggestion(lambda: delattr(obj, 'somethingverywrong'))
+        self.assertNotIn("blech", actual)
+
+    def test_delattr_error_bad_suggestions_do_not_trigger_for_small_names(self):
+        class MyClass:
+            vvv = mom = w = id = pytho = None
+
+        obj = MyClass()
+        for name in ("b", "v", "m", "py"):
+            with self.subTest(name=name):
+                actual = self.get_suggestion(lambda: delattr(obj, name))
+                self.assertNotIn("Did you mean", actual)
+                self.assertNotIn("'vvv", actual)
+                self.assertNotIn("'mom'", actual)
+                self.assertNotIn("'id'", actual)
+                self.assertNotIn("'w'", actual)
+                self.assertNotIn("'pytho'", actual)
+
+    def test_delattr_suggestions_do_not_trigger_for_big_dicts(self):
+        class A:
+            blech = None
+        # A class with a very big __dict__ will not be considered
+        # for suggestions.
+        obj = A()
+        for index in range(2000):
+            setattr(obj, f"index_{index}", None)
+
+        actual = self.get_suggestion(lambda: delattr(obj, 'bluch'))
+        self.assertNotIn("blech", actual)
+
     def test_attribute_error_with_failing_dict(self):
         class T:
             bluch = 1
