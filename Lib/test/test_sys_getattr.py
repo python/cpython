@@ -103,20 +103,20 @@ class PySysGetAttrTest(unittest.TestCase):
                 del stdout
                 return "CrashStdout"
 
-            class CrashStderr:
-                def __init__(self):
-                    self.stderr = sys.stderr
-                    setattr(sys, "stderr", FakeIO())
+        class CrashStderr:
+            def __init__(self):
+                self.stderr = sys.stderr
+                setattr(sys, "stderr", FakeIO())
 
-                def __repr__(self):
-                    stderr = sys.stderr
-                    setattr(sys, "stderr", self.stderr)
-                    del stderr
-                    return "CrashStderr"
+            def __repr__(self):
+                stderr = sys.stderr
+                setattr(sys, "stderr", self.stderr)
+                del stderr
+                return "CrashStderr"
 
-            def audit(event, args):
-                if event == 'builtins.input':
-                    repr(args)
+        def audit(event, args):
+            if event == 'builtins.input':
+                repr(args)
 
         def main():
             {0}
