@@ -8478,7 +8478,7 @@ class TypedDictTests(BaseTestCase):
             b: str
 
         self.assertIs(TD2.__total__, True)
-        
+
     def test_total_with_assigned_value(self):
         class TD(TypedDict):
             __total__ = "some_value"
@@ -8487,7 +8487,7 @@ class TypedDictTests(BaseTestCase):
 
         class TD2(TypedDict, total=True):
             __total__ = "some_value"
-            
+
         self.assertIs(TD2.__total__, True)
 
         class TD3(TypedDict, total=False):
