@@ -185,6 +185,31 @@ class PySysGetAttrTest(unittest.TestCase):
             main()
     ''')
 
+    pyerr_printex_code = textwrap.dedent('''
+        import sys
+
+        class Hook:
+            def __call__(self, *args, **kwds):
+                pass
+
+            def __repr__(self):
+                h = sys.excepthook
+                setattr(sys, 'excepthook', sys.__excepthook__)
+                del h
+                return 'Hook'
+
+        def audit(event, args):
+            repr(args)
+
+        def main():
+            sys.addaudithook(audit)
+            setattr(sys, 'excepthook', Hook())
+            raise
+
+        if __name__ == "__main__":
+            main()
+    ''')
+
 
     def test_print_deleted_stdout(self):
         # print should use strong reference to the stdout.
@@ -318,6 +343,13 @@ class PySysGetAttrTest(unittest.TestCase):
 
     def test_py_finalize_flush_std_files_stderr(self):
         test_code = self.flush_std_files_common_code.format("stderr")
+        rc, _, err = assert_python_ok('-c', test_code)
+        self.assertEqual(rc, 0)
+        self.assertNotIn(b"Segmentation fault", err)
+        self.assertNotIn(b"access violation", err)
+
+    def test_pyerr_printex_excepthook(self):
+        test_code = self.pyerr_printex_code
         rc, _, err = assert_python_ok('-c', test_code)
         self.assertEqual(rc, 0)
         self.assertNotIn(b"Segmentation fault", err)
