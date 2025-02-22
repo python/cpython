@@ -167,6 +167,7 @@ which relays any information about the UUID's safety, using this enumeration:
 The :mod:`uuid` module defines the following functions:
 
 
+.. index:: single: getnode
 .. function:: getnode()
 
    Get the hardware address as a 48-bit positive integer.  The first time this
@@ -183,8 +184,6 @@ The :mod:`uuid` module defines the following functions:
       Universally administered MAC addresses are preferred over locally
       administered MAC addresses, since the former are guaranteed to be
       globally unique, while the latter are not.
-
-.. index:: single: getnode
 
 
 .. index:: single: uuid1
