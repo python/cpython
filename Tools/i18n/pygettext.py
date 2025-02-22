@@ -296,7 +296,7 @@ DEFAULTKEYWORDS = {
 
 def parse_spec(spec):
     """Parse a keyword spec string into a dictionary.
-    
+
     The keyword spec format defines the name of the gettext function and the
     positions of the arguments that correspond to msgid, msgid_plural, and
     msgctxt. The format is as follows:
