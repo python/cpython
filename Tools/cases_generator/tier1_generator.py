@@ -160,7 +160,7 @@ def generate_tier1(
 #define TIER_ONE 1
 """)
     outfile.write(f"""
-#ifndef Py_TAIL_CALL_INTERP
+#if !Py_TAIL_CALL_INTERP
 #if !USE_COMPUTED_GOTOS
     dispatch_opcode:
         switch (opcode)
@@ -173,7 +173,7 @@ def generate_tier1(
     generate_tier1_cases(analysis, outfile, lines)
     outfile.write(f"""
             {INSTRUCTION_END_MARKER}
-#ifndef Py_TAIL_CALL_INTERP
+#if !Py_TAIL_CALL_INTERP
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:
 #else
@@ -229,11 +229,10 @@ def generate_tier1_cases(
         out.emit(f"TARGET({name}) {{\n")
         # We need to ifdef it because this breaks platforms
         # without computed gotos/tail calling.
-        out.emit(f"#if defined(Py_TAIL_CALL_INTERP)\n")
-        out.emit(f"int opcode;\n")
-        out.emit(f"#endif\n")
-        out.emit(f"opcode = {name};\n")
+        out.emit(f"#if Py_TAIL_CALL_INTERP\n")
+        out.emit(f"int opcode = {name};\n")
         out.emit(f"(void)(opcode);\n")
+        out.emit(f"#endif\n")
         needs_this = uses_this(inst)
         unused_guard = "(void)this_instr;\n"
         if inst.properties.needs_prev:
@@ -252,6 +251,8 @@ def generate_tier1_cases(
             if needs_this:
                 out.emit(f"_Py_CODEUNIT* const this_instr = next_instr - {inst.size};\n")
                 out.emit(unused_guard)
+        if inst.properties.uses_opcode:
+            out.emit(f"opcode = {name};\n")
         if inst.family is not None:
             out.emit(
                 f"static_assert({inst.family.size} == {inst.size-1}"
