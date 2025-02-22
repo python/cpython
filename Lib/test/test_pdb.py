@@ -4459,7 +4459,7 @@ class PdbTestReadline(unittest.TestCase):
         input += b"\n"
         input += b"func()\n"
         input += b"c\n"
-        
+
         output = run_pty(script, input)
 
         self.assertIn(b'4', output)
