@@ -6558,9 +6558,9 @@ class ZoneInfoTest(unittest.TestCase):
                 ldt = tz.fromutc(udt.replace(tzinfo=tz))
                 self.assertEqual(ldt.fold, 0)
 
+    @classmethod
     @contextlib.contextmanager
-    @staticmethod
-    def _change_tz(new_tzinfo):
+    def _change_tz(cls, new_tzinfo):
         try:
             with os_helper.EnvironmentVarGuard() as env:
                 env["TZ"] = new_tzinfo
