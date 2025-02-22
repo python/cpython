@@ -212,8 +212,7 @@ class TestTranforms(BytecodeTestCase):
             ('a in {1,2,3}', frozenset({1, 2, 3})),
             ('a not in {"a","b","c"}', frozenset({'a', 'c', 'b'})),
             ('a in {None, 1, None}', frozenset({1, None})),
-            # Tuple folding is currently disabled in the AST optimizer
-            # ('a not in {(1, 2), 3, 4}', frozenset({(1, 2), 3, 4})),
+            ('a not in {(1, 2), 3, 4}', frozenset({(1, 2), 3, 4})),
             ('a in {1, 2, 3, 3, 2, 1}', frozenset({1, 2, 3})),
             ):
             with self.subTest(line=line):
