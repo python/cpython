@@ -81,6 +81,10 @@ and :class:`~concurrent.futures.ProcessPoolExecutor` switches from
 See :ref:`(1) <whatsnew314-concurrent-futures-start-method>` and
 :ref:`(2) <whatsnew314-multiprocessing-start-method>` for details.
 
+If you encounter :exc:`NameError`\s or pickling errors coming out of
+:mod:`multiprocessing` or :mod:`concurrent.futures`, please read the
+:ref:`forkserver restrictions <multiprocessing-programming-forkserver>`.
+
 
 New features
 ============
