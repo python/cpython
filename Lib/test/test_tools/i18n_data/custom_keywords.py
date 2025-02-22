@@ -7,7 +7,7 @@ from gettext import (
 )
 
 foo('bar')
-foo('bar', 'baz') 
+foo('bar', 'baz')
 
 nfoo('cat', 'cats', 1)
 nfoo('dog', 'dogs')
@@ -20,7 +20,7 @@ npfoo('context', 'cat', 'cats', 1)
 bar('baz')
 
 # 'nfoo' requires at least 2 arguments
-nfoo('dog')  
+nfoo('dog')
 
 # 'pfoo' requires at least 2 arguments
 pfoo('context')
