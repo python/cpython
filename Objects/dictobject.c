@@ -4577,7 +4577,7 @@ dict_traverse(PyObject *op, visitproc visit, void *arg)
 
     if (DK_IS_UNICODE(keys)) {
         if (_PyDict_HasSplitTable(mp)) {
-            if (!mp->ma_values->valid || !mp->ma_values->embedded) {
+            if (!mp->ma_values->embedded || !mp->ma_values->valid) {
                 for (i = 0; i < n; i++) {
                     Py_VISIT(mp->ma_values->values[i]);
                 }
