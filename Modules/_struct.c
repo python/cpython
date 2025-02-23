@@ -2091,7 +2091,7 @@ unpackiter_iternext(PyObject *op)
     }
     assert(self->index + self->so->s_size <= self->buf.len);
     result = s_unpack_internal(self->so,
-                               (char *)self->buf.buf + self->index,
+                               (char*)self->buf.buf + self->index,
                                state);
     self->index += self->so->s_size;
     return result;
