@@ -792,13 +792,12 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
                          "%s(seconds=1, microseconds=100)" % name)
 
     def test_repr_subclass(self):
-        name = SubclassTimeDelta.__name__
         td = SubclassTimeDelta(days=1)
-        self.assertEqual(repr(td), "%s(days=1)" % name)
+        self.assertEqual(repr(td), "SubclassTimeDelta(days=1)")
         td = SubclassTimeDelta(seconds=30)
-        self.assertEqual(repr(td), "%s(seconds=30)" % name)
+        self.assertEqual(repr(td), "SubclassTimeDelta(seconds=30)")
         td = SubclassTimeDelta(weeks=2)
-        self.assertEqual(repr(td), "%s(days=14)" % name)
+        self.assertEqual(repr(td), "SubclassTimeDelta(days=14)")
 
     def test_roundtrip(self):
         for td in (timedelta(days=999999999, hours=23, minutes=59,
