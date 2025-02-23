@@ -739,13 +739,10 @@ class FallbackTestCase(GettextBaseTest):
         fallback1 = NestedFallback()
         fallback2 = FallbackTranslations()
         t = gettext.NullTranslations()
-
         t.add_fallback(fallback1)
-        self.assertEqual(t._fallback, fallback1)
         t.add_fallback(fallback2)
-        self.assertEqual(t._fallback, fallback1)
-        self.assertEqual(t._fallback._fallback, fallback2)
 
+        self.assertEqual(fallback1.gettext('bar'), 'gettext: bar')
         self.assertEqual(t.gettext('foo'), 'fallback')
         self.assertEqual(t.gettext('bar'), 'gettext: bar')
 
