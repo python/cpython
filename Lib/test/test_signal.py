@@ -1348,13 +1348,12 @@ class StressTest(unittest.TestCase):
         # All ITIMER_REAL signals should have been delivered to the
         # Python handler
         self.assertEqual(len(sigs), N, "Some signals were lost")
-
+    @support.requires_resource('flaky')
     @support.requires_gil_enabled("gh-121065: test is flaky on free-threaded build")
     @unittest.skipIf(is_apple, "crashes due to system bug (FB13453490)")
     @unittest.skipUnless(hasattr(signal, "SIGUSR1"),
                          "test needs SIGUSR1")
     @threading_helper.requires_working_threading()
-    @support.requires_resource('flaky')
     def test_stress_modifying_handlers(self):
         # bpo-43406: race condition between trip_signal() and signal.signal
         signum = signal.SIGUSR1
