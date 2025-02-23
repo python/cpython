@@ -650,7 +650,7 @@ def main():
         # defaults
         extractall = 0 # FIXME: currently this option has no effect at all.
         escape = 0
-        keywords = set()
+        keywords = []
         outpath = ''
         outfile = 'messages.pot'
         writelocations = 1
@@ -684,7 +684,7 @@ def main():
         elif opt in ('-D', '--docstrings'):
             options.docstrings = 1
         elif opt in ('-k', '--keyword'):
-            options.keywords.add(arg)
+            options.keywords.append(arg)
         elif opt in ('-K', '--no-default-keywords'):
             no_default_keywords = True
         elif opt in ('-n', '--add-location'):
