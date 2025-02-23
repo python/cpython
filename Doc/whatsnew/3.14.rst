@@ -70,6 +70,22 @@ Summary -- release highlights
 * :ref:`A new type of interpreter  <whatsnew314-tail-call>`
 
 
+Incompatible changes
+====================
+
+On platforms other than macOS and Windows, the default :ref:`start
+method <multiprocessing-start-methods>` for :mod:`multiprocessing`
+and :class:`~concurrent.futures.ProcessPoolExecutor` switches from
+*fork* to *forkserver*.
+
+See :ref:`(1) <whatsnew314-concurrent-futures-start-method>` and
+:ref:`(2) <whatsnew314-multiprocessing-start-method>` for details.
+
+If you encounter :exc:`NameError`\s or pickling errors coming out of
+:mod:`multiprocessing` or :mod:`concurrent.futures`, see the
+:ref:`forkserver restrictions <multiprocessing-programming-forkserver>`.
+
+
 New features
 ============
 
@@ -396,12 +412,26 @@ concurrent.futures
   same process) to Python code.  This is separate from the proposed API
   in :pep:`734`.
   (Contributed by Eric Snow in :gh:`124548`.)
-* The default ``ProcessPoolExecutor`` start method (see
-  :ref:`multiprocessing-start-methods`) changed from *fork* to *forkserver* on
-  platforms other than macOS & Windows. If you require the threading
-  incompatible *fork* start method you must explicitly request it by
-  supplying a *mp_context* to :class:`concurrent.futures.ProcessPoolExecutor`.
-  (Contributed by Gregory P.  Smith in :gh:`84559`.)
+
+.. _whatsnew314-concurrent-futures-start-method:
+
+* The default :class:`~concurrent.futures.ProcessPoolExecutor`
+  :ref:`start method <multiprocessing-start-methods>` changed
+  from :ref:`fork <multiprocessing-start-method-fork>` to :ref:`forkserver
+  <multiprocessing-start-method-forkserver>` on platforms other than macOS and
+  Windows where it was already :ref:`spawn <multiprocessing-start-method-spawn>`.
+
+  If the threading incompatible *fork* method is required, you must explicitly
+  request it by supplying a multiprocessing context *mp_context* to
+  :class:`~concurrent.futures.ProcessPoolExecutor`.
+
+  See :ref:`forkserver restrictions <multiprocessing-programming-forkserver>`
+  for information and differences with the *fork* method and how this change
+  may affect existing code with mutable global shared variables and/or shared
+  objects that can not be automatically :mod:`pickled <pickle>`.
+
+  (Contributed by Gregory P. Smith in :gh:`84559`.)
+
 
 contextvars
 -----------
@@ -637,18 +667,30 @@ mimetypes
 multiprocessing
 ---------------
 
-* The default start method (see :ref:`multiprocessing-start-methods`) changed
-  from *fork* to *forkserver* on platforms other than macOS & Windows where
-  it was already *spawn*. If you require the threading incompatible *fork*
-  start method you must explicitly request it using a context from
-  :func:`multiprocessing.get_context` (preferred) or change the default via
-  :func:`multiprocessing.set_start_method`.
+.. _whatsnew314-multiprocessing-start-method:
+
+* The default :ref:`start method <multiprocessing-start-methods>` changed
+  from :ref:`fork <multiprocessing-start-method-fork>` to :ref:`forkserver
+  <multiprocessing-start-method-forkserver>` on platforms other than macOS and
+  Windows where it was already :ref:`spawn <multiprocessing-start-method-spawn>`.
+
+  If the threading incompatible *fork* method is required, you must explicitly
+  request it via a context from :func:`multiprocessing.get_context` (preferred)
+  or change the default via :func:`multiprocessing.set_start_method`.
+
+  See :ref:`forkserver restrictions <multiprocessing-programming-forkserver>`
+  for information and differences with the *fork* method and how this change
+  may affect existing code with mutable global shared variables and/or shared
+  objects that can not be automatically :mod:`pickled <pickle>`.
+
   (Contributed by Gregory P. Smith in :gh:`84559`.)
+
 * :mod:`multiprocessing`'s ``"forkserver"`` start method now authenticates
   its control socket to avoid solely relying on filesystem permissions
   to restrict what other processes could cause the forkserver to spawn workers
   and run code.
   (Contributed by Gregory P. Smith for :gh:`97514`.)
+
 * The :ref:`multiprocessing proxy objects <multiprocessing-proxy_objects>`
   for *list* and *dict* types gain previously overlooked missing methods:
 
