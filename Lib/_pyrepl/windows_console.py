@@ -346,7 +346,7 @@ class WindowsConsole(Console):
             raise ValueError(f"Bad cursor position {x}, {y}")
 
         if y < self.__offset or y >= self.__offset + self.height:
-            self.event_queue.insert(0, Event("scroll", ""))
+            self.event_queue.appendleft(Event("scroll", ""))
         else:
             self._move_relative(x, y)
             self.posxy = x, y
@@ -411,37 +411,47 @@ class WindowsConsole(Console):
                     continue
                 return None
 
-            key_event = rec.Event.KeyEvent
-            raw_key = key = key_event.uChar.UnicodeChar
+            event = self._event_from_keyevent(rec.Event.KeyEvent)
 
-            if key == "\r":
-                # Make enter unix-like
-                return Event(evt="key", data="\n", raw=b"\n")
-            elif key_event.wVirtualKeyCode == 8:
-                # Turn backspace directly into the command
-                key = "backspace"
-            elif key == "\x00":
-                # Handle special keys like arrow keys and translate them into the appropriate command
-                key = VK_MAP.get(key_event.wVirtualKeyCode)
-                if key:
-                    if key_event.dwControlKeyState & CTRL_ACTIVE:
-                        key = f"ctrl {key}"
-                    elif key_event.dwControlKeyState & ALT_ACTIVE:
-                        # queue the key, return the meta command
-                        self.event_queue.insert(0, Event(evt="key", data=key, raw=key))
-                        return Event(evt="key", data="\033")  # keymap.py uses this for meta
-                    return Event(evt="key", data=key, raw=key)
-                if block:
-                    continue
+            if event is not None:
+                # Queue this key event to be repeated if wRepeatCount > 1, such as when a 'dead key' is pressed twice
+                for _ in range(rec.Event.KeyEvent.wRepeatCount - 1):
+                    self.event_queue.appendleft(event)
+            elif block:
+                # The key event didn't actually type a character, block until next event
+                continue
 
-                return None
+            return event
 
-            if key_event.dwControlKeyState & ALT_ACTIVE:
-                # queue the key, return the meta command
-                self.event_queue.insert(0, Event(evt="key", data=key, raw=raw_key))
-                return Event(evt="key", data="\033")  # keymap.py uses this for meta
+    def _event_from_keyevent(self, key_event: KeyEvent) -> Event | None:
+        raw_key = key = key_event.uChar.UnicodeChar
 
-            return Event(evt="key", data=key, raw=raw_key)
+        if key == "\r":
+            # Make enter unix-like
+            return Event(evt="key", data="\n", raw=b"\n")
+        elif key_event.wVirtualKeyCode == 8:
+            # Turn backspace directly into the command
+            key = "backspace"
+        elif key == "\x00":
+            # Handle special keys like arrow keys and translate them into the appropriate command
+            key = VK_MAP.get(key_event.wVirtualKeyCode)
+            if key:
+                if key_event.dwControlKeyState & CTRL_ACTIVE:
+                    key = f"ctrl {key}"
+                elif key_event.dwControlKeyState & ALT_ACTIVE:
+                    # queue the key, return the meta command
+                    self.event_queue.appendleft(Event(evt="key", data=key, raw=key))
+                    return Event(evt="key", data="\033")  # keymap.py uses this for meta
+                return Event(evt="key", data=key, raw=key)
+
+            return None
+
+        if key_event.dwControlKeyState & ALT_ACTIVE:
+            # queue the key, return the meta command
+            self.event_queue.appendleft(Event(evt="key", data=key, raw=raw_key))
+            return Event(evt="key", data="\033")  # keymap.py uses this for meta
+
+        return Event(evt="key", data=key, raw=raw_key)
 
     def push_char(self, char: int | bytes) -> None:
         """
@@ -489,7 +499,7 @@ class WindowsConsole(Console):
         # Poor man's Windows select loop
         start_time = time.time()
         while True:
-            if msvcrt.kbhit(): # type: ignore[attr-defined]
+            if msvcrt.kbhit() or self.event_queue: # type: ignore[attr-defined]
                 return True
             if timeout and time.time() - start_time > timeout / 1000:
                 return False

@@ -1,0 +1,1 @@
+Fix double dead key presses in PyREPL being typed just once into Windows Terminal.
