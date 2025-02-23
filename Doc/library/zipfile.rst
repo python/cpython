@@ -382,7 +382,7 @@ ZipFile Objects
    The default is :data:`PreserveMode.NONE`, which does not preserve any permissions. Other
    options are to preserve a safe subset of permissions
    (:data:`PreserveMode.SAFE`) or all permissions
-   (:data:`PreserveMode.ALL`). If the archive was created on Windows,
+   (:data:`PreserveMode.ALL`). On Windows,
    the *preserve_permissions* argument is ignored and permissions are not
    preserved.
 
