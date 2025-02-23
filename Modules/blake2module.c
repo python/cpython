@@ -40,7 +40,7 @@
 #endif
 
 #include <stdbool.h>
-
+#undef HACL_CAN_COMPILE_SIMD128
 // SIMD256 can't be compiled on macOS ARM64, and performance of SIMD128 isn't
 // great; but when compiling a universal2 binary, autoconf will set
 // HACL_CAN_COMPILE_SIMD128 and HACL_CAN_COMPILE_SIMD256 because they *can* be
