@@ -1954,6 +1954,7 @@ their parent process exits.  The manager classes are defined in the
       Create a shared :class:`set` object and return a proxy for it.
 
       .. versionadded:: next
+         :class:`set` support was added.
 
    .. versionchanged:: 3.6
       Shared objects are capable of being nested.  For example, a shared
