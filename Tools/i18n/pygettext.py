@@ -352,10 +352,9 @@ def parse_spec(spec):
             raise ValueError(f'Invalid keyword spec {spec!r}: '
                              'argument positions must be strictly positive')
 
-        for k, v in result.items():
-            if v == pos:
-                raise ValueError(f'Invalid keyword spec {spec!r}: '
-                                 'duplicate positions')
+        if pos in result.values():
+            raise ValueError(f'Invalid keyword spec {spec!r}: '
+                             'duplicate positions')
 
         if is_context:
             if 'msgctxt' in result:
