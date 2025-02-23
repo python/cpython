@@ -6455,6 +6455,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         obj |= {'d', 'e'}
         case.assertSetEqual(obj, {'a', 'b', 'c', 'd', 'e'})
         case.assertIsInstance(obj, multiprocessing.managers.SetProxy)
+
         obj.clear()
         obj.update(['a', 'b', 'c'])
         result = {'a', 'b', 'd'} - obj
@@ -6464,6 +6465,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         obj -= {'a', 'b'}
         case.assertSetEqual(obj, {'c'})
         case.assertIsInstance(obj, multiprocessing.managers.SetProxy)
+
         obj.clear()
         obj.update(['a', 'b', 'c'])
         result = {'b', 'c', 'd'} ^ obj
@@ -6473,6 +6475,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         obj ^= {'b', 'c', 'd'}
         case.assertSetEqual(obj, {'a', 'd'})
         case.assertIsInstance(obj, multiprocessing.managers.SetProxy)
+
         obj.clear()
         obj.update(['a', 'b', 'c'])
         result = obj & {'b', 'c', 'd'}
@@ -6480,21 +6483,19 @@ class TestSyncManagerTypes(unittest.TestCase):
         result = {'b', 'c', 'd'} & obj
         case.assertSetEqual(result, {'b', 'c'})
         obj &= {'b', 'c', 'd'}
-        case.assertIsInstance(obj, multiprocessing.managers.SetProxy)
         case.assertSetEqual(obj, {'b', 'c'})
+        case.assertIsInstance(obj, multiprocessing.managers.SetProxy)
+
         obj.clear()
         obj.update(['a', 'b', 'c'])
-        case.assertGreater(obj, {'a'})
-        case.assertGreaterEqual(obj, {'a', 'b'})
-        case.assertLess(obj, {'a', 'b', 'c', 'd'})
-        case.assertLessEqual(obj, {'a', 'b', 'c'})
-        case.assertSetEqual({o for o in obj}, {'a', 'b', 'c'})
+        case.assertSetEqual(set(obj), {'a', 'b', 'c'})
 
     @classmethod
     def _test_set_operator_methods(cls, obj):
         case = unittest.TestCase()
         obj.add('d')
         case.assertIn('d', obj)
+
         obj.clear()
         obj.update(['a', 'b', 'c'])
         copy_obj = obj.copy()
@@ -6502,6 +6503,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         obj.remove('a')
         case.assertNotIn('a', obj)
         case.assertRaises(KeyError, obj.remove, 'a')
+
         obj.clear()
         obj.update(['a'])
         obj.discard('a')
@@ -6511,18 +6513,21 @@ class TestSyncManagerTypes(unittest.TestCase):
         obj.update(['a'])
         popped = obj.pop()
         case.assertNotIn(popped, obj)
+
         obj.clear()
         obj.update(['a', 'b', 'c'])
         result = obj.intersection({'b', 'c', 'd'})
         case.assertSetEqual(result, {'b', 'c'})
         obj.intersection_update({'b', 'c', 'd'})
         case.assertSetEqual(obj, {'b', 'c'})
+
         obj.clear()
         obj.update(['a', 'b', 'c'])
         result = obj.difference({'a', 'b'})
         case.assertSetEqual(result, {'c'})
         obj.difference_update({'a', 'b'})
         case.assertSetEqual(obj, {'c'})
+
         obj.clear()
         obj.update(['a', 'b', 'c'])
         result = obj.symmetric_difference({'b', 'c', 'd'})
@@ -6531,7 +6536,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertSetEqual(obj, {'a', 'd'})
 
     @classmethod
-    def _test_set_miscellaneous(cls, obj):
+    def _test_set_comparisons(cls, obj):
         case = unittest.TestCase()
         obj.update(['a', 'b', 'c'])
         result = obj.union({'d', 'e'})
@@ -6542,6 +6547,10 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertFalse(obj.issubset({'a', 'b'}))
         case.assertTrue(obj.issuperset({'a', 'b'}))
         case.assertFalse(obj.issuperset({'a', 'b', 'd'}))
+        case.assertGreater(obj, {'a'})
+        case.assertGreaterEqual(obj, {'a', 'b'})
+        case.assertLess(obj, {'a', 'b', 'c', 'd'})
+        case.assertLessEqual(obj, {'a', 'b', 'c'})
 
     def test_set(self):
         o = self.manager.set()
@@ -6549,7 +6558,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         o = self.manager.set()
         self.run_worker(self._test_set_operator_methods, o)
         o = self.manager.set()
-        self.run_worker(self._test_set_miscellaneous, o)
+        self.run_worker(self._test_set_comparisons, o)
 
     def test_set_init(self):
         o = self.manager.set({'a', 'b', 'c'})
@@ -6566,6 +6575,7 @@ class TestSyncManagerTypes(unittest.TestCase):
             '__and__', '__class_getitem__', '__contains__', '__iand__', '__ior__',
             '__isub__', '__iter__', '__ixor__', '__len__', '__or__', '__rand__',
             '__ror__', '__rsub__', '__rxor__', '__sub__', '__xor__',
+            '__ge__', '__gt__', '__le__', '__lt__',
             'add', 'clear', 'copy', 'difference', 'difference_update', 'discard',
             'intersection', 'intersection_update', 'isdisjoint', 'issubset',
             'issuperset', 'pop', 'remove', 'symmetric_difference',

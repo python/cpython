@@ -1947,14 +1947,12 @@ their parent process exits.  The manager classes are defined in the
 
       Create a shared :class:`set` object and return a proxy for it.
 
+      .. versionadded:: next
+
    .. versionchanged:: 3.6
       Shared objects are capable of being nested.  For example, a shared
       container object such as a shared list can contain other shared objects
       which will all be managed and synchronized by the :class:`SyncManager`.
-
-   .. versionchanged:: next
-      Add support for shared :class:`set`\s to :class:`multiprocessing.managers.SyncManager`
-      via :meth:`SyncManager.set() <multiprocessing.managers.SyncManager.set>`.
 
 .. class:: Namespace
 

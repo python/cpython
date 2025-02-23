@@ -1215,14 +1215,6 @@ class SetProxy(_BaseSetProxy):
     def __isub__(self, value):
         self._callmethod('__isub__', (value,))
         return self
-    def __le__(self, value):
-        return self._callmethod('__le__', (value,))
-    def __lt__(self, value):
-        return self._callmethod('__lt__', (value,))
-    def __ge__(self, value):
-        return self._callmethod('__ge__', (value,))
-    def __gt__(self, value):
-        return self._callmethod('__gt__', (value,))
 
     __class_getitem__ = classmethod(types.GenericAlias)
 
@@ -1282,6 +1274,7 @@ SyncManager.register('set', set, SetProxy)
 SyncManager.register('Value', Value, ValueProxy)
 SyncManager.register('Array', Array, ArrayProxy)
 SyncManager.register('Namespace', Namespace, NamespaceProxy)
+
 # types returned by methods of PoolProxy
 SyncManager.register('Iterator', proxytype=IteratorProxy, create_method=False)
 SyncManager.register('AsyncResult', create_method=False)
