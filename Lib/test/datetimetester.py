@@ -1237,13 +1237,12 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             self.assertEqual(dt, dt2)
 
     def test_repr_subclass(self):
-        name = SubclassDate.__name__
         td = SubclassDate(1, 2, 3)
-        self.assertEqual(repr(td), "%s(1, 2, 3)" % name)
+        self.assertEqual(repr(td), "SubclassDate(1, 2, 3)")
         td = SubclassDate(2014, 1, 1)
-        self.assertEqual(repr(td), "%s(2014, 1, 1)" % name)
+        self.assertEqual(repr(td), "SubclassDate(2014, 1, 1)")
         td = SubclassDate(2010, 10, day=10)
-        self.assertEqual(repr(td), "%s(2010, 10, 10)" % name)
+        self.assertEqual(repr(td), "SubclassDate(2010, 10, 10)")
 
     def test_ordinal_conversions(self):
         # Check some fixed values.
