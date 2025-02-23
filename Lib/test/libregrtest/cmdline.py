@@ -122,6 +122,8 @@ resources to test.  Currently only the following are defined:
 
     tzdata -         Run tests that require timezone data.
 
+    flaky -          Run tests that are known to be unreliable/unstable.
+
 To enable all resources except one, use '-uall,-<resource>'.  For
 example, to run all the tests except for the gui tests, give the
 option '-uall,-gui'.
