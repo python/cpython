@@ -6583,7 +6583,7 @@ class TestSyncManagerTypes(unittest.TestCase):
             'issuperset', 'pop', 'remove', 'symmetric_difference',
             'symmetric_difference_update', 'union', 'update',
         }
-        self.assertTrue(set_methods <= set(dir(o)))
+        self.assertLessEqual(set_methods, set(dir(o)))
 
 
 class TestNamedResource(unittest.TestCase):
