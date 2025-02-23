@@ -1,1 +1,1 @@
-Created flaky resource for flagging tests with flaky outcomes using the support.required_resource() decorator. Flagged some initial tests based on-inline comments. This resource can be used to automate re-running certain tests in CI.
+Add the ``flaky`` resource for flagging tests with flaky outcomes using the :func:`test.support.required_resource` decorator.

@@ -7,8 +7,7 @@ import unittest
 import warnings
 
 from test import support
-from test.support import is_wasi, Py_DEBUG
-from test.support import requires_resource
+from test.support import is_wasi, Py_DEBUG, requires_resource
 from test.support.os_helper import (TESTFN, skip_unless_symlink,
                                     can_symlink, create_empty_file, change_cwd)
 
