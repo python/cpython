@@ -2029,13 +2029,6 @@ An obsolete synonym of allocate_lock().");
 static PyObject *
 thread_get_ident(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    /* Work around an issue with the main thread ID to failing comparison checks
-       due to sign extension on some Linux libc implemenations. Can be removed
-       when thread identifiers are reworked. */
-#if SIZEOF_LONG < SIZEOF_LONG_LONG && defined(__linux__) && !defined(__GLIBC__)
-    if (_Py_IsMainThread())
-        return PyLong_FromUnsignedLong(_PyRuntime.main_thread);
-#endif
     PyThread_ident_t ident = PyThread_get_thread_ident_ex();
     if (ident == PYTHREAD_INVALID_THREAD_ID) {
         PyErr_SetString(ThreadError, "no current thread ident");
