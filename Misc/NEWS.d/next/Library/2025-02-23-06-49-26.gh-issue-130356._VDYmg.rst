@@ -1,1 +1,2 @@
-Add default values to the parameters of widget :class:`tkinter.OptionMenu`.
+Add default values to the initialization parameters of class
+:class:`!tkinter.OptionMenu`.

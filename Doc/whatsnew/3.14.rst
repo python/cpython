@@ -809,6 +809,9 @@ tkinter
   arguments passed by keyword.
   (Contributed by Zhikang Yan in :gh:`126899`.)
 
+* Add default values to the initialization parameters of class
+  :class:`!tkinter.OptionMenu`.
+  (Contributed by Zhikang Yan in :gh:`130356`.)
 
 turtle
 ------
