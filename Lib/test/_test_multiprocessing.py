@@ -39,7 +39,6 @@ from test.support import script_helper
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import warnings_helper
-from test.support import requires_resource
 
 
 # Skip tests if _multiprocessing wasn't built.
