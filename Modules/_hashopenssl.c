@@ -1684,7 +1684,7 @@ _hashlib_HMAC_copy_impl(HMACobject *self)
         return _setException(PyExc_ValueError, NULL);
     }
 
-    retval = (HMACobject *)PyObject_New(HMACobject, Py_TYPE(self));
+    retval = PyObject_New(HMACobject, Py_TYPE(self));
     if (retval == NULL) {
         HMAC_CTX_free(ctx);
         return NULL;
