@@ -159,6 +159,7 @@ keywords = {
     'int': (INT := "INT"),
     'long': (LONG := "LONG"),
     'offsetof': (OFFSETOF := "OFFSETOF"),
+    'restrict': (RESTRICT := "RESTRICT"),
     'return': (RETURN := "RETURN"),
     'short': (SHORT := "SHORT"),
     'signed': (SIGNED := "SIGNED"),
@@ -178,6 +179,9 @@ keywords = {
     'op': (OP := "OP"),
     # A macro in the DSL.
     'macro': (MACRO := "MACRO"),
+    # A label in the DSL.
+    'label': (LABEL := "LABEL"),
+    'spilled': (SPILLED := "SPILLED"),
 }
 __all__.extend(keywords.values())
 KEYWORD = "KEYWORD"

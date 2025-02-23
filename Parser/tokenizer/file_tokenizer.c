@@ -158,7 +158,7 @@ fp_setreadl(struct tok_state *tok, const char* enc)
         return 0;
     }
 
-    open = _PyImport_GetModuleAttrString("io", "open");
+    open = PyImport_ImportModuleAttrString("io", "open");
     if (open == NULL) {
         return 0;
     }

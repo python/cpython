@@ -10,6 +10,8 @@ from analyzer import (
     Analysis,
     Instruction,
     Uop,
+    Label,
+    CodeSection,
     analyze_files,
     StackItem,
     analysis_error,
@@ -66,51 +68,21 @@ def declare_variables(uop: Uop, out: CWriter) -> None:
 
 class Tier2Emitter(Emitter):
 
-    def __init__(self, out: CWriter):
-        super().__init__(out)
+    def __init__(self, out: CWriter, labels: dict[str, Label]):
+        super().__init__(out, labels)
         self._replacers["oparg"] = self.oparg
 
-    def error_if(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: Uop,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        self.out.emit_at("if ", tkn)
-        lparen = next(tkn_iter)
-        self.emit(lparen)
-        assert lparen.kind == lx.LPAREN
-        first_tkn = next(tkn_iter)
-        self.out.emit(first_tkn)
-        emit_to(self.out, tkn_iter, lx.COMMA)
-        label = next(tkn_iter).text
-        next(tkn_iter)  # RPAREN
-        next(tkn_iter)  # Semi colon
-        self.emit(") JUMP_TO_ERROR();\n")
-        return not always_true(first_tkn)
-
-
-    def error_no_pop(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: Uop,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        next(tkn_iter)  # LPAREN
-        next(tkn_iter)  # RPAREN
-        next(tkn_iter)  # Semi colon
-        self.out.emit_at("JUMP_TO_ERROR();", tkn)
-        return False
+    def goto_error(self, offset: int, label: str, storage: Storage) -> str:
+        # To do: Add jump targets for popping values.
+        if offset != 0:
+            storage.copy().flush(self.out)
+        return f"JUMP_TO_ERROR();"
 
     def deopt_if(
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -131,7 +103,7 @@ class Tier2Emitter(Emitter):
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -151,7 +123,7 @@ class Tier2Emitter(Emitter):
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -211,7 +183,7 @@ def generate_tier2(
 """
     )
     out = CWriter(outfile, 2, lines)
-    emitter = Tier2Emitter(out)
+    emitter = Tier2Emitter(out, analysis.labels)
     out.emit("\n")
     for name, uop in analysis.uops.items():
         if uop.properties.tier == 1:

@@ -13,7 +13,6 @@ import struct
 import sys
 import threading
 import time
-from typing import Self
 
 try:
     import zlib # We may need its compression method
@@ -606,7 +605,7 @@ class ZipInfo:
 
         return zinfo
 
-    def _for_archive(self, archive: ZipFile) -> Self:
+    def _for_archive(self, archive):
         """Resolve suitable defaults from the archive.
 
         Resolve the date_time, compression attributes, and external attributes
