@@ -19,8 +19,9 @@ env:
   FORCE_COLOR: 1
 
 jobs:
-  build_macos:
+  build-macos:
     name: build and test (${{ inputs.os }})
+    runs-on: ${{ inputs.os }}
     timeout-minutes: 60
     env:
       HOMEBREW_NO_ANALYTICS: 1
@@ -29,7 +30,6 @@ jobs:
       HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
       PYTHONSTRICTEXTENSIONBUILD: 1
       TERM: linux
-    runs-on: ${{ inputs.os }}
     steps:
     - uses: actions/checkout@v4
       with:
