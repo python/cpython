@@ -37,6 +37,7 @@ except ImportError:
 
 from test.support import cpython_only, import_helper
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
+from test.support import run_no_yield_async_fn
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, temp_cwd
 from test.support.script_helper import assert_python_ok, assert_python_failure, kill_python
@@ -71,11 +72,6 @@ def revise(filename, *args):
     return (normcase(filename),) + args
 
 git = mod.StupidGit()
-
-
-def tearDownModule():
-    if support.has_socket_support:
-        asyncio.set_event_loop_policy(None)
 
 
 def signatures_with_lexicographic_keyword_only_parameters():
@@ -205,7 +201,7 @@ class TestPredicates(IsTestBase):
         self.assertFalse(inspect.ismethodwrapper(type("AnyClass", (), {})))
 
     def test_ispackage(self):
-        self.istest(inspect.ispackage, 'asyncio')
+        self.istest(inspect.ispackage, 'unittest')
         self.istest(inspect.ispackage, 'importlib')
         self.assertFalse(inspect.ispackage(inspect))
         self.assertFalse(inspect.ispackage(mod))
@@ -418,6 +414,27 @@ class TestPredicates(IsTestBase):
         self.assertFalse(inspect.isroutine(type('some_class', (), {})))
         # partial
         self.assertTrue(inspect.isroutine(functools.partial(mod.spam)))
+
+    def test_isroutine_singledispatch(self):
+        self.assertTrue(inspect.isroutine(functools.singledispatch(mod.spam)))
+
+        class A:
+            @functools.singledispatchmethod
+            def method(self, arg):
+                pass
+            @functools.singledispatchmethod
+            @classmethod
+            def class_method(cls, arg):
+                pass
+            @functools.singledispatchmethod
+            @staticmethod
+            def static_method(arg):
+                pass
+
+        self.assertTrue(inspect.isroutine(A.method))
+        self.assertTrue(inspect.isroutine(A().method))
+        self.assertTrue(inspect.isroutine(A.static_method))
+        self.assertTrue(inspect.isroutine(A.class_method))
 
     def test_isclass(self):
         self.istest(inspect.isclass, 'mod.StupidGit')
@@ -890,6 +907,7 @@ class TestGetsourceStdlib(unittest.TestCase):
         self.assertEqual(src.splitlines(True), lines)
 
 class TestGetsourceInteractive(unittest.TestCase):
+    @support.force_not_colorized
     def test_getclasses_interactive(self):
         # bpo-44648: simulate a REPL session;
         # there is no `__file__` in the __main__ module
@@ -1166,16 +1184,12 @@ class TestBuggyCases(GetSourceBase):
                 # This is necessary when the test is run multiple times.
                 sys.modules.pop("inspect_actual")
 
-    @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "socket.accept is broken"
-    )
     def test_nested_class_definition_inside_async_function(self):
-        import asyncio
-        self.addCleanup(asyncio.set_event_loop_policy, None)
-        self.assertSourceEqual(asyncio.run(mod2.func225()), 226, 227)
+        run = run_no_yield_async_fn
+
+        self.assertSourceEqual(run(mod2.func225), 226, 227)
         self.assertSourceEqual(mod2.cls226, 231, 235)
-        self.assertSourceEqual(asyncio.run(mod2.cls226().func232()), 233, 234)
+        self.assertSourceEqual(run(mod2.cls226().func232), 233, 234)
 
     def test_class_definition_same_name_diff_methods(self):
         self.assertSourceEqual(mod2.cls296, 296, 298)
@@ -1959,6 +1973,19 @@ class TestGetClosureVars(unittest.TestCase):
         expected = inspect.ClosureVars(nonlocal_vars, global_vars,
                                        builtin_vars, unbound_names)
         self.assertEqual(inspect.getclosurevars(C().f(_arg)), expected)
+
+    def test_attribute_same_name_as_global_var(self):
+        class C:
+            _global_ref = object()
+        def f():
+            print(C._global_ref, _global_ref)
+        nonlocal_vars = {"C": C}
+        global_vars = {"_global_ref": _global_ref}
+        builtin_vars = {"print": print}
+        unbound_names = {"_global_ref"}
+        expected = inspect.ClosureVars(nonlocal_vars, global_vars,
+                                       builtin_vars, unbound_names)
+        self.assertEqual(inspect.getclosurevars(f), expected)
 
     def test_nonlocal_vars(self):
         # More complex tests of nonlocal resolution
@@ -2787,6 +2814,10 @@ class TestGetAsyncGenState(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self):
         await self.asyncgen.aclose()
 
+    @classmethod
+    def tearDownClass(cls):
+        asyncio._set_event_loop_policy(None)
+
     def _asyncgenstate(self):
         return inspect.getasyncgenstate(self.asyncgen)
 
@@ -2978,6 +3009,17 @@ class TestSignatureObject(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, 'follows default argument'):
             S((pkd, pk))
+
+        second_args = args.replace(name="second_args")
+        with self.assertRaisesRegex(ValueError, 'more than one variadic positional parameter'):
+            S((args, second_args))
+
+        with self.assertRaisesRegex(ValueError, 'more than one variadic positional parameter'):
+            S((args, ko, second_args))
+
+        second_kwargs = kwargs.replace(name="second_kwargs")
+        with self.assertRaisesRegex(ValueError, 'more than one variadic keyword parameter'):
+            S((kwargs, second_kwargs))
 
     def test_signature_object_pickle(self):
         def foo(a, b, *, c:1={}, **kw) -> {42:'ham'}: pass
@@ -5128,7 +5170,11 @@ class TestSignatureBind(unittest.TestCase):
     def call(func, *args, **kwargs):
         sig = inspect.signature(func)
         ba = sig.bind(*args, **kwargs)
-        return func(*ba.args, **ba.kwargs)
+        # Prevent unexpected success of assertRaises(TypeError, ...)
+        try:
+            return func(*ba.args, **ba.kwargs)
+        except TypeError as e:
+            raise AssertionError from e
 
     def test_signature_bind_empty(self):
         def test():
@@ -5328,7 +5374,7 @@ class TestSignatureBind(unittest.TestCase):
         self.assertEqual(self.call(test, 1, 2, c_po=4),
                          (1, 2, 3, 42, 50, {'c_po': 4}))
 
-        with self.assertRaisesRegex(TypeError, "missing 2 required positional arguments"):
+        with self.assertRaisesRegex(TypeError, "missing a required positional-only argument: 'a_po'"):
             self.call(test, a_po=1, b_po=2)
 
         def without_var_kwargs(c_po=3, d_po=4, /):
@@ -5708,8 +5754,8 @@ class TestSignatureDefinitions(unittest.TestCase):
         self._test_module_has_signatures(faulthandler, unsupported_signature=unsupported_signature)
 
     def test_functools_module_has_signatures(self):
-        no_signature = {'reduce'}
-        self._test_module_has_signatures(functools, no_signature)
+        unsupported_signature = {"reduce"}
+        self._test_module_has_signatures(functools, unsupported_signature=unsupported_signature)
 
     def test_gc_module_has_signatures(self):
         import gc

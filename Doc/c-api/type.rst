@@ -529,19 +529,19 @@ The following functions and structs are used to create
 
       The following “offset” fields cannot be set using :c:type:`PyType_Slot`:
 
-         * :c:member:`~PyTypeObject.tp_weaklistoffset`
-           (use :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead if possible)
-         * :c:member:`~PyTypeObject.tp_dictoffset`
-           (use :c:macro:`Py_TPFLAGS_MANAGED_DICT` instead if possible)
-         * :c:member:`~PyTypeObject.tp_vectorcall_offset`
-           (use ``"__vectorcalloffset__"`` in
-           :ref:`PyMemberDef <pymemberdef-offsets>`)
+      * :c:member:`~PyTypeObject.tp_weaklistoffset`
+        (use :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead if possible)
+      * :c:member:`~PyTypeObject.tp_dictoffset`
+        (use :c:macro:`Py_TPFLAGS_MANAGED_DICT` instead if possible)
+      * :c:member:`~PyTypeObject.tp_vectorcall_offset`
+        (use ``"__vectorcalloffset__"`` in
+        :ref:`PyMemberDef <pymemberdef-offsets>`)
 
-         If it is not possible to switch to a ``MANAGED`` flag (for example,
-         for vectorcall or to support Python older than 3.12), specify the
-         offset in :c:member:`Py_tp_members <PyTypeObject.tp_members>`.
-         See :ref:`PyMemberDef documentation <pymemberdef-offsets>`
-         for details.
+      If it is not possible to switch to a ``MANAGED`` flag (for example,
+      for vectorcall or to support Python older than 3.12), specify the
+      offset in :c:member:`Py_tp_members <PyTypeObject.tp_members>`.
+      See :ref:`PyMemberDef documentation <pymemberdef-offsets>`
+      for details.
 
       The following internal fields cannot be set at all when creating a heap
       type:
@@ -557,20 +557,18 @@ The following functions and structs are used to create
       To avoid issues, use the *bases* argument of
       :c:func:`PyType_FromSpecWithBases` instead.
 
-     .. versionchanged:: 3.9
+      .. versionchanged:: 3.9
+         Slots in :c:type:`PyBufferProcs` may be set in the unlimited API.
 
-        Slots in :c:type:`PyBufferProcs` may be set in the unlimited API.
+      .. versionchanged:: 3.11
+         :c:member:`~PyBufferProcs.bf_getbuffer` and
+         :c:member:`~PyBufferProcs.bf_releasebuffer` are now available
+         under the :ref:`limited API <limited-c-api>`.
 
-     .. versionchanged:: 3.11
-        :c:member:`~PyBufferProcs.bf_getbuffer` and
-        :c:member:`~PyBufferProcs.bf_releasebuffer` are now available
-        under the :ref:`limited API <limited-c-api>`.
-
-     .. versionchanged:: 3.14
-
-        The field :c:member:`~PyTypeObject.tp_vectorcall` can now set
-        using ``Py_tp_vectorcall``.  See the field's documentation
-        for details.
+      .. versionchanged:: 3.14
+         The field :c:member:`~PyTypeObject.tp_vectorcall` can now set
+         using ``Py_tp_vectorcall``.  See the field's documentation
+         for details.
 
    .. c:member:: void *pfunc
 

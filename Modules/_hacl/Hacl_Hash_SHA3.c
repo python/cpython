@@ -251,7 +251,8 @@ Hacl_Hash_SHA3_update_multi_sha3(
     uint8_t *bl0 = b_;
     uint8_t *uu____0 = b0 + i * block_len(a);
     memcpy(bl0, uu____0, block_len(a) * sizeof (uint8_t));
-    block_len(a);
+    uint32_t unused = block_len(a);
+    KRML_MAYBE_UNUSED_VAR(unused);
     absorb_inner_32(b_, s);
   }
 }

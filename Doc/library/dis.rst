@@ -60,6 +60,8 @@ interpreter.
       The :option:`-P <dis --show-positions>` command-line option
       and the ``show_positions`` argument were added.
 
+      The :option:`-S <dis --specialized>` command-line option is added.
+
 Example: Given the function :func:`!myfunc`::
 
    def myfunc(alist):
@@ -89,27 +91,39 @@ The :mod:`dis` module can be invoked as a script from the command line:
 
 .. code-block:: sh
 
-   python -m dis [-h] [-C] [-O] [-P] [infile]
+   python -m dis [-h] [-C] [-O] [-P] [-S] [infile]
 
 The following options are accepted:
 
 .. program:: dis
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Display usage and exit.
 
-.. cmdoption:: -C, --show-caches
+.. option:: -C, --show-caches
 
    Show inline caches.
 
-.. cmdoption:: -O, --show-offsets
+   .. versionadded:: 3.13
+
+.. option:: -O, --show-offsets
 
    Show offsets of instructions.
 
-.. cmdoption:: -P, --show-positions
+   .. versionadded:: 3.13
+
+.. option:: -P, --show-positions
 
    Show positions of instructions in the source code.
+
+   .. versionadded:: 3.14
+
+.. option:: -S, --specialized
+
+   Show specialized bytecode.
+
+   .. versionadded:: 3.14
 
 If :file:`infile` is specified, its disassembled code will be written to stdout.
 Otherwise, disassembly is performed on compiled source code received from stdin.
@@ -697,15 +711,8 @@ not have to be) the original ``STACK[-2]``.
       STACK.append(lhs op rhs)
 
    .. versionadded:: 3.11
-
-
-.. opcode:: BINARY_SUBSCR
-
-   Implements::
-
-      key = STACK.pop()
-      container = STACK.pop()
-      STACK.append(container[key])
+   .. versionchanged:: 3.14
+      With oparg :``NB_SUBSCR``, implements binary subscript (replaces opcode ``BINARY_SUBSCR``)
 
 
 .. opcode:: STORE_SUBSCR
@@ -1395,6 +1402,13 @@ iterations of the loop.
       This opcode is now only used in situations where the local variable is
       guaranteed to be initialized. It cannot raise :exc:`UnboundLocalError`.
 
+.. opcode:: LOAD_FAST_LOAD_FAST (var_nums)
+
+   Pushes references to ``co_varnames[var_nums >> 4]`` and
+   ``co_varnames[var_nums & 15]`` onto the stack.
+
+   .. versionadded:: 3.13
+
 .. opcode:: LOAD_FAST_CHECK (var_num)
 
    Pushes a reference to the local ``co_varnames[var_num]`` onto the stack,
@@ -1415,6 +1429,20 @@ iterations of the loop.
 
    Stores ``STACK.pop()`` into the local ``co_varnames[var_num]``.
 
+.. opcode:: STORE_FAST_STORE_FAST (var_nums)
+
+   Stores ``STACK[-1]`` into ``co_varnames[var_nums >> 4]``
+   and ``STACK[-2]`` into ``co_varnames[var_nums & 15]``.
+
+   .. versionadded:: 3.13
+
+.. opcode:: STORE_FAST_LOAD_FAST (var_nums)
+
+   Stores ``STACK.pop()`` into the local ``co_varnames[var_nums >> 4]``
+   and pushes a reference to the local ``co_varnames[var_nums & 15]``
+   onto the stack.
+
+   .. versionadded:: 3.13
 
 .. opcode:: DELETE_FAST (var_num)
 
@@ -1562,7 +1590,7 @@ iterations of the loop.
 
 .. opcode:: MAKE_FUNCTION
 
-   Pushes a new function object on the stack built from the code object at ``STACK[1]``.
+   Pushes a new function object on the stack built from the code object at ``STACK[-1]``.
 
    .. versionchanged:: 3.10
       Flag value ``0x04`` is a tuple of strings instead of dictionary
@@ -1647,7 +1675,7 @@ iterations of the loop.
 
    .. versionadded:: 3.13
 
-.. opcode:: FORMAT_SPEC
+.. opcode:: FORMAT_WITH_SPEC
 
    Formats the given value with the given format spec::
 

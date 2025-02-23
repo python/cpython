@@ -327,7 +327,7 @@ Functions
 
    .. impl-detail::
 
-      On CPython, use the same clock than :func:`time.monotonic` and is a
+      On CPython, use the same clock as :func:`time.monotonic` and is a
       monotonic clock, i.e. a clock that cannot go backwards.
 
    Use :func:`perf_counter_ns` to avoid the precision loss caused by the
@@ -339,7 +339,7 @@ Functions
       On Windows, the function is now system-wide.
 
    .. versionchanged:: 3.13
-      Use the same clock than :func:`time.monotonic`.
+      Use the same clock as :func:`time.monotonic`.
 
 
 .. function:: perf_counter_ns() -> int
@@ -385,19 +385,28 @@ Functions
    The suspension time may be longer than requested by an arbitrary amount,
    because of the scheduling of other activity in the system.
 
+   .. rubric:: Windows implementation
+
    On Windows, if *secs* is zero, the thread relinquishes the remainder of its
    time slice to any other thread that is ready to run. If there are no other
    threads ready to run, the function returns immediately, and the thread
    continues execution.  On Windows 8.1 and newer the implementation uses
    a `high-resolution timer
-   <https://docs.microsoft.com/en-us/windows-hardware/drivers/kernel/high-resolution-timers>`_
+   <https://learn.microsoft.com/windows-hardware/drivers/kernel/high-resolution-timers>`_
    which provides resolution of 100 nanoseconds. If *secs* is zero, ``Sleep(0)`` is used.
 
-   Unix implementation:
+   .. rubric:: Unix implementation
 
    * Use ``clock_nanosleep()`` if available (resolution: 1 nanosecond);
    * Or use ``nanosleep()`` if available (resolution: 1 nanosecond);
    * Or use ``select()`` (resolution: 1 microsecond).
+
+   .. note::
+
+      To emulate a "no-op", use :keyword:`pass` instead of ``time.sleep(0)``.
+
+      To voluntarily relinquish the CPU, specify a real-time :ref:`scheduling
+      policy <os-scheduling-policy>` and use :func:`os.sched_yield` instead.
 
    .. audit-event:: time.sleep secs
 
