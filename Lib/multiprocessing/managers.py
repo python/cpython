@@ -1195,7 +1195,9 @@ class DictProxy(_BaseDictProxy):
 
 collections.abc.MutableMapping.register(_BaseDictProxy)
 
-_set_proxy_methods = set(dir(set)) - set(dir(object))
+_set_proxy_methods = set(dir(set)) - set(dir(object)) | {
+    '__ge__', '__gt__', '__le__', '__lt__'
+    }
 _set_proxy_methods = sorted(_set_proxy_methods)
 _BaseSetProxy = MakeProxyType("_BaseSetProxy", _set_proxy_methods)
 del _set_proxy_methods
