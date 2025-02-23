@@ -1,2 +1,1 @@
-Fix an issue with the value of :func:`threading.get_ident` for the main thread
-being sign-extended on some platforms.
+Fix an issue with thread identifiers being sign-extended on some platforms.
