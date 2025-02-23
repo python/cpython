@@ -589,7 +589,7 @@ class _CommentSpec:
     def strip(self, text):
         return self.pattern.sub('', text).rstrip()
 
-    def load(self, text):
+    def wrap(self, text):
         return _Line(text, self)
 
 
@@ -1062,7 +1062,7 @@ class RawConfigParser(MutableMapping):
     def _read_inner(self, fp, fpname):
         st = _ReadState()
 
-        for st.lineno, line in enumerate(map(self._comments.load, fp), start=1):
+        for st.lineno, line in enumerate(map(self._comments.wrap, fp), start=1):
             if not line.clean:
                 if self._empty_lines_in_values:
                     # add empty line to the value, but only if there was no
