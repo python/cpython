@@ -122,6 +122,7 @@ The :class:`pstats.Stats` class reads profile results from a file and formats
 them in various ways.
 
 .. _profile-cli:
+
 .. program:: cProfile
 
 The files :mod:`cProfile` and :mod:`profile` can also be invoked as a script to
