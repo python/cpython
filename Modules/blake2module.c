@@ -135,9 +135,7 @@ static inline bool has_simd256(cpu_flags *flags) {
 
 #include "_hacl/Hacl_Hash_Blake2b.h"
 #include "_hacl/Hacl_Hash_Blake2s.h"
-#if HACL_CAN_COMPILE_SIMD256
 #include "_hacl/Hacl_Hash_Blake2b_Simd256.h"
-#endif
 #if HACL_CAN_COMPILE_SIMD128
 #include "_hacl/Hacl_Hash_Blake2s_Simd128.h"
 #endif
@@ -358,7 +356,7 @@ typedef struct {
         Hacl_Hash_Blake2s_Simd128_state_t *blake2s_128_state;
 #endif
 #ifdef HACL_CAN_COMPILE_SIMD256
-        Hacl_Hash_Blake2b_Simd256_state_t *blake2b_256_state;
+        void *blake2b_256_state;
 #endif
     };
     blake2_impl impl;
