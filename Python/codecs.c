@@ -781,7 +781,8 @@ _PyCodec_ReplaceUnicodeEncodeError(PyObject *exc)
 {
     Py_ssize_t start, end, slen;
     if (_PyUnicodeError_GetParams(exc, NULL, NULL,
-                                  &start, &end, &slen, false) < 0) {
+                                  &start, &end, &slen, false) < 0)
+    {
         return NULL;
     }
     PyObject *res = PyUnicode_New(slen, '?');
@@ -813,7 +814,8 @@ _PyCodec_ReplaceUnicodeTranslateError(PyObject *exc)
 {
     Py_ssize_t start, end, slen;
     if (_PyUnicodeError_GetParams(exc, NULL, NULL,
-                                  &start, &end, &slen, false) < 0) {
+                                  &start, &end, &slen, false) < 0)
+    {
         return NULL;
     }
     PyObject *res = PyUnicode_New(slen, Py_UNICODE_REPLACEMENT_CHARACTER);
