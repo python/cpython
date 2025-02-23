@@ -751,16 +751,14 @@ class Reader:
             self.msg = ""
             self.dirty = True
 
-        while True:
-            # We use the same timeout as in readline.c: 100ms
-            self.run_hooks()
-            self.console.wait(100)
-            event = self.console.get_event(block=False)
-            if not event:
-                if block:
-                    continue
+        # We use the same timeout as in readline.c: 100ms
+        self.run_hooks()
+        self.console.wait(10)
+        events = self.console.get_event(block=False)
+        if not events:
+            if block:
                 return False
-
+        for event in events:
             translate = True
 
             if event.evt == "key":
@@ -780,10 +778,9 @@ class Reader:
             if cmd is None:
                 if block:
                     continue
-                return False
-
-            self.do_cmd(cmd)
-            return True
+            else:
+                self.do_cmd(cmd)
+        return True
 
     def push_char(self, char: int | bytes) -> None:
         self.console.push_char(char)
