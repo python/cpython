@@ -9,6 +9,10 @@ This is Python version 3.14.0 alpha 5
    :alt: CPython build status on Azure DevOps
    :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=main
 
+.. image:: https://api.scorecard.dev/projects/github.com/python/cpython/badge
+   :alt: OpenSSF Scorecard
+   :target: https://scorecard.dev/viewer/?uri=github.com/python/cpython
+
 .. image:: https://img.shields.io/badge/discourse-join_chat-brightgreen.svg
    :alt: Python Discourse chat
    :target: https://discuss.python.org/

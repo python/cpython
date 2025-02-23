@@ -1,0 +1,3 @@
+Add OpenSSF Scorecard GitHub Action which performs dozens of automated
+checks to ensure the project's security posture is solid and badge which
+shows OpenSSF Scorecard score.
