@@ -6454,6 +6454,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertSetEqual(result, {'a', 'b', 'c', 'd', 'e'})
         obj |= {'d', 'e'}
         case.assertSetEqual(obj, {'a', 'b', 'c', 'd', 'e'})
+        case.assertIsInstance(obj, multiprocessing.managers.SetProxy)
         obj.clear()
         obj.update(['a', 'b', 'c'])
         result = {'a', 'b', 'd'} - obj
@@ -6462,6 +6463,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertSetEqual(result, {'c'})
         obj -= {'a', 'b'}
         case.assertSetEqual(obj, {'c'})
+        case.assertIsInstance(obj, multiprocessing.managers.SetProxy)
         obj.clear()
         obj.update(['a', 'b', 'c'])
         result = {'b', 'c', 'd'} ^ obj
@@ -6470,6 +6472,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertSetEqual(result, {'a', 'd'})
         obj ^= {'b', 'c', 'd'}
         case.assertSetEqual(obj, {'a', 'd'})
+        case.assertIsInstance(obj, multiprocessing.managers.SetProxy)
         obj.clear()
         obj.update(['a', 'b', 'c'])
         result = obj & {'b', 'c', 'd'}
@@ -6477,6 +6480,7 @@ class TestSyncManagerTypes(unittest.TestCase):
         result = {'b', 'c', 'd'} & obj
         case.assertSetEqual(result, {'b', 'c'})
         obj &= {'b', 'c', 'd'}
+        case.assertIsInstance(obj, multiprocessing.managers.SetProxy)
         case.assertSetEqual(obj, {'b', 'c'})
         obj.clear()
         obj.update(['a', 'b', 'c'])

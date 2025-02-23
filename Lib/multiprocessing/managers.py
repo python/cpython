@@ -1201,6 +1201,27 @@ _BaseSetProxy = MakeProxyType("_BaseSetProxy", _set_proxy_methods)
 del _set_proxy_methods
 
 class SetProxy(_BaseSetProxy):
+    def __ior__(self, value):
+        self._callmethod('__ior__', (value,))
+        return self
+    def __iand__(self, value):
+        self._callmethod('__iand__', (value,))
+        return self
+    def __ixor__(self, value):
+        self._callmethod('__ixor__', (value,))
+        return self
+    def __isub__(self, value):
+        self._callmethod('__isub__', (value,))
+        return self
+    def __le__(self, value):
+        return self._callmethod('__le__', (value,))
+    def __lt__(self, value):
+        return self._callmethod('__lt__', (value,))
+    def __ge__(self, value):
+        return self._callmethod('__ge__', (value,))
+    def __gt__(self, value):
+        return self._callmethod('__gt__', (value,))
+
     __class_getitem__ = classmethod(types.GenericAlias)
 
 collections.abc.MutableMapping.register(_BaseSetProxy)
