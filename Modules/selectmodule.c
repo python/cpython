@@ -2612,7 +2612,7 @@ _select_free(void *module)
     (void)_select_clear((PyObject *)module);
 }
 
-int
+static int
 _select_exec(PyObject *m)
 {
     _selectstate *state = get_select_state(m);
