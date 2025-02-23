@@ -33,7 +33,7 @@ EXIT_TIMEOUT = 120.0
 
 
 ALL_RESOURCES = ('audio', 'curses', 'largefile', 'network',
-                 'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui', 'walltime')
+                 'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui', 'walltime', 'flaky')
 
 # Other resources excluded from --use=all:
 #

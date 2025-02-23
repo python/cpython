@@ -23,6 +23,7 @@ from test.support import socket_helper
 from test.support import threading_helper
 from test.support import asyncore
 from test.support import smtpd
+from test.support import requires_resource
 from unittest.mock import Mock
 
 
@@ -374,6 +375,7 @@ class DebuggingServerTests(unittest.TestCase):
                                       b'RCPT DATA RSET NOOP QUIT VRFY')
         smtp.quit()
 
+    @support.requires_resource('flaky')
     def testSend(self):
         # connect and send mail
         m = 'A test message'

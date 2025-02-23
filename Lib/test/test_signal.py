@@ -13,6 +13,7 @@ import threading
 import time
 import unittest
 from test import support
+from test.support import requires_resource
 from test.support import (
     is_apple, is_apple_mobile, os_helper, threading_helper
 )
@@ -1353,6 +1354,7 @@ class StressTest(unittest.TestCase):
     @unittest.skipUnless(hasattr(signal, "SIGUSR1"),
                          "test needs SIGUSR1")
     @threading_helper.requires_working_threading()
+    @support.requires_resource('flaky')
     def test_stress_modifying_handlers(self):
         # bpo-43406: race condition between trip_signal() and signal.signal
         signum = signal.SIGUSR1

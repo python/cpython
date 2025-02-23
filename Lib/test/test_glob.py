@@ -8,6 +8,7 @@ import warnings
 
 from test import support
 from test.support import is_wasi, Py_DEBUG
+from test.support import requires_resource
 from test.support.os_helper import (TESTFN, skip_unless_symlink,
                                     can_symlink, create_empty_file, change_cwd)
 
@@ -521,7 +522,7 @@ class SymlinkLoopGlobTests(unittest.TestCase):
     # gh-109959: On Linux, glob._isdir() and glob._lexists() can return False
     # randomly when checking the "link/" symbolic link.
     # https://github.com/python/cpython/issues/109959#issuecomment-2577550700
-    @unittest.skip("flaky test")
+    @support.requires_resource('flaky')
     def test_selflink(self):
         tempdir = TESTFN + "_dir"
         os.makedirs(tempdir)
