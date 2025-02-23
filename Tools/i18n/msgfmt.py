@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 # Written by Martin v. Löwis <loewis@informatik.hu-berlin.de>
-# Version 1.3 by s-ball <s-ball@laposte.net>
+# Modified by s-ball <s-ball@laposte.net>
 """Generate binary message catalog from textual translation description.
 
 This program converts a textual Uniforum-style message catalog (.po file) into
@@ -42,7 +42,7 @@ import array
 from email.parser import HeaderParser
 import codecs
 
-__version__ = "1.3"
+__version__ = "1.2"
 
 
 MESSAGES = {}
