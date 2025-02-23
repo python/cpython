@@ -161,7 +161,7 @@ __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "InterpolationMissingOptionError", "InterpolationSyntaxError",
            "ParsingError", "MissingSectionHeaderError",
            "MultilineContinuationError", "UnnamedSectionDisabledError",
-           "ConfigParser", "RawConfigParser",
+           "InvalidWriteError", "ConfigParser", "RawConfigParser",
            "Interpolation", "BasicInterpolation",  "ExtendedInterpolation",
            "SectionProxy", "ConverterMapping",
            "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH", "UNNAMED_SECTION")
@@ -374,6 +374,14 @@ class _UnnamedSection:
 
     def __repr__(self):
         return "<UNNAMED_SECTION>"
+
+class InvalidWriteError(Error):
+    """Raised when attempting to write data that the parser would read back differently.
+    ex: writing a key which begins with the section header pattern would read back as a
+    new section """
+
+    def __init__(self, msg=''):
+        Error.__init__(self, msg)
 
 
 UNNAMED_SECTION = _UnnamedSection()
@@ -973,6 +981,7 @@ class RawConfigParser(MutableMapping):
         if not unnamed:
             fp.write("[{}]\n".format(section_name))
         for key, value in section_items:
+            self._validate_key_contents(key)
             value = self._interpolation.before_write(self, section_name, key,
                                                      value)
             if value is not None or not self._allow_no_value:
@@ -1209,6 +1218,14 @@ class RawConfigParser(MutableMapping):
         if value.lower() not in self.BOOLEAN_STATES:
             raise ValueError('Not a boolean: %s' % value)
         return self.BOOLEAN_STATES[value.lower()]
+
+    def _validate_key_contents(self, key):
+        """Raises an InvalidWriteError for any keys containing
+        delimiters or that match the section header pattern"""
+        if re.match(self.SECTCRE, key):
+            raise InvalidWriteError("Cannot write keys matching section pattern")
+        if any(delim in key for delim in self._delimiters):
+            raise InvalidWriteError("Cannot write key that contains delimiters")
 
     def _validate_value_types(self, *, section="", option="", value=""):
         """Raises a TypeError for illegal non-string values.
