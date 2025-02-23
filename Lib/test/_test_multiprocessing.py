@@ -6543,10 +6543,12 @@ class TestSyncManagerTypes(unittest.TestCase):
         case.assertSetEqual(result, {'a', 'b', 'c', 'd', 'e'})
         case.assertTrue(obj.isdisjoint({'d', 'e'}))
         case.assertFalse(obj.isdisjoint({'a', 'd'}))
+
         case.assertTrue(obj.issubset({'a', 'b', 'c', 'd'}))
         case.assertFalse(obj.issubset({'a', 'b'}))
         case.assertLess(obj, {'a', 'b', 'c', 'd'})
         case.assertLessEqual(obj, {'a', 'b', 'c'})
+
         case.assertTrue(obj.issuperset({'a', 'b'}))
         case.assertFalse(obj.issuperset({'a', 'b', 'd'}))
         case.assertGreater(obj, {'a'})
