@@ -708,11 +708,9 @@ static int
 bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *values)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
-#ifdef Py_DEBUG
     if (values != NULL) {
         _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(values);
     }
-#endif
     PyByteArrayObject *self = _PyByteArray_CAST(op);
     Py_ssize_t start, stop, step, slicelen;
     char *buf = PyByteArray_AS_STRING(self);
