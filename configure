@@ -32078,26 +32078,7 @@ esac
 if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
     # Older versions of the mmintrin headers shipped with clang may error if they are
   # included without using the corresponding -msse* option. See GH issue #130213.
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if __m128i can be used without -msse*" >&5
-printf %s "checking if __m128i can be used without -msse*... " >&6; }
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <emmintrin.h>
-                      #include <tmmintrin.h>
-                      #include <smmintrin.h>
-int
-main (void)
-{
-__m128i testvar;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2" >&5
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2" >&5
 printf %s "checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2... " >&6; }
 if test ${ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2+y}
 then :
@@ -32133,7 +32114,26 @@ printf "%s\n" "$ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2
 if test "x$ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2" = xyes
 then :
 
-        LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"
+    LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if __m128i can be used without -msse*" >&5
+printf %s "checking if __m128i can be used without -msse*... " >&6; }
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <emmintrin.h>
+                          #include <tmmintrin.h>
+                          #include <smmintrin.h>
+int
+main (void)
+{
+__m128i testvar;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
 
 
 printf "%s\n" "#define HACL_CAN_COMPILE_SIMD128 1" >>confdefs.h
@@ -32156,17 +32156,17 @@ printf "%s\n" "standard" >&6; }
 
 
 else case e in #(
-  e) : ;;
-esac
-fi
-
-
-else case e in #(
   e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; } ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+else case e in #(
+  e) : ;;
+esac
+fi
+
 fi
 
 
@@ -32179,26 +32179,10 @@ fi
 # (https://developer.android.com/ndk/guides/abis#86-64), this is safe because we do a
 # runtime CPUID check.
 if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
-  # Some versions of immintrin.h may not provide the __m256i type if no -mavx*
-  # option is used. See GH issue #130213.
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if __m256i can be used without -mavx2" >&5
-printf %s "checking if __m256i can be used without -mavx2... " >&6; }
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <immintrin.h>
-int
-main (void)
-{
-__m256i testvar;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"
-then :
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-printf "%s\n" "yes" >&6; }
-     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx2" >&5
+  # Some versions of immintrin.h require -mavx* to provide the __m256i type
+  # but blake2module.c must not be compiled with -mavx2 and may include
+  # libintvector.h which contains __m256i. See GH issue #130213.
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx2" >&5
 printf %s "checking whether C compiler accepts -mavx2... " >&6; }
 if test ${ax_cv_check_cflags__Werror__mavx2+y}
 then :
@@ -32234,7 +32218,24 @@ printf "%s\n" "$ax_cv_check_cflags__Werror__mavx2" >&6; }
 if test "x$ax_cv_check_cflags__Werror__mavx2" = xyes
 then :
 
-        LIBHACL_SIMD256_FLAGS="-mavx2"
+     LIBHACL_SIMD256_FLAGS="-mavx2"
+     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if __m256i can be used without -mavx2" >&5
+printf %s "checking if __m256i can be used without -mavx2... " >&6; }
+     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <immintrin.h>
+int
+main (void)
+{
+__m256i testvar;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
 
 printf "%s\n" "#define HACL_CAN_COMPILE_SIMD256 1" >>confdefs.h
 
@@ -32256,17 +32257,17 @@ printf "%s\n" "standard" >&6; }
         fi
 
 else case e in #(
-  e) : ;;
-esac
-fi
-
-
-else case e in #(
   e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; } ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
+else case e in #(
+  e) : ;;
+esac
+fi
+
 fi
 
 
