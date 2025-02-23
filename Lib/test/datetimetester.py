@@ -1237,6 +1237,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             self.assertEqual(dt, dt2)
 
     def test_repr_subclass(self):
+        """Subclasses should have bare names in the repr (gh-107773)."""
         td = SubclassDate(1, 2, 3)
         self.assertEqual(repr(td), "SubclassDate(1, 2, 3)")
         td = SubclassDate(2014, 1, 1)
@@ -3608,6 +3609,7 @@ class TestDateTime(TestDate):
         self.assertIsInstance(dt_rt, DateTimeSubclass)
 
     def test_repr_subclass(self):
+        """Subclasses should have bare names in the repr (gh-107773)."""
         name = SubclassDatetime.__name__
         td = SubclassDatetime(2014, 1, 1)
         self.assertEqual(repr(td), "%s(2014, 1, 1, 0, 0)" % name)
@@ -3927,6 +3929,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
                          "%s(23, 15)" % name)
 
     def test_repr_subclass(self):
+        """Subclasses should have bare names in the repr (gh-107773)."""
         name = SubclassTime.__name__
         td = SubclassTime(hour=1)
         self.assertEqual(repr(td), "%s(1, 0)" % name)
