@@ -860,13 +860,26 @@ class TurtleGraphicsError(Exception):
     """Some TurtleGraphics Error
     """
 
+class BaseShapeDrawer(object):
+    """Base class that allows for taking over controll of drawing process
+    for custom turtle shapes
+    """
+    def __init__(self, screen):
+        self.screen = screen
+    def clone(self, *args, **kwargs):
+        return self.__class__(self.screen, *args, **kwargs)
+    def draw(self, position, orientation, pen_color, fill_color, transform, pen_size):
+        pass
+    def delete(self):
+        pass
 
 class Shape(object):
     """Data structure modeling shapes.
 
-    attribute _type is one of "polygon", "image", "compound"
+    attribute _type is one of "polygon", "image", "compound", "shape_drawer"
     attribute _data is - depending on _type a poygon-tuple,
-    an image or a list constructed using the addcomponent method.
+    an image, a list constructed using the addcomponent method or a subclass of
+    BaseShapeDrawer.
     """
     def __init__(self, type_, data=None):
         self._type = type_
@@ -875,6 +888,8 @@ class Shape(object):
                 data = tuple(data)
         elif type_ == "image":
             assert(isinstance(data, TK.PhotoImage))
+        elif type_ == "shape_drawer":
+            assert(issubclass(data, BaseShapeDrawer))
         elif type_ == "compound":
             data = []
         else:
@@ -1111,8 +1126,8 @@ class TurtleScreen(TurtleScreenBase):
             of pairs of coordinates. Installs the corresponding
             polygon shape
         (4) name is an arbitrary string and shape is a
-            (compound) Shape object. Installs the corresponding
-            compound shape.
+            (compound or shape_drawer) Shape object. Installs the corresponding
+            shape.
         To use a shape, you have to issue the command shape(shapename).
 
         call: register_shape("turtle.gif")
@@ -2550,7 +2565,6 @@ class _TurtleImage(object):
 
     def _setshape(self, shapeIndex):
         screen = self.screen
-        self.shapeIndex = shapeIndex
         if self._type == "polygon" == screen._shapes[shapeIndex]._type:
             return
         if self._type == "image" == screen._shapes[shapeIndex]._type:
@@ -2560,7 +2574,12 @@ class _TurtleImage(object):
         elif self._type == "compound":
             for item in self._item:
                 screen._delete(item)
+        elif self._type == "shape_drawer":
+            del self._item
+
         self._type = screen._shapes[shapeIndex]._type
+        self.shapeIndex = shapeIndex
+
         if self._type == "polygon":
             self._item = screen._createpoly()
         elif self._type == "image":
@@ -2568,6 +2587,8 @@ class _TurtleImage(object):
         elif self._type == "compound":
             self._item = [screen._createpoly() for item in
                                           screen._shapes[shapeIndex]._data]
+        elif self._type == "shape_drawer":
+            self._item = screen._shapes[self.shapeIndex]._data(screen)
 
 
 class RawTurtle(TPen, TNavigator):
@@ -2855,6 +2876,8 @@ class RawTurtle(TPen, TNavigator):
         elif ttype == "compound":
             q.turtle._item = [screen._createpoly() for item in
                               screen._shapes[self.turtle.shapeIndex]._data]
+        elif ttype == "shape_drawer":
+            q.turtle._item = screen._shapes[self.turtle.shapeIndex]._data(screen)
         q.currentLineItem = screen._createline()
         q._update()
         return q
@@ -3111,6 +3134,10 @@ class RawTurtle(TPen, TNavigator):
                     poly = self._polytrafo(self._getshapepoly(poly, True))
                     screen._drawpoly(item, poly, fill=self._cc(fc),
                                      outline=self._cc(oc), width=self._outlinewidth, top=True)
+            elif ttype == "shape_drawer":
+                titem.draw(self._position, self._orient, pen_color = self._pencolor,
+                          fill_color = self._fillcolor, transform = self._shapetrafo,
+                          pen_size = self._pensize)
         else:
             if self._hidden_from_screen:
                 return
@@ -3167,6 +3194,11 @@ class RawTurtle(TPen, TNavigator):
                 poly = self._polytrafo(self._getshapepoly(poly, True))
                 screen._drawpoly(item, poly, fill=self._cc(fc),
                                  outline=self._cc(oc), width=self._outlinewidth, top=True)
+        elif ttype == "shape_drawer":
+            stitem = self.turtle._item.clone()
+            stitem.draw(self._position, self._orient, pen_color = self._pencolor,
+                          fill_color = self._fillcolor, transform = self._shapetrafo,
+                          pen_size = self._pensize)
         self.stampItems.append(stitem)
         self.undobuffer.push(("stamp", stitem))
         return stitem
@@ -3178,20 +3210,22 @@ class RawTurtle(TPen, TNavigator):
             if isinstance(stampid, tuple):
                 for subitem in stampid:
                     self.screen._delete(subitem)
-            else:
+            elif not isinstance(stampid, BaseShapeDrawer):
                 self.screen._delete(stampid)
             self.stampItems.remove(stampid)
+
         # Delete stampitem from undobuffer if necessary
         # if clearstamp is called directly.
         item = ("stamp", stampid)
         buf = self.undobuffer
-        if item not in buf.buffer:
-            return
-        index = buf.buffer.index(item)
-        buf.buffer.remove(item)
-        if index <= buf.ptr:
-            buf.ptr = (buf.ptr - 1) % buf.bufsize
-        buf.buffer.insert((buf.ptr+1)%buf.bufsize, [None])
+        if item in buf.buffer:
+            index = buf.buffer.index(item)
+            buf.buffer.remove(item)
+            if index <= buf.ptr:
+                buf.ptr = (buf.ptr - 1) % buf.bufsize
+            buf.buffer.insert((buf.ptr+1)%buf.bufsize, [None])
+        if isinstance(stampid, BaseShapeDrawer):
+            stampid.delete()
 
     def clearstamp(self, stampid):
         """Delete stamp with given stampid
