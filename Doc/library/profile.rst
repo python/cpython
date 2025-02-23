@@ -135,8 +135,9 @@ profile another script.  For example::
 
 .. option:: -s <sort_order>
 
-   Specifies one of the :func:`~pstats.Stats.sort_stats` sort values to sort
-   the output by. This only applies when :option:`-o <cProfile -o>` is not supplied.
+   Specifies one of the :func:`~pstats.Stats.sort_stats` sort values
+   to sort the output by.
+   This only applies when :option:`-o <cProfile -o>` is not supplied.
 
 .. option:: -m <module>
 
