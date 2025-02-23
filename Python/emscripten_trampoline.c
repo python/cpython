@@ -79,7 +79,7 @@ EM_JS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
 // )
 
 function getPyEMCountArgsPtr() {
-    let isIOS = /iPad|iPhone|iPod/.test(navigator.platform);
+    let isIOS = globalThis.navigator && /iPad|iPhone|iPod/.test(navigator.platform);
     if (isIOS) {
         return 0;
     }
