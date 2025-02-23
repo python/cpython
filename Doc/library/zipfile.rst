@@ -379,7 +379,7 @@ ZipFile Objects
    to extract to.  *member* can be a filename or a :class:`ZipInfo` object.
    *pwd* is the password used for encrypted files as a :class:`bytes` object.
    *preserve_permissions* controls how the permissions of zipped files are preserved.
-   The default is :data:`PreserveMode.NONE` which does not preserve any permissions. Other
+   The default is :data:`PreserveMode.NONE`, which does not preserve any permissions. Other
    options are to preserve a safe subset of permissions
    (:data:`PreserveMode.SAFE`) or all permissions
    (:data:`PreserveMode.ALL`). If the archive was created on Windows,
