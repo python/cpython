@@ -2012,13 +2012,19 @@ expression support in the :mod:`re` module).
 
 .. method:: str.isprintable()
 
-   Return ``True`` if all characters in the string are printable or the string is
-   empty, ``False`` otherwise.  Nonprintable characters are those characters defined
-   in the Unicode character database as "Other" or "Separator", excepting the
-   ASCII space (0x20) which is considered printable.  (Note that printable
-   characters in this context are those which should not be escaped when
-   :func:`repr` is invoked on a string.  It has no bearing on the handling of
-   strings written to :data:`sys.stdout` or :data:`sys.stderr`.)
+   Return true if all characters in the string are printable, false if it
+   contains at least one non-printable character.
+
+   Here "printable" means the character is suitable for :func:`repr` to use in
+   its output; "non-printable" means that :func:`repr` on built-in types will
+   hex-escape the character.  It has no bearing on the handling of strings
+   written to :data:`sys.stdout` or :data:`sys.stderr`.
+
+   The printable characters are those which in the Unicode character database
+   (see :mod:`unicodedata`) have a general category in group Letter, Mark,
+   Number, Punctuation, or Symbol (L, M, N, P, or S); plus the ASCII space 0x20.
+   Nonprintable characters are those in group Separator or Other (Z or C),
+   except the ASCII space.
 
 
 .. method:: str.isspace()
@@ -2840,6 +2846,38 @@ objects.
          Similar to :meth:`bytes.hex`, :meth:`bytearray.hex` now supports
          optional *sep* and *bytes_per_sep* parameters to insert separators
          between bytes in the hex output.
+
+   .. method:: resize(size)
+
+      Resize the :class:`bytearray` to contain *size* bytes. *size* must be
+      greater than or equal to 0.
+
+      If the :class:`bytearray` needs to shrink, bytes beyond *size* are truncated.
+
+      If the :class:`bytearray` needs to grow, all new bytes, those beyond *size*,
+      will be set to null bytes.
+
+
+      This is equivalent to:
+
+      >>> def resize(ba, size):
+      ...     if len(ba) > size:
+      ...         del ba[size:]
+      ...     else:
+      ...         ba += b'\0' * (size - len(ba))
+
+      Examples:
+
+      >>> shrink = bytearray(b'abc')
+      >>> shrink.resize(1)
+      >>> (shrink, len(shrink))
+      (bytearray(b'a'), 1)
+      >>> grow = bytearray(b'abc')
+      >>> grow.resize(5)
+      >>> (grow, len(grow))
+      (bytearray(b'abc\x00\x00'), 5)
+
+      .. versionadded:: 3.14
 
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
