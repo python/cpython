@@ -33,7 +33,7 @@ Features and minimum versions required to build CPython:
   :file:`configure` script.
 
 * `zlib <https://zlib.net>`_ 1.1.3 is the minium version and 1.1.4 is recommended due to
-   a ` security vulnerability <https://zlib.net/zlib_faq.html#faq33>`_ for the :mod:`zlib`
+   a `security vulnerability <https://zlib.net/zlib_faq.html#faq33>`_ for the :mod:`zlib`
    extension module.
 
 .. versionchanged:: 3.1
