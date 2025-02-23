@@ -63,6 +63,12 @@ under :ref:`reference counting <countingrefs>`.
    See documentation of :c:type:`PyVarObject` above.
 
 
+.. c:var:: PyTypeObject PyBaseObject_Type
+
+   The base class of all other classes.  It is the same object
+   as :class:`object` in the Python layer.
+
+
 .. c:function:: int Py_Is(PyObject *x, PyObject *y)
 
    Test if the *x* object is the *y* object, the same as ``x is y`` in Python.
