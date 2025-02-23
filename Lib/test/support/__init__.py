@@ -493,12 +493,8 @@ requires_IEEE_754 = unittest.skipUnless(
     float.__getformat__("double").startswith("IEEE"),
     "test requires IEEE 754 doubles")
 
-def requires_zlib(reason='requires zlib'):
-    try:
-        import zlib
-    except ImportError:
-        zlib = None
-    return unittest.skipUnless(zlib, reason)
+def requires_zlib(reason):
+    return unittest.skipIf(sys.platform == "wasi", "zlib is unsupported on WASI")
 
 def requires_gzip(reason='requires gzip'):
     try:

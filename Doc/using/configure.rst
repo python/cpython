@@ -32,6 +32,10 @@ Features and minimum versions required to build CPython:
 * Autoconf 2.72 and aclocal 1.16.5 are required to regenerate the
   :file:`configure` script.
 
+* `zlib <https://zlib.net>`_ 1.1.3 is the minium version and 1.1.4 is recommended due to
+   a ` security vulnerability <https://zlib.net/zlib_faq.html#faq33>`_ for the :mod:`zlib`
+   extension module.
+
 .. versionchanged:: 3.1
    Tcl/Tk version 8.3.1 is now required.
 
@@ -60,6 +64,9 @@ Features and minimum versions required to build CPython:
 
 .. versionchanged:: 3.14
    Autoconf 2.72 is now required.
+
+.. versionchanged:: next
+   zlib 1.1.3 is now required.
 
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
@@ -454,7 +461,7 @@ Options for third-party dependencies
 .. option:: ZLIB_CFLAGS
 .. option:: ZLIB_LIBS
 
-   C compiler and linker flags for ``libzlib``, used by :mod:`gzip` module,
+   C compiler and linker flags for ``libzlib``, used by the :mod:`zlib` module,
    overriding ``pkg-config``.
 
 
