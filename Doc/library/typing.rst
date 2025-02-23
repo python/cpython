@@ -3439,7 +3439,7 @@ Introspection helpers
    the global and local namespaces.
    *type_params* is a tuple of :ref:`type parameters <type-params>` that
    are in scope when evaluating the forward reference.
-   This parameter must be provided (though it may be an empty tuple) if *owner*
+   This parameter should be provided (though it may be an empty tuple) if *owner*
    is not given and the forward reference does not already have an owner set.
    *format* specifies the format of the annotation and is a member of
    the :class:`annotationlib.Format` enum.
