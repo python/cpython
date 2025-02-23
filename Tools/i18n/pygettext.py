@@ -352,28 +352,28 @@ def parse_spec(spec):
             raise ValueError(f'Invalid keyword spec {spec!r}: '
                              'argument positions must be strictly positive')
 
-        if pos in result.values():
+        if pos in result:
             raise ValueError(f'Invalid keyword spec {spec!r}: '
                              'duplicate positions')
 
         if is_context:
-            if 'msgctxt' in result:
+            if 'msgctxt' in result.values():
                 raise ValueError(f'Invalid keyword spec {spec!r}: '
                                  'msgctxt can only appear once')
-            result['msgctxt'] = pos
-        elif 'msgid' not in result:
-            result['msgid'] = pos
-        elif 'msgid_plural' not in result:
-            result['msgid_plural'] = pos
+            result[pos] = 'msgctxt'
+        elif 'msgid' not in result.values():
+            result[pos] = 'msgid'
+        elif 'msgid_plural' not in result.values():
+            result[pos] = 'msgid_plural'
         else:
             raise ValueError(f'Invalid keyword spec {spec!r}: '
                              'too many positions')
 
-    if 'msgid' not in result and 'msgctxt' in result:
+    if 'msgid' not in result.values() and 'msgctxt' in result.values():
         raise ValueError(f'Invalid keyword spec {spec!r}: '
                          'msgctxt cannot appear without msgid')
 
-    return name, {v: k for k, v in result.items()}
+    return name, result
 
 
 @dataclass(frozen=True)
