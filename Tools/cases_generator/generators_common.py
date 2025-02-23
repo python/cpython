@@ -350,11 +350,11 @@ class Emitter:
     ) -> bool:
         self.out.emit(tkn)
         tkn = next(tkn_iter)
-        assert tkn.kind == LPAREN
+        assert tkn.kind == lx.LPAREN
         self.out.emit(tkn)
         name = next(tkn_iter)
         self.out.emit(name)
-        if name.kind == IDENTIFIER:
+        if name.kind == lx.IDENTIFIER:
             return self.stackref_kill(name, storage, False)
         rparen = emit_to(self.out, tkn_iter, lx.RPAREN)
         self.emit(rparen)
