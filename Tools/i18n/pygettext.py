@@ -731,7 +731,8 @@ def main():
     try:
         options.keywords = dict(parse_spec(spec) for spec in options.keywords)
     except ValueError as e:
-        raise SystemExit(e)
+        print(e, file=sys.stderr)
+        sys.exit(1)
     if not no_default_keywords:
         options.keywords |= DEFAULTKEYWORDS
 
