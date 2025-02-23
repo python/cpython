@@ -306,6 +306,25 @@ do_start_joinable_thread(void (*func)(void *), void *arg, pthread_t* out_id)
     return 0;
 }
 
+/* Helper to convert pthread_t to PyThread_ident_t. POSIX allows pthread_t to be
+   non-arithmetic, e.g., musl typedefs it as a pointer */
+static PyThread_ident_t
+_pthread_t_to_ident(pthread_t value) {
+#if SIZEOF_PTHREAD_T > SIZEOF_LONG
+    return (PyThread_ident_t) *(unsigned long *) &value;
+#else
+    PyThread_ident_t ident;
+#if defined(__linux__) && !defined(__GLIBC__)
+    ident = (PyThread_ident_t) (uintptr_t) value;
+    assert(pthread_equal(value, (pthread_t) (uintptr_t) ident));
+#else
+    ident = (PyThread_ident_t) value;
+    assert(pthread_equal(value, (pthread_t) ident));
+#endif
+    return ident;
+#endif  // SIZEOF_PTHREAD_T > SIZEOF_LONG
+}
+
 int
 PyThread_start_joinable_thread(void (*func)(void *), void *arg,
                                PyThread_ident_t* ident, PyThread_handle_t* handle) {
@@ -313,9 +332,8 @@ PyThread_start_joinable_thread(void (*func)(void *), void *arg,
     if (do_start_joinable_thread(func, arg, &th)) {
         return -1;
     }
-    *ident = (PyThread_ident_t) th;
+    *ident = _pthread_t_to_ident(th);
     *handle = (PyThread_handle_t) th;
-    assert(th == (pthread_t) *ident);
     assert(th == (pthread_t) *handle);
     return 0;
 }
@@ -328,11 +346,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
         return PYTHREAD_INVALID_THREAD_ID;
     }
     pthread_detach(th);
-#if SIZEOF_PTHREAD_T <= SIZEOF_LONG
-    return (unsigned long) th;
-#else
-    return (unsigned long) *(unsigned long *) &th;
-#endif
+    return (unsigned long) _pthread_t_to_ident(th);;
 }
 
 int
@@ -357,8 +371,7 @@ PyThread_get_thread_ident_ex(void) {
     if (!initialized)
         PyThread_init_thread();
     threadid = pthread_self();
-    assert(threadid == (pthread_t) (PyThread_ident_t) threadid);
-    return (PyThread_ident_t) threadid;
+    return _pthread_t_to_ident(threadid);
 }
 
 unsigned long
