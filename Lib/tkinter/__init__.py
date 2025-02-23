@@ -4180,7 +4180,7 @@ class _setit:
 class OptionMenu(Menubutton):
     """OptionMenu which allows the user to select a value from a menu."""
 
-    def __init__(self, master, variable, value, *values, **kwargs):
+    def __init__(self, master=None, variable="", value="", *values, **kwargs):
         """Construct an optionmenu widget with the parent MASTER, with
         the resource textvariable set to VARIABLE, the initially selected
         value VALUE, the other menu values VALUES and an additional
