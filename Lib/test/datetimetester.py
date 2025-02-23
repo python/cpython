@@ -792,6 +792,7 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
                          "%s(seconds=1, microseconds=100)" % name)
 
     def test_repr_subclass(self):
+        """Subclasses should have bare names in the repr (gh-107773)."""
         td = SubclassTimeDelta(days=1)
         self.assertEqual(repr(td), "SubclassTimeDelta(days=1)")
         td = SubclassTimeDelta(seconds=30)
