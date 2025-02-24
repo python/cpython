@@ -216,7 +216,7 @@ class Bdb:
         self.user_opcode(). Raise BdbQuit if self.quitting is set.
         Return self.trace_dispatch to continue tracing in this scope.
 
-        Opcode event will always trigger the user calback. For now the only
+        Opcode event will always trigger the user callback. For now the only
         opcode event is from an inline set_trace() and we want to stop there
         unconditionally.
         """
