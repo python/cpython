@@ -16,11 +16,11 @@ import zipfile
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
-# Deferred import: from test.test_repl import spawn_repl
 from test.support import force_not_colorized, os_helper
 from test.support.import_helper import import_module
 from test.support.pty_helper import run_pty, FakeInput
 from test.support.script_helper import kill_python
+# Deferred import: from test.test_repl import spawn_repl
 from unittest.mock import patch
 
 SKIP_CORO_TESTS = False
