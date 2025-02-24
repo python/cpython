@@ -21,7 +21,7 @@ static PyObject *
 _winapi_Overlapped_GetOverlappedResult_impl(OverlappedObject *self, int wait);
 
 static PyObject *
-_winapi_Overlapped_GetOverlappedResult(OverlappedObject *self, PyObject *arg)
+_winapi_Overlapped_GetOverlappedResult(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int wait;
@@ -30,7 +30,7 @@ _winapi_Overlapped_GetOverlappedResult(OverlappedObject *self, PyObject *arg)
     if (wait < 0) {
         goto exit;
     }
-    return_value = _winapi_Overlapped_GetOverlappedResult_impl(self, wait);
+    return_value = _winapi_Overlapped_GetOverlappedResult_impl((OverlappedObject *)self, wait);
 
 exit:
     return return_value;
@@ -48,9 +48,9 @@ static PyObject *
 _winapi_Overlapped_getbuffer_impl(OverlappedObject *self);
 
 static PyObject *
-_winapi_Overlapped_getbuffer(OverlappedObject *self, PyObject *Py_UNUSED(ignored))
+_winapi_Overlapped_getbuffer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _winapi_Overlapped_getbuffer_impl(self);
+    return _winapi_Overlapped_getbuffer_impl((OverlappedObject *)self);
 }
 
 PyDoc_STRVAR(_winapi_Overlapped_cancel__doc__,
@@ -65,9 +65,9 @@ static PyObject *
 _winapi_Overlapped_cancel_impl(OverlappedObject *self);
 
 static PyObject *
-_winapi_Overlapped_cancel(OverlappedObject *self, PyObject *Py_UNUSED(ignored))
+_winapi_Overlapped_cancel(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _winapi_Overlapped_cancel_impl(self);
+    return _winapi_Overlapped_cancel_impl((OverlappedObject *)self);
 }
 
 PyDoc_STRVAR(_winapi_CloseHandle__doc__,
@@ -793,7 +793,8 @@ _winapi_GetLongPathName(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *argsbuf[1];
     LPCWSTR path = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -897,7 +898,8 @@ _winapi_GetShortPathName(PyObject *module, PyObject *const *args, Py_ssize_t nar
     PyObject *argsbuf[1];
     LPCWSTR path = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -2004,7 +2006,8 @@ _winapi__mimetypes_read_windows_registry(PyObject *module, PyObject *const *args
     PyObject *argsbuf[1];
     PyObject *on_type_read;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -2124,4 +2127,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=2304c62187a90140 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=06b56212b2186250 input=a9049054013a1b77]*/

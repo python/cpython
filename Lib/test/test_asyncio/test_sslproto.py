@@ -21,7 +21,7 @@ from test.test_asyncio import functional as func_tests
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 @unittest.skipIf(ssl is None, 'No ssl module')

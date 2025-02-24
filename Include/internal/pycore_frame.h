@@ -56,7 +56,8 @@ enum _frameowner {
     FRAME_OWNED_BY_THREAD = 0,
     FRAME_OWNED_BY_GENERATOR = 1,
     FRAME_OWNED_BY_FRAME_OBJECT = 2,
-    FRAME_OWNED_BY_CSTACK = 3,
+    FRAME_OWNED_BY_INTERPRETER = 3,
+    FRAME_OWNED_BY_CSTACK = 4,
 };
 
 typedef struct _PyInterpreterFrame {
@@ -69,19 +70,42 @@ typedef struct _PyInterpreterFrame {
     PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
     _Py_CODEUNIT *instr_ptr; /* Instruction currently executing (or about to begin) */
     _PyStackRef *stackpointer;
+#ifdef Py_GIL_DISABLED
+    /* Index of thread-local bytecode containing instr_ptr. */
+    int32_t tlbc_index;
+#endif
     uint16_t return_offset;  /* Only relevant during a function call */
     char owner;
+#ifdef Py_DEBUG
+    uint8_t visited:1;
+    uint8_t lltrace:7;
+#else
+    uint8_t visited;
+#endif
     /* Locals and stack */
     _PyStackRef localsplus[1];
 } _PyInterpreterFrame;
 
 #define _PyInterpreterFrame_LASTI(IF) \
-    ((int)((IF)->instr_ptr - _PyCode_CODE(_PyFrame_GetCode(IF))))
+    ((int)((IF)->instr_ptr - _PyFrame_GetBytecode((IF))))
 
 static inline PyCodeObject *_PyFrame_GetCode(_PyInterpreterFrame *f) {
     PyObject *executable = PyStackRef_AsPyObjectBorrow(f->f_executable);
     assert(PyCode_Check(executable));
     return (PyCodeObject *)executable;
+}
+
+static inline _Py_CODEUNIT *
+_PyFrame_GetBytecode(_PyInterpreterFrame *f)
+{
+#ifdef Py_GIL_DISABLED
+    PyCodeObject *co = _PyFrame_GetCode(f);
+    _PyCodeArray *tlbc = _PyCode_GetTLBCArray(co);
+    assert(f->tlbc_index >= 0 && f->tlbc_index < tlbc->size);
+    return (_Py_CODEUNIT *)tlbc->entries[f->tlbc_index];
+#else
+    return _PyCode_CODE(_PyFrame_GetCode(f));
+#endif
 }
 
 static inline PyFunctionObject *_PyFrame_GetFunction(_PyInterpreterFrame *f) {
@@ -135,14 +159,27 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
     dest->previous = NULL;
+}
 
 #ifdef Py_GIL_DISABLED
-    PyCodeObject *co = _PyFrame_GetCode(dest);
-    for (int i = stacktop; i < co->co_nlocalsplus + co->co_stacksize; i++) {
-        dest->localsplus[i] = PyStackRef_NULL;
+static inline void
+_PyFrame_InitializeTLBC(PyThreadState *tstate, _PyInterpreterFrame *frame,
+                        PyCodeObject *code)
+{
+    _Py_CODEUNIT *tlbc = _PyCode_GetTLBCFast(tstate, code);
+    if (tlbc == NULL) {
+        // No thread-local bytecode exists for this thread yet; use the main
+        // thread's copy, deferring thread-local bytecode creation to the
+        // execution of RESUME.
+        frame->instr_ptr = _PyCode_CODE(code);
+        frame->tlbc_index = 0;
     }
-#endif
+    else {
+        frame->instr_ptr = tlbc;
+        frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
+    }
 }
+#endif
 
 /* Consumes reference to func and locals.
    Does not initialize frame->previous, which happens
@@ -150,7 +187,7 @@ static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *
  */
 static inline void
 _PyFrame_Initialize(
-    _PyInterpreterFrame *frame, _PyStackRef func,
+    PyThreadState *tstate, _PyInterpreterFrame *frame, _PyStackRef func,
     PyObject *locals, PyCodeObject *code, int null_locals_from, _PyInterpreterFrame *previous)
 {
     frame->previous = previous;
@@ -162,23 +199,22 @@ _PyFrame_Initialize(
     frame->f_locals = locals;
     frame->stackpointer = frame->localsplus + code->co_nlocalsplus;
     frame->frame_obj = NULL;
+#ifdef Py_GIL_DISABLED
+    _PyFrame_InitializeTLBC(tstate, frame, code);
+#else
+    (void)tstate;
     frame->instr_ptr = _PyCode_CODE(code);
+#endif
     frame->return_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
+    frame->visited = 0;
+#ifdef Py_DEBUG
+    frame->lltrace = 0;
+#endif
 
     for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
         frame->localsplus[i] = PyStackRef_NULL;
     }
-
-#ifdef Py_GIL_DISABLED
-    // On GIL disabled, we walk the entire stack in GC. Since stacktop
-    // is not always in sync with the real stack pointer, we have
-    // no choice but to traverse the entire stack.
-    // This just makes sure we don't pass the GC invalid stack values.
-    for (int i = code->co_nlocalsplus; i < code->co_nlocalsplus + code->co_stacksize; i++) {
-        frame->localsplus[i] = PyStackRef_NULL;
-    }
-#endif
 }
 
 /* Gets the pointer to the locals array
@@ -220,11 +256,12 @@ _PyFrame_SetStackPointer(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
 static inline bool
 _PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
 {
-    if (frame->owner == FRAME_OWNED_BY_CSTACK) {
+    if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
         return true;
     }
     return frame->owner != FRAME_OWNED_BY_GENERATOR &&
-        frame->instr_ptr < _PyCode_CODE(_PyFrame_GetCode(frame)) + _PyFrame_GetCode(frame)->_co_firsttraceable;
+           frame->instr_ptr < _PyFrame_GetBytecode(frame) +
+                                  _PyFrame_GetCode(frame)->_co_firsttraceable;
 }
 
 static inline _PyInterpreterFrame *
@@ -315,7 +352,8 @@ _PyFrame_PushUnchecked(PyThreadState *tstate, _PyStackRef func, int null_locals_
     _PyInterpreterFrame *new_frame = (_PyInterpreterFrame *)tstate->datastack_top;
     tstate->datastack_top += code->co_framesize;
     assert(tstate->datastack_top < tstate->datastack_limit);
-    _PyFrame_Initialize(new_frame, func, NULL, code, null_locals_from, previous);
+    _PyFrame_Initialize(tstate, new_frame, func, NULL, code, null_locals_from,
+                        previous);
     return new_frame;
 }
 
@@ -339,16 +377,17 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
     assert(stackdepth <= code->co_stacksize);
     frame->stackpointer = frame->localsplus + code->co_nlocalsplus + stackdepth;
     frame->frame_obj = NULL;
-    frame->instr_ptr = _PyCode_CODE(code);
-    frame->owner = FRAME_OWNED_BY_THREAD;
-    frame->return_offset = 0;
-
 #ifdef Py_GIL_DISABLED
-    assert(code->co_nlocalsplus == 0);
-    for (int i = 0; i < code->co_stacksize; i++) {
-        frame->localsplus[i] = PyStackRef_NULL;
-    }
+    _PyFrame_InitializeTLBC(tstate, frame, code);
+#else
+    frame->instr_ptr = _PyCode_CODE(code);
 #endif
+    frame->owner = FRAME_OWNED_BY_THREAD;
+    frame->visited = 0;
+#ifdef Py_DEBUG
+    frame->lltrace = 0;
+#endif
+    frame->return_offset = 0;
     return frame;
 }
 

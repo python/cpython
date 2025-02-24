@@ -15,9 +15,13 @@ on:
         required: true
         type: string
 
+env:
+  FORCE_COLOR: 1
+
 jobs:
-  build_macos:
+  build-macos:
     name: build and test (${{ inputs.os }})
+    runs-on: ${{ inputs.os }}
     timeout-minutes: 60
     env:
       HOMEBREW_NO_ANALYTICS: 1
@@ -26,20 +30,25 @@ jobs:
       HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
       PYTHONSTRICTEXTENSIONBUILD: 1
       TERM: linux
-    runs-on: ${{ inputs.os }}
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - name: Runner image version
-      run: echo "IMAGE_VERSION=${ImageVersion}" >> "$GITHUB_ENV"
+      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
       uses: actions/cache@v4
       with:
         path: config.cache
-        key: ${{ github.job }}-${{ inputs.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}
+        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ inputs.config_hash }}
     - name: Install Homebrew dependencies
-      run: brew install pkg-config openssl@3.0 xz gdbm tcl-tk make
+      run: |
+        brew install pkg-config openssl@3.0 xz gdbm tcl-tk@8 make
+        # Because alternate versions are not symlinked into place by default:
+        brew link --overwrite tcl-tk@8
     - name: Configure CPython
       run: |
+        MACOSX_DEPLOYMENT_TARGET=10.15 \
         GDBM_CFLAGS="-I$(brew --prefix gdbm)/include" \
         GDBM_LIBS="-L$(brew --prefix gdbm)/lib -lgdbm" \
         ./configure \

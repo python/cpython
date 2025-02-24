@@ -212,19 +212,20 @@ class Formatter:
                 # this is some markup, find the object and do
                 #  the formatting
 
-                # handle arg indexing when empty field_names are given.
-                if field_name == '':
+                # handle arg indexing when empty field first parts are given.
+                field_first, _ = _string.formatter_field_name_split(field_name)
+                if field_first == '':
                     if auto_arg_index is False:
                         raise ValueError('cannot switch from manual field '
                                          'specification to automatic field '
                                          'numbering')
-                    field_name = str(auto_arg_index)
+                    field_name = str(auto_arg_index) + field_name
                     auto_arg_index += 1
-                elif field_name.isdigit():
+                elif isinstance(field_first, int):
                     if auto_arg_index:
-                        raise ValueError('cannot switch from manual field '
-                                         'specification to automatic field '
-                                         'numbering')
+                        raise ValueError('cannot switch from automatic field '
+                                         'numbering to manual field '
+                                         'specification')
                     # disable auto arg incrementing, if it gets
                     # used later on, then an exception will be raised
                     auto_arg_index = False
