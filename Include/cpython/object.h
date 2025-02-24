@@ -487,19 +487,18 @@ PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(PyThreadState *tstate);
  * we have headroom above the trigger limit */
 #define Py_TRASHCAN_HEADROOM 50
 
-/* Helper function for Py_TRASHCAN_BEGIN */
-PyAPI_FUNC(int) _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count);
-
 #define Py_TRASHCAN_BEGIN(op, dealloc) \
 do { \
     PyThreadState *tstate = PyThreadState_Get(); \
-    if (_Py_ReachedRecursionLimitWithMargin(tstate, 1) && Py_TYPE(op)->tp_dealloc == (destructor)dealloc) { \
+    if (tstate->c_recursion_remaining <= Py_TRASHCAN_HEADROOM && Py_TYPE(op)->tp_dealloc == (destructor)dealloc) { \
         _PyTrash_thread_deposit_object(tstate, (PyObject *)op); \
         break; \
-    }
+    } \
+    tstate->c_recursion_remaining--;
     /* The body of the deallocator is here. */
 #define Py_TRASHCAN_END \
-    if (tstate->delete_later && !_Py_ReachedRecursionLimitWithMargin(tstate, 2)) { \
+    tstate->c_recursion_remaining++; \
+    if (tstate->delete_later && tstate->c_recursion_remaining > (Py_TRASHCAN_HEADROOM*2)) { \
         _PyTrash_thread_destroy_chain(tstate); \
     } \
 } while (0);
