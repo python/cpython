@@ -339,7 +339,7 @@ dummy_func(
 
         replicate(8) inst(STORE_FAST, (value --)) {
             _PyStackRef tmp = GETLOCAL(oparg);
-            GETLOCAL(oparg) = _PyStackRef_StealIfUnborrowed(value);
+            GETLOCAL(oparg) = value;
             DEAD(value);
             PyStackRef_XCLOSE(tmp);
         }
@@ -352,7 +352,7 @@ dummy_func(
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             _PyStackRef tmp = GETLOCAL(oparg1);
-            GETLOCAL(oparg1) = _PyStackRef_StealIfUnborrowed(value1);
+            GETLOCAL(oparg1) = value1;
             DEAD(value1);
             value2 = PyStackRef_DUP(GETLOCAL(oparg2));
             PyStackRef_XCLOSE(tmp);
@@ -362,11 +362,11 @@ dummy_func(
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             _PyStackRef tmp = GETLOCAL(oparg1);
-            GETLOCAL(oparg1) = _PyStackRef_StealIfUnborrowed(value1);
+            GETLOCAL(oparg1) = value1;
             DEAD(value1);
             PyStackRef_XCLOSE(tmp);
             tmp = GETLOCAL(oparg2);
-            GETLOCAL(oparg2) = _PyStackRef_StealIfUnborrowed(value2);
+            GETLOCAL(oparg2) = value2;
             DEAD(value2);
             PyStackRef_XCLOSE(tmp);
         }

@@ -2614,13 +2614,19 @@ optimize_load_fast(cfg_builder *g)
 
                 case STORE_FAST: {
                     kill_local(has_killed_refs, &refs, oparg);
-                    ref_stack_pop(&refs);
+                    ref r = ref_stack_pop(&refs);
+                    if (r.instr != -1) {
+                        has_killed_refs[r.instr] = true;
+                    }
                     break;
                 }
 
                 case STORE_FAST_LOAD_FAST: {
                     kill_local(has_killed_refs, &refs, oparg >> 4);
-                    ref_stack_pop(&refs);
+                    ref r = ref_stack_pop(&refs);
+                    if (r.instr != -1) {
+                        has_killed_refs[r.instr] = true;
+                    }
                     ref_stack_push(&refs, (ref){i, oparg & 15});
                     break;
                 }
@@ -2628,8 +2634,14 @@ optimize_load_fast(cfg_builder *g)
                 case STORE_FAST_STORE_FAST: {
                     kill_local(has_killed_refs, &refs, oparg >> 4);
                     kill_local(has_killed_refs, &refs, oparg & 15);
-                    ref_stack_pop(&refs);
-                    ref_stack_pop(&refs);
+                    ref r = ref_stack_pop(&refs);
+                    if (r.instr != -1) {
+                        has_killed_refs[r.instr] = true;
+                    }
+                    r = ref_stack_pop(&refs);
+                    if (r.instr != -1) {
+                        has_killed_refs[r.instr] = true;
+                    }
                     break;
                 }
 

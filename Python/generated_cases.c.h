@@ -10943,7 +10943,7 @@
             _PyStackRef value;
             value = stack_pointer[-1];
             _PyStackRef tmp = GETLOCAL(oparg);
-            GETLOCAL(oparg) = _PyStackRef_StealIfUnborrowed(value);
+            GETLOCAL(oparg) = value;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -10966,7 +10966,7 @@
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             _PyStackRef tmp = GETLOCAL(oparg1);
-            GETLOCAL(oparg1) = _PyStackRef_StealIfUnborrowed(value1);
+            GETLOCAL(oparg1) = value1;
             value2 = PyStackRef_DUP(GETLOCAL(oparg2));
             stack_pointer[-1] = value2;
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -10990,14 +10990,14 @@
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
             _PyStackRef tmp = GETLOCAL(oparg1);
-            GETLOCAL(oparg1) = _PyStackRef_StealIfUnborrowed(value1);
+            GETLOCAL(oparg1) = value1;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_XCLOSE(tmp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             tmp = GETLOCAL(oparg2);
-            GETLOCAL(oparg2) = _PyStackRef_StealIfUnborrowed(value2);
+            GETLOCAL(oparg2) = value2;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
