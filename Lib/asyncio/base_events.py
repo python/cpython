@@ -459,7 +459,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         return futures.Future(loop=self)
 
     def create_task(self, coro, **kwargs):
-        """Schedule a coroutine object.
+        """Schedule or begin executing a coroutine object.
 
         Return a task object.
         """
