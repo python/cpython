@@ -426,6 +426,8 @@ The following exceptions are the exceptions that are usually raised.
    :exc:`PythonFinalizationError` during the Python finalization:
 
    * Creating a new Python thread.
+   * :meth:`Joining <threading.Thread.join>` a running daemon thread
+     without a timeout.
    * :func:`os.fork`.
 
    See also the :func:`sys.is_finalizing` function.
@@ -433,6 +435,9 @@ The following exceptions are the exceptions that are usually raised.
    .. versionadded:: 3.13
       Previously, a plain :exc:`RuntimeError` was raised.
 
+   .. versionchanged:: next
+
+      :meth:`threading.Thread.join` can now raise this exception.
 
 .. exception:: RecursionError
 
