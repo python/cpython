@@ -370,22 +370,22 @@ the macOS command line :command:`installer` utility lets you select non-default
 options, too. If you are not familiar with :command:`installer`, it can be
 somewhat cryptic (see :command:`man installer` for more information).
 As an example, the following shell snippet shows one way to do it,
-using the ``3.13.0b2`` release and selecting the free-threaded interpreter
+using the |x_dot_y_b2_literal| release and selecting the free-threaded interpreter
 option:
 
-..  code-block:: sh
+.. parsed-literal::
 
-    RELEASE="python-3.13.0b2-macos11.pkg"
+    RELEASE="python-\ |version|\ 0b2-macos11.pkg"
 
     # download installer pkg
-    curl -O https://www.python.org/ftp/python/3.13.0/${RELEASE}
+    curl -O \https://www.python.org/ftp/python/\ |version|\ .0/${RELEASE}
 
     # create installer choicechanges to customize the install:
-    #    enable the PythonTFramework-3.13 package
+    #    enable the PythonTFramework-\ |version|\  package
     #    while accepting the other defaults (install all other packages)
     cat > ./choicechanges.plist <<EOF
     <?xml version="1.0" encoding="UTF-8"?>
-    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "\http://www.apple.com/DTDs/PropertyList-1.0.dtd">
     <plist version="1.0">
     <array>
             <dict>
@@ -394,7 +394,7 @@ option:
                     <key>choiceAttribute</key>
                     <string>selected</string>
                     <key>choiceIdentifier</key>
-                    <string>org.python.Python.PythonTFramework-3.13</string>
+                    <string>org.python.Python.PythonTFramework-\ |version|\ </string>
             </dict>
     </array>
     </plist>
@@ -405,19 +405,19 @@ option:
 
 You can then test that both installer builds are now available with something like:
 
-..  code-block:: console
+.. parsed-literal::
 
     $ # test that the free-threaded interpreter was installed if the Unix Command Tools package was enabled
-    $ /usr/local/bin/python3.13t -VV
-    Python 3.13.0b2 experimental free-threading build (v3.13.0b2:3a83b172af, Jun  5 2024, 12:57:31) [Clang 15.0.0 (clang-1500.3.9.4)]
+    $ /usr/local/bin/python\ |version|\ t -VV
+    Python \ |version|\ .0b2 experimental free-threading build (v\ |version|\ .0b2:3a83b172af, Jun  5 2024, 12:57:31) [Clang 15.0.0 (clang-1500.3.9.4)]
     $ #    and the traditional interpreter
-    $ /usr/local/bin/python3.13 -VV
-    Python 3.13.0b2 (v3.13.0b2:3a83b172af, Jun  5 2024, 12:50:24) [Clang 15.0.0 (clang-1500.3.9.4)]
+    $ /usr/local/bin/python\ |version|\  -VV
+    Python \ |version|\ .0b2 (v\ |version|\ .0b2:3a83b172af, Jun  5 2024, 12:50:24) [Clang 15.0.0 (clang-1500.3.9.4)]
     $ # test that they are also available without the prefix if /usr/local/bin is on $PATH
-    $ python3.13t -VV
-    Python 3.13.0b2 experimental free-threading build (v3.13.0b2:3a83b172af, Jun  5 2024, 12:57:31) [Clang 15.0.0 (clang-1500.3.9.4)]
-    $ python3.13 -VV
-    Python 3.13.0b2 (v3.13.0b2:3a83b172af, Jun  5 2024, 12:50:24) [Clang 15.0.0 (clang-1500.3.9.4)]
+    $ python\ |version|\ t -VV
+    Python \ |version|\ .0b2 experimental free-threading build (v\ |version|\ .0b2:3a83b172af, Jun  5 2024, 12:57:31) [Clang 15.0.0 (clang-1500.3.9.4)]
+    $ python\ |version|\  -VV
+    Python \ |version|\ .0b2 (v\ |version|\ .0b2:3a83b172af, Jun  5 2024, 12:50:24) [Clang 15.0.0 (clang-1500.3.9.4)]
 
 .. note::
 
