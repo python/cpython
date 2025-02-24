@@ -167,7 +167,6 @@ which relays any information about the UUID's safety, using this enumeration:
 The :mod:`uuid` module defines the following functions:
 
 
-.. index:: single: getnode
 .. function:: getnode()
 
    Get the hardware address as a 48-bit positive integer.  The first time this
@@ -186,7 +185,6 @@ The :mod:`uuid` module defines the following functions:
       globally unique, while the latter are not.
 
 
-.. index:: single: uuid1
 .. function:: uuid1(node=None, clock_seq=None)
 
    Generate a UUID from a host ID, sequence number, and the current time. If *node*
@@ -195,7 +193,6 @@ The :mod:`uuid` module defines the following functions:
    14-bit sequence number is chosen.
 
 
-.. index:: single: uuid3
 .. function:: uuid3(namespace, name)
 
    Generate a UUID based on the MD5 hash of a namespace identifier (which is a
@@ -203,13 +200,11 @@ The :mod:`uuid` module defines the following functions:
    that will be encoded using UTF-8).
 
 
-.. index:: single: uuid4
 .. function:: uuid4()
 
    Generate a random UUID.
 
 
-.. index:: single: uuid5
 .. function:: uuid5(namespace, name)
 
    Generate a UUID based on the SHA-1 hash of a namespace identifier (which is a
@@ -217,7 +212,6 @@ The :mod:`uuid` module defines the following functions:
    that will be encoded using UTF-8).
 
 
-.. index:: single: uuid8
 .. function:: uuid8(a=None, b=None, c=None)
 
    Generate a pseudo-random UUID according to
