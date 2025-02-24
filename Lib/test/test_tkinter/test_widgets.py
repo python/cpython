@@ -354,6 +354,10 @@ class OptionMenuTest(MenubuttonTest, unittest.TestCase):
         with self.assertRaisesRegex(TclError, r"^unknown option -image$"):
             tkinter.OptionMenu(self.root, None, 'b', image='')
 
+    def test_specify_name(self):
+        widget = tkinter.OptionMenu(self.root, None, ':)', name="option_menu")
+        self.assertIs(self.root.nametowidget("option_menu"), widget)
+
 @add_configure_tests(IntegerSizeTests, StandardOptionsTests)
 class EntryTest(AbstractWidgetTest, unittest.TestCase):
     _rounds_pixels = (tk_version < (9, 0))
