@@ -2359,6 +2359,10 @@ types.
        # A functional syntax is also supported
        Employee = NamedTuple('Employee', [('name', str), ('id', int)])
 
+   .. note::
+      Using :func:`super` (and the ``__class__`` :term:`closure variable`) in methods of ``NamedTuple`` subclasses
+      is unsupported and causes a :class:`RuntimeError`.
+
    .. versionchanged:: 3.6
       Added support for :pep:`526` variable annotation syntax.
 
