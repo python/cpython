@@ -18,7 +18,7 @@ DATA_DIR = Path(__file__).resolve().parent / 'i18n_data'
 
 
 with imports_under_tool("i18n"):
-    from pygettext import parse_spec
+    from pygettext import parse_spec, process_keywords, DEFAULTKEYWORDS
 
 
 def normalize_POT_file(pot):
@@ -483,16 +483,16 @@ class Test_pygettext(unittest.TestCase):
 
     def test_parse_keyword_spec(self):
         valid = (
-            ('foo', ('foo', {0: 'msgid'})),
-            ('foo:1', ('foo', {0: 'msgid'})),
-            ('foo:1,2', ('foo', {0: 'msgid', 1: 'msgid_plural'})),
-            ('foo:1, 2', ('foo', {0: 'msgid', 1: 'msgid_plural'})),
-            ('foo:1,2c', ('foo', {0: 'msgid', 1: 'msgctxt'})),
-            ('foo:2c,1', ('foo', {0: 'msgid', 1: 'msgctxt'})),
-            ('foo:2c ,1', ('foo', {0: 'msgid', 1: 'msgctxt'})),
-            ('foo:1,2,3c', ('foo', {0: 'msgid', 1: 'msgid_plural', 2: 'msgctxt'})),
-            ('foo:1, 2, 3c', ('foo', {0: 'msgid', 1: 'msgid_plural', 2: 'msgctxt'})),
-            ('foo:3c,1,2', ('foo', {0: 'msgid', 1: 'msgid_plural', 2: 'msgctxt'})),
+            ('foo', ('foo', {'msgid': 0})),
+            ('foo:1', ('foo', {'msgid': 0})),
+            ('foo:1,2', ('foo', {'msgid': 0, 'msgid_plural': 1})),
+            ('foo:1, 2', ('foo', {'msgid': 0, 'msgid_plural': 1})),
+            ('foo:1,2c', ('foo', {'msgid': 0, 'msgctxt': 1})),
+            ('foo:2c,1', ('foo', {'msgid': 0, 'msgctxt': 1})),
+            ('foo:2c ,1', ('foo', {'msgid': 0, 'msgctxt': 1})),
+            ('foo:1,2,3c', ('foo', {'msgid': 0, 'msgid_plural': 1, 'msgctxt': 2})),
+            ('foo:1, 2, 3c', ('foo', {'msgid': 0, 'msgid_plural': 1, 'msgctxt': 2})),
+            ('foo:3c,1,2', ('foo', {'msgid': 0, 'msgid_plural': 1, 'msgctxt': 2})),
         )
         for spec, expected in valid:
             with self.subTest(spec=spec):
@@ -516,6 +516,33 @@ class Test_pygettext(unittest.TestCase):
                     parse_spec(spec)
                 self.assertEqual(str(cm.exception), message)
 
+    def test_process_keywords(self):
+        default_keywords = {name: [spec] for name, spec
+                            in DEFAULTKEYWORDS.items()}
+        inputs = (
+            (['foo'], True),
+            (['_:1,2'], True),
+            (['foo', 'foo:1,2'], True),
+            (['foo'], False),
+            (['_:1,2', '_:1c,2,3', 'pgettext'], False),
+        )
+        expected = (
+            {'foo': [{'msgid': 0}]},
+            {'_': [{'msgid': 0, 'msgid_plural': 1}]},
+            {'foo': [{'msgid': 0}, {'msgid': 0, 'msgid_plural': 1}]},
+            default_keywords | {'foo': [{'msgid': 0}]},
+            default_keywords | {'_': [{'msgid': 0, 'msgid_plural': 1},
+                                      {'msgctxt': 0, 'msgid': 1, 'msgid_plural': 2}],
+                                'pgettext': [{'msgid': 0}]},
+        )
+        for (keywords, no_default_keywords), expected in zip(inputs, expected):
+            with self.subTest(keywords=keywords,
+                              no_default_keywords=no_default_keywords):
+                processed = process_keywords(
+                    keywords,
+                    no_default_keywords=no_default_keywords)
+                self.assertEqual(processed, expected)
+
 
 def extract_from_snapshots():
     snapshots = {
@@ -526,6 +553,10 @@ def extract_from_snapshots():
         'custom_keywords.py': ('--keyword=foo', '--keyword=nfoo:1,2',
                                '--keyword=pfoo:1c,2',
                                '--keyword=npfoo:1c,2,3', '--keyword=_:1,2'),
+        'multiple_keywords.py': ('--keyword=foo:1c,2,3', '--keyword=foo:1c,2',
+                                 '--keyword=foo:1,2',
+                                 # repeat a keyword to make sure it is extracted only once
+                                 '--keyword=foo', '--keyword=foo'),
     }
 
     for filename, args in snapshots.items():

@@ -282,15 +282,15 @@ def getFilesForName(name):
 # Key is the function name, value is a dictionary mapping argument positions to the
 # type of the argument. The type is one of 'msgid', 'msgid_plural', or 'msgctxt'.
 DEFAULTKEYWORDS = {
-    '_': {0: 'msgid'},
-    'gettext': {0: 'msgid'},
-    'ngettext': {0: 'msgid', 1: 'msgid_plural'},
-    'pgettext': {0: 'msgctxt', 1: 'msgid'},
-    'npgettext': {0: 'msgctxt', 1: 'msgid', 2: 'msgid_plural'},
-    'dgettext': {1: 'msgid'},
-    'dngettext': {1: 'msgid', 2: 'msgid_plural'},
-    'dpgettext': {1: 'msgctxt', 2: 'msgid'},
-    'dnpgettext': {1: 'msgctxt', 2: 'msgid', 3: 'msgid_plural'},
+    '_': {'msgid': 0},
+    'gettext': {'msgid': 0},
+    'ngettext': {'msgid': 0, 'msgid_plural': 1},
+    'pgettext': {'msgctxt': 0, 'msgid': 1},
+    'npgettext': {'msgctxt': 0, 'msgid': 1, 'msgid_plural': 2},
+    'dgettext': {'msgid': 1},
+    'dngettext': {'msgid': 1, 'msgid_plural': 2},
+    'dpgettext': {'msgctxt': 1, 'msgid': 2},
+    'dnpgettext': {'msgctxt': 1, 'msgid': 2, 'msgid_plural': 3},
 }
 
 
@@ -327,7 +327,7 @@ def parse_spec(spec):
     parts = spec.strip().split(':', 1)
     if len(parts) == 1:
         name = parts[0]
-        return name, {0: 'msgid'}
+        return name, {'msgid': 0}
 
     name, args = parts
     if not args:
@@ -373,7 +373,23 @@ def parse_spec(spec):
         raise ValueError(f'Invalid keyword spec {spec!r}: '
                          'msgctxt cannot appear without msgid')
 
-    return name, {v: k for k, v in result.items()}
+    return name, result
+
+
+def process_keywords(keywords, *, no_default_keywords):
+    custom_keywords_list = [parse_spec(spec) for spec in keywords]
+    custom_keywords = {}
+    for name, spec in custom_keywords_list:
+        if name not in custom_keywords:
+            custom_keywords[name] = []
+        custom_keywords[name].append(spec)
+
+    if no_default_keywords:
+        return custom_keywords
+
+    default_keywords = {name: [spec] for name, spec in DEFAULTKEYWORDS.items()}
+    # custom keywords override default keywords
+    return default_keywords | custom_keywords
 
 
 @dataclass(frozen=True)
@@ -459,37 +475,46 @@ class GettextVisitor(ast.NodeVisitor):
 
     def _extract_message(self, node):
         func_name = self._get_func_name(node)
-        spec = self.options.keywords.get(func_name)
-        if spec is None:
-            return
+        specs = self.options.keywords.get(func_name, [])
+        for spec in specs:
+            extracted = self._extract_message_with_spec(node, spec)
+            if extracted:
+                break
 
-        max_index = max(spec)
+    def _extract_message_with_spec(self, node, spec):
+        """Extract a gettext call with the given spec.
+
+        Return True if the gettext call was successfully extracted, False
+        otherwise.
+        """
+        max_index = max(spec.values())
         has_var_positional = any(isinstance(arg, ast.Starred) for
                                  arg in node.args[:max_index+1])
         if has_var_positional:
             print(f'*** {self.filename}:{node.lineno}: Variable positional '
                   f'arguments are not allowed in gettext calls', file=sys.stderr)
-            return
+            return False
 
         if max_index >= len(node.args):
             print(f'*** {self.filename}:{node.lineno}: Expected at least '
-                  f'{max(spec) + 1} positional argument(s) in gettext call, '
+                  f'{max_index + 1} positional argument(s) in gettext call, '
                   f'got {len(node.args)}', file=sys.stderr)
-            return
+            return False
 
         msg_data = {}
-        for position, arg_type in spec.items():
+        for arg_type, position in spec.items():
             arg = node.args[position]
             if not self._is_string_const(arg):
                 print(f'*** {self.filename}:{arg.lineno}: Expected a string '
                       f'constant for argument {position + 1}, '
                       f'got {ast.unparse(arg)}', file=sys.stderr)
-                return
+                return False
             msg_data[arg_type] = arg.value
 
         lineno = node.lineno
         comments = self._extract_comments(node)
         self._add_message(lineno, **msg_data, comments=comments)
+        return True
 
     def _extract_comments(self, node):
         """Extract translator comments.
@@ -729,15 +754,12 @@ def main():
 
     # calculate all keywords
     try:
-        custom_keywords = dict(parse_spec(spec) for spec in options.keywords)
+        options.keywords = process_keywords(
+            options.keywords,
+            no_default_keywords=no_default_keywords)
     except ValueError as e:
         print(e, file=sys.stderr)
         sys.exit(1)
-    options.keywords = {}
-    if not no_default_keywords:
-        options.keywords |= DEFAULTKEYWORDS
-    # custom keywords override default keywords
-    options.keywords |= custom_keywords
 
     # initialize list of strings to exclude
     if options.excludefilename:
