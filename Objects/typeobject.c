@@ -992,6 +992,7 @@ static void
 set_version_unlocked(PyTypeObject *tp, unsigned int version)
 {
     ASSERT_TYPE_LOCK_HELD();
+    assert(version == 0 || (tp->tp_versions_used != _Py_ATTR_CACHE_UNUSED));
 #ifndef Py_GIL_DISABLED
     PyInterpreterState *interp = _PyInterpreterState_GET();
     // lookup the old version and set to null
@@ -1009,7 +1010,7 @@ set_version_unlocked(PyTypeObject *tp, unsigned int version)
         _Py_atomic_add_uint16(&tp->tp_versions_used, 1);
     }
 #endif
-    FT_ATOMIC_STORE_UINT32_RELAXED(tp->tp_version_tag, version);
+    FT_ATOMIC_STORE_UINT_RELAXED(tp->tp_version_tag, version);
 #ifndef Py_GIL_DISABLED
     if (version != 0) {
         PyTypeObject **slot =
@@ -1038,6 +1039,7 @@ type_modified_unlocked(PyTypeObject *type)
        We don't assign new version tags eagerly, but only as
        needed.
      */
+    ASSERT_TYPE_LOCK_HELD();
     if (type->tp_version_tag == 0) {
         return;
     }
@@ -1084,7 +1086,8 @@ type_modified_unlocked(PyTypeObject *type)
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // This field *must* be invalidated if the type is modified (see the
         // comment on struct _specialization_cache):
-        ((PyHeapTypeObject *)type)->_spec_cache.getitem = NULL;
+        FT_ATOMIC_STORE_PTR_RELAXED(
+            ((PyHeapTypeObject *)type)->_spec_cache.getitem, NULL);
     }
 }
 
@@ -1092,7 +1095,7 @@ void
 PyType_Modified(PyTypeObject *type)
 {
     // Quick check without the lock held
-    if (type->tp_version_tag == 0) {
+    if (FT_ATOMIC_LOAD_UINT_RELAXED(type->tp_version_tag) == 0) {
         return;
     }
 
@@ -1148,6 +1151,10 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
         PyObject *b = PyTuple_GET_ITEM(bases, i);
         PyTypeObject *cls = _PyType_CAST(b);
 
+        if (cls->tp_versions_used >= _Py_ATTR_CACHE_UNUSED) {
+            goto clear;
+        }
+
         if (!is_subtype_with_mro(lookup_tp_mro(type), type, cls)) {
             goto clear;
         }
@@ -1156,11 +1163,13 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
 
  clear:
     assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
-    set_version_unlocked(type, 0); /* 0 is not a valid version tag */
+    set_version_unlocked(type, 0);  /* 0 is not a valid version tag */
+    type->tp_versions_used = _Py_ATTR_CACHE_UNUSED;
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // This field *must* be invalidated if the type is modified (see the
         // comment on struct _specialization_cache):
-        ((PyHeapTypeObject *)type)->_spec_cache.getitem = NULL;
+        FT_ATOMIC_STORE_PTR_RELAXED(
+            ((PyHeapTypeObject *)type)->_spec_cache.getitem, NULL);
     }
 }
 
@@ -1208,6 +1217,9 @@ _PyType_GetVersionForCurrentState(PyTypeObject *tp)
 
 
 #define MAX_VERSIONS_PER_CLASS 1000
+#if _Py_ATTR_CACHE_UNUSED < MAX_VERSIONS_PER_CLASS
+#error "_Py_ATTR_CACHE_UNUSED must be bigger than max"
+#endif
 
 static int
 assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
@@ -1225,6 +1237,7 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
         return 0;
     }
     if (type->tp_versions_used >= MAX_VERSIONS_PER_CLASS) {
+        /* (this includes `tp_versions_used == _Py_ATTR_CACHE_UNUSED`) */
         return 0;
     }
 
@@ -2238,7 +2251,9 @@ _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
     if (PyType_IS_GC(type)) {
         _PyObject_GC_Link(obj);
     }
-    memset(obj, '\0', size);
+    // Zero out the object after the PyObject header. The header fields are
+    // initialized by _PyObject_Init[Var]().
+    memset((char *)obj + sizeof(PyObject), 0, size - sizeof(PyObject));
 
     if (type->tp_itemsize == 0) {
         _PyObject_Init(obj, type);
@@ -6150,7 +6165,7 @@ type_dealloc(PyObject *self)
     Py_XDECREF(et->ht_module);
     PyMem_Free(et->_ht_tpname);
 #ifdef Py_GIL_DISABLED
-    assert(et->unique_id == -1);
+    assert(et->unique_id == _Py_INVALID_UNIQUE_ID);
 #endif
     et->ht_token = NULL;
     Py_TYPE(type)->tp_free((PyObject *)type);
@@ -9549,6 +9564,7 @@ add_tp_new_wrapper(PyTypeObject *type)
     if (func == NULL) {
         return -1;
     }
+    _PyObject_SetDeferredRefcount(func);
     r = PyDict_SetItem(dict, &_Py_ID(__new__), func);
     Py_DECREF(func);
     return r;
@@ -10278,10 +10294,13 @@ slot_tp_finalize(PyObject *self)
     del = lookup_maybe_method(self, &_Py_ID(__del__), &unbound);
     if (del != NULL) {
         res = call_unbound_noarg(unbound, del, self);
-        if (res == NULL)
-            PyErr_WriteUnraisable(del);
-        else
+        if (res == NULL) {
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "calling deallocator %R", del);
+        }
+        else {
             Py_DECREF(res);
+        }
         Py_DECREF(del);
     }
 

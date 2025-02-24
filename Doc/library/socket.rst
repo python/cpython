@@ -678,7 +678,7 @@ Constants
 
    Constant to enable duplicate address and port bindings with load balancing.
 
-  .. versionadded:: next
+  .. versionadded:: 3.14
 
   .. availability:: FreeBSD >= 12.0
 
@@ -1667,11 +1667,6 @@ to sockets.
    by *bufsize*. A returned empty bytes object indicates that the client has disconnected.
    See the Unix manual page :manpage:`recv(2)` for the meaning of the optional argument
    *flags*; it defaults to zero.
-
-   .. note::
-
-      For best match with hardware and network realities, the value of  *bufsize*
-      should be a relatively small power of 2, for example, 4096.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise

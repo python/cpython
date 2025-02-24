@@ -45,12 +45,13 @@ static inline PyObject* _Py_FROM_GC(PyGC_Head *gc) {
  * the per-object lock.
  */
 #ifdef Py_GIL_DISABLED
-#  define _PyGC_BITS_TRACKED        (1)     // Tracked by the GC
-#  define _PyGC_BITS_FINALIZED      (2)     // tp_finalize was called
-#  define _PyGC_BITS_UNREACHABLE    (4)
-#  define _PyGC_BITS_FROZEN         (8)
-#  define _PyGC_BITS_SHARED         (16)
-#  define _PyGC_BITS_DEFERRED       (64)    // Use deferred reference counting
+#  define _PyGC_BITS_TRACKED        (1<<0)     // Tracked by the GC
+#  define _PyGC_BITS_FINALIZED      (1<<1)     // tp_finalize was called
+#  define _PyGC_BITS_UNREACHABLE    (1<<2)
+#  define _PyGC_BITS_FROZEN         (1<<3)
+#  define _PyGC_BITS_SHARED         (1<<4)
+#  define _PyGC_BITS_ALIVE          (1<<5)    // Reachable from a known root.
+#  define _PyGC_BITS_DEFERRED       (1<<6)    // Use deferred reference counting
 #endif
 
 #ifdef Py_GIL_DISABLED
@@ -330,6 +331,9 @@ struct _gc_runtime_state {
        collections, and are awaiting to undergo a full collection for
        the first time. */
     Py_ssize_t long_lived_pending;
+
+    /* True if gc.freeze() has been used. */
+    int freeze_active;
 #endif
 };
 
