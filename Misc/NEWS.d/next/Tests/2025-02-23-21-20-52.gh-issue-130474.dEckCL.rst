@@ -1,1 +1,2 @@
-Add the ``flaky`` resource for flagging tests with flaky outcomes using the :func:`!test.support.required_resource` decorator.
+Add the ``flaky`` resource for flagging tests with unreliable outcomes
+using the :py:deco:`!test.support.required_resource` decorator.
