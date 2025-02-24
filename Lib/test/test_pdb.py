@@ -4345,22 +4345,6 @@ class PdbTestInline(unittest.TestCase):
         self.assertEqual(stdout.count(QUIT_PROMPT_QUESTION), 2)
 
 
-def spawn_repl():
-    """Run the basic Python REPL. Returns a Popen object."""
-    # This function is based on the function "spawn_repl" in test_repl.py.
-    # See comments there for the rationale for the command line args.
-    stdin_fname = os.path.join(os.path.dirname(sys.executable), '<stdin>')
-    proc = subprocess.Popen(
-        [stdin_fname, '-I', '-i'],
-        executable=sys.executable,
-        text=True,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-    )
-    return proc
-
-
 @support.force_not_colorized_test_class
 @support.requires_subprocess()
 class TestREPLSession(unittest.TestCase):
@@ -4373,6 +4357,7 @@ class TestREPLSession(unittest.TestCase):
             pdb.set_trace(commands=['x * 3', 'q'])
             x[::-1] * 3
         """
+        from test.test_repl import spawn_repl
         p = spawn_repl()
         p.stdin.write(textwrap.dedent(user_input))
         output = kill_python(p)
