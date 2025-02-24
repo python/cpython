@@ -16,7 +16,7 @@ kernel/git/torvalds/linux.git/tree/tools/perf/Documentation/jit-interface.txt>`_
 In Python, these helper APIs can be used by libraries and features that rely
 on generating machine code on the fly.
 
-Note that holding the Global Interpreter Lock (GIL) is not required for these APIs.
+Note that holding an :term:`attached thread state` is not required for these APIs.
 
 .. c:function:: int PyUnstable_PerfMapState_Init(void)
 
