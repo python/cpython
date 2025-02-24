@@ -1107,7 +1107,7 @@ class ReadablePathTest(JoinablePathTest):
         p = P(self.base)
         q = p / "FILEa"
         given = set(p.glob("FILEa"))
-        expect = {q} if q.exists() else set()
+        expect = {q} if q.info.exists() else set()
         self.assertEqual(given, expect)
         self.assertEqual(set(p.glob("FILEa*")), set())
 
