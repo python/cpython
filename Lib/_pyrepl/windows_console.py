@@ -410,7 +410,7 @@ class WindowsConsole(Console):
         return info.srWindow.Bottom  # type: ignore[no-any-return]
 
     def _read_input(self, block: bool = True) -> INPUT_RECORD | None:
-        # Create a buffer for 128 events
+        # Create a buffer for 32 events
         buffer = (INPUT_RECORD * 32)()
         num_events_read = DWORD(0)
 
@@ -422,10 +422,10 @@ class WindowsConsole(Console):
             if count.value == 0:
                 return []
 
-        # Read up to 1024 events at once
+        # Read up to 32 events at once
         if not ReadConsoleInput(InHandle, buffer, 32, ctypes.byref(num_events_read)):
             raise WinError(GetLastError())
-        # print(num_events_read.value)
+
         return list(buffer[:num_events_read.value])
 
     def get_event(self, block: bool = True) -> Event | None:
@@ -683,6 +683,7 @@ else:
     GetConsoleMode = _win_only
     SetConsoleMode = _win_only
     ReadConsoleInput = _win_only
+    PeekConsoleInput = _win_only
     GetNumberOfConsoleInputEvents = _win_only
     FlushConsoleInputBuffer = _win_only
     OutHandle = 0

@@ -1490,9 +1490,10 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 
     // thread_id and native_thread_id are set in bind_tstate().
 
-    tstate->py_recursion_limit = interp->ceval.recursion_limit;
-    tstate->py_recursion_remaining = interp->ceval.recursion_limit;
-    tstate->c_recursion_remaining = 2;
+    tstate->py_recursion_limit = interp->ceval.recursion_limit,
+    tstate->py_recursion_remaining = interp->ceval.recursion_limit,
+    tstate->c_recursion_remaining = Py_C_RECURSION_LIMIT;
+
     tstate->exc_info = &tstate->exc_state;
 
     // PyGILState_Release must not try to delete this thread state.
@@ -1506,10 +1507,6 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->what_event = -1;
     tstate->previous_executor = NULL;
     tstate->dict_global_version = 0;
-
-    _tstate->c_stack_soft_limit = UINTPTR_MAX;
-    _tstate->c_stack_top = 0;
-    _tstate->c_stack_hard_limit = 0;
 
     _tstate->asyncio_running_loop = NULL;
     _tstate->asyncio_running_task = NULL;
