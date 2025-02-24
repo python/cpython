@@ -26,6 +26,10 @@ level :mod:`_thread` module.
    :mod:`asyncio` offers an alternative approach to achieving task level
    concurrency without requiring the use of multiple operating system threads.
 
+   The :ref:`concurrency-howto` offers explanations about concurrency
+   and different concurrency models, along with examples for each
+   of those models.
+
 .. note::
 
    In the Python 2.x series, this module contained ``camelCase`` names
