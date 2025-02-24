@@ -4356,15 +4356,15 @@ class TestREPLSession(unittest.TestCase):
         user_input = """
             x = 'Spam'
             import pdb
-            pdb.set_trace(commands=['x * 3', 'q'])
-            x[::-1] * 3
+            pdb.set_trace(commands=['x + "During"', 'q'])
+            x + 'After'
         """
         p.stdin.write(textwrap.dedent(user_input))
         output = kill_python(p)
-        self.assertIn('SpamSpamSpam', output)
+        self.assertIn('SpamDuring', output)
         self.assertNotIn(QUIT_PROMPT_QUESTION, output)
         self.assertIn('BdbQuit', output)
-        self.assertIn('mapSmapSmapS', output)
+        self.assertIn('SpamAfter', output)
         self.assertEqual(p.returncode, 0)
 
 
