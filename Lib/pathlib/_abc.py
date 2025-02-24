@@ -316,14 +316,11 @@ class ReadablePath(JoinablePath):
                 paths.append((path, dirnames, filenames))
             try:
                 for child in path.iterdir():
-                    try:
-                        if child.info.is_dir(follow_symlinks=follow_symlinks):
-                            if not top_down:
-                                paths.append(child)
-                            dirnames.append(child.name)
-                        else:
-                            filenames.append(child.name)
-                    except OSError:
+                    if child.info.is_dir(follow_symlinks=follow_symlinks):
+                        if not top_down:
+                            paths.append(child)
+                        dirnames.append(child.name)
+                    else:
                         filenames.append(child.name)
             except OSError as error:
                 if on_error is not None:
@@ -352,7 +349,7 @@ class ReadablePath(JoinablePath):
             target = self.with_segments(target)
         ensure_distinct_paths(self, target)
         copy_file(self, target, follow_symlinks, dirs_exist_ok, preserve_metadata)
-        return target
+        return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def copy_into(self, target_dir, *, follow_symlinks=True,
                   dirs_exist_ok=False, preserve_metadata=False):

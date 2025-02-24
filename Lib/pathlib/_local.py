@@ -1102,7 +1102,7 @@ class Path(PurePath):
             target = self.with_segments(target)
         ensure_distinct_paths(self, target)
         copy_file(self, target, follow_symlinks, dirs_exist_ok, preserve_metadata)
-        return target
+        return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def copy_into(self, target_dir, *, follow_symlinks=True,
                   dirs_exist_ok=False, preserve_metadata=False):
@@ -1132,10 +1132,12 @@ class Path(PurePath):
         else:
             ensure_different_files(self, target)
             try:
-                return self.replace(target)
+                os.replace(self, target)
             except OSError as err:
                 if err.errno != EXDEV:
                     raise
+            else:
+                return target.joinpath()  # Empty join to ensure fresh metadata.
         # Fall back to copy+delete.
         target = self.copy(target, follow_symlinks=False, preserve_metadata=True)
         self._delete()
