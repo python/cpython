@@ -56,7 +56,8 @@ __all__ = [
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
-    "Py_DEBUG", "exceeds_recursion_limit", "skip_on_s390x",
+    "Py_DEBUG", "exceeds_recursion_limit", "get_c_recursion_limit",
+    "skip_on_s390x",
     "requires_jit_enabled",
     "requires_jit_disabled",
     "force_not_colorized",
@@ -556,9 +557,6 @@ is_wasi = sys.platform == "wasi"
 
 def skip_emscripten_stack_overflow():
     return unittest.skipIf(is_emscripten, "Exhausts limited stack on Emscripten")
-
-def skip_wasi_stack_overflow():
-    return unittest.skipIf(is_wasi, "Exhausts stack on WASI")
 
 is_apple_mobile = sys.platform in {"ios", "tvos", "watchos"}
 is_apple = is_apple_mobile or sys.platform == "darwin"
@@ -2626,9 +2624,17 @@ def adjust_int_max_str_digits(max_digits):
         sys.set_int_max_str_digits(current)
 
 
+def get_c_recursion_limit():
+    try:
+        import _testcapi
+        return _testcapi.Py_C_RECURSION_LIMIT
+    except ImportError:
+        raise unittest.SkipTest('requires _testcapi')
+
+
 def exceeds_recursion_limit():
     """For recursion tests, easily exceeds default recursion limit."""
-    return 100_000
+    return get_c_recursion_limit() * 3
 
 
 # Windows doesn't have os.uname() but it doesn't support s390x.
