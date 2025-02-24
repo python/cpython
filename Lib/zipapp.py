@@ -135,6 +135,26 @@ def create_archive(source, target=None, interpreter=None, main=None,
     # the target is being created in the source directory - we
     # don't want the target being added to itself
     files_to_add = sorted(source.rglob('*'))
+
+    # The target cannot be in the list of files to add. If it were, we'd
+    # end up overwriting the source file and writing the archive into
+    # itself, which is an error. We therefore check for that case and
+    # provide a helpful message for the user.
+
+    # Note that we only do a simple path equality check. This won't
+    # catch every case, but it will catch the common case where the
+    # source is the CWD and the target is a file in the CWD. More
+    # thorough checks don't provide enough value to justify the extra
+    # cost.
+
+    # https://github.com/python/cpython/issues/104527 tracks making
+    # the zipfile module catch writing an archive to itself at a
+    # lower level, which could help here in cases that our check
+    # doesn't catch.
+    if target in files_to_add:
+        raise ZipAppError(
+            f"The target archive {target} overwrites one of the source files.")
+
     with _maybe_open(target, 'wb') as fd:
         _write_file_prefix(fd, interpreter)
         compression = (zipfile.ZIP_DEFLATED if compressed else

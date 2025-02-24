@@ -91,7 +91,7 @@ class ZipAppTest(unittest.TestCase):
 
     def test_create_archive_self_insertion(self):
         # When creating an archive, we shouldn't
-        # include the archive in the lis of files to add.
+        # include the archive in the list of files to add.
         source = self.tmpdir
         (source / '__main__.py').touch()
         (source / 'test.py').touch()
@@ -102,6 +102,16 @@ class ZipAppTest(unittest.TestCase):
             self.assertEqual(len(z.namelist()), 2)
             self.assertIn('__main__.py', z.namelist())
             self.assertIn('test.py', z.namelist())
+
+    def test_target_overwrites_source_file(self):
+        # The target cannot be one of the files to add.
+        source = self.tmpdir
+        (source / '__main__.py').touch()
+        target = source / 'target.pyz'
+        target.touch()
+
+        with self.assertRaises(zipapp.ZipAppError):
+            zipapp.create_archive(source, target)
 
     def test_create_archive_filter_exclude_dir(self):
         # Test packing a directory and using a filter to exclude a
