@@ -79,11 +79,18 @@ platform toolset, but LLVMToolsVersion has to be set accordingly.
 Setting the major version is enough, although you can be specific
 and use 18.1.8 in the above example, too.
 
-Even --pgo works out of the box. However, if you want to run the PGO task
+Use the --pgo option to build with PGO (Profile Guided Optimization).
+
+However, if you want to run the PGO task
 on a different host than the build host, you must pass
 "/p:CLANG_PROFILE_PATH=<relative-path-to-instrumented-dir-on-remote-host>"
 in the PGInstrument step to make sure the profile data is generated
 into the instrumented directory when running the PGO task.
+E.g., if you place the instrumented binaries into the folder
+"workdir/instrumented" and then run the PGO task using "workdir"
+as the current working directory, the usage is
+"/p:CLANG_PROFILE_PATH=workdir/instrumented"
+
 Like in the MSVC case, after fetching (or manually copying) the instrumented
 folder back into your build tree, you can continue with the PGUpdate
 step with no further parameters.
