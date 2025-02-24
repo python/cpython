@@ -336,6 +336,11 @@ Other language changes
   making it a :term:`generic type`.
   (Contributed by Brian Schubert in :gh:`126012`.)
 
+* Support underscore and comma as thousands separators in the fractional part
+  for floating-point presentation types of the new-style string formatting
+  (with :func:`format` or :ref:`f-strings`).
+  (Contrubuted by Sergey B Kirpichev in :gh:`87790`.)
+
 * ``\B`` in :mod:`regular expression <re>` now matches empty input string.
   Now it is always the opposite of ``\b``.
   (Contributed by Serhiy Storchaka in :gh:`124130`.)
