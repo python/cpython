@@ -316,14 +316,11 @@ class ReadablePath(JoinablePath):
                 paths.append((path, dirnames, filenames))
             try:
                 for child in path.iterdir():
-                    try:
-                        if child.info.is_dir(follow_symlinks=follow_symlinks):
-                            if not top_down:
-                                paths.append(child)
-                            dirnames.append(child.name)
-                        else:
-                            filenames.append(child.name)
-                    except OSError:
+                    if child.info.is_dir(follow_symlinks=follow_symlinks):
+                        if not top_down:
+                            paths.append(child)
+                        dirnames.append(child.name)
+                    else:
                         filenames.append(child.name)
             except OSError as error:
                 if on_error is not None:
