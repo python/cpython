@@ -1758,7 +1758,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         Quit from the debugger. The program being executed is aborted.
         """
-        if self.mode == 'inline':
+        # Show prompt to kill process when in 'inline' mode and if pdb was not
+        # started from an interactive console. The attribute sys.ps1 is only
+        # defined if the interpreter is in interactive mode.
+        if self.mode == 'inline' and not hasattr(sys, 'ps1'):
             while True:
                 try:
                     reply = input('Quitting pdb will kill the process. Quit anyway? [y/n] ')
