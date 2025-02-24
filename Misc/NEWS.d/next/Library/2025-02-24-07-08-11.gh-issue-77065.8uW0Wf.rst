@@ -1,0 +1,2 @@
+Added optional argument *mask* for :meth:`getpass.getpass`. Patch by
+Semyon Moroz.
