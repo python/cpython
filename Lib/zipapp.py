@@ -131,14 +131,18 @@ def create_archive(source, target=None, interpreter=None, main=None,
     elif not hasattr(target, 'write'):
         target = pathlib.Path(target)
 
+    # Create the list of files to add to the archive now, in case
+    # the target is being created in the source directory - we
+    # don't want the target being added to itself
+    files_to_add = sorted(source.rglob('*'))
     with _maybe_open(target, 'wb') as fd:
         _write_file_prefix(fd, interpreter)
         compression = (zipfile.ZIP_DEFLATED if compressed else
                        zipfile.ZIP_STORED)
         with zipfile.ZipFile(fd, 'w', compression=compression) as z:
-            for child in sorted(source.rglob('*')):
+            for child in files_to_add:
                 arcname = child.relative_to(source)
-                if filter is None or filter(arcname) and child.resolve() != arcname.resolve():
+                if filter is None or filter(arcname):
                     z.write(child, arcname.as_posix())
             if main_py:
                 z.writestr('__main__.py', main_py.encode('utf-8'))

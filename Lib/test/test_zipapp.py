@@ -89,6 +89,20 @@ class ZipAppTest(unittest.TestCase):
             self.assertIn('test.py', z.namelist())
             self.assertNotIn('test.pyc', z.namelist())
 
+    def test_create_archive_self_insertion(self):
+        # When creating an archive, we shouldn't
+        # include the archive in the lis of files to add.
+        source = self.tmpdir
+        (source / '__main__.py').touch()
+        (source / 'test.py').touch()
+        target = self.tmpdir / 'target.pyz'
+
+        zipapp.create_archive(source, target)
+        with zipfile.ZipFile(target, 'r') as z:
+            self.assertEqual(len(z.namelist()), 2)
+            self.assertIn('__main__.py', z.namelist())
+            self.assertIn('test.py', z.namelist())
+        
     def test_create_archive_filter_exclude_dir(self):
         # Test packing a directory and using a filter to exclude a
         # subdirectory (ensures that the path supplied to include
