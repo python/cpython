@@ -1,0 +1,1 @@
+Fix an issue with thread identifiers being sign-extended on some platforms.
