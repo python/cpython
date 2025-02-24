@@ -1,0 +1,5 @@
+:func:`str`, :func:`repr` and :func:`ascii` now always return an instance of
+:class:`str`, even if ``__str__()`` or ``__repr__()`` return an instance of
+:class:`!str` subclass. :func:`bytes` now always returns an instance of
+:class:`bytes`, even if ``__bytes__()`` returns an instance of
+:class:`!bytes` subclass.
