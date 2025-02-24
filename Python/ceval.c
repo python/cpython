@@ -374,10 +374,8 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
         _tstate->c_stack_top = base + stack_size;
         _tstate->c_stack_soft_limit = base + PYOS_STACK_MARGIN_BYTES * 2;
         _tstate->c_stack_hard_limit = base + PYOS_STACK_MARGIN_BYTES;
-#ifndef _AIX
         assert(_tstate->c_stack_soft_limit < here_addr);
         assert(here_addr < _tstate->c_stack_top);
-#endif
         return;
     }
 #  endif

@@ -193,13 +193,18 @@ extern void _PyEval_DeactivateOpCache(void);
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 
+static return_pointer_as_int(char* p) {
+    return (uintptr_t)p;
+}
+
 static inline uintptr_t
 _Py_get_machine_stack_pointer(void) {
 #if _Py__has_builtin(__builtin_frame_address)
     return (uintptr_t)__builtin_frame_address(0);
 #else
     char here;
-    return (uintptr_t)&here;
+    /* Avoid compiler warning about returning stack address */
+    return return_pointer_as_int(&here);
 #endif
 }
 
