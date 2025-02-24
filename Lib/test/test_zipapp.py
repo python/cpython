@@ -102,7 +102,7 @@ class ZipAppTest(unittest.TestCase):
             self.assertEqual(len(z.namelist()), 2)
             self.assertIn('__main__.py', z.namelist())
             self.assertIn('test.py', z.namelist())
-        
+
     def test_create_archive_filter_exclude_dir(self):
         # Test packing a directory and using a filter to exclude a
         # subdirectory (ensures that the path supplied to include
