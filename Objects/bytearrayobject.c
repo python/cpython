@@ -329,7 +329,6 @@ static PyObject *
 bytearray_iconcat_lock_held(PyObject *op, PyObject *other)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(other);
     PyByteArrayObject *self = _PyByteArray_CAST(op);
 
     Py_buffer vo;
@@ -359,9 +358,9 @@ static PyObject *
 bytearray_iconcat(PyObject *op, PyObject *other)
 {
     PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION2(op, other);
+    Py_BEGIN_CRITICAL_SECTION(op);
     ret = bytearray_iconcat_lock_held(op, other);
-    Py_END_CRITICAL_SECTION2();
+    Py_END_CRITICAL_SECTION();
     return ret;
 }
 
@@ -708,9 +707,6 @@ static int
 bytearray_ass_subscript_lock_held(PyObject *op, PyObject *index, PyObject *values)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
-    if (values != NULL) {
-        _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(values);
-    }
     PyByteArrayObject *self = _PyByteArray_CAST(op);
     Py_ssize_t start, stop, step, slicelen;
     char *buf = PyByteArray_AS_STRING(self);
@@ -868,7 +864,7 @@ static int
 bytearray_ass_subscript(PyObject *op, PyObject *index, PyObject *values)
 {
     int ret;
-    if (values != NULL) {
+    if (values != NULL && PyByteArray_Check(values)) {
         Py_BEGIN_CRITICAL_SECTION2(op, values);
         ret = bytearray_ass_subscript_lock_held(op, index, values);
         Py_END_CRITICAL_SECTION2();
