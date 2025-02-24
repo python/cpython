@@ -463,7 +463,7 @@ def _parse_isoformat_time(tstr):
 
     time_comps = _parse_hh_mm_ss_ff(timestr)
 
-    hour = time_comps[0]
+    hour, minute, second, microsecond = time_comps
     became_next_day = False
     error_from_components = False
     error_from_tz = None
@@ -1961,12 +1961,10 @@ class datetime(date):
 
         if tstr:
             try:
-                (
-                    time_components,
-                    became_next_day,
-                    error_from_components,
-                    error_from_tz,
-                ) = _parse_isoformat_time(tstr)
+                (time_components,
+                 became_next_day,
+                 error_from_components,
+                 error_from_tz) = _parse_isoformat_time(tstr)
             except ValueError:
                 raise ValueError(
                     f'Invalid isoformat string: {date_string!r}') from None
