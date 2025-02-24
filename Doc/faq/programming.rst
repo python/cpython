@@ -481,9 +481,9 @@ object, whereas superficially similar operations (for example ``y = y + [10]``
 and :func:`sorted(y) <sorted>`) create a new object.  In general in Python (and in all cases
 in the standard library) a method that mutates an object will return ``None``
 to help avoid getting the two types of operations confused.  So if you
-mistakenly write ``y.sort()`` thinking it will give you a sorted copy of ``y``,
-you'll instead end up with ``None``, which will likely cause your program to
-generate an easily diagnosed error.
+mistakenly write ``z = y.sort()`` thinking ``z`` is a sorted copy of ``y``,
+you'll instead end up with ``z`` being ``None``, which will likely cause
+your program to generate an easily diagnosed error.
 
 However, there is one class of operations where the same operation sometimes
 has different behaviors with different types:  the augmented assignment
