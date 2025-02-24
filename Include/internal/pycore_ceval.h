@@ -193,7 +193,7 @@ extern void _PyEval_DeactivateOpCache(void);
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 
-static return_pointer_as_int(char* p) {
+static uintptr_t return_pointer_as_int(char* p) {
     return (uintptr_t)p;
 }
 
