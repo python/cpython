@@ -56,14 +56,14 @@ Building Python using Clang/LLVM
 --------------------------------
 
 See https://learn.microsoft.com/en-us/cpp/build/clang-support-msbuild?view=msvc-170
-how to install and use clang-cl bundled with Microsoft Visual Studio.
+for how to install and use clang-cl bundled with Microsoft Visual Studio.
 You can use the IDE to switch to clang-cl for local development,
 but because this alters the *.vcxproj files, the recommended way is
 to use build.bat:
 
 build.bat "/p:PlatformToolset=ClangCL" "/p:PreferredToolArchitecture=x64"
 
-All other build.bat options remain to work as with MSVC, so this
+All other build.bat options continue to work as with MSVC, so this
 will create a 64bit release binary. PreferredToolArchitecture is needed,
 because msbuild by default selects the 32bit architecture of the toolset,
 which uses -m32 as the default target architecture.
@@ -79,8 +79,8 @@ platform toolset, but LLVMToolsVersion has to be set accordingly.
 Setting the major version is enough, although you can be specific
 and use 18.1.8 in the above example, too.
 
-Even --pgo works out of the box, except you do want to run the PGO task
-on a different host than the build host. In this case you must pass
+Even --pgo works out of the box. However, if you want to run the PGO task
+on a different host than the build host, you must pass
 "/p:CLANG_PROFILE_PATH=<relative-path-to-instrumented-dir-on-remote-host>"
 in the PGInstrument step to make sure the profile data is generated
 into the instrumented directory when running the PGO task.
