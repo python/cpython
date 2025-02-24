@@ -14,7 +14,7 @@ import time
 import unittest
 from test import support
 from test.support import (
-    is_apple, is_apple_mobile, os_helper, threading_helper, requires_resource
+    is_apple, is_apple_mobile, os_helper, threading_helper
 )
 from test.support.script_helper import assert_python_ok, spawn_python
 try:
@@ -1349,7 +1349,6 @@ class StressTest(unittest.TestCase):
         self.assertEqual(len(sigs), N, "Some signals were lost")
 
 
-    @support.requires_resource('flaky')
     @support.requires_gil_enabled("gh-121065: test is flaky on free-threaded build")
     @unittest.skipIf(is_apple, "crashes due to system bug (FB13453490)")
     @unittest.skipUnless(hasattr(signal, "SIGUSR1"),
