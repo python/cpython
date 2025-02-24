@@ -2415,34 +2415,23 @@ insert_superinstructions(cfg_builder *g)
     return res;
 }
 
+#define NOT_LOCAL -1
+#define DUMMY_INSTR -1
+#define DUMMY_REF (ref){DUMMY_INSTR, NOT_LOCAL}
+
 typedef struct {
-    // Index of instruction that produced the reference or -1.
+    // Index of instruction that produced the reference or DUMMY_INSTR.
     int instr;
 
-    // The local to which the reference refers or -1.
+    // The local to which the reference refers or NOT_LOCAL.
     int local;
 } ref;
-
-#define NOT_LOCAL -1
-
-#define DUMMY_REF (ref){-1, NOT_LOCAL}
 
 typedef struct {
     ref *refs;
     Py_ssize_t size;
     Py_ssize_t capacity;
 } ref_stack;
-
-static bool
-ref_stack_has_refs_from_instr(ref_stack *stack, int instr)
-{
-    for (Py_ssize_t i = 0; i < stack->size; i++) {
-        if (stack->refs[i].instr == instr) {
-            return true;
-        }
-    }
-    return false;
-}
 
 static int
 ref_stack_push(ref_stack *stack, ref r)
@@ -2505,15 +2494,33 @@ ref_stack_fini(ref_stack *stack)
     stack->size = 0;
 }
 
+typedef enum {
+    // The loaded reference is still on the stack when the local is killed
+    LOCAL_KILLED_ON_STACK = 1,
+    // The loaded reference is stored into a local
+    STORED_AS_LOCAL       = 2,
+    // The loaded reference is still on the stack at the end of the basic block
+    REF_UNCONSUMED        = 4,
+} LoadFastInstrFlag;
+
 static void
-kill_local(bool *has_killed_refs, ref_stack *refs, int local)
+kill_local(uint8_t *instr_flags, ref_stack *refs, int local)
 {
     for (Py_ssize_t i = 0; i < refs->size; i++) {
         ref r = ref_stack_at(refs, i);
         if (r.local == local) {
             assert(r.instr >= 0);
-            has_killed_refs[r.instr] = true;
+            instr_flags[r.instr] |= LOCAL_KILLED_ON_STACK;
         }
+    }
+}
+
+static void
+store_local(uint8_t *instr_flags, ref_stack *refs, int local, ref r)
+{
+    kill_local(instr_flags, refs, local);
+    if (r.instr != -1) {
+        instr_flags[r.instr] |= STORED_AS_LOCAL;
     }
 }
 
@@ -2537,9 +2544,9 @@ optimize_load_fast(cfg_builder *g)
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         max_instrs = Py_MAX(max_instrs, b->b_iused);
     }
-    size_t has_killed_refs_size = max_instrs * sizeof(bool);
-    bool *has_killed_refs = PyMem_Calloc(max_instrs, has_killed_refs_size);
-    if (has_killed_refs == NULL) {
+    size_t instr_flags_size = max_instrs * sizeof(bool);
+    uint8_t *instr_flags = PyMem_Calloc(max_instrs, instr_flags_size);
+    if (instr_flags == NULL) {
         PyErr_NoMemory();
         return ERROR;
     }
@@ -2558,9 +2565,8 @@ optimize_load_fast(cfg_builder *g)
         basicblock *block = *--sp;
         assert(block->b_startdepth > -1);
 
-        // Reset state that tracks which instructions produce references to
-        // locals that are on the stack while the local is overwritten.
-        memset(has_killed_refs, 0, has_killed_refs_size);
+        // Reset per-block state.
+        memset(instr_flags, 0, instr_flags_size);
 
         // Reset the stack of refs. We don't track references on the stack
         // across basic blocks, but the bytecode will expect their
@@ -2595,8 +2601,11 @@ optimize_load_fast(cfg_builder *g)
                 }
 
                 case LOAD_FAST_AND_CLEAR: {
-                    kill_local(has_killed_refs, &refs, oparg);
-                    ref_stack_push(&refs, (ref){i, oparg});
+                    kill_local(instr_flags, &refs, oparg);
+                    if (ref_stack_push(&refs, (ref){i, oparg}) < 0) {
+                        status = ERROR;
+                        goto done;
+                    }
                     break;
                 }
 
@@ -2613,35 +2622,30 @@ optimize_load_fast(cfg_builder *g)
                 }
 
                 case STORE_FAST: {
-                    kill_local(has_killed_refs, &refs, oparg);
                     ref r = ref_stack_pop(&refs);
-                    if (r.instr != -1) {
-                        has_killed_refs[r.instr] = true;
-                    }
+                    store_local(instr_flags, &refs, oparg, r);
                     break;
                 }
 
                 case STORE_FAST_LOAD_FAST: {
-                    kill_local(has_killed_refs, &refs, oparg >> 4);
+                    // STORE_FAST
                     ref r = ref_stack_pop(&refs);
-                    if (r.instr != -1) {
-                        has_killed_refs[r.instr] = true;
+                    store_local(instr_flags, &refs, oparg >> 4, r);
+                    // LOAD_FAST
+                    if (ref_stack_push(&refs, (ref){i, oparg & 15}) < 0) {
+                        status = ERROR;
+                        goto done;
                     }
-                    ref_stack_push(&refs, (ref){i, oparg & 15});
                     break;
                 }
 
                 case STORE_FAST_STORE_FAST: {
-                    kill_local(has_killed_refs, &refs, oparg >> 4);
-                    kill_local(has_killed_refs, &refs, oparg & 15);
+                    // STORE_FAST
                     ref r = ref_stack_pop(&refs);
-                    if (r.instr != -1) {
-                        has_killed_refs[r.instr] = true;
-                    }
+                    store_local(instr_flags, &refs, oparg >> 4, r);
+                    // STORE_FAST
                     r = ref_stack_pop(&refs);
-                    if (r.instr != -1) {
-                        has_killed_refs[r.instr] = true;
-                    }
+                    store_local(instr_flags, &refs, oparg & 15, r);
                     break;
                 }
 
@@ -2674,9 +2678,27 @@ optimize_load_fast(cfg_builder *g)
             }
         }
 
+        // Push fallthrough block
+        cfg_instr *term = basicblock_last_instr(block);
+        if (term != NULL && block->b_next != NULL &&
+            !(IS_UNCONDITIONAL_JUMP_OPCODE(term->i_opcode) ||
+              IS_SCOPE_EXIT_OPCODE(term->i_opcode))) {
+            assert(BB_HAS_FALLTHROUGH(block));
+            load_fast_push_block(&sp, block->b_next, refs.size);
+        }
+
+        // Mark instructions that produce values that are on the stack at the
+        // end of the basic block
+        for (Py_ssize_t i = 0; i < refs.size; i++) {
+            ref r = ref_stack_at(&refs, i);
+            if (r.instr != -1) {
+                instr_flags[r.instr] |= REF_UNCONSUMED;
+            }
+        }
+
         // Optimize instructions
         for (int i = 0; i < block->b_iused; i++) {
-            if (!has_killed_refs[i] && !ref_stack_has_refs_from_instr(&refs, i)) {
+            if (!instr_flags[i]) {
                 cfg_instr *instr = &block->b_instr[i];
                 switch (instr->i_opcode) {
                     case LOAD_FAST:
@@ -2690,23 +2712,14 @@ optimize_load_fast(cfg_builder *g)
                 }
             }
         }
-
-        // Push fallthrough block
-        cfg_instr *term = basicblock_last_instr(block);
-        if (term != NULL && block->b_next != NULL &&
-            !(IS_UNCONDITIONAL_JUMP_OPCODE(term->i_opcode) ||
-              IS_SCOPE_EXIT_OPCODE(term->i_opcode))) {
-            assert(BB_HAS_FALLTHROUGH(block));
-            load_fast_push_block(&sp, block->b_next, refs.size);
-        }
     }
 
     status = SUCCESS;
 
 done:
     ref_stack_fini(&refs);
-    if (has_killed_refs != NULL) {
-        PyMem_Free(has_killed_refs);
+    if (instr_flags != NULL) {
+        PyMem_Free(instr_flags);
     }
     if (blocks != NULL) {
         PyMem_Free(blocks);
