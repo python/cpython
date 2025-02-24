@@ -15,6 +15,10 @@ class PySysGetAttrTest(unittest.TestCase):
         import sys
         from faulthandler import dump_traceback, enable, dump_traceback_later
 
+        # The faulthandler_get_fileno calls stderr functions twice - the first
+        # call is a fileno and the second one is a flush. So, if the stderr
+        # changed while fileno is called, then we get a segfault when we
+        # call flush after that.
         class FakeIO:
             def __init__(self, what):
                 self.what = what
@@ -50,6 +54,12 @@ class PySysGetAttrTest(unittest.TestCase):
         import sys
         import warnings
 
+        # First of all, we have to delete _showwarnmsg to get into show_warning
+        # function. The show_warning do series of calls of PyFile_WriteObject
+        # and PyFile_WriteString functions. And one of the call is for __repr__
+        # of warning's message. So if we change stderr while calling __repr__
+        # (or concurently) we can get segfault from one of the consequence call
+        # to write functions.
         class Foo:
             def __init__(self):
                 self.x = sys.stderr
@@ -78,45 +88,28 @@ class PySysGetAttrTest(unittest.TestCase):
                 pass
             def flush(self):
                 pass
-            def fileno(self):
-                return 0
 
-        class CrashStdin:
-            def __init__(self):
-                self.stdin = sys.stdin
-                setattr(sys, "stdin", FakeIO())
-
-            def __repr__(self):
-                stdin = sys.stdin
-                setattr(sys, "stdin", self.stdin)
-                del stdin
-                return "CrashStdin"
-
-        class CrashStdout:
-            def __init__(self):
-                self.stdout = sys.stdout
-                setattr(sys, "stdout", FakeIO())
+        # The input function gets borrowed refs for stdin, stdout and stderr.
+        # As we use FakeIO without fileno the input functions thinks that we
+        # are not tty and following happens:
+        # audit is called, stderr is flushed, prompt's __repr__ is printed to
+        # stdout and line is read from stdin. For stdin and stdout we can just
+        # replace stdin and stdout from prompt's __repr__ and get segfault. But
+        # for stderr we should do this from audit function.
+        class CrashWhat:
+            def __init__(self, what):
+                self.what = what
+                self.std = getattr(sys, what)
+                setattr(sys, what, FakeIO())
 
             def __repr__(self):
-                stdout = sys.stdout
-                setattr(sys, "stdout", self.stdout)
-                del stdout
-                return "CrashStdout"
-
-        class CrashStderr:
-            def __init__(self):
-                self.stderr = sys.stderr
-                setattr(sys, "stderr", FakeIO())
-
-            def __repr__(self):
-                stderr = sys.stderr
-                setattr(sys, "stderr", self.stderr)
-                del stderr
-                return "CrashStderr"
+                std = getattr(sys, self.what)
+                setattr(sys, self.what, self.std)
+                del std
+                return "Crash"
 
         def audit(event, args):
-            if event == 'builtins.input':
-                repr(args)
+            repr(args)
 
         def main():
             {0}
@@ -134,6 +127,10 @@ class PySysGetAttrTest(unittest.TestCase):
             def __del__(self):
                 raise Exception('1')
 
+        # To get into unraisablehook we need to raise an exception from __del__
+        # function. So, format_unraisable_v gets hook, calls audit
+        # function and calls hook. If we revert back unraisablehook from audit
+        # function we will get segfault when calling hook.
         class UnraisableHook:
             def __call__(self, *args, **kwds):
                 print('X', *args)
@@ -161,6 +158,9 @@ class PySysGetAttrTest(unittest.TestCase):
     flush_std_files_common_code = textwrap.dedent('''
         import sys
 
+        # The flush_std_files function gets stdout and stderr. And then checks
+        # if both of them are closed. And if so calls flush for them.
+        # If we restore stdfile from FakeIO.closed property we can get segfault.
         class FakeIO:
             def __init__(self, what):
                 self.what = what
@@ -168,8 +168,6 @@ class PySysGetAttrTest(unittest.TestCase):
                 pass
             def flush(self):
                 pass
-            def fileno(self):
-                return 0
 
             @property
             def closed(self):
@@ -188,6 +186,10 @@ class PySysGetAttrTest(unittest.TestCase):
     pyerr_printex_code = textwrap.dedent('''
         import sys
 
+        # To get into excepthook we should run invalid statement.
+        # Then _PyErr_PrintEx gets excepthook, calls audit function and tries
+        # to call hook. If we replace hook from audit (or concurently) we get
+        # segfault.
         class Hook:
             def __call__(self, *args, **kwds):
                 pass
@@ -214,6 +216,9 @@ class PySysGetAttrTest(unittest.TestCase):
         from io import StringIO
         import sys
 
+        # The print function gets stdout and does a series of calls write
+        # functions. One of the function calls __repr__ and if we replace
+        # stdout from __repr__ (or concurently) we get segfault.
         class Bar:
             def __init__(self):
                 self.x = sys.stdout
@@ -279,21 +284,21 @@ class PySysGetAttrTest(unittest.TestCase):
     def test_input_stdin(self):
         code = self.common_input_code.format(
             "",
-            "CrashStdin()"
+            "CrashWhat('stdin')"
         )
         self._check(code)
 
     def test_input_stdout(self):
         code = self.common_input_code.format(
             "",
-            "CrashStdout()"
+            "CrashWhat('stdout')"
         )
         self._check(code)
 
     def test_input_stderr(self):
         code = self.common_input_code.format(
             "sys.addaudithook(audit)",
-            "CrashStderr()"
+            "CrashWhat('stderr')"
         )
         self._check(code)
 
