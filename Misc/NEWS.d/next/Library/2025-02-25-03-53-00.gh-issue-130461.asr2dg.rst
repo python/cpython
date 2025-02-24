@@ -1,0 +1,3 @@
+* Removed ``.. index::`` directives from uuid module documentation.
+* These directives previously created entries in the general index for functions like ``getnode``, ``uuid1``, ``uuid3``, ``uuid4``, ``uuid5``, and ``uuid8``.
+* This change affects the intersphinx inventory. (GH-130461)
