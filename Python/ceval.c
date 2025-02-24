@@ -342,7 +342,7 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 #elif defined(__hppa__) || defined(__powerpc64__)
 #  define Py_C_STACK_SIZE 2000000
 #else
-#  define Py_C_STACK_SIZE 5000000
+#  define Py_C_STACK_SIZE 4000000
 #endif
 
 void
@@ -359,7 +359,7 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
     _tstate->c_stack_soft_limit = _tstate->c_stack_hard_limit + PYOS_STACK_MARGIN_BYTES;
 #else
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
-#  if defined(HAVE_PTHREAD_GETATTR_NP)
+#  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX)
     size_t stack_size, guard_size;
     void *stack_addr;
     pthread_attr_t attr;
