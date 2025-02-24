@@ -462,7 +462,7 @@ dis_traceback = """\
                NOT_TAKEN
                STORE_FAST               0 (e)
 
-%4d   L4:     LOAD_FAST_BORROW         0 (e)
+%4d   L4:     LOAD_FAST                0 (e)
                LOAD_ATTR                2 (__traceback__)
                STORE_FAST               1 (tb)
        L5:     POP_EXCEPT
@@ -470,7 +470,7 @@ dis_traceback = """\
                STORE_FAST               0 (e)
                DELETE_FAST              0 (e)
 
-%4d           LOAD_FAST_BORROW         1 (tb)
+%4d           LOAD_FAST                1 (tb)
                RETURN_VALUE
 
   --   L6:     LOAD_CONST               0 (None)
@@ -717,7 +717,7 @@ dis_tryfinally = """\
 
   --   L3:     PUSH_EXC_INFO
 
-%4d           LOAD_FAST_BORROW         1 (b)
+%4d           LOAD_FAST                1 (b)
                PUSH_NULL
                CALL                     0
                POP_TOP
@@ -752,7 +752,7 @@ dis_tryfinallyconst = """\
 
   --   L1:     PUSH_EXC_INFO
 
-%4d           LOAD_FAST_BORROW         0 (b)
+%4d           LOAD_FAST                0 (b)
                PUSH_NULL
                CALL                     0
                POP_TOP
@@ -791,7 +791,7 @@ dis_nested_0 = """\
 
 %4d           RESUME                   0
 
-%4d           LOAD_FAST                0 (y)
+%4d           LOAD_FAST_BORROW         0 (y)
                BUILD_TUPLE              1
                LOAD_CONST               0 (<code object foo at 0x..., file "%s", line %d>)
                MAKE_FUNCTION
@@ -815,7 +815,7 @@ Disassembly of <code object foo at 0x..., file "%s", line %d>:
 %4d           RESUME                   0
 
 %4d           LOAD_GLOBAL              1 (list + NULL)
-               LOAD_FAST                0 (x)
+               LOAD_FAST_BORROW         0 (x)
                BUILD_TUPLE              1
                LOAD_CONST               1 (<code object <genexpr> at 0x..., file "%s", line %d>)
                MAKE_FUNCTION
@@ -1711,8 +1711,8 @@ expected_opinfo_outer = [
   Instruction(opname='MAKE_CELL', opcode=95, arg=1, argval='b', argrepr='b', offset=2, start_offset=2, starts_line=False, line_number=None, label=None, positions=None, cache_info=None),
   Instruction(opname='RESUME', opcode=149, arg=0, argval=0, argrepr='', offset=4, start_offset=4, starts_line=True, line_number=1, label=None, positions=None, cache_info=None),
   Instruction(opname='LOAD_CONST', opcode=80, arg=3, argval=(3, 4), argrepr='(3, 4)', offset=6, start_offset=6, starts_line=True, line_number=2, label=None, positions=None, cache_info=None),
-  Instruction(opname='LOAD_FAST', opcode=82, arg=0, argval='a', argrepr='a', offset=8, start_offset=8, starts_line=False, line_number=2, label=None, positions=None, cache_info=None),
-  Instruction(opname='LOAD_FAST', opcode=82, arg=1, argval='b', argrepr='b', offset=10, start_offset=10, starts_line=False, line_number=2, label=None, positions=None, cache_info=None),
+  Instruction(opname='LOAD_FAST_BORROW', opcode=84, arg=0, argval='a', argrepr='a', offset=8, start_offset=8, starts_line=False, line_number=2, label=None, positions=None, cache_info=None),
+  Instruction(opname='LOAD_FAST_BORROW', opcode=84, arg=1, argval='b', argrepr='b', offset=10, start_offset=10, starts_line=False, line_number=2, label=None, positions=None, cache_info=None),
   Instruction(opname='BUILD_TUPLE', opcode=50, arg=2, argval=2, argrepr='', offset=12, start_offset=12, starts_line=False, line_number=2, label=None, positions=None, cache_info=None),
   Instruction(opname='LOAD_CONST', opcode=80, arg=0, argval=code_object_f, argrepr=repr(code_object_f), offset=14, start_offset=14, starts_line=False, line_number=2, label=None, positions=None, cache_info=None),
   Instruction(opname='MAKE_FUNCTION', opcode=23, arg=None, argval=None, argrepr='', offset=16, start_offset=16, starts_line=False, line_number=2, label=None, positions=None, cache_info=None),
@@ -1739,10 +1739,10 @@ expected_opinfo_f = [
   Instruction(opname='MAKE_CELL', opcode=95, arg=1, argval='d', argrepr='d', offset=4, start_offset=4, starts_line=False, line_number=None, label=None, positions=None, cache_info=None),
   Instruction(opname='RESUME', opcode=149, arg=0, argval=0, argrepr='', offset=6, start_offset=6, starts_line=True, line_number=2, label=None, positions=None, cache_info=None),
   Instruction(opname='LOAD_CONST', opcode=80, arg=1, argval=(5, 6), argrepr='(5, 6)', offset=8, start_offset=8, starts_line=True, line_number=3, label=None, positions=None, cache_info=None),
-  Instruction(opname='LOAD_FAST', opcode=82, arg=3, argval='a', argrepr='a', offset=10, start_offset=10, starts_line=False, line_number=3, label=None, positions=None, cache_info=None),
-  Instruction(opname='LOAD_FAST', opcode=82, arg=4, argval='b', argrepr='b', offset=12, start_offset=12, starts_line=False, line_number=3, label=None, positions=None, cache_info=None),
-  Instruction(opname='LOAD_FAST', opcode=82, arg=0, argval='c', argrepr='c', offset=14, start_offset=14, starts_line=False, line_number=3, label=None, positions=None, cache_info=None),
-  Instruction(opname='LOAD_FAST', opcode=82, arg=1, argval='d', argrepr='d', offset=16, start_offset=16, starts_line=False, line_number=3, label=None, positions=None, cache_info=None),
+  Instruction(opname='LOAD_FAST_BORROW', opcode=84, arg=3, argval='a', argrepr='a', offset=10, start_offset=10, starts_line=False, line_number=3, label=None, positions=None, cache_info=None),
+  Instruction(opname='LOAD_FAST_BORROW', opcode=84, arg=4, argval='b', argrepr='b', offset=12, start_offset=12, starts_line=False, line_number=3, label=None, positions=None, cache_info=None),
+  Instruction(opname='LOAD_FAST_BORROW', opcode=84, arg=0, argval='c', argrepr='c', offset=14, start_offset=14, starts_line=False, line_number=3, label=None, positions=None, cache_info=None),
+  Instruction(opname='LOAD_FAST_BORROW', opcode=84, arg=1, argval='d', argrepr='d', offset=16, start_offset=16, starts_line=False, line_number=3, label=None, positions=None, cache_info=None),
   Instruction(opname='BUILD_TUPLE', opcode=50, arg=4, argval=4, argrepr='', offset=18, start_offset=18, starts_line=False, line_number=3, label=None, positions=None, cache_info=None),
   Instruction(opname='LOAD_CONST', opcode=80, arg=0, argval=code_object_inner, argrepr=repr(code_object_inner), offset=20, start_offset=20, starts_line=False, line_number=3, label=None, positions=None, cache_info=None),
   Instruction(opname='MAKE_FUNCTION', opcode=23, arg=None, argval=None, argrepr='', offset=22, start_offset=22, starts_line=False, line_number=3, label=None, positions=None, cache_info=None),

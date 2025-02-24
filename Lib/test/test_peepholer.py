@@ -2325,9 +2325,9 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         expected_insts = [
             ("BUILD_LIST", 0, 1),
-            ("LOAD_FAST_BORROW", 0, 2),
+            ("LOAD_FAST", 0, 2),
             ("LIST_EXTEND", 1, 3),
-            ("LOAD_FAST_BORROW", 1, 4),
+            ("LOAD_FAST", 1, 4),
             ("LIST_EXTEND", 1, 5),
             ("NOP", None, 6),  # ("CALL_INTRINSIC_1", INTRINSIC_LIST_TO_TUPLE, 6),
             ("GET_ITER", None, 7),

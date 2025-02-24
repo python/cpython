@@ -1,4 +1,3 @@
-
 #include <stdbool.h>
 
 #include "Python.h"
@@ -571,6 +570,7 @@ normalize_jumps_in_block(cfg_builder *g, basicblock *b) {
         basicblock_addop(backwards_jump, NOT_TAKEN, 0, last->i_loc));
     RETURN_IF_ERROR(
         basicblock_add_jump(backwards_jump, JUMP, target, last->i_loc));
+    backwards_jump->b_startdepth = target->b_startdepth;
     last->i_opcode = reversed_opcode;
     last->i_target = b->b_next;
 
@@ -2520,10 +2520,8 @@ kill_local(bool *has_killed_refs, ref_stack *refs, int local)
 static void
 load_fast_push_block(basicblock ***sp, basicblock *target, int start_depth)
 {
-    assert(!target->b_visited || (target->b_startdepth == start_depth));
+    assert(target->b_startdepth >= 0 && target->b_startdepth == start_depth);
     if (!target->b_visited) {
-        assert(target->b_startdepth == -1);
-        target->b_startdepth = start_depth;
         target->b_visited = 1;
         *(*sp)++ = target;
     }
@@ -2535,8 +2533,8 @@ optimize_load_fast(cfg_builder *g)
     int status;
     ref_stack refs = {0};
     int max_instrs = 0;
-    for (basicblock *b = g->g_block_list; b != NULL; b = b->b_list) {
-        b->b_startdepth = -1;
+    basicblock *entryblock = g->g_entryblock;
+    for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         max_instrs = Py_MAX(max_instrs, b->b_iused);
     }
     size_t has_killed_refs_size = max_instrs * sizeof(bool);
@@ -2545,7 +2543,6 @@ optimize_load_fast(cfg_builder *g)
         PyErr_NoMemory();
         return ERROR;
     }
-    basicblock *entryblock = g->g_entryblock;
     basicblock **blocks = make_cfg_traversal_stack(entryblock);
     if (blocks == NULL) {
         status = ERROR;
@@ -3318,7 +3315,6 @@ _PyCfg_OptimizeCodeUnit(cfg_builder *g, PyObject *consts, PyObject *const_cache,
         add_checks_for_loads_of_uninitialized_variables(
             g->g_entryblock, nlocals, nparams));
     RETURN_IF_ERROR(insert_superinstructions(g));
-    RETURN_IF_ERROR(optimize_load_fast(g));
 
     RETURN_IF_ERROR(push_cold_blocks_to_end(g));
     RETURN_IF_ERROR(resolve_line_numbers(g, firstlineno));
@@ -3649,6 +3645,11 @@ _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
 
     RETURN_IF_ERROR(normalize_jumps(g));
     assert(no_redundant_jumps(g));
+
+    /* Can't modify the bytecode after inserting instructions that produce
+     * borrowed references.
+     */
+    RETURN_IF_ERROR(optimize_load_fast(g));
 
     /* Can't modify the bytecode after computing jump offsets. */
     if (_PyCfg_ToInstructionSequence(g, seq) < 0) {
