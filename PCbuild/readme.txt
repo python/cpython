@@ -61,12 +61,10 @@ You can use the IDE to switch to clang-cl for local development,
 but because this alters the *.vcxproj files, the recommended way is
 to use build.bat:
 
-build.bat "/p:PlatformToolset=ClangCL" "/p:PreferredToolArchitecture=x64"
+build.bat "/p:PlatformToolset=ClangCL"
 
 All other build.bat options continue to work as with MSVC, so this
-will create a 64bit release binary. PreferredToolArchitecture is needed,
-because msbuild by default selects the 32bit architecture of the toolset,
-which uses -m32 as the default target architecture.
+will create a 64bit release binary.
 
 You can also use a specific version of clang-cl downloaded from
 https://github.com/llvm/llvm-project/releases, e.g.
@@ -74,10 +72,8 @@ clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz.
 Given you have extracted that to <my-clang-dir>, you can use it like so
 build.bat --pgo "/p:PlatformToolset=ClangCL" "/p:LLVMInstallDir=<my-clang-dir> "/p:LLVMToolsVersion=18"
 
-Here, PreferredToolArchitecture is not needed, because this is a 64bit
-platform toolset, but LLVMToolsVersion has to be set accordingly.
-Setting the major version is enough, although you can be specific
-and use 18.1.8 in the above example, too.
+Setting LLVMToolsVersion to the major version is enough, although you
+can be specific and use 18.1.8 in the above example, too.
 
 Use the --pgo option to build with PGO (Profile Guided Optimization).
 
