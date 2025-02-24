@@ -1,0 +1,1 @@
+:func:`shlex.quote` now always quotes its input instead of testing a regex
