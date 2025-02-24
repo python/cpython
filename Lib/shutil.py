@@ -1113,11 +1113,10 @@ _make_zipfile.supports_root_dir = True
 _ARCHIVE_FORMATS = {
     'tar':   (_make_tarball, [('compress', None)],
               "uncompressed tar file"),
+    'gztar': (_make_tarball, [('compress', 'gzip')],
+              "gzip'ed tar-file"),
+    'zip': (_make_zipfile, [], "ZIP file")
 }
-
-_ARCHIVE_FORMATS['gztar'] = (_make_tarball, [('compress', 'gzip')],
-                            "gzip'ed tar-file")
-_ARCHIVE_FORMATS['zip'] = (_make_zipfile, [], "ZIP file")
 
 if _BZ2_SUPPORTED:
     _ARCHIVE_FORMATS['bztar'] = (_make_tarball, [('compress', 'bzip2')],

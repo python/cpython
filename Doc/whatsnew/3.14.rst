@@ -1310,10 +1310,8 @@ Build changes
 * GNU Autoconf 2.72 is now required to generate :file:`configure`.
   (Contributed by Erlend Aasland in :gh:`115765`.)
 
-* zlib is now officially required to build CPython.
-  It is still technically possible to build CPython without it for special needs, like bootstrapping.
-  Such builds are not supported, but we can accept pull requests to keep them working.
-  As an exception, zlib is not required on WASI.
+* zlib is now required to build CPytho on all platforms except WASI.
+  For more information see :pep:`775`.
   (Contributed by Stan Ulbrych and Gregory P. Smith in :gh:`91246`.)
 
 .. _whatsnew314-pep761:

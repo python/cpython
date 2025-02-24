@@ -1,2 +1,2 @@
-Make zlib required to build CPython with the exception of WASI.
-(Contributed by Stan Ulbrych in :gh:`130297`.)
+Make zlib required to build CPython with the exception of WASI implementing :pep:`775`.
+(Contributed by Stan Ulbrych and Gregory P. Smith in :gh:`130297`.)
