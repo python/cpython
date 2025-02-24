@@ -38,7 +38,6 @@ extern "C" {
 
 #include "Hacl_Streaming_Types.h"
 
-
 typedef Hacl_Streaming_MD_state_32 Hacl_Hash_SHA2_state_t_224;
 
 typedef Hacl_Streaming_MD_state_32 Hacl_Hash_SHA2_state_t_256;
