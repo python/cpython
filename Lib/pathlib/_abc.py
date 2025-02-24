@@ -316,14 +316,11 @@ class ReadablePath(JoinablePath):
                 paths.append((path, dirnames, filenames))
             try:
                 for child in path.iterdir():
-                    try:
-                        if child.info.is_dir(follow_symlinks=follow_symlinks):
-                            if not top_down:
-                                paths.append(child)
-                            dirnames.append(child.name)
-                        else:
-                            filenames.append(child.name)
-                    except OSError:
+                    if child.info.is_dir(follow_symlinks=follow_symlinks):
+                        if not top_down:
+                            paths.append(child)
+                        dirnames.append(child.name)
+                    else:
                         filenames.append(child.name)
             except OSError as error:
                 if on_error is not None:
@@ -356,7 +353,8 @@ class ReadablePath(JoinablePath):
             create = target._copy_writer._create
         except AttributeError:
             raise TypeError(f"Target is not writable: {target}") from None
-        return create(self, follow_symlinks, dirs_exist_ok, preserve_metadata)
+        create(self, follow_symlinks, dirs_exist_ok, preserve_metadata)
+        return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def copy_into(self, target_dir, *, follow_symlinks=True,
                   dirs_exist_ok=False, preserve_metadata=False):
