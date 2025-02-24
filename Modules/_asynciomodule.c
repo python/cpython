@@ -3461,7 +3461,10 @@ task_eager_start(asyncio_state *state, TaskObj *task)
     if (prevtask == NULL) {
         return -1;
     }
-
+    // register the task into the linked list of tasks
+    // if the task completely eagerly then it will unregister itself
+    // in future_schedule_callbacks when done otherwise
+    // it will continue in lazy execution
     register_task(task);
 
     if (PyContext_Enter(task->task_context) == -1) {
