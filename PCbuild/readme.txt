@@ -85,7 +85,7 @@ into the instrumented directory when running the PGO task.
 E.g., if you place the instrumented binaries into the folder
 "workdir/instrumented" and then run the PGO task using "workdir"
 as the current working directory, the usage is
-"/p:CLANG_PROFILE_PATH=workdir/instrumented"
+"/p:CLANG_PROFILE_PATH=instrumented"
 
 Like in the MSVC case, after fetching (or manually copying) the instrumented
 folder back into your build tree, you can continue with the PGUpdate
