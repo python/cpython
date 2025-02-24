@@ -137,8 +137,9 @@ created.  Socket addresses are represented as follows:
 - :const:`AF_BLUETOOTH` supports the following protocols and address
   formats:
 
-  - :const:`BTPROTO_L2CAP` accepts ``(bdaddr, psm)`` where ``bdaddr`` is
-    the Bluetooth address as a string and ``psm`` is an integer.
+  - :const:`BTPROTO_L2CAP` accepts ``(bdaddr, psm, cid, bdaddr_type)`` where ``bdaddr`` is
+    the Bluetooth address as a string and ``psm``, ``cid`` and ``bdaddr_type`` are integers.
+    ``cid`` and ``bdaddr_type`` are optional.
 
   - :const:`BTPROTO_RFCOMM` accepts ``(bdaddr, channel)`` where ``bdaddr``
     is the Bluetooth address as a string and ``channel`` is an integer.
