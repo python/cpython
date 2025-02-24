@@ -21,7 +21,7 @@ except ImportError:
 
 from test import support
 from test.support import (script_helper, requires_debug_ranges, run_code,
-                          requires_specialization)
+                          requires_specialization, get_c_recursion_limit)
 from test.support.bytecode_helper import instructions_with_positions
 from test.support.os_helper import FakePath
 
@@ -123,7 +123,7 @@ class TestSpecifics(unittest.TestCase):
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     @support.skip_emscripten_stack_overflow()
     def test_extended_arg(self):
-        repeat = 100
+        repeat = int(get_c_recursion_limit() * 0.9)
         longexpr = 'x = x or ' + '-x' * repeat
         g = {}
         code = textwrap.dedent('''
@@ -712,11 +712,11 @@ class TestSpecifics(unittest.TestCase):
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     @support.skip_emscripten_stack_overflow()
     def test_compiler_recursion_limit(self):
-        # Compiler frames are small
-        limit = 100
-        fail_depth = limit * 1000
-        crash_depth = limit * 2000
-        success_depth = limit
+        # Expected limit is Py_C_RECURSION_LIMIT
+        limit = get_c_recursion_limit()
+        fail_depth = limit + 1
+        crash_depth = limit * 100
+        success_depth = int(limit * 0.8)
 
         def check_limit(prefix, repeated, mode="single"):
             expect_ok = prefix + repeated * success_depth

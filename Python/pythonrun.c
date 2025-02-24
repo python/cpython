@@ -1528,8 +1528,12 @@ _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyComp
 }
 
 #if defined(USE_STACKCHECK)
+#if defined(WIN32) && defined(_MSC_VER)
 
-/* Stack checking */
+/* Stack checking for Microsoft C */
+
+#include <malloc.h>
+#include <excpt.h>
 
 /*
  * Return non-zero when we run out of memory on the stack; zero otherwise.
@@ -1537,9 +1541,26 @@ _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyComp
 int
 PyOS_CheckStack(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    return _Py_ReachedRecursionLimit(tstate);
+    __try {
+        /* alloca throws a stack overflow exception if there's
+           not enough space left on the stack */
+        alloca(PYOS_STACK_MARGIN * sizeof(void*));
+        return 0;
+    } __except (GetExceptionCode() == STATUS_STACK_OVERFLOW ?
+                    EXCEPTION_EXECUTE_HANDLER :
+            EXCEPTION_CONTINUE_SEARCH) {
+        int errcode = _resetstkoflw();
+        if (errcode == 0)
+        {
+            Py_FatalError("Could not reset the stack!");
+        }
+    }
+    return 1;
 }
+
+#endif /* WIN32 && _MSC_VER */
+
+/* Alternate implementations can be added here... */
 
 #endif /* USE_STACKCHECK */
 
