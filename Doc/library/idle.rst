@@ -710,7 +710,9 @@ The following options are available:
 
 If arguments are provided:
 
-- If ``-``, ``-c``, or ``-r`` is used, all arguments are placed in ``sys.argv[1:]``, and ``sys.argv[0]`` is set to ``''``, ``'-c'``, or ``'-r'``. No editor window is opened, even if that is the default set in the Options dialog.
+- If ``-``, ``-c``, or ``-r`` is used, all arguments are placed in ``sys.argv[1:]``,
+  and ``sys.argv[0]`` is set to ``''``, ``'-c'``, or ``'-r'`` respectively.
+  No editor window is opened, even if that is the default set in the *Options* dialog.
 - Otherwise, arguments are treated as files to be opened for editing, and ``sys.argv`` reflects the arguments passed to IDLE itself.
 
 
