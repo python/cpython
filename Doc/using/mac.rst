@@ -302,19 +302,27 @@ Known cautions and limitations:
 
   - To install a package using :command:`pip` without a :command:`venv`:
 
-        |python_x_dot_y_t_literal| ``-m pip install <package_name>``
+    .. parsed-literal::
+
+       python\ |version|\ t -m pip install <package_name>
 
 - When working with multiple Python environments, it is usually safest and easiest
   to :ref:`create and use virtual environments <tut-venv>`.
   This can avoid possible command name conflicts and confusion about which Python is in use:
 
-      |python_x_dot_y_t_literal| ``-m venv <venv_name>``
+  .. parsed-literal::
+
+     python\ |version|\ t -m venv <venv_name>
+
 
   then :command:`activate`.
 
 - To run a free-threaded version of IDLE:
 
-      |python_x_dot_y_t_literal| ``-m idlelib``
+  .. parsed-literal::
+
+     python\ |version|\ t -m idlelib
+
 
 - The interpreters in both builds respond to the same
   :ref:`PYTHON environment variables <using-on-envvars>`
@@ -335,7 +343,9 @@ Known cautions and limitations:
   you can explicitly set your shell ``PATH`` environment variable to
   include the ``PythonT`` framework ``bin`` directory:
 
-  |usemac_export_path|
+  .. parsed-literal::
+
+     export PATH="/Library/Frameworks/PythonT.framework/Versions/\ |version|\ /bin":"$PATH"
 
   The traditional framework installation by default does something similar,
   except for :file:`Python.framework`. Be aware that having both framework ``bin``
@@ -346,9 +356,10 @@ Known cautions and limitations:
   can help avoid such ambiguities. Another option might be to create
   a shell :command:`alias` to the desired interpreter, like:
 
-  |usemac_alias_py_x_dot_y|
+  .. parsed-literal::
 
-  |usemac_alias_py_x_dot_y_t|
+     alias py\ |version|\ ="/Library/Frameworks/Python.framework/Versions/\ |version|\ /bin/python\ |version|\ "
+     alias py\ |version|\ t="/Library/Frameworks/PythonT.framework/Versions/\ |version|\ /bin/python\ |version|\ t"
 
 Installing using the command line
 ---------------------------------
