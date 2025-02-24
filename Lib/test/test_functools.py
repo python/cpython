@@ -404,6 +404,7 @@ class TestPartial:
         self.assertEqual(r, ((1, 2), {}))
         self.assertIs(type(r[0]), tuple)
 
+    @support.skip_if_sanitizer("thread sanitizer crashes in __tsan::FuncEntry", thread=True)
     @support.skip_emscripten_stack_overflow()
     def test_recursive_pickle(self):
         with replaced_module('functools', self.module):
@@ -2087,15 +2088,12 @@ class TestLRU:
                 return n
             return fib(n-1) + fib(n-2)
 
-        if not support.Py_DEBUG:
-            depth = support.get_c_recursion_limit()*2//7
-            with support.infinite_recursion():
-                fib(depth)
+        fib(100)
         if self.module == c_functools:
             fib.cache_clear()
             with support.infinite_recursion():
                 with self.assertRaises(RecursionError):
-                    fib(10000)
+                    fib(support.exceeds_recursion_limit())
 
 
 @py_functools.lru_cache()
