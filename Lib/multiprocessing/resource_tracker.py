@@ -218,7 +218,7 @@ class ResourceTracker(object):
         # see https://github.com/python/cpython/issues/88887
         try:
             self._stop()
-        except:
+        except (OSError, TypeError, AttributeError) as e:
             pass
 
 
