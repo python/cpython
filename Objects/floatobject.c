@@ -2048,14 +2048,16 @@ PyFloat_Pack2(double x, char *data, int le)
         bits = 0;
     }
     else if (isnan(x)) {
-        /* There are 2046 distinct half-precision NaNs (1022 signaling and
-           1024 quiet), but there are only two quiet NaNs that don't arise by
-           quieting a signaling NaN; we get those by setting the topmost bit
-           of the fraction field and clearing all other fraction bits. We
-           choose the one with the appropriate sign. */
         sign = (copysign(1.0, x) == -1.0);
         e = 0x1f;
-        bits = 512;
+
+        uint64_t v;
+
+        memcpy(&v, &x, sizeof(v));
+        bits = v & 0x1ffULL; /* NaN's payload */
+        if (v & 0x8000000000000ULL) { /* is a quiet NaN? */
+            bits += 0x200;
+        }
     }
     else {
         sign = (x < 0.0);
@@ -2401,7 +2403,15 @@ PyFloat_Unpack2(const char *data, int le)
         }
         else {
             /* NaN */
-            return sign ? -fabs(Py_NAN) : fabs(Py_NAN);
+            uint64_t v = sign ? 0xfff0000000000000ULL : 0x7ff0000000000000ULL;
+
+            if (f & 0x200) { /* is a quiet NaN? */
+                v += 0x8000000000000ULL;
+                f -= 0x200;
+            }
+            v += f; /* add NaN's payload */
+            memcpy(&x, &v, sizeof(v));
+            return x;
         }
     }
 
