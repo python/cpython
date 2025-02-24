@@ -180,8 +180,8 @@ _PySSLContext_set_keylog_filename(PySSLContext *self, PyObject *arg, void *c) {
         return 0;
     }
 
-    /* _Py_fopen_obj() also checks that arg is of proper type. */
-    fp = _Py_fopen_obj(arg, "a" PY_STDIOTEXTMODE);
+    /* Py_fopen() also checks that arg is of proper type. */
+    fp = Py_fopen(arg, "a" PY_STDIOTEXTMODE);
     if (fp == NULL)
         return -1;
 

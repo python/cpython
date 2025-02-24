@@ -75,7 +75,7 @@ class UnsupportedOperationTest(unittest.TestCase):
 # Tests for the pure classes.
 #
 
-class PurePathTest(test_pathlib_abc.DummyPurePathTest):
+class PurePathTest(test_pathlib_abc.JoinablePathTest):
     cls = pathlib.PurePath
 
     # Make sure any symbolic links in the base test path are resolved.
@@ -270,6 +270,12 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         P = self.cls
         self.assertEqual(bytes(P('a/b')), b'a' + sep + b'b')
 
+    def test_as_posix_common(self):
+        P = self.cls
+        for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
+            self.assertEqual(P(pathstr).as_posix(), pathstr)
+        # Other tests for as_posix() are in test_equivalences().
+
     def test_eq_common(self):
         P = self.cls
         self.assertEqual(P('a/b'), P('a/b'))
@@ -349,6 +355,51 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
                 self.assertEqual(q, p)
                 self.assertEqual(repr(q), r)
 
+    def test_drive_common(self):
+        P = self.cls
+        self.assertEqual(P('a/b').drive, '')
+        self.assertEqual(P('/a/b').drive, '')
+        self.assertEqual(P('').drive, '')
+
+    @needs_windows
+    def test_drive_windows(self):
+        P = self.cls
+        self.assertEqual(P('c:').drive, 'c:')
+        self.assertEqual(P('c:a/b').drive, 'c:')
+        self.assertEqual(P('c:/').drive, 'c:')
+        self.assertEqual(P('c:/a/b/').drive, 'c:')
+        self.assertEqual(P('//a/b').drive, '\\\\a\\b')
+        self.assertEqual(P('//a/b/').drive, '\\\\a\\b')
+        self.assertEqual(P('//a/b/c/d').drive, '\\\\a\\b')
+        self.assertEqual(P('./c:a').drive, '')
+
+
+    def test_root_common(self):
+        P = self.cls
+        sep = self.sep
+        self.assertEqual(P('').root, '')
+        self.assertEqual(P('a/b').root, '')
+        self.assertEqual(P('/').root, sep)
+        self.assertEqual(P('/a/b').root, sep)
+
+    @needs_posix
+    def test_root_posix(self):
+        P = self.cls
+        self.assertEqual(P('/a/b').root, '/')
+        # POSIX special case for two leading slashes.
+        self.assertEqual(P('//a/b').root, '//')
+
+    @needs_windows
+    def test_root_windows(self):
+        P = self.cls
+        self.assertEqual(P('c:').root, '')
+        self.assertEqual(P('c:a/b').root, '')
+        self.assertEqual(P('c:/').root, '\\')
+        self.assertEqual(P('c:/a/b/').root, '\\')
+        self.assertEqual(P('//a/b').root, '\\')
+        self.assertEqual(P('//a/b/').root, '\\')
+        self.assertEqual(P('//a/b/c/d').root, '\\')
+
     def test_name_empty(self):
         P = self.cls
         self.assertEqual(P('').name, '')
@@ -386,6 +437,84 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         P = self.cls
         self.assertRaises(ValueError, P('a').match, '')
         self.assertRaises(ValueError, P('a').match, '.')
+
+    def test_match_common(self):
+        P = self.cls
+        # Simple relative pattern.
+        self.assertTrue(P('b.py').match('b.py'))
+        self.assertTrue(P('a/b.py').match('b.py'))
+        self.assertTrue(P('/a/b.py').match('b.py'))
+        self.assertFalse(P('a.py').match('b.py'))
+        self.assertFalse(P('b/py').match('b.py'))
+        self.assertFalse(P('/a.py').match('b.py'))
+        self.assertFalse(P('b.py/c').match('b.py'))
+        # Wildcard relative pattern.
+        self.assertTrue(P('b.py').match('*.py'))
+        self.assertTrue(P('a/b.py').match('*.py'))
+        self.assertTrue(P('/a/b.py').match('*.py'))
+        self.assertFalse(P('b.pyc').match('*.py'))
+        self.assertFalse(P('b./py').match('*.py'))
+        self.assertFalse(P('b.py/c').match('*.py'))
+        # Multi-part relative pattern.
+        self.assertTrue(P('ab/c.py').match('a*/*.py'))
+        self.assertTrue(P('/d/ab/c.py').match('a*/*.py'))
+        self.assertFalse(P('a.py').match('a*/*.py'))
+        self.assertFalse(P('/dab/c.py').match('a*/*.py'))
+        self.assertFalse(P('ab/c.py/d').match('a*/*.py'))
+        # Absolute pattern.
+        self.assertTrue(P('/b.py').match('/*.py'))
+        self.assertFalse(P('b.py').match('/*.py'))
+        self.assertFalse(P('a/b.py').match('/*.py'))
+        self.assertFalse(P('/a/b.py').match('/*.py'))
+        # Multi-part absolute pattern.
+        self.assertTrue(P('/a/b.py').match('/a/*.py'))
+        self.assertFalse(P('/ab.py').match('/a/*.py'))
+        self.assertFalse(P('/a/b/c.py').match('/a/*.py'))
+        # Multi-part glob-style pattern.
+        self.assertFalse(P('/a/b/c.py').match('/**/*.py'))
+        self.assertTrue(P('/a/b/c.py').match('/a/**/*.py'))
+        # Case-sensitive flag
+        self.assertFalse(P('A.py').match('a.PY', case_sensitive=True))
+        self.assertTrue(P('A.py').match('a.PY', case_sensitive=False))
+        self.assertFalse(P('c:/a/B.Py').match('C:/A/*.pY', case_sensitive=True))
+        self.assertTrue(P('/a/b/c.py').match('/A/*/*.Py', case_sensitive=False))
+        # Matching against empty path
+        self.assertFalse(P('').match('*'))
+        self.assertFalse(P('').match('**'))
+        self.assertFalse(P('').match('**/*'))
+
+    @needs_posix
+    def test_match_posix(self):
+        P = self.cls
+        self.assertFalse(P('A.py').match('a.PY'))
+
+    @needs_windows
+    def test_match_windows(self):
+        P = self.cls
+        # Absolute patterns.
+        self.assertTrue(P('c:/b.py').match('*:/*.py'))
+        self.assertTrue(P('c:/b.py').match('c:/*.py'))
+        self.assertFalse(P('d:/b.py').match('c:/*.py'))  # wrong drive
+        self.assertFalse(P('b.py').match('/*.py'))
+        self.assertFalse(P('b.py').match('c:*.py'))
+        self.assertFalse(P('b.py').match('c:/*.py'))
+        self.assertFalse(P('c:b.py').match('/*.py'))
+        self.assertFalse(P('c:b.py').match('c:/*.py'))
+        self.assertFalse(P('/b.py').match('c:*.py'))
+        self.assertFalse(P('/b.py').match('c:/*.py'))
+        # UNC patterns.
+        self.assertTrue(P('//some/share/a.py').match('//*/*/*.py'))
+        self.assertTrue(P('//some/share/a.py').match('//some/share/*.py'))
+        self.assertFalse(P('//other/share/a.py').match('//some/share/*.py'))
+        self.assertFalse(P('//some/share/a/b.py').match('//some/share/*.py'))
+        # Case-insensitivity.
+        self.assertTrue(P('B.py').match('b.PY'))
+        self.assertTrue(P('c:/a/B.Py').match('C:/A/*.pY'))
+        self.assertTrue(P('//Some/Share/B.Py').match('//somE/sharE/*.pY'))
+        # Path anchor doesn't match pattern anchor
+        self.assertFalse(P('c:/b.py').match('/*.py'))  # 'c:/' vs '/'
+        self.assertFalse(P('c:/b.py').match('c:*.py'))  # 'c:/' vs 'c:'
+        self.assertFalse(P('//some/share/a.py').match('/*.py'))  # '//some/share/' vs '/'
 
     @needs_posix
     def test_parse_path_posix(self):
@@ -547,6 +676,311 @@ class PurePathTest(test_pathlib_abc.DummyPurePathTest):
         self.assertFalse(p < q)
         self.assertFalse(p > q)
 
+    @needs_posix
+    def test_is_absolute_posix(self):
+        P = self.cls
+        self.assertFalse(P('').is_absolute())
+        self.assertFalse(P('a').is_absolute())
+        self.assertFalse(P('a/b/').is_absolute())
+        self.assertTrue(P('/').is_absolute())
+        self.assertTrue(P('/a').is_absolute())
+        self.assertTrue(P('/a/b/').is_absolute())
+        self.assertTrue(P('//a').is_absolute())
+        self.assertTrue(P('//a/b').is_absolute())
+
+    @needs_windows
+    def test_is_absolute_windows(self):
+        P = self.cls
+        # Under NT, only paths with both a drive and a root are absolute.
+        self.assertFalse(P().is_absolute())
+        self.assertFalse(P('a').is_absolute())
+        self.assertFalse(P('a/b/').is_absolute())
+        self.assertFalse(P('/').is_absolute())
+        self.assertFalse(P('/a').is_absolute())
+        self.assertFalse(P('/a/b/').is_absolute())
+        self.assertFalse(P('c:').is_absolute())
+        self.assertFalse(P('c:a').is_absolute())
+        self.assertFalse(P('c:a/b/').is_absolute())
+        self.assertTrue(P('c:/').is_absolute())
+        self.assertTrue(P('c:/a').is_absolute())
+        self.assertTrue(P('c:/a/b/').is_absolute())
+        # UNC paths are absolute by definition.
+        self.assertTrue(P('//').is_absolute())
+        self.assertTrue(P('//a').is_absolute())
+        self.assertTrue(P('//a/b').is_absolute())
+        self.assertTrue(P('//a/b/').is_absolute())
+        self.assertTrue(P('//a/b/c').is_absolute())
+        self.assertTrue(P('//a/b/c/d').is_absolute())
+        self.assertTrue(P('//?/UNC/').is_absolute())
+        self.assertTrue(P('//?/UNC/spam').is_absolute())
+
+    def test_relative_to_common(self):
+        P = self.cls
+        p = P('a/b')
+        self.assertRaises(TypeError, p.relative_to)
+        self.assertRaises(TypeError, p.relative_to, b'a')
+        self.assertEqual(p.relative_to(P('')), P('a/b'))
+        self.assertEqual(p.relative_to(''), P('a/b'))
+        self.assertEqual(p.relative_to(P('a')), P('b'))
+        self.assertEqual(p.relative_to('a'), P('b'))
+        self.assertEqual(p.relative_to('a/'), P('b'))
+        self.assertEqual(p.relative_to(P('a/b')), P(''))
+        self.assertEqual(p.relative_to('a/b'), P(''))
+        self.assertEqual(p.relative_to(P(''), walk_up=True), P('a/b'))
+        self.assertEqual(p.relative_to('', walk_up=True), P('a/b'))
+        self.assertEqual(p.relative_to(P('a'), walk_up=True), P('b'))
+        self.assertEqual(p.relative_to('a', walk_up=True), P('b'))
+        self.assertEqual(p.relative_to('a/', walk_up=True), P('b'))
+        self.assertEqual(p.relative_to(P('a/b'), walk_up=True), P(''))
+        self.assertEqual(p.relative_to('a/b', walk_up=True), P(''))
+        self.assertEqual(p.relative_to(P('a/c'), walk_up=True), P('../b'))
+        self.assertEqual(p.relative_to('a/c', walk_up=True), P('../b'))
+        self.assertEqual(p.relative_to(P('a/b/c'), walk_up=True), P('..'))
+        self.assertEqual(p.relative_to('a/b/c', walk_up=True), P('..'))
+        self.assertEqual(p.relative_to(P('c'), walk_up=True), P('../a/b'))
+        self.assertEqual(p.relative_to('c', walk_up=True), P('../a/b'))
+        # Unrelated paths.
+        self.assertRaises(ValueError, p.relative_to, P('c'))
+        self.assertRaises(ValueError, p.relative_to, P('a/b/c'))
+        self.assertRaises(ValueError, p.relative_to, P('a/c'))
+        self.assertRaises(ValueError, p.relative_to, P('/a'))
+        self.assertRaises(ValueError, p.relative_to, P("../a"))
+        self.assertRaises(ValueError, p.relative_to, P("a/.."))
+        self.assertRaises(ValueError, p.relative_to, P("/a/.."))
+        self.assertRaises(ValueError, p.relative_to, P('/'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('/a'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P("../a"), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P("a/.."), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P("/a/.."), walk_up=True)
+        p = P('/a/b')
+        self.assertEqual(p.relative_to(P('/')), P('a/b'))
+        self.assertEqual(p.relative_to('/'), P('a/b'))
+        self.assertEqual(p.relative_to(P('/a')), P('b'))
+        self.assertEqual(p.relative_to('/a'), P('b'))
+        self.assertEqual(p.relative_to('/a/'), P('b'))
+        self.assertEqual(p.relative_to(P('/a/b')), P(''))
+        self.assertEqual(p.relative_to('/a/b'), P(''))
+        self.assertEqual(p.relative_to(P('/'), walk_up=True), P('a/b'))
+        self.assertEqual(p.relative_to('/', walk_up=True), P('a/b'))
+        self.assertEqual(p.relative_to(P('/a'), walk_up=True), P('b'))
+        self.assertEqual(p.relative_to('/a', walk_up=True), P('b'))
+        self.assertEqual(p.relative_to('/a/', walk_up=True), P('b'))
+        self.assertEqual(p.relative_to(P('/a/b'), walk_up=True), P(''))
+        self.assertEqual(p.relative_to('/a/b', walk_up=True), P(''))
+        self.assertEqual(p.relative_to(P('/a/c'), walk_up=True), P('../b'))
+        self.assertEqual(p.relative_to('/a/c', walk_up=True), P('../b'))
+        self.assertEqual(p.relative_to(P('/a/b/c'), walk_up=True), P('..'))
+        self.assertEqual(p.relative_to('/a/b/c', walk_up=True), P('..'))
+        self.assertEqual(p.relative_to(P('/c'), walk_up=True), P('../a/b'))
+        self.assertEqual(p.relative_to('/c', walk_up=True), P('../a/b'))
+        # Unrelated paths.
+        self.assertRaises(ValueError, p.relative_to, P('/c'))
+        self.assertRaises(ValueError, p.relative_to, P('/a/b/c'))
+        self.assertRaises(ValueError, p.relative_to, P('/a/c'))
+        self.assertRaises(ValueError, p.relative_to, P(''))
+        self.assertRaises(ValueError, p.relative_to, '')
+        self.assertRaises(ValueError, p.relative_to, P('a'))
+        self.assertRaises(ValueError, p.relative_to, P("../a"))
+        self.assertRaises(ValueError, p.relative_to, P("a/.."))
+        self.assertRaises(ValueError, p.relative_to, P("/a/.."))
+        self.assertRaises(ValueError, p.relative_to, P(''), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('a'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P("../a"), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P("a/.."), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P("/a/.."), walk_up=True)
+
+    @needs_windows
+    def test_relative_to_windows(self):
+        P = self.cls
+        p = P('C:Foo/Bar')
+        self.assertEqual(p.relative_to(P('c:')), P('Foo/Bar'))
+        self.assertEqual(p.relative_to('c:'), P('Foo/Bar'))
+        self.assertEqual(p.relative_to(P('c:foO')), P('Bar'))
+        self.assertEqual(p.relative_to('c:foO'), P('Bar'))
+        self.assertEqual(p.relative_to('c:foO/'), P('Bar'))
+        self.assertEqual(p.relative_to(P('c:foO/baR')), P())
+        self.assertEqual(p.relative_to('c:foO/baR'), P())
+        self.assertEqual(p.relative_to(P('c:'), walk_up=True), P('Foo/Bar'))
+        self.assertEqual(p.relative_to('c:', walk_up=True), P('Foo/Bar'))
+        self.assertEqual(p.relative_to(P('c:foO'), walk_up=True), P('Bar'))
+        self.assertEqual(p.relative_to('c:foO', walk_up=True), P('Bar'))
+        self.assertEqual(p.relative_to('c:foO/', walk_up=True), P('Bar'))
+        self.assertEqual(p.relative_to(P('c:foO/baR'), walk_up=True), P())
+        self.assertEqual(p.relative_to('c:foO/baR', walk_up=True), P())
+        self.assertEqual(p.relative_to(P('C:Foo/Bar/Baz'), walk_up=True), P('..'))
+        self.assertEqual(p.relative_to(P('C:Foo/Baz'), walk_up=True), P('../Bar'))
+        self.assertEqual(p.relative_to(P('C:Baz/Bar'), walk_up=True), P('../../Foo/Bar'))
+        # Unrelated paths.
+        self.assertRaises(ValueError, p.relative_to, P())
+        self.assertRaises(ValueError, p.relative_to, '')
+        self.assertRaises(ValueError, p.relative_to, P('d:'))
+        self.assertRaises(ValueError, p.relative_to, P('/'))
+        self.assertRaises(ValueError, p.relative_to, P('Foo'))
+        self.assertRaises(ValueError, p.relative_to, P('/Foo'))
+        self.assertRaises(ValueError, p.relative_to, P('C:/Foo'))
+        self.assertRaises(ValueError, p.relative_to, P('C:Foo/Bar/Baz'))
+        self.assertRaises(ValueError, p.relative_to, P('C:Foo/Baz'))
+        self.assertRaises(ValueError, p.relative_to, P(), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, '', walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('d:'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('/'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('Foo'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('/Foo'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('C:/Foo'), walk_up=True)
+        p = P('C:/Foo/Bar')
+        self.assertEqual(p.relative_to(P('c:/')), P('Foo/Bar'))
+        self.assertEqual(p.relative_to('c:/'), P('Foo/Bar'))
+        self.assertEqual(p.relative_to(P('c:/foO')), P('Bar'))
+        self.assertEqual(p.relative_to('c:/foO'), P('Bar'))
+        self.assertEqual(p.relative_to('c:/foO/'), P('Bar'))
+        self.assertEqual(p.relative_to(P('c:/foO/baR')), P())
+        self.assertEqual(p.relative_to('c:/foO/baR'), P())
+        self.assertEqual(p.relative_to(P('c:/'), walk_up=True), P('Foo/Bar'))
+        self.assertEqual(p.relative_to('c:/', walk_up=True), P('Foo/Bar'))
+        self.assertEqual(p.relative_to(P('c:/foO'), walk_up=True), P('Bar'))
+        self.assertEqual(p.relative_to('c:/foO', walk_up=True), P('Bar'))
+        self.assertEqual(p.relative_to('c:/foO/', walk_up=True), P('Bar'))
+        self.assertEqual(p.relative_to(P('c:/foO/baR'), walk_up=True), P())
+        self.assertEqual(p.relative_to('c:/foO/baR', walk_up=True), P())
+        self.assertEqual(p.relative_to('C:/Baz', walk_up=True), P('../Foo/Bar'))
+        self.assertEqual(p.relative_to('C:/Foo/Bar/Baz', walk_up=True), P('..'))
+        self.assertEqual(p.relative_to('C:/Foo/Baz', walk_up=True), P('../Bar'))
+        # Unrelated paths.
+        self.assertRaises(ValueError, p.relative_to, 'c:')
+        self.assertRaises(ValueError, p.relative_to, P('c:'))
+        self.assertRaises(ValueError, p.relative_to, P('C:/Baz'))
+        self.assertRaises(ValueError, p.relative_to, P('C:/Foo/Bar/Baz'))
+        self.assertRaises(ValueError, p.relative_to, P('C:/Foo/Baz'))
+        self.assertRaises(ValueError, p.relative_to, P('C:Foo'))
+        self.assertRaises(ValueError, p.relative_to, P('d:'))
+        self.assertRaises(ValueError, p.relative_to, P('d:/'))
+        self.assertRaises(ValueError, p.relative_to, P('/'))
+        self.assertRaises(ValueError, p.relative_to, P('/Foo'))
+        self.assertRaises(ValueError, p.relative_to, P('//C/Foo'))
+        self.assertRaises(ValueError, p.relative_to, 'c:', walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('c:'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('C:Foo'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('d:'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('d:/'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('/'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('/Foo'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('//C/Foo'), walk_up=True)
+        # UNC paths.
+        p = P('//Server/Share/Foo/Bar')
+        self.assertEqual(p.relative_to(P('//sErver/sHare')), P('Foo/Bar'))
+        self.assertEqual(p.relative_to('//sErver/sHare'), P('Foo/Bar'))
+        self.assertEqual(p.relative_to('//sErver/sHare/'), P('Foo/Bar'))
+        self.assertEqual(p.relative_to(P('//sErver/sHare/Foo')), P('Bar'))
+        self.assertEqual(p.relative_to('//sErver/sHare/Foo'), P('Bar'))
+        self.assertEqual(p.relative_to('//sErver/sHare/Foo/'), P('Bar'))
+        self.assertEqual(p.relative_to(P('//sErver/sHare/Foo/Bar')), P())
+        self.assertEqual(p.relative_to('//sErver/sHare/Foo/Bar'), P())
+        self.assertEqual(p.relative_to(P('//sErver/sHare'), walk_up=True), P('Foo/Bar'))
+        self.assertEqual(p.relative_to('//sErver/sHare', walk_up=True), P('Foo/Bar'))
+        self.assertEqual(p.relative_to('//sErver/sHare/', walk_up=True), P('Foo/Bar'))
+        self.assertEqual(p.relative_to(P('//sErver/sHare/Foo'), walk_up=True), P('Bar'))
+        self.assertEqual(p.relative_to('//sErver/sHare/Foo', walk_up=True), P('Bar'))
+        self.assertEqual(p.relative_to('//sErver/sHare/Foo/', walk_up=True), P('Bar'))
+        self.assertEqual(p.relative_to(P('//sErver/sHare/Foo/Bar'), walk_up=True), P())
+        self.assertEqual(p.relative_to('//sErver/sHare/Foo/Bar', walk_up=True), P())
+        self.assertEqual(p.relative_to(P('//sErver/sHare/bar'), walk_up=True), P('../Foo/Bar'))
+        self.assertEqual(p.relative_to('//sErver/sHare/bar', walk_up=True), P('../Foo/Bar'))
+        # Unrelated paths.
+        self.assertRaises(ValueError, p.relative_to, P('/Server/Share/Foo'))
+        self.assertRaises(ValueError, p.relative_to, P('c:/Server/Share/Foo'))
+        self.assertRaises(ValueError, p.relative_to, P('//z/Share/Foo'))
+        self.assertRaises(ValueError, p.relative_to, P('//Server/z/Foo'))
+        self.assertRaises(ValueError, p.relative_to, P('/Server/Share/Foo'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('c:/Server/Share/Foo'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('//z/Share/Foo'), walk_up=True)
+        self.assertRaises(ValueError, p.relative_to, P('//Server/z/Foo'), walk_up=True)
+
+    def test_is_relative_to_common(self):
+        P = self.cls
+        p = P('a/b')
+        self.assertRaises(TypeError, p.is_relative_to)
+        self.assertRaises(TypeError, p.is_relative_to, b'a')
+        self.assertTrue(p.is_relative_to(P('')))
+        self.assertTrue(p.is_relative_to(''))
+        self.assertTrue(p.is_relative_to(P('a')))
+        self.assertTrue(p.is_relative_to('a/'))
+        self.assertTrue(p.is_relative_to(P('a/b')))
+        self.assertTrue(p.is_relative_to('a/b'))
+        # Unrelated paths.
+        self.assertFalse(p.is_relative_to(P('c')))
+        self.assertFalse(p.is_relative_to(P('a/b/c')))
+        self.assertFalse(p.is_relative_to(P('a/c')))
+        self.assertFalse(p.is_relative_to(P('/a')))
+        p = P('/a/b')
+        self.assertTrue(p.is_relative_to(P('/')))
+        self.assertTrue(p.is_relative_to('/'))
+        self.assertTrue(p.is_relative_to(P('/a')))
+        self.assertTrue(p.is_relative_to('/a'))
+        self.assertTrue(p.is_relative_to('/a/'))
+        self.assertTrue(p.is_relative_to(P('/a/b')))
+        self.assertTrue(p.is_relative_to('/a/b'))
+        # Unrelated paths.
+        self.assertFalse(p.is_relative_to(P('/c')))
+        self.assertFalse(p.is_relative_to(P('/a/b/c')))
+        self.assertFalse(p.is_relative_to(P('/a/c')))
+        self.assertFalse(p.is_relative_to(P('')))
+        self.assertFalse(p.is_relative_to(''))
+        self.assertFalse(p.is_relative_to(P('a')))
+
+    @needs_windows
+    def test_is_relative_to_windows(self):
+        P = self.cls
+        p = P('C:Foo/Bar')
+        self.assertTrue(p.is_relative_to(P('c:')))
+        self.assertTrue(p.is_relative_to('c:'))
+        self.assertTrue(p.is_relative_to(P('c:foO')))
+        self.assertTrue(p.is_relative_to('c:foO'))
+        self.assertTrue(p.is_relative_to('c:foO/'))
+        self.assertTrue(p.is_relative_to(P('c:foO/baR')))
+        self.assertTrue(p.is_relative_to('c:foO/baR'))
+        # Unrelated paths.
+        self.assertFalse(p.is_relative_to(P()))
+        self.assertFalse(p.is_relative_to(''))
+        self.assertFalse(p.is_relative_to(P('d:')))
+        self.assertFalse(p.is_relative_to(P('/')))
+        self.assertFalse(p.is_relative_to(P('Foo')))
+        self.assertFalse(p.is_relative_to(P('/Foo')))
+        self.assertFalse(p.is_relative_to(P('C:/Foo')))
+        self.assertFalse(p.is_relative_to(P('C:Foo/Bar/Baz')))
+        self.assertFalse(p.is_relative_to(P('C:Foo/Baz')))
+        p = P('C:/Foo/Bar')
+        self.assertTrue(p.is_relative_to(P('c:/')))
+        self.assertTrue(p.is_relative_to(P('c:/foO')))
+        self.assertTrue(p.is_relative_to('c:/foO/'))
+        self.assertTrue(p.is_relative_to(P('c:/foO/baR')))
+        self.assertTrue(p.is_relative_to('c:/foO/baR'))
+        # Unrelated paths.
+        self.assertFalse(p.is_relative_to('c:'))
+        self.assertFalse(p.is_relative_to(P('C:/Baz')))
+        self.assertFalse(p.is_relative_to(P('C:/Foo/Bar/Baz')))
+        self.assertFalse(p.is_relative_to(P('C:/Foo/Baz')))
+        self.assertFalse(p.is_relative_to(P('C:Foo')))
+        self.assertFalse(p.is_relative_to(P('d:')))
+        self.assertFalse(p.is_relative_to(P('d:/')))
+        self.assertFalse(p.is_relative_to(P('/')))
+        self.assertFalse(p.is_relative_to(P('/Foo')))
+        self.assertFalse(p.is_relative_to(P('//C/Foo')))
+        # UNC paths.
+        p = P('//Server/Share/Foo/Bar')
+        self.assertTrue(p.is_relative_to(P('//sErver/sHare')))
+        self.assertTrue(p.is_relative_to('//sErver/sHare'))
+        self.assertTrue(p.is_relative_to('//sErver/sHare/'))
+        self.assertTrue(p.is_relative_to(P('//sErver/sHare/Foo')))
+        self.assertTrue(p.is_relative_to('//sErver/sHare/Foo'))
+        self.assertTrue(p.is_relative_to('//sErver/sHare/Foo/'))
+        self.assertTrue(p.is_relative_to(P('//sErver/sHare/Foo/Bar')))
+        self.assertTrue(p.is_relative_to('//sErver/sHare/Foo/Bar'))
+        # Unrelated paths.
+        self.assertFalse(p.is_relative_to(P('/Server/Share/Foo')))
+        self.assertFalse(p.is_relative_to(P('c:/Server/Share/Foo')))
+        self.assertFalse(p.is_relative_to(P('//z/Share/Foo')))
+        self.assertFalse(p.is_relative_to(P('//Server/z/Foo')))
+
 
 class PurePosixPathTest(PurePathTest):
     cls = pathlib.PurePosixPath
@@ -568,7 +1002,7 @@ class PurePathSubclassTest(PurePathTest):
 # Tests for the concrete classes.
 #
 
-class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
+class PathTest(test_pathlib_abc.RWPathTest, PurePathTest):
     """Tests for the FS-accessing functionalities of the Path classes."""
     cls = pathlib.Path
     can_symlink = os_helper.can_symlink()
@@ -624,15 +1058,15 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.addCleanup(os_helper.rmtree, d)
         return d
 
-    def test_matches_pathbase_docstrings(self):
-        path_names = {name for name in dir(pathlib._abc.PathBase) if name[0] != '_'}
+    def test_matches_writablepath_docstrings(self):
+        path_names = {name for name in dir(pathlib._abc.WritablePath) if name[0] != '_'}
         for attr_name in path_names:
             if attr_name == 'parser':
-                # On Windows, Path.parser is ntpath, but PathBase.parser is
+                # On Windows, Path.parser is ntpath, but WritablePath.parser is
                 # posixpath, and so their docstrings differ.
                 continue
             our_attr = getattr(self.cls, attr_name)
-            path_attr = getattr(pathlib._abc.PathBase, attr_name)
+            path_attr = getattr(pathlib._abc.WritablePath, attr_name)
             self.assertEqual(our_attr.__doc__, path_attr.__doc__)
 
     def test_concrete_class(self):
@@ -745,6 +1179,15 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             self.assertEqual(42, path.session_id)
         for dirpath, dirnames, filenames in p.walk():
             self.assertEqual(42, dirpath.session_id)
+
+    def test_open_common(self):
+        p = self.cls(self.base)
+        with (p / 'fileA').open('r') as f:
+            self.assertIsInstance(f, io.TextIOBase)
+            self.assertEqual(f.read(), "this is file A\n")
+        with (p / 'fileA').open('rb') as f:
+            self.assertIsInstance(f, io.BufferedIOBase)
+            self.assertEqual(f.read().strip(), b"this is file A")
 
     def test_open_unbuffered(self):
         p = self.cls(self.base)
@@ -997,11 +1440,13 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         if hasattr(os, 'chflags') and hasattr(stat, 'UF_NODUMP'):
             os.chflags(source / 'fileC', stat.UF_NODUMP)
         target = base / 'copyA'
-        source.copy(target, preserve_metadata=True)
 
-        for subpath in ['.', 'fileC', 'dirD', 'dirD/fileD']:
-            source_st = source.joinpath(subpath).stat()
-            target_st = target.joinpath(subpath).stat()
+        subpaths = ['.', 'fileC', 'dirD', 'dirD/fileD']
+        source_sts = [source.joinpath(subpath).stat() for subpath in subpaths]
+        source.copy(target, preserve_metadata=True)
+        target_sts = [target.joinpath(subpath).stat() for subpath in subpaths]
+
+        for source_st, target_st in zip(source_sts, target_sts):
             self.assertLessEqual(source_st.st_atime, target_st.st_atime)
             self.assertLessEqual(source_st.st_mtime, target_st.st_mtime)
             self.assertEqual(source_st.st_mode, target_st.st_mode)
@@ -1067,25 +1512,96 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         self.assertTrue(target.is_symlink())
         self.assertEqual(source_readlink, target.readlink())
 
+    def test_move_file(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        source_text = source.read_text()
+        target = base / 'fileA_moved'
+        result = source.move(target)
+        self.assertEqual(result, target)
+        self.assertFalse(source.exists())
+        self.assertTrue(target.exists())
+        self.assertEqual(source_text, target.read_text())
+
     @patch_replace
     def test_move_file_other_fs(self):
         self.test_move_file()
+
+    def test_move_file_to_file(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        source_text = source.read_text()
+        target = base / 'dirB' / 'fileB'
+        result = source.move(target)
+        self.assertEqual(result, target)
+        self.assertFalse(source.exists())
+        self.assertTrue(target.exists())
+        self.assertEqual(source_text, target.read_text())
 
     @patch_replace
     def test_move_file_to_file_other_fs(self):
         self.test_move_file_to_file()
 
+    def test_move_file_to_dir(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        target = base / 'dirB'
+        self.assertRaises(OSError, source.move, target)
+
     @patch_replace
     def test_move_file_to_dir_other_fs(self):
         self.test_move_file_to_dir()
+
+    def test_move_file_to_itself(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        self.assertRaises(OSError, source.move, source)
+
+    def test_move_dir(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        target = base / 'dirC_moved'
+        result = source.move(target)
+        self.assertEqual(result, target)
+        self.assertFalse(source.exists())
+        self.assertTrue(target.is_dir())
+        self.assertTrue(target.joinpath('dirD').is_dir())
+        self.assertTrue(target.joinpath('dirD', 'fileD').is_file())
+        self.assertEqual(target.joinpath('dirD', 'fileD').read_text(),
+                         "this is file D\n")
+        self.assertTrue(target.joinpath('fileC').is_file())
+        self.assertTrue(target.joinpath('fileC').read_text(),
+                        "this is file C\n")
 
     @patch_replace
     def test_move_dir_other_fs(self):
         self.test_move_dir()
 
+    def test_move_dir_to_dir(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        target = base / 'dirB'
+        self.assertRaises(OSError, source.move, target)
+        self.assertTrue(source.exists())
+        self.assertTrue(target.exists())
+
     @patch_replace
     def test_move_dir_to_dir_other_fs(self):
         self.test_move_dir_to_dir()
+
+    def test_move_dir_to_itself(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        self.assertRaises(OSError, source.move, source)
+        self.assertTrue(source.exists())
+
+    def test_move_dir_into_itself(self):
+        base = self.cls(self.base)
+        source = base / 'dirC'
+        target = base / 'dirC' / 'bar'
+        self.assertRaises(OSError, source.move, target)
+        self.assertTrue(source.exists())
+        self.assertFalse(target.exists())
 
     @patch_replace
     def test_move_dir_into_itself_other_fs(self):
@@ -1116,9 +1632,25 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     def test_move_dangling_symlink_other_fs(self):
         self.test_move_dangling_symlink()
 
+    def test_move_into(self):
+        base = self.cls(self.base)
+        source = base / 'fileA'
+        source_text = source.read_text()
+        target_dir = base / 'dirA'
+        result = source.move_into(target_dir)
+        self.assertEqual(result, target_dir / 'fileA')
+        self.assertFalse(source.exists())
+        self.assertTrue(result.exists())
+        self.assertEqual(source_text, result.read_text())
+
     @patch_replace
     def test_move_into_other_os(self):
         self.test_move_into()
+
+    def test_move_into_empty_name(self):
+        source = self.cls('')
+        target_dir = self.base
+        self.assertRaises(ValueError, source.move_into, target_dir)
 
     @patch_replace
     def test_move_into_empty_name_other_os(self):
@@ -1437,6 +1969,37 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         p.rmdir()
         self.assertFileNotFound(p.stat)
         self.assertFileNotFound(p.unlink)
+
+    def test_delete_file(self):
+        p = self.cls(self.base) / 'fileA'
+        p._delete()
+        self.assertFalse(p.exists())
+        self.assertFileNotFound(p._delete)
+
+    def test_delete_dir(self):
+        base = self.cls(self.base)
+        base.joinpath('dirA')._delete()
+        self.assertFalse(base.joinpath('dirA').exists())
+        self.assertFalse(base.joinpath('dirA', 'linkC').exists(
+            follow_symlinks=False))
+        base.joinpath('dirB')._delete()
+        self.assertFalse(base.joinpath('dirB').exists())
+        self.assertFalse(base.joinpath('dirB', 'fileB').exists())
+        self.assertFalse(base.joinpath('dirB', 'linkD').exists(
+            follow_symlinks=False))
+        base.joinpath('dirC')._delete()
+        self.assertFalse(base.joinpath('dirC').exists())
+        self.assertFalse(base.joinpath('dirC', 'dirD').exists())
+        self.assertFalse(base.joinpath('dirC', 'dirD', 'fileD').exists())
+        self.assertFalse(base.joinpath('dirC', 'fileC').exists())
+        self.assertFalse(base.joinpath('dirC', 'novel.txt').exists())
+
+    def test_delete_missing(self):
+        tmp = self.cls(self.base, 'delete')
+        tmp.mkdir()
+        # filename is guaranteed not to exist
+        filename = tmp / 'foo'
+        self.assertRaises(FileNotFoundError, filename._delete)
 
     @needs_symlinks
     def test_delete_symlink(self):
@@ -1836,6 +2399,44 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             q.symlink_to(p)
 
     @needs_symlinks
+    def test_info_is_symlink_caching(self):
+        p = self.cls(self.base)
+        q = p / 'mylink'
+        self.assertFalse(q.info.is_symlink())
+        q.symlink_to('blah')
+        self.assertFalse(q.info.is_symlink())
+
+        q = p / 'mylink'  # same path, new instance.
+        self.assertTrue(q.info.is_symlink())
+        q.unlink()
+        self.assertTrue(q.info.is_symlink())
+
+    def test_stat(self):
+        statA = self.cls(self.base).joinpath('fileA').stat()
+        statB = self.cls(self.base).joinpath('dirB', 'fileB').stat()
+        statC = self.cls(self.base).joinpath('dirC').stat()
+        # st_mode: files are the same, directory differs.
+        self.assertIsInstance(statA.st_mode, int)
+        self.assertEqual(statA.st_mode, statB.st_mode)
+        self.assertNotEqual(statA.st_mode, statC.st_mode)
+        self.assertNotEqual(statB.st_mode, statC.st_mode)
+        # st_ino: all different,
+        self.assertIsInstance(statA.st_ino, int)
+        self.assertNotEqual(statA.st_ino, statB.st_ino)
+        self.assertNotEqual(statA.st_ino, statC.st_ino)
+        self.assertNotEqual(statB.st_ino, statC.st_ino)
+        # st_dev: all the same.
+        self.assertIsInstance(statA.st_dev, int)
+        self.assertEqual(statA.st_dev, statB.st_dev)
+        self.assertEqual(statA.st_dev, statC.st_dev)
+        # other attributes not used by pathlib.
+
+    def test_stat_no_follow_symlinks_nosymlink(self):
+        p = self.cls(self.base) / 'fileA'
+        st = p.stat()
+        self.assertEqual(st, p.stat(follow_symlinks=False))
+
+    @needs_symlinks
     def test_stat_no_follow_symlinks(self):
         p = self.cls(self.base) / 'linkA'
         st = p.stat()
@@ -2164,6 +2765,64 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         # gh-91616, a re module regression
         _check(p, "*.txt", ["dirC/novel.txt"])
         _check(p, "*.*", ["dirC/novel.txt"])
+
+    def test_rglob_recurse_symlinks_false(self):
+        def _check(path, glob, expected):
+            actual = set(path.rglob(glob, recurse_symlinks=False))
+            self.assertEqual(actual, { P(self.base, q) for q in expected })
+        P = self.cls
+        p = P(self.base)
+        it = p.rglob("fileA")
+        self.assertIsInstance(it, collections.abc.Iterator)
+        _check(p, "fileA", ["fileA"])
+        _check(p, "fileB", ["dirB/fileB"])
+        _check(p, "**/fileB", ["dirB/fileB"])
+        _check(p, "*/fileA", [])
+
+        if self.can_symlink:
+            _check(p, "*/fileB", ["dirB/fileB", "dirB/linkD/fileB",
+                                  "linkB/fileB", "dirA/linkC/fileB"])
+            _check(p, "*/", [
+                "dirA/", "dirA/linkC/", "dirB/", "dirB/linkD/", "dirC/",
+                "dirC/dirD/", "dirE/", "linkB/"])
+        else:
+            _check(p, "*/fileB", ["dirB/fileB"])
+            _check(p, "*/", ["dirA/", "dirB/", "dirC/", "dirC/dirD/", "dirE/"])
+
+        _check(p, "file*", ["fileA", "dirB/fileB", "dirC/fileC", "dirC/dirD/fileD"])
+        _check(p, "", ["", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
+        p = P(self.base, "dirC")
+        _check(p, "*", ["dirC/fileC", "dirC/novel.txt",
+                              "dirC/dirD", "dirC/dirD/fileD"])
+        _check(p, "file*", ["dirC/fileC", "dirC/dirD/fileD"])
+        _check(p, "**/file*", ["dirC/fileC", "dirC/dirD/fileD"])
+        _check(p, "dir*/**", ["dirC/dirD/", "dirC/dirD/fileD"])
+        _check(p, "dir*/**/", ["dirC/dirD/"])
+        _check(p, "*/*", ["dirC/dirD/fileD"])
+        _check(p, "*/", ["dirC/dirD/"])
+        _check(p, "", ["dirC/", "dirC/dirD/"])
+        _check(p, "**", ["dirC/", "dirC/fileC", "dirC/dirD", "dirC/dirD/fileD", "dirC/novel.txt"])
+        _check(p, "**/", ["dirC/", "dirC/dirD/"])
+        # gh-91616, a re module regression
+        _check(p, "*.txt", ["dirC/novel.txt"])
+        _check(p, "*.*", ["dirC/novel.txt"])
+
+    @needs_posix
+    def test_rglob_posix(self):
+        P = self.cls
+        p = P(self.base, "dirC")
+        q = p / "dirD" / "FILEd"
+        given = set(p.rglob("FILEd"))
+        expect = {q} if q.exists() else set()
+        self.assertEqual(given, expect)
+        self.assertEqual(set(p.rglob("FILEd*")), set())
+
+    @needs_windows
+    def test_rglob_windows(self):
+        P = self.cls
+        p = P(self.base, "dirC")
+        self.assertEqual(set(p.rglob("FILEd")), { P(self.base, "dirC/dirD/fileD") })
+        self.assertEqual(set(p.rglob("*\\")), { P(self.base, "dirC/dirD/") })
 
     @needs_symlinks
     def test_rglob_symlink_loop(self):
@@ -2520,7 +3179,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             P('c:/').group()
 
 
-class PathWalkTest(test_pathlib_abc.DummyPathWalkTest):
+class PathWalkTest(test_pathlib_abc.ReadablePathWalkTest):
     cls = pathlib.Path
     base = PathTest.base
     can_symlink = PathTest.can_symlink
@@ -2530,6 +3189,42 @@ class PathWalkTest(test_pathlib_abc.DummyPathWalkTest):
         if name in _tests_needing_symlinks and not self.can_symlink:
             self.skipTest('requires symlinks')
         super().setUp()
+
+    def createTestHierarchy(self):
+        # Build:
+        #     TESTFN/
+        #       TEST1/              a file kid and two directory kids
+        #         tmp1
+        #         SUB1/             a file kid and a directory kid
+        #           tmp2
+        #           SUB11/          no kids
+        #         SUB2/             a file kid and a dirsymlink kid
+        #           tmp3
+        #           link/           a symlink to TEST2
+        #           broken_link
+        #           broken_link2
+        #       TEST2/
+        #         tmp4              a lone file
+        t2_path = self.cls(self.base, "TEST2")
+        os.makedirs(self.sub11_path)
+        os.makedirs(self.sub2_path)
+        os.makedirs(t2_path)
+
+        tmp1_path = self.walk_path / "tmp1"
+        tmp2_path = self.sub1_path / "tmp2"
+        tmp3_path = self.sub2_path / "tmp3"
+        tmp4_path = self.cls(self.base, "TEST2", "tmp4")
+        for path in tmp1_path, tmp2_path, tmp3_path, tmp4_path:
+            with open(path, "w", encoding='utf-8') as f:
+                f.write(f"I'm {path} and proud of it.  Blame test_pathlib.\n")
+
+        if self.can_symlink:
+            broken_link_path = self.sub2_path / "broken_link"
+            broken_link2_path = self.sub2_path / "broken_link2"
+            os.symlink(t2_path, self.link_path, target_is_directory=True)
+            os.symlink('broken', broken_link_path)
+            os.symlink(os.path.join('tmp3', 'broken'), broken_link2_path)
+            self.sub2_tree = (self.sub2_path, [], ["broken_link", "broken_link2", "link", "tmp3"])
         sub21_path= self.sub2_path / "SUB21"
         tmp5_path = sub21_path / "tmp3"
         broken_link3_path = self.sub2_path / "broken_link3"
@@ -2553,7 +3248,7 @@ class PathWalkTest(test_pathlib_abc.DummyPathWalkTest):
     def tearDown(self):
         if 'SUB21' in self.sub2_tree[1]:
             os.chmod(self.sub2_path / "SUB21", stat.S_IRWXU)
-        super().tearDown()
+        os_helper.rmtree(self.base)
 
     def test_walk_bad_dir(self):
         errors = []

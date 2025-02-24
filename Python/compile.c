@@ -704,12 +704,12 @@ _PyCompile_ExitScope(compiler *c)
         assert(c->u);
         /* we are deleting from a list so this really shouldn't fail */
         if (PySequence_DelItem(c->c_stack, n) < 0) {
-            PyErr_FormatUnraisable("Exception ignored on removing "
+            PyErr_FormatUnraisable("Exception ignored while removing "
                                    "the last compiler stack item");
         }
         if (nested_seq != NULL) {
             if (_PyInstructionSequence_AddNested(c->u->u_instr_sequence, nested_seq) < 0) {
-                PyErr_FormatUnraisable("Exception ignored on appending "
+                PyErr_FormatUnraisable("Exception ignored while appending "
                                        "nested instruction sequence");
             }
         }

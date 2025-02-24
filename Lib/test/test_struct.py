@@ -694,7 +694,7 @@ class StructTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         rc, stdout, stderr = assert_python_ok("-c", code)
         self.assertEqual(rc, 0)
         self.assertEqual(stdout.rstrip(), b"")
-        self.assertIn(b"Exception ignored in:", stderr)
+        self.assertIn(b"Exception ignored while calling deallocator", stderr)
         self.assertIn(b"C.__del__", stderr)
 
     def test__struct_reference_cycle_cleaned_up(self):

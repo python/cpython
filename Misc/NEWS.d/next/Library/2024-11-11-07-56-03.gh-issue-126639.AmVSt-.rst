@@ -1,1 +1,0 @@
-:class:`tempfile.NamedTemporaryFile` will now issue a :exc:`ResourceWarning` when it is finalized by the garbage collector without being explicitly closed.
