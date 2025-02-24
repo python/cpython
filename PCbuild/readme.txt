@@ -55,7 +55,7 @@ Release
 Building Python using Clang/LLVM
 --------------------------------
 
-See https://learn.microsoft.com/en-us/cpp/build/clang-support-msbuild?view=msvc-170
+See https://learn.microsoft.com/cpp/build/clang-support-msbuild
 for how to install and use clang-cl bundled with Microsoft Visual Studio.
 You can use the IDE to switch to clang-cl for local development,
 but because this alters the *.vcxproj files, the recommended way is
