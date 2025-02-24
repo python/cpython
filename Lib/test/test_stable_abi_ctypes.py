@@ -655,6 +655,8 @@ SYMBOL_NAMES = (
     "PySys_AuditTuple",
     "PySys_FormatStderr",
     "PySys_FormatStdout",
+    "PySys_GetAttr",
+    "PySys_GetAttrString",
     "PySys_GetObject",
     "PySys_GetXOptions",
     "PySys_HasWarnOptions",
