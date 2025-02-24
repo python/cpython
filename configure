@@ -21450,20 +21450,6 @@ fi
 
 
 
-
-
-  if test "$ac_sys_system" = "Emscripten" -a -z "$ZLIB_CFLAGS" -a -z "$ZLIB_LIBS"
-then :
-
-    ZLIB_CFLAGS="-sUSE_ZLIB"
-    ZLIB_LIBS="-sUSE_ZLIB"
-
-fi
-
-
-
-
-
 pkg_failed=no
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for zlib >= 1.2.0" >&5
 printf %s "checking for zlib >= 1.2.0... " >&6; }
@@ -21820,18 +21806,29 @@ else
 printf "%s\n" "yes" >&6; }
 
   have_zlib=yes
-    printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
+  printf "%s\n" "#define HAVE_ZLIB_COPY 1" >>confdefs.h
 
 
 fi
+case $ac_sys_system in #(
+  WASI) :
 
-if test "x$have_zlib" = xyes
-then :
+    BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
+    BINASCII_LIBS=""
+   ;; #(
+  *) :
 
-  BINASCII_CFLAGS="-DUSE_ZLIB_CRC32 $ZLIB_CFLAGS"
-  BINASCII_LIBS="$ZLIB_LIBS"
+    if test "$have_zlib" != "yes"; then
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: zlib (zlib.h and libz) was not found. Building CPython without zlib is not supported, although it might work for limited use cases. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." >&5
+printf "%s\n" "$as_me: WARNING: zlib (zlib.h and libz) was not found. Building CPython without zlib is not supported, although it might work for limited use cases. Install your OS's zlib-devel or zlib1g-dev equivalent library or get it from https://zlib.net/." >&2;}
+    fi
+    BINASCII_CFLAGS="$ZLIB_CFLAGS"
+    BINASCII_LIBS="$ZLIB_LIBS"
 
-fi
+ ;; #(
+  *) :
+     ;;
+esac
 
 
 
