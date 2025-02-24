@@ -433,7 +433,7 @@ Encoders and Decoders
    .. versionchanged:: 3.6
       All parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
-   .. method:: decode(s)
+   .. method:: decode(s, _w=WHITESPACE.match)
 
       Return the Python representation of *s* (a :class:`str` instance
       containing a JSON document).
@@ -441,7 +441,7 @@ Encoders and Decoders
       :exc:`JSONDecodeError` will be raised if the given JSON document is not
       valid.
 
-   .. method:: raw_decode(s)
+   .. method:: raw_decode(s, idx=0)
 
       Decode a JSON document from *s* (a :class:`str` beginning with a
       JSON document) and return a 2-tuple of the Python representation
@@ -564,7 +564,7 @@ Encoders and Decoders
         '{"foo": ["bar", "baz"]}'
 
 
-   .. method:: iterencode(o)
+   .. method:: iterencode(o, _one_shot=False)
 
       Encode the given object, *o*, and yield each string representation as
       available.  For example::
