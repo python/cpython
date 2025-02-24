@@ -291,7 +291,7 @@ PyStackRef_DUP(_PyStackRef stackref)
 }
 
 static inline _PyStackRef
-PyStackRef_DupDeferred(_PyStackRef stackref)
+PyStackRef_AsDeferred(_PyStackRef stackref)
 {
     return (_PyStackRef){ .bits = stackref.bits | Py_TAG_DEFERRED };
 }

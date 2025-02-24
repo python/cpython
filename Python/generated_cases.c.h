@@ -8809,7 +8809,7 @@
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FAST_BORROW);
             _PyStackRef value;
-            value = PyStackRef_DupDeferred(GETLOCAL(oparg));
+            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -8828,8 +8828,8 @@
             _PyStackRef value2;
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
-            value1 = PyStackRef_DupDeferred(GETLOCAL(oparg1));
-            value2 = PyStackRef_DupDeferred(GETLOCAL(oparg2));
+            value1 = PyStackRef_AsDeferred(GETLOCAL(oparg1));
+            value2 = PyStackRef_AsDeferred(GETLOCAL(oparg2));
             stack_pointer[0] = value1;
             stack_pointer[1] = value2;
             stack_pointer += 2;

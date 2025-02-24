@@ -271,7 +271,7 @@ dummy_func(
         }
 
         inst (LOAD_FAST_BORROW, (-- value)) {
-            value = PyStackRef_DupDeferred(GETLOCAL(oparg));
+            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
         }
 
         inst(LOAD_FAST_AND_CLEAR, (-- value)) {
@@ -289,8 +289,8 @@ dummy_func(
         inst(LOAD_FAST_BORROW_LOAD_FAST_BORROW, ( -- value1, value2)) {
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
-            value1 = PyStackRef_DupDeferred(GETLOCAL(oparg1));
-            value2 = PyStackRef_DupDeferred(GETLOCAL(oparg2));
+            value1 = PyStackRef_AsDeferred(GETLOCAL(oparg1));
+            value2 = PyStackRef_AsDeferred(GETLOCAL(oparg2));
         }
 
         family(LOAD_CONST, 0) = {

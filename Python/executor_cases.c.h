@@ -204,7 +204,7 @@
         case _LOAD_FAST_BORROW: {
             _PyStackRef value;
             oparg = CURRENT_OPARG();
-            value = PyStackRef_DupDeferred(GETLOCAL(oparg));
+            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
