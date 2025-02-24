@@ -74,9 +74,11 @@ The following functions are defined:
 
    Returns ``True`` if a browser was successfully launched, ``False`` otherwise.
 
-   Note that on some platforms, trying to open a filename using this function,
+   Note that on some platforms, trying to open a filename (``'./path.html'``) using this function,
    may work and start the operating system's associated program.  However, this
    is neither supported nor portable.
+   ``'file://...'`` URLs, on the other hand, should work and consistently
+   launch a browser.
 
    .. audit-event:: webbrowser.open url webbrowser.open
 
@@ -200,6 +202,14 @@ Notes:
 
 .. versionchanged:: 3.13
    Support for iOS has been added.
+
+.. versionadded:: next
+   Support for launching the XDG default browser via ``gtk-launch`` or ``gio launch`` on POSIX systems,
+   and ``exo-open`` in XFCE environments.
+
+.. versionchanged:: next
+   ``file://`` URLs should now open more reliably in browsers on all platforms,
+   instead of opening the default application associated with the file type.
 
 Here are some simple examples::
 
