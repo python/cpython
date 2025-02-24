@@ -45,6 +45,13 @@ def temporary_filename():
     finally:
         os_helper.unlink(filename)
 
+
+ADDRESS_EXPR = "0x[0-9a-f]+"
+C_STACK_REGEX = [
+    r"Current thread's C stack trace \(most recent call first\):",
+    fr"  ((\/.+)+\(.*\+{ADDRESS_EXPR}\) \[{ADDRESS_EXPR}\])|(<.+>)"
+]
+
 class FaultHandlerTests(unittest.TestCase):
 
     def get_output(self, code, filename=None, fd=None):
@@ -93,6 +100,7 @@ class FaultHandlerTests(unittest.TestCase):
                     fd=None, know_current_thread=True,
                     py_fatal_error=False,
                     garbage_collecting=False,
+                    c_stack=True,
                     function='<module>'):
         """
         Check that the fault handler for fatal errors is enabled and check the
@@ -106,9 +114,9 @@ class FaultHandlerTests(unittest.TestCase):
         )
         if all_threads and not all_threads_disabled:
             if know_current_thread:
-                header = 'Current thread 0x[0-9a-f]+'
+                header = f'Current thread {ADDRESS_EXPR}'
             else:
-                header = 'Thread 0x[0-9a-f]+'
+                header = f'Thread {ADDRESS_EXPR}'
         else:
             header = 'Stack'
         regex = [f'^{fatal_error}']
@@ -118,12 +126,16 @@ class FaultHandlerTests(unittest.TestCase):
         if all_threads_disabled and not py_fatal_error:
             regex.append("<Cannot show all threads while the GIL is disabled>")
         regex.append(fr'{header} \(most recent call first\):')
+        if garbage_collecting:
+            regex.append('  Garbage-collecting')
         if support.Py_GIL_DISABLED and py_fatal_error and not know_current_thread:
             regex.append("  <tstate is freed>")
         else:
             if garbage_collecting and not all_threads_disabled:
                 regex.append('  Garbage-collecting')
             regex.append(fr'  File "<string>", line {lineno} in {function}')
+        if c_stack:
+            regex.extend(C_STACK_REGEX)
         regex = '\n'.join(regex)
 
         if other_regex:
@@ -934,6 +946,36 @@ class FaultHandlerTests(unittest.TestCase):
         """)
         _, exitcode = self.get_output(code)
         self.assertEqual(exitcode, 0)
+
+    def check_c_stack(self, output):
+        starting_line = output.pop(0)
+        self.assertRegex(starting_line, C_STACK_REGEX[0])
+        self.assertGreater(len(output), 0)
+
+        for line in output:
+            with self.subTest(line=line):
+                if line != '':  # Ignore trailing or leading newlines
+                    self.assertRegex(line, C_STACK_REGEX[1])
+
+
+    def test_dump_c_stack(self):
+        code = dedent("""
+        import faulthandler
+        faulthandler.dump_c_stack()
+        """)
+        output, exitcode = self.get_output(code)
+        self.assertEqual(exitcode, 0)
+        self.check_c_stack(output)
+
+
+    def test_dump_c_stack_file(self):
+        import tempfile
+
+        with tempfile.TemporaryFile("w+") as tmp:
+            faulthandler.dump_c_stack(file=tmp)
+            tmp.flush()  # Just in case
+            tmp.seek(0)
+            self.check_c_stack(tmp.read().split("\n"))
 
 if __name__ == "__main__":
     unittest.main()
