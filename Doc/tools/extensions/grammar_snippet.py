@@ -14,7 +14,7 @@ from sphinx.util.nodes import make_id
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-    from typing import Any
+    from typing import Any, Final
 
     from docutils.nodes import Node
     from sphinx.application import Sphinx
@@ -41,98 +41,92 @@ class GrammarSnippetBase(SphinxDirective):
 
     # The option/argument handling is left to the individual classes.
 
+    grammar_re: Final = re.compile(
+        r"""
+            (?P<rule_name>^[a-zA-Z0-9_]+)     # identifier at start of line
+            (?=:)                             # ... followed by a colon
+        |
+            (?P<rule_ref>`[^\s`]+`)           # identifier in backquotes
+        |
+            (?P<single_quoted>'[^']*')        # string in 'quotes'
+        |
+            (?P<double_quoted>"[^"]*")        # string in "quotes"
+        """,
+        re.VERBOSE,
+    )
+
     def make_grammar_snippet(
         self, options: dict[str, Any], content: Sequence[str]
-    ) -> list[nodes.paragraph]:
+    ) -> list[addnodes.productionlist]:
         """Create a literal block from options & content."""
 
         group_name = options['group']
-
-        # Docutils elements have a `rawsource` attribute that is supposed to be
-        # set to the original ReST source.
-        # Sphinx does the following with it:
-        # - if it's empty, set it to `self.astext()`
-        # - if it matches `self.astext()` when generating the output,
-        #   apply syntax highlighting (which is based on the plain-text content
-        #   and thus discards internal formatting, like references).
-        # To get around this, we set it to this non-empty string:
-        rawsource = 'You should not see this.'
-
-        literal = nodes.literal_block(
-            rawsource,
-            '',
-            classes=['highlight'],
+        node_location = self.get_location()
+        productions = [
+            self.make_production(
+                line, group_name=group_name, location=node_location
+            )
+            for line in content
+        ]
+        node = addnodes.productionlist(
+            '', *productions, support_smartquotes=False
         )
-
-        grammar_re = re.compile(
-            r"""
-                (?P<rule_name>^[a-zA-Z0-9_]+)     # identifier at start of line
-                (?=:)                             # ... followed by a colon
-            |
-                (?P<rule_ref>`[^\s`]+`)           # identifier in backquotes
-            |
-                (?P<single_quoted>'[^']*')        # string in 'quotes'
-            |
-                (?P<double_quoted>"[^"]*")        # string in "quotes"
-            """,
-            re.VERBOSE,
-        )
-
-        for line in content:
-            last_pos = 0
-            for match in grammar_re.finditer(line):
-                # Handle text between matches
-                if match.start() > last_pos:
-                    literal += nodes.Text(line[last_pos : match.start()])
-                last_pos = match.end()
-
-                # Handle matches
-                group_dict = {
-                    name: content
-                    for name, content in match.groupdict().items()
-                    if content is not None
-                }
-                match group_dict:
-                    case {'rule_name': name}:
-                        literal += self.make_link_target_for_token(
-                            group_name, name
-                        )
-                    case {'rule_ref': ref_text}:
-                        literal += token_xrefs(ref_text, group_name)
-                    case {'single_quoted': name} | {'double_quoted': name}:
-                        literal += snippet_string_node('', name)
-                    case _:
-                        raise ValueError('unhandled match')
-            literal += nodes.Text(line[last_pos:] + '\n')
-
-        node = nodes.paragraph(
-            '',
-            '',
-            literal,
-        )
-
+        self.set_source_info(node)
         return [node]
 
-    def make_link_target_for_token(
-        self, group_name: str, name: str
+    def make_production(self, line: str, *, group_name: str, location: str):
+        production_node = addnodes.production(line)
+        last_pos = 0
+        for match in self.grammar_re.finditer(line):
+            # Handle text between matches
+            if match.start() > last_pos:
+                production_node += nodes.Text(line[last_pos : match.start()])
+            last_pos = match.end()
+
+            # Handle matches
+            group_dict = {
+                name: content
+                for name, content in match.groupdict().items()
+                if content is not None
+            }
+            match group_dict:
+                case {'rule_name': name}:
+                    production_node += self.make_name_target(
+                        name=name,
+                        production_group=group_name,
+                        location=location,
+                    )
+                case {'rule_ref': ref_text}:
+                    production_node += token_xrefs(ref_text, group_name)
+                case {'single_quoted': name} | {'double_quoted': name}:
+                    production_node += snippet_string_node('', name)
+                case _:
+                    raise ValueError('unhandled match')
+        production_node += nodes.Text(line[last_pos:] + '\n')
+        return production_node
+
+    def make_name_target(
+        self,
+        *,
+        name: str,
+        production_group: str,
+        location: str,
     ) -> addnodes.literal_strong:
-        """Return a literal node which is a link target for the given token."""
-        name_node = addnodes.literal_strong()
+        """Make a link target for the given production."""
 
         # Cargo-culted magic to make `name_node` a link target
         # similar to Sphinx `production`.
         # This needs to be the same as what Sphinx does
         # to avoid breaking existing links.
-        domain = self.env.domains['std']
-        obj_name = f"{group_name}:{name}"
-        prefix = f'grammar-token-{group_name}'
+
+        name_node = addnodes.literal_strong(name, name)
+        prefix = f'grammar-token-{production_group}'
         node_id = make_id(self.env, self.state.document, prefix, name)
         name_node['ids'].append(node_id)
         self.state.document.note_implicit_target(name_node, name_node)
-        domain.note_object('token', obj_name, node_id, location=name_node)
-
-        text_node = nodes.Text(name)
-        name_node += text_node
+        obj_name = f'{production_group}:{name}' if production_group else name
+        std = self.env.domains.standard_domain
+        std.note_object('token', obj_name, node_id, location=location)
         return name_node
 
 
@@ -168,7 +162,7 @@ class GrammarSnippetDirective(GrammarSnippetBase):
     optional_arguments = 1
     final_argument_whitespace = True
 
-    def run(self) -> list[nodes.paragraph]:
+    def run(self) -> list[addnodes.productionlist]:
         return self.make_grammar_snippet(self.options, self.content)
 
 
@@ -187,7 +181,7 @@ class CompatProductionList(GrammarSnippetBase):
     final_argument_whitespace = True
     option_spec = {}
 
-    def run(self) -> list[nodes.paragraph]:
+    def run(self) -> list[addnodes.productionlist]:
         # The "content" of a productionlist is actually the first and only
         # argument. The first line is the group; the rest is the content lines.
         lines = self.arguments[0].splitlines()
