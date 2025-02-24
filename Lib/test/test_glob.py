@@ -521,6 +521,7 @@ class SymlinkLoopGlobTests(unittest.TestCase):
     # gh-109959: On Linux, glob._isdir() and glob._lexists() can return False
     # randomly when checking the "link/" symbolic link.
     # https://github.com/python/cpython/issues/109959#issuecomment-2577550700
+    @requires_resource('flaky')
     def test_selflink(self):
         tempdir = TESTFN + "_dir"
         os.makedirs(tempdir)
