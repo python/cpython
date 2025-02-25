@@ -1143,10 +1143,16 @@ struct _mem_work_chunk {
     struct _mem_work_item array[WORK_ITEMS_PER_CHUNK];
 };
 
+static int
+work_item_should_decref(uintptr_t ptr)
+{
+    return ptr & 0x01;
+}
+
 static void
 free_work_item(uintptr_t ptr, delayed_dealloc_cb cb, void *state)
 {
-    if (ptr & 0x01) {
+    if (work_item_should_decref(ptr)) {
         PyObject *obj = (PyObject *)(ptr - 1);
 #ifdef Py_GIL_DISABLED
         if (cb == NULL) {
@@ -1154,7 +1160,7 @@ free_work_item(uintptr_t ptr, delayed_dealloc_cb cb, void *state)
             Py_DECREF(obj);
             return;
         }
-
+        assert(_PyInterpreterState_GET()->stoptheworld.world_stopped);
         Py_ssize_t refcount = _Py_ExplicitMergeRefcount(obj, -1);
         if (refcount == 0) {
             cb(obj, state);
@@ -1180,7 +1186,7 @@ free_delayed(uintptr_t ptr)
     {
         // Free immediately during interpreter shutdown or if the world is
         // stopped.
-        assert(!interp->stoptheworld.world_stopped || !(ptr & 0x01));
+        assert(!interp->stoptheworld.world_stopped || !work_item_should_decref(ptr));
         free_work_item(ptr, NULL, NULL);
         return;
     }
@@ -1207,10 +1213,22 @@ free_delayed(uintptr_t ptr)
 
     if (buf == NULL) {
         // failed to allocate a buffer, free immediately
+        PyObject *to_dealloc = NULL;
         _PyEval_StopTheWorld(tstate->base.interp);
-        // TODO: Fix me
-        free_work_item(ptr, NULL, NULL);
+        if (work_item_should_decref(ptr)) {
+            PyObject *obj = (PyObject *)(ptr - 1);
+            Py_ssize_t refcount = _Py_ExplicitMergeRefcount(obj, -1);
+            if (refcount == 0) {
+                to_dealloc = obj;
+            }
+        }
+        else {
+            PyMem_Free((void *)ptr);
+        }
         _PyEval_StartTheWorld(tstate->base.interp);
+        if (to_dealloc != NULL) {
+            _Py_Dealloc(to_dealloc);
+        }
         return;
     }
 
@@ -1257,14 +1275,16 @@ process_queue(struct llist_node *head, struct _qsbr_thread_state *qsbr,
     while (!llist_empty(head)) {
         struct _mem_work_chunk *buf = work_queue_first(head);
 
-        while (buf->rd_idx < buf->wr_idx) {
+        if (buf->rd_idx < buf->wr_idx) {
             struct _mem_work_item *item = &buf->array[buf->rd_idx];
             if (!_Py_qsbr_poll(qsbr, item->qsbr_goal)) {
                 return;
             }
 
-            free_work_item(item->ptr, cb, state);
             buf->rd_idx++;
+            // NB: free_work_item may re-enter or execute arbitrary code
+            free_work_item(item->ptr, cb, state);
+            continue;
         }
 
         assert(buf->rd_idx == buf->wr_idx);
@@ -1360,12 +1380,14 @@ _PyMem_FiniDelayed(PyInterpreterState *interp)
     while (!llist_empty(head)) {
         struct _mem_work_chunk *buf = work_queue_first(head);
 
-        while (buf->rd_idx < buf->wr_idx) {
+        if (buf->rd_idx < buf->wr_idx) {
             // Free the remaining items immediately. There should be no other
             // threads accessing the memory at this point during shutdown.
             struct _mem_work_item *item = &buf->array[buf->rd_idx];
-            free_work_item(item->ptr, NULL, NULL);
             buf->rd_idx++;
+            // NB: free_work_item may re-enter or execute arbitrary code
+            free_work_item(item->ptr, NULL, NULL);
+            continue;
         }
 
         llist_remove(&buf->node);
