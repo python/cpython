@@ -730,6 +730,27 @@ codec_handler_write_unicode_hex(Py_UCS1 **p, Py_UCS4 ch)
 }
 
 
+/*
+ * Create a Unicode string containing 'count' copies of the official
+ * Unicode REPLACEMENT CHARACTER (0xFFFD).
+ */
+static PyObject *
+codec_handler_unicode_replacement_character(Py_ssize_t count)
+{
+    PyObject *res = PyUnicode_New(count, Py_UNICODE_REPLACEMENT_CHARACTER);
+    if (res == NULL) {
+        return NULL;
+    }
+    assert(count == 0 || PyUnicode_KIND(res) == PyUnicode_2BYTE_KIND);
+    Py_UCS2 *outp = PyUnicode_2BYTE_DATA(res);
+    for (Py_ssize_t i = 0; i < count; ++i) {
+        outp[i] = Py_UNICODE_REPLACEMENT_CHARACTER;
+    }
+    assert(_PyUnicode_CheckConsistency(res, 1));
+    return res;
+}
+
+
 // --- handler: 'strict' ------------------------------------------------------
 
 PyObject *PyCodec_StrictErrors(PyObject *exc)
@@ -804,8 +825,11 @@ _PyCodec_ReplaceUnicodeDecodeError(PyObject *exc)
     if (PyUnicodeDecodeError_GetEnd(exc, &end) < 0) {
         return NULL;
     }
-    // Note: Py_UNICODE_REPLACEMENT_CHARACTER < (2 ** 16) < INT_MAX
-    return Py_BuildValue("(Cn)", (int)Py_UNICODE_REPLACEMENT_CHARACTER, end);
+    PyObject *res = codec_handler_unicode_replacement_character(1);
+    if (res == NULL) {
+        return NULL;
+    }
+    return Py_BuildValue("(Nn)", res, end);
 }
 
 
@@ -818,16 +842,10 @@ _PyCodec_ReplaceUnicodeTranslateError(PyObject *exc)
     {
         return NULL;
     }
-    PyObject *res = PyUnicode_New(slen, Py_UNICODE_REPLACEMENT_CHARACTER);
+    PyObject *res = codec_handler_unicode_replacement_character(slen);
     if (res == NULL) {
         return NULL;
     }
-    assert(slen == 0 || PyUnicode_KIND(res) == PyUnicode_2BYTE_KIND);
-    Py_UCS2 *outp = PyUnicode_2BYTE_DATA(res);
-    for (Py_ssize_t i = 0; i < slen; ++i) {
-        outp[i] = Py_UNICODE_REPLACEMENT_CHARACTER;
-    }
-    assert(_PyUnicode_CheckConsistency(res, 1));
     return Py_BuildValue("(Nn)", res, end);
 }
 
