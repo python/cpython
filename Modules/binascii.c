@@ -1239,6 +1239,100 @@ binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
     return rv;
 }
 
+/*[clinic input]
+binascii._b2a_base85
+
+    data: Py_buffer
+    chars: Py_buffer
+    pad: bool = False
+    foldnuls: bool = False
+    foldspaces: bool = False
+
+Utility method used by the base64 module to encode a85/b85 data
+
+    data: bytes
+    chars: 85 bytes conversion table
+    pad: use NULL-paded input if necessary
+    foldnuls: replace NULL chunks by 'z'
+    foldspaces: replace space-only chucks by 'y'
+
+[clinic start generated code]*/
+
+static PyObject *
+binascii__b2a_base85_impl(PyObject *module, Py_buffer *data,
+                          Py_buffer *chars, int pad, int foldnuls,
+                          int foldspaces)
+/*[clinic end generated code: output=cefe84c300ad7314 input=3c8faf77b992dcc2]*/
+{
+    if (chars->len != 85) {
+        PyErr_SetString(PyExc_ValueError,
+                        "chars must be exactly 85 bytes long");
+        return NULL;
+    }
+
+    _PyBytesWriter writer;
+    _PyBytesWriter_Init(&writer);
+
+    const size_t bin_len = data->len;
+
+    // Allocate up to maxium encoded length, adjusted at end
+    const size_t ascii_len = ((bin_len + 3) / 4) * 5;
+
+    unsigned char *ascii_data = _PyBytesWriter_Alloc(&writer, ascii_len);
+    if (ascii_data == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    const unsigned char *table = chars->buf;
+    const unsigned char *bin_data = data->buf;
+
+    size_t i = 0 ;
+    int padding = 0;
+
+    // Conversion largely inspired from git base85 implementation
+    while (i < bin_len) {
+        // Translate each 4 byte chunk to 32bit integer
+        uint32_t value = 0;
+        for (int cnt = 24; cnt >= 0; cnt -= 8) {
+            value |= bin_data[i] << cnt;
+            if (++i == bin_len) {
+                // Number of bytes under the 4 bytes rounded value
+                padding = cnt / 8;
+                break;
+            }
+        }
+
+        // Handle NULL only and space-only cases (specific to ASCII85)
+        if (foldnuls && value == 0) {
+            *ascii_data++ = 'z';
+        }
+        else if (foldspaces && value == 0x20202020) {
+            *ascii_data++ = 'y';
+        }
+        else {
+            for (int j = 4; j >= 0; j--) {
+                ascii_data[j] = table[value % 85];
+                value /= 85;
+            }
+            ascii_data += 5;
+        }
+    }
+
+    // Expand the last folded null in case it did not fill a full chunk
+    if (padding && !pad && foldnuls && ascii_data[-1] == 'z') {
+        ascii_data--;
+        memset(ascii_data, table[0], 5);
+        ascii_data += 5;
+    }
+
+    if (!pad) {
+        ascii_data -= padding;
+    }
+
+    return _PyBytesWriter_Finish(&writer, ascii_data);
+}
+
 /* List of functions defined in the module */
 
 static struct PyMethodDef binascii_module_methods[] = {
@@ -1246,6 +1340,7 @@ static struct PyMethodDef binascii_module_methods[] = {
     BINASCII_B2A_UU_METHODDEF
     BINASCII_A2B_BASE64_METHODDEF
     BINASCII_B2A_BASE64_METHODDEF
+    BINASCII__B2A_BASE85_METHODDEF
     BINASCII_A2B_HEX_METHODDEF
     BINASCII_B2A_HEX_METHODDEF
     BINASCII_HEXLIFY_METHODDEF
