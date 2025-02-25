@@ -114,7 +114,8 @@ def _safe_tuple(t):
 
 class PrettyPrinter:
     def __init__(self, indent=1, width=80, depth=None, stream=None, *,
-                 compact=False, sort_dicts=True, underscore_numbers=False, block_style=False):
+                 compact=False, sort_dicts=True, underscore_numbers=False,
+                 block_style=False):
         """Handle pretty printing operations onto a stream using a set of
         configured parameters.
 
