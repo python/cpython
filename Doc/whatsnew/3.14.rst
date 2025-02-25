@@ -558,6 +558,14 @@ getopt
 * Add support for returning intermixed options and non-option arguments in order.
   (Contributed by Serhiy Storchaka in :gh:`126390`.)
 
+
+getpass
+-------
+
+* Add optional argument *mask* for :meth:`getpass.getpass`.
+  (Contributed by Semyon Moroz in :gh:`77065`.)
+
+
 http
 ----
 
