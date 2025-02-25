@@ -207,20 +207,6 @@ The :mod:`uuid` module defines the following functions:
    that will be encoded using UTF-8).
 
 
-.. function:: uuid8(a=None, b=None, c=None)
-
-   Generate a pseudo-random UUID according to
-   :rfc:`RFC 9562, §5.8 <9562#section-5.8>`.
-
-   When specified, the parameters *a*, *b* and *c* are expected to be
-   positive integers of 48, 12 and 62 bits respectively. If they exceed
-   their expected bit count, only their least significant bits are kept;
-   non-specified arguments are substituted for a pseudo-random integer of
-   appropriate size.
-
-   .. versionadded:: 3.14
-
-
 The :mod:`uuid` module defines the following namespace identifiers for use with
 :func:`uuid3` or :func:`uuid5`.
 
