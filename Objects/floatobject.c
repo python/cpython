@@ -2054,7 +2054,8 @@ PyFloat_Pack2(double x, char *data, int le)
         uint64_t v;
 
         memcpy(&v, &x, sizeof(v));
-        bits = (v & 0xffc0000000000ULL) >> 42; /* NaN's payload */
+        v &= 0xffc0000000000ULL;
+        bits = (unsigned short)(v >> 42); /* NaN's payload */
     }
     else {
         sign = (x < 0.0);
