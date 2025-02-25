@@ -8,6 +8,7 @@ import os
 import struct
 import sys
 import unittest
+from datetime import datetime, timezone
 from subprocess import PIPE, Popen
 from test.support import import_helper
 from test.support import os_helper
@@ -315,6 +316,24 @@ class TestGzip(BaseTest):
             dataRead = fRead.read()
             self.assertEqual(dataRead, data1)
             self.assertEqual(fRead.mtime, mtime)
+
+    def test_mtime_as_datetime(self):
+        mtime = datetime(1973, 11, 29, 21, 33, 9, tzinfo=timezone.utc)
+        with gzip.GzipFile(self.filename, 'w', mtime = mtime) as fWrite:
+            fWrite.write(data1)
+        with gzip.GzipFile(self.filename) as fRead:
+            self.assertTrue(hasattr(fRead, 'mtime'))
+            self.assertIsNone(fRead.mtime)
+            dataRead = fRead.read()
+            self.assertEqual(dataRead, data1)
+            self.assertEqual(fRead.mtime, int(mtime.timestamp()))
+
+    def test_mtime_as_datetime_no_timezone(self):
+        mtime = datetime(1973, 11, 29, 21, 33, 9)
+        self.assertIsNone(mtime.tzinfo)
+        with self.assertRaises(ValueError):
+            with gzip.GzipFile(self.filename, 'w', mtime = mtime) as fWrite:
+                fWrite.write(data1)
 
     def test_metadata(self):
         mtime = 123456789
@@ -712,6 +731,26 @@ class TestGzip(BaseTest):
                     with gzip.GzipFile(fileobj=io.BytesIO(datac), mode="rb") as f:
                         f.read(1) # to set mtime attribute
                         self.assertEqual(f.mtime, mtime)
+
+    def test_compress_mtime_as_datetime(self):
+        mtime = datetime(1973, 11, 29, 21, 33, 9, tzinfo=timezone.utc)
+        for data in [data1, data2]:
+            for args in [(), (1,), (6,), (9,)]:
+                with self.subTest(data=data, args=args):
+                    datac = gzip.compress(data, *args, mtime=mtime)
+                    self.assertEqual(type(datac), bytes)
+                    with gzip.GzipFile(fileobj=io.BytesIO(datac), mode="rb") as f:
+                        f.read(1) # to set mtime attribute
+                        self.assertEqual(f.mtime, int(mtime.timestamp()))
+
+    def test_compress_mtime_as_datetime_no_timezone(self):
+        mtime = datetime(1973, 11, 29, 21, 33, 9)
+        self.assertIsNone(mtime.tzinfo)
+        for data in [data1, data2]:
+            for args in [(), (1,), (6,), (9,)]:
+                with self.subTest(data=data, args=args):
+                    with self.assertRaises(ValueError):
+                        gzip.compress(data, *args, mtime=mtime)
 
     def test_compress_mtime_default(self):
         # test for gh-125260
