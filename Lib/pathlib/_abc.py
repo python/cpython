@@ -14,7 +14,7 @@ WritablePath.
 from abc import ABC, abstractmethod
 from glob import _PathGlobber, _no_recurse_symlinks
 from pathlib import PurePath, Path
-from pathlib._os import magic_open, CopyReader, CopyWriter
+from pathlib._os import magic_open, CopyWriter
 
 
 def _explode_path(path):
@@ -192,7 +192,7 @@ class JoinablePath(ABC):
         Return True if this path matches the given glob-style pattern. The
         pattern is matched against the entire path.
         """
-        if not isinstance(pattern, JoinablePath):
+        if not hasattr(pattern, 'with_segments'):
             pattern = self.with_segments(pattern)
         if case_sensitive is None:
             case_sensitive = self.parser.normcase('Aa') == 'Aa'
@@ -286,7 +286,7 @@ class ReadablePath(JoinablePath):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
-        if not isinstance(pattern, JoinablePath):
+        if not hasattr(pattern, 'with_segments'):
             pattern = self.with_segments(pattern)
         anchor, parts = _explode_path(pattern)
         if anchor:
@@ -302,16 +302,6 @@ class ReadablePath(JoinablePath):
         select = globber.selector(parts)
         return select(self.joinpath(''))
 
-    def rglob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
-        """Recursively yield all existing files (of any kind, including
-        directories) matching the given relative pattern, anywhere in
-        this subtree.
-        """
-        if not isinstance(pattern, JoinablePath):
-            pattern = self.with_segments(pattern)
-        pattern = '**' / pattern
-        return self.glob(pattern, case_sensitive=case_sensitive, recurse_symlinks=recurse_symlinks)
-
     def walk(self, top_down=True, on_error=None, follow_symlinks=False):
         """Walk the directory tree from this directory, similar to os.walk()."""
         paths = [self]
@@ -326,14 +316,11 @@ class ReadablePath(JoinablePath):
                 paths.append((path, dirnames, filenames))
             try:
                 for child in path.iterdir():
-                    try:
-                        if child.info.is_dir(follow_symlinks=follow_symlinks):
-                            if not top_down:
-                                paths.append(child)
-                            dirnames.append(child.name)
-                        else:
-                            filenames.append(child.name)
-                    except OSError:
+                    if child.info.is_dir(follow_symlinks=follow_symlinks):
+                        if not top_down:
+                            paths.append(child)
+                        dirnames.append(child.name)
+                    else:
                         filenames.append(child.name)
             except OSError as error:
                 if on_error is not None:
@@ -353,14 +340,12 @@ class ReadablePath(JoinablePath):
         """
         raise NotImplementedError
 
-    _copy_reader = property(CopyReader)
-
     def copy(self, target, follow_symlinks=True, dirs_exist_ok=False,
              preserve_metadata=False):
         """
         Recursively copy this file or directory tree to the given destination.
         """
-        if not hasattr(target, '_copy_writer'):
+        if not hasattr(target, 'with_segments'):
             target = self.with_segments(target)
 
         # Delegate to the target path's CopyWriter object.
@@ -368,7 +353,8 @@ class ReadablePath(JoinablePath):
             create = target._copy_writer._create
         except AttributeError:
             raise TypeError(f"Target is not writable: {target}") from None
-        return create(self, follow_symlinks, dirs_exist_ok, preserve_metadata)
+        create(self, follow_symlinks, dirs_exist_ok, preserve_metadata)
+        return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def copy_into(self, target_dir, *, follow_symlinks=True,
                   dirs_exist_ok=False, preserve_metadata=False):
@@ -378,7 +364,7 @@ class ReadablePath(JoinablePath):
         name = self.name
         if not name:
             raise ValueError(f"{self!r} has an empty name")
-        elif hasattr(target_dir, '_copy_writer'):
+        elif hasattr(target_dir, 'with_segments'):
             target = target_dir / name
         else:
             target = self.with_segments(target_dir, name)
