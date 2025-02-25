@@ -168,7 +168,7 @@ try:
 except ImportError:
     msvcrt_available = False
 
-@unittest.skipUnless(sys.platform.startswith("win"), "requires Windows")
+@unittest.skipUnless(WIN32, "skipped on non-Windows platforms")
 @unittest.skipUnless(msvcrt_available, 'tests require system with msvcrt (Windows)')
 class WinGetpassTest(unittest.TestCase):
 
