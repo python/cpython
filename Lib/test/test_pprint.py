@@ -1125,7 +1125,7 @@ deque([('brown', 2),
     'lazy dog'}""")
 
     def test_block_style(self):
-        @dataclass
+        @dataclasses.dataclass
         class DummyDataclass:
             foo: str
             bar: float
