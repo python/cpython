@@ -597,6 +597,11 @@ io
   :exc:`BlockingIOError` if the operation cannot immediately return bytes.
   (Contributed by Giovanni Siragusa in :gh:`109523`.)
 
+* Add protocols :class:`io.Reader` and :class:`io.Writer` as a simpler
+  alternatives to the pseudo-protocols :class:`typing.IO`,
+  :class:`typing.TextIO`, and :class:`typing.BinaryIO`.
+  (Contributed by Sebastian Rittau in :gh:`127648`.)
+
 
 json
 ----
@@ -863,15 +868,6 @@ turtle
 * Add context managers for :func:`turtle.fill`, :func:`turtle.poly`
   and :func:`turtle.no_animation`.
   (Contributed by Marie Roald and Yngve Mardal Moe in :gh:`126350`.)
-
-
-typing
-------
-
-* Add protocols :class:`typing.Reader` and :class:`typing.Writer` as a simpler
-  alternatives to the pseudo-protocols :class:`typing.IO`,
-  :class:`typing.TextIO`, and :class:`typing.BinaryIO`.
-  (Contributed by Sebastian Rittau in :gh:`127648`.)
 
 
 unicodedata
