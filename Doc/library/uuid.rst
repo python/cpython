@@ -179,8 +179,6 @@ The :mod:`uuid` module defines the following functions:
       administered MAC addresses, since the former are guaranteed to be
       globally unique, while the latter are not.
 
-.. index:: single: getnode
-
 
 .. function:: uuid1(node=None, clock_seq=None)
 
@@ -189,8 +187,6 @@ The :mod:`uuid` module defines the following functions:
    *clock_seq* is given, it is used as the sequence number; otherwise a random
    14-bit sequence number is chosen.
 
-.. index:: single: uuid1
-
 
 .. function:: uuid3(namespace, name)
 
@@ -198,14 +194,10 @@ The :mod:`uuid` module defines the following functions:
    UUID) and a name (which is a :class:`bytes` object or a string
    that will be encoded using UTF-8).
 
-.. index:: single: uuid3
-
 
 .. function:: uuid4()
 
    Generate a random UUID.
-
-.. index:: single: uuid4
 
 
 .. function:: uuid5(namespace, name)
@@ -214,7 +206,6 @@ The :mod:`uuid` module defines the following functions:
    UUID) and a name (which is a :class:`bytes` object or a string
    that will be encoded using UTF-8).
 
-.. index:: single: uuid5
 
 The :mod:`uuid` module defines the following namespace identifiers for use with
 :func:`uuid3` or :func:`uuid5`.
