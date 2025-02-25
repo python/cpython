@@ -877,7 +877,7 @@ dis_load_test_quickened_code = """\
 %3d           LOAD_FAST_LOAD_FAST      1 (x, y)
               STORE_FAST_STORE_FAST   50 (b, a)
 
-%3d           LOAD_FAST_LOAD_FAST     35 (a, b)
+%3d           LOAD_FAST_BORROW_LOAD_FAST_BORROW 35 (a, b)
               BUILD_TUPLE              2
               RETURN_VALUE
 """ % (load_test.__code__.co_firstlineno,

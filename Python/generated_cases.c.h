@@ -8809,7 +8809,12 @@
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_FAST_BORROW);
             _PyStackRef value;
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
+            #ifdef Py_GIL_DISABLED
             value = PyStackRef_AsDeferred(GETLOCAL(oparg));
+            #else
+            value = PyStackRef_DUP(GETLOCAL(oparg));
+            #endif
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -8828,8 +8833,13 @@
             _PyStackRef value2;
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
+            #ifdef Py_GIL_DISABLED
             value1 = PyStackRef_AsDeferred(GETLOCAL(oparg1));
             value2 = PyStackRef_AsDeferred(GETLOCAL(oparg2));
+            #else
+            value1 = PyStackRef_DUP(GETLOCAL(oparg1));
+            value2 = PyStackRef_DUP(GETLOCAL(oparg2));
+            #endif
             stack_pointer[0] = value1;
             stack_pointer[1] = value2;
             stack_pointer += 2;

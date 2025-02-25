@@ -204,7 +204,12 @@
         case _LOAD_FAST_BORROW: {
             _PyStackRef value;
             oparg = CURRENT_OPARG();
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
+            #ifdef Py_GIL_DISABLED
             value = PyStackRef_AsDeferred(GETLOCAL(oparg));
+            #else
+            value = PyStackRef_DUP(GETLOCAL(oparg));
+            #endif
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());

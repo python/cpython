@@ -147,6 +147,12 @@ PyStackRef_CLOSE(_PyStackRef ref)
 }
 
 static inline _PyStackRef
+_PyStackRef_NewIfBorrowedOrSteal(_PyStackRef ref)
+{
+    return ref;
+}
+
+static inline _PyStackRef
 _PyStackRef_DUP(_PyStackRef ref, const char *filename, int linenumber)
 {
     PyObject *obj = _Py_stackref_get_object(ref);
@@ -274,9 +280,6 @@ PyStackRef_DUP(_PyStackRef stackref)
 {
     assert(!PyStackRef_IsNull(stackref));
     if (PyStackRef_IsDeferred(stackref)) {
-        /* assert(_Py_IsImmortal(PyStackRef_AsPyObjectBorrow(stackref)) || */
-        /*        _PyObject_HasDeferredRefcount(PyStackRef_AsPyObjectBorrow(stackref)) */
-        /* ); */
         return stackref;
     }
     Py_INCREF(PyStackRef_AsPyObjectBorrow(stackref));
@@ -321,6 +324,8 @@ static const _PyStackRef PyStackRef_NULL = { .bits = 0 };
 #define PyStackRef_CLOSE(stackref) Py_DECREF(PyStackRef_AsPyObjectBorrow(stackref))
 
 #define PyStackRef_DUP(stackref) PyStackRef_FromPyObjectSteal(Py_NewRef(PyStackRef_AsPyObjectBorrow(stackref)))
+
+#define _PyStackRef_NewIfBorrowedOrSteal(stackref) stackref
 
 #define PyStackRef_CLOSE_SPECIALIZED(stackref, dealloc) _Py_DECREF_SPECIALIZED(PyStackRef_AsPyObjectBorrow(stackref), dealloc)
 
