@@ -2054,10 +2054,7 @@ PyFloat_Pack2(double x, char *data, int le)
         uint64_t v;
 
         memcpy(&v, &x, sizeof(v));
-        bits = v & 0x1ffULL; /* NaN's payload */
-        if (v & 0x8000000000000ULL) { /* is a quiet NaN? */
-            bits += 0x200;
-        }
+        bits = ((v & 0xffc0000000000ULL)>>42); /* NaN's payload */
     }
     else {
         sign = (x < 0.0);
@@ -2416,11 +2413,7 @@ PyFloat_Unpack2(const char *data, int le)
             /* NaN */
             uint64_t v = sign ? 0xfff0000000000000ULL : 0x7ff0000000000000ULL;
 
-            if (f & 0x200) { /* is a quiet NaN? */
-                v += 0x8000000000000ULL;
-                f -= 0x200;
-            }
-            v += f; /* add NaN's payload */
+            v += ((uint64_t)f << 42); /* add NaN's payload */
             memcpy(&x, &v, sizeof(v));
             return x;
         }
