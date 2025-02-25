@@ -29,6 +29,7 @@ import signal
 import struct
 import termios
 import time
+import platform
 from fcntl import ioctl
 
 from . import curses
@@ -109,7 +110,7 @@ delayprog = re.compile(b"\\$<([0-9]+)((?:/|\\*){0,2})>")
 try:
     poll: type[select.poll] = select.poll
 except AttributeError:
-    # this is exactly the minumum necessary to support what we
+    # this is exactly the minimum necessary to support what we
     # do with poll objects
     class MinimalPoll:
         def __init__(self):
@@ -198,8 +199,14 @@ class UnixConsole(Console):
         self.event_queue = EventQueue(self.input_fd, self.encoding)
         self.cursor_visible = 1
 
+    def more_in_buffer(self) -> bool:
+        return bool(
+            self.input_buffer
+            and self.input_buffer_pos < len(self.input_buffer)
+        )
+
     def __read(self, n: int) -> bytes:
-        if not self.input_buffer or self.input_buffer_pos >= len(self.input_buffer):
+        if not self.more_in_buffer():
             self.input_buffer = os.read(self.input_fd, 10000)
 
         ret = self.input_buffer[self.input_buffer_pos : self.input_buffer_pos + n]
@@ -233,7 +240,7 @@ class UnixConsole(Console):
                 self.__hide_cursor()
                 self.__move(0, len(self.screen) - 1)
                 self.__write("\n")
-                self.__posxy = 0, len(self.screen)
+                self.posxy = 0, len(self.screen)
                 self.screen.append("")
         else:
             while len(self.screen) < len(screen):
@@ -243,7 +250,7 @@ class UnixConsole(Console):
             self.__gone_tall = 1
             self.__move = self.__move_tall
 
-        px, py = self.__posxy
+        px, py = self.posxy
         old_offset = offset = self.__offset
         height = self.height
 
@@ -264,7 +271,7 @@ class UnixConsole(Console):
         if old_offset > offset and self._ri:
             self.__hide_cursor()
             self.__write_code(self._cup, 0, 0)
-            self.__posxy = 0, old_offset
+            self.posxy = 0, old_offset
             for i in range(old_offset - offset):
                 self.__write_code(self._ri)
                 oldscr.pop(-1)
@@ -272,7 +279,7 @@ class UnixConsole(Console):
         elif old_offset < offset and self._ind:
             self.__hide_cursor()
             self.__write_code(self._cup, self.height - 1, 0)
-            self.__posxy = 0, old_offset + self.height - 1
+            self.posxy = 0, old_offset + self.height - 1
             for i in range(offset - old_offset):
                 self.__write_code(self._ind)
                 oldscr.pop(0)
@@ -292,7 +299,7 @@ class UnixConsole(Console):
         while y < len(oldscr):
             self.__hide_cursor()
             self.__move(0, y)
-            self.__posxy = 0, y
+            self.posxy = 0, y
             self.__write_code(self._el)
             y += 1
 
@@ -314,7 +321,7 @@ class UnixConsole(Console):
             self.event_queue.insert(Event("scroll", None))
         else:
             self.__move(x, y)
-            self.__posxy = x, y
+            self.posxy = x, y
             self.flushoutput()
 
     def prepare(self):
@@ -334,12 +341,16 @@ class UnixConsole(Console):
         raw.cc[termios.VTIME] = 0
         tcsetattr(self.input_fd, termios.TCSADRAIN, raw)
 
+        # In macOS terminal we need to deactivate line wrap via ANSI escape code
+        if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
+            os.write(self.output_fd, b"\033[?7l")
+
         self.screen = []
         self.height, self.width = self.getheightwidth()
 
         self.__buffer = []
 
-        self.__posxy = 0, 0
+        self.posxy = 0, 0
         self.__gone_tall = 0
         self.__move = self.__move_short
         self.__offset = 0
@@ -362,6 +373,9 @@ class UnixConsole(Console):
         self.flushoutput()
         tcsetattr(self.input_fd, termios.TCSADRAIN, self.__svtermstate)
 
+        if platform.system() == "Darwin" and os.getenv("TERM_PROGRAM") == "Apple_Terminal":
+            os.write(self.output_fd, b"\033[?7h")
+
         if hasattr(self, "old_sigwinch"):
             signal.signal(signal.SIGWINCH, self.old_sigwinch)
             del self.old_sigwinch
@@ -383,6 +397,9 @@ class UnixConsole(Console):
         Returns:
         - Event: Event object from the event queue.
         """
+        if not block and not self.wait(timeout=0):
+            return None
+
         while self.event_queue.empty():
             while True:
                 try:
@@ -397,15 +414,17 @@ class UnixConsole(Console):
                         raise
                 else:
                     break
-            if not block:
-                break
         return self.event_queue.get()
 
     def wait(self, timeout: float | None = None) -> bool:
         """
         Wait for events on the console.
         """
-        return bool(self.pollob.poll(timeout))
+        return (
+            not self.event_queue.empty()
+            or self.more_in_buffer()
+            or bool(self.pollob.poll(timeout))
+        )
 
     def set_cursor_vis(self, visible):
         """
@@ -430,10 +449,12 @@ class UnixConsole(Console):
             """
             try:
                 return int(os.environ["LINES"]), int(os.environ["COLUMNS"])
-            except KeyError:
-                height, width = struct.unpack(
-                    "hhhh", ioctl(self.input_fd, TIOCGWINSZ, b"\000" * 8)
-                )[0:2]
+            except (KeyError, TypeError, ValueError):
+                try:
+                    size = ioctl(self.input_fd, TIOCGWINSZ, b"\000" * 8)
+                except OSError:
+                    return 25, 80
+                height, width = struct.unpack("hhhh", size)[0:2]
                 if not height:
                     return 25, 80
                 return height, width
@@ -449,7 +470,7 @@ class UnixConsole(Console):
             """
             try:
                 return int(os.environ["LINES"]), int(os.environ["COLUMNS"])
-            except KeyError:
+            except (KeyError, TypeError, ValueError):
                 return 25, 80
 
     def forgetinput(self):
@@ -540,7 +561,7 @@ class UnixConsole(Console):
         self.__write_code(self._clear)
         self.__gone_tall = 1
         self.__move = self.__move_tall
-        self.__posxy = 0, 0
+        self.posxy = 0, 0
         self.screen = []
 
     @property
@@ -613,7 +634,7 @@ class UnixConsole(Console):
 
         # reuse the oldline as much as possible, but stop as soon as we
         # encounter an ESCAPE, because it might be the start of an escape
-        # sequene
+        # sequence
         while (
             x_coord < minlen
             and oldline[x_pos] == newline[x_pos]
@@ -625,8 +646,8 @@ class UnixConsole(Console):
         # if we need to insert a single character right after the first detected change
         if oldline[x_pos:] == newline[x_pos + 1 :] and self.ich1:
             if (
-                y == self.__posxy[1]
-                and x_coord > self.__posxy[0]
+                y == self.posxy[1]
+                and x_coord > self.posxy[0]
                 and oldline[px_pos:x_pos] == newline[px_pos + 1 : x_pos + 1]
             ):
                 x_pos = px_pos
@@ -635,7 +656,7 @@ class UnixConsole(Console):
             self.__move(x_coord, y)
             self.__write_code(self.ich1)
             self.__write(newline[x_pos])
-            self.__posxy = x_coord + character_width, y
+            self.posxy = x_coord + character_width, y
 
         # if it's a single character change in the middle of the line
         elif (
@@ -646,7 +667,7 @@ class UnixConsole(Console):
             character_width = wlen(newline[x_pos])
             self.__move(x_coord, y)
             self.__write(newline[x_pos])
-            self.__posxy = x_coord + character_width, y
+            self.posxy = x_coord + character_width, y
 
         # if this is the last character to fit in the line and we edit in the middle of the line
         elif (
@@ -658,14 +679,14 @@ class UnixConsole(Console):
         ):
             self.__hide_cursor()
             self.__move(self.width - 2, y)
-            self.__posxy = self.width - 2, y
+            self.posxy = self.width - 2, y
             self.__write_code(self.dch1)
 
             character_width = wlen(newline[x_pos])
             self.__move(x_coord, y)
             self.__write_code(self.ich1)
             self.__write(newline[x_pos])
-            self.__posxy = character_width + 1, y
+            self.posxy = character_width + 1, y
 
         else:
             self.__hide_cursor()
@@ -673,7 +694,7 @@ class UnixConsole(Console):
             if wlen(oldline) > wlen(newline):
                 self.__write_code(self._el)
             self.__write(newline[x_pos:])
-            self.__posxy = wlen(newline), y
+            self.posxy = wlen(newline), y
 
         if "\x1b" in newline:
             # ANSI escape characters are present, so we can't assume
@@ -692,32 +713,36 @@ class UnixConsole(Console):
             self.__write_code(fmt, *args)
 
     def __move_y_cuu1_cud1(self, y):
-        dy = y - self.__posxy[1]
+        assert self._cud1 is not None
+        assert self._cuu1 is not None
+        dy = y - self.posxy[1]
         if dy > 0:
             self.__write_code(dy * self._cud1)
         elif dy < 0:
             self.__write_code((-dy) * self._cuu1)
 
     def __move_y_cuu_cud(self, y):
-        dy = y - self.__posxy[1]
+        dy = y - self.posxy[1]
         if dy > 0:
             self.__write_code(self._cud, dy)
         elif dy < 0:
             self.__write_code(self._cuu, -dy)
 
     def __move_x_hpa(self, x: int) -> None:
-        if x != self.__posxy[0]:
+        if x != self.posxy[0]:
             self.__write_code(self._hpa, x)
 
     def __move_x_cub1_cuf1(self, x: int) -> None:
-        dx = x - self.__posxy[0]
+        assert self._cuf1 is not None
+        assert self._cub1 is not None
+        dx = x - self.posxy[0]
         if dx > 0:
             self.__write_code(self._cuf1 * dx)
         elif dx < 0:
             self.__write_code(self._cub1 * (-dx))
 
     def __move_x_cub_cuf(self, x: int) -> None:
-        dx = x - self.__posxy[0]
+        dx = x - self.posxy[0]
         if dx > 0:
             self.__write_code(self._cuf, dx)
         elif dx < 0:
@@ -747,12 +772,12 @@ class UnixConsole(Console):
 
     def repaint(self):
         if not self.__gone_tall:
-            self.__posxy = 0, self.__posxy[1]
+            self.posxy = 0, self.posxy[1]
             self.__write("\r")
             ns = len(self.screen) * ["\000" * self.width]
             self.screen = ns
         else:
-            self.__posxy = 0, self.__offset
+            self.posxy = 0, self.__offset
             self.__move(0, self.__offset)
             ns = self.height * ["\000" * self.width]
             self.screen = ns
@@ -767,7 +792,7 @@ class UnixConsole(Console):
         # only if the bps is actually needed (which I'm
         # betting is pretty unlkely)
         bps = ratedict.get(self.__svtermstate.ospeed)
-        while 1:
+        while True:
             m = prog.search(fmt)
             if not m:
                 os.write(self.output_fd, fmt)

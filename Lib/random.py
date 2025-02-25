@@ -421,11 +421,11 @@ class Random(_random.Random):
             cum_counts = list(_accumulate(counts))
             if len(cum_counts) != n:
                 raise ValueError('The number of counts does not match the population')
-            total = cum_counts.pop()
+            total = cum_counts.pop() if cum_counts else 0
             if not isinstance(total, int):
                 raise TypeError('Counts must be integers')
-            if total <= 0:
-                raise ValueError('Total of counts must be greater than zero')
+            if total < 0:
+                raise ValueError('Counts must be non-negative')
             selections = self.sample(range(total), k=k)
             bisect = _bisect
             return [population[bisect(cum_counts, s)] for s in selections]
@@ -1013,7 +1013,7 @@ def _parse_args(arg_list: list[str] | None):
         help="print a random integer between 1 and N inclusive")
     group.add_argument(
         "-f", "--float", type=float, metavar="N",
-        help="print a random floating point number between 1 and N inclusive")
+        help="print a random floating-point number between 0 and N inclusive")
     group.add_argument(
         "--test", type=int, const=10_000, nargs="?",
         help=argparse.SUPPRESS)
@@ -1038,7 +1038,7 @@ def main(arg_list: list[str] | None = None) -> int | str:
         return randint(1, args.integer)
 
     if args.float is not None:
-        return uniform(1, args.float)
+        return uniform(0, args.float)
 
     if args.test:
         _test(args.test)
@@ -1055,7 +1055,7 @@ def main(arg_list: list[str] | None = None) -> int | str:
             try:
                 # Is it a float?
                 val = float(val)
-                return uniform(1, val)
+                return uniform(0, val)
             except ValueError:
                 # Split in case of space-separated string: "a b c"
                 return choice(val.split())

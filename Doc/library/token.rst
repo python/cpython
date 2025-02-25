@@ -75,8 +75,15 @@ the :mod:`tokenize` module.
    :noindex:
 
    Token value indicating that a type comment was recognized.  Such
-   tokens are only produced when :func:`ast.parse()` is invoked with
+   tokens are only produced when :func:`ast.parse` is invoked with
    ``type_comments=True``.
+
+
+.. data:: EXACT_TOKEN_TYPES
+
+   A dictionary mapping the string representation of a token to its numeric code.
+
+   .. versionadded:: 3.8
 
 
 .. versionchanged:: 3.5

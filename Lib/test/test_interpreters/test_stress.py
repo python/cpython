@@ -23,12 +23,42 @@ class StressTests(TestBase):
             alive.append(interp)
 
     @support.requires_resource('cpu')
+    @threading_helper.requires_working_threading()
     def test_create_many_threaded(self):
         alive = []
         def task():
             interp = interpreters.create()
             alive.append(interp)
         threads = (threading.Thread(target=task) for _ in range(200))
+        with threading_helper.start_threads(threads):
+            pass
+
+    @support.requires_resource('cpu')
+    @threading_helper.requires_working_threading()
+    def test_many_threads_running_interp_in_other_interp(self):
+        interp = interpreters.create()
+
+        script = f"""if True:
+            import _interpreters
+            _interpreters.run_string({interp.id}, '1')
+            """
+
+        def run():
+            interp = interpreters.create()
+            alreadyrunning = (f'{interpreters.InterpreterError}: '
+                              'interpreter already running')
+            success = False
+            while not success:
+                try:
+                    interp.exec(script)
+                except interpreters.ExecutionFailed as exc:
+                    if exc.excinfo.msg != 'interpreter already running':
+                        raise  # re-raise
+                    assert exc.excinfo.type.__name__ == 'InterpreterError'
+                else:
+                    success = True
+
+        threads = (threading.Thread(target=run) for _ in range(200))
         with threading_helper.start_threads(threads):
             pass
 

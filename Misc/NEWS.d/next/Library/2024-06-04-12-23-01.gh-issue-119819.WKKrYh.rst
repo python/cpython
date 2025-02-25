@@ -1,2 +1,0 @@
-Fix regression to allow logging configuration with multiprocessing queue
-types.

@@ -276,8 +276,8 @@ definition looked like this::
 then ``MyClass.i`` and ``MyClass.f`` are valid attribute references, returning
 an integer and a function object, respectively. Class attributes can also be
 assigned to, so you can change the value of ``MyClass.i`` by assignment.
-:attr:`!__doc__` is also a valid attribute, returning the docstring belonging to
-the class: ``"A simple example class"``.
+:attr:`~type.__doc__` is also a valid attribute, returning the docstring
+belonging to the class: ``"A simple example class"``.
 
 Class *instantiation* uses function notation.  Just pretend that the class
 object is a parameterless function that returns a new instance of the class.
@@ -325,7 +325,7 @@ Now what can we do with instance objects?  The only operations understood by
 instance objects are attribute references.  There are two kinds of valid
 attribute names: data attributes and methods.
 
-*data attributes* correspond to "instance variables" in Smalltalk, and to "data
+*Data attributes* correspond to "instance variables" in Smalltalk, and to "data
 members" in C++.  Data attributes need not be declared; like local variables,
 they spring into existence when they are first assigned to.  For example, if
 ``x`` is the instance of :class:`!MyClass` created above, the following piece of
@@ -688,6 +688,11 @@ current class name with leading underscore(s) stripped.  This mangling is done
 without regard to the syntactic position of the identifier, as long as it
 occurs within the definition of a class.
 
+.. seealso::
+
+   The :ref:`private name mangling specifications <private-name-mangling>`
+   for details and special cases.
+
 Name mangling is helpful for letting subclasses override methods without
 breaking intraclass method calls.  For example::
 
@@ -927,6 +932,6 @@ Examples::
 
 .. [#] Except for one thing.  Module objects have a secret read-only attribute called
    :attr:`~object.__dict__` which returns the dictionary used to implement the module's
-   namespace; the name :attr:`~object.__dict__` is an attribute but not a global name.
+   namespace; the name ``__dict__`` is an attribute but not a global name.
    Obviously, using this violates the abstraction of namespace implementation, and
    should be restricted to things like post-mortem debuggers.

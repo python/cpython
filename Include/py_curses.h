@@ -81,8 +81,6 @@ typedef struct {
     char *encoding;
 } PyCursesWindowObject;
 
-#define PyCursesWindow_Check(v) Py_IS_TYPE((v), &PyCursesWindow_Type)
-
 #define PyCurses_CAPSULE_NAME "_curses._C_API"
 
 
@@ -98,6 +96,8 @@ static void **PyCurses_API;
 #define PyCursesSetupTermCalled  {if (! ((int (*)(void))PyCurses_API[1]) () ) return NULL;}
 #define PyCursesInitialised      {if (! ((int (*)(void))PyCurses_API[2]) () ) return NULL;}
 #define PyCursesInitialisedColor {if (! ((int (*)(void))PyCurses_API[3]) () ) return NULL;}
+
+#define PyCursesWindow_Check(v)     Py_IS_TYPE((v), &PyCursesWindow_Type)
 
 #define import_curses() \
     PyCurses_API = (void **)PyCapsule_Import(PyCurses_CAPSULE_NAME, 1);

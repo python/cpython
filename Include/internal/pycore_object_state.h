@@ -8,8 +8,16 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_freelist.h"      // _PyObject_freelists
-#include "pycore_hashtable.h"     // _Py_hashtable_t
+#include "pycore_freelist_state.h"  // _Py_freelists
+#include "pycore_hashtable.h"       // _Py_hashtable_t
+
+
+/* Reference tracer state */
+struct _reftracer_runtime_state {
+    PyRefTracer tracer_func;
+    void* tracer_data;
+};
+
 
 struct _py_object_runtime_state {
 #ifdef Py_REF_DEBUG
@@ -20,7 +28,7 @@ struct _py_object_runtime_state {
 
 struct _py_object_state {
 #if !defined(Py_GIL_DISABLED)
-    struct _Py_object_freelists freelists;
+    struct _Py_freelists freelists;
 #endif
 #ifdef Py_REF_DEBUG
     Py_ssize_t reftotal;

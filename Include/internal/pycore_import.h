@@ -21,6 +21,7 @@ extern int _PyImport_SetModuleString(const char *name, PyObject* module);
 
 extern void _PyImport_AcquireLock(PyInterpreterState *interp);
 extern void _PyImport_ReleaseLock(PyInterpreterState *interp);
+extern void _PyImport_ReInitLock(PyInterpreterState *interp);
 
 // This is used exclusively for the sys and builtins modules:
 extern int _PyImport_FixupBuiltin(
@@ -29,12 +30,6 @@ extern int _PyImport_FixupBuiltin(
     const char *name,            /* UTF-8 encoded string */
     PyObject *modules
     );
-
-// Export for many shared extensions, like '_json'
-PyAPI_FUNC(PyObject*) _PyImport_GetModuleAttr(PyObject *, PyObject *);
-
-// Export for many shared extensions, like '_datetime'
-PyAPI_FUNC(PyObject*) _PyImport_GetModuleAttrString(const char *, const char *);
 
 
 struct _import_runtime_state {

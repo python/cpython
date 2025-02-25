@@ -274,7 +274,7 @@ class CAPITest(unittest.TestCase):
 
         # PyObject_SetAttr(obj, attr_name, NULL) removes the attribute
         xsetattr(obj, 'a', NULL)
-        self.assertFalse(hasattr(obj, 'a'))
+        self.assertNotHasAttr(obj, 'a')
         self.assertRaises(AttributeError, xsetattr, obj, 'b', NULL)
         self.assertRaises(RuntimeError, xsetattr, obj, 'evil', NULL)
 
@@ -294,7 +294,7 @@ class CAPITest(unittest.TestCase):
 
         # PyObject_SetAttrString(obj, attr_name, NULL) removes the attribute
         setattrstring(obj, b'a', NULL)
-        self.assertFalse(hasattr(obj, 'a'))
+        self.assertNotHasAttr(obj, 'a')
         self.assertRaises(AttributeError, setattrstring, obj, b'b', NULL)
         self.assertRaises(RuntimeError, setattrstring, obj, b'evil', NULL)
 
@@ -311,10 +311,10 @@ class CAPITest(unittest.TestCase):
         obj.a = 1
         setattr(obj, '\U0001f40d', 2)
         xdelattr(obj, 'a')
-        self.assertFalse(hasattr(obj, 'a'))
+        self.assertNotHasAttr(obj, 'a')
         self.assertRaises(AttributeError, xdelattr, obj, 'b')
         xdelattr(obj, '\U0001f40d')
-        self.assertFalse(hasattr(obj, '\U0001f40d'))
+        self.assertNotHasAttr(obj, '\U0001f40d')
 
         self.assertRaises(AttributeError, xdelattr, 42, 'numerator')
         self.assertRaises(RuntimeError, xdelattr, obj, 'evil')
@@ -328,10 +328,10 @@ class CAPITest(unittest.TestCase):
         obj.a = 1
         setattr(obj, '\U0001f40d', 2)
         delattrstring(obj, b'a')
-        self.assertFalse(hasattr(obj, 'a'))
+        self.assertNotHasAttr(obj, 'a')
         self.assertRaises(AttributeError, delattrstring, obj, b'b')
         delattrstring(obj, '\U0001f40d'.encode())
-        self.assertFalse(hasattr(obj, '\U0001f40d'))
+        self.assertNotHasAttr(obj, '\U0001f40d')
 
         self.assertRaises(AttributeError, delattrstring, 42, b'numerator')
         self.assertRaises(RuntimeError, delattrstring, obj, b'evil')
@@ -994,18 +994,51 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, xtuple, 42)
         self.assertRaises(SystemError, xtuple, NULL)
 
-    def test_number_check(self):
-        number_check = _testlimitedcapi.number_check
-        self.assertTrue(number_check(1 + 1j))
-        self.assertTrue(number_check(1))
-        self.assertTrue(number_check(0.5))
-        self.assertFalse(number_check("1 + 1j"))
-
     def test_object_generichash(self):
         # Test PyObject_GenericHash()
         generichash = _testcapi.object_generichash
         for obj in object(), 1, 'string', []:
             self.assertEqual(generichash(obj), object.__hash__(obj))
+
+    def run_iter_api_test(self, next_func):
+        for data in (), [], (1, 2, 3), [1 , 2, 3], "123":
+            with self.subTest(data=data):
+                items = []
+                it = iter(data)
+                while (item := next_func(it)) is not None:
+                    items.append(item)
+                self.assertEqual(items, list(data))
+
+        class Broken:
+            def __init__(self):
+                self.count = 0
+
+            def __next__(self):
+                if self.count < 3:
+                    self.count += 1
+                    return self.count
+                else:
+                    raise TypeError('bad type')
+
+        it = Broken()
+        self.assertEqual(next_func(it), 1)
+        self.assertEqual(next_func(it), 2)
+        self.assertEqual(next_func(it), 3)
+        with self.assertRaisesRegex(TypeError, 'bad type'):
+            next_func(it)
+
+    def test_iter_next(self):
+        from _testcapi import PyIter_Next
+        self.run_iter_api_test(PyIter_Next)
+        # CRASHES PyIter_Next(10)
+
+    def test_iter_nextitem(self):
+        from _testcapi import PyIter_NextItem
+        self.run_iter_api_test(PyIter_NextItem)
+
+        regex = "expected.*iterator.*got.*'int'"
+        with self.assertRaisesRegex(TypeError, regex):
+            PyIter_NextItem(10)
 
 
 if __name__ == "__main__":

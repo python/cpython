@@ -357,7 +357,7 @@ def askinteger(title, prompt, **kw):
 
 
 class _QueryFloat(_QueryDialog):
-    errormessage = "Not a floating point value."
+    errormessage = "Not a floating-point value."
 
     def getresult(self):
         return self.getdouble(self.entry.get())

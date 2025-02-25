@@ -1,1 +1,0 @@
-Fix data races on the field that stores a pointer to the interpreter's main thread that occur in free-threaded builds.

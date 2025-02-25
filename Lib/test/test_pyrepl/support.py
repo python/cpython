@@ -1,3 +1,4 @@
+import os
 from code import InteractiveConsole
 from functools import partial
 from typing import Iterable
@@ -36,6 +37,20 @@ def more_lines(text: str, namespace: dict | None = None):
 def code_to_events(code: str):
     for c in code:
         yield Event(evt="key", data=c, raw=bytearray(c.encode("utf-8")))
+
+
+def clean_screen(screen: Iterable[str]):
+    """Cleans color and console characters out of a screen output.
+
+    This is useful for screen testing, it increases the test readability since
+    it strips out all the unreadable side of the screen.
+    """
+    output = []
+    for line in screen:
+        if line.startswith(">>>") or line.startswith("..."):
+            line = line[3:]
+        output.append(line)
+    return "\n".join(output).strip()
 
 
 def prepare_reader(console: Console, **kwargs):
@@ -87,7 +102,7 @@ handle_events_narrow_console = partial(
 
 
 class FakeConsole(Console):
-    def __init__(self, events, encoding="utf-8"):
+    def __init__(self, events, encoding="utf-8") -> None:
         self.events = iter(events)
         self.encoding = encoding
         self.screen = []
@@ -136,8 +151,8 @@ class FakeConsole(Console):
     def forgetinput(self) -> None:
         pass
 
-    def wait(self) -> None:
-        pass
+    def wait(self, timeout: float | None = None) -> bool:
+        return True
 
     def repaint(self) -> None:
         pass

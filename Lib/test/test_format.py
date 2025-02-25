@@ -36,7 +36,7 @@ def testformat(formatstr, args, output=None, limit=None, overflowok=False):
         # when 'limit' is specified, it determines how many characters
         # must match exactly; lengths must always match.
         # ex: limit=5, '12345678' matches '12345___'
-        # (mainly for floating point format tests for which an exact match
+        # (mainly for floating-point format tests for which an exact match
         # can't be guaranteed due to rounding and representation errors)
         elif output and limit is not None and (
                 len(result)!=len(output) or result[:limit]!=output[:limit]):
@@ -515,11 +515,15 @@ class FormatTest(unittest.TestCase):
         error_msg = re.escape("Cannot specify both ',' and '_'.")
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:,_}'.format(1)
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:.,_f}'.format(1.1)
 
     def test_with_an_underscore_and_a_comma_in_format_specifier(self):
         error_msg = re.escape("Cannot specify both ',' and '_'.")
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:_,}'.format(1)
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:._,f}'.format(1.1)
 
     def test_better_error_message_format(self):
         # https://bugs.python.org/issue20524

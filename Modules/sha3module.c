@@ -66,18 +66,20 @@ typedef struct {
     Hacl_Hash_SHA3_state_t *hash_state;
 } SHA3object;
 
+#define _SHA3object_CAST(op)    ((SHA3object *)(op))
+
 #include "clinic/sha3module.c.h"
 
 static SHA3object *
 newSHA3object(PyTypeObject *type)
 {
-    SHA3object *newobj;
-    newobj = (SHA3object *)PyObject_New(SHA3object, type);
+    SHA3object *newobj = PyObject_GC_New(SHA3object, type);
     if (newobj == NULL) {
         return NULL;
     }
     HASHLIB_INIT_MUTEX(newobj);
 
+    PyObject_GC_Track(newobj);
     return newobj;
 }
 
@@ -166,15 +168,33 @@ py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity)
 
 /* Internal methods for a hash object */
 
-static void
-SHA3_dealloc(SHA3object *self)
+static int
+SHA3_clear(PyObject *op)
 {
-    Hacl_Hash_SHA3_free(self->hash_state);
+    SHA3object *self = _SHA3object_CAST(op);
+    if (self->hash_state != NULL) {
+        Hacl_Hash_SHA3_free(self->hash_state);
+        self->hash_state = NULL;
+    }
+    return 0;
+}
+
+static void
+SHA3_dealloc(PyObject *self)
+{
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_Free(self);
+    PyObject_GC_UnTrack(self);
+    (void)SHA3_clear(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
+static int
+SHA3_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(Py_TYPE(self));
+    return 0;
+}
 
 /* External methods for a hash object */
 
@@ -286,15 +306,16 @@ static PyMethodDef SHA3_methods[] = {
 
 
 static PyObject *
-SHA3_get_block_size(SHA3object *self, void *closure)
+SHA3_get_block_size(PyObject *op, void *Py_UNUSED(closure))
 {
+    SHA3object *self = _SHA3object_CAST(op);
     uint32_t rate = Hacl_Hash_SHA3_block_len(self->hash_state);
     return PyLong_FromLong(rate);
 }
 
 
 static PyObject *
-SHA3_get_name(SHA3object *self, void *closure)
+SHA3_get_name(PyObject *self, void *Py_UNUSED(closure))
 {
     PyTypeObject *type = Py_TYPE(self);
 
@@ -321,9 +342,10 @@ SHA3_get_name(SHA3object *self, void *closure)
 
 
 static PyObject *
-SHA3_get_digest_size(SHA3object *self, void *closure)
+SHA3_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
     // Preserving previous behavior: variable-length algorithms return 0
+    SHA3object *self = _SHA3object_CAST(op);
     if (Hacl_Hash_SHA3_is_shake(self->hash_state))
       return PyLong_FromLong(0);
     else
@@ -332,46 +354,51 @@ SHA3_get_digest_size(SHA3object *self, void *closure)
 
 
 static PyObject *
-SHA3_get_capacity_bits(SHA3object *self, void *closure)
+SHA3_get_capacity_bits(PyObject *op, void *Py_UNUSED(closure))
 {
+    SHA3object *self = _SHA3object_CAST(op);
     uint32_t rate = Hacl_Hash_SHA3_block_len(self->hash_state) * 8;
+    assert(rate <= 1600);
     int capacity = 1600 - rate;
     return PyLong_FromLong(capacity);
 }
 
 
 static PyObject *
-SHA3_get_rate_bits(SHA3object *self, void *closure)
+SHA3_get_rate_bits(PyObject *op, void *Py_UNUSED(closure))
 {
+    SHA3object *self = _SHA3object_CAST(op);
     uint32_t rate = Hacl_Hash_SHA3_block_len(self->hash_state) * 8;
     return PyLong_FromLong(rate);
 }
 
 static PyObject *
-SHA3_get_suffix(SHA3object *self, void *closure)
+SHA3_get_suffix(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     unsigned char suffix[2] = {0x06, 0};
     return PyBytes_FromStringAndSize((const char *)suffix, 1);
 }
 
 static PyGetSetDef SHA3_getseters[] = {
-    {"block_size", (getter)SHA3_get_block_size, NULL, NULL, NULL},
-    {"name", (getter)SHA3_get_name, NULL, NULL, NULL},
-    {"digest_size", (getter)SHA3_get_digest_size, NULL, NULL, NULL},
-    {"_capacity_bits", (getter)SHA3_get_capacity_bits, NULL, NULL, NULL},
-    {"_rate_bits", (getter)SHA3_get_rate_bits, NULL, NULL, NULL},
-    {"_suffix", (getter)SHA3_get_suffix, NULL, NULL, NULL},
+    {"block_size", SHA3_get_block_size, NULL, NULL, NULL},
+    {"name", SHA3_get_name, NULL, NULL, NULL},
+    {"digest_size", SHA3_get_digest_size, NULL, NULL, NULL},
+    {"_capacity_bits", SHA3_get_capacity_bits, NULL, NULL, NULL},
+    {"_rate_bits", SHA3_get_rate_bits, NULL, NULL, NULL},
+    {"_suffix", SHA3_get_suffix, NULL, NULL, NULL},
     {NULL}  /* Sentinel */
 };
 
 #define SHA3_TYPE_SLOTS(type_slots_obj, type_doc, type_methods, type_getseters) \
     static PyType_Slot type_slots_obj[] = { \
+        {Py_tp_clear, SHA3_clear}, \
         {Py_tp_dealloc, SHA3_dealloc}, \
+        {Py_tp_traverse, SHA3_traverse}, \
         {Py_tp_doc, (char*)type_doc}, \
         {Py_tp_methods, type_methods}, \
         {Py_tp_getset, type_getseters}, \
         {Py_tp_new, py_sha3_new}, \
-        {0,0} \
+        {0, NULL} \
     }
 
 // Using _PyType_GetModuleState() on these types is safe since they
@@ -380,7 +407,8 @@ static PyGetSetDef SHA3_getseters[] = {
     static PyType_Spec type_spec_obj = { \
         .name = "_sha3." type_name, \
         .basicsize = sizeof(SHA3object), \
-        .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE, \
+        .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_IMMUTABLETYPE \
+                 | Py_TPFLAGS_HAVE_GC, \
         .slots = type_slots \
     }
 
@@ -417,10 +445,11 @@ SHA3_TYPE_SLOTS(sha3_512_slots, sha3_512__doc__, SHA3_methods, SHA3_getseters);
 SHA3_TYPE_SPEC(sha3_512_spec, "sha3_512", sha3_512_slots);
 
 static PyObject *
-_SHAKE_digest(SHA3object *self, unsigned long digestlen, int hex)
+_SHAKE_digest(PyObject *op, unsigned long digestlen, int hex)
 {
     unsigned char *digest = NULL;
     PyObject *result = NULL;
+    SHA3object *self = _SHA3object_CAST(op);
 
     if (digestlen >= (1 << 29)) {
         PyErr_SetString(PyExc_ValueError, "length is too large");
@@ -432,7 +461,7 @@ _SHAKE_digest(SHA3object *self, unsigned long digestlen, int hex)
     }
 
     /* Get the raw (binary) digest value. The HACL functions errors out if:
-     * - the algorith is not shake -- not the case here
+     * - the algorithm is not shake -- not the case here
      * - the output length is zero -- we follow the existing behavior and return
      *   an empty digest, without raising an error */
     if (digestlen > 0) {
@@ -444,9 +473,7 @@ _SHAKE_digest(SHA3object *self, unsigned long digestlen, int hex)
         result = PyBytes_FromStringAndSize((const char *)digest,
                                            digestlen);
     }
-    if (digest != NULL) {
-        PyMem_Free(digest);
-    }
+    PyMem_Free(digest);
     return result;
 }
 
@@ -464,7 +491,7 @@ static PyObject *
 _sha3_shake_128_digest_impl(SHA3object *self, unsigned long length)
 /*[clinic end generated code: output=2313605e2f87bb8f input=418ef6a36d2e6082]*/
 {
-    return _SHAKE_digest(self, length, 0);
+    return _SHAKE_digest((PyObject *)self, length, 0);
 }
 
 
@@ -481,17 +508,17 @@ static PyObject *
 _sha3_shake_128_hexdigest_impl(SHA3object *self, unsigned long length)
 /*[clinic end generated code: output=bf8e2f1e490944a8 input=69fb29b0926ae321]*/
 {
-    return _SHAKE_digest(self, length, 1);
+    return _SHAKE_digest((PyObject *)self, length, 1);
 }
 
 static PyObject *
-SHAKE_get_digest_size(SHA3object *self, void *closure)
+SHAKE_get_digest_size(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(0);
 }
 
 static PyObject *
-SHAKE_get_suffix(SHA3object *self, void *closure)
+SHAKE_get_suffix(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     unsigned char suffix[2] = {0x1f, 0};
     return PyBytes_FromStringAndSize((const char *)suffix, 1);
@@ -499,12 +526,12 @@ SHAKE_get_suffix(SHA3object *self, void *closure)
 
 
 static PyGetSetDef SHAKE_getseters[] = {
-    {"block_size", (getter)SHA3_get_block_size, NULL, NULL, NULL},
-    {"name", (getter)SHA3_get_name, NULL, NULL, NULL},
-    {"digest_size", (getter)SHAKE_get_digest_size, NULL, NULL, NULL},
-    {"_capacity_bits", (getter)SHA3_get_capacity_bits, NULL, NULL, NULL},
-    {"_rate_bits", (getter)SHA3_get_rate_bits, NULL, NULL, NULL},
-    {"_suffix", (getter)SHAKE_get_suffix, NULL, NULL, NULL},
+    {"block_size", SHA3_get_block_size, NULL, NULL, NULL},
+    {"name", SHA3_get_name, NULL, NULL, NULL},
+    {"digest_size", SHAKE_get_digest_size, NULL, NULL, NULL},
+    {"_capacity_bits", SHA3_get_capacity_bits, NULL, NULL, NULL},
+    {"_rate_bits", SHA3_get_rate_bits, NULL, NULL, NULL},
+    {"_suffix", SHAKE_get_suffix, NULL, NULL, NULL},
     {NULL}  /* Sentinel */
 };
 
@@ -563,7 +590,7 @@ _sha3_clear(PyObject *module)
 static void
 _sha3_free(void *module)
 {
-    _sha3_clear((PyObject *)module);
+    (void)_sha3_clear((PyObject *)module);
 }
 
 static int
