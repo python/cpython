@@ -49,6 +49,8 @@ The following exception classes are defined in the :mod:`email.errors` module:
    on an instance of a class derived from
    :class:`~email.mime.nonmultipart.MIMENonMultipart` (e.g.
    :class:`~email.mime.image.MIMEImage`).
+   :exc:`MultipartConversionError` multiply
+   inherits from :exc:`MessageError` and the built-in :exc:`TypeError`.
 
 
 .. exception:: HeaderWriteError()
