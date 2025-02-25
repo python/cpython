@@ -124,7 +124,8 @@ def update_catalog_snapshots():
             translations = GNUTranslations(f)
         catalog_file = po_file.with_suffix('.json')
         with open(catalog_file, 'w') as f:
-            data = list(translations._catalog.items())
+            data = translations._catalog.items()
+            data = sorted(data, key=lambda x: (isinstance(x[0], tuple), x[0]))
             json.dump(data, f, indent=4)
             f.write('\n')
 
