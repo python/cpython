@@ -450,8 +450,8 @@ cannot be split, the specified width will be exceeded::
     'summary': 'A sample Python project',
     'version': '1.2.0'}
 
-Lastly, we can achieve block style formatting with the *block_style* parameter. Best results
-are achieved with a higher *indent* value::
+Lastly, we can achieve block style formatting with the *block_style* parameter.
+Best results are achieved with a higher *indent* value::
 
    >>> pprint.pp(project_info, indent=4, block_style=True)
    {
