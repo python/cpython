@@ -607,6 +607,12 @@ APIs:
    decref'ing the returned objects.
 
 
+.. c:function:: void PyUnicode_Append(PyObject **p_left, PyObject *right)
+
+   Append the string *right* to the end of *p_left*.  (In particular, a :exc:`SystemError`
+   if *p_left* or *right* is ``NULL``, or if either is not a Unicode object).
+
+
 .. c:function:: const char* PyUnicode_GetDefaultEncoding(void)
 
    Return the name of the default string encoding, ``"utf-8"``.
