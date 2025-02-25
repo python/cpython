@@ -3184,7 +3184,7 @@ static PyGetSetDef pattern_getset[] = {
 
 #define PAT_OFF(x) offsetof(PatternObject, x)
 static PyMemberDef pattern_members[] = {
-    {"pattern",    _Py_T_OBJECT,    PAT_OFF(pattern),       Py_READONLY,
+    {"pattern",    Py_T_OBJECT_EX,    PAT_OFF(pattern),       Py_READONLY,
      "The pattern string from which the RE object was compiled."},
     {"flags",      Py_T_INT,       PAT_OFF(flags),         Py_READONLY,
      "The regex matching flags."},
@@ -3243,9 +3243,9 @@ static PyGetSetDef match_getset[] = {
 
 #define MATCH_OFF(x) offsetof(MatchObject, x)
 static PyMemberDef match_members[] = {
-    {"string",  _Py_T_OBJECT,   MATCH_OFF(string),  Py_READONLY,
+    {"string",  Py_T_OBJECT_EX,   MATCH_OFF(string),  Py_READONLY,
      "The string passed to match() or search()."},
-    {"re",      _Py_T_OBJECT,   MATCH_OFF(pattern), Py_READONLY,
+    {"re",      Py_T_OBJECT_EX,   MATCH_OFF(pattern), Py_READONLY,
      "The regular expression object."},
     {"pos",     Py_T_PYSSIZET, MATCH_OFF(pos),     Py_READONLY,
      "The index into the string at which the RE engine started looking for a match."},
@@ -3293,7 +3293,7 @@ static PyMethodDef scanner_methods[] = {
 
 #define SCAN_OFF(x) offsetof(ScannerObject, x)
 static PyMemberDef scanner_members[] = {
-    {"pattern", _Py_T_OBJECT, SCAN_OFF(pattern), Py_READONLY},
+    {"pattern", Py_T_OBJECT_EX, SCAN_OFF(pattern), Py_READONLY},
     {NULL}  /* Sentinel */
 };
 
