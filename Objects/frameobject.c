@@ -177,7 +177,6 @@ static PyObject *
 framelocalsproxy_getitem(PyObject *self, PyObject *key)
 {
     PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
-    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
     PyObject *value = NULL;
 
     int i = framelocalsproxy_getkeyindex(frame, key, true, &value);
