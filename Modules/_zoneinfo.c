@@ -341,7 +341,7 @@ zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
         if (instance == NULL) {
             return NULL;
         }
-        ((PyZoneInfo_ZoneInfo *)(instance))->source = SOURCE_CACHE;
+        ((PyZoneInfo_ZoneInfo *)instance)->source = SOURCE_CACHE;
     }
 
     update_strong_cache(state, type, key, instance);
