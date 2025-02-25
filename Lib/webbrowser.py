@@ -168,7 +168,7 @@ class GenericBrowser(BaseBrowser):
     """Class for all browsers started with a command
        and without remote functionality."""
 
-    def __init__(self, name, /, _supports_file=True):
+    def __init__(self, name, *, _supports_file=True):
         if isinstance(name, str):
             self.name = name
             self.args = ["%s"]
