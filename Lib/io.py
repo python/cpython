@@ -113,7 +113,7 @@ class Reader[T](abc.ABC):
 
     __slots__ = ()
 
-    @abstractmethod
+    @abc.abstractmethod
     def read(self, size: int = ..., /) -> T:
         """Read data from the input stream and return it.
 
@@ -136,7 +136,7 @@ class Writer[T](abc.ABC):
 
     __slots__ = ()
 
-    @abstractmethod
+    @abc.abstractmethod
     def write(self, data: T, /) -> int:
         """Write data to the output stream and return number of items written."""
 
