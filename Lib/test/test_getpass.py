@@ -16,7 +16,6 @@ except ImportError:
 
 try:
     import msvcrt
-
 except ImportError:
     mscvrt = None
 
