@@ -110,7 +110,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self.__eager_start()
         else:
             self._loop.call_soon(self.__step, context=self._context)
-            _register_task(self)
+            _py_register_task(self)
 
     def __del__(self):
         if self._state == futures._PENDING and self._log_destroy_pending:
