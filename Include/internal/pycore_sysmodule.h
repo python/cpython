@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+PyAPI_FUNC(PyObject *) _PySys_GetAttr(PyThreadState *, PyObject *); /* unused */
 PyAPI_FUNC(int) _PySys_GetOptionalAttr(PyObject *, PyObject **);
 PyAPI_FUNC(int) _PySys_GetOptionalAttrString(const char *, PyObject **);
 PyAPI_FUNC(PyObject *) _PySys_GetRequiredAttr(PyObject *);

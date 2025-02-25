@@ -71,6 +71,21 @@ module sys
 
 
 PyObject *
+_PySys_GetAttr(PyThreadState *tstate, PyObject *name)
+{
+    PyObject *sd = tstate->interp->sysdict;
+    if (sd == NULL) {
+        return NULL;
+    }
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+    /* XXX Suppress a new exception if it was raised and restore
+     * the old one. */
+    PyObject *value = _PyDict_GetItemWithError(sd, name);
+    _PyErr_SetRaisedException(tstate, exc);
+    return value;
+}
+
+ PyObject *
 _PySys_GetRequiredAttr(PyObject *name)
 {
     if (!PyUnicode_Check(name)) {
