@@ -1179,15 +1179,10 @@ deque([('brown', 2),
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.access_count = 0
-        dummy_userdict = DummyUserDict(
-            {
-                "foo": "bar",
-                "baz": 123,
-                "qux": {"foo": "bar", "baz": 123},
-                "quux": ["foo", "bar", "baz"],
-                "corge": 7,
-            }
-        )
+        dummy_userdict = DummyUserDict({ "foo": "bar", "baz": 123,
+                                        "qux": {"foo": "bar", "baz": 123},
+                                        "quux": ["foo", "bar", "baz"],
+                                        "corge": 7 })
         dummy_userdict.access_count = 5
 
         class DummyUserList(UserList):
