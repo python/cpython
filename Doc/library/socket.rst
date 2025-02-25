@@ -139,7 +139,11 @@ created.  Socket addresses are represented as follows:
 
   - :const:`BTPROTO_L2CAP` accepts ``(bdaddr, psm, cid, bdaddr_type)`` where ``bdaddr`` is
     the Bluetooth address as a string and ``psm``, ``cid`` and ``bdaddr_type`` are integers.
-    ``cid`` and ``bdaddr_type`` are optional.
+    ``cid`` and ``bdaddr_type`` are optional. ``bdaddr_type`` should be one of :const:`BDADDR_BREDR`,
+    :const:`BDADDR_LE_PUBLIC`, :const:`BDADDR_LE_RANDOM`.
+
+    .. versionchanged:: next
+      Added ``cid`` and ``bdaddr_type`` fields.
 
   - :const:`BTPROTO_RFCOMM` accepts ``(bdaddr, channel)`` where ``bdaddr``
     is the Bluetooth address as a string and ``channel`` is an integer.
@@ -634,6 +638,14 @@ Constants
    meanings. For example, :const:`BDADDR_ANY` can be used to indicate
    any address when specifying the binding socket with
    :const:`BTPROTO_RFCOMM`.
+
+.. data:: BDADDR_BREDR
+          BDADDR_LE_PUBLIC
+          BDADDR_LE_RANDOM
+
+    These constants describe the Bluetooth address type when binding or connecting a :const:`BTPROTO_L2CAP` socket.
+
+    .. versionadded:: next
 
 .. data:: HCI_FILTER
           HCI_TIME_STAMP
