@@ -167,8 +167,7 @@ class UnixGetpassTest(unittest.TestCase):
             self.assertIn('Password:', stderr.getvalue())
 
 
-@unittest.skipIf(msvcrt is None, 'tests require system with msvcrt (Windows)')
-@unittest.skipUnless(support.MS_WINDOWS, "Windows-specific tests")
+@unittest.skipUnless(msvcrt, 'tests require system with msvcrt')
 class WinGetpassTest(unittest.TestCase):
 
     def test_uses_msvcrt_directly(self):
