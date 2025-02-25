@@ -12,10 +12,10 @@ class DummyEditwin:
         self.indentwidth = 8
         self.tabwidth = 8
         self.prompt_last_line = '>>>'
-        self.num_context_lines = 50, 500, 1000
 
     _build_char_in_string_func = EditorWindow._build_char_in_string_func
     is_char_in_string = EditorWindow.is_char_in_string
+    getlineno = EditorWindow.getlineno
 
 
 class HyperParserTest(unittest.TestCase):
