@@ -1720,7 +1720,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                     sys.stderr = X()
                     sys.stdin = X('input\n')
                     support.gc_collect()
-                return StringIO.__getattribute__(self, name)
+                return io.StringIO.__getattribute__(self, name)
 
         with (support.swap_attr(sys, 'stdout', None),
               support.swap_attr(sys, 'stderr', None),
