@@ -62,6 +62,14 @@ class CompilationTest(unittest.TestCase):
                                      '%d emails sent.', 2),
                          '%d emails sent.')
 
+    def test_po_with_bom(self):
+        with temp_cwd():
+            Path('bom.po').write_bytes(b'\xef\xbb\xbfmsgid "Python"\nmsgstr "Pioton"\n')
+
+            res = assert_python_failure(msgfmt, 'bom.po')
+            err = res.err.decode('utf-8')
+            self.assertIn('The file bom.po starts with a UTF-8 BOM', err)
+
     def test_invalid_msgid_plural(self):
         with temp_cwd():
             Path('invalid.po').write_text('''\
