@@ -1495,7 +1495,9 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
             PyObject *addrobj = makebdaddr(&_BT_L2_MEMB(a, bdaddr));
             PyObject *ret = NULL;
             if (addrobj) {
-                /* Retain old format for non-LE address */
+                /* Retain old format for non-LE address.
+                   (cid may be set for BR/EDR, but we're discarding it for now)
+                 */
                 if (_BT_L2_MEMB(a, bdaddr_type) == BDADDR_BREDR) {
                     ret = Py_BuildValue("Oi",
                                         addrobj,
