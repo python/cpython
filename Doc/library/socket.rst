@@ -137,10 +137,16 @@ created.  Socket addresses are represented as follows:
 - :const:`AF_BLUETOOTH` supports the following protocols and address
   formats:
 
-  - :const:`BTPROTO_L2CAP` accepts ``(bdaddr, psm, cid, bdaddr_type)`` where ``bdaddr`` is
-    the Bluetooth address as a string and ``psm``, ``cid`` and ``bdaddr_type`` are integers.
-    ``cid`` and ``bdaddr_type`` are optional. ``bdaddr_type`` should be one of :const:`BDADDR_BREDR`,
-    :const:`BDADDR_LE_PUBLIC`, :const:`BDADDR_LE_RANDOM`.
+  - :const:`BTPROTO_L2CAP` accepts a tuple
+    ``(bdaddr, psm[, cid[, bdaddr_type]])`` where:
+
+    - ``bdaddr``: String specifying the Bluetooth address.
+    - ``psm`` Integer specifying the Protocol/Service Multiplexer.
+    - ``cid`` Optional integer specifying the Channel Identifier. If not given,
+      defaults to zero.
+    - ``bdaddr_type`` Optional integer specifying the address type;
+      one of :const:`BDADDR_BREDR` (default), :const:`BDADDR_LE_PUBLIC`,
+      :const:`BDADDR_LE_RANDOM`.
 
     .. versionchanged:: next
       Added ``cid`` and ``bdaddr_type`` fields.
@@ -631,6 +637,14 @@ Constants
    This constant contains a boolean value which indicates if IPv6 is supported on
    this platform.
 
+.. data:: AF_BLUETOOTH
+          BTPROTO_L2CAP
+          BTPROTO_RFCOMM
+          BTPROTO_HCI
+          BTPROTO_SCO
+
+   Integer constants for use with Bluetooth addresses.
+
 .. data:: BDADDR_ANY
           BDADDR_LOCAL
 
@@ -643,7 +657,8 @@ Constants
           BDADDR_LE_PUBLIC
           BDADDR_LE_RANDOM
 
-    These constants describe the Bluetooth address type when binding or connecting a :const:`BTPROTO_L2CAP` socket.
+   These constants describe the Bluetooth address type when binding or
+   connecting a :const:`BTPROTO_L2CAP` socket.
 
     .. versionadded:: next
 
