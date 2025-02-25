@@ -448,7 +448,7 @@ def join_header_words(lists):
         attr = []
         for k, v in pairs:
             if v is not None:
-                if not re.search(r"^\w+$", v):
+                if not v.isalnum() and '_' not in v:
                     v = HEADER_JOIN_ESCAPE_RE.sub(r"\\\1", v)  # escape " and \
                     v = '"%s"' % v
                 k = "%s=%s" % (k, v)
