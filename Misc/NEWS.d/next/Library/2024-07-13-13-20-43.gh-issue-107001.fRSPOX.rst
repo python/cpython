@@ -1,0 +1,4 @@
+Add :func:`~typing.copy_func_params` and :func:`~typing.copy_func_params`
+to :mod:`typing` that copies/applies the
+:class:`~typing.ParamSpec` from one function/method to another.
+Patch by Carli Freudenberg.
