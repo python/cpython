@@ -153,7 +153,8 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
         code_list, storage = Storage.for_uop(stack, uop)
         for code in code_list:
             emitter.emit(code)
-        for idx, cache in enumerate(uop.caches):
+        idx = 0
+        for cache in uop.caches:
             if cache.name != "unused":
                 if cache.size == 4:
                     type = cast = "PyObject *"
@@ -161,6 +162,7 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
                     type = f"uint{cache.size*16}_t "
                     cast = f"uint{cache.size*16}_t"
                 emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND{idx}();\n")
+                idx += 1
         storage = emitter.emit_tokens(uop, storage, None)
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0]) from None

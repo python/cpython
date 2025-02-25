@@ -35,6 +35,9 @@ OPARG_KINDS = {
     "OPARG_SAVE_RETURN_OFFSET": 7,
     # Skip 8 as the other powers of 2 are sizes
     "OPARG_REPLACED": 9,
+    "OPERAND1_1": 10,
+    "OPERAND1_2": 11,
+    "OPERAND1_4": 12,
 }
 
 FLAGS = [
@@ -313,10 +316,10 @@ def generate_metadata_table(analysis: Analysis, out: CWriter) -> None:
 
 
 def generate_expansion_table(analysis: Analysis, out: CWriter) -> None:
-    expansions_table: dict[str, list[tuple[str, int, int]]] = {}
+    expansions_table: dict[str, list[tuple[str, str, int]]] = {}
     for inst in sorted(analysis.instructions.values(), key=lambda t: t.name):
         offset: int = 0  # Cache effect offset
-        expansions: list[tuple[str, int, int]] = []  # [(name, size, offset), ...]
+        expansions: list[tuple[str, str, int]] = []  # [(name, size, offset), ...]
         if inst.is_super():
             pieces = inst.name.split("_")
             assert len(pieces) == 4, f"{inst.name} doesn't look like a super-instr"
@@ -332,22 +335,30 @@ def generate_expansion_table(analysis: Analysis, out: CWriter) -> None:
             assert (
                 len(instr2.parts) == 1
             ), f"{name2} is not a good superinstruction part"
-            expansions.append((instr1.parts[0].name, OPARG_KINDS["OPARG_TOP"], 0))
-            expansions.append((instr2.parts[0].name, OPARG_KINDS["OPARG_BOTTOM"], 0))
+            expansions.append((instr1.parts[0].name, "OPARG_TOP", 0))
+            expansions.append((instr2.parts[0].name, "OPARG_BOTTOM", 0))
         elif not is_viable_expansion(inst):
             continue
         else:
             for part in inst.parts:
                 size = part.size
-                if part.name == "_SAVE_RETURN_OFFSET":
-                    size = OPARG_KINDS["OPARG_SAVE_RETURN_OFFSET"]
                 if isinstance(part, Uop):
+                    fmt = "0"
+                    if part.name == "_SAVE_RETURN_OFFSET":
+                        fmt = "OPARG_SAVE_RETURN_OFFSET"
+                    elif part.caches:
+                        fmt = str(part.caches[0].size)
                     # Skip specializations
                     if "specializing" in part.annotations:
                         continue
                     if "replaced" in part.annotations:
-                        size = OPARG_KINDS["OPARG_REPLACED"]
-                    expansions.append((part.name, size, offset if size else 0))
+                        fmt = "OPARG_REPLACED"
+                    expansions.append((part.name, fmt, offset))
+                    if len(part.caches) > 1:
+                        internal_offset = 0
+                        for cache in part.caches[:-1]:
+                            internal_offset += cache.size
+                        expansions.append((part.name, f"OPERAND1_{part.caches[-1].size}", offset+internal_offset))
                 offset += part.size
         expansions_table[inst.name] = expansions
     max_uops = max(len(ex) for ex in expansions_table.values())
