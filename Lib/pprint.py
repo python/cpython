@@ -55,7 +55,8 @@ def pprint(object, stream=None, indent=1, width=80, depth=None, *,
 
 
 def pformat(object, indent=1, width=80, depth=None, *,
-            compact=False, sort_dicts=True, underscore_numbers=False, block_style=False):
+            compact=False, sort_dicts=True, underscore_numbers=False,
+            block_style=False):
     """Format a Python object into a pretty-printed representation."""
     return PrettyPrinter(indent=indent, width=width, depth=depth,
                          compact=compact, sort_dicts=sort_dicts,
