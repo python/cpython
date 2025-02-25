@@ -162,5 +162,64 @@ class UnixGetpassTest(unittest.TestCase):
             self.assertIn('Password:', stderr.getvalue())
 
 
+try:
+    import msvcrt
+    msvcrt = True
+except ImportError:
+    msvcrt = False
+
+@unittest.skipUnless(msvcrt, 'tests require system with msvcrt (Windows)')
+class WinGetpassTest(unittest.TestCase):
+
+    def test_uses_msvcrt_directly(self):
+        # Mock the msvcrt.getch function to return a sequence ending with Enter key
+        with mock.patch('msvcrt.getch') as getch:
+            getch.side_effect = [b'a', b'b', b'c', b'\r']
+            mock_stream = mock.Mock(spec=StringIO)
+            result = getpass.win_getpass(stream=mock_stream)
+            self.assertEqual(getch.call_count, 4)
+            self.assertEqual(result, 'abc')
+            # Check that the prompt was written to the stream
+            mock_stream.write.assert_any_call('Password: ')
+            # Check that the stream was flushed
+            mock_stream.flush.assert_called()
+
+    def test_handles_backspace(self):
+        with mock.patch('msvcrt.getch') as getch, \
+             mock.patch('msvcrt.putch') as putch:
+            getch.side_effect = [b'a', b'b', b'\b', b'c', b'\r']
+            result = getpass.win_getpass()
+            self.assertEqual(result, 'ac')
+            # Verify putch was called to handle the backspace (erase character)
+            # The exact sequence depends on the implementation, but should include
+            # calls to handle the backspace character
+            putch.assert_any_call(b'\b')
+
+    def test_handles_ctrl_c(self):
+        with mock.patch('msvcrt.getch') as getch:
+            # Simulate typing 'a' then Ctrl+C (ASCII value 3)
+            getch.side_effect = [b'a', b'\x03']
+            # Verify that KeyboardInterrupt is raised
+            with self.assertRaises(KeyboardInterrupt):
+                getpass.win_getpass()
+
+    def test_flushes_stream_after_input(self):
+        with mock.patch('msvcrt.getch') as getch:
+            # Simulate typing 'a' then Enter
+            getch.side_effect = [b'a', b'\r']
+            mock_stream = mock.Mock(spec=StringIO)
+            getpass.win_getpass(stream=mock_stream)
+            mock_stream.flush.assert_called()
+
+    def test_falls_back_to_fallback_if_msvcrt_raises(self):
+        with mock.patch('msvcrt.getch') as getch, \
+             mock.patch('getpass.fallback_getpass') as fallback:
+            # Make getch raise an exception to trigger the fallback
+            getch.side_effect = RuntimeError("Simulated msvcrt failure")
+            mock_stream = mock.Mock(spec=StringIO)
+            getpass.win_getpass(stream=mock_stream)
+            fallback.assert_called_once_with('Password: ', mock_stream)
+
+
 if __name__ == "__main__":
     unittest.main()
