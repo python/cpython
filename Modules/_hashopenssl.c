@@ -1706,9 +1706,10 @@ _hmac_dealloc(PyObject *op)
 }
 
 static PyObject *
-_hmac_repr(PyObject *self)
+_hmac_repr(PyObject *op)
 {
-    PyObject *digest_name = _hashlib_hmac_get_name(self, NULL);
+    HMACobject *self = HMACobject_CAST(op);
+    PyObject *digest_name = py_digest_name(HMAC_CTX_get_md(self->ctx));
     if (digest_name == NULL) {
         return NULL;
     }
