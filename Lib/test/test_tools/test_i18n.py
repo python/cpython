@@ -8,13 +8,17 @@ from textwrap import dedent
 from pathlib import Path
 
 from test.support.script_helper import assert_python_ok
-from test.test_tools import skip_if_missing, toolsdir
+from test.test_tools import imports_under_tool, skip_if_missing, toolsdir
 from test.support.os_helper import temp_cwd, temp_dir
 
 
 skip_if_missing()
 
 DATA_DIR = Path(__file__).resolve().parent / 'i18n_data'
+
+
+with imports_under_tool("i18n"):
+    from pygettext import parse_spec
 
 
 def normalize_POT_file(pot):
@@ -377,16 +381,8 @@ class Test_pygettext(unittest.TestCase):
 
     def test_pygettext_output(self):
         """Test that the pygettext output exactly matches snapshots."""
-        for input_file in DATA_DIR.glob('*.py'):
-            output_file = input_file.with_suffix('.pot')
-            with self.subTest(input_file=f'i18n_data/{input_file}'):
-                contents = input_file.read_text(encoding='utf-8')
-                with temp_cwd(None):
-                    Path(input_file.name).write_text(contents)
-                    assert_python_ok('-Xutf8', self.script, '--docstrings',
-                                     '--add-comments=i18n:', input_file.name)
-                    output = Path('messages.pot').read_text(encoding='utf-8')
-
+        for input_file, output_file, output in extract_from_snapshots():
+            with self.subTest(input_file=input_file):
                 expected = output_file.read_text(encoding='utf-8')
                 self.assert_POT_equal(expected, output)
 
@@ -485,17 +481,67 @@ class Test_pygettext(unittest.TestCase):
         '''), raw=True)
         self.assertNotIn('#.', data)
 
+    def test_parse_keyword_spec(self):
+        valid = (
+            ('foo', ('foo', {0: 'msgid'})),
+            ('foo:1', ('foo', {0: 'msgid'})),
+            ('foo:1,2', ('foo', {0: 'msgid', 1: 'msgid_plural'})),
+            ('foo:1, 2', ('foo', {0: 'msgid', 1: 'msgid_plural'})),
+            ('foo:1,2c', ('foo', {0: 'msgid', 1: 'msgctxt'})),
+            ('foo:2c,1', ('foo', {0: 'msgid', 1: 'msgctxt'})),
+            ('foo:2c ,1', ('foo', {0: 'msgid', 1: 'msgctxt'})),
+            ('foo:1,2,3c', ('foo', {0: 'msgid', 1: 'msgid_plural', 2: 'msgctxt'})),
+            ('foo:1, 2, 3c', ('foo', {0: 'msgid', 1: 'msgid_plural', 2: 'msgctxt'})),
+            ('foo:3c,1,2', ('foo', {0: 'msgid', 1: 'msgid_plural', 2: 'msgctxt'})),
+        )
+        for spec, expected in valid:
+            with self.subTest(spec=spec):
+                self.assertEqual(parse_spec(spec), expected)
 
-def update_POT_snapshots():
-    for input_file in DATA_DIR.glob('*.py'):
+        invalid = (
+            ('foo:', "Invalid keyword spec 'foo:': missing argument positions"),
+            ('foo:bar', "Invalid keyword spec 'foo:bar': position is not an integer"),
+            ('foo:0', "Invalid keyword spec 'foo:0': argument positions must be strictly positive"),
+            ('foo:-2', "Invalid keyword spec 'foo:-2': argument positions must be strictly positive"),
+            ('foo:1,1', "Invalid keyword spec 'foo:1,1': duplicate positions"),
+            ('foo:1,2,1', "Invalid keyword spec 'foo:1,2,1': duplicate positions"),
+            ('foo:1c,2,1c', "Invalid keyword spec 'foo:1c,2,1c': duplicate positions"),
+            ('foo:1c,2,3c', "Invalid keyword spec 'foo:1c,2,3c': msgctxt can only appear once"),
+            ('foo:1,2,3', "Invalid keyword spec 'foo:1,2,3': too many positions"),
+            ('foo:1c', "Invalid keyword spec 'foo:1c': msgctxt cannot appear without msgid"),
+        )
+        for spec, message in invalid:
+            with self.subTest(spec=spec):
+                with self.assertRaises(ValueError) as cm:
+                    parse_spec(spec)
+                self.assertEqual(str(cm.exception), message)
+
+
+def extract_from_snapshots():
+    snapshots = {
+        'messages.py': (),
+        'fileloc.py': ('--docstrings',),
+        'docstrings.py': ('--docstrings',),
+        'comments.py': ('--add-comments=i18n:',),
+        'custom_keywords.py': ('--keyword=foo', '--keyword=nfoo:1,2',
+                               '--keyword=pfoo:1c,2',
+                               '--keyword=npfoo:1c,2,3'),
+    }
+
+    for filename, args in snapshots.items():
+        input_file = DATA_DIR / filename
         output_file = input_file.with_suffix('.pot')
         contents = input_file.read_bytes()
         with temp_cwd(None):
             Path(input_file.name).write_bytes(contents)
-            assert_python_ok('-Xutf8', Test_pygettext.script, '--docstrings',
-                             '--add-comments=i18n:', input_file.name)
-            output = Path('messages.pot').read_text(encoding='utf-8')
+            assert_python_ok('-Xutf8', Test_pygettext.script, *args,
+                             input_file.name)
+            yield (input_file, output_file,
+                   Path('messages.pot').read_text(encoding='utf-8'))
 
+
+def update_POT_snapshots():
+    for _, output_file, output in extract_from_snapshots():
         output = normalize_POT_file(output)
         output_file.write_text(output, encoding='utf-8')
 
