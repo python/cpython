@@ -824,8 +824,8 @@ def uuid7():
     int_uuid_7 |= tail
     # by construction, the variant and version bits are already cleared
     int_uuid_7 |= _RFC_4122_VERSION_7_FLAGS
-
     res = UUID._from_int(int_uuid_7)
+
     # defer global update until all computations are done
     _last_timestamp_v7 = timestamp_ms
     _last_counter_v7 = counter
