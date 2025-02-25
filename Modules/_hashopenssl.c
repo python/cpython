@@ -1534,7 +1534,6 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
  */
 
 static int _hmac_update(HMACobject*, PyObject*);
-static PyObject *_hashlib_hmac_get_name(PyObject *, void *);
 
 /*[clinic input]
 _hashlib.hmac_new
