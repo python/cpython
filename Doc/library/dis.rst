@@ -1402,12 +1402,28 @@ iterations of the loop.
       This opcode is now only used in situations where the local variable is
       guaranteed to be initialized. It cannot raise :exc:`UnboundLocalError`.
 
+.. opcode:: LOAD_FAST_BORROW (var_num)
+
+   Pushes a borrowed reference to the local ``co_varnames[var_num]`` onto the stack
+   in free-threaded builds. In default builds this is identical to ``LOAD_FAST``.
+
+   .. versionadded:: 3.14
+
 .. opcode:: LOAD_FAST_LOAD_FAST (var_nums)
 
    Pushes references to ``co_varnames[var_nums >> 4]`` and
    ``co_varnames[var_nums & 15]`` onto the stack.
 
    .. versionadded:: 3.13
+
+
+.. opcode:: LOAD_FAST_BORROW_LOAD_FAST_BORROW (var_nums)
+
+   Pushes borrowed references to ``co_varnames[var_nums >> 4]`` and
+   ``co_varnames[var_nums & 15]`` onto the stack in free-threaded builds. This is
+   identical to ``LOAD_FAST_LOAD_FAST`` in default builds.
+
+   .. versionadded:: 3.14
 
 .. opcode:: LOAD_FAST_CHECK (var_num)
 
@@ -2023,4 +2039,3 @@ instructions:
 
    .. deprecated:: 3.13
       All jumps are now relative. This list is empty.
-
