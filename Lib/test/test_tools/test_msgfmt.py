@@ -40,6 +40,28 @@ class CompilationTest(unittest.TestCase):
 
                     self.assertDictEqual(actual._catalog, expected._catalog)
 
+    def test_translations(self):
+        with open(data_dir / 'general.mo', 'rb') as f:
+            t = GNUTranslations(f)
+
+        self.assertEqual(t.gettext('foo'), 'foo')
+        self.assertEqual(t.gettext('bar'), 'baz')
+        self.assertEqual(t.pgettext('abc', 'foo'), 'bar')
+        self.assertEqual(t.pgettext('xyz', 'foo'), 'bar')
+        self.assertEqual(t.gettext('Multilinestring'), 'Multilinetranslation')
+        self.assertEqual(t.gettext('"escapes"'), '"translated"')
+        self.assertEqual(t.gettext('\n newlines \n'), '\n translated \n')
+        self.assertEqual(t.ngettext('One email sent.', '%d emails sent.', 1),
+                         'One email sent.')
+        self.assertEqual(t.ngettext('One email sent.', '%d emails sent.', 2),
+                         '%d emails sent.')
+        self.assertEqual(t.npgettext('abc', 'One email sent.',
+                                     '%d emails sent.', 1),
+                         'One email sent.')
+        self.assertEqual(t.npgettext('abc', 'One email sent.',
+                                     '%d emails sent.', 2),
+                         '%d emails sent.')
+
     def test_invalid_msgid_plural(self):
         with temp_cwd():
             Path('invalid.po').write_text('''\
