@@ -1,6 +1,7 @@
 import multiprocessing
 import os
 import queue
+import signal
 import sys
 import threading
 import time
@@ -238,7 +239,15 @@ class ProcessPoolExecutorTest(ExecutorTest):
                 # We should get started, but not finished since we'll terminate the workers just after
                 self.assertEqual(q.get(timeout=1), 'started')
 
+                worker_process = list(executor._processes.values())[0]
                 getattr(executor, function_name)()
+                worker_process.join()
+
+                if function_name == 'terminate_workers' or sys.platform == 'win32':
+                    # On windows, kill and terminate both send SIGTERM
+                    self.assertEqual(worker_process.exitcode, -signal.SIGTERM)
+                elif function_name == 'kill_workers':
+                    self.assertEqual(worker_process.exitcode, -signal.SIGKILL)
 
                 self.assertRaises(queue.Empty, q.get, timeout=1)
 
@@ -256,7 +265,6 @@ class ProcessPoolExecutorTest(ExecutorTest):
 
             context_with_mocked_process = multiprocessing.get_context()
             with unittest.mock.patch.object(context_with_mocked_process, 'Process') as mock_process:
-
                 with futures.ProcessPoolExecutor(max_workers=1, mp_context=context_with_mocked_process) as executor:
                     # The worker has not been started yet, terminate/kill_workers should basically no-op
                     getattr(executor, function_name)()
