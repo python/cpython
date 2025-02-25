@@ -56,8 +56,7 @@ typedef struct {
     unsigned char source;
 } PyZoneInfo_ZoneInfo;
 
-#define PyZoneInfo_ZoneInfo_FAST_CAST(op)   ((PyZoneInfo_ZoneInfo *)(op))
-#define PyZoneInfo_ZoneInfo_CAST(op)        PyZoneInfo_ZoneInfo_FAST_CAST(op)
+#define PyZoneInfo_ZoneInfo_CAST(op)    ((PyZoneInfo_ZoneInfo *)(op))
 
 struct TransitionRuleType {
     int64_t (*year_to_timestamp)(TransitionRuleType *, int);
@@ -254,7 +253,8 @@ zoneinfo_new_instance(zoneinfo_state *state, PyTypeObject *type, PyObject *key)
         }
     }
 
-    if (load_data(state, PyZoneInfo_ZoneInfo_FAST_CAST(self), file_obj)) {
+    PyZoneInfo_ZoneInfo *self_zinfo = (PyZoneInfo_ZoneInfo *)self;
+    if (load_data(state, self_zinfo, file_obj)) {
         goto error;
     }
 
@@ -265,7 +265,7 @@ zoneinfo_new_instance(zoneinfo_state *state, PyTypeObject *type, PyObject *key)
     }
     Py_DECREF(rv);
 
-    PyZoneInfo_ZoneInfo_FAST_CAST(self)->key = Py_NewRef(key);
+    self_zinfo->key = Py_NewRef(key);
 
     goto cleanup;
 error:
@@ -341,7 +341,7 @@ zoneinfo_ZoneInfo_impl(PyTypeObject *type, PyObject *key)
         if (instance == NULL) {
             return NULL;
         }
-        PyZoneInfo_ZoneInfo_FAST_CAST(instance)->source = SOURCE_CACHE;
+        ((PyZoneInfo_ZoneInfo *)(instance))->source = SOURCE_CACHE;
     }
 
     update_strong_cache(state, type, key, instance);
@@ -425,11 +425,10 @@ zoneinfo_ZoneInfo_from_file_impl(PyTypeObject *type, PyTypeObject *cls,
     PyObject *file_repr = NULL;
     PyZoneInfo_ZoneInfo *self = NULL;
 
-    PyObject *obj_self = type->tp_alloc(type, 0);
-    if (obj_self == NULL) {
+    self = (PyZoneInfo_ZoneInfo *)type->tp_alloc(type, 0);
+    if (self == NULL) {
         return NULL;
     }
-    self = PyZoneInfo_ZoneInfo_FAST_CAST(obj_self);
 
     file_repr = PyObject_Repr(file_obj);
     if (file_repr == NULL) {
@@ -444,7 +443,7 @@ zoneinfo_ZoneInfo_from_file_impl(PyTypeObject *type, PyTypeObject *cls,
     self->source = SOURCE_FILE;
     self->file_repr = file_repr;
     self->key = Py_NewRef(key);
-    return obj_self;
+    return (PyObject *)self;
 
 error:
     Py_XDECREF(file_repr);
