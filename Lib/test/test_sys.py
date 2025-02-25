@@ -1090,6 +1090,9 @@ class SysModuleTest(unittest.TestCase):
             # about the underlying implementation: the function might
             # return 0 or something greater.
             self.assertGreaterEqual(a, 0)
+        gc.collect()
+        b = sys.getallocatedblocks()
+        self.assertLessEqual(b, a)
         try:
             # While we could imagine a Python session where the number of
             # multiple buffer objects would exceed the sharing of references,
@@ -1111,9 +1114,6 @@ class SysModuleTest(unittest.TestCase):
         except AttributeError:
             # gettotalrefcount() not available
             pass
-        gc.collect()
-        b = sys.getallocatedblocks()
-        self.assertLessEqual(b, a)
         gc.collect()
         c = sys.getallocatedblocks()
         self.assertIn(c, range(b - 50, b + 50))
