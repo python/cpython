@@ -1,0 +1,2 @@
+Add support for shared :class:`set` to :class:`multiprocessing.managers.SyncManager`
+via :meth:`SyncManager.set() <multiprocessing.managers.SyncManager.set>`.

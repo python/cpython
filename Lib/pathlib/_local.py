@@ -1098,7 +1098,8 @@ class Path(PurePath):
             create = target._copy_writer._create
         except AttributeError:
             raise TypeError(f"Target is not writable: {target}") from None
-        return create(self, follow_symlinks, dirs_exist_ok, preserve_metadata)
+        create(self, follow_symlinks, dirs_exist_ok, preserve_metadata)
+        return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def copy_into(self, target_dir, *, follow_symlinks=True,
                   dirs_exist_ok=False, preserve_metadata=False):
@@ -1128,10 +1129,12 @@ class Path(PurePath):
         else:
             ensure_different_files(self, target)
             try:
-                return self.replace(target)
+                os.replace(self, target)
             except OSError as err:
                 if err.errno != EXDEV:
                     raise
+            else:
+                return target.joinpath()  # Empty join to ensure fresh metadata.
         # Fall back to copy+delete.
         target = self.copy(target, follow_symlinks=False, preserve_metadata=True)
         self._delete()
