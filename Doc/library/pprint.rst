@@ -164,7 +164,8 @@ PrettyPrinter Objects
 .. index:: single: ...; placeholder
 
 .. class:: PrettyPrinter(indent=1, width=80, depth=None, stream=None, *, \
-                         compact=False, sort_dicts=True, underscore_numbers=False, block_style=False)
+                         compact=False, sort_dicts=True, \
+                         underscore_numbers=False, block_style=False)
 
    Construct a :class:`PrettyPrinter` instance.
 
