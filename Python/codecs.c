@@ -730,6 +730,27 @@ codec_handler_write_unicode_hex(Py_UCS1 **p, Py_UCS4 ch)
 }
 
 
+/*
+ * Create a Unicode string containing 'count' copies of the official
+ * Unicode REPLACEMENT CHARACTER (0xFFFD).
+ */
+static PyObject *
+codec_handler_unicode_replacement_character(Py_ssize_t count)
+{
+    PyObject *res = PyUnicode_New(count, Py_UNICODE_REPLACEMENT_CHARACTER);
+    if (res == NULL) {
+        return NULL;
+    }
+    assert(count == 0 || PyUnicode_KIND(res) == PyUnicode_2BYTE_KIND);
+    Py_UCS2 *outp = PyUnicode_2BYTE_DATA(res);
+    for (Py_ssize_t i = 0; i < count; ++i) {
+        outp[i] = Py_UNICODE_REPLACEMENT_CHARACTER;
+    }
+    assert(_PyUnicode_CheckConsistency(res, 1));
+    return res;
+}
+
+
 // --- handler: 'strict' ------------------------------------------------------
 
 PyObject *PyCodec_StrictErrors(PyObject *exc)
@@ -774,50 +795,71 @@ PyObject *PyCodec_IgnoreErrors(PyObject *exc)
 }
 
 
-PyObject *PyCodec_ReplaceErrors(PyObject *exc)
+// --- handler: 'replace' -----------------------------------------------------
+
+static PyObject *
+_PyCodec_ReplaceUnicodeEncodeError(PyObject *exc)
 {
     Py_ssize_t start, end, slen;
+    if (_PyUnicodeError_GetParams(exc, NULL, NULL,
+                                  &start, &end, &slen, false) < 0)
+    {
+        return NULL;
+    }
+    PyObject *res = PyUnicode_New(slen, '?');
+    if (res == NULL) {
+        return NULL;
+    }
+    assert(PyUnicode_KIND(res) == PyUnicode_1BYTE_KIND);
+    Py_UCS1 *outp = PyUnicode_1BYTE_DATA(res);
+    memset(outp, '?', sizeof(Py_UCS1) * slen);
+    assert(_PyUnicode_CheckConsistency(res, 1));
+    return Py_BuildValue("(Nn)", res, end);
+}
 
-    if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
-        if (_PyUnicodeError_GetParams(exc, NULL, NULL,
-                                      &start, &end, &slen, false) < 0) {
-            return NULL;
-        }
-        PyObject *res = PyUnicode_New(slen, '?');
-        if (res == NULL) {
-            return NULL;
-        }
-        assert(PyUnicode_KIND(res) == PyUnicode_1BYTE_KIND);
-        Py_UCS1 *outp = PyUnicode_1BYTE_DATA(res);
-        memset(outp, '?', sizeof(Py_UCS1) * slen);
-        assert(_PyUnicode_CheckConsistency(res, 1));
-        return Py_BuildValue("(Nn)", res, end);
+
+static PyObject *
+_PyCodec_ReplaceUnicodeDecodeError(PyObject *exc)
+{
+    Py_ssize_t end;
+    if (PyUnicodeDecodeError_GetEnd(exc, &end) < 0) {
+        return NULL;
     }
-    else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
-        if (_PyUnicodeError_GetParams(exc, NULL, NULL,
-                                      NULL, &end, NULL, true) < 0) {
-            return NULL;
-        }
-        return Py_BuildValue("(Cn)",
-                             (int)Py_UNICODE_REPLACEMENT_CHARACTER,
-                             end);
+    PyObject *res = codec_handler_unicode_replacement_character(1);
+    if (res == NULL) {
+        return NULL;
     }
-    else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeTranslateError)) {
-        if (_PyUnicodeError_GetParams(exc, NULL, NULL,
-                                      &start, &end, &slen, false) < 0) {
-            return NULL;
-        }
-        PyObject *res = PyUnicode_New(slen, Py_UNICODE_REPLACEMENT_CHARACTER);
-        if (res == NULL) {
-            return NULL;
-        }
-        assert(slen == 0 || PyUnicode_KIND(res) == PyUnicode_2BYTE_KIND);
-        Py_UCS2 *outp = PyUnicode_2BYTE_DATA(res);
-        for (Py_ssize_t i = 0; i < slen; ++i) {
-            outp[i] = Py_UNICODE_REPLACEMENT_CHARACTER;
-        }
-        assert(_PyUnicode_CheckConsistency(res, 1));
-        return Py_BuildValue("(Nn)", res, end);
+    return Py_BuildValue("(Nn)", res, end);
+}
+
+
+static PyObject *
+_PyCodec_ReplaceUnicodeTranslateError(PyObject *exc)
+{
+    Py_ssize_t start, end, slen;
+    if (_PyUnicodeError_GetParams(exc, NULL, NULL,
+                                  &start, &end, &slen, false) < 0)
+    {
+        return NULL;
+    }
+    PyObject *res = codec_handler_unicode_replacement_character(slen);
+    if (res == NULL) {
+        return NULL;
+    }
+    return Py_BuildValue("(Nn)", res, end);
+}
+
+
+PyObject *PyCodec_ReplaceErrors(PyObject *exc)
+{
+    if (_PyIsUnicodeEncodeError(exc)) {
+        return _PyCodec_ReplaceUnicodeEncodeError(exc);
+    }
+    else if (_PyIsUnicodeDecodeError(exc)) {
+        return _PyCodec_ReplaceUnicodeDecodeError(exc);
+    }
+    else if (_PyIsUnicodeTranslateError(exc)) {
+        return _PyCodec_ReplaceUnicodeTranslateError(exc);
     }
     else {
         wrong_exception_type(exc);
@@ -1468,7 +1510,8 @@ ignore_errors(PyObject *Py_UNUSED(self), PyObject *exc)
 }
 
 
-static PyObject *replace_errors(PyObject *self, PyObject *exc)
+static inline PyObject *
+replace_errors(PyObject *Py_UNUSED(self), PyObject *exc)
 {
     return PyCodec_ReplaceErrors(exc);
 }
