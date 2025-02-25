@@ -301,6 +301,44 @@ class IOSBrowserTest(unittest.TestCase):
         self._test('open_new_tab')
 
 
+@unittest.skipUnless(sys.platform[:3] == "win", "Windows test")
+class WindowsDefaultTest(unittest.TestCase):
+    def setUp(self):
+        support.patch(self, os, "startfile", mock.Mock())
+        self.browser = webbrowser.WindowsDefault()
+        support.patch(self, self.browser, "_open_default_browser", mock.Mock())
+
+    def test_default(self):
+        browser = webbrowser.get()
+        self.assertIsInstance(browser, webbrowser.WindowsDefault)
+
+    def test_open_startfile(self):
+        url = "https://python.org"
+        self.browser.open(url)
+        self.browser._open_default_browser.assert_not_called()
+        os.startfile.assert_called_with(url)
+
+    def test_open_browser_lookup(self):
+        url = "file://python.org"
+        self.browser.open(url)
+        self.browser._open_default_browser.assert_called_with(url)
+        os.startfile.assert_not_called()
+
+    def test_open_browser_lookup_fails(self):
+        url = "file://python.org"
+        self.browser._open_default_browser.return_value = False
+        self.browser.open(url)
+        self.browser._open_default_browser.assert_called_with(url)
+        os.startfile.assert_called_with(url)
+
+    def test_open_browser_lookup_error(self):
+        url = "file://python.org"
+        self.browser._open_default_browser.side_effect = OSError('registry failed...')
+        self.browser.open(url)
+        self.browser._open_default_browser.assert_called_with(url)
+        os.startfile.assert_called_with(url)
+
+
 class BrowserRegistrationTest(unittest.TestCase):
 
     def setUp(self):
