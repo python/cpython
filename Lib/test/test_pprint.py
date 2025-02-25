@@ -10,14 +10,6 @@ import random
 import re
 import types
 import unittest
-from collections import OrderedDict
-from collections import defaultdict
-from collections import Counter
-from collections import ChainMap
-from collections import deque
-from collections import UserDict, UserList
-from dataclasses import dataclass, field
-from types import SimpleNamespace, MappingProxyType
 
 # list, tuple and dict subclasses that do or don't overwrite __repr__
 class list2(list):
