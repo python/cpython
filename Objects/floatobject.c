@@ -2221,6 +2221,17 @@ PyFloat_Pack4(double x, char *data, int le)
         if (isinf(y) && !isinf(x))
             goto Overflow;
 
+        if (isnan(x)) {
+            uint64_t v;
+
+            memcpy(&v, &x, 8);
+            if ((v & (1ULL<<51)) == 0) {
+                uint32_t *py = (uint32_t *)&y;
+
+                *py -= (1<<22);
+            }
+        }
+
         unsigned char s[sizeof(float)];
         memcpy(s, &y, sizeof(float));
 
@@ -2505,6 +2516,19 @@ PyFloat_Unpack4(const char *data, int le)
         }
         else {
             memcpy(&x, p, 4);
+        }
+
+        if (isnan(x)) {
+            uint32_t v;
+
+            memcpy(&v, &x, 4);
+            if ((v & (1<<22)) == 0) {
+                double y = x;
+                uint64_t *py = (uint64_t *)&y;
+
+                *py -= (1ULL<<51);
+                return y;
+            }
         }
 
         return x;
