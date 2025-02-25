@@ -1130,8 +1130,8 @@ deque([('brown', 2),
             foo: str
             bar: float
             baz: bool
-            qux: dict = field(default_factory=dict)
-            quux: list = field(default_factory=list)
+            qux: dict = dataclasses.field(default_factory=dict)
+            quux: list = dataclasses.field(default_factory=list)
             corge: int = 1
             garply: tuple = (1, 2, 3, 4)
         dummy_dataclass = DummyDataclass(
