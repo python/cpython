@@ -2803,54 +2803,28 @@ with :func:`@runtime_checkable <runtime_checkable>`.
     An ABC with one abstract method ``__round__``
     that is covariant in its return type.
 
+.. _typing-io:
+
 ABCs and Protocols for working with I/O
 ---------------------------------------
 
-.. class:: IO
-           TextIO
-           BinaryIO
+.. class:: IO[AnyStr]
+           TextIO[AnyStr]
+           BinaryIO[AnyStr]
 
-   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
+   Generic class ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
    and ``BinaryIO(IO[bytes])``
    represent the types of I/O streams such as returned by
-   :func:`open`.
+   :func:`open`. Please note that these classes are not protocols, and
+   their interface is fairly broad.
 
-The following protocols offer a simpler alternative for common use cases. They
-are especially useful for annotating function and method arguments and are
-decorated with :func:`@runtime_checkable <runtime_checkable>`.
+The protocols :class:`.io.Reader` and :class:`.io.Writer` offer a simpler
+alternative for argument types, when only the ``read()`` or ``write()``
+methods are accessed, respectively::
 
-.. class:: Reader[T]
-
-   Protocol for reading from a file or other input stream.
-
-   .. versionadded:: next
-
-   .. method:: read(size=..., /)
-
-      Read data from the input stream and return it. If ``size`` is
-      specified, at most ``size`` items (bytes/characters) will be read.
-
-   For example::
-
-     def read_it(reader: Reader[str]):
-         data = reader.read(11)
-         assert isinstance(data, str)
-
-.. class:: Writer[T]
-
-   Protocol for writing to a file or other output stream.
-
-   .. versionadded:: next
-
-   .. method:: write(data, /)
-
-      Write data to the output stream and return number of items
-      (bytes/characters) written.
-
-   For example::
-
-     def write_binary(writer: Writer[bytes]):
-         writer.write(b"Hello world!\n")
+  def read_and_write(reader: Reader[str], writer: Writer[bytes]):
+      data = reader.read()
+      writer.write(data.encode())
 
 Also consider using :class:`collections.abc.Iterable` for iterating over
 the lines of an input stream::

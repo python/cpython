@@ -90,7 +90,6 @@ __all__ = [
     'AsyncContextManager',
 
     # Structural checks, a.k.a. protocols.
-    'Reader',
     'Reversible',
     'SupportsAbs',
     'SupportsBytes',
@@ -99,7 +98,6 @@ __all__ = [
     'SupportsIndex',
     'SupportsInt',
     'SupportsRound',
-    'Writer',
 
     # Concrete collection types.
     'ChainMap',
@@ -2929,36 +2927,6 @@ class SupportsRound[T](Protocol):
     @abstractmethod
     def __round__(self, ndigits: int = 0) -> T:
         pass
-
-
-class Reader[T](Protocol):
-    """Protocol for simple I/O reader instances.
-
-    This protocol only supports blocking I/O.
-    """
-
-    __slots__ = ()
-
-    @abstractmethod
-    def read(self, size: int = ..., /) -> T:
-        """Read data from the input stream and return it.
-
-        If "size" is specified, at most "size" items (bytes/characters) will be
-        read.
-        """
-
-
-class Writer[T](Protocol):
-    """Protocol for simple I/O writer instances.
-
-    This protocol only supports blocking I/O.
-    """
-
-    __slots__ = ()
-
-    @abstractmethod
-    def write(self, data: T, /) -> int:
-        """Write data to the output stream and return number of items written."""
 
 
 def _make_nmtuple(name, fields, annotate_func, module, defaults = ()):
