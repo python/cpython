@@ -84,6 +84,7 @@ class object "PyObject *" "&PyBaseObject_Type"
 
 #endif
 
+#define PyTypeObject_CAST(op)   ((PyTypeObject *)(op))
 
 typedef struct PySlot_Offset {
     short subslot_offset;
@@ -1334,11 +1335,11 @@ _PyType_Name(PyTypeObject *type)
 }
 
 static PyObject *
-type_name(PyTypeObject *type, void *context)
+type_name(PyObject *tp, void *Py_UNUSED(closure))
 {
+    PyTypeObject *type = PyTypeObject_CAST(tp);
     if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
         PyHeapTypeObject* et = (PyHeapTypeObject*)type;
-
         return Py_NewRef(et->ht_name);
     }
     else {
@@ -1347,8 +1348,9 @@ type_name(PyTypeObject *type, void *context)
 }
 
 static PyObject *
-type_qualname(PyTypeObject *type, void *context)
+type_qualname(PyObject *tp, void *Py_UNUSED(closure))
 {
+    PyTypeObject *type = PyTypeObject_CAST(tp);
     if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
         PyHeapTypeObject* et = (PyHeapTypeObject*)type;
         return Py_NewRef(et->ht_qualname);
@@ -1359,8 +1361,9 @@ type_qualname(PyTypeObject *type, void *context)
 }
 
 static int
-type_set_name(PyTypeObject *type, PyObject *value, void *context)
+type_set_name(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
 {
+    PyTypeObject *type = PyTypeObject_CAST(tp);
     const char *tp_name;
     Py_ssize_t name_size;
 
@@ -1389,8 +1392,9 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
 }
 
 static int
-type_set_qualname(PyTypeObject *type, PyObject *value, void *context)
+type_set_qualname(PyObject *tp, PyObject *value, void *context)
 {
+    PyTypeObject *type = PyTypeObject_CAST(tp);
     PyHeapTypeObject* et;
 
     if (!check_set_special_type_attr(type, value, "__qualname__"))
@@ -1434,15 +1438,17 @@ type_module(PyTypeObject *type)
     return mod;
 }
 
-static PyObject *
-type_get_module(PyTypeObject *type, void *context)
+static inline PyObject *
+type_get_module(PyObject *tp, void *Py_UNUSED(closure))
 {
+    PyTypeObject *type = PyTypeObject_CAST(tp);
     return type_module(type);
 }
 
 static int
-type_set_module(PyTypeObject *type, PyObject *value, void *context)
+type_set_module(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
 {
+    PyTypeObject *type = PyTypeObject_CAST(tp);
     if (!check_set_special_type_attr(type, value, "__module__"))
         return -1;
 
@@ -1463,7 +1469,7 @@ _PyType_GetFullyQualifiedName(PyTypeObject *type, char sep)
         return PyUnicode_FromString(type->tp_name);
     }
 
-    PyObject *qualname = type_qualname(type, NULL);
+    PyObject *qualname = type_qualname((PyObject *)type, NULL);
     if (qualname == NULL) {
         return NULL;
     }
@@ -1495,11 +1501,11 @@ PyType_GetFullyQualifiedName(PyTypeObject *type)
     return _PyType_GetFullyQualifiedName(type, '.');
 }
 
-
 static PyObject *
-type_abstractmethods(PyTypeObject *type, void *context)
+type_abstractmethods(PyObject *tp, void *Py_UNUSED(closure))
 {
-    PyObject *mod = NULL;
+    PyTypeObject *type = PyTypeObject_CAST(tp);
+    PyObject *res = NULL;
     /* type itself has an __abstractmethods__ descriptor (this). Don't return
        that. */
     if (type == &PyType_Type) {
@@ -1507,16 +1513,17 @@ type_abstractmethods(PyTypeObject *type, void *context)
     }
     else {
         PyObject *dict = lookup_tp_dict(type);
-        if (PyDict_GetItemRef(dict, &_Py_ID(__abstractmethods__), &mod) == 0) {
+        if (PyDict_GetItemRef(dict, &_Py_ID(__abstractmethods__), &res) == 0) {
             PyErr_SetObject(PyExc_AttributeError, &_Py_ID(__abstractmethods__));
         }
     }
-    return mod;
+    return res;
 }
 
 static int
-type_set_abstractmethods(PyTypeObject *type, PyObject *value, void *context)
+type_set_abstractmethods(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
 {
+    PyTypeObject *type = PyTypeObject_CAST(tp);
     /* __abstractmethods__ should only be set once on a type, in
        abc.ABCMeta.__new__, so this function doesn't do anything
        special to update subclasses.
@@ -1550,8 +1557,9 @@ type_set_abstractmethods(PyTypeObject *type, PyObject *value, void *context)
 }
 
 static PyObject *
-type_get_bases(PyTypeObject *type, void *context)
+type_get_bases(PyObject *tp, void *Py_UNUSED(closure))
 {
+    PyTypeObject *type = PyTypeObject_CAST(tp);
     PyObject *bases = _PyType_GetBases(type);
     if (bases == NULL) {
         Py_RETURN_NONE;
@@ -1560,8 +1568,9 @@ type_get_bases(PyTypeObject *type, void *context)
 }
 
 static PyObject *
-type_get_mro(PyTypeObject *type, void *context)
+type_get_mro(PyObject *tp, void *Py_UNUSED(closure))
 {
+    PyTypeObject *type = PyTypeObject_CAST(tp);
     PyObject *mro;
 
     BEGIN_TYPE_LOCK();
@@ -1660,7 +1669,7 @@ mro_hierarchy(PyTypeObject *type, PyObject *temp)
 }
 
 static int
-type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases, void *context)
+type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases)
 {
     // Check arguments
     if (!check_set_special_type_attr(type, new_bases, "__bases__")) {
@@ -1797,18 +1806,20 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases, void *context)
 }
 
 static int
-type_set_bases(PyTypeObject *type, PyObject *new_bases, void *context)
+type_set_bases(PyObject *tp, PyObject *new_bases, void *Py_UNUSED(closure))
 {
+    PyTypeObject *type = PyTypeObject_CAST(tp);
     int res;
     BEGIN_TYPE_LOCK();
-    res = type_set_bases_unlocked(type, new_bases, context);
+    res = type_set_bases_unlocked(type, new_bases);
     END_TYPE_LOCK();
     return res;
 }
 
 static PyObject *
-type_dict(PyTypeObject *type, void *context)
+type_dict(PyObject *tp, void *Py_UNUSED(closure))
 {
+    PyTypeObject *type = PyTypeObject_CAST(tp);
     PyObject *dict = lookup_tp_dict(type);
     if (dict == NULL) {
         Py_RETURN_NONE;
@@ -1817,8 +1828,9 @@ type_dict(PyTypeObject *type, void *context)
 }
 
 static PyObject *
-type_get_doc(PyTypeObject *type, void *context)
+type_get_doc(PyObject *tp, void *Py_UNUSED(closure))
 {
+    PyTypeObject *type = PyTypeObject_CAST(tp);
     PyObject *result;
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE) && type->tp_doc != NULL) {
         return _PyType_GetDocFromInternalDoc(type->tp_name, type->tp_doc);
@@ -1837,14 +1849,16 @@ type_get_doc(PyTypeObject *type, void *context)
 }
 
 static PyObject *
-type_get_text_signature(PyTypeObject *type, void *context)
+type_get_text_signature(PyObject *tp, void *Py_UNUSED(closure))
 {
+    PyTypeObject *type = PyTypeObject_CAST(tp);
     return _PyType_GetTextSignatureFromInternalDoc(type->tp_name, type->tp_doc, 0);
 }
 
 static int
-type_set_doc(PyTypeObject *type, PyObject *value, void *context)
+type_set_doc(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
 {
+    PyTypeObject *type = PyTypeObject_CAST(tp);
     if (!check_set_special_type_attr(type, value, "__doc__"))
         return -1;
     PyType_Modified(type);
@@ -1853,8 +1867,9 @@ type_set_doc(PyTypeObject *type, PyObject *value, void *context)
 }
 
 static PyObject *
-type_get_annotate(PyTypeObject *type, void *Py_UNUSED(ignored))
+type_get_annotate(PyObject *tp, void *Py_UNUSED(closure))
 {
+    PyTypeObject *type = PyTypeObject_CAST(tp);
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         PyErr_Format(PyExc_AttributeError, "type object '%s' has no attribute '__annotate__'", type->tp_name);
         return NULL;
@@ -1885,8 +1900,9 @@ type_get_annotate(PyTypeObject *type, void *Py_UNUSED(ignored))
 }
 
 static int
-type_set_annotate(PyTypeObject *type, PyObject *value, void *Py_UNUSED(ignored))
+type_set_annotate(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
 {
+    PyTypeObject *type = PyTypeObject_CAST(tp);
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "cannot delete __annotate__ attribute");
         return -1;
@@ -1923,8 +1939,9 @@ type_set_annotate(PyTypeObject *type, PyObject *value, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-type_get_annotations(PyTypeObject *type, void *context)
+type_get_annotations(PyObject *tp, void *Py_UNUSED(closure))
 {
+    PyTypeObject *type = PyTypeObject_CAST(tp);
     if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
         PyErr_Format(PyExc_AttributeError, "type object '%s' has no attribute '__annotations__'", type->tp_name);
         return NULL;
@@ -1939,11 +1956,11 @@ type_get_annotations(PyTypeObject *type, void *context)
     if (annotations) {
         descrgetfunc get = Py_TYPE(annotations)->tp_descr_get;
         if (get) {
-            Py_SETREF(annotations, get(annotations, NULL, (PyObject *)type));
+            Py_SETREF(annotations, get(annotations, NULL, tp));
         }
     }
     else {
-        PyObject *annotate = type_get_annotate(type, NULL);
+        PyObject *annotate = type_get_annotate(tp, NULL);
         if (annotate == NULL) {
             Py_DECREF(dict);
             return NULL;
@@ -1984,8 +2001,9 @@ type_get_annotations(PyTypeObject *type, void *context)
 }
 
 static int
-type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
+type_set_annotations(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
 {
+    PyTypeObject *type = PyTypeObject_CAST(tp);
     if (_PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE)) {
         PyErr_Format(PyExc_TypeError,
                      "cannot set '__annotations__' attribute of immutable type '%s'",
@@ -2024,8 +2042,9 @@ type_set_annotations(PyTypeObject *type, PyObject *value, void *context)
 }
 
 static PyObject *
-type_get_type_params(PyTypeObject *type, void *context)
+type_get_type_params(PyObject *tp, void *Py_UNUSED(closure))
 {
+    PyTypeObject *type = PyTypeObject_CAST(tp);
     if (type == &PyType_Type) {
         return PyTuple_New(0);
     }
@@ -2038,8 +2057,9 @@ type_get_type_params(PyTypeObject *type, void *context)
 }
 
 static int
-type_set_type_params(PyTypeObject *type, PyObject *value, void *context)
+type_set_type_params(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
 {
+    PyTypeObject *type = PyTypeObject_CAST(tp);
     if (!check_set_special_type_attr(type, value, "__type_params__")) {
         return -1;
     }
@@ -2088,26 +2108,26 @@ type___subclasscheck___impl(PyTypeObject *self, PyObject *subclass)
 
 
 static PyGetSetDef type_getsets[] = {
-    {"__name__", (getter)type_name, (setter)type_set_name, NULL},
-    {"__qualname__", (getter)type_qualname, (setter)type_set_qualname, NULL},
-    {"__bases__", (getter)type_get_bases, (setter)type_set_bases, NULL},
-    {"__mro__", (getter)type_get_mro, NULL, NULL},
-    {"__module__", (getter)type_get_module, (setter)type_set_module, NULL},
-    {"__abstractmethods__", (getter)type_abstractmethods,
-     (setter)type_set_abstractmethods, NULL},
-    {"__dict__",  (getter)type_dict,  NULL, NULL},
-    {"__doc__", (getter)type_get_doc, (setter)type_set_doc, NULL},
-    {"__text_signature__", (getter)type_get_text_signature, NULL, NULL},
-    {"__annotations__", (getter)type_get_annotations, (setter)type_set_annotations, NULL},
-    {"__annotate__", (getter)type_get_annotate, (setter)type_set_annotate, NULL},
-    {"__type_params__", (getter)type_get_type_params, (setter)type_set_type_params, NULL},
+    {"__name__", type_name, type_set_name, NULL},
+    {"__qualname__", type_qualname, type_set_qualname, NULL},
+    {"__bases__", type_get_bases, type_set_bases, NULL},
+    {"__mro__", type_get_mro, NULL, NULL},
+    {"__module__", type_get_module, type_set_module, NULL},
+    {"__abstractmethods__", type_abstractmethods,
+     type_set_abstractmethods, NULL},
+    {"__dict__",  type_dict,  NULL, NULL},
+    {"__doc__", type_get_doc, type_set_doc, NULL},
+    {"__text_signature__", type_get_text_signature, NULL, NULL},
+    {"__annotations__", type_get_annotations, type_set_annotations, NULL},
+    {"__annotate__", type_get_annotate, type_set_annotate, NULL},
+    {"__type_params__", type_get_type_params, type_set_type_params, NULL},
     {0}
 };
 
 static PyObject *
 type_repr(PyObject *self)
 {
-    PyTypeObject *type = (PyTypeObject *)self;
+    PyTypeObject *type = PyTypeObject_CAST(self);
     if (type->tp_name == NULL) {
         // type_repr() called before the type is fully initialized
         // by PyType_Ready().
@@ -2122,7 +2142,7 @@ type_repr(PyObject *self)
         Py_CLEAR(mod);
     }
 
-    PyObject *name = type_qualname(type, NULL);
+    PyObject *name = type_qualname(self, NULL);
     if (name == NULL) {
         Py_XDECREF(mod);
         return NULL;
@@ -2144,7 +2164,7 @@ type_repr(PyObject *self)
 static PyObject *
 type_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    PyTypeObject *type = (PyTypeObject *)self;
+    PyTypeObject *type = PyTypeObject_CAST(self);
     PyObject *obj;
     PyThreadState *tstate = _PyThreadState_GET();
 
@@ -5159,13 +5179,13 @@ PyType_FromSpec(PyType_Spec *spec)
 PyObject *
 PyType_GetName(PyTypeObject *type)
 {
-    return type_name(type, NULL);
+    return type_name((PyObject *)type, NULL);
 }
 
 PyObject *
 PyType_GetQualName(PyTypeObject *type)
 {
-    return type_qualname(type, NULL);
+    return type_qualname((PyObject *)type, NULL);
 }
 
 PyObject *
@@ -5888,9 +5908,10 @@ _Py_type_getattro_impl(PyTypeObject *type, PyObject *name, int * suppress_missin
 /* This is similar to PyObject_GenericGetAttr(),
    but uses _PyType_LookupRef() instead of just looking in type->tp_dict. */
 PyObject *
-_Py_type_getattro(PyObject *type, PyObject *name)
+_Py_type_getattro(PyObject *tp, PyObject *name)
 {
-    return _Py_type_getattro_impl((PyTypeObject *)type, name, NULL);
+    PyTypeObject *type = PyTypeObject_CAST(tp);
+    return _Py_type_getattro_impl(type, name, NULL);
 }
 
 static int
@@ -5932,7 +5953,7 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
 static int
 type_setattro(PyObject *self, PyObject *name, PyObject *value)
 {
-    PyTypeObject *type = (PyTypeObject *)self;
+    PyTypeObject *type = PyTypeObject_CAST(self);
     int res;
     if (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
         PyErr_Format(
@@ -6131,7 +6152,7 @@ _PyStaticType_FiniBuiltin(PyInterpreterState *interp, PyTypeObject *type)
 static void
 type_dealloc(PyObject *self)
 {
-    PyTypeObject *type = (PyTypeObject *)self;
+    PyTypeObject *type = PyTypeObject_CAST(self);
 
     // Assert this is a heap-allocated type object
     _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
@@ -6324,7 +6345,7 @@ PyDoc_STRVAR(type_doc,
 static int
 type_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    PyTypeObject *type = (PyTypeObject *)self;
+    PyTypeObject *type = PyTypeObject_CAST(self);
 
     /* Because of type_is_gc(), the collector only calls this
        for heaptypes. */
@@ -6355,7 +6376,7 @@ type_traverse(PyObject *self, visitproc visit, void *arg)
 static int
 type_clear(PyObject *self)
 {
-    PyTypeObject *type = (PyTypeObject *)self;
+    PyTypeObject *type = PyTypeObject_CAST(self);
 
     /* Because of type_is_gc(), the collector only calls this
        for heaptypes. */
@@ -6403,9 +6424,10 @@ type_clear(PyObject *self)
 }
 
 static int
-type_is_gc(PyObject *type)
+type_is_gc(PyObject *tp)
 {
-    return ((PyTypeObject *)type)->tp_flags & Py_TPFLAGS_HEAPTYPE;
+    PyTypeObject *type = PyTypeObject_CAST(tp);
+    return type->tp_flags & Py_TPFLAGS_HEAPTYPE;
 }
 
 
@@ -6559,7 +6581,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
         /* Compute "', '".join(sorted(type.__abstractmethods__))
            into joined. */
-        abstract_methods = type_abstractmethods(type, NULL);
+        abstract_methods = type_abstractmethods((PyObject *)type, NULL);
         if (abstract_methods == NULL)
             return NULL;
         sorted_methods = PySequence_List(abstract_methods);
@@ -6623,7 +6645,7 @@ object_repr(PyObject *self)
     else if (!PyUnicode_Check(mod)) {
         Py_SETREF(mod, NULL);
     }
-    name = type_qualname(type, NULL);
+    name = type_qualname((PyObject *)type, NULL);
     if (name == NULL) {
         Py_XDECREF(mod);
         return NULL;
@@ -11457,7 +11479,7 @@ int
 PyType_Freeze(PyTypeObject *type)
 {
     // gh-121654: Check the __mro__ instead of __bases__
-    PyObject *mro = type_get_mro(type, NULL);
+    PyObject *mro = type_get_mro((PyObject *)type, NULL);
     if (!PyTuple_Check(mro)) {
         Py_DECREF(mro);
         PyErr_SetString(PyExc_TypeError, "unable to get the type MRO");
@@ -11486,6 +11508,8 @@ typedef struct {
     PyTypeObject *obj_type;
 } superobject;
 
+#define superobject_CAST(op)    ((superobject *)(op))
+
 static PyMemberDef super_members[] = {
     {"__thisclass__", _Py_T_OBJECT, offsetof(superobject, type), Py_READONLY,
      "the class invoking super()"},
@@ -11499,7 +11523,7 @@ static PyMemberDef super_members[] = {
 static void
 super_dealloc(PyObject *self)
 {
-    superobject *su = (superobject *)self;
+    superobject *su = superobject_CAST(self);
 
     _PyObject_GC_UNTRACK(self);
     Py_XDECREF(su->obj);
@@ -11511,7 +11535,7 @@ super_dealloc(PyObject *self)
 static PyObject *
 super_repr(PyObject *self)
 {
-    superobject *su = (superobject *)self;
+    superobject *su = superobject_CAST(self);
 
     if (su->obj_type)
         return PyUnicode_FromFormat(
@@ -11633,7 +11657,7 @@ do_super_lookup(superobject *su, PyTypeObject *su_type, PyObject *su_obj,
 static PyObject *
 super_getattro(PyObject *self, PyObject *name)
 {
-    superobject *su = (superobject *)self;
+    superobject *su = superobject_CAST(self);
 
     /* We want __class__ to return the class of the super object
        (i.e. super, or a subclass), not the class of su->obj. */
@@ -11726,7 +11750,7 @@ _PySuper_Lookup(PyTypeObject *su_type, PyObject *su_obj, PyObject *name, int *me
 static PyObject *
 super_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
-    superobject *su = (superobject *)self;
+    superobject *su = superobject_CAST(self);
     superobject *newobj;
 
     if (obj == NULL || obj == Py_None || su->obj != NULL) {
@@ -11858,7 +11882,7 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
 
 static inline int
 super_init_impl(PyObject *self, PyTypeObject *type, PyObject *obj) {
-    superobject *su = (superobject *)self;
+    superobject *su = superobject_CAST(self);
     PyTypeObject *obj_type = NULL;
     if (type == NULL) {
         /* Call super(), without args -- fill in from __class__
@@ -11917,7 +11941,7 @@ PyDoc_STRVAR(super_doc,
 static int
 super_traverse(PyObject *self, visitproc visit, void *arg)
 {
-    superobject *su = (superobject *)self;
+    superobject *su = superobject_CAST(self);
 
     Py_VISIT(su->obj);
     Py_VISIT(su->type);
@@ -12009,5 +12033,5 @@ PyTypeObject PySuper_Type = {
     PyType_GenericAlloc,                        /* tp_alloc */
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
-    .tp_vectorcall = (vectorcallfunc)super_vectorcall,
+    .tp_vectorcall = super_vectorcall,
 };
