@@ -164,11 +164,12 @@ class UnixGetpassTest(unittest.TestCase):
 
 try:
     import msvcrt
-    msvcrt_available = True
 except ImportError:
     msvcrt_available = False
+else:
+    msvcrt_available = True
 
-@unittest.skipUnless(WIN32, "skipped on non-Windows platforms")
+@unittest.skipUnless(support.MS_WINDOWS, "Windows-specific tests")
 @unittest.skipUnless(msvcrt_available, 'tests require system with msvcrt (Windows)')
 class WinGetpassTest(unittest.TestCase):
 
