@@ -53,7 +53,6 @@ __all__ = ["BlockingIOError", "open", "open_code", "IOBase", "RawIOBase",
 import _io
 import abc
 
-from _collections_abc import _check_methods
 from _io import (DEFAULT_BUFFER_SIZE, BlockingIOError, UnsupportedOperation,
                  open, open_code, FileIO, BytesIO, StringIO, BufferedReader,
                  BufferedWriter, BufferedRWPair, BufferedRandom,
@@ -123,6 +122,7 @@ class Reader[T](abc.ABC):
 
     @classmethod
     def __subclasshook__(cls, C):
+        from _collections_abc import _check_methods
         if cls is Reader:
             return _check_methods(C, "read")
         return NotImplemented
@@ -142,6 +142,7 @@ class Writer[T](abc.ABC):
 
     @classmethod
     def __subclasshook__(cls, C):
+        from _collections_abc import _check_methods
         if cls is Writer:
             return _check_methods(C, "write")
         return NotImplemented
