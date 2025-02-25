@@ -1229,14 +1229,14 @@ ConfigParser Objects
          interpolation.
 
 
-   .. method:: set(section, option, value)
+   .. method:: set(section, option, value=None)
 
       If the given section exists, set the given option to the specified value;
       otherwise raise :exc:`NoSectionError`.  *option* and *value* must be
       strings; if not, :exc:`TypeError` is raised.
 
 
-   .. method:: write(fileobject, space_around_delimiters=True)
+   .. method:: write(fp, space_around_delimiters=True)
 
       Write a representation of the configuration to the specified :term:`file
       object`, which must be opened in text mode (accepting strings).  This
@@ -1270,12 +1270,12 @@ ConfigParser Objects
       fact existed, return ``True``.  Otherwise return ``False``.
 
 
-   .. method:: optionxform(option)
+   .. method:: optionxform(optionstr)
 
-      Transforms the option name *option* as found in an input file or as passed
+      Transforms the option name *optionstr* as found in an input file or as passed
       in by client code to the form that should be used in the internal
       structures.  The default implementation returns a lower-case version of
-      *option*; subclasses may override this or client code can set an attribute
+      *optionstr*; subclasses may override this or client code can set an attribute
       of this name on instances to affect this behavior.
 
       You don't need to subclass the parser to use this method, you can also
@@ -1358,7 +1358,7 @@ RawConfigParser Objects
       Added support for :const:`UNNAMED_SECTION`.
 
 
-   .. method:: set(section, option, value)
+   .. method:: set(section, option, value=None)
 
       If the given section exists, set the given option to the specified value;
       otherwise raise :exc:`NoSectionError`.  While it is possible to use
