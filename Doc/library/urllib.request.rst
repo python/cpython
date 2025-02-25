@@ -1328,7 +1328,7 @@ Use the *headers* argument to the :class:`Request` constructor, or::
    # Customize the default User-Agent header value:
    req.add_header('User-Agent', 'urllib-example/0.1 (Contact: . . .)')
    with urllib.request.urlopen(req) as r:
-      print(r.read().decode('utf-8'))
+       print(r.read().decode('utf-8'))
 
 
 :class:`OpenerDirector` automatically adds a :mailheader:`User-Agent` header to
