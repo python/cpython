@@ -1,4 +1,5 @@
 import math
+import random
 import sys
 import unittest
 import warnings
@@ -177,6 +178,33 @@ class CAPIFloatTest(unittest.TestCase):
                                             (value, value2))
                         else:
                             self.assertEqual(value2, value)
+
+    @unittest.skipUnless(HAVE_IEEE_754, "requires IEEE 754")
+    def test_pack_unpack_roundtrip_nans(self):
+        pack = _testcapi.float_pack
+        unpack = _testcapi.float_unpack
+
+        for _ in range(100):
+            for size in (2, 4, 8):
+                sign = random.randint(0, 1)
+                quiet = random.randint(0, 1)
+                if size == 8:
+                    payload = random.randint(0 if quiet else 1, 1<<50)
+                    i = (sign<<63) + (0x7ff<<52) + (quiet<<51) + payload
+                elif size == 4:
+                    payload = random.randint(0 if quiet else 1, 1<<21)
+                    i = (sign<<31) + (0xff<<23) + (quiet<<22) + payload
+                elif size == 2:
+                    payload = random.randint(0 if quiet else 1, 1<<8)
+                    i = (sign<<15) + (0x1f<<10) + (quiet<<9) + payload
+                data = bytes.fromhex(f'{i:x}')
+                for endian in (BIG_ENDIAN, LITTLE_ENDIAN):
+                    with self.subTest(data=data, size=size, endian=endian):
+                        data1 = data if endian == BIG_ENDIAN else data[::-1]
+                        value = unpack(data1, endian)
+                        data2 = pack(size, value, endian)
+                        self.assertTrue(math.isnan(value))
+                        self.assertEqual(data1, data2)
 
 
 if __name__ == "__main__":
