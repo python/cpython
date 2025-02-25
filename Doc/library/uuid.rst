@@ -179,8 +179,6 @@ The :mod:`uuid` module defines the following functions:
       administered MAC addresses, since the former are guaranteed to be
       globally unique, while the latter are not.
 
-.. index:: single: getnode
-
 
 .. function:: uuid1(node=None, clock_seq=None)
 
@@ -189,8 +187,6 @@ The :mod:`uuid` module defines the following functions:
    *clock_seq* is given, it is used as the sequence number; otherwise a random
    14-bit sequence number is chosen.
 
-.. index:: single: uuid1
-
 
 .. function:: uuid3(namespace, name)
 
@@ -198,14 +194,10 @@ The :mod:`uuid` module defines the following functions:
    UUID) and a name (which is a :class:`bytes` object or a string
    that will be encoded using UTF-8).
 
-.. index:: single: uuid3
-
 
 .. function:: uuid4()
 
    Generate a random UUID.
-
-.. index:: single: uuid4
 
 
 .. function:: uuid5(namespace, name)
@@ -214,7 +206,19 @@ The :mod:`uuid` module defines the following functions:
    UUID) and a name (which is a :class:`bytes` object or a string
    that will be encoded using UTF-8).
 
-.. index:: single: uuid5
+.. function:: uuid8(a=None, b=None, c=None)
+
+   Generate a pseudo-random UUID according to
+   :rfc:`RFC 9562, §5.8 <9562#section-5.8>`.
+
+   When specified, the parameters *a*, *b* and *c* are expected to be
+   positive integers of 48, 12 and 62 bits respectively. If they exceed
+   their expected bit count, only their least significant bits are kept;
+   non-specified arguments are substituted for a pseudo-random integer of
+   appropriate size.
+
+   .. versionadded:: 3.14
+
 
 The :mod:`uuid` module defines the following namespace identifiers for use with
 :func:`uuid3` or :func:`uuid5`.
