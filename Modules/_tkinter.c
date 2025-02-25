@@ -289,16 +289,6 @@ static PyThreadState *tcl_tstate = NULL;
       if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); \
       tcl_tstate = tstate; }
 
-#define CHECK_TCL_APPARTMENT(op) \
-    do { \
-        TkappObject *app = TkappObject_CAST(op); \
-        if (app->threaded && app->thread_id != Tcl_GetCurrentThread()) { \
-            PyErr_SetString(PyExc_RuntimeError, \
-                            "Calling Tcl from different apartment"); \
-            return 0; \
-        } \
-    } while (0)
-
 #ifndef FREECAST
 #define FREECAST (char *)
 #endif
@@ -332,6 +322,24 @@ typedef struct {
 
 #define TkappObject_CAST(op)    ((TkappObject *)(op))
 #define Tkapp_Interp(v)         (TkappObject_CAST(v)->interp)
+
+static inline int
+check_tcl_appartment(TkappObject *app)
+{
+    if (app->threaded && app->thread_id != Tcl_GetCurrentThread()) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Calling Tcl from different apartment");
+        return -1;
+    }
+    return 0;
+}
+
+#define CHECK_TCL_APPARTMENT(APP)               \
+    do {                                        \
+        if (check_tcl_appartment(APP) < 0) {    \
+            return 0;                           \
+        }                                       \
+    } while (0)
 
 
 /**** Error Handling ****/
