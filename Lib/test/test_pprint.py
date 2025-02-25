@@ -1146,7 +1146,7 @@ deque([('brown', 2),
                                                       ("baz", 123)])
         dummy_list = ["foo", "bar", "baz"]
         dummy_tuple = ("foo", "bar", "baz", 4, 5, 6, dummy_list)
-        dummy_set = { 1, 2, 3 }
+        dummy_set = { (1, 2, 3) }
         dummy_frozenset = frozenset(("foo", "bar", "baz", (1, 2, 3),
                                      frozenset(dummy_set)))
         dummy_bytes = b"Hello world! foo bar baz 123 456 789"
@@ -1213,7 +1213,8 @@ deque([('brown', 2),
             "dummy_userdict": dummy_userdict,
             "dummy_userlist": dummy_userlist,
         }
-        self.assertEqual(pprint.pformat(dummy_samples, width=40, indent=4, block_style=True, sort_dicts=False),
+        self.assertEqual(pprint.pformat(dummy_samples, width=40, indent=4,
+                                        block_style=True, sort_dicts=False),
 """\
 {
     'dummy_dataclass': DummyDataclass(
