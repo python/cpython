@@ -760,6 +760,14 @@ def uuid5(namespace, name):
 _last_timestamp_v7 = None
 _last_counter_v7 = 0  # 42-bit counter
 
+def _uuid7_get_counter_and_tail():
+    rand = int.from_bytes(os.urandom(10))
+    # 42-bit counter with MSB set to 0
+    counter = (rand >> 32) & 0x1ff_ffff_ffff
+    # 32-bit random data
+    tail = rand & 0xffff_ffff
+    return counter, tail
+
 def uuid7():
     """Generate a UUID from a Unix timestamp in milliseconds and random bits.
 
@@ -778,14 +786,6 @@ def uuid7():
     # advanced and the counter is reset to a random 42-bit integer with MSB
     # set to 0.
 
-    def get_counter_and_tail():
-        rand = int.from_bytes(os.urandom(10))
-        # 42-bit counter with MSB set to 0
-        counter = (rand >> 32) & 0x1ff_ffff_ffff
-        # 32-bit random data
-        tail = rand & 0xffff_ffff
-        return counter, tail
-
     global _last_timestamp_v7
     global _last_counter_v7
 
@@ -794,33 +794,40 @@ def uuid7():
     timestamp_ms = nanoseconds // 1_000_000
 
     if _last_timestamp_v7 is None or timestamp_ms > _last_timestamp_v7:
-        counter, tail = get_counter_and_tail()
+        counter, tail = _uuid7_get_counter_and_tail()
     else:
         if timestamp_ms < _last_timestamp_v7:
             timestamp_ms = _last_timestamp_v7 + 1
         # advance the 42-bit counter
         counter = _last_counter_v7 + 1
         if counter > 0x3ff_ffff_ffff:
-            timestamp_ms += 1  # advance the 48-bit timestamp
-            counter, tail = get_counter_and_tail()
+            # advance the 48-bit timestamp
+            timestamp_ms += 1
+            counter, tail = _uuid7_get_counter_and_tail()
         else:
+            # 32-bit random data
             tail = int.from_bytes(os.urandom(4))
-
-    _last_timestamp_v7 = timestamp_ms
-    _last_counter_v7 = counter
 
     unix_ts_ms = timestamp_ms & 0xffff_ffff_ffff
     counter_msbs = counter >> 30
-    counter_hi = counter_msbs & 0x0fff  # keep 12 bits and clear variant bits
-    counter_lo = counter & 0x3fff_ffff  # keep 30 bits and clear version bits
+    # keep 12 counter's MSBs and clear variant bits
+    counter_hi = counter_msbs & 0x0fff
+    # keep 30 counter's LSBs and clear version bits
+    counter_lo = counter & 0x3fff_ffff
+    # ensure that the fail is always a 32-bit integer
+    tail &= 0xffff_ffff
 
     int_uuid_7 = unix_ts_ms << 80
     int_uuid_7 |= counter_hi << 64
     int_uuid_7 |= counter_lo << 32
-    int_uuid_7 |= tail & 0xffff_ffff
+    int_uuid_7 |= tail
     # by construction, the variant and version bits are already cleared
     int_uuid_7 |= _RFC_4122_VERSION_7_FLAGS
-    return UUID._from_int(int_uuid_7)
+    res = UUID._from_int(int_uuid_7)
+    # defer global update until all computations are done
+    _last_timestamp_v7 = timestamp_ms
+    _last_counter_v7 = counter
+    return res
 
 def uuid8(a=None, b=None, c=None):
     """Generate a UUID from three custom blocks.
