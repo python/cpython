@@ -415,13 +415,24 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
       require the *fork* start method for :class:`ProcessPoolExecutor` you must
       explicitly pass ``mp_context=multiprocessing.get_context("fork")``.
 
-   .. method:: terminate_workers(signal=signal.SIGTERM)
+   .. method:: terminate_workers()
 
-      Attempt to terminate all living worker processes immediately by sending
-      each of them the given signal. If the signal is not specified, the default
-      signal :data:`signal.SIGTERM` is used. Internally, it will also call
-      :meth:`Executor.shutdown` to ensure that all other resources associated with
-      the executor are freed.
+      Attempt to terminate all living worker processes immediately by calling
+      :meth:`Process.terminate <multiprocessing.Process.terminate>` on each of them.
+      Internally, it will also call :meth:`Executor.shutdown` to ensure that all
+      other resources associated with the executor are freed.
+
+      After calling this method the caller should no longer submit tasks to the
+      executor.
+
+      .. versionadded:: next
+
+   .. method:: kill_workers()
+
+      Attempt to kill all living worker processes immediately by calling
+      :meth:`Process.terminate <multiprocessing.Process.kill>` on each of them.
+      Internally, it will also call:meth:`Executor.shutdown` to ensure that all
+      other resources associated with the executor are freed.
 
       After calling this method the caller should no longer submit tasks to the
       executor.

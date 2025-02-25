@@ -228,59 +228,70 @@ class ProcessPoolExecutorTest(ExecutorTest):
                     list(executor.map(mul, [(2, 3)] * 10))
             executor.shutdown()
 
+    def test_process_pool_executor_terminate_kill_workers(self):
+        for function_name in ('terminate_workers', 'kill_workers'):
+            manager = multiprocessing.Manager()
+            q = manager.Queue()
+
+            with futures.ProcessPoolExecutor(max_workers=1) as executor:
+                executor.submit(_put_sleep_put, q)
+
+                # We should get started, but not finished since we'll terminate the workers just after
+                self.assertEqual(q.get(timeout=1), 'started')
+
+                getattr(executor, function_name)()
+
+                self.assertRaises(queue.Empty, q.get, timeout=1)
+
+    def test_process_pool_executor_terminate_kill_workers_dead_workers(self):
+        for function_name in ('terminate_workers', 'kill_workers'):
+            with futures.ProcessPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(os._exit, 1)
+                self.assertRaises(BrokenProcessPool, future.result)
+
+                # even though the pool is broken, this shouldn't raise
+                getattr(executor, function_name)()
+
+    def test_process_pool_executor_terminate_kill_workers_not_started_yet(self):
+        for function_name in ('terminate_workers', 'kill_workers'):
+
+            context_with_mocked_process = multiprocessing.get_context()
+            with unittest.mock.patch.object(context_with_mocked_process, 'Process') as mock_process:
+
+                with futures.ProcessPoolExecutor(max_workers=1, mp_context=context_with_mocked_process) as executor:
+                    # The worker has not been started yet, terminate/kill_workers should basically no-op
+                    getattr(executor, function_name)()
+
+                mock_process.return_value.kill.assert_not_called()
+                mock_process.return_value.terminate.assert_not_called()
+
+    def test_process_pool_executor_terminate_kill_workers_stops_pool(self):
+        for function_name in ('terminate_workers', 'kill_workers'):
+            with futures.ProcessPoolExecutor(max_workers=1) as executor:
+                executor.submit(time.sleep, 0).result()
+
+                getattr(executor, function_name)()
+
+                self.assertRaises(RuntimeError, executor.submit, time.sleep, 0)
+
     def test_process_pool_executor_terminate_workers(self):
-        manager = multiprocessing.Manager()
-        q = manager.Queue()
-
         with futures.ProcessPoolExecutor(max_workers=1) as executor:
-            executor.submit(_put_sleep_put, q)
-
-            # We should get started, but not finished since we'll terminate the workers just after
-            self.assertEqual(q.get(timeout=1), 'started')
-
+            executor._terminate_or_kill_workers = unittest.mock.Mock()
             executor.terminate_workers()
 
-            self.assertRaises(queue.Empty, q.get, timeout=1)
+        executor._terminate_or_kill_workers.assert_called_once_with(operation=futures.process._TerminateOrKillOperation.TERMINATE)
 
-    def test_process_pool_executor_terminate_workers_dead_workers(self):
+    def test_process_pool_executor_kill_workers(self):
         with futures.ProcessPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(os._exit, 1)
-            self.assertRaises(BrokenProcessPool, future.result)
+            executor._terminate_or_kill_workers = unittest.mock.Mock()
+            executor.kill_workers()
 
-    @unittest.mock.patch('concurrent.futures.process.os.kill')
-    def test_process_pool_executor_terminate_workers_not_started_yet(self, mock_kill):
+        executor._terminate_or_kill_workers.assert_called_once_with(operation=futures.process._TerminateOrKillOperation.KILL)
+
+    def test_process_pool_executor_terminate_or_kill_workers_invalid_operation(self):
         with futures.ProcessPoolExecutor(max_workers=1) as executor:
-            # The worker has not been started yet, terminate_workers should basically no-op
-            executor.terminate_workers()
+            self.assertRaises(ValueError, executor._terminate_or_kill_workers, operation='invalid operation'),
 
-        mock_kill.assert_not_called()
-
-    def test_process_pool_executor_terminate_workers_stops_pool(self):
-        with futures.ProcessPoolExecutor(max_workers=1) as executor:
-            executor.submit(time.sleep, 0).result()
-
-            executor.terminate_workers()
-
-            self.assertRaises(RuntimeError, executor.submit, time.sleep, 0)
-
-    @unittest.mock.patch('concurrent.futures.process.os.kill')
-    def test_process_pool_executor_terminate_workers_passes_signal(self, mock_kill):
-        with futures.ProcessPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(time.sleep, 0)
-            future.result()
-
-            worker_process = list(executor._processes.values())[0]
-            executor.terminate_workers(signal.SIGABRT)
-
-            mock_kill.assert_called_once_with(worker_process.pid, signal.SIGABRT)
-
-    def test_process_pool_executor_terminate_workers_passes_even_bad_signals(self):
-        with futures.ProcessPoolExecutor(max_workers=1) as executor:
-            future = executor.submit(time.sleep, 0)
-            future.result()
-
-            # 'potatoes' isn't a valid signal, so os.kill will raise a TypeError
-            self.assertRaises(TypeError, executor.terminate_workers, 'potatoes')
 
 
 create_executor_tests(globals(), ProcessPoolExecutorTest,
