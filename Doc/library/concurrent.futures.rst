@@ -431,7 +431,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
 
       Attempt to kill all living worker processes immediately by calling
       :meth:`Process.terminate <multiprocessing.Process.kill>` on each of them.
-      Internally, it will also call:meth:`Executor.shutdown` to ensure that all
+      Internally, it will also call :meth:`Executor.shutdown` to ensure that all
       other resources associated with the executor are freed.
 
       After calling this method the caller should no longer submit tasks to the
