@@ -813,7 +813,9 @@ def uuid7():
     counter_hi = counter_msbs & 0x0fff
     # keep 30 counter's LSBs and clear version bits
     counter_lo = counter & 0x3fff_ffff
-    # ensure that the fail is always a 32-bit integer
+    # ensure that the tail is always a 32-bit integer (by construction,
+    # it is already the case, but future interfaces may allow the user
+    # to specify the random tail)
     tail &= 0xffff_ffff
 
     int_uuid_7 = unix_ts_ms << 80
