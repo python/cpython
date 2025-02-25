@@ -147,10 +147,9 @@ def create_archive(source, target=None, interpreter=None, main=None,
     # thorough checks don't provide enough value to justify the extra
     # cost.
 
-    # https://github.com/python/cpython/issues/104527 tracks making
-    # the zipfile module catch writing an archive to itself at a
-    # lower level, which could help here in cases that our check
-    # doesn't catch.
+    # If target is a file-like object, it will simply fail to compare
+    # equal to any of the entries in files_to_add, so there's no need
+    # to add a special check for that.
     if target in files_to_add:
         raise ZipAppError(
             f"The target archive {target} overwrites one of the source files.")
