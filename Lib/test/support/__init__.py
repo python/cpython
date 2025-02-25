@@ -835,7 +835,6 @@ def gc_threshold(*args):
     finally:
         gc.set_threshold(*old_threshold)
 
-
 def python_is_optimized():
     """Find if Python was built with optimizations."""
     cflags = sysconfig.get_config_var('PY_CFLAGS') or ''
@@ -843,7 +842,11 @@ def python_is_optimized():
     for opt in cflags.split():
         if opt.startswith('-O'):
             final_opt = opt
-    return final_opt not in ('', '-O0', '-Og')
+    if sysconfig.get_config_var("CC") == "gcc":
+        non_opts = ('', '-O0', '-Og')
+    else:
+        non_opts = ('', '-O0')
+    return final_opt not in non_opts
 
 
 def check_cflags_pgo():
