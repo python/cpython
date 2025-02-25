@@ -219,38 +219,6 @@ class ReadablePath(JoinablePath):
         """
         raise NotImplementedError
 
-    def exists(self, *, follow_symlinks=True):
-        """
-        Whether this path exists.
-
-        This method normally follows symlinks; to check whether a symlink exists,
-        add the argument follow_symlinks=False.
-        """
-        info = self.joinpath().info
-        return info.exists(follow_symlinks=follow_symlinks)
-
-    def is_dir(self, *, follow_symlinks=True):
-        """
-        Whether this path is a directory.
-        """
-        info = self.joinpath().info
-        return info.is_dir(follow_symlinks=follow_symlinks)
-
-    def is_file(self, *, follow_symlinks=True):
-        """
-        Whether this path is a regular file (also True for symlinks pointing
-        to regular files).
-        """
-        info = self.joinpath().info
-        return info.is_file(follow_symlinks=follow_symlinks)
-
-    def is_symlink(self):
-        """
-        Whether this path is a symbolic link.
-        """
-        info = self.joinpath().info
-        return info.is_symlink()
-
     @abstractmethod
     def __open_rb__(self, buffering=-1):
         """
