@@ -773,7 +773,7 @@ zoneinfo_str(PyObject *op)
  * Objects constructed from ZoneInfo.from_file cannot be pickled.
  */
 static PyObject *
-zoneinfo_reduce(PyObject *obj_self, PyObject *Py_UNUSED(unused))
+zoneinfo_reduce(PyObject *obj_self, PyObject *Py_UNUSED(dummy))
 {
     PyZoneInfo_ZoneInfo *self = PyZoneInfo_ZoneInfo_CAST(obj_self);
     if (self->source == SOURCE_FILE) {
