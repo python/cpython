@@ -18,7 +18,7 @@
 #include "pycore_pystate.h"           // _PyThreadState_GET()
 #include "pycore_runtime.h"           // _Py_ID()
 #include "pycore_setobject.h"         // _PySet_NextEntry()
-#include "pycore_sysmodule.h"         // _PySys_GetAttr()
+#include "pycore_sysmodule.h"         // _PySys_GetSizeOf()
 
 #include <stdlib.h>               // strtol()
 
@@ -1930,10 +1930,8 @@ whichmodule(PyObject *global, PyObject *dotted_path)
     assert(module_name == NULL);
 
     /* Fallback on walking sys.modules */
-    PyThreadState *tstate = _PyThreadState_GET();
-    modules = _PySys_GetAttr(tstate, &_Py_ID(modules));
+    modules = _PySys_GetRequiredAttr(&_Py_ID(modules));
     if (modules == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
         return NULL;
     }
     if (PyDict_CheckExact(modules)) {
