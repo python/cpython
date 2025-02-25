@@ -116,7 +116,8 @@ Functions
 
 
 .. function:: pformat(object, indent=1, width=80, depth=None, *, \
-                      compact=False, sort_dicts=True, underscore_numbers=False, block_style=False)
+                      compact=False, sort_dicts=True, \
+                      underscore_numbers=False, block_style=False)
 
    Return the formatted representation of *object* as a string.  *indent*,
    *width*, *depth*, *compact*, *sort_dicts*, *underscore_numbers* and *block_style* are
