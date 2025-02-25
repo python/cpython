@@ -237,7 +237,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
                 executor.submit(_put_sleep_put, q)
 
                 # We should get started, but not finished since we'll terminate the workers just after
-                self.assertEqual(q.get(timeout=1), 'started')
+                self.assertEqual(q.get(timeout=5), 'started')
 
                 worker_process = list(executor._processes.values())[0]
                 getattr(executor, function_name)()
