@@ -73,7 +73,7 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 #define _PyObject_HEAD_INIT(type)                   \
     {                                               \
         .ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL,  \
-        .ob_flags = _Py_STATICALLY_ALLOCATED_FLAG,  \
+        .ob_flags = _Py_STATIC_FLAG_BITS,  \
         .ob_gc_bits = _PyGC_BITS_DEFERRED,          \
         .ob_type = (type)                           \
     }
@@ -82,7 +82,7 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 #define _PyObject_HEAD_INIT(type)         \
     {                                     \
         .ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT,  \
-        .ob_flags = _Py_STATICALLY_ALLOCATED_FLAG, \
+        .ob_flags = _Py_STATIC_FLAG_BITS, \
         .ob_type = (type)                 \
     }
 #else

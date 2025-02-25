@@ -410,16 +410,19 @@ typedef struct {
     Py_ssize_t allocated;  /* number of slots in data allocated */
 } Pdata;
 
+#define Pdata_CAST(op)  ((Pdata *)(op))
+
 static int
-Pdata_traverse(Pdata *self, visitproc visit, void *arg)
+Pdata_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
 static void
-Pdata_dealloc(Pdata *self)
+Pdata_dealloc(PyObject *op)
 {
+    Pdata *self = Pdata_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     Py_ssize_t i = Py_SIZE(self);
@@ -427,7 +430,7 @@ Pdata_dealloc(Pdata *self)
         Py_DECREF(self->data[i]);
     }
     PyMem_Free(self->data);
-    tp->tp_free((PyObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -695,6 +698,11 @@ typedef struct {
     PyObject_HEAD
     UnpicklerObject *unpickler;
 } UnpicklerMemoProxyObject;
+
+#define PicklerObject_CAST(op)              ((PicklerObject *)(op))
+#define UnpicklerObject_CAST(op)            ((UnpicklerObject *)(op))
+#define PicklerMemoProxyObject_CAST(op)     ((PicklerMemoProxyObject *)(op))
+#define UnpicklerMemoProxyObject_CAST(op)   ((UnpicklerMemoProxyObject *)(op))
 
 /* Forward declarations */
 static int save(PickleState *state, PicklerObject *, PyObject *, int);
@@ -4720,8 +4728,9 @@ static struct PyMethodDef Pickler_methods[] = {
 };
 
 static int
-Pickler_clear(PicklerObject *self)
+Pickler_clear(PyObject *op)
 {
+    PicklerObject *self = PicklerObject_CAST(op);
     Py_CLEAR(self->output_buffer);
     Py_CLEAR(self->write);
     Py_CLEAR(self->persistent_id);
@@ -4740,18 +4749,19 @@ Pickler_clear(PicklerObject *self)
 }
 
 static void
-Pickler_dealloc(PicklerObject *self)
+Pickler_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     (void)Pickler_clear(self);
-    tp->tp_free((PyObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
 static int
-Pickler_traverse(PicklerObject *self, visitproc visit, void *arg)
+Pickler_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PicklerObject *self = PicklerObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->write);
     Py_VISIT(self->persistent_id);
@@ -4822,7 +4832,7 @@ _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
 {
     /* In case of multiple __init__() calls, clear previous content. */
     if (self->write != NULL)
-        (void)Pickler_clear(self);
+        (void)Pickler_clear((PyObject *)self);
 
     if (_Pickler_SetProtocol(self, protocol, fix_imports) < 0)
         return -1;
@@ -4974,27 +4984,29 @@ static PyMethodDef picklerproxy_methods[] = {
 };
 
 static void
-PicklerMemoProxy_dealloc(PicklerMemoProxyObject *self)
+PicklerMemoProxy_dealloc(PyObject *op)
 {
+    PicklerMemoProxyObject *self = PicklerMemoProxyObject_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     Py_CLEAR(self->pickler);
-    tp->tp_free((PyObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
 static int
-PicklerMemoProxy_traverse(PicklerMemoProxyObject *self,
-                          visitproc visit, void *arg)
+PicklerMemoProxy_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PicklerMemoProxyObject *self = PicklerMemoProxyObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->pickler);
     return 0;
 }
 
 static int
-PicklerMemoProxy_clear(PicklerMemoProxyObject *self)
+PicklerMemoProxy_clear(PyObject *op)
 {
+    PicklerMemoProxyObject *self = PicklerMemoProxyObject_CAST(op);
     Py_CLEAR(self->pickler);
     return 0;
 }
@@ -5032,15 +5044,17 @@ PicklerMemoProxy_New(PicklerObject *pickler)
 /*****************************************************************************/
 
 static PyObject *
-Pickler_get_memo(PicklerObject *self, void *Py_UNUSED(ignored))
+Pickler_get_memo(PyObject *op, void *Py_UNUSED(closure))
 {
+    PicklerObject *self = PicklerObject_CAST(op);
     return PicklerMemoProxy_New(self);
 }
 
 static int
-Pickler_set_memo(PicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored))
+Pickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
 {
     PyMemoTable *new_memo = NULL;
+    PicklerObject *self = PicklerObject_CAST(op);
 
     if (obj == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -5050,7 +5064,7 @@ Pickler_set_memo(PicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored))
 
     PickleState *st = _Pickle_FindStateByType(Py_TYPE(self));
     if (Py_IS_TYPE(obj, st->PicklerMemoProxyType)) {
-        PicklerObject *pickler =
+        PicklerObject *pickler = /* safe fast cast for 'obj' */
             ((PicklerMemoProxyObject *)obj)->pickler;
 
         new_memo = PyMemoTable_Copy(pickler->memo);
@@ -5103,11 +5117,12 @@ Pickler_set_memo(PicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored))
 static PyObject *
 Pickler_getattr(PyObject *self, PyObject *name)
 {
+    PicklerObject *po = PicklerObject_CAST(self);
     if (PyUnicode_Check(name)
         && PyUnicode_EqualToUTF8(name, "persistent_id")
-        && ((PicklerObject *)self)->persistent_id_attr)
+        && po->persistent_id_attr)
     {
-        return Py_NewRef(((PicklerObject *)self)->persistent_id_attr);
+        return Py_NewRef(po->persistent_id_attr);
     }
 
     return PyObject_GenericGetAttr(self, name);
@@ -5119,8 +5134,9 @@ Pickler_setattr(PyObject *self, PyObject *name, PyObject *value)
     if (PyUnicode_Check(name)
         && PyUnicode_EqualToUTF8(name, "persistent_id"))
     {
+        PicklerObject *po = PicklerObject_CAST(self);
         Py_XINCREF(value);
-        Py_XSETREF(((PicklerObject *)self)->persistent_id_attr, value);
+        Py_XSETREF(po->persistent_id_attr, value);
         return 0;
     }
 
@@ -5135,8 +5151,7 @@ static PyMemberDef Pickler_members[] = {
 };
 
 static PyGetSetDef Pickler_getsets[] = {
-    {"memo",          (getter)Pickler_get_memo,
-                      (setter)Pickler_set_memo},
+    {"memo", Pickler_get_memo, Pickler_set_memo},
     {NULL}
 };
 
@@ -7221,8 +7236,9 @@ static struct PyMethodDef Unpickler_methods[] = {
 };
 
 static int
-Unpickler_clear(UnpicklerObject *self)
+Unpickler_clear(PyObject *op)
 {
+    UnpicklerObject *self = UnpicklerObject_CAST(op);
     Py_CLEAR(self->readline);
     Py_CLEAR(self->readinto);
     Py_CLEAR(self->read);
@@ -7250,18 +7266,19 @@ Unpickler_clear(UnpicklerObject *self)
 }
 
 static void
-Unpickler_dealloc(UnpicklerObject *self)
+Unpickler_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
-    PyObject_GC_UnTrack((PyObject *)self);
+    PyObject_GC_UnTrack(self);
     (void)Unpickler_clear(self);
-    tp->tp_free((PyObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
 static int
-Unpickler_traverse(UnpicklerObject *self, visitproc visit, void *arg)
+Unpickler_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    UnpicklerObject *self = UnpicklerObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->readline);
     Py_VISIT(self->readinto);
@@ -7322,7 +7339,7 @@ _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file,
 {
     /* In case of multiple __init__() calls, clear previous content. */
     if (self->read != NULL)
-        (void)Unpickler_clear(self);
+        (void)Unpickler_clear((PyObject *)self);
 
     if (_Unpickler_SetInputStream(self, file) < 0)
         return -1;
@@ -7461,27 +7478,29 @@ static PyMethodDef unpicklerproxy_methods[] = {
 };
 
 static void
-UnpicklerMemoProxy_dealloc(UnpicklerMemoProxyObject *self)
+UnpicklerMemoProxy_dealloc(PyObject *op)
 {
+    UnpicklerMemoProxyObject *self = UnpicklerMemoProxyObject_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     Py_CLEAR(self->unpickler);
-    tp->tp_free((PyObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
 static int
-UnpicklerMemoProxy_traverse(UnpicklerMemoProxyObject *self,
-                            visitproc visit, void *arg)
+UnpicklerMemoProxy_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    UnpicklerMemoProxyObject *self = UnpicklerMemoProxyObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->unpickler);
     return 0;
 }
 
 static int
-UnpicklerMemoProxy_clear(UnpicklerMemoProxyObject *self)
+UnpicklerMemoProxy_clear(PyObject *op)
 {
+    UnpicklerMemoProxyObject *self = UnpicklerMemoProxyObject_CAST(op);
     Py_CLEAR(self->unpickler);
     return 0;
 }
@@ -7521,15 +7540,17 @@ UnpicklerMemoProxy_New(UnpicklerObject *unpickler)
 
 
 static PyObject *
-Unpickler_get_memo(UnpicklerObject *self, void *Py_UNUSED(ignored))
+Unpickler_get_memo(PyObject *op, void *Py_UNUSED(closure))
 {
+    UnpicklerObject *self = UnpicklerObject_CAST(op);
     return UnpicklerMemoProxy_New(self);
 }
 
 static int
-Unpickler_set_memo(UnpicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored))
+Unpickler_set_memo(PyObject *op, PyObject *obj, void *Py_UNUSED(closure))
 {
     PyObject **new_memo;
+    UnpicklerObject *self = UnpicklerObject_CAST(op);
     size_t new_memo_size = 0;
 
     if (obj == NULL) {
@@ -7540,7 +7561,7 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored
 
     PickleState *state = _Pickle_FindStateByType(Py_TYPE(self));
     if (Py_IS_TYPE(obj, state->UnpicklerMemoProxyType)) {
-        UnpicklerObject *unpickler =
+        UnpicklerObject *unpickler = /* safe fast cast for 'obj' */
             ((UnpicklerMemoProxyObject *)obj)->unpickler;
 
         new_memo_size = unpickler->memo_size;
@@ -7606,11 +7627,12 @@ Unpickler_set_memo(UnpicklerObject *self, PyObject *obj, void *Py_UNUSED(ignored
 static PyObject *
 Unpickler_getattr(PyObject *self, PyObject *name)
 {
+    UnpicklerObject *obj = UnpicklerObject_CAST(self);
     if (PyUnicode_Check(name)
         && PyUnicode_EqualToUTF8(name, "persistent_load")
-        && ((UnpicklerObject *)self)->persistent_load_attr)
+        && obj->persistent_load_attr)
     {
-        return Py_NewRef(((UnpicklerObject *)self)->persistent_load_attr);
+        return Py_NewRef(obj->persistent_load_attr);
     }
 
     return PyObject_GenericGetAttr(self, name);
@@ -7622,8 +7644,9 @@ Unpickler_setattr(PyObject *self, PyObject *name, PyObject *value)
     if (PyUnicode_Check(name)
         && PyUnicode_EqualToUTF8(name, "persistent_load"))
     {
+        UnpicklerObject *obj = UnpicklerObject_CAST(self);
         Py_XINCREF(value);
-        Py_XSETREF(((UnpicklerObject *)self)->persistent_load_attr, value);
+        Py_XSETREF(obj->persistent_load_attr, value);
         return 0;
     }
 
@@ -7631,7 +7654,7 @@ Unpickler_setattr(PyObject *self, PyObject *name, PyObject *value)
 }
 
 static PyGetSetDef Unpickler_getsets[] = {
-    {"memo", (getter)Unpickler_get_memo, (setter)Unpickler_set_memo},
+    {"memo", Unpickler_get_memo, Unpickler_set_memo},
     {NULL}
 };
 
