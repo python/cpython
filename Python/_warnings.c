@@ -424,7 +424,10 @@ filter_search(PyInterpreterState *interp, PyObject *category,
               PyObject *text, Py_ssize_t lineno,
               PyObject *module, char *list_name, PyObject *filters,
               PyObject **item, PyObject **matched_action) {
-    /* filters list could change while we are iterating over it. */
+    bool result = true;
+    *matched_action = NULL;
+    /* Avoid the filters list changing while we iterate over it. */
+    Py_BEGIN_CRITICAL_SECTION(filters);
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(filters); i++) {
         PyObject *tmp_item, *action, *msg, *cat, *mod, *ln_obj;
         Py_ssize_t ln;
@@ -434,7 +437,8 @@ filter_search(PyInterpreterState *interp, PyObject *category,
         if (!PyTuple_Check(tmp_item) || PyTuple_GET_SIZE(tmp_item) != 5) {
             PyErr_Format(PyExc_ValueError,
                          "warnings.%s item %zd isn't a 5-tuple", list_name, i);
-            return false;
+            result = false;
+            break;
         }
 
         /* Python code: action, msg, cat, mod, ln = item */
@@ -450,43 +454,49 @@ filter_search(PyInterpreterState *interp, PyObject *category,
                          "action must be a string, not '%.200s'",
                          Py_TYPE(action)->tp_name);
             Py_DECREF(tmp_item);
-            return false;
+            result = false;
+            break;
         }
 
         good_msg = check_matched(interp, msg, text);
         if (good_msg == -1) {
             Py_DECREF(tmp_item);
-            return false;
+            result = false;
+            break;
         }
 
         good_mod = check_matched(interp, mod, module);
         if (good_mod == -1) {
             Py_DECREF(tmp_item);
-            return false;
+            result = false;
+            break;
         }
 
         is_subclass = PyObject_IsSubclass(category, cat);
         if (is_subclass == -1) {
             Py_DECREF(tmp_item);
-            return false;
+            result = false;
+            break;
         }
 
         ln = PyLong_AsSsize_t(ln_obj);
         if (ln == -1 && PyErr_Occurred()) {
             Py_DECREF(tmp_item);
-            return false;
+            result = false;
+            break;
         }
 
         if (good_msg && is_subclass && good_mod && (ln == 0 || lineno == ln)) {
             *item = tmp_item;
             *matched_action = action;
-            return true;
+            result = true;
+            break;
         }
 
         Py_DECREF(tmp_item);
     }
-    *matched_action = NULL;
-    return true;
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 /* The item is a new reference. */
