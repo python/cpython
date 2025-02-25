@@ -11,9 +11,9 @@
 #include "pycore_pyerrors.h"      // _PyErr_NoMemory()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pythonrun.h"     // _Py_SourceAsString()
+#include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_cell.h"          // PyCell_GetRef()
-#include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
 
 #include "clinic/bltinmodule.c.h"
 
@@ -833,6 +833,9 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
         goto error;
     if (is_ast) {
         if ((flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST) {
+            if (PyAst_CheckMode(source, compile_mode) < 0) {
+                goto error;
+            }
             // return an un-optimized AST
             result = Py_NewRef(source);
         }

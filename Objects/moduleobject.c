@@ -12,6 +12,7 @@
 #include "pycore_object.h"        // _PyType_AllocNoTrack
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_sysmodule.h"     // PySys_GetAttrString()
 
 #include "osdefs.h"               // MAXPATHLEN
 

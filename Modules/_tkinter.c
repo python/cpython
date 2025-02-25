@@ -31,7 +31,6 @@ Copyright (C) 1994 Steen Lumholt.
 #endif
 
 #include "pycore_long.h"          // _PyLong_IsNegative()
-#include "pycore_sysmodule.h"     // _PySys_GetRequiredAttrString()
 
 #ifdef MS_WINDOWS
 #  include <windows.h>
@@ -143,8 +142,9 @@ _get_tcl_lib_path(void)
     if (already_checked == 0) {
         struct stat stat_buf;
         int stat_return_value;
+        PyObject *prefix;
 
-        PyObject *prefix = _PySys_GetRequiredAttrString("base_prefix");
+        (void) PySys_GetAttrString("base_prefix", &prefix);
         if (prefix == NULL) {
             return NULL;
         }
@@ -3519,7 +3519,7 @@ PyInit__tkinter(void)
 
     /* This helps the dynamic loader; in Unicode aware Tcl versions
        it also helps Tcl find its encodings. */
-    uexe = _PySys_GetRequiredAttrString("executable");
+    (void) PySys_GetAttrString("executable", &uexe);
     if (uexe && PyUnicode_Check(uexe)) {   // sys.executable can be None
         cexe = PyUnicode_EncodeFSDefault(uexe);
         Py_DECREF(uexe);

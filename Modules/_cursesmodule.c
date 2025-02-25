@@ -108,7 +108,7 @@ static const char PyCursesVersion[] = "2.2";
 #include "pycore_capsule.h"     // _PyCapsule_SetTraverse()
 #include "pycore_long.h"        // _PyLong_GetZero()
 #include "pycore_structseq.h"   // _PyStructSequence_NewType()
-#include "pycore_sysmodule.h"   // _PySys_GetRequiredAttrString()
+#include "pycore_sysmodule.h"   // PySys_GetAttrString()
 
 #ifdef __hpux
 #define STRICT_SYSV_CURSES
@@ -3543,15 +3543,14 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
     if (fd == -1) {
         PyObject* sys_stdout;
 
-        sys_stdout = _PySys_GetRequiredAttrString("stdout");
-        if (sys_stdout == NULL) {
+        if (PySys_GetAttrString("stdout", &sys_stdout) < 0) {
             return NULL;
         }
 
-        if (sys_stdout == Py_None) {
+        if (sys_stdout == NULL || sys_stdout == Py_None) {
             cursesmodule_state *state = get_cursesmodule_state(module);
             PyErr_SetString(state->error, "lost sys.stdout");
-            Py_DECREF(sys_stdout);
+            Py_XDECREF(sys_stdout);
             return NULL;
         }
 
