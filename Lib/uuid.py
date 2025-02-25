@@ -55,6 +55,7 @@ Typical usage:
 import os
 import sys
 import time
+
 from enum import Enum, _simple_enum
 
 
@@ -438,7 +439,6 @@ def _get_command_stdout(command, *args):
 #
 # See https://en.wikipedia.org/wiki/MAC_address#Universal_vs._local_(U/L_bit)
 
-
 def _is_universal(mac):
     return not (mac & (1 << 41))
 
@@ -554,7 +554,6 @@ def _ifconfig_getnode():
             return mac
     return None
 
-
 def _ip_getnode():
     """Get the hardware address on Unix by running ip."""
     # This works on Linux with iproute2.
@@ -562,7 +561,6 @@ def _ip_getnode():
     if mac:
         return mac
     return None
-
 
 def _arp_getnode():
     """Get the hardware address on Unix by running arp."""
@@ -592,12 +590,10 @@ def _arp_getnode():
         return mac
     return None
 
-
 def _lanscan_getnode():
     """Get the hardware address on Unix by running lanscan."""
     # This might work on HP-UX.
     return _find_mac_near_keyword('lanscan', '-ai', [b'lan0'], lambda i: 0)
-
 
 def _netstat_getnode():
     """Get the hardware address on Unix by running netstat."""
@@ -622,13 +618,11 @@ def _unix_getnode():
         uuid_time, _ = _generate_time_safe()
         return UUID(bytes=uuid_time).node
 
-
 def _windll_getnode():
     """Get the hardware address on Windows using the _uuid extension module."""
     if _UuidCreate:
         uuid_bytes = _UuidCreate()
         return UUID(bytes_le=uuid_bytes).node
-
 
 def _random_getnode():
     """Get a random node ID."""
@@ -673,7 +667,6 @@ else:
 
 _node = None
 
-
 def getnode():
     """Get the hardware address as a 48-bit positive integer.
 
@@ -697,7 +690,6 @@ def getnode():
 
 
 _last_timestamp = None
-
 
 def uuid1(node=None, clock_seq=None):
     """Generate a UUID from a host ID, sequence number, and the current time.
@@ -747,14 +739,12 @@ def uuid3(namespace, name):
     int_uuid_3 |= _RFC_4122_VERSION_3_FLAGS
     return UUID._from_int(int_uuid_3)
 
-
 def uuid4():
     """Generate a random UUID."""
     int_uuid_4 = int.from_bytes(os.urandom(16))
     int_uuid_4 &= _RFC_4122_CLEARFLAGS_MASK
     int_uuid_4 |= _RFC_4122_VERSION_4_FLAGS
     return UUID._from_int(int_uuid_4)
-
 
 def uuid5(namespace, name):
     """Generate a UUID from the SHA-1 hash of a namespace UUID and a name."""
@@ -767,6 +757,8 @@ def uuid5(namespace, name):
     int_uuid_5 |= _RFC_4122_VERSION_5_FLAGS
     return UUID._from_int(int_uuid_5)
 
+_last_timestamp_v7 = None
+_last_counter_v7 = 0  # 42-bit counter
 
 def _uuid7_get_counter_and_tail():
     rand = int.from_bytes(os.urandom(10))
@@ -775,11 +767,6 @@ def _uuid7_get_counter_and_tail():
     # 32-bit random data
     tail = rand & 0xffff_ffff
     return counter, tail
-
-
-_last_timestamp_v7 = None
-_last_counter_v7 = 0  # 42-bit counter
-
 
 def uuid7():
     """Generate a UUID from a Unix timestamp in milliseconds and random bits.
@@ -841,7 +828,6 @@ def uuid7():
     _last_counter_v7 = counter
     return res
 
-
 def uuid8(a=None, b=None, c=None):
     """Generate a UUID from three custom blocks.
 
@@ -866,7 +852,6 @@ def uuid8(a=None, b=None, c=None):
     # by construction, the variant and version bits are already cleared
     int_uuid_8 |= _RFC_4122_VERSION_8_FLAGS
     return UUID._from_int(int_uuid_8)
-
 
 def main():
     """Run the uuid command line interface."""
