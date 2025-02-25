@@ -670,7 +670,7 @@ The caller must satisfy the following requirements.
 - The digest_length must not exceed 256 for S, 64 for B.
 
 */
-Hacl_Hash_Blake2b_Simd256_state_t
+void
 *Hacl_Hash_Blake2b_Simd256_malloc_with_params_and_key(
   Hacl_Hash_Blake2b_blake2_params *p,
   bool last_node,
@@ -901,11 +901,12 @@ void Hacl_Hash_Blake2b_Simd256_reset(Hacl_Hash_Blake2b_Simd256_state_t *s)
 */
 Hacl_Streaming_Types_error_code
 Hacl_Hash_Blake2b_Simd256_update(
-  Hacl_Hash_Blake2b_Simd256_state_t *state,
+  void *state_in,
   uint8_t *chunk,
   uint32_t chunk_len
 )
 {
+  Hacl_Hash_Blake2b_Simd256_state_t* state = (Hacl_Hash_Blake2b_Simd256_state_t*)state_in;
   Hacl_Hash_Blake2b_Simd256_state_t s = *state;
   uint64_t total_len = s.total_len;
   if ((uint64_t)chunk_len > 0xffffffffffffffffULL - total_len)
@@ -1122,8 +1123,9 @@ For convenience, this function returns `digest_length`. When in doubt, callers
 can pass an array of size HACL_BLAKE2B_256_OUT_BYTES, then use the return value
 to see how many bytes were actually written.
 */
-uint8_t Hacl_Hash_Blake2b_Simd256_digest(Hacl_Hash_Blake2b_Simd256_state_t *s, uint8_t *dst)
+uint8_t Hacl_Hash_Blake2b_Simd256_digest(void * state, uint8_t *dst)
 {
+  Hacl_Hash_Blake2b_Simd256_state_t* s = (Hacl_Hash_Blake2b_Simd256_state_t*)state;
   Hacl_Hash_Blake2b_Simd256_block_state_t block_state0 = (*s).block_state;
   bool last_node0 = block_state0.thd;
   uint8_t nn0 = block_state0.snd;
@@ -1203,8 +1205,9 @@ uint8_t Hacl_Hash_Blake2b_Simd256_digest(Hacl_Hash_Blake2b_Simd256_state_t *s, u
     ((Hacl_Hash_Blake2b_index){ .key_length = kk, .digest_length = nn, .last_node = last_node }).digest_length;
 }
 
-Hacl_Hash_Blake2b_index Hacl_Hash_Blake2b_Simd256_info(Hacl_Hash_Blake2b_Simd256_state_t *s)
+Hacl_Hash_Blake2b_index Hacl_Hash_Blake2b_Simd256_info(void * state)
 {
+  Hacl_Hash_Blake2b_Simd256_state_t* s = (Hacl_Hash_Blake2b_Simd256_state_t*)state;
   Hacl_Hash_Blake2b_Simd256_block_state_t block_state = (*s).block_state;
   bool last_node = block_state.thd;
   uint8_t nn = block_state.snd;
@@ -1216,8 +1219,9 @@ Hacl_Hash_Blake2b_index Hacl_Hash_Blake2b_Simd256_info(Hacl_Hash_Blake2b_Simd256
 /**
   Free state function when there is no key
 */
-void Hacl_Hash_Blake2b_Simd256_free(Hacl_Hash_Blake2b_Simd256_state_t *state)
+void Hacl_Hash_Blake2b_Simd256_free(void *state_in)
 {
+  Hacl_Hash_Blake2b_Simd256_state_t* state = (Hacl_Hash_Blake2b_Simd256_state_t*)state_in;
   Hacl_Hash_Blake2b_Simd256_state_t scrut = *state;
   uint8_t *buf = scrut.buf;
   Hacl_Hash_Blake2b_Simd256_block_state_t block_state = scrut.block_state;
@@ -1232,9 +1236,10 @@ void Hacl_Hash_Blake2b_Simd256_free(Hacl_Hash_Blake2b_Simd256_state_t *state)
 /**
   Copying. This preserves all parameters.
 */
-Hacl_Hash_Blake2b_Simd256_state_t
-*Hacl_Hash_Blake2b_Simd256_copy(Hacl_Hash_Blake2b_Simd256_state_t *state)
+void
+*Hacl_Hash_Blake2b_Simd256_copy(void * state_in)
 {
+  Hacl_Hash_Blake2b_Simd256_state_t* state = (Hacl_Hash_Blake2b_Simd256_state_t*)state_in;
   Hacl_Hash_Blake2b_Simd256_state_t scrut = *state;
   Hacl_Hash_Blake2b_Simd256_block_state_t block_state0 = scrut.block_state;
   uint8_t *buf0 = scrut.buf;
