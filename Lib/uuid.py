@@ -54,6 +54,7 @@ Typical usage:
 
 import os
 import sys
+import time
 
 from enum import Enum, _simple_enum
 
@@ -707,7 +708,6 @@ def uuid1(node=None, clock_seq=None):
         return UUID(bytes=uuid_time, is_safe=is_safe)
 
     global _last_timestamp
-    import time
     nanoseconds = time.time_ns()
     # 0x01b21dd213814000 is the number of 100-ns intervals between the
     # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
@@ -789,7 +789,6 @@ def uuid7():
     global _last_timestamp_v7
     global _last_counter_v7
 
-    import time
     nanoseconds = time.time_ns()
     timestamp_ms = nanoseconds // 1_000_000
 
