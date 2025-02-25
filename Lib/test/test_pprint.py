@@ -1191,7 +1191,8 @@ deque([('brown', 2),
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.description = "foo"
-        dummy_userlist = DummyUserList(["first", 2, {"key": "value"}, [4, 5, 6]])
+        dummy_userlist = DummyUserList(["first", 2, {"key": "value"},
+                                       [4, 5, 6]])
 
         dummy_samples = {
             "dummy_dataclass": dummy_dataclass,
