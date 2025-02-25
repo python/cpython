@@ -3515,6 +3515,10 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(repr(2 ** I(3)), "I(8)")
         self.assertEqual(repr(I(2) ** 3), "I(8)")
         self.assertEqual(repr(pow(I(2), I(3), I(5))), "I(3)")
+        self.assertEqual(repr(pow(I(2), I(3), 5)), "I(3)")
+        self.assertEqual(repr(pow(I(2), 3, 5)), "I(3)")
+        self.assertEqual(repr(pow(2, I(3), 5)), "I(3)")
+        self.assertEqual(repr(pow(2, 3, I(5))), "3")
         class S(str):
             def __eq__(self, other):
                 return self.lower() == other.lower()
