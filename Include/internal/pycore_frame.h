@@ -153,20 +153,27 @@ _PyFrame_NumSlotsForCodeObject(PyCodeObject *code)
 }
 
 static inline void
-_PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
+_PyFrame_CopyToHeap(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
 {
     *dest = *src;
     assert(src->stackpointer != NULL);
     int stacktop = (int)(src->stackpointer - src->localsplus);
     assert(stacktop >= _PyFrame_GetCode(src)->co_nlocalsplus);
     dest->stackpointer = dest->localsplus + stacktop;
-    // The generator may outlive any references that were providing "support"
-    // for borrowed references in the frame. Convert them to strong references.
+    // The destination frame may outlive any references that were providing
+    // "support" for borrowed references in the source frame. Convert any
+    // borrowed references that were copied into dest into strong references.
     for (int i = 0; i < stacktop; i++) {
         dest->localsplus[i] = _PyStackRef_NewIfBorrowedOrSteal(src->localsplus[i]);
     }
     dest->f_executable = _PyStackRef_NewIfBorrowedOrSteal(dest->f_executable);
     dest->f_funcobj = _PyStackRef_NewIfBorrowedOrSteal(dest->f_funcobj);
+}
+
+static inline void
+_PyFrame_CopyToNewGen(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
+{
+    _PyFrame_CopyToHeap(src, dest);
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
     dest->previous = NULL;
