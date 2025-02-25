@@ -14,6 +14,12 @@ try:
 except ImportError:
     pwd = None
 
+try:
+    import msvcrt
+
+except ImportError:
+    mscvrt = None
+
 @mock.patch('os.environ')
 class GetpassGetuserTest(unittest.TestCase):
 
@@ -162,15 +168,8 @@ class UnixGetpassTest(unittest.TestCase):
             self.assertIn('Password:', stderr.getvalue())
 
 
-try:
-    import msvcrt
-except ImportError:
-    msvcrt_available = False
-else:
-    msvcrt_available = True
-
+@unittest.skipIf(msvcrt is None, 'tests require system with msvcrt (Windows)')
 @unittest.skipUnless(support.MS_WINDOWS, "Windows-specific tests")
-@unittest.skipUnless(msvcrt_available, 'tests require system with msvcrt (Windows)')
 class WinGetpassTest(unittest.TestCase):
 
     def test_uses_msvcrt_directly(self):
@@ -187,8 +186,10 @@ class WinGetpassTest(unittest.TestCase):
             mock_stream.flush.assert_called()
 
     def test_handles_backspace(self):
-        with mock.patch('msvcrt.getch') as getch, \
-             mock.patch('msvcrt.putch') as putch:
+        with (
+        	mock.patch('msvcrt.getch') as getch,
+            mock.patch('msvcrt.putch') as putch,
+		):
             getch.side_effect = [b'a', b'b', b'\b', b'c', b'\r']
             result = getpass.win_getpass()
             self.assertEqual(result, 'ac')
