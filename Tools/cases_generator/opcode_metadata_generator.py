@@ -20,12 +20,23 @@ from generators_common import (
 )
 from cwriter import CWriter
 from dataclasses import dataclass
-from typing import TextIO
+from lexer import ANN_REPLACED, ANN_SPECIALIZING
+from typing import TextIO, TypedDict
 from stack import Stack, get_stack_effect, get_stack_effects
+
+class _OpArgDictKind(TypedDict):
+    OPARG_FULL: int
+    OPARG_CACHE_1: int
+    OPARG_CACHE_2: int
+    OPARG_CACHE_4: int
+    OPARG_TOP: int
+    OPARG_BOTTOM: int
+    OPARG_SAVE_RETURN_OFFSET: int
+    OPARG_REPLACED: int
 
 # Constants used instead of size for macro expansions.
 # Note: 1, 2, 4 must match actual cache entry sizes.
-OPARG_KINDS = {
+OPARG_KINDS: _OpArgDictKind = {
     "OPARG_FULL": 0,
     "OPARG_CACHE_1": 1,
     "OPARG_CACHE_2": 2,
@@ -343,9 +354,9 @@ def generate_expansion_table(analysis: Analysis, out: CWriter) -> None:
                     size = OPARG_KINDS["OPARG_SAVE_RETURN_OFFSET"]
                 if isinstance(part, Uop):
                     # Skip specializations
-                    if "specializing" in part.annotations:
+                    if ANN_SPECIALIZING in part.annotations:
                         continue
-                    if "replaced" in part.annotations:
+                    if ANN_REPLACED in part.annotations:
                         size = OPARG_KINDS["OPARG_REPLACED"]
                     expansions.append((part.name, size, offset if size else 0))
                 offset += part.size
@@ -380,9 +391,9 @@ def is_viable_expansion(inst: Instruction) -> bool:
     for part in inst.parts:
         if isinstance(part, Uop):
             # Skip specializing and replaced uops
-            if "specializing" in part.annotations:
+            if ANN_SPECIALIZING in part.annotations:
                 continue
-            if "replaced" in part.annotations:
+            if ANN_REPLACED in part.annotations:
                 continue
             if part.properties.tier == 1 or not part.is_viable():
                 return False
