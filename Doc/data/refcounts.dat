@@ -2771,8 +2771,8 @@ PyUnicode_FromFormatV:const char*:format::
 PyUnicode_FromFormatV:va_list:args::
 
 PyUnicode_Append:void:::
-PyUnicode_ReadChar:PyObject**:p_left:0:
-PyUnicode_ReadChar:PyObject*:right::
+PyUnicode_Append:PyObject**:p_left:0:
+PyUnicode_Append:PyObject*:right::
 
 PyUnicode_GetDefaultEncoding:const char*:::
 PyUnicode_GetDefaultEncoding::void::
