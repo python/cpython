@@ -58,7 +58,6 @@ import threading
 import weakref
 from functools import partial
 import itertools
-import signal
 import sys
 from traceback import format_exception
 
