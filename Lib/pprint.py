@@ -225,7 +225,7 @@ class PrettyPrinter:
 
     def _format_block_end(self, end_str, indent):
         if self._block_style:
-            return '\n' + ' ' * indent + end_str
+            return f"\n{' ' * indent}{end_str}"
         else:
             return end_str
 
