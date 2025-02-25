@@ -1134,108 +1134,46 @@ deque([('brown', 2),
             quux: list = dataclasses.field(default_factory=list)
             corge: int = 1
             garply: tuple = (1, 2, 3, 4)
-        dummy_dataclass = DummyDataclass(
-            foo="foo",
-            bar=1.2,
-            baz=False,
-            qux={"foo": "bar", "baz": 123},
-            quux=["foo", "bar", "baz"],
-            corge=7,
-            garply=(1, 2, 3, 4),
-        )
 
-        dummy_dict = {
-            "foo": "bar",
-            "baz": 123,
-            "qux": {"foo": "bar", "baz": 123},
-            "quux": ["foo", "bar", "baz"],
-            "corge": 7,
-        }
-
-        dummy_ordered_dict = OrderedDict(
-            [
-                ("foo", 1),
-                ("bar", 12),
-                ("baz", 123),
-            ]
-        )
-
-        dummy_list = [
-            "foo",
-            "bar",
-            "baz",
-        ]
-
-        dummy_tuple = (
-            "foo",
-            "bar",
-            "baz",
-            4,
-            5,
-            6,
-            dummy_list,
-        )
-
-        dummy_set = {
-            (1, 2, 3),
-        }
-
-        dummy_frozenset = frozenset(
-            {
-                "foo",
-                "bar",
-                "baz",
-                (1, 2, 3),
-                frozenset(dummy_set),
-            }
-        )
-
+        dummy_dataclass = DummyDataclass(foo="foo", bar=1.2, baz=False,
+                                         qux={"foo": "bar", "baz": 123},
+                                         quux=["foo", "bar", "baz"], corge=7,
+                                         garply=(1, 2, 3, 4))
+        dummy_dict = {"foo": "bar", "baz": 123,
+                      "qux": {"foo": "bar", "baz": 123},
+                      "quux": ["foo", "bar", "baz"], "corge": 7 }
+        dummy_ordered_dict = collections.OrderedDict([("foo", 1), ("bar", 12),
+                                                      ("baz", 123)])
+        dummy_list = ["foo", "bar", "baz"]
+        dummy_tuple = ("foo", "bar", "baz", 4, 5, 6, dummy_list)
+        dummy_set = { 1, 2, 3 }
+        dummy_frozenset = frozenset(("foo", "bar", "baz", (1, 2, 3),
+                                     frozenset(dummy_set)))
         dummy_bytes = b"Hello world! foo bar baz 123 456 789"
         dummy_byte_array = bytearray(dummy_bytes)
-
-        dummy_mappingproxy = MappingProxyType(dummy_dict)
-
-        dummy_namespace = SimpleNamespace(
-            foo="bar",
-            bar=42,
-            baz=SimpleNamespace(
-                x=321,
-                y="string",
-                d={"foo": True, "bar": "baz"},
-            ),
-        )
-
-        dummy_defaultdict = defaultdict(list)
+        dummy_mappingproxy = types.MappingProxyType(dummy_dict)
+        baz = types.SimpleNamespace(x=321, y="string",
+                                    d={"foo": True, "bar": "baz"})
+        dummy_namespace = types.SimpleNamespace(foo="bar", bar=42, baz=baz)
+        dummy_defaultdict = collections.defaultdict(list)
         dummy_defaultdict["foo"].append("bar")
         dummy_defaultdict["foo"].append("baz")
         dummy_defaultdict["foo"].append("qux")
         dummy_defaultdict["bar"] = {"foo": "bar", "baz": None}
-
-        dummy_counter = Counter()
+        dummy_counter = collections.Counter()
         dummy_counter.update("foo")
-        dummy_counter.update(
-            {
-                "bar": 5,
-                "baz": 3,
-                "qux": 10,
-            }
-        )
-
-        dummy_chainmap = ChainMap(
-            {"foo": "bar"},
-            {"baz": "qux"},
-            {"corge": dummy_dict},
-        )
+        dummy_counter.update({ "bar": 5, "baz": 3, "qux": 10 })
+        dummy_chainmap = collections.ChainMap({"foo": "bar"}, {"baz": "qux"},
+                                              {"corge": dummy_dict},)
         dummy_chainmap.maps.append({"garply": "waldo"})
-
-        dummy_deque = deque(maxlen=10)
+        dummy_deque = collections.deque(maxlen=10)
         dummy_deque.append("foo")
         dummy_deque.append(123)
         dummy_deque.append(dummy_dict)
         dummy_deque.extend(dummy_list)
         dummy_deque.appendleft(dummy_set)
 
-        class DummyUserDict(UserDict):
+        class DummyUserDict(collections.UserDict):
             """A custom UserDict with some extra attributes"""
 
             def __init__(self, *args, **kwargs):
