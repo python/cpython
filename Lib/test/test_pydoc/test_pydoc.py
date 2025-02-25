@@ -4,6 +4,7 @@ import sys
 import contextlib
 import importlib.util
 import inspect
+import io
 import pydoc
 import py_compile
 import keyword
@@ -79,7 +80,7 @@ CLASSES
     class B(builtins.object)
      |  Methods defined here:
      |
-     |  __annotate__(...)
+     |  __annotate__(format, /)
      |
      |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
@@ -180,7 +181,7 @@ class A(builtins.object)
 
 class B(builtins.object)
     Methods defined here:
-        __annotate__(...)
+        __annotate__(format, /)
     ----------------------------------------------------------------------
     Data descriptors defined here:
         __dict__
@@ -555,6 +556,14 @@ class PydocDocTest(unittest.TestCase):
          |      ... and 82 other subclasses
         """
         doc = pydoc.TextDoc()
+        try:
+            # Make sure HeapType, which has no __module__ attribute, is one
+            # of the known subclasses of object. (doc.docclass() used to
+            # fail if HeapType was imported before running this test, like
+            # when running tests sequentially.)
+            from _testcapi import HeapType
+        except ImportError:
+            pass
         text = doc.docclass(object)
         snip = (" |  Built-in subclasses:\n"
                 " |      async_generator\n"
@@ -898,6 +907,82 @@ class PydocDocTest(unittest.TestCase):
                 print('line 2: hi"""', file=script)
             synopsis = pydoc.synopsis(TESTFN, {})
             self.assertEqual(synopsis, 'line 1: h\xe9')
+
+    def test_source_synopsis(self):
+        def check(source, expected, encoding=None):
+            if isinstance(source, str):
+                source_file = StringIO(source)
+            else:
+                source_file = io.TextIOWrapper(io.BytesIO(source), encoding=encoding)
+            with source_file:
+                result = pydoc.source_synopsis(source_file)
+                self.assertEqual(result, expected)
+
+        check('"""Single line docstring."""',
+              'Single line docstring.')
+        check('"""First line of docstring.\nSecond line.\nThird line."""',
+              'First line of docstring.')
+        check('"""First line of docstring.\\nSecond line.\\nThird line."""',
+              'First line of docstring.')
+        check('"""  Whitespace around docstring.  """',
+              'Whitespace around docstring.')
+        check('import sys\n"""No docstring"""',
+              None)
+        check('  \n"""Docstring after empty line."""',
+              'Docstring after empty line.')
+        check('# Comment\n"""Docstring after comment."""',
+              'Docstring after comment.')
+        check('  # Indented comment\n"""Docstring after comment."""',
+              'Docstring after comment.')
+        check('""""""', # Empty docstring
+              '')
+        check('', # Empty file
+              None)
+        check('"""Embedded\0null byte"""',
+              None)
+        check('"""Embedded null byte"""\0',
+              None)
+        check('"""Café and résumé."""',
+              'Café and résumé.')
+        check("'''Triple single quotes'''",
+              'Triple single quotes')
+        check('"Single double quotes"',
+              'Single double quotes')
+        check("'Single single quotes'",
+              'Single single quotes')
+        check('"""split\\\nline"""',
+              'splitline')
+        check('"""Unrecognized escape \\sequence"""',
+              'Unrecognized escape \\sequence')
+        check('"""Invalid escape seq\\uence"""',
+              None)
+        check('r"""Raw \\stri\\ng"""',
+              'Raw \\stri\\ng')
+        check('b"""Bytes literal"""',
+              None)
+        check('f"""f-string"""',
+              None)
+        check('"""Concatenated""" \\\n"string" \'literals\'',
+              'Concatenatedstringliterals')
+        check('"""String""" + """expression"""',
+              None)
+        check('("""In parentheses""")',
+              'In parentheses')
+        check('("""Multiple lines """\n"""in parentheses""")',
+              'Multiple lines in parentheses')
+        check('()', # tuple
+              None)
+        check(b'# coding: iso-8859-15\n"""\xa4uro sign"""',
+              '€uro sign', encoding='iso-8859-15')
+        check(b'"""\xa4"""', # Decoding error
+              None, encoding='utf-8')
+
+        with tempfile.NamedTemporaryFile(mode='w+', encoding='utf-8') as temp_file:
+            temp_file.write('"""Real file test."""\n')
+            temp_file.flush()
+            temp_file.seek(0)
+            result = pydoc.source_synopsis(temp_file)
+            self.assertEqual(result, "Real file test.")
 
     @requires_docstrings
     def test_synopsis_sourceless(self):
@@ -1817,6 +1902,11 @@ foo
             '<a href="https://localhost/">https://localhost/</a>',
             html
         )
+
+    def test_module_none(self):
+        # Issue #128772
+        from test.test_pydoc import module_none
+        pydoc.render_doc(module_none)
 
 
 class PydocFodderTest(unittest.TestCase):

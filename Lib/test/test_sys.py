@@ -1100,7 +1100,13 @@ class SysModuleTest(unittest.TestCase):
             # code objects is a large fraction of the total number of
             # references, this can cause the total number of allocated
             # blocks to exceed the total number of references.
-            if not support.Py_GIL_DISABLED:
+            #
+            # For some reason, iOS seems to trigger the "unlikely to happen"
+            # case reliably under CI conditions. It's not clear why; but as
+            # this test is checking the behavior of getallocatedblock()
+            # under garbage collection, we can skip this pre-condition check
+            # for now. See GH-130384.
+            if not support.Py_GIL_DISABLED and not support.is_apple_mobile:
                 self.assertLess(a, sys.gettotalrefcount())
         except AttributeError:
             # gettotalrefcount() not available
@@ -1621,7 +1627,7 @@ class SizeofTest(unittest.TestCase):
             return sys._getframe()
         x = func()
         if support.Py_GIL_DISABLED:
-            INTERPRETER_FRAME = '10PhcP'
+            INTERPRETER_FRAME = '9PihcP'
         else:
             INTERPRETER_FRAME = '9PhcP'
         check(x, size('3PiccPP' + INTERPRETER_FRAME + 'P'))

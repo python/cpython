@@ -16,9 +16,10 @@
 #include "pycore_parking_lot.h"   // _PyParkingLot_AfterFork()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
 #include "pycore_pylifecycle.h"   // _PyAST_Fini()
-#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
+#include "pycore_pymem.h"         // _PyMem_DebugEnabled()
 #include "pycore_pystate.h"
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
+#include "pycore_stackref.h"      // Py_STACKREF_DEBUG
 #include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
 
@@ -642,6 +643,8 @@ init_interpreter(PyInterpreterState *interp,
     _Py_brc_init_state(interp);
 #endif
     llist_init(&interp->mem_free_queue.head);
+    llist_init(&interp->asyncio_tasks_head);
+    interp->asyncio_tasks_lock = (PyMutex){0};
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
     }
@@ -654,15 +657,30 @@ init_interpreter(PyInterpreterState *interp,
     }
     interp->sys_profile_initialized = false;
     interp->sys_trace_initialized = false;
-#ifdef _Py_TIER2
-    (void)_Py_SetOptimizer(interp, NULL);
+    interp->jit = false;
     interp->executor_list_head = NULL;
     interp->trace_run_counter = JIT_CLEANUP_THRESHOLD;
-#endif
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
     }
+#if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
+    interp->next_stackref = 1;
+    _Py_hashtable_allocator_t alloc = {
+        .malloc = malloc,
+        .free = free,
+    };
+    interp->stackref_debug_table = _Py_hashtable_new_full(
+        _Py_hashtable_hash_ptr,
+        _Py_hashtable_compare_direct,
+        NULL,
+        NULL,
+        &alloc
+    );
+    _Py_stackref_associate(interp, Py_None, PyStackRef_None);
+    _Py_stackref_associate(interp, Py_False, PyStackRef_False);
+    _Py_stackref_associate(interp, Py_True, PyStackRef_True);
+#endif
 
     interp->_initialized = 1;
     return _PyStatus_OK();
@@ -768,6 +786,11 @@ PyInterpreterState_New(void)
     return interp;
 }
 
+#if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
+extern void
+_Py_stackref_report_leaks(PyInterpreterState *interp);
+#endif
+
 static void
 interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
 {
@@ -805,12 +828,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         // XXX Eliminate the need to do this.
         tstate->_status.cleared = 0;
     }
-
-#ifdef _Py_TIER2
-    _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
-    assert(old != NULL);
-    Py_DECREF(old);
-#endif
 
     /* It is possible that any of the objects below have a finalizer
        that runs Python code or otherwise relies on a thread state
@@ -876,6 +893,12 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     PyDict_Clear(interp->builtins);
     Py_CLEAR(interp->sysdict);
     Py_CLEAR(interp->builtins);
+
+#if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
+    _Py_stackref_report_leaks(interp);
+    _Py_hashtable_destroy(interp->stackref_debug_table);
+    interp->stackref_debug_table = NULL;
+#endif
 
     if (tstate->interp == interp) {
         /* We are now safe to fix tstate->_status.cleared. */
@@ -1486,11 +1509,12 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->dict_global_version = 0;
 
     _tstate->asyncio_running_loop = NULL;
+    _tstate->asyncio_running_task = NULL;
 
     tstate->delete_later = NULL;
 
     llist_init(&_tstate->mem_free_queue);
-
+    llist_init(&_tstate->asyncio_tasks_head);
     if (interp->stoptheworld.requested || _PyRuntime.stoptheworld.requested) {
         // Start in the suspended state if there is an ongoing stop-the-world.
         tstate->state = _Py_THREAD_SUSPENDED;
@@ -1668,6 +1692,15 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->threading_local_sentinel);
 
     Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_loop);
+    Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_task);
+
+
+    PyMutex_Lock(&tstate->interp->asyncio_tasks_lock);
+    // merge any lingering tasks from thread state to interpreter's
+    // tasks list
+    llist_concat(&tstate->interp->asyncio_tasks_head,
+                 &((_PyThreadStateImpl *)tstate)->asyncio_tasks_head);
+    PyMutex_Unlock(&tstate->interp->asyncio_tasks_lock);
 
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);
@@ -2851,24 +2884,9 @@ _PyInterpreterState_GetConfig(PyInterpreterState *interp)
 }
 
 
-int
-_PyInterpreterState_GetConfigCopy(PyConfig *config)
-{
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-
-    PyStatus status = _PyConfig_Copy(config, &interp->config);
-    if (PyStatus_Exception(status)) {
-        _PyErr_SetFromPyStatus(status);
-        return -1;
-    }
-    return 0;
-}
-
-
 const PyConfig*
 _Py_GetConfig(void)
 {
-    assert(PyGILState_Check());
     PyThreadState *tstate = current_fast_get();
     _Py_EnsureTstateNotNULL(tstate);
     return _PyInterpreterState_GetConfig(tstate->interp);

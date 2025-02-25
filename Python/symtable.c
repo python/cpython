@@ -138,6 +138,13 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
 
     ste->ste_has_docstring = 0;
 
+    ste->ste_method = 0;
+    if (st->st_cur != NULL &&
+        st->st_cur->ste_type == ClassBlock &&
+        block == FunctionBlock) {
+        ste->ste_method = 1;
+    }
+
     ste->ste_symbols = PyDict_New();
     ste->ste_varnames = PyList_New(0);
     ste->ste_children = PyList_New(0);
