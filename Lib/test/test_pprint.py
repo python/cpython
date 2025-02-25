@@ -1185,7 +1185,7 @@ deque([('brown', 2),
                                         "corge": 7 })
         dummy_userdict.access_count = 5
 
-        class DummyUserList(UserList):
+        class DummyUserList(collections.UserList):
             """A custom UserList with some extra attributes"""
 
             def __init__(self, *args, **kwargs):
