@@ -2931,7 +2931,7 @@ class SupportsRound[T](Protocol):
         pass
 
 
-class Reader[T](Iterable[T], Protocol):
+class Reader[T](Protocol):
     """Protocol for simple I/O reader instances.
 
     This protocol only supports blocking I/O.
@@ -2942,14 +2942,6 @@ class Reader[T](Iterable[T], Protocol):
     @abstractmethod
     def read(self, size: int = ..., /) -> T:
         """Read data from the input stream and return it.
-
-        If "size" is specified, at most "size" items (bytes/characters) will be
-        read.
-        """
-
-    @abstractmethod
-    def readline(self, size: int = ..., /) -> T:
-        """Read a line of data from the input stream and return it.
 
         If "size" is specified, at most "size" items (bytes/characters) will be
         read.

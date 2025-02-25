@@ -2830,22 +2830,11 @@ decorated with :func:`@runtime_checkable <runtime_checkable>`.
       Read data from the input stream and return it. If ``size`` is
       specified, at most ``size`` items (bytes/characters) will be read.
 
-   .. method:: readline(size=..., /)
-
-      Read a line of data from the input stream and return it. If ``size`` is
-      specified, at most ``size`` items (bytes/characters) will be read.
-
-   .. method:: __iter__()
-
-      Return an :class:`collections.abc.Iterator` over the lines of data
-      in the input stream.
-
    For example::
 
      def read_it(reader: Reader[str]):
-         assert reader.read(11) == "--marker--\n"
-         for line in reader:
-             print(line)
+         data = reader.read(11)
+         assert isinstance(data, str)
 
 .. class:: Writer[T]
 
