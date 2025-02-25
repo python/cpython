@@ -780,9 +780,6 @@ class BaseTestUUID:
         # While UUIDv8 has an entropy of 122 bits, those 122 bits may not
         # necessarily be sampled from a PRNG. On the other hand, UUIDv7
         # uses os.urandom() as a PRNG which features better randomness.
-        #
-        # Until reaching UNIX_EPOCH + 10'000 years, the probability for
-        # generating two identical UUIDs is negligible.
         N = 1000
         uuids = {self.uuid.uuid7() for _ in range(N)}
         self.assertEqual(len(uuids), N)
