@@ -90,7 +90,7 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject *key, bool read, PyO
      *   - if read == true, returns the index if the value is not NULL
      *   - if read == false, returns the index if the value is not hidden
      * Otherwise returns -1.
-     * 
+     *
      * If read == true and value_ptr is not NULL, *value_ptr is set to
      * the value of the key if it is found (with a new reference).
      */
