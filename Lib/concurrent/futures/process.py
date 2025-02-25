@@ -45,6 +45,7 @@ Process #1..n:
 
 __author__ = 'Brian Quinlan (brian@sweetapp.com)'
 
+import enum
 import os
 from concurrent.futures import _base
 import queue
@@ -626,6 +627,18 @@ class BrokenProcessPool(_base.BrokenExecutor):
     while a future was in the running state.
     """
 
+class _TerminateOrKillOperation(enum.Enum):
+    """Enum for _terminate_or_kill_workers().
+
+    Used to determine the operation used by the
+    _terminate_or_kill_workers() method.
+    """
+    # Delegate to call process.terminate()
+    TERMINATE = 1
+
+    # Delegate to call process.kill()
+    KILL = 2
+
 
 class ProcessPoolExecutor(_base.Executor):
     def __init__(self, max_workers=None, mp_context=None,
@@ -855,3 +868,65 @@ class ProcessPoolExecutor(_base.Executor):
         self._executor_manager_thread_wakeup = None
 
     shutdown.__doc__ = _base.Executor.shutdown.__doc__
+
+    def _terminate_or_kill_workers(self, operation: _TerminateOrKillOperation):
+        """Attempts to terminate or kill the executor's workers based off the given
+        operation. Iterates through all of the current processes and performs the
+        relevant task if the process is still alive.
+
+        After terminating workers, the pool will be in a broken state
+        and no longer usable (for instance, new tasks should not be
+        submitted).
+        """
+        if operation not in _TerminateOrKillOperation._member_map_.values():
+            raise ValueError(f"Unsupported operation: {operation}")
+
+        processes = {}
+        if self._processes:
+            processes = self._processes.copy()
+
+        # shutdown will invalidate ._processes, so we copy it right before calling.
+        # If we waited here, we would deadlock if a process decides not to exit.
+        self.shutdown(wait=False, cancel_futures=True)
+
+        if not processes:
+            return
+
+        for proc in processes.values():
+            try:
+                if not proc.is_alive():
+                    continue
+            except ValueError:
+                # The process is already exited/closed out.
+                continue
+
+            try:
+                if operation == _TerminateOrKillOperation.TERMINATE:
+                    proc.terminate()
+                elif operation == _TerminateOrKillOperation.KILL:
+                    proc.kill()
+            except ProcessLookupError:
+                # The process just ended before our signal
+                continue
+
+    def terminate_workers(self):
+        """Attempts to terminate the executor's workers.
+        Iterates through all of the current worker processes and terminates
+        each one that is still alive.
+
+        After terminating workers, the pool will be in a broken state
+        and no longer usable (for instance, new tasks should not be
+        submitted).
+        """
+        return self._terminate_or_kill_workers(operation=_TerminateOrKillOperation.TERMINATE)
+
+    def kill_workers(self):
+        """Attempts to kill the executor's workers.
+        Iterates through all of the current worker processes and kills
+        each one that is still alive.
+
+        After killing workers, the pool will be in a broken state
+        and no longer usable (for instance, new tasks should not be
+        submitted).
+        """
+        return self._terminate_or_kill_workers(operation=_TerminateOrKillOperation.KILL)
