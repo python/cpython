@@ -82,19 +82,29 @@ async def async_check_output(*args, **kwargs):
 
 # Return a list of UDIDs associated with booted simulators
 async def list_devices():
-    # List the testing simulators, in JSON format
-    raw_json = await async_check_output(
-        "xcrun", "simctl", "--set", "testing", "list", "-j"
-    )
-    json_data = json.loads(raw_json)
+    try:
+        # List the testing simulators, in JSON format
+        raw_json = await async_check_output(
+            "xcrun", "simctl", "--set", "testing", "list", "-j"
+        )
+        json_data = json.loads(raw_json)
 
-    # Filter out the booted iOS simulators
-    return [
-        simulator["udid"]
-        for runtime, simulators in json_data["devices"].items()
-        for simulator in simulators
-        if runtime.split(".")[-1].startswith("iOS") and simulator["state"] == "Booted"
-    ]
+        # Filter out the booted iOS simulators
+        return [
+            simulator["udid"]
+            for runtime, simulators in json_data["devices"].items()
+            for simulator in simulators
+            if runtime.split(".")[-1].startswith("iOS") and simulator["state"] == "Booted"
+        ]
+    except subprocess.CalledProcessError as e:
+        # If there's no ~/Library/Developer/XCTestDevices folder (which is the
+        # case on fresh installs, and in some CI environments), `simctl list`
+        # returns error code 1, rather than an empty list. Handle that case,
+        # but raise all other errors.
+        if e.returncode == 1:
+            return []
+        else:
+            raise
 
 
 async def find_device(initial_devices):
