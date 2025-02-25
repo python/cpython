@@ -202,8 +202,7 @@ class WinGetpassTest(unittest.TestCase):
             # Simulate typing 'a' then Ctrl+C (ASCII value 3)
             getch.side_effect = [b'a', b'\x03']
             # Verify that KeyboardInterrupt is raised
-            with self.assertRaises(KeyboardInterrupt):
-                getpass.win_getpass()
+            self.assertRaises(KeyboardInterrupt, getpass.win_getpass)
 
     def test_flushes_stream_after_input(self):
         with mock.patch('msvcrt.getch') as getch:
