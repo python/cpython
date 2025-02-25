@@ -103,8 +103,10 @@ else:
 # Static Typing Support
 #
 
+GenericAlias = type(list[int])
 
-class Reader[T](metaclass=abc.ABCMeta):
+
+class Reader(metaclass=abc.ABCMeta):
     """Protocol for simple I/O reader instances.
 
     This protocol only supports blocking I/O.
@@ -127,8 +129,10 @@ class Reader[T](metaclass=abc.ABCMeta):
             return _check_methods(C, "read")
         return NotImplemented
 
+    __class_getitem__ = classmethod(GenericAlias)
 
-class Writer[T](metaclass=abc.ABCMeta):
+
+class Writer(metaclass=abc.ABCMeta):
     """Protocol for simple I/O writer instances.
 
     This protocol only supports blocking I/O.
@@ -146,3 +150,5 @@ class Writer[T](metaclass=abc.ABCMeta):
         if cls is Writer:
             return _check_methods(C, "write")
         return NotImplemented
+
+    __class_getitem__ = classmethod(GenericAlias)
