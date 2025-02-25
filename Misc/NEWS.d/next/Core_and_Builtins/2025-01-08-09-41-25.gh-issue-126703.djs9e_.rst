@@ -1,0 +1,1 @@
+Improve performance of  :class:`range` by using a freelist.
