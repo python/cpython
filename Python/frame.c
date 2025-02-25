@@ -57,15 +57,12 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     frame->f_executable = PyStackRef_DUP(frame->f_executable);
     int stacktop = (int)(frame->stackpointer - frame->localsplus);
     assert(stacktop >= _PyFrame_GetCode(frame)->co_nlocalsplus);
-    // XXX - Maybe more optimal sequence to do here
-    if (_PyStackRef_IsBorrowed(frame->f_executable)) {
-        frame->f_executable = PyStackRef_FromPyObjectNew(PyStackRef_AsPyObjectBorrow(frame->f_executable));
-    }
-    if (_PyStackRef_IsBorrowed(frame->f_funcobj)) {
-        frame->f_funcobj = PyStackRef_FromPyObjectNew(PyStackRef_AsPyObjectBorrow(frame->f_funcobj));
-    }
+    // The frame object may outlive any references that were providing "support"
+    // for borrowed references in the frame. Convert them to strong references.
+    frame->f_executable = _PyStackRef_NewIfBorrowedOrSteal(frame->f_executable);
+    frame->f_funcobj = _PyStackRef_NewIfBorrowedOrSteal(frame->f_funcobj);
     for (int i = 0; i < stacktop; i++) {
-        frame->localsplus[i] = _PyStackRef_StealIfUnborrowed(frame->localsplus[i]);
+        frame->localsplus[i] = _PyStackRef_NewIfBorrowedOrSteal(frame->localsplus[i]);
     }
     f->f_frame = frame;
     frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;

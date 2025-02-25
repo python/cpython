@@ -7230,7 +7230,7 @@
             {
                 retval = val;
                 assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
-                _PyStackRef temp = _PyStackRef_StealIfUnborrowed(retval);
+                _PyStackRef temp = _PyStackRef_NewIfBorrowedOrSteal(retval);
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -7314,7 +7314,7 @@
                 #endif
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-                value = _PyStackRef_StealIfUnborrowed(temp);
+                value = _PyStackRef_NewIfBorrowedOrSteal(temp);
                 LLTRACE_RESUME_FRAME();
             }
             stack_pointer[0] = value;
@@ -10305,7 +10305,7 @@
             _PyStackRef res;
             retval = stack_pointer[-1];
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
-            _PyStackRef temp = _PyStackRef_StealIfUnborrowed(retval);
+            _PyStackRef temp = _PyStackRef_NewIfBorrowedOrSteal(retval);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -10362,7 +10362,7 @@
                 PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
                 PyObject *retval_o;
                 assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
-                _PyStackRef tmp = _PyStackRef_StealIfUnborrowed(v);
+                _PyStackRef tmp = _PyStackRef_NewIfBorrowedOrSteal(v);
                 if ((tstate->interp->eval_frame == NULL) &&
                     (Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type) &&
                     ((PyGenObject *)receiver_o)->gi_frame_state < FRAME_EXECUTING)
@@ -10471,7 +10471,7 @@
                 }
                 STAT_INC(SEND, hit);
                 gen_frame = &gen->gi_iframe;
-                _PyFrame_StackPush(gen_frame, _PyStackRef_StealIfUnborrowed(v));
+                _PyFrame_StackPush(gen_frame, _PyStackRef_NewIfBorrowedOrSteal(v));
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
@@ -11975,7 +11975,7 @@
             #endif
             stack_pointer = _PyFrame_GetStackPointer(frame);
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-            value = _PyStackRef_StealIfUnborrowed(temp);
+            value = _PyStackRef_NewIfBorrowedOrSteal(temp);
             LLTRACE_RESUME_FRAME();
             stack_pointer[0] = value;
             stack_pointer += 1;

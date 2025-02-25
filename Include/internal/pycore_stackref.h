@@ -213,24 +213,6 @@ _PyStackRef_FromPyObjectSteal(PyObject *obj)
 }
 #   define PyStackRef_FromPyObjectSteal(obj) _PyStackRef_FromPyObjectSteal(_PyObject_CAST(obj))
 
-static inline _PyStackRef
-_PyStackRef_StealIfUnborrowed(_PyStackRef stackref)
-{
-    if (PyStackRef_IsNull(stackref)) {
-        return stackref;
-    }
-    if (PyStackRef_IsDeferred(stackref)) {
-        PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
-        if (_Py_IsImmortal(obj) || _PyObject_HasDeferredRefcount(obj)) {
-            return stackref;
-        }
-        else {
-            return (_PyStackRef){ .bits = (uintptr_t)(Py_NewRef(obj)) | Py_TAG_PTR };
-        }
-    }
-    return stackref;
-}
-
 static inline bool
 _PyStackRef_IsBorrowed(_PyStackRef stackref)
 {
@@ -239,6 +221,17 @@ _PyStackRef_IsBorrowed(_PyStackRef stackref)
     }
     PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
     return !(_Py_IsImmortal(obj) || _PyObject_HasDeferredRefcount(obj));
+}
+
+
+static inline _PyStackRef
+_PyStackRef_NewIfBorrowedOrSteal(_PyStackRef stackref)
+{
+    if (_PyStackRef_IsBorrowed(stackref)) {
+        PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
+        return (_PyStackRef){ .bits = (uintptr_t)(Py_NewRef(obj)) | Py_TAG_PTR };
+    }
+    return stackref;
 }
 
 static inline _PyStackRef

@@ -152,23 +152,21 @@ _PyFrame_NumSlotsForCodeObject(PyCodeObject *code)
     return code->co_framesize - FRAME_SPECIALS_SIZE;
 }
 
-static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
+static inline void
+_PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
 {
     *dest = *src;
     assert(src->stackpointer != NULL);
     int stacktop = (int)(src->stackpointer - src->localsplus);
     assert(stacktop >= _PyFrame_GetCode(src)->co_nlocalsplus);
     dest->stackpointer = dest->localsplus + stacktop;
+    // The generator may outlive any references that were providing "support"
+    // for borrowed references in the frame. Convert them to strong references.
     for (int i = 0; i < stacktop; i++) {
-        dest->localsplus[i] = _PyStackRef_StealIfUnborrowed(src->localsplus[i]);
+        dest->localsplus[i] = _PyStackRef_NewIfBorrowedOrSteal(src->localsplus[i]);
     }
-    // XXX - More efficient version of this?
-    if (_PyStackRef_IsBorrowed(dest->f_executable)) {
-        dest->f_executable = PyStackRef_FromPyObjectNew(PyStackRef_AsPyObjectBorrow(dest->f_executable));
-    }
-    if (_PyStackRef_IsBorrowed(dest->f_funcobj)) {
-        dest->f_funcobj = PyStackRef_FromPyObjectNew(PyStackRef_AsPyObjectBorrow(dest->f_funcobj));
-    }
+    dest->f_executable = _PyStackRef_NewIfBorrowedOrSteal(dest->f_executable);
+    dest->f_funcobj = _PyStackRef_NewIfBorrowedOrSteal(dest->f_funcobj);
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
     dest->previous = NULL;
