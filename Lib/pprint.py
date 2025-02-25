@@ -60,7 +60,8 @@ def pformat(object, indent=1, width=80, depth=None, *,
     """Format a Python object into a pretty-printed representation."""
     return PrettyPrinter(indent=indent, width=width, depth=depth,
                          compact=compact, sort_dicts=sort_dicts,
-                         underscore_numbers=underscore_numbers, block_style=block_style).pformat(object)
+                         underscore_numbers=underscore_numbers,
+                         block_style=block_style).pformat(object)
 
 
 def pp(object, *args, sort_dicts=False, **kwargs):
