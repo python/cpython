@@ -141,6 +141,7 @@ class QueryTestCase(unittest.TestCase):
         self.assertRaises(ValueError, pprint.PrettyPrinter, depth=0)
         self.assertRaises(ValueError, pprint.PrettyPrinter, depth=-1)
         self.assertRaises(ValueError, pprint.PrettyPrinter, width=0)
+        self.assertRaises(ValueError, pprint.PrettyPrinter, compact=True, block_style=True)
 
     def test_basic(self):
         # Verify .isrecursive() and .isreadable() w/o recursion
@@ -1122,6 +1123,217 @@ deque([('brown', 2),
     'brown fox '
     'jumped over a '
     'lazy dog'}""")
+
+    def test_block_style(self):
+        @dataclasses.dataclass
+        class DummyDataclass:
+            foo: str
+            bar: float
+            baz: bool
+            qux: dict = dataclasses.field(default_factory=dict)
+            quux: list = dataclasses.field(default_factory=list)
+            corge: int = 1
+            garply: tuple = (1, 2, 3, 4)
+
+        dummy_dataclass = DummyDataclass(foo="foo", bar=1.2, baz=False,
+                                         qux={"foo": "bar", "baz": 123},
+                                         quux=["foo", "bar", "baz"], corge=7,
+                                         garply=(1, 2, 3, 4))
+        dummy_dict = {"foo": "bar", "baz": 123,
+                      "qux": {"foo": "bar", "baz": 123},
+                      "quux": ["foo", "bar", "baz"], "corge": 7 }
+        dummy_ordered_dict = collections.OrderedDict([("foo", 1), ("bar", 12),
+                                                      ("baz", 123)])
+        dummy_list = ["foo", "bar", "baz"]
+        dummy_tuple = ("foo", "bar", "baz", 4, 5, 6, dummy_list)
+        dummy_set = { 1, 2, 3 }
+        dummy_frozenset = frozenset(("foo", "bar", "baz", (1, 2, 3),
+                                     frozenset(dummy_set)))
+        dummy_bytes = b"Hello world! foo bar baz 123 456 789"
+        dummy_byte_array = bytearray(dummy_bytes)
+        dummy_mappingproxy = types.MappingProxyType(dummy_dict)
+        baz = types.SimpleNamespace(x=321, y="string",
+                                    d={"foo": True, "bar": "baz"})
+        dummy_namespace = types.SimpleNamespace(foo="bar", bar=42, baz=baz)
+        dummy_defaultdict = collections.defaultdict(list)
+        dummy_defaultdict["foo"].append("bar")
+        dummy_defaultdict["foo"].append("baz")
+        dummy_defaultdict["foo"].append("qux")
+        dummy_defaultdict["bar"] = {"foo": "bar", "baz": None}
+        dummy_counter = collections.Counter()
+        dummy_counter.update("foo")
+        dummy_counter.update({ "bar": 5, "baz": 3, "qux": 10 })
+        dummy_chainmap = collections.ChainMap({"foo": "bar"}, {"baz": "qux"},
+                                              {"corge": dummy_dict},)
+        dummy_chainmap.maps.append({"garply": "waldo"})
+        dummy_deque = collections.deque(maxlen=10)
+        dummy_deque.append("foo")
+        dummy_deque.append(123)
+        dummy_deque.append(dummy_dict)
+        dummy_deque.extend(dummy_list)
+        dummy_deque.appendleft(dummy_set)
+
+        class DummyUserDict(collections.UserDict):
+            """A custom UserDict with some extra attributes"""
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.access_count = 0
+        dummy_userdict = DummyUserDict({ "foo": "bar", "baz": 123,
+                                        "qux": {"foo": "bar", "baz": 123},
+                                        "quux": ["foo", "bar", "baz"],
+                                        "corge": 7 })
+        dummy_userdict.access_count = 5
+
+        class DummyUserList(collections.UserList):
+            """A custom UserList with some extra attributes"""
+
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.description = "foo"
+        dummy_userlist = DummyUserList(["first", 2, {"key": "value"},
+                                       [4, 5, 6]])
+
+        dummy_samples = {
+            "dummy_dataclass": dummy_dataclass,
+            "dummy_dict": dummy_dict,
+            "dummy_ordered_dict": dummy_ordered_dict,
+            "dummy_list": dummy_list,
+            "dummy_tuple": dummy_tuple,
+            "dummy_set": dummy_set,
+            "dummy_frozenset": dummy_frozenset,
+            "dummy_bytes": dummy_bytes,
+            "dummy_byte_array": dummy_byte_array,
+            "dummy_mappingproxy": dummy_mappingproxy,
+            "dummy_namespace": dummy_namespace,
+            "dummy_defaultdict": dummy_defaultdict,
+            "dummy_counter": dummy_counter,
+            "dummy_chainmap": dummy_chainmap,
+            "dummy_deque": dummy_deque,
+            "dummy_userdict": dummy_userdict,
+            "dummy_userlist": dummy_userlist,
+        }
+        self.assertEqual(pprint.pformat(dummy_samples, width=40, indent=4, block_style=True, sort_dicts=False),
+"""\
+{
+    'dummy_dataclass': DummyDataclass(
+        foo='foo',
+        bar=1.2,
+        baz=False,
+        qux={'foo': 'bar', 'baz': 123},
+        quux=['foo', 'bar', 'baz'],
+        corge=7,
+        garply=(1, 2, 3, 4)
+    ),
+    'dummy_dict': {
+        'foo': 'bar',
+        'baz': 123,
+        'qux': {'foo': 'bar', 'baz': 123},
+        'quux': ['foo', 'bar', 'baz'],
+        'corge': 7
+    },
+    'dummy_ordered_dict': OrderedDict([
+        ('foo', 1),
+        ('bar', 12),
+        ('baz', 123)
+    ]),
+    'dummy_list': ['foo', 'bar', 'baz'],
+    'dummy_tuple': (
+        'foo',
+        'bar',
+        'baz',
+        4,
+        5,
+        6,
+        ['foo', 'bar', 'baz']
+    ),
+    'dummy_set': {(1, 2, 3)},
+    'dummy_frozenset': frozenset({
+        frozenset({(1, 2, 3)}),
+        'bar',
+        'baz',
+        'foo',
+        (1, 2, 3)
+    }),
+    'dummy_bytes': b'Hello world! foo bar baz 123 456'
+    b' 789',
+    'dummy_byte_array': bytearray(
+        b'Hello world! foo bar baz 123'
+        b' 456 789'
+    ),
+    'dummy_mappingproxy': mappingproxy({
+        'foo': 'bar',
+        'baz': 123,
+        'qux': {'foo': 'bar', 'baz': 123},
+        'quux': ['foo', 'bar', 'baz'],
+        'corge': 7
+    }),
+    'dummy_namespace': namespace(
+        foo='bar',
+        bar=42,
+        baz=namespace(
+            x=321,
+            y='string',
+            d={'foo': True, 'bar': 'baz'}
+        )
+    ),
+    'dummy_defaultdict': defaultdict(<class 'list'>, {
+        'foo': ['bar', 'baz', 'qux'],
+        'bar': {'foo': 'bar', 'baz': None}
+    }),
+    'dummy_counter': Counter({
+        'qux': 10,
+        'bar': 5,
+        'baz': 3,
+        'o': 2,
+        'f': 1
+    }),
+    'dummy_chainmap': ChainMap(
+        {'foo': 'bar'},
+        {'baz': 'qux'},
+        {
+            'corge': {
+                'foo': 'bar',
+                'baz': 123,
+                'qux': {
+                    'foo': 'bar',
+                    'baz': 123
+                },
+                'quux': ['foo', 'bar', 'baz'],
+                'corge': 7
+            }
+        },
+        {'garply': 'waldo'}
+    ),
+    'dummy_deque': deque([
+        {(1, 2, 3)},
+        'foo',
+        123,
+        {
+            'foo': 'bar',
+            'baz': 123,
+            'qux': {'foo': 'bar', 'baz': 123},
+            'quux': ['foo', 'bar', 'baz'],
+            'corge': 7
+        },
+        'foo',
+        'bar',
+        'baz'
+    ], maxlen=10),
+    'dummy_userdict': {
+        'foo': 'bar',
+        'baz': 123,
+        'qux': {'foo': 'bar', 'baz': 123},
+        'quux': ['foo', 'bar', 'baz'],
+        'corge': 7
+    },
+    'dummy_userlist': [
+        'first',
+        2,
+        {'key': 'value'},
+        [4, 5, 6]
+    ]
+}""")
 
 
 class DottedPrettyPrinter(pprint.PrettyPrinter):
