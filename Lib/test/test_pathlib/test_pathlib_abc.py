@@ -1107,7 +1107,7 @@ class ReadablePathTest(JoinablePathTest):
         p = P(self.base)
         q = p / "FILEa"
         given = set(p.glob("FILEa"))
-        expect = {q} if q.exists() else set()
+        expect = {q} if q.info.exists() else set()
         self.assertEqual(given, expect)
         self.assertEqual(set(p.glob("FILEa*")), set())
 
@@ -1391,8 +1391,8 @@ class RWPathTest(WritablePathTest, ReadablePathTest):
         target = base / 'copyA'
         result = source.copy(target)
         self.assertEqual(result, target)
-        self.assertTrue(target.exists())
-        self.assertEqual(source.read_text(), target.read_text())
+        self.assertTrue(result.info.exists())
+        self.assertEqual(source.read_text(), result.read_text())
 
     def test_copy_file_to_existing_file(self):
         base = self.cls(self.base)
@@ -1400,8 +1400,8 @@ class RWPathTest(WritablePathTest, ReadablePathTest):
         target = base / 'dirB' / 'fileB'
         result = source.copy(target)
         self.assertEqual(result, target)
-        self.assertTrue(target.exists())
-        self.assertEqual(source.read_text(), target.read_text())
+        self.assertTrue(result.info.exists())
+        self.assertEqual(source.read_text(), result.read_text())
 
     def test_copy_file_to_existing_directory(self):
         base = self.cls(self.base)
@@ -1416,8 +1416,8 @@ class RWPathTest(WritablePathTest, ReadablePathTest):
         source.write_bytes(b'')
         result = source.copy(target)
         self.assertEqual(result, target)
-        self.assertTrue(target.exists())
-        self.assertEqual(target.read_bytes(), b'')
+        self.assertTrue(result.info.exists())
+        self.assertEqual(result.read_bytes(), b'')
 
     def test_copy_file_to_itself(self):
         base = self.cls(self.base)
@@ -1432,13 +1432,13 @@ class RWPathTest(WritablePathTest, ReadablePathTest):
         target = base / 'copyC'
         result = source.copy(target)
         self.assertEqual(result, target)
-        self.assertTrue(target.is_dir())
-        self.assertTrue(target.joinpath('dirD').is_dir())
-        self.assertTrue(target.joinpath('dirD', 'fileD').is_file())
-        self.assertEqual(target.joinpath('dirD', 'fileD').read_text(),
+        self.assertTrue(result.info.is_dir())
+        self.assertTrue(result.joinpath('dirD').info.is_dir())
+        self.assertTrue(result.joinpath('dirD', 'fileD').info.is_file())
+        self.assertEqual(result.joinpath('dirD', 'fileD').read_text(),
                          "this is file D\n")
-        self.assertTrue(target.joinpath('fileC').is_file())
-        self.assertTrue(target.joinpath('fileC').read_text(),
+        self.assertTrue(result.joinpath('fileC').info.is_file())
+        self.assertTrue(result.joinpath('fileC').read_text(),
                         "this is file C\n")
 
     def test_copy_dir_complex(self, follow_symlinks=True):
@@ -1462,7 +1462,7 @@ class RWPathTest(WritablePathTest, ReadablePathTest):
 
         # Compare the source and target trees
         source_walk = ordered_walk(source)
-        target_walk = ordered_walk(target)
+        target_walk = ordered_walk(result)
         for source_item, target_item in zip(source_walk, target_walk, strict=True):
             self.assertEqual(source_item[0].parts[len(source.parts):],
                              target_item[0].parts[len(target.parts):])  # dirpath
@@ -1472,12 +1472,12 @@ class RWPathTest(WritablePathTest, ReadablePathTest):
             for filename in source_item[2]:
                 source_file = source_item[0].joinpath(filename)
                 target_file = target_item[0].joinpath(filename)
-                if follow_symlinks or not source_file.is_symlink():
+                if follow_symlinks or not source_file.info.is_symlink():
                     # Regular file.
                     self.assertEqual(source_file.read_bytes(), target_file.read_bytes())
-                elif source_file.is_dir():
+                elif source_file.info.is_dir():
                     # Symlink to directory.
-                    self.assertTrue(target_file.is_dir())
+                    self.assertTrue(target_file.info.is_dir())
                     self.assertEqual(source_file.readlink(), target_file.readlink())
                 else:
                     # Symlink to file.
@@ -1503,13 +1503,13 @@ class RWPathTest(WritablePathTest, ReadablePathTest):
         target.joinpath('dirD').mkdir()
         result = source.copy(target, dirs_exist_ok=True)
         self.assertEqual(result, target)
-        self.assertTrue(target.is_dir())
-        self.assertTrue(target.joinpath('dirD').is_dir())
-        self.assertTrue(target.joinpath('dirD', 'fileD').is_file())
-        self.assertEqual(target.joinpath('dirD', 'fileD').read_text(),
+        self.assertTrue(result.info.is_dir())
+        self.assertTrue(result.joinpath('dirD').info.is_dir())
+        self.assertTrue(result.joinpath('dirD', 'fileD').info.is_file())
+        self.assertEqual(result.joinpath('dirD', 'fileD').read_text(),
                          "this is file D\n")
-        self.assertTrue(target.joinpath('fileC').is_file())
-        self.assertTrue(target.joinpath('fileC').read_text(),
+        self.assertTrue(result.joinpath('fileC').info.is_file())
+        self.assertTrue(result.joinpath('fileC').read_text(),
                         "this is file C\n")
 
     def test_copy_dir_to_itself(self):
@@ -1524,7 +1524,7 @@ class RWPathTest(WritablePathTest, ReadablePathTest):
         target = base / 'dirC' / 'dirD' / 'copyC'
         self.assertRaises(OSError, source.copy, target)
         self.assertRaises(OSError, source.copy, target, follow_symlinks=False)
-        self.assertFalse(target.exists())
+        self.assertFalse(target.info.exists())
 
     def test_copy_into(self):
         base = self.cls(self.base)
@@ -1532,7 +1532,7 @@ class RWPathTest(WritablePathTest, ReadablePathTest):
         target_dir = base / 'dirA'
         result = source.copy_into(target_dir)
         self.assertEqual(result, target_dir / 'fileA')
-        self.assertTrue(result.exists())
+        self.assertTrue(result.info.exists())
         self.assertEqual(source.read_text(), result.read_text())
 
     def test_copy_into_empty_name(self):
