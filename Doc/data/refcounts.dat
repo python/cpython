@@ -2757,6 +2757,10 @@ PyUnicode_FromFormatV:PyObject*::+1:
 PyUnicode_FromFormatV:const char*:format::
 PyUnicode_FromFormatV:va_list:args::
 
+PyUnicode_Append:void:::
+PyUnicode_ReadChar:PyObject**:p_left:0:
+PyUnicode_ReadChar:PyObject*:right::
+
 PyUnicode_GetLength:Py_ssize_t:::
 PyUnicode_GetLength:PyObject*:unicode:0:
 

@@ -607,6 +607,12 @@ APIs:
    decref'ing the returned objects.
 
 
+.. c:function:: void PyUnicode_Append(PyObject **p_left, PyObject *right)
+
+   Append the string *right* to the end of *p_left*.  (In particular, a :exc:`SystemError`
+   if *p_left* or *right* is NULL, or if either is not a Unicode object).
+
+
 .. c:function:: Py_ssize_t PyUnicode_GetLength(PyObject *unicode)
 
    Return the length of the Unicode object, in code points.
