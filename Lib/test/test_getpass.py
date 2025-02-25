@@ -164,11 +164,11 @@ class UnixGetpassTest(unittest.TestCase):
 
 try:
     import msvcrt
-    msvcrt = True
+    msvcrt_available = True
 except ImportError:
-    msvcrt = False
+    msvcrt_available = False
 
-@unittest.skipUnless(msvcrt, 'tests require system with msvcrt (Windows)')
+@unittest.skipUnless(msvcrt_available, 'tests require system with msvcrt (Windows)')
 class WinGetpassTest(unittest.TestCase):
 
     def test_uses_msvcrt_directly(self):
