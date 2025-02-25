@@ -115,7 +115,7 @@ class Reader(metaclass=abc.ABCMeta):
     __slots__ = ()
 
     @abc.abstractmethod
-    def read(self, size: int = ..., /) -> T:
+    def read(self, size=..., /):
         """Read data from the input stream and return it.
 
         If "size" is specified, at most "size" items (bytes/characters) will be
@@ -141,7 +141,7 @@ class Writer(metaclass=abc.ABCMeta):
     __slots__ = ()
 
     @abc.abstractmethod
-    def write(self, data: T, /) -> int:
+    def write(self, data, /):
         """Write data to the output stream and return number of items written."""
 
     @classmethod
