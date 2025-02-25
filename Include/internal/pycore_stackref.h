@@ -370,6 +370,7 @@ PyStackRef_AsStrongReference(_PyStackRef stackref)
         } \
     } while (0)
 
+
 #else // Py_GIL_DISABLED
 
 // With GIL
@@ -418,6 +419,12 @@ static inline void PyStackRef_CheckValid(_PyStackRef ref) {
 
 #endif
 
+#ifdef _WIN32
+#define PyStackRef_IsUncountedMortal(REF) (((REF).bits & Py_TAG_BITS) == 0)
+#define PyStackRef_IsCountedMortal(REF) (((REF).bits & Py_TAG_BITS) == Py_TAG_REFCNT)
+#define PyStackRef_IsMortal(REF) (((REF).bits & Py_TAG_BITS) != Py_TAG_IMMORTAL)
+#define PyStackRef_AsPyObjectBorrow BITS_TO_PTR_MASKED
+#else
 /* Does this ref not have an embedded refcount and refer to a mortal object? */
 static inline int
 PyStackRef_IsUncountedMortal(_PyStackRef ref)
@@ -444,6 +451,7 @@ PyStackRef_AsPyObjectBorrow(_PyStackRef ref)
 {
     return BITS_TO_PTR_MASKED(ref);
 }
+#endif
 
 static inline PyObject *
 PyStackRef_AsPyObjectSteal(_PyStackRef ref)
@@ -508,6 +516,10 @@ PyStackRef_FromPyObjectImmortal(PyObject *obj)
     return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_IMMORTAL};
 }
 
+#ifdef _WIN32
+#define PyStackRef_DUP(REF) \
+    (PyStackRef_IsUncountedMortal(REF) ? Py_INCREF_MORTAL(BITS_TO_PTR(ref)) : (REF))
+#else
 static inline _PyStackRef
 PyStackRef_DUP(_PyStackRef ref)
 {
@@ -517,6 +529,7 @@ PyStackRef_DUP(_PyStackRef ref)
     }
     return ref;
 }
+#endif
 
 static inline bool
 PyStackRef_IsHeapSafe(_PyStackRef ref)
@@ -537,6 +550,12 @@ PyStackRef_MakeHeapSafe(_PyStackRef ref)
     return ref;
 }
 
+#ifdef _WIN32
+#define PyStackRef_CLOSE(REF) \
+do { \
+    if (PyStackRef_IsUncountedMortal(REF)) Py_DECREF_MORTAL(BITS_TO_PTR(ref)); \
+} while (0)
+#else
 static inline void
 PyStackRef_CLOSE(_PyStackRef ref)
 {
@@ -545,6 +564,7 @@ PyStackRef_CLOSE(_PyStackRef ref)
         Py_DECREF_MORTAL(BITS_TO_PTR(ref));
     }
 }
+#endif
 
 static inline void
 PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct)
@@ -555,6 +575,9 @@ PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct)
     }
 }
 
+#ifdef _WIN32
+#define PyStackRef_XCLOSE PyStackRef_CLOSE
+#else
 static inline void
 PyStackRef_XCLOSE(_PyStackRef ref)
 {
@@ -564,6 +587,7 @@ PyStackRef_XCLOSE(_PyStackRef ref)
         Py_DECREF_MORTAL(BITS_TO_PTR(ref));
     }
 }
+#endif
 
 #define PyStackRef_CLEAR(REF) \
     do { \
