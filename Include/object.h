@@ -71,7 +71,7 @@ whose size is determined when the object is allocated.
 #define PyObject_HEAD_INIT(type)    \
     {                               \
         0,                          \
-        _Py_STATIC_FLAG_BITS,       \
+        _Py_STATIC_IMMORTAL_INITIAL_REFCNT, \
         { 0 },                      \
         0,                          \
         _Py_IMMORTAL_REFCNT_LOCAL,  \
