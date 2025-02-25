@@ -728,21 +728,23 @@ class OpenSSLConstructorTestCase(ThroughOpenSSLAPIMixin,
 
 
 class SanityTestCaseMixin(CreatorMixin):
+
     hmac_class = None
+    digestname = None
 
-    @hashlib_helper.requires_hashdigest('sha256')
     def test_methods(self):
-        h = self.hmac_new(b"my secret key", digestmod="sha256")
-        self.check(h)
-
-    def check(self, h):
+        h = self.hmac_new(b"my secret key", digestmod=self.digestname)
         self.assertIsInstance(h, self.hmac_class)
         self.assertIsNone(h.update(b"compute the hash of this text!"))
         self.assertIsInstance(h.digest(), bytes)
         self.assertIsInstance(h.hexdigest(), str)
         self.assertIsInstance(h.copy(), self.hmac_class)
 
+    def test_repr(self):
+        raise NotImplementedError
 
+
+@hashlib_helper.requires_hashdigest('sha256')
 class PySanityTestCase(ThroughObjectMixin, PyModuleMixin, SanityTestCaseMixin,
                        unittest.TestCase):
 
@@ -750,8 +752,14 @@ class PySanityTestCase(ThroughObjectMixin, PyModuleMixin, SanityTestCaseMixin,
     def setUpClass(cls):
         super().setUpClass()
         cls.hmac_class = cls.hmac.HMAC
+        cls.digestname = 'sha256'
+
+    def test_repr(self):
+        h = self.hmac_new(b"my secret key", digestmod=self.digestname)
+        self.assertStartsWith(repr(h), "<hmac.HMAC object at")
 
 
+@hashlib_helper.requires_hashdigest('sha256', openssl=True)
 class OpenSSLSanityTestCase(ThroughOpenSSLAPIMixin, SanityTestCaseMixin,
                             unittest.TestCase):
 
@@ -759,6 +767,11 @@ class OpenSSLSanityTestCase(ThroughOpenSSLAPIMixin, SanityTestCaseMixin,
     def setUpClass(cls):
         super().setUpClass()
         cls.hmac_class = _hashlib.HMAC
+        cls.digestname = 'sha256'
+
+    def test_repr(self):
+        h = self.hmac_new(b"my secret key", digestmod=self.digestname)
+        self.assertStartsWith(repr(h), f"<{self.digestname} HMAC object @")
 
 
 class UpdateTestCaseMixin:
