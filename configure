@@ -32180,8 +32180,8 @@ fi
 # runtime CPUID check.
 if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
   # Some versions of immintrin.h require -mavx* to provide the __m256i type
-  # but blake2module.c must not be compiled with -mavx2 and may include
-  # libintvector.h which contains __m256i. See GH issue #130213.
+  # but blake2module.c must not be compiled with those options and may
+  # include libintvector.h which contains __m256i. See GH issue #130213.
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx2" >&5
 printf %s "checking whether C compiler accepts -mavx2... " >&6; }
 if test ${ax_cv_check_cflags__Werror__mavx2+y}
