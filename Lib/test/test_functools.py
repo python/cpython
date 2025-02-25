@@ -2087,12 +2087,15 @@ class TestLRU:
                 return n
             return fib(n-1) + fib(n-2)
 
-        fib(100)
+        if not support.Py_DEBUG:
+            depth = support.get_c_recursion_limit()*2//7
+            with support.infinite_recursion():
+                fib(depth)
         if self.module == c_functools:
             fib.cache_clear()
             with support.infinite_recursion():
                 with self.assertRaises(RecursionError):
-                    fib(support.exceeds_recursion_limit())
+                    fib(10000)
 
 
 @py_functools.lru_cache()
@@ -3308,6 +3311,58 @@ class TestSingleDispatch(unittest.TestCase):
         if not support.check_impl_detail(cpython=True):
             support.gc_collect()
         self.assertIsNone(r())
+
+    def test_signatures(self):
+        @functools.singledispatch
+        def func(item, arg: int) -> str:
+            return str(item)
+        @func.register
+        def _(item: int, arg: bytes) -> str:
+            return str(item)
+
+        self.assertEqual(str(Signature.from_callable(func)),
+                         '(item, arg: int) -> str')
+
+    def test_method_signatures(self):
+        class A:
+            def m(self, item, arg: int) -> str:
+                return str(item)
+            @classmethod
+            def cm(cls, item, arg: int) -> str:
+                return str(item)
+            @functools.singledispatchmethod
+            def func(self, item, arg: int) -> str:
+                return str(item)
+            @func.register
+            def _(self, item, arg: bytes) -> str:
+                return str(item)
+
+            @functools.singledispatchmethod
+            @classmethod
+            def cls_func(cls, item, arg: int) -> str:
+                return str(arg)
+            @func.register
+            @classmethod
+            def _(cls, item, arg: bytes) -> str:
+                return str(item)
+
+            @functools.singledispatchmethod
+            @staticmethod
+            def static_func(item, arg: int) -> str:
+                return str(arg)
+            @func.register
+            @staticmethod
+            def _(item, arg: bytes) -> str:
+                return str(item)
+
+        self.assertEqual(str(Signature.from_callable(A.func)),
+                         '(self, item, arg: int) -> str')
+        self.assertEqual(str(Signature.from_callable(A().func)),
+                         '(self, item, arg: int) -> str')
+        self.assertEqual(str(Signature.from_callable(A.cls_func)),
+                         '(cls, item, arg: int) -> str')
+        self.assertEqual(str(Signature.from_callable(A.static_func)),
+                         '(item, arg: int) -> str')
 
 
 class CachedCostItem:
