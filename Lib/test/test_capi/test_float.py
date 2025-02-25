@@ -179,8 +179,7 @@ class CAPIFloatTest(unittest.TestCase):
                         else:
                             self.assertEqual(value2, value)
 
-    @unittest.skipUnless(HAVE_IEEE_754 and sys.platform != 'win32',
-                         "requires IEEE 754")
+    @unittest.skipUnless(HAVE_IEEE_754, "requires IEEE 754")
     def test_pack_unpack_roundtrip_nans(self):
         pack = _testcapi.float_pack
         unpack = _testcapi.float_unpack
@@ -188,7 +187,10 @@ class CAPIFloatTest(unittest.TestCase):
         for _ in range(100):
             for size in (2, 4, 8):
                 sign = random.randint(0, 1)
-                quiet = random.randint(0, 1)
+                if sys.platform != 'win32':
+                    quiet = random.randint(0, 1)
+                else:
+                    quiet = 1  # doesn't work for sNaN's here
                 if size == 8:
                     payload = random.randint(0 if quiet else 1, 1<<50)
                     i = (sign<<63) + (0x7ff<<52) + (quiet<<51) + payload
