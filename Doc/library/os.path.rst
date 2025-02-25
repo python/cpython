@@ -55,11 +55,14 @@ the :mod:`glob` module.)
 
 
 .. function:: abspath(path)
-
    Return a normalized absolutized version of the pathname *path*. On most
    platforms, this is equivalent to calling the function :func:`normpath` as
    follows: ``normpath(join(os.getcwd(), path))``.
-
+   
+   .. seealso:: 
+      :func:`join` - Used by abspath to combine paths
+      :func:`normpath` - Used by abspath to normalize paths
+   
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
@@ -238,14 +241,16 @@ the :mod:`glob` module.)
 
 
 .. function:: isabs(path)
-
    Return ``True`` if *path* is an absolute pathname.  On Unix, that means it
    begins with a slash, on Windows that it begins with two (back)slashes, or a
    drive letter, colon, and (back)slash together.
-
+   
+   .. seealso::
+      :func:`abspath` - Returns the absolute version of a path
+   
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
-
+      
    .. versionchanged:: 3.13
       On Windows, returns ``False`` if the given path starts with exactly one
       (back)slash.
@@ -351,7 +356,7 @@ the :mod:`glob` module.)
 
 
 .. function:: join(path, *paths)
-
+    
    Join one or more path segments intelligently.  The return value is the
    concatenation of *path* and all members of *\*paths*, with exactly one
    directory separator following each non-empty part, except the last. That is,
@@ -359,14 +364,24 @@ the :mod:`glob` module.)
    ends in a separator. If a segment is an absolute path (which on Windows
    requires both a drive and a root), then all previous segments are ignored and
    joining continues from the absolute path segment.
-
+   
+   Examples::
+   
+      >>> os.path.join('/home/foo', 'bar')
+      '/home/foo/bar'
+      >>> os.path.join('/home/foo', '/home/bar')
+      '/home/bar'
+   
+   The second example demonstrates how an absolute path argument ignores all
+   previous path segments.
+   
    On Windows, the drive is not reset when a rooted path segment (e.g.,
    ``r'\foo'``) is encountered. If a segment is on a different drive or is an
    absolute path, all previous segments are ignored and the drive is reset. Note
    that since there is a current directory for each drive,
    ``os.path.join("c:", "foo")`` represents a path relative to the current
    directory on drive :file:`C:` (:file:`c:foo`), not :file:`c:\\foo`.
-
+   
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *path* and *paths*.
 
@@ -486,7 +501,7 @@ the :mod:`glob` module.)
 
 
 .. function:: split(path)
-
+    
    Split the pathname *path* into a pair, ``(head, tail)`` where *tail* is the
    last pathname component and *head* is everything leading up to that.  The
    *tail* part will never contain a slash; if *path* ends in a slash, *tail*
@@ -496,9 +511,14 @@ the :mod:`glob` module.)
    all cases, ``join(head, tail)`` returns a path to the same location as *path*
    (but the strings may differ).  Also see the functions :func:`dirname` and
    :func:`basename`.
-
+   
+   .. seealso::
+      :func:`join` - Can be used to reconstruct a path from split components
+      :func:`dirname` - Returns the directory name of a path
+      :func:`basename` - Returns the base name of a path
+   
    .. versionchanged:: 3.6
-      Accepts a :term:`path-like object`.
+      Accepts a :term:`path-like object`..
 
 
 .. function:: splitdrive(path)
