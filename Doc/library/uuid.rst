@@ -224,9 +224,14 @@ The :mod:`uuid` module defines the following functions:
 
 .. function:: uuid7()
 
-   .. versionadded:: next
+   Generate a time-based UUID according to
+   :rfc:`RFC 9562, §5.7 <9562#section-5.7>`.
 
-.. index:: single: uuid7
+   For portability across platforms lacking sub-millisecond precision, UUIDs
+   produced by this function embed a 48-bit timestamp and use a 42-bit counter
+   to guarantee monotonicity within a millisecond.
+
+   .. versionadded:: next
 
 
 .. function:: uuid8(a=None, b=None, c=None)
