@@ -237,8 +237,6 @@ The :mod:`uuid` module defines the following functions:
 
    .. versionadded:: next
 
-.. index:: single: uuid6
-
 
 .. function:: uuid8(a=None, b=None, c=None)
 
