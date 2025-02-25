@@ -1,0 +1,3 @@
+The implementations of equality and hashing for :class:`annotationlib.ForwardRef`
+now use all attributes on the object. Two :class:`!ForwardRef` objects
+are equal only if all attributes are equal.

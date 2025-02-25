@@ -34,8 +34,6 @@ _sentinel = object()
 # preserved for compatibility with the old typing.ForwardRef class. The remaining
 # names are private.
 _SLOTS = (
-    "__forward_evaluated__",
-    "__forward_value__",
     "__forward_is_argument__",
     "__forward_is_class__",
     "__forward_module__",
@@ -78,8 +76,6 @@ class ForwardRef:
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
 
         self.__arg__ = arg
-        self.__forward_evaluated__ = False
-        self.__forward_value__ = None
         self.__forward_is_argument__ = is_argument
         self.__forward_is_class__ = is_class
         self.__forward_module__ = module
@@ -97,16 +93,12 @@ class ForwardRef:
 
         If the forward reference cannot be evaluated, raise an exception.
         """
-        if self.__forward_evaluated__:
-            return self.__forward_value__
         if self.__cell__ is not None:
             try:
                 value = self.__cell__.cell_contents
             except ValueError:
                 pass
             else:
-                self.__forward_evaluated__ = True
-                self.__forward_value__ = value
                 return value
         if owner is None:
             owner = self.__owner__
@@ -173,8 +165,6 @@ class ForwardRef:
         else:
             code = self.__forward_code__
             value = eval(code, globals=globals, locals=locals)
-        self.__forward_evaluated__ = True
-        self.__forward_value__ = value
         return value
 
     def _evaluate(self, globalns, localns, type_params=_sentinel, *, recursive_guard):
@@ -232,18 +222,30 @@ class ForwardRef:
     def __eq__(self, other):
         if not isinstance(other, ForwardRef):
             return NotImplemented
-        if self.__forward_evaluated__ and other.__forward_evaluated__:
-            return (
-                self.__forward_arg__ == other.__forward_arg__
-                and self.__forward_value__ == other.__forward_value__
-            )
         return (
             self.__forward_arg__ == other.__forward_arg__
             and self.__forward_module__ == other.__forward_module__
+            and self.__forward_is_class__ == other.__forward_is_class__
+            and self.__code__ == other.__code__
+            and self.__ast_node__ == other.__ast_node__
+            # Use "is" here because we use id() for this in __hash__
+            # because dictionaries are not hashable.
+            and self.__globals__ is other.__globals__
+            and self.__cell__ == other.__cell__
+            and self.__owner__ == other.__owner__
         )
 
     def __hash__(self):
-        return hash((self.__forward_arg__, self.__forward_module__))
+        return hash((
+            self.__forward_arg__,
+            self.__forward_module__,
+            self.__forward_is_class__,
+            self.__code__,
+            self.__ast_node__,
+            id(self.__globals__),  # dictionaries are not hashable, so hash by identity
+            self.__cell__,
+            self.__owner__,
+        ))
 
     def __or__(self, other):
         global _Union
@@ -258,11 +260,14 @@ class ForwardRef:
         return _Union[other, self]
 
     def __repr__(self):
-        if self.__forward_module__ is None:
-            module_repr = ""
-        else:
-            module_repr = f", module={self.__forward_module__!r}"
-        return f"ForwardRef({self.__forward_arg__!r}{module_repr})"
+        extra = []
+        if self.__forward_module__ is not None:
+            extra.append(f", module={self.__forward_module__!r}")
+        if self.__forward_is_class__:
+            extra.append(", is_class=True")
+        if self.__owner__ is not None:
+            extra.append(f", owner={self.__owner__!r}")
+        return f"ForwardRef({self.__forward_arg__!r}{''.join(extra)})"
 
 
 class _Stringifier:
@@ -284,8 +289,6 @@ class _Stringifier:
         # represent a single name).
         assert isinstance(node, (ast.AST, str))
         self.__arg__ = None
-        self.__forward_evaluated__ = False
-        self.__forward_value__ = None
         self.__forward_is_argument__ = False
         self.__forward_is_class__ = is_class
         self.__forward_module__ = None
