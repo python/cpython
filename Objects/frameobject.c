@@ -82,7 +82,7 @@ framelocalsproxy_hasval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
 }
 
 static int
-framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
+framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject *key, bool read, PyObject **value_ptr)
 {
     /*
      * Returns -2 (!) if an error occurred; exception will be set.
@@ -90,7 +90,13 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
      *   - if read == true, returns the index if the value is not NULL
      *   - if read == false, returns the index if the value is not hidden
      * Otherwise returns -1.
+     * 
+     * If read == true and value_ptr is not NULL, *value_ptr is set to
+     * the value of the key if it is found (with a new reference).
      */
+
+    // value_ptr should only be given if we are reading the value
+    assert(read || value_ptr == NULL);
 
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
 
@@ -99,6 +105,7 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
     if (key_hash == -1) {
         return -2;
     }
+
     bool found = false;
 
     // We do 2 loops here because it's highly possible the key is interned
@@ -107,7 +114,13 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         if (name == key) {
             if (read) {
-                if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
+                PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
+                if (value != NULL) {
+                    if (value_ptr != NULL) {
+                        *value_ptr = value;
+                    } else {
+                        Py_DECREF(value);
+                    }
                     return i;
                 }
             } else {
@@ -138,7 +151,13 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
         }
         if (same) {
             if (read) {
-                if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
+                PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
+                if (value != NULL) {
+                    if (value_ptr != NULL) {
+                        *value_ptr = value;
+                    } else {
+                        Py_DECREF(value);
+                    }
                     return i;
                 }
             } else {
@@ -157,22 +176,23 @@ framelocalsproxy_getitem(PyObject *self, PyObject *key)
 {
     PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
+    PyObject *value = NULL;
 
-    int i = framelocalsproxy_getkeyindex(frame, key, true);
+    int i = framelocalsproxy_getkeyindex(frame, key, true, &value);
     if (i == -2) {
         return NULL;
     }
     if (i >= 0) {
-        PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
         assert(value != NULL);
         return value;
     }
+    assert(value == NULL);
 
     // Okay not in the fast locals, try extra locals
 
     PyObject *extra = frame->f_extra_locals;
     if (extra != NULL) {
-        PyObject *value = PyDict_GetItem(extra, key);
+        value = PyDict_GetItem(extra, key);
         if (value != NULL) {
             return Py_NewRef(value);
         }
@@ -190,7 +210,7 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
     _PyStackRef *fast = _PyFrame_GetLocalsArray(frame->f_frame);
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
 
-    int i = framelocalsproxy_getkeyindex(frame, key, false);
+    int i = framelocalsproxy_getkeyindex(frame, key, false, NULL);
     if (i == -2) {
         return -1;
     }
@@ -631,7 +651,7 @@ framelocalsproxy_contains(PyObject *self, PyObject *key)
 {
     PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
 
-    int i = framelocalsproxy_getkeyindex(frame, key, true);
+    int i = framelocalsproxy_getkeyindex(frame, key, true, NULL);
     if (i == -2) {
         return -1;
     }
@@ -742,7 +762,7 @@ framelocalsproxy_pop(PyObject* self, PyObject *const *args, Py_ssize_t nargs)
 
     PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
 
-    int i = framelocalsproxy_getkeyindex(frame, key, false);
+    int i = framelocalsproxy_getkeyindex(frame, key, false, NULL);
     if (i == -2) {
         return NULL;
     }
