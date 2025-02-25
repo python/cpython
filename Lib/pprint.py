@@ -219,7 +219,7 @@ class PrettyPrinter:
 
     def _format_block_start(self, start_str, indent):
         if self._block_style:
-            return start_str +'\n' + ' ' * indent
+            return f"{start_str}\n{' ' * indent}"
         else:
             return start_str
 
