@@ -814,7 +814,7 @@ MODULE_TIME_TRUE
 MODULE__IO_FALSE
 MODULE__IO_TRUE
 MODULE_BUILDTYPE
-PYTHREAD_NAME_MAXLEN
+_PYTHREAD_NAME_MAXLEN
 TEST_MODULES
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
@@ -1122,6 +1122,7 @@ with_platlibdir
 with_wheel_pkg_dir
 with_readline
 with_computed_gotos
+with_tail_call_interp
 with_ensurepip
 with_openssl
 with_openssl_rpath
@@ -1929,6 +1930,8 @@ Optional Packages:
                           use libedit for backend or disable readline module
   --with-computed-gotos   enable computed gotos in evaluation loop (enabled by
                           default on supported compilers)
+  --with-tail-call-interp enable tail-calling interpreter in evaluation loop
+                          and rest of CPython
   --with-ensurepip[=install|upgrade|no]
                           "install" or "upgrade" using bundled pip (default is
                           upgrade)
@@ -4097,6 +4100,9 @@ then
 	*-apple-ios*)
 		ac_sys_system=iOS
 		;;
+	*-*-darwin*)
+		ac_sys_system=Darwin
+		;;
 	*-*-vxworks*)
 	    ac_sys_system=VxWorks
 	    ;;
@@ -4129,6 +4135,7 @@ then
 
     case $MACHDEP in
 	aix*) MACHDEP="aix";;
+	freebsd*) MACHDEP="freebsd";;
 	linux-android*) MACHDEP="android";;
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
@@ -4591,11 +4598,20 @@ printf "%s\n" "$IPHONEOS_DEPLOYMENT_TARGET" >&6; }
 				;;
 		esac
 		;;
+	*-*-darwin*)
+		case "$host_cpu" in
+		arm*)
+			_host_ident=arm
+			;;
+		*)
+			_host_ident=$host_cpu
+		esac
+		;;
 	*-*-vxworks*)
 		_host_ident=$host_cpu
 		;;
 	*-*-emscripten)
-		_host_ident=$(emcc -dumpversion)-$host_cpu
+		_host_ident=$(emcc -dumpversion | cut -f1 -d-)-$host_cpu
 		;;
 	wasm32-*-* | wasm64-*-*)
 		_host_ident=$host_cpu
@@ -9398,7 +9414,7 @@ fi
 printf %s "checking BOLT_COMMON_FLAGS... " >&6; }
 if test -z "${BOLT_COMMON_FLAGS}"
 then
-  BOLT_COMMON_FLAGS=-update-debug-sections
+  BOLT_COMMON_FLAGS=" -update-debug-sections -skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1 "
 
 fi
 
@@ -9615,7 +9631,7 @@ fi
 
         as_fn_append LINKFORSHARED " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
     as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV"
-    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version"
+    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET"
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
 
     if test "x$enable_wasm_dynamic_linking" = xyes
@@ -17146,26 +17162,28 @@ esac
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $have_ndbm ($dbm_ndbm)" >&5
 printf "%s\n" "$have_ndbm ($dbm_ndbm)" >&6; }
 
-{ ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gdbm/ndbm.h" >&5
+printf %s "checking for gdbm/ndbm.h... " >&6; }
 if test ${ac_cv_header_gdbm_slash_ndbm_h+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
-  e)
-  ac_fn_c_check_header_compile "$LINENO" "gdbm/ndbm.h" "ac_cv_header_gdbm_ndbm_h" "$ac_includes_default"
-if test "x$ac_cv_header_gdbm_ndbm_h" = xyes
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <gdbm/ndbm.h>
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"
 then :
   ac_cv_header_gdbm_slash_ndbm_h=yes
 else case e in #(
-  e) ac_cv_header_gdbm_slash_ndbm_h=no
-   ;;
+  e) ac_cv_header_gdbm_slash_ndbm_h=no ;;
 esac
 fi
-
- ;;
+rm -f conftest.err conftest.i conftest.$ac_ext ;;
 esac
 fi
-
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_header_gdbm_slash_ndbm_h" >&5
+printf "%s\n" "$ac_cv_header_gdbm_slash_ndbm_h" >&6; }
 if test "x$ac_cv_header_gdbm_slash_ndbm_h" = xyes
 then :
 
@@ -17175,26 +17193,28 @@ printf "%s\n" "#define HAVE_GDBM_NDBM_H 1" >>confdefs.h
 
 fi
 
-{ ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gdbm-ndbm.h" >&5
+printf %s "checking for gdbm-ndbm.h... " >&6; }
 if test ${ac_cv_header_gdbm_dash_ndbm_h+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
-  e)
-  ac_fn_c_check_header_compile "$LINENO" "gdbm-ndbm.h" "ac_cv_header_gdbm_ndbm_h" "$ac_includes_default"
-if test "x$ac_cv_header_gdbm_ndbm_h" = xyes
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <gdbm-ndbm.h>
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"
 then :
   ac_cv_header_gdbm_dash_ndbm_h=yes
 else case e in #(
-  e) ac_cv_header_gdbm_dash_ndbm_h=no
-   ;;
+  e) ac_cv_header_gdbm_dash_ndbm_h=no ;;
 esac
 fi
-
- ;;
+rm -f conftest.err conftest.i conftest.$ac_ext ;;
 esac
 fi
-
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_header_gdbm_dash_ndbm_h" >&5
+printf "%s\n" "$ac_cv_header_gdbm_dash_ndbm_h" >&6; }
 if test "x$ac_cv_header_gdbm_dash_ndbm_h" = xyes
 then :
 
@@ -17203,7 +17223,6 @@ printf "%s\n" "#define HAVE_GDBM_DASH_NDBM_H 1" >>confdefs.h
 
 
 fi
-{ ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
 
 if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
   { ac_cv_search_dbm_open=; unset ac_cv_search_dbm_open;}
@@ -19002,6 +19021,12 @@ then :
   printf "%s\n" "#define HAVE_CTERMID 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "dladdr" "ac_cv_func_dladdr"
+if test "x$ac_cv_func_dladdr" = xyes
+then :
+  printf "%s\n" "#define HAVE_DLADDR 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "dup" "ac_cv_func_dup"
 if test "x$ac_cv_func_dup" = xyes
 then :
@@ -19596,6 +19621,12 @@ then :
   printf "%s\n" "#define HAVE_PTHREAD_SETNAME_NP 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "pthread_getattr_np" "ac_cv_func_pthread_getattr_np"
+if test "x$ac_cv_func_pthread_getattr_np" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTHREAD_GETATTR_NP 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "ptsname" "ac_cv_func_ptsname"
 if test "x$ac_cv_func_ptsname" = xyes
 then :
@@ -19986,10 +20017,10 @@ then :
   printf "%s\n" "#define HAVE_TRUNCATE 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "ttyname" "ac_cv_func_ttyname"
-if test "x$ac_cv_func_ttyname" = xyes
+ac_fn_c_check_func "$LINENO" "ttyname_r" "ac_cv_func_ttyname_r"
+if test "x$ac_cv_func_ttyname_r" = xyes
 then :
-  printf "%s\n" "#define HAVE_TTYNAME 1" >>confdefs.h
+  printf "%s\n" "#define HAVE_TTYNAME_R 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "umask" "ac_cv_func_umask"
@@ -29227,6 +29258,39 @@ printf "%s\n" "#define HAVE_COMPUTED_GOTOS 1" >>confdefs.h
 
 esac
 
+# Check for --with-tail-call-interp
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-tail-call-interp" >&5
+printf %s "checking for --with-tail-call-interp... " >&6; }
+
+# Check whether --with-tail-call-interp was given.
+if test ${with_tail_call_interp+y}
+then :
+  withval=$with_tail_call_interp;
+if test "$withval" = yes
+then
+
+printf "%s\n" "#define Py_TAIL_CALL_INTERP 1" >>confdefs.h
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+fi
+if test "$withval" = no
+then
+
+printf "%s\n" "#define Py_TAIL_CALL_INTERP 0" >>confdefs.h
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no value specified" >&5
+printf "%s\n" "no value specified" >&6; } ;;
+esac
+fi
+
+
+
 case $ac_sys_system in
 AIX*)
 
@@ -30385,17 +30449,17 @@ CPPFLAGS=$save_CPPFLAGS
 
 # gh-59705: Maximum length in bytes of a thread name
 case "$ac_sys_system" in
-  Linux*) PYTHREAD_NAME_MAXLEN=15;;  # Linux and Android
-  SunOS*) PYTHREAD_NAME_MAXLEN=31;;
-  NetBSD*) PYTHREAD_NAME_MAXLEN=31;;
-  Darwin) PYTHREAD_NAME_MAXLEN=63;;
-  iOS) PYTHREAD_NAME_MAXLEN=63;;
-  FreeBSD*) PYTHREAD_NAME_MAXLEN=98;;
-  *) PYTHREAD_NAME_MAXLEN=;;
+  Linux*) _PYTHREAD_NAME_MAXLEN=15;;  # Linux and Android
+  SunOS*) _PYTHREAD_NAME_MAXLEN=31;;
+  NetBSD*) _PYTHREAD_NAME_MAXLEN=31;;
+  Darwin) _PYTHREAD_NAME_MAXLEN=63;;
+  iOS) _PYTHREAD_NAME_MAXLEN=63;;
+  FreeBSD*) _PYTHREAD_NAME_MAXLEN=98;;
+  *) _PYTHREAD_NAME_MAXLEN=;;
 esac
-if test -n "$PYTHREAD_NAME_MAXLEN"; then
+if test -n "$_PYTHREAD_NAME_MAXLEN"; then
 
-printf "%s\n" "#define PYTHREAD_NAME_MAXLEN $PYTHREAD_NAME_MAXLEN" >>confdefs.h
+printf "%s\n" "#define _PYTHREAD_NAME_MAXLEN $_PYTHREAD_NAME_MAXLEN" >>confdefs.h
 
 fi
 

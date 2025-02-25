@@ -131,7 +131,7 @@ class TypeCacheWithSpecializationTests(unittest.TestCase):
         return set(instr.opname for instr in dis.Bytecode(func, adaptive=True))
 
     def _check_specialization(self, func, arg, opname, *, should_specialize):
-        for _ in range(100):
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             func(arg)
 
         if should_specialize:

@@ -415,7 +415,7 @@ Make opcodes :opcode:`!JUMP_IF_TRUE_OR_POP` and
 
 Replace the ``f_lasti`` member of the internal ``_PyInterpreterFrame``
 structure with a ``prev_instr`` pointer, which reduces overhead in the main
-interpreter loop. The ``f_lasti`` attribute of Python-layer frame objects is
+interpreter loop. The ``f_lasti`` attribute of Python-layer frame objects is
 preserved for backward-compatibility.
 
 ..
@@ -570,7 +570,7 @@ planned). Patch by Alex Waygood.
 
 ..
 
-.. gh: 78157
+.. gh-issue: 78157
 .. date: 2022-05-05-20-40-45
 .. nonce: IA_9na
 .. section: Library
@@ -1289,7 +1289,7 @@ Deprecate the chunk module.
 
 ..
 
-.. gh: 91498
+.. gh-issue: 91498
 .. date: 2022-04-10-08-39-44
 .. nonce: 8oII92
 .. section: Library

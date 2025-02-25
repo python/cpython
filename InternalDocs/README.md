@@ -25,7 +25,7 @@ Runtime Objects
 
 - [Code Objects](code_objects.md)
 
-- [Generators (coming soon)](generators.md)
+- [Generators](generators.md)
 
 - [Frames](frames.md)
 

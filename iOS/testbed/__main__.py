@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import json
 import plistlib
+import re
 import shutil
 import subprocess
 import sys
@@ -11,6 +12,18 @@ from pathlib import Path
 
 
 DECODE_ARGS = ("UTF-8", "backslashreplace")
+
+# The system log prefixes each line:
+#   2025-01-17 16:14:29.090 Df iOSTestbed[23987:1fd393b4] (Python) ...
+#   2025-01-17 16:14:29.090 E  iOSTestbed[23987:1fd393b4] (Python) ...
+
+LOG_PREFIX_REGEX = re.compile(
+    r"^\d{4}-\d{2}-\d{2}"  # YYYY-MM-DD
+    r"\s+\d+:\d{2}:\d{2}\.\d+"  # HH:MM:SS.sss
+    r"\s+\w+"  # Df/E
+    r"\s+iOSTestbed\[\d+:\w+\]"  # Process/thread ID
+    r"\s+\(Python\)\s"  # Logger name
+)
 
 
 # Work around a bug involving sys.exit and TaskGroups
@@ -69,19 +82,29 @@ async def async_check_output(*args, **kwargs):
 
 # Return a list of UDIDs associated with booted simulators
 async def list_devices():
-    # List the testing simulators, in JSON format
-    raw_json = await async_check_output(
-        "xcrun", "simctl", "--set", "testing", "list", "-j"
-    )
-    json_data = json.loads(raw_json)
+    try:
+        # List the testing simulators, in JSON format
+        raw_json = await async_check_output(
+            "xcrun", "simctl", "--set", "testing", "list", "-j"
+        )
+        json_data = json.loads(raw_json)
 
-    # Filter out the booted iOS simulators
-    return [
-        simulator["udid"]
-        for runtime, simulators in json_data["devices"].items()
-        for simulator in simulators
-        if runtime.split(".")[-1].startswith("iOS") and simulator["state"] == "Booted"
-    ]
+        # Filter out the booted iOS simulators
+        return [
+            simulator["udid"]
+            for runtime, simulators in json_data["devices"].items()
+            for simulator in simulators
+            if runtime.split(".")[-1].startswith("iOS") and simulator["state"] == "Booted"
+        ]
+    except subprocess.CalledProcessError as e:
+        # If there's no ~/Library/Developer/XCTestDevices folder (which is the
+        # case on fresh installs, and in some CI environments), `simctl list`
+        # returns error code 1, rather than an empty list. Handle that case,
+        # but raise all other errors.
+        if e.returncode == 1:
+            return []
+        else:
+            raise
 
 
 async def find_device(initial_devices):
@@ -131,6 +154,8 @@ async def log_stream_task(initial_devices):
     ) as process:
         suppress_dupes = False
         while line := (await process.stdout.readline()).decode(*DECODE_ARGS):
+            # Strip the prefix from each log line
+            line = LOG_PREFIX_REGEX.sub("", line)
             # The iOS log streamer can sometimes lag; when it does, it outputs
             # a warning about messages being dropped... often multiple times.
             # Only print the first of these duplicated warnings.
@@ -215,33 +240,69 @@ def clone_testbed(
     shutil.copytree(source, target, symlinks=True)
     print(" done")
 
+    xc_framework_path = target / "Python.xcframework"
+    sim_framework_path = xc_framework_path / "ios-arm64_x86_64-simulator"
     if framework is not None:
         if framework.suffix == ".xcframework":
             print("  Installing XCFramework...", end="", flush=True)
-            xc_framework_path = (target / "Python.xcframework").resolve()
             if xc_framework_path.is_dir():
                 shutil.rmtree(xc_framework_path)
             else:
-                xc_framework_path.unlink()
+                xc_framework_path.unlink(missing_ok=True)
             xc_framework_path.symlink_to(
                 framework.relative_to(xc_framework_path.parent, walk_up=True)
             )
             print(" done")
         else:
             print("  Installing simulator framework...", end="", flush=True)
-            sim_framework_path = (
-                target / "Python.xcframework" / "ios-arm64_x86_64-simulator"
-            ).resolve()
             if sim_framework_path.is_dir():
                 shutil.rmtree(sim_framework_path)
             else:
-                sim_framework_path.unlink()
+                sim_framework_path.unlink(missing_ok=True)
             sim_framework_path.symlink_to(
                 framework.relative_to(sim_framework_path.parent, walk_up=True)
             )
             print(" done")
     else:
-        print("  Using pre-existing iOS framework.")
+        if (
+            xc_framework_path.is_symlink()
+            and not xc_framework_path.readlink().is_absolute()
+        ):
+            # XCFramework is a relative symlink. Rewrite the symlink relative
+            # to the new location.
+            print("  Rewriting symlink to XCframework...", end="", flush=True)
+            orig_xc_framework_path = (
+                source
+                / xc_framework_path.readlink()
+            ).resolve()
+            xc_framework_path.unlink()
+            xc_framework_path.symlink_to(
+                orig_xc_framework_path.relative_to(
+                    xc_framework_path.parent, walk_up=True
+                )
+            )
+            print(" done")
+        elif (
+            sim_framework_path.is_symlink()
+            and not sim_framework_path.readlink().is_absolute()
+        ):
+            print("  Rewriting symlink to simulator framework...", end="", flush=True)
+            # Simulator framework is a relative symlink. Rewrite the symlink
+            # relative to the new location.
+            orig_sim_framework_path = (
+                source
+                / "Python.XCframework"
+                / sim_framework_path.readlink()
+            ).resolve()
+            sim_framework_path.unlink()
+            sim_framework_path.symlink_to(
+                orig_sim_framework_path.relative_to(
+                    sim_framework_path.parent, walk_up=True
+                )
+            )
+            print(" done")
+        else:
+            print("  Using pre-existing iOS framework.")
 
     for app_src in apps:
         print(f"  Installing app {app_src.name!r}...", end="", flush=True)
@@ -357,8 +418,8 @@ def main():
 
     if context.subcommand == "clone":
         clone_testbed(
-            source=Path(__file__).parent,
-            target=Path(context.location),
+            source=Path(__file__).parent.resolve(),
+            target=Path(context.location).resolve(),
             framework=Path(context.framework).resolve() if context.framework else None,
             apps=[Path(app) for app in context.apps],
         )

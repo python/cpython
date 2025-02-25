@@ -1,1 +1,0 @@
-Add :meth:`zipfile.ZipInfo._for_archive` setting default properties on :class:`~zipfile.ZipInfo` objects. Patch by Bénédikt Tran and Jason R. Coombs.
