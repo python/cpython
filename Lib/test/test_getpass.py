@@ -17,7 +17,7 @@ except ImportError:
 try:
     import msvcrt
 except ImportError:
-    mscvrt = None
+    msvcrt = None
 
 @mock.patch('os.environ')
 class GetpassGetuserTest(unittest.TestCase):
@@ -185,16 +185,11 @@ class WinGetpassTest(unittest.TestCase):
             mock_stream.flush.assert_called()
 
     def test_handles_backspace(self):
-        with (
-        	mock.patch('msvcrt.getch') as getch,
-            mock.patch('msvcrt.putch') as putch,
-		):
+        with mock.patch('msvcrt.getch') as getch, \
+                mock.patch('msvcrt.putch') as putch:
             getch.side_effect = [b'a', b'b', b'\b', b'c', b'\r']
             result = getpass.win_getpass()
             self.assertEqual(result, 'ac')
-            # Verify putch was called to handle the backspace (erase character)
-            # The exact sequence depends on the implementation, but should include
-            # calls to handle the backspace character
             putch.assert_any_call(b'\b')
 
     def test_handles_ctrl_c(self):
@@ -214,8 +209,7 @@ class WinGetpassTest(unittest.TestCase):
 
     def test_falls_back_to_fallback_if_msvcrt_raises(self):
         with mock.patch('msvcrt.getch') as getch, \
-             mock.patch('getpass.fallback_getpass') as fallback:
-            # Make getch raise an exception to trigger the fallback
+                mock.patch('getpass.fallback_getpass') as fallback:
             getch.side_effect = RuntimeError("Simulated msvcrt failure")
             mock_stream = mock.Mock(spec=StringIO)
             getpass.win_getpass(stream=mock_stream)
