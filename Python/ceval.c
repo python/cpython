@@ -307,8 +307,7 @@ Py_SetRecursionLimit(int new_limit)
 int
 _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count)
 {
-    char here;
-    uintptr_t here_addr = (uintptr_t)&here;
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     if (here_addr > _tstate->c_stack_soft_limit + margin_count * PYOS_STACK_MARGIN_BYTES) {
         return 0;
@@ -322,8 +321,7 @@ _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count)
 void
 _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 {
-    char here;
-    uintptr_t here_addr = (uintptr_t)&here;
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     if (here_addr < _tstate->c_stack_hard_limit) {
         Py_FatalError("Unchecked stack overflow.");
@@ -340,11 +338,11 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 #  define Py_C_STACK_SIZE 1600000
 #elif defined(__wasi__)
    /* Web assembly has two stacks, so this isn't really the stack depth */
-#  define Py_C_STACK_SIZE 100000
+#  define Py_C_STACK_SIZE 80000
 #elif defined(__hppa__) || defined(__powerpc64__)
 #  define Py_C_STACK_SIZE 2000000
 #else
-#  define Py_C_STACK_SIZE 5000000
+#  define Py_C_STACK_SIZE 4000000
 #endif
 
 void
@@ -360,8 +358,27 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
     _tstate->c_stack_hard_limit = ((uintptr_t)low) + guarantee + PYOS_STACK_MARGIN_BYTES;
     _tstate->c_stack_soft_limit = _tstate->c_stack_hard_limit + PYOS_STACK_MARGIN_BYTES;
 #else
-    char here;
-    uintptr_t here_addr = (uintptr_t)&here;
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
+#  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX)
+    size_t stack_size, guard_size;
+    void *stack_addr;
+    pthread_attr_t attr;
+    int err = pthread_getattr_np(pthread_self(), &attr);
+    if (err == 0) {
+        err = pthread_attr_getguardsize(&attr, &guard_size);
+        err |= pthread_attr_getstack(&attr, &stack_addr, &stack_size);
+        err |= pthread_attr_destroy(&attr);
+    }
+    if (err == 0) {
+        uintptr_t base = ((uintptr_t)stack_addr) + guard_size;
+        _tstate->c_stack_top = base + stack_size;
+        _tstate->c_stack_soft_limit = base + PYOS_STACK_MARGIN_BYTES * 2;
+        _tstate->c_stack_hard_limit = base + PYOS_STACK_MARGIN_BYTES;
+        assert(_tstate->c_stack_soft_limit < here_addr);
+        assert(here_addr < _tstate->c_stack_top);
+        return;
+    }
+#  endif
     _tstate->c_stack_top = _Py_SIZE_ROUND_UP(here_addr, 4096);
     _tstate->c_stack_soft_limit = _tstate->c_stack_top - Py_C_STACK_SIZE;
     _tstate->c_stack_hard_limit = _tstate->c_stack_top - (Py_C_STACK_SIZE + PYOS_STACK_MARGIN_BYTES);
@@ -374,8 +391,7 @@ int
 _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
-    char here;
-    uintptr_t here_addr = (uintptr_t)&here;
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
     assert(_tstate->c_stack_soft_limit != 0);
     if (_tstate->c_stack_hard_limit == 0) {
         _Py_InitializeRecursionLimits(tstate);
