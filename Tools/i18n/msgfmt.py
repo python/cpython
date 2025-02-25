@@ -149,6 +149,7 @@ def make(filename, outfile):
         elif l.startswith('msgid') and not l.startswith('msgid_plural'):
             if section == STR:
                 add(msgctxt, msgid, msgstr, fuzzy)
+                msgctxt = None
                 if not msgid:
                     # See whether there is an encoding declaration
                     p = HeaderParser()
