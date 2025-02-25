@@ -36,7 +36,8 @@ Functions
 ---------
 
 .. function:: pp(object, stream=None, indent=1, width=80, depth=None, *, \
-                     compact=False, sort_dicts=False, underscore_numbers=False, block_style=False)
+                 compact=False, sort_dicts=False, underscore_numbers=False, \
+                 block_style=False)
 
    Prints the formatted representation of *object*, followed by a newline.
    This function may be used in the interactive interpreter
