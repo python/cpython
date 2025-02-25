@@ -50,9 +50,9 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.infunc.side_effect = EOFError('Finished')
         self.console.interact()
         self.assertEqual(self.sysmod.ps2, '... ')
-        self.sysmod.ps1 = 'custom2> '
+        self.sysmod.ps2 = 'custom2> '
         self.console.interact()
-        self.assertEqual(self.sysmod.ps1, 'custom2> ')
+        self.assertEqual(self.sysmod.ps2, 'custom2> ')
 
     def test_console_stderr(self):
         self.infunc.side_effect = ["'antioch'", "", EOFError('Finished')]
