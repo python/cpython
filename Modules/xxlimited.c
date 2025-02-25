@@ -90,6 +90,7 @@ typedef struct {
     Py_ssize_t          x_exports;         /* how many buffer are exported */
 } XxoObject;
 
+#define XxoObject_CAST(op)  ((XxoObject *)(op))
 // XXX: no good way to do this yet
 // #define XxoObject_Check(v)      Py_IS_TYPE(v, Xxo_Type)
 
@@ -114,28 +115,29 @@ newXxoObject(PyObject *module)
 /* Xxo finalization */
 
 static int
-Xxo_traverse(PyObject *self_obj, visitproc visit, void *arg)
+Xxo_traverse(PyObject *op, visitproc visit, void *arg)
 {
     // Visit the type
-    Py_VISIT(Py_TYPE(self_obj));
+    Py_VISIT(Py_TYPE(op));
 
     // Visit the attribute dict
-    XxoObject *self = (XxoObject *)self_obj;
+    XxoObject *self = XxoObject_CAST(op);
     Py_VISIT(self->x_attr);
     return 0;
 }
 
 static int
-Xxo_clear(XxoObject *self)
+Xxo_clear(PyObject *op)
 {
+    XxoObject *self = XxoObject_CAST(op);
     Py_CLEAR(self->x_attr);
     return 0;
 }
 
 static void
-Xxo_finalize(PyObject *self_obj)
+Xxo_finalize(PyObject *op)
 {
-    XxoObject *self = (XxoObject *)self_obj;
+    XxoObject *self = XxoObject_CAST(op);
     Py_CLEAR(self->x_attr);
 }
 
@@ -154,8 +156,9 @@ Xxo_dealloc(PyObject *self)
 /* Xxo attribute handling */
 
 static PyObject *
-Xxo_getattro(XxoObject *self, PyObject *name)
+Xxo_getattro(PyObject *op, PyObject *name)
 {
+    XxoObject *self = XxoObject_CAST(op);
     if (self->x_attr != NULL) {
         PyObject *v = PyDict_GetItemWithError(self->x_attr, name);
         if (v != NULL) {
@@ -165,12 +168,13 @@ Xxo_getattro(XxoObject *self, PyObject *name)
             return NULL;
         }
     }
-    return PyObject_GenericGetAttr((PyObject *)self, name);
+    return PyObject_GenericGetAttr(op, name);
 }
 
 static int
-Xxo_setattro(XxoObject *self, PyObject *name, PyObject *v)
+Xxo_setattro(PyObject *op, PyObject *name, PyObject *v)
 {
+    XxoObject *self = XxoObject_CAST(op);
     if (self->x_attr == NULL) {
         // prepare the attribute dict
         self->x_attr = PyDict_New();
@@ -197,8 +201,8 @@ Xxo_setattro(XxoObject *self, PyObject *name, PyObject *v)
 /* Xxo methods */
 
 static PyObject *
-Xxo_demo(XxoObject *self, PyTypeObject *defining_class,
-         PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
+Xxo_demo(PyObject *op, PyTypeObject *defining_class,
+         PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     if (kwnames != NULL && PyObject_Length(kwnames)) {
         PyErr_SetString(PyExc_TypeError, "demo() takes no keyword arguments");
@@ -233,9 +237,10 @@ static PyMethodDef Xxo_methods[] = {
 /* Xxo buffer interface */
 
 static int
-Xxo_getbuffer(XxoObject *self, Py_buffer *view, int flags)
+Xxo_getbuffer(PyObject *op, Py_buffer *view, int flags)
 {
-    int res = PyBuffer_FillInfo(view, (PyObject*)self,
+    XxoObject *self = XxoObject_CAST(op);
+    int res = PyBuffer_FillInfo(view, op,
                                (void *)self->x_buffer, BUFSIZE,
                                0, flags);
     if (res == 0) {
@@ -245,14 +250,16 @@ Xxo_getbuffer(XxoObject *self, Py_buffer *view, int flags)
 }
 
 static void
-Xxo_releasebuffer(XxoObject *self, Py_buffer *view)
+Xxo_releasebuffer(PyObject *op, Py_buffer *Py_UNUSED(view))
 {
+    XxoObject *self = XxoObject_CAST(op);
     self->x_exports--;
 }
 
 static PyObject *
-Xxo_get_x_exports(XxoObject *self, void *c)
+Xxo_get_x_exports(PyObject *op, void *Py_UNUSED(closure))
 {
+    XxoObject *self = XxoObject_CAST(op);
     return PyLong_FromSsize_t(self->x_exports);
 }
 
@@ -262,7 +269,7 @@ PyDoc_STRVAR(Xxo_doc,
              "A class that explicitly stores attributes in an internal dict");
 
 static PyGetSetDef Xxo_getsetlist[] = {
-    {"x_exports", (getter) Xxo_get_x_exports, NULL, NULL},
+    {"x_exports", Xxo_get_x_exports, NULL, NULL},
     {NULL},
 };
 

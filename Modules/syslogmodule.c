@@ -89,10 +89,9 @@ syslog_get_argv(void)
     Py_ssize_t argv_len, scriptlen;
     PyObject *scriptobj;
     Py_ssize_t slash;
-    PyObject *argv = PySys_GetAttrString("argv");
+    PyObject *argv;
 
-    if (argv == NULL) {
-        PyErr_Clear();
+    if (PySys_GetOptionalAttrString("argv", &argv) <= 0) {
         return NULL;
     }
 
@@ -168,6 +167,9 @@ syslog_openlog_impl(PyObject *module, PyObject *ident, long logopt,
     else {
         /* get sys.argv[0] or NULL if we can't for some reason  */
         ident = syslog_get_argv();
+        if (ident == NULL && PyErr_Occurred()) {
+            return NULL;
+        }
     }
 
     /* At this point, ident should be INCREF()ed.  openlog(3) does not

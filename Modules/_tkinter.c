@@ -142,8 +142,9 @@ _get_tcl_lib_path(void)
     if (already_checked == 0) {
         struct stat stat_buf;
         int stat_return_value;
+        PyObject *prefix;
 
-        PyObject *prefix = PySys_GetAttrString("base_prefix");
+        (void) PySys_GetOptionalAttrString("base_prefix", &prefix);
         if (prefix == NULL) {
             return NULL;
         }
@@ -3518,7 +3519,7 @@ PyInit__tkinter(void)
 
     /* This helps the dynamic loader; in Unicode aware Tcl versions
        it also helps Tcl find its encodings. */
-    uexe = PySys_GetAttrString("executable");
+    (void) PySys_GetOptionalAttrString("executable", &uexe);
     if (uexe && PyUnicode_Check(uexe)) {   // sys.executable can be None
         cexe = PyUnicode_EncodeFSDefault(uexe);
         Py_DECREF(uexe);
