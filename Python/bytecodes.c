@@ -4509,8 +4509,8 @@ dummy_func(
         macro(INSTRUMENTED_CALL_KW) =
             counter/1 +
             unused/2 +
-            _MONITOR_CALL_KW +
             _MAYBE_EXPAND_METHOD_KW +
+            _MONITOR_CALL_KW +
             _DO_CALL_KW;
 
         op(_CHECK_IS_NOT_PY_CALLABLE_KW, (callable[1], unused[1], unused[oparg], kwnames -- callable[1], unused[1], unused[oparg], kwnames)) {
