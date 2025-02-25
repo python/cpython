@@ -118,7 +118,8 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject *key, bool read, PyO
                 if (value != NULL) {
                     if (value_ptr != NULL) {
                         *value_ptr = value;
-                    } else {
+                    }
+                    else {
                         Py_DECREF(value);
                     }
                     return i;
@@ -155,7 +156,8 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject *key, bool read, PyO
                 if (value != NULL) {
                     if (value_ptr != NULL) {
                         *value_ptr = value;
-                    } else {
+                    }
+                    else {
                         Py_DECREF(value);
                     }
                     return i;
