@@ -1,0 +1,3 @@
+Fix OOM vulnerability in :mod:`http.client`, when reading the whole body of
+a specially prepared small HTTP response could cause consuming an arbitrary
+amount of memory.
