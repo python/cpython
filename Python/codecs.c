@@ -730,6 +730,56 @@ codec_handler_write_unicode_hex(Py_UCS1 **p, Py_UCS4 ch)
 }
 
 
+static inline void
+codec_handler_unicode_log10_max(Py_UCS4 ch, int *base, int *digits)
+{
+#define MAKE_BRANCH(D, N)           \
+    do {                            \
+        if (ch < 10 * (N)) {        \
+            if (base != NULL) {     \
+                *base = (N);        \
+            }                       \
+            if (digits != NULL) {   \
+                *digits = (D);      \
+            }                       \
+            return;                 \
+        }                           \
+    } while (0)
+    MAKE_BRANCH(1, 1);
+    MAKE_BRANCH(2, 10);
+    MAKE_BRANCH(3, 100);
+    MAKE_BRANCH(4, 1000);
+    MAKE_BRANCH(5, 10000);
+    MAKE_BRANCH(6, 100000);
+    MAKE_BRANCH(7, 1000000);
+#undef MAKE_BRANCH
+    Py_UNREACHABLE();
+}
+
+
+/*
+ * Write the decimal representation of 'ch' to the buffer pointed by 'p'
+ * using at most 7 characters prefixed by '&#' and suffixed by ';'.
+ */
+static inline void
+codec_handler_write_unicode_dec(Py_UCS1 **p, Py_UCS4 ch)
+{
+    int base = 0, digits = 0;
+    codec_handler_unicode_log10_max(ch, &base, &digits);
+    assert(base != 0 && digits != 0);
+    assert(digits <= 7);
+
+    *(*p)++ = '&';
+    *(*p)++ = '#';
+    while (digits-- > 0) {
+        assert(base >= 1);
+        *(*p)++ = '0' + ch / base;
+        ch %= base;
+        base /= 10;
+    }
+    *(*p)++ = ';';
+}
+
 /*
  * Create a Unicode string containing 'count' copies of the official
  * Unicode REPLACEMENT CHARACTER (0xFFFD).
@@ -867,9 +917,12 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
     }
 }
 
+
+// --- handler: 'xmlcharrefreplace' -------------------------------------------
+
 PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
 {
-    if (!PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
+    if (!_PyIsUnicodeEncodeError(exc)) {
         wrong_exception_type(exc);
         return NULL;
     }
@@ -898,28 +951,11 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
     for (Py_ssize_t i = start; i < end; ++i) {
         /* object is guaranteed to be "ready" */
         Py_UCS4 ch = PyUnicode_READ_CHAR(obj, i);
-        if (ch < 10) {
-            ressize += 2 + 1 + 1;
-        }
-        else if (ch < 100) {
-            ressize += 2 + 2 + 1;
-        }
-        else if (ch < 1000) {
-            ressize += 2 + 3 + 1;
-        }
-        else if (ch < 10000) {
-            ressize += 2 + 4 + 1;
-        }
-        else if (ch < 100000) {
-            ressize += 2 + 5 + 1;
-        }
-        else if (ch < 1000000) {
-            ressize += 2 + 6 + 1;
-        }
-        else {
-            assert(ch < 10000000);
-            ressize += 2 + 7 + 1;
-        }
+        int k = 0;
+        codec_handler_unicode_log10_max(ch, NULL, &k);
+        assert(k != 0);
+        assert(k <= 7);
+        ressize += 2 + k + 1;
     }
 
     /* allocate replacement */
@@ -931,46 +967,8 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
     Py_UCS1 *outp = PyUnicode_1BYTE_DATA(res);
     /* generate replacement */
     for (Py_ssize_t i = start; i < end; ++i) {
-        int digits, base;
         Py_UCS4 ch = PyUnicode_READ_CHAR(obj, i);
-        if (ch < 10) {
-            digits = 1;
-            base = 1;
-        }
-        else if (ch < 100) {
-            digits = 2;
-            base = 10;
-        }
-        else if (ch < 1000) {
-            digits = 3;
-            base = 100;
-        }
-        else if (ch < 10000) {
-            digits = 4;
-            base = 1000;
-        }
-        else if (ch < 100000) {
-            digits = 5;
-            base = 10000;
-        }
-        else if (ch < 1000000) {
-            digits = 6;
-            base = 100000;
-        }
-        else {
-            assert(ch < 10000000);
-            digits = 7;
-            base = 1000000;
-        }
-        *outp++ = '&';
-        *outp++ = '#';
-        while (digits-- > 0) {
-            assert(base >= 1);
-            *outp++ = '0' + ch / base;
-            ch %= base;
-            base /= 10;
-        }
-        *outp++ = ';';
+        codec_handler_write_unicode_dec(&outp, ch);
     }
     assert(_PyUnicode_CheckConsistency(res, 1));
     PyObject *restuple = Py_BuildValue("(Nn)", res, end);
@@ -1517,7 +1515,8 @@ replace_errors(PyObject *Py_UNUSED(self), PyObject *exc)
 }
 
 
-static PyObject *xmlcharrefreplace_errors(PyObject *self, PyObject *exc)
+static inline PyObject *
+xmlcharrefreplace_errors(PyObject *Py_UNUSED(self), PyObject *exc)
 {
     return PyCodec_XMLCharRefReplaceErrors(exc);
 }
