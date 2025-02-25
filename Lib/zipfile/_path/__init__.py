@@ -430,7 +430,9 @@ class Path:
         return posixpath.relpath(str(self), str(other.joinpath(*extra)))
 
     def __str__(self):
-        return posixpath.join(self.root.filename, self.at)
+        if (filename := self.root.filename) is None:
+            filename = ":memory:"
+        return posixpath.join(filename, self.at)
 
     def __repr__(self):
         return self.__repr.format(self=self)
