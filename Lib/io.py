@@ -104,7 +104,7 @@ else:
 #
 
 
-class Reader[T](abc.ABC):
+class Reader[T](metaclass=abc.ABCMeta):
     """Protocol for simple I/O reader instances.
 
     This protocol only supports blocking I/O.
@@ -128,7 +128,7 @@ class Reader[T](abc.ABC):
         return NotImplemented
 
 
-class Writer[T](abc.ABC):
+class Writer[T](metaclass=abc.ABCMeta):
     """Protocol for simple I/O writer instances.
 
     This protocol only supports blocking I/O.
