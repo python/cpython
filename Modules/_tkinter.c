@@ -766,6 +766,8 @@ typedef struct {
     PyObject *string; /* This cannot cause cycles. */
 } PyTclObject;
 
+// TODO(picnixz): maybe assert that 'op' is really a PyTclObject (we might want
+//                to also add a FAST_CAST macro to bypass the check if needed).
 #define PyTclObject_CAST(op)    ((PyTclObject *)(op))
 
 static PyObject *PyTclObject_Type;
@@ -2698,9 +2700,8 @@ typedef struct {
     PyObject *func;
 } TkttObject;
 
-#define TkttObject_FAST_CAST(op)   ((TkttObject *)(op))
 #define TkttObject_CAST(op)        \
-    (assert(TkttObject_Check(op)), TkttObject_FAST_CAST(op))
+    (assert(TkttObject_Check(op)), ((TkttObject *)(op)))
 
 /*[clinic input]
 _tkinter.tktimertoken.deletetimerhandler
