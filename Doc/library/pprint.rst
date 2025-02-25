@@ -107,7 +107,8 @@ Functions
 
 
 .. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
-                     compact=False, sort_dicts=True, underscore_numbers=False, block_style=False)
+                     compact=False, sort_dicts=True, \
+                     underscore_numbers=False, block_style=False)
 
    Alias for :func:`~pprint.pp` with *sort_dicts* set to ``True`` by default,
    which would automatically sort the dictionaries' keys,
