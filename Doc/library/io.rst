@@ -1152,7 +1152,7 @@ Static Typing
 
 The following protocols can be used for annotating function and method
 arguments for simple stream reading or writing operations. They are decorated
-with :func:`@runtime_checkable <runtime_checkable>`.
+with :func:`@typing.runtime_checkable <typing.runtime_checkable>`.
 
 .. class:: Reader[T]
 
