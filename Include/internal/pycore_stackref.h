@@ -518,7 +518,7 @@ PyStackRef_FromPyObjectImmortal(PyObject *obj)
 
 #ifdef _WIN32
 #define PyStackRef_DUP(REF) \
-    (PyStackRef_IsUncountedMortal(REF) ? Py_INCREF_MORTAL(BITS_TO_PTR(ref)) : (REF))
+    (PyStackRef_IsUncountedMortal(REF) ? Py_INCREF_MORTAL(BITS_TO_PTR(REF)) : (REF))
 #else
 static inline _PyStackRef
 PyStackRef_DUP(_PyStackRef ref)
