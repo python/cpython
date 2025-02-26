@@ -29,10 +29,9 @@ Python/thread_pthread.h	PyThread__init_thread	lib_initialized	-
 ## other values (not Python-specific)
 
 ## cached computed data - set lazily (*after* first init)
+# Thread-safe lazy init:
+Objects/longobject.c	-	state	-
 # XXX Are these safe relative to write races?
-Objects/longobject.c	long_from_non_binary_base	log_base_BASE	-
-Objects/longobject.c	long_from_non_binary_base	convwidth_base	-
-Objects/longobject.c	long_from_non_binary_base	convmultmax_base	-
 Objects/unicodeobject.c	-	bloom_linebreak	-
 # This is safe:
 Objects/unicodeobject.c	_init_global_state	initialized	-
