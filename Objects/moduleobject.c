@@ -8,7 +8,6 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "structmember.h"         // PyMemberDef
-#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttrString()
 
 
 static PyMemberDef module_members[] = {

@@ -13,7 +13,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_sysmodule.h"         // _PySys_GetSizeOf()
+#include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
 #include "structmember.h"         // PyMemberDef
 
 #include <stdlib.h>               // strtol()

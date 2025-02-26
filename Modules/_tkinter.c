@@ -146,7 +146,6 @@ _get_tcl_lib_path(void)
         PyObject *prefix;
         struct stat stat_buf;
         int stat_return_value;
-        PyObject *prefix;
 
         prefix = PyUnicode_FromWideChar(Py_GetPrefix(), -1);
         if (prefix == NULL) {
@@ -3553,10 +3552,6 @@ PyInit__tkinter(void)
 #endif /* MS_WINDOWS */
         }
         Py_XDECREF(cexe);
-        Py_DECREF(uexe);
-    }
-    else {
-        Py_XDECREF(uexe);
     }
 
     if (PyErr_Occurred()) {
