@@ -69,7 +69,7 @@ All input read from non-interactive files has the same form:
 .. grammar-snippet::
    :group: python-grammar
 
-   file: `statement`* ENDMARKER
+   file_input: (`statement` | NEWLINE)* ENDMARKER
 
 This syntax is used in the following situations:
 
@@ -90,7 +90,7 @@ Input in interactive mode is parsed using the following grammar:
 .. grammar-snippet::
    :group: python-grammar
 
-   interactive: [`stmt_list`] NEWLINE | `compound_stmt` NEWLINE | ENDMARKER
+   interactive_input: [`stmt_list`] NEWLINE | `compound_stmt` NEWLINE | ENDMARKER
 
 Note that a (top-level) compound statement must be followed by a blank line in
 interactive mode; this is needed to help the parser detect the end of the input.
@@ -110,5 +110,4 @@ string argument to :func:`eval` must have the following form:
 .. grammar-snippet::
    :group: python-grammar
 
-   eval: `expressions` NEWLINE* ENDMARKER
-   expressions: `expression` (',' `expression` )* [',']
+   eval_input: `expression_list` NEWLINE* ENDMARKER
