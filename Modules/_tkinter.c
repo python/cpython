@@ -33,6 +33,7 @@ Copyright (C) 1994 Steen Lumholt.
 #endif
 
 #include "pycore_long.h"
+#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttrString()
 
 #ifdef MS_WINDOWS
 #include <windows.h>
@@ -154,9 +155,11 @@ _get_tcl_lib_path(void)
         /* Check expected location for an installed Python first */
         tcl_library_path = PyUnicode_FromString("\\tcl\\tcl" TCL_VERSION);
         if (tcl_library_path == NULL) {
+            Py_DECREF(prefix);
             return NULL;
         }
         tcl_library_path = PyUnicode_Concat(prefix, tcl_library_path);
+        Py_DECREF(prefix);
         if (tcl_library_path == NULL) {
             return NULL;
         }
@@ -3509,6 +3512,7 @@ PyInit__tkinter(void)
     uexe = PyUnicode_FromWideChar(Py_GetProgramName(), -1);
     if (uexe) {
         cexe = PyUnicode_EncodeFSDefault(uexe);
+        Py_DECREF(uexe);
         if (cexe) {
 #ifdef MS_WINDOWS
             int set_var = 0;
@@ -3521,12 +3525,14 @@ PyInit__tkinter(void)
             if (!ret && GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
                 str_path = _get_tcl_lib_path();
                 if (str_path == NULL && PyErr_Occurred()) {
+                    Py_DECREF(cexe);
                     Py_DECREF(m);
                     return NULL;
                 }
                 if (str_path != NULL) {
                     wcs_path = PyUnicode_AsWideCharString(str_path, NULL);
                     if (wcs_path == NULL) {
+                        Py_DECREF(cexe);
                         Py_DECREF(m);
                         return NULL;
                     }
@@ -3546,7 +3552,6 @@ PyInit__tkinter(void)
 #endif /* MS_WINDOWS */
         }
         Py_XDECREF(cexe);
-        Py_DECREF(uexe);
     }
 
     if (PyErr_Occurred()) {

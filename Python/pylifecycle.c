@@ -1189,8 +1189,12 @@ init_interp_main(PyThreadState *tstate)
 
     if (is_main_interp) {
         /* Initialize warnings. */
-        PyObject *warnoptions = PySys_GetObject("warnoptions");
-        if (warnoptions != NULL && PyList_Size(warnoptions) > 0)
+        PyObject *warnoptions;
+        if (_PySys_GetOptionalAttrString("warnoptions", &warnoptions) < 0) {
+            return _PyStatus_ERR("can't initialize warnings");
+        }
+        if (warnoptions != NULL && PyList_Check(warnoptions) &&
+            PyList_Size(warnoptions) > 0)
         {
             PyObject *warnings_module = PyImport_ImportModule("warnings");
             if (warnings_module == NULL) {
@@ -1199,6 +1203,7 @@ init_interp_main(PyThreadState *tstate)
             }
             Py_XDECREF(warnings_module);
         }
+        Py_XDECREF(warnoptions);
 
         interp->runtime->initialized = 1;
     }
@@ -1667,24 +1672,32 @@ file_is_closed(PyObject *fobj)
 static int
 flush_std_files(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *fout = _PySys_GetAttr(tstate, &_Py_ID(stdout));
-    PyObject *ferr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    PyObject *file;
     PyObject *tmp;
     int status = 0;
 
-    if (fout != NULL && fout != Py_None && !file_is_closed(fout)) {
-        tmp = PyObject_CallMethodNoArgs(fout, &_Py_ID(flush));
+    if (_PySys_GetOptionalAttr(&_Py_ID(stdout), &file) < 0) {
+        status = -1;
+    }
+    else if (file != NULL && file != Py_None && !file_is_closed(file)) {
+        tmp = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
         if (tmp == NULL) {
-            PyErr_WriteUnraisable(fout);
             status = -1;
         }
         else
             Py_DECREF(tmp);
     }
+    if (status < 0) {
+        PyErr_WriteUnraisable(file);
+    }
+    Py_XDECREF(file);
 
-    if (ferr != NULL && ferr != Py_None && !file_is_closed(ferr)) {
-        tmp = PyObject_CallMethodNoArgs(ferr, &_Py_ID(flush));
+    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
+        PyErr_Clear();
+        status = -1;
+    }
+    else if (file != NULL && file != Py_None && !file_is_closed(file)) {
+        tmp = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
         if (tmp == NULL) {
             PyErr_Clear();
             status = -1;
@@ -1692,6 +1705,7 @@ flush_std_files(void)
         else
             Py_DECREF(tmp);
     }
+    Py_XDECREF(file);
 
     return status;
 }
@@ -2655,10 +2669,14 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
         return 0;
     }
 
-    PyObject *ferr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    PyObject *ferr;
+    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &ferr) < 0) {
+        _PyErr_Clear(tstate);
+    }
     if (ferr == NULL || ferr == Py_None) {
         /* sys.stderr is not set yet or set to None,
            no need to try to display the exception */
+        Py_XDECREF(ferr);
         Py_DECREF(exc);
         return 0;
     }
@@ -2678,6 +2696,7 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
     else {
         Py_DECREF(res);
     }
+    Py_DECREF(ferr);
 
     return has_tb;
 }

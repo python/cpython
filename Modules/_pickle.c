@@ -13,6 +13,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
 #include "structmember.h"         // PyMemberDef
 
 #include <stdlib.h>               // strtol()
@@ -1984,19 +1985,19 @@ whichmodule(PyObject *global, PyObject *dotted_path)
     assert(module_name == NULL);
 
     /* Fallback on walking sys.modules */
-    PyThreadState *tstate = _PyThreadState_GET();
-    modules = _PySys_GetAttr(tstate, &_Py_ID(modules));
+    modules = _PySys_GetRequiredAttr(&_Py_ID(modules));
     if (modules == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
         return NULL;
     }
     if (PyDict_CheckExact(modules)) {
         i = 0;
         while (PyDict_Next(modules, &i, &module_name, &module)) {
             if (_checkmodule(module_name, module, global, dotted_path) == 0) {
+                Py_DECREF(modules);
                 return Py_NewRef(module_name);
             }
             if (PyErr_Occurred()) {
+                Py_DECREF(modules);
                 return NULL;
             }
         }
@@ -2004,6 +2005,7 @@ whichmodule(PyObject *global, PyObject *dotted_path)
     else {
         PyObject *iterator = PyObject_GetIter(modules);
         if (iterator == NULL) {
+            Py_DECREF(modules);
             return NULL;
         }
         while ((module_name = PyIter_Next(iterator))) {
@@ -2011,22 +2013,26 @@ whichmodule(PyObject *global, PyObject *dotted_path)
             if (module == NULL) {
                 Py_DECREF(module_name);
                 Py_DECREF(iterator);
+                Py_DECREF(modules);
                 return NULL;
             }
             if (_checkmodule(module_name, module, global, dotted_path) == 0) {
                 Py_DECREF(module);
                 Py_DECREF(iterator);
+                Py_DECREF(modules);
                 return module_name;
             }
             Py_DECREF(module);
             Py_DECREF(module_name);
             if (PyErr_Occurred()) {
                 Py_DECREF(iterator);
+                Py_DECREF(modules);
                 return NULL;
             }
         }
         Py_DECREF(iterator);
     }
+    Py_DECREF(modules);
 
     /* If no module is found, use __main__. */
     module_name = &_Py_ID(__main__);
