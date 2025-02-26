@@ -2199,7 +2199,6 @@ class IPv6Interface(IPv6Address):
         self.network = IPv6Network((addr, mask), strict=False)
         self.netmask = self.network.netmask
         self._prefixlen = self.network._prefixlen
-        self._scope_id = addr.scope_id if isinstance(addr, IPv6Address) else None
 
     @functools.cached_property
     def hostmask(self):
