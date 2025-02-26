@@ -102,6 +102,11 @@ if sys.platform == 'win32':
     # ps_AF doesn't work on Windows: see bpo-38324 (msg361830)
     del known_numerics['ps_AF']
 
+if sys.platform == 'sunos5':
+    # On Solaris, Japanese ERAs start with the year 1927,
+    # and thus there's less of them.
+    known_era['ja_JP'] = (5, '+:1:2019/05/01:2019/12/31:令和:%EC元年')
+
 class _LocaleTests(unittest.TestCase):
 
     def setUp(self):

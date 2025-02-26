@@ -60,7 +60,7 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         "T_FLOAT", "T_DOUBLE", "T_STRING_INPLACE",
         "T_LONGLONG", "T_ULONGLONG", "T_CHAR",
         NULL};
-    static const char fmt[] = "|bbBhHiIlknfds#LKC";
+    static const char fmt[] = "|bbBhHiIlknfds#LKc";
     test_structmembers *ob;
     const char *s = NULL;
     Py_ssize_t string_len = 0;

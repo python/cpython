@@ -1182,10 +1182,8 @@ class self_converter(CConverter):
     @property
     def parser_type(self) -> str:
         assert self.type is not None
-        if self.function.kind in {METHOD_INIT, METHOD_NEW, STATIC_METHOD, CLASS_METHOD}:
-            tp, _ = correct_name_for_self(self.function)
-            return tp
-        return self.type
+        tp, _ = correct_name_for_self(self.function)
+        return tp
 
     def render(self, parameter: Parameter, data: CRenderData) -> None:
         """

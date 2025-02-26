@@ -13,7 +13,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_pyhash.h"        // _Py_KeyedHash()
 #include "pycore_pylifecycle.h"
-#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
+#include "pycore_pymem.h"         // _PyMem_DefaultRawFree()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
 #include "pycore_time.h"          // _PyTime_AsMicroseconds()
@@ -594,7 +594,8 @@ _PyImport_ClearModulesByIndex(PyInterpreterState *interp)
     if (PyList_SetSlice(MODULES_BY_INDEX(interp),
                         0, PyList_GET_SIZE(MODULES_BY_INDEX(interp)),
                         NULL)) {
-        PyErr_FormatUnraisable("Exception ignored on clearing interpreters module list");
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "clearing interpreters module list");
     }
 }
 
@@ -749,7 +750,7 @@ const char *
 _PyImport_ResolveNameWithPackageContext(const char *name)
 {
 #ifndef HAVE_THREAD_LOCAL
-    PyThread_acquire_lock(EXTENSIONS.mutex, WAIT_LOCK);
+    PyMutex_Lock(&EXTENSIONS.mutex);
 #endif
     if (PKGCONTEXT != NULL) {
         const char *p = strrchr(PKGCONTEXT, '.');
@@ -759,7 +760,7 @@ _PyImport_ResolveNameWithPackageContext(const char *name)
         }
     }
 #ifndef HAVE_THREAD_LOCAL
-    PyThread_release_lock(EXTENSIONS.mutex);
+    PyMutex_Unlock(&EXTENSIONS.mutex);
 #endif
     return name;
 }
@@ -768,12 +769,12 @@ const char *
 _PyImport_SwapPackageContext(const char *newcontext)
 {
 #ifndef HAVE_THREAD_LOCAL
-    PyThread_acquire_lock(EXTENSIONS.mutex, WAIT_LOCK);
+    PyMutex_Lock(&EXTENSIONS.mutex);
 #endif
     const char *oldcontext = PKGCONTEXT;
     PKGCONTEXT = newcontext;
 #ifndef HAVE_THREAD_LOCAL
-    PyThread_release_lock(EXTENSIONS.mutex);
+    PyMutex_Unlock(&EXTENSIONS.mutex);
 #endif
     return oldcontext;
 }
@@ -1176,9 +1177,10 @@ hashtable_key_from_2_strings(PyObject *str1, PyObject *str2, const char sep)
         return NULL;
     }
 
-    strncpy(key, str1_data, str1_len);
+    memcpy(key, str1_data, str1_len);
     key[str1_len] = sep;
-    strncpy(key + str1_len + 1, str2_data, str2_len + 1);
+    memcpy(key + str1_len + 1, str2_data, str2_len);
+    key[size - 1] = '\0';
     assert(strlen(key) == size - 1);
     return key;
 }
@@ -2385,14 +2387,11 @@ PyImport_ExtendInittab(struct _inittab *newtab)
 
     /* Force default raw memory allocator to get a known allocator to be able
        to release the memory in _PyImport_Fini2() */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
     /* Allocate new memory for the combined table */
     p = NULL;
     if (i + n <= SIZE_MAX / sizeof(struct _inittab) - 1) {
         size_t size = sizeof(struct _inittab) * (i + n + 1);
-        p = PyMem_RawRealloc(inittab_copy, size);
+        p = _PyMem_DefaultRawRealloc(inittab_copy, size);
     }
     if (p == NULL) {
         res = -1;
@@ -2406,9 +2405,7 @@ PyImport_ExtendInittab(struct _inittab *newtab)
     }
     memcpy(p + i, newtab, (n + 1) * sizeof(struct _inittab));
     PyImport_Inittab = inittab_copy = p;
-
 done:
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return res;
 }
 
@@ -2443,7 +2440,7 @@ init_builtin_modules_table(void)
     size++;
 
     /* Make the copy. */
-    struct _inittab *copied = PyMem_RawMalloc(size * sizeof(struct _inittab));
+    struct _inittab *copied = _PyMem_DefaultRawMalloc(size * sizeof(struct _inittab));
     if (copied == NULL) {
         return -1;
     }
@@ -2457,7 +2454,7 @@ fini_builtin_modules_table(void)
 {
     struct _inittab *inittab = INITTAB;
     INITTAB = NULL;
-    PyMem_RawFree(inittab);
+    _PyMem_DefaultRawFree(inittab);
 }
 
 PyObject *
@@ -3329,19 +3326,15 @@ PyObject *
 PyImport_GetImporter(PyObject *path)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *path_importer_cache = PySys_GetObject("path_importer_cache");
+    PyObject *path_importer_cache = _PySys_GetRequiredAttrString("path_importer_cache");
     if (path_importer_cache == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "lost sys.path_importer_cache");
         return NULL;
     }
-    Py_INCREF(path_importer_cache);
-    PyObject *path_hooks = PySys_GetObject("path_hooks");
+    PyObject *path_hooks = _PySys_GetRequiredAttrString("path_hooks");
     if (path_hooks == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "lost sys.path_hooks");
         Py_DECREF(path_importer_cache);
         return NULL;
     }
-    Py_INCREF(path_hooks);
     PyObject *importer = get_path_importer(tstate, path_importer_cache, path_hooks, path);
     Py_DECREF(path_hooks);
     Py_DECREF(path_importer_cache);
@@ -3643,15 +3636,31 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 
     PyTime_t t1 = 0, accumulated_copy = accumulated;
 
-    PyObject *sys_path = PySys_GetObject("path");
-    PyObject *sys_meta_path = PySys_GetObject("meta_path");
-    PyObject *sys_path_hooks = PySys_GetObject("path_hooks");
+    PyObject *sys_path, *sys_meta_path, *sys_path_hooks;
+    if (_PySys_GetOptionalAttrString("path", &sys_path) < 0) {
+        return NULL;
+    }
+    if (_PySys_GetOptionalAttrString("meta_path", &sys_meta_path) < 0) {
+        Py_XDECREF(sys_path);
+        return NULL;
+    }
+    if (_PySys_GetOptionalAttrString("path_hooks", &sys_path_hooks) < 0) {
+        Py_XDECREF(sys_meta_path);
+        Py_XDECREF(sys_path);
+        return NULL;
+    }
     if (_PySys_Audit(tstate, "import", "OOOOO",
                      abs_name, Py_None, sys_path ? sys_path : Py_None,
                      sys_meta_path ? sys_meta_path : Py_None,
                      sys_path_hooks ? sys_path_hooks : Py_None) < 0) {
+        Py_XDECREF(sys_path_hooks);
+        Py_XDECREF(sys_meta_path);
+        Py_XDECREF(sys_path);
         return NULL;
     }
+    Py_XDECREF(sys_path_hooks);
+    Py_XDECREF(sys_meta_path);
+    Py_XDECREF(sys_path);
 
 
     /* XOptions is initialized after first some imports.
@@ -3975,22 +3984,10 @@ _PyImport_Init(void)
     if (INITTAB != NULL) {
         return _PyStatus_ERR("global import state already initialized");
     }
-
-    PyStatus status = _PyStatus_OK();
-
-    /* Force default raw memory allocator to get a known allocator to be able
-       to release the memory in _PyImport_Fini() */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
     if (init_builtin_modules_table() != 0) {
-        status = PyStatus_NoMemory();
-        goto done;
+        return PyStatus_NoMemory();
     }
-
-done:
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    return status;
+    return _PyStatus_OK();
 }
 
 void
@@ -4001,31 +3998,19 @@ _PyImport_Fini(void)
     // ever dlclose() the module files?
     _extensions_cache_clear_all();
 
-    /* Use the same memory allocator as _PyImport_Init(). */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
     /* Free memory allocated by _PyImport_Init() */
     fini_builtin_modules_table();
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
 void
 _PyImport_Fini2(void)
 {
-    /* Use the same memory allocator than PyImport_ExtendInittab(). */
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
     // Reset PyImport_Inittab
     PyImport_Inittab = _PyImport_Inittab;
 
     /* Free memory allocated by PyImport_ExtendInittab() */
-    PyMem_RawFree(inittab_copy);
+    _PyMem_DefaultRawFree(inittab_copy);
     inittab_copy = NULL;
-
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
 
@@ -4079,13 +4064,15 @@ _PyImport_FiniCore(PyInterpreterState *interp)
     int verbose = _PyInterpreterState_GetConfig(interp)->verbose;
 
     if (_PySys_ClearAttrString(interp, "meta_path", verbose) < 0) {
-        PyErr_FormatUnraisable("Exception ignored on clearing sys.meta_path");
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "clearing sys.meta_path");
     }
 
     // XXX Pull in most of finalize_modules() in pylifecycle.c.
 
     if (_PySys_ClearAttrString(interp, "modules", verbose) < 0) {
-        PyErr_FormatUnraisable("Exception ignored on clearing sys.modules");
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "clearing sys.modules");
     }
 
     _PyImport_ClearCore(interp);
@@ -4099,10 +4086,8 @@ _PyImport_FiniCore(PyInterpreterState *interp)
 static int
 init_zipimport(PyThreadState *tstate, int verbose)
 {
-    PyObject *path_hooks = PySys_GetObject("path_hooks");
+    PyObject *path_hooks = _PySys_GetRequiredAttrString("path_hooks");
     if (path_hooks == NULL) {
-        _PyErr_SetString(tstate, PyExc_RuntimeError,
-                         "unable to get sys.path_hooks");
         return -1;
     }
 
@@ -4110,7 +4095,7 @@ init_zipimport(PyThreadState *tstate, int verbose)
         PySys_WriteStderr("# installing zipimport hook\n");
     }
 
-    PyObject *zipimporter = _PyImport_GetModuleAttrString("zipimport", "zipimporter");
+    PyObject *zipimporter = PyImport_ImportModuleAttrString("zipimport", "zipimporter");
     if (zipimporter == NULL) {
         _PyErr_Clear(tstate); /* No zipimporter object -- okay */
         if (verbose) {
@@ -4122,12 +4107,14 @@ init_zipimport(PyThreadState *tstate, int verbose)
         int err = PyList_Insert(path_hooks, 0, zipimporter);
         Py_DECREF(zipimporter);
         if (err < 0) {
+            Py_DECREF(path_hooks);
             return -1;
         }
         if (verbose) {
             PySys_WriteStderr("# installed zipimport hook\n");
         }
     }
+    Py_DECREF(path_hooks);
 
     return 0;
 }
@@ -4160,10 +4147,12 @@ _PyImport_FiniExternal(PyInterpreterState *interp)
     // XXX Uninstall importlib metapath importers here?
 
     if (_PySys_ClearAttrString(interp, "path_importer_cache", verbose) < 0) {
-        PyErr_FormatUnraisable("Exception ignored on clearing sys.path_importer_cache");
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "clearing sys.path_importer_cache");
     }
     if (_PySys_ClearAttrString(interp, "path_hooks", verbose) < 0) {
-        PyErr_FormatUnraisable("Exception ignored on clearing sys.path_hooks");
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "clearing sys.path_hooks");
     }
 }
 
@@ -4173,7 +4162,7 @@ _PyImport_FiniExternal(PyInterpreterState *interp)
 /******************/
 
 PyObject *
-_PyImport_GetModuleAttr(PyObject *modname, PyObject *attrname)
+PyImport_ImportModuleAttr(PyObject *modname, PyObject *attrname)
 {
     PyObject *mod = PyImport_Import(modname);
     if (mod == NULL) {
@@ -4185,7 +4174,7 @@ _PyImport_GetModuleAttr(PyObject *modname, PyObject *attrname)
 }
 
 PyObject *
-_PyImport_GetModuleAttrString(const char *modname, const char *attrname)
+PyImport_ImportModuleAttrString(const char *modname, const char *attrname)
 {
     PyObject *pmodname = PyUnicode_FromString(modname);
     if (pmodname == NULL) {
@@ -4196,7 +4185,7 @@ _PyImport_GetModuleAttrString(const char *modname, const char *attrname)
         Py_DECREF(pmodname);
         return NULL;
     }
-    PyObject *result = _PyImport_GetModuleAttr(pmodname, pattrname);
+    PyObject *result = PyImport_ImportModuleAttr(pmodname, pattrname);
     Py_DECREF(pattrname);
     Py_DECREF(pmodname);
     return result;
@@ -4687,7 +4676,7 @@ _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
      * code relies on fp still being open. */
     FILE *fp;
     if (file != NULL) {
-        fp = _Py_fopen_obj(info.filename, "r");
+        fp = Py_fopen(info.filename, "r");
         if (fp == NULL) {
             goto finally;
         }

@@ -67,6 +67,8 @@ typedef struct {
     uint64_t _abc_negative_cache_version;
 } _abc_data;
 
+#define _abc_data_CAST(op)  ((_abc_data *)(op))
+
 static inline uint64_t
 get_cache_version(_abc_data *impl)
 {
@@ -88,8 +90,9 @@ set_cache_version(_abc_data *impl, uint64_t version)
 }
 
 static int
-abc_data_traverse(_abc_data *self, visitproc visit, void *arg)
+abc_data_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    _abc_data *self = _abc_data_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->_abc_registry);
     Py_VISIT(self->_abc_cache);
@@ -98,8 +101,9 @@ abc_data_traverse(_abc_data *self, visitproc visit, void *arg)
 }
 
 static int
-abc_data_clear(_abc_data *self)
+abc_data_clear(PyObject *op)
 {
+    _abc_data *self = _abc_data_CAST(op);
     Py_CLEAR(self->_abc_registry);
     Py_CLEAR(self->_abc_cache);
     Py_CLEAR(self->_abc_negative_cache);
@@ -107,7 +111,7 @@ abc_data_clear(_abc_data *self)
 }
 
 static void
-abc_data_dealloc(_abc_data *self)
+abc_data_dealloc(PyObject *self)
 {
     PyObject_GC_UnTrack(self);
     PyTypeObject *tp = Py_TYPE(self);
@@ -212,7 +216,7 @@ _destroy(PyObject *setweakref, PyObject *objweakref)
 }
 
 static PyMethodDef _destroy_def = {
-    "_destroy", (PyCFunction) _destroy, METH_O
+    "_destroy", _destroy, METH_O
 };
 
 static int
@@ -964,7 +968,7 @@ _abcmodule_clear(PyObject *module)
 static void
 _abcmodule_free(void *module)
 {
-    _abcmodule_clear((PyObject *)module);
+    (void)_abcmodule_clear((PyObject *)module);
 }
 
 static PyModuleDef_Slot _abcmodule_slots[] = {
