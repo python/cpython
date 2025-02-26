@@ -57,7 +57,7 @@ Pending removal in Python 3.15
 
 * :mod:`sysconfig`:
 
-  * The ``check_home`` argument of :func:`sysconfig.is_python_build` has been
+  * The *check_home* argument of :func:`sysconfig.is_python_build` has been
     deprecated since Python 3.12.
 
 * :mod:`threading`:
