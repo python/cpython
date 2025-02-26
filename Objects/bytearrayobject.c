@@ -2749,7 +2749,6 @@ static PyObject *
 bytearray_mod_lock_held(PyObject *v, PyObject *w)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(v);
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(w);
     if (!PyByteArray_Check(v))
         Py_RETURN_NOTIMPLEMENTED;
     return _PyBytes_FormatEx(PyByteArray_AS_STRING(v), PyByteArray_GET_SIZE(v), w, 1);
@@ -2759,9 +2758,16 @@ static PyObject *
 bytearray_mod(PyObject *v, PyObject *w)
 {
     PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION2(v, w);
-    ret = bytearray_mod_lock_held(v, w);
-    Py_END_CRITICAL_SECTION2();
+    if (PyByteArray_Check(w)) {
+        Py_BEGIN_CRITICAL_SECTION2(v, w);
+        ret = bytearray_mod_lock_held(v, w);
+        Py_END_CRITICAL_SECTION2();
+    }
+    else {
+        Py_BEGIN_CRITICAL_SECTION(v);
+        ret = bytearray_mod_lock_held(v, w);
+        Py_END_CRITICAL_SECTION();
+    }
     return ret;
 }
 
