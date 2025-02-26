@@ -6,6 +6,7 @@ TSAN_TESTS = [
     'test_capi.test_mem',
     'test_capi.test_pyatomic',
     'test_code',
+    'test_concurrent_futures',
     'test_enum',
     'test_functools',
     'test_httpservers',
