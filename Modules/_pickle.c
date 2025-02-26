@@ -18,7 +18,7 @@
 #include "pycore_pystate.h"           // _PyThreadState_GET()
 #include "pycore_runtime.h"           // _Py_ID()
 #include "pycore_setobject.h"         // _PySet_NextEntry()
-#include "pycore_sysmodule.h"         // _PySys_GetAttr()
+#include "pycore_sysmodule.h"         // _PySys_GetSizeOf()
 
 #include <stdlib.h>               // strtol()
 
@@ -1930,10 +1930,8 @@ whichmodule(PyObject *global, PyObject *dotted_path)
     assert(module_name == NULL);
 
     /* Fallback on walking sys.modules */
-    PyThreadState *tstate = _PyThreadState_GET();
-    modules = _PySys_GetAttr(tstate, &_Py_ID(modules));
+    modules = _PySys_GetRequiredAttr(&_Py_ID(modules));
     if (modules == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "unable to get sys.modules");
         return NULL;
     }
     if (PyDict_CheckExact(modules)) {
@@ -4652,6 +4650,7 @@ Pickler_clear(PicklerObject *self)
     Py_CLEAR(self->output_buffer);
     Py_CLEAR(self->write);
     Py_CLEAR(self->persistent_id);
+    Py_CLEAR(self->persistent_id_attr);
     Py_CLEAR(self->dispatch_table);
     Py_CLEAR(self->fast_memo);
     Py_CLEAR(self->reducer_override);
@@ -4681,6 +4680,7 @@ Pickler_traverse(PicklerObject *self, visitproc visit, void *arg)
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->write);
     Py_VISIT(self->persistent_id);
+    Py_VISIT(self->persistent_id_attr);
     Py_VISIT(self->dispatch_table);
     Py_VISIT(self->fast_memo);
     Py_VISIT(self->reducer_override);
@@ -7138,6 +7138,7 @@ Unpickler_clear(UnpicklerObject *self)
     Py_CLEAR(self->peek);
     Py_CLEAR(self->stack);
     Py_CLEAR(self->persistent_load);
+    Py_CLEAR(self->persistent_load_attr);
     Py_CLEAR(self->buffers);
     if (self->buffer.buf != NULL) {
         PyBuffer_Release(&self->buffer);
@@ -7177,6 +7178,7 @@ Unpickler_traverse(UnpicklerObject *self, visitproc visit, void *arg)
     Py_VISIT(self->peek);
     Py_VISIT(self->stack);
     Py_VISIT(self->persistent_load);
+    Py_VISIT(self->persistent_load_attr);
     Py_VISIT(self->buffers);
     PyObject **memo = self->memo;
     if (memo) {

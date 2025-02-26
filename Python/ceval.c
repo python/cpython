@@ -27,10 +27,12 @@
 #include "pycore_setobject.h"     // _PySet_Update()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_traceback.h"     // _PyTraceBack_FromFrame
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 #include "pycore_uop_ids.h"       // Uops
 #include "pycore_pyerrors.h"
+#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttrString()
 
 #include "pycore_dict.h"
 #include "dictobject.h"
@@ -2020,6 +2022,17 @@ _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type,
             if (wrapped == NULL) {
                 return -1;
             }
+            PyThreadState *tstate = _PyThreadState_GET();
+            _PyInterpreterFrame *frame = _PyThreadState_GetFrame(tstate);
+            PyFrameObject *f = _PyFrame_GetFrameObject(frame);
+            if (f != NULL) {
+                PyObject *tb = _PyTraceBack_FromFrame(NULL, f);
+                if (tb == NULL) {
+                    return -1;
+                }
+                PyException_SetTraceback(wrapped, tb);
+                Py_DECREF(tb);
+            }
             *match = wrapped;
         }
         *rest = Py_NewRef(Py_None);
@@ -2795,13 +2808,18 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
     }
     int is_possibly_shadowing_stdlib = 0;
     if (is_possibly_shadowing) {
-        PyObject *stdlib_modules = PySys_GetObject("stdlib_module_names");
+        PyObject *stdlib_modules;
+        if (_PySys_GetOptionalAttrString("stdlib_module_names", &stdlib_modules) < 0) {
+            goto done;
+        }
         if (stdlib_modules && PyAnySet_Check(stdlib_modules)) {
             is_possibly_shadowing_stdlib = PySet_Contains(stdlib_modules, mod_name_or_unknown);
             if (is_possibly_shadowing_stdlib < 0) {
+                Py_DECREF(stdlib_modules);
                 goto done;
             }
         }
+        Py_XDECREF(stdlib_modules);
     }
 
     if (origin == NULL && PyModule_Check(v)) {

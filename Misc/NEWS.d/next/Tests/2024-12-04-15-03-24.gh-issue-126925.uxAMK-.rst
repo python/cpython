@@ -1,2 +1,0 @@
-iOS test results are now streamed during test execution, and the deprecated
-xcresulttool is no longer used.

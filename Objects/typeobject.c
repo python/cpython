@@ -975,7 +975,7 @@ set_version_unlocked(PyTypeObject *tp, unsigned int version)
         _Py_atomic_add_uint16(&tp->tp_versions_used, 1);
     }
 #endif
-    FT_ATOMIC_STORE_UINT32_RELAXED(tp->tp_version_tag, version);
+    FT_ATOMIC_STORE_UINT_RELAXED(tp->tp_version_tag, version);
 }
 
 static void
@@ -996,15 +996,10 @@ type_modified_unlocked(PyTypeObject *type)
        We don't assign new version tags eagerly, but only as
        needed.
      */
-#ifdef Py_GIL_DISABLED
-    if (_Py_atomic_load_uint_relaxed(&type->tp_version_tag) == 0) {
-        return;
-    }
-#else
+    ASSERT_TYPE_LOCK_HELD();
     if (type->tp_version_tag == 0) {
         return;
     }
-#endif
     // Cannot modify static builtin types.
     assert((type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) == 0);
 
@@ -1056,7 +1051,7 @@ void
 PyType_Modified(PyTypeObject *type)
 {
     // Quick check without the lock held
-    if (type->tp_version_tag == 0) {
+    if (FT_ATOMIC_LOAD_UINT_RELAXED(type->tp_version_tag) == 0) {
         return;
     }
 
@@ -5038,6 +5033,26 @@ _PyType_GetModuleByDef2(PyTypeObject *left, PyTypeObject *right,
                 PyExc_TypeError,
                 "PyType_GetModuleByDef: No superclass of '%s' nor '%s' has "
                 "the given module", left->tp_name, right->tp_name);
+        }
+    }
+    return module;
+}
+
+PyObject *
+_PyType_GetModuleByDef3(PyTypeObject *left, PyTypeObject *right, PyTypeObject *third,
+                        PyModuleDef *def)
+{
+    PyObject *module = get_module_by_def(left, def);
+    if (module == NULL) {
+        module = get_module_by_def(right, def);
+        if (module == NULL) {
+            module = get_module_by_def(third, def);
+            if (module == NULL) {
+                PyErr_Format(
+                    PyExc_TypeError,
+                    "PyType_GetModuleByDef: No superclass of '%s', '%s' nor '%s' has "
+                    "the given module", left->tp_name, right->tp_name, third->tp_name);
+            }
         }
     }
     return module;

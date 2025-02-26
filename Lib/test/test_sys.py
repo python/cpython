@@ -2,6 +2,7 @@ import builtins
 import codecs
 import _datetime
 import gc
+import io
 import locale
 import operator
 import os
@@ -79,6 +80,18 @@ class DisplayHookTest(unittest.TestCase):
         with support.swap_attr(sys, 'displayhook', baddisplayhook):
             code = compile("42", "<string>", "single")
             self.assertRaises(ValueError, eval, code)
+
+    def test_gh130163(self):
+        class X:
+            def __repr__(self):
+                sys.stdout = io.StringIO()
+                support.gc_collect()
+                return 'foo'
+
+        with support.swap_attr(sys, 'stdout', None):
+            sys.stdout = io.StringIO()  # the only reference
+            sys.displayhook(X())  # should not crash
+
 
 class ActiveExceptionTests(unittest.TestCase):
     def test_exc_info_no_exception(self):

@@ -3313,36 +3313,43 @@ SimpleExtendsException(PyExc_Exception, ReferenceError,
 
 #define MEMERRORS_SAVE 16
 
+#ifdef Py_GIL_DISABLED
+# define MEMERRORS_LOCK(state) PyMutex_LockFlags(&state->memerrors_lock, _Py_LOCK_DONT_DETACH)
+# define MEMERRORS_UNLOCK(state) PyMutex_Unlock(&state->memerrors_lock)
+#else
+# define MEMERRORS_LOCK(state) ((void)0)
+# define MEMERRORS_UNLOCK(state) ((void)0)
+#endif
+
 static PyObject *
 get_memory_error(int allow_allocation, PyObject *args, PyObject *kwds)
 {
-    PyBaseExceptionObject *self;
+    PyBaseExceptionObject *self = NULL;
     struct _Py_exc_state *state = get_exc_state();
-    if (state->memerrors_freelist == NULL) {
-        if (!allow_allocation) {
-            PyInterpreterState *interp = _PyInterpreterState_GET();
-            return Py_NewRef(
-                &_Py_INTERP_SINGLETON(interp, last_resort_memory_error));
-        }
-        PyObject *result = BaseException_new((PyTypeObject *)PyExc_MemoryError, args, kwds);
-        return result;
+
+    MEMERRORS_LOCK(state);
+    if (state->memerrors_freelist != NULL) {
+        /* Fetch MemoryError from freelist and initialize it */
+        self = state->memerrors_freelist;
+        state->memerrors_freelist = (PyBaseExceptionObject *) self->dict;
+        state->memerrors_numfree--;
+        self->dict = NULL;
+        self->args = (PyObject *)&_Py_SINGLETON(tuple_empty);
+        _Py_NewReference((PyObject *)self);
+        _PyObject_GC_TRACK(self);
+    }
+    MEMERRORS_UNLOCK(state);
+
+    if (self != NULL) {
+        return (PyObject *)self;
     }
 
-    /* Fetch object from freelist and revive it */
-    self = state->memerrors_freelist;
-    self->args = PyTuple_New(0);
-    /* This shouldn't happen since the empty tuple is persistent */
-
-    if (self->args == NULL) {
-        return NULL;
+    if (!allow_allocation) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        return Py_NewRef(
+            &_Py_INTERP_SINGLETON(interp, last_resort_memory_error));
     }
-
-    state->memerrors_freelist = (PyBaseExceptionObject *) self->dict;
-    state->memerrors_numfree--;
-    self->dict = NULL;
-    _Py_NewReference((PyObject *)self);
-    _PyObject_GC_TRACK(self);
-    return (PyObject *)self;
+    return BaseException_new((PyTypeObject *)PyExc_MemoryError, args, kwds);
 }
 
 static PyObject *
@@ -3387,14 +3394,17 @@ MemoryError_dealloc(PyBaseExceptionObject *self)
     }
 
     struct _Py_exc_state *state = get_exc_state();
-    if (state->memerrors_numfree >= MEMERRORS_SAVE) {
-        Py_TYPE(self)->tp_free((PyObject *)self);
-    }
-    else {
+    MEMERRORS_LOCK(state);
+    if (state->memerrors_numfree < MEMERRORS_SAVE) {
         self->dict = (PyObject *) state->memerrors_freelist;
         state->memerrors_freelist = self;
         state->memerrors_numfree++;
+        MEMERRORS_UNLOCK(state);
+        return;
     }
+    MEMERRORS_UNLOCK(state);
+
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static int

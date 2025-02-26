@@ -1,2 +1,0 @@
-Fix crash when dict with keys in invalid encoding were passed to several
-functions in ``_interpreters`` module.

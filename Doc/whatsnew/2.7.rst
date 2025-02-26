@@ -1602,7 +1602,7 @@ changes, or look through the Subversion logs for all the details.
   identifier instead of the previous default value of ``'python'``.
   (Changed by Sean Reifschneider; :issue:`8451`.)
 
-* The :attr:`sys.version_info` value is now a named tuple, with attributes
+* The :data:`sys.version_info` value is now a named tuple, with attributes
   named :attr:`!major`, :attr:`!minor`, :attr:`!micro`,
   :attr:`!releaselevel`, and :attr:`!serial`.  (Contributed by Ross
   Light; :issue:`4285`.)

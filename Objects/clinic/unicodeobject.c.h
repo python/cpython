@@ -703,10 +703,9 @@ PyDoc_STRVAR(unicode_isprintable__doc__,
 "isprintable($self, /)\n"
 "--\n"
 "\n"
-"Return True if the string is printable, False otherwise.\n"
+"Return True if all characters in the string are printable, False otherwise.\n"
 "\n"
-"A string is printable if all of its characters are considered printable in\n"
-"repr() or if it is empty.");
+"A character is printable if repr() may use it in its output.");
 
 #define UNICODE_ISPRINTABLE_METHODDEF    \
     {"isprintable", (PyCFunction)unicode_isprintable, METH_NOARGS, unicode_isprintable__doc__},
@@ -1888,4 +1887,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9fee62bd337f809b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b7d75c4898e8198d input=a9049054013a1b77]*/

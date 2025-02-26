@@ -1,0 +1,3 @@
+Fix bugs where :class:`sqlite3.Row` objects could segfault if their
+inherited :attr:`~sqlite3.Cursor.description` was set to ``None``. Patch by
+Erlend Aasland.

@@ -35,8 +35,15 @@ framelocalsproxy_getval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
     if (kind == CO_FAST_FREE || kind & CO_FAST_CELL) {
         // The cell was set when the frame was created from
         // the function's closure.
-        assert(PyCell_Check(value));
-        cell = value;
+        // GH-128396: With PEP 709, it's possible to have a fast variable in
+        // an inlined comprehension that has the same name as the cell variable
+        // in the frame, where the `kind` obtained from frame can not guarantee
+        // that the variable is a cell.
+        // If the variable is not a cell, we are okay with it and we can simply
+        // return the value.
+        if (PyCell_Check(value)) {
+            cell = value;
+        }
     }
 
     if (cell != NULL) {
