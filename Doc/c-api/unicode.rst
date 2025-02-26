@@ -609,8 +609,10 @@ APIs:
 
 .. c:function:: void PyUnicode_Append(PyObject **p_left, PyObject *right)
 
-   Append the string *right* to the end of *p_left*.  (In particular, a :exc:`SystemError`
-   if *p_left* or *right* is ``NULL``, or if either is not a Unicode object).
+   Append the string *right* to the end of *p_left*.
+   *p_left* must point to a :term:`strong reference` to a Unicode object.
+
+   On error, set *p_left* to ``NULL`` and set an exception.
 
 
 .. c:function:: const char* PyUnicode_GetDefaultEncoding(void)
