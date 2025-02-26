@@ -1,21 +1,21 @@
-This pull request addresses the issue described in `issue #129538 <https://github.com/python/cpython/issues/129538>`_, where the `IPv6Interface.ip` loses the scope ID information when accessing the IP address.
+This pull request addresses the issue described in `issue #129538 <https://github.com/python/cpython/issues/129538>`_, where the ``IPv6Interface.ip`` loses the scope ID information when accessing the IP address.
 
-The problem occurs when an IPv6 address with a scope ID is converted into an `IPv6Interface` and then accessed via the `ip` property, resulting in the loss of the scope ID information. This behavior is unexpected and not documented.
+The problem occurs when an IPv6 address with a scope ID is converted into an ``IPv6Interface`` and then accessed via the ``ip`` property, resulting in the loss of the scope ID information. This behavior is unexpected and not documented.
 
 Minimal Example Demonstrating the Issue::
 
-    addr = ipaddress.IPv6Address("fe80::%10")
-    addr_with_prefix = ipaddress.IPv6Interface((addr, 64))
-    print(addr_with_prefix.ip)  # Expected: IPv6Address('fe80::%10'), Actual: IPv6Address('fe80::')
+   addr = ipaddress.IPv6Address("fe80::%10")
+   addr_with_prefix = ipaddress.IPv6Interface((addr, 64))
+   print(addr_with_prefix.ip)  # Expected: IPv6Address('fe80::%10'), Actual: IPv6Address('fe80::')
 
 Changes Made:
-1. Fix in `IPv6Interface` Class:
-   - Updated the `IPv6Interface` class to ensure the scope ID is preserved when converting the IP address.
-   - Modified the `ip` property to include the scope ID in the address string.
+1. Fix in ``IPv6Interface`` Class:
+   - Updated the ``IPv6Interface`` class to ensure the scope ID is preserved when converting the IP address.
+   - Modified the ``ip`` property to include the scope ID in the address string.
 
 2. Added Test Case:
-   - Added a test case to verify that the scope ID is preserved when converting the IP address in the `IPv6Interface` class.
+   - Added a test case to verify that the scope ID is preserved when converting the IP address in the ``IPv6Interface`` class.
 
 Tests and Documentation:
-- Updated the tests in `Lib/test/test_ipaddress.py` to include the new test case.
+- Updated the tests in ``Lib/test/test_ipaddress.py`` to include the new test case.
 - No changes to documentation as the behavior is expected and intuitive.
