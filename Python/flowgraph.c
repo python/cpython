@@ -2496,11 +2496,11 @@ ref_stack_fini(ref_stack *stack)
 
 typedef enum {
     // The loaded reference is still on the stack when the local is killed
-    LOCAL_KILLED_ON_STACK = 1,
+    SUPPORT_KILLED  = 1,
     // The loaded reference is stored into a local
-    STORED_AS_LOCAL       = 2,
+    STORED_AS_LOCAL = 2,
     // The loaded reference is still on the stack at the end of the basic block
-    REF_UNCONSUMED        = 4,
+    REF_UNCONSUMED  = 4,
 } LoadFastInstrFlag;
 
 static void
@@ -2510,7 +2510,7 @@ kill_local(uint8_t *instr_flags, ref_stack *refs, int local)
         ref r = ref_stack_at(refs, i);
         if (r.local == local) {
             assert(r.instr >= 0);
-            instr_flags[r.instr] |= LOCAL_KILLED_ON_STACK;
+            instr_flags[r.instr] |= SUPPORT_KILLED;
         }
     }
 }
@@ -2519,7 +2519,7 @@ static void
 store_local(uint8_t *instr_flags, ref_stack *refs, int local, ref r)
 {
     kill_local(instr_flags, refs, local);
-    if (r.instr != -1) {
+    if (r.instr != DUMMY_INSTR) {
         instr_flags[r.instr] |= STORED_AS_LOCAL;
     }
 }
@@ -2534,6 +2534,43 @@ load_fast_push_block(basicblock ***sp, basicblock *target, int start_depth)
     }
 }
 
+/*
+ * Strength reduce LOAD_FAST{_LOAD_FAST} instructions into weaker variants that
+ * load borrowed references onto the operand stack.
+ *
+ * This is only safe when we can prove that the reference in the frame outlives
+ * the borrowed reference produced by the instruction. We make this tractable
+ * by enforcing the following lifetimes:
+ *
+ * 1. Borrowed references loaded onto the operand stack live until the end of
+ *    the instruction that consumes them from the stack. Any borrowed
+ *    references that would escape into the heap (e.g. into frame objects or
+ *    generators) are converted into new, strong references.
+ *
+ * 2. Locals live until they are either killed by an instruction
+ *    (e.g. STORE_FAST) or the frame is unwound. Any local that is overwritten
+ *    via `f_locals` is added to a list owned by the frame object.
+ *
+ * To simplify the problem of detecting which supporting references in the
+ * frame are killed by instructions that overwrite locals, we only allow
+ * borrowed references to be stored as a local in the frame if they were passed
+ * as an argument. {RETURN,YIELD}_VALUE convert borrowed references into new,
+ * strong references.
+ *
+ * Using the above, we can optimize any LOAD_FAST{_LOAD_FAST} instructions
+ * that meet the following criteria:
+ *
+ * 1. The produced reference must be consumed from the stack before the
+ *    supporting reference in the frame is killed.
+ *
+ * 2. The produced reference cannot be stored as a local.
+ *
+ * We use abstract interpretation to identify instructions that meet these
+ * criteria. For each basic block, we simulate the effect the bytecode has on a
+ * stack of abstract references and note any instructions that violate the
+ * criteria above. Once we've processed all the instructions in a block, any
+ * non-violating LOAD_FAST{_LOAD_FAST} can be optimized.
+ */
 static int
 optimize_load_fast(cfg_builder *g)
 {
