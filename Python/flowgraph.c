@@ -2544,8 +2544,8 @@ optimize_load_fast(cfg_builder *g)
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         max_instrs = Py_MAX(max_instrs, b->b_iused);
     }
-    size_t instr_flags_size = max_instrs * sizeof(bool);
-    uint8_t *instr_flags = PyMem_Calloc(max_instrs, instr_flags_size);
+    size_t instr_flags_size = max_instrs * sizeof(uint8_t);
+    uint8_t *instr_flags = PyMem_Malloc(instr_flags_size);
     if (instr_flags == NULL) {
         PyErr_NoMemory();
         return ERROR;
@@ -2566,7 +2566,7 @@ optimize_load_fast(cfg_builder *g)
         assert(block->b_startdepth > -1);
 
         // Reset per-block state.
-        memset(instr_flags, 0, instr_flags_size);
+        memset(instr_flags, 0, block->b_iused * sizeof(*instr_flags));
 
         // Reset the stack of refs. We don't track references on the stack
         // across basic blocks, but the bytecode will expect their
