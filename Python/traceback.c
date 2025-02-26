@@ -1127,7 +1127,92 @@ format_entry(char *entry_str, const char *the_entry, Py_ssize_t *length_ptr)
 
 /* This is for faulthandler.
  * Apparently, backtrace() doesn't play well across DLL boundaries on macOS */
-#if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE) && defined(HAVE_BACKTRACE_SYMBOLS)
+#if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE)
+
+#if __ELF_NATIVE_CLASS == 32
+# define WORD_WIDTH 8
+#else
+/* We assume 64bits.  */
+# define WORD_WIDTH 16
+#endif
+void
+py_backtrace_symbols(void *const *array, Py_ssize_t size, char **result, Py_ssize_t result_size)
+{
+    Dl_info info[size];
+    int status[size];
+    Py_ssize_t total = 0;
+    char **result;
+    /* Fill in the information we can get from `dladdr'.  */
+    for (Py_ssize_t i = 0; i < size; ++i)
+    {
+        struct link_map *map;
+        status[i] = dladdr1(array[i], &info[i], &map, RTLD_DL_LINKMAP);
+        if (status[i] && info[i].dli_fname && info[i].dli_fname[0] != '\0') {
+            /* We have some info, compute the length of the string which will be
+                "<file-name>(<sym-name>+offset) [address].  */
+            total += (strlen (info[i].dli_fname ?: "")
+                + strlen (info[i].dli_sname ?: "")
+                + 3 + WORD_WIDTH + 3 + WORD_WIDTH + 5);
+            /* The load bias is more useful to the user than the load
+                address.  The use of these addresses is to calculate an
+                address in the ELF file, so its prelinked bias is not
+                something we want to subtract out.  */
+            info[i].dli_fbase = (void *) map->l_addr;
+        }
+        else {
+            total += 5 + WORD_WIDTH;
+        }
+    }
+    /* Allocate memory for the result.  */
+    result = (char **) malloc(size * sizeof (char *) + total);
+    if (result == NULL) {
+        return NULL;
+    }
+    char *last = (char *) (result + size);
+    for (Py_ssize_t i = 0; i < size; ++i)
+    {
+        result[i] = last;
+        if (status[i]
+            && info[i].dli_fname != NULL
+            && info[i].dli_fname[0] != '\0') {
+            if (info[i].dli_sname == NULL) {
+                /* We found no symbol name to use, so describe it as
+                    relative to the file.  */
+                info[i].dli_saddr = info[i].dli_fbase;
+            }
+            if (info[i].dli_sname == NULL
+                && info[i].dli_saddr == 0) {
+                last += 1 + sprintf(last, "%s(%s) [%p]",
+                                    info[i].dli_fname ?: "",
+                                    info[i].dli_sname ?: "",
+                                    array[i]);
+            }
+            else {
+                char sign;
+                ptrdiff_t offset;
+                if (array[i] >= (void *)info[i].dli_saddr) {
+                    sign = '+';
+                    offset = array[i] - info[i].dli_saddr;
+                }
+                else {
+                    sign = '-';
+                    offset = info[i].dli_saddr - array[i];
+                }
+                last += 1 + sprintf(last,
+                                    "%s(%s%c%#tx) [%p]",
+                                    info[i].dli_fname ?: "",
+                                    info[i].dli_sname ?: "",
+                                    sign, offset, array[i]);
+            }
+        }
+        else {
+            last += 1 + sprintf(last, "[%p]", array[i]);
+        }
+    }
+    assert(last <= (char *) result + size * sizeof (char *) + total);
+    return result;
+}
+
 void
 _Py_DumpStack(int fd)
 {
