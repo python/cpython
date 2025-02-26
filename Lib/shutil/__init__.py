@@ -1656,18 +1656,39 @@ def main():
     parser = argparse.ArgumentParser(description=description)
 
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-c', '--copy2', nargs=2, metavar=('<src>', '<dst>'), help="Copy a file, preserving metadata")
-    group.add_argument('-m', '--move', nargs=2, metavar=('<src>', '<dst>'), help="Move a file or directory")
-    group.add_argument('-r', '--rmtree', metavar='<path>', help="Remove a directory tree")
-    group.add_argument('-C', '--copytree', nargs=2, metavar=('<src>', '<dst>'), help="Recursively copy a directory")
-    group.add_argument('-a', '--make-archive', nargs=3, metavar=('<base_name>', '<format>', '<root_dir>'), help="Create an archive (zip/tar)")
-    group.add_argument('-x', '--unpack-archive', nargs=2, metavar=('<filename>', '<extract_dir>'), help="Extract an archive")
-    group.add_argument('-d', '--disk-usage', metavar='<path>', help="Show disk usage for a directory")
-    group.add_argument('-w', '--which', metavar='<command>', help="Locate an executable in PATH")
+    group.add_argument('-c', '--copy', nargs=2,
+                       metavar=('<src>', '<dst>'),
+                       help="Copy a file")
+    group.add_argument('-c', '--copy2', nargs=2,
+                       metavar=('<src>', '<dst>'),
+                       help="Copy a file, preserving metadata")
+    group.add_argument('-m', '--move', nargs=2,
+                       metavar=('<src>', '<dst>'),
+                       help="Move a file or directory")
+    group.add_argument('-r', '--rmtree',
+                       metavar='<path>',
+                       help="Remove a directory tree")
+    group.add_argument('-C', '--copytree', nargs=2,
+                       metavar=('<src>', '<dst>'),
+                       help="Recursively copy a directory")
+    group.add_argument('-a', '--make-archive', nargs=3,
+                       metavar=('<base_name>', '<format>', '<root_dir>'),
+                       help="Create an archive (zip/tar)")
+    group.add_argument('-x', '--unpack-archive', nargs=2,
+                       metavar=('<filename>', '<extract_dir>'),
+                       help="Extract an archive")
+    group.add_argument('-d', '--disk-usage',
+                       metavar='<path>',
+                       help="Show disk usage for a directory")
+    group.add_argument('-w', '--which',
+                       metavar='<command>',
+                       help="Locate an executable in PATH")
 
     args = parser.parse_args()
 
-    if args.copy2:
+    if args.copy:
+        copy(*args.copy)
+    elif args.copy2:
         copy2(*args.copy2)
     elif args.move:
         move(*args.move)
