@@ -1,0 +1,2 @@
+Add the ``idle`` resource for flagging tests that need an idle system as
+they're sensitive to timing.
