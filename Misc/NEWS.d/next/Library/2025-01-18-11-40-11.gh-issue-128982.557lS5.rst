@@ -1,2 +1,0 @@
-Improve the performance of :func:`!http.cookiejar.join_header_words` by up
-to 35%. Patch by Bénédikt Tran.
