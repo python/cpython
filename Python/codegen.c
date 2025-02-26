@@ -4885,6 +4885,9 @@ codegen_with(compiler *c, stmt_ty s, int pos)
 static int
 codegen_visit_expr(compiler *c, expr_ty e)
 {
+    if (Py_EnterRecursiveCall(" during compilation")) {
+        return ERROR;
+    }
     location loc = LOC(e);
     switch (e->kind) {
     case NamedExpr_kind:

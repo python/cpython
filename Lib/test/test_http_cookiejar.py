@@ -227,10 +227,19 @@ class HeaderTests(unittest.TestCase):
         self.assertEqual(parse_ns_headers([hdr]), expected)
 
     def test_join_header_words(self):
-        joined = join_header_words([[("foo", None), ("bar", "baz")]])
-        self.assertEqual(joined, "foo; bar=baz")
-
-        self.assertEqual(join_header_words([[]]), "")
+        for src, expected in [
+            ([[("foo", None), ("bar", "baz")]], "foo; bar=baz"),
+            (([]), ""),
+            (([[]]), ""),
+            (([[("a", "_")]]), "a=_"),
+            (([[("a", ";")]]), 'a=";"'),
+            ([[("n", None), ("foo", "foo;_")], [("bar", "foo_bar")]],
+             'n; foo="foo;_", bar=foo_bar'),
+            ([[("n", "m"), ("foo", None)], [("bar", "foo_bar")]],
+             'n=m; foo, bar=foo_bar'),
+        ]:
+            with self.subTest(src=src):
+                self.assertEqual(join_header_words(src), expected)
 
     def test_split_header_words(self):
         tests = [
@@ -286,7 +295,10 @@ Got:          '%s'
              'foo=bar; port="80,81"; discard, bar=baz'),
 
             (r'Basic realm="\"foo\\\\bar\""',
-             r'Basic; realm="\"foo\\\\bar\""')
+             r'Basic; realm="\"foo\\\\bar\""'),
+
+            ('n; foo="foo;_", bar=foo!_',
+             'n; foo="foo;_", bar="foo!_"'),
             ]
 
         for arg, expect in tests:

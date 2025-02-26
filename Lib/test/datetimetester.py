@@ -504,6 +504,9 @@ class HarmlessMixedComparison:
 #############################################################################
 # timedelta tests
 
+class SubclassTimeDelta(timedelta):
+    sub_var = 1
+
 class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
 
     theclass = timedelta
@@ -787,6 +790,15 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
                          "%s(days=1, microseconds=100)" % name)
         self.assertEqual(repr(self.theclass(seconds=1, microseconds=100)),
                          "%s(seconds=1, microseconds=100)" % name)
+
+    def test_repr_subclass(self):
+        """Subclasses should have bare names in the repr (gh-107773)."""
+        td = SubclassTimeDelta(days=1)
+        self.assertEqual(repr(td), "SubclassTimeDelta(days=1)")
+        td = SubclassTimeDelta(seconds=30)
+        self.assertEqual(repr(td), "SubclassTimeDelta(seconds=30)")
+        td = SubclassTimeDelta(weeks=2)
+        self.assertEqual(repr(td), "SubclassTimeDelta(days=14)")
 
     def test_roundtrip(self):
         for td in (timedelta(days=999999999, hours=23, minutes=59,
@@ -1223,6 +1235,15 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             # Verify identity via reconstructing from pieces.
             dt2 = self.theclass(dt.year, dt.month, dt.day)
             self.assertEqual(dt, dt2)
+
+    def test_repr_subclass(self):
+        """Subclasses should have bare names in the repr (gh-107773)."""
+        td = SubclassDate(1, 2, 3)
+        self.assertEqual(repr(td), "SubclassDate(1, 2, 3)")
+        td = SubclassDate(2014, 1, 1)
+        self.assertEqual(repr(td), "SubclassDate(2014, 1, 1)")
+        td = SubclassDate(2010, 10, day=10)
+        self.assertEqual(repr(td), "SubclassDate(2010, 10, 10)")
 
     def test_ordinal_conversions(self):
         # Check some fixed values.
@@ -3587,6 +3608,15 @@ class TestDateTime(TestDate):
         self.assertEqual(dt, dt_rt)
         self.assertIsInstance(dt_rt, DateTimeSubclass)
 
+    def test_repr_subclass(self):
+        """Subclasses should have bare names in the repr (gh-107773)."""
+        td = SubclassDatetime(2014, 1, 1)
+        self.assertEqual(repr(td), "SubclassDatetime(2014, 1, 1, 0, 0)")
+        td = SubclassDatetime(2010, 10, day=10)
+        self.assertEqual(repr(td), "SubclassDatetime(2010, 10, 10, 0, 0)")
+        td = SubclassDatetime(2010, 10, 2, second=3)
+        self.assertEqual(repr(td), "SubclassDatetime(2010, 10, 2, 0, 0, 3)")
+
 
 class TestSubclassDateTime(TestDateTime):
     theclass = SubclassDatetime
@@ -3896,6 +3926,19 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
                          "%s(12, 2, 3)" % name)
         self.assertEqual(repr(self.theclass(23, 15, 0, 0)),
                          "%s(23, 15)" % name)
+
+    def test_repr_subclass(self):
+        """Subclasses should have bare names in the repr (gh-107773)."""
+        td = SubclassTime(hour=1)
+        self.assertEqual(repr(td), "SubclassTime(1, 0)")
+        td = SubclassTime(hour=2, minute=30)
+        self.assertEqual(repr(td), "SubclassTime(2, 30)")
+        td = SubclassTime(hour=2, minute=30, second=11)
+        self.assertEqual(repr(td), "SubclassTime(2, 30, 11)")
+        td = SubclassTime(minute=30, second=11, fold=0)
+        self.assertEqual(repr(td), "SubclassTime(0, 30, 11)")
+        td = SubclassTime(minute=30, second=11, fold=1)
+        self.assertEqual(repr(td), "SubclassTime(0, 30, 11, fold=1)")
 
     def test_resolution_info(self):
         self.assertIsInstance(self.theclass.min, self.theclass)

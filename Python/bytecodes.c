@@ -3298,12 +3298,9 @@ dummy_func(
 
             assert(val_o && PyExceptionInstance_Check(val_o));
             exc = PyExceptionInstance_Class(val_o);
-            tb = PyException_GetTraceback(val_o);
+            PyObject *original_tb = tb = PyException_GetTraceback(val_o);
             if (tb == NULL) {
                 tb = Py_None;
-            }
-            else {
-                Py_DECREF(tb);
             }
             assert(PyStackRef_LongCheck(lasti));
             (void)lasti; // Shut up compiler warning if asserts are off
@@ -3312,6 +3309,7 @@ dummy_func(
             PyObject *res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
                     (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             ERROR_IF(res_o == NULL, error);
+            Py_XDECREF(original_tb);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
@@ -4510,8 +4508,8 @@ dummy_func(
         macro(INSTRUMENTED_CALL_KW) =
             counter/1 +
             unused/2 +
-            _MONITOR_CALL_KW +
             _MAYBE_EXPAND_METHOD_KW +
+            _MONITOR_CALL_KW +
             _DO_CALL_KW;
 
         op(_CHECK_IS_NOT_PY_CALLABLE_KW, (callable[1], unused[1], unused[oparg], kwnames -- callable[1], unused[1], unused[oparg], kwnames)) {

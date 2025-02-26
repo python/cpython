@@ -43,7 +43,7 @@ jobs:
     if: fromJSON(needs.build-context.outputs.run-docs)
     uses: ./.github/workflows/reusable-docs.yml
 
-  check_autoconf_regen:
+  check-autoconf-regen:
     name: 'Check if Autoconf files are up to date'
     # Don't use ubuntu-latest but a specific version to make the job
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
@@ -86,7 +86,7 @@ jobs:
             exit 1
           fi
 
-  check_generated_files:
+  check-generated-files:
     name: 'Check if generated files are up to date'
     # Don't use ubuntu-latest but a specific version to make the job
     # reproducible: to get the same tools versions (autoconf, aclocal, ...)
@@ -147,7 +147,7 @@ jobs:
         if: github.event_name == 'pull_request'  # $GITHUB_EVENT_NAME
         run: make check-c-globals
 
-  build_windows:
+  build-windows:
     name: >-
       Windows
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
@@ -179,7 +179,7 @@ jobs:
       arch: ${{ matrix.arch }}
       free-threading: ${{ matrix.free-threading }}
 
-  build_windows_msi:
+  build-windows-msi:
     name: >-  # ${{ '' } is a hack to nest jobs under the same sidebar category
       Windows MSI${{ '' }}
     needs: build-context
@@ -194,7 +194,7 @@ jobs:
     with:
       arch: ${{ matrix.arch }}
 
-  build_macos:
+  build-macos:
     name: >-
       macOS
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
@@ -228,7 +228,7 @@ jobs:
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
 
-  build_ubuntu:
+  build-ubuntu:
     name: >-
       Ubuntu
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
@@ -260,7 +260,7 @@ jobs:
       free-threading: ${{ matrix.free-threading }}
       os: ${{ matrix.os }}
 
-  build_ubuntu_ssltests:
+  build-ubuntu-ssltests:
     name: 'Ubuntu SSL tests with OpenSSL'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -322,7 +322,7 @@ jobs:
     - name: SSL tests
       run: ./python Lib/test/ssltests.py
 
-  build_wasi:
+  build-wasi:
     name: 'WASI'
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
@@ -330,7 +330,7 @@ jobs:
     with:
       config_hash: ${{ needs.build-context.outputs.config-hash }}
 
-  test_hypothesis:
+  test-hypothesis:
     name: "Hypothesis tests on Ubuntu"
     runs-on: ubuntu-24.04
     timeout-minutes: 60
@@ -445,8 +445,7 @@ jobs:
         name: hypothesis-example-db
         path: ${{ env.CPYTHON_BUILDDIR }}/.hypothesis/examples/
 
-
-  build_asan:
+  build-asan:
     name: 'Address sanitizer'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -509,7 +508,7 @@ jobs:
     - name: Tests
       run: xvfb-run make ci
 
-  build_tsan:
+  build-tsan:
     name: >-
       Thread sanitizer
       ${{ fromJSON(matrix.free-threading) && '(free-threading)' || '' }}
@@ -528,6 +527,7 @@ jobs:
   cross-build-linux:
     name: Cross build Linux
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     steps:
@@ -592,8 +592,8 @@ jobs:
           output-sarif: true
           sanitizer: ${{ matrix.sanitizer }}
       - name: Upload crash
-        uses: actions/upload-artifact@v4
         if: failure() && steps.build.outcome == 'success'
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.sanitizer }}-artifacts
           path: ./out/artifacts
@@ -606,36 +606,35 @@ jobs:
 
   all-required-green:  # This job does nothing and is only used for the branch protection
     name: All required checks pass
-    if: always()
-
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs:
     - build-context  # Transitive dependency, needed to access `run-tests` value
     - check-docs
-    - check_autoconf_regen
-    - check_generated_files
-    - build_macos
-    - build_ubuntu
-    - build_ubuntu_ssltests
-    - build_wasi
-    - build_windows
-    - build_windows_msi
+    - check-autoconf-regen
+    - check-generated-files
+    - build-windows
+    - build-windows-msi
+    - build-macos
+    - build-ubuntu
+    - build-ubuntu-ssltests
+    - build-wasi
+    - test-hypothesis
+    - build-asan
+    - build-tsan
     - cross-build-linux
-    - test_hypothesis
-    - build_asan
-    - build_tsan
     - cifuzz
-
-    runs-on: ubuntu-latest
+    if: always()
 
     steps:
     - name: Check whether the needed jobs succeeded or failed
       uses: re-actors/alls-green@05ac9388f0aebcb5727afa17fcccfecd6f8ec5fe
       with:
         allowed-failures: >-
-          build_ubuntu_ssltests,
-          build_windows_msi,
+          build-windows-msi,
+          build-ubuntu-ssltests,
+          test-hypothesis,
           cifuzz,
-          test_hypothesis,
         allowed-skips: >-
           ${{
             !fromJSON(needs.build-context.outputs.run-docs)
@@ -647,15 +646,15 @@ jobs:
           ${{
             needs.build-context.outputs.run-tests != 'true'
             && '
-            check_autoconf_regen,
-            check_generated_files,
-            build_macos,
-            build_ubuntu,
-            build_ubuntu_ssltests,
-            build_wasi,
-            build_asan,
-            build_tsan,
-            test_hypothesis,
+            check-autoconf-regen,
+            check-generated-files,
+            build-macos,
+            build-ubuntu,
+            build-ubuntu-ssltests,
+            build-wasi,
+            test-hypothesis,
+            build-asan,
+            build-tsan,
             cross-build-linux,
             '
             || ''
@@ -663,7 +662,7 @@ jobs:
           ${{
             !fromJSON(needs.build-context.outputs.run-windows-tests)
             && '
-            build_windows,
+            build-windows,
             '
             || ''
           }}
