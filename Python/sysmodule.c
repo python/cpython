@@ -3141,6 +3141,7 @@ static PyStructSequence_Field flags_fields[] = {
     {"safe_path", "-P"},
     {"int_max_str_digits",      "-X int_max_str_digits"},
     {"gil",                     "-X gil"},
+    {"traceback_timestamps",    "-X traceback_timestamps"},
     {0}
 };
 
@@ -3150,7 +3151,7 @@ static PyStructSequence_Desc flags_desc = {
     "sys.flags",        /* name */
     flags__doc__,       /* doc */
     flags_fields,       /* fields */
-    18
+    18  /* NB - do not increase. new fields are not tuple fields. GH-122575 */
 };
 
 static void
@@ -3244,6 +3245,20 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
 #else
     SetFlagObj(PyLong_FromLong(1));
 #endif
+    PyObject *ts_str;
+    if (config->traceback_timestamps != NULL && config->traceback_timestamps[0] != L'\0') {
+        ts_str = PyUnicode_FromWideChar(config->traceback_timestamps, -1);
+        if (ts_str == NULL) {
+            return -1;
+        }
+    }
+    else {
+        ts_str = PyUnicode_FromString("");
+    }
+
+    /* Set the flag with our string value */
+    SetFlagObj(ts_str);
+    /* REMEMBER: the order of the SetFlag ops MUST match that of flags_fields */
 #undef SetFlagObj
 #undef SetFlag
     return 0;

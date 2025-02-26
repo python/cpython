@@ -181,8 +181,9 @@ def format_exception_only(exc, /, value=_sentinel, *, show_group=False, **kwargs
     return list(te.format_exception_only(show_group=show_group, colorize=colorize))
 
 
-_TIMESTAMP_FORMAT = os.environ.get("PYTHON_TRACEBACK_TIMESTAMPS", "")
-match _TIMESTAMP_FORMAT:
+match _TIMESTAMP_FORMAT := getattr(sys.flags, "traceback_timestamps", ""):
+    case "" | "0":
+            _TIMESTAMP_FORMAT = ""
     case "us" | "1":
         def _timestamp_formatter(ns):
             return f"<@{ns/1e9:.6f}>"
@@ -194,7 +195,7 @@ match _TIMESTAMP_FORMAT:
             from datetime import datetime
             return f"<@{datetime.fromtimestamp(ns/1e9).isoformat()}>"
     case _:
-        _TIMESTAMP_FORMAT = ""
+        raise ValueError(f"Invalid sys.flags.traceback_timestamp={_TIMESTAMP_FORMAT!r}")
 
 
 # The regular expression to match timestamps as formatted in tracebacks.

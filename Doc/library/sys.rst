@@ -594,6 +594,11 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       * - .. attribute:: flags.warn_default_encoding
         - :option:`-X warn_default_encoding <-X>`
 
+      * - .. attribute:: flags.traceback_timestamps
+        - :option:`-X traceback_timestamps <-X>`.  This is a string containing
+          the selected format (``us``, ``ns``, ``iso``),  or an empty string
+          when disabled.
+
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
 
@@ -619,6 +624,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionchanged:: 3.11
       Added the ``int_max_str_digits`` attribute.
+
+   .. versionchanged:: next
+      Added the ``traceback_timestamps`` attribute.
 
 
 .. data:: float_info

@@ -8,15 +8,14 @@
 
 --------------
 
-This module provides a standard interface to extract, format and print
-stack traces of Python programs. It is more flexible than the
-interpreter's default traceback display, and therefore makes it
-possible to configure certain aspects of the output. Finally,
-it contains a utility for capturing enough information about an
-exception to print it later, without the need to save a reference
-to the actual exception. Since exceptions can be the roots of large
-objects graph, this utility can significantly improve
-memory management.
+This module provides a standard interface to extract, format and print stack
+traces of Python programs. While it has been around forever, it is used by
+default for more flexible traceback display as of Python 3.13. It enables
+configuring various aspects of the output. Finally, it contains utility classes
+for capturing enough information about an exception to print it later, without
+the need to save a reference to the actual exception. Since exceptions can be
+the roots of large objects graph, that can significantly improve memory
+management.
 
 .. index:: pair: object; traceback
 
@@ -48,6 +47,10 @@ The module's API can be divided into two parts:
    Output is colorized by default and can be
    :ref:`controlled using environment variables <using-on-controlling-color>`.
 
+.. versionadded:: next
+   Tracebacks can now contain timestamps. Display of which can be configured by
+   the :envvar:`PYTHON_TRACEBACK_TIMESTAMPS` environment variable or the
+   :option:`-X traceback_timestamps <-X>` command line option.
 
 Module-Level Functions
 ----------------------
@@ -105,8 +108,11 @@ Module-Level Functions
    printed as well, like the interpreter itself does when printing an unhandled
    exception.
 
-   If *no_timestamp* is ``True`` and :envvar:`PYTHON_TRACEBACK_TIMESTAMPS`
-   is enabled, any timestamp after the exception message will be omitted.
+   If *no_timestamp* is ``True`` and a traceback timestamp format is enabled via the
+   :envvar:`PYTHON_TRACEBACK_TIMESTAMPS` environment variable or the
+   :option:`-X traceback_timestamps <-X>` option, any timestamp after the exception
+   message will be omitted. This is useful for tests or other situations where
+   you need consistent output regardless of when exceptions occur.
 
    .. versionchanged:: 3.5
       The *etype* argument is ignored and inferred from the type of *value*.
@@ -203,8 +209,12 @@ Module-Level Functions
    :exc:`BaseExceptionGroup`, the nested exceptions are included as
    well, recursively, with indentation relative to their nesting depth.
 
-   If *no_timestamp* is ``True`` and :envvar:`PYTHON_TRACEBACK_TIMESTAMPS`
-   is enabled, any timestamp after the exception message will be omitted.
+   If *no_timestamp* is ``True`` and a traceback timestamp formatting is enabled
+   via the :envvar:`PYTHON_TRACEBACK_TIMESTAMPS` environment variable or the
+   :option:`-X traceback_timestamps <-X>` command line option, any timestamp
+   after the exception message will be omitted. This is useful for tests or
+   other situations where you need consistent output regardless of when
+   exceptions occur.
 
    .. versionchanged:: 3.10
       The *etype* parameter has been renamed to *exc* and is now
@@ -230,8 +240,12 @@ Module-Level Functions
    containing internal newlines.  When these lines are concatenated and printed,
    exactly the same text is printed as does :func:`print_exception`.
 
-   If *no_timestamp* is ``True`` and :envvar:`PYTHON_TRACEBACK_TIMESTAMPS`
-   is enabled, any timestamp after the exception message will be omitted.
+   If *no_timestamp* is ``True`` and a traceback timestamp formatting is enabled
+   via the :envvar:`PYTHON_TRACEBACK_TIMESTAMPS` environment variable or the
+   :option:`-X traceback_timestamps <-X>` command line option, any timestamp
+   after the exception message will be omitted. This is useful for tests or
+   other situations where you need consistent output regardless of when
+   exceptions occur.
 
    .. versionchanged:: 3.5
       The *etype* argument is ignored and inferred from the type of *value*.
@@ -289,9 +303,12 @@ Module-Level Functions
 
    Given *output* of ``str`` or ``bytes`` presumed to contain a rendered
    traceback, if traceback timestamps are enabled (see
-   :envvar:`PYTHON_TRACEBACK_TIMESTAMPS`) returns output of the same type with
-   all formatted exception message timestamp values removed.  When disabled,
-   returns *output* unchanged.
+   :envvar:`PYTHON_TRACEBACK_TIMESTAMPS` or the :option:`-X traceback_timestamps <-X>`
+   option) returns output of the same type with all formatted exception message timestamp
+   values removed. When timestamps are disabled, returns *output* unchanged.
+
+   This function is useful when you need to compare exception outputs or process
+   them without the timestamp information.
 
    .. versionadded:: next
 
@@ -805,4 +822,3 @@ With the helper class, we have more options::
        1/0
        ~^~
    ZeroDivisionError: division by zero
-

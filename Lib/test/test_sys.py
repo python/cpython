@@ -822,12 +822,21 @@ class SysModuleTest(unittest.TestCase):
                  "warn_default_encoding", "safe_path", "int_max_str_digits")
         for attr in attrs:
             self.assertTrue(hasattr(sys.flags, attr), attr)
-            attr_type = bool if attr in ("dev_mode", "safe_path") else int
+            match attr:
+                case "dev_mode" | "safe_path":
+                    attr_type = bool
+                case _:
+                    attr_type = int
             self.assertEqual(type(getattr(sys.flags, attr)), attr_type, attr)
         self.assertTrue(repr(sys.flags))
         self.assertEqual(len(sys.flags), len(attrs))
 
         self.assertIn(sys.flags.utf8_mode, {0, 1, 2})
+
+        # non-tuple sequence fields
+        self.assertIsInstance(sys.flags.gil, int)
+        self.assertIsInstance(sys.flags.traceback_timestamps, str)
+
 
     def assert_raise_on_new_sys_type(self, sys_attr):
         # Users are intentionally prevented from creating new instances of
@@ -1845,11 +1854,9 @@ class SizeofTest(unittest.TestCase):
             # traceback
             if tb is not None:
                 check(tb, size('2P2i'))
-        # symtable entry
-        # XXX
-        # sys.flags
-        # FIXME: The +1 will not be necessary once gh-122575 is fixed
-        check(sys.flags, vsize('') + self.P * (1 + len(sys.flags)))
+        # TODO: The non_sequence_fields adjustment is due to GH-122575.
+        non_sequence_fields = 2
+        check(sys.flags, vsize('') + self.P * (non_sequence_fields + len(sys.flags)))
 
     def test_asyncgen_hooks(self):
         old = sys.get_asyncgen_hooks()
