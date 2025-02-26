@@ -620,8 +620,9 @@ slice_richcompare(PyObject *v, PyObject *w, int op)
 }
 
 static int
-slice_traverse(PySliceObject *v, visitproc visit, void *arg)
+slice_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PySliceObject *v = _PySlice_CAST(op);
     Py_VISIT(v->start);
     Py_VISIT(v->stop);
     Py_VISIT(v->step);
@@ -687,7 +688,7 @@ PyTypeObject PySlice_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     slice_doc,                                  /* tp_doc */
-    (traverseproc)slice_traverse,               /* tp_traverse */
+    slice_traverse,                             /* tp_traverse */
     0,                                          /* tp_clear */
     slice_richcompare,                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
