@@ -230,6 +230,7 @@ jobs:
     needs: build-context
     if: fromJSON(needs.build-context.outputs.run-windows-msi)
     strategy:
+      fail-fast: false
       matrix:
         arch:
         - x86
@@ -280,6 +281,7 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     strategy:
+      fail-fast: false
       matrix:
         free-threading:
         - false
@@ -479,6 +481,7 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-24.04]
     env:
@@ -542,6 +545,7 @@ jobs:
     needs: build-context
     if: needs.build-context.outputs.run-tests == 'true'
     strategy:
+      fail-fast: false
       matrix:
         free-threading:
         - false
