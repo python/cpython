@@ -62,26 +62,41 @@ class GrammarSnippetBase(SphinxDirective):
 
         group_name = options['group']
         node_location = self.get_location()
-        productions = [
-            self.make_production(
-                line, group_name=group_name, location=node_location
+        production_nodes = []
+        source_line = None
+        for source_line in content:
+            # Start a new production_node if there's text in the first
+            # column of the line. (That means a new rule is starting.)
+            if source_line is None or not source_line[:1].isspace():
+                production_node = addnodes.production(source_line)
+                production_nodes.append(production_node)
+            self.add_production_line(
+                production_node,
+                source_line,
+                group_name=group_name,
+                location=node_location,
             )
-            for line in content
-        ]
         node = addnodes.productionlist(
-            '', *productions, support_smartquotes=False,
+            '', *production_nodes, support_smartquotes=False,
             classes=['highlight'],
         )
         self.set_source_info(node)
         return [node]
 
-    def make_production(self, line: str, *, group_name: str, location: str):
-        production_node = addnodes.production(line)
+    def add_production_line(
+        self,
+        production_node: addnodes.production,
+        source_line: str,
+        *,
+        group_name: str,
+        location: str,
+    ) -> None:
+        """Add one line of content to the given production_node"""
         last_pos = 0
-        for match in self.grammar_re.finditer(line):
+        for match in self.grammar_re.finditer(source_line):
             # Handle text between matches
             if match.start() > last_pos:
-                production_node += nodes.Text(line[last_pos : match.start()])
+                production_node += nodes.Text(source_line[last_pos : match.start()])
             last_pos = match.end()
 
             # Handle matches
@@ -103,8 +118,7 @@ class GrammarSnippetBase(SphinxDirective):
                     production_node += snippet_string_node('', name)
                 case _:
                     raise ValueError('unhandled match')
-        production_node += nodes.Text(line[last_pos:] + '\n')
-        return production_node
+        production_node += nodes.Text(source_line[last_pos:] + '\n')
 
     def make_name_target(
         self,
