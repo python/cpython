@@ -115,7 +115,10 @@ static PyObject*
 get_c_recursion_remaining(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return PyLong_FromLong(tstate->c_recursion_remaining);
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    int remaining = (int)((here_addr - _tstate->c_stack_soft_limit)/PYOS_STACK_MARGIN_BYTES * 50);
+    return PyLong_FromLong(remaining);
 }
 
 
@@ -1992,6 +1995,13 @@ is_static_immortal(PyObject *self, PyObject *op)
     Py_RETURN_FALSE;
 }
 
+static PyObject *
+incref_decref_delayed(PyObject *self, PyObject *op)
+{
+    _PyObject_XDecRefDelayed(Py_NewRef(op));
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2086,6 +2096,7 @@ static PyMethodDef module_functions[] = {
     {"has_deferred_refcount", has_deferred_refcount, METH_O},
     {"get_tracked_heap_size", get_tracked_heap_size, METH_NOARGS},
     {"is_static_immortal", is_static_immortal, METH_O},
+    {"incref_decref_delayed", incref_decref_delayed, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
