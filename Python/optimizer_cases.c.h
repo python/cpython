@@ -1182,23 +1182,12 @@
             break;
         }
 
-        case _CHECK_ATTR_WITH_HINT: {
-            JitOptSymbol *dict;
-            dict = sym_new_not_null(ctx);
-            stack_pointer[0] = dict;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
         case _LOAD_ATTR_WITH_HINT: {
             JitOptSymbol *attr;
             uint16_t hint = (uint16_t)this_instr->operand0;
             attr = sym_new_not_null(ctx);
             (void)hint;
-            stack_pointer[-2] = attr;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = attr;
             break;
         }
 

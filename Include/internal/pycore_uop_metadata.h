@@ -153,8 +153,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CHECK_MANAGED_OBJECT_HAS_VALUES] = HAS_DEOPT_FLAG,
     [_LOAD_ATTR_INSTANCE_VALUE] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_ATTR_MODULE] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
-    [_CHECK_ATTR_WITH_HINT] = HAS_EXIT_FLAG,
-    [_LOAD_ATTR_WITH_HINT] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_DEOPT_FLAG,
+    [_LOAD_ATTR_WITH_HINT] = HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_ATTR_SLOT] = HAS_DEOPT_FLAG,
     [_CHECK_ATTR_CLASS] = HAS_EXIT_FLAG,
     [_LOAD_ATTR_CLASS] = 0,
@@ -336,7 +335,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_CHECK_AND_ALLOCATE_OBJECT] = "_CHECK_AND_ALLOCATE_OBJECT",
     [_CHECK_ATTR_CLASS] = "_CHECK_ATTR_CLASS",
     [_CHECK_ATTR_METHOD_LAZY_DICT] = "_CHECK_ATTR_METHOD_LAZY_DICT",
-    [_CHECK_ATTR_WITH_HINT] = "_CHECK_ATTR_WITH_HINT",
     [_CHECK_CALL_BOUND_METHOD_EXACT_ARGS] = "_CHECK_CALL_BOUND_METHOD_EXACT_ARGS",
     [_CHECK_EG_MATCH] = "_CHECK_EG_MATCH",
     [_CHECK_EXC_MATCH] = "_CHECK_EXC_MATCH",
@@ -827,10 +825,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _LOAD_ATTR_MODULE:
             return 1;
-        case _CHECK_ATTR_WITH_HINT:
-            return 0;
         case _LOAD_ATTR_WITH_HINT:
-            return 2;
+            return 1;
         case _LOAD_ATTR_SLOT:
             return 1;
         case _CHECK_ATTR_CLASS:

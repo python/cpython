@@ -3161,37 +3161,22 @@
             break;
         }
 
-        case _CHECK_ATTR_WITH_HINT: {
-            _PyStackRef owner;
-            PyDictObject *dict;
-            owner = stack_pointer[-1];
-            PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictObject *dict_o = _PyObject_GetManagedDict(owner_o);
-            if (dict_o == NULL) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            assert(PyDict_CheckExact((PyObject *)dict_o));
-            dict = dict_o;
-            stack_pointer[0].bits = (uintptr_t)dict;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
         case _LOAD_ATTR_WITH_HINT: {
-            PyDictObject *dict;
             _PyStackRef owner;
             _PyStackRef attr;
             oparg = CURRENT_OPARG();
-            dict = (PyDictObject *)stack_pointer[-1].bits;
-            owner = stack_pointer[-2];
+            owner = stack_pointer[-1];
             uint16_t hint = (uint16_t)CURRENT_OPERAND0();
+            PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
+            assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
+            if (dict == NULL) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *attr_o;
             if (!LOCK_OBJECT(dict)) {
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     JUMP_TO_JUMP_TARGET();
@@ -3199,8 +3184,6 @@
             }
             if (hint >= (size_t)dict->ma_keys->dk_nentries) {
                 UNLOCK_OBJECT(dict);
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     JUMP_TO_JUMP_TARGET();
@@ -3209,8 +3192,6 @@
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
                 UNLOCK_OBJECT(dict);
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     JUMP_TO_JUMP_TARGET();
@@ -3219,8 +3200,6 @@
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
             if (ep->me_key != name) {
                 UNLOCK_OBJECT(dict);
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     JUMP_TO_JUMP_TARGET();
@@ -3229,8 +3208,6 @@
             attr_o = ep->me_value;
             if (attr_o == NULL) {
                 UNLOCK_OBJECT(dict);
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
                 if (true) {
                     UOP_STAT_INC(uopcode, miss);
                     JUMP_TO_JUMP_TARGET();
@@ -3239,15 +3216,10 @@
             STAT_INC(LOAD_ATTR, hit);
             attr = PyStackRef_FromPyObjectNew(attr_o);
             UNLOCK_OBJECT(dict);
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyStackRef tmp = owner;
-            owner = attr;
-            stack_pointer[-1] = owner;
-            PyStackRef_CLOSE(tmp);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             stack_pointer[-1] = attr;
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(owner);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             break;
         }
 

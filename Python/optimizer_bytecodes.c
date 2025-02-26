@@ -547,11 +547,7 @@ dummy_func(void) {
         }
     }
 
-    op(_CHECK_ATTR_WITH_HINT, (owner -- owner, dict)) {
-        dict = sym_new_not_null(ctx);
-    }
-
-    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict -- attr)) {
+    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr)) {
         attr = sym_new_not_null(ctx);
         (void)hint;
     }

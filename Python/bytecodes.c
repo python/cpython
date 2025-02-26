@@ -2253,57 +2253,45 @@ dummy_func(
             unused/5 +
             _PUSH_NULL_CONDITIONAL;
 
-        op(_CHECK_ATTR_WITH_HINT, (owner -- owner, dict: PyDictObject *)) {
+        op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-
             assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictObject *dict_o = _PyObject_GetManagedDict(owner_o);
-            EXIT_IF(dict_o == NULL);
-            assert(PyDict_CheckExact((PyObject *)dict_o));
-            dict = dict_o;
-        }
-
-        op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict: PyDictObject * -- attr)) {
+            PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
+            DEOPT_IF(dict == NULL);
+            assert(PyDict_CheckExact((PyObject *)dict));
             PyObject *attr_o;
             if (!LOCK_OBJECT(dict)) {
-                POP_INPUT(dict);
                 DEOPT_IF(true);
             }
 
             if (hint >= (size_t)dict->ma_keys->dk_nentries) {
                 UNLOCK_OBJECT(dict);
-                POP_INPUT(dict);
                 DEOPT_IF(true);
             }
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
             if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
                 UNLOCK_OBJECT(dict);
-                POP_INPUT(dict);
                 DEOPT_IF(true);
             }
             PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
             if (ep->me_key != name) {
                 UNLOCK_OBJECT(dict);
-                POP_INPUT(dict);
                 DEOPT_IF(true);
             }
             attr_o = ep->me_value;
             if (attr_o == NULL) {
                 UNLOCK_OBJECT(dict);
-                POP_INPUT(dict);
                 DEOPT_IF(true);
             }
             STAT_INC(LOAD_ATTR, hit);
             attr = PyStackRef_FromPyObjectNew(attr_o);
             UNLOCK_OBJECT(dict);
-            DEAD(dict);
-            DECREF_INPUTS();
+            PyStackRef_CLOSE(owner);
         }
 
         macro(LOAD_ATTR_WITH_HINT) =
             unused/1 +
             _GUARD_TYPE_VERSION +
-            _CHECK_ATTR_WITH_HINT +
             _LOAD_ATTR_WITH_HINT +
             unused/5 +
             _PUSH_NULL_CONDITIONAL;

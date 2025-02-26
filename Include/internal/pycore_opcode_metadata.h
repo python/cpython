@@ -1558,7 +1558,7 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
             return 0;
         }
         case LOAD_ATTR_WITH_HINT: {
-            *effect = Py_MAX(1, (oparg & 1));
+            *effect = Py_MAX(0, (oparg & 1));
             return 0;
         }
         case LOAD_BUILD_CLASS: {
@@ -2139,7 +2139,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[266] = {
     [LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
     [LOAD_ATTR_PROPERTY] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_EXIT_FLAG },
     [LOAD_ATTR_SLOT] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_EXIT_FLAG },
-    [LOAD_ATTR_WITH_HINT] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_DEOPT_FLAG | HAS_EXIT_FLAG },
+    [LOAD_ATTR_WITH_HINT] = { true, INSTR_FMT_IBC00000000, HAS_ARG_FLAG | HAS_NAME_FLAG | HAS_DEOPT_FLAG | HAS_EXIT_FLAG | HAS_ESCAPES_FLAG },
     [LOAD_BUILD_CLASS] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [LOAD_COMMON_CONSTANT] = { true, INSTR_FMT_IB, HAS_ARG_FLAG },
     [LOAD_CONST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_CONST_FLAG },
@@ -2348,7 +2348,7 @@ _PyOpcode_macro_expansion[256] = {
     [LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES] = { .nuops = 4, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, 0, 3 }, { _GUARD_KEYS_VERSION, 2, 3 }, { _LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES, 4, 5 } } },
     [LOAD_ATTR_PROPERTY] = { .nuops = 5, .uops = { { _CHECK_PEP_523, 0, 1 }, { _GUARD_TYPE_VERSION, 2, 1 }, { _LOAD_ATTR_PROPERTY_FRAME, 4, 5 }, { _SAVE_RETURN_OFFSET, OPARG_SAVE_RETURN_OFFSET, 9 }, { _PUSH_FRAME, 0, 9 } } },
     [LOAD_ATTR_SLOT] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _LOAD_ATTR_SLOT, 1, 3 }, { _PUSH_NULL_CONDITIONAL, 0, 9 } } },
-    [LOAD_ATTR_WITH_HINT] = { .nuops = 4, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _CHECK_ATTR_WITH_HINT, 0, 3 }, { _LOAD_ATTR_WITH_HINT, 1, 3 }, { _PUSH_NULL_CONDITIONAL, 0, 9 } } },
+    [LOAD_ATTR_WITH_HINT] = { .nuops = 3, .uops = { { _GUARD_TYPE_VERSION, 2, 1 }, { _LOAD_ATTR_WITH_HINT, 1, 3 }, { _PUSH_NULL_CONDITIONAL, 0, 9 } } },
     [LOAD_BUILD_CLASS] = { .nuops = 1, .uops = { { _LOAD_BUILD_CLASS, 0, 0 } } },
     [LOAD_COMMON_CONSTANT] = { .nuops = 1, .uops = { { _LOAD_COMMON_CONSTANT, 0, 0 } } },
     [LOAD_CONST_IMMORTAL] = { .nuops = 1, .uops = { { _LOAD_CONST_IMMORTAL, 0, 0 } } },

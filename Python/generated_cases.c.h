@@ -8478,7 +8478,6 @@
             INSTRUCTION_STATS(LOAD_ATTR_WITH_HINT);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
-            PyDictObject *dict;
             _PyStackRef attr;
             _PyStackRef null = PyStackRef_NULL;
             /* Skip 1 cache entry */
@@ -8494,22 +8493,18 @@
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
-            // _CHECK_ATTR_WITH_HINT
+            // _LOAD_ATTR_WITH_HINT
             {
+                uint16_t hint = read_u16(&this_instr[4].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-                PyDictObject *dict_o = _PyObject_GetManagedDict(owner_o);
-                if (dict_o == NULL) {
+                PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
+                if (dict == NULL) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
-                assert(PyDict_CheckExact((PyObject *)dict_o));
-                dict = dict_o;
-            }
-            // _LOAD_ATTR_WITH_HINT
-            {
-                uint16_t hint = read_u16(&this_instr[4].cache);
+                assert(PyDict_CheckExact((PyObject *)dict));
                 PyObject *attr_o;
                 if (!LOCK_OBJECT(dict)) {
                     if (true) {
@@ -8556,13 +8551,10 @@
                 STAT_INC(LOAD_ATTR, hit);
                 attr = PyStackRef_FromPyObjectNew(attr_o);
                 UNLOCK_OBJECT(dict);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyStackRef tmp = owner;
-                owner = attr;
-                stack_pointer[-1] = owner;
-                PyStackRef_CLOSE(tmp);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
                 stack_pointer[-1] = attr;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_CLOSE(owner);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             /* Skip 5 cache entries */
             // _PUSH_NULL_CONDITIONAL
