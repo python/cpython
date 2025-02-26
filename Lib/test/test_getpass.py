@@ -13,11 +13,11 @@ try:
     import pwd
 except ImportError:
     pwd = None
-
 try:
     import msvcrt
 except ImportError:
     msvcrt = None
+
 
 @mock.patch('os.environ')
 class GetpassGetuserTest(unittest.TestCase):
