@@ -1648,3 +1648,39 @@ def __getattr__(name):
         )
         return RuntimeError
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+def main():
+    import argparse
+
+    description = 'A simple command-line interface for the shutil module.'
+    parser = argparse.ArgumentParser(description=description)
+
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('-c', '--copy2', nargs=2, metavar=('<src>', '<dst>'), help="Copy a file, preserving metadata")
+    group.add_argument('-m', '--move', nargs=2, metavar=('<src>', '<dst>'), help="Move a file or directory")
+    group.add_argument('-r', '--rmtree', metavar='<path>', help="Remove a directory tree")
+    group.add_argument('-C', '--copytree', nargs=2, metavar=('<src>', '<dst>'), help="Recursively copy a directory")
+    group.add_argument('-a', '--make-archive', nargs=3, metavar=('<base_name>', '<format>', '<root_dir>'), help="Create an archive (zip/tar)")
+    group.add_argument('-x', '--unpack-archive', nargs=2, metavar=('<filename>', '<extract_dir>'), help="Extract an archive")
+    group.add_argument('-d', '--disk-usage', metavar='<path>', help="Show disk usage for a directory")
+    group.add_argument('-w', '--which', metavar='<command>', help="Locate an executable in PATH")
+
+    args = parser.parse_args()
+
+    if args.copy2:
+        copy2(*args.copy2)
+    elif args.move:
+        move(*args.move)
+    elif args.rmtree:
+        rmtree(args.rmtree)
+    elif args.copytree:
+        copytree(*args.copytree)
+    elif args.make_archive:
+        make_archive(*args.make_archive)
+    elif args.unpack_archive:
+        unpack_archive(*args.unpack_archive)
+    elif args.disk_usage:
+        usage = disk_usage(args.disk_usage)
+        print(f"Total: {usage.total}, Used: {usage.used}, Free: {usage.free}")
+    elif args.which:
+        print(which(args.which))
