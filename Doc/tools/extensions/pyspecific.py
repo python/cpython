@@ -21,9 +21,6 @@ from sphinx.domains.python import PyFunction, PyMethod, PyModule
 from sphinx.locale import _ as sphinx_gettext
 from sphinx.util.docutils import SphinxDirective
 
-
-ISSUE_URI = 'https://bugs.python.org/issue?@action=redirect&bpo=%s'
-GH_ISSUE_URI = 'https://github.com/python/cpython/issues/%s'
 # Used in conf.py and updated here by python/release-tools/run_release.py
 SOURCE_URI = 'https://github.com/python/cpython/tree/main/%s'
 
