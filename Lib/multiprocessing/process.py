@@ -8,7 +8,7 @@
 #
 
 __all__ = ['BaseProcess', 'current_process', 'active_children',
-           'parent_process']
+           'parent_process', 'main_process']
 
 #
 # Imports
@@ -53,6 +53,13 @@ def parent_process():
     Return process object representing the parent process
     '''
     return _parent_process
+
+
+def main_process():
+    '''
+    Return process object representing the main process
+    '''
+    return _main_process
 
 #
 #
@@ -416,7 +423,7 @@ class _MainProcess(BaseProcess):
 
 
 _parent_process = None
-_current_process = _MainProcess()
+_current_process = _main_process = _MainProcess()
 _process_counter = itertools.count(1)
 _children = set()
 del _MainProcess
