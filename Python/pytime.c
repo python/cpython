@@ -917,7 +917,7 @@ py_get_system_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
         // QueryPerformanceCounter() internally.
         info->implementation = "GetSystemTimePreciseAsFileTime()";
         info->monotonic = 0;
-        info->resolution = _PyTimeFraction_Resolution(&_PyRuntime.time.timebase);
+        info->resolution = _PyTimeFraction_Resolution(&_PyRuntime.time.base);
         info->adjustable = 1;
     }
 
