@@ -915,7 +915,6 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
 
     Py_ssize_t ressize = 0;
     for (Py_ssize_t i = start; i < end; ++i) {
-        /* object is guaranteed to be "ready" */
         Py_UCS4 ch = PyUnicode_READ_CHAR(obj, i);
         int k = n_decimal_digits_for_codepoint(ch);
         assert(k != 0);
