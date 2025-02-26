@@ -1,1 +1,1 @@
-Move :class:`bytearray` to use a buffer convertable to :class:`bytes` without copying.
+Move :class:`bytearray` to use a buffer convertible to :class:`bytes` without copying.
