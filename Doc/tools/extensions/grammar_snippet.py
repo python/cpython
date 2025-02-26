@@ -69,7 +69,8 @@ class GrammarSnippetBase(SphinxDirective):
             for line in content
         ]
         node = addnodes.productionlist(
-            '', *productions, support_smartquotes=False
+            '', *productions, support_smartquotes=False,
+            classes=['highlight'],
         )
         self.set_source_info(node)
         return [node]
