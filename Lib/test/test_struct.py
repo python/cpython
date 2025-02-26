@@ -936,6 +936,9 @@ class UnpackIteratorTest(unittest.TestCase):
             self.assertTrue(math.isnan(struct.unpack('>e', bits[::-1])[0]))
 
             # Check round-trip for NaN's:
+            if (sys.platform == 'win32'
+                    and not (int.from_bytes(bits[::-1]) & (1<<9))):
+                continue  # doesn't work for sNaN's here
             nan = struct.unpack('<e', bits)[0]
             self.assertEqual(struct.pack('<e', nan), bits)
             nan = struct.unpack('>e', bits[::-1])[0]
