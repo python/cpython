@@ -69,7 +69,7 @@ All input read from non-interactive files has the same form:
 .. grammar-snippet::
    :group: python-grammar
 
-   file_input: (`statement` | NEWLINE)* ENDMARKER
+   file_input: (NEWLINE | `statement`)* ENDMARKER
 
 This syntax is used in the following situations:
 
