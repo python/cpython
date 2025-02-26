@@ -77,7 +77,9 @@ class GrammarSnippetBase(SphinxDirective):
                 location=node_location,
             )
         node = addnodes.productionlist(
-            '', *production_nodes, support_smartquotes=False,
+            '',
+            *production_nodes,
+            support_smartquotes=False,
             classes=['highlight'],
         )
         self.set_source_info(node)
@@ -96,7 +98,9 @@ class GrammarSnippetBase(SphinxDirective):
         for match in self.grammar_re.finditer(source_line):
             # Handle text between matches
             if match.start() > last_pos:
-                production_node += nodes.Text(source_line[last_pos : match.start()])
+                production_node += nodes.Text(
+                    source_line[last_pos : match.start()]
+                )
             last_pos = match.end()
 
             # Handle matches
