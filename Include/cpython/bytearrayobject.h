@@ -9,6 +9,7 @@ typedef struct {
     char *ob_bytes;        /* Physical backing buffer */
     char *ob_start;        /* Logical start inside ob_bytes */
     Py_ssize_t ob_exports; /* How many buffer exports */
+    PyObject *ob_bytes_head; /* bytes enabling zero-copy detach. */
 } PyByteArrayObject;
 
 PyAPI_DATA(char) _PyByteArray_empty_string[];

@@ -21,6 +21,20 @@ class bytearray "PyByteArrayObject *" "&PyByteArray_Type"
 char _PyByteArray_empty_string[] = "";
 
 /* Helpers */
+static void
+bytearray_set_bytes(PyByteArrayObject *self, PyObject *bytes, Py_ssize_t size)
+{
+    /* Always point to a valid bytes object */
+    assert(bytes);
+    assert(PyBytes_CheckExact(bytes));
+    self->ob_bytes_head = bytes;
+    self->ob_bytes = self->ob_start = PyBytes_AS_STRING(bytes);
+
+    Py_ssize_t alloc = PyBytes_GET_SIZE(bytes);
+    alloc = (alloc == 0 ? alloc : alloc + 1);
+    FT_ATOMIC_STORE_SSIZE_RELAXED(self->ob_alloc, alloc);
+    Py_SET_SIZE(self, size);
+}
 
 static int
 _getbytevalue(PyObject* arg, int *value)
@@ -127,7 +141,6 @@ PyObject *
 PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
 {
     PyByteArrayObject *new;
-    Py_ssize_t alloc;
 
     if (size < 0) {
         PyErr_SetString(PyExc_SystemError,
@@ -141,27 +154,17 @@ PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
     }
 
     new = PyObject_New(PyByteArrayObject, &PyByteArray_Type);
-    if (new == NULL)
+    if (new == NULL) {
         return NULL;
+    }
 
-    if (size == 0) {
-        new->ob_bytes = NULL;
-        alloc = 0;
+    PyObject *buffer = PyBytes_FromStringAndSize(bytes, size);
+    if (buffer == NULL) {
+        Py_DECREF(new);
+        return NULL;
     }
-    else {
-        alloc = size + 1;
-        new->ob_bytes = PyMem_Malloc(alloc);
-        if (new->ob_bytes == NULL) {
-            Py_DECREF(new);
-            return PyErr_NoMemory();
-        }
-        if (bytes != NULL && size > 0)
-            memcpy(new->ob_bytes, bytes, size);
-        new->ob_bytes[size] = '\0';  /* Trailing null byte */
-    }
-    Py_SET_SIZE(new, size);
-    new->ob_alloc = alloc;
-    new->ob_start = new->ob_bytes;
+
+    bytearray_set_bytes(new, buffer, size);
     new->ob_exports = 0;
 
     return (PyObject *)new;
@@ -189,7 +192,6 @@ static int
 bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
-    void *sval;
     PyByteArrayObject *obj = ((PyByteArrayObject *)self);
     /* All computations are done unsigned to avoid integer overflows
        (see issue #22335). */
@@ -245,26 +247,27 @@ bytearray_resize_lock_held(PyObject *self, Py_ssize_t requested_size)
     }
 
     if (logical_offset > 0) {
-        sval = PyMem_Malloc(alloc);
-        if (sval == NULL) {
-            PyErr_NoMemory();
+        /* Make a new non-offset buffer */
+        PyObject *new = PyBytes_FromStringAndSize(NULL, alloc - 1);
+        if (new == NULL) {
             return -1;
         }
-        memcpy(sval, PyByteArray_AS_STRING(self),
+        memcpy(PyBytes_AS_STRING(new), PyByteArray_AS_STRING(self),
                Py_MIN((size_t)requested_size, (size_t)Py_SIZE(self)));
-        PyMem_Free(obj->ob_bytes);
-    }
-    else {
-        sval = PyMem_Realloc(obj->ob_bytes, alloc);
-        if (sval == NULL) {
-            PyErr_NoMemory();
-            return -1;
-        }
+        Py_DECREF(obj->ob_bytes_head);
+        bytearray_set_bytes(obj, new, size);
+        obj->ob_bytes[size] = '\0'; /* Trailing null byte */
+
+        return 0;
     }
 
-    obj->ob_bytes = obj->ob_start = sval;
-    Py_SET_SIZE(self, size);
-    FT_ATOMIC_STORE_SSIZE_RELAXED(obj->ob_alloc, alloc);
+    /* Too small, grow allocation */
+    if (_PyBytes_Resize(&obj->ob_bytes_head, alloc - 1) < 0) {
+        bytearray_set_bytes(obj, PyBytes_FromStringAndSize(NULL, 0), 0);
+        return -1;
+    }
+
+    bytearray_set_bytes(obj, obj->ob_bytes_head, size);
     obj->ob_bytes[size] = '\0'; /* Trailing null byte */
 
     return 0;
@@ -870,6 +873,19 @@ bytearray_ass_subscript(PyObject *op, PyObject *index, PyObject *values)
     return ret;
 }
 
+static PyObject *
+bytearray_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
+{
+    PyObject *obj = subtype->tp_alloc(subtype, 0);
+    if (obj == NULL) {
+        return NULL;
+    }
+
+    PyByteArrayObject *self = _PyByteArray_CAST(obj);
+    bytearray_set_bytes(self, PyBytes_FromStringAndSize(NULL, 0), 0);
+    return obj;
+}
+
 /*[clinic input]
 bytearray.__init__
 
@@ -1233,9 +1249,7 @@ bytearray_dealloc(PyObject *op)
                         "deallocated bytearray object has exported buffers");
         PyErr_Print();
     }
-    if (self->ob_bytes != 0) {
-        PyMem_Free(self->ob_bytes);
-    }
+    Py_XDECREF(self->ob_bytes_head);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -2452,7 +2466,16 @@ static PyObject *
 bytearray_alloc(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     PyByteArrayObject *self = _PyByteArray_CAST(op);
-    return PyLong_FromSsize_t(FT_ATOMIC_LOAD_SSIZE_RELAXED(self->ob_alloc));
+
+    Py_ssize_t size = PyBytes_GET_SIZE(self->ob_bytes_head);
+    Py_ssize_t alloc = (size == 0 ? size : size + 1);
+
+#ifndef NDEBUG
+    /* Validate redundant information is redundant */
+    Py_ssize_t ob_alloc = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->ob_alloc);
+    assert(alloc == ob_alloc);
+#endif
+    return PyLong_FromSsize_t(alloc);
 }
 
 /*[clinic input]
@@ -2820,7 +2843,7 @@ PyTypeObject PyByteArray_Type = {
     0,                                  /* tp_dictoffset */
     (initproc)bytearray___init__,       /* tp_init */
     PyType_GenericAlloc,                /* tp_alloc */
-    PyType_GenericNew,                  /* tp_new */
+    bytearray_new,                      /* tp_new */
     PyObject_Free,                      /* tp_free */
     .tp_version_tag = _Py_TYPE_VERSION_BYTEARRAY,
 };
