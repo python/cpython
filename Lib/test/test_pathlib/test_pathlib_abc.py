@@ -914,23 +914,17 @@ class DummyWritablePath(WritablePath, DummyJoinablePath):
         self._directories[parent].add(name)
         return DummyWritablePathIO(self._files, path)
 
-    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+    def mkdir(self):
         path = str(self)
         parent = str(self.parent)
         if path in self._directories:
-            if exist_ok:
-                return
-            else:
-                raise FileExistsError(errno.EEXIST, "File exists", path)
+            raise FileExistsError(errno.EEXIST, "File exists", path)
         try:
             if self.name:
                 self._directories[parent].add(self.name)
             self._directories[path] = set()
         except KeyError:
-            if not parents:
-                raise FileNotFoundError(errno.ENOENT, "File not found", parent) from None
-            self.parent.mkdir(parents=True, exist_ok=True)
-            self.mkdir(mode, parents=False, exist_ok=exist_ok)
+            raise FileNotFoundError(errno.ENOENT, "File not found", parent) from None
 
     def symlink_to(self, target, target_is_directory=False):
         raise NotImplementedError
