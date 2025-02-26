@@ -177,6 +177,17 @@ def _have_socket_bluetooth():
     return True
 
 
+def _have_socket_bluetooth_l2cap():
+    """Check whether BTPROTO_L2CAP sockets are supported on this host."""
+    try:
+        s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
+    except (AttributeError, OSError):
+        return False
+    else:
+        s.close()
+    return True
+
+
 def _have_socket_hyperv():
     """Check whether AF_HYPERV sockets are supported on this host."""
     try:
@@ -218,6 +229,8 @@ HAVE_SOCKET_UDPLITE = (
     and not (support.is_android and platform.android_ver().api_level < 29))
 
 HAVE_SOCKET_BLUETOOTH = _have_socket_bluetooth()
+
+HAVE_SOCKET_BLUETOOTH_L2CAP = _have_socket_bluetooth_l2cap()
 
 HAVE_SOCKET_HYPERV = _have_socket_hyperv()
 
@@ -2592,7 +2605,7 @@ class BasicBluetoothTest(unittest.TestCase):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM) as s:
             pass
 
-    @unittest.skipIf(sys.platform == "win32", "windows does not support L2CAP sockets")
+    @unittest.skipUnless(HAVE_SOCKET_BLUETOOTH_L2CAP, 'Bluetooth L2CAP sockets required for this test')
     def testCreateL2capSocket(self):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP) as s:
             pass
@@ -2608,7 +2621,7 @@ class BasicBluetoothTest(unittest.TestCase):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_SCO) as s:
             pass
 
-    @unittest.skipIf(sys.platform != "linux", "expecting full L2CAP support on linux only")
+    @unittest.skipUnless(HAVE_SOCKET_BLUETOOTH_L2CAP, 'Bluetooth L2CAP sockets required for this test')
     def testBindLeAttL2capSocket(self):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP) as f:
             # ATT is the only CID allowed in userspace by the Linux kernel
@@ -2617,7 +2630,7 @@ class BasicBluetoothTest(unittest.TestCase):
             addr = f.getsockname()
             self.assertEqual(addr, (socket.BDADDR_ANY, 0, CID_ATT, socket.BDADDR_LE_PUBLIC))
 
-    @unittest.skipIf(sys.platform != "linux", "expecting full L2CAP support on linux only")
+    @unittest.skipUnless(HAVE_SOCKET_BLUETOOTH_L2CAP, 'Bluetooth L2CAP sockets required for this test')
     def testBindLePsmL2capSocket(self):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP) as f:
             # First user PSM in LE L2CAP
@@ -2626,7 +2639,7 @@ class BasicBluetoothTest(unittest.TestCase):
             addr = f.getsockname()
             self.assertEqual(addr, (socket.BDADDR_ANY, psm, 0, socket.BDADDR_LE_RANDOM))
 
-    @unittest.skipIf(sys.platform != "linux", "expecting full L2CAP support on linux only")
+    @unittest.skipUnless(HAVE_SOCKET_BLUETOOTH_L2CAP, 'Bluetooth L2CAP sockets required for this test')
     def testBindBrEdrL2capSocket(self):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP) as f:
             # First user PSM in BR/EDR L2CAP
