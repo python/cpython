@@ -14,7 +14,7 @@ WritablePath.
 from abc import ABC, abstractmethod
 from glob import _PathGlobber, _no_recurse_symlinks
 from pathlib import PurePath, Path
-from pathlib._os import magic_open, CopyWriter
+from pathlib._os import magic_open, ensure_distinct_paths, copy_file
 
 
 def _explode_path(path):
@@ -347,13 +347,8 @@ class ReadablePath(JoinablePath):
         """
         if not hasattr(target, 'with_segments'):
             target = self.with_segments(target)
-
-        # Delegate to the target path's CopyWriter object.
-        try:
-            create = target._copy_writer._create
-        except AttributeError:
-            raise TypeError(f"Target is not writable: {target}") from None
-        create(self, follow_symlinks, dirs_exist_ok, preserve_metadata)
+        ensure_distinct_paths(self, target)
+        copy_file(self, target, follow_symlinks, dirs_exist_ok, preserve_metadata)
         return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def copy_into(self, target_dir, *, follow_symlinks=True,
@@ -424,7 +419,11 @@ class WritablePath(JoinablePath):
         with magic_open(self, mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
-    _copy_writer = property(CopyWriter)
+    def _write_info(self, info, follow_symlinks=True):
+        """
+        Write the given PathInfo to this path.
+        """
+        pass
 
 
 JoinablePath.register(PurePath)
