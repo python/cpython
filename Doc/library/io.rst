@@ -1165,8 +1165,9 @@ with :deco:`typing.runtime_checkable`.
    .. method:: read()
                read(size, /)
 
-      Read data from the input stream and return it. If ``size`` is
-      specified, at most ``size`` items (bytes/characters) will be read.
+      Read data from the input stream and return it. If *size* is
+      specified, it should be an integer, and at most *size* items
+      (bytes/characters) will be read.
 
    For example::
 
@@ -1184,7 +1185,7 @@ with :deco:`typing.runtime_checkable`.
 
    .. method:: write(data, /)
 
-      Write data to the output stream and return number of items
+      Write *data* to the output stream and return the number of items
       (bytes/characters) written.
 
    For example::
@@ -1192,8 +1193,8 @@ with :deco:`typing.runtime_checkable`.
      def write_binary(writer: Writer[bytes]):
          writer.write(b"Hello world!\n")
 
-See :ref:`typing-io` for other I/O related protocols and classes used for
-static type checking.
+See :ref:`typing-io` for other I/O related protocols and classes that can be
+used for static type checking.
 
 Performance
 -----------

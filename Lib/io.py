@@ -119,7 +119,7 @@ class Reader(metaclass=abc.ABCMeta):
     def read(self, size=..., /):
         """Read data from the input stream and return it.
 
-        If "size" is specified, at most "size" items (bytes/characters) will be
+        If *size* is specified, at most *size* items (bytes/characters) will be
         read.
         """
 
@@ -142,7 +142,7 @@ class Writer(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def write(self, data, /):
-        """Write data to the output stream and return number of items written."""
+        """Write *data* to the output stream and return the number of items written."""
 
     @classmethod
     def __subclasshook__(cls, C):

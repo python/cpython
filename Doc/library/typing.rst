@@ -2822,16 +2822,16 @@ The protocols :class:`io.Reader` and :class:`io.Writer` offer a simpler
 alternative for argument types, when only the ``read()`` or ``write()``
 methods are accessed, respectively::
 
-  def read_and_write(reader: Reader[str], writer: Writer[bytes]):
-      data = reader.read()
-      writer.write(data.encode())
+   def read_and_write(reader: Reader[str], writer: Writer[bytes]):
+       data = reader.read()
+       writer.write(data.encode())
 
 Also consider using :class:`collections.abc.Iterable` for iterating over
 the lines of an input stream::
 
-  def read_config(stream: Iterable[str]):
-      for line in stream:
-          ...
+   def read_config(stream: Iterable[str]):
+       for line in stream:
+           ...
 
 Functions and decorators
 ------------------------
