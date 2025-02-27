@@ -244,6 +244,10 @@ _ATOMIC_TYPES = frozenset({
     property,
 })
 
+# Any marker is used in `make_dataclass` to mark unannotated fields as `Any`
+# without importing `typing` module.
+_ANY_MARKER = object()
+
 
 class InitVar:
     __slots__ = ('type', )
@@ -1588,7 +1592,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
     for item in fields:
         if isinstance(item, str):
             name = item
-            tp = 'typing.Any'
+            tp = _ANY_MARKER
         elif len(item) == 2:
             name, tp, = item
         elif len(item) == 3:
@@ -1607,11 +1611,29 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
         seen.add(name)
         annotations[name] = tp
 
+    def annotate_method(format):
+        typing = sys.modules.get("typing")
+        if typing is None and format == annotationlib.Format.FORWARDREF:
+            typing_any = annotationlib.ForwardRef("Any", module="typing")
+            return {
+                ann: typing_any if t is _ANY_MARKER else t
+                for ann, t in annotations.items()
+            }
+
+        from typing import Any
+        ann_dict = {
+            ann: Any if t is _ANY_MARKER else t
+            for ann, t in annotations.items()
+        }
+        if format == annotationlib.Format.STRING:
+            return annotationlib.annotations_to_string(ann_dict)
+        return ann_dict
+
     # Update 'ns' with the user-supplied namespace plus our calculated values.
     def exec_body_callback(ns):
+        ns['__annotate__'] = annotate_method
         ns.update(namespace)
         ns.update(defaults)
-        ns['__annotations__'] = annotations
 
     # We use `types.new_class()` instead of simply `type()` to allow dynamic creation
     # of generic dataclasses.
