@@ -517,27 +517,20 @@ ThreadHandle_join(ThreadHandle *self, PyTime_t timeout_ns)
             PyErr_SetString(ThreadError, "Cannot join current thread");
             return -1;
         }
-
-        PyTime_t deadline = 0;
-
-        if (timeout_ns == -1) {
-            if (Py_IsFinalizing()) {
-                // gh-123940: On finalization, other threads are prevented from
-                // running Python code. They cannot finalize themselves,
-                // so join() would hang forever.
-                // We raise instead.
-                // (We only do this if no timeout is given: otherwise
-                //  we assume the caller can handle a hung thread.)
-                PyErr_SetString(PyExc_PythonFinalizationError,
-                                "cannot join thread at interpreter shutdown");
-                return -1;
-            }
-        }
-        else {
-            deadline = _PyDeadline_Init(timeout_ns);
+        if (Py_IsFinalizing()) {
+            // gh-123940: On finalization, other threads are prevented from
+            // running Python code. They cannot finalize themselves,
+            // so join() would hang forever.
+            // We raise instead.
+            // (We only do this if no timeout is given: otherwise
+            //  we assume the caller can handle a hung thread.)
+            PyErr_SetString(PyExc_PythonFinalizationError,
+                            "cannot join thread at interpreter shutdown");
+            return -1;
         }
 
         // Wait until the deadline for the thread to exit.
+        PyTime_t deadline = timeout_ns != -1 ? _PyDeadline_Init(timeout_ns) : 0;
         int detach = 1;
         while (!PyEvent_WaitTimed(is_exiting, timeout_ns, detach)) {
             if (deadline) {

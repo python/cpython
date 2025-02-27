@@ -426,8 +426,7 @@ The following exceptions are the exceptions that are usually raised.
    :exc:`PythonFinalizationError` during the Python finalization:
 
    * Creating a new Python thread.
-   * :meth:`Joining <threading.Thread.join>` a running daemon thread
-     without a timeout.
+   * :meth:`Joining <threading.Thread.join>` a running daemon thread.
    * :func:`os.fork`.
 
    See also the :func:`sys.is_finalizing` function.

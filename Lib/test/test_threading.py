@@ -1177,35 +1177,38 @@ class ThreadTests(BaseTestCase):
         # (Non-Python threads, that is `threading._DummyThread`, can't be
         # joined at all.)
         # We raise an exception rather than hang.
-        code = textwrap.dedent("""
-            import threading
+        for timeout in (None, 10):
+            with self.subTest(timeout=timeout):
+                code = textwrap.dedent(f"""
+                    import threading
 
 
-            def loop():
-                while True:
-                    pass
+                    def loop():
+                        while True:
+                            pass
 
 
-            class Cycle:
-                def __init__(self):
-                    self.self_ref = self
-                    self.thr = threading.Thread(target=loop, daemon=True)
-                    self.thr.start()
+                    class Cycle:
+                        def __init__(self):
+                            self.self_ref = self
+                            self.thr = threading.Thread(
+                                target=loop, daemon=True)
+                            self.thr.start()
 
-                def __del__(self):
-                    try:
-                        self.thr.join()
-                    except PythonFinalizationError:
-                        print('got the correct exception!')
+                        def __del__(self):
+                            try:
+                                self.thr.join(timeout={timeout})
+                            except PythonFinalizationError:
+                                print('got the correct exception!')
 
-            # Cycle holds a reference to itself, which ensures it is cleaned
-            # up during the GC that runs after daemon threads have been
-            # forced to exit during finalization.
-            Cycle()
-        """)
-        rc, out, err = assert_python_ok("-c", code)
-        self.assertEqual(err, b"")
-        self.assertIn(b"got the correct exception", out)
+                    # Cycle holds a reference to itself, which ensures it is
+                    # cleaned up during the GC that runs after daemon threads
+                    # have been forced to exit during finalization.
+                    Cycle()
+                """)
+                rc, out, err = assert_python_ok("-c", code)
+                self.assertEqual(err, b"")
+                self.assertIn(b"got the correct exception", out)
 
     def test_join_finished_daemon_thread_in_finalization(self):
         # (see previous test)
@@ -1234,35 +1237,6 @@ class ThreadTests(BaseTestCase):
         rc, out, err = assert_python_ok("-c", code)
         self.assertEqual(err, b"")
         self.assertIn(b"all clear", out)
-
-    def test_timed_join_daemon_thread_in_finalization(self):
-        # (see previous test)
-        # When called with timeout, no error is raised.
-        code = textwrap.dedent("""
-            import threading
-            done = threading.Event()
-
-            def loop():
-                done.set()
-                while True:
-                    pass
-
-            class Cycle:
-                def __init__(self):
-                    self.self_ref = self
-                    self.thr = threading.Thread(target=loop, daemon=True)
-                    self.thr.start()
-                    done.wait()
-
-                def __del__(self):
-                    self.thr.join(timeout=0.01)
-                    print('alive:', self.thr.is_alive())
-
-            Cycle()
-        """)
-        rc, out, err = assert_python_ok("-c", code)
-        self.assertEqual(err, b"")
-        self.assertIn(b"alive: True", out)
 
     def test_start_new_thread_failed(self):
         # gh-109746: if Python fails to start newly created thread
