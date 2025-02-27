@@ -1339,7 +1339,7 @@ dummy_func(
             goto exception_unwind;
         }
 
-        tier1 inst(END_ASYNC_FOR, (awaitable_st, exc_st -- )) {
+        tier1 op(_END_ASYNC_FOR, (awaitable_st, exc_st -- )) {
             PyObject *exc = PyStackRef_AsPyObjectBorrow(exc_st);
 
             assert(exc && PyExceptionInstance_Check(exc));
@@ -1354,6 +1354,16 @@ dummy_func(
                 goto exception_unwind;
             }
         }
+
+        tier1 op(_MONITOR_BRANCH_RIGHT, ( -- )) {
+            INSTRUMENTED_JUMP(prev_instr, this_instr+1, PY_MONITORING_EVENT_BRANCH_RIGHT);
+        }
+
+        macro(INSTRUMENTED_END_ASYNC_FOR) =
+            _MONITOR_BRANCH_RIGHT +
+            _END_ASYNC_FOR;
+
+        macro(END_ASYNC_FOR) = _END_ASYNC_FOR;
 
         tier1 inst(CLEANUP_THROW, (sub_iter, last_sent_val, exc_value_st -- none, value)) {
             PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
