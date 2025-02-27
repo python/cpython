@@ -1196,9 +1196,11 @@ class ThreadTests(BaseTestCase):
                             self.thr.start()
 
                         def __del__(self):
+                            assert self.thr.is_alive()
                             try:
                                 self.thr.join(timeout={timeout})
                             except PythonFinalizationError:
+                                assert self.thr.is_alive()
                                 print('got the correct exception!')
 
                     # Cycle holds a reference to itself, which ensures it is
@@ -1229,7 +1231,9 @@ class ThreadTests(BaseTestCase):
                     done.wait()
 
                 def __del__(self):
+                    assert not self.thr.is_alive()
                     self.thr.join()
+                    assert not self.thr.is_alive()
                     print('all clear!')
 
             Cycle()
