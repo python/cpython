@@ -19,7 +19,11 @@ try:
 except ImportError:
     grp = None
 
-from pathlib._os import LocalCopyWriter, PathInfo, DirEntryInfo, ensure_different_files
+from pathlib._os import (
+    PathInfo, DirEntryInfo,
+    ensure_different_files, ensure_distinct_paths,
+    copy_file, copy_info,
+)
 
 
 __all__ = [
@@ -475,7 +479,7 @@ class PurePath:
         The *walk_up* parameter controls whether `..` may be used to resolve
         the path.
         """
-        if not isinstance(other, PurePath):
+        if not hasattr(other, 'with_segments'):
             other = self.with_segments(other)
         for step, path in enumerate(chain([other], other.parents)):
             if path == self or path in self.parents:
@@ -492,7 +496,7 @@ class PurePath:
     def is_relative_to(self, other):
         """Return True if the path is relative to another path or False.
         """
-        if not isinstance(other, PurePath):
+        if not hasattr(other, 'with_segments'):
             other = self.with_segments(other)
         return other == self or other in self.parents
 
@@ -545,7 +549,7 @@ class PurePath:
         Return True if this path matches the given glob-style pattern. The
         pattern is matched against the entire path.
         """
-        if not isinstance(pattern, PurePath):
+        if not hasattr(pattern, 'with_segments'):
             pattern = self.with_segments(pattern)
         if case_sensitive is None:
             case_sensitive = self.parser is posixpath
@@ -564,7 +568,7 @@ class PurePath:
         is matched. The recursive wildcard '**' is *not* supported by this
         method.
         """
-        if not isinstance(path_pattern, PurePath):
+        if not hasattr(path_pattern, 'with_segments'):
             path_pattern = self.with_segments(path_pattern)
         if case_sensitive is None:
             case_sensitive = self.parser is posixpath
@@ -798,6 +802,12 @@ class Path(PurePath):
                             data.__class__.__name__)
         with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
+
+    def _write_info(self, info, follow_symlinks=True):
+        """
+        Write the given PathInfo to this path.
+        """
+        copy_info(info, self, follow_symlinks=follow_symlinks)
 
     _remove_leading_dot = operator.itemgetter(slice(2, None))
     _remove_trailing_slash = operator.itemgetter(slice(-1))
@@ -1064,7 +1074,9 @@ class Path(PurePath):
         Returns the new Path instance pointing to the target path.
         """
         os.rename(self, target)
-        return self.with_segments(target)
+        if not hasattr(target, 'with_segments'):
+            target = self.with_segments(target)
+        return target
 
     def replace(self, target):
         """
@@ -1077,24 +1089,20 @@ class Path(PurePath):
         Returns the new Path instance pointing to the target path.
         """
         os.replace(self, target)
-        return self.with_segments(target)
-
-    _copy_writer = property(LocalCopyWriter)
+        if not hasattr(target, 'with_segments'):
+            target = self.with_segments(target)
+        return target
 
     def copy(self, target, follow_symlinks=True, dirs_exist_ok=False,
              preserve_metadata=False):
         """
         Recursively copy this file or directory tree to the given destination.
         """
-        if not hasattr(target, '_copy_writer'):
+        if not hasattr(target, 'with_segments'):
             target = self.with_segments(target)
-
-        # Delegate to the target path's CopyWriter object.
-        try:
-            create = target._copy_writer._create
-        except AttributeError:
-            raise TypeError(f"Target is not writable: {target}") from None
-        return create(self, follow_symlinks, dirs_exist_ok, preserve_metadata)
+        ensure_distinct_paths(self, target)
+        copy_file(self, target, follow_symlinks, dirs_exist_ok, preserve_metadata)
+        return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def copy_into(self, target_dir, *, follow_symlinks=True,
                   dirs_exist_ok=False, preserve_metadata=False):
@@ -1104,7 +1112,7 @@ class Path(PurePath):
         name = self.name
         if not name:
             raise ValueError(f"{self!r} has an empty name")
-        elif hasattr(target_dir, '_copy_writer'):
+        elif hasattr(target_dir, 'with_segments'):
             target = target_dir / name
         else:
             target = self.with_segments(target_dir, name)
@@ -1118,19 +1126,18 @@ class Path(PurePath):
         """
         # Use os.replace() if the target is os.PathLike and on the same FS.
         try:
-            target_str = os.fspath(target)
+            target = self.with_segments(target)
         except TypeError:
             pass
         else:
-            if not hasattr(target, '_copy_writer'):
-                target = self.with_segments(target_str)
             ensure_different_files(self, target)
             try:
-                os.replace(self, target_str)
-                return target
+                os.replace(self, target)
             except OSError as err:
                 if err.errno != EXDEV:
                     raise
+            else:
+                return target.joinpath()  # Empty join to ensure fresh metadata.
         # Fall back to copy+delete.
         target = self.copy(target, follow_symlinks=False, preserve_metadata=True)
         self._delete()
@@ -1143,7 +1150,7 @@ class Path(PurePath):
         name = self.name
         if not name:
             raise ValueError(f"{self!r} has an empty name")
-        elif hasattr(target_dir, '_copy_writer'):
+        elif hasattr(target_dir, 'with_segments'):
             target = target_dir / name
         else:
             target = self.with_segments(target_dir, name)
