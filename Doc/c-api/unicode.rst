@@ -34,7 +34,7 @@ Python:
 .. c:var:: PyTypeObject PyUnicode_Type
 
    This instance of :c:type:`PyTypeObject` represents the Python Unicode type.  It
-   is exposed to Python code as ``str``.
+   is exposed to Python code as :py:class:`str`.
 
 
 .. c:type:: Py_UCS4
@@ -346,7 +346,6 @@ APIs:
    using the :c:type:`PyUnicodeWriter` API, or one of the ``PyUnicode_From*``
    functions below.
 
-   Objects created using this function are not resizable.
 
    .. versionadded:: 3.3
 
@@ -1789,7 +1788,7 @@ The following API is deprecated.
    .. deprecated:: 3.10
       This API does nothing since Python 3.12.
       Previously, this needed to be called for each string created using
-      the old API (``PyUnicode_FromUnicode`` or similar).
+      the old API (:c:func:`!PyUnicode_FromUnicode` or similar).
 
 
 .. c:function:: unsigned int PyUnicode_IS_READY(PyObject *unicode)
