@@ -9,7 +9,6 @@
 #include "pycore_intrinsics.h"    // INTRINSIC_PRINT
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
 #include "pycore_typevarobject.h" // _Py_make_typevar()
 
 
@@ -25,7 +24,7 @@ no_intrinsic1(PyThreadState* tstate, PyObject *unused)
 static PyObject *
 print_expr(PyThreadState* Py_UNUSED(ignored), PyObject *value)
 {
-    PyObject *hook = _PySys_GetRequiredAttr(&_Py_ID(displayhook));
+    PyObject *hook = PySys_GetAttr(&_Py_ID(displayhook));
     // Can't use ERROR_IF here.
     if (hook == NULL) {
         return NULL;

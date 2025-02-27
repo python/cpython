@@ -8,7 +8,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_Format()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
-#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame()
 
 #ifdef MS_WINDOWS
@@ -1533,7 +1532,7 @@ write_unraisable_exc(PyThreadState *tstate, PyObject *exc_type,
                      PyObject *obj)
 {
     PyObject *file;
-    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
         return -1;
     }
     if (file == NULL || file == Py_None) {
@@ -1640,7 +1639,7 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
     }
 
     PyObject *hook;
-    if (_PySys_GetOptionalAttr(&_Py_ID(unraisablehook), &hook) < 0) {
+    if (PySys_GetOptionalAttr(&_Py_ID(unraisablehook), &hook) < 0) {
         Py_DECREF(hook_args);
         err_msg_str = NULL;
         obj = NULL;
