@@ -1681,7 +1681,7 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch left', 'func', 12, 12)])
 
 
-    def test_async_for(self):
+    def test_match(self):
 
         def func(v=1):
             x = 0
