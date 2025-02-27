@@ -6,7 +6,7 @@
 // Time formats:
 //
 // * Seconds.
-// * Seconds as a floating point number (C double).
+// * Seconds as a floating-point number (C double).
 // * Milliseconds (10^-3 seconds).
 // * Microseconds (10^-6 seconds).
 // * 100 nanoseconds (10^-7 seconds), used on Windows.
@@ -330,6 +330,18 @@ extern PyTime_t _PyTimeFraction_Mul(
 extern double _PyTimeFraction_Resolution(
     const _PyTimeFraction *frac);
 
+
+// --- _Py_time_runtime_state ------------------------------------------------
+
+struct _Py_time_runtime_state {
+#if defined(MS_WINDOWS) || defined(__APPLE__)
+    _PyTimeFraction base;
+#else
+    char _unused;
+#endif
+};
+
+extern PyStatus _PyTime_Init(struct _Py_time_runtime_state *state);
 
 #ifdef __cplusplus
 }

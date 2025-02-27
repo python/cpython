@@ -144,14 +144,17 @@ typedef struct {
     Py_buffer write_buffer;
 } OverlappedObject;
 
+#define OverlappedObject_CAST(op)   ((OverlappedObject *)(op))
+
 /*
 Note: tp_clear (overlapped_clear) is not implemented because it
 requires cancelling the IO operation if it's pending and the cancellation is
 quite complex and can fail (see: overlapped_dealloc).
 */
 static int
-overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
+overlapped_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    OverlappedObject *self = OverlappedObject_CAST(op);
     Py_VISIT(self->read_buffer);
     Py_VISIT(self->write_buffer.obj);
     Py_VISIT(Py_TYPE(self));
@@ -159,10 +162,11 @@ overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
 }
 
 static void
-overlapped_dealloc(OverlappedObject *self)
+overlapped_dealloc(PyObject *op)
 {
     DWORD bytes;
     int err = GetLastError();
+    OverlappedObject *self = OverlappedObject_CAST(op);
 
     PyObject_GC_UnTrack(self);
     if (self->pending) {
@@ -171,17 +175,16 @@ overlapped_dealloc(OverlappedObject *self)
         {
             /* The operation is no longer pending -- nothing to do. */
         }
-        else if (_Py_IsInterpreterFinalizing(_PyInterpreterState_GET()))
-        {
+        else if (_Py_IsInterpreterFinalizing(_PyInterpreterState_GET())) {
             /* The operation is still pending -- give a warning.  This
                will probably only happen on Windows XP. */
             PyErr_SetString(PyExc_PythonFinalizationError,
                             "I/O operations still in flight while destroying "
                             "Overlapped object, the process may crash");
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored while deallocating "
+                                   "overlapped operation %R", self);
         }
-        else
-        {
+        else {
             /* The operation is still pending, but the process is
                probably about to exit, so we need not worry too much
                about memory leaks.  Leaking self prevents a potential
@@ -1048,7 +1051,7 @@ getenvironment(PyObject* environment)
     }
 
     normalized_environment = normalize_environment(environment);
-    if (normalize_environment == NULL) {
+    if (normalized_environment == NULL) {
         return NULL;
     }
 
@@ -2317,7 +2320,7 @@ _winapi_BatchedWaitForMultipleObjects_impl(PyObject *module,
                                            BOOL wait_all, DWORD milliseconds)
 /*[clinic end generated code: output=d21c1a4ad0a252fd input=7e196f29005dc77b]*/
 {
-    Py_ssize_t thread_count = 0, handle_count = 0, i, j;
+    Py_ssize_t thread_count = 0, handle_count = 0, i;
     Py_ssize_t nhandles;
     BatchedWaitData *thread_data[MAXIMUM_WAIT_OBJECTS];
     HANDLE handles[MAXIMUM_WAIT_OBJECTS];
@@ -2378,7 +2381,7 @@ _winapi_BatchedWaitForMultipleObjects_impl(PyObject *module,
         if (data->handle_count > MAXIMUM_WAIT_OBJECTS - 1) {
             data->handle_count = MAXIMUM_WAIT_OBJECTS - 1;
         }
-        for (j = 0; j < data->handle_count; ++i, ++j) {
+        for (DWORD j = 0; j < data->handle_count; ++i, ++j) {
             PyObject *v = PySequence_GetItem(handle_seq, i);
             if (!v || !PyArg_Parse(v, F_HANDLE, &data->handles[j])) {
                 Py_XDECREF(v);
@@ -2526,7 +2529,7 @@ _winapi_BatchedWaitForMultipleObjects_impl(PyObject *module,
         if (triggered_indices) {
             for (i = 0; i < thread_count; ++i) {
                 Py_ssize_t triggered = (Py_ssize_t)thread_data[i]->result - WAIT_OBJECT_0;
-                if (triggered >= 0 && triggered < thread_data[i]->handle_count - 1) {
+                if (triggered >= 0 && (size_t)triggered < thread_data[i]->handle_count - 1) {
                     PyObject *v = PyLong_FromSsize_t(thread_data[i]->handle_base + triggered);
                     if (!v || PyList_Append(triggered_indices, v) < 0) {
                         Py_XDECREF(v);
@@ -2803,7 +2806,7 @@ _winapi__mimetypes_read_windows_registry_impl(PyObject *module,
         }
 
         err = RegOpenKeyExW(hkcr, ext, 0, KEY_READ, &subkey);
-        if (err == ERROR_FILE_NOT_FOUND) {
+        if (err == ERROR_FILE_NOT_FOUND || err == ERROR_ACCESS_DENIED) {
             err = ERROR_SUCCESS;
             continue;
         } else if (err != ERROR_SUCCESS) {
@@ -3216,7 +3219,7 @@ winapi_clear(PyObject *module)
 static void
 winapi_free(void *module)
 {
-    winapi_clear((PyObject *)module);
+    (void)winapi_clear((PyObject *)module);
 }
 
 static struct PyModuleDef winapi_module = {

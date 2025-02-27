@@ -1,2 +1,0 @@
-Expose :meth:`symtable.Symbol.is_type_parameter` in the :mod:`symtable`
-module. Patch by Bénédikt Tran.

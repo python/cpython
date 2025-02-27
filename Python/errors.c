@@ -2,12 +2,13 @@
 /* Error handling */
 
 #include "Python.h"
+#include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_initconfig.h"    // _PyStatus_ERR()
 #include "pycore_pyerrors.h"      // _PyErr_Format()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
-#include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame()
 
 #ifdef MS_WINDOWS
@@ -300,12 +301,21 @@ PyErr_SetString(PyObject *exception, const char *string)
     _PyErr_SetString(tstate, exception, string);
 }
 
+void
+_PyErr_SetLocaleString(PyObject *exception, const char *string)
+{
+    PyObject *value = PyUnicode_DecodeLocale(string, "surrogateescape");
+    if (value != NULL) {
+        PyErr_SetObject(exception, value);
+        Py_DECREF(value);
+    }
+}
 
 PyObject* _Py_HOT_FUNCTION
 PyErr_Occurred(void)
 {
-    /* The caller must hold the GIL. */
-    assert(PyGILState_Check());
+    /* The caller must hold a thread state. */
+    _Py_AssertHoldsTstate();
 
     PyThreadState *tstate = _PyThreadState_GET();
     return _PyErr_Occurred(tstate);
@@ -1522,14 +1532,15 @@ write_unraisable_exc(PyThreadState *tstate, PyObject *exc_type,
                      PyObject *exc_value, PyObject *exc_tb, PyObject *err_msg,
                      PyObject *obj)
 {
-    PyObject *file = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    PyObject *file;
+    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
+        return -1;
+    }
     if (file == NULL || file == Py_None) {
+        Py_XDECREF(file);
         return 0;
     }
 
-    /* Hold a strong reference to ensure that sys.stderr doesn't go away
-       while we use it */
-    Py_INCREF(file);
     int res = write_unraisable_exc_file(tstate, exc_type, exc_value, exc_tb,
                                         err_msg, obj, file);
     Py_DECREF(file);
@@ -1623,18 +1634,25 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
     PyObject *hook_args = make_unraisable_hook_args(
         tstate, exc_type, exc_value, exc_tb, err_msg, obj);
     if (hook_args == NULL) {
-        err_msg_str = ("Exception ignored on building "
+        err_msg_str = ("Exception ignored while building "
                        "sys.unraisablehook arguments");
         goto error;
     }
 
-    PyObject *hook = _PySys_GetAttr(tstate, &_Py_ID(unraisablehook));
+    PyObject *hook;
+    if (_PySys_GetOptionalAttr(&_Py_ID(unraisablehook), &hook) < 0) {
+        Py_DECREF(hook_args);
+        err_msg_str = NULL;
+        obj = NULL;
+        goto error;
+    }
     if (hook == NULL) {
         Py_DECREF(hook_args);
         goto default_hook;
     }
 
     if (_PySys_Audit(tstate, "sys.unraisablehook", "OO", hook, hook_args) < 0) {
+        Py_DECREF(hook);
         Py_DECREF(hook_args);
         err_msg_str = "Exception ignored in audit hook";
         obj = NULL;
@@ -1642,11 +1660,13 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
     }
 
     if (hook == Py_None) {
+        Py_DECREF(hook);
         Py_DECREF(hook_args);
         goto default_hook;
     }
 
     PyObject *res = PyObject_CallOneArg(hook, hook_args);
+    Py_DECREF(hook);
     Py_DECREF(hook_args);
     if (res != NULL) {
         Py_DECREF(res);
@@ -1850,6 +1870,52 @@ PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
     Py_XDECREF(fileobj);
 }
 
+/* Raises a SyntaxError.
+ * If something goes wrong, a different exception may be raised.
+ */
+void
+_PyErr_RaiseSyntaxError(PyObject *msg, PyObject *filename, int lineno, int col_offset,
+                        int end_lineno, int end_col_offset)
+{
+    PyObject *text = PyErr_ProgramTextObject(filename, lineno);
+    if (text == NULL) {
+        text = Py_NewRef(Py_None);
+    }
+    PyObject *args = Py_BuildValue("O(OiiOii)", msg, filename,
+                                   lineno, col_offset, text,
+                                   end_lineno, end_col_offset);
+    if (args == NULL) {
+        goto exit;
+    }
+    PyErr_SetObject(PyExc_SyntaxError, args);
+ exit:
+    Py_DECREF(text);
+    Py_XDECREF(args);
+}
+
+/* Emits a SyntaxWarning and returns 0 on success.
+   If a SyntaxWarning is raised as error, replaces it with a SyntaxError
+   and returns -1.
+*/
+int
+_PyErr_EmitSyntaxWarning(PyObject *msg, PyObject *filename, int lineno, int col_offset,
+                         int end_lineno, int end_col_offset)
+{
+    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, filename,
+                                 lineno, NULL, NULL) < 0)
+    {
+        if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
+            /* Replace the SyntaxWarning exception with a SyntaxError
+               to get a more accurate error report */
+            PyErr_Clear();
+            _PyErr_RaiseSyntaxError(msg, filename, lineno, col_offset,
+                                    end_lineno, end_col_offset);
+        }
+        return -1;
+    }
+    return 0;
+}
+
 /* Attempt to load the line of text that the exception refers to.  If it
    fails, it will return NULL but will not set an exception.
 
@@ -1857,44 +1923,44 @@ PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
    functionality in tb_displayline() in traceback.c. */
 
 static PyObject *
-err_programtext(PyThreadState *tstate, FILE *fp, int lineno, const char* encoding)
+err_programtext(FILE *fp, int lineno, const char* encoding)
 {
-    int i;
     char linebuf[1000];
-    if (fp == NULL) {
-        return NULL;
-    }
+    size_t line_size = 0;
 
-    for (i = 0; i < lineno; i++) {
-        char *pLastChar = &linebuf[sizeof(linebuf) - 2];
-        do {
-            *pLastChar = '\0';
-            if (Py_UniversalNewlineFgets(linebuf, sizeof linebuf,
-                                         fp, NULL) == NULL) {
-                goto after_loop;
-            }
-            /* fgets read *something*; if it didn't get as
-               far as pLastChar, it must have found a newline
-               or hit the end of the file; if pLastChar is \n,
-               it obviously found a newline; else we haven't
-               yet seen a newline, so must continue */
-        } while (*pLastChar != '\0' && *pLastChar != '\n');
-    }
-
-after_loop:
-    fclose(fp);
-    if (i == lineno) {
-        PyObject *res;
-        if (encoding != NULL) {
-            res = PyUnicode_Decode(linebuf, strlen(linebuf), encoding, "replace");
-        } else {
-            res = PyUnicode_FromString(linebuf);
+    for (int i = 0; i < lineno; ) {
+        line_size = 0;
+        if (_Py_UniversalNewlineFgetsWithSize(linebuf, sizeof(linebuf),
+                                              fp, NULL, &line_size) == NULL)
+        {
+            /* Error or EOF. */
+            return NULL;
         }
-        if (res == NULL)
-            _PyErr_Clear(tstate);
-        return res;
+        /* fgets read *something*; if it didn't fill the
+           whole buffer, it must have found a newline
+           or hit the end of the file; if the last character is \n,
+           it obviously found a newline; else we haven't
+           yet seen a newline, so must continue */
+        if (i + 1 < lineno
+            && line_size == sizeof(linebuf) - 1
+            && linebuf[sizeof(linebuf) - 2] != '\n')
+        {
+            continue;
+        }
+        i++;
     }
-    return NULL;
+
+    const char *line = linebuf;
+    /* Skip BOM. */
+    if (lineno == 1 && line_size >= 3 && memcmp(line, "\xef\xbb\xbf", 3) == 0) {
+        line += 3;
+        line_size -= 3;
+    }
+    PyObject *res = PyUnicode_Decode(line, line_size, encoding, "replace");
+    if (res == NULL) {
+        PyErr_Clear();
+    }
+    return res;
 }
 
 PyObject *
@@ -1914,20 +1980,41 @@ PyErr_ProgramText(const char *filename, int lineno)
     return res;
 }
 
+/* Function from Parser/tokenizer/file_tokenizer.c */
+extern char* _PyTokenizer_FindEncodingFilename(int, PyObject *);
+
 PyObject *
 _PyErr_ProgramDecodedTextObject(PyObject *filename, int lineno, const char* encoding)
 {
+    char *found_encoding = NULL;
     if (filename == NULL || lineno <= 0) {
         return NULL;
     }
 
-    PyThreadState *tstate = _PyThreadState_GET();
-    FILE *fp = _Py_fopen_obj(filename, "r" PY_STDIOTEXTMODE);
+    FILE *fp = Py_fopen(filename, "r" PY_STDIOTEXTMODE);
     if (fp == NULL) {
-        _PyErr_Clear(tstate);
+        PyErr_Clear();
         return NULL;
     }
-    return err_programtext(tstate, fp, lineno, encoding);
+    if (encoding == NULL) {
+        int fd = fileno(fp);
+        found_encoding = _PyTokenizer_FindEncodingFilename(fd, filename);
+        encoding = found_encoding;
+        if (encoding == NULL) {
+            PyErr_Clear();
+            encoding = "utf-8";
+        }
+        /* Reset position */
+        if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
+            fclose(fp);
+            PyMem_Free(found_encoding);
+            return NULL;
+        }
+    }
+    PyObject *res = err_programtext(fp, lineno, encoding);
+    fclose(fp);
+    PyMem_Free(found_encoding);
+    return res;
 }
 
 PyObject *

@@ -3,6 +3,7 @@
 
 from test.support import check_syntax_error
 from test.support import import_helper
+import annotationlib
 import inspect
 import unittest
 import sys
@@ -459,7 +460,7 @@ class GrammarTests(unittest.TestCase):
         gns = {}; lns = {}
         exec("'docstring'\n"
              "x: int = 5\n", gns, lns)
-        self.assertEqual(lns["__annotate__"](1), {'x': int})
+        self.assertEqual(lns["__annotate__"](annotationlib.Format.VALUE), {'x': int})
         with self.assertRaises(KeyError):
             gns['__annotate__']
 
@@ -1970,6 +1971,18 @@ class GrammarTests(unittest.TestCase):
 
         with self.assertRaises(Done):
             foo().send(None)
+
+    def test_complex_lambda(self):
+        def test1(foo, bar):
+            return ""
+
+        def test2():
+            return f"{test1(
+                foo=lambda: '、、、、、、、、、、、、、、、、、',
+                bar=lambda: 'abcdefghijklmnopqrstuvwxyz 123456789 123456789',
+            )}"
+
+        self.assertEqual(test2(), "")
 
 
 if __name__ == '__main__':

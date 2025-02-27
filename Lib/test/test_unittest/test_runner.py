@@ -106,6 +106,7 @@ class TestCleanUp(unittest.TestCase):
         self.assertTrue(test.doCleanups())
         self.assertEqual(cleanups, [(2, (), {}), (1, (1, 2, 3), dict(four='hello', five='goodbye'))])
 
+    @support.force_not_colorized
     def testCleanUpWithErrors(self):
         class TestableTest(unittest.TestCase):
             def testNothing(self):
@@ -249,6 +250,7 @@ class TestCleanUp(unittest.TestCase):
         self.assertEqual(test._cleanups, [])
 
 
+@support.force_not_colorized_test_class
 class TestClassCleanup(unittest.TestCase):
     def test_addClassCleanUp(self):
         class TestableTest(unittest.TestCase):
@@ -601,6 +603,7 @@ class TestClassCleanup(unittest.TestCase):
         self.assertIn("\nNO TESTS RAN\n", runner.stream.getvalue())
 
 
+@support.force_not_colorized_test_class
 class TestModuleCleanUp(unittest.TestCase):
     def test_add_and_do_ModuleCleanup(self):
         module_cleanups = []
@@ -1318,6 +1321,7 @@ class Test_TextTestRunner(unittest.TestCase):
         expectedresult = (runner.stream, DESCRIPTIONS, VERBOSITY)
         self.assertEqual(runner._makeResult(), expectedresult)
 
+    @support.force_not_colorized
     @support.requires_subprocess()
     def test_warnings(self):
         """

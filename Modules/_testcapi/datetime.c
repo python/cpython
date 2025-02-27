@@ -129,7 +129,7 @@ static PyObject *
 get_timezones_offset_zero(PyObject *self, PyObject *args)
 {
     PyObject *offset = PyDelta_FromDSU(0, 0, 0);
-    PyObject *name = PyUnicode_FromString("");
+    PyObject *name = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     if (offset == NULL || name == NULL) {
         Py_XDECREF(offset);
         Py_XDECREF(name);

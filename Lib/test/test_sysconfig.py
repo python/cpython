@@ -5,10 +5,13 @@ import sys
 import os
 import subprocess
 import shutil
+import json
+import textwrap
 from copy import copy
 
 from test.support import (
     captured_stdout,
+    is_android,
     is_apple_mobile,
     is_wasi,
     PythonSymlink,
@@ -17,13 +20,15 @@ from test.support import (
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
                                     change_cwd)
+from test.support.venv import VirtualEnvironmentMixin
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
                        get_path, get_path_names, _INSTALL_SCHEMES,
                        get_default_scheme, get_scheme_names, get_config_var,
-                       _expand_vars, _get_preferred_schemes)
-from sysconfig.__main__ import _main, _parse_makefile
+                       _expand_vars, _get_preferred_schemes,
+                       is_python_build, _PROJECT_BASE)
+from sysconfig.__main__ import _main, _parse_makefile, _get_pybuilddir, _get_json_data_name
 import _imp
 import _osx_support
 import _sysconfig
@@ -32,10 +37,11 @@ import _sysconfig
 HAS_USER_BASE = sysconfig._HAS_USER_BASE
 
 
-class TestSysConfig(unittest.TestCase):
+class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
 
     def setUp(self):
         super(TestSysConfig, self).setUp()
+        self.maxDiff = None
         self.sys_path = sys.path[:]
         # patching os.uname
         if hasattr(os, 'uname'):
@@ -47,6 +53,8 @@ class TestSysConfig(unittest.TestCase):
         os.uname = self._get_uname
         # saving the environment
         self.name = os.name
+        self.prefix = sys.prefix
+        self.exec_prefix = sys.exec_prefix
         self.platform = sys.platform
         self.version = sys.version
         self._framework = sys._framework
@@ -71,6 +79,8 @@ class TestSysConfig(unittest.TestCase):
         else:
             del os.uname
         os.name = self.name
+        sys.prefix = self.prefix
+        sys.exec_prefix = self.exec_prefix
         sys.platform = self.platform
         sys.version = self.version
         sys._framework = self._framework
@@ -417,8 +427,8 @@ class TestSysConfig(unittest.TestCase):
                 if name == 'platlib':
                     # Replace "/lib64/python3.11/site-packages" suffix
                     # with "/lib/python3.11/site-packages".
-                    py_version_short = sysconfig.get_python_version()
-                    suffix = f'python{py_version_short}/site-packages'
+                    py_version_abi = sysconfig._get_python_version_abi()
+                    suffix = f'python{py_version_abi}/site-packages'
                     expected = expected.replace(f'/{sys.platlibdir}/{suffix}',
                                                 f'/lib/{suffix}')
                 self.assertEqual(user_path, expected)
@@ -582,6 +592,99 @@ class TestSysConfig(unittest.TestCase):
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         self.assertTrue(suffix.endswith('-darwin.so'), suffix)
 
+    @requires_subprocess()
+    def test_makefile_overwrites_config_vars(self):
+        script = textwrap.dedent("""
+            import sys, sysconfig
+
+            data = {
+                'prefix': sys.prefix,
+                'exec_prefix': sys.exec_prefix,
+                'base_prefix': sys.base_prefix,
+                'base_exec_prefix': sys.base_exec_prefix,
+                'config_vars': sysconfig.get_config_vars(),
+            }
+
+            import json
+            print(json.dumps(data, indent=2))
+        """)
+
+        # We need to run the test inside a virtual environment so that
+        # sys.prefix/sys.exec_prefix have a different value from the
+        # prefix/exec_prefix Makefile variables.
+        with self.venv() as venv:
+            data = json.loads(venv.run('-c', script).stdout)
+
+        # We expect sysconfig.get_config_vars to correctly reflect sys.prefix/sys.exec_prefix
+        self.assertEqual(data['prefix'], data['config_vars']['prefix'])
+        self.assertEqual(data['exec_prefix'], data['config_vars']['exec_prefix'])
+        # As a sanity check, just make sure sys.prefix/sys.exec_prefix really
+        # are different from the Makefile values.
+        # sys.base_prefix/sys.base_exec_prefix should reflect the value of the
+        # prefix/exec_prefix Makefile variables, so we use them in the comparison.
+        self.assertNotEqual(data['prefix'], data['base_prefix'])
+        self.assertNotEqual(data['exec_prefix'], data['base_exec_prefix'])
+
+    @unittest.skipIf(os.name != 'posix', '_sysconfig-vars JSON file is only available on POSIX')
+    @unittest.skipIf(is_wasi, "_sysconfig-vars JSON file currently isn't available on WASI")
+    @unittest.skipIf(is_android or is_apple_mobile, 'Android and iOS change the prefix')
+    def test_sysconfigdata_json(self):
+        if '_PYTHON_SYSCONFIGDATA_PATH' in os.environ:
+            data_dir = os.environ['_PYTHON_SYSCONFIGDATA_PATH']
+        elif is_python_build():
+            data_dir = os.path.join(_PROJECT_BASE, _get_pybuilddir())
+        else:
+            data_dir = sys._stdlib_dir
+
+        json_data_path = os.path.join(data_dir, _get_json_data_name())
+
+        with open(json_data_path) as f:
+            json_config_vars = json.load(f)
+
+        system_config_vars = get_config_vars()
+
+        ignore_keys = set()
+        # Keys dependent on Python being run outside the build directrory
+        if sysconfig.is_python_build():
+            ignore_keys |= {'srcdir'}
+        # Keys dependent on the executable location
+        if os.path.dirname(sys.executable) != system_config_vars['BINDIR']:
+            ignore_keys |= {'projectbase'}
+        # Keys dependent on the environment (different inside virtual environments)
+        if sys.prefix != sys.base_prefix:
+            ignore_keys |= {'prefix', 'exec_prefix', 'base', 'platbase'}
+        # Keys dependent on Python being run from the prefix targetted when building (different on relocatable installs)
+        if sysconfig._installation_is_relocated():
+            ignore_keys |= {'prefix', 'exec_prefix', 'base', 'platbase', 'installed_base', 'installed_platbase'}
+
+        for key in ignore_keys:
+            json_config_vars.pop(key)
+            system_config_vars.pop(key)
+
+        self.assertEqual(system_config_vars, json_config_vars)
+
+    def test_sysconfig_config_vars_no_prefix_cache(self):
+        sys.prefix = 'prefix-AAA'
+        sys.exec_prefix = 'exec-prefix-AAA'
+
+        config_vars = sysconfig.get_config_vars()
+
+        self.assertEqual(config_vars['prefix'], sys.prefix)
+        self.assertEqual(config_vars['base'], sys.prefix)
+        self.assertEqual(config_vars['exec_prefix'], sys.exec_prefix)
+        self.assertEqual(config_vars['platbase'], sys.exec_prefix)
+
+        sys.prefix = 'prefix-BBB'
+        sys.exec_prefix = 'exec-prefix-BBB'
+
+        config_vars = sysconfig.get_config_vars()
+
+        self.assertEqual(config_vars['prefix'], sys.prefix)
+        self.assertEqual(config_vars['base'], sys.prefix)
+        self.assertEqual(config_vars['exec_prefix'], sys.exec_prefix)
+        self.assertEqual(config_vars['platbase'], sys.exec_prefix)
+
+
 class MakefileTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform.startswith('win'),
@@ -612,6 +715,39 @@ class MakefileTests(unittest.TestCase):
             'var5': 'dollar$5',
             'var6': '42/lib/python3.5/config-b42dollar$5-x86_64-linux-gnu',
         })
+
+
+class DeprecationTests(unittest.TestCase):
+    def deprecated(self, removal_version, deprecation_msg=None, error=Exception, error_msg=None):
+        if sys.version_info >= removal_version:
+            return self.assertRaises(error, msg=error_msg)
+        else:
+            return self.assertWarns(DeprecationWarning, msg=deprecation_msg)
+
+    def test_expand_makefile_vars(self):
+        with self.deprecated(
+            removal_version=(3, 16),
+            deprecation_msg=(
+                'sysconfig.expand_makefile_vars is deprecated and will be removed in '
+                'Python 3.16. Use sysconfig.get_paths(vars=...) instead.',
+            ),
+            error=AttributeError,
+            error_msg="module 'sysconfig' has no attribute 'expand_makefile_vars'",
+        ):
+            sysconfig.expand_makefile_vars('', {})
+
+    def test_is_python_build_check_home(self):
+        with self.deprecated(
+            removal_version=(3, 15),
+            deprecation_msg=(
+                'The check_home argument of sysconfig.is_python_build is '
+                'deprecated and its value is ignored. '
+                'It will be removed in Python 3.15.'
+            ),
+            error=TypeError,
+            error_msg="is_python_build() takes 0 positional arguments but 1 were given",
+        ):
+            sysconfig.is_python_build('foo')
 
 
 if __name__ == "__main__":

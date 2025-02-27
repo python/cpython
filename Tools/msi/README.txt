@@ -9,7 +9,7 @@ script:
 For an official release, the installer should be built with the
 Tools/msi/buildrelease.bat script and environment variables:
 
-    set PYTHON=<path to Python 3.8 or later>
+    set PYTHON=<path to Python 3.10 or later>
     set SPHINXBUILD=<path to sphinx-build.exe>
     set PATH=<path to Git (git.exe)>;%PATH%
 
@@ -61,24 +61,20 @@ the initial download size by separating them into their own MSIs.
 Building the Installer
 ======================
 
-Before building the installer, download extra build dependencies using
-Tools\msi\get_externals.bat. (Note that this is in addition to the
+Before building the installer, download the extra build dependencies
+using Tools\msi\get_externals.bat. (Note that this is in addition to the
 similarly named file in PCbuild.)
 
-One of the dependencies used in builds is WiX, a toolset that lets developers
-create installers for Windows Installer, the Windows installation engine. WiX
-has a dependency on the Microsoft .NET Framework Version 3.5 (which may not be
-configured on recent versions of Windows, such as Windows 10). If you are
-building on a recent Windows version, use the Control Panel (Programs | Programs
-and Features | Turn Windows Features on or off) and ensure that the entry
-".NET Framework 3.5 (includes .NET 2.0 and 3.0)" is enabled.
+One of the dependencies used in the build process is WiX, a toolset that
+allows developers to create installers for Windows Installer, the
+Windows installation engine. If you're not using the copy of WiX
+installed by Tools\msi\get_externals.bat, you'll need to set the
+"WixInstallPath" environment variable before building.
 
-For Python 3.11.x and above, enable "Microsoft .NET Framework 4.8 Advanced Services"
-instead of "Microsoft .NET Framework Version 3.5" available for Windows 10 and above.
-Also make sure "MSVC v143 - VS 2022 C++ ARM64 build tools" are selected under
-"Desktop Development with C++" in "Visual Studio installer" even if you are not
-building on ARM64 along with other x64 related v143 build tools. This is because for
-3.11.x and above we have upgraded to Wix-3.14.
+Additionally, ensure that "MSVC v14x - VS 20xx C++ ARM64/ARM64EC build tools"
+is selected under "Desktop Development with C++" in the "Visual Studio Installer",
+even if you're not building on ARM64. This is required because we've upgraded
+to WiX 3.14, which requires these tools for Python 3.10 and later versions.
 
 For testing, the installer should be built with the Tools/msi/build.bat
 script:
@@ -107,7 +103,7 @@ be available alongside. This takes longer, but is easier to share.
 For an official release, the installer should be built with the
 Tools/msi/buildrelease.bat script:
 
-    set PYTHON=<path to Python 2.7 or 3.4>
+    set PYTHON=<path to Python 3.10 or later>
     set SPHINXBUILD=<path to sphinx-build.exe>
     set PATH=<path to Git (git.exe)>;%PATH%
 

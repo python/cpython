@@ -1,0 +1,10 @@
+self-hosted-runner:
+  labels: ["windows-aarch64"]
+
+config-variables: null
+
+paths:
+  .github/workflows/**/*.yml:
+     ignore:
+     - 1st argument of function call is not assignable
+     - SC2(015|038|086|091|097|098|129|155)

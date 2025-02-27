@@ -112,7 +112,7 @@ struct _ts {
     int py_recursion_remaining;
     int py_recursion_limit;
 
-    int c_recursion_remaining;
+    int c_recursion_remaining; /* Retained for backwards compatibility. Do not use */
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */
 
     /* 'tracing' keeps track of the execution depth when tracing/profiling.
@@ -192,32 +192,17 @@ struct _ts {
     PyObject *previous_executor;
 
     uint64_t dict_global_version;
+
+    /* Used to store/retrieve `threading.local` keys/values for this thread */
+    PyObject *threading_local_key;
+
+    /* Used by `threading.local`s to be remove keys/values for dying threads.
+       The PyThreadObject must hold the only reference to this value.
+    */
+    PyObject *threading_local_sentinel;
 };
 
-#ifdef Py_DEBUG
-   // A debug build is likely built with low optimization level which implies
-   // higher stack memory usage than a release build: use a lower limit.
-#  define Py_C_RECURSION_LIMIT 500
-#elif defined(__s390x__)
-#  define Py_C_RECURSION_LIMIT 800
-#elif defined(_WIN32) && defined(_M_ARM64)
-#  define Py_C_RECURSION_LIMIT 1000
-#elif defined(_WIN32)
-#  define Py_C_RECURSION_LIMIT 3000
-#elif defined(__ANDROID__)
-   // On an ARM64 emulator, API level 34 was OK with 10000, but API level 21
-   // crashed in test_compiler_recursion_limit.
-#  define Py_C_RECURSION_LIMIT 3000
-#elif defined(_Py_ADDRESS_SANITIZER)
-#  define Py_C_RECURSION_LIMIT 4000
-#elif defined(__wasi__)
-   // Based on wasmtime 16.
-#  define Py_C_RECURSION_LIMIT 5000
-#else
-   // This value is duplicated in Lib/test/support/__init__.py
-#  define Py_C_RECURSION_LIMIT 10000
-#endif
-
+# define Py_C_RECURSION_LIMIT 5000
 
 /* other API */
 
@@ -225,9 +210,12 @@ struct _ts {
  * if it is NULL. */
 PyAPI_FUNC(PyThreadState *) PyThreadState_GetUnchecked(void);
 
-// Alias kept for backward compatibility
-#define _PyThreadState_UncheckedGet PyThreadState_GetUnchecked
-
+// Deprecated alias kept for backward compatibility
+Py_DEPRECATED(3.14) static inline PyThreadState*
+_PyThreadState_UncheckedGet(void)
+{
+    return PyThreadState_GetUnchecked();
+}
 
 // Disable tracing and profiling.
 PyAPI_FUNC(void) PyThreadState_EnterTracing(PyThreadState *tstate);

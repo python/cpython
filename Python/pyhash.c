@@ -22,7 +22,7 @@ extern PyHash_FuncDef PyHash_Func;
 static PyHash_FuncDef PyHash_Func;
 #endif
 
-/* Count _Py_HashBytes() calls */
+/* Count Py_HashBuffer() calls */
 #ifdef Py_HASH_STATS
 #define Py_HASH_STATS_MAX 32
 static Py_ssize_t hashstats[Py_HASH_STATS_MAX + 1] = {0};
@@ -146,9 +146,8 @@ PyObject_GenericHash(PyObject *obj)
 }
 
 Py_hash_t
-_Py_HashBytes(const void *src, Py_ssize_t len)
+Py_HashBuffer(const void *ptr, Py_ssize_t len)
 {
-    Py_hash_t x;
     /*
       We make the hash of the empty string be 0, rather than using
       (prefix ^ suffix), since this slightly obfuscates the hash secret
@@ -161,11 +160,12 @@ _Py_HashBytes(const void *src, Py_ssize_t len)
     hashstats[(len <= Py_HASH_STATS_MAX) ? len : 0]++;
 #endif
 
+    Py_hash_t x;
 #if Py_HASH_CUTOFF > 0
     if (len < Py_HASH_CUTOFF) {
         /* Optimize hashing of very small strings with inline DJBX33A. */
         Py_uhash_t hash;
-        const unsigned char *p = src;
+        const unsigned char *p = ptr;
         hash = 5381; /* DJBX33A starts with 5381 */
 
         switch(len) {
@@ -186,10 +186,13 @@ _Py_HashBytes(const void *src, Py_ssize_t len)
     }
     else
 #endif /* Py_HASH_CUTOFF */
-        x = PyHash_Func.hash(src, len);
+    {
+        x = PyHash_Func.hash(ptr, len);
+    }
 
-    if (x == -1)
+    if (x == -1) {
         return -2;
+    }
     return x;
 }
 
