@@ -29,6 +29,7 @@ extensions = [
     'changes',
     'glossary_search',
     'implementation_detail',
+    'issue_role',
     'lexers',
     'misc_news',
     'pydoc_topics',
