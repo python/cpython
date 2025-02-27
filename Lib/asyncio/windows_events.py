@@ -29,8 +29,8 @@ from .log import logger
 
 __all__ = (
     'SelectorEventLoop', 'ProactorEventLoop', 'IocpProactor',
-    'DefaultEventLoopPolicy', 'WindowsSelectorEventLoopPolicy',
-    'WindowsProactorEventLoopPolicy', 'EventLoop',
+    '_DefaultEventLoopPolicy', '_WindowsSelectorEventLoopPolicy',
+    '_WindowsProactorEventLoopPolicy', 'EventLoop',
 )
 
 
@@ -891,13 +891,13 @@ class _WindowsSubprocessTransport(base_subprocess.BaseSubprocessTransport):
 SelectorEventLoop = _WindowsSelectorEventLoop
 
 
-class WindowsSelectorEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
+class _WindowsSelectorEventLoopPolicy(events._BaseDefaultEventLoopPolicy):
     _loop_factory = SelectorEventLoop
 
 
-class WindowsProactorEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
+class _WindowsProactorEventLoopPolicy(events._BaseDefaultEventLoopPolicy):
     _loop_factory = ProactorEventLoop
 
 
-DefaultEventLoopPolicy = WindowsProactorEventLoopPolicy
+_DefaultEventLoopPolicy = _WindowsProactorEventLoopPolicy
 EventLoop = ProactorEventLoop

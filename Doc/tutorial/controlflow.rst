@@ -61,7 +61,7 @@ they appear in the sequence.  For example (no pun intended):
 ::
 
    >>> # Measure some strings:
-   ... words = ['cat', 'window', 'defenestrate']
+   >>> words = ['cat', 'window', 'defenestrate']
    >>> for w in words:
    ...     print(w, len(w))
    ...
@@ -160,21 +160,60 @@ arguments.  In chapter :ref:`tut-structures`, we will discuss in more detail abo
 
 .. _tut-break:
 
-:keyword:`!break` and :keyword:`!continue` Statements, and :keyword:`!else` Clauses on Loops
-============================================================================================
+:keyword:`!break` and :keyword:`!continue` Statements
+=====================================================
 
 The :keyword:`break` statement breaks out of the innermost enclosing
-:keyword:`for` or :keyword:`while` loop.
+:keyword:`for` or :keyword:`while` loop::
 
-A :keyword:`!for` or :keyword:`!while` loop can include an :keyword:`!else` clause.
+    >>> for n in range(2, 10):
+    ...     for x in range(2, n):
+    ...         if n % x == 0:
+    ...             print(f"{n} equals {x} * {n//x}")
+    ...             break
+    ...
+    4 equals 2 * 2
+    6 equals 2 * 3
+    8 equals 2 * 4
+    9 equals 3 * 3
+
+The :keyword:`continue` statement continues with the next
+iteration of the loop::
+
+    >>> for num in range(2, 10):
+    ...     if num % 2 == 0:
+    ...         print(f"Found an even number {num}")
+    ...         continue
+    ...     print(f"Found an odd number {num}")
+    ...
+    Found an even number 2
+    Found an odd number 3
+    Found an even number 4
+    Found an odd number 5
+    Found an even number 6
+    Found an odd number 7
+    Found an even number 8
+    Found an odd number 9
+
+.. _tut-for-else:
+.. _break-and-continue-statements-and-else-clauses-on-loops:
+
+:keyword:`!else` Clauses on Loops
+=================================
+
+In a :keyword:`!for` or :keyword:`!while` loop the :keyword:`!break` statement
+may be paired with an :keyword:`!else` clause.  If the loop finishes without
+executing the :keyword:`!break`, the :keyword:`!else` clause executes.
 
 In a :keyword:`for` loop, the :keyword:`!else` clause is executed
-after the loop reaches its final iteration.
+after the loop finishes its final iteration, that is, if no break occurred.
 
 In a :keyword:`while` loop, it's executed after the loop's condition becomes false.
 
-In either kind of loop, the :keyword:`!else` clause is **not** executed
-if the loop was terminated by a :keyword:`break`.
+In either kind of loop, the :keyword:`!else` clause is **not** executed if the
+loop was terminated by a :keyword:`break`.  Of course, other ways of ending the
+loop early, such as a :keyword:`return` or a raised exception, will also skip
+execution of the :keyword:`else` clause.
 
 This is exemplified in the following :keyword:`!for` loop,
 which searches for prime numbers::
@@ -198,32 +237,19 @@ which searches for prime numbers::
    9 equals 3 * 3
 
 (Yes, this is the correct code.  Look closely: the ``else`` clause belongs to
-the :keyword:`for` loop, **not** the :keyword:`if` statement.)
+the ``for`` loop, **not** the ``if`` statement.)
 
-When used with a loop, the ``else`` clause has more in common with the
-``else`` clause of a :keyword:`try` statement than it does with that of
-:keyword:`if` statements: a :keyword:`try` statement's ``else`` clause runs
-when no exception occurs, and a loop's ``else`` clause runs when no ``break``
-occurs. For more on the :keyword:`!try` statement and exceptions, see
-:ref:`tut-handling`.
+One way to think of the else clause is to imagine it paired with the ``if``
+inside the loop.  As the loop executes, it will run a sequence like
+if/if/if/else. The ``if`` is inside the loop, encountered a number of times. If
+the condition is ever true, a ``break`` will happen. If the condition is never
+true, the ``else`` clause outside the loop will execute.
 
-The :keyword:`continue` statement, also borrowed from C, continues with the next
-iteration of the loop::
-
-    >>> for num in range(2, 10):
-    ...     if num % 2 == 0:
-    ...         print("Found an even number", num)
-    ...         continue
-    ...     print("Found an odd number", num)
-    ...
-    Found an even number 2
-    Found an odd number 3
-    Found an even number 4
-    Found an odd number 5
-    Found an even number 6
-    Found an odd number 7
-    Found an even number 8
-    Found an odd number 9
+When used with a loop, the ``else`` clause has more in common with the ``else``
+clause of a :keyword:`try` statement than it does with that of ``if``
+statements: a ``try`` statement's ``else`` clause runs when no exception
+occurs, and a loop's ``else`` clause runs when no ``break`` occurs. For more on
+the ``try`` statement and exceptions, see :ref:`tut-handling`.
 
 .. _tut-pass:
 
@@ -436,8 +462,8 @@ Defining Functions
 We can create a function that writes the Fibonacci series to an arbitrary
 boundary::
 
-   >>> def fib(n):    # write Fibonacci series up to n
-   ...     """Print a Fibonacci series up to n."""
+   >>> def fib(n):    # write Fibonacci series less than n
+   ...     """Print a Fibonacci series less than n."""
    ...     a, b = 0, 1
    ...     while a < n:
    ...         print(a, end=' ')
@@ -445,7 +471,7 @@ boundary::
    ...     print()
    ...
    >>> # Now call the function we just defined:
-   ... fib(2000)
+   >>> fib(2000)
    0 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 1597
 
 .. index::
@@ -807,7 +833,7 @@ parameters as there is a ``/`` in the function definition::
      File "<stdin>", line 1, in <module>
    TypeError: pos_only_arg() got some positional-only arguments passed as keyword arguments: 'arg'
 
-The third function ``kwd_only_args`` only allows keyword arguments as indicated
+The third function ``kwd_only_arg`` only allows keyword arguments as indicated
 by a ``*`` in the function definition::
 
    >>> kwd_only_arg(3)

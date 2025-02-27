@@ -64,7 +64,7 @@ class TestConsoleIO(unittest.TestCase):
     # CREATE_NEW_CONSOLE creates a "popup" window.
     @requires_resource('gui')
     def run_in_separated_process(self, code):
-        # Run test in a seprated process to avoid stdin conflicts.
+        # Run test in a separated process to avoid stdin conflicts.
         # See: gh-110147
         cmd = [sys.executable, '-c', code]
         subprocess.run(cmd, check=True, capture_output=True,

@@ -897,7 +897,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             "to run"
         )
 
-        # N.B.: We do alot of gymnastics below in the ZIP_STORED case to save
+        # N.B.: We do a lot of gymnastics below in the ZIP_STORED case to save
         # and reconstruct a sparse zip on systems that support sparse files.
         # Instead of creating a ~8GB zip file mainly consisting of null bytes
         # for every run of the test, we create the zip once and save off the

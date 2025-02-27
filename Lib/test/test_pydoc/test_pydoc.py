@@ -4,6 +4,7 @@ import sys
 import contextlib
 import importlib.util
 import inspect
+import io
 import pydoc
 import py_compile
 import keyword
@@ -79,7 +80,7 @@ CLASSES
     class B(builtins.object)
      |  Methods defined here:
      |
-     |  __annotate__(...)
+     |  __annotate__(format, /)
      |
      |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
@@ -180,7 +181,7 @@ class A(builtins.object)
 
 class B(builtins.object)
     Methods defined here:
-        __annotate__(...)
+        __annotate__(format, /)
     ----------------------------------------------------------------------
     Data descriptors defined here:
         __dict__
@@ -463,6 +464,14 @@ class PydocDocTest(unittest.TestCase):
         doc = pydoc.render_doc(BinaryInteger)
         self.assertIn('BinaryInteger.zero', doc)
 
+    def test_slotted_dataclass_with_field_docs(self):
+        import dataclasses
+        @dataclasses.dataclass(slots=True)
+        class My:
+            x: int = dataclasses.field(doc='Docstring for x')
+        doc = pydoc.render_doc(My)
+        self.assertIn('Docstring for x', doc)
+
     def test_mixed_case_module_names_are_lower_cased(self):
         # issue16484
         doc_link = get_pydoc_link(xml.etree.ElementTree)
@@ -547,6 +556,14 @@ class PydocDocTest(unittest.TestCase):
          |      ... and 82 other subclasses
         """
         doc = pydoc.TextDoc()
+        try:
+            # Make sure HeapType, which has no __module__ attribute, is one
+            # of the known subclasses of object. (doc.docclass() used to
+            # fail if HeapType was imported before running this test, like
+            # when running tests sequentially.)
+            from _testcapi import HeapType
+        except ImportError:
+            pass
         text = doc.docclass(object)
         snip = (" |  Built-in subclasses:\n"
                 " |      async_generator\n"
@@ -776,9 +793,16 @@ class PydocDocTest(unittest.TestCase):
                         'Help on function help in module pydoc:')
         run_pydoc_pager('str', 'str', 'Help on class str in module builtins:')
         run_pydoc_pager(str, 'str', 'Help on class str in module builtins:')
-        run_pydoc_pager('str.upper', 'str.upper', 'Help on method_descriptor in str:')
-        run_pydoc_pager(str.upper, 'str.upper', 'Help on method_descriptor:')
-        run_pydoc_pager(str.__add__, 'str.__add__', 'Help on wrapper_descriptor:')
+        run_pydoc_pager('str.upper', 'str.upper',
+                        'Help on method descriptor upper in str:')
+        run_pydoc_pager(str.upper, 'str.upper',
+                        'Help on method descriptor upper:')
+        run_pydoc_pager(''.upper, 'str.upper',
+                        'Help on built-in function upper:')
+        run_pydoc_pager(str.__add__,
+                        'str.__add__', 'Help on method descriptor __add__:')
+        run_pydoc_pager(''.__add__,
+                        'str.__add__', 'Help on method wrapper __add__:')
         run_pydoc_pager(int.numerator, 'int.numerator',
                         'Help on getset descriptor builtins.int.numerator:')
         run_pydoc_pager(list[int], 'list',
@@ -883,6 +907,82 @@ class PydocDocTest(unittest.TestCase):
                 print('line 2: hi"""', file=script)
             synopsis = pydoc.synopsis(TESTFN, {})
             self.assertEqual(synopsis, 'line 1: h\xe9')
+
+    def test_source_synopsis(self):
+        def check(source, expected, encoding=None):
+            if isinstance(source, str):
+                source_file = StringIO(source)
+            else:
+                source_file = io.TextIOWrapper(io.BytesIO(source), encoding=encoding)
+            with source_file:
+                result = pydoc.source_synopsis(source_file)
+                self.assertEqual(result, expected)
+
+        check('"""Single line docstring."""',
+              'Single line docstring.')
+        check('"""First line of docstring.\nSecond line.\nThird line."""',
+              'First line of docstring.')
+        check('"""First line of docstring.\\nSecond line.\\nThird line."""',
+              'First line of docstring.')
+        check('"""  Whitespace around docstring.  """',
+              'Whitespace around docstring.')
+        check('import sys\n"""No docstring"""',
+              None)
+        check('  \n"""Docstring after empty line."""',
+              'Docstring after empty line.')
+        check('# Comment\n"""Docstring after comment."""',
+              'Docstring after comment.')
+        check('  # Indented comment\n"""Docstring after comment."""',
+              'Docstring after comment.')
+        check('""""""', # Empty docstring
+              '')
+        check('', # Empty file
+              None)
+        check('"""Embedded\0null byte"""',
+              None)
+        check('"""Embedded null byte"""\0',
+              None)
+        check('"""Café and résumé."""',
+              'Café and résumé.')
+        check("'''Triple single quotes'''",
+              'Triple single quotes')
+        check('"Single double quotes"',
+              'Single double quotes')
+        check("'Single single quotes'",
+              'Single single quotes')
+        check('"""split\\\nline"""',
+              'splitline')
+        check('"""Unrecognized escape \\sequence"""',
+              'Unrecognized escape \\sequence')
+        check('"""Invalid escape seq\\uence"""',
+              None)
+        check('r"""Raw \\stri\\ng"""',
+              'Raw \\stri\\ng')
+        check('b"""Bytes literal"""',
+              None)
+        check('f"""f-string"""',
+              None)
+        check('"""Concatenated""" \\\n"string" \'literals\'',
+              'Concatenatedstringliterals')
+        check('"""String""" + """expression"""',
+              None)
+        check('("""In parentheses""")',
+              'In parentheses')
+        check('("""Multiple lines """\n"""in parentheses""")',
+              'Multiple lines in parentheses')
+        check('()', # tuple
+              None)
+        check(b'# coding: iso-8859-15\n"""\xa4uro sign"""',
+              '€uro sign', encoding='iso-8859-15')
+        check(b'"""\xa4"""', # Decoding error
+              None, encoding='utf-8')
+
+        with tempfile.NamedTemporaryFile(mode='w+', encoding='utf-8') as temp_file:
+            temp_file.write('"""Real file test."""\n')
+            temp_file.flush()
+            temp_file.seek(0)
+            result = pydoc.source_synopsis(temp_file)
+            self.assertEqual(result, "Real file test.")
 
     @requires_docstrings
     def test_synopsis_sourceless(self):
@@ -1058,7 +1158,7 @@ class B(A)
 
 class A(builtins.object)
  |  A(
- |      arg1: collections.abc.Callable[[int, int, int], str],
+ |      arg1: Callable[[int, int, int], str],
  |      arg2: Literal['some value', 'other value'],
  |      arg3: Annotated[int, 'some docs about this type']
  |  ) -> None
@@ -1067,7 +1167,7 @@ class A(builtins.object)
  |
  |  __init__(
  |      self,
- |      arg1: collections.abc.Callable[[int, int, int], str],
+ |      arg1: Callable[[int, int, int], str],
  |      arg2: Literal['some value', 'other value'],
  |      arg3: Annotated[int, 'some docs about this type']
  |  ) -> None
@@ -1094,7 +1194,7 @@ class A(builtins.object)
         self.assertEqual(doc, '''Python Library Documentation: function func in module %s
 
 func(
-    arg1: collections.abc.Callable[[typing.Annotated[int, 'Some doc']], str],
+    arg1: Callable[[Annotated[int, 'Some doc']], str],
     arg2: Literal[1, 2, 3, 4, 5, 6, 7, 8]
 ) -> Annotated[int, 'Some other']
 ''' % __name__)
@@ -1209,7 +1309,6 @@ class PydocImportTest(PydocBaseTest):
         self.assertEqual(err.getvalue(), '')
 
     @os_helper.skip_unless_working_chmod
-    @unittest.skipIf(is_emscripten, "cannot remove x bit")
     def test_apropos_empty_doc(self):
         pkgdir = os.path.join(TESTFN, 'walkpkg')
         os.mkdir(pkgdir)
@@ -1379,8 +1478,8 @@ class TestDescriptions(unittest.TestCase):
         T = typing.TypeVar('T')
         class C(typing.Generic[T], typing.Mapping[int, str]): ...
         self.assertEqual(pydoc.render_doc(foo).splitlines()[-1],
-                         'f\x08fo\x08oo\x08o(data: List[Any], x: int)'
-                         ' -> Iterator[Tuple[int, Any]]')
+                         'f\x08fo\x08oo\x08o(data: typing.List[typing.Any], x: int)'
+                         ' -> typing.Iterator[typing.Tuple[int, typing.Any]]')
         self.assertEqual(pydoc.render_doc(C).splitlines()[2],
                          'class C\x08C(collections.abc.Mapping, typing.Generic)')
 
@@ -1803,6 +1902,11 @@ foo
             '<a href="https://localhost/">https://localhost/</a>',
             html
         )
+
+    def test_module_none(self):
+        # Issue #128772
+        from test.test_pydoc import module_none
+        pydoc.render_doc(module_none)
 
 
 class PydocFodderTest(unittest.TestCase):

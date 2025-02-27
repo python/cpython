@@ -1,7 +1,7 @@
 import os
 from pickle import dump
 import sys
-from test.support import captured_stdout, requires_resource, requires_gil_enabled
+from test.support import captured_stdout, requires_resource
 from test.support.os_helper import (TESTFN, rmtree, unlink)
 from test.support.script_helper import assert_python_ok, assert_python_failure
 import textwrap
@@ -301,7 +301,6 @@ class TestFuncs(unittest.TestCase):
 
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'pre-existing trace function throws off measurements')
-    @requires_gil_enabled("gh-117783: immortalization of types affects traced method names")
     def test_inst_method_calling(self):
         obj = TracedClass(20)
         self.tracer.runfunc(obj.inst_method_calling, 1)
@@ -335,7 +334,6 @@ class TestCallers(unittest.TestCase):
 
     @unittest.skipIf(hasattr(sys, 'gettrace') and sys.gettrace(),
                      'pre-existing trace function throws off measurements')
-    @requires_gil_enabled("gh-117783: immortalization of types affects traced method names")
     def test_loop_caller_importing(self):
         self.tracer.runfunc(traced_func_importing_caller, 1)
 
@@ -392,7 +390,7 @@ class TestCoverage(unittest.TestCase):
         libpath = os.path.normpath(os.path.dirname(os.path.dirname(__file__)))
         # sys.prefix does not work when running from a checkout
         tracer = trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,
-                             libpath], trace=0, count=1)
+                             libpath] + sys.path, trace=0, count=1)
         with captured_stdout() as stdout:
             self._coverage(tracer)
         if os.path.exists(TESTFN):
@@ -414,7 +412,7 @@ class TestCoverage(unittest.TestCase):
         coverage = {}
         for line in stdout:
             lines, cov, module = line.split()[:3]
-            coverage[module] = (int(lines), int(cov[:-1]))
+            coverage[module] = (float(lines), float(cov[:-1]))
         # XXX This is needed to run regrtest.py as a script
         modname = trace._fullmodname(sys.modules[modname].__file__)
         self.assertIn(modname, coverage)
@@ -555,7 +553,7 @@ class TestCommandLine(unittest.TestCase):
         stdout = stdout.decode()
         self.assertEqual(status, 0)
         self.assertIn('lines   cov%   module   (path)', stdout)
-        self.assertIn(f'6   100%   {modulename}   ({filename})', stdout)
+        self.assertIn(f'6   100.0%   {modulename}   ({filename})', stdout)
 
     def test_run_as_module(self):
         assert_python_ok('-m', 'trace', '-l', '--module', 'timeit', '-n', '1')

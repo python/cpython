@@ -13,25 +13,27 @@
 #define PY_MONITORING_EVENT_LINE 5
 #define PY_MONITORING_EVENT_INSTRUCTION 6
 #define PY_MONITORING_EVENT_JUMP 7
-#define PY_MONITORING_EVENT_BRANCH 8
-#define PY_MONITORING_EVENT_STOP_ITERATION 9
+#define PY_MONITORING_EVENT_BRANCH_LEFT 8
+#define PY_MONITORING_EVENT_BRANCH_RIGHT 9
+#define PY_MONITORING_EVENT_STOP_ITERATION 10
 
 #define PY_MONITORING_IS_INSTRUMENTED_EVENT(ev) \
     ((ev) < _PY_MONITORING_LOCAL_EVENTS)
 
 /* Other events, mainly exceptions */
 
-#define PY_MONITORING_EVENT_RAISE 10
-#define PY_MONITORING_EVENT_EXCEPTION_HANDLED 11
-#define PY_MONITORING_EVENT_PY_UNWIND 12
-#define PY_MONITORING_EVENT_PY_THROW 13
-#define PY_MONITORING_EVENT_RERAISE 14
+#define PY_MONITORING_EVENT_RAISE 11
+#define PY_MONITORING_EVENT_EXCEPTION_HANDLED 12
+#define PY_MONITORING_EVENT_PY_UNWIND 13
+#define PY_MONITORING_EVENT_PY_THROW 14
+#define PY_MONITORING_EVENT_RERAISE 15
 
 
 /* Ancillary events */
 
-#define PY_MONITORING_EVENT_C_RETURN 15
-#define PY_MONITORING_EVENT_C_RAISE 16
+#define PY_MONITORING_EVENT_C_RETURN 16
+#define PY_MONITORING_EVENT_C_RAISE 17
+#define PY_MONITORING_EVENT_BRANCH 18
 
 
 typedef struct _PyMonitoringState {
@@ -74,8 +76,16 @@ PyAPI_FUNC(int)
 _PyMonitoring_FireJumpEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
                             PyObject *target_offset);
 
-PyAPI_FUNC(int)
+Py_DEPRECATED(3.14) PyAPI_FUNC(int)
 _PyMonitoring_FireBranchEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
+                              PyObject *target_offset);
+
+PyAPI_FUNC(int)
+_PyMonitoring_FireBranchRightEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
+                              PyObject *target_offset);
+
+PyAPI_FUNC(int)
+_PyMonitoring_FireBranchLeftEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
                               PyObject *target_offset);
 
 PyAPI_FUNC(int)
@@ -174,12 +184,21 @@ PyMonitoring_FireJumpEvent(PyMonitoringState *state, PyObject *codelike, int32_t
 }
 
 static inline int
-PyMonitoring_FireBranchEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
+PyMonitoring_FireBranchRightEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
                              PyObject *target_offset)
 {
     _PYMONITORING_IF_ACTIVE(
         state,
-        _PyMonitoring_FireBranchEvent(state, codelike, offset, target_offset));
+        _PyMonitoring_FireBranchRightEvent(state, codelike, offset, target_offset));
+}
+
+static inline int
+PyMonitoring_FireBranchLeftEvent(PyMonitoringState *state, PyObject *codelike, int32_t offset,
+                             PyObject *target_offset)
+{
+    _PYMONITORING_IF_ACTIVE(
+        state,
+        _PyMonitoring_FireBranchLeftEvent(state, codelike, offset, target_offset));
 }
 
 static inline int

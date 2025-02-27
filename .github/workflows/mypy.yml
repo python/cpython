@@ -33,6 +33,9 @@ concurrency:
 
 jobs:
   mypy:
+    name: Run mypy on ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -46,14 +49,13 @@ jobs:
           "Tools/peg_generator",
           "Tools/wasm",
         ]
-    name: Run mypy on ${{ matrix.target }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.13"
           cache: pip
           cache-dependency-path: Tools/requirements-dev.txt
       - run: pip install -r Tools/requirements-dev.txt

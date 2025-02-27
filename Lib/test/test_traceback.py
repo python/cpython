@@ -21,7 +21,7 @@ from test.support import (Error, captured_output, cpython_only, ALWAYS_EQ,
 from test.support.os_helper import TESTFN, unlink
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support.import_helper import forget
-from test.support import force_not_colorized
+from test.support import force_not_colorized, force_not_colorized_test_class
 
 import json
 import textwrap
@@ -86,7 +86,7 @@ class TracebackCases(unittest.TestCase):
         err = self.get_exception_format(self.syntax_error_with_caret,
                                         SyntaxError)
         self.assertEqual(len(err), 4)
-        self.assertTrue(err[1].strip() == "return x!")
+        self.assertEqual(err[1].strip(), "return x!")
         self.assertIn("^", err[2]) # third line has caret
         self.assertEqual(err[1].find("!"), err[2].find("^")) # in the right place
         self.assertEqual(err[2].count("^"), 1)
@@ -150,7 +150,7 @@ class TracebackCases(unittest.TestCase):
             import traceback
             try:
                 x = 1 / 0
-            except:
+            except ZeroDivisionError:
                 traceback.print_exc()
             """)
         try:
@@ -376,6 +376,30 @@ class TracebackCases(unittest.TestCase):
             '   ValueError: 0\n',
         ])
 
+    def test_format_exception_group_syntax_error_with_custom_values(self):
+        # See https://github.com/python/cpython/issues/128894
+        for exc in [
+            SyntaxError('error', 'abcd'),
+            SyntaxError('error', [None] * 4),
+            SyntaxError('error', (1, 2, 3, 4)),
+            SyntaxError('error', (1, 2, 3, 4)),
+            SyntaxError('error', (1, 'a', 'b', 2)),
+            # with end_lineno and end_offset:
+            SyntaxError('error', 'abcdef'),
+            SyntaxError('error', [None] * 6),
+            SyntaxError('error', (1, 2, 3, 4, 5, 6)),
+            SyntaxError('error', (1, 'a', 'b', 2, 'c', 'd')),
+        ]:
+            with self.subTest(exc=exc):
+                err = traceback.format_exception_only(exc, show_group=True)
+                # Should not raise an exception:
+                if exc.lineno is not None:
+                    self.assertEqual(len(err), 2)
+                    self.assertTrue(err[0].startswith('  File'))
+                else:
+                    self.assertEqual(len(err), 1)
+                self.assertEqual(err[-1], 'SyntaxError: error\n')
+
     @requires_subprocess()
     @force_not_colorized
     def test_encoded_file(self):
@@ -419,16 +443,10 @@ class TracebackCases(unittest.TestCase):
             err_line = "raise RuntimeError('{0}')".format(message_ascii)
             err_msg = "RuntimeError: {0}".format(message_ascii)
 
-            self.assertIn(("line %s" % lineno), stdout[1],
-                "Invalid line number: {0!r} instead of {1}".format(
-                    stdout[1], lineno))
-            self.assertTrue(stdout[2].endswith(err_line),
-                "Invalid traceback line: {0!r} instead of {1!r}".format(
-                    stdout[2], err_line))
+            self.assertIn("line %s" % lineno, stdout[1])
+            self.assertEndsWith(stdout[2], err_line)
             actual_err_msg = stdout[3]
-            self.assertTrue(actual_err_msg == err_msg,
-                "Invalid error message: {0!r} instead of {1!r}".format(
-                    actual_err_msg, err_msg))
+            self.assertEqual(actual_err_msg, err_msg)
 
         do_test("", "foo", "ascii", 3)
         for charset in ("ascii", "iso-8859-1", "utf-8", "GBK"):
@@ -492,6 +510,12 @@ class TracebackCases(unittest.TestCase):
         traceback.print_exception(Exception("projector"), file=output)
         self.assertEqual(output.getvalue(), "Exception: projector\n")
 
+    def test_print_last(self):
+        with support.swap_attr(sys, 'last_exc', ValueError(42)):
+            output = StringIO()
+            traceback.print_last(file=output)
+            self.assertEqual(output.getvalue(), "ValueError: 42\n")
+
     def test_format_exception_exc(self):
         e = Exception("projector")
         output = traceback.format_exception(e)
@@ -550,9 +574,10 @@ class PurePythonExceptionFormattingMixin:
     def get_exception(self, callable, slice_start=0, slice_end=-1):
         try:
             callable()
-            self.fail("No exception thrown.")
-        except:
+        except BaseException:
             return traceback.format_exc().splitlines()[slice_start:slice_end]
+        else:
+            self.fail("No exception thrown.")
 
     callable_line = get_exception.__code__.co_firstlineno + 2
 
@@ -694,6 +719,35 @@ class TracebackErrorLocationCaretTestBase:
             '  File "?", line 7\n'
             '    foo(a, z\n'
             '           ^'
+            )
+
+        result_lines = self.get_exception(f_with_multiline)
+        self.assertEqual(result_lines, expected_f.splitlines())
+
+        # Check custom error messages covering multiple lines
+        code = textwrap.dedent("""
+        dummy_call(
+            "dummy value"
+            foo="bar",
+        )
+        """)
+
+        def f_with_multiline():
+            # Need to defer the compilation until in self.get_exception(..)
+            return compile(code, "?", "exec")
+
+        lineno_f = f_with_multiline.__code__.co_firstlineno
+
+        expected_f = (
+            'Traceback (most recent call last):\n'
+            f'  File "{__file__}", line {self.callable_line}, in get_exception\n'
+            '    callable()\n'
+            '    ~~~~~~~~^^\n'
+            f'  File "{__file__}", line {lineno_f+2}, in f_with_multiline\n'
+            '    return compile(code, "?", "exec")\n'
+            '  File "?", line 3\n'
+            '    "dummy value"\n'
+            '    ^^^^^^^^^^^^^'
             )
 
         result_lines = self.get_exception(f_with_multiline)
@@ -1682,6 +1736,7 @@ class TracebackErrorLocationCaretTestBase:
 
 
 @requires_debug_ranges()
+@force_not_colorized_test_class
 class PurePythonTracebackErrorCaretTests(
     PurePythonExceptionFormattingMixin,
     TracebackErrorLocationCaretTestBase,
@@ -1695,6 +1750,7 @@ class PurePythonTracebackErrorCaretTests(
 
 @cpython_only
 @requires_debug_ranges()
+@force_not_colorized_test_class
 class CPythonTracebackErrorCaretTests(
     CAPIExceptionFormattingMixin,
     TracebackErrorLocationCaretTestBase,
@@ -1706,6 +1762,7 @@ class CPythonTracebackErrorCaretTests(
 
 @cpython_only
 @requires_debug_ranges()
+@force_not_colorized_test_class
 class CPythonTracebackLegacyErrorCaretTests(
     CAPIExceptionFormattingLegacyMixin,
     TracebackErrorLocationCaretTestBase,
@@ -1776,9 +1833,9 @@ class TracebackFormatMixin:
         banner = tb_lines[0]
         self.assertEqual(len(tb_lines), 5)
         location, source_line = tb_lines[-2], tb_lines[-1]
-        self.assertTrue(banner.startswith('Traceback'))
-        self.assertTrue(location.startswith('  File'))
-        self.assertTrue(source_line.startswith('    raise'))
+        self.assertStartsWith(banner, 'Traceback')
+        self.assertStartsWith(location, '  File')
+        self.assertStartsWith(source_line, '    raise')
 
     def test_traceback_format(self):
         self.check_traceback_format()
@@ -2067,6 +2124,7 @@ class TracebackFormatMixin:
         return e
 
     @cpython_only
+    @support.skip_emscripten_stack_overflow()
     def test_exception_group_deep_recursion_capi(self):
         from _testcapi import exception_print
         LIMIT = 75
@@ -2078,6 +2136,7 @@ class TracebackFormatMixin:
         self.assertIn('ExceptionGroup', output)
         self.assertLessEqual(output.count('ExceptionGroup'), LIMIT)
 
+    @support.skip_emscripten_stack_overflow()
     def test_exception_group_deep_recursion_traceback(self):
         LIMIT = 75
         eg = self.deep_eg()
@@ -2117,10 +2176,12 @@ context_message = (
 boundaries = re.compile(
     '(%s|%s)' % (re.escape(cause_message), re.escape(context_message)))
 
+@force_not_colorized_test_class
 class TestTracebackFormat(unittest.TestCase, TracebackFormatMixin):
     pass
 
 @cpython_only
+@force_not_colorized_test_class
 class TestFallbackTracebackFormat(unittest.TestCase, TracebackFormatMixin):
     DEBUG_RANGES = False
     def setUp(self) -> None:
@@ -2153,12 +2214,12 @@ class BaseExceptionReportingTests:
     def check_zero_div(self, msg):
         lines = msg.splitlines()
         if has_no_debug_ranges():
-            self.assertTrue(lines[-3].startswith('  File'))
+            self.assertStartsWith(lines[-3], '  File')
             self.assertIn('1/0 # In zero_div', lines[-2])
         else:
-            self.assertTrue(lines[-4].startswith('  File'))
+            self.assertStartsWith(lines[-4], '  File')
             self.assertIn('1/0 # In zero_div', lines[-3])
-        self.assertTrue(lines[-1].startswith('ZeroDivisionError'), lines[-1])
+        self.assertStartsWith(lines[-1], 'ZeroDivisionError')
 
     def test_simple(self):
         try:
@@ -2168,12 +2229,12 @@ class BaseExceptionReportingTests:
         lines = self.get_report(e).splitlines()
         if has_no_debug_ranges():
             self.assertEqual(len(lines), 4)
-            self.assertTrue(lines[3].startswith('ZeroDivisionError'))
+            self.assertStartsWith(lines[3], 'ZeroDivisionError')
         else:
             self.assertEqual(len(lines), 5)
-            self.assertTrue(lines[4].startswith('ZeroDivisionError'))
-        self.assertTrue(lines[0].startswith('Traceback'))
-        self.assertTrue(lines[1].startswith('  File'))
+            self.assertStartsWith(lines[4], 'ZeroDivisionError')
+        self.assertStartsWith(lines[0], 'Traceback')
+        self.assertStartsWith(lines[1], '  File')
         self.assertIn('1/0 # Marker', lines[2])
 
     def test_cause(self):
@@ -2208,15 +2269,15 @@ class BaseExceptionReportingTests:
         try:
             try:
                 raise Exception
-            except:
+            except Exception:
                 raise ZeroDivisionError from None
         except ZeroDivisionError as _:
             e = _
         lines = self.get_report(e).splitlines()
         self.assertEqual(len(lines), 4)
-        self.assertTrue(lines[3].startswith('ZeroDivisionError'))
-        self.assertTrue(lines[0].startswith('Traceback'))
-        self.assertTrue(lines[1].startswith('  File'))
+        self.assertStartsWith(lines[3], 'ZeroDivisionError')
+        self.assertStartsWith(lines[0], 'Traceback')
+        self.assertStartsWith(lines[1], '  File')
         self.assertIn('ZeroDivisionError from None', lines[2])
 
     def test_cause_and_context(self):
@@ -2312,19 +2373,22 @@ class BaseExceptionReportingTests:
     def test_syntax_error_various_offsets(self):
         for offset in range(-5, 10):
             for add in [0, 2]:
-                text = " "*add + "text%d" % offset
+                text = " " * add + "text%d" % offset
                 expected = ['  File "file.py", line 1']
                 if offset < 1:
                     expected.append("    %s" % text.lstrip())
                 elif offset <= 6:
                     expected.append("    %s" % text.lstrip())
-                    expected.append("    %s^" % (" "*(offset-1)))
+                    # Set the caret length to match the length of the text minus the offset.
+                    caret_length = max(1, len(text.lstrip()) - offset + 1)
+                    expected.append("    %s%s" % (" " * (offset - 1), "^" * caret_length))
                 else:
+                    caret_length = max(1, len(text.lstrip()) - 4)
                     expected.append("    %s" % text.lstrip())
-                    expected.append("    %s^" % (" "*5))
+                    expected.append("    %s%s" % (" " * 5, "^" * caret_length))
                 expected.append("SyntaxError: msg")
                 expected.append("")
-                err = self.get_report(SyntaxError("msg", ("file.py", 1, offset+add, text)))
+                err = self.get_report(SyntaxError("msg", ("file.py", 1, offset + add, text)))
                 exp = "\n".join(expected)
                 self.assertEqual(exp, err)
 
@@ -2557,9 +2621,9 @@ class BaseExceptionReportingTests:
             try:
                 try:
                     raise EG("eg1", [ValueError(1), TypeError(2)])
-                except:
+                except EG:
                     raise EG("eg2", [ValueError(3), TypeError(4)])
-            except:
+            except EG:
                 raise ImportError(5)
 
         expected = (
@@ -2609,7 +2673,7 @@ class BaseExceptionReportingTests:
                 except Exception as e:
                     exc = e
                 raise EG("eg", [VE(1), exc, VE(4)])
-            except:
+            except EG:
                 raise EG("top", [VE(5)])
 
         expected = (f'  + Exception Group Traceback (most recent call last):\n'
@@ -2879,6 +2943,33 @@ class BaseExceptionReportingTests:
         report = self.get_report(exc)
         self.assertEqual(report, expected)
 
+    def test_exception_group_wrapped_naked(self):
+        # See gh-128799
+
+        def exc():
+            try:
+                raise Exception(42)
+            except* Exception as e:
+                raise
+
+        expected = (f'  + Exception Group Traceback (most recent call last):\n'
+                    f'  |   File "{__file__}", line {self.callable_line}, in get_exception\n'
+                    f'  |     exception_or_callable()\n'
+                    f'  |     ~~~~~~~~~~~~~~~~~~~~~^^\n'
+                    f'  |   File "{__file__}", line {exc.__code__.co_firstlineno + 3}, in exc\n'
+                    f'  |     except* Exception as e:\n'
+                    f'  |         raise\n'
+                    f'  | ExceptionGroup:  (1 sub-exception)\n'
+                    f'  +-+---------------- 1 ----------------\n'
+                    f'    | Traceback (most recent call last):\n'
+                    f'    |   File "{__file__}", line {exc.__code__.co_firstlineno + 2}, in exc\n'
+                    f'    |     raise Exception(42)\n'
+                    f'    | Exception: 42\n'
+                    f'    +------------------------------------\n')
+
+        report = self.get_report(exc)
+        self.assertEqual(report, expected)
+
     def test_KeyboardInterrupt_at_first_line_of_frame(self):
         # see GH-93249
         def f():
@@ -2905,6 +2996,7 @@ class BaseExceptionReportingTests:
         self.assertEqual(report, expected)
 
 
+@force_not_colorized_test_class
 class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
     #
     # This checks reporting through the 'traceback' module, with both
@@ -2921,6 +3013,7 @@ class PyExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
         return s
 
 
+@force_not_colorized_test_class
 class CExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
     #
     # This checks built-in reporting by the interpreter.
@@ -3142,10 +3235,16 @@ class TestStack(unittest.TestCase):
     def test_walk_stack(self):
         def deeper():
             return list(traceback.walk_stack(None))
-        s1 = list(traceback.walk_stack(None))
-        s2 = deeper()
+        s1, s2 = list(traceback.walk_stack(None)), deeper()
         self.assertEqual(len(s2) - len(s1), 1)
         self.assertEqual(s2[1:], s1)
+
+    def test_walk_innermost_frame(self):
+        def inner():
+            return list(traceback.walk_stack(None))
+        frames = inner()
+        innermost_frame, _ = frames[0]
+        self.assertEqual(innermost_frame.f_code.co_name, "inner")
 
     def test_walk_tb(self):
         try:
@@ -3275,6 +3374,41 @@ class TestStack(unittest.TestCase):
             f'  File "{__file__}", line {lno}, in f\n    1/0\n'
         )
 
+    def test_summary_should_show_carets(self):
+        # See: https://github.com/python/cpython/issues/122353
+
+        # statement to execute and to get a ZeroDivisionError for a traceback
+        statement = "abcdef = 1 / 0 and 2.0"
+        colno = statement.index('1 / 0')
+        end_colno = colno + len('1 / 0')
+
+        # Actual line to use when rendering the traceback
+        # and whose AST will be extracted (it will be empty).
+        cached_line = '# this line will be used during rendering'
+        self.addCleanup(unlink, TESTFN)
+        with open(TESTFN, "w") as file:
+            file.write(cached_line)
+        linecache.updatecache(TESTFN, {})
+
+        try:
+            exec(compile(statement, TESTFN, "exec"))
+        except ZeroDivisionError as exc:
+            # This is the simplest way to create a StackSummary
+            # whose FrameSummary items have their column offsets.
+            s = traceback.TracebackException.from_exception(exc).stack
+            self.assertIsInstance(s, traceback.StackSummary)
+            with unittest.mock.patch.object(s, '_should_show_carets',
+                                            wraps=s._should_show_carets) as ff:
+                self.assertEqual(len(s), 2)
+                self.assertListEqual(
+                    s.format_frame_summary(s[1]).splitlines(),
+                    [
+                        f'  File "{TESTFN}", line 1, in <module>',
+                        f'    {cached_line}'
+                     ]
+                )
+                ff.assert_called_with(colno, end_colno, [cached_line], None)
+
 class Unrepresentable:
     def __repr__(self) -> str:
         raise Exception("Unrepresentable")
@@ -3387,7 +3521,7 @@ class TestTracebackException(unittest.TestCase):
         def f():
             try:
                 1/0
-            except:
+            except ZeroDivisionError:
                 f()
 
         try:
@@ -3491,7 +3625,7 @@ class TestTracebackException(unittest.TestCase):
         def raise_exc():
             try:
                 raise ValueError('bad value')
-            except:
+            except ValueError:
                 raise
 
         def raise_with_locals():
@@ -4420,9 +4554,8 @@ class MiscTest(unittest.TestCase):
 
     def test_all(self):
         expected = set()
-        denylist = {'print_list'}
         for name in dir(traceback):
-            if name.startswith('_') or name in denylist:
+            if name.startswith('_'):
                 continue
             module_object = getattr(traceback, name)
             if getattr(module_object, '__module__', None) == 'traceback':
@@ -4569,6 +4702,49 @@ class TestColorizedTraceback(unittest.TestCase):
             f'{boldm}ZeroDivisionError{reset}: {magenta}division by zero{reset}']
         self.assertEqual(actual, expected)
 
+    def test_colorized_traceback_from_exception_group(self):
+        def foo():
+            exceptions = []
+            try:
+                1 / 0
+            except ZeroDivisionError as inner_exc:
+                exceptions.append(inner_exc)
+            raise ExceptionGroup("test", exceptions)
+
+        try:
+            foo()
+        except Exception as e:
+            exc = traceback.TracebackException.from_exception(
+                e, capture_locals=True
+            )
+
+        red = _colorize.ANSIColors.RED
+        boldr = _colorize.ANSIColors.BOLD_RED
+        magenta = _colorize.ANSIColors.MAGENTA
+        boldm = _colorize.ANSIColors.BOLD_MAGENTA
+        reset = _colorize.ANSIColors.RESET
+        lno_foo = foo.__code__.co_firstlineno
+        actual = "".join(exc.format(colorize=True)).splitlines()
+        expected = [f"  + Exception Group Traceback (most recent call last):",
+                   f'  |   File {magenta}"{__file__}"{reset}, line {magenta}{lno_foo+9}{reset}, in {magenta}test_colorized_traceback_from_exception_group{reset}',
+                   f'  |     {red}foo{reset}{boldr}(){reset}',
+                   f'  |     {red}~~~{reset}{boldr}^^{reset}',
+                   f"  |     e = ExceptionGroup('test', [ZeroDivisionError('division by zero')])",
+                   f"  |     foo = {foo}",
+                   f'  |     self = <{__name__}.TestColorizedTraceback testMethod=test_colorized_traceback_from_exception_group>',
+                   f'  |   File {magenta}"{__file__}"{reset}, line {magenta}{lno_foo+6}{reset}, in {magenta}foo{reset}',
+                   f'  |     raise ExceptionGroup("test", exceptions)',
+                   f"  |     exceptions = [ZeroDivisionError('division by zero')]",
+                   f'  | {boldm}ExceptionGroup{reset}: {magenta}test (1 sub-exception){reset}',
+                   f'  +-+---------------- 1 ----------------',
+                   f'    | Traceback (most recent call last):',
+                   f'    |   File {magenta}"{__file__}"{reset}, line {magenta}{lno_foo+3}{reset}, in {magenta}foo{reset}',
+                   f'    |     {red}1 {reset}{boldr}/{reset}{red} 0{reset}',
+                   f'    |     {red}~~{reset}{boldr}^{reset}{red}~~{reset}',
+                   f"    |     exceptions = [ZeroDivisionError('division by zero')]",
+                   f'    | {boldm}ZeroDivisionError{reset}: {magenta}division by zero{reset}',
+                   f'    +------------------------------------']
+        self.assertEqual(actual, expected)
 
 if __name__ == "__main__":
     unittest.main()

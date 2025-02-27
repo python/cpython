@@ -1,3 +1,0 @@
-Fix Python implementation of :class:`pickle.Pickler` for :class:`bytes` and
-:class:`bytearray` objects when using protocol version 5. Patch by Bénédikt
-Tran.

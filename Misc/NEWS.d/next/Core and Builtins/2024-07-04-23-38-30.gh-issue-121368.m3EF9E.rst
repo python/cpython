@@ -1,3 +1,0 @@
-Fix race condition in ``_PyType_Lookup`` in the free-threaded build due to
-a missing memory fence.  This could lead to ``_PyType_Lookup`` returning
-incorrect results on arm64.

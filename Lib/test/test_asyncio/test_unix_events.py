@@ -33,7 +33,7 @@ from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 MOCK_ANY = mock.ANY
@@ -1116,11 +1116,11 @@ class TestFunctional(unittest.TestCase):
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
+        asyncio._set_event_loop(self.loop)
 
     def tearDown(self):
         self.loop.close()
-        asyncio.set_event_loop(None)
+        asyncio._set_event_loop(None)
 
     def test_add_reader_invalid_argument(self):
         def assert_raises():
@@ -1195,8 +1195,7 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
         if pid == 0:
             # child
             try:
-                with self.assertWarns(DeprecationWarning):
-                    loop = asyncio.get_event_loop_policy().get_event_loop()
+                loop = asyncio.get_event_loop()
                 os.write(w, b'LOOP:' + str(id(loop)).encode())
             except RuntimeError:
                 os.write(w, b'NO LOOP')
@@ -1207,11 +1206,11 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
         else:
             # parent
             result = os.read(r, 100)
-            self.assertEqual(result[:5], b'LOOP:', result)
-            self.assertNotEqual(int(result[5:]), id(loop))
+            self.assertEqual(result, b'NO LOOP')
             wait_process(pid, exitcode=0)
 
     @hashlib_helper.requires_hashdigest('md5')
+    @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
     def test_fork_signal_handling(self):
         self.addCleanup(multiprocessing_cleanup_tests)
 
@@ -1258,6 +1257,7 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(child_handled.is_set())
 
     @hashlib_helper.requires_hashdigest('md5')
+    @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
     def test_fork_asyncio_run(self):
         self.addCleanup(multiprocessing_cleanup_tests)
 
@@ -1277,6 +1277,7 @@ class TestFork(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.value, 42)
 
     @hashlib_helper.requires_hashdigest('md5')
+    @support.skip_if_sanitizer("TSAN doesn't support threads after fork", thread=True)
     def test_fork_asyncio_subprocess(self):
         self.addCleanup(multiprocessing_cleanup_tests)
 

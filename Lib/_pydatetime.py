@@ -1,11 +1,9 @@
-"""Concrete date/time and related types.
-
-See http://www.iana.org/time-zones/repository/tz-link.html for
-time zone and DST data sources.
-"""
+"""Pure Python implementation of the datetime module."""
 
 __all__ = ("date", "datetime", "time", "timedelta", "timezone", "tzinfo",
            "MINYEAR", "MAXYEAR", "UTC")
+
+__name__ = "datetime"
 
 
 import time as _time
@@ -18,10 +16,10 @@ def _cmp(x, y):
 
 def _get_class_module(self):
     module_name = self.__class__.__module__
-    if module_name == '_pydatetime':
-        return 'datetime'
+    if module_name == 'datetime':
+        return 'datetime.'
     else:
-        return module_name
+        return ''
 
 MINYEAR = 1
 MAXYEAR = 9999
@@ -64,14 +62,14 @@ def _days_in_month(year, month):
 
 def _days_before_month(year, month):
     "year, month -> number of days in year preceding first day of month."
-    assert 1 <= month <= 12, 'month must be in 1..12'
+    assert 1 <= month <= 12, f"month must be in 1..12, not {month}"
     return _DAYS_BEFORE_MONTH[month] + (month > 2 and _is_leap(year))
 
 def _ymd2ord(year, month, day):
     "year, month, day -> ordinal, considering 01-Jan-0001 as day 1."
-    assert 1 <= month <= 12, 'month must be in 1..12'
+    assert 1 <= month <= 12, f"month must be in 1..12, not {month}"
     dim = _days_in_month(year, month)
-    assert 1 <= day <= dim, ('day must be in 1..%d' % dim)
+    assert 1 <= day <= dim, f"day must be in 1..{dim}, not {day}"
     return (_days_before_year(year) +
             _days_before_month(year, month) +
             day)
@@ -215,6 +213,17 @@ def _need_normalize_century():
             _normalize_century = True
     return _normalize_century
 
+_supports_c99 = None
+def _can_support_c99():
+    global _supports_c99
+    if _supports_c99 is None:
+        try:
+            _supports_c99 = (
+                _time.strftime("%F", (1900, 1, 1, 0, 0, 0, 0, 1, 0)) == "1900-01-01")
+        except ValueError:
+            _supports_c99 = False
+    return _supports_c99
+
 # Correctly substitute for %z and %Z escapes in strftime formats.
 def _wrap_strftime(object, format, timetuple):
     # Don't call utcoffset() or tzname() unless actually needed.
@@ -272,14 +281,20 @@ def _wrap_strftime(object, format, timetuple):
                                 # strftime is going to have at this: escape %
                                 Zreplace = s.replace('%', '%%')
                     newformat.append(Zreplace)
-                elif ch in 'YG' and object.year < 1000 and _need_normalize_century():
-                    # Note that datetime(1000, 1, 1).strftime('%G') == '1000' so
-                    # year 1000 for %G can go on the fast path.
+                # Note that datetime(1000, 1, 1).strftime('%G') == '1000' so
+                # year 1000 for %G can go on the fast path.
+                elif ((ch in 'YG' or ch in 'FC' and _can_support_c99()) and
+                        object.year < 1000 and _need_normalize_century()):
                     if ch == 'G':
                         year = int(_time.strftime("%G", timetuple))
                     else:
                         year = object.year
-                    push('{:04}'.format(year))
+                    if ch == 'C':
+                        push('{:02}'.format(year // 100))
+                    else:
+                        push('{:04}'.format(year))
+                        if ch == 'F':
+                            push('-{:02}-{:02}'.format(*timetuple[1:3]))
                 else:
                     push('%')
                     push(ch)
@@ -418,7 +433,7 @@ def _parse_hh_mm_ss_ff(tstr):
 
     if pos < len_str:
         if tstr[pos] not in '.,':
-            raise ValueError("Invalid microsecond component")
+            raise ValueError("Invalid microsecond separator")
         else:
             pos += 1
 
@@ -450,6 +465,17 @@ def _parse_isoformat_time(tstr):
 
     time_comps = _parse_hh_mm_ss_ff(timestr)
 
+    hour, minute, second, microsecond = time_comps
+    became_next_day = False
+    error_from_components = False
+    if (hour == 24):
+        if all(time_comp == 0 for time_comp in time_comps[1:]):
+            hour = 0
+            time_comps[0] = hour
+            became_next_day = True
+        else:
+            error_from_components = True
+
     tzi = None
     if tz_pos == len_str and tstr[-1] == 'Z':
         tzi = timezone.utc
@@ -465,7 +491,7 @@ def _parse_isoformat_time(tstr):
         # HH:MM:SS            len: 8
         # HH:MM:SS.f+         len: 10+
 
-        if len(tzstr) in (0, 1, 3):
+        if len(tzstr) in (0, 1, 3) or tstr[tz_pos-1] == 'Z':
             raise ValueError("Malformed time zone string")
 
         tz_comps = _parse_hh_mm_ss_ff(tzstr)
@@ -482,13 +508,13 @@ def _parse_isoformat_time(tstr):
 
     time_comps.append(tzi)
 
-    return time_comps
+    return time_comps, became_next_day, error_from_components
 
 # tuple[int, int, int] -> tuple[int, int, int] version of date.fromisocalendar
 def _isoweek_to_gregorian(year, week, day):
     # Year is bounded this way because 9999-12-31 is (9999, 52, 5)
     if not MINYEAR <= year <= MAXYEAR:
-        raise ValueError(f"Year is out of range: {year}")
+        raise ValueError(f"year must be in {MINYEAR}..{MAXYEAR}, not {year}")
 
     if not 0 < week < 53:
         out_of_range = True
@@ -521,7 +547,7 @@ def _isoweek_to_gregorian(year, week, day):
 def _check_tzname(name):
     if name is not None and not isinstance(name, str):
         raise TypeError("tzinfo.tzname() must return None or string, "
-                        "not '%s'" % type(name))
+                        f"not {type(name).__name__!r}")
 
 # name is the offset-producing method, "utcoffset" or "dst".
 # offset is what it returned.
@@ -534,24 +560,24 @@ def _check_utc_offset(name, offset):
     if offset is None:
         return
     if not isinstance(offset, timedelta):
-        raise TypeError("tzinfo.%s() must return None "
-                        "or timedelta, not '%s'" % (name, type(offset)))
+        raise TypeError(f"tzinfo.{name}() must return None "
+                        f"or timedelta, not {type(offset).__name__!r}")
     if not -timedelta(1) < offset < timedelta(1):
-        raise ValueError("%s()=%s, must be strictly between "
-                         "-timedelta(hours=24) and timedelta(hours=24)" %
-                         (name, offset))
+        raise ValueError("offset must be a timedelta "
+                         "strictly between -timedelta(hours=24) and "
+                         f"timedelta(hours=24), not {offset!r}")
 
 def _check_date_fields(year, month, day):
     year = _index(year)
     month = _index(month)
     day = _index(day)
     if not MINYEAR <= year <= MAXYEAR:
-        raise ValueError('year must be in %d..%d' % (MINYEAR, MAXYEAR), year)
+        raise ValueError(f"year must be in {MINYEAR}..{MAXYEAR}, not {year}")
     if not 1 <= month <= 12:
-        raise ValueError('month must be in 1..12', month)
+        raise ValueError(f"month must be in 1..12, not {month}")
     dim = _days_in_month(year, month)
     if not 1 <= day <= dim:
-        raise ValueError('day must be in 1..%d' % dim, day)
+        raise ValueError(f"day must be in 1..{dim}, not {day}")
     return year, month, day
 
 def _check_time_fields(hour, minute, second, microsecond, fold):
@@ -560,20 +586,23 @@ def _check_time_fields(hour, minute, second, microsecond, fold):
     second = _index(second)
     microsecond = _index(microsecond)
     if not 0 <= hour <= 23:
-        raise ValueError('hour must be in 0..23', hour)
+        raise ValueError(f"hour must be in 0..23, not {hour}")
     if not 0 <= minute <= 59:
-        raise ValueError('minute must be in 0..59', minute)
+        raise ValueError(f"minute must be in 0..59, not {minute}")
     if not 0 <= second <= 59:
-        raise ValueError('second must be in 0..59', second)
+        raise ValueError(f"second must be in 0..59, not {second}")
     if not 0 <= microsecond <= 999999:
-        raise ValueError('microsecond must be in 0..999999', microsecond)
+        raise ValueError(f"microsecond must be in 0..999999, not {microsecond}")
     if fold not in (0, 1):
-        raise ValueError('fold must be either 0 or 1', fold)
+        raise ValueError(f"fold must be either 0 or 1, not {fold}")
     return hour, minute, second, microsecond, fold
 
 def _check_tzinfo_arg(tz):
     if tz is not None and not isinstance(tz, tzinfo):
-        raise TypeError("tzinfo argument must be None or of a tzinfo subclass")
+        raise TypeError(
+            "tzinfo argument must be None or of a tzinfo subclass, "
+            f"not {type(tz).__name__!r}"
+        )
 
 def _divide_and_round(a, b):
     """divide a by b and round result to the nearest integer
@@ -627,7 +656,19 @@ class timedelta:
         # guide the C implementation; it's way more convoluted than speed-
         # ignoring auto-overflow-to-long idiomatic Python could be.
 
-        # XXX Check that all inputs are ints or floats.
+        for name, value in (
+            ("days", days),
+            ("seconds", seconds),
+            ("microseconds", microseconds),
+            ("milliseconds", milliseconds),
+            ("minutes", minutes),
+            ("hours", hours),
+            ("weeks", weeks)
+        ):
+            if not isinstance(value, (int, float)):
+                raise TypeError(
+                    f"unsupported type for timedelta {name} component: {type(value).__name__}"
+                )
 
         # Final values, all integer.
         # s and us fit in 32-bit signed ints; d isn't bounded.
@@ -728,9 +769,9 @@ class timedelta:
             args.append("microseconds=%d" % self._microseconds)
         if not args:
             args.append('0')
-        return "%s.%s(%s)" % (_get_class_module(self),
-                              self.__class__.__qualname__,
-                              ', '.join(args))
+        return "%s%s(%s)" % (_get_class_module(self),
+                             self.__class__.__qualname__,
+                             ', '.join(args))
 
     def __str__(self):
         mm, ss = divmod(self._seconds, 60)
@@ -927,6 +968,7 @@ class date:
     fromtimestamp()
     today()
     fromordinal()
+    strptime()
 
     Operators:
 
@@ -1027,6 +1069,12 @@ class date:
         This is the inverse of the date.isocalendar() function"""
         return cls(*_isoweek_to_gregorian(year, week, day))
 
+    @classmethod
+    def strptime(cls, date_string, format):
+        """Parse a date string according to the given format (like time.strptime())."""
+        import _strptime
+        return _strptime._strptime_datetime_date(cls, date_string, format)
+
     # Conversions to string
 
     def __repr__(self):
@@ -1036,11 +1084,11 @@ class date:
         >>> repr(d)
         'datetime.date(2010, 1, 1)'
         """
-        return "%s.%s(%d, %d, %d)" % (_get_class_module(self),
-                                      self.__class__.__qualname__,
-                                      self._year,
-                                      self._month,
-                                      self._day)
+        return "%s%s(%d, %d, %d)" % (_get_class_module(self),
+                                     self.__class__.__qualname__,
+                                     self._year,
+                                     self._month,
+                                     self._day)
     # XXX These shouldn't depend on time.localtime(), because that
     # clips the usable dates to [1970 .. 2038).  At least ctime() is
     # easily done without using strftime() -- that's better too because
@@ -1347,6 +1395,7 @@ class time:
     Constructors:
 
     __new__()
+    strptime()
 
     Operators:
 
@@ -1404,6 +1453,12 @@ class time:
         self._hashcode = -1
         self._fold = fold
         return self
+
+    @classmethod
+    def strptime(cls, date_string, format):
+        """string, format -> new time parsed from a string (like time.strptime())."""
+        import _strptime
+        return _strptime._strptime_datetime_time(cls, date_string, format)
 
     # Read-only field accessors
     @property
@@ -1533,7 +1588,7 @@ class time:
             s = ", %d" % self._second
         else:
             s = ""
-        s= "%s.%s(%d, %d%s)" % (_get_class_module(self),
+        s = "%s%s(%d, %d%s)" % (_get_class_module(self),
                                 self.__class__.__qualname__,
                                 self._hour, self._minute, s)
         if self._tzinfo is not None:
@@ -1575,7 +1630,7 @@ class time:
         time_string = time_string.removeprefix('T')
 
         try:
-            return cls(*_parse_isoformat_time(time_string))
+            return cls(*_parse_isoformat_time(time_string)[0])
         except Exception:
             raise ValueError(f'Invalid isoformat string: {time_string!r}')
 
@@ -1889,10 +1944,27 @@ class datetime(date):
 
         if tstr:
             try:
-                time_components = _parse_isoformat_time(tstr)
+                time_components, became_next_day, error_from_components = _parse_isoformat_time(tstr)
             except ValueError:
                 raise ValueError(
                     f'Invalid isoformat string: {date_string!r}') from None
+            else:
+                if error_from_components:
+                    raise ValueError("minute, second, and microsecond must be 0 when hour is 24")
+
+                if became_next_day:
+                    year, month, day = date_components
+                    # Only wrap day/month when it was previously valid
+                    if month <= 12 and day <= (days_in_month := _days_in_month(year, month)):
+                        # Calculate midnight of the next day
+                        day += 1
+                        if day > days_in_month:
+                            day = 1
+                            month += 1
+                            if month > 12:
+                                month = 1
+                                year += 1
+                        date_components = [year, month, day]
         else:
             time_components = [0, 0, 0, 0, None]
 
@@ -2092,9 +2164,9 @@ class datetime(date):
             del L[-1]
         if L[-1] == 0:
             del L[-1]
-        s = "%s.%s(%s)" % (_get_class_module(self),
-                           self.__class__.__qualname__,
-                           ", ".join(map(str, L)))
+        s = "%s%s(%s)" % (_get_class_module(self),
+                          self.__class__.__qualname__,
+                          ", ".join(map(str, L)))
         if self._tzinfo is not None:
             assert s[-1:] == ")"
             s = s[:-1] + ", tzinfo=%r" % self._tzinfo + ")"
@@ -2111,7 +2183,7 @@ class datetime(date):
     def strptime(cls, date_string, format):
         'string, format -> new datetime parsed from a string (like time.strptime()).'
         import _strptime
-        return _strptime._strptime_datetime(cls, date_string, format)
+        return _strptime._strptime_datetime_datetime(cls, date_string, format)
 
     def utcoffset(self):
         """Return the timezone offset as timedelta positive east of UTC (negative west of
@@ -2325,7 +2397,6 @@ datetime.resolution = timedelta(microseconds=1)
 
 def _isoweek1monday(year):
     # Helper to calculate the day number of the Monday starting week 1
-    # XXX This could be done more efficiently
     THURSDAY = 3
     firstday = _ymd2ord(year, 1, 1)
     firstweekday = (firstday + 6) % 7  # See weekday() above
@@ -2352,7 +2423,7 @@ class timezone(tzinfo):
         if not cls._minoffset <= offset <= cls._maxoffset:
             raise ValueError("offset must be a timedelta "
                              "strictly between -timedelta(hours=24) and "
-                             "timedelta(hours=24).")
+                             f"timedelta(hours=24), not {offset!r}")
         return cls._create(offset, name)
 
     def __init_subclass__(cls):
@@ -2392,12 +2463,12 @@ class timezone(tzinfo):
         if self is self.utc:
             return 'datetime.timezone.utc'
         if self._name is None:
-            return "%s.%s(%r)" % (_get_class_module(self),
-                                  self.__class__.__qualname__,
-                                  self._offset)
-        return "%s.%s(%r, %r)" % (_get_class_module(self),
-                                  self.__class__.__qualname__,
-                                  self._offset, self._name)
+            return "%s%s(%r)" % (_get_class_module(self),
+                                 self.__class__.__qualname__,
+                                 self._offset)
+        return "%s%s(%r, %r)" % (_get_class_module(self),
+                                 self.__class__.__qualname__,
+                                 self._offset, self._name)
 
     def __str__(self):
         return self.tzname(None)

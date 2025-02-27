@@ -137,7 +137,7 @@ The following classes are provided:
       The Netscape protocol with the bugs fixed.  Uses :mailheader:`Set-Cookie2` in
       place of :mailheader:`Set-Cookie`.  Not widely used.
 
-   http://kristol.org/cookie/errata.html
+   https://kristol.org/cookie/errata.html
       Unfinished errata to :rfc:`2965`.
 
    :rfc:`2964` - Use of HTTP State Management

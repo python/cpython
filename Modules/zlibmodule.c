@@ -221,6 +221,8 @@ typedef struct
     PyThread_type_lock lock;
 } compobject;
 
+#define _compobject_CAST(op)    ((compobject *)op)
+
 static void
 zlib_error(zlibstate *state, z_stream zst, int err, const char *msg)
 {
@@ -267,12 +269,12 @@ newcompobject(PyTypeObject *type)
     self->eof = 0;
     self->is_initialised = 0;
     self->zdict = NULL;
-    self->unused_data = PyBytes_FromStringAndSize("", 0);
+    self->unused_data = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     if (self->unused_data == NULL) {
         Py_DECREF(self);
         return NULL;
     }
-    self->unconsumed_tail = PyBytes_FromStringAndSize("", 0);
+    self->unconsumed_tail = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     if (self->unconsumed_tail == NULL) {
         Py_DECREF(self);
         return NULL;
@@ -706,7 +708,7 @@ zlib_decompressobj_impl(PyObject *module, int wbits, PyObject *zdict)
 static void
 Dealloc(compobject *self)
 {
-    PyObject *type = (PyObject *)Py_TYPE(self);
+    PyTypeObject *type = Py_TYPE(self);
     PyThread_free_lock(self->lock);
     Py_XDECREF(self->unused_data);
     Py_XDECREF(self->unconsumed_tail);
@@ -716,18 +718,20 @@ Dealloc(compobject *self)
 }
 
 static void
-Comp_dealloc(compobject *self)
+Comp_dealloc(PyObject *op)
 {
+    compobject *self = _compobject_CAST(op);
     if (self->is_initialised)
-        deflateEnd(&self->zst);
+        (void)deflateEnd(&self->zst);
     Dealloc(self);
 }
 
 static void
-Decomp_dealloc(compobject *self)
+Decomp_dealloc(PyObject *op)
 {
+    compobject *self = _compobject_CAST(op);
     if (self->is_initialised)
-        inflateEnd(&self->zst);
+        (void)inflateEnd(&self->zst);
     Dealloc(self);
 }
 

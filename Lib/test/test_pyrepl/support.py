@@ -1,3 +1,4 @@
+import os
 from code import InteractiveConsole
 from functools import partial
 from typing import Iterable
@@ -101,7 +102,7 @@ handle_events_narrow_console = partial(
 
 
 class FakeConsole(Console):
-    def __init__(self, events, encoding="utf-8"):
+    def __init__(self, events, encoding="utf-8") -> None:
         self.events = iter(events)
         self.encoding = encoding
         self.screen = []
@@ -150,8 +151,8 @@ class FakeConsole(Console):
     def forgetinput(self) -> None:
         pass
 
-    def wait(self) -> None:
-        pass
+    def wait(self, timeout: float | None = None) -> bool:
+        return True
 
     def repaint(self) -> None:
         pass

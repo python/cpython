@@ -34,7 +34,7 @@ propagated, additional calls into the Python/C API may not behave as intended
 and may fail in mysterious ways.
 
 .. note::
-   The error indicator is **not** the result of :func:`sys.exc_info()`.
+   The error indicator is **not** the result of :func:`sys.exc_info`.
    The former corresponds to an exception that is not yet caught (and is
    therefore still propagating), while the latter returns an exception after
    it is caught (and has therefore stopped propagating).
@@ -733,7 +733,7 @@ Exception Classes
    This creates a class object derived from :exc:`Exception` (accessible in C as
    :c:data:`PyExc_Exception`).
 
-   The :attr:`!__module__` attribute of the new class is set to the first part (up
+   The :attr:`~type.__module__` attribute of the new class is set to the first part (up
    to the last dot) of the *name* argument, and the class name is set to the last
    part (after the last dot).  The *base* argument can be used to specify alternate
    base classes; it can either be only one class or a tuple of classes. The *dict*
@@ -853,12 +853,23 @@ The following functions are used to create and modify Unicode exceptions from C.
    *\*start*.  *start* must not be ``NULL``.  Return ``0`` on success, ``-1`` on
    failure.
 
+   If the :attr:`UnicodeError.object` is an empty sequence, the resulting
+   *start* is ``0``. Otherwise, it is clipped to ``[0, len(object) - 1]``.
+
+   .. seealso:: :attr:`UnicodeError.start`
+
 .. c:function:: int PyUnicodeDecodeError_SetStart(PyObject *exc, Py_ssize_t start)
                 int PyUnicodeEncodeError_SetStart(PyObject *exc, Py_ssize_t start)
                 int PyUnicodeTranslateError_SetStart(PyObject *exc, Py_ssize_t start)
 
-   Set the *start* attribute of the given exception object to *start*.  Return
-   ``0`` on success, ``-1`` on failure.
+   Set the *start* attribute of the given exception object to *start*.
+   Return ``0`` on success, ``-1`` on failure.
+
+   .. note::
+
+      While passing a negative *start* does not raise an exception,
+      the corresponding getters will not consider it as a relative
+      offset.
 
 .. c:function:: int PyUnicodeDecodeError_GetEnd(PyObject *exc, Py_ssize_t *end)
                 int PyUnicodeEncodeError_GetEnd(PyObject *exc, Py_ssize_t *end)
@@ -868,12 +879,17 @@ The following functions are used to create and modify Unicode exceptions from C.
    *\*end*.  *end* must not be ``NULL``.  Return ``0`` on success, ``-1`` on
    failure.
 
+   If the :attr:`UnicodeError.object` is an empty sequence, the resulting
+   *end* is ``0``. Otherwise, it is clipped to ``[1, len(object)]``.
+
 .. c:function:: int PyUnicodeDecodeError_SetEnd(PyObject *exc, Py_ssize_t end)
                 int PyUnicodeEncodeError_SetEnd(PyObject *exc, Py_ssize_t end)
                 int PyUnicodeTranslateError_SetEnd(PyObject *exc, Py_ssize_t end)
 
    Set the *end* attribute of the given exception object to *end*.  Return ``0``
    on success, ``-1`` on failure.
+
+   .. seealso:: :attr:`UnicodeError.end`
 
 .. c:function:: PyObject* PyUnicodeDecodeError_GetReason(PyObject *exc)
                 PyObject* PyUnicodeEncodeError_GetReason(PyObject *exc)
@@ -905,11 +921,7 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
 
    Marks a point where a recursive C-level call is about to be performed.
 
-   If :c:macro:`!USE_STACKCHECK` is defined, this function checks if the OS
-   stack overflowed using :c:func:`PyOS_CheckStack`.  If this is the case, it
-   sets a :exc:`MemoryError` and returns a nonzero value.
-
-   The function then checks if the recursion limit is reached.  If this is the
+   The function then checks if the stack limit is reached.  If this is the
    case, a :exc:`RecursionError` is set and a nonzero value is returned.
    Otherwise, zero is returned.
 
@@ -1004,6 +1016,7 @@ the variables:
    single: PyExc_OverflowError (C var)
    single: PyExc_PermissionError (C var)
    single: PyExc_ProcessLookupError (C var)
+   single: PyExc_PythonFinalizationError (C var)
    single: PyExc_RecursionError (C var)
    single: PyExc_ReferenceError (C var)
    single: PyExc_RuntimeError (C var)
@@ -1095,6 +1108,8 @@ the variables:
 | :c:data:`PyExc_PermissionError`         | :exc:`PermissionError`          |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_ProcessLookupError`      | :exc:`ProcessLookupError`       |          |
++-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_PythonFinalizationError` | :exc:`PythonFinalizationError`  |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_RecursionError`          | :exc:`RecursionError`           |          |
 +-----------------------------------------+---------------------------------+----------+
