@@ -388,8 +388,9 @@ static PyGetSetDef inst_seq_getsetters[] = {
 };
 
 static void
-inst_seq_dealloc(_PyInstructionSequence *seq)
+inst_seq_dealloc(PyObject *op)
 {
+    _PyInstructionSequence *seq = (_PyInstructionSequence *)op;
     PyObject_GC_UnTrack(seq);
     Py_TRASHCAN_BEGIN(seq, inst_seq_dealloc)
     PyInstructionSequence_Fini(seq);
@@ -398,15 +399,17 @@ inst_seq_dealloc(_PyInstructionSequence *seq)
 }
 
 static int
-inst_seq_traverse(_PyInstructionSequence *seq, visitproc visit, void *arg)
+inst_seq_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    _PyInstructionSequence *seq = (_PyInstructionSequence *)op;
     Py_VISIT(seq->s_nested);
     return 0;
 }
 
 static int
-inst_seq_clear(_PyInstructionSequence *seq)
+inst_seq_clear(PyObject *op)
 {
+    _PyInstructionSequence *seq = (_PyInstructionSequence *)op;
     Py_CLEAR(seq->s_nested);
     return 0;
 }
@@ -416,7 +419,7 @@ PyTypeObject _PyInstructionSequence_Type = {
     "InstructionSequence",
     sizeof(_PyInstructionSequence),
     0,
-    (destructor)inst_seq_dealloc, /*tp_dealloc*/
+    inst_seq_dealloc,   /*tp_dealloc*/
     0,                  /*tp_vectorcall_offset*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
@@ -433,8 +436,8 @@ PyTypeObject _PyInstructionSequence_Type = {
     0,                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
     inst_seq_new__doc__,                    /* tp_doc */
-    (traverseproc)inst_seq_traverse,        /* tp_traverse */
-    (inquiry)inst_seq_clear,                /* tp_clear */
+    inst_seq_traverse,                      /* tp_traverse */
+    inst_seq_clear,                         /* tp_clear */
     0,                                      /* tp_richcompare */
     0,                                      /* tp_weaklistoffset */
     0,                                      /* tp_iter */
