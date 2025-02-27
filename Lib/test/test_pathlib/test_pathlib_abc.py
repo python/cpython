@@ -1495,23 +1495,6 @@ class RWPathTest(WritablePathTest, ReadablePathTest):
         target.joinpath('dirD').mkdir()
         self.assertRaises(FileExistsError, source.copy, target)
 
-    def test_copy_dir_to_existing_directory_dirs_exist_ok(self):
-        base = self.cls(self.base)
-        source = base / 'dirC'
-        target = base / 'copyC'
-        target.mkdir()
-        target.joinpath('dirD').mkdir()
-        result = source.copy(target, dirs_exist_ok=True)
-        self.assertEqual(result, target)
-        self.assertTrue(result.info.is_dir())
-        self.assertTrue(result.joinpath('dirD').info.is_dir())
-        self.assertTrue(result.joinpath('dirD', 'fileD').info.is_file())
-        self.assertEqual(result.joinpath('dirD', 'fileD').read_text(),
-                         "this is file D\n")
-        self.assertTrue(result.joinpath('fileC').info.is_file())
-        self.assertTrue(result.joinpath('fileC').read_text(),
-                        "this is file C\n")
-
     def test_copy_dir_to_itself(self):
         base = self.cls(self.base)
         source = base / 'dirC'
