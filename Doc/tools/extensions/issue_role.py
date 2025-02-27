@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from docutils import nodes
 from sphinx.util.docutils import SphinxRole
 
-TYPE_CHECKING = False
 if TYPE_CHECKING:
     from docutils.nodes import Element
     from sphinx.application import Sphinx
