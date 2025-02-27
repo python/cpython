@@ -571,17 +571,18 @@ I/O Base Classes
       Read and return up to *size* bytes. If the argument is omitted, ``None``,
       or negative read as much as possible.
 
-      The default implementation will use ``raw.readall`` if available (
-      which should implement :meth:`RawIOBase.readall`),
-      otherwise will read in a loop until read returns ``None``, a size-zero
-      ``bytes``, or a non-retryable error. For most streams this is to EOF, but
-      for non-blocking streams more data may become available.
-
       Less bytes may be returned than requested. An empty :class:`bytes` object
       is returned if the stream is already at EOF. More than one read may be
       made, and calls may be retried if specific errors are encountered, see
       :meth:`os.read` and :pep:`475` for more details. Less than size bytes
       being returned does not imply that EOF is imminent.
+
+      When reading as much as possible the default implementation will use
+      ``raw.readall`` if available (which should implement
+      :meth:`RawIOBase.readall`), otherwise will read in a loop until read
+      returns ``None``, a size-zero :clss:`bytes`, or a non-retryable error. For
+      most streams this is to EOF, but for non-blocking streams more data may
+      become available.
 
       A :exc:`BlockingIOError` is raised if the underlying raw stream is in
       non blocking-mode, and has no data available at the moment.
