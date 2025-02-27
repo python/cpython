@@ -126,7 +126,6 @@ class Emitter:
             "PyStackRef_AsPyObjectSteal": self.stackref_steal,
             "DISPATCH": self.dispatch,
             "INSTRUCTION_SIZE": self.instruction_size,
-            "POP_INPUT": self.pop_input,
             "stack_pointer": self.stack_pointer,
         }
         self.out = out

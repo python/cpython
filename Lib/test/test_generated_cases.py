@@ -1931,55 +1931,6 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
-    def test_pop_input(self):
-        input = """
-        inst(OP, (a, b --)) {
-            POP_INPUT(b);
-            HAM(a);
-            INPUTS_DEAD();
-        }
-        """
-        output = """
-        TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
-            int opcode = OP;
-            (void)(opcode);
-            #endif
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(OP);
-            _PyStackRef a;
-            _PyStackRef b;
-            b = stack_pointer[-1];
-            a = stack_pointer[-2];
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            HAM(a);
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            DISPATCH();
-        }
-        """
-        self.run_cases_test(input, output)
-
-    def test_pop_input_with_empty_stack(self):
-        input = """
-        inst(OP, (--)) {
-            POP_INPUT(foo);
-        }
-        """
-        with self.assertRaises(SyntaxError):
-            self.run_cases_test(input, "")
-
-    def test_pop_input_with_non_tos(self):
-        input = """
-        inst(OP, (a, b --)) {
-            POP_INPUT(a);
-        }
-        """
-        with self.assertRaises(SyntaxError):
-            self.run_cases_test(input, "")
-
     def test_no_escaping_calls_in_branching_macros(self):
 
         input = """
