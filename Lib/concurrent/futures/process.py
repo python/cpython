@@ -45,7 +45,6 @@ Process #1..n:
 
 __author__ = 'Brian Quinlan (brian@sweetapp.com)'
 
-import enum
 import os
 from concurrent.futures import _base
 import queue
@@ -627,17 +626,13 @@ class BrokenProcessPool(_base.BrokenExecutor):
     while a future was in the running state.
     """
 
-class _TerminateOrKillOperation(enum.Enum):
-    """Enum for _terminate_or_kill_workers().
+_TERMINATE = "terminate"
+_KILL = "kill"
 
-    Used to determine the operation used by the
-    _terminate_or_kill_workers() method.
-    """
-    # Delegate to call process.terminate()
-    TERMINATE = 1
-
-    # Delegate to call process.kill()
-    KILL = 2
+_TERMINATE_OR_KILL_OPERATION = {
+    _TERMINATE,
+    _KILL
+}
 
 
 class ProcessPoolExecutor(_base.Executor):
@@ -869,24 +864,25 @@ class ProcessPoolExecutor(_base.Executor):
 
     shutdown.__doc__ = _base.Executor.shutdown.__doc__
 
-    def _terminate_or_kill_workers(self, operation: _TerminateOrKillOperation):
-        """Attempts to terminate or kill the executor's workers based off the given
-        operation. Iterates through all of the current processes and performs the
-        relevant task if the process is still alive.
+    def _terminate_or_kill_workers(self, operation):
+        """Attempts to terminate or kill the executor's workers based off the
+        given operation. Iterates through all of the current processes and
+        performs the relevant task if the process is still alive.
 
         After terminating workers, the pool will be in a broken state
         and no longer usable (for instance, new tasks should not be
         submitted).
         """
-        if operation not in _TerminateOrKillOperation:
+        if operation not in _TERMINATE_OR_KILL_OPERATION:
             raise ValueError(f"Unsupported operation: {operation}")
 
         processes = {}
         if self._processes:
             processes = self._processes.copy()
 
-        # shutdown will invalidate ._processes, so we copy it right before calling.
-        # If we waited here, we would deadlock if a process decides not to exit.
+        # shutdown will invalidate ._processes, so we copy it right before
+        # calling. If we waited here, we would deadlock if a process decides not
+        # to exit.
         self.shutdown(wait=False, cancel_futures=True)
 
         if not processes:
@@ -901,9 +897,9 @@ class ProcessPoolExecutor(_base.Executor):
                 continue
 
             try:
-                if operation == _TerminateOrKillOperation.TERMINATE:
+                if operation == _TERMINATE:
                     proc.terminate()
-                elif operation == _TerminateOrKillOperation.KILL:
+                elif operation == _KILL:
                     proc.kill()
             except ProcessLookupError:
                 # The process just ended before our signal
@@ -918,7 +914,7 @@ class ProcessPoolExecutor(_base.Executor):
         and no longer usable (for instance, new tasks should not be
         submitted).
         """
-        return self._terminate_or_kill_workers(operation=_TerminateOrKillOperation.TERMINATE)
+        return self._terminate_or_kill_workers(operation=_TERMINATE)
 
     def kill_workers(self):
         """Attempts to kill the executor's workers.
@@ -929,4 +925,4 @@ class ProcessPoolExecutor(_base.Executor):
         and no longer usable (for instance, new tasks should not be
         submitted).
         """
-        return self._terminate_or_kill_workers(operation=_TerminateOrKillOperation.KILL)
+        return self._terminate_or_kill_workers(operation=_KILL)
