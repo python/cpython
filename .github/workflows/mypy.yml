@@ -33,6 +33,9 @@ concurrency:
 
 jobs:
   mypy:
+    name: Run mypy on ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -46,9 +49,6 @@ jobs:
           "Tools/peg_generator",
           "Tools/wasm",
         ]
-    name: Run mypy on ${{ matrix.target }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
