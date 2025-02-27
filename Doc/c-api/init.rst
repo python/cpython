@@ -1522,7 +1522,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    Return a :term:`strong reference` to the ``__main__`` :ref:`module object <moduleobjects>`
    for the given interpreter.
 
-   The caller must hold the GIL.
+   The caller must have an :term:`attached thread state`.
 
    .. versionadded:: 3.13
 
