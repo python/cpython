@@ -878,7 +878,7 @@ class ProcessPoolExecutor(_base.Executor):
         and no longer usable (for instance, new tasks should not be
         submitted).
         """
-        if operation not in _TerminateOrKillOperation._member_map_.values():
+        if operation not in _TerminateOrKillOperation:
             raise ValueError(f"Unsupported operation: {operation}")
 
         processes = {}

@@ -230,7 +230,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
 
     def test_process_pool_executor_terminate_kill_workers(self):
         for function_name in ('terminate_workers', 'kill_workers'):
-            with self.subTest(function_name=function_name):
+            with self.subTest(function_name):
                 manager = multiprocessing.Manager()
                 q = manager.Queue()
 
