@@ -144,7 +144,7 @@ created.  Socket addresses are represented as follows:
     - ``psm`` is an integer specifying the Protocol/Service Multiplexer.
     - ``cid`` is an optional integer specifying the Channel Identifier.
       If not given, defaults to zero.
-    - ``bdaddr_type``is an optional integer specifying the address type;
+    - ``bdaddr_type`` is an optional integer specifying the address type;
       one of :const:`BDADDR_BREDR` (default), :const:`BDADDR_LE_PUBLIC`,
       :const:`BDADDR_LE_RANDOM`.
 
