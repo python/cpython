@@ -20,13 +20,13 @@ class ReadablePathTest:
     def test_is_readable(self):
         self.assertIsInstance(self.root, ReadablePath)
 
-    def test_open_w(self):
+    def test_open_r(self):
         p = self.root / 'fileA'
         with magic_open(p, 'r') as f:
             self.assertIsInstance(f, io.TextIOBase)
             self.assertEqual(f.read(), 'this is file A\n')
 
-    def test_open_wb(self):
+    def test_open_rb(self):
         p = self.root / 'fileA'
         with magic_open(p, 'rb') as f:
             self.assertEqual(f.read(), b'this is file A\n')
