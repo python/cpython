@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from docutils import nodes
 from sphinx.util.docutils import SphinxRole
 
+TYPE_CHECKING = False
 if TYPE_CHECKING:
     from docutils.nodes import Element
     from sphinx.application import Sphinx
@@ -23,7 +22,7 @@ class BPOIssue(SphinxRole):
         if 47_261 < int(issue) < 400_000:
             msg = self.inliner.reporter.error(
                 f"The BPO ID {issue!r} seems too high. "
-                "Use :gh:`...` for GitHub IDs",
+                "Use :gh:`...` for GitHub IDs.",
                 line=self.lineno,
             )
             prb = self.inliner.problematic(self.rawtext, self.rawtext, msg)
@@ -46,7 +45,7 @@ class GitHubIssue(SphinxRole):
         if int(issue) < 32_426:
             msg = self.inliner.reporter.error(
                 f"The GitHub ID {issue!r} seems too low. "
-                "Use :issue:`...` for BPO IDs",
+                "Use :issue:`...` for BPO IDs.",
                 line=self.lineno,
             )
             prb = self.inliner.problematic(self.rawtext, self.rawtext, msg)
