@@ -31,6 +31,7 @@ extensions = [
     'implementation_detail',
     'lexers',
     'misc_news',
+    'pydoc_topics',
     'pyspecific',
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
