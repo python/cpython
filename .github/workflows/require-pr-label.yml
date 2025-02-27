@@ -5,8 +5,8 @@ on:
     types: [opened, reopened, labeled, unlabeled, synchronize]
 
 jobs:
-  label-dnm:
-    name: DO-NOT-MERGE
+  label:
+    name: DO-NOT-MERGE / unresolved review
     if: github.repository_owner == 'python'
     runs-on: ubuntu-latest
     permissions:
@@ -14,29 +14,8 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Check there's no DO-NOT-MERGE
-        uses: mheap/github-action-required-labels@v5
+      - uses: mheap/github-action-required-labels@v5
         with:
           mode: exactly
           count: 0
-          labels: |
-            DO-NOT-MERGE
-
-  label-reviews:
-    name: Unresolved review
-    if: github.repository_owner == 'python'
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: read
-    timeout-minutes: 10
-
-    steps:
-      # Check that the PR is not awaiting changes from the author due to previous review.
-      - name: Check there's no required changes
-        uses: mheap/github-action-required-labels@v5
-        with:
-          mode: exactly
-          count: 0
-          labels: |
-            awaiting changes
-            awaiting change review
+          labels: "DO-NOT-MERGE, awaiting changes, awaiting change review"
