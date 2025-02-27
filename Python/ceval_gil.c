@@ -325,7 +325,10 @@ take_gil(PyThreadState *tstate)
     while (_Py_atomic_load_int_relaxed(&gil->locked)) {
         unsigned long saved_switchnum = gil->switch_number;
 
-        unsigned long interval = (gil->interval >= 1 ? gil->interval : 1);
+        unsigned long interval = _Py_atomic_load_ulong_relaxed(&gil->interval);
+        if (interval < 1) {
+            interval = 1;
+        }
         int timed_out = 0;
         COND_TIMED_WAIT(gil->cond, gil->mutex, interval, timed_out);
 
@@ -420,7 +423,7 @@ void _PyEval_SetSwitchInterval(unsigned long microseconds)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _gil_runtime_state *gil = interp->ceval.gil;
     assert(gil != NULL);
-    gil->interval = microseconds;
+    _Py_atomic_store_ulong_relaxed(&gil->interval, microseconds);
 }
 
 unsigned long _PyEval_GetSwitchInterval(void)
@@ -428,7 +431,7 @@ unsigned long _PyEval_GetSwitchInterval(void)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _gil_runtime_state *gil = interp->ceval.gil;
     assert(gil != NULL);
-    return gil->interval;
+    return _Py_atomic_load_ulong_relaxed(&gil->interval);
 }
 
 
