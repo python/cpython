@@ -232,7 +232,7 @@ Operating System Utilities
 
    The file descriptor is created non-inheritable (:pep:`446`).
 
-   The caller must hold the GIL.
+   The caller must have an :term:`attached thread state`.
 
    .. versionadded:: 3.14
 
