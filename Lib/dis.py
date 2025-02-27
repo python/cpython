@@ -310,6 +310,7 @@ _Instruction = collections.namedtuple(
 )
 
 _Instruction.opname.__doc__ = "Human readable name for operation"
+_Instruction.opcode.__doc__ = "Numeric code for operation"
 _Instruction.arg.__doc__ = "Numeric argument to operation (if any), otherwise None"
 _Instruction.argval.__doc__ = "Resolved arg value (if known), otherwise same as arg"
 _Instruction.argrepr.__doc__ = "Human readable description of operation argument"
@@ -376,8 +377,12 @@ class Instruction(_Instruction):
     """
 
     @staticmethod
-    def make(opname, arg, argval, argrepr, offset, start_offset, starts_line, line_number, label=None, positions=None, cache_info=None):
-        return Instruction(opname, _all_opmap[opname], arg, argval, argrepr, offset, start_offset, starts_line, line_number, label, positions, cache_info)
+    def make(
+        opname, arg, argval, argrepr, offset, start_offset, starts_line,
+        line_number, label=None, positions=None, cache_info=None
+    ):
+        return Instruction(opname, _all_opmap[opname], arg, argval, argrepr, offset,
+                           start_offset, starts_line, line_number, label, positions, cache_info)
 
     @property
     def oparg(self):
