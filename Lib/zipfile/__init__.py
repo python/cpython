@@ -15,7 +15,7 @@ import threading
 import time
 
 try:
-    import zlib # We may need its compression method
+    import zlib
     crc32 = zlib.crc32
 except ImportError:
     zlib = None

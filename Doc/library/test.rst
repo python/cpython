@@ -748,7 +748,12 @@ The :mod:`test.support` module defines the following functions:
 
 .. decorator:: requires_zlib
 
-   Decorator for skipping tests if :mod:`zlib` doesn't exist.
+   Decorator for skipping tests if running on WASI as :mod:`zlib` is
+   unsupported.
+
+.. versionchanged:: next
+   Test is skipped only if it is running on WASI as builds without :mod:`zlib` on
+   other systems are unsupported.
 
 
 .. decorator:: requires_gzip
