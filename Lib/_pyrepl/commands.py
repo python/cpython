@@ -32,8 +32,8 @@ import os
 # [completion]
 
 
-# types
-if False:
+TYPE_CHECKING = False
+if TYPE_CHECKING:
     from .historical_reader import HistoricalReader
 
 
