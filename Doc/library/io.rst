@@ -1156,7 +1156,9 @@ with :deco:`typing.runtime_checkable`.
 
 .. class:: Reader[T]
 
-   Protocol for reading from a file or other input stream.
+   Generic protocol for reading from a file or other input stream. ``T`` will
+   usually be :class:`str` or :class:`bytes`, but can be any type that is
+   read from the stream.
 
    .. versionadded:: next
 
@@ -1174,7 +1176,9 @@ with :deco:`typing.runtime_checkable`.
 
 .. class:: Writer[T]
 
-   Protocol for writing to a file or other output stream.
+   Generic protocol for writing to a file or other output stream. ``T`` will
+   usually be :class:`str` or :class:`bytes`, but can be any type that can be
+   written to the stream.
 
    .. versionadded:: next
 
