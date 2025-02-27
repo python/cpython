@@ -32,13 +32,13 @@ extern "C" {
   unboxed integers harder in the future.
 
   Steal means that ownership is transferred to something else. The total
-  number of references to the object stays the same.
+  number of references to the object stays the same.  The old reference is no
+  longer valid.
 
   New creates a new reference from the old reference. The old reference
   is still valid.
 
-  With these 3 API, a strict stack discipline must be maintained. All
-  _PyStackRef must be operated on by the new reference operations:
+  All _PyStackRef must be operated on by the new reference operations:
 
     1. DUP
     2. CLOSE
