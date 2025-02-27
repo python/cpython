@@ -51,6 +51,7 @@ import copy
 import datetime
 import sys
 from email.base64mime import body_encode as encode_base64
+from saslprep import saslprep
 
 __all__ = ["SMTPException", "SMTPNotSupportedError", "SMTPServerDisconnected", "SMTPResponseException",
            "SMTPSenderRefused", "SMTPRecipientsRefused", "SMTPDataError",
@@ -636,7 +637,7 @@ class SMTP:
         mechanism = mechanism.upper()
         initial_response = (authobject() if initial_response_ok else None)
         if initial_response is not None:
-            response = encode_base64(initial_response.encode('ascii'), eol='')
+            response = encode_base64(initial_response.encode('utf-8'), eol='')
             (code, resp) = self.docmd("AUTH", mechanism + " " + response)
             self._auth_challenge_count = 1
         else:
@@ -647,7 +648,7 @@ class SMTP:
             self._auth_challenge_count += 1
             challenge = base64.decodebytes(resp)
             response = encode_base64(
-                authobject(challenge).encode('ascii'), eol='')
+                authobject(challenge).encode('utf-8'), eol='')
             (code, resp) = self.docmd(response)
             # If server keeps sending challenges, something is wrong.
             if self._auth_challenge_count > _MAXCHALLENGE:
@@ -665,21 +666,21 @@ class SMTP:
         # CRAM-MD5 does not support initial-response.
         if challenge is None:
             return None
-        return self.user + " " + hmac.HMAC(
-            self.password.encode('ascii'), challenge, 'md5').hexdigest()
+        return saslprep(self.user) + " " + hmac.HMAC(
+            saslprep(self.password).encode('utf-8'), challenge, 'md5').hexdigest()
 
     def auth_plain(self, challenge=None):
         """ Authobject to use with PLAIN authentication. Requires self.user and
         self.password to be set."""
-        return "\0%s\0%s" % (self.user, self.password)
+        return "\0%s\0%s" % (saslprep(self.user), saslprep(self.password))
 
     def auth_login(self, challenge=None):
         """ Authobject to use with LOGIN authentication. Requires self.user and
         self.password to be set."""
         if challenge is None or self._auth_challenge_count < 2:
-            return self.user
+            return saslprep(self.user)
         else:
-            return self.password
+            return saslprep(self.password)
 
     def login(self, user, password, *, initial_response_ok=True):
         """Log in on an SMTP server that requires authentication.
