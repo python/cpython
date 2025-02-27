@@ -1691,7 +1691,7 @@ class TestBranchAndJumpEvents(CheckEvents):
                         x += 1
                     case 2:
                         x += 2
-                    case 3:
+                    case _:
                         x += 3
             return x
 
@@ -1699,7 +1699,6 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch left', 'func', 2, 2),
             ('branch right', 'func', 4, 6),
             ('branch right', 'func', 6, 8),
-            ('branch left', 'func', 8, 8),
             ('branch left', 'func', 2, 2),
             ('branch left', 'func', 4, 5),
             ('branch left', 'func', 2, 2),
@@ -1708,7 +1707,6 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch left', 'func', 2, 2),
             ('branch right', 'func', 4, 6),
             ('branch right', 'func', 6, 8),
-            ('branch right', 'func', 8, 9),
             ('branch right', 'func', 2, 10)])
 
 
