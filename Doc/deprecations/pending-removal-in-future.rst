@@ -111,9 +111,6 @@ although there is currently no date scheduled for their removal.
   * ``ssl.TLSVersion.TLSv1``
   * ``ssl.TLSVersion.TLSv1_1``
 
-* :func:`sysconfig.is_python_build` *check_home* parameter is deprecated and
-  ignored.
-
 * :mod:`threading` methods:
 
   * :meth:`!threading.Condition.notifyAll`: use :meth:`~threading.Condition.notify_all`.
