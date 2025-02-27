@@ -933,7 +933,6 @@ class _StoreConstAction(Action):
                  default=None,
                  required=False,
                  help=None,
-                 metavar=None,
                  deprecated=False):
         super(_StoreConstAction, self).__init__(
             option_strings=option_strings,
