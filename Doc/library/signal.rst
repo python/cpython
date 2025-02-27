@@ -397,7 +397,7 @@ The :mod:`signal` module defines the following functions:
 
 .. function:: raise_signal(signum)
 
-   Sends a signal to the calling process. Returns nothing.
+   Sends a signal to the calling thread, not the entire process. Returns nothing.
 
    .. versionadded:: 3.8
 
