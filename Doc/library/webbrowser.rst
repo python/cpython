@@ -205,7 +205,8 @@ Notes:
 
 .. versionadded:: next
    Support for launching the XDG default browser via ``gtk-launch`` or ``gio launch`` on POSIX systems,
-   and ``exo-open`` in XFCE environments.
+   ``exo-open`` in XFCE environments,
+   and ``kioclient exec`` in KDE environments.
 
 .. versionchanged:: next
    ``file://`` URLs should now open more reliably in browsers on all platforms,

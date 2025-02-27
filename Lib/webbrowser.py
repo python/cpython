@@ -501,9 +501,12 @@ def register_X_browsers():
 
     # The default KDE browser
     if (("KDE" in xdg_desktop or
-         "KDE_FULL_SESSION" in os.environ) and
-            shutil.which("kfmclient")):
-        register("kfmclient", Konqueror, Konqueror("kfmclient"))
+         "KDE_FULL_SESSION" in os.environ):
+        if shutil.which("kioclient"):
+            # launch URL with http[s] handler
+            register("kioclient", None, BackgroundBrowser(["kioclient", "exec", "%s", "x-scheme-handler/https"]))
+        if shutil.which("kfmclient")):
+            register("kfmclient", Konqueror, Konqueror("kfmclient"))
 
     # The default XFCE browser
     if "XFCE" in xdg_desktop and shutil.which("exo-open"):
