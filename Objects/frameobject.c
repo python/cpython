@@ -193,9 +193,11 @@ framelocalsproxy_getitem(PyObject *self, PyObject *key)
 
     PyObject *extra = frame->f_extra_locals;
     if (extra != NULL) {
-        value = PyDict_GetItem(extra, key);
+        if (PyDict_GetItemRef(extra, key, &value) < 0) {
+            return NULL;
+        }
         if (value != NULL) {
-            return Py_NewRef(value);
+            return value;
         }
     }
 
