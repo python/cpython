@@ -3317,8 +3317,8 @@ dummy_func(
             int has_self = !PyStackRef_IsNull(exit_self);
             PyObject *res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
                     (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
-            ERROR_IF(res_o == NULL, error);
             Py_XDECREF(original_tb);
+            ERROR_IF(res_o == NULL, error);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
