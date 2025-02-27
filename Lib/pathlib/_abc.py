@@ -386,7 +386,7 @@ class WritablePath(JoinablePath):
         raise NotImplementedError
 
     @abstractmethod
-    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+    def mkdir(self):
         """
         Create a new directory at this given path.
         """
