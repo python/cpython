@@ -1500,12 +1500,13 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. versionadded:: 3.8
 
 
-.. c:function:: int PyThreadState_Ensure(PyInterpreterState *interp)
+.. c:function:: int PyThreadState_Ensure(PyInterpreterState *interp, const char **errmsg)
 
    Similar to :c:func:`PyGILState_Ensure`, except that it returns with a status
    code even in the case of failure, and takes an interpreter state.
    Specifically, it returns a status code (``>= 0``) when the operation
-   succeeded, and returns ``-1`` on failure.
+   succeeded, or sets *\*errmsg* (if *errmsg* is not NULL) and returns ``-1``
+   on failure.
 
    On success, the thread state must be released by
    :c:func:`PyThreadState_Release`.
