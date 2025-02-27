@@ -538,6 +538,23 @@ class NonCallableMock(Base):
         _spec_class = None
         _spec_signature = None
         _spec_asyncs = []
+        __dict__ = self.__dict__
+
+        # special-casing code carriers because co_flags is part of the specs
+        maybe_func = spec
+        code_attr = None
+        if inspect.ismethod(maybe_func):
+            maybe_func = maybe_func.__func__
+        if inspect.isfunction(maybe_func):
+            code_attr = '__code__'
+        elif inspect.iscoroutine(maybe_func):
+            code_attr = 'cr_code'
+        elif inspect.isgenerator(maybe_func):
+            code_attr = 'gi_code'
+        if code_attr:
+            __dict__[code_attr] = MagicMock(parent=self, name=code_attr,
+                _new_name=code_attr, _new_parent=self,
+                co_flags=getattr(maybe_func, code_attr).co_flags)
 
         if spec is not None and not _is_list(spec):
             if isinstance(spec, type):
@@ -562,7 +579,6 @@ class NonCallableMock(Base):
 
             spec = spec_list
 
-        __dict__ = self.__dict__
         __dict__['_spec_class'] = _spec_class
         __dict__['_spec_set'] = spec_set
         __dict__['_spec_signature'] = _spec_signature
