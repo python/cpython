@@ -2292,42 +2292,43 @@ dummy_func(
             PyDictObject *dict_o = _PyObject_GetManagedDict(owner_o);
             EXIT_IF(dict_o == NULL);
             assert(PyDict_CheckExact((PyObject *)dict_o));
+#ifdef Py_GIL_DISABLED
+            _PyDict_EnsureSharedOnRead(dict_o);
+#endif
             dict = dict_o;
         }
 
         op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict: PyDictObject * -- attr)) {
+            PyDictKeysObject *dk = FT_ATOMIC_LOAD_PTR(dict->ma_keys);
             PyObject *attr_o;
-            if (!LOCK_OBJECT(dict)) {
-                POP_INPUT(dict);
-                DEOPT_IF(true);
-            }
-
-            if (hint >= (size_t)dict->ma_keys->dk_nentries) {
-                UNLOCK_OBJECT(dict);
+            if (hint >= (size_t)FT_ATOMIC_LOAD_SSIZE_RELAXED(dk->dk_nentries)) {
                 POP_INPUT(dict);
                 DEOPT_IF(true);
             }
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-            if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
-                UNLOCK_OBJECT(dict);
+            if (dk->dk_kind != DICT_KEYS_UNICODE) {
                 POP_INPUT(dict);
                 DEOPT_IF(true);
             }
-            PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
-            if (ep->me_key != name) {
-                UNLOCK_OBJECT(dict);
+            PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dk) + hint;
+            if (FT_ATOMIC_LOAD_PTR_RELAXED(ep->me_key) != name) {
                 POP_INPUT(dict);
                 DEOPT_IF(true);
             }
-            attr_o = ep->me_value;
+            attr_o = FT_ATOMIC_LOAD_PTR(ep->me_value);
             if (attr_o == NULL) {
-                UNLOCK_OBJECT(dict);
                 POP_INPUT(dict);
                 DEOPT_IF(true);
             }
-            STAT_INC(LOAD_ATTR, hit);
+#ifdef Py_GIL_DISABLED
+            if (!_Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr)) {
+                POP_INPUT(dict);
+                DEOPT_IF(true);
+            }
+#else
             attr = PyStackRef_FromPyObjectNew(attr_o);
-            UNLOCK_OBJECT(dict);
+#endif
+            STAT_INC(LOAD_ATTR, hit);
             DEAD(dict);
             DECREF_INPUTS();
         }
