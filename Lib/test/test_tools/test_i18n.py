@@ -7,16 +7,9 @@ import unittest
 from textwrap import dedent
 from pathlib import Path
 
-<<<<<<< HEAD
 from test.support.script_helper import assert_python_ok, assert_python_failure
-from test.test_tools import skip_if_missing, toolsdir
-from test.support.os_helper import temp_cwd, temp_dir, change_cwd
-from test.support.import_helper import unload
-=======
-from test.support.script_helper import assert_python_ok
 from test.test_tools import imports_under_tool, skip_if_missing, toolsdir
 from test.support.os_helper import temp_cwd, temp_dir
->>>>>>> main
 
 
 skip_if_missing()
@@ -505,7 +498,25 @@ class Test_pygettext(unittest.TestCase):
             with self.subTest(spec=spec):
                 self.assertEqual(parse_spec(spec), expected)
 
-<<<<<<< HEAD
+        invalid = (
+            ('foo:', "Invalid keyword spec 'foo:': missing argument positions"),
+            ('foo:bar', "Invalid keyword spec 'foo:bar': position is not an integer"),
+            ('foo:0', "Invalid keyword spec 'foo:0': argument positions must be strictly positive"),
+            ('foo:-2', "Invalid keyword spec 'foo:-2': argument positions must be strictly positive"),
+            ('foo:1,1', "Invalid keyword spec 'foo:1,1': duplicate positions"),
+            ('foo:1,2,1', "Invalid keyword spec 'foo:1,2,1': duplicate positions"),
+            ('foo:1c,2,1c', "Invalid keyword spec 'foo:1c,2,1c': duplicate positions"),
+            ('foo:1c,2,3c', "Invalid keyword spec 'foo:1c,2,3c': msgctxt can only appear once"),
+            ('foo:1,2,3', "Invalid keyword spec 'foo:1,2,3': too many positions"),
+            ('foo:1c', "Invalid keyword spec 'foo:1c': msgctxt cannot appear without msgid"),
+        )
+        for spec, message in invalid:
+            with self.subTest(spec=spec):
+                with self.assertRaises(ValueError) as cm:
+                    parse_spec(spec)
+                self.assertEqual(str(cm.exception), message)
+
+
 class Test_msgfmt(unittest.TestCase):
     """Tests for the msgfmt.py tool
         bpo-35335 - bpo-9741
@@ -719,28 +730,6 @@ msgstr "Au revoir ..."
         sys.path.pop()
 
 
-def update_POT_snapshots():
-    for input_file in DATA_DIR.glob('*.py'):
-=======
-        invalid = (
-            ('foo:', "Invalid keyword spec 'foo:': missing argument positions"),
-            ('foo:bar', "Invalid keyword spec 'foo:bar': position is not an integer"),
-            ('foo:0', "Invalid keyword spec 'foo:0': argument positions must be strictly positive"),
-            ('foo:-2', "Invalid keyword spec 'foo:-2': argument positions must be strictly positive"),
-            ('foo:1,1', "Invalid keyword spec 'foo:1,1': duplicate positions"),
-            ('foo:1,2,1', "Invalid keyword spec 'foo:1,2,1': duplicate positions"),
-            ('foo:1c,2,1c', "Invalid keyword spec 'foo:1c,2,1c': duplicate positions"),
-            ('foo:1c,2,3c', "Invalid keyword spec 'foo:1c,2,3c': msgctxt can only appear once"),
-            ('foo:1,2,3', "Invalid keyword spec 'foo:1,2,3': too many positions"),
-            ('foo:1c', "Invalid keyword spec 'foo:1c': msgctxt cannot appear without msgid"),
-        )
-        for spec, message in invalid:
-            with self.subTest(spec=spec):
-                with self.assertRaises(ValueError) as cm:
-                    parse_spec(spec)
-                self.assertEqual(str(cm.exception), message)
-
-
 def extract_from_snapshots():
     snapshots = {
         'messages.py': (),
@@ -754,7 +743,6 @@ def extract_from_snapshots():
 
     for filename, args in snapshots.items():
         input_file = DATA_DIR / filename
->>>>>>> main
         output_file = input_file.with_suffix('.pot')
         contents = input_file.read_bytes()
         with temp_cwd(None):
@@ -769,6 +757,7 @@ def update_POT_snapshots():
     for _, output_file, output in extract_from_snapshots():
         output = normalize_POT_file(output)
         output_file.write_text(output, encoding='utf-8')
+
 
 
 if __name__ == '__main__':
