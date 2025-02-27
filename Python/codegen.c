@@ -6121,7 +6121,9 @@ codegen_match_inner(compiler *c, stmt_ty s, pattern_context *pc)
         }
         // Success! Pop the subject off, we're done with it:
         if (i != cases - has_default - 1) {
-            ADDOP(c, LOC(m->pattern), POP_TOP);
+            /* Use the body location to give better locations for branch events */
+            assert(asdl_seq_LEN(m->body) > 0);
+            ADDOP(c, LOC(asdl_seq_GET(m->body, 0)), POP_TOP);
         }
         VISIT_SEQ(c, stmt, m->body);
         ADDOP_JUMP(c, NO_LOCATION, JUMP, end);
