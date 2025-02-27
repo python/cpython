@@ -124,6 +124,15 @@ Options:
     --width=columns
         Set width of output to columns.
 
+    --omit-header
+        Don’t write header to file.
+
+        This is useful for testing purposes because it eliminates a source of
+        variance for generated .gmo files.
+
+        Note: Using this option will lead to an error if the resulting file
+        would not entirely be in ASCII.
+
     -x filename
     --exclude-file=filename
         Specify a file that contains a list of strings that are not be
@@ -574,9 +583,11 @@ class GettextVisitor(ast.NodeVisitor):
 def write_pot_file(messages, options, fp):
     timestamp = time.strftime('%Y-%m-%d %H:%M%z')
     encoding = fp.encoding if fp.encoding else 'UTF-8'
-    print(pot_header % {'time': timestamp, 'version': __version__,
-                        'charset': encoding,
-                        'encoding': '8bit'}, file=fp)
+
+    if not options.omit_header:
+        print(pot_header % {'time': timestamp, 'version': __version__,
+                            'charset': encoding,
+                            'encoding': '8bit'}, file=fp)
 
     # Sort locations within each message by filename and lineno
     sorted_keys = [
@@ -636,7 +647,7 @@ def main():
             ['extract-all', 'add-comments=?', 'default-domain=', 'escape',
              'help', 'keyword=', 'no-default-keywords',
              'add-location', 'no-location', 'output=', 'output-dir=',
-             'style=', 'verbose', 'version', 'width=', 'exclude-file=',
+             'style=', 'verbose', 'version', 'width=', 'omit-header', 'exclude-file=',
              'docstrings', 'no-docstrings',
              ])
     except getopt.error as msg:
@@ -657,6 +668,7 @@ def main():
         locationstyle = GNU
         verbose = 0
         width = 78
+        omit_header = False
         excludefilename = ''
         docstrings = 0
         nodocstrings = {}
@@ -709,6 +721,8 @@ def main():
                 options.width = int(arg)
             except ValueError:
                 usage(1, f'--width argument must be an integer: {arg}')
+        elif opt in ('--omit-header',):
+            options.omit_header = True
         elif opt in ('-x', '--exclude-file'):
             options.excludefilename = arg
         elif opt in ('-X', '--no-docstrings'):
