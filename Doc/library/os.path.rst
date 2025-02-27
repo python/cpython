@@ -248,6 +248,7 @@ the :mod:`glob` module.)
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
    .. versionchanged:: 3.13
       On Windows, returns ``False`` if the given path starts with exactly one
       (back)slash.
@@ -362,7 +363,7 @@ the :mod:`glob` module.)
 
    If a segment is an absolute path (which on Windows requires both a drive and
    a root), then all previous segments are ignored and joining continues from the
-   absolute path segment. For instance::
+   absolute path segment. For example::
 
       >>> os.path.join('/home/foo', 'bar')
       '/home/foo/bar'
@@ -372,7 +373,7 @@ the :mod:`glob` module.)
    On Windows, the drive is not reset when a rooted path segment (e.g.,
    ``r'\foo'``) is encountered. If a segment is on a different drive or is an
    absolute path, all previous segments are ignored and the drive is reset. For
-   instance::
+   example::
 
       >>> os.path.join('c:\\', 'foo')
       'c:\\foo'
