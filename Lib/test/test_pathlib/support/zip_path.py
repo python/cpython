@@ -58,10 +58,14 @@ class ZipFileList:
      `resolve()` method fetches an entry from the tree.
     """
 
-    __slots__ = ('_root_info', '_items')
+    __slots__ = ('_roots', '_items')
 
     def __init__(self, items):
-        self._root_info = ZipPathInfo()
+        self._roots = {
+            '': ZipPathInfo(),
+            '/': ZipPathInfo(),
+            '//': ZipPathInfo(),
+        }
         self._items = []
         for item in items:
             self.append(item)
@@ -80,7 +84,8 @@ class ZipFileList:
         """
         Returns a PathInfo object for the given path by walking the tree.
         """
-        path_info = self._root_info
+        _drive, root, path = posixpath.splitroot(path)
+        path_info = self._roots[root]
         for name in path.split('/'):
             if not name or name == '.':
                 pass
@@ -127,7 +132,12 @@ class ReadableZipPath(pathlib._abc.ReadablePath):
         return type(self)(*pathsegments, zip_file=self.zip_file)
 
     def __open_rb__(self, buffering=-1):
-        return self.zip_file.open(str(self), 'r')
+        info = self.info
+        if not info.exists():
+            raise FileNotFoundError(errno.ENOENT, "File not found", self)
+        elif info.is_dir():
+            raise IsADirectoryError(errno.EISDIR, "Is a directory", self)
+        return self.zip_file.open(info.zip_info, 'r')
 
     def iterdir(self):
         info = self.info
