@@ -6,6 +6,7 @@ from collections import defaultdict
 from functools import lru_cache, wraps, reduce
 import gc
 import inspect
+import io
 import itertools
 import operator
 import os
