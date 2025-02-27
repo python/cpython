@@ -461,14 +461,16 @@ def _locate_xdg_desktop(name: str) -> str | None:
 
 def register_X_browsers():
 
-    # use gtk-launch to launch preferred browser by name, if found
+    # use gtk[4]-launch to launch preferred browser by name, if found
     # this should be _before_ xdg-open, which doesn't necessarily launch a browser
-    if _os_preferred_browser and shutil.which("gtk-launch"):
-        register(
-            "gtk-launch",
-            None,
-            BackgroundBrowser(["gtk-launch", _os_preferred_browser, "%s"]),
-        )
+    if _os_preferred_browser:
+        for gtk_launch in ("gtk4-launch", "gtk-launch"):
+            if shutil.which(gtk_launch):
+                register(
+                    gtk_launch,
+                    None,
+                    BackgroundBrowser([gtk_launch, _os_preferred_browser, "%s"]),
+                )
 
     # use xdg-open if around
     if shutil.which("xdg-open"):
