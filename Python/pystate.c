@@ -2099,11 +2099,10 @@ _PyThreadState_Attach(PyThreadState *tstate)
 
         // XXX assert(tstate_is_alive(tstate));
         current_fast_set(&_PyRuntime, tstate);
-        tstate_activate(tstate);
-
         if (!tstate_try_attach(tstate)) {
             tstate_wait_attach(tstate);
         }
+        tstate_activate(tstate);
 
 #ifdef Py_GIL_DISABLED
         if (_PyEval_IsGILEnabled(tstate) && !tstate->_status.holds_gil) {
