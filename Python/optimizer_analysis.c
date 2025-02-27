@@ -389,7 +389,7 @@ optimize_to_bool(
         *result_ptr = value;
         return 1;
     }
-    int truthiness = sym_truthiness(value);
+    int truthiness = sym_truthiness(ctx, value);
     if (truthiness >= 0) {
         PyObject *load = truthiness ? Py_True : Py_False;
         REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
