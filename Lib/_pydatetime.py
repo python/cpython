@@ -3,6 +3,8 @@
 __all__ = ("date", "datetime", "time", "timedelta", "timezone", "tzinfo",
            "MINYEAR", "MAXYEAR", "UTC")
 
+__name__ = "datetime"
+
 
 import time as _time
 import math as _math
@@ -14,10 +16,10 @@ def _cmp(x, y):
 
 def _get_class_module(self):
     module_name = self.__class__.__module__
-    if module_name == '_pydatetime':
-        return 'datetime'
+    if module_name == 'datetime':
+        return 'datetime.'
     else:
-        return module_name
+        return ''
 
 MINYEAR = 1
 MAXYEAR = 9999
@@ -431,7 +433,7 @@ def _parse_hh_mm_ss_ff(tstr):
 
     if pos < len_str:
         if tstr[pos] not in '.,':
-            raise ValueError("Invalid microsecond component")
+            raise ValueError("Invalid microsecond separator")
         else:
             pos += 1
 
@@ -489,7 +491,7 @@ def _parse_isoformat_time(tstr):
         # HH:MM:SS            len: 8
         # HH:MM:SS.f+         len: 10+
 
-        if len(tzstr) in (0, 1, 3):
+        if len(tzstr) in (0, 1, 3) or tstr[tz_pos-1] == 'Z':
             raise ValueError("Malformed time zone string")
 
         tz_comps = _parse_hh_mm_ss_ff(tzstr)
@@ -767,9 +769,9 @@ class timedelta:
             args.append("microseconds=%d" % self._microseconds)
         if not args:
             args.append('0')
-        return "%s.%s(%s)" % (_get_class_module(self),
-                              self.__class__.__qualname__,
-                              ', '.join(args))
+        return "%s%s(%s)" % (_get_class_module(self),
+                             self.__class__.__qualname__,
+                             ', '.join(args))
 
     def __str__(self):
         mm, ss = divmod(self._seconds, 60)
@@ -1082,11 +1084,11 @@ class date:
         >>> repr(d)
         'datetime.date(2010, 1, 1)'
         """
-        return "%s.%s(%d, %d, %d)" % (_get_class_module(self),
-                                      self.__class__.__qualname__,
-                                      self._year,
-                                      self._month,
-                                      self._day)
+        return "%s%s(%d, %d, %d)" % (_get_class_module(self),
+                                     self.__class__.__qualname__,
+                                     self._year,
+                                     self._month,
+                                     self._day)
     # XXX These shouldn't depend on time.localtime(), because that
     # clips the usable dates to [1970 .. 2038).  At least ctime() is
     # easily done without using strftime() -- that's better too because
@@ -1586,7 +1588,7 @@ class time:
             s = ", %d" % self._second
         else:
             s = ""
-        s= "%s.%s(%d, %d%s)" % (_get_class_module(self),
+        s = "%s%s(%d, %d%s)" % (_get_class_module(self),
                                 self.__class__.__qualname__,
                                 self._hour, self._minute, s)
         if self._tzinfo is not None:
@@ -2162,9 +2164,9 @@ class datetime(date):
             del L[-1]
         if L[-1] == 0:
             del L[-1]
-        s = "%s.%s(%s)" % (_get_class_module(self),
-                           self.__class__.__qualname__,
-                           ", ".join(map(str, L)))
+        s = "%s%s(%s)" % (_get_class_module(self),
+                          self.__class__.__qualname__,
+                          ", ".join(map(str, L)))
         if self._tzinfo is not None:
             assert s[-1:] == ")"
             s = s[:-1] + ", tzinfo=%r" % self._tzinfo + ")"
@@ -2461,12 +2463,12 @@ class timezone(tzinfo):
         if self is self.utc:
             return 'datetime.timezone.utc'
         if self._name is None:
-            return "%s.%s(%r)" % (_get_class_module(self),
-                                  self.__class__.__qualname__,
-                                  self._offset)
-        return "%s.%s(%r, %r)" % (_get_class_module(self),
-                                  self.__class__.__qualname__,
-                                  self._offset, self._name)
+            return "%s%s(%r)" % (_get_class_module(self),
+                                 self.__class__.__qualname__,
+                                 self._offset)
+        return "%s%s(%r, %r)" % (_get_class_module(self),
+                                 self.__class__.__qualname__,
+                                 self._offset, self._name)
 
     def __str__(self):
         return self.tzname(None)

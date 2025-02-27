@@ -45,18 +45,12 @@ The following exception classes are defined in the :mod:`email.errors` module:
 
 .. exception:: MultipartConversionError()
 
-   Raised when a payload is added to a :class:`~email.message.Message` object
-   using :meth:`add_payload`, but the payload is already a scalar and the
-   message's :mailheader:`Content-Type` main type is not either
-   :mimetype:`multipart` or missing.  :exc:`MultipartConversionError` multiply
-   inherits from :exc:`MessageError` and the built-in :exc:`TypeError`.
-
-   Since :meth:`Message.add_payload` is deprecated, this exception is rarely
-   raised in practice.  However the exception may also be raised if the
-   :meth:`~email.message.Message.attach`
-   method is called on an instance of a class derived from
+   Raised if the :meth:`~email.message.Message.attach` method is called
+   on an instance of a class derived from
    :class:`~email.mime.nonmultipart.MIMENonMultipart` (e.g.
    :class:`~email.mime.image.MIMEImage`).
+   :exc:`MultipartConversionError` multiply
+   inherits from :exc:`MessageError` and the built-in :exc:`TypeError`.
 
 
 .. exception:: HeaderWriteError()

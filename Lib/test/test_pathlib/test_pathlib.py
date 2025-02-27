@@ -1440,11 +1440,13 @@ class PathTest(test_pathlib_abc.RWPathTest, PurePathTest):
         if hasattr(os, 'chflags') and hasattr(stat, 'UF_NODUMP'):
             os.chflags(source / 'fileC', stat.UF_NODUMP)
         target = base / 'copyA'
-        source.copy(target, preserve_metadata=True)
 
-        for subpath in ['.', 'fileC', 'dirD', 'dirD/fileD']:
-            source_st = source.joinpath(subpath).stat()
-            target_st = target.joinpath(subpath).stat()
+        subpaths = ['.', 'fileC', 'dirD', 'dirD/fileD']
+        source_sts = [source.joinpath(subpath).stat() for subpath in subpaths]
+        source.copy(target, preserve_metadata=True)
+        target_sts = [target.joinpath(subpath).stat() for subpath in subpaths]
+
+        for source_st, target_st in zip(source_sts, target_sts):
             self.assertLessEqual(source_st.st_atime, target_st.st_atime)
             self.assertLessEqual(source_st.st_mtime, target_st.st_mtime)
             self.assertEqual(source_st.st_mode, target_st.st_mode)
@@ -2763,6 +2765,64 @@ class PathTest(test_pathlib_abc.RWPathTest, PurePathTest):
         # gh-91616, a re module regression
         _check(p, "*.txt", ["dirC/novel.txt"])
         _check(p, "*.*", ["dirC/novel.txt"])
+
+    def test_rglob_recurse_symlinks_false(self):
+        def _check(path, glob, expected):
+            actual = set(path.rglob(glob, recurse_symlinks=False))
+            self.assertEqual(actual, { P(self.base, q) for q in expected })
+        P = self.cls
+        p = P(self.base)
+        it = p.rglob("fileA")
+        self.assertIsInstance(it, collections.abc.Iterator)
+        _check(p, "fileA", ["fileA"])
+        _check(p, "fileB", ["dirB/fileB"])
+        _check(p, "**/fileB", ["dirB/fileB"])
+        _check(p, "*/fileA", [])
+
+        if self.can_symlink:
+            _check(p, "*/fileB", ["dirB/fileB", "dirB/linkD/fileB",
+                                  "linkB/fileB", "dirA/linkC/fileB"])
+            _check(p, "*/", [
+                "dirA/", "dirA/linkC/", "dirB/", "dirB/linkD/", "dirC/",
+                "dirC/dirD/", "dirE/", "linkB/"])
+        else:
+            _check(p, "*/fileB", ["dirB/fileB"])
+            _check(p, "*/", ["dirA/", "dirB/", "dirC/", "dirC/dirD/", "dirE/"])
+
+        _check(p, "file*", ["fileA", "dirB/fileB", "dirC/fileC", "dirC/dirD/fileD"])
+        _check(p, "", ["", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
+        p = P(self.base, "dirC")
+        _check(p, "*", ["dirC/fileC", "dirC/novel.txt",
+                              "dirC/dirD", "dirC/dirD/fileD"])
+        _check(p, "file*", ["dirC/fileC", "dirC/dirD/fileD"])
+        _check(p, "**/file*", ["dirC/fileC", "dirC/dirD/fileD"])
+        _check(p, "dir*/**", ["dirC/dirD/", "dirC/dirD/fileD"])
+        _check(p, "dir*/**/", ["dirC/dirD/"])
+        _check(p, "*/*", ["dirC/dirD/fileD"])
+        _check(p, "*/", ["dirC/dirD/"])
+        _check(p, "", ["dirC/", "dirC/dirD/"])
+        _check(p, "**", ["dirC/", "dirC/fileC", "dirC/dirD", "dirC/dirD/fileD", "dirC/novel.txt"])
+        _check(p, "**/", ["dirC/", "dirC/dirD/"])
+        # gh-91616, a re module regression
+        _check(p, "*.txt", ["dirC/novel.txt"])
+        _check(p, "*.*", ["dirC/novel.txt"])
+
+    @needs_posix
+    def test_rglob_posix(self):
+        P = self.cls
+        p = P(self.base, "dirC")
+        q = p / "dirD" / "FILEd"
+        given = set(p.rglob("FILEd"))
+        expect = {q} if q.exists() else set()
+        self.assertEqual(given, expect)
+        self.assertEqual(set(p.rglob("FILEd*")), set())
+
+    @needs_windows
+    def test_rglob_windows(self):
+        P = self.cls
+        p = P(self.base, "dirC")
+        self.assertEqual(set(p.rglob("FILEd")), { P(self.base, "dirC/dirD/fileD") })
+        self.assertEqual(set(p.rglob("*\\")), { P(self.base, "dirC/dirD/") })
 
     @needs_symlinks
     def test_rglob_symlink_loop(self):

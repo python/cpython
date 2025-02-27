@@ -2455,9 +2455,6 @@ class FreeThreadingTest(unittest.TestCase):
             with threading_helper.start_threads(threads):
                 pass
 
-            for thread in threads:
-                threading_helper.join_thread(thread)
-
         # hard errors
 
         check([clear] + [reduce] * 10)
@@ -2518,6 +2515,44 @@ class FreeThreadingTest(unittest.TestCase):
         check([clear] + [title] * 10, bytearray(b'aA' * 0x200000))
         check([clear] + [upper] * 10, bytearray(b'a' * 0x400000))
         check([clear] + [zfill] * 10, bytearray(b'1' * 0x200000))
+
+    @unittest.skipUnless(support.Py_GIL_DISABLED, 'this test can only possibly fail with GIL disabled')
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_free_threading_bytearrayiter(self):
+        # Non-deterministic but good chance to fail if bytearrayiter is not free-threading safe.
+        # We are fishing for a "Assertion failed: object has negative ref count" and tsan races.
+
+        def iter_next(b, it):
+            b.wait()
+            list(it)
+
+        def iter_reduce(b, it):
+            b.wait()
+            it.__reduce__()
+
+        def iter_setstate(b, it):
+            b.wait()
+            it.__setstate__(0)
+
+        def check(funcs, it):
+            barrier = threading.Barrier(len(funcs))
+            threads = []
+
+            for func in funcs:
+                thread = threading.Thread(target=func, args=(barrier, it))
+
+                threads.append(thread)
+
+            with threading_helper.start_threads(threads):
+                pass
+
+        for _ in range(10):
+            ba = bytearray(b'0' * 0x4000)  # this is a load-bearing variable, do not remove
+
+            check([iter_next] * 10, iter(ba))
+            check([iter_next] + [iter_reduce] * 10, iter(ba))  # for tsan
+            check([iter_next] + [iter_setstate] * 10, iter(ba))  # for tsan
 
 
 if __name__ == "__main__":
