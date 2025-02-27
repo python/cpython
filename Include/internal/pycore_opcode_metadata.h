@@ -227,6 +227,8 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
             return 4;
         case INSTRUMENTED_CALL_KW:
             return 3 + oparg;
+        case INSTRUMENTED_END_ASYNC_FOR:
+            return 2;
         case INSTRUMENTED_END_FOR:
             return 2;
         case INSTRUMENTED_END_SEND:
@@ -700,6 +702,8 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
             return 1;
         case INSTRUMENTED_CALL_KW:
             return 1;
+        case INSTRUMENTED_END_ASYNC_FOR:
+            return 0;
         case INSTRUMENTED_END_FOR:
             return 1;
         case INSTRUMENTED_END_SEND:
@@ -1381,6 +1385,10 @@ int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {
         }
         case INSTRUMENTED_CALL_KW: {
             *effect = Py_MAX(0, -2 - oparg);
+            return 0;
+        }
+        case INSTRUMENTED_END_ASYNC_FOR: {
+            *effect = 0;
             return 0;
         }
         case INSTRUMENTED_END_FOR: {
@@ -2097,6 +2105,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[266] = {
     [INSTRUMENTED_CALL] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [INSTRUMENTED_CALL_FUNCTION_EX] = { true, INSTR_FMT_IX, HAS_EVAL_BREAK_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [INSTRUMENTED_CALL_KW] = { true, INSTR_FMT_IBC00, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
+    [INSTRUMENTED_END_ASYNC_FOR] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [INSTRUMENTED_END_FOR] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG | HAS_NO_SAVE_IP_FLAG },
     [INSTRUMENTED_END_SEND] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [INSTRUMENTED_FOR_ITER] = { true, INSTR_FMT_IBC, HAS_ARG_FLAG | HAS_JUMP_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
@@ -2525,6 +2534,7 @@ const char *_PyOpcode_OpName[266] = {
     [INSTRUMENTED_CALL] = "INSTRUMENTED_CALL",
     [INSTRUMENTED_CALL_FUNCTION_EX] = "INSTRUMENTED_CALL_FUNCTION_EX",
     [INSTRUMENTED_CALL_KW] = "INSTRUMENTED_CALL_KW",
+    [INSTRUMENTED_END_ASYNC_FOR] = "INSTRUMENTED_END_ASYNC_FOR",
     [INSTRUMENTED_END_FOR] = "INSTRUMENTED_END_FOR",
     [INSTRUMENTED_END_SEND] = "INSTRUMENTED_END_SEND",
     [INSTRUMENTED_FOR_ITER] = "INSTRUMENTED_FOR_ITER",
@@ -2787,6 +2797,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     [INSTRUMENTED_CALL] = INSTRUMENTED_CALL,
     [INSTRUMENTED_CALL_FUNCTION_EX] = INSTRUMENTED_CALL_FUNCTION_EX,
     [INSTRUMENTED_CALL_KW] = INSTRUMENTED_CALL_KW,
+    [INSTRUMENTED_END_ASYNC_FOR] = INSTRUMENTED_END_ASYNC_FOR,
     [INSTRUMENTED_END_FOR] = INSTRUMENTED_END_FOR,
     [INSTRUMENTED_END_SEND] = INSTRUMENTED_END_SEND,
     [INSTRUMENTED_FOR_ITER] = INSTRUMENTED_FOR_ITER,
@@ -2951,7 +2962,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     case 148: \
     case 232: \
     case 233: \
-    case 234: \
         ;
 struct pseudo_targets {
     uint8_t as_sequence;
