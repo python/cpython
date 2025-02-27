@@ -1,4 +1,3 @@
-import multiprocessing
 import os
 import queue
 import signal
@@ -256,7 +255,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
 
     @parameterize(*TERMINATE_OR_KILL_PARAMS)
     def test_process_pool_executor_terminate_kill_workers(self, function_name):
-        manager = multiprocessing.Manager()
+        manager = self.get_context().Manager()
         q = manager.Queue()
 
         with futures.ProcessPoolExecutor(max_workers=1) as executor:
