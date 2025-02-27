@@ -422,15 +422,18 @@ _locale_strxfrm_impl(PyObject *module, PyObject *str)
         goto exit;
     }
     if (n2 >= (size_t)n1) {
-        /* more space needed */
-        wchar_t * new_buf = PyMem_Realloc(buf, (n2+1)*sizeof(wchar_t));
+        /* more space needed, some implementations return needed size while
+           others just buffer length and it's up to the caller to figure
+           out needed buffer size */
+        size_t new_buf_len = n2 * 2;
+        wchar_t * new_buf = PyMem_Realloc(buf, new_buf_len * sizeof(wchar_t));
         if (!new_buf) {
             PyErr_NoMemory();
             goto exit;
         }
         buf = new_buf;
         errno = 0;
-        n2 = wcsxfrm(buf, s, n2+1);
+        n2 = wcsxfrm(buf, s, new_buf_len);
         if (errno) {
             PyErr_SetFromErrno(PyExc_OSError);
             goto exit;
