@@ -3302,17 +3302,11 @@ array_arrayiterator___reduce___impl(arrayiterobject *self, PyTypeObject *cls)
     array_state *state = get_array_state_by_class(cls);
     assert(state != NULL);
     PyObject *func = _PyEval_GetBuiltin(state->str_iter);
-    PyObject *ret = NULL;
     Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(self->index);
     if (index >= 0) {
-        if (index <= Py_SIZE(self->ao)) {
-            ret = Py_BuildValue("N(O)n", func, self->ao, index);
-        }
+        return Py_BuildValue("N(O)n", func, self->ao, index);
     }
-    if (ret == NULL) {
-        ret = Py_BuildValue("N(())", func);
-    }
-    return ret;
+    return Py_BuildValue("N(())", func);
 }
 
 /*[clinic input]
