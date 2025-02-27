@@ -47,7 +47,7 @@ The token constants are:
 .. data:: NAME
 
    Token value that indicates an :ref:`identifier <identifiers>`.
-   Note that keywords are also identifiers.
+   Note that keywords are also initially tokenized an ``NAME`` tokens.
 
 .. data:: NUMBER
 
@@ -56,10 +56,10 @@ The token constants are:
 .. data:: STRING
 
    Token value that indicates a :ref:`string or byte literal <strings>`,
-   excluding :ref:`f-strings <f-strings>`.
-   The token string is not interpreted: it includes the prefix (if any)
-   and the quote characters; escape sequences are included with their
-   initial backslash.
+   excluding :ref:`formatted string literals <f-strings>`.
+   The token string is not interpreted:
+   it includes the surrounding quotation marks and the prefix (if given);
+   backslashes are included literally, without processing escape sequences.
 
 .. data:: OP
 
@@ -74,8 +74,7 @@ The token constants are:
 
 .. data:: NEWLINE
 
-   Token value that indicates the end of a :ref:`logical line <logical-lines>`
-   of Python code.
+   Token value that indicates the end of a :ref:`logical line <logical-lines>`.
 
 .. data:: NL
 
@@ -95,17 +94,17 @@ The token constants are:
 
 .. data:: FSTRING_START
 
-   Token value used to indicate the beginning of a
-   :ref:`f-string <f-strings>`.
+   Token value used to indicate the beginning of an
+   :ref:`f-string literal <f-strings>`.
 
    .. impl-detail::
 
-      The token string includes the prefix and the opening quote, but none
+      The token string includes the prefix and the opening quote(s), but none
       of the contents of the literal.
 
 .. data:: FSTRING_MIDDLE
 
-   Token value used for literal text inside an :ref:`f-string <f-strings>`,
+   Token value used for literal text inside an :ref:`f-string literal <f-strings>`,
    including format specifications.
 
    .. impl-detail::
@@ -121,7 +120,7 @@ The token constants are:
 
    .. impl-detail::
 
-      The token string contains the closing quote.
+      The token string contains the closing quote(s).
 
 .. data:: ENDMARKER
 
@@ -146,14 +145,14 @@ and are defined for special uses in the tokenizer or parser:
 .. data:: TYPE_IGNORE
 
    Token value indicating that a ``type: ignore`` comment was recognized.
-   Such tokens are produced instead of regular :data:`COMMENT` tokens only when
-   :func:`ast.parse` is invoked with ``type_comments=True``.
+   Such tokens are produced instead of regular :data:`COMMENT` tokens only
+   with the :data:`~ast.PyCF_TYPE_COMMENTS` flag.
 
 .. data:: TYPE_COMMENT
 
    Token value indicating that a type comment was recognized.
-   Such tokens are produced instead of regular :data:`COMMENT` tokens only when
-   :func:`ast.parse` is invoked with ``type_comments=True``.
+   Such tokens are produced instead of regular :data:`COMMENT` tokens only
+   with the :data:`~ast.PyCF_TYPE_COMMENTS` flag.
 
 .. data:: SOFT_KEYWORD
 

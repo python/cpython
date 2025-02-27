@@ -208,6 +208,7 @@ token_inc_template = f"""\
 .. {AUTO_GENERATED_BY_SCRIPT}
 
 .. list-table::
+   :align: left
    :header-rows: 1
 
    * - Token
