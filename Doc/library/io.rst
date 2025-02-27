@@ -571,7 +571,7 @@ I/O Base Classes
       Read and return up to *size* bytes. If the argument is omitted, ``None``,
       or negative read as much as possible.
 
-      The default implementation will use :py:func:`raw.readall` if available (
+      The default implementation will use ``raw.readall`` if available (
       which should implement :meth:`RawIOBase.readall`),
       otherwise will read in a loop until read returns ``None``, a size-zero
       ``bytes``, or a non-retryable error. For most streams this is to EOF, but
