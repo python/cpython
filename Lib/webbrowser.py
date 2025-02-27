@@ -502,12 +502,12 @@ def register_X_browsers():
         register("gvfs-open", None, BackgroundBrowser("gvfs-open", _supports_file=False))
 
     # The default KDE browser
-    if (("KDE" in xdg_desktop or
+    if ("KDE" in xdg_desktop or
          "KDE_FULL_SESSION" in os.environ):
         if shutil.which("kioclient"):
             # launch URL with http[s] handler
             register("kioclient", None, BackgroundBrowser(["kioclient", "exec", "%s", "x-scheme-handler/https"]))
-        if shutil.which("kfmclient")):
+        if shutil.which("kfmclient"):
             register("kfmclient", Konqueror, Konqueror("kfmclient"))
 
     # The default XFCE browser
