@@ -231,10 +231,13 @@ class ZipPathGround:
         self.create_link(p.joinpath('brokenLinkLoop'), 'brokenLinkLoop')
 
     def readtext(self, p):
-        return p.zip_file.read(str(p)).decode()
+        with p.zip_file.open(str(p), 'r') as f:
+            f = io.TextIOWrapper(f)
+            return f.read()
 
     def readbytes(self, p):
-        return p.zip_file.read(str(p))
+        with p.zip_file.open(str(p), 'r') as f:
+            return f.read()
 
     readlink = readtext
 
