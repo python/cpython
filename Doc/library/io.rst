@@ -568,15 +568,19 @@ I/O Base Classes
 
    .. method:: read(size=-1, /)
 
-      Read and return up to *size* bytes.  If the argument is omitted, ``None``,
-      or negative, data is read and returned until EOF is reached.  An empty
-      :class:`bytes` object is returned if the stream is already at EOF.
+      Read and return up to *size* bytes. If the argument is omitted, ``None``,
+      or negative read as much as possible.
 
-      If the argument is positive, and the underlying raw stream is not
-      interactive, multiple raw reads may be issued to satisfy the byte count
-      (unless EOF is reached first).  But for interactive raw streams, at most
-      one raw read will be issued, and a short result does not imply that EOF is
-      imminent.
+      Reading as much as possible will use :meth:`~raw.readall` if available,
+      otherwise will read in a loop until read returns ``None``, a size-zero
+      ``bytes``, or a non-retryable error. For most streams this is to EOF, but
+      for non-blocking streams more data may become available.
+
+      Less bytes may be returned than requested. An empty :class:`bytes` object
+      is returned if the stream is already at EOF. More than one read may be
+      made, and calls may be retried if specific errors are encountered, see
+      :meth:`os.read` and :pep:`475` for more details. Less than size bytes
+      being returned does not imply that EOF is imminent.
 
       A :exc:`BlockingIOError` is raised if the underlying raw stream is in
       non blocking-mode, and has no data available at the moment.
@@ -591,6 +595,11 @@ I/O Base Classes
 
       If *size* is ``-1`` (the default), an arbitrary number of bytes are
       returned (more than zero unless EOF is reached).
+
+      .. note::
+
+         When the underlying raw stream is non-blocking, a :exc:`BlockingIOError`
+         may be raised if a read operation cannot be completed immediately.
 
    .. method:: readinto(b, /)
 
@@ -737,14 +746,14 @@ than raw I/O does.
 
    .. method:: read1(size=-1, /)
 
-      In :class:`BytesIO`, this is the same as :meth:`~BufferedIOBase.read`.
+      In :class:`BytesIO`, this is the same as :meth:`io.BufferedIOBase.read`.
 
       .. versionchanged:: 3.7
          The *size* argument is now optional.
 
    .. method:: readinto1(b, /)
 
-      In :class:`BytesIO`, this is the same as :meth:`~BufferedIOBase.readinto`.
+      In :class:`BytesIO`, this is the same as :meth:`io.BufferedIOBase.readinto`.
 
       .. versionadded:: 3.5
 
@@ -767,33 +776,20 @@ than raw I/O does.
 
    .. method:: peek(size=0, /)
 
-      Return bytes from the stream without advancing the position.  At most one
-      single read on the raw stream is done to satisfy the call. The number of
-      bytes returned may be less or more than requested.
+      Return bytes from the stream without advancing the position. The number of
+      bytes returned may be less or more than requested. If the underlying raw
+      stream is non-blocking and the operation would block, returns empty bytes.
 
    .. method:: read(size=-1, /)
 
-      Read and return *size* bytes, or if *size* is not given or negative, until
-      EOF or if the read call would block in non-blocking mode.
-
-      .. note::
-
-         When the underlying raw stream is non-blocking, a :exc:`BlockingIOError`
-         may be raised if a read operation cannot be completed immediately.
+      In :class:`BufferedReader` this is the same as :meth:`io.BufferedIOBase.read`
 
    .. method:: read1(size=-1, /)
 
-      Read and return up to *size* bytes with only one call on the raw stream.
-      If at least one byte is buffered, only buffered bytes are returned.
-      Otherwise, one raw stream read call is made.
+      In :class:`BufferedReader` this is the same as :meth:`io.BufferedIOBase.read1`
 
       .. versionchanged:: 3.7
          The *size* argument is now optional.
-
-      .. note::
-
-         When the underlying raw stream is non-blocking, a :exc:`BlockingIOError`
-         may be raised if a read operation cannot be completed immediately.
 
 .. class:: BufferedWriter(raw, buffer_size=DEFAULT_BUFFER_SIZE)
 
@@ -856,7 +852,7 @@ than raw I/O does.
    :data:`DEFAULT_BUFFER_SIZE`.
 
    :class:`BufferedRWPair` implements all of :class:`BufferedIOBase`\'s methods
-   except for :meth:`~BufferedIOBase.detach`, which raises
+   except for :meth:`io.BufferedIOBase.detach`, which raises
    :exc:`UnsupportedOperation`.
 
    .. warning::
@@ -1006,8 +1002,8 @@ Text I/O
    If *line_buffering* is ``True``, :meth:`~IOBase.flush` is implied when a call to
    write contains a newline character or a carriage return.
 
-   If *write_through* is ``True``, calls to :meth:`~BufferedIOBase.write` are guaranteed
-   not to be buffered: any data written on the :class:`TextIOWrapper`
+   If *write_through* is ``True``, calls to :meth:`io.BufferedIOBase.write` are
+   guaranteed not to be buffered: any data written on the :class:`TextIOWrapper`
    object is immediately handled to its underlying binary *buffer*.
 
    .. versionchanged:: 3.3
