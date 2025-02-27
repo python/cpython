@@ -583,6 +583,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PySlice_New",
     "PyStackRef_AsPyObjectBorrow",
     "PyStackRef_AsPyObjectNew",
+    "PyStackRef_FromPyObjectNewMortal",
     "PyStackRef_AsPyObjectSteal",
     "PyStackRef_CLEAR",
     "PyStackRef_CLOSE_SPECIALIZED",

@@ -311,7 +311,7 @@ dummy_func(
 
         inst(LOAD_CONST_MORTAL, (-- value)) {
             PyObject *obj = GETITEM(FRAME_CO_CONSTS, oparg);
-            value = PyStackRef_FromPyObjectNew(obj);
+            value = PyStackRef_FromPyObjectNewMortal(obj);
         }
 
         inst(LOAD_CONST_IMMORTAL, (-- value)) {

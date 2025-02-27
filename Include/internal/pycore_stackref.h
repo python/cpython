@@ -370,6 +370,7 @@ PyStackRef_AsStrongReference(_PyStackRef stackref)
         } \
     } while (0)
 
+#define PyStackRef_FromPyObjectNewMortal PyStackRef_FromPyObjectNew
 
 #else // Py_GIL_DISABLED
 
@@ -507,6 +508,17 @@ _PyStackRef_FromPyObjectNew(PyObject *obj)
     return ref;
 }
 #define PyStackRef_FromPyObjectNew(obj) _PyStackRef_FromPyObjectNew(_PyObject_CAST(obj))
+
+static inline _PyStackRef
+_PyStackRef_FromPyObjectNewMortal(PyObject *obj)
+{
+    assert(obj != NULL);
+    Py_INCREF_MORTAL(obj);
+    _PyStackRef ref = (_PyStackRef){ .bits = (uintptr_t)obj };
+    PyStackRef_CheckValid(ref);
+    return ref;
+}
+#define PyStackRef_FromPyObjectNewMortal(obj) _PyStackRef_FromPyObjectNewMortal(_PyObject_CAST(obj))
 
 /* Create a new reference from an object with an embedded reference count */
 static inline _PyStackRef
