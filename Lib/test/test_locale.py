@@ -371,6 +371,17 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
     def test_strxfrm_with_diacritic(self):
         self.assertLess(locale.strxfrm('à'), locale.strxfrm('b'))
 
+    @unittest.skipIf(sys.platform.startswith('aix'),
+                     'bpo-29972: broken test on AIX')
+    @unittest.skipIf(
+        is_emscripten or is_wasi,
+        "musl libc issue on Emscripten/WASI, bpo-46390"
+    )
+    @unittest.skipIf(sys.platform.startswith("netbsd"),
+                     "gh-124108: NetBSD doesn't support UTF-8 for LC_COLLATE")
+    def test_strxfrm_non_latin_1(self):
+        self.assertLess(locale.strxfrm('s'), locale.strxfrm('š'))
+
 
 class NormalizeTest(unittest.TestCase):
     def check(self, localename, expected):

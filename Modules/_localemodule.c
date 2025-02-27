@@ -394,49 +394,58 @@ static PyObject *
 _locale_strxfrm_impl(PyObject *module, PyObject *str)
 /*[clinic end generated code: output=3081866ebffc01af input=1378bbe6a88b4780]*/
 {
-    Py_ssize_t n1;
+    Py_ssize_t buf_len;
     wchar_t *s = NULL, *buf = NULL;
-    size_t n2;
+    size_t xfrm_result;
     PyObject *result = NULL;
 
-    s = PyUnicode_AsWideCharString(str, &n1);
+    s = PyUnicode_AsWideCharString(str, &buf_len);
     if (s == NULL)
         goto exit;
-    if (wcslen(s) != (size_t)n1) {
+    if (wcslen(s) != (size_t)buf_len) {
         PyErr_SetString(PyExc_ValueError,
                         "embedded null character");
         goto exit;
     }
 
     /* assume no change in size, first */
-    n1 = n1 + 1;
-    buf = PyMem_New(wchar_t, n1);
+    buf_len = buf_len + 1;
+    buf = PyMem_New(wchar_t, buf_len);
     if (!buf) {
         PyErr_NoMemory();
         goto exit;
     }
-    errno = 0;
-    n2 = wcsxfrm(buf, s, n1);
-    if (errno && errno != ERANGE) {
-        PyErr_SetFromErrno(PyExc_OSError);
-        goto exit;
-    }
-    if (n2 >= (size_t)n1) {
-        /* more space needed */
-        wchar_t * new_buf = PyMem_Realloc(buf, (n2+1)*sizeof(wchar_t));
+    for (;;) {
+        errno = 0;
+        xfrm_result = wcsxfrm(buf, s, buf_len);
+        if (errno && errno != ERANGE) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            break;
+        }
+
+        if (xfrm_result < (size_t)buf_len) {
+            // wcsxfrm succeeded, return result
+            result = PyUnicode_FromWideChar(buf, xfrm_result);
+            break;
+        }
+
+        if (xfrm_result > (size_t)buf_len) {
+            // Assume this is desired buffer size
+            buf_len = xfrm_result + 1;
+        } else {
+            // Some platforms, such as macOS 15 doesn't return desired buffer
+            // size so it is up to the caller to figure out needed buffer size
+            // (gh-130567).
+            buf_len = buf_len * 2;
+        }
+
+        wchar_t * new_buf = PyMem_Realloc(buf, buf_len * sizeof(wchar_t));
         if (!new_buf) {
             PyErr_NoMemory();
-            goto exit;
+            break;
         }
         buf = new_buf;
-        errno = 0;
-        n2 = wcsxfrm(buf, s, n2+1);
-        if (errno) {
-            PyErr_SetFromErrno(PyExc_OSError);
-            goto exit;
-        }
     }
-    result = PyUnicode_FromWideChar(buf, n2);
 exit:
     PyMem_Free(buf);
     PyMem_Free(s);
