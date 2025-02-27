@@ -1160,7 +1160,8 @@ with :deco:`typing.runtime_checkable`.
 
    .. versionadded:: next
 
-   .. method:: read(size=..., /)
+   .. method:: read()
+               read(size, /)
 
       Read data from the input stream and return it. If ``size`` is
       specified, at most ``size`` items (bytes/characters) will be read.
