@@ -2540,6 +2540,9 @@ _Py_SetImmortalUntracked(PyObject *op)
     op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
     op->ob_ref_shared = 0;
     _Py_atomic_or_uint8(&op->ob_gc_bits, _PyGC_BITS_DEFERRED);
+#elif SIZEOF_VOID_P > 4
+    op->ob_flags = _Py_IMMORTAL_FLAGS;
+    op->ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
 #else
     op->ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
 #endif
