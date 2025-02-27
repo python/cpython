@@ -82,7 +82,6 @@ class TestRecursion:
             with support.infinite_recursion():
                 self.loads('[' * 100000 + '1' + ']' * 100000)
 
-    @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     def test_highly_nested_objects_encoding(self):
         # See #12051

@@ -628,23 +628,13 @@ x = (
                             r"does not match opening parenthesis '\('",
                             ["f'{a(4}'",
                             ])
-        self.assertRaises(SyntaxError, eval, "f'{" + "("*20 + "}'")
+        self.assertRaises(SyntaxError, eval, "f'{" + "("*500 + "}'")
 
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_fstring_nested_too_deeply(self):
-        def raises_syntax_or_memory_error(txt):
-            try:
-                eval(txt)
-            except SyntaxError:
-                pass
-            except MemoryError:
-                pass
-            except Exception as ex:
-                self.fail(f"Should raise SyntaxError or MemoryError, not {type(ex)}")
-            else:
-                self.fail("No exception raised")
-
-        raises_syntax_or_memory_error('f"{1+2:{1+2:{1+1:{1}}}}"')
+        self.assertAllRaise(SyntaxError,
+                            "f-string: expressions nested too deeply",
+                            ['f"{1+2:{1+2:{1+1:{1}}}}"'])
 
         def create_nested_fstring(n):
             if n == 0:
@@ -652,10 +642,9 @@ x = (
             prev = create_nested_fstring(n-1)
             return f'f"{{{prev}}}"'
 
-        raises_syntax_or_memory_error(create_nested_fstring(160))
-        raises_syntax_or_memory_error("f'{" + "("*100 + "}'")
-        raises_syntax_or_memory_error("f'{" + "("*1000 + "}'")
-        raises_syntax_or_memory_error("f'{" + "("*10_000 + "}'")
+        self.assertAllRaise(SyntaxError,
+                            "too many nested f-strings",
+                            [create_nested_fstring(160)])
 
     def test_syntax_error_in_nested_fstring(self):
         # See gh-104016 for more information on this crash
