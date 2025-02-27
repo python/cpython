@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_initconfig.h"    // _PyStatus_ERR
 #include "pycore_time.h"          // PyTime_t
 #include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
 
@@ -1048,7 +1049,7 @@ py_win_perf_counter_frequency(_PyTimeFraction *base)
     // * 10,000,000 (10 MHz): 100 ns resolution
     // * 3,579,545 Hz (3.6 MHz): 279 ns resolution
     if (_PyTimeFraction_Set(base, SEC_TO_NS, denom) < 0) {
-        return PyStatus_Error("invalid QueryPerformanceFrequency");
+        return _PyStatus_ERR("invalid QueryPerformanceFrequency");
     }
     return PyStatus_Ok();
 }
@@ -1108,7 +1109,7 @@ py_mach_timebase_info(_PyTimeFraction *base)
     // * (1000000000, 33333335) on PowerPC: ~30 ns
     // * (1000000000, 25000000) on PowerPC: 40 ns
     if (_PyTimeFraction_Set(base, numer, denom) < 0) {
-        return PyStatus_Error("invalid mach_timebase_info");
+        return _PyStatus_ERR("invalid mach_timebase_info");
     }
     return PyStatus_Ok();
 }
