@@ -31,7 +31,6 @@ from functools import partial
 import sys
 from sys import maxsize
 from struct import pack, unpack
-import re
 import io
 import codecs
 import _compat_pickle
@@ -188,7 +187,7 @@ BYTEARRAY8       = b'\x96'  # push bytearray
 NEXT_BUFFER      = b'\x97'  # push next out-of-band buffer
 READONLY_BUFFER  = b'\x98'  # make top of stack readonly
 
-__all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$", x)])
+__all__.extend(x for x in dir() if x.isupper() and not x.startswith('_'))
 
 
 class _Framer:
@@ -1387,7 +1386,7 @@ class _Unpickler:
         elif data == TRUE[1:]:
             val = True
         else:
-            val = int(data, 0)
+            val = int(data)
         self.append(val)
     dispatch[INT[0]] = load_int
 
@@ -1407,7 +1406,7 @@ class _Unpickler:
         val = self.readline()[:-1]
         if val and val[-1] == b'L'[0]:
             val = val[:-1]
-        self.append(int(val, 0))
+        self.append(int(val))
     dispatch[LONG[0]] = load_long
 
     def load_long1(self):

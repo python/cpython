@@ -478,17 +478,6 @@ def get_temp_dir(tmp_dir: StrPath | None = None) -> StrPath:
     return os.path.abspath(tmp_dir)
 
 
-def fix_umask() -> None:
-    if support.is_emscripten:
-        # Emscripten has default umask 0o777, which breaks some tests.
-        # see https://github.com/emscripten-core/emscripten/issues/17269
-        old_mask = os.umask(0)
-        if old_mask == 0o777:
-            os.umask(0o027)
-        else:
-            os.umask(old_mask)
-
-
 def get_work_dir(parent_dir: StrPath, worker: bool = False) -> StrPath:
     # Define a writable temp dir that will be used as cwd while running
     # the tests. The name of the dir includes the pid to allow parallel

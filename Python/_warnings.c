@@ -5,7 +5,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
 #include "pycore_traceback.h"     // _Py_DisplaySourceLine()
 
 #include <stdbool.h>
@@ -232,6 +232,64 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
     return obj;
 }
 
+static inline void
+warnings_lock(PyInterpreterState *interp)
+{
+    WarningsState *st = warnings_get_state(interp);
+    assert(st != NULL);
+    _PyRecursiveMutex_Lock(&st->lock);
+}
+
+static inline int
+warnings_unlock(PyInterpreterState *interp)
+{
+    WarningsState *st = warnings_get_state(interp);
+    assert(st != NULL);
+    return _PyRecursiveMutex_TryUnlock(&st->lock);
+}
+
+static inline bool
+warnings_lock_held(WarningsState *st)
+{
+    return PyMutex_IsLocked(&st->lock.mutex);
+}
+
+/*[clinic input]
+_acquire_lock as warnings_acquire_lock
+
+[clinic start generated code]*/
+
+static PyObject *
+warnings_acquire_lock_impl(PyObject *module)
+/*[clinic end generated code: output=594313457d1bf8e1 input=46ec20e55acca52f]*/
+{
+    PyInterpreterState *interp = get_current_interp();
+    if (interp == NULL) {
+        return NULL;
+    }
+    warnings_lock(interp);
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_release_lock as warnings_release_lock
+
+[clinic start generated code]*/
+
+static PyObject *
+warnings_release_lock_impl(PyObject *module)
+/*[clinic end generated code: output=d73d5a8789396750 input=ea01bb77870c5693]*/
+{
+    PyInterpreterState *interp = get_current_interp();
+    if (interp == NULL) {
+        return NULL;
+    }
+    if (warnings_unlock(interp) < 0) {
+        PyErr_SetString(PyExc_RuntimeError, "cannot release un-acquired lock");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
 
 static PyObject *
 get_once_registry(PyInterpreterState *interp)
@@ -239,7 +297,7 @@ get_once_registry(PyInterpreterState *interp)
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
 
-    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+    assert(warnings_lock_held(st));
 
     PyObject *registry = GET_WARNINGS_ATTR(interp, onceregistry, 0);
     if (registry == NULL) {
@@ -267,7 +325,7 @@ get_default_action(PyInterpreterState *interp)
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
 
-    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+    assert(warnings_lock_held(st));
 
     PyObject *default_action = GET_WARNINGS_ATTR(interp, defaultaction, 0);
     if (default_action == NULL) {
@@ -299,7 +357,7 @@ get_filter(PyInterpreterState *interp, PyObject *category,
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
 
-    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+    assert(warnings_lock_held(st));
 
     PyObject *warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
     if (warnings_filters == NULL) {
@@ -399,7 +457,7 @@ already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
 
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
-    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&st->mutex);
+    assert(warnings_lock_held(st));
 
     PyObject *version_obj;
     if (PyDict_GetItemRef(registry, &_Py_ID(version), &version_obj) < 0) {
@@ -494,7 +552,7 @@ static void
 show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
              PyObject *text, PyObject *category, PyObject *sourceline)
 {
-    PyObject *f_stderr;
+    PyObject *f_stderr = NULL;
     PyObject *name;
     char lineno_str[128];
 
@@ -505,8 +563,7 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
         goto error;
     }
 
-    f_stderr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
-    if (f_stderr == NULL) {
+    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &f_stderr) <= 0) {
         fprintf(stderr, "lost sys.stderr\n");
         goto error;
     }
@@ -556,6 +613,7 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
     }
 
 error:
+    Py_XDECREF(f_stderr);
     Py_XDECREF(name);
     PyErr_Clear();
 }
@@ -994,15 +1052,10 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
                        &filename, &lineno, &module, &registry))
         return NULL;
 
-#ifdef Py_GIL_DISABLED
-    WarningsState *st = warnings_get_state(tstate->interp);
-    assert(st != NULL);
-#endif
-
-    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
+    warnings_lock(tstate->interp);
     res = warn_explicit(tstate, category, message, filename, lineno, module, registry,
                         NULL, source);
-    Py_END_CRITICAL_SECTION();
+    warnings_unlock(tstate->interp);
     Py_DECREF(filename);
     Py_DECREF(registry);
     Py_DECREF(module);
@@ -1151,27 +1204,22 @@ warnings_warn_explicit_impl(PyObject *module, PyObject *message,
         }
     }
 
-#ifdef Py_GIL_DISABLED
-    WarningsState *st = warnings_get_state(tstate->interp);
-    assert(st != NULL);
-#endif
-
-    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
+    warnings_lock(tstate->interp);
     returned = warn_explicit(tstate, category, message, filename, lineno,
                              mod, registry, source_line, sourceobj);
-    Py_END_CRITICAL_SECTION();
+    warnings_unlock(tstate->interp);
     Py_XDECREF(source_line);
     return returned;
 }
 
 /*[clinic input]
-_filters_mutated as warnings_filters_mutated
+_filters_mutated_lock_held as warnings_filters_mutated_lock_held
 
 [clinic start generated code]*/
 
 static PyObject *
-warnings_filters_mutated_impl(PyObject *module)
-/*[clinic end generated code: output=8ce517abd12b88f4 input=35ecbf08ee2491b2]*/
+warnings_filters_mutated_lock_held_impl(PyObject *module)
+/*[clinic end generated code: output=df5c84f044e856ec input=34208bf03d70e432]*/
 {
     PyInterpreterState *interp = get_current_interp();
     if (interp == NULL) {
@@ -1181,13 +1229,16 @@ warnings_filters_mutated_impl(PyObject *module)
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
 
-    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
+    // Note that the lock must be held by the caller.
+    if (!warnings_lock_held(st)) {
+        PyErr_SetString(PyExc_RuntimeError, "warnings lock is not held");
+        return NULL;
+    }
+
     st->filters_version++;
-    Py_END_CRITICAL_SECTION();
 
     Py_RETURN_NONE;
 }
-
 
 /* Function to issue a warning message; may raise an exception. */
 
@@ -1303,15 +1354,10 @@ PyErr_WarnExplicitObject(PyObject *category, PyObject *message,
         return -1;
     }
 
-#ifdef Py_GIL_DISABLED
-    WarningsState *st = warnings_get_state(tstate->interp);
-    assert(st != NULL);
-#endif
-
-    Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
+    warnings_lock(tstate->interp);
     res = warn_explicit(tstate, category, message, filename, lineno,
                         module, registry, NULL, NULL);
-    Py_END_CRITICAL_SECTION();
+    warnings_unlock(tstate->interp);
     if (res == NULL)
         return -1;
     Py_DECREF(res);
@@ -1376,15 +1422,10 @@ PyErr_WarnExplicitFormat(PyObject *category,
         PyObject *res;
         PyThreadState *tstate = get_current_tstate();
         if (tstate != NULL) {
-#ifdef Py_GIL_DISABLED
-            WarningsState *st = warnings_get_state(tstate->interp);
-            assert(st != NULL);
-#endif
-
-            Py_BEGIN_CRITICAL_SECTION_MUT(&st->mutex);
+            warnings_lock(tstate->interp);
             res = warn_explicit(tstate, category, message, filename, lineno,
                                 module, registry, NULL, NULL);
-            Py_END_CRITICAL_SECTION();
+            warnings_unlock(tstate->interp);
             Py_DECREF(message);
             if (res != NULL) {
                 Py_DECREF(res);
@@ -1407,7 +1448,8 @@ _PyErr_WarnUnawaitedAgenMethod(PyAsyncGenObject *agen, PyObject *method)
                           "coroutine method %R of %R was never awaited",
                           method, agen->ag_qualname) < 0)
     {
-        PyErr_WriteUnraisable((PyObject *)agen);
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "finalizing async generator %R", agen);
     }
     PyErr_SetRaisedException(exc);
 }
@@ -1449,14 +1491,17 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
     }
 
     if (PyErr_Occurred()) {
-        PyErr_WriteUnraisable(coro);
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "finalizing coroutine %R", coro);
     }
+
     if (!warned) {
         if (_PyErr_WarnFormat(coro, PyExc_RuntimeWarning, 1,
                               "coroutine '%S' was never awaited",
                               ((PyCoroObject *)coro)->cr_qualname) < 0)
         {
-            PyErr_WriteUnraisable(coro);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "finalizing coroutine %R", coro);
         }
     }
 }
@@ -1464,7 +1509,9 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
 static PyMethodDef warnings_functions[] = {
     WARNINGS_WARN_METHODDEF
     WARNINGS_WARN_EXPLICIT_METHODDEF
-    WARNINGS_FILTERS_MUTATED_METHODDEF
+    WARNINGS_FILTERS_MUTATED_LOCK_HELD_METHODDEF
+    WARNINGS_ACQUIRE_LOCK_METHODDEF
+    WARNINGS_RELEASE_LOCK_METHODDEF
     /* XXX(brett.cannon): add showwarning? */
     /* XXX(brett.cannon): Reasonable to add formatwarning? */
     {NULL, NULL}                /* sentinel */

@@ -1,2 +1,0 @@
-Fix issue where :func:`urllib.request.url2pathname` failed to discard any
-'localhost' authority present in the URL.

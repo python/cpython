@@ -488,6 +488,7 @@ PYTHON_OBJS=	\
 		Python/qsbr.o \
 		Python/bootstrap_hash.o \
 		Python/specialize.o \
+		Python/stackrefs.o \
 		Python/structmember.o \
 		Python/symtable.o \
 		Python/sysmodule.o \
@@ -727,7 +728,7 @@ list-targets:
 
 .PHONY: build_all
 build_all:	check-clean-src check-app-store-compliance $(BUILDPYTHON) platform sharedmods \
-		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil
+		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil build-details.json
 
 .PHONY: build_wasm
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
@@ -932,6 +933,9 @@ pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
 		rm -f ./pybuilddir.txt ; \
 		exit 1 ; \
 	fi
+
+build-details.json: pybuilddir.txt
+	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate-build-details.py `cat pybuilddir.txt`/build-details.json
 
 # Build static library
 $(LIBRARY): $(LIBRARY_OBJS)
@@ -2146,7 +2150,6 @@ testuniversal: all
 # This must be run *after* a `make install` has completed the build. The
 # `--with-framework-name` argument *cannot* be used when configuring the build.
 XCFOLDER:=iOSTestbed.$(MULTIARCH).$(shell date +%s)
-XCRESULT=$(XCFOLDER)/$(MULTIARCH).xcresult
 .PHONY: testios
 testios:
 	@if test "$(MACHDEP)" != "ios"; then \
@@ -2165,29 +2168,12 @@ testios:
 		echo "Cannot find a finalized iOS Python.framework. Have you run 'make install' to finalize the framework build?"; \
 		exit 1;\
 	fi
-	# Copy the testbed project into the build folder
-	cp -r $(srcdir)/iOS/testbed $(XCFOLDER)
-	# Copy the framework from the install location to the testbed project.
-	cp -r $(PYTHONFRAMEWORKPREFIX)/* $(XCFOLDER)/Python.xcframework/ios-arm64_x86_64-simulator
 
-	# Run the test suite for the Xcode project, targeting the iOS simulator.
-	# If the suite fails, touch a file in the test folder as a marker
-	if ! xcodebuild test -project $(XCFOLDER)/iOSTestbed.xcodeproj -scheme "iOSTestbed" -destination "platform=iOS Simulator,name=iPhone SE (3rd Generation)" -resultBundlePath $(XCRESULT) -derivedDataPath $(XCFOLDER)/DerivedData ; then \
-	 	touch $(XCFOLDER)/failed; \
-	fi
+	# Clone the testbed project into the XCFOLDER
+	$(PYTHON_FOR_BUILD) $(srcdir)/iOS/testbed clone --framework $(PYTHONFRAMEWORKPREFIX) "$(XCFOLDER)"
 
-	# Regardless of success or failure, extract and print the test output
-	xcrun xcresulttool get --path $(XCRESULT) \
-		--id $$( \
-			xcrun xcresulttool get --path $(XCRESULT) --format json | \
-			$(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['actions']['_values'][0]['actionResult']['logRef']['id']['_value'])" \
-		) \
-		--format json | \
-		$(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['subsections']['_values'][1]['subsections']['_values'][0]['emittedOutput']['_value'])"
-
-	@if test -e $(XCFOLDER)/failed ; then \
-		exit 1; \
-	fi
+	# Run the testbed project
+	$(PYTHON_FOR_BUILD) "$(XCFOLDER)" run --verbose -- test -uall --single-process --rerun -W
 
 # Like test, but using --slow-ci which enables all test resources and use
 # longer timeout. Run an optional pybuildbot.identify script to include
@@ -2563,6 +2549,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_tomllib/data/valid/multiline-basic-str \
 		test/test_tools \
 		test/test_tools/i18n_data \
+		test/test_tools/msgfmt_data \
 		test/test_ttk \
 		test/test_unittest \
 		test/test_unittest/namespace_test_pkg \
@@ -2661,6 +2648,7 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 	done
 	$(INSTALL_DATA) `cat pybuilddir.txt`/_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).py $(DESTDIR)$(LIBDEST); \
 	$(INSTALL_DATA) `cat pybuilddir.txt`/_sysconfig_vars_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).json $(DESTDIR)$(LIBDEST); \
+	$(INSTALL_DATA) `cat pybuilddir.txt`/build-details.json $(DESTDIR)$(LIBDEST); \
 	$(INSTALL_DATA) $(srcdir)/LICENSE $(DESTDIR)$(LIBDEST)/LICENSE.txt
 	@ # If app store compliance has been configured, apply the patch to the
 	@ # installed library code. The patch has been previously validated against

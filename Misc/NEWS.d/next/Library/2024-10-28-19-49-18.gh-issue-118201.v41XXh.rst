@@ -1,2 +1,0 @@
-Fixed intermittent failures of :any:`os.confstr`, :any:`os.pathconf` and
-:any:`os.sysconf` on iOS and Android.

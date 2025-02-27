@@ -6,6 +6,7 @@ import shlex
 import sys
 import sysconfig
 import tempfile
+import unittest
 import venv
 
 
@@ -68,3 +69,14 @@ class VirtualEnvironment:
             raise
         else:
             return result
+
+
+class VirtualEnvironmentMixin:
+    def venv(self, name=None, **venv_create_args):
+        venv_name = self.id()
+        if name:
+            venv_name += f'-{name}'
+        return VirtualEnvironment.from_tmpdir(
+            prefix=f'{venv_name}-venv-',
+            **venv_create_args,
+        )
