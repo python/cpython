@@ -140,11 +140,11 @@ created.  Socket addresses are represented as follows:
   - :const:`BTPROTO_L2CAP` accepts a tuple
     ``(bdaddr, psm[, cid[, bdaddr_type]])`` where:
 
-    - ``bdaddr``: String specifying the Bluetooth address.
-    - ``psm`` Integer specifying the Protocol/Service Multiplexer.
-    - ``cid`` Optional integer specifying the Channel Identifier. If not given,
-      defaults to zero.
-    - ``bdaddr_type`` Optional integer specifying the address type;
+    - ``bdaddr`` is a string specifying the Bluetooth address.
+    - ``psm`` is an integer specifying the Protocol/Service Multiplexer.
+    - ``cid`` is an optional integer specifying the Channel Identifier.
+      If not given, defaults to zero.
+    - ``bdaddr_type``is an optional integer specifying the address type;
       one of :const:`BDADDR_BREDR` (default), :const:`BDADDR_LE_PUBLIC`,
       :const:`BDADDR_LE_RANDOM`.
 
