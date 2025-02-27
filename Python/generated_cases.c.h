@@ -6600,6 +6600,57 @@
             DISPATCH();
         }
 
+        TARGET(INSTRUMENTED_END_ASYNC_FOR) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = INSTRUMENTED_END_ASYNC_FOR;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(INSTRUMENTED_END_ASYNC_FOR);
+            _PyStackRef awaitable_st;
+            _PyStackRef exc_st;
+            // _MONITOR_BRANCH_RIGHT
+            {
+                INSTRUMENTED_JUMP(prev_instr, this_instr+1, PY_MONITORING_EVENT_BRANCH_RIGHT);
+            }
+            // _END_ASYNC_FOR
+            {
+                exc_st = stack_pointer[-1];
+                awaitable_st = stack_pointer[-2];
+                PyObject *exc = PyStackRef_AsPyObjectBorrow(exc_st);
+                assert(exc && PyExceptionInstance_Check(exc));
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                int matches = PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (matches) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyStackRef tmp = exc_st;
+                    exc_st = PyStackRef_NULL;
+                    stack_pointer[-1] = exc_st;
+                    PyStackRef_CLOSE(tmp);
+                    tmp = awaitable_st;
+                    awaitable_st = PyStackRef_NULL;
+                    stack_pointer[-2] = awaitable_st;
+                    PyStackRef_CLOSE(tmp);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    stack_pointer += -2;
+                    assert(WITHIN_STACK_BOUNDS());
+                }
+                else {
+                    Py_INCREF(exc);
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyErr_SetRaisedException(tstate, exc);
+                    monitor_reraise(tstate, frame, this_instr);
+                    JUMP_TO_LABEL(exception_unwind);
+                }
+            }
+            DISPATCH();
+        }
+
         TARGET(INSTRUMENTED_END_FOR) {
             #if Py_TAIL_CALL_INTERP
             int opcode = INSTRUMENTED_END_FOR;
