@@ -226,8 +226,16 @@ class POP3:
         retval = self._shortcmd('STAT')
         rets = retval.split()
         if self._debugging: print('*stat*', repr(rets))
-        numMessages = int(rets[1])
-        sizeMessages = int(rets[2])
+
+        if len(rets) < 3:
+            raise error_proto("Invalid STAT response format")
+
+        try:
+            numMessages = int(rets[1])
+            sizeMessages = int(rets[2])
+        except ValueError:
+            raise error_proto("Invalid STAT response data: non-numeric values")
+
         return (numMessages, sizeMessages)
 
 
