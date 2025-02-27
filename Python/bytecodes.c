@@ -1339,7 +1339,7 @@ dummy_func(
             goto exception_unwind;
         }
 
-        tier1 inst(END_ASYNC_FOR, (awaitable_st, exc_st -- )) {
+        tier1 op(_END_ASYNC_FOR, (awaitable_st, exc_st -- )) {
             PyObject *exc = PyStackRef_AsPyObjectBorrow(exc_st);
 
             assert(exc && PyExceptionInstance_Check(exc));
@@ -1354,6 +1354,16 @@ dummy_func(
                 goto exception_unwind;
             }
         }
+
+        tier1 op(_MONITOR_BRANCH_RIGHT, ( -- )) {
+            INSTRUMENTED_JUMP(prev_instr, this_instr+1, PY_MONITORING_EVENT_BRANCH_RIGHT);
+        }
+
+        macro(INSTRUMENTED_END_ASYNC_FOR) =
+            _MONITOR_BRANCH_RIGHT +
+            _END_ASYNC_FOR;
+
+        macro(END_ASYNC_FOR) = _END_ASYNC_FOR;
 
         tier1 inst(CLEANUP_THROW, (sub_iter, last_sent_val, exc_value_st -- none, value)) {
             PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
@@ -3297,12 +3307,9 @@ dummy_func(
 
             assert(val_o && PyExceptionInstance_Check(val_o));
             exc = PyExceptionInstance_Class(val_o);
-            tb = PyException_GetTraceback(val_o);
+            PyObject *original_tb = tb = PyException_GetTraceback(val_o);
             if (tb == NULL) {
                 tb = Py_None;
-            }
-            else {
-                Py_DECREF(tb);
             }
             assert(PyStackRef_LongCheck(lasti));
             (void)lasti; // Shut up compiler warning if asserts are off
@@ -3311,6 +3318,7 @@ dummy_func(
             PyObject *res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
                     (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             ERROR_IF(res_o == NULL, error);
+            Py_XDECREF(original_tb);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
@@ -4509,8 +4517,8 @@ dummy_func(
         macro(INSTRUMENTED_CALL_KW) =
             counter/1 +
             unused/2 +
-            _MONITOR_CALL_KW +
             _MAYBE_EXPAND_METHOD_KW +
+            _MONITOR_CALL_KW +
             _DO_CALL_KW;
 
         op(_CHECK_IS_NOT_PY_CALLABLE_KW, (callable[1], unused[1], unused[oparg], kwnames -- callable[1], unused[1], unused[oparg], kwnames)) {
