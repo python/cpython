@@ -76,6 +76,12 @@ sym_new(JitOptContext *ctx)
     return self;
 }
 
+static void make_const(JitOptSymbol *sym, PyObject *val)
+{
+    sym->tag = JIT_SYM_KNOWN_VALUE_TAG;
+    sym->value.value = Py_NewRef(val);
+}
+
 static inline void
 sym_set_bottom(JitOptContext *ctx, JitOptSymbol *sym)
 {
@@ -103,7 +109,12 @@ _Py_uop_sym_is_const(JitOptContext *ctx, JitOptSymbol *sym)
     }
     if (sym->tag == JIT_SYM_TRUTH_TAG) {
         JitOptSymbol *value = allocation_base(ctx) + sym->truth.value;
-        return _Py_uop_sym_truthiness(ctx, value) >= 0;
+        int truth = _Py_uop_sym_truthiness(ctx, value);
+        if (truth < 0) {
+            return false;
+        }
+        make_const(sym, (truth ^ sym->truth.not) ? Py_True : Py_False);
+        return true;
     }
     return false;
 }
@@ -127,7 +138,9 @@ _Py_uop_sym_get_const(JitOptContext *ctx, JitOptSymbol *sym)
         if (truth < 0) {
             return NULL;
         }
-        return (truth ^ sym->truth.not) ? Py_True : Py_False;
+        PyObject *res = (truth ^ sym->truth.not) ? Py_True : Py_False;
+        make_const(sym, res);
+        return res;
     }
     return NULL;
 }
@@ -229,12 +242,6 @@ _Py_uop_sym_set_type_version(JitOptContext *ctx, JitOptSymbol *sym, unsigned int
     Py_UNREACHABLE();
 }
 
-static void make_const(JitOptSymbol *sym, PyObject *val)
-{
-    sym->tag = JIT_SYM_KNOWN_VALUE_TAG;
-    sym->value.value = Py_NewRef(val);
-}
-
 void
 _Py_uop_sym_set_const(JitOptContext *ctx, JitOptSymbol *sym, PyObject *const_val)
 {
@@ -273,7 +280,10 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptSymbol *sym, PyObject *const_val
             make_const(sym, const_val);
             return;
         case JIT_SYM_TRUTH_TAG:
-            if (!PyBool_Check(const_val) || _Py_uop_sym_get_const(ctx, sym) != const_val) {
+            if (!PyBool_Check(const_val) ||
+                (_Py_uop_sym_is_const(ctx, sym) &&
+                 _Py_uop_sym_get_const(ctx, sym) != const_val))
+            {
                 sym_set_bottom(ctx, sym);
                 return;
             }
@@ -480,7 +490,9 @@ _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptSymbol *sym)
             if (truth < 0) {
                 return truth;
             }
-            return truth ^ sym->truth.not;
+            truth ^= sym->truth.not;
+            make_const(sym, truth ? Py_True : Py_False);
+            return truth;
     }
     PyObject *value = sym->value.value;
     /* Only handle a few known safe types */
@@ -563,6 +575,28 @@ _Py_uop_sym_is_immortal(JitOptSymbol *sym)
         return sym->cls.type == &PyBool_Type;
     }
     return false;
+}
+
+JitOptSymbol *
+_Py_uop_sym_new_truth(JitOptContext *ctx, JitOptSymbol *value, bool not)
+{
+    if (value->tag == JIT_SYM_TRUTH_TAG && value->truth.not == not) {
+        return value;
+    }
+    JitOptSymbol *res = sym_new(ctx);
+    if (res == NULL) {
+        return out_of_space(ctx);
+    }
+    int truth = _Py_uop_sym_truthiness(ctx, value);
+    if (truth < 0) {
+        res->tag = JIT_SYM_TRUTH_TAG;
+        res->truth.not = not;
+        res->truth.value = (uint16_t)(value - allocation_base(ctx));
+    }
+    else {
+        make_const(res, (truth ^ not) ? Py_True : Py_False);
+    }
+    return res;
 }
 
 // 0 on success, -1 on error.
