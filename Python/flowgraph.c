@@ -2572,12 +2572,15 @@ load_fast_push_block(basicblock ***sp, basicblock *target, int start_depth)
  * non-violating LOAD_FAST{_LOAD_FAST} can be optimized.
  */
 static int
-optimize_load_fast(cfg_builder *g)
+optimize_load_fast(cfg_builder *g, bool compute_stackdepth)
 {
     int status;
     ref_stack refs = {0};
     int max_instrs = 0;
     basicblock *entryblock = g->g_entryblock;
+    if (compute_stackdepth) {
+        calculate_stackdepth(g);
+    }
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         max_instrs = Py_MAX(max_instrs, b->b_iused);
     }
@@ -2620,6 +2623,7 @@ optimize_load_fast(cfg_builder *g)
             assert(opcode != EXTENDED_ARG);
             switch (opcode) {
                 case COPY: {
+                    assert(oparg > 0);
                     Py_ssize_t idx = refs.size - oparg;
                     ref r = ref_stack_at(&refs, idx);
                     if (ref_stack_push(&refs, r) < 0) {
@@ -2687,6 +2691,7 @@ optimize_load_fast(cfg_builder *g)
                 }
 
                 case SWAP: {
+                    assert(oparg >= 2);
                     ref_stack_swap_top(&refs, oparg);
                     break;
                 }
@@ -3711,7 +3716,7 @@ _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
     /* Can't modify the bytecode after inserting instructions that produce
      * borrowed references.
      */
-    RETURN_IF_ERROR(optimize_load_fast(g));
+    RETURN_IF_ERROR(optimize_load_fast(g, /* compute_stackdepth */ false));
 
     /* Can't modify the bytecode after computing jump offsets. */
     if (_PyCfg_ToInstructionSequence(g, seq) < 0) {
@@ -3799,6 +3804,29 @@ _PyCompile_OptimizeCfg(PyObject *seq, PyObject *consts, int nlocals)
     res = cfg_to_instruction_sequence(g);
 error:
     Py_DECREF(const_cache);
+    _PyCfgBuilder_Free(g);
+    return res;
+}
+
+PyObject *
+_PyCompile_OptimizeLoadFast(PyObject *seq)
+{
+    if (!_PyInstructionSequence_Check(seq)) {
+        PyErr_SetString(PyExc_ValueError, "expected an instruction sequence");
+        return NULL;
+    }
+
+    cfg_builder *g = _PyCfg_FromInstructionSequence((_PyInstructionSequence*)seq);
+    if (g == NULL) {
+        return NULL;
+    }
+
+    if (optimize_load_fast(g, /* compute_stackdepth */ true) != SUCCESS) {
+        _PyCfgBuilder_Free(g);
+        return NULL;
+    }
+
+    PyObject *res = cfg_to_instruction_sequence(g);
     _PyCfgBuilder_Free(g);
     return res;
 }

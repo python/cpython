@@ -4,9 +4,14 @@ import opcode
 import sys
 import textwrap
 import unittest
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 from test import support
-from test.support.bytecode_helper import BytecodeTestCase, CfgOptimizationTestCase
+from test.support.bytecode_helper import (
+    BytecodeTestCase, CfgOptimizationTestCase, CompilationStepTestCase)
 
 
 def compile_pattern_with_fast_locals(pattern):
@@ -2351,6 +2356,98 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         self.assertEqual(a, [0, 1, 2, 3])
         self.assertEqual(b, [3, 2, 1, 0])
         self.assertEqual(items, [])
+
+
+@unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+class OptimizeLoadFastTestCase(CompilationStepTestCase):
+    def check(self, insts, expected_insts):
+        self.check_instructions(insts)
+        self.check_instructions(expected_insts)
+        seq = self.seq_from_insts(insts)
+        opt_insts = _testinternalcapi.optimize_load_fast(seq)
+        expected_insts = self.seq_from_insts(expected_insts).get_instructions()
+        self.assertInstructionsMatch(opt_insts, expected_insts)
+
+    def test_optimized(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_FAST", 1, 2),
+            ("BINARY_OP", 2, 3),
+        ]
+        expected = [
+            ("LOAD_FAST_BORROW", 0, 1),
+            ("LOAD_FAST_BORROW", 1, 2),
+            ("BINARY_OP", 2, 3),
+        ]
+        self.check(insts, expected)
+
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_CONST", 1, 2),
+            ("SWAP", 2, 3),
+            ("POP_TOP", None, 4),
+        ]
+        expected = [
+            ("LOAD_FAST_BORROW", 0, 1),
+            ("LOAD_CONST", 1, 2),
+            ("SWAP", 2, 3),
+            ("POP_TOP", None, 4),
+        ]
+        self.check(insts, expected)
+
+    def test_unoptimized_if_unconsumed(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_FAST", 1, 2),
+            ("POP_TOP", None, 3),
+        ]
+        expected = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_FAST_BORROW", 1, 2),
+            ("POP_TOP", None, 3),
+        ]
+        self.check(insts, expected)
+
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("COPY", 1, 2),
+            ("POP_TOP", None, 3),
+        ]
+        self.check(insts, insts)
+
+    def test_unoptimized_if_support_killed(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_CONST", 0, 2),
+            ("STORE_FAST", 0, 3),
+            ("POP_TOP", None, 4),
+        ]
+        self.check(insts, insts)
+
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_CONST", 0, 2),
+            ("LOAD_CONST", 0, 3),
+            ("STORE_FAST_STORE_FAST", 0 << 4 | 1, 4),
+            ("POP_TOP", None, 5),
+        ]
+        self.check(insts, insts)
+
+    def test_unoptimized_if_aliased(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("STORE_FAST", 1, 2),
+        ]
+        self.check(insts, insts)
+
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_CONST", 0, 3),
+            ("STORE_FAST_STORE_FAST", 0 << 4 | 1, 4),
+        ]
+        self.check(insts, insts)
+
+
 
 
 if __name__ == "__main__":

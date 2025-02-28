@@ -225,6 +225,63 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_testinternalcapi_optimize_load_fast__doc__,
+"optimize_load_fast($module, /, instructions)\n"
+"--\n"
+"\n"
+"Optimize LOAD_FAST{_LOAD_FAST} instructions.");
+
+#define _TESTINTERNALCAPI_OPTIMIZE_LOAD_FAST_METHODDEF    \
+    {"optimize_load_fast", _PyCFunction_CAST(_testinternalcapi_optimize_load_fast), METH_FASTCALL|METH_KEYWORDS, _testinternalcapi_optimize_load_fast__doc__},
+
+static PyObject *
+_testinternalcapi_optimize_load_fast_impl(PyObject *module,
+                                          PyObject *instructions);
+
+static PyObject *
+_testinternalcapi_optimize_load_fast(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(instructions), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"instructions", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "optimize_load_fast",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    PyObject *instructions;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    instructions = args[0];
+    return_value = _testinternalcapi_optimize_load_fast_impl(module, instructions);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_testinternalcapi_assemble_code_object__doc__,
 "assemble_code_object($module, /, filename, instructions, metadata)\n"
 "--\n"
@@ -365,4 +422,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ec77971c6c2663da input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bbd9381589d0f959 input=a9049054013a1b77]*/
