@@ -172,7 +172,7 @@ typedef enum _JitSymType {
     JIT_SYM_KNOWN_CLASS_TAG = 6,
     JIT_SYM_KNOWN_VALUE_TAG = 7,
     JIT_SYM_TUPLE_TAG = 8,
-    JIT_SYM_TRUTH_TAG = 9,
+    JIT_SYM_TRUTHINESS_TAG = 9,
 } JitSymType;
 
 typedef struct _jit_opt_known_class {
@@ -203,7 +203,7 @@ typedef struct {
     uint8_t tag;
     bool not;
     uint16_t value;
-} JitOptTruth;
+} JitOptTruthiness;
 
 typedef union _jit_opt_symbol {
     uint8_t tag;
@@ -211,7 +211,7 @@ typedef union _jit_opt_symbol {
     JitOptKnownValue value;
     JitOptKnownVersion version;
     JitOptTuple tuple;
-    JitOptTruth truth;
+    JitOptTruthiness truthiness;
 } JitOptSymbol;
 
 
@@ -276,7 +276,7 @@ extern bool _Py_uop_sym_is_immortal(JitOptSymbol *sym);
 extern JitOptSymbol *_Py_uop_sym_new_tuple(JitOptContext *ctx, int size, JitOptSymbol **args);
 extern JitOptSymbol *_Py_uop_sym_tuple_getitem(JitOptContext *ctx, JitOptSymbol *sym, int item);
 extern int _Py_uop_sym_tuple_length(JitOptSymbol *sym);
-extern JitOptSymbol *_Py_uop_sym_new_truth(JitOptContext *ctx, JitOptSymbol *value, bool not);
+extern JitOptSymbol *_Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptSymbol *value, bool not);
 
 extern void _Py_uop_abstractcontext_init(JitOptContext *ctx);
 extern void _Py_uop_abstractcontext_fini(JitOptContext *ctx);
