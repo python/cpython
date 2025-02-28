@@ -77,7 +77,13 @@ EM_JS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
 //         i32.const -1
 //     )
 // )
-addOnPreRun(() => {
+
+function getPyEMCountArgsPtr() {
+    let isIOS = globalThis.navigator && /iPad|iPhone|iPod/.test(navigator.platform);
+    if (isIOS) {
+        return 0;
+    }
+
     // Try to initialize countArgsFunc
     const code = new Uint8Array([
         0x00, 0x61, 0x73, 0x6d, // \0asm magic number
@@ -149,15 +155,19 @@ addOnPreRun(() => {
             0x41, 0x7f,       // i32.const -1
             0x0b // end function
     ]);
-    let ptr = 0;
     try {
         const mod = new WebAssembly.Module(code);
         const inst = new WebAssembly.Instance(mod, { e: { t: wasmTable } });
-        ptr = addFunction(inst.exports.f);
+        return addFunction(inst.exports.f);
     } catch (e) {
         // If something goes wrong, we'll null out _PyEM_CountFuncParams and fall
         // back to the JS trampoline.
+        return 0;
     }
+}
+
+addOnPreRun(() => {
+    const ptr = getPyEMCountArgsPtr();
     Module._PyEM_CountArgsPtr = ptr;
     const offset = HEAP32[__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET / 4];
     HEAP32[(__PyRuntime + offset) / 4] = ptr;
