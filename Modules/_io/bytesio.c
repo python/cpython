@@ -842,7 +842,7 @@ bytesio_setstate(PyObject *op, PyObject *state)
 
     /* Set the value of the internal buffer. If state[0] does not support the
        buffer protocol, bytesio_write will raise the appropriate TypeError. */
-    result = _io_BytesIO_write(self, PyTuple_GET_ITEM(state, 0));
+    result = _io_BytesIO_write_impl(self, PyTuple_GET_ITEM(state, 0));
     if (result == NULL)
         return NULL;
     Py_DECREF(result);
@@ -958,7 +958,7 @@ _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
         }
         else {
             PyObject *res;
-            res = _io_BytesIO_write(self, initvalue);
+            res = _io_BytesIO_write_impl(self, initvalue);
             if (res == NULL)
                 return -1;
             Py_DECREF(res);

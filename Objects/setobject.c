@@ -2004,7 +2004,7 @@ set_xor(PyObject *self, PyObject *other)
     if (!PyAnySet_Check(self) || !PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
     PySetObject *so = _PySet_CAST(self);
-    return set_symmetric_difference(so, other);
+    return set_symmetric_difference_impl(so, other);
 }
 
 static PyObject *
@@ -2016,7 +2016,7 @@ set_ixor(PyObject *self, PyObject *other)
         Py_RETURN_NOTIMPLEMENTED;
     PySetObject *so = _PySet_CAST(self);
 
-    result = set_symmetric_difference_update(so, other);
+    result = set_symmetric_difference_update_impl(so, other);
     if (result == NULL)
         return NULL;
     Py_DECREF(result);
@@ -2083,7 +2083,7 @@ set_issuperset_impl(PySetObject *so, PyObject *other)
 /*[clinic end generated code: output=ecf00ce552c09461 input=5f2e1f262e6e4ccc]*/
 {
     if (PyAnySet_Check(other)) {
-        return set_issubset((PySetObject *)other, (PyObject *)so);
+        return set_issubset_impl((PySetObject *)other, (PyObject *)so);
     }
 
     PyObject *key, *it = PyObject_GetIter(other);
@@ -2127,7 +2127,7 @@ set_richcompare(PyObject *self, PyObject *w, int op)
             ((PySetObject *)w)->hash != -1 &&
             v->hash != ((PySetObject *)w)->hash)
             Py_RETURN_FALSE;
-        return set_issubset(v, w);
+        return set_issubset_impl(v, w);
     case Py_NE:
         r1 = set_richcompare((PyObject*)v, w, Py_EQ);
         if (r1 == NULL)
@@ -2138,17 +2138,17 @@ set_richcompare(PyObject *self, PyObject *w, int op)
             return NULL;
         return PyBool_FromLong(!r2);
     case Py_LE:
-        return set_issubset(v, w);
+        return set_issubset_impl(v, w);
     case Py_GE:
-        return set_issuperset(v, w);
+        return set_issuperset_impl(v, w);
     case Py_LT:
         if (PySet_GET_SIZE(v) >= PySet_GET_SIZE(w))
             Py_RETURN_FALSE;
-        return set_issubset(v, w);
+        return set_issubset_impl(v, w);
     case Py_GT:
         if (PySet_GET_SIZE(v) <= PySet_GET_SIZE(w))
             Py_RETURN_FALSE;
-        return set_issuperset(v, w);
+        return set_issuperset_impl(v, w);
     }
     Py_RETURN_NOTIMPLEMENTED;
 }

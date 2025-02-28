@@ -560,7 +560,7 @@ _io__Buffered_close_impl(buffered *self)
     }
 
     if (self->finalizing) {
-        PyObject *r = _io__Buffered__dealloc_warn(self, (PyObject *) self);
+        PyObject *r = _io__Buffered__dealloc_warn_impl(self, (PyObject *) self);
         if (r)
             Py_DECREF(r);
         else
