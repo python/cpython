@@ -211,7 +211,7 @@ _specialized_opmap = {
 opmap = {
     'CACHE': 0,
     'RESERVED': 17,
-    'RESUME': 149,
+    'RESUME': 128,
     'INSTRUMENTED_LINE': 254,
     'ENTER_EXECUTOR': 255,
     'BINARY_SLICE': 1,

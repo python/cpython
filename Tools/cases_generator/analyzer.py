@@ -1075,8 +1075,8 @@ def assign_opcodes(
     # This helps catch cases where we attempt to execute a cache.
     instmap["RESERVED"] = 17
 
-    # 149 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
-    instmap["RESUME"] = 149
+    # 128 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
+    instmap["RESUME"] = 128
 
     # This is an historical oddity.
     instmap["BINARY_OP_INPLACE_ADD_UNICODE"] = 3

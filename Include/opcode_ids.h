@@ -127,7 +127,7 @@ extern "C" {
 #define UNPACK_EX                              114
 #define UNPACK_SEQUENCE                        115
 #define YIELD_VALUE                            116
-#define RESUME                                 149
+#define RESUME                                 128
 #define BINARY_OP_ADD_FLOAT                    150
 #define BINARY_OP_ADD_INT                      151
 #define BINARY_OP_ADD_UNICODE                  152
@@ -244,7 +244,7 @@ extern "C" {
 #define STORE_FAST_MAYBE_NULL                  265
 
 #define HAVE_ARGUMENT                           43
-#define MIN_SPECIALIZED_OPCODE                 150
+#define MIN_SPECIALIZED_OPCODE                 129
 #define MIN_INSTRUMENTED_OPCODE                234
 
 #ifdef __cplusplus

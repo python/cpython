@@ -2939,7 +2939,6 @@ const uint8_t _PyOpcode_Deopt[256] = {
     case 125: \
     case 126: \
     case 127: \
-    case 128: \
     case 129: \
     case 130: \
     case 131: \
@@ -2960,6 +2959,7 @@ const uint8_t _PyOpcode_Deopt[256] = {
     case 146: \
     case 147: \
     case 148: \
+    case 149: \
     case 232: \
     case 233: \
         ;
