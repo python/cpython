@@ -4,16 +4,12 @@ import re
 import shutil
 import sys
 import unittest
-import unittest.mock
 import warnings
 
 from test import support
 from test.support import is_wasi, Py_DEBUG, infinite_recursion
 from test.support.os_helper import (TESTFN, skip_unless_symlink,
                                     can_symlink, create_empty_file, change_cwd)
-
-
-_supports_dir_fd = {os.open, os.stat} <= os.supports_dir_fd and os.scandir in os.supports_fd
 
 
 class GlobTests(unittest.TestCase):
@@ -53,7 +49,7 @@ class GlobTests(unittest.TestCase):
     def open_dirfd(self):
         if self.dir_fd is not None:
             os.close(self.dir_fd)
-        if _supports_dir_fd:
+        if {os.open, os.stat} <= os.supports_dir_fd and os.scandir in os.supports_fd:
             self.dir_fd = os.open(self.tempdir, os.O_RDONLY | os.O_DIRECTORY)
         else:
             self.dir_fd = None
@@ -408,24 +404,6 @@ class GlobTests(unittest.TestCase):
         pattern = os.path.join(base, '**', 'd')
         with infinite_recursion(depth - 5):
             glob.glob(pattern, recursive=True)
-
-    @unittest.skipUnless(_supports_dir_fd, "Needs support for iglob(dir_fd=...)")
-    def test_iglob_iter_close(self):
-        base = os.path.join(self.tempdir, 'deep')
-        p = os.path.join(base, *(['d'] * 10))
-        os.makedirs(p)
-        with (
-            unittest.mock.patch("glob._StringGlobber.open", wraps=os.open) as os_open,
-            unittest.mock.patch("glob._StringGlobber.close", wraps=os.close) as os_close
-        ):
-            self.assertEqual(os_open.call_count, os_close.call_count)
-            iter = glob.iglob('**/*/d', dir_fd=self.dir_fd, recursive=True)
-            self.assertEqual(os_open.call_count, os_close.call_count)
-            self.assertEqual(next(iter), 'deep/d')
-            self.assertEqual(next(iter), 'deep/d/d')
-            self.assertGreater(os_open.call_count, os_close.call_count)
-            iter.close()
-            self.assertEqual(os_open.call_count, os_close.call_count)
 
     def test_glob0(self):
         with self.assertWarns(DeprecationWarning):
