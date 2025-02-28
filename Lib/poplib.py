@@ -227,6 +227,9 @@ class POP3:
         rets = retval.split()
         if self._debugging: print('*stat*', repr(rets))
 
+        # Check if the response has enough elements
+        # RFC 1939 requires at least 3 elements (+OK, message count, mailbox size)
+        # but allows additional data after the required fields
         if len(rets) < 3:
             raise error_proto("Invalid STAT response format")
 
