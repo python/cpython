@@ -9,7 +9,7 @@ from test.test_pathlib.support.local_path import ReadableLocalPath, LocalPathGro
 from test.test_pathlib.support.zip_path import ReadableZipPath, ZipPathGround
 
 
-class ReadablePathTest:
+class ReadablePathTestBase:
     def setUp(self):
         self.root = self.ground.setup()
         self.ground.create_hierarchy(self.root)
@@ -54,15 +54,15 @@ class ReadablePathTest:
         self.assertEqual(p.read_text(newline='\r\n'), 'abcde\r\nfghlk\n\rmnopq')
 
 
-class ZipPathTest(ReadablePathTest, unittest.TestCase):
+class ZipPathTest(ReadablePathTestBase, unittest.TestCase):
     ground = ZipPathGround(ReadableZipPath)
 
 
-class LocalPathTest(ReadablePathTest, unittest.TestCase):
+class LocalPathTest(ReadablePathTestBase, unittest.TestCase):
     ground = LocalPathGround(ReadableLocalPath)
 
 
-class PathTest(ReadablePathTest, unittest.TestCase):
+class PathTest(ReadablePathTestBase, unittest.TestCase):
     ground = LocalPathGround(Path)
 
 

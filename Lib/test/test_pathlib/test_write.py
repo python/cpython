@@ -10,7 +10,7 @@ from test.test_pathlib.support.local_path import WritableLocalPath, LocalPathGro
 from test.test_pathlib.support.zip_path import WritableZipPath, ZipPathGround
 
 
-class WritablePathTest:
+class WritablePathTestBase:
     def setUp(self):
         self.root = self.ground.setup()
 
@@ -89,15 +89,15 @@ class WritablePathTest:
         self.assertEqual(self.ground.readlink(link), 'fileA')
 
 
-class ZipPathTest(WritablePathTest, unittest.TestCase):
+class ZipPathTest(WritablePathTestBase, unittest.TestCase):
     ground = ZipPathGround(WritableZipPath)
 
 
-class LocalPathTest(WritablePathTest, unittest.TestCase):
+class LocalPathTest(WritablePathTestBase, unittest.TestCase):
     ground = LocalPathGround(WritableLocalPath)
 
 
-class PathTest(WritablePathTest, unittest.TestCase):
+class PathTest(WritablePathTestBase, unittest.TestCase):
     ground = LocalPathGround(Path)
 
 
