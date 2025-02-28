@@ -1,0 +1,2 @@
+The interpreter now correctly issues :c:data:`PyRefTracer_DESTROY` for
+deallocated objects.
