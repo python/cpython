@@ -542,7 +542,6 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     }
     co->_co_firsttraceable = entry_point;
 #ifdef Py_GIL_DISABLED
-    // fprintf(stderr, "== Quicken %s\n", PyUnicode_AsUTF8(co->co_qualname));
     _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), interp->config.tlbc_enabled);
 #else
     _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), 1);
