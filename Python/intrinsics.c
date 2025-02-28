@@ -9,7 +9,7 @@
 #include "pycore_intrinsics.h"    // INTRINSIC_PRINT
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_runtime.h"       // _Py_ID()
-#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
 #include "pycore_typevarobject.h" // _Py_make_typevar()
 
 
@@ -23,16 +23,16 @@ no_intrinsic1(PyThreadState* tstate, PyObject *unused)
 }
 
 static PyObject *
-print_expr(PyThreadState* tstate, PyObject *value)
+print_expr(PyThreadState* Py_UNUSED(ignored), PyObject *value)
 {
-    PyObject *hook = _PySys_GetAttr(tstate, &_Py_ID(displayhook));
+    PyObject *hook = _PySys_GetRequiredAttr(&_Py_ID(displayhook));
     // Can't use ERROR_IF here.
     if (hook == NULL) {
-        _PyErr_SetString(tstate, PyExc_RuntimeError,
-                            "lost sys.displayhook");
         return NULL;
     }
-    return PyObject_CallOneArg(hook, value);
+    PyObject *res = PyObject_CallOneArg(hook, value);
+    Py_DECREF(hook);
+    return res;
 }
 
 static int
