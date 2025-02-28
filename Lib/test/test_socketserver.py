@@ -11,6 +11,7 @@ import socket
 import threading
 import unittest
 import socketserver
+import time
 
 import test.support
 from test.support import reap_children, verbose
@@ -118,13 +119,12 @@ class SocketServerTest(unittest.TestCase):
             print("ADDR =", addr)
             print("CLASS =", svrcls)
 
+        # Short poll interval, if shutdown won't wake loop.
+        poll_interval = 1
         t = threading.Thread(
             name='%s serving' % svrcls,
             target=server.serve_forever,
-            # Short poll interval to make the test finish quickly.
-            # Time between requests is short enough that we won't wake
-            # up spuriously too many times.
-            kwargs={'poll_interval':0.01})
+            kwargs={'poll_interval': poll_interval})
         t.daemon = True  # In case this function raises.
         t.start()
         if verbose: print("server running")
@@ -132,8 +132,11 @@ class SocketServerTest(unittest.TestCase):
             if verbose: print("test client", i)
             testfunc(svrcls.address_family, addr)
         if verbose: print("waiting for server")
+        start_time = time.perf_counter()
         server.shutdown()
+        time_taken = time.perf_counter() - start_time
         t.join()
+        self.assertLess(time_taken, poll_interval / 2)
         server.server_close()
         self.assertEqual(-1, server.socket.fileno())
         if HAVE_FORKING and isinstance(server, socketserver.ForkingMixIn):
@@ -252,7 +255,7 @@ class SocketServerTest(unittest.TestCase):
             t = threading.Thread(
                 name='MyServer serving',
                 target=s.serve_forever,
-                kwargs={'poll_interval':0.01})
+                kwargs={'poll_interval': 1})
             t.daemon = True  # In case this function raises.
             threads.append((t, s))
         for t, s in threads:
@@ -261,6 +264,35 @@ class SocketServerTest(unittest.TestCase):
         for t, s in threads:
             t.join()
             s.server_close()
+
+    @threading_helper.reap_threads
+    def test_write_to_self_on_closed_server(self):
+        poll_interval = 0.1
+
+        class MyServer(socketserver.TCPServer):
+            def serve_forever(self, poll_interval=poll_interval) -> None:
+                try:
+                    super().serve_forever(poll_interval)
+                except OSError:
+                    # In case server was closed before select() was called
+                    return
+
+        class MyHandler(socketserver.StreamRequestHandler):
+            pass
+
+        s = MyServer((HOST, 0), MyHandler)
+        t = threading.Thread(
+            name='MyServer serving',
+            target=s.serve_forever)
+        t.daemon = True  # In case this function raises.
+        t.start()
+        s.server_close()
+        start_time = time.perf_counter()
+        s.write_to_self()  # Should return without trying to connect
+        time_taken = time.perf_counter() - start_time
+        self.assertLess(time_taken, poll_interval / 10)
+        s.shutdown()
+        t.join()
 
     def test_close_immediately(self):
         class MyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
