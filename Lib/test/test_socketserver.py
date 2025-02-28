@@ -273,7 +273,7 @@ class SocketServerTest(unittest.TestCase):
             def serve_forever(self, poll_interval=poll_interval) -> None:
                 try:
                     super().serve_forever(poll_interval)
-                except OSError:
+                except ValueError:
                     # In case server was closed before select() was called
                     return
 
