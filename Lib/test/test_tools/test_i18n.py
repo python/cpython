@@ -522,7 +522,7 @@ class Test_msgfmt(unittest.TestCase):
         bpo-35335 - bpo-9741
     """
 
-    script = os.path.join(toolsdir,'i18n', 'msgfmt.py')
+    script = os.path.join(toolsdir, 'i18n', 'msgfmt.py')
 
     # binary images of tiny po files
     # windows end of lines for first one
@@ -651,8 +651,7 @@ msgstr "Au revoir ..."
         self.assertTrue(stderr.startswith(
             b'Generate binary message catalog from textual'
             b' translation description.'
-            )
-        )
+        ))
 
     def test_wrong(self):
         """Test wrong option"""
@@ -661,8 +660,7 @@ msgstr "Au revoir ..."
         self.assertTrue(stderr.startswith(
             b'Generate binary message catalog from textual'
             b' translation description.'
-            )
-        )
+        ))
 
     def test_outputfile(self):
         """Test script with -o option - 1 single file, Windows EOL"""
@@ -757,7 +755,6 @@ def update_POT_snapshots():
     for _, output_file, output in extract_from_snapshots():
         output = normalize_POT_file(output)
         output_file.write_text(output, encoding='utf-8')
-
 
 
 if __name__ == '__main__':
