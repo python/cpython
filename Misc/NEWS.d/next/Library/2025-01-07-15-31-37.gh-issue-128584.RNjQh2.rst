@@ -1,0 +1,1 @@
+Allow the *mtime* parameters in :func:`gzip.compress` and :class:`gzip.GzipFile` to be :class:`datetime.datetime` objects.
