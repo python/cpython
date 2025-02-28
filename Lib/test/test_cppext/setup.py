@@ -18,14 +18,6 @@ if not support.MS_WINDOWS:
         # a C++ extension using the Python C API does not emit C++ compiler
         # warnings
         '-Werror',
-
-        # Ask for strict(er) compliance with the standard.
-        '-pedantic-errors',
-
-        # But allow C++11 features for -std=C++03. We use:
-        # - `long long` (-Wno-c++11-long-long)
-        # - comma at end of `enum` lists (no narrower GCC option exists)
-        '-Wno-c++11-extensions',
     ]
 else:
     # MSVC compiler flags
