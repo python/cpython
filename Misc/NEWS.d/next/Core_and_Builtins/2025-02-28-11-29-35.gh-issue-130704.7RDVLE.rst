@@ -1,0 +1,2 @@
+Optimize ``LOAD_FAST`` and its superinstruction form to reduce reference
+counting overhead.
