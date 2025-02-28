@@ -968,6 +968,14 @@ base64
   (Contributed by Bénédikt Tran, Chris Markiewicz, and Adam Turner in :gh:`118761`.)
 
 
+glob
+----
+
+* Reduce the number of system calls in :func:`glob.glob` and :func:`~glob.iglob`,
+  thereby improving the speed of globbing operations by 20-80%.
+  (Contributed by Barney Gale in :gh:`116380`.)
+
+
 io
 ---
 * :mod:`io` which provides the built-in :func:`open` makes less system calls
