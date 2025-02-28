@@ -37,18 +37,25 @@ deactivate () {
 deactivate nondestructive
 
 # on Windows, a path can contain colons and backslashes and has to be converted:
-if [ "${OSTYPE:-}" = "cygwin" ] || [ "${OSTYPE:-}" = "msys" ] ; then
-    # transform D:\path\to\venv to /d/path/to/venv on MSYS
-    # and to /cygdrive/d/path/to/venv on Cygwin
-    export VIRTUAL_ENV=$(cygpath __VENV_DIR__)
-else
-    # use the path as-is
-    export VIRTUAL_ENV=__VENV_DIR__
-fi
+case "$(uname)" in
+    CYGWIN*|MSYS*|MINGW*)
+        # transform D:\path\to\venv to /d/path/to/venv on MSYS and MINGW
+        # and to /cygdrive/d/path/to/venv on Cygwin
+        VIRTUAL_ENV=$(cygpath __VENV_DIR__)
+        export VIRTUAL_ENV
+        ;;
+    *)
+        # use the path as-is
+        export VIRTUAL_ENV=__VENV_DIR__
+        ;;
+esac
 
 _OLD_VIRTUAL_PATH="$PATH"
 PATH="$VIRTUAL_ENV/"__VENV_BIN_NAME__":$PATH"
 export PATH
+
+VIRTUAL_ENV_PROMPT=__VENV_PROMPT__
+export VIRTUAL_ENV_PROMPT
 
 # unset PYTHONHOME if set
 # this will fail if PYTHONHOME is set to the empty string (which is bad anyway)
@@ -60,10 +67,8 @@ fi
 
 if [ -z "${VIRTUAL_ENV_DISABLE_PROMPT:-}" ] ; then
     _OLD_VIRTUAL_PS1="${PS1:-}"
-    PS1=__VENV_PROMPT__"${PS1:-}"
+    PS1="("__VENV_PROMPT__") ${PS1:-}"
     export PS1
-    VIRTUAL_ENV_PROMPT=__VENV_PROMPT__
-    export VIRTUAL_ENV_PROMPT
 fi
 
 # Call hash to forget past commands. Without forgetting
