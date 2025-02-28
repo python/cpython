@@ -1441,19 +1441,19 @@ class TestUopsOptimization(unittest.TestCase):
         def f(n):
             trace = []
             for i in range(n):
-                # f is always False, but we can only prove that it's a bool:
-                f = i == TIER2_THRESHOLD
+                # false *usually* False, but we can only prove that it's a bool:
+                false = i % 100 == 0 
                 trace.append("A")
-                if not f:  # Kept.
+                if not false:  # Kept.
                     trace.append("B")
-                    if not f:  # Removed!
+                    if not false:  # Removed!
                         trace.append("C")
                     trace.append("D")
-                    if f:  # Removed!
+                    if false:  # Removed!
                         trace.append("X")
                     trace.append("E")
                 trace.append("F")
-                if f:  # Removed!
+                if false:  # Removed!
                     trace.append("X")
                 trace.append("G")
             return trace
@@ -1472,19 +1472,19 @@ class TestUopsOptimization(unittest.TestCase):
         def f(n):
             trace = []
             for i in range(n):
-                # f is always True, but we can only prove that it's a bool:
-                f = i != TIER2_THRESHOLD
+                # true *usually* True, but we can only prove that it's a bool:
+                true = i % 100 != 0 
                 trace.append("A")
-                if f:  # Kept.
+                if true:  # Kept.
                     trace.append("B")
-                    if not f:  # Removed!
+                    if not true:  # Removed!
                         trace.append("X")
                     trace.append("C")
-                    if f:  # Removed!
+                    if true:  # Removed!
                         trace.append("D")
                     trace.append("E")
                 trace.append("F")
-                if not f:  # Removed!
+                if not true:  # Removed!
                     trace.append("X")
                 trace.append("G")
             return trace
