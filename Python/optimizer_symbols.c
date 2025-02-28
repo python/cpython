@@ -663,7 +663,7 @@ _Py_uop_abstractcontext_fini(JitOptContext *ctx)
 void
 _Py_uop_abstractcontext_init(JitOptContext *ctx)
 {
-    static_assert(sizeof(JitOptSymbol) <= 2*sizeof(uint64_t));
+    static_assert(sizeof(JitOptSymbol) <= 2 * sizeof(uint64_t), "JitOptSymbol has grown");
     ctx->limit = ctx->locals_and_stack + MAX_ABSTRACT_INTERP_SIZE;
     ctx->n_consumed = ctx->locals_and_stack;
 #ifdef Py_DEBUG // Aids debugging a little. There should never be NULL in the abstract interpreter.
@@ -718,6 +718,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
     _Py_uop_abstractcontext_init(ctx);
     PyObject *val_42 = NULL;
     PyObject *val_43 = NULL;
+    PyObject *tuple = NULL;
 
     // Use a single 'sym' variable so copy-pasting tests is easier.
     JitOptSymbol *sym = _Py_uop_sym_new_unknown(ctx);
@@ -821,7 +822,7 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
         "tuple item does not match value used to create tuple"
     );
     PyObject *pair[2] = { val_42, val_43 };
-    PyObject *tuple = _PyTuple_FromArray(pair, 2);
+    tuple = _PyTuple_FromArray(pair, 2);
     sym = _Py_uop_sym_new_const(ctx, tuple);
     TEST_PREDICATE(
         _Py_uop_sym_get_const(ctx, _Py_uop_sym_tuple_getitem(ctx, sym, 1)) == val_43,
