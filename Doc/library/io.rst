@@ -580,7 +580,7 @@ I/O Base Classes
       When reading as much as possible the default implementation will use
       ``raw.readall`` if available (which should implement
       :meth:`RawIOBase.readall`), otherwise will read in a loop until read
-      returns ``None``, a size-zero :clss:`bytes`, or a non-retryable error. For
+      returns ``None``, a size-zero :class:`bytes`, or a non-retryable error. For
       most streams this is to EOF, but for non-blocking streams more data may
       become available.
 
