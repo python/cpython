@@ -47,7 +47,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.console.interact()
         output = ''.join(''.join(call[1]) for call in self.stdout.method_calls)
         self.assertIn('>>> ', output)
-        self.assertFalse(hasattr(self.sysmod, 'ps1'))
+        self.assertNotHasAttr(self.sysmod, 'ps1')
 
         self.infunc.side_effect = [
             "import code",
@@ -69,7 +69,7 @@ class TestInteractiveConsole(unittest.TestCase, MockSys):
         self.console.interact()
         output = ''.join(''.join(call[1]) for call in self.stdout.method_calls)
         self.assertIn('... ', output)
-        self.assertFalse(hasattr(self.sysmod, 'ps2'))
+        self.assertNotHasAttr(self.sysmod, 'ps2')
 
         self.infunc.side_effect = [
             "import code",
