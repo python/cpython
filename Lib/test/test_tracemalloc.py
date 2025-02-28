@@ -4,6 +4,7 @@ import sys
 import textwrap
 import tracemalloc
 import unittest
+import warnings
 from unittest.mock import patch
 from test.support.script_helper import (assert_python_ok, assert_python_failure,
                                         interpreter_requires_environment)
@@ -1140,6 +1141,37 @@ class TestCAPI(unittest.TestCase):
             support.late_deletion(obj)
         """)
         assert_python_ok("-c", code)
+
+    def test_trace_refs(self):
+        def f():
+            l = []
+            del l
+
+        def g():
+            l = [], []
+            del l
+
+        tracemalloc.start()
+
+        try:
+            tracemalloc.clear_traces()
+            f()
+            refs = tracemalloc.get_traced_refs()
+            if refs == (1, 0):
+                warnings.warn("ceval Py_DECREF doesn't emit PyRefTracer_DESTROY in this build")
+            else:
+                self.assertEqual(refs, (1, 1))
+
+            tracemalloc.clear_traces()
+            g()
+            refs = tracemalloc.get_traced_refs()
+            if refs == (3, 2):
+                warnings.warn("ceval Py_DECREF doesn't emit PyRefTracer_DESTROY in this build")
+            else:
+                self.assertEqual(refs, (3, 3))
+
+        finally:
+            tracemalloc.stop()
 
 
 if __name__ == "__main__":

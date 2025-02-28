@@ -195,6 +195,26 @@ _tracemalloc_get_traced_memory(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _tracemalloc_get_traced_memory_impl(module);
 }
 
+PyDoc_STRVAR(_tracemalloc_get_traced_refs__doc__,
+"get_traced_refs($module, /)\n"
+"--\n"
+"\n"
+"Get the current count of created and destroyed refs.\n"
+"\n"
+"Returns a tuple: (created: int, destroyed: int).");
+
+#define _TRACEMALLOC_GET_TRACED_REFS_METHODDEF    \
+    {"get_traced_refs", (PyCFunction)_tracemalloc_get_traced_refs, METH_NOARGS, _tracemalloc_get_traced_refs__doc__},
+
+static PyObject *
+_tracemalloc_get_traced_refs_impl(PyObject *module);
+
+static PyObject *
+_tracemalloc_get_traced_refs(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return _tracemalloc_get_traced_refs_impl(module);
+}
+
 PyDoc_STRVAR(_tracemalloc_reset_peak__doc__,
 "reset_peak($module, /)\n"
 "--\n"
@@ -214,4 +234,4 @@ _tracemalloc_reset_peak(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _tracemalloc_reset_peak_impl(module);
 }
-/*[clinic end generated code: output=9d4d884b156c2ddb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7efbb9b4f08daab3 input=a9049054013a1b77]*/

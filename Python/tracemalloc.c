@@ -76,6 +76,8 @@ typedef struct {
 #define tracemalloc_tracebacks _PyRuntime.tracemalloc.tracebacks
 #define tracemalloc_traces _PyRuntime.tracemalloc.traces
 #define tracemalloc_domains _PyRuntime.tracemalloc.domains
+#define tracemalloc_refs_created _PyRuntime.tracemalloc.refs_created
+#define tracemalloc_refs_destroyed _PyRuntime.tracemalloc.refs_destroyed
 
 
 #ifdef TRACE_DEBUG
@@ -1258,6 +1260,10 @@ _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event,
                         void* Py_UNUSED(ignore))
 {
     if (event != PyRefTracer_CREATE) {
+        /* we don't want bother here with the lock for performance reasons */
+        if (_Py_atomic_load_int32_relaxed(&tracemalloc_config.tracing)) {
+            _Py_atomic_add_ssize((Py_ssize_t *)&tracemalloc_refs_destroyed, 1);
+        }
         return 0;
     }
     if (get_reentrant()) {
@@ -1270,6 +1276,8 @@ _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event,
     if (!tracemalloc_config.tracing) {
         goto done;
     }
+
+    tracemalloc_refs_created += 1;
 
     PyTypeObject *type = Py_TYPE(op);
     const size_t presize = _PyType_PreHeaderSize(type);
@@ -1326,6 +1334,8 @@ _PyTraceMalloc_ClearTraces(void)
     TABLES_LOCK();
     if (tracemalloc_config.tracing) {
         tracemalloc_clear_traces_unlocked();
+        tracemalloc_refs_created = 0;
+        tracemalloc_refs_destroyed = 0;
     }
     TABLES_UNLOCK();
 }
@@ -1462,6 +1472,25 @@ _PyTraceMalloc_GetTracedMemory(void)
     TABLES_UNLOCK();
 
     return Py_BuildValue("nn", traced, peak);
+}
+
+
+PyObject *
+_PyTraceMalloc_GetTracedRefs(void)
+{
+    TABLES_LOCK();
+    Py_ssize_t created, destroyed;
+    if (tracemalloc_config.tracing) {
+        created = tracemalloc_refs_created;
+        destroyed = tracemalloc_refs_destroyed;
+    }
+    else {
+        created = 0;
+        destroyed = 0;
+    }
+    TABLES_UNLOCK();
+
+    return Py_BuildValue("nn", created, destroyed);
 }
 
 void
