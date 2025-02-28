@@ -612,7 +612,7 @@ APIs:
    Append the string *right* to the end of *p_left*.
    *p_left* must point to a :term:`strong reference` to a Unicode object.
 
-   On error, set *p_left* to ``NULL`` and set an exception.
+   On error, set *p_left* to ``NULL`` (*stealing* the reference) and set an exception.
 
 
 .. c:function:: void PyUnicode_AppendAndDel(PyObject **p_left, PyObject *right)
