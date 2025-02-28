@@ -218,12 +218,14 @@ class InteractiveConsole(InteractiveInterpreter):
 
         """
         try:
-            sys.ps1
+            _ps1 = sys.ps1
         except AttributeError:
+            _ps1 = None
             sys.ps1 = ">>> "
         try:
-            sys.ps2
+            _ps2 = sys.ps2
         except AttributeError:
+            _ps2 = None
             sys.ps2 = "... "
         cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
         if banner is None:
@@ -286,6 +288,12 @@ class InteractiveConsole(InteractiveInterpreter):
 
             if _quit is not None:
                 builtins.quit = _quit
+
+            if _ps1 is None:
+                del sys.ps1
+
+            if _ps2 is None:
+                del sys.ps2
 
             if exitmsg is None:
                 self.write('now exiting %s...\n' % self.__class__.__name__)
