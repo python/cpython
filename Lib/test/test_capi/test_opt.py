@@ -1441,8 +1441,8 @@ class TestUopsOptimization(unittest.TestCase):
         def f(n):
             trace = []
             for i in range(n):
-                # false is *usually* False, but we can only prove that it's a bool:
-                false = i % 100 == 0 
+                # false is always False, but we can only prove that it's a bool:
+                false = i == TIER2_THRESHOLD
                 trace.append("A")
                 if not false:  # Kept.
                     trace.append("B")
@@ -1472,8 +1472,8 @@ class TestUopsOptimization(unittest.TestCase):
         def f(n):
             trace = []
             for i in range(n):
-                # true is *usually* True, but we can only prove that it's a bool:
-                true = i % 100 != 0 
+                # true always True, but we can only prove that it's a bool:
+                true = i != TIER2_THRESHOLD
                 trace.append("A")
                 if true:  # Kept.
                     trace.append("B")
