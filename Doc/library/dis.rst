@@ -76,7 +76,7 @@ the following command can be used to display the disassembly of
      2           RESUME                   0
    <BLANKLINE>
      3           LOAD_GLOBAL              1 (len + NULL)
-                 LOAD_FAST                0 (alist)
+                 LOAD_FAST_BORROW         0 (alist)
                  CALL                     1
                  RETURN_VALUE
 
