@@ -2380,11 +2380,21 @@ class FreeThreadingTest(unittest.TestCase):
             b.wait()
             a[:] = c
 
+        def ass_subscript2(b, a, c):  # MODIFIES!
+            b.wait()
+            a[:] = c
+            assert b'\xdd' not in a
+
         def mod(b, a):
             c = tuple(range(4096))
             b.wait()
             try: a % c
             except TypeError: pass
+
+        def mod2(b, a, c):
+            b.wait()
+            d = a % c
+            assert b'\xdd' not in d
 
         def repr_(b, a):
             b.wait()
@@ -2503,7 +2513,9 @@ class FreeThreadingTest(unittest.TestCase):
 
         check([clear] + [contains] * 10)
         check([clear] + [subscript] * 10)
+        check([clear2] + [ass_subscript2] * 10, None, bytearray(b'0' * 0x400000))
         check([clear] + [mod] * 10, bytearray(b'%d' * 4096))
+        check([clear2] + [mod2] * 10, bytearray(b'%s'), bytearray(b'0' * 0x400000))
 
         check([clear] + [capitalize] * 10, bytearray(b'a' * 0x40000))
         check([clear] + [center] * 10, bytearray(b'a' * 0x40000))

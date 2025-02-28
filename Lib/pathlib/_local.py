@@ -1093,19 +1093,18 @@ class Path(PurePath):
             target = self.with_segments(target)
         return target
 
-    def copy(self, target, follow_symlinks=True, dirs_exist_ok=False,
-             preserve_metadata=False):
+    def copy(self, target, follow_symlinks=True, preserve_metadata=False):
         """
         Recursively copy this file or directory tree to the given destination.
         """
         if not hasattr(target, 'with_segments'):
             target = self.with_segments(target)
         ensure_distinct_paths(self, target)
-        copy_file(self, target, follow_symlinks, dirs_exist_ok, preserve_metadata)
+        copy_file(self, target, follow_symlinks, preserve_metadata)
         return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def copy_into(self, target_dir, *, follow_symlinks=True,
-                  dirs_exist_ok=False, preserve_metadata=False):
+                  preserve_metadata=False):
         """
         Copy this file or directory tree into the given existing directory.
         """
@@ -1117,7 +1116,6 @@ class Path(PurePath):
         else:
             target = self.with_segments(target_dir, name)
         return self.copy(target, follow_symlinks=follow_symlinks,
-                         dirs_exist_ok=dirs_exist_ok,
                          preserve_metadata=preserve_metadata)
 
     def move(self, target):
