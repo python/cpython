@@ -223,22 +223,21 @@ BENCHMARKS = {
 }
 
 
-def is_accelerated_module(module):
-    return getattr(pickle.Pickler, '__module__', '<jython>') != 'pickle'
-
-
-def add_cmdline_args(cmd, args):
-    if args.pure_python:
-        cmd.append("--pure-python")
-    cmd.extend(("--protocol", str(args.protocol)))
-    cmd.append(args.benchmark)
-
-
-def run_pgo():
-    import pickle
-
+def bench_all(pickle):
     class options:
         protocol = pickle.HIGHEST_PROTOCOL
 
     for benchmark, inner_loops in BENCHMARKS.values():
-        benchmark(10*inner_loops, pickle, options)
+        benchmark(inner_loops, pickle, options)
+
+
+def run_pgo():
+    from test.support import import_helper
+
+    # C accelerated version
+    import pickle
+    bench_all(pickle)
+
+    # pure Python version
+    py_pickle = import_helper.import_fresh_module('pickle', blocked=['_pickle'])
+    bench_all(py_pickle)
