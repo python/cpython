@@ -5147,7 +5147,7 @@ AC_CHECK_FUNCS([ \
   posix_spawn_file_actions_addclosefrom_np \
   pread preadv preadv2 process_vm_readv \
   pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
-  pthread_kill pthread_getname_np pthread_setname_np \
+  pthread_kill pthread_getname_np pthread_setname_np pthread_getattr_np \
   ptsname ptsname_r pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
   rtpSpawn sched_get_priority_max sched_rr_get_interval sched_setaffinity \
   sched_setparam sched_setscheduler sem_clockwait sem_getvalue sem_open \

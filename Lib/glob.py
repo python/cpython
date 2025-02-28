@@ -495,7 +495,9 @@ class _PathGlobber(_GlobberBase):
     """Provides shell-style pattern matching and globbing for pathlib paths.
     """
 
-    lexists = operator.methodcaller('exists', follow_symlinks=False)
+    @staticmethod
+    def lexists(path):
+        return path.info.exists(follow_symlinks=False)
 
     @staticmethod
     def scandir(path):
