@@ -119,7 +119,7 @@ _default_encoder = JSONEncoder(
 
 def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         allow_nan=True, cls=None, indent=None, separators=None,
-        default=None, sort_keys=False, list_oneline=False, **kw):
+        default=None, sort_keys=False, arr_oneline=False, **kw):
     """Serialize ``obj`` as a JSON formatted stream to ``fp`` (a
     ``.write()``-supporting file-like object).
 
@@ -155,7 +155,7 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
 
     If *sort_keys* is true (default: ``False``), then the output of
     dictionaries will be sorted by key.
-    If *list_oneline* is true (default: ``False``), then lists/tuples will be
+    If *arr_oneline* is true (default: ``False``), then lists/tuples will be
     encoded as arrays on a single line.
 
     To use a custom ``JSONEncoder`` subclass (e.g. one that overrides the
@@ -175,7 +175,7 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         iterable = cls(skipkeys=skipkeys, ensure_ascii=ensure_ascii,
             check_circular=check_circular, allow_nan=allow_nan, indent=indent,
             separators=separators, default=default, sort_keys=sort_keys,
-            list_oneline=list_oneline, **kw).iterencode(obj)
+            arr_oneline=arr_oneline, **kw).iterencode(obj)
     # could accelerate with writelines in some versions of Python, at
     # a debuggability cost
     for chunk in iterable:
@@ -184,7 +184,7 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
 
 def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         allow_nan=True, cls=None, indent=None, separators=None,
-        default=None, sort_keys=False, list_oneline=False, **kw):
+        default=None, sort_keys=False, arr_oneline=False, **kw):
     """Serialize ``obj`` to a JSON formatted ``str``.
 
     If ``skipkeys`` is true then ``dict`` keys that are not basic types
@@ -219,7 +219,7 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
 
     If *sort_keys* is true (default: ``False``), then the output of
     dictionaries will be sorted by key.
-    If *list_oneline* is true (default: ``False``), then lists/tuples will be
+    If *arr_oneline* is true (default: ``False``), then lists/tuples will be
     encoded as arrays on a single line.
 
     To use a custom ``JSONEncoder`` subclass (e.g. one that overrides the
@@ -239,7 +239,7 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         skipkeys=skipkeys, ensure_ascii=ensure_ascii,
         check_circular=check_circular, allow_nan=allow_nan, indent=indent,
         separators=separators, default=default, sort_keys=sort_keys,
-        list_oneline=list_oneline, **kw).encode(obj)
+        arr_oneline=arr_oneline, **kw).encode(obj)
 
 
 _default_decoder = JSONDecoder(object_hook=None, object_pairs_hook=None)
