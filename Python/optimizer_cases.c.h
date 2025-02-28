@@ -273,14 +273,16 @@
             {
                 assert(PyLong_CheckExact(sym_get_const(left)));
                 assert(PyLong_CheckExact(sym_get_const(right)));
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
                 PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(left),
                     (PyLongObject *)sym_get_const(right));
                 if (temp == NULL) {
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
+                stack_pointer[0] = res;
+                stack_pointer += 1;
                 assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:
@@ -306,14 +308,16 @@
             {
                 assert(PyLong_CheckExact(sym_get_const(left)));
                 assert(PyLong_CheckExact(sym_get_const(right)));
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
                 PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(left),
                     (PyLongObject *)sym_get_const(right));
                 if (temp == NULL) {
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
+                stack_pointer[0] = res;
+                stack_pointer += 1;
                 assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:
@@ -339,14 +343,16 @@
             {
                 assert(PyLong_CheckExact(sym_get_const(left)));
                 assert(PyLong_CheckExact(sym_get_const(right)));
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
                 PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(left),
                     (PyLongObject *)sym_get_const(right));
                 if (temp == NULL) {
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
-                stack_pointer[-2] = res;
-                stack_pointer += -1;
+                stack_pointer[0] = res;
+                stack_pointer += 1;
                 assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:
@@ -575,15 +581,6 @@
             break;
         }
 
-        case _BINARY_SUBSCR: {
-            JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
         case _BINARY_SLICE: {
             JitOptSymbol *res;
             res = sym_new_not_null(ctx);
@@ -599,7 +596,7 @@
             break;
         }
 
-        case _BINARY_SUBSCR_LIST_INT: {
+        case _BINARY_OP_SUBSCR_LIST_INT: {
             JitOptSymbol *res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
@@ -608,7 +605,7 @@
             break;
         }
 
-        case _BINARY_SUBSCR_STR_INT: {
+        case _BINARY_OP_SUBSCR_STR_INT: {
             JitOptSymbol *res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
@@ -617,7 +614,7 @@
             break;
         }
 
-        case _BINARY_SUBSCR_TUPLE_INT: {
+        case _BINARY_OP_SUBSCR_TUPLE_INT: {
             JitOptSymbol *res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
@@ -626,7 +623,7 @@
             break;
         }
 
-        case _BINARY_SUBSCR_DICT: {
+        case _BINARY_OP_SUBSCR_DICT: {
             JitOptSymbol *res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
@@ -635,7 +632,7 @@
             break;
         }
 
-        case _BINARY_SUBSCR_CHECK_FUNC: {
+        case _BINARY_OP_SUBSCR_CHECK_FUNC: {
             JitOptSymbol *getitem;
             getitem = sym_new_not_null(ctx);
             stack_pointer[0] = getitem;
@@ -644,7 +641,7 @@
             break;
         }
 
-        case _BINARY_SUBSCR_INIT_CALL: {
+        case _BINARY_OP_SUBSCR_INIT_CALL: {
             _Py_UOpsAbstractFrame *new_frame;
             new_frame = NULL;
             ctx->done = true;
