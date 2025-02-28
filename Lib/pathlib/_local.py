@@ -19,7 +19,11 @@ try:
 except ImportError:
     grp = None
 
-from pathlib._os import LocalCopyWriter, PathInfo, DirEntryInfo, ensure_different_files
+from pathlib._os import (
+    PathInfo, DirEntryInfo,
+    ensure_different_files, ensure_distinct_paths,
+    copy_file, copy_info,
+)
 
 
 __all__ = [
@@ -799,6 +803,12 @@ class Path(PurePath):
         with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
+    def _write_info(self, info, follow_symlinks=True):
+        """
+        Write the given PathInfo to this path.
+        """
+        copy_info(info, self, follow_symlinks=follow_symlinks)
+
     _remove_leading_dot = operator.itemgetter(slice(2, None))
     _remove_trailing_slash = operator.itemgetter(slice(-1))
 
@@ -1083,8 +1093,6 @@ class Path(PurePath):
             target = self.with_segments(target)
         return target
 
-    _copy_writer = property(LocalCopyWriter)
-
     def copy(self, target, follow_symlinks=True, dirs_exist_ok=False,
              preserve_metadata=False):
         """
@@ -1092,13 +1100,9 @@ class Path(PurePath):
         """
         if not hasattr(target, 'with_segments'):
             target = self.with_segments(target)
-
-        # Delegate to the target path's CopyWriter object.
-        try:
-            create = target._copy_writer._create
-        except AttributeError:
-            raise TypeError(f"Target is not writable: {target}") from None
-        return create(self, follow_symlinks, dirs_exist_ok, preserve_metadata)
+        ensure_distinct_paths(self, target)
+        copy_file(self, target, follow_symlinks, dirs_exist_ok, preserve_metadata)
+        return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def copy_into(self, target_dir, *, follow_symlinks=True,
                   dirs_exist_ok=False, preserve_metadata=False):
@@ -1128,10 +1132,12 @@ class Path(PurePath):
         else:
             ensure_different_files(self, target)
             try:
-                return self.replace(target)
+                os.replace(self, target)
             except OSError as err:
                 if err.errno != EXDEV:
                     raise
+            else:
+                return target.joinpath()  # Empty join to ensure fresh metadata.
         # Fall back to copy+delete.
         target = self.copy(target, follow_symlinks=False, preserve_metadata=True)
         self._delete()

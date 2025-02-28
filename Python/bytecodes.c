@@ -1082,7 +1082,6 @@ dummy_func(
             /* Restore previous frame and return. */
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
-            tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
             PyObject *result = PyStackRef_AsPyObjectSteal(retval);
             SYNC_SP(); /* Not strictly necessary, but prevents warnings */
             return result;
@@ -1340,7 +1339,7 @@ dummy_func(
             goto exception_unwind;
         }
 
-        tier1 inst(END_ASYNC_FOR, (awaitable_st, exc_st -- )) {
+        tier1 op(_END_ASYNC_FOR, (awaitable_st, exc_st -- )) {
             PyObject *exc = PyStackRef_AsPyObjectBorrow(exc_st);
 
             assert(exc && PyExceptionInstance_Check(exc));
@@ -1355,6 +1354,16 @@ dummy_func(
                 goto exception_unwind;
             }
         }
+
+        tier1 op(_MONITOR_BRANCH_RIGHT, ( -- )) {
+            INSTRUMENTED_JUMP(prev_instr, this_instr+1, PY_MONITORING_EVENT_BRANCH_RIGHT);
+        }
+
+        macro(INSTRUMENTED_END_ASYNC_FOR) =
+            _MONITOR_BRANCH_RIGHT +
+            _END_ASYNC_FOR;
+
+        macro(END_ASYNC_FOR) = _END_ASYNC_FOR;
 
         tier1 inst(CLEANUP_THROW, (sub_iter, last_sent_val, exc_value_st -- none, value)) {
             PyObject *exc_value = PyStackRef_AsPyObjectBorrow(exc_value_st);
@@ -3298,12 +3307,9 @@ dummy_func(
 
             assert(val_o && PyExceptionInstance_Check(val_o));
             exc = PyExceptionInstance_Class(val_o);
-            tb = PyException_GetTraceback(val_o);
+            PyObject *original_tb = tb = PyException_GetTraceback(val_o);
             if (tb == NULL) {
                 tb = Py_None;
-            }
-            else {
-                Py_DECREF(tb);
             }
             assert(PyStackRef_LongCheck(lasti));
             (void)lasti; // Shut up compiler warning if asserts are off
@@ -3311,6 +3317,7 @@ dummy_func(
             int has_self = !PyStackRef_IsNull(exit_self);
             PyObject *res_o = PyObject_Vectorcall(exit_func_o, stack + 2 - has_self,
                     (3 + has_self) | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
+            Py_XDECREF(original_tb);
             ERROR_IF(res_o == NULL, error);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
@@ -3971,11 +3978,10 @@ dummy_func(
             EXIT_IF(!PyCFunction_CheckExact(callable_o));
             EXIT_IF(PyCFunction_GET_FLAGS(callable_o) != METH_O);
             // CPython promises to check all non-vectorcall function calls.
-            EXIT_IF(tstate->c_recursion_remaining <= 0);
+            EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
             _PyStackRef arg = args[0];
-            _Py_EnterRecursiveCallTstateUnchecked(tstate);
             PyObject *res_o = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable_o), PyStackRef_AsPyObjectBorrow(arg));
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -4165,14 +4171,13 @@ dummy_func(
             PyMethodDef *meth = method->d_method;
             EXIT_IF(meth->ml_flags != METH_O);
             // CPython promises to check all non-vectorcall function calls.
-            EXIT_IF(tstate->c_recursion_remaining <= 0);
+            EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             _PyStackRef arg_stackref = arguments[1];
             _PyStackRef self_stackref = arguments[0];
             EXIT_IF(!Py_IS_TYPE(PyStackRef_AsPyObjectBorrow(self_stackref),
                                  method->d_common.d_type));
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
-            _Py_EnterRecursiveCallTstateUnchecked(tstate);
             PyObject *res_o = _PyCFunction_TrampolineCall(cfunc,
                                   PyStackRef_AsPyObjectBorrow(self_stackref),
                                   PyStackRef_AsPyObjectBorrow(arg_stackref));
@@ -4247,10 +4252,9 @@ dummy_func(
             EXIT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
             EXIT_IF(meth->ml_flags != METH_NOARGS);
             // CPython promises to check all non-vectorcall function calls.
-            EXIT_IF(tstate->c_recursion_remaining <= 0);
+            EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             STAT_INC(CALL, hit);
             PyCFunction cfunc = meth->ml_meth;
-            _Py_EnterRecursiveCallTstateUnchecked(tstate);
             PyObject *res_o = _PyCFunction_TrampolineCall(cfunc, self, NULL);
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -4513,8 +4517,8 @@ dummy_func(
         macro(INSTRUMENTED_CALL_KW) =
             counter/1 +
             unused/2 +
-            _MONITOR_CALL_KW +
             _MAYBE_EXPAND_METHOD_KW +
+            _MONITOR_CALL_KW +
             _DO_CALL_KW;
 
         op(_CHECK_IS_NOT_PY_CALLABLE_KW, (callable[1], unused[1], unused[oparg], kwnames -- callable[1], unused[1], unused[oparg], kwnames)) {
@@ -5252,7 +5256,6 @@ dummy_func(
             if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
                 /* Restore previous frame and exit */
                 tstate->current_frame = frame->previous;
-                tstate->c_recursion_remaining += PY_EVAL_C_STACK_UNITS;
                 return NULL;
             }
             next_instr = frame->instr_ptr;
