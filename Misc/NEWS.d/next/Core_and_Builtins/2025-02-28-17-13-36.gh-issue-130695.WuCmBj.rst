@@ -1,0 +1,1 @@
+Add tracking of number of deallocations to :mod:`tracemalloc`.
