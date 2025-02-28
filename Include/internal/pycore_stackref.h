@@ -528,6 +528,7 @@ PyStackRef_FromPyObjectImmortal(PyObject *obj)
     return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_IMMORTAL};
 }
 
+/* WARNING: This macro evaluates its argument twice */
 #ifdef _WIN32
 #define PyStackRef_DUP(REF) \
     (PyStackRef_IsUncountedMortal(REF) ? (Py_INCREF_MORTAL(BITS_TO_PTR(REF)), (REF)) : (REF))
@@ -565,7 +566,8 @@ PyStackRef_MakeHeapSafe(_PyStackRef ref)
 #ifdef _WIN32
 #define PyStackRef_CLOSE(REF) \
 do { \
-    if (PyStackRef_IsUncountedMortal(REF)) Py_DECREF_MORTAL(BITS_TO_PTR(REF)); \
+    _PyStackRef _temp = (REF);
+    if (PyStackRef_IsUncountedMortal(_temp)) Py_DECREF_MORTAL(BITS_TO_PTR(_temp)); \
 } while (0)
 #else
 static inline void
