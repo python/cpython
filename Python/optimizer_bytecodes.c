@@ -34,6 +34,7 @@ typedef struct _Py_UOpsAbstractFrame _Py_UOpsAbstractFrame;
 #define sym_tuple_getitem _Py_uop_sym_tuple_getitem
 #define sym_tuple_length _Py_uop_sym_tuple_length
 #define sym_is_immortal _Py_uop_sym_is_immortal
+#define sym_new_truth _Py_uop_sym_new_truth
 
 extern int
 optimize_to_bool(
@@ -391,14 +392,14 @@ dummy_func(void) {
 
     op(_TO_BOOL, (value -- res)) {
         if (!optimize_to_bool(this_instr, ctx, value, &res)) {
-            res = sym_new_type(ctx, &PyBool_Type);
+            res = sym_new_truth(ctx, value, false);
         }
     }
 
     op(_TO_BOOL_BOOL, (value -- res)) {
         if (!optimize_to_bool(this_instr, ctx, value, &res)) {
             sym_set_type(value, &PyBool_Type);
-            res = value;
+            res = sym_new_truth(ctx, value, false);
         }
     }
 
@@ -428,6 +429,11 @@ dummy_func(void) {
             res = sym_new_type(ctx, &PyBool_Type);
             sym_set_type(value, &PyUnicode_Type);
         }
+    }
+
+    op(_UNARY_NOT, (value -- res)) {
+        sym_set_type(value, &PyBool_Type);
+        res = sym_new_truth(ctx, value, true);
     }
 
     op(_COMPARE_OP, (left, right -- res)) {

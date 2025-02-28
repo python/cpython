@@ -140,8 +140,11 @@
         }
 
         case _UNARY_NOT: {
+            JitOptSymbol *value;
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            value = stack_pointer[-1];
+            sym_set_type(value, &PyBool_Type);
+            res = sym_new_truth(ctx, value, true);
             stack_pointer[-1] = res;
             break;
         }
@@ -151,7 +154,7 @@
             JitOptSymbol *res;
             value = stack_pointer[-1];
             if (!optimize_to_bool(this_instr, ctx, value, &res)) {
-                res = sym_new_type(ctx, &PyBool_Type);
+                res = sym_new_truth(ctx, value, false);
             }
             stack_pointer[-1] = res;
             break;
@@ -163,7 +166,7 @@
             value = stack_pointer[-1];
             if (!optimize_to_bool(this_instr, ctx, value, &res)) {
                 sym_set_type(value, &PyBool_Type);
-                res = value;
+                res = sym_new_truth(ctx, value, false);
             }
             stack_pointer[-1] = res;
             break;
