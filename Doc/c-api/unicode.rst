@@ -1851,7 +1851,7 @@ The following API is deprecated.
         * :c:func:`PyObject_Length`
       * * ``hash``
         * N/A
-        * :c:func:`PyObject_Hash` \(2)
+        * :c:func:`PyObject_Hash`
       * * ``interned``
         * :c:func:`PyUnicode_CHECK_INTERNED`
         * N/A \(1)
@@ -1859,7 +1859,7 @@ The following API is deprecated.
         * :c:func:`PyUnicode_KIND`
         * N/A
       * * ``compact``
-        * :c:func:`PyUnicode_IS_COMPACT` \(3)
+        * :c:func:`PyUnicode_IS_COMPACT` \(2)
         * N/A
       * * ``ascii``
         * :c:func:`PyUnicode_IS_ASCII`
