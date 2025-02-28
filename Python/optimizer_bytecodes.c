@@ -492,6 +492,14 @@ dummy_func(void) {
         value = sym_new_const(ctx, ptr);
     }
 
+    op(_POP_TOP_LOAD_CONST_INLINE, (ptr/4, pop -- value)) {
+        value = sym_new_const(ctx, ptr);
+    }
+
+    op(_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
+        value = sym_new_const(ctx, ptr);
+    }
+
     op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
         assert(oparg > 0);
         top = bottom;
@@ -521,7 +529,6 @@ dummy_func(void) {
                 if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
                     PyDict_Watch(GLOBALS_WATCHER_ID, dict);
                     _Py_BloomFilter_Add(dependencies, dict);
-                    PyObject *dict = mod->md_dict;
                     PyObject *res = convert_global_to_const(this_instr, dict, true);
                     attr = sym_new_const(ctx, res);
                 }

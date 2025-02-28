@@ -26,7 +26,7 @@ from stack import Stack, get_stack_effect, get_stack_effects
 # Constants used instead of size for macro expansions.
 # Note: 1, 2, 4 must match actual cache entry sizes.
 OPARG_KINDS = {
-    "OPARG_FULL": 0,
+    "OPARG_SIMPLE": 0,
     "OPARG_CACHE_1": 1,
     "OPARG_CACHE_2": 2,
     "OPARG_CACHE_4": 4,
@@ -343,18 +343,20 @@ def generate_expansion_table(analysis: Analysis, out: CWriter) -> None:
             for part in inst.parts:
                 size = part.size
                 if isinstance(part, Uop):
-                    fmt = "0"
+                    # Skip specializations
+                    if "specializing" in part.annotations:
+                        continue
+                    # Add the primary expansion.
+                    fmt = "OPARG_SIMPLE"
                     if part.name == "_SAVE_RETURN_OFFSET":
                         fmt = "OPARG_SAVE_RETURN_OFFSET"
                     elif part.caches:
                         fmt = str(part.caches[0].size)
-                    # Skip specializations
-                    if "specializing" in part.annotations:
-                        continue
                     if "replaced" in part.annotations:
                         fmt = "OPARG_REPLACED"
                     expansions.append((part.name, fmt, offset))
                     if len(part.caches) > 1:
+                        # Add expansion for the second operand
                         internal_offset = 0
                         for cache in part.caches[:-1]:
                             internal_offset += cache.size

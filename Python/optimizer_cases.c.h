@@ -1168,7 +1168,6 @@
                     if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
                         PyDict_Watch(GLOBALS_WATCHER_ID, dict);
                         _Py_BloomFilter_Add(dependencies, dict);
-                        PyObject *dict = mod->md_dict;
                         PyObject *res = convert_global_to_const(this_instr, dict, true);
                         attr = sym_new_const(ctx, res);
                     }
@@ -2357,7 +2356,8 @@
 
         case _POP_TOP_LOAD_CONST_INLINE: {
             JitOptSymbol *value;
-            value = sym_new_not_null(ctx);
+            PyObject *ptr = (PyObject *)this_instr->operand0;
+            value = sym_new_const(ctx, ptr);
             stack_pointer[-1] = value;
             break;
         }
@@ -2374,7 +2374,8 @@
 
         case _POP_TOP_LOAD_CONST_INLINE_BORROW: {
             JitOptSymbol *value;
-            value = sym_new_not_null(ctx);
+            PyObject *ptr = (PyObject *)this_instr->operand0;
+            value = sym_new_const(ctx, ptr);
             stack_pointer[-1] = value;
             break;
         }
