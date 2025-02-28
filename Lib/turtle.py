@@ -1224,7 +1224,7 @@ class TurtleScreen(TurtleScreenBase):
         self._rescale(self.xscale/oldxscale, self.yscale/oldyscale)
         self.update()
 
-    def register_shape(self, name, shape=None):
+    def register_shape(self, name, shape=None, rotate_image_shape=False):
         """Adds a turtle shape to TurtleScreen's shapelist.
 
         Arguments:
@@ -1236,6 +1236,7 @@ class TurtleScreen(TurtleScreenBase):
             Installs the corresponding image shape.
             !! Image-shapes DO NOT rotate when turning the turtle,
             !! so they do not display the heading of the turtle!
+            !! unless rotate_image_shape is explicitly set to true
         (3) name is an arbitrary string and shape is a tuple
             of pairs of coordinates. Installs the corresponding
             polygon shape
@@ -1246,15 +1247,17 @@ class TurtleScreen(TurtleScreenBase):
 
         call: register_shape("turtle.gif")
         --or: register_shape("tri", ((0,0), (10,10), (-10,10)))
+        --or: register_shape("turtle.gif", rotate_image_shape=True)
 
         Example (for a TurtleScreen instance named screen):
         >>> screen.register_shape("triangle", ((5,-3),(0,5),(-5,-3)))
 
         """
+        image_shape_type = "transformable_image" if rotate_image_shape else "image"
         if shape is None:
-            shape = Shape("image", self._image(name))
+            shape = Shape(image_shape_type, self._image(name))
         elif isinstance(shape, str):
-            shape = Shape("image", self._image(shape))
+            shape = Shape(image_shape_type, self._image(shape))
         elif isinstance(shape, tuple):
             shape = Shape("polygon", shape)
         ## else shape assumed to be Shape-instance
