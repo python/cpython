@@ -28,7 +28,11 @@ _pickle_Pickler_clear_memo_impl(PicklerObject *self);
 static PyObject *
 _pickle_Pickler_clear_memo(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_Pickler_clear_memo_impl((PicklerObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _pickle_Pickler_clear_memo_impl((PicklerObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_pickle_Pickler_dump__doc__,
@@ -229,7 +233,11 @@ _pickle_PicklerMemoProxy_clear_impl(PicklerMemoProxyObject *self);
 static PyObject *
 _pickle_PicklerMemoProxy_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_PicklerMemoProxy_clear_impl((PicklerMemoProxyObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _pickle_PicklerMemoProxy_clear_impl((PicklerMemoProxyObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_pickle_PicklerMemoProxy_copy__doc__,
@@ -247,7 +255,11 @@ _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self);
 static PyObject *
 _pickle_PicklerMemoProxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_PicklerMemoProxy_copy_impl((PicklerMemoProxyObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _pickle_PicklerMemoProxy_copy_impl((PicklerMemoProxyObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_pickle_PicklerMemoProxy___reduce____doc__,
@@ -265,7 +277,11 @@ _pickle_PicklerMemoProxy___reduce___impl(PicklerMemoProxyObject *self);
 static PyObject *
 _pickle_PicklerMemoProxy___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_PicklerMemoProxy___reduce___impl((PicklerMemoProxyObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _pickle_PicklerMemoProxy___reduce___impl((PicklerMemoProxyObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_pickle_Unpickler_persistent_load__doc__,
@@ -331,11 +347,16 @@ _pickle_Unpickler_load_impl(UnpicklerObject *self, PyTypeObject *cls);
 static PyObject *
 _pickle_Unpickler_load(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "load() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _pickle_Unpickler_load_impl((UnpicklerObject *)self, cls);
+    return_value = _pickle_Unpickler_load_impl((UnpicklerObject *)self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_pickle_Unpickler_find_class__doc__,
@@ -568,7 +589,11 @@ _pickle_UnpicklerMemoProxy_clear_impl(UnpicklerMemoProxyObject *self);
 static PyObject *
 _pickle_UnpicklerMemoProxy_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_UnpicklerMemoProxy_clear_impl((UnpicklerMemoProxyObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _pickle_UnpicklerMemoProxy_clear_impl((UnpicklerMemoProxyObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_pickle_UnpicklerMemoProxy_copy__doc__,
@@ -586,7 +611,11 @@ _pickle_UnpicklerMemoProxy_copy_impl(UnpicklerMemoProxyObject *self);
 static PyObject *
 _pickle_UnpicklerMemoProxy_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_UnpicklerMemoProxy_copy_impl((UnpicklerMemoProxyObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _pickle_UnpicklerMemoProxy_copy_impl((UnpicklerMemoProxyObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_pickle_UnpicklerMemoProxy___reduce____doc__,
@@ -604,7 +633,11 @@ _pickle_UnpicklerMemoProxy___reduce___impl(UnpicklerMemoProxyObject *self);
 static PyObject *
 _pickle_UnpicklerMemoProxy___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _pickle_UnpicklerMemoProxy___reduce___impl((UnpicklerMemoProxyObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _pickle_UnpicklerMemoProxy___reduce___impl((UnpicklerMemoProxyObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_pickle_dump__doc__,
@@ -1086,4 +1119,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d71dc73af298ebe8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f37ff045f4feec40 input=a9049054013a1b77]*/

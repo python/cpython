@@ -139,7 +139,11 @@ memoryview_release_impl(PyMemoryViewObject *self);
 static PyObject *
 memoryview_release(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return memoryview_release_impl((PyMemoryViewObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = memoryview_release_impl((PyMemoryViewObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(memoryview_cast__doc__,
@@ -225,7 +229,11 @@ memoryview_toreadonly_impl(PyMemoryViewObject *self);
 static PyObject *
 memoryview_toreadonly(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return memoryview_toreadonly_impl((PyMemoryViewObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = memoryview_toreadonly_impl((PyMemoryViewObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(memoryview_tolist__doc__,
@@ -243,7 +251,11 @@ memoryview_tolist_impl(PyMemoryViewObject *self);
 static PyObject *
 memoryview_tolist(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return memoryview_tolist_impl((PyMemoryViewObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = memoryview_tolist_impl((PyMemoryViewObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(memoryview_tobytes__doc__,
@@ -428,6 +440,19 @@ PyDoc_STRVAR(memoryview_count__doc__,
 #define MEMORYVIEW_COUNT_METHODDEF    \
     {"count", (PyCFunction)memoryview_count, METH_O, memoryview_count__doc__},
 
+static PyObject *
+memoryview_count_impl(PyMemoryViewObject *self, PyObject *value);
+
+static PyObject *
+memoryview_count(PyObject *self, PyObject *value)
+{
+    PyObject *return_value = NULL;
+
+    return_value = memoryview_count_impl((PyMemoryViewObject *)self, value);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(memoryview_index__doc__,
 "index($self, value, start=0, stop=sys.maxsize, /)\n"
 "--\n"
@@ -473,4 +498,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2ef6c061d9c4e3dc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=37f6fd422ddd18af input=a9049054013a1b77]*/

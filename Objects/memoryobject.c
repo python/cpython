@@ -2781,8 +2781,8 @@ Count the number of occurrences of a value.
 [clinic start generated code]*/
 
 static PyObject *
-memoryview_count(PyMemoryViewObject *self, PyObject *value)
-/*[clinic end generated code: output=e2c255a8d54eaa12 input=e3036ce1ed7d1823]*/
+memoryview_count_impl(PyMemoryViewObject *self, PyObject *value)
+/*[clinic end generated code: output=a15cb19311985063 input=e3036ce1ed7d1823]*/
 {
     PyObject *iter = PyObject_GetIter(_PyObject_CAST(self));
     if (iter == NULL) {

@@ -45,11 +45,16 @@ _lsprof_Profiler_getstats_impl(ProfilerObject *self, PyTypeObject *cls);
 static PyObject *
 _lsprof_Profiler_getstats(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "getstats() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _lsprof_Profiler_getstats_impl((ProfilerObject *)self, cls);
+    return_value = _lsprof_Profiler_getstats_impl((ProfilerObject *)self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_lsprof_Profiler__pystart_callback__doc__,
@@ -285,7 +290,11 @@ _lsprof_Profiler_disable_impl(ProfilerObject *self);
 static PyObject *
 _lsprof_Profiler_disable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _lsprof_Profiler_disable_impl((ProfilerObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _lsprof_Profiler_disable_impl((ProfilerObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_lsprof_Profiler_clear__doc__,
@@ -303,7 +312,11 @@ _lsprof_Profiler_clear_impl(ProfilerObject *self);
 static PyObject *
 _lsprof_Profiler_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _lsprof_Profiler_clear_impl((ProfilerObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _lsprof_Profiler_clear_impl((ProfilerObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(profiler_init__doc__,
@@ -407,4 +420,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d983dbf23fd8ac3b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5326524fe31145ce input=a9049054013a1b77]*/

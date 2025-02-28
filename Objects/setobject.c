@@ -1933,8 +1933,8 @@ Update the set, keeping only elements found in either set, but not in both.
 [clinic start generated code]*/
 
 static PyObject *
-set_symmetric_difference_update(PySetObject *so, PyObject *other)
-/*[clinic end generated code: output=fbb049c0806028de input=a50acf0365e1f0a5]*/
+set_symmetric_difference_update_impl(PySetObject *so, PyObject *other)
+/*[clinic end generated code: output=79f80b4ee5da66c1 input=a50acf0365e1f0a5]*/
 {
     if (Py_Is((PyObject *)so, other)) {
         return set_clear((PyObject *)so, NULL);

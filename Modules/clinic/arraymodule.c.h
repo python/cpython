@@ -70,7 +70,7 @@ static PyObject *
 array_array___deepcopy___impl(arrayobject *self, PyObject *unused);
 
 static PyObject *
-array_array___deepcopy__(arrayobject *self, PyObject *unused)
+array_array___deepcopy__(PyObject *self, PyObject *unused)
 {
     PyObject *return_value = NULL;
 
@@ -94,7 +94,7 @@ static PyObject *
 array_array_count_impl(arrayobject *self, PyObject *v);
 
 static PyObject *
-array_array_count(arrayobject *self, PyObject *v)
+array_array_count(PyObject *self, PyObject *v)
 {
     PyObject *return_value = NULL;
 
@@ -166,7 +166,7 @@ static PyObject *
 array_array_remove_impl(arrayobject *self, PyObject *v);
 
 static PyObject *
-array_array_remove(arrayobject *self, PyObject *v)
+array_array_remove(PyObject *self, PyObject *v)
 {
     PyObject *return_value = NULL;
 
@@ -351,7 +351,7 @@ static PyObject *
 array_array_append_impl(arrayobject *self, PyObject *v);
 
 static PyObject *
-array_array_append(arrayobject *self, PyObject *v)
+array_array_append(PyObject *self, PyObject *v)
 {
     PyObject *return_value = NULL;
 
@@ -530,7 +530,7 @@ static PyObject *
 array_array_fromlist_impl(arrayobject *self, PyObject *list);
 
 static PyObject *
-array_array_fromlist(arrayobject *self, PyObject *list)
+array_array_fromlist(PyObject *self, PyObject *list)
 {
     PyObject *return_value = NULL;
 
@@ -701,7 +701,11 @@ array_array___sizeof___impl(arrayobject *self);
 static PyObject *
 array_array___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return array_array___sizeof___impl((arrayobject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = array_array___sizeof___impl((arrayobject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(array__array_reconstructor__doc__,
@@ -818,11 +822,16 @@ array_arrayiterator___reduce___impl(arrayiterobject *self, PyTypeObject *cls);
 static PyObject *
 array_arrayiterator___reduce__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "__reduce__() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return array_arrayiterator___reduce___impl((arrayiterobject *)self, cls);
+    return_value = array_arrayiterator___reduce___impl((arrayiterobject *)self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
@@ -833,4 +842,17 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=c9219e074c62e0c8 input=a9049054013a1b77]*/
+
+static PyObject *
+array_arrayiterator___setstate___impl(arrayiterobject *self, PyObject *state);
+
+static PyObject *
+array_arrayiterator___setstate__(PyObject *self, PyObject *state)
+{
+    PyObject *return_value = NULL;
+
+    return_value = array_arrayiterator___setstate___impl((arrayiterobject *)self, state);
+
+    return return_value;
+}
+/*[clinic end generated code: output=f9a91e294a35f475 input=a9049054013a1b77]*/

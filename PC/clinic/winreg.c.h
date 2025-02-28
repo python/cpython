@@ -28,7 +28,11 @@ winreg_HKEYType_Close_impl(PyHKEYObject *self);
 static PyObject *
 winreg_HKEYType_Close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return winreg_HKEYType_Close_impl((PyHKEYObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = winreg_HKEYType_Close_impl((PyHKEYObject *)self);
+
+    return return_value;
 }
 
 #endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
@@ -58,7 +62,11 @@ winreg_HKEYType_Detach_impl(PyHKEYObject *self);
 static PyObject *
 winreg_HKEYType_Detach(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return winreg_HKEYType_Detach_impl((PyHKEYObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = winreg_HKEYType_Detach_impl((PyHKEYObject *)self);
+
+    return return_value;
 }
 
 #endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
@@ -1766,4 +1774,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=fbe9b075cd2fa833 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b63cab45ed1e83c6 input=a9049054013a1b77]*/

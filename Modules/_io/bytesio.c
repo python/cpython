@@ -710,8 +710,8 @@ Return the number of bytes written.
 [clinic start generated code]*/
 
 static PyObject *
-_io_BytesIO_write(bytesio *self, PyObject *b)
-/*[clinic end generated code: output=53316d99800a0b95 input=f5ec7c8c64ed720a]*/
+_io_BytesIO_write_impl(bytesio *self, PyObject *b)
+/*[clinic end generated code: output=d3e46bcec8d9e21c input=f5ec7c8c64ed720a]*/
 {
     Py_ssize_t n = write_bytes(self, b);
     return n >= 0 ? PyLong_FromSsize_t(n) : NULL;
@@ -730,8 +730,8 @@ each element.
 [clinic start generated code]*/
 
 static PyObject *
-_io_BytesIO_writelines(bytesio *self, PyObject *lines)
-/*[clinic end generated code: output=7f33aa3271c91752 input=e972539176fc8fc1]*/
+_io_BytesIO_writelines_impl(bytesio *self, PyObject *lines)
+/*[clinic end generated code: output=03a43a75773bc397 input=e972539176fc8fc1]*/
 {
     PyObject *it, *item;
 

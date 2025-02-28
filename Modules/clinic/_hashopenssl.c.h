@@ -24,7 +24,11 @@ EVP_copy_impl(EVPobject *self);
 static PyObject *
 EVP_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return EVP_copy_impl((EVPobject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = EVP_copy_impl((EVPobject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(EVP_digest__doc__,
@@ -42,7 +46,11 @@ EVP_digest_impl(EVPobject *self);
 static PyObject *
 EVP_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return EVP_digest_impl((EVPobject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = EVP_digest_impl((EVPobject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(EVP_hexdigest__doc__,
@@ -60,7 +68,11 @@ EVP_hexdigest_impl(EVPobject *self);
 static PyObject *
 EVP_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return EVP_hexdigest_impl((EVPobject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = EVP_hexdigest_impl((EVPobject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(EVP_update__doc__,
@@ -71,6 +83,19 @@ PyDoc_STRVAR(EVP_update__doc__,
 
 #define EVP_UPDATE_METHODDEF    \
     {"update", (PyCFunction)EVP_update, METH_O, EVP_update__doc__},
+
+static PyObject *
+EVP_update_impl(EVPobject *self, PyObject *obj);
+
+static PyObject *
+EVP_update(PyObject *self, PyObject *obj)
+{
+    PyObject *return_value = NULL;
+
+    return_value = EVP_update_impl((EVPobject *)self, obj);
+
+    return return_value;
+}
 
 #if defined(PY_OPENSSL_HAS_SHAKE)
 
@@ -1636,7 +1661,11 @@ _hashlib_HMAC_copy_impl(HMACobject *self);
 static PyObject *
 _hashlib_HMAC_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _hashlib_HMAC_copy_impl((HMACobject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _hashlib_HMAC_copy_impl((HMACobject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_hashlib_HMAC_update__doc__,
@@ -1710,7 +1739,11 @@ _hashlib_HMAC_digest_impl(HMACobject *self);
 static PyObject *
 _hashlib_HMAC_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _hashlib_HMAC_digest_impl((HMACobject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _hashlib_HMAC_digest_impl((HMACobject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_hashlib_HMAC_hexdigest__doc__,
@@ -1731,7 +1764,11 @@ _hashlib_HMAC_hexdigest_impl(HMACobject *self);
 static PyObject *
 _hashlib_HMAC_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _hashlib_HMAC_hexdigest_impl((HMACobject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _hashlib_HMAC_hexdigest_impl((HMACobject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_hashlib_get_fips_mode__doc__,
@@ -1844,4 +1881,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=811a8b50beae1018 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=140f479c4eaea484 input=a9049054013a1b77]*/

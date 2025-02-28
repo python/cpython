@@ -307,6 +307,19 @@ PyDoc_STRVAR(_io__Buffered__dealloc_warn__doc__,
 #define _IO__BUFFERED__DEALLOC_WARN_METHODDEF    \
     {"_dealloc_warn", (PyCFunction)_io__Buffered__dealloc_warn, METH_O, _io__Buffered__dealloc_warn__doc__},
 
+static PyObject *
+_io__Buffered__dealloc_warn_impl(buffered *self, PyObject *source);
+
+static PyObject *
+_io__Buffered__dealloc_warn(PyObject *self, PyObject *source)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _io__Buffered__dealloc_warn_impl((buffered *)self, source);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_io__Buffered_simple_flush__doc__,
 "flush($self, /)\n"
 "--\n"
@@ -1246,4 +1259,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f019d29701ba2556 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1a0562c66776fd53 input=a9049054013a1b77]*/

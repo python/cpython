@@ -1415,8 +1415,8 @@ Extend list by appending elements from the iterable.
 [clinic start generated code]*/
 
 static PyObject *
-list_extend(PyListObject *self, PyObject *iterable)
-/*[clinic end generated code: output=630fb3bca0c8e789 input=979da7597a515791]*/
+list_extend_impl(PyListObject *self, PyObject *iterable)
+/*[clinic end generated code: output=b0eba9e0b186d5ce input=979da7597a515791]*/
 {
     if (_list_extend(self, iterable) < 0) {
         return NULL;
@@ -3271,8 +3271,8 @@ Return number of occurrences of value.
 [clinic start generated code]*/
 
 static PyObject *
-list_count(PyListObject *self, PyObject *value)
-/*[clinic end generated code: output=b1f5d284205ae714 input=3bdc3a5e6f749565]*/
+list_count_impl(PyListObject *self, PyObject *value)
+/*[clinic end generated code: output=eff66f14aef2df86 input=3bdc3a5e6f749565]*/
 {
     Py_ssize_t count = 0;
     for (Py_ssize_t i = 0; ; i++) {

@@ -24,7 +24,11 @@ bytes___bytes___impl(PyBytesObject *self);
 static PyObject *
 bytes___bytes__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return bytes___bytes___impl((PyBytesObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = bytes___bytes___impl((PyBytesObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(bytes_split__doc__,
@@ -295,6 +299,19 @@ PyDoc_STRVAR(bytes_join__doc__,
 
 #define BYTES_JOIN_METHODDEF    \
     {"join", (PyCFunction)bytes_join, METH_O, bytes_join__doc__},
+
+static PyObject *
+bytes_join_impl(PyBytesObject *self, PyObject *iterable_of_bytes);
+
+static PyObject *
+bytes_join(PyObject *self, PyObject *iterable_of_bytes)
+{
+    PyObject *return_value = NULL;
+
+    return_value = bytes_join_impl((PyBytesObject *)self, iterable_of_bytes);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(bytes_find__doc__,
 "find($self, sub[, start[, end]], /)\n"
@@ -1391,4 +1408,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=96fe2d6ef9ac8f6a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e9ae159473126636 input=a9049054013a1b77]*/

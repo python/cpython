@@ -388,7 +388,11 @@ _multiprocessing_SemLock__is_mine_impl(SemLockObject *self);
 static PyObject *
 _multiprocessing_SemLock__is_mine(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multiprocessing_SemLock__is_mine_impl((SemLockObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _multiprocessing_SemLock__is_mine_impl((SemLockObject *)self);
+
+    return return_value;
 }
 
 #endif /* defined(HAVE_MP_SEMAPHORE) */
@@ -410,7 +414,11 @@ _multiprocessing_SemLock__get_value_impl(SemLockObject *self);
 static PyObject *
 _multiprocessing_SemLock__get_value(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multiprocessing_SemLock__get_value_impl((SemLockObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _multiprocessing_SemLock__get_value_impl((SemLockObject *)self);
+
+    return return_value;
 }
 
 #endif /* defined(HAVE_MP_SEMAPHORE) */
@@ -432,7 +440,11 @@ _multiprocessing_SemLock__is_zero_impl(SemLockObject *self);
 static PyObject *
 _multiprocessing_SemLock__is_zero(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multiprocessing_SemLock__is_zero_impl((SemLockObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _multiprocessing_SemLock__is_zero_impl((SemLockObject *)self);
+
+    return return_value;
 }
 
 #endif /* defined(HAVE_MP_SEMAPHORE) */
@@ -454,7 +466,11 @@ _multiprocessing_SemLock__after_fork_impl(SemLockObject *self);
 static PyObject *
 _multiprocessing_SemLock__after_fork(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multiprocessing_SemLock__after_fork_impl((SemLockObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _multiprocessing_SemLock__after_fork_impl((SemLockObject *)self);
+
+    return return_value;
 }
 
 #endif /* defined(HAVE_MP_SEMAPHORE) */
@@ -576,4 +592,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
     #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF) */
-/*[clinic end generated code: output=e28d0fdbfefd1235 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=01e706da40883df7 input=a9049054013a1b77]*/

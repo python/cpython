@@ -165,7 +165,11 @@ pysqlite_cursor_fetchone_impl(pysqlite_Cursor *self);
 static PyObject *
 pysqlite_cursor_fetchone(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return pysqlite_cursor_fetchone_impl((pysqlite_Cursor *)self);
+    PyObject *return_value = NULL;
+
+    return_value = pysqlite_cursor_fetchone_impl((pysqlite_Cursor *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(pysqlite_cursor_fetchmany__doc__,
@@ -250,7 +254,11 @@ pysqlite_cursor_fetchall_impl(pysqlite_Cursor *self);
 static PyObject *
 pysqlite_cursor_fetchall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return pysqlite_cursor_fetchall_impl((pysqlite_Cursor *)self);
+    PyObject *return_value = NULL;
+
+    return_value = pysqlite_cursor_fetchall_impl((pysqlite_Cursor *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(pysqlite_cursor_setinputsizes__doc__,
@@ -261,6 +269,19 @@ PyDoc_STRVAR(pysqlite_cursor_setinputsizes__doc__,
 
 #define PYSQLITE_CURSOR_SETINPUTSIZES_METHODDEF    \
     {"setinputsizes", (PyCFunction)pysqlite_cursor_setinputsizes, METH_O, pysqlite_cursor_setinputsizes__doc__},
+
+static PyObject *
+pysqlite_cursor_setinputsizes_impl(pysqlite_Cursor *self, PyObject *sizes);
+
+static PyObject *
+pysqlite_cursor_setinputsizes(PyObject *self, PyObject *sizes)
+{
+    PyObject *return_value = NULL;
+
+    return_value = pysqlite_cursor_setinputsizes_impl((pysqlite_Cursor *)self, sizes);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(pysqlite_cursor_setoutputsize__doc__,
 "setoutputsize($self, size, column=None, /)\n"
@@ -312,6 +333,10 @@ pysqlite_cursor_close_impl(pysqlite_Cursor *self);
 static PyObject *
 pysqlite_cursor_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return pysqlite_cursor_close_impl((pysqlite_Cursor *)self);
+    PyObject *return_value = NULL;
+
+    return_value = pysqlite_cursor_close_impl((pysqlite_Cursor *)self);
+
+    return return_value;
 }
-/*[clinic end generated code: output=82620ca7622b547c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ad3519acb068dcaf input=a9049054013a1b77]*/

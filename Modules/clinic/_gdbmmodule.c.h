@@ -91,7 +91,11 @@ _gdbm_gdbm_close_impl(gdbmobject *self);
 static PyObject *
 _gdbm_gdbm_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _gdbm_gdbm_close_impl((gdbmobject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _gdbm_gdbm_close_impl((gdbmobject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_keys__doc__,
@@ -109,11 +113,16 @@ _gdbm_gdbm_keys_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_keys(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "keys() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _gdbm_gdbm_keys_impl((gdbmobject *)self, cls);
+    return_value = _gdbm_gdbm_keys_impl((gdbmobject *)self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_firstkey__doc__,
@@ -135,11 +144,16 @@ _gdbm_gdbm_firstkey_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_firstkey(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "firstkey() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _gdbm_gdbm_firstkey_impl((gdbmobject *)self, cls);
+    return_value = _gdbm_gdbm_firstkey_impl((gdbmobject *)self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_nextkey__doc__,
@@ -214,11 +228,16 @@ _gdbm_gdbm_reorganize_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_reorganize(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "reorganize() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _gdbm_gdbm_reorganize_impl((gdbmobject *)self, cls);
+    return_value = _gdbm_gdbm_reorganize_impl((gdbmobject *)self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_sync__doc__,
@@ -239,11 +258,16 @@ _gdbm_gdbm_sync_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_sync(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "sync() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _gdbm_gdbm_sync_impl((gdbmobject *)self, cls);
+    return_value = _gdbm_gdbm_sync_impl((gdbmobject *)self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_gdbm_gdbm_clear__doc__,
@@ -261,11 +285,16 @@ _gdbm_gdbm_clear_impl(gdbmobject *self, PyTypeObject *cls);
 static PyObject *
 _gdbm_gdbm_clear(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "clear() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _gdbm_gdbm_clear_impl((gdbmobject *)self, cls);
+    return_value = _gdbm_gdbm_clear_impl((gdbmobject *)self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(dbmopen__doc__,
@@ -343,4 +372,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d974cb39e4ee5d67 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=524bfb0fb71263fd input=a9049054013a1b77]*/

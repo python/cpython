@@ -284,7 +284,11 @@ InstructionSequenceType_get_nested_impl(_PyInstructionSequence *self);
 static PyObject *
 InstructionSequenceType_get_nested(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return InstructionSequenceType_get_nested_impl((_PyInstructionSequence *)self);
+    PyObject *return_value = NULL;
+
+    return_value = InstructionSequenceType_get_nested_impl((_PyInstructionSequence *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(InstructionSequenceType_get_instructions__doc__,
@@ -302,6 +306,10 @@ InstructionSequenceType_get_instructions_impl(_PyInstructionSequence *self);
 static PyObject *
 InstructionSequenceType_get_instructions(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return InstructionSequenceType_get_instructions_impl((_PyInstructionSequence *)self);
+    PyObject *return_value = NULL;
+
+    return_value = InstructionSequenceType_get_instructions_impl((_PyInstructionSequence *)self);
+
+    return return_value;
 }
-/*[clinic end generated code: output=e6b5d05bde008cc2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fb0f15c2a0805a72 input=a9049054013a1b77]*/
