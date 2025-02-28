@@ -34,6 +34,10 @@ class TestCPPExt(unittest.TestCase):
         # Please ask the C API WG before adding a new C++11-only feature.
         self.check_build('_testcpp03ext', std='c++03')
 
+    @support.requires_gil_enabled('incompatible with Free Threading')
+    def test_build_limited_cpp03(self):
+        self.check_build('_test_limited_cpp03ext', std='c++03', limited=True)
+
     @unittest.skipIf(support.MS_WINDOWS, "MSVC doesn't support /std:c++11")
     def test_build_cpp11(self):
         self.check_build('_testcpp11ext', std='c++11')
