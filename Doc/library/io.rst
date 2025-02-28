@@ -573,14 +573,14 @@ I/O Base Classes
 
       Less bytes may be returned than requested. An empty :class:`bytes` object
       is returned if the stream is already at EOF. More than one read may be
-      made, and calls may be retried if specific errors are encountered, see
+      made and calls may be retried if specific errors are encountered, see
       :meth:`os.read` and :pep:`475` for more details. Less than size bytes
       being returned does not imply that EOF is imminent.
 
       When reading as much as possible the default implementation will use
       ``raw.readall`` if available (which should implement
       :meth:`RawIOBase.readall`), otherwise will read in a loop until read
-      returns ``None``, a size-zero :class:`bytes`, or a non-retryable error. For
+      returns ``None``, an empty :class:`bytes`, or a non-retryable error. For
       most streams this is to EOF, but for non-blocking streams more data may
       become available.
 
