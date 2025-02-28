@@ -492,6 +492,14 @@ dummy_func(void) {
         value = sym_new_const(ctx, ptr);
     }
 
+    op(_POP_TOP_LOAD_CONST_INLINE, (ptr/4, pop -- value)) {
+        value = sym_new_const(ctx, ptr);
+    }
+
+    op(_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
+        value = sym_new_const(ctx, ptr);
+    }
+
     op(_COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
         assert(oparg > 0);
         top = bottom;
@@ -509,21 +517,26 @@ dummy_func(void) {
         (void)offset;
     }
 
-    op(_CHECK_ATTR_MODULE_PUSH_KEYS, (dict_version/2, owner -- owner, mod_keys)) {
+    op(_LOAD_ATTR_MODULE, (dict_version/2, owner, index/1 -- attr)) {
         (void)dict_version;
-        mod_keys = sym_new_not_null(ctx);
+        (void)index;
+        attr = NULL;
         if (sym_is_const(owner)) {
-            PyObject *cnst = sym_get_const(owner);
-            if (PyModule_CheckExact(cnst)) {
-                PyModuleObject *mod = (PyModuleObject *)cnst;
+            PyModuleObject *mod = (PyModuleObject *)sym_get_const(owner);
+            if (PyModule_CheckExact(mod)) {
                 PyObject *dict = mod->md_dict;
                 uint64_t watched_mutations = get_mutations(dict);
                 if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
                     PyDict_Watch(GLOBALS_WATCHER_ID, dict);
                     _Py_BloomFilter_Add(dependencies, dict);
-                    this_instr->opcode = _NOP;
+                    PyObject *res = convert_global_to_const(this_instr, dict, true);
+                    attr = sym_new_const(ctx, res);
                 }
             }
+        }
+        if (attr == NULL) {
+            /* No conversion made. We don't know what `attr` is. */
+            attr = sym_new_not_null(ctx);
         }
     }
 
@@ -541,35 +554,7 @@ dummy_func(void) {
         }
     }
 
-    op(_LOAD_ATTR_MODULE_FROM_KEYS, (index/1, owner, mod_keys -- attr)) {
-        (void)index;
-        attr = NULL;
-        if (this_instr[-1].opcode == _NOP) {
-            // Preceding _CHECK_ATTR_MODULE_PUSH_KEYS was removed: mod is const and dict is watched.
-            assert(sym_is_const(owner));
-            PyModuleObject *mod = (PyModuleObject *)sym_get_const(owner);
-            assert(PyModule_CheckExact(mod));
-            PyObject *dict = mod->md_dict;
-            PyObject *res = convert_global_to_const(this_instr, dict);
-            if (res != NULL) {
-                this_instr[-1].opcode = _POP_TOP;
-                attr = sym_new_const(ctx, res);
-            }
-            else {
-                this_instr->opcode = _LOAD_ATTR_MODULE;
-            }
-        }
-        if (attr == NULL) {
-            /* No conversion made. We don't know what `attr` is. */
-            attr = sym_new_not_null(ctx);
-        }
-    }
-
-    op(_CHECK_ATTR_WITH_HINT, (owner -- owner, dict)) {
-        dict = sym_new_not_null(ctx);
-    }
-
-    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner, dict -- attr)) {
+    op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr)) {
         attr = sym_new_not_null(ctx);
         (void)hint;
     }
@@ -886,16 +871,6 @@ dummy_func(void) {
     op(_EXIT_TRACE, (exit_p/4 --)) {
         (void)exit_p;
         ctx->done = true;
-    }
-
-    op(_GUARD_GLOBALS_VERSION_PUSH_KEYS, (version/1 -- globals_keys)) {
-        globals_keys = sym_new_unknown(ctx);
-        (void)version;
-    }
-
-    op(_GUARD_BUILTINS_VERSION_PUSH_KEYS, (version/1 -- builtins_keys)) {
-        builtins_keys = sym_new_unknown(ctx);
-        (void)version;
     }
 
     op(_REPLACE_WITH_TRUE, (value -- res)) {
