@@ -233,8 +233,7 @@ class GzipFile(_compression.BaseStream):
                                              0)
             self._write_mtime = mtime
             self._buffer_size = _WRITE_BUFFER_SIZE
-            write_wrap = _WriteBufferStream(self)
-            self._buffer = io.BufferedWriter(write_wrap,
+            self._buffer = io.BufferedWriter(_WriteBufferStream(self),
                                              buffer_size=self._buffer_size)
         else:
             raise ValueError("Invalid mode: {!r}".format(mode))
