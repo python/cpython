@@ -286,5 +286,6 @@ def run_pgo():
                      type=int, default=DEFAULT_RNG_SEED,
                      help="Random number generator seed (default: %s)"
                           % DEFAULT_RNG_SEED)
-    args = cmd.parse_args()
-    main(args)
+    args = cmd.parse_args([])
+    for _ in range(5):
+        main(args)
