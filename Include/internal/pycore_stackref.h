@@ -566,7 +566,7 @@ PyStackRef_MakeHeapSafe(_PyStackRef ref)
 #ifdef _WIN32
 #define PyStackRef_CLOSE(REF) \
 do { \
-    _PyStackRef _temp = (REF);
+    _PyStackRef _temp = (REF); \
     if (PyStackRef_IsUncountedMortal(_temp)) Py_DECREF_MORTAL(BITS_TO_PTR(_temp)); \
 } while (0)
 #else
