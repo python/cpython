@@ -271,8 +271,8 @@ Update this hash object's state with the provided bytes-like object.
 [clinic start generated code]*/
 
 static PyObject *
-_sha3_sha3_224_update(SHA3object *self, PyObject *data)
-/*[clinic end generated code: output=d3223352286ed357 input=a887f54dcc4ae227]*/
+_sha3_sha3_224_update_impl(SHA3object *self, PyObject *data)
+/*[clinic end generated code: output=390b7abf7c9795a5 input=a887f54dcc4ae227]*/
 {
     Py_buffer buf;
 

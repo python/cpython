@@ -579,9 +579,9 @@ _io.IncrementalNewlineDecoder.setstate
 [clinic start generated code]*/
 
 static PyObject *
-_io_IncrementalNewlineDecoder_setstate(nldecoder_object *self,
-                                       PyObject *state)
-/*[clinic end generated code: output=c10c622508b576cb input=c53fb505a76dbbe2]*/
+_io_IncrementalNewlineDecoder_setstate_impl(nldecoder_object *self,
+                                            PyObject *state)
+/*[clinic end generated code: output=09135cb6e78a1dc8 input=c53fb505a76dbbe2]*/
 {
     PyObject *buffer;
     unsigned long long flag;

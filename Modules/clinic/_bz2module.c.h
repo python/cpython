@@ -65,7 +65,11 @@ _bz2_BZ2Compressor_flush_impl(BZ2Compressor *self);
 static PyObject *
 _bz2_BZ2Compressor_flush(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _bz2_BZ2Compressor_flush_impl((BZ2Compressor *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _bz2_BZ2Compressor_flush_impl((BZ2Compressor *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_bz2_BZ2Compressor__doc__,
@@ -235,4 +239,4 @@ _bz2_BZ2Decompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0fc5a6292c5fd2c5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1fde2ac12ffe85a3 input=a9049054013a1b77]*/

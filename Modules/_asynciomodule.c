@@ -2749,8 +2749,8 @@ _asyncio.Task.set_result
 [clinic start generated code]*/
 
 static PyObject *
-_asyncio_Task_set_result(TaskObj *self, PyObject *result)
-/*[clinic end generated code: output=1dcae308bfcba318 input=9d1a00c07be41bab]*/
+_asyncio_Task_set_result_impl(TaskObj *self, PyObject *result)
+/*[clinic end generated code: output=e9d8e3cdaf18e258 input=9d1a00c07be41bab]*/
 {
     PyErr_SetString(PyExc_RuntimeError,
                     "Task does not support set_result operation");
@@ -2765,8 +2765,8 @@ _asyncio.Task.set_exception
 [clinic start generated code]*/
 
 static PyObject *
-_asyncio_Task_set_exception(TaskObj *self, PyObject *exception)
-/*[clinic end generated code: output=bc377fc28067303d input=9a8f65c83dcf893a]*/
+_asyncio_Task_set_exception_impl(TaskObj *self, PyObject *exception)
+/*[clinic end generated code: output=96a91790c192cc7d input=9a8f65c83dcf893a]*/
 {
     PyErr_SetString(PyExc_RuntimeError,
                     "Task does not support set_exception operation");

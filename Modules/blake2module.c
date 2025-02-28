@@ -739,8 +739,8 @@ Update this hash object's state with the provided bytes-like object.
 [clinic start generated code]*/
 
 static PyObject *
-_blake2_blake2b_update(Blake2Object *self, PyObject *data)
-/*[clinic end generated code: output=e6d1ac88471df308 input=ffc4aa6a6a225d31]*/
+_blake2_blake2b_update_impl(Blake2Object *self, PyObject *data)
+/*[clinic end generated code: output=99330230068e8c99 input=ffc4aa6a6a225d31]*/
 {
     Py_buffer buf;
 

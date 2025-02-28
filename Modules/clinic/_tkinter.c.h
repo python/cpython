@@ -156,6 +156,19 @@ PyDoc_STRVAR(_tkinter_tkapp_getint__doc__,
 #define _TKINTER_TKAPP_GETINT_METHODDEF    \
     {"getint", (PyCFunction)_tkinter_tkapp_getint, METH_O, _tkinter_tkapp_getint__doc__},
 
+static PyObject *
+_tkinter_tkapp_getint_impl(TkappObject *self, PyObject *arg);
+
+static PyObject *
+_tkinter_tkapp_getint(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _tkinter_tkapp_getint_impl((TkappObject *)self, arg);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_tkinter_tkapp_getdouble__doc__,
 "getdouble($self, arg, /)\n"
 "--\n"
@@ -164,6 +177,19 @@ PyDoc_STRVAR(_tkinter_tkapp_getdouble__doc__,
 #define _TKINTER_TKAPP_GETDOUBLE_METHODDEF    \
     {"getdouble", (PyCFunction)_tkinter_tkapp_getdouble, METH_O, _tkinter_tkapp_getdouble__doc__},
 
+static PyObject *
+_tkinter_tkapp_getdouble_impl(TkappObject *self, PyObject *arg);
+
+static PyObject *
+_tkinter_tkapp_getdouble(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _tkinter_tkapp_getdouble_impl((TkappObject *)self, arg);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_tkinter_tkapp_getboolean__doc__,
 "getboolean($self, arg, /)\n"
 "--\n"
@@ -171,6 +197,19 @@ PyDoc_STRVAR(_tkinter_tkapp_getboolean__doc__,
 
 #define _TKINTER_TKAPP_GETBOOLEAN_METHODDEF    \
     {"getboolean", (PyCFunction)_tkinter_tkapp_getboolean, METH_O, _tkinter_tkapp_getboolean__doc__},
+
+static PyObject *
+_tkinter_tkapp_getboolean_impl(TkappObject *self, PyObject *arg);
+
+static PyObject *
+_tkinter_tkapp_getboolean(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _tkinter_tkapp_getboolean_impl((TkappObject *)self, arg);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_tkinter_tkapp_exprstring__doc__,
 "exprstring($self, s, /)\n"
@@ -324,6 +363,19 @@ PyDoc_STRVAR(_tkinter_tkapp_splitlist__doc__,
 #define _TKINTER_TKAPP_SPLITLIST_METHODDEF    \
     {"splitlist", (PyCFunction)_tkinter_tkapp_splitlist, METH_O, _tkinter_tkapp_splitlist__doc__},
 
+static PyObject *
+_tkinter_tkapp_splitlist_impl(TkappObject *self, PyObject *arg);
+
+static PyObject *
+_tkinter_tkapp_splitlist(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _tkinter_tkapp_splitlist_impl((TkappObject *)self, arg);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_tkinter_tkapp_createcommand__doc__,
 "createcommand($self, name, func, /)\n"
 "--\n"
@@ -451,6 +503,19 @@ PyDoc_STRVAR(_tkinter_tkapp_deletefilehandler__doc__,
 #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF    \
     {"deletefilehandler", (PyCFunction)_tkinter_tkapp_deletefilehandler, METH_O, _tkinter_tkapp_deletefilehandler__doc__},
 
+static PyObject *
+_tkinter_tkapp_deletefilehandler_impl(TkappObject *self, PyObject *file);
+
+static PyObject *
+_tkinter_tkapp_deletefilehandler(PyObject *self, PyObject *file)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _tkinter_tkapp_deletefilehandler_impl((TkappObject *)self, file);
+
+    return return_value;
+}
+
 #endif /* defined(HAVE_CREATEFILEHANDLER) */
 
 PyDoc_STRVAR(_tkinter_tktimertoken_deletetimerhandler__doc__,
@@ -467,7 +532,11 @@ _tkinter_tktimertoken_deletetimerhandler_impl(TkttObject *self);
 static PyObject *
 _tkinter_tktimertoken_deletetimerhandler(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _tkinter_tktimertoken_deletetimerhandler_impl((TkttObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _tkinter_tktimertoken_deletetimerhandler_impl((TkttObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_tkinter_tkapp_createtimerhandler__doc__,
@@ -585,7 +654,11 @@ _tkinter_tkapp_quit_impl(TkappObject *self);
 static PyObject *
 _tkinter_tkapp_quit(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _tkinter_tkapp_quit_impl((TkappObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _tkinter_tkapp_quit_impl((TkappObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_tkinter_tkapp_interpaddr__doc__,
@@ -602,7 +675,11 @@ _tkinter_tkapp_interpaddr_impl(TkappObject *self);
 static PyObject *
 _tkinter_tkapp_interpaddr(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _tkinter_tkapp_interpaddr_impl((TkappObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _tkinter_tkapp_interpaddr_impl((TkappObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_tkinter_tkapp_loadtk__doc__,
@@ -619,7 +696,11 @@ _tkinter_tkapp_loadtk_impl(TkappObject *self);
 static PyObject *
 _tkinter_tkapp_loadtk(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _tkinter_tkapp_loadtk_impl((TkappObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _tkinter_tkapp_loadtk_impl((TkappObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_tkinter_tkapp_settrace__doc__,
@@ -630,6 +711,19 @@ PyDoc_STRVAR(_tkinter_tkapp_settrace__doc__,
 
 #define _TKINTER_TKAPP_SETTRACE_METHODDEF    \
     {"settrace", (PyCFunction)_tkinter_tkapp_settrace, METH_O, _tkinter_tkapp_settrace__doc__},
+
+static PyObject *
+_tkinter_tkapp_settrace_impl(TkappObject *self, PyObject *func);
+
+static PyObject *
+_tkinter_tkapp_settrace(PyObject *self, PyObject *func)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _tkinter_tkapp_settrace_impl((TkappObject *)self, func);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_tkinter_tkapp_gettrace__doc__,
 "gettrace($self, /)\n"
@@ -646,7 +740,11 @@ _tkinter_tkapp_gettrace_impl(TkappObject *self);
 static PyObject *
 _tkinter_tkapp_gettrace(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _tkinter_tkapp_gettrace_impl((TkappObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _tkinter_tkapp_gettrace_impl((TkappObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_tkinter_tkapp_willdispatch__doc__,
@@ -663,7 +761,11 @@ _tkinter_tkapp_willdispatch_impl(TkappObject *self);
 static PyObject *
 _tkinter_tkapp_willdispatch(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _tkinter_tkapp_willdispatch_impl((TkappObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _tkinter_tkapp_willdispatch_impl((TkappObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_tkinter__flatten__doc__,
@@ -888,4 +990,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=172a98df5f209a84 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4a4b9d107654402e input=a9049054013a1b77]*/

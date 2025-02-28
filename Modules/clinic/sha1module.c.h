@@ -23,11 +23,16 @@ SHA1Type_copy_impl(SHA1object *self, PyTypeObject *cls);
 static PyObject *
 SHA1Type_copy(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return SHA1Type_copy_impl((SHA1object *)self, cls);
+    return_value = SHA1Type_copy_impl((SHA1object *)self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(SHA1Type_digest__doc__,
@@ -45,7 +50,11 @@ SHA1Type_digest_impl(SHA1object *self);
 static PyObject *
 SHA1Type_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return SHA1Type_digest_impl((SHA1object *)self);
+    PyObject *return_value = NULL;
+
+    return_value = SHA1Type_digest_impl((SHA1object *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(SHA1Type_hexdigest__doc__,
@@ -63,7 +72,11 @@ SHA1Type_hexdigest_impl(SHA1object *self);
 static PyObject *
 SHA1Type_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return SHA1Type_hexdigest_impl((SHA1object *)self);
+    PyObject *return_value = NULL;
+
+    return_value = SHA1Type_hexdigest_impl((SHA1object *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(SHA1Type_update__doc__,
@@ -74,6 +87,19 @@ PyDoc_STRVAR(SHA1Type_update__doc__,
 
 #define SHA1TYPE_UPDATE_METHODDEF    \
     {"update", (PyCFunction)SHA1Type_update, METH_O, SHA1Type_update__doc__},
+
+static PyObject *
+SHA1Type_update_impl(SHA1object *self, PyObject *obj);
+
+static PyObject *
+SHA1Type_update(PyObject *self, PyObject *obj)
+{
+    PyObject *return_value = NULL;
+
+    return_value = SHA1Type_update_impl((SHA1object *)self, obj);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_sha1_sha1__doc__,
 "sha1($module, /, string=b\'\', *, usedforsecurity=True)\n"
@@ -149,4 +175,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ad6f3788a6e7ff6f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d42333a7ee032349 input=a9049054013a1b77]*/

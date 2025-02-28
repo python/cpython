@@ -628,6 +628,19 @@ PyDoc_STRVAR(builtin_id__doc__,
 #define BUILTIN_ID_METHODDEF    \
     {"id", (PyCFunction)builtin_id, METH_O, builtin_id__doc__},
 
+static PyObject *
+builtin_id_impl(PyModuleDef *self, PyObject *v);
+
+static PyObject *
+builtin_id(PyObject *self, PyObject *v)
+{
+    PyObject *return_value = NULL;
+
+    return_value = builtin_id_impl((PyModuleDef *)self, v);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(builtin_setattr__doc__,
 "setattr($module, obj, name, value, /)\n"
 "--\n"
@@ -1239,4 +1252,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b0178189d13e8bf8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c08e0e086a791ff0 input=a9049054013a1b77]*/

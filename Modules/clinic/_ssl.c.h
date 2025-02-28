@@ -255,7 +255,11 @@ _ssl__SSLSocket_compression_impl(PySSLSocket *self);
 static PyObject *
 _ssl__SSLSocket_compression(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl__SSLSocket_compression_impl((PySSLSocket *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _ssl__SSLSocket_compression_impl((PySSLSocket *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_ssl__SSLSocket_context__doc__,
@@ -1520,7 +1524,7 @@ static PyObject *
 _ssl__SSLContext_load_dh_params_impl(PySSLContext *self, PyObject *filepath);
 
 static PyObject *
-_ssl__SSLContext_load_dh_params(PySSLContext *self, PyObject *filepath)
+_ssl__SSLContext_load_dh_params(PyObject *self, PyObject *filepath)
 {
     PyObject *return_value = NULL;
 
@@ -1784,7 +1788,7 @@ static PyObject *
 _ssl__SSLContext_set_ecdh_curve_impl(PySSLContext *self, PyObject *name);
 
 static PyObject *
-_ssl__SSLContext_set_ecdh_curve(PySSLContext *self, PyObject *name)
+_ssl__SSLContext_set_ecdh_curve(PyObject *self, PyObject *name)
 {
     PyObject *return_value = NULL;
 
@@ -2878,4 +2882,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=bededfb2b927bd41 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c0c80336beff60df input=a9049054013a1b77]*/

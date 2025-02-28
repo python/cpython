@@ -27,11 +27,16 @@ _io_FileIO_close_impl(fileio *self, PyTypeObject *cls);
 static PyObject *
 _io_FileIO_close(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "close() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _io_FileIO_close_impl((fileio *)self, cls);
+    return_value = _io_FileIO_close_impl((fileio *)self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_io_FileIO___init____doc__,
@@ -153,7 +158,11 @@ _io_FileIO_fileno_impl(fileio *self);
 static PyObject *
 _io_FileIO_fileno(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_FileIO_fileno_impl((fileio *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _io_FileIO_fileno_impl((fileio *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io_FileIO_readable__doc__,
@@ -171,7 +180,11 @@ _io_FileIO_readable_impl(fileio *self);
 static PyObject *
 _io_FileIO_readable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_FileIO_readable_impl((fileio *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _io_FileIO_readable_impl((fileio *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io_FileIO_writable__doc__,
@@ -189,7 +202,11 @@ _io_FileIO_writable_impl(fileio *self);
 static PyObject *
 _io_FileIO_writable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_FileIO_writable_impl((fileio *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _io_FileIO_writable_impl((fileio *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io_FileIO_seekable__doc__,
@@ -207,7 +224,11 @@ _io_FileIO_seekable_impl(fileio *self);
 static PyObject *
 _io_FileIO_seekable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_FileIO_seekable_impl((fileio *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _io_FileIO_seekable_impl((fileio *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io_FileIO_readinto__doc__,
@@ -280,7 +301,11 @@ _io_FileIO_readall_impl(fileio *self);
 static PyObject *
 _io_FileIO_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_FileIO_readall_impl((fileio *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _io_FileIO_readall_impl((fileio *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_io_FileIO_read__doc__,
@@ -454,7 +479,11 @@ _io_FileIO_tell_impl(fileio *self);
 static PyObject *
 _io_FileIO_tell(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_FileIO_tell_impl((fileio *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _io_FileIO_tell_impl((fileio *)self);
+
+    return return_value;
 }
 
 #if defined(HAVE_FTRUNCATE)
@@ -527,10 +556,14 @@ _io_FileIO_isatty_impl(fileio *self);
 static PyObject *
 _io_FileIO_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _io_FileIO_isatty_impl((fileio *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _io_FileIO_isatty_impl((fileio *)self);
+
+    return return_value;
 }
 
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=dcbeb6a0b13e4b1f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b247cc05968891b2 input=a9049054013a1b77]*/

@@ -2951,8 +2951,8 @@ _elementtree.TreeBuilder.data
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_TreeBuilder_data(TreeBuilderObject *self, PyObject *data)
-/*[clinic end generated code: output=69144c7100795bb2 input=a0540c532b284d29]*/
+_elementtree_TreeBuilder_data_impl(TreeBuilderObject *self, PyObject *data)
+/*[clinic end generated code: output=dfa02b68f732b8c0 input=a0540c532b284d29]*/
 {
     return treebuilder_handle_data(self, data);
 }
@@ -2966,8 +2966,8 @@ _elementtree.TreeBuilder.end
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_TreeBuilder_end(TreeBuilderObject *self, PyObject *tag)
-/*[clinic end generated code: output=9a98727cc691cd9d input=22dc3674236f5745]*/
+_elementtree_TreeBuilder_end_impl(TreeBuilderObject *self, PyObject *tag)
+/*[clinic end generated code: output=84cb6ca9008ec740 input=22dc3674236f5745]*/
 {
     return treebuilder_handle_end(self, tag);
 }
@@ -2981,8 +2981,9 @@ _elementtree.TreeBuilder.comment
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_TreeBuilder_comment(TreeBuilderObject *self, PyObject *text)
-/*[clinic end generated code: output=22835be41deeaa27 input=47e7ebc48ed01dfa]*/
+_elementtree_TreeBuilder_comment_impl(TreeBuilderObject *self,
+                                      PyObject *text)
+/*[clinic end generated code: output=a555ef39027c3823 input=47e7ebc48ed01dfa]*/
 {
     return treebuilder_handle_comment(self, text);
 }
@@ -3949,8 +3950,8 @@ _elementtree.XMLParser.feed
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_XMLParser_feed(XMLParserObject *self, PyObject *data)
-/*[clinic end generated code: output=e42b6a78eec7446d input=fe231b6b8de3ce1f]*/
+_elementtree_XMLParser_feed_impl(XMLParserObject *self, PyObject *data)
+/*[clinic end generated code: output=503e6fbf1adf17ab input=fe231b6b8de3ce1f]*/
 {
     /* feed data to parser */
 
@@ -3997,8 +3998,9 @@ _elementtree.XMLParser._parse_whole
 [clinic start generated code]*/
 
 static PyObject *
-_elementtree_XMLParser__parse_whole(XMLParserObject *self, PyObject *file)
-/*[clinic end generated code: output=f797197bb818dda3 input=19ecc893b6f3e752]*/
+_elementtree_XMLParser__parse_whole_impl(XMLParserObject *self,
+                                         PyObject *file)
+/*[clinic end generated code: output=60718a4e63d237d2 input=19ecc893b6f3e752]*/
 {
     /* (internal) parse the whole input, until end of stream */
     PyObject* reader;

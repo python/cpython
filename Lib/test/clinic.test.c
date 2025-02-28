@@ -4910,16 +4910,21 @@ Test_cls_no_params_impl(TestObj *self, PyTypeObject *cls);
 static PyObject *
 Test_cls_no_params(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "cls_no_params() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return Test_cls_no_params_impl((TestObj *)self, cls);
+    return_value = Test_cls_no_params_impl((TestObj *)self, cls);
+
+exit:
+    return return_value;
 }
 
 static PyObject *
 Test_cls_no_params_impl(TestObj *self, PyTypeObject *cls)
-/*[clinic end generated code: output=8845de054449f40a input=e7e2e4e344e96a11]*/
+/*[clinic end generated code: output=70c0b4bfb2ea3bab input=e7e2e4e344e96a11]*/
 
 
 /*[clinic input]
@@ -4940,7 +4945,7 @@ static int
 Test_metho_not_default_return_converter_impl(TestObj *self, PyObject *a);
 
 static PyObject *
-Test_metho_not_default_return_converter(TestObj *self, PyObject *a)
+Test_metho_not_default_return_converter(PyObject *self, PyObject *a)
 {
     PyObject *return_value = NULL;
     int _return_value;
@@ -4957,7 +4962,7 @@ exit:
 
 static int
 Test_metho_not_default_return_converter_impl(TestObj *self, PyObject *a)
-/*[clinic end generated code: output=b2cce75a7af2e6ce input=428657129b521177]*/
+/*[clinic end generated code: output=8b03f5213c312138 input=428657129b521177]*/
 
 
 /*[clinic input]
@@ -5291,12 +5296,16 @@ Test_meth_coexist_impl(TestObj *self);
 static PyObject *
 Test_meth_coexist(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return Test_meth_coexist_impl((TestObj *)self);
+    PyObject *return_value = NULL;
+
+    return_value = Test_meth_coexist_impl((TestObj *)self);
+
+    return return_value;
 }
 
 static PyObject *
 Test_meth_coexist_impl(TestObj *self)
-/*[clinic end generated code: output=7edf4e95b29f06fa input=2a1d75b5e6fec6dd]*/
+/*[clinic end generated code: output=09e0fbba4ffb08df input=2a1d75b5e6fec6dd]*/
 
 /*[clinic input]
 @getter
@@ -5319,12 +5328,16 @@ Test_property_get_impl(TestObj *self);
 static PyObject *
 Test_property_get(PyObject *self, void *Py_UNUSED(context))
 {
-    return Test_property_get_impl((TestObj *)self);
+    PyObject *return_value = NULL;
+
+    return_value = Test_property_get_impl((TestObj *)self);
+
+    return return_value;
 }
 
 static PyObject *
 Test_property_get_impl(TestObj *self)
-/*[clinic end generated code: output=b38d68abd3466a6e input=2d92b3449fbc7d2b]*/
+/*[clinic end generated code: output=117f470c76def2b0 input=2d92b3449fbc7d2b]*/
 
 /*[clinic input]
 @setter
@@ -5420,12 +5433,16 @@ Test_setter_first_with_docstr_get_impl(TestObj *self);
 static PyObject *
 Test_setter_first_with_docstr_get(PyObject *self, void *Py_UNUSED(context))
 {
-    return Test_setter_first_with_docstr_get_impl((TestObj *)self);
+    PyObject *return_value = NULL;
+
+    return_value = Test_setter_first_with_docstr_get_impl((TestObj *)self);
+
+    return return_value;
 }
 
 static PyObject *
 Test_setter_first_with_docstr_get_impl(TestObj *self)
-/*[clinic end generated code: output=fe6e3aa844a24920 input=10af4e43b3cb34dc]*/
+/*[clinic end generated code: output=ee74b65390f451f6 input=10af4e43b3cb34dc]*/
 
 /*[clinic input]
 output push

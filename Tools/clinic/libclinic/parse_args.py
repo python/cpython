@@ -134,7 +134,7 @@ PARSER_PROTOTYPE_SETTER: Final[str] = libclinic.normalize_snippet("""
 """)
 METH_O_PROTOTYPE: Final[str] = libclinic.normalize_snippet("""
     static PyObject *
-    {c_basename}({impl_parameters})
+    {c_basename}({self_type}{self_name}, {parser_parameters})
 """)
 DOCSTRING_PROTOTYPE_VAR: Final[str] = libclinic.normalize_snippet("""
     PyDoc_VAR({c_basename}__doc__);
@@ -195,6 +195,7 @@ class ParseArgsCodeGen:
 
     # Function parameters
     parameters: list[Parameter]
+    self_parameter_converter: self_converter
     converters: list[CConverter]
 
     # Is 'defining_class' used for the first parameter?
@@ -236,9 +237,10 @@ class ParseArgsCodeGen:
         self.codegen = codegen
 
         self.parameters = list(self.func.parameters.values())
-        first_param = self.parameters.pop(0)
-        if not isinstance(first_param.converter, self_converter):
+        self_parameter = self.parameters.pop(0)
+        if not isinstance(self_parameter.converter, self_converter):
             raise ValueError("the first parameter must use self_converter")
+        self.self_parameter_converter = self_parameter.converter
 
         self.requires_defining_class = False
         if self.parameters and isinstance(self.parameters[0].converter, defining_class_converter):
@@ -290,8 +292,11 @@ class ParseArgsCodeGen:
                 and not self.is_new_or_init())
 
     def use_simple_return(self) -> bool:
-        return (self.func.return_converter.type == 'PyObject *'
-                and not self.func.critical_section)
+        pyobject = 'PyObject *'
+        return (self.func.return_converter.type == pyobject
+                and not self.func.critical_section
+                and self.self_parameter_converter.type in (pyobject, None)
+                and self.self_parameter_converter.specified_type in (pyobject, None))
 
     def select_prototypes(self) -> None:
         self.docstring_prototype = ''
