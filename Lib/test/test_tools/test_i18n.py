@@ -161,6 +161,11 @@ class Test_pygettext(unittest.TestCase):
             # This will raise if the date format does not exactly match.
             datetime.strptime(creationDate, '%Y-%m-%d %H:%M%z')
 
+    def test_wrap_to_width(self):
+        msgid = self.extract_docstrings_from_str(
+            '''_("thisisaveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryverlongstring")''')
+        self.assertIn('\nlongstring', msgid[1])
+
     def test_funcdocstring(self):
         for doc in ('"""doc"""', "r'''doc'''", "R'doc'", 'u"doc"'):
             with self.subTest(doc):

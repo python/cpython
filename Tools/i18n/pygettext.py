@@ -619,9 +619,27 @@ def write_pot_file(messages, options, fp):
             print('#, docstring', file=fp)
         if msg.msgctxt is not None:
             print('msgctxt', normalize(msg.msgctxt, encoding), file=fp)
-        print('msgid', normalize(msg.msgid, encoding), file=fp)
+
+        # If msgid is longer than width wrap
+        msgid = normalize(msg.msgid, encoding)[1:-1] # normalize returns "msg"
+        if len(msgid) > options.width:
+            print('msgid ""', file=fp)
+            while msgid:
+                print(f'"{msgid[:options.width]}"', file=fp)
+                msgid = msgid[options.width:]
+        else:
+            print(f'msgid "{msgid}"', file=fp)
+
+        # If msgid_plural is longer than width wrap
         if msg.msgid_plural is not None:
-            print('msgid_plural', normalize(msg.msgid_plural, encoding), file=fp)
+            msgid_plural = normalize(msg.msgid_plural, encoding)[1:-1]  # normalize returns "msg"
+            if len(msgid_plural) > options.width:
+                print('msgid_plural ""', file=fp)
+                while msgid_plural:
+                    print(f'"{msgid_plural[:options.width]}"', file=fp)
+                    msgid_plural = msgid_plural[options.width:]
+            else:
+                print(f'msgid_plural "{msgid_plural}"', file=fp)
             print('msgstr[0] ""', file=fp)
             print('msgstr[1] ""\n', file=fp)
         else:
