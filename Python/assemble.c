@@ -1,5 +1,3 @@
-#include <stdbool.h>
-
 #include "Python.h"
 #include "pycore_code.h"            // write_location_entry_start()
 #include "pycore_compile.h"
@@ -8,6 +6,7 @@
 #include "pycore_opcode_metadata.h" // is_pseudo_target, _PyOpcode_Caches
 #include "pycore_symtable.h"        // _Py_SourceLocation
 
+#include <stdbool.h>
 
 #define DEFAULT_CODE_SIZE 128
 #define DEFAULT_LNOTAB_SIZE 16

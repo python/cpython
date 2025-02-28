@@ -1,5 +1,3 @@
-#include <stdbool.h>
-
 #include "Python.h"
 #include "opcode.h"
 
@@ -15,6 +13,8 @@
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "clinic/codeobject.c.h"
+
+#include <stdbool.h>
 
 static const char *
 code_event_name(PyCodeEvent event) {
