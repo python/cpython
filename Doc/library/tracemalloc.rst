@@ -331,10 +331,10 @@ Functions
    :mod:`tracemalloc` module as a tuple: ``(current: int, peak: int)``.
 
 
-.. function:: get_traced_refs()
+.. function:: get_traced_allocs()
 
-   Get the current count of created and destroyed memory blocks.
-   :mod:`tracemalloc` module as a tuple: ``(created: int, destroyed: int)``.
+   Get the current unit counts of allocated and deallocated memory blocks.
+   :mod:`tracemalloc` module as a tuple: ``(allocs: int, deallocs: int)``.
 
 
 .. function:: reset_peak()
