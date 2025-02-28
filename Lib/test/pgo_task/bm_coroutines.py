@@ -23,4 +23,4 @@ def bench_coroutines(loops: int) -> float:
 
 
 def run_pgo():
-    bench_coroutines(1)
+    bench_coroutines(10)

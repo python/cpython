@@ -27,4 +27,4 @@ def benchamark_collection(loops, n_levels):
 
 
 def run_pgo():
-    benchamark_collection(1, N_LEVELS)
+    benchamark_collection(10, N_LEVELS)

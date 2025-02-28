@@ -40,4 +40,4 @@ def bench_generators(loops: int) -> float:
             pass
 
 def run_pgo():
-    bench_generators(1)
+    bench_generators(5)

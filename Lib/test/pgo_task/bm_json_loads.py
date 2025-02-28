@@ -97,5 +97,5 @@ def run_pgo():
     json_dict_group = json.dumps(DICT_GROUP)
     objs = (json_dict, json_tuple, json_dict_group)
 
-    for _ in range(10):
+    for _ in range(200):
         bench_json_loads(objs)

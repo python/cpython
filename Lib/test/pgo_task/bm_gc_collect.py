@@ -56,4 +56,4 @@ def benchamark_collection(loops, cycles, links):
 
 
 def run_pgo():
-    benchamark_collection(1, CYCLES, LINKS)
+    benchamark_collection(10, CYCLES, LINKS)

@@ -39,4 +39,5 @@ async def bench_async_generators(loops=100000) -> None:
 
 def run_pgo():
     import asyncio
-    asyncio.run(bench_async_generators(1000))
+    for _ in range(10):
+        asyncio.run(bench_async_generators(1000))

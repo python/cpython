@@ -46,4 +46,5 @@ def bench_sqlite(loops):
 
 
 def run_pgo():
-    bench_sqlite(loops=100)
+    for _ in range(20):
+        bench_sqlite(loops=200)

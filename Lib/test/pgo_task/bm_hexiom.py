@@ -640,4 +640,4 @@ def main(loops, level):
 
 
 def run_pgo():
-    main(10, level=DEFAULT_LEVEL)
+    main(20, level=DEFAULT_LEVEL)

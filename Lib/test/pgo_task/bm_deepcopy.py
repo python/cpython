@@ -68,7 +68,7 @@ def benchmark(n):
 
 
 def run_pgo():
-    loops = 100
+    loops = 1000
     benchmark(loops)
     benchmark_reduce(loops)
     benchmark_memo(loops)

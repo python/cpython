@@ -50,4 +50,5 @@ def calc_ndigits(n):
 
 
 def run_pgo():
-    calc_ndigits(DEFAULT_DIGITS)
+    for _ in range(5):
+        calc_ndigits(DEFAULT_DIGITS)

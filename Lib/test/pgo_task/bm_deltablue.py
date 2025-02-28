@@ -627,5 +627,5 @@ def delta_blue(n):
 
 
 def run_pgo():
-    n = 1000
+    n = 5000
     delta_blue(n)

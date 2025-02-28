@@ -154,6 +154,6 @@ bench_regex_effbot.data = None
 def run_pgo():
     global USE_BYTES
 
-    bench_regex_effbot(1)
+    bench_regex_effbot(10)
     USE_BYTES = True
-    bench_regex_effbot(1)
+    bench_regex_effbot(10)

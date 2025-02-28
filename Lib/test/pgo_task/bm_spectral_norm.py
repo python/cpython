@@ -64,5 +64,5 @@ def bench_spectral_norm(loops):
 
 
 def run_pgo():
-    loops = 1
+    loops = 5
     bench_spectral_norm(loops)

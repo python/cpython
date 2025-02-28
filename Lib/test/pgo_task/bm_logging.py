@@ -126,4 +126,4 @@ def run_pgo():
         name = 'logging_%s' % bench
         bench_func = BENCHMARKS[bench]
 
-        bench_func(100, logger, stream)
+        bench_func(200, logger, stream)

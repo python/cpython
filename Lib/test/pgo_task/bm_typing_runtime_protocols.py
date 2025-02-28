@@ -165,4 +165,5 @@ def bench_protocols(loops: int) -> float:
 
 
 def run_pgo():
-    bench_protocols(100)
+    for _ in range(10):
+        bench_protocols(100)

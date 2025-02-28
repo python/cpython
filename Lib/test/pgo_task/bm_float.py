@@ -53,4 +53,5 @@ def benchmark(n):
 
 def run_pgo():
     points = POINTS
-    benchmark(points)
+    for _ in range(5):
+        benchmark(points)

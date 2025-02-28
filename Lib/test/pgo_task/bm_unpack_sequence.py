@@ -129,4 +129,5 @@ def run_pgo():
     benchmarks = {"tuple": bench_tuple_unpacking,
                   "list": bench_list_unpacking}
     func = bench_all
-    func(1000)
+    for _ in range(10):
+        func(1000)

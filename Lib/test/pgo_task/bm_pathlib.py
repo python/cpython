@@ -61,7 +61,7 @@ def bench_pathlib(loops, tmp_path):
 def run_pgo():
     modname = pathlib.__name__
     tmp_path = setup(NUM_FILES)
-    loops = 1
+    loops = 10
     try:
         bench_pathlib(loops, tmp_path)
     finally:

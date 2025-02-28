@@ -450,4 +450,5 @@ def versus_cpu():
 
 
 def run_pgo():
-    versus_cpu()
+    for _ in range(5):
+        versus_cpu()

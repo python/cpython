@@ -421,4 +421,4 @@ class Richards:
 
 def run_pgo():
     richard = Richards()
-    richard.run(1)
+    richard.run(10)

@@ -208,5 +208,5 @@ def run_pgo():
     se_nh = get_senh(board, cti)
 
     solve_arg = SOLVE_ARG
-    loops = 1
+    loops = 10
     bench_meteor_contest(loops, board, pieces, solve_arg, fps, se_nh)

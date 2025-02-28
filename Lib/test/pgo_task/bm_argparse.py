@@ -116,4 +116,5 @@ def add_parser_args(parser):
 
 def run_pgo():
     for bm_func in BENCHMARKS.values():
-        bm_func()
+        for _ in range(10):
+            bm_func()
