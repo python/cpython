@@ -20,6 +20,7 @@
 #include "pycore_pystate.h"
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_stackref.h"      // Py_STACKREF_DEBUG
+#include "pycore_time.h"          // _PyTime_Init()
 #include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
 
@@ -459,6 +460,11 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
         // Preserve the cookie from the original runtime.
         memcpy(runtime->debug_offsets.cookie, _Py_Debug_Cookie, 8);
         assert(!runtime->_initialized);
+    }
+
+    PyStatus status = _PyTime_Init(&runtime->time);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     if (gilstate_tss_init(runtime) != 0) {
@@ -2118,11 +2124,10 @@ _PyThreadState_Attach(PyThreadState *tstate)
 
         // XXX assert(tstate_is_alive(tstate));
         current_fast_set(&_PyRuntime, tstate);
-        tstate_activate(tstate);
-
         if (!tstate_try_attach(tstate)) {
             tstate_wait_attach(tstate);
         }
+        tstate_activate(tstate);
 
 #ifdef Py_GIL_DISABLED
         if (_PyEval_IsGILEnabled(tstate) && !tstate->holds_gil) {
