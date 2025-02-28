@@ -123,8 +123,8 @@ class LocalPathGround:
     def __init__(self, path_cls):
         self.path_cls = path_cls
 
-    def setup(self):
-        root = self.path_cls(os_helper.TESTFN)
+    def setup(self, local_suffix=""):
+        root = self.path_cls(os_helper.TESTFN + local_suffix)
         os.mkdir(root)
         return root
 

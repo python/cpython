@@ -1333,15 +1333,6 @@ class RWPathTest(WritablePathTest, ReadablePathTest):
     cls = DummyRWPath
     can_symlink = False
 
-    def test_copy_file(self):
-        base = self.cls(self.base)
-        source = base / 'fileA'
-        target = base / 'copyA'
-        result = source.copy(target)
-        self.assertEqual(result, target)
-        self.assertTrue(result.info.exists())
-        self.assertEqual(source.read_text(), result.read_text())
-
     def test_copy_file_to_existing_file(self):
         base = self.cls(self.base)
         source = base / 'fileA'

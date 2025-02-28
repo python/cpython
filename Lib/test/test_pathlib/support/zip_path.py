@@ -203,7 +203,7 @@ class ZipPathGround:
     def __init__(self, path_cls):
         self.path_cls = path_cls
 
-    def setup(self):
+    def setup(self, local_suffix=""):
         return self.path_cls(zip_file=zipfile.ZipFile(io.BytesIO(), "w"))
 
     def teardown(self, root):
