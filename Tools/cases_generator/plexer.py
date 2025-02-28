@@ -34,7 +34,7 @@ class PLexer:
         while self.pos < len(self.tokens):
             tok = self.tokens[self.pos]
             self.pos += 1
-            if raw or tok.kind != "COMMENT":
+            if raw or tok.kind != lx.COMMENT:
                 return tok
         return None
 
