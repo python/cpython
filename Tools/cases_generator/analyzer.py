@@ -1106,7 +1106,7 @@ def assign_opcodes(
 
     # Specialized ops appear in their own section
     # Instrumented opcodes are at the end of the valid range
-    min_internal = 150
+    min_internal = instmap["RESUME"] + 1
     min_instrumented = 254 - (len(instrumented) - 1)
     assert min_internal + len(specialized) < min_instrumented
 
