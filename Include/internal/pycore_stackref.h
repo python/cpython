@@ -101,6 +101,12 @@ PyStackRef_IsNone(_PyStackRef ref)
     return _Py_stackref_get_object(ref) == Py_None;
 }
 
+static inline bool
+PyStackRef_IsBorrowed(_PyStackRef ref)
+{
+    return false;
+}
+
 static inline PyObject *
 _PyStackRef_AsPyObjectBorrow(_PyStackRef ref, const char *filename, int linenumber)
 {
@@ -220,7 +226,7 @@ _PyStackRef_FromPyObjectSteal(PyObject *obj)
 #   define PyStackRef_FromPyObjectSteal(obj) _PyStackRef_FromPyObjectSteal(_PyObject_CAST(obj))
 
 static inline bool
-_PyStackRef_IsBorrowed(_PyStackRef stackref)
+PyStackRef_IsBorrowed(_PyStackRef stackref)
 {
     if (PyStackRef_IsNull(stackref) || !PyStackRef_IsDeferred(stackref)) {
         return false;
@@ -233,7 +239,7 @@ _PyStackRef_IsBorrowed(_PyStackRef stackref)
 static inline _PyStackRef
 _PyStackRef_NewIfBorrowedOrSteal(_PyStackRef stackref)
 {
-    if (_PyStackRef_IsBorrowed(stackref)) {
+    if (PyStackRef_IsBorrowed(stackref)) {
         PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
         return (_PyStackRef){ .bits = (uintptr_t)(Py_NewRef(obj)) | Py_TAG_PTR };
     }
@@ -310,6 +316,7 @@ static const _PyStackRef PyStackRef_NULL = { .bits = 0 };
 #define PyStackRef_True ((_PyStackRef){.bits = (uintptr_t)&_Py_TrueStruct })
 #define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) })
 #define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) })
+#define PyStackRef_IsBorrowed(stackref) false
 
 #define PyStackRef_AsPyObjectBorrow(stackref) ((PyObject *)(stackref).bits)
 
