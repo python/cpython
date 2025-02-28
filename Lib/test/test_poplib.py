@@ -308,6 +308,16 @@ class TestPOP3Class(TestCase):
         with self.assertRaises(poplib.error_proto):
             self.client.stat()
 
+        def mock_shortcmd_extra_fields(cmd):
+            if cmd == 'STAT':
+                return b'+OK 1 2 3 4 5'
+            return original_shortcmd(cmd)
+
+        self.client._shortcmd = mock_shortcmd_extra_fields
+
+        result = self.client.stat()
+        self.assertEqual(result, (1, 2))
+
         self.client._shortcmd = original_shortcmd
 
     def test_list(self):
