@@ -29,6 +29,9 @@ class TestCPPExt(unittest.TestCase):
         self.check_build('_testcppext')
 
     def test_build_cpp03(self):
+        # In public docs, we say C API is compatible with C++11. However,
+        # in practice we do maintain C++03 compatibility in public headers.
+        # Please ask the C API WG before adding a new C++11-only feature.
         self.check_build('_testcpp03ext', std='c++03')
 
     @unittest.skipIf(support.MS_WINDOWS, "MSVC doesn't support /std:c++11")
