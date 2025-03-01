@@ -114,7 +114,6 @@ class WaitTests:
 
     def test_timeout(self):
         short_timeout = 0.050
-        self.event.clear()
 
         future = self.executor.submit(self.event.wait)
 
