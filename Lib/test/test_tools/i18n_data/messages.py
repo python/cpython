@@ -28,6 +28,9 @@ _("""Hello,
     multiline!
 """)
 
+# very long string that should be wrapped
+_("this is a very very very very very very very very very very very very very long string!")
+
 # Invalid arguments
 _()
 _(None)

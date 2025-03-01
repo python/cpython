@@ -213,21 +213,39 @@ def escape_nonascii(s, encoding):
     return ''.join(escapes[b] for b in s.encode(encoding))
 
 
-def normalize(s, encoding):
+def normalize(s, encoding, options):
     # This converts the various Python string types into a format that is
-    # appropriate for .po files, namely much closer to C style.
-    lines = s.split('\n')
-    if len(lines) == 1:
-        s = '"' + escape(s, encoding) + '"'
-    else:
-        if not lines[-1]:
-            del lines[-1]
-            lines[-1] = lines[-1] + '\n'
-        for i in range(len(lines)):
-            lines[i] = escape(lines[i], encoding)
-        lineterm = '\\n"\n"'
-        s = '""\n"' + lineterm.join(lines) + '"'
-    return s
+    # appropriate for .po files, namely much closer to C style. While wrapping
+    # to options.width.
+    lines = []
+    for line in s.splitlines(True):
+        if len(escape(line, encoding)) > options.width:
+            words = line.split()
+            words.reverse()
+            while words:
+                buf = []
+                size = 2
+                while words:
+                    word = words[-1]
+                    escaped_word = escape(word, encoding)
+                    add_space = 1 if buf else 0
+                    if size + len(escaped_word) + add_space <= options.width:
+                        buf.append(words.pop())
+                        size += len(escaped_word) + add_space
+                    else:
+                        if not buf:
+                            buf.append(words.pop())
+                        break
+                lines.append(' '.join(buf))
+        else:
+            lines.append(line)
+    if len(lines) <= 1:
+        return '"' + escape(s, encoding) + '"'
+    if lines and not lines[-1]:
+        del lines[-1]
+        lines[-1] += '\n'
+    return '""\n' + '\n'.join(
+        [f'"{escape(line, encoding)}"' for line in lines])
 
 
 def containsAny(str, set):
@@ -618,28 +636,10 @@ def write_pot_file(messages, options, fp):
             # to skip translating some unimportant docstrings.
             print('#, docstring', file=fp)
         if msg.msgctxt is not None:
-            print('msgctxt', normalize(msg.msgctxt, encoding), file=fp)
-
-        # If msgid is longer than width wrap
-        msgid = normalize(msg.msgid, encoding)[1:-1] # normalize returns "msg"
-        if len(msgid) > options.width:
-            print('msgid ""', file=fp)
-            while msgid:
-                print(f'"{msgid[:options.width]}"', file=fp)
-                msgid = msgid[options.width:]
-        else:
-            print(f'msgid "{msgid}"', file=fp)
-
-        # If msgid_plural is longer than width wrap
+            print('msgctxt', normalize(msg.msgctxt, encoding, options), file=fp)
+        print('msgid', normalize(msg.msgid, encoding, options), file=fp)
         if msg.msgid_plural is not None:
-            msgid_plural = normalize(msg.msgid_plural, encoding)[1:-1]  # normalize returns "msg"
-            if len(msgid_plural) > options.width:
-                print('msgid_plural ""', file=fp)
-                while msgid_plural:
-                    print(f'"{msgid_plural[:options.width]}"', file=fp)
-                    msgid_plural = msgid_plural[options.width:]
-            else:
-                print(f'msgid_plural "{msgid_plural}"', file=fp)
+            print('msgid_plural', normalize(msg.msgid_plural, encoding, options), file=fp)
             print('msgstr[0] ""', file=fp)
             print('msgstr[1] ""\n', file=fp)
         else:
