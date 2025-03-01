@@ -730,54 +730,20 @@ codec_handler_write_unicode_hex(Py_UCS1 **p, Py_UCS4 ch)
 }
 
 
-static inline void
-codec_handler_unicode_log10_max(Py_UCS4 ch, int *base, int *digits)
-{
-#define MAKE_BRANCH(D, N)           \
-    do {                            \
-        if (ch < 10 * (N)) {        \
-            if (base != NULL) {     \
-                *base = (N);        \
-            }                       \
-            if (digits != NULL) {   \
-                *digits = (D);      \
-            }                       \
-            return;                 \
-        }                           \
-    } while (0)
-    MAKE_BRANCH(1, 1);
-    MAKE_BRANCH(2, 10);
-    MAKE_BRANCH(3, 100);
-    MAKE_BRANCH(4, 1000);
-    MAKE_BRANCH(5, 10000);
-    MAKE_BRANCH(6, 100000);
-    MAKE_BRANCH(7, 1000000);
-#undef MAKE_BRANCH
-    Py_UNREACHABLE();
-}
-
-
-/*
- * Write the decimal representation of 'ch' to the buffer pointed by 'p'
- * using at most 7 characters prefixed by '&#' and suffixed by ';'.
+/* Determine the number of digits for a decimal representation of codepoint ch
  */
-static inline void
-codec_handler_write_unicode_dec(Py_UCS1 **p, Py_UCS4 ch)
+static inline int
+n_decimal_digits_for_codepoint(Py_UCS4 ch)
 {
-    int base = 0, digits = 0;
-    codec_handler_unicode_log10_max(ch, &base, &digits);
-    assert(base != 0 && digits != 0);
-    assert(digits <= 7);
-
-    *(*p)++ = '&';
-    *(*p)++ = '#';
-    while (digits-- > 0) {
-        assert(base >= 1);
-        *(*p)++ = '0' + ch / base;
-        ch %= base;
-        base /= 10;
-    }
-    *(*p)++ = ';';
+    if (ch < 10) return 1;
+    if (ch < 100) return 2;
+    if (ch < 1000) return 3;
+    if (ch < 10000) return 4;
+    if (ch < 100000) return 5;
+    if (ch < 1000000) return 6;
+    if (ch < 10000000) return 7;
+    // Unicode codepoints are limited to 1114111 (7 decimal digits)
+    Py_UNREACHABLE();
 }
 
 /*
@@ -949,10 +915,8 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
 
     Py_ssize_t ressize = 0;
     for (Py_ssize_t i = start; i < end; ++i) {
-        /* object is guaranteed to be "ready" */
         Py_UCS4 ch = PyUnicode_READ_CHAR(obj, i);
-        int k = 0;
-        codec_handler_unicode_log10_max(ch, NULL, &k);
+        int k = n_decimal_digits_for_codepoint(ch);
         assert(k != 0);
         assert(k <= 7);
         ressize += 2 + k + 1;
@@ -968,7 +932,20 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
     /* generate replacement */
     for (Py_ssize_t i = start; i < end; ++i) {
         Py_UCS4 ch = PyUnicode_READ_CHAR(obj, i);
-        codec_handler_write_unicode_dec(&outp, ch);
+        /*
+         * Write the decimal representation of 'ch' to the buffer pointed by 'p'
+         * using at most 7 characters prefixed by '&#' and suffixed by ';'.
+         */
+        *outp++ = '&';
+        *outp++ = '#';
+        Py_UCS1 *digit_end = outp + n_decimal_digits_for_codepoint(ch);
+        for (Py_UCS1 *digitp = digit_end - 1; digitp >= outp; --digitp) {
+            *digitp = '0' + (ch % 10);
+            ch /= 10;
+        }
+        assert(ch == 0);
+        outp = digit_end;
+        *outp++ = ';';
     }
     assert(_PyUnicode_CheckConsistency(res, 1));
     PyObject *restuple = Py_BuildValue("(Nn)", res, end);
