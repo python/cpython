@@ -7,7 +7,7 @@ import sys
 from errno import *
 from glob import _StringGlobber, _no_recurse_symlinks
 from itertools import chain
-from stat import S_IMODE, S_ISDIR, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
+from stat import S_ISDIR, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from _collections_abc import Sequence
 
 try:
@@ -19,8 +19,7 @@ try:
 except ImportError:
     grp = None
 
-from pathlib._os import copyfile, PathInfo, DirEntryInfo
-from pathlib._abc import CopyReader, CopyWriter, JoinablePath, ReadablePath, WritablePath
+from pathlib._os import LocalCopyWriter, PathInfo, DirEntryInfo, ensure_different_files
 
 
 __all__ = [
@@ -65,142 +64,7 @@ class _PathParents(Sequence):
         return "<{}.parents>".format(type(self._path).__name__)
 
 
-class _LocalCopyReader(CopyReader):
-    """This object implements the "read" part of copying local paths. Don't
-    try to construct it yourself.
-    """
-    __slots__ = ()
-
-    _readable_metakeys = {'mode', 'times_ns'}
-    if hasattr(os.stat_result, 'st_flags'):
-        _readable_metakeys.add('flags')
-    if hasattr(os, 'listxattr'):
-        _readable_metakeys.add('xattrs')
-    _readable_metakeys = frozenset(_readable_metakeys)
-
-    def _read_metadata(self, metakeys, *, follow_symlinks=True):
-        metadata = {}
-        if 'mode' in metakeys or 'times_ns' in metakeys or 'flags' in metakeys:
-            st = self._path.stat(follow_symlinks=follow_symlinks)
-            if 'mode' in metakeys:
-                metadata['mode'] = S_IMODE(st.st_mode)
-            if 'times_ns' in metakeys:
-                metadata['times_ns'] = st.st_atime_ns, st.st_mtime_ns
-            if 'flags' in metakeys:
-                metadata['flags'] = st.st_flags
-        if 'xattrs' in metakeys:
-            try:
-                metadata['xattrs'] = [
-                    (attr, os.getxattr(self._path, attr, follow_symlinks=follow_symlinks))
-                    for attr in os.listxattr(self._path, follow_symlinks=follow_symlinks)]
-            except OSError as err:
-                if err.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
-                    raise
-        return metadata
-
-
-class _LocalCopyWriter(CopyWriter):
-    """This object implements the "write" part of copying local paths. Don't
-    try to construct it yourself.
-    """
-    __slots__ = ()
-
-    _writable_metakeys = _LocalCopyReader._readable_metakeys
-
-    def _write_metadata(self, metadata, *, follow_symlinks=True):
-        def _nop(*args, ns=None, follow_symlinks=None):
-            pass
-
-        if follow_symlinks:
-            # use the real function if it exists
-            def lookup(name):
-                return getattr(os, name, _nop)
-        else:
-            # use the real function only if it exists
-            # *and* it supports follow_symlinks
-            def lookup(name):
-                fn = getattr(os, name, _nop)
-                if fn in os.supports_follow_symlinks:
-                    return fn
-                return _nop
-
-        times_ns = metadata.get('times_ns')
-        if times_ns is not None:
-            lookup("utime")(self._path, ns=times_ns, follow_symlinks=follow_symlinks)
-        # We must copy extended attributes before the file is (potentially)
-        # chmod()'ed read-only, otherwise setxattr() will error with -EACCES.
-        xattrs = metadata.get('xattrs')
-        if xattrs is not None:
-            for attr, value in xattrs:
-                try:
-                    os.setxattr(self._path, attr, value, follow_symlinks=follow_symlinks)
-                except OSError as e:
-                    if e.errno not in (EPERM, ENOTSUP, ENODATA, EINVAL, EACCES):
-                        raise
-        mode = metadata.get('mode')
-        if mode is not None:
-            try:
-                lookup("chmod")(self._path, mode, follow_symlinks=follow_symlinks)
-            except NotImplementedError:
-                # if we got a NotImplementedError, it's because
-                #   * follow_symlinks=False,
-                #   * lchown() is unavailable, and
-                #   * either
-                #       * fchownat() is unavailable or
-                #       * fchownat() doesn't implement AT_SYMLINK_NOFOLLOW.
-                #         (it returned ENOSUP.)
-                # therefore we're out of options--we simply cannot chown the
-                # symlink.  give up, suppress the error.
-                # (which is what shutil always did in this circumstance.)
-                pass
-        flags = metadata.get('flags')
-        if flags is not None:
-            try:
-                lookup("chflags")(self._path, flags, follow_symlinks=follow_symlinks)
-            except OSError as why:
-                if why.errno not in (EOPNOTSUPP, ENOTSUP):
-                    raise
-
-    if copyfile:
-        # Use fast OS routine for local file copying where available.
-        def _create_file(self, source, metakeys):
-            """Copy the given file to the given target."""
-            try:
-                source = os.fspath(source)
-            except TypeError:
-                if not isinstance(source, WritablePath):
-                    raise
-                super()._create_file(source, metakeys)
-            else:
-                copyfile(source, os.fspath(self._path))
-
-    if os.name == 'nt':
-        # Windows: symlink target might not exist yet if we're copying several
-        # files, so ensure we pass is_dir to os.symlink().
-        def _create_symlink(self, source, metakeys):
-            """Copy the given symlink to the given target."""
-            self._path.symlink_to(source.readlink(), source.is_dir())
-            if metakeys:
-                metadata = source._copy_reader._read_metadata(metakeys, follow_symlinks=False)
-                if metadata:
-                    self._write_metadata(metadata, follow_symlinks=False)
-
-    def _ensure_different_file(self, source):
-        """
-        Raise OSError(EINVAL) if both paths refer to the same file.
-        """
-        try:
-            if not self._path.samefile(source):
-                return
-        except (OSError, ValueError):
-            return
-        err = OSError(EINVAL, "Source and target are the same file")
-        err.filename = str(source)
-        err.filename2 = str(self._path)
-        raise err
-
-
-class PurePath(JoinablePath):
+class PurePath:
     """Base class for manipulating paths without I/O.
 
     PurePath represents a filesystem path and offers operations which
@@ -544,6 +408,31 @@ class PurePath(JoinablePath):
         tail[-1] = name
         return self._from_parsed_parts(self.drive, self.root, tail)
 
+    def with_stem(self, stem):
+        """Return a new path with the stem changed."""
+        suffix = self.suffix
+        if not suffix:
+            return self.with_name(stem)
+        elif not stem:
+            # If the suffix is non-empty, we can't make the stem empty.
+            raise ValueError(f"{self!r} has a non-empty suffix")
+        else:
+            return self.with_name(stem + suffix)
+
+    def with_suffix(self, suffix):
+        """Return a new path with the file suffix changed.  If the path
+        has no suffix, add given suffix.  If the given suffix is an empty
+        string, remove the suffix from the path.
+        """
+        stem = self.stem
+        if not stem:
+            # If the stem is empty, we can't make the suffix non-empty.
+            raise ValueError(f"{self!r} has an empty name")
+        elif suffix and not suffix.startswith('.'):
+            raise ValueError(f"Invalid suffix {suffix!r}")
+        else:
+            return self.with_name(stem + suffix)
+
     @property
     def stem(self):
         """The final path component, minus its last suffix."""
@@ -586,7 +475,7 @@ class PurePath(JoinablePath):
         The *walk_up* parameter controls whether `..` may be used to resolve
         the path.
         """
-        if not isinstance(other, PurePath):
+        if not hasattr(other, 'with_segments'):
             other = self.with_segments(other)
         for step, path in enumerate(chain([other], other.parents)):
             if path == self or path in self.parents:
@@ -603,7 +492,7 @@ class PurePath(JoinablePath):
     def is_relative_to(self, other):
         """Return True if the path is relative to another path or False.
         """
-        if not isinstance(other, PurePath):
+        if not hasattr(other, 'with_segments'):
             other = self.with_segments(other)
         return other == self or other in self.parents
 
@@ -656,7 +545,7 @@ class PurePath(JoinablePath):
         Return True if this path matches the given glob-style pattern. The
         pattern is matched against the entire path.
         """
-        if not isinstance(pattern, PurePath):
+        if not hasattr(pattern, 'with_segments'):
             pattern = self.with_segments(pattern)
         if case_sensitive is None:
             case_sensitive = self.parser is posixpath
@@ -675,7 +564,7 @@ class PurePath(JoinablePath):
         is matched. The recursive wildcard '**' is *not* supported by this
         method.
         """
-        if not isinstance(path_pattern, PurePath):
+        if not hasattr(path_pattern, 'with_segments'):
             path_pattern = self.with_segments(path_pattern)
         if case_sensitive is None:
             case_sensitive = self.parser is posixpath
@@ -719,7 +608,7 @@ class PureWindowsPath(PurePath):
     __slots__ = ()
 
 
-class Path(WritablePath, ReadablePath, PurePath):
+class Path(PurePath):
     """PurePath subclass that can make system calls.
 
     Path represents a filesystem path but unlike PurePath, also offers
@@ -1175,7 +1064,9 @@ class Path(WritablePath, ReadablePath, PurePath):
         Returns the new Path instance pointing to the target path.
         """
         os.rename(self, target)
-        return self.with_segments(target)
+        if not hasattr(target, 'with_segments'):
+            target = self.with_segments(target)
+        return target
 
     def replace(self, target):
         """
@@ -1188,10 +1079,43 @@ class Path(WritablePath, ReadablePath, PurePath):
         Returns the new Path instance pointing to the target path.
         """
         os.replace(self, target)
-        return self.with_segments(target)
+        if not hasattr(target, 'with_segments'):
+            target = self.with_segments(target)
+        return target
 
-    _copy_reader = property(_LocalCopyReader)
-    _copy_writer = property(_LocalCopyWriter)
+    _copy_writer = property(LocalCopyWriter)
+
+    def copy(self, target, follow_symlinks=True, dirs_exist_ok=False,
+             preserve_metadata=False):
+        """
+        Recursively copy this file or directory tree to the given destination.
+        """
+        if not hasattr(target, 'with_segments'):
+            target = self.with_segments(target)
+
+        # Delegate to the target path's CopyWriter object.
+        try:
+            create = target._copy_writer._create
+        except AttributeError:
+            raise TypeError(f"Target is not writable: {target}") from None
+        create(self, follow_symlinks, dirs_exist_ok, preserve_metadata)
+        return target.joinpath()  # Empty join to ensure fresh metadata.
+
+    def copy_into(self, target_dir, *, follow_symlinks=True,
+                  dirs_exist_ok=False, preserve_metadata=False):
+        """
+        Copy this file or directory tree into the given existing directory.
+        """
+        name = self.name
+        if not name:
+            raise ValueError(f"{self!r} has an empty name")
+        elif hasattr(target_dir, 'with_segments'):
+            target = target_dir / name
+        else:
+            target = self.with_segments(target_dir, name)
+        return self.copy(target, follow_symlinks=follow_symlinks,
+                         dirs_exist_ok=dirs_exist_ok,
+                         preserve_metadata=preserve_metadata)
 
     def move(self, target):
         """
@@ -1199,19 +1123,18 @@ class Path(WritablePath, ReadablePath, PurePath):
         """
         # Use os.replace() if the target is os.PathLike and on the same FS.
         try:
-            target_str = os.fspath(target)
+            target = self.with_segments(target)
         except TypeError:
             pass
         else:
-            if not hasattr(target, '_copy_writer'):
-                target = self.with_segments(target_str)
-            target._copy_writer._ensure_different_file(self)
+            ensure_different_files(self, target)
             try:
-                os.replace(self, target_str)
-                return target
+                os.replace(self, target)
             except OSError as err:
                 if err.errno != EXDEV:
                     raise
+            else:
+                return target.joinpath()  # Empty join to ensure fresh metadata.
         # Fall back to copy+delete.
         target = self.copy(target, follow_symlinks=False, preserve_metadata=True)
         self._delete()
@@ -1224,7 +1147,7 @@ class Path(WritablePath, ReadablePath, PurePath):
         name = self.name
         if not name:
             raise ValueError(f"{self!r} has an empty name")
-        elif hasattr(target_dir, '_copy_writer'):
+        elif hasattr(target_dir, 'with_segments'):
             target = target_dir / name
         else:
             target = self.with_segments(target_dir, name)
