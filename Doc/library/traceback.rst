@@ -504,7 +504,7 @@ A :class:`!FrameSummary` object represents a single :ref:`frame <frame-objects>`
 in a :ref:`traceback <traceback-objects>`.
 
 .. class:: FrameSummary(filename, lineno, name, *,\
-                        lookup_line=True, locals=None, \
+                        lookup_line=True, locals=None,\
                         line=None, end_lineno=None, colno=None, end_colno=None)
 
    Represents a single :ref:`frame <frame-objects>` in the
@@ -544,17 +544,17 @@ in a :ref:`traceback <traceback-objects>`.
    .. attribute:: FrameSummary.end_lineno
 
       The last line number of the source code for this frame.
-      By default, it is ``None`` and is 1-index base.
+      By default, it is ``None`` and indexation starts from 1.
 
    .. attribute:: FrameSummary.colno
 
       The column number of the source code for this frame.
-      By default, it is ``None`` and is 1-index base.
+      By default, it is ``None`` and indexation starts from 1.
 
    .. attribute:: FrameSummary.end_colno
 
       The last column number of the source code for this frame.
-      By default, it is ``None`` and is 1-index base.
+      By default, it is ``None`` and indexation starts from 1.
 
 .. _traceback-example:
 
