@@ -2525,7 +2525,7 @@ store_local(uint8_t *instr_flags, ref_stack *refs, int local, ref r)
 }
 
 static void
-load_fast_push_block(basicblock ***sp, basicblock *target, int start_depth)
+load_fast_push_block(basicblock ***sp, basicblock *target, Py_ssize_t start_depth)
 {
     assert(target->b_startdepth >= 0 && target->b_startdepth == start_depth);
     if (!target->b_visited) {
