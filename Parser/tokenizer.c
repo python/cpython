@@ -479,8 +479,11 @@ static int update_fstring_expr(struct tok_state *tok, char cur) {
     break;
   case '}':
   case '!':
-  case ':':
     tok_mode->last_expr_end = strlen(tok->start);
+  case ':':
+    if (tok_mode->last_expr_end == -1) {
+        tok_mode->last_expr_end = strlen(tok->start);
+    }
     break;
   default:
     Py_UNREACHABLE();
