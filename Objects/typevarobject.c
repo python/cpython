@@ -464,14 +464,14 @@ unpack_typevartuples(PyObject *params)
 static PyObject *
 typeparam_reduce_anonymous(PyObject *self, PyObject *owner)
 {
-    assert(PyTuple_Check(owner));
+    assert(PyTuple_CheckExact(owner));
     assert(PyTuple_GET_SIZE(owner) == 3);
     PyObject *module_name = PyTuple_GET_ITEM(owner, 0);
     PyObject *qualname = PyTuple_GET_ITEM(owner, 1);
     PyObject *index = PyTuple_GET_ITEM(owner, 2);
-    assert(PyUnicode_Check(module_name));
-    assert(PyUnicode_Check(qualname));
-    assert(PyLong_Check(index));
+    assert(PyUnicode_CheckExact(module_name));
+    assert(PyUnicode_CheckExact(qualname));
+    assert(PyLong_CheckExact(index));
     PyObject *ret = NULL;
     PyObject *typing = NULL;
     PyObject *restore_func = NULL;
