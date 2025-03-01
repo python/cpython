@@ -196,8 +196,7 @@ class JoinablePath(ABC):
             pattern = self.with_segments(pattern)
         if case_sensitive is None:
             case_sensitive = self.parser.normcase('Aa') == 'Aa'
-        globber = _PathGlobber(pattern.parser.sep, case_sensitive,
-                              recursive=True, include_hidden=True)
+        globber = _PathGlobber(pattern.parser.sep, case_sensitive, recursive=True)
         match = globber.compile(str(pattern))
         return match(str(self)) is not None
 
