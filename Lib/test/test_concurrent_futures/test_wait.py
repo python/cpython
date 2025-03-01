@@ -1,6 +1,5 @@
 import sys
 import threading
-import time
 import unittest
 from concurrent import futures
 from test import support
@@ -16,15 +15,15 @@ from .util import (
 def mul(x, y):
     return x * y
 
-def sleep_and_raise(t):
-    time.sleep(t)
+def wait_and_raise(e):
+    e.wait()
     raise Exception('this is an exception')
 
 
 class WaitTests:
     def test_20369(self):
         # See https://bugs.python.org/issue20369
-        future = self.executor.submit(time.sleep, 1.5)
+        future = self.executor.submit(mul, 1, 2)
         done, not_done = futures.wait([future, future],
                             return_when=futures.ALL_COMPLETED)
         self.assertEqual({future}, done)
@@ -32,8 +31,9 @@ class WaitTests:
 
 
     def test_first_completed(self):
+        event = self.create_event()
         future1 = self.executor.submit(mul, 21, 2)
-        future2 = self.executor.submit(time.sleep, 1.5)
+        future2 = self.executor.submit(event.wait)
 
         done, not_done = futures.wait(
                 [CANCELLED_FUTURE, future1, future2],
@@ -42,8 +42,12 @@ class WaitTests:
         self.assertEqual(set([future1]), done)
         self.assertEqual(set([CANCELLED_FUTURE, future2]), not_done)
 
+        event.set()
+        future2.result()  # wait for job to finish
+
     def test_first_completed_some_already_completed(self):
-        future1 = self.executor.submit(time.sleep, 1.5)
+        event = self.create_event()
+        future1 = self.executor.submit(event.wait)
 
         finished, pending = futures.wait(
                  [CANCELLED_AND_NOTIFIED_FUTURE, SUCCESSFUL_FUTURE, future1],
@@ -54,11 +58,24 @@ class WaitTests:
                 finished)
         self.assertEqual(set([future1]), pending)
 
-    @support.requires_resource('walltime')
+        event.set()
+        future1.result()  # wait for job to finish
+
     def test_first_exception(self):
+        event1 = self.create_event()
+        event2 = self.create_event()
+
         future1 = self.executor.submit(mul, 2, 21)
-        future2 = self.executor.submit(sleep_and_raise, 1.5)
-        future3 = self.executor.submit(time.sleep, 3)
+        future2 = self.executor.submit(wait_and_raise, event1)
+        future3 = self.executor.submit(event2.wait)
+
+        # Ensure that future1 is completed before future2 finishes
+        def wait_for_future1():
+            future1.result()
+            event1.set()
+
+        t = threading.Thread(target=wait_for_future1)
+        t.start()
 
         finished, pending = futures.wait(
                 [future1, future2, future3],
@@ -67,9 +84,14 @@ class WaitTests:
         self.assertEqual(set([future1, future2]), finished)
         self.assertEqual(set([future3]), pending)
 
+        t.join()
+        event2.set()
+        future3.result()  # wait for job to finish
+
     def test_first_exception_some_already_complete(self):
+        event = self.create_event()
         future1 = self.executor.submit(divmod, 21, 0)
-        future2 = self.executor.submit(time.sleep, 1.5)
+        future2 = self.executor.submit(event.wait)
 
         finished, pending = futures.wait(
                 [SUCCESSFUL_FUTURE,
@@ -83,8 +105,12 @@ class WaitTests:
                               future1]), finished)
         self.assertEqual(set([CANCELLED_FUTURE, future2]), pending)
 
+        event.set()
+        future2.result()  # wait for job to finish
+
     def test_first_exception_one_already_failed(self):
-        future1 = self.executor.submit(time.sleep, 2)
+        event = self.create_event()
+        future1 = self.executor.submit(event.wait)
 
         finished, pending = futures.wait(
                  [EXCEPTION_FUTURE, future1],
@@ -92,6 +118,9 @@ class WaitTests:
 
         self.assertEqual(set([EXCEPTION_FUTURE]), finished)
         self.assertEqual(set([future1]), pending)
+
+        event.set()
+        future1.result()  # wait for job to finish
 
     def test_all_completed(self):
         future1 = self.executor.submit(divmod, 2, 0)
@@ -114,9 +143,9 @@ class WaitTests:
 
     def test_timeout(self):
         short_timeout = 0.050
-        long_timeout = short_timeout * 10
 
-        future = self.executor.submit(time.sleep, long_timeout)
+        event = self.create_event()
+        future = self.executor.submit(event.wait)
 
         finished, pending = futures.wait(
                 [CANCELLED_AND_NOTIFIED_FUTURE,
@@ -131,6 +160,10 @@ class WaitTests:
                               SUCCESSFUL_FUTURE]),
                          finished)
         self.assertEqual(set([future]), pending)
+
+        # Set the event to allow the future to complete
+        event.set()
+        future.result()  # wait for job to finish
 
 
 class ThreadPoolWaitTests(ThreadPoolMixin, WaitTests, BaseTestCase):
