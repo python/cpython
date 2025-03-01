@@ -214,16 +214,11 @@ def heapify_max(x):
         _siftup_max(x, i)
 
 # For backwards compadibility
-def _heappop_max(heap):
-    return heappop_max(heap)
-def _heapreplace_max(heap, item):
-    return heapreplace_max(heap, item)
-def _heappush_max(heap, item):
-    return _heappush_max(heap, item)
-def _heappushpop_max(heap, item):
-    return _heappushpop_max(heap, item)
-def _heapify_max(x):
-    return _heapify_max()
+_heappop_max  = heappop_max
+_heapreplace_max = heapreplace_max
+_heappush_max = _heappush_max
+_heappushpop_max = _heappushpop_max
+_heapify_max = _heapify_max
 
 
 # 'heap' is a heap at all indices >= startpos, except possibly for pos.  pos

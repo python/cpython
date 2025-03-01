@@ -82,23 +82,27 @@ The following functions are provided:
    on the heap.
 
 
+For max heaps, the reverse of a heap, the following functions are provided:
+
+
 .. function:: heapify_max(x)
 
-   Transform list *x* into a heap, in-place, in linear time.
+   Transform list *x* into a max heap, in-place, in linear time.
 
    .. versionadded:: next
 
 
 .. function:: heappush_max(heap, item)
 
-   Push the value *item* onto the *heap*, maintaining the heap invariant.
+   Push the value *item* onto the max *heap*, maintaining the heap invariant.
 
    .. versionadded:: next
 
+
 .. function:: heappop_max(heap)
 
-   Pop and return the largest item from the *heap*, maintaining the heap
-   invariant.  If the heap is empty, :exc:`IndexError` is raised.  To access the
+   Pop and return the largest item from the max *heap*, maintaining the heap
+   invariant.  If the max heap is empty, :exc:`IndexError` is raised.  To access the
    largest item without popping it, use ``heap[0]``.
 
    .. versionadded:: next
@@ -106,7 +110,7 @@ The following functions are provided:
 
 .. function:: heappushpop_max(heap, item)
 
-   Push *item* on the heap, then pop and return the largest item from the
+   Push *item* on the max heap, then pop and return the largest item from the max
    *heap*.  The combined action runs more efficiently than :func:`heappush_max`
    followed by a separate call to :func:`heappop_max`.
 
@@ -115,17 +119,17 @@ The following functions are provided:
 
 .. function:: heapreplace_max(heap, item)
 
-   Pop and return the largest item from the *heap*, and also push the new *item*.
-   The heap size doesn't change. If the heap is empty, :exc:`IndexError` is raised.
+   Pop and return the largest item from the max *heap*, and also push the new *item*.
+   The max heap size doesn't change. If the max heap is empty, :exc:`IndexError` is raised.
 
-   This one step operation is more efficient than a :func:`heappop` followed by
-   :func:`heappush` and can be more appropriate when using a fixed-size heap.
+   This one step operation is more efficient than a :func:`heappop_max` followed by
+   :func:`heappush_max` and can be more appropriate when using a fixed-size heap.
    The pop/push combination always returns an element from the heap and replaces
    it with *item*.
 
    The value returned may be larger than the *item* added.  If that isn't
-   desired, consider using :func:`heappushpop` instead.  Its push/pop
-   combination returns the smaller of the two values, leaving the larger value
+   desired, consider using :func:`heappushpop_max` instead.  Its push/pop
+   combination returns the larger of the two values, leaving the smaller value
    on the heap.
 
    .. versionadded:: next
