@@ -34,7 +34,7 @@ def unix_getpass(prompt='Password: ', stream=None, *, echochar=None):
       stream: A writable file object to display the prompt.  Defaults to
               the tty.  If no tty is available defaults to sys.stderr.
       echochar: A string used to mask input (e.g., '*').  If None, input is
-              hidden.
+                hidden.
     Returns:
       The seKr3t input.
     Raises:
@@ -83,25 +83,7 @@ def unix_getpass(prompt='Password: ', stream=None, *, echochar=None):
                         stream.write('\n')
                         return passwd
 
-                    passwd = ""
-                    stream.write(prompt)
-                    stream.flush()
-                    while True:
-                        char = input.read(1)
-                        if char == '\n' or char == '\r':
-                            break
-                        if char == '\x03':
-                            raise KeyboardInterrupt
-                        if char == '\x7f' or char == '\b':
-                            if echochar and passwd:
-                                stream.write("\b \b" * len(echochar))
-                                stream.flush()
-                            passwd = passwd[:-1]
-                        else:
-                            passwd += char
-                            if echochar:
-                                stream.write(echochar)
-                                stream.flush()
+                    passwd = _echochar_input(prompt, stream, input, echochar)
                 finally:
                     termios.tcsetattr(fd, tcsetattr_flags, old)
                     stream.flush()  # issue7208
@@ -184,6 +166,33 @@ def _raw_input(prompt="", stream=None, input=None):
     if line[-1] == '\n':
         line = line[:-1]
     return line
+
+
+def _echochar_input(prompt="", stream=None, input=None, echochar=""):
+    if not stream:
+        stream = sys.stderr
+    if not input:
+        input = sys.stdin
+    prompt = str(prompt)
+    stream.write(prompt)
+    stream.flush()
+    passwd = ""
+    while True:
+        char = input.read(1)
+        if char == '\n' or char == '\r':
+            break
+        if char == '\x03':
+            raise KeyboardInterrupt
+        if char == '\x7f' or char == '\b':
+            if passwd:
+                stream.write("\b \b" * len(echochar))
+                stream.flush()
+            passwd = passwd[:-1]
+        else:
+            passwd += char
+            stream.write(echochar)
+            stream.flush()
+    return passwd
 
 
 def getuser():

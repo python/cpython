@@ -39,6 +39,9 @@ The :mod:`getpass` module provides two functions:
       If you call getpass from within IDLE, the input may be done in the
       terminal you launched IDLE from rather than the idle window itself.
 
+   .. versionchanged:: next
+      Added the *echochar* parameter for keyboard feedback.
+
 .. exception:: GetPassWarning
 
    A :exc:`UserWarning` subclass issued when password input may be echoed.
