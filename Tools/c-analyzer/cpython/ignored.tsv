@@ -28,7 +28,7 @@ Python/thread_pthread.h	PyThread__init_thread	lib_initialized	-
 ##-----------------------
 ## other values (not Python-specific)
 
-# computed by runtime init, before interpreters created
+# static tables computed by external script
 Objects/longobject.c	-	log_base_BASE	-
 Objects/longobject.c	-	convwidth_base	-
 Objects/longobject.c	-	convmultmax_base	-

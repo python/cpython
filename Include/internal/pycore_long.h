@@ -49,7 +49,6 @@ extern "C" {
 
 /* runtime lifecycle */
 
-extern PyStatus _PyLong_InitRuntime(void);
 extern PyStatus _PyLong_InitTypes(PyInterpreterState *);
 extern void _PyLong_FiniTypes(PyInterpreterState *interp);
 
