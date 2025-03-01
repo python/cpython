@@ -16,7 +16,7 @@
 This module provides an implementation of the heap queue algorithm, also known
 as the priority queue algorithm.
 
-in-heaps (resp. max-heaps) are binary trees for which every parent node
+Min-heaps (resp. max-heaps) are binary trees for which every parent node
 has a value less than (resp. greater than) or equal to any of its children.
 We refer to this condition as the heap invariant. Unless stated otherwise,
 *heaps* refer to min-heaps.
@@ -96,7 +96,7 @@ For max-heaps, the reverse of a heap, the following functions are provided:
 
 .. function:: heappush_max(heap, item)
 
-   Push the value *item* onto the max-*heap*, maintaining the heap invariant.
+   Push the value *item* onto the max-heap *heap*, maintaining the heap invariant.
 
    .. versionadded:: next
 
