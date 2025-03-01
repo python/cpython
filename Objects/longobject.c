@@ -2863,7 +2863,7 @@ long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits,
     PyLongObject *z;
     const char *p;
 
-    assert (log_base_BASE[base] != 0.0); // pre-computed by _PyLong_InitRuntime()
+    assert(log_base_BASE[base] != 0.0); // pre-computed by _PyLong_InitRuntime()
 
     /* Create an int object that can contain the largest possible
      * integer with this base and length.  Note that there's no
