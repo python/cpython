@@ -34,8 +34,39 @@ _typing__idfunc(PyObject *module, PyObject *x)
 }
 
 
+/*[clinic input]
+_typing._restore_anonymous_typeparam -> object
+
+    owner: object
+    index: object
+    /
+
+Restore previously pickled anonymous type param from object.__type_params__.
+[clinic start generated code]*/
+
+static PyObject *
+_typing__restore_anonymous_typeparam_impl(PyObject *module, PyObject *owner,
+                                          PyObject *index)
+/*[clinic end generated code: output=00baec27dbf8d2d9 input=2f048db28d8124fb]*/
+{
+    PyObject *ret = NULL;
+    PyObject *type_params = PyObject_GetAttr(owner, &_Py_ID(__type_params__));
+
+    if (type_params == NULL) {
+        goto done;
+    }
+
+    ret = PyObject_GetItem(type_params, index);
+
+done:
+    Py_XDECREF(type_params);
+    return ret;
+}
+
+
 static PyMethodDef typing_methods[] = {
     _TYPING__IDFUNC_METHODDEF
+    _TYPING__RESTORE_ANONYMOUS_TYPEPARAM_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 

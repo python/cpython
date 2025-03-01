@@ -480,7 +480,7 @@ typeparam_reduce_anonymous(PyObject *self, PyObject *owner)
     PyObject *obj = NULL;
     PyObject *args = NULL;
 
-    typing = PyImport_ImportModule("typing");
+    typing = PyImport_ImportModule("_typing");
     if (typing == NULL) {
         goto done;
     }

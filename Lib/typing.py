@@ -502,10 +502,6 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
     return t
 
 
-def _restore_anonymous_typeparam(owner, index):
-    return owner.__type_params__[index]
-
-
 class _Final:
     """Mixin to prohibit subclassing."""
 
