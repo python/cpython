@@ -730,18 +730,34 @@ codec_handler_write_unicode_hex(Py_UCS1 **p, Py_UCS4 ch)
 }
 
 
-/* Determine the number of digits for a decimal representation of codepoint ch
+/*
+ * Determine the number of digits for a decimal representation of Unicode
+ * codepoint 'ch' (by design, Unicode codepoints are limited to 7 digits).
  */
 static inline int
 n_decimal_digits_for_codepoint(Py_UCS4 ch)
 {
-    if (ch < 10) return 1;
-    if (ch < 100) return 2;
-    if (ch < 1000) return 3;
-    if (ch < 10000) return 4;
-    if (ch < 100000) return 5;
-    if (ch < 1000000) return 6;
-    if (ch < 10000000) return 7;
+    if (ch < 10) {
+        return 1;
+    }
+    if (ch < 100) {
+        return 2;
+    }
+    if (ch < 1000) {
+        return 3;
+    }
+    if (ch < 10000) {
+        return 4;
+    }
+    if (ch < 100000) {
+        return 5;
+    }
+    if (ch < 1000000) {
+        return 6;
+    }
+    if (ch < 10000000) {
+        return 7;
+    }
     // Unicode codepoints are limited to 1114111 (7 decimal digits)
     Py_UNREACHABLE();
 }
