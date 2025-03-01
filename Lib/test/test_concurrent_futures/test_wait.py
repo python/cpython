@@ -135,6 +135,7 @@ class WaitTests:
         # Set the event to allow the future to complete
         self.event.set()
 
+
 class ThreadPoolWaitTests(ThreadPoolMixin, WaitTests, BaseTestCase):
 
     def test_pending_calls_race(self):
