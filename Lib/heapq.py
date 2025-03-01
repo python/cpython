@@ -216,9 +216,9 @@ def heapify_max(x):
 # For backwards compadibility
 _heappop_max  = heappop_max
 _heapreplace_max = heapreplace_max
-_heappush_max = _heappush_max
-_heappushpop_max = _heappushpop_max
-_heapify_max = _heapify_max
+_heappush_max = heappush_max
+_heappushpop_max = heappushpop_max
+_heapify_max = heapify_max
 
 
 # 'heap' is a heap at all indices >= startpos, except possibly for pos.  pos
