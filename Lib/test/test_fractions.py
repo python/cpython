@@ -1530,8 +1530,8 @@ class FractionTest(unittest.TestCase):
             (F(51, 1000), '.1f', '0.1'),
             (F(149, 1000), '.1f', '0.1'),
             (F(151, 1000), '.1f', '0.2'),
-            (F(1, 3), '.016f', '0.3333333333333333'),  # issue gh-130662
-            (F(1, 3), '0030.016f', '0000000000000.3333333333333333'),
+            (F(22, 7), '.02f', '3.14'),  # issue gh-130662
+            (F(22, 7), '005.02f', '03.14'),
         ]
         for fraction, spec, expected in testcases:
             with self.subTest(fraction=fraction, spec=spec):
