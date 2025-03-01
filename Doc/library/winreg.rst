@@ -105,7 +105,7 @@ This module offers the following functions:
    :ref:`REG_OPTION_* constants <hkey-constants>`.
 
    *create_only* is a boolean.
-   When set to True, a :exc:`FileExistsError`` will be raised
+   When set to True, a :exc:`FileExistsError` will be raised
    if the key is already exists.  Default is ``False``.
 
    If *key* is one of the predefined keys, *sub_key* may be ``None``. In that
