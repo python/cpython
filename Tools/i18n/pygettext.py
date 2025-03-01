@@ -216,8 +216,8 @@ def escape_nonascii(s, encoding):
 
 def normalize(s, encoding, options):
     # This converts the various Python string types into a format that is
-    # appropriate for .po files, namely much closer to C style. While wrapping
-    # to options.width.
+    # appropriate for .po files, namely much closer to C style,
+    # while wrapping to options.width.
     lines = []
     for line in s.splitlines(True):
         if len(escape(line, encoding)) > options.width:
