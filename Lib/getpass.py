@@ -83,7 +83,8 @@ def unix_getpass(prompt='Password: ', stream=None, *, echochar=None):
                         stream.write('\n')
                         return passwd
 
-                    passwd = _echochar_input(prompt, stream, input, echochar)
+                    passwd = _input_with_echochar(prompt, stream, input,
+                                                  echochar)
                 finally:
                     termios.tcsetattr(fd, tcsetattr_flags, old)
                     stream.flush()  # issue7208
@@ -168,7 +169,7 @@ def _raw_input(prompt="", stream=None, input=None):
     return line
 
 
-def _echochar_input(prompt="", stream=None, input=None, echochar=""):
+def _input_with_echochar(prompt="", stream=None, input=None, echochar=""):
     if not stream:
         stream = sys.stderr
     if not input:
