@@ -1411,7 +1411,9 @@ winreg.OpenKey -> HKEY
     sub_key: Py_UNICODE(accept={str, NoneType})
         A string that identifies the sub_key to open.
     reserved: int = 0
-        A reserved integer that must be zero.  Default is zero.
+        A reserved integer that be should zero.  If it is not zero,
+        it will be used as the options parameter for compatibility reasons.
+        Default is zero.
     access: REGSAM(c_default='KEY_READ') = winreg.KEY_READ
         An integer that specifies an access mask that describes the desired
         security access for the key.  Default is KEY_READ.
