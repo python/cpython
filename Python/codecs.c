@@ -954,7 +954,7 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
          */
         *outp++ = '&';
         *outp++ = '#';
-        const Py_UCS1 *digit_end = outp + n_decimal_digits_for_codepoint(ch);
+        Py_UCS1 *digit_end = outp + n_decimal_digits_for_codepoint(ch);
         for (Py_UCS1 *p_digit = digit_end - 1; p_digit >= outp; --p_digit) {
             *p_digit = '0' + (ch % 10);
             ch /= 10;
