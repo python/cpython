@@ -595,18 +595,6 @@ try:
     from _heapq import *
 except ImportError:
     pass
-try:
-    from _heapq import heapreplace_max
-except ImportError:
-    pass
-try:
-    from _heapq import heapify_max
-except ImportError:
-    pass
-try:
-    from _heapq import heappop_max
-except ImportError:
-    pass
 
 
 if __name__ == "__main__":
