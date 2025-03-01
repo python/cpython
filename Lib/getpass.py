@@ -135,7 +135,7 @@ def win_getpass(prompt='Password: ', stream=None, mask=None):
             raise KeyboardInterrupt
         if c == '\b':
             if mask and pw:
-                for _ in range(len(mask)):
+                for _ in mask:
                     msvcrt.putwch('\b')
                     msvcrt.putwch(' ')
                     msvcrt.putwch('\b')
