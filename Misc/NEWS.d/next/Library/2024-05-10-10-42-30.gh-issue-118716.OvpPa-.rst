@@ -1,0 +1,1 @@
+Do not fail when parsing email address with non-ASCII local part.
