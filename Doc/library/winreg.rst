@@ -85,7 +85,7 @@ This module offers the following functions:
       See :ref:`above <exception-changed>`.
 
 
-.. function:: CreateKeyEx(key, sub_key, reserved=0, access=KEY_WRITE)
+.. function:: CreateKeyEx(key, sub_key, reserved=0, access=KEY_WRITE, options=0, create_only=False)
 
    Creates or opens the specified key, returning a
    :ref:`handle object <handle-object>`.
@@ -100,6 +100,13 @@ This module offers the following functions:
    *access* is an integer that specifies an access mask that describes the desired
    security access for the key.  Default is :const:`KEY_WRITE`.  See
    :ref:`Access Rights <access-rights>` for other allowed values.
+
+   *options* is an interger and can be zero or one of the predefined
+   :ref:`REG_OPTION_* constants <hkey-constants>`.
+
+   *create_only* is a boolean.
+   When set to True, a :exc:`FileExistsError`` will be raised
+   if the key is already exists.  Default is ``False``.
 
    If *key* is one of the predefined keys, *sub_key* may be ``None``. In that
    case, the handle returned is the same key handle passed in to the function.
