@@ -2820,23 +2820,18 @@ that triggers it(!).  Instead the code was tested by artificially allocating
 just 1 digit at the start, so that the copying code was exercised for every
 digit beyond the first.
 ***/
-static int
-long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits, int base, PyLongObject **res)
+
+static double log_base_BASE[37] = {0.0e0,};
+static int convwidth_base[37] = {0,};
+static twodigits convmultmax_base[37] = {0,};
+
+static void
+long_precompute_base_conv(void)
 {
-    twodigits c;           /* current input character */
-    Py_ssize_t size_z;
-    int i;
-    int convwidth;
-    twodigits convmultmax, convmult;
-    digit *pz, *pzstop;
-    PyLongObject *z;
-    const char *p;
-
-    static double log_base_BASE[37] = {0.0e0,};
-    static int convwidth_base[37] = {0,};
-    static twodigits convmultmax_base[37] = {0,};
-
-    if (log_base_BASE[base] == 0.0) {
+    // These constants are quick to compute (likely less than 1 μs) and
+    // computing them at runtime avoids hard-coding a table dependant on
+    // PyLong_BASE.
+    for (int base = 2; base <= 36; base++) {
         twodigits convmax = base;
         int i = 1;
 
@@ -2854,6 +2849,21 @@ long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits,
         assert(i > 0);
         convwidth_base[base] = i;
     }
+}
+
+static int
+long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits, int base, PyLongObject **res)
+{
+    twodigits c;           /* current input character */
+    Py_ssize_t size_z;
+    int i;
+    int convwidth;
+    twodigits convmultmax, convmult;
+    digit *pz, *pzstop;
+    PyLongObject *z;
+    const char *p;
+
+    assert (log_base_BASE[base] != 0.0); // pre-computed by _PyLong_InitRuntime()
 
     /* Create an int object that can contain the largest possible
      * integer with this base and length.  Note that there's no
@@ -6739,6 +6749,13 @@ PyLong_GetInfo(void)
 
 
 /* runtime lifecycle */
+
+PyStatus
+_PyLong_InitRuntime(void)
+{
+    long_precompute_base_conv();
+    return _PyStatus_OK();
+}
 
 PyStatus
 _PyLong_InitTypes(PyInterpreterState *interp)
