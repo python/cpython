@@ -1184,15 +1184,14 @@ def func2[X, Y](x: X | Y) -> X | Y: ...
 def func3[X, *Y, **Z](x: X, y: tuple[*Y], z: Z) -> X: ...
 def func4[X: int, Y: (bytes, str)](x: X, y: Y) -> X | Y: ...
 def func3b[X, *Y, **Z]() -> X: return Class3[X, Y, Z]()
-def func5[Baz](): return Class5[Baz]()
+def func5[Baz](): return Class1[Baz]()
 
 class Class1[X]: ...
 class Class2[X, Y]: ...
 class Class3[X, *Y, **Z]: ...
 class Class4[X: int, Y: (bytes, str)]: ...
-class Class5(Generic[T]): pass
-class Class6:
-    def meth[Baz](): return Class5[Baz]()
+class Class5:
+    def meth[Baz](): return Class1[Baz]()
 
 
 class TypeParamsPickleTest(unittest.TestCase):
@@ -1271,12 +1270,12 @@ class TypeParamsPickleTest(unittest.TestCase):
             unpickled = pickle.loads(pickled)
             self.assertIs(unpickled, thing)
 
-        thing = Class6.meth()
+        thing = Class5.meth()
         pickled = pickle.dumps(thing)
         unpickled = pickle.loads(pickled)
         self.assertIs(unpickled.__orig_class__, thing.__orig_class__)
         self.assertIs(unpickled.__orig_class__.__args__[0],
-                      Class6.meth.__type_params__[0])
+                      Class5.meth.__type_params__[0])
 
 
 class TypeParamsWeakRefTest(unittest.TestCase):

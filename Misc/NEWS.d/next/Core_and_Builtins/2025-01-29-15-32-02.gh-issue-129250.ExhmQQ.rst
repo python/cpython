@@ -1,1 +1,1 @@
-Allow pickle of instances of generic classes.
+Fix pickling of generic classes instances.

@@ -49,18 +49,13 @@ _typing__restore_anonymous_typeparam_impl(PyObject *module, PyObject *owner,
                                           PyObject *index)
 /*[clinic end generated code: output=00baec27dbf8d2d9 input=2f048db28d8124fb]*/
 {
-    PyObject *ret = NULL;
     PyObject *type_params = PyObject_GetAttr(owner, &_Py_ID(__type_params__));
-
     if (type_params == NULL) {
-        goto done;
+        return NULL;
     }
-
-    ret = PyObject_GetItem(type_params, index);
-
-done:
-    Py_XDECREF(type_params);
-    return ret;
+    PyObject *res = PyObject_GetItem(type_params, index);
+    Py_DECREF(type_params);
+    return res;
 }
 
 
