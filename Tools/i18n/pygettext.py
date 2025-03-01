@@ -228,19 +228,21 @@ def normalize(s, encoding, options):
                 while words:
                     word = words[-1]
                     escaped_word = escape(word, encoding)
+                    escaped_word_len = len(escaped_word)
                     add_space = 1 if buf else 0
-                    if size + len(escaped_word) + add_space <= options.width:
+                    new_size = size + escaped_word_len + add_space
+                    if new_size <= options.width:
                         buf.append(words.pop())
-                        size += len(escaped_word) + add_space
+                        size = new_size
                     else:
                         if not buf:
-                            buf.append(words.pop())
+                            buf = [words.pop()]
                         break
                 lines.append(' '.join(buf))
         else:
             lines.append(line)
     if len(lines) <= 1:
-        return '"' + escape(s, encoding) + '"'
+        return f'"{escape(s, encoding)}"'
     if lines and not lines[-1]:
         del lines[-1]
         lines[-1] += '\n'
