@@ -82,16 +82,26 @@ The following functions are provided:
    on the heap.
 
 
+.. function:: heapify_max(x)
+
+   Transform list *x* into a heap, in-place, in linear time.
+
+   .. versionadded:: next
+
+
 .. function:: heappush_max(heap, item)
 
    Push the value *item* onto the *heap*, maintaining the heap invariant.
 
+   .. versionadded:: next
 
 .. function:: heappop_max(heap)
 
    Pop and return the largest item from the *heap*, maintaining the heap
    invariant.  If the heap is empty, :exc:`IndexError` is raised.  To access the
    largest item without popping it, use ``heap[0]``.
+
+   .. versionadded:: next
 
 
 .. function:: heappushpop_max(heap, item)
@@ -100,15 +110,12 @@ The following functions are provided:
    *heap*.  The combined action runs more efficiently than :func:`heappush_max`
    followed by a separate call to :func:`heappop_max`.
 
-
-.. function:: heapify_max(x)
-
-   Transform list *x* into a max heap, in-place, in linear time.
+   .. versionadded:: next
 
 
-.. function:: heapreplace(heap, item)
+.. function:: heapreplace_max(heap, item)
 
-   Pop and return the smallest item from the *heap*, and also push the new *item*.
+   Pop and return the largest item from the *heap*, and also push the new *item*.
    The heap size doesn't change. If the heap is empty, :exc:`IndexError` is raised.
 
    This one step operation is more efficient than a :func:`heappop` followed by
@@ -120,6 +127,8 @@ The following functions are provided:
    desired, consider using :func:`heappushpop` instead.  Its push/pop
    combination returns the smaller of the two values, leaving the larger value
    on the heap.
+
+   .. versionadded:: next
 
 
 The module also offers three general purpose functions based on heaps.
