@@ -1,5 +1,6 @@
 import multiprocessing
 import sys
+import threading
 import time
 import unittest
 from concurrent import futures
@@ -46,11 +47,14 @@ class ExecutorMixin:
 
         self.t1 = time.monotonic()
         if hasattr(self, "ctx"):
+            self.manager = multiprocessing.Manager()
+            self.event = self.manager.Event()
             self.executor = self.executor_type(
                 max_workers=self.worker_count,
                 mp_context=self.get_context(),
                 **self.executor_kwargs)
         else:
+            self.event = threading.Event()
             self.executor = self.executor_type(
                 max_workers=self.worker_count,
                 **self.executor_kwargs)
@@ -58,6 +62,9 @@ class ExecutorMixin:
     def tearDown(self):
         self.executor.shutdown(wait=True)
         self.executor = None
+        if hasattr(self, "ctx"):
+            self.manager.shutdown()
+            self.manager = None
 
         dt = time.monotonic() - self.t1
         if support.verbose:
