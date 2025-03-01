@@ -114,8 +114,9 @@ class WaitTests:
 
     def test_timeout(self):
         short_timeout = 0.050
+        long_timeout = short_timeout * 10
 
-        future = self.executor.submit(self.event.wait)
+        future = self.executor.submit(time.sleep, long_timeout)
 
         finished, pending = futures.wait(
                 [CANCELLED_AND_NOTIFIED_FUTURE,
@@ -130,9 +131,6 @@ class WaitTests:
                               SUCCESSFUL_FUTURE]),
                          finished)
         self.assertEqual(set([future]), pending)
-
-        # Set the event to allow the future to complete
-        self.event.set()
 
 
 class ThreadPoolWaitTests(ThreadPoolMixin, WaitTests, BaseTestCase):
