@@ -193,18 +193,28 @@ extern void _PyEval_DeactivateOpCache(void);
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 
-#ifdef USE_STACKCHECK
-/* With USE_STACKCHECK macro defined, trigger stack checks in
-   _Py_CheckRecursiveCall() on every 64th call to _Py_EnterRecursiveCall. */
-static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
-    return (tstate->c_recursion_remaining-- < 0
-            || (tstate->c_recursion_remaining & 63) == 0);
-}
-#else
-static inline int _Py_MakeRecCheck(PyThreadState *tstate) {
-    return tstate->c_recursion_remaining-- < 0;
+#if !_Py__has_builtin(__builtin_frame_address)
+static uintptr_t return_pointer_as_int(char* p) {
+    return (uintptr_t)p;
 }
 #endif
+
+static inline uintptr_t
+_Py_get_machine_stack_pointer(void) {
+#if _Py__has_builtin(__builtin_frame_address)
+    return (uintptr_t)__builtin_frame_address(0);
+#else
+    char here;
+    /* Avoid compiler warning about returning stack address */
+    return return_pointer_as_int(&here);
+#endif
+}
+
+static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    return here_addr < _tstate->c_stack_soft_limit;
+}
 
 // Export for '_json' shared extension, used via _Py_EnterRecursiveCall()
 // static inline function.
@@ -220,23 +230,30 @@ static inline int _Py_EnterRecursiveCallTstate(PyThreadState *tstate,
     return (_Py_MakeRecCheck(tstate) && _Py_CheckRecursiveCall(tstate, where));
 }
 
-static inline void _Py_EnterRecursiveCallTstateUnchecked(PyThreadState *tstate)  {
-    assert(tstate->c_recursion_remaining > 0);
-    tstate->c_recursion_remaining--;
-}
-
 static inline int _Py_EnterRecursiveCall(const char *where) {
     PyThreadState *tstate = _PyThreadState_GET();
     return _Py_EnterRecursiveCallTstate(tstate, where);
 }
 
-static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate)  {
-    tstate->c_recursion_remaining++;
+static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate) {
+    (void)tstate;
+}
+
+PyAPI_FUNC(void) _Py_InitializeRecursionLimits(PyThreadState *tstate);
+
+static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    if (here_addr > _tstate->c_stack_soft_limit) {
+        return 0;
+    }
+    if (_tstate->c_stack_hard_limit == 0) {
+        _Py_InitializeRecursionLimits(tstate);
+    }
+    return here_addr <= _tstate->c_stack_soft_limit;
 }
 
 static inline void _Py_LeaveRecursiveCall(void)  {
-    PyThreadState *tstate = _PyThreadState_GET();
-    _Py_LeaveRecursiveCallTstate(tstate);
 }
 
 extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);
@@ -264,7 +281,7 @@ PyAPI_DATA(const size_t) _Py_FunctionAttributeOffsets[];
 
 PyAPI_FUNC(int) _PyEval_CheckExceptStarTypeValid(PyThreadState *tstate, PyObject* right);
 PyAPI_FUNC(int) _PyEval_CheckExceptTypeValid(PyThreadState *tstate, PyObject* right);
-PyAPI_FUNC(int) _PyEval_ExceptionGroupMatch(PyObject* exc_value, PyObject *match_type, PyObject **match, PyObject **rest);
+PyAPI_FUNC(int) _PyEval_ExceptionGroupMatch(_PyInterpreterFrame *, PyObject* exc_value, PyObject *match_type, PyObject **match, PyObject **rest);
 PyAPI_FUNC(void) _PyEval_FormatAwaitableError(PyThreadState *tstate, PyTypeObject *type, int oparg);
 PyAPI_FUNC(void) _PyEval_FormatExcCheckArg(PyThreadState *tstate, PyObject *exc, const char *format_str, PyObject *obj);
 PyAPI_FUNC(void) _PyEval_FormatExcUnbound(PyThreadState *tstate, PyCodeObject *co, int oparg);
@@ -274,7 +291,7 @@ PyAPI_FUNC(PyObject *) _PyEval_ImportName(PyThreadState *, _PyInterpreterFrame *
 PyAPI_FUNC(PyObject *)_PyEval_MatchClass(PyThreadState *tstate, PyObject *subject, PyObject *type, Py_ssize_t nargs, PyObject *kwargs);
 PyAPI_FUNC(PyObject *)_PyEval_MatchKeys(PyThreadState *tstate, PyObject *map, PyObject *keys);
 PyAPI_FUNC(void) _PyEval_MonitorRaise(PyThreadState *tstate, _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);
-PyAPI_FUNC(int) _PyEval_UnpackIterableStackRef(PyThreadState *tstate, _PyStackRef v, int argcnt, int argcntafter, _PyStackRef *sp);
+PyAPI_FUNC(int) _PyEval_UnpackIterableStackRef(PyThreadState *tstate, PyObject *v, int argcnt, int argcntafter, _PyStackRef *sp);
 PyAPI_FUNC(void) _PyEval_FrameClearAndPop(PyThreadState *tstate, _PyInterpreterFrame *frame);
 PyAPI_FUNC(PyObject **) _PyObjectArray_FromStackRefArray(_PyStackRef *input, Py_ssize_t nargs, PyObject **scratch);
 
@@ -326,7 +343,6 @@ void _Py_set_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 void _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 
 PyAPI_FUNC(PyObject *) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value);
-
 
 #ifdef __cplusplus
 }

@@ -211,9 +211,11 @@ _PyLexer_update_fstring_expr(struct tok_state *tok, char cur)
             break;
         case '}':
         case '!':
+            tok_mode->last_expr_end = strlen(tok->start);
+            break;
         case ':':
             if (tok_mode->last_expr_end == -1) {
-                tok_mode->last_expr_end = strlen(tok->start);
+               tok_mode->last_expr_end = strlen(tok->start);
             }
             break;
         default:
@@ -329,11 +331,7 @@ verify_identifier(struct tok_state *tok)
         return 0;
     }
     Py_ssize_t invalid = _PyUnicode_ScanIdentifier(s);
-    if (invalid < 0) {
-        Py_DECREF(s);
-        tok->done = E_ERROR;
-        return 0;
-    }
+    assert(invalid >= 0);
     assert(PyUnicode_GET_LENGTH(s) > 0);
     if (invalid < PyUnicode_GET_LENGTH(s)) {
         Py_UCS4 ch = PyUnicode_READ_CHAR(s, invalid);

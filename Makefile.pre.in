@@ -269,10 +269,6 @@ SRCDIRS= 	@SRCDIRS@
 # Other subdirectories
 SUBDIRSTOO=	Include Lib Misc
 
-# assets for Emscripten browser builds
-WASM_ASSETS_DIR=.$(prefix)
-WASM_STDLIB=$(WASM_ASSETS_DIR)/lib/python$(VERSION)/os.py
-
 # Files and directories to be distributed
 CONFIGFILES=	configure configure.ac acconfig.h pyconfig.h.in Makefile.pre.in
 DISTFILES=	README.rst ChangeLog $(CONFIGFILES)
@@ -492,6 +488,7 @@ PYTHON_OBJS=	\
 		Python/qsbr.o \
 		Python/bootstrap_hash.o \
 		Python/specialize.o \
+		Python/stackrefs.o \
 		Python/structmember.o \
 		Python/symtable.o \
 		Python/sysmodule.o \
@@ -731,11 +728,14 @@ list-targets:
 
 .PHONY: build_all
 build_all:	check-clean-src check-app-store-compliance $(BUILDPYTHON) platform sharedmods \
-		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil
+		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil build-details.json
 
 .PHONY: build_wasm
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
 		python-config checksharedmods
+
+.PHONY: build_emscripten
+build_emscripten: build_wasm web_example
 
 # Check that the source is clean when building out of source.
 .PHONY: check-clean-src
@@ -934,6 +934,9 @@ pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
 		exit 1 ; \
 	fi
 
+build-details.json: pybuilddir.txt
+	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate-build-details.py `cat pybuilddir.txt`/build-details.json
+
 # Build static library
 $(LIBRARY): $(LIBRARY_OBJS)
 	-rm -f $@
@@ -1016,23 +1019,38 @@ $(DLLLIBRARY) libpython$(LDVERSION).dll.a: $(LIBRARY_OBJS)
 	else true; \
 	fi
 
-# wasm32-emscripten browser build
-# wasm assets directory is relative to current build dir, e.g. "./usr/local".
-# --preload-file turns a relative asset path into an absolute path.
+# wasm32-emscripten browser web example
 
-.PHONY: wasm_stdlib
-wasm_stdlib: $(WASM_STDLIB)
-$(WASM_STDLIB): $(srcdir)/Lib/*.py $(srcdir)/Lib/*/*.py \
-	    $(srcdir)/Tools/wasm/wasm_assets.py \
+WEBEX_DIR=$(srcdir)/Tools/wasm/emscripten/web_example/
+web_example/python.html: $(WEBEX_DIR)/python.html
+	@mkdir -p web_example
+	@cp $< $@
+
+web_example/python.worker.mjs: $(WEBEX_DIR)/python.worker.mjs
+	@mkdir -p web_example
+	@cp $< $@
+
+web_example/server.py: $(WEBEX_DIR)/server.py
+	@mkdir -p web_example
+	@cp $< $@
+
+WEB_STDLIB=web_example/python$(VERSION)$(ABI_THREAD).zip
+$(WEB_STDLIB): $(srcdir)/Lib/*.py $(srcdir)/Lib/*/*.py \
+	    $(WEBEX_DIR)/wasm_assets.py \
 	    Makefile pybuilddir.txt Modules/Setup.local
-	$(PYTHON_FOR_BUILD) $(srcdir)/Tools/wasm/wasm_assets.py \
-	    --buildroot . --prefix $(prefix)
+	$(PYTHON_FOR_BUILD) $(WEBEX_DIR)/wasm_assets.py \
+	    --buildroot . --prefix $(prefix) -o $@
 
-python.html: $(srcdir)/Tools/wasm/python.html python.worker.js
-	@cp $(srcdir)/Tools/wasm/python.html $@
+web_example/python.mjs web_example/python.wasm: $(BUILDPYTHON)
+	@if test $(HOST_GNU_TYPE) != 'wasm32-unknown-emscripten' ; then \
+		echo "Can only build web_example when target is Emscripten" ;\
+		exit 1 ;\
+	fi
+	cp python.mjs web_example/python.mjs
+	cp python.wasm web_example/python.wasm
 
-python.worker.js: $(srcdir)/Tools/wasm/python.worker.js
-	@cp $(srcdir)/Tools/wasm/python.worker.js $@
+.PHONY: web_example
+web_example: web_example/python.mjs web_example/python.worker.mjs web_example/python.html web_example/server.py $(WEB_STDLIB)
 
 ############################################################################
 # Header files
@@ -2131,8 +2149,7 @@ testuniversal: all
 # a full Xcode install that has an iPhone SE (3rd edition) simulator available.
 # This must be run *after* a `make install` has completed the build. The
 # `--with-framework-name` argument *cannot* be used when configuring the build.
-XCFOLDER:=iOSTestbed.$(MULTIARCH).$(shell date +%s)
-XCRESULT=$(XCFOLDER)/$(MULTIARCH).xcresult
+XCFOLDER:=iOSTestbed.$(MULTIARCH).$(shell date +%s).$$PPID
 .PHONY: testios
 testios:
 	@if test "$(MACHDEP)" != "ios"; then \
@@ -2151,29 +2168,12 @@ testios:
 		echo "Cannot find a finalized iOS Python.framework. Have you run 'make install' to finalize the framework build?"; \
 		exit 1;\
 	fi
-	# Copy the testbed project into the build folder
-	cp -r $(srcdir)/iOS/testbed $(XCFOLDER)
-	# Copy the framework from the install location to the testbed project.
-	cp -r $(PYTHONFRAMEWORKPREFIX)/* $(XCFOLDER)/Python.xcframework/ios-arm64_x86_64-simulator
 
-	# Run the test suite for the Xcode project, targeting the iOS simulator.
-	# If the suite fails, touch a file in the test folder as a marker
-	if ! xcodebuild test -project $(XCFOLDER)/iOSTestbed.xcodeproj -scheme "iOSTestbed" -destination "platform=iOS Simulator,name=iPhone SE (3rd Generation)" -resultBundlePath $(XCRESULT) -derivedDataPath $(XCFOLDER)/DerivedData ; then \
-	 	touch $(XCFOLDER)/failed; \
-	fi
+	# Clone the testbed project into the XCFOLDER
+	$(PYTHON_FOR_BUILD) $(srcdir)/iOS/testbed clone --framework $(PYTHONFRAMEWORKPREFIX) "$(XCFOLDER)"
 
-	# Regardless of success or failure, extract and print the test output
-	xcrun xcresulttool get --path $(XCRESULT) \
-		--id $$( \
-			xcrun xcresulttool get --path $(XCRESULT) --format json | \
-			$(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['actions']['_values'][0]['actionResult']['logRef']['id']['_value'])" \
-		) \
-		--format json | \
-		$(PYTHON_FOR_BUILD) -c "import sys, json; result = json.load(sys.stdin); print(result['subsections']['_values'][1]['subsections']['_values'][0]['emittedOutput']['_value'])"
-
-	@if test -e $(XCFOLDER)/failed ; then \
-		exit 1; \
-	fi
+	# Run the testbed project
+	$(PYTHON_FOR_BUILD) "$(XCFOLDER)" run --verbose -- test -uall --single-process --rerun -W
 
 # Like test, but using --slow-ci which enables all test resources and use
 # longer timeout. Run an optional pybuildbot.identify script to include
@@ -2549,6 +2549,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_tomllib/data/valid/multiline-basic-str \
 		test/test_tools \
 		test/test_tools/i18n_data \
+		test/test_tools/msgfmt_data \
 		test/test_ttk \
 		test/test_unittest \
 		test/test_unittest/namespace_test_pkg \
@@ -2647,6 +2648,7 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 	done
 	$(INSTALL_DATA) `cat pybuilddir.txt`/_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).py $(DESTDIR)$(LIBDEST); \
 	$(INSTALL_DATA) `cat pybuilddir.txt`/_sysconfig_vars_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).json $(DESTDIR)$(LIBDEST); \
+	$(INSTALL_DATA) `cat pybuilddir.txt`/build-details.json $(DESTDIR)$(LIBDEST); \
 	$(INSTALL_DATA) $(srcdir)/LICENSE $(DESTDIR)$(LIBDEST)/LICENSE.txt
 	@ # If app store compliance has been configured, apply the patch to the
 	@ # installed library code. The patch has been previously validated against
@@ -3053,8 +3055,7 @@ clean-retain-profile: pycremoval
 	find build -name '*.py[co]' -exec rm -f {} ';' || true
 	-rm -f pybuilddir.txt
 	-rm -f _bootstrap_python
-	-rm -f python.html python*.js python.data python*.symbols python*.map
-	-rm -f $(WASM_STDLIB)
+	-rm -rf web_example python.mjs python.wasm python*.symbols python*.map
 	-rm -f Programs/_testembed Programs/_freeze_module
 	-rm -rf Python/deepfreeze
 	-rm -f Python/frozen_modules/*.h
