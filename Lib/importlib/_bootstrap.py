@@ -741,30 +741,8 @@ def _init_module_attrs(spec, module, *, override=False):
             pass
     # __loader__
     if override or getattr(module, '__loader__', None) is None:
-        loader = spec.loader
-        if loader is None:
-            # A backward compatibility hack.
-            if spec.submodule_search_locations is not None:
-                if _bootstrap_external is None:
-                    raise NotImplementedError
-                NamespaceLoader = _bootstrap_external.NamespaceLoader
-
-                loader = NamespaceLoader.__new__(NamespaceLoader)
-                loader._path = spec.submodule_search_locations
-                spec.loader = loader
-                # While the docs say that module.__file__ is not set for
-                # built-in modules, and the code below will avoid setting it if
-                # spec.has_location is false, this is incorrect for namespace
-                # packages.  Namespace packages have no location, but their
-                # __spec__.origin is None, and thus their module.__file__
-                # should also be None for consistency.  While a bit of a hack,
-                # this is the best place to ensure this consistency.
-                #
-                # See # https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.load_module
-                # and bpo-32305
-                module.__file__ = None
         try:
-            module.__loader__ = loader
+            module.__loader__ = spec.loader
         except AttributeError:
             pass
     # __package__
@@ -800,6 +778,19 @@ def _init_module_attrs(spec, module, *, override=False):
                     module.__cached__ = spec.cached
                 except AttributeError:
                     pass
+    # A backward compatibility hack.
+    if _bootstrap_external and isinstance(spec.loader, _bootstrap_external.NamespaceLoader):
+        # While the docs say that module.__file__ is not set for
+        # built-in modules, and the code below will avoid setting it if
+        # spec.has_location is false, this is incorrect for namespace
+        # packages.  Namespace packages have no location, but their
+        # __spec__.origin is None, and thus their module.__file__
+        # should also be None for consistency.  While a bit of a hack,
+        # this is the best place to ensure this consistency.
+        #
+        # See # https://docs.python.org/3/library/importlib.html#importlib.abc.Loader.load_module
+        # and bpo-32305
+        module.__file__ = None
     return module
 
 
