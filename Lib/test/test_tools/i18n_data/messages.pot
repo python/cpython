@@ -35,7 +35,7 @@ msgstr ""
 
 #: messages.py:32
 msgid ""
-"this is a very very very very very very very very very very very very very"
+"this is a very very very very very very very very very very very very very "
 "long string!"
 msgstr ""
 

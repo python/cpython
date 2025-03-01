@@ -16,7 +16,7 @@ expected one argument
 ignored explicit argument %r
 invalid %(type)s value: %(value)r
 invalid choice: %(value)r (choose from %(choices)s)
-invalid choice: %(value)r, maybe you meant %(closest)r? (choose from%(choices)s)
+invalid choice: %(value)r, maybe you meant %(closest)r? (choose from %(choices)s)
 not allowed with argument %s
 one of the arguments %s is required
 option '%(option)s' is deprecated

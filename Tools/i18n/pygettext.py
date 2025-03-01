@@ -148,6 +148,7 @@ import os
 import sys
 import time
 import tokenize
+import re
 from dataclasses import dataclass, field
 from io import BytesIO
 from operator import itemgetter
@@ -220,25 +221,21 @@ def normalize(s, encoding, options):
     lines = []
     for line in s.splitlines(True):
         if len(escape(line, encoding)) > options.width:
-            words = line.split()
+            words = re.split(r'(\s+)', line)
             words.reverse()
+            buf = []
+            size = 2
             while words:
-                buf = []
-                size = 2
-                while words:
-                    word = words[-1]
-                    escaped_word = escape(word, encoding)
-                    escaped_word_len = len(escaped_word)
-                    add_space = 1 if buf else 0
-                    new_size = size + escaped_word_len + add_space
-                    if new_size <= options.width:
-                        buf.append(words.pop())
-                        size = new_size
-                    else:
-                        if not buf:
-                            buf = [words.pop()]
-                        break
-                lines.append(' '.join(buf))
+                word = words.pop()
+                escaped_word_len = len(escape(word, encoding))
+                if size + escaped_word_len <= options.width:
+                    buf.append(word)
+                    size += escaped_word_len
+                else:
+                    lines.append(''.join(buf))
+                    buf = [word]
+                    size = 2 + escaped_word_len
+            lines.append(''.join(buf))
         else:
             lines.append(line)
     if len(lines) <= 1:
