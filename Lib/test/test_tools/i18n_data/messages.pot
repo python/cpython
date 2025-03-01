@@ -39,65 +39,71 @@ msgid ""
 "long string!"
 msgstr ""
 
-#: messages.py:49 messages.py:92 messages.py:93 messages.py:96 messages.py:97
-#: messages.py:102 messages.py:103 messages.py:104
+#: messages.py:33
+msgid ""
+"this  is  a  very  very    very very  very    very  very   very       very  "
+"very    very  very    very   long string with wierd spaces!"
+msgstr ""
+
+#: messages.py:50 messages.py:93 messages.py:94 messages.py:97 messages.py:98
+#: messages.py:103 messages.py:104 messages.py:105
 msgid "foo"
 msgid_plural "foos"
 msgstr[0] ""
 msgstr[1] ""
 
-#: messages.py:50
+#: messages.py:51
 msgid "something"
 msgstr ""
 
-#: messages.py:53
+#: messages.py:54
 msgid "Hello, {}!"
 msgstr ""
 
-#: messages.py:57
+#: messages.py:58
 msgid "1"
 msgstr ""
 
-#: messages.py:57
+#: messages.py:58
 msgid "2"
 msgstr ""
 
-#: messages.py:58 messages.py:59
+#: messages.py:59 messages.py:60
 msgid "A"
 msgstr ""
 
-#: messages.py:58 messages.py:59
+#: messages.py:59 messages.py:60
 msgid "B"
 msgstr ""
 
-#: messages.py:60
+#: messages.py:61
 msgid "set"
 msgstr ""
 
-#: messages.py:65 messages.py:66
+#: messages.py:66 messages.py:67
 msgid "nested string"
 msgstr ""
 
-#: messages.py:71
+#: messages.py:72
 msgid "baz"
 msgstr ""
 
-#: messages.py:74 messages.py:78
+#: messages.py:75 messages.py:79
 msgid "default value"
 msgstr ""
 
-#: messages.py:94 messages.py:95 messages.py:98 messages.py:99
+#: messages.py:95 messages.py:96 messages.py:99 messages.py:100
 msgctxt "context"
 msgid "foo"
 msgid_plural "foos"
 msgstr[0] ""
 msgstr[1] ""
 
-#: messages.py:105
+#: messages.py:106
 msgid "domain foo"
 msgstr ""
 
-#: messages.py:121 messages.py:122
+#: messages.py:122 messages.py:123
 msgid "world"
 msgid_plural "worlds"
 msgstr[0] ""
