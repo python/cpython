@@ -20,7 +20,7 @@ from .results import TestResults, EXITCODE_INTERRUPTED
 from .runtests import RunTests, HuntRefleak
 from .setup import setup_process, setup_test_dir
 from .single import run_single_test, PROGRESS_MIN_TIME
-from .tsan import setup_tsan_tests
+from .tsan import setup_tsan_tests, setup_tsan_parallel_tests
 from .utils import (
     StrPath, StrJSON, TestName, TestList, TestTuple, TestFilter,
     strip_py_suffix, count, format_duration,
@@ -60,6 +60,7 @@ class Regrtest:
         self.pgo: bool = ns.pgo
         self.pgo_extended: bool = ns.pgo_extended
         self.tsan: bool = ns.tsan
+        self.tsan_parallel: bool = ns.tsan_parallel
 
         # Test results
         self.results: TestResults = TestResults()
@@ -142,6 +143,8 @@ class Regrtest:
         else:
             self.random_seed = ns.random_seed
 
+        self.parallel_threads = ns.parallel_threads
+
         # tests
         self.first_runtests: RunTests | None = None
 
@@ -192,6 +195,9 @@ class Regrtest:
 
         if self.tsan:
             setup_tsan_tests(self.cmdline_args)
+
+        if self.tsan_parallel:
+            setup_tsan_parallel_tests(self.cmdline_args)
 
         exclude_tests = set()
         if self.exclude:
@@ -393,15 +399,11 @@ class Regrtest:
             msg += " (timeout: %s)" % format_duration(runtests.timeout)
         self.log(msg)
 
-        previous_test = None
         tests_iter = runtests.iter_tests()
         for test_index, test_name in enumerate(tests_iter, 1):
             start_time = time.perf_counter()
 
-            text = test_name
-            if previous_test:
-                text = '%s -- %s' % (text, previous_test)
-            self.logger.display_progress(test_index, text)
+            self.logger.display_progress(test_index, test_name)
 
             result = self.run_test(test_name, runtests, tracer)
 
@@ -418,19 +420,14 @@ class Regrtest:
                 except (KeyError, AttributeError):
                     pass
 
-            if result.must_stop(self.fail_fast, self.fail_env_changed):
-                break
-
-            previous_test = str(result)
+            text = str(result)
             test_time = time.perf_counter() - start_time
             if test_time >= PROGRESS_MIN_TIME:
-                previous_test = "%s in %s" % (previous_test, format_duration(test_time))
-            elif result.state == State.PASSED:
-                # be quiet: say nothing if the test passed shortly
-                previous_test = None
+                text = f"{text} in {format_duration(test_time)}"
+            self.logger.display_progress(test_index, text)
 
-        if previous_test:
-            print(previous_test)
+            if result.must_stop(self.fail_fast, self.fail_env_changed):
+                break
 
     def get_state(self) -> str:
         state = self.results.get_state(self.fail_env_changed)
@@ -506,6 +503,7 @@ class Regrtest:
             python_cmd=self.python_cmd,
             randomize=self.randomize,
             random_seed=self.random_seed,
+            parallel_threads=self.parallel_threads,
         )
 
     def _run_tests(self, selected: TestTuple, tests: TestList | None) -> int:

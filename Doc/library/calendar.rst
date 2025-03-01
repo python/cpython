@@ -38,13 +38,33 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
    itself. This is the job of subclasses.
 
 
-   :class:`Calendar` instances have the following methods:
+   :class:`Calendar` instances have the following methods and attributes:
+
+   .. attribute:: firstweekday
+
+      The first weekday as an integer (0--6).
+
+      This property can also be set and read using
+      :meth:`~Calendar.setfirstweekday` and
+      :meth:`~Calendar.getfirstweekday` respectively.
+
+   .. method:: getfirstweekday()
+
+      Return an :class:`int` for the current first weekday (0--6).
+
+      Identical to reading the :attr:`~Calendar.firstweekday` property.
+
+   .. method:: setfirstweekday(firstweekday)
+
+      Set the first weekday to *firstweekday*, passed as an :class:`int` (0--6)
+
+      Identical to setting the :attr:`~Calendar.firstweekday` property.
 
    .. method:: iterweekdays()
 
       Return an iterator for the week day numbers that will be used for one
       week.  The first value from the iterator will be the same as the value of
-      the :attr:`firstweekday` property.
+      the :attr:`~Calendar.firstweekday` property.
 
 
    .. method:: itermonthdates(year, month)
@@ -146,17 +166,12 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       the specified width, representing an empty day. The *weekday* parameter
       is unused.
 
-   .. method:: formatweek(theweek, w=0, highlight_day=None)
+   .. method:: formatweek(theweek, w=0)
 
       Return a single week in a string with no newline. If *w* is provided, it
       specifies the width of the date columns, which are centered. Depends
       on the first weekday as specified in the constructor or set by the
       :meth:`setfirstweekday` method.
-
-      .. versionchanged:: next
-         If *highlight_day* is given, this date is highlighted in color.
-         This can be :ref:`controlled using environment variables
-         <using-on-controlling-color>`.
 
 
    .. method:: formatweekday(weekday, width)
@@ -173,18 +188,13 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       settings and are padded to the specified width.
 
 
-   .. method:: formatmonth(theyear, themonth, w=0, l=0, highlight_day=None)
+   .. method:: formatmonth(theyear, themonth, w=0, l=0)
 
       Return a month's calendar in a multi-line string. If *w* is provided, it
       specifies the width of the date columns, which are centered. If *l* is
       given, it specifies the number of lines that each week will use. Depends
       on the first weekday as specified in the constructor or set by the
       :meth:`setfirstweekday` method.
-
-      .. versionchanged:: next
-         If *highlight_day* is given, this date is highlighted in color.
-         This can be :ref:`controlled using environment variables
-         <using-on-controlling-color>`.
 
 
    .. method:: formatmonthname(theyear, themonth, width=0, withyear=True)
@@ -200,7 +210,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       Print a month's calendar as returned by :meth:`formatmonth`.
 
 
-   .. method:: formatyear(theyear, w=2, l=1, c=6, m=3, highlight_day=None)
+   .. method:: formatyear(theyear, w=2, l=1, c=6, m=3)
 
       Return a *m*-column calendar for an entire year as a multi-line string.
       Optional parameters *w*, *l*, and *c* are for date column width, lines per
@@ -208,11 +218,6 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
       the first weekday as specified in the constructor or set by the
       :meth:`setfirstweekday` method.  The earliest year for which a calendar
       can be generated is platform-dependent.
-
-      .. versionchanged:: next
-         If *highlight_day* is given, this date is highlighted in color.
-         This can be :ref:`controlled using environment variables
-         <using-on-controlling-color>`.
 
 
    .. method:: pryear(theyear, w=2, l=1, c=6, m=3)
@@ -707,7 +712,7 @@ The following options are accepted:
    The number of months printed per row.
    Defaults to 3.
 
-.. versionchanged:: next
+.. versionchanged:: 3.14
    By default, today's date is highlighted in color and can be
    :ref:`controlled using environment variables <using-on-controlling-color>`.
 

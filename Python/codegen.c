@@ -201,9 +201,6 @@ static int codegen_subscript(compiler *, expr_ty);
 static int codegen_slice_two_parts(compiler *, expr_ty);
 static int codegen_slice(compiler *, expr_ty);
 
-static bool are_all_items_const(asdl_expr_seq *, Py_ssize_t, Py_ssize_t);
-
-
 static int codegen_with(compiler *, stmt_ty, int);
 static int codegen_async_with(compiler *, stmt_ty, int);
 static int codegen_async_for(compiler *, stmt_ty);
@@ -287,7 +284,7 @@ codegen_addop_load_const(compiler *c, location loc, PyObject *o)
     if (PyLong_CheckExact(o)) {
         int overflow;
         long val = PyLong_AsLongAndOverflow(o, &overflow);
-        if (!overflow && val >= 0 && val < 256 && val < _PY_NSMALLPOSINTS) {
+        if (!overflow && _PY_IS_SMALL_INT(val)) {
             ADDOP_I(c, loc, LOAD_SMALL_INT, val);
             return SUCCESS;
         }
@@ -406,13 +403,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
     assert(IS_JUMP_TARGET_LABEL(target));
     assert(OPCODE_HAS_JUMP(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    if (_PyInstructionSequence_Addop(seq, opcode, target.id, loc) != SUCCESS) {
-        return ERROR;
-    }
-    if (IS_CONDITIONAL_JUMP_OPCODE(opcode) || opcode == FOR_ITER) {
-        return _PyInstructionSequence_Addop(seq, NOT_TAKEN, 0, NO_LOCATION);
-    }
-    return SUCCESS;
+    return _PyInstructionSequence_Addop(seq, opcode, target.id, loc);
 }
 
 #define ADDOP_JUMP(C, LOC, OP, O) \
@@ -2018,7 +2009,7 @@ codegen_for(compiler *c, stmt_ty s)
     * but a non-generator will jump to a later instruction.
     */
     ADDOP(c, NO_LOCATION, END_FOR);
-    ADDOP(c, NO_LOCATION, POP_TOP);
+    ADDOP(c, NO_LOCATION, POP_ITER);
 
     _PyCompile_PopFBlock(c, COMPILE_FBLOCK_FOR_LOOP, start);
 
@@ -2050,6 +2041,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADD_YIELD_FROM(c, loc, 1);
     ADDOP(c, loc, POP_BLOCK);  /* for SETUP_FINALLY */
+    ADDOP(c, loc, NOT_TAKEN);
 
     /* Success block for __anext__ */
     VISIT(c, expr, s->v.AsyncFor.target);
@@ -3216,34 +3208,6 @@ starunpack_helper_impl(compiler *c, location loc,
                        int build, int add, int extend, int tuple)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
-    if (!injected_arg && n > 2 && are_all_items_const(elts, 0, n)) {
-        PyObject *folded = PyTuple_New(n);
-        if (folded == NULL) {
-            return ERROR;
-        }
-        for (Py_ssize_t i = 0; i < n; i++) {
-            PyObject *val = ((expr_ty)asdl_seq_GET(elts, i))->v.Constant.value;
-            PyTuple_SET_ITEM(folded, i, Py_NewRef(val));
-        }
-        if (tuple && !pushed) {
-            ADDOP_LOAD_CONST_NEW(c, loc, folded);
-        } else {
-            if (add == SET_ADD) {
-                Py_SETREF(folded, PyFrozenSet_New(folded));
-                if (folded == NULL) {
-                    return ERROR;
-                }
-            }
-            ADDOP_I(c, loc, build, pushed);
-            ADDOP_LOAD_CONST_NEW(c, loc, folded);
-            ADDOP_I(c, loc, extend, 1);
-            if (tuple) {
-                ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_LIST_TO_TUPLE);
-            }
-        }
-        return SUCCESS;
-    }
-
     int big = n + pushed + (injected_arg ? 1 : 0) > STACK_USE_GUIDELINE;
     int seen_star = 0;
     for (Py_ssize_t i = 0; i < n; i++) {
@@ -3393,18 +3357,6 @@ codegen_set(compiler *c, expr_ty e)
     location loc = LOC(e);
     return starunpack_helper(c, loc, e->v.Set.elts, 0,
                              BUILD_SET, SET_ADD, SET_UPDATE, 0);
-}
-
-static bool
-are_all_items_const(asdl_expr_seq *seq, Py_ssize_t begin, Py_ssize_t end)
-{
-    for (Py_ssize_t i = begin; i < end; i++) {
-        expr_ty key = (expr_ty)asdl_seq_GET(seq, i);
-        if (key == NULL || key->kind != Constant_kind) {
-            return false;
-        }
-    }
-    return true;
 }
 
 static int
@@ -4114,7 +4066,10 @@ ex_call:
         }
         assert(have_dict);
     }
-    ADDOP_I(c, loc, CALL_FUNCTION_EX, nkwelts > 0);
+    if (nkwelts == 0) {
+        ADDOP(c, loc, PUSH_NULL);
+    }
+    ADDOP(c, loc, CALL_FUNCTION_EX);
     return SUCCESS;
 }
 
@@ -4283,7 +4238,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
         * but a non-generator will jump to a later instruction.
         */
         ADDOP(c, NO_LOCATION, END_FOR);
-        ADDOP(c, NO_LOCATION, POP_TOP);
+        ADDOP(c, NO_LOCATION, POP_ITER);
     }
 
     return SUCCESS;
@@ -4931,6 +4886,9 @@ codegen_with(compiler *c, stmt_ty s, int pos)
 static int
 codegen_visit_expr(compiler *c, expr_ty e)
 {
+    if (Py_EnterRecursiveCall(" during compilation")) {
+        return ERROR;
+    }
     location loc = LOC(e);
     switch (e->kind) {
     case NamedExpr_kind:
@@ -5122,7 +5080,7 @@ codegen_augassign(compiler *c, stmt_ty s)
             VISIT(c, expr, e->v.Subscript.slice);
             ADDOP_I(c, loc, COPY, 2);
             ADDOP_I(c, loc, COPY, 2);
-            ADDOP(c, loc, BINARY_SUBSCR);
+            ADDOP_I(c, loc, BINARY_OP, NB_SUBSCR);
         }
         break;
     case Name_kind:
@@ -5288,7 +5246,6 @@ codegen_subscript(compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     expr_context_ty ctx = e->v.Subscript.ctx;
-    int op = 0;
 
     if (ctx == Load) {
         RETURN_IF_ERROR(check_subscripter(c, e->v.Subscript.value));
@@ -5311,12 +5268,16 @@ codegen_subscript(compiler *c, expr_ty e)
     else {
         VISIT(c, expr, e->v.Subscript.slice);
         switch (ctx) {
-            case Load:    op = BINARY_SUBSCR; break;
-            case Store:   op = STORE_SUBSCR; break;
-            case Del:     op = DELETE_SUBSCR; break;
+            case Load:
+                ADDOP_I(c, loc, BINARY_OP, NB_SUBSCR);
+                break;
+            case Store:
+                ADDOP(c, loc, STORE_SUBSCR);
+                break;
+            case Del:
+                ADDOP(c, loc, DELETE_SUBSCR);
+                break;
         }
-        assert(op);
-        ADDOP(c, loc, op);
     }
     return SUCCESS;
 }
@@ -5548,7 +5509,7 @@ pattern_helper_sequence_unpack(compiler *c, location loc,
     return SUCCESS;
 }
 
-// Like pattern_helper_sequence_unpack, but uses BINARY_SUBSCR instead of
+// Like pattern_helper_sequence_unpack, but uses BINARY_OP/NB_SUBSCR instead of
 // UNPACK_SEQUENCE / UNPACK_EX. This is more efficient for patterns with a
 // starred wildcard like [first, *_] / [first, *_, last] / [*_, last] / etc.
 static int
@@ -5579,7 +5540,7 @@ pattern_helper_sequence_subscr(compiler *c, location loc,
             ADDOP_LOAD_CONST_NEW(c, loc, PyLong_FromSsize_t(size - i));
             ADDOP_BINARY(c, loc, Sub);
         }
-        ADDOP(c, loc, BINARY_SUBSCR);
+        ADDOP_I(c, loc, BINARY_OP, NB_SUBSCR);
         RETURN_IF_ERROR(codegen_pattern_subpattern(c, pattern, pc));
     }
     // Pop the subject, we're done with it:

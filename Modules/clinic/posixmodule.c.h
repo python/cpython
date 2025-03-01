@@ -309,7 +309,7 @@ exit:
     return return_value;
 }
 
-#if defined(HAVE_TTYNAME)
+#if defined(HAVE_TTYNAME_R)
 
 PyDoc_STRVAR(os_ttyname__doc__,
 "ttyname($module, fd, /)\n"
@@ -342,7 +342,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_TTYNAME) */
+#endif /* defined(HAVE_TTYNAME_R) */
 
 #if defined(HAVE_CTERMID)
 
@@ -7577,6 +7577,62 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(os_readinto__doc__,
+"readinto($module, fd, buffer, /)\n"
+"--\n"
+"\n"
+"Read into a buffer object from a file descriptor.\n"
+"\n"
+"The buffer should be mutable and bytes-like. On success, returns the number of\n"
+"bytes read. Less bytes may be read than the size of the buffer. The underlying\n"
+"system call will be retried when interrupted by a signal, unless the signal\n"
+"handler raises an exception. Other errors will not be retried and an error will\n"
+"be raised.\n"
+"\n"
+"Returns 0 if *fd* is at end of file or if the provided *buffer* has length 0\n"
+"(which can be used to check for errors without reading data). Never returns\n"
+"negative.");
+
+#define OS_READINTO_METHODDEF    \
+    {"readinto", _PyCFunction_CAST(os_readinto), METH_FASTCALL, os_readinto__doc__},
+
+static Py_ssize_t
+os_readinto_impl(PyObject *module, int fd, Py_buffer *buffer);
+
+static PyObject *
+os_readinto(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fd;
+    Py_buffer buffer = {NULL, NULL};
+    Py_ssize_t _return_value;
+
+    if (!_PyArg_CheckPositional("readinto", nargs, 2, 2)) {
+        goto exit;
+    }
+    fd = PyLong_AsInt(args[0]);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &buffer, PyBUF_WRITABLE) < 0) {
+        _PyArg_BadArgument("readinto", "argument 2", "read-write bytes-like object", args[1]);
+        goto exit;
+    }
+    _return_value = os_readinto_impl(module, fd, &buffer);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromSsize_t(_return_value);
+
+exit:
+    /* Cleanup for buffer */
+    if (buffer.obj) {
+       PyBuffer_Release(&buffer);
+    }
+
+    return return_value;
+}
+
 #if defined(HAVE_READV)
 
 PyDoc_STRVAR(os_readv__doc__,
@@ -11662,7 +11718,7 @@ static int
 os_DirEntry_is_symlink_impl(DirEntry *self, PyTypeObject *defining_class);
 
 static PyObject *
-os_DirEntry_is_symlink(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os_DirEntry_is_symlink(PyObject *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     int _return_value;
@@ -11671,7 +11727,7 @@ os_DirEntry_is_symlink(DirEntry *self, PyTypeObject *defining_class, PyObject *c
         PyErr_SetString(PyExc_TypeError, "is_symlink() takes no arguments");
         goto exit;
     }
-    _return_value = os_DirEntry_is_symlink_impl(self, defining_class);
+    _return_value = os_DirEntry_is_symlink_impl((DirEntry *)self, defining_class);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -11694,12 +11750,12 @@ static int
 os_DirEntry_is_junction_impl(DirEntry *self);
 
 static PyObject *
-os_DirEntry_is_junction(DirEntry *self, PyObject *Py_UNUSED(ignored))
+os_DirEntry_is_junction(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     int _return_value;
 
-    _return_value = os_DirEntry_is_junction_impl(self);
+    _return_value = os_DirEntry_is_junction_impl((DirEntry *)self);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -11723,7 +11779,7 @@ os_DirEntry_stat_impl(DirEntry *self, PyTypeObject *defining_class,
                       int follow_symlinks);
 
 static PyObject *
-os_DirEntry_stat(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os_DirEntry_stat(PyObject *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -11768,7 +11824,7 @@ os_DirEntry_stat(DirEntry *self, PyTypeObject *defining_class, PyObject *const *
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = os_DirEntry_stat_impl(self, defining_class, follow_symlinks);
+    return_value = os_DirEntry_stat_impl((DirEntry *)self, defining_class, follow_symlinks);
 
 exit:
     return return_value;
@@ -11788,7 +11844,7 @@ os_DirEntry_is_dir_impl(DirEntry *self, PyTypeObject *defining_class,
                         int follow_symlinks);
 
 static PyObject *
-os_DirEntry_is_dir(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os_DirEntry_is_dir(PyObject *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -11834,7 +11890,7 @@ os_DirEntry_is_dir(DirEntry *self, PyTypeObject *defining_class, PyObject *const
         goto exit;
     }
 skip_optional_kwonly:
-    _return_value = os_DirEntry_is_dir_impl(self, defining_class, follow_symlinks);
+    _return_value = os_DirEntry_is_dir_impl((DirEntry *)self, defining_class, follow_symlinks);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -11858,7 +11914,7 @@ os_DirEntry_is_file_impl(DirEntry *self, PyTypeObject *defining_class,
                          int follow_symlinks);
 
 static PyObject *
-os_DirEntry_is_file(DirEntry *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+os_DirEntry_is_file(PyObject *self, PyTypeObject *defining_class, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -11904,7 +11960,7 @@ os_DirEntry_is_file(DirEntry *self, PyTypeObject *defining_class, PyObject *cons
         goto exit;
     }
 skip_optional_kwonly:
-    _return_value = os_DirEntry_is_file_impl(self, defining_class, follow_symlinks);
+    _return_value = os_DirEntry_is_file_impl((DirEntry *)self, defining_class, follow_symlinks);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -11927,9 +11983,9 @@ static PyObject *
 os_DirEntry_inode_impl(DirEntry *self);
 
 static PyObject *
-os_DirEntry_inode(DirEntry *self, PyObject *Py_UNUSED(ignored))
+os_DirEntry_inode(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return os_DirEntry_inode_impl(self);
+    return os_DirEntry_inode_impl((DirEntry *)self);
 }
 
 PyDoc_STRVAR(os_DirEntry___fspath____doc__,
@@ -11945,9 +12001,9 @@ static PyObject *
 os_DirEntry___fspath___impl(DirEntry *self);
 
 static PyObject *
-os_DirEntry___fspath__(DirEntry *self, PyObject *Py_UNUSED(ignored))
+os_DirEntry___fspath__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return os_DirEntry___fspath___impl(self);
+    return os_DirEntry___fspath___impl((DirEntry *)self);
 }
 
 PyDoc_STRVAR(os_scandir__doc__,
@@ -13140,4 +13196,4 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_DEBUGGER_METHODDEF) */
-/*[clinic end generated code: output=9c2ca1dbf986c62c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8318c26fc2cd236c input=a9049054013a1b77]*/

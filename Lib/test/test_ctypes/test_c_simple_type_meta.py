@@ -1,4 +1,5 @@
 import unittest
+from test.support import MS_WINDOWS
 import ctypes
 from ctypes import POINTER, c_void_p
 
@@ -54,9 +55,9 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
             pass
 
         self.assertIsInstance(POINTER(Sub2), p_meta)
-        self.assertTrue(issubclass(POINTER(Sub2), Sub2))
-        self.assertTrue(issubclass(POINTER(Sub2), POINTER(Sub)))
-        self.assertTrue(issubclass(POINTER(Sub), POINTER(CtBase)))
+        self.assertIsSubclass(POINTER(Sub2), Sub2)
+        self.assertIsSubclass(POINTER(Sub2), POINTER(Sub))
+        self.assertIsSubclass(POINTER(Sub), POINTER(CtBase))
 
     def test_creating_pointer_in_dunder_new_2(self):
         # A simpler variant of the above, used in `CoClass` of the `comtypes`
@@ -84,7 +85,7 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
             pass
 
         self.assertIsInstance(POINTER(Sub), p_meta)
-        self.assertTrue(issubclass(POINTER(Sub), Sub))
+        self.assertIsSubclass(POINTER(Sub), Sub)
 
     def test_creating_pointer_in_dunder_init_1(self):
         class ct_meta(type):
@@ -120,9 +121,9 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
             pass
 
         self.assertIsInstance(POINTER(Sub2), p_meta)
-        self.assertTrue(issubclass(POINTER(Sub2), Sub2))
-        self.assertTrue(issubclass(POINTER(Sub2), POINTER(Sub)))
-        self.assertTrue(issubclass(POINTER(Sub), POINTER(CtBase)))
+        self.assertIsSubclass(POINTER(Sub2), Sub2)
+        self.assertIsSubclass(POINTER(Sub2), POINTER(Sub))
+        self.assertIsSubclass(POINTER(Sub), POINTER(CtBase))
 
     def test_creating_pointer_in_dunder_init_2(self):
         class ct_meta(type):
@@ -149,4 +150,21 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
             pass
 
         self.assertIsInstance(POINTER(Sub), p_meta)
-        self.assertTrue(issubclass(POINTER(Sub), Sub))
+        self.assertIsSubclass(POINTER(Sub), Sub)
+
+    def test_bad_type_message(self):
+        """Verify the error message that lists all available type codes"""
+        # (The string is generated at runtime, so this checks the underlying
+        # set of types as well as correct construction of the string.)
+        with self.assertRaises(AttributeError) as cm:
+            class F(metaclass=PyCSimpleType):
+                _type_ = "\0"
+        message = str(cm.exception)
+        expected_type_chars = list('cbBhHiIlLdCEFfuzZqQPXOv?g')
+        if not hasattr(ctypes, 'c_float_complex'):
+            expected_type_chars.remove('C')
+            expected_type_chars.remove('E')
+            expected_type_chars.remove('F')
+        if not MS_WINDOWS:
+            expected_type_chars.remove('X')
+        self.assertIn("'" + ''.join(expected_type_chars) + "'", message)

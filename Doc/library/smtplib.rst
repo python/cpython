@@ -524,7 +524,7 @@ An :class:`SMTP` instance has the following methods:
    :mailheader:`Bcc` or :mailheader:`Resent-Bcc` headers that may appear
    in *msg*.  If any of the addresses in *from_addr* and *to_addrs* contain
    non-ASCII characters and the server does not advertise ``SMTPUTF8`` support,
-   an :exc:`SMTPNotSupported` error is raised.  Otherwise the ``Message`` is
+   an :exc:`SMTPNotSupportedError` is raised.  Otherwise the ``Message`` is
    serialized with a clone of its :mod:`~email.policy` with the
    :attr:`~email.policy.EmailPolicy.utf8` attribute set to ``True``, and
    ``SMTPUTF8`` and ``BODY=8BITMIME`` are added to *mail_options*.

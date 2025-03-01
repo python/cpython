@@ -51,7 +51,7 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(setobject(b'newattr', value2), 0)
             self.assertIs(sys.newattr, value2)
             self.assertEqual(setobject(b'newattr', NULL), 0)
-            self.assertFalse(hasattr(sys, 'newattr'))
+            self.assertNotHasAttr(sys, 'newattr')
             self.assertEqual(setobject(b'newattr', NULL), 0)
         finally:
             with contextlib.suppress(AttributeError):
@@ -60,7 +60,7 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(setobject('\U0001f40d'.encode(), value), 0)
             self.assertIs(getattr(sys, '\U0001f40d'), value)
             self.assertEqual(setobject('\U0001f40d'.encode(), NULL), 0)
-            self.assertFalse(hasattr(sys, '\U0001f40d'))
+            self.assertNotHasAttr(sys, '\U0001f40d')
         finally:
             with contextlib.suppress(AttributeError):
                 delattr(sys, '\U0001f40d')

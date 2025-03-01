@@ -115,14 +115,14 @@ Module-Level Functions
 
 .. function:: print_exc(limit=None, file=None, chain=True)
 
-   This is a shorthand for ``print_exception(sys.exception(), limit, file,
-   chain)``.
+   This is a shorthand for ``print_exception(sys.exception(), limit=limit, file=file,
+   chain=chain)``.
 
 
 .. function:: print_last(limit=None, file=None, chain=True)
 
-   This is a shorthand for ``print_exception(sys.last_exc, limit, file,
-   chain)``.  In general it will work only after an exception has reached
+   This is a shorthand for ``print_exception(sys.last_exc, limit=limit, file=file,
+   chain=chain)``.  In general it will work only after an exception has reached
    an interactive prompt (see :data:`sys.last_exc`).
 
 
@@ -256,6 +256,11 @@ Module-Level Functions
    used. This helper is used with :meth:`StackSummary.extract`.
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.14
+      This function previously returned a generator that would walk the stack
+      when first iterated over. The generator returned now is the state of the
+      stack when ``walk_stack`` is called.
 
 .. function:: walk_tb(tb)
 

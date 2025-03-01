@@ -1,4 +1,0 @@
-Fix a bug in matching regular expression ``\B`` in empty input string.
-Now it is always the opposite of ``\b``.
-To get an old behavior, use ``(?!\A\Z)\B``.
-To get a new behavior in old Python versions, use ``(?!\b)``.
