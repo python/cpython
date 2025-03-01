@@ -82,8 +82,6 @@ struct symtable {
     PyObject *st_private;           /* name of current class or NULL */
     _PyFutureFeatures *st_future;   /* module's future features that affect
                                        the symbol table */
-    int recursion_depth;            /* current recursion depth */
-    int recursion_limit;            /* recursion limit */
 };
 
 typedef struct _symtable_entry {

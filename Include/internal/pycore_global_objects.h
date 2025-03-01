@@ -64,6 +64,9 @@ struct _Py_static_objects {
     (interp)->cached_objects.NAME
 
 struct _Py_interp_cached_objects {
+#ifdef Py_GIL_DISABLED
+    PyMutex interned_mutex;
+#endif
     PyObject *interned_strings;
 
     /* object.__reduce__ */

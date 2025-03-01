@@ -2041,6 +2041,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     ADDOP_LOAD_CONST(c, loc, Py_None);
     ADD_YIELD_FROM(c, loc, 1);
     ADDOP(c, loc, POP_BLOCK);  /* for SETUP_FINALLY */
+    ADDOP(c, loc, NOT_TAKEN);
 
     /* Success block for __anext__ */
     VISIT(c, expr, s->v.AsyncFor.target);
@@ -4885,6 +4886,9 @@ codegen_with(compiler *c, stmt_ty s, int pos)
 static int
 codegen_visit_expr(compiler *c, expr_ty e)
 {
+    if (Py_EnterRecursiveCall(" during compilation")) {
+        return ERROR;
+    }
     location loc = LOC(e);
     switch (e->kind) {
     case NamedExpr_kind:
