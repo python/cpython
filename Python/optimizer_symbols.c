@@ -578,8 +578,10 @@ _Py_uop_sym_is_immortal(JitOptSymbol *sym)
 }
 
 JitOptSymbol *
-_Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptSymbol *value, bool not)
+_Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptSymbol *value, bool truthy)
 {
+    // It's clearer to invert this in the signature:
+    bool not = !truthy;
     if (value->tag == JIT_SYM_TRUTHINESS_TAG && value->truthiness.not == not) {
         return value;
     }

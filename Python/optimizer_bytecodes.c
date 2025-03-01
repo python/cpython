@@ -392,14 +392,14 @@ dummy_func(void) {
 
     op(_TO_BOOL, (value -- res)) {
         if (!optimize_to_bool(this_instr, ctx, value, &res)) {
-            res = sym_new_truthiness(ctx, value, false);
+            res = sym_new_truthiness(ctx, value, true);
         }
     }
 
     op(_TO_BOOL_BOOL, (value -- res)) {
         if (!optimize_to_bool(this_instr, ctx, value, &res)) {
             sym_set_type(value, &PyBool_Type);
-            res = sym_new_truthiness(ctx, value, false);
+            res = sym_new_truthiness(ctx, value, true);
         }
     }
 
@@ -433,7 +433,7 @@ dummy_func(void) {
 
     op(_UNARY_NOT, (value -- res)) {
         sym_set_type(value, &PyBool_Type);
-        res = sym_new_truthiness(ctx, value, true);
+        res = sym_new_truthiness(ctx, value, false);
     }
 
     op(_COMPARE_OP, (left, right -- res)) {
