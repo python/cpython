@@ -1,1 +1,2 @@
-Ensure Python.h is included in most places, except when "pyconfig.h" is included before, or in platform specific contexts
+Ensure that `Python.h` is included before `stdbool.h` unless `pyconfig.h` is included
+or in some platform-specific contexts.
