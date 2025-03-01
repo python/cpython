@@ -71,7 +71,7 @@ This module defines the following functions:
 
    When *aware_datetime* is true, fields with type ``datetime.datetime`` will
    be created as :ref:`aware object <datetime-naive-aware>`, with
-   :attr:`!tzinfo` as :attr:`datetime.UTC`.
+   :attr:`!tzinfo` as :const:`datetime.UTC`.
 
    XML data for the :data:`FMT_XML` format is parsed using the Expat parser
    from :mod:`xml.parsers.expat` -- see its documentation for possible
@@ -99,7 +99,7 @@ This module defines the following functions:
 
 .. function:: dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False, aware_datetime=False)
 
-   Write *value* to a plist file. *Fp* should be a writable, binary
+   Write *value* to a plist file. *fp* should be a writable, binary
    file object.
 
    The *fmt* argument specifies the format of the plist file and can be

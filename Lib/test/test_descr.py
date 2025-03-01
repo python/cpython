@@ -1103,6 +1103,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         with self.assertRaises(TypeError):
             frozenset().__class__ = MyFrozenSet
 
+    @support.thread_unsafe
     def test_slots(self):
         # Testing __slots__...
         class C0(object):
@@ -3657,6 +3658,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                            encoding='latin1', errors='replace')
         self.assertEqual(ba, b'abc\xbd?')
 
+    @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     def test_recursive_call(self):
         # Testing recursive __call__() by setting to instance of class...
@@ -4517,6 +4519,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         o.whatever = Provoker(o)
         del o
 
+    @support.skip_wasi_stack_overflow()
     @support.requires_resource('cpu')
     def test_wrapper_segfault(self):
         # SF 927248: deeply nested wrappers could cause stack overflow
@@ -5485,6 +5488,7 @@ class PicklingTests(unittest.TestCase):
                                      {pickle.dumps, pickle._dumps},
                                      {pickle.loads, pickle._loads}))
 
+    @support.thread_unsafe
     def test_pickle_slots(self):
         # Tests pickling of classes with __slots__.
 
@@ -5552,6 +5556,7 @@ class PicklingTests(unittest.TestCase):
                 y = pickle_copier.copy(x)
                 self._assert_is_copy(x, y)
 
+    @support.thread_unsafe
     def test_reduce_copying(self):
         # Tests pickling and copying new-style classes and objects.
         global C1
