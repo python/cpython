@@ -164,7 +164,8 @@ _PyFrame_CopyToHeap(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
     // "support" for borrowed references in the source frame. Convert any
     // borrowed references that were copied into dest into strong references.
     for (int i = 0; i < stacktop; i++) {
-        dest->localsplus[i] = _PyStackRef_NewIfBorrowedOrSteal(src->localsplus[i]);
+        dest->localsplus[i] =
+            _PyStackRef_NewIfBorrowedOrSteal(src->localsplus[i]);
     }
     dest->f_executable = _PyStackRef_NewIfBorrowedOrSteal(dest->f_executable);
     dest->f_funcobj = _PyStackRef_NewIfBorrowedOrSteal(dest->f_funcobj);
