@@ -16,7 +16,7 @@
 
 The :mod:`getpass` module provides two functions:
 
-.. function:: getpass(prompt='Password: ', stream=None, mask=None)
+.. function:: getpass(prompt='Password: ', stream=None, *, echochar=None)
 
    Prompt the user for a password without echoing.  The user is prompted using
    the string *prompt*, which defaults to ``'Password: '``.  On Unix, the
@@ -25,10 +25,11 @@ The :mod:`getpass` module provides two functions:
    (:file:`/dev/tty`) or if that is unavailable to ``sys.stderr`` (this
    argument is ignored on Windows).
 
-   The *mask* argument controls how user input is displayed while typing. If
-   *mask* is ``None`` (default), input remains hidden. If *mask* is a string,
-   each typed character is replaced with the given string. For example,
-   ``mask='*'`` will display asterisks instead of the actual input.
+   The *echochar* argument controls how user input is displayed while typing.
+   If *echochar* is ``None`` (default), input remains hidden. If *echochar* is
+   a string, each typed character is replaced with the given string.
+   For example, ``echochar='*'`` will display asterisks instead of the actual
+   input.
 
    If echo free input is unavailable getpass() falls back to printing
    a warning message to *stream* and reading from ``sys.stdin`` and

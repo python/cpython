@@ -1,2 +1,2 @@
-Added optional argument *mask* for :meth:`getpass.getpass`. Patch by
-Semyon Moroz.
+Add keyword-only optional argument *mask* for :meth:`getpass.getpass`.
+Patch by Semyon Moroz.
