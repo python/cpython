@@ -111,9 +111,9 @@ class TestHeap:
                 self.assertTrue(heap[parentpos] <= item)
 
     def check_max_invariant(self, heap):
-        for pos in range(1, len(heap)):
+        for pos, item in enumerate(heap[1:], start=1):
             parentpos = (pos - 1) >> 1
-            self.assertGreaterEqual(heap[parentpos], heap[pos])
+            self.assertGreaterEqual(heap[parentpos], item)
 
     def test_heapify(self):
         for size in list(range(30)) + [20000]:
