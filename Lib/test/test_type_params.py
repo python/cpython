@@ -1191,6 +1191,8 @@ class Class2[X, Y]: ...
 class Class3[X, *Y, **Z]: ...
 class Class4[X: int, Y: (bytes, str)]: ...
 class Class5(Generic[T]): pass
+class Class6:
+    def meth[Baz](): return Class5[Baz]()
 
 
 class TypeParamsPickleTest(unittest.TestCase):
@@ -1268,6 +1270,13 @@ class TypeParamsPickleTest(unittest.TestCase):
             pickled = pickle.dumps(thing)
             unpickled = pickle.loads(pickled)
             self.assertIs(unpickled, thing)
+
+        thing = Class6.meth()
+        pickled = pickle.dumps(thing)
+        unpickled = pickle.loads(pickled)
+        self.assertIs(unpickled.__orig_class__, thing.__orig_class__)
+        self.assertIs(unpickled.__orig_class__.__args__[0],
+                      Class6.meth.__type_params__[0])
 
 
 class TypeParamsWeakRefTest(unittest.TestCase):

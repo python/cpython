@@ -464,7 +464,8 @@ unpack_typevartuples(PyObject *params)
 static PyObject *
 typeparam_reduce_anonymous(PyObject *self, PyObject *owner)
 {
-    assert(PyTuple_Check(owner) && PyTuple_GET_SIZE(owner) == 3);
+    assert(PyTuple_Check(owner));
+    assert(PyTuple_GET_SIZE(owner) == 3);
     PyObject *module_name = PyTuple_GET_ITEM(owner, 0);
     PyObject *qualname = PyTuple_GET_ITEM(owner, 1);
     PyObject *index = PyTuple_GET_ITEM(owner, 2);
@@ -516,9 +517,6 @@ typeparam_reduce_anonymous(PyObject *self, PyObject *owner)
         goto done;
     }
     ret = PyTuple_Pack(2, restore_func, args);
-    if (ret == NULL) {
-        goto done;
-    }
 
 done:
     Py_XDECREF(args);
@@ -2511,7 +2509,8 @@ set_typeparam_owner(PyThreadState *ts, PyObject *typeparam, PyObject *owner)
 PyObject *
 _Py_set_typeparam_owner(PyThreadState *ts, PyObject *typeparam, PyObject *owner)
 {
-    assert(PyTuple_CheckExact(owner) && PyTuple_GET_SIZE(owner) == 3);
+    assert(PyTuple_CheckExact(owner));
+    assert(PyTuple_GET_SIZE(owner) == 3);
     assert(PyUnicode_CheckExact(PyTuple_GET_ITEM(owner, 0)));
     assert(PyUnicode_CheckExact(PyTuple_GET_ITEM(owner, 1)));
     assert(PyLong_CheckExact(PyTuple_GET_ITEM(owner, 2)));
@@ -2519,6 +2518,5 @@ _Py_set_typeparam_owner(PyThreadState *ts, PyObject *typeparam, PyObject *owner)
         PyErr_SetString(PyExc_RuntimeError, "invalid typeparam");
         return NULL;
     }
-    Py_INCREF(typeparam);
-    return typeparam;
+    return Py_NewRef(typeparam);
 }
