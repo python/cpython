@@ -558,7 +558,8 @@ class PurePath:
         # paths shouldn't match wildcards, so we change it to the empty string.
         path = str(self) if self.parts else ''
         pattern = str(pattern) if pattern.parts else ''
-        globber = _StringGlobber(self.parser.sep, case_sensitive, recursive=True)
+        globber = _StringGlobber(self.parser.sep, case_sensitive,
+                                 recursive=True, include_hidden=True)
         return globber.compile(pattern)(path) is not None
 
     def match(self, path_pattern, *, case_sensitive=None):
@@ -580,7 +581,8 @@ class PurePath:
             return False
         if len(path_parts) > len(pattern_parts) and path_pattern.anchor:
             return False
-        globber = _StringGlobber(self.parser.sep, case_sensitive)
+        globber = _StringGlobber(self.parser.sep, case_sensitive,
+                                 include_hidden=True)
         for path_part, pattern_part in zip(path_parts, pattern_parts):
             match = globber.compile(pattern_part)
             if match(path_part) is None:
@@ -855,7 +857,8 @@ class Path(PurePath):
             case_pedantic = True
         parts = self._parse_pattern(pattern)
         recursive = True if recurse_symlinks else _no_recurse_symlinks
-        globber = _StringGlobber(self.parser.sep, case_sensitive, case_pedantic, recursive)
+        globber = _StringGlobber(self.parser.sep, case_sensitive, case_pedantic,
+                                 recursive, include_hidden=True)
         select = globber.selector(parts[::-1])
         root = str(self)
         paths = select(self.parser.join(root, ''))
@@ -1093,19 +1096,18 @@ class Path(PurePath):
             target = self.with_segments(target)
         return target
 
-    def copy(self, target, follow_symlinks=True, dirs_exist_ok=False,
-             preserve_metadata=False):
+    def copy(self, target, follow_symlinks=True, preserve_metadata=False):
         """
         Recursively copy this file or directory tree to the given destination.
         """
         if not hasattr(target, 'with_segments'):
             target = self.with_segments(target)
         ensure_distinct_paths(self, target)
-        copy_file(self, target, follow_symlinks, dirs_exist_ok, preserve_metadata)
+        copy_file(self, target, follow_symlinks, preserve_metadata)
         return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def copy_into(self, target_dir, *, follow_symlinks=True,
-                  dirs_exist_ok=False, preserve_metadata=False):
+                  preserve_metadata=False):
         """
         Copy this file or directory tree into the given existing directory.
         """
@@ -1117,7 +1119,6 @@ class Path(PurePath):
         else:
             target = self.with_segments(target_dir, name)
         return self.copy(target, follow_symlinks=follow_symlinks,
-                         dirs_exist_ok=dirs_exist_ok,
                          preserve_metadata=preserve_metadata)
 
     def move(self, target):
