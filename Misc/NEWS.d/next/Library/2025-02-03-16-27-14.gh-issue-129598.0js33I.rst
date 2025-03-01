@@ -1,1 +1,1 @@
-Fix of :func:`ast.unparse` when :class:`ast.Interactive` contains multiple statements.
+Fix :func:`ast.unparse` when :class:`ast.Interactive` contains multiple statements.

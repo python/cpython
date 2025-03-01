@@ -466,8 +466,8 @@ class UnparseTestCase(ASTTestCase):
         ):
             self.check_ast_roundtrip(statement, type_comments=True)
 
-    def test_unparse_interactive(self):
-        # gh-129598: Fix of ast.unparse() when ast.Interactive contains multiple statements
+    def test_unparse_interactive_semicolons(self):
+        # gh-129598: Fix ast.unparse() when ast.Interactive contains multiple statements
         self.check_src_roundtrip("i = 1; 'expr'; raise Exception", mode='single')
         self.check_src_roundtrip("i: int = 1; j: float = 0; k += l", mode='single')
         combinable = (
@@ -497,7 +497,8 @@ class UnparseTestCase(ASTTestCase):
             for b in combinable:
                 self.check_src_roundtrip(f"{a}; {b}", mode='single')
 
-        # rest of the tests just make sure mode='single' parse and unparse didn't break
+    def test_unparse_interactive_integrity_1(self):
+        # rest of unparse_interactive_integrity tests just make sure mode='single' parse and unparse didn't break
         self.check_src_roundtrip(
             "if i:\n 'expr'\nelse:\n raise Exception",
             "if i:\n    'expr'\nelse:\n    raise Exception",
@@ -513,6 +514,8 @@ class UnparseTestCase(ASTTestCase):
             '''@decorator1\n@decorator2\nclass cls:\n    """docstring"""\n    i = 1\n    'expr'\n    raise Exception''',
             mode='single'
         )
+
+    def test_unparse_interactive_integrity_2(self):
         for statement in (
             "def x():\n    pass",
             "def x(y):\n    pass",
@@ -548,6 +551,8 @@ class UnparseTestCase(ASTTestCase):
             "class cls:\n\n    def f(self, *args, **kwargs):\n        pass",
         ):
             self.check_src_roundtrip(statement, mode='single')
+
+    def test_unparse_interactive_integrity_3(self):
         for statement in (
             "def x():",
             "def x(y):",
