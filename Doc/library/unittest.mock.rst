@@ -447,6 +447,9 @@ the *new_callable* argument to :func:`patch`.
         .. versionchanged:: 3.6
            Added two keyword-only arguments to the reset_mock function.
 
+        .. versionchanged:: 3.9
+           :attr:`return_value` and :attr:`side_effect` apply to child mocks too.
+
     .. method:: mock_add_spec(spec, spec_set=False)
 
         Add a spec to a mock. *spec* can either be an object or a
