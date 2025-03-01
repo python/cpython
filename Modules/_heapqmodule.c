@@ -549,9 +549,11 @@ _heapq_heappushpop_max_impl(PyObject *module, PyObject *heap, PyObject *item)
 {
     PyObject *returnitem;
     int cmp;
+
     if (PyList_GET_SIZE(heap) == 0) {
         return Py_NewRef(item);
     }
+
     PyObject *top = PyList_GET_ITEM(heap, 0);
     Py_INCREF(top);
     cmp = PyObject_RichCompareBool(top, item, Py_LT);
@@ -562,14 +564,19 @@ _heapq_heappushpop_max_impl(PyObject *module, PyObject *heap, PyObject *item)
     if (cmp == 0) {
         return Py_NewRef(item);
     }
+
+    if (PyList_GET_SIZE(heap) == 0) {
+        PyErr_SetString(PyExc_IndexError, "index out of range");
+        return NULL;
+    }
+
     returnitem = PyList_GET_ITEM(heap, 0);
     PyList_SET_ITEM(heap, 0, Py_NewRef(item));
-
-    if (siftup_max((PyListObject *)heap, 0)) {
+    if (siftup_max((PyListObject *)heap, 0) < 0) {
         Py_DECREF(returnitem);
         return NULL;
     }
-    return Py_NewRef(returnitem);
+    return returnitem;
 }
 
 static PyMethodDef heapq_methods[] = {

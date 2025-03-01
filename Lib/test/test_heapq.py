@@ -14,7 +14,7 @@ c_heapq = import_helper.import_fresh_module('heapq', fresh=['_heapq'])
 # _heapq.nlargest/nsmallest are saved in heapq._nlargest/_smallest when
 # _heapq is imported, so check them there
 func_names = ['heapify', 'heappop', 'heappush', 'heappushpop', 'heapreplace',
-              'heappop_max', 'heapreplace_max', 'heapify_max', 'heappushpop_max',]
+              'heappop_max', 'heapreplace_max', 'heapify_max', 'heappushpop_max']
 
 class TestModules(TestCase):
     def test_py_functions(self):
@@ -96,10 +96,10 @@ class TestHeap:
         # 2) Check that the invariant holds for a sorted array
         self.check_max_invariant(results)
 
-        self.assertRaises(TypeError, self.module.heappush, [])
+        self.assertRaises(TypeError, self.module.heappush_max, [])
         try:
-            self.assertRaises(TypeError, self.module.heappush, None, None)
-            self.assertRaises(TypeError, self.module.heappop, None)
+            self.assertRaises(TypeError, self.module.heappush_max, None, None)
+            self.assertRaises(TypeError, self.module.heappop_max, None)
         except AttributeError:
             pass
 
@@ -113,7 +113,7 @@ class TestHeap:
     def check_max_invariant(self, heap):
         for pos in range(1, len(heap)):
             parentpos = (pos - 1) >> 1
-            self.assertTrue(heap[parentpos] >= heap[pos])
+            self.assertGreaterEqual(heap[parentpos], heap[pos])
 
     def test_heapify(self):
         for size in list(range(30)) + [20000]:
@@ -129,7 +129,7 @@ class TestHeap:
             self.module.heapify_max(heap)
             self.check_max_invariant(heap)
 
-        self.assertRaises(TypeError, self.module.heapify, None)
+        self.assertRaises(TypeError, self.module.heapify_max, None)
 
     def test_naive_nbest(self):
         data = [random.randrange(2000) for i in range(1000)]
@@ -198,21 +198,21 @@ class TestHeap:
     def test_heappushpop_max(self):
         h = []
         x = self.module.heappushpop_max(h, 10)
-        self.assertEqual((h, x), ([], 10))
+        self.assertTupleEqual((h, x), ([], 10))
 
         h = [10]
         x = self.module.heappushpop_max(h, 10.0)
-        self.assertEqual((h, x), ([10], 10.0))
-        self.assertEqual(type(h[0]), int)
-        self.assertEqual(type(x), float)
+        self.assertTupleEqual((h, x), ([10], 10.0))
+        self.assertIsInstance(h[0], int)
+        self.assertIsInstance(x, float)
 
         h = [10]
         x = self.module.heappushpop_max(h, 11)
-        self.assertEqual((h, x), ([11], 10))
+        self.assertTupleEqual((h, x), ([11], 10))
 
         h = [10]
         x = self.module.heappushpop_max(h, 9)
-        self.assertEqual((h, x), ([10], 9))
+        self.assertTupleEqual((h, x), ([10], 9))
 
     def test_heappop_max(self):
         # heapop_max has an optimization for one-item lists which isn't

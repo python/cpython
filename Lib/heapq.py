@@ -213,13 +213,6 @@ def heapify_max(x):
     for i in reversed(range(n//2)):
         _siftup_max(x, i)
 
-# For backwards compadibility
-_heappop_max  = heappop_max
-_heapreplace_max = heapreplace_max
-_heappush_max = heappush_max
-_heappushpop_max = heappushpop_max
-_heapify_max = heapify_max
-
 
 # 'heap' is a heap at all indices >= startpos, except possibly for pos.  pos
 # is the index of a leaf with a possibly out-of-order value.  Restore the
@@ -604,6 +597,12 @@ try:
 except ImportError:
     pass
 
+# For backwards compatibility
+_heappop_max  = heappop_max
+_heapreplace_max = heapreplace_max
+_heappush_max = heappush_max
+_heappushpop_max = heappushpop_max
+_heapify_max = heapify_max
 
 if __name__ == "__main__":
 
