@@ -126,15 +126,14 @@ class WaitTests:
                 timeout=short_timeout,
                 return_when=futures.ALL_COMPLETED)
 
-        self.event.set()
-        futures.wait([future], return_when=futures.ALL_COMPLETED)
-
         self.assertEqual(set([CANCELLED_AND_NOTIFIED_FUTURE,
                               EXCEPTION_FUTURE,
                               SUCCESSFUL_FUTURE]),
                          finished)
         self.assertEqual(set([future]), pending)
 
+        # Set the event to allow the future to complete
+        self.event.set()
 
 class ThreadPoolWaitTests(ThreadPoolMixin, WaitTests, BaseTestCase):
 
