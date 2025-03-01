@@ -1,5 +1,6 @@
 """Tests for the Tools/i18n/msgfmt.py tool."""
 
+import os
 import sys
 import unittest
 from gettext import GNUTranslations
