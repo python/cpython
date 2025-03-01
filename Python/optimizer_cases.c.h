@@ -49,7 +49,7 @@
 
         case _LOAD_FAST_BORROW: {
             JitOptSymbol *value;
-            value = sym_new_not_null(ctx);
+            value = GETLOCAL(oparg);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());

@@ -201,6 +201,134 @@
             break;
         }
 
+        case _LOAD_FAST_BORROW_0: {
+            _PyStackRef value;
+            oparg = 0;
+            assert(oparg == CURRENT_OPARG());
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
+            #ifdef Py_GIL_DISABLED
+            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
+            #else
+            value = PyStackRef_DUP(GETLOCAL(oparg));
+            #endif
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_FAST_BORROW_1: {
+            _PyStackRef value;
+            oparg = 1;
+            assert(oparg == CURRENT_OPARG());
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
+            #ifdef Py_GIL_DISABLED
+            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
+            #else
+            value = PyStackRef_DUP(GETLOCAL(oparg));
+            #endif
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_FAST_BORROW_2: {
+            _PyStackRef value;
+            oparg = 2;
+            assert(oparg == CURRENT_OPARG());
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
+            #ifdef Py_GIL_DISABLED
+            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
+            #else
+            value = PyStackRef_DUP(GETLOCAL(oparg));
+            #endif
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_FAST_BORROW_3: {
+            _PyStackRef value;
+            oparg = 3;
+            assert(oparg == CURRENT_OPARG());
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
+            #ifdef Py_GIL_DISABLED
+            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
+            #else
+            value = PyStackRef_DUP(GETLOCAL(oparg));
+            #endif
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_FAST_BORROW_4: {
+            _PyStackRef value;
+            oparg = 4;
+            assert(oparg == CURRENT_OPARG());
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
+            #ifdef Py_GIL_DISABLED
+            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
+            #else
+            value = PyStackRef_DUP(GETLOCAL(oparg));
+            #endif
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_FAST_BORROW_5: {
+            _PyStackRef value;
+            oparg = 5;
+            assert(oparg == CURRENT_OPARG());
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
+            #ifdef Py_GIL_DISABLED
+            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
+            #else
+            value = PyStackRef_DUP(GETLOCAL(oparg));
+            #endif
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_FAST_BORROW_6: {
+            _PyStackRef value;
+            oparg = 6;
+            assert(oparg == CURRENT_OPARG());
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
+            #ifdef Py_GIL_DISABLED
+            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
+            #else
+            value = PyStackRef_DUP(GETLOCAL(oparg));
+            #endif
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_FAST_BORROW_7: {
+            _PyStackRef value;
+            oparg = 7;
+            assert(oparg == CURRENT_OPARG());
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
+            #ifdef Py_GIL_DISABLED
+            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
+            #else
+            value = PyStackRef_DUP(GETLOCAL(oparg));
+            #endif
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _LOAD_FAST_BORROW: {
             _PyStackRef value;
             oparg = CURRENT_OPARG();

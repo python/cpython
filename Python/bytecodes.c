@@ -270,7 +270,7 @@ dummy_func(
             value = PyStackRef_DUP(GETLOCAL(oparg));
         }
 
-        inst (LOAD_FAST_BORROW, (-- value)) {
+        replicate(8) pure inst (LOAD_FAST_BORROW, (-- value)) {
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             #ifdef Py_GIL_DISABLED
             value = PyStackRef_AsDeferred(GETLOCAL(oparg));
