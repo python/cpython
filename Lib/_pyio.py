@@ -1636,7 +1636,13 @@ class FileIO(RawIOBase):
     def read(self, size=None):
         """Read at most size bytes, returned as bytes.
 
-        Only makes one system call, so less data may be returned than requested
+        If size is less than 0, read all bytes in the file making
+        multiple read calls. See ``_io.FileIO.readall``.
+
+        Attempts to make only one system call, retrying only per
+        PEP-475 (EINTR). This means less data may be returned than
+        requested.
+
         In non-blocking mode, returns None if no data is available.
         Return an empty bytes object at EOF.
         """
@@ -1652,8 +1658,13 @@ class FileIO(RawIOBase):
     def readall(self):
         """Read all data from the file, returned as bytes.
 
-        In non-blocking mode, returns as much as is immediately available,
-        or None if no data is available.  Return an empty bytes object at EOF.
+        Reads until either there is an error or read() returns size 0
+        (indicates EOF). If the file is already at EOF, returns an
+        empty bytes object.
+
+        In non-blocking mode, returns as much data as could be read
+        before EAGAIN. If no data is available (EAGAIN is returned
+        before bytes are read) returns None.
         """
         self._checkClosed()
         self._checkReadable()
