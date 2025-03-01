@@ -42,7 +42,7 @@ def unix_getpass(prompt='Password: ', stream=None, mask=None):
 
     Always restores terminal settings before returning.
     """
-    passwd = ""
+    passwd = None
     with contextlib.ExitStack() as stack:
         try:
             # Always try reading and writing directly on the tty first.
@@ -82,6 +82,7 @@ def unix_getpass(prompt='Password: ', stream=None, mask=None):
                         stream.write('\n')
                         return passwd
 
+                    passwd = ""
                     stream.write(prompt)
                     stream.flush()
                     while True:
@@ -104,7 +105,7 @@ def unix_getpass(prompt='Password: ', stream=None, mask=None):
                     termios.tcsetattr(fd, tcsetattr_flags, old)
                     stream.flush()  # issue7208
             except termios.error:
-                if passwd:
+                if passwd is not None:
                     # _raw_input succeeded.  The final tcsetattr failed.  Reraise
                     # instead of leaving the terminal in an unknown state.
                     raise
