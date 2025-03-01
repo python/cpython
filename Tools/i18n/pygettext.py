@@ -219,9 +219,10 @@ def normalize(s, encoding, options):
     # appropriate for .po files, namely much closer to C style,
     # while wrapping to options.width.
     lines = []
+    space_splitter = re.compile(r'(\s+)').split
     for line in s.splitlines(True):
         if len(escape(line, encoding)) > options.width:
-            words = re.split(r'(\s+)', line)
+            words = space_splitter(line)
             words.reverse()
             buf = []
             size = 2
