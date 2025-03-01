@@ -8,6 +8,8 @@ argument %(argument_name)s: %(message)s
 argument '%(argument_name)s' is deprecated
 can't open '%(filename)s': %(error)s
 command '%(parser_name)s' is deprecated
+conflicting option string: %s
+expected %s argument
 expected at least one argument
 expected at most one argument
 expected one argument

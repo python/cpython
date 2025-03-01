@@ -137,8 +137,19 @@ created.  Socket addresses are represented as follows:
 - :const:`AF_BLUETOOTH` supports the following protocols and address
   formats:
 
-  - :const:`BTPROTO_L2CAP` accepts ``(bdaddr, psm)`` where ``bdaddr`` is
-    the Bluetooth address as a string and ``psm`` is an integer.
+  - :const:`BTPROTO_L2CAP` accepts a tuple
+    ``(bdaddr, psm[, cid[, bdaddr_type]])`` where:
+
+    - ``bdaddr`` is a string specifying the Bluetooth address.
+    - ``psm`` is an integer specifying the Protocol/Service Multiplexer.
+    - ``cid`` is an optional integer specifying the Channel Identifier.
+      If not given, defaults to zero.
+    - ``bdaddr_type`` is an optional integer specifying the address type;
+      one of :const:`BDADDR_BREDR` (default), :const:`BDADDR_LE_PUBLIC`,
+      :const:`BDADDR_LE_RANDOM`.
+
+    .. versionchanged:: next
+      Added ``cid`` and ``bdaddr_type`` fields.
 
   - :const:`BTPROTO_RFCOMM` accepts ``(bdaddr, channel)`` where ``bdaddr``
     is the Bluetooth address as a string and ``channel`` is an integer.
@@ -626,6 +637,14 @@ Constants
    This constant contains a boolean value which indicates if IPv6 is supported on
    this platform.
 
+.. data:: AF_BLUETOOTH
+          BTPROTO_L2CAP
+          BTPROTO_RFCOMM
+          BTPROTO_HCI
+          BTPROTO_SCO
+
+   Integer constants for use with Bluetooth addresses.
+
 .. data:: BDADDR_ANY
           BDADDR_LOCAL
 
@@ -633,6 +652,15 @@ Constants
    meanings. For example, :const:`BDADDR_ANY` can be used to indicate
    any address when specifying the binding socket with
    :const:`BTPROTO_RFCOMM`.
+
+.. data:: BDADDR_BREDR
+          BDADDR_LE_PUBLIC
+          BDADDR_LE_RANDOM
+
+   These constants describe the Bluetooth address type when binding or
+   connecting a :const:`BTPROTO_L2CAP` socket.
+
+    .. versionadded:: next
 
 .. data:: HCI_FILTER
           HCI_TIME_STAMP
@@ -673,6 +701,14 @@ Constants
   .. versionadded:: 3.11
 
   .. availability:: Linux >= 3.9
+
+.. data:: SO_REUSEPORT_LB
+
+   Constant to enable duplicate address and port bindings with load balancing.
+
+  .. versionadded:: 3.14
+
+  .. availability:: FreeBSD >= 12.0
 
 .. data:: AF_HYPERV
           HV_PROTOCOL_RAW
@@ -979,7 +1015,7 @@ The :mod:`socket` module also offers various network-related services:
       These addresses should generally be tried in order until a connection succeeds
       (possibly tried in parallel, for example, using a `Happy Eyeballs`_ algorithm).
       In these cases, limiting the *type* and/or *proto* can help eliminate
-      unsuccessful or unusable connecton attempts.
+      unsuccessful or unusable connection attempts.
 
       Some systems will, however, only return a single address.
       (For example, this was reported on Solaris and AIX configurations.)
@@ -1596,8 +1632,6 @@ to sockets.
 
 .. method:: socket.ioctl(control, option)
 
-   :platform: Windows
-
    The :meth:`ioctl` method is a limited interface to the WSAIoctl system
    interface.  Please refer to the `Win32 documentation
    <https://msdn.microsoft.com/en-us/library/ms741621%28VS.85%29.aspx>`_ for more
@@ -1609,8 +1643,11 @@ to sockets.
    Currently only the following control codes are supported:
    ``SIO_RCVALL``, ``SIO_KEEPALIVE_VALS``, and ``SIO_LOOPBACK_FAST_PATH``.
 
+   .. availability:: Windows
+
    .. versionchanged:: 3.6
       ``SIO_LOOPBACK_FAST_PATH`` was added.
+
 
 .. method:: socket.listen([backlog])
 
@@ -1658,11 +1695,6 @@ to sockets.
    by *bufsize*. A returned empty bytes object indicates that the client has disconnected.
    See the Unix manual page :manpage:`recv(2)` for the meaning of the optional argument
    *flags*; it defaults to zero.
-
-   .. note::
-
-      For best match with hardware and network realities, the value of  *bufsize*
-      should be a relatively small power of 2, for example, 4096.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise

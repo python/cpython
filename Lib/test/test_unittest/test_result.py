@@ -1,12 +1,11 @@
 import io
 import sys
 import textwrap
-
-from test.support import warnings_helper, captured_stdout
-
 import traceback
 import unittest
 from unittest.util import strclass
+from test.support import warnings_helper
+from test.support import captured_stdout, force_not_colorized_test_class
 from test.test_unittest.support import BufferedWriter
 
 
@@ -14,7 +13,7 @@ class MockTraceback(object):
     class TracebackException:
         def __init__(self, *args, **kwargs):
             self.capture_locals = kwargs.get('capture_locals', False)
-        def format(self):
+        def format(self, **kwargs):
             result = ['A traceback']
             if self.capture_locals:
                 result.append('locals')
@@ -34,6 +33,7 @@ def bad_cleanup2():
     raise ValueError('bad cleanup2')
 
 
+@force_not_colorized_test_class
 class Test_TestResult(unittest.TestCase):
     # Note: there are not separate tests for TestResult.wasSuccessful(),
     # TestResult.errors, TestResult.failures, TestResult.testsRun or
@@ -454,9 +454,10 @@ class Test_TestResult(unittest.TestCase):
             self.assertTrue(result.failfast)
         result = runner.run(test)
         stream.flush()
-        self.assertTrue(stream.getvalue().endswith('\n\nOK\n'))
+        self.assertEndsWith(stream.getvalue(), '\n\nOK\n')
 
 
+@force_not_colorized_test_class
 class Test_TextTestResult(unittest.TestCase):
     maxDiff = None
 
@@ -758,6 +759,7 @@ class Test_OldTestResult(unittest.TestCase):
         runner.run(Test('testFoo'))
 
 
+@force_not_colorized_test_class
 class TestOutputBuffering(unittest.TestCase):
 
     def setUp(self):

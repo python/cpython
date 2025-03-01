@@ -1,3 +1,0 @@
-Fix an issue with ``skip_file_prefixes`` parameter which resulted in an inconsistent
-behaviour between the C and Python implementations of :func:`warnings.warn`.
-Patch by Daehee Kim.

@@ -1,3 +1,4 @@
+%(option)s option requires %(number)d argument
 %prog [options]
 %s option does not take a value
 Options

@@ -297,8 +297,6 @@ def main():
                         # build.
                         # Use 16 MiB stack.
                         "--wasm max-wasm-stack=16777216 "
-                        # Use WASI 0.2 primitives.
-                        "--wasi preview2 "
                         # Enable thread support; causes use of preview1.
                         #"--wasm threads=y --wasi threads=y "
                         # Map the checkout to / to load the stdlib from /Lib.

@@ -141,7 +141,11 @@ class Hole:
     def __post_init__(self) -> None:
         self.func = _PATCH_FUNCS[self.kind]
 
-    def fold(self, other: typing.Self, body: bytes) -> typing.Self | None:
+    def fold(
+        self,
+        other: typing.Self,
+        body: bytes | bytearray,
+    ) -> typing.Self | None:
         """Combine two holes into a single hole, if possible."""
         instruction_a = int.from_bytes(
             body[self.offset : self.offset + 4], byteorder=sys.byteorder
@@ -202,7 +206,8 @@ class Stencil:
         """Pad the stencil to the given alignment."""
         offset = len(self.body)
         padding = -offset % alignment
-        self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
+        if padding:
+            self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
         self.body.extend([0] * padding)
 
     def remove_jump(self, *, alignment: int = 1) -> None:

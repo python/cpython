@@ -1024,7 +1024,7 @@ def evaluate_forward_ref(
     owner=None,
     globals=None,
     locals=None,
-    type_params=None,
+    type_params=_sentinel,
     format=annotationlib.Format.VALUE,
     _recursive_guard=frozenset(),
 ):
@@ -1733,12 +1733,16 @@ class _UnionGenericAlias(_NotIterable, _GenericAlias, _root=True):
         return super().__repr__()
 
     def __instancecheck__(self, obj):
-        return self.__subclasscheck__(type(obj))
+        for arg in self.__args__:
+            if isinstance(obj, arg):
+                return True
+        return False
 
     def __subclasscheck__(self, cls):
         for arg in self.__args__:
             if issubclass(cls, arg):
                 return True
+        return False
 
     def __reduce__(self):
         func, (origin, args) = super().__reduce__()
@@ -2936,10 +2940,13 @@ def _make_eager_annotate(types):
     checked_types = {key: _type_check(val, f"field {key} annotation must be a type")
                      for key, val in types.items()}
     def annotate(format):
-        if format in (annotationlib.Format.VALUE, annotationlib.Format.FORWARDREF):
-            return checked_types
-        else:
-            return annotationlib.annotations_to_string(types)
+        match format:
+            case annotationlib.Format.VALUE | annotationlib.Format.FORWARDREF:
+                return checked_types
+            case annotationlib.Format.STRING:
+                return annotationlib.annotations_to_string(types)
+            case _:
+                raise NotImplementedError(format)
     return annotate
 
 
@@ -3229,8 +3236,10 @@ class _TypedDictMeta(type):
                     }
             elif format == annotationlib.Format.STRING:
                 own = annotationlib.annotations_to_string(own_annotations)
-            else:
+            elif format in (annotationlib.Format.FORWARDREF, annotationlib.Format.VALUE):
                 own = own_checked_annotations
+            else:
+                raise NotImplementedError(format)
             annos.update(own)
             return annos
 

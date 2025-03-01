@@ -4,11 +4,16 @@ import re
 import shutil
 import sys
 import unittest
+import unittest.mock
 import warnings
 
-from test.support import is_wasi, Py_DEBUG
+from test import support
+from test.support import is_wasi, Py_DEBUG, infinite_recursion
 from test.support.os_helper import (TESTFN, skip_unless_symlink,
                                     can_symlink, create_empty_file, change_cwd)
+
+
+_supports_dir_fd = {os.open, os.stat} <= os.supports_dir_fd and os.scandir in os.supports_fd
 
 
 class GlobTests(unittest.TestCase):
@@ -48,7 +53,7 @@ class GlobTests(unittest.TestCase):
     def open_dirfd(self):
         if self.dir_fd is not None:
             os.close(self.dir_fd)
-        if {os.open, os.stat} <= os.supports_dir_fd and os.scandir in os.supports_fd:
+        if _supports_dir_fd:
             self.dir_fd = os.open(self.tempdir, os.O_RDONLY | os.O_DIRECTORY)
         else:
             self.dir_fd = None
@@ -170,37 +175,43 @@ class GlobTests(unittest.TestCase):
                                     self.norm('aab', 'F')])
 
     def test_glob_directory_with_trailing_slash(self):
-        # Patterns ending with a slash shouldn't match non-dirs
-        res = glob.glob(self.norm('Z*Z') + os.sep)
-        self.assertEqual(res, [])
-        res = glob.glob(self.norm('ZZZ') + os.sep)
-        self.assertEqual(res, [])
-        # When there is a wildcard pattern which ends with os.sep, glob()
-        # doesn't blow up.
-        res = glob.glob(self.norm('aa*') + os.sep)
-        self.assertEqual(len(res), 2)
-        # either of these results is reasonable
-        self.assertIn(set(res), [
-                      {self.norm('aaa'), self.norm('aab')},
-                      {self.norm('aaa') + os.sep, self.norm('aab') + os.sep},
-                      ])
+        seps = (os.sep, os.altsep) if os.altsep else (os.sep,)
+        for sep in seps:
+            # Patterns ending with a slash shouldn't match non-dirs
+            self.assertEqual(glob.glob(self.norm('Z*Z') + sep), [])
+            self.assertEqual(glob.glob(self.norm('ZZZ') + sep), [])
+            self.assertEqual(glob.glob(self.norm('aaa') + sep),
+                             [self.norm('aaa') + os.sep])
+            # Redundant separators are preserved and normalized
+            self.assertEqual(glob.glob(self.norm('aaa') + sep*2),
+                             [self.norm('aaa') + os.sep*2])
+            # When there is a wildcard pattern which ends with a pathname
+            # separator, glob() doesn't blow.
+            # The result should end with the pathname separator.
+            eq = self.assertSequencesEqual_noorder
+            eq(glob.glob(self.norm('aa*') + sep),
+               [self.norm('aaa') + os.sep, self.norm('aab') + os.sep])
+            eq(glob.glob(self.norm('aa*') + sep*2),
+               [self.norm('aaa') + os.sep*2, self.norm('aab') + os.sep*2])
 
     def test_glob_bytes_directory_with_trailing_slash(self):
         # Same as test_glob_directory_with_trailing_slash, but with a
         # bytes argument.
-        res = glob.glob(os.fsencode(self.norm('Z*Z') + os.sep))
-        self.assertEqual(res, [])
-        res = glob.glob(os.fsencode(self.norm('ZZZ') + os.sep))
-        self.assertEqual(res, [])
-        res = glob.glob(os.fsencode(self.norm('aa*') + os.sep))
-        self.assertEqual(len(res), 2)
-        # either of these results is reasonable
-        self.assertIn(set(res), [
-                      {os.fsencode(self.norm('aaa')),
-                       os.fsencode(self.norm('aab'))},
-                      {os.fsencode(self.norm('aaa') + os.sep),
-                       os.fsencode(self.norm('aab') + os.sep)},
-                      ])
+        seps = (os.sep, os.altsep) if os.altsep else (os.sep,)
+        for sep in seps:
+            self.assertEqual(glob.glob(os.fsencode(self.norm('Z*Z') + sep)), [])
+            self.assertEqual(glob.glob(os.fsencode(self.norm('ZZZ') + sep)), [])
+            self.assertEqual(glob.glob(os.fsencode(self.norm('aaa') + sep)),
+               [os.fsencode(self.norm('aaa') + os.sep)])
+            self.assertEqual(glob.glob(os.fsencode(self.norm('aaa') + sep*2)),
+               [os.fsencode(self.norm('aaa') + os.sep*2)])
+            eq = self.assertSequencesEqual_noorder
+            eq(glob.glob(os.fsencode(self.norm('aa*') + sep)),
+               [os.fsencode(self.norm('aaa') + os.sep),
+                os.fsencode(self.norm('aab') + os.sep)])
+            eq(glob.glob(os.fsencode(self.norm('aa*') + sep*2)),
+               [os.fsencode(self.norm('aaa') + os.sep*2),
+                os.fsencode(self.norm('aab') + os.sep*2)])
 
     @skip_unless_symlink
     def test_glob_symlinks(self):
@@ -208,8 +219,7 @@ class GlobTests(unittest.TestCase):
         eq(self.glob('sym3'), [self.norm('sym3')])
         eq(self.glob('sym3', '*'), [self.norm('sym3', 'EF'),
                                     self.norm('sym3', 'efg')])
-        self.assertIn(self.glob('sym3' + os.sep),
-                      [[self.norm('sym3')], [self.norm('sym3') + os.sep]])
+        eq(self.glob('sym3' + os.sep), [self.norm('sym3') + os.sep])
         eq(self.glob('*', '*F'),
            [self.norm('aaa', 'zzzF'),
             self.norm('aab', 'F'), self.norm('sym3', 'EF')])
@@ -318,7 +328,11 @@ class GlobTests(unittest.TestCase):
         with change_cwd(self.tempdir):
             join = os.path.join
             eq(glob.glob('**', recursive=True), [join(*i) for i in full])
+            eq(glob.glob(join('**', '**'), recursive=True),
+                [join(*i) for i in full])
             eq(glob.glob(join('**', ''), recursive=True),
+                [join(*i) for i in dirs])
+            eq(glob.glob(join('**', '**', ''), recursive=True),
                 [join(*i) for i in dirs])
             eq(glob.glob(join('**', '*'), recursive=True),
                 [join(*i) for i in full])
@@ -385,6 +399,33 @@ class GlobTests(unittest.TestCase):
             p = os.path.join(p, 'd')
             for it in iters:
                 self.assertEqual(next(it), p)
+
+    def test_glob_above_recursion_limit(self):
+        depth = 30
+        base = os.path.join(self.tempdir, 'deep')
+        p = os.path.join(base, *(['d']*depth))
+        os.makedirs(p)
+        pattern = os.path.join(base, '**', 'd')
+        with infinite_recursion(depth - 5):
+            glob.glob(pattern, recursive=True)
+
+    @unittest.skipUnless(_supports_dir_fd, "Needs support for iglob(dir_fd=...)")
+    def test_iglob_iter_close(self):
+        base = os.path.join(self.tempdir, 'deep')
+        p = os.path.join(base, *(['d'] * 10))
+        os.makedirs(p)
+        with (
+            unittest.mock.patch("glob._StringGlobber.open", wraps=os.open) as os_open,
+            unittest.mock.patch("glob._StringGlobber.close", wraps=os.close) as os_close
+        ):
+            self.assertEqual(os_open.call_count, os_close.call_count)
+            iter = glob.iglob('**/*/d', dir_fd=self.dir_fd, recursive=True)
+            self.assertEqual(os_open.call_count, os_close.call_count)
+            self.assertEqual(next(iter), 'deep/d')
+            self.assertEqual(next(iter), 'deep/d/d')
+            self.assertGreater(os_open.call_count, os_close.call_count)
+            iter.close()
+            self.assertEqual(os_open.call_count, os_close.call_count)
 
     def test_glob0(self):
         with self.assertWarns(DeprecationWarning):
@@ -505,54 +546,6 @@ class GlobTests(unittest.TestCase):
             return glob.translate(pat, recursive=True, include_hidden=True, seps=['/', '\\'])
         self.assertEqual(fn('foo/bar\\baz'), r'(?s:foo[/\\]bar[/\\]baz)\Z')
         self.assertEqual(fn('**/*'), r'(?s:(?:.+[/\\])?[^/\\]+)\Z')
-
-
-@skip_unless_symlink
-class SymlinkLoopGlobTests(unittest.TestCase):
-
-    def test_selflink(self):
-        tempdir = TESTFN + "_dir"
-        os.makedirs(tempdir)
-        self.addCleanup(shutil.rmtree, tempdir)
-        with change_cwd(tempdir):
-            os.makedirs('dir')
-            create_empty_file(os.path.join('dir', 'file'))
-            os.symlink(os.curdir, os.path.join('dir', 'link'))
-
-            results = glob.glob('**', recursive=True)
-            self.assertEqual(len(results), len(set(results)))
-            results = set(results)
-            depth = 0
-            while results:
-                path = os.path.join(*(['dir'] + ['link'] * depth))
-                self.assertIn(path, results)
-                results.remove(path)
-                if not results:
-                    break
-                path = os.path.join(path, 'file')
-                self.assertIn(path, results)
-                results.remove(path)
-                depth += 1
-
-            results = glob.glob(os.path.join('**', 'file'), recursive=True)
-            self.assertEqual(len(results), len(set(results)))
-            results = set(results)
-            depth = 0
-            while results:
-                path = os.path.join(*(['dir'] + ['link'] * depth + ['file']))
-                self.assertIn(path, results)
-                results.remove(path)
-                depth += 1
-
-            results = glob.glob(os.path.join('**', ''), recursive=True)
-            self.assertEqual(len(results), len(set(results)))
-            results = set(results)
-            depth = 0
-            while results:
-                path = os.path.join(*(['dir'] + ['link'] * depth + ['']))
-                self.assertIn(path, results)
-                results.remove(path)
-                depth += 1
 
 
 if __name__ == "__main__":

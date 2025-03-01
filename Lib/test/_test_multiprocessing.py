@@ -319,7 +319,7 @@ class _TestProcess(BaseTestCase):
         authkey = current.authkey
 
         self.assertTrue(current.is_alive())
-        self.assertTrue(not current.daemon)
+        self.assertFalse(current.daemon)
         self.assertIsInstance(authkey, bytes)
         self.assertTrue(len(authkey) > 0)
         self.assertEqual(current.ident, os.getpid())
@@ -463,7 +463,7 @@ class _TestProcess(BaseTestCase):
         self.assertEqual(p.is_alive(), False)
         self.assertEqual(p.daemon, True)
         self.assertNotIn(p, self.active_children())
-        self.assertTrue(type(self.active_children()) is list)
+        self.assertIs(type(self.active_children()), list)
         self.assertEqual(p.exitcode, None)
 
         p.start()
@@ -583,8 +583,8 @@ class _TestProcess(BaseTestCase):
             cpus = multiprocessing.cpu_count()
         except NotImplementedError:
             cpus = 1
-        self.assertTrue(type(cpus) is int)
-        self.assertTrue(cpus >= 1)
+        self.assertIsInstance(cpus, int)
+        self.assertGreaterEqual(cpus, 1)
 
     def test_active_children(self):
         self.assertEqual(type(self.active_children()), list)
@@ -846,8 +846,8 @@ class _TestProcess(BaseTestCase):
                 finally:
                     setattr(sys, stream_name, old_stream)
 
-    @classmethod
-    def _sleep_and_set_event(self, evt, delay=0.0):
+    @staticmethod
+    def _sleep_and_set_event(evt, delay=0.0):
         time.sleep(delay)
         evt.set()
 
@@ -898,6 +898,56 @@ class _TestProcess(BaseTestCase):
         if os.name != 'nt':
             self.check_forkserver_death(signal.SIGKILL)
 
+    def test_forkserver_auth_is_enabled(self):
+        if self.TYPE == "threads":
+            self.skipTest(f"test not appropriate for {self.TYPE}")
+        if multiprocessing.get_start_method() != "forkserver":
+            self.skipTest("forkserver start method specific")
+
+        forkserver = multiprocessing.forkserver._forkserver
+        forkserver.ensure_running()
+        self.assertTrue(forkserver._forkserver_pid)
+        authkey = forkserver._forkserver_authkey
+        self.assertTrue(authkey)
+        self.assertGreater(len(authkey), 15)
+        addr = forkserver._forkserver_address
+        self.assertTrue(addr)
+
+        # Demonstrate that a raw auth handshake, as Client performs, does not
+        # raise an error.
+        client = multiprocessing.connection.Client(addr, authkey=authkey)
+        client.close()
+
+        # That worked, now launch a quick process.
+        proc = self.Process(target=sys.exit)
+        proc.start()
+        proc.join()
+        self.assertEqual(proc.exitcode, 0)
+
+    def test_forkserver_without_auth_fails(self):
+        if self.TYPE == "threads":
+            self.skipTest(f"test not appropriate for {self.TYPE}")
+        if multiprocessing.get_start_method() != "forkserver":
+            self.skipTest("forkserver start method specific")
+
+        forkserver = multiprocessing.forkserver._forkserver
+        forkserver.ensure_running()
+        self.assertTrue(forkserver._forkserver_pid)
+        authkey_len = len(forkserver._forkserver_authkey)
+        with unittest.mock.patch.object(
+                forkserver, '_forkserver_authkey', None):
+            # With an incorrect authkey we should get an auth rejection
+            # rather than the above protocol error.
+            forkserver._forkserver_authkey = b'T' * authkey_len
+            proc = self.Process(target=sys.exit)
+            with self.assertRaises(multiprocessing.AuthenticationError):
+                proc.start()
+            del proc
+
+        # authkey restored, launching processes should work again.
+        proc = self.Process(target=sys.exit)
+        proc.start()
+        proc.join()
 
 #
 #
@@ -2332,14 +2382,14 @@ class _TestValue(BaseTestCase):
         self.assertEqual(lock, lock3)
 
         arr4 = self.Value('i', 5, lock=False)
-        self.assertFalse(hasattr(arr4, 'get_lock'))
-        self.assertFalse(hasattr(arr4, 'get_obj'))
+        self.assertNotHasAttr(arr4, 'get_lock')
+        self.assertNotHasAttr(arr4, 'get_obj')
 
         self.assertRaises(AttributeError, self.Value, 'i', 5, lock='navalue')
 
         arr5 = self.RawValue('i', 5)
-        self.assertFalse(hasattr(arr5, 'get_lock'))
-        self.assertFalse(hasattr(arr5, 'get_obj'))
+        self.assertNotHasAttr(arr5, 'get_lock')
+        self.assertNotHasAttr(arr5, 'get_obj')
 
 
 class _TestArray(BaseTestCase):
@@ -2412,14 +2462,14 @@ class _TestArray(BaseTestCase):
         self.assertEqual(lock, lock3)
 
         arr4 = self.Array('i', range(10), lock=False)
-        self.assertFalse(hasattr(arr4, 'get_lock'))
-        self.assertFalse(hasattr(arr4, 'get_obj'))
+        self.assertNotHasAttr(arr4, 'get_lock')
+        self.assertNotHasAttr(arr4, 'get_obj')
         self.assertRaises(AttributeError,
                           self.Array, 'i', range(10), lock='notalock')
 
         arr5 = self.RawArray('i', range(10))
-        self.assertFalse(hasattr(arr5, 'get_lock'))
-        self.assertFalse(hasattr(arr5, 'get_obj'))
+        self.assertNotHasAttr(arr5, 'get_lock')
+        self.assertNotHasAttr(arr5, 'get_obj')
 
 #
 #
@@ -2607,8 +2657,8 @@ class _TestContainers(BaseTestCase):
         self.assertEqual((n.name, n.job), ('Bob', 'Builder'))
         del n.job
         self.assertEqual(str(n), "Namespace(name='Bob')")
-        self.assertTrue(hasattr(n, 'name'))
-        self.assertTrue(not hasattr(n, 'job'))
+        self.assertHasAttr(n, 'name')
+        self.assertNotHasAttr(n, 'job')
 
 #
 #
@@ -4888,13 +4938,9 @@ class _TestImportStar(unittest.TestCase):
         for name in modules:
             __import__(name)
             mod = sys.modules[name]
-            self.assertTrue(hasattr(mod, '__all__'), name)
-
+            self.assertHasAttr(mod, '__all__', name)
             for attr in mod.__all__:
-                self.assertTrue(
-                    hasattr(mod, attr),
-                    '%r does not have attribute %r' % (mod, attr)
-                    )
+                self.assertHasAttr(mod, attr)
 
 #
 # Quick test that logging works -- does not test logging output
@@ -4907,7 +4953,7 @@ class _TestLogging(BaseTestCase):
     def test_enable_logging(self):
         logger = multiprocessing.get_logger()
         logger.setLevel(util.SUBWARNING)
-        self.assertTrue(logger is not None)
+        self.assertIsNotNone(logger)
         logger.debug('this will not be printed')
         logger.info('nor will this')
         logger.setLevel(LOG_LEVEL)
@@ -5703,9 +5749,8 @@ class TestStartMethod(unittest.TestCase):
                 self.assertEqual(multiprocessing.get_start_method(), method)
                 ctx = multiprocessing.get_context()
                 self.assertEqual(ctx.get_start_method(), method)
-                self.assertTrue(type(ctx).__name__.lower().startswith(method))
-                self.assertTrue(
-                    ctx.Process.__name__.lower().startswith(method))
+                self.assertStartsWith(type(ctx).__name__.lower(), method)
+                self.assertStartsWith(ctx.Process.__name__.lower(), method)
                 self.check_context(multiprocessing)
                 count += 1
         finally:
@@ -5906,9 +5951,9 @@ class TestResourceTracker(unittest.TestCase):
             if should_die:
                 self.assertEqual(len(all_warn), 1)
                 the_warn = all_warn[0]
-                self.assertTrue(issubclass(the_warn.category, UserWarning))
-                self.assertTrue("resource_tracker: process died"
-                                in str(the_warn.message))
+                self.assertIsSubclass(the_warn.category, UserWarning)
+                self.assertIn("resource_tracker: process died",
+                              str(the_warn.message))
             else:
                 self.assertEqual(len(all_warn), 0)
 
@@ -5994,6 +6039,27 @@ class TestResourceTracker(unittest.TestCase):
                 self._test_resource_tracker_leak_resources(
                     cleanup=cleanup,
                 )
+
+    @unittest.skipUnless(hasattr(signal, "pthread_sigmask"), "pthread_sigmask is not available")
+    def test_resource_tracker_blocked_signals(self):
+        #
+        # gh-127586: Check that resource_tracker does not override blocked signals of caller.
+        #
+        from multiprocessing.resource_tracker import ResourceTracker
+        orig_sigmask = signal.pthread_sigmask(signal.SIG_BLOCK, set())
+        signals = {signal.SIGTERM, signal.SIGINT, signal.SIGUSR1}
+
+        try:
+            for sig in signals:
+                signal.pthread_sigmask(signal.SIG_SETMASK, {sig})
+                self.assertEqual(signal.pthread_sigmask(signal.SIG_BLOCK, set()), {sig})
+                tracker = ResourceTracker()
+                tracker.ensure_running()
+                self.assertEqual(signal.pthread_sigmask(signal.SIG_BLOCK, set()), {sig})
+                tracker._stop()
+        finally:
+            # restore sigmask to what it was before executing test
+            signal.pthread_sigmask(signal.SIG_SETMASK, orig_sigmask)
 
 class TestSimpleQueue(unittest.TestCase):
 
@@ -6092,8 +6158,8 @@ class TestPoolNotLeakOnFailure(unittest.TestCase):
                 Process=FailingForkProcess))
             p.close()
             p.join()
-        self.assertFalse(
-            any(process.is_alive() for process in forked_processes))
+        for process in forked_processes:
+            self.assertFalse(process.is_alive(), process)
 
 
 @hashlib_helper.requires_hashdigest('sha256')
@@ -6374,6 +6440,150 @@ class TestSyncManagerTypes(unittest.TestCase):
         o.x = 0
         o.y = 1
         self.run_worker(self._test_namespace, o)
+
+    @classmethod
+    def _test_set_operator_symbols(cls, obj):
+        case = unittest.TestCase()
+        obj.update(['a', 'b', 'c'])
+        case.assertEqual(len(obj), 3)
+        case.assertIn('a', obj)
+        case.assertNotIn('d', obj)
+        result = obj | {'d', 'e'}
+        case.assertSetEqual(result, {'a', 'b', 'c', 'd', 'e'})
+        result = {'d', 'e'} | obj
+        case.assertSetEqual(result, {'a', 'b', 'c', 'd', 'e'})
+        obj |= {'d', 'e'}
+        case.assertSetEqual(obj, {'a', 'b', 'c', 'd', 'e'})
+        case.assertIsInstance(obj, multiprocessing.managers.SetProxy)
+
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        result = {'a', 'b', 'd'} - obj
+        case.assertSetEqual(result, {'d'})
+        result = obj - {'a', 'b'}
+        case.assertSetEqual(result, {'c'})
+        obj -= {'a', 'b'}
+        case.assertSetEqual(obj, {'c'})
+        case.assertIsInstance(obj, multiprocessing.managers.SetProxy)
+
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        result = {'b', 'c', 'd'} ^ obj
+        case.assertSetEqual(result, {'a', 'd'})
+        result = obj ^ {'b', 'c', 'd'}
+        case.assertSetEqual(result, {'a', 'd'})
+        obj ^= {'b', 'c', 'd'}
+        case.assertSetEqual(obj, {'a', 'd'})
+        case.assertIsInstance(obj, multiprocessing.managers.SetProxy)
+
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        result = obj & {'b', 'c', 'd'}
+        case.assertSetEqual(result, {'b', 'c'})
+        result = {'b', 'c', 'd'} & obj
+        case.assertSetEqual(result, {'b', 'c'})
+        obj &= {'b', 'c', 'd'}
+        case.assertSetEqual(obj, {'b', 'c'})
+        case.assertIsInstance(obj, multiprocessing.managers.SetProxy)
+
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        case.assertSetEqual(set(obj), {'a', 'b', 'c'})
+
+    @classmethod
+    def _test_set_operator_methods(cls, obj):
+        case = unittest.TestCase()
+        obj.add('d')
+        case.assertIn('d', obj)
+
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        copy_obj = obj.copy()
+        case.assertSetEqual(copy_obj, obj)
+        obj.remove('a')
+        case.assertNotIn('a', obj)
+        case.assertRaises(KeyError, obj.remove, 'a')
+
+        obj.clear()
+        obj.update(['a'])
+        obj.discard('a')
+        case.assertNotIn('a', obj)
+        obj.discard('a')
+        case.assertNotIn('a', obj)
+        obj.update(['a'])
+        popped = obj.pop()
+        case.assertNotIn(popped, obj)
+
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        result = obj.intersection({'b', 'c', 'd'})
+        case.assertSetEqual(result, {'b', 'c'})
+        obj.intersection_update({'b', 'c', 'd'})
+        case.assertSetEqual(obj, {'b', 'c'})
+
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        result = obj.difference({'a', 'b'})
+        case.assertSetEqual(result, {'c'})
+        obj.difference_update({'a', 'b'})
+        case.assertSetEqual(obj, {'c'})
+
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        result = obj.symmetric_difference({'b', 'c', 'd'})
+        case.assertSetEqual(result, {'a', 'd'})
+        obj.symmetric_difference_update({'b', 'c', 'd'})
+        case.assertSetEqual(obj, {'a', 'd'})
+
+    @classmethod
+    def _test_set_comparisons(cls, obj):
+        case = unittest.TestCase()
+        obj.update(['a', 'b', 'c'])
+        result = obj.union({'d', 'e'})
+        case.assertSetEqual(result, {'a', 'b', 'c', 'd', 'e'})
+        case.assertTrue(obj.isdisjoint({'d', 'e'}))
+        case.assertFalse(obj.isdisjoint({'a', 'd'}))
+
+        case.assertTrue(obj.issubset({'a', 'b', 'c', 'd'}))
+        case.assertFalse(obj.issubset({'a', 'b'}))
+        case.assertLess(obj, {'a', 'b', 'c', 'd'})
+        case.assertLessEqual(obj, {'a', 'b', 'c'})
+
+        case.assertTrue(obj.issuperset({'a', 'b'}))
+        case.assertFalse(obj.issuperset({'a', 'b', 'd'}))
+        case.assertGreater(obj, {'a'})
+        case.assertGreaterEqual(obj, {'a', 'b'})
+
+    def test_set(self):
+        o = self.manager.set()
+        self.run_worker(self._test_set_operator_symbols, o)
+        o = self.manager.set()
+        self.run_worker(self._test_set_operator_methods, o)
+        o = self.manager.set()
+        self.run_worker(self._test_set_comparisons, o)
+
+    def test_set_init(self):
+        o = self.manager.set({'a', 'b', 'c'})
+        self.assertSetEqual(o, {'a', 'b', 'c'})
+        o = self.manager.set(["a", "b", "c"])
+        self.assertSetEqual(o, {"a", "b", "c"})
+        o = self.manager.set({"a": 1, "b": 2, "c": 3})
+        self.assertSetEqual(o, {"a", "b", "c"})
+        self.assertRaises(RemoteError, self.manager.set, 1234)
+
+    def test_set_contain_all_method(self):
+        o = self.manager.set()
+        set_methods = {
+            '__and__', '__class_getitem__', '__contains__', '__iand__', '__ior__',
+            '__isub__', '__iter__', '__ixor__', '__len__', '__or__', '__rand__',
+            '__ror__', '__rsub__', '__rxor__', '__sub__', '__xor__',
+            '__ge__', '__gt__', '__le__', '__lt__',
+            'add', 'clear', 'copy', 'difference', 'difference_update', 'discard',
+            'intersection', 'intersection_update', 'isdisjoint', 'issubset',
+            'issuperset', 'pop', 'remove', 'symmetric_difference',
+            'symmetric_difference_update', 'union', 'update',
+        }
+        self.assertLessEqual(set_methods, set(dir(o)))
 
 
 class TestNamedResource(unittest.TestCase):

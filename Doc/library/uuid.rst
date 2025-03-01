@@ -11,9 +11,9 @@
 --------------
 
 This module provides immutable :class:`UUID` objects (the :class:`UUID` class)
-and the functions :func:`uuid1`, :func:`uuid3`, :func:`uuid4`, :func:`uuid5` for
-generating version 1, 3, 4, 5, and 8 UUIDs as specified in :rfc:`9562` (which
-supersedes :rfc:`4122`).
+and the functions :func:`uuid1`, :func:`uuid3`, :func:`uuid4`, :func:`uuid5`,
+and :func:`uuid.uuid8` for generating version 1, 3, 4, 5, and 8 UUIDs as
+specified in :rfc:`9562` (which supersedes :rfc:`4122`).
 
 If all you want is a unique ID, you should probably call :func:`uuid1` or
 :func:`uuid4`.  Note that :func:`uuid1` may compromise privacy since it creates
@@ -153,7 +153,7 @@ which relays any information about the UUID's safety, using this enumeration:
    The UUID version number (1 through 8, meaningful only when the variant is
    :const:`RFC_4122`).
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Added UUID version 8.
 
 
@@ -184,8 +184,6 @@ The :mod:`uuid` module defines the following functions:
       administered MAC addresses, since the former are guaranteed to be
       globally unique, while the latter are not.
 
-.. index:: single: getnode
-
 
 .. function:: uuid1(node=None, clock_seq=None)
 
@@ -194,8 +192,6 @@ The :mod:`uuid` module defines the following functions:
    *clock_seq* is given, it is used as the sequence number; otherwise a random
    14-bit sequence number is chosen.
 
-.. index:: single: uuid1
-
 
 .. function:: uuid3(namespace, name)
 
@@ -203,14 +199,10 @@ The :mod:`uuid` module defines the following functions:
    UUID) and a name (which is a :class:`bytes` object or a string
    that will be encoded using UTF-8).
 
-.. index:: single: uuid3
-
 
 .. function:: uuid4()
 
    Generate a random UUID.
-
-.. index:: single: uuid4
 
 
 .. function:: uuid5(namespace, name)
@@ -218,8 +210,6 @@ The :mod:`uuid` module defines the following functions:
    Generate a UUID based on the SHA-1 hash of a namespace identifier (which is a
    UUID) and a name (which is a :class:`bytes` object or a string
    that will be encoded using UTF-8).
-
-.. index:: single: uuid5
 
 
 .. function:: uuid8(a=None, b=None, c=None)
@@ -233,9 +223,7 @@ The :mod:`uuid` module defines the following functions:
    non-specified arguments are substituted for a pseudo-random integer of
    appropriate size.
 
-   .. versionadded:: next
-
-.. index:: single: uuid8
+   .. versionadded:: 3.14
 
 
 The :mod:`uuid` module defines the following namespace identifiers for use with
@@ -289,6 +277,25 @@ of the :attr:`~UUID.variant` attribute:
    Reserved for future definition.
 
 
+The :mod:`uuid` module defines the special Nil and Max UUID values:
+
+
+.. data:: NIL
+
+   A special form of UUID that is specified to have all 128 bits set to zero
+   according to :rfc:`RFC 9562, §5.9 <9562#section-5.9>`.
+
+   .. versionadded:: 3.14
+
+
+.. data:: MAX
+
+   A special form of UUID that is specified to have all 128 bits set to one
+   according to :rfc:`RFC 9562, §5.10 <9562#section-5.10>`.
+
+   .. versionadded:: 3.14
+
+
 .. seealso::
 
    :rfc:`9562` - A Universally Unique IDentifier (UUID) URN Namespace
@@ -322,6 +329,9 @@ The following options are accepted:
 
    Specify the function name to use to generate the uuid. By default :func:`uuid4`
    is used.
+
+   .. versionadded:: 3.14
+      Allow generating UUID version 8.
 
 .. option:: -n <namespace>
             --namespace <namespace>
@@ -376,6 +386,14 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    >>> # make a UUID from a 16-byte string
    >>> uuid.UUID(bytes=x.bytes)
    UUID('00010203-0405-0607-0809-0a0b0c0d0e0f')
+
+   >>> # get the Nil UUID
+   >>> uuid.NIL
+   UUID('00000000-0000-0000-0000-000000000000')
+
+   >>> # get the Max UUID
+   >>> uuid.MAX
+   UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
 
 
 .. _uuid-cli-example:

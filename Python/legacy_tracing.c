@@ -491,8 +491,8 @@ int
 _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
 {
     assert(is_tstate_valid(tstate));
-    /* The caller must hold the GIL */
-    assert(PyGILState_Check());
+    /* The caller must hold a thread state */
+    _Py_AssertHoldsTstate();
 
     /* Call _PySys_Audit() in the context of the current thread state,
        even if tstate is not the current thread state. */
@@ -586,8 +586,8 @@ int
 _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
 {
     assert(is_tstate_valid(tstate));
-    /* The caller must hold the GIL */
-    assert(PyGILState_Check());
+    /* The caller must hold a thread state */
+    _Py_AssertHoldsTstate();
 
     /* Call _PySys_Audit() in the context of the current thread state,
        even if tstate is not the current thread state. */

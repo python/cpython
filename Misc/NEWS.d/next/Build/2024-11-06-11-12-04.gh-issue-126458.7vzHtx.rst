@@ -1,1 +1,0 @@
-Disable SIMD support for HACL under WASI.

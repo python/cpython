@@ -6,7 +6,7 @@ from time import sleep, time
 # The maximum length of a log message in bytes, including the level marker and
 # tag, is defined as LOGGER_ENTRY_MAX_PAYLOAD at
 # https://cs.android.com/android/platform/superproject/+/android-14.0.0_r1:system/logging/liblog/include/log/log.h;l=71.
-# Messages longer than this will be be truncated by logcat. This limit has already
+# Messages longer than this will be truncated by logcat. This limit has already
 # been reduced at least once in the history of Android (from 4076 to 4068 between
 # API level 23 and 26), so leave some headroom.
 MAX_BYTES_PER_WRITE = 4000
