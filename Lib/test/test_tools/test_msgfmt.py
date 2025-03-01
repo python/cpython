@@ -9,7 +9,6 @@ from test.support.os_helper import temp_cwd
 from test.support.script_helper import assert_python_failure, assert_python_ok
 from test.test_tools import skip_if_missing, toolsdir
 
-
 skip_if_missing('i18n')
 
 data_dir = (Path(__file__).parent / 'msgfmt_data').resolve()
@@ -91,6 +90,7 @@ msgstr "bar"
             err = res.err.decode('utf-8')
             self.assertIn('Syntax error', err)
 
+
 class CLITest(unittest.TestCase):
 
     def test_help(self):
@@ -122,13 +122,14 @@ class CLITest(unittest.TestCase):
 
 
 class Test_multi_input(unittest.TestCase):
-    """Tests for the msgfmt.py tool
-        bpo-35335 - bpo-9741
+    """Tests for the issue https://github.com/python/cpython/issues/79516
+        msgfmt.py shall accept multiple input files and when imported
+        make shall be callable multiple times
     """
 
     script = os.path.join(toolsdir, 'i18n', 'msgfmt.py')
 
-    # binary images of tiny po files
+    # binary contents of tiny po files
     # windows end of lines for first one
     file1_fr_po = b'''# French translations for python package.\r
 # Copyright (C) 2018 THE python\'S COPYRIGHT HOLDER\r
@@ -189,58 +190,65 @@ msgid "Bye..."
 msgstr "Au revoir ..."
 '''
 
-    # binary images of corresponding compiled mo files
-    file1_fr_mo = b'\xde\x12\x04\x95\x00\x00\x00\x00\x03\x00\x00\x00\x1c' \
-                  b'\x00\x00\x004\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                  b'\x00\x00\x00\x00\x00L\x00\x00\x00\x06\x00\x00\x00M' \
-                  b'\x00\x00\x00\x14\x00\x00\x00T\x00\x00\x00[\x01\x00' \
-                  b'\x00i\x00\x00\x00\t\x00\x00\x00\xc5\x01\x00\x00\x16' \
-                  b'\x00\x00\x00\xcf\x01\x00\x00\x00Hello!\x00{n} horse' \
-                  b'\x00{n} horses\x00Project-Id-Version: python 3.8\n' \
-                  b'Report-Msgid-Bugs-To: \nPOT-Creation-Date: 2018-11-30 ' \
-                  b'23:46+0100\nPO-Revision-Date: 2018-11-30 23:47+0100\n'\
-                  b'Last-Translator: s-ball <s-ball@laposte.net>\n' \
-                  b'Language-Team: French\nLanguage: fr\nMIME-Version: 1.0' \
-                  b'\nContent-Type: text/plain; charset=UTF-8\nContent-' \
-                  b'Transfer-Encoding: 8bit\nPlural-Forms: nplurals=2' \
-                  b'; plural=(n > 1);\n\x00Bonjour !\x00{n} cheval\x00{n' \
-                  b'} chevaux\x00'
-    file2_fr_mo = b"\xde\x12\x04\x95\x00\x00\x00\x00\x03\x00\x00\x00" \
-                  b"\x1c\x00\x00\x004\x00\x00\x00\x00\x00\x00\x00\x00" \
-                  b"\x00\x00\x00\x00\x00\x00\x00L\x00\x00\x00\x06\x00" \
-                  b"\x00\x00M\x00\x00\x00\n\x00\x00\x00T\x00\x00\x00[" \
-                  b"\x01\x00\x00_\x00\x00\x00\r\x00\x00\x00\xbb\x01" \
-                  b"\x00\x00\x0f\x00\x00\x00\xc9\x01\x00\x00\x00Bye.." \
-                  b".\x00It's over.\x00Project-Id-Version: python 3.8" \
-                  b"\nReport-Msgid-Bugs-To: \nPOT-Creation-Date: 2018" \
-                  b"-11-30 23:57+0100\nPO-Revision-Date: 2018-11-30 2" \
-                  b"3:57+0100\nLast-Translator: s-ball <s-ball@lapost" \
-                  b"e.net>\nLanguage-Team: French\nLanguage: fr\nMIME" \
-                  b"-Version: 1.0\nContent-Type: text/plain; charset=" \
-                  b"UTF-8\nContent-Transfer-Encoding: 8bit\nPlural-Fo" \
-                  b"rms: nplurals=2; plural=(n > 1);\n\x00Au revoir ." \
-                  b"..\x00C'est termin\xc3\xa9.\x00"
+    # binary contents of corresponding compiled mo files
+    file1_fr_mo = (
+        b'\xde\x12\x04\x95\x00\x00\x00\x00\x03\x00\x00\x00\x1c'
+        b'\x00\x00\x004\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        b'\x00\x00\x00\x00\x00L\x00\x00\x00\x06\x00\x00\x00M'
+        b'\x00\x00\x00\x14\x00\x00\x00T\x00\x00\x00[\x01\x00'
+        b'\x00i\x00\x00\x00\t\x00\x00\x00\xc5\x01\x00\x00\x16'
+        b'\x00\x00\x00\xcf\x01\x00\x00\x00Hello!\x00{n} horse'
+        b'\x00{n} horses\x00Project-Id-Version: python 3.8\n'
+        b'Report-Msgid-Bugs-To: \nPOT-Creation-Date: 2018-11-30 '
+        b'23:46+0100\nPO-Revision-Date: 2018-11-30 23:47+0100\n'
+        b'Last-Translator: s-ball <s-ball@laposte.net>\n'
+        b'Language-Team: French\nLanguage: fr\nMIME-Version: 1.0'
+        b'\nContent-Type: text/plain; charset=UTF-8\nContent-'
+        b'Transfer-Encoding: 8bit\nPlural-Forms: nplurals=2'
+        b'; plural=(n > 1);\n\x00Bonjour !\x00{n} cheval\x00{n'
+        b'} chevaux\x00'
+    )
+    file2_fr_mo = (
+        b"\xde\x12\x04\x95\x00\x00\x00\x00\x03\x00\x00\x00"
+        b"\x1c\x00\x00\x004\x00\x00\x00\x00\x00\x00\x00\x00"
+        b"\x00\x00\x00\x00\x00\x00\x00L\x00\x00\x00\x06\x00"
+        b"\x00\x00M\x00\x00\x00\n\x00\x00\x00T\x00\x00\x00["
+        b"\x01\x00\x00_\x00\x00\x00\r\x00\x00\x00\xbb\x01"
+        b"\x00\x00\x0f\x00\x00\x00\xc9\x01\x00\x00\x00Bye.."
+        b".\x00It's over.\x00Project-Id-Version: python 3.8"
+        b"\nReport-Msgid-Bugs-To: \nPOT-Creation-Date: 2018"
+        b"-11-30 23:57+0100\nPO-Revision-Date: 2018-11-30 2"
+        b"3:57+0100\nLast-Translator: s-ball <s-ball@lapost"
+        b"e.net>\nLanguage-Team: French\nLanguage: fr\nMIME"
+        b"-Version: 1.0\nContent-Type: text/plain; charset="
+        b"UTF-8\nContent-Transfer-Encoding: 8bit\nPlural-Fo"
+        b"rms: nplurals=2; plural=(n > 1);\n\x00Au revoir ."
+        b"..\x00C'est termin\xc3\xa9.\x00"
+    )
 
-    # image of merging both po files keeping second header
-    file12_fr_mo = b"\xde\x12\x04\x95\x00\x00\x00\x00\x05\x00\x00\x00" \
-                  b"\x1c\x00\x00\x00D\x00\x00\x00\x00\x00\x00\x00\x00" \
-                  b"\x00\x00\x00\x00\x00\x00\x00l\x00\x00\x00\x06\x00" \
-                  b"\x00\x00m\x00\x00\x00\x06\x00\x00\x00t\x00\x00\x00" \
-                  b"\n\x00\x00\x00{\x00\x00\x00\x14\x00\x00\x00\x86" \
-                  b"\x00\x00\x00[\x01\x00\x00\x9b\x00\x00\x00\r\x00" \
-                  b"\x00\x00\xf7\x01\x00\x00\t\x00\x00\x00\x05\x02\x00" \
-                  b"\x00\x0f\x00\x00\x00\x0f\x02\x00\x00\x16\x00\x00" \
-                  b"\x00\x1f\x02\x00\x00\x00Bye...\x00Hello!\x00It's " \
-                  b"over.\x00{n} horse\x00{n} horses\x00Project-Id-Ver" \
-                  b"sion: python 3.8\nReport-Msgid-Bugs-To: \nPOT-Crea" \
-                  b"tion-Date: 2018-11-30 23:57+0100\nPO-Revision-Date" \
-                  b": 2018-11-30 23:57+0100\nLast-Translator: s-ball <" \
-                  b"s-ball@laposte.net>\nLanguage-Team: French\nLangua" \
-                  b"ge: fr\nMIME-Version: 1.0\nContent-Type: text/plai" \
-                  b"n; charset=UTF-8\nContent-Transfer-Encoding: 8bit" \
-                  b"\nPlural-Forms: nplurals=2; plural=(n > 1);\n\x00A" \
-                  b"u revoir ...\x00Bonjour !\x00C'est termin\xc3\xa9." \
-                  b"\x00{n} cheval\x00{n} chevaux\x00"
+    # content of merging both po files keeping second header
+    file12_fr_mo = (
+        b"\xde\x12\x04\x95\x00\x00\x00\x00\x05\x00\x00\x00"
+        b"\x1c\x00\x00\x00D\x00\x00\x00\x00\x00\x00\x00\x00"
+        b"\x00\x00\x00\x00\x00\x00\x00l\x00\x00\x00\x06\x00"
+        b"\x00\x00m\x00\x00\x00\x06\x00\x00\x00t\x00\x00\x00"
+        b"\n\x00\x00\x00{\x00\x00\x00\x14\x00\x00\x00\x86"
+        b"\x00\x00\x00[\x01\x00\x00\x9b\x00\x00\x00\r\x00"
+        b"\x00\x00\xf7\x01\x00\x00\t\x00\x00\x00\x05\x02\x00"
+        b"\x00\x0f\x00\x00\x00\x0f\x02\x00\x00\x16\x00\x00"
+        b"\x00\x1f\x02\x00\x00\x00Bye...\x00Hello!\x00It's "
+        b"over.\x00{n} horse\x00{n} horses\x00Project-Id-Ver"
+        b"sion: python 3.8\nReport-Msgid-Bugs-To: \nPOT-Crea"
+        b"tion-Date: 2018-11-30 23:57+0100\nPO-Revision-Date"
+        b": 2018-11-30 23:57+0100\nLast-Translator: s-ball <"
+        b"s-ball@laposte.net>\nLanguage-Team: French\nLangua"
+        b"ge: fr\nMIME-Version: 1.0\nContent-Type: text/plai"
+        b"n; charset=UTF-8\nContent-Transfer-Encoding: 8bit"
+        b"\nPlural-Forms: nplurals=2; plural=(n > 1);\n\x00A"
+        b"u revoir ...\x00Bonjour !\x00C'est termin\xc3\xa9."
+        b"\x00{n} cheval\x00{n} chevaux\x00"
+    )
+
     def imp(self):
         i18ndir = os.path.join(toolsdir, 'i18n')
         sys.path.append(i18ndir)
@@ -316,7 +324,7 @@ msgstr "Au revoir ..."
 
     def test_consecutive_make_calls(self):
         """Directly calls make twice to prove bpo-9741 is fixed"""
-        sys.path.append(os.path.join(toolsdir,'i18n'))
+        sys.path.append(os.path.join(toolsdir, 'i18n'))
         from msgfmt import make
         with temp_cwd(None):
             with open("file1_fr.po", "wb") as out:
