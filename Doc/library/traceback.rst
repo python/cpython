@@ -554,12 +554,12 @@ in a :ref:`traceback <traceback-objects>`.
    .. attribute:: FrameSummary.colno
 
       The column number of the source code for this frame.
-      By default, it is ``None`` and indexation starts from 1.
+      By default, it is ``None`` and indexation starts from 0.
 
    .. attribute:: FrameSummary.end_colno
 
       The last column number of the source code for this frame.
-      By default, it is ``None`` and indexation starts from 1.
+      By default, it is ``None`` and indexation starts from 0.
 
 
 .. _traceback-example:
