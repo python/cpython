@@ -1,0 +1,1 @@
+Ensure Python.h is included in most places, except when "pyconfig.h" is included before, or in platform specific contexts
