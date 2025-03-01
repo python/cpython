@@ -937,10 +937,8 @@ class BytesIO(BufferedIOBase):
             return 0
         pos = self._pos
         if pos > len(self._buffer):
-            # Inserts null bytes between the current end of the file
-            # and the new write position.
-            padding = b'\x00' * (pos - len(self._buffer))
-            self._buffer += padding
+            # Pad buffer to pos with null bytes.
+            self._buffer.resize(pos)
         self._buffer[pos:pos + n] = b
         self._pos += n
         return n
@@ -1456,6 +1454,17 @@ class BufferedRandom(BufferedWriter, BufferedReader):
         return BufferedWriter.write(self, b)
 
 
+def _new_buffersize(bytes_read):
+    # Parallels _io/fileio.c new_buffersize
+    if bytes_read > 65536:
+        addend = bytes_read >> 3
+    else:
+        addend = 256 + bytes_read
+    if addend < DEFAULT_BUFFER_SIZE:
+        addend = DEFAULT_BUFFER_SIZE
+    return bytes_read + addend
+
+
 class FileIO(RawIOBase):
     _fd = -1
     _created = False
@@ -1685,31 +1694,30 @@ class FileIO(RawIOBase):
                 except OSError:
                     pass
 
-        result = bytearray()
-        while True:
-            if len(result) >= bufsize:
-                bufsize = len(result)
-                bufsize += max(bufsize, DEFAULT_BUFFER_SIZE)
-            n = bufsize - len(result)
-            try:
-                chunk = os.read(self._fd, n)
-            except BlockingIOError:
-                if result:
-                    break
+        result = bytearray(bufsize)
+        bytes_read = 0
+        try:
+            while n := os.readinto(self._fd, memoryview(result)[bytes_read:]):
+                bytes_read += n
+                if bytes_read >= len(result):
+                    result.resize(_new_buffersize(bytes_read))
+        except BlockingIOError:
+            if not bytes_read:
                 return None
-            if not chunk: # reached the end of the file
-                break
-            result += chunk
 
+        assert len(result) - bytes_read >= 1, \
+            "os.readinto buffer size 0 will result in erroneous EOF / returns 0"
+        result.resize(bytes_read)
         return bytes(result)
 
-    def readinto(self, b):
+    def readinto(self, buffer):
         """Same as RawIOBase.readinto()."""
-        m = memoryview(b).cast('B')
-        data = self.read(len(m))
-        n = len(data)
-        m[:n] = data
-        return n
+        self._checkClosed()
+        self._checkReadable()
+        try:
+            return os.readinto(self._fd, buffer)
+        except BlockingIOError:
+            return None
 
     def write(self, b):
         """Write bytes b to file, return number written.

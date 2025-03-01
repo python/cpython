@@ -59,14 +59,14 @@ class TestEffects(unittest.TestCase):
     def test_effect_sizes(self):
         stack = Stack()
         inputs = [
-            x := StackItem("x", None, "1"),
-            y := StackItem("y", None, "oparg"),
-            z := StackItem("z", None, "oparg*2"),
+            x := StackItem("x", None, "", "1"),
+            y := StackItem("y", None, "", "oparg"),
+            z := StackItem("z", None, "", "oparg*2"),
         ]
         outputs = [
-            StackItem("x", None, "1"),
-            StackItem("b", None, "oparg*4"),
-            StackItem("c", None, "1"),
+            StackItem("x", None, "", "1"),
+            StackItem("b", None, "", "oparg*4"),
+            StackItem("c", None, "", "1"),
         ]
         stack.pop(z)
         stack.pop(y)
@@ -104,6 +104,20 @@ class TestGenerateMaxStackEffect(unittest.TestCase):
         """
         self.check(input, output)
 
+    def test_cond_push(self):
+        input = """
+        inst(OP, (a -- b, c if (oparg))) {
+            SPAM();
+        }
+        """
+        output = """
+        case OP: {
+            *effect = ((oparg) ? 1 : 0);
+            return 0;
+        }
+        """
+        self.check(input, output)
+
     def test_ops_pass_two(self):
         input = """
         op(A, (-- val1)) {
@@ -119,6 +133,25 @@ class TestGenerateMaxStackEffect(unittest.TestCase):
         output = """
         case OP: {
             *effect = 2;
+            return 0;
+        }
+        """
+        self.check(input, output)
+
+    def test_ops_pass_two_cond_push(self):
+        input = """
+        op(A, (-- val1, val2)) {
+            val1 = 0;
+            val2 = 1;
+        }
+        op(B, (val1, val2 -- val1, val2, val3 if (oparg))) {
+            val3 = SPAM();
+        }
+        macro(OP) = A + B;
+        """
+        output = """
+        case OP: {
+            *effect = Py_MAX(2, 2 + ((oparg) ? 1 : 0));
             return 0;
         }
         """
@@ -248,12 +281,12 @@ class TestGeneratedCases(unittest.TestCase):
             )
 
         with open(self.temp_output_filename) as temp_output:
-            lines = temp_output.readlines()
-            while lines and lines[0].startswith(("// ", "#", "    #", "\n")):
-                lines.pop(0)
-            while lines and lines[-1].startswith(("#", "\n")):
-                lines.pop(-1)
-        actual = "".join(lines)
+            lines = temp_output.read()
+            _, rest = lines.split(tier1_generator.INSTRUCTION_START_MARKER)
+            instructions, labels_with_prelude_and_postlude = rest.split(tier1_generator.INSTRUCTION_END_MARKER)
+            _, labels_with_postlude = labels_with_prelude_and_postlude.split(tier1_generator.LABEL_START_MARKER)
+            labels, _ = labels_with_postlude.split(tier1_generator.LABEL_END_MARKER)
+            actual = instructions.strip() + "\n\n        " + labels.strip()
         # if actual.strip() != expected.strip():
         #     print("Actual:")
         #     print(actual)
@@ -271,6 +304,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -289,6 +326,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -310,6 +351,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -332,6 +377,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -355,6 +404,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -381,6 +434,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -409,10 +466,14 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP1) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP1;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
-            PREDICTED(OP1);
+            PREDICTED_OP1:;
             _PyStackRef res;
             res = Py_None;
             stack_pointer[-1] = res;
@@ -420,12 +481,22 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP3) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP3;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP3);
             static_assert(INLINE_CACHE_ENTRIES_OP1 == 0, "incorrect cache size");
             _PyStackRef res;
-            DEOPT_IF(xxx, OP1);
+            if (xxx) {
+                UPDATE_MISS_STATS(OP1);
+                assert(_PyOpcode_Deopt[opcode] == (OP1));
+                JUMP_TO_PREDICTED(OP1);
+            }
             res = Py_None;
             stack_pointer[-1] = res;
             DISPATCH();
@@ -448,6 +519,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(A) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = A;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(A);
@@ -465,6 +540,10 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(B) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = B;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(B);
@@ -502,10 +581,16 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            if (cond) goto label;
+            if (cond) {
+                JUMP_TO_LABEL(label);
+            }
             DISPATCH();
         }
     """
@@ -519,10 +604,16 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            if (cond) goto label;
+            if (cond) {
+                JUMP_TO_LABEL(label);
+            }
             // Comment is ok
             DISPATCH();
         }
@@ -540,6 +631,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -549,7 +644,9 @@ class TestGeneratedCases(unittest.TestCase):
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             SPAM(left, right);
-            if (cond) goto pop_2_label;
+            if (cond) {
+                JUMP_TO_LABEL(pop_2_label);
+            }
             res = 0;
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -569,6 +666,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -578,7 +679,9 @@ class TestGeneratedCases(unittest.TestCase):
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             res = SPAM(left, right);
-            if (cond) goto pop_2_label;
+            if (cond) {
+                JUMP_TO_LABEL(pop_2_label);
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -594,8 +697,13 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
-            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(OP);
             uint16_t counter = read_u16(&this_instr[1].cache);
@@ -611,16 +719,28 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_suppress_dispatch(self):
         input = """
+        label(somewhere) {
+        }
+
         inst(OP, (--)) {
             goto somewhere;
         }
     """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
-            goto somewhere;
+            JUMP_TO_LABEL(somewhere);
+        }
+
+        LABEL(somewhere)
+        {
+
         }
     """
         self.run_cases_test(input, output)
@@ -643,10 +763,14 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 6;
             INSTRUCTION_STATS(OP);
-            PREDICTED(OP);
+            PREDICTED_OP:;
             _Py_CODEUNIT* const this_instr = next_instr - 6;
             (void)this_instr;
             _PyStackRef left;
@@ -680,8 +804,13 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP1) {
-            _Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP1;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
+            frame->instr_ptr = next_instr;
             next_instr += 2;
             INSTRUCTION_STATS(OP1);
             _PyStackRef left;
@@ -697,6 +826,10 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP3) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP3;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 6;
             INSTRUCTION_STATS(OP3);
@@ -728,6 +861,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(OP);
@@ -750,6 +887,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP1) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP1;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
@@ -769,6 +910,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP1) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP1;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
@@ -791,6 +936,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP1) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP1;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
@@ -798,6 +947,10 @@ class TestGeneratedCases(unittest.TestCase):
         }
 
         TARGET(OP2) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP2;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP2);
@@ -815,6 +968,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -838,6 +995,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -866,6 +1027,10 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -890,15 +1055,111 @@ class TestGeneratedCases(unittest.TestCase):
     """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
             if (oparg == 0) {
                 stack_pointer += -1 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
-                goto somewhere;
+                JUMP_TO_LABEL(somewhere);
             }
             stack_pointer += -1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+    """
+        self.run_cases_test(input, output)
+
+    def test_cond_effect(self):
+        input = """
+        inst(OP, (aa, input if ((oparg & 1) == 1), cc -- xx, output if (oparg & 2), zz)) {
+            output = SPAM(oparg, aa, cc, input);
+            INPUTS_DEAD();
+            xx = 0;
+            zz = 0;
+        }
+    """
+        output = """
+        TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef aa;
+            _PyStackRef input = PyStackRef_NULL;
+            _PyStackRef cc;
+            _PyStackRef xx;
+            _PyStackRef output = PyStackRef_NULL;
+            _PyStackRef zz;
+            cc = stack_pointer[-1];
+            if ((oparg & 1) == 1) { input = stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)]; }
+            aa = stack_pointer[-2 - (((oparg & 1) == 1) ? 1 : 0)];
+            output = SPAM(oparg, aa, cc, input);
+            xx = 0;
+            zz = 0;
+            stack_pointer[-2 - (((oparg & 1) == 1) ? 1 : 0)] = xx;
+            if (oparg & 2) stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)] = output;
+            stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0) + ((oparg & 2) ? 1 : 0)] = zz;
+            stack_pointer += -(((oparg & 1) == 1) ? 1 : 0) + ((oparg & 2) ? 1 : 0);
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+    """
+        self.run_cases_test(input, output)
+
+    def test_macro_cond_effect(self):
+        input = """
+        op(A, (left, middle, right --)) {
+            USE(left, middle, right);
+            INPUTS_DEAD();
+        }
+        op(B, (-- deep, extra if (oparg), res)) {
+            deep = -1;
+            res = 0;
+            extra = 1;
+            INPUTS_DEAD();
+        }
+        macro(M) = A + B;
+    """
+        output = """
+        TARGET(M) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = M;
+            (void)(opcode);
+            #endif
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(M);
+            _PyStackRef left;
+            _PyStackRef middle;
+            _PyStackRef right;
+            _PyStackRef deep;
+            _PyStackRef extra = PyStackRef_NULL;
+            _PyStackRef res;
+            // A
+            {
+                right = stack_pointer[-1];
+                middle = stack_pointer[-2];
+                left = stack_pointer[-3];
+                USE(left, middle, right);
+            }
+            // B
+            {
+                deep = -1;
+                res = 0;
+                extra = 1;
+            }
+            stack_pointer[-3] = deep;
+            if (oparg) stack_pointer[-2] = extra;
+            stack_pointer[-2 + ((oparg) ? 1 : 0)] = res;
+            stack_pointer += -1 + ((oparg) ? 1 : 0);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
@@ -917,6 +1178,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(M) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = M;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(M);
@@ -950,6 +1215,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -971,6 +1240,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(M) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = M;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(M);
@@ -988,6 +1261,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1006,6 +1283,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(M) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = M;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(M);
@@ -1042,6 +1323,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1064,6 +1349,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1102,6 +1391,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(INST) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = INST;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(INST);
@@ -1128,6 +1421,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(TEST) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = TEST;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(TEST);
@@ -1168,6 +1465,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(TEST) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = TEST;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(TEST);
@@ -1207,6 +1508,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(TEST) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = TEST;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(TEST);
@@ -1255,6 +1560,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(TEST) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = TEST;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(TEST);
@@ -1275,7 +1584,9 @@ class TestGeneratedCases(unittest.TestCase):
             // THIRD
             {
                 // Mark j and k as used
-                if (cond) goto pop_2_error;
+                if (cond) {
+                    JUMP_TO_LABEL(pop_2_error);
+                }
             }
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
@@ -1301,6 +1612,10 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(TEST) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = TEST;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(TEST);
@@ -1318,7 +1633,7 @@ class TestGeneratedCases(unittest.TestCase):
                     stack_pointer[1] = b;
                     stack_pointer += 2;
                     assert(WITHIN_STACK_BOUNDS());
-                    goto error;
+                    JUMP_TO_LABEL(error);
                 }
             }
             stack_pointer[0] = a;
@@ -1342,17 +1657,25 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP1) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP1;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
-            goto here;
+            JUMP_TO_LABEL(here);
         }
 
         TARGET(OP2) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP2;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP2);
-            goto there;
+            JUMP_TO_LABEL(there);
         }
         """
         self.run_cases_test(input, output)
@@ -1400,17 +1723,46 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         inst(BALANCED, ( -- )) {
             SAVE_STACK();
+            code();
             RELOAD_STACK();
         }
         """
 
         output = """
         TARGET(BALANCED) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = BALANCED;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BALANCED);
             _PyFrame_SetStackPointer(frame, stack_pointer);
+            code();
             stack_pointer = _PyFrame_GetStackPointer(frame);
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_stack_save_reload_paired(self):
+
+        input = """
+        inst(BALANCED, ( -- )) {
+            SAVE_STACK();
+            RELOAD_STACK();
+        }
+        """
+
+        output = """
+        TARGET(BALANCED) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = BALANCED;
+            (void)(opcode);
+            #endif
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(BALANCED);
             DISPATCH();
         }
         """
@@ -1426,6 +1778,10 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(BALANCED) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = BALANCED;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BALANCED);
@@ -1447,6 +1803,12 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(BALANCED) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = BALANCED;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BALANCED);
@@ -1467,6 +1829,10 @@ class TestGeneratedCases(unittest.TestCase):
 
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1502,6 +1868,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1536,6 +1906,10 @@ class TestGeneratedCases(unittest.TestCase):
         """
         output = """
         TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
@@ -1556,51 +1930,6 @@ class TestGeneratedCases(unittest.TestCase):
         }
         """
         self.run_cases_test(input, output)
-
-    def test_pop_input(self):
-        input = """
-        inst(OP, (a, b --)) {
-            POP_INPUT(b);
-            HAM(a);
-            INPUTS_DEAD();
-        }
-        """
-        output = """
-        TARGET(OP) {
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(OP);
-            _PyStackRef a;
-            _PyStackRef b;
-            b = stack_pointer[-1];
-            a = stack_pointer[-2];
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            HAM(a);
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            DISPATCH();
-        }
-        """
-        self.run_cases_test(input, output)
-
-    def test_pop_input_with_empty_stack(self):
-        input = """
-        inst(OP, (--)) {
-            POP_INPUT(foo);
-        }
-        """
-        with self.assertRaises(SyntaxError):
-            self.run_cases_test(input, "")
-
-    def test_pop_input_with_non_tos(self):
-        input = """
-        inst(OP, (a, b --)) {
-            POP_INPUT(a);
-        }
-        """
-        with self.assertRaises(SyntaxError):
-            self.run_cases_test(input, "")
 
     def test_no_escaping_calls_in_branching_macros(self):
 
@@ -1638,6 +1967,139 @@ class TestGeneratedCases(unittest.TestCase):
         """
         with self.assertRaises(SyntaxError):
             self.run_cases_test(input, "")
+
+    def test_complex_label(self):
+        input = """
+        label(other_label) {
+        }
+
+        label(other_label2) {
+        }
+
+        label(my_label) {
+            // Comment
+            do_thing();
+            if (complex) {
+                goto other_label;
+            }
+            goto other_label2;
+        }
+        """
+
+        output = """
+        LABEL(other_label)
+        {
+
+        }
+
+        LABEL(other_label2)
+        {
+
+        }
+
+        LABEL(my_label)
+        {
+            // Comment
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            do_thing();
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (complex) {
+                JUMP_TO_LABEL(other_label);
+            }
+            JUMP_TO_LABEL(other_label2);
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_spilled_label(self):
+        input = """
+        spilled label(one) {
+            RELOAD_STACK();
+            goto two;
+        }
+
+        label(two) {
+            SAVE_STACK();
+            goto one;
+        }
+        """
+
+        output = """
+        LABEL(one)
+        {
+            /* STACK SPILLED */
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            JUMP_TO_LABEL(two);
+        }
+
+        LABEL(two)
+        {
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            JUMP_TO_LABEL(one);
+        }
+        """
+        self.run_cases_test(input, output)
+
+
+    def test_incorrect_spills(self):
+        input1 = """
+        spilled label(one) {
+            goto two;
+        }
+
+        label(two) {
+        }
+        """
+
+        input2 = """
+        spilled label(one) {
+        }
+
+        label(two) {
+            goto one;
+        }
+        """
+        with self.assertRaisesRegex(SyntaxError, ".*reload.*"):
+            self.run_cases_test(input1, "")
+        with self.assertRaisesRegex(SyntaxError, ".*spill.*"):
+            self.run_cases_test(input2, "")
+
+
+    def test_multiple_labels(self):
+        input = """
+        label(my_label_1) {
+            // Comment
+            do_thing1();
+            goto my_label_2;
+        }
+
+        label(my_label_2) {
+            // Comment
+            do_thing2();
+            goto my_label_1;
+        }
+        """
+
+        output = """
+        LABEL(my_label_1)
+        {
+            // Comment
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            do_thing1();
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            JUMP_TO_LABEL(my_label_2);
+        }
+
+        LABEL(my_label_2)
+        {
+            // Comment
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            do_thing2();
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            JUMP_TO_LABEL(my_label_1);
+        }
+        """
+        self.run_cases_test(input, output)
 
 
 class TestGeneratedAbstractCases(unittest.TestCase):

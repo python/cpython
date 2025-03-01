@@ -184,8 +184,6 @@ The :mod:`uuid` module defines the following functions:
       administered MAC addresses, since the former are guaranteed to be
       globally unique, while the latter are not.
 
-.. index:: single: getnode
-
 
 .. function:: uuid1(node=None, clock_seq=None)
 
@@ -194,8 +192,6 @@ The :mod:`uuid` module defines the following functions:
    *clock_seq* is given, it is used as the sequence number; otherwise a random
    14-bit sequence number is chosen.
 
-.. index:: single: uuid1
-
 
 .. function:: uuid3(namespace, name)
 
@@ -203,14 +199,10 @@ The :mod:`uuid` module defines the following functions:
    UUID) and a name (which is a :class:`bytes` object or a string
    that will be encoded using UTF-8).
 
-.. index:: single: uuid3
-
 
 .. function:: uuid4()
 
    Generate a random UUID.
-
-.. index:: single: uuid4
 
 
 .. function:: uuid5(namespace, name)
@@ -218,8 +210,6 @@ The :mod:`uuid` module defines the following functions:
    Generate a UUID based on the SHA-1 hash of a namespace identifier (which is a
    UUID) and a name (which is a :class:`bytes` object or a string
    that will be encoded using UTF-8).
-
-.. index:: single: uuid5
 
 
 .. function:: uuid8(a=None, b=None, c=None)
@@ -234,8 +224,6 @@ The :mod:`uuid` module defines the following functions:
    appropriate size.
 
    .. versionadded:: 3.14
-
-.. index:: single: uuid8
 
 
 The :mod:`uuid` module defines the following namespace identifiers for use with
@@ -287,6 +275,25 @@ of the :attr:`~UUID.variant` attribute:
 .. data:: RESERVED_FUTURE
 
    Reserved for future definition.
+
+
+The :mod:`uuid` module defines the special Nil and Max UUID values:
+
+
+.. data:: NIL
+
+   A special form of UUID that is specified to have all 128 bits set to zero
+   according to :rfc:`RFC 9562, §5.9 <9562#section-5.9>`.
+
+   .. versionadded:: 3.14
+
+
+.. data:: MAX
+
+   A special form of UUID that is specified to have all 128 bits set to one
+   according to :rfc:`RFC 9562, §5.10 <9562#section-5.10>`.
+
+   .. versionadded:: 3.14
 
 
 .. seealso::
@@ -379,6 +386,14 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    >>> # make a UUID from a 16-byte string
    >>> uuid.UUID(bytes=x.bytes)
    UUID('00010203-0405-0607-0809-0a0b0c0d0e0f')
+
+   >>> # get the Nil UUID
+   >>> uuid.NIL
+   UUID('00000000-0000-0000-0000-000000000000')
+
+   >>> # get the Max UUID
+   >>> uuid.MAX
+   UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
 
 
 .. _uuid-cli-example:

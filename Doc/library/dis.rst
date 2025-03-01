@@ -75,8 +75,7 @@ the following command can be used to display the disassembly of
    >>> dis.dis(myfunc)
      2           RESUME                   0
    <BLANKLINE>
-     3           LOAD_GLOBAL              0 (len)
-                 PUSH_NULL
+     3           LOAD_GLOBAL              1 (len + NULL)
                  LOAD_FAST                0 (alist)
                  CALL                     1
                  RETURN_VALUE
@@ -98,25 +97,33 @@ The following options are accepted:
 
 .. program:: dis
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Display usage and exit.
 
-.. cmdoption:: -C, --show-caches
+.. option:: -C, --show-caches
 
    Show inline caches.
 
-.. cmdoption:: -O, --show-offsets
+   .. versionadded:: 3.13
+
+.. option:: -O, --show-offsets
 
    Show offsets of instructions.
 
-.. cmdoption:: -P, --show-positions
+   .. versionadded:: 3.13
+
+.. option:: -P, --show-positions
 
    Show positions of instructions in the source code.
 
-.. cmdoption:: -S, --specialized
+   .. versionadded:: 3.14
+
+.. option:: -S, --specialized
 
    Show specialized bytecode.
+
+   .. versionadded:: 3.14
 
 If :file:`infile` is specified, its disassembled code will be written to stdout.
 Otherwise, disassembly is performed on compiled source code received from stdin.
@@ -208,7 +215,6 @@ Example:
     ...
     RESUME
     LOAD_GLOBAL
-    PUSH_NULL
     LOAD_FAST
     CALL
     RETURN_VALUE
@@ -705,15 +711,8 @@ not have to be) the original ``STACK[-2]``.
       STACK.append(lhs op rhs)
 
    .. versionadded:: 3.11
-
-
-.. opcode:: BINARY_SUBSCR
-
-   Implements::
-
-      key = STACK.pop()
-      container = STACK.pop()
-      STACK.append(container[key])
+   .. versionchanged:: 3.14
+      With oparg :``NB_SUBSCR``, implements binary subscript (replaces opcode ``BINARY_SUBSCR``)
 
 
 .. opcode:: STORE_SUBSCR
@@ -1217,20 +1216,11 @@ iterations of the loop.
 
 .. opcode:: LOAD_ATTR (namei)
 
-   Replaces ``STACK[-1]`` with ``getattr(STACK[-1], co_names[namei>>1])``.
+   If the low bit of ``namei`` is not set, this replaces ``STACK[-1]`` with
+   ``getattr(STACK[-1], co_names[namei>>1])``.
 
-   .. versionchanged:: 3.12
-      If the low bit of ``namei`` is set, then a ``NULL`` or ``self`` is
-      pushed to the stack before the attribute or unbound method respectively.
-
-   .. versionchanged:: 3.14
-      Reverted change from 3.12. The low bit of ``namei`` has no special meaning.
-
-
-.. opcode:: LOAD_METHOD (namei)
-
-   Attempt to load a method named ``co_names[namei>>1]`` from the ``STACK[-1]`` object.
-   ``STACK[-1]`` is popped.
+   If the low bit of ``namei`` is set, this will attempt to load a method named
+   ``co_names[namei>>1]`` from the ``STACK[-1]`` object. ``STACK[-1]`` is popped.
    This bytecode distinguishes two cases: if ``STACK[-1]`` has a method with the
    correct name, the bytecode pushes the unbound method and ``STACK[-1]``.
    ``STACK[-1]`` will be used as the first argument (``self``) by :opcode:`CALL`
@@ -1238,7 +1228,9 @@ iterations of the loop.
    Otherwise, ``NULL`` and the object returned by
    the attribute lookup are pushed.
 
-   .. versionadded:: 3.14
+   .. versionchanged:: 3.12
+      If the low bit of ``namei`` is set, then a ``NULL`` or ``self`` is
+      pushed to the stack before the attribute or unbound method respectively.
 
 
 .. opcode:: LOAD_SUPER_ATTR (namei)
@@ -1933,6 +1925,12 @@ but are replaced by real opcodes or removed before bytecode is generated.
 
    .. versionchanged:: 3.13
       This opcode is now a pseudo-instruction.
+
+
+.. opcode:: LOAD_METHOD
+
+   Optimized unbound method lookup. Emitted as a ``LOAD_ATTR`` opcode
+   with a flag set in the arg.
 
 
 .. _opcode_collections:

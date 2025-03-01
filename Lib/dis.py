@@ -42,9 +42,7 @@ JUMP_BACKWARD = opmap['JUMP_BACKWARD']
 FOR_ITER = opmap['FOR_ITER']
 SEND = opmap['SEND']
 LOAD_ATTR = opmap['LOAD_ATTR']
-LOAD_METHOD = opmap['LOAD_METHOD']
 LOAD_SUPER_ATTR = opmap['LOAD_SUPER_ATTR']
-LOAD_SUPER_METHOD = opmap['LOAD_SUPER_METHOD']
 CALL_INTRINSIC_1 = opmap['CALL_INTRINSIC_1']
 CALL_INTRINSIC_2 = opmap['CALL_INTRINSIC_2']
 LOAD_COMMON_CONSTANT = opmap['LOAD_COMMON_CONSTANT']
@@ -582,14 +580,16 @@ class ArgResolver:
                 argval, argrepr = _get_const_info(deop, arg, self.co_consts)
             elif deop in hasname:
                 if deop == LOAD_GLOBAL:
-                    argval, argrepr = _get_name_info(arg, get_name)
-                elif deop == LOAD_ATTR or deop == LOAD_METHOD:
-                    argval, argrepr = _get_name_info(arg, get_name)
-                    if deop == LOAD_METHOD and argrepr:
+                    argval, argrepr = _get_name_info(arg//2, get_name)
+                    if (arg & 1) and argrepr:
+                        argrepr = f"{argrepr} + NULL"
+                elif deop == LOAD_ATTR:
+                    argval, argrepr = _get_name_info(arg//2, get_name)
+                    if (arg & 1) and argrepr:
                         argrepr = f"{argrepr} + NULL|self"
-                elif deop == LOAD_SUPER_ATTR or deop == LOAD_SUPER_METHOD:
+                elif deop == LOAD_SUPER_ATTR:
                     argval, argrepr = _get_name_info(arg//4, get_name)
-                    if deop == LOAD_SUPER_METHOD and argrepr:
+                    if (arg & 1) and argrepr:
                         argrepr = f"{argrepr} + NULL|self"
                 else:
                     argval, argrepr = _get_name_info(arg, get_name)

@@ -25,6 +25,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+env:
+  FORCE_COLOR: 1
+
 jobs:
   interpreter:
     name: Interpreter (Debug)
@@ -134,7 +137,9 @@ jobs:
     name: Free-Threaded (Debug)
     needs: interpreter
     runs-on: ubuntu-24.04
+    timeout-minutes: 90
     strategy:
+      fail-fast: false
       matrix:
         llvm:
           - 19

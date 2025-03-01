@@ -9,6 +9,8 @@ from analyzer import (
     Analysis,
     Instruction,
     Uop,
+    Label,
+    CodeSection,
     analyze_files,
     StackItem,
     analysis_error,
@@ -39,7 +41,14 @@ def declare_variable(
     required.remove(var.name)
     type, null = type_and_null(var)
     space = " " if type[-1].isalnum() else ""
-    out.emit(f"{type}{space}{var.name};\n")
+    if var.condition:
+        out.emit(f"{type}{space}{var.name} = {null};\n")
+        if uop.replicates:
+            # Replicas may not use all their conditional variables
+            # So avoid a compiler warning with a fake use
+            out.emit(f"(void){var.name};\n")
+    else:
+        out.emit(f"{type}{space}{var.name};\n")
 
 
 def declare_variables(uop: Uop, out: CWriter) -> None:
@@ -58,51 +67,21 @@ def declare_variables(uop: Uop, out: CWriter) -> None:
 
 class Tier2Emitter(Emitter):
 
-    def __init__(self, out: CWriter):
-        super().__init__(out)
+    def __init__(self, out: CWriter, labels: dict[str, Label]):
+        super().__init__(out, labels)
         self._replacers["oparg"] = self.oparg
 
-    def error_if(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: Uop,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        self.out.emit_at("if ", tkn)
-        lparen = next(tkn_iter)
-        self.emit(lparen)
-        assert lparen.kind == "LPAREN"
-        first_tkn = next(tkn_iter)
-        self.out.emit(first_tkn)
-        emit_to(self.out, tkn_iter, "COMMA")
-        label = next(tkn_iter).text
-        next(tkn_iter)  # RPAREN
-        next(tkn_iter)  # Semi colon
-        self.emit(") JUMP_TO_ERROR();\n")
-        return not always_true(first_tkn)
-
-
-    def error_no_pop(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: Uop,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        next(tkn_iter)  # LPAREN
-        next(tkn_iter)  # RPAREN
-        next(tkn_iter)  # Semi colon
-        self.out.emit_at("JUMP_TO_ERROR();", tkn)
-        return False
+    def goto_error(self, offset: int, label: str, storage: Storage) -> str:
+        # To do: Add jump targets for popping values.
+        if offset != 0:
+            storage.copy().flush(self.out)
+        return f"JUMP_TO_ERROR();"
 
     def deopt_if(
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -123,7 +102,7 @@ class Tier2Emitter(Emitter):
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -143,7 +122,7 @@ class Tier2Emitter(Emitter):
         self,
         tkn: Token,
         tkn_iter: TokenIterator,
-        uop: Uop,
+        uop: CodeSection,
         storage: Storage,
         inst: Instruction | None,
     ) -> bool:
@@ -174,7 +153,8 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
         code_list, storage = Storage.for_uop(stack, uop)
         for code in code_list:
             emitter.emit(code)
-        for idx, cache in enumerate(uop.caches):
+        idx = 0
+        for cache in uop.caches:
             if cache.name != "unused":
                 if cache.size == 4:
                     type = cast = "PyObject *"
@@ -182,6 +162,7 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
                     type = f"uint{cache.size*16}_t "
                     cast = f"uint{cache.size*16}_t"
                 emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND{idx}();\n")
+                idx += 1
         storage = emitter.emit_tokens(uop, storage, None)
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0]) from None
@@ -203,10 +184,13 @@ def generate_tier2(
 """
     )
     out = CWriter(outfile, 2, lines)
-    emitter = Tier2Emitter(out)
+    emitter = Tier2Emitter(out, analysis.labels)
     out.emit("\n")
     for name, uop in analysis.uops.items():
         if uop.properties.tier == 1:
+            continue
+        if uop.properties.oparg_and_1:
+            out.emit(f"/* {uop.name} is split on (oparg & 1) */\n\n")
             continue
         if uop.is_super():
             continue

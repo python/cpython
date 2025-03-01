@@ -48,13 +48,19 @@ def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
         for var in reversed(uop.stack.inputs):
             if var.used and var.name not in variables:
                 variables.add(var.name)
-                out.emit(f"{type_name(var)}{var.name};\n")
+                if var.condition:
+                    out.emit(f"{type_name(var)}{var.name} = NULL;\n")
+                else:
+                    out.emit(f"{type_name(var)}{var.name};\n")
     for var in uop.stack.outputs:
         if var.peek:
             continue
         if var.name not in variables:
             variables.add(var.name)
-            out.emit(f"{type_name(var)}{var.name};\n")
+            if var.condition:
+                out.emit(f"{type_name(var)}{var.name} = NULL;\n")
+            else:
+                out.emit(f"{type_name(var)}{var.name};\n")
 
 
 def decref_inputs(
@@ -106,6 +112,9 @@ class OptimizerEmitter(Emitter):
     def emit_reload(self, storage: Storage) -> None:
         pass
 
+    def goto_label(self, goto: Token, label: Token, storage: Storage) -> None:
+        self.out.emit(goto)
+        self.out.emit(label)
 
 def write_uop(
     override: Uop | None,
@@ -139,17 +148,17 @@ def write_uop(
                         cast = f"uint{cache.size*16}_t"
                     out.emit(f"{type}{cache.name} = ({cast})this_instr->operand0;\n")
         if override:
-            emitter = OptimizerEmitter(out)
+            emitter = OptimizerEmitter(out, {})
             # No reference management of inputs needed.
             for var in storage.inputs:  # type: ignore[possibly-undefined]
                 var.defined = False
             storage = emitter.emit_tokens(override, storage, None)
             out.start_line()
-            storage.flush(out, cast_type="JitOptSymbol *")
+            storage.flush(out)
         else:
             emit_default(out, uop, stack)
             out.start_line()
-            stack.flush(out, cast_type="JitOptSymbol *")
+            stack.flush(out)
     except StackError as ex:
         raise analysis_error(ex.args[0], prototype.body[0]) # from None
 
@@ -192,7 +201,7 @@ def generate_abstract_interpreter(
             declare_variables(override, out, skip_inputs=False)
         else:
             declare_variables(uop, out, skip_inputs=True)
-        stack = Stack(False)
+        stack = Stack(extract_bits=False, cast_type="JitOptSymbol *")
         write_uop(override, uop, out, stack, debug, skip_inputs=(override is None))
         out.start_line()
         out.emit("break;\n")

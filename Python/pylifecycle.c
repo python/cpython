@@ -27,7 +27,7 @@
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sliceobject.h"   // _PySlice_Fini()
-#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads()
 #include "pycore_uniqueid.h"      // _PyObject_FinalizeUniqueIdPool()
 #include "pycore_typeobject.h"    // _PyTypes_InitTypes()
@@ -111,23 +111,7 @@ static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 
-#if defined(MS_WINDOWS)
-
-#pragma section("PyRuntime", read, write)
-__declspec(allocate("PyRuntime"))
-
-#elif defined(__APPLE__)
-
-__attribute__((
-    section(SEG_DATA ",PyRuntime")
-))
-
-#endif
-
-_PyRuntimeState _PyRuntime
-#if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
-__attribute__ ((section (".PyRuntime")))
-#endif
+GENERATE_DEBUG_SECTION(PyRuntime, _PyRuntimeState _PyRuntime)
 = _PyRuntimeState_INIT(_PyRuntime, _Py_Debug_Cookie);
 _Py_COMP_DIAG_POP
 
@@ -1270,8 +1254,12 @@ init_interp_main(PyThreadState *tstate)
 
     if (is_main_interp) {
         /* Initialize warnings. */
-        PyObject *warnoptions = PySys_GetObject("warnoptions");
-        if (warnoptions != NULL && PyList_Size(warnoptions) > 0)
+        PyObject *warnoptions;
+        if (_PySys_GetOptionalAttrString("warnoptions", &warnoptions) < 0) {
+            return _PyStatus_ERR("can't initialize warnings");
+        }
+        if (warnoptions != NULL && PyList_Check(warnoptions) &&
+            PyList_Size(warnoptions) > 0)
         {
             PyObject *warnings_module = PyImport_ImportModule("warnings");
             if (warnings_module == NULL) {
@@ -1280,6 +1268,7 @@ init_interp_main(PyThreadState *tstate)
             }
             Py_XDECREF(warnings_module);
         }
+        Py_XDECREF(warnoptions);
 
         interp->runtime->initialized = 1;
     }
@@ -1322,14 +1311,7 @@ init_interp_main(PyThreadState *tstate)
             } else
 #endif
             {
-                PyObject *opt = _PyOptimizer_NewUOpOptimizer();
-                if (opt == NULL) {
-                    return _PyStatus_ERR("can't initialize optimizer");
-                }
-                if (_Py_SetTier2Optimizer((_PyOptimizerObject *)opt)) {
-                    return _PyStatus_ERR("can't install optimizer");
-                }
-                Py_DECREF(opt);
+                interp->jit = true;
             }
         }
     }
@@ -1498,13 +1480,15 @@ finalize_modules_delete_special(PyThreadState *tstate, int verbose)
         PySys_WriteStderr("# clear builtins._\n");
     }
     if (PyDict_SetItemString(interp->builtins, "_", Py_None) < 0) {
-        PyErr_FormatUnraisable("Exception ignored on setting builtin variable _");
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "setting builtin variable _");
     }
 
     const char * const *p;
     for (p = sys_deletes; *p != NULL; p++) {
         if (_PySys_ClearAttrString(interp, *p, verbose) < 0) {
-            PyErr_FormatUnraisable("Exception ignored on clearing sys.%s", *p);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "clearing sys.%s", *p);
         }
     }
     for (p = sys_files; *p != NULL; p+=2) {
@@ -1515,13 +1499,15 @@ finalize_modules_delete_special(PyThreadState *tstate, int verbose)
         }
         PyObject *value;
         if (PyDict_GetItemStringRef(interp->sysdict, orig_name, &value) < 0) {
-            PyErr_FormatUnraisable("Exception ignored on restoring sys.%s", name);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "restoring sys.%s", name);
         }
         if (value == NULL) {
             value = Py_NewRef(Py_None);
         }
         if (PyDict_SetItemString(interp->sysdict, name, value) < 0) {
-            PyErr_FormatUnraisable("Exception ignored on restoring sys.%s", name);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "restoring sys.%s", name);
         }
         Py_DECREF(value);
     }
@@ -1533,7 +1519,7 @@ finalize_remove_modules(PyObject *modules, int verbose)
 {
     PyObject *weaklist = PyList_New(0);
     if (weaklist == NULL) {
-        PyErr_FormatUnraisable("Exception ignored on removing modules");
+        PyErr_FormatUnraisable("Exception ignored while removing modules");
     }
 
 #define STORE_MODULE_WEAKREF(name, mod) \
@@ -1542,13 +1528,13 @@ finalize_remove_modules(PyObject *modules, int verbose)
             if (wr) { \
                 PyObject *tup = PyTuple_Pack(2, name, wr); \
                 if (!tup || PyList_Append(weaklist, tup) < 0) { \
-                    PyErr_FormatUnraisable("Exception ignored on removing modules"); \
+                    PyErr_FormatUnraisable("Exception ignored while removing modules"); \
                 } \
                 Py_XDECREF(tup); \
                 Py_DECREF(wr); \
             } \
             else { \
-                PyErr_FormatUnraisable("Exception ignored on removing modules"); \
+                PyErr_FormatUnraisable("Exception ignored while removing modules"); \
             } \
         }
 
@@ -1559,7 +1545,7 @@ finalize_remove_modules(PyObject *modules, int verbose)
             } \
             STORE_MODULE_WEAKREF(name, mod); \
             if (PyObject_SetItem(modules, name, Py_None) < 0) { \
-                PyErr_FormatUnraisable("Exception ignored on removing modules"); \
+                PyErr_FormatUnraisable("Exception ignored while removing modules"); \
             } \
         }
 
@@ -1573,14 +1559,14 @@ finalize_remove_modules(PyObject *modules, int verbose)
     else {
         PyObject *iterator = PyObject_GetIter(modules);
         if (iterator == NULL) {
-            PyErr_FormatUnraisable("Exception ignored on removing modules");
+            PyErr_FormatUnraisable("Exception ignored while removing modules");
         }
         else {
             PyObject *key;
             while ((key = PyIter_Next(iterator))) {
                 PyObject *value = PyObject_GetItem(modules, key);
                 if (value == NULL) {
-                    PyErr_FormatUnraisable("Exception ignored on removing modules");
+                    PyErr_FormatUnraisable("Exception ignored while removing modules");
                     continue;
                 }
                 CLEAR_MODULE(key, value);
@@ -1588,7 +1574,7 @@ finalize_remove_modules(PyObject *modules, int verbose)
                 Py_DECREF(key);
             }
             if (PyErr_Occurred()) {
-                PyErr_FormatUnraisable("Exception ignored on removing modules");
+                PyErr_FormatUnraisable("Exception ignored while removing modules");
             }
             Py_DECREF(iterator);
         }
@@ -1608,7 +1594,7 @@ finalize_clear_modules_dict(PyObject *modules)
     }
     else {
         if (PyObject_CallMethodNoArgs(modules, &_Py_ID(clear)) == NULL) {
-            PyErr_FormatUnraisable("Exception ignored on clearing sys.modules");
+            PyErr_FormatUnraisable("Exception ignored while clearing sys.modules");
         }
     }
 }
@@ -1620,11 +1606,11 @@ finalize_restore_builtins(PyThreadState *tstate)
     PyInterpreterState *interp = tstate->interp;
     PyObject *dict = PyDict_Copy(interp->builtins);
     if (dict == NULL) {
-        PyErr_FormatUnraisable("Exception ignored on restoring builtins");
+        PyErr_FormatUnraisable("Exception ignored while restoring builtins");
     }
     PyDict_Clear(interp->builtins);
     if (PyDict_Update(interp->builtins, interp->builtins_copy)) {
-        PyErr_FormatUnraisable("Exception ignored on restoring builtins");
+        PyErr_FormatUnraisable("Exception ignored while restoring builtins");
     }
     Py_XDECREF(dict);
 }
@@ -1681,11 +1667,10 @@ finalize_modules(PyThreadState *tstate)
 {
     PyInterpreterState *interp = tstate->interp;
 
+    // Invalidate all executors and turn off JIT:
+    interp->jit = false;
 #ifdef _Py_TIER2
-    // Invalidate all executors and turn off tier 2 optimizer
     _Py_Executors_InvalidateAll(interp, 0);
-    _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
-    Py_XDECREF(old);
 #endif
 
     // Stop watching __builtin__ modifications
@@ -1790,24 +1775,33 @@ file_is_closed(PyObject *fobj)
 static int
 flush_std_files(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *fout = _PySys_GetAttr(tstate, &_Py_ID(stdout));
-    PyObject *ferr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    PyObject *file;
     int status = 0;
 
-    if (fout != NULL && fout != Py_None && !file_is_closed(fout)) {
-        if (_PyFile_Flush(fout) < 0) {
-            PyErr_FormatUnraisable("Exception ignored on flushing sys.stdout");
+    if (_PySys_GetOptionalAttr(&_Py_ID(stdout), &file) < 0) {
+        status = -1;
+    }
+    else if (file != NULL && file != Py_None && !file_is_closed(file)) {
+        if (_PyFile_Flush(file) < 0) {
             status = -1;
         }
     }
+    if (status < 0) {
+        PyErr_FormatUnraisable("Exception ignored while flushing sys.stdout");
+    }
+    Py_XDECREF(file);
 
-    if (ferr != NULL && ferr != Py_None && !file_is_closed(ferr)) {
-        if (_PyFile_Flush(ferr) < 0) {
+    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
+        PyErr_Clear();
+        status = -1;
+    }
+    else if (file != NULL && file != Py_None && !file_is_closed(file)) {
+        if (_PyFile_Flush(file) < 0) {
             PyErr_Clear();
             status = -1;
         }
     }
+    Py_XDECREF(file);
 
     return status;
 }
@@ -2181,6 +2175,7 @@ _Py_Finalize(_PyRuntimeState *runtime)
     // XXX Ensure finalizer errors are handled properly.
 
     finalize_interp_clear(tstate);
+
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
@@ -2632,7 +2627,7 @@ create_stdio(const PyConfig *config, PyObject* io,
 
 #ifdef HAVE_WINDOWS_CONSOLE_IO
     /* Windows console IO is always UTF-8 encoded */
-    PyTypeObject *winconsoleio_type = (PyTypeObject *)_PyImport_GetModuleAttr(
+    PyTypeObject *winconsoleio_type = (PyTypeObject *)PyImport_ImportModuleAttr(
             &_Py_ID(_io), &_Py_ID(_WindowsConsoleIO));
     if (winconsoleio_type == NULL) {
         goto error;
@@ -2737,7 +2732,7 @@ init_set_builtins_open(void)
         goto error;
     }
 
-    if (!(wrapper = _PyImport_GetModuleAttrString("io", "open"))) {
+    if (!(wrapper = PyImport_ImportModuleAttrString("io", "open"))) {
         goto error;
     }
 
@@ -3017,10 +3012,14 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
         return 0;
     }
 
-    PyObject *ferr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    PyObject *ferr;
+    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &ferr) < 0) {
+        _PyErr_Clear(tstate);
+    }
     if (ferr == NULL || ferr == Py_None) {
         /* sys.stderr is not set yet or set to None,
            no need to try to display the exception */
+        Py_XDECREF(ferr);
         Py_DECREF(exc);
         return 0;
     }
@@ -3036,6 +3035,7 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
     if (_PyFile_Flush(ferr) < 0) {
         _PyErr_Clear(tstate);
     }
+    Py_DECREF(ferr);
 
     return has_tb;
 }
