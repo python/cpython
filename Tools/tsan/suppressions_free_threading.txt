@@ -10,7 +10,7 @@
 # These entries are for warnings that trigger in a library function, as called
 # by a CPython function.
 
-# https://gist.github.com/swtaarrs/08dfe7883b4c975c31ecb39388987a67
+# gh-124878: race condition when interpreter finalized while daemon thread runs
 race:free_threadstate
 
 # These warnings trigger directly in a CPython function.
