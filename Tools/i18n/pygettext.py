@@ -223,9 +223,8 @@ def normalize(s, encoding, prefix, options):
     lines = []
     for line in s.splitlines(True):
         escaped_line = escape(line, encoding)
-        if len(escaped_line) + len(prefix) + 2 > options.width and _space_splitter.search(line):  # don't wrap single words
+        if len(escaped_line) + len(prefix) + 3 > options.width:
             words = _space_splitter.findall(line)
-            words = [w for w in words if w]
             words.reverse()
             buf = []
             size = 0
@@ -234,10 +233,7 @@ def normalize(s, encoding, prefix, options):
                 escaped_word = escape(word, encoding)
                 escaped_word_len = len(escaped_word)
                 new_size = size + escaped_word_len
-                if new_size + 2 <= options.width:
-                    buf.append(escaped_word)
-                    size = new_size
-                elif not buf:
+                if new_size + 2 <= options.width or not buf:
                     buf.append(escaped_word)
                     size = new_size
                 else:
