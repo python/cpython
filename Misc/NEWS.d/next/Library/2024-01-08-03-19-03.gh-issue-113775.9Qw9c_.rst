@@ -1,0 +1,7 @@
+Fix handling of the ``#HttpOnly_`` prefix in
+:class:`~http.cookiejar.MozillaCookieJar` in the :mod:`http.cookiejar`
+module. For this, a ``case_insensitive`` option has been added to
+:meth:`~http.cookiejar.Cookie.has_nonstandard_attr` on the basis of RFC6265.
+Additionally, the :data:`~http.cookiejar.HTTPONLY_ATTR` constant has been
+changed from ``"HTTPOnly"`` to ``"HttpOnly"`` to improve consistency and
+standards compliance.
