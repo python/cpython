@@ -5429,6 +5429,7 @@ local(long long u)
     // Check edge cases
     int year = local_time.tm_year + 1900;
     if (year < MINYEAR || year > MAXYEAR) {
+        Py_DECREF(year);
         return old_u;
     }
     return utc_to_seconds(year,
