@@ -10,6 +10,7 @@ from test.support.os_helper import temp_cwd
 from test.support.script_helper import assert_python_failure, assert_python_ok
 from test.test_tools import skip_if_missing, toolsdir
 
+
 skip_if_missing('i18n')
 
 data_dir = (Path(__file__).parent / 'msgfmt_data').resolve()

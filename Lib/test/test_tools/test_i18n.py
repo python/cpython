@@ -7,7 +7,7 @@ import unittest
 from textwrap import dedent
 from pathlib import Path
 
-from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support.script_helper import assert_python_ok
 from test.test_tools import imports_under_tool, skip_if_missing, toolsdir
 from test.support.os_helper import temp_cwd, temp_dir
 
