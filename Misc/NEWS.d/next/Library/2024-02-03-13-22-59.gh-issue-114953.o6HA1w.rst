@@ -1,0 +1,6 @@
+Added support for multi-threaded XZ compression by passing in new optional
+parameter ``threads`` into :mod:`lzma` API. Supported both in the
+:func:`lzma.compress()` function and :class:`lzma.LZMAFile` class.
+
+This is supported by using the underlying ``lzma_stream_encoder_mt()`` API
+provided by liblzma.
