@@ -214,7 +214,7 @@ def escape_nonascii(s, encoding):
     return ''.join(escapes[b] for b in s.encode(encoding))
 
 
-_space_splitter = re.compile(r'(\s+)')
+_space_splitter = re.compile(r'\s+|\S+\s*')
 
 def normalize(s, encoding, prefix, options):
     # This converts the various Python string types into a format that is
@@ -224,7 +224,8 @@ def normalize(s, encoding, prefix, options):
     for line in s.splitlines(True):
         escaped_line = escape(line, encoding)
         if len(escaped_line) + len(prefix) + 2 > options.width and _space_splitter.search(line):  # don't wrap single words
-            words = _space_splitter.split(line)
+            words = _space_splitter.findall(line)
+            words = [w for w in words if w]
             words.reverse()
             buf = []
             size = 0
