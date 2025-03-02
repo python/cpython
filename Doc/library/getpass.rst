@@ -16,7 +16,7 @@
 
 The :mod:`getpass` module provides two functions:
 
-.. function:: getpass(prompt='Password: ', stream=None)
+.. function:: getpass(prompt='Password: ', stream=None, *, echochar=None)
 
    Prompt the user for a password without echoing.  The user is prompted using
    the string *prompt*, which defaults to ``'Password: '``.  On Unix, the
@@ -25,6 +25,12 @@ The :mod:`getpass` module provides two functions:
    (:file:`/dev/tty`) or if that is unavailable to ``sys.stderr`` (this
    argument is ignored on Windows).
 
+   The *echochar* argument controls how user input is displayed while typing.
+   If *echochar* is ``None`` (default), input remains hidden. If *echochar* is
+   a string, each typed character is replaced with the given string.
+   For example, ``echochar='*'`` will display asterisks instead of the actual
+   input.
+
    If echo free input is unavailable getpass() falls back to printing
    a warning message to *stream* and reading from ``sys.stdin`` and
    issuing a :exc:`GetPassWarning`.
@@ -32,6 +38,9 @@ The :mod:`getpass` module provides two functions:
    .. note::
       If you call getpass from within IDLE, the input may be done in the
       terminal you launched IDLE from rather than the idle window itself.
+
+   .. versionchanged:: next
+      Added the *echochar* parameter for keyboard feedback.
 
 .. exception:: GetPassWarning
 
