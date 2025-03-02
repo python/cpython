@@ -7,6 +7,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_call.h"          // _PyObject_MakeTpCall
 #include "pycore_freelist.h"      // _Py_FREELIST_FREE, _Py_FREELIST_POP
+#include "pycore_lock.h"          // _PyOnceFlag_CallOnce
 #include "pycore_long.h"          // _Py_SmallInts
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
@@ -2732,6 +2733,36 @@ error:
 }
 #endif /* WITH_PYLONG_MODULE */
 
+static struct non_binary_base_state {
+    double log_base_BASE;
+    twodigits convmultmax_base;
+    int convwidth_base;
+    _PyOnceFlag once;
+} state[37];
+
+static int
+init_non_binary_base(void *arg)
+{
+    int base = *(int *)arg;
+    twodigits convmax = base;
+    int i = 1;
+
+    state[base].log_base_BASE = (log((double)base) /
+                                 log((double)PyLong_BASE));
+    for (;;) {
+        twodigits next = convmax * base;
+        if (next > PyLong_BASE) {
+            break;
+        }
+        convmax = next;
+        ++i;
+    }
+    state[base].convmultmax_base = convmax;
+    assert(i > 0);
+    state[base].convwidth_base = i;
+    return 0;
+}
+
 /***
 long_from_non_binary_base: parameters and return values are the same as
 long_from_binary_base.
@@ -2748,26 +2779,26 @@ case number of Python digits needed to hold it is the smallest integer n s.t.
     BASE**n >= B**N      [taking logs to base BASE]
     n >= log(B**N)/log(BASE) = N * log(B)/log(BASE)
 
-The static array log_base_BASE[base] == log(base)/log(BASE) so we can compute
+The value log_base_BASE == log(base)/log(BASE) so we can compute
 this quickly.  A Python int with that much space is reserved near the start,
 and the result is computed into it.
 
 The input string is actually treated as being in base base**i (i.e., i digits
-are processed at a time), where two more static arrays hold:
+are processed at a time), where two more values:
 
-    convwidth_base[base] = the largest integer i such that base**i <= BASE
-    convmultmax_base[base] = base ** convwidth_base[base]
+    convwidth_base = the largest integer i such that base**i <= BASE
+    convmultmax_base = base ** convwidth_base
 
 The first of these is the largest i such that i consecutive input digits
 must fit in a single Python digit.  The second is effectively the input
 base we're really using.
 
 Viewing the input as a sequence <c0, c1, ..., c_n-1> of digits in base
-convmultmax_base[base], the result is "simply"
+convmultmax_base, the result is "simply"
 
    (((c0*B + c1)*B + c2)*B + c3)*B + ... ))) + c_n-1
 
-where B = convmultmax_base[base].
+where B = convmultmax_base.
 
 Error analysis:  as above, the number of Python digits `n` needed is worst-
 case
@@ -2832,35 +2863,15 @@ long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits,
     PyLongObject *z;
     const char *p;
 
-    static double log_base_BASE[37] = {0.0e0,};
-    static int convwidth_base[37] = {0,};
-    static twodigits convmultmax_base[37] = {0,};
-
-    if (log_base_BASE[base] == 0.0) {
-        twodigits convmax = base;
-        int i = 1;
-
-        log_base_BASE[base] = (log((double)base) /
-                               log((double)PyLong_BASE));
-        for (;;) {
-            twodigits next = convmax * base;
-            if (next > PyLong_BASE) {
-                break;
-            }
-            convmax = next;
-            ++i;
-        }
-        convmultmax_base[base] = convmax;
-        assert(i > 0);
-        convwidth_base[base] = i;
-    }
+    /* Initialize state[base] */
+    _PyOnceFlag_CallOnce(&state[base].once, init_non_binary_base, &base);
 
     /* Create an int object that can contain the largest possible
      * integer with this base and length.  Note that there's no
      * need to initialize z->long_value.ob_digit -- no slot is read up before
      * being stored into.
      */
-    double fsize_z = (double)digits * log_base_BASE[base] + 1.0;
+    double fsize_z = (double)digits * state[base].log_base_BASE + 1.0;
     if (fsize_z > (double)MAX_LONG_DIGITS) {
         /* The same exception as in long_alloc(). */
         PyErr_SetString(PyExc_OverflowError,
@@ -2882,8 +2893,8 @@ long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits,
     /* `convwidth` consecutive input digits are treated as a single
      * digit in base `convmultmax`.
      */
-    convwidth = convwidth_base[base];
-    convmultmax = convmultmax_base[base];
+    convwidth = state[base].convwidth_base;
+    convmultmax = state[base].convmultmax_base;
 
     /* Work ;-) */
     p = start;
