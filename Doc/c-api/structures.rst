@@ -65,8 +65,7 @@ under :ref:`reference counting <countingrefs>`.
 
 .. c:var:: PyTypeObject PyBaseObject_Type
 
-   The base class of all other classes.  It is the same object
-   as :class:`object` in the Python layer.
+   The base class of all other objects, the same as :class:`object` in Python.
 
 
 .. c:function:: int Py_Is(PyObject *x, PyObject *y)
