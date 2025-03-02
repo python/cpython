@@ -236,18 +236,20 @@ class ProcessPoolExecutorTest(ExecutorTest):
             executor.shutdown()
 
     def test_terminate_workers(self):
+        mock_fn = unittest.mock.Mock()
         with self.executor_type(max_workers=1) as executor:
-            executor._force_shutdown = unittest.mock.Mock()
+            executor._force_shutdown = mock_fn
             executor.terminate_workers()
 
-        executor._force_shutdown.assert_called_once_with(operation=futures.process._TERMINATE)
+        mock_fn.assert_called_once_with(operation=futures.process._TERMINATE)
 
     def test_kill_workers(self):
+        mock_fn = unittest.mock.Mock()
         with self.executor_type(max_workers=1) as executor:
-            executor._force_shutdown = unittest.mock.Mock()
+            executor._force_shutdown = mock_fn
             executor.kill_workers()
 
-        executor._force_shutdown.assert_called_once_with(operation=futures.process._KILL)
+        mock_fn.assert_called_once_with(operation=futures.process._KILL)
 
     def test_force_shutdown_workers_invalid_op(self):
         with self.executor_type(max_workers=1) as executor:
