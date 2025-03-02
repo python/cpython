@@ -72,7 +72,7 @@ def prepare_reader(console: Console, **kwargs):
 
 def prepare_console(events: Iterable[Event], **kwargs) -> MagicMock | Console:
     console = MagicMock()
-    console.get_event.side_effect = events
+    console.get_event.side_effect = list(events)
     console.height = 100
     console.width = 80
     for key, val in kwargs.items():
@@ -83,7 +83,7 @@ def prepare_console(events: Iterable[Event], **kwargs) -> MagicMock | Console:
 def handle_all_events(
     events, prepare_console=prepare_console, prepare_reader=prepare_reader
 ):
-    console = prepare_console(events)
+    console = prepare_console([events])
     reader = prepare_reader(console)
     try:
         while True:
@@ -103,14 +103,21 @@ handle_events_narrow_console = partial(
 
 class FakeConsole(Console):
     def __init__(self, events, encoding="utf-8") -> None:
-        self.events = iter(events)
+        self.events = list(events)
         self.encoding = encoding
         self.screen = []
         self.height = 100
         self.width = 80
+        self.index = 0
+        self.events_len = len(self.events)
 
     def get_event(self, block: bool = True) -> Event | None:
-        return next(self.events)
+        if self.index < self.events_len:
+            index = self.index
+            self.index += 1
+            return [self.events[index]]
+        else:
+            raise StopIteration
 
     def getpending(self) -> Event:
         return self.get_event(block=False)
