@@ -525,7 +525,7 @@ class Test_pygettext(unittest.TestCase):
         s = 'multi-line\n translation'
         s_expected = '""\n"multi-line\\n"\n" translation"'
 
-        data = normalize(s, 'UTF-8', options)
+        data = normalize(s, 'UTF-8', 'msgid', options)
         self.assertEqual(s_expected, data)
 
     def test_normalize_wrap(self):
@@ -534,9 +534,9 @@ class Test_pygettext(unittest.TestCase):
         make_escapes(True)
 
         s = 'this string should be wrapped to 30 chars'
-        s_expected = '""\n"this string should be wrapped "\n"to 30 chars"'
+        s_expected = '""\n"this string should be "\n"wrapped to 30 chars"'
 
-        data = normalize(s, 'UTF-8', options)
+        data = normalize(s, 'UTF-8', 'msgid', options)
         self.assertEqual(s_expected, data)
 
     def test_normalize_nostr(self):
@@ -547,7 +547,7 @@ class Test_pygettext(unittest.TestCase):
         s = ''
         s_expected = '""'
 
-        data = normalize(s, 'UTF-8', options)
+        data = normalize(s, 'UTF-8', 'msgid', options)
         self.assertEqual(s_expected, data)
 
     def test_normalize_short_width(self):
@@ -558,7 +558,7 @@ class Test_pygettext(unittest.TestCase):
         s = 'foos'
         s_expected = '"foos"'
 
-        data = normalize(s, 'UTF-8', options)
+        data = normalize(s, 'UTF-8', 'msgid', options)
         self.assertEqual(s_expected, data)
 
 
