@@ -2205,7 +2205,15 @@ find_ttinfo(zoneinfo_state *state, PyZoneInfo_ZoneInfo *self, PyObject *dt)
     }
 
     unsigned char fold = PyDateTime_DATE_GET_FOLD(dt);
-    assert(fold < 2);
+
+    // gh-125318: out-of-bounds sanity check on non-PyDateTime types
+    if (fold >= 2) {
+        PyErr_Format(PyExc_MemoryError,
+                     "find_ttinfo: sanity check failed, fold = %d, expected "
+                     "only 0 or 1", fold);
+        return NULL;
+    }
+
     int64_t *local_transitions = self->trans_list_wall[fold];
     size_t num_trans = self->num_transitions;
 
