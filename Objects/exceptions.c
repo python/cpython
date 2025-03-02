@@ -41,6 +41,16 @@ get_exc_state(void)
 }
 
 
+static bool
+should_collect_traceback_timestamps(void)
+{
+    /* Unset or empty means disabled. */
+    wchar_t *traceback_timestamps = (
+        _PyInterpreterState_GET()->config.traceback_timestamps);
+    return traceback_timestamps && traceback_timestamps[0] != '\0';
+}
+
+
 /* NOTE: If the exception class hierarchy changes, don't forget to update
  * Lib/test/exception_hierarchy.txt
  */
@@ -79,7 +89,13 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 static inline void BaseException_init_timestamp(PyBaseExceptionObject *self)
 {
-    PyTime_TimeRaw(&self->timestamp_ns);  /* fills in 0 on failure. */
+    if (!should_collect_traceback_timestamps() ||
+        Py_IS_TYPE(self, (PyTypeObject *)PyExc_StopIteration) ||
+        Py_IS_TYPE(self, (PyTypeObject *)PyExc_StopAsyncIteration)) {
+        self->timestamp_ns = 0;  /* fast; frequent non-error control flow. */
+    } else {
+        PyTime_TimeRaw(&self->timestamp_ns);  /* fills in 0 on failure. */
+    }
 }
 
 static int
@@ -89,12 +105,7 @@ BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
         return -1;
 
     Py_XSETREF(self->args, Py_NewRef(args));
-    if (Py_IS_TYPE(self, (PyTypeObject *)PyExc_StopIteration) ||
-        Py_IS_TYPE(self, (PyTypeObject *)PyExc_StopAsyncIteration)) {
-        self->timestamp_ns = 0;  /* fast; frequent non-error control flow. */
-    } else {
-        BaseException_init_timestamp(self);
-    }
+    BaseException_init_timestamp(self);
     return 0;
 }
 
@@ -117,7 +128,7 @@ BaseException_vectorcall(PyObject *type_obj, PyObject * const*args,
     // The dict is created on the fly in PyObject_GenericSetAttr()
     self->dict = NULL;
     self->notes = NULL;
-    BaseException_init_timestamp(self);
+    BaseException_init_timestamp(self);  // self.timestamp_ns = ...
     self->traceback = NULL;
     self->cause = NULL;
     self->context = NULL;
@@ -4429,4 +4440,3 @@ _PyException_AddNote(PyObject *exc, PyObject *note)
     Py_XDECREF(r);
     return res;
 }
-

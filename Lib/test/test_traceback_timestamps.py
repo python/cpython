@@ -143,7 +143,7 @@ print(repr(sys.flags.traceback_timestamps))
         """Test that invalid flag values cause an error"""
         result = script_helper.assert_python_failure("-X", "traceback_timestamps=invalid", self.flags_script_path)
         stderr = result.err.decode()
-        self.assertIn("Invalid value for -X traceback_timestamps option", stderr)
+        self.assertIn("Invalid -X traceback_timestamps=value option", stderr)
 
 
 if __name__ == "__main__":

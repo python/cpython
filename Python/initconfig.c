@@ -1943,7 +1943,7 @@ normalize_timestamp_format(const wchar_t *value)
         return L"us";
     }
     if (wcscmp(value, L"0") == 0) {
-        /* Treat "0" as empty string to disable the feature */
+        /* "0" means disable the feature. */
         return L"";
     }
     return value;
@@ -1963,7 +1963,8 @@ config_init_traceback_timestamps(PyConfig *config)
         /* For environment variables, silently ignore invalid values */
         if (is_valid_timestamp_format(wenv)) {
             const wchar_t *normalized = normalize_timestamp_format(wenv);
-            PyStatus status = PyConfig_SetString(config, &config->traceback_timestamps, normalized);
+            PyStatus status = PyConfig_SetString(
+                config, &config->traceback_timestamps, normalized);
             PyMem_RawFree(wenv);
             if (_PyStatus_EXCEPTION(status)) {
                 return status;
@@ -1974,21 +1975,24 @@ config_init_traceback_timestamps(PyConfig *config)
     }
 
     /* -X option overrides environment variable */
-    const wchar_t *xoption = config_get_xoption_value(config, L"traceback_timestamps");
+    const wchar_t *xoption = config_get_xoption_value(
+        config, L"traceback_timestamps");
     if (xoption != NULL) {
-        /* If value is empty (just -X traceback_timestamps with no =), use "us" as default */
+        /* If just -X traceback_timestamps with no =, use "us" as default */
         const wchar_t *value = (*xoption != '\0') ? xoption : L"us";
 
         /* Validate command line option values, error out if invalid */
         if (is_valid_timestamp_format(value)) {
             const wchar_t *normalized = normalize_timestamp_format(value);
-            PyStatus status = PyConfig_SetString(config, &config->traceback_timestamps, normalized);
+            PyStatus status = PyConfig_SetString(
+                config, &config->traceback_timestamps, normalized);
             if (_PyStatus_EXCEPTION(status)) {
                 return status;
             }
         } else {
-            return PyStatus_Error("Invalid value for -X traceback_timestamps option. "
-                                 "Valid values are: us, ns, iso, 0, 1 or empty.");
+            return PyStatus_Error(
+                "Invalid -X traceback_timestamps=value option.  Valid "
+                "values are: us, ns, iso, 0, 1 or empty.");
         }
     }
 

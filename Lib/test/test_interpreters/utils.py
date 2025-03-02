@@ -458,8 +458,10 @@ class TestBase(unittest.TestCase):
 
     @support.requires_subprocess()
     def run_python(self, *argv):
+        # Make assertions of specific traceback output simpler.
+        arguments = ["-X", "traceback_timestamps=0", *argv]
         proc = subprocess.run(
-            [sys.executable, *argv],
+            [sys.executable, *arguments],
             capture_output=True,
             text=True,
         )
