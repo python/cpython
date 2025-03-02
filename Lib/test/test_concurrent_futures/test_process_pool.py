@@ -26,13 +26,15 @@ class EventfulGCObj():
     def __del__(self):
         self.event.set()
 
+TERMINATE_WORKERS = futures.ProcessPoolExecutor.terminate_workers.__name__
+KILL_WORKERS = futures.ProcessPoolExecutor.kill_workers.__name__
 FORCE_SHUTDOWN_PARAMS = [
-    dict(function_name='terminate_workers'),
-    dict(function_name='kill_workers'),
+    dict(function_name=TERMINATE_WORKERS),
+    dict(function_name=KILL_WORKERS),
 ]
 
 def _put_sleep_put(queue):
-    """ Used as part of test_process_pool_executor_terminate_workers """
+    """ Used as part of test_terminate_workers """
     queue.put('started')
     time.sleep(2)
     queue.put('finished')
@@ -269,12 +271,14 @@ class ProcessPoolExecutorTest(ExecutorTest):
             getattr(executor, function_name)()
             worker_process.join()
 
-            if function_name == 'terminate_workers' or \
+            if function_name == TERMINATE_WORKERS or \
                 sys.platform == 'win32':
                 # On windows, kill and terminate both send SIGTERM
                 self.assertEqual(worker_process.exitcode, -signal.SIGTERM)
-            elif function_name == 'kill_workers':
+            elif function_name == KILL_WORKERS:
                 self.assertEqual(worker_process.exitcode, -signal.SIGKILL)
+            else:
+                self.fail(f"Unknown operation: {function_name}")
 
             self.assertRaises(queue.Empty, q.get, timeout=1)
 
