@@ -69,10 +69,11 @@ class TestHeap:
 
         self.assertRaises(TypeError, self.module.heappush, [])
 
-        exc_types = (AttributeError, TypeError)
-        self.assertRaises(exc_types, self.module.heappush, None, None)
-        self.assertRaises(exc_types, self.module.heappop, None)
-
+        try:
+            self.assertRaises(TypeError, self.module.heappush, None, None)
+            self.assertRaises(TypeError, self.module.heappop, None)
+        except AttributeError:
+            pass
 
     def test_max_push_pop(self):
         # 1) Push 256 random numbers and pop them off, verifying all's OK.
@@ -97,11 +98,10 @@ class TestHeap:
         self.check_max_invariant(results)
 
         self.assertRaises(TypeError, self.module.heappush_max, [])
-        try:
-            self.assertRaises(TypeError, self.module.heappush_max, None, None)
-            self.assertRaises(TypeError, self.module.heappop_max, None)
-        except AttributeError:
-            pass
+
+        exc_types = (AttributeError, TypeError)
+        self.assertRaises(exc_types, self.module.heappush_max, None, None)
+        self.assertRaises(exc_types, self.module.heappop_max, None)
 
     def check_invariant(self, heap):
         # Check the heap invariant.

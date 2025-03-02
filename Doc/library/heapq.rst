@@ -84,7 +84,7 @@ The following functions are provided:
    on the heap.
 
 
-For max-heaps, the reverse of a heap, the following functions are provided:
+For max-heaps, the following functions are provided:
 
 
 .. function:: heapify_max(x)
@@ -103,7 +103,7 @@ For max-heaps, the reverse of a heap, the following functions are provided:
 
 .. function:: heappop_max(heap)
 
-   Pop and return the largest item from the max-*heap*, maintaining the heap
+   Pop and return the largest item from the max-heap *heap*, maintaining the heap
    invariant.  If the max-heap is empty, :exc:`IndexError` is raised.  To access the
    largest item without popping it, use ``heap[0]``.
 
@@ -112,7 +112,7 @@ For max-heaps, the reverse of a heap, the following functions are provided:
 
 .. function:: heappushpop_max(heap, item)
 
-   Push *item* on the max-heap, then pop and return the largest item from *heap*.
+   Push *item* on the max-heap *heap*, then pop and return the largest item from *heap*.
    The combined action runs more efficiently than :func:`heappush_max`
    followed by a separate call to :func:`heappop_max`.
 
