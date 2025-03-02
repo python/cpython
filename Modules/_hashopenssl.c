@@ -1623,7 +1623,7 @@ locked_HMAC_CTX_copy(HMAC_CTX *new_ctx_p, HMACobject *self)
     return result;
 }
 
-/* returning 0 means that an error occurred and an OpenSSL exception is set */
+/* returning 0 means that an error occurred and an exception is set */
 static unsigned int
 _hmac_digest_size(HMACobject *self)
 {
