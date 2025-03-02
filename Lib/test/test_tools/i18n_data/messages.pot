@@ -42,7 +42,7 @@ msgstr ""
 #: messages.py:33
 msgid ""
 "this  is  a  very  very    very very  very    very  very   very       very  "
-"very    very  very    very   long string with wierd spaces!"
+"very    very  very    very   long string with weird spaces!"
 msgstr ""
 
 #: messages.py:50 messages.py:93 messages.py:94 messages.py:97 messages.py:98
