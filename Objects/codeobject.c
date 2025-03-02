@@ -1,5 +1,3 @@
-#include <stdbool.h>
-
 #include "Python.h"
 #include "opcode.h"
 #include "structmember.h"         // PyMemberDef
@@ -10,6 +8,8 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "clinic/codeobject.c.h"
+
+#include <stdbool.h>
 
 static PyObject* code_repr(PyCodeObject *co);
 

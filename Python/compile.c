@@ -21,8 +21,6 @@
  * objects.
  */
 
-#include <stdbool.h>
-
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #define NEED_OPCODE_TABLES
@@ -37,6 +35,8 @@
 #include "pycore_symtable.h"      // PySTEntryObject, _PyFuture_FromAST()
 
 #include "opcode_metadata.h"      // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
+
+#include <stdbool.h>
 
 #define DEFAULT_CODE_SIZE 128
 #define DEFAULT_LNOTAB_SIZE 16
