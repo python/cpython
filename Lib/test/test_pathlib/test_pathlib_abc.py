@@ -914,23 +914,17 @@ class DummyWritablePath(WritablePath, DummyJoinablePath):
         self._directories[parent].add(name)
         return DummyWritablePathIO(self._files, path)
 
-    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+    def mkdir(self):
         path = str(self)
         parent = str(self.parent)
         if path in self._directories:
-            if exist_ok:
-                return
-            else:
-                raise FileExistsError(errno.EEXIST, "File exists", path)
+            raise FileExistsError(errno.EEXIST, "File exists", path)
         try:
             if self.name:
                 self._directories[parent].add(self.name)
             self._directories[path] = set()
         except KeyError:
-            if not parents:
-                raise FileNotFoundError(errno.ENOENT, "File not found", parent) from None
-            self.parent.mkdir(parents=True, exist_ok=True)
-            self.mkdir(mode, parents=False, exist_ok=exist_ok)
+            raise FileNotFoundError(errno.ENOENT, "File not found", parent) from None
 
     def symlink_to(self, target, target_is_directory=False):
         raise NotImplementedError
@@ -1007,25 +1001,6 @@ class ReadablePathTest(JoinablePathTest):
         p = self.cls(self.base)
         self.assertIsInstance(p, ReadablePath)
 
-    def test_exists(self):
-        P = self.cls
-        p = P(self.base)
-        self.assertIs(True, p.exists())
-        self.assertIs(True, (p / 'dirA').exists())
-        self.assertIs(True, (p / 'fileA').exists())
-        self.assertIs(False, (p / 'fileA' / 'bah').exists())
-        if self.can_symlink:
-            self.assertIs(True, (p / 'linkA').exists())
-            self.assertIs(True, (p / 'linkB').exists())
-            self.assertIs(True, (p / 'linkB' / 'fileB').exists())
-            self.assertIs(False, (p / 'linkA' / 'bah').exists())
-            self.assertIs(False, (p / 'brokenLink').exists())
-            self.assertIs(True, (p / 'brokenLink').exists(follow_symlinks=False))
-        self.assertIs(False, (p / 'foo').exists())
-        self.assertIs(False, P('/xyzzy').exists())
-        self.assertIs(False, P(self.base + '\udfff').exists())
-        self.assertIs(False, P(self.base + '\x00').exists())
-
     def test_magic_open(self):
         p = self.cls(self.base)
         with magic_open(p / 'fileA', 'r') as f:
@@ -1058,17 +1033,8 @@ class ReadablePathTest(JoinablePathTest):
     def test_iterdir_info(self):
         p = self.cls(self.base)
         for child in p.iterdir():
-            info = child.info
-            self.assertIsInstance(info, PathInfo)
-            self.assertEqual(info.exists(), child.exists())
-            self.assertEqual(info.is_dir(), child.is_dir())
-            self.assertEqual(info.is_file(), child.is_file())
-            self.assertEqual(info.is_symlink(), child.is_symlink())
-            self.assertTrue(info.exists(follow_symlinks=False))
-            self.assertEqual(info.is_dir(follow_symlinks=False),
-                             child.is_dir(follow_symlinks=False))
-            self.assertEqual(info.is_file(follow_symlinks=False),
-                             child.is_file(follow_symlinks=False))
+            self.assertIsInstance(child.info, PathInfo)
+            self.assertTrue(child.info.exists(follow_symlinks=False))
 
     def test_glob_common(self):
         def _check(glob, expected):
@@ -1247,74 +1213,6 @@ class ReadablePathTest(JoinablePathTest):
             self.assertTrue((p / 'brokenLinkLoop').info.is_symlink())
         self.assertFalse((p / 'fileA\udfff').info.is_symlink())
         self.assertFalse((p / 'fileA\x00').info.is_symlink())
-
-    def test_is_dir(self):
-        P = self.cls(self.base)
-        self.assertTrue((P / 'dirA').is_dir())
-        self.assertFalse((P / 'fileA').is_dir())
-        self.assertFalse((P / 'non-existing').is_dir())
-        self.assertFalse((P / 'fileA' / 'bah').is_dir())
-        if self.can_symlink:
-            self.assertFalse((P / 'linkA').is_dir())
-            self.assertTrue((P / 'linkB').is_dir())
-            self.assertFalse((P/ 'brokenLink').is_dir())
-        self.assertFalse((P / 'dirA\udfff').is_dir())
-        self.assertFalse((P / 'dirA\x00').is_dir())
-
-    def test_is_dir_no_follow_symlinks(self):
-        P = self.cls(self.base)
-        self.assertTrue((P / 'dirA').is_dir(follow_symlinks=False))
-        self.assertFalse((P / 'fileA').is_dir(follow_symlinks=False))
-        self.assertFalse((P / 'non-existing').is_dir(follow_symlinks=False))
-        self.assertFalse((P / 'fileA' / 'bah').is_dir(follow_symlinks=False))
-        if self.can_symlink:
-            self.assertFalse((P / 'linkA').is_dir(follow_symlinks=False))
-            self.assertFalse((P / 'linkB').is_dir(follow_symlinks=False))
-            self.assertFalse((P/ 'brokenLink').is_dir(follow_symlinks=False))
-        self.assertFalse((P / 'dirA\udfff').is_dir(follow_symlinks=False))
-        self.assertFalse((P / 'dirA\x00').is_dir(follow_symlinks=False))
-
-    def test_is_file(self):
-        P = self.cls(self.base)
-        self.assertTrue((P / 'fileA').is_file())
-        self.assertFalse((P / 'dirA').is_file())
-        self.assertFalse((P / 'non-existing').is_file())
-        self.assertFalse((P / 'fileA' / 'bah').is_file())
-        if self.can_symlink:
-            self.assertTrue((P / 'linkA').is_file())
-            self.assertFalse((P / 'linkB').is_file())
-            self.assertFalse((P/ 'brokenLink').is_file())
-        self.assertFalse((P / 'fileA\udfff').is_file())
-        self.assertFalse((P / 'fileA\x00').is_file())
-
-    def test_is_file_no_follow_symlinks(self):
-        P = self.cls(self.base)
-        self.assertTrue((P / 'fileA').is_file(follow_symlinks=False))
-        self.assertFalse((P / 'dirA').is_file(follow_symlinks=False))
-        self.assertFalse((P / 'non-existing').is_file(follow_symlinks=False))
-        self.assertFalse((P / 'fileA' / 'bah').is_file(follow_symlinks=False))
-        if self.can_symlink:
-            self.assertFalse((P / 'linkA').is_file(follow_symlinks=False))
-            self.assertFalse((P / 'linkB').is_file(follow_symlinks=False))
-            self.assertFalse((P/ 'brokenLink').is_file(follow_symlinks=False))
-        self.assertFalse((P / 'fileA\udfff').is_file(follow_symlinks=False))
-        self.assertFalse((P / 'fileA\x00').is_file(follow_symlinks=False))
-
-    def test_is_symlink(self):
-        P = self.cls(self.base)
-        self.assertFalse((P / 'fileA').is_symlink())
-        self.assertFalse((P / 'dirA').is_symlink())
-        self.assertFalse((P / 'non-existing').is_symlink())
-        self.assertFalse((P / 'fileA' / 'bah').is_symlink())
-        if self.can_symlink:
-            self.assertTrue((P / 'linkA').is_symlink())
-            self.assertTrue((P / 'linkB').is_symlink())
-            self.assertTrue((P/ 'brokenLink').is_symlink())
-        self.assertIs((P / 'fileA\udfff').is_file(), False)
-        self.assertIs((P / 'fileA\x00').is_file(), False)
-        if self.can_symlink:
-            self.assertIs((P / 'linkA\udfff').is_file(), False)
-            self.assertIs((P / 'linkA\x00').is_file(), False)
 
 
 class WritablePathTest(JoinablePathTest):
