@@ -213,13 +213,13 @@ def escape_ascii(s, encoding):
 def escape_nonascii(s, encoding):
     return ''.join(escapes[b] for b in s.encode(encoding))
 
+space_splitter = re.compile(r'(\s+)').split
 
 def normalize(s, encoding, options):
     # This converts the various Python string types into a format that is
     # appropriate for .po files, namely much closer to C style,
     # while wrapping to options.width.
     lines = []
-    space_splitter = re.compile(r'(\s+)').split
     for line in s.splitlines(True):
         if len(escape(line, encoding)) > options.width:
             words = space_splitter(line)
