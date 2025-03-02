@@ -1551,6 +1551,9 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
                 goto exit;
             }
             PyObject *constant = get_const_value(instr->i_opcode, instr->i_oparg, consts);
+            if (constant == NULL) {
+                goto error;
+            }
             int r = PyList_Append(list, constant);
             Py_DECREF(constant);
             if (r < 0) {
