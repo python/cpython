@@ -16,8 +16,10 @@
 This module provides an implementation of the heap queue algorithm, also known
 as the priority queue algorithm.
 
-Heaps are binary trees for which every parent node has a value less than or
-equal to any of its children.  We refer to this condition as the heap invariant.
+Min-heaps (resp. max-heaps) are binary trees for which every parent node
+has a value less than (resp. greater than) or equal to any of its children.
+We refer to this condition as the heap invariant. Unless stated otherwise,
+*heaps* refer to min-heaps.
 
 This implementation uses arrays for which
 ``heap[k] <= heap[2*k+1]`` and ``heap[k] <= heap[2*k+2]`` for all *k*, counting
@@ -80,6 +82,59 @@ The following functions are provided:
    desired, consider using :func:`heappushpop` instead.  Its push/pop
    combination returns the smaller of the two values, leaving the larger value
    on the heap.
+
+
+For max-heaps, the following functions are provided:
+
+
+.. function:: heapify_max(x)
+
+   Transform list *x* into a max-heap, in-place, in linear time.
+
+   .. versionadded:: next
+
+
+.. function:: heappush_max(heap, item)
+
+   Push the value *item* onto the max-heap *heap*, maintaining the heap invariant.
+
+   .. versionadded:: next
+
+
+.. function:: heappop_max(heap)
+
+   Pop and return the largest item from the max-heap *heap*, maintaining the heap
+   invariant.  If the max-heap is empty, :exc:`IndexError` is raised.  To access the
+   largest item without popping it, use ``heap[0]``.
+
+   .. versionadded:: next
+
+
+.. function:: heappushpop_max(heap, item)
+
+   Push *item* on the max-heap *heap*, then pop and return the largest item from *heap*.
+   The combined action runs more efficiently than :func:`heappush_max`
+   followed by a separate call to :func:`heappop_max`.
+
+   .. versionadded:: next
+
+
+.. function:: heapreplace_max(heap, item)
+
+   Pop and return the largest item from the max-heap *heap* and also push the new *item*.
+   The max-heap size doesn't change. If the max-heap is empty, :exc:`IndexError` is raised.
+
+   This one step operation is more efficient than a :func:`heappop_max` followed by
+   :func:`heappush_max` and can be more appropriate when using a fixed-size heap.
+   The pop/push combination always returns an element from the heap and replaces
+   it with *item*.
+
+   The value returned may be larger than the *item* added.  If that isn't
+   desired, consider using :func:`heappushpop_max` instead.  Its push/pop
+   combination returns the larger of the two values, leaving the smaller value
+   on the heap.
+
+   .. versionadded:: next
 
 
 The module also offers three general purpose functions based on heaps.
