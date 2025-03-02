@@ -167,6 +167,23 @@ _tracemalloc_get_traced_memory_impl(PyObject *module)
     return _PyTraceMalloc_GetTracedMemory();
 }
 
+
+/*[clinic input]
+_tracemalloc.get_traced_allocs
+
+Get the current count of created and destroyed refs.
+
+Returns a tuple: (created: int, destroyed: int).
+[clinic start generated code]*/
+
+static PyObject *
+_tracemalloc_get_traced_allocs_impl(PyObject *module)
+/*[clinic end generated code: output=cb84cbd781fab85f input=336f38d37a5830ef]*/
+{
+    return _PyTraceMalloc_GetTracedAllocs();
+}
+
+
 /*[clinic input]
 _tracemalloc.reset_peak
 
@@ -195,6 +212,7 @@ static PyMethodDef module_methods[] = {
     _TRACEMALLOC_GET_TRACEBACK_LIMIT_METHODDEF
     _TRACEMALLOC_GET_TRACEMALLOC_MEMORY_METHODDEF
     _TRACEMALLOC_GET_TRACED_MEMORY_METHODDEF
+    _TRACEMALLOC_GET_TRACED_ALLOCS_METHODDEF
     _TRACEMALLOC_RESET_PEAK_METHODDEF
     /* sentinel */
     {NULL, NULL}

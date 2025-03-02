@@ -94,6 +94,12 @@ struct _tracemalloc_runtime_state {
     /* domain (unsigned int) => traces (_Py_hashtable_t).
        Protected by TABLES_LOCK(). */
     _Py_hashtable_t *domains;
+    /* Number of allocations.
+       Protected by TABLES_LOCK(). */
+    Py_ssize_t allocations;
+    /* Number of deallocations.
+       Protected by TABLES_LOCK() and sometimes modified atomically. */
+    Py_ssize_t deallocations;
 
     struct tracemalloc_traceback empty_traceback;
 
@@ -154,6 +160,9 @@ extern size_t _PyTraceMalloc_GetMemory(void);
 
 /* Get the current size and peak size of traced memory blocks as a 2-tuple */
 extern PyObject* _PyTraceMalloc_GetTracedMemory(void);
+
+/* Get the current number of references created and destroyed as a 2-tuple */
+extern PyObject* _PyTraceMalloc_GetTracedAllocs(void);
 
 /* Set the peak size of traced memory blocks to the current size */
 extern void _PyTraceMalloc_ResetPeak(void);

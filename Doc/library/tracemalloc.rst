@@ -299,7 +299,8 @@ Functions
 
 .. function:: clear_traces()
 
-   Clear traces of memory blocks allocated by Python.
+   Clear traces of memory blocks allocated and counts of created and destroyed
+   memory blocks by Python.
 
    See also :func:`stop`.
 
@@ -328,6 +329,12 @@ Functions
 
    Get the current size and peak size of memory blocks traced by the
    :mod:`tracemalloc` module as a tuple: ``(current: int, peak: int)``.
+
+
+.. function:: get_traced_allocs()
+
+   Get the current unit counts of allocated and deallocated memory blocks.
+   :mod:`tracemalloc` module as a tuple: ``(allocs: int, deallocs: int)``.
 
 
 .. function:: reset_peak()
