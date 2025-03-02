@@ -225,7 +225,7 @@ def normalize(s, encoding, options):
             words = space_splitter(line)
             words.reverse()
             buf = []
-            size = 2
+            size = 0
             while words:
                 word = words.pop()
                 escaped_word_len = len(escape(word, encoding))
@@ -235,17 +235,13 @@ def normalize(s, encoding, options):
                 else:
                     lines.append(''.join(buf))
                     buf = [word]
-                    size = 2 + escaped_word_len
+                    size = escaped_word_len
             lines.append(''.join(buf))
         else:
             lines.append(line)
     if len(lines) <= 1:
         return f'"{escape(s, encoding)}"'
-    if lines and not lines[-1]:
-        del lines[-1]
-        lines[-1] += '\n'
-    return '""\n' + '\n'.join(
-        [f'"{escape(line, encoding)}"' for line in lines])
+    return '""\n' + '\n'.join([f'"{escape(line, encoding)}"' for line in lines])
 
 
 def containsAny(str, set):

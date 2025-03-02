@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import unittest
+from test.test_decimal import skip_expected
 from textwrap import dedent
 from pathlib import Path
 
@@ -18,7 +19,7 @@ DATA_DIR = Path(__file__).resolve().parent / 'i18n_data'
 
 
 with imports_under_tool("i18n"):
-    from pygettext import parse_spec
+    from pygettext import parse_spec, normalize, make_escapes
 
 
 def normalize_POT_file(pot):
@@ -515,6 +516,42 @@ class Test_pygettext(unittest.TestCase):
                 with self.assertRaises(ValueError) as cm:
                     parse_spec(spec)
                 self.assertEqual(str(cm.exception), message)
+
+    def test_normalize_multiline(self):
+        # required to set up normalize
+        class NormOptions:
+            width = 78
+        make_escapes(True)
+
+        s = 'multi-line\n translation'
+        s_expected = '""\n"multi-line\\n"\n" translation"'
+
+        data = normalize(s, 'UTF-8', NormOptions)
+        self.assertEqual(s_expected, data)
+
+    def test_normalize_wrap(self):
+        # required to set up normalize
+        class NormOptions:
+            width = 30
+        make_escapes(True)
+
+        s = 'this string should be wrapped to 30 chars'
+        s_expected = '""\n"this string should be wrapped "\n"to 30 chars"'
+
+        data = normalize(s, 'UTF-8', NormOptions)
+        self.assertEqual(s_expected, data)
+
+    def test_normalize_nostr(self):
+        # required to set up normalize
+        class NormOptions:
+            width = 78
+        make_escapes(True)
+
+        s = ''
+        s_expected = '""'
+
+        data = normalize(s, 'UTF-8', NormOptions)
+        self.assertEqual(s_expected, data)
 
 
 def extract_from_snapshots():
