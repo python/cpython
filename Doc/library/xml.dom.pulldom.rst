@@ -82,7 +82,7 @@ and switch to DOM-related processing.
 
 .. class:: SAX2DOM(documentFactory=None)
 
-   Subclass of :class:`xml.sax.handler.ContentHandler`.
+   Subclass of :class:`xml.dom.pulldom.PullDom`.
 
 
 .. function:: parse(stream_or_string, parser=None, bufsize=None)
