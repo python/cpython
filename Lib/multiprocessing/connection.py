@@ -23,6 +23,7 @@ import time
 from . import util
 
 from . import AuthenticationError, BufferTooShort
+from . import context
 from .context import reduction
 _ForkingPickler = reduction.ForkingPickler
 
@@ -899,9 +900,9 @@ def _create_response(authkey, message):
             return hmac.new(authkey, message, 'md5').digest()
         except ValueError:
             # HMAC-MD5 is not available (FIPS mode?), fall back to
-            # HMAC-SHA2-256 modern protocol. The legacy server probably
+            # our modern HMAC-SHA* protocol. The legacy server probably
             # doesn't support it and will reject us anyways. :shrug:
-            digest_name = 'sha256'
+            digest_name = context._DIGEST_FOR_CONNECTION_HMAC
     # Modern protocol, indicate the digest used in the reply.
     response = hmac.new(authkey, message, digest_name).digest()
     return b'{%s}%s' % (digest_name.encode('ascii'), response)
@@ -932,10 +933,12 @@ def _verify_challenge(authkey, message, response):
         raise AuthenticationError('digest received was wrong')
 
 
-def deliver_challenge(connection, authkey: bytes, digest_name='sha256'):
+def deliver_challenge(connection, authkey: bytes, digest_name: str = ''):
     if not isinstance(authkey, bytes):
         raise ValueError(
             "Authkey must be bytes, not {0!s}".format(type(authkey)))
+    if not digest_name:
+        digest_name = context._DIGEST_FOR_CONNECTION_HMAC
     assert MESSAGE_LENGTH > _MD5ONLY_MESSAGE_LENGTH, "protocol constraint"
     message = os.urandom(MESSAGE_LENGTH)
     message = b'{%s}%s' % (digest_name.encode('ascii'), message)
