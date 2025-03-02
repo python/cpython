@@ -22,7 +22,6 @@
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#include <stdbool.h>
 #include "Python.h"
 #include "pycore_hashtable.h"
 #include "pycore_strhex.h"               // _Py_strhex()
@@ -37,6 +36,7 @@
 #include <openssl/objects.h>
 #include <openssl/err.h>
 
+#include <stdbool.h>
 
 #ifndef OPENSSL_THREADS
 #  error "OPENSSL_THREADS is not defined, Python requires thread-safe OpenSSL"
