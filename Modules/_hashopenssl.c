@@ -797,7 +797,8 @@ EVPXOF_digest_impl(EVPobject *self, Py_ssize_t length)
     }
     if (!EVP_DigestFinalXOF(temp_ctx,
                             (unsigned char*)PyBytes_AS_STRING(retval),
-                            length)) {
+                            length))
+    {
         goto error;
     }
 
@@ -930,10 +931,7 @@ py_evp_fromname(PyObject *module, const char *digestname, PyObject *data_obj,
         module, digestname, usedforsecurity ? Py_ht_evp : Py_ht_evp_nosecurity
     );
     if (digest == NULL) {
-        if (data_obj != NULL) {
-            PyBuffer_Release(&view);
-        }
-        return NULL;
+        goto exit;
     }
 
     if ((EVP_MD_flags(digest) & EVP_MD_FLAG_XOF) == EVP_MD_FLAG_XOF) {
@@ -982,8 +980,10 @@ exit:
     if (data_obj != NULL) {
         PyBuffer_Release(&view);
     }
-    assert(digest != NULL);
-    PY_EVP_MD_free(digest);
+    if (digest != NULL) {
+        PY_EVP_MD_free(digest);
+    }
+
     return (PyObject *)self;
 }
 
@@ -1756,12 +1756,12 @@ _hmac_digest(HMACobject *self, unsigned char *buf, unsigned int len)
 {
     HMAC_CTX *temp_ctx = HMAC_CTX_new();
     if (temp_ctx == NULL) {
-        PyErr_NoMemory();
+        (void)PyErr_NoMemory();
         return 0;
     }
     if (!locked_HMAC_CTX_copy(temp_ctx, self)) {
         HMAC_CTX_free(temp_ctx);
-        _setException(PyExc_ValueError, NULL);
+        (void)_setException(PyExc_ValueError, NULL);
         return 0;
     }
     int r = HMAC_Final(temp_ctx, buf, &len);
