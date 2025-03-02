@@ -250,6 +250,7 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
 
     if (newsize == 0) {
 #ifdef Py_GIL_DISABLED
+        ensure_shared_on_resize(self);
         arrayarray_free(self->ob_item, _PyObject_GC_IS_SHARED(self));
 #else
         arrayarray_free(self->ob_item, false);
@@ -799,7 +800,6 @@ getarrayitem(PyObject *op, Py_ssize_t i, char *items)
     assert(array_Check(op, state));
 #endif
     arrayobject *ap = arrayobject_CAST(op);
-    assert(valid_index(i, Py_SIZE(op)));
     return (*ap->ob_descr->getitem)(items, i);
 }
 
@@ -864,7 +864,6 @@ setarrayitem(PyObject *op, Py_ssize_t i, PyObject *v, char *items)
     assert(array_Check(op, state));
 #endif
     arrayobject *ap = arrayobject_CAST(op);
-    assert(valid_index(i, Py_SIZE(op)));
     return (*ap->ob_descr->setitem)(items, i, v);
 }
 
