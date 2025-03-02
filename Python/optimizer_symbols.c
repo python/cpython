@@ -574,6 +574,9 @@ _Py_uop_sym_is_immortal(JitOptSymbol *sym)
     if (sym->tag == JIT_SYM_KNOWN_CLASS_TAG) {
         return sym->cls.type == &PyBool_Type;
     }
+    if (sym->tag == JIT_SYM_TRUTHINESS_TAG) {
+        return true;
+    }
     return false;
 }
 
@@ -830,7 +833,21 @@ _Py_uop_symbols_test(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
         _Py_uop_sym_get_const(ctx, _Py_uop_sym_tuple_getitem(ctx, sym, 1)) == val_43,
         "tuple item does not match value used to create tuple"
     );
-
+    JitOptSymbol *value = _Py_uop_sym_new_type(ctx, &PyBool_Type);
+    sym = _Py_uop_sym_new_truthiness(ctx, value, false);
+    TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyBool_Type), "truthiness is not boolean");
+    TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, sym) == -1, "truthiness is not unknown");
+    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, sym) == false, "truthiness is constant");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, sym) == NULL, "truthiness is not NULL");
+    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, value) == false, "value is constant");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, value) == NULL, "value is not NULL");
+    _Py_uop_sym_set_const(ctx, sym, Py_False);
+    TEST_PREDICATE(_Py_uop_sym_matches_type(sym, &PyBool_Type), "truthiness is not boolean");
+    TEST_PREDICATE(_Py_uop_sym_truthiness(ctx, sym) == 0, "truthiness is not True");
+    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, sym) == true, "truthiness is not constant");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, sym) == Py_False, "truthiness is not False");
+    TEST_PREDICATE(_Py_uop_sym_is_const(ctx, value) == true, "value is not constant");
+    TEST_PREDICATE(_Py_uop_sym_get_const(ctx, value) == Py_True, "value is not True");
     _Py_uop_abstractcontext_fini(ctx);
     Py_DECREF(val_42);
     Py_DECREF(val_43);
