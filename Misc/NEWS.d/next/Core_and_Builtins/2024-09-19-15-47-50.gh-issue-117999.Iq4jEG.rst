@@ -1,0 +1,2 @@
+Fix calculation of powers of complex numbers. Small integer powers now produce correct sign of zero components. Negative powers of infinite numbers now evaluate to zero instead of NaN.
+Powers of infinite numbers no longer raise OverflowError.
