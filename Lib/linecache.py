@@ -182,6 +182,8 @@ def lazycache(filename, module_globals):
     if module_globals and '__name__' in module_globals:
         spec = module_globals.get('__spec__')
         name = getattr(spec, 'name', None) or module_globals['__name__']
+        if name == "_pyrepl.__main__":
+            return False
         loader = getattr(spec, 'loader', None)
         if loader is None:
             loader = module_globals.get('__loader__')
