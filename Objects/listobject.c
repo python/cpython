@@ -228,6 +228,22 @@ _PyList_DebugMallocStats(FILE *out)
                            sizeof(PyListObject));
 }
 
+
+static inline int
+maybe_small_list_freelist_push(PyObject *self)
+{
+    // todo: in the resizing there are some alignments on the allocation. can we use that here?
+    assert(PyList_CheckExact(self));
+
+    PyListObject *op = (PyListObject *)self;
+    Py_ssize_t allocated = op->allocated;
+    if (allocated < PyList_MAXSAVESIZE) {
+        return _Py_FREELIST_PUSH(small_lists[allocated], self, Py_small_lists_MAXFREELIST);
+    }
+    return 0;
+}
+
+
 PyObject *
 PyList_New(Py_ssize_t size)
 {
@@ -236,35 +252,55 @@ PyList_New(Py_ssize_t size)
         return NULL;
     }
 
-    PyListObject *op = _Py_FREELIST_POP(PyListObject, lists);
+    PyListObject *op=0;
+
+    if (size < PyList_MAXSAVESIZE) {
+        op = (PyListObject *)_Py_FREELIST_POP(PyLongObject, small_lists[size]);
+        if (op) {
+            // allocated with ob_item still allocated, but we need to set the other fields
+            Py_SET_SIZE(op, size);
+            if ( size>0) {
+                memset(op->ob_item, 0, size * sizeof(PyObject *));
+            } else {
+                // might be relatex later
+                op->ob_item = NULL;
+            }
+            assert (op->allocated >= size);
+        }
+        //op=0;
+    }
     if (op == NULL) {
-        op = PyObject_GC_New(PyListObject, &PyList_Type);
+        // do we still need this freelist? if so, we could store it at small_lists[0] with some special casing
+        op = _Py_FREELIST_POP(PyListObject, lists);
         if (op == NULL) {
-            return NULL;
+            op = PyObject_GC_New(PyListObject, &PyList_Type);
+            if (op == NULL) {
+                return NULL;
+            }
         }
-    }
-    if (size <= 0) {
-        op->ob_item = NULL;
-    }
-    else {
+        if (size <= 0) {
+            op->ob_item = NULL;
+        }
+        else {
 #ifdef Py_GIL_DISABLED
-        _PyListArray *array = list_allocate_array(size);
-        if (array == NULL) {
-            Py_DECREF(op);
-            return PyErr_NoMemory();
-        }
-        memset(&array->ob_item, 0, size * sizeof(PyObject *));
-        op->ob_item = array->ob_item;
+            _PyListArray *array = list_allocate_array(size);
+            if (array == NULL) {
+                Py_DECREF(op);
+                return PyErr_NoMemory();
+            }
+            memset(&array->ob_item, 0, size * sizeof(PyObject *));
+            op->ob_item = array->ob_item;
 #else
-        op->ob_item = (PyObject **) PyMem_Calloc(size, sizeof(PyObject *));
+            op->ob_item = (PyObject **) PyMem_Calloc(size, sizeof(PyObject *));
+            if (op->ob_item == NULL) {
+                Py_DECREF(op);
+                return PyErr_NoMemory();
+            }
 #endif
-        if (op->ob_item == NULL) {
-            Py_DECREF(op);
-            return PyErr_NoMemory();
         }
+        Py_SET_SIZE(op, size);
+        op->allocated = size;
     }
-    Py_SET_SIZE(op, size);
-    op->allocated = size;
     _PyObject_GC_TRACK(op);
     return (PyObject *) op;
 }
@@ -273,6 +309,15 @@ static PyObject *
 list_new_prealloc(Py_ssize_t size)
 {
     assert(size > 0);
+    if (size < PyList_MAXSAVESIZE) {
+        PyListObject *op = (PyListObject *)_Py_FREELIST_POP(PyLongObject, small_lists[size]);
+        if (op) {
+            // allocated with ob_item still allocated, but we need to set the other fields
+            assert (op->allocated >= size);
+            return (PyObject *) op;
+        }
+    }
+
     PyListObject *op = (PyListObject *) PyList_New(0);
     if (op == NULL) {
         return NULL;
@@ -516,6 +561,18 @@ PyList_Append(PyObject *op, PyObject *newitem)
 
 /* Methods */
 
+void _Py_small_list_freelist_free(void *obj)
+{
+    PyObject *self = (PyObject *)obj;
+
+    assert(PyList_CheckExact(self));
+    PyListObject *op = (PyListObject *)self;
+    if (op->ob_item != NULL) {
+        free_list_items(op->ob_item, false);
+    }
+    PyObject_GC_Del(op);
+}
+
 static void
 list_dealloc(PyObject *self)
 {
@@ -532,14 +589,23 @@ list_dealloc(PyObject *self)
         while (--i >= 0) {
             Py_XDECREF(op->ob_item[i]);
         }
+    }
+    if (PyList_CheckExact(op)) {
+        if( maybe_small_list_freelist_push(self) ) {
+            goto end;
+        }
+    }
+    if (op->ob_item != NULL) {
         free_list_items(op->ob_item, false);
     }
     if (PyList_CheckExact(op)) {
-        _Py_FREELIST_FREE(lists, op, PyObject_GC_Del);
+       _Py_FREELIST_FREE(lists, op, PyObject_GC_Del);
     }
     else {
         PyObject_GC_Del(op);
     }
+
+    end:
     Py_TRASHCAN_END
 }
 
