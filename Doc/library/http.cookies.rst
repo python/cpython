@@ -111,7 +111,7 @@ Cookie Objects
    The meaning for *attrs* is the same as in :meth:`output`.
 
 
-.. method:: BaseCookie.load(rawdata)
+.. method:: BaseCookie.load(rawdata, *, ignore_errors=False)
 
    If *rawdata* is a string, parse it as an ``HTTP_COOKIE`` and add the values
    found there as :class:`Morsel`\ s. If it is a dictionary, it is equivalent to::
@@ -119,6 +119,10 @@ Cookie Objects
       for k, v in rawdata.items():
           cookie[k] = v
 
+   if ignore_errors is True, skip Morsels that raise CookieError.
+
+   .. versionchanged:: 3.9
+      *ignore_errors* was added.
 
 .. _morsel-objects:
 
