@@ -126,62 +126,29 @@ class CLITest(unittest.TestCase):
 
 class Test_multi_input(unittest.TestCase):
     """Tests for the issue https://github.com/python/cpython/issues/79516
-        msgfmt.py shall accept multiple input files and when imported
-        make shall be callable multiple times
+        msgfmt.py shall accept multiple input files
     """
 
-    script = os.path.join(toolsdir, 'i18n', 'msgfmt.py')
-
-    def imp(self):
-        i18ndir = os.path.join(toolsdir, 'i18n')
-        sys.path.append(i18ndir)
-        import msgfmt
-        sys.path.remove(i18ndir)
-        return msgfmt
-
-    def test_help(self):
-        """Test option -h"""
-        rc, stdout, stderr = assert_python_ok(self.script, '-h')
-        self.assertEqual(0, rc)
-        self.assertTrue(stderr.startswith(
-            b'Generate binary message catalog from textual'
-            b' translation description.'
-        ))
-
-    def test_wrong(self):
-        """Test wrong option"""
-        rc, stdout, stderr = assert_python_failure(self.script, '-x')
-        self.assertEqual(1, rc)
-        self.assertTrue(stderr.startswith(
-            b'Generate binary message catalog from textual'
-            b' translation description.'
-        ))
-
-    def test_outputfile(self):
-        """Test script with -o option - 1 single file, Windows EOL"""
-        with temp_cwd(None):
-            assert_python_ok(self.script, '-o', 'file1.mo',
-                             data_dir / 'file1_fr.po')
-            self.assertTrue(
-                filecmp.cmp(data_dir / 'file1_fr.mo', 'file1.mo'),
-                'Wrong compiled file1_fr.mo')
-
     def test_no_outputfile(self):
-        """Test script without -o option - 1 single file, Unix EOL"""
+        """Test script without -o option - 1 single file"""
         with temp_cwd(None):
             shutil.copy(data_dir / 'file2_fr.po', '.')
-            assert_python_ok(self.script, 'file2_fr.po')
+            assert_python_ok(msgfmt, 'file2_fr.po')
             self.assertTrue(
                 filecmp.cmp(data_dir / 'file2_fr.mo', 'file2_fr.mo'),
                 'Wrong compiled file2_fr.mo')
 
     def test_both_with_outputfile(self):
-        """Test script with -o option and 2 input files"""
-        # msgfmt.py version 1.2 behaviour is to correctly merge the input
-        # files and to keep last entry when same entry occurs in more than
-        # one file
+        """Test script with -o option and 2 input files
+
+        The current behaviour is to merge entries having distinct ids
+        and keep last one if the same id occurs in multiple files.
+
+        Here the first file has Windows endings (cflr) while second has
+        Unix endings (lf)
+        """
         with temp_cwd(None):
-            assert_python_ok(self.script, '-o', 'file12.mo',
+            assert_python_ok(msgfmt, '-o', 'file12.mo',
                              data_dir / 'file1_fr.po',
                              data_dir / 'file2_fr.po')
             self.assertTrue(
@@ -190,35 +157,17 @@ class Test_multi_input(unittest.TestCase):
 
     def test_both_without_outputfile(self):
         """Test script without -o option and 2 input files"""
-        # msgfmt.py version 1.2 behaviour was that second mo file
-        # also merged previous po files
+
         with temp_cwd(None):
             shutil.copy(data_dir /'file1_fr.po', '.')
             shutil.copy(data_dir /'file2_fr.po', '.')
-            assert_python_ok(self.script, 'file1_fr.po', 'file2_fr.po')
+            assert_python_ok(msgfmt, 'file1_fr.po', 'file2_fr.po')
             self.assertTrue(
                 filecmp.cmp(data_dir / 'file1_fr.mo', 'file1_fr.mo'),
                 'Wrong compiled file1_fr.mo')
             self.assertTrue(
                 filecmp.cmp(data_dir / 'file2_fr.mo', 'file2_fr.mo'),
                 'Wrong compiled file2_fr.mo')
-
-    def test_consecutive_make_calls(self):
-        """Directly calls make twice to prove bpo-9741 is fixed"""
-        sys.path.append(os.path.join(toolsdir, 'i18n'))
-        from msgfmt import make
-        with temp_cwd(None):
-            with open("file1_fr.po", "wb") as out:
-                out.write(self.file1_fr_po)
-            with open("file2_fr.po", "wb") as out:
-                out.write(self.file2_fr_po)
-            make("file1_fr.po", "file1_fr.mo")
-            make("file2_fr.po", "file2_fr.mo")
-            with open('file1_fr.mo', 'rb') as fin:
-                self.assertEqual(self.file1_fr_mo, fin.read())
-            with open('file2_fr.mo', 'rb') as fin:
-                self.assertEqual(self.file2_fr_mo, fin.read())
-        sys.path.pop()
 
 
 def update_catalog_snapshots():
