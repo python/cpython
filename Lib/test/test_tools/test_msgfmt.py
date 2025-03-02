@@ -1,5 +1,7 @@
 """Tests for the Tools/i18n/msgfmt.py tool."""
-
+import filecmp
+import os
+import shutil
 import sys
 import unittest
 from gettext import GNUTranslations
@@ -91,6 +93,7 @@ msgstr "bar"
             err = res.err.decode('utf-8')
             self.assertIn('Syntax error', err)
 
+
 class CLITest(unittest.TestCase):
 
     def test_help(self):
@@ -119,6 +122,52 @@ class CLITest(unittest.TestCase):
 
     def test_nonexistent_file(self):
         assert_python_failure(msgfmt, 'nonexistent.po')
+
+
+class Test_multi_input(unittest.TestCase):
+    """Tests for the issue https://github.com/python/cpython/issues/79516
+        msgfmt.py shall accept multiple input files
+    """
+
+    def test_no_outputfile(self):
+        """Test script without -o option - 1 single file"""
+        with temp_cwd(None):
+            shutil.copy(data_dir / 'file2_fr.po', '.')
+            assert_python_ok(msgfmt, 'file2_fr.po')
+            self.assertTrue(
+                filecmp.cmp(data_dir / 'file2_fr.mo', 'file2_fr.mo'),
+                'Wrong compiled file2_fr.mo')
+
+    def test_both_with_outputfile(self):
+        """Test script with -o option and 2 input files
+
+        The current behaviour is to merge entries having distinct ids
+        and keep last one if the same id occurs in multiple files.
+
+        Here the first file has Windows endings (cflr) while second has
+        Unix endings (lf)
+        """
+        with temp_cwd(None):
+            assert_python_ok(msgfmt, '-o', 'file12.mo',
+                             data_dir / 'file1_fr.po',
+                             data_dir / 'file2_fr.po')
+            self.assertTrue(
+                filecmp.cmp(data_dir / 'file12_fr.mo', 'file12.mo'),
+                'Wrong compiled file12.mo')
+
+    def test_both_without_outputfile(self):
+        """Test script without -o option and 2 input files"""
+
+        with temp_cwd(None):
+            shutil.copy(data_dir /'file1_fr.po', '.')
+            shutil.copy(data_dir /'file2_fr.po', '.')
+            assert_python_ok(msgfmt, 'file1_fr.po', 'file2_fr.po')
+            self.assertTrue(
+                filecmp.cmp(data_dir / 'file1_fr.mo', 'file1_fr.mo'),
+                'Wrong compiled file1_fr.mo')
+            self.assertTrue(
+                filecmp.cmp(data_dir / 'file2_fr.mo', 'file2_fr.mo'),
+                'Wrong compiled file2_fr.mo')
 
 
 def update_catalog_snapshots():
