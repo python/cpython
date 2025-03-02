@@ -1708,7 +1708,7 @@ Instruction = dis.Instruction
 expected_opinfo_outer = [
   Instruction(opname='MAKE_CELL', opcode=93, arg=0, argval='a', argrepr='a', offset=0, start_offset=0, starts_line=True, line_number=None, label=None, positions=None, cache_info=None),
   Instruction(opname='MAKE_CELL', opcode=93, arg=1, argval='b', argrepr='b', offset=2, start_offset=2, starts_line=False, line_number=None, label=None, positions=None, cache_info=None),
-  Instruction(opname='RESUME', opcode=149, arg=0, argval=0, argrepr='', offset=4, start_offset=4, starts_line=True, line_number=1, label=None, positions=None, cache_info=None),
+  Instruction(opname='RESUME', opcode=128, arg=0, argval=0, argrepr='', offset=4, start_offset=4, starts_line=True, line_number=1, label=None, positions=None, cache_info=None),
   Instruction(opname='LOAD_CONST', opcode=80, arg=3, argval=(3, 4), argrepr='(3, 4)', offset=6, start_offset=6, starts_line=True, line_number=2, label=None, positions=None, cache_info=None),
   Instruction(opname='LOAD_FAST', opcode=82, arg=0, argval='a', argrepr='a', offset=8, start_offset=8, starts_line=False, line_number=2, label=None, positions=None, cache_info=None),
   Instruction(opname='LOAD_FAST', opcode=82, arg=1, argval='b', argrepr='b', offset=10, start_offset=10, starts_line=False, line_number=2, label=None, positions=None, cache_info=None),
@@ -1736,7 +1736,7 @@ expected_opinfo_f = [
   Instruction(opname='COPY_FREE_VARS', opcode=59, arg=2, argval=2, argrepr='', offset=0, start_offset=0, starts_line=True, line_number=None, label=None, positions=None, cache_info=None),
   Instruction(opname='MAKE_CELL', opcode=93, arg=0, argval='c', argrepr='c', offset=2, start_offset=2, starts_line=False, line_number=None, label=None, positions=None, cache_info=None),
   Instruction(opname='MAKE_CELL', opcode=93, arg=1, argval='d', argrepr='d', offset=4, start_offset=4, starts_line=False, line_number=None, label=None, positions=None, cache_info=None),
-  Instruction(opname='RESUME', opcode=149, arg=0, argval=0, argrepr='', offset=6, start_offset=6, starts_line=True, line_number=2, label=None, positions=None, cache_info=None),
+  Instruction(opname='RESUME', opcode=128, arg=0, argval=0, argrepr='', offset=6, start_offset=6, starts_line=True, line_number=2, label=None, positions=None, cache_info=None),
   Instruction(opname='LOAD_CONST', opcode=80, arg=1, argval=(5, 6), argrepr='(5, 6)', offset=8, start_offset=8, starts_line=True, line_number=3, label=None, positions=None, cache_info=None),
   Instruction(opname='LOAD_FAST', opcode=82, arg=3, argval='a', argrepr='a', offset=10, start_offset=10, starts_line=False, line_number=3, label=None, positions=None, cache_info=None),
   Instruction(opname='LOAD_FAST', opcode=82, arg=4, argval='b', argrepr='b', offset=12, start_offset=12, starts_line=False, line_number=3, label=None, positions=None, cache_info=None),
@@ -1761,7 +1761,7 @@ expected_opinfo_f = [
 
 expected_opinfo_inner = [
   Instruction(opname='COPY_FREE_VARS', opcode=59, arg=4, argval=4, argrepr='', offset=0, start_offset=0, starts_line=True, line_number=None, label=None, positions=None, cache_info=None),
-  Instruction(opname='RESUME', opcode=149, arg=0, argval=0, argrepr='', offset=2, start_offset=2, starts_line=True, line_number=3, label=None, positions=None, cache_info=None),
+  Instruction(opname='RESUME', opcode=128, arg=0, argval=0, argrepr='', offset=2, start_offset=2, starts_line=True, line_number=3, label=None, positions=None, cache_info=None),
   Instruction(opname='LOAD_GLOBAL', opcode=88, arg=1, argval='print', argrepr='print + NULL', offset=4, start_offset=4, starts_line=True, line_number=4, label=None, positions=None, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
   Instruction(opname='LOAD_DEREF', opcode=81, arg=2, argval='a', argrepr='a', offset=14, start_offset=14, starts_line=False, line_number=4, label=None, positions=None, cache_info=None),
   Instruction(opname='LOAD_DEREF', opcode=81, arg=3, argval='b', argrepr='b', offset=16, start_offset=16, starts_line=False, line_number=4, label=None, positions=None, cache_info=None),
@@ -1775,7 +1775,7 @@ expected_opinfo_inner = [
 ]
 
 expected_opinfo_jumpy = [
-  Instruction(opname='RESUME', opcode=149, arg=0, argval=0, argrepr='', offset=0, start_offset=0, starts_line=True, line_number=1, label=None, positions=None, cache_info=None),
+  Instruction(opname='RESUME', opcode=128, arg=0, argval=0, argrepr='', offset=0, start_offset=0, starts_line=True, line_number=1, label=None, positions=None, cache_info=None),
   Instruction(opname='LOAD_GLOBAL', opcode=88, arg=1, argval='range', argrepr='range + NULL', offset=2, start_offset=2, starts_line=True, line_number=3, label=None, positions=None, cache_info=[('counter', 1, b'\x00\x00'), ('index', 1, b'\x00\x00'), ('module_keys_version', 1, b'\x00\x00'), ('builtin_keys_version', 1, b'\x00\x00')]),
   Instruction(opname='LOAD_SMALL_INT', opcode=90, arg=10, argval=10, argrepr='', offset=12, start_offset=12, starts_line=False, line_number=3, label=None, positions=None, cache_info=None),
   Instruction(opname='CALL', opcode=51, arg=1, argval=1, argrepr='', offset=14, start_offset=14, starts_line=False, line_number=3, label=None, positions=None, cache_info=[('counter', 1, b'\x00\x00'), ('func_version', 2, b'\x00\x00\x00\x00')]),
@@ -1908,7 +1908,7 @@ expected_opinfo_jumpy = [
 # One last piece of inspect fodder to check the default line number handling
 def simple(): pass
 expected_opinfo_simple = [
-  Instruction(opname='RESUME', opcode=149, arg=0, argval=0, argrepr='', offset=0, start_offset=0, starts_line=True, line_number=simple.__code__.co_firstlineno, label=None, positions=None),
+  Instruction(opname='RESUME', opcode=128, arg=0, argval=0, argrepr='', offset=0, start_offset=0, starts_line=True, line_number=simple.__code__.co_firstlineno, label=None, positions=None),
   Instruction(opname='LOAD_CONST', opcode=80, arg=0, argval=None, argrepr='None', offset=2, start_offset=2, starts_line=False, line_number=simple.__code__.co_firstlineno, label=None),
   Instruction(opname='RETURN_VALUE', opcode=35, arg=None, argval=None, argrepr='', offset=4, start_offset=4, starts_line=False, line_number=simple.__code__.co_firstlineno, label=None),
 ]
