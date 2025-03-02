@@ -550,6 +550,17 @@ class Test_pygettext(unittest.TestCase):
         data = normalize(s, 'UTF-8', options)
         self.assertEqual(s_expected, data)
 
+    def test_normalize_short_width(self):
+        # required to set up normalize
+        options = SimpleNamespace(width=3)
+        make_escapes(True)
+
+        s = 'foos'
+        s_expected = '"foos"'
+
+        data = normalize(s, 'UTF-8', options)
+        self.assertEqual(s_expected, data)
+
 
 def extract_from_snapshots():
     snapshots = {

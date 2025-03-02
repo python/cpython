@@ -224,7 +224,7 @@ def normalize(s, encoding, options):
     # while wrapping to options.width.
     lines = []
     for line in s.splitlines(True):
-        if len(escape(line, encoding)) > options.width:
+        if len(escape(line, encoding)) > options.width and ' ' in line: # don't wrap single words
             words = _space_splitter(line)
             words.reverse()
             buf = []
