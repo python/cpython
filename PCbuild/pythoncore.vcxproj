@@ -420,6 +420,8 @@
     <ClCompile Include="..\Modules\blake2module.c">
       <PreprocessorDefinitions Condition="'$(Platform)' == 'x64'">HACL_CAN_COMPILE_SIMD128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Platform)' == 'x64'">HACL_CAN_COMPILE_SIMD256;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <!-- GH-130213: blake2module.c needs to "see" the AVX intrinsics during compiling -->
+      <AdditionalOptions Condition="'$(Platform)' == 'x64' and $(PlatformToolset) == 'ClangCL' and '$(LLVMToolsVersion)' &lt; '19'">/arch:AVX</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="..\Modules\_codecsmodule.c" />
     <ClCompile Include="..\Modules\_collectionsmodule.c" />
@@ -741,6 +743,13 @@
   </Target>
   <Target Name="_WarnAboutToolset" BeforeTargets="PrepareForBuild" Condition="$(PlatformToolset) != 'v141' and $(PlatformToolset) != 'v142' and $(PlatformToolset) != 'v143'">
     <Warning Text="Toolset $(PlatformToolset) is not used for official builds. Your build may have errors or incompatibilities." />
+  </Target>
+  <Target Name="_WarnAboutTooOldClang" BeforeTargets="PrepareForBuild" Condition="'$(Platform)' == 'x64' and $(PlatformToolset) == 'ClangCL' and '$(LLVMToolsVersion)' &lt; '19'">
+    <!-- GH-130213: blake2module.c needs to just "see" the AVX intrinsics during compiling.
+         But older clangs only make them visible, if they are compiling
+         for an architecture that supports them.
+    -->
+    <Warning Text="built executable requires AVX and may not run everywhere" />
   </Target>
   <Target Name="_WarnAboutZlib" BeforeTargets="PrepareForBuild" Condition="!$(IncludeExternals)">
     <Warning Text="Not including zlib is not a supported configuration." />
