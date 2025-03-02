@@ -187,6 +187,8 @@ time_clockid_converter(PyObject *obj, clockid_t *p)
 {
 #ifdef _AIX
     long long clk_id = PyLong_AsLongLong(obj);
+#elif defined(__DragonFly__)
+    long clk_id = PyLong_AsLong(obj);
 #else
     int clk_id = PyLong_AsInt(obj);
 #endif
@@ -979,7 +981,7 @@ time_strptime(PyObject *self, PyObject *args)
 {
     PyObject *func, *result;
 
-    func = _PyImport_GetModuleAttrString("_strptime", "_strptime_time");
+    func = PyImport_ImportModuleAttrString("_strptime", "_strptime_time");
     if (!func) {
         return NULL;
     }

@@ -16,10 +16,11 @@
 #include "pycore_parking_lot.h"   // _PyParkingLot_AfterFork()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
 #include "pycore_pylifecycle.h"   // _PyAST_Fini()
-#include "pycore_pymem.h"         // _PyMem_SetDefaultAllocator()
+#include "pycore_pymem.h"         // _PyMem_DebugEnabled()
 #include "pycore_pystate.h"
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_stackref.h"      // Py_STACKREF_DEBUG
+#include "pycore_time.h"          // _PyTime_Init()
 #include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
 
@@ -461,6 +462,11 @@ _PyRuntimeState_Init(_PyRuntimeState *runtime)
         assert(!runtime->_initialized);
     }
 
+    PyStatus status = _PyTime_Init(&runtime->time);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     if (gilstate_tss_init(runtime) != 0) {
         _PyRuntimeState_Fini(runtime);
         return _PyStatus_NO_MEMORY();
@@ -643,6 +649,8 @@ init_interpreter(PyInterpreterState *interp,
     _Py_brc_init_state(interp);
 #endif
     llist_init(&interp->mem_free_queue.head);
+    llist_init(&interp->asyncio_tasks_head);
+    interp->asyncio_tasks_lock = (PyMutex){0};
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
     }
@@ -655,11 +663,9 @@ init_interpreter(PyInterpreterState *interp,
     }
     interp->sys_profile_initialized = false;
     interp->sys_trace_initialized = false;
-#ifdef _Py_TIER2
-    (void)_Py_SetOptimizer(interp, NULL);
+    interp->jit = false;
     interp->executor_list_head = NULL;
     interp->trace_run_counter = JIT_CLEANUP_THRESHOLD;
-#endif
     if (interp != &runtime->_main_interpreter) {
         /* Fix the self-referential, statically initialized fields. */
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
@@ -828,12 +834,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
         // XXX Eliminate the need to do this.
         tstate->_status.cleared = 0;
     }
-
-#ifdef _Py_TIER2
-    _PyOptimizerObject *old = _Py_SetOptimizer(interp, NULL);
-    assert(old != NULL);
-    Py_DECREF(old);
-#endif
 
     /* It is possible that any of the objects below have a finalizer
        that runs Python code or otherwise relies on a thread state
@@ -1496,10 +1496,9 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 
     // thread_id and native_thread_id are set in bind_tstate().
 
-    tstate->py_recursion_limit = interp->ceval.recursion_limit,
-    tstate->py_recursion_remaining = interp->ceval.recursion_limit,
-    tstate->c_recursion_remaining = Py_C_RECURSION_LIMIT;
-
+    tstate->py_recursion_limit = interp->ceval.recursion_limit;
+    tstate->py_recursion_remaining = interp->ceval.recursion_limit;
+    tstate->c_recursion_remaining = 2;
     tstate->exc_info = &tstate->exc_state;
 
     // PyGILState_Release must not try to delete this thread state.
@@ -1514,13 +1513,17 @@ init_threadstate(_PyThreadStateImpl *_tstate,
     tstate->previous_executor = NULL;
     tstate->dict_global_version = 0;
 
+    _tstate->c_stack_soft_limit = UINTPTR_MAX;
+    _tstate->c_stack_top = 0;
+    _tstate->c_stack_hard_limit = 0;
+
     _tstate->asyncio_running_loop = NULL;
     _tstate->asyncio_running_task = NULL;
 
     tstate->delete_later = NULL;
 
     llist_init(&_tstate->mem_free_queue);
-
+    llist_init(&_tstate->asyncio_tasks_head);
     if (interp->stoptheworld.requested || _PyRuntime.stoptheworld.requested) {
         // Start in the suspended state if there is an ongoing stop-the-world.
         tstate->state = _Py_THREAD_SUSPENDED;
@@ -1699,6 +1702,14 @@ PyThreadState_Clear(PyThreadState *tstate)
 
     Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_loop);
     Py_CLEAR(((_PyThreadStateImpl *)tstate)->asyncio_running_task);
+
+
+    PyMutex_Lock(&tstate->interp->asyncio_tasks_lock);
+    // merge any lingering tasks from thread state to interpreter's
+    // tasks list
+    llist_concat(&tstate->interp->asyncio_tasks_head,
+                 &((_PyThreadStateImpl *)tstate)->asyncio_tasks_head);
+    PyMutex_Unlock(&tstate->interp->asyncio_tasks_lock);
 
     Py_CLEAR(tstate->dict);
     Py_CLEAR(tstate->async_exc);
@@ -2088,11 +2099,10 @@ _PyThreadState_Attach(PyThreadState *tstate)
 
         // XXX assert(tstate_is_alive(tstate));
         current_fast_set(&_PyRuntime, tstate);
-        tstate_activate(tstate);
-
         if (!tstate_try_attach(tstate)) {
             tstate_wait_attach(tstate);
         }
+        tstate_activate(tstate);
 
 #ifdef Py_GIL_DISABLED
         if (_PyEval_IsGILEnabled(tstate) && !tstate->_status.holds_gil) {

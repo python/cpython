@@ -658,6 +658,9 @@ Glossary
       and therefore it is never deallocated while the interpreter is running.
       For example, :const:`True` and :const:`None` are immortal in CPython.
 
+      Immortal objects can be identified via :func:`sys._is_immortal`, or
+      via :c:func:`PyUnstable_IsImmortal` in the C API.
+
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
       tuples.  Such an object cannot be altered.  A new object has to
@@ -716,7 +719,7 @@ Glossary
       iterables include all sequence types (such as :class:`list`, :class:`str`,
       and :class:`tuple`) and some non-sequence types like :class:`dict`,
       :term:`file objects <file object>`, and objects of any classes you define
-      with an :meth:`~iterator.__iter__` method or with a
+      with an :meth:`~object.__iter__` method or with a
       :meth:`~object.__getitem__` method
       that implements :term:`sequence` semantics.
 
@@ -936,10 +939,15 @@ Glossary
       modules, respectively.
 
    namespace package
-      A :pep:`420` :term:`package` which serves only as a container for
-      subpackages.  Namespace packages may have no physical representation,
+      A :term:`package` which serves only as a container for subpackages.
+      Namespace packages may have no physical representation,
       and specifically are not like a :term:`regular package` because they
       have no ``__init__.py`` file.
+
+      Namespace packages allow several individually installable packages to have a common parent package.
+      Otherwise, it is recommended to use a :term:`regular package`.
+
+      For more information, see :pep:`420` and :ref:`reference-namespace-package`.
 
       See also :term:`module`.
 

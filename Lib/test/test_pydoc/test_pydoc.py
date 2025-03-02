@@ -1903,6 +1903,11 @@ foo
             html
         )
 
+    def test_module_none(self):
+        # Issue #128772
+        from test.test_pydoc import module_none
+        pydoc.render_doc(module_none)
+
 
 class PydocFodderTest(unittest.TestCase):
     def tearDown(self):
