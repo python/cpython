@@ -28,6 +28,10 @@ _("""Hello,
     multiline!
 """)
 
+# very long strings that should be wrapped by normalize
+_("this is a very very very very very very very very very very very very very long string!")
+_("this  is  a  very  very    very very  very    very  very   very       very  very    very  very    very   long string with weird spaces!")
+
 # Invalid arguments
 _()
 _(None)

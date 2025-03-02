@@ -5,6 +5,7 @@ import re
 import sys
 import unittest
 from textwrap import dedent
+from types import SimpleNamespace
 from pathlib import Path
 
 from test.support.script_helper import assert_python_ok
@@ -18,7 +19,7 @@ DATA_DIR = Path(__file__).resolve().parent / 'i18n_data'
 
 
 with imports_under_tool("i18n"):
-    from pygettext import parse_spec
+    from pygettext import parse_spec, make_escapes, normalize
 
 
 def normalize_POT_file(pot):
@@ -515,6 +516,50 @@ class Test_pygettext(unittest.TestCase):
                 with self.assertRaises(ValueError) as cm:
                     parse_spec(spec)
                 self.assertEqual(str(cm.exception), message)
+
+    def test_normalize_multiline(self):
+        # required to set up normalize
+        options = SimpleNamespace(width=78)
+        make_escapes(True)
+
+        s = 'multi-line\n translation'
+        s_expected = '""\n"multi-line\\n"\n" translation"'
+
+        data = normalize(s, 'UTF-8', 'msgid', options)
+        self.assertEqual(s_expected, data)
+
+    def test_normalize_wrap(self):
+        # required to set up normalize
+        options = SimpleNamespace(width=30)
+        make_escapes(True)
+
+        s = 'this string should be wrapped to 30 chars'
+        s_expected = '""\n"this string should be "\n"wrapped to 30 chars"'
+
+        data = normalize(s, 'UTF-8', 'msgid', options)
+        self.assertEqual(s_expected, data)
+
+    def test_normalize_nostr(self):
+        # required to set up normalize
+        options = SimpleNamespace(width=30)
+        make_escapes(True)
+
+        s = ''
+        s_expected = '""'
+
+        data = normalize(s, 'UTF-8', 'msgid', options)
+        self.assertEqual(s_expected, data)
+
+    def test_normalize_short_width(self):
+        # required to set up normalize
+        options = SimpleNamespace(width=3)
+        make_escapes(True)
+
+        s = 'foos'
+        s_expected = '"foos"'
+
+        data = normalize(s, 'UTF-8', 'msgid', options)
+        self.assertEqual(s_expected, data)
 
 
 def extract_from_snapshots():
