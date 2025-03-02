@@ -729,12 +729,15 @@ def main():
 
     # calculate all keywords
     try:
-        options.keywords = dict(parse_spec(spec) for spec in options.keywords)
+        custom_keywords = dict(parse_spec(spec) for spec in options.keywords)
     except ValueError as e:
         print(e, file=sys.stderr)
         sys.exit(1)
+    options.keywords = {}
     if not no_default_keywords:
         options.keywords |= DEFAULTKEYWORDS
+    # custom keywords override default keywords
+    options.keywords |= custom_keywords
 
     # initialize list of strings to exclude
     if options.excludefilename:
