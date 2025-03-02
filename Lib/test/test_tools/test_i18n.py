@@ -4,8 +4,8 @@ import os
 import re
 import sys
 import unittest
-from types import SimpleNamespace
 from textwrap import dedent
+from types import SimpleNamespace
 from pathlib import Path
 
 from test.support.script_helper import assert_python_ok
@@ -19,7 +19,7 @@ DATA_DIR = Path(__file__).resolve().parent / 'i18n_data'
 
 
 with imports_under_tool("i18n"):
-    from pygettext import parse_spec, normalize, make_escapes
+    from pygettext import parse_spec, make_escapes, normalize
 
 
 def normalize_POT_file(pot):

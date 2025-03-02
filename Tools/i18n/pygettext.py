@@ -213,7 +213,10 @@ def escape_ascii(s, encoding):
 def escape_nonascii(s, encoding):
     return ''.join(escapes[b] for b in s.encode(encoding))
 
-space_splitter = re.compile(r'(\s+)').split
+# Split a string according to whitespaces and keep
+# the whitespaces in the resulting array thanks to
+# the capturing group.
+_space_splitter = re.compile(r'(\s+)').split
 
 def normalize(s, encoding, options):
     # This converts the various Python string types into a format that is
@@ -222,16 +225,17 @@ def normalize(s, encoding, options):
     lines = []
     for line in s.splitlines(True):
         if len(escape(line, encoding)) > options.width:
-            words = space_splitter(line)
+            words = _space_splitter(line)
             words.reverse()
             buf = []
             size = 0
             while words:
                 word = words.pop()
                 escaped_word_len = len(escape(word, encoding))
-                if size + escaped_word_len <= options.width:
+                new_size = size + escaped_word_len
+                if new_size <= options.width:
                     buf.append(word)
-                    size += escaped_word_len
+                    size = new_size
                 else:
                     lines.append(''.join(buf))
                     buf = [word]
@@ -241,7 +245,7 @@ def normalize(s, encoding, options):
             lines.append(line)
     if len(lines) <= 1:
         return f'"{escape(s, encoding)}"'
-    return '""\n' + '\n'.join([f'"{escape(line, encoding)}"' for line in lines])
+    return '""\n' + '\n'.join(f'"{escape(line, encoding)}"' for line in lines)
 
 
 def containsAny(str, set):
