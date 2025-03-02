@@ -1,6 +1,5 @@
 #! /usr/bin/env python3
 # Written by Martin v. Löwis <loewis@informatik.hu-berlin.de>
-# Modified by s-ball <s-ball@laposte.net>
 
 """Generate binary message catalog from textual translation description.
 
@@ -106,11 +105,11 @@ def generate(messages):
 
 
 def make(filenames, outfile):
-    """This function is now member of the public interface.
+    """
     filenames is a string or an iterable of strings representing input file(s)
     outfile is a string for the name of an input file or None.
 
-    If it is not None, the output file receives a merge of the input files
+    If it is not None, the output file receives a merge of the input files.
     If it is None, then filenames must be a string and the name of the output
     file is obtained by replacing the po extension with mo.
     Both ways are for compatibility reasons with previous behaviour.
