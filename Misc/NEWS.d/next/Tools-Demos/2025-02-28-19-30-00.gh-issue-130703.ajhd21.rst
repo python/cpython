@@ -1,1 +1,1 @@
-Wrap msgids to specified ``width`` and not just comments in :program:`pygettext`.
+Wrap msgids to specified ``width`` in :program:`pygettext`.
