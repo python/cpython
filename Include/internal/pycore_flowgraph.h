@@ -41,6 +41,9 @@ PyAPI_FUNC(PyObject*) _PyCompile_OptimizeCfg(
         PyObject *consts,
         int nlocals);
 
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(PyObject*) _PyCompile_OptimizeLoadFast(PyObject *instructions);
+
 #ifdef __cplusplus
 }
 #endif

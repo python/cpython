@@ -270,6 +270,15 @@ dummy_func(
             value = PyStackRef_DUP(GETLOCAL(oparg));
         }
 
+        replicate(8) pure inst (LOAD_FAST_BORROW, (-- value)) {
+            assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
+            #ifdef Py_GIL_DISABLED
+            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
+            #else
+            value = PyStackRef_DUP(GETLOCAL(oparg));
+            #endif
+        }
+
         inst(LOAD_FAST_AND_CLEAR, (-- value)) {
             value = GETLOCAL(oparg);
             GETLOCAL(oparg) = PyStackRef_NULL;
@@ -280,6 +289,18 @@ dummy_func(
             uint32_t oparg2 = oparg & 15;
             value1 = PyStackRef_DUP(GETLOCAL(oparg1));
             value2 = PyStackRef_DUP(GETLOCAL(oparg2));
+        }
+
+        inst(LOAD_FAST_BORROW_LOAD_FAST_BORROW, ( -- value1, value2)) {
+            uint32_t oparg1 = oparg >> 4;
+            uint32_t oparg2 = oparg & 15;
+            #ifdef Py_GIL_DISABLED
+            value1 = PyStackRef_AsDeferred(GETLOCAL(oparg1));
+            value2 = PyStackRef_AsDeferred(GETLOCAL(oparg2));
+            #else
+            value1 = PyStackRef_DUP(GETLOCAL(oparg1));
+            value2 = PyStackRef_DUP(GETLOCAL(oparg2));
+            #endif
         }
 
         family(LOAD_CONST, 0) = {
@@ -721,9 +742,8 @@ dummy_func(
         // At the end we just skip over the STORE_FAST.
         op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right --)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectSteal(right);
             assert(PyUnicode_CheckExact(left_o));
-            assert(PyUnicode_CheckExact(right_o));
+            assert(PyUnicode_CheckExact(PyStackRef_AsPyObjectBorrow(right)));
 
             int next_oparg;
         #if TIER_ONE
@@ -746,10 +766,11 @@ dummy_func(
              * only the locals reference, so PyUnicode_Append knows
              * that the string is safe to mutate.
              */
-            assert(Py_REFCNT(left_o) >= 2);
+            assert(Py_REFCNT(left_o) >= 2 || PyStackRef_IsBorrowed(left));
             PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             DEAD(left);
             PyObject *temp = PyStackRef_AsPyObjectSteal(*target_local);
+            PyObject *right_o = PyStackRef_AsPyObjectSteal(right);
             PyUnicode_Append(&temp, right_o);
             *target_local = PyStackRef_FromPyObjectSteal(temp);
             Py_DECREF(right_o);
@@ -1092,7 +1113,7 @@ dummy_func(
         // is pushed to a different frame, the callers' frame.
         inst(RETURN_VALUE, (retval -- res)) {
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
-            _PyStackRef temp = retval;
+            _PyStackRef temp = _PyStackRef_NewIfBorrowedOrSteal(retval);
             DEAD(retval);
             SAVE_STACK();
             assert(EMPTY());
@@ -1190,6 +1211,8 @@ dummy_func(
 
             PyObject *retval_o;
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
+            _PyStackRef tmp = _PyStackRef_NewIfBorrowedOrSteal(v);
+            DEAD(v);
             if ((tstate->interp->eval_frame == NULL) &&
                 (Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type) &&
                 ((PyGenObject *)receiver_o)->gi_frame_state < FRAME_EXECUTING)
@@ -1197,7 +1220,7 @@ dummy_func(
                 PyGenObject *gen = (PyGenObject *)receiver_o;
                 _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
                 STACK_SHRINK(1);
-                _PyFrame_StackPush(gen_frame, v);
+                _PyFrame_StackPush(gen_frame, tmp);
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
@@ -1213,7 +1236,7 @@ dummy_func(
             else {
                 retval_o = PyObject_CallMethodOneArg(receiver_o,
                                                      &_Py_ID(send),
-                                                     PyStackRef_AsPyObjectBorrow(v));
+                                                     PyStackRef_AsPyObjectBorrow(tmp));
             }
             if (retval_o == NULL) {
                 int matches = _PyErr_ExceptionMatches(tstate, PyExc_StopIteration);
@@ -1226,11 +1249,11 @@ dummy_func(
                     JUMPBY(oparg);
                 }
                 else {
-                    PyStackRef_CLOSE(v);
+                    PyStackRef_CLOSE(tmp);
                     ERROR_IF(true, error);
                 }
             }
-            PyStackRef_CLOSE(v);
+            PyStackRef_CLOSE(tmp);
             retval = PyStackRef_FromPyObjectSteal(retval_o);
         }
 
@@ -1242,7 +1265,7 @@ dummy_func(
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING);
             STAT_INC(SEND, hit);
             gen_frame = &gen->gi_iframe;
-            _PyFrame_StackPush(gen_frame, v);
+            _PyFrame_StackPush(gen_frame, _PyStackRef_NewIfBorrowedOrSteal(v));
             DEAD(v);
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
@@ -1289,7 +1312,7 @@ dummy_func(
             #endif
             RELOAD_STACK();
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-            value = temp;
+            value = _PyStackRef_NewIfBorrowedOrSteal(temp);
             LLTRACE_RESUME_FRAME();
         }
 
@@ -4681,7 +4704,7 @@ dummy_func(
             SAVE_STACK();
             _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
             frame->instr_ptr++;
-            _PyFrame_Copy(frame, gen_frame);
+            _PyFrame_CopyToNewGen(frame, gen_frame);
             assert(frame->frame_obj == NULL);
             gen->gi_frame_state = FRAME_CREATED;
             gen_frame->owner = FRAME_OWNED_BY_GENERATOR;

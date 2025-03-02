@@ -31,6 +31,12 @@ struct _frame {
        PyEval_GetLocals requires a borrowed reference so the actual reference
        is stored here */
     PyObject *f_locals_cache;
+    /* A list containing strong references to fast locals that were overwritten
+     * via f_locals. Borrowed references to these locals may exist in frames
+     * closer to the top of the stack. The references in this list act as
+     * "support" for the borrowed references, ensuring that they remain valid.
+     */
+    PyObject *f_overwritten_fast_locals;
     /* The frame data, if this frame object owns the frame */
     PyObject *_f_frame_data[1];
 };
@@ -146,16 +152,29 @@ _PyFrame_NumSlotsForCodeObject(PyCodeObject *code)
     return code->co_framesize - FRAME_SPECIALS_SIZE;
 }
 
-static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
+static inline void
+_PyFrame_CopyToHeap(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
 {
     *dest = *src;
     assert(src->stackpointer != NULL);
     int stacktop = (int)(src->stackpointer - src->localsplus);
     assert(stacktop >= _PyFrame_GetCode(src)->co_nlocalsplus);
     dest->stackpointer = dest->localsplus + stacktop;
-    for (int i = 1; i < stacktop; i++) {
-        dest->localsplus[i] = src->localsplus[i];
+    // The destination frame may outlive any references that were providing
+    // "support" for borrowed references in the source frame. Convert any
+    // borrowed references that were copied into dest into strong references.
+    for (int i = 0; i < stacktop; i++) {
+        dest->localsplus[i] =
+            _PyStackRef_NewIfBorrowedOrSteal(src->localsplus[i]);
     }
+    dest->f_executable = _PyStackRef_NewIfBorrowedOrSteal(dest->f_executable);
+    dest->f_funcobj = _PyStackRef_NewIfBorrowedOrSteal(dest->f_funcobj);
+}
+
+static inline void
+_PyFrame_CopyToNewGen(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
+{
+    _PyFrame_CopyToHeap(src, dest);
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
     dest->previous = NULL;

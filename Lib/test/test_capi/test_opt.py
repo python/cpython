@@ -134,7 +134,7 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_JUMP_TO_TOP", uops)
-        self.assertIn("_LOAD_FAST_0", uops)
+        self.assertIn("_LOAD_FAST_BORROW_0", uops)
 
     def test_extended_arg(self):
         "Check EXTENDED_ARG handling in superblock creation"
@@ -180,7 +180,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(many_vars)
         self.assertIsNotNone(ex)
-        self.assertTrue(any((opcode, oparg, operand) == ("_LOAD_FAST", 259, 0)
+        self.assertTrue(any((opcode, oparg, operand) == ("_LOAD_FAST_BORROW", 259, 0)
                             for opcode, oparg, _, operand in list(ex)))
 
     def test_unspecialized_unpack(self):

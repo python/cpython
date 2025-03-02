@@ -243,7 +243,19 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
             Py_XINCREF(value);
             PyCell_SetTakeRef((PyCellObject *)cell, value);
         } else if (value != PyStackRef_AsPyObjectBorrow(oldvalue)) {
-            PyStackRef_XCLOSE(fast[i]);
+            if (!PyStackRef_IsNull(fast[i])) {
+                if (frame->f_overwritten_fast_locals == NULL) {
+                    frame->f_overwritten_fast_locals = PyList_New(0);
+                    if (frame->f_overwritten_fast_locals == NULL) {
+                        return -1;
+                    }
+                }
+                PyObject *obj = PyStackRef_AsPyObjectBorrow(fast[i]);
+                if (PyList_Append(frame->f_overwritten_fast_locals, obj) < 0) {
+                    return -1;
+                }
+                PyStackRef_CLOSE(fast[i]);
+            }
             fast[i] = PyStackRef_FromPyObjectNew(value);
         }
         return 0;
@@ -1806,6 +1818,7 @@ frame_dealloc(PyObject *op)
     Py_CLEAR(f->f_trace);
     Py_CLEAR(f->f_extra_locals);
     Py_CLEAR(f->f_locals_cache);
+    Py_CLEAR(f->f_overwritten_fast_locals);
     PyObject_GC_Del(f);
     Py_TRASHCAN_END;
 }
@@ -1818,6 +1831,7 @@ frame_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(f->f_trace);
     Py_VISIT(f->f_extra_locals);
     Py_VISIT(f->f_locals_cache);
+    Py_VISIT(f->f_overwritten_fast_locals);
     if (f->f_frame->owner != FRAME_OWNED_BY_FRAME_OBJECT) {
         return 0;
     }
@@ -1832,6 +1846,7 @@ frame_tp_clear(PyObject *op)
     Py_CLEAR(f->f_trace);
     Py_CLEAR(f->f_extra_locals);
     Py_CLEAR(f->f_locals_cache);
+    Py_CLEAR(f->f_overwritten_fast_locals);
 
     /* locals and stack */
     _PyStackRef *locals = _PyFrame_GetLocalsArray(f->f_frame);
@@ -1973,6 +1988,7 @@ _PyFrame_New_NoTrack(PyCodeObject *code)
     f->f_lineno = 0;
     f->f_extra_locals = NULL;
     f->f_locals_cache = NULL;
+    f->f_overwritten_fast_locals = NULL;
     return f;
 }
 

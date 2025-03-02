@@ -748,6 +748,23 @@ _testinternalcapi_optimize_cfg_impl(PyObject *module, PyObject *instructions,
     return _PyCompile_OptimizeCfg(instructions, consts, nlocals);
 }
 
+/*[clinic input]
+
+_testinternalcapi.optimize_load_fast -> object
+
+  instructions: object
+
+Optimize LOAD_FAST{_LOAD_FAST} instructions.
+[clinic start generated code]*/
+
+static PyObject *
+_testinternalcapi_optimize_load_fast_impl(PyObject *module,
+                                          PyObject *instructions)
+/*[clinic end generated code: output=6f975349c976d017 input=c59f3eac68308c01]*/
+{
+    return _PyCompile_OptimizeLoadFast(instructions);
+}
+
 static int
 get_nonnegative_int_from_dict(PyObject *dict, const char *key) {
     PyObject *obj = PyDict_GetItemString(dict, key);
@@ -2023,6 +2040,7 @@ static PyMethodDef module_functions[] = {
     _TESTINTERNALCAPI_NEW_INSTRUCTION_SEQUENCE_METHODDEF
     _TESTINTERNALCAPI_COMPILER_CODEGEN_METHODDEF
     _TESTINTERNALCAPI_OPTIMIZE_CFG_METHODDEF
+    _TESTINTERNALCAPI_OPTIMIZE_LOAD_FAST_METHODDEF
     _TESTINTERNALCAPI_ASSEMBLE_CODE_OBJECT_METHODDEF
     {"get_interp_settings", get_interp_settings, METH_VARARGS, NULL},
     {"clear_extension", clear_extension, METH_VARARGS, NULL},

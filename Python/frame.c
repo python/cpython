@@ -50,11 +50,19 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
 {
     assert(frame->owner < FRAME_OWNED_BY_INTERPRETER);
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
-    Py_ssize_t size = ((char*)frame->stackpointer) - (char *)frame;
-    memcpy((_PyInterpreterFrame *)f->_f_frame_data, frame, size);
-    frame = (_PyInterpreterFrame *)f->_f_frame_data;
-    frame->stackpointer = (_PyStackRef *)(((char *)frame) + size);
+    // While ownership of f_executable is transferred to the frame object, the
+    // reference in the frame will also be closed when the frame is popped from
+    // the stack. Create another reference to ensure that works correctly.
+    //
+    // This must happen in the source frame (not in the frame
+    // object). _PyFrame_CopyToHeap converts borrowed references in the source
+    // frame into strong references in the destination frame. duping the
+    // reference in the dest frame would result in a leak if the source was
+    // borrowed because the close on the source would not destroy the newly
+    // created reference.
     frame->f_executable = PyStackRef_DUP(frame->f_executable);
+    _PyFrame_CopyToHeap(frame, (_PyInterpreterFrame *) f->_f_frame_data);
+    frame = (_PyInterpreterFrame *)f->_f_frame_data;
     f->f_frame = frame;
     frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
     if (_PyFrame_IsIncomplete(frame)) {

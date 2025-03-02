@@ -989,7 +989,7 @@ gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
     assert(f->f_frame->frame_obj == NULL);
     assert(f->f_frame->owner == FRAME_OWNED_BY_FRAME_OBJECT);
     _PyInterpreterFrame *frame = &gen->gi_iframe;
-    _PyFrame_Copy((_PyInterpreterFrame *)f->_f_frame_data, frame);
+    _PyFrame_CopyToNewGen((_PyInterpreterFrame *)f->_f_frame_data, frame);
     gen->gi_frame_state = FRAME_CREATED;
     assert(frame->frame_obj == f);
     f->f_frame = frame;

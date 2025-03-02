@@ -4,9 +4,14 @@ import opcode
 import sys
 import textwrap
 import unittest
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 from test import support
-from test.support.bytecode_helper import BytecodeTestCase, CfgOptimizationTestCase
+from test.support.bytecode_helper import (
+    BytecodeTestCase, CfgOptimizationTestCase, CompilationStepTestCase)
 
 
 def compile_pattern_with_fast_locals(pattern):
@@ -906,7 +911,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         def f():
             x = 1
             y = x + x
-        self.assertInBytecode(f, 'LOAD_FAST_LOAD_FAST')
+        self.assertInBytecode(f, 'LOAD_FAST_BORROW_LOAD_FAST_BORROW')
 
     def test_load_fast_unknown_simple(self):
         def f():
@@ -927,27 +932,27 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
     def test_load_fast_known_because_parameter(self):
         def f1(x):
             print(x)
-        self.assertInBytecode(f1, 'LOAD_FAST')
+        self.assertInBytecode(f1, 'LOAD_FAST_BORROW')
         self.assertNotInBytecode(f1, 'LOAD_FAST_CHECK')
 
         def f2(*, x):
             print(x)
-        self.assertInBytecode(f2, 'LOAD_FAST')
+        self.assertInBytecode(f2, 'LOAD_FAST_BORROW')
         self.assertNotInBytecode(f2, 'LOAD_FAST_CHECK')
 
         def f3(*args):
             print(args)
-        self.assertInBytecode(f3, 'LOAD_FAST')
+        self.assertInBytecode(f3, 'LOAD_FAST_BORROW')
         self.assertNotInBytecode(f3, 'LOAD_FAST_CHECK')
 
         def f4(**kwargs):
             print(kwargs)
-        self.assertInBytecode(f4, 'LOAD_FAST')
+        self.assertInBytecode(f4, 'LOAD_FAST_BORROW')
         self.assertNotInBytecode(f4, 'LOAD_FAST_CHECK')
 
         def f5(x=0):
             print(x)
-        self.assertInBytecode(f5, 'LOAD_FAST')
+        self.assertInBytecode(f5, 'LOAD_FAST_BORROW')
         self.assertNotInBytecode(f5, 'LOAD_FAST_CHECK')
 
     def test_load_fast_known_because_already_loaded(self):
@@ -957,7 +962,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             print(x)
             print(x)
         self.assertInBytecode(f, 'LOAD_FAST_CHECK')
-        self.assertInBytecode(f, 'LOAD_FAST')
+        self.assertInBytecode(f, 'LOAD_FAST_BORROW')
 
     def test_load_fast_known_multiple_branches(self):
         def f():
@@ -966,7 +971,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             else:
                 x = 2
             print(x)
-        self.assertInBytecode(f, 'LOAD_FAST')
+        self.assertInBytecode(f, 'LOAD_FAST_BORROW')
         self.assertNotInBytecode(f, 'LOAD_FAST_CHECK')
 
     def test_load_fast_unknown_after_error(self):
@@ -1010,12 +1015,12 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
                 print(a00, a01, a62, a63)
                 print(a64, a65, a78, a79)
 
-        self.assertInBytecode(f, 'LOAD_FAST_LOAD_FAST', ("a00", "a01"))
+        self.assertInBytecode(f, 'LOAD_FAST_BORROW_LOAD_FAST_BORROW', ("a00", "a01"))
         self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', "a00")
         self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', "a01")
         for i in 62, 63:
             # First 64 locals: analyze completely
-            self.assertInBytecode(f, 'LOAD_FAST', f"a{i:02}")
+            self.assertInBytecode(f, 'LOAD_FAST_BORROW', f"a{i:02}")
             self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', f"a{i:02}")
         for i in 64, 65, 78, 79:
             # Locals >=64 not in the same basicblock
@@ -1023,14 +1028,14 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             self.assertNotInBytecode(f, 'LOAD_FAST', f"a{i:02}")
         for i in 70, 71:
             # Locals >=64 in the same basicblock
-            self.assertInBytecode(f, 'LOAD_FAST', f"a{i:02}")
+            self.assertInBytecode(f, 'LOAD_FAST_BORROW', f"a{i:02}")
             self.assertNotInBytecode(f, 'LOAD_FAST_CHECK', f"a{i:02}")
         # del statements should invalidate within basicblocks.
         self.assertInBytecode(f, 'LOAD_FAST_CHECK', "a72")
         self.assertNotInBytecode(f, 'LOAD_FAST', "a72")
         # previous checked loads within a basicblock enable unchecked loads
         self.assertInBytecode(f, 'LOAD_FAST_CHECK', "a73")
-        self.assertInBytecode(f, 'LOAD_FAST', "a73")
+        self.assertInBytecode(f, 'LOAD_FAST_BORROW', "a73")
 
     def test_setting_lineno_no_undefined(self):
         code = textwrap.dedent("""\
@@ -1048,7 +1053,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         ns = {}
         exec(code, ns)
         f = ns['f']
-        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_BORROW")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         co_code = f.__code__.co_code
         def trace(frame, event, arg):
@@ -1060,7 +1065,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         sys.settrace(trace)
         result = f()
         self.assertIsNone(result)
-        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_BORROW")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         self.assertEqual(f.__code__.co_code, co_code)
 
@@ -1080,7 +1085,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         ns = {}
         exec(code, ns)
         f = ns['f']
-        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_BORROW")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         co_code = f.__code__.co_code
         def trace(frame, event, arg):
@@ -1094,7 +1099,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             sys.settrace(trace)
             result = f()
         self.assertEqual(result, 4)
-        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_BORROW")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         self.assertEqual(f.__code__.co_code, co_code)
 
@@ -1114,7 +1119,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         ns = {}
         exec(code, ns)
         f = ns['f']
-        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_BORROW")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         co_code = f.__code__.co_code
         def trace(frame, event, arg):
@@ -1128,7 +1133,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             sys.settrace(trace)
             result = f()
         self.assertEqual(result, 4)
-        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_BORROW")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         self.assertEqual(f.__code__.co_code, co_code)
 
@@ -1146,7 +1151,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
         ns = {}
         exec(code, ns)
         f = ns['f']
-        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_BORROW")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
         return f
 
@@ -1160,7 +1165,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             return trace
         sys.settrace(trace)
         f()
-        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_BORROW")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
 
     def test_initializing_local_does_not_add_check(self):
@@ -1173,7 +1178,7 @@ class TestMarkingVariablesAsUnKnown(BytecodeTestCase):
             return trace
         sys.settrace(trace)
         f()
-        self.assertInBytecode(f, "LOAD_FAST")
+        self.assertInBytecode(f, "LOAD_FAST_BORROW")
         self.assertNotInBytecode(f, "LOAD_FAST_CHECK")
 
 
@@ -1330,15 +1335,6 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         self.cfg_optimization_test(before, after, consts=[], expected_consts=[(1, 2, 3)])
 
-        # not enough consts
-        same = [
-            ('LOAD_SMALL_INT', 1, 0),
-            ('LOAD_SMALL_INT', 2, 0),
-            ('BUILD_TUPLE', 3, 0),
-            ('RETURN_VALUE', None, 0)
-        ]
-        self.cfg_optimization_test(same, same, consts=[])
-
         # not all consts
         same = [
             ('LOAD_SMALL_INT', 1, 0),
@@ -1379,16 +1375,6 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         self.cfg_optimization_test(same, same, consts=[])
 
-        # not enough consts
-        same = [
-            ('LOAD_SMALL_INT', 1, 0),
-            ('LOAD_SMALL_INT', 2, 0),
-            ('LOAD_SMALL_INT', 3, 0),
-            ('BUILD_LIST', 4, 0),
-            ('RETURN_VALUE', None, 0),
-        ]
-        self.cfg_optimization_test(same, same, consts=[])
-
         # not all consts
         same = [
             ('LOAD_SMALL_INT', 1, 0),
@@ -1425,16 +1411,6 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_SMALL_INT', 1, 0),
             ('LOAD_SMALL_INT', 2, 0),
             ('BUILD_SET', 2, 0),
-            ('RETURN_VALUE', None, 0),
-        ]
-        self.cfg_optimization_test(same, same, consts=[])
-
-        # not enough consts
-        same = [
-            ('LOAD_SMALL_INT', 1, 0),
-            ('LOAD_SMALL_INT', 2, 0),
-            ('LOAD_SMALL_INT', 3, 0),
-            ('BUILD_SET', 4, 0),
             ('RETURN_VALUE', None, 0),
         ]
         self.cfg_optimization_test(same, same, consts=[])
@@ -2293,12 +2269,12 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             return [
                        lbl2 := self.Label(),
                        ('LOAD_NAME', 0, 10),
+                       ('POP_TOP', None, 10),
                        (op1, lbl1 := self.Label(), lno1),
                        ('LOAD_NAME', 1, 20),
                        lbl1,
                        (op2, lbl2, lno2),
                    ]
-
 
         for op1 in ('JUMP', 'JUMP_NO_INTERRUPT'):
             for op2 in ('JUMP', 'JUMP_NO_INTERRUPT'):
@@ -2309,6 +2285,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
                     op = 'JUMP' if 'JUMP' in (op1, op2) else 'JUMP_NO_INTERRUPT'
                     expected_insts = [
                         ('LOAD_NAME', 0, 10),
+                        ('POP_TOP', None, 10),
                         ('NOP', None, 4),
                         (op, 0, 5),
                     ]
@@ -2325,6 +2302,7 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
                         op = 'JUMP' if 'JUMP' in (op1, op2) else 'JUMP_NO_INTERRUPT'
                         expected_insts = [
                             ('LOAD_NAME', 0, 10),
+                            ('POP_TOP', None, 10),
                             (op, 0, lno),
                         ]
                         self.cfg_optimization_test(insts, expected_insts, consts=list(range(5)))
@@ -2378,6 +2356,98 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         self.assertEqual(a, [0, 1, 2, 3])
         self.assertEqual(b, [3, 2, 1, 0])
         self.assertEqual(items, [])
+
+
+@unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
+class OptimizeLoadFastTestCase(CompilationStepTestCase):
+    def check(self, insts, expected_insts):
+        self.check_instructions(insts)
+        self.check_instructions(expected_insts)
+        seq = self.seq_from_insts(insts)
+        opt_insts = _testinternalcapi.optimize_load_fast(seq)
+        expected_insts = self.seq_from_insts(expected_insts).get_instructions()
+        self.assertInstructionsMatch(opt_insts, expected_insts)
+
+    def test_optimized(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_FAST", 1, 2),
+            ("BINARY_OP", 2, 3),
+        ]
+        expected = [
+            ("LOAD_FAST_BORROW", 0, 1),
+            ("LOAD_FAST_BORROW", 1, 2),
+            ("BINARY_OP", 2, 3),
+        ]
+        self.check(insts, expected)
+
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_CONST", 1, 2),
+            ("SWAP", 2, 3),
+            ("POP_TOP", None, 4),
+        ]
+        expected = [
+            ("LOAD_FAST_BORROW", 0, 1),
+            ("LOAD_CONST", 1, 2),
+            ("SWAP", 2, 3),
+            ("POP_TOP", None, 4),
+        ]
+        self.check(insts, expected)
+
+    def test_unoptimized_if_unconsumed(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_FAST", 1, 2),
+            ("POP_TOP", None, 3),
+        ]
+        expected = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_FAST_BORROW", 1, 2),
+            ("POP_TOP", None, 3),
+        ]
+        self.check(insts, expected)
+
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("COPY", 1, 2),
+            ("POP_TOP", None, 3),
+        ]
+        self.check(insts, insts)
+
+    def test_unoptimized_if_support_killed(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_CONST", 0, 2),
+            ("STORE_FAST", 0, 3),
+            ("POP_TOP", None, 4),
+        ]
+        self.check(insts, insts)
+
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_CONST", 0, 2),
+            ("LOAD_CONST", 0, 3),
+            ("STORE_FAST_STORE_FAST", 0 << 4 | 1, 4),
+            ("POP_TOP", None, 5),
+        ]
+        self.check(insts, insts)
+
+    def test_unoptimized_if_aliased(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("STORE_FAST", 1, 2),
+        ]
+        self.check(insts, insts)
+
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_CONST", 0, 3),
+            ("STORE_FAST_STORE_FAST", 0 << 4 | 1, 4),
+        ]
+        self.check(insts, insts)
+
+
 
 
 if __name__ == "__main__":
