@@ -950,6 +950,11 @@ winreg.CreateKeyEx -> HKEY
     access: REGSAM(c_default='KEY_WRITE') = winreg.KEY_WRITE
         An integer that specifies an access mask that describes the
         desired security access for the key. Default is KEY_WRITE.
+    options: int = 0
+        Can be one of the REG_OPTION_* constants.
+    create_only: bool = False
+        When set to True, raise FileExistsError if the key is already exists.
+        Default is False.
 
 Creates or opens the specified key.
 
@@ -964,22 +969,34 @@ If the function fails, an OSError exception is raised.
 
 static HKEY
 winreg_CreateKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
-                        int reserved, REGSAM access)
-/*[clinic end generated code: output=51b53e38d5e00d4b input=42c2b03f98406b66]*/
+                        int reserved, REGSAM access, int options,
+                        int create_only)
+/*[clinic end generated code: output=10c0a5f7beea07e3 input=23d740b8cd7fb0df]*/
 {
     HKEY retKey;
     long rc;
+    DWORD disposition;
 
     if (PySys_Audit("winreg.CreateKey", "nun",
                     (Py_ssize_t)key, sub_key,
                     (Py_ssize_t)access) < 0) {
         return NULL;
     }
-    rc = RegCreateKeyExW(key, sub_key, reserved, NULL, 0,
-                         access, NULL, &retKey, NULL);
+    rc = RegCreateKeyExW(key, sub_key, reserved, NULL, options,
+                         access, NULL, &retKey, &disposition);
     if (rc != ERROR_SUCCESS) {
         PyErr_SetFromWindowsErrWithFunction(rc, "CreateKeyEx");
         return NULL;
+    }
+    if (create_only) {
+        if (disposition == REG_OPENED_EXISTING_KEY) {
+            PyErr_SetFromWindowsErrWithFunction(ERROR_ALREADY_EXISTS, "CreateKeyEx");
+            if (retKey != key) {
+                // This is not a predefined key and needs to be closed.
+                RegCloseKey(key);
+            }
+            return NULL;
+        }
     }
     if (PySys_Audit("winreg.OpenKey/result", "n",
                     (Py_ssize_t)retKey) < 0) {
@@ -1394,10 +1411,14 @@ winreg.OpenKey -> HKEY
     sub_key: Py_UNICODE(accept={str, NoneType})
         A string that identifies the sub_key to open.
     reserved: int = 0
-        A reserved integer that must be zero.  Default is zero.
+        A reserved integer that be should zero.  If it is not zero,
+        it will be used as the options parameter for compatibility reasons.
+        Default is zero.
     access: REGSAM(c_default='KEY_READ') = winreg.KEY_READ
         An integer that specifies an access mask that describes the desired
         security access for the key.  Default is KEY_READ.
+    options: int = 0
+        Can be one of the REG_OPTION_* constants.
 
 Opens the specified key.
 
@@ -1407,8 +1428,8 @@ If the function fails, an OSError exception is raised.
 
 static HKEY
 winreg_OpenKey_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
-                    int reserved, REGSAM access)
-/*[clinic end generated code: output=5efbad23b3ffe2e7 input=098505ac36a9ae28]*/
+                    int reserved, REGSAM access, int options)
+/*[clinic end generated code: output=1cb0239fad9672e0 input=2fff042272bfc4f6]*/
 {
     HKEY retKey;
     long rc;
@@ -1417,6 +1438,9 @@ winreg_OpenKey_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
                     (Py_ssize_t)key, sub_key,
                     (Py_ssize_t)access) < 0) {
         return NULL;
+    }
+    if (options != 0) {
+        reserved = options;
     }
     Py_BEGIN_ALLOW_THREADS
     rc = RegOpenKeyExW(key, sub_key, reserved, access, &retKey);
@@ -1443,10 +1467,10 @@ If the function fails, an OSError exception is raised.
 
 static HKEY
 winreg_OpenKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
-                      int reserved, REGSAM access)
-/*[clinic end generated code: output=435e675800fa78c2 input=c6c4972af8622959]*/
+                      int reserved, REGSAM access, int options)
+/*[clinic end generated code: output=08a607e6a6385ed4 input=c6c4972af8622959]*/
 {
-    return winreg_OpenKey_impl(module, key, sub_key, reserved, access);
+    return winreg_OpenKey_impl(module, key, sub_key, reserved, access, options);
 }
 
 /*[clinic input]
