@@ -864,9 +864,16 @@ static int
 bytearray_ass_subscript(PyObject *op, PyObject *index, PyObject *values)
 {
     int ret;
-    Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytearray_ass_subscript_lock_held(op, index, values);
-    Py_END_CRITICAL_SECTION();
+    if (values != NULL && PyByteArray_Check(values)) {
+        Py_BEGIN_CRITICAL_SECTION2(op, values);
+        ret = bytearray_ass_subscript_lock_held(op, index, values);
+        Py_END_CRITICAL_SECTION2();
+    }
+    else {
+        Py_BEGIN_CRITICAL_SECTION(op);
+        ret = bytearray_ass_subscript_lock_held(op, index, values);
+        Py_END_CRITICAL_SECTION();
+    }
     return ret;
 }
 
@@ -2751,9 +2758,16 @@ static PyObject *
 bytearray_mod(PyObject *v, PyObject *w)
 {
     PyObject *ret;
-    Py_BEGIN_CRITICAL_SECTION(v);
-    ret = bytearray_mod_lock_held(v, w);
-    Py_END_CRITICAL_SECTION();
+    if (PyByteArray_Check(w)) {
+        Py_BEGIN_CRITICAL_SECTION2(v, w);
+        ret = bytearray_mod_lock_held(v, w);
+        Py_END_CRITICAL_SECTION2();
+    }
+    else {
+        Py_BEGIN_CRITICAL_SECTION(v);
+        ret = bytearray_mod_lock_held(v, w);
+        Py_END_CRITICAL_SECTION();
+    }
     return ret;
 }
 

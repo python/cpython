@@ -19,6 +19,7 @@ from test import support
 from test.support import force_not_colorized, os_helper
 from test.support.import_helper import import_module
 from test.support.pty_helper import run_pty, FakeInput
+from test.support.script_helper import kill_python
 from unittest.mock import patch
 
 SKIP_CORO_TESTS = False
@@ -4340,6 +4341,29 @@ class PdbTestInline(unittest.TestCase):
         self.assertEqual(stderr, "")
         # The quit prompt should be printed exactly twice
         self.assertEqual(stdout.count("Quit anyway"), 2)
+
+
+@support.force_not_colorized_test_class
+@support.requires_subprocess()
+class TestREPLSession(unittest.TestCase):
+    def test_return_from_inline_mode_to_REPL(self):
+        # GH-124703: Raise BdbQuit when exiting pdb in REPL session.
+        # This allows the REPL session to continue.
+        from test.test_repl import spawn_repl
+        p = spawn_repl()
+        user_input = """
+            x = 'Spam'
+            import pdb
+            pdb.set_trace(commands=['x + "During"', 'q'])
+            x + 'After'
+        """
+        p.stdin.write(textwrap.dedent(user_input))
+        output = kill_python(p)
+        self.assertIn('SpamDuring', output)
+        self.assertNotIn("Quit anyway", output)
+        self.assertIn('BdbQuit', output)
+        self.assertIn('SpamAfter', output)
+        self.assertEqual(p.returncode, 0)
 
 
 @support.requires_subprocess()
