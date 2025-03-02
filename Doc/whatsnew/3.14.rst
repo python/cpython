@@ -567,17 +567,16 @@ getopt
 heapq
 -----
 
-* Make :mod:`heapq` max-heap functions
+* The max-heap functions in :mod:`heapq` are now public:
 
   * :func:`heapq.heapify_max`,
   * :func:`heapq.heappush_max`,
   * :func:`heapq.heappop_max`,
   * :func:`heapq.heapreplace_max`
 
-  public. And add the missing :func:`heapq.heappushpop_max` to
-  both the C and Python implementation.
-
   Previous underscored naming is kept for backwards compatibility.
+  Additionally, the missing function :func:`heapq.heappushpop_max` has been added to both the C and Python
+  implementations.
 
 
 http

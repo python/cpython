@@ -1,11 +1,2 @@
-Make :mod:`heapq` max-heap functions
-
-* :func:`heapq.heapify_max`,
-* :func:`heapq.heappush_max`,
-* :func:`heapq.heappop_max`,
-* :func:`heapq.heapreplace_max`
-
-public. And add the missing :func:`heapq.heappushpop_max` to
-both the C and Python implementation.
-
-Previous underscored naming is kept for backwards compatibility.
+Make :mod:`heapq` max-heap functions :func:`heapq.heapify_max`, :func:`heapq.heappush_max`, :func:`heapq.heappop_max`,
+and :func:`heapq.heapreplace_max` public. Add missing :func:`heapq.heappushpop_max` to both the C and Python implementation.

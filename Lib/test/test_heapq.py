@@ -68,7 +68,6 @@ class TestHeap:
         self.check_invariant(results)
 
         self.assertRaises(TypeError, self.module.heappush, [])
-
         try:
             self.assertRaises(TypeError, self.module.heappush, None, None)
             self.assertRaises(TypeError, self.module.heappop, None)
