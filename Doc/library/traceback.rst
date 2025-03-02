@@ -540,7 +540,7 @@ in a :ref:`traceback <traceback-objects>`.
    .. attribute:: FrameSummary.end_lineno
 
       The last line number of the source code for this frame.
-      By default, it is set to ``None`` and indexation starts from 1.
+      By default, it is set to ``lineno`` and indexation starts from 1.
 
    .. attribute:: FrameSummary.colno
 
