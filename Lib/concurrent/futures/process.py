@@ -874,7 +874,7 @@ class ProcessPoolExecutor(_base.Executor):
         submitted).
         """
         if operation not in _TERMINATE_OR_KILL_OPERATION:
-            raise ValueError(f"Unsupported operation: {operation}")
+            raise ValueError(f"Unsupported operation: {operation!r}")
 
         processes = {}
         if self._processes:

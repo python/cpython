@@ -233,28 +233,28 @@ class ProcessPoolExecutorTest(ExecutorTest):
                     list(executor.map(mul, [(2, 3)] * 10))
             executor.shutdown()
 
-    def test_process_pool_executor_terminate_workers(self):
+    def test_terminate_workers(self):
         with futures.ProcessPoolExecutor(max_workers=1) as executor:
             executor._terminate_or_kill_workers = unittest.mock.Mock()
             executor.terminate_workers()
 
         executor._terminate_or_kill_workers.assert_called_once_with(operation=futures.process._TERMINATE)
 
-    def test_process_pool_executor_kill_workers(self):
+    def test_kill_workers(self):
         with futures.ProcessPoolExecutor(max_workers=1) as executor:
             executor._terminate_or_kill_workers = unittest.mock.Mock()
             executor.kill_workers()
 
         executor._terminate_or_kill_workers.assert_called_once_with(operation=futures.process._KILL)
 
-    def test_process_pool_executor_terminate_or_kill_workers_invalid_op(self):
+    def test_terminate_or_kill_workers_invalid_op(self):
         with futures.ProcessPoolExecutor(max_workers=1) as executor:
             self.assertRaises(ValueError,
                               executor._terminate_or_kill_workers,
                               operation='invalid operation'),
 
     @parameterize(*TERMINATE_OR_KILL_PARAMS)
-    def test_process_pool_executor_terminate_kill_workers(self, function_name):
+    def test_terminate_kill_workers(self, function_name):
         manager = self.get_context().Manager()
         q = manager.Queue()
 
@@ -279,7 +279,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
             self.assertRaises(queue.Empty, q.get, timeout=1)
 
     @parameterize(*TERMINATE_OR_KILL_PARAMS)
-    def test_process_pool_executor_terminate_kill_workers_dead_workers(self, function_name):
+    def test_terminate_kill_workers_dead_workers(self, function_name):
         with futures.ProcessPoolExecutor(max_workers=1) as executor:
             future = executor.submit(os._exit, 1)
             self.assertRaises(BrokenProcessPool, future.result)
@@ -288,7 +288,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
             getattr(executor, function_name)()
 
     @parameterize(*TERMINATE_OR_KILL_PARAMS)
-    def test_process_pool_executor_terminate_kill_workers_not_started_yet(self, function_name):
+    def test_terminate_kill_workers_not_started_yet(self, function_name):
         ctx = self.get_context()
         with unittest.mock.patch.object(ctx, 'Process') as mock_process:
             with futures.ProcessPoolExecutor(max_workers=1, mp_context=ctx) as executor:
@@ -300,9 +300,10 @@ class ProcessPoolExecutorTest(ExecutorTest):
             mock_process.return_value.terminate.assert_not_called()
 
     @parameterize(*TERMINATE_OR_KILL_PARAMS)
-    def test_process_pool_executor_terminate_kill_workers_stops_pool(self, function_name):
+    def test_terminate_kill_workers_stops_pool(self, function_name):
         with futures.ProcessPoolExecutor(max_workers=1) as executor:
-            executor.submit(time.sleep, 0).result()
+            task = executor.submit(time.sleep, 0)
+            self.assertIsNone(task.result())
 
             getattr(executor, function_name)()
 
