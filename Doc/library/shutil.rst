@@ -601,8 +601,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    any format-specific extension.
 
    *format* is the archive format: one of
-   "zip" (if the :mod:`zlib` module is available), "tar", "gztar" (if the
-   :mod:`zlib` module is available), "bztar" (if the :mod:`bz2` module is
+   "zip", "tar", "gztar", "bztar" (if the :mod:`bz2` module is
    available), or "xztar" (if the :mod:`lzma` module is available).
 
    *root_dir* is a directory that will be the root directory of the
@@ -653,9 +652,9 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    By default :mod:`shutil` provides these formats:
 
-   - *zip*: ZIP file (if the :mod:`zlib` module is available).
+   - *zip*: ZIP file.
    - *tar*: Uncompressed tar file. Uses POSIX.1-2001 pax format for new archives.
-   - *gztar*: gzip'ed tar-file (if the :mod:`zlib` module is available).
+   - *gztar*: gzip'ed tar-file.
    - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available).
    - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available).
 
@@ -768,10 +767,9 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    By default :mod:`shutil` provides these formats:
 
-   - *zip*: ZIP file (unpacking compressed files works only if the corresponding
-     module is available).
+   - *zip*: ZIP file.
    - *tar*: uncompressed tar file.
-   - *gztar*: gzip'ed tar-file (if the :mod:`zlib` module is available).
+   - *gztar*: gzip'ed tar-file.
    - *bztar*: bzip2'ed tar-file (if the :mod:`bz2` module is available).
    - *xztar*: xz'ed tar-file (if the :mod:`lzma` module is available).
 
