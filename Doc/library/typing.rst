@@ -1368,47 +1368,39 @@ These can be used as types in annotations. They all support subscription using
       T1 = Annotated[int, ValueRange(-10, 5)]
       T2 = Annotated[T1, ValueRange(-20, 3)]
 
-   Details of the syntax:
+   ``Annotated`` must be subscripted with at least two arguments.
+   The first argument to ``Annotated`` must be a valid type. Multiple metadata
+   elements can be supplied as ``Annotated`` supports variadic arguments. The
+   order of the metadata elements is preserved and matters for equality checks::
 
-   * The first argument to ``Annotated`` must be a valid type
+      @dataclass
+      class ctype:
+         kind: str
 
-   * Multiple metadata elements can be supplied (``Annotated`` supports variadic
-     arguments)::
+      Annotated[int, ValueRange(3, 10), ctype("char")]
 
-        @dataclass
-        class ctype:
-            kind: str
+      assert Annotated[int, ValueRange(3, 10), ctype("char")] != Annotated[
+          int, ctype("char"), ValueRange(3, 10)
+      ] # Order matters
 
-        Annotated[int, ValueRange(3, 10), ctype("char")]
+   It is up to the tool consuming the annotations to decide whether the
+   client is allowed to add multiple metadata elements to one annotation and how to
+   merge those annotations.
 
-     It is up to the tool consuming the annotations to decide whether the
-     client is allowed to add multiple metadata elements to one annotation and how to
-     merge those annotations.
+   Nested ``Annotated`` types are flattened. The order of the metadata elements
+   starts with the innermost annotation::
 
-   * ``Annotated`` must be subscripted with at least two arguments (
-     ``Annotated[int]`` is not valid)
+      assert Annotated[Annotated[int, ValueRange(3, 10)], ctype("char")] == Annotated[
+         int, ValueRange(3, 10), ctype("char")
+      ]
 
-   * The order of the metadata elements is preserved and matters for equality
-     checks::
+   Duplicated metadata elements are not removed::
 
-        assert Annotated[int, ValueRange(3, 10), ctype("char")] != Annotated[
-            int, ctype("char"), ValueRange(3, 10)
-        ]
+      assert Annotated[int, ValueRange(3, 10)] != Annotated[
+         int, ValueRange(3, 10), ValueRange(3, 10)
+      ]
 
-   * Nested ``Annotated`` types are flattened. The order of the metadata elements
-     starts with the innermost annotation::
-
-        assert Annotated[Annotated[int, ValueRange(3, 10)], ctype("char")] == Annotated[
-            int, ValueRange(3, 10), ctype("char")
-        ]
-
-   * Duplicated metadata elements are not removed::
-
-        assert Annotated[int, ValueRange(3, 10)] != Annotated[
-            int, ValueRange(3, 10), ValueRange(3, 10)
-        ]
-
-   * ``Annotated`` can be used with nested and generic aliases:
+   ``Annotated`` can be used with nested and generic aliases:
 
      .. testcode::
 
@@ -1422,19 +1414,15 @@ These can be used as types in annotations. They all support subscription using
         # ``Annotated[list[tuple[int, int]], MaxLen(10)]``:
         type V = Vec[int]
 
-   * ``Annotated`` cannot be used with an unpacked :class:`TypeVarTuple`::
+   ``Annotated`` cannot be used with an unpacked :class:`TypeVarTuple`::
 
-        type Variadic[*Ts] = Annotated[*Ts, Ann1]  # NOT valid
+        type Variadic[*Ts] = Annotated[*Ts, Ann1] = Annotated[T1, T2, T3, ..., Ann1]  # NOT valid
 
-     This would be equivalent to::
+   where ``T1``, ``T2``,... are :class:`TypeVars <TypeVar>`. This is invalid as
+   only one type should be passed to Annotated.
 
-        Annotated[T1, T2, T3, ..., Ann1]
-
-     where ``T1``, ``T2``, etc. are :class:`TypeVars <TypeVar>`. This would be
-     invalid: only one type should be passed to Annotated.
-
-   * By default, :func:`get_type_hints` strips the metadata from annotations.
-     Pass ``include_extras=True`` to have the metadata preserved:
+   By default, :func:`get_type_hints` strips the metadata from annotations.
+   Pass ``include_extras=True`` to have the metadata preserved:
 
      .. doctest::
 
@@ -1446,29 +1434,23 @@ These can be used as types in annotations. They all support subscription using
         >>> get_type_hints(func, include_extras=True)
         {'x': typing.Annotated[int, 'metadata'], 'return': <class 'NoneType'>}
 
-   * At runtime, the metadata associated with an ``Annotated`` type can be
-     retrieved via the :attr:`!__metadata__` attribute:
+   At runtime, the metadata associated with an ``Annotated`` type can be
+   retrieved via the :attr:`!__metadata__` attribute. If you want to retrieve
+   the original type wrapped by ``Annotated``, use the :attr:`!__origin__` attribute:
 
      .. doctest::
 
-        >>> from typing import Annotated
+        >>> from typing import Annotated, get_origin
         >>> X = Annotated[int, "very", "important", "metadata"]
         >>> X
         typing.Annotated[int, 'very', 'important', 'metadata']
         >>> X.__metadata__
         ('very', 'important', 'metadata')
-
-   * At runtime, if you want to retrieve the original
-     type wrapped by ``Annotated``, use the :attr:`!__origin__` attribute:
-
-     .. doctest::
-
-        >>> from typing import Annotated, get_origin
         >>> Password = Annotated[str, "secret"]
         >>> Password.__origin__
         <class 'str'>
 
-     Note that using :func:`get_origin` will return ``Annotated`` itself:
+   Note that using :func:`get_origin` will return ``Annotated`` itself:
 
      .. doctest::
 
