@@ -254,7 +254,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
                               operation='invalid operation'),
 
     @parameterize(*FORCE_SHUTDOWN_PARAMS)
-    def test_terminate_kill_workers(self, function_name):
+    def test_force_shutdown_workers(self, function_name):
         manager = self.get_context().Manager()
         q = manager.Queue()
 
@@ -279,7 +279,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
             self.assertRaises(queue.Empty, q.get, timeout=1)
 
     @parameterize(*FORCE_SHUTDOWN_PARAMS)
-    def test_terminate_kill_workers_dead_workers(self, function_name):
+    def test_force_shutdown_workers_dead_workers(self, function_name):
         with futures.ProcessPoolExecutor(max_workers=1) as executor:
             future = executor.submit(os._exit, 1)
             self.assertRaises(BrokenProcessPool, future.result)
@@ -288,7 +288,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
             getattr(executor, function_name)()
 
     @parameterize(*FORCE_SHUTDOWN_PARAMS)
-    def test_terminate_kill_workers_not_started_yet(self, function_name):
+    def test_force_shutdown_workers_not_started_yet(self, function_name):
         ctx = self.get_context()
         with unittest.mock.patch.object(ctx, 'Process') as mock_process:
             with futures.ProcessPoolExecutor(max_workers=1, mp_context=ctx) as executor:
@@ -300,7 +300,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
             mock_process.return_value.terminate.assert_not_called()
 
     @parameterize(*FORCE_SHUTDOWN_PARAMS)
-    def test_terminate_kill_workers_stops_pool(self, function_name):
+    def test_force_shutdown_workers_stops_pool(self, function_name):
         with futures.ProcessPoolExecutor(max_workers=1) as executor:
             task = executor.submit(time.sleep, 0)
             self.assertIsNone(task.result())
