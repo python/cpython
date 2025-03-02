@@ -248,8 +248,7 @@ class CAPITest(unittest.TestCase):
 
         x = X()
         self.assertEqual(inplacepower(x, 11), (x, 11))
-        # XXX: In-place power doesn't pass the third arg to __ipow__.
-        self.assertEqual(inplacepower(x, 11, 5), (x, 11))
+        self.assertEqual(inplacepower(x, 11, 5), (x, 11, 5))
 
     def test_long(self):
         # Test PyNumber_Long()
