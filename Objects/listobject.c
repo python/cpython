@@ -415,6 +415,32 @@ _PyList_GetItemRef(PyListObject *list, Py_ssize_t i)
     return list_get_item_ref(list, i);
 }
 
+#ifdef Py_GIL_DISABLED
+int
+_PyList_GetItemRefNoLock(PyListObject *list, Py_ssize_t i, _PyStackRef *result)
+{
+    assert(_Py_IsOwnedByCurrentThread((PyObject *)list) ||
+           _PyObject_GC_IS_SHARED(list));
+    if (!valid_index(i, PyList_GET_SIZE(list))) {
+        return 0;
+    }
+    PyObject **ob_item = _Py_atomic_load_ptr(&list->ob_item);
+    if (ob_item == NULL) {
+        return 0;
+    }
+    Py_ssize_t cap = list_capacity(ob_item);
+    assert(cap != -1);
+    if (!valid_index(i, cap)) {
+        return 0;
+    }
+    PyObject *obj = _Py_atomic_load_ptr(&ob_item[i]);
+    if (obj == NULL || !_Py_TryIncrefCompareStackRef(&ob_item[i], obj, result)) {
+        return -1;
+    }
+    return 1;
+}
+#endif
+
 int
 PyList_SetItem(PyObject *op, Py_ssize_t i,
                PyObject *newitem)
