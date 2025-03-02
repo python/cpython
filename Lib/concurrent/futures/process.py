@@ -629,7 +629,7 @@ class BrokenProcessPool(_base.BrokenExecutor):
 _TERMINATE = "terminate"
 _KILL = "kill"
 
-_TERMINATE_OR_KILL_OPERATION = {
+_SHUTDOWN_CALLBACK_OPERATION = {
     _TERMINATE,
     _KILL
 }
@@ -864,7 +864,7 @@ class ProcessPoolExecutor(_base.Executor):
 
     shutdown.__doc__ = _base.Executor.shutdown.__doc__
 
-    def _terminate_or_kill_workers(self, operation):
+    def _force_shutdown(self, operation):
         """Attempts to terminate or kill the executor's workers based off the
         given operation. Iterates through all of the current processes and
         performs the relevant task if the process is still alive.
@@ -873,7 +873,7 @@ class ProcessPoolExecutor(_base.Executor):
         and no longer usable (for instance, new tasks should not be
         submitted).
         """
-        if operation not in _TERMINATE_OR_KILL_OPERATION:
+        if operation not in _SHUTDOWN_CALLBACK_OPERATION:
             raise ValueError(f"Unsupported operation: {operation!r}")
 
         processes = {}
@@ -914,7 +914,7 @@ class ProcessPoolExecutor(_base.Executor):
         and no longer usable (for instance, new tasks should not be
         submitted).
         """
-        return self._terminate_or_kill_workers(operation=_TERMINATE)
+        return self._force_shutdown(operation=_TERMINATE)
 
     def kill_workers(self):
         """Attempts to kill the executor's workers.
@@ -925,4 +925,4 @@ class ProcessPoolExecutor(_base.Executor):
         and no longer usable (for instance, new tasks should not be
         submitted).
         """
-        return self._terminate_or_kill_workers(operation=_KILL)
+        return self._force_shutdown(operation=_KILL)
