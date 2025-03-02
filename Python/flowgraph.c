@@ -1,6 +1,3 @@
-
-#include <stdbool.h>
-
 #include "Python.h"
 #include "pycore_flowgraph.h"
 #include "pycore_compile.h"
@@ -10,6 +7,8 @@
 #define NEED_OPCODE_METADATA
 #include "opcode_metadata.h"      // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
 #undef NEED_OPCODE_METADATA
+
+#include <stdbool.h>
 
 
 #undef SUCCESS
