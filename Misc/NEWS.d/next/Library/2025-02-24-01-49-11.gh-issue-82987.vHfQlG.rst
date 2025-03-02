@@ -1,0 +1,1 @@
+:mod:`pdb` will always stop on calling frames when inline breakpoints like :func:`breakpoint` or :func:`pdb.set_trace` are used, regardless of whether the module matches ``skip`` pattern.
