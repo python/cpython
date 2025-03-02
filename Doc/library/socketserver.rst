@@ -230,7 +230,7 @@ Server Objects
       will return.
 
 
-   .. method:: serve_forever(poll_interval=0.5)
+   .. method:: serve_forever(poll_interval=30)
 
       Handle requests until an explicit :meth:`shutdown` request.  Poll for
       shutdown every *poll_interval* seconds.
@@ -243,6 +243,9 @@ Server Objects
       .. versionchanged:: 3.3
          Added ``service_actions`` call to the ``serve_forever`` method.
 
+      .. versionchanged:: 3.14
+         Default of *poll_interval* is now ``30`` instead of ``0.5``.
+
 
    .. method:: service_actions()
 
@@ -252,12 +255,16 @@ Server Objects
 
       .. versionadded:: 3.3
 
-   .. method:: shutdown()
+   .. method:: shutdown(write_to_self=True)
 
       Tell the :meth:`serve_forever` loop to stop and wait until it does.
+      If *write_to_self* is True, :meth:`write_to_self` called
+      and the loop will wake up immediately if server is not closed.
       :meth:`shutdown` must be called while :meth:`serve_forever` is running in a
       different thread otherwise it will deadlock.
 
+      .. versionchanged:: 3.14
+         Added ``write_to_self`` parameter.
 
    .. method:: server_close()
 
@@ -397,6 +404,14 @@ Server Objects
       be processed, and if it's :const:`False`, the request will be denied.  This
       function can be overridden to implement access controls for a server. The
       default implementation always returns :const:`True`.
+
+
+   .. method:: write_to_self()
+
+      Connect to the server's socket and send null byte.
+      May be overriden.
+
+      .. versionadded:: 3.14
 
 
    .. versionchanged:: 3.6
