@@ -1,0 +1,6 @@
+:func:`webbrowser.open` should launch default webbrowsers for URLs that are
+not ``http[s]://`` more often (especially ``file://``,
+where the default application by file type was often launched, instead of a browser).
+This works by adding support for ``gtk-launch`` and ``gio
+launch``,
+and making sure generic application launchers like ``xdg-open`` are not used for ``file://`` URLs.
