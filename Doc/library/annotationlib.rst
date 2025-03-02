@@ -192,7 +192,10 @@ Classes
       the global and local namespaces in which the name is evaluated.
       *type_params*, if given, must be a tuple of
       :ref:`type parameters <type-params>` that are in scope while the forward
-      reference is being evaluated. *owner* is the object that owns the
+      reference is being evaluated. This parameter should be provided (though it
+      may be an empty tuple) if the *owner* parameter is not given and the
+      :class:`~ForwardRef` instance does not have an owner set.
+      *owner* is the object that owns the
       annotation from which the forward reference derives, usually a function,
       class, or module.
 
