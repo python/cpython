@@ -5,7 +5,7 @@
 Parsing arguments and building values
 =====================================
 
-These functions are useful when creating your own extensions functions and
+These functions are useful when creating your own extension functions and
 methods.  Additional information and examples are available in
 :ref:`extending-index`.
 
@@ -644,6 +644,10 @@ Building values
 
    ``n`` (:class:`int`) [:c:type:`Py_ssize_t`]
       Convert a C :c:type:`Py_ssize_t` to a Python integer.
+
+   ``p`` (:class:`bool`) [int]
+      Convert a C :c:expr:`int` to a Python :class:`bool` object.
+      .. versionadded:: 3.14
 
    ``c`` (:class:`bytes` of length 1) [char]
       Convert a C :c:expr:`int` representing a byte to a Python :class:`bytes` object of
