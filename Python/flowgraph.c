@@ -1,6 +1,3 @@
-
-#include <stdbool.h>
-
 #include "Python.h"
 #include "pycore_flowgraph.h"
 #include "pycore_compile.h"
@@ -8,6 +5,8 @@
 
 #include "pycore_opcode_utils.h"
 #include "pycore_opcode_metadata.h" // OPCODE_HAS_ARG, etc
+
+#include <stdbool.h>
 
 
 #undef SUCCESS
