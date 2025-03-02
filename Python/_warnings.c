@@ -5,7 +5,6 @@
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
 #include "pycore_traceback.h"     // _Py_DisplaySourceLine()
 
 #include <stdbool.h>
@@ -563,7 +562,7 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
         goto error;
     }
 
-    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &f_stderr) <= 0) {
+    if (PySys_GetAttr(&_Py_ID(stderr), &f_stderr) <= 0) {
         fprintf(stderr, "lost sys.stderr\n");
         goto error;
     }

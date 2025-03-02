@@ -3471,7 +3471,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
 #define DUMP_SYS(NAME) \
         do { \
             PySys_FormatStderr("  sys.%s = ", #NAME); \
-            if (_PySys_GetOptionalAttrString(#NAME, &obj) < 0) { \
+            if (PySys_GetAttrString(#NAME, &obj) < 0) { \
                 PyErr_Clear(); \
             } \
             if (obj != NULL) { \
@@ -3495,7 +3495,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
 #undef DUMP_SYS
 
     PyObject *sys_path;
-    (void) _PySys_GetOptionalAttrString("path", &sys_path);
+    (void) PySys_GetAttrString("path", &sys_path);
     if (sys_path != NULL && PyList_Check(sys_path)) {
         PySys_WriteStderr("  sys.path = [\n");
         Py_ssize_t len = PyList_GET_SIZE(sys_path);
