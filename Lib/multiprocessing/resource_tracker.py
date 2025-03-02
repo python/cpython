@@ -212,6 +212,15 @@ class ResourceTracker(object):
         assert nbytes == len(msg), "nbytes {0:n} but len(msg) {1:n}".format(
             nbytes, len(msg))
 
+    def __del__(self):
+        # making sure child processess are cleaned before ResourceTracker
+        # gets destructed.
+        # see https://github.com/python/cpython/issues/88887
+        try:
+            self._stop()
+        except (OSError, TypeError, AttributeError):
+            pass
+
 
 _resource_tracker = ResourceTracker()
 ensure_running = _resource_tracker.ensure_running
