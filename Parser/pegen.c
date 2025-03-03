@@ -509,7 +509,6 @@ _PyPegen_new_identifier(Parser *p, const char *n)
     if (!id) {
         goto error;
     }
-    assert(PyUnicode_IS_READY(id));
     /* Check whether there are non-ASCII characters in the
        identifier; if so, normalize to NFKC. */
     if (!PyUnicode_IS_ASCII(id))
