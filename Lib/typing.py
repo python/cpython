@@ -765,13 +765,6 @@ def Union(self, parameters):
 
         assert Union[Union[int, str], float] == Union[int, str, float]
 
-      However, this does not apply to unions referenced through a type
-      alias, to avoid forcing evaluation of the underlying
-      TypeAliasType::
-
-        type A = Union[int, str]
-        assert Union[A, float] != Union[int, str, float]
-
     - Unions of a single argument vanish, e.g.::
 
         assert Union[int] == int  # The constructor actually returns int
@@ -837,33 +830,6 @@ def Literal(self, *parameters):
     Literal[...] cannot be subclassed. At runtime, an arbitrary value
     is allowed as type argument to Literal[...], but type checkers may
     impose restrictions.
-
-    Literal is very similar to Union, the main difference is that its
-    arguments are literal values instead of types:
-
-    - The arguments must be literal values and there must be at least one.
-
-    - Nested Literal types are flattened, e.g.::
-
-        assert Literal[Literal[1, 2], 3] == Literal[1, 2, 3]
-
-      However, this does not apply to Literal types referenced through a type
-      alias, to avoid forcing evaluation of the underlying TypeAliasType::
-
-        type A = Literal[1, 2]
-        assert Literal[A, 3] != Literal[1, 2, 3]
-
-    - Redundant arguments are skipped, e.g.::
-
-        assert Union[1, 2, 1] == Union[1, 2]
-
-    - When comparing literals, the argument order is ignored, e.g.::
-
-        assert Literal[1, 2] == Literal[2, 1]
-
-    - You cannot subclass or instantiate a Literal.
-
-    - You cannot write Literal[X][Y].
     """
     # There is no '_type_check' call because arguments to Literal[...] are
     # values, not types.
@@ -2272,13 +2238,6 @@ def Annotated(self, *params):
     - Nested Annotated types are flattened::
 
         assert Annotated[Annotated[T, Ann1, Ann2], Ann3] == Annotated[T, Ann1, Ann2, Ann3]
-
-      However, this does not apply to Annotated types referenced through
-      a type alias, to avoid forcing evaluation of the underlying
-      TypeAliasType::
-
-        type A[T] = Annotated[T, Ann1, Ann2]
-        assert Annotated[A[T], Ann3] != Annotated[T, Ann1, Ann2, Ann3]
 
     - Instantiating an annotated type is equivalent to instantiating the
     underlying type::
