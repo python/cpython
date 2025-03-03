@@ -76,8 +76,8 @@ typedef struct {
 #define tracemalloc_tracebacks _PyRuntime.tracemalloc.tracebacks
 #define tracemalloc_traces _PyRuntime.tracemalloc.traces
 #define tracemalloc_domains _PyRuntime.tracemalloc.domains
-#define tracemalloc_allocations _PyRuntime.tracemalloc.allocations
-#define tracemalloc_deallocations _PyRuntime.tracemalloc.deallocations
+#define tracemalloc_refs_created _PyRuntime.tracemalloc.refs_created
+#define tracemalloc_refs_destroyed _PyRuntime.tracemalloc.refs_destroyed
 
 
 #ifdef TRACE_DEBUG
@@ -1255,48 +1255,47 @@ _PyTraceMalloc_Fini(void)
 
    Do nothing if tracemalloc is not tracing memory allocations
    or if the object memory block is not already traced. */
-static int
-_PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event,
-                        void* Py_UNUSED(ignore))
-{
-    if (event != PyRefTracer_CREATE) {
-        /* we don't want bother here with the lock for performance reasons */
-        if (_Py_atomic_load_int_relaxed(&tracemalloc_config.tracing)) {
-            _Py_atomic_add_ssize(&tracemalloc_deallocations, 1);
-        }
-        return 0;
-    }
-    if (get_reentrant()) {
-        return 0;
-    }
+   static int
+   _PyTraceMalloc_TraceRef(PyObject *op, PyRefTracerEvent event,
+                           void* Py_UNUSED(ignore))
+   {
+       if (get_reentrant()) {
+           return 0;
+       }
 
-    _Py_AssertHoldsTstate();
-    TABLES_LOCK();
+       _Py_AssertHoldsTstate();
+       TABLES_LOCK();
 
-    if (!tracemalloc_config.tracing) {
-        goto done;
-    }
+       if (!tracemalloc_config.tracing) {
+           goto done;
+       }
 
-    tracemalloc_allocations += 1;
+       if (event == PyRefTracer_CREATE) {
+           tracemalloc_refs_created += 1;
+       }
+       else {
+           tracemalloc_refs_destroyed += 1;
+           goto done;
+       }
 
-    PyTypeObject *type = Py_TYPE(op);
-    const size_t presize = _PyType_PreHeaderSize(type);
-    uintptr_t ptr = (uintptr_t)((char *)op - presize);
+       PyTypeObject *type = Py_TYPE(op);
+       const size_t presize = _PyType_PreHeaderSize(type);
+       uintptr_t ptr = (uintptr_t)((char *)op - presize);
 
-    trace_t *trace = _Py_hashtable_get(tracemalloc_traces, TO_PTR(ptr));
-    if (trace != NULL) {
-        /* update the traceback of the memory block */
-        traceback_t *traceback = traceback_new();
-        if (traceback != NULL) {
-            trace->traceback = traceback;
-        }
-    }
-    /* else: cannot track the object, its memory block size is unknown */
+       trace_t *trace = _Py_hashtable_get(tracemalloc_traces, TO_PTR(ptr));
+       if (trace != NULL) {
+           /* update the traceback of the memory block */
+           traceback_t *traceback = traceback_new();
+           if (traceback != NULL) {
+               trace->traceback = traceback;
+           }
+       }
+       /* else: cannot track the object, its memory block size is unknown */
 
-done:
-    TABLES_UNLOCK();
-    return 0;
-}
+   done:
+       TABLES_UNLOCK();
+       return 0;
+   }
 
 
 PyObject*
@@ -1334,8 +1333,8 @@ _PyTraceMalloc_ClearTraces(void)
     TABLES_LOCK();
     if (tracemalloc_config.tracing) {
         tracemalloc_clear_traces_unlocked();
-        tracemalloc_allocations = 0;
-        tracemalloc_deallocations = 0;
+        tracemalloc_refs_created = 0;
+        tracemalloc_refs_destroyed = 0;
     }
     TABLES_UNLOCK();
 }
@@ -1476,21 +1475,21 @@ _PyTraceMalloc_GetTracedMemory(void)
 
 
 PyObject *
-_PyTraceMalloc_GetTracedAllocs(void)
+_PyTraceMalloc_GetTracedRefs(void)
 {
     TABLES_LOCK();
-    Py_ssize_t allocations, deallocations;
+    Py_ssize_t created, destroyed;
     if (tracemalloc_config.tracing) {
-        allocations = tracemalloc_allocations;
-        deallocations = tracemalloc_deallocations;
+        created = tracemalloc_refs_created;
+        destroyed = tracemalloc_refs_destroyed;
     }
     else {
-        allocations = 0;
-        deallocations = 0;
+        created = 0;
+        destroyed = 0;
     }
     TABLES_UNLOCK();
 
-    return Py_BuildValue("nn", allocations, deallocations);
+    return Py_BuildValue("nn", created, destroyed);
 }
 
 void

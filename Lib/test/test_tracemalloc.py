@@ -1156,7 +1156,7 @@ class TestCAPI(unittest.TestCase):
         try:
             tracemalloc.clear_traces()
             f()
-            refs = tracemalloc.get_traced_allocs()
+            refs = tracemalloc.get_traced_refs()
             if refs == (1, 0):
                 warnings.warn("ceval Py_DECREF doesn't emit PyRefTracer_DESTROY in this build")
             else:
@@ -1164,7 +1164,7 @@ class TestCAPI(unittest.TestCase):
 
             tracemalloc.clear_traces()
             g()
-            refs = tracemalloc.get_traced_allocs()
+            refs = tracemalloc.get_traced_refs()
             if refs == (3, 2):
                 warnings.warn("ceval Py_DECREF doesn't emit PyRefTracer_DESTROY in this build")
             else:
