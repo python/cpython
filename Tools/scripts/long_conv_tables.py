@@ -41,11 +41,11 @@ def conv_tables(long_bits):
     # print('steps', steps)
     return '\n'.join(
         [
-            format_array('static double log_base_BASE[37]', log_base_BASE),
-            format_array('static int convmultmax_base[37]', convmultmax_base),
+            format_array('static const double log_base_BASE[37]', log_base_BASE),
             format_array(
-                'static twodigits convwidth_base[37]', convwidth_base
+                'static const int convwidth_base[37]', convwidth_base
             ),
+            format_array('static const twodigits convmultmax_base[37]', convmultmax_base),
         ]
     )
 
