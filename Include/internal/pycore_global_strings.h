@@ -17,7 +17,7 @@ extern "C" {
 
 #define STRUCT_FOR_ASCII_STR(LITERAL) \
     struct { \
-        _PyASCIIObject _ascii; \
+        PyUnstable_ASCIIObject _ascii; \
         uint8_t _data[sizeof(LITERAL)]; \
     }
 #define STRUCT_FOR_STR(NAME, LITERAL) \
@@ -786,11 +786,11 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(zdict)
     } identifiers;
     struct {
-        _PyASCIIObject _ascii;
+        PyUnstable_ASCIIObject _ascii;
         uint8_t _data[2];
     } ascii[128];
     struct {
-        _PyCompactUnicodeObject _latin1;
+        PyUnstable_CompactUnicodeObject _latin1;
         uint8_t _data[2];
     } latin1[128];
 };

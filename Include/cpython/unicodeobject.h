@@ -160,43 +160,46 @@ typedef struct {
         unsigned int :24;
 #endif
     } state;
-} _PyASCIIObject;
+} PyUnstable_ASCIIObject;
 
 /* Non-ASCII strings allocated through PyUnicode_New use the
    PyCompactUnicodeObject structure. state.compact is set, and the data
    immediately follow the structure. */
 typedef struct {
-    _PyASCIIObject _base;
+    PyUnstable_ASCIIObject _base;
     Py_ssize_t utf8_length;     /* Number of bytes in utf8, excluding the
                                  * terminating \0. */
     char *utf8;                 /* UTF-8 representation (null-terminated) */
-} _PyCompactUnicodeObject;
+} PyUnstable_CompactUnicodeObject;
 
 /* Object format for Unicode subclasses. */
 typedef struct {
-    _PyCompactUnicodeObject _base;
+    PyUnstable_CompactUnicodeObject _base;
     union {
         void *any;
         Py_UCS1 *latin1;
         Py_UCS2 *ucs2;
         Py_UCS4 *ucs4;
     } data;                     /* Canonical, smallest-form Unicode buffer */
-} _PyUnicodeObject;
+} PyUnstable_UnicodeObject;
 
 
-_Py_DEPRECATED_EXTERNALLY(3.14) typedef _PyASCIIObject PyASCIIObject;
-_Py_DEPRECATED_EXTERNALLY(3.14) typedef _PyCompactUnicodeObject PyCompactUnicodeObject;
-_Py_DEPRECATED_EXTERNALLY(3.14) typedef _PyUnicodeObject PyUnicodeObject;
+_Py_DEPRECATED_EXTERNALLY(3.14) typedef PyUnstable_ASCIIObject
+    PyASCIIObject;
+_Py_DEPRECATED_EXTERNALLY(3.14) typedef PyUnstable_CompactUnicodeObject
+    PyCompactUnicodeObject;
+_Py_DEPRECATED_EXTERNALLY(3.14) typedef PyUnstable_UnicodeObject
+    PyUnicodeObject;
 
 #define _PyASCIIObject_CAST(op) \
     (assert(PyUnicode_Check(op)), \
-     _Py_CAST(_PyASCIIObject*, (op)))
+     _Py_CAST(PyUnstable_ASCIIObject*, (op)))
 #define _PyCompactUnicodeObject_CAST(op) \
     (assert(PyUnicode_Check(op)), \
-     _Py_CAST(_PyCompactUnicodeObject*, (op)))
+     _Py_CAST(PyUnstable_CompactUnicodeObject*, (op)))
 #define _PyUnicodeObject_CAST(op) \
     (assert(PyUnicode_Check(op)), \
-     _Py_CAST(_PyUnicodeObject*, (op)))
+     _Py_CAST(PyUnstable_UnicodeObject*, (op)))
 
 
 /* --- Flexible String Representation Helper Macros (PEP 393) -------------- */
