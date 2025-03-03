@@ -589,11 +589,14 @@ class OpenSSLRFCTestCase(OpenSSLTestVectorsMixin, RFCTestCasesMixin,
 
 
 class DigestModTestCaseMixin(CreatorMixin, DigestMixin):
+    """Tests for the 'digestmod' parameter."""
 
     def assert_raises_missing_digestmod(self):
+        """A context manager catching errors when a digestmod is missing."""
         return self.assertRaisesRegex(TypeError, "Missing required.*digestmod")
 
     def assert_raises_unknown_digestmod(self):
+        """A context manager catching errors when a digestmod is unknown."""
         return self.assertRaisesRegex(ValueError, "[Uu]nsupported.*")
 
     def test_constructor_missing_digestmod(self):
@@ -614,6 +617,12 @@ class DigestModTestCaseMixin(CreatorMixin, DigestMixin):
             with self.subTest(args=args, kwds=kwds), catcher():
                 func(*args, **kwds)
 
+    def cases_missing_digestmod_in_constructor(self):
+        raise NotImplementedError
+
+    def cases_unknown_digestmod_in_constructor(self):
+        raise NotImplementedError
+
     def make_invalid_digestmod_cases(self, func, invalid_values):
         """Generate cases for either missing or unknown digestmod tests."""
         key = b'unused key'
@@ -626,12 +635,6 @@ class DigestModTestCaseMixin(CreatorMixin, DigestMixin):
             cases.append((func, (key, msg), kwargs))
             cases.append((func, (key,), kwargs | {'msg': msg}))
         return cases
-
-    def cases_missing_digestmod_in_constructor(self):
-        raise NotImplementedError
-
-    def cases_unknown_digestmod_in_constructor(self):
-        raise NotImplementedError
 
 
 class ConstructorTestCaseMixin(CreatorMixin, DigestMixin, CheckerMixin):
