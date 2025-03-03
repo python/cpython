@@ -204,9 +204,9 @@ class Printer:
         with self.indent():
             with self.block("struct"):
                 if ascii:
-                    self.write("PyASCIIObject _ascii;")
+                    self.write("_PyASCIIObject _ascii;")
                 else:
-                    self.write("PyCompactUnicodeObject _compact;")
+                    self.write("_PyCompactUnicodeObject _compact;")
                 self.write(f"{datatype} _data[{len(s)+1}];")
         with self.block(f"{name} =", ";"):
             if ascii:

@@ -38,7 +38,8 @@
 #ifdef Py_GIL_DISABLED
 #   ifndef _Py_ALIGN_AS
 #       ifdef __cplusplus
-#           if (__cplusplus < 201103L) && (defined(__GNUC__) || defined(__clang__)
+#           if (__cplusplus < 201103L) \
+                  && (defined(__GNUC__) || defined(__clang__))
 #               define _Py_ALIGN_AS(V) __attribute__((aligned(V)))
 #           else
 #               define _Py_ALIGN_AS(V) alignas(V)
