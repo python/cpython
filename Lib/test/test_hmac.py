@@ -310,7 +310,7 @@ class OpenSSLTestVectorsMixin(TestVectorsMixin):
 class RFCTestCasesMixin(TestVectorsMixin):
     """Test HMAC implementations against test vectors from the RFC.
 
-    Subclasses must override the 'md5', 'sha1', and 'sha2_*' attributes
+    Subclasses must override the 'md5' and other 'sha*' attributes
     to test the implementations. Their value can be a string, a callable,
     or a PEP-257 module.
     """
@@ -320,6 +320,8 @@ class RFCTestCasesMixin(TestVectorsMixin):
         'sha224', 'sha256', 'sha384', 'sha512',
     ]
 
+    # Those will be automatically set to non-None on subclasses
+    # as they are set by __init_subclass()__.
     md5 = sha1 = sha224 = sha256 = sha384 = sha512 = None
 
     def __init_subclass__(cls, *args, **kwargs):
@@ -575,9 +577,8 @@ class OpenSSLRFCTestCase(OpenSSLTestVectorsMixin, RFCTestCasesMixin,
                          unittest.TestCase):
     """OpenSSL implementation of HMAC."""
 
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
+    def __init_subclass__(cls, *args, **kwargs):
+        super().__init_subclass__(*args, **kwargs)
 
         for name in cls.ALGORITHMS:
             @property
