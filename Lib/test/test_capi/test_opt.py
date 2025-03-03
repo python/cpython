@@ -1503,10 +1503,10 @@ class TestUopsOptimization(unittest.TestCase):
         def f(n):
             trace = []
             for i in range(n):
-                dummy = "aaa"
                 # Hopefully the optimizer can't guess what the value is.
                 # empty is always "", but we can only prove that it's a string:
-                empty = dummy[:0]
+                false = i == TIER2_THRESHOLD
+                empty = "X"[:false]
                 trace.append("A")
                 if not empty:  # Kept.
                     trace.append("B")
