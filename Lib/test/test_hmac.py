@@ -151,7 +151,7 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
         implementation which only recognizes underlying hash functions
         by their name (all HMAC implementations must at least recognize
         hash functions by their names but some may use aliases such as
-        `hashlib.sha1` instead of "sha1".
+        `hashlib.sha1` instead of "sha1").
         """
         self.assertIsInstance(hashname, str | None)
         return self.hmac_new(key, msg, digestmod=hashname)
@@ -169,13 +169,17 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
         The 'hashfunc' and 'hashname' are used as 'digestmod' values,
         thereby allowing to test the underlying dispatching mechanism.
 
-        At most one of 'hashfunc' or 'hashname' value can be None, in which
-        case it is ignored.
+        Note that 'hashfunc' may be a string, a callable, or a PEP-257
+        module. Note that not all HMAC implementations may recognize the
+        same set of types for 'hashfunc', but they should always accept
+        a hash function by its name.
         """
-        digestmods = list(filter(None, [hashfunc, hashname]))
-        self.assertNotEqual(digestmods, [],
-                            "at least one implementation must be tested")
-        for digestmod in digestmods:
+        if hashfunc == hashname:
+            choices = [hashname]
+        else:
+            choices = [hashfunc, hashname]
+
+        for digestmod in choices:
             with self.subTest(digestmod=digestmod):
                 self.assert_hmac_new(
                     key, msg, hexdigest, digestmod,
@@ -268,7 +272,7 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
         self, key, msg, hexdigest, digestmod, hashname, digest_size, block_size
     ):
         """Extra tests that can be added in subclasses."""
-        h1 = self.hmac_new(key, digestmod=digestmod)
+        h1 = self.hmac_new_by_name(key, hashname=hashname)
         h2 = h1.copy()
         h2.update(b"test update should not affect original")
         h1.update(msg)
