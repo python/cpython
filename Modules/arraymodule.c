@@ -837,7 +837,7 @@ getarrayitem_maybe_locked(PyObject *op, Py_ssize_t i)
         return NULL;
     }
     arrayobject *ap = (arrayobject *)op;
-    char *items = _Py_atomic_load_ptr(&ap->ob_item);
+    char *items = _Py_atomic_load_ptr_relaxed(&ap->ob_item);
     if (items == NULL) {
         return NULL;
     }
