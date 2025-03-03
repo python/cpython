@@ -1504,7 +1504,8 @@ class TestUopsOptimization(unittest.TestCase):
             trace = []
             for i in range(n):
                 # zero is always (int) 0, but we can only prove that it's a integer:
-                zero = i - i
+                false = i == TIER2_THRESHOLD # this will always be false, while hopefully still fooling optimizer improvements
+                zero = false + 0 # this should always set the variable zero equal to 0
                 trace.append("A")
                 if not zero:  # Kept.
                     trace.append("B")
