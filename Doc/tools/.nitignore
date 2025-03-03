@@ -22,7 +22,6 @@ Doc/library/asyncio-subprocess.rst
 Doc/library/audioop.rst
 Doc/library/cgi.rst
 Doc/library/chunk.rst
-Doc/library/collections.rst
 Doc/library/copy.rst
 Doc/library/decimal.rst
 Doc/library/email.charset.rst
