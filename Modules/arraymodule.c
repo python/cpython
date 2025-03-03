@@ -69,7 +69,7 @@ typedef struct {
     PyObject *str_iter;
 } array_state;
 
-static inline Py_ssize_t Pyarrayobject_GET_SIZE(PyObject *op) {
+static inline Py_ssize_t PyArray_GET_SIZE(PyObject *op) {
     arrayobject *ao = (arrayobject *)op;
 #ifdef Py_GIL_DISABLED
     return _Py_atomic_load_ssize_relaxed(&(_PyVarObject_CAST(ao)->ob_size));
@@ -77,7 +77,7 @@ static inline Py_ssize_t Pyarrayobject_GET_SIZE(PyObject *op) {
     return Py_SIZE(ao);
 #endif
 }
-#define Pyarrayobject_GET_SIZE(op) Pyarrayobject_GET_SIZE(_PyObject_CAST(op))
+#define PyArray_GET_SIZE(op) PyArray_GET_SIZE(_PyObject_CAST(op))
 
 /* Forward declaration. */
 static PyObject *array_array_frombytes(PyObject *self, PyObject *bytes);
@@ -832,7 +832,7 @@ getarrayitem_maybe_locked(PyObject *op, Py_ssize_t i)
     if (!_Py_IsOwnedByCurrentThread((PyObject *)op) && !_PyObject_GC_IS_SHARED(op)) {
         return getarrayitem_locked(op, i);
     }
-    Py_ssize_t size = Pyarrayobject_GET_SIZE(op);
+    Py_ssize_t size = PyArray_GET_SIZE(op);
     if (!valid_index(i, size)) {
         return NULL;
     }
@@ -901,12 +901,12 @@ setarrayitem_maybe_locked(PyObject *op, Py_ssize_t i, PyObject *v)
     if (!_Py_IsOwnedByCurrentThread((PyObject *)op) && !_PyObject_GC_IS_SHARED(op)) {
         return setarrayitem_locked(op, i, v);
     }
-    Py_ssize_t size = Pyarrayobject_GET_SIZE(op);
+    Py_ssize_t size = PyArray_GET_SIZE(op);
     if (!valid_index(i, size)) {
         goto error;
     }
     arrayobject *ap = (arrayobject *)op;
-    char *items = _Py_atomic_load_ptr(&ap->ob_item);
+    char *items = _Py_atomic_load_ptr_relaxed(&ap->ob_item);
     if (items == NULL) {
         goto error;
     }
@@ -981,7 +981,7 @@ array_dealloc(PyObject *op)
     if (self->ob_exports > 0) {
         PyErr_SetString(PyExc_SystemError,
                         "deallocated array object has exported buffers");
-        PyErr_Print();
+        PyErr_WriteUnraisable(NULL);
     }
     if (self->weakreflist != NULL) {
         PyObject_ClearWeakRefs(op);
@@ -1119,7 +1119,7 @@ static Py_ssize_t
 array_length(PyObject *op)
 {
     arrayobject *self = arrayobject_CAST(op);
-    return Pyarrayobject_GET_SIZE(self);
+    return PyArray_GET_SIZE(self);
 }
 
 
@@ -2841,7 +2841,7 @@ array_subscr(PyObject *op, PyObject *item)
         if (i==-1 && PyErr_Occurred()) {
             return NULL;
         }
-        Py_ssize_t size = Pyarrayobject_GET_SIZE(op);
+        Py_ssize_t size = PyArray_GET_SIZE(op);
         if (i < 0) {
             i += size;
         }
@@ -3038,7 +3038,7 @@ array_ass_subscr(PyObject *op, PyObject* item, PyObject* value)
             if (i == -1 && PyErr_Occurred())
                 return -1;
             if (i < 0)
-                i += Pyarrayobject_GET_SIZE(op);
+                i += PyArray_GET_SIZE(op);
             return setarrayitem_maybe_locked(op, i, value);
         }
     }
@@ -3570,7 +3570,7 @@ array_arrayiterator___setstate__(arrayiterobject *self, PyObject *state)
             index = -1;
         }
         else {
-            Py_ssize_t size = Pyarrayobject_GET_SIZE(self->ao);
+            Py_ssize_t size = PyArray_GET_SIZE(self->ao);
             if (index > size) {
                 index = size; /* iterator at end */
             }
