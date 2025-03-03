@@ -69,7 +69,7 @@ class BaseEventQueue:
         trace('added event {event}', event=event)
         self.events.append(event)
 
-    def push(self, char: int | bytes) -> None:
+    def push(self, char: int | bytes | str) -> None:
         """
         Processes a character by updating the buffer and handling special key mappings.
         """
