@@ -1,2 +1,2 @@
-file1_fr.po	eol=crlf
-file2_fr.po	eol=lf
+file1_fr_crlf.po    eol=crlf
+file2_fr_lf.po      eol=lf
