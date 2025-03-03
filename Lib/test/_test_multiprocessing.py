@@ -1577,14 +1577,13 @@ class _TestCondition(BaseTestCase):
         cond.release()
 
     def assertReachesEventually(self, func, value):
-        for i in range(10):
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
             try:
                 if func() == value:
                     break
             except NotImplementedError:
                 break
-            time.sleep(DELTA)
-        time.sleep(DELTA)
+
         self.assertReturnsIfImplemented(value, func)
 
     def check_invariant(self, cond):
@@ -1618,8 +1617,7 @@ class _TestCondition(BaseTestCase):
         sleeping.acquire()
 
         # check no process/thread has woken up
-        time.sleep(DELTA)
-        self.assertReturnsIfImplemented(0, get_value, woken)
+        self.assertReachesEventually(lambda: get_value(woken), 0)
 
         # wake up one process/thread
         cond.acquire()
@@ -1627,8 +1625,7 @@ class _TestCondition(BaseTestCase):
         cond.release()
 
         # check one process/thread has woken up
-        time.sleep(DELTA)
-        self.assertReturnsIfImplemented(1, get_value, woken)
+        self.assertReachesEventually(lambda: get_value(woken), 1)
 
         # wake up another
         cond.acquire()
@@ -1636,8 +1633,7 @@ class _TestCondition(BaseTestCase):
         cond.release()
 
         # check other has woken up
-        time.sleep(DELTA)
-        self.assertReturnsIfImplemented(2, get_value, woken)
+        self.assertReachesEventually(lambda: get_value(woken), 2)
 
         # check state is not mucked up
         self.check_invariant(cond)
