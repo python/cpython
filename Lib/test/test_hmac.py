@@ -620,16 +620,23 @@ class DigestModTestCaseMixin(CreatorMixin, DigestMixin):
     def cases_missing_digestmod_in_constructor(self):
         raise NotImplementedError
 
+    def make_missing_digestmod_cases(self, func, choices):
+        """Generate cases for missing digestmod tests."""
+        key, msg = b'unused key', b'unused msg'
+        cases = self._invalid_digestmod_cases(func, key, msg, choices)
+        return [(func, (key,), {}), (func, (key, msg), {})] + cases
+
     def cases_unknown_digestmod_in_constructor(self):
         raise NotImplementedError
 
-    def make_invalid_digestmod_cases(self, func, invalid_values):
-        """Generate cases for either missing or unknown digestmod tests."""
-        key = b'unused key'
-        msg = b'unused msg'
+    def make_unknown_digestmod_cases(self, func, choices):
+        """Generate cases for unknown digestmod tests."""
+        key, msg = b'unused key', b'unused msg'
+        return self._invalid_digestmod_cases(func, key, msg, choices)
 
+    def _invalid_digestmod_cases(self, func, key, msg, choices):
         cases = []
-        for digestmod in invalid_values:
+        for digestmod in choices:
             kwargs = {'digestmod': digestmod}
             cases.append((func, (key,), kwargs))
             cases.append((func, (key, msg), kwargs))
@@ -678,13 +685,12 @@ class PyConstructorBaseMixin(PyModuleMixin,
                              ConstructorTestCaseMixin):
 
     def cases_missing_digestmod_in_constructor(self):
-        func, key, msg = self.hmac_new, b'unused key', b'unused msg'
-        cases = self.make_invalid_digestmod_cases(func, ['', None, False])
-        cases.extend([(func, (key,), {}), (func, (key, msg), {})])
-        return cases
+        func, choices = self.hmac_new, ['', None, False]
+        return self.make_missing_digestmod_cases(func, choices)
 
     def cases_unknown_digestmod_in_constructor(self):
-        return self.make_invalid_digestmod_cases(self.hmac_new, ['unknown'])
+        func, choices = self.hmac_new, ['unknown']
+        return self.make_unknown_digestmod_cases(func, choices)
 
     @requires_builtin_sha2()
     def test_constructor_with_module(self):
@@ -703,7 +709,7 @@ class PyConstructorTestCase(ThroughObjectMixin, PyConstructorBaseMixin,
 
 class PyModuleConstructorTestCase(ThroughModuleAPIMixin, PyConstructorBaseMixin,
                                   unittest.TestCase):
-    """Test the hmac.new() constructor function."""
+    """Test the hmac.new() and hmac.digest() functions."""
 
     def test_hmac_digest_digestmod_parameter(self):
         func = self.hmac_digest
@@ -749,13 +755,12 @@ class ExtensionConstructorTestCaseMixin(DigestModTestCaseMixin,
         self.do_test_constructor_unknown_digestmod(self.assert_digestmod_error)
 
     def cases_missing_digestmod_in_constructor(self):
-        func, key, msg = self.hmac_new, b'unused key', b'unused msg'
-        cases = self.make_invalid_digestmod_cases(func, ['', None, False])
-        cases.extend([(func, (key,), {}), (func, (key, msg), {})])
-        return cases
+        func, choices = self.hmac_new, ['', None, False]
+        return self.make_missing_digestmod_cases(func, choices)
 
     def cases_unknown_digestmod_in_constructor(self):
-        return self.make_invalid_digestmod_cases(self.hmac_new, ['unknown', 1234])
+        func, choices = self.hmac_new, ['unknown', 1234]
+        return self.make_unknown_digestmod_cases(func, choices)
 
 
 class OpenSSLConstructorTestCase(ThroughOpenSSLAPIMixin,
