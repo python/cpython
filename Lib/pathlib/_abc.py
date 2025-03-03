@@ -14,7 +14,7 @@ WritablePath.
 from abc import ABC, abstractmethod
 from glob import _PathGlobber, _no_recurse_symlinks
 from pathlib import PurePath, Path
-from pathlib._os import magic_open, CopyWriter
+from pathlib._os import magic_open, ensure_distinct_paths, copy_file
 
 
 def _explode_path(path):
@@ -219,38 +219,6 @@ class ReadablePath(JoinablePath):
         """
         raise NotImplementedError
 
-    def exists(self, *, follow_symlinks=True):
-        """
-        Whether this path exists.
-
-        This method normally follows symlinks; to check whether a symlink exists,
-        add the argument follow_symlinks=False.
-        """
-        info = self.joinpath().info
-        return info.exists(follow_symlinks=follow_symlinks)
-
-    def is_dir(self, *, follow_symlinks=True):
-        """
-        Whether this path is a directory.
-        """
-        info = self.joinpath().info
-        return info.is_dir(follow_symlinks=follow_symlinks)
-
-    def is_file(self, *, follow_symlinks=True):
-        """
-        Whether this path is a regular file (also True for symlinks pointing
-        to regular files).
-        """
-        info = self.joinpath().info
-        return info.is_file(follow_symlinks=follow_symlinks)
-
-    def is_symlink(self):
-        """
-        Whether this path is a symbolic link.
-        """
-        info = self.joinpath().info
-        return info.is_symlink()
-
     @abstractmethod
     def __open_rb__(self, buffering=-1):
         """
@@ -316,14 +284,11 @@ class ReadablePath(JoinablePath):
                 paths.append((path, dirnames, filenames))
             try:
                 for child in path.iterdir():
-                    try:
-                        if child.info.is_dir(follow_symlinks=follow_symlinks):
-                            if not top_down:
-                                paths.append(child)
-                            dirnames.append(child.name)
-                        else:
-                            filenames.append(child.name)
-                    except OSError:
+                    if child.info.is_dir(follow_symlinks=follow_symlinks):
+                        if not top_down:
+                            paths.append(child)
+                        dirnames.append(child.name)
+                    else:
                         filenames.append(child.name)
             except OSError as error:
                 if on_error is not None:
@@ -343,23 +308,18 @@ class ReadablePath(JoinablePath):
         """
         raise NotImplementedError
 
-    def copy(self, target, follow_symlinks=True, dirs_exist_ok=False,
-             preserve_metadata=False):
+    def copy(self, target, follow_symlinks=True, preserve_metadata=False):
         """
         Recursively copy this file or directory tree to the given destination.
         """
         if not hasattr(target, 'with_segments'):
             target = self.with_segments(target)
-
-        # Delegate to the target path's CopyWriter object.
-        try:
-            create = target._copy_writer._create
-        except AttributeError:
-            raise TypeError(f"Target is not writable: {target}") from None
-        return create(self, follow_symlinks, dirs_exist_ok, preserve_metadata)
+        ensure_distinct_paths(self, target)
+        copy_file(self, target, follow_symlinks, preserve_metadata)
+        return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def copy_into(self, target_dir, *, follow_symlinks=True,
-                  dirs_exist_ok=False, preserve_metadata=False):
+                  preserve_metadata=False):
         """
         Copy this file or directory tree into the given existing directory.
         """
@@ -371,7 +331,6 @@ class ReadablePath(JoinablePath):
         else:
             target = self.with_segments(target_dir, name)
         return self.copy(target, follow_symlinks=follow_symlinks,
-                         dirs_exist_ok=dirs_exist_ok,
                          preserve_metadata=preserve_metadata)
 
 
@@ -393,7 +352,7 @@ class WritablePath(JoinablePath):
         raise NotImplementedError
 
     @abstractmethod
-    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+    def mkdir(self):
         """
         Create a new directory at this given path.
         """
@@ -426,7 +385,11 @@ class WritablePath(JoinablePath):
         with magic_open(self, mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
-    _copy_writer = property(CopyWriter)
+    def _write_info(self, info, follow_symlinks=True):
+        """
+        Write the given PathInfo to this path.
+        """
+        pass
 
 
 JoinablePath.register(PurePath)

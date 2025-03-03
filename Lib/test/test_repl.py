@@ -294,7 +294,15 @@ class TestInteractiveModeSyntaxErrors(unittest.TestCase):
         self.assertEqual(traceback_lines, expected_lines)
 
 
-class TestAsyncioREPLContextVars(unittest.TestCase):
+class TestAsyncioREPL(unittest.TestCase):
+    def test_multiple_statements_fail_early(self):
+        user_input = "1 / 0; print('afterwards')"
+        p = spawn_repl("-m", "asyncio")
+        p.stdin.write(user_input)
+        output = kill_python(p)
+        self.assertIn("ZeroDivisionError", output)
+        self.assertNotIn("afterwards", output)
+
     def test_toplevel_contextvars_sync(self):
         user_input = dedent("""\
         from contextvars import ContextVar
