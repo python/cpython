@@ -748,6 +748,7 @@ n_decimal_digits_for_codepoint(Py_UCS4 ch)
     Py_UNREACHABLE();
 }
 
+
 /*
  * Create a Unicode string containing 'count' copies of the official
  * Unicode REPLACEMENT CHARACTER (0xFFFD).
