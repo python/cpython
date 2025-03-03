@@ -814,10 +814,12 @@ getarrayitem_locked(PyObject *op, Py_ssize_t i)
     }
 #endif
     if (!valid_index(i, Py_SIZE(op)))  {
-        return NULL;
+        ret = NULL;
     }
-    arrayobject *ap = (arrayobject *)op;
-    ret = getarrayitem(op, i, ap->ob_item);
+    else {
+        arrayobject *ap = (arrayobject *)op;
+        ret = getarrayitem(op, i, ap->ob_item);
+    }
     Py_END_CRITICAL_SECTION();
     return ret;
 }
@@ -844,6 +846,8 @@ getarrayitem_maybe_locked(PyObject *op, Py_ssize_t i)
         return NULL;
     }
     return getarrayitem(op, i, items);
+    /* Could check size again here to make sure it hasn't changed during get,
+       but not sure would add anything of value. */
 }
 
 #else // Py_GIL_DISABLED
