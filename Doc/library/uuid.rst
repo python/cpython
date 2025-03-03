@@ -11,7 +11,7 @@
 --------------
 
 This module provides immutable :class:`UUID` objects (the :class:`UUID` class) and
-the :ref:`functions <uuid-constructor-functions>` for generating UUIDs corresponding
+the :ref:`functions <uuid-factory-functions>` for generating UUIDs corresponding
 to a specific UUID version as specified in :rfc:`9562` (which supersedes :rfc:`4122`),
 e.g., :func:`uuid1` for UUID version 1, :func:`uuid3` for UUID version 3, and so on.
 Note that UUID version 2 is deliberately omitted as it is outside the scope of the RFC.
@@ -186,7 +186,7 @@ The :mod:`uuid` module defines the following functions:
       globally unique, while the latter are not.
 
 
-.. _uuid-constructor-functions:
+.. _uuid-factory-functions:
 
 .. function:: uuid1(node=None, clock_seq=None)
 
