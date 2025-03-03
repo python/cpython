@@ -75,6 +75,7 @@ class BaseEventQueue:
         """
         ord_char = char if isinstance(char, int) else ord(char)
         if ord_char > 255:
+            assert isinstance(char, str)
             char = bytes(char.encode(self.encoding))
             self.buf.extend(char)
         else:
