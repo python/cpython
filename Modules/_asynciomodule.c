@@ -3462,7 +3462,7 @@ task_eager_start(asyncio_state *state, TaskObj *task)
         return -1;
     }
     // register the task into the linked list of tasks
-    // if the task completely eagerly then it will unregister itself
+    // if the task completes eagerly (without suspending) then it will unregister itself
     // in future_schedule_callbacks when done otherwise
     // it will continue in lazy execution
     register_task(task);
