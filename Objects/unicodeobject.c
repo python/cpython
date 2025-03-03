@@ -373,6 +373,17 @@ clear_interned_dict(PyInterpreterState *interp)
     }
 }
 
+static inline void
+set_interned_field(PyObject *s, int new_state)
+{
+#ifdef Py_GIL_DISABLED
+    FT_ATOMIC_STORE_UINT8_RELAXED((_PyUnicode_STATE(s).interned),
+                                  ((unsigned char)new_state));
+#else
+    _PyUnicode_STATE(s).interned = new_state;
+#endif
+}
+
 static PyStatus
 init_global_interned_strings(PyInterpreterState *interp)
 {
@@ -1348,7 +1359,6 @@ _PyUnicode_Dump(PyObject *op)
 }
 #endif
 
-
 PyObject *
 PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
 {
@@ -1417,7 +1427,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
         data = unicode + 1;
     _PyUnicode_LENGTH(unicode) = size;
     _PyUnicode_HASH(unicode) = -1;
-    _PyUnicode_STATE(unicode).interned = 0;
+    set_interned_field(obj, 0);
     _PyUnicode_STATE(unicode).kind = kind;
     _PyUnicode_STATE(unicode).compact = 1;
     _PyUnicode_STATE(unicode).ascii = is_ascii;
@@ -1722,7 +1732,7 @@ unicode_dealloc(PyObject *unicode)
         _Py_SetImmortal(unicode);
         return;
     }
-    switch (_PyUnicode_STATE(unicode).interned) {
+    switch (PyUnicode_CHECK_INTERNED(unicode)) {
         case SSTATE_NOT_INTERNED:
             break;
         case SSTATE_INTERNED_MORTAL:
@@ -1752,7 +1762,7 @@ unicode_dealloc(PyObject *unicode)
                 //   so it can't cause trouble (except wasted memory)
                 // - if it wasn't popped, it'll remain interned
                 _Py_SetImmortal(unicode);
-                _PyUnicode_STATE(unicode).interned = SSTATE_INTERNED_IMMORTAL;
+                set_interned_field(unicode, SSTATE_INTERNED_IMMORTAL);
                 return;
             }
             if (r == 0) {
@@ -15485,7 +15495,7 @@ unicode_subtype_new(PyTypeObject *type, PyObject *unicode)
 #else
     _PyUnicode_HASH(self) = _PyUnicode_HASH(unicode);
 #endif
-    _PyUnicode_STATE(self).interned = 0;
+    set_interned_field(self, 0);
     _PyUnicode_STATE(self).kind = kind;
     _PyUnicode_STATE(self).compact = 0;
     _PyUnicode_STATE(self).ascii = _PyUnicode_STATE(unicode).ascii;
@@ -15704,8 +15714,8 @@ intern_static(PyInterpreterState *interp, PyObject *s /* stolen */)
     assert(r == NULL);
     /* but just in case (for the non-debug build), handle this */
     if (r != NULL && r != s) {
-        assert(_PyUnicode_STATE(r).interned == SSTATE_INTERNED_IMMORTAL_STATIC);
         assert(_PyUnicode_CHECK(r));
+        assert(PyUnicode_CHECK_INTERNED(r) == SSTATE_INTERNED_IMMORTAL_STATIC);
         Py_DECREF(s);
         return Py_NewRef(r);
     }
@@ -15714,7 +15724,7 @@ intern_static(PyInterpreterState *interp, PyObject *s /* stolen */)
         Py_FatalError("failed to intern static string");
     }
 
-    _PyUnicode_STATE(s).interned = SSTATE_INTERNED_IMMORTAL_STATIC;
+    set_interned_field(s, SSTATE_INTERNED_IMMORTAL_STATIC);
     return s;
 }
 
@@ -15741,7 +15751,7 @@ immortalize_interned(PyObject *s)
         _Py_DecRefTotal(_PyThreadState_GET());
     }
 #endif
-    FT_ATOMIC_STORE_UINT16_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_IMMORTAL);
+    set_interned_field(s, SSTATE_INTERNED_IMMORTAL);
     _Py_SetImmortal(s);
 }
 
@@ -15851,7 +15861,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
 
     /* NOT_INTERNED -> INTERNED_MORTAL */
 
-    assert(_PyUnicode_STATE(s).interned == SSTATE_NOT_INTERNED);
+    assert(PyUnicode_CHECK_INTERNED(s) == SSTATE_NOT_INTERNED);
 
     if (!_Py_IsImmortal(s)) {
         /* The two references in interned dict (key and value) are not counted.
@@ -15859,7 +15869,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
         Py_DECREF(s);
         Py_DECREF(s);
     }
-    FT_ATOMIC_STORE_UINT16_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_MORTAL);
+    set_interned_field(s, SSTATE_INTERNED_MORTAL);
 
     /* INTERNED_MORTAL -> INTERNED_IMMORTAL (if needed) */
 
@@ -15996,7 +16006,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
             Py_UNREACHABLE();
         }
         if (!shared) {
-            FT_ATOMIC_STORE_UINT16_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_NOT_INTERNED);
+            set_interned_field(s, SSTATE_NOT_INTERNED);
         }
     }
 #ifdef INTERNED_STATS
