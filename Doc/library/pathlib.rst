@@ -1571,8 +1571,7 @@ Creating files and directories
 Copying, moving and deleting
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. method:: Path.copy(target, *, follow_symlinks=True, dirs_exist_ok=False, \
-                      preserve_metadata=False)
+.. method:: Path.copy(target, *, follow_symlinks=True, preserve_metadata=False)
 
    Copy this file or directory tree to the given *target*, and return a new
    :class:`!Path` instance pointing to *target*.
@@ -1581,12 +1580,6 @@ Copying, moving and deleting
    file. If the source is a symlink and *follow_symlinks* is true (the
    default), the symlink's target is copied. Otherwise, the symlink is
    recreated at the destination.
-
-   If the source is a directory and *dirs_exist_ok* is false (the default), a
-   :exc:`FileExistsError` is raised if the target is an existing directory.
-   If *dirs_exists_ok* is true, the copying operation will overwrite
-   existing files within the destination tree with corresponding files
-   from the source tree.
 
    If *preserve_metadata* is false (the default), only directory structures
    and file data are guaranteed to be copied. Set *preserve_metadata* to true
@@ -1604,7 +1597,7 @@ Copying, moving and deleting
 
 
 .. method:: Path.copy_into(target_dir, *, follow_symlinks=True, \
-                           dirs_exist_ok=False, preserve_metadata=False)
+                           preserve_metadata=False)
 
    Copy this file or directory tree into the given *target_dir*, which should
    be an existing directory. Other arguments are handled identically to

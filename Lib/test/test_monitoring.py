@@ -1657,6 +1657,29 @@ class TestBranchAndJumpEvents(CheckEvents):
             in_loop,
             exit_loop])
 
+    def test_async_for(self):
+
+        def func():
+            async def gen():
+                yield 2
+                yield 3
+
+            async def foo():
+                async for y in gen():
+                    2
+                pass # line 3
+
+            try:
+                foo().send(None)
+            except StopIteration:
+                pass
+
+        self.check_events(func, recorders = BRANCHES_RECORDERS, expected = [
+            ('branch left', 'foo', 1, 1),
+            ('branch left', 'foo', 1, 1),
+            ('branch right', 'foo', 1, 3),
+            ('branch left', 'func', 12, 12)])
+
 
 class TestBranchConsistency(MonitoringTestBase, unittest.TestCase):
 
