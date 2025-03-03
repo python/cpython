@@ -336,6 +336,11 @@ Other language changes
   making it a :term:`generic type`.
   (Contributed by Brian Schubert in :gh:`126012`.)
 
+* Support underscore and comma as thousands separators in the fractional part
+  for floating-point presentation types of the new-style string formatting
+  (with :func:`format` or :ref:`f-strings`).
+  (Contrubuted by Sergey B Kirpichev in :gh:`87790`.)
+
 * ``\B`` in :mod:`regular expression <re>` now matches empty input string.
   Now it is always the opposite of ``\b``.
   (Contributed by Serhiy Storchaka in :gh:`124130`.)
@@ -438,6 +443,11 @@ contextvars
 
 * Support context manager protocol by :class:`contextvars.Token`.
   (Contributed by Andrew Svetlov in :gh:`129889`.)
+
+* Add :meth:`concurrent.futures.ProcessPoolExecutor.terminate_workers` and
+  :meth:`concurrent.futures.ProcessPoolExecutor.kill_workers` as
+  ways to terminate or kill all living worker processes in the given pool.
+  (Contributed by Charles Machalow in :gh:`128043`.)
 
 * Add the optional ``buffersize`` parameter to
   :meth:`concurrent.futures.Executor.map` to limit the number of submitted
@@ -921,8 +931,8 @@ urllib
 uuid
 ----
 
-* Add support for UUID version 8 via :func:`uuid.uuid8` as specified
-  in :rfc:`9562`.
+* Add support for UUID versions 6 and 8 via :func:`uuid.uuid6` and
+  :func:`uuid.uuid8` respectively, as specified in :rfc:`9562`.
   (Contributed by Bénédikt Tran in :gh:`89083`.)
 
 * :const:`uuid.NIL` and :const:`uuid.MAX` are now available to represent the
