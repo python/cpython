@@ -19,7 +19,6 @@ def format_array(name, values):
 
 
 def conv_tables(long_bits):
-    steps = 0
     PyLong_BASE = 1 << long_bits
     log_base_BASE = [0.0] * 37
     convmultmax_base = [0] * 37
@@ -29,7 +28,6 @@ def conv_tables(long_bits):
         i = 1
         log_base_BASE[base] = math.log(float(base)) / math.log(PyLong_BASE)
         while True:
-            steps += 1
             next = convmax * base
             if next > PyLong_BASE:
                 break
@@ -38,7 +36,6 @@ def conv_tables(long_bits):
         convmultmax_base[base] = convmax
         assert i > 0
         convwidth_base[base] = i
-    # print('steps', steps)
     return '\n'.join(
         [
             format_array('static const double log_base_BASE[37]', log_base_BASE),
