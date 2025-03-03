@@ -1094,7 +1094,7 @@ mmap__repr__method(PyObject *op)
 
 #ifdef MS_WINDOWS
 static PyObject *
-mmap__sizeof__method(PyObject *op, void *Py_UNUSED(ignored))
+mmap__sizeof__method(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     mmap_object *self = mmap_object_CAST(op);
     size_t res = _PyObject_SIZE(Py_TYPE(self));
