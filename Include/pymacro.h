@@ -27,9 +27,10 @@
 // _Py_ALIGN_AS: this compiler's spelling of `alignas` keyword,
 // We currently use alignas for free-threaded builds only; additional compat
 // checking would be great before we add it to the default build.
-// Standards support:
+// Standards/compiler support:
 // - `alignas` is a keyword in C23 and C++11.
-// - `_Alignas` is a keyword in C11.
+// - `_Alignas` is a keyword in C11, and a common C compiler extension
+// - GCC & clang has __attribute__((aligned))
 // Older compilers may name it differently; to allow compilation on such
 // unsupported platforms, we don't redefine _Py_ALIGN_AS if it's already
 // defined. Note that defining it wrong (including defining it to nothing) will
@@ -37,7 +38,11 @@
 #ifdef Py_GIL_DISABLED
 #   ifndef _Py_ALIGN_AS
 #       ifdef __cplusplus
-#           define _Py_ALIGN_AS(V) alignas(V)
+#           if (__cplusplus < 201103L) && (defined(__GNUC__) || defined(__clang__)
+#               define _Py_ALIGN_AS(V) __attribute__((aligned(V)))
+#           else
+#               define _Py_ALIGN_AS(V) alignas(V)
+#           endif
 #       elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
 #           define _Py_ALIGN_AS(V) alignas(V)
 #       else
