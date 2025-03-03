@@ -98,7 +98,7 @@ struct _tracemalloc_runtime_state {
        Protected by TABLES_LOCK(). */
     Py_ssize_t refs_created;
     /* Number of references destroyed.
-       Protected by TABLES_LOCK() and sometimes modified atomically. */
+       Protected by TABLES_LOCK(). */
     Py_ssize_t refs_destroyed;
 
     struct tracemalloc_traceback empty_traceback;
