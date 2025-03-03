@@ -1,15 +1,12 @@
-# French translations for python package.
-# Copyright (C) 2018 THE python'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the python package.
-# s-ball <s-ball@laposte.net>, 2018.
+# Example of French translations, lf end of lines
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: python 3.8\n"
+"Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-11-30 23:57+0100\n"
-"PO-Revision-Date: 2018-11-30 23:57+0100\n"
-"Last-Translator: s-ball <s-ball@laposte.net>\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: French\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"

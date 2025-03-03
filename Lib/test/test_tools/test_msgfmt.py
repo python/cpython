@@ -1,4 +1,5 @@
 """Tests for the Tools/i18n/msgfmt.py tool."""
+
 import filecmp
 import os
 import shutil
@@ -174,6 +175,7 @@ def update_catalog_snapshots():
     for po_file in data_dir.glob('*.po'):
         mo_file = po_file.with_suffix('.mo')
         compile_messages(po_file, mo_file)
+    # cannot use compile_message because of both input files
     assert_python_ok(msgfmt, '-o', data_dir /'file12_fr.mo',
                      data_dir / 'file1_fr_crlf.po',
                      data_dir / 'file2_fr_lf.po')

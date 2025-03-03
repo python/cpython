@@ -14,7 +14,13 @@ Options:
     -o file
     --output-file=file
         Specify the output file to write to.  If omitted, output will go to a
-        file named filename.mo (based off the input file name).
+        file named filename.mo (based off the input file name(s)).
+        If more than one input file is given, and if an output file is passed
+        with -o option, then all the input files are merged. If keys are
+        repeated (common for "" key for the header) the one from last file is used.
+        If more than one input file is given, and no -o option is present, then
+        every input file is compiled in its corresponding mo file (same name
+        with mo replacing po)
 
     -h
     --help
@@ -23,14 +29,6 @@ Options:
     -V
     --version
         Display version information and exit.
-
-If more than one input file is given, and if an output file is passed with
--o option, then all the input files are merged. If keys are repeated (common
-for "" key for the header) the one from last file is used.
-
-If more than one input file is given, and no -o option is present, then
-every input file is compiled in its corresponding mo file (same name with mo
-replacing po)
 """
 
 import os
@@ -255,9 +253,9 @@ def writefile(outfile, output):
         print(msg, file=sys.stderr)
 
 
-def main(argv):
+def main():
     try:
-        opts, args = getopt.getopt(argv, 'hVo:',
+        opts, args = getopt.getopt(sys.argv[1:], 'hVo:',
                                    ['help', 'version', 'output-file='])
     except getopt.error as msg:
         usage(1, msg)
@@ -285,4 +283,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
