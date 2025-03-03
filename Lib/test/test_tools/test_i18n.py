@@ -517,8 +517,9 @@ class Test_pygettext(unittest.TestCase):
                     parse_spec(spec)
                 self.assertEqual(str(cm.exception), message)
 
-    # required to set up normalize
-    make_escapes(True)
+    def setUp(self):
+        # required to set up normalize
+        make_escapes(True)
 
     def test_normalize_multiline(self):
         s = 'multi-line\n translation'
@@ -528,20 +529,16 @@ class Test_pygettext(unittest.TestCase):
         self.assertEqual(s_expected, data)
 
     def test_normalize_wrap(self):
-        s = 'fee fi fo fum fee fi '                # len = 29
-        s_expected = '"fee fi fo fum fee fi "'
-        data = normalize(s, 'UTF-8', 'msgid', 30)
-        self.assertEqual(s_expected, data)
-
-        s = 'fee fi fo fum fee fi f'               # len = 30
-        s_expected = '"fee fi fo fum fee fi f"'
-        data = normalize(s, 'UTF-8', 'msgid', 30)
-        self.assertEqual(s_expected, data)
-
-        s = 'fee fi fo fum fee fi fo'              # len = 31
-        s_expected = '""\n"fee fi fo fum fee fi fo"'
-        data = normalize(s, 'UTF-8', 'msgid', 30)
-        self.assertEqual(s_expected, data)
+        cases = (
+            ('multi-line\n translation', '""\n"multi-line\\n"\n" translation"'),
+            ('fee fi fo fum fee fi ', '"fee fi fo fum fee fi "'),         # len = 29
+            ('fee fi fo fum fee fi f',  '"fee fi fo fum fee fi f"'),      # len = 30
+            ('fee fi fo fum fee fi fo', '""\n"fee fi fo fum fee fi fo"' ),# len = 31
+        )
+        for raw, expected in cases:
+            with self.subTest(raw):
+                data = normalize(raw, 'UTF-8', 'msgid', 30)
+                self.assertEqual(expected, data)
 
     def test_normalize_nostr(self):
         data = normalize('', 'UTF-8', 'msgid', 30)
