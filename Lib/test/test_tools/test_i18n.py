@@ -548,8 +548,6 @@ class Test_pygettext(unittest.TestCase):
         self.assertEqual('""', data)
 
     def test_normalize_single_word(self):
-        # required to set up normalize
-        make_escapes(True)
         for s in ("fee", "fi", "fo", "fums"):
             data = normalize(s, 'UTF-8', 'msgid', 3)
             self.assertNotIn('""', data) # did not wrap
