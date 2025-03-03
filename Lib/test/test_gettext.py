@@ -717,83 +717,76 @@ class ExpandLangTestCase(unittest.TestCase):
                                          return_value=locale):
                     self.assertEqual(gettext._expand_lang(locale), expanded)
 
-# helper for FindTestCase
-def _clearvars(env):
-    for key in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
-        env.unset(key)
 
 class FindTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.env = self.enterContext(os_helper.EnvironmentVarGuard())
+        self.tempdir = self.enterContext(os_helper.temp_cwd())
+
+        for key in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
+            self.env.unset(key)
+
+    def createMo(self, lang):
+        locale_dir = os.path.join(self.tempdir, "locale")
+        mofile_dir = os.path.join(locale_dir, lang, "LC_MESSAGES")
+        os.makedirs(mofile_dir)
+        mo_file = os.path.join(mofile_dir, "mofile.mo")
+        with open(mo_file, "wb") as f:
+            f.write(b"\xDE\x12\x04\x95")
+        return mo_file
+
     def test_find_with_env_vars(self):
         # test that find correctly finds the environment variable LANGUAGE
         # when languages are not supplied
-        with os_helper.EnvironmentVarGuard() as env, os_helper.temp_cwd() as tempdir:
-            env.set('LANGUAGE', 'ga_IE')
+        self.setUp()
+        self.env.set('LANGUAGE', 'ga_IE')
+        mo_file =self.createMo("ga_IE")
 
-            locale_dir = os.path.join(tempdir, "locale")
-            mofile_dir = os.path.join(locale_dir, "ga_IE", "LC_MESSAGES")
-            os.makedirs(mofile_dir)
-            mo_file = os.path.join(mofile_dir, "mofile.mo")
-            with open(mo_file, "wb") as f:
-                f.write(b"\xDE\x12\x04\x95")
-
-            result = gettext.find("mofile", localedir=locale_dir)
-            self.assertEqual(result, mo_file)
+        result = gettext.find("mofile",
+                              localedir=os.path.join(self.tempdir, "locale"))
+        self.assertEqual(result, mo_file)
 
     def test_find_with_lanuages(self):
         # test that passed languages are used
-        with os_helper.EnvironmentVarGuard() as env, os_helper.temp_cwd() as tempdir:
-            env.set('LANGUAGE', 'pt_BR')
+        self.setUp()
+        self.env.set('LANGUAGE', 'pt_BR')
+        mo_file = self.createMo("ga_IE")
 
-            locale_dir = os.path.join(tempdir, "locale")
-            mofile_dir = os.path.join(locale_dir, "ga_IE", "LC_MESSAGES")
-            os.makedirs(mofile_dir)
-            mo_file = os.path.join(mofile_dir, "mofile.mo")
-            with open(mo_file, "wb") as f:
-                f.write(b"\xDE\x12\x04\x95")
-
-            result = gettext.find("mofile", localedir=locale_dir, languages=['ga_IE'])
-            self.assertEqual(result, mo_file)
+        result = gettext.find("mofile",
+                              localedir=os.path.join(self.tempdir, "locale"),
+                              languages=['ga_IE'])
+        self.assertEqual(result, mo_file)
 
     def test_find_with_no_lang(self):
         # no language can be found
-        with os_helper.EnvironmentVarGuard() as env, os_helper.temp_cwd() as tempdir:
-            _clearvars(env)
-            result = gettext.find('foo')
-            self.assertEqual(result, None)
+        self.setUp()
+        result = gettext.find('foo')
+        self.assertEqual(result, None)
 
     def test_find_with_c(self):
         # 'C' is already in languages
-        with os_helper.EnvironmentVarGuard() as env, os_helper.temp_cwd() as tempdir:
-            env.set('LANGUAGE', 'C')
-            result = gettext.find('foo')
-            self.assertEqual(result, None)
+        self.setUp()
+        self.env.set('LANGUAGE', 'C')
+        result = gettext.find('foo')
+        self.assertEqual(result, None)
 
     def test_find_all(self):
         # test that all are returned when all is set
-        with os_helper.EnvironmentVarGuard() as env, os_helper.temp_cwd() as tempdir:
-            _clearvars(env)
-
-            locale_dir = os.path.join(tempdir, "locale")
-            paths = []
-            for lang in ["ga_IE", "es_ES"]:
-                mofile_dir = os.path.join(locale_dir, lang, "LC_MESSAGES")
-                os.makedirs(mofile_dir)
-                mo_file = os.path.join(mofile_dir, "mofile.mo")
-                with open(mo_file, "wb") as f:
-                    f.write(b"\xDE\x12\x04\x95")
-                paths.append(mo_file)
-
-            result = gettext.find('mofile', localedir=locale_dir,
-                                  languages=["ga_IE", "es_ES"], all=True)
-            self.assertEqual(sorted(result), sorted(paths))
+        self.setUp()
+        paths = []
+        for lang in ["ga_IE", "es_ES"]:
+            paths.append(self.createMo(lang))
+        result = gettext.find('mofile',
+                              localedir=os.path.join(self.tempdir, "locale"),
+                              languages=["ga_IE", "es_ES"], all=True)
+        self.assertEqual(sorted(result), sorted(paths))
 
     def test_find_dedupelication(self):
         # test that find removes duplicate languages
-        with os_helper.EnvironmentVarGuard() as env, os_helper.temp_cwd() as tempdir:
-            _clearvars(env)
-
-            result = gettext.find("foo", languages=['ga_IE', 'ga_IE'])
-            self.assertEqual(result, None)
+        self.setUp()
+        result = gettext.find("foo", languages=['ga_IE', 'ga_IE'])
+        self.assertEqual(result, None)
 
 
 class MiscTestCase(unittest.TestCase):
