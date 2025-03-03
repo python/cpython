@@ -3928,7 +3928,7 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEqual(res + f.readline(), 'foo\nbar\n')
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
-    @unittest.skipIf(support.is_emscripten, "Would be fixed by emscripten-core/emscripten#23306")
+    @unittest.skipIf(support.is_emscripten, "Fixed in next Emscripten release after 4.0.1")
     def test_read_non_blocking(self):
         import os
         r, w = os.pipe()

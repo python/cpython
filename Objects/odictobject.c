@@ -260,7 +260,7 @@ mp_length         __len__          -                   dict_length
 mp_subscript      __getitem__      -                   dict_subscript
 mp_ass_subscript  __setitem__      -                   dict_ass_sub
                   __delitem__
-tp_hash           __hash__         _Py_HashPointer     ..._HashNotImpl
+tp_hash           __hash__         Py_HashPointer      ..._HashNotImpl
 tp_str            __str__          object_str          -
 tp_getattro       __getattribute__ ..._GenericGetAttr  (repeated)
                   __getattr__

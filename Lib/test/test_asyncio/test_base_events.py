@@ -833,8 +833,8 @@ class BaseEventLoopTests(test_utils.TestCase):
             loop.close()
 
     def test_create_named_task_with_custom_factory(self):
-        def task_factory(loop, coro):
-            return asyncio.Task(coro, loop=loop)
+        def task_factory(loop, coro, **kwargs):
+            return asyncio.Task(coro, loop=loop, **kwargs)
 
         async def test():
             pass
@@ -1345,7 +1345,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         with self.assertRaises(OSError) as cm:
             self.loop.run_until_complete(coro)
 
-        self.assertTrue(str(cm.exception).startswith('Multiple exceptions: '))
+        self.assertStartsWith(str(cm.exception), 'Multiple exceptions: ')
         self.assertTrue(m_socket.socket.return_value.close.called)
 
         coro = self.loop.create_connection(
