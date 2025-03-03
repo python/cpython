@@ -934,7 +934,8 @@ class CopyTestCase(unittest.TestCase):
 
 class CompareDigestMixin:
 
-    def compare_digest(self, a, b):
+    @staticmethod
+    def compare_digest(a, b):
         """Implementation of 'a == b' to test."""
         raise NotImplementedError
 
@@ -1048,9 +1049,9 @@ class HMACCompareDigestTestCase(CompareDigestMixin, unittest.TestCase):
 
     def test_compare_digest_func(self):
         if openssl_compare_digest is not None:
-            self.assertIs(hmac.compare_digest, openssl_compare_digest)
+            self.assertIs(self.compare_digest, openssl_compare_digest)
         else:
-            self.assertIs(hmac.compare_digest, operator_compare_digest)
+            self.assertIs(self.compare_digest, operator_compare_digest)
 
 
 @hashlib_helper.requires_hashlib()
