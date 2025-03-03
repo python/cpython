@@ -775,6 +775,7 @@ def uuid5(namespace, name):
     int_uuid_5 |= _RFC_4122_VERSION_5_FLAGS
     return UUID._from_int(int_uuid_5)
 
+
 _last_timestamp_v6 = None
 
 def uuid6(node=None, clock_seq=None):
@@ -813,6 +814,7 @@ def uuid6(node=None, clock_seq=None):
     int_uuid_6 |= _RFC_4122_VERSION_6_FLAGS
     return UUID._from_int(int_uuid_6)
 
+
 _last_timestamp_v7 = None
 _last_counter_v7 = 0  # 42-bit counter
 
@@ -823,6 +825,7 @@ def _uuid7_get_counter_and_tail():
     # 32-bit random data
     tail = rand & 0xffff_ffff
     return counter, tail
+
 
 def uuid7():
     """Generate a UUID from a Unix timestamp in milliseconds and random bits.
@@ -887,6 +890,7 @@ def uuid7():
     _last_counter_v7 = counter
     return res
 
+
 def uuid8(a=None, b=None, c=None):
     """Generate a UUID from three custom blocks.
 
@@ -911,6 +915,7 @@ def uuid8(a=None, b=None, c=None):
     # by construction, the variant and version bits are already cleared
     int_uuid_8 |= _RFC_4122_VERSION_8_FLAGS
     return UUID._from_int(int_uuid_8)
+
 
 def main():
     """Run the uuid command line interface."""
