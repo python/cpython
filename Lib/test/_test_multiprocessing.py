@@ -1521,14 +1521,11 @@ class _TestLock(BaseTestCase):
         for i in range(n):
             self.assertIn(f'<RLock(MainProcess|T{i+1}, {i+1})>', l)
 
-
-        t = threading.Thread(target=self._acquire_release,
-                                 args=(lock, 0.2),
-                                 name=f'T1')
+        rlock = self.RLock()
+        t = threading.Thread(target=rlock.acquire)
         t.start()
-        time.sleep(0.1)
-        self.assertEqual('<RLock(SomeOtherThread, nonzero)>', repr(lock))
-        time.sleep(0.2)
+        t.join()
+        self.assertEqual('<RLock(SomeOtherThread, nonzero)>', repr(rlock))
 
         pname = 'P1'
         l = multiprocessing.Manager().list()
@@ -1539,14 +1536,11 @@ class _TestLock(BaseTestCase):
         p.join()
         self.assertEqual(f'<RLock({pname}, 1)>', l[0])
 
-        event = self.Event()
-        lock = self.RLock()
-        p = self.Process(target=self._acquire_event,
-                         args=(lock, event))
+        rlock = self.RLock()
+        p = self.Process(target=self._acquire, args=(rlock,))
         p.start()
-        event.wait()
-        self.assertEqual('<RLock(SomeOtherProcess, nonzero)>', repr(lock))
         p.join()
+        self.assertEqual('<RLock(SomeOtherProcess, nonzero)>', repr(rlock))
 
     def test_rlock(self):
         lock = self.RLock()
@@ -1628,14 +1622,13 @@ class _TestCondition(BaseTestCase):
         cond.release()
 
     def assertReachesEventually(self, func, value):
-        for i in range(10):
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
             try:
                 if func() == value:
                     break
             except NotImplementedError:
                 break
-            time.sleep(DELTA)
-        time.sleep(DELTA)
+
         self.assertReturnsIfImplemented(value, func)
 
     def check_invariant(self, cond):
@@ -1669,8 +1662,7 @@ class _TestCondition(BaseTestCase):
         sleeping.acquire()
 
         # check no process/thread has woken up
-        time.sleep(DELTA)
-        self.assertReturnsIfImplemented(0, get_value, woken)
+        self.assertReachesEventually(lambda: get_value(woken), 0)
 
         # wake up one process/thread
         cond.acquire()
@@ -1678,8 +1670,7 @@ class _TestCondition(BaseTestCase):
         cond.release()
 
         # check one process/thread has woken up
-        time.sleep(DELTA)
-        self.assertReturnsIfImplemented(1, get_value, woken)
+        self.assertReachesEventually(lambda: get_value(woken), 1)
 
         # wake up another
         cond.acquire()
@@ -1687,8 +1678,7 @@ class _TestCondition(BaseTestCase):
         cond.release()
 
         # check other has woken up
-        time.sleep(DELTA)
-        self.assertReturnsIfImplemented(2, get_value, woken)
+        self.assertReachesEventually(lambda: get_value(woken), 2)
 
         # check state is not mucked up
         self.check_invariant(cond)

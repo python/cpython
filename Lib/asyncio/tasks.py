@@ -1110,7 +1110,6 @@ try:
     from _asyncio import (_register_task, _register_eager_task,
                           _unregister_task, _unregister_eager_task,
                           _enter_task, _leave_task, _swap_current_task,
-                          _scheduled_tasks, _eager_tasks,
                           current_task, all_tasks)
 except ImportError:
     pass

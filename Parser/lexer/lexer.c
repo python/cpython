@@ -211,8 +211,12 @@ _PyLexer_update_fstring_expr(struct tok_state *tok, char cur)
             break;
         case '}':
         case '!':
-        case ':':
             tok_mode->last_expr_end = strlen(tok->start);
+            break;
+        case ':':
+            if (tok_mode->last_expr_end == -1) {
+               tok_mode->last_expr_end = strlen(tok->start);
+            }
             break;
         default:
             Py_UNREACHABLE();
@@ -304,9 +308,7 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind) {
     return 1;
 }
 
-/* Verify that the identifier follows PEP 3131.
-   All identifier strings are guaranteed to be "ready" unicode objects.
- */
+/* Verify that the identifier follows PEP 3131. */
 static int
 verify_identifier(struct tok_state *tok)
 {

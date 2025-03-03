@@ -21,6 +21,9 @@ this type and there is exactly one in existence.
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 
 
+#define _PySlice_CAST(op) _Py_CAST(PySliceObject*, (op))
+
+
 static PyObject *
 ellipsis_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
@@ -341,8 +344,9 @@ slice(start, stop[, step])\n\
 Create a slice object.  This is used for extended slicing (e.g. a[0:10:2]).");
 
 static void
-slice_dealloc(PySliceObject *r)
+slice_dealloc(PyObject *op)
 {
+    PySliceObject *r = _PySlice_CAST(op);
     PyObject_GC_UnTrack(r);
     Py_DECREF(r->step);
     Py_DECREF(r->start);
@@ -351,9 +355,11 @@ slice_dealloc(PySliceObject *r)
 }
 
 static PyObject *
-slice_repr(PySliceObject *r)
+slice_repr(PyObject *op)
 {
-    return PyUnicode_FromFormat("slice(%R, %R, %R)", r->start, r->stop, r->step);
+    PySliceObject *r = _PySlice_CAST(op);
+    return PyUnicode_FromFormat("slice(%R, %R, %R)",
+                                r->start, r->stop, r->step);
 }
 
 static PyMemberDef slice_members[] = {
@@ -614,8 +620,9 @@ slice_richcompare(PyObject *v, PyObject *w, int op)
 }
 
 static int
-slice_traverse(PySliceObject *v, visitproc visit, void *arg)
+slice_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PySliceObject *v = _PySlice_CAST(op);
     Py_VISIT(v->start);
     Py_VISIT(v->stop);
     Py_VISIT(v->step);
@@ -636,8 +643,9 @@ slice_traverse(PySliceObject *v, visitproc visit, void *arg)
 #endif
 
 static Py_hash_t
-slicehash(PySliceObject *v)
+slice_hash(PyObject *op)
 {
+    PySliceObject *v = _PySlice_CAST(op);
     Py_uhash_t acc = _PyHASH_XXPRIME_5;
 #define _PyHASH_SLICE_PART(com) { \
     Py_uhash_t lane = PyObject_Hash(v->com); \
@@ -663,16 +671,16 @@ PyTypeObject PySlice_Type = {
     "slice",                    /* Name of this type */
     sizeof(PySliceObject),      /* Basic object size */
     0,                          /* Item size for varobject */
-    (destructor)slice_dealloc,                  /* tp_dealloc */
+    slice_dealloc,                              /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)slice_repr,                       /* tp_repr */
+    slice_repr,                                 /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
-    (hashfunc)slicehash,                        /* tp_hash */
+    slice_hash,                                 /* tp_hash */
     0,                                          /* tp_call */
     0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
@@ -680,7 +688,7 @@ PyTypeObject PySlice_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     slice_doc,                                  /* tp_doc */
-    (traverseproc)slice_traverse,               /* tp_traverse */
+    slice_traverse,                             /* tp_traverse */
     0,                                          /* tp_clear */
     slice_richcompare,                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
