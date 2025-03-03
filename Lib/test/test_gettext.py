@@ -779,8 +779,10 @@ class FindTestCase(unittest.TestCase):
 
     def test_find_deduplication(self):
         # test that find removes duplicate languages
-        result = gettext.find("foo", languages=['ga_IE', 'ga_IE'])
-        self.assertEqual(result, None)
+        mo_file = [self.create_mo_file('ga_IE')]
+        result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"),
+                              languages=['ga_IE', 'ga_IE'], all=True)
+        self.assertEqual(result, mo_file)
 
 
 class MiscTestCase(unittest.TestCase):
