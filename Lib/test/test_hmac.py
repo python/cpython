@@ -61,6 +61,7 @@ class CreatorMixin:
     """Mixin exposing a method creating a HMAC object."""
 
     def hmac_new(self, key, msg=None, digestmod=None):
+        """Create a new HMAC object."""
         raise NotImplementedError
 
     def bind_hmac_new(self, digestmod):
@@ -72,6 +73,7 @@ class DigestMixin:
     """Mixin exposing a method computing a HMAC digest."""
 
     def hmac_digest(self, key, msg=None, digestmod=None):
+        """Compute a HMAC digest."""
         raise NotImplementedError
 
     def bind_hmac_digest(self, digestmod):
@@ -80,12 +82,18 @@ class DigestMixin:
 
 
 class ThroughObjectMixin(ModuleMixin, CreatorMixin, DigestMixin):
-    """Mixin delegating to <module>.HMAC() and <module>.HMAC(...).digest()."""
+    """Mixin delegating to <module>.HMAC() and <module>.HMAC(...).digest().
+
+    Both the C implementation and the Python implementation of HMAC should
+    expose a HMAC class with the same functionalities.
+    """
 
     def hmac_new(self, key, msg=None, digestmod=None):
+        """Create a HMAC object via a module-level class constructor."""
         return self.hmac.HMAC(key, msg, digestmod=digestmod)
 
     def hmac_digest(self, key, msg=None, digestmod=None):
+        """Call the digest() method on a HMAC object obtained by hmac_new()."""
         return self.hmac_new(key, msg, digestmod).digest()
 
 
@@ -93,9 +101,11 @@ class ThroughModuleAPIMixin(ModuleMixin, CreatorMixin, DigestMixin):
     """Mixin delegating to <module>.new() and <module>.digest()."""
 
     def hmac_new(self, key, msg=None, digestmod=None):
+        """Create a HMAC object via a module-level function."""
         return self.hmac.new(key, msg, digestmod=digestmod)
 
     def hmac_digest(self, key, msg=None, digestmod=None):
+        """One-shot HMAC digest computation."""
         return self.hmac.digest(key, msg, digest=digestmod)
 
 
@@ -114,15 +124,18 @@ class CheckerMixin:
     """Mixin for checking HMAC objects (pure Python, OpenSSL or built-in)."""
 
     def check_object(self, h, digest, hashname, digest_size, block_size):
+        """Check a HMAC object 'h' against the given values."""
         self.check_internals(h, hashname, digest_size, block_size)
         self.check_hexdigest(h, digest, digest_size)
 
     def check_internals(self, h, hashname, digest_size, block_size):
+        """Check the constant attributes of a HMAC object."""
         self.assertEqual(h.name, f"hmac-{hashname}")
         self.assertEqual(h.digest_size, digest_size)
         self.assertEqual(h.block_size, block_size)
 
     def check_hexdigest(self, h, digest, digest_size):
+        """Check the HMAC digest of 'h' and its size."""
         self.assertEqual(len(h.digest()), digest_size)
         self.assertEqual(h.hexdigest().upper(), digest.upper())
 
@@ -131,7 +144,14 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
     """Mixin class for all test vectors test cases."""
 
     def hmac_new_by_name(self, key, msg=None, hashname=None):
-        """Alternative implementation of hmac_new()."""
+        """Alternative implementation of hmac_new().
+
+        This is typically useful when one needs to test against an HMAC
+        implementation which only recognizes underlying hash functions
+        by their name (all HMAC implementations must at least recognize
+        hash functions by their names but some may use aliases such as
+        `hashlib.sha1` instead of "sha1".
+        """
         self.assertIsInstance(hashname, str | None)
         return self.hmac_new(key, msg, digestmod=hashname)
 
@@ -143,6 +163,14 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
     def assert_hmac(
         self, key, msg, digest, hashfunc, hashname, digest_size, block_size
     ):
+        """Check that HMAC(key, msg) == digest.
+
+        The 'hashfunc' and 'hashname' are used as 'digestmod' values,
+        thereby allowing to test the underlying dispatching mechanism.
+
+        At most one of 'hashfunc' or 'hashname' value can be None, in which
+        case it is ignored.
+        """
         digestmods = list(filter(None, [hashfunc, hashname]))
         self.assertNotEqual(digestmods, [],
                             "at least one implementation must be tested")
@@ -170,6 +198,10 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
     def assert_hmac_new(
         self, key, msg, digest, digestmod, hashname, digest_size, block_size
     ):
+        """Check that HMAC(key, msg) == digest.
+
+        This test uses the `hmac_new()` method to create HMAC objects.
+        """
         self._check_hmac_new(
             key, msg, digest, hashname, digest_size, block_size,
             hmac_new_func=self.hmac_new,
@@ -179,6 +211,10 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
     def assert_hmac_new_by_name(
         self, key, msg, digest, hashname, digest_size, block_size
     ):
+        """Check that HMAC(key, msg) == digest.
+
+        This test uses the `hmac_new_by_name()` method to create HMAC objects.
+        """
         self._check_hmac_new(
             key, msg, digest, hashname, digest_size, block_size,
             hmac_new_func=self.hmac_new_by_name,
@@ -189,6 +225,12 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
         self, key, msg, digest, hashname, digest_size, block_size,
         hmac_new_func, hmac_new_kwds,
     ):
+        """Check that HMAC(key, msg) == digest.
+
+        This also tests that using an empty/None initial message and
+        then calling `h.update(msg)` produces the same result, namely
+        that HMAC(key, msg) is equivalent to HMAC(key).update(msg).
+        """
         h = hmac_new_func(key, msg, **hmac_new_kwds)
         self.check_object(h, digest, hashname, digest_size, block_size)
 
@@ -207,6 +249,7 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
     def assert_hmac_digest(
         self, key, msg, digest, digestmod, digest_size,
     ):
+        """Check a HMAC digest computed by hmac_digest()."""
         d = self.hmac_digest(key, msg, digestmod=digestmod)
         self.assertEqual(len(d), digest_size)
         self.assertEqual(d, binascii.unhexlify(digest))
@@ -214,6 +257,7 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
     def assert_hmac_digest_by_new(
         self, key, msg, digest, hashname, digest_size
     ):
+        """Check a HMAC digest computed by hmac_digest_by_name()."""
         self.assertIsInstance(hashname, str | None)
         d = self.hmac_digest_by_name(key, msg, hashname=hashname)
         self.assertEqual(len(d), digest_size)
@@ -676,7 +720,11 @@ class PyModuleConstructorTestCase(ThroughModuleAPIMixin, PyConstructorBaseMixin,
 
 class ExtensionConstructorTestCaseMixin(DigestModTestCaseMixin,
                                         ConstructorTestCaseMixin):
+
+    # The underlying C class.
     obj_type = None
+
+    # The exact exception class raised when a 'digestmod' parameter is invalid.
     exc_type = None
 
     def test_internal_types(self):
@@ -726,9 +774,16 @@ class OpenSSLConstructorTestCase(ThroughOpenSSLAPIMixin,
 
 
 class SanityTestCaseMixin(CreatorMixin):
+    """Sanity checks for HMAC objects and their object interface.
 
-    hmac_class = None
-    digestname = None
+    The tests here use a common digestname and do not check all supported
+    hash functions.
+    """
+
+    # The underlying HMAC class to test. May be in C or in Python.
+    hmac_class: type
+    # The underlying hash function name (should be accepted by the HMAC class).
+    digestname: str
 
     def test_methods(self):
         h = self.hmac_new(b"my secret key", digestmod=self.digestname)
@@ -739,6 +794,7 @@ class SanityTestCaseMixin(CreatorMixin):
         self.assertIsInstance(h.copy(), self.hmac_class)
 
     def test_repr(self):
+        # HMAC object representation may differ across implementations
         raise NotImplementedError
 
 
@@ -773,8 +829,10 @@ class OpenSSLSanityTestCase(ThroughOpenSSLAPIMixin, SanityTestCaseMixin,
 
 
 class UpdateTestCaseMixin:
+    """Tests for the update() method (streaming HMAC)."""
 
     def HMAC(self, key, msg=None):
+        """Create a HMAC object."""
         raise NotImplementedError
 
     def test_update(self):
@@ -867,6 +925,7 @@ class CopyTestCase(unittest.TestCase):
 class CompareDigestMixin:
 
     def compare_digest(self, a, b):
+        """Implementation of 'a == b' to test."""
         raise NotImplementedError
 
     def assert_digest_equal(self, a, b):
