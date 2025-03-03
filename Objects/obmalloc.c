@@ -1378,7 +1378,7 @@ _PyMem_AbandonDelayed(PyThreadState *tstate)
     llist_concat(&interp->mem_free_queue.head, queue);
 
     // Process the merged queue now (see gh-130794).
-    _PyThreadStateImpl *this_tstate = (_PyThreadStateImpl *)tstate;
+    _PyThreadStateImpl *this_tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
     process_interp_queue(&interp->mem_free_queue, this_tstate->qsbr, NULL, NULL);
 
     PyMutex_Unlock(&interp->mem_free_queue.mutex);
