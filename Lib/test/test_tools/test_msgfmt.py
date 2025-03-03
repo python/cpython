@@ -124,9 +124,9 @@ class CLITest(unittest.TestCase):
         assert_python_failure(msgfmt, 'nonexistent.po')
 
 
-class Test_multi_input(unittest.TestCase):
+class MultiInputTest(unittest.TestCase):
     """Tests for the issue https://github.com/python/cpython/issues/79516
-        msgfmt.py shall accept multiple input files
+        msgfmt.py accepts multiple input files
     """
 
     def test_no_outputfile(self):

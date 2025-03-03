@@ -6,9 +6,9 @@
 This program converts a textual Uniforum-style message catalog (.po file) into
 a binary GNU catalog (.mo file).  This is essentially the same function as the
 GNU msgfmt program, however, it is a simpler implementation.  Currently it
-handles plural forms and message contexts, but does not generate hash table.
+handles plural forms and message contexts, but does not generate a hash table.
 
-Usage: msgfmt.py [OPTIONS] filename.po [filename.po ...]
+Usage: msgfmt.py [OPTIONS] filename.po ...
 
 Options:
     -o file
@@ -105,7 +105,7 @@ def generate(messages):
 
 
 def make(filenames, outfile):
-    """ Compiles one or several po files(s).
+    """ Compiles one or more po files(s).
 
     filenames is a string or an iterable of strings representing input file(s)
     outfile is a string for the name of an input file or None.
