@@ -35,6 +35,7 @@ import warnings
 from io import StringIO
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from itertools import chain
 from tokenize import TokenInfo
 
 import os
@@ -635,71 +636,69 @@ class ModuleCompleter:
 
     def get_completions(self, line: str) -> list[str]:
         """Return the next possible import completions for 'line'."""
-
-        parser = ImportParser(line)
-        if not (result := parser.parse()):
+        result = ImportParser(line).parse()
+        if not result:
             return []
         return self.complete(*result)
 
     def complete(self, from_name: str | None, name: str | None) -> list[str]:
-        # import x.y.z<tab>
         if from_name is None:
-            if not name:
-                return []
-            return self.complete_import(name)
+            # import x.y.z<tab>
+            path, prefix = self.get_path_and_prefix(name)
+            modules = self.find_modules(path, prefix)
+            return [self.format_completion(path, module) for module in modules]
 
-        # from x.y.z<tab>
         if name is None:
-            if not from_name:
-                return []
-            return self.complete_import(from_name)
+            # from x.y.z<tab>
+            path, prefix = self.get_path_and_prefix(from_name)
+            modules = self.find_modules(path, prefix)
+            return [self.format_completion(path, module) for module in modules]
 
         # from x.y import z<tab>
-        if not (module := self.import_module(from_name)):
-            return []
+        return self.find_modules(from_name, name)
 
-        submodules = self.filter_submodules(module, name)
-        attributes = self.filter_attributes(module, name)
-        return list(set(submodules + attributes))
+    def find_modules(self, path: str, prefix: str) -> list[str]:
+        """Find all modules under 'path' that start with 'prefix'."""
+        if not path:
+            # Top-level import (e.g. `import foo<tab>`` or `from foo<tab>`)`
+            return [name for _, name, _ in self.global_cache
+                    if name.startswith(prefix)]
 
-    def complete_import(self, name: str) -> list[str]:
-        is_relative = name.startswith('.')
-        path, prefix = self.get_path_and_prefix(name)
+        if path.startswith('.'):
+            # Convert relative path to absolute path
+            package = self.namespace.get('__package__')
+            path = self.resolve_relative_name(path, package)
+            if path is None:
+                return []
 
-        if not is_relative and not path:
-            return [name for name in self.global_cache if name.startswith(prefix)]
+        modules = self.global_cache
+        for segment in path.split('.'):
+            modules = [mod_info for mod_info in modules
+                       if mod_info.ispkg and mod_info.name == segment]
+            modules = self.iter_submodules(modules)
+        return [module.name for module in modules
+                if module.name.startswith(prefix)]
 
-        if not (module := self.import_module(path)):
-            return []
-
-        submodules = self.filter_submodules(module, prefix)
-        if not is_relative:
-            return [f'{path}.{name}' for name in submodules]
-        return [f'.{name}' for name in submodules]
-
-    def import_module(self, path: str) -> ModuleType | None:
-        package = self.namespace.get('__package__')
-        is_relative = path.startswith('.')
-        if is_relative and not package:
-            return None
-        try:
-            module = importlib.import_module(
-                path,
-                package=package if is_relative else None)
-        except ImportError:
-            return None
-        return module
-
-    def filter_submodules(self, module: ModuleType, prefix: str) -> list[str]:
-        if not hasattr(module, '__path__'):
-            return []
-        return [name for _, name, _ in pkgutil.iter_modules(module.__path__)
-                if name.startswith(prefix)]
-
-    def filter_attributes(self, module: ModuleType, prefix: str) -> list[str]:
-        return [attr for attr in module.__dict__ if attr.startswith(prefix)]
+    def iter_submodules(self, parent_modules):
+        """Iterate over all submodules of the given parent modules."""
+        specs = [info.module_finder.find_spec(info.name)
+                 for info in parent_modules if info.ispkg]
+        search_locations = set(chain.from_iterable(
+            getattr(spec, 'submodule_search_locations', [])
+            for spec in specs if spec
+        ))
+        return pkgutil.iter_modules(search_locations)
 
     def get_path_and_prefix(self, dotted_name: str) -> tuple[str, str]:
+        """
+        Split a dotted name into an import path and a
+        final prefix that is to be completed.
+
+        Examples:
+            'foo.bar' -> 'foo', 'bar'
+            'foo.' -> 'foo', ''
+            '.foo' -> '.', 'foo'
+        """
         if '.' not in dotted_name:
             return '', dotted_name
         if dotted_name.startswith('.'):
@@ -712,12 +711,35 @@ class ModuleCompleter:
         path, prefix = dotted_name.rsplit('.', 1)
         return path, prefix
 
+    def format_completion(self, path: str, module: str) -> str:
+        if path == '' or path.endswith('.'):
+            return f'{path}{module}'
+        return f'{path}.{module}'
+
+    def resolve_relative_name(self, name, package):
+        """Resolve a relative module name to an absolute name.
+
+        Example: resolve_relative_name('.foo', 'bar') -> 'bar.foo'
+        """
+        # taken from importlib._bootstrap
+        level = 0
+        for character in name:
+            if character != '.':
+                break
+            level += 1
+        bits = package.rsplit('.', level - 1)
+        if len(bits) < level:
+            return None
+        base = bits[0]
+        name = name[level:]
+        return f'{base}.{name}' if name else base
+
     @property
     def global_cache(self) -> list[str]:
+        """Global module cache"""
         if not self._global_cache or self._curr_sys_path != sys.path:
             self._curr_sys_path = sys.path[:]
-            self._global_cache = [
-                name for _, name, _ in pkgutil.iter_modules()]
+            self._global_cache = list(pkgutil.iter_modules())
         return self._global_cache
 
 

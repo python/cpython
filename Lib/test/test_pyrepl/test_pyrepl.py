@@ -904,49 +904,21 @@ class TestPyReplModuleCompleter(TestCase):
         reader = ReadlineAlikeReader(console=console, config=config)
         return reader
 
-    def test_import(self):
-        cases = [
+    def test_import_completions(self):
+        cases = (
             ("import path\t\n", "import pathlib"),
             ("import importlib.\t\tres\t\n", "import importlib.resources"),
             ("import importlib.resources.\t\ta\t\n", "import importlib.resources.abc"),
             ("import foo, impo\t\n", "import foo, importlib"),
             ("import foo as bar, impo\t\n", "import foo as bar, importlib"),
-        ]
-
-        for code, expected in cases:
-            with self.subTest(code=code):
-                events = code_to_events(code)
-                reader = self.prepare_reader(events, namespace={})
-                output = reader.readline()
-                self.assertEqual(output, expected)
-
-    def test_from_import(self):
-        cases = [
             ("from impo\t\n", "from importlib"),
             ("from importlib.res\t\n", "from importlib.resources"),
             ("from importlib.\t\tres\t\n", "from importlib.resources"),
             ("from importlib.resources.ab\t\n", "from importlib.resources.abc"),
-        ]
-
-        for code, expected in cases:
-            with self.subTest(code=code):
-                events = code_to_events(code)
-                reader = self.prepare_reader(events, namespace={})
-                output = reader.readline()
-                self.assertEqual(output, expected)
-
-    def test_from_import_attributes(self):
-        cases = [
             ("from importlib import mac\t\n", "from importlib import machinery"),
             ("from importlib import res\t\n", "from importlib import resources"),
-            ("from importlib import invalidate_\t\n", "from importlib import invalidate_caches"),
-            ("from importlib import (inval\t\n", "from importlib import (invalidate_caches"),
-            ("from importlib import foo, invalidate_\t\n", "from importlib import foo, invalidate_caches"),
-            ("from importlib import (foo, invalidate_\t\n", "from importlib import (foo, invalidate_caches"),
-            ("from importlib import foo as bar, invalidate_\t\n", "from importlib import foo as bar, invalidate_caches"),
-            ("from importlib import (foo as bar, invalidate_\t\n", "from importlib import (foo as bar, invalidate_caches"),
-        ]
-
+            ("from importlib.res\t import a\t\n", "from importlib.resources import abc"),
+        )
         for code, expected in cases:
             with self.subTest(code=code):
                 events = code_to_events(code)
@@ -954,12 +926,11 @@ class TestPyReplModuleCompleter(TestCase):
                 output = reader.readline()
                 self.assertEqual(output, expected)
 
-    def test_relative_from_import(self):
-        cases = [
+    def test_relative_import_completions(self):
+        cases = (
             ("from .readl\t\n", "from .readline"),
-            ("from .readline import Mod\t\n", "from .readline import ModuleCompleter"),
-        ]
-
+            ("from . import readl\t\n", "from . import readline"),
+        )
         for code, expected in cases:
             with self.subTest(code=code):
                 events = code_to_events(code)
@@ -968,7 +939,7 @@ class TestPyReplModuleCompleter(TestCase):
                 self.assertEqual(output, expected)
 
     def test_get_path_and_prefix(self):
-        cases = [
+        cases = (
             ('', ('', '')),
             ('.', ('.', '')),
             ('..', ('..', '')),
@@ -983,15 +954,14 @@ class TestPyReplModuleCompleter(TestCase):
             ('foo.bar', ('foo', 'bar')),
             ('foo.bar.', ('foo.bar', '')),
             ('foo.bar.baz', ('foo.bar', 'baz')),
-        ]
-
+        )
         completer = ModuleCompleter()
         for name, expected in cases:
             with self.subTest(name=name):
                 self.assertEqual(completer.get_path_and_prefix(name), expected)
 
     def test_parse(self):
-        cases = [
+        cases = (
             ('import ', (None, '')),
             ('import foo', (None, 'foo')),
             ('import foo,', (None, '')),
@@ -1027,8 +997,7 @@ class TestPyReplModuleCompleter(TestCase):
             ('from foo import (a, ', ('foo', '')),
             ('from foo import (a, c', ('foo', 'c')),
             ('from foo import (a as b, c', ('foo', 'c')),
-        ]
-
+        )
         for code, parsed in cases:
             parser = ImportParser(code)
             actual = parser.parse()
@@ -1039,9 +1008,12 @@ class TestPyReplModuleCompleter(TestCase):
             code = f'import xyz\n{code}'
             with self.subTest(code=code):
                 self.assertEqual(actual, parsed)
+            code = f'import xyz;{code}'
+            with self.subTest(code=code):
+                self.assertEqual(actual, parsed)
 
     def test_parse_error(self):
-        cases = [
+        cases = (
             '',
             'import foo ',
             'from foo ',
@@ -1060,6 +1032,9 @@ class TestPyReplModuleCompleter(TestCase):
             'import a.b.c as',
             'import (foo',
             'import (',
+            'import .foo',
+            'import ..foo',
+            'import .foo.bar',
             'import foo; x = 1',
             'import a.; x = 1',
             'import a.b; x = 1',
@@ -1080,8 +1055,7 @@ class TestPyReplModuleCompleter(TestCase):
             'from foo import import',
             'from foo import from',
             'from foo import as',
-        ]
-
+        )
         for code in cases:
             parser = ImportParser(code)
             actual = parser.parse()
