@@ -49,7 +49,6 @@ class object "PyObject *" "&PyBaseObject_Type"
                 ((Py_ssize_t)(name)) >> 3)
 #define MCACHE_CACHEABLE_NAME(name)                             \
         PyUnicode_CheckExact(name) &&                           \
-        PyUnicode_IS_READY(name) &&                             \
         (PyUnicode_GET_LENGTH(name) <= MCACHE_MAX_ATTR_SIZE)
 
 #define NEXT_GLOBAL_VERSION_TAG _PyRuntime.types.next_version_tag
