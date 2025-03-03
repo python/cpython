@@ -1501,12 +1501,11 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
 {
     assert(PyDict_CheckExact(const_cache));
     assert(PyList_CheckExact(consts));
-    assert(i >= 0 && i < bb->b_iused);
+    assert(i >= 0);
+    assert(i < bb->b_iused);
     cfg_instr *intrinsic = &bb->b_instr[i];
-    assert(
-        intrinsic->i_opcode == CALL_INTRINSIC_1 &&
-        intrinsic->i_oparg == INTRINSIC_LIST_TO_TUPLE
-    );
+    assert(intrinsic->i_opcode == CALL_INTRINSIC_1);
+    assert(intrinsic->i_oparg == INTRINSIC_LIST_TO_TUPLE);
 
     PyObject *list = PyList_New(0);
     if (list == NULL) {
@@ -2468,11 +2467,12 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 RETURN_IF_ERROR(fold_const_unaryop(bb, i, consts, const_cache));
                 break;
             case CALL_INTRINSIC_1:
-                // for _ in (*foo, *bar) -> for _ in [*foo, *bar]
                 if (oparg == INTRINSIC_LIST_TO_TUPLE) {
+                    // for _ in (*foo, *bar) -> for _ in [*foo, *bar]
                     if (nextop == GET_ITER) {
                         INSTR_SET_OP0(inst, NOP);
-                    } else {
+                    }
+                    else {
                         fold_constant_intrinsic_list_to_tuple(bb, i, consts, const_cache);
                     }
                 }
