@@ -1,8 +1,8 @@
-r"""UUID objects (universally unique identifiers) according to RFC 4122.
+r"""UUID objects (universally unique identifiers) according to RFC 4122/9562.
 
 This module provides immutable UUID objects (class UUID) and the functions
-uuid1(), uuid3(), uuid4(), uuid5() for generating version 1, 3, 4, and 5
-UUIDs as specified in RFC 4122.
+uuid1(), uuid3(), uuid4(), uuid5(), uuid6(), and uuid8() for generating
+version 1, 3, 4, 5, 6, and 8 UUIDs as specified in RFC 4122/9562.
 
 If all you want is a unique ID, you should probably call uuid1() or uuid4().
 Note that uuid1() may compromise privacy since it creates a UUID containing
@@ -42,6 +42,14 @@ Typical usage:
     # make a UUID from a 16-byte string
     >>> uuid.UUID(bytes=x.bytes)
     UUID('00010203-0405-0607-0809-0a0b0c0d0e0f')
+
+    # get the Nil UUID
+    >>> uuid.NIL
+    UUID('00000000-0000-0000-0000-000000000000')
+
+    # get the Max UUID
+    >>> uuid.MAX
+    UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
 """
 
 import os
@@ -85,6 +93,18 @@ class SafeUUID:
     unknown = None
 
 
+_UINT_128_MAX = (1 << 128) - 1
+# 128-bit mask to clear the variant and version bits of a UUID integral value
+_RFC_4122_CLEARFLAGS_MASK = ~((0xf000 << 64) | (0xc000 << 48))
+# RFC 4122 variant bits and version bits to activate on a UUID integral value.
+_RFC_4122_VERSION_1_FLAGS = ((1 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_3_FLAGS = ((3 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_4_FLAGS = ((4 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_5_FLAGS = ((5 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_6_FLAGS = ((6 << 76) | (0x8000 << 48))
+_RFC_4122_VERSION_8_FLAGS = ((8 << 76) | (0x8000 << 48))
+
+
 class UUID:
     """Instances of the UUID class represent UUIDs as specified in RFC 4122.
     UUID objects are immutable, hashable, and usable as dictionary keys.
@@ -108,7 +128,9 @@ class UUID:
 
         fields      a tuple of the six integer fields of the UUID,
                     which are also available as six individual attributes
-                    and two derived attributes:
+                    and two derived attributes. The time_* attributes are
+                    only relevant to version 1, while the others are only
+                    relevant to versions 1 and 6:
 
             time_low                the first 32 bits of the UUID
             time_mid                the next 16 bits of the UUID
@@ -124,12 +146,12 @@ class UUID:
 
         int         the UUID as a 128-bit integer
 
-        urn         the UUID as a URN as specified in RFC 4122
+        urn         the UUID as a URN as specified in RFC 4122/9562
 
         variant     the UUID variant (one of the constants RESERVED_NCS,
                     RFC_4122, RESERVED_MICROSOFT, or RESERVED_FUTURE)
 
-        version     the UUID version number (1 through 5, meaningful only
+        version     the UUID version number (1 through 8, meaningful only
                     when the variant is RFC_4122)
 
         is_safe     An enum indicating whether the UUID has been generated in
@@ -174,56 +196,68 @@ class UUID:
         if [hex, bytes, bytes_le, fields, int].count(None) != 4:
             raise TypeError('one of the hex, bytes, bytes_le, fields, '
                             'or int arguments must be given')
-        if hex is not None:
+        if int is not None:
+            pass
+        elif hex is not None:
             hex = hex.replace('urn:', '').replace('uuid:', '')
             hex = hex.strip('{}').replace('-', '')
             if len(hex) != 32:
                 raise ValueError('badly formed hexadecimal UUID string')
             int = int_(hex, 16)
-        if bytes_le is not None:
+        elif bytes_le is not None:
             if len(bytes_le) != 16:
                 raise ValueError('bytes_le is not a 16-char string')
+            assert isinstance(bytes_le, bytes_), repr(bytes_le)
             bytes = (bytes_le[4-1::-1] + bytes_le[6-1:4-1:-1] +
                      bytes_le[8-1:6-1:-1] + bytes_le[8:])
-        if bytes is not None:
+            int = int_.from_bytes(bytes)  # big endian
+        elif bytes is not None:
             if len(bytes) != 16:
                 raise ValueError('bytes is not a 16-char string')
             assert isinstance(bytes, bytes_), repr(bytes)
             int = int_.from_bytes(bytes)  # big endian
-        if fields is not None:
+        elif fields is not None:
             if len(fields) != 6:
                 raise ValueError('fields is not a 6-tuple')
             (time_low, time_mid, time_hi_version,
              clock_seq_hi_variant, clock_seq_low, node) = fields
-            if not 0 <= time_low < 1<<32:
+            if not 0 <= time_low < (1 << 32):
                 raise ValueError('field 1 out of range (need a 32-bit value)')
-            if not 0 <= time_mid < 1<<16:
+            if not 0 <= time_mid < (1 << 16):
                 raise ValueError('field 2 out of range (need a 16-bit value)')
-            if not 0 <= time_hi_version < 1<<16:
+            if not 0 <= time_hi_version < (1 << 16):
                 raise ValueError('field 3 out of range (need a 16-bit value)')
-            if not 0 <= clock_seq_hi_variant < 1<<8:
+            if not 0 <= clock_seq_hi_variant < (1 << 8):
                 raise ValueError('field 4 out of range (need an 8-bit value)')
-            if not 0 <= clock_seq_low < 1<<8:
+            if not 0 <= clock_seq_low < (1 << 8):
                 raise ValueError('field 5 out of range (need an 8-bit value)')
-            if not 0 <= node < 1<<48:
+            if not 0 <= node < (1 << 48):
                 raise ValueError('field 6 out of range (need a 48-bit value)')
             clock_seq = (clock_seq_hi_variant << 8) | clock_seq_low
             int = ((time_low << 96) | (time_mid << 80) |
                    (time_hi_version << 64) | (clock_seq << 48) | node)
-        if int is not None:
-            if not 0 <= int < 1<<128:
-                raise ValueError('int is out of range (need a 128-bit value)')
+        if not 0 <= int <= _UINT_128_MAX:
+            raise ValueError('int is out of range (need a 128-bit value)')
         if version is not None:
-            if not 1 <= version <= 5:
+            if not 1 <= version <= 8:
                 raise ValueError('illegal version number')
-            # Set the variant to RFC 4122.
-            int &= ~(0xc000 << 48)
-            int |= 0x8000 << 48
+            # clear the variant and the version number bits
+            int &= _RFC_4122_CLEARFLAGS_MASK
+            # Set the variant to RFC 4122/9562.
+            int |= 0x8000_0000_0000_0000  # (0x8000 << 48)
             # Set the version number.
-            int &= ~(0xf000 << 64)
             int |= version << 76
         object.__setattr__(self, 'int', int)
         object.__setattr__(self, 'is_safe', is_safe)
+
+    @classmethod
+    def _from_int(cls, value):
+        """Create a UUID from an integer *value*. Internal use only."""
+        assert 0 <= value <= _UINT_128_MAX, repr(value)
+        self = object.__new__(cls)
+        object.__setattr__(self, 'int', value)
+        object.__setattr__(self, 'is_safe', SafeUUID.unknown)
+        return self
 
     def __getstate__(self):
         d = {'int': self.int}
@@ -322,8 +356,19 @@ class UUID:
 
     @property
     def time(self):
-        return (((self.time_hi_version & 0x0fff) << 48) |
-                (self.time_mid << 32) | self.time_low)
+        if self.version == 6:
+            # time_hi (32) | time_mid (16) | ver (4) | time_lo (12) | ... (64)
+            time_hi = self.int >> 96
+            time_lo = (self.int >> 64) & 0x0fff
+            return time_hi << 28 | (self.time_mid << 12) | time_lo
+        else:
+            # time_lo (32) | time_mid (16) | ver (4) | time_hi (12) | ... (64)
+            #
+            # For compatibility purposes, we do not warn or raise when the
+            # version is not 1 (timestamp is irrelevant to other versions).
+            time_hi = (self.int >> 64) & 0x0fff
+            time_lo = self.int >> 96
+            return time_hi << 48 | (self.time_mid << 32) | time_lo
 
     @property
     def clock_seq(self):
@@ -355,7 +400,7 @@ class UUID:
 
     @property
     def version(self):
-        # The version bits are only meaningful for RFC 4122 UUIDs.
+        # The version bits are only meaningful for RFC 4122/9562 UUIDs.
         if self.variant == RFC_4122:
             return int((self.int >> 76) & 0xf)
 
@@ -700,25 +745,93 @@ def uuid3(namespace, name):
     """Generate a UUID from the MD5 hash of a namespace UUID and a name."""
     if isinstance(name, str):
         name = bytes(name, "utf-8")
-    from hashlib import md5
-    digest = md5(
-        namespace.bytes + name,
-        usedforsecurity=False
-    ).digest()
-    return UUID(bytes=digest[:16], version=3)
+    import hashlib
+    h = hashlib.md5(namespace.bytes + name, usedforsecurity=False)
+    int_uuid_3 = int.from_bytes(h.digest())
+    int_uuid_3 &= _RFC_4122_CLEARFLAGS_MASK
+    int_uuid_3 |= _RFC_4122_VERSION_3_FLAGS
+    return UUID._from_int(int_uuid_3)
 
 def uuid4():
     """Generate a random UUID."""
-    return UUID(bytes=os.urandom(16), version=4)
+    int_uuid_4 = int.from_bytes(os.urandom(16))
+    int_uuid_4 &= _RFC_4122_CLEARFLAGS_MASK
+    int_uuid_4 |= _RFC_4122_VERSION_4_FLAGS
+    return UUID._from_int(int_uuid_4)
 
 def uuid5(namespace, name):
     """Generate a UUID from the SHA-1 hash of a namespace UUID and a name."""
     if isinstance(name, str):
         name = bytes(name, "utf-8")
-    from hashlib import sha1
-    hash = sha1(namespace.bytes + name).digest()
-    return UUID(bytes=hash[:16], version=5)
+    import hashlib
+    h = hashlib.sha1(namespace.bytes + name, usedforsecurity=False)
+    int_uuid_5 = int.from_bytes(h.digest()[:16])
+    int_uuid_5 &= _RFC_4122_CLEARFLAGS_MASK
+    int_uuid_5 |= _RFC_4122_VERSION_5_FLAGS
+    return UUID._from_int(int_uuid_5)
 
+_last_timestamp_v6 = None
+
+def uuid6(node=None, clock_seq=None):
+    """Similar to :func:`uuid1` but where fields are ordered differently
+    for improved DB locality.
+
+    More precisely, given a 60-bit timestamp value as specified for UUIDv1,
+    for UUIDv6 the first 48 most significant bits are stored first, followed
+    by the 4-bit version (same position), followed by the remaining 12 bits
+    of the original 60-bit timestamp.
+    """
+    global _last_timestamp_v6
+    import time
+    nanoseconds = time.time_ns()
+    # 0x01b21dd213814000 is the number of 100-ns intervals between the
+    # UUID epoch 1582-10-15 00:00:00 and the Unix epoch 1970-01-01 00:00:00.
+    timestamp = nanoseconds // 100 + 0x01b21dd213814000
+    if _last_timestamp_v6 is not None and timestamp <= _last_timestamp_v6:
+        timestamp = _last_timestamp_v6 + 1
+    _last_timestamp_v6 = timestamp
+    if clock_seq is None:
+        import random
+        clock_seq = random.getrandbits(14)  # instead of stable storage
+    time_hi_and_mid = (timestamp >> 12) & 0xffff_ffff_ffff
+    time_lo = timestamp & 0x0fff  # keep 12 bits and clear version bits
+    clock_s = clock_seq & 0x3fff  # keep 14 bits and clear variant bits
+    if node is None:
+        node = getnode()
+    # --- 32 + 16 ---   -- 4 --   -- 12 --  -- 2 --   -- 14 ---    48
+    # time_hi_and_mid | version | time_lo | variant | clock_seq | node
+    int_uuid_6 = time_hi_and_mid << 80
+    int_uuid_6 |= time_lo << 64
+    int_uuid_6 |= clock_s << 48
+    int_uuid_6 |= node & 0xffff_ffff_ffff
+    # by construction, the variant and version bits are already cleared
+    int_uuid_6 |= _RFC_4122_VERSION_6_FLAGS
+    return UUID._from_int(int_uuid_6)
+
+def uuid8(a=None, b=None, c=None):
+    """Generate a UUID from three custom blocks.
+
+    * 'a' is the first 48-bit chunk of the UUID (octets 0-5);
+    * 'b' is the mid 12-bit chunk (octets 6-7);
+    * 'c' is the last 62-bit chunk (octets 8-15).
+
+    When a value is not specified, a pseudo-random value is generated.
+    """
+    if a is None:
+        import random
+        a = random.getrandbits(48)
+    if b is None:
+        import random
+        b = random.getrandbits(12)
+    if c is None:
+        import random
+        c = random.getrandbits(62)
+    int_uuid_8 = (a & 0xffff_ffff_ffff) << 80
+    int_uuid_8 |= (b & 0xfff) << 64
+    int_uuid_8 |= c & 0x3fff_ffff_ffff_ffff
+    # by construction, the variant and version bits are already cleared
+    int_uuid_8 |= _RFC_4122_VERSION_8_FLAGS
+    return UUID._from_int(int_uuid_8)
 
 def main():
     """Run the uuid command line interface."""
@@ -726,7 +839,9 @@ def main():
         "uuid1": uuid1,
         "uuid3": uuid3,
         "uuid4": uuid4,
-        "uuid5": uuid5
+        "uuid5": uuid5,
+        "uuid6": uuid6,
+        "uuid8": uuid8,
     }
     uuid_namespace_funcs = ("uuid3", "uuid5")
     namespaces = {
@@ -775,6 +890,11 @@ NAMESPACE_DNS = UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_URL = UUID('6ba7b811-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_OID = UUID('6ba7b812-9dad-11d1-80b4-00c04fd430c8')
 NAMESPACE_X500 = UUID('6ba7b814-9dad-11d1-80b4-00c04fd430c8')
+
+# RFC 9562 Sections 5.9 and 5.10 define the special Nil and Max UUID formats.
+
+NIL = UUID('00000000-0000-0000-0000-000000000000')
+MAX = UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
 
 if __name__ == "__main__":
     main()

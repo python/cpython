@@ -963,7 +963,7 @@ def evaluate_forward_ref(
     owner=None,
     globals=None,
     locals=None,
-    type_params=None,
+    type_params=_sentinel,
     format=annotationlib.Format.VALUE,
     _recursive_guard=frozenset(),
 ):
@@ -1648,9 +1648,13 @@ class _TupleType(_SpecialGenericAlias, _root=True):
 
 
 class _UnionGenericAliasMeta(type):
-    def __instancecheck__(self, inst: type) -> bool:
+    def __instancecheck__(self, inst: object) -> bool:
         warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
         return isinstance(inst, Union)
+
+    def __subclasscheck__(self, inst: type) -> bool:
+        warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
+        return issubclass(inst, Union)
 
     def __eq__(self, other):
         warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
@@ -1868,9 +1872,11 @@ def _allow_reckless_class_checks(depth=2):
 _PROTO_ALLOWLIST = {
     'collections.abc': [
         'Callable', 'Awaitable', 'Iterable', 'Iterator', 'AsyncIterable',
-        'Hashable', 'Sized', 'Container', 'Collection', 'Reversible', 'Buffer',
+        'AsyncIterator', 'Hashable', 'Sized', 'Container', 'Collection',
+        'Reversible', 'Buffer',
     ],
     'contextlib': ['AbstractContextManager', 'AbstractAsyncContextManager'],
+    'os': ['PathLike'],
 }
 
 
@@ -2862,10 +2868,13 @@ def _make_eager_annotate(types):
     checked_types = {key: _type_check(val, f"field {key} annotation must be a type")
                      for key, val in types.items()}
     def annotate(format):
-        if format in (annotationlib.Format.VALUE, annotationlib.Format.FORWARDREF):
-            return checked_types
-        else:
-            return annotationlib.annotations_to_string(types)
+        match format:
+            case annotationlib.Format.VALUE | annotationlib.Format.FORWARDREF:
+                return checked_types
+            case annotationlib.Format.STRING:
+                return annotationlib.annotations_to_string(types)
+            case _:
+                raise NotImplementedError(format)
     return annotate
 
 
@@ -3155,8 +3164,10 @@ class _TypedDictMeta(type):
                     }
             elif format == annotationlib.Format.STRING:
                 own = annotationlib.annotations_to_string(own_annotations)
-            else:
+            elif format in (annotationlib.Format.FORWARDREF, annotationlib.Format.VALUE):
                 own = own_checked_annotations
+            else:
+                raise NotImplementedError(format)
             annos.update(own)
             return annos
 

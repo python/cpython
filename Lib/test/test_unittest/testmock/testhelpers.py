@@ -951,7 +951,7 @@ class SpecSignatureTest(unittest.TestCase):
 
         proxy = Foo()
         autospec = create_autospec(proxy)
-        self.assertFalse(hasattr(autospec, '__name__'))
+        self.assertNotHasAttr(autospec, '__name__')
 
 
     def test_autospec_signature_staticmethod(self):
@@ -1080,7 +1080,7 @@ class SpecSignatureTest(unittest.TestCase):
         class WithMethod:
             a: int
             def b(self) -> int:
-                return 1
+                return 1  # pragma: no cover
 
         for mock in [
             create_autospec(WithMethod, instance=True),

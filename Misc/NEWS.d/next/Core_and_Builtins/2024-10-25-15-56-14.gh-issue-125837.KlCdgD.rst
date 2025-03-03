@@ -1,5 +1,0 @@
-Adds :opcode:`LOAD_SMALL_INT` and :opcode:`LOAD_CONST_IMMORTAL` instructions.
-``LOAD_SMALL_INT`` pushes a small integer equal to the ``oparg`` to the stack.
-``LOAD_CONST_IMMORTAL`` does the same as ``LOAD_CONST`` but is more
-efficient for immortal objects.
-Removes ``RETURN_CONST``  instruction.

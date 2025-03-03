@@ -15,7 +15,7 @@ from unittest.mock import (ANY, call, AsyncMock, patch, MagicMock, Mock,
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class AsyncClass:
@@ -586,16 +586,16 @@ class AsyncMagicMethods(unittest.TestCase):
 
     def test_magicmock_has_async_magic_methods(self):
         m_mock = MagicMock()
-        self.assertTrue(hasattr(m_mock, "__aenter__"))
-        self.assertTrue(hasattr(m_mock, "__aexit__"))
-        self.assertTrue(hasattr(m_mock, "__anext__"))
+        self.assertHasAttr(m_mock, "__aenter__")
+        self.assertHasAttr(m_mock, "__aexit__")
+        self.assertHasAttr(m_mock, "__anext__")
 
     def test_asyncmock_has_sync_magic_methods(self):
         a_mock = AsyncMock()
-        self.assertTrue(hasattr(a_mock, "__enter__"))
-        self.assertTrue(hasattr(a_mock, "__exit__"))
-        self.assertTrue(hasattr(a_mock, "__next__"))
-        self.assertTrue(hasattr(a_mock, "__len__"))
+        self.assertHasAttr(a_mock, "__enter__")
+        self.assertHasAttr(a_mock, "__exit__")
+        self.assertHasAttr(a_mock, "__next__")
+        self.assertHasAttr(a_mock, "__len__")
 
     def test_magic_methods_are_async_functions(self):
         m_mock = MagicMock()

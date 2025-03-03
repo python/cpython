@@ -59,6 +59,8 @@ PACKAGE_TO_FILES = {
         include=["Modules/expat/**"],
         exclude=[
             "Modules/expat/expat_config.h",
+            "Modules/expat/pyexpatns.h",
+            "Modules/_hacl/refresh.sh",
         ]
     ),
     "macholib": PackageFiles(
@@ -216,6 +218,32 @@ def check_sbom_packages(sbom_data: dict[str, typing.Any]) -> None:
             error_if(
                 hacl_expected_rev != version,
                 "HACL* SBOM version doesn't match value in 'Modules/_hacl/refresh.sh'"
+            )
+
+        # libexpat specifies its expected rev in a refresh script.
+        if package["name"] == "libexpat":
+            libexpat_refresh_sh = (CPYTHON_ROOT_DIR / "Modules/expat/refresh.sh").read_text()
+            libexpat_expected_version_match = re.search(
+                r"expected_libexpat_version=\"([0-9]+\.[0-9]+\.[0-9]+)\"",
+                libexpat_refresh_sh
+            )
+            libexpat_expected_sha256_match = re.search(
+                r"expected_libexpat_sha256=\"[a-f0-9]{40}\"",
+                libexpat_refresh_sh
+            )
+            libexpat_expected_version = libexpat_expected_version_match and libexpat_expected_version_match.group(1)
+            libexpat_expected_sha256 = libexpat_expected_sha256_match and libexpat_expected_sha256_match.group(1)
+
+            error_if(
+                libexpat_expected_version != version,
+                "libexpat SBOM version doesn't match value in 'Modules/expat/refresh.sh'"
+            )
+            error_if(
+                package["checksums"] != [{
+                    "algorithm": "SHA256",
+                    "checksumValue": libexpat_expected_sha256
+                }],
+                "libexpat SBOM checksum doesn't match value in 'Modules/expat/refresh.sh'"
             )
 
         # License must be on the approved list for SPDX.

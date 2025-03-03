@@ -1670,7 +1670,7 @@ Replaced opcodes
 |                                    |                                    | for each direction                      |
 |                                    |                                    |                                         |
 +------------------------------------+------------------------------------+-----------------------------------------+
-| | :opcode:`!SETUP_WITH`            | :opcode:`BEFORE_WITH`              | :keyword:`with` block setup             |
+| | :opcode:`!SETUP_WITH`            | :opcode:`!BEFORE_WITH`             | :keyword:`with` block setup             |
 | | :opcode:`!SETUP_ASYNC_WITH`      |                                    |                                         |
 +------------------------------------+------------------------------------+-----------------------------------------+
 
