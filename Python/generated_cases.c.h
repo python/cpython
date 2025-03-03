@@ -8176,14 +8176,14 @@
             INSTRUCTION_STATS(LOAD_ATTR_MODULE);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
-            PyDictKeysObject *mod_keys;
             _PyStackRef attr;
             _PyStackRef null = PyStackRef_NULL;
             /* Skip 1 cache entry */
-            // _CHECK_ATTR_MODULE_PUSH_KEYS
+            // _LOAD_ATTR_MODULE
             {
                 owner = stack_pointer[-1];
                 uint32_t dict_version = read_u32(&this_instr[2].cache);
+                uint16_t index = read_u16(&this_instr[4].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 if (Py_TYPE(owner_o)->tp_getattro != PyModule_Type.tp_getattro) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
@@ -8198,16 +8198,10 @@
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
-                mod_keys = keys;
-            }
-            // _LOAD_ATTR_MODULE_FROM_KEYS
-            {
-                uint16_t index = read_u16(&this_instr[4].cache);
-                assert(mod_keys->dk_kind == DICT_KEYS_UNICODE);
-                assert(index < FT_ATOMIC_LOAD_SSIZE_RELAXED(mod_keys->dk_nentries));
-                PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(mod_keys) + index;
+                assert(keys->dk_kind == DICT_KEYS_UNICODE);
+                assert(index < FT_ATOMIC_LOAD_SSIZE_RELAXED(keys->dk_nentries));
+                PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(keys) + index;
                 PyObject *attr_o = FT_ATOMIC_LOAD_PTR_RELAXED(ep->me_value);
-                // Clear mod_keys from stack in case we need to deopt
                 if (attr_o == NULL) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
@@ -8532,7 +8526,6 @@
             INSTRUCTION_STATS(LOAD_ATTR_WITH_HINT);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
-            PyDictObject *dict;
             _PyStackRef attr;
             _PyStackRef null = PyStackRef_NULL;
             /* Skip 1 cache entry */
@@ -8548,22 +8541,18 @@
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
             }
-            // _CHECK_ATTR_WITH_HINT
+            // _LOAD_ATTR_WITH_HINT
             {
+                uint16_t hint = read_u16(&this_instr[4].cache);
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-                PyDictObject *dict_o = _PyObject_GetManagedDict(owner_o);
-                if (dict_o == NULL) {
+                PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
+                if (dict == NULL) {
                     UPDATE_MISS_STATS(LOAD_ATTR);
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
                     JUMP_TO_PREDICTED(LOAD_ATTR);
                 }
-                assert(PyDict_CheckExact((PyObject *)dict_o));
-                dict = dict_o;
-            }
-            // _LOAD_ATTR_WITH_HINT
-            {
-                uint16_t hint = read_u16(&this_instr[4].cache);
+                assert(PyDict_CheckExact((PyObject *)dict));
                 PyObject *attr_o;
                 if (!LOCK_OBJECT(dict)) {
                     if (true) {
@@ -8610,13 +8599,10 @@
                 STAT_INC(LOAD_ATTR, hit);
                 attr = PyStackRef_FromPyObjectNew(attr_o);
                 UNLOCK_OBJECT(dict);
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyStackRef tmp = owner;
-                owner = attr;
-                stack_pointer[-1] = owner;
-                PyStackRef_CLOSE(tmp);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
                 stack_pointer[-1] = attr;
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_CLOSE(owner);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             /* Skip 5 cache entries */
             // _PUSH_NULL_CONDITIONAL
@@ -9054,7 +9040,6 @@
             next_instr += 5;
             INSTRUCTION_STATS(LOAD_GLOBAL_BUILTIN);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
-            PyDictKeysObject *builtins_keys;
             _PyStackRef res;
             _PyStackRef null = PyStackRef_NULL;
             /* Skip 1 cache entry */
@@ -9075,9 +9060,10 @@
                 }
                 assert(DK_IS_UNICODE(keys));
             }
-            // _GUARD_BUILTINS_VERSION_PUSH_KEYS
+            // _LOAD_GLOBAL_BUILTINS
             {
                 uint16_t version = read_u16(&this_instr[3].cache);
+                uint16_t index = read_u16(&this_instr[4].cache);
                 PyDictObject *dict = (PyDictObject *)BUILTINS();
                 if (!PyDict_CheckExact(dict)) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
@@ -9090,13 +9076,8 @@
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
                     JUMP_TO_PREDICTED(LOAD_GLOBAL);
                 }
-                builtins_keys = keys;
-                assert(DK_IS_UNICODE(builtins_keys));
-            }
-            // _LOAD_GLOBAL_BUILTINS_FROM_KEYS
-            {
-                uint16_t index = read_u16(&this_instr[4].cache);
-                PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(builtins_keys);
+                assert(DK_IS_UNICODE(keys));
+                PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
                 PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
                 if (res_o == NULL) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
@@ -9137,13 +9118,16 @@
             next_instr += 5;
             INSTRUCTION_STATS(LOAD_GLOBAL_MODULE);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
-            PyDictKeysObject *globals_keys;
             _PyStackRef res;
             _PyStackRef null = PyStackRef_NULL;
             /* Skip 1 cache entry */
-            // _GUARD_GLOBALS_VERSION_PUSH_KEYS
+            // _NOP
+            {
+            }
+            // _LOAD_GLOBAL_MODULE
             {
                 uint16_t version = read_u16(&this_instr[2].cache);
+                uint16_t index = read_u16(&this_instr[4].cache);
                 PyDictObject *dict = (PyDictObject *)GLOBALS();
                 if (!PyDict_CheckExact(dict)) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
@@ -9156,14 +9140,9 @@
                     assert(_PyOpcode_Deopt[opcode] == (LOAD_GLOBAL));
                     JUMP_TO_PREDICTED(LOAD_GLOBAL);
                 }
-                globals_keys = keys;
-                assert(DK_IS_UNICODE(globals_keys));
-            }
-            /* Skip 1 cache entry */
-            // _LOAD_GLOBAL_MODULE_FROM_KEYS
-            {
-                uint16_t index = read_u16(&this_instr[4].cache);
-                PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(globals_keys);
+                assert(DK_IS_UNICODE(keys));
+                PyDictUnicodeEntry *entries = DK_UNICODE_ENTRIES(keys);
+                assert(index < DK_SIZE(keys));
                 PyObject *res_o = FT_ATOMIC_LOAD_PTR_RELAXED(entries[index].me_value);
                 if (res_o == NULL) {
                     UPDATE_MISS_STATS(LOAD_GLOBAL);
