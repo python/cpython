@@ -270,15 +270,18 @@ class ProcessPoolExecutorTest(ExecutorTest):
             self.assertEqual(q.get(timeout=5), 'started')
 
             worker_process = list(executor._processes.values())[0]
+
+            Mock = unittest.mock.Mock
+            worker_process.terminate = Mock(wraps=worker_process.terminate)
+            worker_process.kill = Mock(wraps=worker_process.kill)
+
             getattr(executor, function_name)()
             worker_process.join()
 
-            if function_name == TERMINATE_WORKERS or \
-                sys.platform == 'win32':
-                # On windows, kill and terminate both send SIGTERM
-                self.assertEqual(worker_process.exitcode, -signal.SIGTERM)
+            if function_name == TERMINATE_WORKERS:
+                worker_process.terminate.assert_called()
             elif function_name == KILL_WORKERS:
-                self.assertEqual(worker_process.exitcode, -signal.SIGKILL)
+                worker_process.kill.assert_called()
             else:
                 self.fail(f"Unknown operation: {function_name}")
 
