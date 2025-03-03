@@ -1368,7 +1368,6 @@ These can be used as types in annotations. They all support subscription using
       T1 = Annotated[int, ValueRange(-10, 5)]
       T2 = Annotated[T1, ValueRange(-20, 3)]
 
-   ``Annotated`` must be subscripted with at least two arguments.
    The first argument to ``Annotated`` must be a valid type. Multiple metadata
    elements can be supplied as ``Annotated`` supports variadic arguments. The
    order of the metadata elements is preserved and matters for equality checks::
@@ -1418,7 +1417,7 @@ These can be used as types in annotations. They all support subscription using
 
         type Variadic[*Ts] = Annotated[*Ts, Ann1] = Annotated[T1, T2, T3, ..., Ann1]  # NOT valid
 
-   where ``T1``, ``T2``,... are :class:`TypeVars <TypeVar>`. This is invalid as
+   where ``T1``, ``T2``, ... are :class:`TypeVars <TypeVar>`. This is invalid as
    only one type should be passed to Annotated.
 
    By default, :func:`get_type_hints` strips the metadata from annotations.
