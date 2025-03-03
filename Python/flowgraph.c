@@ -1485,12 +1485,12 @@ fold_tuple_of_constants(basicblock *bb, int i, PyObject *consts, PyObject *const
 /* Replace:
     BUILD_LIST 0
     LOAD_CONST c1
-    LIST_APPEND
+    LIST_APPEND 1
     LOAD_CONST c2
-    LIST_APPEND
+    LIST_APPEND 1
     ...
     LOAD_CONST cN
-    LIST_APPEND
+    LIST_APPEND 1
     CALL_INTRINSIC_1 INTRINSIC_LIST_TO_TUPLE
    with:
     LOAD_CONST (c1, c2, ... cN)
