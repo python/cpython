@@ -245,6 +245,9 @@ access further features, you have to do this yourself:
    .. versionadded:: 3.14
       Added the *mode* argument.
 
+   .. versionchanged:: 3.14
+      *skip* will be ignored if inline breakpoints like :func:`breakpoint` or :func:`set_trace` are used.
+
    .. method:: run(statement, globals=None, locals=None)
                runeval(expression, globals=None, locals=None)
                runcall(function, *args, **kwds)
