@@ -1228,8 +1228,7 @@ These can be used as types in annotations. They all support subscription using
    is allowed as type argument to ``Literal[...]``, but type checkers may
    impose restrictions. See :pep:`586` for more details about literal types.
 
-   ``Literal`` is very similar to :class:`Union`, the main difference is that its
-   arguments are literal values instead of types:
+   Additional details:
 
    * The arguments must be literal values and there must be at least one.
 
