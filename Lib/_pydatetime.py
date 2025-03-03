@@ -1991,7 +1991,8 @@ class datetime(date):
         def local(u):
             y, m, d, hh, mm, ss = _time.localtime(u)[:6]
             try:
-                return (datetime(y, m, d, hh, mm, ss) - epoch) // timedelta(0, 1)
+                return ((datetime(y, m, d, hh, mm, ss) - epoch) //
+                        timedelta(0, 1))
             except (ValueError, OverflowError):
                 return u
 
