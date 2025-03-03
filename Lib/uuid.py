@@ -1,8 +1,12 @@
 r"""UUID objects (universally unique identifiers) according to RFC 4122/9562.
 
-This module provides immutable UUID objects (class UUID) and the functions
-uuid{N}() for generating UUIDs version N as specified in RFC 4122/9562 for
-N = 1, 3, 4, 5, 6, 7, and 8.
+This module provides immutable UUID objects (class UUID) and functions for
+generating UUIDs corresponding to a specific UUID version as specified in
+RFC 4122/9562, e.g., uuid1() for UUID version 1, uuid3() for UUID version 3,
+and so on.
+
+Note that UUID version 2 is deliberately omitted as it exceeds the scope
+of the RFC.
 
 If all you want is a unique ID, you should probably call uuid1() or uuid4().
 Note that uuid1() may compromise privacy since it creates a UUID containing
