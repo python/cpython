@@ -296,7 +296,10 @@ struct _is {
 
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
     uint64_t next_stackref;
-    _Py_hashtable_t *stackref_debug_table;
+    _Py_hashtable_t *open_stackrefs_table;
+#  ifdef Py_STACKREF_CLOSE_DEBUG
+    _Py_hashtable_t *closed_stackrefs_table;
+#  endif
 #endif
 };
 

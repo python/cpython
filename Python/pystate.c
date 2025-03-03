@@ -676,13 +676,22 @@ init_interpreter(PyInterpreterState *interp,
         .malloc = malloc,
         .free = free,
     };
-    interp->stackref_debug_table = _Py_hashtable_new_full(
+    interp->open_stackrefs_table = _Py_hashtable_new_full(
         _Py_hashtable_hash_ptr,
         _Py_hashtable_compare_direct,
         NULL,
         NULL,
         &alloc
     );
+#  ifdef Py_STACKREF_CLOSE_DEBUG
+    interp->closed_stackrefs_table = _Py_hashtable_new_full(
+        _Py_hashtable_hash_ptr,
+        _Py_hashtable_compare_direct,
+        NULL,
+        NULL,
+        &alloc
+    );
+#  endif
     _Py_stackref_associate(interp, Py_None, PyStackRef_None);
     _Py_stackref_associate(interp, Py_False, PyStackRef_False);
     _Py_stackref_associate(interp, Py_True, PyStackRef_True);
@@ -901,9 +910,13 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     Py_CLEAR(interp->builtins);
 
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
+#  ifdef Py_STACKREF_CLOSE_DEBUG
+    _Py_hashtable_destroy(interp->closed_stackrefs_table);
+    interp->closed_stackrefs_table = NULL;
+#  endif
     _Py_stackref_report_leaks(interp);
-    _Py_hashtable_destroy(interp->stackref_debug_table);
-    interp->stackref_debug_table = NULL;
+    _Py_hashtable_destroy(interp->open_stackrefs_table);
+    interp->open_stackrefs_table = NULL;
 #endif
 
     if (tstate->interp == interp) {
