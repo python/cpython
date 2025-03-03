@@ -1374,7 +1374,7 @@ These can be used as types in annotations. They all support subscription using
 
       @dataclass
       class ctype:
-         kind: str
+           kind: str
 
       Annotated[int, ValueRange(3, 10), ctype("char")]
 
@@ -1390,13 +1390,13 @@ These can be used as types in annotations. They all support subscription using
    starts with the innermost annotation::
 
       assert Annotated[Annotated[int, ValueRange(3, 10)], ctype("char")] == Annotated[
-         int, ValueRange(3, 10), ctype("char")
+          int, ValueRange(3, 10), ctype("char")
       ]
 
    Duplicated metadata elements are not removed::
 
       assert Annotated[int, ValueRange(3, 10)] != Annotated[
-         int, ValueRange(3, 10), ValueRange(3, 10)
+          int, ValueRange(3, 10), ValueRange(3, 10)
       ]
 
    ``Annotated`` can be used with nested and generic aliases:
