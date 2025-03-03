@@ -1,4 +1,3 @@
-from Lib import annotationlib
 from annotationlib import Format, ForwardRef
 import asyncio
 import builtins
@@ -4594,7 +4593,7 @@ class TestSignatureObject(unittest.TestCase):
 
         def foo(x: undef):
             pass
-        sig = inspect.signature(foo, annotation_format=annotationlib.Format.FORWARDREF)
+        sig = inspect.signature(foo, annotation_format=Format.FORWARDREF)
         self.assertEqual(str(sig), '(x: undef)')
 
     def test_signature_str_positional_only(self):

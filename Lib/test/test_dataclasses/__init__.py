@@ -2344,6 +2344,13 @@ class TestDocString(unittest.TestCase):
 
         self.assertDocStrEqual(C.__doc__, "C(x:collections.deque=<factory>)")
 
+    def test_docstring_undefined_name(self):
+        @dataclass
+        class C:
+            x: undef
+
+        self.assertDocStrEqual(C.__doc__, "C(x:undef)")
+
     def test_docstring_with_unsolvable_forward_ref_in_init(self):
         # See: https://github.com/python/cpython/issues/128184
         ns = {}
@@ -2360,7 +2367,7 @@ class TestDocString(unittest.TestCase):
             ns,
         )
 
-        self.assertDocStrEqual(ns['C'].__doc__, "C(x:'X',num:'int')")
+        self.assertDocStrEqual(ns['C'].__doc__, "C(x:X,num:int)")
 
     def test_docstring_with_no_signature(self):
         # See https://github.com/python/cpython/issues/103449
