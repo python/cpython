@@ -1,3 +1,4 @@
+from Lib import annotationlib
 from annotationlib import Format, ForwardRef
 import asyncio
 import builtins
@@ -1731,6 +1732,10 @@ class TestFormatAnnotation(unittest.TestCase):
         from test.typinganndata.ann_module9 import ann, ann1
         self.assertEqual(inspect.formatannotation(ann), 'Union[List[str], int]')
         self.assertEqual(inspect.formatannotation(ann1), 'Union[List[testModule.typing.A], int]')
+
+    def test_forwardref(self):
+        fwdref = ForwardRef('fwdref')
+        self.assertEqual(inspect.formatannotation(fwdref), 'fwdref')
 
 
 class TestIsMethodDescriptor(unittest.TestCase):
@@ -4565,6 +4570,11 @@ class TestSignatureObject(unittest.TestCase):
                          '(a: list[str]) -> Tuple[str, float]')
         self.assertEqual(str(inspect.signature(foo)),
                          inspect.signature(foo).format())
+
+        def foo(x: undef):
+            pass
+        sig = inspect.signature(foo, annotation_format=annotationlib.Format.FORWARDREF)
+        self.assertEqual(str(sig), '(x: undef)')
 
     def test_signature_str_positional_only(self):
         P = inspect.Parameter
