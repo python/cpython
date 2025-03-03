@@ -110,10 +110,6 @@ class ThroughOpenSSLAPIMixin(CreatorMixin, DigestMixin):
         return _hashlib.hmac_digest(key, msg, digest=digestmod)
 
 
-class ThroughBuiltinAPIMixin(ThroughModuleAPIMixin, BuiltinModuleMixin):
-    """Mixin delegating to _hmac.new() and _hmac.digest()."""
-
-
 class CheckerMixin:
     """Mixin for checking HMAC objects (pure Python, OpenSSL or built-in)."""
 
