@@ -108,7 +108,7 @@ This example shows how these formats behave:
      ...
    NameError: name 'Undefined' is not defined
    >>> get_annotations(func, format=Format.FORWARDREF)
-   {'arg': ForwardRef('Undefined')}
+   {'arg': ForwardRef('Undefined', owner=<function func at 0x...>)}
    >>> get_annotations(func, format=Format.STRING)
    {'arg': 'Undefined'}
 
