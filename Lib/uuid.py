@@ -5,7 +5,7 @@ generating UUIDs corresponding to a specific UUID version as specified in
 RFC 4122/9562, e.g., uuid1() for UUID version 1, uuid3() for UUID version 3,
 and so on.
 
-Note that UUID version 2 is deliberately omitted as it exceeds the scope
+Note that UUID version 2 is deliberately omitted as it is outside the scope
 of the RFC.
 
 If all you want is a unique ID, you should probably call uuid1() or uuid4().

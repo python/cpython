@@ -14,7 +14,7 @@ This module provides immutable :class:`UUID` objects (the :class:`UUID` class) a
 the :ref:`functions <uuid-factory-functions>` for generating UUIDs corresponding
 to a specific UUID version as specified in :rfc:`9562` (which supersedes :rfc:`4122`),
 e.g., :func:`uuid1` for UUID version 1, :func:`uuid3` for UUID version 3, and so on.
-Note that UUID version 2 is deliberately omitted as it exceeds the scope of the RFC.
+Note that UUID version 2 is deliberately omitted as it is outside the scope of the RFC.
 
 If all you want is a unique ID, you should probably call :func:`uuid1` or
 :func:`uuid4`.  Note that :func:`uuid1` may compromise privacy since it creates
