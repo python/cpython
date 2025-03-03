@@ -213,22 +213,8 @@
             JitOptSymbol *res;
             value = stack_pointer[-1];
             if (!optimize_to_bool(this_instr, ctx, value, &res)) {
-                res = sym_new_type(ctx, &PyBool_Type);
+                res = sym_new_truthiness(ctx, value, true);
                 sym_set_type(value, &PyUnicode_Type);
-            }
-            if (!sym_is_const(value)) {
-                assert(sym_matches_type(value, &PyUnicode_Type));
-                int next_opcode = (this_instr + 1)->opcode;
-                assert(next_opcode == _CHECK_VALIDITY_AND_SET_IP);
-                next_opcode = (this_instr + 2)->opcode;
-                // If the next uop is a guard, we can narrow value. However, we
-                // *can't* narrow res, since that would cause the guard to be
-                // removed and the narrowed value to be invalid:
-                if (next_opcode == _GUARD_IS_FALSE_POP) {
-                    stack_pointer[-1] = res;
-                    sym_set_const(value, Py_GetConstant(Py_CONSTANT_EMPTY_STR));
-                    res = sym_new_type(ctx, &PyBool_Type);
-                }
             }
             stack_pointer[-1] = res;
             break;
