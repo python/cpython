@@ -727,7 +727,7 @@ class FindTestCase(unittest.TestCase):
         for key in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
             self.env.unset(key)
 
-    def createMo(self, lang):
+    def create_mo_file(self, lang):
         locale_dir = os.path.join(self.tempdir, "locale")
         mofile_dir = os.path.join(locale_dir, lang, "LC_MESSAGES")
         os.makedirs(mofile_dir)
@@ -741,7 +741,7 @@ class FindTestCase(unittest.TestCase):
         # when languages are not supplied
         self.setUp()
         self.env.set('LANGUAGE', 'ga_IE')
-        mo_file =self.createMo("ga_IE")
+        mo_file = self.createMo("ga_IE")
 
         result = gettext.find("mofile",
                               localedir=os.path.join(self.tempdir, "locale"))
@@ -782,7 +782,7 @@ class FindTestCase(unittest.TestCase):
                               languages=["ga_IE", "es_ES"], all=True)
         self.assertEqual(sorted(result), sorted(paths))
 
-    def test_find_dedupelication(self):
+    def test_find_deduplication(self):
         # test that find removes duplicate languages
         self.setUp()
         result = gettext.find("foo", languages=['ga_IE', 'ga_IE'])
