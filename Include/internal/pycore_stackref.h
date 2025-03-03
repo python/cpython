@@ -5,12 +5,12 @@ extern "C" {
 #endif
 
 // Define this to get precise tracking of stackrefs.
-#define Py_STACKREF_DEBUG 1
+// #define Py_STACKREF_DEBUG 1
 
 // Define this to get precise tracking of closed stackrefs.
 // This will use unbounded memory, as it can only grow.
 // Use this to track double closes in short-lived programs
-#define Py_STACKREF_CLOSE_DEBUG 1
+// #define Py_STACKREF_CLOSE_DEBUG 1
 
 #ifndef Py_BUILD_CORE
 #  error "this header requires Py_BUILD_CORE define"
