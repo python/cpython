@@ -609,7 +609,7 @@ class Executor(object):
         if timeout is not None:
             end_time = timeout + time.monotonic()
 
-        zipped_iterables = iter(zip(*iterables))
+        zipped_iterables = zip(*iterables)
         if buffersize:
             fs = collections.deque(
                 self.submit(fn, *args) for args in islice(zipped_iterables, buffersize)
