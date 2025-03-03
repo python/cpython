@@ -10,10 +10,11 @@
 
 --------------
 
-This module provides immutable :class:`UUID` objects (the :class:`UUID` class)
-and the functions :func:`uuid1`, :func:`uuid3`, :func:`uuid4`, :func:`uuid5`,
-:func:`uuid6`, :func:`uuid7`, and :func:`uuid8` for generating UUIDs version 1,
-3, 4, 5, 6, 7, and 8 as specified in :rfc:`9562` (which supersedes :rfc:`4122`).
+This module provides immutable :class:`UUID` objects (the :class:`UUID` class) and
+the :ref:`functions <uuid-constructor-functions>` for generating UUIDs corresponding
+to a specific UUID version as specified in :rfc:`9562` (which supersedes :rfc:`4122`),
+e.g., :func:`uuid1` for UUID version 1, :func:`uuid3` for UUID version 3, and so on.
+Note that UUID version 2 is deliberately omitted as it is outside the scope of the RFC.
 
 If all you want is a unique ID, you should probably call :func:`uuid1` or
 :func:`uuid4`.  Note that :func:`uuid1` may compromise privacy since it creates
@@ -184,6 +185,8 @@ The :mod:`uuid` module defines the following functions:
       administered MAC addresses, since the former are guaranteed to be
       globally unique, while the latter are not.
 
+
+.. _uuid-constructor-functions:
 
 .. function:: uuid1(node=None, clock_seq=None)
 
