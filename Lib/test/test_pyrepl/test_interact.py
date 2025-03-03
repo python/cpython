@@ -53,6 +53,19 @@ class TestSimpleInteract(unittest.TestCase):
         self.assertFalse(more)
         self.assertEqual(f.getvalue(), "1\n")
 
+    @force_not_colorized
+    def test_multiple_statements_fail_early(self):
+        console = InteractiveColoredConsole()
+        code = dedent("""\
+        raise Exception('foobar')
+        print('spam&eggs')
+        """)
+        f = io.StringIO()
+        with contextlib.redirect_stderr(f):
+            console.runsource(code)
+        self.assertIn('Exception: foobar', f.getvalue())
+        self.assertNotIn('spam&eggs', f.getvalue())
+
     def test_empty(self):
         namespace = {}
         code = ""
