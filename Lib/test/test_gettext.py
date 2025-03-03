@@ -733,7 +733,7 @@ class FindTestCase(unittest.TestCase):
         os.makedirs(mofile_dir)
         mo_file = os.path.join(mofile_dir, "mofile.mo")
         with open(mo_file, "wb") as f:
-            f.write(b"\xDE\x12\x04\x95")
+            f.write(GNU_MO_DATA)
         return mo_file
 
     def test_find_with_env_vars(self):
