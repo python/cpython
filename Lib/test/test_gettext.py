@@ -739,9 +739,8 @@ class FindTestCase(unittest.TestCase):
     def test_find_with_env_vars(self):
         # test that find correctly finds the environment variable LANGUAGE
         # when languages are not supplied
-        self.setUp()
         self.env.set('LANGUAGE', 'ga_IE')
-        mo_file = self.createMo("ga_IE")
+        mo_file = self.create_mo_file("ga_IE")
 
         result = gettext.find("mofile",
                               localedir=os.path.join(self.tempdir, "locale"))
@@ -749,9 +748,8 @@ class FindTestCase(unittest.TestCase):
 
     def test_find_with_lanuages(self):
         # test that passed languages are used
-        self.setUp()
         self.env.set('LANGUAGE', 'pt_BR')
-        mo_file = self.createMo("ga_IE")
+        mo_file = self.create_mo_file("ga_IE")
 
         result = gettext.find("mofile",
                               localedir=os.path.join(self.tempdir, "locale"),
@@ -760,23 +758,20 @@ class FindTestCase(unittest.TestCase):
 
     def test_find_with_no_lang(self):
         # no language can be found
-        self.setUp()
         result = gettext.find('foo')
         self.assertEqual(result, None)
 
     def test_find_with_c(self):
         # 'C' is already in languages
-        self.setUp()
         self.env.set('LANGUAGE', 'C')
         result = gettext.find('foo')
         self.assertEqual(result, None)
 
     def test_find_all(self):
         # test that all are returned when all is set
-        self.setUp()
         paths = []
         for lang in ["ga_IE", "es_ES"]:
-            paths.append(self.createMo(lang))
+            paths.append(self.create_mo_file(lang))
         result = gettext.find('mofile',
                               localedir=os.path.join(self.tempdir, "locale"),
                               languages=["ga_IE", "es_ES"], all=True)
@@ -784,7 +779,6 @@ class FindTestCase(unittest.TestCase):
 
     def test_find_deduplication(self):
         # test that find removes duplicate languages
-        self.setUp()
         result = gettext.find("foo", languages=['ga_IE', 'ga_IE'])
         self.assertEqual(result, None)
 
