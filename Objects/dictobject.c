@@ -3254,7 +3254,8 @@ dict_dealloc(PyObject *self)
     Py_TRASHCAN_BEGIN(mp, dict_dealloc)
     if (values != NULL) {
         if (values->embedded == 0) {
-            for (i = 0, n = mp->ma_keys->dk_nentries; i < n; i++) {
+            n = FT_ATOMIC_LOAD_SSIZE_RELAXED(mp->ma_keys->dk_nentries);
+            for (i = 0; i < n; i++) {
                 Py_XDECREF(values->values[i]);
             }
             free_values(values, false);
