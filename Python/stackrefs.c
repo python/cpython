@@ -105,7 +105,7 @@ _Py_stackref_record_borrow(_PyStackRef ref, const char *filename, int linenumber
     PyInterpreterState *interp = PyInterpreterState_Get();
     TableEntry *entry = _Py_hashtable_get(interp->stackref_debug_table, (void *)ref.index);
     if (entry == NULL) {
-        _Py_FatalErrorFormat(__func__, "Invalid StackRef with ID %" PRIu64 "\n", (void *)ref.index);
+        _Py_FatalErrorFormat(__func__, "Invalid StackRef with ID %" PRIu64 " at %s:%d\n", (void *)ref.index, filename, linenumber);
     }
     entry->filename_borrow = filename;
     entry->linenumber_borrow = linenumber;
