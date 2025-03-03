@@ -228,7 +228,7 @@ class BasicTest(BaseTest):
         builder = venv.EnvBuilder()
         bin_path = 'bin'
         python_exe = os.path.split(sys.executable)[1]
-        expected_exe = os.path.basename(sys.executable)
+        expected_exe = os.path.basename(sys._base_executable)
 
         if sys.platform == 'win32':
             bin_path = 'Scripts'
@@ -754,7 +754,8 @@ class BasicTest(BaseTest):
         subprocess.check_call(cmd, env=child_env)
         # Now check the venv created from the non-installed python has
         # correct zip path in pythonpath.
-        cmd = [os.path.join(self.env_dir, self.bindir, python_exe), '-S', '-c', 'import sys; print(sys.path)']
+        target_python = os.path.join(self.env_dir, self.bindir, python_exe)
+        cmd = [target_python, '-S', '-c', 'import sys; print(sys.path)']
         out, err = check_output(cmd)
         self.assertTrue(zip_landmark.encode() in out)
 
