@@ -17,9 +17,10 @@
 #  define Py_BUILD_CORE_MODULE 1
 #endif
 
-#include <stdbool.h>
 #include "Python.h"
 #include "pycore_strhex.h"       // _Py_strhex()
+
+#include <stdbool.h>
 
 #include "../hashlib.h"
 #include "blake2module.h"
