@@ -867,7 +867,6 @@ format_string_internal(PyObject *value, const InternalFormatSpec *format,
     int result = -1;
     Py_UCS4 maxchar;
 
-    assert(PyUnicode_IS_READY(value));
     len = PyUnicode_GET_LENGTH(value);
 
     /* sign is not allowed on strings */
