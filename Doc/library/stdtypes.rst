@@ -5464,6 +5464,11 @@ The user-exposed type for the union object can be accessed from
 
 .. versionadded:: 3.10
 
+.. versionchanged:: 3.14
+
+   Union objects are now instances of :class:`typing.Union`. Previously, they were instances
+   of :class:`types.UnionType`, which remains an alias for :class:`typing.Union`.
+
 
 .. _typesother:
 
