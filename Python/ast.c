@@ -43,7 +43,8 @@ static int validate_typeparam(type_param_ty);
     if (node->lineno < -1 || node->end_lineno < -1 || \
         node->col_offset < -1 || node->end_col_offset < -1) { \
         PyErr_Format(PyExc_ValueError, \
-                     "AST node has invalid location (%d, %d, %d, %d)", \
+                     "AST node has invalid location: lineno=%d, end_lineno=%d, " \
+                     "col_offset=%d, end_col_offset=%d", \
                      node->lineno, node->end_lineno, \
                      node->col_offset, node->end_col_offset); \
         return 0; \
