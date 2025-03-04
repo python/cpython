@@ -110,7 +110,7 @@ _PySys_GetRequiredAttrString(const char *name)
 }
 
 int
-_PySys_GetOptionalAttr(PyObject *name, PyObject **value)
+PySys_GetAttr(PyObject *name, PyObject **value)
 {
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
@@ -129,7 +129,7 @@ _PySys_GetOptionalAttr(PyObject *name, PyObject **value)
 }
 
 int
-_PySys_GetOptionalAttrString(const char *name, PyObject **value)
+PySys_GetAttrString(const char *name, PyObject **value)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *sysdict = tstate->interp->sysdict;
@@ -2873,7 +2873,7 @@ static PyObject *
 get_warnoptions(PyThreadState *tstate)
 {
     PyObject *warnoptions;
-    if (_PySys_GetOptionalAttr(&_Py_ID(warnoptions), &warnoptions) < 0) {
+    if (PySys_GetAttr(&_Py_ID(warnoptions), &warnoptions) < 0) {
         return NULL;
     }
     if (warnoptions == NULL || !PyList_Check(warnoptions)) {
@@ -2910,7 +2910,7 @@ PySys_ResetWarnOptions(void)
     }
 
     PyObject *warnoptions;
-    if (_PySys_GetOptionalAttr(&_Py_ID(warnoptions), &warnoptions) < 0) {
+    if (PySys_GetAttr(&_Py_ID(warnoptions), &warnoptions) < 0) {
         PyErr_Clear();
         return;
     }
@@ -2974,7 +2974,7 @@ PyAPI_FUNC(int)
 PySys_HasWarnOptions(void)
 {
     PyObject *warnoptions;
-    if (_PySys_GetOptionalAttr(&_Py_ID(warnoptions), &warnoptions) < 0) {
+    if (PySys_GetAttr(&_Py_ID(warnoptions), &warnoptions) < 0) {
         PyErr_Clear();
         return 0;
     }
@@ -2988,7 +2988,7 @@ static PyObject *
 get_xoptions(PyThreadState *tstate)
 {
     PyObject *xoptions;
-    if (_PySys_GetOptionalAttr(&_Py_ID(_xoptions), &xoptions) < 0) {
+    if (PySys_GetAttr(&_Py_ID(_xoptions), &xoptions) < 0) {
         return NULL;
     }
     if (xoptions == NULL || !PyDict_Check(xoptions)) {
@@ -4040,7 +4040,7 @@ PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
             }
 
             PyObject *sys_path;
-            if (_PySys_GetOptionalAttr(&_Py_ID(path), &sys_path) < 0) {
+            if (PySys_GetAttr(&_Py_ID(path), &sys_path) < 0) {
                 Py_FatalError("can't get sys.path");
             }
             else if (sys_path != NULL) {
