@@ -1832,6 +1832,24 @@ class ZipFile:
         arcname = pathsep.join(x for x in arcname if x)
         return arcname
 
+    def _apply_permissions(self, member, path, mode):
+        """
+        Apply ZipFile permissions to a file using
+        """
+        if mode == PreserveMode.NONE:
+            return
+
+        # Ignore permissions if the archive was created on Windows
+        if member.create_system == 0:
+            return
+
+        mask = {
+            PreserveMode.SAFE: 0o777,
+            PreserveMode.ALL: 0xFFFF,
+        }
+        new_mode = (member.external_attr >> 16) & mask[mode]
+        os.chmod(path, new_mode)
+
     def _extract_member(self, member, targetpath, pwd,
                         preserve_permissions=PreserveMode.NONE):
         """Extract the ZipInfo object 'member' to a physical
@@ -1880,17 +1898,7 @@ class ZipFile:
              open(targetpath, "wb") as target:
             shutil.copyfileobj(source, target)
 
-        # Ignore permissions if the archive was created on Windows
-        if member.create_system == 0 or preserve_permissions == PreserveMode.NONE:
-            return targetpath
-
-        if preserve_permissions == PreserveMode.SAFE:
-            mode = (member.external_attr >> 16) & 0o777
-        elif preserve_permissions == PreserveMode.ALL:
-            mode = (member.external_attr >> 16) & 0xFFFF
-
-        os.chmod(targetpath, mode)
-
+        self._apply_permissions(member, targetpath, preserve_permissions)
         return targetpath
 
     def _writecheck(self, zinfo):
