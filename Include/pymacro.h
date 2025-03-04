@@ -29,8 +29,10 @@
 // checking would be great before we add it to the default build.
 // Standards/compiler support:
 // - `alignas` is a keyword in C23 and C++11.
-// - `_Alignas` is a keyword in C11, and a common C compiler extension
+// - `_Alignas` is a keyword in C11
+// - MSVC has __declspec(align)
 // - GCC & clang has __attribute__((aligned))
+// - `_Alignas` is common C compiler extension
 // Older compilers may name it differently; to allow compilation on such
 // unsupported platforms, we don't redefine _Py_ALIGN_AS if it's already
 // defined. Note that defining it wrong (including defining it to nothing) will
@@ -46,6 +48,10 @@
 #           endif
 #       elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
 #           define _Py_ALIGN_AS(V) alignas(V)
+#       elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#           define _Py_ALIGN_AS(V) _Alignas(V)
+#       elif defined(_MSC_VER)
+#           define _Py_ALIGN_AS(V) __declspec(align(V))
 #       else
 #           define _Py_ALIGN_AS(V) _Alignas(V)
 #       endif
