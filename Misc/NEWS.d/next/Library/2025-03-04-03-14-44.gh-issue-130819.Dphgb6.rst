@@ -1,0 +1,3 @@
+Emit ``mode``, ``uname`` and ``gname`` fields for long paths in
+:mod:`tarfile` archives, providing better bit-for-bit compatibility with GNU
+``tar(1)``.
