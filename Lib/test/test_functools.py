@@ -3386,7 +3386,6 @@ class TestSingleDispatch(unittest.TestCase):
                 pass
 
 
-
 class CachedCostItem:
     _cost = 1
 
