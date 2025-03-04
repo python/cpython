@@ -505,6 +505,62 @@ After the last `DEOPT_IF` has passed, a hit should be recorded with
 `STAT_INC(BASE_INSTRUCTION, hit)`.
 After an optimization has been deferred in the adaptive instruction,
 that should be recorded with `STAT_INC(BASE_INSTRUCTION, deferred)`.
+## How to add a new bytecode specialization
+
+Assuming you found an instruction that serves as a good specialization candidate. 
+Let's use the example of [`CONTAINS_OP`](../Doc/library/dis.rst#contains_op):
+
+1. Update below in [Python/bytecodes.c](../Python/bytecodes.c)
+
+- Convert `CONTAINS_OP` to a micro-operation (uop) by renaming
+     it to `_CONTAINS_OP` and changing the instruction definition
+     from `inst` to `op`.
+
+  ```c
+        // Before
+        inst(CONTAINS_OP, ...);
+
+        // After
+        op(_CONTAINS_OP, ...);
+  ```
+
+- Add a uop that calls the specializing function `_SPECIALIZE_CONTAINS_OP`. 
+  For example.
+
+  ```c
+        specializing op(_SPECIALIZE_CONTAINS_OP, (counter/1, left, right -- left, right)) {
+            #if ENABLE_SPECIALIZATION
+            if (ADAPTIVE_COUNTER_IS_ZERO(counter)) {
+                next_instr = this_instr;
+                _Py_Specialize_ContainsOp(right, next_instr);
+                DISPATCH_SAME_OPARG();
+            }
+            STAT_INC(CONTAINS_OP, deferred);
+            DECREMENT_ADAPTIVE_COUNTER(this_instr[1].cache);
+            #endif  /* ENABLE_SPECIALIZATION */
+        }
+  ```
+
+- The original `CONTAINS_OP` is now a new macro consisting of
+      `_SPECIALIZE_CONTAINS_OP` and `_CONTAINS_OP`.
+
+2. Define the cache structure in [Include/internal/pycore_code.h](../Include/internal/pycore_code.h),
+at the very least, a 16-bit counter is needed.
+
+    ```c
+        typedef struct {
+            uint16_t counter;
+        } _PyContainsOpCache;
+    ```      
+
+3. Write the specializing function itself in [Python/specialize.c ](../Python/specialize.c). 
+   Refer to any other function in that file for the format.
+4. Remember to update operation stats by calling add_stat_dict in 
+   [Python/specialize.c ](../Python/specialize.c).
+5. Add the cache layout in [Lib/opcode.py](../Lib/opcode.py) so that Python's 
+   dis module will know how to represent it properly.
+6. Bump magic number in  [Include/core/pycore_magic_number.h](../Include/internal/pycore_magic_number.h).
+7. Run ``make regen-all`` on `*nix` or `build.bat --regen` on Windows.
 
 
 Additional resources
