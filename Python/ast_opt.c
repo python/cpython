@@ -12,7 +12,7 @@ typedef struct {
     bool in_finally;
     bool in_funcdef;
     bool in_loop;
-} ControlFlowInFinallyState;
+} ControlFlowInFinallyContext;
 
 typedef struct {
     PyObject *filename;
@@ -23,7 +23,7 @@ typedef struct {
     int recursion_depth;            /* current recursion depth */
     int recursion_limit;            /* recursion limit */
 
-    ControlFlowInFinallyState cf_finally;
+    ControlFlowInFinallyContext cf_finally;
 } _PyASTOptimizeState;
 
 #define ENTER_RECURSIVE(ST) \
@@ -41,21 +41,20 @@ typedef struct {
     } while(0)
 
 
-static ControlFlowInFinallyState
+static ControlFlowInFinallyContext
 overwrite_state(_PyASTOptimizeState *state, bool finally, bool funcdef, bool loop)
 {
-    ControlFlowInFinallyState saved = state->cf_finally;
+    ControlFlowInFinallyContext saved = state->cf_finally;
     state->cf_finally.in_finally = finally;
     state->cf_finally.in_funcdef = funcdef;
     state->cf_finally.in_loop = loop;
     return saved;
 }
 
-static int
-restore_state(_PyASTOptimizeState *state, ControlFlowInFinallyState *saved)
+static void
+restore_state(_PyASTOptimizeState *state, ControlFlowInFinallyContext *saved)
 {
     state->cf_finally = *saved;
-    return 1;
 }
 
 static int
@@ -94,17 +93,14 @@ before_loop_exit(_PyASTOptimizeState *state, stmt_ty node_, const char *kw)
     return 1;
 }
 
-#define RESTORE_STATE_CHECKED(S, CFS) \
-    if (!restore_state((S), (CFS))) { \
-        return 0; \
-    }
+#define RESTORE_STATE(S, CFS) restore_state((S), (CFS))
 
 #define BEFORE_FINALLY(S) overwrite_state((S), true, false, false)
-#define AFTER_FINALLY(S, CFS) RESTORE_STATE_CHECKED((S), (CFS))
+#define AFTER_FINALLY(S, CFS) RESTORE_STATE((S), (CFS))
 #define BEFORE_FUNC_BODY(S) overwrite_state((S), false, true, false)
-#define AFTER_FUNC_BODY(S, CFS) RESTORE_STATE_CHECKED((S), (CFS))
+#define AFTER_FUNC_BODY(S, CFS) RESTORE_STATE((S), (CFS))
 #define BEFORE_LOOP_BODY(S) overwrite_state((S), false, false, true)
-#define AFTER_LOOP_BODY(S, CFS) RESTORE_STATE_CHECKED((S), (CFS))
+#define AFTER_LOOP_BODY(S, CFS) RESTORE_STATE((S), (CFS))
 
 #define BEFORE_RETURN(S, N) \
     if (!before_return((S), (N))) { \
@@ -927,9 +923,9 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case FunctionDef_kind: {
         CALL_SEQ(astfold_type_param, type_param, node_->v.FunctionDef.type_params);
         CALL(astfold_arguments, arguments_ty, node_->v.FunctionDef.args);
-        ControlFlowInFinallyState saved_state = BEFORE_FUNC_BODY(state);
+        ControlFlowInFinallyContext saved_context = BEFORE_FUNC_BODY(state);
         CALL(astfold_body, asdl_seq, node_->v.FunctionDef.body);
-        AFTER_FUNC_BODY(state, &saved_state);
+        AFTER_FUNC_BODY(state, &saved_context);
         CALL_SEQ(astfold_expr, expr, node_->v.FunctionDef.decorator_list);
         if (!(state->ff_features & CO_FUTURE_ANNOTATIONS)) {
             CALL_OPT(astfold_expr, expr_ty, node_->v.FunctionDef.returns);
@@ -939,9 +935,9 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case AsyncFunctionDef_kind: {
         CALL_SEQ(astfold_type_param, type_param, node_->v.AsyncFunctionDef.type_params);
         CALL(astfold_arguments, arguments_ty, node_->v.AsyncFunctionDef.args);
-        ControlFlowInFinallyState saved_state = BEFORE_FUNC_BODY(state);
+        ControlFlowInFinallyContext saved_context = BEFORE_FUNC_BODY(state);
         CALL(astfold_body, asdl_seq, node_->v.AsyncFunctionDef.body);
-        AFTER_FUNC_BODY(state, &saved_state);
+        AFTER_FUNC_BODY(state, &saved_context);
         CALL_SEQ(astfold_expr, expr, node_->v.AsyncFunctionDef.decorator_list);
         if (!(state->ff_features & CO_FUTURE_ANNOTATIONS)) {
             CALL_OPT(astfold_expr, expr_ty, node_->v.AsyncFunctionDef.returns);
@@ -985,26 +981,26 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
     case For_kind: {
         CALL(astfold_expr, expr_ty, node_->v.For.target);
         CALL(astfold_expr, expr_ty, node_->v.For.iter);
-        ControlFlowInFinallyState saved_state = BEFORE_LOOP_BODY(state);
+        ControlFlowInFinallyContext saved_context = BEFORE_LOOP_BODY(state);
         CALL_SEQ(astfold_stmt, stmt, node_->v.For.body);
-        AFTER_LOOP_BODY(state, &saved_state);
+        AFTER_LOOP_BODY(state, &saved_context);
         CALL_SEQ(astfold_stmt, stmt, node_->v.For.orelse);
         break;
     }
     case AsyncFor_kind: {
         CALL(astfold_expr, expr_ty, node_->v.AsyncFor.target);
         CALL(astfold_expr, expr_ty, node_->v.AsyncFor.iter);
-        ControlFlowInFinallyState saved_state = BEFORE_LOOP_BODY(state);
+        ControlFlowInFinallyContext saved_context = BEFORE_LOOP_BODY(state);
         CALL_SEQ(astfold_stmt, stmt, node_->v.AsyncFor.body);
-        AFTER_LOOP_BODY(state, &saved_state);
+        AFTER_LOOP_BODY(state, &saved_context);
         CALL_SEQ(astfold_stmt, stmt, node_->v.AsyncFor.orelse);
         break;
     }
     case While_kind: {
         CALL(astfold_expr, expr_ty, node_->v.While.test);
-        ControlFlowInFinallyState saved_state = BEFORE_LOOP_BODY(state);
+        ControlFlowInFinallyContext saved_context = BEFORE_LOOP_BODY(state);
         CALL_SEQ(astfold_stmt, stmt, node_->v.While.body);
-        AFTER_LOOP_BODY(state, &saved_state);
+        AFTER_LOOP_BODY(state, &saved_context);
         CALL_SEQ(astfold_stmt, stmt, node_->v.While.orelse);
         break;
     }
@@ -1029,18 +1025,18 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL_SEQ(astfold_stmt, stmt, node_->v.Try.body);
         CALL_SEQ(astfold_excepthandler, excepthandler, node_->v.Try.handlers);
         CALL_SEQ(astfold_stmt, stmt, node_->v.Try.orelse);
-        ControlFlowInFinallyState saved_state = BEFORE_FINALLY(state);
+        ControlFlowInFinallyContext saved_context = BEFORE_FINALLY(state);
         CALL_SEQ(astfold_stmt, stmt, node_->v.Try.finalbody);
-        AFTER_FINALLY(state, &saved_state);
+        AFTER_FINALLY(state, &saved_context);
         break;
     }
     case TryStar_kind: {
         CALL_SEQ(astfold_stmt, stmt, node_->v.TryStar.body);
         CALL_SEQ(astfold_excepthandler, excepthandler, node_->v.TryStar.handlers);
         CALL_SEQ(astfold_stmt, stmt, node_->v.TryStar.orelse);
-        ControlFlowInFinallyState saved_state = BEFORE_FINALLY(state);
+        ControlFlowInFinallyContext saved_context = BEFORE_FINALLY(state);
         CALL_SEQ(astfold_stmt, stmt, node_->v.TryStar.finalbody);
-        AFTER_FINALLY(state, &saved_state);
+        AFTER_FINALLY(state, &saved_context);
         break;
     }
     case Assert_kind:
