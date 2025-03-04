@@ -1,0 +1,2 @@
+Fix an issue where modifications to locals could fail to persist when there
+is an inlined comprehension with colliding variable name.
