@@ -2294,9 +2294,11 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 RETURN_IF_ERROR(fold_const_unaryop(bb, i, consts, const_cache));
                 break;
             case CALL_INTRINSIC_1:
-                // for _ in (*foo, *bar) -> for _ in [*foo, *bar]
-                if (oparg == INTRINSIC_LIST_TO_TUPLE && nextop == GET_ITER) {
-                    INSTR_SET_OP0(inst, NOP);
+                if (oparg == INTRINSIC_LIST_TO_TUPLE) {
+                    // for _ in (*foo, *bar) -> for _ in [*foo, *bar]
+                    if (nextop == GET_ITER) {
+                        INSTR_SET_OP0(inst, NOP);
+                    }
                 }
                 else if (oparg == INTRINSIC_UNARY_POSITIVE) {
                     RETURN_IF_ERROR(fold_const_unaryop(bb, i, consts, const_cache));
