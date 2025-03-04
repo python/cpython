@@ -640,9 +640,9 @@ class Regrtest:
         if not sys.stdout.write_through:
             python_opts.append('-u')
 
-        # Add warnings filter 'default'
+        # Add warnings filter 'error'
         if 'default' not in sys.warnoptions:
-            python_opts.extend(('-W', 'default'))
+            python_opts.extend(('-W', 'error'))
 
         # Error on bytes/str comparison
         if sys.flags.bytes_warning < 2:
