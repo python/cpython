@@ -1,10 +1,10 @@
-#include <stdbool.h>
-
 #include <Python.h>
 
 #include "tokenizer.h"
 #include "pegen.h"
 #include "string_parser.h"
+
+#include <stdbool.h>
 
 //// STRING HANDLING FUNCTIONS ////
 
