@@ -2294,17 +2294,22 @@ types.
         The keyword-argument syntax is deprecated in 3.11 and will be removed
         in 3.13. It may also be unsupported by static type checkers.
 
-   The functional syntax should also be used when any of the keys are not valid
-   :ref:`identifiers <identifiers>`, for example because they are keywords or contain hyphens.
-   Example::
+   This functional syntax allows defining keys which are not valid
+   :ref:`identifiers <identifiers>`, for example because they are
+   keywords or contain hyphens, or when key names must not be
+   :ref:`mangled <private-name-mangling>` like regular private names::
 
       # raises SyntaxError
       class Point2D(TypedDict):
           in: int  # 'in' is a keyword
           x-y: int  # name with hyphens
 
+      class Definition(TypedDict):
+          __schema: str  # mangled to `_Definition__schema`
+
       # OK, functional syntax
       Point2D = TypedDict('Point2D', {'in': int, 'x-y': int})
+      Definition = TypedDict('Definition', {'__schema': str})  # not mangled
 
    By default, all keys must be present in a ``TypedDict``. It is possible to
    mark individual keys as non-required using :data:`NotRequired`::
