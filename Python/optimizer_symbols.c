@@ -299,6 +299,9 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptSymbol *sym, PyObject *const_val
             else if (type == &PyBool_Type) {
                 _Py_uop_sym_set_const(ctx, value, Py_False);
             }
+            else if (type == &PyLong_Type) {
+                _Py_uop_sym_set_const(ctx, value, Py_GetConstant(Py_CONSTANT_ZERO));
+            }
             else if (type == &PyUnicode_Type) {
                 _Py_uop_sym_set_const(ctx, value, Py_GetConstant(Py_CONSTANT_EMPTY_STR));
             }
