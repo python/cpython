@@ -74,6 +74,7 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
     {                                               \
         .ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL,  \
         .ob_flags = _Py_STATICALLY_ALLOCATED_FLAG,  \
+        .ob_gc_bits = _PyGC_BITS_DEFERRED,          \
         .ob_type = (type)                           \
     }
 #else
@@ -612,7 +613,7 @@ _Py_TryIncrefCompare(PyObject **src, PyObject *op)
 static inline int
 _Py_TryIncrefCompareStackRef(PyObject **src, PyObject *op, _PyStackRef *out)
 {
-    if (_Py_IsImmortal(op) || _PyObject_HasDeferredRefcount(op)) {
+    if (_PyObject_HasDeferredRefcount(op)) {
         *out = (_PyStackRef){ .bits = (intptr_t)op | Py_TAG_DEFERRED };
         return 1;
     }
@@ -729,6 +730,9 @@ _PyObject_ResurrectStart(PyObject *op)
 #else
     Py_SET_REFCNT(op, 1);
 #endif
+#ifdef Py_TRACE_REFS
+    _Py_ResurrectReference(op);
+#endif
 }
 
 // Undoes an object resurrection by decrementing the refcount without calling
@@ -742,13 +746,22 @@ _PyObject_ResurrectEnd(PyObject *op)
 #endif
 #ifndef Py_GIL_DISABLED
     Py_SET_REFCNT(op, Py_REFCNT(op) - 1);
-    return Py_REFCNT(op) != 0;
+    if (Py_REFCNT(op) == 0) {
+# ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+# endif
+        return 0;
+    }
+    return 1;
 #else
     uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
     Py_ssize_t shared = _Py_atomic_load_ssize_acquire(&op->ob_ref_shared);
     if (_Py_IsOwnedByCurrentThread(op) && local == 1 && shared == 0) {
         // Fast-path: object has a single refcount and is owned by this thread
         _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 0);
+# ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+# endif
         return 0;
     }
     // Slow-path: object has a shared refcount or is not owned by this thread

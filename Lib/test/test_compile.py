@@ -21,7 +21,7 @@ except ImportError:
 
 from test import support
 from test.support import (script_helper, requires_debug_ranges, run_code,
-                          requires_specialization, get_c_recursion_limit)
+                          requires_specialization)
 from test.support.bytecode_helper import instructions_with_positions
 from test.support.os_helper import FakePath
 
@@ -123,7 +123,7 @@ class TestSpecifics(unittest.TestCase):
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     @support.skip_emscripten_stack_overflow()
     def test_extended_arg(self):
-        repeat = int(get_c_recursion_limit() * 0.9)
+        repeat = 100
         longexpr = 'x = x or ' + '-x' * repeat
         g = {}
         code = textwrap.dedent('''
@@ -712,21 +712,18 @@ class TestSpecifics(unittest.TestCase):
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     @support.skip_emscripten_stack_overflow()
     def test_compiler_recursion_limit(self):
-        # Expected limit is Py_C_RECURSION_LIMIT
-        limit = get_c_recursion_limit()
-        fail_depth = limit + 1
-        crash_depth = limit * 100
-        success_depth = int(limit * 0.8)
+        # Compiler frames are small
+        limit = 100
+        crash_depth = limit * 5000
+        success_depth = limit
 
         def check_limit(prefix, repeated, mode="single"):
             expect_ok = prefix + repeated * success_depth
             compile(expect_ok, '<test>', mode)
-            for depth in (fail_depth, crash_depth):
-                broken = prefix + repeated * depth
-                details = "Compiling ({!r} + {!r} * {})".format(
-                            prefix, repeated, depth)
-                with self.assertRaises(RecursionError, msg=details):
-                    compile(broken, '<test>', mode)
+            broken = prefix + repeated * crash_depth
+            details = f"Compiling ({prefix!r} + {repeated!r} * {crash_depth})"
+            with self.assertRaises(RecursionError, msg=details):
+                compile(broken, '<test>', mode)
 
         check_limit("a", "()")
         check_limit("a", ".b")
@@ -798,7 +795,7 @@ class TestSpecifics(unittest.TestCase):
         f3 = lambda x: x in {("not a name",)}
         self.assertIs(f1.__code__.co_consts[0],
                       f2.__code__.co_consts[0][0])
-        self.assertIs(next(iter(f3.__code__.co_consts[0])),
+        self.assertIs(next(iter(f3.__code__.co_consts[1])),
                       f2.__code__.co_consts[0])
 
         # {0} is converted to a constant frozenset({0}) by the peephole

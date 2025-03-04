@@ -1360,6 +1360,43 @@ class ExceptionTests(unittest.TestCase):
                 exc = UnicodeDecodeError('utf-8', encoded, start, end, '')
                 self.assertIsInstance(str(exc), str)
 
+    def test_unicode_error_evil_str_set_none_object(self):
+        def side_effect(exc):
+            exc.object = None
+        self.do_test_unicode_error_mutate(side_effect)
+
+    def test_unicode_error_evil_str_del_self_object(self):
+        def side_effect(exc):
+            del exc.object
+        self.do_test_unicode_error_mutate(side_effect)
+
+    def do_test_unicode_error_mutate(self, side_effect):
+        # Test that str(UnicodeError(...)) does not crash when
+        # side-effects mutate the underlying 'object' attribute.
+        # See https://github.com/python/cpython/issues/128974.
+
+        class Evil(str):
+            def __str__(self):
+                side_effect(exc)
+                return self
+
+        for reason, encoding in [
+            ("reason", Evil("utf-8")),
+            (Evil("reason"), "utf-8"),
+            (Evil("reason"), Evil("utf-8")),
+        ]:
+            with self.subTest(encoding=encoding, reason=reason):
+                with self.subTest(UnicodeEncodeError):
+                    exc = UnicodeEncodeError(encoding, "x", 0, 1, reason)
+                    self.assertRaises(TypeError, str, exc)
+                with self.subTest(UnicodeDecodeError):
+                    exc = UnicodeDecodeError(encoding, b"x", 0, 1, reason)
+                    self.assertRaises(TypeError, str, exc)
+
+        with self.subTest(UnicodeTranslateError):
+            exc = UnicodeTranslateError("x", 0, 1, Evil("reason"))
+            self.assertRaises(TypeError, str, exc)
+
     @no_tracing
     def test_badisinstance(self):
         # Bug #2542: if issubclass(e, MyException) raises an exception,
@@ -1391,7 +1428,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertIsInstance(exc, RecursionError, type(exc))
         self.assertIn("maximum recursion depth exceeded", str(exc))
 
-
+    @support.skip_wasi_stack_overflow()
     @cpython_only
     @support.requires_resource('cpu')
     def test_trashcan_recursion(self):
@@ -1479,7 +1516,7 @@ class ExceptionTests(unittest.TestCase):
         """
         rc, out, err = script_helper.assert_python_failure("-c", code)
         self.assertEqual(rc, 1)
-        expected = b'RecursionError: maximum recursion depth exceeded'
+        expected = b'RecursionError'
         self.assertTrue(expected in err, msg=f"{expected!r} not found in {err[:3_000]!r}... (truncated)")
         self.assertIn(b'Done.', out)
 
@@ -2303,7 +2340,7 @@ class SyntaxErrorTests(unittest.TestCase):
         )
         err = run_script(source.encode('cp437'))
         self.assertEqual(err[-3], '    "┬ó┬ó┬ó┬ó┬ó┬ó" + f(4, x for x in range(1))')
-        self.assertEqual(err[-2], '                          ^^^^^^^^^^^^^^^^^^^')
+        self.assertEqual(err[-2], '                            ^^^')
 
         # Check backwards tokenizer errors
         source = '# -*- coding: ascii -*-\n\n(\n'

@@ -139,16 +139,13 @@ typedef struct {
     PyObject *asyncio_mod;
     PyObject *context_kwname;
 
-    /* Dictionary containing tasks that are currently active in
-       all running event loops.  {EventLoop: Task} */
-    PyObject *current_tasks;
-
     /* WeakSet containing scheduled 3rd party tasks which don't
        inherit from native asyncio.Task */
     PyObject *non_asyncio_tasks;
 
-    /* Set containing all eagerly executing tasks. */
-    PyObject *eager_tasks;
+    /* Set containing all 3rd party eagerly executing tasks which don't
+       inherit from native asyncio.Task */
+    PyObject *non_asyncio_eager_tasks;
 
     /* An isinstance type cache for the 'is_coroutine()' function. */
     PyObject *iscoroutine_typecache;
@@ -220,7 +217,7 @@ static PyObject * future_new_iter(PyObject *);
 
 static PyObject *
 task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *result);
-
+static void unregister_task(TaskObj *task);
 
 static void
 clear_task_coro(TaskObj *task)
@@ -418,6 +415,15 @@ static int
 future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(fut);
+
+    assert(fut->fut_state != STATE_PENDING);
+
+    if (Task_Check(state, fut)) {
+        // remove task from linked-list of tasks
+        // as it is finished now
+        TaskObj *task = (TaskObj *)fut;
+        unregister_task(task);
+    }
 
     if (fut->fut_callback0 != NULL) {
         /* There's a 1st callback */
@@ -2051,8 +2057,6 @@ static int task_call_step_soon(asyncio_state *state, TaskObj *, PyObject *);
 static PyObject * task_wakeup(TaskObj *, PyObject *);
 static PyObject * task_step(asyncio_state *, TaskObj *, PyObject *);
 static int task_eager_start(asyncio_state *state, TaskObj *task);
-static inline void clear_ts_asyncio_running_task(PyObject *loop);
-static inline void set_ts_asyncio_running_task(PyObject *loop, PyObject *task);
 
 /* ----- Task._step wrapper */
 
@@ -2165,9 +2169,8 @@ static  PyMethodDef TaskWakeupDef = {
 /* ----- Task introspection helpers */
 
 static void
-register_task(asyncio_state *state, TaskObj *task)
+register_task(TaskObj *task)
 {
-    assert(Task_Check(state, task));
     if (task->task_node.next != NULL) {
         // already registered
         assert(task->task_node.prev != NULL);
@@ -2176,12 +2179,6 @@ register_task(asyncio_state *state, TaskObj *task)
     _PyThreadStateImpl *tstate = (_PyThreadStateImpl *) _PyThreadState_GET();
     struct llist_node *head = &tstate->asyncio_tasks_head;
     llist_insert_tail(head, &task->task_node);
-}
-
-static int
-register_eager_task(asyncio_state *state, PyObject *task)
-{
-    return PySet_Add(state->eager_tasks, task);
 }
 
 static inline void
@@ -2196,9 +2193,8 @@ unregister_task_safe(TaskObj *task)
 }
 
 static void
-unregister_task(asyncio_state *state, TaskObj *task)
+unregister_task(TaskObj *task)
 {
-    assert(Task_Check(state, task));
 #ifdef Py_GIL_DISABLED
     // check if we are in the same thread
     // if so, we can avoid locking
@@ -2219,165 +2215,71 @@ unregister_task(asyncio_state *state, TaskObj *task)
 }
 
 static int
-unregister_eager_task(asyncio_state *state, PyObject *task)
+enter_task(PyObject *loop, PyObject *task)
 {
-    return PySet_Discard(state->eager_tasks, task);
-}
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
 
-static int
-enter_task(asyncio_state *state, PyObject *loop, PyObject *task)
-{
-    PyObject *item;
-    int res = PyDict_SetDefaultRef(state->current_tasks, loop, task, &item);
-    if (res < 0) {
+    if (ts->asyncio_running_loop != loop) {
+        PyErr_Format(PyExc_RuntimeError, "loop %R is not the running loop", loop);
         return -1;
     }
-    else if (res == 1) {
+
+    if (ts->asyncio_running_task != NULL) {
         PyErr_Format(
             PyExc_RuntimeError,
             "Cannot enter into task %R while another " \
             "task %R is being executed.",
-            task, item, NULL);
-        Py_DECREF(item);
+            task, ts->asyncio_running_task, NULL);
         return -1;
     }
 
-    assert(task == item);
-    Py_CLEAR(item);
-    set_ts_asyncio_running_task(loop, task);
+    ts->asyncio_running_task = Py_NewRef(task);
     return 0;
 }
 
 static int
-err_leave_task(PyObject *item, PyObject *task)
+leave_task(PyObject *loop, PyObject *task)
 {
-    PyErr_Format(
-        PyExc_RuntimeError,
-        "Leaving task %R does not match the current task %R.",
-        task, item);
-    return -1;
-}
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
 
-static int
-leave_task_predicate(PyObject *item, void *task)
-{
-    if (item != task) {
-        return err_leave_task(item, (PyObject *)task);
+    if (ts->asyncio_running_loop != loop) {
+        PyErr_Format(PyExc_RuntimeError, "loop %R is not the running loop", loop);
+        return -1;
     }
-    return 1;
-}
 
-static int
-leave_task(asyncio_state *state, PyObject *loop, PyObject *task)
-{
-    int res = _PyDict_DelItemIf(state->current_tasks, loop,
-                                leave_task_predicate, task);
-    if (res == 0) {
-        // task was not found
-        return err_leave_task(Py_None, task);
+    if (ts->asyncio_running_task != task) {
+        PyErr_Format(
+            PyExc_RuntimeError,
+            "Invalid attempt to leave task %R while " \
+            "task %R is entered.",
+            task, ts->asyncio_running_task ? ts->asyncio_running_task : Py_None, NULL);
+        return -1;
     }
-    clear_ts_asyncio_running_task(loop);
-    return res;
+    Py_CLEAR(ts->asyncio_running_task);
+    return 0;
 }
 
 static PyObject *
-swap_current_task_lock_held(PyDictObject *current_tasks, PyObject *loop,
-                            Py_hash_t hash, PyObject *task)
+swap_current_task(PyObject *loop, PyObject *task)
 {
-    PyObject *prev_task;
-    if (_PyDict_GetItemRef_KnownHash_LockHeld(current_tasks, loop, hash, &prev_task) < 0) {
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
+
+    if (ts->asyncio_running_loop != loop) {
+        PyErr_Format(PyExc_RuntimeError, "loop %R is not the running loop", loop);
         return NULL;
     }
-    if (_PyDict_SetItem_KnownHash_LockHeld(current_tasks, loop, task, hash) < 0) {
-        Py_XDECREF(prev_task);
-        return NULL;
+
+    /* transfer ownership to avoid redundant ref counting */
+    PyObject *prev_task = ts->asyncio_running_task;
+    if (task != Py_None) {
+        ts->asyncio_running_task = Py_NewRef(task);
+    } else {
+        ts->asyncio_running_task = NULL;
     }
     if (prev_task == NULL) {
         Py_RETURN_NONE;
     }
     return prev_task;
-}
-
-static PyObject *
-swap_current_task(asyncio_state *state, PyObject *loop, PyObject *task)
-{
-    PyObject *prev_task;
-
-    clear_ts_asyncio_running_task(loop);
-    if (task == Py_None) {
-        if (PyDict_Pop(state->current_tasks, loop, &prev_task) < 0) {
-            return NULL;
-        }
-        if (prev_task == NULL) {
-            Py_RETURN_NONE;
-        }
-        return prev_task;
-    }
-
-    Py_hash_t hash = PyObject_Hash(loop);
-    if (hash == -1) {
-        return NULL;
-    }
-
-    PyDictObject *current_tasks = (PyDictObject *)state->current_tasks;
-    Py_BEGIN_CRITICAL_SECTION(current_tasks);
-    prev_task = swap_current_task_lock_held(current_tasks, loop, hash, task);
-    Py_END_CRITICAL_SECTION();
-    set_ts_asyncio_running_task(loop, task);
-    return prev_task;
-}
-
-static inline void
-set_ts_asyncio_running_task(PyObject *loop, PyObject *task)
-{
-    // We want to enable debuggers and profilers to be able to quickly
-    // introspect the asyncio running state from another process.
-    // When we do that, we need to essentially traverse the address space
-    // of a Python process and understand what every Python thread in it is
-    // currently doing, mainly:
-    //
-    //  * current frame
-    //  * current asyncio task
-    //
-    // A naive solution would be to require profilers and debuggers to
-    // find the current task in the "_asynciomodule" module state, but
-    // unfortunately that would require a lot of complicated remote
-    // memory reads and logic, as Python's dict is a notoriously complex
-    // and ever-changing data structure.
-    //
-    // So the easier solution is to put a strong reference to the currently
-    // running `asyncio.Task` on the current thread state (the current loop
-    // is also stored there.)
-    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
-    if (ts->asyncio_running_loop == loop) {
-        // Protect from a situation when someone calls this method
-        // from another thread. This shouldn't ever happen though,
-        // as `enter_task` and `leave_task` can either be called by:
-        //
-        //  - `asyncio.Task` itself, in `Task.__step()`. That method
-        //    can only be called by the event loop itself.
-        //
-        //  - third-party Task "from scratch" implementations, that
-        //    our `capture_call_graph` API doesn't support anyway.
-        //
-        // That said, we still want to make sure we don't end up in
-        // a broken state, so we check that we're in the correct thread
-        // by comparing the *loop* argument to the event loop running
-        // in the current thread. If they match we know we're in the
-        // right thread, as asyncio event loops don't change threads.
-        assert(ts->asyncio_running_task == NULL);
-        ts->asyncio_running_task = Py_NewRef(task);
-    }
-}
-
-static inline void
-clear_ts_asyncio_running_task(PyObject *loop)
-{
-    // See comment in set_ts_asyncio_running_task() for details.
-    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
-    if (ts->asyncio_running_loop == NULL || ts->asyncio_running_loop == loop) {
-        Py_CLEAR(ts->asyncio_running_task);
-    }
 }
 
 /* ----- Task */
@@ -2480,7 +2382,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
     // works correctly in non-owning threads.
     _PyObject_SetMaybeWeakref((PyObject *)self);
 #endif
-    register_task(state, self);
+    register_task(self);
     return 0;
 }
 
@@ -3065,8 +2967,7 @@ TaskObj_dealloc(PyObject *self)
     _PyObject_ResurrectStart(self);
     // Unregister the task here so that even if any subclass of Task
     // which doesn't end up calling TaskObj_finalize not crashes.
-    asyncio_state *state = get_asyncio_state_by_def(self);
-    unregister_task(state, task);
+    unregister_task(task);
 
     PyObject_CallFinalizer(self);
 
@@ -3529,7 +3430,7 @@ task_step(asyncio_state *state, TaskObj *task, PyObject *exc)
 {
     PyObject *res;
 
-    if (enter_task(state, task->task_loop, (PyObject*)task) < 0) {
+    if (enter_task(task->task_loop, (PyObject*)task) < 0) {
         return NULL;
     }
 
@@ -3537,12 +3438,12 @@ task_step(asyncio_state *state, TaskObj *task, PyObject *exc)
 
     if (res == NULL) {
         PyObject *exc = PyErr_GetRaisedException();
-        leave_task(state, task->task_loop, (PyObject*)task);
+        leave_task(task->task_loop, (PyObject*)task);
         _PyErr_ChainExceptions1(exc);
         return NULL;
     }
     else {
-        if (leave_task(state, task->task_loop, (PyObject*)task) < 0) {
+        if (leave_task(task->task_loop, (PyObject*)task) < 0) {
             Py_DECREF(res);
             return NULL;
         }
@@ -3556,15 +3457,15 @@ static int
 task_eager_start(asyncio_state *state, TaskObj *task)
 {
     assert(task != NULL);
-    PyObject *prevtask = swap_current_task(state, task->task_loop, (PyObject *)task);
+    PyObject *prevtask = swap_current_task(task->task_loop, (PyObject *)task);
     if (prevtask == NULL) {
         return -1;
     }
-
-    if (register_eager_task(state, (PyObject *)task) == -1) {
-        Py_DECREF(prevtask);
-        return -1;
-    }
+    // register the task into the linked list of tasks
+    // if the task completes eagerly (without suspending) then it will unregister itself
+    // in future_schedule_callbacks when done, otherwise
+    // it will continue as a regular (non-eager) asyncio task
+    register_task(task);
 
     if (PyContext_Enter(task->task_context) == -1) {
         Py_DECREF(prevtask);
@@ -3585,7 +3486,7 @@ task_eager_start(asyncio_state *state, TaskObj *task)
         Py_DECREF(stepres);
     }
 
-    PyObject *curtask = swap_current_task(state, task->task_loop, prevtask);
+    PyObject *curtask = swap_current_task(task->task_loop, prevtask);
     Py_DECREF(prevtask);
     if (curtask == NULL) {
         retval = -1;
@@ -3594,17 +3495,11 @@ task_eager_start(asyncio_state *state, TaskObj *task)
         Py_DECREF(curtask);
     }
 
-    if (unregister_eager_task(state, (PyObject *)task) == -1) {
-        retval = -1;
-    }
-
     if (PyContext_Exit(task->task_context) == -1) {
         retval = -1;
     }
 
-    if (task->task_state == STATE_PENDING) {
-        register_task(state, task);
-    } else {
+    if (task->task_state != STATE_PENDING) {
         // This seems to really help performance on pyperformance benchmarks
         clear_task_coro(task);
     }
@@ -3794,7 +3689,7 @@ _asyncio__register_task_impl(PyObject *module, PyObject *task)
     if (Task_Check(state, task)) {
         // task is an asyncio.Task instance or subclass, use efficient
         // linked-list implementation.
-        register_task(state, (TaskObj *)task);
+        register_task((TaskObj *)task);
         Py_RETURN_NONE;
     }
     // As task does not inherit from asyncio.Task, fallback to less efficient
@@ -3823,9 +3718,18 @@ _asyncio__register_eager_task_impl(PyObject *module, PyObject *task)
 /*[clinic end generated code: output=dfe1d45367c73f1a input=237f684683398c51]*/
 {
     asyncio_state *state = get_asyncio_state(module);
-    if (register_eager_task(state, task) < 0) {
+
+    if (Task_Check(state, task)) {
+        // task is an asyncio.Task instance or subclass, use efficient
+        // linked-list implementation.
+        register_task((TaskObj *)task);
+        Py_RETURN_NONE;
+    }
+
+    if (PySet_Add(state->non_asyncio_eager_tasks, task) < 0) {
         return NULL;
     }
+
     Py_RETURN_NONE;
 }
 
@@ -3846,7 +3750,7 @@ _asyncio__unregister_task_impl(PyObject *module, PyObject *task)
 {
     asyncio_state *state = get_asyncio_state(module);
     if (Task_Check(state, task)) {
-        unregister_task(state, (TaskObj *)task);
+        unregister_task((TaskObj *)task);
         Py_RETURN_NONE;
     }
     PyObject *res = PyObject_CallMethodOneArg(state->non_asyncio_tasks,
@@ -3873,9 +3777,17 @@ _asyncio__unregister_eager_task_impl(PyObject *module, PyObject *task)
 /*[clinic end generated code: output=a426922bd07f23d1 input=9d07401ef14ee048]*/
 {
     asyncio_state *state = get_asyncio_state(module);
-    if (unregister_eager_task(state, task) < 0) {
+    if (Task_Check(state, task)) {
+        // task is an asyncio.Task instance or subclass, use efficient
+        // linked-list implementation.
+        unregister_task((TaskObj *)task);
+        Py_RETURN_NONE;
+    }
+
+    if (PySet_Discard(state->non_asyncio_eager_tasks, task) < 0) {
         return NULL;
     }
+
     Py_RETURN_NONE;
 }
 
@@ -3897,8 +3809,7 @@ static PyObject *
 _asyncio__enter_task_impl(PyObject *module, PyObject *loop, PyObject *task)
 /*[clinic end generated code: output=a22611c858035b73 input=de1b06dca70d8737]*/
 {
-    asyncio_state *state = get_asyncio_state(module);
-    if (enter_task(state, loop, task) < 0) {
+    if (enter_task(loop, task) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -3922,8 +3833,7 @@ static PyObject *
 _asyncio__leave_task_impl(PyObject *module, PyObject *loop, PyObject *task)
 /*[clinic end generated code: output=0ebf6db4b858fb41 input=51296a46313d1ad8]*/
 {
-    asyncio_state *state = get_asyncio_state(module);
-    if (leave_task(state, loop, task) < 0) {
+    if (leave_task(loop, task) < 0) {
         return NULL;
     }
     Py_RETURN_NONE;
@@ -3947,7 +3857,7 @@ _asyncio__swap_current_task_impl(PyObject *module, PyObject *loop,
                                  PyObject *task)
 /*[clinic end generated code: output=9f88de958df74c7e input=c9c72208d3d38b6c]*/
 {
-    return swap_current_task(get_asyncio_state(module), loop, task);
+    return swap_current_task(loop, task);
 }
 
 
@@ -3964,9 +3874,6 @@ static PyObject *
 _asyncio_current_task_impl(PyObject *module, PyObject *loop)
 /*[clinic end generated code: output=fe15ac331a7f981a input=58910f61a5627112]*/
 {
-    PyObject *ret;
-    asyncio_state *state = get_asyncio_state(module);
-
     if (loop == Py_None) {
         loop = _asyncio_get_running_loop_impl(module);
         if (loop == NULL) {
@@ -3976,11 +3883,36 @@ _asyncio_current_task_impl(PyObject *module, PyObject *loop)
         Py_INCREF(loop);
     }
 
-    int rc = PyDict_GetItemRef(state->current_tasks, loop, &ret);
-    Py_DECREF(loop);
-    if (rc == 0) {
+    _PyThreadStateImpl *ts = (_PyThreadStateImpl *)_PyThreadState_GET();
+    // Fast path for the current running loop of current thread
+    // no locking or stop the world pause is required
+    if (ts->asyncio_running_loop == loop) {
+        if (ts->asyncio_running_task != NULL) {
+            Py_DECREF(loop);
+            return Py_NewRef(ts->asyncio_running_task);
+        }
+        Py_DECREF(loop);
         Py_RETURN_NONE;
     }
+
+    PyObject *ret = Py_None;
+    // Stop the world and traverse the per-thread current tasks
+    // and return the task if the loop matches
+    PyInterpreterState *interp = ts->base.interp;
+    _PyEval_StopTheWorld(interp);
+    _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
+        ts = (_PyThreadStateImpl *)p;
+        if (ts->asyncio_running_loop == loop) {
+            if (ts->asyncio_running_task != NULL) {
+                ret = Py_NewRef(ts->asyncio_running_task);
+            }
+            goto exit;
+        }
+    }
+exit:
+    _Py_FOR_EACH_TSTATE_END(interp);
+    _PyEval_StartTheWorld(interp);
+    Py_DECREF(loop);
     return ret;
 }
 
@@ -4030,6 +3962,7 @@ add_tasks_llist(struct llist_node *head, PyListObject *tasks)
     struct llist_node *node;
     llist_for_each_safe(node, head) {
         TaskObj *task = llist_data(node, TaskObj, task_node);
+        assert(task->task_state == STATE_PENDING);
         // The linked list holds borrowed references to task
         // as such it is possible that the task is concurrently
         // deallocated while added to this list.
@@ -4108,7 +4041,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         Py_DECREF(loop);
         return NULL;
     }
-    if (PyList_Extend(tasks, state->eager_tasks) < 0) {
+    if (PyList_Extend(tasks, state->non_asyncio_eager_tasks) < 0) {
         Py_DECREF(tasks);
         Py_DECREF(loop);
         return NULL;
@@ -4246,8 +4179,7 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->asyncio_CancelledError);
 
     Py_VISIT(state->non_asyncio_tasks);
-    Py_VISIT(state->eager_tasks);
-    Py_VISIT(state->current_tasks);
+    Py_VISIT(state->non_asyncio_eager_tasks);
     Py_VISIT(state->iscoroutine_typecache);
 
     Py_VISIT(state->context_kwname);
@@ -4277,8 +4209,7 @@ module_clear(PyObject *mod)
     Py_CLEAR(state->asyncio_CancelledError);
 
     Py_CLEAR(state->non_asyncio_tasks);
-    Py_CLEAR(state->eager_tasks);
-    Py_CLEAR(state->current_tasks);
+    Py_CLEAR(state->non_asyncio_eager_tasks);
     Py_CLEAR(state->iscoroutine_typecache);
 
     Py_CLEAR(state->context_kwname);
@@ -4305,11 +4236,6 @@ module_init(asyncio_state *state)
 
     state->asyncio_mod = PyImport_ImportModule("asyncio");
     if (state->asyncio_mod == NULL) {
-        goto fail;
-    }
-
-    state->current_tasks = PyDict_New();
-    if (state->current_tasks == NULL) {
         goto fail;
     }
 
@@ -4366,8 +4292,8 @@ module_init(asyncio_state *state)
         goto fail;
     }
 
-    state->eager_tasks = PySet_New(NULL);
-    if (state->eager_tasks == NULL) {
+    state->non_asyncio_eager_tasks = PySet_New(NULL);
+    if (state->non_asyncio_eager_tasks == NULL) {
         goto fail;
     }
 
@@ -4436,19 +4362,6 @@ module_exec(PyObject *mod)
     if (module_init(state) < 0) {
         return -1;
     }
-
-    if (PyModule_AddObjectRef(mod, "_scheduled_tasks", state->non_asyncio_tasks) < 0) {
-        return -1;
-    }
-
-    if (PyModule_AddObjectRef(mod, "_eager_tasks", state->eager_tasks) < 0) {
-        return -1;
-    }
-
-    if (PyModule_AddObjectRef(mod, "_current_tasks", state->current_tasks) < 0) {
-        return -1;
-    }
-
 
     return 0;
 }
