@@ -126,7 +126,7 @@ assemble_emit_exception_table_item(struct assembler *a, int value, int msb)
     write_except_byte(a, (value&0x3f) | msb);
 }
 
-/* See Objects/exception_handling_notes.txt for details of layout */
+/* See InternalDocs/exception_handling.md for details of layout */
 #define MAX_SIZE_OF_ENTRY 20
 
 static int
