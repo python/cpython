@@ -4,6 +4,7 @@ from gettext import (
     pgettext as pfoo,
     npgettext as npfoo,
     gettext as bar,
+    gettext as _,
 )
 
 foo('bar')
@@ -28,3 +29,6 @@ pfoo('context')
 # 'npfoo' requires at least 3 arguments
 npfoo('context')
 npfoo('context', 'cat')
+
+# --keyword should override the default keyword
+_('overridden', 'default')
