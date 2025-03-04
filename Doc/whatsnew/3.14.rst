@@ -444,11 +444,6 @@ contextvars
 * Support context manager protocol by :class:`contextvars.Token`.
   (Contributed by Andrew Svetlov in :gh:`129889`.)
 
-* Add :meth:`concurrent.futures.ProcessPoolExecutor.terminate_workers` and
-  :meth:`concurrent.futures.ProcessPoolExecutor.kill_workers` as
-  ways to terminate or kill all living worker processes in the given pool.
-  (Contributed by Charles Machalow in :gh:`128043`.)
-
 
 ctypes
 ------
@@ -784,6 +779,11 @@ pdb
   in ``inline`` mode. ``y``, ``Y``, ``<Enter>`` or ``EOF`` will confirm
   the quit and call :func:`sys.exit`, instead of raising :exc:`bdb.BdbQuit`.
   (Contributed by Tian Gao in :gh:`124704`.)
+
+* Inline breakpoints like :func:`breakpoint` or :func:`pdb.set_trace` will
+  always stop the program at calling frame, ignoring the ``skip`` pattern
+  (if any).
+  (Contributed by Tian Gao in :gh:`130493`.)
 
 
 pickle
@@ -1325,6 +1325,8 @@ typing
 
 * Remove :class:`!typing.ByteString`. It had previously raised a
   :exc:`DeprecationWarning` since Python 3.12.
+
+* :class:`typing.TypeAliasType` now supports star unpacking.
 
 urllib
 ------

@@ -1086,7 +1086,7 @@ Special forms
 These can be used as types in annotations. They all support subscription using
 ``[]``, but each has a unique syntax.
 
-.. data:: Union
+.. class:: Union
 
    Union type; ``Union[X, Y]`` is equivalent to ``X | Y`` and means either X or Y.
 
@@ -1120,6 +1120,14 @@ These can be used as types in annotations. They all support subscription using
    .. versionchanged:: 3.10
       Unions can now be written as ``X | Y``. See
       :ref:`union type expressions<types-union>`.
+
+   .. versionchanged:: 3.14
+      :class:`types.UnionType` is now an alias for :class:`Union`, and both
+      ``Union[int, str]`` and ``int | str`` create instances of the same class.
+      To check whether an object is a ``Union`` at runtime, use
+      ``isinstance(obj, Union)``. For compatibility with earlier versions of
+      Python, use
+      ``get_origin(obj) is typing.Union or get_origin(obj) is types.UnionType``.
 
 .. data:: Optional
 
@@ -2292,6 +2300,20 @@ without the dedicated syntax, as documented below.
 
       .. versionadded:: 3.14
 
+   .. rubric:: Unpacking
+
+   Type aliases support star unpacking using the ``*Alias`` syntax.
+   This is equivalent to using ``Unpack[Alias]`` directly:
+
+   .. doctest::
+
+      >>> type Alias = tuple[int, str]
+      >>> type Unpacked = tuple[bool, *Alias]
+      >>> Unpacked.__value__
+      tuple[bool, typing.Unpack[Alias]]
+
+   .. versionadded:: next
+
 
 Other special directives
 """"""""""""""""""""""""
@@ -2551,15 +2573,20 @@ types.
 
    This functional syntax allows defining keys which are not valid
    :ref:`identifiers <identifiers>`, for example because they are
-   keywords or contain hyphens::
+   keywords or contain hyphens, or when key names must not be
+   :ref:`mangled <private-name-mangling>` like regular private names::
 
       # raises SyntaxError
       class Point2D(TypedDict):
           in: int  # 'in' is a keyword
           x-y: int  # name with hyphens
 
+      class Definition(TypedDict):
+          __schema: str  # mangled to `_Definition__schema`
+
       # OK, functional syntax
       Point2D = TypedDict('Point2D', {'in': int, 'x-y': int})
+      Definition = TypedDict('Definition', {'__schema': str})  # not mangled
 
    By default, all keys must be present in a ``TypedDict``. It is possible to
    mark individual keys as non-required using :data:`NotRequired`::

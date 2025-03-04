@@ -12,6 +12,7 @@ import builtins
 import types
 import weakref
 import traceback
+import textwrap
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
@@ -2313,7 +2314,7 @@ class TestDocString(unittest.TestCase):
         class C:
             x: Union[int, type(None)] = None
 
-        self.assertDocStrEqual(C.__doc__, "C(x:Optional[int]=None)")
+        self.assertDocStrEqual(C.__doc__, "C(x:int|None=None)")
 
     def test_docstring_list_field(self):
         @dataclass
@@ -2342,6 +2343,31 @@ class TestDocString(unittest.TestCase):
             x: deque = field(default_factory=deque)
 
         self.assertDocStrEqual(C.__doc__, "C(x:collections.deque=<factory>)")
+
+    def test_docstring_undefined_name(self):
+        @dataclass
+        class C:
+            x: undef
+
+        self.assertDocStrEqual(C.__doc__, "C(x:undef)")
+
+    def test_docstring_with_unsolvable_forward_ref_in_init(self):
+        # See: https://github.com/python/cpython/issues/128184
+        ns = {}
+        exec(
+            textwrap.dedent(
+                """
+                from dataclasses import dataclass
+
+                @dataclass
+                class C:
+                    def __init__(self, x: X, num: int) -> None: ...
+                """,
+            ),
+            ns,
+        )
+
+        self.assertDocStrEqual(ns['C'].__doc__, "C(x:X,num:int)")
 
     def test_docstring_with_no_signature(self):
         # See https://github.com/python/cpython/issues/103449
