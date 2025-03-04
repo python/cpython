@@ -1,0 +1,2 @@
+Add :func:`graphlib.reverse` and :func:`graphlib.as_transitive` to work with
+directed acyclic graphs represented as dicts.

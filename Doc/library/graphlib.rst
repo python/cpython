@@ -14,6 +14,8 @@
 
 --------------
 
+Topological Ordering
+--------------------
 
 .. class:: TopologicalSorter(graph=None)
 
@@ -194,15 +196,74 @@
    .. versionadded:: 3.9
 
 
+Graph Functions
+---------------
+
+Some functions are provided to work with directed acyclic graph structures using
+the same representation accepted by :meth:`TopologicalSorter.__init__`: a
+mapping of nodes to iterables of predecessors.
+
+Nodes can be any :term:`hashable` object. Duplicate edges are ignored.
+
+For example, it can be useful to construct a TopologicalSorter that processes
+a graph in reverse order. This can be done by passing the :func:`reverse` of a
+graph to the constructor of :class:`TopologicalSorter`::
+
+   ts = TopologicalSorter(reverse(graph))
+
+
+.. function:: reverse(graph)
+
+   Return a new graph with the edges reversed.
+
+   The *graph* argument must be a dictionary representing a directed graph
+   where the keys are nodes and the values are iterables of predecessors. Keys
+   and predecessors must be hashable.
+
+   Return a dict mapping nodes to sets of successors. The returned graph will
+   include a key for all nodes in the input graph, possibly with an empty set
+   of successors::
+
+      >>> reverse({"a": ["b", "c"], "d": [], "c": ["e"]})
+      {'b': {'a'}, 'c': {'a'}, 'a': set(), 'd': set(), 'e': {'c'}}
+
+   .. versionadded:: next
+
+
+.. function:: as_transitive(graph)
+
+   Compute the transitive closure of a dependency graph.
+
+   The *graph* argument must be a dictionary representing a directed graph
+   where the keys are nodes and the values are iterables of predecessors. Keys
+   and predecessors must be hashable.
+
+   If A is a direct predecessor of B, and B is a direct predecessor of C,
+   then A is a transitive predecessor of C. The returned dict maps each key in
+   the input graph to a sets of all such transitive predecessors for that key.
+
+   If the input graph contains cycles, raise CycleError.
+
+   Nodes that do not appear as keys in the input graph, but appear as
+   predecessors of other nodes, will not be included as keys in the returned
+   transitive graph::
+
+        >>> as_transitive({"a": ["b"], "b": ["c"]})
+        {'a': {'b', 'c'}, 'b': {'c'}}
+
+   .. versionadded:: next
+
+
 Exceptions
 ----------
 The :mod:`graphlib` module defines the following exception classes:
 
 .. exception:: CycleError
 
-   Subclass of :exc:`ValueError` raised by :meth:`TopologicalSorter.prepare` if cycles exist
-   in the working graph. If multiple cycles exist, only one undefined choice among them will
-   be reported and included in the exception.
+   Subclass of :exc:`ValueError` raised by :meth:`TopologicalSorter.prepare` and
+   :func:`as_transitive` when a cycle is detected in the graph. If multiple
+   cycles exist, only one undefined choice among them will be reported and
+   included in the exception.
 
    The detected cycle can be accessed via the second element in the :attr:`~BaseException.args`
    attribute of the exception instance and consists in a list of nodes, such that each node is,
