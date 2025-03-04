@@ -134,8 +134,7 @@ class CLITest(unittest.TestCase):
 
 
 class MultiInputTest(unittest.TestCase):
-    """Tests for the issue https://github.com/python/cpython/issues/79516
-        msgfmt.py accepts multiple input files
+    """Tests for multiple input files
     """
 
     def test_no_outputfile(self):
@@ -161,8 +160,7 @@ class MultiInputTest(unittest.TestCase):
                              data_dir / 'file1_fr_crlf.po',
                              data_dir / 'file2_fr_lf.po')
             self.assertTrue(
-                filecmp.cmp(data_dir / 'file12_fr.mo', 'file12.mo'),
-                'Wrong compiled file12.mo')
+                filecmp.cmp(data_dir / 'file12_fr.mo', 'file12.mo'))
 
     def test_both_without_outputfile(self):
         """Test script without -o option and 2 input files"""
@@ -172,11 +170,9 @@ class MultiInputTest(unittest.TestCase):
             shutil.copy(data_dir / 'file2_fr_lf.po', '.')
             assert_python_ok(msgfmt, 'file1_fr_crlf.po', 'file2_fr_lf.po')
             self.assertTrue(
-                filecmp.cmp(data_dir / 'file1_fr_crlf.mo', 'file1_fr_crlf.mo'),
-                'Wrong compiled file1_fr_crlf.mo')
+                filecmp.cmp(data_dir / 'file1_fr_crlf.mo', 'file1_fr_crlf.mo'))
             self.assertTrue(
-                filecmp.cmp(data_dir / 'file2_fr_lf.mo', 'file2_fr_lf.mo'),
-                'Wrong compiled file2_fr_lf.mo')
+                filecmp.cmp(data_dir / 'file2_fr_lf.mo', 'file2_fr_lf.mo'))
 
 
 def update_catalog_snapshots():
