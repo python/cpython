@@ -375,16 +375,10 @@ ZipFile Objects
 
    Extract a member from the archive to the current working directory; *member*
    must be its full name or a :class:`ZipInfo` object.  Its file information is
-   extracted as accurately as possible.  *path* specifies a different directory
-   to extract to.  *member* can be a filename or a :class:`ZipInfo` object.
-   *pwd* is the password used for encrypted files as a :class:`bytes` object.
-   *preserve_permissions* controls how the permissions of zipped files are preserved.
-   The default is :data:`PreserveMode.NONE`, which does not preserve any permissions. Other
-   options are to preserve a safe subset of permissions
-   (:data:`PreserveMode.SAFE`) or all permissions
-   (:data:`PreserveMode.ALL`). On Windows,
-   the *preserve_permissions* argument is ignored and permissions are not
-   preserved.
+   extracted as accurately as possible.  *member* can be a filename or a
+   :class:`ZipInfo` object.
+
+   *path*, *pwd*, and *preserve_permissions* have the same meaning as for :meth:`extract`.
 
    Returns the normalized path created (a directory or new file).
 
@@ -412,16 +406,10 @@ ZipFile Objects
 .. method:: ZipFile.extractall(path=None, members=None, pwd=None, \
                                preserve_permissions=PreserveMode.NONE)
 
-   Extract all members from the archive to the current working directory.  *path*
-   specifies a different directory to extract to.  *members* is optional and must
-   be a subset of the list returned by :meth:`namelist`.  *pwd* is the password
-   used for encrypted files as a :class:`bytes` object.  *preserve_permissions*
-   controls how the permissions of zipped files are preserved. The default is
-   :data:`PreserveMode.NONE` which does not preserve any permissions.  Other options are
-   to preserve a safe subset of permissions (:data:`PreserveMode.SAFE`) or all
-   permissions (:data:`PreserveMode.ALL`). If the archive was created on Windows,
-   the *preserve_pemissions* argument is ignored and permissions are not preserved.
+   Extract all members from the archive to the current working directory.
+   *members* is optional and must be a subset of the list returned by :meth:`namelist`.
 
+   *path*, *pwd*, and *preserve_permissions* have the same meaning as for :meth:`extract`.
 
    .. warning::
 
