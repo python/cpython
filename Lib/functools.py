@@ -885,7 +885,7 @@ def _find_impl(cls, registry):
             match = t
     return registry.get(match)
 
-def _singledispatchimpl(func, is_method):
+def _singledispatchimpl(func, *, is_method):
     # There are many programs that use functools without singledispatch, so we
     # trade-off making singledispatch marginally slower for the benefit of
     # making start-up of such applications slightly faster.
