@@ -2292,6 +2292,20 @@ without the dedicated syntax, as documented below.
 
       .. versionadded:: 3.14
 
+   .. rubric:: Unpacking
+
+   Type aliases support star unpacking using the ``*Alias`` syntax.
+   This is equivalent to using ``Unpack[Alias]`` directly:
+
+   .. doctest::
+
+      >>> type Alias = tuple[int, str]
+      >>> type Unpacked = tuple[bool, *Alias]
+      >>> Unpacked.__value__
+      tuple[bool, typing.Unpack[Alias]]
+
+   .. versionadded:: next
+
 
 Other special directives
 """"""""""""""""""""""""
