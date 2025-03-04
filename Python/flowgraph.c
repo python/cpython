@@ -849,7 +849,7 @@ calculate_stackdepth(cfg_builder *g)
                 goto error;
             }
             maxdepth = Py_MAX(maxdepth, depth + effects.max);
-            if (HAS_TARGET(instr->i_opcode)) {
+            if (HAS_TARGET(instr->i_opcode) && instr->i_opcode != END_ASYNC_FOR) {
                 if (get_stack_effects(instr->i_opcode, instr->i_oparg, 1, &effects) < 0) {
                     PyErr_Format(PyExc_SystemError,
                                  "Invalid stack effect for opcode=%d, arg=%i",

@@ -3109,6 +3109,14 @@ branchesiter_next(branchesiterator *bi)
                 int not_taken = next_offset + 1;
                 bi->bi_offset = not_taken;
                 return int_triple(offset*2, not_taken*2, (next_offset + oparg)*2);
+            case END_ASYNC_FOR:
+                oparg = (oparg << 8) | inst.op.arg;
+                int src_offset = next_offset - oparg;
+                bi->bi_offset = next_offset;
+                assert(_Py_GetBaseCodeUnit(bi->bi_code, src_offset).op.code == END_SEND);
+                assert(_Py_GetBaseCodeUnit(bi->bi_code, src_offset+1).op.code == NOT_TAKEN);
+                not_taken = src_offset + 2;
+                return int_triple(src_offset *2, not_taken*2, next_offset*2);
             default:
                 oparg = 0;
         }

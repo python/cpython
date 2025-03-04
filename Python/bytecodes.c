@@ -1340,6 +1340,8 @@ dummy_func(
         }
 
         tier1 op(_END_ASYNC_FOR, (awaitable_st, exc_st -- )) {
+            JUMPBY(0); // Pretend jump as we need source offset for monitoring
+            (void)oparg;
             PyObject *exc = PyStackRef_AsPyObjectBorrow(exc_st);
 
             assert(exc && PyExceptionInstance_Check(exc));
@@ -1355,12 +1357,12 @@ dummy_func(
             }
         }
 
-        tier1 op(_MONITOR_BRANCH_RIGHT, ( -- )) {
-            INSTRUMENTED_JUMP(prev_instr, this_instr+1, PY_MONITORING_EVENT_BRANCH_RIGHT);
+        tier1 op(_MONITOR_END_ASYNC_FOR, ( -- )) {
+            INSTRUMENTED_JUMP(next_instr-oparg, this_instr+1, PY_MONITORING_EVENT_BRANCH_RIGHT);
         }
 
         macro(INSTRUMENTED_END_ASYNC_FOR) =
-            _MONITOR_BRANCH_RIGHT +
+            _MONITOR_END_ASYNC_FOR +
             _END_ASYNC_FOR;
 
         macro(END_ASYNC_FOR) = _END_ASYNC_FOR;
