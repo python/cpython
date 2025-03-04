@@ -1399,14 +1399,14 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
 
     PyObject *exc = PyErr_GetRaisedException();
     for (int i = 0; i < co->co_nlocalsplus; i++) {
-        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
-
-        /* Same test as in PyFrame_FastToLocals() above. */
-        if (kind & CO_FAST_FREE && !(co->co_flags & CO_OPTIMIZED)) {
+        /* Same test as in _PyFrame_GetLocals() above. */
+        PyObject *value; // borrowed reference
+        if (!frame_get_var(frame, co, i, &value)) {
             continue;
         }
+
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
-        PyObject *value = PyObject_GetItem(locals, name);
+        _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
         /* We only care about NULLs if clear is true. */
         if (value == NULL) {
             PyErr_Clear();
@@ -1452,7 +1452,6 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
             }
             Py_XSETREF(fast[i], Py_NewRef(value));
         }
-        Py_XDECREF(value);
     }
     PyErr_SetRaisedException(exc);
 }
