@@ -8365,12 +8365,12 @@ class NamedTupleTests(BaseTestCase):
             "in methods of NamedTuple subclasses"
         )
 
-        with self.assertRaises(RuntimeError, msg=expected_message):
+        with self.assertRaises(TypeError, msg=expected_message):
             class ThisWontWork(NamedTuple):
                 def __repr__(self):
                     return super().__repr__()
 
-        with self.assertRaises(RuntimeError, msg=expected_message):
+        with self.assertRaises(TypeError, msg=expected_message):
             class ThisWontWorkEither(NamedTuple):
                 @property
                 def name(self):
