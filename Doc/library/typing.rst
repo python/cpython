@@ -2551,8 +2551,8 @@ types.
 
    This functional syntax allows defining keys which are not valid
    :ref:`identifiers <identifiers>`, for example because they are
-   keywords or contain hyphens, or when key names must not be mangled
-   like regular private names::
+   keywords or contain hyphens, or when key names must not be
+   :ref:`mangled <private-name-mangling>` like regular private names::
 
       # raises SyntaxError
       class Point2D(TypedDict):
