@@ -2521,7 +2521,8 @@ typedef struct {
     int (*prev_tracer)(PyObject *, PyRefTracerEvent, void *);
 } reftrace_counter_data;
 
-static int _reftrace_counter(PyObject *obj, PyRefTracerEvent event, void *counter_data)
+static int
+_reftrace_counter(PyObject *obj, PyRefTracerEvent event, void *counter_data)
 {
     if (event == PyRefTracer_CREATE) {
         ((reftrace_counter_data *)counter_data)->create_count++;
