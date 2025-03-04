@@ -1,5 +1,4 @@
 import os
-import pathlib._abc
 import pathlib.types
 import posixpath
 
@@ -48,7 +47,7 @@ class LocalPathInfo(pathlib.types.PathInfo):
         return self._is_symlink
 
 
-class ReadableLocalPath(pathlib._abc.ReadablePath):
+class ReadableLocalPath(pathlib.types._ReadablePath):
     """
     Simple implementation of a ReadablePath class for local filesystem paths.
     """
@@ -85,7 +84,7 @@ class ReadableLocalPath(pathlib._abc.ReadablePath):
         return self._info
 
 
-class WritableLocalPath(pathlib._abc.WritablePath):
+class WritableLocalPath(pathlib.types._WritablePath):
     """
     Simple implementation of a WritablePath class for local filesystem paths.
     """

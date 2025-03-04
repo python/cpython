@@ -3,7 +3,7 @@ import os
 import unittest
 
 from pathlib import Path
-from pathlib._abc import WritablePath
+from pathlib.types import _WritablePath
 from pathlib._os import magic_open
 
 from test.test_pathlib.support.local_path import WritableLocalPath, LocalPathGround
@@ -18,7 +18,7 @@ class WritablePathTestBase:
         self.ground.teardown(self.root)
 
     def test_is_writable(self):
-        self.assertIsInstance(self.root, WritablePath)
+        self.assertIsInstance(self.root, _WritablePath)
 
     def test_open_w(self):
         p = self.root / 'fileA'

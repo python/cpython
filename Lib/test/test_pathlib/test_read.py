@@ -2,7 +2,7 @@ import io
 import unittest
 
 from pathlib import Path
-from pathlib._abc import ReadablePath
+from pathlib.types import _ReadablePath
 from pathlib._os import magic_open
 
 from test.test_pathlib.support.local_path import ReadableLocalPath, LocalPathGround
@@ -18,7 +18,7 @@ class ReadablePathTestBase:
         self.ground.teardown(self.root)
 
     def test_is_readable(self):
-        self.assertIsInstance(self.root, ReadablePath)
+        self.assertIsInstance(self.root, _ReadablePath)
 
     def test_open_r(self):
         p = self.root / 'fileA'

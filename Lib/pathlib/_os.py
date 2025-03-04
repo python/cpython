@@ -242,8 +242,7 @@ def ensure_different_files(source, target):
     raise err
 
 
-def copy_file(source, target, follow_symlinks=True, dirs_exist_ok=False,
-              preserve_metadata=False):
+def copy_file(source, target, follow_symlinks=True, preserve_metadata=False):
     """
     Recursively copy the given source ReadablePath to the given target WritablePath.
     """
@@ -254,10 +253,10 @@ def copy_file(source, target, follow_symlinks=True, dirs_exist_ok=False,
             target._write_info(info, follow_symlinks=False)
     elif info.is_dir():
         children = source.iterdir()
-        target.mkdir(exist_ok=dirs_exist_ok)
+        target.mkdir()
         for src in children:
             dst = target.joinpath(src.name)
-            copy_file(src, dst, follow_symlinks, dirs_exist_ok, preserve_metadata)
+            copy_file(src, dst, follow_symlinks, preserve_metadata)
         if preserve_metadata:
             target._write_info(info)
     else:

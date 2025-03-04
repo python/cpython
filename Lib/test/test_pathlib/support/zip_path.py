@@ -1,6 +1,6 @@
 import errno
 import io
-import pathlib._abc
+import pathlib.types
 import posixpath
 import stat
 import zipfile
@@ -101,7 +101,7 @@ class ZipFileList:
         return path_info
 
 
-class ReadableZipPath(pathlib._abc.ReadablePath):
+class ReadableZipPath(pathlib.types._ReadablePath):
     """
     Simple implementation of a ReadablePath class for .zip files.
     """
@@ -155,7 +155,7 @@ class ReadableZipPath(pathlib._abc.ReadablePath):
         return self.zip_file.filelist.resolve(str(self))
 
 
-class WritableZipPath(pathlib._abc.WritablePath):
+class WritableZipPath(pathlib.types._WritablePath):
     """
     Simple implementation of a WritablePath class for .zip files.
     """

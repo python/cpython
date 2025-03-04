@@ -4342,6 +4342,28 @@ class PdbTestInline(unittest.TestCase):
         # The quit prompt should be printed exactly twice
         self.assertEqual(stdout.count("Quit anyway"), 2)
 
+    def test_set_trace_with_skip(self):
+        """GH-82897
+        Inline set_trace() should break unconditionally. This example is a
+        bit oversimplified, but as `pdb.set_trace()` uses the previous Pdb
+        instance, it's possible that we had a previous pdb instance with
+        skip values when we use `pdb.set_trace()` - it would be confusing
+        to users when such inline breakpoints won't break immediately.
+        """
+        script = textwrap.dedent("""
+            import pdb
+            def foo():
+                x = 40 + 2
+                pdb.Pdb(skip=['__main__']).set_trace()
+            foo()
+        """)
+        commands = """
+            p x
+            c
+        """
+        stdout, _ = self._run_script(script, commands)
+        self.assertIn("42", stdout)
+
 
 @support.force_not_colorized_test_class
 @support.requires_subprocess()
