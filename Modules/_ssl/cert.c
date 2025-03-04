@@ -153,13 +153,13 @@ _x509name_print(_sslmodulestate *state, X509_NAME *name, int indent, unsigned lo
  * PySSLCertificate_Type
  */
 
-#define _PySSLCertificate_CAST(op)  ((PySSLCertificate *)(op))
+#define PySSLCertificate_CAST(op)   ((PySSLCertificate *)(op))
 
 static PyObject *
 certificate_repr(PyObject *op)
 {
     PyObject *osubject, *result;
-    PySSLCertificate *self = _PySSLCertificate_CAST(op);
+    PySSLCertificate *self = PySSLCertificate_CAST(op);
 
     /* subject string is ASCII encoded, UTF-8 chars are quoted */
     osubject = _x509name_print(
@@ -181,7 +181,7 @@ certificate_repr(PyObject *op)
 static Py_hash_t
 certificate_hash(PyObject *op)
 {
-    PySSLCertificate *self = _PySSLCertificate_CAST(op);
+    PySSLCertificate *self = PySSLCertificate_CAST(op);
     if (self->hash == (Py_hash_t)-1) {
         unsigned long hash;
         hash = X509_subject_name_hash(self->cert);
@@ -198,7 +198,7 @@ static PyObject *
 certificate_richcompare(PyObject *lhs, PyObject *rhs, int op)
 {
     int cmp;
-    PySSLCertificate *self = _PySSLCertificate_CAST(lhs);
+    PySSLCertificate *self = PySSLCertificate_CAST(lhs);
     _sslmodulestate *state = get_state_cert(self);
 
     if (Py_TYPE(rhs) != state->PySSLCertificate_Type) {
@@ -219,7 +219,7 @@ certificate_richcompare(PyObject *lhs, PyObject *rhs, int op)
 static void
 certificate_dealloc(PyObject *op)
 {
-    PySSLCertificate *self = _PySSLCertificate_CAST(op);
+    PySSLCertificate *self = PySSLCertificate_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     X509_free(self->cert);
     (void)Py_TYPE(self)->tp_free(self);
