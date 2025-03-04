@@ -965,22 +965,47 @@ class TransformableImage(object):
             bounding_box = self._get_new_bounding_box()
             offset_x = bounding_box["min_x"] * -1
             offset_y = bounding_box["min_y"] * -1
-            self._tkPhotoImage = TK.PhotoImage(width=bounding_box["width"], height=bounding_box["height"])
+            self._tkPhotoImage = TK.PhotoImage(width=bounding_box["width"],
+                                               height=bounding_box["height"])
 
             for new_y in range(bounding_box["height"]):
                 for new_x in range(bounding_box["width"]):
-                    original_x, original_y = self._transform_coordinates(new_x - offset_x, new_y - offset_y)
-
-                    if 0 <= original_x < self._originalImage.width() - 1 and 0 <= original_y < self._originalImage.height() - 1:
+                    original_x, original_y = self._transform_coordinates(
+                        new_x - offset_x, new_y - offset_y
+                    )
+                    if (
+                        0 <= original_x < self._originalImage.width() - 1
+                        and 0 <= original_y < self._originalImage.height() - 1
+                    ):
                         rgb = self._interpolate_color(original_x, original_y)
-                        is_transparent = self._originalImage.transparency_get(int(original_x), int(original_y))
-                        self._tkPhotoImage.put("#{:02x}{:02x}{:02x}".format(rgb[0], rgb[1], rgb[2]), (new_x, new_y))
-                        self._tkPhotoImage.transparency_set(new_x, new_y, is_transparent)
-                    elif 0 <= int(original_x) < self._originalImage.width() and 0 <= int(original_y) < self._originalImage.height():
-                        rgb = self._originalImage.get(int(original_x),int(original_y))
-                        is_transparent = self._originalImage.transparency_get(int(original_x), int(original_y))
-                        self._tkPhotoImage.put("#{:02x}{:02x}{:02x}".format(rgb[0], rgb[1], rgb[2]), (new_x, new_y))
-                        self._tkPhotoImage.transparency_set(new_x, new_y, is_transparent)
+                        is_transparent = self._originalImage.transparency_get(
+                            int(original_x), int(original_y)
+                        )
+                        self._tkPhotoImage.put(
+                            "#{:02x}{:02x}{:02x}".format(rgb[0], rgb[1], rgb[2]),
+                            (new_x, new_y),
+                        )
+                        self._tkPhotoImage.transparency_set(
+                            new_x, new_y, is_transparent
+                        )
+                    elif (
+                        0 <= int(original_x) < self._originalImage.width()
+                        and 0 <= int(original_y) < self._originalImage.height()
+                    ):
+                        rgb = self._originalImage.get(
+                            int(original_x), int(original_y)
+                        )
+                        is_transparent = self._originalImage.transparency_get(
+                            int(original_x), int(original_y)
+                        )
+                        self._tkPhotoImage.put(
+                            "#{:02x}{:02x}{:02x}".format(rgb[0], rgb[1], rgb[2]),
+                            (new_x, new_y),
+                        )
+                        self._tkPhotoImage.transparency_set(
+                            new_x, new_y, is_transparent
+                        )
+
             self._currentOrientation = orientation
             self._currentTilt = tilt
         self._screen._drawimage(self._item, position, self._tkPhotoImage)
@@ -1000,9 +1025,7 @@ class Shape(object):
         if type_ == "polygon":
             if isinstance(data, list):
                 data = tuple(data)
-        elif type_ == "image":
-            assert(isinstance(data, TK.PhotoImage))
-        elif type_ == "transformable_image":
+        elif type_ == "image" or type_ == "transformable_image":
             assert(isinstance(data, TK.PhotoImage))
         elif type_ == "compound":
             data = []
@@ -1241,8 +1264,8 @@ class TurtleScreen(TurtleScreenBase):
             of pairs of coordinates. Installs the corresponding
             polygon shape
         (4) name is an arbitrary string and shape is a
-            (compound or transformable_image) Shape object. Installs the corresponding
-            shape.
+            (compound) Shape object. Installs the corresponding
+            compound shape.
         To use a shape, you have to issue the command shape(shapename).
 
         call: register_shape("turtle.gif")
@@ -3326,7 +3349,6 @@ class RawTurtle(TPen, TNavigator):
             elif not isinstance(stampid, TransformableImage):
                 self.screen._delete(stampid)
             self.stampItems.remove(stampid)
-
         # Delete stampitem from undobuffer if necessary
         # if clearstamp is called directly.
         item = ("stamp", stampid)
