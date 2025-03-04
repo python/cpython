@@ -1,0 +1,2 @@
+Ensure that both and left branches have same source for ``async for`` loops.
+Add these branches to the ``co_branches()`` iterator.
