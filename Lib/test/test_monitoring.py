@@ -1706,7 +1706,7 @@ class TestBranchConsistency(MonitoringTestBase, unittest.TestCase):
                 rights.add((src, right))
             print(event_list)
             for event in event_list:
-                way, name, src, dest = event
+                way, _, src, dest = event
                 if "left" in way:
                     self.assertIn((src, dest), lefts)
                 else:
@@ -1782,7 +1782,6 @@ class TestBranchConsistency(MonitoringTestBase, unittest.TestCase):
             except StopIteration:
                 pass
 
-        print(list(foo.__code__.co_branches()))
         self.check_branches(func, foo)
 
 

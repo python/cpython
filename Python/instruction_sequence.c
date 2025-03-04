@@ -29,7 +29,6 @@ typedef _Py_SourceLocation location;
 
 #define RETURN_IF_ERROR(X)  \
     if ((X) == -1) {        \
-        assert(PyErr_Occurred()); \
         return ERROR;       \
     }
 
