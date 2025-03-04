@@ -1,7 +1,0 @@
-================
-Type: Improvement
-Title: Enhance documentation for Python C API type objects
-Issue: :gh:`130814`
-
-Detailed changes:
-- Clarified the title of the page
