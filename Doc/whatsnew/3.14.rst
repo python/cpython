@@ -780,6 +780,11 @@ pdb
   the quit and call :func:`sys.exit`, instead of raising :exc:`bdb.BdbQuit`.
   (Contributed by Tian Gao in :gh:`124704`.)
 
+* Inline breakpoints like :func:`breakpoint` or :func:`pdb.set_trace` will
+  always stop the program at calling frame, ignoring the ``skip`` pattern
+  (if any).
+  (Contributed by Tian Gao in :gh:`130493`.)
+
 
 pickle
 ------
@@ -919,7 +924,8 @@ urllib
 uuid
 ----
 
-* Add support for UUID version 8 via :func:`uuid.uuid8` as specified
+* Add support for UUID versions 6, 7, and 8 via :func:`uuid.uuid6`,
+  :func:`uuid.uuid7`, and :func:`uuid.uuid8` respectively, as specified
   in :rfc:`9562`.
   (Contributed by Bénédikt Tran in :gh:`89083`.)
 

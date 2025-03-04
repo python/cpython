@@ -2820,6 +2820,58 @@ that triggers it(!).  Instead the code was tested by artificially allocating
 just 1 digit at the start, so that the copying code was exercised for every
 digit beyond the first.
 ***/
+
+// Tables are computed by Tools/scripts/long_conv_tables.py
+#if PYLONG_BITS_IN_DIGIT == 15
+    static const double log_base_BASE[37] = {0.0, 0.0, 0.0,
+        0.10566416671474375, 0.0, 0.15479520632582416,
+        0.17233083338141042, 0.18715699480384027, 0.0,
+        0.2113283334294875, 0.22146187299249084, 0.23062877457581984,
+        0.2389975000480771, 0.24669598120940617, 0.25382366147050694,
+        0.26045937304056793, 0.0, 0.27249752275002265,
+        0.27799500009615413, 0.2831951675629057, 0.28812853965915747,
+        0.29282116151858406, 0.2972954412424865, 0.3015707970704675,
+        0.3056641667147438, 0.30959041265164833, 0.3133626478760728,
+        0.31699250014423125, 0.3204903281371736, 0.3238653996751715,
+        0.3271260397072346, 0.3302797540257917, 0.0,
+        0.3362929412905636, 0.3391641894166893, 0.34195220112966446,
+        0.34466166676282084};
+    static const int convwidth_base[37] = {0, 0, 0, 9, 0, 6, 5, 5, 0,
+        4, 4, 4, 4, 4, 3, 3, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+        3, 3, 0, 2, 2, 2, 2};
+    static const twodigits convmultmax_base[37] = {0, 0, 0, 19683, 0,
+        15625, 7776, 16807, 0, 6561, 10000, 14641, 20736, 28561, 2744,
+        3375, 0, 4913, 5832, 6859, 8000, 9261, 10648, 12167, 13824,
+        15625, 17576, 19683, 21952, 24389, 27000, 29791, 0, 1089,
+        1156, 1225, 1296};
+#elif PYLONG_BITS_IN_DIGIT == 30
+    static const double log_base_BASE[37] = {0.0, 0.0, 0.0,
+        0.05283208335737188, 0.0, 0.07739760316291208,
+        0.08616541669070521, 0.09357849740192013, 0.0,
+        0.10566416671474375, 0.11073093649624542, 0.11531438728790992,
+        0.11949875002403855, 0.12334799060470308, 0.12691183073525347,
+        0.13022968652028397, 0.0, 0.13624876137501132,
+        0.13899750004807707, 0.14159758378145285, 0.14406426982957873,
+        0.14641058075929203, 0.14864772062124326, 0.15078539853523376,
+        0.1528320833573719, 0.15479520632582416, 0.1566813239380364,
+        0.15849625007211562, 0.1602451640685868, 0.16193269983758574,
+        0.1635630198536173, 0.16513987701289584, 0.0,
+        0.1681464706452818, 0.16958209470834465, 0.17097610056483223,
+        0.17233083338141042};
+    static const int convwidth_base[37] = {0, 0, 0, 18, 0, 12, 11, 10,
+        0, 9, 9, 8, 8, 8, 7, 7, 0, 7, 7, 7, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+        6, 6, 6, 0, 5, 5, 5, 5};
+    static const twodigits convmultmax_base[37] = {0, 0, 0, 387420489,
+        0, 244140625, 362797056, 282475249, 0, 387420489, 1000000000,
+        214358881, 429981696, 815730721, 105413504, 170859375, 0,
+        410338673, 612220032, 893871739, 64000000, 85766121,
+        113379904, 148035889, 191102976, 244140625, 308915776,
+        387420489, 481890304, 594823321, 729000000, 887503681, 0,
+        39135393, 45435424, 52521875, 60466176};
+#else
+    #error "invalid PYLONG_BITS_IN_DIGIT value"
+#endif
+
 static int
 long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits, int base, PyLongObject **res)
 {
@@ -2832,28 +2884,7 @@ long_from_non_binary_base(const char *start, const char *end, Py_ssize_t digits,
     PyLongObject *z;
     const char *p;
 
-    static double log_base_BASE[37] = {0.0e0,};
-    static int convwidth_base[37] = {0,};
-    static twodigits convmultmax_base[37] = {0,};
-
-    if (log_base_BASE[base] == 0.0) {
-        twodigits convmax = base;
-        int i = 1;
-
-        log_base_BASE[base] = (log((double)base) /
-                               log((double)PyLong_BASE));
-        for (;;) {
-            twodigits next = convmax * base;
-            if (next > PyLong_BASE) {
-                break;
-            }
-            convmax = next;
-            ++i;
-        }
-        convmultmax_base[base] = convmax;
-        assert(i > 0);
-        convwidth_base[base] = i;
-    }
+    assert(log_base_BASE[base] != 0.0);
 
     /* Create an int object that can contain the largest possible
      * integer with this base and length.  Note that there's no
