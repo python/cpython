@@ -556,14 +556,13 @@ at the very least, a 16-bit counter is needed.
         } _PyContainsOpCache;
     ```      
 
-3. Write the specializing function itself in [Python/specialize.c ](../Python/specialize.c). 
-   Refer to any other function in that file for the format.
+3. Write the specializing function itself (`_Py_Specialize_ContainsOp`) in [Python/specialize.c ](../Python/specialize.c). 
+Refer to other functions in that file for the pattern.
 
-4. Remember to update operation stats by calling `add_stat_dict` in 
-   [Python/specialize.c ](../Python/specialize.c).
+4. Add a call to `add_stat_dict` in  `_Py_GetSpecializationStats` which is in [Python/specialize.c ](../Python/specialize.c).
 
 5. Add the cache layout in [Lib/opcode.py](../Lib/opcode.py) so that Python's 
-   dis module will know how to represent it properly.
+   `dis` module will know how to represent it properly.
 
 6. Bump magic number in  [Include/core/pycore_magic_number.h](../Include/internal/pycore_magic_number.h).
 
