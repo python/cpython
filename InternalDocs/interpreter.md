@@ -505,6 +505,7 @@ After the last `DEOPT_IF` has passed, a hit should be recorded with
 `STAT_INC(BASE_INSTRUCTION, hit)`.
 After an optimization has been deferred in the adaptive instruction,
 that should be recorded with `STAT_INC(BASE_INSTRUCTION, deferred)`.
+
 ## How to add a new bytecode specialization
 
 Assuming you found an instruction that serves as a good specialization candidate. 
@@ -555,7 +556,7 @@ at the very least, a 16-bit counter is needed.
 
 3. Write the specializing function itself in [Python/specialize.c ](../Python/specialize.c). 
    Refer to any other function in that file for the format.
-4. Remember to update operation stats by calling add_stat_dict in 
+4. Remember to update operation stats by calling `add_stat_dict` in 
    [Python/specialize.c ](../Python/specialize.c).
 5. Add the cache layout in [Lib/opcode.py](../Lib/opcode.py) so that Python's 
    dis module will know how to represent it properly.
