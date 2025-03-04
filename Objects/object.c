@@ -779,8 +779,8 @@ PyObject_Repr(PyObject *v)
     }
     if (!PyUnicode_Check(res)) {
         _PyErr_Format(tstate, PyExc_TypeError,
-                      "__repr__ returned non-string (type %.200s)",
-                      Py_TYPE(res)->tp_name);
+                      "%.200s.__repr__ returned non-string (type %.200s)",
+                      Py_TYPE(v)->tp_name, Py_TYPE(res)->tp_name);
         Py_DECREF(res);
         return NULL;
     }
@@ -822,8 +822,8 @@ PyObject_Str(PyObject *v)
     }
     if (!PyUnicode_Check(res)) {
         _PyErr_Format(tstate, PyExc_TypeError,
-                      "__str__ returned non-string (type %.200s)",
-                      Py_TYPE(res)->tp_name);
+                      "%.200s.__str__ returned non-string (type %.200s)",
+                      Py_TYPE(v)->tp_name, Py_TYPE(res)->tp_name);
         Py_DECREF(res);
         return NULL;
     }
@@ -878,8 +878,8 @@ PyObject_Bytes(PyObject *v)
             return NULL;
         if (!PyBytes_Check(result)) {
             PyErr_Format(PyExc_TypeError,
-                         "__bytes__ returned non-bytes (type %.200s)",
-                         Py_TYPE(result)->tp_name);
+                         "%.200s.__bytes__ returned non-bytes (type %.200s)",
+                         Py_TYPE(v)->tp_name, Py_TYPE(result)->tp_name);
             Py_DECREF(result);
             return NULL;
         }
