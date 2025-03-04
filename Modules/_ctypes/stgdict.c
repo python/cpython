@@ -258,7 +258,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     }
 
     PyObject *layout_func = PyImport_ImportModuleAttrString("ctypes._layout",
-                                                          "get_layout");
+                                                            "get_layout");
     if (!layout_func) {
         goto error;
     }
