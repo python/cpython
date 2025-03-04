@@ -873,9 +873,6 @@ class TransformableImage(object):
         self._transformMatrix = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
         self._item = screen._createimage(self._transformedImage)
 
-    def clone(self, *args, **kwargs):
-        return self.__class__(self._screen, self._originalImage, *args, **kwargs)
-
     def _transform_coordinates(self, x, y):
         m = self._transformMatrix
         return (m[0][0] * x + m[0][1] * y + m[0][2],
@@ -1009,6 +1006,11 @@ class TransformableImage(object):
             self._currentOrientation = orientation
             self._currentTilt = tilt
         self._screen._drawimage(self._item, position, self._transformedImage)
+
+    def stamp(self, position, orientation, tilt):
+        stamp = self.__class__(self._screen, self._originalImage)
+        stamp.draw(position, orientation, tilt)
+        return stamp
 
     def delete(self):
         self._screen._delete(self._item)
@@ -3331,8 +3333,7 @@ class RawTurtle(TPen, TNavigator):
                 screen._drawpoly(item, poly, fill=self._cc(fc),
                                  outline=self._cc(oc), width=self._outlinewidth, top=True)
         elif ttype == "transformable_image":
-            stitem = self.turtle._item.clone()
-            stitem.draw(self._position, self._orient, self._tilt)
+            stitem = self.turtle._item.stamp(self._position, self._orient, self._tilt)
         self.stampItems.append(stitem)
         self.undobuffer.push(("stamp", stitem))
         return stitem
