@@ -567,8 +567,8 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
             return NULL;
         if (!PyBytes_Check(result)) {
             PyErr_Format(PyExc_TypeError,
-                         "__bytes__ returned non-bytes (type %.200s)",
-                         Py_TYPE(result)->tp_name);
+                         "%.200s.__bytes__ returned non-bytes (type %.200s)",
+                         Py_TYPE(v)->tp_name, Py_TYPE(result)->tp_name);
             Py_DECREF(result);
             return NULL;
         }
@@ -2762,8 +2762,8 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
             return NULL;
         if (!PyBytes_Check(bytes)) {
             PyErr_Format(PyExc_TypeError,
-                        "__bytes__ returned non-bytes (type %.200s)",
-                        Py_TYPE(bytes)->tp_name);
+                         "%.200s.__bytes__ returned non-bytes (type %.200s)",
+                         Py_TYPE(x)->tp_name, Py_TYPE(bytes)->tp_name);
             Py_DECREF(bytes);
             return NULL;
         }
