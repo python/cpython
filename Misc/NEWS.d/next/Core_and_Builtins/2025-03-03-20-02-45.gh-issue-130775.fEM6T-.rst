@@ -1,0 +1,2 @@
+Validate negative :mod:`ast` locations, we only allow ``-1`` as a special
+value.
