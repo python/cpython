@@ -33,10 +33,12 @@ FORCE_SHUTDOWN_PARAMS = [
     dict(function_name=KILL_WORKERS),
 ]
 
-def _put_sleep_put(queue):
+def _put_wait_put(queue, event):
     """ Used as part of test_terminate_workers """
     queue.put('started')
-    time.sleep(2)
+    event.wait()
+
+    # We should never get here since the event will not get set
     queue.put('finished')
 
 
@@ -261,12 +263,13 @@ class ProcessPoolExecutorTest(ExecutorTest):
     def test_force_shutdown_workers(self, function_name):
         manager = self.get_context().Manager()
         q = manager.Queue()
+        e = manager.Event()
 
         with self.executor_type(max_workers=1) as executor:
-            executor.submit(_put_sleep_put, q)
+            executor.submit(_put_wait_put, q, e)
 
             # We should get started, but not finished since we'll terminate the
-            # workers just after
+            # workers just after and never set the event.
             self.assertEqual(q.get(timeout=support.SHORT_TIMEOUT), 'started')
 
             worker_process = list(executor._processes.values())[0]
