@@ -4,8 +4,8 @@ import os
 import errno
 import unittest
 
-from pathlib._abc import JoinablePath, ReadablePath, WritablePath, magic_open
-from pathlib.types import _PathParser, PathInfo
+from pathlib._os import magic_open
+from pathlib.types import _PathParser, PathInfo, _JoinablePath, _ReadablePath, _WritablePath
 import posixpath
 
 from test.support.os_helper import TESTFN
@@ -31,28 +31,10 @@ def needs_windows(fn):
 #
 
 
-class JoinablePathTest(unittest.TestCase):
-    cls = JoinablePath
-
-    def test_magic_methods(self):
-        P = self.cls
-        self.assertFalse(hasattr(P, '__fspath__'))
-        self.assertFalse(hasattr(P, '__bytes__'))
-        self.assertIs(P.__reduce__, object.__reduce__)
-        self.assertIs(P.__repr__, object.__repr__)
-        self.assertIs(P.__hash__, object.__hash__)
-        self.assertIs(P.__eq__, object.__eq__)
-        self.assertIs(P.__lt__, object.__lt__)
-        self.assertIs(P.__le__, object.__le__)
-        self.assertIs(P.__gt__, object.__gt__)
-        self.assertIs(P.__ge__, object.__ge__)
-
-    def test_parser(self):
-        self.assertIs(self.cls.parser, posixpath)
-
-
-class DummyJoinablePath(JoinablePath):
+class DummyJoinablePath(_JoinablePath):
     __slots__ = ('_segments',)
+
+    parser = posixpath
 
     def __init__(self, *segments):
         self._segments = segments
@@ -77,7 +59,7 @@ class DummyJoinablePath(JoinablePath):
         return type(self)(*pathsegments)
 
 
-class DummyJoinablePathTest(unittest.TestCase):
+class JoinablePathTest(unittest.TestCase):
     cls = DummyJoinablePath
 
     # Use a base path that's unrelated to any real filesystem path.
@@ -93,6 +75,10 @@ class DummyJoinablePathTest(unittest.TestCase):
         self.parser = p.parser
         self.sep = self.parser.sep
         self.altsep = self.parser.altsep
+
+    def test_is_joinable(self):
+        p = self.cls(self.base)
+        self.assertIsInstance(p, _JoinablePath)
 
     def test_parser(self):
         self.assertIsInstance(self.cls.parser, _PathParser)
@@ -869,7 +855,7 @@ class DummyReadablePathInfo:
         return False
 
 
-class DummyReadablePath(ReadablePath, DummyJoinablePath):
+class DummyReadablePath(_ReadablePath, DummyJoinablePath):
     """
     Simple implementation of DummyReadablePath that keeps files and
     directories in memory.
@@ -878,6 +864,7 @@ class DummyReadablePath(ReadablePath, DummyJoinablePath):
 
     _files = {}
     _directories = {}
+    parser = posixpath
 
     def __init__(self, *segments):
         super().__init__(*segments)
@@ -909,8 +896,11 @@ class DummyReadablePath(ReadablePath, DummyJoinablePath):
         else:
             raise FileNotFoundError(errno.ENOENT, "File not found", path)
 
+    def readlink(self):
+        raise NotImplementedError
 
-class DummyWritablePath(WritablePath, DummyJoinablePath):
+
+class DummyWritablePath(_WritablePath, DummyJoinablePath):
     __slots__ = ()
 
     def __open_wb__(self, buffering=-1):
@@ -924,26 +914,23 @@ class DummyWritablePath(WritablePath, DummyJoinablePath):
         self._directories[parent].add(name)
         return DummyWritablePathIO(self._files, path)
 
-    def mkdir(self, mode=0o777, parents=False, exist_ok=False):
+    def mkdir(self):
         path = str(self)
         parent = str(self.parent)
         if path in self._directories:
-            if exist_ok:
-                return
-            else:
-                raise FileExistsError(errno.EEXIST, "File exists", path)
+            raise FileExistsError(errno.EEXIST, "File exists", path)
         try:
             if self.name:
                 self._directories[parent].add(self.name)
             self._directories[path] = set()
         except KeyError:
-            if not parents:
-                raise FileNotFoundError(errno.ENOENT, "File not found", parent) from None
-            self.parent.mkdir(parents=True, exist_ok=True)
-            self.mkdir(mode, parents=False, exist_ok=exist_ok)
+            raise FileNotFoundError(errno.ENOENT, "File not found", parent) from None
+
+    def symlink_to(self, target, target_is_directory=False):
+        raise NotImplementedError
 
 
-class DummyReadablePathTest(DummyJoinablePathTest):
+class ReadablePathTest(JoinablePathTest):
     """Tests for ReadablePathTest methods that use stat(), open() and iterdir()."""
 
     cls = DummyReadablePath
@@ -1010,24 +997,9 @@ class DummyReadablePathTest(DummyJoinablePathTest):
         normcase = self.parser.normcase
         self.assertEqual(normcase(path_a), normcase(path_b))
 
-    def test_exists(self):
-        P = self.cls
-        p = P(self.base)
-        self.assertIs(True, p.exists())
-        self.assertIs(True, (p / 'dirA').exists())
-        self.assertIs(True, (p / 'fileA').exists())
-        self.assertIs(False, (p / 'fileA' / 'bah').exists())
-        if self.can_symlink:
-            self.assertIs(True, (p / 'linkA').exists())
-            self.assertIs(True, (p / 'linkB').exists())
-            self.assertIs(True, (p / 'linkB' / 'fileB').exists())
-            self.assertIs(False, (p / 'linkA' / 'bah').exists())
-            self.assertIs(False, (p / 'brokenLink').exists())
-            self.assertIs(True, (p / 'brokenLink').exists(follow_symlinks=False))
-        self.assertIs(False, (p / 'foo').exists())
-        self.assertIs(False, P('/xyzzy').exists())
-        self.assertIs(False, P(self.base + '\udfff').exists())
-        self.assertIs(False, P(self.base + '\x00').exists())
+    def test_is_readable(self):
+        p = self.cls(self.base)
+        self.assertIsInstance(p, _ReadablePath)
 
     def test_magic_open(self):
         p = self.cls(self.base)
@@ -1061,17 +1033,8 @@ class DummyReadablePathTest(DummyJoinablePathTest):
     def test_iterdir_info(self):
         p = self.cls(self.base)
         for child in p.iterdir():
-            info = child.info
-            self.assertIsInstance(info, PathInfo)
-            self.assertEqual(info.exists(), child.exists())
-            self.assertEqual(info.is_dir(), child.is_dir())
-            self.assertEqual(info.is_file(), child.is_file())
-            self.assertEqual(info.is_symlink(), child.is_symlink())
-            self.assertTrue(info.exists(follow_symlinks=False))
-            self.assertEqual(info.is_dir(follow_symlinks=False),
-                             child.is_dir(follow_symlinks=False))
-            self.assertEqual(info.is_file(follow_symlinks=False),
-                             child.is_file(follow_symlinks=False))
+            self.assertIsInstance(child.info, PathInfo)
+            self.assertTrue(child.info.exists(follow_symlinks=False))
 
     def test_glob_common(self):
         def _check(glob, expected):
@@ -1110,7 +1073,7 @@ class DummyReadablePathTest(DummyJoinablePathTest):
         p = P(self.base)
         q = p / "FILEa"
         given = set(p.glob("FILEa"))
-        expect = {q} if q.exists() else set()
+        expect = {q} if q.info.exists() else set()
         self.assertEqual(given, expect)
         self.assertEqual(set(p.glob("FILEa*")), set())
 
@@ -1138,64 +1101,6 @@ class DummyReadablePathTest(DummyJoinablePathTest):
         _check(path, "DIRB/FILE*", False, ["dirB/fileB"])
         _check(path, "dirb/file*", True, [])
         _check(path, "dirb/file*", False, ["dirB/fileB"])
-
-    def test_rglob_recurse_symlinks_false(self):
-        def _check(path, glob, expected):
-            actual = set(path.rglob(glob, recurse_symlinks=False))
-            self.assertEqual(actual, { P(self.base, q) for q in expected })
-        P = self.cls
-        p = P(self.base)
-        it = p.rglob("fileA")
-        self.assertIsInstance(it, collections.abc.Iterator)
-        _check(p, "fileA", ["fileA"])
-        _check(p, "fileB", ["dirB/fileB"])
-        _check(p, "**/fileB", ["dirB/fileB"])
-        _check(p, "*/fileA", [])
-
-        if self.can_symlink:
-            _check(p, "*/fileB", ["dirB/fileB", "dirB/linkD/fileB",
-                                  "linkB/fileB", "dirA/linkC/fileB"])
-            _check(p, "*/", [
-                "dirA/", "dirA/linkC/", "dirB/", "dirB/linkD/", "dirC/",
-                "dirC/dirD/", "dirE/", "linkB/"])
-        else:
-            _check(p, "*/fileB", ["dirB/fileB"])
-            _check(p, "*/", ["dirA/", "dirB/", "dirC/", "dirC/dirD/", "dirE/"])
-
-        _check(p, "file*", ["fileA", "dirB/fileB", "dirC/fileC", "dirC/dirD/fileD"])
-        _check(p, "", ["", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
-        p = P(self.base, "dirC")
-        _check(p, "*", ["dirC/fileC", "dirC/novel.txt",
-                              "dirC/dirD", "dirC/dirD/fileD"])
-        _check(p, "file*", ["dirC/fileC", "dirC/dirD/fileD"])
-        _check(p, "**/file*", ["dirC/fileC", "dirC/dirD/fileD"])
-        _check(p, "dir*/**", ["dirC/dirD/", "dirC/dirD/fileD"])
-        _check(p, "dir*/**/", ["dirC/dirD/"])
-        _check(p, "*/*", ["dirC/dirD/fileD"])
-        _check(p, "*/", ["dirC/dirD/"])
-        _check(p, "", ["dirC/", "dirC/dirD/"])
-        _check(p, "**", ["dirC/", "dirC/fileC", "dirC/dirD", "dirC/dirD/fileD", "dirC/novel.txt"])
-        _check(p, "**/", ["dirC/", "dirC/dirD/"])
-        # gh-91616, a re module regression
-        _check(p, "*.txt", ["dirC/novel.txt"])
-        _check(p, "*.*", ["dirC/novel.txt"])
-
-    @needs_posix
-    def test_rglob_posix(self):
-        P = self.cls
-        p = P(self.base, "dirC")
-        q = p / "dirD" / "FILEd"
-        given = set(p.rglob("FILEd"))
-        expect = {q} if q.exists() else set()
-        self.assertEqual(given, expect)
-        self.assertEqual(set(p.rglob("FILEd*")), set())
-
-    @needs_windows
-    def test_rglob_windows(self):
-        P = self.cls
-        p = P(self.base, "dirC")
-        self.assertEqual(set(p.rglob("FILEd")), { P(self.base, "dirC/dirD/fileD") })
-        self.assertEqual(set(p.rglob("*\\")), { P(self.base, "dirC/dirD/") })
 
     def test_info_exists(self):
         p = self.cls(self.base)
@@ -1225,7 +1130,7 @@ class DummyReadablePathTest(DummyJoinablePathTest):
         q = p / 'myfile'
         self.assertFalse(q.info.exists())
         self.assertFalse(q.info.exists(follow_symlinks=False))
-        if isinstance(self.cls, WritablePath):
+        if isinstance(self.cls, _WritablePath):
             q.write_text('hullo')
             self.assertFalse(q.info.exists())
             self.assertFalse(q.info.exists(follow_symlinks=False))
@@ -1257,7 +1162,7 @@ class DummyReadablePathTest(DummyJoinablePathTest):
         q = p / 'mydir'
         self.assertFalse(q.info.is_dir())
         self.assertFalse(q.info.is_dir(follow_symlinks=False))
-        if isinstance(self.cls, WritablePath):
+        if isinstance(self.cls, _WritablePath):
             q.mkdir()
             self.assertFalse(q.info.is_dir())
             self.assertFalse(q.info.is_dir(follow_symlinks=False))
@@ -1289,7 +1194,7 @@ class DummyReadablePathTest(DummyJoinablePathTest):
         q = p / 'myfile'
         self.assertFalse(q.info.is_file())
         self.assertFalse(q.info.is_file(follow_symlinks=False))
-        if isinstance(self.cls, WritablePath):
+        if isinstance(self.cls, _WritablePath):
             q.write_text('hullo')
             self.assertFalse(q.info.is_file())
             self.assertFalse(q.info.is_file(follow_symlinks=False))
@@ -1309,84 +1214,20 @@ class DummyReadablePathTest(DummyJoinablePathTest):
         self.assertFalse((p / 'fileA\udfff').info.is_symlink())
         self.assertFalse((p / 'fileA\x00').info.is_symlink())
 
-    def test_is_dir(self):
-        P = self.cls(self.base)
-        self.assertTrue((P / 'dirA').is_dir())
-        self.assertFalse((P / 'fileA').is_dir())
-        self.assertFalse((P / 'non-existing').is_dir())
-        self.assertFalse((P / 'fileA' / 'bah').is_dir())
-        if self.can_symlink:
-            self.assertFalse((P / 'linkA').is_dir())
-            self.assertTrue((P / 'linkB').is_dir())
-            self.assertFalse((P/ 'brokenLink').is_dir())
-        self.assertFalse((P / 'dirA\udfff').is_dir())
-        self.assertFalse((P / 'dirA\x00').is_dir())
 
-    def test_is_dir_no_follow_symlinks(self):
-        P = self.cls(self.base)
-        self.assertTrue((P / 'dirA').is_dir(follow_symlinks=False))
-        self.assertFalse((P / 'fileA').is_dir(follow_symlinks=False))
-        self.assertFalse((P / 'non-existing').is_dir(follow_symlinks=False))
-        self.assertFalse((P / 'fileA' / 'bah').is_dir(follow_symlinks=False))
-        if self.can_symlink:
-            self.assertFalse((P / 'linkA').is_dir(follow_symlinks=False))
-            self.assertFalse((P / 'linkB').is_dir(follow_symlinks=False))
-            self.assertFalse((P/ 'brokenLink').is_dir(follow_symlinks=False))
-        self.assertFalse((P / 'dirA\udfff').is_dir(follow_symlinks=False))
-        self.assertFalse((P / 'dirA\x00').is_dir(follow_symlinks=False))
-
-    def test_is_file(self):
-        P = self.cls(self.base)
-        self.assertTrue((P / 'fileA').is_file())
-        self.assertFalse((P / 'dirA').is_file())
-        self.assertFalse((P / 'non-existing').is_file())
-        self.assertFalse((P / 'fileA' / 'bah').is_file())
-        if self.can_symlink:
-            self.assertTrue((P / 'linkA').is_file())
-            self.assertFalse((P / 'linkB').is_file())
-            self.assertFalse((P/ 'brokenLink').is_file())
-        self.assertFalse((P / 'fileA\udfff').is_file())
-        self.assertFalse((P / 'fileA\x00').is_file())
-
-    def test_is_file_no_follow_symlinks(self):
-        P = self.cls(self.base)
-        self.assertTrue((P / 'fileA').is_file(follow_symlinks=False))
-        self.assertFalse((P / 'dirA').is_file(follow_symlinks=False))
-        self.assertFalse((P / 'non-existing').is_file(follow_symlinks=False))
-        self.assertFalse((P / 'fileA' / 'bah').is_file(follow_symlinks=False))
-        if self.can_symlink:
-            self.assertFalse((P / 'linkA').is_file(follow_symlinks=False))
-            self.assertFalse((P / 'linkB').is_file(follow_symlinks=False))
-            self.assertFalse((P/ 'brokenLink').is_file(follow_symlinks=False))
-        self.assertFalse((P / 'fileA\udfff').is_file(follow_symlinks=False))
-        self.assertFalse((P / 'fileA\x00').is_file(follow_symlinks=False))
-
-    def test_is_symlink(self):
-        P = self.cls(self.base)
-        self.assertFalse((P / 'fileA').is_symlink())
-        self.assertFalse((P / 'dirA').is_symlink())
-        self.assertFalse((P / 'non-existing').is_symlink())
-        self.assertFalse((P / 'fileA' / 'bah').is_symlink())
-        if self.can_symlink:
-            self.assertTrue((P / 'linkA').is_symlink())
-            self.assertTrue((P / 'linkB').is_symlink())
-            self.assertTrue((P/ 'brokenLink').is_symlink())
-        self.assertIs((P / 'fileA\udfff').is_file(), False)
-        self.assertIs((P / 'fileA\x00').is_file(), False)
-        if self.can_symlink:
-            self.assertIs((P / 'linkA\udfff').is_file(), False)
-            self.assertIs((P / 'linkA\x00').is_file(), False)
-
-
-class DummyWritablePathTest(DummyJoinablePathTest):
+class WritablePathTest(JoinablePathTest):
     cls = DummyWritablePath
+
+    def test_is_writable(self):
+        p = self.cls(self.base)
+        self.assertIsInstance(p, _WritablePath)
 
 
 class DummyRWPath(DummyWritablePath, DummyReadablePath):
     __slots__ = ()
 
 
-class DummyRWPathTest(DummyWritablePathTest, DummyReadablePathTest):
+class RWPathTest(WritablePathTest, ReadablePathTest):
     cls = DummyRWPath
     can_symlink = False
 
@@ -1448,8 +1289,8 @@ class DummyRWPathTest(DummyWritablePathTest, DummyReadablePathTest):
         target = base / 'copyA'
         result = source.copy(target)
         self.assertEqual(result, target)
-        self.assertTrue(target.exists())
-        self.assertEqual(source.read_text(), target.read_text())
+        self.assertTrue(result.info.exists())
+        self.assertEqual(source.read_text(), result.read_text())
 
     def test_copy_file_to_existing_file(self):
         base = self.cls(self.base)
@@ -1457,8 +1298,8 @@ class DummyRWPathTest(DummyWritablePathTest, DummyReadablePathTest):
         target = base / 'dirB' / 'fileB'
         result = source.copy(target)
         self.assertEqual(result, target)
-        self.assertTrue(target.exists())
-        self.assertEqual(source.read_text(), target.read_text())
+        self.assertTrue(result.info.exists())
+        self.assertEqual(source.read_text(), result.read_text())
 
     def test_copy_file_to_existing_directory(self):
         base = self.cls(self.base)
@@ -1473,8 +1314,8 @@ class DummyRWPathTest(DummyWritablePathTest, DummyReadablePathTest):
         source.write_bytes(b'')
         result = source.copy(target)
         self.assertEqual(result, target)
-        self.assertTrue(target.exists())
-        self.assertEqual(target.read_bytes(), b'')
+        self.assertTrue(result.info.exists())
+        self.assertEqual(result.read_bytes(), b'')
 
     def test_copy_file_to_itself(self):
         base = self.cls(self.base)
@@ -1489,13 +1330,13 @@ class DummyRWPathTest(DummyWritablePathTest, DummyReadablePathTest):
         target = base / 'copyC'
         result = source.copy(target)
         self.assertEqual(result, target)
-        self.assertTrue(target.is_dir())
-        self.assertTrue(target.joinpath('dirD').is_dir())
-        self.assertTrue(target.joinpath('dirD', 'fileD').is_file())
-        self.assertEqual(target.joinpath('dirD', 'fileD').read_text(),
+        self.assertTrue(result.info.is_dir())
+        self.assertTrue(result.joinpath('dirD').info.is_dir())
+        self.assertTrue(result.joinpath('dirD', 'fileD').info.is_file())
+        self.assertEqual(result.joinpath('dirD', 'fileD').read_text(),
                          "this is file D\n")
-        self.assertTrue(target.joinpath('fileC').is_file())
-        self.assertTrue(target.joinpath('fileC').read_text(),
+        self.assertTrue(result.joinpath('fileC').info.is_file())
+        self.assertTrue(result.joinpath('fileC').read_text(),
                         "this is file C\n")
 
     def test_copy_dir_complex(self, follow_symlinks=True):
@@ -1519,7 +1360,7 @@ class DummyRWPathTest(DummyWritablePathTest, DummyReadablePathTest):
 
         # Compare the source and target trees
         source_walk = ordered_walk(source)
-        target_walk = ordered_walk(target)
+        target_walk = ordered_walk(result)
         for source_item, target_item in zip(source_walk, target_walk, strict=True):
             self.assertEqual(source_item[0].parts[len(source.parts):],
                              target_item[0].parts[len(target.parts):])  # dirpath
@@ -1529,12 +1370,12 @@ class DummyRWPathTest(DummyWritablePathTest, DummyReadablePathTest):
             for filename in source_item[2]:
                 source_file = source_item[0].joinpath(filename)
                 target_file = target_item[0].joinpath(filename)
-                if follow_symlinks or not source_file.is_symlink():
+                if follow_symlinks or not source_file.info.is_symlink():
                     # Regular file.
                     self.assertEqual(source_file.read_bytes(), target_file.read_bytes())
-                elif source_file.is_dir():
+                elif source_file.info.is_dir():
                     # Symlink to directory.
-                    self.assertTrue(target_file.is_dir())
+                    self.assertTrue(target_file.info.is_dir())
                     self.assertEqual(source_file.readlink(), target_file.readlink())
                 else:
                     # Symlink to file.
@@ -1552,23 +1393,6 @@ class DummyRWPathTest(DummyWritablePathTest, DummyReadablePathTest):
         target.joinpath('dirD').mkdir()
         self.assertRaises(FileExistsError, source.copy, target)
 
-    def test_copy_dir_to_existing_directory_dirs_exist_ok(self):
-        base = self.cls(self.base)
-        source = base / 'dirC'
-        target = base / 'copyC'
-        target.mkdir()
-        target.joinpath('dirD').mkdir()
-        result = source.copy(target, dirs_exist_ok=True)
-        self.assertEqual(result, target)
-        self.assertTrue(target.is_dir())
-        self.assertTrue(target.joinpath('dirD').is_dir())
-        self.assertTrue(target.joinpath('dirD', 'fileD').is_file())
-        self.assertEqual(target.joinpath('dirD', 'fileD').read_text(),
-                         "this is file D\n")
-        self.assertTrue(target.joinpath('fileC').is_file())
-        self.assertTrue(target.joinpath('fileC').read_text(),
-                        "this is file C\n")
-
     def test_copy_dir_to_itself(self):
         base = self.cls(self.base)
         source = base / 'dirC'
@@ -1581,7 +1405,7 @@ class DummyRWPathTest(DummyWritablePathTest, DummyReadablePathTest):
         target = base / 'dirC' / 'dirD' / 'copyC'
         self.assertRaises(OSError, source.copy, target)
         self.assertRaises(OSError, source.copy, target, follow_symlinks=False)
-        self.assertFalse(target.exists())
+        self.assertFalse(target.info.exists())
 
     def test_copy_into(self):
         base = self.cls(self.base)
@@ -1589,7 +1413,7 @@ class DummyRWPathTest(DummyWritablePathTest, DummyReadablePathTest):
         target_dir = base / 'dirA'
         result = source.copy_into(target_dir)
         self.assertEqual(result, target_dir / 'fileA')
-        self.assertTrue(result.exists())
+        self.assertTrue(result.info.exists())
         self.assertEqual(source.read_text(), result.read_text())
 
     def test_copy_into_empty_name(self):
@@ -1598,9 +1422,9 @@ class DummyRWPathTest(DummyWritablePathTest, DummyReadablePathTest):
         self.assertRaises(ValueError, source.copy_into, target_dir)
 
 
-class DummyReadablePathWalkTest(unittest.TestCase):
+class ReadablePathWalkTest(unittest.TestCase):
     cls = DummyReadablePath
-    base = DummyReadablePathTest.base
+    base = ReadablePathTest.base
     can_symlink = False
 
     def setUp(self):

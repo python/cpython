@@ -112,6 +112,14 @@ NOTE: In the interpreter's initialization phase, some globals are currently
 #  define _PyUnicode_CHECK(op) PyUnicode_Check(op)
 #endif
 
+#ifdef Py_GIL_DISABLED
+#  define LOCK_INTERNED(interp) PyMutex_Lock(&_Py_INTERP_CACHED_OBJECT(interp, interned_mutex))
+#  define UNLOCK_INTERNED(interp) PyMutex_Unlock(&_Py_INTERP_CACHED_OBJECT(interp, interned_mutex))
+#else
+#  define LOCK_INTERNED(interp)
+#  define UNLOCK_INTERNED(interp)
+#endif
+
 static inline char* _PyUnicode_UTF8(PyObject *op)
 {
     return FT_ATOMIC_LOAD_PTR_ACQUIRE(_PyCompactUnicodeObject_CAST(op)->utf8);
@@ -9764,7 +9772,8 @@ _PyUnicode_InsertThousandsGrouping(
     Py_ssize_t min_width,
     const char *grouping,
     PyObject *thousands_sep,
-    Py_UCS4 *maxchar)
+    Py_UCS4 *maxchar,
+    int forward)
 {
     min_width = Py_MAX(0, min_width);
     if (writer) {
@@ -9801,14 +9810,14 @@ _PyUnicode_InsertThousandsGrouping(
        should be an empty string */
     assert(!(grouping[0] == CHAR_MAX && thousands_sep_len != 0));
 
-    digits_pos = d_pos + n_digits;
+    digits_pos = d_pos + (forward ? 0 : n_digits);
     if (writer) {
-        buffer_pos = writer->pos + n_buffer;
+        buffer_pos = writer->pos + (forward ? 0 : n_buffer);
         assert(buffer_pos <= PyUnicode_GET_LENGTH(writer->buffer));
         assert(digits_pos <= PyUnicode_GET_LENGTH(digits));
     }
     else {
-        buffer_pos = n_buffer;
+        buffer_pos = forward ? 0 : n_buffer;
     }
 
     if (!writer) {
@@ -9830,7 +9839,7 @@ _PyUnicode_InsertThousandsGrouping(
                                      digits, &digits_pos,
                                      n_chars, n_zeros,
                                      use_separator ? thousands_sep : NULL,
-                                     thousands_sep_len, maxchar);
+                                     thousands_sep_len, maxchar, forward);
 
         /* Use a separator next time. */
         use_separator = 1;
@@ -9859,7 +9868,7 @@ _PyUnicode_InsertThousandsGrouping(
                                      digits, &digits_pos,
                                      n_chars, n_zeros,
                                      use_separator ? thousands_sep : NULL,
-                                     thousands_sep_len, maxchar);
+                                     thousands_sep_len, maxchar, forward);
     }
     return count;
 }
@@ -12452,15 +12461,14 @@ unicode_isidentifier_impl(PyObject *self)
 /*[clinic input]
 str.isprintable as unicode_isprintable
 
-Return True if the string is printable, False otherwise.
+Return True if all characters in the string are printable, False otherwise.
 
-A string is printable if all of its characters are considered printable in
-repr() or if it is empty.
+A character is printable if repr() may use it in its output.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_isprintable_impl(PyObject *self)
-/*[clinic end generated code: output=3ab9626cd32dd1a0 input=98a0e1c2c1813209]*/
+/*[clinic end generated code: output=3ab9626cd32dd1a0 input=4e56bcc6b06ca18c]*/
 {
     Py_ssize_t i, length;
     int kind;
@@ -15815,11 +15823,13 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     PyObject *interned = get_interned_dict(interp);
     assert(interned != NULL);
 
+    LOCK_INTERNED(interp);
     PyObject *t;
     {
         int res = PyDict_SetDefaultRef(interned, s, s, &t);
         if (res < 0) {
             PyErr_Clear();
+            UNLOCK_INTERNED(interp);
             return s;
         }
         else if (res == 1) {
@@ -15829,6 +15839,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
                     PyUnicode_CHECK_INTERNED(t) == SSTATE_INTERNED_MORTAL) {
                 immortalize_interned(t);
             }
+            UNLOCK_INTERNED(interp);
             return t;
         }
         else {
@@ -15845,12 +15856,8 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
     if (!_Py_IsImmortal(s)) {
         /* The two references in interned dict (key and value) are not counted.
         unicode_dealloc() and _PyUnicode_ClearInterned() take care of this. */
-        Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
-#ifdef Py_REF_DEBUG
-        /* let's be pedantic with the ref total */
-        _Py_DecRefTotal(_PyThreadState_GET());
-        _Py_DecRefTotal(_PyThreadState_GET());
-#endif
+        Py_DECREF(s);
+        Py_DECREF(s);
     }
     FT_ATOMIC_STORE_UINT16_RELAXED(_PyUnicode_STATE(s).interned, SSTATE_INTERNED_MORTAL);
 
@@ -15865,6 +15872,7 @@ intern_common(PyInterpreterState *interp, PyObject *s /* stolen */,
         immortalize_interned(s);
     }
 
+    UNLOCK_INTERNED(interp);
     return s;
 }
 
@@ -15944,7 +15952,6 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
     Py_ssize_t pos = 0;
     PyObject *s, *ignored_value;
     while (PyDict_Next(interned, &pos, &s, &ignored_value)) {
-        assert(PyUnicode_IS_READY(s));
         int shared = 0;
         switch (PyUnicode_CHECK_INTERNED(s)) {
         case SSTATE_INTERNED_IMMORTAL:

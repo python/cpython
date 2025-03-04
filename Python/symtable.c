@@ -163,15 +163,17 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
 }
 
 static PyObject *
-ste_repr(PySTEntryObject *ste)
+ste_repr(PyObject *op)
 {
+    PySTEntryObject *ste = (PySTEntryObject *)op;
     return PyUnicode_FromFormat("<symtable entry %U(%R), line %d>",
                                 ste->ste_name, ste->ste_id, ste->ste_loc.lineno);
 }
 
 static void
-ste_dealloc(PySTEntryObject *ste)
+ste_dealloc(PyObject *op)
 {
+    PySTEntryObject *ste = (PySTEntryObject *)op;
     ste->ste_table = NULL;
     Py_XDECREF(ste->ste_id);
     Py_XDECREF(ste->ste_name);
@@ -203,12 +205,12 @@ PyTypeObject PySTEntry_Type = {
     "symtable entry",
     sizeof(PySTEntryObject),
     0,
-    (destructor)ste_dealloc,                /* tp_dealloc */
-    0,                                      /* tp_vectorcall_offset */
-    0,                                         /* tp_getattr */
+    ste_dealloc,                                /* tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
+    0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)ste_repr,                         /* tp_repr */
+    ste_repr,                                   /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
@@ -406,7 +408,6 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
     asdl_stmt_seq *seq;
     Py_ssize_t i;
     PyThreadState *tstate;
-    int starting_recursion_depth;
 
     if (st == NULL)
         return NULL;
@@ -423,11 +424,6 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
         _PySymtable_Free(st);
         return NULL;
     }
-    /* Be careful here to prevent overflow. */
-    int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
-    starting_recursion_depth = recursion_depth;
-    st->recursion_depth = starting_recursion_depth;
-    st->recursion_limit = Py_C_RECURSION_LIMIT;
 
     /* Make the initial symbol information gathering pass */
 
@@ -466,14 +462,6 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
         goto error;
     }
     if (!symtable_exit_block(st)) {
-        _PySymtable_Free(st);
-        return NULL;
-    }
-    /* Check that the recursion depth counting balanced correctly */
-    if (st->recursion_depth != starting_recursion_depth) {
-        PyErr_Format(PyExc_SystemError,
-            "symtable analysis recursion depth mismatch (before=%d, after=%d)",
-            starting_recursion_depth, st->recursion_depth);
         _PySymtable_Free(st);
         return NULL;
     }
@@ -1736,19 +1724,12 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
         } \
     } while(0)
 
-#define ENTER_RECURSIVE(ST) \
-    do { \
-        if (++(ST)->recursion_depth > (ST)->recursion_limit) { \
-            PyErr_SetString(PyExc_RecursionError, \
-                "maximum recursion depth exceeded during compilation"); \
-            return 0; \
-        } \
-    } while(0)
+#define ENTER_RECURSIVE() \
+if (Py_EnterRecursiveCall(" during compilation")) { \
+    return 0; \
+}
 
-#define LEAVE_RECURSIVE(ST) \
-    do { \
-        --(ST)->recursion_depth; \
-    } while(0)
+#define LEAVE_RECURSIVE() Py_LeaveRecursiveCall();
 
 
 static int
@@ -1823,7 +1804,7 @@ maybe_set_ste_coroutine_for_module(struct symtable *st, stmt_ty s)
 static int
 symtable_visit_stmt(struct symtable *st, stmt_ty s)
 {
-    ENTER_RECURSIVE(st);
+    ENTER_RECURSIVE();
     switch (s->kind) {
     case FunctionDef_kind: {
         if (!symtable_add_def(st, s->v.FunctionDef.name, DEF_LOCAL, LOCATION(s)))
@@ -2235,7 +2216,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_SEQ(st, stmt, s->v.AsyncFor.orelse);
         break;
     }
-    LEAVE_RECURSIVE(st);
+    LEAVE_RECURSIVE();
     return 1;
 }
 
@@ -2358,7 +2339,7 @@ symtable_handle_namedexpr(struct symtable *st, expr_ty e)
 static int
 symtable_visit_expr(struct symtable *st, expr_ty e)
 {
-    ENTER_RECURSIVE(st);
+    ENTER_RECURSIVE();
     switch (e->kind) {
     case NamedExpr_kind:
         if (!symtable_raise_if_annotation_block(st, "named expression", e)) {
@@ -2529,7 +2510,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT_SEQ(st, expr, e->v.Tuple.elts);
         break;
     }
-    LEAVE_RECURSIVE(st);
+    LEAVE_RECURSIVE();
     return 1;
 }
 
@@ -2563,7 +2544,7 @@ symtable_visit_type_param_bound_or_default(
 static int
 symtable_visit_type_param(struct symtable *st, type_param_ty tp)
 {
-    ENTER_RECURSIVE(st);
+    ENTER_RECURSIVE();
     switch(tp->kind) {
     case TypeVar_kind:
         if (!symtable_add_def(st, tp->v.TypeVar.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
@@ -2612,14 +2593,14 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         }
         break;
     }
-    LEAVE_RECURSIVE(st);
+    LEAVE_RECURSIVE();
     return 1;
 }
 
 static int
 symtable_visit_pattern(struct symtable *st, pattern_ty p)
 {
-    ENTER_RECURSIVE(st);
+    ENTER_RECURSIVE();
     switch (p->kind) {
     case MatchValue_kind:
         VISIT(st, expr, p->v.MatchValue.value);
@@ -2668,7 +2649,7 @@ symtable_visit_pattern(struct symtable *st, pattern_ty p)
         VISIT_SEQ(st, pattern, p->v.MatchOr.patterns);
         break;
     }
-    LEAVE_RECURSIVE(st);
+    LEAVE_RECURSIVE();
     return 1;
 }
 

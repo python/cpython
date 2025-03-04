@@ -86,7 +86,7 @@ jobs:
             runner: ubuntu-24.04
           - target: aarch64-unknown-linux-gnu/gcc
             architecture: aarch64
-            runner: ubuntu-22.04-arm
+            runner: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
         with:
@@ -137,7 +137,9 @@ jobs:
     name: Free-Threaded (Debug)
     needs: interpreter
     runs-on: ubuntu-24.04
+    timeout-minutes: 90
     strategy:
+      fail-fast: false
       matrix:
         llvm:
           - 19
