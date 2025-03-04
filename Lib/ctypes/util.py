@@ -174,7 +174,7 @@ elif sys.platform == "android":
         return fname if os.path.isfile(fname) else None
 
 elif os.name == "posix":
-    # Andreas Degert's find functions, using gcc, /sbin/ldconfig, objdump
+    # Andreas Degert's find functions, using gcc, ldconfig, objdump
     import re, tempfile
 
     def _is_elf(filename):
@@ -291,12 +291,13 @@ elif os.name == "posix":
             return nums or [sys.maxsize]
 
         def find_library(name):
+            ldconfig_bin = shutil.which('ldconfig') or '/sbin/ldconfig'
             ename = re.escape(name)
             expr = r':-l%s\.\S+ => \S*/(lib%s\.\S+)' % (ename, ename)
             expr = os.fsencode(expr)
 
             try:
-                proc = subprocess.Popen(('/sbin/ldconfig', '-r'),
+                proc = subprocess.Popen((ldconfig_bin, '-r'),
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.DEVNULL)
             except OSError:  # E.g. command not found
@@ -353,8 +354,9 @@ elif os.name == "posix":
             return _get_soname(_findLib_crle(name, is64) or _findLib_gcc(name))
 
     else:
-
+        # Linux distros and any others which did not match on sys.platform
         def _findSoname_ldconfig(name):
+            ldconfig_bin = shutil.which('ldconfig') or '/sbin/ldconfig'
             import struct
             if struct.calcsize('l') == 4:
                 machine = os.uname().machine + '-32'
@@ -368,12 +370,11 @@ elif os.name == "posix":
                 'ia64-64': 'libc6,IA-64',
                 }
             abi_type = mach_map.get(machine, 'libc6')
-
             # XXX assuming GLIBC's ldconfig (with option -p)
             regex = r'\s+(lib%s\.[^\s]+)\s+\(%s'
             regex = os.fsencode(regex % (re.escape(name), abi_type))
             try:
-                with subprocess.Popen(['/sbin/ldconfig', '-p'],
+                with subprocess.Popen([ldconfig_bin, '-p'],
                                       stdin=subprocess.DEVNULL,
                                       stderr=subprocess.DEVNULL,
                                       stdout=subprocess.PIPE,
