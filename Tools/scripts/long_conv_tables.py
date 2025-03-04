@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 #
-# Compute tables for longobject.c integer conversion.
+# Compute tables for longobject.c long_from_non_binary_base().  They are used
+# for conversions of strings to integers with a non-binary base.
 
 import math
 import textwrap
@@ -24,9 +25,12 @@ def conv_tables(long_bits):
     convmultmax_base = [0] * 37
     convwidth_base = [0] * 37
     for base in range(2, 37):
+        is_binary_base = (base & (base - 1)) == 0
+        if is_binary_base:
+            continue  # don't need, leave as zero
         convmax = base
         i = 1
-        log_base_BASE[base] = math.log(float(base)) / math.log(PyLong_BASE)
+        log_base_BASE[base] = math.log(base) / math.log(PyLong_BASE)
         while True:
             next = convmax * base
             if next > PyLong_BASE:
@@ -38,11 +42,16 @@ def conv_tables(long_bits):
         convwidth_base[base] = i
     return '\n'.join(
         [
-            format_array('static const double log_base_BASE[37]', log_base_BASE),
+            format_array(
+                'static const double log_base_BASE[37]', log_base_BASE
+            ),
             format_array(
                 'static const int convwidth_base[37]', convwidth_base
             ),
-            format_array('static const twodigits convmultmax_base[37]', convmultmax_base),
+            format_array(
+                'static const twodigits convmultmax_base[37]',
+                convmultmax_base,
+            ),
         ]
     )
 
