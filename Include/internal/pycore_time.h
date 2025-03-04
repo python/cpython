@@ -331,6 +331,18 @@ extern double _PyTimeFraction_Resolution(
     const _PyTimeFraction *frac);
 
 
+// --- _Py_time_runtime_state ------------------------------------------------
+
+struct _Py_time_runtime_state {
+#if defined(MS_WINDOWS) || defined(__APPLE__)
+    _PyTimeFraction base;
+#else
+    char _unused;
+#endif
+};
+
+extern PyStatus _PyTime_Init(struct _Py_time_runtime_state *state);
+
 #ifdef __cplusplus
 }
 #endif

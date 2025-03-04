@@ -1052,6 +1052,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             f2 = filter(filter_char, "abcdeabcde")
             self.check_iter_pickle(f1, list(f2), proto)
 
+    @support.skip_wasi_stack_overflow()
     @support.requires_resource('cpu')
     def test_filter_dealloc(self):
         # Tests recursive deallocation of nested filter objects using the
@@ -1708,6 +1709,29 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             sys.stdin = savestdin
             sys.stdout = savestdout
             fp.close()
+
+    def test_input_gh130163(self):
+        class X(io.StringIO):
+            def __getattribute__(self, name):
+                nonlocal patch
+                if patch:
+                    patch = False
+                    sys.stdout = X()
+                    sys.stderr = X()
+                    sys.stdin = X('input\n')
+                    support.gc_collect()
+                return io.StringIO.__getattribute__(self, name)
+
+        with (support.swap_attr(sys, 'stdout', None),
+              support.swap_attr(sys, 'stderr', None),
+              support.swap_attr(sys, 'stdin', None)):
+            patch = False
+            # the only references:
+            sys.stdout = X()
+            sys.stderr = X()
+            sys.stdin = X('input\n')
+            patch = True
+            input()  # should not crash
 
     # test_int(): see test_int.py for tests of built-in function int().
 

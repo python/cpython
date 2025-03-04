@@ -3254,7 +3254,7 @@ dict_dealloc(PyObject *self)
     Py_TRASHCAN_BEGIN(mp, dict_dealloc)
     if (values != NULL) {
         if (values->embedded == 0) {
-            for (i = 0, n = mp->ma_keys->dk_nentries; i < n; i++) {
+            for (i = 0, n = values->capacity; i < n; i++) {
                 Py_XDECREF(values->values[i]);
             }
             free_values(values, false);

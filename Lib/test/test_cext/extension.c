@@ -58,10 +58,23 @@ _testcext_exec(
     return 0;
 }
 
+// Converting from function pointer to void* has undefined behavior, but
+// works on all known platforms, and CPython's module and type slots currently
+// need it.
+// (GCC doesn't have a narrower category for this than -Wpedantic.)
+_Py_COMP_DIAG_PUSH
+#if defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wpedantic"
+#elif defined(__clang__)
+#pragma clang diagnostic ignored "-Wpedantic"
+#endif
+
 static PyModuleDef_Slot _testcext_slots[] = {
     {Py_mod_exec, (void*)_testcext_exec},
     {0, NULL}
 };
+
+_Py_COMP_DIAG_POP
 
 
 PyDoc_STRVAR(_testcext_doc, "C test extension.");

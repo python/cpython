@@ -493,6 +493,24 @@ class TestEdgeCases(unittest.TestCase):
         # The last c_call is the call to sys.setprofile
         self.assertEqual(events, ['c_call', 'c_return', 'c_call'])
 
+        class B:
+            f = classmethod(max)
+        events = []
+        sys.setprofile(lambda frame, event, args: events.append(event))
+        # Not important, we only want to trigger INSTRUMENTED_CALL_KW
+        B().f(1, key=lambda x: 0)
+        sys.setprofile(None)
+        # The last c_call is the call to sys.setprofile
+        self.assertEqual(
+            events,
+            ['c_call',
+             'call', 'return',
+             'call', 'return',
+             'c_return',
+             'c_call'
+            ]
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

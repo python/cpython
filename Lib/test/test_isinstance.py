@@ -263,12 +263,14 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertEqual(True, issubclass(int, (int, (float, int))))
         self.assertEqual(True, issubclass(str, (str, (Child, str))))
 
+    @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     def test_subclass_recursion_limit(self):
         # make sure that issubclass raises RecursionError before the C stack is
         # blown
         self.assertRaises(RecursionError, blowstack, issubclass, str, str)
 
+    @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     def test_isinstance_recursion_limit(self):
         # make sure that issubclass raises RecursionError before the C stack is

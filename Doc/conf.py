@@ -30,6 +30,7 @@ extensions = [
     'glossary_search',
     'grammar_snippet',
     'implementation_detail',
+    'issue_role',
     'lexers',
     'misc_news',
     'pydoc_topics',

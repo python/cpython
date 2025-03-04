@@ -154,7 +154,6 @@ import itertools
 import os
 import re
 import sys
-import types
 
 __all__ = ("NoSectionError", "DuplicateOptionError", "DuplicateSectionError",
            "NoOptionError", "InterpolationError", "InterpolationDepthError",
@@ -570,35 +569,36 @@ class _ReadState:
 
 
 class _Line(str):
+    __slots__ = 'clean', 'has_comments'
 
     def __new__(cls, val, *args, **kwargs):
         return super().__new__(cls, val)
 
-    def __init__(self, val, prefixes):
-        self.prefixes = prefixes
+    def __init__(self, val, comments):
+        trimmed = val.strip()
+        self.clean = comments.strip(trimmed)
+        self.has_comments = trimmed != self.clean
 
-    @functools.cached_property
-    def clean(self):
-        return self._strip_full() and self._strip_inline()
 
-    @property
-    def has_comments(self):
-        return self.strip() != self.clean
-
-    def _strip_inline(self):
-        """
-        Search for the earliest prefix at the beginning of the line or following a space.
-        """
-        matcher = re.compile(
-            '|'.join(fr'(^|\s)({re.escape(prefix)})' for prefix in self.prefixes.inline)
-            # match nothing if no prefixes
-            or '(?!)'
+class _CommentSpec:
+    def __init__(self, full_prefixes, inline_prefixes):
+        full_patterns = (
+            # prefix at the beginning of a line
+            fr'^({re.escape(prefix)}).*'
+            for prefix in full_prefixes
         )
-        match = matcher.search(self)
-        return self[:match.start() if match else None].strip()
+        inline_patterns = (
+            # prefix at the beginning of the line or following a space
+            fr'(^|\s)({re.escape(prefix)}.*)'
+            for prefix in inline_prefixes
+        )
+        self.pattern = re.compile('|'.join(itertools.chain(full_patterns, inline_patterns)))
 
-    def _strip_full(self):
-        return '' if any(map(self.strip().startswith, self.prefixes.full)) else True
+    def strip(self, text):
+        return self.pattern.sub('', text).rstrip()
+
+    def wrap(self, text):
+        return _Line(text, self)
 
 
 class RawConfigParser(MutableMapping):
@@ -667,10 +667,7 @@ class RawConfigParser(MutableMapping):
             else:
                 self._optcre = re.compile(self._OPT_TMPL.format(delim=d),
                                           re.VERBOSE)
-        self._prefixes = types.SimpleNamespace(
-            full=tuple(comment_prefixes or ()),
-            inline=tuple(inline_comment_prefixes or ()),
-        )
+        self._comments = _CommentSpec(comment_prefixes or (), inline_comment_prefixes or ())
         self._strict = strict
         self._allow_no_value = allow_no_value
         self._empty_lines_in_values = empty_lines_in_values
@@ -1066,7 +1063,6 @@ class RawConfigParser(MutableMapping):
         in an otherwise empty line or may be entered in lines holding values or
         section names. Please note that comments get stripped off when reading configuration files.
         """
-
         try:
             ParsingError._raise_all(self._read_inner(fp, fpname))
         finally:
@@ -1075,8 +1071,7 @@ class RawConfigParser(MutableMapping):
     def _read_inner(self, fp, fpname):
         st = _ReadState()
 
-        Line = functools.partial(_Line, prefixes=self._prefixes)
-        for st.lineno, line in enumerate(map(Line, fp), start=1):
+        for st.lineno, line in enumerate(map(self._comments.wrap, fp), start=1):
             if not line.clean:
                 if self._empty_lines_in_values:
                     # add empty line to the value, but only if there was no

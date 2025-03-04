@@ -1437,6 +1437,132 @@ class TestUopsOptimization(unittest.TestCase):
 
         crash_addition()
 
+    def test_narrow_type_to_constant_bool_false(self):
+        def f(n):
+            trace = []
+            for i in range(n):
+                # false is always False, but we can only prove that it's a bool:
+                false = i == TIER2_THRESHOLD
+                trace.append("A")
+                if not false:  # Kept.
+                    trace.append("B")
+                    if not false:  # Removed!
+                        trace.append("C")
+                    trace.append("D")
+                    if false:  # Removed!
+                        trace.append("X")
+                    trace.append("E")
+                trace.append("F")
+                if false:  # Removed!
+                    trace.append("X")
+                trace.append("G")
+            return trace
+
+        trace, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(trace, list("ABCDEFG") * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # Only one guard remains:
+        self.assertEqual(uops.count("_GUARD_IS_FALSE_POP"), 1)
+        self.assertEqual(uops.count("_GUARD_IS_TRUE_POP"), 0)
+        # But all of the appends we care about are still there:
+        self.assertEqual(uops.count("_CALL_LIST_APPEND"), len("ABCDEFG"))
+
+    def test_narrow_type_to_constant_bool_true(self):
+        def f(n):
+            trace = []
+            for i in range(n):
+                # true always True, but we can only prove that it's a bool:
+                true = i != TIER2_THRESHOLD
+                trace.append("A")
+                if true:  # Kept.
+                    trace.append("B")
+                    if not true:  # Removed!
+                        trace.append("X")
+                    trace.append("C")
+                    if true:  # Removed!
+                        trace.append("D")
+                    trace.append("E")
+                trace.append("F")
+                if not true:  # Removed!
+                    trace.append("X")
+                trace.append("G")
+            return trace
+
+        trace, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(trace, list("ABCDEFG") * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # Only one guard remains:
+        self.assertEqual(uops.count("_GUARD_IS_FALSE_POP"), 0)
+        self.assertEqual(uops.count("_GUARD_IS_TRUE_POP"), 1)
+        # But all of the appends we care about are still there:
+        self.assertEqual(uops.count("_CALL_LIST_APPEND"), len("ABCDEFG"))
+
+    def test_narrow_type_to_constant_int_zero(self):
+        def f(n):
+            trace = []
+            for i in range(n):
+                # zero is always (int) 0, but we can only prove that it's a integer:
+                false = i == TIER2_THRESHOLD # this will always be false, while hopefully still fooling optimizer improvements
+                zero = false + 0 # this should always set the variable zero equal to 0
+                trace.append("A")
+                if not zero:  # Kept.
+                    trace.append("B")
+                    if not zero:  # Removed!
+                        trace.append("C")
+                    trace.append("D")
+                    if zero:  # Removed!
+                        trace.append("X")
+                    trace.append("E")
+                trace.append("F")
+                if zero:  # Removed!
+                    trace.append("X")
+                trace.append("G")
+            return trace
+
+        trace, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(trace, list("ABCDEFG") * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # Only one guard remains:
+        self.assertEqual(uops.count("_GUARD_IS_FALSE_POP"), 1)
+        self.assertEqual(uops.count("_GUARD_IS_TRUE_POP"), 0)
+        # But all of the appends we care about are still there:
+        self.assertEqual(uops.count("_CALL_LIST_APPEND"), len("ABCDEFG"))
+
+def test_narrow_type_to_constant_str_empty(self):
+        def f(n):
+            trace = []
+            for i in range(n):
+                # Hopefully the optimizer can't guess what the value is.
+                # empty is always "", but we can only prove that it's a string:
+                false = i == TIER2_THRESHOLD
+                empty = "X"[:false]
+                trace.append("A")
+                if not empty:  # Kept.
+                    trace.append("B")
+                    if not empty:  # Removed!
+                        trace.append("C")
+                    trace.append("D")
+                    if empty:  # Removed!
+                        trace.append("X")
+                    trace.append("E")
+                trace.append("F")
+                if empty:  # Removed!
+                    trace.append("X")
+                trace.append("G")
+            return trace
+
+        trace, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(trace, list("ABCDEFG") * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        # Only one guard remains:
+        self.assertEqual(uops.count("_GUARD_IS_FALSE_POP"), 1)
+        self.assertEqual(uops.count("_GUARD_IS_TRUE_POP"), 0)
+        # But all of the appends we care about are still there:
+        self.assertEqual(uops.count("_CALL_LIST_APPEND"), len("ABCDEFG"))
 
 def global_identity(x):
     return x

@@ -2,6 +2,7 @@ import os
 import base64
 import gettext
 import unittest
+import unittest.mock
 from functools import partial
 
 from test import support
@@ -689,6 +690,32 @@ class GettextCacheTestCase(GettextBaseTest):
 
         self.assertEqual(len(gettext._translations), 2)
         self.assertEqual(t.__class__, DummyGNUTranslations)
+
+
+class ExpandLangTestCase(unittest.TestCase):
+    def test_expand_lang(self):
+        # Test all combinations of territory, charset and
+        # modifier (locale extension)
+        locales = {
+            'cs': ['cs'],
+            'cs_CZ': ['cs_CZ', 'cs'],
+            'cs.ISO8859-2': ['cs.ISO8859-2', 'cs'],
+            'cs@euro': ['cs@euro', 'cs'],
+            'cs_CZ.ISO8859-2': ['cs_CZ.ISO8859-2', 'cs_CZ', 'cs.ISO8859-2',
+                                'cs'],
+            'cs_CZ@euro': ['cs_CZ@euro', 'cs@euro', 'cs_CZ', 'cs'],
+            'cs.ISO8859-2@euro': ['cs.ISO8859-2@euro', 'cs@euro',
+                                  'cs.ISO8859-2', 'cs'],
+            'cs_CZ.ISO8859-2@euro': ['cs_CZ.ISO8859-2@euro', 'cs_CZ@euro',
+                                     'cs.ISO8859-2@euro', 'cs@euro',
+                                     'cs_CZ.ISO8859-2', 'cs_CZ',
+                                     'cs.ISO8859-2', 'cs'],
+        }
+        for locale, expanded in locales.items():
+            with self.subTest(locale=locale):
+                with unittest.mock.patch("locale.normalize",
+                                         return_value=locale):
+                    self.assertEqual(gettext._expand_lang(locale), expanded)
 
 
 class MiscTestCase(unittest.TestCase):

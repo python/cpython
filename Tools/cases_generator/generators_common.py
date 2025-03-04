@@ -126,7 +126,6 @@ class Emitter:
             "PyStackRef_AsPyObjectSteal": self.stackref_steal,
             "DISPATCH": self.dispatch,
             "INSTRUCTION_SIZE": self.instruction_size,
-            "POP_INPUT": self.pop_input,
             "stack_pointer": self.stack_pointer,
         }
         self.out = out
@@ -419,29 +418,6 @@ class Emitter:
         next(tkn_iter)
         next(tkn_iter)
         self.emit_save(storage)
-        return True
-
-    def pop_input(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: CodeSection,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        next(tkn_iter)
-        name_tkn = next(tkn_iter)
-        name = name_tkn.text
-        next(tkn_iter)
-        next(tkn_iter)
-        if not storage.inputs:
-            raise analysis_error("stack is empty", tkn)
-        tos = storage.inputs[-1]
-        if tos.name != name:
-            raise analysis_error(f"'{name} is not top of stack", name_tkn)
-        tos.defined = False
-        storage.clear_dead_inputs()
-        storage.flush(self.out)
         return True
 
     def emit_reload(self, storage: Storage) -> None:

@@ -143,7 +143,7 @@ __all__ = [
 
 
 import abc
-from annotationlib import Format
+from annotationlib import Format, ForwardRef
 from annotationlib import get_annotations  # re-exported
 import ast
 import dis
@@ -1342,6 +1342,8 @@ def formatannotation(annotation, base_module=None, *, quote_annotation_strings=T
         if annotation.__module__ in ('builtins', base_module):
             return annotation.__qualname__
         return annotation.__module__+'.'+annotation.__qualname__
+    if isinstance(annotation, ForwardRef):
+        return annotation.__forward_arg__
     return repr(annotation)
 
 def formatannotationrelativeto(object):
