@@ -1190,6 +1190,9 @@ class TarInfo(object):
         info["type"] = type
         info["size"] = len(name)
         info["magic"] = GNU_MAGIC
+        info["mode"] = 0o100644
+        info["uname"] = "root"
+        info["gname"] = "root"
 
         # create extended header + name blocks.
         return cls._create_header(info, USTAR_FORMAT, encoding, errors) + \
