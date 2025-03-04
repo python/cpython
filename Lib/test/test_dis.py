@@ -1256,6 +1256,17 @@ class DisTests(DisTestBase):
         except Exception as e:
             self.assertIsNone(e.__context__)
 
+    def test_async_for(self):
+
+        async def afunc():
+            async for letter in async_iter1:
+                l2
+            l3
+
+        expected = ""
+        self.do_disassembly_test(afunc, expected)
+
+
     @staticmethod
     def code_quicken(f):
         _testinternalcapi = import_helper.import_module("_testinternalcapi")

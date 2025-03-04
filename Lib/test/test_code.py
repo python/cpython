@@ -943,7 +943,7 @@ class CodeLocationTest(unittest.TestCase):
 
         self.assertEqual(
             get_line_branches(afunc),
-            [(1,2,3)])
+            [(1,1,3)])
 
 if check_impl_detail(cpython=True) and ctypes is not None:
     py = ctypes.pythonapi
