@@ -1,1 +1,1 @@
-:mod:`pdb` will always stop on calling frames when inline breakpoints like :func:`breakpoint` or :func:`pdb.set_trace` are used, ignoring the ``skip`` pattern (if any).
+Inline breakpoints like :func:`breakpoint` or :func:`pdb.set_trace` will always stop the program at calling frame, ignoring the ``skip`` pattern (if any).

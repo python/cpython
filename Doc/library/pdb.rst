@@ -246,7 +246,8 @@ access further features, you have to do this yourself:
       Added the *mode* argument.
 
    .. versionchanged:: 3.14
-      *skip* will be ignored if inline breakpoints like :func:`breakpoint` or :func:`set_trace` are used.
+      Inline breakpoints like :func:`breakpoint` or :func:`pdb.set_trace` will
+      always stop the program at calling frame, ignoring the *skip* pattern (if any).
 
    .. method:: run(statement, globals=None, locals=None)
                runeval(expression, globals=None, locals=None)
