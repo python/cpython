@@ -2705,6 +2705,7 @@ class _TurtleImage(object):
 
     def _setshape(self, shapeIndex):
         screen = self.screen
+        self.shapeIndex = shapeIndex
         if self._type == "polygon" == screen._shapes[shapeIndex]._type:
             return
         if self._type == "image" == screen._shapes[shapeIndex]._type:
@@ -2715,11 +2716,8 @@ class _TurtleImage(object):
             for item in self._item:
                 screen._delete(item)
         elif self._type == "transformable_image":
-            del self._item
-
+            self._item.delete()
         self._type = screen._shapes[shapeIndex]._type
-        self.shapeIndex = shapeIndex
-
         if self._type == "polygon":
             self._item = screen._createpoly()
         elif self._type == "image":
