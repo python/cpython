@@ -1,2 +1,2 @@
-Fix an issue where modifications to locals could fail to persist when there
-is an inlined comprehension with colliding variable name.
+Fixed an issue where ``_PyFrame_LocalsToFast`` tries to write module level
+values to hidden fasts.
