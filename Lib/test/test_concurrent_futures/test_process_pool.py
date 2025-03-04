@@ -334,8 +334,9 @@ class ProcessPoolExecutorTest(ExecutorTest):
             # ...  that seems a bit buggy.
             # We need it dead before ending the test to ensure it doesn't
             # get marked as an ENV CHANGE due to living child process.
-            while worker_process.is_alive():
-                time.sleep(0.1)
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                if not worker_process.is_alive():
+                    break
 
 
 create_executor_tests(globals(), ProcessPoolExecutorTest,
