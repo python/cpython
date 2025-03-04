@@ -867,11 +867,11 @@ class TransformableImage(object):
         self._screen = screen
         self._originalImage = image
         self._rotationCenter = (image.width() / 2, image.height() / 2)
-        self._tkPhotoImage = image.copy()
+        self._transformedImage = image.copy()
         self._currentOrientation = (1.0, 0)
         self._currentTilt = 0.0
         self._transformMatrix = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-        self._item = screen._createimage(self._tkPhotoImage)
+        self._item = screen._createimage(self._transformedImage)
 
     def clone(self, *args, **kwargs):
         return self.__class__(self._screen, self._originalImage, *args, **kwargs)
@@ -965,7 +965,7 @@ class TransformableImage(object):
             bounding_box = self._get_new_bounding_box()
             offset_x = bounding_box["min_x"] * -1
             offset_y = bounding_box["min_y"] * -1
-            self._tkPhotoImage = TK.PhotoImage(width=bounding_box["width"],
+            self._transformedImage = TK.PhotoImage(width=bounding_box["width"],
                                                height=bounding_box["height"])
 
             for new_y in range(bounding_box["height"]):
@@ -981,11 +981,11 @@ class TransformableImage(object):
                         is_transparent = self._originalImage.transparency_get(
                             int(original_x), int(original_y)
                         )
-                        self._tkPhotoImage.put(
+                        self._transformedImage.put(
                             "#{:02x}{:02x}{:02x}".format(rgb[0], rgb[1], rgb[2]),
                             (new_x, new_y),
                         )
-                        self._tkPhotoImage.transparency_set(
+                        self._transformedImage.transparency_set(
                             new_x, new_y, is_transparent
                         )
                     elif (
@@ -998,17 +998,17 @@ class TransformableImage(object):
                         is_transparent = self._originalImage.transparency_get(
                             int(original_x), int(original_y)
                         )
-                        self._tkPhotoImage.put(
+                        self._transformedImage.put(
                             "#{:02x}{:02x}{:02x}".format(rgb[0], rgb[1], rgb[2]),
                             (new_x, new_y),
                         )
-                        self._tkPhotoImage.transparency_set(
+                        self._transformedImage.transparency_set(
                             new_x, new_y, is_transparent
                         )
 
             self._currentOrientation = orientation
             self._currentTilt = tilt
-        self._screen._drawimage(self._item, position, self._tkPhotoImage)
+        self._screen._drawimage(self._item, position, self._transformedImage)
 
     def delete(self):
         self._screen._delete(self._item)
