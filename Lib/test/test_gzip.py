@@ -143,6 +143,38 @@ class TestGzip(BaseTest):
                 self.assertEqual(f.tell(), nread)
         self.assertEqual(b''.join(blocks), data1 * 50)
 
+    def test_readinto(self):
+        # 10MB of uncompressible data to ensure multiple reads
+        large_data = os.urandom(10 * 2**20)
+        with gzip.GzipFile(self.filename, 'wb') as f:
+            f.write(large_data)
+
+        buf = bytearray(len(large_data))
+        with gzip.GzipFile(self.filename, 'r') as f:
+            nbytes = f.readinto(buf)
+        self.assertEqual(nbytes, len(large_data))
+        self.assertEqual(buf, large_data)
+
+    def test_readinto1(self):
+        # 10MB of uncompressible data to ensure multiple reads
+        large_data = os.urandom(10 * 2**20)
+        with gzip.GzipFile(self.filename, 'wb') as f:
+            f.write(large_data)
+
+        nread = 0
+        buf = bytearray(len(large_data))
+        memview = memoryview(buf)  # Simplifies slicing
+        with gzip.GzipFile(self.filename, 'r') as f:
+            for count in range(200):
+                nbytes = f.readinto1(memview[nread:])
+                if not nbytes:
+                    break
+                nread += nbytes
+                self.assertEqual(f.tell(), nread)
+        self.assertEqual(buf, large_data)
+        # readinto1() should require multiple loops
+        self.assertGreater(count, 1)
+
     @bigmemtest(size=_4G, memuse=1)
     def test_read_large(self, size):
         # Read chunk size over UINT_MAX should be supported, despite zlib's
