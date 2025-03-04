@@ -1,0 +1,7 @@
+================
+Type: Improvement
+Title: Enhance documentation for Python C API type objects
+Issue: bpo-130814
+
+Detailed changes:
+- Clarified the title of the page
