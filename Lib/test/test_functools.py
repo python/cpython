@@ -3362,6 +3362,30 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(str(Signature.from_callable(A.static_func)),
                          '(item, arg: int) -> str')
 
+    def test_typing_self(self):
+        # gh-130827: typing.Self with singledispatchmethod() didn't work
+        class Foo:
+            @functools.singledispatchmethod
+            def bar(self: typing.Self, arg: int | str) -> int | str: ...
+
+            @bar.register
+            def _(self: typing.Self, arg: int) -> int:
+                return arg
+
+
+        foo = Foo()
+        self.assertEqual(foo.bar(42), 42)
+
+        @functools.singledispatch
+        def test(self: typing.Self, arg: int | str) -> int | str:
+            pass
+        # But, it shouldn't work on singledispatch()
+        with self.assertRaises(TypeError):
+            @test.register
+            def silly(self: typing.Self, arg: int | str) -> int | str:
+                pass
+
+
 
 class CachedCostItem:
     _cost = 1

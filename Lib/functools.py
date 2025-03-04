@@ -885,15 +885,7 @@ def _find_impl(cls, registry):
             match = t
     return registry.get(match)
 
-def singledispatch(func):
-    """Single-dispatch generic function decorator.
-
-    Transforms a function into a generic function, which can have different
-    behaviours depending upon the type of its first argument. The decorated
-    function acts as the default implementation, and additional
-    implementations can be registered using the register() attribute of the
-    generic function.
-    """
+def _singledispatchimpl(func, is_method):
     # There are many programs that use functools without singledispatch, so we
     # trade-off making singledispatch marginally slower for the benefit of
     # making start-up of such applications slightly faster.
@@ -963,9 +955,19 @@ def singledispatch(func):
             func = cls
 
             # only import typing if annotation parsing is necessary
-            from typing import get_type_hints
+            from typing import get_type_hints, Self
             from annotationlib import Format, ForwardRef
-            argname, cls = next(iter(get_type_hints(func, format=Format.FORWARDREF).items()))
+            hints_iter = iter(get_type_hints(func, format=Format.FORWARDREF).items())
+            argname, cls = next(hints_iter)
+            if cls is Self:
+                if not is_method:
+                    raise TypeError(
+                        f"Invalid annotation for {argname!r}. ",
+                        "typing.Self can only be used with singledispatchmethod()"
+                    )
+                else:
+                    argname, cls = next(hints_iter)
+
             if not _is_valid_dispatch_type(cls):
                 if _is_union_type(cls):
                     raise TypeError(
@@ -1010,6 +1012,16 @@ def singledispatch(func):
     update_wrapper(wrapper, func)
     return wrapper
 
+def singledispatch(func):
+    """Single-dispatch generic function decorator.
+
+    Transforms a function into a generic function, which can have different
+    behaviours depending upon the type of its first argument. The decorated
+    function acts as the default implementation, and additional
+    implementations can be registered using the register() attribute of the
+    generic function.
+    """
+    return _singledispatchimpl(func, is_method=False)
 
 # Descriptor version
 class singledispatchmethod:
@@ -1023,7 +1035,7 @@ class singledispatchmethod:
         if not callable(func) and not hasattr(func, "__get__"):
             raise TypeError(f"{func!r} is not callable or a descriptor")
 
-        self.dispatcher = singledispatch(func)
+        self.dispatcher = _singledispatchimpl(func, is_method=True)
         self.func = func
 
     def register(self, cls, method=None):
