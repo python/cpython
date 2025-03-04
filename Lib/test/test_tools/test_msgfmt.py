@@ -1,4 +1,12 @@
-"""Tests for the Tools/i18n/msgfmt.py tool."""
+"""Tests for the Tools/i18n/msgfmt.py tool.
+
+Those tests use data files (po and mo) in the msgfmt_data folder.
+The mo files can be generated (if the po file changes, or if msgfmt.py
+slightly changes its output format) by using the --snapshot-update flag
+with this script:
+
+    python test_msgfmt.py --snapshot-update
+"""
 
 import filecmp
 import os
