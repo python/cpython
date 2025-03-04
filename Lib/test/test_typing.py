@@ -8359,6 +8359,23 @@ class NamedTupleTests(BaseTestCase):
             class Foo(NamedTuple):
                 attr = very_annoying
 
+    def test_super_explicitly_disallowed(self):
+        expected_message = (
+            "uses of super() and __class__ are unsupported "
+            "in methods of NamedTuple subclasses"
+        )
+
+        with self.assertRaises(RuntimeError, msg=expected_message):
+            class ThisWontWork(NamedTuple):
+                def __repr__(self):
+                    return super().__repr__()
+
+        with self.assertRaises(RuntimeError, msg=expected_message):
+            class ThisWontWorkEither(NamedTuple):
+                @property
+                def name(self):
+                    return __class__.__name__
+
 
 class TypedDictTests(BaseTestCase):
     def test_basics_functional_syntax(self):
