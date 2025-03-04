@@ -249,7 +249,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             with self.assertWarnsRegex(RuntimeWarning,
                                        "The executor did not finishing joining"):
                 self.loop.run_until_complete(
-                    self.loop.shutdown_default_executor(timeout=0.1))
+                    self.loop.shutdown_default_executor(timeout=0.01))
         finally:
             event.set()
 
