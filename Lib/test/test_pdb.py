@@ -4342,6 +4342,32 @@ class PdbTestInline(unittest.TestCase):
         # The quit prompt should be printed exactly twice
         self.assertEqual(stdout.count("Quit anyway"), 2)
 
+    def test_quit_after_interact(self):
+        """
+        interact command will set sys.ps1 temporarily, we need to make sure
+        that it's restored and pdb does not believe it's in interactive mode
+        after interact is done.
+        """
+        script = """
+            x = 1
+            breakpoint()
+        """
+
+        commands = """
+            interact
+            quit()
+            q
+            y
+        """
+
+        stdout, stderr = self._run_script(script, commands)
+        # Normal exit should not print anything to stderr
+        self.assertEqual(stderr, "")
+        # The quit prompt should be printed exactly once
+        self.assertEqual(stdout.count("Quit anyway"), 1)
+        # BdbQuit should not be printed
+        self.assertNotIn("BdbQuit", stdout)
+
     def test_set_trace_with_skip(self):
         """GH-82897
         Inline set_trace() should break unconditionally. This example is a
@@ -4486,6 +4512,32 @@ class PdbTestReadline(unittest.TestCase):
         output = run_pty(script, input)
 
         self.assertIn(b'42', output)
+
+    def test_multiline_indent_completion(self):
+        script = textwrap.dedent("""
+            import pdb; pdb.Pdb().set_trace()
+        """)
+
+        # \t should always complete a 4-space indent
+        # This piece of code will raise an IndentationError or a SyntaxError
+        # if the completion is not working as expected
+        input = textwrap.dedent("""\
+            def func():
+            \ta = 1
+             \ta += 1
+              \ta += 1
+               \tif a > 0:
+                    a += 1
+            \t\treturn a
+
+            func()
+            c
+        """).encode()
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'4', output)
+        self.assertNotIn(b'Error', output)
 
 
 def load_tests(loader, tests, pattern):
