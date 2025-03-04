@@ -589,12 +589,16 @@ class _TestProcess(BaseTestCase):
     def test_active_children(self):
         self.assertEqual(type(self.active_children()), list)
 
-        p = self.Process(target=time.sleep, args=(DELTA,))
+        event = self.Event()
+        p = self.Process(target=event.wait, args=())
         self.assertNotIn(p, self.active_children())
 
-        p.daemon = True
-        p.start()
-        self.assertIn(p, self.active_children())
+        try:
+            p.daemon = True
+            p.start()
+            self.assertIn(p, self.active_children())
+        finally:
+            event.set()
 
         p.join()
         self.assertNotIn(p, self.active_children())
