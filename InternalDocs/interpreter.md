@@ -525,8 +525,7 @@ Let's use the example of [`CONTAINS_OP`](../Doc/library/dis.rst#contains_op):
         op(_CONTAINS_OP, ...);
   ```
 
-- Add a uop that calls the specializing function `_SPECIALIZE_CONTAINS_OP`. 
-  For example.
+- Add a uop that calls the specializing function:
 
   ```c
         specializing op(_SPECIALIZE_CONTAINS_OP, (counter/1, left, right -- left, right)) {
@@ -542,8 +541,11 @@ Let's use the example of [`CONTAINS_OP`](../Doc/library/dis.rst#contains_op):
         }
   ```
 
-- The original `CONTAINS_OP` is now a new macro consisting of
-      `_SPECIALIZE_CONTAINS_OP` and `_CONTAINS_OP`.
+- Create a macro for the original bytecode name:
+    
+  ```c 
+  macro(CONTAINS_OP) = _SPECIALIZE_CONTAINS_OP + _CONTAINS_OP; 
+  ``` 
 
 2. Define the cache structure in [Include/internal/pycore_code.h](../Include/internal/pycore_code.h),
 at the very least, a 16-bit counter is needed.
