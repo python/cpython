@@ -2514,6 +2514,47 @@ code_offset_to_line(PyObject* self, PyObject* const* args, Py_ssize_t nargsf)
     return PyLong_FromInt32(PyCode_Addr2Line(code, offset));
 }
 
+typedef struct {
+    Py_ssize_t create_count;
+    Py_ssize_t destroy_count;
+    void *prev_data;
+    int (*prev_tracer)(PyObject *, PyRefTracerEvent, void *);
+} reftrace_counter_data;
+
+static int _reftrace_counter(PyObject *obj, PyRefTracerEvent event, void *counter_data)
+{
+    if (event == PyRefTracer_CREATE) {
+        ((reftrace_counter_data *)counter_data)->create_count++;
+    } else {
+        ((reftrace_counter_data *)counter_data)->destroy_count++;
+    }
+    return 0;
+}
+
+// A very simple reftrace counter for very simple tests
+static PyObject *
+toggle_reftrace_counter(PyObject *ob, PyObject *Py_UNUSED(args))
+{
+    static reftrace_counter_data counter_data = {0, 0, NULL, (void *)toggle_reftrace_counter};  // sentinel
+
+    if (counter_data.prev_tracer == (void *)toggle_reftrace_counter) {
+        // toggle counter on
+        counter_data.create_count = counter_data.destroy_count = 0;
+        counter_data.prev_tracer = PyRefTracer_GetTracer(&counter_data.prev_data);
+
+        PyRefTracer_SetTracer(_reftrace_counter, &counter_data);
+
+        Py_RETURN_NONE;
+    }
+
+    // toggle counter off
+    PyRefTracer_SetTracer(counter_data.prev_tracer, counter_data.prev_data);
+
+    counter_data.prev_tracer = (void *)toggle_reftrace_counter;
+
+    return Py_BuildValue("(nn)", counter_data.create_count, counter_data.destroy_count);
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
@@ -2608,6 +2649,7 @@ static PyMethodDef TestMethods[] = {
     {"finalize_thread_hang", finalize_thread_hang, METH_O, NULL},
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
+    {"toggle_reftrace_counter", toggle_reftrace_counter, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

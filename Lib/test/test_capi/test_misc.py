@@ -2884,5 +2884,26 @@ class TestVersions(unittest.TestCase):
                 self.assertEqual(result, expected)
 
 
+class TestCEval(unittest.TestCase):
+   def test_ceval_decref(self):
+        def f():
+            l = []
+            del l
+
+        def g():
+            l = [], []
+            del l
+
+        _testcapi.toggle_reftrace_counter()
+        f()
+        refs = _testcapi.toggle_reftrace_counter()
+        self.assertEqual(refs, (1, 1))
+
+        _testcapi.toggle_reftrace_counter()
+        g()
+        refs = _testcapi.toggle_reftrace_counter()
+        self.assertEqual(refs, (3, 3))
+
+
 if __name__ == "__main__":
     unittest.main()
