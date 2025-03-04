@@ -28,7 +28,7 @@
 #define OFF(x) offsetof(PyFrameObject, x)
 
 
-// Returns borrowed reference or NULL
+// Returns new reference or NULL
 static PyObject *
 framelocalsproxy_getval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
 {
@@ -45,12 +45,22 @@ framelocalsproxy_getval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
     if (kind == CO_FAST_FREE || kind & CO_FAST_CELL) {
         // The cell was set when the frame was created from
         // the function's closure.
-        assert(PyCell_Check(value));
-        cell = value;
+        // GH-128396: With PEP 709, it's possible to have a fast variable in
+        // an inlined comprehension that has the same name as the cell variable
+        // in the frame, where the `kind` obtained from frame can not guarantee
+        // that the variable is a cell.
+        // If the variable is not a cell, we are okay with it and we can simply
+        // return the value.
+        if (PyCell_Check(value)) {
+            cell = value;
+        }
     }
 
     if (cell != NULL) {
-        value = PyCell_GET(cell);
+        value = PyCell_GetRef((PyCellObject *)cell);
+    }
+    else {
+        Py_XINCREF(value);
     }
 
     if (value == NULL) {
@@ -60,8 +70,19 @@ framelocalsproxy_getval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
     return value;
 }
 
+static bool
+framelocalsproxy_hasval(_PyInterpreterFrame *frame, PyCodeObject *co, int i)
+{
+    PyObject *value = framelocalsproxy_getval(frame, co, i);
+    if (value == NULL) {
+        return false;
+    }
+    Py_DECREF(value);
+    return true;
+}
+
 static int
-framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
+framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject *key, bool read, PyObject **value_ptr)
 {
     /*
      * Returns -2 (!) if an error occurred; exception will be set.
@@ -69,7 +90,13 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
      *   - if read == true, returns the index if the value is not NULL
      *   - if read == false, returns the index if the value is not hidden
      * Otherwise returns -1.
+     *
+     * If read == true and value_ptr is not NULL, *value_ptr is set to
+     * the value of the key if it is found (with a new reference).
      */
+
+    // value_ptr should only be given if we are reading the value
+    assert(read || value_ptr == NULL);
 
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
 
@@ -78,6 +105,7 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
     if (key_hash == -1) {
         return -2;
     }
+
     bool found = false;
 
     // We do 2 loops here because it's highly possible the key is interned
@@ -86,7 +114,14 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         if (name == key) {
             if (read) {
-                if (framelocalsproxy_getval(frame->f_frame, co, i) != NULL) {
+                PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
+                if (value != NULL) {
+                    if (value_ptr != NULL) {
+                        *value_ptr = value;
+                    }
+                    else {
+                        Py_DECREF(value);
+                    }
                     return i;
                 }
             } else {
@@ -117,7 +152,14 @@ framelocalsproxy_getkeyindex(PyFrameObject *frame, PyObject* key, bool read)
         }
         if (same) {
             if (read) {
-                if (framelocalsproxy_getval(frame->f_frame, co, i) != NULL) {
+                PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
+                if (value != NULL) {
+                    if (value_ptr != NULL) {
+                        *value_ptr = value;
+                    }
+                    else {
+                        Py_DECREF(value);
+                    }
                     return i;
                 }
             } else {
@@ -135,25 +177,27 @@ static PyObject *
 framelocalsproxy_getitem(PyObject *self, PyObject *key)
 {
     PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
-    PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
+    PyObject *value = NULL;
 
-    int i = framelocalsproxy_getkeyindex(frame, key, true);
+    int i = framelocalsproxy_getkeyindex(frame, key, true, &value);
     if (i == -2) {
         return NULL;
     }
     if (i >= 0) {
-        PyObject *value = framelocalsproxy_getval(frame->f_frame, co, i);
         assert(value != NULL);
-        return Py_NewRef(value);
+        return value;
     }
+    assert(value == NULL);
 
     // Okay not in the fast locals, try extra locals
 
     PyObject *extra = frame->f_extra_locals;
     if (extra != NULL) {
-        PyObject *value = PyDict_GetItem(extra, key);
+        if (PyDict_GetItemRef(extra, key, &value) < 0) {
+            return NULL;
+        }
         if (value != NULL) {
-            return Py_NewRef(value);
+            return value;
         }
     }
 
@@ -169,7 +213,7 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
     _PyStackRef *fast = _PyFrame_GetLocalsArray(frame->f_frame);
     PyCodeObject *co = _PyFrame_GetCode(frame->f_frame);
 
-    int i = framelocalsproxy_getkeyindex(frame, key, false);
+    int i = framelocalsproxy_getkeyindex(frame, key, false, NULL);
     if (i == -2) {
         return -1;
     }
@@ -290,8 +334,7 @@ framelocalsproxy_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
-        PyObject *val = framelocalsproxy_getval(frame->f_frame, co, i);
-        if (val) {
+        if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
             PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
             if (PyList_Append(names, name) < 0) {
                 Py_DECREF(names);
@@ -504,8 +547,10 @@ framelocalsproxy_values(PyObject *self, PyObject *Py_UNUSED(ignored))
         if (value) {
             if (PyList_Append(values, value) < 0) {
                 Py_DECREF(values);
+                Py_DECREF(value);
                 return NULL;
             }
+            Py_DECREF(value);
         }
     }
 
@@ -543,16 +588,19 @@ framelocalsproxy_items(PyObject *self, PyObject *Py_UNUSED(ignored))
             PyObject *pair = PyTuple_Pack(2, name, value);
             if (pair == NULL) {
                 Py_DECREF(items);
+                Py_DECREF(value);
                 return NULL;
             }
 
             if (PyList_Append(items, pair) < 0) {
                 Py_DECREF(items);
                 Py_DECREF(pair);
+                Py_DECREF(value);
                 return NULL;
             }
 
             Py_DECREF(pair);
+            Py_DECREF(value);
         }
     }
 
@@ -594,7 +642,7 @@ framelocalsproxy_length(PyObject *self)
     }
 
     for (int i = 0; i < co->co_nlocalsplus; i++) {
-        if (framelocalsproxy_getval(frame->f_frame, co, i) != NULL) {
+        if (framelocalsproxy_hasval(frame->f_frame, co, i)) {
             size++;
         }
     }
@@ -606,7 +654,7 @@ framelocalsproxy_contains(PyObject *self, PyObject *key)
 {
     PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
 
-    int i = framelocalsproxy_getkeyindex(frame, key, true);
+    int i = framelocalsproxy_getkeyindex(frame, key, true, NULL);
     if (i == -2) {
         return -1;
     }
@@ -717,7 +765,7 @@ framelocalsproxy_pop(PyObject* self, PyObject *const *args, Py_ssize_t nargs)
 
     PyFrameObject *frame = PyFrameLocalsProxyObject_CAST(self)->frame;
 
-    int i = framelocalsproxy_getkeyindex(frame, key, false);
+    int i = framelocalsproxy_getkeyindex(frame, key, false, NULL);
     if (i == -2) {
         return NULL;
     }
@@ -2059,9 +2107,7 @@ _PyFrame_HasHiddenLocals(_PyInterpreterFrame *frame)
         _PyLocals_Kind kind = _PyLocals_GetKind(co->co_localspluskinds, i);
 
         if (kind & CO_FAST_HIDDEN) {
-            PyObject* value = framelocalsproxy_getval(frame, co, i);
-
-            if (value != NULL) {
+            if (framelocalsproxy_hasval(frame, co, i)) {
                 return true;
             }
         }
