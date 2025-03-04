@@ -142,9 +142,6 @@ struct _object {
 #endif
         _Py_ALIGNED_DEF(_PyObject_MIN_ALIGNMENT, char) _aligner;
     };
-#ifdef _MSC_VER
-    __pragma(warning(pop))
-#endif
 
     PyTypeObject *ob_type;
 };
