@@ -55,7 +55,7 @@ any codec:
 
 The full details for each codec can also be looked up directly:
 
-.. function:: lookup(encoding)
+.. function:: lookup(encoding, /)
 
    Looks up the codec info in the Python codec registry and returns a
    :class:`CodecInfo` object as defined below.
@@ -65,7 +65,7 @@ The full details for each codec can also be looked up directly:
    found, a :exc:`LookupError` is raised. Otherwise, the :class:`CodecInfo` object
    is stored in the cache and returned to the caller.
 
-.. class:: CodecInfo(encode, decode, streamreader=None, streamwriter=None, incrementalencoder=None, incrementaldecoder=None, name=None)
+.. class:: CodecInfo(encode, decode, streamreader=None, streamwriter=None, incrementalencoder=None, incrementaldecoder=None, name=None, *, _is_text_encoding=None)
 
    Codec details when looking up the codec registry. The constructor
    arguments are stored in attributes of the same name:
@@ -156,7 +156,7 @@ these additional functions which use :func:`lookup` for the codec lookup:
 Custom codecs are made available by registering a suitable codec search
 function:
 
-.. function:: register(search_function)
+.. function:: register(search_function, /)
 
    Register a codec search function. Search functions are expected to take one
    argument, being the encoding name in all lower case letters with hyphens
@@ -168,7 +168,7 @@ function:
       Hyphens and spaces are converted to underscore.
 
 
-.. function:: unregister(search_function)
+.. function:: unregister(search_function, /)
 
    Unregister a codec search function and clear the registry's cache.
    If the search function is not registered, do nothing.
@@ -416,7 +416,7 @@ In addition, the following error handler is specific to the given codecs:
 The set of allowed values can be extended by registering a new named error
 handler:
 
-.. function:: register_error(name, error_handler)
+.. function:: register_error(name, error_handler, /)
 
    Register the error handling function *error_handler* under the name *name*.
    The *error_handler* argument will be called during encoding and decoding
@@ -442,7 +442,7 @@ handler:
 Previously registered error handlers (including the standard error handlers)
 can be looked up by name:
 
-.. function:: lookup_error(name)
+.. function:: lookup_error(name, /)
 
    Return the error handler previously registered under the name *name*.
 
@@ -607,9 +607,9 @@ define in order to be compatible with the Python codec registry.
    object.
 
 
-   .. method:: encode(object, final=False)
+   .. method:: encode(input, final=False)
 
-      Encodes *object* (taking the current state of the encoder into account)
+      Encodes *input* (taking the current state of the encoder into account)
       and returns the resulting encoded object. If this is the last call to
       :meth:`encode` *final* must be true (the default is false).
 
@@ -664,9 +664,9 @@ define in order to be compatible with the Python codec registry.
    object.
 
 
-   .. method:: decode(object, final=False)
+   .. method:: decode(input, final=False)
 
-      Decodes *object* (taking the current state of the decoder into account)
+      Decodes *input* (taking the current state of the decoder into account)
       and returns the resulting decoded object. If this is the last call to
       :meth:`decode` *final* must be true (the default is false). If *final* is
       true the decoder must decode the input completely and must flush all
