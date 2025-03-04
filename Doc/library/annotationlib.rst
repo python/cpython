@@ -196,12 +196,6 @@ Classes
       annotation from which the forward reference derives, usually a function,
       class, or module.
 
-      .. important::
-
-         Once a :class:`~ForwardRef` instance has been evaluated, it caches
-         the evaluated value, and future calls to :meth:`evaluate` will return
-         the cached value, regardless of the parameters passed in.
-
    .. versionadded:: 3.14
 
 
