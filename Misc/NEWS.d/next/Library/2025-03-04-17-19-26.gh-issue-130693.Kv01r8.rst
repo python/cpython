@@ -1,0 +1,13 @@
+================
+Type: Enhancement
+Title: Add support for -nolinestop, -all, -overlap, and -strictlimits options to tkinter.Text.search
+Issue: :gh:`130693`
+
+Detailed changes:
+- Enhanced the `tkinter.Text.search` method by adding support for the following options:
+  - `-nolinestop`: Allows searching across lines without stopping.
+  - `-all`: Finds all matches instead of just the first match.
+  - `-overlap`: Finds matches that overlap with each other.
+  - `-strictlimits`: Ensures strict boundaries for the search.
+
+These improvements align the `tkinter.Text.search` method with the underlying Tcl/Tk library, providing more flexibility and functionality for users.
