@@ -160,8 +160,8 @@ class MultiInputTest(unittest.TestCase):
         """Test script without -o option and 2 input files"""
 
         with temp_cwd(None):
-            shutil.copy(data_dir /'file1_fr_crlf.po', '.')
-            shutil.copy(data_dir /'file2_fr_lf.po', '.')
+            shutil.copy(data_dir / 'file1_fr_crlf.po', '.')
+            shutil.copy(data_dir / 'file2_fr_lf.po', '.')
             assert_python_ok(msgfmt, 'file1_fr_crlf.po', 'file2_fr_lf.po')
             self.assertTrue(
                 filecmp.cmp(data_dir / 'file1_fr_crlf.mo', 'file1_fr_crlf.mo'),
@@ -176,7 +176,7 @@ def update_catalog_snapshots():
         mo_file = po_file.with_suffix('.mo')
         compile_messages(mo_file, po_file)
     # special processing for file12_fr.mo which results from 2 input files
-    compile_messages(data_dir /'file12_fr.mo',
+    compile_messages(data_dir / 'file12_fr.mo',
                      data_dir / 'file1_fr_crlf.po',
                      data_dir / 'file2_fr_lf.po')
 
