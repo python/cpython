@@ -1,6 +1,6 @@
 from types import GenericAlias
 
-__all__ = ["TopologicalSorter", "CycleError"]
+__all__ = ["TopologicalSorter", "CycleError", "reverse", "as_transitive"]
 
 _NODE_OUT = -1
 _NODE_DONE = -2
@@ -248,3 +248,78 @@ class TopologicalSorter:
             self.done(*node_group)
 
     __class_getitem__ = classmethod(GenericAlias)
+
+
+def reverse(graph):
+    """Reverse the direction of the edges in a directed graph.
+
+    Given a mapping from nodes to collections of their dependencies,
+    construct a dict mapping each node to the set of nodes that depend on it.
+
+    Nodes that have no dependents appear as keys in the result, with an empty
+    set as value.
+
+    For example:
+
+        >>> reverse({"a": ["b", "c"], "d": []})
+        {'b': {'a'}, 'c': {'a'}, 'a': set(), 'd': set()}
+
+    """
+    result = {}
+    for node, deps in graph.items():
+        for dep in deps:
+            if dep not in result:
+                result[dep] = {node}
+            else:
+                result[dep].add(node)
+        if node not in result:
+            result[node] = set()
+    return result
+
+
+def as_transitive(graph):
+    """Compute the transitive closure of a dependency graph.
+
+    If the input graph contains cycles, raise CycleError.
+
+    The returned dict will contain the same keys as the input graph, but the
+    values will be sets of transitive predecessors of the key, rather than
+    direct predecessors.
+
+    Examples:
+        >>> as_transitive({"a": ["b"], "b": ["c"]})
+        {'a': {'b', 'c'}, 'b': {'c'}}
+    """
+    unprocessed = dict(graph)
+    transitive_graph = {node: set() for node in graph}
+
+    while unprocessed:
+        node, deps = unprocessed.popitem()
+
+        stack = [iter(deps)]
+        path = [node]  # Ordering for cycle detection
+        seen = {node}  # Fast test for cycle detection
+
+        while stack:
+            try:
+                child = next(stack[-1])
+            except StopIteration:
+                stack.pop()
+                seen.remove(path.pop())
+                continue
+
+            if child in seen:
+                cycle = [child, *reversed(path[path.index(child):])]
+                raise CycleError("nodes are in a cycle", cycle)
+
+            if (deps := unprocessed.pop(child, None)) is not None:
+                if deps:
+                    stack.append(iter(deps))
+                    path.append(child)
+                    seen.add(child)
+                    continue
+
+            transitive_graph[node].add(child)
+            transitive_graph[node].update(transitive_graph.get(child, ()))
+
+    return transitive_graph

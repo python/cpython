@@ -465,6 +465,15 @@ getopt
 * Add support for returning intermixed options and non-option arguments in order.
   (Contributed by Serhiy Storchaka in :gh:`126390`.)
 
+
+graphlib
+--------
+
+* Add :func:`graphlib.reverse` and :func:`graphlib.as_transitive` to work with
+  directed acyclic graphs represented as dicts.
+  (Contributed by Daniel Pope in :gh:`129847`.)
+
+
 http
 ----
 
