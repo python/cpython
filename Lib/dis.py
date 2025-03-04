@@ -748,7 +748,7 @@ def _parse_exception_table(code):
 def _is_backward_jump(op):
     return opname[op] in ('JUMP_BACKWARD',
                           'JUMP_BACKWARD_NO_INTERRUPT',
-                          'END_ASYNC_FOR') # No really a jump, but it has a target
+                          'END_ASYNC_FOR') # Not really a jump, but it has a "target"
 
 def _get_instructions_bytes(code, linestarts=None, line_offset=0, co_positions=None,
                             original_code=None, arg_resolver=None):
