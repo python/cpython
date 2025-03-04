@@ -4451,9 +4451,8 @@ of elements within braces, for example: ``{'jack', 'sjoerd'}``, in addition to t
 The constructors for both classes work the same:
 
 .. class:: set([iterable])
-           frozenset([iterable])
 
-   Return a new set or frozenset object whose elements are taken from
+   Return a new set object whose elements are taken from
    *iterable*.  The elements of a set must be :term:`hashable`.  To
    represent sets of sets, the inner sets must be :class:`frozenset`
    objects.  If *iterable* is not specified, a new empty set is
@@ -4465,8 +4464,7 @@ The constructors for both classes work the same:
    * Use a set comprehension: ``{c for c in 'abracadabra' if c not in 'abc'}``
    * Use the type constructor: ``set()``, ``set('foobar')``, ``set(['a', 'b', 'foo'])``
 
-   Instances of :class:`set` and :class:`frozenset` provide the following
-   operations:
+   Instances of :class:`set` provide the following operations:
 
    .. describe:: len(s)
 
@@ -4484,6 +4482,11 @@ The constructors for both classes work the same:
 
       Return ``True`` if the set has no elements in common with *other*.  Sets are
       disjoint if and only if their intersection is the empty set.
+
+   .. method:: set == other
+
+      Test whether every element of each set is contained in the other, that is,
+      ``set <= other and set >= other``.
 
    .. method:: issubset(other)
                set <= other
@@ -4537,17 +4540,6 @@ The constructors for both classes work the same:
    sets.  This precludes error-prone constructions like ``set('abc') & 'cbs'``
    in favor of the more readable ``set('abc').intersection('cbs')``.
 
-   Both :class:`set` and :class:`frozenset` support set to set comparisons. Two
-   sets are equal if and only if every element of each set is contained in the
-   other (each is a subset of the other). A set is less than another set if and
-   only if the first set is a proper subset of the second set (is a subset, but
-   is not equal). A set is greater than another set if and only if the first set
-   is a proper superset of the second set (is a superset, but is not equal).
-
-   Instances of :class:`set` are compared to instances of :class:`frozenset`
-   based on their members.  For example, ``set('abc') == frozenset('abc')``
-   returns ``True`` and so does ``set('abc') in set([frozenset('abc')])``.
-
    The subset and equality comparisons do not generalize to a total ordering
    function.  For example, any two nonempty disjoint sets are not equal and are not
    subsets of each other, so *all* of the following return ``False``: ``a<b``,
@@ -4558,12 +4550,7 @@ The constructors for both classes work the same:
 
    Set elements, like dictionary keys, must be :term:`hashable`.
 
-   Binary operations that mix :class:`set` instances with :class:`frozenset`
-   return the type of the first operand.  For example: ``frozenset('ab') |
-   set('bc')`` returns an instance of :class:`frozenset`.
-
-   The following table lists operations available for :class:`set` that do not
-   apply to immutable instances of :class:`frozenset`:
+   Instances of :class:`set` also provide the following operations:
 
    .. method:: update(*others)
                set |= other | ...
@@ -4617,6 +4604,45 @@ The constructors for both classes work the same:
    :meth:`remove`, and
    :meth:`discard` methods may be a set.  To support searching for an equivalent
    frozenset, a temporary one is created from *elem*.
+
+.. class:: frozenset([iterable])
+
+   Return a new frozenset object whose elements are taken from *iterable*.
+
+   Instances of :class:`frozenset` provide the following :class:`set` operations:
+
+   .. method:: len(s)
+               x in s
+               x not in s
+               isdisjoint(other)
+               issubset(other)
+               set == other
+               set <= other
+               set < other
+               issuperset(other)
+               set >= other
+               set > other
+               union(*others)
+               set | other | ...
+               intersection(*others)
+               set & other & ...
+               new set with elements common to the set and all others.
+               difference(*others)
+               set - other - ...
+               symmetric_difference(other)
+               set ^ other
+               copy()
+
+   The notes about these methods mentioned in :class:`set` also apply
+   to :class:`frozenset`.  In addition, Note that:
+
+   * Instances of :class:`set` are compared to instances of :class:`frozenset`
+     based on their members.  For example, ``set('abc') == frozenset('abc')``
+     returns ``True`` and so does ``set('abc') in set([frozenset('abc')])``.
+
+   * Binary operations that mix :class:`set` instances with :class:`frozenset`
+     return the type of the first operand.  For example: ``frozenset('ab') |
+     set('bc')`` returns an instance of :class:`frozenset`.
 
 
 .. _typesmapping:
