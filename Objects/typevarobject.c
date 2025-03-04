@@ -59,9 +59,6 @@ typedef struct {
 
 #include "clinic/typevarobject.c.h"
 
-#define typevartuple_iter unpack_iter
-#define typealias_iter unpack_iter
-
 /* NoDefault is a marker object to indicate that a parameter has no default. */
 
 static PyObject *
@@ -1763,7 +1760,7 @@ PyType_Slot typevartuple_slots[] = {
     {Py_tp_methods, typevartuple_methods},
     {Py_tp_getset, typevartuple_getset},
     {Py_tp_new, typevartuple},
-    {Py_tp_iter, typevartuple_iter},
+    {Py_tp_iter, unpack_iter},
     {Py_tp_repr, typevartuple_repr},
     {Py_tp_dealloc, typevartuple_dealloc},
     {Py_tp_alloc, PyType_GenericAlloc},
@@ -2137,7 +2134,7 @@ PyTypeObject _PyTypeAlias_Type = {
     .tp_new = typealias_new,
     .tp_free = PyObject_GC_Del,
     .tp_traverse = (traverseproc)typealias_traverse,
-    .tp_iter = typealias_iter,
+    .tp_iter = unpack_iter,
     .tp_clear = (inquiry)typealias_clear,
     .tp_repr = typealias_repr,
     .tp_as_number = &typealias_as_number,
