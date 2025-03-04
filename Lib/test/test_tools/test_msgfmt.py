@@ -20,8 +20,8 @@ script_dir = Path(toolsdir) / 'i18n'
 msgfmt = script_dir / 'msgfmt.py'
 
 
-def compile_messages(po_file, mo_file):
-    assert_python_ok(msgfmt, '-o', mo_file, po_file)
+def compile_messages(mo_file, *po_files):
+    assert_python_ok(msgfmt, '-o', mo_file, *po_files)
 
 
 class CompilationTest(unittest.TestCase):
@@ -36,7 +36,7 @@ class CompilationTest(unittest.TestCase):
                         expected = GNUTranslations(f)
 
                     tmp_mo_file = mo_file.name
-                    compile_messages(po_file, tmp_mo_file)
+                    compile_messages(tmp_mo_file, po_file)
                     with open(tmp_mo_file, 'rb') as f:
                         actual = GNUTranslations(f)
 
@@ -174,9 +174,9 @@ class MultiInputTest(unittest.TestCase):
 def update_catalog_snapshots():
     for po_file in data_dir.glob('*.po'):
         mo_file = po_file.with_suffix('.mo')
-        compile_messages(po_file, mo_file)
-    # cannot use compile_message because of both input files
-    assert_python_ok(msgfmt, '-o', data_dir /'file12_fr.mo',
+        compile_messages(mo_file, po_file)
+    # special processing for file12_fr.mo which results from 2 input files
+    compile_messages(data_dir /'file12_fr.mo',
                      data_dir / 'file1_fr_crlf.po',
                      data_dir / 'file2_fr_lf.po')
 
