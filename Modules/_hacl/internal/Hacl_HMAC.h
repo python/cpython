@@ -23,8 +23,8 @@
  */
 
 
-#ifndef __internal_Hacl_Hash_Blake2s_Simd128_H
-#define __internal_Hacl_Hash_Blake2s_Simd128_H
+#ifndef __internal_Hacl_HMAC_H
+#define __internal_Hacl_HMAC_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -35,57 +35,18 @@ extern "C" {
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 
-#include "../Hacl_Hash_Blake2s_Simd128.h"
-#include "libintvector.h"
+#include "../Hacl_HMAC.h"
 
-void
-Hacl_Hash_Blake2s_Simd128_init(Lib_IntVector_Intrinsics_vec128 *hash, uint32_t kk, uint32_t nn);
-
-void
-Hacl_Hash_Blake2s_Simd128_update_multi(
-  uint32_t len,
-  Lib_IntVector_Intrinsics_vec128 *wv,
-  Lib_IntVector_Intrinsics_vec128 *hash,
-  uint64_t prev,
-  uint8_t *blocks,
-  uint32_t nb
-);
-
-void
-Hacl_Hash_Blake2s_Simd128_update_last(
-  uint32_t len,
-  Lib_IntVector_Intrinsics_vec128 *wv,
-  Lib_IntVector_Intrinsics_vec128 *hash,
-  bool last_node,
-  uint64_t prev,
-  uint32_t rem,
-  uint8_t *d
-);
-
-void
-Hacl_Hash_Blake2s_Simd128_finish(
-  uint32_t nn,
-  uint8_t *output,
-  Lib_IntVector_Intrinsics_vec128 *hash
-);
-
-void
-Hacl_Hash_Blake2s_Simd128_store_state128s_to_state32(
-  uint32_t *st32,
-  Lib_IntVector_Intrinsics_vec128 *st
-);
-
-void
-Hacl_Hash_Blake2s_Simd128_load_state128s_from_state32(
-  Lib_IntVector_Intrinsics_vec128 *st,
-  uint32_t *st32
-);
-
-Lib_IntVector_Intrinsics_vec128 *Hacl_Hash_Blake2s_Simd128_malloc_with_key(void);
+typedef struct K___uint32_t_uint32_t_s
+{
+  uint32_t fst;
+  uint32_t snd;
+}
+K___uint32_t_uint32_t;
 
 #if defined(__cplusplus)
 }
 #endif
 
-#define __internal_Hacl_Hash_Blake2s_Simd128_H_DEFINED
+#define __internal_Hacl_HMAC_H_DEFINED
 #endif

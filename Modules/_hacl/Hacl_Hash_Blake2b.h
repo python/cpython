@@ -38,7 +38,6 @@ extern "C" {
 
 #include "Hacl_Streaming_Types.h"
 
-
 typedef struct Hacl_Hash_Blake2b_blake2_params_s
 {
   uint8_t digest_length;
@@ -72,25 +71,14 @@ Hacl_Hash_Blake2b_index;
 
 #define HACL_HASH_BLAKE2B_PERSONAL_BYTES (16U)
 
-typedef struct K____uint64_t___uint64_t__s
-{
-  uint64_t *fst;
-  uint64_t *snd;
-}
-K____uint64_t___uint64_t_;
+typedef Hacl_Streaming_Blake2_Types_block_state_blake2b_32 Hacl_Hash_Blake2b_block_state_t;
 
-typedef struct Hacl_Hash_Blake2b_block_state_t_s
-{
-  uint8_t fst;
-  uint8_t snd;
-  bool thd;
-  K____uint64_t___uint64_t_ f3;
-}
-Hacl_Hash_Blake2b_block_state_t;
+typedef Hacl_Streaming_Blake2_Types_optional_block_state_blake2b_32
+Hacl_Hash_Blake2b_optional_block_state_t;
 
 typedef struct Hacl_Hash_Blake2b_state_t_s
 {
-  Hacl_Hash_Blake2b_block_state_t block_state;
+  Hacl_Streaming_Blake2_Types_block_state_blake2b_32 block_state;
   uint8_t *buf;
   uint64_t total_len;
 }
