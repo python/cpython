@@ -5323,14 +5323,10 @@ if test "$ac_cv_have_lchflags" = yes ; then
 fi
 
 dnl Check for compression libraries
-AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy])
-
-dnl detect zlib from Emscripten emport
-PY_CHECK_EMSCRIPTEN_PORT([ZLIB], [-sUSE_ZLIB])
+AH_TEMPLATE([HAVE_ZLIB_COPY], [Define if the zlib library has inflateCopy; zlib 1.2.0 (2003) added inflateCopy.])
 
 PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
   have_zlib=yes
-  dnl zlib 1.2.0 (2003) added inflateCopy
   AC_DEFINE([HAVE_ZLIB_COPY], [1])
 ], [
   WITH_SAVE_ENV([
@@ -5346,12 +5342,26 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
     ])
   ])
 ])
-
-dnl binascii can use zlib for optimized crc32.
-AS_VAR_IF([have_zlib], [yes], [
-  BINASCII_CFLAGS="-DUSE_ZLIB_CRC32 $ZLIB_CFLAGS"
-  BINASCII_LIBS="$ZLIB_LIBS"
-])
+dnl temporarily throw only errors on builds other than wasi until wasi supports zlib
+AS_CASE([$ac_sys_system],
+  [WASI], [
+    BINASCII_CFLAGS="-DNO_ZLIB_CRC32"
+    BINASCII_LIBS=""
+  ],
+  [*], [
+    if test "$have_zlib" != "yes"; then
+      AC_MSG_WARN([m4_normalize([
+        zlib (zlib.h and libz) was not found. Building CPython
+        without zlib is not supported, although it might work
+        for limited use cases.
+        Install your OS's zlib-devel or zlib1g-dev equivalent
+        library or get it from https://zlib.net/.
+      ])])
+    fi
+    BINASCII_CFLAGS="$ZLIB_CFLAGS"
+    BINASCII_LIBS="$ZLIB_LIBS"
+  ]
+)
 
 dnl detect bzip2 from Emscripten emport
 PY_CHECK_EMSCRIPTEN_PORT([BZIP2], [-sUSE_BZIP2])

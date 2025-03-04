@@ -1389,6 +1389,10 @@ Build changes
 * GNU Autoconf 2.72 is now required to generate :file:`configure`.
   (Contributed by Erlend Aasland in :gh:`115765`.)
 
+* zlib is now required to build CPytho on all platforms except WASI.
+  For more information see :pep:`775`.
+  (Contributed by Stan Ulbrych and Gregory P. Smith in :gh:`91246`.)
+
 .. _whatsnew314-pep761:
 
 PEP 761: Discontinuation of PGP signatures
