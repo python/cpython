@@ -324,8 +324,15 @@ class ProcessPoolExecutorTest(ExecutorTest):
             # If we don't, every once in a while we may get an ENV CHANGE
             # error since the process would be alive immediately after the
             # test run.. and die a moment later.
-            worker_process.join(timeout=5)
-            self.assertFalse(worker_process.is_alive())
+            worker_process.join(5)
+
+            # Oddly enough, even though join completes, sometimes it takes a
+            # moment for the process to actually be marked as dead.
+            # ...  that seems a bit buggy.
+            # We need it dead before ending the test to ensure it doesn't
+            # get marked as an ENV CHANGE due to living child process.
+            while worker_process.is_alive():
+                time.sleep(0.1)
 
 
 create_executor_tests(globals(), ProcessPoolExecutorTest,
