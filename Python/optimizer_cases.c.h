@@ -213,7 +213,7 @@
             JitOptSymbol *res;
             value = stack_pointer[-1];
             if (!optimize_to_bool(this_instr, ctx, value, &res)) {
-                res = sym_new_type(ctx, &PyBool_Type);
+                res = sym_new_truthiness(ctx, value, true);
                 sym_set_type(value, &PyUnicode_Type);
             }
             stack_pointer[-1] = res;
