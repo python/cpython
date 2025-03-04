@@ -206,6 +206,8 @@ class BaseServer:
         self.RequestHandlerClass = RequestHandlerClass
         self.__is_shut_down = threading.Event()
         self.__shutdown_request = False
+        self.__not_shutting_down = threading.Event()
+        self.__not_shutting_down.set()
 
     def server_activate(self):
         """Called by constructor to activate the server.
@@ -215,7 +217,7 @@ class BaseServer:
         """
         pass
 
-    def serve_forever(self, poll_interval=0.5):
+    def serve_forever(self, poll_interval=30):
         """Handle one request at a time until shutdown.
 
         Polls for shutdown every poll_interval seconds. Ignores
@@ -224,10 +226,6 @@ class BaseServer:
         """
         self.__is_shut_down.clear()
         try:
-            # XXX: Consider using another file descriptor or connecting to the
-            # socket to wake this up instead of polling. Polling reduces our
-            # responsiveness to a shutdown request and wastes cpu at all other
-            # times.
             with _ServerSelector() as selector:
                 selector.register(self, selectors.EVENT_READ)
 
@@ -242,17 +240,56 @@ class BaseServer:
                     self.service_actions()
         finally:
             self.__shutdown_request = False
+            self.__not_shutting_down.wait()
             self.__is_shut_down.set()
 
-    def shutdown(self):
+    def shutdown(self, write_to_self=True):
         """Stops the serve_forever loop.
+
+        If write_to_self is True, write_to_self() will be called
+        and the loop will wake up immediately if server is not closed.
 
         Blocks until the loop has finished. This must be called while
         serve_forever() is running in another thread, or it will
         deadlock.
         """
         self.__shutdown_request = True
+
+        if write_to_self:
+            # On Windows connecting to a closed server takes a long time.
+            # So, assuming that server_close() is called right after
+            # serve_forever() returns, we will make loop wait
+            # for write_to_self() to complete.
+            self.__not_shutting_down.clear()
+            try:
+                if self.__is_shut_down.is_set():
+                    return
+                self.write_to_self()
+            finally:
+                self.__not_shutting_down.set()
+
         self.__is_shut_down.wait()
+
+    def write_to_self(self):
+        """Connect to the server's socket and send null byte.
+
+        May be overriden.
+        """
+        try:
+            addr = self.socket.getsockname()
+        except OSError:
+            return  # Socket is closed
+
+        try:
+            with socket.socket(self.socket.family, self.socket.type) as sock:
+                sock.connect(addr)
+                sock.setblocking(False)
+                try:
+                    sock.send(b'\0')
+                except BlockingIOError:
+                    return
+        except ConnectionRefusedError:
+            pass  # Server closed before we connected
 
     def service_actions(self):
         """Called by the serve_forever() loop.
