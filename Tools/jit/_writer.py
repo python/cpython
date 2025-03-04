@@ -48,7 +48,7 @@ def _dump_stencil(opname: str, group: _stencils.StencilGroup) -> typing.Iterator
     yield "{"
     for part, stencil in [("code", group.code), ("data", group.data)]:
         for line in stencil.disassembly:
-            yield f"    // {line}"
+            yield f"    // {line}".rstrip()
         stripped = stencil.body.rstrip(b"\x00")
         if stripped:
             yield f"    const unsigned char {part}_body[{len(stencil.body)}] = {{"

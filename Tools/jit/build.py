@@ -2,13 +2,10 @@
 
 import argparse
 import pathlib
-import shlex
-import sys
 
 import _targets
 
 if __name__ == "__main__":
-    comment = f"$ {shlex.join([pathlib.Path(sys.executable).name] + sys.argv)}"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "target", type=_targets.get_target, help="a PEP 11 target triple to compile for"
@@ -25,4 +22,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args.target.debug = args.debug
     args.target.verbose = args.verbose
-    args.target.build(pathlib.Path.cwd(), comment=comment, force=args.force)
+    args.target.build(pathlib.Path.cwd(), force=args.force)
