@@ -267,7 +267,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
 
             # We should get started, but not finished since we'll terminate the
             # workers just after
-            self.assertEqual(q.get(timeout=5), 'started')
+            self.assertEqual(q.get(timeout=support.SHORT_TIMEOUT), 'started')
 
             worker_process = list(executor._processes.values())[0]
 
@@ -285,7 +285,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
             else:
                 self.fail(f"Unknown operation: {function_name}")
 
-            self.assertRaises(queue.Empty, q.get, timeout=1)
+            self.assertRaises(queue.Empty, q.get, timeout=0.01)
 
     @parameterize(*FORCE_SHUTDOWN_PARAMS)
     def test_force_shutdown_workers_dead_workers(self, function_name):
@@ -324,7 +324,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
             # If we don't, every once in a while we may get an ENV CHANGE
             # error since the process would be alive immediately after the
             # test run.. and die a moment later.
-            worker_process.join(5)
+            worker_process.join(support.SHORT_TIMEOUT)
 
             # Oddly enough, even though join completes, sometimes it takes a
             # moment for the process to actually be marked as dead.
