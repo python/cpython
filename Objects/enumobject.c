@@ -439,20 +439,22 @@ reversed_next(PyObject *op)
 {
     reversedobject *ro = _reversedobject_CAST(op);
     PyObject *item;
-    Py_ssize_t index = ro->index;
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(ro->index);
 
     if (index >= 0) {
         item = PySequence_GetItem(ro->seq, index);
         if (item != NULL) {
-            ro->index--;
+            FT_ATOMIC_STORE_SSIZE_RELAXED(ro->index, index - 1);
             return item;
         }
         if (PyErr_ExceptionMatches(PyExc_IndexError) ||
             PyErr_ExceptionMatches(PyExc_StopIteration))
             PyErr_Clear();
     }
-    ro->index = -1;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(ro->index, -1);
+#ifndef Py_GIL_DISABLED
     Py_CLEAR(ro->seq);
+#endif
     return NULL;
 }
 
@@ -461,13 +463,15 @@ reversed_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     reversedobject *ro = _reversedobject_CAST(op);
     Py_ssize_t position, seqsize;
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(ro->index);
 
-    if (ro->seq == NULL)
+    if (index == -1)
         return PyLong_FromLong(0);
+    assert(ro->seq != NULL);
     seqsize = PySequence_Size(ro->seq);
     if (seqsize == -1)
         return NULL;
-    position = ro->index + 1;
+    position = index + 1;
     return PyLong_FromSsize_t((seqsize < position)  ?  0  :  position);
 }
 
@@ -477,10 +481,13 @@ static PyObject *
 reversed_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     reversedobject *ro = _reversedobject_CAST(op);
-    if (ro->seq)
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(ro->index);
+    if (index != -1) {
         return Py_BuildValue("O(O)n", Py_TYPE(ro), ro->seq, ro->index);
-    else
+    }
+    else {
         return Py_BuildValue("O(())", Py_TYPE(ro));
+    }
 }
 
 static PyObject *
@@ -490,7 +497,11 @@ reversed_setstate(PyObject *op, PyObject *state)
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
-    if (ro->seq != 0) {
+    Py_ssize_t ro_index = FT_ATOMIC_LOAD_SSIZE_RELAXED(ro->index);
+    // if the iterator is exhausted we do not set the state
+    // this is for backwards compatibility reasons. in practice this situation
+    // will not occur, see gh-120971
+    if (ro_index != -1) {
         Py_ssize_t n = PySequence_Size(ro->seq);
         if (n < 0)
             return NULL;
@@ -498,7 +509,7 @@ reversed_setstate(PyObject *op, PyObject *state)
             index = -1;
         else if (index > n-1)
             index = n-1;
-        ro->index = index;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(ro->index, index);
     }
     Py_RETURN_NONE;
 }
