@@ -1341,6 +1341,14 @@ f_string_middle:
             // it means that the format spec ends here and we should
             // return to the regular mode.
             if (in_format_spec && c == '\n') {
+                if (current_tok->f_string_quote_size == 1) {
+                    return MAKE_TOKEN(
+                        _PyTokenizer_syntaxerror(
+                            tok,
+                            "f-string: newlines are not allowed in format specifiers for single quoted f-strings"
+                        )
+                    );
+                }
                 tok_backup(tok, c);
                 TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
                 current_tok->in_format_spec = 0;
