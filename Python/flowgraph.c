@@ -2468,7 +2468,6 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 break;
             case CALL_INTRINSIC_1:
                 if (oparg == INTRINSIC_LIST_TO_TUPLE) {
-                    // for _ in (*foo, *bar) -> for _ in [*foo, *bar]
                     if (nextop == GET_ITER) {
                         INSTR_SET_OP0(inst, NOP);
                     }
