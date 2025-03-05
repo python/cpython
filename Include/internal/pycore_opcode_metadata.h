@@ -2942,27 +2942,27 @@ const uint8_t _PyOpcode_Deopt[256] = {
     case 125: \
     case 126: \
     case 127: \
-    case 128: \
-    case 129: \
-    case 130: \
-    case 131: \
-    case 132: \
-    case 133: \
-    case 134: \
-    case 135: \
-    case 136: \
-    case 137: \
-    case 138: \
-    case 139: \
-    case 140: \
-    case 141: \
-    case 142: \
-    case 143: \
-    case 144: \
-    case 145: \
-    case 146: \
-    case 147: \
-    case 148: \
+    case 211: \
+    case 212: \
+    case 213: \
+    case 214: \
+    case 215: \
+    case 216: \
+    case 217: \
+    case 218: \
+    case 219: \
+    case 220: \
+    case 221: \
+    case 222: \
+    case 223: \
+    case 224: \
+    case 225: \
+    case 226: \
+    case 227: \
+    case 228: \
+    case 229: \
+    case 230: \
+    case 231: \
     case 232: \
     case 233: \
         ;

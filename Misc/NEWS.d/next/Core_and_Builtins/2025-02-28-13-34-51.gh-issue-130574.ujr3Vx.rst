@@ -1,0 +1,1 @@
+Renumber :opcode:`RESUME` from 149 to 128.
