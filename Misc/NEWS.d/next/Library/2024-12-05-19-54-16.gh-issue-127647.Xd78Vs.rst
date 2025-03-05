@@ -1,0 +1,3 @@
+Add protocols :class:`io.Reader` and :class:`io.Writer` as
+alternatives to :class:`typing.IO`, :class:`typing.TextIO`, and
+:class:`typing.BinaryIO`.

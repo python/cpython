@@ -6,6 +6,7 @@ from collections import defaultdict
 from functools import lru_cache, wraps, reduce
 import gc
 import inspect
+import io
 import itertools
 import operator
 import os
@@ -4293,6 +4294,40 @@ class ProtocolTests(BaseTestCase):
         self.assertIsInstance(D(), ReleasableBuffer)
         self.assertNotIsSubclass(C, ReleasableBuffer)
         self.assertNotIsInstance(C(), ReleasableBuffer)
+
+    def test_io_reader_protocol_allowed(self):
+        @runtime_checkable
+        class CustomReader(io.Reader[bytes], Protocol):
+            def close(self): ...
+
+        class A: pass
+        class B:
+            def read(self, sz=-1):
+                return b""
+            def close(self):
+                pass
+
+        self.assertIsSubclass(B, CustomReader)
+        self.assertIsInstance(B(), CustomReader)
+        self.assertNotIsSubclass(A, CustomReader)
+        self.assertNotIsInstance(A(), CustomReader)
+
+    def test_io_writer_protocol_allowed(self):
+        @runtime_checkable
+        class CustomWriter(io.Writer[bytes], Protocol):
+            def close(self): ...
+
+        class A: pass
+        class B:
+            def write(self, b):
+                pass
+            def close(self):
+                pass
+
+        self.assertIsSubclass(B, CustomWriter)
+        self.assertIsInstance(B(), CustomWriter)
+        self.assertNotIsSubclass(A, CustomWriter)
+        self.assertNotIsInstance(A(), CustomWriter)
 
     def test_builtin_protocol_allowlist(self):
         with self.assertRaises(TypeError):
