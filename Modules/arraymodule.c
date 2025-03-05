@@ -254,8 +254,8 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
 #else
         arraydata_free(self->data, false);
 #endif
-        self->data = NULL;
         Py_SET_SIZE(self, 0);
+        FT_ATOMIC_STORE_PTR_RELAXED(self->data, NULL);
         return 0;
     }
 
@@ -2629,10 +2629,11 @@ array_array___reduce_ex___impl(arrayobject *self, PyTypeObject *cls,
     array_state *state = get_array_state_by_class(cls);
     assert(state != NULL);
 
-    if (state->array_reconstructor == NULL) {
-        state->array_reconstructor = PyImport_ImportModuleAttrString(
-                "array", "_array_reconstructor");
-        if (state->array_reconstructor == NULL) {
+    if (FT_ATOMIC_LOAD_PTR_RELAXED(state->array_reconstructor) == NULL) {
+        PyObject *array_reconstructor = PyImport_ImportModuleAttrString(
+            "array", "_array_reconstructor");
+        FT_ATOMIC_STORE_PTR_RELAXED(state->array_reconstructor, array_reconstructor);
+        if (array_reconstructor == NULL) {
             return NULL;
         }
     }

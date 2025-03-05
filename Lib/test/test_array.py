@@ -4,6 +4,7 @@
 
 import collections.abc
 import io
+import os
 import unittest
 from test import support
 from test.support import import_helper
@@ -104,7 +105,10 @@ UTF32_BE = 21
 class ArrayReconstructorTest(unittest.TestCase):
 
     def setUp(self):
-        self.enterContext(warnings.catch_warnings())
+        if (not support.Py_GIL_DISABLED or
+                any('"parallel_threads": null' in a for a in sys.argv) or
+                all('parallel_threads' not in a for a in sys.argv)):
+            self.enterContext(warnings.catch_warnings())
         warnings.filterwarnings(
             "ignore",
             message="The 'u' type code is deprecated and "
@@ -220,7 +224,10 @@ class BaseTest:
     # minitemsize: the minimum guaranteed itemsize
 
     def setUp(self):
-        self.enterContext(warnings.catch_warnings())
+        if (not support.Py_GIL_DISABLED or
+                any('"parallel_threads": null' in a for a in sys.argv) or
+                all('parallel_threads' not in a for a in sys.argv)):
+            self.enterContext(warnings.catch_warnings())
         warnings.filterwarnings(
             "ignore",
             message="The 'u' type code is deprecated and "
@@ -472,54 +479,59 @@ class BaseTest:
     def test_tofromfile(self):
         a = array.array(self.typecode, 2*self.example)
         self.assertRaises(TypeError, a.tofile)
-        os_helper.unlink(os_helper.TESTFN)
-        f = open(os_helper.TESTFN, 'wb')
-        try:
-            a.tofile(f)
-            f.close()
-            b = array.array(self.typecode)
-            f = open(os_helper.TESTFN, 'rb')
-            self.assertRaises(TypeError, b.fromfile)
-            b.fromfile(f, len(self.example))
-            self.assertEqual(b, array.array(self.typecode, self.example))
-            self.assertNotEqual(a, b)
-            self.assertRaises(EOFError, b.fromfile, f, len(self.example)+1)
-            self.assertEqual(a, b)
-            f.close()
-        finally:
-            if not f.closed:
+        with os_helper.temp_dir() as temp_dir:
+            temp_path = os.path.join(temp_dir, os_helper.TESTFN)
+            f = open(temp_path, 'wb')
+            try:
+                a.tofile(f)
                 f.close()
-            os_helper.unlink(os_helper.TESTFN)
+                b = array.array(self.typecode)
+                f = open(temp_path, 'rb')
+                self.assertRaises(TypeError, b.fromfile)
+                b.fromfile(f, len(self.example))
+                self.assertEqual(b, array.array(self.typecode, self.example))
+                self.assertNotEqual(a, b)
+                self.assertRaises(EOFError, b.fromfile, f, len(self.example)+1)
+                self.assertEqual(a, b)
+                f.close()
+            finally:
+                if not f.closed:
+                    f.close()
+                os_helper.unlink(temp_path)
 
     def test_fromfile_ioerror(self):
         # Issue #5395: Check if fromfile raises a proper OSError
         # instead of EOFError.
         a = array.array(self.typecode)
-        f = open(os_helper.TESTFN, 'wb')
-        try:
-            self.assertRaises(OSError, a.fromfile, f, len(self.example))
-        finally:
-            f.close()
-            os_helper.unlink(os_helper.TESTFN)
+        with os_helper.temp_dir() as temp_dir:
+            temp_path = os.path.join(temp_dir, os_helper.TESTFN)
+            f = open(temp_path, 'wb')
+            try:
+                self.assertRaises(OSError, a.fromfile, f, len(self.example))
+            finally:
+                f.close()
+                os_helper.unlink(temp_path)
 
     def test_filewrite(self):
         a = array.array(self.typecode, 2*self.example)
-        f = open(os_helper.TESTFN, 'wb')
-        try:
-            f.write(a)
-            f.close()
-            b = array.array(self.typecode)
-            f = open(os_helper.TESTFN, 'rb')
-            b.fromfile(f, len(self.example))
-            self.assertEqual(b, array.array(self.typecode, self.example))
-            self.assertNotEqual(a, b)
-            b.fromfile(f, len(self.example))
-            self.assertEqual(a, b)
-            f.close()
-        finally:
-            if not f.closed:
+        with os_helper.temp_dir() as temp_dir:
+            temp_path = os.path.join(temp_dir, os_helper.TESTFN)
+            f = open(temp_path, 'wb')
+            try:
+                f.write(a)
                 f.close()
-            os_helper.unlink(os_helper.TESTFN)
+                b = array.array(self.typecode)
+                f = open(temp_path, 'rb')
+                b.fromfile(f, len(self.example))
+                self.assertEqual(b, array.array(self.typecode, self.example))
+                self.assertNotEqual(a, b)
+                b.fromfile(f, len(self.example))
+                self.assertEqual(a, b)
+                f.close()
+            finally:
+                if not f.closed:
+                    f.close()
+                os_helper.unlink(temp_path)
 
     def test_tofromlist(self):
         a = array.array(self.typecode, 2*self.example)
@@ -1201,6 +1213,7 @@ class BaseTest:
         a = array.array('B', b"")
         self.assertRaises(BufferError, _testcapi.getbuffer_with_null_view, a)
 
+    @unittest.skipIf(support.Py_GIL_DISABLED, 'not freed if GIL disabled')
     def test_free_after_iterating(self):
         support.check_free_after_iterating(self, iter, array.array,
                                            (self.typecode,))
@@ -1255,6 +1268,7 @@ class UnicodeTest(StringTest, unittest.TestCase):
         self.assertRaises(ValueError, a.tounicode)
         self.assertRaises(ValueError, str, a)
 
+    @unittest.skipIf(support.Py_GIL_DISABLED, 'warning stuff is not free-thread safe yet')
     def test_typecode_u_deprecation(self):
         with self.assertWarns(DeprecationWarning):
             array.array("u")
