@@ -630,7 +630,7 @@ extern "C" {
 // style fallthrough attribute, not the GCC extension syntax used here,
 // and __has_attribute(fallthrough) evaluates to 1.
 #if _Py__has_attribute(fallthrough) && (!defined(__clang__) || \
-    (!defined(__apple_build_version__) && __clang_major__ >= 10) || \
+    ((!defined(__apple_build_version__) && !defined(__NetBSD__)) && __clang_major__ >= 10) || \
     (defined(__apple_build_version__) && __clang_major__ >= 12))
 #  define _Py_FALLTHROUGH __attribute__((fallthrough))
 #else
