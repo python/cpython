@@ -674,6 +674,7 @@ class _Unparser(NodeVisitor):
         self._type_ignores = {}
         self._indent = 0
         self._in_try_star = False
+        self._in_interactive = False
 
     def interleave(self, inter, f, seq):
         """Call f on each item in seq, calling inter() in between."""
@@ -702,11 +703,20 @@ class _Unparser(NodeVisitor):
         if self._source:
             self.write("\n")
 
-    def fill(self, text=""):
+    def maybe_semicolon(self):
+        """Adds a "; " delimiter if it isn't the start of generated source"""
+        if self._source:
+            self.write("; ")
+
+    def fill(self, text="", *, allow_semicolon=True):
         """Indent a piece of text and append it, according to the current
-        indentation level"""
-        self.maybe_newline()
-        self.write("    " * self._indent + text)
+        indentation level, or only delineate with semicolon if applicable"""
+        if self._in_interactive and not self._indent and allow_semicolon:
+            self.maybe_semicolon()
+            self.write(text)
+        else:
+            self.maybe_newline()
+            self.write("    " * self._indent + text)
 
     def write(self, *text):
         """Add new source parts"""
@@ -812,8 +822,17 @@ class _Unparser(NodeVisitor):
             ignore.lineno: f"ignore{ignore.tag}"
             for ignore in node.type_ignores
         }
-        self._write_docstring_and_traverse_body(node)
-        self._type_ignores.clear()
+        try:
+            self._write_docstring_and_traverse_body(node)
+        finally:
+            self._type_ignores.clear()
+
+    def visit_Interactive(self, node):
+        self._in_interactive = True
+        try:
+            self._write_docstring_and_traverse_body(node)
+        finally:
+            self._in_interactive = False
 
     def visit_FunctionType(self, node):
         with self.delimit("(", ")"):
@@ -945,17 +964,17 @@ class _Unparser(NodeVisitor):
             self.traverse(node.cause)
 
     def do_visit_try(self, node):
-        self.fill("try")
+        self.fill("try", allow_semicolon=False)
         with self.block():
             self.traverse(node.body)
         for ex in node.handlers:
             self.traverse(ex)
         if node.orelse:
-            self.fill("else")
+            self.fill("else", allow_semicolon=False)
             with self.block():
                 self.traverse(node.orelse)
         if node.finalbody:
-            self.fill("finally")
+            self.fill("finally", allow_semicolon=False)
             with self.block():
                 self.traverse(node.finalbody)
 
@@ -976,7 +995,7 @@ class _Unparser(NodeVisitor):
             self._in_try_star = prev_in_try_star
 
     def visit_ExceptHandler(self, node):
-        self.fill("except*" if self._in_try_star else "except")
+        self.fill("except*" if self._in_try_star else "except", allow_semicolon=False)
         if node.type:
             self.write(" ")
             self.traverse(node.type)
@@ -989,9 +1008,9 @@ class _Unparser(NodeVisitor):
     def visit_ClassDef(self, node):
         self.maybe_newline()
         for deco in node.decorator_list:
-            self.fill("@")
+            self.fill("@", allow_semicolon=False)
             self.traverse(deco)
-        self.fill("class " + node.name)
+        self.fill("class " + node.name, allow_semicolon=False)
         if hasattr(node, "type_params"):
             self._type_params_helper(node.type_params)
         with self.delimit_if("(", ")", condition = node.bases or node.keywords):
@@ -1021,10 +1040,10 @@ class _Unparser(NodeVisitor):
     def _function_helper(self, node, fill_suffix):
         self.maybe_newline()
         for deco in node.decorator_list:
-            self.fill("@")
+            self.fill("@", allow_semicolon=False)
             self.traverse(deco)
         def_str = fill_suffix + " " + node.name
-        self.fill(def_str)
+        self.fill(def_str, allow_semicolon=False)
         if hasattr(node, "type_params"):
             self._type_params_helper(node.type_params)
         with self.delimit("(", ")"):
@@ -1075,7 +1094,7 @@ class _Unparser(NodeVisitor):
         self._for_helper("async for ", node)
 
     def _for_helper(self, fill, node):
-        self.fill(fill)
+        self.fill(fill, allow_semicolon=False)
         self.set_precedence(_Precedence.TUPLE, node.target)
         self.traverse(node.target)
         self.write(" in ")
@@ -1083,46 +1102,46 @@ class _Unparser(NodeVisitor):
         with self.block(extra=self.get_type_comment(node)):
             self.traverse(node.body)
         if node.orelse:
-            self.fill("else")
+            self.fill("else", allow_semicolon=False)
             with self.block():
                 self.traverse(node.orelse)
 
     def visit_If(self, node):
-        self.fill("if ")
+        self.fill("if ", allow_semicolon=False)
         self.traverse(node.test)
         with self.block():
             self.traverse(node.body)
         # collapse nested ifs into equivalent elifs.
         while node.orelse and len(node.orelse) == 1 and isinstance(node.orelse[0], If):
             node = node.orelse[0]
-            self.fill("elif ")
+            self.fill("elif ", allow_semicolon=False)
             self.traverse(node.test)
             with self.block():
                 self.traverse(node.body)
         # final else
         if node.orelse:
-            self.fill("else")
+            self.fill("else", allow_semicolon=False)
             with self.block():
                 self.traverse(node.orelse)
 
     def visit_While(self, node):
-        self.fill("while ")
+        self.fill("while ", allow_semicolon=False)
         self.traverse(node.test)
         with self.block():
             self.traverse(node.body)
         if node.orelse:
-            self.fill("else")
+            self.fill("else", allow_semicolon=False)
             with self.block():
                 self.traverse(node.orelse)
 
     def visit_With(self, node):
-        self.fill("with ")
+        self.fill("with ", allow_semicolon=False)
         self.interleave(lambda: self.write(", "), self.traverse, node.items)
         with self.block(extra=self.get_type_comment(node)):
             self.traverse(node.body)
 
     def visit_AsyncWith(self, node):
-        self.fill("async with ")
+        self.fill("async with ", allow_semicolon=False)
         self.interleave(lambda: self.write(", "), self.traverse, node.items)
         with self.block(extra=self.get_type_comment(node)):
             self.traverse(node.body)
@@ -1264,7 +1283,7 @@ class _Unparser(NodeVisitor):
         self.write(node.id)
 
     def _write_docstring(self, node):
-        self.fill()
+        self.fill(allow_semicolon=False)
         if node.kind == "u":
             self.write("u")
         self._write_str_avoiding_backslashes(node.value, quote_types=_MULTI_QUOTES)
@@ -1558,7 +1577,7 @@ class _Unparser(NodeVisitor):
             self.traverse(node.step)
 
     def visit_Match(self, node):
-        self.fill("match ")
+        self.fill("match ", allow_semicolon=False)
         self.traverse(node.subject)
         with self.block():
             for case in node.cases:
@@ -1652,7 +1671,7 @@ class _Unparser(NodeVisitor):
             self.traverse(node.optional_vars)
 
     def visit_match_case(self, node):
-        self.fill("case ")
+        self.fill("case ", allow_semicolon=False)
         self.traverse(node.pattern)
         if node.guard:
             self.write(" if ")
