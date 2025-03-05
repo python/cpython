@@ -5534,10 +5534,12 @@ PySSLSession_richcompare(PyObject *left, PyObject *right, int op)
     }
 
     int result;
-    _sslmodulestate *state = get_state_obj(left);
-    PyTypeObject *sesstype = state->PySSLSession_Type;
 
-    if (!Py_IS_TYPE(left, sesstype) || !Py_IS_TYPE(right, sesstype)) {
+    PySSLSession *self = PySSLSession_CAST(left);
+    PyTypeObject *sesstype = Py_TYPE(self);
+    assert(sesstype == self->ctx->state->PySSLSession_Type);
+
+    if (!Py_IS_TYPE(right, sesstype)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
 
@@ -5546,8 +5548,7 @@ PySSLSession_richcompare(PyObject *left, PyObject *right, int op)
     } else {
         const unsigned char *left_id, *right_id;
         unsigned int left_len, right_len;
-        left_id = SSL_SESSION_get_id(((PySSLSession *)left)->session,
-                                     &left_len);
+        left_id = SSL_SESSION_get_id(self->session, &left_len);
         right_id = SSL_SESSION_get_id(((PySSLSession *)right)->session,
                                       &right_len);
         if (left_len == right_len) {
