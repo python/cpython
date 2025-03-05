@@ -1,0 +1,2 @@
+Disallow ``__classdict__`` as the name of a type parameter. Using this
+name would previously crash the interpreter in some circumstances.
