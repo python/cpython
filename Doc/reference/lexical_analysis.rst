@@ -277,29 +277,38 @@ Identifiers and keywords
 
 .. index:: identifier, name
 
-Identifiers (also referred to as *names*) are described by the following lexical
-definitions.
+:data:`~token.NAME` tokens represent *identifiers*, *keywords*, and
+*soft keywords*.
 
-The syntax of identifiers in Python is based on the Unicode standard annex
-UAX-31, with elaboration and changes as defined below; see also :pep:`3131` for
-further details.
-
-Within the ASCII range (U+0001..U+007F), the valid characters for identifiers
-include the uppercase and lowercase letters ``A`` through
-``Z``, the underscore ``_`` and, except for the first character, the digits
+Within the ASCII range (U+0001..U+007F), the valid characters for names
+include the uppercase and lowercase letters (``A`` through
+``Z``), the underscore ``_`` and, except for the first character, the digits
 ``0`` through ``9``.
-Python 3.0 introduced additional characters from outside the ASCII range (see
-:pep:`3131`).  For these characters, the classification uses the version of the
-Unicode Character Database as included in the :mod:`unicodedata` module.
 
-Identifiers are unlimited in length.  Case is significant.
+Names must contain at least one character, but have no upper length limit.
+Case is significant.
+
+Besizes ``A-Z`` and ``0-9``, names can also use "letter-like" and "number-like"
+characters from outside the ASCII range.  For these characters, the
+classification uses the version of the Unicode Character Database as included
+in the :mod:`unicodedata` module.
+
+The exact definition of "letter-like" and "number-like" characters is based on
+the Unicode standard annex `UAX-31`_, with elaboration and changes as
+defined below. See also :pep:`3131` for further details.
+
+All identifiers are converted into the normal form NFKC while parsing;
+comparison of identifiers is based on NFKC.
+
+Formally, names are described by the following lexical definitions.
 
 .. productionlist:: python-grammar
-   identifier: `xid_start` `xid_continue`*
+   NAME: `xid_start` `xid_continue`*
    id_start: <all characters in general categories Lu, Ll, Lt, Lm, Lo, Nl, the underscore, and characters with the Other_ID_Start property>
    id_continue: <all characters in `id_start`, plus characters in the categories Mn, Mc, Nd, Pc and others with the Other_ID_Continue property>
    xid_start: <all characters in `id_start` whose NFKC normalization is in "id_start xid_continue*">
    xid_continue: <all characters in `id_continue` whose NFKC normalization is in "id_continue*">
+   identifier: <`NAME`, except keywords>
 
 The Unicode category codes mentioned above stand for:
 
@@ -318,12 +327,12 @@ The Unicode category codes mentioned above stand for:
   compatibility
 * *Other_ID_Continue* - likewise
 
-All identifiers are converted into the normal form NFKC while parsing; comparison
-of identifiers is based on NFKC.
-
 A non-normative HTML file listing all valid identifier characters for Unicode
 16.0.0 can be found at
 https://www.unicode.org/Public/16.0.0/ucd/DerivedCoreProperties.txt
+
+
+.. _UAX-31: https://www.unicode.org/reports/tr31/
 
 
 .. _keywords:
