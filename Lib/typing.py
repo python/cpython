@@ -475,19 +475,6 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
                 t = t.__origin__[args]
             if is_unpacked:
                 t = Unpack[t]
-            # Ensure the actual subclass is preserved
-            if ev_args == t.__args__:
-                return t
-            if isinstance(t, GenericAlias):
-                if _should_unflatten_callable_args(t, ev_args):
-                    return t.__class__(t.__origin__, (ev_args[:-1], ev_args[-1]))
-                return t.__class__(t.__origin__, ev_args)
-        if isinstance(t, Union):
-            return functools.reduce(operator.or_, ev_args)
-        else:
-            return t
-    return t
-
 
         ev_args = tuple(
             _eval_type(
@@ -499,7 +486,9 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
         if ev_args == t.__args__:
             return t
         if isinstance(t, GenericAlias):
-            return GenericAlias(t.__origin__, ev_args)
+            if _should_unflatten_callable_args(t, ev_args):
+                return t.__class__(t.__origin__, (ev_args[:-1], ev_args[-1]))
+            return t.__class__(t.__origin__, ev_args)
         if isinstance(t, Union):
             return functools.reduce(operator.or_, ev_args)
         else:
