@@ -499,7 +499,7 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
     if re.fullmatch(r"aarch64-apple-darwin.*", host):
         target = _MachO(host, alignment=8, prefix="_")
     elif re.fullmatch(r"aarch64-pc-windows-msvc", host):
-        args = ["-fms-runtime-lib=dll"]
+        args = ["-fms-runtime-lib=dll", "-fplt"]
         target = _COFF(host, alignment=8, args=args)
     elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
         args = [
