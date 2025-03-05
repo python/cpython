@@ -720,6 +720,7 @@ class ListComprehensionTest(unittest.TestCase):
             f_locals = frame.f_locals
             foo = 1
             [foo for foo in [0]]
+            # calls _PyFrame_LocalsToFast which triggers the issue
             from abc import *
             same_f_locals = frame.f_locals is f_locals
         """
