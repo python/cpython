@@ -785,6 +785,23 @@ class GCTests(unittest.TestCase):
         rc, out, err = assert_python_ok(TESTFN)
         self.assertEqual(out.strip(), b'__del__ called')
 
+    def test_builtin_module_access_at_exit(self):
+        code = """if 1:
+            import logging
+            class C:
+                def __enter__(self):
+                    return 'a'
+                def __exit__(self, t, v, tb):
+                    assert open
+                    assert logging.debug
+            def G():
+                with C() as i:
+                    yield from i
+            g = G()
+            next(g)"""
+        rc, out, err = assert_python_ok('-c', code)
+        self.assertEqual(err, b'')
+
     def test_get_stats(self):
         stats = gc.get_stats()
         self.assertEqual(len(stats), 3)
