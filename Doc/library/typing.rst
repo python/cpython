@@ -53,7 +53,7 @@ provides backports of these new features to older versions of Python.
       should broadly apply to most Python type checkers. (Some parts may still
       be specific to mypy.)
 
-   `"Static Typing with Python" <https://typing.readthedocs.io/en/latest/>`_
+   `"Static Typing with Python" <https://typing.python.org/en/latest/>`_
       Type-checker-agnostic documentation written by the community detailing
       type system features, useful typing related tools and typing best
       practices.
@@ -64,7 +64,7 @@ Specification for the Python Type System
 ========================================
 
 The canonical, up-to-date specification of the Python type system can be
-found at `"Specification for the Python type system" <https://typing.readthedocs.io/en/latest/spec/index.html>`_.
+found at `"Specification for the Python type system" <https://typing.python.org/en/latest/spec/index.html>`_.
 
 .. _type-aliases:
 
@@ -2912,7 +2912,7 @@ Functions and decorators
 
    .. seealso::
       `Unreachable Code and Exhaustiveness Checking
-      <https://typing.readthedocs.io/en/latest/guides/unreachable.html>`__ has more
+      <https://typing.python.org/en/latest/guides/unreachable.html>`__ has more
       information about exhaustiveness checking with static typing.
 
    .. versionadded:: 3.11
