@@ -597,7 +597,32 @@ if sys.platform == 'darwin':
             sys.audit("webbrowser.open", url)
             url = url.replace('"', '%22')
             if self.name == 'default':
-                script = f'open location "{url}"'  # opens in default browser
+                proto, _sep, _rest = url.partition(":")
+                if _sep and proto.lower() in {"http", "https"}:
+                    # default web URL, don't need to lookup browser
+                    script = f'open location "{url}"'
+                else:
+                    # if not a web URL, need to lookup default browser to ensure a browser is launched
+                    # this should always work, but is overkill to lookup http handler
+                    # before launching http
+                    script = f"""
+                        use framework "AppKit"
+                        use AppleScript version "2.4"
+                        use scripting additions
+
+                        property NSWorkspace : a reference to current application's NSWorkspace
+                        property NSURL : a reference to current application's NSURL
+
+                        set http_url to NSURL's URLWithString:"https://python.org"
+                        set browser_url to (NSWorkspace's sharedWorkspace)'s ¬
+                            URLForApplicationToOpenURL:http_url
+                        set app_path to browser_url's relativePath as text -- NSURL to absolute path '/Applications/Safari.app'
+
+                        tell application app_path
+                            activate
+                            open location "{url}"
+                        end tell
+                    """
             else:
                 script = f'''
                    tell application "{self.name}"
