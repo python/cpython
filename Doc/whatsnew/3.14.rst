@@ -785,6 +785,10 @@ pdb
   (if any).
   (Contributed by Tian Gao in :gh:`130493`.)
 
+* ``<tab>`` at the beginning of the line in :mod:`pdb` multi-line input will
+  fill in a 4-space indentation now, instead of inserting a ``\t`` character.
+  (Contributed by Tian Gao in :gh:`130471`.)
+
 
 pickle
 ------
@@ -1325,6 +1329,8 @@ typing
 
 * Remove :class:`!typing.ByteString`. It had previously raised a
   :exc:`DeprecationWarning` since Python 3.12.
+
+* :class:`typing.TypeAliasType` now supports star unpacking.
 
 urllib
 ------
