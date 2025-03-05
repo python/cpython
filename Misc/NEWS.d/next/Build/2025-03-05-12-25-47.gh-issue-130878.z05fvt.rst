@@ -1,1 +1,0 @@
-Returned :file:`PCbuild/prepare_ssl.py` :func:`copy_includes` behavior to raise exceptions if include directory cannot be created.
