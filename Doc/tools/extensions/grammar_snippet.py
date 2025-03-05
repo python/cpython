@@ -70,6 +70,8 @@ class GrammarSnippetBase(SphinxDirective):
             if source_line is None or not source_line[:1].isspace():
                 production_node = addnodes.production(source_line)
                 production_nodes.append(production_node)
+            else:
+                production_node.rawsource += '\n' + source_line
             self.add_production_line(
                 production_node,
                 source_line,
