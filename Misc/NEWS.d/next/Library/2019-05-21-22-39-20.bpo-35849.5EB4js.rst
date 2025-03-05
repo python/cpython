@@ -1,0 +1,2 @@
+:mod:`pstats` report is improved: thousands separators, larger column width,
+and automatic decrease of subsequent rows size. Patch by Evandro Coan.
