@@ -4483,11 +4483,6 @@ The constructors for both classes work the same:
       Return ``True`` if the set has no elements in common with *other*.  Sets are
       disjoint if and only if their intersection is the empty set.
 
-   .. method:: set == other
-
-      Test whether every element of each set is contained in the other, that is,
-      ``set <= other and set >= other``.
-
    .. method:: issubset(other)
                set <= other
 
@@ -4539,6 +4534,13 @@ The constructors for both classes work the same:
    contrast, their operator based counterparts require their arguments to be
    sets.  This precludes error-prone constructions like ``set('abc') & 'cbs'``
    in favor of the more readable ``set('abc').intersection('cbs')``.
+
+   Both :class:`set` and :class:`frozenset` support set to set comparisons. Two
+   sets are equal if and only if every element of each set is contained in the
+   other (each is a subset of the other). A set is less than another set if and
+   only if the first set is a proper subset of the second set (is a subset, but
+   is not equal). A set is greater than another set if and only if the first set
+   is a proper superset of the second set (is a superset, but is not equal).
 
    The subset and equality comparisons do not generalize to a total ordering
    function.  For example, any two nonempty disjoint sets are not equal and are not
@@ -4616,7 +4618,6 @@ The constructors for both classes work the same:
                x not in s
                isdisjoint(other)
                issubset(other)
-               set == other
                set <= other
                set < other
                issuperset(other)
