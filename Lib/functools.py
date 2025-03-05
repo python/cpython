@@ -1033,6 +1033,15 @@ class singledispatchmethod:
     def __isabstractmethod__(self):
         return getattr(self.func, '__isabstractmethod__', False)
 
+    def __repr__(self):
+        try:
+            name = self.func.__qualname__
+        except AttributeError:
+            try:
+                name = self.func.__name__
+            except AttributeError:
+                name = '?'
+        return f'<single dispatch method descriptor {name}>'
 
 class _singledispatchmethod_get:
     def __init__(self, unbound, obj, cls):
@@ -1051,6 +1060,19 @@ class _singledispatchmethod_get:
             self.__doc__ = func.__doc__
         except AttributeError:
             pass
+
+    def __repr__(self):
+        try:
+            name = self.__qualname__
+        except AttributeError:
+            try:
+                name = self.__name__
+            except AttributeError:
+                name = '?'
+        if self._obj is not None:
+            return f'<bound single dispatch method {name} of {self._obj!r}>'
+        else:
+            return f'<single dispatch method {name}>'
 
     def __call__(self, /, *args, **kwargs):
         if not args:
