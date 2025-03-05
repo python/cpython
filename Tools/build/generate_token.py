@@ -234,11 +234,10 @@ def make_rst(infile, outfile='Doc/library/token-list.inc',
 
     has_handwritten_doc = set()
     with open(rstfile) as fileobj:
-        tokendef_re = re.compile(r'.. data:: (\w+)')
+        tokendef_re = re.compile(r'.. data:: ([0-9A-Z_]+)\s*')
         for line in fileobj:
-            if match := tokendef_re.fullmatch(line.strip()):
-                if match[1].isupper():
-                    has_handwritten_doc.add(match[1])
+            if match := tokendef_re.fullmatch(line):
+                has_handwritten_doc.add(match[1])
 
     # Exclude non-token constants in token.py
     has_handwritten_doc -= {'N_TOKENS', 'NT_OFFSET', 'EXACT_TOKEN_TYPES'}
