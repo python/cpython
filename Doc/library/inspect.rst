@@ -555,8 +555,7 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 .. function:: ismethoddescriptor(object)
 
    Return ``True`` if the object is a method descriptor, but not if
-   :func:`ismethod`, :func:`isclass`, :func:`isfunction` or :func:`isbuiltin`
-   are true.
+   :func:`isclass`, :func:`ismethod` or :func:`isfunction` are true.
 
    This, for example, is true of ``int.__add__``.  An object passing this test
    has a :meth:`~object.__get__` method, but not a :meth:`~object.__set__`
@@ -564,10 +563,10 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
    attributes varies.  A :attr:`~definition.__name__` attribute is usually
    sensible, and :attr:`~definition.__doc__` often is.
 
-   Methods implemented via descriptors that also pass one of the other tests
-   return ``False`` from the :func:`ismethoddescriptor` test, simply because the
-   other tests promise more -- you can, e.g., count on having the
-   :attr:`~method.__func__` attribute (etc) when an object passes
+   Method descriptors that also pass any of the other tests (:func:`isclass`,
+   :func:`ismethod` or :func:`isfunction`) make this function return ``False``,
+   simply because those other tests promise more -- you can, e.g., count on
+   having the :attr:`~method.__func__` attribute when an object passes
    :func:`ismethod`.
 
    .. versionchanged:: 3.13
@@ -578,16 +577,28 @@ attributes (see :ref:`import-mod-attrs` for module attributes):
 
 .. function:: isdatadescriptor(object)
 
-   Return ``True`` if the object is a data descriptor.
+   Return ``True`` if the object is a data descriptor, but not if
+   :func:`isclass`, :func:`ismethod` or :func:`isfunction` are true.
 
-   Data descriptors have a :attr:`~object.__set__` or a :attr:`~object.__delete__` method.
-   Examples are properties (defined in Python), getsets, and members.  The
-   latter two are defined in C and there are more specific tests available for
-   those types, which is robust across Python implementations.  Typically, data
-   descriptors will also have :attr:`~definition.__name__` and :attr:`!__doc__` attributes
-   (properties, getsets, and members have both of these attributes), but this is
-   not guaranteed.
+   Data descriptors always have a :meth:`~object.__set__` method and/or
+   a :meth:`~object.__delete__` method.  Optionally, they may also have a
+   :meth:`~object.__get__` method.
 
+   Examples of data descriptors are :func:`properties <property>`, getsets and
+   member descriptors.  Note that for the latter two (defined only in C extension
+   modules) more specific tests are available: :func:`isgetsetdescriptor` and
+   :func:`ismemberdescriptor`, respectively.
+
+   While data descriptors may have also :attr:`~definition.__name__` and
+   :attr:`!__doc__` attributes (as properties, getsets and member descriptors
+   do), this is not necessarily the case in general.
+
+   .. versionchanged:: 3.8
+      This function now reports objects with only a :meth:`~object.__set__` method
+      as being data descriptors (the presence of :meth:`~object.__get__` is no
+      longer required for that).  Moreover, objects with :meth:`~object.__delete__`,
+      but not :meth:`~object.__set__`, are now properly recognized as data
+      descriptors as well, which was not the case previously.
 
 .. function:: isgetsetdescriptor(object)
 
