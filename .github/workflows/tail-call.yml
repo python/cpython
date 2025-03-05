@@ -9,11 +9,11 @@ on:
       - '.github/workflows/tail-call.yml'
   push:
     paths:
+      - '.github/workflows/tail-call.yml'
       - 'Python/bytecodes.c'
       - 'Python/ceval.c'
       - 'Python/ceval_macros.h'
       - 'Python/generated_cases.c.h'
-      - '.github/workflows/tail-call.yml'
   workflow_dispatch:
 
 permissions:
