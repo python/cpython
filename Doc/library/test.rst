@@ -792,6 +792,11 @@ The :mod:`test.support` module defines the following functions:
    Decorator for invoking :func:`check_impl_detail` on *guards*.  If that
    returns ``False``, then uses *msg* as the reason for skipping the test.
 
+.. decorator:: thread_unsafe(reason=None)
+
+   Decorator for marking tests as thread-unsafe.  This test always runs in one
+   thread even when invoked with ``--parallel-threads``.
+
 
 .. decorator:: no_tracing
 

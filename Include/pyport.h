@@ -625,8 +625,13 @@ extern "C" {
 //     case 2: code; break;
 //     }
 //
-// __attribute__((fallthrough)) was introduced in GCC 7.
-#if _Py__has_attribute(fallthrough)
+// __attribute__((fallthrough)) was introduced in GCC 7 and Clang 10 /
+// Apple Clang 12.0. Earlier Clang versions support only the C++11
+// style fallthrough attribute, not the GCC extension syntax used here,
+// and __has_attribute(fallthrough) evaluates to 1.
+#if _Py__has_attribute(fallthrough) && (!defined(__clang__) || \
+    (!defined(__apple_build_version__) && __clang_major__ >= 10) || \
+    (defined(__apple_build_version__) && __clang_major__ >= 12))
 #  define _Py_FALLTHROUGH __attribute__((fallthrough))
 #else
 #  define _Py_FALLTHROUGH do { } while (0)

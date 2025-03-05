@@ -984,6 +984,9 @@
 /* Defined for Solaris 2.6 bug in pthread header. */
 #undef HAVE_PTHREAD_DESTRUCTOR
 
+/* Define to 1 if you have the 'pthread_getattr_np' function. */
+#undef HAVE_PTHREAD_GETATTR_NP
+
 /* Define to 1 if you have the 'pthread_getcpuclockid' function. */
 #undef HAVE_PTHREAD_GETCPUCLOCKID
 
@@ -1662,9 +1665,6 @@
 /* Define as the preferred size in bits of long digits */
 #undef PYLONG_BITS_IN_DIGIT
 
-/* Maximum length in bytes of a thread name */
-#undef PYTHREAD_NAME_MAXLEN
-
 /* enabled builtin hash modules */
 #undef PY_BUILTIN_HASHLIB_HASHES
 
@@ -1720,6 +1720,9 @@
 
 /* The version of SunOS/Solaris as reported by `uname -r' without the dot. */
 #undef Py_SUNOS_VERSION
+
+/* Define if you want to use tail-calling interpreters in CPython. */
+#undef Py_TAIL_CALL_INTERP
 
 /* Define if you want to enable tracing references for debugging purpose */
 #undef Py_TRACE_REFS
@@ -1979,6 +1982,9 @@
 
 /* framework name */
 #undef _PYTHONFRAMEWORK
+
+/* Maximum length in bytes of a thread name */
+#undef _PYTHREAD_NAME_MAXLEN
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT

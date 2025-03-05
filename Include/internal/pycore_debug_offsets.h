@@ -11,6 +11,42 @@ extern "C" {
 
 #define _Py_Debug_Cookie "xdebugpy"
 
+#if defined(__APPLE__)
+#  include <mach-o/loader.h>
+#endif
+
+// Macros to burn global values in custom sections so out-of-process
+// profilers can locate them easily.
+#define GENERATE_DEBUG_SECTION(name, declaration)     \
+   _GENERATE_DEBUG_SECTION_WINDOWS(name)            \
+   _GENERATE_DEBUG_SECTION_APPLE(name)              \
+   declaration                                      \
+   _GENERATE_DEBUG_SECTION_LINUX(name)
+
+#if defined(MS_WINDOWS)
+#define _GENERATE_DEBUG_SECTION_WINDOWS(name)                       \
+   _Pragma(Py_STRINGIFY(section(Py_STRINGIFY(name), read, write))) \
+   __declspec(allocate(Py_STRINGIFY(name)))
+#else
+#define _GENERATE_DEBUG_SECTION_WINDOWS(name)
+#endif
+
+#if defined(__APPLE__)
+#define _GENERATE_DEBUG_SECTION_APPLE(name) \
+   __attribute__((section(SEG_DATA "," Py_STRINGIFY(name))))      \
+   __attribute__((used))
+#else
+#define _GENERATE_DEBUG_SECTION_APPLE(name)
+#endif
+
+#if defined(__linux__) && (defined(__GNUC__) || defined(__clang__))
+#define _GENERATE_DEBUG_SECTION_LINUX(name) \
+   __attribute__((section("." Py_STRINGIFY(name))))               \
+   __attribute__((used))
+#else
+#define _GENERATE_DEBUG_SECTION_LINUX(name)
+#endif
+
 #ifdef Py_GIL_DISABLED
 # define _Py_Debug_gilruntimestate_enabled offsetof(struct _gil_runtime_state, enabled)
 # define _Py_Debug_Free_Threaded 1
@@ -69,6 +105,7 @@ typedef struct _Py_DebugOffsets {
         uint64_t instr_ptr;
         uint64_t localsplus;
         uint64_t owner;
+        uint64_t stackpointer;
     } interpreter_frame;
 
     // Code object offset;
@@ -113,6 +150,14 @@ typedef struct _Py_DebugOffsets {
         uint64_t ob_size;
     } list_object;
 
+    // PySet object offset;
+    struct _set_object {
+        uint64_t size;
+        uint64_t used;
+        uint64_t table;
+        uint64_t mask;
+    } set_object;
+
     // PyDict object offset;
     struct _dict_object {
         uint64_t size;
@@ -153,6 +198,14 @@ typedef struct _Py_DebugOffsets {
         uint64_t size;
         uint64_t collecting;
     } gc;
+
+    // Generator object offset;
+    struct _gen_object {
+        uint64_t size;
+        uint64_t gi_name;
+        uint64_t gi_iframe;
+        uint64_t gi_frame_state;
+    } gen_object;
 } _Py_DebugOffsets;
 
 
@@ -198,6 +251,7 @@ typedef struct _Py_DebugOffsets {
         .instr_ptr = offsetof(_PyInterpreterFrame, instr_ptr), \
         .localsplus = offsetof(_PyInterpreterFrame, localsplus), \
         .owner = offsetof(_PyInterpreterFrame, owner), \
+        .stackpointer = offsetof(_PyInterpreterFrame, stackpointer), \
     }, \
     .code_object = { \
         .size = sizeof(PyCodeObject), \
@@ -231,6 +285,12 @@ typedef struct _Py_DebugOffsets {
         .ob_item = offsetof(PyListObject, ob_item), \
         .ob_size = offsetof(PyListObject, ob_base.ob_size), \
     }, \
+    .set_object = { \
+        .size = sizeof(PySetObject), \
+        .used = offsetof(PySetObject, used), \
+        .table = offsetof(PySetObject, table), \
+        .mask = offsetof(PySetObject, mask), \
+    }, \
     .dict_object = { \
         .size = sizeof(PyDictObject), \
         .ma_keys = offsetof(PyDictObject, ma_keys), \
@@ -259,6 +319,12 @@ typedef struct _Py_DebugOffsets {
     .gc = { \
         .size = sizeof(struct _gc_runtime_state), \
         .collecting = offsetof(struct _gc_runtime_state, collecting), \
+    }, \
+    .gen_object = { \
+        .size = sizeof(PyGenObject), \
+        .gi_name = offsetof(PyGenObject, gi_name), \
+        .gi_iframe = offsetof(PyGenObject, gi_iframe), \
+        .gi_frame_state = offsetof(PyGenObject, gi_frame_state), \
     }, \
 }
 

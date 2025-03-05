@@ -22,9 +22,9 @@ static PyObject *
 EVP_copy_impl(EVPobject *self);
 
 static PyObject *
-EVP_copy(EVPobject *self, PyObject *Py_UNUSED(ignored))
+EVP_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return EVP_copy_impl(self);
+    return EVP_copy_impl((EVPobject *)self);
 }
 
 PyDoc_STRVAR(EVP_digest__doc__,
@@ -40,9 +40,9 @@ static PyObject *
 EVP_digest_impl(EVPobject *self);
 
 static PyObject *
-EVP_digest(EVPobject *self, PyObject *Py_UNUSED(ignored))
+EVP_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return EVP_digest_impl(self);
+    return EVP_digest_impl((EVPobject *)self);
 }
 
 PyDoc_STRVAR(EVP_hexdigest__doc__,
@@ -58,9 +58,9 @@ static PyObject *
 EVP_hexdigest_impl(EVPobject *self);
 
 static PyObject *
-EVP_hexdigest(EVPobject *self, PyObject *Py_UNUSED(ignored))
+EVP_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return EVP_hexdigest_impl(self);
+    return EVP_hexdigest_impl((EVPobject *)self);
 }
 
 PyDoc_STRVAR(EVP_update__doc__,
@@ -87,7 +87,7 @@ static PyObject *
 EVPXOF_digest_impl(EVPobject *self, Py_ssize_t length);
 
 static PyObject *
-EVPXOF_digest(EVPobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+EVPXOF_digest(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -135,7 +135,7 @@ EVPXOF_digest(EVPobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
         }
         length = ival;
     }
-    return_value = EVPXOF_digest_impl(self, length);
+    return_value = EVPXOF_digest_impl((EVPobject *)self, length);
 
 exit:
     return return_value;
@@ -158,7 +158,7 @@ static PyObject *
 EVPXOF_hexdigest_impl(EVPobject *self, Py_ssize_t length);
 
 static PyObject *
-EVPXOF_hexdigest(EVPobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+EVPXOF_hexdigest(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -206,7 +206,7 @@ EVPXOF_hexdigest(EVPobject *self, PyObject *const *args, Py_ssize_t nargs, PyObj
         }
         length = ival;
     }
-    return_value = EVPXOF_hexdigest_impl(self, length);
+    return_value = EVPXOF_hexdigest_impl((EVPobject *)self, length);
 
 exit:
     return return_value;
@@ -1634,9 +1634,9 @@ static PyObject *
 _hashlib_HMAC_copy_impl(HMACobject *self);
 
 static PyObject *
-_hashlib_HMAC_copy(HMACobject *self, PyObject *Py_UNUSED(ignored))
+_hashlib_HMAC_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _hashlib_HMAC_copy_impl(self);
+    return _hashlib_HMAC_copy_impl((HMACobject *)self);
 }
 
 PyDoc_STRVAR(_hashlib_HMAC_update__doc__,
@@ -1652,7 +1652,7 @@ static PyObject *
 _hashlib_HMAC_update_impl(HMACobject *self, PyObject *msg);
 
 static PyObject *
-_hashlib_HMAC_update(HMACobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_hashlib_HMAC_update(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1689,7 +1689,7 @@ _hashlib_HMAC_update(HMACobject *self, PyObject *const *args, Py_ssize_t nargs, 
         goto exit;
     }
     msg = args[0];
-    return_value = _hashlib_HMAC_update_impl(self, msg);
+    return_value = _hashlib_HMAC_update_impl((HMACobject *)self, msg);
 
 exit:
     return return_value;
@@ -1708,9 +1708,9 @@ static PyObject *
 _hashlib_HMAC_digest_impl(HMACobject *self);
 
 static PyObject *
-_hashlib_HMAC_digest(HMACobject *self, PyObject *Py_UNUSED(ignored))
+_hashlib_HMAC_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _hashlib_HMAC_digest_impl(self);
+    return _hashlib_HMAC_digest_impl((HMACobject *)self);
 }
 
 PyDoc_STRVAR(_hashlib_HMAC_hexdigest__doc__,
@@ -1729,9 +1729,9 @@ static PyObject *
 _hashlib_HMAC_hexdigest_impl(HMACobject *self);
 
 static PyObject *
-_hashlib_HMAC_hexdigest(HMACobject *self, PyObject *Py_UNUSED(ignored))
+_hashlib_HMAC_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _hashlib_HMAC_hexdigest_impl(self);
+    return _hashlib_HMAC_hexdigest_impl((HMACobject *)self);
 }
 
 PyDoc_STRVAR(_hashlib_get_fips_mode__doc__,
@@ -1844,4 +1844,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=c3ef67e4a573cc7a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=811a8b50beae1018 input=a9049054013a1b77]*/

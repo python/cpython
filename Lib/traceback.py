@@ -135,7 +135,7 @@ BUILTIN_EXCEPTION_LIMIT = object()
 
 def _print_exception_bltin(exc, /):
     file = sys.stderr if sys.stderr is not None else sys.__stderr__
-    colorize = _colorize.can_colorize()
+    colorize = _colorize.can_colorize(file=file)
     return print_exception(exc, limit=BUILTIN_EXCEPTION_LIMIT, file=file, colorize=colorize)
 
 
@@ -204,7 +204,7 @@ def _safe_string(value, what, func=str):
 # --
 
 def print_exc(limit=None, file=None, chain=True):
-    """Shorthand for 'print_exception(sys.exception(), limit, file, chain)'."""
+    """Shorthand for 'print_exception(sys.exception(), limit=limit, file=file, chain=chain)'."""
     print_exception(sys.exception(), limit=limit, file=file, chain=chain)
 
 def format_exc(limit=None, chain=True):
@@ -212,15 +212,15 @@ def format_exc(limit=None, chain=True):
     return "".join(format_exception(sys.exception(), limit=limit, chain=chain))
 
 def print_last(limit=None, file=None, chain=True):
-    """This is a shorthand for 'print_exception(sys.last_exc, limit, file, chain)'."""
+    """This is a shorthand for 'print_exception(sys.last_exc, limit=limit, file=file, chain=chain)'."""
     if not hasattr(sys, "last_exc") and not hasattr(sys, "last_type"):
         raise ValueError("no last exception")
 
     if hasattr(sys, "last_exc"):
-        print_exception(sys.last_exc, limit, file, chain)
+        print_exception(sys.last_exc, limit=limit, file=file, chain=chain)
     else:
         print_exception(sys.last_type, sys.last_value, sys.last_traceback,
-                        limit, file, chain)
+                        limit=limit, file=file, chain=chain)
 
 
 #
@@ -380,10 +380,14 @@ def walk_stack(f):
     current stack is used. Usually used with StackSummary.extract.
     """
     if f is None:
-        f = sys._getframe().f_back.f_back.f_back.f_back
-    while f is not None:
-        yield f, f.f_lineno
-        f = f.f_back
+        f = sys._getframe().f_back
+
+    def walk_stack_generator(frame):
+        while frame is not None:
+            yield frame, frame.f_lineno
+            frame = frame.f_back
+
+    return walk_stack_generator(f)
 
 
 def walk_tb(tb):
@@ -1283,7 +1287,7 @@ class TracebackException:
             filename_suffix = ' ({})'.format(self.filename)
 
         text = self.text
-        if text is not None:
+        if isinstance(text, str):
             # text  = "   foo\n"
             # rtext = "   foo"
             # ltext =    "foo"
@@ -1292,10 +1296,17 @@ class TracebackException:
             spaces = len(rtext) - len(ltext)
             if self.offset is None:
                 yield '    {}\n'.format(ltext)
-            else:
+            elif isinstance(self.offset, int):
                 offset = self.offset
                 if self.lineno == self.end_lineno:
-                    end_offset = self.end_offset if self.end_offset not in {None, 0} else offset
+                    end_offset = (
+                        self.end_offset
+                        if (
+                            isinstance(self.end_offset, int)
+                            and self.end_offset != 0
+                        )
+                        else offset
+                    )
                 else:
                     end_offset = len(rtext) + 1
 

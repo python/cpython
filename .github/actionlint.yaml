@@ -1,5 +1,5 @@
 self-hosted-runner:
-  labels: ["ubuntu-24.04-aarch64", "windows-aarch64"]
+  labels: ["windows-aarch64"]
 
 config-variables: null
 
