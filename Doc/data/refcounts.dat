@@ -2770,6 +2770,14 @@ PyUnicode_FromFormatV:PyObject*::+1:
 PyUnicode_FromFormatV:const char*:format::
 PyUnicode_FromFormatV:va_list:args::
 
+PyUnicode_Append:void:::
+PyUnicode_Append:PyObject**:p_left:0:
+PyUnicode_Append:PyObject*:right::
+
+PyUnicode_AppendAndDel:void:::
+PyUnicode_AppendAndDel:PyObject**:p_left:0:
+PyUnicode_AppendAndDel:PyObject*:right:-1:
+
 PyUnicode_GetDefaultEncoding:const char*:::
 PyUnicode_GetDefaultEncoding::void::
 
