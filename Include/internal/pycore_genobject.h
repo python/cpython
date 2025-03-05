@@ -13,7 +13,7 @@ extern "C" {
 /* _PyGenObject_HEAD defines the initial segment of generator
    and coroutine objects. */
 #define _PyGenObject_HEAD(prefix)                                           \
-    PyObject_HEAD                                                           \
+    PyObject_VAR_HEAD                                                       \
     /* List of weak reference. */                                           \
     PyObject *prefix##_weakreflist;                                         \
     /* Name of the generator. */                                            \
