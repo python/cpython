@@ -108,6 +108,24 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             self._selector = None
 
     def _close_self_pipe(self, shutdown=False):
+        """
+        Close the self-pipe used for waking up the event loop.
+    
+        This method ensures that the self-pipe is properly closed, releasing any associated resources.
+        It optionally shuts down the sockets before closing them if the `shutdown` parameter is set to True.
+    
+        Parameters:
+        shutdown (bool): If True, the method attempts to shut down the sockets before closing them.
+    
+        Raises:
+        OSError: If an error occurs during the socket shutdown process. The error is logged but not re-raised.
+    
+        Notes:
+        - The method first removes the reader from the event loop for the `_ssock` socket.
+        - If `shutdown` is True, the method attempts to shut down the `_ssock` and `_csock` sockets.
+          Any errors encountered during shutdown are logged.
+        - The sockets are closed, and the `_internal_fds` counter is decremented.
+        """
         if self._ssock is not None:
             self._remove_reader(self._ssock.fileno())
             if shutdown:
