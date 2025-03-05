@@ -1418,17 +1418,16 @@ _PyNumber_Index(PyObject *item)
 
     if (!PyLong_Check(result)) {
         PyErr_Format(PyExc_TypeError,
-                     "%.200s.__index__ returned non-int (type %.200s)",
-                     Py_TYPE(item)->tp_name, Py_TYPE(result)->tp_name);
+                     "%T.__index__ returned non-int (type %T)", item, result);
         Py_DECREF(result);
         return NULL;
     }
     /* Issue #17576: warn if 'result' not of exact type int. */
     if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-            "%.200s.__index__ returned non-int (type %.200s).  "
+            "%T.__index__ returned non-int (type %T).  "
             "The ability to return an instance of a strict subclass of int "
             "is deprecated, and may be removed in a future version of Python.",
-            Py_TYPE(item)->tp_name, Py_TYPE(result)->tp_name)) {
+            item, result)) {
         Py_DECREF(result);
         return NULL;
     }
@@ -1528,17 +1527,16 @@ PyNumber_Long(PyObject *o)
 
         if (!PyLong_Check(result)) {
             PyErr_Format(PyExc_TypeError,
-                         "%.200s.__int__ returned non-int (type %.200s)",
-                         Py_TYPE(o)->tp_name, Py_TYPE(result)->tp_name);
+                         "%T.__int__ returned non-int (type %T)", o, result);
             Py_DECREF(result);
             return NULL;
         }
         /* Issue #17576: warn if 'result' not of exact type int. */
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "%.200s.__int__ returned non-int (type %.200s).  "
+                "%T.__int__ returned non-int (type %T).  "
                 "The ability to return an instance of a strict subclass of int "
                 "is deprecated, and may be removed in a future version of Python.",
-                Py_TYPE(o)->tp_name, Py_TYPE(result)->tp_name)) {
+                o, result)) {
             Py_DECREF(result);
             return NULL;
         }
@@ -1606,17 +1604,16 @@ PyNumber_Float(PyObject *o)
 
         if (!PyFloat_Check(res)) {
             PyErr_Format(PyExc_TypeError,
-                         "%.50s.__float__ returned non-float (type %.50s)",
-                         Py_TYPE(o)->tp_name, Py_TYPE(res)->tp_name);
+                         "%T.__float__ returned non-float (type %T)", o, res);
             Py_DECREF(res);
             return NULL;
         }
         /* Issue #26983: warn if 'res' not of exact type float. */
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "%.50s.__float__ returned non-float (type %.50s).  "
+                "%T.__float__ returned non-float (type %T).  "
                 "The ability to return an instance of a strict subclass of float "
                 "is deprecated, and may be removed in a future version of Python.",
-                Py_TYPE(o)->tp_name, Py_TYPE(res)->tp_name)) {
+                o, res)) {
             Py_DECREF(res);
             return NULL;
         }
@@ -2815,9 +2812,8 @@ PyObject_GetIter(PyObject *o)
         PyObject *res = (*f)(o);
         if (res != NULL && !PyIter_Check(res)) {
             PyErr_Format(PyExc_TypeError,
-                         "%.100s.iter() returned non-iterator "
-                         "of type '%.100s'",
-                         Py_TYPE(o)->tp_name, Py_TYPE(res)->tp_name);
+                         "%T.iter() returned non-iterator of type '%T'",
+                         o, res);
             Py_SETREF(res, NULL);
         }
         return res;

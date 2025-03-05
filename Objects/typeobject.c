@@ -9920,8 +9920,7 @@ slot_nb_bool(PyObject *self)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "%s.__bool__ returned non-bool (type %s)",
-                     Py_TYPE(self)->tp_name, Py_TYPE(value)->tp_name);
+                     "%T.__bool__ returned non-bool (type %T)", self, value);
         result = -1;
     }
 
