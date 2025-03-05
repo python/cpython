@@ -1304,17 +1304,25 @@ process_interp_queue(struct _Py_mem_interp_free_queue *queue,
                      struct _qsbr_thread_state *qsbr, delayed_dealloc_cb cb,
                      void *state)
 {
+    assert(PyMutex_IsLocked(&queue->mutex));
+    process_queue(&queue->head, qsbr, false, cb, state);
+
+    int more_work = !llist_empty(&queue->head);
+    _Py_atomic_store_int_relaxed(&queue->has_work, more_work);
+}
+
+static void
+maybe_process_interp_queue(struct _Py_mem_interp_free_queue *queue,
+                           struct _qsbr_thread_state *qsbr, delayed_dealloc_cb cb,
+                           void *state)
+{
     if (!_Py_atomic_load_int_relaxed(&queue->has_work)) {
         return;
     }
 
     // Try to acquire the lock, but don't block if it's already held.
     if (_PyMutex_LockTimed(&queue->mutex, 0, 0) == PY_LOCK_ACQUIRED) {
-        process_queue(&queue->head, qsbr, false, cb, state);
-
-        int more_work = !llist_empty(&queue->head);
-        _Py_atomic_store_int_relaxed(&queue->has_work, more_work);
-
+        process_interp_queue(queue, qsbr, cb, state);
         PyMutex_Unlock(&queue->mutex);
     }
 }
@@ -1329,7 +1337,7 @@ _PyMem_ProcessDelayed(PyThreadState *tstate)
     process_queue(&tstate_impl->mem_free_queue, tstate_impl->qsbr, true, NULL, NULL);
 
     // Process shared interpreter work
-    process_interp_queue(&interp->mem_free_queue, tstate_impl->qsbr, NULL, NULL);
+    maybe_process_interp_queue(&interp->mem_free_queue, tstate_impl->qsbr, NULL, NULL);
 }
 
 void
@@ -1342,7 +1350,7 @@ _PyMem_ProcessDelayedNoDealloc(PyThreadState *tstate, delayed_dealloc_cb cb, voi
     process_queue(&tstate_impl->mem_free_queue, tstate_impl->qsbr, true, cb, state);
 
     // Process shared interpreter work
-    process_interp_queue(&interp->mem_free_queue, tstate_impl->qsbr, cb, state);
+    maybe_process_interp_queue(&interp->mem_free_queue, tstate_impl->qsbr, cb, state);
 }
 
 void
@@ -1364,10 +1372,15 @@ _PyMem_AbandonDelayed(PyThreadState *tstate)
         return;
     }
 
-    // Merge the thread's work queue into the interpreter's work queue.
     PyMutex_Lock(&interp->mem_free_queue.mutex);
+
+    // Merge the thread's work queue into the interpreter's work queue.
     llist_concat(&interp->mem_free_queue.head, queue);
-    _Py_atomic_store_int_relaxed(&interp->mem_free_queue.has_work, 1);
+
+    // Process the merged queue now (see gh-130794).
+    _PyThreadStateImpl *this_tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
+    process_interp_queue(&interp->mem_free_queue, this_tstate->qsbr, NULL, NULL);
+
     PyMutex_Unlock(&interp->mem_free_queue.mutex);
 
     assert(llist_empty(queue));  // the thread's queue is now empty
