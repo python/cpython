@@ -46,7 +46,7 @@ directly specified in the :class:`!InventoryItem` definition shown above.
 Module contents
 ---------------
 
-.. decorator:: dataclass(*, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False)
+.. decorator:: dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False)
 
    This function is a :term:`decorator` that is used to add generated
    :term:`special methods <special method>` to classes, as described below.
