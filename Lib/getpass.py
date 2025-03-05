@@ -1,6 +1,7 @@
 """Utilities to get a password and/or the current user name.
 
-getpass(prompt[, stream]) - Prompt for a password, with echo turned off.
+getpass(prompt[, stream[, echochar]]) - Prompt for a password, with echo
+turned off and optional keyboard feedback.
 getuser() - Get the user name from the environment or password database.
 
 GetPassWarning - This UserWarning is issued when getpass() cannot prevent
@@ -25,13 +26,15 @@ __all__ = ["getpass","getuser","GetPassWarning"]
 class GetPassWarning(UserWarning): pass
 
 
-def unix_getpass(prompt='Password: ', stream=None):
+def unix_getpass(prompt='Password: ', stream=None, *, echochar=None):
     """Prompt for a password, with echo turned off.
 
     Args:
       prompt: Written on stream to ask for the input.  Default: 'Password: '
       stream: A writable file object to display the prompt.  Defaults to
               the tty.  If no tty is available defaults to sys.stderr.
+      echochar: A string used to mask input (e.g., '*').  If None, input is
+                hidden.
     Returns:
       The seKr3t input.
     Raises:
@@ -68,12 +71,20 @@ def unix_getpass(prompt='Password: ', stream=None):
                 old = termios.tcgetattr(fd)     # a copy to save
                 new = old[:]
                 new[3] &= ~termios.ECHO  # 3 == 'lflags'
+                if echochar:
+                    new[3] &= ~termios.ICANON
                 tcsetattr_flags = termios.TCSAFLUSH
                 if hasattr(termios, 'TCSASOFT'):
                     tcsetattr_flags |= termios.TCSASOFT
                 try:
                     termios.tcsetattr(fd, tcsetattr_flags, new)
-                    passwd = _raw_input(prompt, stream, input=input)
+                    if not echochar:
+                        passwd = _raw_input(prompt, stream, input=input)
+                        stream.write('\n')
+                        return passwd
+
+                    passwd = _input_with_echochar(prompt, stream, input,
+                                                  echochar)
                 finally:
                     termios.tcsetattr(fd, tcsetattr_flags, old)
                     stream.flush()  # issue7208
@@ -93,7 +104,7 @@ def unix_getpass(prompt='Password: ', stream=None):
         return passwd
 
 
-def win_getpass(prompt='Password: ', stream=None):
+def win_getpass(prompt='Password: ', stream=None, *, echochar=None):
     """Prompt for password with echo off, using Windows getwch()."""
     if sys.stdin is not sys.__stdin__:
         return fallback_getpass(prompt, stream)
@@ -108,9 +119,16 @@ def win_getpass(prompt='Password: ', stream=None):
         if c == '\003':
             raise KeyboardInterrupt
         if c == '\b':
+            if echochar and pw:
+                for _ in echochar:
+                    msvcrt.putwch('\b')
+                    msvcrt.putwch(' ')
+                    msvcrt.putwch('\b')
             pw = pw[:-1]
         else:
             pw = pw + c
+            if echochar:
+                msvcrt.putwch(echochar)
     msvcrt.putwch('\r')
     msvcrt.putwch('\n')
     return pw
@@ -149,6 +167,33 @@ def _raw_input(prompt="", stream=None, input=None):
     if line[-1] == '\n':
         line = line[:-1]
     return line
+
+
+def _input_with_echochar(prompt="", stream=None, input=None, echochar=""):
+    if not stream:
+        stream = sys.stderr
+    if not input:
+        input = sys.stdin
+    prompt = str(prompt)
+    stream.write(prompt)
+    stream.flush()
+    passwd = ""
+    while True:
+        char = input.read(1)
+        if char == '\n' or char == '\r':
+            break
+        if char == '\x03':
+            raise KeyboardInterrupt
+        if char == '\x7f' or char == '\b':
+            if passwd:
+                stream.write("\b \b" * len(echochar))
+                stream.flush()
+            passwd = passwd[:-1]
+        else:
+            passwd += char
+            stream.write(echochar)
+            stream.flush()
+    return passwd
 
 
 def getuser():
