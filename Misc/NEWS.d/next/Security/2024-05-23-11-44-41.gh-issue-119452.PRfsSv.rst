@@ -1,0 +1,3 @@
+Fix OOM vulnerability in :mod:`http.server`, when handling the POST request
+in the CGI server on Windows could cause consuming an arbitrary amount of
+memory.
