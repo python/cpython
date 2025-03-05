@@ -3221,11 +3221,15 @@ starunpack_helper_impl(compiler *c, location loc,
     Py_ssize_t n = asdl_seq_LEN(elts);
     int big = n + pushed + (injected_arg ? 1 : 0) > _PY_STACK_USE_GUIDELINE;
     int seen_star = 0;
+    int is_const = 1;
     for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
-        if (elt->kind == Starred_kind) {
-            seen_star = 1;
-            break;
+        if (elt->kind != Constant_kind) {
+            is_const = 0;
+            if (elt->kind == Starred_kind) {
+                seen_star = 1;
+                break;
+            }
         }
     }
     if (!seen_star && !big) {
@@ -3246,24 +3250,18 @@ starunpack_helper_impl(compiler *c, location loc,
     }
     int sequence_built = 0;
     if (big) {
-        if (tuple) {
+        if (is_const && tuple && !injected_arg && !pushed) {
             PyObject *newconst = PyTuple_New(n);
             if (newconst == NULL) {
                 return ERROR;
             }
-            bool is_const = true;
             for (Py_ssize_t i = 0; i < n; i++) {
                 expr_ty elt = asdl_seq_GET(elts, i);
-                if (elt->kind != Constant_kind) {
-                    is_const = false;
-                    Py_DECREF(newconst);
-                    break;
-                }
                 PyTuple_SET_ITEM(newconst, i, Py_NewRef(elt->v.Constant.value));
             }
-            if (is_const) {
-                return codegen_addop_load_const(c, loc, newconst);
-            }
+            int r = codegen_addop_load_const(c, loc, newconst);
+            Py_DECREF(newconst);
+            return r;
         }
         ADDOP_I(c, loc, build, pushed);
         sequence_built = 1;
