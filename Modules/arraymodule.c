@@ -321,8 +321,8 @@ in bounds; that's the responsibility of the caller.
 static PyObject *
 b_getitem(char *items, Py_ssize_t i)
 {
-    long x = ((signed char *)items)[i];
-    return PyLong_FromLong(x);
+    return PyLong_FromLong(
+        (long) (signed char) FT_ATOMIC_LOAD_CHAR_RELAXED(items[i]));
 }
 
 static int
@@ -332,8 +332,9 @@ b_setitem(char *items, Py_ssize_t i, PyObject *v)
     /* PyArg_Parse's 'b' formatter is for an unsigned char, therefore
        must use the next size up that is signed ('h') and manually do
        the overflow checking */
-    if (!PyArg_Parse(v, "h;array item must be integer", &x))
+    if (!PyArg_Parse(v, "h;array item must be integer", &x)) {
         return -1;
+    }
     else if (x < -128) {
         PyErr_SetString(PyExc_OverflowError,
             "signed char is less than minimum");
@@ -344,16 +345,17 @@ b_setitem(char *items, Py_ssize_t i, PyObject *v)
             "signed char is greater than maximum");
         return -1;
     }
-    if (i >= 0)
-        ((char *)items)[i] = (char)x;
+    if (i >= 0) {
+        FT_ATOMIC_STORE_CHAR_RELAXED(items[i], (char) x);
+    }
     return 0;
 }
 
 static PyObject *
 BB_getitem(char *items, Py_ssize_t i)
 {
-    long x = ((unsigned char *)items)[i];
-    return PyLong_FromLong(x);
+    return PyLong_FromLong(
+        (long) (unsigned char) FT_ATOMIC_LOAD_CHAR_RELAXED(items[i]));
 }
 
 static int
@@ -361,17 +363,20 @@ BB_setitem(char *items, Py_ssize_t i, PyObject *v)
 {
     unsigned char x;
     /* 'B' == unsigned char, maps to PyArg_Parse's 'b' formatter */
-    if (!PyArg_Parse(v, "b;array item must be integer", &x))
+    if (!PyArg_Parse(v, "b;array item must be integer", &x)) {
         return -1;
-    if (i >= 0)
-        ((unsigned char *)items)[i] = x;
+    }
+    if (i >= 0) {
+        FT_ATOMIC_STORE_CHAR_RELAXED(items[i], x);
+    }
     return 0;
 }
 
 static PyObject *
 u_getitem(char *items, Py_ssize_t i)
 {
-    return PyUnicode_FromOrdinal(((wchar_t *) items)[i]);
+    return PyUnicode_FromOrdinal(
+        (wchar_t) FT_ATOMIC_LOAD_INT_RELAXED(((wchar_t *) items)[i]));
 }
 
 static int
@@ -406,7 +411,7 @@ u_setitem(char *items, Py_ssize_t i, PyObject *v)
     assert(len == 1);
 
     if (i >= 0) {
-        ((wchar_t *)items)[i] = w;
+        FT_ATOMIC_STORE_INT_RELAXED(((wchar_t *) items)[i], w);
     }
     return 0;
 }
@@ -414,7 +419,8 @@ u_setitem(char *items, Py_ssize_t i, PyObject *v)
 static PyObject *
 w_getitem(char *items, Py_ssize_t i)
 {
-    return PyUnicode_FromOrdinal(((Py_UCS4 *) items)[i]);
+    return PyUnicode_FromOrdinal(
+        (Py_UCS4) FT_ATOMIC_LOAD_UINT32_RELAXED(((Py_UCS4 *) items)[i]));
 }
 
 static int
@@ -436,7 +442,8 @@ w_setitem(char *items, Py_ssize_t i, PyObject *v)
     }
 
     if (i >= 0) {
-        ((Py_UCS4 *)items)[i] = PyUnicode_READ_CHAR(v, 0);
+        Py_UCS4 w = PyUnicode_READ_CHAR(v, 0);
+        FT_ATOMIC_STORE_UINT32_RELAXED(((Py_UCS4 *) items)[i], w);
     }
     return 0;
 }
@@ -444,7 +451,8 @@ w_setitem(char *items, Py_ssize_t i, PyObject *v)
 static PyObject *
 h_getitem(char *items, Py_ssize_t i)
 {
-    return PyLong_FromLong((long) ((short *)items)[i]);
+    return PyLong_FromLong(
+        (long) FT_ATOMIC_LOAD_SHORT_RELAXED(((short *) items)[i]));
 }
 
 
@@ -453,17 +461,20 @@ h_setitem(char *items, Py_ssize_t i, PyObject *v)
 {
     short x;
     /* 'h' == signed short, maps to PyArg_Parse's 'h' formatter */
-    if (!PyArg_Parse(v, "h;array item must be integer", &x))
+    if (!PyArg_Parse(v, "h;array item must be integer", &x)) {
         return -1;
-    if (i >= 0)
-        ((short *)items)[i] = x;
+    }
+    if (i >= 0) {
+        FT_ATOMIC_STORE_SHORT_RELAXED(((short *) items)[i], x);
+    }
     return 0;
 }
 
 static PyObject *
 HH_getitem(char *items, Py_ssize_t i)
 {
-    return PyLong_FromLong((long) ((unsigned short *)items)[i]);
+    return PyLong_FromLong(
+        (long) (unsigned short) FT_ATOMIC_LOAD_SHORT_RELAXED(((short *) items)[i]));
 }
 
 static int
@@ -472,8 +483,9 @@ HH_setitem(char *items, Py_ssize_t i, PyObject *v)
     int x;
     /* PyArg_Parse's 'h' formatter is for a signed short, therefore
        must use the next size up and manually do the overflow checking */
-    if (!PyArg_Parse(v, "i;array item must be integer", &x))
+    if (!PyArg_Parse(v, "i;array item must be integer", &x)) {
         return -1;
+    }
     else if (x < 0) {
         PyErr_SetString(PyExc_OverflowError,
             "unsigned short is less than minimum");
@@ -484,15 +496,17 @@ HH_setitem(char *items, Py_ssize_t i, PyObject *v)
             "unsigned short is greater than maximum");
         return -1;
     }
-    if (i >= 0)
-        ((short *)items)[i] = (short)x;
+    if (i >= 0) {
+        FT_ATOMIC_STORE_SHORT_RELAXED(((short *) items)[i], (unsigned short) x);
+    }
     return 0;
 }
 
 static PyObject *
 i_getitem(char *items, Py_ssize_t i)
 {
-    return PyLong_FromLong((long) ((int *)items)[i]);
+    return PyLong_FromLong(
+        (long) FT_ATOMIC_LOAD_INT_RELAXED(((int *) items)[i]));
 }
 
 static int
@@ -500,10 +514,12 @@ i_setitem(char *items, Py_ssize_t i, PyObject *v)
 {
     int x;
     /* 'i' == signed int, maps to PyArg_Parse's 'i' formatter */
-    if (!PyArg_Parse(v, "i;array item must be integer", &x))
+    if (!PyArg_Parse(v, "i;array item must be integer", &x)) {
         return -1;
-    if (i >= 0)
-        ((int *)items)[i] = x;
+    }
+    if (i >= 0) {
+        FT_ATOMIC_STORE_INT_RELAXED(((int *)items)[i], x);
+    }
     return 0;
 }
 
@@ -511,7 +527,7 @@ static PyObject *
 II_getitem(char *items, Py_ssize_t i)
 {
     return PyLong_FromUnsignedLong(
-        (unsigned long) ((unsigned int *)items)[i]);
+        (unsigned long) (unsigned int) FT_ATOMIC_LOAD_INT_RELAXED(((int *) items)[i]));
 }
 
 static int
@@ -542,8 +558,9 @@ II_setitem(char *items, Py_ssize_t i, PyObject *v)
         }
         return -1;
     }
-    if (i >= 0)
-        ((unsigned int *)items)[i] = (unsigned int)x;
+    if (i >= 0) {
+        FT_ATOMIC_STORE_INT_RELAXED(((int *) items)[i], (unsigned int) x);
+    }
 
     if (do_decref) {
         Py_DECREF(v);
@@ -554,24 +571,28 @@ II_setitem(char *items, Py_ssize_t i, PyObject *v)
 static PyObject *
 l_getitem(char *items, Py_ssize_t i)
 {
-    return PyLong_FromLong(((long *)items)[i]);
+    return PyLong_FromLong(
+        FT_ATOMIC_LOAD_LONG_RELAXED(((long *) items)[i]));
 }
 
 static int
 l_setitem(char *items, Py_ssize_t i, PyObject *v)
 {
     long x;
-    if (!PyArg_Parse(v, "l;array item must be integer", &x))
+    if (!PyArg_Parse(v, "l;array item must be integer", &x)) {
         return -1;
-    if (i >= 0)
-        ((long *)items)[i] = x;
+    }
+    if (i >= 0) {
+        FT_ATOMIC_STORE_LONG_RELAXED(((long *) items)[i], x);
+    }
     return 0;
 }
 
 static PyObject *
 LL_getitem(char *items, Py_ssize_t i)
 {
-    return PyLong_FromUnsignedLong(((unsigned long *)items)[i]);
+    return PyLong_FromUnsignedLong(
+        (unsigned long) FT_ATOMIC_LOAD_LONG_RELAXED(((long *) items)[i]));
 }
 
 static int
@@ -594,8 +615,9 @@ LL_setitem(char *items, Py_ssize_t i, PyObject *v)
         }
         return -1;
     }
-    if (i >= 0)
-        ((unsigned long *)items)[i] = x;
+    if (i >= 0) {
+        FT_ATOMIC_STORE_LONG_RELAXED(((long *) items)[i], x);
+    }
 
     if (do_decref) {
         Py_DECREF(v);
@@ -606,17 +628,20 @@ LL_setitem(char *items, Py_ssize_t i, PyObject *v)
 static PyObject *
 q_getitem(char *items, Py_ssize_t i)
 {
-    return PyLong_FromLongLong(((long long *)items)[i]);
+    return PyLong_FromLongLong(
+        FT_ATOMIC_LOAD_LLONG_RELAXED(((long long *) items)[i]));
 }
 
 static int
 q_setitem(char *items, Py_ssize_t i, PyObject *v)
 {
     long long x;
-    if (!PyArg_Parse(v, "L;array item must be integer", &x))
+    if (!PyArg_Parse(v, "L;array item must be integer", &x)) {
         return -1;
-    if (i >= 0)
-        ((long long *)items)[i] = x;
+    }
+    if (i >= 0) {
+        FT_ATOMIC_STORE_LLONG_RELAXED(((long long *) items)[i], x);
+    }
     return 0;
 }
 
@@ -624,7 +649,7 @@ static PyObject *
 QQ_getitem(char *items, Py_ssize_t i)
 {
     return PyLong_FromUnsignedLongLong(
-        ((unsigned long long *)items)[i]);
+        (unsigned long long) FT_ATOMIC_LOAD_LLONG_RELAXED(((long long *) items)[i]));
 }
 
 static int
@@ -647,8 +672,9 @@ QQ_setitem(char *items, Py_ssize_t i, PyObject *v)
         }
         return -1;
     }
-    if (i >= 0)
-        ((unsigned long long *)items)[i] = x;
+    if (i >= 0) {
+        FT_ATOMIC_STORE_LLONG_RELAXED(((long long *) items)[i], x);
+    }
 
     if (do_decref) {
         Py_DECREF(v);
@@ -659,34 +685,40 @@ QQ_setitem(char *items, Py_ssize_t i, PyObject *v)
 static PyObject *
 f_getitem(char *items, Py_ssize_t i)
 {
-    return PyFloat_FromDouble((double) ((float *)items)[i]);
+    return PyFloat_FromDouble(
+        (double) FT_ATOMIC_LOAD_FLOAT_RELAXED(((float *) items)[i]));
 }
 
 static int
 f_setitem(char *items, Py_ssize_t i, PyObject *v)
 {
     float x;
-    if (!PyArg_Parse(v, "f;array item must be float", &x))
+    if (!PyArg_Parse(v, "f;array item must be float", &x)) {
         return -1;
-    if (i >= 0)
-        ((float *)items)[i] = x;
+    }
+    if (i >= 0) {
+        FT_ATOMIC_STORE_FLOAT_RELAXED(((float *) items)[i], x);
+    }
     return 0;
 }
 
 static PyObject *
 d_getitem(char *items, Py_ssize_t i)
 {
-    return PyFloat_FromDouble(((double *)items)[i]);
+    return PyFloat_FromDouble(
+        FT_ATOMIC_LOAD_DOUBLE_RELAXED(((double *) items)[i]));
 }
 
 static int
 d_setitem(char *items, Py_ssize_t i, PyObject *v)
 {
     double x;
-    if (!PyArg_Parse(v, "d;array item must be float", &x))
+    if (!PyArg_Parse(v, "d;array item must be float", &x)) {
         return -1;
-    if (i >= 0)
-        ((double *)items)[i] = x;
+    }
+    if (i >= 0) {
+        FT_ATOMIC_STORE_DOUBLE_RELAXED(((double *) items)[i], x);
+    }
     return 0;
 }
 
@@ -695,9 +727,11 @@ d_setitem(char *items, Py_ssize_t i, PyObject *v)
     code##_compareitems(const void *lhs, const void *rhs, Py_ssize_t length) \
     { \
         const type *a = lhs, *b = rhs; \
-        for (Py_ssize_t i = 0; i < length; ++i) \
-            if (a[i] != b[i]) \
+        for (Py_ssize_t i = 0; i < length; ++i) { \
+            if (a[i] != b[i]) { \
                 return a[i] < b[i] ? -1 : 1; \
+            } \
+        } \
         return 0; \
     }
 
@@ -910,7 +944,7 @@ setarrayitem_maybe_locked(PyObject *op, Py_ssize_t i, PyObject *v)
         goto error;
     }
     arrayobject *ap = (arrayobject *)op;
-    arraydata *data = _Py_atomic_load_ptr_relaxed(&ap->data);
+    arraydata *data = _Py_atomic_load_ptr_acquire(&ap->data);
     if (data == NULL) {
         goto error;
     }

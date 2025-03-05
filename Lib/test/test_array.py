@@ -105,10 +105,7 @@ UTF32_BE = 21
 class ArrayReconstructorTest(unittest.TestCase):
 
     def setUp(self):
-        if (not support.Py_GIL_DISABLED or
-                any('"parallel_threads": null' in a for a in sys.argv) or
-                all('parallel_threads' not in a for a in sys.argv)):
-            self.enterContext(warnings.catch_warnings())
+        self.enterContext(warnings.catch_warnings())
         warnings.filterwarnings(
             "ignore",
             message="The 'u' type code is deprecated and "
@@ -224,10 +221,7 @@ class BaseTest:
     # minitemsize: the minimum guaranteed itemsize
 
     def setUp(self):
-        if (not support.Py_GIL_DISABLED or
-                any('"parallel_threads": null' in a for a in sys.argv) or
-                all('parallel_threads' not in a for a in sys.argv)):
-            self.enterContext(warnings.catch_warnings())
+        self.enterContext(warnings.catch_warnings())
         warnings.filterwarnings(
             "ignore",
             message="The 'u' type code is deprecated and "
@@ -1696,6 +1690,29 @@ class FreeThreadingTest(unittest.TestCase):
     # Non-deterministic, but at least one of these things will fail if
     # array module is not free-thread safe.
 
+    def setUp(self):
+        self.enterContext(warnings.catch_warnings())
+        warnings.filterwarnings(
+            "ignore",
+            message="The 'u' type code is deprecated and "
+                    "will be removed in Python 3.16",
+            category=DeprecationWarning)
+
+    def check(self, funcs, a=None, *args):
+        if a is None:
+            a = array.array('i', [1])
+
+        barrier = threading.Barrier(len(funcs))
+        threads = []
+
+        for func in funcs:
+            thread = threading.Thread(target=func, args=(barrier, a, *args))
+
+            threads.append(thread)
+
+        with threading_helper.start_threads(threads):
+            pass
+
     @unittest.skipUnless(support.Py_GIL_DISABLED, 'this test can only possibly fail with GIL disabled')
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
@@ -1889,67 +1906,81 @@ class FreeThreadingTest(unittest.TestCase):
             c = it.__reduce__()
             assert not c[1] or 0xdd not in c[1][0]
 
-        def check(funcs, a=None, *args):
-            if a is None:
-                a = array.array('i', [1])
-
-            barrier = threading.Barrier(len(funcs))
-            threads = []
-
-            for func in funcs:
-                thread = threading.Thread(target=func, args=(barrier, a, *args))
-
-                threads.append(thread)
-
-            with threading_helper.start_threads(threads):
-                pass
-
-        check([pop1] * 10)
-        check([pop1] + [subscr0] * 10)
-        check([append1] * 10)
-        check([insert1] * 10)
-        check([pop1] + [index1] * 10)
-        check([pop1] + [contains1] * 10)
-        check([insert1] + [repeat2] * 10)
-        check([pop1] + [repr1] * 10)
-        check([inplace_repeat2] * 10)
-        check([byteswap] * 10)
-        check([insert1] + [clear] * 10)
-        check([pop1] + [count1] * 10)
-        check([remove1] * 10)
-        check([clear] + [copy] * 10, array.array('B', b'0' * 0x400000))
-        check([pop1] + [reduce_ex2] * 10)
-        check([clear] + [reduce_ex3] * 10, array.array('B', b'0' * 0x400000))
-        check([pop1] + [tobytes] * 10)
-        check([pop1] + [tolist] * 10)
-        check([clear, tounicode] * 10, array.array('w', 'a'*10000))
-        check([clear, tofile] * 10, array.array('w', 'a'*10000))
-        check([clear] + [extend] * 10)
-        check([clear] + [inplace_concat] * 10)
-        check([clear] + [concat] * 10, array.array('w', 'a'*10000))
-        check([fromunicode] * 10, array.array('w', 'a'))
-        check([frombytes] * 10)
-        check([fromlist] * 10)
-        check([clear] + [richcmplhs] * 10, array.array('i', [1]*10000))
-        check([clear] + [richcmprhs] * 10, array.array('i', [1]*10000))
-        check([clear, ass0] * 10, array.array('i', [1]*10000))  # to test array_ass_item must disable Py_mp_ass_subscript
-        check([clear] + [new] * 10, array.array('w', 'a'*10000))
-        check([clear] + [repr_] * 10, array.array('B', b'0' * 0x40000))
-        check([clear] + [repr_] * 10, array.array('B', b'0' * 0x40000))
-        check([clear] + [irepeat] * 10, array.array('B', b'0' * 0x40000))
-        check([clear] + [iter_reduce] * 10, a := array.array('B', b'0' * 0x400), iter(a))
+        self.check([pop1] * 10)
+        self.check([pop1] + [subscr0] * 10)
+        self.check([append1] * 10)
+        self.check([insert1] * 10)
+        self.check([pop1] + [index1] * 10)
+        self.check([pop1] + [contains1] * 10)
+        self.check([insert1] + [repeat2] * 10)
+        self.check([pop1] + [repr1] * 10)
+        self.check([inplace_repeat2] * 10)
+        self.check([byteswap] * 10)
+        self.check([insert1] + [clear] * 10)
+        self.check([pop1] + [count1] * 10)
+        self.check([remove1] * 10)
+        self.check([clear] + [copy] * 10, array.array('B', b'0' * 0x400000))
+        self.check([pop1] + [reduce_ex2] * 10)
+        self.check([clear] + [reduce_ex3] * 10, array.array('B', b'0' * 0x400000))
+        self.check([pop1] + [tobytes] * 10)
+        self.check([pop1] + [tolist] * 10)
+        self.check([clear, tounicode] * 10, array.array('w', 'a'*10000))
+        self.check([clear, tofile] * 10, array.array('w', 'a'*10000))
+        self.check([clear] + [extend] * 10)
+        self.check([clear] + [inplace_concat] * 10)
+        self.check([clear] + [concat] * 10, array.array('w', 'a'*10000))
+        self.check([fromunicode] * 10, array.array('w', 'a'))
+        self.check([frombytes] * 10)
+        self.check([fromlist] * 10)
+        self.check([clear] + [richcmplhs] * 10, array.array('i', [1]*10000))
+        self.check([clear] + [richcmprhs] * 10, array.array('i', [1]*10000))
+        self.check([clear, ass0] * 10, array.array('i', [1]*10000))  # to test array_ass_item must disable Py_mp_ass_subscript
+        self.check([clear] + [new] * 10, array.array('w', 'a'*10000))
+        self.check([clear] + [repr_] * 10, array.array('B', b'0' * 0x40000))
+        self.check([clear] + [repr_] * 10, array.array('B', b'0' * 0x40000))
+        self.check([clear] + [irepeat] * 10, array.array('B', b'0' * 0x40000))
+        self.check([clear] + [iter_reduce] * 10, a := array.array('B', b'0' * 0x400), iter(a))
 
         # make sure we handle non-self objects correctly
-        check([clear] + [newi] * 10, [2] * random.randint(0, 100))
-        check([fromlistlclear] + [fromlistl] * 10, array.array('i', [1]), [2] * random.randint(0, 100))
-        check([clear2] + [concat2] * 10, array.array('w', 'a'*10000), array.array('w', 'a'*10000))
-        check([clear2] + [inplace_concat2] * 10, array.array('w', 'a'*10000), array.array('w', 'a'*10000))
-        check([clear2] + [extend2] * 10, array.array('w', 'a'*10000), array.array('w', 'a'*10000))
-        check([clear2] + [ass_subscr2] * 10, array.array('w', 'a'*10000), array.array('w', 'a'*10000))
-        check([clear2] + [frombytes2] * 10, array.array('w', 'a'*10000), array.array('B', b'a'*10000))
+        self.check([clear] + [newi] * 10, [2] * random.randint(0, 100))
+        self.check([fromlistlclear] + [fromlistl] * 10, array.array('i', [1]), [2] * random.randint(0, 100))
+        self.check([clear2] + [concat2] * 10, array.array('w', 'a'*10000), array.array('w', 'a'*10000))
+        self.check([clear2] + [inplace_concat2] * 10, array.array('w', 'a'*10000), array.array('w', 'a'*10000))
+        self.check([clear2] + [extend2] * 10, array.array('w', 'a'*10000), array.array('w', 'a'*10000))
+        self.check([clear2] + [ass_subscr2] * 10, array.array('w', 'a'*10000), array.array('w', 'a'*10000))
+        self.check([clear2] + [frombytes2] * 10, array.array('w', 'a'*10000), array.array('B', b'a'*10000))
 
         # iterator stuff
-        check([clear] + [iter_next] * 10, a := array.array('i', [1] * 10), iter(a))
+        self.check([clear] + [iter_next] * 10, a := array.array('i', [1] * 10), iter(a))
+
+    @unittest.skipUnless(support.check_sanitizer(thread=True), 'meant for tsan')
+    def test_free_threading_tsan(self):
+        def copy_back_and_forth(b, a, count):
+            b.wait()
+            for _ in range(count):
+                a[0] = a[1]
+                a[1] = a[0]
+
+        def extend_range(b, a, count):
+            b.wait()
+            for _ in range(count):
+                a.extend(range(10))
+
+        def append_and_pop(b, a, count):
+            b.wait()
+            for _ in range(count):
+                a.append(1)
+                a.pop()
+
+        for tc in typecodes:
+            if tc in 'uw':
+                a = array.array(tc, 'ab')
+            else:
+                a = array.array(tc, [0, 1])
+
+        self.check([copy_back_and_forth] * 10, a, 100)
+        self.check([append_and_pop] * 10, a, 100)
+        self.check([copy_back_and_forth] * 10 + [extend_range], a, 10)
 
 
 if __name__ == "__main__":
