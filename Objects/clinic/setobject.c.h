@@ -325,7 +325,7 @@ PyDoc_STRVAR(set_issubset__doc__,
 "issubset($self, other, /)\n"
 "--\n"
 "\n"
-"Report whether another set contains this set.");
+"Return True if the set is a subset of other.");
 
 #define SET_ISSUBSET_METHODDEF    \
     {"issubset", (PyCFunction)set_issubset, METH_O, set_issubset__doc__},
@@ -349,7 +349,7 @@ PyDoc_STRVAR(set_issuperset__doc__,
 "issuperset($self, other, /)\n"
 "--\n"
 "\n"
-"Report whether this set contains another set.");
+"Return True if the set is a superset of other.");
 
 #define SET_ISSUPERSET_METHODDEF    \
     {"issuperset", (PyCFunction)set_issuperset, METH_O, set_issuperset__doc__},
@@ -519,4 +519,4 @@ set___sizeof__(PyObject *so, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
-/*[clinic end generated code: output=83b7742a762ce465 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5e60090ec210982a input=a9049054013a1b77]*/
