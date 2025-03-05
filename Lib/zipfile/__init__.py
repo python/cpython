@@ -1834,7 +1834,8 @@ class ZipFile:
 
     def _apply_permissions(self, member, path, mode):
         """
-        Apply ZipFile permissions to a file using
+        Apply ZipFile permissions to a file on the filesystem with
+        specified PreserveMode
         """
         if mode == PreserveMode.NONE:
             return
