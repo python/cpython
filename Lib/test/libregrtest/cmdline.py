@@ -122,6 +122,9 @@ resources to test.  Currently only the following are defined:
 
     tzdata -         Run tests that require timezone data.
 
+    idle -           Run tests that require an otherwise idle system as
+                     they are sensitive to timing.
+
 To enable all resources except one, use '-uall,-<resource>'.  For
 example, to run all the tests except for the gui tests, give the
 option '-uall,-gui'.
