@@ -1256,6 +1256,23 @@ class DisTests(DisTestBase):
         except Exception as e:
             self.assertIsNone(e.__context__)
 
+    def test_async_for_presentation(self):
+
+        async def afunc():
+            async for letter in async_iter1:
+                l2
+            l3
+
+        disassembly =  self.get_disassembly(afunc)
+        for line in disassembly.split("\n"):
+            if "END_ASYNC_FOR" in line:
+                break
+        else:
+            self.fail("No END_ASYNC_FOR in disassembly of async for")
+        self.assertNotIn("to", line)
+        self.assertIn("from", line)
+
+
     @staticmethod
     def code_quicken(f):
         _testinternalcapi = import_helper.import_module("_testinternalcapi")
