@@ -474,7 +474,7 @@ read_obj(uint16_t *p)
     return val;
 }
 
-/* See Objects/exception_handling_notes.txt for details.
+/* See InternalDocs/exception_handling.md for details.
  */
 static inline unsigned char *
 parse_varint(unsigned char *p, int *result) {

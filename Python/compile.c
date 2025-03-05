@@ -14,8 +14,6 @@
  *
  */
 
-#include <stdbool.h>
-
 #include "Python.h"
 #include "pycore_ast.h"           // PyAST_Check, _PyAST_GetDocString()
 #include "pycore_compile.h"
@@ -24,6 +22,8 @@
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 
 #include "cpython/code.h"
+
+#include <stdbool.h>
 
 #undef SUCCESS
 #undef ERROR
