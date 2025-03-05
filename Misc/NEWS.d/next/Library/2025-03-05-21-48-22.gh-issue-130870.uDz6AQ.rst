@@ -1,6 +1,6 @@
 Type: Bugfix
-Title: Fix _eval_type Handling for GenericAlias with Unflattened Arguments and Union Types
+Title: Fix ``_eval_type`` Handling for ``GenericAlias`` with Unflattened Arguments and ``Union`` Types
 Issue: :gh:`130870`
 
 Detailed changes:
-This change improves the handling of `GenericAlias` and `Union` types in `_eval_type`, ensuring that callable arguments for `GenericAlias` are unflattened and that `Union` types are properly evaluated. It resolves complex annotations, including recursive and generic types. All relevant tests, including those for forward references, generics, `Union` types, and recursion, passed successfully without any issues.
+This change improves the handling of ``GenericAlias`` and ``Union`` types in ``_eval_type``, ensuring that callable arguments for ``GenericAlias`` are unflattened and that ``Union`` types are properly evaluated. It resolves complex annotations, including recursive and generic types. All relevant tests, including those for forward references, generics, ``Union`` types, and recursion, passed successfully without any issues.
