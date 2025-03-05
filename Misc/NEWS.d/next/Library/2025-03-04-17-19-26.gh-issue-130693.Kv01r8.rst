@@ -3,5 +3,4 @@ Type: Enhancement
 Title: Add support for ``-nolinestop``, ``-all``, ``-overlap``, and ``-strictlimits`` options to ``tkinter.Text.search``
 Issue: :gh:`130693`
 
-
-Added nolinestop, all, overlap, and strictlimits to tkinter.Text.search method
+Added nolinestop, all, overlap, and strictlimits to tkinter.Text.search method These improvements align the ``tkinter.Text.search`` method with the underlying Tcl/Tk library, providing more flexibility and functionality for users.
