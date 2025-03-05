@@ -589,12 +589,16 @@ class _TestProcess(BaseTestCase):
     def test_active_children(self):
         self.assertEqual(type(self.active_children()), list)
 
-        p = self.Process(target=time.sleep, args=(DELTA,))
+        event = self.Event()
+        p = self.Process(target=event.wait, args=())
         self.assertNotIn(p, self.active_children())
 
-        p.daemon = True
-        p.start()
-        self.assertIn(p, self.active_children())
+        try:
+            p.daemon = True
+            p.start()
+            self.assertIn(p, self.active_children())
+        finally:
+            event.set()
 
         p.join()
         self.assertNotIn(p, self.active_children())
@@ -1521,14 +1525,11 @@ class _TestLock(BaseTestCase):
         for i in range(n):
             self.assertIn(f'<RLock(MainProcess|T{i+1}, {i+1})>', l)
 
-
-        t = threading.Thread(target=self._acquire_release,
-                                 args=(lock, 0.2),
-                                 name=f'T1')
+        rlock = self.RLock()
+        t = threading.Thread(target=rlock.acquire)
         t.start()
-        time.sleep(0.1)
-        self.assertEqual('<RLock(SomeOtherThread, nonzero)>', repr(lock))
-        time.sleep(0.2)
+        t.join()
+        self.assertEqual('<RLock(SomeOtherThread, nonzero)>', repr(rlock))
 
         pname = 'P1'
         l = multiprocessing.Manager().list()
@@ -1539,14 +1540,11 @@ class _TestLock(BaseTestCase):
         p.join()
         self.assertEqual(f'<RLock({pname}, 1)>', l[0])
 
-        event = self.Event()
-        lock = self.RLock()
-        p = self.Process(target=self._acquire_event,
-                         args=(lock, event))
+        rlock = self.RLock()
+        p = self.Process(target=self._acquire, args=(rlock,))
         p.start()
-        event.wait()
-        self.assertEqual('<RLock(SomeOtherProcess, nonzero)>', repr(lock))
         p.join()
+        self.assertEqual('<RLock(SomeOtherProcess, nonzero)>', repr(rlock))
 
     def test_rlock(self):
         lock = self.RLock()
@@ -1628,14 +1626,13 @@ class _TestCondition(BaseTestCase):
         cond.release()
 
     def assertReachesEventually(self, func, value):
-        for i in range(10):
+        for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
             try:
                 if func() == value:
                     break
             except NotImplementedError:
                 break
-            time.sleep(DELTA)
-        time.sleep(DELTA)
+
         self.assertReturnsIfImplemented(value, func)
 
     def check_invariant(self, cond):
@@ -1669,8 +1666,7 @@ class _TestCondition(BaseTestCase):
         sleeping.acquire()
 
         # check no process/thread has woken up
-        time.sleep(DELTA)
-        self.assertReturnsIfImplemented(0, get_value, woken)
+        self.assertReachesEventually(lambda: get_value(woken), 0)
 
         # wake up one process/thread
         cond.acquire()
@@ -1678,8 +1674,7 @@ class _TestCondition(BaseTestCase):
         cond.release()
 
         # check one process/thread has woken up
-        time.sleep(DELTA)
-        self.assertReturnsIfImplemented(1, get_value, woken)
+        self.assertReachesEventually(lambda: get_value(woken), 1)
 
         # wake up another
         cond.acquire()
@@ -1687,8 +1682,7 @@ class _TestCondition(BaseTestCase):
         cond.release()
 
         # check other has woken up
-        time.sleep(DELTA)
-        self.assertReturnsIfImplemented(2, get_value, woken)
+        self.assertReachesEventually(lambda: get_value(woken), 2)
 
         # check state is not mucked up
         self.check_invariant(cond)
@@ -6440,6 +6434,150 @@ class TestSyncManagerTypes(unittest.TestCase):
         o.x = 0
         o.y = 1
         self.run_worker(self._test_namespace, o)
+
+    @classmethod
+    def _test_set_operator_symbols(cls, obj):
+        case = unittest.TestCase()
+        obj.update(['a', 'b', 'c'])
+        case.assertEqual(len(obj), 3)
+        case.assertIn('a', obj)
+        case.assertNotIn('d', obj)
+        result = obj | {'d', 'e'}
+        case.assertSetEqual(result, {'a', 'b', 'c', 'd', 'e'})
+        result = {'d', 'e'} | obj
+        case.assertSetEqual(result, {'a', 'b', 'c', 'd', 'e'})
+        obj |= {'d', 'e'}
+        case.assertSetEqual(obj, {'a', 'b', 'c', 'd', 'e'})
+        case.assertIsInstance(obj, multiprocessing.managers.SetProxy)
+
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        result = {'a', 'b', 'd'} - obj
+        case.assertSetEqual(result, {'d'})
+        result = obj - {'a', 'b'}
+        case.assertSetEqual(result, {'c'})
+        obj -= {'a', 'b'}
+        case.assertSetEqual(obj, {'c'})
+        case.assertIsInstance(obj, multiprocessing.managers.SetProxy)
+
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        result = {'b', 'c', 'd'} ^ obj
+        case.assertSetEqual(result, {'a', 'd'})
+        result = obj ^ {'b', 'c', 'd'}
+        case.assertSetEqual(result, {'a', 'd'})
+        obj ^= {'b', 'c', 'd'}
+        case.assertSetEqual(obj, {'a', 'd'})
+        case.assertIsInstance(obj, multiprocessing.managers.SetProxy)
+
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        result = obj & {'b', 'c', 'd'}
+        case.assertSetEqual(result, {'b', 'c'})
+        result = {'b', 'c', 'd'} & obj
+        case.assertSetEqual(result, {'b', 'c'})
+        obj &= {'b', 'c', 'd'}
+        case.assertSetEqual(obj, {'b', 'c'})
+        case.assertIsInstance(obj, multiprocessing.managers.SetProxy)
+
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        case.assertSetEqual(set(obj), {'a', 'b', 'c'})
+
+    @classmethod
+    def _test_set_operator_methods(cls, obj):
+        case = unittest.TestCase()
+        obj.add('d')
+        case.assertIn('d', obj)
+
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        copy_obj = obj.copy()
+        case.assertSetEqual(copy_obj, obj)
+        obj.remove('a')
+        case.assertNotIn('a', obj)
+        case.assertRaises(KeyError, obj.remove, 'a')
+
+        obj.clear()
+        obj.update(['a'])
+        obj.discard('a')
+        case.assertNotIn('a', obj)
+        obj.discard('a')
+        case.assertNotIn('a', obj)
+        obj.update(['a'])
+        popped = obj.pop()
+        case.assertNotIn(popped, obj)
+
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        result = obj.intersection({'b', 'c', 'd'})
+        case.assertSetEqual(result, {'b', 'c'})
+        obj.intersection_update({'b', 'c', 'd'})
+        case.assertSetEqual(obj, {'b', 'c'})
+
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        result = obj.difference({'a', 'b'})
+        case.assertSetEqual(result, {'c'})
+        obj.difference_update({'a', 'b'})
+        case.assertSetEqual(obj, {'c'})
+
+        obj.clear()
+        obj.update(['a', 'b', 'c'])
+        result = obj.symmetric_difference({'b', 'c', 'd'})
+        case.assertSetEqual(result, {'a', 'd'})
+        obj.symmetric_difference_update({'b', 'c', 'd'})
+        case.assertSetEqual(obj, {'a', 'd'})
+
+    @classmethod
+    def _test_set_comparisons(cls, obj):
+        case = unittest.TestCase()
+        obj.update(['a', 'b', 'c'])
+        result = obj.union({'d', 'e'})
+        case.assertSetEqual(result, {'a', 'b', 'c', 'd', 'e'})
+        case.assertTrue(obj.isdisjoint({'d', 'e'}))
+        case.assertFalse(obj.isdisjoint({'a', 'd'}))
+
+        case.assertTrue(obj.issubset({'a', 'b', 'c', 'd'}))
+        case.assertFalse(obj.issubset({'a', 'b'}))
+        case.assertLess(obj, {'a', 'b', 'c', 'd'})
+        case.assertLessEqual(obj, {'a', 'b', 'c'})
+
+        case.assertTrue(obj.issuperset({'a', 'b'}))
+        case.assertFalse(obj.issuperset({'a', 'b', 'd'}))
+        case.assertGreater(obj, {'a'})
+        case.assertGreaterEqual(obj, {'a', 'b'})
+
+    def test_set(self):
+        o = self.manager.set()
+        self.run_worker(self._test_set_operator_symbols, o)
+        o = self.manager.set()
+        self.run_worker(self._test_set_operator_methods, o)
+        o = self.manager.set()
+        self.run_worker(self._test_set_comparisons, o)
+
+    def test_set_init(self):
+        o = self.manager.set({'a', 'b', 'c'})
+        self.assertSetEqual(o, {'a', 'b', 'c'})
+        o = self.manager.set(["a", "b", "c"])
+        self.assertSetEqual(o, {"a", "b", "c"})
+        o = self.manager.set({"a": 1, "b": 2, "c": 3})
+        self.assertSetEqual(o, {"a", "b", "c"})
+        self.assertRaises(RemoteError, self.manager.set, 1234)
+
+    def test_set_contain_all_method(self):
+        o = self.manager.set()
+        set_methods = {
+            '__and__', '__class_getitem__', '__contains__', '__iand__', '__ior__',
+            '__isub__', '__iter__', '__ixor__', '__len__', '__or__', '__rand__',
+            '__ror__', '__rsub__', '__rxor__', '__sub__', '__xor__',
+            '__ge__', '__gt__', '__le__', '__lt__',
+            'add', 'clear', 'copy', 'difference', 'difference_update', 'discard',
+            'intersection', 'intersection_update', 'isdisjoint', 'issubset',
+            'issuperset', 'pop', 'remove', 'symmetric_difference',
+            'symmetric_difference_update', 'union', 'update',
+        }
+        self.assertLessEqual(set_methods, set(dir(o)))
 
 
 class TestNamedResource(unittest.TestCase):

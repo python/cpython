@@ -11,9 +11,10 @@
 --------------
 
 This module provides immutable :class:`UUID` objects (the :class:`UUID` class)
-and the functions :func:`uuid1`, :func:`uuid3`, :func:`uuid4`, :func:`uuid5`,
-and :func:`uuid.uuid8` for generating version 1, 3, 4, 5, and 8 UUIDs as
-specified in :rfc:`9562` (which supersedes :rfc:`4122`).
+and :ref:`functions <uuid-factory-functions>` for generating UUIDs corresponding
+to a specific UUID version as specified in :rfc:`9562` (which supersedes :rfc:`4122`),
+for example, :func:`uuid1` for UUID version 1, :func:`uuid3` for UUID version 3, and so on.
+Note that UUID version 2 is deliberately omitted as it is outside the scope of the RFC.
 
 If all you want is a unique ID, you should probably call :func:`uuid1` or
 :func:`uuid4`.  Note that :func:`uuid1` may compromise privacy since it creates
@@ -153,8 +154,8 @@ which relays any information about the UUID's safety, using this enumeration:
    The UUID version number (1 through 8, meaningful only when the variant is
    :const:`RFC_4122`).
 
-   .. versionchanged:: 3.14
-      Added UUID version 8.
+   .. versionchanged:: next
+      Added UUID versions 6, 7 and 8.
 
 
 .. attribute:: UUID.is_safe
@@ -184,8 +185,8 @@ The :mod:`uuid` module defines the following functions:
       administered MAC addresses, since the former are guaranteed to be
       globally unique, while the latter are not.
 
-.. index:: single: getnode
 
+.. _uuid-factory-functions:
 
 .. function:: uuid1(node=None, clock_seq=None)
 
@@ -194,8 +195,6 @@ The :mod:`uuid` module defines the following functions:
    *clock_seq* is given, it is used as the sequence number; otherwise a random
    14-bit sequence number is chosen.
 
-.. index:: single: uuid1
-
 
 .. function:: uuid3(namespace, name)
 
@@ -203,14 +202,10 @@ The :mod:`uuid` module defines the following functions:
    UUID) and a name (which is a :class:`bytes` object or a string
    that will be encoded using UTF-8).
 
-.. index:: single: uuid3
-
 
 .. function:: uuid4()
 
    Generate a random UUID.
-
-.. index:: single: uuid4
 
 
 .. function:: uuid5(namespace, name)
@@ -219,7 +214,33 @@ The :mod:`uuid` module defines the following functions:
    UUID) and a name (which is a :class:`bytes` object or a string
    that will be encoded using UTF-8).
 
-.. index:: single: uuid5
+
+.. function:: uuid6(node=None, clock_seq=None)
+
+   Generate a UUID from a sequence number and the current time according to
+   :rfc:`9562`.
+   This is an alternative to :func:`uuid1` to improve database locality.
+
+   When *node* is not specified, :func:`getnode` is used to obtain the hardware
+   address as a 48-bit positive integer. When a sequence number *clock_seq* is
+   not specified, a pseudo-random 14-bit positive integer is generated.
+
+   If *node* or *clock_seq* exceed their expected bit count, only their least
+   significant bits are kept.
+
+   .. versionadded:: next
+
+
+.. function:: uuid7()
+
+   Generate a time-based UUID according to
+   :rfc:`RFC 9562, §5.7 <9562#section-5.7>`.
+
+   For portability across platforms lacking sub-millisecond precision, UUIDs
+   produced by this function embed a 48-bit timestamp and use a 42-bit counter
+   to guarantee monotonicity within a millisecond.
+
+   .. versionadded:: next
 
 
 .. function:: uuid8(a=None, b=None, c=None)
@@ -234,8 +255,6 @@ The :mod:`uuid` module defines the following functions:
    appropriate size.
 
    .. versionadded:: 3.14
-
-.. index:: single: uuid8
 
 
 The :mod:`uuid` module defines the following namespace identifiers for use with
@@ -326,7 +345,7 @@ The :mod:`uuid` module can be executed as a script from the command line.
 
 .. code-block:: sh
 
-   python -m uuid [-h] [-u {uuid1,uuid3,uuid4,uuid5,uuid8}] [-n NAMESPACE] [-N NAME]
+   python -m uuid [-h] [-u {uuid1,uuid3,uuid4,uuid5,uuid6,uuid7,uuid8}] [-n NAMESPACE] [-N NAME]
 
 The following options are accepted:
 
@@ -342,8 +361,8 @@ The following options are accepted:
    Specify the function name to use to generate the uuid. By default :func:`uuid4`
    is used.
 
-   .. versionadded:: 3.14
-      Allow generating UUID version 8.
+   .. versionchanged:: next
+      Allow generating UUID versions 6, 7 and 8.
 
 .. option:: -n <namespace>
             --namespace <namespace>

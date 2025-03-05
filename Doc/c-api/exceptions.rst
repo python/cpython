@@ -921,11 +921,7 @@ because the :ref:`call protocol <call>` takes care of recursion handling.
 
    Marks a point where a recursive C-level call is about to be performed.
 
-   If :c:macro:`!USE_STACKCHECK` is defined, this function checks if the OS
-   stack overflowed using :c:func:`PyOS_CheckStack`.  If this is the case, it
-   sets a :exc:`MemoryError` and returns a nonzero value.
-
-   The function then checks if the recursion limit is reached.  If this is the
+   The function then checks if the stack limit is reached.  If this is the
    case, a :exc:`RecursionError` is set and a nonzero value is returned.
    Otherwise, zero is returned.
 
