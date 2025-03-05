@@ -197,10 +197,10 @@ PyStackRef_IsMortal(_PyStackRef ref)
     return _Py_IsImmortal(obj);
 }
 
-static inline int
+static inline bool
 PyStackRef_IsHeapSafe(_PyStackRef ref)
 {
-    return 1;
+    return true;
 }
 
 
@@ -333,10 +333,10 @@ PyStackRef_DUP(_PyStackRef stackref)
     return stackref;
 }
 
-static inline int
+static inline bool
 PyStackRef_IsHeapSafe(_PyStackRef ref)
 {
-    return 1;
+    return true;
 }
 
 static inline _PyStackRef
