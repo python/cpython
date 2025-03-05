@@ -629,8 +629,7 @@ pylong_aslongandoverflow(PyObject *module, PyObject *arg)
     int overflow = UNINITIALIZED_INT;
     long value = PyLong_AsLongAndOverflow(arg, &overflow);
     if (value == -1 && PyErr_Occurred()) {
-        // overflow can be 0 if a separate exception occurred
-        assert(overflow == -1 || overflow == 0);
+        assert(overflow == 0);
         return NULL;
     }
     return Py_BuildValue("li", value, overflow);
@@ -676,8 +675,7 @@ pylong_aslonglongandoverflow(PyObject *module, PyObject *arg)
     int overflow = UNINITIALIZED_INT;
     long long value = PyLong_AsLongLongAndOverflow(arg, &overflow);
     if (value == -1 && PyErr_Occurred()) {
-        // overflow can be 0 if a separate exception occurred
-        assert(overflow == -1 || overflow == 0);
+        assert(overflow == 0);
         return NULL;
     }
     return Py_BuildValue("Li", value, overflow);
