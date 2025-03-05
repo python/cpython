@@ -986,6 +986,9 @@ class Analyzer:
             self.out.write_raw(self.from_source_files())
             self.out.write_raw(f"// Do not edit!\n")
 
+            self.out.write_raw("\n")
+            self.out.write_raw("#include <stdbool.h>")
+            self.out.write_raw("\n")
 
             self.write_stack_effect_functions()
 

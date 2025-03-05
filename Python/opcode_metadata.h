@@ -3,6 +3,8 @@
 //   Python/bytecodes.c
 // Do not edit!
 
+#include <stdbool.h>
+
 #ifndef NEED_OPCODE_METADATA
 extern int _PyOpcode_num_popped(int opcode, int oparg, bool jump);
 #else
