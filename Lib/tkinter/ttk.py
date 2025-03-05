@@ -1603,7 +1603,8 @@ class OptionMenu(Menubutton):
                 A callback that will be invoked after selecting an item.
         """
         kw = {'textvariable': variable, 'style': kwargs.pop('style', None),
-              'direction': kwargs.pop('direction', None)}
+              'direction': kwargs.pop('direction', None),
+              'name': kwargs.pop('name', None)}
         Menubutton.__init__(self, master, **kw)
         self['menu'] = tkinter.Menu(self, tearoff=False)
 
