@@ -62,7 +62,6 @@ extern PyTypeObject _PyExc_MemoryError;
         .parser = _parser_runtime_state_INIT, \
         .ceval = { \
             .pending_mainthread = { \
-                .max = MAXPENDINGCALLS_MAIN, \
                 .maxloop = MAXPENDINGCALLSLOOP_MAIN, \
             }, \
             .perf = _PyEval_RUNTIME_PERF_INIT, \
@@ -125,7 +124,6 @@ extern PyTypeObject _PyExc_MemoryError;
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
             .pending = { \
-                .max = MAXPENDINGCALLS, \
                 .maxloop = MAXPENDINGCALLSLOOP, \
             }, \
         }, \
