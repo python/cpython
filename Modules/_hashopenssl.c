@@ -1366,8 +1366,8 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
     key = PyBytes_AS_STRING(key_obj);
 
     Py_BEGIN_ALLOW_THREADS
-    retval = PKCS5_PBKDF2_HMAC((char*)password->buf, (int)password->len,
-                               (unsigned char *)salt->buf, (int)salt->len,
+    retval = PKCS5_PBKDF2_HMAC((const char *)password->buf, (int)password->len,
+                               (const unsigned char *)salt->buf, (int)salt->len,
                                iterations, digest, dklen,
                                (unsigned char *)key);
     Py_END_ALLOW_THREADS
@@ -1551,8 +1551,8 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
     Py_BEGIN_ALLOW_THREADS
     result = HMAC(
         evp,
-        (const void*)key->buf, (int)key->len,
-        (const unsigned char*)msg->buf, (int)msg->len,
+        (const void *)key->buf, (int)key->len,
+        (const unsigned char *)msg->buf, (size_t)msg->len,
         md, &md_len
     );
     Py_END_ALLOW_THREADS
@@ -1686,11 +1686,15 @@ _hmac_update(HMACobject *self, PyObject *obj)
     if (self->use_mutex) {
         Py_BEGIN_ALLOW_THREADS
         PyMutex_Lock(&self->mutex);
-        r = HMAC_Update(self->ctx, (const unsigned char*)view.buf, view.len);
+        r = HMAC_Update(self->ctx,
+                        (const unsigned char *)view.buf,
+                        (size_t)view.len);
         PyMutex_Unlock(&self->mutex);
         Py_END_ALLOW_THREADS
     } else {
-        r = HMAC_Update(self->ctx, (const unsigned char*)view.buf, view.len);
+        r = HMAC_Update(self->ctx,
+                        (const unsigned char *)view.buf,
+                        (size_t)view.len);
     }
 
     PyBuffer_Release(&view);
