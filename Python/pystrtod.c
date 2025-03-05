@@ -169,13 +169,8 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
         p++;
     }
 
-    /* Some platform strtods accept hex floats; Python shouldn't (at the
-       moment), so we check explicitly for strings starting with '0x'. */
-    if (*p == '0' && (*(p+1) == 'x' || *(p+1) == 'X'))
-        goto invalid_string;
-
     /* Check that what's left begins with a digit or decimal point */
-    if (!Py_ISDIGIT(*p) && *p != '.')
+    if (!Py_ISXDIGIT(*p) && *p != '.')
         goto invalid_string;
 
     digits_pos = p;
@@ -186,7 +181,7 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
            swapped for the current locale's decimal point before we
            call strtod.  On the other hand, if we find the current
            locale's decimal point then the input is invalid. */
-        while (Py_ISDIGIT(*p))
+        while (Py_ISXDIGIT(*p))
             p++;
 
         if (*p == '.')
@@ -194,10 +189,10 @@ _PyOS_ascii_strtod(const char *nptr, char **endptr)
             decimal_point_pos = p++;
 
             /* locate end of number */
-            while (Py_ISDIGIT(*p))
+            while (Py_ISXDIGIT(*p))
                 p++;
 
-            if (*p == 'e' || *p == 'E')
+            if (*p == 'e' || *p == 'E' || *p == 'p' || *p == 'P')
                 p++;
             if (*p == '+' || *p == '-')
                 p++;
@@ -350,6 +345,7 @@ _Py_string_to_number_with_underscores(
     const char *p, *last;
     char *dup, *end;
     PyObject *result;
+    int (*_isdigit)(char) = &Py_ISDIGIT;
 
     assert(s[orig_len] == '\0');
 
@@ -364,21 +360,40 @@ _Py_string_to_number_with_underscores(
     end = dup;
     prev = '\0';
     last = s + orig_len;
-    for (p = s; *p; p++) {
+    p = s;
+    /* Has hexadecimal prefix? */
+    if (*p == '0' && (*(p+1) == 'x' || *(p+1) == 'X')) {
+        _isdigit = &Py_ISXDIGIT;
+        /* Accept prefix. */
+        *end++ = *p;
+        p++;
+        *end++ = *p;
+        p++;
+        /* Underscore allowed right after the prefix and before '.' */
+        if (*p == '_') {
+            p++;
+            if (*p == '.') {
+                *end++ = *p;
+                p++;
+            }
+        }
+    }
+    while (*p) {
         if (*p == '_') {
             /* Underscores are only allowed after digits. */
-            if (!(prev >= '0' && prev <= '9')) {
+            if (!(*_isdigit)(prev)) {
                 goto error;
             }
         }
         else {
             *end++ = *p;
             /* Underscores are only allowed before digits. */
-            if (prev == '_' && !(*p >= '0' && *p <= '9')) {
+            if (prev == '_' && !(*_isdigit)(*p)) {
                 goto error;
             }
         }
         prev = *p;
+        p++;
     }
     /* Underscores are not allowed at the end. */
     if (prev == '_') {
