@@ -578,6 +578,22 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
         }
     }
 
+    if (spec->n_frac == 0) {
+        spec->n_grouped_frac_digits = 0;
+    }
+    else {
+        Py_UCS4 grouping_maxchar;
+        spec->n_grouped_frac_digits = _PyUnicode_InsertThousandsGrouping(
+            NULL, 0,
+            NULL, 0, spec->n_frac,
+            spec->n_frac,
+            locale->grouping, locale->frac_thousands_sep, &grouping_maxchar, 1);
+        if (spec->n_grouped_frac_digits == -1) {
+            return -1;
+        }
+        *maxchar = Py_MAX(*maxchar, grouping_maxchar);
+    }
+
     /* The number of chars used for non-digits and non-padding. */
     n_non_digit_non_padding = spec->n_sign + spec->n_prefix + spec->n_decimal +
         + spec->n_frac + spec->n_remainder;
@@ -585,7 +601,8 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
     /* min_width can go negative, that's okay. format->width == -1 means
        we don't care. */
     if (format->fill_char == '0' && format->align == '=')
-        spec->n_min_width = format->width - n_non_digit_non_padding;
+        spec->n_min_width = (format->width - n_non_digit_non_padding
+                             + spec->n_frac - spec->n_grouped_frac_digits);
     else
         spec->n_min_width = 0;
 
@@ -602,22 +619,6 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
             spec->n_min_width,
             locale->grouping, locale->thousands_sep, &grouping_maxchar, 0);
         if (spec->n_grouped_digits == -1) {
-            return -1;
-        }
-        *maxchar = Py_MAX(*maxchar, grouping_maxchar);
-    }
-
-    if (spec->n_frac == 0) {
-        spec->n_grouped_frac_digits = 0;
-    }
-    else {
-        Py_UCS4 grouping_maxchar;
-        spec->n_grouped_frac_digits = _PyUnicode_InsertThousandsGrouping(
-            NULL, 0,
-            NULL, 0, spec->n_frac,
-            spec->n_frac,
-            locale->grouping, locale->frac_thousands_sep, &grouping_maxchar, 1);
-        if (spec->n_grouped_frac_digits == -1) {
             return -1;
         }
         *maxchar = Py_MAX(*maxchar, grouping_maxchar);
