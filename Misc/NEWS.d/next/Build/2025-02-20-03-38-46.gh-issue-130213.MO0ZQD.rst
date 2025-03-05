@@ -1,0 +1,1 @@
+Disabled use of Intel SIMD instructions for libhacl when it would cause the build to fail, such as with some older clang versions.
