@@ -424,6 +424,34 @@ Module functions
    Note: *typename* and the name of the type in your query are matched
    case-insensitively.
 
+.. function:: Date(year, month, day, /, tzinfo=None, *, fold=0)
+
+   Construct a date instance as :class:`datetime.date`.
+
+.. function:: Time(hour, minute, second, /, tzinfo=None, *, fold=0)
+
+   Construct a time instance as :class:`datetime.time`.
+
+.. function:: Timestamp(year, month, day, /, hour=0, minute=0, second=0, tzinfo=None, *, fold=0)
+
+   Construct a time stamp instance as :class:`datetime.datetime`.
+
+.. function:: DateFromTicks([secs])
+
+   Construct a :class:`~sqlite3.Date` instance from the given number of seconds since the epoch, converted to local time.
+   (see the documentation of the standard Python :mod:`time` module and its :func:`~time.localtime` function for details).
+
+.. function:: TimeFromTicks([secs])
+
+   Constructs a :class:`~sqlite3.Time` instance from the given number of seconds since the epoch, converted to local time.
+
+.. function:: TimestampFromTicks([secs])
+
+   Construct a :class:`~sqlite3.Timestamp` from the given number of seconds since the epoch, converted to local time.
+
+.. function:: Binary(object)
+
+   Construct a BLOB as a :class:`memoryview` from a :term:`bytes-like object`.
 
 .. _sqlite3-module-constants:
 
