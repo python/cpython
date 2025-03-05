@@ -710,6 +710,9 @@ class ListComprehensionTest(unittest.TestCase):
         self._check_in_scopes(code, {"x": 2, "y": [2]}, ns={"x": 3}, scopes=["function", "module"])
 
     def test_name_collision_locals(self):
+        # GH-130809: The existence of a hidden fast from list comprehension should not cause
+        # frame.f_locals on module level to return a new dict every time it is accessed.
+
         code = """
             import sys
             frame = sys._getframe()
@@ -717,9 +720,9 @@ class ListComprehensionTest(unittest.TestCase):
             foo = 1
             [foo for foo in [0]]
             from abc import *
-            assert frame.f_locals is f_locals
+            same_f_locals = frame.f_locals is f_locals
         """
-        self._check_in_scopes(code, {"foo": 1}, scopes=["module"])
+        self._check_in_scopes(code, {"foo": 1, "same_f_locals": True}, scopes=["module"])
 
     def test_exception_locations(self):
         # The location of an exception raised from __init__ or
