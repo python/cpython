@@ -1040,7 +1040,7 @@ class Path(PurePath):
         """
         try:
             os.unlink(self)
-        except FileNotFoundError:
+        except (FileNotFoundError, NotADirectoryError):
             if not missing_ok:
                 raise
 

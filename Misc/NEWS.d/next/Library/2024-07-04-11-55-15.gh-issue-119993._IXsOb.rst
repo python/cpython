@@ -1,0 +1,2 @@
+:meth:`pathlib.Path.unlink` will also ignore any :exc:`NotADirectoryError`
+if *missing_ok* is true.
