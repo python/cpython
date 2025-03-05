@@ -1,0 +1,8 @@
+================
+Type: Enhancement
+Title: Refactor _close_self_pipe for conditional socket shutdown in asyncio/selector_events.py``
+Issue: :gh:`130850`
+
+
+Detailed changes:
+Python's `asyncio` module has been enhanced with a refactored `_close_self_pipe` function in `selector_events.py`. This update introduces a `shutdown` parameter, allowing developers to choose between a graceful socket shutdown or a standard close operation, thereby offering greater control over socket management within asynchronous applications.
