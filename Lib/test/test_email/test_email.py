@@ -742,7 +742,8 @@ class TestMessageAPI(TestEmailBase):
         for policy in (email.policy.default, email.policy.compat32):
             for setter in (Message.__setitem__, Message.add_header):
                 for name, value in invalid_headers:
-                    self.do_test_invalid_header_names(policy, setter, name, value)
+                    self.do_test_invalid_header_names(
+                        policy, setter,name, value)
 
     def do_test_invalid_header_names(self, policy, setter, name, value):
         with self.subTest(policy=policy, setter=setter, name=name, value=value):

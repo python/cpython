@@ -15,7 +15,7 @@ __all__ = [
     'compat32',
     ]
 
-# equivalent to pattern re.compile("[!-9;-~]+$")
+# validation regex from RFC 5322,equivalent to pattern re.compile("[!-9;-~]+$")
 valid_header_name_re = re.compile("[\041-\071\073-\176]+$")
 
 def validate_header_name(name):
