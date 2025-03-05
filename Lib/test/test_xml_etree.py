@@ -2793,20 +2793,38 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         gc_collect()
 
 
-class MutatingElementPath(str):
+class MutationDeleteElementPath(str):
     def __new__(cls, elem, *args):
         self = str.__new__(cls, *args)
         self.elem = elem
         return self
+
     def __eq__(self, o):
         del self.elem[:]
         return True
-MutatingElementPath.__hash__ = str.__hash__
+
+    __hash__ = str.__hash__
+
+
+class MutationClearElementPath(str):
+    def __new__(cls, elem, *args):
+        self = str.__new__(cls, *args)
+        self.elem = elem
+        return self
+
+    def __eq__(self, o):
+        self.elem.clear()
+        return True
+
+    __hash__ = str.__hash__
+
 
 class BadElementPath(str):
     def __eq__(self, o):
         raise 1/0
-BadElementPath.__hash__ = str.__hash__
+
+    __hash__ = str.__hash__
+
 
 class BadElementPathTest(ElementTestCase, unittest.TestCase):
     def setUp(self):
@@ -2821,9 +2839,11 @@ class BadElementPathTest(ElementTestCase, unittest.TestCase):
         super().tearDown()
 
     def test_find_with_mutating(self):
-        e = ET.Element('foo')
-        e.extend([ET.Element('bar')])
-        e.find(MutatingElementPath(e, 'x'))
+        for cls in [MutationDeleteElementPath, MutationClearElementPath]:
+            with self.subTest(cls):
+                e = ET.Element('foo')
+                e.extend([ET.Element('bar')])
+                e.find(cls(e, 'x'))
 
     def test_find_with_error(self):
         e = ET.Element('foo')
@@ -2834,9 +2854,11 @@ class BadElementPathTest(ElementTestCase, unittest.TestCase):
             pass
 
     def test_findtext_with_mutating(self):
-        e = ET.Element('foo')
-        e.extend([ET.Element('bar')])
-        e.findtext(MutatingElementPath(e, 'x'))
+        for cls in [MutationDeleteElementPath, MutationClearElementPath]:
+            with self.subTest(cls):
+                e = ET.Element('foo')
+                e.extend([ET.Element('bar')])
+                e.findtext(cls(e, 'x'))
 
     def test_findtext_with_error(self):
         e = ET.Element('foo')
@@ -2861,9 +2883,11 @@ class BadElementPathTest(ElementTestCase, unittest.TestCase):
         self.assertEqual(root_elem.findtext('./bar'), '')
 
     def test_findall_with_mutating(self):
-        e = ET.Element('foo')
-        e.extend([ET.Element('bar')])
-        e.findall(MutatingElementPath(e, 'x'))
+        for cls in [MutationDeleteElementPath, MutationClearElementPath]:
+            with self.subTest(cls):
+                e = ET.Element('foo')
+                e.extend([ET.Element('bar')])
+                e.findall(cls(e, 'x'))
 
     def test_findall_with_error(self):
         e = ET.Element('foo')
