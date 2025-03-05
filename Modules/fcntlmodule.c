@@ -339,6 +339,30 @@ fcntl_flock_impl(PyObject *module, int fd, int code)
 }
 
 
+static void
+fill_struct_flock(struct flock *l, PyObject *lenobj, PyObject *startobj)
+{
+    l->l_start = l->l_len = 0;
+    if (startobj != NULL) {
+#if !defined(HAVE_LARGEFILE_SUPPORT)
+        l->l_start = PyLong_AsLong(startobj);
+#else
+        l->l_start = PyLong_Check(startobj) ?
+                        PyLong_AsLongLong(startobj) :
+                PyLong_AsLong(startobj);
+#endif
+    }
+    if (lenobj != NULL) {
+#if !defined(HAVE_LARGEFILE_SUPPORT)
+        l->l_len = PyLong_AsLong(lenobj);
+#else
+        l->l_len = PyLong_Check(lenobj) ?
+                        PyLong_AsLongLong(lenobj) :
+                PyLong_AsLong(lenobj);
+#endif
+    }
+}
+
 /*[clinic input]
 fcntl.lockf
 
@@ -405,29 +429,9 @@ fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
                             "unrecognized lockf argument");
             return NULL;
         }
-        l.l_start = l.l_len = 0;
-        if (startobj != NULL) {
-#if !defined(HAVE_LARGEFILE_SUPPORT)
-            l.l_start = PyLong_AsLong(startobj);
-#else
-            l.l_start = PyLong_Check(startobj) ?
-                            PyLong_AsLongLong(startobj) :
-                    PyLong_AsLong(startobj);
-#endif
-            if (PyErr_Occurred())
-                return NULL;
-        }
-        if (lenobj != NULL) {
-#if !defined(HAVE_LARGEFILE_SUPPORT)
-            l.l_len = PyLong_AsLong(lenobj);
-#else
-            l.l_len = PyLong_Check(lenobj) ?
-                            PyLong_AsLongLong(lenobj) :
-                    PyLong_AsLong(lenobj);
-#endif
-            if (PyErr_Occurred())
-                return NULL;
-        }
+        fill_struct_flock(&l, lenobj, startobj);
+        if (PyErr_Occurred())
+            return NULL;
         l.l_whence = whence;
         do {
             Py_BEGIN_ALLOW_THREADS
@@ -441,6 +445,96 @@ fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
     Py_RETURN_NONE;
 }
 
+
+/*[clinic input]
+fcntl.getlk
+
+    fd: fildes
+    cmd as code: int
+    len as lenobj: object(c_default='NULL') = 0
+    start as startobj: object(c_default='NULL') = 0
+    whence: int = 0
+    /
+
+A wrapper around the fcntl(F_GETLK) locking call.
+
+`fd` is the file descriptor of the file whose lock status to get.  `cmd`
+is one of the following values:
+
+    LOCK_SH - check for conflicting exclusive lock
+    LOCK_EX - check for conflicting shared or exclusive lock
+
+Note that the returned information identifies a lock that would conflict with
+acquiring the type of lock specified in `cmd`.  Calling with LOCK_SH therefore
+only returns information on a conflicting LOCK_EX, while calling with LOCK_EX
+returns information on either LOCK_SH or LOCK_EX locks.
+
+The remaining parameters are as with `lockf`.
+
+Returns a tuple of (pid, cmd, len, start, whence) if a conflicting lock is
+found.  If more than one lock conflicts, platform code chooses one.  There
+may not be an associated process, in which case pid will be -1.
+
+If no other lock would conflict with the request, this function returns None.
+
+The information returned by this call may already be outdated by the time it
+returns.  Additionally, only locks acquired using `lockf` (or `fcntl(F_SETLK)`)
+are considered by this call.
+[clinic start generated code]*/
+
+static PyObject *
+fcntl_getlk_impl(PyObject *module, int fd, int code, PyObject *lenobj,
+                 PyObject *startobj, int whence)
+/*[clinic end generated code: output=2a7ba40514c0f66b input=336315433d0b46b2]*/
+{
+    int ret;
+    int async_err = 0;
+    struct flock l;
+
+    if (PySys_Audit("fcntl.getlk", "iiOOi", fd, code, lenobj ? lenobj : Py_None,
+                    startobj ? startobj : Py_None, whence) < 0) {
+        return NULL;
+    }
+
+    /* LOCK_UN and combinations make no sense for F_GETLK */
+    if (code == LOCK_SH)
+        l.l_type = F_RDLCK;
+    else if (code == LOCK_EX)
+        l.l_type = F_WRLCK;
+    else {
+        PyErr_SetString(PyExc_ValueError,
+                        "unrecognized getlk argument");
+        return NULL;
+    }
+    fill_struct_flock(&l, lenobj, startobj);
+    if (PyErr_Occurred())
+        return NULL;
+    l.l_whence = whence;
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        ret = fcntl(fd, F_GETLK, &l);
+        Py_END_ALLOW_THREADS
+    } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+
+    if (ret < 0) {
+        return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
+    } else {
+        int cmd = 0;
+
+        if (l.l_type == F_UNLCK)
+            Py_RETURN_NONE;
+        else if (l.l_type == F_RDLCK)
+            cmd = LOCK_SH;
+        else if (l.l_type == F_WRLCK)
+            cmd = LOCK_EX;
+
+        /* casts necessary since types in OS header are unknown */
+        return Py_BuildValue("LiLLi", (long long)l.l_pid, cmd,
+                             (long long)l.l_len, (long long)l.l_start,
+                             (int)l.l_whence);
+    }
+}
+
 /* List of functions */
 
 static PyMethodDef fcntl_methods[] = {
@@ -448,6 +542,7 @@ static PyMethodDef fcntl_methods[] = {
     FCNTL_IOCTL_METHODDEF
     FCNTL_FLOCK_METHODDEF
     FCNTL_LOCKF_METHODDEF
+    FCNTL_GETLK_METHODDEF
     {NULL, NULL}  /* sentinel */
 };
 
