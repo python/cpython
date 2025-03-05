@@ -3246,25 +3246,6 @@ starunpack_helper_impl(compiler *c, location loc,
     }
     int sequence_built = 0;
     if (big) {
-        if (tuple) {
-            PyObject *newconst = PyTuple_New(n);
-            if (newconst == NULL) {
-                return ERROR;
-            }
-            bool is_const = true;
-            for (Py_ssize_t i = 0; i < n; i++) {
-                expr_ty elt = asdl_seq_GET(elts, i);
-                if (elt->kind != Constant_kind) {
-                    is_const = false;
-                    Py_DECREF(newconst);
-                    break;
-                }
-                PyTuple_SET_ITEM(newconst, i, Py_NewRef(elt->v.Constant.value));
-            }
-            if (is_const) {
-                return codegen_addop_load_const(c, loc, newconst);
-            }
-        }
         ADDOP_I(c, loc, build, pushed);
         sequence_built = 1;
     }
