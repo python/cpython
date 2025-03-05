@@ -6718,9 +6718,9 @@ _PyDict_NewKeysForClass(PyHeapTypeObject *cls)
 void
 _PyObject_InitInlineValues(PyObject *obj, PyTypeObject *tp)
 {
-    assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
-    assert(tp->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-    assert(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    assert(_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
+    assert(_PyType_HasFeature(tp, Py_TPFLAGS_INLINE_VALUES));
+    assert(_PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT));
     PyDictKeysObject *keys = CACHED_KEYS(tp);
     assert(keys != NULL);
     OBJECT_STAT_INC(inline_values);
@@ -6840,7 +6840,7 @@ store_instance_attr_lock_held(PyObject *obj, PyDictValues *values,
     PyDictKeysObject *keys = CACHED_KEYS(Py_TYPE(obj));
     assert(keys != NULL);
     assert(values != NULL);
-    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+    assert(_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_INLINE_VALUES));
     Py_ssize_t ix = DKIX_EMPTY;
     PyDictObject *dict = _PyObject_GetManagedDict(obj);
     assert(dict == NULL || ((PyDictObject *)dict)->ma_values == values);
@@ -7005,7 +7005,7 @@ int
 _PyObject_ManagedDictValidityCheck(PyObject *obj)
 {
     PyTypeObject *tp = Py_TYPE(obj);
-    CHECK(tp->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    CHECK(_PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT));
     PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(obj);
     if (_PyManagedDictPointer_IsValues(*managed_dict)) {
         PyDictValues *values = _PyManagedDictPointer_GetValues(*managed_dict);
@@ -7117,7 +7117,7 @@ _PyObject_IsInstanceDictEmpty(PyObject *obj)
         return 1;
     }
     PyDictObject *dict;
-    if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    if (_PyType_HasFeature(tp, Py_TPFLAGS_INLINE_VALUES)) {
         PyDictValues *values = _PyObject_InlineValues(obj);
         if (FT_ATOMIC_LOAD_UINT8(values->valid)) {
             PyDictKeysObject *keys = CACHED_KEYS(tp);
@@ -7130,7 +7130,7 @@ _PyObject_IsInstanceDictEmpty(PyObject *obj)
         }
         dict = _PyObject_GetManagedDict(obj);
     }
-    else if (tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+    else if (_PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT)) {
         dict = _PyObject_GetManagedDict(obj);
     }
     else {
@@ -7147,10 +7147,10 @@ int
 PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *arg)
 {
     PyTypeObject *tp = Py_TYPE(obj);
-    if((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
+    if(!_PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT)) {
         return 0;
     }
-    if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    if (_PyType_HasFeature(tp, Py_TPFLAGS_INLINE_VALUES)) {
         PyDictValues *values = _PyObject_InlineValues(obj);
         if (values->valid) {
             for (Py_ssize_t i = 0; i < values->capacity; i++) {
@@ -7265,7 +7265,7 @@ decref_maybe_delay(PyObject *obj, bool delay)
 int
 _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict)
 {
-    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    assert(_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_MANAGED_DICT));
 #ifndef NDEBUG
     Py_BEGIN_CRITICAL_SECTION(obj);
     assert(_PyObject_InlineValuesConsistencyCheck(obj));
@@ -7273,7 +7273,7 @@ _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict)
 #endif
     int err = 0;
     PyTypeObject *tp = Py_TYPE(obj);
-    if (tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    if (_PyType_HasFeature(tp, Py_TPFLAGS_INLINE_VALUES)) {
 #ifdef Py_GIL_DISABLED
         PyDictObject *prev_dict;
         if (!try_set_dict_inline_only_or_other_dict(obj, new_dict, &prev_dict)) {
@@ -7359,7 +7359,7 @@ detach_dict_from_object(PyDictObject *mp, PyObject *obj)
     ASSERT_WORLD_STOPPED_OR_OBJ_LOCKED(mp);
     assert(mp->ma_values->embedded == 1);
     assert(mp->ma_values->valid == 1);
-    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+    assert(_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_INLINE_VALUES));
 
     PyDictValues *values = copy_values(mp->ma_values);
 
@@ -7382,7 +7382,7 @@ PyObject_ClearManagedDict(PyObject *obj)
 {
     // This is called when the object is being freed or cleared
     // by the GC and therefore known to have no references.
-    if (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    if (_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_INLINE_VALUES)) {
         PyDictObject *dict = _PyObject_GetManagedDict(obj);
         if (dict == NULL) {
             // We have no materialized dictionary and inline values
@@ -7436,7 +7436,7 @@ ensure_managed_dict(PyObject *obj)
     PyDictObject *dict = _PyObject_GetManagedDict(obj);
     if (dict == NULL) {
         PyTypeObject *tp = Py_TYPE(obj);
-        if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
+        if (_PyType_HasFeature(tp, Py_TPFLAGS_INLINE_VALUES) &&
             FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(obj)->valid)) {
             dict = _PyObject_MaterializeManagedDict(obj);
         }
@@ -7702,10 +7702,10 @@ _PyDict_SendEvent(int watcher_bits,
 static int
 _PyObject_InlineValuesConsistencyCheck(PyObject *obj)
 {
-    if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) == 0) {
+    if (!_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_INLINE_VALUES)) {
         return 1;
     }
-    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    assert(_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_MANAGED_DICT));
     PyDictObject *dict = _PyObject_GetManagedDict(obj);
     if (dict == NULL) {
         return 1;

@@ -787,7 +787,7 @@ specialize_module_load_attr(
     PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
 {
     PyModuleObject *m = (PyModuleObject *)owner;
-    assert((Py_TYPE(owner)->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
+    assert(!_PyType_HasFeature(Py_TYPE(owner), Py_TPFLAGS_MANAGED_DICT));
     PyDictObject *dict = (PyDictObject *)m->md_dict;
     if (dict == NULL) {
         SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_NO_DICT);
@@ -849,7 +849,7 @@ classify_descriptor(PyObject *descriptor, bool has_getattr)
         return ABSENT;
     }
     PyTypeObject *desc_cls = Py_TYPE(descriptor);
-    if (!(desc_cls->tp_flags & Py_TPFLAGS_IMMUTABLETYPE)) {
+    if (!_PyType_HasFeature(desc_cls, Py_TPFLAGS_IMMUTABLETYPE)) {
         return MUTABLE;
     }
     if (desc_cls->tp_descr_set) {
@@ -870,7 +870,7 @@ classify_descriptor(PyObject *descriptor, bool has_getattr)
         return OVERRIDING;
     }
     if (desc_cls->tp_descr_get) {
-        if (desc_cls->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR) {
+        if (_PyType_HasFeature(desc_cls, Py_TPFLAGS_METHOD_DESCRIPTOR)) {
             return METHOD;
         }
         if (Py_IS_TYPE(descriptor, &PyClassMethodDescr_Type)) {
@@ -1037,11 +1037,11 @@ specialize_dict_access(
         kind == BUILTIN_CLASSMETHOD || kind == PYTHON_CLASSMETHOD ||
         kind == METHOD);
     // No descriptor, or non overriding.
-    if ((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_MANAGED_DICT)) {
         SPECIALIZATION_FAIL(base_op, SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
         return 0;
     }
-    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES &&
+    if (_PyType_HasFeature(type, Py_TPFLAGS_INLINE_VALUES ) &&
         FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner)->valid) &&
         !(base_op == STORE_ATTR && _PyObject_GetManagedDict(owner) != NULL))
     {
@@ -1094,10 +1094,10 @@ static bool
 instance_has_key(PyObject *obj, PyObject *name, uint32_t *shared_keys_version)
 {
     PyTypeObject *cls = Py_TYPE(obj);
-    if ((cls->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
+    if (!_PyType_HasFeature(cls, Py_TPFLAGS_MANAGED_DICT)) {
         return false;
     }
-    if (cls->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    if (_PyType_HasFeature(cls, Py_TPFLAGS_INLINE_VALUES)) {
         PyDictKeysObject *keys = ((PyHeapTypeObject *)cls)->ht_cached_keys;
         Py_ssize_t index =
             _PyDictKeys_StringLookupAndVersion(keys, name, shared_keys_version);
@@ -1528,7 +1528,7 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
         return -1;
     }
     bool metaclass_check = false;
-    if ((Py_TYPE(cls)->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) == 0) {
+    if (!_PyType_HasFeature(Py_TYPE(cls), Py_TPFLAGS_IMMUTABLETYPE)) {
         metaclass_check = true;
         if (meta_version == 0) {
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_OUT_OF_VERSIONS);
@@ -1948,7 +1948,7 @@ specialize_class_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
 {
     assert(PyType_Check(callable));
     PyTypeObject *tp = _PyType_CAST(callable);
-    if (tp->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
+    if (_PyType_HasFeature(tp, Py_TPFLAGS_IMMUTABLETYPE)) {
         int oparg = instr->op.arg;
         if (nargs == 1 && oparg == 1) {
             if (tp == &PyUnicode_Type) {
@@ -2329,7 +2329,7 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
             PyTypeObject *container_type = Py_TYPE(lhs);
             PyObject *descriptor = _PyType_LookupRefAndVersion(container_type, &_Py_ID(__getitem__), &tp_version);
             if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type) {
-                if (!(container_type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+                if (!_PyType_HasFeature(container_type, Py_TPFLAGS_HEAPTYPE)) {
                     Py_DECREF(descriptor);
                     return SPEC_FAIL_BINARY_OP_SUBSCR_NOT_HEAP_TYPE;
                 }
@@ -2585,7 +2585,7 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
             PyTypeObject *container_type = Py_TYPE(lhs);
             PyObject *descriptor = _PyType_LookupRefAndVersion(container_type, &_Py_ID(__getitem__), &tp_version);
             if (descriptor && Py_TYPE(descriptor) == &PyFunction_Type &&
-                container_type->tp_flags & Py_TPFLAGS_HEAPTYPE)
+                _PyType_HasFeature(container_type, Py_TPFLAGS_HEAPTYPE))
             {
                 PyFunctionObject *func = (PyFunctionObject *)descriptor;
                 PyCodeObject *fcode = (PyCodeObject *)func->func_code;

@@ -111,7 +111,7 @@ static int
 structseq_traverse(PyObject *op, visitproc visit, void *arg)
 {
     PyStructSequence *obj = (PyStructSequence *)op;
-    if (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+    if (_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_HEAPTYPE)) {
         Py_VISIT(Py_TYPE(obj));
     }
     Py_ssize_t i, size;
@@ -577,6 +577,8 @@ initialize_static_fields(PyTypeObject *type, PyStructSequence_Desc *desc,
     type->tp_base = &PyTuple_Type;
     type->tp_methods = structseq_methods;
     type->tp_new = structseq_new;
+    // Note that it is thread-safe to not use an atomic operation to set flags
+    // here since PyType_Ready() will be called later.
     type->tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | tp_flags;
     type->tp_traverse = structseq_traverse;
     type->tp_members = tp_members;
@@ -613,7 +615,7 @@ _PyStructSequence_InitBuiltinWithFlags(PyInterpreterState *interp,
     Py_ssize_t n_members = count_members(desc, &n_unnamed_members);
     PyMemberDef *members = NULL;
 
-    if ((type->tp_flags & Py_TPFLAGS_READY) == 0) {
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_READY)) {
         assert(type->tp_name == NULL);
         assert(type->tp_members == NULL);
         assert(type->tp_base == NULL);
@@ -632,7 +634,7 @@ _PyStructSequence_InitBuiltinWithFlags(PyInterpreterState *interp,
         assert(type->tp_name != NULL);
         assert(type->tp_members != NULL);
         assert(type->tp_base == &PyTuple_Type);
-        assert((type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
+        assert(_PyType_HasFeature(type, _Py_TPFLAGS_STATIC_BUILTIN));
         assert(_Py_IsImmortal(type));
     }
 #endif
@@ -710,7 +712,7 @@ _PyStructSequence_FiniBuiltin(PyInterpreterState *interp, PyTypeObject *type)
     // Ensure that the type is initialized
     assert(type->tp_name != NULL);
     assert(type->tp_base == &PyTuple_Type);
-    assert((type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
+    assert(_PyType_HasFeature(type, _Py_TPFLAGS_STATIC_BUILTIN));
     assert(_Py_IsImmortal(type));
 
     // Cannot delete a type if it still has subclasses

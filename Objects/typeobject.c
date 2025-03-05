@@ -194,7 +194,7 @@ managed_static_type_state_get(PyInterpreterState *interp, PyTypeObject *self)
 managed_static_type_state *
 _PyStaticType_GetState(PyInterpreterState *interp, PyTypeObject *self)
 {
-    assert(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
+    assert(_PyType_HasFeature(self, _Py_TPFLAGS_STATIC_BUILTIN));
     return managed_static_type_state_get(interp, self);
 }
 
@@ -347,7 +347,7 @@ _PyStaticType_GetBuiltins(void)
 static void
 type_set_flags(PyTypeObject *tp, unsigned long flags)
 {
-    if (tp->tp_flags & Py_TPFLAGS_READY) {
+    if (_PyType_HasFeature(tp, Py_TPFLAGS_READY)) {
         // It's possible the type object has been exposed to other threads
         // if it's been marked ready.  In that case, the type lock should be
         // held when flags are modified.
@@ -381,7 +381,7 @@ type_clear_flags(PyTypeObject *tp, unsigned long flag)
 static inline void
 start_readying(PyTypeObject *type)
 {
-    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+    if (_PyType_HasFeature(type, _Py_TPFLAGS_STATIC_BUILTIN)) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         managed_static_type_state *state = managed_static_type_state_get(interp, type);
         assert(state != NULL);
@@ -389,14 +389,14 @@ start_readying(PyTypeObject *type)
         state->readying = 1;
         return;
     }
-    assert((type->tp_flags & Py_TPFLAGS_READYING) == 0);
+    assert(!_PyType_HasFeature(type, Py_TPFLAGS_READYING));
     type_add_flags(type, Py_TPFLAGS_READYING);
 }
 
 static inline void
 stop_readying(PyTypeObject *type)
 {
-    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+    if (_PyType_HasFeature(type, _Py_TPFLAGS_STATIC_BUILTIN)) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         managed_static_type_state *state = managed_static_type_state_get(interp, type);
         assert(state != NULL);
@@ -404,20 +404,20 @@ stop_readying(PyTypeObject *type)
         state->readying = 0;
         return;
     }
-    assert(type->tp_flags & Py_TPFLAGS_READYING);
+    assert(_PyType_HasFeature(type, Py_TPFLAGS_READYING));
     type_clear_flags(type, Py_TPFLAGS_READYING);
 }
 
 static inline int
 is_readying(PyTypeObject *type)
 {
-    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+    if (_PyType_HasFeature(type, _Py_TPFLAGS_STATIC_BUILTIN)) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         managed_static_type_state *state = managed_static_type_state_get(interp, type);
         assert(state != NULL);
         return state->readying;
     }
-    return (type->tp_flags & Py_TPFLAGS_READYING) != 0;
+    return _PyType_HasFeature(type, Py_TPFLAGS_READYING);
 }
 
 
@@ -426,7 +426,7 @@ is_readying(PyTypeObject *type)
 static inline PyObject *
 lookup_tp_dict(PyTypeObject *self)
 {
-    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+    if (_PyType_HasFeature(self, _Py_TPFLAGS_STATIC_BUILTIN)) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         managed_static_type_state *state = _PyStaticType_GetState(interp, self);
         assert(state != NULL);
@@ -452,7 +452,7 @@ PyType_GetDict(PyTypeObject *self)
 static inline void
 set_tp_dict(PyTypeObject *self, PyObject *dict)
 {
-    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+    if (_PyType_HasFeature(self, _Py_TPFLAGS_STATIC_BUILTIN)) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         managed_static_type_state *state = _PyStaticType_GetState(interp, self);
         assert(state != NULL);
@@ -465,7 +465,7 @@ set_tp_dict(PyTypeObject *self, PyObject *dict)
 static inline void
 clear_tp_dict(PyTypeObject *self)
 {
-    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+    if (_PyType_HasFeature(self, _Py_TPFLAGS_STATIC_BUILTIN)) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         managed_static_type_state *state = _PyStaticType_GetState(interp, self);
         assert(state != NULL);
@@ -499,7 +499,7 @@ static inline void
 set_tp_bases(PyTypeObject *self, PyObject *bases, int initial)
 {
     assert(PyTuple_CheckExact(bases));
-    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+    if (_PyType_HasFeature(self, _Py_TPFLAGS_STATIC_BUILTIN)) {
         // XXX tp_bases can probably be statically allocated for each
         // static builtin type.
         assert(initial);
@@ -510,7 +510,7 @@ set_tp_bases(PyTypeObject *self, PyObject *bases, int initial)
         else {
             assert(PyTuple_GET_SIZE(bases) == 1);
             assert(PyTuple_GET_ITEM(bases, 0) == (PyObject *)self->tp_base);
-            assert(self->tp_base->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
+            assert(_PyType_HasFeature(self->tp_base, _Py_TPFLAGS_STATIC_BUILTIN));
             assert(_Py_IsImmortal(self->tp_base));
         }
         _Py_SetImmortal(bases);
@@ -521,7 +521,7 @@ set_tp_bases(PyTypeObject *self, PyObject *bases, int initial)
 static inline void
 clear_tp_bases(PyTypeObject *self, int final)
 {
-    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+    if (_PyType_HasFeature(self, _Py_TPFLAGS_STATIC_BUILTIN)) {
         if (final) {
             if (self->tp_bases != NULL) {
                 if (PyTuple_GET_SIZE(self->tp_bases) == 0) {
@@ -572,7 +572,7 @@ static inline void
 set_tp_mro(PyTypeObject *self, PyObject *mro, int initial)
 {
     assert(PyTuple_CheckExact(mro));
-    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+    if (_PyType_HasFeature(self, _Py_TPFLAGS_STATIC_BUILTIN)) {
         // XXX tp_mro can probably be statically allocated for each
         // static builtin type.
         assert(initial);
@@ -586,7 +586,7 @@ set_tp_mro(PyTypeObject *self, PyObject *mro, int initial)
 static inline void
 clear_tp_mro(PyTypeObject *self, int final)
 {
-    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+    if (_PyType_HasFeature(self, _Py_TPFLAGS_STATIC_BUILTIN)) {
         if (final) {
             if (self->tp_mro != NULL) {
                 if (PyTuple_GET_SIZE(self->tp_mro) == 0) {
@@ -611,7 +611,7 @@ init_tp_subclasses(PyTypeObject *self)
     if (subclasses == NULL) {
         return NULL;
     }
-    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+    if (_PyType_HasFeature(self, _Py_TPFLAGS_STATIC_BUILTIN)) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         managed_static_type_state *state = _PyStaticType_GetState(interp, self);
         state->tp_subclasses = subclasses;
@@ -627,7 +627,7 @@ clear_tp_subclasses(PyTypeObject *self)
     /* Delete the dictionary to save memory. _PyStaticType_Dealloc()
        callers also test if tp_subclasses is NULL to check if a static type
        has no subclass. */
-    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+    if (_PyType_HasFeature(self, _Py_TPFLAGS_STATIC_BUILTIN)) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         managed_static_type_state *state = _PyStaticType_GetState(interp, self);
         Py_CLEAR(state->tp_subclasses);
@@ -639,7 +639,7 @@ clear_tp_subclasses(PyTypeObject *self)
 static inline PyObject *
 lookup_tp_subclasses(PyTypeObject *self)
 {
-    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+    if (_PyType_HasFeature(self, _Py_TPFLAGS_STATIC_BUILTIN)) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         managed_static_type_state *state = _PyStaticType_GetState(interp, self);
         assert(state != NULL);
@@ -652,7 +652,7 @@ int
 _PyType_HasSubclasses(PyTypeObject *self)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN
+    if (_PyType_HasFeature(self, _Py_TPFLAGS_STATIC_BUILTIN)
         // XXX _PyStaticType_GetState() should never return NULL.
         && _PyStaticType_GetState(interp, self) == NULL)
     {
@@ -762,7 +762,7 @@ _PyType_CheckConsistency(PyTypeObject *type)
 
     CHECK(!_PyObject_IsFreed((PyObject *)type));
 
-    if (!(type->tp_flags & Py_TPFLAGS_READY)) {
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_READY)) {
         /* don't check static types before PyType_Ready() */
         return 1;
     }
@@ -773,13 +773,13 @@ _PyType_CheckConsistency(PyTypeObject *type)
     CHECK(!is_readying(type));
     CHECK(lookup_tp_dict(type) != NULL);
 
-    if (type->tp_flags & Py_TPFLAGS_HAVE_GC) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_HAVE_GC)) {
         // bpo-44263: tp_traverse is required if Py_TPFLAGS_HAVE_GC is set.
         // Note: tp_clear is optional.
         CHECK(type->tp_traverse != NULL);
     }
 
-    if (type->tp_flags & Py_TPFLAGS_DISALLOW_INSTANTIATION) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_DISALLOW_INSTANTIATION)) {
         CHECK(type->tp_new == NULL);
         CHECK(PyDict_Contains(lookup_tp_dict(type), &_Py_ID(__new__)) == 0);
     }
@@ -1078,7 +1078,7 @@ type_modified_unlocked(PyTypeObject *type)
         return;
     }
     // Cannot modify static builtin types.
-    assert((type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) == 0);
+    assert(!_PyType_HasFeature(type, _Py_TPFLAGS_STATIC_BUILTIN));
 
     PyObject *subclasses = lookup_tp_subclasses(type);
     if (subclasses != NULL) {
@@ -1196,7 +1196,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     return;
 
  clear:
-    assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
+    assert(!_PyType_HasFeature(type, _Py_TPFLAGS_STATIC_BUILTIN));
     set_version_unlocked(type, 0);  /* 0 is not a valid version tag */
     type->tp_versions_used = _Py_ATTR_CACHE_UNUSED;
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
@@ -1283,7 +1283,7 @@ assign_version_tag(PyInterpreterState *interp, PyTypeObject *type)
             return 0;
         }
     }
-    if (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE)) {
         /* static types */
         if (NEXT_GLOBAL_VERSION_TAG > _Py_MAX_GLOBAL_TYPE_VERSION_TAG) {
             /* We have run out of version numbers */
@@ -1371,7 +1371,7 @@ static PyObject *
 type_name(PyObject *tp, void *Py_UNUSED(closure))
 {
     PyTypeObject *type = PyTypeObject_CAST(tp);
-    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         PyHeapTypeObject* et = (PyHeapTypeObject*)type;
         return Py_NewRef(et->ht_name);
     }
@@ -1384,7 +1384,7 @@ static PyObject *
 type_qualname(PyObject *tp, void *Py_UNUSED(closure))
 {
     PyTypeObject *type = PyTypeObject_CAST(tp);
-    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         PyHeapTypeObject* et = (PyHeapTypeObject*)type;
         return Py_NewRef(et->ht_qualname);
     }
@@ -1448,7 +1448,7 @@ static PyObject *
 type_module(PyTypeObject *type)
 {
     PyObject *mod;
-    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         PyObject *dict = lookup_tp_dict(type);
         if (PyDict_GetItemRef(dict, &_Py_ID(__module__), &mod) == 0) {
             PyErr_Format(PyExc_AttributeError, "__module__");
@@ -1498,7 +1498,7 @@ type_set_module(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
 PyObject *
 _PyType_GetFullyQualifiedName(PyTypeObject *type, char sep)
 {
-    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         return PyUnicode_FromString(type->tp_name);
     }
 
@@ -1868,7 +1868,7 @@ type_get_doc(PyObject *tp, void *Py_UNUSED(closure))
 {
     PyTypeObject *type = PyTypeObject_CAST(tp);
     PyObject *result;
-    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE) && type->tp_doc != NULL) {
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE) && type->tp_doc != NULL) {
         return _PyType_GetDocFromInternalDoc(type->tp_name, type->tp_doc);
     }
     PyObject *dict = lookup_tp_dict(type);
@@ -1906,7 +1906,7 @@ static PyObject *
 type_get_annotate(PyObject *tp, void *Py_UNUSED(closure))
 {
     PyTypeObject *type = PyTypeObject_CAST(tp);
-    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         PyErr_Format(PyExc_AttributeError, "type object '%s' has no attribute '__annotate__'", type->tp_name);
         return NULL;
     }
@@ -1978,7 +1978,7 @@ static PyObject *
 type_get_annotations(PyObject *tp, void *Py_UNUSED(closure))
 {
     PyTypeObject *type = PyTypeObject_CAST(tp);
-    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         PyErr_Format(PyExc_AttributeError, "type object '%s' has no attribute '__annotations__'", type->tp_name);
         return NULL;
     }
@@ -2266,7 +2266,7 @@ type_call(PyObject *self, PyObject *args, PyObject *kwds)
 PyObject *
 _PyType_NewManagedObject(PyTypeObject *type)
 {
-    assert(type->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+    assert(_PyType_HasFeature(type, Py_TPFLAGS_INLINE_VALUES));
     assert(_PyType_IS_GC(type));
     assert(type->tp_new == PyBaseObject_Type.tp_new);
     assert(type->tp_alloc == PyType_GenericAlloc);
@@ -2291,7 +2291,7 @@ _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
     size_t size = _PyObject_VAR_SIZE(type, nitems+1);
 
     const size_t presize = _PyType_PreHeaderSize(type);
-    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_INLINE_VALUES)) {
         assert(type->tp_itemsize == 0);
         size += _PyInlineValuesSize(type);
     }
@@ -2317,7 +2317,7 @@ _PyType_AllocNoTrack(PyTypeObject *type, Py_ssize_t nitems)
     else {
         _PyObject_InitVar((PyVarObject *)obj, type, nitems);
     }
-    if (type->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_INLINE_VALUES)) {
         _PyObject_InitInlineValues(obj, type);
     }
     return obj;
@@ -2395,7 +2395,7 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
 
     if (type->tp_dictoffset != base->tp_dictoffset) {
         assert(base->tp_dictoffset == 0);
-        if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+        if (_PyType_HasFeature(type, Py_TPFLAGS_MANAGED_DICT)) {
             assert(type->tp_dictoffset == -1);
             int err = PyObject_VisitManagedDict(self, visit, arg);
             if (err) {
@@ -2410,8 +2410,8 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
         }
     }
 
-    if (type->tp_flags & Py_TPFLAGS_HEAPTYPE
-        && (!basetraverse || !(base->tp_flags & Py_TPFLAGS_HEAPTYPE))) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)
+        && (!basetraverse || !_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE))) {
         /* For a heaptype, the instances count as references
            to the type.          Traverse the type so the collector
            can find cycles involving this link.
@@ -2465,13 +2465,13 @@ subtype_clear(PyObject *self)
 
     /* Clear the instance dict (if any), to break cycles involving only
        __dict__ slots (as in the case 'self.__dict__ is self'). */
-    if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
-        if ((base->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_MANAGED_DICT)) {
+        if (!_PyType_HasFeature(base, Py_TPFLAGS_MANAGED_DICT)) {
             PyObject_ClearManagedDict(self);
         }
         else {
-            assert((base->tp_flags & Py_TPFLAGS_INLINE_VALUES) ==
-                   (type->tp_flags & Py_TPFLAGS_INLINE_VALUES));
+            assert(_PyType_HasFeature(base, Py_TPFLAGS_INLINE_VALUES) ==
+                   _PyType_HasFeature(type, Py_TPFLAGS_INLINE_VALUES));
         }
     }
     else if (type->tp_dictoffset != base->tp_dictoffset) {
@@ -2494,7 +2494,7 @@ subtype_dealloc(PyObject *self)
 
     /* Extract the type; we expect it to be a heap type */
     type = Py_TYPE(self);
-    _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
+    _PyObject_ASSERT((PyObject *)type, _PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE));
 
     /* Test whether the type has GC exactly once */
 
@@ -2527,10 +2527,10 @@ subtype_dealloc(PyObject *self)
 
         // Don't read type memory after calling basedealloc() since basedealloc()
         // can deallocate the type and free its memory.
-        int type_needs_decref = (type->tp_flags & Py_TPFLAGS_HEAPTYPE
-                                 && !(base->tp_flags & Py_TPFLAGS_HEAPTYPE));
+        int type_needs_decref = (_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)
+                                 && !_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE));
 
-        assert((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
+        assert(!_PyType_HasFeature(type, Py_TPFLAGS_MANAGED_DICT));
 
         /* Call the base tp_dealloc() */
         assert(basedealloc);
@@ -2614,7 +2614,7 @@ subtype_dealloc(PyObject *self)
     }
 
     /* If we added a dict, DECREF it, or free inline values. */
-    if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_MANAGED_DICT)) {
         PyObject_ClearManagedDict(self);
     }
     else if (type->tp_dictoffset && !base->tp_dictoffset) {
@@ -2640,8 +2640,8 @@ subtype_dealloc(PyObject *self)
 
     // Don't read type memory after calling basedealloc() since basedealloc()
     // can deallocate the type and free its memory.
-    int type_needs_decref = (type->tp_flags & Py_TPFLAGS_HEAPTYPE
-                             && !(base->tp_flags & Py_TPFLAGS_HEAPTYPE));
+    int type_needs_decref = (_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)
+                             && !_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE));
 
     assert(basedealloc);
     basedealloc(self);
@@ -3370,7 +3370,7 @@ mro_internal_unlocked(PyTypeObject *type, int initial, PyObject **p_old_mro)
     type_mro_modified(type, lookup_tp_bases(type));
 
     // XXX Expand this to Py_TPFLAGS_IMMUTABLETYPE?
-    if (!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN)) {
+    if (!_PyType_HasFeature(type, _Py_TPFLAGS_STATIC_BUILTIN)) {
         type_modified_unlocked(type);
     }
     else {
@@ -3501,7 +3501,7 @@ get_builtin_base_with_dict(PyTypeObject *type)
 {
     while (type->tp_base != NULL) {
         if (type->tp_dictoffset != 0 &&
-            !(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
+            !_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE))
             return type;
         type = type->tp_base;
     }
@@ -3580,7 +3580,7 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
         return -1;
     }
 
-    if (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+    if (_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_MANAGED_DICT)) {
         return _PyObject_SetManagedDict(obj, value);
     }
     else {
@@ -4210,12 +4210,12 @@ type_new_descriptors(const type_new_ctx *ctx, PyTypeObject *type)
     }
 
     if (ctx->add_weak) {
-        assert((type->tp_flags & Py_TPFLAGS_MANAGED_WEAKREF) == 0);
+        assert(!_PyType_HasFeature(type, Py_TPFLAGS_MANAGED_WEAKREF));
         type_add_flags(type, Py_TPFLAGS_MANAGED_WEAKREF);
         type->tp_weaklistoffset = MANAGED_WEAKREF_OFFSET;
     }
     if (ctx->add_dict) {
-        assert((type->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
+        assert(!_PyType_HasFeature(type, Py_TPFLAGS_MANAGED_DICT));
         type_add_flags(type, Py_TPFLAGS_MANAGED_DICT);
         type->tp_dictoffset = -1;
     }
@@ -4969,7 +4969,7 @@ PyType_FromMetaclass(
 
         /* Inheriting variable-sized types is limited */
         if (base->tp_itemsize
-            && !((base->tp_flags | spec->flags) & Py_TPFLAGS_ITEMS_AT_END))
+            && !((PyType_GetFlags(base) | spec->flags) & Py_TPFLAGS_ITEMS_AT_END))
         {
             PyErr_SetString(
                 PyExc_SystemError,
@@ -5805,7 +5805,7 @@ static void
 set_flags_recursive(PyTypeObject *self, unsigned long mask, unsigned long flags)
 {
     if (PyType_HasFeature(self, Py_TPFLAGS_IMMUTABLETYPE) ||
-        (self->tp_flags & mask) == flags)
+        (PyType_GetFlags(self) & mask) == flags)
     {
         return;
     }
@@ -5984,7 +5984,7 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
 {
     PyTypeObject *type = PyTypeObject_CAST(self);
     int res;
-    if (type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE)) {
         PyErr_Format(
             PyExc_TypeError,
             "cannot set %R attribute of immutable type '%s'",
@@ -6109,7 +6109,7 @@ clear_static_tp_subclasses(PyTypeObject *type, int isbuiltin)
             continue;
         }
         // All static builtin subtypes should have been finalized already.
-        assert(!isbuiltin || !(subclass->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
+        assert(!isbuiltin || !_PyType_HasFeature(subclass, _Py_TPFLAGS_STATIC_BUILTIN));
         Py_DECREF(subclass);
     }
 #else
@@ -6137,7 +6137,7 @@ static void
 fini_static_type(PyInterpreterState *interp, PyTypeObject *type,
                  int isbuiltin, int final)
 {
-    assert(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
+    assert(_PyType_HasFeature(type, _Py_TPFLAGS_STATIC_BUILTIN));
     assert(_Py_IsImmortal((PyObject *)type));
 
     type_dealloc_common(type);
@@ -6186,7 +6186,7 @@ type_dealloc(PyObject *self)
     PyTypeObject *type = PyTypeObject_CAST(self);
 
     // Assert this is a heap-allocated type object
-    _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
+    _PyObject_ASSERT((PyObject *)type, _PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE));
 
     _PyObject_GC_UNTRACK(type);
     type_dealloc_common(type);
@@ -6341,7 +6341,7 @@ type___sizeof___impl(PyTypeObject *self)
 /*[clinic end generated code: output=766f4f16cd3b1854 input=99398f24b9cf45d6]*/
 {
     size_t size;
-    if (self->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+    if (_PyType_HasFeature(self, Py_TPFLAGS_HEAPTYPE)) {
         PyHeapTypeObject* et = (PyHeapTypeObject*)self;
         size = sizeof(PyHeapTypeObject);
         if (et->ht_cached_keys)
@@ -6380,7 +6380,7 @@ type_traverse(PyObject *self, visitproc visit, void *arg)
 
     /* Because of type_is_gc(), the collector only calls this
        for heaptypes. */
-    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         char msg[200];
         sprintf(msg, "type_traverse() called on non-heap type '%.100s'",
                 type->tp_name);
@@ -6411,7 +6411,7 @@ type_clear(PyObject *self)
 
     /* Because of type_is_gc(), the collector only calls this
        for heaptypes. */
-    _PyObject_ASSERT((PyObject *)type, type->tp_flags & Py_TPFLAGS_HEAPTYPE);
+    _PyObject_ASSERT((PyObject *)type, _PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE));
 
     /* We need to invalidate the method cache carefully before clearing
        the dict, so that other objects caught in a reference cycle
@@ -6603,7 +6603,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
 
-    if (type->tp_flags & Py_TPFLAGS_IS_ABSTRACT) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_IS_ABSTRACT)) {
         PyObject *abstract_methods;
         PyObject *sorted_methods;
         PyObject *joined;
@@ -6767,8 +6767,8 @@ compatible_with_tp_base(PyTypeObject *child)
             child->tp_itemsize == parent->tp_itemsize &&
             child->tp_dictoffset == parent->tp_dictoffset &&
             child->tp_weaklistoffset == parent->tp_weaklistoffset &&
-            ((child->tp_flags & Py_TPFLAGS_HAVE_GC) ==
-             (parent->tp_flags & Py_TPFLAGS_HAVE_GC)) &&
+            (_PyType_HasFeature(child, Py_TPFLAGS_HAVE_GC) ==
+             _PyType_HasFeature(parent, Py_TPFLAGS_HAVE_GC)) &&
             (child->tp_dealloc == subtype_dealloc ||
              child->tp_dealloc == parent->tp_dealloc));
 }
@@ -6788,8 +6788,8 @@ same_slots_added(PyTypeObject *a, PyTypeObject *b)
         size += sizeof(PyObject *);
 
     /* Check slots compliance */
-    if (!(a->tp_flags & Py_TPFLAGS_HEAPTYPE) ||
-        !(b->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+    if (!_PyType_HasFeature(a, Py_TPFLAGS_HEAPTYPE) ||
+        !_PyType_HasFeature(b, Py_TPFLAGS_HEAPTYPE)) {
         return 0;
     }
     slots_a = ((PyHeapTypeObject *)a)->ht_slots;
@@ -6837,14 +6837,14 @@ compatible_for_assignment(PyTypeObject* oldto, PyTypeObject* newto, const char* 
          !same_slots_added(newbase, oldbase))) {
         goto differs;
     }
-    if ((oldto->tp_flags & Py_TPFLAGS_INLINE_VALUES) !=
-        ((newto->tp_flags & Py_TPFLAGS_INLINE_VALUES)))
+    if (_PyType_HasFeature(oldto, Py_TPFLAGS_INLINE_VALUES) !=
+        _PyType_HasFeature(newto, Py_TPFLAGS_INLINE_VALUES))
     {
         goto differs;
     }
     /* The above does not check for the preheader */
-    if ((oldto->tp_flags & Py_TPFLAGS_PREHEADER) ==
-        ((newto->tp_flags & Py_TPFLAGS_PREHEADER)))
+    if ((PyType_GetFlags(oldto) & Py_TPFLAGS_PREHEADER) ==
+        ((PyType_GetFlags(newto) & Py_TPFLAGS_PREHEADER)))
     {
         return 1;
     }
@@ -6927,7 +6927,7 @@ object_set_class_world_stopped(PyObject *self, PyTypeObject *newto)
     if (compatible_for_assignment(oldto, newto, "__class__")) {
         /* Changing the class will change the implicit dict keys,
          * so we must materialize the dictionary first. */
-        if (oldto->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+        if (_PyType_HasFeature(oldto, Py_TPFLAGS_INLINE_VALUES)) {
             PyDictObject *dict = _PyObject_GetManagedDict(self);
             if (dict == NULL) {
                 dict = _PyObject_MaterializeManagedDict_LockHeld(self);
@@ -6943,7 +6943,7 @@ object_set_class_world_stopped(PyObject *self, PyTypeObject *newto)
             }
 
         }
-        if (newto->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+        if (_PyType_HasFeature(newto, Py_TPFLAGS_HEAPTYPE)) {
             Py_INCREF(newto);
         }
 
@@ -6988,7 +6988,7 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
     _PyEval_StartTheWorld(interp);
 #endif
     if (res == 0) {
-        if (oldto->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+        if (_PyType_HasFeature(oldto, Py_TPFLAGS_HEAPTYPE)) {
             Py_DECREF(oldto);
         }
 
@@ -7112,7 +7112,7 @@ object_getstate_default(PyObject *obj, int required)
     if (required) {
         Py_ssize_t basicsize = PyBaseObject_Type.tp_basicsize;
         if (Py_TYPE(obj)->tp_dictoffset &&
-            (Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0)
+            !_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_MANAGED_DICT))
         {
             basicsize += sizeof(PyObject *);
         }
@@ -7894,8 +7894,8 @@ static void
 inherit_special(PyTypeObject *type, PyTypeObject *base)
 {
     /* Copying tp_traverse and tp_clear is connected to the GC flags */
-    if (!(type->tp_flags & Py_TPFLAGS_HAVE_GC) &&
-        (base->tp_flags & Py_TPFLAGS_HAVE_GC) &&
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HAVE_GC) &&
+        _PyType_HasFeature(base, Py_TPFLAGS_HAVE_GC) &&
         (!type->tp_traverse && !type->tp_clear)) {
         type_add_flags(type, Py_TPFLAGS_HAVE_GC);
         if (type->tp_traverse == NULL)
@@ -7903,7 +7903,7 @@ inherit_special(PyTypeObject *type, PyTypeObject *base)
         if (type->tp_clear == NULL)
             type->tp_clear = base->tp_clear;
     }
-    type_add_flags(type, base->tp_flags & Py_TPFLAGS_PREHEADER);
+    type_add_flags(type, PyType_GetFlags(base) & Py_TPFLAGS_PREHEADER);
 
     if (type->tp_basicsize == 0)
         type->tp_basicsize = base->tp_basicsize;
@@ -8144,12 +8144,12 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
         COPYSLOT(tp_alloc);
         COPYSLOT(tp_is_gc);
         COPYSLOT(tp_finalize);
-        if ((type->tp_flags & Py_TPFLAGS_HAVE_GC) ==
-            (base->tp_flags & Py_TPFLAGS_HAVE_GC)) {
+        if (_PyType_HasFeature(type, Py_TPFLAGS_HAVE_GC) ==
+            _PyType_HasFeature(base, Py_TPFLAGS_HAVE_GC)) {
             /* They agree about gc. */
             COPYSLOT(tp_free);
         }
-        else if ((type->tp_flags & Py_TPFLAGS_HAVE_GC) &&
+        else if (_PyType_HasFeature(type, Py_TPFLAGS_HAVE_GC) &&
                  type->tp_free == NULL &&
                  base->tp_free == PyObject_Free) {
             /* A bit of magic to plug in the correct default
@@ -8180,17 +8180,17 @@ type_ready_pre_checks(PyTypeObject *type)
      *   tp_vectorcall_offset > 0
      * To avoid mistakes, we require this before inheriting.
      */
-    if (type->tp_flags & Py_TPFLAGS_METHOD_DESCRIPTOR) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_METHOD_DESCRIPTOR)) {
         _PyObject_ASSERT((PyObject *)type, type->tp_descr_get != NULL);
     }
-    if (type->tp_flags & Py_TPFLAGS_HAVE_VECTORCALL) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_HAVE_VECTORCALL)) {
         _PyObject_ASSERT((PyObject *)type, type->tp_vectorcall_offset > 0);
         _PyObject_ASSERT((PyObject *)type, type->tp_call != NULL);
     }
 
     /* Consistency checks for pattern matching
      * Py_TPFLAGS_SEQUENCE and Py_TPFLAGS_MAPPING are mutually exclusive */
-    _PyObject_ASSERT((PyObject *)type, (type->tp_flags & COLLECTION_FLAGS) != COLLECTION_FLAGS);
+    _PyObject_ASSERT((PyObject *)type, (PyType_GetFlags(type) & COLLECTION_FLAGS) != COLLECTION_FLAGS);
 
     if (type->tp_name == NULL) {
         PyErr_Format(PyExc_SystemError,
@@ -8208,7 +8208,7 @@ type_ready_set_base(PyTypeObject *type)
     PyTypeObject *base = type->tp_base;
     if (base == NULL && type != &PyBaseObject_Type) {
         base = &PyBaseObject_Type;
-        if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+        if (_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
             type->tp_base = (PyTypeObject*)Py_NewRef((PyObject*)base);
         }
         else {
@@ -8251,7 +8251,7 @@ type_ready_set_type(PyTypeObject *type)
 static int
 type_ready_set_bases(PyTypeObject *type, int initial)
 {
-    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+    if (_PyType_HasFeature(type, _Py_TPFLAGS_STATIC_BUILTIN)) {
         if (!initial) {
             assert(lookup_tp_bases(type) != NULL);
             return 0;
@@ -8355,7 +8355,7 @@ type_ready_fill_dict(PyTypeObject *type)
 static int
 type_ready_preheader(PyTypeObject *type)
 {
-    if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_MANAGED_DICT)) {
         if (type->tp_dictoffset > 0 || type->tp_dictoffset < -1) {
             PyErr_Format(PyExc_TypeError,
                         "type %s has the Py_TPFLAGS_MANAGED_DICT flag "
@@ -8365,7 +8365,7 @@ type_ready_preheader(PyTypeObject *type)
         }
         type->tp_dictoffset = -1;
     }
-    if (type->tp_flags & Py_TPFLAGS_MANAGED_WEAKREF) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_MANAGED_WEAKREF)) {
         if (type->tp_weaklistoffset != 0 &&
             type->tp_weaklistoffset != MANAGED_WEAKREF_OFFSET)
         {
@@ -8385,7 +8385,7 @@ type_ready_mro(PyTypeObject *type, int initial)
 {
     ASSERT_TYPE_LOCK_HELD();
 
-    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+    if (_PyType_HasFeature(type, _Py_TPFLAGS_STATIC_BUILTIN)) {
         if (!initial) {
             assert(lookup_tp_mro(type) != NULL);
             return 0;
@@ -8403,20 +8403,20 @@ type_ready_mro(PyTypeObject *type, int initial)
 
     /* All bases of statically allocated type should be statically allocated,
        and static builtin types must have static builtin bases. */
-    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
-        assert(type->tp_flags & Py_TPFLAGS_IMMUTABLETYPE);
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        assert(_PyType_HasFeature(type, Py_TPFLAGS_IMMUTABLETYPE));
         Py_ssize_t n = PyTuple_GET_SIZE(mro);
         for (Py_ssize_t i = 0; i < n; i++) {
             PyTypeObject *base = _PyType_CAST(PyTuple_GET_ITEM(mro, i));
-            if (base->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+            if (_PyType_HasFeature(base, Py_TPFLAGS_HEAPTYPE)) {
                 PyErr_Format(PyExc_TypeError,
                              "type '%.100s' is not dynamically allocated but "
                              "its base type '%.100s' is dynamically allocated",
                              type->tp_name, base->tp_name);
                 return -1;
             }
-            assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) ||
-                   (base->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
+            assert(!_PyType_HasFeature(type, _Py_TPFLAGS_STATIC_BUILTIN) ||
+                   _PyType_HasFeature(base, _Py_TPFLAGS_STATIC_BUILTIN));
         }
     }
     return 0;
@@ -8450,8 +8450,8 @@ type_ready_inherit_as_structs(PyTypeObject *type, PyTypeObject *base)
 
 static void
 inherit_patma_flags(PyTypeObject *type, PyTypeObject *base) {
-    if ((type->tp_flags & COLLECTION_FLAGS) == 0) {
-        type_add_flags(type, base->tp_flags & COLLECTION_FLAGS);
+    if (!_PyType_HasFeature(type, COLLECTION_FLAGS)) {
+        type_add_flags(type, PyType_GetFlags(base) & COLLECTION_FLAGS);
     }
 }
 
@@ -8484,7 +8484,7 @@ type_ready_inherit(PyTypeObject *type)
     }
 
     /* Sanity check for tp_free. */
-    if (_PyType_IS_GC(type) && (type->tp_flags & Py_TPFLAGS_BASETYPE) &&
+    if (_PyType_IS_GC(type) && _PyType_HasFeature(type, Py_TPFLAGS_BASETYPE) &&
         (type->tp_free == NULL || type->tp_free == PyObject_Free))
     {
         /* This base class needs to call tp_free, but doesn't have
@@ -8564,12 +8564,12 @@ type_ready_set_new(PyTypeObject *type, int initial)
        default also inherit object.__new__. */
     if (type->tp_new == NULL
         && base == &PyBaseObject_Type
-        && !(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
+        && !_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE))
     {
         type_add_flags(type, Py_TPFLAGS_DISALLOW_INSTANTIATION);
     }
 
-    if (!(type->tp_flags & Py_TPFLAGS_DISALLOW_INSTANTIATION)) {
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_DISALLOW_INSTANTIATION)) {
         if (type->tp_new != NULL) {
             if (initial || base == NULL || type->tp_new != base->tp_new) {
                 // If "__new__" key does not exists in the type dictionary,
@@ -8594,10 +8594,10 @@ type_ready_set_new(PyTypeObject *type, int initial)
 static int
 type_ready_managed_dict(PyTypeObject *type)
 {
-    if (!(type->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_MANAGED_DICT)) {
         return 0;
     }
-    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         PyErr_Format(PyExc_SystemError,
                      "type %s has the Py_TPFLAGS_MANAGED_DICT flag "
                      "but not Py_TPFLAGS_HEAPTYPE flag",
@@ -8623,7 +8623,7 @@ type_ready_post_checks(PyTypeObject *type)
 {
     // bpo-44263: tp_traverse is required if Py_TPFLAGS_HAVE_GC is set.
     // Note: tp_clear is optional.
-    if (type->tp_flags & Py_TPFLAGS_HAVE_GC
+    if (_PyType_HasFeature(type, Py_TPFLAGS_HAVE_GC)
         && type->tp_traverse == NULL)
     {
         PyErr_Format(PyExc_SystemError,
@@ -8632,7 +8632,7 @@ type_ready_post_checks(PyTypeObject *type)
                      type->tp_name);
         return -1;
     }
-    if (type->tp_flags & Py_TPFLAGS_MANAGED_DICT) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_MANAGED_DICT)) {
         if (type->tp_dictoffset != -1) {
             PyErr_Format(PyExc_SystemError,
                         "type %s has the Py_TPFLAGS_MANAGED_DICT flag "
@@ -8733,14 +8733,14 @@ error:
 int
 PyType_Ready(PyTypeObject *type)
 {
-    if (type->tp_flags & Py_TPFLAGS_READY) {
+    if (_PyType_HasFeature(type, Py_TPFLAGS_READY)) {
         assert(_PyType_CheckConsistency(type));
         return 0;
     }
-    assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
+    assert(!_PyType_HasFeature(type, _Py_TPFLAGS_STATIC_BUILTIN));
 
     /* Historically, all static types were immutable. See bpo-43908 */
-    if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         type_add_flags(type, Py_TPFLAGS_IMMUTABLETYPE);
         /* Static types must be immortal */
         _Py_SetImmortalUntracked((PyObject *)type);
@@ -8748,7 +8748,7 @@ PyType_Ready(PyTypeObject *type)
 
     int res;
     BEGIN_TYPE_LOCK();
-    if (!(type->tp_flags & Py_TPFLAGS_READY)) {
+    if (!_PyType_HasFeature(type, Py_TPFLAGS_READY)) {
         res = type_ready(type, 1);
     } else {
         res = 0;
@@ -8764,11 +8764,11 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
                  int isbuiltin, int initial)
 {
     assert(_Py_IsImmortal((PyObject *)self));
-    assert(!(self->tp_flags & Py_TPFLAGS_HEAPTYPE));
-    assert(!(self->tp_flags & Py_TPFLAGS_MANAGED_DICT));
-    assert(!(self->tp_flags & Py_TPFLAGS_MANAGED_WEAKREF));
+    assert(!_PyType_HasFeature(self, Py_TPFLAGS_HEAPTYPE));
+    assert(!_PyType_HasFeature(self, Py_TPFLAGS_MANAGED_DICT));
+    assert(!_PyType_HasFeature(self, Py_TPFLAGS_MANAGED_WEAKREF));
 
-    if ((self->tp_flags & Py_TPFLAGS_READY) == 0) {
+    if (!_PyType_HasFeature(self, Py_TPFLAGS_READY)) {
         assert(initial);
 
         type_add_flags(self, _Py_TPFLAGS_STATIC_BUILTIN);
@@ -8781,7 +8781,7 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
     }
     else {
         assert(!initial);
-        assert(self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
+        assert(_PyType_HasFeature(self, _Py_TPFLAGS_STATIC_BUILTIN));
         assert(self->tp_version_tag != 0);
     }
 
@@ -8801,7 +8801,7 @@ init_static_type(PyInterpreterState *interp, PyTypeObject *self,
 int
 _PyStaticType_InitForExtension(PyInterpreterState *interp, PyTypeObject *self)
 {
-    return init_static_type(interp, self, 0, ((self->tp_flags & Py_TPFLAGS_READY) == 0));
+    return init_static_type(interp, self, 0, !_PyType_HasFeature(self, Py_TPFLAGS_READY));
 }
 
 int
@@ -11474,7 +11474,7 @@ add_operators(PyTypeObject *type)
         if (!ptr || !*ptr)
             continue;
         /* Also ignore when the type slot has been inherited. */
-        if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN
+        if (_PyType_HasFeature(type, _Py_TPFLAGS_STATIC_BUILTIN)
             && type->tp_base != NULL
             && slot_inherited(type, p, ptr))
         {

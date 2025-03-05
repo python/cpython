@@ -1911,7 +1911,7 @@ get_tlbc_id(PyObject *Py_UNUSED(module), PyObject *obj)
 static PyObject *
 has_inline_values(PyObject *self, PyObject *obj)
 {
-    if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
+    if (_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_INLINE_VALUES) &&
         _PyObject_InlineValues(obj)->valid) {
         Py_RETURN_TRUE;
     }
