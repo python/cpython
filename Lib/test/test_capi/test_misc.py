@@ -2886,25 +2886,19 @@ class TestVersions(unittest.TestCase):
 
 class TestCEval(unittest.TestCase):
    def test_ceval_decref(self):
-        def f():
-            l = []
-            del l
-
-        def g():
-            l = [], []
-            del l
-
-        _testcapi.toggle_reftrace_counter()
-        f()
-        refs = _testcapi.toggle_reftrace_counter()
-        # sometimes we get a stray DECREF from somewhere else (other thread?)
-        # doesn't happen outside of test
-        self.assertIn(refs, ((1, 1), (1, 2)))
-
-        _testcapi.toggle_reftrace_counter()
-        g()
-        refs = _testcapi.toggle_reftrace_counter()
-        self.assertIn(refs, ((3, 3), (3, 4)))
+        code = textwrap.dedent("""
+            import _testcapi
+            _testcapi.toggle_reftrace_printer(True)
+            l1 = []
+            l2 = []
+            del l1
+            del l2
+            _testcapi.toggle_reftrace_printer(False)
+        """)
+        _, out, _ = assert_python_ok("-c", code)
+        lines = out.decode("utf-8").splitlines()
+        self.assertEqual(lines.count("CREATE list"), 2)
+        self.assertEqual(lines.count("DESTROY list"), 2)
 
 
 if __name__ == "__main__":

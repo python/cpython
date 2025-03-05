@@ -2515,107 +2515,30 @@ code_offset_to_line(PyObject* self, PyObject* const* args, Py_ssize_t nargsf)
 }
 
 
-typedef struct {
-    Py_ssize_t create_count;
-    Py_ssize_t destroy_count;
-    void *prev_data;
-    int (*prev_tracer)(PyObject *, PyRefTracerEvent, void *);
-} reftrace_counter_data;
-
 static int
-_reftrace_counter(PyObject *obj, PyRefTracerEvent event, void *counter_data)
+_reftrace_printer(PyObject *obj, PyRefTracerEvent event, void *counter_data)
 {
     if (event == PyRefTracer_CREATE) {
-        ((reftrace_counter_data *)counter_data)->create_count++;
+        printf("CREATE %s\n", Py_TYPE(obj)->tp_name);
     }
     else {  // PyRefTracer_DESTROY
-        ((reftrace_counter_data *)counter_data)->destroy_count++;
+        printf("DESTROY %s\n", Py_TYPE(obj)->tp_name);
     }
     return 0;
 }
 
-void
-reftrace_counter_capsule_destructor(PyObject *capsule)
-{
-    reftrace_counter_data *counter_data = (reftrace_counter_data *)PyCapsule_GetPointer(capsule, "counter_data");
-
-    if (counter_data) {
-        if (counter_data->prev_tracer != (void *)_reftrace_counter) {
-            // juuust in case, to not segfault
-            PyRefTracer_SetTracer(counter_data->prev_tracer, counter_data->prev_data);
-        }
-
-        PyMem_Free(counter_data);
-    }
-}
-
-// A simple reftrace counter for very simple tests
+// A simple reftrace printer for very simple tests
 static PyObject *
-toggle_reftrace_counter(PyObject *ob, PyObject *args)
+toggle_reftrace_printer(PyObject *ob, PyObject *arg)
 {
-    reftrace_counter_data *counter_data;
-    PyObject *capsule;
-
-    if (PyObject_GetOptionalAttrString(ob, "_reftrace_counter_data", &capsule)) {
-        if (!PyCapsule_IsValid(capsule, "counter_data")) {
-            PyErr_SetString(PyExc_ValueError, "something went wrong, _reftrace_counter_data is invalid");
-            return NULL;
-        }
-
-        counter_data = PyCapsule_GetPointer(capsule, "counter_data");
-
-        if (counter_data == NULL) {
-            PyErr_SetString(PyExc_ValueError, "something went wrong, _reftrace_counter_data is invalid");
-            return NULL;
-        }
+    if (arg == Py_True) {
+        PyRefTracer_SetTracer(_reftrace_printer, NULL);
     }
     else {
-        counter_data = (reftrace_counter_data *)PyMem_Malloc(sizeof(reftrace_counter_data));
-
-        if (counter_data == NULL) {
-            PyErr_NoMemory();
-            return NULL;
-        }
-
-        capsule = PyCapsule_New(counter_data, "counter_data", reftrace_counter_capsule_destructor);
-
-        if (capsule == NULL) {
-            PyMem_Free(counter_data);
-            return NULL;
-        }
-
-        counter_data->prev_tracer = (void *)_reftrace_counter;  // sentinel
-
-        if (PyModule_Add(ob, "_reftrace_counter_data", capsule)) {
-            return NULL;
-        }
-
-        Py_INCREF(capsule);
+        PyRefTracer_SetTracer(NULL, NULL);
     }
-
-    if (counter_data->prev_tracer == (void *)_reftrace_counter) {
-        // toggle counter on
-        counter_data->create_count = counter_data->destroy_count = 0;
-        counter_data->prev_tracer = PyRefTracer_GetTracer(&counter_data->prev_data);
-
-        PyRefTracer_SetTracer(_reftrace_counter, counter_data);
-
-        Py_DECREF(capsule);
-        Py_RETURN_NONE;
-    }
-
-    // toggle counter off
-    PyRefTracer_SetTracer(counter_data->prev_tracer, counter_data->prev_data);
-
-    Py_ssize_t create_count = counter_data->create_count - 1;  // because of PyObject_GetOptionalAttrString
-    Py_ssize_t destroy_count = counter_data->destroy_count;
-    counter_data->prev_tracer = (void *)_reftrace_counter;
-
-    Py_DECREF(capsule);
-
-    return Py_BuildValue("(nn)", create_count, destroy_count);
+    Py_RETURN_NONE;
 }
-
 
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
@@ -2710,7 +2633,7 @@ static PyMethodDef TestMethods[] = {
     {"finalize_thread_hang", finalize_thread_hang, METH_O, NULL},
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
-    {"toggle_reftrace_counter", toggle_reftrace_counter, METH_VARARGS},
+    {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
