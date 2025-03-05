@@ -3,6 +3,7 @@ import threading
 import unittest
 from concurrent import futures
 from test import support
+from test.support import threading_helper
 
 from .util import (
     CANCELLED_FUTURE, CANCELLED_AND_NOTIFIED_FUTURE, EXCEPTION_FUTURE,
@@ -35,57 +36,61 @@ class WaitTests:
         future1 = self.executor.submit(mul, 21, 2)
         future2 = self.executor.submit(event.wait)
 
-        done, not_done = futures.wait(
-                [CANCELLED_FUTURE, future1, future2],
-                 return_when=futures.FIRST_COMPLETED)
+        try:
+            done, not_done = futures.wait(
+                    [CANCELLED_FUTURE, future1, future2],
+                     return_when=futures.FIRST_COMPLETED)
 
-        self.assertEqual(set([future1]), done)
-        self.assertEqual(set([CANCELLED_FUTURE, future2]), not_done)
-
-        event.set()
+            self.assertEqual(set([future1]), done)
+            self.assertEqual(set([CANCELLED_FUTURE, future2]), not_done)
+        finally:
+            event.set()
         future2.result()  # wait for job to finish
 
     def test_first_completed_some_already_completed(self):
         event = self.create_event()
         future1 = self.executor.submit(event.wait)
 
-        finished, pending = futures.wait(
-                 [CANCELLED_AND_NOTIFIED_FUTURE, SUCCESSFUL_FUTURE, future1],
-                 return_when=futures.FIRST_COMPLETED)
+        try:
+            finished, pending = futures.wait(
+                     [CANCELLED_AND_NOTIFIED_FUTURE, SUCCESSFUL_FUTURE, future1],
+                     return_when=futures.FIRST_COMPLETED)
 
-        self.assertEqual(
-                set([CANCELLED_AND_NOTIFIED_FUTURE, SUCCESSFUL_FUTURE]),
-                finished)
-        self.assertEqual(set([future1]), pending)
-
-        event.set()
+            self.assertEqual(
+                    set([CANCELLED_AND_NOTIFIED_FUTURE, SUCCESSFUL_FUTURE]),
+                    finished)
+            self.assertEqual(set([future1]), pending)
+        finally:
+            event.set()
         future1.result()  # wait for job to finish
 
     def test_first_exception(self):
         event1 = self.create_event()
         event2 = self.create_event()
+        try:
+            future1 = self.executor.submit(mul, 2, 21)
+            future2 = self.executor.submit(wait_and_raise, event1)
+            future3 = self.executor.submit(event2.wait)
 
-        future1 = self.executor.submit(mul, 2, 21)
-        future2 = self.executor.submit(wait_and_raise, event1)
-        future3 = self.executor.submit(event2.wait)
+            # Ensure that future1 is completed before future2 finishes
+            def wait_for_future1():
+                future1.result()
+                event1.set()
 
-        # Ensure that future1 is completed before future2 finishes
-        def wait_for_future1():
-            future1.result()
+            t = threading.Thread(target=wait_for_future1)
+            t.start()
+
+            finished, pending = futures.wait(
+                    [future1, future2, future3],
+                    return_when=futures.FIRST_EXCEPTION)
+
+            self.assertEqual(set([future1, future2]), finished)
+            self.assertEqual(set([future3]), pending)
+
+            threading_helper.join_thread(t)
+        finally:
             event1.set()
-
-        t = threading.Thread(target=wait_for_future1)
-        t.start()
-
-        finished, pending = futures.wait(
-                [future1, future2, future3],
-                return_when=futures.FIRST_EXCEPTION)
-
-        self.assertEqual(set([future1, future2]), finished)
-        self.assertEqual(set([future3]), pending)
-
-        t.join()
-        event2.set()
+            event2.set()
         future3.result()  # wait for job to finish
 
     def test_first_exception_some_already_complete(self):
@@ -93,33 +98,35 @@ class WaitTests:
         future1 = self.executor.submit(divmod, 21, 0)
         future2 = self.executor.submit(event.wait)
 
-        finished, pending = futures.wait(
-                [SUCCESSFUL_FUTURE,
-                 CANCELLED_FUTURE,
-                 CANCELLED_AND_NOTIFIED_FUTURE,
-                 future1, future2],
-                return_when=futures.FIRST_EXCEPTION)
+        try:
+            finished, pending = futures.wait(
+                    [SUCCESSFUL_FUTURE,
+                     CANCELLED_FUTURE,
+                     CANCELLED_AND_NOTIFIED_FUTURE,
+                     future1, future2],
+                    return_when=futures.FIRST_EXCEPTION)
 
-        self.assertEqual(set([SUCCESSFUL_FUTURE,
-                              CANCELLED_AND_NOTIFIED_FUTURE,
-                              future1]), finished)
-        self.assertEqual(set([CANCELLED_FUTURE, future2]), pending)
-
-        event.set()
+            self.assertEqual(set([SUCCESSFUL_FUTURE,
+                                  CANCELLED_AND_NOTIFIED_FUTURE,
+                                  future1]), finished)
+            self.assertEqual(set([CANCELLED_FUTURE, future2]), pending)
+        finally:
+            event.set()
         future2.result()  # wait for job to finish
 
     def test_first_exception_one_already_failed(self):
         event = self.create_event()
         future1 = self.executor.submit(event.wait)
 
-        finished, pending = futures.wait(
-                 [EXCEPTION_FUTURE, future1],
-                 return_when=futures.FIRST_EXCEPTION)
+        try:
+            finished, pending = futures.wait(
+                     [EXCEPTION_FUTURE, future1],
+                     return_when=futures.FIRST_EXCEPTION)
 
-        self.assertEqual(set([EXCEPTION_FUTURE]), finished)
-        self.assertEqual(set([future1]), pending)
-
-        event.set()
+            self.assertEqual(set([EXCEPTION_FUTURE]), finished)
+            self.assertEqual(set([future1]), pending)
+        finally:
+            event.set()
         future1.result()  # wait for job to finish
 
     def test_all_completed(self):
@@ -147,22 +154,22 @@ class WaitTests:
         event = self.create_event()
         future = self.executor.submit(event.wait)
 
-        finished, pending = futures.wait(
-                [CANCELLED_AND_NOTIFIED_FUTURE,
-                 EXCEPTION_FUTURE,
-                 SUCCESSFUL_FUTURE,
-                 future],
-                timeout=short_timeout,
-                return_when=futures.ALL_COMPLETED)
+        try:
+            finished, pending = futures.wait(
+                    [CANCELLED_AND_NOTIFIED_FUTURE,
+                     EXCEPTION_FUTURE,
+                     SUCCESSFUL_FUTURE,
+                     future],
+                    timeout=short_timeout,
+                    return_when=futures.ALL_COMPLETED)
 
-        self.assertEqual(set([CANCELLED_AND_NOTIFIED_FUTURE,
-                              EXCEPTION_FUTURE,
-                              SUCCESSFUL_FUTURE]),
-                         finished)
-        self.assertEqual(set([future]), pending)
-
-        # Set the event to allow the future to complete
-        event.set()
+            self.assertEqual(set([CANCELLED_AND_NOTIFIED_FUTURE,
+                                  EXCEPTION_FUTURE,
+                                  SUCCESSFUL_FUTURE]),
+                             finished)
+            self.assertEqual(set([future]), pending)
+        finally:
+            event.set()
         future.result()  # wait for job to finish
 
 
