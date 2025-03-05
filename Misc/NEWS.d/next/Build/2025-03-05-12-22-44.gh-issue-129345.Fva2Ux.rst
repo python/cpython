@@ -1,0 +1,1 @@
+Returned `PCbuild/prepare_ssl.py` behavior to raise exceptions if include directory cannot be created.
