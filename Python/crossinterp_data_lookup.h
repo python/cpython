@@ -134,7 +134,7 @@ _xidregistry_unlock(dlregistry_t *registry)
 static inline dlregistry_t *
 _get_xidregistry_for_type(dlcontext_t *ctx, PyTypeObject *cls)
 {
-    if (cls->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+    if (_PyType_HasFeature(cls, Py_TPFLAGS_HEAPTYPE)) {
         return &ctx->local->registry;
     }
     return &ctx->global->registry;
@@ -157,7 +157,7 @@ _xidregistry_find_type(dlregistry_t *xidregistry, PyTypeObject *cls)
             }
             assert(PyType_Check(registered));
             assert(cur->cls == (PyTypeObject *)registered);
-            assert(cur->cls->tp_flags & Py_TPFLAGS_HEAPTYPE);
+            assert(_PyType_HasFeature(cur->cls, Py_TPFLAGS_HEAPTYPE));
             Py_DECREF(registered);
         }
         if (cur->cls == cls) {
@@ -200,7 +200,7 @@ _xidregistry_add_type(dlregistry_t *xidregistry,
         .refcount = 1,
         .getdata = getdata,
     };
-    if (cls->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+    if (_PyType_HasFeature(cls, Py_TPFLAGS_HEAPTYPE)) {
         // XXX Assign a callback to clear the entry from the registry?
         newhead->weakref = PyWeakref_NewRef((PyObject *)cls, NULL);
         if (newhead->weakref == NULL) {

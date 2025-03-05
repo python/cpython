@@ -475,7 +475,7 @@ _excinfo_init_type_from_exception(struct _excinfo_type *info, PyObject *exc)
     PyObject *strobj = NULL;
 
     PyTypeObject *type = Py_TYPE(exc);
-    if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+    if (_PyType_HasFeature(type, _Py_TPFLAGS_STATIC_BUILTIN)) {
         assert(_Py_IsImmortal((PyObject *)type));
         info->builtin = type;
     }
@@ -560,12 +560,11 @@ _excinfo_init_type_from_object(struct _excinfo_type *info, PyObject *exctype)
 
     return 0;
 }
-
 static void
 _excinfo_clear_type(struct _excinfo_type *info)
 {
     if (info->builtin != NULL) {
-        assert(info->builtin->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN);
+        assert(_PyType_HasFeature(info->builtin, _Py_TPFLAGS_STATIC_BUILTIN));
         assert(_Py_IsImmortal((PyObject *)info->builtin));
     }
     if (info->name != NULL) {

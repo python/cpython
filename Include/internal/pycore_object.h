@@ -810,7 +810,7 @@ static inline PyObject **
 _PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
 {
     if (PyType_Check(op) &&
-            ((PyTypeObject *)op)->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+            _PyType_HasFeature((PyTypeObject *)op, _Py_TPFLAGS_STATIC_BUILTIN)) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
         managed_static_type_state *state = _PyStaticType_GetState(
                                                 interp, (PyTypeObject *)op);
@@ -837,7 +837,7 @@ static inline PyWeakReference **
 _PyObject_GET_WEAKREFS_LISTPTR_FROM_OFFSET(PyObject *op)
 {
     assert(!PyType_Check(op) ||
-            ((PyTypeObject *)op)->tp_flags & Py_TPFLAGS_HEAPTYPE);
+            _PyType_HasFeature((PyTypeObject *)op, Py_TPFLAGS_HEAPTYPE));
     Py_ssize_t offset = Py_TYPE(op)->tp_weaklistoffset;
     return (PyWeakReference **)((char *)op + offset);
 }
@@ -935,7 +935,7 @@ typedef union {
 static inline PyManagedDictPointer *
 _PyObject_ManagedDictPointer(PyObject *obj)
 {
-    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    assert(_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_MANAGED_DICT));
     return (PyManagedDictPointer *)((char *)obj + MANAGED_DICT_OFFSET);
 }
 
@@ -951,8 +951,8 @@ _PyObject_InlineValues(PyObject *obj)
 {
     PyTypeObject *tp = Py_TYPE(obj);
     assert(tp->tp_basicsize > 0 && (size_t)tp->tp_basicsize % sizeof(PyObject *) == 0);
-    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
-    assert(Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+    assert(_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_INLINE_VALUES));
+    assert(_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_MANAGED_DICT));
     return (PyDictValues *)((char *)obj + tp->tp_basicsize);
 }
 

@@ -2204,7 +2204,7 @@ dummy_func(
         op(_CHECK_MANAGED_OBJECT_HAS_VALUES, (owner -- owner)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
             assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
-            assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+            assert(_PyType_HasFeature(Py_TYPE(owner_o), Py_TPFLAGS_INLINE_VALUES));
             DEOPT_IF(!FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid));
         }
 
@@ -2264,7 +2264,7 @@ dummy_func(
 
         op(_LOAD_ATTR_WITH_HINT, (hint/1, owner -- attr)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            assert(_PyType_HasFeature(Py_TYPE(owner_o), Py_TPFLAGS_MANAGED_DICT));
             PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
             DEOPT_IF(dict == NULL);
             assert(PyDict_CheckExact((PyObject *)dict));
@@ -2414,7 +2414,7 @@ dummy_func(
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
 
             assert(Py_TYPE(owner_o)->tp_dictoffset < 0);
-            assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+            assert(_PyType_HasFeature(Py_TYPE(owner_o), Py_TPFLAGS_INLINE_VALUES));
             if (_PyObject_GetManagedDict(owner_o) ||
                     !FT_ATOMIC_LOAD_UINT8(_PyObject_InlineValues(owner_o)->valid)) {
                 UNLOCK_OBJECT(owner_o);
@@ -2448,7 +2448,7 @@ dummy_func(
 
         op(_STORE_ATTR_WITH_HINT, (hint/1, value, owner --)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
+            assert(_PyType_HasFeature(Py_TYPE(owner_o), Py_TPFLAGS_MANAGED_DICT));
             PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
             DEOPT_IF(dict == NULL);
             DEOPT_IF(!LOCK_OBJECT(dict));
@@ -2919,12 +2919,12 @@ dummy_func(
         }
 
         inst(MATCH_MAPPING, (subject -- subject, res)) {
-            int match = PyStackRef_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
+            int match = _PyType_HasFeature(PyStackRef_TYPE(subject), Py_TPFLAGS_MAPPING);
             res = match ? PyStackRef_True : PyStackRef_False;
         }
 
         inst(MATCH_SEQUENCE, (subject -- subject, res)) {
-            int match = PyStackRef_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
+            int match = _PyType_HasFeature(PyStackRef_TYPE(subject), Py_TPFLAGS_SEQUENCE);
             res = match ? PyStackRef_True : PyStackRef_False;
         }
 
@@ -3328,7 +3328,7 @@ dummy_func(
 
         op(_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT, (owner -- owner)) {
             PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_INLINE_VALUES);
+            assert(_PyType_HasFeature(Py_TYPE(owner_o), Py_TPFLAGS_INLINE_VALUES));
             PyDictValues *ivs = _PyObject_InlineValues(owner_o);
             DEOPT_IF(!FT_ATOMIC_LOAD_UINT8(ivs->valid));
         }
@@ -3841,7 +3841,7 @@ dummy_func(
             PyTypeObject *tp = (PyTypeObject *)callable_o;
             DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(tp->tp_version_tag) != type_version);
             assert(tp->tp_new == PyBaseObject_Type.tp_new);
-            assert(tp->tp_flags & Py_TPFLAGS_HEAPTYPE);
+            assert(_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
             assert(tp->tp_alloc == PyType_GenericAlloc);
             PyHeapTypeObject *cls = (PyHeapTypeObject *)callable_o;
             PyFunctionObject *init_func = (PyFunctionObject *)FT_ATOMIC_LOAD_PTR_ACQUIRE(cls->_spec_cache.init);

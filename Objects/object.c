@@ -1484,7 +1484,7 @@ PyObject **
 _PyObject_ComputedDictPointer(PyObject *obj)
 {
     PyTypeObject *tp = Py_TYPE(obj);
-    assert((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0);
+    assert(!_PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT));
 
     Py_ssize_t dictoffset = tp->tp_dictoffset;
     if (dictoffset == 0) {
@@ -1518,11 +1518,11 @@ _PyObject_ComputedDictPointer(PyObject *obj)
 PyObject **
 _PyObject_GetDictPtr(PyObject *obj)
 {
-    if ((Py_TYPE(obj)->tp_flags & Py_TPFLAGS_MANAGED_DICT) == 0) {
+    if (!_PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_MANAGED_DICT)) {
         return _PyObject_ComputedDictPointer(obj);
     }
     PyDictObject *dict = _PyObject_GetManagedDict(obj);
-    if (dict == NULL && Py_TYPE(obj)->tp_flags & Py_TPFLAGS_INLINE_VALUES) {
+    if (dict == NULL && _PyType_HasFeature(Py_TYPE(obj), Py_TPFLAGS_INLINE_VALUES)) {
         dict = _PyObject_MaterializeManagedDict(obj);
         if (dict == NULL) {
             PyErr_Clear();
@@ -1598,7 +1598,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
         }
     }
     PyObject *dict, *attr;
-    if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES) &&
+    if (_PyType_HasFeature(tp, Py_TPFLAGS_INLINE_VALUES) &&
          _PyObject_TryGetInstanceAttribute(obj, name, &attr)) {
         if (attr != NULL) {
             *method = attr;
@@ -1607,7 +1607,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
         }
         dict = NULL;
     }
-    else if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
+    else if (_PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT)) {
         dict = (PyObject *)_PyObject_GetManagedDict(obj);
     }
     else {
@@ -1700,7 +1700,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         }
     }
     if (dict == NULL) {
-        if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES)) {
+        if (_PyType_HasFeature(tp, Py_TPFLAGS_INLINE_VALUES)) {
             if (PyUnicode_CheckExact(name) &&
                 _PyObject_TryGetInstanceAttribute(obj, name, &res)) {
                 if (res != NULL) {
@@ -1715,7 +1715,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
                 }
             }
         }
-        else if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
+        else if (_PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT)) {
             dict = (PyObject *)_PyObject_GetManagedDict(obj);
         }
         else {
@@ -1816,12 +1816,12 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     if (dict == NULL) {
         PyObject **dictptr;
 
-        if ((tp->tp_flags & Py_TPFLAGS_INLINE_VALUES)) {
+        if (_PyType_HasFeature(tp, Py_TPFLAGS_INLINE_VALUES)) {
             res = _PyObject_StoreInstanceAttribute(obj, name, value);
             goto error_check;
         }
 
-        if ((tp->tp_flags & Py_TPFLAGS_MANAGED_DICT)) {
+        if (_PyType_HasFeature(tp, Py_TPFLAGS_MANAGED_DICT)) {
             PyManagedDictPointer *managed_dict = _PyObject_ManagedDictPointer(obj);
             dictptr = (PyObject **)&managed_dict->dict;
         }

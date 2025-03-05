@@ -10,6 +10,7 @@ extern "C" {
 
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_lock.h"          // PyMutex
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_ULONG_RELAXED
 
 
 /* state */
@@ -207,7 +208,7 @@ static inline void *
 _PyType_GetModuleState(PyTypeObject *type)
 {
     assert(PyType_Check(type));
-    assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
+    assert((FT_ATOMIC_LOAD_ULONG_RELAXED(type->tp_flags) & Py_TPFLAGS_HEAPTYPE));
     PyHeapTypeObject *et = (PyHeapTypeObject *)type;
     assert(et->ht_module);
     PyModuleObject *mod = (PyModuleObject *)(et->ht_module);
