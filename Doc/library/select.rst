@@ -165,7 +165,7 @@ The module defines the following:
       :exc:`InterruptedError`.
 
 
-.. attribute:: PIPE_BUF
+.. data:: PIPE_BUF
 
    The minimum number of bytes which can be written without blocking to a pipe
    when the pipe has been reported as ready for writing by :func:`~select.select`,

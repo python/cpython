@@ -48,7 +48,7 @@ _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame)
 static void
 take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
 {
-    assert(frame->owner != FRAME_OWNED_BY_CSTACK);
+    assert(frame->owner < FRAME_OWNED_BY_INTERPRETER);
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
     Py_ssize_t size = ((char*)frame->stackpointer) - (char *)frame;
     memcpy((_PyInterpreterFrame *)f->_f_frame_data, frame, size);
@@ -69,7 +69,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     _PyInterpreterFrame *prev = _PyFrame_GetFirstComplete(frame->previous);
     frame->previous = NULL;
     if (prev) {
-        assert(prev->owner != FRAME_OWNED_BY_CSTACK);
+        assert(prev->owner < FRAME_OWNED_BY_INTERPRETER);
         /* Link PyFrameObjects.f_back and remove link through _PyInterpreterFrame.previous */
         PyFrameObject *back = _PyFrame_GetFrameObject(prev);
         if (back == NULL) {

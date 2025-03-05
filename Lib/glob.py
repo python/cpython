@@ -348,13 +348,7 @@ class _GlobberBase:
 
     @staticmethod
     def scandir(path):
-        """Implements os.scandir().
-        """
-        raise NotImplementedError
-
-    @staticmethod
-    def add_slash(path):
-        """Returns a path with a trailing slash added.
+        """Like os.scandir(), but generates (entry, name, path) tuples.
         """
         raise NotImplementedError
 
@@ -389,10 +383,12 @@ class _GlobberBase:
     def special_selector(self, part, parts):
         """Returns a function that selects special children of the given path.
         """
+        if parts:
+            part += self.sep
         select_next = self.selector(parts)
 
         def select_special(path, exists=False):
-            path = self.concat_path(self.add_slash(path), part)
+            path = self.concat_path(path, part)
             return select_next(path, exists)
         return select_special
 
@@ -402,14 +398,16 @@ class _GlobberBase:
 
         # Optimization: consume and join any subsequent literal parts here,
         # rather than leaving them for the next selector. This reduces the
-        # number of string concatenation operations and calls to add_slash().
+        # number of string concatenation operations.
         while parts and magic_check.search(parts[-1]) is None:
             part += self.sep + parts.pop()
+        if parts:
+            part += self.sep
 
         select_next = self.selector(parts)
 
         def select_literal(path, exists=False):
-            path = self.concat_path(self.add_slash(path), part)
+            path = self.concat_path(path, part)
             return select_next(path, exists=False)
         return select_literal
 
@@ -425,24 +423,19 @@ class _GlobberBase:
 
         def select_wildcard(path, exists=False):
             try:
-                # We must close the scandir() object before proceeding to
-                # avoid exhausting file descriptors when globbing deep trees.
-                with self.scandir(path) as scandir_it:
-                    entries = list(scandir_it)
+                entries = self.scandir(path)
             except OSError:
                 pass
             else:
-                prefix = self.add_slash(path)
-                for entry in entries:
-                    if match is None or match(entry.name):
+                for entry, entry_name, entry_path in entries:
+                    if match is None or match(entry_name):
                         if dir_only:
                             try:
                                 if not entry.is_dir():
                                     continue
                             except OSError:
                                 continue
-                        entry_path = self.concat_path(prefix, entry.name)
-                        if dir_only:
+                            entry_path = self.concat_path(entry_path, self.sep)
                             yield from select_next(entry_path, exists=True)
                         else:
                             yield entry_path
@@ -472,7 +465,6 @@ class _GlobberBase:
         select_next = self.selector(parts)
 
         def select_recursive(path, exists=False):
-            path = self.add_slash(path)
             match_pos = len(str(path))
             if match is None or match(str(path), match_pos):
                 yield from select_next(path, exists)
@@ -483,15 +475,11 @@ class _GlobberBase:
         def select_recursive_step(stack, match_pos):
             path = stack.pop()
             try:
-                # We must close the scandir() object before proceeding to
-                # avoid exhausting file descriptors when globbing deep trees.
-                with self.scandir(path) as scandir_it:
-                    entries = list(scandir_it)
+                entries = self.scandir(path)
             except OSError:
                 pass
             else:
-                prefix = self.add_slash(path)
-                for entry in entries:
+                for entry, _entry_name, entry_path in entries:
                     is_dir = False
                     try:
                         if entry.is_dir(follow_symlinks=follow_symlinks):
@@ -500,8 +488,10 @@ class _GlobberBase:
                         pass
 
                     if is_dir or not dir_only:
-                        entry_path = self.concat_path(prefix, entry.name)
-                        if match is None or match(str(entry_path), match_pos):
+                        entry_path_str = str(entry_path)
+                        if dir_only:
+                            entry_path = self.concat_path(entry_path, self.sep)
+                        if match is None or match(entry_path_str, match_pos):
                             if dir_only:
                                 yield from select_next(entry_path, exists=True)
                             else:
@@ -528,19 +518,29 @@ class _StringGlobber(_GlobberBase):
     """Provides shell-style pattern matching and globbing for string paths.
     """
     lexists = staticmethod(os.path.lexists)
-    scandir = staticmethod(os.scandir)
     concat_path = operator.add
 
-    if os.name == 'nt':
-        @staticmethod
-        def add_slash(pathname):
-            tail = os.path.splitroot(pathname)[2]
-            if not tail or tail[-1] in '\\/':
-                return pathname
-            return f'{pathname}\\'
-    else:
-        @staticmethod
-        def add_slash(pathname):
-            if not pathname or pathname[-1] == '/':
-                return pathname
-            return f'{pathname}/'
+    @staticmethod
+    def scandir(path):
+        # We must close the scandir() object before proceeding to
+        # avoid exhausting file descriptors when globbing deep trees.
+        with os.scandir(path) as scandir_it:
+            entries = list(scandir_it)
+        return ((entry, entry.name, entry.path) for entry in entries)
+
+
+class _PathGlobber(_GlobberBase):
+    """Provides shell-style pattern matching and globbing for pathlib paths.
+    """
+
+    @staticmethod
+    def lexists(path):
+        return path.info.exists(follow_symlinks=False)
+
+    @staticmethod
+    def scandir(path):
+        return ((child.info, child.name, child) for child in path.iterdir())
+
+    @staticmethod
+    def concat_path(path, text):
+        return path.with_segments(str(path) + text)

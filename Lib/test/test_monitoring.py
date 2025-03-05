@@ -14,6 +14,7 @@ import test.support
 from test.support import requires_specialization_ft, script_helper
 
 _testcapi = test.support.import_helper.import_module("_testcapi")
+_testinternalcapi = test.support.import_helper.import_module("_testinternalcapi")
 
 PAIR = (0,1)
 
@@ -897,13 +898,13 @@ class ExceptionMonitoringTest(CheckEvents):
         # re-specialize immediately, so that we can we can test the
         # unspecialized version of the loop first.
         # Note: this assumes that we don't specialize loops over sets.
-        implicit_stop_iteration(set(range(100)))
+        implicit_stop_iteration(set(range(_testinternalcapi.SPECIALIZATION_THRESHOLD)))
 
         # This will record a RAISE event for the StopIteration.
         self.check_events(implicit_stop_iteration, expected, recorders=recorders)
 
         # Now specialize, so that we see a STOP_ITERATION event.
-        for _ in range(100):
+        for _ in range(_testinternalcapi.SPECIALIZATION_COOLDOWN):
             implicit_stop_iteration()
 
         # This will record a STOP_ITERATION event for the StopIteration.
@@ -1057,7 +1058,7 @@ class ExceptionMonitoringTest(CheckEvents):
             except ValueError:
                 pass
 
-        for _ in range(100):
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             f()
         recorders = (
             ReturnRecorder,
@@ -1656,6 +1657,29 @@ class TestBranchAndJumpEvents(CheckEvents):
             in_loop,
             exit_loop])
 
+    def test_async_for(self):
+
+        def func():
+            async def gen():
+                yield 2
+                yield 3
+
+            async def foo():
+                async for y in gen():
+                    2
+                pass # line 3
+
+            try:
+                foo().send(None)
+            except StopIteration:
+                pass
+
+        self.check_events(func, recorders = BRANCHES_RECORDERS, expected = [
+            ('branch left', 'foo', 1, 1),
+            ('branch left', 'foo', 1, 1),
+            ('branch right', 'foo', 1, 3),
+            ('branch left', 'func', 12, 12)])
+
 
 class TestBranchConsistency(MonitoringTestBase, unittest.TestCase):
 
@@ -2033,8 +2057,8 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
                     sys.monitoring.set_events(TEST_TOOL, E.PY_RESUME)
 
         def make_foo_optimized_then_set_event():
-            for i in range(100):
-                Foo(i == 99)
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD + 1):
+                Foo(i == _testinternalcapi.SPECIALIZATION_THRESHOLD)
 
         try:
             make_foo_optimized_then_set_event()
@@ -2106,9 +2130,9 @@ class TestTier2Optimizer(CheckEvents):
             set_events = sys.monitoring.set_events
             line = E.LINE
             i = 0
-            for i in range(551):
-                # Turn on events without branching once i reaches 500.
-                set_events(TEST_TOOL, line * int(i >= 500))
+            for i in range(_testinternalcapi.SPECIALIZATION_THRESHOLD + 51):
+                # Turn on events without branching once i reaches _testinternalcapi.SPECIALIZATION_THRESHOLD.
+                set_events(TEST_TOOL, line * int(i >= _testinternalcapi.SPECIALIZATION_THRESHOLD))
                 pass
                 pass
                 pass

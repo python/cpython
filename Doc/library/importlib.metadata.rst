@@ -268,8 +268,9 @@ Distribution versions
 
 .. function:: version(distribution_name)
 
-   Return the installed distribution package version for the named
-   distribution package.
+   Return the installed distribution package
+   `version <https://packaging.python.org/en/latest/specifications/core-metadata/#version>`__
+   for the named distribution package.
 
    Raises :exc:`PackageNotFoundError` if the named distribution
    package is not installed in the current Python environment.
@@ -375,7 +376,7 @@ Mapping import to distribution packages
 .. function:: packages_distributions()
 
    Return a mapping from the top level module and import package
-   names found via :attr:`sys.meta_path` to the names of the distribution
+   names found via :data:`sys.meta_path` to the names of the distribution
    packages (if any) that provide the corresponding files.
 
    To allow for namespace packages (which may have members provided by

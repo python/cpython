@@ -407,7 +407,8 @@ Modules/_tkinter.c	-	trbInCmd	-
 
 ## other
 Include/datetime.h	-	PyDateTimeAPI	-
-Modules/_ctypes/cfield.c	_ctypes_get_fielddesc	initialized	-
+Modules/_ctypes/cfield.c	_ctypes_init_fielddesc	initialized	-
+Modules/_ctypes/cfield.c	-	formattable	-
 Modules/_ctypes/malloc_closure.c	-	_pagesize	-
 Modules/_cursesmodule.c	-	curses_module_loaded	-
 Modules/_cursesmodule.c	-	curses_initscr_called	-
@@ -422,7 +423,6 @@ Modules/readline.c	-	libedit_history_start	-
 ##-----------------------
 ## state
 
-Modules/_ctypes/cfield.c	-	formattable	-
 Modules/_ctypes/malloc_closure.c	-	free_list	-
 Modules/_curses_panel.c	-	lop	-
 Modules/_ssl/debughelpers.c	_PySSL_keylog_callback	lock	-

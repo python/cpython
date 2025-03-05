@@ -1830,7 +1830,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    dictionary, so it is may be more efficient to call :c:func:`PyObject_GetAttr`
    when accessing an attribute on the object.
 
-   It is an error to set both the :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` bit and
+   It is an error to set both the :c:macro:`Py_TPFLAGS_MANAGED_DICT` bit and
    :c:member:`~PyTypeObject.tp_dictoffset`.
 
    **Inheritance:**

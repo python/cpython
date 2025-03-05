@@ -1,5 +1,3 @@
-#include <stdbool.h>
-
 #include "Python.h"
 #include "opcode.h"
 
@@ -19,6 +17,8 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_uniqueid.h"      // _PyObject_AssignUniqueId()
 #include "clinic/codeobject.c.h"
+
+#include <stdbool.h>
 
 #define INITIAL_SPECIALIZED_CODE_SIZE 16
 
@@ -459,8 +459,7 @@ _PyCode_Validate(struct _PyCodeConstructor *con)
 }
 
 extern void
-_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, PyObject *consts,
-                int enable_counters);
+_PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters);
 
 #ifdef Py_GIL_DISABLED
 static _PyCodeArray * _PyCodeArray_New(Py_ssize_t size);
@@ -543,10 +542,9 @@ init_code(PyCodeObject *co, struct _PyCodeConstructor *con)
     }
     co->_co_firsttraceable = entry_point;
 #ifdef Py_GIL_DISABLED
-    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), co->co_consts,
-                    interp->config.tlbc_enabled);
+    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), interp->config.tlbc_enabled);
 #else
-    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), co->co_consts, 1);
+    _PyCode_Quicken(_PyCode_CODE(co), Py_SIZE(co), 1);
 #endif
     notify_code_watchers(PY_CODE_EVENT_CREATE, co);
     return 0;
@@ -978,6 +976,9 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
     if (addrq < 0) {
         return co->co_firstlineno;
+    }
+    if (co->_co_monitoring && co->_co_monitoring->lines) {
+        return _Py_Instrumentation_GetLine(co, addrq/sizeof(_Py_CODEUNIT));
     }
     assert(addrq >= 0 && addrq < _PyCode_NBYTES(co));
     PyCodeAddressRange bounds;
@@ -2212,24 +2213,24 @@ code_branchesiterator(PyObject *self, PyObject *Py_UNUSED(args))
 code.replace
 
     *
-    co_argcount: int(c_default="self->co_argcount") = unchanged
-    co_posonlyargcount: int(c_default="self->co_posonlyargcount") = unchanged
-    co_kwonlyargcount: int(c_default="self->co_kwonlyargcount") = unchanged
-    co_nlocals: int(c_default="self->co_nlocals") = unchanged
-    co_stacksize: int(c_default="self->co_stacksize") = unchanged
-    co_flags: int(c_default="self->co_flags") = unchanged
-    co_firstlineno: int(c_default="self->co_firstlineno") = unchanged
+    co_argcount: int(c_default="((PyCodeObject *)self)->co_argcount") = unchanged
+    co_posonlyargcount: int(c_default="((PyCodeObject *)self)->co_posonlyargcount") = unchanged
+    co_kwonlyargcount: int(c_default="((PyCodeObject *)self)->co_kwonlyargcount") = unchanged
+    co_nlocals: int(c_default="((PyCodeObject *)self)->co_nlocals") = unchanged
+    co_stacksize: int(c_default="((PyCodeObject *)self)->co_stacksize") = unchanged
+    co_flags: int(c_default="((PyCodeObject *)self)->co_flags") = unchanged
+    co_firstlineno: int(c_default="((PyCodeObject *)self)->co_firstlineno") = unchanged
     co_code: object(subclass_of="&PyBytes_Type", c_default="NULL") = unchanged
-    co_consts: object(subclass_of="&PyTuple_Type", c_default="self->co_consts") = unchanged
-    co_names: object(subclass_of="&PyTuple_Type", c_default="self->co_names") = unchanged
+    co_consts: object(subclass_of="&PyTuple_Type", c_default="((PyCodeObject *)self)->co_consts") = unchanged
+    co_names: object(subclass_of="&PyTuple_Type", c_default="((PyCodeObject *)self)->co_names") = unchanged
     co_varnames: object(subclass_of="&PyTuple_Type", c_default="NULL") = unchanged
     co_freevars: object(subclass_of="&PyTuple_Type", c_default="NULL") = unchanged
     co_cellvars: object(subclass_of="&PyTuple_Type", c_default="NULL") = unchanged
-    co_filename: unicode(c_default="self->co_filename") = unchanged
-    co_name: unicode(c_default="self->co_name") = unchanged
-    co_qualname: unicode(c_default="self->co_qualname") = unchanged
-    co_linetable: object(subclass_of="&PyBytes_Type", c_default="self->co_linetable") = unchanged
-    co_exceptiontable: object(subclass_of="&PyBytes_Type", c_default="self->co_exceptiontable") = unchanged
+    co_filename: unicode(c_default="((PyCodeObject *)self)->co_filename") = unchanged
+    co_name: unicode(c_default="((PyCodeObject *)self)->co_name") = unchanged
+    co_qualname: unicode(c_default="((PyCodeObject *)self)->co_qualname") = unchanged
+    co_linetable: object(subclass_of="&PyBytes_Type", c_default="((PyCodeObject *)self)->co_linetable") = unchanged
+    co_exceptiontable: object(subclass_of="&PyBytes_Type", c_default="((PyCodeObject *)self)->co_exceptiontable") = unchanged
 
 Return a copy of the code object with new values for the specified fields.
 [clinic start generated code]*/
@@ -2244,7 +2245,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                   PyObject *co_filename, PyObject *co_name,
                   PyObject *co_qualname, PyObject *co_linetable,
                   PyObject *co_exceptiontable)
-/*[clinic end generated code: output=e75c48a15def18b9 input=18e280e07846c122]*/
+/*[clinic end generated code: output=e75c48a15def18b9 input=a455a89c57ac9d42]*/
 {
 #define CHECK_INT_ARG(ARG) \
         if (ARG < 0) { \
@@ -2586,6 +2587,7 @@ intern_one_constant(PyObject *op)
     _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(consts, op);
     if (entry == NULL) {
         if (_Py_hashtable_set(consts, op, op) != 0) {
+            PyErr_NoMemory();
             return NULL;
         }
 
@@ -2607,7 +2609,8 @@ intern_one_constant(PyObject *op)
 }
 
 static int
-compare_constants(const void *key1, const void *key2) {
+compare_constants(const void *key1, const void *key2)
+{
     PyObject *op1 = (PyObject *)key1;
     PyObject *op2 = (PyObject *)key2;
     if (op1 == op2) {
@@ -2667,8 +2670,8 @@ compare_constants(const void *key1, const void *key2) {
         Py_complex c2 = ((PyComplexObject *)op2)->cval;
         return memcmp(&c1, &c2, sizeof(Py_complex)) == 0;
     }
-    _Py_FatalErrorFormat("unexpected type in compare_constants: %s",
-                         Py_TYPE(op1)->tp_name);
+    // gh-130851: Treat instances of unexpected types as distinct if they are
+    // not the same object.
     return 0;
 }
 
@@ -2688,9 +2691,13 @@ hash_const(const void *key)
     }
     Py_hash_t h = PyObject_Hash(op);
     if (h == -1) {
-        // This should never happen: all the constants we support have
-        // infallible hash functions.
-        Py_FatalError("code: hash failed");
+        // gh-130851: Other than slice objects, every constant that the
+        // bytecode compiler generates is hashable. However, users can
+        // provide their own constants, when constructing code objects via
+        // types.CodeType(). If the user-provided constant is unhashable, we
+        // use the memory address of the object as a fallback hash value.
+        PyErr_Clear();
+        return (Py_uhash_t)(uintptr_t)key;
     }
     return (Py_uhash_t)h;
 }
@@ -2816,7 +2823,7 @@ copy_code(_Py_CODEUNIT *dst, PyCodeObject *co)
     for (int i = 0; i < code_len; i += _PyInstruction_GetLength(co, i)) {
         dst[i] = _Py_GetBaseCodeUnit(co, i);
     }
-    _PyCode_Quicken(dst, code_len, co->co_consts, 1);
+    _PyCode_Quicken(dst, code_len, 1);
 }
 
 static Py_ssize_t

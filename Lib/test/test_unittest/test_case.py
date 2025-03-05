@@ -795,7 +795,15 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         with self.assertRaises(self.failureException) as cm:
             self.assertHasAttr(a, 'y')
         self.assertEqual(str(cm.exception),
-                "List instance has no attribute 'y'")
+                "'List' object has no attribute 'y'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertHasAttr(List, 'spam')
+        self.assertEqual(str(cm.exception),
+                "type object 'List' has no attribute 'spam'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertHasAttr(sys, 'nonexistent')
+        self.assertEqual(str(cm.exception),
+                "module 'sys' has no attribute 'nonexistent'")
 
         with self.assertRaises(self.failureException) as cm:
             self.assertHasAttr(a, 'y', 'ababahalamaha')
@@ -811,7 +819,15 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         with self.assertRaises(self.failureException) as cm:
             self.assertNotHasAttr(a, 'x')
         self.assertEqual(str(cm.exception),
-                "List instance has unexpected attribute 'x'")
+                "'List' object has unexpected attribute 'x'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotHasAttr(List, 'append')
+        self.assertEqual(str(cm.exception),
+                "type object 'List' has unexpected attribute 'append'")
+        with self.assertRaises(self.failureException) as cm:
+            self.assertNotHasAttr(sys, 'modules')
+        self.assertEqual(str(cm.exception),
+                "module 'sys' has unexpected attribute 'modules'")
 
         with self.assertRaises(self.failureException) as cm:
             self.assertNotHasAttr(a, 'x', 'ababahalamaha')

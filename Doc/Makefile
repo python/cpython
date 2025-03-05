@@ -14,15 +14,15 @@ PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
 REQUIREMENTS = requirements.txt
-SPHINXERRORHANDLING = -W
+SPHINXERRORHANDLING = --fail-on-warning
 
 # Internal variables.
-PAPEROPT_a4     = -D latex_elements.papersize=a4paper
-PAPEROPT_letter = -D latex_elements.papersize=letterpaper
+PAPEROPT_a4     = --define latex_elements.papersize=a4paper
+PAPEROPT_letter = --define latex_elements.papersize=letterpaper
 
-ALLSPHINXOPTS = -b $(BUILDER) \
-                -d build/doctrees \
-                -j $(JOBS) \
+ALLSPHINXOPTS = --builder $(BUILDER) \
+                --doctree-dir build/doctrees \
+                --jobs $(JOBS) \
                 $(PAPEROPT_$(PAPER)) \
                 $(SPHINXOPTS) $(SPHINXERRORHANDLING) \
                 . build/$(BUILDER) $(SOURCES)
@@ -144,7 +144,7 @@ pydoc-topics: build
 
 .PHONY: gettext
 gettext: BUILDER = gettext
-gettext: override SPHINXOPTS := -d build/doctrees-gettext $(SPHINXOPTS)
+gettext: override SPHINXOPTS := --doctree-dir build/doctrees-gettext $(SPHINXOPTS)
 gettext: build
 
 .PHONY: htmlview
@@ -172,7 +172,7 @@ venv:
 	else \
 		echo "Creating venv in $(VENVDIR)"; \
 		if $(UV) --version >/dev/null 2>&1; then \
-			$(UV) venv $(VENVDIR); \
+			$(UV) venv --python=$(PYTHON) $(VENVDIR); \
 			VIRTUAL_ENV=$(VENVDIR) $(UV) pip install -r $(REQUIREMENTS); \
 		else \
 			$(PYTHON) -m venv $(VENVDIR); \
@@ -300,20 +300,20 @@ serve:
 # By default, Sphinx only rebuilds pages where the page content has changed.
 # This means it doesn't always pick up changes to preferred link targets, etc
 # To ensure such changes are picked up, we build the published docs with
-# `-E` (to ignore the cached environment) and `-a` (to ignore already existing
-# output files)
+# ``--fresh-env`` (to ignore the cached environment) and ``--write-all``
+# (to ignore already existing output files)
 
 # for development releases: always build
 .PHONY: autobuild-dev
 autobuild-dev: DISTVERSION = $(shell $(PYTHON) tools/extensions/patchlevel.py --short)
 autobuild-dev:
-	$(MAKE) dist-no-html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1' DISTVERSION=$(DISTVERSION)
+	$(MAKE) dist-no-html SPHINXOPTS='$(SPHINXOPTS) --fresh-env --write-all --html-define daily=1' DISTVERSION=$(DISTVERSION)
 
 # for HTML-only rebuilds
 .PHONY: autobuild-dev-html
 autobuild-dev-html: DISTVERSION = $(shell $(PYTHON) tools/extensions/patchlevel.py --short)
 autobuild-dev-html:
-	$(MAKE) dist-html SPHINXOPTS='$(SPHINXOPTS) -Ea -A daily=1' DISTVERSION=$(DISTVERSION)
+	$(MAKE) dist-html SPHINXOPTS='$(SPHINXOPTS) --fresh-env --write-all --html-define daily=1' DISTVERSION=$(DISTVERSION)
 
 # for stable releases: only build if not in pre-release stage (alpha, beta)
 # release candidate downloads are okay, since the stable tree can be in that stage

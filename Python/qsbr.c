@@ -161,6 +161,7 @@ bool
 _Py_qsbr_poll(struct _qsbr_thread_state *qsbr, uint64_t goal)
 {
     assert(_Py_atomic_load_int_relaxed(&_PyThreadState_GET()->state) == _Py_THREAD_ATTACHED);
+    assert(((_PyThreadStateImpl *)_PyThreadState_GET())->qsbr == qsbr);
 
     if (_Py_qbsr_goal_reached(qsbr, goal)) {
         return true;
@@ -205,15 +206,15 @@ _Py_qsbr_reserve(PyInterpreterState *interp)
         }
         _PyEval_StartTheWorld(interp);
     }
-    PyMutex_Unlock(&shared->mutex);
-
-    if (qsbr == NULL) {
-        return -1;
-    }
 
     // Return an index rather than the pointer because the array may be
     // resized and the pointer invalidated.
-    return (struct _qsbr_pad *)qsbr - shared->array;
+    Py_ssize_t index = -1;
+    if (qsbr != NULL) {
+        index = (struct _qsbr_pad *)qsbr - shared->array;
+    }
+    PyMutex_Unlock(&shared->mutex);
+    return index;
 }
 
 void
