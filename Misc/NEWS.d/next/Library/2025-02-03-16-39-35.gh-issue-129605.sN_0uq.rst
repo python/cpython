@@ -1,0 +1,1 @@
+Fix pyrepl crash when a :exc:`NameError` occurs in the :meth:`~object.__getattr__`, :meth:`~object.__getattribute__` and any method of a class.
