@@ -10,6 +10,7 @@
 *.ico binary
 *.jpg binary
 *.pck binary
+*.pdf binary
 *.png binary
 *.psd binary
 *.tar binary
@@ -67,6 +68,7 @@ PCbuild/readme.txt  dos
 **/clinic/*.cpp.h                                   generated
 **/clinic/*.h.h                                     generated
 *_db.h                                              generated
+Doc/c-api/lifecycle.dot.svg                         generated
 Doc/data/stable_abi.dat                             generated
 Doc/library/token-list.inc                          generated
 Include/internal/pycore_ast.h                       generated
