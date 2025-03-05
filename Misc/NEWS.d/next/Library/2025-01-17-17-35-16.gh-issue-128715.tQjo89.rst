@@ -1,0 +1,3 @@
+The class of :class:`~ctypes.Structure`/:class:`~ctypes.Union` field
+descriptors is now available as :class:`~ctypes.CField`, and has new
+attributes to aid debugging and introspection.

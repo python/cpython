@@ -10,27 +10,33 @@ from ctypes import (CDLL, Structure, sizeof, POINTER, byref, alignment,
                     Union)
 from test import support
 from test.support import import_helper
+from ._support import StructCheckMixin
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 
-class BITS(Structure):
-    _fields_ = [("A", c_int, 1),
-                ("B", c_int, 2),
-                ("C", c_int, 3),
-                ("D", c_int, 4),
-                ("E", c_int, 5),
-                ("F", c_int, 6),
-                ("G", c_int, 7),
-                ("H", c_int, 8),
-                ("I", c_int, 9),
+TEST_FIELDS = (
+    ("A", c_int, 1),
+    ("B", c_int, 2),
+    ("C", c_int, 3),
+    ("D", c_int, 4),
+    ("E", c_int, 5),
+    ("F", c_int, 6),
+    ("G", c_int, 7),
+    ("H", c_int, 8),
+    ("I", c_int, 9),
 
-                ("M", c_short, 1),
-                ("N", c_short, 2),
-                ("O", c_short, 3),
-                ("P", c_short, 4),
-                ("Q", c_short, 5),
-                ("R", c_short, 6),
-                ("S", c_short, 7)]
+    ("M", c_short, 1),
+    ("N", c_short, 2),
+    ("O", c_short, 3),
+    ("P", c_short, 4),
+    ("Q", c_short, 5),
+    ("R", c_short, 6),
+    ("S", c_short, 7),
+)
+
+
+class BITS(Structure):
+    _fields_ = TEST_FIELDS
 
 func = CDLL(_ctypes_test.__file__).unpack_bitfields
 func.argtypes = POINTER(BITS), c_char
@@ -38,23 +44,12 @@ func.argtypes = POINTER(BITS), c_char
 
 class BITS_msvc(Structure):
     _layout_ = "ms"
-    _fields_ = [("A", c_int, 1),
-                ("B", c_int, 2),
-                ("C", c_int, 3),
-                ("D", c_int, 4),
-                ("E", c_int, 5),
-                ("F", c_int, 6),
-                ("G", c_int, 7),
-                ("H", c_int, 8),
-                ("I", c_int, 9),
+    _fields_ = TEST_FIELDS
 
-                ("M", c_short, 1),
-                ("N", c_short, 2),
-                ("O", c_short, 3),
-                ("P", c_short, 4),
-                ("Q", c_short, 5),
-                ("R", c_short, 6),
-                ("S", c_short, 7)]
+
+class BITS_gcc(Structure):
+    _layout_ = "gcc-sysv"
+    _fields_ = TEST_FIELDS
 
 
 try:
@@ -124,13 +119,19 @@ signed_int_types = (c_byte, c_short, c_int, c_long, c_longlong)
 unsigned_int_types = (c_ubyte, c_ushort, c_uint, c_ulong, c_ulonglong)
 int_types = unsigned_int_types + signed_int_types
 
-class BitFieldTest(unittest.TestCase):
+class BitFieldTest(unittest.TestCase, StructCheckMixin):
+
+    def test_generic_checks(self):
+        self.check_struct(BITS)
+        self.check_struct(BITS_msvc)
+        self.check_struct(BITS_gcc)
 
     def test_longlong(self):
         class X(Structure):
             _fields_ = [("a", c_longlong, 1),
                         ("b", c_longlong, 62),
                         ("c", c_longlong, 1)]
+        self.check_struct(X)
 
         self.assertEqual(sizeof(X), sizeof(c_longlong))
         x = X()
@@ -142,6 +143,7 @@ class BitFieldTest(unittest.TestCase):
             _fields_ = [("a", c_ulonglong, 1),
                         ("b", c_ulonglong, 62),
                         ("c", c_ulonglong, 1)]
+        self.check_struct(X)
 
         self.assertEqual(sizeof(X), sizeof(c_longlong))
         x = X()
@@ -159,6 +161,7 @@ class BitFieldTest(unittest.TestCase):
                                 ("a", c_typ, 3),
                                 ("b", c_typ, 3),
                                 ("c", c_typ, 1)]
+                self.check_struct(X)
                 self.assertEqual(sizeof(X), sizeof(c_typ)*2)
 
                 x = X()
@@ -178,6 +181,7 @@ class BitFieldTest(unittest.TestCase):
                     _fields_ = [("a", c_typ, 3),
                                 ("b", c_typ, 3),
                                 ("c", c_typ, 1)]
+                self.check_struct(X)
                 self.assertEqual(sizeof(X), sizeof(c_typ))
 
                 x = X()
@@ -210,12 +214,14 @@ class BitFieldTest(unittest.TestCase):
 
         class Empty(Structure):
             _fields_ = []
+        self.check_struct(Empty)
 
         result = self.fail_fields(("a", Empty, 1))
         self.assertEqual(result, (ValueError, "number of bits invalid for bit field 'a'"))
 
         class Dummy(Structure):
             _fields_ = [("x", c_int)]
+        self.check_struct(Dummy)
 
         result = self.fail_fields(("a", Dummy, 1))
         self.assertEqual(result, (TypeError, 'bit fields not allowed for type Dummy'))
@@ -240,10 +246,12 @@ class BitFieldTest(unittest.TestCase):
 
                 class X(Structure):
                     _fields_ = [("a", c_typ, 1)]
+                self.check_struct(X)
                 self.assertEqual(sizeof(X), sizeof(c_typ))
 
                 class X(Structure):
                     _fields_ = [("a", c_typ, sizeof(c_typ)*8)]
+                self.check_struct(X)
                 self.assertEqual(sizeof(X), sizeof(c_typ))
 
                 result = self.fail_fields(("a", c_typ, sizeof(c_typ)*8 + 1))
@@ -255,6 +263,7 @@ class BitFieldTest(unittest.TestCase):
             _fields_ = [("a", c_short, 1),
                         ("b", c_short, 14),
                         ("c", c_short, 1)]
+        self.check_struct(X)
         self.assertEqual(sizeof(X), sizeof(c_short))
 
         class X(Structure):
@@ -262,6 +271,7 @@ class BitFieldTest(unittest.TestCase):
                         ("a1", c_short),
                         ("b", c_short, 14),
                         ("c", c_short, 1)]
+        self.check_struct(X)
         self.assertEqual(sizeof(X), sizeof(c_short)*3)
         self.assertEqual(X.a.offset, 0)
         self.assertEqual(X.a1.offset, sizeof(c_short))
@@ -272,6 +282,7 @@ class BitFieldTest(unittest.TestCase):
             _fields_ = [("a", c_short, 3),
                         ("b", c_short, 14),
                         ("c", c_short, 14)]
+        self.check_struct(X)
         self.assertEqual(sizeof(X), sizeof(c_short)*3)
         self.assertEqual(X.a.offset, sizeof(c_short)*0)
         self.assertEqual(X.b.offset, sizeof(c_short)*1)
@@ -287,6 +298,7 @@ class BitFieldTest(unittest.TestCase):
         class X(Structure):
             _fields_ = [("a", c_byte, 4),
                         ("b", c_int, 4)]
+        self.check_struct(X)
         if os.name == "nt":
             self.assertEqual(sizeof(X), sizeof(c_int)*2)
         else:
@@ -296,12 +308,14 @@ class BitFieldTest(unittest.TestCase):
         class X(Structure):
             _fields_ = [("a", c_byte, 4),
                         ("b", c_int, 32)]
+        self.check_struct(X)
         self.assertEqual(sizeof(X), alignment(c_int)+sizeof(c_int))
 
     def test_mixed_3(self):
         class X(Structure):
             _fields_ = [("a", c_byte, 4),
                         ("b", c_ubyte, 4)]
+        self.check_struct(X)
         self.assertEqual(sizeof(X), sizeof(c_byte))
 
     def test_mixed_4(self):
@@ -312,6 +326,7 @@ class BitFieldTest(unittest.TestCase):
                         ("d", c_short, 4),
                         ("e", c_short, 4),
                         ("f", c_int, 24)]
+        self.check_struct(X)
         # MSVC does NOT combine c_short and c_int into one field, GCC
         # does (unless GCC is run with '-mms-bitfields' which
         # produces code compatible with MSVC).
@@ -325,6 +340,7 @@ class BitFieldTest(unittest.TestCase):
             _fields_ = [
                 ('A', c_uint, 1),
                 ('B', c_ushort, 16)]
+        self.check_struct(X)
         a = X()
         a.A = 0
         a.B = 1
@@ -335,6 +351,7 @@ class BitFieldTest(unittest.TestCase):
             _fields_ = [
                 ('A', c_ulonglong, 1),
                 ('B', c_uint, 32)]
+        self.check_struct(X)
         a = X()
         a.A = 0
         a.B = 1
@@ -348,6 +365,7 @@ class BitFieldTest(unittest.TestCase):
                 ("A", c_uint32),
                 ('B', c_uint32, 20),
                 ('C', c_uint64, 24)]
+        self.check_struct(X)
         self.assertEqual(16, sizeof(X))
 
     def test_mixed_8(self):
@@ -357,6 +375,7 @@ class BitFieldTest(unittest.TestCase):
                 ("B", c_uint32, 32),
                 ("C", c_ulonglong, 1),
                 ]
+        self.check_struct(Foo)
 
         class Bar(Structure):
             _fields_ = [
@@ -364,6 +383,7 @@ class BitFieldTest(unittest.TestCase):
                 ("B", c_uint32),
                 ("C", c_ulonglong, 1),
                 ]
+        self.check_struct(Bar)
         self.assertEqual(sizeof(Foo), sizeof(Bar))
 
     def test_mixed_9(self):
@@ -372,6 +392,7 @@ class BitFieldTest(unittest.TestCase):
                 ("A", c_uint8),
                 ("B", c_uint32, 1),
                 ]
+        self.check_struct(X)
         if sys.platform == 'win32':
             self.assertEqual(8, sizeof(X))
         else:
@@ -385,6 +406,7 @@ class BitFieldTest(unittest.TestCase):
                 ("A", c_uint32, 1),
                 ("B", c_uint64, 1),
                 ]
+        self.check_struct(X)
         if sys.platform == 'win32':
             self.assertEqual(8, alignment(X))
             self.assertEqual(16, sizeof(X))
@@ -399,6 +421,7 @@ class BitFieldTest(unittest.TestCase):
                     ("Field1", c_uint32, field_width),
                     ("Field2", c_uint8, 8)
                 ]
+            self.check_struct(TestStruct)
 
             cmd = TestStruct()
             cmd.Field2 = 1
@@ -442,6 +465,9 @@ class BitFieldTest(unittest.TestCase):
                 ("b0", c_uint16, 4),
                 ("b1", c_uint16, 12),
             ]
+        self.check_struct(Bad)
+        self.check_struct(GoodA)
+        self.check_struct(Good)
 
         self.assertEqual(3, sizeof(Bad))
         self.assertEqual(3, sizeof(Good))
@@ -461,6 +487,7 @@ class BitFieldTest(unittest.TestCase):
                             ("C",       c_uint32, 20),
                             ("R2",      c_uint32, 2)
                         ]
+        self.check_struct(MyStructure)
         self.assertEqual(8, sizeof(MyStructure))
 
     def test_gh_86098(self):
@@ -470,6 +497,7 @@ class BitFieldTest(unittest.TestCase):
                 ("b", c_uint8, 8),
                 ("c", c_uint32, 16)
             ]
+        self.check_struct(X)
         if sys.platform == 'win32':
             self.assertEqual(8, sizeof(X))
         else:
@@ -484,9 +512,13 @@ class BitFieldTest(unittest.TestCase):
             _anonymous_ = ["_"]
             _fields_ = [("_", X)]
 
+        self.check_struct(X)
+        self.check_struct(Y)
+
     def test_uint32(self):
         class X(Structure):
             _fields_ = [("a", c_uint32, 32)]
+        self.check_struct(X)
         x = X()
         x.a = 10
         self.assertEqual(x.a, 10)
@@ -496,6 +528,7 @@ class BitFieldTest(unittest.TestCase):
     def test_uint64(self):
         class X(Structure):
             _fields_ = [("a", c_uint64, 64)]
+        self.check_struct(X)
         x = X()
         x.a = 10
         self.assertEqual(x.a, 10)
@@ -508,6 +541,7 @@ class BitFieldTest(unittest.TestCase):
             _fields_ = [("a", c_uint32, 24),
                         ("b", c_uint32, 4),
                         ("c", c_uint32, 4)]
+        self.check_struct(Little)
         b = bytearray(4)
         x = Little.from_buffer(b)
         x.a = 0xabcdef
@@ -521,6 +555,7 @@ class BitFieldTest(unittest.TestCase):
             _fields_ = [("a", c_uint32, 24),
                         ("b", c_uint32, 4),
                         ("c", c_uint32, 4)]
+        self.check_struct(Big)
         b = bytearray(4)
         x = Big.from_buffer(b)
         x.a = 0xabcdef
@@ -533,6 +568,7 @@ class BitFieldTest(unittest.TestCase):
             _fields_ = [("a", c_uint32, 1),
                         ("b", c_uint32, 2),
                         ("c", c_uint32, 3)]
+        self.check_union(BitfieldUnion)
         self.assertEqual(sizeof(BitfieldUnion), 4)
         b = bytearray(4)
         x = BitfieldUnion.from_buffer(b)

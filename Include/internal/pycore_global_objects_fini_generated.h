@@ -756,6 +756,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_get_sourcefile));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_handle_fromlist));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_initializing));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_internal_use));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_io));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_is_text_encoding));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_isatty_open_only));
@@ -806,6 +807,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(before));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(big));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(binary_form));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(bit_offset));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(bit_size));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(block));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(bound));
@@ -816,6 +818,8 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(buffers));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(bufsize));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(builtins));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(byte_offset));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(byte_size));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(byteorder));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(bytes));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(bytes_per_sep));
