@@ -1,0 +1,2 @@
+Fix potential hang in ``multiprocessing.popen_spawn_posix`` that can happen
+when the child proc dies early by closing the child fds right away.
