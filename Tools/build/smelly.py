@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Script checking that all symbols exported by libpython start with Py or _Py
 
 import os.path

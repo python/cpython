@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """Create a WASM asset bundle directory structure.
 
 The WASM asset bundles are pre-loaded by the final WASM build. The bundle
