@@ -63,11 +63,11 @@ class GrammarSnippetBase(SphinxDirective):
         group_name = options['group']
         node_location = self.get_location()
         production_nodes = []
-        source_line = None
+        production_node = None
         for source_line in content:
             # Start a new production_node if there's text in the first
             # column of the line. (That means a new rule is starting.)
-            if source_line is None or not source_line[:1].isspace():
+            if production_node is None or not source_line[:1].isspace():
                 production_node = addnodes.production(source_line)
                 production_nodes.append(production_node)
             else:
