@@ -711,12 +711,15 @@ class ListComprehensionTest(unittest.TestCase):
 
     def test_name_collision_locals(self):
         code = """
-            x = 1
-            [x for x in [0]]
+            import sys
+            frame = sys._getframe()
+            f_locals = frame.f_locals
+            foo = 1
+            [foo for foo in [0]]
             from abc import *
-            exec("b = 2")
+            assert frame.f_locals is f_locals
         """
-        self._check_in_scopes(code, {"b": 2, "x": 1}, scopes=["module"])
+        self._check_in_scopes(code, {"foo": 1}, scopes=["module"])
 
     def test_exception_locations(self):
         # The location of an exception raised from __init__ or
