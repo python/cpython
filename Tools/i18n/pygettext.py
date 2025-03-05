@@ -230,13 +230,13 @@ def normalize(s, encoding, prefix, width):
             words = _space_splitter.findall(line)
             words.reverse()
             buf = []
-            size = 2
+            size = 0
             while words:
                 word = words.pop()
                 escaped_word = escape(word, encoding)
                 escaped_word_len = len(escaped_word)
                 new_size = size + escaped_word_len
-                if new_size <= width or not buf:
+                if new_size + 2 <= width or not buf:
                     buf.append(escaped_word)
                     size = new_size
                 else:

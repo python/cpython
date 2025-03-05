@@ -540,13 +540,13 @@ class Test_pygettext(unittest.TestCase):
                 data = normalize(raw, 'UTF-8', 'msgid', 30)
                 self.assertEqual(expected, data)
 
-    def test_normalize_nostr(self):
+    def test_normalize_empty_str(self):
         data = normalize('', 'UTF-8', 'msgid', 30)
         self.assertEqual('""', data)
 
     def test_normalize_single_word(self):
         for s in ("fee", "fi", "fo", "fums"):
-            data = normalize(s, 'UTF-8', 'msgid', 3)
+            data = normalize(s, 'UTF-8', 'msgid', 8)
             self.assertNotIn('""', data) # did not wrap
 
     def test_normalize_split_on_whitespace(self):
@@ -556,6 +556,11 @@ class Test_pygettext(unittest.TestCase):
             s_expected = f'""\n"longlonglong{space}"\n"word"'
             data = normalize(s, 'UTF-8', 'msgid', 10)
             self.assertEqual(s_expected, data)
+
+        s = f'longlonglong\r\nword'
+        s_expected = f'""\n"longlonglong\\r\\n"\n"word"'
+        data = normalize(s, 'UTF-8', 'msgid', 30)
+        self.assertEqual(s_expected, data)
 
 
 def extract_from_snapshots():
