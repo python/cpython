@@ -4171,10 +4171,11 @@
             break;
         }
 
-        case _ITER_NEXT_LIST: {
+        /* _ITER_NEXT_LIST is not a viable micro-op for tier 2 because it is replaced */
+
+        case _ITER_NEXT_LIST_TIER_TWO: {
             _PyStackRef iter;
             _PyStackRef next;
-            oparg = CURRENT_OPARG();
             iter = stack_pointer[-1];
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             _PyListIterObject *it = (_PyListIterObject *)iter_o;
@@ -4197,9 +4198,10 @@
             }
             if (result == 0) {
                 it->it_index = -1;
-                /* Jump forward oparg, then skip following END_FOR instruction */
-                JUMPBY(oparg + 1);
-                DISPATCH();
+                if (1) {
+                    UOP_STAT_INC(uopcode, miss);
+                    JUMP_TO_JUMP_TARGET();
+                }
             }
             it->it_index++;
             #else

@@ -3094,6 +3094,7 @@ dummy_func(
 // invalid by the time we actually try to fetch the item.
 #ifdef Py_GIL_DISABLED
             assert(_PyObject_IsUniquelyReferenced(iter_o));
+            (void)iter_o;
 #else
             _PyListIterObject *it = (_PyListIterObject *)iter_o;
             STAT_INC(FOR_ITER, hit);
@@ -3126,7 +3127,7 @@ dummy_func(
 #endif
         }
 
-        op(_ITER_NEXT_LIST, (iter -- iter, next)) {
+        replaced op(_ITER_NEXT_LIST, (iter -- iter, next)) {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             _PyListIterObject *it = (_PyListIterObject *)iter_o;
             assert(Py_TYPE(iter_o) == &PyListIter_Type);
@@ -3146,6 +3147,33 @@ dummy_func(
                 /* Jump forward oparg, then skip following END_FOR instruction */
                 JUMPBY(oparg + 1);
                 DISPATCH();
+            }
+            it->it_index++;
+#else
+            assert(it->it_index < PyList_GET_SIZE(seq));
+            next = PyStackRef_FromPyObjectNew(PyList_GET_ITEM(seq, it->it_index++));
+#endif
+        }
+
+        // Only used by Tier 2
+        op(_ITER_NEXT_LIST_TIER_TWO, (iter -- iter, next)) {
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            _PyListIterObject *it = (_PyListIterObject *)iter_o;
+            assert(Py_TYPE(iter_o) == &PyListIter_Type);
+            PyListObject *seq = it->it_seq;
+            assert(seq);
+#ifdef Py_GIL_DISABLED
+            assert(_PyObject_IsUniquelyReferenced(iter_o));
+            assert(_Py_IsOwnedByCurrentThread((PyObject *)seq) ||
+                   _PyObject_GC_IS_SHARED(seq));
+            STAT_INC(FOR_ITER, hit);
+            int result = _PyList_GetItemRefNoLock(seq, it->it_index, &next);
+            // A negative result means we lost a race with another thread
+            // and we need to take the slow path.
+            EXIT_IF(result < 0);
+            if (result == 0) {
+                it->it_index = -1;
+                EXIT_IF(1);
             }
             it->it_index++;
 #else

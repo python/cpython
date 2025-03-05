@@ -5601,6 +5601,7 @@
                 // invalid by the time we actually try to fetch the item.
                 #ifdef Py_GIL_DISABLED
                 assert(_PyObject_IsUniquelyReferenced(iter_o));
+                (void)iter_o;
                 #else
                 _PyListIterObject *it = (_PyListIterObject *)iter_o;
                 STAT_INC(FOR_ITER, hit);
