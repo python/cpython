@@ -1,0 +1,3 @@
+Fix potential memory leak in c-field representation of Python objects
+
+Resolved a memory leak issue in the `_PyObject_CAST` macro by ensuring proper casting and handling of c-fields. This fix improves memory management and prevents unintended behavior in CPython's internal object representation.
