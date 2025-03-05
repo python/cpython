@@ -3083,8 +3083,8 @@ class TestFolding(TestEmailBase):
         cases = [
             # (to, folded)
             ('=?utf-8?q?A_v=C3=A9ry_long_name_with=2C_comma?= <to@example.com>',
-             '=?utf-8?q?A_v=C3=A9ry_long_name_with?=\n'
-             ' =?utf-8?q?=2C_comma?= <to@example.com>\n'),
+             'A =?utf-8?q?v=C3=A9ry_long_name_with?=\n'
+             ' =?utf-8?q?=2C?= comma <to@example.com>\n'),
             ('=?utf-8?q?This_long_name_does_not_need_encoded=2Dword?= <to@example.com>',
              'This long name does not need\n'
              ' encoded-word <to@example.com>\n'),
