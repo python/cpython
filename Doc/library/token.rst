@@ -19,6 +19,10 @@ change between Python versions.
 The module also provides a mapping from numeric codes to names and some
 functions.  The functions mirror definitions in the Python C header files.
 
+Note that a token's value may depend on tokenizer options. For example, a
+``"+"`` token may be reported as either :data:`PLUS` or :data:`OP`, or
+a ``"match"`` token may be either :data:`NAME` or :data:`SOFT_KEYWORD`.
+
 
 .. data:: tok_name
 
@@ -63,9 +67,14 @@ The token constants are:
 
 .. data:: OP
 
-   A generic token value returned by the :mod:`tokenize` module for
-   :ref:`operators <operators>` and :ref:`delimiters <delimiters>`.
-   See the :mod:`tokenize` module documentation for details.
+   A generic token value that indicates an
+   :ref:`operator <operators>` or :ref:`delimiter <delimiters>`.
+
+   .. impl-detail::
+
+      This value is only reported by the :mod:`tokenize` module.
+      Internally, the tokenizer uses
+      :ref:`exact token types <token_operators_delimiters>` instead.
 
 .. data:: COMMENT
 
@@ -171,6 +180,8 @@ and are defined for special uses in the tokenizer or parser:
    It can also emit tokens such as :data:`OP` or :data:`NAME` with strings that
    are later rejected by the parser.
 
+
+.. _token_operators_delimiters:
 
 The remaining tokens represent specific :ref:`operators <operators>` and
 :ref:`delimiters <delimiters>`.
