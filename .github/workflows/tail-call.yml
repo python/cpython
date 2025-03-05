@@ -45,7 +45,7 @@ jobs:
           - aarch64-unknown-linux-gnu/gcc
           - free-threading
         llvm:
-          - 19.1.5
+          - 19
         include:
 #          - target: i686-pc-windows-msvc/msvc
 #            architecture: Win32
@@ -83,9 +83,9 @@ jobs:
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         shell: cmd
         run: |
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}
+          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.5
           set PlatformToolset=clangcl
-          set LLVMToolsVersion=${{ matrix.llvm }}
+          set LLVMToolsVersion=${{ matrix.llvm }}.1.5
           set LLVMInstallDir=C:\Program Files\LLVM
           ./PCbuild/build.bat --tail-call-interp -d -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat -d -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
@@ -95,9 +95,9 @@ jobs:
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
         shell: cmd
         run: |
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}
+          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.5
           set PlatformToolset=clangcl
-          set LLVMToolsVersion=${{ matrix.llvm }}
+          set LLVMToolsVersion=${{ matrix.llvm }}.1.5
           set LLVMInstallDir=C:\Program Files\LLVM
           ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }}
 
