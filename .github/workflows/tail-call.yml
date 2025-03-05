@@ -2,7 +2,7 @@ name: Tail calling interpreter
 on:
   pull_request:
     paths:
-      - '.github/workflows/tail-call.yml'      
+      - '.github/workflows/tail-call.yml'
       - 'Python/bytecodes.c'
       - 'Python/ceval.c'
       - 'Python/ceval_macros.h'
@@ -45,7 +45,7 @@ jobs:
           - aarch64-unknown-linux-gnu/gcc
           - free-threading
         llvm:
-          - 19
+          - 19.1.5
         include:
 #          - target: i686-pc-windows-msvc/msvc
 #            architecture: Win32
@@ -83,9 +83,9 @@ jobs:
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         shell: cmd
         run: |
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.5
+          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}
           set PlatformToolset=clangcl
-          set LLVMToolsVersion=19.1.5
+          set LLVMToolsVersion=${{ matrix.llvm }}
           set LLVMInstallDir=C:\Program Files\LLVM
           ./PCbuild/build.bat --tail-call-interp -d -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat -d -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
@@ -95,9 +95,9 @@ jobs:
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
         shell: cmd
         run: |
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.5
+          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}
           set PlatformToolset=clangcl
-          set LLVMToolsVersion=19.1.5
+          set LLVMToolsVersion=${{ matrix.llvm }}
           set LLVMInstallDir=C:\Program Files\LLVM
           ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }}
 

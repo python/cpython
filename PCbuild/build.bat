@@ -40,7 +40,7 @@ echo.  --experimental-jit          Enable the experimental just-in-time compiler
 echo.  --experimental-jit-off      Ditto but off by default (PYTHON_JIT=1 enables).
 echo.  --experimental-jit-interpreter  Enable the experimental Tier 2 interpreter.
 echo.  --pystats      Enable PyStats collection.
-echo.  --tail-call-interp  Enable tail-calling interpreter.
+echo.  --tail-call-interp  Enable tail-calling interpreter (requires LLVM 19 or higher).
 echo.
 echo.Available flags to avoid building certain modules.
 echo.These flags have no effect if '-e' is not given:
