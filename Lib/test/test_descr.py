@@ -3658,6 +3658,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                            encoding='latin1', errors='replace')
         self.assertEqual(ba, b'abc\xbd?')
 
+    @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     def test_recursive_call(self):
         # Testing recursive __call__() by setting to instance of class...
@@ -4518,6 +4519,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         o.whatever = Provoker(o)
         del o
 
+    @support.skip_wasi_stack_overflow()
     @support.requires_resource('cpu')
     def test_wrapper_segfault(self):
         # SF 927248: deeply nested wrappers could cause stack overflow
