@@ -297,6 +297,7 @@ write_location_info_entry(struct assembler* a, location loc, int isize)
     int line_delta = loc.lineno - a->a_lineno;
     int column = loc.col_offset;
     int end_column = loc.end_col_offset;
+    // Values are validated in `VALIDATE_POSITIONS` in `ast.c`:
     assert(column >= -1);
     assert(end_column >= -1);
     if (column < 0 || end_column < 0) {
