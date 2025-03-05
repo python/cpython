@@ -1378,7 +1378,7 @@ pbkdf2_hmac_impl(PyObject *module, const char *hash_name,
         goto end;
     }
 
-  end:
+end:
     if (digest != NULL) {
         PY_EVP_MD_free(digest);
     }
