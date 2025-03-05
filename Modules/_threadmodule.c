@@ -510,32 +510,52 @@ ThreadHandle_join(ThreadHandle *self, PyTime_t timeout_ns)
     // To work around this, we set `thread_is_exiting` immediately before
     // `thread_run` returns.  We can be sure that we are not attempting to join
     // ourselves if the handle's thread is about to exit.
-    if (!_PyEvent_IsSet(&self->thread_is_exiting) &&
-        ThreadHandle_ident(self) == PyThread_get_thread_ident_ex()) {
-        // PyThread_join_thread() would deadlock or error out.
-        PyErr_SetString(ThreadError, "Cannot join current thread");
-        return -1;
-    }
-
-    // Wait until the deadline for the thread to exit.
-    PyTime_t deadline = timeout_ns != -1 ? _PyDeadline_Init(timeout_ns) : 0;
-    int detach = 1;
-    while (!PyEvent_WaitTimed(&self->thread_is_exiting, timeout_ns, detach)) {
-        if (deadline) {
-            // _PyDeadline_Get will return a negative value if the deadline has
-            // been exceeded.
-            timeout_ns = Py_MAX(_PyDeadline_Get(deadline), 0);
+    PyEvent *is_exiting = &self->thread_is_exiting;
+    if (!_PyEvent_IsSet(is_exiting)) {
+        if (ThreadHandle_ident(self) == PyThread_get_thread_ident_ex()) {
+            // PyThread_join_thread() would deadlock or error out.
+            PyErr_SetString(ThreadError, "Cannot join current thread");
+            return -1;
         }
 
-        if (timeout_ns) {
-            // Interrupted
-            if (Py_MakePendingCalls() < 0) {
+        PyTime_t deadline = 0;
+
+        if (timeout_ns == -1) {
+            if (Py_IsFinalizing()) {
+                // gh-123940: On finalization, other threads are prevented from
+                // running Python code. They cannot finalize themselves,
+                // so join() would hang forever.
+                // We raise instead.
+                // (We only do this if no timeout is given: otherwise
+                //  we assume the caller can handle a hung thread.)
+                PyErr_SetString(PyExc_PythonFinalizationError,
+                                "cannot join thread at interpreter shutdown");
                 return -1;
             }
         }
         else {
-            // Timed out
-            return 0;
+            deadline = _PyDeadline_Init(timeout_ns);
+        }
+
+        // Wait until the deadline for the thread to exit.
+        int detach = 1;
+        while (!PyEvent_WaitTimed(is_exiting, timeout_ns, detach)) {
+            if (deadline) {
+                // _PyDeadline_Get will return a negative value if
+                // the deadline has been exceeded.
+                timeout_ns = Py_MAX(_PyDeadline_Get(deadline), 0);
+            }
+
+            if (timeout_ns) {
+                // Interrupted
+                if (Py_MakePendingCalls() < 0) {
+                    return -1;
+                }
+            }
+            else {
+                // Timed out
+                return 0;
+            }
         }
     }
 
