@@ -1,0 +1,1 @@
+Add ``Anchor`` to ``importlib.resources`` (in order for the code to comply with the documentation)
