@@ -728,6 +728,9 @@ EVP_get_name(PyObject *op, void *Py_UNUSED(closure))
     EVPobject *self = EVPobject_CAST(op);
     const EVP_MD *md = EVP_MD_CTX_md(self->ctx);
     if (md == NULL) {
+        // TODO(picnixz): investigate whether this is dead code or not
+        // as OpenSSL define macros that do not check if EVP_MD_CTX_md()
+        // returns NULL or not.
         notify_ssl_error_occurred();
         return NULL;
     }
@@ -1570,6 +1573,16 @@ _hashlib_hmac_singleshot_impl(PyObject *module, Py_buffer *key,
 
 static int _hmac_update(HMACobject*, PyObject*);
 
+static const EVP_MD *
+_hashlib_hmac_get_md(HMACobject *self)
+{
+    const EVP_MD *md = HMAC_CTX_get_md(self->ctx);
+    if (md == NULL) {
+        raise_ssl_error(PyExc_ValueError, "missing EVP_MD for HMAC context");
+    }
+    return md;
+}
+
 /*[clinic input]
 _hashlib.hmac_new
 
@@ -1657,17 +1670,16 @@ locked_HMAC_CTX_copy(HMAC_CTX *new_ctx_p, HMACobject *self)
 
 /* returning 0 means that an error occurred and an exception is set */
 static unsigned int
-_hmac_digest_size(HMACobject *self)
+_hashlib_hmac_digest_size(HMACobject *self)
 {
-    const EVP_MD *md = HMAC_CTX_get_md(self->ctx);
+    const EVP_MD *md = _hashlib_hmac_get_md(self);
     if (md == NULL) {
-        notify_ssl_error_occurred();
         return 0;
     }
     unsigned int digest_size = EVP_MD_size(md);
     assert(digest_size <= EVP_MAX_MD_SIZE);
     if (digest_size == 0) {
-        notify_ssl_error_occurred();
+        raise_ssl_error(PyExc_ValueError, "invalid digest size");
     }
     return digest_size;
 }
@@ -1756,9 +1768,8 @@ static PyObject *
 _hmac_repr(PyObject *op)
 {
     HMACobject *self = HMACobject_CAST(op);
-    const EVP_MD *md = HMAC_CTX_get_md(self->ctx);
+    const EVP_MD *md = _hashlib_hmac_get_md(self);
     if (md == NULL) {
-        notify_ssl_error_occurred();
         return NULL;
     }
     PyObject *digest_name = py_digest_name(md);
@@ -1821,7 +1832,7 @@ _hashlib_HMAC_digest_impl(HMACobject *self)
 /*[clinic end generated code: output=1b1424355af7a41e input=bff07f74da318fb4]*/
 {
     unsigned char digest[EVP_MAX_MD_SIZE];
-    unsigned int digest_size = _hmac_digest_size(self);
+    unsigned int digest_size = _hashlib_hmac_digest_size(self);
     if (digest_size == 0) {
         return NULL;
     }
@@ -1846,7 +1857,7 @@ _hashlib_HMAC_hexdigest_impl(HMACobject *self)
 /*[clinic end generated code: output=80d825be1eaae6a7 input=5abc42702874ddcf]*/
 {
     unsigned char digest[EVP_MAX_MD_SIZE];
-    unsigned int digest_size = _hmac_digest_size(self);
+    unsigned int digest_size = _hashlib_hmac_digest_size(self);
     if (digest_size == 0) {
         return NULL;
     }
@@ -1861,32 +1872,24 @@ static PyObject *
 _hashlib_hmac_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
     HMACobject *self = HMACobject_CAST(op);
-    unsigned int digest_size = _hmac_digest_size(self);
-    if (digest_size == 0) {
-        return NULL;
-    }
-    return PyLong_FromLong(digest_size);
+    unsigned int digest_size = _hashlib_hmac_digest_size(self);
+    return digest_size == 0 ? NULL : PyLong_FromLong(digest_size);
 }
 
 static PyObject *
 _hashlib_hmac_get_block_size(PyObject *op, void *Py_UNUSED(closure))
 {
     HMACobject *self = HMACobject_CAST(op);
-    const EVP_MD *md = HMAC_CTX_get_md(self->ctx);
-    if (md == NULL) {
-        notify_ssl_error_occurred();
-        return NULL;
-    }
-    return PyLong_FromLong(EVP_MD_block_size(md));
+    const EVP_MD *md = _hashlib_hmac_get_md(self);
+    return md == NULL ? NULL : PyLong_FromLong(EVP_MD_block_size(md));
 }
 
 static PyObject *
 _hashlib_hmac_get_name(PyObject *op, void *Py_UNUSED(closure))
 {
     HMACobject *self = HMACobject_CAST(op);
-    const EVP_MD *md = HMAC_CTX_get_md(self->ctx);
+    const EVP_MD *md = _hashlib_hmac_get_md(self);
     if (md == NULL) {
-        notify_ssl_error_occurred();
         return NULL;
     }
     PyObject *digest_name = py_digest_name(md);
