@@ -36,11 +36,15 @@ import keyword
 import re
 import __main__
 import warnings
+from itertools import chain
+import codeop
 
 __all__ = ["Completer"]
 
+_keywords = keyword.kwlist + keyword.softkwlist
+
 class Completer:
-    def __init__(self, namespace = None):
+    def __init__(self, namespace = None, mode="single"):
         """Create a new completer for the command line.
 
         Completer([namespace]) -> completer instance.
@@ -66,8 +70,9 @@ class Completer:
         else:
             self.use_main_ns = 0
             self.namespace = namespace
+        self.mode = mode
 
-    def complete(self, text, state):
+    def complete(self, text, state, buffer=None):
         """Return the next possible completion for 'text'.
 
         This is called successively with state == 0, 1, 2, ... until it
@@ -93,7 +98,7 @@ class Completer:
                 if "." in text:
                     self.matches = self.attr_matches(text)
                 else:
-                    self.matches = self.global_matches(text)
+                    self.matches = self.global_matches(text, buffer)
         try:
             return self.matches[state]
         except IndexError:
@@ -110,7 +115,19 @@ class Completer:
 
         return word
 
-    def global_matches(self, text):
+    def _check_word(self, source, word) -> bool:
+        source += word + " "
+        while True:
+            try:
+                compile(source, "<completer>", self.mode,
+                        flags=codeop.PyCF_ALLOW_INCOMPLETE_INPUT)
+                return True
+            except _IncompleteInputError:
+                return True
+            except (SyntaxError, ValueError, OverflowError):
+                return False
+
+    def global_matches(self, text, buffer=None):
         """Compute matches when text is a simple name.
 
         Return a list of all keywords, built-in functions and names currently
@@ -119,9 +136,12 @@ class Completer:
         """
         matches = []
         seen = {"__builtins__"}
-        n = len(text)
-        for word in keyword.kwlist + keyword.softkwlist:
-            if word[:n] == text:
+        source = "".join(buffer[i] for i in range(len(buffer) - len(text))) \
+                 if buffer else ""
+        for word in _keywords:
+            if not word.startswith(text):
+                continue
+            if self._check_word(source, word):
                 seen.add(word)
                 if word in {'finally', 'try'}:
                     word = word + ':'
@@ -130,11 +150,13 @@ class Completer:
                                   'else', '_'}:
                     word = word + ' '
                 matches.append(word)
-        for nspace in [self.namespace, builtins.__dict__]:
-            for word, val in nspace.items():
-                if word[:n] == text and word not in seen:
-                    seen.add(word)
-                    matches.append(self._callable_postfix(val, word))
+        for word, val in chain(self.namespace.items(),
+                               builtins.__dict__.items()):
+            if not word.startswith(text) or word in seen:
+                continue
+            if self._check_word(source, word):
+                seen.add(word)
+                matches.append(self._callable_postfix(val, word))
         return matches
 
     def attr_matches(self, text):
