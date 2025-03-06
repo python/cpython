@@ -220,6 +220,7 @@ class ResourceTracker(object):
         assert nbytes == len(msg), "nbytes {0:n} but len(msg) {1:n}".format(
             nbytes, len(msg))
 
+
 _resource_tracker = ResourceTracker()
 ensure_running = _resource_tracker.ensure_running
 register = _resource_tracker.register
