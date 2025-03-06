@@ -894,8 +894,7 @@ class SubprocessMixin:
         # See https://github.com/python/cpython/issues/130925
         async def main():
             proc = await asyncio.create_subprocess_exec(*PROGRAM_YES,
-                                                        stdout=asyncio.subprocess.PIPE,
-                                                        stderr=asyncio.subprocess.DEVNULL)
+                                                        stdout=asyncio.subprocess.PIPE)
             try:
                 # just make sure the program has executed correctly
                 data = await proc.stdout.readline()
