@@ -343,12 +343,15 @@ assemble_location_info(struct assembler *a, instr_sequence *instrs,
     a->a_lineno = firstlineno;
     location loc = NO_LOCATION;
     int size = 0;
+    // The last location should not be NEXT_LOCATION, but don't crash non-debug builds
     if (same_location(instrs->s_instrs[instrs->s_used-1].i_loc, NEXT_LOCATION)) {
+        assert(0 && "last instruction has NEXT_LOCATION");
         instrs->s_instrs[instrs->s_used-1].i_loc = NO_LOCATION;
     }
     for (int i = instrs->s_used-1; i > 0; i--) {
         instruction *instr = &instrs->s_instrs[i];
         if (same_location(instr[-1].i_loc, NEXT_LOCATION)) {
+            assert(!IS_TERMINATOR_OPCODE(instr[-1].i_opcode));
             instr[-1].i_loc = instr->i_loc;
         }
     }
