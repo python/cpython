@@ -1,4 +1,3 @@
-Issue: :gh:`130870`
+Issue: :gh:`130850`
 
-Detailed changes:
-This change improves the handling of ``GenericAlias`` and ``Union`` types in ``_eval_type``, ensuring that callable arguments for ``GenericAlias`` are unflattened and that ``Union`` types are properly evaluated.
+Detailed changes: Modified _close_self_pipe function in selector_events.py in python/asyncio. This update introduces a shutdown parameter, allowing for either a socket shutdown or the default socket close
