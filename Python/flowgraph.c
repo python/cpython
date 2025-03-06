@@ -1512,8 +1512,6 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
         return ERROR;
     }
 
-    bool expect_append = true;
-
     for (int pos = i-1; pos >= 0; pos--) {
         cfg_instr *instr = &bb->b_instr[pos];
 
@@ -1522,10 +1520,6 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
         }
 
         if (instr->i_opcode == BUILD_LIST && instr->i_oparg == 0) {
-            if (!expect_append) {
-                /* Not a sequence start */
-                goto exit;
-            }
             /* Sequence start, we are done. */
             if (PyList_Reverse(list) < 0) {
                 goto error;
@@ -1540,27 +1534,30 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
             return instr_make_load_const(intrinsic, newconst, consts, const_cache);
         }
 
-        if (expect_append) {
-            if (!(instr->i_opcode == LIST_APPEND && instr->i_oparg == 1)) {
-                goto exit;
-            }
-        }
-        else {
-            if (!loads_const(instr->i_opcode)) {
-                goto exit;
-            }
-            PyObject *constant = get_const_value(instr->i_opcode, instr->i_oparg, consts);
-            if (constant == NULL) {
-                goto error;
-            }
-            int r = PyList_Append(list, constant);
-            Py_DECREF(constant);
-            if (r < 0) {
-                goto error;
-            }
+        if (pos < 1) {
+            /* Can't process 2 instructions. */
+            goto exit;
         }
 
-        expect_append = !expect_append;
+        if (!(instr->i_opcode == LIST_APPEND && instr->i_oparg == 1)) {
+            goto exit;
+        }
+
+        instr = &bb->b_instr[--pos];
+        if (!loads_const(instr->i_opcode)) {
+            goto exit;
+        }
+
+        PyObject *constant = get_const_value(instr->i_opcode, instr->i_oparg, consts);
+        if (constant == NULL) {
+            goto error;
+        }
+
+        int r = PyList_Append(list, constant);
+        Py_DECREF(constant);
+        if (r < 0) {
+            goto error;
+        }
     }
 
 exit:
@@ -2472,7 +2469,7 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                         INSTR_SET_OP0(inst, NOP);
                     }
                     else {
-                        fold_constant_intrinsic_list_to_tuple(bb, i, consts, const_cache);
+                        RETURN_IF_ERROR(fold_constant_intrinsic_list_to_tuple(bb, i, consts, const_cache));
                     }
                 }
                 else if (oparg == INTRINSIC_UNARY_POSITIVE) {
