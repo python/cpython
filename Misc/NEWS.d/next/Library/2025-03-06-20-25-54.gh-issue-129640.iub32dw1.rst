@@ -1,0 +1,1 @@
+Fixed a reference cycle in ``gzip.GzipFile`` when writing to a file.
