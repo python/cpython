@@ -2398,6 +2398,10 @@ types.
    .. versionchanged:: 3.11
       Added support for generic namedtuples.
 
+   .. versionchanged:: next
+      Using :func:`super` (and the ``__class__`` :term:`closure variable`) in methods of ``NamedTuple`` subclasses
+      is unsupported and causes a :class:`TypeError`.
+
    .. deprecated-removed:: 3.13 3.15
       The undocumented keyword argument syntax for creating NamedTuple classes
       (``NT = NamedTuple("NT", x=int)``) is deprecated, and will be disallowed
