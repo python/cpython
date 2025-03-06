@@ -10758,6 +10758,69 @@ class UnionGenericAliasTests(BaseTestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertNotEqual(int, typing._UnionGenericAlias)
 
+class MyType:
+    pass
+
+class test_generic_alias_handling(BaseTestCase):
+    def test_forward_ref(self):
+        fwd_ref = ForwardRef('MyType')
+        result = _eval_type(fwd_ref, globals(), locals())
+        self.assertIs(result, MyType, f"Expected MyType, got {result}")
+
+    def test_generic_alias(self):
+        fwd_ref = ForwardRef('MyType')
+        generic_list = List[fwd_ref]
+        result = _eval_type(generic_list, globals(), locals())
+        self.assertEqual(result, List[MyType], f"Expected List[MyType], got {result}")
+
+    def test_union(self):
+        fwd_ref_1 = ForwardRef('MyType')
+        fwd_ref_2 = ForwardRef('int')
+        union_type = Union[fwd_ref_1, fwd_ref_2]
+        
+        result = _eval_type(union_type, globals(), locals())
+        self.assertEqual(result, Union[MyType, int], f"Expected Union[MyType, int], got {result}")
+
+    def test_recursive_forward_ref(self):
+        recursive_ref = ForwardRef('RecursiveType')
+        globals()['RecursiveType'] = recursive_ref
+
+        recursive_type = Dict[str, List[recursive_ref]]
+        
+        result = _eval_type(recursive_type, globals(), locals(), recursive_guard={recursive_ref})
+        
+        self.assertEqual(result, Dict[str, List[recursive_ref]], f"Expected Dict[str, List[RecursiveType]], got {result}")
+
+    def test_callable_unpacking(self):
+        fwd_ref = ForwardRef('MyType')
+        callable_type = Callable[[fwd_ref, int], str]
+        result = _eval_type(callable_type, globals(), locals())
+        
+        self.assertEqual(result, Callable[[MyType, int], str], f"Expected Callable[[MyType, int], str], got {result}")
+
+    def test_unpacked_generic(self):
+        fwd_ref = ForwardRef('MyType')
+        generic_type = Tuple[fwd_ref, int]
+        
+        result = _eval_type(generic_type, globals(), locals())
+        self.assertEqual(result, Tuple[MyType, int], f"Expected Tuple[MyType, int], got {result}")
+
+    def test_preservation_of_type(self):
+        fwd_ref_1 = ForwardRef('MyType')
+        fwd_ref_2 = ForwardRef('int')
+        complex_type = Dict[str, Union[fwd_ref_1, fwd_ref_2]]
+        
+        result = _eval_type(complex_type, globals(), locals())
+        self.assertEqual(result, Dict[str, Union[MyType, int]], f"Expected Dict[str, Union[MyType, int]], got {result}")
+
+    def test_callable_unflattening(self):
+        callable_type = Callable[[int, str], bool]
+        result = _eval_type(callable_type, globals(), locals(), type_params=())
+        self.assertEqual(result, Callable[[int, str], bool], f"Expected Callable[[int, str], bool], got {result}")
+
+        callable_type_packed = Callable[[int, str], bool]  # Correct format for callable
+        result = _eval_type(callable_type_packed, globals(), locals(), type_params=())
+        self.assertEqual(result, Callable[[int, str], bool], f"Expected Callable[[int, str], bool], got {result}")
 
 def load_tests(loader, tests, pattern):
     import doctest
