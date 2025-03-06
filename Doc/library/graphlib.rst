@@ -200,8 +200,8 @@ Graph Functions
 ---------------
 
 Some functions are provided to work with directed acyclic graph structures using
-the same representation accepted by :meth:`TopologicalSorter.__init__`: a
-mapping of nodes to iterables of predecessors.
+the same representation accepted by :class:`.TopologicalSorter`: a mapping of
+nodes to iterables of predecessors.
 
 Nodes can be any :term:`hashable` object. Duplicate edges are ignored.
 
