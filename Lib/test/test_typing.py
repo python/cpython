@@ -41,6 +41,7 @@ from typing import Self, LiteralString
 from typing import TypeAlias
 from typing import ParamSpec, Concatenate, ParamSpecArgs, ParamSpecKwargs
 from typing import TypeGuard, TypeIs, NoDefault
+from typing import _eval_type
 import abc
 import textwrap
 import typing
@@ -10761,7 +10762,7 @@ class UnionGenericAliasTests(BaseTestCase):
 class MyType:
     pass
 
-class test_generic_alias_handling(BaseTestCase):
+class TestGenericAliasHandling(BaseTestCase):
     def test_forward_ref(self):
         fwd_ref = ForwardRef('MyType')
         result = _eval_type(fwd_ref, globals(), locals())
