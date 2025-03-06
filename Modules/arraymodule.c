@@ -375,8 +375,13 @@ BB_setitem(char *items, Py_ssize_t i, PyObject *v)
 static PyObject *
 u_getitem(char *items, Py_ssize_t i)
 {
+#if WCHAR_MAX == 0x7FFFFFFF
     return PyUnicode_FromOrdinal(
         (wchar_t) FT_ATOMIC_LOAD_INT_RELAXED(((wchar_t *) items)[i]));
+#else
+    return PyUnicode_FromOrdinal(
+        (wchar_t) FT_ATOMIC_LOAD_SHORT_RELAXED(((wchar_t *) items)[i]));
+#endif
 }
 
 static int
@@ -411,7 +416,11 @@ u_setitem(char *items, Py_ssize_t i, PyObject *v)
     assert(len == 1);
 
     if (i >= 0) {
+#if WCHAR_MAX == 0x7FFFFFFF
         FT_ATOMIC_STORE_INT_RELAXED(((wchar_t *) items)[i], w);
+#else
+        FT_ATOMIC_STORE_SHORT_RELAXED(((wchar_t *) items)[i], w);
+#endif
     }
     return 0;
 }
@@ -3235,6 +3244,7 @@ array_new_internal_lock_held(PyTypeObject *type, PyObject *initial, int c)
                 if (c == 'u') {
                     Py_ssize_t n;
                     wchar_t *ustr = PyUnicode_AsWideCharString(initial, &n);
+                    printf("... %ld, %ld\n", sizeof(wchar_t), n);
                     if (ustr == NULL) {
                         Py_DECREF(a);
                         return NULL;
