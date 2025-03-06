@@ -1012,19 +1012,37 @@ class HTTPConnection:
         if self._tunnel_host:
             self._tunnel()
 
-    def close(self):
-        """Close the connection to the HTTP server."""
+    def close(self, shutdown=False):
         self.__state = _CS_IDLE
         try:
             sock = self.sock
             if sock:
                 self.sock = None
-                sock.close()   # close it manually... there may be other refs
+                if shutdown:
+                    try:
+                        sock.shutdown(socket.SHUT_RDWR)
+                    except OSError as e:
+                        print(f"Socket shutdown error: {e}", file=sys.stderr)
+                    except Exception as e:
+                        print(f"Unexpected error during socket shutdown: {e}", file=sys.stderr)
+                try:
+                    sock.close()
+                except OSError as e:
+                    print(f"Socket close error: {e}", file=sys.stderr)
+                except Exception as e:
+                    print(f"Unexpected error during socket close: {e}", file=sys.stderr)
         finally:
             response = self.__response
             if response:
                 self.__response = None
-                response.close()
+                try:
+                    response.close()
+                except OSError as e:
+                    print(f"Response close error: {e}", file=sys.stderr)
+                except Exception as e:
+                    print(f"Unexpected error during response close: {e}", file=sys.stderr)
+    
+
 
     def send(self, data):
         """Send 'data' to the server.
