@@ -290,6 +290,10 @@ StreamReader
       Return ``True`` if the buffer is empty and :meth:`feed_eof`
       was called.
 
+   .. method:: close()
+
+      Invoke ``close()`` on the underlying transport (if one exists).
+
 
 StreamWriter
 ============

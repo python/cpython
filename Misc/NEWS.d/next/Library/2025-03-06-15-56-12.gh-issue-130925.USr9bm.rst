@@ -1,0 +1,3 @@
+:func:`asyncio.StreamReader.close` now exists so that it's possible to
+signal to sub-processes executed via :func:`asyncio.create_subprocess_exec`
+that they may cease generating output and exit cleanly.
