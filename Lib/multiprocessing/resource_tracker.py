@@ -199,7 +199,7 @@ class ResourceTracker(object):
         '''Unregister name of resource with resource tracker.'''
         self._send('UNREGISTER', name, rtype)
 
-    def _send(self, cmd, name, rtype)::77
+    def _send(self, cmd, name, rtype):
         try:
             self.ensure_running()
         except ReentrantCallError:
