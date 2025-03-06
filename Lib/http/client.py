@@ -1040,8 +1040,7 @@ class HTTPConnection:
                 except OSError as e:
                     print(f"Response close error: {e}", file=sys.stderr)
                 except Exception as e:
-                    print(f"Unexpected error during response close: {e}", file=sys.stderr)
-    
+                    print(f"Unexpected error during response close: {e}", file=sys.stderr)    
     def send(self, data):
         """Send 'data' to the server.
         ``data`` can be a string object, a bytes object, an array object, a
