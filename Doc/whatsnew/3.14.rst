@@ -270,7 +270,7 @@ It uses tail calls between small C functions that implement individual
 Python opcodes, rather than one large C case statement.
 For certain newer compilers, this interpreter provides
 significantly better performance. Preliminary numbers on our machines suggest
-anywhere from -3% to 30% faster Python code, and a geometric mean of 9-15%
+anywhere up to 30% faster Python code, and a geometric mean of 3-5%
 faster on ``pyperformance`` depending on platform and architecture. The
 baseline is Python 3.14 built with Clang 19 without this new interpreter.
 
@@ -294,6 +294,19 @@ For further information on how to build Python, see
    all.  It can improve their performance, but doesn't change anything else.
 
    __ https://en.wikipedia.org/wiki/Tail_call
+
+.. attention::
+
+    This section previously reported a 9-15% geomean speedup. This number has since been
+    cautiously revised down to 3-5%. While we expect performance results to be better
+    than what we report, our estimates are more conservative due to a
+    `compiler bug <https://github.com/llvm/llvm-project/issues/106846>`_ found in
+    Clang/LLVM 19, which causes the normal interpreter to be slower. We were unaware of this bug,
+    resulting in inaccurate results. We sincerely apologize for
+    communicating results that were only accurate for certain versions of LLVM 19
+    and 20. At the time of writing, this bug has not yet been fixed in LLVM 19-21. Thus
+    any benchmarks with those versions of LLVM may produce inaccurate numbers.
+    (Thanks to Nelson Elhage for bringing this to light.)
 
 (Contributed by Ken Jin in :gh:`128563`, with ideas on how to implement this
 in CPython by Mark Shannon, Garrett Gu, Haoran Xu, and Josh Haberman.)
@@ -437,6 +450,10 @@ concurrent.futures
 
   (Contributed by Gregory P. Smith in :gh:`84559`.)
 
+* Add :meth:`concurrent.futures.ProcessPoolExecutor.terminate_workers` and
+  :meth:`concurrent.futures.ProcessPoolExecutor.kill_workers` as
+  ways to terminate or kill all living worker processes in the given pool.
+  (Contributed by Charles Machalow in :gh:`130849`.)
 
 contextvars
 -----------
@@ -601,6 +618,11 @@ io
 * Reading text from a non-blocking stream with ``read`` may now raise a
   :exc:`BlockingIOError` if the operation cannot immediately return bytes.
   (Contributed by Giovanni Siragusa in :gh:`109523`.)
+
+* Add protocols :class:`io.Reader` and :class:`io.Writer` as a simpler
+  alternatives to the pseudo-protocols :class:`typing.IO`,
+  :class:`typing.TextIO`, and :class:`typing.BinaryIO`.
+  (Contributed by Sebastian Rittau in :gh:`127648`.)
 
 
 json

@@ -53,7 +53,7 @@ provides backports of these new features to older versions of Python.
       should broadly apply to most Python type checkers. (Some parts may still
       be specific to mypy.)
 
-   `"Static Typing with Python" <https://typing.readthedocs.io/en/latest/>`_
+   `"Static Typing with Python" <https://typing.python.org/en/latest/>`_
       Type-checker-agnostic documentation written by the community detailing
       type system features, useful typing related tools and typing best
       practices.
@@ -64,7 +64,7 @@ Specification for the Python Type System
 ========================================
 
 The canonical, up-to-date specification of the Python type system can be
-found at `"Specification for the Python type system" <https://typing.readthedocs.io/en/latest/spec/index.html>`_.
+found at `"Specification for the Python type system" <https://typing.python.org/en/latest/spec/index.html>`_.
 
 .. _type-aliases:
 
@@ -2398,6 +2398,10 @@ types.
    .. versionchanged:: 3.11
       Added support for generic namedtuples.
 
+   .. versionchanged:: next
+      Using :func:`super` (and the ``__class__`` :term:`closure variable`) in methods of ``NamedTuple`` subclasses
+      is unsupported and causes a :class:`TypeError`.
+
    .. deprecated-removed:: 3.13 3.15
       The undocumented keyword argument syntax for creating NamedTuple classes
       (``NT = NamedTuple("NT", x=int)``) is deprecated, and will be disallowed
@@ -2830,17 +2834,35 @@ with :func:`@runtime_checkable <runtime_checkable>`.
     An ABC with one abstract method ``__round__``
     that is covariant in its return type.
 
-ABCs for working with IO
-------------------------
+.. _typing-io:
 
-.. class:: IO
-           TextIO
-           BinaryIO
+ABCs and Protocols for working with I/O
+---------------------------------------
 
-   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
+.. class:: IO[AnyStr]
+           TextIO[AnyStr]
+           BinaryIO[AnyStr]
+
+   Generic class ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
    and ``BinaryIO(IO[bytes])``
    represent the types of I/O streams such as returned by
-   :func:`open`.
+   :func:`open`. Please note that these classes are not protocols, and
+   their interface is fairly broad.
+
+The protocols :class:`io.Reader` and :class:`io.Writer` offer a simpler
+alternative for argument types, when only the ``read()`` or ``write()``
+methods are accessed, respectively::
+
+   def read_and_write(reader: Reader[str], writer: Writer[bytes]):
+       data = reader.read()
+       writer.write(data.encode())
+
+Also consider using :class:`collections.abc.Iterable` for iterating over
+the lines of an input stream::
+
+   def read_config(stream: Iterable[str]):
+       for line in stream:
+           ...
 
 Functions and decorators
 ------------------------
@@ -2912,7 +2934,7 @@ Functions and decorators
 
    .. seealso::
       `Unreachable Code and Exhaustiveness Checking
-      <https://typing.readthedocs.io/en/latest/guides/unreachable.html>`__ has more
+      <https://typing.python.org/en/latest/guides/unreachable.html>`__ has more
       information about exhaustiveness checking with static typing.
 
    .. versionadded:: 3.11
