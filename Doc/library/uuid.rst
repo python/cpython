@@ -1,8 +1,8 @@
-:mod:`uuid` --- UUID objects according to :rfc:`4122`
-=====================================================
+:mod:`!uuid` --- UUID objects according to :rfc:`9562`
+======================================================
 
 .. module:: uuid
-   :synopsis: UUID objects (universally unique identifiers) according to RFC 4122
+   :synopsis: UUID objects (universally unique identifiers) according to RFC 9562
 .. moduleauthor:: Ka-Ping Yee <ping@zesty.ca>
 .. sectionauthor:: George Yoshida <quiver@users.sourceforge.net>
 
@@ -11,8 +11,10 @@
 --------------
 
 This module provides immutable :class:`UUID` objects (the :class:`UUID` class)
-and the functions :func:`uuid1`, :func:`uuid3`, :func:`uuid4`, :func:`uuid5` for
-generating version 1, 3, 4, and 5 UUIDs as specified in :rfc:`4122`.
+and :ref:`functions <uuid-factory-functions>` for generating UUIDs corresponding
+to a specific UUID version as specified in :rfc:`9562` (which supersedes :rfc:`4122`),
+for example, :func:`uuid1` for UUID version 1, :func:`uuid3` for UUID version 3, and so on.
+Note that UUID version 2 is deliberately omitted as it is outside the scope of the RFC.
 
 If all you want is a unique ID, you should probably call :func:`uuid1` or
 :func:`uuid4`.  Note that :func:`uuid1` may compromise privacy since it creates
@@ -22,7 +24,7 @@ random UUID.
 Depending on support from the underlying platform, :func:`uuid1` may or may
 not return a "safe" UUID.  A safe UUID is one which is generated using
 synchronization methods that ensure no two processes can obtain the same
-UUID.  All instances of :class:`UUID` have an :attr:`is_safe` attribute
+UUID.  All instances of :class:`UUID` have an :attr:`~UUID.is_safe` attribute
 which relays any information about the UUID's safety, using this enumeration:
 
 .. class:: SafeUUID
@@ -65,7 +67,7 @@ which relays any information about the UUID's safety, using this enumeration:
 
    Exactly one of *hex*, *bytes*, *bytes_le*, *fields*, or *int* must be given.
    The *version* argument is optional; if given, the resulting UUID will have its
-   variant and version number set according to :rfc:`4122`, overriding bits in the
+   variant and version number set according to :rfc:`9562`, overriding bits in the
    given *hex*, *bytes*, *bytes_le*, *fields*, or *int*.
 
    Comparison of UUID objects are made by way of comparing their
@@ -95,25 +97,34 @@ which relays any information about the UUID's safety, using this enumeration:
    A tuple of the six integer fields of the UUID, which are also available as six
    individual attributes and two derived attributes:
 
-   +------------------------------+-------------------------------+
-   | Field                        | Meaning                       |
-   +==============================+===============================+
-   | :attr:`time_low`             | the first 32 bits of the UUID |
-   +------------------------------+-------------------------------+
-   | :attr:`time_mid`             | the next 16 bits of the UUID  |
-   +------------------------------+-------------------------------+
-   | :attr:`time_hi_version`      | the next 16 bits of the UUID  |
-   +------------------------------+-------------------------------+
-   | :attr:`clock_seq_hi_variant` | the next 8 bits of the UUID   |
-   +------------------------------+-------------------------------+
-   | :attr:`clock_seq_low`        | the next 8 bits of the UUID   |
-   +------------------------------+-------------------------------+
-   | :attr:`node`                 | the last 48 bits of the UUID  |
-   +------------------------------+-------------------------------+
-   | :attr:`time`                 | the 60-bit timestamp          |
-   +------------------------------+-------------------------------+
-   | :attr:`clock_seq`            | the 14-bit sequence number    |
-   +------------------------------+-------------------------------+
+.. list-table::
+
+   * - Field
+     - Meaning
+
+   * - .. attribute:: UUID.time_low
+     - The first 32 bits of the UUID.
+
+   * - .. attribute:: UUID.time_mid
+     - The next 16 bits of the UUID.
+
+   * - .. attribute:: UUID.time_hi_version
+     - The next 16 bits of the UUID.
+
+   * - .. attribute:: UUID.clock_seq_hi_variant
+     - The next 8 bits of the UUID.
+
+   * - .. attribute:: UUID.clock_seq_low
+     - The next 8 bits of the UUID.
+
+   * - .. attribute:: UUID.node
+     - The last 48 bits of the UUID.
+
+   * - .. attribute:: UUID.time
+     - The 60-bit timestamp.
+
+   * - .. attribute:: UUID.clock_seq
+     - The 14-bit sequence number.
 
 
 .. attribute:: UUID.hex
@@ -128,7 +139,7 @@ which relays any information about the UUID's safety, using this enumeration:
 
 .. attribute:: UUID.urn
 
-   The UUID as a URN as specified in :rfc:`4122`.
+   The UUID as a URN as specified in :rfc:`9562`.
 
 
 .. attribute:: UUID.variant
@@ -140,8 +151,12 @@ which relays any information about the UUID's safety, using this enumeration:
 
 .. attribute:: UUID.version
 
-   The UUID version number (1 through 5, meaningful only when the variant is
+   The UUID version number (1 through 8, meaningful only when the variant is
    :const:`RFC_4122`).
+
+   .. versionchanged:: next
+      Added UUID versions 6, 7 and 8.
+
 
 .. attribute:: UUID.is_safe
 
@@ -170,8 +185,8 @@ The :mod:`uuid` module defines the following functions:
       administered MAC addresses, since the former are guaranteed to be
       globally unique, while the latter are not.
 
-.. index:: single: getnode
 
+.. _uuid-factory-functions:
 
 .. function:: uuid1(node=None, clock_seq=None)
 
@@ -180,8 +195,6 @@ The :mod:`uuid` module defines the following functions:
    *clock_seq* is given, it is used as the sequence number; otherwise a random
    14-bit sequence number is chosen.
 
-.. index:: single: uuid1
-
 
 .. function:: uuid3(namespace, name)
 
@@ -189,14 +202,10 @@ The :mod:`uuid` module defines the following functions:
    UUID) and a name (which is a :class:`bytes` object or a string
    that will be encoded using UTF-8).
 
-.. index:: single: uuid3
-
 
 .. function:: uuid4()
 
    Generate a random UUID.
-
-.. index:: single: uuid4
 
 
 .. function:: uuid5(namespace, name)
@@ -205,7 +214,48 @@ The :mod:`uuid` module defines the following functions:
    UUID) and a name (which is a :class:`bytes` object or a string
    that will be encoded using UTF-8).
 
-.. index:: single: uuid5
+
+.. function:: uuid6(node=None, clock_seq=None)
+
+   Generate a UUID from a sequence number and the current time according to
+   :rfc:`9562`.
+   This is an alternative to :func:`uuid1` to improve database locality.
+
+   When *node* is not specified, :func:`getnode` is used to obtain the hardware
+   address as a 48-bit positive integer. When a sequence number *clock_seq* is
+   not specified, a pseudo-random 14-bit positive integer is generated.
+
+   If *node* or *clock_seq* exceed their expected bit count, only their least
+   significant bits are kept.
+
+   .. versionadded:: next
+
+
+.. function:: uuid7()
+
+   Generate a time-based UUID according to
+   :rfc:`RFC 9562, §5.7 <9562#section-5.7>`.
+
+   For portability across platforms lacking sub-millisecond precision, UUIDs
+   produced by this function embed a 48-bit timestamp and use a 42-bit counter
+   to guarantee monotonicity within a millisecond.
+
+   .. versionadded:: next
+
+
+.. function:: uuid8(a=None, b=None, c=None)
+
+   Generate a pseudo-random UUID according to
+   :rfc:`RFC 9562, §5.8 <9562#section-5.8>`.
+
+   When specified, the parameters *a*, *b* and *c* are expected to be
+   positive integers of 48, 12 and 62 bits respectively. If they exceed
+   their expected bit count, only their least significant bits are kept;
+   non-specified arguments are substituted for a pseudo-random integer of
+   appropriate size.
+
+   .. versionadded:: 3.14
+
 
 The :mod:`uuid` module defines the following namespace identifiers for use with
 :func:`uuid3` or :func:`uuid5`.
@@ -233,7 +283,7 @@ The :mod:`uuid` module defines the following namespace identifiers for use with
    text output format.
 
 The :mod:`uuid` module defines the following constants for the possible values
-of the :attr:`variant` attribute:
+of the :attr:`~UUID.variant` attribute:
 
 
 .. data:: RESERVED_NCS
@@ -243,7 +293,9 @@ of the :attr:`variant` attribute:
 
 .. data:: RFC_4122
 
-   Specifies the UUID layout given in :rfc:`4122`.
+   Specifies the UUID layout given in :rfc:`4122`. This constant is kept
+   for backward compatibility even though :rfc:`4122` has been superseded
+   by :rfc:`9562`.
 
 
 .. data:: RESERVED_MICROSOFT
@@ -256,9 +308,28 @@ of the :attr:`variant` attribute:
    Reserved for future definition.
 
 
+The :mod:`uuid` module defines the special Nil and Max UUID values:
+
+
+.. data:: NIL
+
+   A special form of UUID that is specified to have all 128 bits set to zero
+   according to :rfc:`RFC 9562, §5.9 <9562#section-5.9>`.
+
+   .. versionadded:: 3.14
+
+
+.. data:: MAX
+
+   A special form of UUID that is specified to have all 128 bits set to one
+   according to :rfc:`RFC 9562, §5.10 <9562#section-5.10>`.
+
+   .. versionadded:: 3.14
+
+
 .. seealso::
 
-   :rfc:`4122` - A Universally Unique IDentifier (UUID) URN Namespace
+   :rfc:`9562` - A Universally Unique IDentifier (UUID) URN Namespace
       This specification defines a Uniform Resource Name namespace for UUIDs, the
       internal format of UUIDs, and methods of generating UUIDs.
 
@@ -274,31 +345,34 @@ The :mod:`uuid` module can be executed as a script from the command line.
 
 .. code-block:: sh
 
-   python -m uuid [-h] [-u {uuid1,uuid3,uuid4,uuid5}] [-n NAMESPACE] [-N NAME]
+   python -m uuid [-h] [-u {uuid1,uuid3,uuid4,uuid5,uuid6,uuid7,uuid8}] [-n NAMESPACE] [-N NAME]
 
 The following options are accepted:
 
 .. program:: uuid
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Show the help message and exit.
 
-.. cmdoption:: -u <uuid>
-               --uuid <uuid>
+.. option:: -u <uuid>
+            --uuid <uuid>
 
    Specify the function name to use to generate the uuid. By default :func:`uuid4`
    is used.
 
-.. cmdoption:: -n <namespace>
-               --namespace <namespace>
+   .. versionchanged:: next
+      Allow generating UUID versions 6, 7 and 8.
+
+.. option:: -n <namespace>
+            --namespace <namespace>
 
    The namespace is a ``UUID``, or ``@ns`` where ``ns`` is a well-known predefined UUID
    addressed by namespace name. Such as ``@dns``, ``@url``, ``@oid``, and ``@x500``.
    Only required for :func:`uuid3` / :func:`uuid5` functions.
 
-.. cmdoption:: -N <name>
-               --name <name>
+.. option:: -N <name>
+            --name <name>
 
    The name used as part of generating the uuid. Only required for
    :func:`uuid3` / :func:`uuid5` functions.
@@ -343,6 +417,14 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    >>> # make a UUID from a 16-byte string
    >>> uuid.UUID(bytes=x.bytes)
    UUID('00010203-0405-0607-0809-0a0b0c0d0e0f')
+
+   >>> # get the Nil UUID
+   >>> uuid.NIL
+   UUID('00000000-0000-0000-0000-000000000000')
+
+   >>> # get the Max UUID
+   >>> uuid.MAX
+   UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
 
 
 .. _uuid-cli-example:

@@ -24,14 +24,14 @@
         This URI is used to generate the various GUIDs used by the installer.
         Installers built with the same URI will upgrade each other or block
         when attempting to downgrade.
-        
+
         By default, this is the local computer name, which will produce
         installers that do not interfere with other installers. Products
         that intend to bundle Python should rebuild these modules with their
         own URI to avoid conflicting with the official releases.
-        
+
         The official releases use "https://www.python.org/$(ArchName)"
-        
+
         This is not the same as the DownloadUrl property used in the bundle
         projects.
         -->
@@ -39,7 +39,7 @@
         <ReleaseUri Condition="!$(ReleaseUri.EndsWith(`/`))">$(ReleaseUri)/</ReleaseUri>
     </PropertyGroup>
 
-    
+
     <ItemGroup>
         <Compile Include="$(MSBuildThisFileDirectory)common.wxs" />
         <WxlTemplate Include="$(MSBuildThisFileDirectory)\*.wxl_template" Condition="$(IgnoreCommonWxlTemplates) != 'true'" />
@@ -63,13 +63,17 @@
 
         <InstallerVersion>$(MajorVersionNumber).$(MinorVersionNumber).$(Field3Value).0</InstallerVersion>
     </PropertyGroup>
-    
+
+    <PropertyGroup>
+        <IncludeFreethreaded Condition="$(IncludeFreethreaded) != 'true'">false</IncludeFreethreaded>
+    </PropertyGroup>
+
     <PropertyGroup Condition="!$(BuildForRelease)">
         <RevisionNumber Condition="'$(RevisionNumber)' == ''">$([System.Math]::Floor($([System.DateTime]::Now.Subtract($([System.DateTime]::new(2001, 1, 1))).TotalDays)))</RevisionNumber>
         <PythonVersion>$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)dev$(RevisionNumber)</PythonVersion>
         <InstallerVersion>$(MajorVersionNumber).$(MinorVersionNumber).$(RevisionNumber).0</InstallerVersion>
     </PropertyGroup>
-    
+
     <PropertyGroup>
         <Bitness>32-bit</Bitness>
         <Bitness Condition="$(Platform) == 'x64'">64-bit</Bitness>
@@ -91,9 +95,12 @@
             PyDebugExt=$(PyDebugExt);
             PyArchExt=$(PyArchExt);
             PyTestExt=$(PyTestExt);
+            PydTag=$(PydTag);
+            FreethreadedPydTag=$(FreethreadedPydTag);
             OptionalFeatureName=$(OutputName);
             ssltag=$(OpenSSLDLLSuffix);
             Suffix32=$(PyArchExt);
+            IncludeFreethreaded=$(IncludeFreethreaded);
         </DefineConstants>
         <DefineConstants Condition="'$(CRTRedist)' != ''">
             $(DefineConstants);CRTRedist=$(CRTRedist);
@@ -139,7 +146,7 @@
         <Error Text="Platform '$(Platform)' is not supported. Use 'x86', 'x64' or 'ARM64'."
                Condition="$(Platform) != 'x86' and $(Platform) != 'x64' and $(Platform) != 'ARM64'" />
     </Target>
-    
+
     <ItemGroup>
         <_Uuid Include="CoreUpgradeCode">
             <Uri>upgradecode</Uri>
@@ -156,14 +163,17 @@
         <_Uuid Include="PythonwExeComponentGuid">
             <Uri>pythonw.exe</Uri>
         </_Uuid>
-        <_Uuid Include="RemoveLib2to3PickleComponentGuid">
-            <Uri>lib2to3/pickles</Uri>
-        </_Uuid>
         <_Uuid Include="CommonPythonRegComponentGuid">
             <Uri>registry</Uri>
         </_Uuid>
         <_Uuid Include="PythonRegComponentGuid">
             <Uri>registry/$(OutputName)</Uri>
+        </_Uuid>
+        <_Uuid Include="FreethreadedPythonExeComponentGuid" Condition="$(IncludeFreethreaded)">
+            <Uri>freethreaded/python.exe</Uri>
+        </_Uuid>
+        <_Uuid Include="FreethreadedPythonwExeComponentGuid" Condition="$(IncludeFreethreaded)">
+            <Uri>freethreaded/pythonw.exe</Uri>
         </_Uuid>
     </ItemGroup>
     <Target Name="_GenerateGuids"
@@ -174,15 +184,15 @@
             <_Uuids>@(_Uuid->'("%(Identity)", "$(MajorVersionNumber).$(MinorVersionNumber)/%(Uri)")',',')</_Uuids>
             <_GenerateCommand>import uuid; print('\n'.join('{}={}'.format(i, uuid.uuid5(uuid.UUID('c8d9733e-a70c-43ff-ab0c-e26456f11083'), '$(ReleaseUri.Replace(`{arch}`, `$(ArchName)`))' + j)) for i,j in [$(_Uuids.Replace(`"`,`'`))]))</_GenerateCommand>
         </PropertyGroup>
-        
+
         <Exec Command='$(PythonForBuild) -c "$(_GenerateCommand)" &gt; "$(IntermediateOutputPath)$(OutputName)guids.txt"'
               WorkingDirectory="$(MSBuildThisFileDirectory)"
               IgnoreExitCode="false" />
-        
+
         <ReadLinesFromFile File="$(IntermediateOutputPath)$(OutputName)guids.txt">
             <Output TaskParameter="Lines" ItemName="_UuidValue" />
         </ReadLinesFromFile>
-        
+
         <PropertyGroup>
             <DefineConstants>$(DefineConstants);@(_UuidValue,';');</DefineConstants>
         </PropertyGroup>

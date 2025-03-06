@@ -129,6 +129,9 @@ winerror_to_errno(int winerror)
     case ERROR_NO_UNICODE_TRANSLATION:    // 1113
         return EILSEQ;
 
+    case WAIT_TIMEOUT:                    //  258
+        return ETIMEDOUT;
+
     case ERROR_INVALID_FUNCTION:          //    1
     case ERROR_INVALID_ACCESS:            //   12
     case ERROR_INVALID_DATA:              //   13

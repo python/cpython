@@ -5,7 +5,11 @@
  * See the xxlimited module for an extension module template.
  */
 
-#define Py_LIMITED_API 0x03050000
+// Test the limited C API version 3.5
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x03050000
+#endif
 
 #include "Python.h"
 
@@ -20,7 +24,8 @@ typedef struct {
 
 static PyObject *Xxo_Type;
 
-#define XxoObject_Check(v)      Py_IS_TYPE(v, Xxo_Type)
+#define XxoObject_CAST(op)  ((XxoObject *)(op))
+#define XxoObject_Check(v)  Py_IS_TYPE(v, Xxo_Type)
 
 static XxoObject *
 newXxoObject(PyObject *arg)
@@ -36,32 +41,36 @@ newXxoObject(PyObject *arg)
 /* Xxo methods */
 
 static int
-Xxo_traverse(XxoObject *self, visitproc visit, void *arg)
+Xxo_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    XxoObject *self = XxoObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->x_attr);
     return 0;
 }
 
 static int
-Xxo_clear(XxoObject *self)
+Xxo_clear(PyObject *op)
 {
+    XxoObject *self = XxoObject_CAST(op);
     Py_CLEAR(self->x_attr);
     return 0;
 }
 
 static void
-Xxo_finalize(XxoObject *self)
+Xxo_finalize(PyObject *op)
 {
+    XxoObject *self = XxoObject_CAST(op);
     Py_CLEAR(self->x_attr);
 }
 
 static PyObject *
-Xxo_demo(XxoObject *self, PyObject *args)
+Xxo_demo(PyObject *self, PyObject *args)
 {
     PyObject *o = NULL;
-    if (!PyArg_ParseTuple(args, "|O:demo", &o))
+    if (!PyArg_ParseTuple(args, "|O:demo", &o)) {
         return NULL;
+    }
     /* Test availability of fast type checks */
     if (o != NULL && PyUnicode_Check(o)) {
         return Py_NewRef(o);
@@ -70,14 +79,14 @@ Xxo_demo(XxoObject *self, PyObject *args)
 }
 
 static PyMethodDef Xxo_methods[] = {
-    {"demo",            (PyCFunction)Xxo_demo,  METH_VARARGS,
-        PyDoc_STR("demo() -> None")},
-    {NULL,              NULL}           /* sentinel */
+    {"demo", Xxo_demo,  METH_VARARGS, PyDoc_STR("demo() -> None")},
+    {NULL, NULL}  /* sentinel */
 };
 
 static PyObject *
-Xxo_getattro(XxoObject *self, PyObject *name)
+Xxo_getattro(PyObject *op, PyObject *name)
 {
+    XxoObject *self = XxoObject_CAST(op);
     if (self->x_attr != NULL) {
         PyObject *v = PyDict_GetItemWithError(self->x_attr, name);
         if (v != NULL) {
@@ -87,26 +96,28 @@ Xxo_getattro(XxoObject *self, PyObject *name)
             return NULL;
         }
     }
-    return PyObject_GenericGetAttr((PyObject *)self, name);
+    return PyObject_GenericGetAttr(op, name);
 }
 
 static int
-Xxo_setattr(XxoObject *self, const char *name, PyObject *v)
+Xxo_setattr(PyObject *op, const char *name, PyObject *v)
 {
+    XxoObject *self = XxoObject_CAST(op);
     if (self->x_attr == NULL) {
         self->x_attr = PyDict_New();
-        if (self->x_attr == NULL)
+        if (self->x_attr == NULL) {
             return -1;
+        }
     }
     if (v == NULL) {
         int rv = PyDict_DelItemString(self->x_attr, name);
-        if (rv < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
+        if (rv < 0 && PyErr_ExceptionMatches(PyExc_KeyError)) {
             PyErr_SetString(PyExc_AttributeError,
-                "delete non-existing Xxo attribute");
+                            "delete non-existing Xxo attribute");
+        }
         return rv;
     }
-    else
-        return PyDict_SetItemString(self->x_attr, name, v);
+    return PyDict_SetItemString(self->x_attr, name, v);
 }
 
 static PyType_Slot Xxo_Type_slots[] = {
@@ -293,6 +304,10 @@ xx_modexec(PyObject *m)
 
 static PyModuleDef_Slot xx_slots[] = {
     {Py_mod_exec, xx_modexec},
+#ifdef Py_GIL_DISABLED
+    // These definitions are in the limited API, but not until 3.13.
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+#endif
     {0, NULL}
 };
 

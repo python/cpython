@@ -1,4 +1,5 @@
 import lexer as lx
+
 Token = lx.Token
 
 
@@ -64,7 +65,9 @@ class PLexer:
         tkn = self.next()
         if tkn is not None and tkn.kind == kind:
             return tkn
-        raise self.make_syntax_error(f"Expected {kind!r} but got {tkn and tkn.text!r}", tkn)
+        raise self.make_syntax_error(
+            f"Expected {kind!r} but got {tkn and tkn.text!r}", tkn
+        )
 
     def extract_line(self, lineno: int) -> str:
         # Return source line `lineno` (1-based)
@@ -73,18 +76,20 @@ class PLexer:
             return ""
         return lines[lineno - 1]
 
-    def make_syntax_error(self, message: str, tkn: Token|None = None) -> SyntaxError:
+    def make_syntax_error(self, message: str, tkn: Token | None = None) -> SyntaxError:
         # Construct a SyntaxError instance from message and token
         if tkn is None:
             tkn = self.peek()
         if tkn is None:
             tkn = self.tokens[-1]
-        return lx.make_syntax_error(message,
-            self.filename, tkn.line, tkn.column, self.extract_line(tkn.line))
+        return lx.make_syntax_error(
+            message, self.filename, tkn.line, tkn.column, self.extract_line(tkn.line)
+        )
 
 
 if __name__ == "__main__":
     import sys
+
     if sys.argv[1:]:
         filename = sys.argv[1]
         if filename == "-c" and sys.argv[2:]:

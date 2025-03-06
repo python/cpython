@@ -123,7 +123,7 @@ There is a new function parameter syntax ``/`` to indicate that some
 function parameters must be specified positionally and cannot be used as
 keyword arguments.  This is the same notation shown by ``help()`` for C
 functions annotated with Larry Hastings'
-:ref:`Argument Clinic <howto-clinic>` tool.
+`Argument Clinic <https://devguide.python.org/development-tools/clinic/>`__ tool.
 
 In the following example, parameters *a* and *b* are positional-only,
 while *c* or *d* can be positional or keyword, and *e* or *f* are
@@ -404,7 +404,7 @@ Other Language Changes
   or :meth:`~object.__complex__` is not available.
   (Contributed by Serhiy Storchaka in :issue:`20092`.)
 
-* Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`::
+* Added support of :samp:`\\N\\{{name}\\}` escapes in :mod:`regular expressions <re>`::
 
     >>> notice = 'Copyright © 2019'
     >>> copyright_year_pattern = re.compile(r'\N{copyright sign}\s*(\d{4})')
@@ -428,9 +428,9 @@ Other Language Changes
   normal assignment syntax::
 
     >>> def parse(family):
-            lastname, *members = family.split()
-            return lastname.upper(), *members
-
+    ...     lastname, *members = family.split()
+    ...     return lastname.upper(), *members
+    ...
     >>> parse('simpsons homer marge bart lisa maggie')
     ('SIMPSONS', 'homer', 'marge', 'bart', 'lisa', 'maggie')
 
@@ -754,8 +754,8 @@ datetime
 --------
 
 Added new alternate constructors :meth:`datetime.date.fromisocalendar` and
-:meth:`datetime.datetime.fromisocalendar`, which construct :class:`date` and
-:class:`datetime` objects respectively from ISO year, week number, and weekday;
+:meth:`datetime.datetime.fromisocalendar`, which construct :class:`~datetime.date` and
+:class:`~datetime.datetime` objects respectively from ISO year, week number, and weekday;
 these are the inverse of each class's ``isocalendar`` method.
 (Contributed by Paul Ganssle in :issue:`36004`.)
 
@@ -936,7 +936,7 @@ Add option ``--json-lines`` to parse every input line as a separate JSON object.
 logging
 -------
 
-Added a *force* keyword argument to :func:`logging.basicConfig()`
+Added a *force* keyword argument to :func:`logging.basicConfig`.
 When set to true, any existing handlers attached
 to the root logger are removed and closed before carrying out the
 configuration specified by the other arguments.
@@ -947,7 +947,7 @@ This made it difficult to update, experiment with, or teach the various
 logging configuration options using the interactive prompt or a Jupyter
 notebook.
 
-(Suggested by Raymond Hettinger, implemented by Dong-hee Na, and
+(Suggested by Raymond Hettinger, implemented by Donghee Na, and
 reviewed by Vinay Sajip in :issue:`33897`.)
 
 
@@ -1077,16 +1077,16 @@ pathlib
 -------
 
 :mod:`pathlib.Path` methods that return a boolean result like
-:meth:`~pathlib.Path.exists()`, :meth:`~pathlib.Path.is_dir()`,
-:meth:`~pathlib.Path.is_file()`, :meth:`~pathlib.Path.is_mount()`,
-:meth:`~pathlib.Path.is_symlink()`, :meth:`~pathlib.Path.is_block_device()`,
-:meth:`~pathlib.Path.is_char_device()`, :meth:`~pathlib.Path.is_fifo()`,
-:meth:`~pathlib.Path.is_socket()` now return ``False`` instead of raising
+:meth:`~pathlib.Path.exists`, :meth:`~pathlib.Path.is_dir`,
+:meth:`~pathlib.Path.is_file`, :meth:`~pathlib.Path.is_mount`,
+:meth:`~pathlib.Path.is_symlink`, :meth:`~pathlib.Path.is_block_device`,
+:meth:`~pathlib.Path.is_char_device`, :meth:`~pathlib.Path.is_fifo`,
+:meth:`~pathlib.Path.is_socket` now return ``False`` instead of raising
 :exc:`ValueError` or its subclass :exc:`UnicodeEncodeError` for paths that
 contain characters unrepresentable at the OS level.
 (Contributed by Serhiy Storchaka in :issue:`33721`.)
 
-Added :meth:`pathlib.Path.link_to()` which creates a hard link pointing
+Added :meth:`!pathlib.Path.link_to` which creates a hard link pointing
 to a path.
 (Contributed by Joannah Nanjekye in :issue:`26978`)
 Note that ``link_to`` was deprecated in 3.10 and removed in 3.12 in
@@ -1170,13 +1170,13 @@ recursively removing their contents first.
 socket
 ------
 
-Added :meth:`~socket.create_server()` and :meth:`~socket.has_dualstack_ipv6()`
+Added :meth:`~socket.create_server` and :meth:`~socket.has_dualstack_ipv6`
 convenience functions to automate the necessary tasks usually involved when
 creating a server socket, including accepting both IPv4 and IPv6 connections
 on the same socket.  (Contributed by Giampaolo Rodolà in :issue:`17561`.)
 
-The :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`, and
-:func:`socket.if_indextoname()` functions have been implemented on Windows.
+The :func:`socket.if_nameindex`, :func:`socket.if_nametoindex`, and
+:func:`socket.if_indextoname` functions have been implemented on Windows.
 (Contributed by Zackery Spytz in :issue:`37007`.)
 
 
@@ -1192,11 +1192,11 @@ post-handshake authentication.
 statistics
 ----------
 
-Added :func:`statistics.fmean` as a faster, floating point variant of
-:func:`statistics.mean()`.  (Contributed by Raymond Hettinger and
+Added :func:`statistics.fmean` as a faster, floating-point variant of
+:func:`statistics.mean`.  (Contributed by Raymond Hettinger and
 Steven D'Aprano in :issue:`35904`.)
 
-Added :func:`statistics.geometric_mean()`
+Added :func:`statistics.geometric_mean`
 (Contributed by Raymond Hettinger in :issue:`27181`.)
 
 Added :func:`statistics.multimode` that returns a list of the most
@@ -1305,7 +1305,7 @@ Zackery Spytz in :issue:`25451`.)
 time
 ----
 
-Added new clock :data:`~time.CLOCK_UPTIME_RAW` for macOS 10.12.
+Added new clock :const:`~time.CLOCK_UPTIME_RAW` for macOS 10.12.
 (Contributed by Joannah Nanjekye in :issue:`35702`.)
 
 
@@ -1367,10 +1367,10 @@ Added :class:`~unittest.mock.AsyncMock` to support an asynchronous version of
 have been added as well.
 (Contributed by Lisa Roach in :issue:`26467`).
 
-Added :func:`~unittest.addModuleCleanup()` and
-:meth:`~unittest.TestCase.addClassCleanup()` to unittest to support
-cleanups for :func:`~unittest.setUpModule()` and
-:meth:`~unittest.TestCase.setUpClass()`.
+Added :func:`~unittest.addModuleCleanup` and
+:meth:`~unittest.TestCase.addClassCleanup` to unittest to support
+cleanups for :func:`~unittest.setUpModule` and
+:meth:`~unittest.TestCase.setUpClass`.
 (Contributed by Lisa Roach in :issue:`24412`.)
 
 Several mock assert functions now also print a list of actual calls upon
@@ -1432,7 +1432,7 @@ and ``{namespace}*`` which returns all tags in the given namespace.
 (Contributed by Stefan Behnel in :issue:`28238`.)
 
 The :mod:`xml.etree.ElementTree` module provides a new function
-:func:`–xml.etree.ElementTree.canonicalize()` that implements C14N 2.0.
+:func:`–xml.etree.ElementTree.canonicalize` that implements C14N 2.0.
 (Contributed by Stefan Behnel in :issue:`13611`.)
 
 The target object of :class:`xml.etree.ElementTree.XMLParser` can
@@ -1574,12 +1574,12 @@ Build and C API Changes
   * :c:func:`Py_INCREF`, :c:func:`Py_DECREF`
   * :c:func:`Py_XINCREF`, :c:func:`Py_XDECREF`
   * :c:func:`PyObject_INIT`, :c:func:`PyObject_INIT_VAR`
-  * Private functions: :c:func:`_PyObject_GC_TRACK`,
-    :c:func:`_PyObject_GC_UNTRACK`, :c:func:`_Py_Dealloc`
+  * Private functions: :c:func:`!_PyObject_GC_TRACK`,
+    :c:func:`!_PyObject_GC_UNTRACK`, :c:func:`!_Py_Dealloc`
 
   (Contributed by Victor Stinner in :issue:`35059`.)
 
-* The :c:func:`PyByteArray_Init` and :c:func:`PyByteArray_Fini` functions have
+* The :c:func:`!PyByteArray_Init` and :c:func:`!PyByteArray_Fini` functions have
   been removed. They did nothing since Python 2.7.4 and Python 3.2.0, were
   excluded from the limited API (stable ABI), and were not documented.
   (Contributed by Victor Stinner in :issue:`35713`.)
@@ -1623,12 +1623,12 @@ Build and C API Changes
   allocation or deallocation may need to be adjusted.
   (Contributed by Eddie Elizondo in :issue:`35810`.)
 
-* The new function :c:func:`PyCode_NewWithPosOnlyArgs` allows to create
-  code objects like :c:func:`PyCode_New`, but with an extra *posonlyargcount*
+* The new function :c:func:`!PyCode_NewWithPosOnlyArgs` allows to create
+  code objects like :c:func:`!PyCode_New`, but with an extra *posonlyargcount*
   parameter for indicating the number of positional-only arguments.
   (Contributed by Pablo Galindo in :issue:`37221`.)
 
-* :c:func:`Py_SetPath` now sets :data:`sys.executable` to the program full
+* :c:func:`!Py_SetPath` now sets :data:`sys.executable` to the program full
   path (:c:func:`Py_GetProgramFullPath`) rather than to the program name
   (:c:func:`Py_GetProgramName`).
   (Contributed by Victor Stinner in :issue:`38234`.)
@@ -1653,7 +1653,7 @@ Deprecated
   deprecated and will be prohibited in Python 3.9.
   (Contributed by Elvis Pranskevichus in :issue:`34075`.)
 
-* The :meth:`__getitem__` methods of :class:`xml.dom.pulldom.DOMEventStream`,
+* The :meth:`~object.__getitem__` methods of :class:`xml.dom.pulldom.DOMEventStream`,
   :class:`wsgiref.util.FileWrapper` and :class:`fileinput.FileInput` have been
   deprecated.
 
@@ -1712,9 +1712,9 @@ Deprecated
   the ``l*gettext()`` functions.
   (Contributed by Serhiy Storchaka in :issue:`33710`.)
 
-* The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread`
+* The :meth:`~threading.Thread.isAlive` method of :class:`threading.Thread`
   has been deprecated.
-  (Contributed by Dong-hee Na in :issue:`35283`.)
+  (Contributed by Donghee Na in :issue:`35283`.)
 
 * Many builtin and extension functions that take integer arguments will
   now emit a deprecation warning for :class:`~decimal.Decimal`\ s,
@@ -1755,7 +1755,7 @@ The following features and APIs have been removed from Python 3.8:
 *  Starting with Python 3.3, importing ABCs from :mod:`collections` was
    deprecated, and importing should be done from :mod:`collections.abc`. Being
    able to import from collections was marked for removal in 3.8, but has been
-   delayed to 3.9. (See :issue:`36952`.)
+   delayed to 3.9. (See :gh:`81134`.)
 
 * The :mod:`macpath` module, deprecated in Python 3.7, has been removed.
   (Contributed by Victor Stinner in :issue:`35471`.)
@@ -1774,7 +1774,7 @@ The following features and APIs have been removed from Python 3.8:
   to help eliminate confusion as to what Python interpreter the ``pyvenv``
   script is tied to. (Contributed by Brett Cannon in :issue:`25427`.)
 
-* ``parse_qs``, ``parse_qsl``, and ``escape`` are removed from the :mod:`cgi`
+* ``parse_qs``, ``parse_qsl``, and ``escape`` are removed from the :mod:`!cgi`
   module.  They are deprecated in Python 3.2 or older. They should be imported
   from the ``urllib.parse`` and ``html`` modules instead.
 
@@ -1839,18 +1839,18 @@ Changes in Python behavior
   classes will affect their string representation.
   (Contributed by Serhiy Storchaka in :issue:`36793`.)
 
-* On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
+* On AIX, :data:`sys.platform` doesn't contain the major version anymore.
   It is always ``'aix'``, instead of ``'aix3'`` .. ``'aix7'``.  Since
   older Python versions include the version number, so it is recommended to
   always use ``sys.platform.startswith('aix')``.
   (Contributed by M. Felt in :issue:`36588`.)
 
-* :c:func:`PyEval_AcquireLock` and :c:func:`PyEval_AcquireThread` now
+* :c:func:`!PyEval_AcquireLock` and :c:func:`!PyEval_AcquireThread` now
   terminate the current thread if called while the interpreter is
   finalizing, making them consistent with :c:func:`PyEval_RestoreThread`,
   :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`. If this
-  behavior is not desired, guard the call by checking :c:func:`_Py_IsFinalizing`
-  or :c:func:`sys.is_finalizing`.
+  behavior is not desired, guard the call by checking :c:func:`!_Py_IsFinalizing`
+  or :func:`sys.is_finalizing`.
   (Contributed by Joannah Nanjekye in :issue:`36475`.)
 
 
@@ -2021,7 +2021,7 @@ Changes in the C API
   *cf_flags*.
   (Contributed by Guido van Rossum in :issue:`35766`.)
 
-* The :c:func:`PyEval_ReInitThreads` function has been removed from the C API.
+* The :c:func:`!PyEval_ReInitThreads` function has been removed from the C API.
   It should not be called explicitly: use :c:func:`PyOS_AfterFork_Child`
   instead.
   (Contributed by Victor Stinner in :issue:`36728`.)
@@ -2061,8 +2061,8 @@ Changes in the C API
 
   * Remove :c:macro:`Py_INCREF` on the type object after allocating an
     instance - if any.
-    This may happen after calling :c:func:`PyObject_New`,
-    :c:func:`PyObject_NewVar`, :c:func:`PyObject_GC_New`,
+    This may happen after calling :c:macro:`PyObject_New`,
+    :c:macro:`PyObject_NewVar`, :c:func:`PyObject_GC_New`,
     :c:func:`PyObject_GC_NewVar`, or any other custom allocator that uses
     :c:func:`PyObject_Init` or :c:func:`PyObject_INIT`.
 
@@ -2116,12 +2116,12 @@ Changes in the C API
   extension types across feature releases, anymore.  A :c:type:`PyTypeObject`
   exported by a third-party extension module is supposed to have all the
   slots expected in the current Python version, including
-  :c:member:`~PyTypeObject.tp_finalize` (:const:`Py_TPFLAGS_HAVE_FINALIZE`
+  :c:member:`~PyTypeObject.tp_finalize` (:c:macro:`Py_TPFLAGS_HAVE_FINALIZE`
   is not checked anymore before reading :c:member:`~PyTypeObject.tp_finalize`).
 
   (Contributed by Antoine Pitrou in :issue:`32388`.)
 
-* The functions :c:func:`PyNode_AddChild` and :c:func:`PyParser_AddToken` now accept
+* The functions :c:func:`!PyNode_AddChild` and :c:func:`!PyParser_AddToken` now accept
   two additional ``int`` arguments *end_lineno* and *end_col_offset*.
 
 * The :file:`libpython38.a` file to allow MinGW tools to link directly against
@@ -2152,11 +2152,11 @@ CPython bytecode changes
   cleaning-up code for :keyword:`break`, :keyword:`continue` and
   :keyword:`return`.
 
-  Removed opcodes :opcode:`BREAK_LOOP`, :opcode:`CONTINUE_LOOP`,
-  :opcode:`SETUP_LOOP` and :opcode:`SETUP_EXCEPT`.  Added new opcodes
-  :opcode:`ROT_FOUR`, :opcode:`BEGIN_FINALLY`, :opcode:`CALL_FINALLY` and
-  :opcode:`POP_FINALLY`.  Changed the behavior of :opcode:`END_FINALLY`
-  and :opcode:`WITH_CLEANUP_START`.
+  Removed opcodes :opcode:`!BREAK_LOOP`, :opcode:`!CONTINUE_LOOP`,
+  :opcode:`!SETUP_LOOP` and :opcode:`!SETUP_EXCEPT`.  Added new opcodes
+  :opcode:`!ROT_FOUR`, :opcode:`!BEGIN_FINALLY`, :opcode:`!CALL_FINALLY` and
+  :opcode:`!POP_FINALLY`.  Changed the behavior of :opcode:`!END_FINALLY`
+  and :opcode:`!WITH_CLEANUP_START`.
 
   (Contributed by Mark Shannon, Antoine Pitrou and Serhiy Storchaka in
   :issue:`17611`.)
@@ -2229,7 +2229,7 @@ The benchmarks were measured on an
 `Intel® Core™ i7-4960HQ processor
 <https://ark.intel.com/content/www/us/en/ark/products/76088/intel-core-i7-4960hq-processor-6m-cache-up-to-3-80-ghz.html>`_
 running the macOS 64-bit builds found at
-`python.org <https://www.python.org/downloads/mac-osx/>`_.
+`python.org <https://www.python.org/downloads/macos/>`_.
 The benchmark script displays timings in nanoseconds.
 
 
@@ -2243,6 +2243,21 @@ details, see the documentation for ``loop.create_datagram_endpoint()``.
 (Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
 :issue:`37228`.)
 
+Notable changes in Python 3.8.2
+===============================
+
+Fixed a regression with the ``ignore`` callback of :func:`shutil.copytree`.
+The argument types are now str and List[str] again.
+(Contributed by Manuel Barkhau and Giampaolo Rodola in :gh:`83571`.)
+
+Notable changes in Python 3.8.3
+===============================
+
+The constant values of future flags in the :mod:`__future__` module
+are updated in order to prevent collision with compiler flags. Previously
+``PyCF_ALLOW_TOP_LEVEL_AWAIT`` was clashing with ``CO_FUTURE_DIVISION``.
+(Contributed by Batuhan Taskaya in :gh:`83743`)
+
 Notable changes in Python 3.8.8
 ===============================
 
@@ -2251,13 +2266,59 @@ query parameter separators in :func:`urllib.parse.parse_qs` and
 :func:`urllib.parse.parse_qsl`.  Due to security concerns, and to conform with
 newer W3C recommendations, this has been changed to allow only a single
 separator key, with ``&`` as the default.  This change also affects
-:func:`cgi.parse` and :func:`cgi.parse_multipart` as they use the affected
+:func:`!cgi.parse` and :func:`!cgi.parse_multipart` as they use the affected
 functions internally. For more details, please see their respective
 documentation.
 (Contributed by Adam Goldschmidt, Senthil Kumaran and Ken Jin in :issue:`42967`.)
 
+Notable changes in Python 3.8.9
+===============================
+
+A security fix alters the :class:`ftplib.FTP` behavior to not trust the
+IPv4 address sent from the remote server when setting up a passive data
+channel.  We reuse the ftp server IP address instead.  For unusual code
+requiring the old behavior, set a ``trust_server_pasv_ipv4_address``
+attribute on your FTP instance to ``True``.  (See :gh:`87451`)
+
+Notable changes in Python 3.8.10
+================================
+
+macOS 11.0 (Big Sur) and Apple Silicon Mac support
+--------------------------------------------------
+
+As of 3.8.10, Python now supports building and running on macOS 11
+(Big Sur) and on Apple Silicon Macs (based on the ``ARM64`` architecture).
+A new universal build variant, ``universal2``, is now available to natively
+support both ``ARM64`` and ``Intel 64`` in one set of executables.
+Note that support for "weaklinking", building binaries targeted for newer
+versions of macOS that will also run correctly on older versions by
+testing at runtime for missing features, is not included in this backport
+from Python 3.9; to support a range of macOS versions, continue to target
+for and build on the oldest version in the range.
+
+(Originally contributed by Ronald Oussoren and Lawrence D'Anna in :gh:`85272`,
+with fixes by FX Coudert and Eli Rykoff, and backported to 3.8 by Maxime Bélanger
+and Ned Deily)
+
+Notable changes in Python 3.8.10
+================================
+
+urllib.parse
+------------
+
+The presence of newline or tab characters in parts of a URL allows for some
+forms of attacks. Following the WHATWG specification that updates :rfc:`3986`,
+ASCII newline ``\n``, ``\r`` and tab ``\t`` characters are stripped from the
+URL by the parser in :mod:`urllib.parse` preventing such attacks. The removal
+characters are controlled by a new module level variable
+``urllib.parse._UNSAFE_URL_BYTES_TO_REMOVE``. (See :issue:`43882`)
+
+
 Notable changes in Python 3.8.12
 ================================
+
+Changes in the Python API
+-------------------------
 
 Starting with Python 3.8.12 the :mod:`ipaddress` module no longer accepts
 any leading zeros in IPv4 address strings. Leading zeros are ambiguous and
@@ -2268,3 +2329,32 @@ any leading zeros.
 
 (Originally contributed by Christian Heimes in :issue:`36384`, and backported
 to 3.8 by Achraf Merzouki.)
+
+Notable security feature in 3.8.14
+==================================
+
+Converting between :class:`int` and :class:`str` in bases other than 2
+(binary), 4, 8 (octal), 16 (hexadecimal), or 32 such as base 10 (decimal)
+now raises a :exc:`ValueError` if the number of digits in string form is
+above a limit to avoid potential denial of service attacks due to the
+algorithmic complexity. This is a mitigation for :cve:`2020-10735`.
+This limit can be configured or disabled by environment variable, command
+line flag, or :mod:`sys` APIs. See the :ref:`integer string conversion
+length limitation <int_max_str_digits>` documentation.  The default limit
+is 4300 digits in string form.
+
+Notable changes in 3.8.17
+=========================
+
+tarfile
+-------
+
+* The extraction methods in :mod:`tarfile`, and :func:`shutil.unpack_archive`,
+  have a new a *filter* argument that allows limiting tar features than may be
+  surprising or dangerous, such as creating files outside the destination
+  directory.
+  See :ref:`tarfile-extraction-filter` for details.
+  In Python 3.12, use without the *filter* argument will show a
+  :exc:`DeprecationWarning`.
+  In Python 3.14, the default will switch to ``'data'``.
+  (Contributed by Petr Viktorin in :pep:`706`.)

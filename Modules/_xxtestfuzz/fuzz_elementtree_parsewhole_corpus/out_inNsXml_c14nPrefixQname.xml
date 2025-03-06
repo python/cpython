@@ -1,0 +1,3 @@
+<n0:foo xmlns:n0="http://z0" xml:id="23">
+  <n0:bar xmlns:n1="http://www.w3.org/2001/XMLSchema" xmlns:n2="http://www.w3.org/2001/XMLSchema-instance" n2:type="n1:string">data</n0:bar>
+</n0:foo>

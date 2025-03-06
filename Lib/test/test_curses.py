@@ -5,9 +5,10 @@ import string
 import sys
 import tempfile
 import unittest
+from unittest.mock import MagicMock
 
 from test.support import (requires, verbose, SaveSignals, cpython_only,
-                          check_disallow_instantiation)
+                          check_disallow_instantiation, MISSING_C_DOCSTRINGS)
 from test.support.import_helper import import_module
 
 # Optionally test curses module.  This currently requires that the
@@ -1080,6 +1081,14 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(curses.LINES, lines)
         self.assertEqual(curses.COLS, cols)
 
+        with self.assertRaises(OverflowError):
+            curses.resize_term(35000, 1)
+        with self.assertRaises(OverflowError):
+            curses.resize_term(1, 35000)
+        # GH-120378: Overflow failure in resize_term() causes refresh to fail
+        tmp = curses.initscr()
+        tmp.erase()
+
     @requires_curses_func('resizeterm')
     def test_resizeterm(self):
         curses.update_lines_cols()
@@ -1093,6 +1102,14 @@ class TestCurses(unittest.TestCase):
         curses.resizeterm(lines, cols)
         self.assertEqual(curses.LINES, lines)
         self.assertEqual(curses.COLS, cols)
+
+        with self.assertRaises(OverflowError):
+            curses.resizeterm(35000, 1)
+        with self.assertRaises(OverflowError):
+            curses.resizeterm(1, 35000)
+        # GH-120378: Overflow failure in resizeterm() causes refresh to fail
+        tmp = curses.initscr()
+        tmp.erase()
 
     def test_ungetch(self):
         curses.ungetch(b'A')
@@ -1141,6 +1158,8 @@ class TestCurses(unittest.TestCase):
         with self.assertRaises(TypeError):
             del stdscr.encoding
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_issue21088(self):
         stdscr = self.stdscr
         #
@@ -1318,6 +1337,83 @@ def lorem_ipsum(win):
     maxy, maxx = win.getmaxyx()
     for y, line in enumerate(text[:maxy]):
         win.addstr(y, 0, line[:maxx - (y == maxy - 1)])
+
+
+class TextboxTest(unittest.TestCase):
+    def setUp(self):
+        self.mock_win = MagicMock(spec=curses.window)
+        self.mock_win.getyx.return_value = (1, 1)
+        self.mock_win.getmaxyx.return_value = (10, 20)
+        self.textbox = curses.textpad.Textbox(self.mock_win)
+
+    def test_init(self):
+        """Test textbox initialization."""
+        self.mock_win.reset_mock()
+        tb = curses.textpad.Textbox(self.mock_win)
+        self.mock_win.getmaxyx.assert_called_once_with()
+        self.mock_win.keypad.assert_called_once_with(1)
+        self.assertEqual(tb.insert_mode, False)
+        self.assertEqual(tb.stripspaces, 1)
+        self.assertIsNone(tb.lastcmd)
+        self.mock_win.reset_mock()
+
+    def test_insert(self):
+        """Test inserting a printable character."""
+        self.mock_win.reset_mock()
+        self.textbox.do_command(ord('a'))
+        self.mock_win.addch.assert_called_with(ord('a'))
+        self.textbox.do_command(ord('b'))
+        self.mock_win.addch.assert_called_with(ord('b'))
+        self.textbox.do_command(ord('c'))
+        self.mock_win.addch.assert_called_with(ord('c'))
+        self.mock_win.reset_mock()
+
+    def test_delete(self):
+        """Test deleting a character."""
+        self.mock_win.reset_mock()
+        self.textbox.do_command(curses.ascii.BS)
+        self.textbox.do_command(curses.KEY_BACKSPACE)
+        self.textbox.do_command(curses.ascii.DEL)
+        assert self.mock_win.delch.call_count == 3
+        self.mock_win.reset_mock()
+
+    def test_move_left(self):
+        """Test moving the cursor left."""
+        self.mock_win.reset_mock()
+        self.textbox.do_command(curses.KEY_LEFT)
+        self.mock_win.move.assert_called_with(1, 0)
+        self.mock_win.reset_mock()
+
+    def test_move_right(self):
+        """Test moving the cursor right."""
+        self.mock_win.reset_mock()
+        self.textbox.do_command(curses.KEY_RIGHT)
+        self.mock_win.move.assert_called_with(1, 2)
+        self.mock_win.reset_mock()
+
+    def test_move_left_and_right(self):
+        """Test moving the cursor left and then right."""
+        self.mock_win.reset_mock()
+        self.textbox.do_command(curses.KEY_LEFT)
+        self.mock_win.move.assert_called_with(1, 0)
+        self.textbox.do_command(curses.KEY_RIGHT)
+        self.mock_win.move.assert_called_with(1, 2)
+        self.mock_win.reset_mock()
+
+    def test_move_up(self):
+        """Test moving the cursor up."""
+        self.mock_win.reset_mock()
+        self.textbox.do_command(curses.KEY_UP)
+        self.mock_win.move.assert_called_with(0, 1)
+        self.mock_win.reset_mock()
+
+    def test_move_down(self):
+        """Test moving the cursor down."""
+        self.mock_win.reset_mock()
+        self.textbox.do_command(curses.KEY_DOWN)
+        self.mock_win.move.assert_called_with(2, 1)
+        self.mock_win.reset_mock()
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -14,8 +14,7 @@ import io
 
 import textwrap
 from test import support
-from test.support import import_helper
-from test.support import os_helper
+from test.support import import_helper, is_apple, os_helper
 from test.support.script_helper import (
     make_pkg, make_script, make_zip_pkg, make_zip_script,
     assert_python_ok, assert_python_failure, spawn_python, kill_python)
@@ -89,6 +88,8 @@ def _make_test_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
     importlib.invalidate_caches()
     return to_return
 
+
+@support.force_not_colorized_test_class
 class CmdLineTest(unittest.TestCase):
     def _check_output(self, script_name, exit_code, data,
                              expected_file, expected_argv0,
@@ -203,6 +204,8 @@ class CmdLineTest(unittest.TestCase):
             stderr = p.stderr if separate_stderr else p.stdout
             self.assertIn(b'Traceback ', stderr.readline())
             self.assertIn(b'File "<stdin>"', stderr.readline())
+            self.assertIn(b'1/0', stderr.readline())
+            self.assertIn(b'    ~^~', stderr.readline())
             self.assertIn(b'ZeroDivisionError', stderr.readline())
 
     def test_repl_stdout_flush(self):
@@ -542,7 +545,7 @@ class CmdLineTest(unittest.TestCase):
         script = textwrap.dedent("""\
             try:
                 raise ValueError
-            except:
+            except ValueError:
                 raise NameError from None
             """)
         with os_helper.temp_dir() as script_dir:
@@ -555,12 +558,17 @@ class CmdLineTest(unittest.TestCase):
             self.assertTrue(text[3].startswith('NameError'))
 
     def test_non_ascii(self):
-        # Mac OS X denies the creation of a file with an invalid UTF-8 name.
+        # Apple platforms deny the creation of a file with an invalid UTF-8 name.
         # Windows allows creating a name with an arbitrary bytes name, but
         # Python cannot a undecodable bytes argument to a subprocess.
-        # WASI does not permit invalid UTF-8 names.
-        if (os_helper.TESTFN_UNDECODABLE
-        and sys.platform not in ('win32', 'darwin', 'emscripten', 'wasi')):
+        # Emscripten/WASI does not permit invalid UTF-8 names.
+        if (
+            os_helper.TESTFN_UNDECODABLE
+            and sys.platform not in {
+                "win32", "emscripten", "wasi"
+            }
+            and not is_apple
+        ):
             name = os.fsdecode(os_helper.TESTFN_UNDECODABLE)
         elif os_helper.TESTFN_NONASCII:
             name = os_helper.TESTFN_NONASCII
@@ -636,9 +644,9 @@ class CmdLineTest(unittest.TestCase):
             self.assertEqual(
                 stderr.splitlines()[-3:],
                 [
-                    b'    foo"""',
-                    b'          ^',
-                    b'SyntaxError: f-string: empty expression not allowed',
+                    b'    foo = f"""{}',
+                    b'               ^',
+                    b'SyntaxError: f-string: valid expression required before \'}\'',
                 ],
             )
 
@@ -652,8 +660,9 @@ class CmdLineTest(unittest.TestCase):
             self.assertEqual(
                 stderr.splitlines()[-3:],
                 [   b'    foo = """\\q"""',
-                    b'          ^^^^^^^^',
-                    b'SyntaxError: invalid escape sequence \'\\q\''
+                    b'             ^^',
+                    b'SyntaxError: "\\q" is an invalid escape sequence. '
+                    b'Did you mean "\\\\q"? A raw string is also an option.'
                 ],
             )
 
@@ -668,6 +677,40 @@ class CmdLineTest(unittest.TestCase):
                     b'SyntaxError: source code cannot contain null bytes'
                 ],
             )
+
+    def test_syntaxerror_null_bytes_in_multiline_string(self):
+        scripts = ["\n'''\nmultilinestring\0\n'''", "\nf'''\nmultilinestring\0\n'''"] # Both normal and f-strings
+        with os_helper.temp_dir() as script_dir:
+            for script in scripts:
+                script_name = _make_test_script(script_dir, 'script', script)
+                _, _, stderr = assert_python_failure(script_name)
+                self.assertEqual(
+                    stderr.splitlines()[-2:],
+                    [   b"    multilinestring",
+                        b'SyntaxError: source code cannot contain null bytes'
+                    ]
+                )
+
+    def test_source_lines_are_shown_when_running_source(self):
+        _, _, stderr = assert_python_failure("-c", "1/0")
+        expected_lines = [
+            b'Traceback (most recent call last):',
+            b'  File "<string>", line 1, in <module>',
+            b'    1/0',
+            b'    ~^~',
+            b'ZeroDivisionError: division by zero']
+        self.assertEqual(stderr.splitlines(), expected_lines)
+
+    def test_syntaxerror_does_not_crash(self):
+        script = "nonlocal x\n"
+        with os_helper.temp_dir() as script_dir:
+            script_name = _make_test_script(script_dir, 'script', script)
+            exitcode, stdout, stderr = assert_python_failure(script_name)
+            text = io.TextIOWrapper(io.BytesIO(stderr), 'ascii').read()
+            # It used to crash in https://github.com/python/cpython/issues/111132
+            self.assertTrue(text.endswith(
+                'SyntaxError: nonlocal declaration not allowed at module level\n',
+            ), text)
 
     def test_consistent_sys_path_for_direct_execution(self):
         # This test case ensures that the following all give the same
@@ -764,7 +807,7 @@ class CmdLineTest(unittest.TestCase):
         with os_helper.temp_dir() as work_dir:
             script_name = _make_test_script(work_dir, 'script.py', script)
             with open(script_name, "r") as fp:
-                p = spawn_python(f"/dev/fd/{fp.fileno()}", close_fds=False, pass_fds=(0,1,2,fp.fileno()))
+                p = spawn_python(f"/dev/fd/{fp.fileno()}", close_fds=True, pass_fds=(0,1,2,fp.fileno()))
                 out, err = p.communicate()
                 self.assertEqual(out, b"12345678912345678912345\n")
 

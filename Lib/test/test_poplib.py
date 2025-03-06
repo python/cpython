@@ -29,8 +29,8 @@ if hasattr(poplib, 'POP3_SSL'):
     import ssl
 
     SUPPORTS_SSL = True
-    CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "keycert3.pem")
-    CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "pycacert.pem")
+    CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "certdata", "keycert3.pem")
+    CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "certdata", "pycacert.pem")
 
 requires_ssl = skipUnless(SUPPORTS_SSL, 'SSL not supported')
 
@@ -288,6 +288,37 @@ class TestPOP3Class(TestCase):
 
     def test_stat(self):
         self.assertEqual(self.client.stat(), (10, 100))
+
+        original_shortcmd = self.client._shortcmd
+        def mock_shortcmd_invalid_format(cmd):
+            if cmd == 'STAT':
+                return b'+OK'
+            return original_shortcmd(cmd)
+
+        self.client._shortcmd = mock_shortcmd_invalid_format
+        with self.assertRaises(poplib.error_proto):
+            self.client.stat()
+
+        def mock_shortcmd_invalid_data(cmd):
+            if cmd == 'STAT':
+                return b'+OK abc def'
+            return original_shortcmd(cmd)
+
+        self.client._shortcmd = mock_shortcmd_invalid_data
+        with self.assertRaises(poplib.error_proto):
+            self.client.stat()
+
+        def mock_shortcmd_extra_fields(cmd):
+            if cmd == 'STAT':
+                return b'+OK 1 2 3 4 5'
+            return original_shortcmd(cmd)
+
+        self.client._shortcmd = mock_shortcmd_extra_fields
+
+        result = self.client.stat()
+        self.assertEqual(result, (1, 2))
+
+        self.client._shortcmd = original_shortcmd
 
     def test_list(self):
         self.assertEqual(self.client.list()[1:],

@@ -1,0 +1,1 @@
+Restore :meth:`configparser.ConfigParser.read` performance.

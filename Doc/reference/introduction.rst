@@ -90,7 +90,8 @@ Notation
 
 .. index:: BNF, grammar, syntax, notation
 
-The descriptions of lexical analysis and syntax use a modified BNF grammar
+The descriptions of lexical analysis and syntax use a modified
+`Backus–Naur form (BNF) <https://en.wikipedia.org/wiki/Backus%E2%80%93Naur_form>`_ grammar
 notation.  This uses the following style of definition:
 
 .. productionlist:: notation

@@ -11,59 +11,63 @@ History of the software
 =======================
 
 Python was created in the early 1990s by Guido van Rossum at Stichting
-Mathematisch Centrum (CWI, see https://www.cwi.nl/) in the Netherlands as a
+Mathematisch Centrum (CWI, see https://www.cwi.nl) in the Netherlands as a
 successor of a language called ABC.  Guido remains Python's principal author,
 although it includes many contributions from others.
 
 In 1995, Guido continued his work on Python at the Corporation for National
-Research Initiatives (CNRI, see https://www.cnri.reston.va.us/) in Reston,
+Research Initiatives (CNRI, see https://www.cnri.reston.va.us) in Reston,
 Virginia where he released several versions of the software.
 
 In May 2000, Guido and the Python core development team moved to BeOpen.com to
 form the BeOpen PythonLabs team.  In October of the same year, the PythonLabs
-team moved to Digital Creations (now Zope Corporation; see
-https://www.zope.org/).  In 2001, the Python Software Foundation (PSF, see
+team moved to Digital Creations, which became
+Zope Corporation.  In 2001, the Python Software Foundation (PSF, see
 https://www.python.org/psf/) was formed, a non-profit organization created
-specifically to own Python-related Intellectual Property.  Zope Corporation is a
+specifically to own Python-related Intellectual Property.  Zope Corporation was a
 sponsoring member of the PSF.
 
-All Python releases are Open Source (see https://opensource.org/ for the Open
+All Python releases are Open Source (see https://opensource.org for the Open
 Source Definition). Historically, most, but not all, Python releases have also
 been GPL-compatible; the table below summarizes the various releases.
 
-+----------------+--------------+------------+------------+-----------------+
-| Release        | Derived from | Year       | Owner      | GPL compatible? |
-+================+==============+============+============+=================+
-| 0.9.0 thru 1.2 | n/a          | 1991-1995  | CWI        | yes             |
-+----------------+--------------+------------+------------+-----------------+
-| 1.3 thru 1.5.2 | 1.2          | 1995-1999  | CNRI       | yes             |
-+----------------+--------------+------------+------------+-----------------+
-| 1.6            | 1.5.2        | 2000       | CNRI       | no              |
-+----------------+--------------+------------+------------+-----------------+
-| 2.0            | 1.6          | 2000       | BeOpen.com | no              |
-+----------------+--------------+------------+------------+-----------------+
-| 1.6.1          | 1.6          | 2001       | CNRI       | no              |
-+----------------+--------------+------------+------------+-----------------+
-| 2.1            | 2.0+1.6.1    | 2001       | PSF        | no              |
-+----------------+--------------+------------+------------+-----------------+
-| 2.0.1          | 2.0+1.6.1    | 2001       | PSF        | yes             |
-+----------------+--------------+------------+------------+-----------------+
-| 2.1.1          | 2.1+2.0.1    | 2001       | PSF        | yes             |
-+----------------+--------------+------------+------------+-----------------+
-| 2.1.2          | 2.1.1        | 2002       | PSF        | yes             |
-+----------------+--------------+------------+------------+-----------------+
-| 2.1.3          | 2.1.2        | 2002       | PSF        | yes             |
-+----------------+--------------+------------+------------+-----------------+
-| 2.2 and above  | 2.1.1        | 2001-now   | PSF        | yes             |
-+----------------+--------------+------------+------------+-----------------+
++----------------+--------------+------------+------------+---------------------+
+| Release        | Derived from | Year       | Owner      | GPL-compatible? (1) |
++================+==============+============+============+=====================+
+| 0.9.0 thru 1.2 | n/a          | 1991-1995  | CWI        | yes                 |
++----------------+--------------+------------+------------+---------------------+
+| 1.3 thru 1.5.2 | 1.2          | 1995-1999  | CNRI       | yes                 |
++----------------+--------------+------------+------------+---------------------+
+| 1.6            | 1.5.2        | 2000       | CNRI       | no                  |
++----------------+--------------+------------+------------+---------------------+
+| 2.0            | 1.6          | 2000       | BeOpen.com | no                  |
++----------------+--------------+------------+------------+---------------------+
+| 1.6.1          | 1.6          | 2001       | CNRI       | yes (2)             |
++----------------+--------------+------------+------------+---------------------+
+| 2.1            | 2.0+1.6.1    | 2001       | PSF        | no                  |
++----------------+--------------+------------+------------+---------------------+
+| 2.0.1          | 2.0+1.6.1    | 2001       | PSF        | yes                 |
++----------------+--------------+------------+------------+---------------------+
+| 2.1.1          | 2.1+2.0.1    | 2001       | PSF        | yes                 |
++----------------+--------------+------------+------------+---------------------+
+| 2.1.2          | 2.1.1        | 2002       | PSF        | yes                 |
++----------------+--------------+------------+------------+---------------------+
+| 2.1.3          | 2.1.2        | 2002       | PSF        | yes                 |
++----------------+--------------+------------+------------+---------------------+
+| 2.2 and above  | 2.1.1        | 2001-now   | PSF        | yes                 |
++----------------+--------------+------------+------------+---------------------+
 
 .. note::
 
-   GPL-compatible doesn't mean that we're distributing Python under the GPL.  All
-   Python licenses, unlike the GPL, let you distribute a modified version without
-   making your changes open source. The GPL-compatible licenses make it possible to
-   combine Python with other software that is released under the GPL; the others
-   don't.
+   (1) GPL-compatible doesn't mean that we're distributing Python under the GPL.
+       All Python licenses, unlike the GPL, let you distribute a modified version
+       without making your changes open source. The GPL-compatible licenses make
+       it possible to combine Python with other software that is released under
+       the GPL; the others don't.
+
+   (2) According to Richard Stallman, 1.6.1 is not GPL-compatible, because its license
+       has a choice of law clause. According to CNRI, however, Stallman's lawyer has
+       told CNRI's lawyer that 1.6.1 is "not incompatible" with the GPL.
 
 Thanks to the many outside volunteers who have worked under Guido's direction to
 make these releases possible.
@@ -73,10 +77,10 @@ Terms and conditions for accessing or otherwise using Python
 ============================================================
 
 Python software and documentation are licensed under the
-:ref:`PSF License Agreement <PSF-license>`.
+Python Software Foundation License Version 2.
 
 Starting with Python 3.8.6, examples, recipes, and other code in
-the documentation are dual licensed under the PSF License Agreement
+the documentation are dual licensed under the PSF License Version 2
 and the :ref:`Zero-Clause BSD license <BSD0>`.
 
 Some software incorporated into Python is under different licenses.
@@ -86,39 +90,38 @@ See :ref:`OtherLicenses` for an incomplete list of these licenses.
 
 .. _PSF-license:
 
-PSF LICENSE AGREEMENT FOR PYTHON |release|
-------------------------------------------
+PYTHON SOFTWARE FOUNDATION LICENSE VERSION 2
+--------------------------------------------
 
 .. parsed-literal::
 
    1. This LICENSE AGREEMENT is between the Python Software Foundation ("PSF"), and
-      the Individual or Organization ("Licensee") accessing and otherwise using Python
-      |release| software in source or binary form and its associated documentation.
+      the Individual or Organization ("Licensee") accessing and otherwise using this
+      software ("Python") in source or binary form and its associated documentation.
 
    2. Subject to the terms and conditions of this License Agreement, PSF hereby
       grants Licensee a nonexclusive, royalty-free, world-wide license to reproduce,
       analyze, test, perform and/or display publicly, prepare derivative works,
-      distribute, and otherwise use Python |release| alone or in any derivative
+      distribute, and otherwise use Python alone or in any derivative
       version, provided, however, that PSF's License Agreement and PSF's notice of
-      copyright, i.e., "Copyright © 2001-2023 Python Software Foundation; All Rights
-      Reserved" are retained in Python |release| alone or in any derivative version
+      copyright, i.e., "Copyright © 2001 Python Software Foundation; All Rights
+      Reserved" are retained in Python alone or in any derivative version
       prepared by Licensee.
 
    3. In the event Licensee prepares a derivative work that is based on or
-      incorporates Python |release| or any part thereof, and wants to make the
+      incorporates Python or any part thereof, and wants to make the
       derivative work available to others as provided herein, then Licensee hereby
-      agrees to include in any such work a brief summary of the changes made to Python
-      |release|.
+      agrees to include in any such work a brief summary of the changes made to Python.
 
-   4. PSF is making Python |release| available to Licensee on an "AS IS" basis.
+   4. PSF is making Python available to Licensee on an "AS IS" basis.
       PSF MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED.  BY WAY OF
       EXAMPLE, BUT NOT LIMITATION, PSF MAKES NO AND DISCLAIMS ANY REPRESENTATION OR
       WARRANTY OF MERCHANTABILITY OR FITNESS FOR ANY PARTICULAR PURPOSE OR THAT THE
-      USE OF PYTHON |release| WILL NOT INFRINGE ANY THIRD PARTY RIGHTS.
+      USE OF PYTHON WILL NOT INFRINGE ANY THIRD PARTY RIGHTS.
 
-   5. PSF SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON |release|
+   5. PSF SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON
       FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR LOSS AS A RESULT OF
-      MODIFYING, DISTRIBUTING, OR OTHERWISE USING PYTHON |release|, OR ANY DERIVATIVE
+      MODIFYING, DISTRIBUTING, OR OTHERWISE USING PYTHON, OR ANY DERIVATIVE
       THEREOF, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.
 
    6. This License Agreement will automatically terminate upon a material breach of
@@ -130,7 +133,7 @@ PSF LICENSE AGREEMENT FOR PYTHON |release|
       trademark sense to endorse or promote products or services of Licensee, or any
       third party.
 
-   8. By copying, installing or otherwise using Python |release|, Licensee agrees
+   8. By copying, installing or otherwise using Python, Licensee agrees
       to be bound by the terms and conditions of this License Agreement.
 
 
@@ -205,7 +208,7 @@ CNRI LICENSE AGREEMENT FOR PYTHON 1.6.1
       Agreement.  This Agreement together with Python 1.6.1 may be located on the
       internet using the following unique, persistent identifier (known as a handle):
       1895.22/1013.  This Agreement may also be obtained from a proxy server on the
-      internet using the following URL: http://hdl.handle.net/1895.22/1013."
+      internet using the following URL: http://hdl.handle.net/1895.22/1013".
 
    3. In the event Licensee prepares a derivative work that is based on or
       incorporates Python 1.6.1 or any part thereof, and wants to make the derivative
@@ -273,8 +276,8 @@ CWI LICENSE AGREEMENT FOR PYTHON 0.9.0 THROUGH 1.2
 
 .. _BSD0:
 
-ZERO-CLAUSE BSD LICENSE FOR CODE IN THE PYTHON |release| DOCUMENTATION
-----------------------------------------------------------------------
+ZERO-CLAUSE BSD LICENSE FOR CODE IN THE PYTHON DOCUMENTATION
+------------------------------------------------------------
 
 .. parsed-literal::
 
@@ -352,8 +355,8 @@ the verbatim comments from the original code::
 Sockets
 -------
 
-The :mod:`socket` module uses the functions, :func:`getaddrinfo`, and
-:func:`getnameinfo`, which are coded in separate source files from the WIDE
+The :mod:`socket` module uses the functions, :c:func:`!getaddrinfo`, and
+:c:func:`!getnameinfo`, which are coded in separate source files from the WIDE
 Project, https://www.wide.ad.jp/. ::
 
    Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -371,7 +374,7 @@ Project, https://www.wide.ad.jp/. ::
       may be used to endorse or promote products derived from this software
       without specific prior written permission.
 
-   THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+   THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS "AS IS" AND
    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
    ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
@@ -387,7 +390,7 @@ Project, https://www.wide.ad.jp/. ::
 Asynchronous socket services
 ----------------------------
 
-The :mod:`test.support.asynchat` and :mod:`test.support.asyncore`
+The :mod:`!test.support.asynchat` and :mod:`!test.support.asyncore`
 modules contain the following notice::
 
    Copyright 1996 by Sam Rushing
@@ -476,7 +479,7 @@ The :mod:`trace` module contains the following notice::
 UUencode and UUdecode functions
 -------------------------------
 
-The :mod:`uu` module contains the following notice::
+The ``uu`` codec contains the following notice::
 
    Copyright 1994 by Lance Ellinghouse
    Cathedral City, California Republic, United States of America.
@@ -539,7 +542,7 @@ The :mod:`xmlrpc.client` module contains the following notice::
 test_epoll
 ----------
 
-The :mod:`test_epoll` module contains the following notice::
+The :mod:`!test.test_epoll` module contains the following notice::
 
   Copyright (c) 2001-2006 Twisted Matrix Laboratories.
 
@@ -580,7 +583,7 @@ interface::
      notice, this list of conditions and the following disclaimer in the
      documentation and/or other materials provided with the distribution.
 
-  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS "AS IS" AND
   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
   ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
@@ -655,144 +658,196 @@ copyright and licensing notice::
 OpenSSL
 -------
 
-The modules :mod:`hashlib`, :mod:`posix`, :mod:`ssl`, :mod:`crypt` use
+The modules :mod:`hashlib`, :mod:`posix` and :mod:`ssl` use
 the OpenSSL library for added performance if made available by the
 operating system. Additionally, the Windows and macOS installers for
 Python may include a copy of the OpenSSL libraries, so we include a copy
-of the OpenSSL license here::
+of the OpenSSL license here. For the OpenSSL 3.0 release,
+and later releases derived from that, the Apache License v2 applies::
 
 
-  LICENSE ISSUES
-  ==============
+                                 Apache License
+                           Version 2.0, January 2004
+                        https://www.apache.org/licenses/
 
-  The OpenSSL toolkit stays under a dual license, i.e. both the conditions of
-  the OpenSSL License and the original SSLeay license apply to the toolkit.
-  See below for the actual license texts. Actually both licenses are BSD-style
-  Open Source licenses. In case of any license issues related to OpenSSL
-  please contact openssl-core@openssl.org.
+   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 
-  OpenSSL License
-  ---------------
+   1. Definitions.
 
-    /* ====================================================================
-     * Copyright (c) 1998-2008 The OpenSSL Project.  All rights reserved.
-     *
-     * Redistribution and use in source and binary forms, with or without
-     * modification, are permitted provided that the following conditions
-     * are met:
-     *
-     * 1. Redistributions of source code must retain the above copyright
-     *    notice, this list of conditions and the following disclaimer.
-     *
-     * 2. Redistributions in binary form must reproduce the above copyright
-     *    notice, this list of conditions and the following disclaimer in
-     *    the documentation and/or other materials provided with the
-     *    distribution.
-     *
-     * 3. All advertising materials mentioning features or use of this
-     *    software must display the following acknowledgment:
-     *    "This product includes software developed by the OpenSSL Project
-     *    for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
-     *
-     * 4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
-     *    endorse or promote products derived from this software without
-     *    prior written permission. For written permission, please contact
-     *    openssl-core@openssl.org.
-     *
-     * 5. Products derived from this software may not be called "OpenSSL"
-     *    nor may "OpenSSL" appear in their names without prior written
-     *    permission of the OpenSSL Project.
-     *
-     * 6. Redistributions of any form whatsoever must retain the following
-     *    acknowledgment:
-     *    "This product includes software developed by the OpenSSL Project
-     *    for use in the OpenSSL Toolkit (http://www.openssl.org/)"
-     *
-     * THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
-     * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-     * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-     * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR
-     * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-     * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-     * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-     * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-     * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
-     * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-     * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
-     * OF THE POSSIBILITY OF SUCH DAMAGE.
-     * ====================================================================
-     *
-     * This product includes cryptographic software written by Eric Young
-     * (eay@cryptsoft.com).  This product includes software written by Tim
-     * Hudson (tjh@cryptsoft.com).
-     *
-     */
+      "License" shall mean the terms and conditions for use, reproduction,
+      and distribution as defined by Sections 1 through 9 of this document.
 
- Original SSLeay License
- -----------------------
+      "Licensor" shall mean the copyright owner or entity authorized by
+      the copyright owner that is granting the License.
 
-    /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
-     * All rights reserved.
-     *
-     * This package is an SSL implementation written
-     * by Eric Young (eay@cryptsoft.com).
-     * The implementation was written so as to conform with Netscapes SSL.
-     *
-     * This library is free for commercial and non-commercial use as long as
-     * the following conditions are aheared to.  The following conditions
-     * apply to all code found in this distribution, be it the RC4, RSA,
-     * lhash, DES, etc., code; not just the SSL code.  The SSL documentation
-     * included with this distribution is covered by the same copyright terms
-     * except that the holder is Tim Hudson (tjh@cryptsoft.com).
-     *
-     * Copyright remains Eric Young's, and as such any Copyright notices in
-     * the code are not to be removed.
-     * If this package is used in a product, Eric Young should be given attribution
-     * as the author of the parts of the library used.
-     * This can be in the form of a textual message at program startup or
-     * in documentation (online or textual) provided with the package.
-     *
-     * Redistribution and use in source and binary forms, with or without
-     * modification, are permitted provided that the following conditions
-     * are met:
-     * 1. Redistributions of source code must retain the copyright
-     *    notice, this list of conditions and the following disclaimer.
-     * 2. Redistributions in binary form must reproduce the above copyright
-     *    notice, this list of conditions and the following disclaimer in the
-     *    documentation and/or other materials provided with the distribution.
-     * 3. All advertising materials mentioning features or use of this software
-     *    must display the following acknowledgement:
-     *    "This product includes cryptographic software written by
-     *     Eric Young (eay@cryptsoft.com)"
-     *    The word 'cryptographic' can be left out if the rouines from the library
-     *    being used are not cryptographic related :-).
-     * 4. If you include any Windows specific code (or a derivative thereof) from
-     *    the apps directory (application code) you must include an acknowledgement:
-     *    "This product includes software written by Tim Hudson (tjh@cryptsoft.com)"
-     *
-     * THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND
-     * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-     * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-     * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
-     * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-     * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-     * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-     * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-     * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-     * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-     * SUCH DAMAGE.
-     *
-     * The licence and distribution terms for any publically available version or
-     * derivative of this code cannot be changed.  i.e. this code cannot simply be
-     * copied and put under another distribution licence
-     * [including the GNU Public Licence.]
-     */
+      "Legal Entity" shall mean the union of the acting entity and all
+      other entities that control, are controlled by, or are under common
+      control with that entity. For the purposes of this definition,
+      "control" means (i) the power, direct or indirect, to cause the
+      direction or management of such entity, whether by contract or
+      otherwise, or (ii) ownership of fifty percent (50%) or more of the
+      outstanding shares, or (iii) beneficial ownership of such entity.
+
+      "You" (or "Your") shall mean an individual or Legal Entity
+      exercising permissions granted by this License.
+
+      "Source" form shall mean the preferred form for making modifications,
+      including but not limited to software source code, documentation
+      source, and configuration files.
+
+      "Object" form shall mean any form resulting from mechanical
+      transformation or translation of a Source form, including but
+      not limited to compiled object code, generated documentation,
+      and conversions to other media types.
+
+      "Work" shall mean the work of authorship, whether in Source or
+      Object form, made available under the License, as indicated by a
+      copyright notice that is included in or attached to the work
+      (an example is provided in the Appendix below).
+
+      "Derivative Works" shall mean any work, whether in Source or Object
+      form, that is based on (or derived from) the Work and for which the
+      editorial revisions, annotations, elaborations, or other modifications
+      represent, as a whole, an original work of authorship. For the purposes
+      of this License, Derivative Works shall not include works that remain
+      separable from, or merely link (or bind by name) to the interfaces of,
+      the Work and Derivative Works thereof.
+
+      "Contribution" shall mean any work of authorship, including
+      the original version of the Work and any modifications or additions
+      to that Work or Derivative Works thereof, that is intentionally
+      submitted to Licensor for inclusion in the Work by the copyright owner
+      or by an individual or Legal Entity authorized to submit on behalf of
+      the copyright owner. For the purposes of this definition, "submitted"
+      means any form of electronic, verbal, or written communication sent
+      to the Licensor or its representatives, including but not limited to
+      communication on electronic mailing lists, source code control systems,
+      and issue tracking systems that are managed by, or on behalf of, the
+      Licensor for the purpose of discussing and improving the Work, but
+      excluding communication that is conspicuously marked or otherwise
+      designated in writing by the copyright owner as "Not a Contribution."
+
+      "Contributor" shall mean Licensor and any individual or Legal Entity
+      on behalf of whom a Contribution has been received by Licensor and
+      subsequently incorporated within the Work.
+
+   2. Grant of Copyright License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      copyright license to reproduce, prepare Derivative Works of,
+      publicly display, publicly perform, sublicense, and distribute the
+      Work and such Derivative Works in Source or Object form.
+
+   3. Grant of Patent License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      (except as stated in this section) patent license to make, have made,
+      use, offer to sell, sell, import, and otherwise transfer the Work,
+      where such license applies only to those patent claims licensable
+      by such Contributor that are necessarily infringed by their
+      Contribution(s) alone or by combination of their Contribution(s)
+      with the Work to which such Contribution(s) was submitted. If You
+      institute patent litigation against any entity (including a
+      cross-claim or counterclaim in a lawsuit) alleging that the Work
+      or a Contribution incorporated within the Work constitutes direct
+      or contributory patent infringement, then any patent licenses
+      granted to You under this License for that Work shall terminate
+      as of the date such litigation is filed.
+
+   4. Redistribution. You may reproduce and distribute copies of the
+      Work or Derivative Works thereof in any medium, with or without
+      modifications, and in Source or Object form, provided that You
+      meet the following conditions:
+
+      (a) You must give any other recipients of the Work or
+          Derivative Works a copy of this License; and
+
+      (b) You must cause any modified files to carry prominent notices
+          stating that You changed the files; and
+
+      (c) You must retain, in the Source form of any Derivative Works
+          that You distribute, all copyright, patent, trademark, and
+          attribution notices from the Source form of the Work,
+          excluding those notices that do not pertain to any part of
+          the Derivative Works; and
+
+      (d) If the Work includes a "NOTICE" text file as part of its
+          distribution, then any Derivative Works that You distribute must
+          include a readable copy of the attribution notices contained
+          within such NOTICE file, excluding those notices that do not
+          pertain to any part of the Derivative Works, in at least one
+          of the following places: within a NOTICE text file distributed
+          as part of the Derivative Works; within the Source form or
+          documentation, if provided along with the Derivative Works; or,
+          within a display generated by the Derivative Works, if and
+          wherever such third-party notices normally appear. The contents
+          of the NOTICE file are for informational purposes only and
+          do not modify the License. You may add Your own attribution
+          notices within Derivative Works that You distribute, alongside
+          or as an addendum to the NOTICE text from the Work, provided
+          that such additional attribution notices cannot be construed
+          as modifying the License.
+
+      You may add Your own copyright statement to Your modifications and
+      may provide additional or different license terms and conditions
+      for use, reproduction, or distribution of Your modifications, or
+      for any such Derivative Works as a whole, provided Your use,
+      reproduction, and distribution of the Work otherwise complies with
+      the conditions stated in this License.
+
+   5. Submission of Contributions. Unless You explicitly state otherwise,
+      any Contribution intentionally submitted for inclusion in the Work
+      by You to the Licensor shall be under the terms and conditions of
+      this License, without any additional terms or conditions.
+      Notwithstanding the above, nothing herein shall supersede or modify
+      the terms of any separate license agreement you may have executed
+      with Licensor regarding such Contributions.
+
+   6. Trademarks. This License does not grant permission to use the trade
+      names, trademarks, service marks, or product names of the Licensor,
+      except as required for reasonable and customary use in describing the
+      origin of the Work and reproducing the content of the NOTICE file.
+
+   7. Disclaimer of Warranty. Unless required by applicable law or
+      agreed to in writing, Licensor provides the Work (and each
+      Contributor provides its Contributions) on an "AS IS" BASIS,
+      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+      implied, including, without limitation, any warranties or conditions
+      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+      PARTICULAR PURPOSE. You are solely responsible for determining the
+      appropriateness of using or redistributing the Work and assume any
+      risks associated with Your exercise of permissions under this License.
+
+   8. Limitation of Liability. In no event and under no legal theory,
+      whether in tort (including negligence), contract, or otherwise,
+      unless required by applicable law (such as deliberate and grossly
+      negligent acts) or agreed to in writing, shall any Contributor be
+      liable to You for damages, including any direct, indirect, special,
+      incidental, or consequential damages of any character arising as a
+      result of this License or out of the use or inability to use the
+      Work (including but not limited to damages for loss of goodwill,
+      work stoppage, computer failure or malfunction, or any and all
+      other commercial damages or losses), even if such Contributor
+      has been advised of the possibility of such damages.
+
+   9. Accepting Warranty or Additional Liability. While redistributing
+      the Work or Derivative Works thereof, You may choose to offer,
+      and charge a fee for, acceptance of support, warranty, indemnity,
+      or other liability obligations and/or rights consistent with this
+      License. However, in accepting such obligations, You may act only
+      on Your own behalf and on Your sole responsibility, not on behalf
+      of any other Contributor, and only if You agree to indemnify,
+      defend, and hold each Contributor harmless for any liability
+      incurred by, or claims asserted against, such Contributor by reason
+      of your accepting any such warranty or additional liability.
+
+   END OF TERMS AND CONDITIONS
 
 
 expat
 -----
 
-The :mod:`pyexpat` extension is built using an included copy of the expat
+The :mod:`pyexpat <xml.parsers.expat>` extension is built using an included copy of the expat
 sources unless the build is configured ``--with-system-expat``::
 
   Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd
@@ -829,7 +884,7 @@ sources unless the build is configured ``--with-system-libffi``::
 
    Permission is hereby granted, free of charge, to any person obtaining
    a copy of this software and associated documentation files (the
-   ``Software''), to deal in the Software without restriction, including
+   "Software"), to deal in the Software without restriction, including
    without limitation the rights to use, copy, modify, merge, publish,
    distribute, sublicense, and/or sell copies of the Software, and to
    permit persons to whom the Software is furnished to do so, subject to
@@ -838,7 +893,7 @@ sources unless the build is configured ``--with-system-libffi``::
    The above copyright notice and this permission notice shall be included
    in all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
    NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
@@ -990,29 +1045,90 @@ https://www.w3.org/TR/xml-c14n2-testcases/ and is distributed under the
    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-Audioop
--------
+.. _mimalloc-license:
 
-The audioop module uses the code base in g771.c file of the SoX project::
+mimalloc
+--------
 
-    Programming the AdLib/Sound Blaster
-    FM Music Chips
-    Version 2.0 (24 Feb 1992)
-    Copyright (c) 1991, 1992 by Jeffrey S. Lee
-    jlee@smylex.uucp
-    Warranty and Copyright Policy
-    This document is provided on an "as-is" basis, and its author makes
-    no warranty or representation, express or implied, with respect to
-    its quality performance or fitness for a particular purpose.  In no
-    event will the author of this document be liable for direct, indirect,
-    special, incidental, or consequential damages arising out of the use
-    or inability to use the information contained within.  Use of this
-    document is at your own risk.
-    This file may be used and copied freely so long as the applicable
-    copyright notices are retained, and no modifications are made to the
-    text of the document.  No money shall be charged for its distribution
-    beyond reasonable shipping, handling and duplication costs, nor shall
-    proprietary changes be made to this document so that it cannot be
-    distributed freely.  This document may not be included in published
-    material or commercial packages without the written consent of its
-    author.
+MIT License::
+
+   Copyright (c) 2018-2021 Microsoft Corporation, Daan Leijen
+
+   Permission is hereby granted, free of charge, to any person obtaining a copy
+   of this software and associated documentation files (the "Software"), to deal
+   in the Software without restriction, including without limitation the rights
+   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   copies of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
+
+   The above copyright notice and this permission notice shall be included in all
+   copies or substantial portions of the Software.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.
+
+
+asyncio
+----------
+
+Parts of the :mod:`asyncio` module are incorporated from
+`uvloop 0.16 <https://github.com/MagicStack/uvloop/tree/v0.16.0>`_,
+which is distributed under the MIT license::
+
+  Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
+
+  Permission is hereby granted, free of charge, to any person obtaining
+  a copy of this software and associated documentation files (the
+  "Software"), to deal in the Software without restriction, including
+  without limitation the rights to use, copy, modify, merge, publish,
+  distribute, sublicense, and/or sell copies of the Software, and to
+  permit persons to whom the Software is furnished to do so, subject to
+  the following conditions:
+
+  The above copyright notice and this permission notice shall be
+  included in all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+Global Unbounded Sequences (GUS)
+--------------------------------
+
+The file :file:`Python/qsbr.c` is adapted from FreeBSD's "Global Unbounded
+Sequences" safe memory reclamation scheme in
+`subr_smr.c <https://github.com/freebsd/freebsd-src/blob/main/sys/kern/subr_smr.c>`_.
+The file is distributed under the 2-Clause BSD License::
+
+  Copyright (c) 2019,2020 Jeffrey Roberson <jeff@FreeBSD.org>
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions
+  are met:
+  1. Redistributions of source code must retain the above copyright
+     notice unmodified, this list of conditions, and the following
+     disclaimer.
+  2. Redistributions in binary form must reproduce the above copyright
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
+
+  THIS SOFTWARE IS PROVIDED BY THE AUTHOR "AS IS" AND ANY EXPRESS OR
+  IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+  OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+  NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

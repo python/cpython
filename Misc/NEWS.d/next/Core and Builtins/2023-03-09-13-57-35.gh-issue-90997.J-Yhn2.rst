@@ -1,2 +1,0 @@
-Shrink the number of inline :opcode:`CACHE` entries used by
-:opcode:`LOAD_GLOBAL`.

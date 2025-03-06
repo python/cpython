@@ -1,3 +1,0 @@
-Add :c:func:`PyErr_DisplayException` which takes just an exception instance,
-to replace the legacy :c:func:`PyErr_Display` which takes the ``(typ, exc,
-tb)`` triplet.

@@ -5,7 +5,7 @@
 .. original section: Library
 .. section: Security
 
-Update expat to 2.1.1, fixes CVE-2015-1283.
+Update expat to 2.1.1, fixes :cve:`2015-1283`.
 
 ..
 
@@ -15,8 +15,8 @@ Update expat to 2.1.1, fixes CVE-2015-1283.
 .. original section: Library
 .. section: Security
 
-Fix TLS stripping vulnerability in smtplib, CVE-2016-0772. Reported by Team
-Oststrom
+Fix TLS stripping vulnerability in smtplib, :cve:`2016-0772`. Reported by Team
+Oststrom.
 
 ..
 
@@ -710,9 +710,9 @@ Fixed the comparison of plistlib.Data with other types.
 .. nonce: RMRMtM
 .. section: Library
 
-Fix an uninitialized variable in `ctypes.util`.
+Fix an uninitialized variable in ``ctypes.util``.
 The bug only occurs on SunOS when the ctypes implementation searches for the
-`crle` program.  Patch by Xiang Zhang.  Tested on SunOS by Kees Bos.
+``crle`` program.  Patch by Xiang Zhang.  Tested on SunOS by Kees Bos.
 
 ..
 

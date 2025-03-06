@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_BadArgument()
 
 PyDoc_STRVAR(complex_conjugate__doc__,
 "conjugate($self, /)\n"
@@ -21,9 +21,9 @@ static PyObject *
 complex_conjugate_impl(PyComplexObject *self);
 
 static PyObject *
-complex_conjugate(PyComplexObject *self, PyObject *Py_UNUSED(ignored))
+complex_conjugate(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return complex_conjugate_impl(self);
+    return complex_conjugate_impl((PyComplexObject *)self);
 }
 
 PyDoc_STRVAR(complex___getnewargs____doc__,
@@ -38,9 +38,9 @@ static PyObject *
 complex___getnewargs___impl(PyComplexObject *self);
 
 static PyObject *
-complex___getnewargs__(PyComplexObject *self, PyObject *Py_UNUSED(ignored))
+complex___getnewargs__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return complex___getnewargs___impl(self);
+    return complex___getnewargs___impl((PyComplexObject *)self);
 }
 
 PyDoc_STRVAR(complex___format____doc__,
@@ -56,7 +56,7 @@ static PyObject *
 complex___format___impl(PyComplexObject *self, PyObject *format_spec);
 
 static PyObject *
-complex___format__(PyComplexObject *self, PyObject *arg)
+complex___format__(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *format_spec;
@@ -65,11 +65,8 @@ complex___format__(PyComplexObject *self, PyObject *arg)
         _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     format_spec = arg;
-    return_value = complex___format___impl(self, format_spec);
+    return_value = complex___format___impl((PyComplexObject *)self, format_spec);
 
 exit:
     return return_value;
@@ -88,18 +85,21 @@ static PyObject *
 complex___complex___impl(PyComplexObject *self);
 
 static PyObject *
-complex___complex__(PyComplexObject *self, PyObject *Py_UNUSED(ignored))
+complex___complex__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return complex___complex___impl(self);
+    return complex___complex___impl((PyComplexObject *)self);
 }
 
 PyDoc_STRVAR(complex_new__doc__,
 "complex(real=0, imag=0)\n"
 "--\n"
 "\n"
-"Create a complex number from a real part and an optional imaginary part.\n"
+"Create a complex number from a string or numbers.\n"
 "\n"
-"This is equivalent to (real + imag*1j) where imag defaults to 0.");
+"If a string is given, parse it as a complex number.\n"
+"If a single number is given, convert it to a complex number.\n"
+"If the \'real\' or \'imag\' arguments are given, create a complex number\n"
+"with the specified real and imaginary components.");
 
 static PyObject *
 complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i);
@@ -140,7 +140,8 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *r = NULL;
     PyObject *i = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -160,4 +161,13 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=52e85a1e258425d6 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(complex_from_number__doc__,
+"from_number($type, number, /)\n"
+"--\n"
+"\n"
+"Convert number to a complex floating-point number.");
+
+#define COMPLEX_FROM_NUMBER_METHODDEF    \
+    {"from_number", (PyCFunction)complex_from_number, METH_O|METH_CLASS, complex_from_number__doc__},
+/*[clinic end generated code: output=252cddef7f9169a0 input=a9049054013a1b77]*/

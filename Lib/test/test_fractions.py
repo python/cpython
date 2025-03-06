@@ -7,6 +7,7 @@ import numbers
 import operator
 import fractions
 import functools
+import os
 import sys
 import typing
 import unittest
@@ -15,6 +16,9 @@ import pickle
 from pickle import dumps, loads
 F = fractions.Fraction
 
+#locate file with float format test values
+test_dir = os.path.dirname(__file__) or os.curdir
+format_testfile = os.path.join(test_dir, 'mathdata', 'formatfloat_testcases.txt')
 
 class DummyFloat(object):
     """Dummy float class for testing comparisons with Fractions"""
@@ -87,6 +91,204 @@ class DummyFraction(fractions.Fraction):
 def _components(r):
     return (r.numerator, r.denominator)
 
+def typed_approx_eq(a, b):
+    return type(a) == type(b) and (a == b or math.isclose(a, b))
+
+class Symbolic:
+    """Simple non-numeric class for testing mixed arithmetic.
+    It is not Integral, Rational, Real or Complex, and cannot be converted
+    to int, float or complex. but it supports some arithmetic operations.
+    """
+    def __init__(self, value):
+        self.value = value
+    def __mul__(self, other):
+        if isinstance(other, F):
+            return NotImplemented
+        return self.__class__(f'{self} * {other}')
+    def __rmul__(self, other):
+        return self.__class__(f'{other} * {self}')
+    def __truediv__(self, other):
+        if isinstance(other, F):
+            return NotImplemented
+        return self.__class__(f'{self} / {other}')
+    def __rtruediv__(self, other):
+        return self.__class__(f'{other} / {self}')
+    def __mod__(self, other):
+        if isinstance(other, F):
+            return NotImplemented
+        return self.__class__(f'{self} % {other}')
+    def __rmod__(self, other):
+        return self.__class__(f'{other} % {self}')
+    def __pow__(self, other):
+        if isinstance(other, F):
+            return NotImplemented
+        return self.__class__(f'{self} ** {other}')
+    def __rpow__(self, other):
+        return self.__class__(f'{other} ** {self}')
+    def __eq__(self, other):
+        if other.__class__ != self.__class__:
+            return NotImplemented
+        return self.value == other.value
+    def __str__(self):
+        return f'{self.value}'
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.value!r})'
+
+class SymbolicReal(Symbolic):
+    pass
+numbers.Real.register(SymbolicReal)
+
+class SymbolicComplex(Symbolic):
+    pass
+numbers.Complex.register(SymbolicComplex)
+
+class Rat:
+    """Simple Rational class for testing mixed arithmetic."""
+    def __init__(self, n, d):
+        self.numerator = n
+        self.denominator = d
+    def __mul__(self, other):
+        if isinstance(other, F):
+            return NotImplemented
+        return self.__class__(self.numerator * other.numerator,
+                              self.denominator * other.denominator)
+    def __rmul__(self, other):
+        return self.__class__(other.numerator * self.numerator,
+                              other.denominator * self.denominator)
+    def __truediv__(self, other):
+        if isinstance(other, F):
+            return NotImplemented
+        return self.__class__(self.numerator * other.denominator,
+                              self.denominator * other.numerator)
+    def __rtruediv__(self, other):
+        return self.__class__(other.numerator * self.denominator,
+                              other.denominator * self.numerator)
+    def __mod__(self, other):
+        if isinstance(other, F):
+            return NotImplemented
+        d = self.denominator * other.numerator
+        return self.__class__(self.numerator * other.denominator % d, d)
+    def __rmod__(self, other):
+        d = other.denominator * self.numerator
+        return self.__class__(other.numerator * self.denominator % d, d)
+
+        return self.__class__(other.numerator / self.numerator,
+                              other.denominator / self.denominator)
+    def __pow__(self, other):
+        if isinstance(other, F):
+            return NotImplemented
+        return self.__class__(self.numerator ** other,
+                              self.denominator ** other)
+    def __float__(self):
+        return self.numerator / self.denominator
+    def __eq__(self, other):
+        if self.__class__ != other.__class__:
+            return NotImplemented
+        return (typed_approx_eq(self.numerator, other.numerator) and
+                typed_approx_eq(self.denominator, other.denominator))
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.numerator!r}, {self.denominator!r})'
+numbers.Rational.register(Rat)
+
+class Root:
+    """Simple Real class for testing mixed arithmetic."""
+    def __init__(self, v, n=F(2)):
+        self.base = v
+        self.degree = n
+    def __mul__(self, other):
+        if isinstance(other, F):
+            return NotImplemented
+        return self.__class__(self.base * other**self.degree, self.degree)
+    def __rmul__(self, other):
+        return self.__class__(other**self.degree * self.base, self.degree)
+    def __truediv__(self, other):
+        if isinstance(other, F):
+            return NotImplemented
+        return self.__class__(self.base / other**self.degree, self.degree)
+    def __rtruediv__(self, other):
+        return self.__class__(other**self.degree / self.base, self.degree)
+    def __pow__(self, other):
+        if isinstance(other, F):
+            return NotImplemented
+        return self.__class__(self.base, self.degree / other)
+    def __float__(self):
+        return float(self.base) ** (1 / float(self.degree))
+    def __eq__(self, other):
+        if self.__class__ != other.__class__:
+            return NotImplemented
+        return typed_approx_eq(self.base, other.base) and typed_approx_eq(self.degree, other.degree)
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.base!r}, {self.degree!r})'
+numbers.Real.register(Root)
+
+class Polar:
+    """Simple Complex class for testing mixed arithmetic."""
+    def __init__(self, r, phi):
+        self.r = r
+        self.phi = phi
+    def __mul__(self, other):
+        if isinstance(other, F):
+            return NotImplemented
+        return self.__class__(self.r * other, self.phi)
+    def __rmul__(self, other):
+        return self.__class__(other * self.r, self.phi)
+    def __truediv__(self, other):
+        if isinstance(other, F):
+            return NotImplemented
+        return self.__class__(self.r / other, self.phi)
+    def __rtruediv__(self, other):
+        return self.__class__(other / self.r, -self.phi)
+    def __pow__(self, other):
+        if isinstance(other, F):
+            return NotImplemented
+        return self.__class__(self.r ** other, self.phi * other)
+    def __eq__(self, other):
+        if self.__class__ != other.__class__:
+            return NotImplemented
+        return typed_approx_eq(self.r, other.r) and typed_approx_eq(self.phi, other.phi)
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.r!r}, {self.phi!r})'
+numbers.Complex.register(Polar)
+
+class Rect:
+    """Other simple Complex class for testing mixed arithmetic."""
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+    def __mul__(self, other):
+        if isinstance(other, F):
+            return NotImplemented
+        return self.__class__(self.x * other, self.y * other)
+    def __rmul__(self, other):
+        return self.__class__(other * self.x, other * self.y)
+    def __truediv__(self, other):
+        if isinstance(other, F):
+            return NotImplemented
+        return self.__class__(self.x / other, self.y / other)
+    def __rtruediv__(self, other):
+        r = self.x * self.x + self.y * self.y
+        return self.__class__(other * (self.x / r), other * (self.y / r))
+    def __rpow__(self, other):
+        return Polar(other ** self.x, math.log(other) * self.y)
+    def __complex__(self):
+        return complex(self.x, self.y)
+    def __eq__(self, other):
+        if self.__class__ != other.__class__:
+            return NotImplemented
+        return typed_approx_eq(self.x, other.x) and typed_approx_eq(self.y, other.y)
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.x!r}, {self.y!r})'
+numbers.Complex.register(Rect)
+
+class RectComplex(Rect, complex):
+    pass
+
+class Ratio:
+    def __init__(self, ratio):
+        self._ratio = ratio
+    def as_integer_ratio(self):
+        return self._ratio
+
 
 class FractionTest(unittest.TestCase):
 
@@ -158,6 +360,38 @@ class FractionTest(unittest.TestCase):
         self.assertRaises(ValueError, F, Decimal('snan'))
         self.assertRaises(OverflowError, F, Decimal('inf'))
         self.assertRaises(OverflowError, F, Decimal('-inf'))
+
+    def testInitFromIntegerRatio(self):
+        self.assertEqual((7, 3), _components(F(Ratio((7, 3)))))
+        errmsg = (r"argument should be a string or a Rational instance or "
+                  r"have the as_integer_ratio\(\) method")
+        # the type also has an "as_integer_ratio" attribute.
+        self.assertRaisesRegex(TypeError, errmsg, F, Ratio)
+        # bad ratio
+        self.assertRaises(TypeError, F, Ratio(7))
+        self.assertRaises(ValueError, F, Ratio((7,)))
+        self.assertRaises(ValueError, F, Ratio((7, 3, 1)))
+        # only single-argument form
+        self.assertRaises(TypeError, F, Ratio((3, 7)), 11)
+        self.assertRaises(TypeError, F, 2, Ratio((-10, 9)))
+
+        # as_integer_ratio not defined in a class
+        class A:
+            pass
+        a = A()
+        a.as_integer_ratio = lambda: (9, 5)
+        self.assertEqual((9, 5), _components(F(a)))
+
+        # as_integer_ratio defined in a metaclass
+        class M(type):
+            def as_integer_ratio(self):
+                return (11, 9)
+        class B(metaclass=M):
+            pass
+        self.assertRaisesRegex(TypeError, errmsg, F, B)
+        self.assertRaisesRegex(TypeError, errmsg, F, B())
+        self.assertRaises(TypeError, F.from_number, B)
+        self.assertRaises(TypeError, F.from_number, B())
 
     def testFromString(self):
         self.assertEqual((5, 1), _components(F("5")))
@@ -257,6 +491,30 @@ class FractionTest(unittest.TestCase):
         self.assertRaisesMessage(
             ValueError, "Invalid literal for Fraction: '1.1e+1__1'",
             F, "1.1e+1__1")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '123.dd'",
+            F, "123.dd")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '123.5_dd'",
+            F, "123.5_dd")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: 'dd.5'",
+            F, "dd.5")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '7_dd'",
+            F, "7_dd")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1/dd'",
+            F, "1/dd")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '1/123_dd'",
+            F, "1/123_dd")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '789edd'",
+            F, "789edd")
+        self.assertRaisesMessage(
+            ValueError, "Invalid literal for Fraction: '789e2_dd'",
+            F, "789e2_dd")
         # Test catastrophic backtracking.
         val = "9"*50 + "_"
         self.assertRaisesMessage(
@@ -339,6 +597,37 @@ class FractionTest(unittest.TestCase):
         self.assertRaisesMessage(
             ValueError, "cannot convert NaN to integer ratio",
             F.from_decimal, Decimal("snan"))
+
+    def testFromNumber(self, cls=F):
+        def check(arg, numerator, denominator):
+            f = cls.from_number(arg)
+            self.assertIs(type(f), cls)
+            self.assertEqual(f.numerator, numerator)
+            self.assertEqual(f.denominator, denominator)
+
+        check(10, 10, 1)
+        check(2.5, 5, 2)
+        check(Decimal('2.5'), 5, 2)
+        check(F(22, 7), 22, 7)
+        check(DummyFraction(22, 7), 22, 7)
+        check(Rat(22, 7), 22, 7)
+        check(Ratio((22, 7)), 22, 7)
+        self.assertRaises(TypeError, cls.from_number, 3+4j)
+        self.assertRaises(TypeError, cls.from_number, '5/2')
+        self.assertRaises(TypeError, cls.from_number, [])
+        self.assertRaises(OverflowError, cls.from_number, float('inf'))
+        self.assertRaises(OverflowError, cls.from_number, Decimal('inf'))
+
+        # as_integer_ratio not defined in a class
+        class A:
+            pass
+        a = A()
+        a.as_integer_ratio = lambda: (9, 5)
+        check(a, 9, 5)
+
+    def testFromNumber_subclass(self):
+        self.testFromNumber(DummyFraction)
+
 
     def test_is_integer(self):
         self.assertTrue(F(1, 1).is_integer())
@@ -565,6 +854,7 @@ class FractionTest(unittest.TestCase):
         self.assertTypedEquals(0.9, 1.0 - F(1, 10))
         self.assertTypedEquals(0.9 + 0j, (1.0 + 0j) - F(1, 10))
 
+    def testMixedMultiplication(self):
         self.assertTypedEquals(F(1, 10), F(1, 10) * 1)
         self.assertTypedEquals(0.1, F(1, 10) * 1.0)
         self.assertTypedEquals(0.1 + 0j, F(1, 10) * (1.0 + 0j))
@@ -572,6 +862,29 @@ class FractionTest(unittest.TestCase):
         self.assertTypedEquals(0.1, 1.0 * F(1, 10))
         self.assertTypedEquals(0.1 + 0j, (1.0 + 0j) * F(1, 10))
 
+        self.assertTypedEquals(F(3, 2) * DummyFraction(5, 3), F(5, 2))
+        self.assertTypedEquals(DummyFraction(5, 3) * F(3, 2), F(5, 2))
+        self.assertTypedEquals(F(3, 2) * Rat(5, 3), Rat(15, 6))
+        self.assertTypedEquals(Rat(5, 3) * F(3, 2), F(5, 2))
+
+        self.assertTypedEquals(F(3, 2) * Root(4), Root(F(9, 1)))
+        self.assertTypedEquals(Root(4) * F(3, 2), 3.0)
+        self.assertEqual(F(3, 2) * SymbolicReal('X'), SymbolicReal('3/2 * X'))
+        self.assertRaises(TypeError, operator.mul, SymbolicReal('X'), F(3, 2))
+
+        self.assertTypedEquals(F(3, 2) * Polar(4, 2), Polar(F(6, 1), 2))
+        self.assertTypedEquals(F(3, 2) * Polar(4.0, 2), Polar(6.0, 2))
+        self.assertTypedEquals(F(3, 2) * Rect(4, 3), Rect(F(6, 1), F(9, 2)))
+        self.assertTypedEquals(F(3, 2) * RectComplex(4, 3), RectComplex(6.0, 4.5))
+        self.assertRaises(TypeError, operator.mul, Polar(4, 2), F(3, 2))
+        self.assertTypedEquals(Rect(4, 3) * F(3, 2), 6.0 + 4.5j)
+        self.assertEqual(F(3, 2) * SymbolicComplex('X'), SymbolicComplex('3/2 * X'))
+        self.assertRaises(TypeError, operator.mul, SymbolicComplex('X'), F(3, 2))
+
+        self.assertEqual(F(3, 2) * Symbolic('X'), Symbolic('3/2 * X'))
+        self.assertRaises(TypeError, operator.mul, Symbolic('X'), F(3, 2))
+
+    def testMixedDivision(self):
         self.assertTypedEquals(F(1, 10), F(1, 10) / 1)
         self.assertTypedEquals(0.1, F(1, 10) / 1.0)
         self.assertTypedEquals(0.1 + 0j, F(1, 10) / (1.0 + 0j))
@@ -579,6 +892,28 @@ class FractionTest(unittest.TestCase):
         self.assertTypedEquals(10.0, 1.0 / F(1, 10))
         self.assertTypedEquals(10.0 + 0j, (1.0 + 0j) / F(1, 10))
 
+        self.assertTypedEquals(F(3, 2) / DummyFraction(3, 5), F(5, 2))
+        self.assertTypedEquals(DummyFraction(5, 3) / F(2, 3), F(5, 2))
+        self.assertTypedEquals(F(3, 2) / Rat(3, 5), Rat(15, 6))
+        self.assertTypedEquals(Rat(5, 3) / F(2, 3), F(5, 2))
+
+        self.assertTypedEquals(F(2, 3) / Root(4), Root(F(1, 9)))
+        self.assertTypedEquals(Root(4) / F(2, 3), 3.0)
+        self.assertEqual(F(3, 2) / SymbolicReal('X'), SymbolicReal('3/2 / X'))
+        self.assertRaises(TypeError, operator.truediv, SymbolicReal('X'), F(3, 2))
+
+        self.assertTypedEquals(F(3, 2) / Polar(4, 2), Polar(F(3, 8), -2))
+        self.assertTypedEquals(F(3, 2) / Polar(4.0, 2), Polar(0.375, -2))
+        self.assertTypedEquals(F(3, 2) / Rect(4, 3), Rect(0.24, 0.18))
+        self.assertRaises(TypeError, operator.truediv, Polar(4, 2), F(2, 3))
+        self.assertTypedEquals(Rect(4, 3) / F(2, 3), 6.0 + 4.5j)
+        self.assertEqual(F(3, 2) / SymbolicComplex('X'), SymbolicComplex('3/2 / X'))
+        self.assertRaises(TypeError, operator.truediv, SymbolicComplex('X'), F(3, 2))
+
+        self.assertEqual(F(3, 2) / Symbolic('X'), Symbolic('3/2 / X'))
+        self.assertRaises(TypeError, operator.truediv, Symbolic('X'), F(2, 3))
+
+    def testMixedIntegerDivision(self):
         self.assertTypedEquals(0, F(1, 10) // 1)
         self.assertTypedEquals(0.0, F(1, 10) // 1.0)
         self.assertTypedEquals(10, 1 // F(1, 10))
@@ -603,6 +938,26 @@ class FractionTest(unittest.TestCase):
         self.assertTypedTupleEquals(divmod(-0.1, float('inf')), divmod(F(-1, 10), float('inf')))
         self.assertTypedTupleEquals(divmod(-0.1, float('-inf')), divmod(F(-1, 10), float('-inf')))
 
+        self.assertTypedEquals(F(3, 2) % DummyFraction(3, 5), F(3, 10))
+        self.assertTypedEquals(DummyFraction(5, 3) % F(2, 3), F(1, 3))
+        self.assertTypedEquals(F(3, 2) % Rat(3, 5), Rat(3, 6))
+        self.assertTypedEquals(Rat(5, 3) % F(2, 3), F(1, 3))
+
+        self.assertRaises(TypeError, operator.mod, F(2, 3), Root(4))
+        self.assertTypedEquals(Root(4) % F(3, 2), 0.5)
+        self.assertEqual(F(3, 2) % SymbolicReal('X'), SymbolicReal('3/2 % X'))
+        self.assertRaises(TypeError, operator.mod, SymbolicReal('X'), F(3, 2))
+
+        self.assertRaises(TypeError, operator.mod, F(3, 2), Polar(4, 2))
+        self.assertRaises(TypeError, operator.mod, F(3, 2), RectComplex(4, 3))
+        self.assertRaises(TypeError, operator.mod, Rect(4, 3), F(2, 3))
+        self.assertEqual(F(3, 2) % SymbolicComplex('X'), SymbolicComplex('3/2 % X'))
+        self.assertRaises(TypeError, operator.mod, SymbolicComplex('X'), F(3, 2))
+
+        self.assertEqual(F(3, 2) % Symbolic('X'), Symbolic('3/2 % X'))
+        self.assertRaises(TypeError, operator.mod, Symbolic('X'), F(2, 3))
+
+    def testMixedPower(self):
         # ** has more interesting conversion rules.
         self.assertTypedEquals(F(100, 1), F(1, 10) ** -2)
         self.assertTypedEquals(F(100, 1), F(10, 1) ** 2)
@@ -618,6 +973,40 @@ class FractionTest(unittest.TestCase):
         self.assertTypedEquals(1.0 + 0j, (1.0 + 0j) ** F(1, 10))
         self.assertRaises(ZeroDivisionError, operator.pow,
                           F(0, 1), -2)
+
+        self.assertTypedEquals(F(3, 2) ** Rat(3, 1), F(27, 8))
+        self.assertTypedEquals(F(3, 2) ** Rat(-3, 1), F(8, 27))
+        self.assertTypedEquals(F(-3, 2) ** Rat(-3, 1), F(-8, 27))
+        self.assertTypedEquals(F(9, 4) ** Rat(3, 2), 3.375)
+        self.assertIsInstance(F(4, 9) ** Rat(-3, 2), float)
+        self.assertAlmostEqual(F(4, 9) ** Rat(-3, 2), 3.375)
+        self.assertAlmostEqual(F(-4, 9) ** Rat(-3, 2), 3.375j)
+        self.assertTypedEquals(Rat(9, 4) ** F(3, 2), 3.375)
+        self.assertTypedEquals(Rat(3, 2) ** F(3, 1), Rat(27, 8))
+        self.assertTypedEquals(Rat(3, 2) ** F(-3, 1), F(8, 27))
+        self.assertIsInstance(Rat(4, 9) ** F(-3, 2), float)
+        self.assertAlmostEqual(Rat(4, 9) ** F(-3, 2), 3.375)
+
+        self.assertTypedEquals(Root(4) ** F(2, 3), Root(4, 3.0))
+        self.assertTypedEquals(Root(4) ** F(2, 1), Root(4, F(1)))
+        self.assertTypedEquals(Root(4) ** F(-2, 1), Root(4, -F(1)))
+        self.assertTypedEquals(Root(4) ** F(-2, 3), Root(4, -3.0))
+        self.assertEqual(F(3, 2) ** SymbolicReal('X'), SymbolicReal('3/2 ** X'))
+        self.assertEqual(SymbolicReal('X') ** F(3, 2), SymbolicReal('X ** 1.5'))
+
+        self.assertTypedEquals(F(3, 2) ** Rect(2, 0), Polar(F(9,4), 0.0))
+        self.assertTypedEquals(F(1, 1) ** Rect(2, 3), Polar(F(1), 0.0))
+        self.assertTypedEquals(F(3, 2) ** RectComplex(2, 0), Polar(2.25, 0.0))
+        self.assertTypedEquals(F(1, 1) ** RectComplex(2, 3), Polar(1.0, 0.0))
+        self.assertTypedEquals(Polar(4, 2) ** F(3, 2), Polar(8.0, 3.0))
+        self.assertTypedEquals(Polar(4, 2) ** F(3, 1), Polar(64, 6))
+        self.assertTypedEquals(Polar(4, 2) ** F(-3, 1), Polar(0.015625, -6))
+        self.assertTypedEquals(Polar(4, 2) ** F(-3, 2), Polar(0.125, -3.0))
+        self.assertEqual(F(3, 2) ** SymbolicComplex('X'), SymbolicComplex('3/2 ** X'))
+        self.assertEqual(SymbolicComplex('X') ** F(3, 2), SymbolicComplex('X ** 1.5'))
+
+        self.assertEqual(F(3, 2) ** Symbolic('X'), Symbolic('3/2 ** X'))
+        self.assertEqual(Symbolic('X') ** F(3, 2), Symbolic('X ** 1.5'))
 
     def testMixingWithDecimal(self):
         # Decimal refuses mixed arithmetic (but not mixed comparisons)
@@ -845,12 +1234,50 @@ class FractionTest(unittest.TestCase):
         self.assertEqual(type(f.denominator), myint)
 
     def test_format_no_presentation_type(self):
-        # Triples (fraction, specification, expected_result)
+        # Triples (fraction, specification, expected_result).
         testcases = [
-            (F(1, 3), '', '1/3'),
-            (F(-1, 3), '', '-1/3'),
-            (F(3), '', '3'),
-            (F(-3), '', '-3'),
+            # Explicit sign handling
+            (F(2, 3), '+', '+2/3'),
+            (F(-2, 3), '+', '-2/3'),
+            (F(3), '+', '+3'),
+            (F(-3), '+', '-3'),
+            (F(2, 3), ' ', ' 2/3'),
+            (F(-2, 3), ' ', '-2/3'),
+            (F(3), ' ', ' 3'),
+            (F(-3), ' ', '-3'),
+            (F(2, 3), '-', '2/3'),
+            (F(-2, 3), '-', '-2/3'),
+            (F(3), '-', '3'),
+            (F(-3), '-', '-3'),
+            # Padding
+            (F(0), '5', '    0'),
+            (F(2, 3), '5', '  2/3'),
+            (F(-2, 3), '5', ' -2/3'),
+            (F(2, 3), '0', '2/3'),
+            (F(2, 3), '1', '2/3'),
+            (F(2, 3), '2', '2/3'),
+            # Alignment
+            (F(2, 3), '<5', '2/3  '),
+            (F(2, 3), '>5', '  2/3'),
+            (F(2, 3), '^5', ' 2/3 '),
+            (F(2, 3), '=5', '  2/3'),
+            (F(-2, 3), '<5', '-2/3 '),
+            (F(-2, 3), '>5', ' -2/3'),
+            (F(-2, 3), '^5', '-2/3 '),
+            (F(-2, 3), '=5', '- 2/3'),
+            # Fill
+            (F(2, 3), 'X>5', 'XX2/3'),
+            (F(-2, 3), '.<5', '-2/3.'),
+            (F(-2, 3), '\n^6', '\n-2/3\n'),
+            # Thousands separators
+            (F(1234, 5679), ',', '1,234/5,679'),
+            (F(-1234, 5679), '_', '-1_234/5_679'),
+            (F(1234567), '_', '1_234_567'),
+            (F(-1234567), ',', '-1,234,567'),
+            # Alternate form forces a slash in the output
+            (F(123), '#', '123/1'),
+            (F(-123), '#', '-123/1'),
+            (F(0), '#', '0/1'),
         ]
         for fraction, spec, expected in testcases:
             with self.subTest(fraction=fraction, spec=spec):
@@ -1214,11 +1641,72 @@ class FractionTest(unittest.TestCase):
             '.%',
             # Z instead of z for negative zero suppression
             'Z.2f'
+            # z flag not supported for general formatting
+            'z',
+            # zero padding not supported for general formatting
+            '05',
         ]
         for spec in invalid_specs:
             with self.subTest(spec=spec):
                 with self.assertRaises(ValueError):
                     format(fraction, spec)
+
+    @requires_IEEE_754
+    def test_float_format_testfile(self):
+        with open(format_testfile, encoding="utf-8") as testfile:
+            for line in testfile:
+                if line.startswith('--'):
+                    continue
+                line = line.strip()
+                if not line:
+                    continue
+
+                lhs, rhs = map(str.strip, line.split('->'))
+                fmt, arg = lhs.split()
+                if fmt == '%r':
+                    continue
+                fmt2 = fmt[1:]
+                with self.subTest(fmt=fmt, arg=arg):
+                    f = F(float(arg))
+                    self.assertEqual(format(f, fmt2), rhs)
+                    if f:  # skip negative zero
+                        self.assertEqual(format(-f, fmt2), '-' + rhs)
+                    f = F(arg)
+                    self.assertEqual(float(format(f, fmt2)), float(rhs))
+                    self.assertEqual(float(format(-f, fmt2)), float('-' + rhs))
+
+    def test_complex_handling(self):
+        # See issue gh-102840 for more details.
+
+        a = F(1, 2)
+        b = 1j
+        message = "unsupported operand type(s) for %s: '%s' and '%s'"
+        # test forward
+        self.assertRaisesMessage(TypeError,
+                                 message % ("%", "Fraction", "complex"),
+                                 operator.mod, a, b)
+        self.assertRaisesMessage(TypeError,
+                                 message % ("//", "Fraction", "complex"),
+                                 operator.floordiv, a, b)
+        self.assertRaisesMessage(TypeError,
+                                 message % ("divmod()", "Fraction", "complex"),
+                                 divmod, a, b)
+        # test reverse
+        self.assertRaisesMessage(TypeError,
+                                 message % ("%", "complex", "Fraction"),
+                                 operator.mod, b, a)
+        self.assertRaisesMessage(TypeError,
+                                 message % ("//", "complex", "Fraction"),
+                                 operator.floordiv, b, a)
+        self.assertRaisesMessage(TypeError,
+                                 message % ("divmod()", "complex", "Fraction"),
+                                 divmod, b, a)
+
+    def test_three_argument_pow(self):
+        message = "unsupported operand type(s) for ** or pow(): '%s', '%s', '%s'"
+        self.assertRaisesMessage(TypeError,
+                                 message % ("Fraction", "int", "int"),
+                                 pow, F(3), 4, 5)
 
 
 if __name__ == '__main__':
