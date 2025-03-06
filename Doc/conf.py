@@ -79,6 +79,10 @@ version, release = import_module('patchlevel').get_version_info()
 rst_epilog = f"""
 .. |python_version_literal| replace:: ``Python {version}``
 .. |python_x_dot_y_literal| replace:: ``python{version}``
+.. |python_x_dot_y_t_literal| replace:: ``python{version}t``
+.. |python_x_dot_y_t_literal_config| replace:: ``python{version}t-config``
+.. |x_dot_y_b2_literal| replace:: ``{version}.0b2``
+.. |applications_python_version_literal| replace:: ``/Applications/Python {version}/``
 .. |usr_local_bin_python_x_dot_y_literal| replace:: ``/usr/local/bin/python{version}``
 
 .. Apparently this how you hack together a formatted link:
