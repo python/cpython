@@ -738,12 +738,34 @@ class TestRetrievingSourceCode(GetSourceBase):
 
     def test_getmodule_file_not_found(self):
         # See bpo-45406
+        checked_objs = set()
         def _getabsfile(obj, _filename):
+            # Ensure non-caching is working
+            self.assertNotIn(obj, checked_objs)
+            checked_objs.add(obj)
             raise FileNotFoundError('bad file')
         with unittest.mock.patch('inspect.getabsfile', _getabsfile):
             f = inspect.currentframe()
             self.assertIsNone(inspect.getmodule(f))
             inspect.getouterframes(f)  # smoke test
+
+    def test_getmodule_cache(self):
+        with unittest.mock.patch(
+            'inspect._update_module_filename_cache',
+            side_effect=inspect._update_module_filename_cache,
+        ) as mock_update, unittest.mock.patch(
+            'inspect.getmodule', side_effect=inspect.getmodule
+        ) as mock_getmodule:
+            d = {}
+            exec("def x(): pass", d)
+            inspect.getmodule(d["x"].__code__)
+            self.assertTrue(mock_update.call_count > 0)
+            mock_getmodule.reset_mock()
+            mock_update.reset_mock()
+            inspect.getmodule(d["x"].__code__)
+            self.assertEqual(mock_getmodule.call_count, 1)
+            self.assertEqual(mock_update.call_count, 0)
+        inspect._moduleless.clear()
 
     def test_getframeinfo_get_first_line(self):
         frame_info = inspect.getframeinfo(self.fodderModule.fr, 50)
@@ -829,6 +851,7 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertEqual(inspect.getsourcefile(m.x.__code__), '<string>')
         del sys.modules[name]
         inspect.getmodule(compile('a=10','','single'))
+        inspect._moduleless.clear()
 
     def test_proceed_with_fake_filename(self):
         '''doctest monkeypatches linecache to enable inspection'''
@@ -846,6 +869,7 @@ class TestRetrievingSourceCode(GetSourceBase):
             inspect.getsource(ns["x"])
         finally:
             linecache.getlines = getlines
+            inspect._moduleless.clear()
 
     def test_getsource_on_code_object(self):
         self.assertSourceEqual(mod.eggs.__code__, 12, 18)
