@@ -675,7 +675,8 @@ resolve_jump_offsets(instr_sequence *instrs)
                 instruction *target = &instrs->s_instrs[instr->i_target];
                 instr->i_oparg = target->i_offset;
                 if (instr->i_opcode == END_ASYNC_FOR) {
-                    // Monitoring needs the target to be the END_SEND
+                    // sys.monitoring needs to be able to find the matching END_SEND
+                    // but the target is the SEND, so we adjust it here.
                     instr->i_oparg = offset - instr->i_oparg - END_SEND_OFFSET;
                 }
                 else if (instr->i_oparg < offset) {
