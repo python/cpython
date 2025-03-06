@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "opcode.h"
+#include "pycore_c_array.h"       // _Py_EnsureArrayLargeEnough
 #include "pycore_flowgraph.h"
 #include "pycore_compile.h"
 #include "pycore_intrinsics.h"
@@ -142,7 +143,7 @@ basicblock_next_instr(basicblock *b)
 {
     assert(b != NULL);
     RETURN_IF_ERROR(
-        _PyCompile_EnsureArrayLargeEnough(
+        _Py_EnsureArrayLargeEnough(
             b->b_iused + 1,
             (void**)&b->b_instr,
             &b->b_ialloc,

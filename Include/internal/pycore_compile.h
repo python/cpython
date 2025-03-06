@@ -11,6 +11,7 @@ extern "C" {
 #include <stdbool.h>
 
 #include "pycore_ast.h"       // mod_ty
+#include "pycore_c_array.h"   // _Py_EnsureArrayLargeEnough()
 #include "pycore_symtable.h"  // _Py_SourceLocation
 #include "pycore_instruction_sequence.h"
 
@@ -173,14 +174,6 @@ int _PyCodegen_EnterAnonymousScope(struct _PyCompiler* c, mod_ty mod);
 int _PyCodegen_Expression(struct _PyCompiler *c, expr_ty e);
 int _PyCodegen_Body(struct _PyCompiler *c, _Py_SourceLocation loc, asdl_stmt_seq *stmts,
                     bool is_interactive);
-
-/* Utility for a number of growing arrays used in the compiler */
-int _PyCompile_EnsureArrayLargeEnough(
-        int idx,
-        void **array,
-        int *alloc,
-        int default_alloc,
-        size_t item_size);
 
 int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
 

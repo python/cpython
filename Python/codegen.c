@@ -120,8 +120,8 @@ static const int compare_masks[] = {
  *
  */
 int
-_PyCompile_EnsureArrayLargeEnough(int idx, void **array, int *alloc,
-                                  int default_alloc, size_t item_size)
+_Py_EnsureArrayLargeEnough(int idx, void **array, int *alloc,
+                           int default_alloc, size_t item_size)
 {
     void *arr = *array;
     if (arr == NULL) {
