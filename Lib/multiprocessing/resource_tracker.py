@@ -83,8 +83,8 @@ class ResourceTracker(object):
             self._stop()
         except AttributeError:
             # AttributeError is likely caused by module teardown
-            # > __del__() can be executed during interpreter shutdown. As a 
-            # > consequence, the global variables it needs to access (including 
+            # > __del__() can be executed during interpreter shutdown. As a
+            # > consequence, the global variables it needs to access (including
             # > other modules) may already have been deleted or set to None.
             # see https://docs.python.org/3/reference/datamodel.html#object.__del__
             pass
