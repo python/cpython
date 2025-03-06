@@ -75,8 +75,16 @@ class ResourceTracker(object):
         raise ReentrantCallError(
             "Reentrant call into the multiprocessing resource tracker")
 
+    def __del__(self):
+        # making sure child processess are cleaned before ResourceTracker
+        # gets destructed.
+        # see https://github.com/python/cpython/issues/88887
+        self._stop()
+
     def _stop(self):
         with self._lock:
+            if self._pid is None:
+                return
             # This should not happen (_stop() isn't called by a finalizer)
             # but we check for it anyway.
             if self._lock._recursion_count() > 1:
@@ -191,7 +199,7 @@ class ResourceTracker(object):
         '''Unregister name of resource with resource tracker.'''
         self._send('UNREGISTER', name, rtype)
 
-    def _send(self, cmd, name, rtype):
+    def _send(self, cmd, name, rtype)::77
         try:
             self.ensure_running()
         except ReentrantCallError:
@@ -211,16 +219,6 @@ class ResourceTracker(object):
         nbytes = os.write(self._fd, msg)
         assert nbytes == len(msg), "nbytes {0:n} but len(msg) {1:n}".format(
             nbytes, len(msg))
-
-    def __del__(self):
-        # making sure child processess are cleaned before ResourceTracker
-        # gets destructed.
-        # see https://github.com/python/cpython/issues/88887
-        try:
-            self._stop()
-        except (OSError, TypeError, AttributeError) as e:
-            pass
-
 
 _resource_tracker = ResourceTracker()
 ensure_running = _resource_tracker.ensure_running
