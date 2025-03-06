@@ -1,0 +1,3 @@
+Fix the missing ``get_value`` for Semaphores on MacOSX
+by adding a dedicated workaround in :class:`_multiprocessing.SemLock`.
+The changes are located in the ``semaphore.c`` file in :mod:`_multiprocessing`.
