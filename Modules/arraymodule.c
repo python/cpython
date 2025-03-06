@@ -3244,7 +3244,6 @@ array_new_internal_lock_held(PyTypeObject *type, PyObject *initial, int c)
                 if (c == 'u') {
                     Py_ssize_t n;
                     wchar_t *ustr = PyUnicode_AsWideCharString(initial, &n);
-                    printf("... %ld, %ld\n", sizeof(wchar_t), n);
                     if (ustr == NULL) {
                         Py_DECREF(a);
                         return NULL;
