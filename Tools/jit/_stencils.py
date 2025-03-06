@@ -209,7 +209,15 @@ class Stencil:
             self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
         self.body.extend([0] * padding)
 
-    def remove_jump(self, *, alignment: int = 1) -> None:
+    def add_nop(self, alignment: int) -> None:
+        """Add a NOP if the offset is not aligned."""
+        offset = len(self.body)
+        nop = b"\x1f\x20\x03\xD5"
+        if offset % alignment:
+            self.disassembly.append(f"{offset:x}: d503201f\t\t nop")
+            self.body.extend(nop)
+
+    def remove_jump(self) -> None:
         """Remove a zero-length continuation jump, if it exists."""
         hole = max(self.holes, key=lambda hole: hole.offset)
         match hole:
@@ -244,8 +252,9 @@ class Stencil:
                 jump = b"\x00\x00\x00\x14"
             case _:
                 return
-        if self.body[offset:] == jump and offset % alignment == 0:
+        if self.body[offset:] == jump:
             self.body = self.body[:offset]
+            self.disassembly = self.disassembly[:-2]
             self.holes.remove(hole)
 
 
@@ -289,8 +298,8 @@ class StencilGroup:
                 self._trampolines.add(ordinal)
                 hole.addend = ordinal
                 hole.symbol = None
-        self.code.remove_jump(alignment=alignment)
-        self.code.pad(alignment)
+        self.code.remove_jump()
+        self.code.add_nop(alignment=alignment)
         self.data.pad(8)
         for stencil in [self.code, self.data]:
             for hole in stencil.holes:
