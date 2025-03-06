@@ -135,6 +135,16 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. versionchanged:: 3.10
       This function will no longer use :meth:`~object.__int__`.
 
+   .. c:namespace:: NULL
+
+   .. c:function:: long PyLong_AS_LONG(PyObject *obj)
+
+      A :term:`soft deprecated` alias.
+      Exactly equivalent to the preferred ``PyLong_AsLong``. In particular,
+      it can fail with :exc:`OverflowError` or another exception.
+
+      .. deprecated:: 3.14
+         The function is soft deprecated.
 
 .. c:function:: long PyLong_AsLongAndOverflow(PyObject *obj, int *overflow)
 
