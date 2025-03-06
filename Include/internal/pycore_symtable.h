@@ -58,7 +58,7 @@ typedef struct {
                .end_col_offset = (n)->end_col_offset }
 
 static const _Py_SourceLocation NO_LOCATION = {-1, -1, -1, -1};
-static const _Py_SourceLocation NEXT_LOCATION = {INT_MAX, INT_MAX, INT_MAX, INT_MAX};
+static const _Py_SourceLocation NEXT_LOCATION = {-2, -2, -2, -2};
 
 /* __future__ information */
 typedef struct {
