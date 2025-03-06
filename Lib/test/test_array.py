@@ -1961,16 +1961,30 @@ class FreeThreadingTest(unittest.TestCase):
                 a[0] = a[1]
                 a[1] = a[0]
 
+        def append_and_pop(b, a, count):
+            v = a[0]
+            b.wait()
+            for _ in range(count):
+                a.append(v)
+                a.pop()
+
+        def copy_random(b, a, count):
+            end = len(a) - 1
+            idxs = [(random.randint(0, end), random.randint(0, end)) for _ in range(count)]
+            b.wait()
+            for src, dst in idxs:
+                a[dst] = a[src]
+
         def extend_range(b, a, count):
             b.wait()
             for _ in range(count):
                 a.extend(range(10))
 
-        def append_and_pop(b, a, count):
+        def extend_self(b, a, count):
+            c = a[:]
             b.wait()
             for _ in range(count):
-                a.append(1)
-                a.pop()
+                a.extend(c)
 
         for tc in typecodes:
             if tc in 'uw':
@@ -1978,9 +1992,13 @@ class FreeThreadingTest(unittest.TestCase):
             else:
                 a = array.array(tc, [0, 1])
 
-        self.check([copy_back_and_forth] * 10, a, 100)
-        self.check([append_and_pop] * 10, a, 100)
-        self.check([copy_back_and_forth] * 10 + [extend_range], a, 10)
+            self.check([copy_back_and_forth] * 10, a, 100)
+            self.check([append_and_pop] * 10, a, 100)
+            self.check([copy_back_and_forth] * 10 + [extend_self], a, 100)
+
+            if tc not in 'uw':
+                self.check([copy_back_and_forth] * 10 + [extend_range], a, 100)
+                self.check([copy_random] * 10, a * 5, 100)
 
 
 if __name__ == "__main__":

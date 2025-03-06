@@ -197,7 +197,44 @@ arraydata_set_items(arraydata *data, char *newitems, Py_ssize_t newsize, int ite
     return data;
 }
 
+#ifdef Py_GIL_DISABLED
+
+static void
+atomic_itemcpy(void *dest, const void *src, size_t n, int itemsize)
+{
+    if (itemsize == 1) {
+        for (char *d = (char *) dest, *end = d + n, *s = (char *) src;
+             d < end; d++, s++) {
+            _Py_atomic_store_char_relaxed(d, _Py_atomic_load_char_relaxed(s));
+        }
+    }
+    else if (itemsize == 2) {
+        for (short *d = (short *) dest, *end = d + n, *s = (short *) src;
+             d < end; d++, s++) {
+            _Py_atomic_store_short_relaxed(d, _Py_atomic_load_short_relaxed(s));
+        }
+    }
+    else if (itemsize == 4) {
+        for (PY_UINT32_T *d = (PY_UINT32_T *) dest, *end = d + n, *s = (PY_UINT32_T *) src;
+             d < end; d++, s++) {
+            _Py_atomic_store_uint32_relaxed(d, _Py_atomic_load_uint32_relaxed(s));
+        }
+    }
+    else if (itemsize == 8) {
+        for (PY_UINT64_T *d = (PY_UINT64_T *) dest, *end = d + n, *s = (PY_UINT64_T *) src;
+             d < end; d++, s++) {
+            _Py_atomic_store_uint64_relaxed(d, _Py_atomic_load_uint64_relaxed(s));
+        }
+    }
+    else {
+        assert(false);
+    }
+}
+
+#endif
+
 #ifndef Py_GIL_DISABLED
+
 static arraydata *
 arraydata_realloc(arraydata *data, Py_ssize_t size, int itemsize)
 {
@@ -211,6 +248,7 @@ arraydata_realloc(arraydata *data, Py_ssize_t size, int itemsize)
     data->allocated = size;
     return data;
 }
+
 #endif
 
 static int
@@ -289,7 +327,11 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
     }
     if (data != NULL) {
         Py_ssize_t size = Py_SIZE(self);
+#ifdef Py_GIL_DISABLED
+        atomic_itemcpy(newdata->items, data->items, Py_MIN(size, newsize), itemsize);
+#else
         memcpy(newdata->items, data->items, Py_MIN(size, newsize) * itemsize);
+#endif
         arraydata_free(data, _PyObject_GC_IS_SHARED(self));
     }
     _Py_atomic_store_ptr_release(&self->data, newdata);
@@ -375,7 +417,7 @@ BB_setitem(char *items, Py_ssize_t i, PyObject *v)
 static PyObject *
 u_getitem(char *items, Py_ssize_t i)
 {
-#if WCHAR_MAX > 0xFFFF
+#if SIZEOF_WCHAR_T > 2
     return PyUnicode_FromOrdinal(
         (wchar_t) FT_ATOMIC_LOAD_INT_RELAXED(((wchar_t *) items)[i]));
 #else
@@ -416,7 +458,7 @@ u_setitem(char *items, Py_ssize_t i, PyObject *v)
     assert(len == 1);
 
     if (i >= 0) {
-#if WCHAR_MAX > 0xFFFF
+#if SIZEOF_WCHAR_T > 2
         FT_ATOMIC_STORE_INT_RELAXED(((wchar_t *) items)[i], w);
 #else
         FT_ATOMIC_STORE_SHORT_RELAXED(((wchar_t *) items)[i], w);
@@ -960,9 +1002,7 @@ setarrayitem_maybe_locked(PyObject *op, Py_ssize_t i, PyObject *v)
     if (!valid_index(i, data->allocated)) {
         goto error;
     }
-    int ret = setarrayitem(ap, i, v, data->items);
-    _Py_atomic_fence_release();
-    return ret;
+    return setarrayitem(ap, i, v, data->items);
 
 error:
     PyErr_SetString(PyExc_IndexError, "array index out of range");
