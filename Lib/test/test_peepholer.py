@@ -1414,6 +1414,33 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         self.cfg_optimization_test(before, after, consts=[], expected_consts=[(1, 2, 3)])
 
+        # NOP's in between: (1, 2, 3)
+        before = [
+            ('BUILD_LIST', 0, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('NOP', None, 0),
+            ('NOP', None, 0),
+            ('LIST_APPEND', 1, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('NOP', None, 0),
+            ('NOP', None, 0),
+            ('LIST_APPEND', 1, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('NOP', None, 0),
+            ('LIST_APPEND', 1, 0),
+            ('NOP', None, 0),
+            ('CALL_INTRINSIC_1', INTRINSIC_LIST_TO_TUPLE, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[(1, 2, 3)])
+
     def test_optimize_if_const_list(self):
         before = [
             ('NOP', None, 0),
