@@ -1649,7 +1649,7 @@ class FileIO(RawIOBase):
         multiple read calls. See ``_io.FileIO.readall``.
 
         Attempts to make only one system call, retrying only per
-        PEP-475 (EINTR). This means less data may be returned than
+        PEP 475 (EINTR). This means less data may be returned than
         requested.
 
         In non-blocking mode, returns None if no data is available.
