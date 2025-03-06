@@ -375,8 +375,11 @@ class ForkAwareThreadLock(object):
 
 
 class ForkAwareLocal(threading.local):
-    def __init__(self):
-        register_after_fork(self, lambda obj : obj.__dict__.clear())
+    def __new__(cls):
+        self = threading.local.__new__(cls)
+        register_after_fork(self, lambda obj: obj.__dict__.clear())
+        return self
+
     def __reduce__(self):
         return type(self), ()
 
