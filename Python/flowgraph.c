@@ -1507,65 +1507,62 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
     assert(intrinsic->i_opcode == CALL_INTRINSIC_1);
     assert(intrinsic->i_oparg == INTRINSIC_LIST_TO_TUPLE);
 
-    PyObject *list = PyList_New(0);
-    if (list == NULL) {
-        return ERROR;
-    }
+    int consts_found = 0;
+    bool start_found = false;
+    bool expect_append = true;
 
     for (int pos = i-1; pos >= 0; pos--) {
         cfg_instr *instr = &bb->b_instr[pos];
-
         if (instr->i_opcode == NOP) {
             continue;
         }
 
-        if (instr->i_opcode == BUILD_LIST && instr->i_oparg == 0) {
-            /* Sequence start, we are done. */
-            if (PyList_Reverse(list) < 0) {
-                goto error;
+        if (instr->i_opcode == BUILD_LIST &&instr->i_oparg == 0) {
+            start_found = expect_append;
+            break;
+        }
+
+        if (expect_append) {
+            if (!(instr->i_opcode == LIST_APPEND && instr->i_oparg == 1)) {
+                break;
             }
-            PyObject *newconst = PyList_AsTuple(list);
-            if (newconst == NULL) {
-                goto error;
+        }
+        else {
+            if (!loads_const(instr->i_opcode)) {
+                break;
             }
-            Py_DECREF(list);
-            int nops = (int)PyTuple_Size(newconst) * 2 + 1;
-            nop_out(bb, i-1, nops);
-            return instr_make_load_const(intrinsic, newconst, consts, const_cache);
+            consts_found++;
         }
 
-        if (pos < 1) {
-            /* Can't process 2 instructions. */
-            goto exit;
-        }
-
-        if (!(instr->i_opcode == LIST_APPEND && instr->i_oparg == 1)) {
-            goto exit;
-        }
-
-        instr = &bb->b_instr[--pos];
-        if (!loads_const(instr->i_opcode)) {
-            goto exit;
-        }
-
-        PyObject *constant = get_const_value(instr->i_opcode, instr->i_oparg, consts);
-        if (constant == NULL) {
-            goto error;
-        }
-
-        int r = PyList_Append(list, constant);
-        Py_DECREF(constant);
-        if (r < 0) {
-            goto error;
-        }
+        expect_append = !expect_append;
     }
 
-exit:
-    Py_DECREF(list);
-    return SUCCESS;
-error:
-    Py_DECREF(list);
-    return ERROR;
+    if (!start_found) {
+        return SUCCESS;
+    }
+
+    PyObject *newconst = PyTuple_New((Py_ssize_t)consts_found);
+    if (newconst == NULL) {
+        return ERROR;
+    }
+
+    int nops = consts_found * 2 + 1;
+    for (int pos = i-1; pos >= 0 && consts_found > 0; pos--) {
+        cfg_instr *instr = &bb->b_instr[pos];
+        if (!loads_const(instr->i_opcode)) {
+            continue;
+        }
+        PyObject *constant = get_const_value(instr->i_opcode, instr->i_oparg, consts);
+        if (constant == NULL) {
+            Py_DECREF(newconst);
+            return ERROR;
+        }
+        PyTuple_SET_ITEM(newconst, --consts_found, constant);
+    }
+
+    assert(consts_found == 0);
+    nop_out(bb, i-1, nops);
+    return instr_make_load_const(intrinsic, newconst, consts, const_cache);
 }
 
 #define MIN_CONST_SEQUENCE_SIZE 3
