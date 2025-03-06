@@ -306,6 +306,7 @@ def as_transitive(graph):
             try:
                 child = next(stack[-1])
             except StopIteration:
+                # "Return"
                 stack.pop()
                 seen.remove(path.pop())
                 continue
@@ -321,6 +322,7 @@ def as_transitive(graph):
                 seen.add(child)
                 continue
 
+            node = path[-1]
             transitive_graph[node].add(child)
             transitive_graph[node].update(transitive_graph.get(child, ()))
 
