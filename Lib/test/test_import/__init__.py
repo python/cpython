@@ -1185,6 +1185,7 @@ except ImportError as e:
             for line in lines:
                 self.assertRegex(line, rb"cannot import name 'Fraction' from 'fractions' \(.*\)")
 
+    @unittest.skipIf(sys.platform == 'win32', 'Cannot delete cwd on Windows')
     def test_script_shadowing_stdlib_cwd_failure(self):
         with os_helper.temp_dir() as tmp:
             subtmp = os.path.join(tmp, "subtmp")
