@@ -2,8 +2,8 @@
 
 .. _type-structs:
 
-Type Objects
-============
+Type Object Structures
+======================
 
 Perhaps one of the most important structures of the Python object system is the
 structure that defines a new type: the :c:type:`PyTypeObject` structure.  Type
