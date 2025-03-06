@@ -75,7 +75,7 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
                 self.write("\nKeyboardInterrupt\n")
             else:
                 self.showtraceback()
-
+            return self.STATEMENT_FAILED
 
 class REPLThread(threading.Thread):
 
