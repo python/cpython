@@ -286,7 +286,7 @@ def as_transitive(graph):
     values will be sets of transitive predecessors of the key, rather than
     direct predecessors.
 
-    Examples:
+    For example:
         >>> as_transitive({"a": ["b"], "b": ["c"]})
         {'a': {'b', 'c'}, 'b': {'c'}}
     """
@@ -296,6 +296,8 @@ def as_transitive(graph):
     while unprocessed:
         node, deps = unprocessed.popitem()
 
+        # We use a recursive algorithm but don't use Python's stack in
+        # order to avoid hitting the recursion limit.
         stack = [iter(deps)]
         path = [node]  # Ordering for cycle detection
         seen = {node}  # Fast test for cycle detection
@@ -312,12 +314,12 @@ def as_transitive(graph):
                 cycle = [child, *reversed(path[path.index(child):])]
                 raise CycleError("nodes are in a cycle", cycle)
 
-            if (deps := unprocessed.pop(child, None)) is not None:
-                if deps:
-                    stack.append(iter(deps))
-                    path.append(child)
-                    seen.add(child)
-                    continue
+            # "Recurse" into the child's deps if it has any
+            if deps := unprocessed.pop(child, None):
+                stack.append(iter(deps))
+                path.append(child)
+                seen.add(child)
+                continue
 
             transitive_graph[node].add(child)
             transitive_graph[node].update(transitive_graph.get(child, ()))
