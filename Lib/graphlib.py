@@ -308,8 +308,14 @@ def as_transitive(graph):
             except StopIteration:
                 # "Return"
                 stack.pop()
-                seen.remove(path.pop())
-                continue
+                if not stack:
+                    break
+                child = path.pop()
+                seen.remove(child)
+                node = path[-1]
+                transitive_graph[node].update(transitive_graph.get(child, ()))
+
+            transitive_graph[node].add(child)
 
             if child in seen:
                 cycle = [child, *reversed(path[path.index(child):])]
@@ -317,13 +323,11 @@ def as_transitive(graph):
 
             # "Recurse" into the child's deps if it has any
             if deps := unprocessed.pop(child, None):
+                node = child
                 stack.append(iter(deps))
                 path.append(child)
                 seen.add(child)
                 continue
-
-            node = path[-1]
-            transitive_graph[node].add(child)
             transitive_graph[node].update(transitive_graph.get(child, ()))
 
     return transitive_graph
