@@ -1,6 +1,7 @@
 import graphlib
 import os
 import unittest
+from itertools import permutations
 
 from test.support.script_helper import assert_python_ok
 
@@ -296,6 +297,31 @@ class TestAsTransitive(unittest.TestCase):
         graph = {"a": ["b"], "b": ["c", "e"], "c": ["d"]}
         expected = {"a": {"b", "c", "d", "e"}, "b": {"c", "d", "e"}, "c": {"d"}}
         self.assertEqual(graphlib.as_transitive(graph), expected)
+
+    def test_as_transitive_disordered_chain(self):
+        """We can compute the transitive closure of a graph in any order."""
+        graph = {"a": "b", "b": "c", "c": "d", "d": "e"}.items()
+        expected = {
+            "a": {"b", "c", "d", "e"},
+            "b": {"c", "d", "e"},
+            "c": {"d", "e"},
+            "d": {"e"}
+        }
+        for perm in permutations(graph):
+            with self.subTest(perm):
+                self.assertEqual(graphlib.as_transitive(dict(perm)), expected)
+
+    def test_as_transitive_disordered_wide(self):
+        """We can compute the transitive closure of a graph in any order."""
+        graph = {"a": "bc", "c": "de", "e": "f"}.items()
+        expected = {
+            "a": {"b", "c", "d", "e", "f"},
+            "c": {"d", "e", "f"},
+            "e": {"f"}
+        }
+        for perm in permutations(graph):
+            with self.subTest(perm):
+                self.assertEqual(graphlib.as_transitive(dict(perm)), expected)
 
     def test_as_transitive_disjoint(self):
         """We compute the transitive closure of disjoint subgraphs."""
