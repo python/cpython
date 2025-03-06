@@ -363,7 +363,9 @@ class GzipFile(_compression.BaseStream):
 
     def close(self):
         fileobj = self.fileobj
-        if fileobj is None or self._buffer is None or self._buffer.closed:
+        if fileobj is None:
+            return
+        if self._buffer is None or self._buffer.closed:
             return
         try:
             if self.mode == WRITE:
@@ -446,7 +448,7 @@ class GzipFile(_compression.BaseStream):
             warnings.warn("unclosed GzipFile",
                           ResourceWarning, source=self, stacklevel=2)
 
-        return super().__del__()
+        super().__del__()
 
 def _read_exact(fp, n):
     '''Read exactly *n* bytes from `fp`
