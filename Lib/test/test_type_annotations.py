@@ -596,3 +596,17 @@ class ConditionalAnnotationTests(unittest.TestCase):
             {"outer_before": "outer_before", "inner_else": "inner_else",
              "outer_after": "outer_after"},
         )
+
+    def test_non_name_annotations(self):
+        code = """
+            before: "before"
+            if {cond}:
+                a = "x"
+                a[0]: int
+            else:
+                a = object()
+                a.b: str
+            after: "after"
+        """
+        expected = {"before": "before", "after": "after"}
+        self.check_scopes(code, expected, expected)
