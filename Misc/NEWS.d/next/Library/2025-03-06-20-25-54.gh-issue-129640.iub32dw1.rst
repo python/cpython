@@ -1,1 +1,1 @@
-Fixed a reference cycle in ``gzip.GzipFile`` when writing to a file.
+Fix a reference cycle in :class:`gzip.GzipFile` when writing to a file.
