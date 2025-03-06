@@ -79,18 +79,26 @@ class ResourceTracker(object):
         # making sure child processess are cleaned before ResourceTracker
         # gets destructed.
         # see https://github.com/python/cpython/issues/88887
-        self._stop()
+        try:
+            self._stop()
+        except AttributeError:
+            # AttributeError is likely caused by module teardown
+            # > __del__() can be executed during interpreter shutdown. As a 
+            # > consequence, the global variables it needs to access (including 
+            # > other modules) may already have been deleted or set to None.
+            # see https://docs.python.org/3/reference/datamodel.html#object.__del__
+            pass
 
     def _stop(self):
         with self._lock:
-            if self._pid is None:
-                return
             # This should not happen (_stop() isn't called by a finalizer)
             # but we check for it anyway.
             if self._lock._recursion_count() > 1:
                 return self._reentrant_call_error()
             if self._fd is None:
                 # not running
+                return
+            if self._pid is None:
                 return
 
             # closing the "alive" file descriptor stops main()
