@@ -375,7 +375,7 @@ BB_setitem(char *items, Py_ssize_t i, PyObject *v)
 static PyObject *
 u_getitem(char *items, Py_ssize_t i)
 {
-#if WCHAR_MAX == 0x7FFFFFFF
+#if WCHAR_MAX > 0xFFFF
     return PyUnicode_FromOrdinal(
         (wchar_t) FT_ATOMIC_LOAD_INT_RELAXED(((wchar_t *) items)[i]));
 #else
@@ -416,7 +416,7 @@ u_setitem(char *items, Py_ssize_t i, PyObject *v)
     assert(len == 1);
 
     if (i >= 0) {
-#if WCHAR_MAX == 0x7FFFFFFF
+#if WCHAR_MAX > 0xFFFF
         FT_ATOMIC_STORE_INT_RELAXED(((wchar_t *) items)[i], w);
 #else
         FT_ATOMIC_STORE_SHORT_RELAXED(((wchar_t *) items)[i], w);
