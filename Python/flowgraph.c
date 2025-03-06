@@ -1511,24 +1511,27 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
     bool start_found = false;
     bool expect_append = true;
 
-    for (int pos = i-1; pos >= 0; pos--) {
+    for (int pos = i - 1; pos >= 0; pos--) {
         cfg_instr *instr = &bb->b_instr[pos];
-        if (instr->i_opcode == NOP) {
+        int opcode = instr->i_opcode;
+        int oparg = instr->i_oparg;
+
+        if (opcode == NOP) {
             continue;
         }
 
-        if (instr->i_opcode == BUILD_LIST &&instr->i_oparg == 0) {
+        if (opcode == BUILD_LIST && oparg == 0) {
             start_found = expect_append;
             break;
         }
 
         if (expect_append) {
-            if (!(instr->i_opcode == LIST_APPEND && instr->i_oparg == 1)) {
+            if (opcode != LIST_APPEND || oparg != 1) {
                 break;
             }
         }
         else {
-            if (!loads_const(instr->i_opcode)) {
+            if (!loads_const(opcode)) {
                 break;
             }
             consts_found++;
@@ -1547,17 +1550,16 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
     }
 
     int nops = consts_found * 2 + 1;
-    for (int pos = i-1; pos >= 0 && consts_found > 0; pos--) {
+    for (int pos = i - 1; pos >= 0 && consts_found > 0; pos--) {
         cfg_instr *instr = &bb->b_instr[pos];
-        if (!loads_const(instr->i_opcode)) {
-            continue;
+        if (loads_const(instr->i_opcode)) {
+            PyObject *constant = get_const_value(instr->i_opcode, instr->i_oparg, consts);
+            if (constant == NULL) {
+                Py_DECREF(newconst);
+                return ERROR;
+            }
+            PyTuple_SET_ITEM(newconst, --consts_found, constant);
         }
-        PyObject *constant = get_const_value(instr->i_opcode, instr->i_oparg, consts);
-        if (constant == NULL) {
-            Py_DECREF(newconst);
-            return ERROR;
-        }
-        PyTuple_SET_ITEM(newconst, --consts_found, constant);
     }
 
     assert(consts_found == 0);
