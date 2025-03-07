@@ -84,8 +84,6 @@ declare -a lib_files
 lib_files=(
   krmllib/dist/minimal/FStar_UInt_8_16_32_64.h
   krmllib/dist/minimal/FStar_UInt128.h
-  krmllib/dist/minimal/fstar_uint128_gcc64.h
-  krmllib/dist/minimal/fstar_uint128_msvc.h
   krmllib/dist/minimal/fstar_uint128_struct_endianness.h
   krmllib/dist/minimal/FStar_UInt128_Verified.h
 )
@@ -117,8 +115,11 @@ fi
 readarray -t all_files < <(find . -name '*.h' -or -name '*.c')
 
 # Adjust the include path to reflect the local directory structure
-$sed -i 's!#include "fstar_uint128_msvc.h"!#include "krml/fstar_uint128_msvc.h"!g' include/krml/internal/types.h
-$sed -i 's!#include "fstar_uint128_gcc64.h"!#include "krml/fstar_uint128_gcc64.h"!g' include/krml/internal/types.h
+$sed -i 's!#include "FStar_UInt128_Verified.h"!#include "krml/FStar_UInt128_Verified.h"!g' include/krml/internal/types.h
+$sed -i 's!#include "fstar_uint128_struct_endianness.h"!#include "krml/fstar_uint128_struct_endianness.h"!g' include/krml/internal/types.h
+
+# use KRML_VERIFIED_UINT128
+$sed -i -z 's!#define KRML_TYPES_H!#define KRML_TYPES_H\n#define KRML_VERIFIED_UINT128!g' include/krml/internal/types.h
 
 # FStar_UInt_8_16_32_64 contains definitions useful in the general case, but not
 # for us; trim!
@@ -130,7 +131,7 @@ $sed -i -z 's!\(extern\|typedef\)[^;]*;\n\n!!g' include/krml/FStar_UInt_8_16_32_
 $sed -i 's!#include.*Hacl_Krmllib.h"!!g' "${all_files[@]}"
 
 # Use globally unique names for the Hacl_ C APIs to avoid linkage conflicts.
-$sed -i -z 's!#include <string.h>\n!#include <string.h>\n#include "python_hacl_namespaces.h"\n!' Hacl_Hash_*.h
+$sed -i -z 's!#include <string.h>!#include <string.h>\n#include "python_hacl_namespaces.h"!' Hacl_Hash_*.h
 
 # Finally, we remove a bunch of ifdefs from target.h that are, again, useful in
 # the general case, but not exercised by the subset of HACL* that we vendor.

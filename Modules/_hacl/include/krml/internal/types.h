@@ -3,6 +3,7 @@
 
 #ifndef KRML_TYPES_H
 #define KRML_TYPES_H
+#define KRML_VERIFIED_UINT128
 
 #include <inttypes.h>
 #include <stdio.h>
@@ -94,12 +95,12 @@ typedef FStar_UInt128_uint128 FStar_UInt128_t, uint128_t;
 #ifndef __FStar_UInt_8_16_32_64_H
 
 #if !defined(KRML_VERIFIED_UINT128) && defined(IS_MSVC64)
-#include "krml/fstar_uint128_msvc.h"
+#include "fstar_uint128_msvc.h"
 #elif !defined(KRML_VERIFIED_UINT128) && defined(HAS_INT128)
-#include "krml/fstar_uint128_gcc64.h"
+#include "fstar_uint128_gcc64.h"
 #else
-#include "FStar_UInt128_Verified.h"
-#include "fstar_uint128_struct_endianness.h"
+#include "krml/FStar_UInt128_Verified.h"
+#include "krml/fstar_uint128_struct_endianness.h"
 #endif
 
 #endif
