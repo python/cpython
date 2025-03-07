@@ -863,7 +863,7 @@ bytes object at EOF.
 
 static PyObject *
 _io_FileIO_read_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
-/*[clinic end generated code: output=bbd749c7c224143e input=a508789e8d9468b4]*/
+/*[clinic end generated code: output=bbd749c7c224143e input=e8376d92a521d865]*/
 {
     char *ptr;
     Py_ssize_t n;
