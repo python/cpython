@@ -1406,7 +1406,7 @@ are always available.  They are listed here in alphabetical order.
    given, the default buffering policy works as follows:
 
    * Binary files are buffered in fixed-size chunks; the size of the buffer
-     is max(min(blocksize, 8 MiB), DEFAULT_BUFFER_SIZE)
+     is ``max(min(blocksize, 8 MiB), DEFAULT_BUFFER_SIZE)``
      when the device block size is available.
      On most systems, the buffer will typically be 128 kilobytes long.
 
