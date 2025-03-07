@@ -7,7 +7,7 @@
 
 #include "Python.h"
 
-#include "pycore_c_array.h" // _Py_EnsureArrayLargeEnough
+#include "pycore_c_array.h" // _Py_c_array_EnsureCapacity
 #include "pycore_compile.h" // _PyInstruction
 #include "pycore_opcode_utils.h"
 #include "pycore_opcode_metadata.h" // OPCODE_HAS_ARG, etc
@@ -37,12 +37,16 @@ static int
 instr_sequence_next_inst(instr_sequence *seq) {
     assert(seq->s_instrs != NULL || seq->s_used == 0);
 
-    RETURN_IF_ERROR(
-        _Py_EnsureArrayLargeEnough(seq->s_used + 1,
-                                   (void**)&seq->s_instrs,
-                                   &seq->s_allocated,
-                                   INITIAL_INSTR_SEQUENCE_SIZE,
-                                   sizeof(instruction)));
+
+    _Py_c_array_t array = {
+        .array = (void**)&seq->s_instrs,
+        .allocated_entries = &seq->s_allocated,
+        .item_size = sizeof(instruction),
+        .initial_num_entries = INITIAL_INSTR_SEQUENCE_SIZE,
+    };
+
+    RETURN_IF_ERROR(_Py_c_array_EnsureCapacity(&array, seq->s_used + 1));
+
     assert(seq->s_allocated >= 0);
     assert(seq->s_used < seq->s_allocated);
     return seq->s_used++;
@@ -59,12 +63,14 @@ int
 _PyInstructionSequence_UseLabel(instr_sequence *seq, int lbl)
 {
     int old_size = seq->s_labelmap_size;
-    RETURN_IF_ERROR(
-        _Py_EnsureArrayLargeEnough(lbl,
-                                   (void**)&seq->s_labelmap,
-                                   &seq->s_labelmap_size,
-                                   INITIAL_INSTR_SEQUENCE_LABELS_MAP_SIZE,
-                                   sizeof(int)));
+    _Py_c_array_t array = {
+        .array = (void**)&seq->s_labelmap,
+        .allocated_entries = &seq->s_labelmap_size,
+        .item_size = sizeof(int),
+        .initial_num_entries = INITIAL_INSTR_SEQUENCE_LABELS_MAP_SIZE,
+    };
+
+    RETURN_IF_ERROR(_Py_c_array_EnsureCapacity(&array, lbl));
 
     for(int i = old_size; i < seq->s_labelmap_size; i++) {
         seq->s_labelmap[i] = -111;  /* something weird, for debugging */

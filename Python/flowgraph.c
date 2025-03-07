@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "opcode.h"
-#include "pycore_c_array.h"       // _Py_EnsureArrayLargeEnough
+#include "pycore_c_array.h"       // _Py_c_array_EnsureCapacity
 #include "pycore_flowgraph.h"
 #include "pycore_compile.h"
 #include "pycore_intrinsics.h"
@@ -142,13 +142,14 @@ static int
 basicblock_next_instr(basicblock *b)
 {
     assert(b != NULL);
-    RETURN_IF_ERROR(
-        _Py_EnsureArrayLargeEnough(
-            b->b_iused + 1,
-            (void**)&b->b_instr,
-            &b->b_ialloc,
-            DEFAULT_BLOCK_SIZE,
-            sizeof(cfg_instr)));
+    _Py_c_array_t array = {
+        .array = (void**)&b->b_instr,
+        .allocated_entries = &b->b_ialloc,
+        .item_size = sizeof(cfg_instr),
+        .initial_num_entries = DEFAULT_BLOCK_SIZE,
+    };
+
+    RETURN_IF_ERROR(_Py_c_array_EnsureCapacity(&array, b->b_iused + 1));
     return b->b_iused++;
 }
 

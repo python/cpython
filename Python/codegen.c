@@ -18,6 +18,7 @@
 #define NEED_OPCODE_TABLES
 #include "pycore_opcode_utils.h"
 #undef NEED_OPCODE_TABLES
+#include "pycore_c_array.h"       // _Py_c_array_t
 #include "pycore_compile.h"
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_NewLabel()
 #include "pycore_intrinsics.h"
@@ -109,40 +110,31 @@ static const int compare_masks[] = {
     [Py_GE] = COMPARISON_GREATER_THAN | COMPARISON_EQUALS,
 };
 
-/*
- * Resize the array if index is out of range.
- *
- * idx: the index we want to access
- * arr: pointer to the array
- * alloc: pointer to the capacity of the array
- * initial_size: initial number of items
- * item_size: size of each item
- *
- */
+
 int
-_Py_EnsureArrayLargeEnough(int idx, void **array, int *alloc,
-                           int initial_size, size_t item_size)
+_Py_c_array_EnsureCapacity(_Py_c_array_t *c_array, int idx)
 {
-    void *arr = *array;
+    void *arr = *c_array->array;
+    int alloc = *c_array->allocated_entries;
     if (arr == NULL) {
-        int new_alloc = initial_size;
+        int new_alloc = c_array->initial_num_entries;
         if (idx >= new_alloc) {
-            new_alloc = idx + initial_size;
+            new_alloc = idx + c_array->initial_num_entries;
         }
-        arr = PyMem_Calloc(new_alloc, item_size);
+        arr = PyMem_Calloc(new_alloc, c_array->item_size);
         if (arr == NULL) {
             PyErr_NoMemory();
             return ERROR;
         }
-        *alloc = new_alloc;
+        alloc = new_alloc;
     }
-    else if (idx >= *alloc) {
-        size_t oldsize = *alloc * item_size;
-        int new_alloc = *alloc << 1;
+    else if (idx >= alloc) {
+        size_t oldsize = alloc * c_array->item_size;
+        int new_alloc = alloc << 1;
         if (idx >= new_alloc) {
-            new_alloc = idx + initial_size;
+            new_alloc = idx + c_array->initial_num_entries;
         }
-        size_t newsize = new_alloc * item_size;
+        size_t newsize = new_alloc * c_array->item_size;
 
         if (oldsize > (SIZE_MAX >> 1)) {
             PyErr_NoMemory();
@@ -155,12 +147,13 @@ _Py_EnsureArrayLargeEnough(int idx, void **array, int *alloc,
             PyErr_NoMemory();
             return ERROR;
         }
-        *alloc = new_alloc;
+        alloc = new_alloc;
         arr = tmp;
         memset((char *)arr + oldsize, 0, newsize - oldsize);
     }
 
-    *array = arr;
+    *c_array->array = arr;
+    *c_array->allocated_entries = alloc;
     return SUCCESS;
 }
 

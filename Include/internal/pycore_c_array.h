@@ -10,25 +10,22 @@ extern "C" {
 #endif
 
 
-/* Utility for a number of growing arrays
- *
- * idx: index we need to write to
- * array: pointer to the array
- * alloc: pointer to array capacity
- * delta: array growth
- * item_size: size of each array entry
- *
- * If *array is NULL, allocate default_alloc entries.
- * Otherwise, double the array size if idx is out of range.
+/* Utility for a number of growing arrays */
+
+typedef struct {
+    void **array;             /* pointer to the array */
+    int *allocated_entries;   /* pointer to the capacity of the array */
+    size_t item_size;         /* size of each element */
+    int initial_num_entries;  /* initial allocation size */
+} _Py_c_array_t;
+
+/* If idx is out of bouds:
+ * If arr->array is NULL, allocate arr->initial_num_entries slots.
+ * Otherwise, double its size.
  *
  * Return 0 if successful and -1 (with exception set) otherwise.
  */
-int _Py_EnsureArrayLargeEnough(
-    int idx,
-    void **array,
-    int *alloc,
-    int initial_size,
-    size_t item_size);
+int _Py_c_array_EnsureCapacity(_Py_c_array_t *c_array, int idx);
 
 
 #ifdef __cplusplus
