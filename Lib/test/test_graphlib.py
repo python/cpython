@@ -1,4 +1,5 @@
 import graphlib
+import sys
 import os
 import unittest
 from itertools import permutations
@@ -322,6 +323,13 @@ class TestAsTransitive(unittest.TestCase):
         for perm in permutations(graph):
             with self.subTest(perm):
                 self.assertEqual(graphlib.as_transitive(dict(perm)), expected)
+
+    def test_large_diameter_graph(self):
+        """We can compute the transitive closure of a large graph."""
+        size = sys.getrecursionlimit()
+        graph = {k: [k + 1] for k in range(size)}
+        expected = {k: set(range(k + 1, size + 1)) for k in range(size)}
+        self.assertEqual(graphlib.as_transitive(graph), expected)
 
     def test_as_transitive_disjoint(self):
         """We compute the transitive closure of disjoint subgraphs."""
