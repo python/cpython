@@ -1,5 +1,6 @@
 #ifndef Py_INTERNAL_C_ARRAY_H
 #define Py_INTERNAL_C_ARRAY_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -18,19 +19,20 @@ extern "C" {
  * item_size: size of each array entry
  *
  * If *array is NULL, allocate default_alloc entries.
- * Otherwise, grow the array by default_alloc entries.
+ * Otherwise, double the array size if idx is out of range.
  *
- * return 0 if successful and -1 (with exception set) otherwise.
+ * Return 0 if successful and -1 (with exception set) otherwise.
  */
 int _Py_EnsureArrayLargeEnough(
-        int idx,
-        void **array,
-        int *alloc,
-        int delta,
-        size_t item_size);
+    int idx,
+    void **array,
+    int *alloc,
+    int initial_size,
+    size_t item_size);
 
 
 #ifdef __cplusplus
 }
 #endif
+
 #endif /* !Py_INTERNAL_C_ARRAY_H */

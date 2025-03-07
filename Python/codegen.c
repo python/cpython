@@ -115,19 +115,19 @@ static const int compare_masks[] = {
  * idx: the index we want to access
  * arr: pointer to the array
  * alloc: pointer to the capacity of the array
- * default_alloc: initial number of items
+ * initial_size: initial number of items
  * item_size: size of each item
  *
  */
 int
 _Py_EnsureArrayLargeEnough(int idx, void **array, int *alloc,
-                           int default_alloc, size_t item_size)
+                           int initial_size, size_t item_size)
 {
     void *arr = *array;
     if (arr == NULL) {
-        int new_alloc = default_alloc;
+        int new_alloc = initial_size;
         if (idx >= new_alloc) {
-            new_alloc = idx + default_alloc;
+            new_alloc = idx + initial_size;
         }
         arr = PyMem_Calloc(new_alloc, item_size);
         if (arr == NULL) {
@@ -140,7 +140,7 @@ _Py_EnsureArrayLargeEnough(int idx, void **array, int *alloc,
         size_t oldsize = *alloc * item_size;
         int new_alloc = *alloc << 1;
         if (idx >= new_alloc) {
-            new_alloc = idx + default_alloc;
+            new_alloc = idx + initial_size;
         }
         size_t newsize = new_alloc * item_size;
 
