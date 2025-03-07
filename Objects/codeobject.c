@@ -143,9 +143,11 @@ static PyObject *intern_one_constant(PyObject *op);
 static int
 should_immortalize_constant(PyObject *v)
 {
+    // Only immortalize containers if we've already immortalized all their
+    // elements.
     if (PyTuple_CheckExact(v)) {
         for (Py_ssize_t i = PyTuple_GET_SIZE(v); --i >= 0; ) {
-            if (!should_immortalize_constant(PyTuple_GET_ITEM(v, i))) {
+            if (!_Py_IsImmortal(PyTuple_GET_ITEM(v, i))) {
                 return 0;
             }
         }
@@ -156,7 +158,7 @@ should_immortalize_constant(PyObject *v)
         Py_hash_t hash;
         Py_ssize_t pos = 0;
         while (_PySet_NextEntry(v, &pos, &item, &hash)) {
-            if (!should_immortalize_constant(item)) {
+            if (!_Py_IsImmortal(item)) {
                 return 0;
             }
         }
@@ -164,13 +166,12 @@ should_immortalize_constant(PyObject *v)
     }
     else if (PySlice_Check(v)) {
         PySliceObject *slice = (PySliceObject *)v;
-        return (should_immortalize_constant(slice->start) &&
-                should_immortalize_constant(slice->stop) &&
-                should_immortalize_constant(slice->step));
+        return (_Py_IsImmortal(slice->start) &&
+                _Py_IsImmortal(slice->stop) &&
+                _Py_IsImmortal(slice->step));
     }
-    return (PyUnicode_CheckExact(v) || PyLong_CheckExact(v) ||
-            PyFloat_CheckExact(v) || PyComplex_Check(v) ||
-            PyBytes_CheckExact(v) || _Py_IsImmortal(v));
+    return (PyLong_CheckExact(v) || PyFloat_CheckExact(v) ||
+            PyComplex_Check(v) || PyBytes_CheckExact(v));
 }
 #endif
 
