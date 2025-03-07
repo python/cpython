@@ -307,6 +307,7 @@ StreamReader
       In other words, it is not an error to not to call close() on
       :class:`StreamReader` instance you've been given.
 
+      .. versionadded:: next
 
 StreamWriter
 ============
