@@ -1591,10 +1591,8 @@ class _TestSemaphore(BaseTestCase):
     def test_bounded_semaphore(self):
         sem = self.BoundedSemaphore(2)
         self._test_semaphore(sem)
-        # Currently fails on OS/X
-        #if HAVE_GETVALUE:
-        #    self.assertRaises(ValueError, sem.release)
-        #    self.assertReturnsIfImplemented(2, get_value, sem)
+        self.assertRaises(ValueError, sem.release)
+        self.assertReturnsIfImplemented(2, get_value, sem)
 
     def test_timeout(self):
         if self.TYPE != 'processes':
