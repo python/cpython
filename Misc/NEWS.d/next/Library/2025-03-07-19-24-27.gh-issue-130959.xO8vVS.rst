@@ -1,0 +1,3 @@
+Fix pure Python implementation of ``time.fromisoformat()`` to reject times
+with spaces in fractional part (for example, ``12:34:56.400 ``), matching
+the C implementation.
