@@ -280,7 +280,7 @@ def reverse(graph):
 def as_transitive(graph):
     """Compute the transitive closure of a dependency graph.
 
-    If the input graph contains cycles, raise CycleError.
+    If the input graph contains cycles, raise a CycleError.
 
     The returned dict will contain the same keys as the input graph, but the
     values will be sets of transitive predecessors of the key, rather than
