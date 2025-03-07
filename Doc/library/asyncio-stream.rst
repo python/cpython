@@ -295,7 +295,7 @@ StreamReader
       Invoke ``close()`` on the underlying asyncio transport (if one exists).
 
       Note: It is not necessary for code that is given an already
-      instantiated :class:`StreamReader` instance to call `close()`
+      instantiated :class:`StreamReader` instance to call ``close()``
       for the sake of cleaning up resources when it is done using
       it. Cleanup of the underlying transport is the
       reponsibility of the code that provided the
