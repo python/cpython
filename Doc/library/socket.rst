@@ -1492,7 +1492,7 @@ to sockets.
    operations on the socket object will fail. The remote end will receive no more data 
    (after queued data is flushed).
 
-   If the `shutdown` parameter is set to ``True``, the socket will first be 
+   If the ``shutdown`` parameter is set to ``True``, the socket will first be 
    shut down before closing, ensuring that no further data can be sent or received. 
    This is useful for properly releasing resources and preventing issues like lingering 
    connections or reset by peer (RST) errors in some network conditions. If the parameter is
@@ -1503,7 +1503,7 @@ to sockets.
    :keyword:`with` statement around them.
 
    .. versionadded:: 3.14
-      Added an optional `shutdown` parameter to allow explicit socket shutdown before closing.
+      Added an optional ``shutdown`` parameter to allow explicit socket shutdown before closing.
 
    .. versionchanged:: 3.6
       :exc:`OSError` is now raised if an error occurs when the underlying
