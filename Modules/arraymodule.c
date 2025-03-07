@@ -197,42 +197,6 @@ arraydata_set_items(arraydata *data, char *newitems, Py_ssize_t newsize, int ite
     return data;
 }
 
-#ifdef Py_GIL_DISABLED
-
-static void
-atomic_itemcpy(void *dest, const void *src, size_t n, int itemsize)
-{
-    if (itemsize == 1) {
-        for (char *d = (char *) dest, *end = d + n, *s = (char *) src;
-             d < end; d++, s++) {
-            _Py_atomic_store_char_relaxed(d, _Py_atomic_load_char_relaxed(s));
-        }
-    }
-    else if (itemsize == 2) {
-        for (short *d = (short *) dest, *end = d + n, *s = (short *) src;
-             d < end; d++, s++) {
-            _Py_atomic_store_short_relaxed(d, _Py_atomic_load_short_relaxed(s));
-        }
-    }
-    else if (itemsize == 4) {
-        for (PY_UINT32_T *d = (PY_UINT32_T *) dest, *end = d + n, *s = (PY_UINT32_T *) src;
-             d < end; d++, s++) {
-            _Py_atomic_store_uint32_relaxed(d, _Py_atomic_load_uint32_relaxed(s));
-        }
-    }
-    else if (itemsize == 8) {
-        for (PY_UINT64_T *d = (PY_UINT64_T *) dest, *end = d + n, *s = (PY_UINT64_T *) src;
-             d < end; d++, s++) {
-            _Py_atomic_store_uint64_relaxed(d, _Py_atomic_load_uint64_relaxed(s));
-        }
-    }
-    else {
-        assert(false);
-    }
-}
-
-#endif
-
 #ifndef Py_GIL_DISABLED
 
 static arraydata *
@@ -247,6 +211,42 @@ arraydata_realloc(arraydata *data, Py_ssize_t size, int itemsize)
     }
     data->allocated = size;
     return data;
+}
+
+#endif
+
+#ifdef Py_GIL_DISABLED
+
+static void
+atomic_itemcpy(void *dest, const void *src, size_t n, int itemsize)
+{
+    if (itemsize == 1) {
+        for (char *d = (char *) dest, *end = d + n, *s = (char *) src;
+             d < end; d++, s++) {
+            *d = _Py_atomic_load_char_relaxed(s);
+        }
+    }
+    else if (itemsize == 2) {
+        for (short *d = (short *) dest, *end = d + n, *s = (short *) src;
+             d < end; d++, s++) {
+            *d = _Py_atomic_load_short_relaxed(s);
+        }
+    }
+    else if (itemsize == 4) {
+        for (PY_UINT32_T *d = (PY_UINT32_T *) dest, *end = d + n, *s = (PY_UINT32_T *) src;
+             d < end; d++, s++) {
+            *d = (PY_UINT32_T) _Py_atomic_load_uint32_relaxed(s);
+        }
+    }
+    else if (itemsize == 8) {
+        for (PY_UINT64_T *d = (PY_UINT64_T *) dest, *end = d + n, *s = (PY_UINT64_T *) src;
+             d < end; d++, s++) {
+            *d = (PY_UINT64_T) _Py_atomic_load_uint64_relaxed(s);
+        }
+    }
+    else {
+        assert(false);
+    }
 }
 
 #endif
