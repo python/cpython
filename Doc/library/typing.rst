@@ -1376,11 +1376,10 @@ These can be used as types in annotations. They all support subscription using
       class ctype:
            kind: str
 
-      Annotated[int, ValueRange(3, 10), ctype("char")]
+      a1 = Annotated[int, ValueRange(3, 10), ctype("char")]
+      a2 = Annotated[int, ctype("char"), ValueRange(3, 10)]
 
-      assert Annotated[int, ValueRange(3, 10), ctype("char")] != Annotated[
-          int, ctype("char"), ValueRange(3, 10)
-      ] # Order matters
+      assert a1 != a2 # Order matters
 
    It is up to the tool consuming the annotations to decide whether the
    client is allowed to add multiple metadata elements to one annotation and how to
@@ -1445,6 +1444,9 @@ These can be used as types in annotations. They all support subscription using
         typing.Annotated[int, 'very', 'important', 'metadata']
         >>> X.__metadata__
         ('very', 'important', 'metadata')
+
+     .. doctest::
+
         >>> Password = Annotated[str, "secret"]
         >>> Password.__origin__
         <class 'str'>
