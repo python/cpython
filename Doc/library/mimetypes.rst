@@ -355,48 +355,48 @@ Command-Line Example
 Here are some examples of typical usage of the :mod:`mimetypes` command
 line interface:
 
-.. code-block:: shell
+.. code-block:: console
 
-   # get a MIME type by a file name
-   python -m mimetypes filename.png
+   $ # get a MIME type by a file name
+   $ python -m mimetypes filename.png
    type: image/png encoding: None
 
-   # get a MIME type by a URL
-   python -m mimetypes http://example.com/filename.txt
+   $ # get a MIME type by a URL
+   $ python -m mimetypes http://example.com/filename.txt
    type: text/plain encoding: None
 
-   # get a complex MIME type
-   python -m mimetypes filename.tar.gz
+   $ # get a complex MIME type
+   $ python -m mimetypes filename.tar.gz
    type: application/x-tar encoding: gzip
 
-   # get a MIME type for a rare file extension
-   python -m mimetypes filename.pict
+   $ # get a MIME type for a rare file extension
+   $ python -m mimetypes filename.pict
    error: unknown extension of filename.pict
 
-   # now look in the extended database built into Python
-   python -m mimetypes -l filename.pict
+   $ # now look in the extended database built into Python
+   $ python -m mimetypes -l filename.pict
    type: image/pict encoding: None
 
-   # get a file extension by a MIME type
-   python -m mimetypes -e text/javascript
+   $ # get a file extension by a MIME type
+   $ python -m mimetypes -e text/javascript
    .js
 
-   # get a file extension by a rare MIME type
-   python -m mimetypes -e text/xul
+   $ # get a file extension by a rare MIME type
+   $ python -m mimetypes -e text/xul
    error: unknown type text/xul
 
-   # now look in the extended database again
-   python -m mimetypes -e -l text/xul
+   $ # now look in the extended database again
+   $ python -m mimetypes -e -l text/xul
    .xul
 
-   # try to feed an unknown file extension
-   python -m mimetypes filename.sh filename.nc filename.xxx filename.txt
+   $ # try to feed an unknown file extension
+   $ python -m mimetypes filename.sh filename.nc filename.xxx filename.txt
    type: application/x-sh encoding: None
    type: application/x-netcdf encoding: None
    error: unknown extension of filename.xxx
 
-   # try to feed an unknown MIME type
-   python -m mimetypes -e audio/aac audio/opus audio/future audio/x-wav
+   $ # try to feed an unknown MIME type
+   $ python -m mimetypes -e audio/aac audio/opus audio/future audio/x-wav
    .aac
    .opus
    error: unknown type audio/future
