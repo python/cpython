@@ -1489,17 +1489,17 @@ to sockets.
 
    Mark the socket closed. The underlying system resource (e.g., a file descriptor) is also
    closed when all file objects from :meth:`makefile` are closed. Once that happens, all future
-   operations on the socket object will fail. The remote end will receive no more data 
+   operations on the socket object will fail. The remote end will receive no more data
    (after queued data is flushed).
 
-   If the ``shutdown`` parameter is set to ``True``, the socket will first be 
-   shut down before closing, ensuring that no further data can be sent or received. 
-   This is useful for properly releasing resources and preventing issues like lingering 
+   If the ``shutdown`` parameter is set to ``True``, the socket will first be
+   shut down before closing, ensuring that no further data can be sent or received.
+   This is useful for properly releasing resources and preventing issues like lingering
    connections or reset by peer (RST) errors in some network conditions. If the parameter is
    ommited or set to false, the function will continue its normal behavior
 
-   Sockets are automatically closed when they are garbage-collected, but 
-   it is recommended to :meth:`close` them explicitly, or to use a 
+   Sockets are automatically closed when they are garbage-collected, but
+   it is recommended to :meth:`close` them explicitly, or to use a
    :keyword:`with` statement around them.
 
    .. versionadded:: 3.14
@@ -1511,8 +1511,8 @@ to sockets.
 
    .. note::
 
-      :meth:`close` releases the resource associated with a connection 
-      but does not necessarily close the connection immediately. If you want to close the connection in a 
+      :meth:`close` releases the resource associated with a connection
+      but does not necessarily close the connection immediately. If you want to close the connection in a
       timely fashion, call :meth:`shutdown` before :meth:`close`, or
       use this function with the shutdown parameter like this ``socket.close(shutdown=True)``
 
