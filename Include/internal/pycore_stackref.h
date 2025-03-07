@@ -368,25 +368,24 @@ PyStackRef_AsStrongReference(_PyStackRef stackref)
 
 #define Py_TAG_BITS 3
 #define Py_TAG_REFCNT 1
-#if _Py_IMMORTAL_FLAGS != Py_TAG_REFCNT
+#if Py_TAG_REFCNT != Py_TAG_REFCNT
 #  error "_Py_IMMORTAL_FLAGS != Py_TAG_REFCNT"
 #endif
-#define Py_TAG_IMMORTAL _Py_IMMORTAL_FLAGS
 
 #define BITS_TO_PTR(REF) ((PyObject *)((REF).bits))
 #define BITS_TO_PTR_MASKED(REF) ((PyObject *)(((REF).bits) & (~Py_TAG_BITS)))
 
-#define PyStackRef_NULL_BITS Py_TAG_IMMORTAL
+#define PyStackRef_NULL_BITS Py_TAG_REFCNT
 static const _PyStackRef PyStackRef_NULL = { .bits = PyStackRef_NULL_BITS };
 
 #define PyStackRef_IsNull(ref) ((ref).bits == PyStackRef_NULL_BITS)
-#define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) | Py_TAG_IMMORTAL })
-#define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) | Py_TAG_IMMORTAL })
-#define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) | Py_TAG_IMMORTAL })
+#define PyStackRef_True ((_PyStackRef){.bits = ((uintptr_t)&_Py_TrueStruct) | Py_TAG_REFCNT })
+#define PyStackRef_False ((_PyStackRef){.bits = ((uintptr_t)&_Py_FalseStruct) | Py_TAG_REFCNT })
+#define PyStackRef_None ((_PyStackRef){.bits = ((uintptr_t)&_Py_NoneStruct) | Py_TAG_REFCNT })
 
-#define PyStackRef_IsTrue(REF) ((REF).bits == (((uintptr_t)&_Py_TrueStruct) | Py_TAG_IMMORTAL))
-#define PyStackRef_IsFalse(REF) ((REF).bits == (((uintptr_t)&_Py_FalseStruct) | Py_TAG_IMMORTAL))
-#define PyStackRef_IsNone(REF) ((REF).bits == (((uintptr_t)&_Py_NoneStruct) | Py_TAG_IMMORTAL))
+#define PyStackRef_IsTrue(REF) ((REF).bits == (((uintptr_t)&_Py_TrueStruct) | Py_TAG_REFCNT))
+#define PyStackRef_IsFalse(REF) ((REF).bits == (((uintptr_t)&_Py_FalseStruct) | Py_TAG_REFCNT))
+#define PyStackRef_IsNone(REF) ((REF).bits == (((uintptr_t)&_Py_NoneStruct) | Py_TAG_REFCNT))
 
 #ifdef Py_DEBUG
 
@@ -399,7 +398,7 @@ static inline void PyStackRef_CheckValid(_PyStackRef ref) {
             /* Can be immortal if object was made immortal after reference came into existence */
             assert(!_Py_IsStaticImmortal(obj));
             break;
-        case Py_TAG_IMMORTAL:
+        case Py_TAG_REFCNT:
             assert(obj == NULL || _Py_IsImmortal(obj));
             break;
         default:
@@ -449,7 +448,7 @@ PyStackRef_FromPyObjectSteal(PyObject *obj)
 #if SIZEOF_VOID_P > 4
     unsigned int tag = obj->ob_flags & Py_TAG_BITS;
 #else
-    unsigned int tag = _Py_IsImmortal(obj) ? Py_TAG_IMMORTAL : 0;
+    unsigned int tag = _Py_IsImmortal(obj) ? Py_TAG_REFCNT : 0;
 #endif
     _PyStackRef ref = ((_PyStackRef){.bits = ((uintptr_t)(obj)) | tag});
     PyStackRef_CheckValid(ref);
@@ -477,7 +476,7 @@ _PyStackRef_FromPyObjectNew(PyObject *obj)
 {
     assert(obj != NULL);
     if (_Py_IsImmortal(obj)) {
-        return (_PyStackRef){ .bits = ((uintptr_t)obj) | Py_TAG_IMMORTAL};
+        return (_PyStackRef){ .bits = ((uintptr_t)obj) | Py_TAG_REFCNT};
     }
     Py_INCREF_MORTAL(obj);
     _PyStackRef ref = (_PyStackRef){ .bits = (uintptr_t)obj };
@@ -502,7 +501,7 @@ static inline _PyStackRef
 PyStackRef_FromPyObjectImmortal(PyObject *obj)
 {
     assert(_Py_IsImmortal(obj));
-    return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_IMMORTAL};
+    return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_REFCNT};
 }
 
 /* WARNING: This macro evaluates its argument twice */
