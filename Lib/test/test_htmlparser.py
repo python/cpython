@@ -539,12 +539,24 @@ text
         for html, expected in data:
             self._run_check(html, expected)
 
-    def test_broken_comments(self):
+    def test_unescape_method(self):
+        from html import unescape
+        p = self.get_collector()
+        with self.assertWarns(DeprecationWarning):
+            s = '&quot;&#34;&#x22;&quot&#34&#x22&#bad;'
+            self.assertEqual(p.unescape(s), unescape(s))
+
+    def test_bogus_comments(self):
         html = ('<! not really a comment >'
                 '<! not a comment either -->'
                 '<! -- close enough -->'
                 '<!><!<-- this was an empty comment>'
-                '<!!! another bogus comment !!!>')
+                '<!!! another bogus comment !!!>'
+                # see #32876
+                '<![with square brackets]!>'
+                '<![\nmultiline\nbogusness\n]!>'
+                '<![more brackets]-[and a hyphen]!>'
+                '<![cdata[should be uppercase]]>')
         expected = [
             ('comment', ' not really a comment '),
             ('comment', ' not a comment either --'),
@@ -552,41 +564,66 @@ text
             ('comment', ''),
             ('comment', '<-- this was an empty comment'),
             ('comment', '!! another bogus comment !!!'),
+            ('comment', '[with square brackets]!'),
+            ('comment', '[\nmultiline\nbogusness\n]!'),
+            ('comment', '[more brackets]-[and a hyphen]!'),
+            ('comment', '[cdata[should be uppercase]]'),
         ]
         self._run_check(html, expected)
 
     def test_broken_condcoms(self):
         # these condcoms are missing the '--' after '<!' and before the '>'
+        # and they are considered bogus comments according to
+        # "8.2.4.42. Markup declaration open state"
         html = ('<![if !(IE)]>broken condcom<![endif]>'
                 '<![if ! IE]><link href="favicon.tiff"/><![endif]>'
                 '<![if !IE 6]><img src="firefox.png" /><![endif]>'
                 '<![if !ie 6]><b>foo</b><![endif]>'
                 '<![if (!IE)|(lt IE 9)]><img src="mammoth.bmp" /><![endif]>')
-        # According to the HTML5 specs sections "8.2.4.44 Bogus comment state"
-        # and "8.2.4.45 Markup declaration open state", comment tokens should
-        # be emitted instead of 'unknown decl', but calling unknown_decl
-        # provides more flexibility.
-        # See also Lib/_markupbase.py:parse_declaration
         expected = [
-            ('unknown decl', 'if !(IE)'),
+            ('comment', '[if !(IE)]'),
             ('data', 'broken condcom'),
-            ('unknown decl', 'endif'),
-            ('unknown decl', 'if ! IE'),
+            ('comment', '[endif]'),
+            ('comment', '[if ! IE]'),
             ('startendtag', 'link', [('href', 'favicon.tiff')]),
-            ('unknown decl', 'endif'),
-            ('unknown decl', 'if !IE 6'),
+            ('comment', '[endif]'),
+            ('comment', '[if !IE 6]'),
             ('startendtag', 'img', [('src', 'firefox.png')]),
-            ('unknown decl', 'endif'),
-            ('unknown decl', 'if !ie 6'),
+            ('comment', '[endif]'),
+            ('comment', '[if !ie 6]'),
             ('starttag', 'b', []),
             ('data', 'foo'),
             ('endtag', 'b'),
-            ('unknown decl', 'endif'),
-            ('unknown decl', 'if (!IE)|(lt IE 9)'),
+            ('comment', '[endif]'),
+            ('comment', '[if (!IE)|(lt IE 9)]'),
             ('startendtag', 'img', [('src', 'mammoth.bmp')]),
-            ('unknown decl', 'endif')
+            ('comment', '[endif]')
         ]
         self._run_check(html, expected)
+
+    def test_cdata_declarations(self):
+        # More tests should be added. See also "8.2.4.42. Markup
+        # declaration open state", "8.2.4.69. CDATA section state",
+        # and issue 32876
+        html = ('<![CDATA[just some plain text]]>')
+        expected = [('unknown decl', 'CDATA[just some plain text')]
+        self._run_check(html, expected)
+
+    def test_cdata_declarations_multiline(self):
+        html = ('<code><![CDATA['
+                '    if (a < b && a > b) {'
+                '        printf("[<marquee>How?</marquee>]");'
+                '    }'
+                ']]></code>')
+        expected = [
+            ('starttag', 'code', []),
+            ('unknown decl',
+             'CDATA[    if (a < b && a > b) {        '
+             'printf("[<marquee>How?</marquee>]");    }'),
+            ('endtag', 'code')
+        ]
+        self._run_check(html, expected)
+
 
     def test_convert_charrefs_dropped_text(self):
         # #23144: make sure that all the events are triggered when
@@ -599,6 +636,7 @@ text
             [('data', 'foo '), ('starttag', 'a', []), ('data', 'link'),
              ('endtag', 'a'), ('data', ' bar & baz')]
         )
+
 
 
 class AttributesTestCase(TestCaseBase):
