@@ -667,7 +667,6 @@ LIBHACL_BLAKE2_OBJS= \
 
 LIBHACL_HEADERS= \
                 Modules/_hacl/include/krml/FStar_UInt128.h \
-                Modules/_hacl/include/krml/fstar_uint128_gcc64.h \
                 Modules/_hacl/include/krml/FStar_UInt128_Verified.h \
                 Modules/_hacl/include/krml/FStar_UInt_8_16_32_64.h \
                 Modules/_hacl/include/krml/fstar_uint128_struct_endianness.h \
