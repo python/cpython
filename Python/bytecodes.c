@@ -1358,6 +1358,7 @@ dummy_func(
         }
 
         tier1 op(_MONITOR_END_ASYNC_FOR, ( -- )) {
+            assert((next_instr-oparg)->op.code == END_SEND || (next_instr-oparg)->op.code >= MIN_INSTRUMENTED_OPCODE);
             INSTRUMENTED_JUMP(next_instr-oparg, this_instr+1, PY_MONITORING_EVENT_BRANCH_RIGHT);
         }
 
