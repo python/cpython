@@ -809,11 +809,6 @@ _io_FileIO_readall_impl(fileio *self)
                 Py_DECREF(result);
                 return NULL;
             }
-
-            if (PyBytes_GET_SIZE(result) < (Py_ssize_t)bufsize) {
-                if (_PyBytes_Resize(&result, bufsize) < 0)
-                    return NULL;
-            }
         }
 
         n = _Py_read(self->fd,
