@@ -22,7 +22,7 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good.
-expected_hacl_star_rev=f218923ef2417d963d7efc7951593ae6aef613f7
+expected_hacl_star_rev=809c320227eecc61a744953f1ee574b4f24aabe3
 
 hacl_dir="$(realpath "$1")"
 cd "$(dirname "$0")"
@@ -58,6 +58,7 @@ dist_files=(
   internal/Hacl_Hash_Blake2b_Simd256.h
   internal/Hacl_Hash_Blake2s_Simd128.h
   internal/Hacl_Impl_Blake2_Constants.h
+  internal/Hacl_Streaming_Types.h
   Hacl_Hash_MD5.c
   Hacl_Hash_SHA1.c
   Hacl_Hash_SHA2.c
@@ -74,12 +75,17 @@ dist_files=(
 declare -a include_files
 include_files=(
   include/krml/lowstar_endianness.h
+  include/krml/internal/compat.h
   include/krml/internal/target.h
+  include/krml/internal/types.h
 )
 
 declare -a lib_files
 lib_files=(
   krmllib/dist/minimal/FStar_UInt_8_16_32_64.h
+  krmllib/dist/minimal/FStar_UInt128.h
+  krmllib/dist/minimal/fstar_uint128_gcc64.h
+  krmllib/dist/minimal/fstar_uint128_msvc.h
   krmllib/dist/minimal/fstar_uint128_struct_endianness.h
   krmllib/dist/minimal/FStar_UInt128_Verified.h
 )
@@ -110,28 +116,9 @@ fi
 
 readarray -t all_files < <(find . -name '*.h' -or -name '*.c')
 
-# types.h originally contains a complex series of if-defs and auxiliary type
-# definitions; here, we just need a proper uint128 type in scope
-# is a simple wrapper that defines the uint128 type
-cat > include/krml/types.h <<EOF
-#pragma once
-
-#include <inttypes.h>
-
-typedef struct FStar_UInt128_uint128_s {
-  uint64_t low;
-  uint64_t high;
-} FStar_UInt128_uint128, uint128_t;
-
-#define KRML_VERIFIED_UINT128
-
-#include "krml/lowstar_endianness.h"
-#include "krml/fstar_uint128_struct_endianness.h"
-#include "krml/FStar_UInt128_Verified.h"
-EOF
 # Adjust the include path to reflect the local directory structure
-$sed -i 's!#include.*types.h"!#include "krml/types.h"!g' "${all_files[@]}"
-$sed -i 's!#include.*compat.h"!!g' "${all_files[@]}"
+$sed -i 's!#include "fstar_uint128_msvc.h"!#include "krml/fstar_uint128_msvc.h"!g' include/krml/internal/types.h
+$sed -i 's!#include "fstar_uint128_gcc64.h"!#include "krml/fstar_uint128_gcc64.h"!g' include/krml/internal/types.h
 
 # FStar_UInt_8_16_32_64 contains definitions useful in the general case, but not
 # for us; trim!

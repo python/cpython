@@ -23,8 +23,8 @@
  */
 
 
-#ifndef __internal_Hacl_Hash_Blake2s_H
-#define __internal_Hacl_Hash_Blake2s_H
+#ifndef __internal_Hacl_Streaming_Types_H
+#define __internal_Hacl_Streaming_Types_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -35,60 +35,53 @@ extern "C" {
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 
-#include "../Hacl_Hash_Blake2s.h"
+#include "../Hacl_Streaming_Types.h"
 
-void Hacl_Hash_Blake2s_init(uint32_t *hash, uint32_t kk, uint32_t nn);
+#define Hacl_Streaming_Types_None 0
+#define Hacl_Streaming_Types_Some 1
 
-void
-Hacl_Hash_Blake2s_update_multi(
-  uint32_t len,
-  uint32_t *wv,
-  uint32_t *hash,
-  uint64_t prev,
-  uint8_t *blocks,
-  uint32_t nb
-);
+typedef uint8_t Hacl_Streaming_Types_optional;
 
-void
-Hacl_Hash_Blake2s_update_last(
-  uint32_t len,
-  uint32_t *wv,
-  uint32_t *hash,
-  bool last_node,
-  uint64_t prev,
-  uint32_t rem,
-  uint8_t *d
-);
-
-void Hacl_Hash_Blake2s_finish(uint32_t nn, uint8_t *output, uint32_t *hash);
-
-typedef struct K____uint32_t___uint32_t__s
+typedef struct Hacl_Streaming_Types_optional_32_s
 {
-  uint32_t *fst;
-  uint32_t *snd;
+  Hacl_Streaming_Types_optional tag;
+  uint32_t *v;
 }
-K____uint32_t___uint32_t_;
+Hacl_Streaming_Types_optional_32;
 
-typedef struct Hacl_Hash_Blake2s_block_state_t_s
+typedef struct Hacl_Streaming_Types_optional_64_s
 {
-  uint8_t fst;
-  uint8_t snd;
-  bool thd;
-  K____uint32_t___uint32_t_ f3;
+  Hacl_Streaming_Types_optional tag;
+  uint64_t *v;
 }
-Hacl_Hash_Blake2s_block_state_t;
+Hacl_Streaming_Types_optional_64;
 
-typedef struct Hacl_Hash_Blake2s_state_t_s
+typedef struct Hacl_Streaming_Types_two_pointers_s
 {
-  Hacl_Hash_Blake2s_block_state_t block_state;
+  uint64_t *fst;
+  uint64_t *snd;
+}
+Hacl_Streaming_Types_two_pointers;
+
+typedef struct Hacl_Streaming_MD_state_32_s
+{
+  uint32_t *block_state;
   uint8_t *buf;
   uint64_t total_len;
 }
-Hacl_Hash_Blake2s_state_t;
+Hacl_Streaming_MD_state_32;
+
+typedef struct Hacl_Streaming_MD_state_64_s
+{
+  uint64_t *block_state;
+  uint8_t *buf;
+  uint64_t total_len;
+}
+Hacl_Streaming_MD_state_64;
 
 #if defined(__cplusplus)
 }
 #endif
 
-#define __internal_Hacl_Hash_Blake2s_H_DEFINED
+#define __internal_Hacl_Streaming_Types_H_DEFINED
 #endif
