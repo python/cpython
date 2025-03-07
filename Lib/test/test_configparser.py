@@ -1328,9 +1328,9 @@ class ConfigParserTestCaseNoValue(ConfigParserTestCase):
     allow_no_value = True
 
 
-class ConfigParserTestCaseNoValueAndInterpolation(ConfigParserTestCase):
-    allow_no_value = True
+class NoValueAndExtendedInterpolation(CfgParserTestCaseClass):
     interpolation = configparser.ExtendedInterpolation()
+    allow_no_value = True
 
     def test_interpolation_with_allow_no_value(self):
         config = textwrap.dedent("""
@@ -1342,6 +1342,31 @@ class ConfigParserTestCaseNoValueAndInterpolation(ConfigParserTestCase):
 
         self.assertIs(cf["dummy"]["a"], None)
         self.assertEqual(cf["dummy"]["b"], "")
+
+    def test_explicit_none(self):
+        config = textwrap.dedent("""
+            [dummy]
+            a = None
+            b = ${a}
+        """)
+        cf = self.fromstring(config)
+
+        self.assertEqual(cf["dummy"]["a"], "None")
+        self.assertEqual(cf["dummy"]["b"], "None")
+
+
+class ConfigParserNoValueAndExtendedInterpolationTest(
+    NoValueAndExtendedInterpolation,
+    unittest.TestCase,
+):
+    config_class = configparser.ConfigParser
+
+
+class RawConfigParserNoValueAndExtendedInterpolationTest(
+    NoValueAndExtendedInterpolation,
+    unittest.TestCase,
+):
+    config_class = configparser.RawConfigParser
 
 
 class ConfigParserTestCaseTrickyFile(CfgParserTestCaseClass, unittest.TestCase):

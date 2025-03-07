@@ -541,7 +541,7 @@ class ExtendedInterpolation(Interpolation):
                 except (KeyError, NoSectionError, NoOptionError):
                     raise InterpolationMissingOptionError(
                         option, section, rawval, ":".join(path)) from None
-                if not v:
+                if v is None:
                     continue
                 if "$" in v:
                     self._interpolate_some(parser, opt, accum, v, sect,
