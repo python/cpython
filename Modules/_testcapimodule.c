@@ -411,6 +411,31 @@ test_buildvalue_N(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_buildvalue_p(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *res = Py_BuildValue("p", 3);
+    if (res == NULL) {
+        return NULL;
+    }
+    if (!Py_IsTrue(res)) {
+        Py_DECREF(res);
+        return raiseTestError(self, "test_buildvalue_p", "Py_BuildValue(\"p\", 3) returned wrong result");
+    }
+    Py_DECREF(res);
+
+    res = Py_BuildValue("p", 0);
+    if (res == NULL) {
+        return NULL;
+    }
+    if (!Py_IsFalse(res)) {
+        Py_DECREF(res);
+        return raiseTestError(self, "test_buildvalue_p", "Py_BuildValue(\"p\", 0) returned wrong result");
+    }
+    Py_DECREF(res);
+
+    Py_RETURN_NONE;
+}
 
 static PyObject *
 pyobject_repr_from_null(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -2512,6 +2537,7 @@ static PyMethodDef TestMethods[] = {
     {"py_buildvalue",            py_buildvalue,                  METH_VARARGS},
     {"py_buildvalue_ints",       py_buildvalue_ints,             METH_VARARGS},
     {"test_buildvalue_N",        test_buildvalue_N,              METH_NOARGS},
+    {"test_buildvalue_p",       test_buildvalue_p,               METH_NOARGS},
     {"test_reftracer",          test_reftracer,                  METH_NOARGS},
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
     {"gilstate_ensure_release", gilstate_ensure_release,         METH_NOARGS},
@@ -3213,7 +3239,6 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
 
     PyModule_AddIntConstant(m, "the_number_three", 3);
-    PyModule_AddIntMacro(m, Py_C_RECURSION_LIMIT);
     PyModule_AddObject(m, "INT32_MIN", PyLong_FromInt32(INT32_MIN));
     PyModule_AddObject(m, "INT32_MAX", PyLong_FromInt32(INT32_MAX));
     PyModule_AddObject(m, "UINT32_MAX", PyLong_FromUInt32(UINT32_MAX));

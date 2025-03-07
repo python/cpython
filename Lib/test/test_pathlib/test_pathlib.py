@@ -75,7 +75,7 @@ class UnsupportedOperationTest(unittest.TestCase):
 # Tests for the pure classes.
 #
 
-class PurePathTest(test_pathlib_abc.DummyJoinablePathTest):
+class PurePathTest(test_pathlib_abc.JoinablePathTest):
     cls = pathlib.PurePath
 
     # Make sure any symbolic links in the base test path are resolved.
@@ -1002,7 +1002,7 @@ class PurePathSubclassTest(PurePathTest):
 # Tests for the concrete classes.
 #
 
-class PathTest(test_pathlib_abc.DummyRWPathTest, PurePathTest):
+class PathTest(test_pathlib_abc.RWPathTest, PurePathTest):
     """Tests for the FS-accessing functionalities of the Path classes."""
     cls = pathlib.Path
     can_symlink = os_helper.can_symlink()
@@ -1059,14 +1059,14 @@ class PathTest(test_pathlib_abc.DummyRWPathTest, PurePathTest):
         return d
 
     def test_matches_writablepath_docstrings(self):
-        path_names = {name for name in dir(pathlib._abc.WritablePath) if name[0] != '_'}
+        path_names = {name for name in dir(pathlib.types._WritablePath) if name[0] != '_'}
         for attr_name in path_names:
             if attr_name == 'parser':
                 # On Windows, Path.parser is ntpath, but WritablePath.parser is
                 # posixpath, and so their docstrings differ.
                 continue
             our_attr = getattr(self.cls, attr_name)
-            path_attr = getattr(pathlib._abc.WritablePath, attr_name)
+            path_attr = getattr(pathlib.types._WritablePath, attr_name)
             self.assertEqual(our_attr.__doc__, path_attr.__doc__)
 
     def test_concrete_class(self):
@@ -1440,11 +1440,13 @@ class PathTest(test_pathlib_abc.DummyRWPathTest, PurePathTest):
         if hasattr(os, 'chflags') and hasattr(stat, 'UF_NODUMP'):
             os.chflags(source / 'fileC', stat.UF_NODUMP)
         target = base / 'copyA'
-        source.copy(target, preserve_metadata=True)
 
-        for subpath in ['.', 'fileC', 'dirD', 'dirD/fileD']:
-            source_st = source.joinpath(subpath).stat()
-            target_st = target.joinpath(subpath).stat()
+        subpaths = ['.', 'fileC', 'dirD', 'dirD/fileD']
+        source_sts = [source.joinpath(subpath).stat() for subpath in subpaths]
+        source.copy(target, preserve_metadata=True)
+        target_sts = [target.joinpath(subpath).stat() for subpath in subpaths]
+
+        for source_st, target_st in zip(source_sts, target_sts):
             self.assertLessEqual(source_st.st_atime, target_st.st_atime)
             self.assertLessEqual(source_st.st_mtime, target_st.st_mtime)
             self.assertEqual(source_st.st_mode, target_st.st_mode)
@@ -2451,6 +2453,93 @@ class PathTest(test_pathlib_abc.DummyRWPathTest, PurePathTest):
         st = p.stat()
         self.assertEqual(st, p.lstat())
 
+    def test_exists(self):
+        P = self.cls
+        p = P(self.base)
+        self.assertIs(True, p.exists())
+        self.assertIs(True, (p / 'dirA').exists())
+        self.assertIs(True, (p / 'fileA').exists())
+        self.assertIs(False, (p / 'fileA' / 'bah').exists())
+        if self.can_symlink:
+            self.assertIs(True, (p / 'linkA').exists())
+            self.assertIs(True, (p / 'linkB').exists())
+            self.assertIs(True, (p / 'linkB' / 'fileB').exists())
+            self.assertIs(False, (p / 'linkA' / 'bah').exists())
+            self.assertIs(False, (p / 'brokenLink').exists())
+            self.assertIs(True, (p / 'brokenLink').exists(follow_symlinks=False))
+        self.assertIs(False, (p / 'foo').exists())
+        self.assertIs(False, P('/xyzzy').exists())
+        self.assertIs(False, P(self.base + '\udfff').exists())
+        self.assertIs(False, P(self.base + '\x00').exists())
+
+    def test_is_dir(self):
+        P = self.cls(self.base)
+        self.assertTrue((P / 'dirA').is_dir())
+        self.assertFalse((P / 'fileA').is_dir())
+        self.assertFalse((P / 'non-existing').is_dir())
+        self.assertFalse((P / 'fileA' / 'bah').is_dir())
+        if self.can_symlink:
+            self.assertFalse((P / 'linkA').is_dir())
+            self.assertTrue((P / 'linkB').is_dir())
+            self.assertFalse((P/ 'brokenLink').is_dir())
+        self.assertFalse((P / 'dirA\udfff').is_dir())
+        self.assertFalse((P / 'dirA\x00').is_dir())
+
+    def test_is_dir_no_follow_symlinks(self):
+        P = self.cls(self.base)
+        self.assertTrue((P / 'dirA').is_dir(follow_symlinks=False))
+        self.assertFalse((P / 'fileA').is_dir(follow_symlinks=False))
+        self.assertFalse((P / 'non-existing').is_dir(follow_symlinks=False))
+        self.assertFalse((P / 'fileA' / 'bah').is_dir(follow_symlinks=False))
+        if self.can_symlink:
+            self.assertFalse((P / 'linkA').is_dir(follow_symlinks=False))
+            self.assertFalse((P / 'linkB').is_dir(follow_symlinks=False))
+            self.assertFalse((P/ 'brokenLink').is_dir(follow_symlinks=False))
+        self.assertFalse((P / 'dirA\udfff').is_dir(follow_symlinks=False))
+        self.assertFalse((P / 'dirA\x00').is_dir(follow_symlinks=False))
+
+    def test_is_file(self):
+        P = self.cls(self.base)
+        self.assertTrue((P / 'fileA').is_file())
+        self.assertFalse((P / 'dirA').is_file())
+        self.assertFalse((P / 'non-existing').is_file())
+        self.assertFalse((P / 'fileA' / 'bah').is_file())
+        if self.can_symlink:
+            self.assertTrue((P / 'linkA').is_file())
+            self.assertFalse((P / 'linkB').is_file())
+            self.assertFalse((P/ 'brokenLink').is_file())
+        self.assertFalse((P / 'fileA\udfff').is_file())
+        self.assertFalse((P / 'fileA\x00').is_file())
+
+    def test_is_file_no_follow_symlinks(self):
+        P = self.cls(self.base)
+        self.assertTrue((P / 'fileA').is_file(follow_symlinks=False))
+        self.assertFalse((P / 'dirA').is_file(follow_symlinks=False))
+        self.assertFalse((P / 'non-existing').is_file(follow_symlinks=False))
+        self.assertFalse((P / 'fileA' / 'bah').is_file(follow_symlinks=False))
+        if self.can_symlink:
+            self.assertFalse((P / 'linkA').is_file(follow_symlinks=False))
+            self.assertFalse((P / 'linkB').is_file(follow_symlinks=False))
+            self.assertFalse((P/ 'brokenLink').is_file(follow_symlinks=False))
+        self.assertFalse((P / 'fileA\udfff').is_file(follow_symlinks=False))
+        self.assertFalse((P / 'fileA\x00').is_file(follow_symlinks=False))
+
+    def test_is_symlink(self):
+        P = self.cls(self.base)
+        self.assertFalse((P / 'fileA').is_symlink())
+        self.assertFalse((P / 'dirA').is_symlink())
+        self.assertFalse((P / 'non-existing').is_symlink())
+        self.assertFalse((P / 'fileA' / 'bah').is_symlink())
+        if self.can_symlink:
+            self.assertTrue((P / 'linkA').is_symlink())
+            self.assertTrue((P / 'linkB').is_symlink())
+            self.assertTrue((P/ 'brokenLink').is_symlink())
+        self.assertIs((P / 'fileA\udfff').is_file(), False)
+        self.assertIs((P / 'fileA\x00').is_file(), False)
+        if self.can_symlink:
+            self.assertIs((P / 'linkA\udfff').is_file(), False)
+            self.assertIs((P / 'linkA\x00').is_file(), False)
+
     def test_is_junction_false(self):
         P = self.cls(self.base)
         self.assertFalse((P / 'fileA').is_junction())
@@ -2763,6 +2852,64 @@ class PathTest(test_pathlib_abc.DummyRWPathTest, PurePathTest):
         # gh-91616, a re module regression
         _check(p, "*.txt", ["dirC/novel.txt"])
         _check(p, "*.*", ["dirC/novel.txt"])
+
+    def test_rglob_recurse_symlinks_false(self):
+        def _check(path, glob, expected):
+            actual = set(path.rglob(glob, recurse_symlinks=False))
+            self.assertEqual(actual, { P(self.base, q) for q in expected })
+        P = self.cls
+        p = P(self.base)
+        it = p.rglob("fileA")
+        self.assertIsInstance(it, collections.abc.Iterator)
+        _check(p, "fileA", ["fileA"])
+        _check(p, "fileB", ["dirB/fileB"])
+        _check(p, "**/fileB", ["dirB/fileB"])
+        _check(p, "*/fileA", [])
+
+        if self.can_symlink:
+            _check(p, "*/fileB", ["dirB/fileB", "dirB/linkD/fileB",
+                                  "linkB/fileB", "dirA/linkC/fileB"])
+            _check(p, "*/", [
+                "dirA/", "dirA/linkC/", "dirB/", "dirB/linkD/", "dirC/",
+                "dirC/dirD/", "dirE/", "linkB/"])
+        else:
+            _check(p, "*/fileB", ["dirB/fileB"])
+            _check(p, "*/", ["dirA/", "dirB/", "dirC/", "dirC/dirD/", "dirE/"])
+
+        _check(p, "file*", ["fileA", "dirB/fileB", "dirC/fileC", "dirC/dirD/fileD"])
+        _check(p, "", ["", "dirA/", "dirB/", "dirC/", "dirE/", "dirC/dirD/"])
+        p = P(self.base, "dirC")
+        _check(p, "*", ["dirC/fileC", "dirC/novel.txt",
+                              "dirC/dirD", "dirC/dirD/fileD"])
+        _check(p, "file*", ["dirC/fileC", "dirC/dirD/fileD"])
+        _check(p, "**/file*", ["dirC/fileC", "dirC/dirD/fileD"])
+        _check(p, "dir*/**", ["dirC/dirD/", "dirC/dirD/fileD"])
+        _check(p, "dir*/**/", ["dirC/dirD/"])
+        _check(p, "*/*", ["dirC/dirD/fileD"])
+        _check(p, "*/", ["dirC/dirD/"])
+        _check(p, "", ["dirC/", "dirC/dirD/"])
+        _check(p, "**", ["dirC/", "dirC/fileC", "dirC/dirD", "dirC/dirD/fileD", "dirC/novel.txt"])
+        _check(p, "**/", ["dirC/", "dirC/dirD/"])
+        # gh-91616, a re module regression
+        _check(p, "*.txt", ["dirC/novel.txt"])
+        _check(p, "*.*", ["dirC/novel.txt"])
+
+    @needs_posix
+    def test_rglob_posix(self):
+        P = self.cls
+        p = P(self.base, "dirC")
+        q = p / "dirD" / "FILEd"
+        given = set(p.rglob("FILEd"))
+        expect = {q} if q.exists() else set()
+        self.assertEqual(given, expect)
+        self.assertEqual(set(p.rglob("FILEd*")), set())
+
+    @needs_windows
+    def test_rglob_windows(self):
+        P = self.cls
+        p = P(self.base, "dirC")
+        self.assertEqual(set(p.rglob("FILEd")), { P(self.base, "dirC/dirD/fileD") })
+        self.assertEqual(set(p.rglob("*\\")), { P(self.base, "dirC/dirD/") })
 
     @needs_symlinks
     def test_rglob_symlink_loop(self):
@@ -3119,7 +3266,7 @@ class PathTest(test_pathlib_abc.DummyRWPathTest, PurePathTest):
             P('c:/').group()
 
 
-class PathWalkTest(test_pathlib_abc.DummyReadablePathWalkTest):
+class PathWalkTest(test_pathlib_abc.ReadablePathWalkTest):
     cls = pathlib.Path
     base = PathTest.base
     can_symlink = PathTest.can_symlink

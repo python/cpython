@@ -1657,10 +1657,35 @@ class TestBranchAndJumpEvents(CheckEvents):
             in_loop,
             exit_loop])
 
+    def test_async_for(self):
+
+        def func():
+            async def gen():
+                yield 2
+                yield 3
+
+            async def foo():
+                async for y in gen():
+                    2
+                pass # line 3
+
+            try:
+                foo().send(None)
+            except StopIteration:
+                pass
+
+        self.check_events(func, recorders = BRANCHES_RECORDERS, expected = [
+            ('branch left', 'foo', 1, 1),
+            ('branch left', 'foo', 1, 1),
+            ('branch right', 'foo', 1, 3),
+            ('branch left', 'func', 12, 12)])
+
 
 class TestBranchConsistency(MonitoringTestBase, unittest.TestCase):
 
-    def check_branches(self, func, tool=TEST_TOOL, recorders=BRANCH_OFFSET_RECORDERS):
+    def check_branches(self, run_func, test_func=None, tool=TEST_TOOL, recorders=BRANCH_OFFSET_RECORDERS):
+        if test_func is None:
+            test_func = run_func
         try:
             self.assertEqual(sys.monitoring._all_events(), {})
             event_list = []
@@ -1669,16 +1694,17 @@ class TestBranchConsistency(MonitoringTestBase, unittest.TestCase):
                 ev = recorder.event_type
                 sys.monitoring.register_callback(tool, ev, recorder(event_list))
                 all_events |= ev
-            sys.monitoring.set_local_events(tool, func.__code__, all_events)
-            func()
-            sys.monitoring.set_local_events(tool, func.__code__, 0)
+            sys.monitoring.set_local_events(tool, test_func.__code__, all_events)
+            run_func()
+            sys.monitoring.set_local_events(tool, test_func.__code__, 0)
             for recorder in recorders:
                 sys.monitoring.register_callback(tool, recorder.event_type, None)
             lefts = set()
             rights = set()
-            for (src, left, right) in func.__code__.co_branches():
+            for (src, left, right) in test_func.__code__.co_branches():
                 lefts.add((src, left))
                 rights.add((src, right))
+            print(event_list)
             for event in event_list:
                 way, _, src, dest = event
                 if "left" in way:
@@ -1687,7 +1713,7 @@ class TestBranchConsistency(MonitoringTestBase, unittest.TestCase):
                     self.assertIn("right", way)
                     self.assertIn((src, dest), rights)
         finally:
-            sys.monitoring.set_local_events(tool, func.__code__, 0)
+            sys.monitoring.set_local_events(tool, test_func.__code__, 0)
             for recorder in recorders:
                 sys.monitoring.register_callback(tool, recorder.event_type, None)
 
@@ -1738,6 +1764,25 @@ class TestBranchConsistency(MonitoringTestBase, unittest.TestCase):
             return None
 
         self.check_branches(foo)
+
+    def test_async_for(self):
+
+        async def gen():
+            yield 2
+            yield 3
+
+        async def foo():
+            async for y in gen():
+                2
+            pass # line 3
+
+        def func():
+            try:
+                foo().send(None)
+            except StopIteration:
+                pass
+
+        self.check_branches(func, foo)
 
 
 class TestLoadSuperAttr(CheckEvents):

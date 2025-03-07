@@ -532,7 +532,7 @@ Python/pythonrun.c:PyId_stdin                                    _Py_IDENTIFIER(
 Python/pythonrun.c:PyId_stdout                                   _Py_IDENTIFIER(stdout)
 Python/pythonrun.c:PyRun_InteractiveOneObjectEx():PyId___main__  _Py_IDENTIFIER(__main__)
 Python/pythonrun.c:PyRun_InteractiveOneObjectEx():PyId_encoding  _Py_IDENTIFIER(encoding)
-Python/pythonrun.c:_Py_HandleSystemExit():PyId_code              _Py_IDENTIFIER(code)
+Python/pythonrun.c:_Py_HandleSystemExitAndKeyboardInterrupt():PyId_code _Py_IDENTIFIER(code)
 Python/pythonrun.c:parse_syntax_error():PyId_filename            _Py_IDENTIFIER(filename)
 Python/pythonrun.c:parse_syntax_error():PyId_lineno              _Py_IDENTIFIER(lineno)
 Python/pythonrun.c:parse_syntax_error():PyId_msg                 _Py_IDENTIFIER(msg)
