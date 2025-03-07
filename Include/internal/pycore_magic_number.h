@@ -269,6 +269,8 @@ Known values:
     Python 3.14a5 3614 (Add BINARY_OP_EXTEND)
     Python 3.14a5 3615 (CALL_FUNCTION_EX always take a kwargs argument)
     Python 3.14a5 3616 (Remove BINARY_SUBSCR and family. Make them BINARY_OPs)
+    Python 3.14a6 3617 (Branch monitoring for async for loops)
+    Python 3.14a6 3618 (Renumber RESUME opcode from 149 to 128)
 
     Python 3.15 will start with 3650
 
@@ -281,7 +283,7 @@ PC/launcher.c must also be updated.
 
 */
 
-#define PYC_MAGIC_NUMBER 3616
+#define PYC_MAGIC_NUMBER 3618
 /* This is equivalent to converting PYC_MAGIC_NUMBER to 2 bytes
    (little-endian) and then appending b'\r\n'. */
 #define PYC_MAGIC_NUMBER_TOKEN \

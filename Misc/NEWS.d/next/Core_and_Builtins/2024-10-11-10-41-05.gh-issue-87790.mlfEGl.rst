@@ -1,0 +1,3 @@
+Support underscore and comma as thousands separators in the fractional part for
+floating-point presentation types of the new-style string formatting (with
+:func:`format` or :ref:`f-strings`).  Patch by Sergey B Kirpichev.

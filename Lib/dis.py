@@ -376,6 +376,14 @@ class Instruction(_Instruction):
                         entries (if any)
     """
 
+    @staticmethod
+    def make(
+        opname, arg, argval, argrepr, offset, start_offset, starts_line,
+        line_number, label=None, positions=None, cache_info=None
+    ):
+        return Instruction(opname, _all_opmap[opname], arg, argval, argrepr, offset,
+                           start_offset, starts_line, line_number, label, positions, cache_info)
+
     @property
     def oparg(self):
         """Alias for Instruction.arg."""
