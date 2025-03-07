@@ -207,7 +207,9 @@ Nodes can be any :term:`hashable` object. Duplicate edges are ignored.
 
 For example, it can be useful to construct a TopologicalSorter that processes
 a graph in reverse order. This can be done by passing the :func:`reverse` of a
-graph to the constructor of :class:`TopologicalSorter`::
+graph to the constructor of :class:`TopologicalSorter`:
+
+.. code-block:: python
 
    ts = TopologicalSorter(reverse(graph))
 
@@ -242,7 +244,7 @@ graph to the constructor of :class:`TopologicalSorter`::
    then A is a transitive predecessor of C. The returned dict maps each key in
    the input graph to a sets of all such transitive predecessors for that key.
 
-   If the input graph contains cycles, raise CycleError.
+   If the input graph contains cycles, raise a CycleError.
 
    Nodes that do not appear as keys in the input graph, but appear as
    predecessors of other nodes, will not be included as keys in the returned
