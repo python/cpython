@@ -292,7 +292,20 @@ StreamReader
 
    .. method:: close()
 
-      Invoke ``close()`` on the underlying transport (if one exists).
+      Invoke ``close()`` on the underlying asyncio transport (if one exists).
+
+      Note: It is not necessary for code that is given an already
+      instantiated :class:`StreamReader` instance to call `close()`
+      for the sake of cleaning up resources when it is done using
+      it. Cleanup of the underlying transport is the
+      reponsibility of the code that provided the
+      :class:`StreamReader` instance. This method exists purely to
+      allow client code of APIs that hide the underlying transport to
+      eagerly close the transport as a way to signal to the producer
+      of the stream that the read side is shut down. In particular,
+      when interacting with the standard out pipe of a sub-process.
+      In other words, it is an error to not to call close() on
+      :class:`StreamReader` instance you've been given.
 
 
 StreamWriter
