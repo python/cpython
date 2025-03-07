@@ -680,6 +680,9 @@ class JoinablePathTest(unittest.TestCase):
         self.assertEqual(P('/a/b.py').with_name('d.xml'), P('/a/d.xml'))
         self.assertEqual(P('a/Dot ending.').with_name('d.xml'), P('a/d.xml'))
         self.assertEqual(P('/a/Dot ending.').with_name('d.xml'), P('/a/d.xml'))
+        self.assertRaises(ValueError, P('').with_name, 'd.xml')
+        self.assertRaises(ValueError, P('/').with_name, 'd.xml')
+        self.assertRaises(ValueError, P('a/b').with_name, '')
 
     @needs_windows
     def test_with_name_windows(self):
@@ -700,10 +703,7 @@ class JoinablePathTest(unittest.TestCase):
 
     def test_with_name_empty(self):
         P = self.cls
-        self.assertEqual(P('').with_name('d.xml'), P('d.xml'))
         self.assertEqual(P('.').with_name('d.xml'), P('d.xml'))
-        self.assertEqual(P('/').with_name('d.xml'), P('/d.xml'))
-        self.assertEqual(P('a/b').with_name(''), P('a/'))
         self.assertEqual(P('a/b').with_name('.'), P('a/.'))
 
     def test_with_name_seps(self):
@@ -721,6 +721,11 @@ class JoinablePathTest(unittest.TestCase):
         self.assertEqual(P('/a/b.tar.gz').with_stem('d'), P('/a/d.gz'))
         self.assertEqual(P('a/Dot ending.').with_stem('d'), P('a/d.'))
         self.assertEqual(P('/a/Dot ending.').with_stem('d'), P('/a/d.'))
+        self.assertRaises(ValueError, P('').with_stem, 'd')
+        self.assertRaises(ValueError, P('/').with_stem, 'd')
+        self.assertRaises(ValueError, P('a/b').with_stem, '')
+        self.assertRaises(ValueError, P('foo.gz').with_stem, '')
+        self.assertRaises(ValueError, P('/a/b/foo.gz').with_stem, '')
 
     @needs_windows
     def test_with_stem_windows(self):
@@ -741,13 +746,8 @@ class JoinablePathTest(unittest.TestCase):
 
     def test_with_stem_empty(self):
         P = self.cls
-        self.assertEqual(P('').with_stem('d'), P('d'))
         self.assertEqual(P('.').with_stem('d'), P('d'))
-        self.assertEqual(P('/').with_stem('d'), P('/d'))
-        self.assertEqual(P('a/b').with_stem(''), P('a/'))
         self.assertEqual(P('a/b').with_stem('.'), P('a/.'))
-        self.assertRaises(ValueError, P('foo.gz').with_stem, '')
-        self.assertRaises(ValueError, P('/a/b/foo.gz').with_stem, '')
 
     def test_with_stem_seps(self):
         P = self.cls

@@ -133,9 +133,12 @@ class _JoinablePath(ABC):
     def with_name(self, name):
         """Return a new path with the file name changed."""
         split = self.parser.split
-        if split(name)[0]:
+        if not name or split(name)[0]:
             raise ValueError(f"Invalid name {name!r}")
-        return self.with_segments(split(str(self))[0], name)
+        parent, old_name = split(str(self))
+        if not old_name:
+            raise ValueError(f"{self!r} has an empty name")
+        return self.with_segments(parent, name)
 
     def with_stem(self, stem):
         """Return a new path with the stem changed."""

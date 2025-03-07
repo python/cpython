@@ -413,18 +413,12 @@ class PurePathTest(test_pathlib_abc.JoinablePathTest):
 
     def test_with_name_empty(self):
         P = self.cls
-        self.assertRaises(ValueError, P('').with_name, 'd.xml')
         self.assertRaises(ValueError, P('.').with_name, 'd.xml')
-        self.assertRaises(ValueError, P('/').with_name, 'd.xml')
-        self.assertRaises(ValueError, P('a/b').with_name, '')
         self.assertRaises(ValueError, P('a/b').with_name, '.')
 
     def test_with_stem_empty(self):
         P = self.cls
-        self.assertRaises(ValueError, P('').with_stem, 'd')
         self.assertRaises(ValueError, P('.').with_stem, 'd')
-        self.assertRaises(ValueError, P('/').with_stem, 'd')
-        self.assertRaises(ValueError, P('a/b').with_stem, '')
         self.assertRaises(ValueError, P('a/b').with_stem, '.')
 
     def test_is_reserved_deprecated(self):
