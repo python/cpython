@@ -1488,10 +1488,10 @@ mark_stacks(PyInterpreterState *interp, PyGC_Head *visited, int visited_space, b
             objects_marked += move_to_reachable(func, &reachable, visited_space);
             while (sp > locals) {
                 sp--;
-                if (!PyStackRef_IsMortal(*sp)) {
+                PyObject *op = PyStackRef_AsPyObjectBorrow(*sp);
+                if (op == NULL || _Py_IsImmortal(op)) {
                     continue;
                 }
-                PyObject *op = PyStackRef_AsPyObjectBorrow(*sp);
                 if (_PyObject_IS_GC(op)) {
                     PyGC_Head *gc = AS_GC(op);
                     if (_PyObject_GC_IS_TRACKED(op) &&

@@ -19,9 +19,8 @@ immortal. The latter should be the only instances that require
 cleanup during runtime finalization.
 */
 
-/* Leave the low bits for refcount overflow for old stable ABI code */
 #define _Py_STATICALLY_ALLOCATED_FLAG 4
-#define _Py_IMMORTAL_FLAGS 3
+#define _Py_IMMORTAL_FLAGS 1
 
 #if SIZEOF_VOID_P > 4
 /*

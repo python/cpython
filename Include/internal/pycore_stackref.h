@@ -188,16 +188,6 @@ _PyStackRef_FromPyObjectStealMortal(PyObject *obj, const char *filename, int lin
 #define PyStackRef_FromPyObjectStealMortal(obj) _PyStackRef_FromPyObjectStealMortal(_PyObject_CAST(obj), __FILE__, __LINE__)
 
 static inline bool
-PyStackRef_IsMortal(_PyStackRef ref)
-{
-    PyObject *obj = _Py_stackref_get_object(ref);
-    if (obj == NULL) {
-        return false;
-    }
-    return _Py_IsImmortal(obj);
-}
-
-static inline bool
 PyStackRef_IsHeapSafe(_PyStackRef ref)
 {
     return true;
@@ -377,8 +367,12 @@ PyStackRef_AsStrongReference(_PyStackRef stackref)
 // With GIL
 
 #define Py_TAG_BITS 3
-#define Py_TAG_IMMORTAL _Py_IMMORTAL_FLAGS
 #define Py_TAG_REFCNT 1
+#if _Py_IMMORTAL_FLAGS != Py_TAG_REFCNT
+#  error "_Py_IMMORTAL_FLAGS != Py_TAG_REFCNT"
+#endif
+#define Py_TAG_IMMORTAL _Py_IMMORTAL_FLAGS
+
 #define BITS_TO_PTR(REF) ((PyObject *)((REF).bits))
 #define BITS_TO_PTR_MASKED(REF) ((PyObject *)(((REF).bits) & (~Py_TAG_BITS)))
 
@@ -402,7 +396,6 @@ static inline void PyStackRef_CheckValid(_PyStackRef ref) {
     PyObject *obj = BITS_TO_PTR_MASKED(ref);
     switch (tag) {
         case 0:
-        case Py_TAG_REFCNT:
             /* Can be immortal if object was made immortal after reference came into existence */
             assert(!_Py_IsStaticImmortal(obj));
             break;
@@ -422,8 +415,6 @@ static inline void PyStackRef_CheckValid(_PyStackRef ref) {
 
 #ifdef _WIN32
 #define PyStackRef_IsUncountedMortal(REF) (((REF).bits & Py_TAG_BITS) == 0)
-#define PyStackRef_IsCountedMortal(REF) (((REF).bits & Py_TAG_BITS) == Py_TAG_REFCNT)
-#define PyStackRef_IsMortal(REF) (((REF).bits & Py_TAG_BITS) != Py_TAG_IMMORTAL)
 #define PyStackRef_AsPyObjectBorrow BITS_TO_PTR_MASKED
 #else
 /* Does this ref not have an embedded refcount and refer to a mortal object? */
@@ -431,20 +422,6 @@ static inline int
 PyStackRef_IsUncountedMortal(_PyStackRef ref)
 {
     return (ref.bits & Py_TAG_BITS) == 0;
-}
-
-/* Does this ref have an embedded refcount and refer to a mortal object (NULL is not mortal)? */
-static inline bool
-PyStackRef_IsCountedMortal(_PyStackRef ref)
-{
-    return (ref.bits & Py_TAG_BITS) == Py_TAG_REFCNT;
-}
-
-/* Does this ref refer to a mortal object (NULL is not mortal) */
-static inline bool
-PyStackRef_IsMortal(_PyStackRef ref)
-{
-    return (ref.bits & Py_TAG_BITS) != Py_TAG_IMMORTAL;
 }
 
 static inline PyObject *
@@ -547,13 +524,13 @@ PyStackRef_DUP(_PyStackRef ref)
 static inline bool
 PyStackRef_IsHeapSafe(_PyStackRef ref)
 {
-    return !PyStackRef_IsCountedMortal(ref);
+    return (ref.bits & Py_TAG_BITS) == 0 || ref.bits == PyStackRef_NULL_BITS ||  _Py_IsImmortal(BITS_TO_PTR_MASKED(ref));
 }
 
 static inline _PyStackRef
 PyStackRef_MakeHeapSafe(_PyStackRef ref)
 {
-    if (!PyStackRef_IsCountedMortal(ref)) {
+    if (PyStackRef_IsHeapSafe(ref)) {
         return ref;
     }
     PyObject *obj = BITS_TO_PTR_MASKED(ref);
