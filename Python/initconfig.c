@@ -126,7 +126,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
 #endif
     SPEC(buffered_stdio, BOOL, READ_ONLY, NO_SYS),
     SPEC(check_hash_pycs_mode, WSTR, READ_ONLY, NO_SYS),
-    SPEC(traceback_timestamps, WSTR, READ_ONLY, NO_SYS),
+    SPEC(traceback_timestamps, WSTR_OPT, READ_ONLY, NO_SYS),
     SPEC(code_debug_ranges, BOOL, READ_ONLY, NO_SYS),
     SPEC(configure_c_stdio, BOOL, READ_ONLY, NO_SYS),
     SPEC(cpu_count, INT, READ_ONLY, NO_SYS),
