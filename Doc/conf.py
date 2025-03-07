@@ -30,6 +30,7 @@ extensions = [
     'glossary_search',
     'grammar_snippet',
     'implementation_detail',
+    'issue_role',
     'lexers',
     'misc_news',
     'pydoc_topics',
@@ -99,7 +100,7 @@ highlight_language = 'python3'
 
 # Minimum version of sphinx required
 # Keep this version in sync with ``Doc/requirements.txt``.
-needs_sphinx = '8.1.3'
+needs_sphinx = '8.2.0'
 
 # Create table of contents entries for domain objects (e.g. functions, classes,
 # attributes, etc.). Default is True.

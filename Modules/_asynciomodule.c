@@ -143,8 +143,9 @@ typedef struct {
        inherit from native asyncio.Task */
     PyObject *non_asyncio_tasks;
 
-    /* Set containing all eagerly executing tasks. */
-    PyObject *eager_tasks;
+    /* Set containing all 3rd party eagerly executing tasks which don't
+       inherit from native asyncio.Task */
+    PyObject *non_asyncio_eager_tasks;
 
     /* An isinstance type cache for the 'is_coroutine()' function. */
     PyObject *iscoroutine_typecache;
@@ -2180,12 +2181,6 @@ register_task(TaskObj *task)
     llist_insert_tail(head, &task->task_node);
 }
 
-static int
-register_eager_task(asyncio_state *state, PyObject *task)
-{
-    return PySet_Add(state->eager_tasks, task);
-}
-
 static inline void
 unregister_task_safe(TaskObj *task)
 {
@@ -2217,12 +2212,6 @@ unregister_task(TaskObj *task)
 #else
     unregister_task_safe(task);
 #endif
-}
-
-static int
-unregister_eager_task(asyncio_state *state, PyObject *task)
-{
-    return PySet_Discard(state->eager_tasks, task);
 }
 
 static int
@@ -3472,11 +3461,11 @@ task_eager_start(asyncio_state *state, TaskObj *task)
     if (prevtask == NULL) {
         return -1;
     }
-
-    if (register_eager_task(state, (PyObject *)task) == -1) {
-        Py_DECREF(prevtask);
-        return -1;
-    }
+    // register the task into the linked list of tasks
+    // if the task completes eagerly (without suspending) then it will unregister itself
+    // in future_schedule_callbacks when done, otherwise
+    // it will continue as a regular (non-eager) asyncio task
+    register_task(task);
 
     if (PyContext_Enter(task->task_context) == -1) {
         Py_DECREF(prevtask);
@@ -3506,17 +3495,11 @@ task_eager_start(asyncio_state *state, TaskObj *task)
         Py_DECREF(curtask);
     }
 
-    if (unregister_eager_task(state, (PyObject *)task) == -1) {
-        retval = -1;
-    }
-
     if (PyContext_Exit(task->task_context) == -1) {
         retval = -1;
     }
 
-    if (task->task_state == STATE_PENDING) {
-        register_task(task);
-    } else {
+    if (task->task_state != STATE_PENDING) {
         // This seems to really help performance on pyperformance benchmarks
         clear_task_coro(task);
     }
@@ -3735,9 +3718,18 @@ _asyncio__register_eager_task_impl(PyObject *module, PyObject *task)
 /*[clinic end generated code: output=dfe1d45367c73f1a input=237f684683398c51]*/
 {
     asyncio_state *state = get_asyncio_state(module);
-    if (register_eager_task(state, task) < 0) {
+
+    if (Task_Check(state, task)) {
+        // task is an asyncio.Task instance or subclass, use efficient
+        // linked-list implementation.
+        register_task((TaskObj *)task);
+        Py_RETURN_NONE;
+    }
+
+    if (PySet_Add(state->non_asyncio_eager_tasks, task) < 0) {
         return NULL;
     }
+
     Py_RETURN_NONE;
 }
 
@@ -3785,9 +3777,17 @@ _asyncio__unregister_eager_task_impl(PyObject *module, PyObject *task)
 /*[clinic end generated code: output=a426922bd07f23d1 input=9d07401ef14ee048]*/
 {
     asyncio_state *state = get_asyncio_state(module);
-    if (unregister_eager_task(state, task) < 0) {
+    if (Task_Check(state, task)) {
+        // task is an asyncio.Task instance or subclass, use efficient
+        // linked-list implementation.
+        unregister_task((TaskObj *)task);
+        Py_RETURN_NONE;
+    }
+
+    if (PySet_Discard(state->non_asyncio_eager_tasks, task) < 0) {
         return NULL;
     }
+
     Py_RETURN_NONE;
 }
 
@@ -4041,7 +4041,7 @@ _asyncio_all_tasks_impl(PyObject *module, PyObject *loop)
         Py_DECREF(loop);
         return NULL;
     }
-    if (PyList_Extend(tasks, state->eager_tasks) < 0) {
+    if (PyList_Extend(tasks, state->non_asyncio_eager_tasks) < 0) {
         Py_DECREF(tasks);
         Py_DECREF(loop);
         return NULL;
@@ -4179,7 +4179,7 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->asyncio_CancelledError);
 
     Py_VISIT(state->non_asyncio_tasks);
-    Py_VISIT(state->eager_tasks);
+    Py_VISIT(state->non_asyncio_eager_tasks);
     Py_VISIT(state->iscoroutine_typecache);
 
     Py_VISIT(state->context_kwname);
@@ -4209,7 +4209,7 @@ module_clear(PyObject *mod)
     Py_CLEAR(state->asyncio_CancelledError);
 
     Py_CLEAR(state->non_asyncio_tasks);
-    Py_CLEAR(state->eager_tasks);
+    Py_CLEAR(state->non_asyncio_eager_tasks);
     Py_CLEAR(state->iscoroutine_typecache);
 
     Py_CLEAR(state->context_kwname);
@@ -4292,8 +4292,8 @@ module_init(asyncio_state *state)
         goto fail;
     }
 
-    state->eager_tasks = PySet_New(NULL);
-    if (state->eager_tasks == NULL) {
+    state->non_asyncio_eager_tasks = PySet_New(NULL);
+    if (state->non_asyncio_eager_tasks == NULL) {
         goto fail;
     }
 
@@ -4360,14 +4360,6 @@ module_exec(PyObject *mod)
     }
     // Must be done after types are added to avoid a circular dependency
     if (module_init(state) < 0) {
-        return -1;
-    }
-
-    if (PyModule_AddObjectRef(mod, "_scheduled_tasks", state->non_asyncio_tasks) < 0) {
-        return -1;
-    }
-
-    if (PyModule_AddObjectRef(mod, "_eager_tasks", state->eager_tasks) < 0) {
         return -1;
     }
 

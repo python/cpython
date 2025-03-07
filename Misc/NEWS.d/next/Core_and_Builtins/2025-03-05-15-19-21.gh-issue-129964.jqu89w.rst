@@ -1,0 +1,1 @@
+Fix JIT crash on Windows on Arm. Patch by Diego Russo and Brandt Bucher.

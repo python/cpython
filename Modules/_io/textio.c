@@ -358,7 +358,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
         out = PyUnicode_DATA(modified);
         PyUnicode_WRITE(kind, out, 0, '\r');
         memcpy(out + kind, PyUnicode_DATA(output), kind * output_len);
-        Py_SETREF(output, modified); /* output remains ready */
+        Py_SETREF(output, modified);
         self->pendingcr = 0;
         output_len++;
     }
@@ -1818,7 +1818,6 @@ textiowrapper_get_decoded_chars(textio *self, Py_ssize_t n)
     if (self->decoded_chars == NULL)
         return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
 
-    /* decoded_chars is guaranteed to be "ready". */
     avail = (PyUnicode_GET_LENGTH(self->decoded_chars)
              - self->decoded_chars_used);
 

@@ -23,6 +23,7 @@ extern "C" {
 #include "pycore_pymem.h"           // struct _pymem_allocators
 #include "pycore_pythread.h"        // struct _pythread_runtime_state
 #include "pycore_signal.h"          // struct _signals_runtime_state
+#include "pycore_time.h"            // struct _PyTime_runtime_state
 #include "pycore_tracemalloc.h"     // struct _tracemalloc_runtime_state
 #include "pycore_typeobject.h"      // struct _types_runtime_state
 #include "pycore_unicodeobject.h"   // struct _Py_unicode_runtime_state
@@ -168,6 +169,7 @@ typedef struct pyruntimestate {
     struct _Py_float_runtime_state float_state;
     struct _Py_unicode_runtime_state unicode_state;
     struct _types_runtime_state types;
+    struct _Py_time_runtime_state time;
 
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
     // Used in "Python/emscripten_trampoline.c" to choose between type

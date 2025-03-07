@@ -1,0 +1,3 @@
+Fix specialization of generic aliases that are generic over a
+:class:`typing.ParamSpec` and have been specialized with a
+nested type variable.

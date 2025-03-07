@@ -5,8 +5,6 @@
  */
 
 
-#include <stdbool.h>
-
 #include "Python.h"
 
 #include "pycore_compile.h" // _PyCompile_EnsureArrayLargeEnough
@@ -21,6 +19,8 @@ typedef _Py_SourceLocation location;
 #define INITIAL_INSTR_SEQUENCE_LABELS_MAP_SIZE 10
 
 #include "clinic/instruction_sequence.c.h"
+
+#include <stdbool.h>
 
 #undef SUCCESS
 #undef ERROR
