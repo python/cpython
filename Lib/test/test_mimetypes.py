@@ -399,14 +399,14 @@ class MimetypesCliTestCase(unittest.TestCase):
     def test_help_option(self):
         retcode, out, err = self.mimetypes_cmd('-h')
         self.assertEqual(retcode, 0)
-        self.assertIn('usage: mimetypes.py', out)
+        self.assertStartsWith(out, 'usage: ')
         self.assertEqual(err, '')
 
     def test_invalid_option(self):
         retcode, out, err = self.mimetypes_cmd('--invalid')
         self.assertEqual(retcode, 2)
         self.assertEqual(out, '')
-        self.assertIn('usage: mimetypes.py', err)
+        self.assertStartsWith(err, 'usage: ')
 
     def test_guess_extension(self):
         retcode, out, err = self.mimetypes_cmd('-l', '-e', 'image/jpg')
