@@ -222,10 +222,13 @@ BaseException_repr(PyBaseExceptionObject *self)
 
 /* Returns dict on success, after having added a __timestamp_ns__ key; NULL
    otherwise.  dict does not have to be self->dict as the getstate use case
-   often uses a copy.  */
+   often uses a copy.  No key is added if its value would be 0. */
 static PyObject* BaseException_add_timestamp_to_dict(PyBaseExceptionObject *self, PyObject *dict)
 {
     assert(dict != NULL);
+    if (self->timestamp_ns <= 0) {
+        return dict;
+    }
     PyObject *ts = PyLong_FromLongLong(self->timestamp_ns);
     if (!ts)
         return NULL;
