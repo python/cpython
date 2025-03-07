@@ -79,17 +79,9 @@ class ResourceTracker(object):
         # making sure child processess are cleaned before ResourceTracker
         # gets destructed.
         # see https://github.com/python/cpython/issues/88887
-        try:
-            self._stop()
-        except AttributeError:
-            # AttributeError is likely caused by module teardown
-            # > __del__() can be executed during interpreter shutdown. As a
-            # > consequence, the global variables it needs to access (including
-            # > other modules) may already have been deleted or set to None.
-            # see https://docs.python.org/3/reference/datamodel.html#object.__del__
-            pass
+        self._stop()
 
-    def _stop(self):
+    def _stop(self, close=os.close, waitpid=os.waitpid, waitstatus_to_exitcode=os.waitstatus_to_exitcode):
         with self._lock:
             # This should not happen (_stop() isn't called by a finalizer)
             # but we check for it anyway.
@@ -102,15 +94,15 @@ class ResourceTracker(object):
                 return
 
             # closing the "alive" file descriptor stops main()
-            os.close(self._fd)
+            close(self._fd)
             self._fd = None
 
-            _, status = os.waitpid(self._pid, 0)
+            _, status = waitpid(self._pid, 0)
 
             self._pid = None
 
             try:
-                self._exitcode = os.waitstatus_to_exitcode(status)
+                self._exitcode = waitstatus_to_exitcode(status)
             except ValueError:
                 # os.waitstatus_to_exitcode may raise an exception for invalid values
                 self._exitcode = None
