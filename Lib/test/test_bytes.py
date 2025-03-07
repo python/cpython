@@ -457,11 +457,16 @@ class BaseBytesTest:
             self.assertRaises(ValueError, self.type2test.fromhex, c)
 
         # Check that we can parse bytes and bytearray
-        self.assertEqual(self.type2test.fromhex(b' 012abc'), b'\x01\x2a\xbc')
-        self.assertEqual(
-            self.type2test.fromhex(bytearray(b' 012abc')),
-            b'\x01\x2a\xbc',
-        )
+        tests = [
+            ("bytes", bytes),
+            ("bytearray", bytearray),
+            ("memoryview", memoryview),
+            ("array.array", lambda bs: array.array('B', bs)),
+        ]
+        for name, factory in tests:
+            with self.subTest(name=name):
+                self.assertEqual(self.type2test.fromhex(factory(b' 1A 2B 30 ')), b)
+
         # Invalid bytes are rejected
         for u8 in b"\0\x1C\x1D\x1E\x1F\x85\xa0":
             b = bytes([30, 31, u8])

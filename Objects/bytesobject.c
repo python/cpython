@@ -2512,6 +2512,8 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     unsigned int top, bot;
     const Py_UCS1 *str, *start, *end;
     _PyBytesWriter writer;
+    Py_buffer view;
+    view.obj = NULL;
 
     _PyBytesWriter_Init(&writer);
     writer.use_bytearray = use_bytearray;
@@ -2534,15 +2536,13 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         }
 
         assert(PyUnicode_KIND(string) == PyUnicode_1BYTE_KIND);
-        str = start = PyUnicode_1BYTE_DATA(string);
+        str = PyUnicode_1BYTE_DATA(string);
     }
-    else if (PyBytes_Check(string)) {
-        hexlen = PyBytes_GET_SIZE(string);
-        str = start = (Py_UCS1 *)PyBytes_AS_STRING(string);
-    }
-    else if (PyByteArray_Check(string)) {
-        hexlen = PyByteArray_GET_SIZE(string);
-        str = start = (Py_UCS1 *)PyByteArray_AS_STRING(string);
+    else if (PyObject_CheckBuffer(string)) {
+        if (PyObject_GetBuffer(string, &view, PyBUF_SIMPLE) != 0)
+            return NULL;
+        hexlen = view.len;
+        str = view.buf;
     }
     else {
         PyErr_Format(PyExc_TypeError,
@@ -2554,8 +2554,9 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     /* This overestimates if there are spaces */
     buf = _PyBytesWriter_Alloc(&writer, hexlen / 2);
     if (buf == NULL)
-        return NULL;
+        goto release_buffer;
 
+    start = str;
     end = str + hexlen;
     while (str < end) {
         /* skip over spaces in the input */
@@ -2589,6 +2590,9 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         *buf++ = (unsigned char)((top << 4) + bot);
     }
 
+    if (view.obj != NULL) {
+       PyBuffer_Release(&view);
+    }
     return _PyBytesWriter_Finish(&writer, buf);
 
   error:
@@ -2601,6 +2605,11 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
                      "fromhex() arg at position %zd", invalid_char);
     }
     _PyBytesWriter_Dealloc(&writer);
+
+  release_buffer:
+    if (view.obj != NULL) {
+        PyBuffer_Release(&view);
+    }
     return NULL;
 }
 
