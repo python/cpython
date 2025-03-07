@@ -852,7 +852,7 @@ _io.FileIO.read
 Read at most size bytes, returned as bytes.
 
 If size is less than 0, read all bytes in the file making multiple read calls.
-See ``_io.FileIO.readall``.
+See ``FileIO.readall``.
 
 Attempts to make only one system call, retrying only per PEP 475 (EINTR). This
 means less data may be returned than requested.
@@ -863,7 +863,7 @@ bytes object at EOF.
 
 static PyObject *
 _io_FileIO_read_impl(fileio *self, PyTypeObject *cls, Py_ssize_t size)
-/*[clinic end generated code: output=bbd749c7c224143e input=e8376d92a521d865]*/
+/*[clinic end generated code: output=bbd749c7c224143e input=cf21fddef7d38ab6]*/
 {
     char *ptr;
     Py_ssize_t n;

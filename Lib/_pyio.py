@@ -1646,7 +1646,7 @@ class FileIO(RawIOBase):
         """Read at most size bytes, returned as bytes.
 
         If size is less than 0, read all bytes in the file making
-        multiple read calls. See ``_io.FileIO.readall``.
+        multiple read calls. See ``FileIO.readall``.
 
         Attempts to make only one system call, retrying only per
         PEP 475 (EINTR). This means less data may be returned than

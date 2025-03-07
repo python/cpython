@@ -293,7 +293,7 @@ PyDoc_STRVAR(_io_FileIO_read__doc__,
 "Read at most size bytes, returned as bytes.\n"
 "\n"
 "If size is less than 0, read all bytes in the file making multiple read calls.\n"
-"See ``_io.FileIO.readall``.\n"
+"See ``FileIO.readall``.\n"
 "\n"
 "Attempts to make only one system call, retrying only per PEP 475 (EINTR). This\n"
 "means less data may be returned than requested.\n"
@@ -541,4 +541,4 @@ _io_FileIO_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=02117cfbca5535d1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f4e1f74c03d4ecdf input=a9049054013a1b77]*/
