@@ -323,6 +323,7 @@ class Bdb:
         """
         if self.stop_here(frame) or self.break_here(frame):
             self.user_line(frame)
+            self.restart_events()
             if self.quitting: raise BdbQuit
         elif not self.get_break(frame.f_code.co_filename, frame.f_lineno):
             self.disable_current_event()

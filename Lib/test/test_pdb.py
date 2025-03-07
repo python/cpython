@@ -531,6 +531,48 @@ def test_pdb_breakpoint_with_filename():
     (Pdb) continue
     """
 
+def test_pdb_breakpoint_on_disabled_line():
+    """New breakpoint on once disabled line should work
+
+    >>> reset_Breakpoint()
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     for i in range(3):
+    ...         j = i * 2
+    ...         print(j)
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'break 5',
+    ...     'c',
+    ...     'clear 1',
+    ...     'break 4',
+    ...     'c',
+    ...     'clear 2',
+    ...     'c'
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) break 5
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>:5
+    (Pdb) c
+    > <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>(5)test_function()
+    -> print(j)
+    (Pdb) clear 1
+    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>:5
+    (Pdb) break 4
+    Breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>:4
+    (Pdb) c
+    0
+    > <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>(4)test_function()
+    -> j = i * 2
+    (Pdb) clear 2
+    Deleted breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>:4
+    (Pdb) c
+    2
+    4
+    """
+
 def test_pdb_breakpoints_preserved_across_interactive_sessions():
     """Breakpoints are remembered between interactive sessions
 
