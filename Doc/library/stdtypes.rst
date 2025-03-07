@@ -2745,8 +2745,9 @@ data and are closely related to string objects in a variety of other ways.
          not just spaces.
 
       .. versionchanged:: next
-         :meth:`bytes.fromhex` now accepts an ASCII :class:`bytes` object as
-         input.
+         :meth:`bytes.fromhex` now accepts ASCII :class:`bytes` and
+         :class:`bytearray` objects as input.
+
 
 
    A reverse conversion function exists to transform a bytes object into its
@@ -2835,8 +2836,8 @@ objects.
          not just spaces.
 
       .. versionchanged:: next
-         :meth:`bytearray.fromhex` now accepts an ASCII :class:`bytes` object as
-         input.
+         :meth:`bytearray.fromhex` now accepts ASCII :class:`bytes` and
+         :class:`bytearray` objects as input.
 
    A reverse conversion function exists to transform a bytearray object into its
    hexadecimal representation.
