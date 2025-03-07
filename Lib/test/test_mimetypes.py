@@ -435,10 +435,10 @@ class MimetypesCliTestCase(unittest.TestCase):
         'macOS lists common_types in mime.types thus making them always known'
     )
     def test_guess_type_conflicting_with_mimetypes(self):
-        retcode, out, err = self.mimetypes_cmd('foo.webp')
+        retcode, out, err = self.mimetypes_cmd('foo.pic')
         self.assertEqual(retcode, 1)
         self.assertEqual(out, '')
-        self.assertEqual(err, f'error: unknown extension of foo.webp{linesep}')
+        self.assertEqual(err, f'error: unknown extension of foo.pic{linesep}')
 
 if __name__ == "__main__":
     unittest.main()
