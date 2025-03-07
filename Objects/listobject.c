@@ -1428,7 +1428,7 @@ list_extend_impl(PyListObject *self, PyObject *iterable)
 PyObject *
 _PyList_Extend(PyListObject *self, PyObject *iterable)
 {
-    return list_extend_impl(self, iterable);
+    return list_extend((PyObject*)self, iterable);
 }
 
 int
