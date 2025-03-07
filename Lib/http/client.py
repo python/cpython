@@ -1013,6 +1013,10 @@ class HTTPConnection:
             self._tunnel()
 
     def close(self, shutdown=False):
+        """Close the connection to the HTTP server.
+        :param shutdown: If True, perform an explicit shutdown of the socket before closing. Defaults to False.
+        :type shutdown: bool, optional
+        """
         self.__state = _CS_IDLE
         try:
             sock = self.sock
