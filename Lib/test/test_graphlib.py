@@ -276,6 +276,18 @@ class TestReverse(unittest.TestCase):
         expected = {2: {1}, 3: {1, 2}, 1: set()}
         self.assertEqual(graphlib.reverse(graph), expected)
 
+    def test_reverse_with_iterators(self):
+        """Values may be any iterable including iterators."""
+        graph = {"a": iter("cd"), "b": iter("ace"), "e": iter("f")}
+        expected = {
+            "a": {"b"},
+            "b": set(),
+            "c": {"a", "b"},
+            "d": {"a"},
+            "e": {"b"},
+            "f": {"e"},
+        }
+        self.assertEqual(graphlib.reverse(graph), expected)
 
 class TestAsTransitive(unittest.TestCase):
     """Tests for graphlib.as_transitive()."""
@@ -347,6 +359,12 @@ class TestAsTransitive(unittest.TestCase):
         """Nodes may be any hashable type, such as int."""
         graph = {1: [2], 2: [3], 3: []}
         expected = {1: {2, 3}, 2: {3}, 3: set()}
+        self.assertEqual(graphlib.as_transitive(graph), expected)
+
+    def test_as_transitive_with_iterators(self):
+        """Values may be any iterable including iterators."""
+        graph = {"a": iter("cd"), "b": iter("ace"), "e": iter("f")}
+        expected = {"a": {"c", "d"}, "b": {"c", "d", "e", "a", "f"}, "e": {"f"}}
         self.assertEqual(graphlib.as_transitive(graph), expected)
 
     def test_as_transitive_cyclic(self):
