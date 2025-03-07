@@ -2539,8 +2539,9 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         str = PyUnicode_1BYTE_DATA(string);
     }
     else if (PyObject_CheckBuffer(string)) {
-        if (PyObject_GetBuffer(string, &view, PyBUF_SIMPLE) != 0)
+        if (PyObject_GetBuffer(string, &view, PyBUF_SIMPLE) != 0) {
             return NULL;
+        }
         hexlen = view.len;
         str = view.buf;
     }
