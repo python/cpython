@@ -355,7 +355,7 @@ Other language changes
   (Contrubuted by Sergey B Kirpichev in :gh:`87790`.)
 
 * The :func:`bytes.fromhex` and :func:`bytearray.fromhex` methods now accept
-  ASCII :class:`bytes` and :class:`bytearray` objects.
+  ASCII :class:`bytes` and :term:`bytes-like objects <bytes-like object>`.
   (Contributed by Daniel Pope in :gh:`129349`.)
 
 * ``\B`` in :mod:`regular expression <re>` now matches empty input string.

@@ -2746,7 +2746,7 @@ data and are closely related to string objects in a variety of other ways.
 
       .. versionchanged:: next
          :meth:`bytes.fromhex` now accepts ASCII :class:`bytes` and
-         :class:`bytearray` objects as input.
+         :term:`bytes-like objects <bytes-like object>` as input.
 
 
 
@@ -2837,7 +2837,7 @@ objects.
 
       .. versionchanged:: next
          :meth:`bytearray.fromhex` now accepts ASCII :class:`bytes` and
-         :class:`bytearray` objects as input.
+         :term:`bytes-like objects <bytes-like object>` as input.
 
    A reverse conversion function exists to transform a bytearray object into its
    hexadecimal representation.
