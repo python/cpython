@@ -4,8 +4,8 @@ import os
 import errno
 import unittest
 
-from pathlib._abc import JoinablePath, ReadablePath, WritablePath, magic_open
-from pathlib.types import _PathParser, PathInfo
+from pathlib._os import magic_open
+from pathlib.types import _PathParser, PathInfo, _JoinablePath, _ReadablePath, _WritablePath
 import posixpath
 
 from test.support.os_helper import TESTFN
@@ -31,7 +31,7 @@ def needs_windows(fn):
 #
 
 
-class DummyJoinablePath(JoinablePath):
+class DummyJoinablePath(_JoinablePath):
     __slots__ = ('_segments',)
 
     parser = posixpath
@@ -78,7 +78,7 @@ class JoinablePathTest(unittest.TestCase):
 
     def test_is_joinable(self):
         p = self.cls(self.base)
-        self.assertIsInstance(p, JoinablePath)
+        self.assertIsInstance(p, _JoinablePath)
 
     def test_parser(self):
         self.assertIsInstance(self.cls.parser, _PathParser)
@@ -855,7 +855,7 @@ class DummyReadablePathInfo:
         return False
 
 
-class DummyReadablePath(ReadablePath, DummyJoinablePath):
+class DummyReadablePath(_ReadablePath, DummyJoinablePath):
     """
     Simple implementation of DummyReadablePath that keeps files and
     directories in memory.
@@ -900,7 +900,7 @@ class DummyReadablePath(ReadablePath, DummyJoinablePath):
         raise NotImplementedError
 
 
-class DummyWritablePath(WritablePath, DummyJoinablePath):
+class DummyWritablePath(_WritablePath, DummyJoinablePath):
     __slots__ = ()
 
     def __open_wb__(self, buffering=-1):
@@ -999,7 +999,7 @@ class ReadablePathTest(JoinablePathTest):
 
     def test_is_readable(self):
         p = self.cls(self.base)
-        self.assertIsInstance(p, ReadablePath)
+        self.assertIsInstance(p, _ReadablePath)
 
     def test_magic_open(self):
         p = self.cls(self.base)
@@ -1130,7 +1130,7 @@ class ReadablePathTest(JoinablePathTest):
         q = p / 'myfile'
         self.assertFalse(q.info.exists())
         self.assertFalse(q.info.exists(follow_symlinks=False))
-        if isinstance(self.cls, WritablePath):
+        if isinstance(self.cls, _WritablePath):
             q.write_text('hullo')
             self.assertFalse(q.info.exists())
             self.assertFalse(q.info.exists(follow_symlinks=False))
@@ -1162,7 +1162,7 @@ class ReadablePathTest(JoinablePathTest):
         q = p / 'mydir'
         self.assertFalse(q.info.is_dir())
         self.assertFalse(q.info.is_dir(follow_symlinks=False))
-        if isinstance(self.cls, WritablePath):
+        if isinstance(self.cls, _WritablePath):
             q.mkdir()
             self.assertFalse(q.info.is_dir())
             self.assertFalse(q.info.is_dir(follow_symlinks=False))
@@ -1194,7 +1194,7 @@ class ReadablePathTest(JoinablePathTest):
         q = p / 'myfile'
         self.assertFalse(q.info.is_file())
         self.assertFalse(q.info.is_file(follow_symlinks=False))
-        if isinstance(self.cls, WritablePath):
+        if isinstance(self.cls, _WritablePath):
             q.write_text('hullo')
             self.assertFalse(q.info.is_file())
             self.assertFalse(q.info.is_file(follow_symlinks=False))
@@ -1220,7 +1220,7 @@ class WritablePathTest(JoinablePathTest):
 
     def test_is_writable(self):
         p = self.cls(self.base)
-        self.assertIsInstance(p, WritablePath)
+        self.assertIsInstance(p, _WritablePath)
 
 
 class DummyRWPath(DummyWritablePath, DummyReadablePath):
