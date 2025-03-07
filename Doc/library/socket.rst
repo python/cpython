@@ -1513,7 +1513,7 @@ to sockets.
 
       :meth:`close` releases the resource associated with a connection 
       but does not necessarily close the connection immediately. If you want to close the connection in a timely fashion,        call :meth:`shutdown` before :meth:`close`, or use this function with the shutdown parameter like this
-      ``socket.close(shutdown=True)
+      ``socket.close(shutdown=True)``
 
 
 .. method:: socket.connect(address)
