@@ -1522,9 +1522,32 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
 
         if (opcode == BUILD_LIST && oparg == 0) {
             if (!expect_append) {
+                /* Not a sequence start. */
                 return SUCCESS;
             }
-            goto start_found;
+
+            /* Sequence start, we are done. */
+            PyObject *newconst = PyTuple_New((Py_ssize_t)consts_found);
+            if (newconst == NULL) {
+                return ERROR;
+            }
+
+            int nops = consts_found * 2 + 1;
+            for (pos = i - 1; pos >= 0 && consts_found > 0; pos--) {
+                instr = &bb->b_instr[pos];
+                if (loads_const(instr->i_opcode)) {
+                    PyObject *constant = get_const_value(instr->i_opcode, instr->i_oparg, consts);
+                    if (constant == NULL) {
+                        Py_DECREF(newconst);
+                        return ERROR;
+                    }
+                    PyTuple_SET_ITEM(newconst, --consts_found, constant);
+                }
+            }
+
+            assert(consts_found == 0);
+            nop_out(bb, i-1, nops);
+            return instr_make_load_const(intrinsic, newconst, consts, const_cache);
         }
 
         if (expect_append) {
@@ -1544,29 +1567,6 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
 
     /* Did not find sequence start. */
     return SUCCESS;
-
-start_found:;
-    PyObject *newconst = PyTuple_New((Py_ssize_t)consts_found);
-    if (newconst == NULL) {
-        return ERROR;
-    }
-
-    int nops = consts_found * 2 + 1;
-    for (int pos = i - 1; pos >= 0 && consts_found > 0; pos--) {
-        cfg_instr *instr = &bb->b_instr[pos];
-        if (loads_const(instr->i_opcode)) {
-            PyObject *constant = get_const_value(instr->i_opcode, instr->i_oparg, consts);
-            if (constant == NULL) {
-                Py_DECREF(newconst);
-                return ERROR;
-            }
-            PyTuple_SET_ITEM(newconst, --consts_found, constant);
-        }
-    }
-
-    assert(consts_found == 0);
-    nop_out(bb, i-1, nops);
-    return instr_make_load_const(intrinsic, newconst, consts, const_cache);
 }
 
 #define MIN_CONST_SEQUENCE_SIZE 3
