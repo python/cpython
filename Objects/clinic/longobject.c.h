@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 static PyObject *
 long_new_impl(PyTypeObject *type, PyObject *x, PyObject *obase);
@@ -47,7 +48,8 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *x = NULL;
     PyObject *obase = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -107,9 +109,6 @@ int___format__(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     format_spec = arg;
     return_value = int___format___impl(self, format_spec);
 
@@ -118,7 +117,7 @@ exit:
 }
 
 PyDoc_STRVAR(int___round____doc__,
-"__round__($self, ndigits=<unrepresentable>, /)\n"
+"__round__($self, ndigits=None, /)\n"
 "--\n"
 "\n"
 "Rounding an Integral returns itself.\n"
@@ -135,7 +134,7 @@ static PyObject *
 int___round__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *o_ndigits = NULL;
+    PyObject *o_ndigits = Py_None;
 
     if (!_PyArg_CheckPositional("__round__", nargs, 0, 1)) {
         goto exit;
@@ -231,10 +230,9 @@ PyDoc_STRVAR(int_as_integer_ratio__doc__,
 "as_integer_ratio($self, /)\n"
 "--\n"
 "\n"
-"Return integer ratio.\n"
+"Return a pair of integers, whose ratio is equal to the original int.\n"
 "\n"
-"Return a pair of integers, whose ratio is exactly equal to the original int\n"
-"and with a positive denominator.\n"
+"The ratio is in lowest terms and has a positive denominator.\n"
 "\n"
 ">>> (10).as_integer_ratio()\n"
 "(10, 1)\n"
@@ -270,7 +268,7 @@ PyDoc_STRVAR(int_to_bytes__doc__,
 "    the most significant byte is at the beginning of the byte array.  If\n"
 "    byteorder is \'little\', the most significant byte is at the end of the\n"
 "    byte array.  To request the native byte order of the host system, use\n"
-"    `sys.byteorder\' as the byte order value.  Default is to use \'big\'.\n"
+"    sys.byteorder as the byte order value.  Default is to use \'big\'.\n"
 "  signed\n"
 "    Determines whether two\'s complement is used to represent the integer.\n"
 "    If signed is False and a negative integer is given, an OverflowError\n"
@@ -318,7 +316,8 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
     PyObject *byteorder = NULL;
     int is_signed = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -345,9 +344,6 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
     if (args[1]) {
         if (!PyUnicode_Check(args[1])) {
             _PyArg_BadArgument("to_bytes", "argument 'byteorder'", "str", args[1]);
-            goto exit;
-        }
-        if (PyUnicode_READY(args[1]) == -1) {
             goto exit;
         }
         byteorder = args[1];
@@ -386,7 +382,7 @@ PyDoc_STRVAR(int_from_bytes__doc__,
 "    the most significant byte is at the beginning of the byte array.  If\n"
 "    byteorder is \'little\', the most significant byte is at the end of the\n"
 "    byte array.  To request the native byte order of the host system, use\n"
-"    `sys.byteorder\' as the byte order value.  Default is to use \'big\'.\n"
+"    sys.byteorder as the byte order value.  Default is to use \'big\'.\n"
 "  signed\n"
 "    Indicates whether two\'s complement is used to represent the integer.");
 
@@ -432,7 +428,8 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
     PyObject *byteorder = NULL;
     int is_signed = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -443,9 +440,6 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
     if (args[1]) {
         if (!PyUnicode_Check(args[1])) {
             _PyArg_BadArgument("from_bytes", "argument 'byteorder'", "str", args[1]);
-            goto exit;
-        }
-        if (PyUnicode_READY(args[1]) == -1) {
             goto exit;
         }
         byteorder = args[1];
@@ -485,4 +479,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=e518fe2b5d519322 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fb96bd642a643f75 input=a9049054013a1b77]*/

@@ -2,6 +2,7 @@ import asyncio
 import contextvars
 import unittest
 from test import support
+from test.support import force_not_colorized
 
 support.requires_working_socket(module=True)
 
@@ -11,7 +12,7 @@ class MyException(Exception):
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class TestCM:
@@ -252,6 +253,7 @@ class TestAsyncCase(unittest.TestCase):
         test.doCleanups()
         self.assertEqual(events, ['asyncSetUp', 'test', 'asyncTearDown', 'cleanup'])
 
+    @force_not_colorized
     def test_exception_in_tear_clean_up(self):
         class Test(unittest.IsolatedAsyncioTestCase):
             async def asyncSetUp(self):
@@ -312,18 +314,21 @@ class TestAsyncCase(unittest.TestCase):
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test1', str(w.warning))
         self.assertEqual(w.filename, __file__)
+        self.assertIn("returned 'int'", str(w.warning))
 
         with self.assertWarns(DeprecationWarning) as w:
             Test('test2').run()
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test2', str(w.warning))
         self.assertEqual(w.filename, __file__)
+        self.assertIn("returned 'async_generator'", str(w.warning))
 
         with self.assertWarns(DeprecationWarning) as w:
             Test('test3').run()
         self.assertIn('It is deprecated to return a value that is not None', str(w.warning))
         self.assertIn('test3', str(w.warning))
         self.assertEqual(w.filename, __file__)
+        self.assertIn(f'returned {Nothing.__name__!r}', str(w.warning))
 
     def test_cleanups_interleave_order(self):
         events = []
@@ -471,11 +476,11 @@ class TestAsyncCase(unittest.TestCase):
     def test_setup_get_event_loop(self):
         # See https://github.com/python/cpython/issues/95736
         # Make sure the default event loop is not used
-        asyncio.set_event_loop(None)
+        asyncio._set_event_loop(None)
 
         class TestCase1(unittest.IsolatedAsyncioTestCase):
             def setUp(self):
-                asyncio.get_event_loop_policy().get_event_loop()
+                asyncio._get_event_loop_policy().get_event_loop()
 
             async def test_demo1(self):
                 pass
@@ -483,6 +488,20 @@ class TestAsyncCase(unittest.TestCase):
         test = TestCase1('test_demo1')
         result = test.run()
         self.assertTrue(result.wasSuccessful())
+
+    def test_loop_factory(self):
+        asyncio._set_event_loop_policy(None)
+
+        class TestCase1(unittest.IsolatedAsyncioTestCase):
+            loop_factory = asyncio.EventLoop
+
+            async def test_demo1(self):
+                pass
+
+        test = TestCase1('test_demo1')
+        result = test.run()
+        self.assertTrue(result.wasSuccessful())
+        self.assertIsNone(support.maybe_get_event_loop_policy())
 
 if __name__ == "__main__":
     unittest.main()

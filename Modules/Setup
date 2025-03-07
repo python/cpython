@@ -137,6 +137,9 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_datetime _datetimemodule.c
 #_decimal _decimal/_decimal.c
 #_heapq _heapqmodule.c
+#_interpchannels _interpchannelsmodule.c
+#_interpqueues _interpqueuesmodule.c
+#_interpreters _interpretersmodule.c
 #_json _json.c
 #_lsprof _lsprof.c rotatingtree.c
 #_multiprocessing -I$(srcdir)/Modules/_multiprocessing _multiprocessing/multiprocessing.c _multiprocessing/semaphore.c
@@ -150,24 +153,23 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_typing _typingmodule.c
 #_zoneinfo _zoneinfo.c
 #array arraymodule.c
-#audioop audioop.c
 #binascii binascii.c
 #cmath cmathmodule.c
 #math mathmodule.c
 #mmap mmapmodule.c
 #select selectmodule.c
+#_sysconfig _sysconfig.c
 
 # XML
 #_elementtree _elementtree.c
 #pyexpat pyexpat.c
 
 # hashing builtins
-#_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c
-#_md5 md5module.c
-#_sha1 sha1module.c
-#_sha256 sha256module.c
-#_sha512 sha512module.c
-#_sha3 _sha3/sha3module.c
+#_blake2 blake2module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_Blake2.a
+#_md5 md5module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_MD5.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
+#_sha1 sha1module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_SHA1.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
+#_sha2 sha2module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_SHA2.a
+#_sha3 sha3module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_SHA3.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
 
 # text encodings and unicode
 #_codecs_cn cjkcodecs/_codecs_cn.c
@@ -185,16 +187,9 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_posixshmem -I$(srcdir)/Modules/_multiprocessing _multiprocessing/posixshmem.c -lrt
 #fcntl fcntlmodule.c
 #grp grpmodule.c
-#ossaudiodev ossaudiodev.c
 #resource resource.c
-#spwd spwdmodule.c
 #syslog syslogmodule.c
 #termios termios.c
-
-# Modules with UNIX dependencies that require external libraries
-
-#_crypt _cryptmodule.c -lcrypt
-#nis nismodule.c -I/usr/include/tirpc -lnsl -ltirpc
 
 # Modules that require external libraries.
 
@@ -263,7 +258,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 # *** Always uncomment this; X11 libraries to link with:
 #	-lX11
 
-# Some system have -lcurses 
+# Some system have -lcurses
 #_curses -lncurses -lncursesw -ltermcap _cursesmodule.c
 #_curses_panel -lpanel -lncurses _curses_panel.c
 
@@ -279,7 +274,6 @@ PYTHONPATH=$(COREPYTHONPATH)
 
 # Testing
 
-#_xxsubinterpreters _xxsubinterpretersmodule.c
 #_xxtestfuzz _xxtestfuzz/_xxtestfuzz.c _xxtestfuzz/fuzzer.c
 #_testbuffer _testbuffer.c
 #_testinternalcapi _testinternalcapi.c
@@ -291,6 +285,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_testcapi _testcapimodule.c
 #_testimportmultiple _testimportmultiple.c
 #_testmultiphase _testmultiphase.c
+#_testexternalinspection _testexternalinspection.c
 #_testsinglephase _testsinglephase.c
 
 # ---

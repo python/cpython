@@ -2,6 +2,8 @@ import os
 import base64
 import gettext
 import unittest
+import unittest.mock
+from functools import partial
 
 from test import support
 from test.support import os_helper
@@ -9,8 +11,6 @@ from test.support import os_helper
 
 # TODO:
 #  - Add new tests, for example for "dgettext"
-#  - Remove dummy tests, for example testing for single and double quotes
-#    has no sense, it would have if we were testing a parser (i.e. pygettext)
 #  - Tests should have only one assert.
 
 GNU_MO_DATA = b'''\
@@ -115,9 +115,16 @@ UMOFILE = os.path.join(LOCALEDIR, 'ugettext.mo')
 MMOFILE = os.path.join(LOCALEDIR, 'metadata.mo')
 
 
+def reset_gettext():
+    gettext._localedirs.clear()
+    gettext._current_domain = 'messages'
+    gettext._translations.clear()
+
+
 class GettextBaseTest(unittest.TestCase):
-    def setUp(self):
-        self.addCleanup(os_helper.rmtree, os.path.split(LOCALEDIR)[0])
+    @classmethod
+    def setUpClass(cls):
+        cls.addClassCleanup(os_helper.rmtree, os.path.split(LOCALEDIR)[0])
         if not os.path.isdir(LOCALEDIR):
             os.makedirs(LOCALEDIR)
         with open(MOFILE, 'wb') as fp:
@@ -130,9 +137,12 @@ class GettextBaseTest(unittest.TestCase):
             fp.write(base64.decodebytes(UMO_DATA))
         with open(MMOFILE, 'wb') as fp:
             fp.write(base64.decodebytes(MMO_DATA))
+
+    def setUp(self):
         self.env = self.enterContext(os_helper.EnvironmentVarGuard())
         self.env['LANGUAGE'] = 'xx'
-        gettext._translations.clear()
+        reset_gettext()
+        self.addCleanup(reset_gettext)
 
 
 GNU_MO_DATA_ISSUE_17898 = b'''\
@@ -163,30 +173,6 @@ class GettextTestCase1(GettextBaseTest):
            'wink wink (in "my context")')
         eq(pgettext('my other context', 'nudge nudge'),
            'wink wink (in "my other context")')
-
-    def test_double_quotes(self):
-        eq = self.assertEqual
-        # double quotes
-        eq(_("albatross"), 'albatross')
-        eq(_("mullusk"), 'bacon')
-        eq(_(r"Raymond Luxury Yach-t"), 'Throatwobbler Mangrove')
-        eq(_(r"nudge nudge"), 'wink wink')
-
-    def test_triple_single_quotes(self):
-        eq = self.assertEqual
-        # triple single quotes
-        eq(_('''albatross'''), 'albatross')
-        eq(_('''mullusk'''), 'bacon')
-        eq(_(r'''Raymond Luxury Yach-t'''), 'Throatwobbler Mangrove')
-        eq(_(r'''nudge nudge'''), 'wink wink')
-
-    def test_triple_double_quotes(self):
-        eq = self.assertEqual
-        # triple double quotes
-        eq(_("""albatross"""), 'albatross')
-        eq(_("""mullusk"""), 'bacon')
-        eq(_(r"""Raymond Luxury Yach-t"""), 'Throatwobbler Mangrove')
-        eq(_(r"""nudge nudge"""), 'wink wink')
 
     def test_multiline_strings(self):
         eq = self.assertEqual
@@ -274,30 +260,6 @@ class GettextTestCase2(GettextBaseTest):
         eq(gettext.dpgettext('gettext', 'my other context', 'nudge nudge'),
            'wink wink (in "my other context")')
 
-    def test_double_quotes(self):
-        eq = self.assertEqual
-        # double quotes
-        eq(self._("albatross"), 'albatross')
-        eq(self._("mullusk"), 'bacon')
-        eq(self._(r"Raymond Luxury Yach-t"), 'Throatwobbler Mangrove')
-        eq(self._(r"nudge nudge"), 'wink wink')
-
-    def test_triple_single_quotes(self):
-        eq = self.assertEqual
-        # triple single quotes
-        eq(self._('''albatross'''), 'albatross')
-        eq(self._('''mullusk'''), 'bacon')
-        eq(self._(r'''Raymond Luxury Yach-t'''), 'Throatwobbler Mangrove')
-        eq(self._(r'''nudge nudge'''), 'wink wink')
-
-    def test_triple_double_quotes(self):
-        eq = self.assertEqual
-        # triple double quotes
-        eq(self._("""albatross"""), 'albatross')
-        eq(self._("""mullusk"""), 'bacon')
-        eq(self._(r"""Raymond Luxury Yach-t"""), 'Throatwobbler Mangrove')
-        eq(self._(r"""nudge nudge"""), 'wink wink')
-
     def test_multiline_strings(self):
         eq = self.assertEqual
         # multiline strings
@@ -309,47 +271,139 @@ fhccbeg sbe lbhe Clguba cebtenzf ol cebivqvat na vagresnpr gb gur TAH
 trggrkg zrffntr pngnybt yvoenel.''')
 
 
-class PluralFormsTestCase(GettextBaseTest):
+class PluralFormsTests:
+
+    def _test_plural_forms(self, ngettext, gettext,
+                           singular, plural, tsingular, tplural,
+                           numbers_only=True):
+        x = ngettext(singular, plural, 1)
+        self.assertEqual(x, tsingular)
+        x = ngettext(singular, plural, 2)
+        self.assertEqual(x, tplural)
+        x = gettext(singular)
+        self.assertEqual(x, tsingular)
+
+        lineno = self._test_plural_forms.__code__.co_firstlineno + 12
+        with self.assertWarns(DeprecationWarning) as cm:
+            x = ngettext(singular, plural, 1.0)
+        self.assertEqual(cm.filename, __file__)
+        self.assertEqual(cm.lineno, lineno)
+        self.assertEqual(x, tsingular)
+        with self.assertWarns(DeprecationWarning) as cm:
+            x = ngettext(singular, plural, 1.1)
+        self.assertEqual(cm.filename, __file__)
+        self.assertEqual(cm.lineno, lineno + 5)
+        self.assertEqual(x, tplural)
+
+        if numbers_only:
+            with self.assertRaises(TypeError):
+                ngettext(singular, plural, None)
+        else:
+            with self.assertWarns(DeprecationWarning) as cm:
+                x = ngettext(singular, plural, None)
+            self.assertEqual(x, tplural)
+
+    def test_plural_forms(self):
+        self._test_plural_forms(
+            self.ngettext, self.gettext,
+            'There is %s file', 'There are %s files',
+            'Hay %s fichero', 'Hay %s ficheros')
+        self._test_plural_forms(
+            self.ngettext, self.gettext,
+            '%d file deleted', '%d files deleted',
+            '%d file deleted', '%d files deleted')
+
+    def test_plural_context_forms(self):
+        ngettext = partial(self.npgettext, 'With context')
+        gettext = partial(self.pgettext, 'With context')
+        self._test_plural_forms(
+            ngettext, gettext,
+            'There is %s file', 'There are %s files',
+            'Hay %s fichero (context)', 'Hay %s ficheros (context)')
+        self._test_plural_forms(
+            ngettext, gettext,
+            '%d file deleted', '%d files deleted',
+            '%d file deleted', '%d files deleted')
+
+    def test_plural_wrong_context_forms(self):
+        self._test_plural_forms(
+            partial(self.npgettext, 'Unknown context'),
+            partial(self.pgettext, 'Unknown context'),
+            'There is %s file', 'There are %s files',
+            'There is %s file', 'There are %s files')
+
+
+class GNUTranslationsPluralFormsTestCase(PluralFormsTests, GettextBaseTest):
     def setUp(self):
         GettextBaseTest.setUp(self)
-        self.mofile = MOFILE
+        # Set up the bindings
+        gettext.bindtextdomain('gettext', os.curdir)
+        gettext.textdomain('gettext')
 
-    def test_plural_forms1(self):
-        eq = self.assertEqual
-        x = gettext.ngettext('There is %s file', 'There are %s files', 1)
-        eq(x, 'Hay %s fichero')
-        x = gettext.ngettext('There is %s file', 'There are %s files', 2)
-        eq(x, 'Hay %s ficheros')
+        self.gettext = gettext.gettext
+        self.ngettext = gettext.ngettext
+        self.pgettext = gettext.pgettext
+        self.npgettext = gettext.npgettext
 
-    def test_plural_context_forms1(self):
-        eq = self.assertEqual
-        x = gettext.npgettext('With context',
-                              'There is %s file', 'There are %s files', 1)
-        eq(x, 'Hay %s fichero (context)')
-        x = gettext.npgettext('With context',
-                              'There is %s file', 'There are %s files', 2)
-        eq(x, 'Hay %s ficheros (context)')
 
-    def test_plural_forms2(self):
-        eq = self.assertEqual
-        with open(self.mofile, 'rb') as fp:
+class GNUTranslationsWithDomainPluralFormsTestCase(PluralFormsTests, GettextBaseTest):
+    def setUp(self):
+        GettextBaseTest.setUp(self)
+        # Set up the bindings
+        gettext.bindtextdomain('gettext', os.curdir)
+
+        self.gettext = partial(gettext.dgettext, 'gettext')
+        self.ngettext = partial(gettext.dngettext, 'gettext')
+        self.pgettext = partial(gettext.dpgettext, 'gettext')
+        self.npgettext = partial(gettext.dnpgettext, 'gettext')
+
+    def test_plural_forms_wrong_domain(self):
+        self._test_plural_forms(
+            partial(gettext.dngettext, 'unknown'),
+            partial(gettext.dgettext, 'unknown'),
+            'There is %s file', 'There are %s files',
+            'There is %s file', 'There are %s files',
+            numbers_only=False)
+
+    def test_plural_context_forms_wrong_domain(self):
+        self._test_plural_forms(
+            partial(gettext.dnpgettext, 'unknown', 'With context'),
+            partial(gettext.dpgettext, 'unknown', 'With context'),
+            'There is %s file', 'There are %s files',
+            'There is %s file', 'There are %s files',
+            numbers_only=False)
+
+
+class GNUTranslationsClassPluralFormsTestCase(PluralFormsTests, GettextBaseTest):
+    def setUp(self):
+        GettextBaseTest.setUp(self)
+        with open(MOFILE, 'rb') as fp:
             t = gettext.GNUTranslations(fp)
-        x = t.ngettext('There is %s file', 'There are %s files', 1)
-        eq(x, 'Hay %s fichero')
-        x = t.ngettext('There is %s file', 'There are %s files', 2)
-        eq(x, 'Hay %s ficheros')
 
-    def test_plural_context_forms2(self):
-        eq = self.assertEqual
-        with open(self.mofile, 'rb') as fp:
-            t = gettext.GNUTranslations(fp)
-        x = t.npgettext('With context',
-                        'There is %s file', 'There are %s files', 1)
-        eq(x, 'Hay %s fichero (context)')
-        x = t.npgettext('With context',
-                        'There is %s file', 'There are %s files', 2)
-        eq(x, 'Hay %s ficheros (context)')
+        self.gettext = t.gettext
+        self.ngettext = t.ngettext
+        self.pgettext = t.pgettext
+        self.npgettext = t.npgettext
 
+    def test_plural_forms_null_translations(self):
+        t = gettext.NullTranslations()
+        self._test_plural_forms(
+            t.ngettext, t.gettext,
+            'There is %s file', 'There are %s files',
+            'There is %s file', 'There are %s files',
+            numbers_only=False)
+
+    def test_plural_context_forms_null_translations(self):
+        t = gettext.NullTranslations()
+        self._test_plural_forms(
+            partial(t.npgettext, 'With context'),
+            partial(t.pgettext, 'With context'),
+            'There is %s file', 'There are %s files',
+            'There is %s file', 'There are %s files',
+            numbers_only=False)
+
+
+class PluralFormsInternalTestCase(unittest.TestCase):
     # Examples from http://www.gnu.org/software/gettext/manual/gettext.html
 
     def test_ja(self):
@@ -464,11 +518,17 @@ class PluralFormsTestCase(GettextBaseTest):
     def test_invalid_syntax(self):
         invalid_expressions = [
             'x>1', '(n>1', 'n>1)', '42**42**42', '0xa', '1.0', '1e2',
-            'n>0x1', '+n', '-n', 'n()', 'n(1)', '1+', 'nn', 'n n',
+            'n>0x1', '+n', '-n', 'n()', 'n(1)', '1+', 'nn', 'n n', 'n ? 1 2'
         ]
         for expr in invalid_expressions:
             with self.assertRaises(ValueError):
                 gettext.c2py(expr)
+
+    def test_negation(self):
+        f = gettext.c2py('!!!n')
+        self.assertEqual(f(0), 1)
+        self.assertEqual(f(1), 0)
+        self.assertEqual(f(2), 0)
 
     def test_nested_condition_operator(self):
         self.assertEqual(gettext.c2py('n?1?2:3:4')(0), 4)
@@ -630,6 +690,32 @@ class GettextCacheTestCase(GettextBaseTest):
 
         self.assertEqual(len(gettext._translations), 2)
         self.assertEqual(t.__class__, DummyGNUTranslations)
+
+
+class ExpandLangTestCase(unittest.TestCase):
+    def test_expand_lang(self):
+        # Test all combinations of territory, charset and
+        # modifier (locale extension)
+        locales = {
+            'cs': ['cs'],
+            'cs_CZ': ['cs_CZ', 'cs'],
+            'cs.ISO8859-2': ['cs.ISO8859-2', 'cs'],
+            'cs@euro': ['cs@euro', 'cs'],
+            'cs_CZ.ISO8859-2': ['cs_CZ.ISO8859-2', 'cs_CZ', 'cs.ISO8859-2',
+                                'cs'],
+            'cs_CZ@euro': ['cs_CZ@euro', 'cs@euro', 'cs_CZ', 'cs'],
+            'cs.ISO8859-2@euro': ['cs.ISO8859-2@euro', 'cs@euro',
+                                  'cs.ISO8859-2', 'cs'],
+            'cs_CZ.ISO8859-2@euro': ['cs_CZ.ISO8859-2@euro', 'cs_CZ@euro',
+                                     'cs.ISO8859-2@euro', 'cs@euro',
+                                     'cs_CZ.ISO8859-2', 'cs_CZ',
+                                     'cs.ISO8859-2', 'cs'],
+        }
+        for locale, expanded in locales.items():
+            with self.subTest(locale=locale):
+                with unittest.mock.patch("locale.normalize",
+                                         return_value=locale):
+                    self.assertEqual(gettext._expand_lang(locale), expanded)
 
 
 class MiscTestCase(unittest.TestCase):

@@ -2,11 +2,8 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_random_Random_random__doc__,
 "random($self, /)\n"
@@ -21,9 +18,15 @@ static PyObject *
 _random_Random_random_impl(RandomObject *self);
 
 static PyObject *
-_random_Random_random(RandomObject *self, PyObject *Py_UNUSED(ignored))
+_random_Random_random(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _random_Random_random_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _random_Random_random_impl((RandomObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_random_Random_seed__doc__,
@@ -42,7 +45,7 @@ static PyObject *
 _random_Random_seed_impl(RandomObject *self, PyObject *n);
 
 static PyObject *
-_random_Random_seed(RandomObject *self, PyObject *const *args, Py_ssize_t nargs)
+_random_Random_seed(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *n = Py_None;
@@ -55,7 +58,9 @@ _random_Random_seed(RandomObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     n = args[0];
 skip_optional:
-    return_value = _random_Random_seed_impl(self, n);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _random_Random_seed_impl((RandomObject *)self, n);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -74,9 +79,15 @@ static PyObject *
 _random_Random_getstate_impl(RandomObject *self);
 
 static PyObject *
-_random_Random_getstate(RandomObject *self, PyObject *Py_UNUSED(ignored))
+_random_Random_getstate(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _random_Random_getstate_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _random_Random_getstate_impl((RandomObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_random_Random_setstate__doc__,
@@ -87,6 +98,21 @@ PyDoc_STRVAR(_random_Random_setstate__doc__,
 
 #define _RANDOM_RANDOM_SETSTATE_METHODDEF    \
     {"setstate", (PyCFunction)_random_Random_setstate, METH_O, _random_Random_setstate__doc__},
+
+static PyObject *
+_random_Random_setstate_impl(RandomObject *self, PyObject *state);
+
+static PyObject *
+_random_Random_setstate(RandomObject *self, PyObject *state)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _random_Random_setstate_impl((RandomObject *)self, state);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_random_Random_getrandbits__doc__,
 "getrandbits($self, k, /)\n"
@@ -101,18 +127,20 @@ static PyObject *
 _random_Random_getrandbits_impl(RandomObject *self, int k);
 
 static PyObject *
-_random_Random_getrandbits(RandomObject *self, PyObject *arg)
+_random_Random_getrandbits(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int k;
 
-    k = _PyLong_AsInt(arg);
+    k = PyLong_AsInt(arg);
     if (k == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = _random_Random_getrandbits_impl(self, k);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _random_Random_getrandbits_impl((RandomObject *)self, k);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bc17406a886824fc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=859cfbf59c133a4e input=a9049054013a1b77]*/

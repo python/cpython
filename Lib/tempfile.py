@@ -269,6 +269,22 @@ def _mkstemp_inner(dir, pre, suf, flags, output_type):
     raise FileExistsError(_errno.EEXIST,
                           "No usable temporary file name found")
 
+def _dont_follow_symlinks(func, path, *args):
+    # Pass follow_symlinks=False, unless not supported on this platform.
+    if func in _os.supports_follow_symlinks:
+        func(path, *args, follow_symlinks=False)
+    elif not _os.path.islink(path):
+        func(path, *args)
+
+def _resetperms(path):
+    try:
+        chflags = _os.chflags
+    except AttributeError:
+        pass
+    else:
+        _dont_follow_symlinks(chflags, path, 0)
+    _dont_follow_symlinks(_os.chmod, path, 0o700)
+
 
 # User visible interfaces.
 
@@ -376,7 +392,7 @@ def mkdtemp(suffix=None, prefix=None, dir=None):
                 continue
             else:
                 raise
-        return file
+        return _os.path.abspath(file)
 
     raise FileExistsError(_errno.EEXIST,
                           "No usable temporary directory name found")
@@ -421,11 +437,19 @@ class _TemporaryFileCloser:
     cleanup_called = False
     close_called = False
 
-    def __init__(self, file, name, delete=True, delete_on_close=True):
+    def __init__(
+        self,
+        file,
+        name,
+        delete=True,
+        delete_on_close=True,
+        warn_message="Implicitly cleaning up unknown file",
+    ):
         self.file = file
         self.name = name
         self.delete = delete
         self.delete_on_close = delete_on_close
+        self.warn_message = warn_message
 
     def cleanup(self, windows=(_os.name == 'nt'), unlink=_os.unlink):
         if not self.cleanup_called:
@@ -453,7 +477,10 @@ class _TemporaryFileCloser:
                     self.cleanup()
 
     def __del__(self):
+        close_called = self.close_called
         self.cleanup()
+        if not close_called:
+            _warnings.warn(self.warn_message, ResourceWarning)
 
 
 class _TemporaryFileWrapper:
@@ -467,8 +494,17 @@ class _TemporaryFileWrapper:
     def __init__(self, file, name, delete=True, delete_on_close=True):
         self.file = file
         self.name = name
-        self._closer = _TemporaryFileCloser(file, name, delete,
-                                            delete_on_close)
+        self._closer = _TemporaryFileCloser(
+            file,
+            name,
+            delete,
+            delete_on_close,
+            warn_message=f"Implicitly cleaning up {self!r}",
+        )
+
+    def __repr__(self):
+        file = self.__dict__['file']
+        return f"<{type(self).__name__} {file=}>"
 
     def __getattr__(self, name):
         # Attribute lookups are delegated to the underlying file
@@ -832,10 +868,14 @@ class SpooledTemporaryFile(_io.IOBase):
         return rv
 
     def writelines(self, iterable):
-        file = self._file
-        rv = file.writelines(iterable)
-        self._check(file)
-        return rv
+        if self._max_size == 0 or self._rolled:
+            return self._file.writelines(iterable)
+
+        it = iter(iterable)
+        for line in it:
+            self.write(line)
+            if self._rolled:
+                return self._file.writelines(it)
 
     def detach(self):
         return self._file.detach()
@@ -850,53 +890,74 @@ class TemporaryDirectory:
             ...
 
     Upon exiting the context, the directory and everything contained
-    in it are removed.
+    in it are removed (unless delete=False is passed or an exception
+    is raised during cleanup and ignore_cleanup_errors is not True).
+
+    Optional Arguments:
+        suffix - A str suffix for the directory name.  (see mkdtemp)
+        prefix - A str prefix for the directory name.  (see mkdtemp)
+        dir - A directory to create this temp dir in.  (see mkdtemp)
+        ignore_cleanup_errors - False; ignore exceptions during cleanup?
+        delete - True; whether the directory is automatically deleted.
     """
 
     def __init__(self, suffix=None, prefix=None, dir=None,
-                 ignore_cleanup_errors=False):
+                 ignore_cleanup_errors=False, *, delete=True):
         self.name = mkdtemp(suffix, prefix, dir)
         self._ignore_cleanup_errors = ignore_cleanup_errors
+        self._delete = delete
         self._finalizer = _weakref.finalize(
             self, self._cleanup, self.name,
             warn_message="Implicitly cleaning up {!r}".format(self),
-            ignore_errors=self._ignore_cleanup_errors)
+            ignore_errors=self._ignore_cleanup_errors, delete=self._delete)
 
     @classmethod
-    def _rmtree(cls, name, ignore_errors=False):
-        def onerror(func, path, exc_info):
-            if issubclass(exc_info[0], PermissionError):
-                def resetperms(path):
-                    try:
-                        _os.chflags(path, 0)
-                    except AttributeError:
-                        pass
-                    _os.chmod(path, 0o700)
+    def _rmtree(cls, name, ignore_errors=False, repeated=False):
+        def onexc(func, path, exc):
+            if isinstance(exc, PermissionError):
+                if repeated and path == name:
+                    if ignore_errors:
+                        return
+                    raise
 
                 try:
                     if path != name:
-                        resetperms(_os.path.dirname(path))
-                    resetperms(path)
+                        _resetperms(_os.path.dirname(path))
+                    _resetperms(path)
 
                     try:
                         _os.unlink(path)
-                    # PermissionError is raised on FreeBSD for directories
-                    except (IsADirectoryError, PermissionError):
+                    except IsADirectoryError:
                         cls._rmtree(path, ignore_errors=ignore_errors)
+                    except PermissionError:
+                        # The PermissionError handler was originally added for
+                        # FreeBSD in directories, but it seems that it is raised
+                        # on Windows too.
+                        # bpo-43153: Calling _rmtree again may
+                        # raise NotADirectoryError and mask the PermissionError.
+                        # So we must re-raise the current PermissionError if
+                        # path is not a directory.
+                        if not _os.path.isdir(path) or _os.path.isjunction(path):
+                            if ignore_errors:
+                                return
+                            raise
+                        cls._rmtree(path, ignore_errors=ignore_errors,
+                                    repeated=(path == name))
                 except FileNotFoundError:
                     pass
-            elif issubclass(exc_info[0], FileNotFoundError):
+            elif isinstance(exc, FileNotFoundError):
                 pass
             else:
                 if not ignore_errors:
                     raise
 
-        _shutil.rmtree(name, onerror=onerror)
+        _shutil.rmtree(name, onexc=onexc)
 
     @classmethod
-    def _cleanup(cls, name, warn_message, ignore_errors=False):
-        cls._rmtree(name, ignore_errors=ignore_errors)
-        _warnings.warn(warn_message, ResourceWarning)
+    def _cleanup(cls, name, warn_message, ignore_errors=False, delete=True):
+        if delete:
+            cls._rmtree(name, ignore_errors=ignore_errors)
+            _warnings.warn(warn_message, ResourceWarning)
 
     def __repr__(self):
         return "<{} {!r}>".format(self.__class__.__name__, self.name)
@@ -905,7 +966,8 @@ class TemporaryDirectory:
         return self.name
 
     def __exit__(self, exc, value, tb):
-        self.cleanup()
+        if self._delete:
+            self.cleanup()
 
     def cleanup(self):
         if self._finalizer.detach() or _os.path.exists(self.name):

@@ -1,3 +1,4 @@
+import collections.abc
 import concurrent.futures
 import contextvars
 import functools
@@ -6,10 +7,11 @@ import random
 import time
 import unittest
 import weakref
+from test import support
 from test.support import threading_helper
 
 try:
-    from _testcapi import hamt
+    from _testinternalcapi import hamt
 except ImportError:
     hamt = None
 
@@ -58,6 +60,14 @@ class ContextTest(unittest.TestCase):
         self.assertNotIn(' used ', repr(t))
         c.reset(t)
         self.assertIn(' used ', repr(t))
+
+    @isolated_context
+    def test_token_repr_1(self):
+        c = contextvars.ContextVar('a')
+        tok = c.set(1)
+        self.assertRegex(repr(tok),
+                         r"^<Token var=<ContextVar name='a' "
+                         r"at 0x[0-9a-fA-F]+> at 0x[0-9a-fA-F]+>$")
 
     def test_context_subclassing_1(self):
         with self.assertRaisesRegex(TypeError, 'not an acceptable base type'):
@@ -341,6 +351,19 @@ class ContextTest(unittest.TestCase):
 
         ctx1.run(ctx1_fun)
 
+    def test_context_isinstance(self):
+        ctx = contextvars.Context()
+        self.assertIsInstance(ctx, collections.abc.Mapping)
+        self.assertTrue(issubclass(contextvars.Context, collections.abc.Mapping))
+
+        mapping_methods = (
+            '__contains__', '__eq__', '__getitem__', '__iter__', '__len__',
+            '__ne__', 'get', 'items', 'keys', 'values',
+        )
+        for name in mapping_methods:
+            with self.subTest(name=name):
+                self.assertTrue(callable(getattr(ctx, name)))
+
     @isolated_context
     @threading_helper.requires_working_threading()
     def test_context_threads_1(self):
@@ -359,6 +382,115 @@ class ContextTest(unittest.TestCase):
         finally:
             tp.shutdown()
         self.assertEqual(results, list(range(10)))
+
+    def test_token_contextmanager_with_default(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            with c.set(36):
+                self.assertEqual(c.get(), 36)
+
+            self.assertEqual(c.get(), 42)
+
+        ctx.run(fun)
+
+    def test_token_contextmanager_without_default(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c')
+
+        def fun():
+            with c.set(36):
+                self.assertEqual(c.get(), 36)
+
+            with self.assertRaisesRegex(LookupError, "<ContextVar name='c'"):
+                c.get()
+
+        ctx.run(fun)
+
+    def test_token_contextmanager_on_exception(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            with c.set(36):
+                self.assertEqual(c.get(), 36)
+                raise ValueError("custom exception")
+
+            self.assertEqual(c.get(), 42)
+
+        with self.assertRaisesRegex(ValueError, "custom exception"):
+            ctx.run(fun)
+
+    def test_token_contextmanager_reentrant(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            token = c.set(36)
+            with self.assertRaisesRegex(
+                    RuntimeError,
+                    "<Token .+ has already been used once"
+            ):
+                with token:
+                    with token:
+                        self.assertEqual(c.get(), 36)
+
+            self.assertEqual(c.get(), 42)
+
+        ctx.run(fun)
+
+    def test_token_contextmanager_multiple_c_set(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            with c.set(36):
+                self.assertEqual(c.get(), 36)
+                c.set(24)
+                self.assertEqual(c.get(), 24)
+                c.set(12)
+                self.assertEqual(c.get(), 12)
+
+            self.assertEqual(c.get(), 42)
+
+        ctx.run(fun)
+
+    def test_token_contextmanager_with_explicit_reset_the_same_token(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            with self.assertRaisesRegex(
+                    RuntimeError,
+                    "<Token .+ has already been used once"
+            ):
+                with c.set(36) as token:
+                    self.assertEqual(c.get(), 36)
+                    c.reset(token)
+
+                    self.assertEqual(c.get(), 42)
+
+            self.assertEqual(c.get(), 42)
+
+        ctx.run(fun)
+
+    def test_token_contextmanager_with_explicit_reset_another_token(self):
+        ctx = contextvars.Context()
+        c = contextvars.ContextVar('c', default=42)
+
+        def fun():
+            with c.set(36):
+                self.assertEqual(c.get(), 36)
+
+                token = c.set(24)
+                self.assertEqual(c.get(), 24)
+                c.reset(token)
+                self.assertEqual(c.get(), 36)
+
+            self.assertEqual(c.get(), 42)
+
+        ctx.run(fun)
 
 
 # HAMT Tests
@@ -431,7 +563,7 @@ class EqError(Exception):
     pass
 
 
-@unittest.skipIf(hamt is None, '_testcapi lacks "hamt()" function')
+@unittest.skipIf(hamt is None, '_testinternalcapi.hamt() not available')
 class HamtTest(unittest.TestCase):
 
     def test_hashkey_helper_1(self):
@@ -570,6 +702,7 @@ class HamtTest(unittest.TestCase):
 
         self.assertEqual({k.name for k in h.keys()}, {'C', 'D', 'E'})
 
+    @support.requires_resource('cpu')
     def test_hamt_stress(self):
         COLLECTION_SIZE = 7000
         TEST_ITERS_EVERY = 647

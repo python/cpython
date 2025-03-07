@@ -10,12 +10,23 @@
 
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include <stdbool.h>              // bool
 
 #include <ffi.h>
 #include "ctypes.h"
 
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
+#  include "../_complex.h"        // complex
+#endif
 
 #define CTYPES_CFIELD_CAPSULE_NAME_PYMEM "_ctypes/cfield.c pymem"
+
+/*[clinic input]
+module _ctypes
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=476a19c49b31a75c]*/
+
+#include "clinic/cfield.c.h"
 
 static void pymem_destructor(PyObject *ptr)
 {
@@ -30,257 +41,253 @@ static void pymem_destructor(PyObject *ptr)
 /*
   PyCField_Type
 */
+/*[clinic input]
+class _ctypes.CField "PyObject *" "PyObject"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=602817ea3ffc709c]*/
 
-/*
- * Expects the size, index and offset for the current field in *psize and
- * *poffset, stores the total size so far in *psize, the offset for the next
- * field in *poffset, the alignment requirements for the current field in
- * *palign, and returns a field descriptor for this field.
- */
-/*
- * bitfields extension:
- * bitsize != 0: this is a bit field.
- * pbitofs points to the current bit offset, this will be updated.
- * prev_desc points to the type of the previous bitfield, if any.
- */
-PyObject *
-PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
-                Py_ssize_t *pfield_size, int bitsize, int *pbitofs,
-                Py_ssize_t *psize, Py_ssize_t *poffset, Py_ssize_t *palign,
-                int pack, int big_endian)
+static inline
+Py_ssize_t NUM_BITS(Py_ssize_t bitsize);
+static inline
+Py_ssize_t LOW_BIT(Py_ssize_t offset);
+
+
+/*[clinic input]
+@classmethod
+_ctypes.CField.__new__ as PyCField_new
+
+    name: object(subclass_of='&PyUnicode_Type')
+    type as proto: object
+    size: Py_ssize_t
+    offset: Py_ssize_t
+    index: Py_ssize_t
+    bit_size as bit_size_obj: object = None
+
+[clinic start generated code]*/
+
+static PyObject *
+PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
+                  Py_ssize_t size, Py_ssize_t offset, Py_ssize_t index,
+                  PyObject *bit_size_obj)
+/*[clinic end generated code: output=43649ef9157c5f58 input=3d813f56373c4caa]*/
 {
-    CFieldObject *self;
-    PyObject *proto;
-    Py_ssize_t size, align;
-    SETFUNC setfunc = NULL;
-    GETFUNC getfunc = NULL;
-    StgDictObject *dict;
-    int fieldtype;
-#define NO_BITFIELD 0
-#define NEW_BITFIELD 1
-#define CONT_BITFIELD 2
-#define EXPAND_BITFIELD 3
+    CFieldObject* self = NULL;
+    if (size < 0) {
+        PyErr_Format(PyExc_ValueError,
+                     "size of field %R must not be negative, got %zd",
+                     name, size);
+        goto error;
+    }
+    // assert: no overflow;
+    if ((unsigned long long int) size
+            >= (1ULL << (8*sizeof(Py_ssize_t)-1)) / 8) {
+        PyErr_Format(PyExc_ValueError,
+                     "size of field %R is too big: %zd", name, size);
+        goto error;
+    }
 
-    self = (CFieldObject *)PyCField_Type.tp_alloc((PyTypeObject *)&PyCField_Type, 0);
-    if (self == NULL)
-        return NULL;
-    dict = PyType_stgdict(desc);
-    if (!dict) {
-        PyErr_SetString(PyExc_TypeError,
-                        "has no _stginfo_");
-        Py_DECREF(self);
+    PyTypeObject *tp = type;
+    ctypes_state *st = get_module_state_by_class(tp);
+    self = (CFieldObject *)tp->tp_alloc(tp, 0);
+    if (!self) {
         return NULL;
     }
-    if (bitsize /* this is a bitfield request */
-        && *pfield_size /* we have a bitfield open */
-#ifdef MS_WIN32
-        /* MSVC, GCC with -mms-bitfields */
-        && dict->size * 8 == *pfield_size
-#else
-        /* GCC */
-        && dict->size * 8 <= *pfield_size
-#endif
-        && (*pbitofs + bitsize) <= *pfield_size) {
-        /* continue bit field */
-        fieldtype = CONT_BITFIELD;
-#ifndef MS_WIN32
-    } else if (bitsize /* this is a bitfield request */
-        && *pfield_size /* we have a bitfield open */
-        && dict->size * 8 >= *pfield_size
-        && (*pbitofs + bitsize) <= dict->size * 8) {
-        /* expand bit field */
-        fieldtype = EXPAND_BITFIELD;
-#endif
-    } else if (bitsize) {
-        /* start new bitfield */
-        fieldtype = NEW_BITFIELD;
-        *pbitofs = 0;
-        *pfield_size = dict->size * 8;
+    if (PyUnicode_CheckExact(name)) {
+        self->name = Py_NewRef(name);
     } else {
-        /* not a bit field */
-        fieldtype = NO_BITFIELD;
-        *pbitofs = 0;
-        *pfield_size = 0;
-    }
-
-    size = dict->size;
-    proto = desc;
-
-    /*  Field descriptors for 'c_char * n' are be scpecial cased to
-        return a Python string instead of an Array object instance...
-    */
-    if (PyCArrayTypeObject_Check(proto)) {
-        StgDictObject *adict = PyType_stgdict(proto);
-        StgDictObject *idict;
-        if (adict && adict->proto) {
-            idict = PyType_stgdict(adict->proto);
-            if (!idict) {
-                PyErr_SetString(PyExc_TypeError,
-                                "has no _stginfo_");
-                Py_DECREF(self);
-                return NULL;
-            }
-            if (idict->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
-                struct fielddesc *fd = _ctypes_get_fielddesc("s");
-                getfunc = fd->getfunc;
-                setfunc = fd->setfunc;
-            }
-            if (idict->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
-                struct fielddesc *fd = _ctypes_get_fielddesc("U");
-                getfunc = fd->getfunc;
-                setfunc = fd->setfunc;
-            }
+        self->name = PyObject_Str(name);
+        if (!self->name) {
+            goto error;
         }
     }
 
-    self->setfunc = setfunc;
-    self->getfunc = getfunc;
-    self->index = index;
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, proto, &info) < 0) {
+        goto error;
+    }
+    if (info == NULL) {
+        PyErr_Format(PyExc_TypeError,
+                     "type of field %R must be a C type", self->name);
+        goto error;
+    }
+
+    if (bit_size_obj != Py_None) {
+#ifdef Py_DEBUG
+        Py_ssize_t bit_size = NUM_BITS(size);
+        assert(bit_size > 0);
+        assert(bit_size <= info->size * 8);
+        // Currently, the bit size is specified redundantly
+        // in NUM_BITS(size) and bit_size_obj.
+        // Verify that they match.
+        assert(PyLong_AsSsize_t(bit_size_obj) == bit_size);
+#endif
+        switch(info->ffi_type_pointer.type) {
+            case FFI_TYPE_UINT8:
+            case FFI_TYPE_UINT16:
+            case FFI_TYPE_UINT32:
+            case FFI_TYPE_SINT64:
+            case FFI_TYPE_UINT64:
+                break;
+
+            case FFI_TYPE_SINT8:
+            case FFI_TYPE_SINT16:
+            case FFI_TYPE_SINT32:
+                if (info->getfunc != _ctypes_get_fielddesc("c")->getfunc
+                    && info->getfunc != _ctypes_get_fielddesc("u")->getfunc)
+                {
+                    break;
+                }
+                _Py_FALLTHROUGH;  /* else fall through */
+            default:
+                PyErr_Format(PyExc_TypeError,
+                             "bit fields not allowed for type %s",
+                             ((PyTypeObject*)proto)->tp_name);
+                goto error;
+        }
+    }
 
     self->proto = Py_NewRef(proto);
+    self->size = size;
+    self->offset = offset;
 
-    switch (fieldtype) {
-    case NEW_BITFIELD:
-        if (big_endian)
-            self->size = (bitsize << 16) + *pfield_size - *pbitofs - bitsize;
-        else
-            self->size = (bitsize << 16) + *pbitofs;
-        *pbitofs = bitsize;
-        /* fall through */
-    case NO_BITFIELD:
-        if (pack)
-            align = min(pack, dict->align);
-        else
-            align = dict->align;
-        if (align && *poffset % align) {
-            Py_ssize_t delta = align - (*poffset % align);
-            *psize += delta;
-            *poffset += delta;
+    self->index = index;
+
+    /*  Field descriptors for 'c_char * n' are be special cased to
+        return a Python string instead of an Array object instance...
+    */
+    self->setfunc = NULL;
+    self->getfunc = NULL;
+    if (PyCArrayTypeObject_Check(st, proto)) {
+        StgInfo *ainfo;
+        if (PyStgInfo_FromType(st, proto, &ainfo) < 0) {
+            goto error;
         }
 
-        if (bitsize == 0)
-            self->size = size;
-        *psize += size;
-
-        self->offset = *poffset;
-        *poffset += size;
-
-        *palign = align;
-        break;
-
-    case EXPAND_BITFIELD:
-        *poffset += dict->size - *pfield_size/8;
-        *psize += dict->size - *pfield_size/8;
-
-        *pfield_size = dict->size * 8;
-
-        if (big_endian)
-            self->size = (bitsize << 16) + *pfield_size - *pbitofs - bitsize;
-        else
-            self->size = (bitsize << 16) + *pbitofs;
-
-        self->offset = *poffset - size; /* poffset is already updated for the NEXT field */
-        *pbitofs += bitsize;
-        break;
-
-    case CONT_BITFIELD:
-        if (big_endian)
-            self->size = (bitsize << 16) + *pfield_size - *pbitofs - bitsize;
-        else
-            self->size = (bitsize << 16) + *pbitofs;
-
-        self->offset = *poffset - size; /* poffset is already updated for the NEXT field */
-        *pbitofs += bitsize;
-        break;
+        if (ainfo && ainfo->proto) {
+            StgInfo *iinfo;
+            if (PyStgInfo_FromType(st, ainfo->proto, &iinfo) < 0) {
+                goto error;
+            }
+            if (!iinfo) {
+                PyErr_SetString(PyExc_TypeError,
+                                "has no _stginfo_");
+                goto error;
+            }
+            if (iinfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
+                struct fielddesc *fd = _ctypes_get_fielddesc("s");
+                self->getfunc = fd->getfunc;
+                self->setfunc = fd->setfunc;
+            }
+            if (iinfo->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
+                struct fielddesc *fd = _ctypes_get_fielddesc("U");
+                self->getfunc = fd->getfunc;
+                self->setfunc = fd->setfunc;
+            }
+        }
     }
 
     return (PyObject *)self;
+error:
+    Py_XDECREF(self);
+    return NULL;
 }
 
+
 static int
-PyCField_set(CFieldObject *self, PyObject *inst, PyObject *value)
+PyCField_set(PyObject *op, PyObject *inst, PyObject *value)
 {
     CDataObject *dst;
     char *ptr;
-    if (!CDataObject_Check(inst)) {
+    CFieldObject *self = _CFieldObject_CAST(op);
+    ctypes_state *st = get_module_state_by_class(Py_TYPE(self));
+    if (!CDataObject_Check(st, inst)) {
         PyErr_SetString(PyExc_TypeError,
                         "not a ctype instance");
         return -1;
     }
-    dst = (CDataObject *)inst;
+    dst = _CDataObject_CAST(inst);
     ptr = dst->b_ptr + self->offset;
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
                         "can't delete attribute");
         return -1;
     }
-    return PyCData_set(inst, self->proto, self->setfunc, value,
-                     self->index, self->size, ptr);
+    return PyCData_set(st, inst, self->proto, self->setfunc, value,
+                       self->index, self->size, ptr);
 }
 
 static PyObject *
-PyCField_get(CFieldObject *self, PyObject *inst, PyTypeObject *type)
+PyCField_get(PyObject *op, PyObject *inst, PyTypeObject *type)
 {
     CDataObject *src;
+    CFieldObject *self = _CFieldObject_CAST(op);
     if (inst == NULL) {
         return Py_NewRef(self);
     }
-    if (!CDataObject_Check(inst)) {
+    ctypes_state *st = get_module_state_by_class(Py_TYPE(self));
+    if (!CDataObject_Check(st, inst)) {
         PyErr_SetString(PyExc_TypeError,
                         "not a ctype instance");
         return NULL;
     }
-    src = (CDataObject *)inst;
-    return PyCData_get(self->proto, self->getfunc, inst,
-                     self->index, self->size, src->b_ptr + self->offset);
+    src = _CDataObject_CAST(inst);
+    return PyCData_get(st, self->proto, self->getfunc, inst,
+                       self->index, self->size, src->b_ptr + self->offset);
 }
 
 static PyObject *
 PyCField_get_offset(PyObject *self, void *data)
 {
-    return PyLong_FromSsize_t(((CFieldObject *)self)->offset);
+    return PyLong_FromSsize_t(_CFieldObject_CAST(self)->offset);
 }
 
 static PyObject *
 PyCField_get_size(PyObject *self, void *data)
 {
-    return PyLong_FromSsize_t(((CFieldObject *)self)->size);
+    return PyLong_FromSsize_t(_CFieldObject_CAST(self)->size);
 }
 
 static PyGetSetDef PyCField_getset[] = {
-    { "offset", PyCField_get_offset, NULL, "offset in bytes of this field" },
-    { "size", PyCField_get_size, NULL, "size in bytes of this field" },
+    { "offset", PyCField_get_offset, NULL, PyDoc_STR("offset in bytes of this field") },
+    { "size", PyCField_get_size, NULL, PyDoc_STR("size in bytes of this field") },
     { NULL, NULL, NULL, NULL },
 };
 
 static int
-PyCField_traverse(CFieldObject *self, visitproc visit, void *arg)
+PyCField_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    CFieldObject *self = _CFieldObject_CAST(op);
+    Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->proto);
     return 0;
 }
 
 static int
-PyCField_clear(CFieldObject *self)
+PyCField_clear(PyObject *op)
 {
+    CFieldObject *self = _CFieldObject_CAST(op);
     Py_CLEAR(self->proto);
+    Py_CLEAR(self->name);
     return 0;
 }
 
 static void
 PyCField_dealloc(PyObject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    PyCField_clear((CFieldObject *)self);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    (void)PyCField_clear(self);
+    Py_TYPE(self)->tp_free(self);
+    Py_DECREF(tp);
 }
 
 static PyObject *
-PyCField_repr(CFieldObject *self)
+PyCField_repr(PyObject *op)
 {
     PyObject *result;
-    Py_ssize_t bits = self->size >> 16;
-    Py_ssize_t size = self->size & 0xFFFF;
+    CFieldObject *self = _CFieldObject_CAST(op);
+    Py_ssize_t bits = NUM_BITS(self->size);
+    Py_ssize_t size = LOW_BIT(self->size);
     const char *name;
 
     name = ((PyTypeObject *)self->proto)->tp_name;
@@ -296,111 +303,41 @@ PyCField_repr(CFieldObject *self)
     return result;
 }
 
-PyTypeObject PyCField_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_ctypes.CField",                                   /* tp_name */
-    sizeof(CFieldObject),                       /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    PyCField_dealloc,                                   /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    (reprfunc)PyCField_repr,                            /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    0,                                          /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /* tp_flags */
-    PyDoc_STR("Structure/Union member"),        /* tp_doc */
-    (traverseproc)PyCField_traverse,                    /* tp_traverse */
-    (inquiry)PyCField_clear,                            /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    0,                                          /* tp_methods */
-    0,                                          /* tp_members */
-    PyCField_getset,                                    /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    (descrgetfunc)PyCField_get,                 /* tp_descr_get */
-    (descrsetfunc)PyCField_set,                 /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    0,                                          /* tp_init */
-    0,                                          /* tp_alloc */
-    0,                                          /* tp_new */
-    0,                                          /* tp_free */
+static PyType_Slot cfield_slots[] = {
+    {Py_tp_new, PyCField_new},
+    {Py_tp_dealloc, PyCField_dealloc},
+    {Py_tp_repr, PyCField_repr},
+    {Py_tp_doc, (void *)PyDoc_STR("Structure/Union member")},
+    {Py_tp_traverse, PyCField_traverse},
+    {Py_tp_clear, PyCField_clear},
+    {Py_tp_getset, PyCField_getset},
+    {Py_tp_descr_get, PyCField_get},
+    {Py_tp_descr_set, PyCField_set},
+    {0, NULL},
 };
 
+PyType_Spec cfield_spec = {
+    .name = "_ctypes.CField",
+    .basicsize = sizeof(CFieldObject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = cfield_slots,
+};
 
-/******************************************************************/
-/*
-  Accessor functions
-*/
-
-/* Derived from Modules/structmodule.c:
-   Helper routine to get a Python integer and raise the appropriate error
-   if it isn't one */
-
-static int
-get_long(PyObject *v, long *p)
-{
-    long x = PyLong_AsUnsignedLongMask(v);
-    if (x == -1 && PyErr_Occurred())
-        return -1;
-    *p = x;
-    return 0;
-}
-
-/* Same, but handling unsigned long */
-
-static int
-get_ulong(PyObject *v, unsigned long *p)
-{
-    unsigned long x = PyLong_AsUnsignedLongMask(v);
-    if (x == (unsigned long)-1 && PyErr_Occurred())
-        return -1;
-    *p = x;
-    return 0;
-}
-
-/* Same, but handling native long long. */
-
-static int
-get_longlong(PyObject *v, long long *p)
-{
-    long long x = PyLong_AsUnsignedLongLongMask(v);
-    if (x == -1 && PyErr_Occurred())
-        return -1;
-    *p = x;
-    return 0;
-}
-
-/* Same, but handling native unsigned long long. */
-
-static int
-get_ulonglong(PyObject *v, unsigned long long *p)
-{
-    unsigned long long x = PyLong_AsUnsignedLongLongMask(v);
-    if (x == (unsigned long long)-1 && PyErr_Occurred())
-        return -1;
-    *p = x;
-    return 0;
-}
 
 /*****************************************************************
  * Integer fields, with bitfield support
  */
 
 /* how to decode the size field, for integer get/set functions */
-#define LOW_BIT(x)  ((x) & 0xFFFF)
-#define NUM_BITS(x) ((x) >> 16)
+static inline
+Py_ssize_t LOW_BIT(Py_ssize_t offset) {
+    return offset & 0xFFFF;
+}
+static inline
+Py_ssize_t NUM_BITS(Py_ssize_t bitsize) {
+    return bitsize >> 16;
+}
 
 /* Doesn't work if NUM_BITS(size) == 0, but it never happens in SET() call. */
 #define BIT_MASK(type, size) (((((type)1 << (NUM_BITS(size) - 1)) - 1) << 1) + 1)
@@ -417,34 +354,8 @@ get_ulonglong(PyObject *v, unsigned long long *p)
 /* This macro RETURNS the first parameter with the bit field CHANGED. */
 #define SET(type, x, v, size)                                                 \
     (NUM_BITS(size) ?                                                   \
-     ( ( (type)x & ~(BIT_MASK(type, size) << LOW_BIT(size)) ) | ( ((type)v & BIT_MASK(type, size)) << LOW_BIT(size) ) ) \
-     : (type)v)
-
-#if SIZEOF_SHORT == 2
-#  define SWAP_SHORT _Py_bswap16
-#else
-#  error "unsupported short size"
-#endif
-
-#if SIZEOF_INT == 4
-#  define SWAP_INT _Py_bswap32
-#else
-#  error "unsupported int size"
-#endif
-
-#if SIZEOF_LONG == 4
-#  define SWAP_LONG _Py_bswap32
-#elif SIZEOF_LONG == 8
-#  define SWAP_LONG _Py_bswap64
-#else
-#  error "unsupported long size"
-#endif
-
-#if SIZEOF_LONG_LONG == 8
-#  define SWAP_LONG_LONG _Py_bswap64
-#else
-#  error "unsupported long long size"
-#endif
+     ( ( (type)(x) & ~(BIT_MASK(type, size) << LOW_BIT(size)) ) | ( ((type)(v) & BIT_MASK(type, size)) << LOW_BIT(size) ) ) \
+     : (type)(v))
 
 /*****************************************************************
  * The setter methods return an object which must be kept alive, to keep the
@@ -467,203 +378,145 @@ get_ulonglong(PyObject *v, unsigned long long *p)
 #endif
 
 /*****************************************************************
- * integer accessor methods, supporting bit fields
+ * accessor methods for fixed-width integers (e.g. int8_t, uint64_t),
+ * supporting bit fields.
+ * These are named e.g. `i8_set`/`i8_get` or `u64_set`/`u64_get`,
+ * and are all alike, so they're defined using a macro.
  */
 
-static PyObject *
-b_set(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    long val;
-    if (get_long(value, &val) < 0)
-        return NULL;
-    *(signed char *)ptr = SET(signed char, *(signed char *)ptr, val, size);
-    _RET(value);
-}
+#define FIXINT_GETSET(TAG, CTYPE, NBITS, PYAPI_FROMFUNC)                      \
+    static PyObject *                                                         \
+    TAG ## _set(void *ptr, PyObject *value, Py_ssize_t size_arg)              \
+    {                                                                         \
+        assert(NUM_BITS(size_arg) || (size_arg == (NBITS) / 8));              \
+        CTYPE val;                                                            \
+        if (PyLong_Check(value)                                               \
+            && PyUnstable_Long_IsCompact((PyLongObject *)value))              \
+        {                                                                     \
+            val = (CTYPE)PyUnstable_Long_CompactValue(                        \
+                      (PyLongObject *)value);                                 \
+        }                                                                     \
+        else {                                                                \
+            Py_ssize_t res = PyLong_AsNativeBytes(                            \
+                value, &val, (NBITS) / 8,                                     \
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN                                \
+                | Py_ASNATIVEBYTES_ALLOW_INDEX);                              \
+            if (res < 0) {                                                    \
+                return NULL;                                                  \
+            }                                                                 \
+        }                                                                     \
+        CTYPE prev;                                                           \
+        memcpy(&prev, ptr, (NBITS) / 8);                                      \
+        val = SET(CTYPE, prev, val, size_arg);                                \
+        memcpy(ptr, &val, (NBITS) / 8);                                       \
+        _RET(value);                                                          \
+    }                                                                         \
+                                                                              \
+    static PyObject *                                                         \
+    TAG ## _get(void *ptr, Py_ssize_t size_arg)                               \
+    {                                                                         \
+        assert(NUM_BITS(size_arg) || (size_arg == (NBITS) / 8));              \
+        CTYPE val;                                                            \
+        memcpy(&val, ptr, sizeof(val));                                       \
+        GET_BITFIELD(val, size_arg);                                          \
+        return PYAPI_FROMFUNC(val);                                           \
+    }                                                                         \
+    ///////////////////////////////////////////////////////////////////////////
 
+/* Another macro for byte-swapped variants (e.g. `i8_set_sw`/`i8_get_sw`) */
 
-static PyObject *
-b_get(void *ptr, Py_ssize_t size)
-{
-    signed char val = *(signed char *)ptr;
-    GET_BITFIELD(val, size);
-    return PyLong_FromLong(val);
-}
+#define FIXINT_GETSET_SW(TAG, CTYPE, NBITS, PYAPI_FROMFUNC, PY_SWAPFUNC)      \
+    static PyObject *                                                         \
+    TAG ## _set_sw(void *ptr, PyObject *value, Py_ssize_t size_arg)           \
+    {                                                                         \
+        CTYPE val;                                                            \
+        PyObject *res = TAG ## _set(&val, value, (NBITS) / 8);                \
+        if (res == NULL) {                                                    \
+            return NULL;                                                      \
+        }                                                                     \
+        Py_DECREF(res);                                                       \
+        CTYPE field;                                                          \
+        memcpy(&field, ptr, sizeof(field));                                   \
+        field = PY_SWAPFUNC(field);                                           \
+        field = SET(CTYPE, field, val, size_arg);                             \
+        field = PY_SWAPFUNC(field);                                           \
+        memcpy(ptr, &field, sizeof(field));                                   \
+        _RET(value);                                                          \
+    }                                                                         \
+                                                                              \
+    static PyObject *                                                         \
+    TAG ## _get_sw(void *ptr, Py_ssize_t size_arg)                            \
+    {                                                                         \
+        assert(NUM_BITS(size_arg) || (size_arg == (NBITS) / 8));              \
+        CTYPE val;                                                            \
+        memcpy(&val, ptr, sizeof(val));                                       \
+        val = PY_SWAPFUNC(val);                                               \
+        GET_BITFIELD(val, size_arg);                                          \
+        return PYAPI_FROMFUNC(val);                                           \
+    }                                                                         \
+    ///////////////////////////////////////////////////////////////////////////
 
-static PyObject *
-B_set(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    unsigned long val;
-    if (get_ulong(value, &val) < 0)
-        return NULL;
-    *(unsigned char *)ptr = SET(unsigned char, *(unsigned char*)ptr, val, size);
-    _RET(value);
-}
+/* These macros are expanded for all supported combinations of byte sizes
+ * (1, 2, 4, 8), signed and unsigned, native and swapped byteorder.
+ * That's a lot, so generate the list with Argument Clinic (`make clinic`).
+ */
 
+/*[python input]
+for nbits in 8, 16, 32, 64:
+    for sgn in 'i', 'u':
+        u = 'u' if sgn == 'u' else ''
+        U = u.upper()
+        apibits = max(nbits, 32)
+        parts = [
+            f'{sgn}{nbits}',
+            f'{u}int{nbits}_t',
+            f'{nbits}',
+            f'PyLong_From{U}Int{apibits}',
+        ]
+        print(f'FIXINT_GETSET({", ".join(parts)})')
+        if nbits > 8:
+            parts.append(f'_Py_bswap{nbits}')
+            print(f'FIXINT_GETSET_SW({", ".join(parts)})')
+[python start generated code]*/
+FIXINT_GETSET(i8, int8_t, 8, PyLong_FromInt32)
+FIXINT_GETSET(u8, uint8_t, 8, PyLong_FromUInt32)
+FIXINT_GETSET(i16, int16_t, 16, PyLong_FromInt32)
+FIXINT_GETSET_SW(i16, int16_t, 16, PyLong_FromInt32, _Py_bswap16)
+FIXINT_GETSET(u16, uint16_t, 16, PyLong_FromUInt32)
+FIXINT_GETSET_SW(u16, uint16_t, 16, PyLong_FromUInt32, _Py_bswap16)
+FIXINT_GETSET(i32, int32_t, 32, PyLong_FromInt32)
+FIXINT_GETSET_SW(i32, int32_t, 32, PyLong_FromInt32, _Py_bswap32)
+FIXINT_GETSET(u32, uint32_t, 32, PyLong_FromUInt32)
+FIXINT_GETSET_SW(u32, uint32_t, 32, PyLong_FromUInt32, _Py_bswap32)
+FIXINT_GETSET(i64, int64_t, 64, PyLong_FromInt64)
+FIXINT_GETSET_SW(i64, int64_t, 64, PyLong_FromInt64, _Py_bswap64)
+FIXINT_GETSET(u64, uint64_t, 64, PyLong_FromUInt64)
+FIXINT_GETSET_SW(u64, uint64_t, 64, PyLong_FromUInt64, _Py_bswap64)
+/*[python end generated code: output=3d60c96fa58e07d5 input=0b7e166f2ea18e70]*/
 
-static PyObject *
-B_get(void *ptr, Py_ssize_t size)
-{
-    unsigned char val = *(unsigned char *)ptr;
-    GET_BITFIELD(val, size);
-    return PyLong_FromLong(val);
-}
+// For one-byte types, swapped variants are the same as native
+#define i8_set_sw i8_set
+#define i8_get_sw i8_get
+#define u8_set_sw u8_set
+#define u8_get_sw u8_get
 
-static PyObject *
-h_set(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    long val;
-    short x;
-    if (get_long(value, &val) < 0)
-        return NULL;
-    memcpy(&x, ptr, sizeof(x));
-    x = SET(short, x, val, size);
-    memcpy(ptr, &x, sizeof(x));
-    _RET(value);
-}
+#undef FIXINT_GETSET
+#undef FIXINT_GETSET_SW
 
-
-static PyObject *
-h_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    long val;
-    short field;
-    if (get_long(value, &val) < 0) {
-        return NULL;
-    }
-    memcpy(&field, ptr, sizeof(field));
-    field = SWAP_SHORT(field);
-    field = SET(short, field, val, size);
-    field = SWAP_SHORT(field);
-    memcpy(ptr, &field, sizeof(field));
-    _RET(value);
-}
-
-static PyObject *
-h_get(void *ptr, Py_ssize_t size)
-{
-    short val;
-    memcpy(&val, ptr, sizeof(val));
-    GET_BITFIELD(val, size);
-    return PyLong_FromLong((long)val);
-}
-
-static PyObject *
-h_get_sw(void *ptr, Py_ssize_t size)
-{
-    short val;
-    memcpy(&val, ptr, sizeof(val));
-    val = SWAP_SHORT(val);
-    GET_BITFIELD(val, size);
-    return PyLong_FromLong(val);
-}
-
-static PyObject *
-H_set(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    unsigned long val;
-    unsigned short x;
-    if (get_ulong(value, &val) < 0)
-        return NULL;
-    memcpy(&x, ptr, sizeof(x));
-    x = SET(unsigned short, x, val, size);
-    memcpy(ptr, &x, sizeof(x));
-    _RET(value);
-}
-
-static PyObject *
-H_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    unsigned long val;
-    unsigned short field;
-    if (get_ulong(value, &val) < 0) {
-        return NULL;
-    }
-    memcpy(&field, ptr, sizeof(field));
-    field = SWAP_SHORT(field);
-    field = SET(unsigned short, field, val, size);
-    field = SWAP_SHORT(field);
-    memcpy(ptr, &field, sizeof(field));
-    _RET(value);
-}
-
-
-static PyObject *
-H_get(void *ptr, Py_ssize_t size)
-{
-    unsigned short val;
-    memcpy(&val, ptr, sizeof(val));
-    GET_BITFIELD(val, size);
-    return PyLong_FromLong(val);
-}
-
-static PyObject *
-H_get_sw(void *ptr, Py_ssize_t size)
-{
-    unsigned short val;
-    memcpy(&val, ptr, sizeof(val));
-    val = SWAP_SHORT(val);
-    GET_BITFIELD(val, size);
-    return PyLong_FromLong(val);
-}
-
-static PyObject *
-i_set(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    long val;
-    int x;
-    if (get_long(value, &val) < 0)
-        return NULL;
-    memcpy(&x, ptr, sizeof(x));
-    x = SET(int, x, val, size);
-    memcpy(ptr, &x, sizeof(x));
-    _RET(value);
-}
-
-static PyObject *
-i_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    long val;
-    int field;
-    if (get_long(value, &val) < 0) {
-        return NULL;
-    }
-    memcpy(&field, ptr, sizeof(field));
-    field = SWAP_INT(field);
-    field = SET(int, field, val, size);
-    field = SWAP_INT(field);
-    memcpy(ptr, &field, sizeof(field));
-    _RET(value);
-}
-
-
-static PyObject *
-i_get(void *ptr, Py_ssize_t size)
-{
-    int val;
-    memcpy(&val, ptr, sizeof(val));
-    GET_BITFIELD(val, size);
-    return PyLong_FromLong(val);
-}
-
-static PyObject *
-i_get_sw(void *ptr, Py_ssize_t size)
-{
-    int val;
-    memcpy(&val, ptr, sizeof(val));
-    val = SWAP_INT(val);
-    GET_BITFIELD(val, size);
-    return PyLong_FromLong(val);
-}
+/*****************************************************************
+ * non-integer accessor methods, not supporting bit fields
+ */
 
 #ifndef MS_WIN32
 /* http://msdn.microsoft.com/en-us/library/cc237864.aspx */
 #define VARIANT_FALSE 0x0000
 #define VARIANT_TRUE 0xFFFF
 #endif
-/* short BOOL - VARIANT_BOOL */
+/* v: short BOOL - VARIANT_BOOL */
 static PyObject *
-vBOOL_set(void *ptr, PyObject *value, Py_ssize_t size)
+v_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(short int)));
     switch (PyObject_IsTrue(value)) {
     case -1:
         return NULL;
@@ -677,22 +530,25 @@ vBOOL_set(void *ptr, PyObject *value, Py_ssize_t size)
 }
 
 static PyObject *
-vBOOL_get(void *ptr, Py_ssize_t size)
+v_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(short int)));
     return PyBool_FromLong((long)*(short int *)ptr);
 }
 
+/* bool ('?'): bool (i.e. _Bool) */
 static PyObject *
 bool_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(bool)));
     switch (PyObject_IsTrue(value)) {
     case -1:
         return NULL;
     case 0:
-        *(_Bool *)ptr = 0;
+        *(bool *)ptr = 0;
         _RET(value);
     default:
-        *(_Bool *)ptr = 1;
+        *(bool *)ptr = 1;
         _RET(value);
     }
 }
@@ -700,260 +556,15 @@ bool_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 bool_get(void *ptr, Py_ssize_t size)
 {
-    return PyBool_FromLong((long)*(_Bool *)ptr);
+    assert(NUM_BITS(size) || (size == sizeof(bool)));
+    return PyBool_FromLong((long)*(bool *)ptr);
 }
 
-static PyObject *
-I_set(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    unsigned long val;
-    unsigned int x;
-    if (get_ulong(value, &val) < 0)
-        return  NULL;
-    memcpy(&x, ptr, sizeof(x));
-    x = SET(unsigned int, x, val, size);
-    memcpy(ptr, &x, sizeof(x));
-    _RET(value);
-}
-
-static PyObject *
-I_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    unsigned long val;
-    unsigned int field;
-    if (get_ulong(value, &val) < 0) {
-        return  NULL;
-    }
-    memcpy(&field, ptr, sizeof(field));
-    field = SWAP_INT(field);
-    field = SET(unsigned int, field, (unsigned int)val, size);
-    field = SWAP_INT(field);
-    memcpy(ptr, &field, sizeof(field));
-    _RET(value);
-}
-
-
-static PyObject *
-I_get(void *ptr, Py_ssize_t size)
-{
-    unsigned int val;
-    memcpy(&val, ptr, sizeof(val));
-    GET_BITFIELD(val, size);
-    return PyLong_FromUnsignedLong(val);
-}
-
-static PyObject *
-I_get_sw(void *ptr, Py_ssize_t size)
-{
-    unsigned int val;
-    memcpy(&val, ptr, sizeof(val));
-    val = SWAP_INT(val);
-    GET_BITFIELD(val, size);
-    return PyLong_FromUnsignedLong(val);
-}
-
-static PyObject *
-l_set(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    long val;
-    long x;
-    if (get_long(value, &val) < 0)
-        return NULL;
-    memcpy(&x, ptr, sizeof(x));
-    x = SET(long, x, val, size);
-    memcpy(ptr, &x, sizeof(x));
-    _RET(value);
-}
-
-static PyObject *
-l_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    long val;
-    long field;
-    if (get_long(value, &val) < 0) {
-        return NULL;
-    }
-    memcpy(&field, ptr, sizeof(field));
-    field = SWAP_LONG(field);
-    field = SET(long, field, val, size);
-    field = SWAP_LONG(field);
-    memcpy(ptr, &field, sizeof(field));
-    _RET(value);
-}
-
-
-static PyObject *
-l_get(void *ptr, Py_ssize_t size)
-{
-    long val;
-    memcpy(&val, ptr, sizeof(val));
-    GET_BITFIELD(val, size);
-    return PyLong_FromLong(val);
-}
-
-static PyObject *
-l_get_sw(void *ptr, Py_ssize_t size)
-{
-    long val;
-    memcpy(&val, ptr, sizeof(val));
-    val = SWAP_LONG(val);
-    GET_BITFIELD(val, size);
-    return PyLong_FromLong(val);
-}
-
-static PyObject *
-L_set(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    unsigned long val;
-    unsigned long x;
-    if (get_ulong(value, &val) < 0)
-        return  NULL;
-    memcpy(&x, ptr, sizeof(x));
-    x = SET(unsigned long, x, val, size);
-    memcpy(ptr, &x, sizeof(x));
-    _RET(value);
-}
-
-static PyObject *
-L_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    unsigned long val;
-    unsigned long field;
-    if (get_ulong(value, &val) < 0) {
-        return  NULL;
-    }
-    memcpy(&field, ptr, sizeof(field));
-    field = SWAP_LONG(field);
-    field = SET(unsigned long, field, val, size);
-    field = SWAP_LONG(field);
-    memcpy(ptr, &field, sizeof(field));
-    _RET(value);
-}
-
-
-static PyObject *
-L_get(void *ptr, Py_ssize_t size)
-{
-    unsigned long val;
-    memcpy(&val, ptr, sizeof(val));
-    GET_BITFIELD(val, size);
-    return PyLong_FromUnsignedLong(val);
-}
-
-static PyObject *
-L_get_sw(void *ptr, Py_ssize_t size)
-{
-    unsigned long val;
-    memcpy(&val, ptr, sizeof(val));
-    val = SWAP_LONG(val);
-    GET_BITFIELD(val, size);
-    return PyLong_FromUnsignedLong(val);
-}
-
-static PyObject *
-q_set(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    long long val;
-    long long x;
-    if (get_longlong(value, &val) < 0)
-        return NULL;
-    memcpy(&x, ptr, sizeof(x));
-    x = SET(long long, x, val, size);
-    memcpy(ptr, &x, sizeof(x));
-    _RET(value);
-}
-
-static PyObject *
-q_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    long long val;
-    long long field;
-    if (get_longlong(value, &val) < 0) {
-        return NULL;
-    }
-    memcpy(&field, ptr, sizeof(field));
-    field = SWAP_LONG_LONG(field);
-    field = SET(long long, field, val, size);
-    field = SWAP_LONG_LONG(field);
-    memcpy(ptr, &field, sizeof(field));
-    _RET(value);
-}
-
-static PyObject *
-q_get(void *ptr, Py_ssize_t size)
-{
-    long long val;
-    memcpy(&val, ptr, sizeof(val));
-    GET_BITFIELD(val, size);
-    return PyLong_FromLongLong(val);
-}
-
-static PyObject *
-q_get_sw(void *ptr, Py_ssize_t size)
-{
-    long long val;
-    memcpy(&val, ptr, sizeof(val));
-    val = SWAP_LONG_LONG(val);
-    GET_BITFIELD(val, size);
-    return PyLong_FromLongLong(val);
-}
-
-static PyObject *
-Q_set(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    unsigned long long val;
-    unsigned long long x;
-    if (get_ulonglong(value, &val) < 0)
-        return NULL;
-    memcpy(&x, ptr, sizeof(x));
-    x = SET(long long, x, val, size);
-    memcpy(ptr, &x, sizeof(x));
-    _RET(value);
-}
-
-static PyObject *
-Q_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
-{
-    unsigned long long val;
-    unsigned long long field;
-    if (get_ulonglong(value, &val) < 0) {
-        return NULL;
-    }
-    memcpy(&field, ptr, sizeof(field));
-    field = SWAP_LONG_LONG(field);
-    field = SET(unsigned long long, field, val, size);
-    field = SWAP_LONG_LONG(field);
-    memcpy(ptr, &field, sizeof(field));
-    _RET(value);
-}
-
-static PyObject *
-Q_get(void *ptr, Py_ssize_t size)
-{
-    unsigned long long val;
-    memcpy(&val, ptr, sizeof(val));
-    GET_BITFIELD(val, size);
-    return PyLong_FromUnsignedLongLong(val);
-}
-
-static PyObject *
-Q_get_sw(void *ptr, Py_ssize_t size)
-{
-    unsigned long long val;
-    memcpy(&val, ptr, sizeof(val));
-    val = SWAP_LONG_LONG(val);
-    GET_BITFIELD(val, size);
-    return PyLong_FromUnsignedLongLong(val);
-}
-
-/*****************************************************************
- * non-integer accessor methods, not supporting bit fields
- */
-
-
+/* g: long double */
 static PyObject *
 g_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(long double)));
     long double x;
 
     x = PyFloat_AsDouble(value);
@@ -966,14 +577,17 @@ g_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 g_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(long double)));
     long double val;
     memcpy(&val, ptr, sizeof(long double));
     return PyFloat_FromDouble(val);
 }
 
+/* d: double */
 static PyObject *
 d_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(double)));
     double x;
 
     x = PyFloat_AsDouble(value);
@@ -986,14 +600,94 @@ d_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 d_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(double)));
     double val;
     memcpy(&val, ptr, sizeof(val));
     return PyFloat_FromDouble(val);
 }
 
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
+/* C: double complex */
+static PyObject *
+C_set(void *ptr, PyObject *value, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == sizeof(double complex)));
+    Py_complex c = PyComplex_AsCComplex(value);
+
+    if (c.real == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    double complex x = CMPLX(c.real, c.imag);
+    memcpy(ptr, &x, sizeof(x));
+    _RET(value);
+}
+
+static PyObject *
+C_get(void *ptr, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == sizeof(double complex)));
+    double complex x;
+
+    memcpy(&x, ptr, sizeof(x));
+    return PyComplex_FromDoubles(creal(x), cimag(x));
+}
+
+/* E: float complex */
+static PyObject *
+E_set(void *ptr, PyObject *value, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == sizeof(float complex)));
+    Py_complex c = PyComplex_AsCComplex(value);
+
+    if (c.real == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    float complex x = CMPLXF((float)c.real, (float)c.imag);
+    memcpy(ptr, &x, sizeof(x));
+    _RET(value);
+}
+
+static PyObject *
+E_get(void *ptr, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == sizeof(float complex)));
+    float complex x;
+
+    memcpy(&x, ptr, sizeof(x));
+    return PyComplex_FromDoubles(crealf(x), cimagf(x));
+}
+
+/* F: long double complex */
+static PyObject *
+F_set(void *ptr, PyObject *value, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == sizeof(long double complex)));
+    Py_complex c = PyComplex_AsCComplex(value);
+
+    if (c.real == -1 && PyErr_Occurred()) {
+        return NULL;
+    }
+    long double complex x = CMPLXL(c.real, c.imag);
+    memcpy(ptr, &x, sizeof(x));
+    _RET(value);
+}
+
+static PyObject *
+F_get(void *ptr, Py_ssize_t size)
+{
+    assert(NUM_BITS(size) || (size == sizeof(long double complex)));
+    long double complex x;
+
+    memcpy(&x, ptr, sizeof(x));
+    return PyComplex_FromDoubles((double)creall(x), (double)cimagl(x));
+}
+#endif
+
+/* d: double */
 static PyObject *
 d_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(double)));
     double x;
 
     x = PyFloat_AsDouble(value);
@@ -1012,6 +706,7 @@ d_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 d_get_sw(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(double)));
 #ifdef WORDS_BIGENDIAN
     return PyFloat_FromDouble(PyFloat_Unpack8(ptr, 1));
 #else
@@ -1019,9 +714,11 @@ d_get_sw(void *ptr, Py_ssize_t size)
 #endif
 }
 
+/* f: float */
 static PyObject *
 f_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(float)));
     float x;
 
     x = (float)PyFloat_AsDouble(value);
@@ -1034,6 +731,7 @@ f_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 f_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(float)));
     float val;
     memcpy(&val, ptr, sizeof(val));
     return PyFloat_FromDouble(val);
@@ -1042,6 +740,7 @@ f_get(void *ptr, Py_ssize_t size)
 static PyObject *
 f_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(float)));
     float x;
 
     x = (float)PyFloat_AsDouble(value);
@@ -1060,6 +759,7 @@ f_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 f_get_sw(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(float)));
 #ifdef WORDS_BIGENDIAN
     return PyFloat_FromDouble(PyFloat_Unpack4(ptr, 1));
 #else
@@ -1067,6 +767,7 @@ f_get_sw(void *ptr, Py_ssize_t size)
 #endif
 }
 
+/* O: Python object */
 /*
   py_object refcounts:
 
@@ -1080,6 +781,7 @@ f_get_sw(void *ptr, Py_ssize_t size)
 static PyObject *
 O_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(PyObject *)));
     PyObject *ob = *(PyObject **)ptr;
     if (ob == NULL) {
         if (!PyErr_Occurred())
@@ -1094,34 +796,57 @@ O_get(void *ptr, Py_ssize_t size)
 static PyObject *
 O_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(PyObject *)));
     /* Hm, does the memory block need it's own refcount or not? */
     *(PyObject **)ptr = value;
     return Py_NewRef(value);
 }
 
 
+/* c: a single byte-character */
 static PyObject *
 c_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
-    if (PyBytes_Check(value) && PyBytes_GET_SIZE(value) == 1) {
+    assert(NUM_BITS(size) || (size == sizeof(char)));
+    if (PyBytes_Check(value)) {
+        if (PyBytes_GET_SIZE(value) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                        "one character bytes, bytearray, or an integer "
+                        "in range(256) expected, not bytes of length %zd",
+                        PyBytes_GET_SIZE(value));
+            return NULL;
+        }
         *(char *)ptr = PyBytes_AS_STRING(value)[0];
         _RET(value);
     }
-    if (PyByteArray_Check(value) && PyByteArray_GET_SIZE(value) == 1) {
+    if (PyByteArray_Check(value)) {
+        if (PyByteArray_GET_SIZE(value) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                        "one character bytes, bytearray, or an integer "
+                        "in range(256) expected, not bytearray of length %zd",
+                        PyByteArray_GET_SIZE(value));
+            return NULL;
+        }
         *(char *)ptr = PyByteArray_AS_STRING(value)[0];
         _RET(value);
     }
-    if (PyLong_Check(value))
-    {
-        long longval = PyLong_AsLong(value);
-        if (longval < 0 || longval >= 256)
-            goto error;
+    if (PyLong_Check(value)) {
+        int overflow;
+        long longval = PyLong_AsLongAndOverflow(value, &overflow);
+        if (longval == -1 && PyErr_Occurred()) {
+            return NULL;
+        }
+        if (overflow || longval < 0 || longval >= 256) {
+            PyErr_SetString(PyExc_TypeError, "integer not in range(256)");
+            return NULL;
+        }
         *(char *)ptr = (char)longval;
         _RET(value);
     }
-  error:
     PyErr_Format(PyExc_TypeError,
-                 "one character bytes, bytearray or integer expected");
+                 "one character bytes, bytearray, or an integer "
+                 "in range(256) expected, not %T",
+                 value);
     return NULL;
 }
 
@@ -1129,33 +854,40 @@ c_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 c_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(char)));
     return PyBytes_FromStringAndSize((char *)ptr, 1);
 }
 
-/* u - a single wchar_t character */
+/* u: a single wchar_t character */
 static PyObject *
 u_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(wchar_t)));
     Py_ssize_t len;
     wchar_t chars[2];
     if (!PyUnicode_Check(value)) {
         PyErr_Format(PyExc_TypeError,
-                        "unicode string expected instead of %s instance",
-                        Py_TYPE(value)->tp_name);
+                     "a unicode character expected, not instance of %T",
+                     value);
         return NULL;
-    } else
-        Py_INCREF(value);
+    }
 
     len = PyUnicode_AsWideChar(value, chars, 2);
     if (len != 1) {
-        Py_DECREF(value);
-        PyErr_SetString(PyExc_TypeError,
-                        "one character unicode string expected");
+        if (PyUnicode_GET_LENGTH(value) != 1) {
+            PyErr_Format(PyExc_TypeError,
+                         "a unicode character expected, not a string of length %zd",
+                         PyUnicode_GET_LENGTH(value));
+        }
+        else {
+            PyErr_Format(PyExc_TypeError,
+                         "the string %A cannot be converted to a single wchar_t character",
+                         value);
+        }
         return NULL;
     }
 
     *(wchar_t *)ptr = chars[0];
-    Py_DECREF(value);
 
     _RET(value);
 }
@@ -1164,10 +896,11 @@ u_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 u_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(wchar_t)));
     return PyUnicode_FromWideChar((wchar_t *)ptr, 1);
 }
 
-/* U - a unicode string */
+/* U: a wchar_t* unicode string */
 static PyObject *
 U_get(void *ptr, Py_ssize_t size)
 {
@@ -1226,6 +959,7 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
 }
 
 
+/* s: a byte string */
 static PyObject *
 s_get(void *ptr, Py_ssize_t size)
 {
@@ -1275,6 +1009,7 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
     _RET(value);
 }
 
+/* z: a byte string, can be set from integer pointer */
 static PyObject *
 z_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
@@ -1311,6 +1046,7 @@ z_get(void *ptr, Py_ssize_t size)
     }
 }
 
+/* Z: a wchar* string, can be set from integer pointer */
 static PyObject *
 Z_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
@@ -1365,8 +1101,9 @@ Z_get(void *ptr, Py_ssize_t size)
 
 
 #ifdef MS_WIN32
+/* X: COM BSTR (wide-char string to be handled handled using Windows API) */
 static PyObject *
-BSTR_set(void *ptr, PyObject *value, Py_ssize_t size)
+X_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
     BSTR bstr;
 
@@ -1410,7 +1147,7 @@ BSTR_set(void *ptr, PyObject *value, Py_ssize_t size)
 
 
 static PyObject *
-BSTR_get(void *ptr, Py_ssize_t size)
+X_get(void *ptr, Py_ssize_t size)
 {
     BSTR p;
     p = *(BSTR *)ptr;
@@ -1425,9 +1162,11 @@ BSTR_get(void *ptr, Py_ssize_t size)
 }
 #endif
 
+/* P: generic pointer */
 static PyObject *
 P_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(void *)));
     void *v;
     if (value == Py_None) {
         *(void **)ptr = NULL;
@@ -1459,144 +1198,399 @@ P_set(void *ptr, PyObject *value, Py_ssize_t size)
 static PyObject *
 P_get(void *ptr, Py_ssize_t size)
 {
+    assert(NUM_BITS(size) || (size == sizeof(void *)));
     if (*(void **)ptr == NULL) {
         Py_RETURN_NONE;
     }
     return PyLong_FromVoidPtr(*(void **)ptr);
 }
 
-static struct fielddesc formattable[] = {
-    { 's', s_set, s_get, NULL},
-    { 'b', b_set, b_get, NULL},
-    { 'B', B_set, B_get, NULL},
-    { 'c', c_set, c_get, NULL},
-    { 'd', d_set, d_get, NULL, d_set_sw, d_get_sw},
-    { 'g', g_set, g_get, NULL},
-    { 'f', f_set, f_get, NULL, f_set_sw, f_get_sw},
-    { 'h', h_set, h_get, NULL, h_set_sw, h_get_sw},
-    { 'H', H_set, H_get, NULL, H_set_sw, H_get_sw},
-    { 'i', i_set, i_get, NULL, i_set_sw, i_get_sw},
-    { 'I', I_set, I_get, NULL, I_set_sw, I_get_sw},
-    { 'l', l_set, l_get, NULL, l_set_sw, l_get_sw},
-    { 'L', L_set, L_get, NULL, L_set_sw, L_get_sw},
-    { 'q', q_set, q_get, NULL, q_set_sw, q_get_sw},
-    { 'Q', Q_set, Q_get, NULL, Q_set_sw, Q_get_sw},
-    { 'P', P_set, P_get, NULL},
-    { 'z', z_set, z_get, NULL},
-    { 'u', u_set, u_get, NULL},
-    { 'U', U_set, U_get, NULL},
-    { 'Z', Z_set, Z_get, NULL},
-#ifdef MS_WIN32
-    { 'X', BSTR_set, BSTR_get, NULL},
-#endif
-    { 'v', vBOOL_set, vBOOL_get, NULL},
-#if SIZEOF__BOOL == SIZEOF_INT
-    { '?', bool_set, bool_get, NULL, I_set_sw, I_get_sw},
-#elif SIZEOF__BOOL == SIZEOF_LONG
-    { '?', bool_set, bool_get, NULL, L_set_sw, L_get_sw},
-#elif SIZEOF__BOOL == SIZEOF_LONG_LONG
-    { '?', bool_set, bool_get, NULL, Q_set_sw, Q_get_sw},
-#else
-    { '?', bool_set, bool_get, NULL},
-#endif /* SIZEOF__BOOL */
-    { 'O', O_set, O_get, NULL},
-    { 0, NULL, NULL, NULL},
+/* Table with info about all formats.
+ * Must be accessed via _ctypes_get_fielddesc, which initializes it on
+ * first use. After initialization it's treated as constant & read-only.
+ */
+
+struct formattable {
+/*[python input]
+for nbytes in 8, 16, 32, 64:
+    for sgn in 'i', 'u':
+        print(f'    struct fielddesc fmt_{sgn}{nbytes};')
+for code in 'sbBcdCEFgfhHiIlLqQPzuUZXvO':
+    print(f'    struct fielddesc fmt_{code};')
+[python start generated code]*/
+    struct fielddesc fmt_i8;
+    struct fielddesc fmt_u8;
+    struct fielddesc fmt_i16;
+    struct fielddesc fmt_u16;
+    struct fielddesc fmt_i32;
+    struct fielddesc fmt_u32;
+    struct fielddesc fmt_i64;
+    struct fielddesc fmt_u64;
+    struct fielddesc fmt_s;
+    struct fielddesc fmt_b;
+    struct fielddesc fmt_B;
+    struct fielddesc fmt_c;
+    struct fielddesc fmt_d;
+    struct fielddesc fmt_C;
+    struct fielddesc fmt_E;
+    struct fielddesc fmt_F;
+    struct fielddesc fmt_g;
+    struct fielddesc fmt_f;
+    struct fielddesc fmt_h;
+    struct fielddesc fmt_H;
+    struct fielddesc fmt_i;
+    struct fielddesc fmt_I;
+    struct fielddesc fmt_l;
+    struct fielddesc fmt_L;
+    struct fielddesc fmt_q;
+    struct fielddesc fmt_Q;
+    struct fielddesc fmt_P;
+    struct fielddesc fmt_z;
+    struct fielddesc fmt_u;
+    struct fielddesc fmt_U;
+    struct fielddesc fmt_Z;
+    struct fielddesc fmt_X;
+    struct fielddesc fmt_v;
+    struct fielddesc fmt_O;
+/*[python end generated code: output=fa648744ec7f919d input=087d58357d4bf2c5]*/
+
+    // bool has code '?':
+    struct fielddesc fmt_bool;
+
+    // always contains NULLs:
+    struct fielddesc fmt_nil;
+
+    // Result of _ctypes_get_simple_type_chars. Initialized just after
+    // the rest of formattable, so we stash it here.
+    char simple_type_chars[26];
 };
 
-/*
-  Ideas: Implement VARIANT in this table, using 'V' code.
-  Use '?' as code for BOOL.
-*/
+static struct formattable formattable;
+
+
+/* Get fielddesc info for a fixed-width integer.
+ * N.B: - must be called after (or from) _ctypes_init_fielddesc!
+ *      - nbytes must be one of the supported values
+ */
+
+static inline struct fielddesc *
+_ctypes_fixint_fielddesc(Py_ssize_t nbytes, bool is_signed)
+{
+#define _PACK(NBYTES, SGN) ((NBYTES<<2) + (SGN ? 1 : 0))
+    switch (_PACK(nbytes, is_signed)) {
+/*[python input]
+for nbytes in 8, 16, 32, 64:
+    for sgn in 'i', 'u':
+        is_signed = sgn == 'i'
+        print(f'    case (_PACK({nbytes // 8}, {int(is_signed)})): '
+              + f'return &formattable.fmt_{sgn}{nbytes};')
+[python start generated code]*/
+    case (_PACK(1, 1)): return &formattable.fmt_i8;
+    case (_PACK(1, 0)): return &formattable.fmt_u8;
+    case (_PACK(2, 1)): return &formattable.fmt_i16;
+    case (_PACK(2, 0)): return &formattable.fmt_u16;
+    case (_PACK(4, 1)): return &formattable.fmt_i32;
+    case (_PACK(4, 0)): return &formattable.fmt_u32;
+    case (_PACK(8, 1)): return &formattable.fmt_i64;
+    case (_PACK(8, 0)): return &formattable.fmt_u64;
+/*[python end generated code: output=0194ba35c4d64ff3 input=ee9f6f5bb872d645]*/
+#undef _PACK
+    }
+    /* ctypes currently only supports platforms where the basic integer types
+     * (`char`, `short`, `int`, `long`, `long long`) have 1, 2, 4, or 8 bytes
+     * (i.e. 8 to 64 bits).
+     */
+    Py_UNREACHABLE();
+}
+
+
+/* Macro to call _ctypes_fixint_fielddesc for a given C type. */
+
+_Py_COMP_DIAG_PUSH
+#if defined(__GNUC__) && (__GNUC__ < 14)
+/* The signedness check expands to an expression that's always true or false.
+ * Older GCC gives a '-Wtype-limits' warning for this, which is a GCC bug
+ * (docs say it should "not warn for constant expressions"):
+ *      https://gcc.gnu.org/bugzilla/show_bug.cgi?id=86647
+ * Silence that warning.
+ */
+#pragma GCC diagnostic ignored "-Wtype-limits"
+#endif
+
+#define FIXINT_FIELDDESC_FOR(C_TYPE) \
+    _ctypes_fixint_fielddesc(sizeof(C_TYPE), (C_TYPE)-1 < 0)
+
 
 /* Delayed initialization. Windows cannot statically reference dynamically
    loaded addresses from DLLs. */
-void
+static void
+_ctypes_init_fielddesc_locked(void)
+{
+    /* Fixed-width integers */
+
+/*[python input]
+for nbytes in 8, 16, 32, 64:
+    for sgn in 'i', 'u':
+        is_signed = sgn == 'i'
+        u = 'u' if sgn == 'u' else 's'
+        parts = [
+            f"0",
+            f'&ffi_type_{u}int{nbytes}',
+            f'{sgn}{nbytes}_set',
+            f'{sgn}{nbytes}_get',
+            f'{sgn}{nbytes}_set_sw',
+            f'{sgn}{nbytes}_get_sw',
+        ]
+        print(f'    formattable.fmt_{sgn}{nbytes} = (struct fielddesc){{')
+        print(f'            {', '.join(parts)} }};')
+[python start generated code]*/
+    formattable.fmt_i8 = (struct fielddesc){
+            0, &ffi_type_sint8, i8_set, i8_get, i8_set_sw, i8_get_sw };
+    formattable.fmt_u8 = (struct fielddesc){
+            0, &ffi_type_uint8, u8_set, u8_get, u8_set_sw, u8_get_sw };
+    formattable.fmt_i16 = (struct fielddesc){
+            0, &ffi_type_sint16, i16_set, i16_get, i16_set_sw, i16_get_sw };
+    formattable.fmt_u16 = (struct fielddesc){
+            0, &ffi_type_uint16, u16_set, u16_get, u16_set_sw, u16_get_sw };
+    formattable.fmt_i32 = (struct fielddesc){
+            0, &ffi_type_sint32, i32_set, i32_get, i32_set_sw, i32_get_sw };
+    formattable.fmt_u32 = (struct fielddesc){
+            0, &ffi_type_uint32, u32_set, u32_get, u32_set_sw, u32_get_sw };
+    formattable.fmt_i64 = (struct fielddesc){
+            0, &ffi_type_sint64, i64_set, i64_get, i64_set_sw, i64_get_sw };
+    formattable.fmt_u64 = (struct fielddesc){
+            0, &ffi_type_uint64, u64_set, u64_get, u64_set_sw, u64_get_sw };
+/*[python end generated code: output=16806fe0ca3a9c4c input=850b8dd6388b1b10]*/
+
+
+    /* Native C integers.
+     * These use getters/setters for fixed-width ints but have their own
+     * `code` and `pffi_type`.
+     */
+
+/*[python input]
+for base_code, base_c_type in [
+    ('b', 'char'),
+    ('h', 'short'),
+    ('i', 'int'),
+    ('l', 'long'),
+    ('q', 'long long'),
+]:
+    for code, c_type, ffi_type in [
+        (base_code, 'signed ' + base_c_type, 's' + base_c_type),
+        (base_code.upper(), 'unsigned ' + base_c_type, 'u' + base_c_type),
+    ]:
+        print(f'    formattable.fmt_{code} = *FIXINT_FIELDDESC_FOR({c_type});')
+        print(f"    formattable.fmt_{code}.code = '{code}';")
+        if base_code == 'q':
+            # ffi doesn't have `long long`; keep use the fixint type
+            pass
+        else:
+            print(f'    formattable.fmt_{code}.pffi_type = &ffi_type_{ffi_type};')
+[python start generated code]*/
+    formattable.fmt_b = *FIXINT_FIELDDESC_FOR(signed char);
+    formattable.fmt_b.code = 'b';
+    formattable.fmt_b.pffi_type = &ffi_type_schar;
+    formattable.fmt_B = *FIXINT_FIELDDESC_FOR(unsigned char);
+    formattable.fmt_B.code = 'B';
+    formattable.fmt_B.pffi_type = &ffi_type_uchar;
+    formattable.fmt_h = *FIXINT_FIELDDESC_FOR(signed short);
+    formattable.fmt_h.code = 'h';
+    formattable.fmt_h.pffi_type = &ffi_type_sshort;
+    formattable.fmt_H = *FIXINT_FIELDDESC_FOR(unsigned short);
+    formattable.fmt_H.code = 'H';
+    formattable.fmt_H.pffi_type = &ffi_type_ushort;
+    formattable.fmt_i = *FIXINT_FIELDDESC_FOR(signed int);
+    formattable.fmt_i.code = 'i';
+    formattable.fmt_i.pffi_type = &ffi_type_sint;
+    formattable.fmt_I = *FIXINT_FIELDDESC_FOR(unsigned int);
+    formattable.fmt_I.code = 'I';
+    formattable.fmt_I.pffi_type = &ffi_type_uint;
+    formattable.fmt_l = *FIXINT_FIELDDESC_FOR(signed long);
+    formattable.fmt_l.code = 'l';
+    formattable.fmt_l.pffi_type = &ffi_type_slong;
+    formattable.fmt_L = *FIXINT_FIELDDESC_FOR(unsigned long);
+    formattable.fmt_L.code = 'L';
+    formattable.fmt_L.pffi_type = &ffi_type_ulong;
+    formattable.fmt_q = *FIXINT_FIELDDESC_FOR(signed long long);
+    formattable.fmt_q.code = 'q';
+    formattable.fmt_Q = *FIXINT_FIELDDESC_FOR(unsigned long long);
+    formattable.fmt_Q.code = 'Q';
+/*[python end generated code: output=873c87a2e6b5075a input=ee814ca263aac18e]*/
+
+
+    /* Other types have bespoke setters and getters named `@_set` and `@_get`,
+     * where `@` is the type code.
+     * Some have swapped variants, `@_set_sw` and `@_get_sw`
+     */
+
+#define _TABLE_ENTRY(SYMBOL, FFI_TYPE, ...)                                   \
+    formattable.fmt_ ## SYMBOL =                                              \
+        (struct fielddesc){(#SYMBOL)[0], (FFI_TYPE), __VA_ARGS__};            \
+    ///////////////////////////////////////////////////////////////////////////
+
+#define TABLE_ENTRY(SYMBOL, FFI_TYPE)                                         \
+    _TABLE_ENTRY(SYMBOL, FFI_TYPE, SYMBOL ## _set, SYMBOL ## _get)            \
+    ///////////////////////////////////////////////////////////////////////////
+
+#define TABLE_ENTRY_SW(SYMBOL, FFI_TYPE)                                      \
+    _TABLE_ENTRY(SYMBOL, FFI_TYPE, SYMBOL ## _set,                            \
+        SYMBOL ## _get, SYMBOL ## _set_sw, SYMBOL ## _get_sw)                 \
+    ///////////////////////////////////////////////////////////////////////////
+
+    TABLE_ENTRY_SW(d, &ffi_type_double);
+#if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
+    if (Py_FFI_COMPLEX_AVAILABLE) {
+        TABLE_ENTRY(C, &ffi_type_complex_double);
+        TABLE_ENTRY(E, &ffi_type_complex_float);
+        TABLE_ENTRY(F, &ffi_type_complex_longdouble);
+    }
+#endif
+    TABLE_ENTRY(g, &ffi_type_longdouble);
+    TABLE_ENTRY_SW(f, &ffi_type_float);
+    TABLE_ENTRY(v, &ffi_type_sshort);    /* vBOOL */
+
+    // ctypes.c_char is signed for FFI, even where C wchar_t is unsigned.
+    TABLE_ENTRY(c, _ctypes_fixint_fielddesc(sizeof(char), true)->pffi_type);
+    // ctypes.c_wchar is signed for FFI, even where C wchar_t is unsigned.
+    TABLE_ENTRY(u, _ctypes_fixint_fielddesc(sizeof(wchar_t), true)->pffi_type);
+
+    TABLE_ENTRY(s, &ffi_type_pointer);
+    TABLE_ENTRY(P, &ffi_type_pointer);
+    TABLE_ENTRY(z, &ffi_type_pointer);
+    TABLE_ENTRY(U, &ffi_type_pointer);
+    TABLE_ENTRY(Z, &ffi_type_pointer);
+#ifdef MS_WIN32
+    TABLE_ENTRY(X, &ffi_type_pointer);
+#endif
+    TABLE_ENTRY(O, &ffi_type_pointer);
+
+#undef TABLE_ENTRY_SW
+#undef TABLE_ENTRY
+#undef _TABLE_ENTRY
+
+    /* bool has code '?', fill it in manually */
+
+    // ctypes.c_bool is unsigned for FFI, even where C bool is signed.
+    formattable.fmt_bool = *_ctypes_fixint_fielddesc(sizeof(bool), false);
+    formattable.fmt_bool.code = '?';
+    formattable.fmt_bool.setfunc = bool_set;
+    formattable.fmt_bool.getfunc = bool_get;
+
+/*[python input]
+all_chars = "cbBhHiIlLdCEFfuzZqQPXOv?g"
+print(f'    assert(sizeof(formattable.simple_type_chars) == {len(all_chars)+1});')
+print(f'    int i = 0;')
+for char in all_chars:
+    ident_char = {'?': 'bool'}.get(char, char)
+    print(f"    if (formattable.fmt_{ident_char}.code) "
+          + f"formattable.simple_type_chars[i++] = '{char}';")
+print(f"    formattable.simple_type_chars[i] = 0;")
+[python start generated code]*/
+    assert(sizeof(formattable.simple_type_chars) == 26);
+    int i = 0;
+    if (formattable.fmt_c.code) formattable.simple_type_chars[i++] = 'c';
+    if (formattable.fmt_b.code) formattable.simple_type_chars[i++] = 'b';
+    if (formattable.fmt_B.code) formattable.simple_type_chars[i++] = 'B';
+    if (formattable.fmt_h.code) formattable.simple_type_chars[i++] = 'h';
+    if (formattable.fmt_H.code) formattable.simple_type_chars[i++] = 'H';
+    if (formattable.fmt_i.code) formattable.simple_type_chars[i++] = 'i';
+    if (formattable.fmt_I.code) formattable.simple_type_chars[i++] = 'I';
+    if (formattable.fmt_l.code) formattable.simple_type_chars[i++] = 'l';
+    if (formattable.fmt_L.code) formattable.simple_type_chars[i++] = 'L';
+    if (formattable.fmt_d.code) formattable.simple_type_chars[i++] = 'd';
+    if (formattable.fmt_C.code) formattable.simple_type_chars[i++] = 'C';
+    if (formattable.fmt_E.code) formattable.simple_type_chars[i++] = 'E';
+    if (formattable.fmt_F.code) formattable.simple_type_chars[i++] = 'F';
+    if (formattable.fmt_f.code) formattable.simple_type_chars[i++] = 'f';
+    if (formattable.fmt_u.code) formattable.simple_type_chars[i++] = 'u';
+    if (formattable.fmt_z.code) formattable.simple_type_chars[i++] = 'z';
+    if (formattable.fmt_Z.code) formattable.simple_type_chars[i++] = 'Z';
+    if (formattable.fmt_q.code) formattable.simple_type_chars[i++] = 'q';
+    if (formattable.fmt_Q.code) formattable.simple_type_chars[i++] = 'Q';
+    if (formattable.fmt_P.code) formattable.simple_type_chars[i++] = 'P';
+    if (formattable.fmt_X.code) formattable.simple_type_chars[i++] = 'X';
+    if (formattable.fmt_O.code) formattable.simple_type_chars[i++] = 'O';
+    if (formattable.fmt_v.code) formattable.simple_type_chars[i++] = 'v';
+    if (formattable.fmt_bool.code) formattable.simple_type_chars[i++] = '?';
+    if (formattable.fmt_g.code) formattable.simple_type_chars[i++] = 'g';
+    formattable.simple_type_chars[i] = 0;
+/*[python end generated code: output=e6e5098a02f4b606 input=72031a625eac00c1]*/
+
+}
+#undef FIXINT_FIELDDESC_FOR
+_Py_COMP_DIAG_POP
+
+static void
 _ctypes_init_fielddesc(void)
 {
-    struct fielddesc *fd = formattable;
-    for (; fd->code; ++fd) {
-        switch (fd->code) {
-        case 's': fd->pffi_type = &ffi_type_pointer; break;
-        case 'b': fd->pffi_type = &ffi_type_schar; break;
-        case 'B': fd->pffi_type = &ffi_type_uchar; break;
-        case 'c': fd->pffi_type = &ffi_type_schar; break;
-        case 'd': fd->pffi_type = &ffi_type_double; break;
-        case 'g': fd->pffi_type = &ffi_type_longdouble; break;
-        case 'f': fd->pffi_type = &ffi_type_float; break;
-        case 'h': fd->pffi_type = &ffi_type_sshort; break;
-        case 'H': fd->pffi_type = &ffi_type_ushort; break;
-        case 'i': fd->pffi_type = &ffi_type_sint; break;
-        case 'I': fd->pffi_type = &ffi_type_uint; break;
-        /* XXX Hm, sizeof(int) == sizeof(long) doesn't hold on every platform */
-        /* As soon as we can get rid of the type codes, this is no longer a problem */
-    #if SIZEOF_LONG == 4
-        case 'l': fd->pffi_type = &ffi_type_sint32; break;
-        case 'L': fd->pffi_type = &ffi_type_uint32; break;
-    #elif SIZEOF_LONG == 8
-        case 'l': fd->pffi_type = &ffi_type_sint64; break;
-        case 'L': fd->pffi_type = &ffi_type_uint64; break;
-    #else
-        #error
-    #endif
-    #if SIZEOF_LONG_LONG == 8
-        case 'q': fd->pffi_type = &ffi_type_sint64; break;
-        case 'Q': fd->pffi_type = &ffi_type_uint64; break;
-    #else
-        #error
-    #endif
-        case 'P': fd->pffi_type = &ffi_type_pointer; break;
-        case 'z': fd->pffi_type = &ffi_type_pointer; break;
-        case 'u':
-            if (sizeof(wchar_t) == sizeof(short))
-                fd->pffi_type = &ffi_type_sshort;
-            else if (sizeof(wchar_t) == sizeof(int))
-                fd->pffi_type = &ffi_type_sint;
-            else if (sizeof(wchar_t) == sizeof(long))
-                fd->pffi_type = &ffi_type_slong;
-            else
-                Py_UNREACHABLE();
-            break;
-        case 'U': fd->pffi_type = &ffi_type_pointer; break;
-        case 'Z': fd->pffi_type = &ffi_type_pointer; break;
-    #ifdef MS_WIN32
-        case 'X': fd->pffi_type = &ffi_type_pointer; break;
-    #endif
-        case 'v': fd->pffi_type = &ffi_type_sshort; break;
-    #if SIZEOF__BOOL == 1
-        case '?': fd->pffi_type = &ffi_type_uchar; break; /* Also fallback for no native _Bool support */
-    #elif SIZEOF__BOOL == SIZEOF_SHORT
-        case '?': fd->pffi_type = &ffi_type_ushort; break;
-    #elif SIZEOF__BOOL == SIZEOF_INT
-        case '?': fd->pffi_type = &ffi_type_uint; break;
-    #elif SIZEOF__BOOL == SIZEOF_LONG
-        case '?': fd->pffi_type = &ffi_type_ulong; break;
-    #elif SIZEOF__BOOL == SIZEOF_LONG_LONG
-        case '?': fd->pffi_type = &ffi_type_ulong; break;
-    #endif /* SIZEOF__BOOL */
-        case 'O': fd->pffi_type = &ffi_type_pointer; break;
-        default:
-            Py_UNREACHABLE();
-        }
+    static bool initialized = false;
+    static PyMutex mutex = {0};
+    PyMutex_Lock(&mutex);
+    if (!initialized) {
+        _ctypes_init_fielddesc_locked();
+        initialized = true;
     }
+    PyMutex_Unlock(&mutex);
+}
 
+char *
+_ctypes_get_simple_type_chars(void) {
+    _ctypes_init_fielddesc();
+    return formattable.simple_type_chars;
 }
 
 struct fielddesc *
 _ctypes_get_fielddesc(const char *fmt)
 {
-    static int initialized = 0;
-    struct fielddesc *table = formattable;
+    _ctypes_init_fielddesc();
 
-    if (!initialized) {
-        initialized = 1;
-        _ctypes_init_fielddesc();
+    struct fielddesc *result = NULL;
+    switch(fmt[0]) {
+/*[python input]
+for code in 'sbBcdCEFgfhHiIlLqQPzuUZXvO':
+    print(f"        case '{code}': result = &formattable.fmt_{code}; break;")
+[python start generated code]*/
+        case 's': result = &formattable.fmt_s; break;
+        case 'b': result = &formattable.fmt_b; break;
+        case 'B': result = &formattable.fmt_B; break;
+        case 'c': result = &formattable.fmt_c; break;
+        case 'd': result = &formattable.fmt_d; break;
+        case 'C': result = &formattable.fmt_C; break;
+        case 'E': result = &formattable.fmt_E; break;
+        case 'F': result = &formattable.fmt_F; break;
+        case 'g': result = &formattable.fmt_g; break;
+        case 'f': result = &formattable.fmt_f; break;
+        case 'h': result = &formattable.fmt_h; break;
+        case 'H': result = &formattable.fmt_H; break;
+        case 'i': result = &formattable.fmt_i; break;
+        case 'I': result = &formattable.fmt_I; break;
+        case 'l': result = &formattable.fmt_l; break;
+        case 'L': result = &formattable.fmt_L; break;
+        case 'q': result = &formattable.fmt_q; break;
+        case 'Q': result = &formattable.fmt_Q; break;
+        case 'P': result = &formattable.fmt_P; break;
+        case 'z': result = &formattable.fmt_z; break;
+        case 'u': result = &formattable.fmt_u; break;
+        case 'U': result = &formattable.fmt_U; break;
+        case 'Z': result = &formattable.fmt_Z; break;
+        case 'X': result = &formattable.fmt_X; break;
+        case 'v': result = &formattable.fmt_v; break;
+        case 'O': result = &formattable.fmt_O; break;
+/*[python end generated code: output=81a8223dda9f81f7 input=2f59666d3c024edf]*/
+        case '?': result = &formattable.fmt_bool; break;
     }
-
-    for (; table->code; ++table) {
-        if (table->code == fmt[0])
-            return table;
+    if (!result || !result->code) {
+        return NULL;
     }
-    return NULL;
+    assert(result->pffi_type);
+    assert(result->setfunc);
+    assert(result->getfunc);
+    return result;
 }
+
+/*
+  Ideas: Implement VARIANT in this table, using 'V' code.
+*/
 
 /*---------------- EOF ----------------*/

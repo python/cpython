@@ -33,7 +33,7 @@ extern "C" {
 static inline void _Py_ADJUST_ERANGE1(double x)
 {
     if (errno == 0) {
-        if (x == Py_HUGE_VAL || x == -Py_HUGE_VAL) {
+        if (x == Py_INFINITY || x == -Py_INFINITY) {
             errno = ERANGE;
         }
     }
@@ -44,8 +44,8 @@ static inline void _Py_ADJUST_ERANGE1(double x)
 
 static inline void _Py_ADJUST_ERANGE2(double x, double y)
 {
-    if (x == Py_HUGE_VAL || x == -Py_HUGE_VAL ||
-        y == Py_HUGE_VAL || y == -Py_HUGE_VAL)
+    if (x == Py_INFINITY || x == -Py_INFINITY ||
+        y == Py_INFINITY || y == -Py_INFINITY)
     {
         if (errno == 0) {
             errno = ERANGE;
@@ -55,21 +55,6 @@ static inline void _Py_ADJUST_ERANGE2(double x, double y)
         errno = 0;
     }
 }
-
-// Return the maximum value of integral type *type*.
-#define _Py_IntegralTypeMax(type) \
-    (_Py_IS_TYPE_SIGNED(type) ? (((((type)1 << (sizeof(type)*CHAR_BIT - 2)) - 1) << 1) + 1) : ~(type)0)
-
-// Return the minimum value of integral type *type*.
-#define _Py_IntegralTypeMin(type) \
-    (_Py_IS_TYPE_SIGNED(type) ? -_Py_IntegralTypeMax(type) - 1 : 0)
-
-// Check whether *v* is in the range of integral type *type*. This is most
-// useful if *v* is floating-point, since demoting a floating-point *v* to an
-// integral type that cannot represent *v*'s integral part is undefined
-// behavior.
-#define _Py_InIntegralTypeRange(type, v) \
-    (_Py_IntegralTypeMin(type) <= v && v <= _Py_IntegralTypeMax(type))
 
 
 //--- HAVE_PY_SET_53BIT_PRECISION macro ------------------------------------

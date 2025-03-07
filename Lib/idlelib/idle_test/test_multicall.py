@@ -27,7 +27,7 @@ class MultiCallTest(unittest.TestCase):
     def test_creator(self):
         mc = self.mc
         self.assertIs(multicall._multicall_dict[Text], mc)
-        self.assertTrue(issubclass(mc, Text))
+        self.assertIsSubclass(mc, Text)
         mc2 = multicall.MultiCallCreator(Text)
         self.assertIs(mc, mc2)
 

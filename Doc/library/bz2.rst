@@ -1,5 +1,5 @@
-:mod:`bz2` --- Support for :program:`bzip2` compression
-=======================================================
+:mod:`!bz2` --- Support for :program:`bzip2` compression
+========================================================
 
 .. module:: bz2
    :synopsis: Interfaces for bzip2 compression and decompression.
@@ -87,10 +87,11 @@ The :mod:`bz2` module contains:
    compressed streams.
 
    :class:`BZ2File` provides all of the members specified by the
-   :class:`io.BufferedIOBase`, except for :meth:`detach` and :meth:`truncate`.
+   :class:`io.BufferedIOBase`, except for :meth:`~io.BufferedIOBase.detach`
+   and :meth:`~io.IOBase.truncate`.
    Iteration and the :keyword:`with` statement are supported.
 
-   :class:`BZ2File` also provides the following method:
+   :class:`BZ2File` also provides the following methods and attributes:
 
    .. method:: peek([n])
 
@@ -105,19 +106,69 @@ The :mod:`bz2` module contains:
 
       .. versionadded:: 3.3
 
+   .. method:: fileno()
+
+      Return the file descriptor for the underlying file.
+
+      .. versionadded:: 3.3
+
+   .. method:: readable()
+
+      Return whether the file was opened for reading.
+
+      .. versionadded:: 3.3
+
+   .. method:: seekable()
+
+      Return whether the file supports seeking.
+
+      .. versionadded:: 3.3
+
+   .. method:: writable()
+
+      Return whether the file was opened for writing.
+
+      .. versionadded:: 3.3
+
+   .. method:: read1(size=-1)
+
+      Read up to *size* uncompressed bytes, while trying to avoid
+      making multiple reads from the underlying stream. Reads up to a
+      buffer's worth of data if size is negative.
+
+      Returns ``b''`` if the file is at EOF.
+
+      .. versionadded:: 3.3
+
+   .. method:: readinto(b)
+
+      Read bytes into *b*.
+
+      Returns the number of bytes read (0 for EOF).
+
+      .. versionadded:: 3.3
+
+   .. attribute:: mode
+
+      ``'rb'`` for reading and ``'wb'`` for writing.
+
+      .. versionadded:: 3.13
+
+   .. attribute:: name
+
+      The bzip2 file name.  Equivalent to the :attr:`~io.FileIO.name`
+      attribute of the underlying :term:`file object`.
+
+      .. versionadded:: 3.13
+
 
    .. versionchanged:: 3.1
       Support for the :keyword:`with` statement was added.
 
    .. versionchanged:: 3.3
-      The :meth:`fileno`, :meth:`readable`, :meth:`seekable`, :meth:`writable`,
-      :meth:`read1` and :meth:`readinto` methods were added.
-
-   .. versionchanged:: 3.3
       Support was added for *filename* being a :term:`file object` instead of an
       actual filename.
 
-   .. versionchanged:: 3.3
       The ``'a'`` (append) mode was added, along with support for reading
       multi-stream files.
 

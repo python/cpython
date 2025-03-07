@@ -5,8 +5,13 @@ import unittest
 from test.support import cpython_only
 from test.support.os_helper import TESTFN, unlink
 from test.support import check_free_after_iterating, ALWAYS_EQ, NEVER_EQ
+from test.support import BrokenIter
 import pickle
 import collections.abc
+import functools
+import contextlib
+import builtins
+import traceback
 
 # Test result of triple loop (too big to inline)
 TRIPLETS = [(0, 0, 0), (0, 0, 1), (0, 0, 2),
@@ -90,6 +95,12 @@ class CallableIterClass:
         if i > 100:
             raise IndexError # Emergency stop
         return i
+
+class EmptyIterClass:
+    def __len__(self):
+        return 0
+    def __getitem__(self, i):
+        raise StopIteration
 
 # Main test suite
 
@@ -238,6 +249,78 @@ class TestCase(unittest.TestCase):
         self.assertEqual(list(empit), [5, 6])
         self.assertEqual(list(a), [0, 1, 2, 3, 4, 5, 6])
 
+    def test_reduce_mutating_builtins_iter(self):
+        # This is a reproducer of issue #101765
+        # where iter `__reduce__` calls could lead to a segfault or SystemError
+        # depending on the order of C argument evaluation, which is undefined
+
+        # Backup builtins
+        builtins_dict = builtins.__dict__
+        orig = {"iter": iter, "reversed": reversed}
+
+        def run(builtin_name, item, sentinel=None):
+            it = iter(item) if sentinel is None else iter(item, sentinel)
+
+            class CustomStr:
+                def __init__(self, name, iterator):
+                    self.name = name
+                    self.iterator = iterator
+                def __hash__(self):
+                    return hash(self.name)
+                def __eq__(self, other):
+                    # Here we exhaust our iterator, possibly changing
+                    # its `it_seq` pointer to NULL
+                    # The `__reduce__` call should correctly get
+                    # the pointers after this call
+                    list(self.iterator)
+                    return other == self.name
+
+            # del is required here
+            # to not prematurely call __eq__ from
+            # the hash collision with the old key
+            del builtins_dict[builtin_name]
+            builtins_dict[CustomStr(builtin_name, it)] = orig[builtin_name]
+
+            return it.__reduce__()
+
+        types = [
+            (EmptyIterClass(),),
+            (bytes(8),),
+            (bytearray(8),),
+            ((1, 2, 3),),
+            (lambda: 0, 0),
+            (tuple[int],)  # GenericAlias
+        ]
+
+        try:
+            run_iter = functools.partial(run, "iter")
+            # The returned value of `__reduce__` should not only be valid
+            # but also *empty*, as `it` was exhausted during `__eq__`
+            # i.e "xyz" returns (iter, ("",))
+            self.assertEqual(run_iter("xyz"), (orig["iter"], ("",)))
+            self.assertEqual(run_iter([1, 2, 3]), (orig["iter"], ([],)))
+
+            # _PyEval_GetBuiltin is also called for `reversed` in a branch of
+            # listiter_reduce_general
+            self.assertEqual(
+                run("reversed", orig["reversed"](list(range(8)))),
+                (reversed, ([],))
+            )
+
+            for case in types:
+                self.assertEqual(run_iter(*case), (orig["iter"], ((),)))
+        finally:
+            # Restore original builtins
+            for key, func in orig.items():
+                # need to suppress KeyErrors in case
+                # a failed test deletes the key without setting anything
+                with contextlib.suppress(KeyError):
+                    # del is required here
+                    # to not invoke our custom __eq__ from
+                    # the hash collision with the old key
+                    del builtins_dict[key]
+                builtins_dict[key] = func
+
     # Test a new_style class with __iter__ but no next() method
     def test_new_style_iter_class(self):
         class IterClass(object):
@@ -266,6 +349,31 @@ class TestCase(unittest.TestCase):
             state[0] = i+1
             return i
         self.check_iterator(iter(spam, 20), list(range(10)), pickle=False)
+
+    def test_iter_function_concealing_reentrant_exhaustion(self):
+        # gh-101892: Test two-argument iter() with a function that
+        # exhausts its associated iterator but forgets to either return
+        # a sentinel value or raise StopIteration.
+        HAS_MORE = 1
+        NO_MORE = 2
+
+        def exhaust(iterator):
+            """Exhaust an iterator without raising StopIteration."""
+            list(iterator)
+
+        def spam():
+            # Touching the iterator with exhaust() below will call
+            # spam() once again so protect against recursion.
+            if spam.is_recursive_call:
+                return NO_MORE
+            spam.is_recursive_call = True
+            exhaust(spam.iterator)
+            return HAS_MORE
+
+        spam.is_recursive_call = False
+        spam.iterator = iter(spam, NO_MORE)
+        with self.assertRaises(StopIteration):
+            next(spam.iterator)
 
     # Test exception propagation through function iterator
     def test_exception_function(self):
@@ -1036,6 +1144,46 @@ class TestCase(unittest.TestCase):
         for typ in (DefaultIterClass, NoIterClass):
             self.assertRaises(TypeError, iter, typ())
         self.assertRaises(ZeroDivisionError, iter, BadIterableClass())
+
+    def test_exception_locations(self):
+        # The location of an exception raised from __init__ or
+        # __next__ should should be the iterator expression
+
+        def init_raises():
+            try:
+                for x in BrokenIter(init_raises=True):
+                    pass
+            except Exception as e:
+                return e
+
+        def next_raises():
+            try:
+                for x in BrokenIter(next_raises=True):
+                    pass
+            except Exception as e:
+                return e
+
+        def iter_raises():
+            try:
+                for x in BrokenIter(iter_raises=True):
+                    pass
+            except Exception as e:
+                return e
+
+        for func, expected in [(init_raises, "BrokenIter(init_raises=True)"),
+                               (next_raises, "BrokenIter(next_raises=True)"),
+                               (iter_raises, "BrokenIter(iter_raises=True)"),
+                              ]:
+            with self.subTest(func):
+                exc = func()
+                f = traceback.extract_tb(exc.__traceback__)[0]
+                indent = 16
+                co = func.__code__
+                self.assertEqual(f.lineno, co.co_firstlineno + 2)
+                self.assertEqual(f.end_lineno, co.co_firstlineno + 2)
+                self.assertEqual(f.line[f.colno - indent : f.end_colno - indent],
+                                 expected)
+
 
 
 if __name__ == "__main__":

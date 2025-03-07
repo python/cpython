@@ -8,12 +8,12 @@ FWK="/Library/Frameworks/Python.framework/Versions/@PYVER@"
 
 "${FWK}/bin/python@PYVER@" -E -s -Wi \
     "${FWK}/lib/python${PYVER}/compileall.py" -q -j0 \
-    -f -x 'bad_coding|badsyntax|site-packages|test/test_lib2to3/data' \
+    -f -x 'bad_coding|badsyntax|site-packages' \
     "${FWK}/lib/python${PYVER}"
 
 "${FWK}/bin/python@PYVER@" -E -s -Wi -O \
     "${FWK}/lib/python${PYVER}/compileall.py" -q -j0 \
-    -f -x 'bad_coding|badsyntax|site-packages|test/test_lib2to3/data' \
+    -f -x 'bad_coding|badsyntax|site-packages' \
     "${FWK}/lib/python${PYVER}"
 
 "${FWK}/bin/python@PYVER@" -E -s -Wi \

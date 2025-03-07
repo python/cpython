@@ -1,5 +1,5 @@
-:mod:`xml.dom.minidom` --- Minimal DOM implementation
-=====================================================
+:mod:`!xml.dom.minidom` --- Minimal DOM implementation
+======================================================
 
 .. module:: xml.dom.minidom
    :synopsis: Minimal Document Object Model (DOM) implementation.

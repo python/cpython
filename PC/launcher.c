@@ -449,7 +449,7 @@ locate_pythons_for_key(HKEY root, REGSAM flags)
 }
 
 static void
-locate_store_pythons()
+locate_store_pythons(void)
 {
 #if defined(_M_X64)
     /* 64bit process, so look in native registry */
@@ -466,7 +466,7 @@ locate_store_pythons()
 }
 
 static void
-locate_venv_python()
+locate_venv_python(void)
 {
     static wchar_t venv_python[MAX_PATH];
     INSTALLED_PYTHON * ip;
@@ -495,7 +495,7 @@ locate_venv_python()
 }
 
 static void
-locate_all_pythons()
+locate_all_pythons(void)
 {
     /* venv Python is highest priority */
     locate_venv_python();
@@ -694,7 +694,7 @@ static wchar_t wrapped_script_path[MAX_PATH];
  * valid wrapped script file.
  */
 static void
-locate_wrapped_script()
+locate_wrapped_script(void)
 {
     wchar_t * p;
     size_t plen;
@@ -770,8 +770,7 @@ run_child(wchar_t * cmdline)
     window, or fetching a message).  As this launcher doesn't do this
     directly, that cursor remains even after the child process does these
     things.  We avoid that by doing a simple post+get message.
-    See http://bugs.python.org/issue17290 and
-    https://bitbucket.org/vinay.sajip/pylauncher/issue/20/busy-cursor-for-a-long-time-when-running
+    See http://bugs.python.org/issue17290
     */
     MSG msg;
 
@@ -1035,7 +1034,7 @@ read_config_file(wchar_t * config_path)
     }
 }
 
-static void read_commands()
+static void read_commands(void)
 {
     if (launcher_ini_path[0])
         read_config_file(launcher_ini_path);
@@ -1271,6 +1270,8 @@ static PYC_MAGIC magic_values[] = {
     /* Allow 50 magic numbers per version from here on */
     { 3450, 3499, L"3.11" },
     { 3500, 3549, L"3.12" },
+    { 3550, 3599, L"3.13" },
+    { 3600, 3649, L"3.14" },
     { 0 }
 };
 
@@ -1685,7 +1686,7 @@ wcsdup_pad(const wchar_t *s, int padding, int *newlen)
 }
 
 static wchar_t *
-get_process_name()
+get_process_name(void)
 {
     DWORD bufferLen = MAX_PATH;
     DWORD len = bufferLen;

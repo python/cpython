@@ -8,7 +8,7 @@ import sys
 import unittest
 import warnings
 
-from .os_helper import unlink
+from .os_helper import unlink, temp_dir
 
 
 @contextlib.contextmanager
@@ -58,8 +58,8 @@ def make_legacy_pyc(source):
     :return: The file system path to the legacy pyc file.
     """
     pyc_file = importlib.util.cache_from_source(source)
-    up_one = os.path.dirname(os.path.abspath(source))
-    legacy_pyc = os.path.join(up_one, source + 'c')
+    assert source.endswith('.py')
+    legacy_pyc = source + 'c'
     shutil.move(pyc_file, legacy_pyc)
     return legacy_pyc
 
@@ -103,6 +103,26 @@ def frozen_modules(enabled=True):
         yield
     finally:
         _imp._override_frozen_modules_for_tests(0)
+
+
+@contextlib.contextmanager
+def multi_interp_extensions_check(enabled=True):
+    """Force legacy modules to be allowed in subinterpreters (or not).
+
+    ("legacy" == single-phase init)
+
+    This only applies to modules that haven't been imported yet.
+    It overrides the PyInterpreterConfig.check_multi_interp_extensions
+    setting (see support.run_in_subinterp_with_config() and
+    _interpreters.create()).
+
+    Also see importlib.utils.allowing_all_extensions().
+    """
+    old = _imp._override_multi_interp_extensions_check(1 if enabled else -1)
+    try:
+        yield
+    finally:
+        _imp._override_multi_interp_extensions_check(old)
 
 
 def import_fresh_module(name, fresh=(), blocked=(), *,
@@ -248,9 +268,44 @@ def modules_cleanup(oldmodules):
     sys.modules.update(oldmodules)
 
 
+@contextlib.contextmanager
+def isolated_modules():
+    """
+    Save modules on entry and cleanup on exit.
+    """
+    (saved,) = modules_setup()
+    try:
+        yield
+    finally:
+        modules_cleanup(saved)
+
+
 def mock_register_at_fork(func):
     # bpo-30599: Mock os.register_at_fork() when importing the random module,
     # since this function doesn't allow to unregister callbacks and would leak
     # memory.
     from unittest import mock
     return mock.patch('os.register_at_fork', create=True)(func)
+
+
+@contextlib.contextmanager
+def ready_to_import(name=None, source=""):
+    from test.support import script_helper
+
+    # 1. Sets up a temporary directory and removes it afterwards
+    # 2. Creates the module file
+    # 3. Temporarily clears the module from sys.modules (if any)
+    # 4. Reverts or removes the module when cleaning up
+    name = name or "spam"
+    with temp_dir() as tempdir:
+        path = script_helper.make_script(tempdir, name, source)
+        old_module = sys.modules.pop(name, None)
+        try:
+            sys.path.insert(0, tempdir)
+            yield name, path
+            sys.path.remove(tempdir)
+        finally:
+            if old_module is not None:
+                sys.modules[name] = old_module
+            else:
+                sys.modules.pop(name, None)

@@ -1,3 +1,5 @@
+.. _logging-howto:
+
 =============
 Logging HOWTO
 =============
@@ -25,10 +27,12 @@ or *severity*.
 When to use logging
 ^^^^^^^^^^^^^^^^^^^
 
-Logging provides a set of convenience functions for simple logging usage. These
-are :func:`debug`, :func:`info`, :func:`warning`, :func:`error` and
-:func:`critical`. To determine when to use logging, see the table below, which
-states, for each of a set of common tasks, the best tool to use for it.
+You can access logging functionality by creating a logger via ``logger =
+getLogger(__name__)``, and then calling the logger's :meth:`~Logger.debug`,
+:meth:`~Logger.info`, :meth:`~Logger.warning`, :meth:`~Logger.error` and
+:meth:`~Logger.critical` methods. To determine when to use logging, and to see
+which logger methods to use when, see the table below. It states, for each of a
+set of common tasks, the best tool to use for that task.
 
 +-------------------------------------+--------------------------------------+
 | Task you want to perform            | The best tool for the task           |
@@ -37,8 +41,8 @@ states, for each of a set of common tasks, the best tool to use for it.
 | usage of a command line script or   |                                      |
 | program                             |                                      |
 +-------------------------------------+--------------------------------------+
-| Report events that occur during     | :func:`logging.info` (or             |
-| normal operation of a program (e.g. | :func:`logging.debug` for very       |
+| Report events that occur during     | A logger's :meth:`~Logger.info` (or  |
+| normal operation of a program (e.g. | :meth:`~Logger.debug` method for very|
 | for status monitoring or fault      | detailed output for diagnostic       |
 | investigation)                      | purposes)                            |
 +-------------------------------------+--------------------------------------+
@@ -47,22 +51,23 @@ states, for each of a set of common tasks, the best tool to use for it.
 |                                     | the client application should be     |
 |                                     | modified to eliminate the warning    |
 |                                     |                                      |
-|                                     | :func:`logging.warning` if there is  |
-|                                     | nothing the client application can do|
-|                                     | about the situation, but the event   |
-|                                     | should still be noted                |
+|                                     | A logger's :meth:`~Logger.warning`   |
+|                                     | method if there is nothing the client|
+|                                     | application can do about the         |
+|                                     | situation, but the event should still|
+|                                     | be noted                             |
 +-------------------------------------+--------------------------------------+
 | Report an error regarding a         | Raise an exception                   |
 | particular runtime event            |                                      |
 +-------------------------------------+--------------------------------------+
-| Report suppression of an error      | :func:`logging.error`,               |
-| without raising an exception (e.g.  | :func:`logging.exception` or         |
-| error handler in a long-running     | :func:`logging.critical` as          |
+| Report suppression of an error      | A logger's :meth:`~Logger.error`,    |
+| without raising an exception (e.g.  | :meth:`~Logger.exception` or         |
+| error handler in a long-running     | :meth:`~Logger.critical` method as   |
 | server process)                     | appropriate for the specific error   |
 |                                     | and application domain               |
 +-------------------------------------+--------------------------------------+
 
-The logging functions are named after the level or severity of the events
+The logger methods are named after the level or severity of the events
 they are used to track. The standard levels and their applicability are
 described below (in increasing order of severity):
 
@@ -89,9 +94,8 @@ described below (in increasing order of severity):
 |              | itself may be unable to continue running.   |
 +--------------+---------------------------------------------+
 
-The default level is ``WARNING``, which means that only events of this level
-and above will be tracked, unless the logging package is configured to do
-otherwise.
+The default level is ``WARNING``, which means that only events of this severity and higher
+will be tracked, unless the logging package is configured to do otherwise.
 
 Events that are tracked can be handled in different ways. The simplest way of
 handling tracked events is to print them to the console. Another common way
@@ -116,12 +120,18 @@ If you type these lines into a script and run it, you'll see:
    WARNING:root:Watch out!
 
 printed out on the console. The ``INFO`` message doesn't appear because the
-default level is ``WARNING``. The printed message includes the indication of
-the level and the description of the event provided in the logging call, i.e.
-'Watch out!'. Don't worry about the 'root' part for now: it will be explained
-later. The actual output can be formatted quite flexibly if you need that;
-formatting options will also be explained later.
+default level is ``WARNING``. The printed message includes the indication of the
+level and the description of the event provided in the logging call, i.e.
+'Watch out!'. The actual output can be formatted quite flexibly if you need
+that; formatting options will also be explained later.
 
+Notice that in this example, we use functions directly on the ``logging``
+module, like ``logging.debug``, rather than creating a logger and calling
+functions on it. These functions operate on the root logger, but can be useful
+as they will call :func:`~logging.basicConfig` for you if it has not been called yet, like in
+this example.  In larger programs you'll usually want to control the logging
+configuration explicitly however - so for that reason as well as others, it's
+better to create loggers and call their methods.
 
 Logging to a file
 ^^^^^^^^^^^^^^^^^
@@ -131,11 +141,12 @@ look at that next. Be sure to try the following in a newly started Python
 interpreter, and don't just continue from the session described above::
 
    import logging
+   logger = logging.getLogger(__name__)
    logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
-   logging.debug('This message should go to the log file')
-   logging.info('So should this')
-   logging.warning('And this, too')
-   logging.error('And non-ASCII stuff, too, like Øresund and Malmö')
+   logger.debug('This message should go to the log file')
+   logger.info('So should this')
+   logger.warning('And this, too')
+   logger.error('And non-ASCII stuff, too, like Øresund and Malmö')
 
 .. versionchanged:: 3.9
    The *encoding* argument was added. In earlier Python versions, or if not
@@ -149,10 +160,10 @@ messages:
 
 .. code-block:: none
 
-   DEBUG:root:This message should go to the log file
-   INFO:root:So should this
-   WARNING:root:And this, too
-   ERROR:root:And non-ASCII stuff, too, like Øresund and Malmö
+   DEBUG:__main__:This message should go to the log file
+   INFO:__main__:So should this
+   WARNING:__main__:And this, too
+   ERROR:__main__:And non-ASCII stuff, too, like Øresund and Malmö
 
 This example also shows how you can set the logging level which acts as the
 threshold for tracking. In this case, because we set the threshold to
@@ -181,11 +192,9 @@ following example::
        raise ValueError('Invalid log level: %s' % loglevel)
    logging.basicConfig(level=numeric_level, ...)
 
-The call to :func:`basicConfig` should come *before* any calls to
-:func:`debug`, :func:`info`, etc. Otherwise, those functions will call
-:func:`basicConfig` for you with the default options. As it's intended as a
-one-off simple configuration facility, only the first call will actually do
-anything: subsequent calls are effectively no-ops.
+The call to :func:`basicConfig` should come *before* any calls to a logger's
+methods such as :meth:`~Logger.debug`, :meth:`~Logger.info`, etc. Otherwise,
+that logging event may not be handled in the desired manner.
 
 If you run the above script several times, the messages from successive runs
 are appended to the file *example.log*. If you want each run to start afresh,
@@ -196,50 +205,6 @@ argument, by changing the call in the above example to::
 
 The output will be the same as before, but the log file is no longer appended
 to, so the messages from earlier runs are lost.
-
-
-Logging from multiple modules
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-If your program consists of multiple modules, here's an example of how you
-could organize logging in it::
-
-   # myapp.py
-   import logging
-   import mylib
-
-   def main():
-       logging.basicConfig(filename='myapp.log', level=logging.INFO)
-       logging.info('Started')
-       mylib.do_something()
-       logging.info('Finished')
-
-   if __name__ == '__main__':
-       main()
-
-::
-
-   # mylib.py
-   import logging
-
-   def do_something():
-       logging.info('Doing something')
-
-If you run *myapp.py*, you should see this in *myapp.log*:
-
-.. code-block:: none
-
-   INFO:root:Started
-   INFO:root:Doing something
-   INFO:root:Finished
-
-which is hopefully what you were expecting to see. You can generalize this to
-multiple modules, using the pattern in *mylib.py*. Note that for this simple
-usage pattern, you won't know, by looking in the log file, *where* in your
-application your messages came from, apart from looking at the event
-description. If you want to track the location of your messages, you'll need
-to refer to the documentation beyond the tutorial level -- see
-:ref:`logging-advanced-tutorial`.
 
 
 Logging variable data
@@ -417,7 +382,52 @@ Logging Flow
 The flow of log event information in loggers and handlers is illustrated in the
 following diagram.
 
-.. image:: logging_flow.png
+.. only:: not html
+
+   .. image:: logging_flow.*
+
+.. raw:: html
+   :file: logging_flow.svg
+
+.. raw:: html
+
+   <script>
+   /*
+    * This snippet is needed to handle the case where a light or dark theme is
+    * chosen via the theme is selected in the page. We call the existing handler
+    * and then add a dark-theme class to the body when the dark theme is selected.
+    * The SVG styling (above) then does the rest.
+    *
+    * If the pydoc theme is updated to set the dark-theme class, this snippet
+    * won't be needed any more.
+    */
+   (function() {
+     var oldActivateTheme = activateTheme;
+
+     function updateBody(theme) {
+        let elem = document.body;
+
+        elem.classList.remove('dark-theme');
+        elem.classList.remove('light-theme');
+        if (theme === 'dark') {
+            elem.classList.add('dark-theme');
+        }
+        else if (theme === 'light') {
+            elem.classList.add('light-theme');
+        }
+     }
+
+     activateTheme = function(theme) {
+        oldActivateTheme(theme);
+        updateBody(theme);
+     };
+     /*
+      * If the page is refreshed, make sure we update the body - the overriding
+      * of activateTheme won't have taken effect yet.
+      */
+      updateBody(localStorage.getItem('currentTheme') || 'auto');
+   })();
+   </script>
 
 Loggers
 ^^^^^^^
@@ -520,7 +530,7 @@ custom handlers) are the following configuration methods:
 
 * The :meth:`~Handler.setLevel` method, just as in logger objects, specifies the
   lowest severity that will be dispatched to the appropriate destination.  Why
-  are there two :func:`setLevel` methods?  The level set in the logger
+  are there two :meth:`~Handler.setLevel` methods?  The level set in the logger
   determines which severity of messages it will pass to its handlers.  The level
   set in each handler determines which messages that handler will send on.
 
@@ -774,29 +784,29 @@ What happens if no configuration is provided
 
 If no logging configuration is provided, it is possible to have a situation
 where a logging event needs to be output, but no handlers can be found to
-output the event. The behaviour of the logging package in these
-circumstances is dependent on the Python version.
+output the event.
 
-For versions of Python prior to 3.2, the behaviour is as follows:
+The event is output using a 'handler of last resort', stored in
+:data:`lastResort`. This internal handler is not associated with any
+logger, and acts like a :class:`~logging.StreamHandler` which writes the
+event description message to the current value of ``sys.stderr`` (therefore
+respecting any redirections which may be in effect). No formatting is
+done on the message - just the bare event description message is printed.
+The handler's level is set to ``WARNING``, so all events at this and
+greater severities will be output.
 
-* If *logging.raiseExceptions* is ``False`` (production mode), the event is
-  silently dropped.
+.. versionchanged:: 3.2
 
-* If *logging.raiseExceptions* is ``True`` (development mode), a message
-  'No handlers could be found for logger X.Y.Z' is printed once.
+   For versions of Python prior to 3.2, the behaviour is as follows:
 
-In Python 3.2 and later, the behaviour is as follows:
+   * If :data:`raiseExceptions` is ``False`` (production mode), the event is
+     silently dropped.
 
-* The event is output using a 'handler of last resort', stored in
-  ``logging.lastResort``. This internal handler is not associated with any
-  logger, and acts like a :class:`~logging.StreamHandler` which writes the
-  event description message to the current value of ``sys.stderr`` (therefore
-  respecting any redirections which may be in effect). No formatting is
-  done on the message - just the bare event description message is printed.
-  The handler's level is set to ``WARNING``, so all events at this and
-  greater severities will be output.
+   * If :data:`raiseExceptions` is ``True`` (development mode), a message
+     'No handlers could be found for logger X.Y.Z' is printed once.
 
-To obtain the pre-3.2 behaviour, ``logging.lastResort`` can be set to ``None``.
+   To obtain the pre-3.2 behaviour,
+   :data:`lastResort` can be set to ``None``.
 
 .. _library-config:
 
@@ -978,7 +988,7 @@ provided:
 
 #. :class:`NullHandler` instances do nothing with error messages. They are used
    by library developers who want to use logging, but want to avoid the 'No
-   handlers could be found for logger XXX' message which can be displayed if
+   handlers could be found for logger *XXX*' message which can be displayed if
    the library user has not configured logging. See :ref:`library-config` for
    more information.
 
@@ -998,7 +1008,7 @@ Logged messages are formatted for presentation through instances of the
 use with the % operator and a dictionary.
 
 For formatting multiple messages in a batch, instances of
-:class:`~handlers.BufferingFormatter` can be used. In addition to the format
+:class:`BufferingFormatter` can be used. In addition to the format
 string (which is applied to each message in the batch), there is provision for
 header and trailer format strings.
 
@@ -1034,7 +1044,8 @@ checks to see if a module-level variable, :data:`raiseExceptions`, is set. If
 set, a traceback is printed to :data:`sys.stderr`. If not set, the exception is
 swallowed.
 
-.. note:: The default value of :data:`raiseExceptions` is ``True``. This is
+.. note::
+   The default value of :data:`raiseExceptions` is ``True``. This is
    because during development, you typically want to be notified of any
    exceptions that occur. It's advised that you set :data:`raiseExceptions` to
    ``False`` for production usage.
@@ -1072,7 +1083,7 @@ You can write code like this::
                                             expensive_func2())
 
 so that if the logger's threshold is set above ``DEBUG``, the calls to
-:func:`expensive_func1` and :func:`expensive_func2` are never made.
+``expensive_func1`` and ``expensive_func2`` are never made.
 
 .. note:: In some cases, :meth:`~Logger.isEnabledFor` can itself be more
    expensive than you'd like (e.g. for deeply nested loggers where an explicit

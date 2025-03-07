@@ -1,5 +1,3 @@
-#! /usr/bin/env python3
-
 """
 The Python Debugger Pdb
 =======================
@@ -76,15 +74,23 @@ import bdb
 import dis
 import code
 import glob
+import token
+import types
+import codeop
 import pprint
 import signal
 import inspect
+import textwrap
 import tokenize
-import functools
+import itertools
 import traceback
 import linecache
+import _colorize
 
-from typing import Union
+from contextlib import contextmanager
+from rlcompleter import Completer
+from types import CodeType
+from warnings import deprecated
 
 
 class Restart(Exception):
@@ -94,27 +100,54 @@ class Restart(Exception):
 __all__ = ["run", "pm", "Pdb", "runeval", "runctx", "runcall", "set_trace",
            "post_mortem", "help"]
 
+
+def find_first_executable_line(code):
+    """ Try to find the first executable line of the code object.
+
+    Equivalently, find the line number of the instruction that's
+    after RESUME
+
+    Return code.co_firstlineno if no executable line is found.
+    """
+    prev = None
+    for instr in dis.get_instructions(code):
+        if prev is not None and prev.opname == 'RESUME':
+            if instr.positions.lineno is not None:
+                return instr.positions.lineno
+            return code.co_firstlineno
+        prev = instr
+    return code.co_firstlineno
+
 def find_function(funcname, filename):
-    cre = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
+    cre = re.compile(r'def\s+%s(\s*\[.+\])?\s*[(]' % re.escape(funcname))
     try:
         fp = tokenize.open(filename)
     except OSError:
-        return None
+        lines = linecache.getlines(filename)
+        if not lines:
+            return None
+        fp = io.StringIO(''.join(lines))
+    funcdef = ""
+    funcstart = 0
     # consumer of this info expects the first line to be 1
     with fp:
         for lineno, line in enumerate(fp, start=1):
             if cre.match(line):
-                return funcname, filename, lineno
-    return None
+                funcstart, funcdef = lineno, line
+            elif funcdef:
+                funcdef += line
 
-def getsourcelines(obj):
-    lines, lineno = inspect.findsource(obj)
-    if inspect.isframe(obj) and obj.f_globals is obj.f_locals:
-        # must be a module frame: do not try to cut a block out of it
-        return lines, 1
-    elif inspect.ismodule(obj):
-        return lines, 1
-    return inspect.getblock(lines[lineno:]), lineno+1
+            if funcdef:
+                try:
+                    code = compile(funcdef, filename, 'exec')
+                except SyntaxError:
+                    continue
+                # We should always be able to find the code object here
+                funccode = next(c for c in code.co_consts if
+                                isinstance(c, CodeType) and c.co_name == funcname)
+                lineno_offset = find_first_executable_line(funccode)
+                return funcname, filename, funcstart + lineno_offset - 1
+    return None
 
 def lasti2lineno(code, lasti):
     linestarts = list(dis.findlinestarts(code))
@@ -131,68 +164,75 @@ class _rstr(str):
         return self
 
 
-class _ScriptTarget(str):
-    def __new__(cls, val):
-        # Mutate self to be the "real path".
-        res = super().__new__(cls, os.path.realpath(val))
+class _ExecutableTarget:
+    filename: str
+    code: CodeType | str
+    namespace: dict
 
-        # Store the original path for error reporting.
-        res.orig = val
 
-        return res
+class _ScriptTarget(_ExecutableTarget):
+    def __init__(self, target):
+        self._target = os.path.realpath(target)
 
-    def check(self):
-        if not os.path.exists(self):
-            print('Error:', self.orig, 'does not exist')
+        if not os.path.exists(self._target):
+            print(f'Error: {target} does not exist')
+            sys.exit(1)
+        if os.path.isdir(self._target):
+            print(f'Error: {target} is a directory')
             sys.exit(1)
 
-        # Replace pdb's dir with script's dir in front of module search path.
-        sys.path[0] = os.path.dirname(self)
+        # If safe_path(-P) is not set, sys.path[0] is the directory
+        # of pdb, and we should replace it with the directory of the script
+        if not sys.flags.safe_path:
+            sys.path[0] = os.path.dirname(self._target)
+
+    def __repr__(self):
+        return self._target
 
     @property
     def filename(self):
-        return self
+        return self._target
+
+    @property
+    def code(self):
+        # Open the file each time because the file may be modified
+        with io.open_code(self._target) as fp:
+            return f"exec(compile({fp.read()!r}, {self._target!r}, 'exec'))"
 
     @property
     def namespace(self):
         return dict(
             __name__='__main__',
-            __file__=self,
+            __file__=self._target,
             __builtins__=__builtins__,
+            __spec__=None,
         )
 
-    @property
-    def code(self):
-        with io.open(self) as fp:
-            return f"exec(compile({fp.read()!r}, {self!r}, 'exec'))"
 
+class _ModuleTarget(_ExecutableTarget):
+    def __init__(self, target):
+        self._target = target
 
-class _ModuleTarget(str):
-    def check(self):
+        import runpy
         try:
-            self._details
+            _, self._spec, self._code = runpy._get_module_details(self._target)
+        except ImportError as e:
+            print(f"ImportError: {e}")
+            sys.exit(1)
         except Exception:
             traceback.print_exc()
             sys.exit(1)
 
-    @functools.cached_property
-    def _details(self):
-        import runpy
-        return runpy._get_module_details(self)
+    def __repr__(self):
+        return self._target
 
     @property
     def filename(self):
-        return self.code.co_filename
+        return self._code.co_filename
 
     @property
     def code(self):
-        name, spec, code = self._details
-        return code
-
-    @property
-    def _spec(self):
-        name, spec, code = self._details
-        return spec
+        return self._code
 
     @property
     def namespace(self):
@@ -206,6 +246,53 @@ class _ModuleTarget(str):
         )
 
 
+class _ZipTarget(_ExecutableTarget):
+    def __init__(self, target):
+        import runpy
+
+        self._target = os.path.realpath(target)
+        sys.path.insert(0, self._target)
+        try:
+            _, self._spec, self._code = runpy._get_main_module_details()
+        except ImportError as e:
+            print(f"ImportError: {e}")
+            sys.exit(1)
+        except Exception:
+            traceback.print_exc()
+            sys.exit(1)
+
+    def __repr__(self):
+        return self._target
+
+    @property
+    def filename(self):
+        return self._code.co_filename
+
+    @property
+    def code(self):
+        return self._code
+
+    @property
+    def namespace(self):
+        return dict(
+            __name__='__main__',
+            __file__=os.path.normcase(os.path.abspath(self.filename)),
+            __package__=self._spec.parent,
+            __loader__=self._spec.loader,
+            __spec__=self._spec,
+            __builtins__=__builtins__,
+        )
+
+
+class _PdbInteractiveConsole(code.InteractiveConsole):
+    def __init__(self, ns, message):
+        self._message = message
+        super().__init__(locals=ns, local_exit=True)
+
+    def write(self, data):
+        self._message(data, end='')
+
+
 # Interaction prompt line will separate file and call info from code
 # text using value of line_prefix string.  A newline and arrow may
 # be to your liking.  You can set it once pdb is imported using the
@@ -213,12 +300,21 @@ class _ModuleTarget(str):
 # line_prefix = ': '    # Use this to get the old situation back
 line_prefix = '\n-> '   # Probably a better default
 
-class Pdb(bdb.Bdb, cmd.Cmd):
 
+
+class Pdb(bdb.Bdb, cmd.Cmd):
     _previous_sigint_handler = None
 
+    # Limit the maximum depth of chained exceptions, we should be handling cycles,
+    # but in case there are recursions, we stop at 999.
+    MAX_CHAINED_EXCEPTION_DEPTH = 999
+
+    _file_mtime_table = {}
+
+    _last_pdb_instance = None
+
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
-                 nosigint=False, readrc=True):
+                 nosigint=False, readrc=True, mode=None):
         bdb.Bdb.__init__(self, skip=skip)
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         sys.audit("pdb.Pdb")
@@ -230,15 +326,19 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.mainpyfile = ''
         self._wait_for_mainpyfile = False
         self.tb_lineno = {}
+        self.mode = mode
         # Try to load readline if it exists
         try:
             import readline
             # remove some common file name delimiters
-            readline.set_completer_delims(' \t\n`@#$%^&*()=+[{]}\\|;:\'",<>?')
+            readline.set_completer_delims(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
         except ImportError:
             pass
         self.allow_kbdint = False
         self.nosigint = nosigint
+        # Consider these characters as part of the command so when the users type
+        # c.a or c['a'], it won't be recognized as a c(ontinue) command
+        self.identchars = cmd.Cmd.identchars + '=.[](),"\'+-*/%@&|<>~^'
 
         # Read ~/.pdbrc and ./.pdbrc
         self.rcLines = []
@@ -255,14 +355,23 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 pass
 
         self.commands = {} # associates a command list to breakpoint numbers
-        self.commands_doprompt = {} # for each bp num, tells if the prompt
-                                    # must be disp. after execing the cmd list
-        self.commands_silent = {} # for each bp num, tells if the stack trace
-                                  # must be disp. after execing the cmd list
         self.commands_defining = False # True while in the process of defining
                                        # a command list
         self.commands_bnum = None # The breakpoint number for which we are
                                   # defining a list
+
+        self._chained_exceptions = tuple()
+        self._chained_exception_index = 0
+
+    def set_trace(self, frame=None, *, commands=None):
+        Pdb._last_pdb_instance = self
+        if frame is None:
+            frame = sys._getframe().f_back
+
+        if commands is not None:
+            self.rcLines.extend(commands)
+
+        super().set_trace(frame)
 
     def sigint_handler(self, signum, frame):
         if self.allow_kbdint:
@@ -279,6 +388,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.lineno = None
         self.stack = []
         self.curindex = 0
+        if hasattr(self, 'curframe') and self.curframe:
+            self.curframe.f_globals.pop('__pdb_convenience_variables', None)
         self.curframe = None
         self.tb_lineno.clear()
 
@@ -293,30 +404,33 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.tb_lineno[tb.tb_frame] = lineno
             tb = tb.tb_next
         self.curframe = self.stack[self.curindex][0]
-        # The f_locals dictionary is updated from the actual frame
-        # locals whenever the .f_locals accessor is called, so we
-        # cache it here to ensure that modifications are not overwritten.
-        self.curframe_locals = self.curframe.f_locals
-        return self.execRcLines()
+        self.set_convenience_variable(self.curframe, '_frame', self.curframe)
 
-    # Can be executed earlier than 'setup' if desired
-    def execRcLines(self):
-        if not self.rcLines:
-            return
-        # local copy because of recursion
-        rcLines = self.rcLines
-        rcLines.reverse()
-        # execute every line only once
-        self.rcLines = []
-        while rcLines:
-            line = rcLines.pop().strip()
-            if line and line[0] != '#':
-                if self.onecmd(line):
-                    # if onecmd returns True, the command wants to exit
-                    # from the interaction, save leftover rc lines
-                    # to execute before next interaction
-                    self.rcLines += reversed(rcLines)
-                    return True
+        self._save_initial_file_mtime(self.curframe)
+
+        if self._chained_exceptions:
+            self.set_convenience_variable(
+                self.curframe,
+                '_exception',
+                self._chained_exceptions[self._chained_exception_index],
+            )
+
+        if self.rcLines:
+            self.cmdqueue = [
+                line for line in self.rcLines
+                if line.strip() and not line.strip().startswith("#")
+            ]
+            self.rcLines = []
+
+    @property
+    @deprecated("The frame locals reference is no longer cached. Use 'curframe.f_locals' instead.")
+    def curframe_locals(self):
+        return self.curframe.f_locals
+
+    @curframe_locals.setter
+    @deprecated("Setting 'curframe_locals' no longer has any effect. Update the contents of 'curframe.f_locals' instead.")
+    def curframe_locals(self, value):
+        pass
 
     # Override Bdb methods
 
@@ -332,12 +446,20 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def user_line(self, frame):
         """This function is called when we stop or break at this line."""
         if self._wait_for_mainpyfile:
-            if (self.mainpyfile != self.canonic(frame.f_code.co_filename)
-                or frame.f_lineno <= 0):
+            if (self.mainpyfile != self.canonic(frame.f_code.co_filename)):
                 return
             self._wait_for_mainpyfile = False
-        if self.bp_commands(frame):
-            self.interaction(frame, None)
+        if self.trace_opcodes:
+            # GH-127321
+            # We want to avoid stopping at an opcode that does not have
+            # an associated line number because pdb does not like it
+            if frame.f_lineno is None:
+                self.set_stepinstr()
+                return
+        self.bp_commands(frame)
+        self.interaction(frame, None)
+
+    user_opcode = user_line
 
     def bp_commands(self, frame):
         """Call every command that was set for the current active breakpoint
@@ -350,24 +472,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                self.currentbp in self.commands:
             currentbp = self.currentbp
             self.currentbp = 0
-            lastcmd_back = self.lastcmd
-            self.setup(frame, None)
             for line in self.commands[currentbp]:
-                self.onecmd(line)
-            self.lastcmd = lastcmd_back
-            if not self.commands_silent[currentbp]:
-                self.print_stack_entry(self.stack[self.curindex])
-            if self.commands_doprompt[currentbp]:
-                self._cmdloop()
-            self.forget()
-            return
-        return 1
+                self.cmdqueue.append(line)
+            self.cmdqueue.append(f'_pdbcmd_restore_lastcmd {self.lastcmd}')
 
     def user_return(self, frame, return_value):
         """This function is called when a return trap is set here."""
         if self._wait_for_mainpyfile:
             return
         frame.f_locals['__return__'] = return_value
+        self.set_convenience_variable(frame, '_retval', return_value)
         self.message('--Return--')
         self.interaction(frame, None)
 
@@ -378,6 +492,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             return
         exc_type, exc_value, exc_traceback = exc_info
         frame.f_locals['__exception__'] = exc_type, exc_value
+        self.set_convenience_variable(frame, '_exception', exc_value)
 
         # An 'Internal StopIteration' exception is an exception debug event
         # issued by the interpreter when handling a subgenerator run with
@@ -386,8 +501,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # stop when the debuggee is returning from such generators.
         prefix = 'Internal ' if (not exc_traceback
                                     and exc_type is StopIteration) else ''
-        self.message('%s%s' % (prefix,
-            traceback.format_exception_only(exc_type, exc_value)[-1].strip()))
+        self.message('%s%s' % (prefix, self._format_exc(exc_value)))
         self.interaction(frame, exc_traceback)
 
     # General interaction function
@@ -403,8 +517,35 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             except KeyboardInterrupt:
                 self.message('--KeyboardInterrupt--')
 
+    def _save_initial_file_mtime(self, frame):
+        """save the mtime of the all the files in the frame stack in the file mtime table
+        if they haven't been saved yet."""
+        while frame:
+            filename = frame.f_code.co_filename
+            if filename not in self._file_mtime_table:
+                try:
+                    self._file_mtime_table[filename] = os.path.getmtime(filename)
+                except Exception:
+                    pass
+            frame = frame.f_back
+
+    def _validate_file_mtime(self):
+        """Check if the source file of the current frame has been modified.
+        If so, give a warning and reset the modify time to current."""
+        try:
+            filename = self.curframe.f_code.co_filename
+            mtime = os.path.getmtime(filename)
+        except Exception:
+            return
+        if (filename in self._file_mtime_table and
+            mtime != self._file_mtime_table[filename]):
+            self.message(f"*** WARNING: file '{filename}' was edited, "
+                         "running stale code until the program is rerun")
+            self._file_mtime_table[filename] = mtime
+
     # Called before loop, handles display expressions
-    def preloop(self):
+    # Set up convenience variable containers
+    def _show_display(self):
         displaying = self.displaying.get(self.curframe)
         if displaying:
             for expr, oldvalue in displaying.items():
@@ -414,10 +555,68 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 # fields are changed to be displayed
                 if newvalue is not oldvalue and newvalue != oldvalue:
                     displaying[expr] = newvalue
-                    self.message('display %s: %r  [old: %r]' %
-                                 (expr, newvalue, oldvalue))
+                    self.message('display %s: %s  [old: %s]' %
+                                 (expr, self._safe_repr(newvalue, expr),
+                                  self._safe_repr(oldvalue, expr)))
 
-    def interaction(self, frame, traceback):
+    def _get_tb_and_exceptions(self, tb_or_exc):
+        """
+        Given a tracecack or an exception, return a tuple of chained exceptions
+        and current traceback to inspect.
+
+        This will deal with selecting the right ``__cause__`` or ``__context__``
+        as well as handling cycles, and return a flattened list of exceptions we
+        can jump to with do_exceptions.
+
+        """
+        _exceptions = []
+        if isinstance(tb_or_exc, BaseException):
+            traceback, current = tb_or_exc.__traceback__, tb_or_exc
+
+            while current is not None:
+                if current in _exceptions:
+                    break
+                _exceptions.append(current)
+                if current.__cause__ is not None:
+                    current = current.__cause__
+                elif (
+                    current.__context__ is not None and not current.__suppress_context__
+                ):
+                    current = current.__context__
+
+                if len(_exceptions) >= self.MAX_CHAINED_EXCEPTION_DEPTH:
+                    self.message(
+                        f"More than {self.MAX_CHAINED_EXCEPTION_DEPTH}"
+                        " chained exceptions found, not all exceptions"
+                        "will be browsable with `exceptions`."
+                    )
+                    break
+        else:
+            traceback = tb_or_exc
+        return tuple(reversed(_exceptions)), traceback
+
+    @contextmanager
+    def _hold_exceptions(self, exceptions):
+        """
+        Context manager to ensure proper cleaning of exceptions references
+
+        When given a chained exception instead of a traceback,
+        pdb may hold references to many objects which may leak memory.
+
+        We use this context manager to make sure everything is properly cleaned
+
+        """
+        try:
+            self._chained_exceptions = exceptions
+            self._chained_exception_index = len(exceptions) - 1
+            yield
+        finally:
+            # we can't put those in forget as otherwise they would
+            # be cleared on exception change
+            self._chained_exceptions = tuple()
+            self._chained_exception_index = 0
+
+    def interaction(self, frame, tb_or_exc):
         # Restore the previous signal handler at the Pdb prompt.
         if Pdb._previous_sigint_handler:
             try:
@@ -426,14 +625,23 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 pass
             else:
                 Pdb._previous_sigint_handler = None
-        if self.setup(frame, traceback):
-            # no interaction desired at this time (happens if .pdbrc contains
-            # a command like "continue")
+
+        _chained_exceptions, tb = self._get_tb_and_exceptions(tb_or_exc)
+        if isinstance(tb_or_exc, BaseException):
+            assert tb is not None, "main exception must have a traceback"
+        with self._hold_exceptions(_chained_exceptions):
+            self.setup(frame, tb)
+            # We should print the stack entry if and only if the user input
+            # is expected, and we should print it right before the user input.
+            # We achieve this by appending _pdbcmd_print_frame_status to the
+            # command queue. If cmdqueue is not exhausted, the user input is
+            # not expected and we will not print the stack entry.
+            self.cmdqueue.append('_pdbcmd_print_frame_status')
+            self._cmdloop()
+            # If _pdbcmd_print_frame_status is not used, pop it out
+            if self.cmdqueue and self.cmdqueue[-1] == '_pdbcmd_print_frame_status':
+                self.cmdqueue.pop()
             self.forget()
-            return
-        self.print_stack_entry(self.stack[self.curindex])
-        self._cmdloop()
-        self.forget()
 
     def displayhook(self, obj):
         """Custom displayhook for the exec in default(), which prevents
@@ -443,12 +651,132 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if obj is not None:
             self.message(repr(obj))
 
+    @contextmanager
+    def _enable_multiline_completion(self):
+        completenames = self.completenames
+        try:
+            self.completenames = self.complete_multiline_names
+            yield
+        finally:
+            self.completenames = completenames
+        return
+
+    def _exec_in_closure(self, source, globals, locals):
+        """ Run source code in closure so code object created within source
+            can find variables in locals correctly
+
+            returns True if the source is executed, False otherwise
+        """
+
+        # Determine if the source should be executed in closure. Only when the
+        # source compiled to multiple code objects, we should use this feature.
+        # Otherwise, we can just raise an exception and normal exec will be used.
+
+        code = compile(source, "<string>", "exec")
+        if not any(isinstance(const, CodeType) for const in code.co_consts):
+            return False
+
+        # locals could be a proxy which does not support pop
+        # copy it first to avoid modifying the original locals
+        locals_copy = dict(locals)
+
+        locals_copy["__pdb_eval__"] = {
+            "result": None,
+            "write_back": {}
+        }
+
+        # If the source is an expression, we need to print its value
+        try:
+            compile(source, "<string>", "eval")
+        except SyntaxError:
+            pass
+        else:
+            source = "__pdb_eval__['result'] = " + source
+
+        # Add write-back to update the locals
+        source = ("try:\n" +
+                  textwrap.indent(source, "  ") + "\n" +
+                  "finally:\n" +
+                  "  __pdb_eval__['write_back'] = locals()")
+
+        # Build a closure source code with freevars from locals like:
+        # def __pdb_outer():
+        #   var = None
+        #   def __pdb_scope():  # This is the code object we want to execute
+        #     nonlocal var
+        #     <source>
+        #   return __pdb_scope.__code__
+        source_with_closure = ("def __pdb_outer():\n" +
+                               "\n".join(f"  {var} = None" for var in locals_copy) + "\n" +
+                               "  def __pdb_scope():\n" +
+                               "\n".join(f"    nonlocal {var}" for var in locals_copy) + "\n" +
+                               textwrap.indent(source, "    ") + "\n" +
+                               "  return __pdb_scope.__code__"
+                               )
+
+        # Get the code object of __pdb_scope()
+        # The exec fills locals_copy with the __pdb_outer() function and we can call
+        # that to get the code object of __pdb_scope()
+        ns = {}
+        try:
+            exec(source_with_closure, {}, ns)
+        except Exception:
+            return False
+        code = ns["__pdb_outer"]()
+
+        cells = tuple(types.CellType(locals_copy.get(var)) for var in code.co_freevars)
+
+        try:
+            exec(code, globals, locals_copy, closure=cells)
+        except Exception:
+            return False
+
+        # get the data we need from the statement
+        pdb_eval = locals_copy["__pdb_eval__"]
+
+        # __pdb_eval__ should not be updated back to locals
+        pdb_eval["write_back"].pop("__pdb_eval__")
+
+        # Write all local variables back to locals
+        locals.update(pdb_eval["write_back"])
+        eval_result = pdb_eval["result"]
+        if eval_result is not None:
+            print(repr(eval_result))
+
+        return True
+
     def default(self, line):
-        if line[:1] == '!': line = line[1:]
-        locals = self.curframe_locals
+        if line[:1] == '!': line = line[1:].strip()
+        locals = self.curframe.f_locals
         globals = self.curframe.f_globals
         try:
-            code = compile(line + '\n', '<stdin>', 'single')
+            buffer = line
+            if (code := codeop.compile_command(line + '\n', '<stdin>', 'single')) is None:
+                # Multi-line mode
+                with self._enable_multiline_completion():
+                    buffer = line
+                    continue_prompt = "...   "
+                    while (code := codeop.compile_command(buffer, '<stdin>', 'single')) is None:
+                        if self.use_rawinput:
+                            try:
+                                line = input(continue_prompt)
+                            except (EOFError, KeyboardInterrupt):
+                                self.lastcmd = ""
+                                print('\n')
+                                return
+                        else:
+                            self.stdout.write(continue_prompt)
+                            self.stdout.flush()
+                            line = self.stdin.readline()
+                            if not len(line):
+                                self.lastcmd = ""
+                                self.stdout.write('\n')
+                                self.stdout.flush()
+                                return
+                            else:
+                                line = line.rstrip('\r\n')
+                        buffer += '\n' + line
+                    self.lastcmd = buffer
             save_stdout = sys.stdout
             save_stdin = sys.stdin
             save_displayhook = sys.displayhook
@@ -456,13 +784,47 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 sys.stdin = self.stdin
                 sys.stdout = self.stdout
                 sys.displayhook = self.displayhook
-                exec(code, globals, locals)
+                if not self._exec_in_closure(buffer, globals, locals):
+                    exec(code, globals, locals)
             finally:
                 sys.stdout = save_stdout
                 sys.stdin = save_stdin
                 sys.displayhook = save_displayhook
         except:
             self._error_exc()
+
+    def _replace_convenience_variables(self, line):
+        """Replace the convenience variables in 'line' with their values.
+           e.g. $foo is replaced by __pdb_convenience_variables["foo"].
+           Note: such pattern in string literals will be skipped"""
+
+        if "$" not in line:
+            return line
+
+        dollar_start = dollar_end = (-1, -1)
+        replace_variables = []
+        try:
+            for t in tokenize.generate_tokens(io.StringIO(line).readline):
+                token_type, token_string, start, end, _ = t
+                if token_type == token.OP and token_string == '$':
+                    dollar_start, dollar_end = start, end
+                elif start == dollar_end and token_type == token.NAME:
+                    # line is a one-line command so we only care about column
+                    replace_variables.append((dollar_start[1], end[1], token_string))
+        except tokenize.TokenError:
+            return line
+
+        if not replace_variables:
+            return line
+
+        last_end = 0
+        line_pieces = []
+        for start, end, name in replace_variables:
+            line_pieces.append(line[last_end:start] + f'__pdb_convenience_variables["{name}"]')
+            last_end = end
+        line_pieces.append(line[last_end:])
+
+        return ''.join(line_pieces)
 
     def precmd(self, line):
         """Handle alias expansion and ';;' separator."""
@@ -471,11 +833,20 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         args = line.split()
         while args[0] in self.aliases:
             line = self.aliases[args[0]]
-            ii = 1
-            for tmpArg in args[1:]:
-                line = line.replace("%" + str(ii),
-                                      tmpArg)
-                ii += 1
+            for idx in range(1, 10):
+                if f'%{idx}' in line:
+                    if idx >= len(args):
+                        self.error(f"Not enough arguments for alias '{args[0]}'")
+                        # This is a no-op
+                        return "!"
+                    line = line.replace(f'%{idx}', args[idx])
+                elif '%*' not in line:
+                    if idx < len(args):
+                        self.error(f"Too many arguments for alias '{args[0]}'")
+                        # This is a no-op
+                        return "!"
+                    break
+
             line = line.replace("%*", ' '.join(args[1:]))
             args = line.split()
         # split into ';;' separated commands
@@ -485,8 +856,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             if marker >= 0:
                 # queue up everything after marker
                 next = line[marker+2:].lstrip()
-                self.cmdqueue.append(next)
+                self.cmdqueue.insert(0, next)
                 line = line[:marker].rstrip()
+
+        # Replace all the convenience variables
+        line = self._replace_convenience_variables(line)
+
         return line
 
     def onecmd(self, line):
@@ -497,6 +872,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         a breakpoint command list definition.
         """
         if not self.commands_defining:
+            if line.startswith('_pdbcmd'):
+                command, arg, line = self.parseline(line)
+                if hasattr(self, command):
+                    return getattr(self, command)(arg)
             return cmd.Cmd.onecmd(self, line)
         else:
             return self.handle_command_def(line)
@@ -505,14 +884,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """Handles one command line during command list definition."""
         cmd, arg, line = self.parseline(line)
         if not cmd:
-            return
-        if cmd == 'silent':
-            self.commands_silent[self.commands_bnum] = True
-            return # continue to handle other cmd def in the cmd list
-        elif cmd == 'end':
-            self.cmdqueue = []
-            return 1 # end of cmd list
+            return False
+        if cmd == 'end':
+            return True  # end of cmd list
+        elif cmd == 'EOF':
+            print('')
+            return True  # end of cmd list
         cmdlist = self.commands[self.commands_bnum]
+        if cmd == 'silent':
+            cmdlist.append('_pdbcmd_silence_frame_status')
+            return False  # continue to handle other cmd def in the cmd list
         if arg:
             cmdlist.append(cmd+' '+arg)
         else:
@@ -524,21 +905,41 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             func = self.default
         # one of the resuming commands
         if func.__name__ in self.commands_resuming:
-            self.commands_doprompt[self.commands_bnum] = False
-            self.cmdqueue = []
-            return 1
-        return
+            return True
+        return False
 
     # interface abstraction functions
 
-    def message(self, msg):
-        print(msg, file=self.stdout)
+    def message(self, msg, end='\n'):
+        print(msg, end=end, file=self.stdout)
 
     def error(self, msg):
         print('***', msg, file=self.stdout)
 
+    # convenience variables
+
+    def set_convenience_variable(self, frame, name, value):
+        if '__pdb_convenience_variables' not in frame.f_globals:
+            frame.f_globals['__pdb_convenience_variables'] = {}
+        frame.f_globals['__pdb_convenience_variables'][name] = value
+
     # Generic completion functions.  Individual complete_foo methods can be
     # assigned below to one of these functions.
+
+    def completenames(self, text, line, begidx, endidx):
+        # Overwrite completenames() of cmd so for the command completion,
+        # if no current command matches, check for expressions as well
+        commands = super().completenames(text, line, begidx, endidx)
+        for alias in self.aliases:
+            if alias.startswith(text):
+                commands.append(alias)
+        if commands:
+            return commands
+        else:
+            expressions = self._complete_expression(text, line, begidx, endidx)
+            if expressions:
+                return expressions
+            return self.completedefault(text, line, begidx, endidx)
 
     def _complete_location(self, text, line, begidx, endidx):
         # Complete a file/module/function location for break/tbreak/clear.
@@ -573,7 +974,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # Collect globals and locals.  It is usually not really sensible to also
         # complete builtins, and they clutter the namespace quite heavily, so we
         # leave them out.
-        ns = {**self.curframe.f_globals, **self.curframe_locals}
+        ns = {**self.curframe.f_globals, **self.curframe.f_locals}
+        if text.startswith("$"):
+            # Complete convenience variables
+            conv_vars = self.curframe.f_globals.get('__pdb_convenience_variables', {})
+            return [f"${name}" for name in conv_vars if name.startswith(text[1:])]
         if '.' in text:
             # Walk an attribute chain up to the last part, similar to what
             # rlcompleter does.  This will bail if any of the parts are not
@@ -591,12 +996,56 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             # Complete a simple name.
             return [n for n in ns.keys() if n.startswith(text)]
 
+    def _complete_indentation(self, text, line, begidx, endidx):
+        try:
+            import readline
+        except ImportError:
+            return []
+        # Fill in spaces to form a 4-space indent
+        return [' ' * (4 - readline.get_begidx() % 4)]
+
+    def complete_multiline_names(self, text, line, begidx, endidx):
+        # If text is space-only, the user entered <tab> before any text.
+        # That normally means they want to indent the current line.
+        if not text.strip():
+            return self._complete_indentation(text, line, begidx, endidx)
+        return self.completedefault(text, line, begidx, endidx)
+
+    def completedefault(self, text, line, begidx, endidx):
+        if text.startswith("$"):
+            # Complete convenience variables
+            conv_vars = self.curframe.f_globals.get('__pdb_convenience_variables', {})
+            return [f"${name}" for name in conv_vars if name.startswith(text[1:])]
+
+        # Use rlcompleter to do the completion
+        state = 0
+        matches = []
+        completer = Completer(self.curframe.f_globals | self.curframe.f_locals)
+        while (match := completer.complete(text, state)) is not None:
+            matches.append(match)
+            state += 1
+        return matches
+
+    # Pdb meta commands, only intended to be used internally by pdb
+
+    def _pdbcmd_print_frame_status(self, arg):
+        self.print_stack_trace(0)
+        self._validate_file_mtime()
+        self._show_display()
+
+    def _pdbcmd_silence_frame_status(self, arg):
+        if self.cmdqueue and self.cmdqueue[-1] == '_pdbcmd_print_frame_status':
+            self.cmdqueue.pop()
+
+    def _pdbcmd_restore_lastcmd(self, arg):
+        self.lastcmd = arg
+
     # Command definitions, called by cmdloop()
     # The argument is the remaining string on the command line
     # Return true to exit from the command loop
 
     def do_commands(self, arg):
-        """commands [bpnumber]
+        """(Pdb) commands [bpnumber]
         (com) ...
         (com) end
         (Pdb)
@@ -638,7 +1087,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             try:
                 bnum = int(arg)
             except:
-                self.error("Usage: commands [bnum]\n        ...\n        end")
+                self._print_invalid_arg(arg)
                 return
         try:
             self.get_bpbynumber(bnum)
@@ -649,14 +1098,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.commands_bnum = bnum
         # Save old definitions for the case of a keyboard interrupt.
         if bnum in self.commands:
-            old_command_defs = (self.commands[bnum],
-                                self.commands_doprompt[bnum],
-                                self.commands_silent[bnum])
+            old_commands = self.commands[bnum]
         else:
-            old_command_defs = None
+            old_commands = None
         self.commands[bnum] = []
-        self.commands_doprompt[bnum] = True
-        self.commands_silent[bnum] = False
 
         prompt_back = self.prompt
         self.prompt = '(com) '
@@ -665,14 +1110,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.cmdloop()
         except KeyboardInterrupt:
             # Restore old definitions.
-            if old_command_defs:
-                self.commands[bnum] = old_command_defs[0]
-                self.commands_doprompt[bnum] = old_command_defs[1]
-                self.commands_silent[bnum] = old_command_defs[2]
+            if old_commands:
+                self.commands[bnum] = old_commands
             else:
                 del self.commands[bnum]
-                del self.commands_doprompt[bnum]
-                del self.commands_silent[bnum]
             self.error('command definition aborted, old commands restored')
         finally:
             self.commands_defining = False
@@ -680,8 +1121,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     complete_commands = _complete_bpnumber
 
-    def do_break(self, arg, temporary = 0):
+    def do_break(self, arg, temporary=False):
         """b(reak) [ ([filename:]lineno | function) [, condition] ]
+
         Without argument, list all breaks.
 
         With a line number argument, set a break at this line in the
@@ -707,10 +1149,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         filename = None
         lineno = None
         cond = None
+        module_globals = None
         comma = arg.find(',')
         if comma > 0:
             # parse stuff after comma: "condition"
             cond = arg[comma+1:].lstrip()
+            if err := self._compile_error_message(cond):
+                self.error('Invalid condition %s: %r' % (cond, err))
+                return
             arg = arg[:comma].rstrip()
         # parse stuff before comma: [filename:]lineno | function
         colon = arg.rfind(':')
@@ -737,7 +1183,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 try:
                     func = eval(arg,
                                 self.curframe.f_globals,
-                                self.curframe_locals)
+                                self.curframe.f_locals)
                 except:
                     func = arg
                 try:
@@ -747,8 +1193,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     #use co_name to identify the bkpt (function names
                     #could be aliased, but co_name is invariant)
                     funcname = code.co_name
-                    lineno = code.co_firstlineno
+                    lineno = find_first_executable_line(code)
                     filename = code.co_filename
+                    module_globals = func.__globals__
                 except:
                     # last thing to try
                     (ok, filename, ln) = self.lineinfo(arg)
@@ -760,8 +1207,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     lineno = int(ln)
         if not filename:
             filename = self.defaultFile()
+        filename = self.canonic(filename)
         # Check for reasonable breakpoint
-        line = self.checkline(filename, lineno)
+        line = self.checkline(filename, lineno, module_globals)
         if line:
             # now set the break point
             err = self.set_break(filename, line, temporary, cond, funcname)
@@ -787,10 +1235,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def do_tbreak(self, arg):
         """tbreak [ ([filename:]lineno | function) [, condition] ]
+
         Same arguments as break, but sets a temporary breakpoint: it
         is automatically deleted when first hit.
         """
-        self.do_break(arg, 1)
+        self.do_break(arg, True)
 
     complete_tbreak = _complete_location
 
@@ -824,10 +1273,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             if f:
                 fname = f
             item = parts[1]
-        answer = find_function(item, fname)
+        answer = find_function(item, self.canonic(fname))
         return answer or failed
 
-    def checkline(self, filename, lineno):
+    def checkline(self, filename, lineno, module_globals=None):
         """Check whether specified line seems to be executable.
 
         Return `lineno` if it is, 0 if not (e.g. a docstring, comment, blank
@@ -836,8 +1285,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # this method should be callable before starting debugging, so default
         # to "no globals" if there is no current frame
         frame = getattr(self, 'curframe', None)
-        globs = frame.f_globals if frame else None
-        line = linecache.getline(filename, lineno, globs)
+        if module_globals is None:
+            module_globals = frame.f_globals if frame else None
+        line = linecache.getline(filename, lineno, module_globals)
         if not line:
             self.message('End of file')
             return 0
@@ -851,9 +1301,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def do_enable(self, arg):
         """enable bpnumber [bpnumber ...]
+
         Enables the breakpoints given as a space separated list of
         breakpoint numbers.
         """
+        if not arg:
+            self._print_invalid_arg(arg)
+            return
         args = arg.split()
         for i in args:
             try:
@@ -868,12 +1322,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def do_disable(self, arg):
         """disable bpnumber [bpnumber ...]
+
         Disables the breakpoints given as a space separated list of
         breakpoint numbers.  Disabling a breakpoint means it cannot
         cause the program to stop execution, but unlike clearing a
         breakpoint, it remains in the list of breakpoints and can be
         (re-)enabled.
         """
+        if not arg:
+            self._print_invalid_arg(arg)
+            return
         args = arg.split()
         for i in args:
             try:
@@ -888,14 +1346,21 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def do_condition(self, arg):
         """condition bpnumber [condition]
+
         Set a new condition for the breakpoint, an expression which
         must evaluate to true before the breakpoint is honored.  If
         condition is absent, any existing condition is removed; i.e.,
         the breakpoint is made unconditional.
         """
+        if not arg:
+            self._print_invalid_arg(arg)
+            return
         args = arg.split(' ', 1)
         try:
             cond = args[1]
+            if err := self._compile_error_message(cond):
+                self.error('Invalid condition %s: %r' % (cond, err))
+                return
         except IndexError:
             cond = None
         try:
@@ -915,6 +1380,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def do_ignore(self, arg):
         """ignore bpnumber [count]
+
         Set the ignore count for the given breakpoint number.  If
         count is omitted, the ignore count is set to 0.  A breakpoint
         becomes active when the ignore count is zero.  When non-zero,
@@ -922,15 +1388,26 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         and the breakpoint is not disabled and any associated
         condition evaluates to true.
         """
+        if not arg:
+            self._print_invalid_arg(arg)
+            return
         args = arg.split()
-        try:
-            count = int(args[1].strip())
-        except:
+        if not args:
+            self.error('Breakpoint number expected')
+            return
+        if len(args) == 1:
             count = 0
+        elif len(args) == 2:
+            try:
+                count = int(args[1])
+            except ValueError:
+                self._print_invalid_arg(arg)
+                return
+        else:
+            self._print_invalid_arg(arg)
+            return
         try:
             bp = self.get_bpbynumber(args[0].strip())
-        except IndexError:
-            self.error('Breakpoint number expected')
         except ValueError as err:
             self.error(err)
         else:
@@ -949,7 +1426,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     complete_ignore = _complete_bpnumber
 
     def do_clear(self, arg):
-        """cl(ear) filename:lineno\ncl(ear) [bpnumber [bpnumber...]]
+        """cl(ear) [filename:lineno | bpnumber ...]
+
         With a space separated list of breakpoint numbers, clear
         those breakpoints.  Without argument, clear all breaks (but
         first ask confirmation).  With a filename:lineno argument,
@@ -1000,12 +1478,24 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     complete_cl = _complete_location
 
     def do_where(self, arg):
-        """w(here)
-        Print a stack trace, with the most recent frame at the bottom.
+        """w(here) [count]
+
+        Print a stack trace. If count is not specified, print the full stack.
+        If count is 0, print the current frame entry. If count is positive,
+        print count entries from the most recent frame. If count is negative,
+        print -count entries from the least recent frame.
         An arrow indicates the "current frame", which determines the
         context of most commands.  'bt' is an alias for this command.
         """
-        self.print_stack_trace()
+        if not arg:
+            count = None
+        else:
+            try:
+                count = int(arg)
+            except ValueError:
+                self.error('Invalid count (%s)' % arg)
+                return
+        self.print_stack_trace(count)
     do_w = do_where
     do_bt = do_where
 
@@ -1013,12 +1503,60 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         assert 0 <= number < len(self.stack)
         self.curindex = number
         self.curframe = self.stack[self.curindex][0]
-        self.curframe_locals = self.curframe.f_locals
+        self.set_convenience_variable(self.curframe, '_frame', self.curframe)
         self.print_stack_entry(self.stack[self.curindex])
         self.lineno = None
 
+    def do_exceptions(self, arg):
+        """exceptions [number]
+
+        List or change current exception in an exception chain.
+
+        Without arguments, list all the current exception in the exception
+        chain. Exceptions will be numbered, with the current exception indicated
+        with an arrow.
+
+        If given an integer as argument, switch to the exception at that index.
+        """
+        if not self._chained_exceptions:
+            self.message(
+                "Did not find chained exceptions. To move between"
+                " exceptions, pdb/post_mortem must be given an exception"
+                " object rather than a traceback."
+            )
+            return
+        if not arg:
+            for ix, exc in enumerate(self._chained_exceptions):
+                prompt = ">" if ix == self._chained_exception_index else " "
+                rep = repr(exc)
+                if len(rep) > 80:
+                    rep = rep[:77] + "..."
+                indicator = (
+                    "  -"
+                    if self._chained_exceptions[ix].__traceback__ is None
+                    else f"{ix:>3}"
+                )
+                self.message(f"{prompt} {indicator} {rep}")
+        else:
+            try:
+                number = int(arg)
+            except ValueError:
+                self.error("Argument must be an integer")
+                return
+            if 0 <= number < len(self._chained_exceptions):
+                if self._chained_exceptions[number].__traceback__ is None:
+                    self.error("This exception does not have a traceback, cannot jump to it")
+                    return
+
+                self._chained_exception_index = number
+                self.setup(None, self._chained_exceptions[number].__traceback__)
+                self.print_stack_entry(self.stack[self.curindex])
+            else:
+                self.error("No exception with that number")
+
     def do_up(self, arg):
         """u(p) [count]
+
         Move the current frame count (default one) levels up in the
         stack trace (to an older frame).
         """
@@ -1039,6 +1577,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def do_down(self, arg):
         """d(own) [count]
+
         Move the current frame count (default one) levels down in the
         stack trace (to a newer frame).
         """
@@ -1059,6 +1598,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def do_until(self, arg):
         """unt(il) [lineno]
+
         Without argument, continue execution until the line with a
         number greater than the current one is reached.  With a line
         number, continue execution until a line with a number greater
@@ -1083,30 +1623,44 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def do_step(self, arg):
         """s(tep)
+
         Execute the current line, stop at the first possible occasion
         (either in a function that is called or in the current
         function).
         """
+        if arg:
+            self._print_invalid_arg(arg)
+            return
         self.set_step()
         return 1
     do_s = do_step
 
     def do_next(self, arg):
         """n(ext)
+
         Continue execution until the next line in the current function
         is reached or it returns.
         """
+        if arg:
+            self._print_invalid_arg(arg)
+            return
         self.set_next(self.curframe)
         return 1
     do_n = do_next
 
     def do_run(self, arg):
         """run [args...]
+
         Restart the debugged python program. If a string is supplied
         it is split with "shlex", and the result is used as the new
         sys.argv.  History, breakpoints, actions and debugger options
         are preserved.  "restart" is an alias for "run".
         """
+        if self.mode == 'inline':
+            self.error('run/restart command is disabled when pdb is running in inline mode.\n'
+                       'Use the command line interface to enable restarting your program\n'
+                       'e.g. "python -m pdb myscript.py"')
+            return
         if arg:
             import shlex
             argv0 = sys.argv[0:1]
@@ -1123,16 +1677,24 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def do_return(self, arg):
         """r(eturn)
+
         Continue execution until the current function returns.
         """
+        if arg:
+            self._print_invalid_arg(arg)
+            return
         self.set_return(self.curframe)
         return 1
     do_r = do_return
 
     def do_continue(self, arg):
         """c(ont(inue))
+
         Continue execution, only stop when a breakpoint is encountered.
         """
+        if arg:
+            self._print_invalid_arg(arg)
+            return
         if not self.nosigint:
             try:
                 Pdb._previous_sigint_handler = \
@@ -1149,6 +1711,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def do_jump(self, arg):
         """j(ump) lineno
+
         Set the next line that will be executed.  Only available in
         the bottom-most frame.  This lets you jump back and execute
         code again, or jump forward to skip code that you don't want
@@ -1158,6 +1721,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         instance it is not possible to jump into the middle of a
         for loop or out of a finally clause.
         """
+        if not arg:
+            self._print_invalid_arg(arg)
+            return
         if self.curindex + 1 != len(self.stack):
             self.error('You can only jump within the bottom frame')
             return
@@ -1178,13 +1744,17 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def do_debug(self, arg):
         """debug code
+
         Enter a recursive debugger that steps through the code
         argument (which is an arbitrary expression or statement to be
         executed in the current environment).
         """
+        if not arg:
+            self._print_invalid_arg(arg)
+            return
         sys.settrace(None)
         globals = self.curframe.f_globals
-        locals = self.curframe_locals
+        locals = self.curframe.f_locals
         p = Pdb(self.completekey, self.stdin, self.stdout)
         p.prompt = "(%s) " % self.prompt.strip()
         self.message("ENTERING RECURSIVE DEBUGGER")
@@ -1199,9 +1769,26 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     complete_debug = _complete_expression
 
     def do_quit(self, arg):
-        """q(uit)\nexit
+        """q(uit) | exit
+
         Quit from the debugger. The program being executed is aborted.
         """
+        # Show prompt to kill process when in 'inline' mode and if pdb was not
+        # started from an interactive console. The attribute sys.ps1 is only
+        # defined if the interpreter is in interactive mode.
+        if self.mode == 'inline' and not hasattr(sys, 'ps1'):
+            while True:
+                try:
+                    reply = input('Quitting pdb will kill the process. Quit anyway? [y/n] ')
+                    reply = reply.lower().strip()
+                except EOFError:
+                    reply = 'y'
+                    self.message('')
+                if reply == 'y' or reply == '':
+                    sys.exit(0)
+                elif reply.lower() == 'n':
+                    return
+
         self._user_requested_quit = True
         self.set_quit()
         return 1
@@ -1211,43 +1798,50 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def do_EOF(self, arg):
         """EOF
+
         Handles the receipt of EOF as a command.
         """
         self.message('')
-        self._user_requested_quit = True
-        self.set_quit()
-        return 1
+        return self.do_quit(arg)
 
     def do_args(self, arg):
         """a(rgs)
+
         Print the argument list of the current function.
         """
+        if arg:
+            self._print_invalid_arg(arg)
+            return
         co = self.curframe.f_code
-        dict = self.curframe_locals
+        dict = self.curframe.f_locals
         n = co.co_argcount + co.co_kwonlyargcount
         if co.co_flags & inspect.CO_VARARGS: n = n+1
         if co.co_flags & inspect.CO_VARKEYWORDS: n = n+1
         for i in range(n):
             name = co.co_varnames[i]
             if name in dict:
-                self.message('%s = %r' % (name, dict[name]))
+                self.message('%s = %s' % (name, self._safe_repr(dict[name], name)))
             else:
                 self.message('%s = *** undefined ***' % (name,))
     do_a = do_args
 
     def do_retval(self, arg):
         """retval
+
         Print the return value for the last return of a function.
         """
-        if '__return__' in self.curframe_locals:
-            self.message(repr(self.curframe_locals['__return__']))
+        if arg:
+            self._print_invalid_arg(arg)
+            return
+        if '__return__' in self.curframe.f_locals:
+            self.message(self._safe_repr(self.curframe.f_locals['__return__'], "retval"))
         else:
             self.error('Not yet returned!')
     do_rv = do_retval
 
     def _getval(self, arg):
         try:
-            return eval(arg, self.curframe.f_globals, self.curframe_locals)
+            return eval(arg, self.curframe.f_globals, self.curframe.f_locals)
         except:
             self._error_exc()
             raise
@@ -1255,17 +1849,15 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def _getval_except(self, arg, frame=None):
         try:
             if frame is None:
-                return eval(arg, self.curframe.f_globals, self.curframe_locals)
+                return eval(arg, self.curframe.f_globals, self.curframe.f_locals)
             else:
                 return eval(arg, frame.f_globals, frame.f_locals)
-        except:
-            exc_info = sys.exc_info()[:2]
-            err = traceback.format_exception_only(*exc_info)[-1].strip()
-            return _rstr('** raised %s **' % err)
+        except BaseException as exc:
+            return _rstr('** raised %s **' % self._format_exc(exc))
 
     def _error_exc(self):
-        exc_info = sys.exc_info()[:2]
-        self.error(traceback.format_exception_only(*exc_info)[-1].strip())
+        exc = sys.exception()
+        self.error(self._format_exc(exc))
 
     def _msg_val_func(self, arg, func):
         try:
@@ -1277,16 +1869,30 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except:
             self._error_exc()
 
+    def _safe_repr(self, obj, expr):
+        try:
+            return repr(obj)
+        except Exception as e:
+            return _rstr(f"*** repr({expr}) failed: {self._format_exc(e)} ***")
+
     def do_p(self, arg):
         """p expression
+
         Print the value of the expression.
         """
+        if not arg:
+            self._print_invalid_arg(arg)
+            return
         self._msg_val_func(arg, repr)
 
     def do_pp(self, arg):
         """pp expression
+
         Pretty-print the value of the expression.
         """
+        if not arg:
+            self._print_invalid_arg(arg)
+            return
         self._msg_val_func(arg, pprint.pformat)
 
     complete_print = _complete_expression
@@ -1294,7 +1900,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     complete_pp = _complete_expression
 
     def do_list(self, arg):
-        """l(ist) [first [,last] | .]
+        """l(ist) [first[, last] | .]
 
         List source code for the current file.  Without arguments,
         list 11 lines around the current line or continue the previous
@@ -1348,32 +1954,42 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.message('[EOF]')
         except KeyboardInterrupt:
             pass
+        self._validate_file_mtime()
     do_l = do_list
 
     def do_longlist(self, arg):
-        """longlist | ll
+        """ll | longlist
+
         List the whole source code for the current function or frame.
         """
+        if arg:
+            self._print_invalid_arg(arg)
+            return
         filename = self.curframe.f_code.co_filename
         breaklist = self.get_file_breaks(filename)
         try:
-            lines, lineno = getsourcelines(self.curframe)
+            lines, lineno = self._getsourcelines(self.curframe)
         except OSError as err:
             self.error(err)
             return
         self._print_lines(lines, lineno, breaklist, self.curframe)
+        self._validate_file_mtime()
     do_ll = do_longlist
 
     def do_source(self, arg):
         """source expression
+
         Try to get source code for the given object and display it.
         """
+        if not arg:
+            self._print_invalid_arg(arg)
+            return
         try:
             obj = self._getval(arg)
         except:
             return
         try:
-            lines, lineno = getsourcelines(obj)
+            lines, lineno = self._getsourcelines(obj)
         except (OSError, TypeError) as err:
             self.error(err)
             return
@@ -1403,9 +2019,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.message(s + '\t' + line.rstrip())
 
     def do_whatis(self, arg):
-        """whatis arg
+        """whatis expression
+
         Print the type of the argument.
         """
+        if not arg:
+            self._print_invalid_arg(arg)
+            return
         try:
             value = self._getval(arg)
         except:
@@ -1446,13 +2066,19 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Without expression, list all display expressions for the current frame.
         """
         if not arg:
-            self.message('Currently displaying:')
-            for item in self.displaying.get(self.curframe, {}).items():
-                self.message('%s: %r' % item)
+            if self.displaying:
+                self.message('Currently displaying:')
+                for key, val in self.displaying.get(self.curframe, {}).items():
+                    self.message('%s: %s' % (key, self._safe_repr(val, key)))
+            else:
+                self.message('No expression is being displayed')
         else:
-            val = self._getval_except(arg)
-            self.displaying.setdefault(self.curframe, {})[arg] = val
-            self.message('display %s: %r' % (arg, val))
+            if err := self._compile_error_message(arg):
+                self.error('Unable to display %s: %r' % (arg, err))
+            else:
+                val = self._getval_except(arg)
+                self.displaying.setdefault(self.curframe, {})[arg] = val
+                self.message('display %s: %s' % (arg, self._safe_repr(val, arg)))
 
     complete_display = _complete_expression
 
@@ -1481,11 +2107,14 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Start an interactive interpreter whose global namespace
         contains all the (global and local) names found in the current scope.
         """
-        ns = {**self.curframe.f_globals, **self.curframe_locals}
-        code.interact("*interactive*", local=ns)
+        ns = {**self.curframe.f_globals, **self.curframe.f_locals}
+        console = _PdbInteractiveConsole(ns, message=self.message)
+        console.interact(banner="*pdb interact start*",
+                         exitmsg="*exit from pdb interact command*")
 
     def do_alias(self, arg):
-        """alias [name [command [parameter parameter ...] ]]
+        """alias [name [command]]
+
         Create an alias called 'name' that executes 'command'.  The
         command must *not* be enclosed in quotes.  Replaceable
         parameters can be indicated by %1, %2, and so on, while %* is
@@ -1514,17 +2143,34 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             for alias in keys:
                 self.message("%s = %s" % (alias, self.aliases[alias]))
             return
-        if args[0] in self.aliases and len(args) == 1:
-            self.message("%s = %s" % (args[0], self.aliases[args[0]]))
+        if len(args) == 1:
+            if args[0] in self.aliases:
+                self.message("%s = %s" % (args[0], self.aliases[args[0]]))
+            else:
+                self.error(f"Unknown alias '{args[0]}'")
         else:
-            self.aliases[args[0]] = ' '.join(args[1:])
+            # Do a validation check to make sure no replaceable parameters
+            # are skipped if %* is not used.
+            alias = ' '.join(args[1:])
+            if '%*' not in alias:
+                consecutive = True
+                for idx in range(1, 10):
+                    if f'%{idx}' not in alias:
+                        consecutive = False
+                    if f'%{idx}' in alias and not consecutive:
+                        self.error("Replaceable parameters must be consecutive")
+                        return
+            self.aliases[args[0]] = alias
 
     def do_unalias(self, arg):
         """unalias name
+
         Delete the specified alias.
         """
         args = arg.split()
-        if len(args) == 0: return
+        if len(args) == 0:
+            self._print_invalid_arg(arg)
+            return
         if args[0] in self.aliases:
             del self.aliases[args[0]]
 
@@ -1533,7 +2179,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     # List of all the commands making the program resume execution.
     commands_resuming = ['do_continue', 'do_step', 'do_next', 'do_return',
-                         'do_quit', 'do_jump']
+                         'do_until', 'do_quit', 'do_jump']
 
     # Print a traceback starting at the top stack frame.
     # The most recently entered frame is printed last;
@@ -1542,10 +2188,22 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     # It is also consistent with the up/down commands (which are
     # compatible with dbx and gdb: up moves towards 'main()'
     # and down moves towards the most recent stack frame).
+    #     * if count is None, prints the full stack
+    #     * if count = 0, prints the current frame entry
+    #     * if count < 0, prints -count least recent frame entries
+    #     * if count > 0, prints count most recent frame entries
 
-    def print_stack_trace(self):
+    def print_stack_trace(self, count=None):
+        if count is None:
+            stack_to_print = self.stack
+        elif count == 0:
+            stack_to_print = [self.stack[self.curindex]]
+        elif count < 0:
+            stack_to_print = self.stack[:-count]
+        else:
+            stack_to_print = self.stack[-count:]
         try:
-            for frame_lineno in self.stack:
+            for frame_lineno in stack_to_print:
                 self.print_stack_entry(frame_lineno)
         except KeyboardInterrupt:
             pass
@@ -1563,6 +2221,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     def do_help(self, arg):
         """h(elp)
+
         Without argument, print the list of available commands.
         With a command name as argument, print help about that command.
         "help pdb" shows the full pdb documentation.
@@ -1586,17 +2245,21 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             if command.__doc__ is None:
                 self.error('No help for %r; __doc__ string missing' % arg)
                 return
-            self.message(command.__doc__.rstrip())
+            self.message(self._help_message_from_doc(command.__doc__))
 
     do_h = do_help
 
     def help_exec(self):
         """(!) statement
+
         Execute the (one-line) statement in the context of the current
         stack frame.  The exclamation point can be omitted unless the
-        first word of the statement resembles a debugger command.  To
-        assign to a global variable you must always prefix the command
-        with a 'global' command, e.g.:
+        first word of the statement resembles a debugger command, e.g.:
+        (Pdb) ! n=42
+        (Pdb)
+
+        To assign to a global variable you must always prefix the command with
+        a 'global' command, e.g.:
         (Pdb) global list_options; list_options = ['-l']
         (Pdb)
         """
@@ -1612,17 +2275,23 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         lookupmodule() translates (possibly incomplete) file or module name
         into an absolute file name.
+
+        filename could be in format of:
+            * an absolute path like '/path/to/file.py'
+            * a relative path like 'file.py' or 'dir/file.py'
+            * a module name like 'module' or 'package.module'
+
+        files and modules will be searched in sys.path.
         """
-        if os.path.isabs(filename) and  os.path.exists(filename):
-            return filename
-        f = os.path.join(sys.path[0], filename)
-        if  os.path.exists(f) and self.canonic(f) == self.mainpyfile:
-            return f
-        root, ext = os.path.splitext(filename)
-        if ext == '':
-            filename = filename + '.py'
+        if not filename.endswith('.py'):
+            # A module is passed in so convert it to equivalent file
+            filename = filename.replace('.', os.sep) + '.py'
+
         if os.path.isabs(filename):
-            return filename
+            if os.path.exists(filename):
+                return filename
+            return None
+
         for dirname in sys.path:
             while os.path.islink(dirname):
                 dirname = os.readlink(dirname)
@@ -1631,7 +2300,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 return fullname
         return None
 
-    def _run(self, target: Union[_ModuleTarget, _ScriptTarget]):
+    def _run(self, target: _ExecutableTarget):
         # When bdb sets tracing, a number of call and line events happen
         # BEFORE debugger even reaches user's code (and the exact sequence of
         # events depends on python version). Take special measures to
@@ -1649,8 +2318,69 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         __main__.__dict__.clear()
         __main__.__dict__.update(target.namespace)
 
+        # Clear the mtime table for program reruns, assume all the files
+        # are up to date.
+        self._file_mtime_table.clear()
+
         self.run(target.code)
 
+    def _format_exc(self, exc: BaseException):
+        return traceback.format_exception_only(exc)[-1].strip()
+
+    def _compile_error_message(self, expr):
+        """Return the error message as string if compiling `expr` fails."""
+        try:
+            compile(expr, "<stdin>", "eval")
+        except SyntaxError as exc:
+            return _rstr(self._format_exc(exc))
+        return ""
+
+    def _getsourcelines(self, obj):
+        # GH-103319
+        # inspect.getsourcelines() returns lineno = 0 for
+        # module-level frame which breaks our code print line number
+        # This method should be replaced by inspect.getsourcelines(obj)
+        # once this bug is fixed in inspect
+        lines, lineno = inspect.getsourcelines(obj)
+        lineno = max(1, lineno)
+        return lines, lineno
+
+    def _help_message_from_doc(self, doc, usage_only=False):
+        lines = [line.strip() for line in doc.rstrip().splitlines()]
+        if not lines:
+            return "No help message found."
+        if "" in lines:
+            usage_end = lines.index("")
+        else:
+            usage_end = 1
+        formatted = []
+        indent = " " * len(self.prompt)
+        for i, line in enumerate(lines):
+            if i == 0:
+                prefix = "Usage: "
+            elif i < usage_end:
+                prefix = "       "
+            else:
+                if usage_only:
+                    break
+                prefix = ""
+            formatted.append(indent + prefix + line)
+        return "\n".join(formatted)
+
+    def _print_invalid_arg(self, arg):
+        """Return the usage string for a function."""
+
+        if not arg:
+            self.error("Argument is required for this command")
+        else:
+            self.error(f"Invalid argument: {arg}")
+
+        # Yes it's a bit hacky. Get the caller name, get the method based on
+        # that name, and get the docstring from that method.
+        # This should NOT fail if the caller is a method of this class.
+        doc = inspect.getdoc(getattr(self, sys._getframe(1).f_code.co_name))
+        if doc is not None:
+            self.message(self._help_message_from_doc(doc, usage_only=True))
 
 # Collect all command help into docstring, if not run with -OO
 
@@ -1711,44 +2441,61 @@ def runcall(*args, **kwds):
     """
     return Pdb().runcall(*args, **kwds)
 
-def set_trace(*, header=None):
+def set_trace(*, header=None, commands=None):
     """Enter the debugger at the calling stack frame.
 
     This is useful to hard-code a breakpoint at a given point in a
     program, even if the code is not otherwise being debugged (e.g. when
     an assertion fails). If given, *header* is printed to the console
-    just before debugging begins.
+    just before debugging begins. *commands* is an optional list of
+    pdb commands to run when the debugger starts.
     """
-    pdb = Pdb()
+    if Pdb._last_pdb_instance is not None:
+        pdb = Pdb._last_pdb_instance
+    else:
+        pdb = Pdb(mode='inline')
     if header is not None:
         pdb.message(header)
-    pdb.set_trace(sys._getframe().f_back)
+    pdb.set_trace(sys._getframe().f_back, commands=commands)
 
 # Post-Mortem interface
 
 def post_mortem(t=None):
-    """Enter post-mortem debugging of the given *traceback* object.
+    """Enter post-mortem debugging of the given *traceback*, or *exception*
+    object.
 
     If no traceback is given, it uses the one of the exception that is
     currently being handled (an exception must be being handled if the
     default is to be used).
+
+    If `t` is an exception object, the `exceptions` command makes it possible to
+    list and inspect its chained exceptions (if any).
+    """
+    return _post_mortem(t, Pdb())
+
+
+def _post_mortem(t, pdb_instance):
+    """
+    Private version of post_mortem, which allow to pass a pdb instance
+    for testing purposes.
     """
     # handling the default
     if t is None:
-        # sys.exc_info() returns (type, value, traceback) if an exception is
-        # being handled, otherwise it returns None
-        t = sys.exc_info()[2]
-    if t is None:
+        exc = sys.exception()
+        if exc is not None:
+            t = exc.__traceback__
+
+    if t is None or (isinstance(t, BaseException) and t.__traceback__ is None):
         raise ValueError("A valid traceback must be passed if no "
                          "exception is being handled")
 
-    p = Pdb()
-    p.reset()
-    p.interaction(None, t)
+    pdb_instance.reset()
+    pdb_instance.interaction(None, t)
+
 
 def pm():
-    """Enter post-mortem debugging of the traceback found in sys.last_traceback."""
-    post_mortem(sys.last_traceback)
+    """Enter post-mortem debugging of the traceback found in sys.last_exc."""
+    post_mortem(sys.last_exc)
 
 
 # Main program for testing
@@ -1764,8 +2511,6 @@ def help():
     pydoc.pager(__doc__)
 
 _usage = """\
-usage: pdb.py [-c command] ... [-m module | pyfile] [arg] ...
-
 Debug the Python program given by pyfile. Alternatively,
 an executable module or package to debug can be specified using
 the -m switch.
@@ -1780,58 +2525,90 @@ To let the script run up to a given line X in the debugged file, use
 
 
 def main():
-    import getopt
+    import argparse
 
-    opts, args = getopt.getopt(sys.argv[1:], 'mhc:', ['help', 'command='])
+    parser = argparse.ArgumentParser(usage="%(prog)s [-h] [-c command] (-m module | pyfile) [args ...]",
+                                     description=_usage,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     allow_abbrev=False)
 
-    if not args:
-        print(_usage)
+    # We need to maunally get the script from args, because the first positional
+    # arguments could be either the script we need to debug, or the argument
+    # to the -m module
+    parser.add_argument('-c', '--command', action='append', default=[], metavar='command', dest='commands',
+                        help='pdb commands to execute as if given in a .pdbrc file')
+    parser.add_argument('-m', metavar='module', dest='module')
+
+    if len(sys.argv) == 1:
+        # If no arguments were given (python -m pdb), print the whole help message.
+        # Without this check, argparse would only complain about missing required arguments.
+        parser.print_help()
         sys.exit(2)
 
-    if any(opt in ['-h', '--help'] for opt, optarg in opts):
-        print(_usage)
-        sys.exit()
+    opts, args = parser.parse_known_args()
 
-    commands = [optarg for opt, optarg in opts if opt in ['-c', '--command']]
+    if opts.module:
+        # If a module is being debugged, we consider the arguments after "-m module" to
+        # be potential arguments to the module itself. We need to parse the arguments
+        # before "-m" to check if there is any invalid argument.
+        # e.g. "python -m pdb -m foo --spam" means passing "--spam" to "foo"
+        #      "python -m pdb --spam -m foo" means passing "--spam" to "pdb" and is invalid
+        idx = sys.argv.index('-m')
+        args_to_pdb = sys.argv[1:idx]
+        # This will raise an error if there are invalid arguments
+        parser.parse_args(args_to_pdb)
+    else:
+        # If a script is being debugged, then pdb expects the script name as the first argument.
+        # Anything before the script is considered an argument to pdb itself, which would
+        # be invalid because it's not parsed by argparse.
+        invalid_args = list(itertools.takewhile(lambda a: a.startswith('-'), args))
+        if invalid_args:
+            parser.error(f"unrecognized arguments: {' '.join(invalid_args)}")
+            sys.exit(2)
 
-    module_indicated = any(opt in ['-m'] for opt, optarg in opts)
-    cls = _ModuleTarget if module_indicated else _ScriptTarget
-    target = cls(args[0])
+    if opts.module:
+        file = opts.module
+        target = _ModuleTarget(file)
+    else:
+        if not args:
+            parser.error("no module or script to run")
+        file = args.pop(0)
+        if file.endswith('.pyz'):
+            target = _ZipTarget(file)
+        else:
+            target = _ScriptTarget(file)
 
-    target.check()
-
-    sys.argv[:] = args      # Hide "pdb.py" and pdb options from argument list
+    sys.argv[:] = [file] + args  # Hide "pdb.py" and pdb options from argument list
 
     # Note on saving/restoring sys.argv: it's a good idea when sys.argv was
     # modified by the script being debugged. It's a bad idea when it was
     # changed by the user from the command line. There is a "restart" command
     # which allows explicit specification of command line arguments.
-    pdb = Pdb()
-    pdb.rcLines.extend(commands)
+    pdb = Pdb(mode='cli')
+    pdb.rcLines.extend(opts.commands)
     while True:
         try:
             pdb._run(target)
-            if pdb._user_requested_quit:
-                break
-            print("The program finished and will be restarted")
         except Restart:
             print("Restarting", target, "with arguments:")
             print("\t" + " ".join(sys.argv[1:]))
-        except SystemExit:
+        except SystemExit as e:
             # In most cases SystemExit does not warrant a post-mortem session.
             print("The program exited via sys.exit(). Exit status:", end=' ')
-            print(sys.exc_info()[1])
-        except SyntaxError:
-            traceback.print_exc()
-            sys.exit(1)
-        except:
-            traceback.print_exc()
+            print(e)
+        except BaseException as e:
+            traceback.print_exception(e, colorize=_colorize.can_colorize())
             print("Uncaught exception. Entering post mortem debugging")
             print("Running 'cont' or 'step' will restart the program")
-            t = sys.exc_info()[2]
-            pdb.interaction(None, t)
-            print("Post mortem debugger finished. The " + target +
-                  " will be restarted")
+            try:
+                pdb.interaction(None, e)
+            except Restart:
+                print("Restarting", target, "with arguments:")
+                print("\t" + " ".join(sys.argv[1:]))
+                continue
+        if pdb._user_requested_quit:
+            break
+        print("The program finished and will be restarted")
 
 
 # When invoked as main program, invoke the debugger on a script

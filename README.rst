@@ -1,7 +1,7 @@
-This is Python version 3.12.0 alpha 4
+This is Python version 3.14.0 alpha 5
 =====================================
 
-.. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
+.. image:: https://github.com/python/cpython/actions/workflows/build.yml/badge.svg?branch=main&event=push
    :alt: CPython build status on GitHub Actions
    :target: https://github.com/python/cpython/actions
 
@@ -14,7 +14,7 @@ This is Python version 3.12.0 alpha 4
    :target: https://discuss.python.org/
 
 
-Copyright © 2001-2023 Python Software Foundation.  All rights reserved.
+Copyright © 2001 Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
@@ -64,7 +64,7 @@ the executable is called ``python.exe``; elsewhere it's just ``python``.
 Building a complete Python installation requires the use of various
 additional third-party libraries, depending on your build platform and
 configure options.  Not all standard library modules are buildable or
-useable on all platforms.  Refer to the
+usable on all platforms.  Refer to the
 `Install dependencies <https://devguide.python.org/getting-started/setup-building.html#build-dependencies>`_
 section of the `Developer Guide`_ for current detailed information on
 dependencies for various Linux distributions and macOS.
@@ -75,6 +75,9 @@ to macOS framework and universal builds.  Refer to `Mac/README.rst
 
 On Windows, see `PCbuild/readme.txt
 <https://github.com/python/cpython/blob/main/PCbuild/readme.txt>`_.
+
+To build Windows installer, see `Tools/msi/README.txt
+<https://github.com/python/cpython/blob/main/Tools/msi/README.txt>`_.
 
 If you wish, you can create a subdirectory and invoke configure from there.
 For example::
@@ -133,7 +136,7 @@ What's New
 ----------
 
 We have a comprehensive overview of the changes in the `What's New in Python
-3.12 <https://docs.python.org/3.12/whatsnew/3.12.html>`_ document.  For a more
+3.14 <https://docs.python.org/3.14/whatsnew/3.14.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
 <https://github.com/python/cpython/tree/main/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
@@ -146,7 +149,7 @@ entitled "Installing multiple versions".
 Documentation
 -------------
 
-`Documentation for Python 3.12 <https://docs.python.org/3.12/>`_ is online,
+`Documentation for Python 3.14 <https://docs.python.org/3.14/>`_ is online,
 updated daily.
 
 It can also be downloaded in many formats for faster access.  The documentation
@@ -156,15 +159,6 @@ formatting requirements.
 
 For information about building Python's documentation, refer to `Doc/README.rst
 <https://github.com/python/cpython/blob/main/Doc/README.rst>`_.
-
-
-Converting From Python 2.x to 3.x
----------------------------------
-
-Significant backward incompatible changes were made for the release of Python
-3.0, which may cause programs written for Python 2 to fail when run with Python
-3.  For more information about porting your code from Python 2 to Python 3, see
-the `Porting HOWTO <https://docs.python.org/3/howto/pyporting.html>`_.
 
 
 Testing
@@ -177,7 +171,7 @@ is printed about a failed test or a traceback or core dump is produced,
 something is wrong.
 
 By default, tests are prevented from overusing resources like disk space and
-memory.  To enable these tests, run ``make testall``.
+memory.  To enable these tests, run ``make buildbottest``.
 
 If any tests fail, you can re-run the failing test(s) in verbose mode.  For
 example, if ``test_os`` and ``test_gdb`` failed, you can run::
@@ -203,49 +197,25 @@ directories installed using ``make altinstall`` contain the major and minor
 version and can thus live side-by-side.  ``make install`` also creates
 ``${prefix}/bin/python3`` which refers to ``${prefix}/bin/python3.X``.  If you
 intend to install multiple versions using the same prefix you must decide which
-version (if any) is your "primary" version.  Install that version using ``make
-install``.  Install all other versions using ``make altinstall``.
+version (if any) is your "primary" version.  Install that version using
+``make install``.  Install all other versions using ``make altinstall``.
 
-For example, if you want to install Python 2.7, 3.6, and 3.12 with 3.12 being the
-primary version, you would execute ``make install`` in your 3.12 build directory
+For example, if you want to install Python 2.7, 3.6, and 3.14 with 3.14 being the
+primary version, you would execute ``make install`` in your 3.14 build directory
 and ``make altinstall`` in the others.
-
-
-Issue Tracker and Mailing List
-------------------------------
-
-Bug reports are welcome!  You can use Github to `report bugs
-<https://github.com/python/cpython/issues>`_, and/or `submit pull requests
-<https://github.com/python/cpython/pulls>`_.
-
-You can also follow development discussion on the `python-dev mailing list
-<https://mail.python.org/mailman/listinfo/python-dev/>`_.
-
-
-Proposals for enhancement
--------------------------
-
-If you have a proposal to change Python, you may want to send an email to the
-`comp.lang.python`_ or `python-ideas`_ mailing lists for initial feedback.  A
-Python Enhancement Proposal (PEP) may be submitted if your idea gains ground.
-All current PEPs, as well as guidelines for submitting a new PEP, are listed at
-`peps.python.org <https://peps.python.org/>`_.
-
-.. _python-ideas: https://mail.python.org/mailman/listinfo/python-ideas/
-.. _comp.lang.python: https://mail.python.org/mailman/listinfo/python-list
 
 
 Release Schedule
 ----------------
 
-See :pep:`693` for Python 3.12 release details.
+See `PEP 745 <https://peps.python.org/pep-0745/>`__ for Python 3.14 release details.
 
 
 Copyright and License Information
 ---------------------------------
 
 
-Copyright © 2001-2023 Python Software Foundation.  All rights reserved.
+Copyright © 2001 Python Software Foundation.  All rights reserved.
 
 Copyright © 2000 BeOpen.com.  All rights reserved.
 

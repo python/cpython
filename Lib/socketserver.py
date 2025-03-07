@@ -141,6 +141,8 @@ if hasattr(socket, "AF_UNIX"):
     __all__.extend(["UnixStreamServer","UnixDatagramServer",
                     "ThreadingUnixStreamServer",
                     "ThreadingUnixDatagramServer"])
+    if hasattr(os, "fork"):
+        __all__.extend(["ForkingUnixStreamServer", "ForkingUnixDatagramServer"])
 
 # poll/select have the advantage of not requiring any extra file descriptor,
 # contrarily to epoll/kqueue (also, they require a single syscall).
@@ -466,7 +468,12 @@ class TCPServer(BaseServer):
         """
         if self.allow_reuse_address and hasattr(socket, "SO_REUSEADDR"):
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        if self.allow_reuse_port and hasattr(socket, "SO_REUSEPORT"):
+        # Since Linux 6.12.9, SO_REUSEPORT is not allowed
+        # on other address families than AF_INET/AF_INET6.
+        if (
+            self.allow_reuse_port and hasattr(socket, "SO_REUSEPORT")
+            and self.address_family in (socket.AF_INET, socket.AF_INET6)
+        ):
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self.socket.bind(self.server_address)
         self.server_address = self.socket.getsockname()
@@ -726,6 +733,11 @@ if hasattr(socket, 'AF_UNIX'):
     class ThreadingUnixStreamServer(ThreadingMixIn, UnixStreamServer): pass
 
     class ThreadingUnixDatagramServer(ThreadingMixIn, UnixDatagramServer): pass
+
+    if hasattr(os, "fork"):
+        class ForkingUnixStreamServer(ForkingMixIn, UnixStreamServer): pass
+
+        class ForkingUnixDatagramServer(ForkingMixIn, UnixDatagramServer): pass
 
 class BaseRequestHandler:
 

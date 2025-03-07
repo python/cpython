@@ -1,5 +1,5 @@
-:mod:`email.utils`: Miscellaneous utilities
--------------------------------------------
+:mod:`!email.utils`: Miscellaneous utilities
+--------------------------------------------
 
 .. module:: email.utils
    :synopsis: Miscellaneous email package utilities.
@@ -13,19 +13,16 @@ module:
 
 .. function:: localtime(dt=None)
 
-    Return local time as an aware datetime object.  If called without
-    arguments, return current time.  Otherwise *dt* argument should be a
-    :class:`~datetime.datetime` instance, and it is converted to the local time
-    zone according to the system time zone database.  If *dt* is naive (that
-    is, ``dt.tzinfo`` is ``None``), it is assumed to be in local time.  In this
-    case, a positive or zero value for *isdst* causes ``localtime`` to presume
-    initially that summer time (for example, Daylight Saving Time) is or is not
-    (respectively) in effect for the specified time.  A negative value for
-    *isdst* causes the ``localtime`` to attempt to divine whether summer time
-    is in effect for the specified time.
+   Return local time as an aware datetime object.  If called without
+   arguments, return current time.  Otherwise *dt* argument should be a
+   :class:`~datetime.datetime` instance, and it is converted to the local time
+   zone according to the system time zone database.  If *dt* is naive (that
+   is, ``dt.tzinfo`` is ``None``), it is assumed to be in local time.
 
-    .. versionadded:: 3.3
+   .. versionadded:: 3.3
 
+   .. deprecated-removed:: 3.12 3.14
+      The *isdst* parameter.
 
 .. function:: make_msgid(idstring=None, domain=None)
 
@@ -60,12 +57,17 @@ of the new API.
    begins with angle brackets, they are stripped off.
 
 
-.. function:: parseaddr(address)
+.. function:: parseaddr(address, *, strict=True)
 
    Parse address -- which should be the value of some address-containing field such
    as :mailheader:`To` or :mailheader:`Cc` -- into its constituent *realname* and
    *email address* parts.  Returns a tuple of that information, unless the parse
    fails, in which case a 2-tuple of ``('', '')`` is returned.
+
+   If *strict* is true, use a strict parser which rejects malformed inputs.
+
+   .. versionchanged:: 3.13
+      Add *strict* optional parameter and reject malformed inputs by default.
 
 
 .. function:: formataddr(pair, charset='utf-8')
@@ -84,12 +86,15 @@ of the new API.
       Added the *charset* option.
 
 
-.. function:: getaddresses(fieldvalues)
+.. function:: getaddresses(fieldvalues, *, strict=True)
 
    This method returns a list of 2-tuples of the form returned by ``parseaddr()``.
    *fieldvalues* is a sequence of header field values as might be returned by
-   :meth:`Message.get_all <email.message.Message.get_all>`.  Here's a simple
-   example that gets all the recipients of a message::
+   :meth:`Message.get_all <email.message.Message.get_all>`.
+
+   If *strict* is true, use a strict parser which rejects malformed inputs.
+
+   Here's a simple example that gets all the recipients of a message::
 
       from email.utils import getaddresses
 
@@ -98,6 +103,9 @@ of the new API.
       resent_tos = msg.get_all('resent-to', [])
       resent_ccs = msg.get_all('resent-cc', [])
       all_recipients = getaddresses(tos + ccs + resent_tos + resent_ccs)
+
+   .. versionchanged:: 3.13
+      Add *strict* optional parameter and reject malformed inputs by default.
 
 
 .. function:: parsedate(date)
@@ -150,7 +158,7 @@ of the new API.
 
       Fri, 09 Nov 2001 01:08:47 -0000
 
-   Optional *timeval* if given is a floating point time value as accepted by
+   Optional *timeval* if given is a floating-point time value as accepted by
    :func:`time.gmtime` and :func:`time.localtime`, otherwise the current time is
    used.
 

@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2010 Python Software Foundation
+# Copyright (C) 2001 Python Software Foundation
 # Contact: email-sig@python.org
 # email package unit tests
 
@@ -16,6 +16,7 @@ from unittest.mock import patch
 
 import email
 import email.policy
+import email.utils
 
 from email.charset import Charset
 from email.generator import Generator, DecodedGenerator, BytesGenerator
@@ -38,6 +39,7 @@ from email import iterators
 from email import quoprimime
 from email import utils
 
+from test import support
 from test.support import threading_helper
 from test.support.os_helper import unlink
 from test.test_email import openfile, TestEmailBase
@@ -332,6 +334,21 @@ class TestMessageAPI(TestEmailBase):
             can be as_string'd:
             F=F6=F6 b=E4r
             """)
+        msg = email.message_from_bytes(source)
+        self.assertEqual(msg.as_string(), expected)
+
+    def test_nonascii_as_string_with_ascii_charset(self):
+        m = textwrap.dedent("""\
+            MIME-Version: 1.0
+            Content-type: text/plain; charset="us-ascii"
+            Content-Transfer-Encoding: 8bit
+
+            Test if non-ascii messages with no Content-Transfer-Encoding set
+            can be as_string'd:
+            Föö bär
+            """)
+        source = m.encode('iso-8859-1')
+        expected = source.decode('ascii', 'replace')
         msg = email.message_from_bytes(source)
         self.assertEqual(msg.as_string(), expected)
 
@@ -792,6 +809,16 @@ class TestMessageAPI(TestEmailBase):
 
             w4kgdGVzdGFiYwo=
             """))
+
+    def test_string_payload_with_base64_cte(self):
+        msg = email.message_from_string(textwrap.dedent("""\
+        Content-Transfer-Encoding: base64
+
+        SGVsbG8uIFRlc3Rpbmc=
+        """), policy=email.policy.default)
+        self.assertEqual(msg.get_payload(decode=True), b"Hello. Testing")
+        self.assertDefectsEqual(msg['content-transfer-encoding'].defects, [])
+
 
 
 # Test the email.encoders module
@@ -2235,7 +2262,7 @@ class TestNonConformant(TestEmailBase):
                     "\nContent-Transfer-Encoding: {}".format(cte)))
             self.assertEqual(len(msg.defects), 0)
 
-    # test_headerregistry.TestContentTyopeHeader invalid_1 and invalid_2.
+    # test_headerregistry.TestContentTypeHeader invalid_1 and invalid_2.
     def test_invalid_content_type(self):
         eq = self.assertEqual
         neq = self.ndiffAssertEqual
@@ -2334,6 +2361,40 @@ counter to RFC 2822, there's no separating newline here
         self.assertEqual(msg.get_payload(), 'not a header\nTo: abc\n\nb\n')
         self.assertDefectsEqual(msg.defects,
                                 [errors.MissingHeaderBodySeparatorDefect])
+
+    def test_string_payload_with_extra_space_after_cte(self):
+        # https://github.com/python/cpython/issues/98188
+        cte = "base64 "
+        msg = email.message_from_string(textwrap.dedent(f"""\
+        Content-Transfer-Encoding: {cte}
+
+        SGVsbG8uIFRlc3Rpbmc=
+        """), policy=email.policy.default)
+        self.assertEqual(msg.get_payload(decode=True), b"Hello. Testing")
+        self.assertDefectsEqual(msg['content-transfer-encoding'].defects, [])
+
+    def test_string_payload_with_extra_text_after_cte(self):
+        msg = email.message_from_string(textwrap.dedent("""\
+        Content-Transfer-Encoding: base64 some text
+
+        SGVsbG8uIFRlc3Rpbmc=
+        """), policy=email.policy.default)
+        self.assertEqual(msg.get_payload(decode=True), b"Hello. Testing")
+        cte = msg['content-transfer-encoding']
+        self.assertDefectsEqual(cte.defects, [email.errors.InvalidHeaderDefect])
+
+    def test_string_payload_with_extra_space_after_cte_compat32(self):
+        cte = "base64 "
+        msg = email.message_from_string(textwrap.dedent(f"""\
+        Content-Transfer-Encoding: {cte}
+
+        SGVsbG8uIFRlc3Rpbmc=
+        """), policy=email.policy.compat32)
+        pasted_cte = msg['content-transfer-encoding']
+        self.assertEqual(pasted_cte, cte)
+        self.assertEqual(msg.get_payload(decode=True), b"Hello. Testing")
+        self.assertDefectsEqual(msg.defects, [])
+
 
 
 # Test RFC 2047 header encoding and decoding
@@ -3319,15 +3380,154 @@ Foo
            [('Al Person', 'aperson@dom.ain'),
             ('Bud Person', 'bperson@dom.ain')])
 
+    def test_getaddresses_comma_in_name(self):
+        """GH-106669 regression test."""
+        self.assertEqual(
+            utils.getaddresses(
+                [
+                    '"Bud, Person" <bperson@dom.ain>',
+                    'aperson@dom.ain (Al Person)',
+                    '"Mariusz Felisiak" <to@example.com>',
+                ]
+            ),
+            [
+                ('Bud, Person', 'bperson@dom.ain'),
+                ('Al Person', 'aperson@dom.ain'),
+                ('Mariusz Felisiak', 'to@example.com'),
+            ],
+        )
+
+    def test_parsing_errors(self):
+        """Test for parsing errors from CVE-2023-27043 and CVE-2019-16056"""
+        alice = 'alice@example.org'
+        bob = 'bob@example.com'
+        empty = ('', '')
+
+        # Test utils.getaddresses() and utils.parseaddr() on malformed email
+        # addresses: default behavior (strict=True) rejects malformed address,
+        # and strict=False which tolerates malformed address.
+        for invalid_separator, expected_non_strict in (
+            ('(', [(f'<{bob}>', alice)]),
+            (')', [('', alice), empty, ('', bob)]),
+            ('<', [('', alice), empty, ('', bob), empty]),
+            ('>', [('', alice), empty, ('', bob)]),
+            ('[', [('', f'{alice}[<{bob}>]')]),
+            (']', [('', alice), empty, ('', bob)]),
+            ('@', [empty, empty, ('', bob)]),
+            (';', [('', alice), empty, ('', bob)]),
+            (':', [('', alice), ('', bob)]),
+            ('.', [('', alice + '.'), ('', bob)]),
+            ('"', [('', alice), ('', f'<{bob}>')]),
+        ):
+            address = f'{alice}{invalid_separator}<{bob}>'
+            with self.subTest(address=address):
+                self.assertEqual(utils.getaddresses([address]),
+                                 [empty])
+                self.assertEqual(utils.getaddresses([address], strict=False),
+                                 expected_non_strict)
+
+                self.assertEqual(utils.parseaddr([address]),
+                                 empty)
+                self.assertEqual(utils.parseaddr([address], strict=False),
+                                 ('', address))
+
+        # Comma (',') is treated differently depending on strict parameter.
+        # Comma without quotes.
+        address = f'{alice},<{bob}>'
+        self.assertEqual(utils.getaddresses([address]),
+                         [('', alice), ('', bob)])
+        self.assertEqual(utils.getaddresses([address], strict=False),
+                         [('', alice), ('', bob)])
+        self.assertEqual(utils.parseaddr([address]),
+                         empty)
+        self.assertEqual(utils.parseaddr([address], strict=False),
+                         ('', address))
+
+        # Real name between quotes containing comma.
+        address = '"Alice, alice@example.org" <bob@example.com>'
+        expected_strict = ('Alice, alice@example.org', 'bob@example.com')
+        self.assertEqual(utils.getaddresses([address]), [expected_strict])
+        self.assertEqual(utils.getaddresses([address], strict=False), [expected_strict])
+        self.assertEqual(utils.parseaddr([address]), expected_strict)
+        self.assertEqual(utils.parseaddr([address], strict=False),
+                         ('', address))
+
+        # Valid parenthesis in comments.
+        address = 'alice@example.org (Alice)'
+        expected_strict = ('Alice', 'alice@example.org')
+        self.assertEqual(utils.getaddresses([address]), [expected_strict])
+        self.assertEqual(utils.getaddresses([address], strict=False), [expected_strict])
+        self.assertEqual(utils.parseaddr([address]), expected_strict)
+        self.assertEqual(utils.parseaddr([address], strict=False),
+                         ('', address))
+
+        # Invalid parenthesis in comments.
+        address = 'alice@example.org )Alice('
+        self.assertEqual(utils.getaddresses([address]), [empty])
+        self.assertEqual(utils.getaddresses([address], strict=False),
+                         [('', 'alice@example.org'), ('', ''), ('', 'Alice')])
+        self.assertEqual(utils.parseaddr([address]), empty)
+        self.assertEqual(utils.parseaddr([address], strict=False),
+                         ('', address))
+
+        # Two addresses with quotes separated by comma.
+        address = '"Jane Doe" <jane@example.net>, "John Doe" <john@example.net>'
+        self.assertEqual(utils.getaddresses([address]),
+                         [('Jane Doe', 'jane@example.net'),
+                          ('John Doe', 'john@example.net')])
+        self.assertEqual(utils.getaddresses([address], strict=False),
+                         [('Jane Doe', 'jane@example.net'),
+                          ('John Doe', 'john@example.net')])
+        self.assertEqual(utils.parseaddr([address]), empty)
+        self.assertEqual(utils.parseaddr([address], strict=False),
+                         ('', address))
+
+        # Test email.utils.supports_strict_parsing attribute
+        self.assertEqual(email.utils.supports_strict_parsing, True)
+
     def test_getaddresses_nasty(self):
-        eq = self.assertEqual
-        eq(utils.getaddresses(['foo: ;']), [('', '')])
-        eq(utils.getaddresses(
-           ['[]*-- =~$']),
-           [('', ''), ('', ''), ('', '*--')])
-        eq(utils.getaddresses(
-           ['foo: ;', '"Jason R. Mastaler" <jason@dom.ain>']),
-           [('', ''), ('Jason R. Mastaler', 'jason@dom.ain')])
+        for addresses, expected in (
+            (['"Sürname, Firstname" <to@example.com>'],
+             [('Sürname, Firstname', 'to@example.com')]),
+
+            (['foo: ;'],
+             [('', '')]),
+
+            (['foo: ;', '"Jason R. Mastaler" <jason@dom.ain>'],
+             [('', ''), ('Jason R. Mastaler', 'jason@dom.ain')]),
+
+            ([r'Pete(A nice \) chap) <pete(his account)@silly.test(his host)>'],
+             [('Pete (A nice ) chap his account his host)', 'pete@silly.test')]),
+
+            (['(Empty list)(start)Undisclosed recipients  :(nobody(I know))'],
+             [('', '')]),
+
+            (['Mary <@machine.tld:mary@example.net>, , jdoe@test   . example'],
+             [('Mary', 'mary@example.net'), ('', ''), ('', 'jdoe@test.example')]),
+
+            (['John Doe <jdoe@machine(comment).  example>'],
+             [('John Doe (comment)', 'jdoe@machine.example')]),
+
+            (['"Mary Smith: Personal Account" <smith@home.example>'],
+             [('Mary Smith: Personal Account', 'smith@home.example')]),
+
+            (['Undisclosed recipients:;'],
+             [('', '')]),
+
+            ([r'<boss@nil.test>, "Giant; \"Big\" Box" <bob@example.net>'],
+             [('', 'boss@nil.test'), ('Giant; "Big" Box', 'bob@example.net')]),
+        ):
+            with self.subTest(addresses=addresses):
+                self.assertEqual(utils.getaddresses(addresses),
+                                 expected)
+                self.assertEqual(utils.getaddresses(addresses, strict=False),
+                                 expected)
+
+        addresses = ['[]*-- =~$']
+        self.assertEqual(utils.getaddresses(addresses),
+                         [('', '')])
+        self.assertEqual(utils.getaddresses(addresses, strict=False),
+                         [('', ''), ('', ''), ('', '*--')])
 
     def test_getaddresses_embedded_comment(self):
         """Test proper handling of a nested comment"""
@@ -3341,6 +3541,7 @@ Foo
         self.assertEqual(addrs[0][1], 'aperson@dom.ain')
 
     @threading_helper.requires_working_threading()
+    @support.requires_resource('cpu')
     def test_make_msgid_collisions(self):
         # Test make_msgid uniqueness, even with multiple threads
         class MsgidsThread(Thread):
@@ -3516,6 +3717,54 @@ multipart/report
             with self.subTest(cls=cls.__name__, policy='default'):
                 m = cls(*constructor, policy=email.policy.default)
                 self.assertIs(m.policy, email.policy.default)
+
+    def test_iter_escaped_chars(self):
+        self.assertEqual(list(utils._iter_escaped_chars(r'a\\b\"c\\"d')),
+                         [(0, 'a'),
+                          (2, '\\\\'),
+                          (3, 'b'),
+                          (5, '\\"'),
+                          (6, 'c'),
+                          (8, '\\\\'),
+                          (9, '"'),
+                          (10, 'd')])
+        self.assertEqual(list(utils._iter_escaped_chars('a\\')),
+                         [(0, 'a'), (1, '\\')])
+
+    def test_strip_quoted_realnames(self):
+        def check(addr, expected):
+            self.assertEqual(utils._strip_quoted_realnames(addr), expected)
+
+        check('"Jane Doe" <jane@example.net>, "John Doe" <john@example.net>',
+              ' <jane@example.net>,  <john@example.net>')
+        check(r'"Jane \"Doe\"." <jane@example.net>',
+              ' <jane@example.net>')
+
+        # special cases
+        check(r'before"name"after', 'beforeafter')
+        check(r'before"name"', 'before')
+        check(r'b"name"', 'b')  # single char
+        check(r'"name"after', 'after')
+        check(r'"name"a', 'a')  # single char
+        check(r'"name"', '')
+
+        # no change
+        for addr in (
+            'Jane Doe <jane@example.net>, John Doe <john@example.net>',
+            'lone " quote',
+        ):
+            self.assertEqual(utils._strip_quoted_realnames(addr), addr)
+
+
+    def test_check_parenthesis(self):
+        addr = 'alice@example.net'
+        self.assertTrue(utils._check_parenthesis(f'{addr} (Alice)'))
+        self.assertFalse(utils._check_parenthesis(f'{addr} )Alice('))
+        self.assertFalse(utils._check_parenthesis(f'{addr} (Alice))'))
+        self.assertFalse(utils._check_parenthesis(f'{addr} ((Alice)'))
+
+        # Ignore real name between quotes
+        self.assertTrue(utils._check_parenthesis(f'")Alice((" {addr}'))
 
 
 # Test the iterator/generators
@@ -3694,6 +3943,16 @@ class TestParsers(TestEmailBase):
         self.assertFalse(msg.is_multipart())
         self.assertIsInstance(msg.get_payload(), str)
         self.assertIsInstance(msg.get_payload(decode=True), bytes)
+
+    def test_header_parser_multipart_is_valid(self):
+        # Don't flag valid multipart emails as having defects
+        with openfile('msg_47.txt', encoding="utf-8") as fp:
+            msgdata = fp.read()
+
+        parser = email.parser.Parser(policy=email.policy.default)
+        parsed_msg = parser.parsestr(msgdata, headersonly=True)
+
+        self.assertEqual(parsed_msg.defects, [])
 
     def test_bytes_parser_does_not_close_file(self):
         with openfile('msg_02.txt', 'rb') as fp:
@@ -3965,6 +4224,21 @@ class Test8BitBytesHandling(TestEmailBase):
         msg = email.message_from_bytes(m)
         self.assertEqual(msg.get_payload(decode=True),
                          '<,.V<W1A; á \n'.encode('utf-8'))
+
+    def test_rfc2231_charset_8bit_CTE(self):
+        m = textwrap.dedent("""\
+        From: foo@bar.com
+        To: baz
+        Mime-Version: 1.0
+        Content-Type: text/plain; charset*=ansi-x3.4-1968''utf-8
+        Content-Transfer-Encoding: 8bit
+
+        pöstal
+        """).encode('utf-8')
+        msg = email.message_from_bytes(m)
+        self.assertEqual(msg.get_payload(), "pöstal\n")
+        self.assertEqual(msg.get_payload(decode=True),
+                         "pöstal\n".encode('utf-8'))
 
 
     headertest_headers = (

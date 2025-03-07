@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(zlib_compress__doc__,
 "compress($module, data, /, level=Z_DEFAULT_COMPRESSION, wbits=MAX_WBITS)\n"
@@ -62,22 +63,19 @@ zlib_compress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     int level = Z_DEFAULT_COMPRESSION;
     int wbits = MAX_WBITS;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("compress", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (!noptargs) {
         goto skip_optional_pos;
     }
     if (args[1]) {
-        level = _PyLong_AsInt(args[1]);
+        level = PyLong_AsInt(args[1]);
         if (level == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -85,7 +83,7 @@ zlib_compress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
             goto skip_optional_pos;
         }
     }
-    wbits = _PyLong_AsInt(args[2]);
+    wbits = PyLong_AsInt(args[2]);
     if (wbits == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -156,22 +154,19 @@ zlib_decompress(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     int wbits = MAX_WBITS;
     Py_ssize_t bufsize = DEF_BUF_SIZE;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("decompress", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (!noptargs) {
         goto skip_optional_pos;
     }
     if (args[1]) {
-        wbits = _PyLong_AsInt(args[1]);
+        wbits = PyLong_AsInt(args[1]);
         if (wbits == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -278,7 +273,8 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     int strategy = Z_DEFAULT_STRATEGY;
     Py_buffer zdict = {NULL, NULL};
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 6, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 6, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -286,7 +282,7 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         goto skip_optional_pos;
     }
     if (args[0]) {
-        level = _PyLong_AsInt(args[0]);
+        level = PyLong_AsInt(args[0]);
         if (level == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -295,7 +291,7 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         }
     }
     if (args[1]) {
-        method = _PyLong_AsInt(args[1]);
+        method = PyLong_AsInt(args[1]);
         if (method == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -304,7 +300,7 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         }
     }
     if (args[2]) {
-        wbits = _PyLong_AsInt(args[2]);
+        wbits = PyLong_AsInt(args[2]);
         if (wbits == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -313,7 +309,7 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         }
     }
     if (args[3]) {
-        memLevel = _PyLong_AsInt(args[3]);
+        memLevel = PyLong_AsInt(args[3]);
         if (memLevel == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -322,7 +318,7 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         }
     }
     if (args[4]) {
-        strategy = _PyLong_AsInt(args[4]);
+        strategy = PyLong_AsInt(args[4]);
         if (strategy == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -331,10 +327,6 @@ zlib_compressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
         }
     }
     if (PyObject_GetBuffer(args[5], &zdict, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&zdict, 'C')) {
-        _PyArg_BadArgument("compressobj", "argument 'zdict'", "contiguous buffer", args[5]);
         goto exit;
     }
 skip_optional_pos:
@@ -401,7 +393,8 @@ zlib_decompressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     int wbits = MAX_WBITS;
     PyObject *zdict = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -409,7 +402,7 @@ zlib_decompressobj(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
         goto skip_optional_pos;
     }
     if (args[0]) {
-        wbits = _PyLong_AsInt(args[0]);
+        wbits = PyLong_AsInt(args[0]);
         if (wbits == -1 && PyErr_Occurred()) {
             goto exit;
         }
@@ -446,7 +439,7 @@ zlib_Compress_compress_impl(compobject *self, PyTypeObject *cls,
                             Py_buffer *data);
 
 static PyObject *
-zlib_Compress_compress(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Compress_compress(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -465,18 +458,15 @@ zlib_Compress_compress(compobject *self, PyTypeObject *cls, PyObject *const *arg
     PyObject *argsbuf[1];
     Py_buffer data = {NULL, NULL};
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("compress", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
-    return_value = zlib_Compress_compress_impl(self, cls, &data);
+    return_value = zlib_Compress_compress_impl((compobject *)self, cls, &data);
 
 exit:
     /* Cleanup for data */
@@ -512,7 +502,7 @@ zlib_Decompress_decompress_impl(compobject *self, PyTypeObject *cls,
                                 Py_buffer *data, Py_ssize_t max_length);
 
 static PyObject *
-zlib_Decompress_decompress(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Decompress_decompress(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -545,15 +535,12 @@ zlib_Decompress_decompress(compobject *self, PyTypeObject *cls, PyObject *const 
     Py_buffer data = {NULL, NULL};
     Py_ssize_t max_length = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("decompress", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -572,7 +559,7 @@ zlib_Decompress_decompress(compobject *self, PyTypeObject *cls, PyObject *const 
         max_length = ival;
     }
 skip_optional_pos:
-    return_value = zlib_Decompress_decompress_impl(self, cls, &data, max_length);
+    return_value = zlib_Decompress_decompress_impl((compobject *)self, cls, &data, max_length);
 
 exit:
     /* Cleanup for data */
@@ -602,7 +589,7 @@ static PyObject *
 zlib_Compress_flush_impl(compobject *self, PyTypeObject *cls, int mode);
 
 static PyObject *
-zlib_Compress_flush(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Compress_flush(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -621,19 +608,20 @@ zlib_Compress_flush(compobject *self, PyTypeObject *cls, PyObject *const *args, 
     PyObject *argsbuf[1];
     int mode = Z_FINISH;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     if (nargs < 1) {
         goto skip_optional_posonly;
     }
-    mode = _PyLong_AsInt(args[0]);
+    mode = PyLong_AsInt(args[0]);
     if (mode == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional_posonly:
-    return_value = zlib_Compress_flush_impl(self, cls, mode);
+    return_value = zlib_Compress_flush_impl((compobject *)self, cls, mode);
 
 exit:
     return return_value;
@@ -654,13 +642,13 @@ static PyObject *
 zlib_Compress_copy_impl(compobject *self, PyTypeObject *cls);
 
 static PyObject *
-zlib_Compress_copy(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Compress_copy(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
         return NULL;
     }
-    return zlib_Compress_copy_impl(self, cls);
+    return zlib_Compress_copy_impl((compobject *)self, cls);
 }
 
 #endif /* defined(HAVE_ZLIB_COPY) */
@@ -679,13 +667,13 @@ static PyObject *
 zlib_Compress___copy___impl(compobject *self, PyTypeObject *cls);
 
 static PyObject *
-zlib_Compress___copy__(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Compress___copy__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "__copy__() takes no arguments");
         return NULL;
     }
-    return zlib_Compress___copy___impl(self, cls);
+    return zlib_Compress___copy___impl((compobject *)self, cls);
 }
 
 #endif /* defined(HAVE_ZLIB_COPY) */
@@ -705,7 +693,7 @@ zlib_Compress___deepcopy___impl(compobject *self, PyTypeObject *cls,
                                 PyObject *memo);
 
 static PyObject *
-zlib_Compress___deepcopy__(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Compress___deepcopy__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -724,12 +712,13 @@ zlib_Compress___deepcopy__(compobject *self, PyTypeObject *cls, PyObject *const 
     PyObject *argsbuf[1];
     PyObject *memo;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     memo = args[0];
-    return_value = zlib_Compress___deepcopy___impl(self, cls, memo);
+    return_value = zlib_Compress___deepcopy___impl((compobject *)self, cls, memo);
 
 exit:
     return return_value;
@@ -752,13 +741,13 @@ static PyObject *
 zlib_Decompress_copy_impl(compobject *self, PyTypeObject *cls);
 
 static PyObject *
-zlib_Decompress_copy(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Decompress_copy(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
         return NULL;
     }
-    return zlib_Decompress_copy_impl(self, cls);
+    return zlib_Decompress_copy_impl((compobject *)self, cls);
 }
 
 #endif /* defined(HAVE_ZLIB_COPY) */
@@ -777,13 +766,13 @@ static PyObject *
 zlib_Decompress___copy___impl(compobject *self, PyTypeObject *cls);
 
 static PyObject *
-zlib_Decompress___copy__(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Decompress___copy__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "__copy__() takes no arguments");
         return NULL;
     }
-    return zlib_Decompress___copy___impl(self, cls);
+    return zlib_Decompress___copy___impl((compobject *)self, cls);
 }
 
 #endif /* defined(HAVE_ZLIB_COPY) */
@@ -803,7 +792,7 @@ zlib_Decompress___deepcopy___impl(compobject *self, PyTypeObject *cls,
                                   PyObject *memo);
 
 static PyObject *
-zlib_Decompress___deepcopy__(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Decompress___deepcopy__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -822,12 +811,13 @@ zlib_Decompress___deepcopy__(compobject *self, PyTypeObject *cls, PyObject *cons
     PyObject *argsbuf[1];
     PyObject *memo;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     memo = args[0];
-    return_value = zlib_Decompress___deepcopy___impl(self, cls, memo);
+    return_value = zlib_Decompress___deepcopy___impl((compobject *)self, cls, memo);
 
 exit:
     return return_value;
@@ -852,7 +842,7 @@ zlib_Decompress_flush_impl(compobject *self, PyTypeObject *cls,
                            Py_ssize_t length);
 
 static PyObject *
-zlib_Decompress_flush(compobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_Decompress_flush(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -871,7 +861,8 @@ zlib_Decompress_flush(compobject *self, PyTypeObject *cls, PyObject *const *args
     PyObject *argsbuf[1];
     Py_ssize_t length = DEF_BUF_SIZE;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -891,7 +882,7 @@ zlib_Decompress_flush(compobject *self, PyTypeObject *cls, PyObject *const *args
         length = ival;
     }
 skip_optional_posonly:
-    return_value = zlib_Decompress_flush_impl(self, cls, length);
+    return_value = zlib_Decompress_flush_impl((compobject *)self, cls, length);
 
 exit:
     return return_value;
@@ -924,7 +915,7 @@ zlib_ZlibDecompressor_decompress_impl(ZlibDecompressor *self,
                                       Py_buffer *data, Py_ssize_t max_length);
 
 static PyObject *
-zlib_ZlibDecompressor_decompress(ZlibDecompressor *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zlib_ZlibDecompressor_decompress(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -957,15 +948,12 @@ zlib_ZlibDecompressor_decompress(ZlibDecompressor *self, PyObject *const *args, 
     Py_buffer data = {NULL, NULL};
     Py_ssize_t max_length = -1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("decompress", "argument 'data'", "contiguous buffer", args[0]);
         goto exit;
     }
     if (!noptargs) {
@@ -984,7 +972,7 @@ zlib_ZlibDecompressor_decompress(ZlibDecompressor *self, PyObject *const *args, 
         max_length = ival;
     }
 skip_optional_pos:
-    return_value = zlib_ZlibDecompressor_decompress_impl(self, &data, max_length);
+    return_value = zlib_ZlibDecompressor_decompress_impl((ZlibDecompressor *)self, &data, max_length);
 
 exit:
     /* Cleanup for data */
@@ -1023,10 +1011,6 @@ zlib_adler32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
-        goto exit;
-    }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("adler32", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (nargs < 2) {
@@ -1079,10 +1063,6 @@ zlib_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("crc32", "argument 1", "contiguous buffer", args[0]);
-        goto exit;
-    }
     if (nargs < 2) {
         goto skip_optional;
     }
@@ -1129,4 +1109,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=57ff7b511ab23132 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=969872868c303e8a input=a9049054013a1b77]*/

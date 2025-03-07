@@ -1,5 +1,9 @@
-:mod:`struct` --- Interpret bytes as packed binary data
-=======================================================
+:mod:`!struct` --- Interpret bytes as packed binary data
+========================================================
+
+.. testsetup:: *
+
+   from struct import *
 
 .. module:: struct
    :synopsis: Interpret bytes as packed binary data.
@@ -156,6 +160,21 @@ following table:
 
 If the first character is not one of these, ``'@'`` is assumed.
 
+.. note::
+
+   The number 1023 (``0x3ff`` in hexadecimal) has the following byte representations:
+
+   * ``03 ff`` in big-endian (``>``)
+   * ``ff 03`` in little-endian (``<``)
+
+   Python example:
+
+       >>> import struct
+       >>> struct.pack('>h', 1023)
+       b'\x03\xff'
+       >>> struct.pack('<h', 1023)
+       b'\xff\x03'
+
 Native byte order is big-endian or little-endian, depending on the
 host system. For example, Intel x86, AMD64 (x86-64), and Apple M1 are
 little-endian; IBM z and many legacy architectures are big-endian.
@@ -231,9 +250,9 @@ platform-dependent.
 | ``Q``  | :c:expr:`unsigned long   | integer            | 8              | \(2)       |
 |        | long`                    |                    |                |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``n``  | :c:expr:`ssize_t`        | integer            |                | \(3)       |
+| ``n``  | :c:type:`ssize_t`        | integer            |                | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``N``  | :c:expr:`size_t`         | integer            |                | \(3)       |
+| ``N``  | :c:type:`size_t`         | integer            |                | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``e``  | \(6)                     | float              | 2              | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
@@ -248,11 +267,25 @@ platform-dependent.
 | ``P``  | :c:expr:`void \*`        | integer            |                | \(5)       |
 +--------+--------------------------+--------------------+----------------+------------+
 
+Additionally, if IEC 60559 compatible complex arithmetic (Annex G of the
+C11 standard) is supported, the following format characters are available:
+
++--------+--------------------------+--------------------+----------------+------------+
+| Format | C Type                   | Python type        | Standard size  | Notes      |
++========+==========================+====================+================+============+
+| ``E``  | :c:expr:`float complex`  | complex            | 8              | \(10)      |
++--------+--------------------------+--------------------+----------------+------------+
+| ``C``  | :c:expr:`double complex` | complex            | 16             | \(10)      |
++--------+--------------------------+--------------------+----------------+------------+
+
 .. versionchanged:: 3.3
    Added support for the ``'n'`` and ``'N'`` formats.
 
 .. versionchanged:: 3.6
    Added support for the ``'e'`` format.
+
+.. versionchanged:: 3.14
+   Added support for the ``'E'`` and ``'C'`` formats.
 
 
 Notes:
@@ -260,17 +293,17 @@ Notes:
 (1)
    .. index:: single: ? (question mark); in struct format strings
 
-   The ``'?'`` conversion code corresponds to the :c:expr:`_Bool` type defined by
-   C99. If this type is not available, it is simulated using a :c:expr:`char`. In
-   standard mode, it is always represented by one byte.
+   The ``'?'`` conversion code corresponds to the :c:expr:`_Bool` type
+   defined by C standards since C99.  In standard mode, it is
+   represented by one byte.
 
 (2)
    When attempting to pack a non-integer using any of the integer conversion
-   codes, if the non-integer has a :meth:`__index__` method then that method is
+   codes, if the non-integer has a :meth:`~object.__index__` method then that method is
    called to convert the argument to an integer before packing.
 
    .. versionchanged:: 3.2
-      Added use of the :meth:`__index__` method for non-integers.
+      Added use of the :meth:`~object.__index__` method for non-integers.
 
 (3)
    The ``'n'`` and ``'N'`` conversion codes are only available for the native
@@ -330,6 +363,11 @@ Notes:
    of bytes.  As a special case, ``'0s'`` means a single, empty string (while
    ``'0c'`` means 0 characters).
 
+(10)
+   For the ``'E'`` and ``'C'`` format characters, the packed representation uses
+   the IEEE 754 binary32 and binary64 format for components of the complex
+   number, regardless of the floating-point format used by the platform.
+
 A format character may be preceded by an integral repeat count.  For example,
 the format string ``'4h'`` means exactly the same as ``'hhhh'``.
 
@@ -371,7 +409,7 @@ ordering::
     >>> from struct import *
     >>> pack(">bhl", 1, 2, 3)
     b'\x01\x00\x02\x00\x00\x00\x03'
-    >>> unpack('>bhl', b'\x01\x00\x02\x00\x00\x00\x03'
+    >>> unpack('>bhl', b'\x01\x00\x02\x00\x00\x00\x03')
     (1, 2, 3)
     >>> calcsize('>bhl')
     7
@@ -462,7 +500,7 @@ In such cases, the ``@`` format character should be used to specify
 native byte ordering and data sizes.  Internal pad bytes are normally inserted
 automatically.  It is possible that a zero-repeat format code will be
 needed at the end of a format string to round up to the correct
-byte boundary for proper alignment of consective chunks of data.
+byte boundary for proper alignment of consecutive chunks of data.
 
 Consider these two simple examples (on a 64-bit, little-endian
 machine)::
@@ -597,9 +635,14 @@ The :mod:`struct` module also defines the following type:
       The calculated size of the struct (and hence of the bytes object produced
       by the :meth:`pack` method) corresponding to :attr:`format`.
 
+   .. versionchanged:: 3.13 The *repr()* of structs has changed.  It
+      is now:
+
+         >>> Struct('i')
+         Struct('i')
 
 .. _half precision format: https://en.wikipedia.org/wiki/Half-precision_floating-point_format
 
 .. _ieee 754 standard: https://en.wikipedia.org/wiki/IEEE_754-2008_revision
 
-.. _IETF RFC 1700: https://tools.ietf.org/html/rfc1700
+.. _IETF RFC 1700: https://datatracker.ietf.org/doc/html/rfc1700

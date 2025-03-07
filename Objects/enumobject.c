@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_long.h"          // _PyLong_GetOne()
+#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 
 #include "clinic/enumobject.c.h"
@@ -22,6 +23,7 @@ typedef struct {
     PyObject* one;                 /* borrowed reference */
 } enumobject;
 
+#define _enumobject_CAST(op)    ((enumobject *)(op))
 
 /*[clinic input]
 @classmethod
@@ -149,8 +151,9 @@ enumerate_vectorcall(PyObject *type, PyObject *const *args,
 }
 
 static void
-enum_dealloc(enumobject *en)
+enum_dealloc(PyObject *op)
 {
+    enumobject *en = _enumobject_CAST(op);
     PyObject_GC_UnTrack(en);
     Py_XDECREF(en->en_sit);
     Py_XDECREF(en->en_result);
@@ -159,8 +162,9 @@ enum_dealloc(enumobject *en)
 }
 
 static int
-enum_traverse(enumobject *en, visitproc visit, void *arg)
+enum_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    enumobject *en = _enumobject_CAST(op);
     Py_VISIT(en->en_sit);
     Py_VISIT(en->en_result);
     Py_VISIT(en->en_longindex);
@@ -219,8 +223,9 @@ enum_next_long(enumobject *en, PyObject* next_item)
 }
 
 static PyObject *
-enum_next(enumobject *en)
+enum_next(PyObject *op)
 {
+    enumobject *en = _enumobject_CAST(op);
     PyObject *next_index;
     PyObject *next_item;
     PyObject *result = en->en_result;
@@ -269,8 +274,9 @@ enum_next(enumobject *en)
 }
 
 static PyObject *
-enum_reduce(enumobject *en, PyObject *Py_UNUSED(ignored))
+enum_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    enumobject *en = _enumobject_CAST(op);
     if (en->en_longindex != NULL)
         return Py_BuildValue("O(OO)", Py_TYPE(en), en->en_sit, en->en_longindex);
     else
@@ -280,7 +286,7 @@ enum_reduce(enumobject *en, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyMethodDef enum_methods[] = {
-    {"__reduce__", (PyCFunction)enum_reduce, METH_NOARGS, reduce_doc},
+    {"__reduce__", enum_reduce, METH_NOARGS, reduce_doc},
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
@@ -292,7 +298,7 @@ PyTypeObject PyEnum_Type = {
     sizeof(enumobject),             /* tp_basicsize */
     0,                              /* tp_itemsize */
     /* methods */
-    (destructor)enum_dealloc,       /* tp_dealloc */
+    enum_dealloc,                   /* tp_dealloc */
     0,                              /* tp_vectorcall_offset */
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
@@ -310,12 +316,12 @@ PyTypeObject PyEnum_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,        /* tp_flags */
     enum_new__doc__,                /* tp_doc */
-    (traverseproc)enum_traverse,    /* tp_traverse */
+    enum_traverse,                  /* tp_traverse */
     0,                              /* tp_clear */
     0,                              /* tp_richcompare */
     0,                              /* tp_weaklistoffset */
     PyObject_SelfIter,              /* tp_iter */
-    (iternextfunc)enum_next,        /* tp_iternext */
+    enum_next,                      /* tp_iternext */
     enum_methods,                   /* tp_methods */
     0,                              /* tp_members */
     0,                              /* tp_getset */
@@ -328,7 +334,7 @@ PyTypeObject PyEnum_Type = {
     PyType_GenericAlloc,            /* tp_alloc */
     enum_new,                       /* tp_new */
     PyObject_GC_Del,                /* tp_free */
-    .tp_vectorcall = (vectorcallfunc)enumerate_vectorcall
+    .tp_vectorcall = enumerate_vectorcall
 };
 
 /* Reversed Object ***************************************************************/
@@ -338,6 +344,8 @@ typedef struct {
     Py_ssize_t      index;
     PyObject* seq;
 } reversedobject;
+
+#define _reversedobject_CAST(op)    ((reversedobject *)(op))
 
 /*[clinic input]
 @classmethod
@@ -410,23 +418,26 @@ reversed_vectorcall(PyObject *type, PyObject * const*args,
 }
 
 static void
-reversed_dealloc(reversedobject *ro)
+reversed_dealloc(PyObject *op)
 {
+    reversedobject *ro = _reversedobject_CAST(op);
     PyObject_GC_UnTrack(ro);
     Py_XDECREF(ro->seq);
     Py_TYPE(ro)->tp_free(ro);
 }
 
 static int
-reversed_traverse(reversedobject *ro, visitproc visit, void *arg)
+reversed_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    reversedobject *ro = _reversedobject_CAST(op);
     Py_VISIT(ro->seq);
     return 0;
 }
 
 static PyObject *
-reversed_next(reversedobject *ro)
+reversed_next(PyObject *op)
 {
+    reversedobject *ro = _reversedobject_CAST(op);
     PyObject *item;
     Py_ssize_t index = ro->index;
 
@@ -446,8 +457,9 @@ reversed_next(reversedobject *ro)
 }
 
 static PyObject *
-reversed_len(reversedobject *ro, PyObject *Py_UNUSED(ignored))
+reversed_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    reversedobject *ro = _reversedobject_CAST(op);
     Py_ssize_t position, seqsize;
 
     if (ro->seq == NULL)
@@ -462,8 +474,9 @@ reversed_len(reversedobject *ro, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-reversed_reduce(reversedobject *ro, PyObject *Py_UNUSED(ignored))
+reversed_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    reversedobject *ro = _reversedobject_CAST(op);
     if (ro->seq)
         return Py_BuildValue("O(O)n", Py_TYPE(ro), ro->seq, ro->index);
     else
@@ -471,8 +484,9 @@ reversed_reduce(reversedobject *ro, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-reversed_setstate(reversedobject *ro, PyObject *state)
+reversed_setstate(PyObject *op, PyObject *state)
 {
+    reversedobject *ro = _reversedobject_CAST(op);
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
@@ -492,9 +506,9 @@ reversed_setstate(reversedobject *ro, PyObject *state)
 PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
 
 static PyMethodDef reversediter_methods[] = {
-    {"__length_hint__", (PyCFunction)reversed_len, METH_NOARGS, length_hint_doc},
-    {"__reduce__", (PyCFunction)reversed_reduce, METH_NOARGS, reduce_doc},
-    {"__setstate__", (PyCFunction)reversed_setstate, METH_O, setstate_doc},
+    {"__length_hint__", reversed_len, METH_NOARGS, length_hint_doc},
+    {"__reduce__", reversed_reduce, METH_NOARGS, reduce_doc},
+    {"__setstate__", reversed_setstate, METH_O, setstate_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -504,7 +518,7 @@ PyTypeObject PyReversed_Type = {
     sizeof(reversedobject),         /* tp_basicsize */
     0,                              /* tp_itemsize */
     /* methods */
-    (destructor)reversed_dealloc,   /* tp_dealloc */
+    reversed_dealloc,               /* tp_dealloc */
     0,                              /* tp_vectorcall_offset */
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
@@ -522,12 +536,12 @@ PyTypeObject PyReversed_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,        /* tp_flags */
     reversed_new__doc__,            /* tp_doc */
-    (traverseproc)reversed_traverse,/* tp_traverse */
+    reversed_traverse,              /* tp_traverse */
     0,                              /* tp_clear */
     0,                              /* tp_richcompare */
     0,                              /* tp_weaklistoffset */
     PyObject_SelfIter,              /* tp_iter */
-    (iternextfunc)reversed_next,    /* tp_iternext */
+    reversed_next,                  /* tp_iternext */
     reversediter_methods,           /* tp_methods */
     0,                              /* tp_members */
     0,                              /* tp_getset */
@@ -540,5 +554,5 @@ PyTypeObject PyReversed_Type = {
     PyType_GenericAlloc,            /* tp_alloc */
     reversed_new,                   /* tp_new */
     PyObject_GC_Del,                /* tp_free */
-    .tp_vectorcall = (vectorcallfunc)reversed_vectorcall,
+    .tp_vectorcall = reversed_vectorcall,
 };

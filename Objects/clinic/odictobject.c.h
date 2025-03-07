@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(OrderedDict_fromkeys__doc__,
 "fromkeys($type, /, iterable, value=None)\n"
@@ -54,7 +54,8 @@ OrderedDict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs
     PyObject *seq;
     PyObject *value = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -86,7 +87,7 @@ OrderedDict_setdefault_impl(PyODictObject *self, PyObject *key,
                             PyObject *default_value);
 
 static PyObject *
-OrderedDict_setdefault(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+OrderedDict_setdefault(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -119,7 +120,8 @@ OrderedDict_setdefault(PyODictObject *self, PyObject *const *args, Py_ssize_t na
     PyObject *key;
     PyObject *default_value = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -129,7 +131,7 @@ OrderedDict_setdefault(PyODictObject *self, PyObject *const *args, Py_ssize_t na
     }
     default_value = args[1];
 skip_optional_pos:
-    return_value = OrderedDict_setdefault_impl(self, key, default_value);
+    return_value = OrderedDict_setdefault_impl((PyODictObject *)self, key, default_value);
 
 exit:
     return return_value;
@@ -152,7 +154,7 @@ OrderedDict_pop_impl(PyODictObject *self, PyObject *key,
                      PyObject *default_value);
 
 static PyObject *
-OrderedDict_pop(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+OrderedDict_pop(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -185,7 +187,8 @@ OrderedDict_pop(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     PyObject *key;
     PyObject *default_value = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -195,7 +198,7 @@ OrderedDict_pop(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, Py
     }
     default_value = args[1];
 skip_optional_pos:
-    return_value = OrderedDict_pop_impl(self, key, default_value);
+    return_value = OrderedDict_pop_impl((PyODictObject *)self, key, default_value);
 
 exit:
     return return_value;
@@ -216,7 +219,7 @@ static PyObject *
 OrderedDict_popitem_impl(PyODictObject *self, int last);
 
 static PyObject *
-OrderedDict_popitem(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+OrderedDict_popitem(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -248,7 +251,8 @@ OrderedDict_popitem(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int last = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -260,7 +264,7 @@ OrderedDict_popitem(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
 skip_optional_pos:
-    return_value = OrderedDict_popitem_impl(self, last);
+    return_value = OrderedDict_popitem_impl((PyODictObject *)self, last);
 
 exit:
     return return_value;
@@ -281,7 +285,7 @@ static PyObject *
 OrderedDict_move_to_end_impl(PyODictObject *self, PyObject *key, int last);
 
 static PyObject *
-OrderedDict_move_to_end(PyODictObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+OrderedDict_move_to_end(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -314,7 +318,8 @@ OrderedDict_move_to_end(PyODictObject *self, PyObject *const *args, Py_ssize_t n
     PyObject *key;
     int last = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -327,9 +332,9 @@ OrderedDict_move_to_end(PyODictObject *self, PyObject *const *args, Py_ssize_t n
         goto exit;
     }
 skip_optional_pos:
-    return_value = OrderedDict_move_to_end_impl(self, key, last);
+    return_value = OrderedDict_move_to_end_impl((PyODictObject *)self, key, last);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=76d85a9162d62ca8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=55bd390bb516e997 input=a9049054013a1b77]*/

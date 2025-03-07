@@ -45,7 +45,7 @@ Functions and classes provided:
 
    This function is a :term:`decorator` that can be used to define a factory
    function for :keyword:`with` statement context managers, without needing to
-   create a class or separate :meth:`__enter__` and :meth:`__exit__` methods.
+   create a class or separate :meth:`~object.__enter__` and :meth:`~object.__exit__` methods.
 
    While many objects natively support use in with statements, sometimes a
    resource needs to be managed that isn't a context manager in its own right,
@@ -106,8 +106,8 @@ Functions and classes provided:
 
    This function is a :term:`decorator` that can be used to define a factory
    function for :keyword:`async with` statement asynchronous context managers,
-   without needing to create a class or separate :meth:`__aenter__` and
-   :meth:`__aexit__` methods. It must be applied to an :term:`asynchronous
+   without needing to create a class or separate :meth:`~object.__aenter__` and
+   :meth:`~object.__aexit__` methods. It must be applied to an :term:`asynchronous
    generator` function.
 
    A simple example::
@@ -151,9 +151,9 @@ Functions and classes provided:
    created by :func:`asynccontextmanager` to meet the requirement that context
    managers support multiple invocations in order to be used as decorators.
 
-  .. versionchanged:: 3.10
-     Async context managers created with :func:`asynccontextmanager` can
-     be used as decorators.
+   .. versionchanged:: 3.10
+      Async context managers created with :func:`asynccontextmanager` can
+      be used as decorators.
 
 
 .. function:: closing(thing)
@@ -182,6 +182,14 @@ Functions and classes provided:
    without needing to explicitly close ``page``.  Even if an error occurs,
    ``page.close()`` will be called when the :keyword:`with` block is exited.
 
+   .. note::
+
+      Most types managing resources support the :term:`context manager` protocol,
+      which closes *thing* on leaving the :keyword:`with` statement.
+      As such, :func:`!closing` is most useful for third party types that don't
+      support context managers.
+      This example is purely for illustration purposes,
+      as :func:`~urllib.request.urlopen` would normally be used in a context manager.
 
 .. function:: aclosing(thing)
 
@@ -304,8 +312,17 @@ Functions and classes provided:
 
    This context manager is :ref:`reentrant <reentrant-cms>`.
 
+   If the code within the :keyword:`!with` block raises a
+   :exc:`BaseExceptionGroup`, suppressed exceptions are removed from the
+   group.  Any exceptions of the group which are not suppressed are re-raised in
+   a new group which is created using the original group's :meth:`~BaseExceptionGroup.derive`
+   method.
+
    .. versionadded:: 3.4
 
+   .. versionchanged:: 3.12
+      ``suppress`` now supports suppressing exceptions raised as
+      part of a :exc:`BaseExceptionGroup`.
 
 .. function:: redirect_stdout(new_target)
 
@@ -508,7 +525,7 @@ Functions and classes provided:
           # the with statement, even if attempts to open files later
           # in the list raise an exception
 
-   The :meth:`__enter__` method returns the :class:`ExitStack` instance, and
+   The :meth:`~object.__enter__` method returns the :class:`ExitStack` instance, and
    performs no additional operations.
 
    Each instance maintains a stack of registered callbacks that are called in
@@ -536,9 +553,9 @@ Functions and classes provided:
 
    .. method:: enter_context(cm)
 
-      Enters a new context manager and adds its :meth:`__exit__` method to
+      Enters a new context manager and adds its :meth:`~object.__exit__` method to
       the callback stack. The return value is the result of the context
-      manager's own :meth:`__enter__` method.
+      manager's own :meth:`~object.__enter__` method.
 
       These context managers may suppress exceptions just as they normally
       would if used directly as part of a :keyword:`with` statement.
@@ -549,18 +566,18 @@ Functions and classes provided:
 
    .. method:: push(exit)
 
-      Adds a context manager's :meth:`__exit__` method to the callback stack.
+      Adds a context manager's :meth:`~object.__exit__` method to the callback stack.
 
       As ``__enter__`` is *not* invoked, this method can be used to cover
-      part of an :meth:`__enter__` implementation with a context manager's own
-      :meth:`__exit__` method.
+      part of an :meth:`~object.__enter__` implementation with a context manager's own
+      :meth:`~object.__exit__` method.
 
       If passed an object that is not a context manager, this method assumes
       it is a callback with the same signature as a context manager's
-      :meth:`__exit__` method and adds it directly to the callback stack.
+      :meth:`~object.__exit__` method and adds it directly to the callback stack.
 
       By returning true values, these callbacks can suppress exceptions the
-      same way context manager :meth:`__exit__` methods can.
+      same way context manager :meth:`~object.__exit__` methods can.
 
       The passed in object is returned from the function, allowing this
       method to be used as a function decorator.
@@ -609,12 +626,13 @@ Functions and classes provided:
    asynchronous context managers, as well as having coroutines for
    cleanup logic.
 
-   The :meth:`close` method is not implemented, :meth:`aclose` must be used
+   The :meth:`~ExitStack.close` method is not implemented; :meth:`aclose` must be used
    instead.
 
-   .. coroutinemethod:: enter_async_context(cm)
+   .. method:: enter_async_context(cm)
+      :async:
 
-      Similar to :meth:`enter_context` but expects an asynchronous context
+      Similar to :meth:`ExitStack.enter_context` but expects an asynchronous context
       manager.
 
       .. versionchanged:: 3.11
@@ -623,16 +641,17 @@ Functions and classes provided:
 
    .. method:: push_async_exit(exit)
 
-      Similar to :meth:`push` but expects either an asynchronous context manager
+      Similar to :meth:`ExitStack.push` but expects either an asynchronous context manager
       or a coroutine function.
 
    .. method:: push_async_callback(callback, /, *args, **kwds)
 
-      Similar to :meth:`callback` but expects a coroutine function.
+      Similar to :meth:`ExitStack.callback` but expects a coroutine function.
 
-   .. coroutinemethod:: aclose()
+   .. method:: aclose()
+      :async:
 
-      Similar to :meth:`close` but properly handles awaitables.
+      Similar to :meth:`ExitStack.close` but properly handles awaitables.
 
    Continuing the example for :func:`asynccontextmanager`::
 
@@ -707,7 +726,7 @@ Cleaning up in an ``__enter__`` implementation
 
 As noted in the documentation of :meth:`ExitStack.push`, this
 method can be useful in cleaning up an already allocated resource if later
-steps in the :meth:`__enter__` implementation fail.
+steps in the :meth:`~object.__enter__` implementation fail.
 
 Here's an example of doing this for a context manager that accepts resource
 acquisition and release functions, along with an optional validation function,
@@ -781,7 +800,7 @@ executing that callback::
        if result:
            stack.pop_all()
 
-This allows the intended cleanup up behaviour to be made explicit up front,
+This allows the intended cleanup behaviour to be made explicit up front,
 rather than requiring a separate flag variable.
 
 If a particular application uses this pattern a lot, it can be simplified
@@ -864,7 +883,7 @@ And also as a function decorator::
 
 Note that there is one additional limitation when using context managers
 as function decorators: there's no way to access the return value of
-:meth:`__enter__`. If that value is needed, then it is still necessary to use
+:meth:`~object.__enter__`. If that value is needed, then it is still necessary to use
 an explicit ``with`` statement.
 
 .. seealso::

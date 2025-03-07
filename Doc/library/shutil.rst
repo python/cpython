@@ -1,5 +1,5 @@
-:mod:`shutil` --- High-level file operations
-============================================
+:mod:`!shutil` --- High-level file operations
+=============================================
 
 .. module:: shutil
    :synopsis: High-level file operations, including copying.
@@ -39,7 +39,7 @@ Directory and files operations
 
 .. function:: copyfileobj(fsrc, fdst[, length])
 
-   Copy the contents of the file-like object *fsrc* to the file-like object *fdst*.
+   Copy the contents of the :term:`file-like object <file object>` *fsrc* to the file-like object *fdst*.
    The integer *length*, if given, is the buffer size. In particular, a negative
    *length* value means to copy the data without looping over the source data in
    chunks; by default the data is read in chunks to avoid uncontrolled memory
@@ -52,7 +52,7 @@ Directory and files operations
 
    Copy the contents (no metadata) of the file named *src* to a file named
    *dst* and return *dst* in the most efficient way possible.
-   *src* and *dst* are path-like objects or path names given as strings.
+   *src* and *dst* are :term:`path-like objects <path-like object>` or path names given as strings.
 
    *dst* must be the complete target file name; look at :func:`~shutil.copy`
    for a copy that accepts a target directory path.  If *src* and *dst*
@@ -94,7 +94,7 @@ Directory and files operations
 .. function:: copymode(src, dst, *, follow_symlinks=True)
 
    Copy the permission bits from *src* to *dst*.  The file contents, owner, and
-   group are unaffected.  *src* and *dst* are path-like objects or path names
+   group are unaffected.  *src* and *dst* are :term:`path-like objects <path-like object>` or path names
    given as strings.
    If *follow_symlinks* is false, and both *src* and *dst* are symbolic links,
    :func:`copymode` will attempt to modify the mode of *dst* itself (rather
@@ -113,7 +113,7 @@ Directory and files operations
    Copy the permission bits, last access time, last modification time, and
    flags from *src* to *dst*.  On Linux, :func:`copystat` also copies the
    "extended attributes" where possible.  The file contents, owner, and
-   group are unaffected.  *src* and *dst* are path-like objects or path
+   group are unaffected.  *src* and *dst* are :term:`path-like objects <path-like object>` or path
    names given as strings.
 
    If *follow_symlinks* is false, and *src* and *dst* both
@@ -242,7 +242,7 @@ Directory and files operations
    be copied as far as the platform allows; if false or omitted, the contents
    and metadata of the linked files are copied to the new tree.
 
-   When *symlinks* is false, if the file pointed by the symlink doesn't
+   When *symlinks* is false, if the file pointed to by the symlink doesn't
    exist, an exception will be added in the list of errors raised in
    an :exc:`Error` exception at the end of the copy process.
    You can set the optional *ignore_dangling_symlinks* flag to true if you
@@ -274,33 +274,33 @@ Directory and files operations
 
    .. audit-event:: shutil.copytree src,dst shutil.copytree
 
-   .. versionchanged:: 3.3
-      Copy metadata when *symlinks* is false.
-      Now returns *dst*.
-
    .. versionchanged:: 3.2
       Added the *copy_function* argument to be able to provide a custom copy
       function.
       Added the *ignore_dangling_symlinks* argument to silence dangling symlinks
       errors when *symlinks* is false.
 
+   .. versionchanged:: 3.3
+      Copy metadata when *symlinks* is false.
+      Now returns *dst*.
+
    .. versionchanged:: 3.8
       Platform-specific fast-copy syscalls may be used internally in order to
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
 
-   .. versionadded:: 3.8
-      The *dirs_exist_ok* parameter.
+   .. versionchanged:: 3.8
+      Added the *dirs_exist_ok* parameter.
 
-.. function:: rmtree(path, ignore_errors=False, onerror=None, *, dir_fd=None)
+.. function:: rmtree(path, ignore_errors=False, onerror=None, *, onexc=None, dir_fd=None)
 
    .. index:: single: directory; deleting
 
    Delete an entire directory tree; *path* must point to a directory (but not a
    symbolic link to a directory).  If *ignore_errors* is true, errors resulting
    from failed removals will be ignored; if false or omitted, such errors are
-   handled by calling a handler specified by *onerror* or, if that is omitted,
-   they raise an exception.
+   handled by calling a handler specified by *onexc* or *onerror* or, if both
+   are omitted, exceptions are propagated to the caller.
 
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>`.
@@ -315,14 +315,17 @@ Directory and files operations
       otherwise.  Applications can use the :data:`rmtree.avoids_symlink_attacks`
       function attribute to determine which case applies.
 
-   If *onerror* is provided, it must be a callable that accepts three
-   parameters: *function*, *path*, and *excinfo*.
+   If *onexc* is provided, it must be a callable that accepts three parameters:
+   *function*, *path*, and *excinfo*.
 
    The first parameter, *function*, is the function which raised the exception;
    it depends on the platform and implementation.  The second parameter,
    *path*, will be the path name passed to *function*.  The third parameter,
-   *excinfo*, will be the exception information returned by
-   :func:`sys.exc_info`.  Exceptions raised by *onerror* will not be caught.
+   *excinfo*, is the exception that was raised. Exceptions raised by *onexc*
+   will not be caught.
+
+   The deprecated *onerror* is similar to *onexc*, except that the third
+   parameter it receives is the tuple returned from :func:`sys.exc_info`.
 
    .. audit-event:: shutil.rmtree path,dir_fd shutil.rmtree
 
@@ -335,7 +338,16 @@ Directory and files operations
       before removing the junction.
 
    .. versionchanged:: 3.11
-      The *dir_fd* parameter.
+      Added the *dir_fd* parameter.
+
+   .. versionchanged:: 3.12
+      Added the *onexc* parameter, deprecated *onerror*.
+
+   .. versionchanged:: 3.13
+      :func:`!rmtree` now ignores :exc:`FileNotFoundError` exceptions for all
+      but the top-level path.
+      Exceptions other than :exc:`OSError` and subclasses of :exc:`!OSError`
+      are now always propagated to the caller.
 
    .. attribute:: rmtree.avoids_symlink_attacks
 
@@ -348,22 +360,25 @@ Directory and files operations
 
 .. function:: move(src, dst, copy_function=copy2)
 
-   Recursively move a file or directory (*src*) to another location (*dst*)
-   and return the destination.
+   Recursively move a file or directory (*src*) to another location and return
+   the destination.
 
-   If the destination is an existing directory, then *src* is moved inside that
-   directory. If the destination already exists but is not a directory, it may
-   be overwritten depending on :func:`os.rename` semantics.
+   If *dst* is an existing directory or a symlink to a directory, then *src*
+   is moved inside that directory. The destination path in that directory must
+   not already exist.
+
+   If *dst* already exists but is not a directory, it may be overwritten
+   depending on :func:`os.rename` semantics.
 
    If the destination is on the current filesystem, then :func:`os.rename` is
-   used. Otherwise, *src* is copied to *dst* using *copy_function* and then
-   removed.  In case of symlinks, a new symlink pointing to the target of *src*
-   will be created in or as *dst* and *src* will be removed.
+   used. Otherwise, *src* is copied to the destination using *copy_function*
+   and then removed.  In case of symlinks, a new symlink pointing to the target
+   of *src* will be created as the destination and *src* will be removed.
 
-   If *copy_function* is given, it must be a callable that takes two arguments
-   *src* and *dst*, and will be used to copy *src* to *dst* if
-   :func:`os.rename` cannot be used.  If the source is a directory,
-   :func:`copytree` is called, passing it the :func:`copy_function`. The
+   If *copy_function* is given, it must be a callable that takes two arguments,
+   *src* and the destination, and will be used to copy *src* to the destination
+   if :func:`os.rename` cannot be used.  If the source is a directory,
+   :func:`copytree` is called, passing it the *copy_function*. The
    default *copy_function* is :func:`copy2`.  Using :func:`~shutil.copy` as the
    *copy_function* allows the move to succeed when it is not possible to also
    copy the metadata, at the expense of not copying any of the metadata.
@@ -393,6 +408,12 @@ Directory and files operations
    total, used and free space, in bytes. *path* may be a file or a
    directory.
 
+   .. note::
+
+      On Unix filesystems, *path* must point to a path within a **mounted**
+      filesystem partition. On those platforms, CPython doesn't attempt to
+      retrieve disk usage information from non-mounted filesystems.
+
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.8
@@ -400,7 +421,8 @@ Directory and files operations
 
    .. availability:: Unix, Windows.
 
-.. function:: chown(path, user=None, group=None)
+.. function:: chown(path, user=None, group=None, *, dir_fd=None, \
+                    follow_symlinks=True)
 
    Change owner *user* and/or *group* of the given *path*.
 
@@ -415,6 +437,9 @@ Directory and files operations
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.13
+      Added *dir_fd* and *follow_symlinks* parameters.
+
 
 .. function:: which(cmd, mode=os.F_OK | os.X_OK, path=None)
 
@@ -422,20 +447,33 @@ Directory and files operations
    called.  If no *cmd* would be called, return ``None``.
 
    *mode* is a permission mask passed to :func:`os.access`, by default
-   determining if the file exists and executable.
+   determining if the file exists and is executable.
 
-   When no *path* is specified, the results of :func:`os.environ` are used,
-   returning either the "PATH" value or a fallback of :attr:`os.defpath`.
+   *path* is a "``PATH`` string" specifying the directories to look in,
+   delimited by :data:`os.pathsep`. When no *path* is specified, the
+   :envvar:`PATH` environment variable is read from :data:`os.environ`,
+   falling back to :data:`os.defpath` if it is not set.
 
-   On Windows, the current directory is always prepended to the *path* whether
-   or not you use the default or provide your own, which is the behavior the
-   command shell uses when finding executables.  Additionally, when finding the
-   *cmd* in the *path*, the ``PATHEXT`` environment variable is checked.  For
-   example, if you call ``shutil.which("python")``, :func:`which` will search
-   ``PATHEXT`` to know that it should look for ``python.exe`` within the *path*
-   directories.  For example, on Windows::
+   On Windows, the current directory is prepended to the *path* if *mode* does
+   not include ``os.X_OK``. When the *mode* does include ``os.X_OK``, the
+   Windows API ``NeedCurrentDirectoryForExePathW`` will be consulted to
+   determine if the current directory should be prepended to *path*. To avoid
+   consulting the current working directory for executables: set the environment
+   variable ``NoDefaultCurrentDirectoryInExePath``.
+
+   Also on Windows, the :envvar:`PATHEXT` environment variable is used to
+   resolve commands that may not already include an extension. For example,
+   if you call ``shutil.which("python")``, :func:`which` will search ``PATHEXT``
+   to know that it should look for ``python.exe`` within the *path*
+   directories. For example, on Windows::
 
       >>> shutil.which("python")
+      'C:\\Python33\\python.EXE'
+
+   This is also applied when *cmd* is a path that contains a directory
+   component::
+
+      >> shutil.which("C:\\Python33\\python")
       'C:\\Python33\\python.EXE'
 
    .. versionadded:: 3.3
@@ -443,6 +481,15 @@ Directory and files operations
    .. versionchanged:: 3.8
       The :class:`bytes` type is now accepted.  If *cmd* type is
       :class:`bytes`, the result type is also :class:`bytes`.
+
+   .. versionchanged:: 3.12
+      On Windows, the current directory is no longer prepended to the search
+      path if *mode* includes ``os.X_OK`` and WinAPI
+      ``NeedCurrentDirectoryForExePathW(cmd)`` is false, else the current
+      directory is prepended even if it is already in the search path;
+      ``PATHEXT`` is used now even when *cmd* includes a directory component
+      or ends with an extension that is in ``PATHEXT``; and filenames that
+      have no extension can now be found.
 
 .. exception:: Error
 
@@ -465,7 +512,9 @@ the use of userspace buffers in Python as in "``outfd.write(infd.read())``".
 
 On macOS `fcopyfile`_ is used to copy the file content (not metadata).
 
-On Linux :func:`os.sendfile` is used.
+On Linux :func:`os.copy_file_range` or :func:`os.sendfile` is used.
+
+On Solaris :func:`os.sendfile` is used.
 
 On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
 instead of 64 KiB) and a :func:`memoryview`-based variant of
@@ -476,6 +525,13 @@ file then shutil will silently fallback on using less efficient
 :func:`copyfileobj` function internally.
 
 .. versionchanged:: 3.8
+
+.. versionchanged:: 3.14
+    Solaris now uses :func:`os.sendfile`.
+
+.. versionchanged:: 3.14
+   Copy-on-write or server-side copy may be used internally via
+   :func:`os.copy_file_range` on supported Linux filesystems.
 
 .. _shutil-copytree-example:
 
@@ -509,7 +565,7 @@ rmtree example
 ~~~~~~~~~~~~~~
 
 This example shows how to remove a directory tree on Windows where some
-of the files have their read-only bit set. It uses the onerror callback
+of the files have their read-only bit set. It uses the onexc callback
 to clear the readonly bit and reattempt the remove. Any subsequent failure
 will propagate. ::
 
@@ -521,7 +577,7 @@ will propagate. ::
         os.chmod(path, stat.S_IWRITE)
         func(path)
 
-    shutil.rmtree(directory, onerror=remove_readonly)
+    shutil.rmtree(directory, onexc=remove_readonly)
 
 .. _archiving-operations:
 
@@ -542,7 +598,9 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    Create an archive file (such as zip or tar) and return its name.
 
    *base_name* is the name of the file to create, including the path, minus
-   any format-specific extension. *format* is the archive format: one of
+   any format-specific extension.
+
+   *format* is the archive format: one of
    "zip" (if the :mod:`zlib` module is available), "tar", "gztar" (if the
    :mod:`zlib` module is available), "bztar" (if the :mod:`bz2` module is
    available), or "xztar" (if the :mod:`lzma` module is available).
@@ -636,7 +694,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    Remove the archive format *name* from the list of supported formats.
 
 
-.. function:: unpack_archive(filename[, extract_dir[, format]])
+.. function:: unpack_archive(filename[, extract_dir[, format[, filter]]])
 
    Unpack an archive. *filename* is the full path of the archive.
 
@@ -650,6 +708,12 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    registered for that extension.  In case none is found,
    a :exc:`ValueError` is raised.
 
+   The keyword-only *filter* argument is passed to the underlying unpacking
+   function. For zip files, *filter* is not accepted.
+   For tar files, it is recommended to use ``'data'`` (default since Python
+   3.14), unless using features specific to tar and UNIX-like filesystems.
+   (See :ref:`tarfile-extraction-filter` for details.)
+
    .. audit-event:: shutil.unpack_archive filename,extract_dir,format shutil.unpack_archive
 
    .. warning::
@@ -659,8 +723,17 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
       the *extract_dir* argument, e.g. members that have absolute filenames
       starting with "/" or filenames with two dots "..".
 
+      Since Python 3.14, the defaults for both built-in formats (zip and tar
+      files) will prevent the most dangerous of such security issues,
+      but will not prevent *all* unintended behavior.
+      Read the :ref:`tarfile-further-verification`
+      section for tar-specific details.
+
    .. versionchanged:: 3.7
       Accepts a :term:`path-like object` for *filename* and *extract_dir*.
+
+   .. versionchanged:: 3.12
+      Added the *filter* argument.
 
 .. function:: register_unpack_format(name, extensions, function[, extra_args[, description]])
 
@@ -669,11 +742,14 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    ``.zip`` for Zip files.
 
    *function* is the callable that will be used to unpack archives. The
-   callable will receive the path of the archive, followed by the directory
-   the archive must be extracted to.
+   callable will receive:
 
-   When provided, *extra_args* is a sequence of ``(name, value)`` tuples that
-   will be passed as keywords arguments to the callable.
+   - the path of the archive, as a positional argument;
+   - the directory the archive must be extracted to, as a positional argument;
+   - possibly a *filter* keyword argument, if it was given to
+     :func:`unpack_archive`;
+   - additional keyword arguments, specified by *extra_args* as a sequence
+     of ``(name, value)`` tuples.
 
    *description* can be provided to describe the format, and will be returned
    by the :func:`get_unpack_formats` function.

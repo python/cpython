@@ -3,23 +3,73 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
+#include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
+PyDoc_STRVAR(warnings_acquire_lock__doc__,
+"_acquire_lock($module, /)\n"
+"--\n"
+"\n");
+
+#define WARNINGS_ACQUIRE_LOCK_METHODDEF    \
+    {"_acquire_lock", (PyCFunction)warnings_acquire_lock, METH_NOARGS, warnings_acquire_lock__doc__},
+
+static PyObject *
+warnings_acquire_lock_impl(PyObject *module);
+
+static PyObject *
+warnings_acquire_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return warnings_acquire_lock_impl(module);
+}
+
+PyDoc_STRVAR(warnings_release_lock__doc__,
+"_release_lock($module, /)\n"
+"--\n"
+"\n");
+
+#define WARNINGS_RELEASE_LOCK_METHODDEF    \
+    {"_release_lock", (PyCFunction)warnings_release_lock, METH_NOARGS, warnings_release_lock__doc__},
+
+static PyObject *
+warnings_release_lock_impl(PyObject *module);
+
+static PyObject *
+warnings_release_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return warnings_release_lock_impl(module);
+}
 
 PyDoc_STRVAR(warnings_warn__doc__,
-"warn($module, /, message, category=None, stacklevel=1, source=None)\n"
+"warn($module, /, message, category=None, stacklevel=1, source=None, *,\n"
+"     skip_file_prefixes=<unrepresentable>)\n"
 "--\n"
 "\n"
-"Issue a warning, or maybe ignore it or raise an exception.");
+"Issue a warning, or maybe ignore it or raise an exception.\n"
+"\n"
+"  message\n"
+"    Text of the warning message.\n"
+"  category\n"
+"    The Warning category subclass. Defaults to UserWarning.\n"
+"  stacklevel\n"
+"    How far up the call stack to make this warning appear. A value of 2 for\n"
+"    example attributes the warning to the caller of the code calling warn().\n"
+"  source\n"
+"    If supplied, the destroyed object which emitted a ResourceWarning\n"
+"  skip_file_prefixes\n"
+"    An optional tuple of module filename prefixes indicating frames to skip\n"
+"    during stacklevel computations for stack frame attribution.");
 
 #define WARNINGS_WARN_METHODDEF    \
     {"warn", _PyCFunction_CAST(warnings_warn), METH_FASTCALL|METH_KEYWORDS, warnings_warn__doc__},
 
 static PyObject *
 warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
-                   Py_ssize_t stacklevel, PyObject *source);
+                   Py_ssize_t stacklevel, PyObject *source,
+                   PyTupleObject *skip_file_prefixes);
 
 static PyObject *
 warnings_warn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -27,14 +77,14 @@ warnings_warn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 4
+    #define NUM_KEYWORDS 5
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(message), &_Py_ID(category), &_Py_ID(stacklevel), &_Py_ID(source), },
+        .ob_item = { &_Py_ID(message), &_Py_ID(category), &_Py_ID(stacklevel), &_Py_ID(source), &_Py_ID(skip_file_prefixes), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -43,21 +93,23 @@ warnings_warn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"message", "category", "stacklevel", "source", NULL};
+    static const char * const _keywords[] = {"message", "category", "stacklevel", "source", "skip_file_prefixes", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "warn",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *message;
     PyObject *category = Py_None;
     Py_ssize_t stacklevel = 1;
     PyObject *source = Py_None;
+    PyTupleObject *skip_file_prefixes = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 4, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -88,9 +140,23 @@ warnings_warn(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
             goto skip_optional_pos;
         }
     }
-    source = args[3];
+    if (args[3]) {
+        source = args[3];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
 skip_optional_pos:
-    return_value = warnings_warn_impl(module, message, category, stacklevel, source);
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (!PyTuple_Check(args[4])) {
+        _PyArg_BadArgument("warn", "argument 'skip_file_prefixes'", "tuple", args[4]);
+        goto exit;
+    }
+    skip_file_prefixes = (PyTupleObject *)args[4];
+skip_optional_kwonly:
+    return_value = warnings_warn_impl(module, message, category, stacklevel, source, skip_file_prefixes);
 
 exit:
     return return_value;
@@ -153,7 +219,8 @@ warnings_warn_explicit(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *module_globals = Py_None;
     PyObject *sourceobj = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 8, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 4, /*maxpos*/ 8, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -163,11 +230,8 @@ warnings_warn_explicit(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         _PyArg_BadArgument("warn_explicit", "argument 'filename'", "str", args[2]);
         goto exit;
     }
-    if (PyUnicode_READY(args[2]) == -1) {
-        goto exit;
-    }
     filename = args[2];
-    lineno = _PyLong_AsInt(args[3]);
+    lineno = PyLong_AsInt(args[3]);
     if (lineno == -1 && PyErr_Occurred()) {
         goto exit;
     }
@@ -200,20 +264,20 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(warnings_filters_mutated__doc__,
-"_filters_mutated($module, /)\n"
+PyDoc_STRVAR(warnings_filters_mutated_lock_held__doc__,
+"_filters_mutated_lock_held($module, /)\n"
 "--\n"
 "\n");
 
-#define WARNINGS_FILTERS_MUTATED_METHODDEF    \
-    {"_filters_mutated", (PyCFunction)warnings_filters_mutated, METH_NOARGS, warnings_filters_mutated__doc__},
+#define WARNINGS_FILTERS_MUTATED_LOCK_HELD_METHODDEF    \
+    {"_filters_mutated_lock_held", (PyCFunction)warnings_filters_mutated_lock_held, METH_NOARGS, warnings_filters_mutated_lock_held__doc__},
 
 static PyObject *
-warnings_filters_mutated_impl(PyObject *module);
+warnings_filters_mutated_lock_held_impl(PyObject *module);
 
 static PyObject *
-warnings_filters_mutated(PyObject *module, PyObject *Py_UNUSED(ignored))
+warnings_filters_mutated_lock_held(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return warnings_filters_mutated_impl(module);
+    return warnings_filters_mutated_lock_held_impl(module);
 }
-/*[clinic end generated code: output=0d264d1ddfc37100 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d9d32a8b59a30683 input=a9049054013a1b77]*/

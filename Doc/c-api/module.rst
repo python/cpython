@@ -5,7 +5,7 @@
 Module Objects
 --------------
 
-.. index:: object: module
+.. index:: pair: object; module
 
 
 .. c:var:: PyTypeObject PyModule_Type
@@ -37,16 +37,19 @@ Module Objects
       single: __package__ (module attribute)
       single: __loader__ (module attribute)
 
-   Return a new module object with the :attr:`__name__` attribute set to *name*.
-   The module's :attr:`__name__`, :attr:`__doc__`, :attr:`__package__`, and
-   :attr:`__loader__` attributes are filled in (all but :attr:`__name__` are set
-   to ``None``); the caller is responsible for providing a :attr:`__file__`
-   attribute.
+   Return a new module object with :attr:`module.__name__` set to *name*.
+   The module's :attr:`!__name__`, :attr:`~module.__doc__`,
+   :attr:`~module.__package__` and :attr:`~module.__loader__` attributes are
+   filled in (all but :attr:`!__name__` are set to ``None``). The caller is
+   responsible for setting a :attr:`~module.__file__` attribute.
+
+   Return ``NULL`` with an exception set on error.
 
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.4
-      :attr:`__package__` and :attr:`__loader__` are set to ``None``.
+      :attr:`~module.__package__` and :attr:`~module.__loader__` are now set to
+      ``None``.
 
 
 .. c:function:: PyObject* PyModule_New(const char *name)
@@ -75,8 +78,9 @@ Module Objects
       single: __name__ (module attribute)
       single: SystemError (built-in exception)
 
-   Return *module*'s :attr:`__name__` value.  If the module does not provide one,
-   or if it is not a string, :exc:`SystemError` is raised and ``NULL`` is returned.
+   Return *module*'s :attr:`~module.__name__` value.  If the module does not
+   provide one, or if it is not a string, :exc:`SystemError` is raised and
+   ``NULL`` is returned.
 
    .. versionadded:: 3.3
 
@@ -106,8 +110,8 @@ Module Objects
       single: SystemError (built-in exception)
 
    Return the name of the file from which *module* was loaded using *module*'s
-   :attr:`__file__` attribute.  If this is not defined, or if it is not a
-   unicode string, raise :exc:`SystemError` and return ``NULL``; otherwise return
+   :attr:`~module.__file__` attribute.  If this is not defined, or if it is not a
+   string, raise :exc:`SystemError` and return ``NULL``; otherwise return
    a reference to a Unicode object.
 
    .. versionadded:: 3.2
@@ -119,7 +123,7 @@ Module Objects
    encoded to 'utf-8'.
 
    .. deprecated:: 3.2
-      :c:func:`PyModule_GetFilename` raises :c:type:`UnicodeEncodeError` on
+      :c:func:`PyModule_GetFilename` raises :exc:`UnicodeEncodeError` on
       unencodable filenames, use :c:func:`PyModule_GetFilenameObject` instead.
 
 
@@ -145,7 +149,7 @@ or request "multi-phase initialization" by returning the definition struct itsel
 
    .. c:member:: PyModuleDef_Base m_base
 
-      Always initialize this member to :const:`PyModuleDef_HEAD_INIT`.
+      Always initialize this member to :c:macro:`PyModuleDef_HEAD_INIT`.
 
    .. c:member:: const char *m_name
 
@@ -164,7 +168,7 @@ or request "multi-phase initialization" by returning the definition struct itsel
 
       This memory area is allocated based on *m_size* on module creation,
       and freed when the module object is deallocated, after the
-      :c:member:`m_free` function has been called, if present.
+      :c:member:`~PyModuleDef.m_free` function has been called, if present.
 
       Setting ``m_size`` to ``-1`` means that the module does not support
       sub-interpreters, because it has global state.
@@ -202,7 +206,7 @@ or request "multi-phase initialization" by returning the definition struct itsel
       This function is not called if the module state was requested but is not
       allocated yet. This is the case immediately after the module is created
       and before the module is executed (:c:data:`Py_mod_exec` function). More
-      precisely, this function is not called if :c:member:`m_size` is greater
+      precisely, this function is not called if :c:member:`~PyModuleDef.m_size` is greater
       than 0 and the module state (as returned by :c:func:`PyModule_GetState`)
       is ``NULL``.
 
@@ -217,7 +221,7 @@ or request "multi-phase initialization" by returning the definition struct itsel
       This function is not called if the module state was requested but is not
       allocated yet. This is the case immediately after the module is created
       and before the module is executed (:c:data:`Py_mod_exec` function). More
-      precisely, this function is not called if :c:member:`m_size` is greater
+      precisely, this function is not called if :c:member:`~PyModuleDef.m_size` is greater
       than 0 and the module state (as returned by :c:func:`PyModule_GetState`)
       is ``NULL``.
 
@@ -238,7 +242,7 @@ or request "multi-phase initialization" by returning the definition struct itsel
       This function is not called if the module state was requested but is not
       allocated yet. This is the case immediately after the module is created
       and before the module is executed (:c:data:`Py_mod_exec` function). More
-      precisely, this function is not called if :c:member:`m_size` is greater
+      precisely, this function is not called if :c:member:`~PyModuleDef.m_size` is greater
       than 0 and the module state (as returned by :c:func:`PyModule_GetState`)
       is ``NULL``.
 
@@ -256,7 +260,7 @@ of the following two module creation functions:
 
    Create a new module object, given the definition in *def*.  This behaves
    like :c:func:`PyModule_Create2` with *module_api_version* set to
-   :const:`PYTHON_API_VERSION`.
+   :c:macro:`PYTHON_API_VERSION`.
 
 
 .. c:function:: PyObject* PyModule_Create2(PyModuleDef *def, int module_api_version)
@@ -264,6 +268,8 @@ of the following two module creation functions:
    Create a new module object, given the definition in *def*, assuming the
    API version *module_api_version*.  If that version does not match the version
    of the running interpreter, a :exc:`RuntimeWarning` is emitted.
+
+   Return ``NULL`` with an exception set on error.
 
    .. note::
 
@@ -282,7 +288,7 @@ An alternate way to specify extensions is to request "multi-phase initialization
 Extension modules created this way behave more like Python modules: the
 initialization is split between the *creation phase*, when the module object
 is created, and the *execution phase*, when it is populated.
-The distinction is similar to the :py:meth:`__new__` and :py:meth:`__init__` methods
+The distinction is similar to the :py:meth:`!__new__` and :py:meth:`!__init__` methods
 of classes.
 
 Unlike modules created using single-phase initialization, these modules are not
@@ -293,7 +299,7 @@ By default, multiple modules created from the same definition should be
 independent: changes to one should not affect the others.
 This means that all state should be specific to the module object (using e.g.
 using :c:func:`PyModule_GetState`), or its contents (such as the module's
-:attr:`__dict__` or individual classes created with :c:func:`PyType_FromSpec`).
+:attr:`~object.__dict__` or individual classes created with :c:func:`PyType_FromSpec`).
 
 All modules created using multi-phase initialization are expected to support
 :ref:`sub-interpreters <sub-interpreter-support>`. Making sure multiple modules
@@ -338,6 +344,8 @@ The available slot types are:
    The *value* pointer of this slot must point to a function of the signature:
 
    .. c:function:: PyObject* create_module(PyObject *spec, PyModuleDef *def)
+      :no-index-entry:
+      :no-contents-entry:
 
    The function receives a :py:class:`~importlib.machinery.ModuleSpec`
    instance, as defined in :PEP:`451`, and the module definition.
@@ -372,9 +380,71 @@ The available slot types are:
    The signature of the function is:
 
    .. c:function:: int exec_module(PyObject* module)
+      :no-index-entry:
+      :no-contents-entry:
 
    If multiple ``Py_mod_exec`` slots are specified, they are processed in the
    order they appear in the *m_slots* array.
+
+.. c:macro:: Py_mod_multiple_interpreters
+
+   Specifies one of the following values:
+
+   .. c:namespace:: NULL
+
+   .. c:macro:: Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED
+
+      The module does not support being imported in subinterpreters.
+
+   .. c:macro:: Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED
+
+      The module supports being imported in subinterpreters,
+      but only when they share the main interpreter's GIL.
+      (See :ref:`isolating-extensions-howto`.)
+
+   .. c:macro:: Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
+
+      The module supports being imported in subinterpreters,
+      even when they have their own GIL.
+      (See :ref:`isolating-extensions-howto`.)
+
+   This slot determines whether or not importing this module
+   in a subinterpreter will fail.
+
+   Multiple ``Py_mod_multiple_interpreters`` slots may not be specified
+   in one module definition.
+
+   If ``Py_mod_multiple_interpreters`` is not specified, the import
+   machinery defaults to ``Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED``.
+
+   .. versionadded:: 3.12
+
+.. c:macro:: Py_mod_gil
+
+   Specifies one of the following values:
+
+   .. c:namespace:: NULL
+
+   .. c:macro:: Py_MOD_GIL_USED
+
+      The module depends on the presence of the global interpreter lock (GIL),
+      and may access global state without synchronization.
+
+   .. c:macro:: Py_MOD_GIL_NOT_USED
+
+      The module is safe to run without an active GIL.
+
+   This slot is ignored by Python builds not configured with
+   :option:`--disable-gil`.  Otherwise, it determines whether or not importing
+   this module will cause the GIL to be automatically enabled. See
+   :ref:`whatsnew313-free-threaded-cpython` for more detail.
+
+   Multiple ``Py_mod_gil`` slots may not be specified in one module definition.
+
+   If ``Py_mod_gil`` is not specified, the import machinery defaults to
+   ``Py_MOD_GIL_USED``.
+
+   .. versionadded:: 3.13
 
 See :PEP:`489` for more details on multi-phase initialization.
 
@@ -388,18 +458,20 @@ objects dynamically. Note that both ``PyModule_FromDefAndSpec`` and
 
 .. c:function:: PyObject * PyModule_FromDefAndSpec(PyModuleDef *def, PyObject *spec)
 
-   Create a new module object, given the definition in *module* and the
+   Create a new module object, given the definition in *def* and the
    ModuleSpec *spec*.  This behaves like :c:func:`PyModule_FromDefAndSpec2`
-   with *module_api_version* set to :const:`PYTHON_API_VERSION`.
+   with *module_api_version* set to :c:macro:`PYTHON_API_VERSION`.
 
    .. versionadded:: 3.5
 
 .. c:function:: PyObject * PyModule_FromDefAndSpec2(PyModuleDef *def, PyObject *spec, int module_api_version)
 
-   Create a new module object, given the definition in *module* and the
+   Create a new module object, given the definition in *def* and the
    ModuleSpec *spec*, assuming the API version *module_api_version*.
    If that version does not match the version of the running interpreter,
    a :exc:`RuntimeWarning` is emitted.
+
+   Return ``NULL`` with an exception set on error.
 
    .. note::
 
@@ -451,9 +523,6 @@ state:
 
    On success, return ``0``. On error, raise an exception and return ``-1``.
 
-   Return ``NULL`` if *value* is ``NULL``. It must be called with an exception
-   raised in this case.
-
    Example usage::
 
        static int
@@ -467,6 +536,10 @@ state:
            Py_DECREF(obj);
            return res;
         }
+
+   To be convenient, the function accepts ``NULL`` *value* with an exception
+   set. In this case, return ``-1`` and just leave the raised exception
+   unchanged.
 
    The example can also be written without checking explicitly if *obj* is
    ``NULL``::
@@ -483,7 +556,31 @@ state:
    Note that ``Py_XDECREF()`` should be used instead of ``Py_DECREF()`` in
    this case, since *obj* can be ``NULL``.
 
+   The number of different *name* strings passed to this function
+   should be kept small, usually by only using statically allocated strings
+   as *name*.
+   For names that aren't known at compile time, prefer calling
+   :c:func:`PyUnicode_FromString` and :c:func:`PyObject_SetAttr` directly.
+   For more details, see :c:func:`PyUnicode_InternFromString`, which may be
+   used internally to create a key object.
+
    .. versionadded:: 3.10
+
+
+.. c:function:: int PyModule_Add(PyObject *module, const char *name, PyObject *value)
+
+   Similar to :c:func:`PyModule_AddObjectRef`, but "steals" a reference
+   to *value*.
+   It can be called with a result of function that returns a new reference
+   without bothering to check its result or even saving it to a variable.
+
+   Example usage::
+
+        if (PyModule_Add(module, "spam", PyBytes_FromString(value)) < 0) {
+            goto error;
+        }
+
+   .. versionadded:: 3.13
 
 
 .. c:function:: int PyModule_AddObject(PyObject *module, const char *name, PyObject *value)
@@ -491,79 +588,68 @@ state:
    Similar to :c:func:`PyModule_AddObjectRef`, but steals a reference to
    *value* on success (if it returns ``0``).
 
-   The new :c:func:`PyModule_AddObjectRef` function is recommended, since it is
+   The new :c:func:`PyModule_Add` or :c:func:`PyModule_AddObjectRef`
+   functions are recommended, since it is
    easy to introduce reference leaks by misusing the
    :c:func:`PyModule_AddObject` function.
 
    .. note::
 
       Unlike other functions that steal references, ``PyModule_AddObject()``
-      only decrements the reference count of *value* **on success**.
+      only releases the reference to *value* **on success**.
 
       This means that its return value must be checked, and calling code must
-      :c:func:`Py_DECREF` *value* manually on error.
+      :c:func:`Py_XDECREF` *value* manually on error.
 
    Example usage::
 
-      static int
-      add_spam(PyObject *module, int value)
-      {
-          PyObject *obj = PyLong_FromLong(value);
-          if (obj == NULL) {
-              return -1;
-          }
-          if (PyModule_AddObject(module, "spam", obj) < 0) {
-              Py_DECREF(obj);
-              return -1;
-          }
-          // PyModule_AddObject() stole a reference to obj:
-          // Py_DECREF(obj) is not needed here
-          return 0;
-      }
+        PyObject *obj = PyBytes_FromString(value);
+        if (PyModule_AddObject(module, "spam", obj) < 0) {
+            // If 'obj' is not NULL and PyModule_AddObject() failed,
+            // 'obj' strong reference must be deleted with Py_XDECREF().
+            // If 'obj' is NULL, Py_XDECREF() does nothing.
+            Py_XDECREF(obj);
+            goto error;
+        }
+        // PyModule_AddObject() stole a reference to obj:
+        // Py_XDECREF(obj) is not needed here.
 
-   The example can also be written without checking explicitly if *obj* is
-   ``NULL``::
+   .. deprecated:: 3.13
 
-      static int
-      add_spam(PyObject *module, int value)
-      {
-          PyObject *obj = PyLong_FromLong(value);
-          if (PyModule_AddObject(module, "spam", obj) < 0) {
-              Py_XDECREF(obj);
-              return -1;
-          }
-          // PyModule_AddObject() stole a reference to obj:
-          // Py_DECREF(obj) is not needed here
-          return 0;
-      }
-
-   Note that ``Py_XDECREF()`` should be used instead of ``Py_DECREF()`` in
-   this case, since *obj* can be ``NULL``.
+      :c:func:`PyModule_AddObject` is :term:`soft deprecated`.
 
 
 .. c:function:: int PyModule_AddIntConstant(PyObject *module, const char *name, long value)
 
    Add an integer constant to *module* as *name*.  This convenience function can be
-   used from the module's initialization function. Return ``-1`` on error, ``0`` on
-   success.
+   used from the module's initialization function.
+   Return ``-1`` with an exception set on error, ``0`` on success.
+
+   This is a convenience function that calls :c:func:`PyLong_FromLong` and
+   :c:func:`PyModule_AddObjectRef`; see their documentation for details.
 
 
 .. c:function:: int PyModule_AddStringConstant(PyObject *module, const char *name, const char *value)
 
    Add a string constant to *module* as *name*.  This convenience function can be
    used from the module's initialization function.  The string *value* must be
-   ``NULL``-terminated.  Return ``-1`` on error, ``0`` on success.
+   ``NULL``-terminated.
+   Return ``-1`` with an exception set on error, ``0`` on success.
+
+   This is a convenience function that calls
+   :c:func:`PyUnicode_InternFromString` and :c:func:`PyModule_AddObjectRef`;
+   see their documentation for details.
 
 
-.. c:function:: int PyModule_AddIntMacro(PyObject *module, macro)
+.. c:macro:: PyModule_AddIntMacro(module, macro)
 
    Add an int constant to *module*. The name and the value are taken from
    *macro*. For example ``PyModule_AddIntMacro(module, AF_INET)`` adds the int
    constant *AF_INET* with the value of *AF_INET* to *module*.
-   Return ``-1`` on error, ``0`` on success.
+   Return ``-1`` with an exception set on error, ``0`` on success.
 
 
-.. c:function:: int PyModule_AddStringMacro(PyObject *module, macro)
+.. c:macro:: PyModule_AddStringMacro(module, macro)
 
    Add a string constant to *module*.
 
@@ -573,9 +659,22 @@ state:
    The type object is finalized by calling internally :c:func:`PyType_Ready`.
    The name of the type object is taken from the last component of
    :c:member:`~PyTypeObject.tp_name` after dot.
-   Return ``-1`` on error, ``0`` on success.
+   Return ``-1`` with an exception set on error, ``0`` on success.
 
    .. versionadded:: 3.9
+
+.. c:function:: int PyUnstable_Module_SetGIL(PyObject *module, void *gil)
+
+   Indicate that *module* does or does not support running without the global
+   interpreter lock (GIL), using one of the values from
+   :c:macro:`Py_mod_gil`. It must be called during *module*'s initialization
+   function. If this function is not called during module initialization, the
+   import machinery assumes the module does not support running without the
+   GIL. This function is only available in Python builds configured with
+   :option:`--disable-gil`.
+   Return ``-1`` with an exception set on error, ``0`` on success.
+
+   .. versionadded:: 3.13
 
 
 Module lookup
@@ -612,14 +711,14 @@ since multiple such modules can be created from a single definition.
 
    The caller must hold the GIL.
 
-   Return 0 on success or -1 on failure.
+   Return ``-1`` with an exception set on error, ``0`` on success.
 
    .. versionadded:: 3.3
 
 .. c:function:: int PyState_RemoveModule(PyModuleDef *def)
 
    Removes the module object created from *def* from the interpreter state.
-   Return 0 on success or -1 on failure.
+   Return ``-1`` with an exception set on error, ``0`` on success.
 
    The caller must hold the GIL.
 

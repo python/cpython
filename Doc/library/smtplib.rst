@@ -1,5 +1,5 @@
-:mod:`smtplib` --- SMTP protocol client
-=======================================
+:mod:`!smtplib` --- SMTP protocol client
+========================================
 
 .. module:: smtplib
    :synopsis: SMTP protocol client (requires sockets).
@@ -25,7 +25,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
 
    An :class:`SMTP` instance encapsulates an SMTP connection.  It has methods
    that support a full repertoire of SMTP and ESMTP operations. If the optional
-   host and port parameters are given, the SMTP :meth:`connect` method is
+   *host* and *port* parameters are given, the SMTP :meth:`connect` method is
    called with those parameters during initialization.  If specified,
    *local_hostname* is used as the FQDN of the local host in the HELO/EHLO
    command.  Otherwise, the local hostname is found using
@@ -34,12 +34,12 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    *timeout* parameter specifies a timeout in seconds for blocking operations
    like the connection attempt (if not specified, the global default timeout
    setting will be used).  If the timeout expires, :exc:`TimeoutError` is
-   raised.  The optional source_address parameter allows binding
+   raised.  The optional *source_address* parameter allows binding
    to some specific source address in a machine with multiple network
    interfaces, and/or to some specific source TCP port. It takes a 2-tuple
-   (host, port), for the socket to bind to as its source address before
-   connecting. If omitted (or if host or port are ``''`` and/or 0 respectively)
-   the OS default behavior will be used.
+   ``(host, port)``, for the socket to bind to as its source address before
+   connecting. If omitted (or if *host* or *port* are ``''`` and/or ``0``
+   respectively) the OS default behavior will be used.
 
    For normal use, you should only require the initialization/connect,
    :meth:`sendmail`, and :meth:`SMTP.quit` methods.
@@ -98,21 +98,14 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    .. versionchanged:: 3.4
       The class now supports hostname check with
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
-      :data:`ssl.HAS_SNI`).
-
-   .. deprecated:: 3.6
-
-       *keyfile* and *certfile* are deprecated in favor of *context*.
-       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
-       :func:`ssl.create_default_context` select the system's trusted CA
-       certificates for you.
+      :const:`ssl.HAS_SNI`).
 
    .. versionchanged:: 3.9
       If the *timeout* parameter is set to be zero, it will raise a
       :class:`ValueError` to prevent the creation of a non-blocking socket
 
    .. versionchanged:: 3.12
-       The deprecated *keyfile* and *certfile* parameters have been removed.
+      The deprecated *keyfile* and *certfile* parameters have been removed.
 
 .. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None, \
                 source_address=None[, timeout])
@@ -407,15 +400,8 @@ An :class:`SMTP` instance has the following methods:
    If there has been no previous ``EHLO`` or ``HELO`` command this session,
    this method tries ESMTP ``EHLO`` first.
 
-   .. deprecated:: 3.6
-
-       *keyfile* and *certfile* are deprecated in favor of *context*.
-       Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
-       :func:`ssl.create_default_context` select the system's trusted CA
-       certificates for you.
-
    .. versionchanged:: 3.12
-       The deprecated *keyfile* and *certfile* parameters have been removed.
+      The deprecated *keyfile* and *certfile* parameters have been removed.
 
    :exc:`SMTPHeloError`
       The server didn't reply properly to the ``HELO`` greeting.
@@ -432,7 +418,7 @@ An :class:`SMTP` instance has the following methods:
    .. versionchanged:: 3.4
       The method now supports hostname check with
       :attr:`SSLContext.check_hostname` and *Server Name Indicator* (see
-      :data:`~ssl.HAS_SNI`).
+      :const:`~ssl.HAS_SNI`).
 
    .. versionchanged:: 3.5
       The error raised for lack of STARTTLS support is now the
@@ -538,7 +524,7 @@ An :class:`SMTP` instance has the following methods:
    :mailheader:`Bcc` or :mailheader:`Resent-Bcc` headers that may appear
    in *msg*.  If any of the addresses in *from_addr* and *to_addrs* contain
    non-ASCII characters and the server does not advertise ``SMTPUTF8`` support,
-   an :exc:`SMTPNotSupported` error is raised.  Otherwise the ``Message`` is
+   an :exc:`SMTPNotSupportedError` is raised.  Otherwise the ``Message`` is
    serialized with a clone of its :mod:`~email.policy` with the
    :attr:`~email.policy.EmailPolicy.utf8` attribute set to ``True``, and
    ``SMTPUTF8`` and ``BODY=8BITMIME`` are added to *mail_options*.
@@ -570,34 +556,33 @@ This example prompts the user for addresses needed in the message envelope ('To'
 and 'From' addresses), and the message to be delivered.  Note that the headers
 to be included with the message must be included in the message as entered; this
 example doesn't do any processing of the :rfc:`822` headers.  In particular, the
-'To' and 'From' addresses must be included in the message headers explicitly. ::
+'To' and 'From' addresses must be included in the message headers explicitly::
 
    import smtplib
 
-   def prompt(prompt):
-       return input(prompt).strip()
+   def prompt(title):
+       return input(title).strip()
 
-   fromaddr = prompt("From: ")
-   toaddrs  = prompt("To: ").split()
+   from_addr = prompt("From: ")
+   to_addrs  = prompt("To: ").split()
    print("Enter message, end with ^D (Unix) or ^Z (Windows):")
 
    # Add the From: and To: headers at the start!
-   msg = ("From: %s\r\nTo: %s\r\n\r\n"
-          % (fromaddr, ", ".join(toaddrs)))
+   lines = [f"From: {from_addr}", f"To: {', '.join(to_addrs)}", ""]
    while True:
        try:
            line = input()
        except EOFError:
            break
-       if not line:
-           break
-       msg = msg + line
+       else:
+           lines.append(line)
 
+   msg = "\r\n".join(lines)
    print("Message length is", len(msg))
 
-   server = smtplib.SMTP('localhost')
+   server = smtplib.SMTP("localhost")
    server.set_debuglevel(1)
-   server.sendmail(fromaddr, toaddrs, msg)
+   server.sendmail(from_addr, to_addrs, msg)
    server.quit()
 
 .. note::

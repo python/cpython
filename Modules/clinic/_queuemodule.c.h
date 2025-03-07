@@ -3,10 +3,11 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 
 PyDoc_STRVAR(simplequeue_new__doc__,
 "SimpleQueue()\n"
@@ -21,14 +22,13 @@ static PyObject *
 simplequeue_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = simplequeue_get_state_by_type(type)->SimpleQueueType;
 
-    if ((type == simplequeue_get_state_by_type(type)->SimpleQueueType ||
-         type->tp_init == simplequeue_get_state_by_type(type)->SimpleQueueType->tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoPositional("SimpleQueue", args)) {
         goto exit;
     }
-    if ((type == simplequeue_get_state_by_type(type)->SimpleQueueType ||
-         type->tp_init == simplequeue_get_state_by_type(type)->SimpleQueueType->tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("SimpleQueue", kwargs)) {
         goto exit;
     }
@@ -55,7 +55,7 @@ _queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item,
                             int block, PyObject *timeout);
 
 static PyObject *
-_queue_SimpleQueue_put(simplequeueobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_queue_SimpleQueue_put(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -89,7 +89,8 @@ _queue_SimpleQueue_put(simplequeueobject *self, PyObject *const *args, Py_ssize_
     int block = 1;
     PyObject *timeout = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -108,7 +109,9 @@ _queue_SimpleQueue_put(simplequeueobject *self, PyObject *const *args, Py_ssize_
     }
     timeout = args[2];
 skip_optional_pos:
-    return_value = _queue_SimpleQueue_put_impl(self, item, block, timeout);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _queue_SimpleQueue_put_impl((simplequeueobject *)self, item, block, timeout);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -130,7 +133,7 @@ static PyObject *
 _queue_SimpleQueue_put_nowait_impl(simplequeueobject *self, PyObject *item);
 
 static PyObject *
-_queue_SimpleQueue_put_nowait(simplequeueobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_queue_SimpleQueue_put_nowait(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -161,12 +164,15 @@ _queue_SimpleQueue_put_nowait(simplequeueobject *self, PyObject *const *args, Py
     PyObject *argsbuf[1];
     PyObject *item;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     item = args[0];
-    return_value = _queue_SimpleQueue_put_nowait_impl(self, item);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _queue_SimpleQueue_put_nowait_impl((simplequeueobject *)self, item);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -194,7 +200,7 @@ _queue_SimpleQueue_get_impl(simplequeueobject *self, PyTypeObject *cls,
                             int block, PyObject *timeout_obj);
 
 static PyObject *
-_queue_SimpleQueue_get(simplequeueobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_queue_SimpleQueue_get(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -227,7 +233,8 @@ _queue_SimpleQueue_get(simplequeueobject *self, PyTypeObject *cls, PyObject *con
     int block = 1;
     PyObject *timeout_obj = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -245,7 +252,9 @@ _queue_SimpleQueue_get(simplequeueobject *self, PyTypeObject *cls, PyObject *con
     }
     timeout_obj = args[1];
 skip_optional_pos:
-    return_value = _queue_SimpleQueue_get_impl(self, cls, block, timeout_obj);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _queue_SimpleQueue_get_impl((simplequeueobject *)self, cls, block, timeout_obj);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -268,13 +277,20 @@ _queue_SimpleQueue_get_nowait_impl(simplequeueobject *self,
                                    PyTypeObject *cls);
 
 static PyObject *
-_queue_SimpleQueue_get_nowait(simplequeueobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_queue_SimpleQueue_get_nowait(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    PyObject *return_value = NULL;
+
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "get_nowait() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _queue_SimpleQueue_get_nowait_impl(self, cls);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _queue_SimpleQueue_get_nowait_impl((simplequeueobject *)self, cls);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_queue_SimpleQueue_empty__doc__,
@@ -290,12 +306,14 @@ static int
 _queue_SimpleQueue_empty_impl(simplequeueobject *self);
 
 static PyObject *
-_queue_SimpleQueue_empty(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
+_queue_SimpleQueue_empty(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     int _return_value;
 
-    _return_value = _queue_SimpleQueue_empty_impl(self);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    _return_value = _queue_SimpleQueue_empty_impl((simplequeueobject *)self);
+    Py_END_CRITICAL_SECTION();
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -318,12 +336,14 @@ static Py_ssize_t
 _queue_SimpleQueue_qsize_impl(simplequeueobject *self);
 
 static PyObject *
-_queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
+_queue_SimpleQueue_qsize(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     Py_ssize_t _return_value;
 
-    _return_value = _queue_SimpleQueue_qsize_impl(self);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    _return_value = _queue_SimpleQueue_qsize_impl((simplequeueobject *)self);
+    Py_END_CRITICAL_SECTION();
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -332,4 +352,4 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=628e992d38f50aac input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e04e15a1b959c700 input=a9049054013a1b77]*/

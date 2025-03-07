@@ -29,6 +29,9 @@ __all__ = [
 import _collections_abc
 import sys as _sys
 
+_sys.modules['collections.abc'] = _collections_abc
+abc = _collections_abc
+
 from itertools import chain as _chain
 from itertools import repeat as _repeat
 from itertools import starmap as _starmap
@@ -46,9 +49,17 @@ else:
     _collections_abc.MutableSequence.register(deque)
 
 try:
+    # Expose _deque_iterator to support pickling deque iterators
+    from _collections import _deque_iterator  # noqa: F401
+except ImportError:
+    pass
+
+try:
     from _collections import defaultdict
 except ImportError:
     pass
+
+heapq = None  # Lazily imported
 
 
 ################################################################################
@@ -90,17 +101,19 @@ class OrderedDict(dict):
     # Individual links are kept alive by the hard reference in self.__map.
     # Those hard references disappear when a key is deleted from an OrderedDict.
 
+    def __new__(cls, /, *args, **kwds):
+        "Create the ordered dict object and set up the underlying structures."
+        self = dict.__new__(cls)
+        self.__hardroot = _Link()
+        self.__root = root = _proxy(self.__hardroot)
+        root.prev = root.next = root
+        self.__map = {}
+        return self
+
     def __init__(self, other=(), /, **kwds):
         '''Initialize an ordered dictionary.  The signature is the same as
         regular dictionaries.  Keyword argument order is preserved.
         '''
-        try:
-            self.__root
-        except AttributeError:
-            self.__hardroot = _Link()
-            self.__root = root = _proxy(self.__hardroot)
-            root.prev = root.next = root
-            self.__map = {}
         self.__update(other, **kwds)
 
     def __setitem__(self, key, value,
@@ -267,7 +280,7 @@ class OrderedDict(dict):
         'od.__repr__() <==> repr(od)'
         if not self:
             return '%s()' % (self.__class__.__name__,)
-        return '%s(%r)' % (self.__class__.__name__, list(self.items()))
+        return '%s(%r)' % (self.__class__.__name__, dict(self.items()))
 
     def __reduce__(self):
         'Return state information for pickling'
@@ -450,7 +463,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
     def _replace(self, /, **kwds):
         result = self._make(_map(kwds.pop, field_names, self))
         if kwds:
-            raise ValueError(f'Got unexpected field names: {list(kwds)!r}')
+            raise TypeError(f'Got unexpected field names: {list(kwds)!r}')
         return result
 
     _replace.__doc__ = (f'Return a new {typename} object replacing specified '
@@ -488,6 +501,7 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         '_field_defaults': field_defaults,
         '__new__': __new__,
         '_make': _make,
+        '__replace__': _replace,
         '_replace': _replace,
         '__repr__': __repr__,
         '_asdict': _asdict,
@@ -581,7 +595,7 @@ class Counter(dict):
     # References:
     #   http://en.wikipedia.org/wiki/Multiset
     #   http://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html
-    #   http://www.demo2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm
+    #   http://www.java2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm
     #   http://code.activestate.com/recipes/259174/
     #   Knuth, TAOCP Vol. II section 4.6.3
 
@@ -621,7 +635,10 @@ class Counter(dict):
             return sorted(self.items(), key=_itemgetter(1), reverse=True)
 
         # Lazy import to speedup Python startup time
-        import heapq
+        global heapq
+        if heapq is None:
+            import heapq
+
         return heapq.nlargest(n, self.items(), key=_itemgetter(1))
 
     def elements(self):
@@ -631,7 +648,8 @@ class Counter(dict):
         >>> sorted(c.elements())
         ['A', 'A', 'B', 'B', 'C', 'C']
 
-        # Knuth's example for prime factors of 1836:  2**2 * 3**3 * 17**1
+        Knuth's example for prime factors of 1836:  2**2 * 3**3 * 17**1
+
         >>> import math
         >>> prime_factors = Counter({2: 2, 3: 3, 17: 1})
         >>> math.prod(prime_factors.elements())
@@ -672,7 +690,7 @@ class Counter(dict):
 
         '''
         # The regular dict.update() operation makes no sense here because the
-        # replace behavior results in the some of original untouched counts
+        # replace behavior results in some of the original untouched counts
         # being mixed-in with all of the other counts for a mismash that
         # doesn't have a straight-forward interpretation in most counting
         # contexts.  Instead, we implement straight-addition.  Both the inputs
@@ -1007,7 +1025,7 @@ class ChainMap(_collections_abc.MutableMapping):
         return self.__missing__(key)            # support subclasses that define __missing__
 
     def get(self, key, default=None):
-        return self[key] if key in self else default
+        return self[key] if key in self else default    # needs to make use of __contains__
 
     def __len__(self):
         return len(set().union(*self.maps))     # reuses stored hash values if possible
@@ -1019,7 +1037,10 @@ class ChainMap(_collections_abc.MutableMapping):
         return iter(d)
 
     def __contains__(self, key):
-        return any(key in m for m in self.maps)
+        for mapping in self.maps:
+            if key in mapping:
+                return True
+        return False
 
     def __bool__(self):
         return any(self.maps)
@@ -1029,9 +1050,9 @@ class ChainMap(_collections_abc.MutableMapping):
         return f'{self.__class__.__name__}({", ".join(map(repr, self.maps))})'
 
     @classmethod
-    def fromkeys(cls, iterable, *args):
-        'Create a ChainMap with a single dict created from the iterable.'
-        return cls(dict.fromkeys(iterable, *args))
+    def fromkeys(cls, iterable, value=None, /):
+        'Create a new ChainMap with keys from iterable and values set to value.'
+        return cls(dict.fromkeys(iterable, value))
 
     def copy(self):
         'New ChainMap or subclass with a new copy of maps[0] and refs to maps[1:]'

@@ -10,24 +10,82 @@ extern "C" {
 
 /* GC information is stored BEFORE the object structure. */
 typedef struct {
-    // Pointer to next object in the list.
+    // Tagged pointer to next object in the list.
     // 0 means the object is not tracked
     uintptr_t _gc_next;
 
-    // Pointer to previous object in the list.
+    // Tagged pointer to previous object in the list.
     // Lowest two bits are used for flags documented later.
     uintptr_t _gc_prev;
 } PyGC_Head;
 
-static inline PyGC_Head* _Py_AS_GC(PyObject *op) {
-    return (_Py_CAST(PyGC_Head*, op) - 1);
-}
 #define _PyGC_Head_UNUSED PyGC_Head
+
+
+/* Get an object's GC head */
+static inline PyGC_Head* _Py_AS_GC(PyObject *op) {
+    char *gc = ((char*)op) - sizeof(PyGC_Head);
+    return (PyGC_Head*)gc;
+}
+
+/* Get the object given the GC head */
+static inline PyObject* _Py_FROM_GC(PyGC_Head *gc) {
+    char *op = ((char *)gc) + sizeof(PyGC_Head);
+    return (PyObject *)op;
+}
+
+
+/* Bit flags for ob_gc_bits (in Py_GIL_DISABLED builds)
+ *
+ * Setting the bits requires a relaxed store. The per-object lock must also be
+ * held, except when the object is only visible to a single thread (e.g. during
+ * object initialization or destruction).
+ *
+ * Reading the bits requires using a relaxed load, but does not require holding
+ * the per-object lock.
+ */
+#ifdef Py_GIL_DISABLED
+#  define _PyGC_BITS_TRACKED        (1<<0)     // Tracked by the GC
+#  define _PyGC_BITS_FINALIZED      (1<<1)     // tp_finalize was called
+#  define _PyGC_BITS_UNREACHABLE    (1<<2)
+#  define _PyGC_BITS_FROZEN         (1<<3)
+#  define _PyGC_BITS_SHARED         (1<<4)
+#  define _PyGC_BITS_ALIVE          (1<<5)    // Reachable from a known root.
+#  define _PyGC_BITS_DEFERRED       (1<<6)    // Use deferred reference counting
+#endif
+
+#ifdef Py_GIL_DISABLED
+
+static inline void
+_PyObject_SET_GC_BITS(PyObject *op, uint8_t new_bits)
+{
+    uint8_t bits = _Py_atomic_load_uint8_relaxed(&op->ob_gc_bits);
+    _Py_atomic_store_uint8_relaxed(&op->ob_gc_bits, bits | new_bits);
+}
+
+static inline int
+_PyObject_HAS_GC_BITS(PyObject *op, uint8_t bits)
+{
+    return (_Py_atomic_load_uint8_relaxed(&op->ob_gc_bits) & bits) != 0;
+}
+
+static inline void
+_PyObject_CLEAR_GC_BITS(PyObject *op, uint8_t bits_to_clear)
+{
+    uint8_t bits = _Py_atomic_load_uint8_relaxed(&op->ob_gc_bits);
+    _Py_atomic_store_uint8_relaxed(&op->ob_gc_bits, bits & ~bits_to_clear);
+}
+
+#endif
 
 /* True if the object is currently tracked by the GC. */
 static inline int _PyObject_GC_IS_TRACKED(PyObject *op) {
+#ifdef Py_GIL_DISABLED
+    return _PyObject_HAS_GC_BITS(op, _PyGC_BITS_TRACKED);
+#else
     PyGC_Head *gc = _Py_AS_GC(op);
     return (gc->_gc_next != 0);
+#endif
 }
 #define _PyObject_GC_IS_TRACKED(op) _PyObject_GC_IS_TRACKED(_Py_CAST(PyObject*, op))
 
@@ -43,51 +101,117 @@ static inline int _PyObject_GC_MAY_BE_TRACKED(PyObject *obj) {
     return 1;
 }
 
+#ifdef Py_GIL_DISABLED
+
+/* True if memory the object references is shared between
+ * multiple threads and needs special purpose when freeing
+ * those references due to the possibility of in-flight
+ * lock-free reads occurring.  The object is responsible
+ * for calling _PyMem_FreeDelayed on the referenced
+ * memory. */
+static inline int _PyObject_GC_IS_SHARED(PyObject *op) {
+    return _PyObject_HAS_GC_BITS(op, _PyGC_BITS_SHARED);
+}
+#define _PyObject_GC_IS_SHARED(op) _PyObject_GC_IS_SHARED(_Py_CAST(PyObject*, op))
+
+static inline void _PyObject_GC_SET_SHARED(PyObject *op) {
+    _PyObject_SET_GC_BITS(op, _PyGC_BITS_SHARED);
+}
+#define _PyObject_GC_SET_SHARED(op) _PyObject_GC_SET_SHARED(_Py_CAST(PyObject*, op))
+
+#endif
 
 /* Bit flags for _gc_prev */
 /* Bit 0 is set when tp_finalize is called */
-#define _PyGC_PREV_MASK_FINALIZED  (1)
+#define _PyGC_PREV_MASK_FINALIZED  ((uintptr_t)1)
 /* Bit 1 is set when the object is in generation which is GCed currently. */
-#define _PyGC_PREV_MASK_COLLECTING (2)
-/* The (N-2) most significant bits contain the real address. */
-#define _PyGC_PREV_SHIFT           (2)
+#define _PyGC_PREV_MASK_COLLECTING ((uintptr_t)2)
+
+/* Bit 0 in _gc_next is the old space bit.
+ * It is set as follows:
+ * Young: gcstate->visited_space
+ * old[0]: 0
+ * old[1]: 1
+ * permanent: 0
+ *
+ * During a collection all objects handled should have the bit set to
+ * gcstate->visited_space, as objects are moved from the young gen
+ * and the increment into old[gcstate->visited_space].
+ * When object are moved from the pending space, old[gcstate->visited_space^1]
+ * into the increment, the old space bit is flipped.
+*/
+#define _PyGC_NEXT_MASK_OLD_SPACE_1    1
+
+#define _PyGC_PREV_SHIFT           2
 #define _PyGC_PREV_MASK            (((uintptr_t) -1) << _PyGC_PREV_SHIFT)
+
+/* set for debugging information */
+#define _PyGC_DEBUG_STATS             (1<<0) /* print collection statistics */
+#define _PyGC_DEBUG_COLLECTABLE       (1<<1) /* print collectable objects */
+#define _PyGC_DEBUG_UNCOLLECTABLE     (1<<2) /* print uncollectable objects */
+#define _PyGC_DEBUG_SAVEALL           (1<<5) /* save all garbage in gc.garbage */
+#define _PyGC_DEBUG_LEAK              _PyGC_DEBUG_COLLECTABLE | \
+                                      _PyGC_DEBUG_UNCOLLECTABLE | \
+                                      _PyGC_DEBUG_SAVEALL
+
+typedef enum {
+    // GC was triggered by heap allocation
+    _Py_GC_REASON_HEAP,
+
+    // GC was called during shutdown
+    _Py_GC_REASON_SHUTDOWN,
+
+    // GC was called by gc.collect() or PyGC_Collect()
+    _Py_GC_REASON_MANUAL
+} _PyGC_Reason;
 
 // Lowest bit of _gc_next is used for flags only in GC.
 // But it is always 0 for normal code.
 static inline PyGC_Head* _PyGCHead_NEXT(PyGC_Head *gc) {
-    uintptr_t next = gc->_gc_next;
-    return _Py_CAST(PyGC_Head*, next);
+    uintptr_t next = gc->_gc_next & _PyGC_PREV_MASK;
+    return (PyGC_Head*)next;
 }
 static inline void _PyGCHead_SET_NEXT(PyGC_Head *gc, PyGC_Head *next) {
-    gc->_gc_next = _Py_CAST(uintptr_t, next);
+    uintptr_t unext = (uintptr_t)next;
+    assert((unext & ~_PyGC_PREV_MASK) == 0);
+    gc->_gc_next = (gc->_gc_next & ~_PyGC_PREV_MASK) | unext;
 }
 
 // Lowest two bits of _gc_prev is used for _PyGC_PREV_MASK_* flags.
 static inline PyGC_Head* _PyGCHead_PREV(PyGC_Head *gc) {
     uintptr_t prev = (gc->_gc_prev & _PyGC_PREV_MASK);
-    return _Py_CAST(PyGC_Head*, prev);
+    return (PyGC_Head*)prev;
 }
+
 static inline void _PyGCHead_SET_PREV(PyGC_Head *gc, PyGC_Head *prev) {
-    uintptr_t uprev = _Py_CAST(uintptr_t, prev);
+    uintptr_t uprev = (uintptr_t)prev;
     assert((uprev & ~_PyGC_PREV_MASK) == 0);
     gc->_gc_prev = ((gc->_gc_prev & ~_PyGC_PREV_MASK) | uprev);
 }
 
-static inline int _PyGCHead_FINALIZED(PyGC_Head *gc) {
-    return ((gc->_gc_prev & _PyGC_PREV_MASK_FINALIZED) != 0);
-}
-static inline void _PyGCHead_SET_FINALIZED(PyGC_Head *gc) {
-    gc->_gc_prev |= _PyGC_PREV_MASK_FINALIZED;
-}
-
 static inline int _PyGC_FINALIZED(PyObject *op) {
+#ifdef Py_GIL_DISABLED
+    return _PyObject_HAS_GC_BITS(op, _PyGC_BITS_FINALIZED);
+#else
     PyGC_Head *gc = _Py_AS_GC(op);
-    return _PyGCHead_FINALIZED(gc);
+    return ((gc->_gc_prev & _PyGC_PREV_MASK_FINALIZED) != 0);
+#endif
 }
 static inline void _PyGC_SET_FINALIZED(PyObject *op) {
+#ifdef Py_GIL_DISABLED
+    _PyObject_SET_GC_BITS(op, _PyGC_BITS_FINALIZED);
+#else
     PyGC_Head *gc = _Py_AS_GC(op);
-    _PyGCHead_SET_FINALIZED(gc);
+    gc->_gc_prev |= _PyGC_PREV_MASK_FINALIZED;
+#endif
+}
+static inline void _PyGC_CLEAR_FINALIZED(PyObject *op) {
+#ifdef Py_GIL_DISABLED
+    _PyObject_CLEAR_GC_BITS(op, _PyGC_BITS_FINALIZED);
+#else
+    PyGC_Head *gc = _Py_AS_GC(op);
+    gc->_gc_prev &= ~_PyGC_PREV_MASK_FINALIZED;
+#endif
 }
 
 
@@ -144,6 +268,13 @@ struct gc_generation {
                   generations */
 };
 
+struct gc_collection_stats {
+    /* number of collected objects */
+    Py_ssize_t collected;
+    /* total number of uncollectable objects (put into gc.garbage) */
+    Py_ssize_t uncollectable;
+};
+
 /* Running stats per generation */
 struct gc_generation_stats {
     /* total number of collections */
@@ -152,6 +283,11 @@ struct gc_generation_stats {
     Py_ssize_t collected;
     /* total number of uncollectable objects (put into gc.garbage) */
     Py_ssize_t uncollectable;
+};
+
+enum _GCPhase {
+    GC_PHASE_MARK = 0,
+    GC_PHASE_COLLECT = 1
 };
 
 struct _gc_runtime_state {
@@ -165,8 +301,8 @@ struct _gc_runtime_state {
     int enabled;
     int debug;
     /* linked lists of container objects */
-    struct gc_generation generations[NUM_GENERATIONS];
-    PyGC_Head *generation0;
+    struct gc_generation young;
+    struct gc_generation old[2];
     /* a permanent generation which won't be collected */
     struct gc_generation permanent_generation;
     struct gc_generation_stats generation_stats[NUM_GENERATIONS];
@@ -176,6 +312,14 @@ struct _gc_runtime_state {
     PyObject *garbage;
     /* a list of callbacks to be invoked when collection is performed */
     PyObject *callbacks;
+
+    Py_ssize_t heap_size;
+    Py_ssize_t work_to_do;
+    /* Which of the old spaces is the visited space */
+    int visited_space;
+    int phase;
+
+#ifdef Py_GIL_DISABLED
     /* This is the number of objects that survived the last full
        collection. It approximates the number of long lived objects
        tracked by the GC.
@@ -187,23 +331,60 @@ struct _gc_runtime_state {
        collections, and are awaiting to undergo a full collection for
        the first time. */
     Py_ssize_t long_lived_pending;
+
+    /* True if gc.freeze() has been used. */
+    int freeze_active;
+#endif
 };
+
+#ifdef Py_GIL_DISABLED
+struct _gc_thread_state {
+    /* Thread-local allocation count. */
+    Py_ssize_t alloc_count;
+};
+#endif
 
 
 extern void _PyGC_InitState(struct _gc_runtime_state *);
 
-extern Py_ssize_t _PyGC_CollectNoFail(PyThreadState *tstate);
+extern Py_ssize_t _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason);
+extern void _PyGC_CollectNoFail(PyThreadState *tstate);
 
+/* Freeze objects tracked by the GC and ignore them in future collections. */
+extern void _PyGC_Freeze(PyInterpreterState *interp);
+/* Unfreezes objects placing them in the oldest generation */
+extern void _PyGC_Unfreeze(PyInterpreterState *interp);
+/* Number of frozen objects */
+extern Py_ssize_t _PyGC_GetFreezeCount(PyInterpreterState *interp);
+
+extern PyObject *_PyGC_GetObjects(PyInterpreterState *interp, int generation);
+extern PyObject *_PyGC_GetReferrers(PyInterpreterState *interp, PyObject *objs);
 
 // Functions to clear types free lists
-extern void _PyTuple_ClearFreeList(PyInterpreterState *interp);
-extern void _PyFloat_ClearFreeList(PyInterpreterState *interp);
-extern void _PyList_ClearFreeList(PyInterpreterState *interp);
-extern void _PyDict_ClearFreeList(PyInterpreterState *interp);
-extern void _PyAsyncGen_ClearFreeLists(PyInterpreterState *interp);
-extern void _PyContext_ClearFreeList(PyInterpreterState *interp);
-extern void _Py_ScheduleGC(PyInterpreterState *interp);
+extern void _PyGC_ClearAllFreeLists(PyInterpreterState *interp);
+extern void _Py_ScheduleGC(PyThreadState *tstate);
 extern void _Py_RunGC(PyThreadState *tstate);
+
+union _PyStackRef;
+
+// GC visit callback for tracked interpreter frames
+extern int _PyGC_VisitFrameStack(struct _PyInterpreterFrame *frame, visitproc visit, void *arg);
+extern int _PyGC_VisitStackRef(union _PyStackRef *ref, visitproc visit, void *arg);
+
+// Like Py_VISIT but for _PyStackRef fields
+#define _Py_VISIT_STACKREF(ref)                                         \
+    do {                                                                \
+        if (!PyStackRef_IsNull(ref)) {                                  \
+            int vret = _PyGC_VisitStackRef(&(ref), visit, arg);         \
+            if (vret)                                                   \
+                return vret;                                            \
+        }                                                               \
+    } while (0)
+
+#ifdef Py_GIL_DISABLED
+extern void _PyGC_VisitObjectsWorldStopped(PyInterpreterState *interp,
+                                           gcvisitobjects_t callback, void *arg);
+#endif
 
 #ifdef __cplusplus
 }

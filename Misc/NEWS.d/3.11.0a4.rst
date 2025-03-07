@@ -7,7 +7,7 @@
 :c:func:`Py_EndInterpreter` now explicitly untracks all objects currently
 tracked by the GC. Previously, if an object was used later by another
 interpreter, calling :c:func:`PyObject_GC_UnTrack` on the object crashed if
-the previous or the next object of the :c:type:`PyGC_Head` structure became
+the previous or the next object of the :c:type:`!PyGC_Head` structure became
 a dangling pointer. Patch by Victor Stinner.
 
 ..
@@ -161,7 +161,7 @@ faster due to reference-counting optimizations. Patch by Dennis Sweeney.
 .. nonce: 7oGp-I
 .. section: Core and Builtins
 
-:opcode:`PREP_RERAISE_STAR` no longer pushes ``lasti`` to the stack.
+:opcode:`!PREP_RERAISE_STAR` no longer pushes ``lasti`` to the stack.
 
 ..
 
@@ -170,7 +170,7 @@ faster due to reference-counting optimizations. Patch by Dennis Sweeney.
 .. nonce: IKx4v6
 .. section: Core and Builtins
 
-Remove :opcode:`POP_EXCEPT_AND_RERAISE` and replace it by an equivalent
+Remove :opcode:`!POP_EXCEPT_AND_RERAISE` and replace it by an equivalent
 sequence of other opcodes.
 
 ..
@@ -258,7 +258,7 @@ instruction which performs the same operation, but without the loop.
 .. nonce: ADVaPT
 .. section: Core and Builtins
 
-The code called from :c:func:`_PyErr_Display` was refactored to improve
+The code called from :c:func:`!_PyErr_Display` was refactored to improve
 error handling. It now exits immediately upon an unrecoverable error.
 
 ..
@@ -510,7 +510,7 @@ Remove special-casing of ``__new__`` in :meth:`enum.Enum.__dir__`.
 
 Improve day constants in :mod:`calendar`.
 
-Now all constants (`MONDAY` ... `SUNDAY`) are documented, tested, and added
+Now all constants (``MONDAY`` ... ``SUNDAY``) are documented, tested, and added
 to ``__all__``.
 
 ..
@@ -775,8 +775,8 @@ Ensure that :func:`math.expm1` does not raise on underflow.
 .. nonce: s9PuyF
 .. section: Library
 
-Adding :attr:`F_DUP2FD` and :attr:`F_DUP2FD_CLOEXEC` constants from FreeBSD
-into the fcntl module.
+Adding :const:`!F_DUP2FD` and :const:`!F_DUP2FD_CLOEXEC` constants from FreeBSD
+into the :mod:`fcntl` module.
 
 ..
 
@@ -839,7 +839,7 @@ patch by Kumar Aditya.
 .. nonce: jeiPiX
 .. section: Library
 
-Added :data:`signal.SIGSTKFLT` on platforms where this signal is defined.
+Added :const:`signal.SIGSTKFLT` on platforms where this signal is defined.
 
 ..
 
@@ -1171,7 +1171,7 @@ Replaced deprecated usage of :c:func:`PyImport_ImportModuleNoBlock` with
 .. nonce: sMgDLz
 .. section: C API
 
-The :c:func:`PyUnicode_CHECK_INTERNED` macro has been excluded from the
+The :c:func:`!PyUnicode_CHECK_INTERNED` macro has been excluded from the
 limited C API. It was never usable there, because it used internal
 structures which are not available in the limited C API. Patch by Victor
 Stinner.

@@ -19,7 +19,7 @@ if __version__ != _ctypes_version:
     raise Exception("Version number mismatch", __version__, _ctypes_version)
 
 if _os.name == "nt":
-    from _ctypes import FormatError
+    from _ctypes import COMError, CopyComPointer, FormatError
 
 DEFAULT_MODE = RTLD_LOCAL
 if _os.name == "posix" and _sys.platform == "darwin":
@@ -205,6 +205,18 @@ class c_longdouble(_SimpleCData):
 if sizeof(c_longdouble) == sizeof(c_double):
     c_longdouble = c_double
 
+try:
+    class c_double_complex(_SimpleCData):
+        _type_ = "C"
+    _check_size(c_double_complex)
+    class c_float_complex(_SimpleCData):
+        _type_ = "E"
+    _check_size(c_float_complex)
+    class c_longdouble_complex(_SimpleCData):
+        _type_ = "F"
+except AttributeError:
+    pass
+
 if _calcsize("l") == _calcsize("q"):
     # if long and long long have the same size, make c_longlong an alias for c_long
     c_longlong = c_long
@@ -302,8 +314,9 @@ def create_unicode_buffer(init, size=None):
     raise TypeError(init)
 
 
-# XXX Deprecated
 def SetPointerType(pointer, cls):
+    import warnings
+    warnings._deprecated("ctypes.SetPointerType", remove=(3, 15))
     if _pointer_type_cache.get(cls, None) is not None:
         raise RuntimeError("This type already exists in the cache")
     if id(pointer) not in _pointer_type_cache:
@@ -312,7 +325,6 @@ def SetPointerType(pointer, cls):
     _pointer_type_cache[cls] = pointer
     del _pointer_type_cache[id(pointer)]
 
-# XXX Deprecated
 def ARRAY(typ, len):
     return typ * len
 
@@ -344,6 +356,19 @@ class CDLL(object):
                  use_errno=False,
                  use_last_error=False,
                  winmode=None):
+        if name:
+            name = _os.fspath(name)
+
+            # If the filename that has been provided is an iOS/tvOS/watchOS
+            # .fwork file, dereference the location to the true origin of the
+            # binary.
+            if name.endswith(".fwork"):
+                with open(name) as f:
+                    name = _os.path.join(
+                        _os.path.dirname(_sys.executable),
+                        f.read().strip()
+                    )
+
         self._name = name
         flags = self._func_flags_
         if use_errno:
@@ -464,6 +489,8 @@ pydll = LibraryLoader(PyDLL)
 
 if _os.name == "nt":
     pythonapi = PyDLL("python dll", None, _sys.dllhandle)
+elif _sys.platform == "android":
+    pythonapi = PyDLL("libpython%d.%d.so" % _sys.version_info[:2])
 elif _sys.platform == "cygwin":
     pythonapi = PyDLL("libpython%d.%d.dll" % _sys.version_info[:2])
 else:
@@ -497,6 +524,7 @@ elif sizeof(c_ulonglong) == sizeof(c_void_p):
 # functions
 
 from _ctypes import _memmove_addr, _memset_addr, _string_at_addr, _cast_addr
+from _ctypes import _memoryview_at_addr
 
 ## void *memmove(void *, const void *, size_t);
 memmove = CFUNCTYPE(c_void_p, c_void_p, c_void_p, c_size_t)(_memmove_addr)
@@ -517,10 +545,18 @@ def cast(obj, typ):
 
 _string_at = PYFUNCTYPE(py_object, c_void_p, c_int)(_string_at_addr)
 def string_at(ptr, size=-1):
-    """string_at(addr[, size]) -> string
+    """string_at(ptr[, size]) -> string
 
-    Return the string at addr."""
+    Return the byte string at void *ptr."""
     return _string_at(ptr, size)
+
+_memoryview_at = PYFUNCTYPE(
+    py_object, c_void_p, c_ssize_t, c_int)(_memoryview_at_addr)
+def memoryview_at(ptr, size, readonly=False):
+    """memoryview_at(ptr, size[, readonly]) -> memoryview
+
+    Return a memoryview representing the memory at void *ptr."""
+    return _memoryview_at(ptr, size, bool(readonly))
 
 try:
     from _ctypes import _wstring_at_addr
@@ -529,9 +565,9 @@ except ImportError:
 else:
     _wstring_at = PYFUNCTYPE(py_object, c_void_p, c_int)(_wstring_at_addr)
     def wstring_at(ptr, size=-1):
-        """wstring_at(addr[, size]) -> string
+        """wstring_at(ptr[, size]) -> string
 
-        Return the string at addr."""
+        Return the wide-character string at void *ptr."""
         return _wstring_at(ptr, size)
 
 

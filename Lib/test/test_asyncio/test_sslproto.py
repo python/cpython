@@ -5,6 +5,7 @@ import socket
 import unittest
 import weakref
 from test import support
+from test.support import socket_helper
 from unittest import mock
 try:
     import ssl
@@ -20,7 +21,7 @@ from test.test_asyncio import functional as func_tests
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 @unittest.skipIf(ssl is None, 'No ssl module')
@@ -46,6 +47,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         sslobj = mock.Mock()
         # emulate reading decompressed data
         sslobj.read.side_effect = ssl.SSLWantReadError
+        sslobj.write.side_effect = ssl.SSLWantReadError
         if do_handshake is not None:
             sslobj.do_handshake = do_handshake
         ssl_proto._sslobj = sslobj
@@ -107,6 +109,54 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         test_utils.run_briefly(self.loop)
         self.assertIsInstance(waiter.exception(), ConnectionAbortedError)
 
+    def test_connection_lost_when_busy(self):
+        # gh-118950: SSLProtocol.connection_lost not being called when OSError
+        # is thrown on asyncio.write.
+        sock = mock.Mock()
+        sock.fileno = mock.Mock(return_value=12345)
+        sock.send = mock.Mock(side_effect=BrokenPipeError)
+
+        # construct StreamWriter chain that contains loop dependant logic this emulates
+        # what _make_ssl_transport() does in BaseSelectorEventLoop
+        reader = asyncio.StreamReader(limit=2 ** 16, loop=self.loop)
+        protocol = asyncio.StreamReaderProtocol(reader, loop=self.loop)
+        ssl_proto = self.ssl_protocol(proto=protocol)
+
+        # emulate reading decompressed data
+        sslobj = mock.Mock()
+        sslobj.read.side_effect = ssl.SSLWantReadError
+        sslobj.write.side_effect = ssl.SSLWantReadError
+        ssl_proto._sslobj = sslobj
+
+        # emulate outgoing data
+        data = b'An interesting message'
+
+        outgoing = mock.Mock()
+        outgoing.read = mock.Mock(return_value=data)
+        outgoing.pending = len(data)
+        ssl_proto._outgoing = outgoing
+
+        # use correct socket transport to initialize the SSLProtocol
+        self.loop._make_socket_transport(sock, ssl_proto)
+
+        transport = ssl_proto._app_transport
+        writer = asyncio.StreamWriter(transport, protocol, reader, self.loop)
+
+        async def main():
+            # writes data to transport
+            async def write():
+                writer.write(data)
+                await writer.drain()
+
+            # try to write for the first time
+            await write()
+            # try to write for the second time, this raises as the connection_lost
+            # callback should be done with error
+            with self.assertRaises(ConnectionResetError):
+                await write()
+
+        self.loop.run_until_complete(main())
+
     def test_close_during_handshake(self):
         # bpo-29743 Closing transport during handshake process leaks socket
         waiter = self.loop.create_future()
@@ -119,7 +169,19 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         test_utils.run_briefly(self.loop)
 
         ssl_proto._app_transport.close()
-        self.assertTrue(transport.abort.called)
+        self.assertTrue(transport._force_close.called)
+
+    def test_close_during_ssl_over_ssl(self):
+        # gh-113214: passing exceptions from the inner wrapped SSL protocol to the
+        # shim transport provided by the outer SSL protocol should not raise
+        # attribute errors
+        outer = self.ssl_protocol(proto=self.ssl_protocol())
+        self.connection_made(outer)
+        # Closing the outer app transport should not raise an exception
+        messages = []
+        self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
+        outer._app_transport.close()
+        self.assertEqual(messages, [])
 
     def test_get_extra_info_on_closed_connection(self):
         waiter = self.loop.create_future()
@@ -350,6 +412,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
         support.gc_collect()
         self.assertIsNone(client_context())
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_start_tls_client_buf_proto_1(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
 
@@ -502,6 +565,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 asyncio.wait_for(client(srv.addr),
                                  timeout=support.SHORT_TIMEOUT))
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_start_tls_server_1(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
         ANSWER = b'answer'

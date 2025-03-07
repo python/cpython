@@ -12,6 +12,8 @@ import stat
 import types
 import weakref
 import gc
+import shutil
+import subprocess
 from unittest import mock
 
 import unittest
@@ -61,16 +63,10 @@ class TestLowLevelInternals(unittest.TestCase):
             tempfile._infer_return_type(b'', None, '')
 
     def test_infer_return_type_pathlib(self):
-        self.assertIs(str, tempfile._infer_return_type(pathlib.Path('/')))
+        self.assertIs(str, tempfile._infer_return_type(os_helper.FakePath('/')))
 
     def test_infer_return_type_pathlike(self):
-        class Path:
-            def __init__(self, path):
-                self.path = path
-
-            def __fspath__(self):
-                return self.path
-
+        Path = os_helper.FakePath
         self.assertIs(str, tempfile._infer_return_type(Path('/')))
         self.assertIs(bytes, tempfile._infer_return_type(Path(b'/')))
         self.assertIs(str, tempfile._infer_return_type('', Path('')))
@@ -332,10 +328,6 @@ def _mock_candidate_names(*names):
 
 
 class TestBadTempdir:
-
-    @unittest.skipIf(
-        support.is_emscripten, "Emscripten cannot remove write bits."
-    )
     def test_read_only_directory(self):
         with _inside_empty_temp_dir():
             oldmode = mode = os.stat(tempfile.tempdir).st_mode
@@ -441,7 +433,7 @@ class TestMkstempInner(TestBadTempdir, BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             self.do_create(dir=dir).write(b"blat")
-            self.do_create(dir=pathlib.Path(dir)).write(b"blat")
+            self.do_create(dir=os_helper.FakePath(dir)).write(b"blat")
         finally:
             support.gc_collect()  # For PyPy or other GCs.
             os.rmdir(dir)
@@ -679,7 +671,7 @@ class TestMkstemp(BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             self.do_create(dir=dir)
-            self.do_create(dir=pathlib.Path(dir))
+            self.do_create(dir=os_helper.FakePath(dir))
         finally:
             os.rmdir(dir)
 
@@ -780,7 +772,7 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
         dir = tempfile.mkdtemp()
         try:
             os.rmdir(self.do_create(dir=dir))
-            os.rmdir(self.do_create(dir=pathlib.Path(dir)))
+            os.rmdir(self.do_create(dir=os_helper.FakePath(dir)))
         finally:
             os.rmdir(dir)
 
@@ -801,6 +793,33 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
             self.assertEqual(mode, expected)
         finally:
             os.rmdir(dir)
+
+    @unittest.skipUnless(os.name == "nt", "Only on Windows.")
+    def test_mode_win32(self):
+        # Use icacls.exe to extract the users with some level of access
+        # Main thing we are testing is that the BUILTIN\Users group has
+        # no access. The exact ACL is going to vary based on which user
+        # is running the test.
+        dir = self.do_create()
+        try:
+            out = subprocess.check_output(["icacls.exe", dir], encoding="oem").casefold()
+        finally:
+            os.rmdir(dir)
+
+        dir = dir.casefold()
+        users = set()
+        found_user = False
+        for line in out.strip().splitlines():
+            acl = None
+            # First line of result includes our directory
+            if line.startswith(dir):
+                acl = line.removeprefix(dir).strip()
+            elif line and line[:1].isspace():
+                acl = line.strip()
+            if acl:
+                users.add(acl.partition(":")[0])
+
+        self.assertNotIn(r"BUILTIN\Users".casefold(), users)
 
     def test_collision_with_existing_file(self):
         # mkdtemp tries another name when a file with
@@ -848,6 +867,15 @@ class TestMkdtemp(TestBadTempdir, BaseTestCase):
             self.assertIsInstance(path, str)
         finally:
             tempfile.tempdir = orig_tempdir
+
+    def test_path_is_absolute(self):
+        # Test that the path returned by mkdtemp with a relative `dir`
+        # argument is absolute
+        try:
+            path = tempfile.mkdtemp(dir=".")
+            self.assertTrue(os.path.isabs(path))
+        finally:
+            os.rmdir(path)
 
 
 class TestMktemp(BaseTestCase):
@@ -1015,7 +1043,7 @@ class TestNamedTemporaryFile(BaseTestCase):
         self.assertRaises(ValueError, use_closed)
 
     def test_context_man_not_del_on_close_if_delete_on_close_false(self):
-        # Issue gh-58451: tempfile.NamedTemporaryFile is not particulary useful
+        # Issue gh-58451: tempfile.NamedTemporaryFile is not particularly useful
         # on Windows
         # A NamedTemporaryFile is NOT deleted when closed if
         # delete_on_close=False, but is deleted on context manager exit
@@ -1084,11 +1112,14 @@ class TestNamedTemporaryFile(BaseTestCase):
             # Testing extreme case, where the file is not explicitly closed
             # f.close()
             return tmp_name
-        # Make sure that the garbage collector has finalized the file object.
-        gc.collect()
         dir = tempfile.mkdtemp()
         try:
-            tmp_name = my_func(dir)
+            with self.assertWarnsRegex(
+                expected_warning=ResourceWarning,
+                expected_regex=r"Implicitly cleaning up <_TemporaryFileWrapper file=.*>",
+            ):
+                tmp_name = my_func(dir)
+                support.gc_collect()
             self.assertFalse(os.path.exists(tmp_name),
                         f"NamedTemporaryFile {tmp_name!r} "
                         f"exists after finalizer ")
@@ -1208,9 +1239,6 @@ class TestSpooledTemporaryFile(BaseTestCase):
         with self.assertWarns(ResourceWarning):
             f.__del__()
 
-    @unittest.skipIf(
-        support.is_emscripten, "Emscripten cannot fstat renamed files."
-    )
     def test_del_rolled_file(self):
         # The rolled file should be deleted when the SpooledTemporaryFile
         # object is deleted. This should raise a ResourceWarning since the file
@@ -1255,6 +1283,34 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertEqual(pos, 0)
         buf = f.read()
         self.assertEqual(buf, b'xyz')
+
+    def test_writelines_rollover(self):
+        # Verify writelines rolls over before exhausting the iterator
+        f = self.do_create(max_size=2)
+
+        def it():
+            yield b'xy'
+            self.assertFalse(f._rolled)
+            yield b'z'
+            self.assertTrue(f._rolled)
+
+        f.writelines(it())
+        pos = f.seek(0)
+        self.assertEqual(pos, 0)
+        buf = f.read()
+        self.assertEqual(buf, b'xyz')
+
+    def test_writelines_fast_path(self):
+        f = self.do_create(max_size=2)
+        f.write(b'abc')
+        self.assertTrue(f._rolled)
+
+        f.writelines([b'd', b'e', b'f'])
+        pos = f.seek(0)
+        self.assertEqual(pos, 0)
+        buf = f.read()
+        self.assertEqual(buf, b'abcdef')
+
 
     def test_writelines_sequential(self):
         # A SpooledTemporaryFile should hold exactly max_size bytes, and roll
@@ -1436,9 +1492,6 @@ class TestSpooledTemporaryFile(BaseTestCase):
                 pass
         self.assertRaises(ValueError, use_closed)
 
-    @unittest.skipIf(
-        support.is_emscripten, "Emscripten cannot fstat renamed files."
-    )
     def test_truncate_with_size_parameter(self):
         # A SpooledTemporaryFile can be truncated to zero size
         f = tempfile.SpooledTemporaryFile(max_size=10)
@@ -1607,7 +1660,7 @@ class TestTemporaryDirectory(BaseTestCase):
         finally:
             os.rmdir(dir)
 
-    def test_explict_cleanup_ignore_errors(self):
+    def test_explicit_cleanup_ignore_errors(self):
         """Test that cleanup doesn't return an error when ignoring them."""
         with tempfile.TemporaryDirectory() as working_dir:
             temp_dir = self.do_create(
@@ -1631,6 +1684,28 @@ class TestTemporaryDirectory(BaseTestCase):
                 temp_path.exists(),
                 f"TemporaryDirectory {temp_path!s} exists after cleanup")
 
+    @unittest.skipUnless(os.name == "nt", "Only on Windows.")
+    def test_explicit_cleanup_correct_error(self):
+        with tempfile.TemporaryDirectory() as working_dir:
+            temp_dir = self.do_create(dir=working_dir)
+            with open(os.path.join(temp_dir.name, "example.txt"), 'wb'):
+                # Previously raised NotADirectoryError on some OSes
+                # (e.g. Windows). See bpo-43153.
+                with self.assertRaises(PermissionError):
+                    temp_dir.cleanup()
+
+    @unittest.skipUnless(os.name == "nt", "Only on Windows.")
+    def test_cleanup_with_used_directory(self):
+        with tempfile.TemporaryDirectory() as working_dir:
+            temp_dir = self.do_create(dir=working_dir)
+            subdir = os.path.join(temp_dir.name, "subdir")
+            os.mkdir(subdir)
+            with os_helper.change_cwd(subdir):
+                # Previously raised RecursionError on some OSes
+                # (e.g. Windows). See bpo-35144.
+                with self.assertRaises(PermissionError):
+                    temp_dir.cleanup()
+
     @os_helper.skip_unless_symlink
     def test_cleanup_with_symlink_to_a_directory(self):
         # cleanup() should not follow symlinks to directories (issue #12464)
@@ -1651,6 +1726,103 @@ class TestTemporaryDirectory(BaseTestCase):
                          "Contents of the directory pointed to by a symlink "
                          "were deleted")
         d2.cleanup()
+
+    @os_helper.skip_unless_symlink
+    def test_cleanup_with_symlink_modes(self):
+        # cleanup() should not follow symlinks when fixing mode bits (#91133)
+        with self.do_create(recurse=0) as d2:
+            file1 = os.path.join(d2, 'file1')
+            open(file1, 'wb').close()
+            dir1 = os.path.join(d2, 'dir1')
+            os.mkdir(dir1)
+            for mode in range(8):
+                mode <<= 6
+                with self.subTest(mode=format(mode, '03o')):
+                    def test(target, target_is_directory):
+                        d1 = self.do_create(recurse=0)
+                        symlink = os.path.join(d1.name, 'symlink')
+                        os.symlink(target, symlink,
+                                target_is_directory=target_is_directory)
+                        try:
+                            os.chmod(symlink, mode, follow_symlinks=False)
+                        except NotImplementedError:
+                            pass
+                        try:
+                            os.chmod(symlink, mode)
+                        except FileNotFoundError:
+                            pass
+                        os.chmod(d1.name, mode)
+                        d1.cleanup()
+                        self.assertFalse(os.path.exists(d1.name))
+
+                    with self.subTest('nonexisting file'):
+                        test('nonexisting', target_is_directory=False)
+                    with self.subTest('nonexisting dir'):
+                        test('nonexisting', target_is_directory=True)
+
+                    with self.subTest('existing file'):
+                        os.chmod(file1, mode)
+                        old_mode = os.stat(file1).st_mode
+                        test(file1, target_is_directory=False)
+                        new_mode = os.stat(file1).st_mode
+                        self.assertEqual(new_mode, old_mode,
+                                         '%03o != %03o' % (new_mode, old_mode))
+
+                    with self.subTest('existing dir'):
+                        os.chmod(dir1, mode)
+                        old_mode = os.stat(dir1).st_mode
+                        test(dir1, target_is_directory=True)
+                        new_mode = os.stat(dir1).st_mode
+                        self.assertEqual(new_mode, old_mode,
+                                         '%03o != %03o' % (new_mode, old_mode))
+
+    @unittest.skipUnless(hasattr(os, 'chflags'), 'requires os.chflags')
+    @os_helper.skip_unless_symlink
+    def test_cleanup_with_symlink_flags(self):
+        # cleanup() should not follow symlinks when fixing flags (#91133)
+        flags = stat.UF_IMMUTABLE | stat.UF_NOUNLINK
+        self.check_flags(flags)
+
+        with self.do_create(recurse=0) as d2:
+            file1 = os.path.join(d2, 'file1')
+            open(file1, 'wb').close()
+            dir1 = os.path.join(d2, 'dir1')
+            os.mkdir(dir1)
+            def test(target, target_is_directory):
+                d1 = self.do_create(recurse=0)
+                symlink = os.path.join(d1.name, 'symlink')
+                os.symlink(target, symlink,
+                           target_is_directory=target_is_directory)
+                try:
+                    os.chflags(symlink, flags, follow_symlinks=False)
+                except NotImplementedError:
+                    pass
+                try:
+                    os.chflags(symlink, flags)
+                except FileNotFoundError:
+                    pass
+                os.chflags(d1.name, flags)
+                d1.cleanup()
+                self.assertFalse(os.path.exists(d1.name))
+
+            with self.subTest('nonexisting file'):
+                test('nonexisting', target_is_directory=False)
+            with self.subTest('nonexisting dir'):
+                test('nonexisting', target_is_directory=True)
+
+            with self.subTest('existing file'):
+                os.chflags(file1, flags)
+                old_flags = os.stat(file1).st_flags
+                test(file1, target_is_directory=False)
+                new_flags = os.stat(file1).st_flags
+                self.assertEqual(new_flags, old_flags)
+
+            with self.subTest('existing dir'):
+                os.chflags(dir1, flags)
+                old_flags = os.stat(dir1).st_flags
+                test(dir1, target_is_directory=True)
+                new_flags = os.stat(dir1).st_flags
+                self.assertEqual(new_flags, old_flags)
 
     @support.cpython_only
     def test_del_on_collection(self):
@@ -1824,9 +1996,27 @@ class TestTemporaryDirectory(BaseTestCase):
                     d.cleanup()
                 self.assertFalse(os.path.exists(d.name))
 
-    @unittest.skipUnless(hasattr(os, 'chflags'), 'requires os.lchflags')
+    def check_flags(self, flags):
+        # skip the test if these flags are not supported (ex: FreeBSD 13)
+        filename = os_helper.TESTFN
+        try:
+            open(filename, "w").close()
+            try:
+                os.chflags(filename, flags)
+            except OSError as exc:
+                # "OSError: [Errno 45] Operation not supported"
+                self.skipTest(f"chflags() doesn't support flags "
+                              f"{flags:#b}: {exc}")
+            else:
+                os.chflags(filename, 0)
+        finally:
+            os_helper.unlink(filename)
+
+    @unittest.skipUnless(hasattr(os, 'chflags'), 'requires os.chflags')
     def test_flags(self):
         flags = stat.UF_IMMUTABLE | stat.UF_NOUNLINK
+        self.check_flags(flags)
+
         d = self.do_create(recurse=3, dirs=2, files=2)
         with d:
             # Change files and directories flags recursively.
@@ -1837,6 +2027,11 @@ class TestTemporaryDirectory(BaseTestCase):
             d.cleanup()
         self.assertFalse(os.path.exists(d.name))
 
+    def test_delete_false(self):
+        with tempfile.TemporaryDirectory(delete=False) as working_dir:
+            pass
+        self.assertTrue(os.path.exists(working_dir))
+        shutil.rmtree(working_dir)
 
 if __name__ == "__main__":
     unittest.main()

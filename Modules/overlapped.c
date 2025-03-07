@@ -7,8 +7,11 @@
 /* XXX check overflow and DWORD <-> Py_ssize_t conversions
    Check itemsize */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
-#include "structmember.h"         // PyMemberDef
 
 #define WINDOWS_LEAN_AND_MEAN
 #include <winsock2.h>
@@ -17,10 +20,10 @@
 
 #if defined(MS_WIN32) && !defined(MS_WIN64)
 #  define F_POINTER "k"
-#  define T_POINTER T_ULONG
+#  define T_POINTER Py_T_ULONG
 #else
 #  define F_POINTER "K"
-#  define T_POINTER T_ULONGLONG
+#  define T_POINTER Py_T_ULONGLONG
 #endif
 
 #define F_HANDLE F_POINTER
@@ -35,13 +38,14 @@
 class pointer_converter(CConverter):
     format_unit = '"F_POINTER"'
 
-    def parse_arg(self, argname, displayname):
-        return """
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
             {paramname} = PyLong_AsVoidPtr({argname});
             if (!{paramname} && PyErr_Occurred()) {{{{
                 goto exit;
             }}}}
-            """.format(argname=argname, paramname=self.parser_name)
+            """,
+            argname=argname)
 
 class OVERLAPPED_converter(pointer_converter):
     type = 'OVERLAPPED *'
@@ -52,13 +56,14 @@ class HANDLE_converter(pointer_converter):
 class ULONG_PTR_converter(pointer_converter):
     type = 'ULONG_PTR'
 
-    def parse_arg(self, argname, displayname):
-        return """
+    def parse_arg(self, argname, displayname, *, limited_capi):
+        return self.format_code("""
             {paramname} = (uintptr_t)PyLong_AsVoidPtr({argname});
             if (!{paramname} && PyErr_Occurred()) {{{{
                 goto exit;
             }}}}
-            """.format(argname=argname, paramname=self.parser_name)
+            """,
+            argname=argname)
 
 class DWORD_converter(unsigned_long_converter):
     type = 'DWORD'
@@ -66,7 +71,7 @@ class DWORD_converter(unsigned_long_converter):
 class BOOL_converter(int_converter):
     type = 'BOOL'
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=8a07ea3018f4cec8]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=436f4440630a304c]*/
 
 /*[clinic input]
 module _overlapped
@@ -118,6 +123,8 @@ typedef struct {
         } read_from_into;
     };
 } OverlappedObject;
+
+#define OverlappedObject_CAST(op)   ((OverlappedObject *)(op))
 
 
 static inline void
@@ -367,8 +374,9 @@ _overlapped_RegisterWaitWithQueue_impl(PyObject *module, HANDLE Object,
             &NewWaitObject, Object, PostToQueueCallback, pdata, Milliseconds,
             WT_EXECUTEINWAITTHREAD | WT_EXECUTEONLYONCE))
     {
+        SetFromWindowsErr(0);
         PyMem_RawFree(pdata);
-        return SetFromWindowsErr(0);
+        return NULL;
     }
 
     return Py_BuildValue(F_HANDLE, NewWaitObject);
@@ -445,8 +453,8 @@ EventAttributes must be None.
 static PyObject *
 _overlapped_CreateEvent_impl(PyObject *module, PyObject *EventAttributes,
                              BOOL ManualReset, BOOL InitialState,
-                             const Py_UNICODE *Name)
-/*[clinic end generated code: output=8e04f0916c17b13d input=dbc36ae14375ba24]*/
+                             const wchar_t *Name)
+/*[clinic end generated code: output=b17ddc5fd506972d input=dbc36ae14375ba24]*/
 {
     HANDLE Event;
 
@@ -593,8 +601,7 @@ _overlapped_FormatMessage_impl(PyObject *module, DWORD code)
     if (n) {
         while (iswspace(lpMsgBuf[n-1]))
             --n;
-        lpMsgBuf[n] = L'\0';
-        res = Py_BuildValue("u", lpMsgBuf);
+        res = PyUnicode_FromWideChar(lpMsgBuf, n);
     } else {
         res = PyUnicode_FromFormat("unknown error code %u", code);
     }
@@ -661,8 +668,14 @@ _overlapped_Overlapped_impl(PyTypeObject *type, HANDLE event)
 
 
 /* Note (bpo-32710): OverlappedType.tp_clear is not defined to not release
-   buffers while overlapped are still running, to prevent a crash. */
-static int
+ * buffers while overlapped are still running, to prevent a crash.
+ *
+ * Note (gh-111178): Since OverlappedType.tp_clear is not used, we do not
+ * need to prevent an undefined behaviour by changing the type of 'self'.
+ * To avoid suppressing unused return values, we however make this function
+ * return nothing instead of 0, as we never use it.
+ */
+static void
 Overlapped_clear(OverlappedObject *self)
 {
     switch (self->type) {
@@ -704,20 +717,38 @@ Overlapped_clear(OverlappedObject *self)
         }
     }
     self->type = TYPE_NOT_STARTED;
-    return 0;
 }
 
 static void
-Overlapped_dealloc(OverlappedObject *self)
+Overlapped_dealloc(PyObject *op)
 {
     DWORD bytes;
     DWORD olderr = GetLastError();
     BOOL wait = FALSE;
     BOOL ret;
+    OverlappedObject *self = OverlappedObject_CAST(op);
 
     if (!HasOverlappedIoCompleted(&self->overlapped) &&
         self->type != TYPE_NOT_STARTED)
     {
+        // NOTE: We should not get here, if we do then something is wrong in
+        // the IocpProactor or ProactorEventLoop. Since everything uses IOCP if
+        // the overlapped IO hasn't completed yet then we should not be
+        // deallocating!
+        //
+        // The problem is likely that this OverlappedObject was removed from
+        // the IocpProactor._cache before it was complete. The _cache holds a
+        // reference while IO is pending so that it does not get deallocated
+        // while the kernel has retained the OVERLAPPED structure.
+        //
+        // CancelIoEx (likely called from self.cancel()) may have successfully
+        // completed, but the OVERLAPPED is still in use until either
+        // HasOverlappedIoCompleted() is true or GetQueuedCompletionStatus has
+        // returned this OVERLAPPED object.
+        //
+        // NOTE: Waiting when IOCP is in use can hang indefinitely, but this
+        // CancelIoEx is superfluous in that self.cancel() was already called,
+        // so I've only ever seen this return FALSE with GLE=ERROR_NOT_FOUND
         Py_BEGIN_ALLOW_THREADS
         if (CancelIoEx(self->handle, &self->overlapped))
             wait = TRUE;
@@ -736,7 +767,8 @@ Overlapped_dealloc(OverlappedObject *self)
                     PyExc_RuntimeError,
                     "%R still has pending operation at "
                     "deallocation, the process may crash", self);
-                PyErr_WriteUnraisable(NULL);
+                PyErr_FormatUnraisable("Exception ignored while deallocating "
+                                       "overlapped operation %R", self);
         }
     }
 
@@ -900,7 +932,7 @@ _overlapped_Overlapped_getresult_impl(OverlappedObject *self, BOOL wait)
             {
                 break;
             }
-            /* fall through */
+            _Py_FALLTHROUGH;
         default:
             return SetFromWindowsErr(err);
     }
@@ -1600,8 +1632,8 @@ Connect to the pipe for asynchronous I/O (overlapped).
 
 static PyObject *
 _overlapped_Overlapped_ConnectPipe_impl(OverlappedObject *self,
-                                        const Py_UNICODE *Address)
-/*[clinic end generated code: output=3cc9661667d459d4 input=167c06a274efcefc]*/
+                                        const wchar_t *Address)
+/*[clinic end generated code: output=67cbd8e4d3a57855 input=167c06a274efcefc]*/
 {
     HANDLE PipeHandle;
 
@@ -1618,21 +1650,24 @@ _overlapped_Overlapped_ConnectPipe_impl(OverlappedObject *self,
 }
 
 static PyObject*
-Overlapped_getaddress(OverlappedObject *self)
+Overlapped_getaddress(PyObject *op, void *Py_UNUSED(closure))
 {
+    OverlappedObject *self = OverlappedObject_CAST(op);
     return PyLong_FromVoidPtr(&self->overlapped);
 }
 
 static PyObject*
-Overlapped_getpending(OverlappedObject *self)
+Overlapped_getpending(PyObject *op, void *Py_UNUSED(closure))
 {
+    OverlappedObject *self = OverlappedObject_CAST(op);
     return PyBool_FromLong(!HasOverlappedIoCompleted(&self->overlapped) &&
                            self->type != TYPE_NOT_STARTED);
 }
 
 static int
-Overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
+Overlapped_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    OverlappedObject *self = OverlappedObject_CAST(op);
     switch (self->type) {
     case TYPE_READ:
     case TYPE_ACCEPT:
@@ -1942,19 +1977,19 @@ static PyMethodDef Overlapped_methods[] = {
 };
 
 static PyMemberDef Overlapped_members[] = {
-    {"error", T_ULONG,
+    {"error", Py_T_ULONG,
      offsetof(OverlappedObject, error),
-     READONLY, "Error from last operation"},
+     Py_READONLY, "Error from last operation"},
     {"event", T_HANDLE,
      offsetof(OverlappedObject, overlapped) + offsetof(OVERLAPPED, hEvent),
-     READONLY, "Overlapped event handle"},
+     Py_READONLY, "Overlapped event handle"},
     {NULL}
 };
 
 static PyGetSetDef Overlapped_getsets[] = {
-    {"address", (getter)Overlapped_getaddress, NULL,
+    {"address", Overlapped_getaddress, NULL,
      "Address of overlapped structure"},
-    {"pending", (getter)Overlapped_getpending, NULL,
+    {"pending", Overlapped_getpending, NULL,
      "Whether the operation is pending"},
     {NULL},
 };
@@ -1996,12 +2031,7 @@ static PyMethodDef overlapped_functions[] = {
 
 #define WINAPI_CONSTANT(fmt, con) \
     do { \
-        PyObject *value = Py_BuildValue(fmt, con); \
-        if (value == NULL) { \
-            return -1; \
-        } \
-        if (PyModule_AddObject(module, #con, value) < 0 ) { \
-            Py_DECREF(value); \
+        if (PyModule_Add(module, #con, Py_BuildValue(fmt, con)) < 0 ) { \
             return -1; \
         } \
     } while (0)
@@ -2038,6 +2068,7 @@ overlapped_exec(PyObject *module)
     WINAPI_CONSTANT(F_DWORD,  ERROR_OPERATION_ABORTED);
     WINAPI_CONSTANT(F_DWORD,  ERROR_SEM_TIMEOUT);
     WINAPI_CONSTANT(F_DWORD,  ERROR_PIPE_BUSY);
+    WINAPI_CONSTANT(F_DWORD,  ERROR_PORT_UNREACHABLE);
     WINAPI_CONSTANT(F_DWORD,  INFINITE);
     WINAPI_CONSTANT(F_HANDLE, INVALID_HANDLE_VALUE);
     WINAPI_CONSTANT(F_HANDLE, NULL);
@@ -2050,6 +2081,8 @@ overlapped_exec(PyObject *module)
 
 static PyModuleDef_Slot overlapped_slots[] = {
     {Py_mod_exec, overlapped_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

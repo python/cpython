@@ -45,21 +45,21 @@ if "%ORG%"=="" (set ORG=python)
 call "%PCBUILD%\find_python.bat" "%PYTHON%"
 
 if NOT DEFINED PYTHON (
-    where /Q git || echo Python 3.6 could not be found or installed, and git.exe is not on your PATH && exit /B 1
+    where /Q git || echo Python 3.10 or later could not be found or installed, and git.exe is not on your PATH && exit /B 1
 )
 
 echo.Fetching external libraries...
 
 set libraries=
 set libraries=%libraries%                                       bzip2-1.0.8
-if NOT "%IncludeLibffiSrc%"=="false" set libraries=%libraries%  libffi-3.4.3
-if NOT "%IncludeSSLSrc%"=="false" set libraries=%libraries%     openssl-1.1.1s
-set libraries=%libraries%                                       sqlite-3.39.4.0
-if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tcl-core-8.6.12.1
-if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tk-8.6.12.1
-if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tix-8.4.3.6
+if NOT "%IncludeLibffiSrc%"=="false" set libraries=%libraries%  libffi-3.4.4
+if NOT "%IncludeSSLSrc%"=="false" set libraries=%libraries%     openssl-3.0.15
+set libraries=%libraries%                                       mpdecimal-4.0.0
+set libraries=%libraries%                                       sqlite-3.45.3.0
+if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tcl-core-8.6.15.0
+if NOT "%IncludeTkinterSrc%"=="false" set libraries=%libraries% tk-8.6.15.0
 set libraries=%libraries%                                       xz-5.2.5
-set libraries=%libraries%                                       zlib-1.2.13
+set libraries=%libraries%                                       zlib-1.3.1
 
 for %%e in (%libraries%) do (
     if exist "%EXTERNALS_DIR%\%%e" (
@@ -76,9 +76,9 @@ for %%e in (%libraries%) do (
 echo.Fetching external binaries...
 
 set binaries=
-if NOT "%IncludeLibffi%"=="false"  set binaries=%binaries% libffi-3.4.3
-if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-1.1.1s
-if NOT "%IncludeTkinter%"=="false" set binaries=%binaries% tcltk-8.6.12.1
+if NOT "%IncludeLibffi%"=="false"  set binaries=%binaries% libffi-3.4.4
+if NOT "%IncludeSSL%"=="false"     set binaries=%binaries% openssl-bin-3.0.15
+if NOT "%IncludeTkinter%"=="false" set binaries=%binaries% tcltk-8.6.15.0
 if NOT "%IncludeSSLSrc%"=="false"  set binaries=%binaries% nasm-2.11.06
 
 for %%b in (%binaries%) do (

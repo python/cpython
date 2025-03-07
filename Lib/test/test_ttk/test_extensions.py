@@ -45,7 +45,9 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
         # value which causes the tracing callback to be called and then
         # it tries calling instance attributes not yet defined.
         ttk.LabeledScale(self.root, variable=myvar)
-        if hasattr(sys, 'last_type'):
+        if hasattr(sys, 'last_exc'):
+            self.assertNotEqual(type(sys.last_exc), tkinter.TclError)
+        elif hasattr(sys, 'last_type'):
             self.assertNotEqual(sys.last_type, tkinter.TclError)
 
     def test_initialization(self):

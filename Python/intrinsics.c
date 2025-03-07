@@ -3,31 +3,36 @@
 
 #include "Python.h"
 #include "pycore_frame.h"
-#include "pycore_runtime.h"
+#include "pycore_function.h"
 #include "pycore_global_objects.h"
-#include "pycore_intrinsics.h"
-#include "pycore_pyerrors.h"
+#include "pycore_compile.h"       // _PyCompile_GetUnaryIntrinsicName, etc
+#include "pycore_intrinsics.h"    // INTRINSIC_PRINT
+#include "pycore_pyerrors.h"      // _PyErr_SetString()
+#include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
+#include "pycore_typevarobject.h" // _Py_make_typevar()
 
 
+/******** Unary functions ********/
 
 static PyObject *
-no_intrinsic(PyThreadState* tstate, PyObject *unused)
+no_intrinsic1(PyThreadState* tstate, PyObject *unused)
 {
     _PyErr_SetString(tstate, PyExc_SystemError, "invalid intrinsic function");
     return NULL;
 }
 
 static PyObject *
-print_expr(PyThreadState* tstate, PyObject *value)
+print_expr(PyThreadState* Py_UNUSED(ignored), PyObject *value)
 {
-    PyObject *hook = _PySys_GetAttr(tstate, &_Py_ID(displayhook));
+    PyObject *hook = _PySys_GetRequiredAttr(&_Py_ID(displayhook));
     // Can't use ERROR_IF here.
     if (hook == NULL) {
-        _PyErr_SetString(tstate, PyExc_RuntimeError,
-                            "lost sys.displayhook");
         return NULL;
     }
-    return PyObject_CallOneArg(hook, value);
+    PyObject *res = PyObject_CallOneArg(hook, value);
+    Py_DECREF(hook);
+    return res;
 }
 
 static int
@@ -37,11 +42,11 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
     int skip_leading_underscores = 0;
     int pos, err;
 
-    if (_PyObject_LookupAttr(v, &_Py_ID(__all__), &all) < 0) {
+    if (PyObject_GetOptionalAttr(v, &_Py_ID(__all__), &all) < 0) {
         return -1; /* Unexpected error */
     }
     if (all == NULL) {
-        if (_PyObject_LookupAttr(v, &_Py_ID(__dict__), &dict) < 0) {
+        if (PyObject_GetOptionalAttr(v, &_Py_ID(__dict__), &dict) < 0) {
             return -1;
         }
         if (dict == NULL) {
@@ -93,11 +98,6 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
             break;
         }
         if (skip_leading_underscores) {
-            if (PyUnicode_READY(name) == -1) {
-                Py_DECREF(name);
-                err = -1;
-                break;
-            }
             if (PyUnicode_READ_CHAR(name, 0) == '_') {
                 Py_DECREF(name);
                 continue;
@@ -122,19 +122,16 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
 static PyObject *
 import_star(PyThreadState* tstate, PyObject *from)
 {
-    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
-    if (_PyFrame_FastToLocalsWithError(frame) < 0) {
-        return NULL;
-    }
+    _PyInterpreterFrame *frame = tstate->current_frame;
 
-    PyObject *locals = frame->f_locals;
+    PyObject *locals = _PyFrame_GetLocals(frame);
     if (locals == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError,
                             "no locals found during 'import *'");
         return NULL;
     }
     int err = import_all_from(tstate, locals, from);
-    _PyFrame_LocalsToFast(frame, 0);
+    Py_DECREF(locals);
     if (err < 0) {
         return NULL;
     }
@@ -144,20 +141,20 @@ import_star(PyThreadState* tstate, PyObject *from)
 static PyObject *
 stopiteration_error(PyThreadState* tstate, PyObject *exc)
 {
-    _PyInterpreterFrame *frame = tstate->cframe->current_frame;
+    _PyInterpreterFrame *frame = tstate->current_frame;
     assert(frame->owner == FRAME_OWNED_BY_GENERATOR);
     assert(PyExceptionInstance_Check(exc));
     const char *msg = NULL;
     if (PyErr_GivenExceptionMatches(exc, PyExc_StopIteration)) {
         msg = "generator raised StopIteration";
-        if (frame->f_code->co_flags & CO_ASYNC_GENERATOR) {
+        if (_PyFrame_GetCode(frame)->co_flags & CO_ASYNC_GENERATOR) {
             msg = "async generator raised StopIteration";
         }
-        else if (frame->f_code->co_flags & CO_COROUTINE) {
+        else if (_PyFrame_GetCode(frame)->co_flags & CO_COROUTINE) {
             msg = "coroutine raised StopIteration";
         }
     }
-    else if ((frame->f_code->co_flags & CO_ASYNC_GENERATOR) &&
+    else if ((_PyFrame_GetCode(frame)->co_flags & CO_ASYNC_GENERATOR) &&
             PyErr_GivenExceptionMatches(exc, PyExc_StopAsyncIteration))
     {
         /* code in `gen` raised a StopAsyncIteration error:
@@ -198,13 +195,92 @@ list_to_tuple(PyThreadState* unused, PyObject *v)
     return _PyTuple_FromArray(((PyListObject *)v)->ob_item, Py_SIZE(v));
 }
 
-instrinsic_func1
+static PyObject *
+make_typevar(PyThreadState* Py_UNUSED(ignored), PyObject *v)
+{
+    assert(PyUnicode_Check(v));
+    return _Py_make_typevar(v, NULL, NULL);
+}
+
+
+#define INTRINSIC_FUNC_ENTRY(N, F) \
+    [N] = {F, #N},
+
+const intrinsic_func1_info
 _PyIntrinsics_UnaryFunctions[] = {
-    [0] = no_intrinsic,
-    [INTRINSIC_PRINT] = print_expr,
-    [INTRINSIC_IMPORT_STAR] = import_star,
-    [INTRINSIC_STOPITERATION_ERROR] = stopiteration_error,
-    [INTRINSIC_ASYNC_GEN_WRAP] = _PyAsyncGenValueWrapperNew,
-    [INTRINSIC_UNARY_POSITIVE] = unary_pos,
-    [INTRINSIC_LIST_TO_TUPLE] = list_to_tuple,
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_1_INVALID, no_intrinsic1)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_PRINT, print_expr)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_IMPORT_STAR, import_star)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_STOPITERATION_ERROR, stopiteration_error)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_ASYNC_GEN_WRAP, _PyAsyncGenValueWrapperNew)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_UNARY_POSITIVE, unary_pos)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_LIST_TO_TUPLE, list_to_tuple)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEVAR, make_typevar)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_PARAMSPEC, _Py_make_paramspec)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEVARTUPLE, _Py_make_typevartuple)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_SUBSCRIPT_GENERIC, _Py_subscript_generic)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEALIAS, _Py_make_typealias)
 };
+
+
+/******** Binary functions ********/
+
+static PyObject *
+no_intrinsic2(PyThreadState* tstate, PyObject *unused1, PyObject *unused2)
+{
+    _PyErr_SetString(tstate, PyExc_SystemError, "invalid intrinsic function");
+    return NULL;
+}
+
+static PyObject *
+prep_reraise_star(PyThreadState* unused, PyObject *orig, PyObject *excs)
+{
+    assert(PyList_Check(excs));
+    return _PyExc_PrepReraiseStar(orig, excs);
+}
+
+static PyObject *
+make_typevar_with_bound(PyThreadState* Py_UNUSED(ignored), PyObject *name,
+                        PyObject *evaluate_bound)
+{
+    assert(PyUnicode_Check(name));
+    return _Py_make_typevar(name, evaluate_bound, NULL);
+}
+
+static PyObject *
+make_typevar_with_constraints(PyThreadState* Py_UNUSED(ignored), PyObject *name,
+                              PyObject *evaluate_constraints)
+{
+    assert(PyUnicode_Check(name));
+    return _Py_make_typevar(name, NULL, evaluate_constraints);
+}
+
+const intrinsic_func2_info
+_PyIntrinsics_BinaryFunctions[] = {
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_2_INVALID, no_intrinsic2)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_PREP_RERAISE_STAR, prep_reraise_star)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEVAR_WITH_BOUND, make_typevar_with_bound)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_TYPEVAR_WITH_CONSTRAINTS, make_typevar_with_constraints)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_SET_FUNCTION_TYPE_PARAMS, _Py_set_function_type_params)
+    INTRINSIC_FUNC_ENTRY(INTRINSIC_SET_TYPEPARAM_DEFAULT, _Py_set_typeparam_default)
+};
+
+#undef INTRINSIC_FUNC_ENTRY
+
+PyObject*
+_PyCompile_GetUnaryIntrinsicName(int index)
+{
+    if (index < 0 || index > MAX_INTRINSIC_1) {
+        return NULL;
+    }
+    return PyUnicode_FromString(_PyIntrinsics_UnaryFunctions[index].name);
+}
+
+PyObject*
+_PyCompile_GetBinaryIntrinsicName(int index)
+{
+    if (index < 0 || index > MAX_INTRINSIC_2) {
+        return NULL;
+    }
+    return PyUnicode_FromString(_PyIntrinsics_BinaryFunctions[index].name);
+}

@@ -2,11 +2,7 @@
 preserve
 [clinic start generated code]*/
 
-#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
-#endif
-
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(float_is_integer__doc__,
 "is_integer($self, /)\n"
@@ -173,12 +169,10 @@ PyDoc_STRVAR(float_as_integer_ratio__doc__,
 "as_integer_ratio($self, /)\n"
 "--\n"
 "\n"
-"Return integer ratio.\n"
+"Return a pair of integers, whose ratio is exactly equal to the original float.\n"
 "\n"
-"Return a pair of integers, whose ratio is exactly equal to the original float\n"
-"and with a positive denominator.\n"
-"\n"
-"Raise OverflowError on infinities and a ValueError on NaNs.\n"
+"The ratio is in lowest terms and has a positive denominator.  Raise\n"
+"OverflowError on infinities and a ValueError on NaNs.\n"
 "\n"
 ">>> (10.0).as_integer_ratio()\n"
 "(10, 1)\n"
@@ -203,7 +197,7 @@ PyDoc_STRVAR(float_new__doc__,
 "float(x=0, /)\n"
 "--\n"
 "\n"
-"Convert a string or number to a floating point number, if possible.");
+"Convert a string or number to a floating-point number, if possible.");
 
 static PyObject *
 float_new_impl(PyTypeObject *type, PyObject *x);
@@ -212,10 +206,10 @@ static PyObject *
 float_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &PyFloat_Type;
     PyObject *x = NULL;
 
-    if ((type == &PyFloat_Type ||
-         type->tp_init == PyFloat_Type.tp_init) &&
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
         !_PyArg_NoKeywords("float", kwargs)) {
         goto exit;
     }
@@ -232,6 +226,15 @@ skip_optional:
 exit:
     return return_value;
 }
+
+PyDoc_STRVAR(float_from_number__doc__,
+"from_number($type, number, /)\n"
+"--\n"
+"\n"
+"Convert real number to a floating-point number.");
+
+#define FLOAT_FROM_NUMBER_METHODDEF    \
+    {"from_number", (PyCFunction)float_from_number, METH_O|METH_CLASS, float_from_number__doc__},
 
 PyDoc_STRVAR(float___getnewargs____doc__,
 "__getnewargs__($self, /)\n"
@@ -262,7 +265,7 @@ PyDoc_STRVAR(float___getformat____doc__,
 "It exists mainly to be used in Python\'s test suite.\n"
 "\n"
 "This function returns whichever of \'unknown\', \'IEEE, big-endian\' or \'IEEE,\n"
-"little-endian\' best describes the format of floating point numbers used by the\n"
+"little-endian\' best describes the format of floating-point numbers used by the\n"
 "C type named by typestr.");
 
 #define FLOAT___GETFORMAT___METHODDEF    \
@@ -318,13 +321,10 @@ float___format__(PyObject *self, PyObject *arg)
         _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
-    if (PyUnicode_READY(arg) == -1) {
-        goto exit;
-    }
     format_spec = arg;
     return_value = float___format___impl(self, format_spec);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ac6374ac606a505e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=366cea9463cc5bf6 input=a9049054013a1b77]*/

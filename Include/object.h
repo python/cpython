@@ -51,39 +51,46 @@ A standard interface exists for objects that contain an array of items
 whose size is determined when the object is allocated.
 */
 
-#include "pystats.h"
-
 /* Py_DEBUG implies Py_REF_DEBUG. */
 #if defined(Py_DEBUG) && !defined(Py_REF_DEBUG)
 #  define Py_REF_DEBUG
 #endif
 
-#if defined(Py_LIMITED_API) && defined(Py_TRACE_REFS)
-#  error Py_LIMITED_API is incompatible with Py_TRACE_REFS
-#endif
-
-#ifdef Py_TRACE_REFS
-/* Define pointers to support a doubly-linked list of all live heap objects. */
-#define _PyObject_HEAD_EXTRA            \
-    PyObject *_ob_next;           \
-    PyObject *_ob_prev;
-
-#define _PyObject_EXTRA_INIT _Py_NULL, _Py_NULL,
-
-#else
-#  define _PyObject_HEAD_EXTRA
-#  define _PyObject_EXTRA_INIT
-#endif
-
 /* PyObject_HEAD defines the initial segment of every PyObject. */
 #define PyObject_HEAD                   PyObject ob_base;
 
-#define PyObject_HEAD_INIT(type)        \
-    { _PyObject_EXTRA_INIT              \
-    1, (type) },
+// Kept for backward compatibility. It was needed by Py_TRACE_REFS build.
+#define _PyObject_EXTRA_INIT
 
-#define PyVarObject_HEAD_INIT(type, size)       \
-    { PyObject_HEAD_INIT(type) (size) },
+/* Make all uses of PyObject_HEAD_INIT immortal.
+ *
+ * Statically allocated objects might be shared between
+ * interpreters, so must be marked as immortal.
+ */
+#if defined(Py_GIL_DISABLED)
+#define PyObject_HEAD_INIT(type)    \
+    {                               \
+        0,                          \
+        _Py_STATICALLY_ALLOCATED_FLAG, \
+        { 0 },                      \
+        0,                          \
+        _Py_IMMORTAL_REFCNT_LOCAL,  \
+        0,                          \
+        (type),                     \
+    },
+#else
+#define PyObject_HEAD_INIT(type)    \
+    {                               \
+        { _Py_STATIC_IMMORTAL_INITIAL_REFCNT },    \
+        (type)                      \
+    },
+#endif
+
+#define PyVarObject_HEAD_INIT(type, size) \
+    {                                     \
+        PyObject_HEAD_INIT(type)          \
+        (size)                            \
+    },
 
 /* PyObject_VAR_HEAD defines the initial segment of all variable-size
  * container objects.  These end with a declaration of an array with 1
@@ -99,11 +106,60 @@ whose size is determined when the object is allocated.
  * by hand.  Similarly every pointer to a variable-size Python object can,
  * in addition, be cast to PyVarObject*.
  */
+#ifndef Py_GIL_DISABLED
 struct _object {
-    _PyObject_HEAD_EXTRA
-    Py_ssize_t ob_refcnt;
+#if (defined(__GNUC__) || defined(__clang__)) \
+        && !(defined __STDC_VERSION__ && __STDC_VERSION__ >= 201112L)
+    // On C99 and older, anonymous union is a GCC and clang extension
+    __extension__
+#endif
+#ifdef _MSC_VER
+    // Ignore MSC warning C4201: "nonstandard extension used:
+    // nameless struct/union"
+    __pragma(warning(push))
+    __pragma(warning(disable: 4201))
+#endif
+    union {
+#if SIZEOF_VOID_P > 4
+        PY_INT64_T ob_refcnt_full; /* This field is needed for efficient initialization with Clang on ARM */
+        struct {
+#  if PY_BIG_ENDIAN
+            PY_UINT32_T ob_flags;
+            PY_UINT32_T ob_refcnt;
+#  else
+            PY_UINT32_T ob_refcnt;
+            PY_UINT32_T ob_flags;
+#  endif
+        };
+#else
+        Py_ssize_t ob_refcnt;
+#endif
+    };
+#ifdef _MSC_VER
+    __pragma(warning(pop))
+#endif
+
     PyTypeObject *ob_type;
 };
+#else
+// Objects that are not owned by any thread use a thread id (tid) of zero.
+// This includes both immortal objects and objects whose reference count
+// fields have been merged.
+#define _Py_UNOWNED_TID             0
+
+struct _object {
+    // ob_tid stores the thread id (or zero). It is also used by the GC and the
+    // trashcan mechanism as a linked list pointer and by the GC to store the
+    // computed "gc_refs" refcount.
+    uintptr_t ob_tid;
+    uint16_t ob_flags;
+    PyMutex ob_mutex;           // per-object lock
+    uint8_t ob_gc_bits;         // gc-related state
+    uint32_t ob_ref_local;      // local reference count
+    Py_ssize_t ob_ref_shared;   // shared (atomic) reference count
+    PyTypeObject *ob_type;
+};
+#endif
 
 /* Cast argument to PyObject* type. */
 #define _PyObject_CAST(op) _Py_CAST(PyObject*, (op))
@@ -121,46 +177,121 @@ typedef struct {
 PyAPI_FUNC(int) Py_Is(PyObject *x, PyObject *y);
 #define Py_Is(x, y) ((x) == (y))
 
+#if defined(Py_GIL_DISABLED) && !defined(Py_LIMITED_API)
+PyAPI_FUNC(uintptr_t) _Py_GetThreadLocal_Addr(void);
 
-static inline Py_ssize_t Py_REFCNT(PyObject *ob) {
-    return ob->ob_refcnt;
+static inline uintptr_t
+_Py_ThreadId(void)
+{
+    uintptr_t tid;
+#if defined(_MSC_VER) && defined(_M_X64)
+    tid = __readgsqword(48);
+#elif defined(_MSC_VER) && defined(_M_IX86)
+    tid = __readfsdword(24);
+#elif defined(_MSC_VER) && defined(_M_ARM64)
+    tid = __getReg(18);
+#elif defined(__MINGW32__) && defined(_M_X64)
+    tid = __readgsqword(48);
+#elif defined(__MINGW32__) && defined(_M_IX86)
+    tid = __readfsdword(24);
+#elif defined(__MINGW32__) && defined(_M_ARM64)
+    tid = __getReg(18);
+#elif defined(__i386__)
+    __asm__("movl %%gs:0, %0" : "=r" (tid));  // 32-bit always uses GS
+#elif defined(__MACH__) && defined(__x86_64__)
+    __asm__("movq %%gs:0, %0" : "=r" (tid));  // x86_64 macOSX uses GS
+#elif defined(__x86_64__)
+   __asm__("movq %%fs:0, %0" : "=r" (tid));  // x86_64 Linux, BSD uses FS
+#elif defined(__arm__) && __ARM_ARCH >= 7
+    __asm__ ("mrc p15, 0, %0, c13, c0, 3\nbic %0, %0, #3" : "=r" (tid));
+#elif defined(__aarch64__) && defined(__APPLE__)
+    __asm__ ("mrs %0, tpidrro_el0" : "=r" (tid));
+#elif defined(__aarch64__)
+    __asm__ ("mrs %0, tpidr_el0" : "=r" (tid));
+#elif defined(__powerpc64__)
+    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
+    tid = (uintptr_t)__builtin_thread_pointer();
+    #else
+    // r13 is reserved for use as system thread ID by the Power 64-bit ABI.
+    register uintptr_t tp __asm__ ("r13");
+    __asm__("" : "=r" (tp));
+    tid = tp;
+    #endif
+#elif defined(__powerpc__)
+    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
+    tid = (uintptr_t)__builtin_thread_pointer();
+    #else
+    // r2 is reserved for use as system thread ID by the Power 32-bit ABI.
+    register uintptr_t tp __asm__ ("r2");
+    __asm__ ("" : "=r" (tp));
+    tid = tp;
+    #endif
+#elif defined(__s390__) && defined(__GNUC__)
+    // Both GCC and Clang have supported __builtin_thread_pointer
+    // for s390 from long time ago.
+    tid = (uintptr_t)__builtin_thread_pointer();
+#elif defined(__riscv)
+    #if defined(__clang__) && _Py__has_builtin(__builtin_thread_pointer)
+    tid = (uintptr_t)__builtin_thread_pointer();
+    #else
+    // tp is Thread Pointer provided by the RISC-V ABI.
+    __asm__ ("mv %0, tp" : "=r" (tid));
+    #endif
+#else
+    // Fallback to a portable implementation if we do not have a faster
+    // platform-specific implementation.
+    tid = _Py_GetThreadLocal_Addr();
+#endif
+  return tid;
 }
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_REFCNT(ob) Py_REFCNT(_PyObject_CAST(ob))
+
+static inline Py_ALWAYS_INLINE int
+_Py_IsOwnedByCurrentThread(PyObject *ob)
+{
+#ifdef _Py_THREAD_SANITIZER
+    return _Py_atomic_load_uintptr_relaxed(&ob->ob_tid) == _Py_ThreadId();
+#else
+    return ob->ob_tid == _Py_ThreadId();
+#endif
+}
 #endif
 
+// Py_TYPE() implementation for the stable ABI
+PyAPI_FUNC(PyTypeObject*) Py_TYPE(PyObject *ob);
 
-// bpo-39573: The Py_SET_TYPE() function must be used to set an object type.
-static inline PyTypeObject* Py_TYPE(PyObject *ob) {
-    return ob->ob_type;
-}
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_TYPE(ob) Py_TYPE(_PyObject_CAST(ob))
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030e0000
+    // Stable ABI implements Py_TYPE() as a function call
+    // on limited C API version 3.14 and newer.
+#else
+    static inline PyTypeObject* _Py_TYPE(PyObject *ob)
+    {
+        return ob->ob_type;
+    }
+    #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
+    #   define Py_TYPE(ob) _Py_TYPE(_PyObject_CAST(ob))
+    #else
+    #   define Py_TYPE(ob) _Py_TYPE(ob)
+    #endif
 #endif
+
+PyAPI_DATA(PyTypeObject) PyLong_Type;
+PyAPI_DATA(PyTypeObject) PyBool_Type;
 
 // bpo-39573: The Py_SET_SIZE() function must be used to set an object size.
 static inline Py_ssize_t Py_SIZE(PyObject *ob) {
-    PyVarObject *var_ob = _PyVarObject_CAST(ob);
-    return var_ob->ob_size;
+    assert(Py_TYPE(ob) != &PyLong_Type);
+    assert(Py_TYPE(ob) != &PyBool_Type);
+    return  _PyVarObject_CAST(ob)->ob_size;
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SIZE(ob) Py_SIZE(_PyObject_CAST(ob))
 #endif
-
 
 static inline int Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
     return Py_TYPE(ob) == type;
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_IS_TYPE(ob, type) Py_IS_TYPE(_PyObject_CAST(ob), (type))
-#endif
-
-
-static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
-    ob->ob_refcnt = refcnt;
-}
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_SET_REFCNT(ob, refcnt) Py_SET_REFCNT(_PyObject_CAST(ob), (refcnt))
 #endif
 
 
@@ -171,9 +302,14 @@ static inline void Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
 #  define Py_SET_TYPE(ob, type) Py_SET_TYPE(_PyObject_CAST(ob), type)
 #endif
 
-
 static inline void Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
+    assert(Py_TYPE(_PyObject_CAST(ob)) != &PyLong_Type);
+    assert(Py_TYPE(_PyObject_CAST(ob)) != &PyBool_Type);
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_store_ssize_relaxed(&ob->ob_size, size);
+#else
     ob->ob_size = size;
+#endif
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SET_SIZE(ob, size) Py_SET_SIZE(_PyVarObject_CAST(ob), (size))
@@ -262,8 +398,18 @@ PyAPI_FUNC(void *) PyType_GetModuleState(PyTypeObject *);
 PyAPI_FUNC(PyObject *) PyType_GetName(PyTypeObject *);
 PyAPI_FUNC(PyObject *) PyType_GetQualName(PyTypeObject *);
 #endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030D0000
+PyAPI_FUNC(PyObject *) PyType_GetFullyQualifiedName(PyTypeObject *type);
+PyAPI_FUNC(PyObject *) PyType_GetModuleName(PyTypeObject *type);
+#endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
 PyAPI_FUNC(PyObject *) PyType_FromMetaclass(PyTypeObject*, PyObject*, PyType_Spec*, PyObject*);
+PyAPI_FUNC(void *) PyObject_GetTypeData(PyObject *obj, PyTypeObject *cls);
+PyAPI_FUNC(Py_ssize_t) PyType_GetTypeDataSize(PyTypeObject *cls);
+#endif
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030E0000
+PyAPI_FUNC(int) PyType_GetBaseByToken(PyTypeObject *, void *, PyTypeObject **);
+#define Py_TP_USE_SPEC NULL
 #endif
 
 /* Generic type check */
@@ -298,10 +444,20 @@ PyAPI_FUNC(PyObject *) PyObject_RichCompare(PyObject *, PyObject *, int);
 PyAPI_FUNC(int) PyObject_RichCompareBool(PyObject *, PyObject *, int);
 PyAPI_FUNC(PyObject *) PyObject_GetAttrString(PyObject *, const char *);
 PyAPI_FUNC(int) PyObject_SetAttrString(PyObject *, const char *, PyObject *);
+PyAPI_FUNC(int) PyObject_DelAttrString(PyObject *v, const char *name);
 PyAPI_FUNC(int) PyObject_HasAttrString(PyObject *, const char *);
 PyAPI_FUNC(PyObject *) PyObject_GetAttr(PyObject *, PyObject *);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(int) PyObject_GetOptionalAttr(PyObject *, PyObject *, PyObject **);
+PyAPI_FUNC(int) PyObject_GetOptionalAttrString(PyObject *, const char *, PyObject **);
+#endif
 PyAPI_FUNC(int) PyObject_SetAttr(PyObject *, PyObject *, PyObject *);
+PyAPI_FUNC(int) PyObject_DelAttr(PyObject *v, PyObject *name);
 PyAPI_FUNC(int) PyObject_HasAttr(PyObject *, PyObject *);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(int) PyObject_HasAttrWithError(PyObject *, PyObject *);
+PyAPI_FUNC(int) PyObject_HasAttrStringWithError(PyObject *, const char *);
+#endif
 PyAPI_FUNC(PyObject *) PyObject_SelfIter(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_GenericGetAttr(PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_GenericSetAttr(PyObject *, PyObject *, PyObject *);
@@ -321,12 +477,6 @@ PyAPI_FUNC(void) PyObject_ClearWeakRefs(PyObject *);
    no current locals, NULL is returned, and PyErr_Occurred() is false.
 */
 PyAPI_FUNC(PyObject *) PyObject_Dir(PyObject *);
-
-/* Pickle support. */
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyObject_GetState(PyObject *);
-#endif
-
 
 /* Helpers for printing recursive container types */
 PyAPI_FUNC(int) Py_ReprEnter(PyObject *);
@@ -360,13 +510,18 @@ given type object has a specified feature.
 /* Track types initialized using _PyStaticType_InitBuiltin(). */
 #define _Py_TPFLAGS_STATIC_BUILTIN (1 << 1)
 
+/* The values array is placed inline directly after the rest of
+ * the object. Implies Py_TPFLAGS_HAVE_GC.
+ */
+#define Py_TPFLAGS_INLINE_VALUES (1 << 2)
+
 /* Placement of weakref pointers are managed by the VM, not by the type.
  * The VM will automatically set tp_weaklistoffset.
  */
 #define Py_TPFLAGS_MANAGED_WEAKREF (1 << 3)
 
 /* Placement of dict (and values) pointers are managed by the VM, not by the type.
- * The VM will automatically set tp_dictoffset.
+ * The VM will automatically set tp_dictoffset. Implies Py_TPFLAGS_HAVE_GC.
  */
 #define Py_TPFLAGS_MANAGED_DICT (1 << 4)
 
@@ -419,7 +574,7 @@ given type object has a specified feature.
 /* Objects behave like an unbound method */
 #define Py_TPFLAGS_METHOD_DESCRIPTOR (1UL << 17)
 
-/* Object has up-to-date type attribute cache */
+/* Unused. Legacy flag */
 #define Py_TPFLAGS_VALID_VERSION_TAG  (1UL << 19)
 
 /* Type is abstract and cannot be instantiated */
@@ -429,6 +584,9 @@ given type object has a specified feature.
 // behavior, which allows a single positional subpattern to match against the
 // subject itself (rather than a mapped attribute on it):
 #define _Py_TPFLAGS_MATCH_SELF (1UL << 22)
+
+/* Items (ob_size*tp_itemsize) are found at the end of an instance's memory */
+#define Py_TPFLAGS_ITEMS_AT_END (1UL << 23)
 
 /* These flags are used to determine if a type is a subclass. */
 #define Py_TPFLAGS_LONG_SUBCLASS        (1UL << 24)
@@ -461,259 +619,56 @@ given type object has a specified feature.
 #define Py_TPFLAGS_HAVE_VERSION_TAG   (1UL << 18)
 
 
-/*
-The macros Py_INCREF(op) and Py_DECREF(op) are used to increment or decrement
-reference counts.  Py_DECREF calls the object's deallocator function when
-the refcount falls to 0; for
-objects that don't contain references to other objects or heap memory
-this can be the standard function free().  Both macros can be used
-wherever a void expression is allowed.  The argument must not be a
-NULL pointer.  If it may be NULL, use Py_XINCREF/Py_XDECREF instead.
-The macro _Py_NewReference(op) initialize reference counts to 1, and
-in special builds (Py_REF_DEBUG, Py_TRACE_REFS) performs additional
-bookkeeping appropriate to the special build.
+#define Py_CONSTANT_NONE 0
+#define Py_CONSTANT_FALSE 1
+#define Py_CONSTANT_TRUE 2
+#define Py_CONSTANT_ELLIPSIS 3
+#define Py_CONSTANT_NOT_IMPLEMENTED 4
+#define Py_CONSTANT_ZERO 5
+#define Py_CONSTANT_ONE 6
+#define Py_CONSTANT_EMPTY_STR 7
+#define Py_CONSTANT_EMPTY_BYTES 8
+#define Py_CONSTANT_EMPTY_TUPLE 9
 
-We assume that the reference count field can never overflow; this can
-be proven when the size of the field is the same as the pointer size, so
-we ignore the possibility.  Provided a C int is at least 32 bits (which
-is implicitly assumed in many parts of this code), that's enough for
-about 2**31 references to an object.
-
-XXX The following became out of date in Python 2.2, but I'm not sure
-XXX what the full truth is now.  Certainly, heap-allocated type objects
-XXX can and should be deallocated.
-Type objects should never be deallocated; the type pointer in an object
-is not considered to be a reference to the type object, to save
-complications in the deallocation function.  (This is actually a
-decision that's up to the implementer of each new type so if you want,
-you can count such references to the type object.)
-*/
-
-#ifdef Py_REF_DEBUG
-PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
-PyAPI_FUNC(void) _Py_NegativeRefcount(const char *filename, int lineno,
-                                      PyObject *op);
-#endif /* Py_REF_DEBUG */
-
-PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
-
-/*
-These are provided as conveniences to Python runtime embedders, so that
-they can have object code that is not dependent on Python compilation flags.
-*/
-PyAPI_FUNC(void) Py_IncRef(PyObject *);
-PyAPI_FUNC(void) Py_DecRef(PyObject *);
-
-// Similar to Py_IncRef() and Py_DecRef() but the argument must be non-NULL.
-// Private functions used by Py_INCREF() and Py_DECREF().
-PyAPI_FUNC(void) _Py_IncRef(PyObject *);
-PyAPI_FUNC(void) _Py_DecRef(PyObject *);
-
-static inline void Py_INCREF(PyObject *op)
-{
-#if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
-    // Stable ABI for Python 3.10 built in debug mode.
-    _Py_IncRef(op);
-#else
-    _Py_INCREF_STAT_INC();
-    // Non-limited C API and limited C API for Python 3.9 and older access
-    // directly PyObject.ob_refcnt.
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal++;
-#endif
-    op->ob_refcnt++;
-#endif
-}
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_INCREF(op) Py_INCREF(_PyObject_CAST(op))
-#endif
-
-#if defined(Py_REF_DEBUG) && defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030A0000
-// Stable ABI for limited C API version 3.10 of Python debug build
-static inline void Py_DECREF(PyObject *op) {
-    _Py_DecRef(op);
-}
-#define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
-
-#elif defined(Py_REF_DEBUG)
-static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
-{
-    _Py_DECREF_STAT_INC();
-    _Py_RefTotal--;
-    if (--op->ob_refcnt != 0) {
-        if (op->ob_refcnt < 0) {
-            _Py_NegativeRefcount(filename, lineno, op);
-        }
-    }
-    else {
-        _Py_Dealloc(op);
-    }
-}
-#define Py_DECREF(op) Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
-
-#else
-static inline void Py_DECREF(PyObject *op)
-{
-    _Py_DECREF_STAT_INC();
-    // Non-limited C API and limited C API for Python 3.9 and older access
-    // directly PyObject.ob_refcnt.
-    if (--op->ob_refcnt == 0) {
-        _Py_Dealloc(op);
-    }
-}
-#define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
-#endif
-
-
-/* Safely decref `op` and set `op` to NULL, especially useful in tp_clear
- * and tp_dealloc implementations.
- *
- * Note that "the obvious" code can be deadly:
- *
- *     Py_XDECREF(op);
- *     op = NULL;
- *
- * Typically, `op` is something like self->containee, and `self` is done
- * using its `containee` member.  In the code sequence above, suppose
- * `containee` is non-NULL with a refcount of 1.  Its refcount falls to
- * 0 on the first line, which can trigger an arbitrary amount of code,
- * possibly including finalizers (like __del__ methods or weakref callbacks)
- * coded in Python, which in turn can release the GIL and allow other threads
- * to run, etc.  Such code may even invoke methods of `self` again, or cause
- * cyclic gc to trigger, but-- oops! --self->containee still points to the
- * object being torn down, and it may be in an insane state while being torn
- * down.  This has in fact been a rich historic source of miserable (rare &
- * hard-to-diagnose) segfaulting (and other) bugs.
- *
- * The safe way is:
- *
- *      Py_CLEAR(op);
- *
- * That arranges to set `op` to NULL _before_ decref'ing, so that any code
- * triggered as a side-effect of `op` getting torn down no longer believes
- * `op` points to a valid object.
- *
- * There are cases where it's safe to use the naive code, but they're brittle.
- * For example, if `op` points to a Python integer, you know that destroying
- * one of those can't cause problems -- but in part that relies on that
- * Python integers aren't currently weakly referencable.  Best practice is
- * to use Py_CLEAR() even if you can't think of a reason for why you need to.
- *
- * gh-98724: Use a temporary variable to only evaluate the macro argument once,
- * to avoid the duplication of side effects if the argument has side effects.
- *
- * gh-99701: If the PyObject* type is used with casting arguments to PyObject*,
- * the code can be miscompiled with strict aliasing because of type punning.
- * With strict aliasing, a compiler considers that two pointers of different
- * types cannot read or write the same memory which enables optimization
- * opportunities.
- *
- * If available, use _Py_TYPEOF() to use the 'op' type for temporary variables,
- * and so avoid type punning. Otherwise, use memcpy() which causes type erasure
- * and so prevents the compiler to reuse an old cached 'op' value after
- * Py_CLEAR().
- */
-#ifdef _Py_TYPEOF
-#define Py_CLEAR(op) \
-    do { \
-        _Py_TYPEOF(op)* _tmp_op_ptr = &(op); \
-        _Py_TYPEOF(op) _tmp_old_op = (*_tmp_op_ptr); \
-        if (_tmp_old_op != NULL) { \
-            *_tmp_op_ptr = _Py_NULL; \
-            Py_DECREF(_tmp_old_op); \
-        } \
-    } while (0)
-#else
-#define Py_CLEAR(op) \
-    do { \
-        PyObject **_tmp_op_ptr = _Py_CAST(PyObject**, &(op)); \
-        PyObject *_tmp_old_op = (*_tmp_op_ptr); \
-        if (_tmp_old_op != NULL) { \
-            PyObject *_null_ptr = _Py_NULL; \
-            memcpy(_tmp_op_ptr, &_null_ptr, sizeof(PyObject*)); \
-            Py_DECREF(_tmp_old_op); \
-        } \
-    } while (0)
-#endif
-
-
-/* Function to use in case the object pointer can be NULL: */
-static inline void Py_XINCREF(PyObject *op)
-{
-    if (op != _Py_NULL) {
-        Py_INCREF(op);
-    }
-}
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_XINCREF(op) Py_XINCREF(_PyObject_CAST(op))
-#endif
-
-static inline void Py_XDECREF(PyObject *op)
-{
-    if (op != _Py_NULL) {
-        Py_DECREF(op);
-    }
-}
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_XDECREF(op) Py_XDECREF(_PyObject_CAST(op))
-#endif
-
-// Create a new strong reference to an object:
-// increment the reference count of the object and return the object.
-PyAPI_FUNC(PyObject*) Py_NewRef(PyObject *obj);
-
-// Similar to Py_NewRef(), but the object can be NULL.
-PyAPI_FUNC(PyObject*) Py_XNewRef(PyObject *obj);
-
-static inline PyObject* _Py_NewRef(PyObject *obj)
-{
-    Py_INCREF(obj);
-    return obj;
-}
-
-static inline PyObject* _Py_XNewRef(PyObject *obj)
-{
-    Py_XINCREF(obj);
-    return obj;
-}
-
-// Py_NewRef() and Py_XNewRef() are exported as functions for the stable ABI.
-// Names overridden with macros by static inline functions for best
-// performances.
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
-#  define Py_NewRef(obj) _Py_NewRef(_PyObject_CAST(obj))
-#  define Py_XNewRef(obj) _Py_XNewRef(_PyObject_CAST(obj))
-#else
-#  define Py_NewRef(obj) _Py_NewRef(obj)
-#  define Py_XNewRef(obj) _Py_XNewRef(obj)
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(PyObject*) Py_GetConstant(unsigned int constant_id);
+PyAPI_FUNC(PyObject*) Py_GetConstantBorrowed(unsigned int constant_id);
 #endif
 
 
 /*
 _Py_NoneStruct is an object of undefined type which can be used in contexts
 where NULL (nil) is not suitable (since NULL often means 'error').
-
-Don't forget to apply Py_INCREF() when returning this value!!!
 */
 PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
-#define Py_None (&_Py_NoneStruct)
+
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030D0000
+#  define Py_None Py_GetConstantBorrowed(Py_CONSTANT_NONE)
+#else
+#  define Py_None (&_Py_NoneStruct)
+#endif
 
 // Test if an object is the None singleton, the same as "x is None" in Python.
 PyAPI_FUNC(int) Py_IsNone(PyObject *x);
 #define Py_IsNone(x) Py_Is((x), Py_None)
 
 /* Macro for returning Py_None from a function */
-#define Py_RETURN_NONE return Py_NewRef(Py_None)
+#define Py_RETURN_NONE return Py_None
 
 /*
 Py_NotImplemented is a singleton used to signal that an operation is
 not implemented for a given type combination.
 */
 PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
-#define Py_NotImplemented (&_Py_NotImplementedStruct)
+
+#if defined(Py_LIMITED_API) && Py_LIMITED_API+0 >= 0x030D0000
+#  define Py_NotImplemented Py_GetConstantBorrowed(Py_CONSTANT_NOT_IMPLEMENTED)
+#else
+#  define Py_NotImplemented (&_Py_NotImplementedStruct)
+#endif
 
 /* Macro for returning Py_NotImplemented from a function */
-#define Py_RETURN_NOTIMPLEMENTED return Py_NewRef(Py_NotImplemented)
+#define Py_RETURN_NOTIMPLEMENTED return Py_NotImplemented
 
 /* Rich comparison opcodes */
 #define Py_LT 0
@@ -728,7 +683,7 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 typedef enum {
     PYGEN_RETURN = 0,
     PYGEN_ERROR = -1,
-    PYGEN_NEXT = 1,
+    PYGEN_NEXT = 1
 } PySendResult;
 #endif
 
@@ -819,7 +774,11 @@ PyType_HasFeature(PyTypeObject *type, unsigned long feature)
     // PyTypeObject is opaque in the limited C API
     flags = PyType_GetFlags(type);
 #else
-    flags = type->tp_flags;
+#   ifdef Py_GIL_DISABLED
+        flags = _Py_atomic_load_ulong_relaxed(&type->tp_flags);
+#   else
+        flags = type->tp_flags;
+#   endif
 #endif
     return ((flags & feature) != 0);
 }
@@ -841,6 +800,14 @@ static inline int PyType_CheckExact(PyObject *op) {
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define PyType_CheckExact(op) PyType_CheckExact(_PyObject_CAST(op))
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
+PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+PyAPI_FUNC(int) PyType_Freeze(PyTypeObject *type);
 #endif
 
 #ifdef __cplusplus

@@ -578,6 +578,7 @@ class SimpleXMLRPCServer(socketserver.TCPServer,
     """
 
     allow_reuse_address = True
+    allow_reuse_port = True
 
     # Warning: this is for debugging purposes only! Never set this to True in
     # production code, as will be sending out sensitive information (exception

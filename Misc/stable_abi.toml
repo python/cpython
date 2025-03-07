@@ -40,7 +40,7 @@
 # - struct_abi_kind: for `struct`, defines how much of the struct is exposed:
 #   - 'full-abi': All of the struct is part of the ABI, including the size
 #     (users may define arrays of these structs).
-#     Typically used for initalization, rather than at runtime.
+#     Typically used for initialization, rather than at runtime.
 #   - 'opaque': No members are part of the ABI, nor is the size. The Limited
 #     API only handles these via pointers. The C definition should be
 #     incomplete (opaque).
@@ -77,6 +77,10 @@
     windows = true
 [feature_macro.Py_REF_DEBUG]
     doc = 'when Python is compiled in debug mode (with Py_REF_DEBUG)'
+    windows = 'maybe'
+[feature_macro.Py_TRACE_REFS]
+    # nb. This mode is not compatible with Stable ABI/Limited API.
+    doc = 'when Python is compiled with Py_TRACE_REFS'
     windows = 'maybe'
 
 
@@ -447,6 +451,7 @@
     added = '3.2'
 [function.PyCFunction_Call]
     added = '3.2'
+    abi_only = true
 [function.PyCFunction_GetFlags]
     added = '3.2'
 [function.PyCFunction_GetFunction]
@@ -609,6 +614,8 @@
     added = '3.2'
 [function.PyErr_Display]
     added = '3.2'
+[function.PyErr_DisplayException]
+    added = '3.12'
 [function.PyErr_ExceptionMatches]
     added = '3.2'
 [function.PyErr_Fetch]
@@ -661,14 +668,18 @@
     added = '3.2'
 [function.PyEval_AcquireLock]
     added = '3.2'
+    abi_only = true
 [function.PyEval_AcquireThread]
     added = '3.2'
 [function.PyEval_CallFunction]
     added = '3.2'
+    abi_only = true
 [function.PyEval_CallMethod]
     added = '3.2'
+    abi_only = true
 [function.PyEval_CallObjectWithKeywords]
     added = '3.2'
+    abi_only = true
 [function.PyEval_EvalCode]
     added = '3.2'
 [function.PyEval_EvalCodeEx]
@@ -693,6 +704,7 @@
     added = '3.2'
 [function.PyEval_ReleaseLock]
     added = '3.2'
+    abi_only = true
 [function.PyEval_ReleaseThread]
     added = '3.2'
 [function.PyEval_RestoreThread]
@@ -701,6 +713,7 @@
     added = '3.2'
 [function.PyEval_ThreadsInitialized]
     added = '3.2'
+    abi_only = true
 [data.PyExc_ArithmeticError]
     added = '3.2'
 [data.PyExc_AssertionError]
@@ -1240,6 +1253,7 @@
     added = '3.2'
 [function.PySequence_Fast]
     added = '3.2'
+    abi_only = true
 [function.PySequence_GetItem]
     added = '3.2'
 [function.PySequence_GetSlice]
@@ -1306,8 +1320,10 @@
     added = '3.2'
 [function.PySys_AddWarnOption]
     added = '3.2'
+    abi_only = true
 [function.PySys_AddWarnOptionUnicode]
     added = '3.2'
+    abi_only = true
 [function.PySys_FormatStderr]
     added = '3.2'
 [function.PySys_FormatStdout]
@@ -1316,6 +1332,7 @@
     added = '3.2'
 [function.PySys_HasWarnOptions]
     added = '3.2'
+    abi_only = true
 [function.PySys_ResetWarnOptions]
     added = '3.2'
 [function.PySys_SetArgv]
@@ -1326,6 +1343,7 @@
     added = '3.2'
 [function.PySys_SetPath]
     added = '3.2'
+    abi_only = true
 [function.PySys_WriteStderr]
     added = '3.2'
 [function.PySys_WriteStdout]
@@ -1737,12 +1755,16 @@
 
 [function.PyObject_AsCharBuffer]
     added = '3.2'
+    abi_only = true
 [function.PyObject_AsReadBuffer]
     added = '3.2'
+    abi_only = true
 [function.PyObject_AsWriteBuffer]
     added = '3.2'
+    abi_only = true
 [function.PyObject_CheckReadBuffer]
     added = '3.2'
+    abi_only = true
 
 # Flags are implicitly part of the ABI:
 
@@ -1985,6 +2007,7 @@
     added = '3.7'  # (and 3.6.1 and 3.5.3)
 [function.PySys_AddXOption]
     added = '3.7'  # (and 3.6.1 and 3.5.3)
+    abi_only = true
 [function.PySys_GetXOptions]
     added = '3.7'  # (and 3.6.1 and 3.5.3)
 [function.PyUnicode_AsUCS4]
@@ -2015,6 +2038,7 @@
     added = '3.7'  # (and 3.6.1 and 3.5.3)
 [function.Py_SetPath]
     added = '3.7'  # (and 3.6.1 and 3.5.3)
+    abi_only = true
 [function.PyErr_SetExcFromWindowsErr]
     added = '3.7'  # (and 3.6.1 and 3.5.3)
     ifdef = 'MS_WINDOWS'
@@ -2333,6 +2357,15 @@
     added = '3.12'
 [function.PyVectorcall_Call]
     added = '3.12'
+[function.PyErr_GetRaisedException]
+    added = '3.12'
+[function.PyErr_SetRaisedException]
+    added = '3.12'
+[function.PyException_GetArgs]
+    added = '3.12'
+[function.PyException_SetArgs]
+    added = '3.12'
+
 [typedef.vectorcallfunc]
     added = '3.12'
 [function.PyObject_Vectorcall]
@@ -2386,3 +2419,129 @@
     added = '3.12'  # Before 3.12, available in "structmember.h" w/o Py_ prefix
 [const.Py_AUDIT_READ]
     added = '3.12'  # Before 3.12, available in "structmember.h"
+
+[function.PyObject_GetTypeData]
+    added = '3.12'
+[function.PyType_GetTypeDataSize]
+    added = '3.12'
+[const.Py_RELATIVE_OFFSET]
+    added = '3.12'
+[const.Py_TPFLAGS_ITEMS_AT_END]
+    added = '3.12'
+[function.PyImport_AddModuleRef]
+    added = '3.13'
+[function.PyWeakref_GetRef]
+    added = '3.13'
+[function.PyObject_DelAttr]
+    added = '3.13'
+[function.PyObject_DelAttrString]
+    added = '3.13'
+[function.PyObject_GetOptionalAttr]
+    added = '3.13'
+[function.PyObject_GetOptionalAttrString]
+    added = '3.13'
+[function.PyMapping_GetOptionalItem]
+    added = '3.13'
+[function.PyMapping_GetOptionalItemString]
+    added = '3.13'
+[function.PyModule_Add]
+    added = '3.13'
+[function.PyDict_GetItemRef]
+    added = '3.13'
+[function.PyDict_GetItemStringRef]
+    added = '3.13'
+[function.PyLong_AsInt]
+    added = '3.13'
+[function.PyObject_HasAttrWithError]
+    added = '3.13'
+[function.PyObject_HasAttrStringWithError]
+    added = '3.13'
+[function.PyMapping_HasKeyWithError]
+    added = '3.13'
+[function.PyMapping_HasKeyStringWithError]
+    added = '3.13'
+[function.Py_IsFinalizing]
+    added = '3.13'
+[function.PyUnicode_EqualToUTF8]
+    added = '3.13'
+[function.PyUnicode_EqualToUTF8AndSize]
+    added = '3.13'
+[function.PyMem_RawMalloc]
+    added = '3.13'
+[function.PyMem_RawCalloc]
+    added = '3.13'
+[function.PyMem_RawRealloc]
+    added = '3.13'
+[function.PyMem_RawFree]
+    added = '3.13'
+[function.PySys_Audit]
+    added = '3.13'
+[function.PySys_AuditTuple]
+    added = '3.13'
+[function._Py_SetRefcnt]
+    added = '3.13'
+    abi_only = true
+[function.PyList_GetItemRef]
+    added = '3.13'
+[typedef.PyCFunctionFast]
+    added = '3.13'
+    # "abi-only" since 3.10.  (Callback type names aren't used in C code,
+    # but this function signature was expected with METH_FASTCALL.)
+[typedef.PyCFunctionFastWithKeywords]
+    added = '3.13'
+    # "abi-only" since 3.10.  (Same story as PyCFunctionFast.)
+[function.PyType_GetFullyQualifiedName]
+    added = '3.13'
+[function.PyType_GetModuleName]
+    added = '3.13'
+[function.Py_GetConstant]
+    added = '3.13'
+[function.Py_GetConstantBorrowed]
+    added = '3.13'
+[function.PyType_GetModuleByDef]
+    added = '3.13'
+[function.PyEval_GetFrameBuiltins]
+    added = '3.13'
+[function.PyEval_GetFrameGlobals]
+    added = '3.13'
+[function.PyEval_GetFrameLocals]
+    added = '3.13'
+
+[function.Py_TYPE]
+    added = '3.14'
+[function.Py_REFCNT]
+    added = '3.14'
+[function.PyIter_NextItem]
+    added = '3.14'
+[function.PyLong_FromInt32]
+    added = '3.14'
+[function.PyLong_FromUInt32]
+    added = '3.14'
+[function.PyLong_AsInt32]
+    added = '3.14'
+[function.PyLong_AsUInt32]
+    added = '3.14'
+[function.PyLong_FromInt64]
+    added = '3.14'
+[function.PyLong_FromUInt64]
+    added = '3.14'
+[function.PyLong_AsInt64]
+    added = '3.14'
+[function.PyLong_AsUInt64]
+    added = '3.14'
+[const.Py_tp_vectorcall]
+    added = '3.14'
+[function.PyType_GetBaseByToken]
+    added = '3.14'
+[const.Py_tp_token]
+    added = '3.14'
+[const.Py_TP_USE_SPEC]
+    added = '3.14'
+[function.PyUnicode_Equal]
+    added = '3.14'
+[function.PyType_Freeze]
+    added = '3.14'
+[function.Py_PACK_FULL_VERSION]
+    added = '3.14'
+[function.Py_PACK_VERSION]
+    added = '3.14'

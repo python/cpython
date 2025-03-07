@@ -30,8 +30,8 @@ Copyright (c) Corporation for National Research Initiatives.
 
    ------------------------------------------------------------------------ */
 
-#define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_codecs.h"        // _PyCodec_Lookup()
 
 #ifdef MS_WINDOWS
 #include <windows.h>
@@ -980,6 +980,30 @@ _codecs_register_error_impl(PyObject *module, const char *errors,
 }
 
 /*[clinic input]
+_codecs._unregister_error -> bool
+    errors: str
+    /
+
+Un-register the specified error handler for the error handling `errors'.
+
+Only custom error handlers can be un-registered. An exception is raised
+if the error handling is a built-in one (e.g., 'strict'), or if an error
+occurs.
+
+Otherwise, this returns True if a custom handler has been successfully
+un-registered, and False if no custom handler for the specified error
+handling exists.
+
+[clinic start generated code]*/
+
+static int
+_codecs__unregister_error_impl(PyObject *module, const char *errors)
+/*[clinic end generated code: output=28c22be667465503 input=a63ab9e9ce1686d4]*/
+{
+    return _PyCodec_UnregisterError(errors);
+}
+
+/*[clinic input]
 _codecs.lookup_error
     name: str
     /
@@ -1044,11 +1068,14 @@ static PyMethodDef _codecs_functions[] = {
     _CODECS_CODE_PAGE_ENCODE_METHODDEF
     _CODECS_CODE_PAGE_DECODE_METHODDEF
     _CODECS_REGISTER_ERROR_METHODDEF
+    _CODECS__UNREGISTER_ERROR_METHODDEF
     _CODECS_LOOKUP_ERROR_METHODDEF
     {NULL, NULL}                /* sentinel */
 };
 
 static PyModuleDef_Slot _codecs_slots[] = {
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

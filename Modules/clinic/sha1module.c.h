@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(SHA1Type_copy__doc__,
 "copy($self, /)\n"
@@ -21,13 +21,13 @@ static PyObject *
 SHA1Type_copy_impl(SHA1object *self, PyTypeObject *cls);
 
 static PyObject *
-SHA1Type_copy(SHA1object *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+SHA1Type_copy(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
         return NULL;
     }
-    return SHA1Type_copy_impl(self, cls);
+    return SHA1Type_copy_impl((SHA1object *)self, cls);
 }
 
 PyDoc_STRVAR(SHA1Type_digest__doc__,
@@ -43,9 +43,9 @@ static PyObject *
 SHA1Type_digest_impl(SHA1object *self);
 
 static PyObject *
-SHA1Type_digest(SHA1object *self, PyObject *Py_UNUSED(ignored))
+SHA1Type_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return SHA1Type_digest_impl(self);
+    return SHA1Type_digest_impl((SHA1object *)self);
 }
 
 PyDoc_STRVAR(SHA1Type_hexdigest__doc__,
@@ -61,9 +61,9 @@ static PyObject *
 SHA1Type_hexdigest_impl(SHA1object *self);
 
 static PyObject *
-SHA1Type_hexdigest(SHA1object *self, PyObject *Py_UNUSED(ignored))
+SHA1Type_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return SHA1Type_hexdigest_impl(self);
+    return SHA1Type_hexdigest_impl((SHA1object *)self);
 }
 
 PyDoc_STRVAR(SHA1Type_update__doc__,
@@ -121,7 +121,8 @@ _sha1_sha1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     PyObject *string = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -148,4 +149,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4d1293ca3472acdb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ad6f3788a6e7ff6f input=a9049054013a1b77]*/

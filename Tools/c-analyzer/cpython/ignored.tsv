@@ -28,11 +28,13 @@ Python/thread_pthread.h	PyThread__init_thread	lib_initialized	-
 ##-----------------------
 ## other values (not Python-specific)
 
+# static tables computed by external script
+Objects/longobject.c	-	log_base_BASE	-
+Objects/longobject.c	-	convwidth_base	-
+Objects/longobject.c	-	convmultmax_base	-
+
 ## cached computed data - set lazily (*after* first init)
 # XXX Are these safe relative to write races?
-Objects/longobject.c	long_from_non_binary_base	log_base_BASE	-
-Objects/longobject.c	long_from_non_binary_base	convwidth_base	-
-Objects/longobject.c	long_from_non_binary_base	convmultmax_base	-
 Objects/unicodeobject.c	-	bloom_linebreak	-
 # This is safe:
 Objects/unicodeobject.c	_init_global_state	initialized	-
@@ -49,6 +51,12 @@ Python/getversion.c	-	version	-
 ## public C-API - set during first init
 Python/bootstrap_hash.c	-	_Py_HashSecret_Initialized	-
 Python/pyhash.c	-	_Py_HashSecret	-
+
+## thread-safe hashtable (internal locks)
+Python/parking_lot.c	-	buckets	-
+
+## data needed for introspecting asyncio state from debuggers and profilers
+Modules/_asynciomodule.c	-	AsyncioDebug	-
 
 
 ##################################
@@ -84,6 +92,11 @@ Parser/myreadline.c	-	PyOS_ReadlineFunctionPointer	-
 
 Python/initconfig.c	-	_Py_StandardStreamEncoding	-
 Python/initconfig.c	-	_Py_StandardStreamErrors	-
+
+# Internal constant list
+Python/initconfig.c	-	PYCONFIG_SPEC	-
+Python/initconfig.c	-	PYPRECONFIG_SPEC	-
+
 
 ##-----------------------
 ## public C-API
@@ -141,7 +154,6 @@ Modules/syslogmodule.c	-	S_log_open	-
 ##-----------------------
 ## kept for stable ABI compatibility
 
-# XXX should be per-interpreter, without impacting stable ABI extensions
 Objects/object.c	-	_Py_RefTotal	-
 
 ##-----------------------
@@ -157,6 +169,13 @@ Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
 Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
 Python/pylifecycle.c	fatal_error	reentrant	-
 
+# explicitly protected, internal-only
+Modules/_interpchannelsmodule.c	-	_globals	-
+Modules/_interpqueuesmodule.c	-	_globals	-
+
+# set once during module init
+Modules/_decimal/_decimal.c	-	minalloc_is_set	-
+
 
 ##################################
 ## not significant
@@ -165,6 +184,12 @@ Python/pylifecycle.c	fatal_error	reentrant	-
 ## not used (kept for compatibility)
 
 Python/pyfpe.c	-	PyFPE_counter	-
+
+##-----------------------
+## thread-local variables
+
+Python/import.c	-	pkgcontext	-
+Python/pystate.c	-	_Py_tss_tstate	-
 
 ##-----------------------
 ## should be const
@@ -179,6 +204,7 @@ Python/pyfpe.c	-	PyFPE_counter	-
 
 Include/internal/pycore_blocks_output_buffer.h	-	BUFFER_BLOCK_SIZE	-
 Modules/_csv.c	-	quote_styles	-
+Modules/_ctypes/_ctypes.c	-	_ctypesmodule	-
 Modules/_ctypes/cfield.c	-	ffi_type_double	-
 Modules/_ctypes/cfield.c	-	ffi_type_float	-
 Modules/_ctypes/cfield.c	-	ffi_type_longdouble	-
@@ -197,19 +223,26 @@ Modules/_datetimemodule.c	-	max_fold_seconds	-
 Modules/_datetimemodule.c	datetime_isoformat	specs	-
 Modules/_datetimemodule.c	parse_hh_mm_ss_ff	correction	-
 Modules/_datetimemodule.c	time_isoformat	specs	-
-Modules/_decimal/_decimal.c	-	cond_map	-
+Modules/_datetimemodule.c	-	capi_types	-
+Modules/_decimal/_decimal.c	-	cond_map_template	-
 Modules/_decimal/_decimal.c	-	dec_signal_string	-
 Modules/_decimal/_decimal.c	-	dflt_ctx	-
 Modules/_decimal/_decimal.c	-	int_constants	-
 Modules/_decimal/_decimal.c	-	invalid_rounding_err	-
 Modules/_decimal/_decimal.c	-	invalid_signals_err	-
-Modules/_decimal/_decimal.c	-	signal_map	-
+Modules/_decimal/_decimal.c	-	signal_map_template	-
 Modules/_decimal/_decimal.c	-	ssize_constants	-
+Modules/_decimal/_decimal.c	-	INVALID_SIGNALDICT_ERROR_MSG	-
 Modules/_elementtree.c	-	ExpatMemoryHandler	-
+Modules/_hashopenssl.c	-	py_hashes	-
+Modules/_hacl/Hacl_Hash_SHA1.c	-	_h0	-
+Modules/_hacl/Hacl_Hash_MD5.c	-	_h0	-
+Modules/_hacl/Hacl_Hash_MD5.c	-	_t	-
 Modules/_io/_iomodule.c	-	static_types	-
 Modules/_io/textio.c	-	encodefuncs	-
 Modules/_io/winconsoleio.c	-	_PyWindowsConsoleIO_Type	-
 Modules/_localemodule.c	-	langinfo_constants	-
+Modules/_lsprof.c	-	callback_table	-
 Modules/_pickle.c	-	READ_WHOLE_LINE	-
 Modules/_sqlite/module.c	-	error_codes	-
 Modules/_sre/sre.c	pattern_repr	flag_names	-
@@ -218,11 +251,13 @@ Modules/_sre/sre_targets.h	-	sre_targets	-
 Modules/_sre.c	pattern_repr	flag_names	-
 Modules/_struct.c	-	bigendian_table	-
 Modules/_struct.c	-	lilendian_table	-
+Modules/_struct.c	-	native_table	-
 Modules/_tkinter.c	-	state_key	-
-Modules/_xxsubinterpretersmodule.c	-	_channelid_end_recv	-
-Modules/_xxsubinterpretersmodule.c	-	_channelid_end_send	-
+Modules/_interpchannelsmodule.c	-	_channelid_end_recv	-
+Modules/_interpchannelsmodule.c	-	_channelid_end_send	-
 Modules/_zoneinfo.c	-	DAYS_BEFORE_MONTH	-
 Modules/_zoneinfo.c	-	DAYS_IN_MONTH	-
+Modules/_interpretersmodule.c	-	no_exception	-
 Modules/arraymodule.c	-	descriptors	-
 Modules/arraymodule.c	-	emptybuf	-
 Modules/cjkcodecs/_codecs_cn.c	-	_mapping_list	-
@@ -273,10 +308,6 @@ Modules/cmathmodule.c	-	tanh_special_values	-
 Modules/config.c	-	_PyImport_Inittab	-
 Modules/faulthandler.c	-	faulthandler_handlers	-
 Modules/getnameinfo.c	-	gni_afdl	-
-Modules/nismodule.c	-	TIMEOUT	-
-Modules/nismodule.c	-	aliases	-
-Modules/ossaudiodev.c	-	control_labels	-
-Modules/ossaudiodev.c	-	control_names	-
 Modules/posixmodule.c	os_getxattr_impl	buffer_sizes	-
 Modules/posixmodule.c	os_listxattr_impl	buffer_sizes	-
 Modules/posixmodule.c	-	posix_constants_confstr	-
@@ -293,14 +324,18 @@ Objects/exceptions.c	-	static_exceptions	-
 Objects/genobject.c	-	ASYNC_GEN_IGNORED_EXIT_MSG	-
 Objects/genobject.c	-	NON_INIT_CORO_MSG	-
 Objects/longobject.c	-	_PyLong_DigitValue	-
+Objects/longobject.c	-	PyLong_LAYOUT	-
 Objects/object.c	-	_Py_SwappedOp	-
 Objects/object.c	-	_Py_abstract_hack	-
+Objects/object.c	-	last_final_reftotal	-
 Objects/object.c	-	static_types	-
 Objects/obmalloc.c	-	_PyMem	-
 Objects/obmalloc.c	-	_PyMem_Debug	-
 Objects/obmalloc.c	-	_PyMem_Raw	-
 Objects/obmalloc.c	-	_PyObject	-
-Objects/obmalloc.c	-	usedpools	-
+Objects/obmalloc.c	-	last_final_leaks	-
+Objects/obmalloc.c	-	obmalloc_state_main	-
+Objects/obmalloc.c	-	obmalloc_state_initialized	-
 Objects/typeobject.c	-	name_op	-
 Objects/typeobject.c	-	slotdefs	-
 Objects/unicodeobject.c	-	stripfuncnames	-
@@ -311,13 +346,14 @@ Objects/unicodeobject.c	unicode_encode_call_errorhandler	argparse	-
 Objects/unicodeobject.c	unicode_translate_call_errorhandler	argparse	-
 Parser/parser.c	-	reserved_keywords	-
 Parser/parser.c	-	soft_keywords	-
-Parser/tokenizer.c	-	type_comment_prefix	-
+Parser/lexer/lexer.c	-	type_comment_prefix	-
 Python/ast_opt.c	fold_unaryop	ops	-
-Python/ceval.c	-	binary_ops	-
+Python/ceval.c	-	_PyEval_BinaryOps	-
+Python/ceval.c	-	_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS	-
 Python/codecs.c	-	Py_hexdigits	-
+Python/codecs.c	-	codecs_builtin_error_handlers	-
 Python/codecs.c	-	ucnhash_capi	-
-Python/codecs.c	_PyCodecRegistry_Init	methods	-
-Python/compile.c	-	NO_LABEL	-
+Python/codecs.c	_PyCodec_InitRegistry	methods	-
 Python/compile.c	-	NO_LOCATION	-
 Python/dynload_shlib.c	-	_PyImport_DynLoadFiletab	-
 Python/dynload_stub.c	-	_PyImport_DynLoadFiletab	-
@@ -332,26 +368,36 @@ Python/frozen.c	-	_PyImport_FrozenTest	-
 Python/getopt.c	-	longopts	-
 Python/import.c	-	_PyImport_Inittab	-
 Python/import.c	-	_PySys_ImplCacheTag	-
+Python/intrinsics.c	-	_PyIntrinsics_UnaryFunctions	-
+Python/intrinsics.c	-	_PyIntrinsics_BinaryFunctions	-
+Python/lock.c	-	TIME_TO_BE_FAIR_NS	-
 Python/opcode_targets.h	-	opcode_targets	-
 Python/perf_trampoline.c	-	_Py_perfmap_callbacks	-
+Python/perf_jit_trampoline.c	-	_Py_perfmap_jit_callbacks	-
+Python/perf_jit_trampoline.c	-	perf_jit_map_state	-
 Python/pyhash.c	-	PyHash_Func	-
 Python/pylifecycle.c	-	_C_LOCALE_WARNING	-
 Python/pylifecycle.c	-	_PyOS_mystrnicmp_hack	-
 Python/pylifecycle.c	-	_TARGET_LOCALES	-
+Python/pylifecycle.c	-	INTERPRETER_TRAMPOLINE_CODEDEF	-
 Python/pystate.c	-	initial	-
 Python/specialize.c	-	adaptive_opcodes	-
 Python/specialize.c	-	cache_requirements	-
-Python/specialize.c	-	compare_masks	-
+Python/specialize.c	-	binaryop_extend_descrs	-
 Python/stdlib_module_names.h	-	_Py_stdlib_module_names	-
+Python/sysmodule.c	-	perf_map_state	-
 Python/sysmodule.c	-	_PySys_ImplCacheTag	-
 Python/sysmodule.c	-	_PySys_ImplName	-
 Python/sysmodule.c	-	whatstrings	-
+Python/optimizer.c	-	_PyUOpExecutor_Type	-
+Python/optimizer.c	-	_PyOptimizer_Default	-
+Python/optimizer.c	-	_ColdExit_Type	-
+Python/optimizer.c	-	Py_FatalErrorExecutor	-
+Python/optimizer.c	-	EMPTY_FILTER	-
 
 ##-----------------------
 ## test code
 
-Modules/_ctypes/_ctypes_test.c	-	_ctypes_test_slots	-
-Modules/_ctypes/_ctypes_test.c	-	_ctypes_testmodule	-
 Modules/_ctypes/_ctypes_test.c	-	_xxx_lib	-
 Modules/_ctypes/_ctypes_test.c	-	an_integer	-
 Modules/_ctypes/_ctypes_test.c	-	bottom	-
@@ -359,7 +405,6 @@ Modules/_ctypes/_ctypes_test.c	-	last_tf_arg_s	-
 Modules/_ctypes/_ctypes_test.c	-	last_tf_arg_u	-
 Modules/_ctypes/_ctypes_test.c	-	last_tfrsuv_arg	-
 Modules/_ctypes/_ctypes_test.c	-	left	-
-Modules/_ctypes/_ctypes_test.c	-	module_methods	-
 Modules/_ctypes/_ctypes_test.c	-	my_eggs	-
 Modules/_ctypes/_ctypes_test.c	-	my_spams	-
 Modules/_ctypes/_ctypes_test.c	-	right	-
@@ -392,8 +437,33 @@ Modules/_testbuffer.c	ndarray_memoryview_from_buffer	strides	-
 Modules/_testbuffer.c	ndarray_memoryview_from_buffer	suboffsets	-
 Modules/_testbuffer.c	ndarray_push	kwlist	-
 Modules/_testbuffer.c	staticarray_init	kwlist	-
+Modules/_testcapi/buffer.c	-	testBufType	-
+Modules/_testcapi/code.c	get_code_extra_index	key	-
+Modules/_testcapi/datetime.c	-	test_run_counter	-
+Modules/_testcapi/docstring.c	-	DocStringNoSignatureTest	-
+Modules/_testcapi/docstring.c	-	DocStringUnrepresentableSignatureTest	-
+Modules/_testcapi/exceptions.c	-	PyRecursingInfinitelyError_Type	-
 Modules/_testcapi/heaptype.c	-	_testcapimodule	-
-Modules/_testcapi/unicode.c	-	_testcapimodule	-
+Modules/_testcapi/mem.c	-	FmData	-
+Modules/_testcapi/mem.c	-	FmHook	-
+Modules/_testcapi/object.c	-	MyObject_dealloc_called	-
+Modules/_testcapi/object.c	-	MyType	-
+Modules/_testcapi/structmember.c	-	test_structmembersType_OldAPI	-
+Modules/_testcapi/watchers.c	-	g_dict_watch_events	-
+Modules/_testcapi/watchers.c	-	g_dict_watchers_installed	-
+Modules/_testcapi/watchers.c	-	g_type_modified_events	-
+Modules/_testcapi/watchers.c	-	g_type_watchers_installed	-
+Modules/_testcapi/watchers.c	-	code_watcher_ids	-
+Modules/_testcapi/watchers.c	-	num_code_object_created_events	-
+Modules/_testcapi/watchers.c	-	num_code_object_destroyed_events	-
+Modules/_testcapi/watchers.c	-	pyfunc_watchers	-
+Modules/_testcapi/watchers.c	-	func_watcher_ids	-
+Modules/_testcapi/watchers.c	-	func_watcher_callbacks	-
+Modules/_testcapi/watchers.c	-	context_watcher_ids	-
+Modules/_testcapi/watchers.c	-	context_switches	-
+Modules/_testcapi/watchers.c	add_context_watcher	callbacks	-
+Modules/_testcapimodule.c	-	BasicStaticTypes	-
+Modules/_testcapimodule.c	-	num_basic_static_types_used	-
 Modules/_testcapimodule.c	-	ContainerNoGC_members	-
 Modules/_testcapimodule.c	-	ContainerNoGC_type	-
 Modules/_testcapimodule.c	-	FmData	-
@@ -460,11 +530,13 @@ Modules/_testcapimodule.c	-	meth_static_methods	-
 Modules/_testcapimodule.c	-	ml	-
 Modules/_testcapimodule.c	-	str1	-
 Modules/_testcapimodule.c	-	str2	-
+Modules/_testcapimodule.c	-	test_c_thread	-
 Modules/_testcapimodule.c	-	test_members	-
 Modules/_testcapimodule.c	-	test_run_counter	-
 Modules/_testcapimodule.c	-	test_structmembersType	-
 Modules/_testcapimodule.c	-	thread_done	-
 Modules/_testcapimodule.c	-	x	-
+Modules/_testcapimodule.c	-	wait_done	-
 Modules/_testcapimodule.c	getargs_keyword_only	keywords	-
 Modules/_testcapimodule.c	getargs_keywords	keywords	-
 Modules/_testcapimodule.c	getargs_positional_only_and_keywords	keywords	-
@@ -473,7 +545,7 @@ Modules/_testcapimodule.c	make_exception_with_doc	kwlist	-
 Modules/_testcapimodule.c	raise_SIGINT_then_send_None	PyId_send	-
 Modules/_testcapimodule.c	slot_tp_del	PyId___tp_del__	-
 Modules/_testcapimodule.c	test_capsule	buffer	-
-Modules/_testcapimodule.c	test_empty_argparse	kwlist	-
+Modules/_testcapimodule.c	getargs_empty	kwlist	-
 Modules/_testcapimodule.c	test_structmembers_new	keywords	-
 Modules/_testcapimodule.c	getargs_s_hash_int	keywords	-
 Modules/_testcapimodule.c	-	g_dict_watch_events	-
@@ -483,6 +555,7 @@ Modules/_testcapimodule.c	-	g_type_watchers_installed	-
 Modules/_testimportmultiple.c	-	_barmodule	-
 Modules/_testimportmultiple.c	-	_foomodule	-
 Modules/_testimportmultiple.c	-	_testimportmultiple	-
+Modules/_testinternalcapi.c	-	pending_identify_result	-
 Modules/_testmultiphase.c	-	Example_Type_slots	-
 Modules/_testmultiphase.c	-	Example_Type_spec	-
 Modules/_testmultiphase.c	-	Example_methods	-
@@ -507,7 +580,6 @@ Modules/_testmultiphase.c	-	def_nonascii_latin	-
 Modules/_testmultiphase.c	-	def_nonmodule	-
 Modules/_testmultiphase.c	-	def_nonmodule_with_exec_slots	-
 Modules/_testmultiphase.c	-	def_nonmodule_with_methods	-
-Modules/_testmultiphase.c	-	imp_dummy_def	-
 Modules/_testmultiphase.c	-	main_def	-
 Modules/_testmultiphase.c	-	main_slots	-
 Modules/_testmultiphase.c	-	meth_state_access_slots	-
@@ -526,35 +598,42 @@ Modules/_testmultiphase.c	-	slots_exec_unreported_exception	-
 Modules/_testmultiphase.c	-	slots_nonmodule_with_exec_slots	-
 Modules/_testmultiphase.c	-	testexport_methods	-
 Modules/_testmultiphase.c	-	uninitialized_def	-
+Modules/_testsinglephase.c	-	global_state	-
+Modules/_testsinglephase.c	-	static_module_circular	-
 Modules/_xxtestfuzz/_xxtestfuzz.c	-	_fuzzmodule	-
 Modules/_xxtestfuzz/_xxtestfuzz.c	-	module_methods	-
-Modules/_xxtestfuzz/fuzzer.c	-	SRE_FLAG_DEBUG	-
+Modules/_xxtestfuzz/fuzzer.c	-	RE_FLAG_DEBUG	-
 Modules/_xxtestfuzz/fuzzer.c	-	ast_literal_eval_method	-
+Modules/_xxtestfuzz/fuzzer.c	-	bytesio_type	-
 Modules/_xxtestfuzz/fuzzer.c	-	compiled_patterns	-
 Modules/_xxtestfuzz/fuzzer.c	-	csv_error	-
 Modules/_xxtestfuzz/fuzzer.c	-	csv_module	-
 Modules/_xxtestfuzz/fuzzer.c	-	json_loads_method	-
 Modules/_xxtestfuzz/fuzzer.c	-	regex_patterns	-
-Modules/_xxtestfuzz/fuzzer.c	-	sre_compile_method	-
-Modules/_xxtestfuzz/fuzzer.c	-	sre_error_exception	-
+Modules/_xxtestfuzz/fuzzer.c	-	re_compile_method	-
+Modules/_xxtestfuzz/fuzzer.c	-	re_error_exception	-
 Modules/_xxtestfuzz/fuzzer.c	-	struct_error	-
 Modules/_xxtestfuzz/fuzzer.c	-	struct_unpack_method	-
+Modules/_xxtestfuzz/fuzzer.c	-	xmlparser_type	-
+Modules/_xxtestfuzz/fuzzer.c	-	pycompile_scratch	-
+Modules/_xxtestfuzz/fuzzer.c	-	start_vals	-
+Modules/_xxtestfuzz/fuzzer.c	-	optimize_vals	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	CSV_READER_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	JSON_LOADS_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	SRE_COMPILE_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	SRE_MATCH_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	STRUCT_UNPACK_INITIALIZED	-
 Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	AST_LITERAL_EVAL_INITIALIZED	-
+Modules/_xxtestfuzz/fuzzer.c	LLVMFuzzerTestOneInput	ELEMENTTREE_PARSEWHOLE_INITIALIZED	-
 
 ##-----------------------
 ## the analyzer should have ignored these
 # XXX Fix the analyzer.
 
 ## forward/extern references
+Include/internal/pycore_importdl.h	-	_PyImport_DynLoadFiletab	-
 Include/py_curses.h	-	PyCurses_API	-
 Include/pydecimal.h	-	_decimal_api	-
-Modules/_blake2/blake2module.c	-	blake2b_type_spec	-
-Modules/_blake2/blake2module.c	-	blake2s_type_spec	-
 Modules/_io/fileio.c	-	_Py_open_cloexec_works	-
 Modules/_io/_iomodule.h	-	PyIOBase_Type	-
 Modules/_io/_iomodule.h	-	PyRawIOBase_Type	-
@@ -612,7 +691,6 @@ Objects/object.c	-	_PyLineIterator	-
 Objects/object.c	-	_PyPositionsIterator	-
 Python/perf_trampoline.c	-	_Py_trampoline_func_start	-
 Python/perf_trampoline.c	-	_Py_trampoline_func_end	-
-Python/importdl.h	-	_PyImport_DynLoadFiletab	-
 Modules/expat/xmlrole.c	-	prolog0	-
 Modules/expat/xmlrole.c	-	prolog1	-
 Modules/expat/xmlrole.c	-	prolog2	-
@@ -668,3 +746,11 @@ Modules/expat/xmlrole.c	-	error	-
 ## other
 Modules/_io/_iomodule.c	-	_PyIO_Module	-
 Modules/_sqlite/module.c	-	_sqlite3module	-
+Modules/clinic/md5module.c.h	_md5_md5	_keywords	-
+Modules/clinic/grpmodule.c.h	grp_getgrgid	_keywords	-
+Modules/clinic/grpmodule.c.h	grp_getgrnam	_keywords	-
+Objects/object.c	-	constants	static PyObject*[]
+
+
+## False positives
+Python/specialize.c	-	_Py_InitCleanup	-
