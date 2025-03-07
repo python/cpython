@@ -83,8 +83,8 @@ class ResourceTracker(object):
 
     def _stop(self, close=os.close, waitpid=os.waitpid, waitstatus_to_exitcode=os.waitstatus_to_exitcode):
         with self._lock:
-            # This should not happen (_stop() isn't called by a finalizer)
-            # but we check for it anyway.
+            # This shouldn't happen (it might when called by a finalizer)
+            # so we check for it anyway.
             if self._lock._recursion_count() > 1:
                 return self._reentrant_call_error()
             if self._fd is None:
