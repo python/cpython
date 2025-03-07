@@ -161,6 +161,7 @@ bool
 _Py_qsbr_poll(struct _qsbr_thread_state *qsbr, uint64_t goal)
 {
     assert(_Py_atomic_load_int_relaxed(&_PyThreadState_GET()->state) == _Py_THREAD_ATTACHED);
+    assert(((_PyThreadStateImpl *)_PyThreadState_GET())->qsbr == qsbr);
 
     if (_Py_qbsr_goal_reached(qsbr, goal)) {
         return true;
@@ -240,7 +241,7 @@ _Py_qsbr_unregister(PyThreadState *tstate)
     // gh-119369: GIL must be released (if held) to prevent deadlocks, because
     // we might not have an active tstate, which means that blocking on PyMutex
     // locks will not implicitly release the GIL.
-    assert(!tstate->_status.holds_gil);
+    assert(!tstate->holds_gil);
 
     PyMutex_Lock(&shared->mutex);
     // NOTE: we must load (or reload) the thread state's qbsr inside the mutex

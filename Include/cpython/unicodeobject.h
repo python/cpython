@@ -205,29 +205,28 @@ static inline unsigned int PyUnicode_CHECK_INTERNED(PyObject *op) {
 }
 #define PyUnicode_CHECK_INTERNED(op) PyUnicode_CHECK_INTERNED(_PyObject_CAST(op))
 
-/* For backward compatibility */
+/* For backward compatibility. Soft-deprecated. */
 static inline unsigned int PyUnicode_IS_READY(PyObject* Py_UNUSED(op)) {
     return 1;
 }
 #define PyUnicode_IS_READY(op) PyUnicode_IS_READY(_PyObject_CAST(op))
 
 /* Return true if the string contains only ASCII characters, or 0 if not. The
-   string may be compact (PyUnicode_IS_COMPACT_ASCII) or not, but must be
-   ready. */
+   string may be compact (PyUnicode_IS_COMPACT_ASCII) or not. */
 static inline unsigned int PyUnicode_IS_ASCII(PyObject *op) {
     return _PyASCIIObject_CAST(op)->state.ascii;
 }
 #define PyUnicode_IS_ASCII(op) PyUnicode_IS_ASCII(_PyObject_CAST(op))
 
 /* Return true if the string is compact or 0 if not.
-   No type checks or Ready calls are performed. */
+   No type checks are performed. */
 static inline unsigned int PyUnicode_IS_COMPACT(PyObject *op) {
     return _PyASCIIObject_CAST(op)->state.compact;
 }
 #define PyUnicode_IS_COMPACT(op) PyUnicode_IS_COMPACT(_PyObject_CAST(op))
 
 /* Return true if the string is a compact ASCII string (use PyASCIIObject
-   structure), or 0 if not.  No type checks or Ready calls are performed. */
+   structure), or 0 if not.  No type checks are performed. */
 static inline int PyUnicode_IS_COMPACT_ASCII(PyObject *op) {
     return (_PyASCIIObject_CAST(op)->state.ascii && PyUnicode_IS_COMPACT(op));
 }
@@ -319,7 +318,7 @@ static inline void PyUnicode_WRITE(int kind, void *data,
                     (index), _Py_STATIC_CAST(Py_UCS4, value))
 
 /* Read a code point from the string's canonical representation.  No checks
-   or ready calls are performed. */
+   are performed. */
 static inline Py_UCS4 PyUnicode_READ(int kind,
                                      const void *data, Py_ssize_t index)
 {
@@ -398,7 +397,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_New(
     Py_UCS4 maxchar             /* maximum code point value in the string */
     );
 
-/* For backward compatibility */
+/* For backward compatibility. Soft-deprecated. */
 static inline int PyUnicode_READY(PyObject* Py_UNUSED(op))
 {
     return 0;

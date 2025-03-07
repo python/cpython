@@ -10,8 +10,7 @@ jobs:
     if: github.repository_owner == 'python'
     runs-on: ubuntu-latest
     permissions:
-      issues: write
-      pull-requests: write
+      pull-requests: read
     timeout-minutes: 10
 
     steps:
@@ -28,8 +27,7 @@ jobs:
     if: github.repository_owner == 'python'
     runs-on: ubuntu-latest
     permissions:
-      issues: write
-      pull-requests: write
+      pull-requests: read
     timeout-minutes: 10
 
     steps:

@@ -52,6 +52,45 @@ Release
     settings, though without PGO.
 
 
+Building Python using Clang/LLVM
+--------------------------------
+
+See https://learn.microsoft.com/cpp/build/clang-support-msbuild
+for how to install and use clang-cl bundled with Microsoft Visual Studio.
+You can use the IDE to switch to clang-cl for local development,
+but because this alters the *.vcxproj files, the recommended way is
+to use build.bat:
+
+build.bat "/p:PlatformToolset=ClangCL"
+
+All other build.bat options continue to work as with MSVC, so this
+will create a 64bit release binary.
+
+You can also use a specific version of clang-cl downloaded from
+https://github.com/llvm/llvm-project/releases, e.g.
+clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz.
+Given you have extracted that to <my-clang-dir>, you can use it like so
+build.bat --pgo "/p:PlatformToolset=ClangCL" "/p:LLVMInstallDir=<my-clang-dir> "/p:LLVMToolsVersion=18"
+
+Setting LLVMToolsVersion to the major version is enough, although you
+can be specific and use 18.1.8 in the above example, too.
+
+Use the --pgo option to build with PGO (Profile Guided Optimization).
+
+However, if you want to run the PGO task
+on a different host than the build host, you must pass
+"/p:CLANG_PROFILE_PATH=<relative-path-to-instrumented-dir-on-remote-host>"
+in the PGInstrument step to make sure the profile data is generated
+into the instrumented directory when running the PGO task.
+E.g., if you place the instrumented binaries into the folder
+"workdir/instrumented" and then run the PGO task using "workdir"
+as the current working directory, the usage is
+"/p:CLANG_PROFILE_PATH=instrumented"
+
+Like in the MSVC case, after fetching (or manually copying) the instrumented
+folder back into your build tree, you can continue with the PGUpdate
+step with no further parameters.
+
 Building Python using the build.bat script
 ----------------------------------------------
 

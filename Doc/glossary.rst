@@ -719,7 +719,7 @@ Glossary
       iterables include all sequence types (such as :class:`list`, :class:`str`,
       and :class:`tuple`) and some non-sequence types like :class:`dict`,
       :term:`file objects <file object>`, and objects of any classes you define
-      with an :meth:`~iterator.__iter__` method or with a
+      with an :meth:`~object.__iter__` method or with a
       :meth:`~object.__getitem__` method
       that implements :term:`sequence` semantics.
 
