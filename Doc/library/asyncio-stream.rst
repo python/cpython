@@ -302,9 +302,9 @@ StreamReader
       :class:`StreamReader` instance. This method exists purely to
       allow client code of APIs that hide the underlying transport to
       eagerly close the transport as a way to signal to the producer
-      of the stream that the read side is shut down. In particular,
+      of the stream that the read side is shut down. For example,
       when interacting with the standard out pipe of a sub-process.
-      In other words, it is an error to not to call close() on
+      In other words, it is not an error to not to call close() on
       :class:`StreamReader` instance you've been given.
 
 
