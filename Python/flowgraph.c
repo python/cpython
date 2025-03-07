@@ -1503,12 +1503,12 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
     assert(PyList_CheckExact(consts));
     assert(i >= 0);
     assert(i < bb->b_iused);
+
     cfg_instr *intrinsic = &bb->b_instr[i];
     assert(intrinsic->i_opcode == CALL_INTRINSIC_1);
     assert(intrinsic->i_oparg == INTRINSIC_LIST_TO_TUPLE);
 
     int consts_found = 0;
-    bool start_found = false;
     bool expect_append = true;
 
     for (int pos = i - 1; pos >= 0; pos--) {
@@ -1521,18 +1521,20 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
         }
 
         if (opcode == BUILD_LIST && oparg == 0) {
-            start_found = expect_append;
-            break;
+            if (!expect_append) {
+                return SUCCESS;
+            }
+            goto start_found;
         }
 
         if (expect_append) {
             if (opcode != LIST_APPEND || oparg != 1) {
-                break;
+                return SUCCESS;
             }
         }
         else {
             if (!loads_const(opcode)) {
-                break;
+                return SUCCESS;
             }
             consts_found++;
         }
@@ -1540,10 +1542,10 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
         expect_append = !expect_append;
     }
 
-    if (!start_found) {
-        return SUCCESS;
-    }
+    /* Did not find sequence start. */
+    return SUCCESS;
 
+start_found:;
     PyObject *newconst = PyTuple_New((Py_ssize_t)consts_found);
     if (newconst == NULL) {
         return ERROR;
