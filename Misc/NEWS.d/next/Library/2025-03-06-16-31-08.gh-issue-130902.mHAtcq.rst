@@ -1,4 +1,4 @@
 Issue: :gh:`130902`
 
 
-Modifies the ``HTTPConnection.close`` of ``HTTPConnection`` to include an optional socket ``shutdown``, improving functionality with error handling.
+Modifies the :meth:`http.client.HTTPConnection.close` of :class:`http.client.HTTPConnection` to include an optional socket ``shutdown``, improving functionality with error handling.
