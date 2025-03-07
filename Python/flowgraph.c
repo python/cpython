@@ -1532,21 +1532,24 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
                 return ERROR;
             }
 
-            int nops = consts_found * 2 + 1;
-            for (pos = i - 1; pos >= 0 && consts_found > 0; pos--) {
-                instr = &bb->b_instr[pos];
+            for (int newpos = i - 1; newpos >= pos; newpos--) {
+                instr = &bb->b_instr[newpos];
+                if (instr->i_opcode == NOP) {
+                    continue;
+                }
                 if (loads_const(instr->i_opcode)) {
                     PyObject *constant = get_const_value(instr->i_opcode, instr->i_oparg, consts);
                     if (constant == NULL) {
                         Py_DECREF(newconst);
                         return ERROR;
                     }
+                    assert(consts_found > 0);
                     PyTuple_SET_ITEM(newconst, --consts_found, constant);
                 }
+                INSTR_SET_OP0(instr, NOP);
+                INSTR_SET_LOC(instr, NO_LOCATION);
             }
-
             assert(consts_found == 0);
-            nop_out(bb, i-1, nops);
             return instr_make_load_const(intrinsic, newconst, consts, const_cache);
         }
 
