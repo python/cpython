@@ -363,7 +363,7 @@ interface:
    type: image/png encoding: None
 
    $ # get a MIME type by a URL
-   $ python -m mimetypes http://example.com/filename.txt
+   $ python -m mimetypes https://example.com/filename.txt
    type: text/plain encoding: None
 
    $ # get a complex MIME type
@@ -375,19 +375,19 @@ interface:
    error: unknown extension of filename.pict
 
    $ # now look in the extended database built into Python
-   $ python -m mimetypes -l filename.pict
+   $ python -m mimetypes --lenient filename.pict
    type: image/pict encoding: None
 
    $ # get a file extension by a MIME type
-   $ python -m mimetypes -e text/javascript
+   $ python -m mimetypes --extension text/javascript
    .js
 
    $ # get a file extension by a rare MIME type
-   $ python -m mimetypes -e text/xul
+   $ python -m mimetypes --extension text/xul
    error: unknown type text/xul
 
    $ # now look in the extended database again
-   $ python -m mimetypes -e -l text/xul
+   $ python -m mimetypes --extension --lenient text/xul
    .xul
 
    $ # try to feed an unknown file extension
@@ -397,7 +397,7 @@ interface:
    error: unknown extension of filename.xxx
 
    $ # try to feed an unknown MIME type
-   $ python -m mimetypes -e audio/aac audio/opus audio/future audio/x-wav
+   $ python -m mimetypes --extension audio/aac audio/opus audio/future audio/x-wav
    .aac
    .opus
    error: unknown type audio/future
