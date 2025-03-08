@@ -3265,25 +3265,26 @@ date_today(PyObject *cls, PyObject *Py_UNUSED(dummy))
         time_t t;
         time(&t);
 
-        if (_PyTime_localtime(t, &tm) != 0)
+        if (_PyTime_localtime(t, &tm) != 0) {
             return NULL;
+        }
 
         return new_date_ex(tm.tm_year + 1900,
                            tm.tm_mon + 1,
                            tm.tm_mday,
                            (PyTypeObject*)cls);
-    } else {
+    }
+    else {
         PyObject *time;
         PyObject *result;
         time = time_time();
-        if (time == NULL)
+        if (time == NULL) {
             return NULL;
+        }
 
         /* Note well:  today() is a class method, so this may not call
          * date.fromtimestamp.  For example, it may call
-         * datetime.fromtimestamp.  That's why we need all the accuracy
-         * time.time() delivers; if someone were gonzo about optimization,
-         * date.today() could get away with plain C time().
+         * datetime.fromtimestamp.
          */
         result = PyObject_CallMethodOneArg(cls, &_Py_ID(fromtimestamp), time);
         Py_DECREF(time);
