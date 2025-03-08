@@ -143,9 +143,6 @@ class _WriteBufferStream(io.RawIOBase):
     def writable(self):
         return True
 
-    def __del__(self):
-        del self.gzip_file
-
 
 class GzipFile(_compression.BaseStream):
     """The GzipFile class simulates most of the methods of a file object with
