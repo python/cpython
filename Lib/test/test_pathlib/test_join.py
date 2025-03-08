@@ -49,30 +49,32 @@ class JoinTestBase:
 
     def test_join(self):
         P = self.cls
-        p = P('a/b')
+        sep = self.cls.parser.sep
+        p = P(f'a{sep}b')
         pp = p.joinpath('c')
-        self.assertEqual(pp, P('a/b/c'))
+        self.assertEqual(pp, P(f'a{sep}b{sep}c'))
         self.assertIs(type(pp), type(p))
         pp = p.joinpath('c', 'd')
-        self.assertEqual(pp, P('a/b/c/d'))
-        pp = p.joinpath('/c')
-        self.assertEqual(pp, P('/c'))
+        self.assertEqual(pp, P(f'a{sep}b{sep}c{sep}d'))
+        pp = p.joinpath(f'{sep}c')
+        self.assertEqual(pp, P(f'{sep}c'))
 
     def test_div(self):
         # Basically the same as joinpath().
         P = self.cls
-        p = P('a/b')
+        sep = self.cls.parser.sep
+        p = P(f'a{sep}b')
         pp = p / 'c'
-        self.assertEqual(pp, P('a/b/c'))
+        self.assertEqual(pp, P(f'a{sep}b{sep}c'))
         self.assertIs(type(pp), type(p))
-        pp = p / 'c/d'
-        self.assertEqual(pp, P('a/b/c/d'))
+        pp = p / f'c{sep}d'
+        self.assertEqual(pp, P(f'a{sep}b{sep}c{sep}d'))
         pp = p / 'c' / 'd'
-        self.assertEqual(pp, P('a/b/c/d'))
+        self.assertEqual(pp, P(f'a{sep}b{sep}c{sep}d'))
         pp = 'c' / p / 'd'
-        self.assertEqual(pp, P('c/a/b/d'))
-        pp = p/ '/c'
-        self.assertEqual(pp, P('/c'))
+        self.assertEqual(pp, P(f'c{sep}a{sep}b{sep}d'))
+        pp = p/ f'{sep}c'
+        self.assertEqual(pp, P(f'{sep}c'))
 
     def test_full_match(self):
         P = self.cls
@@ -149,11 +151,11 @@ class JoinTestBase:
         # `parts` returns a tuple.
         sep = self.cls.parser.sep
         P = self.cls
-        p = P('a/b')
+        p = P(f'a{sep}b')
         parts = p.parts
         self.assertEqual(parts, ('a', 'b'))
         # When the path is absolute, the anchor is a separate part.
-        p = P('/a/b')
+        p = P(f'{sep}a{sep}b')
         parts = p.parts
         self.assertEqual(parts, (sep, 'a', 'b'))
 
@@ -223,9 +225,9 @@ class JoinTestBase:
         P = self.cls
         sep = self.cls.parser.sep
         self.assertEqual(P('').anchor, '')
-        self.assertEqual(P('a/b').anchor, '')
-        self.assertEqual(P('/').anchor, sep)
-        self.assertEqual(P('/a/b').anchor, sep)
+        self.assertEqual(P(f'a{sep}b').anchor, '')
+        self.assertEqual(P(sep).anchor, sep)
+        self.assertEqual(P(f'{sep}a{sep}b').anchor, sep)
 
     def test_name(self):
         P = self.cls

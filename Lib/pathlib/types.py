@@ -135,7 +135,10 @@ class _JoinablePath(ABC):
         split = self.parser.split
         if split(name)[0]:
             raise ValueError(f"Invalid name {name!r}")
-        return self.with_segments(split(str(self))[0], name)
+        path = str(self)
+        old_name = split(path)[1]
+        path = path[:len(path) - len(old_name)] + name
+        return self.with_segments(path)
 
     def with_stem(self, stem):
         """Return a new path with the stem changed."""
@@ -223,7 +226,7 @@ class _JoinablePath(ABC):
         if case_sensitive is None:
             case_sensitive = self.parser.normcase('Aa') == 'Aa'
         globber = _PathGlobber(pattern.parser.sep, case_sensitive, recursive=True)
-        match = globber.compile(str(pattern))
+        match = globber.compile(str(pattern), altsep=self.parser.altsep)
         return match(str(self)) is not None
 
 
