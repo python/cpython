@@ -55,7 +55,7 @@ An explanation of some terminology and conventions is in order.
 * UTC is `Coordinated Universal Time`_ and superseded `Greenwich Mean Time`_ or
   GMT as the basis of international timekeeping. The acronym UTC is not a
   mistake but conforms to an earlier, language-agnostic naming scheme for time
-  standards: UT0, UT1, etc..
+  standards such as UT0, UT1, and UT2.
 
 .. _Coordinated Universal Time: https://en.wikipedia.org/wiki/Coordinated_Universal_Time
 .. _Greenwich Mean Time: https://en.wikipedia.org/wiki/Greenwich_Mean_Time
