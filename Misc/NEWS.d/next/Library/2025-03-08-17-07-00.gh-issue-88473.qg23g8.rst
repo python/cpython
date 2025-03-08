@@ -1,0 +1,1 @@
+Implement a fast path for date types in :func:`date.today()`
