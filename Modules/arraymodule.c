@@ -397,7 +397,7 @@ static PyObject *
 BB_getitem(char *items, Py_ssize_t i)
 {
     return PyLong_FromLong(
-        (long) (unsigned char) FT_ATOMIC_LOAD_CHAR_RELAXED(items[i]));
+        (long) FT_ATOMIC_LOAD_UCHAR_RELAXED(((unsigned char *) items)[i]));
 }
 
 static int
@@ -409,7 +409,7 @@ BB_setitem(char *items, Py_ssize_t i, PyObject *v)
         return -1;
     }
     if (i >= 0) {
-        FT_ATOMIC_STORE_CHAR_RELAXED(items[i], x);
+        FT_ATOMIC_STORE_UCHAR_RELAXED(((unsigned char *) items)[i], x);
     }
     return 0;
 }
@@ -525,7 +525,7 @@ static PyObject *
 HH_getitem(char *items, Py_ssize_t i)
 {
     return PyLong_FromLong(
-        (long) (unsigned short) FT_ATOMIC_LOAD_SHORT_RELAXED(((short *) items)[i]));
+        (long) FT_ATOMIC_LOAD_USHORT_RELAXED(((unsigned short *) items)[i]));
 }
 
 static int
@@ -548,7 +548,7 @@ HH_setitem(char *items, Py_ssize_t i, PyObject *v)
         return -1;
     }
     if (i >= 0) {
-        FT_ATOMIC_STORE_SHORT_RELAXED(((short *) items)[i], (unsigned short) x);
+        FT_ATOMIC_STORE_USHORT_RELAXED(((unsigned short *) items)[i], (unsigned short) x);
     }
     return 0;
 }
@@ -578,7 +578,7 @@ static PyObject *
 II_getitem(char *items, Py_ssize_t i)
 {
     return PyLong_FromUnsignedLong(
-        (unsigned long) (unsigned int) FT_ATOMIC_LOAD_INT_RELAXED(((int *) items)[i]));
+        (unsigned long) FT_ATOMIC_LOAD_UINT_RELAXED(((unsigned int *) items)[i]));
 }
 
 static int
@@ -610,7 +610,7 @@ II_setitem(char *items, Py_ssize_t i, PyObject *v)
         return -1;
     }
     if (i >= 0) {
-        FT_ATOMIC_STORE_INT_RELAXED(((int *) items)[i], (unsigned int) x);
+        FT_ATOMIC_STORE_UINT_RELAXED(((unsigned int *) items)[i], (unsigned int) x);
     }
 
     if (do_decref) {
@@ -643,7 +643,7 @@ static PyObject *
 LL_getitem(char *items, Py_ssize_t i)
 {
     return PyLong_FromUnsignedLong(
-        (unsigned long) FT_ATOMIC_LOAD_LONG_RELAXED(((long *) items)[i]));
+        FT_ATOMIC_LOAD_ULONG_RELAXED(((unsigned long *) items)[i]));
 }
 
 static int
@@ -667,7 +667,7 @@ LL_setitem(char *items, Py_ssize_t i, PyObject *v)
         return -1;
     }
     if (i >= 0) {
-        FT_ATOMIC_STORE_LONG_RELAXED(((long *) items)[i], x);
+        FT_ATOMIC_STORE_ULONG_RELAXED(((unsigned long *) items)[i], x);
     }
 
     if (do_decref) {
@@ -700,7 +700,7 @@ static PyObject *
 QQ_getitem(char *items, Py_ssize_t i)
 {
     return PyLong_FromUnsignedLongLong(
-        (unsigned long long) FT_ATOMIC_LOAD_LLONG_RELAXED(((long long *) items)[i]));
+        FT_ATOMIC_LOAD_ULLONG_RELAXED(((unsigned long long *) items)[i]));
 }
 
 static int
@@ -724,7 +724,7 @@ QQ_setitem(char *items, Py_ssize_t i, PyObject *v)
         return -1;
     }
     if (i >= 0) {
-        FT_ATOMIC_STORE_LLONG_RELAXED(((long long *) items)[i], x);
+        FT_ATOMIC_STORE_ULLONG_RELAXED(((unsigned long long *) items)[i], x);
     }
 
     if (do_decref) {

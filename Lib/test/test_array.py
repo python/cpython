@@ -1954,6 +1954,8 @@ class FreeThreadingTest(unittest.TestCase):
         self.check([clear] + [iter_next] * 10, a := array.array('i', [1] * 10), iter(a))
 
     @unittest.skipUnless(support.check_sanitizer(thread=True), 'meant for tsan')
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
     def test_free_threading_tsan(self):
         def copy_back_and_forth(b, a, count):
             b.wait()
