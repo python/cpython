@@ -670,7 +670,7 @@ _default_mime_types()
 
 
 def _main():
-    """Run the mimetypes command line interface."""
+    """Run the mimetypes command-line interface."""
     import sys
     from argparse import ArgumentParser
 
