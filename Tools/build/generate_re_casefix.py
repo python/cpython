@@ -23,9 +23,9 @@ re_casefix_template = f"""\
 
 # Maps the code of lowercased character to codes of different lowercased
 # characters which have the same uppercase.
-_EXTRA_CASES = {
+_EXTRA_CASES = {{
 %s
-}
+}}
 """
 
 def uname(i):

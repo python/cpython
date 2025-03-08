@@ -2,7 +2,6 @@
 
 Suggested usage: from stat import *
 """
-import sys
 
 # Indices for stat struct members in the tuple returned by os.stat()
 

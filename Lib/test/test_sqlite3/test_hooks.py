@@ -196,7 +196,7 @@ class ProgressTests(MemoryDatabaseMixin, unittest.TestCase):
         con.execute("select 1 union select 2 union select 3").fetchall()
         self.assertEqual(action, 0, "progress handler was not cleared")
 
-    @with_tracebacks(ZeroDivisionError, name="bad_progress")
+    @with_tracebacks(ZeroDivisionError, msg_regex="bad_progress")
     def test_error_in_progress_handler(self):
         def bad_progress():
             1 / 0
@@ -206,7 +206,7 @@ class ProgressTests(MemoryDatabaseMixin, unittest.TestCase):
                 create table foo(a, b)
                 """)
 
-    @with_tracebacks(ZeroDivisionError, name="bad_progress")
+    @with_tracebacks(ZeroDivisionError, msg_regex="bad_progress")
     def test_error_in_progress_handler_result(self):
         class BadBool:
             def __bool__(self):

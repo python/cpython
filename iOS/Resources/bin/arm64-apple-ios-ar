@@ -1,0 +1,2 @@
+#!/bin/sh
+xcrun --sdk iphoneos${IOS_SDK_VERSION} ar "$@"

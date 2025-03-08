@@ -201,7 +201,7 @@ class Element:
 
     def __bool__(self):
         warnings.warn(
-            "Testing an element's truth value will raise an exception in "
+            "Testing an element's truth value will always return True in "
             "future versions.  "
             "Use specific 'len(elem)' or 'elem is not None' test instead.",
             DeprecationWarning, stacklevel=2
@@ -1248,16 +1248,23 @@ def iterparse(source, events=None, parser=None):
             if close_source:
                 source.close()
 
+    gen = iterator(source)
     class IterParseIterator(collections.abc.Iterator):
-        __next__ = iterator(source).__next__
+        __next__ = gen.__next__
+        def close(self):
+            if close_source:
+                source.close()
+            gen.close()
 
         def __del__(self):
+            # TODO: Emit a ResourceWarning if it was not explicitly closed.
+            # (When the close() method will be supported in all maintained Python versions.)
             if close_source:
                 source.close()
 
     it = IterParseIterator()
+    it.root = None
     wr = weakref.ref(it)
-    del IterParseIterator
     return it
 
 
@@ -1312,6 +1319,11 @@ class XMLPullParser:
                 raise event
             else:
                 yield event
+
+    def flush(self):
+        if self._parser is None:
+            raise ValueError("flush() called after end of stream")
+        self._parser.flush()
 
 
 def XML(text, parser=None):
@@ -1719,6 +1731,15 @@ class XMLParser:
             del self.parser, self._parser
             del self.target, self._target
 
+    def flush(self):
+        was_enabled = self.parser.GetReparseDeferralEnabled()
+        try:
+            self.parser.SetReparseDeferralEnabled(False)
+            self.parser.Parse(b"", False)
+        except self._error as v:
+            self._raiseerror(v)
+        finally:
+            self.parser.SetReparseDeferralEnabled(was_enabled)
 
 # --------------------------------------------------------------------
 # C14N 2.0

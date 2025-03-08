@@ -241,7 +241,9 @@ def is_zipfile(filename):
     result = False
     try:
         if hasattr(filename, "read"):
+            pos = filename.tell()
             result = _check_zipfile(fp=filename)
+            filename.seek(pos)
         else:
             with open(filename, "rb") as fp:
                 result = _check_zipfile(fp)
@@ -309,7 +311,7 @@ def _EndRecData(fpin):
         fpin.seek(-sizeEndCentDir, 2)
     except OSError:
         return None
-    data = fpin.read()
+    data = fpin.read(sizeEndCentDir)
     if (len(data) == sizeEndCentDir and
         data[0:4] == stringEndArchive and
         data[-2:] == b"\000\000"):
@@ -329,9 +331,9 @@ def _EndRecData(fpin):
     # record signature. The comment is the last item in the ZIP file and may be
     # up to 64K long.  It is assumed that the "end of central directory" magic
     # number does not appear in the comment.
-    maxCommentStart = max(filesize - (1 << 16) - sizeEndCentDir, 0)
+    maxCommentStart = max(filesize - ZIP_MAX_COMMENT - sizeEndCentDir, 0)
     fpin.seek(maxCommentStart, 0)
-    data = fpin.read()
+    data = fpin.read(ZIP_MAX_COMMENT + sizeEndCentDir)
     start = data.rfind(stringEndArchive)
     if start >= 0:
         # found the magic number; attempt to unpack and interpret
@@ -603,9 +605,39 @@ class ZipInfo:
 
         return zinfo
 
+    def _for_archive(self, archive):
+        """Resolve suitable defaults from the archive.
+
+        Resolve the date_time, compression attributes, and external attributes
+        to suitable defaults as used by :method:`ZipFile.writestr`.
+
+        Return self.
+        """
+        # gh-91279: Set the SOURCE_DATE_EPOCH to a specific timestamp
+        epoch = os.environ.get('SOURCE_DATE_EPOCH')
+        get_time = int(epoch) if epoch else time.time()
+        self.date_time = time.localtime(get_time)[:6]
+
+        self.compress_type = archive.compression
+        self.compress_level = archive.compresslevel
+        if self.filename.endswith('/'):  # pragma: no cover
+            self.external_attr = 0o40775 << 16  # drwxrwxr-x
+            self.external_attr |= 0x10  # MS-DOS directory flag
+        else:
+            self.external_attr = 0o600 << 16  # ?rw-------
+        return self
+
     def is_dir(self):
         """Return True if this archive member is a directory."""
-        return self.filename.endswith('/')
+        if self.filename.endswith('/'):
+            return True
+        # The ZIP format specification requires to use forward slashes
+        # as the directory separator, but in practice some ZIP files
+        # created on Windows can use backward slashes.  For compatibility
+        # with the extraction code which already handles this:
+        if os.path.altsep:
+            return self.filename.endswith((os.path.sep, os.path.altsep))
+        return False
 
 
 # ZIP encryption uses the CRC32 one-byte primitive for scrambling some
@@ -809,7 +841,10 @@ class _SharedFile:
                 raise ValueError("Can't reposition in the ZIP file while "
                         "there is an open writing handle on it. "
                         "Close the writing handle before trying to read.")
-            self._file.seek(offset, whence)
+            if whence == os.SEEK_CUR:
+                self._file.seek(self._pos + offset)
+            else:
+                self._file.seek(offset, whence)
             self._pos = self._file.tell()
             return self._pos
 
@@ -932,7 +967,7 @@ class ZipExtFile(io.BufferedIOBase):
         result = ['<%s.%s' % (self.__class__.__module__,
                               self.__class__.__qualname__)]
         if not self.closed:
-            result.append(' name=%r mode=%r' % (self.name, self.mode))
+            result.append(' name=%r' % (self.name,))
             if self._compress_type != ZIP_STORED:
                 result.append(' compress_type=%s' %
                               compressor_names.get(self._compress_type,
@@ -1152,13 +1187,15 @@ class ZipExtFile(io.BufferedIOBase):
             self._offset = buff_offset
             read_offset = 0
         # Fast seek uncompressed unencrypted file
-        elif self._compress_type == ZIP_STORED and self._decrypter is None and read_offset > 0:
+        elif self._compress_type == ZIP_STORED and self._decrypter is None and read_offset != 0:
             # disable CRC checking after first seeking - it would be invalid
             self._expected_crc = None
             # seek actual file taking already buffered data into account
             read_offset -= len(self._readbuffer) - self._offset
             self._fileobj.seek(read_offset, os.SEEK_CUR)
             self._left -= read_offset
+            self._compress_left -= read_offset
+            self._eof = self._left <= 0
             read_offset = 0
             # flush read buffer
             self._readbuffer = b''
@@ -1208,6 +1245,14 @@ class _ZipWriteFile(io.BufferedIOBase):
     @property
     def _fileobj(self):
         return self._zipfile.fp
+
+    @property
+    def name(self):
+        return self._zinfo.filename
+
+    @property
+    def mode(self):
+        return 'wb'
 
     def writable(self):
         return True
@@ -1577,7 +1622,8 @@ class ZipFile:
         self._didModify = True
 
     def read(self, name, pwd=None):
-        """Return file bytes for name."""
+        """Return file bytes for name. 'pwd' is the password to decrypt
+        encrypted files."""
         with self.open(name, "r", pwd) as fp:
             return fp.read()
 
@@ -1678,7 +1724,7 @@ class ZipFile:
             else:
                 pwd = None
 
-            return ZipExtFile(zef_file, mode, zinfo, pwd, True)
+            return ZipExtFile(zef_file, mode + 'b', zinfo, pwd, True)
         except:
             zef_file.close()
             raise
@@ -1728,8 +1774,9 @@ class ZipFile:
     def extract(self, member, path=None, pwd=None):
         """Extract a member from the archive to the current working directory,
            using its full name. Its file information is extracted as accurately
-           as possible. `member' may be a filename or a ZipInfo object. You can
-           specify a different directory using `path'.
+           as possible. 'member' may be a filename or a ZipInfo object. You can
+           specify a different directory using 'path'. You can specify the
+           password to decrypt the file using 'pwd'.
         """
         if path is None:
             path = os.getcwd()
@@ -1740,9 +1787,10 @@ class ZipFile:
 
     def extractall(self, path=None, members=None, pwd=None):
         """Extract all members from the archive to the current working
-           directory. `path' specifies a different directory to extract to.
-           `members' is optional and must be a subset of the list returned
-           by namelist().
+           directory. 'path' specifies a different directory to extract to.
+           'members' is optional and must be a subset of the list returned
+           by namelist(). You can specify the password to decrypt all files
+           using 'pwd'.
         """
         if members is None:
             members = self.namelist()
@@ -1802,11 +1850,15 @@ class ZipFile:
         # Create all upper directories if necessary.
         upperdirs = os.path.dirname(targetpath)
         if upperdirs and not os.path.exists(upperdirs):
-            os.makedirs(upperdirs)
+            os.makedirs(upperdirs, exist_ok=True)
 
         if member.is_dir():
             if not os.path.isdir(targetpath):
-                os.mkdir(targetpath)
+                try:
+                    os.mkdir(targetpath)
+                except FileExistsError:
+                    if not os.path.isdir(targetpath):
+                        raise
             return targetpath
 
         with self.open(member, pwd=pwd) as source, \
@@ -1880,18 +1932,10 @@ class ZipFile:
         the name of the file in the archive."""
         if isinstance(data, str):
             data = data.encode("utf-8")
-        if not isinstance(zinfo_or_arcname, ZipInfo):
-            zinfo = ZipInfo(filename=zinfo_or_arcname,
-                            date_time=time.localtime(time.time())[:6])
-            zinfo.compress_type = self.compression
-            zinfo.compress_level = self.compresslevel
-            if zinfo.filename.endswith('/'):
-                zinfo.external_attr = 0o40775 << 16   # drwxrwxr-x
-                zinfo.external_attr |= 0x10           # MS-DOS directory flag
-            else:
-                zinfo.external_attr = 0o600 << 16     # ?rw-------
-        else:
+        if isinstance(zinfo_or_arcname, ZipInfo):
             zinfo = zinfo_or_arcname
+        else:
+            zinfo = ZipInfo(zinfo_or_arcname)._for_archive(self)
 
         if not self.fp:
             raise ValueError(

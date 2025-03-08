@@ -1,5 +1,5 @@
-:mod:`tkinter.font` --- Tkinter font wrapper
-============================================
+:mod:`!tkinter.font` --- Tkinter font wrapper
+=============================================
 
 .. module:: tkinter.font
    :platform: Tk

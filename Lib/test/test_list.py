@@ -1,6 +1,10 @@
+import signal
 import sys
-from test import list_tests
+import textwrap
+from test import list_tests, support
 from test.support import cpython_only
+from test.support.import_helper import import_module
+from test.support.script_helper import assert_python_failure
 import pickle
 import unittest
 
@@ -95,6 +99,11 @@ class ListTest(list_tests.CommonTest):
         def imul(a, b): a *= b
         self.assertRaises((MemoryError, OverflowError), mul, lst, n)
         self.assertRaises((MemoryError, OverflowError), imul, lst, n)
+
+    def test_empty_slice(self):
+        x = []
+        x[:] = x
+        self.assertEqual(x, [])
 
     def test_list_resize_overflow(self):
         # gh-97616: test new_allocated * sizeof(PyObject*) overflow
@@ -229,6 +238,31 @@ class ListTest(list_tests.CommonTest):
         list4 = [1]
         self.assertFalse(list3 == list4)
 
+    def test_lt_operator_modifying_operand(self):
+        # See gh-120298
+        class evil:
+            def __lt__(self, other):
+                other.clear()
+                return NotImplemented
+
+        a = [[evil()]]
+        with self.assertRaises(TypeError):
+            a[0] < a
+
+    def test_list_index_modifing_operand(self):
+        # See gh-120384
+        class evil:
+            def __init__(self, lst):
+                self.lst = lst
+            def __iter__(self):
+                yield from self.lst
+                self.lst.clear()
+
+        lst = list(range(5))
+        operand = evil(lst)
+        with self.assertRaises(ValueError):
+            lst[::-1] = operand
+
     @cpython_only
     def test_preallocation(self):
         iterable = [0] * 10
@@ -269,6 +303,34 @@ class ListTest(list_tests.CommonTest):
         lst = [X(), X()]
         X() in lst
 
+    def test_tier2_invalidates_iterator(self):
+        # GH-121012
+        for _ in range(100):
+            a = [1, 2, 3]
+            it = iter(a)
+            for _ in it:
+                pass
+            a.append(4)
+            self.assertEqual(list(it), [])
+
+    @support.cpython_only
+    def test_no_memory(self):
+        # gh-118331: Make sure we don't crash if list allocation fails
+        import_module("_testcapi")
+        code = textwrap.dedent("""
+        import _testcapi, sys
+        # Prime the freelist
+        l = [None]
+        del l
+        _testcapi.set_nomemory(0)
+        l = [None]
+        """)
+        rc, _, _ = assert_python_failure("-c", code)
+        if support.MS_WINDOWS:
+            # STATUS_ACCESS_VIOLATION
+            self.assertNotEqual(rc, 0xC0000005)
+        else:
+            self.assertNotEqual(rc, -int(signal.SIGSEGV))
 
 if __name__ == "__main__":
     unittest.main()
