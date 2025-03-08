@@ -468,7 +468,7 @@ class TestGzip(BaseTest):
             self.assertEqual(nread, len(uncompressed))
 
     def test_no_refloop_with_writestream(self):
-        """GH-129640: Test that the _WriteBufferStream __del__ method prevents reference loops."""
+        """GH-129640 and GH-129726: Test that the _WriteBufferStream reference cycle method prevents reference loops."""
         import gc
 
         gc.collect()
