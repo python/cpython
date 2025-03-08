@@ -191,7 +191,7 @@ An example usage of the module::
 
 .. _mimetypes-objects:
 
-MimeTypes Objects
+MimeTypes objects
 -----------------
 
 The :class:`MimeTypes` class may be useful for applications which may want more
@@ -309,9 +309,9 @@ than one MIME-type database; it provides an interface similar to the one of the
       official MIME types, otherwise to the non-standard ones.
 
 
-.. mimetypes-cli:
+.. _mimetypes-cli:
 
-Command-Line Usage
+Command-line usage
 ------------------
 
 The :mod:`!mimetypes` module can be executed as a script from the command line.
@@ -350,7 +350,7 @@ standard error stream and exits with the return code ``1``.
 
 .. mimetypes-cli-example:
 
-Command-Line Example
+Command-line example
 --------------------
 
 Here are some examples of typical usage of the :mod:`!mimetypes` command-line
