@@ -650,6 +650,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyTuple_FromStackRefStealOnSuccess",
     "_PyTuple_ITEMS",
     "_PyType_HasFeature",
+    "_PyType_HasFeatureSafe",
     "_PyType_NewManagedObject",
     "_PyUnicode_Equal",
     "_PyUnicode_JoinArray",

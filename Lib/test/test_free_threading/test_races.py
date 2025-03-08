@@ -130,6 +130,45 @@ class TestRaces(TestBase):
         # with the cell binding being changed).
         do_race(access, mutate)
 
+    def test_racing_tp_flags_is_abstract(self):
+        class C:
+            pass
+
+        def access():
+            obj = C()
+
+        def mutate():
+            C.__abstractmethods__ = set()
+            time.sleep(0)
+            del C.__abstractmethods__
+            time.sleep(0)
+
+        # The "mutate" method will set and clear the Py_TPFLAGS_IS_ABSTRACT type flag.
+        do_race(access, mutate)
+
+    def test_racing_tp_flags_vectorcall(self):
+        class C:
+            pass
+
+        def access():
+            try:
+                C()()
+            except Exception:
+                pass
+
+        def mutate():
+            nonlocal C
+            # This will clear the Py_TPFLAGS_VECTORCALL flag.
+            C.__call__ = lambda self: None
+            time.sleep(0)
+            # There is no way to re-set the flag it so we create a new class.
+            class C:
+                pass
+            time.sleep(0)
+
+        do_race(access, mutate)
+
+
     def test_racing_to_bool(self):
 
         seq = [1]

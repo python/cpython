@@ -3974,7 +3974,7 @@
             _PyStackRef subject;
             _PyStackRef res;
             subject = stack_pointer[-1];
-            int match = PyStackRef_TYPE(subject)->tp_flags & Py_TPFLAGS_MAPPING;
+            int match = _PyType_HasFeatureSafe(PyStackRef_TYPE(subject), Py_TPFLAGS_MAPPING);
             res = match ? PyStackRef_True : PyStackRef_False;
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -3986,7 +3986,7 @@
             _PyStackRef subject;
             _PyStackRef res;
             subject = stack_pointer[-1];
-            int match = PyStackRef_TYPE(subject)->tp_flags & Py_TPFLAGS_SEQUENCE;
+            int match = _PyType_HasFeatureSafe(PyStackRef_TYPE(subject), Py_TPFLAGS_SEQUENCE);
             res = match ? PyStackRef_True : PyStackRef_False;
             stack_pointer[0] = res;
             stack_pointer += 1;

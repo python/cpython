@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_object.h"  // _PyType_HaveFeatureSafe()
 
 /* Suggested size (number of positional arguments) for arrays of PyObject*
    allocated on a C stack to avoid allocating memory on the heap memory. Such
@@ -116,7 +117,7 @@ _PyVectorcall_FunctionInline(PyObject *callable)
     assert(callable != NULL);
 
     PyTypeObject *tp = Py_TYPE(callable);
-    if (!PyType_HasFeature(tp, Py_TPFLAGS_HAVE_VECTORCALL)) {
+    if (!_PyType_HasFeatureSafe(tp, Py_TPFLAGS_HAVE_VECTORCALL)) {
         return NULL;
     }
     assert(PyCallable_Check(callable));

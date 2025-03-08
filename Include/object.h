@@ -774,11 +774,7 @@ PyType_HasFeature(PyTypeObject *type, unsigned long feature)
     // PyTypeObject is opaque in the limited C API
     flags = PyType_GetFlags(type);
 #else
-#   ifdef Py_GIL_DISABLED
-        flags = _Py_atomic_load_ulong_relaxed(&type->tp_flags);
-#   else
-        flags = type->tp_flags;
-#   endif
+    flags = type->tp_flags;
 #endif
     return ((flags & feature) != 0);
 }
