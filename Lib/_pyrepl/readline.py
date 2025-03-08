@@ -680,7 +680,7 @@ class ModuleCompleter:
 
     def iter_submodules(self, parent_modules: list[pkgutil.ModuleInfo]) -> Iterator[pkgutil.ModuleInfo]:
         """Iterate over all submodules of the given parent modules."""
-        specs = [info.module_finder.find_spec(info.name)
+        specs = [info.module_finder.find_spec(info.name, None)
                  for info in parent_modules if info.ispkg]
         search_locations = set(chain.from_iterable(
             getattr(spec, 'submodule_search_locations', [])
