@@ -314,6 +314,7 @@ class _ELF(
             assert not section["Symbols"]
             maybe_symbol = group.symbols.get(section["Info"])
             if maybe_symbol is None:
+                # These are relocations for a section we're not emitting. Skip:
                 return
             value, base = maybe_symbol
             if value is _stencils.HoleValue.CODE:
