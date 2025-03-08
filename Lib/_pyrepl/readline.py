@@ -64,7 +64,7 @@ from .types import Callback, Completer, KeySpec, CommandName
 TYPE_CHECKING = False
 
 if TYPE_CHECKING:
-    from typing import Any, Iterator, Mapping
+    from typing import Any, Iterable, Iterator, Mapping
 
 
 MoreLinesCallable = Callable[[str], bool]
@@ -629,7 +629,7 @@ class ModuleCompleter:
 
     def __init__(self, namespace: Mapping[str, Any] | None = None) -> None:
         self.namespace = namespace or {}
-        self._global_cache: list[str] = []
+        self._global_cache: list[pkgutil.ModuleInfo] = []
         self._curr_sys_path: list[str] = sys.path[:]
 
     def get_completions(self, line: str) -> list[str]:
@@ -642,6 +642,7 @@ class ModuleCompleter:
     def complete(self, from_name: str | None, name: str | None) -> list[str]:
         if from_name is None:
             # import x.y.z<tab>
+            assert name is not None
             path, prefix = self.get_path_and_prefix(name)
             modules = self.find_modules(path, prefix)
             return [self.format_completion(path, module) for module in modules]
@@ -664,12 +665,12 @@ class ModuleCompleter:
 
         if path.startswith('.'):
             # Convert relative path to absolute path
-            package = self.namespace.get('__package__')
-            path = self.resolve_relative_name(path, package)
+            package = self.namespace.get('__package__', '')
+            path = self.resolve_relative_name(path, package)  # type: ignore[assignment]
             if path is None:
                 return []
 
-        modules = self.global_cache
+        modules: Iterable[pkgutil.ModuleInfo] = self.global_cache
         for segment in path.split('.'):
             modules = [mod_info for mod_info in modules
                        if mod_info.ispkg and mod_info.name == segment]
@@ -677,7 +678,7 @@ class ModuleCompleter:
         return [module.name for module in modules
                 if module.name.startswith(prefix)]
 
-    def iter_submodules(self, parent_modules) -> Iterator[pkgutil.ModuleInfo]:
+    def iter_submodules(self, parent_modules: list[pkgutil.ModuleInfo]) -> Iterator[pkgutil.ModuleInfo]:
         """Iterate over all submodules of the given parent modules."""
         specs = [info.module_finder.find_spec(info.name)
                  for info in parent_modules if info.ispkg]
@@ -714,7 +715,7 @@ class ModuleCompleter:
             return f'{path}{module}'
         return f'{path}.{module}'
 
-    def resolve_relative_name(self, name, package) -> str | None:
+    def resolve_relative_name(self, name: str, package: str) -> str | None:
         """Resolve a relative module name to an absolute name.
 
         Example: resolve_relative_name('.foo', 'bar') -> 'bar.foo'
@@ -733,7 +734,7 @@ class ModuleCompleter:
         return f'{base}.{name}' if name else base
 
     @property
-    def global_cache(self) -> list[str]:
+    def global_cache(self) -> list[pkgutil.ModuleInfo]:
         """Global module cache"""
         if not self._global_cache or self._curr_sys_path != sys.path:
             self._curr_sys_path = sys.path[:]
@@ -854,14 +855,18 @@ class ImportParser:
         if self.tokens.peek_string('.'):
             name.append('.')
             self.tokens.pop()
-        if self.tokens.peek_name() and self.tokens.peek().string not in self._keywords:
+        if (self.tokens.peek_name()
+            and (tok := self.tokens.peek())
+            and tok.string not in self._keywords):
             name.append(self.tokens.pop_name())
         if not name:
             raise ParseError('parse_dotted_name')
         while self.tokens.peek_string('.'):
             name.append('.')
             self.tokens.pop()
-            if self.tokens.peek_name() and self.tokens.peek().string not in self._keywords:
+            if (self.tokens.peek_name()
+                and (tok := self.tokens.peek())
+                and tok.string not in self._keywords):
                 name.append(self.tokens.pop_name())
             else:
                 break
