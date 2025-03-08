@@ -2748,8 +2748,6 @@ data and are closely related to string objects in a variety of other ways.
          :meth:`bytes.fromhex` now accepts ASCII :class:`bytes` and
          :term:`bytes-like objects <bytes-like object>` as input.
 
-
-
    A reverse conversion function exists to transform a bytes object into its
    hexadecimal representation.
 
