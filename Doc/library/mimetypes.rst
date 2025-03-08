@@ -314,11 +314,11 @@ than one MIME-type database; it provides an interface similar to the one of the
 Command-Line Usage
 ------------------
 
-The :mod:`mimetypes` module can be executed as a script from the command line.
+The :mod:`!mimetypes` module can be executed as a script from the command line.
 
 .. code-block:: sh
 
-   python -m mimetypes [-e] [-l] type [type ...]
+   python -m mimetypes [-h] [-e] [-l] type [type ...]
 
 The following options are accepted:
 
@@ -339,12 +339,13 @@ The following options are accepted:
 
    Additionally search for some common, but non-standard types.
 
-The script converts file extensions to MIME types if ``--extension`` option
-is specified, or vice versa if not.
+By default the script converts MIME types to file extensions.
+However, if ``--extension`` is specified,
+it converts file extensions to MIME types.
 
 For each ``type`` entry, the script writes a line into the standard output
 stream. If an unknown type occurs, it writes an error message into the
-standard error stream and aborts with the return code ``1``.
+standard error stream and exits with the return code ``1``.
 
 
 .. mimetypes-cli-example:
@@ -352,8 +353,8 @@ standard error stream and aborts with the return code ``1``.
 Command-Line Example
 --------------------
 
-Here are some examples of typical usage of the :mod:`mimetypes` command
-line interface:
+Here are some examples of typical usage of the :mod:`!mimetypes` command-line
+interface:
 
 .. code-block:: console
 
