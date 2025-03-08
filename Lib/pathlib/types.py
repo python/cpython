@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from glob import _PathGlobber, _no_recurse_symlinks
 from pathlib import PurePath, Path
 from pathlib._os import magic_open, ensure_distinct_paths, copy_file
-from typing import Protocol, runtime_checkable
+from typing import Optional, Protocol, runtime_checkable
 
 
 def _explode_path(path):
@@ -44,6 +44,7 @@ class _PathParser(Protocol):
     """
 
     sep: str
+    altsep: Optional[str]
     def split(self, path: str) -> tuple[str, str]: ...
     def splitext(self, path: str) -> tuple[str, str]: ...
     def normcase(self, path: str) -> str: ...
@@ -223,7 +224,7 @@ class _JoinablePath(ABC):
         if case_sensitive is None:
             case_sensitive = self.parser.normcase('Aa') == 'Aa'
         globber = _PathGlobber(pattern.parser.sep, case_sensitive, recursive=True)
-        match = globber.compile(str(pattern))
+        match = globber.compile(str(pattern), altsep=pattern.parser.altsep)
         return match(str(self)) is not None
 
 
