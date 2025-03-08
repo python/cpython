@@ -1494,7 +1494,7 @@ to sockets.
 
    If the ``shutdown`` parameter is set to ``True``, the socket will first be
    shut down before closing, ensuring that no further data can be sent or received.
-   This is useful for properly releasing resources and preventing issues like lingering
+   This is useful for properly releasing resources and preventing issues like persistent
    connections or reset by peer (RST) errors in some network conditions. If the parameter is
    ommited or set to false, the function will continue its normal behavior
 
