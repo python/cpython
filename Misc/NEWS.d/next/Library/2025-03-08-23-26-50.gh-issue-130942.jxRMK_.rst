@@ -1,0 +1,1 @@
+Glob.translate no longer matches path separators in ranges
