@@ -28,7 +28,6 @@ extensions for multiline input.
 
 from __future__ import annotations
 
-import importlib
 import pkgutil
 import tokenize
 import warnings
@@ -65,8 +64,7 @@ from .types import Callback, Completer, KeySpec, CommandName
 TYPE_CHECKING = False
 
 if TYPE_CHECKING:
-    from typing import Any, Mapping
-    from types import ModuleType
+    from typing import Any, Iterator, Mapping
 
 
 MoreLinesCallable = Callable[[str], bool]
@@ -629,7 +627,7 @@ class ModuleCompleter:
         - from foo import (bar as baz, qux<tab>
     """
 
-    def __init__(self, namespace: Mapping[str, Any] | None = None):
+    def __init__(self, namespace: Mapping[str, Any] | None = None) -> None:
         self.namespace = namespace or {}
         self._global_cache: list[str] = []
         self._curr_sys_path: list[str] = sys.path[:]
@@ -679,7 +677,7 @@ class ModuleCompleter:
         return [module.name for module in modules
                 if module.name.startswith(prefix)]
 
-    def iter_submodules(self, parent_modules):
+    def iter_submodules(self, parent_modules) -> Iterator[pkgutil.ModuleInfo]:
         """Iterate over all submodules of the given parent modules."""
         specs = [info.module_finder.find_spec(info.name)
                  for info in parent_modules if info.ispkg]
@@ -716,7 +714,7 @@ class ModuleCompleter:
             return f'{path}{module}'
         return f'{path}.{module}'
 
-    def resolve_relative_name(self, name, package):
+    def resolve_relative_name(self, name, package) -> str | None:
         """Resolve a relative module name to an absolute name.
 
         Example: resolve_relative_name('.foo', 'bar') -> 'bar.foo'
@@ -765,7 +763,7 @@ class ImportParser:
     }
     _keywords = {'import', 'from', 'as'}
 
-    def __init__(self, code: str):
+    def __init__(self, code: str) -> None:
         self.code = code
         tokens = []
         try:
@@ -783,18 +781,18 @@ class ImportParser:
             tokens = []
         self.tokens = TokenQueue(tokens[::-1])
 
-    def parse(self):
+    def parse(self) -> tuple[str | None, str | None] | None:
         if not (res := self._parse()):
             return None
         return res.from_name, res.name
 
-    def _parse(self):
+    def _parse(self) -> Result | None:
         with self.tokens.save_state():
             return self.parse_from_import()
         with self.tokens.save_state():
             return self.parse_import()
 
-    def parse_import(self):
+    def parse_import(self) -> Result:
         if self.code.rstrip().endswith('import') and self.code.endswith(' '):
             return Result(name='')
         if self.tokens.peek_string(','):
@@ -812,7 +810,7 @@ class ImportParser:
             return Result(name=name)
         raise ParseError('parse_import')
 
-    def parse_from_import(self):
+    def parse_from_import(self) -> Result:
         if self.code.rstrip().endswith('import') and self.code.endswith(' '):
             return Result(from_name=self.parse_empty_from_import(), name='')
         if self.code.rstrip().endswith('from') and self.code.endswith(' '):
@@ -830,7 +828,7 @@ class ImportParser:
         from_name = self.parse_empty_from_import()
         return Result(from_name=from_name, name=name)
 
-    def parse_empty_from_import(self):
+    def parse_empty_from_import(self) -> str:
         if self.tokens.peek_string(','):
             self.tokens.pop()
             self.parse_as_names()
@@ -839,19 +837,19 @@ class ImportParser:
         self.tokens.pop_string('import')
         return self.parse_from()
 
-    def parse_from(self):
+    def parse_from(self) -> str:
         from_name = self.parse_dotted_name()
         self.tokens.pop_string('from')
         return from_name
 
-    def parse_dotted_as_name(self):
+    def parse_dotted_as_name(self) -> str:
         self.tokens.pop_name()
         if self.tokens.peek_string('as'):
             self.tokens.pop()
         with self.tokens.save_state():
             return self.parse_dotted_name()
 
-    def parse_dotted_name(self):
+    def parse_dotted_name(self) -> str:
         name = []
         if self.tokens.peek_string('.'):
             name.append('.')
@@ -873,13 +871,13 @@ class ImportParser:
             self.tokens.pop()
         return ''.join(name[::-1])
 
-    def parse_as_names(self):
+    def parse_as_names(self) -> None:
         self.parse_as_name()
         while self.tokens.peek_string(','):
             self.tokens.pop()
             self.parse_as_name()
 
-    def parse_as_name(self):
+    def parse_as_name(self) -> None:
         self.tokens.pop_name()
         if self.tokens.peek_string('as'):
             self.tokens.pop()
@@ -905,7 +903,7 @@ class TokenQueue:
         self.stack: list[int] = []
 
     @contextmanager
-    def save_state(self):
+    def save_state(self) -> Any:
         try:
             self.stack.append(self.index)
             yield
@@ -914,7 +912,7 @@ class TokenQueue:
         else:
             self.stack.pop()
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return self.index < len(self.tokens)
 
     def peek(self) -> TokenInfo | None:
