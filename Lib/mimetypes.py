@@ -686,18 +686,18 @@ def _main():
         help='additionally search for common but non-standard types'
     )
     parser.add_argument('type', nargs='+', help='a type to search')
-    arguments = parser.parse_args()
+    args = parser.parse_args()
 
-    if arguments.extension:
-        for gtype in arguments.type:
-            guess = guess_extension(gtype, not arguments.lenient)
+    if args.extension:
+        for gtype in args.type:
+            guess = guess_extension(gtype, not args.lenient)
             if guess:
                 print(guess)
             else:
                 sys.exit(f"error: unknown type {gtype}")
     else:
-        for gtype in arguments.type:
-            guess, encoding = guess_type(gtype, not arguments.lenient)
+        for gtype in args.type:
+            guess, encoding = guess_type(gtype, not args.lenient)
             if guess:
                 print('type:', guess, 'encoding:', encoding)
             else:
