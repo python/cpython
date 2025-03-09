@@ -525,7 +525,6 @@ def extract_from_snapshots():
         'comments.py': ('--add-comments=i18n:',),
         'custom_keywords.py': ('--keyword=foo', '--keyword=nfoo:1,2',
                                '--keyword=pfoo:1c,2',
-                               '--keyword=npfoo:1c,2,3'),
                                '--keyword=npfoo:1c,2,3', '--keyword=_:1,2'),
         'noheader.py': ('--omit-header',),
     }
