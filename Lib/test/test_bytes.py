@@ -473,6 +473,11 @@ class BaseBytesTest:
             self.assertRaises(ValueError, self.type2test.fromhex, b)
 
         self.assertEqual(self.type2test.fromhex('0000'), b'\0\0')
+        with self.assertRaisesRegex(
+            TypeError,
+            r'fromhex\(\) argument must be str or bytes-like, not tuple',
+        ):
+            self.type2test.fromhex(())
         self.assertRaises(ValueError, self.type2test.fromhex, 'a')
         self.assertRaises(ValueError, self.type2test.fromhex, 'rt')
         self.assertRaises(ValueError, self.type2test.fromhex, '1a b cd')
