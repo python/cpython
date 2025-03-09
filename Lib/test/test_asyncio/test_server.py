@@ -4,6 +4,7 @@ import socket
 import time
 import threading
 import unittest
+from unittest.mock import Mock
 
 from test.support import socket_helper
 from test.test_asyncio import utils as test_utils
@@ -186,6 +187,8 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
         loop.call_soon(srv.close)
         loop.call_soon(wr.close)
         await srv.wait_closed()
+        self.assertTrue(task.done())
+        self.assertFalse(srv.is_serving())
 
     async def test_close_clients(self):
         async def serve(rd, wr):
@@ -211,6 +214,9 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0)
         await asyncio.sleep(0)
         self.assertTrue(task.done())
+
+        with self.assertRaisesRegex(RuntimeError, r'is closed'):
+            await srv.start_serving()
 
     async def test_abort_clients(self):
         async def serve(rd, wr):
@@ -265,6 +271,29 @@ class TestServer2(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0)
         await asyncio.sleep(0)
         self.assertTrue(task.done())
+
+    async def test_close_before_transport_attach(self):
+        proto = Mock()
+        loop = asyncio.get_running_loop()
+        srv = await loop.create_server(lambda *_: proto, socket_helper.HOSTv4, 0)
+
+        await srv.start_serving()
+        addr = srv.sockets[0].getsockname()
+
+        # Create a connection to the server but close the server before the
+        # socket transport for the connection is created and attached
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect(addr)
+        await asyncio.sleep(0)  # loop select reader
+        await asyncio.sleep(0)  # accept conn 1
+        srv.close()
+
+        # Ensure the protocol is given an opportunity to handle this event
+        # gh109564: the transport would be unclosed and will cause a loop
+        # exception due to a double-call to Server._wakeup
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
+        proto.connection_lost.assert_called()
 
 
 # Test the various corner cases of Unix server socket removal
