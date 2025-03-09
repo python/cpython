@@ -2036,18 +2036,23 @@ _Py_Finalize(_PyRuntimeState *runtime)
 
     // XXX Call something like _PyImport_Disable() here?
 
-    /* Destroy the state of all threads of the interpreter, except of the
+    /* Remove the state of all threads of the interpreter, except for the
        current thread. In practice, only daemon threads should still be alive,
        except if wait_for_thread_shutdown() has been cancelled by CTRL+C.
-       Clear frames of other threads to call objects destructors. Destructors
-       will be called in the current Python thread. Since
-       _PyRuntimeState_SetFinalizing() has been called, no other Python thread
-       can take the GIL at this point: if they try, they will exit
-       immediately. We start the world once we are the only thread state left,
+       We start the world once we are the only thread state left,
        before we call destructors. */
     PyThreadState *list = _PyThreadState_RemoveExcept(tstate);
+    for (PyThreadState *p = list; p != NULL; p = p->next) {
+        _PyThreadState_SetShuttingDown(p);
+    }
     _PyEval_StartTheWorldAll(runtime);
-    _PyThreadState_DeleteList(list);
+
+    /* Clear frames of other threads to call objects destructors. Destructors
+       will be called in the current Python thread. Since
+       _PyRuntimeState_SetFinalizing() has been called, no other Python thread
+       can take the GIL at this point: if they try, they will hang in
+       _PyThreadState_HangThread. */
+    _PyThreadState_DeleteList(list, /*is_after_fork=*/0);
 
     /* At this point no Python code should be running at all.
        The only thread state left should be the main thread of the main
