@@ -1,0 +1,4 @@
+The pure Python implementation of :func:`datetime.date.fromisoformat`,
+:func:`_pydatetime.date.fromisoformat` now only accepts ASCII strings for
+consistency with the C implementation.
+
