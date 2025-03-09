@@ -516,22 +516,6 @@ class Test_pygettext(unittest.TestCase):
                     parse_spec(spec)
                 self.assertEqual(str(cm.exception), message)
 
-    def test_omit_header(self):
-        """Test that --omit-header removes the header."""
-        data = self.extract_from_str(dedent('''\
-        _("foo")
-        '''), args=('--omit-header',), raw=True)
-
-        self.assertNotIn("Project-Id-Version", data)
-        self.assertNotIn("POT-Creation-Date", data)
-        self.assertNotIn("PO-Revision-Date", data)
-        self.assertNotIn("Last-Translator", data)
-        self.assertNotIn("Language-Team", data)
-        self.assertNotIn("MIME-Version", data)
-        self.assertNotIn("Content-Type", data)
-        self.assertNotIn("Content-Transfer-Encoding", data)
-        self.assertNotIn("Generated-By", data)
-
 
 def extract_from_snapshots():
     snapshots = {
@@ -542,6 +526,7 @@ def extract_from_snapshots():
         'custom_keywords.py': ('--keyword=foo', '--keyword=nfoo:1,2',
                                '--keyword=pfoo:1c,2',
                                '--keyword=npfoo:1c,2,3'),
+        'noheader.py': ('--omit-header',),
     }
 
     for filename, args in snapshots.items():

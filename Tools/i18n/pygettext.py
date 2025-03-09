@@ -125,13 +125,13 @@ Options:
         Set width of output to columns.
 
     --omit-header
-        Don’t write header to file.
+        Do not write header to file.
 
         This is useful for testing purposes because it eliminates a source of
-        variance for generated .gmo files.
+        variance for generated .mo files.
 
-        Note: Using this option will lead to an error if the resulting file
-        would not entirely be in ASCII.
+        Note: Using this option will lead to an error during compilation or other
+        manipulation if the resulting file is not entirely in ASCII.
 
     -x filename
     --exclude-file=filename
