@@ -1344,6 +1344,16 @@ class TestMain(ReplTestCase):
         output, exit_code = self.run_repl(["\x12", "\x03", "exit"])
         self.assertEqual(exit_code, 0)
 
+    def test_newline_after_print_ending_in_space(self):
+        commands = ("print('abcdefg' * 250 + 'Z', end=' ')\n"
+                    "exit()\n")
+        output, exit_code = self.run_repl(commands)
+        self.assertEqual(exit_code, 0)
+        print(output)
+        self.assertIn("Z \r\n", output)
+        expected = "abcdefg" * 200 + "Z " + "\r\n"
+        self.assertIn(expected, output)
+
     def test_prompt_after_help(self):
         output, exit_code = self.run_repl(["help", "q", "exit"])
 
