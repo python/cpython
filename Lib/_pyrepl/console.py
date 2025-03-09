@@ -169,11 +169,14 @@ class InteractiveColoredConsole(code.InteractiveConsole):
 
     def _excepthook(self, typ, value, tb):
         import traceback
-        lines = traceback.format_exception(
-                typ, value, tb,
-                colorize=self.can_colorize,
-                limit=traceback.BUILTIN_EXCEPTION_LIMIT)
-        self.write(''.join(lines))
+        try:
+            lines = traceback.format_exception(
+                    typ, value, tb,
+                    colorize=self.can_colorize,
+                    limit=traceback.BUILTIN_EXCEPTION_LIMIT)
+            self.write(''.join(lines))
+        except TypeError as e:
+            self.write(repr(e) + '\n')
 
     def runcode(self, code):
         try:
