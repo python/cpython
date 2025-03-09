@@ -31,11 +31,11 @@ extern "C" {
 #endif
 
 #include <string.h>
-#include "krml/types.h"
+#include "krml/internal/types.h"
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 
-#include "internal/Hacl_Impl_Blake2_Constants.h"
+#include "internal/Hacl_Streaming_Types.h"
 #include "../Hacl_Hash_Blake2b.h"
 
 typedef struct Hacl_Hash_Blake2b_params_and_key_s
@@ -69,6 +69,23 @@ Hacl_Hash_Blake2b_update_last(
 );
 
 void Hacl_Hash_Blake2b_finish(uint32_t nn, uint8_t *output, uint64_t *hash);
+
+typedef struct Hacl_Hash_Blake2b_block_state_t_s
+{
+  uint8_t fst;
+  uint8_t snd;
+  bool thd;
+  Hacl_Streaming_Types_two_pointers f3;
+}
+Hacl_Hash_Blake2b_block_state_t;
+
+typedef struct Hacl_Hash_Blake2b_state_t_s
+{
+  Hacl_Hash_Blake2b_block_state_t block_state;
+  uint8_t *buf;
+  uint64_t total_len;
+}
+Hacl_Hash_Blake2b_state_t;
 
 #if defined(__cplusplus)
 }
