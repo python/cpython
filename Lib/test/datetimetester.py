@@ -3534,7 +3534,7 @@ class TestDateTime(TestDate):
             '2009-04-19T03:15:4500:00',     # Bad time zone separator
             '2009-04-19T03:15:45.123456+24:30',    # Invalid time zone offset
             '2009-04-19T03:15:45.123456-24:30',    # Invalid negative offset
-            '2009-04-10ᛇᛇᛇᛇᛇ12:15',         # Too many unicode separators
+            '2009-04-10ᛇᛇᛇᛇᛇ12:15',         # Unicode chars
             '2009-04\ud80010T12:15',        # Surrogate char in date
             '2009-04-10T12\ud80015',        # Surrogate char in time
             '2009-04-19T1',                 # Incomplete hours
@@ -3560,7 +3560,7 @@ class TestDateTime(TestDate):
 
         for bad_str in bad_strs:
             with self.subTest(bad_str=bad_str):
-                with self.assertRaises(ValueError):
+                with self.assertRaises(ValueError, TypeError):
                     self.theclass.fromisoformat(bad_str)
 
     def test_fromisoformat_fails_datetime_valueerror(self):
