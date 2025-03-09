@@ -81,7 +81,7 @@
   </ImportGroup>
   <PropertyGroup>
     <KillPython>true</KillPython>
-    <RequirePGCFiles>true</RequirePGCFiles>
+    <RequireProfileData>true</RequireProfileData>
     <IncludeExternals Condition="$(IncludeExternals) == '' and Exists('$(zlibDir)\zlib.h')">true</IncludeExternals>
     <IncludeExternals Condition="$(IncludeExternals) == ''">false</IncludeExternals>
   </PropertyGroup>
