@@ -14,10 +14,9 @@ import os
 import time
 import locale
 import calendar
-from re import A as re_A
 from re import compile as re_compile
 from re import sub as re_sub
-from re import IGNORECASE
+from re import IGNORECASE, ASCII
 from re import escape as re_escape
 from datetime import (date as datetime_date,
                       timedelta as datetime_timedelta,
@@ -381,7 +380,7 @@ See https://github.com/python/cpython/issues/70647.""",
 
     def compile(self, format):
         """Return a compiled re object for the format string."""
-        return re_compile(self.pattern(format), IGNORECASE | re_A)
+        return re_compile(self.pattern(format), IGNORECASE | ASCII)
 
 _cache_lock = _thread_allocate_lock()
 # DO NOT modify _TimeRE_cache or _regex_cache without acquiring the cache lock
