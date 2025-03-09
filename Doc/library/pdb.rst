@@ -82,7 +82,7 @@ example:
 
 .. code-block:: bash
 
-   python -m pdb [-h] [-c command] (-m module | pyfile) [args ...]
+   python -m pdb [-c command] (-m module | pyfile) [args ...]
 
 When invoked as a module, pdb will automatically enter post-mortem debugging if
 the program being debugged exits abnormally.  After post-mortem debugging (or
