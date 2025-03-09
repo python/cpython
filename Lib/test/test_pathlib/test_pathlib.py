@@ -411,6 +411,18 @@ class PurePathTest(test_pathlib_abc.JoinablePathTest):
         self.assertEqual(P('').stem, '')
         self.assertEqual(P('.').stem, '')
 
+    @needs_windows
+    def test_with_name_windows(self):
+        P = self.cls
+        self.assertRaises(ValueError, P(r'c:').with_name, 'd.xml')
+        self.assertRaises(ValueError, P(r'c:\\').with_name, 'd.xml')
+        self.assertRaises(ValueError, P(r'\\My\Share').with_name, 'd.xml')
+        # NTFS alternate data streams
+        self.assertEqual(str(P('a').with_name('d:')), '.\\d:')
+        self.assertEqual(str(P('a').with_name('d:e')), '.\\d:e')
+        self.assertEqual(P(r'c:a\b').with_name('d:'), P(r'c:a\d:'))
+        self.assertEqual(P(r'c:a\b').with_name('d:e'), P(r'c:a\d:e'))
+
     def test_with_name_empty(self):
         P = self.cls
         self.assertRaises(ValueError, P('').with_name, 'd.xml')
@@ -418,6 +430,18 @@ class PurePathTest(test_pathlib_abc.JoinablePathTest):
         self.assertRaises(ValueError, P('/').with_name, 'd.xml')
         self.assertRaises(ValueError, P('a/b').with_name, '')
         self.assertRaises(ValueError, P('a/b').with_name, '.')
+
+    @needs_windows
+    def test_with_stem_windows(self):
+        P = self.cls
+        self.assertRaises(ValueError, P('c:').with_stem, 'd')
+        self.assertRaises(ValueError, P('c:/').with_stem, 'd')
+        self.assertRaises(ValueError, P('//My/Share').with_stem, 'd')
+        # NTFS alternate data streams
+        self.assertEqual(str(P('a').with_stem('d:')), '.\\d:')
+        self.assertEqual(str(P('a').with_stem('d:e')), '.\\d:e')
+        self.assertEqual(P('c:a/b').with_stem('d:'), P('c:a/d:'))
+        self.assertEqual(P('c:a/b').with_stem('d:e'), P('c:a/d:e'))
 
     def test_with_stem_empty(self):
         P = self.cls

@@ -2,6 +2,7 @@
 Simple implementation of JoinablePath, for use in pathlib tests.
 """
 
+import ntpath
 import os.path
 import pathlib.types
 
@@ -31,3 +32,8 @@ class LexicalPath(pathlib.types._JoinablePath):
 
     def with_segments(self, *pathsegments):
         return type(self)(*pathsegments)
+
+
+class LexicalWindowsPath(LexicalPath):
+    __slots__ = ()
+    parser = ntpath
