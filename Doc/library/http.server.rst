@@ -476,7 +476,7 @@ this default with one of the user's choosing::
 
         python -m http.server --default-content-type text/html
 
-.. versionchanged:: 3.13
+.. versionchanged:: next
    Added the ``--default-content-type`` option.
 
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
