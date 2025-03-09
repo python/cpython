@@ -420,6 +420,7 @@
     <ClCompile Include="..\Modules\blake2module.c">
       <PreprocessorDefinitions Condition="'$(Platform)' == 'x64'">HACL_CAN_COMPILE_SIMD128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(Platform)' == 'x64'">HACL_CAN_COMPILE_SIMD256;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions Condition="'$(Platform)' == 'x64' and '$(LLVMToolsVersion)' &lt; '19'">/arch:AVX</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="..\Modules\_codecsmodule.c" />
     <ClCompile Include="..\Modules\_collectionsmodule.c" />
