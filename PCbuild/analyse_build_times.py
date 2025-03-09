@@ -203,7 +203,6 @@ if __name__ == "__main__":
         'filenames', metavar='build_log.txt', type=str, nargs='*',
         help='Build logs to process. Defaults to globbing build_*.txt')
     args = parser.parse_args()
-    print(args)
     if len(args.filenames) == 0:
         filenames = sorted(glob.glob("build_*.txt"))
     elif len(args.filenames) == 1:
