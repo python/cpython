@@ -40,14 +40,23 @@ a new tab, with the browser being brought to the foreground. The use of the
 :mod:`webbrowser` module on iOS requires the :mod:`ctypes` module. If
 :mod:`ctypes` isn't available, calls to :func:`.open` will fail.
 
+.. program:: webbrowser
+
 The script :program:`webbrowser` can be used as a command-line interface for the
 module. It accepts a URL as the argument. It accepts the following optional
 parameters:
 
-* ``-n``/``--new-window`` opens the URL in a new browser window, if possible.
-* ``-t``/``--new-tab`` opens the URL in a new browser page ("tab").
+.. option:: -n, --new-window
 
-The options are, naturally, mutually exclusive.  Usage example::
+   Opens the URL in a new browser window, if possible.
+
+.. option:: -t, --new-tab
+
+   Opens the URL in a new browser tab.
+
+The options are, naturally, mutually exclusive.  Usage example:
+
+.. code-block:: bash
 
    python -m webbrowser -t "https://www.python.org"
 
