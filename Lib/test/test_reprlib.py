@@ -580,6 +580,50 @@ class ReprTests(unittest.TestCase):
                 with self.assertRaisesRegex(expected_error, expected_msg):
                     r.repr(test_object)
 
+    def test_shadowed_stdlib_array(self):
+        # Issue #113570: repr() should not be fooled by an array
+        class array:
+            def __repr__(self):
+                return "not array.array"
+
+        self.assertEqual(r(array()), "not array.array")
+
+    def test_shadowed_builtin(self):
+        # Issue #113570: repr() should not be fooled
+        # by a shadowed builtin function
+        class list:
+            def __repr__(self):
+                return "not builtins.list"
+
+        self.assertEqual(r(list()), "not builtins.list")
+
+    def test_custom_repr(self):
+        class MyRepr(Repr):
+
+            def repr_TextIOWrapper(self, obj, level):
+                if obj.name in {'<stdin>', '<stdout>', '<stderr>'}:
+                    return obj.name
+                return repr(obj)
+
+        aRepr = MyRepr()
+        self.assertEqual(aRepr.repr(sys.stdin), "<stdin>")
+
+    def test_custom_repr_class_with_spaces(self):
+        class TypeWithSpaces:
+            pass
+
+        t = TypeWithSpaces()
+        type(t).__name__ = "type with spaces"
+        self.assertEqual(type(t).__name__, "type with spaces")
+
+        class MyRepr(Repr):
+            def repr_type_with_spaces(self, obj, level):
+                return "Type With Spaces"
+
+
+        aRepr = MyRepr()
+        self.assertEqual(aRepr.repr(t), "Type With Spaces")
+
 def write_file(path, text):
     with open(path, 'w', encoding='ASCII') as fp:
         fp.write(text)

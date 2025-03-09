@@ -12,7 +12,8 @@
 struct tok_state *
 _PyTokenizer_tok_new(void)
 {
-    struct tok_state *tok = (struct tok_state *)PyMem_Malloc(
+    struct tok_state *tok = (struct tok_state *)PyMem_Calloc(
+                                            1,
                                             sizeof(struct tok_state));
     if (tok == NULL)
         return NULL;
@@ -74,6 +75,7 @@ free_fstring_expressions(struct tok_state *tok)
             mode->last_expr_buffer = NULL;
             mode->last_expr_size = 0;
             mode->last_expr_end = -1;
+            mode->in_format_spec = 0;
         }
     }
 }

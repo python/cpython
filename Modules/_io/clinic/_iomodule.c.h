@@ -64,9 +64,9 @@ PyDoc_STRVAR(_io_open__doc__,
 "given, the default buffering policy works as follows:\n"
 "\n"
 "* Binary files are buffered in fixed-size chunks; the size of the buffer\n"
-"  is chosen using a heuristic trying to determine the underlying device\'s\n"
-"  \"block size\" and falling back on `io.DEFAULT_BUFFER_SIZE`.\n"
-"  On many systems, the buffer will typically be 4096 or 8192 bytes long.\n"
+" is max(min(blocksize, 8 MiB), DEFAULT_BUFFER_SIZE)\n"
+" when the device block size is available.\n"
+" On most systems, the buffer will typically be 128 kilobytes long.\n"
 "\n"
 "* \"Interactive\" text files (files for which isatty() returns True)\n"
 "  use line buffering.  Other text files use the policy described above\n"
@@ -175,7 +175,8 @@ _io_open(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     int closefd = 1;
     PyObject *opener = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 8, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 8, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -390,7 +391,8 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *argsbuf[1];
     PyObject *path;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -404,4 +406,4 @@ _io_open_code(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5d60f4e778a600a4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2eaf6e914503bcfd input=a9049054013a1b77]*/

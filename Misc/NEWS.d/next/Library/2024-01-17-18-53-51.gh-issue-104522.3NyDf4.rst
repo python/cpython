@@ -1,3 +1,0 @@
-:exc:`OSError` raised when run a subprocess now only has *filename*
-attribute set to *cwd* if the error was caused by a failed attempt to change
-the current directory.

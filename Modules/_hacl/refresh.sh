@@ -22,7 +22,7 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good.
-expected_hacl_star_rev=521af282fdf6d60227335120f18ae9309a4b8e8c
+expected_hacl_star_rev=f218923ef2417d963d7efc7951593ae6aef613f7
 
 hacl_dir="$(realpath "$1")"
 cd "$(dirname "$0")"
@@ -40,19 +40,35 @@ fi
 
 declare -a dist_files
 dist_files=(
-  Hacl_Hash_SHA2.h
   Hacl_Streaming_Types.h
-  Hacl_Hash_SHA1.h
-  internal/Hacl_Hash_SHA1.h
   Hacl_Hash_MD5.h
+  Hacl_Hash_SHA1.h
+  Hacl_Hash_SHA2.h
   Hacl_Hash_SHA3.h
+  Hacl_Hash_Blake2b.h
+  Hacl_Hash_Blake2s.h
+  Hacl_Hash_Blake2b_Simd256.h
+  Hacl_Hash_Blake2s_Simd128.h
   internal/Hacl_Hash_MD5.h
-  internal/Hacl_Hash_SHA3.h
-  Hacl_Hash_SHA2.c
+  internal/Hacl_Hash_SHA1.h
   internal/Hacl_Hash_SHA2.h
-  Hacl_Hash_SHA1.c
+  internal/Hacl_Hash_SHA3.h
+  internal/Hacl_Hash_Blake2b.h
+  internal/Hacl_Hash_Blake2s.h
+  internal/Hacl_Hash_Blake2b_Simd256.h
+  internal/Hacl_Hash_Blake2s_Simd128.h
+  internal/Hacl_Impl_Blake2_Constants.h
   Hacl_Hash_MD5.c
+  Hacl_Hash_SHA1.c
+  Hacl_Hash_SHA2.c
   Hacl_Hash_SHA3.c
+  Hacl_Hash_Blake2b.c
+  Hacl_Hash_Blake2s.c
+  Hacl_Hash_Blake2b_Simd256.c
+  Hacl_Hash_Blake2s_Simd128.c
+  libintvector.h
+  lib_memzero0.h
+  Lib_Memzero0.c
 )
 
 declare -a include_files
@@ -127,13 +143,17 @@ $sed -i -z 's!\(extern\|typedef\)[^;]*;\n\n!!g' include/krml/FStar_UInt_8_16_32_
 $sed -i 's!#include.*Hacl_Krmllib.h"!!g' "${all_files[@]}"
 
 # Use globally unique names for the Hacl_ C APIs to avoid linkage conflicts.
-$sed -i -z 's!#include <string.h>\n!#include <string.h>\n#include "python_hacl_namespaces.h"\n!' Hacl_Hash_SHA2.h
+$sed -i -z 's!#include <string.h>\n!#include <string.h>\n#include "python_hacl_namespaces.h"\n!' Hacl_Hash_*.h
 
 # Finally, we remove a bunch of ifdefs from target.h that are, again, useful in
 # the general case, but not exercised by the subset of HACL* that we vendor.
-$sed -z -i 's!#ifndef KRML_\(PRE_ALIGN\|POST_ALIGN\|ALIGNED_MALLOC\|ALIGNED_FREE\|HOST_TIME\)\n\(\n\|#  [^\n]*\n\|[^#][^\n]*\n\)*#endif\n\n!!g' include/krml/internal/target.h
+$sed -z -i 's!#ifndef KRML_\(HOST_TIME\)\n\(\n\|#  [^\n]*\n\|[^#][^\n]*\n\)*#endif\n\n!!g' include/krml/internal/target.h
 $sed -z -i 's!\n\n\([^#][^\n]*\n\)*#define KRML_\(EABORT\|EXIT\)[^\n]*\(\n  [^\n]*\)*!!g' include/krml/internal/target.h
 $sed -z -i 's!\n\n\([^#][^\n]*\n\)*#if [^\n]*\n\(  [^\n]*\n\)*#define  KRML_\(EABORT\|EXIT\|CHECK_SIZE\)[^\n]*\(\n  [^\n]*\)*!!g' include/krml/internal/target.h
 $sed -z -i 's!\n\n\([^#][^\n]*\n\)*#if [^\n]*\n\(  [^\n]*\n\)*#  define _\?KRML_\(DEPRECATED\|HOST_SNPRINTF\)[^\n]*\n\([^#][^\n]*\n\|#el[^\n]*\n\|#  [^\n]*\n\)*#endif!!g' include/krml/internal/target.h
+
+# Step 3: trim whitespace (for the linter)
+
+find . -name '*.c' -or -name '*.h' | xargs $sed -i 's![[:space:]]\+$!!'
 
 echo "Updated; verify all is okay using git diff and git status."

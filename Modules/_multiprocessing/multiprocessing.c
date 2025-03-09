@@ -181,7 +181,7 @@ static PyMethodDef module_methods[] = {
     _MULTIPROCESSING_RECV_METHODDEF
     _MULTIPROCESSING_SEND_METHODDEF
 #endif
-#if !defined(POSIX_SEMAPHORES_NOT_ENABLED) && !defined(__ANDROID__)
+#if !defined(POSIX_SEMAPHORES_NOT_ENABLED)
     _MULTIPROCESSING_SEM_UNLINK_METHODDEF
 #endif
     {NULL}
@@ -277,6 +277,7 @@ multiprocessing_exec(PyObject *module)
 static PyModuleDef_Slot multiprocessing_slots[] = {
     {Py_mod_exec, multiprocessing_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

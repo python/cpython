@@ -209,6 +209,7 @@ aliases = {
     'ms932'              : 'cp932',
     'mskanji'            : 'cp932',
     'ms_kanji'           : 'cp932',
+    'windows_31j'        : 'cp932',
 
     # cp949 codec
     '949'                : 'cp949',

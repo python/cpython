@@ -1,5 +1,5 @@
-:mod:`warnings` --- Warning control
-===================================
+:mod:`!warnings` --- Warning control
+====================================
 
 .. module:: warnings
    :synopsis: Issue warning messages and control their disposition.
@@ -145,6 +145,8 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
   +---------------+----------------------------------------------+
   | ``"always"``  | always print matching warnings               |
   +---------------+----------------------------------------------+
+  | ``"all"``     | alias to "always"                            |
+  +---------------+----------------------------------------------+
   | ``"module"``  | print the first occurrence of matching       |
   |               | warnings for each module where the warning   |
   |               | is issued (regardless of line number)        |
@@ -176,6 +178,19 @@ class, to turn a warning into an error we simply raise ``category(message)``.
 
 If a warning is reported and doesn't match any registered filter then the
 "default" action is applied (hence its name).
+
+
+
+.. _repeated-warning-suppression-criteria:
+
+Repeated Warning Suppression Criteria
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The filters that suppress repeated warnings apply the following criteria to determine if a warning is considered a repeat:
+
+- ``"default"``: A warning is considered a repeat only if the (*message*, *category*, *module*, *lineno*) are all the same.
+- ``"module"``: A warning is considered a repeat if the (*message*, *category*, *module*) are the same, ignoring the line number.
+- ``"once"``: A warning is considered a repeat if the (*message*, *category*) are the same, ignoring the module and line number.
 
 
 .. _describing-warning-filters:
@@ -396,7 +411,7 @@ Available Functions
 -------------------
 
 
-.. function:: warn(message, category=None, stacklevel=1, source=None, \*, skip_file_prefixes=None)
+.. function:: warn(message, category=None, stacklevel=1, source=None, *, skip_file_prefixes=())
 
    Issue a warning, or maybe ignore it or raise an exception.  The *category*
    argument, if given, must be a :ref:`warning category class <warning-categories>`; it
@@ -594,6 +609,9 @@ Available Context Managers
     If the *action* argument is not ``None``, the remaining arguments are
     passed to :func:`simplefilter` as if it were called immediately on
     entering the context.
+
+    See :ref:`warning-filter` for the meaning of the *category* and *lineno*
+    parameters.
 
     .. note::
 

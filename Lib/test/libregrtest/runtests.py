@@ -2,13 +2,15 @@ import contextlib
 import dataclasses
 import json
 import os
+import shlex
 import subprocess
-from typing import Any
+import sys
+from typing import Any, Iterator
 
 from test import support
 
 from .utils import (
-    StrPath, StrJSON, TestTuple, TestFilter, FilterTuple, FilterDict)
+    StrPath, StrJSON, TestTuple, TestName, TestFilter, FilterTuple, FilterDict)
 
 
 class JsonFileType:
@@ -26,7 +28,7 @@ class JsonFile:
     file: int | None
     file_type: str
 
-    def configure_subprocess(self, popen_kwargs: dict) -> None:
+    def configure_subprocess(self, popen_kwargs: dict[str, Any]) -> None:
         match self.file_type:
             case JsonFileType.UNIX_FD:
                 # Unix file descriptor
@@ -39,8 +41,8 @@ class JsonFile:
                 popen_kwargs['startupinfo'] = startupinfo
 
     @contextlib.contextmanager
-    def inherit_subprocess(self):
-        if self.file_type == JsonFileType.WINDOWS_HANDLE:
+    def inherit_subprocess(self) -> Iterator[None]:
+        if sys.platform == 'win32' and self.file_type == JsonFileType.WINDOWS_HANDLE:
             os.set_handle_inheritable(self.file, True)
             try:
                 yield
@@ -66,6 +68,11 @@ class HuntRefleak:
     warmups: int
     runs: int
     filename: StrPath
+
+    def bisect_cmd_args(self) -> list[str]:
+        # Ignore filename since it can contain colon (":"),
+        # and usually it's not used. Use the default filename.
+        return ["-R", f"{self.warmups}:{self.runs}:"]
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
@@ -93,31 +100,32 @@ class RunTests:
     python_cmd: tuple[str, ...] | None
     randomize: bool
     random_seed: int | str
+    parallel_threads: int | None
 
     def copy(self, **override) -> 'RunTests':
         state = dataclasses.asdict(self)
         state.update(override)
         return RunTests(**state)
 
-    def create_worker_runtests(self, **override):
+    def create_worker_runtests(self, **override) -> WorkerRunTests:
         state = dataclasses.asdict(self)
         state.update(override)
         return WorkerRunTests(**state)
 
-    def get_match_tests(self, test_name) -> FilterTuple | None:
+    def get_match_tests(self, test_name: TestName) -> FilterTuple | None:
         if self.match_tests_dict is not None:
             return self.match_tests_dict.get(test_name, None)
         else:
             return None
 
-    def get_jobs(self):
+    def get_jobs(self) -> int | None:
         # Number of run_single_test() calls needed to run all tests.
         # None means that there is not bound limit (--forever option).
         if self.forever:
             return None
         return len(self.tests)
 
-    def iter_tests(self):
+    def iter_tests(self) -> Iterator[TestName]:
         if self.forever:
             while True:
                 yield from self.tests
@@ -136,6 +144,51 @@ class RunTests:
             or support.is_emscripten
             or support.is_wasi
         )
+
+    def create_python_cmd(self) -> list[str]:
+        python_opts = support.args_from_interpreter_flags()
+        if self.python_cmd is not None:
+            executable = self.python_cmd
+            # Remove -E option, since --python=COMMAND can set PYTHON
+            # environment variables, such as PYTHONPATH, in the worker
+            # process.
+            python_opts = [opt for opt in python_opts if opt != "-E"]
+        else:
+            executable = (sys.executable,)
+        cmd = [*executable, *python_opts]
+        if '-u' not in python_opts:
+            cmd.append('-u')  # Unbuffered stdout and stderr
+        if self.coverage:
+            cmd.append("-Xpresite=test.cov")
+        return cmd
+
+    def bisect_cmd_args(self) -> list[str]:
+        args = []
+        if self.fail_fast:
+            args.append("--failfast")
+        if self.fail_env_changed:
+            args.append("--fail-env-changed")
+        if self.timeout:
+            args.append(f"--timeout={self.timeout}")
+        if self.hunt_refleak is not None:
+            args.extend(self.hunt_refleak.bisect_cmd_args())
+        if self.test_dir:
+            args.extend(("--testdir", self.test_dir))
+        if self.memory_limit:
+            args.extend(("--memlimit", self.memory_limit))
+        if self.gc_threshold:
+            args.append(f"--threshold={self.gc_threshold}")
+        if self.use_resources:
+            args.extend(("-u", ','.join(self.use_resources)))
+        if self.python_cmd:
+            cmd = shlex.join(self.python_cmd)
+            args.extend(("--python", cmd))
+        if self.randomize:
+            args.append(f"--randomize")
+        if self.parallel_threads:
+            args.append(f"--parallel-threads={self.parallel_threads}")
+        args.append(f"--randseed={self.random_seed}")
+        return args
 
 
 @dataclasses.dataclass(slots=True, frozen=True)

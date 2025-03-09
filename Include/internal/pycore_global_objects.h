@@ -64,10 +64,10 @@ struct _Py_static_objects {
     (interp)->cached_objects.NAME
 
 struct _Py_interp_cached_objects {
+#ifdef Py_GIL_DISABLED
+    PyMutex interned_mutex;
+#endif
     PyObject *interned_strings;
-
-    /* AST */
-    PyObject *str_replace_inf;
 
     /* object.__reduce__ */
     PyObject *objreduce;
@@ -81,6 +81,7 @@ struct _Py_interp_cached_objects {
     PyTypeObject *paramspec_type;
     PyTypeObject *paramspecargs_type;
     PyTypeObject *paramspeckwargs_type;
+    PyTypeObject *constevaluator_type;
 };
 
 #define _Py_INTERP_STATIC_OBJECT(interp, NAME) \

@@ -8,6 +8,7 @@
 # Unicode identifiers in tests is allowed by PEP 3131.
 
 import ast
+import datetime
 import dis
 import os
 import re
@@ -627,13 +628,23 @@ x = (
                             r"does not match opening parenthesis '\('",
                             ["f'{a(4}'",
                             ])
-        self.assertRaises(SyntaxError, eval, "f'{" + "("*500 + "}'")
+        self.assertRaises(SyntaxError, eval, "f'{" + "("*20 + "}'")
 
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
     def test_fstring_nested_too_deeply(self):
-        self.assertAllRaise(SyntaxError,
-                            "f-string: expressions nested too deeply",
-                            ['f"{1+2:{1+2:{1+1:{1}}}}"'])
+        def raises_syntax_or_memory_error(txt):
+            try:
+                eval(txt)
+            except SyntaxError:
+                pass
+            except MemoryError:
+                pass
+            except Exception as ex:
+                self.fail(f"Should raise SyntaxError or MemoryError, not {type(ex)}")
+            else:
+                self.fail("No exception raised")
+
+        raises_syntax_or_memory_error('f"{1+2:{1+2:{1+1:{1}}}}"')
 
         def create_nested_fstring(n):
             if n == 0:
@@ -641,9 +652,10 @@ x = (
             prev = create_nested_fstring(n-1)
             return f'f"{{{prev}}}"'
 
-        self.assertAllRaise(SyntaxError,
-                            "too many nested f-strings",
-                            [create_nested_fstring(160)])
+        raises_syntax_or_memory_error(create_nested_fstring(160))
+        raises_syntax_or_memory_error("f'{" + "("*100 + "}'")
+        raises_syntax_or_memory_error("f'{" + "("*1000 + "}'")
+        raises_syntax_or_memory_error("f'{" + "("*10_000 + "}'")
 
     def test_syntax_error_in_nested_fstring(self):
         # See gh-104016 for more information on this crash
@@ -744,13 +756,13 @@ x = (
 }''', 'A complex trick: 2')
         self.assertEqual(f'''
 {
-40 # fourty
+40 # forty
 +  # plus
 2  # two
 }''', '\n42')
         self.assertEqual(f'''
 {
-40 # fourty
+40 # forty
 +  # plus
 2  # two
 }''', '\n42')
@@ -896,6 +908,7 @@ x = (
                              "f'{:2}'",
                              "f'''{\t\f\r\n:a}'''",
                              "f'{:'",
+                             "F'{[F'{:'}[F'{:'}]]]",
                              ])
 
         self.assertAllRaise(SyntaxError,
@@ -1602,6 +1615,12 @@ x = (
         self.assertEqual(f'{f(a=4)}', '3=')
         self.assertEqual(x, 4)
 
+        # Check debug expressions in format spec
+        y = 20
+        self.assertEqual(f"{2:{y=}}", "yyyyyyyyyyyyyyyyyyy2")
+        self.assertEqual(f"{datetime.datetime.now():h1{y=}h2{y=}h3{y=}}",
+                         'h1y=20h2y=20h3y=20')
+
         # Make sure __format__ is being called.
         class C:
             def __format__(self, s):
@@ -1615,8 +1634,10 @@ x = (
         self.assertEqual(f'{C()=: }', 'C()=FORMAT- ')
         self.assertEqual(f'{C()=:x}', 'C()=FORMAT-x')
         self.assertEqual(f'{C()=!r:*^20}', 'C()=********REPR********')
+        self.assertEqual(f"{C():{20=}}", 'FORMAT-20=20')
 
         self.assertRaises(SyntaxError, eval, "f'{C=]'")
+
 
         # Make sure leading and following text works.
         x = 'foo'
@@ -1639,6 +1660,15 @@ x = (
         # the tabs to spaces just to shut up patchcheck.
         #self.assertEqual(f'X{x =}Y', 'Xx\t='+repr(x)+'Y')
         #self.assertEqual(f'X{x =       }Y', 'Xx\t=\t'+repr(x)+'Y')
+
+    def test_debug_expressions_are_raw_strings(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', SyntaxWarning)
+            self.assertEqual(eval("""f'{b"\\N{OX}"=}'"""), 'b"\\N{OX}"=b\'\\\\N{OX}\'')
+        self.assertEqual(f'{r"\xff"=}', 'r"\\xff"=\'\\\\xff\'')
+        self.assertEqual(f'{r"\n"=}', 'r"\\n"=\'\\\\n\'')
+        self.assertEqual(f"{'\''=}", "'\\''=\"'\"")
+        self.assertEqual(f'{'\xc5'=}', r"'\xc5'='Å'")
 
     def test_walrus(self):
         x = 20
@@ -1747,6 +1777,24 @@ print(f'''{{
 
         for s in ["", "some string"]:
             self.assertEqual(get_code(f"'{s}'"), get_code(f"f'{s}'"))
+
+    def test_gh129093(self):
+        self.assertEqual(f'{1==2=}', '1==2=False')
+        self.assertEqual(f'{1 == 2=}', '1 == 2=False')
+        self.assertEqual(f'{1!=2=}', '1!=2=True')
+        self.assertEqual(f'{1 != 2=}', '1 != 2=True')
+
+        self.assertEqual(f'{(1) != 2=}', '(1) != 2=True')
+        self.assertEqual(f'{(1*2) != (3)=}', '(1*2) != (3)=True')
+
+        self.assertEqual(f'{1 != 2 == 3 != 4=}', '1 != 2 == 3 != 4=False')
+        self.assertEqual(f'{1 == 2 != 3 == 4=}', '1 == 2 != 3 == 4=False')
+
+        self.assertEqual(f'{f'{1==2=}'=}', "f'{1==2=}'='1==2=False'")
+        self.assertEqual(f'{f'{1 == 2=}'=}', "f'{1 == 2=}'='1 == 2=False'")
+        self.assertEqual(f'{f'{1!=2=}'=}', "f'{1!=2=}'='1!=2=True'")
+        self.assertEqual(f'{f'{1 != 2=}'=}', "f'{1 != 2=}'='1 != 2=True'")
+
 
 if __name__ == '__main__':
     unittest.main()

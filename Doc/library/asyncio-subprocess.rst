@@ -61,8 +61,9 @@ See also the `Examples`_ subsection.
 Creating Subprocesses
 =====================
 
-.. coroutinefunction:: create_subprocess_exec(program, *args, stdin=None, \
-                          stdout=None, stderr=None, limit=None, **kwds)
+.. function:: create_subprocess_exec(program, *args, stdin=None, \
+                 stdout=None, stderr=None, limit=None, **kwds)
+   :async:
 
    Create a subprocess.
 
@@ -79,8 +80,9 @@ Creating Subprocesses
       Removed the *loop* parameter.
 
 
-.. coroutinefunction:: create_subprocess_shell(cmd, stdin=None, \
-                          stdout=None, stderr=None, limit=None, **kwds)
+.. function:: create_subprocess_shell(cmd, stdin=None, \
+                 stdout=None, stderr=None, limit=None, **kwds)
+   :async:
 
    Run the *cmd* shell command.
 
@@ -188,7 +190,8 @@ their completion.
    See also the :ref:`Subprocess and Threads <asyncio-subprocess-threads>`
    section.
 
-   .. coroutinemethod:: wait()
+   .. method:: wait()
+      :async:
 
       Wait for the child process to terminate.
 
@@ -202,7 +205,8 @@ their completion.
          more data. Use the :meth:`communicate` method when using pipes
          to avoid this condition.
 
-   .. coroutinemethod:: communicate(input=None)
+   .. method:: communicate(input=None)
+      :async:
 
       Interact with process:
 
@@ -232,7 +236,7 @@ their completion.
 
       .. versionchanged:: 3.12
 
-         *stdin* gets closed when `input=None` too.
+         *stdin* gets closed when ``input=None`` too.
 
    .. method:: send_signal(signal)
 
@@ -240,7 +244,7 @@ their completion.
 
       .. note::
 
-         On Windows, :py:data:`SIGTERM` is an alias for :meth:`terminate`.
+         On Windows, :py:const:`~signal.SIGTERM` is an alias for :meth:`terminate`.
          ``CTRL_C_EVENT`` and ``CTRL_BREAK_EVENT`` can be sent to processes
          started with a *creationflags* parameter which includes
          ``CREATE_NEW_PROCESS_GROUP``.
@@ -249,10 +253,10 @@ their completion.
 
       Stop the child process.
 
-      On POSIX systems this method sends :py:const:`signal.SIGTERM` to the
+      On POSIX systems this method sends :py:const:`~signal.SIGTERM` to the
       child process.
 
-      On Windows the Win32 API function :c:func:`TerminateProcess` is
+      On Windows the Win32 API function :c:func:`!TerminateProcess` is
       called to stop the child process.
 
    .. method:: kill()
@@ -315,18 +319,6 @@ default.
 
 On Windows subprocesses are provided by :class:`ProactorEventLoop` only (default),
 :class:`SelectorEventLoop` has no subprocess support.
-
-On UNIX *child watchers* are used for subprocess finish waiting, see
-:ref:`asyncio-watchers` for more info.
-
-
-.. versionchanged:: 3.8
-
-   UNIX switched to use :class:`ThreadedChildWatcher` for spawning subprocesses from
-   different threads without any limitation.
-
-   Spawning a subprocess with *inactive* current child watcher raises
-   :exc:`RuntimeError`.
 
 Note that alternative event loop implementations might have own limitations;
 please refer to their documentation.
