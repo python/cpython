@@ -14,7 +14,7 @@ c_heapq = import_helper.import_fresh_module('heapq', fresh=['_heapq'])
 # _heapq.nlargest/nsmallest are saved in heapq._nlargest/_smallest when
 # _heapq is imported, so check them there
 func_names = ['heapify', 'heappop', 'heappush', 'heappushpop', 'heapreplace',
-              '_heappop_max', '_heapreplace_max', '_heapify_max']
+              'heappop_max', 'heapreplace_max', 'heapify_max', 'heappushpop_max']
 
 class TestModules(TestCase):
     def test_py_functions(self):
@@ -74,12 +74,45 @@ class TestHeap:
         except AttributeError:
             pass
 
+    def test_max_push_pop(self):
+        # 1) Push 256 random numbers and pop them off, verifying all's OK.
+        heap = []
+        data = []
+        self.check_max_invariant(heap)
+        for i in range(256):
+            item = random.random()
+            data.append(item)
+            self.module.heappush_max(heap, item)
+            self.check_max_invariant(heap)
+        results = []
+        while heap:
+            item = self.module.heappop_max(heap)
+            self.check_max_invariant(heap)
+            results.append(item)
+        data_sorted = data[:]
+        data_sorted.sort(reverse=True)
+
+        self.assertEqual(data_sorted, results)
+        # 2) Check that the invariant holds for a sorted array
+        self.check_max_invariant(results)
+
+        self.assertRaises(TypeError, self.module.heappush_max, [])
+
+        exc_types = (AttributeError, TypeError)
+        self.assertRaises(exc_types, self.module.heappush_max, None, None)
+        self.assertRaises(exc_types, self.module.heappop_max, None)
+
     def check_invariant(self, heap):
         # Check the heap invariant.
         for pos, item in enumerate(heap):
             if pos: # pos 0 has no parent
                 parentpos = (pos-1) >> 1
                 self.assertTrue(heap[parentpos] <= item)
+
+    def check_max_invariant(self, heap):
+        for pos, item in enumerate(heap[1:], start=1):
+            parentpos = (pos - 1) >> 1
+            self.assertGreaterEqual(heap[parentpos], item)
 
     def test_heapify(self):
         for size in list(range(30)) + [20000]:
@@ -88,6 +121,14 @@ class TestHeap:
             self.check_invariant(heap)
 
         self.assertRaises(TypeError, self.module.heapify, None)
+
+    def test_heapify_max(self):
+        for size in list(range(30)) + [20000]:
+            heap = [random.random() for dummy in range(size)]
+            self.module.heapify_max(heap)
+            self.check_max_invariant(heap)
+
+        self.assertRaises(TypeError, self.module.heapify_max, None)
 
     def test_naive_nbest(self):
         data = [random.randrange(2000) for i in range(1000)]
@@ -153,12 +194,31 @@ class TestHeap:
         x = self.module.heappushpop(h, 11)
         self.assertEqual((h, x), ([11], 10))
 
+    def test_heappushpop_max(self):
+        h = []
+        x = self.module.heappushpop_max(h, 10)
+        self.assertTupleEqual((h, x), ([], 10))
+
+        h = [10]
+        x = self.module.heappushpop_max(h, 10.0)
+        self.assertTupleEqual((h, x), ([10], 10.0))
+        self.assertIsInstance(h[0], int)
+        self.assertIsInstance(x, float)
+
+        h = [10]
+        x = self.module.heappushpop_max(h, 11)
+        self.assertTupleEqual((h, x), ([11], 10))
+
+        h = [10]
+        x = self.module.heappushpop_max(h, 9)
+        self.assertTupleEqual((h, x), ([10], 9))
+
     def test_heappop_max(self):
-        # _heapop_max has an optimization for one-item lists which isn't
+        # heapop_max has an optimization for one-item lists which isn't
         # covered in other tests, so test that case explicitly here
         h = [3, 2]
-        self.assertEqual(self.module._heappop_max(h), 3)
-        self.assertEqual(self.module._heappop_max(h), 2)
+        self.assertEqual(self.module.heappop_max(h), 3)
+        self.assertEqual(self.module.heappop_max(h), 2)
 
     def test_heapsort(self):
         # Exercise everything with repeated heapsort checks
