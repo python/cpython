@@ -1405,10 +1405,10 @@ are always available.  They are listed here in alphabetical order.
    :func:`io.TextIOWrapper.reconfigure`. When no *buffering* argument is
    given, the default buffering policy works as follows:
 
-   * Binary files are buffered in fixed-size chunks; the size of the buffer is
-     chosen using a heuristic trying to determine the underlying device's "block
-     size" and falling back on :const:`io.DEFAULT_BUFFER_SIZE`.  On many systems,
-     the buffer will typically be 4096 or 8192 bytes long.
+   * Binary files are buffered in fixed-size chunks; the size of the buffer
+     is ``max(min(blocksize, 8 MiB), DEFAULT_BUFFER_SIZE)``
+     when the device block size is available.
+     On most systems, the buffer will typically be 128 kilobytes long.
 
    * "Interactive" text files (files for which :meth:`~io.IOBase.isatty`
      returns ``True``) use line buffering.  Other text files use the policy

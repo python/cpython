@@ -325,11 +325,15 @@ class GzipFile(_compression.BaseStream):
 
         return length
 
-    def read(self, size=-1):
-        self._check_not_closed()
+    def _check_read(self, caller):
         if self.mode != READ:
             import errno
-            raise OSError(errno.EBADF, "read() on write-only GzipFile object")
+            msg = f"{caller}() on write-only GzipFile object"
+            raise OSError(errno.EBADF, msg)
+
+    def read(self, size=-1):
+        self._check_not_closed()
+        self._check_read("read")
         return self._buffer.read(size)
 
     def read1(self, size=-1):
@@ -337,19 +341,25 @@ class GzipFile(_compression.BaseStream):
 
         Reads up to a buffer's worth of data if size is negative."""
         self._check_not_closed()
-        if self.mode != READ:
-            import errno
-            raise OSError(errno.EBADF, "read1() on write-only GzipFile object")
+        self._check_read("read1")
 
         if size < 0:
             size = io.DEFAULT_BUFFER_SIZE
         return self._buffer.read1(size)
 
+    def readinto(self, b):
+        self._check_not_closed()
+        self._check_read("readinto")
+        return self._buffer.readinto(b)
+
+    def readinto1(self, b):
+        self._check_not_closed()
+        self._check_read("readinto1")
+        return self._buffer.readinto1(b)
+
     def peek(self, n):
         self._check_not_closed()
-        if self.mode != READ:
-            import errno
-            raise OSError(errno.EBADF, "peek() on write-only GzipFile object")
+        self._check_read("peek")
         return self._buffer.peek(n)
 
     @property

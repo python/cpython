@@ -429,14 +429,14 @@ class CodeTest(unittest.TestCase):
         def foo():
             pass
 
-        # assert that opcode 135 is invalid
-        self.assertEqual(opname[135], '<135>')
+        # assert that opcode 127 is invalid
+        self.assertEqual(opname[127], '<127>')
 
-        # change first opcode to 0x87 (=135)
+        # change first opcode to 0x7f (=127)
         foo.__code__ = foo.__code__.replace(
-            co_code=b'\x87' + foo.__code__.co_code[1:])
+            co_code=b'\x7f' + foo.__code__.co_code[1:])
 
-        msg = "unknown opcode 135"
+        msg = "unknown opcode 127"
         with self.assertRaisesRegex(SystemError, msg):
             foo()
 
@@ -952,6 +952,15 @@ class CodeLocationTest(unittest.TestCase):
         self.assertEqual(
             get_line_branches(with_extended_args),
             [(1,2,8)])
+
+        async def afunc():
+            async for letter in async_iter1:
+                2
+            3
+
+        self.assertEqual(
+            get_line_branches(afunc),
+            [(1,1,3)])
 
 if check_impl_detail(cpython=True) and ctypes is not None:
     py = ctypes.pythonapi

@@ -554,6 +554,14 @@ Path Objects
    e.g. 'dir/file.txt', 'dir/', or ''. Defaults to the empty string,
    indicating the root.
 
+   .. note::
+      The :class:`Path` class does not sanitize filenames within the ZIP archive. Unlike
+      the :meth:`ZipFile.extract` and :meth:`ZipFile.extractall` methods, it is the
+      caller's responsibility to validate or sanitize filenames to prevent path traversal
+      vulnerabilities (e.g., filenames containing ".." or absolute paths). When handling
+      untrusted archives, consider resolving filenames using :func:`os.path.abspath`
+      and checking against the target directory with :func:`os.path.commonpath`.
+
 Path objects expose the following features of :mod:`pathlib.Path`
 objects:
 

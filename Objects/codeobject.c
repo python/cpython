@@ -135,6 +135,44 @@ should_intern_string(PyObject *o)
 
 #ifdef Py_GIL_DISABLED
 static PyObject *intern_one_constant(PyObject *op);
+
+// gh-130851: In the free threading build, we intern and immortalize most
+// constants, except code objects. However, users can generate code objects
+// with arbitrary co_consts. We don't want to immortalize or intern unexpected
+// constants or tuples/sets containing unexpected constants.
+static int
+should_immortalize_constant(PyObject *v)
+{
+    // Only immortalize containers if we've already immortalized all their
+    // elements.
+    if (PyTuple_CheckExact(v)) {
+        for (Py_ssize_t i = PyTuple_GET_SIZE(v); --i >= 0; ) {
+            if (!_Py_IsImmortal(PyTuple_GET_ITEM(v, i))) {
+                return 0;
+            }
+        }
+        return 1;
+    }
+    else if (PyFrozenSet_CheckExact(v)) {
+        PyObject *item;
+        Py_hash_t hash;
+        Py_ssize_t pos = 0;
+        while (_PySet_NextEntry(v, &pos, &item, &hash)) {
+            if (!_Py_IsImmortal(item)) {
+                return 0;
+            }
+        }
+        return 1;
+    }
+    else if (PySlice_Check(v)) {
+        PySliceObject *slice = (PySliceObject *)v;
+        return (_Py_IsImmortal(slice->start) &&
+                _Py_IsImmortal(slice->stop) &&
+                _Py_IsImmortal(slice->step));
+    }
+    return (PyLong_CheckExact(v) || PyFloat_CheckExact(v) ||
+            PyComplex_Check(v) || PyBytes_CheckExact(v));
+}
 #endif
 
 static int
@@ -241,8 +279,9 @@ intern_constants(PyObject *tuple, int *modified)
 
         // Intern non-string constants in the free-threaded build
         _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
-        if (!_Py_IsImmortal(v) && !PyCode_Check(v) &&
-            !PyUnicode_CheckExact(v) && !tstate->suppress_co_const_immortalization)
+        if (!_Py_IsImmortal(v) && !PyUnicode_CheckExact(v) &&
+            should_immortalize_constant(v) &&
+            !tstate->suppress_co_const_immortalization)
         {
             PyObject *interned = intern_one_constant(v);
             if (interned == NULL) {

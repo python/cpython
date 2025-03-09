@@ -301,11 +301,11 @@ For further information on how to build Python, see
     cautiously revised down to 3-5%. While we expect performance results to be better
     than what we report, our estimates are more conservative due to a
     `compiler bug <https://github.com/llvm/llvm-project/issues/106846>`_ found in
-    Clang/LLVM 19. We were unaware of this bug, and it artifically boosted
-    our numbers, resulting in inaccurate results. We sincerely apologize for
+    Clang/LLVM 19, which causes the normal interpreter to be slower. We were unaware of this bug,
+    resulting in inaccurate results. We sincerely apologize for
     communicating results that were only accurate for certain versions of LLVM 19
     and 20. At the time of writing, this bug has not yet been fixed in LLVM 19-21. Thus
-    any benchmarks with those versions of LLVM may produce artifically inflated numbers.
+    any benchmarks with those versions of LLVM may produce inaccurate numbers.
     (Thanks to Nelson Elhage for bringing this to light.)
 
 (Contributed by Ken Jin in :gh:`128563`, with ideas on how to implement this
@@ -618,6 +618,11 @@ io
 * Reading text from a non-blocking stream with ``read`` may now raise a
   :exc:`BlockingIOError` if the operation cannot immediately return bytes.
   (Contributed by Giovanni Siragusa in :gh:`109523`.)
+
+* Add protocols :class:`io.Reader` and :class:`io.Writer` as a simpler
+  alternatives to the pseudo-protocols :class:`typing.IO`,
+  :class:`typing.TextIO`, and :class:`typing.BinaryIO`.
+  (Contributed by Sebastian Rittau in :gh:`127648`.)
 
 
 json

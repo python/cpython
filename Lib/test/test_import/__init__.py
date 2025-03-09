@@ -1185,6 +1185,28 @@ except ImportError as e:
             for line in lines:
                 self.assertRegex(line, rb"cannot import name 'Fraction' from 'fractions' \(.*\)")
 
+    @unittest.skipIf(sys.platform == 'win32', 'Cannot delete cwd on Windows')
+    def test_script_shadowing_stdlib_cwd_failure(self):
+        with os_helper.temp_dir() as tmp:
+            subtmp = os.path.join(tmp, "subtmp")
+            os.mkdir(subtmp)
+            with open(os.path.join(subtmp, "main.py"), "w", encoding='utf-8') as f:
+                f.write(f"""
+import sys
+assert sys.path[0] == ''
+
+import os
+import shutil
+shutil.rmtree(os.getcwd())
+
+os.does_not_exist
+""")
+            # Use -c to ensure sys.path[0] is ""
+            popen = script_helper.spawn_python("-c", "import main", cwd=subtmp)
+            stdout, stderr = popen.communicate()
+            expected_error = rb"AttributeError: module 'os' has no attribute 'does_not_exist'"
+            self.assertRegex(stdout, expected_error)
+
     def test_script_shadowing_stdlib_sys_path_modification(self):
         script_errors = [
             (

@@ -5183,6 +5183,8 @@
             _PyStackRef exc_st;
             exc_st = stack_pointer[-1];
             awaitable_st = stack_pointer[-2];
+            JUMPBY(0); // Pretend jump as we need source offset for monitoring
+            (void)oparg;
             PyObject *exc = PyStackRef_AsPyObjectBorrow(exc_st);
             assert(exc && PyExceptionInstance_Check(exc));
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -6607,7 +6609,6 @@
             int opcode = INSTRUMENTED_END_ASYNC_FOR;
             (void)(opcode);
             #endif
-            _Py_CODEUNIT* const prev_instr = frame->instr_ptr;
             _Py_CODEUNIT* const this_instr = next_instr;
             (void)this_instr;
             frame->instr_ptr = next_instr;
@@ -6615,14 +6616,17 @@
             INSTRUCTION_STATS(INSTRUMENTED_END_ASYNC_FOR);
             _PyStackRef awaitable_st;
             _PyStackRef exc_st;
-            // _MONITOR_BRANCH_RIGHT
+            // _MONITOR_END_ASYNC_FOR
             {
-                INSTRUMENTED_JUMP(prev_instr, this_instr+1, PY_MONITORING_EVENT_BRANCH_RIGHT);
+                assert((next_instr-oparg)->op.code == END_SEND || (next_instr-oparg)->op.code >= MIN_INSTRUMENTED_OPCODE);
+                INSTRUMENTED_JUMP(next_instr-oparg, this_instr+1, PY_MONITORING_EVENT_BRANCH_RIGHT);
             }
             // _END_ASYNC_FOR
             {
                 exc_st = stack_pointer[-1];
                 awaitable_st = stack_pointer[-2];
+                JUMPBY(0); // Pretend jump as we need source offset for monitoring
+                (void)oparg;
                 PyObject *exc = PyStackRef_AsPyObjectBorrow(exc_st);
                 assert(exc && PyExceptionInstance_Check(exc));
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -11259,7 +11263,8 @@
             }
             STAT_INC(STORE_SUBSCR, hit);
             PyObject *old_value = PyList_GET_ITEM(list, index);
-            PyList_SET_ITEM(list, index, PyStackRef_AsPyObjectSteal(value));
+            FT_ATOMIC_STORE_PTR_RELEASE(_PyList_ITEMS(list)[index],
+                                        PyStackRef_AsPyObjectSteal(value));
             assert(old_value != NULL);
             UNLOCK_OBJECT(list);  // unlock before decrefs!
             PyStackRef_CLOSE_SPECIALIZED(sub_st, _PyLong_ExactDealloc);

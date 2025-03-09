@@ -513,7 +513,7 @@
                 REPLACE_OP(this_instr, _NOP, 0 ,0);
             }
             sym_set_type(left, &PyUnicode_Type);
-            sym_set_type(left, &PyUnicode_Type);
+            sym_set_type(right, &PyUnicode_Type);
             break;
         }
 

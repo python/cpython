@@ -1876,6 +1876,7 @@ _PROTO_ALLOWLIST = {
         'Reversible', 'Buffer',
     ],
     'contextlib': ['AbstractContextManager', 'AbstractAsyncContextManager'],
+    'io': ['Reader', 'Writer'],
     'os': ['PathLike'],
 }
 

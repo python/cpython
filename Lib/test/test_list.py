@@ -1,3 +1,4 @@
+import signal
 import sys
 import textwrap
 from test import list_tests, support
@@ -324,8 +325,12 @@ class ListTest(list_tests.CommonTest):
         _testcapi.set_nomemory(0)
         l = [None]
         """)
-        _, _, err = assert_python_failure("-c", code)
-        self.assertIn("MemoryError", err.decode("utf-8"))
+        rc, _, _ = assert_python_failure("-c", code)
+        if support.MS_WINDOWS:
+            # STATUS_ACCESS_VIOLATION
+            self.assertNotEqual(rc, 0xC0000005)
+        else:
+            self.assertNotEqual(rc, -int(signal.SIGSEGV))
 
 if __name__ == "__main__":
     unittest.main()
