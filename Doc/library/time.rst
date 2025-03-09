@@ -594,9 +594,10 @@ Functions
    :func:`strftime`; it defaults to ``"%a %b %d %H:%M:%S %Y"`` which matches the
    formatting returned by :func:`ctime`. If *string* cannot be parsed according
    to *format*, or if it has excess data after parsing, :exc:`ValueError` is
-   raised. The default values used to fill in any missing data when more
-   accurate values cannot be inferred are ``(1900, 1, 1, 0, 0, 0, 0, 1, -1)``.
-   Both *string* and *format* must be strings.
+   raised. :exc:`ValueError` is raised if digits are not ASCII. The default
+   values used to fill in any missing data when more accurate values cannot be
+   inferred are ``(1900, 1, 1, 0, 0, 0, 0, 1, -1)``. Both *string* and *format*
+   must be strings.
 
    For example:
 
@@ -615,6 +616,9 @@ Functions
    directives than those listed.  But ``strptime()`` is independent of any platform
    and thus does not necessarily support all directives available that are not
    documented as supported.
+
+.. versionchanged:: next
+   Non-ASCII digits are now rejected by ``strptime``.
 
 
 .. class:: struct_time

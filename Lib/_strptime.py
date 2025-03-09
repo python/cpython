@@ -16,7 +16,7 @@ import locale
 import calendar
 from re import compile as re_compile
 from re import sub as re_sub
-from re import ASCII, IGNORECASE
+from re import IGNORECASE
 from re import escape as re_escape
 from datetime import (date as datetime_date,
                       timedelta as datetime_timedelta,
@@ -290,7 +290,7 @@ class TimeRE(dict):
             'f': r"(?P<f>[0-9]{1,6})",
             'H': r"(?P<H>2[0-3]|[0-1][0-9]|[0-9])",
             'I': r"(?P<I>1[0-2]|0[1-9]|[1-9]| [1-9])",
-            'G': r"(?P<G>[0-9][0-9][0-9][0-9])",
+            'G': r"(?P<G>[0-9]{4})",
             'j': r"(?P<j>36[0-6]|3[0-5][0-9]|[1-2][0-9][0-9]|0[1-9][0-9]|00[1-9]|[1-9][0-9]|0[1-9]|[1-9])",
             'm': r"(?P<m>1[0-2]|0[1-9]|[1-9])",
             'M': r"(?P<M>[0-5][0-9]|[0-9])",
@@ -300,8 +300,8 @@ class TimeRE(dict):
             'u': r"(?P<u>[1-7])",
             'V': r"(?P<V>5[0-3]|0[1-9]|[1-4][0-9]|[0-9])",
             # W is set below by using 'U'
-            'y': r"(?P<y>[0-9][0-9])",
-            'Y': r"(?P<Y>[0-9][0-9][0-9][0-9])",
+            'y': r"(?P<y>[0-9]{2})",
+            'Y': r"(?P<Y>[0-9]{4})",
             'z': r"(?P<z>[+-][0-9][0-9]:?[0-5][0-9](:?[0-5][0-9](\.[0-9]{1,6})?)?|(?-i:Z))",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
             'a': self.__seqToRE(self.locale_time.a_weekday, 'a'),
