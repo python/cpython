@@ -4073,15 +4073,12 @@ class SuggestionFormattingTestBase:
         self.assertNotIn("blech", actual)
 
     def test_suggestions_do_not_trigger_with_non_string_candidates(self):
-        class Parent:
-            def __dir__(self):
-                return [0, 'blech']
+        def run_module_code():
+            import runpy
+            runpy._run_module_code("blech", {0: "", "bluch": ""}, "")
 
-        class WithNonStringAttrs(Parent):
-            blech = None
-
-        result = self.get_suggestion(WithNonStringAttrs(), "bluch")
-        self.assertNotIn("blech", result)
+        actual = self.get_exception(run_module_code, slice_start=-1, slice_end=None)
+        self.assertNotIn("bluch", actual[0])
 
     def test_getattr_suggestions_no_args(self):
         class A:
