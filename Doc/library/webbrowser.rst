@@ -33,13 +33,6 @@ allow the remote browser to maintain its own windows on the display.  If remote
 browsers are not available on Unix, the controlling process will launch a new
 browser and wait.
 
-On iOS, the :envvar:`BROWSER` environment variable, as well as any arguments
-controlling autoraise, browser preference, and new tab/window creation will be
-ignored. Web pages will *always* be opened in the user's preferred browser, in
-a new tab, with the browser being brought to the foreground. The use of the
-:mod:`webbrowser` module on iOS requires the :mod:`ctypes` module. If
-:mod:`ctypes` isn't available, calls to :func:`.open` will fail.
-
 .. program:: webbrowser
 
 The script :program:`webbrowser` can be used as a command-line interface for the
