@@ -4916,6 +4916,24 @@ class PySignalsTest(SignalsTest):
     test_reentrant_write_text = None
 
 
+class ProtocolsTest(unittest.TestCase):
+    class MyReader:
+        def read(self, sz=-1):
+            return b""
+
+    class MyWriter:
+        def write(self, b: bytes):
+            pass
+
+    def test_reader_subclass(self):
+        self.assertIsSubclass(MyReader, io.Reader[bytes])
+        self.assertNotIsSubclass(str, io.Reader[bytes])
+
+    def test_writer_subclass(self):
+        self.assertIsSubclass(MyWriter, io.Writer[bytes])
+        self.assertNotIsSubclass(str, io.Writer[bytes])
+
+
 def load_tests(loader, tests, pattern):
     tests = (CIOTest, PyIOTest, APIMismatchTest,
              CBufferedReaderTest, PyBufferedReaderTest,
