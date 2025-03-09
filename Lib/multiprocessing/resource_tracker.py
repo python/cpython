@@ -79,33 +79,41 @@ class ResourceTracker(object):
         # making sure child processess are cleaned before ResourceTracker
         # gets destructed.
         # see https://github.com/python/cpython/issues/88887
-        self._stop()
+        self._stop(use_blocking_lock=False)
 
-    def _stop(self, close=os.close, waitpid=os.waitpid, waitstatus_to_exitcode=os.waitstatus_to_exitcode):
-        with self._lock:
-            # This should not happen (_stop() isn't called by a finalizer)
-            # but we check for it anyway.
-            if self._lock._recursion_count() > 1:
-                return self._reentrant_call_error()
-            if self._fd is None:
-                # not running
-                return
-            if self._pid is None:
-                return
+    def _stop(self, use_blocking_lock=True):
+        if use_blocking_lock:
+            with self._lock:
+                self._cleanup()
+        else:
+            self._lock.acquire(blocking=False)
+            self._cleanup()
+            self._lock.release()
 
-            # closing the "alive" file descriptor stops main()
-            close(self._fd)
-            self._fd = None
+    def _cleanup(self, close=os.close, waitpid=os.waitpid, waitstatus_to_exitcode=os.waitstatus_to_exitcode):
+        # This should not happen (_stop() isn't called by a finalizer)
+        # but we check for it anyway.
+        if self._lock._recursion_count() > 1:
+            return self._reentrant_call_error()
+        if self._fd is None:
+            # not running
+            return
+        if self._pid is None:
+            return
 
-            _, status = waitpid(self._pid, 0)
+        # closing the "alive" file descriptor stops main()
+        close(self._fd)
+        self._fd = None
 
-            self._pid = None
+        _, status = waitpid(self._pid, 0)
 
-            try:
-                self._exitcode = waitstatus_to_exitcode(status)
-            except ValueError:
-                # os.waitstatus_to_exitcode may raise an exception for invalid values
-                self._exitcode = None
+        self._pid = None
+
+        try:
+            self._exitcode = waitstatus_to_exitcode(status)
+        except ValueError:
+            # os.waitstatus_to_exitcode may raise an exception for invalid values
+            self._exitcode = None
 
     def getfd(self):
         self.ensure_running()
