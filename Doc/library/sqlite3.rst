@@ -463,7 +463,7 @@ Module constants
    :func:`connect` to look up a converter function by
    using the type name, parsed from the query column name,
    as the converter dictionary key.
-   The query column name must be wrapped with double quotes (``"``),
+   The query column name must be wrapped in double quotes (``"``),
    and the type name must be wrapped in square brackets (``[]``),
 
    .. code-block:: sql
