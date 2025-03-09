@@ -3560,7 +3560,8 @@ class TestDateTime(TestDate):
 
         for bad_str in bad_strs:
             with self.subTest(bad_str=bad_str):
-                with self.assertRaises(ValueError, TypeError):
+                errors = (ValueError, TypeError)
+                with self.assertRaises(errors):
                     self.theclass.fromisoformat(bad_str)
 
     def test_fromisoformat_fails_datetime_valueerror(self):
