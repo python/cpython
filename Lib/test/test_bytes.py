@@ -753,6 +753,7 @@ class BaseBytesTest:
         check(b'%c', b'a', b'a')
 
         self.assertRaisesRegex(TypeError, '%i format: a real number is required, not complex', operator.mod, '%i', 2j)
+        self.assertRaisesRegex(TypeError, '%d format: a real number is required, not complex', operator.mod, '%d', 2j)
 
     def test_imod(self):
         b = self.type2test(b'hello, %b!')
