@@ -465,6 +465,10 @@ class StreamReader:
             if not waiter.cancelled():
                 waiter.set_exception(exc)
 
+    def close(self):
+        if self._transport is not None:
+            self._transport.close()
+
     def _wakeup_waiter(self):
         """Wakeup read*() functions waiting for data or EOF."""
         waiter = self._waiter
