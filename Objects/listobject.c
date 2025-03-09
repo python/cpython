@@ -533,6 +533,7 @@ list_dealloc(PyObject *self)
             Py_XDECREF(op->ob_item[i]);
         }
         free_list_items(op->ob_item, false);
+        op->ob_item = NULL;
     }
     if (PyList_CheckExact(op)) {
         _Py_FREELIST_FREE(lists, op, PyObject_GC_Del);

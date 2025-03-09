@@ -404,6 +404,7 @@ class TestPartial:
         self.assertEqual(r, ((1, 2), {}))
         self.assertIs(type(r[0]), tuple)
 
+    @support.skip_if_sanitizer("thread sanitizer crashes in __tsan::FuncEntry", thread=True)
     @support.skip_emscripten_stack_overflow()
     def test_recursive_pickle(self):
         with replaced_module('functools', self.module):
@@ -2933,6 +2934,67 @@ class TestSingleDispatch(unittest.TestCase):
         self.assertEqual(A.static_func.__name__, 'static_func')
         self.assertEqual(A().static_func.__name__, 'static_func')
 
+    def test_method_repr(self):
+        class Callable:
+            def __call__(self, *args):
+                pass
+
+        class CallableWithName:
+            __name__ = 'NOQUALNAME'
+            def __call__(self, *args):
+                pass
+
+        class A:
+            @functools.singledispatchmethod
+            def func(self, arg):
+                pass
+            @functools.singledispatchmethod
+            @classmethod
+            def cls_func(cls, arg):
+                pass
+            @functools.singledispatchmethod
+            @staticmethod
+            def static_func(arg):
+                pass
+            # No __qualname__, only __name__
+            no_qualname = functools.singledispatchmethod(CallableWithName())
+            # No __qualname__, no __name__
+            no_name = functools.singledispatchmethod(Callable())
+
+        self.assertEqual(repr(A.__dict__['func']),
+            f'<single dispatch method descriptor {A.__qualname__}.func>')
+        self.assertEqual(repr(A.__dict__['cls_func']),
+            f'<single dispatch method descriptor {A.__qualname__}.cls_func>')
+        self.assertEqual(repr(A.__dict__['static_func']),
+            f'<single dispatch method descriptor {A.__qualname__}.static_func>')
+        self.assertEqual(repr(A.__dict__['no_qualname']),
+            f'<single dispatch method descriptor NOQUALNAME>')
+        self.assertEqual(repr(A.__dict__['no_name']),
+            f'<single dispatch method descriptor ?>')
+
+        self.assertEqual(repr(A.func),
+            f'<single dispatch method {A.__qualname__}.func>')
+        self.assertEqual(repr(A.cls_func),
+            f'<single dispatch method {A.__qualname__}.cls_func>')
+        self.assertEqual(repr(A.static_func),
+            f'<single dispatch method {A.__qualname__}.static_func>')
+        self.assertEqual(repr(A.no_qualname),
+            f'<single dispatch method NOQUALNAME>')
+        self.assertEqual(repr(A.no_name),
+            f'<single dispatch method ?>')
+
+        a = A()
+        self.assertEqual(repr(a.func),
+            f'<bound single dispatch method {A.__qualname__}.func of {a!r}>')
+        self.assertEqual(repr(a.cls_func),
+            f'<bound single dispatch method {A.__qualname__}.cls_func of {a!r}>')
+        self.assertEqual(repr(a.static_func),
+            f'<bound single dispatch method {A.__qualname__}.static_func of {a!r}>')
+        self.assertEqual(repr(a.no_qualname),
+            f'<bound single dispatch method NOQUALNAME of {a!r}>')
+        self.assertEqual(repr(a.no_name),
+            f'<bound single dispatch method ? of {a!r}>')
+
     def test_double_wrapped_methods(self):
         def classmethod_friendly_decorator(func):
             wrapped = func.__func__
@@ -3082,7 +3144,7 @@ class TestSingleDispatch(unittest.TestCase):
             "Invalid annotation for 'arg'."
         )
         self.assertEndsWith(str(exc.exception),
-            'typing.Union[int, typing.Iterable[str]] not all arguments are classes.'
+            'int | typing.Iterable[str] not all arguments are classes.'
         )
 
     def test_invalid_positional_argument(self):
