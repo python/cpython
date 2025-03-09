@@ -1,0 +1,1 @@
+:func:`datetime.strptime` now only accepts ASCII input.
