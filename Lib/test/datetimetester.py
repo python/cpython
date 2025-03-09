@@ -2068,40 +2068,23 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
     def test_fromisoformat_fails(self):
         # Test that fromisoformat() fails on invalid values
         bad_strs = [
-            '',  # Empty string
-            '\ud800',  # bpo-34454: Surrogate code point
-            '2009.04-19T03',  # Wrong first separator
-            '2009-04.19T03',  # Wrong second separator
-            '2009-04-19T0a',  # Invalid hours
-            '2009-04-19T03:1a:45',  # Invalid minutes
-            '2009-04-19T03:15:4a',  # Invalid seconds
-            '2009-04-19T03;15:45',  # Bad first time separator
-            '2009-04-19T03:15;45',  # Bad second time separator
-            '2009-04-19T03:15:4500:00',  # Bad time zone separator
-            '2009-04-19T03:15:45.123456+24:30',  # Invalid time zone offset
-            '2009-04-19T03:15:45.123456-24:30',  # Invalid negative offset
-            '2009-04-10ᛇᛇᛇᛇᛇ12:15',   # Unicode chars
-            '2009-04\ud80010T12:15',  # Surrogate char in date
-            '2009-04-10T12\ud80015',  # Surrogate char in time
-            '2009-04-19T1',  # Incomplete hours
-            '2009-04-19T12:3',  # Incomplete minutes
-            '2009-04-19T12:30:4',  # Incomplete seconds
-            '2009-04-19T12:',  # Ends with time separator
-            '2009-04-19T12:30:',  # Ends with time separator
-            '2009-04-19T12:30:45.',  # Ends with time separator
-            '2009-04-19T12:30:45.123456+',  # Ends with timezone separator
-            '2009-04-19T12:30:45.123456-',  # Ends with timezone separator
-            '2009-04-19T12:30:45.123456-05:00a',  # Extra text
-            '2009-04-19T12:30:45.123-05:00a',  # Extra text
-            '2009-04-19T12:30:45-05:00a',  # Extra text
-            '2009-04-19T24:00:00.000001',  # Has non-zero microseconds on 24:00
-            '2009-04-19T24:00:01.000000',  # Has non-zero seconds on 24:00
-            '2009-04-19T24:01:00.000000',  # Has non-zero minutes on 24:00
-            '2009-04-32T24:00:00.000000',  # Day is invalid before wrapping due to 24:00
-            '2009-13-01T24:00:00.000000',  # Month is invalid before wrapping due to 24:00
-            '9999-12-31T24:00:00.000000',  # Year is invalid after wrapping due to 24:00
-            '2009-04-19T12:30Z12:00',  # Extra time zone info after Z
-            '2009-04-19T12:30:45:334034',  # Invalid microsecond separator
+            '',                 # Empty string
+            '\ud800',           # bpo-34454: Surrogate code point
+            '009-03-04',        # Not 10 characters
+            '123456789',        # Not a date
+            '200a-12-04',       # Invalid character in year
+            '2009-1a-04',       # Invalid character in month
+            '2009-12-0a',       # Invalid character in day
+            '2009-01-32',       # Invalid day
+            '2009-02-29',       # Invalid leap day
+            '2019-W53-1',       # No week 53 in 2019
+            '2020-W54-1',       # No week 54
+            '0000-W25-1',       # Invalid year
+            '10000-W25-1',      # Invalid year
+            '2020-W25-0',       # Invalid day-of-week
+            '2020-W25-8',       # Invalid day-of-week
+            '٢025-03-09'        # Unicode characters
+            '2009\ud80002\ud80028',     # Separators are surrogate codepoints
         ]
 
         for bad_str in bad_strs:
