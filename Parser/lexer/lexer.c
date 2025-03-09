@@ -308,9 +308,7 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind) {
     return 1;
 }
 
-/* Verify that the identifier follows PEP 3131.
-   All identifier strings are guaranteed to be "ready" unicode objects.
- */
+/* Verify that the identifier follows PEP 3131. */
 static int
 verify_identifier(struct tok_state *tok)
 {

@@ -1284,6 +1284,34 @@ class TestSpooledTemporaryFile(BaseTestCase):
         buf = f.read()
         self.assertEqual(buf, b'xyz')
 
+    def test_writelines_rollover(self):
+        # Verify writelines rolls over before exhausting the iterator
+        f = self.do_create(max_size=2)
+
+        def it():
+            yield b'xy'
+            self.assertFalse(f._rolled)
+            yield b'z'
+            self.assertTrue(f._rolled)
+
+        f.writelines(it())
+        pos = f.seek(0)
+        self.assertEqual(pos, 0)
+        buf = f.read()
+        self.assertEqual(buf, b'xyz')
+
+    def test_writelines_fast_path(self):
+        f = self.do_create(max_size=2)
+        f.write(b'abc')
+        self.assertTrue(f._rolled)
+
+        f.writelines([b'd', b'e', b'f'])
+        pos = f.seek(0)
+        self.assertEqual(pos, 0)
+        buf = f.read()
+        self.assertEqual(buf, b'abcdef')
+
+
     def test_writelines_sequential(self):
         # A SpooledTemporaryFile should hold exactly max_size bytes, and roll
         # over afterward
