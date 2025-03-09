@@ -79,12 +79,16 @@ class ReadTestBase:
         if not self.ground.can_symlink:
             self.skipTest("requires symlinks")
 
+        p = self.root
+        sep = self.root.parser.sep
+        altsep = self.root.parser.altsep
         def check(pattern, expected):
-            expected = {self.root.joinpath(name) for name in expected}
-            actual = set(self.root.glob(pattern, recurse_symlinks=True))
+            if altsep:
+                expected = {name.replace(altsep, sep) for name in expected}
+            expected = {p.joinpath(name) for name in expected}
+            actual = set(p.glob(pattern, recurse_symlinks=True))
             self.assertEqual(actual, expected)
 
-        p = self.root
         it = p.glob("fileA")
         self.assertIsInstance(it, collections.abc.Iterator)
         self.assertEqual(list(it), [p.joinpath("fileA")])
@@ -121,9 +125,14 @@ class ReadTestBase:
                "linkB/fileB"])
 
     def test_glob_case_sensitive(self):
+        p = self.root
+        sep = self.root.parser.sep
+        altsep = self.root.parser.altsep
         def check(pattern, case_sensitive, expected):
-            expected = {self.root / name for name in expected}
-            actual = set(self.root.glob(pattern, case_sensitive=case_sensitive))
+            if altsep:
+                expected = {name.replace(altsep, sep) for name in expected}
+            expected = {p / name for name in expected}
+            actual = set(p.glob(pattern, case_sensitive=case_sensitive))
             self.assertEqual(actual, expected)
         check("DIRB/FILE*", True, [])
         check("DIRB/FILE*", False, ["dirB/fileB"])
