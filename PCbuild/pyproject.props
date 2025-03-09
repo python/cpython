@@ -167,6 +167,30 @@ public override bool Execute() {
     </Task>
   </UsingTask>
 
+  <Target Name="BeginTimeStamp" BeforeTargets="PrepareForBuild">
+    <Exec Command='$(PythonForBuild) -c "import time; print(time.time())"'
+          EchoOff="true"
+          ConsoleToMsBuild="true">
+        <Output TaskParameter="ConsoleOutput" ItemName="_BeginTs" />
+    </Exec>
+    <PropertyGroup>
+      <BeginTs>@(_BeginTs)</BeginTs>
+    </PropertyGroup>
+    <Message Text="BeginTimeStamp $(TargetName): $(BeginTs)" Importance="high" />
+  </Target>
+
+  <Target Name="EndTimeStamp" AfterTargets="AfterBuild">
+    <Exec Command='$(PythonForBuild) -c "import time; print(time.time())"'
+          EchoOff="true"
+          ConsoleToMsBuild="true">
+        <Output TaskParameter="ConsoleOutput" ItemName="_EndTs" />
+    </Exec>
+    <PropertyGroup>
+      <EndTs>@(_EndTs)</EndTs>
+    </PropertyGroup>
+    <Message Text="EndTimeStamp $(TargetName): $(EndTs)" Importance="high" />
+  </Target>
+  
   <Target Name="KillPython" BeforeTargets="PrepareForBuild" Condition="'$(KillPython)' == 'true'">
     <Message Text="Killing any running $(PyExeName)$(PyDebugExt)$(PyTestExt).exe instances..." Importance="high" />
     <KillPython FileName="$(OutDir)$(PyExeName)$(PyDebugExt)$(PyTestExt).exe" />
