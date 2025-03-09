@@ -284,6 +284,15 @@ typedef struct _heaptypeobject {
     struct _specialization_cache _spec_cache; // For use by the specializer.
 #ifdef Py_GIL_DISABLED
     Py_ssize_t unique_id;  // ID used for per-thread refcounting
+
+    // Used to store type flags that can be toggled after the type
+    // structure has been potentially exposed to other threads (i.e. after
+    // type_ready()).  We need to use atomic loads and stores for these
+    // flags, unlike for tp_flags.  The set of flags allowed to be toggled are
+    // POST_READY_FLAGS.  They are toggled with type_set_flags_with_mask() and
+    // need to be tested with _PyType_HasFeatureSafe(), in order to avoid data
+    // races.
+    unsigned long ht_flags;
 #endif
     /* here are optional user slots, followed by the members. */
 } PyHeapTypeObject;

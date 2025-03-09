@@ -347,23 +347,43 @@ _PyStaticType_GetBuiltins(void)
 static void
 type_set_flags(PyTypeObject *tp, unsigned long flags)
 {
-    if (tp->tp_flags & Py_TPFLAGS_READY) {
-        // It's possible the type object has been exposed to other threads
-        // if it's been marked ready.  In that case, the type lock should be
-        // held when flags are modified.
-        ASSERT_TYPE_LOCK_HELD();
-    }
-    // Since PyType_HasFeature() reads the flags without holding the type
-    // lock, we need an atomic store here.
-    FT_ATOMIC_STORE_ULONG_RELAXED(tp->tp_flags, flags);
+    // In the free-threaded build, this can only be used on types that have
+    // not yet been exposed to other threads.  Use type_set_flags_with_mask()
+    // for flags that need to be toggled afterwards.
+    tp->tp_flags = flags;
 }
 
+// Flags used by pattern matching
+#define COLLECTION_FLAGS (Py_TPFLAGS_SEQUENCE | Py_TPFLAGS_MAPPING)
+
+// This is the set of flags are allowed to be toggled after type_ready()
+// is called (and the type potentially exposed to other threads).
+#define POST_READY_FLAGS \
+    (COLLECTION_FLAGS | Py_TPFLAGS_IS_ABSTRACT | Py_TPFLAGS_HAVE_VECTORCALL)
+
+// Used to toggle type flags after the type has been created.  Only the flags
+// in POST_READY_FLAGS are allowed to be toggled.
 static void
 type_set_flags_with_mask(PyTypeObject *tp, unsigned long mask, unsigned long flags)
 {
     ASSERT_TYPE_LOCK_HELD();
+    // Non-heap types are immutable and so these flags can only be toggled
+    // after creation on heap types.
+    assert(_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
     unsigned long new_flags = (tp->tp_flags & ~mask) | flags;
-    type_set_flags(tp, new_flags);
+#ifdef Py_DEBUG
+    unsigned long changed_flags = tp->tp_flags ^ new_flags;
+    assert((changed_flags & ~POST_READY_FLAGS) == 0);
+#endif
+#ifdef Py_GIL_DISABLED
+    PyHeapTypeObject *ht = (PyHeapTypeObject*)tp;
+    FT_ATOMIC_STORE_ULONG_RELAXED(ht->ht_flags, new_flags);
+#else
+    // In this case the GIL protects us and we don't need the separate ht_flags
+    // member and atomics to read and write.  Instead we can just toggle the
+    // flags directly in tp_flags.
+    tp->tp_flags = new_flags;
+#endif
 }
 
 static void
@@ -1318,7 +1338,6 @@ int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
 static PyMemberDef type_members[] = {
     {"__basicsize__", Py_T_PYSSIZET, offsetof(PyTypeObject,tp_basicsize),Py_READONLY},
     {"__itemsize__", Py_T_PYSSIZET, offsetof(PyTypeObject, tp_itemsize), Py_READONLY},
-    {"__flags__", Py_T_ULONG, offsetof(PyTypeObject, tp_flags), Py_READONLY},
     /* Note that this value is misleading for static builtin types,
        since the memory at this offset will always be NULL. */
     {"__weakrefoffset__", Py_T_PYSSIZET,
@@ -1584,9 +1603,9 @@ type_set_abstractmethods(PyObject *tp, PyObject *value, void *Py_UNUSED(closure)
     BEGIN_TYPE_LOCK();
     type_modified_unlocked(type);
     if (abstract)
-        type_add_flags(type, Py_TPFLAGS_IS_ABSTRACT);
+        type_set_flags_with_mask(type, 0, Py_TPFLAGS_IS_ABSTRACT);
     else
-        type_clear_flags(type, Py_TPFLAGS_IS_ABSTRACT);
+        type_set_flags_with_mask(type, Py_TPFLAGS_IS_ABSTRACT, 0);
     END_TYPE_LOCK();
 
     return 0;
@@ -2109,6 +2128,24 @@ type_set_type_params(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
     return result;
 }
 
+static PyObject *
+type_get_flags(PyObject *tp, void *Py_UNUSED(closure))
+{
+    PyTypeObject *type = PyTypeObject_CAST(tp);
+    unsigned long flags;
+#ifdef Py_GIL_DISABLED
+    if (_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        PyHeapTypeObject *ht = (PyHeapTypeObject*)type;
+        flags = FT_ATOMIC_LOAD_ULONG_RELAXED(ht->ht_flags);
+    }
+    else {
+        flags = type->tp_flags;
+    }
+#else
+    flags = type->tp_flags;
+#endif
+    return PyLong_FromLong(flags);
+}
 
 /*[clinic input]
 type.__instancecheck__ -> bool
@@ -2157,6 +2194,7 @@ static PyGetSetDef type_getsets[] = {
     {"__annotations__", type_get_annotations, type_set_annotations, NULL},
     {"__annotate__", type_get_annotate, type_set_annotate, NULL},
     {"__type_params__", type_get_type_params, type_set_type_params, NULL},
+    {"__flags__", type_get_flags, NULL, NULL},
     {0}
 };
 
@@ -3687,7 +3725,13 @@ type_init(PyObject *cls, PyObject *args, PyObject *kwds)
 unsigned long
 PyType_GetFlags(PyTypeObject *type)
 {
-    return FT_ATOMIC_LOAD_ULONG_RELAXED(type->tp_flags);
+#ifdef Py_GIL_DISABLED
+    if (_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        PyHeapTypeObject *ht = (PyHeapTypeObject*)type;
+        return FT_ATOMIC_LOAD_ULONG_RELAXED(ht->ht_flags);
+    }
+#endif
+    return type->tp_flags;
 }
 
 
@@ -4005,6 +4049,7 @@ type_new_alloc(type_new_ctx *ctx)
 
 #ifdef Py_GIL_DISABLED
     et->unique_id = _PyObject_AssignUniqueId((PyObject *)et);
+    et->ht_flags = type->tp_flags;
 #endif
 
     return type;
@@ -4428,6 +4473,7 @@ error:
     return NULL;
 }
 
+static int type_ready(PyTypeObject *type, int initial);
 
 static PyObject*
 type_new_impl(type_new_ctx *ctx)
@@ -4441,13 +4487,28 @@ type_new_impl(type_new_ctx *ctx)
         goto error;
     }
 
+
+    int res;
+
+    // This lock isn't strictly necessary because the type has not been
+    // exposed to anyone else yet, but update_one_slot calls find_name_in_mro
+    // where we'd like to assert that the type is locked.  Also, type_ready()
+    // will assert that the type lock is held.
+    BEGIN_TYPE_LOCK();
+
     /* Initialize the rest */
-    if (PyType_Ready(type) < 0) {
-        goto error;
+    res = type_ready(type, 1);
+
+    if (res >= 0) {
+        // Put the proper slots in place
+        fixup_slot_dispatchers(type);
     }
 
-    // Put the proper slots in place
-    fixup_slot_dispatchers(type);
+    END_TYPE_LOCK();
+
+    if (res < 0) {
+        goto error;
+    }
 
     if (!_PyDict_HasOnlyStringKeys(type->tp_dict)) {
         if (PyErr_WarnFormat(
@@ -6603,7 +6664,7 @@ object_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
 
-    if (type->tp_flags & Py_TPFLAGS_IS_ABSTRACT) {
+    if (_PyType_HasFeatureSafe(type, Py_TPFLAGS_IS_ABSTRACT)) {
         PyObject *abstract_methods;
         PyObject *sorted_methods;
         PyObject *joined;
@@ -8100,7 +8161,7 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 
         /* Inherit Py_TPFLAGS_HAVE_VECTORCALL if tp_call is not overridden */
         if (!type->tp_call &&
-            _PyType_HasFeature(base, Py_TPFLAGS_HAVE_VECTORCALL))
+            _PyType_HasFeatureSafe(base, Py_TPFLAGS_HAVE_VECTORCALL))
         {
             type_add_flags(type, Py_TPFLAGS_HAVE_VECTORCALL);
         }
@@ -8168,8 +8229,6 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 
 static int add_operators(PyTypeObject *type);
 static int add_tp_new_wrapper(PyTypeObject *type);
-
-#define COLLECTION_FLAGS (Py_TPFLAGS_SEQUENCE | Py_TPFLAGS_MAPPING)
 
 static int
 type_ready_pre_checks(PyTypeObject *type)
@@ -8451,7 +8510,7 @@ type_ready_inherit_as_structs(PyTypeObject *type, PyTypeObject *base)
 static void
 inherit_patma_flags(PyTypeObject *type, PyTypeObject *base) {
     if ((type->tp_flags & COLLECTION_FLAGS) == 0) {
-        type_add_flags(type, base->tp_flags & COLLECTION_FLAGS);
+        type_add_flags(type, PyType_GetFlags(base) & COLLECTION_FLAGS);
     }
 }
 
@@ -8717,6 +8776,13 @@ type_ready(PyTypeObject *type, int initial)
             goto error;
         }
     }
+
+#ifdef Py_GIL_DISABLED
+    if (_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        PyHeapTypeObject *ht = (PyHeapTypeObject*)type;
+        FT_ATOMIC_STORE_ULONG_RELAXED(ht->ht_flags, type->tp_flags);
+    }
+#endif
 
     /* All done -- set the ready flag */
     type_add_flags(type, Py_TPFLAGS_READY);
@@ -11159,7 +11225,7 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p)
             generic = p->function;
             if (p->function == slot_tp_call) {
                 /* A generic __call__ is incompatible with vectorcall */
-                type_clear_flags(type, Py_TPFLAGS_HAVE_VECTORCALL);
+                _PyType_SetFlags(type, Py_TPFLAGS_HAVE_VECTORCALL, 0);
             }
         }
         Py_DECREF(descr);
@@ -11228,9 +11294,6 @@ update_slot(PyTypeObject *type, PyObject *name)
 static void
 fixup_slot_dispatchers(PyTypeObject *type)
 {
-    // This lock isn't strictly necessary because the type has not been
-    // exposed to anyone else yet, but update_ont_slot calls find_name_in_mro
-    // where we'd like to assert that the type is locked.
     BEGIN_TYPE_LOCK();
 
     assert(!PyErr_Occurred());
