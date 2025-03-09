@@ -2547,7 +2547,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "fromhex() argument must be str or bytes, not %T",
+                     "fromhex() argument must be str or bytes-like, not %T",
                      string);
         return NULL;
     }
