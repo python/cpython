@@ -1227,9 +1227,11 @@ it receives from the HTTP server. In general, a program will decode
 the returned bytes object to string once it determines or guesses
 the appropriate encoding.
 
-The following W3C document, https://www.w3.org/International/questions/qa-html-encoding-declarations\ , lists
+The following HTML spec document, https://html.spec.whatwg.org/#charset\ , lists
 the various ways in which an HTML document could have specified its
 encoding information.
+
+For additional information, see the W3C document: https://www.w3.org/International/questions/qa-html-encoding-declarations\ .
 
 As the python.org website uses *utf-8* encoding as specified in its meta tag, we
 will use the same for decoding the bytes object::
