@@ -2916,6 +2916,9 @@ class TestDateTime(TestDate):
         with self.assertRaises(ValueError): strptime("-000", "%z")
         with self.assertRaises(ValueError): strptime("z", "%z")
 
+        # test only ascii is allowed
+        with self.assertRaises(ValueError): strptime('٢025-03-09', '%Y-%m-%d')
+
     def test_strptime_single_digit(self):
         # bpo-34903: Check that single digit dates and times are allowed.
 
@@ -4036,7 +4039,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(strptime("UTC", "%Z").tzinfo, None)
 
     def test_strptime_errors(self):
-        for tzstr in ("-2400", "-000", "z"):
+        for tzstr in ("-2400", "-000", "z", "٢"):
             with self.assertRaises(ValueError):
                 self.theclass.strptime(tzstr, "%z")
 

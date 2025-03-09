@@ -1,0 +1,2 @@
+:meth:`datetime.date.strptime`, :meth:`datetime.datetime.strptime` and
+:meth:`datetime.time.strptime` now only accept ASCII digits.
