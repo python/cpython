@@ -8479,6 +8479,22 @@ class TypedDictTests(BaseTestCase):
 
         self.assertIs(TD2.__total__, True)
 
+    def test_total_with_assigned_value(self):
+        class TD(TypedDict):
+            __total__ = "some_value"
+
+        self.assertIs(TD.__total__, True)
+
+        class TD2(TypedDict, total=True):
+            __total__ = "some_value"
+
+        self.assertIs(TD2.__total__, True)
+
+        class TD3(TypedDict, total=False):
+            __total__ = "some value"
+
+        self.assertIs(TD3.__total__, False)
+
     def test_optional_keys(self):
         class Point2Dor3D(Point2D, total=False):
             z: int

@@ -1298,7 +1298,7 @@ Use of Basic HTTP Authentication::
    # ...and install it globally so it can be used with urlopen.
    urllib.request.install_opener(opener)
    with urllib.request.urlopen('http://www.example.com/login.html') as r:
-      print(r.read().decode('utf-8'))
+       print(r.read().decode('utf-8'))
 
 :func:`build_opener` provides many handlers by default, including a
 :class:`ProxyHandler`.  By default, :class:`ProxyHandler` uses the environment
@@ -1329,7 +1329,7 @@ Use the *headers* argument to the :class:`Request` constructor, or::
    # Customize the default User-Agent header value:
    req.add_header('User-Agent', 'urllib-example/0.1 (Contact: . . .)')
    with urllib.request.urlopen(req) as r:
-      print(r.read().decode('utf-8'))
+       print(r.read().decode('utf-8'))
 
 
 :class:`OpenerDirector` automatically adds a :mailheader:`User-Agent` header to

@@ -226,13 +226,25 @@ class TestBasicOps:
         with self.assertRaises(ValueError):
             sample(['red', 'green', 'blue'], counts=[-3, -7, -8], k=2)      # counts are negative
         with self.assertRaises(ValueError):
-            sample(['red', 'green', 'blue'], counts=[0, 0, 0], k=2)         # counts are zero
-        with self.assertRaises(ValueError):
             sample(['red', 'green'], counts=[10, 10], k=21)                 # population too small
         with self.assertRaises(ValueError):
             sample(['red', 'green', 'blue'], counts=[1, 2], k=2)            # too few counts
         with self.assertRaises(ValueError):
             sample(['red', 'green', 'blue'], counts=[1, 2, 3, 4], k=2)      # too many counts
+
+        # Cases with zero counts match equivalents without counts (see gh-130285)
+        self.assertEqual(
+            sample('abc', k=0, counts=[0, 0, 0]),
+            sample([], k=0),
+        )
+        self.assertEqual(
+            sample([], 0, counts=[]),
+            sample([], 0),
+        )
+        with self.assertRaises(ValueError):
+            sample([], 1, counts=[])
+        with self.assertRaises(ValueError):
+            sample('x', 1, counts=[0])
 
     def test_choices(self):
         choices = self.gen.choices
