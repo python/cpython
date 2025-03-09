@@ -2432,7 +2432,7 @@ Class attributes:
 
 :class:`date`, :class:`.datetime`, and :class:`.time` objects all support a
 ``strftime(format)`` method, to create a string representing the time under the
-control of an explicit format string.
+control of an explicit format string. The methods only accept ASCII digits.
 
 Conversely, the :meth:`date.strptime`, :meth:`datetime.strptime` and
 :meth:`time.strptime` class methods create an object from a string
@@ -2610,6 +2610,9 @@ differences between platforms in handling of unsupported format specifiers.
 
 .. versionadded:: 3.12
    ``%:z`` was added.
+
+.. versionchanged:: next
+   Digits must be ASCII
 
 Technical Detail
 ^^^^^^^^^^^^^^^^

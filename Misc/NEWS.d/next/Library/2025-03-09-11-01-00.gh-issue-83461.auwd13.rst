@@ -1,1 +1,2 @@
-:func:`datetime.datetime.strptime` now only accepts ASCII input.
+:meth:`datetime.date.strptime`, :meth:`datetime.datetime.strptime` and
+:meth:`datetime.time.strptime` now only accept ASCII digits.

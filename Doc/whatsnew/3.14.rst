@@ -504,6 +504,11 @@ datetime
 * Add :meth:`datetime.time.strptime` and :meth:`datetime.date.strptime`.
   (Contributed by Wannes Boeykens in :gh:`41431`.)
 
+* The ``strptime(format)`` methods: :meth:`datetime.date.strptime`,
+  :meth:`datetime.datetime.strptime` and :meth:`datetime.time.strptime`
+  only accept ASCII digits.
+  (Contributed by Stan Ulbrych in :gh:`131008`
+
 decimal
 -------
 

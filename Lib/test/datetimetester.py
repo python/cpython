@@ -4039,7 +4039,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         self.assertEqual(strptime("UTC", "%Z").tzinfo, None)
 
     def test_strptime_errors(self):
-        for tzstr in ("-2400", "-000", "z"):
+        for tzstr in ("-2400", "-000", "z", "٢"):
             with self.assertRaises(ValueError):
                 self.theclass.strptime(tzstr, "%z")
 
