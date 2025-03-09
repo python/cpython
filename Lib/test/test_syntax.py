@@ -858,7 +858,7 @@ Traceback (most recent call last):
 SyntaxError: 'function call' is an illegal expression for augmented assignment
 
 
-Test continue in finally in weird combinations.
+Test control flow in finally
 
 continue in for loop under finally should be ok.
 
@@ -872,51 +872,63 @@ continue in for loop under finally should be ok.
     >>> test()
     9
 
-continue in a finally should be ok.
+break in for loop under finally should be ok.
 
     >>> def test():
-    ...    for abc in range(10):
-    ...        try:
-    ...            pass
-    ...        finally:
-    ...            continue
-    ...    print(abc)
+    ...     try:
+    ...         pass
+    ...     finally:
+    ...         for abc in range(10):
+    ...             break
+    ...     print(abc)
     >>> test()
-    9
+    0
+
+return in function under finally should be ok.
 
     >>> def test():
-    ...    for abc in range(10):
-    ...        try:
-    ...            pass
-    ...        finally:
-    ...            try:
-    ...                continue
-    ...            except:
-    ...                pass
-    ...    print(abc)
+    ...     try:
+    ...         pass
+    ...     finally:
+    ...         def f():
+    ...             return 42
+    ...     print(f())
     >>> test()
-    9
+    42
+
+combine for loop and function def
+
+return in function under finally should be ok.
 
     >>> def test():
-    ...    for abc in range(10):
-    ...        try:
-    ...            pass
-    ...        finally:
-    ...            try:
-    ...                pass
-    ...            except:
-    ...                continue
-    ...    print(abc)
+    ...     try:
+    ...         pass
+    ...     finally:
+    ...         for i in range(10):
+    ...             def f():
+    ...                 return 42
+    ...     print(f())
     >>> test()
-    9
+    42
+
+    >>> def test():
+    ...     try:
+    ...         pass
+    ...     finally:
+    ...         def f():
+    ...             for i in range(10):
+    ...                 return 42
+    ...     print(f())
+    >>> test()
+    42
 
 A continue outside loop should not be allowed.
 
     >>> def foo():
     ...     try:
-    ...         pass
-    ...     finally:
     ...         continue
+    ...     finally:
+    ...         pass
     Traceback (most recent call last):
       ...
     SyntaxError: 'continue' not properly in loop
@@ -2393,7 +2405,88 @@ import unittest
 
 from test import support
 
-class SyntaxTestCase(unittest.TestCase):
+class SyntaxWarningTest(unittest.TestCase):
+    def check_warning(self, code, errtext, filename="<testcase>", mode="exec"):
+        """Check that compiling code raises SyntaxWarning with errtext.
+
+        errtest is a regular expression that must be present in the
+        text of the warning raised.
+        """
+        with self.assertWarnsRegex(SyntaxWarning, errtext):
+            compile(code, filename, mode)
+
+    def test_return_in_finally(self):
+        source = textwrap.dedent("""
+            def f():
+                try:
+                    pass
+                finally:
+                    return 42
+            """)
+        self.check_warning(source, "'return' in a 'finally' block")
+
+        source = textwrap.dedent("""
+            def f():
+                try:
+                    pass
+                finally:
+                    try:
+                        return 42
+                    except:
+                        pass
+            """)
+        self.check_warning(source, "'return' in a 'finally' block")
+
+        source = textwrap.dedent("""
+            def f():
+                try:
+                    pass
+                finally:
+                    try:
+                        pass
+                    except:
+                        return 42
+            """)
+        self.check_warning(source, "'return' in a 'finally' block")
+
+    def test_break_and_continue_in_finally(self):
+        for kw in ('break', 'continue'):
+
+            source = textwrap.dedent(f"""
+                for abc in range(10):
+                    try:
+                        pass
+                    finally:
+                        {kw}
+                """)
+            self.check_warning(source, f"'{kw}' in a 'finally' block")
+
+            source = textwrap.dedent(f"""
+                for abc in range(10):
+                    try:
+                        pass
+                    finally:
+                        try:
+                            {kw}
+                        except:
+                            pass
+                """)
+            self.check_warning(source, f"'{kw}' in a 'finally' block")
+
+            source = textwrap.dedent(f"""
+                for abc in range(10):
+                    try:
+                        pass
+                    finally:
+                        try:
+                            pass
+                        except:
+                            {kw}
+                """)
+            self.check_warning(source, f"'{kw}' in a 'finally' block")
+
+
+class SyntaxErrorTestCase(unittest.TestCase):
 
     def _check_error(self, code, errtext,
                      filename="<testcase>", mode="exec", subclass=None,
@@ -2401,7 +2494,7 @@ class SyntaxTestCase(unittest.TestCase):
         """Check that compiling code raises SyntaxError with errtext.
 
         errtest is a regular expression that must be present in the
-        test of the exception raised.  If subclass is specified it
+        text of the exception raised.  If subclass is specified it
         is the expected subclass of SyntaxError (e.g. IndentationError).
         """
         try:
