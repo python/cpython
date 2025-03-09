@@ -75,6 +75,14 @@ Command line options
    When more than one pickle file are specified, print given preamble
    before each disassembly.
 
+.. option:: -t, --test
+
+   Run self-test suite.
+
+.. option:: -v
+
+   Run verbosely; only affects self-test run.
+
 
 
 Programmatic Interface
