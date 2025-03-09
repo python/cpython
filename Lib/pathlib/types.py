@@ -135,7 +135,9 @@ class _JoinablePath(ABC):
         split = self.parser.split
         if split(name)[0]:
             raise ValueError(f"Invalid name {name!r}")
-        return self.with_segments(split(str(self))[0], name)
+        path = str(self)
+        path = path.removesuffix(split(path)[1]) + name
+        return self.with_segments(path)
 
     def with_stem(self, stem):
         """Return a new path with the stem changed."""
