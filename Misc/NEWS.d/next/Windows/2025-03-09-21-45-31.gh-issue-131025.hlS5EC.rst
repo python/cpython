@@ -1,0 +1,1 @@
+Update Windows installer to ship with SQLite 3.49.1.
