@@ -1,2 +1,2 @@
-pylauncher (py) does not correctly detect a BOM when searching for the
+:source:`pylauncher <PC/launcher2.c>` correctly detects a BOM when searching for the
 shebang. Fix by Chris Eibl.
