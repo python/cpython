@@ -51,7 +51,7 @@ nan
 >>> INF / INF
 nan
 
-However unambigous operations with inf return inf:
+However unambiguous operations with inf return inf:
 >>> INF * INF
 inf
 >>> 1.5 * INF
@@ -116,7 +116,7 @@ inf
 >>> 0 ** -1
 Traceback (most recent call last):
 ...
-ZeroDivisionError: 0.0 cannot be raised to a negative power
+ZeroDivisionError: zero to a negative power
 >>> pow(0, NAN)
 nan
 

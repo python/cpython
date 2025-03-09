@@ -103,7 +103,7 @@ class TopologicalSorter:
         # nodes as possible before cycles block more progress
         cycle = self._find_cycle()
         if cycle:
-            raise CycleError(f"nodes are in a cycle", cycle)
+            raise CycleError("nodes are in a cycle", cycle)
 
     def get_ready(self):
         """Return a tuple of all the nodes that are ready.
@@ -154,7 +154,7 @@ class TopologicalSorter:
         This method unblocks any successor of each node in *nodes* for being returned
         in the future by a call to "get_ready".
 
-        Raises :exec:`ValueError` if any node in *nodes* has already been marked as
+        Raises ValueError if any node in *nodes* has already been marked as
         processed by a previous call to this method, if a node was not added to the
         graph by using "add" or if called without calling "prepare" previously or if
         node has not yet been returned by "get_ready".

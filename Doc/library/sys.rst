@@ -1,5 +1,5 @@
-:mod:`sys` --- System-specific parameters and functions
-=======================================================
+:mod:`!sys` --- System-specific parameters and functions
+========================================================
 
 .. module:: sys
    :synopsis: Access system-specific parameters and functions.
@@ -8,7 +8,7 @@
 
 This module provides access to some variables used or maintained by the
 interpreter and to functions that interact strongly with the interpreter. It is
-always available.
+always available. Unless explicitly noted otherwise, all variables are read-only.
 
 
 .. data:: abiflags
@@ -16,11 +16,11 @@ always available.
    On POSIX systems where Python was built with the standard ``configure``
    script, this contains the ABI flags as specified by :pep:`3149`.
 
+   .. versionadded:: 3.2
+
    .. versionchanged:: 3.8
       Default flags became an empty string (``m`` flag for pymalloc has been
       removed).
-
-   .. versionadded:: 3.2
 
    .. availability:: Unix.
 
@@ -130,27 +130,26 @@ always available.
 
 .. data:: base_exec_prefix
 
-   Set during Python startup, before ``site.py`` is run, to the same value as
-   :data:`exec_prefix`. If not running in a
-   :ref:`virtual environment <venv-def>`, the values will stay the same; if
-   ``site.py`` finds that a virtual environment is in use, the values of
-   :data:`prefix` and :data:`exec_prefix` will be changed to point to the
-   virtual environment, whereas :data:`base_prefix` and
-   :data:`base_exec_prefix` will remain pointing to the base Python
-   installation (the one which the virtual environment was created from).
+   Equivalent to :data:`exec_prefix`, but refering to the base Python installation.
+
+   When running under :ref:`sys-path-init-virtual-environments`,
+   :data:`exec_prefix` gets overwritten to the virtual environment prefix.
+   :data:`base_exec_prefix`, conversely, does not change, and always points to
+   the base Python installation.
+   Refer to :ref:`sys-path-init-virtual-environments` for more information.
 
    .. versionadded:: 3.3
 
 
 .. data:: base_prefix
 
-   Set during Python startup, before ``site.py`` is run, to the same value as
-   :data:`prefix`. If not running in a :ref:`virtual environment <venv-def>`, the values
-   will stay the same; if ``site.py`` finds that a virtual environment is in
-   use, the values of :data:`prefix` and :data:`exec_prefix` will be changed to
-   point to the virtual environment, whereas :data:`base_prefix` and
-   :data:`base_exec_prefix` will remain pointing to the base Python
-   installation (the one which the virtual environment was created from).
+   Equivalent to :data:`prefix`, but refering to the base Python installation.
+
+   When running under :ref:`virtual environment <venv-def>`,
+   :data:`prefix` gets overwritten to the virtual environment prefix.
+   :data:`base_prefix`, conversely, does not change, and always points to
+   the base Python installation.
+   Refer to :ref:`sys-path-init-virtual-environments` for more information.
 
    .. versionadded:: 3.3
 
@@ -194,6 +193,17 @@ always available.
    during reference leak debugging.
 
    This function should be used for internal and specialized purposes only.
+
+   .. deprecated:: 3.13
+      Use the more general :func:`_clear_internal_caches` function instead.
+
+
+.. function:: _clear_internal_caches()
+
+   Clear all internal performance-related caches. Use this function *only* to
+   release unnecessary references and memory blocks when hunting for leaks.
+
+   .. versionadded:: 3.13
 
 
 .. function:: _current_frames()
@@ -472,11 +482,19 @@ always available.
 
    .. note::
 
-      If a :ref:`virtual environment <venv-def>` is in effect, this
-      value will be changed in ``site.py`` to point to the virtual environment.
-      The value for the Python installation will still be available, via
-      :data:`base_exec_prefix`.
+      If a :ref:`virtual environment <venv-def>` is in effect, this :data:`exec_prefix`
+      will point to the virtual environment. The value for the Python installation
+      will still be available, via :data:`base_exec_prefix`.
+      Refer to :ref:`sys-path-init-virtual-environments` for more information.
 
+   .. versionchanged:: 3.14
+
+      When running under a :ref:`virtual environment <venv-def>`,
+      :data:`prefix` and :data:`exec_prefix` are now set to the virtual
+      environment prefix by the :ref:`path initialization <sys-path-init>`,
+      instead of :mod:`site`. This means that :data:`prefix` and
+      :data:`exec_prefix` always point to the virtual environment, even when
+      :mod:`site` is disabled (:option:`-S`).
 
 .. data:: executable
 
@@ -724,11 +742,11 @@ always available.
    regardless of their size.  This function is mainly useful for tracking
    and debugging memory leaks.  Because of the interpreter's internal
    caches, the result can vary from call to call; you may have to call
-   :func:`_clear_type_cache()` and :func:`gc.collect()` to get more
+   :func:`_clear_internal_caches` and :func:`gc.collect` to get more
    predictable results.
 
    If a Python build or implementation cannot reasonably compute this
-   information, :func:`getallocatedblocks()` is allowed to return 0 instead.
+   information, :func:`getallocatedblocks` is allowed to return 0 instead.
 
    .. versionadded:: 3.4
 
@@ -742,7 +760,9 @@ always available.
 
 .. function:: getandroidapilevel()
 
-   Return the build time API version of Android as an integer.
+   Return the build-time API level of Android as an integer. This represents the
+   minimum version of Android this build of Python can run on. For runtime
+   version information, see :func:`platform.android_ver`.
 
    .. availability:: Android.
 
@@ -751,8 +771,8 @@ always available.
 
 .. function:: getdefaultencoding()
 
-   Return the name of the current default string encoding used by the Unicode
-   implementation.
+   Return ``'utf-8'``. This is the name of the default string encoding, used
+   in methods like :meth:`str.encode`.
 
 
 .. function:: getdlopenflags()
@@ -835,6 +855,11 @@ always available.
    reflect the actual number of references.  Consequently, do not rely
    on the returned value to be accurate, other than a value of 0 or 1.
 
+   .. impl-detail::
+
+      :term:`Immortal <immortal>` objects with a large reference count can be
+      identified via :func:`_is_immortal`.
+
    .. versionchanged:: 3.12
       Immortal objects have very large refcounts that do not match
       the actual number of references to the object.
@@ -864,13 +889,13 @@ always available.
    additional garbage collector overhead if the object is managed by the garbage
    collector.
 
-   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504/>`_
+   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504-compute-memory-footprint-of-an-object-and-its-cont/>`_
    for an example of using :func:`getsizeof` recursively to find the size of
    containers and all their contents.
 
 .. function:: getswitchinterval()
 
-   Return the interpreter's "thread switch interval"; see
+   Return the interpreter's "thread switch interval" in seconds; see
    :func:`setswitchinterval`.
 
    .. versionadded:: 3.2
@@ -905,6 +930,35 @@ always available.
 
       This function should be used for internal and specialized purposes only.
       It is not guaranteed to exist in all implementations of Python.
+
+
+.. function:: getobjects(limit[, type])
+
+   This function only exists if CPython was built using the
+   specialized configure option :option:`--with-trace-refs`.
+   It is intended only for debugging garbage-collection issues.
+
+   Return a list of up to *limit* dynamically allocated Python objects.
+   If *type* is given, only objects of that exact type (not subtypes)
+   are included.
+
+   Objects from the list are not safe to use.
+   Specifically, the result will include objects from all interpreters that
+   share their object allocator state (that is, ones created with
+   :c:member:`PyInterpreterConfig.use_main_obmalloc` set to 1
+   or using :c:func:`Py_NewInterpreter`, and the
+   :ref:`main interpreter <sub-interpreter-support>`).
+   Mixing objects from different interpreters may lead to crashes
+   or other unexpected behavior.
+
+   .. impl-detail::
+
+      This function should be used for specialized purposes only.
+      It is not guaranteed to exist in all implementations of Python.
+
+   .. versionchanged:: 3.14
+
+      The result may include objects from other interpreters.
 
 
 .. function:: getprofile()
@@ -1186,10 +1240,20 @@ always available.
    return value of :func:`intern` around to benefit from it.
 
 
+.. function:: _is_gil_enabled()
+
+   Return :const:`True` if the :term:`GIL` is enabled and :const:`False` if
+   it is disabled.
+
+   .. versionadded:: 3.13
+
+
 .. function:: is_finalizing()
 
    Return :const:`True` if the main Python interpreter is
    :term:`shutting down <interpreter shutdown>`. Return :const:`False` otherwise.
+
+   See also the :exc:`PythonFinalizationError` exception.
 
    .. versionadded:: 3.5
 
@@ -1204,6 +1268,24 @@ always available.
    module for more information.)
 
    .. versionadded:: 3.12
+
+.. function:: _is_immortal(op)
+
+   Return :const:`True` if the given object is :term:`immortal`, :const:`False`
+   otherwise.
+
+   .. note::
+
+      Objects that are immortal (and thus return ``True`` upon being passed
+      to this function) are not guaranteed to be immortal in future versions,
+      and vice versa for mortal objects.
+
+   .. versionadded:: 3.14
+
+   .. impl-detail::
+
+      This function should be used for specialized purposes only.
+      It is not guaranteed to exist in all implementations of Python.
 
 .. function:: _is_interned(string)
 
@@ -1251,7 +1333,8 @@ always available.
     that implement Python's default import semantics. The
     :meth:`~importlib.abc.MetaPathFinder.find_spec` method is called with at
     least the absolute name of the module being imported. If the module to be
-    imported is contained in a package, then the parent package's :attr:`__path__`
+    imported is contained in a package, then the parent package's
+    :attr:`~module.__path__`
     attribute is passed in as a second argument. The method returns a
     :term:`module spec`, or ``None`` if the module cannot be found.
 
@@ -1293,7 +1376,10 @@ always available.
    The list of the original command line arguments passed to the Python
    executable.
 
-   See also :data:`sys.argv`.
+   The elements of :data:`sys.orig_argv` are the arguments to the Python interpreter,
+   while the elements of :data:`sys.argv` are the arguments to the user's program.
+   Arguments consumed by the interpreter itself will be present in :data:`sys.orig_argv`
+   and missing from :data:`sys.argv`.
 
    .. versionadded:: 3.10
 
@@ -1351,47 +1437,47 @@ always available.
 
 .. data:: platform
 
-   This string contains a platform identifier that can be used to append
-   platform-specific components to :data:`sys.path`, for instance.
-
-   For Unix systems, except on Linux and AIX, this is the lowercased OS name as
-   returned by ``uname -s`` with the first part of the version as returned by
-   ``uname -r`` appended, e.g. ``'sunos5'`` or ``'freebsd8'``, *at the time
-   when Python was built*.  Unless you want to test for a specific system
-   version, it is therefore recommended to use the following idiom::
-
-      if sys.platform.startswith('freebsd'):
-          # FreeBSD-specific code here...
-      elif sys.platform.startswith('linux'):
-          # Linux-specific code here...
-      elif sys.platform.startswith('aix'):
-          # AIX-specific code here...
-
-   For other systems, the values are:
+   A string containing a platform identifier. Known values are:
 
    ================ ===========================
    System           ``platform`` value
    ================ ===========================
    AIX              ``'aix'``
+   Android          ``'android'``
    Emscripten       ``'emscripten'``
+   FreeBSD          ``'freebsd'``
+   iOS              ``'ios'``
    Linux            ``'linux'``
-   WASI             ``'wasi'``
+   macOS            ``'darwin'``
    Windows          ``'win32'``
    Windows/Cygwin   ``'cygwin'``
-   macOS            ``'darwin'``
+   WASI             ``'wasi'``
    ================ ===========================
+
+   On Unix systems not listed in the table, the value is the lowercased OS name
+   as returned by ``uname -s``, with the first part of the version as returned by
+   ``uname -r`` appended, e.g. ``'sunos5'``, *at the time when Python was built*.
+   Unless you want to test for a specific system version, it is therefore
+   recommended to use the following idiom::
+
+      if sys.platform.startswith('sunos'):
+          # SunOS-specific code here...
 
    .. versionchanged:: 3.3
       On Linux, :data:`sys.platform` doesn't contain the major version anymore.
-      It is always ``'linux'``, instead of ``'linux2'`` or ``'linux3'``.  Since
-      older Python versions include the version number, it is recommended to
-      always use the ``startswith`` idiom presented above.
+      It is always ``'linux'``, instead of ``'linux2'`` or ``'linux3'``.
 
    .. versionchanged:: 3.8
       On AIX, :data:`sys.platform` doesn't contain the major version anymore.
-      It is always ``'aix'``, instead of ``'aix5'`` or ``'aix7'``.  Since
-      older Python versions include the version number, it is recommended to
-      always use the ``startswith`` idiom presented above.
+      It is always ``'aix'``, instead of ``'aix5'`` or ``'aix7'``.
+
+   .. versionchanged:: 3.13
+      On Android, :data:`sys.platform` now returns ``'android'`` rather than
+      ``'linux'``.
+
+   .. versionchanged:: 3.14
+      On FreeBSD, :data:`sys.platform` doesn't contain the major version anymore.
+      It is always ``'freebsd'``, instead of ``'freebsd13'`` or ``'freebsd14'``.
 
    .. seealso::
 
@@ -1432,10 +1518,21 @@ always available.
    argument to the :program:`configure` script.  See
    :ref:`installation_paths` for derived paths.
 
-   .. note:: If a :ref:`virtual environment <venv-def>` is in effect, this
-      value will be changed in ``site.py`` to point to the virtual
-      environment. The value for the Python installation will still be
-      available, via :data:`base_prefix`.
+   .. note::
+
+      If a :ref:`virtual environment <venv-def>` is in effect, this :data:`prefix`
+      will point to the virtual environment. The value for the Python installation
+      will still be available, via :data:`base_prefix`.
+      Refer to :ref:`sys-path-init-virtual-environments` for more information.
+
+   .. versionchanged:: 3.14
+
+      When running under a :ref:`virtual environment <venv-def>`,
+      :data:`prefix` and :data:`exec_prefix` are now set to the virtual
+      environment prefix by the :ref:`path initialization <sys-path-init>`,
+      instead of :mod:`site`. This means that :data:`prefix` and
+      :data:`exec_prefix` always point to the virtual environment, even when
+      :mod:`site` is disabled (:option:`-S`).
 
 
 .. data:: ps1
@@ -1687,11 +1784,11 @@ always available.
    contain a tuple of (filename, line number, function name) tuples
    describing the traceback where the coroutine object was created,
    with the most recent call first. When disabled, ``cr_origin`` will
-   be None.
+   be ``None``.
 
    To enable, pass a *depth* value greater than zero; this sets the
    number of frames whose information will be captured. To disable,
-   pass set *depth* to zero.
+   set *depth* to zero.
 
    This setting is thread-specific.
 
@@ -1705,6 +1802,8 @@ always available.
 
    Activate the stack profiler trampoline *backend*.
    The only supported backend is ``"perf"``.
+
+   Stack trampolines cannot be activated if the JIT is active.
 
    .. availability:: Linux.
 

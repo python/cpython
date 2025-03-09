@@ -22,8 +22,8 @@ TESTFN_ASCII = "{}_{}_tmp".format(TESTFN_ASCII, os.getpid())
 
 # TESTFN_UNICODE is a non-ascii filename
 TESTFN_UNICODE = TESTFN_ASCII + "-\xe0\xf2\u0258\u0141\u011f"
-if sys.platform == 'darwin':
-    # In Mac OS X's VFS API file names are, by definition, canonically
+if support.is_apple:
+    # On Apple's VFS API file names are, by definition, canonically
     # decomposed Unicode, encoded using UTF-8. See QA1173:
     # http://developer.apple.com/mac/library/qa/qa2001/qa1173.html
     import unicodedata
@@ -48,8 +48,8 @@ if os.name == 'nt':
                   'encoding (%s). Unicode filename tests may not be effective'
                   % (TESTFN_UNENCODABLE, sys.getfilesystemencoding()))
             TESTFN_UNENCODABLE = None
-# macOS and Emscripten deny unencodable filenames (invalid utf-8)
-elif sys.platform not in {'darwin', 'emscripten', 'wasi'}:
+# Apple and Emscripten deny unencodable filenames (invalid utf-8)
+elif not support.is_apple and sys.platform not in {"emscripten", "wasi"}:
     try:
         # ascii and utf-8 cannot encode the byte 0xff
         b'\xff'.decode(sys.getfilesystemencoding())
@@ -198,6 +198,23 @@ def skip_unless_symlink(test):
     return test if ok else unittest.skip(msg)(test)
 
 
+_can_hardlink = None
+
+def can_hardlink():
+    global _can_hardlink
+    if _can_hardlink is None:
+        # Android blocks hard links using SELinux
+        # (https://stackoverflow.com/q/32365690).
+        _can_hardlink = hasattr(os, "link") and not support.is_android
+    return _can_hardlink
+
+
+def skip_unless_hardlink(test):
+    ok = can_hardlink()
+    msg = "requires hardlink support"
+    return test if ok else unittest.skip(msg)(test)
+
+
 _can_xattr = None
 
 
@@ -275,6 +292,33 @@ def skip_unless_working_chmod(test):
     ok = can_chmod()
     msg = "requires working os.chmod()"
     return test if ok else unittest.skip(msg)(test)
+
+
+@contextlib.contextmanager
+def save_mode(path, *, quiet=False):
+    """Context manager that restores the mode (permissions) of *path* on exit.
+
+    Arguments:
+
+      path: Path of the file to restore the mode of.
+
+      quiet: if False (the default), the context manager raises an exception
+        on error.  Otherwise, it issues only a warning and keeps the current
+        working directory the same.
+
+    """
+    saved_mode = os.stat(path)
+    try:
+        yield
+    finally:
+        try:
+            os.chmod(path, saved_mode.st_mode)
+        except OSError as exc:
+            if not quiet:
+                raise
+            warnings.warn(f'tests may fail, unable to restore the mode of '
+                          f'{path!r} to {saved_mode.st_mode}: {exc}',
+                          RuntimeWarning, stacklevel=3)
 
 
 # Check whether the current effective user has the capability to override
@@ -595,7 +639,7 @@ class FakePath:
 def fd_count():
     """Count the number of open file descriptors.
     """
-    if sys.platform.startswith(('linux', 'freebsd', 'emscripten')):
+    if sys.platform.startswith(('linux', 'android', 'freebsd', 'emscripten')):
         fd_path = "/proc/self/fd"
     elif sys.platform == "darwin":
         fd_path = "/dev/fd"

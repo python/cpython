@@ -371,7 +371,7 @@ class LexicalHandler:
 
         name is the name of the document element type, public_id the
         public identifier of the DTD (or None if none were supplied)
-        and system_id the system identfier of the external subset (or
+        and system_id the system identifier of the external subset (or
         None if none were supplied)."""
 
     def endDTD(self):

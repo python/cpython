@@ -3,10 +3,11 @@ Tests for the threading module.
 """
 
 import test.support
-from test.support import threading_helper, requires_subprocess
+from test.support import threading_helper, requires_subprocess, requires_gil_enabled
 from test.support import verbose, cpython_only, os_helper
 from test.support.import_helper import import_module
 from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support import force_not_colorized
 
 import random
 import sys
@@ -47,6 +48,8 @@ def skip_unless_reliable_fork(test):
         return unittest.skip("due to known OS bug related to thread+fork")(test)
     if support.HAVE_ASAN_FORK_BUG:
         return unittest.skip("libasan has a pthread_create() dead lock related to thread+fork")(test)
+    if support.check_sanitizer(thread=True):
+        return unittest.skip("TSAN doesn't support threads after fork")(test)
     return test
 
 
@@ -406,7 +409,7 @@ class ThreadTests(BaseTestCase):
 
     def test_limbo_cleanup(self):
         # Issue 7481: Failure to start thread should cleanup the limbo map.
-        def fail_new_thread(*args):
+        def fail_new_thread(*args, **kwargs):
             raise threading.ThreadError()
         _start_joinable_thread = threading._start_joinable_thread
         threading._start_joinable_thread = fail_new_thread
@@ -423,6 +426,10 @@ class ThreadTests(BaseTestCase):
         # Issue 1402: the PyGILState_Ensure / _Release functions may be called
         # very late on python exit: on deallocation of a running thread for
         # example.
+        if support.check_sanitizer(thread=True):
+            # the thread running `time.sleep(100)` below will still be alive
+            # at process exit
+            self.skipTest("TSAN would report thread leak")
         import_module("ctypes")
 
         rc, out, err = assert_python_failure("-c", """if 1:
@@ -455,6 +462,11 @@ class ThreadTests(BaseTestCase):
     def test_finalize_with_trace(self):
         # Issue1733757
         # Avoid a deadlock when sys.settrace steps into threading._shutdown
+        if support.check_sanitizer(thread=True):
+            # the thread running `time.sleep(2)` below will still be alive
+            # at process exit
+            self.skipTest("TSAN would report thread leak")
+
         assert_python_ok("-c", """if 1:
             import sys, threading
 
@@ -504,7 +516,7 @@ class ThreadTests(BaseTestCase):
         old_interval = sys.getswitchinterval()
         try:
             for i in range(1, 100):
-                sys.setswitchinterval(i * 0.0002)
+                support.setswitchinterval(i * 0.0002)
                 t = threading.Thread(target=lambda: None)
                 t.start()
                 t.join()
@@ -769,8 +781,7 @@ class ThreadTests(BaseTestCase):
                          "current is main True\n"
                          )
 
-    @unittest.skipIf(sys.platform in platforms_to_skip, "due to known OS bug")
-    @support.requires_fork()
+    @skip_unless_reliable_fork
     @unittest.skipUnless(hasattr(os, 'waitpid'), "test needs os.waitpid()")
     def test_main_thread_after_fork_from_foreign_thread(self, create_dummy=False):
         code = """if 1:
@@ -901,41 +912,6 @@ class ThreadTests(BaseTestCase):
         rc, out, err = assert_python_ok("-c", code)
         self.assertEqual(err, b"")
 
-    def test_tstate_lock(self):
-        # Test an implementation detail of Thread objects.
-        started = _thread.allocate_lock()
-        finish = _thread.allocate_lock()
-        started.acquire()
-        finish.acquire()
-        def f():
-            started.release()
-            finish.acquire()
-            time.sleep(0.01)
-        # The tstate lock is None until the thread is started
-        t = threading.Thread(target=f)
-        self.assertIs(t._tstate_lock, None)
-        t.start()
-        started.acquire()
-        self.assertTrue(t.is_alive())
-        # The tstate lock can't be acquired when the thread is running
-        # (or suspended).
-        tstate_lock = t._tstate_lock
-        self.assertFalse(tstate_lock.acquire(timeout=0), False)
-        finish.release()
-        # When the thread ends, the state_lock can be successfully
-        # acquired.
-        self.assertTrue(tstate_lock.acquire(timeout=support.SHORT_TIMEOUT), False)
-        # But is_alive() is still True:  we hold _tstate_lock now, which
-        # prevents is_alive() from knowing the thread's end-of-life C code
-        # is done.
-        self.assertTrue(t.is_alive())
-        # Let is_alive() find out the C code is done.
-        tstate_lock.release()
-        self.assertFalse(t.is_alive())
-        # And verify the thread disposed of _tstate_lock.
-        self.assertIsNone(t._tstate_lock)
-        t.join()
-
     def test_repr_stopped(self):
         # Verify that "stopped" shows up in repr(Thread) appropriately.
         started = _thread.allocate_lock()
@@ -983,6 +959,7 @@ class ThreadTests(BaseTestCase):
 
     @cpython_only
     def test_frame_tstate_tracing(self):
+        _testcapi = import_module("_testcapi")
         # Issue #14432: Crash when a generator is created in a C thread that is
         # destroyed while the generator is still used. The issue was that a
         # generator contains a frame, and the frame kept a reference to the
@@ -1010,7 +987,6 @@ class ThreadTests(BaseTestCase):
             threading.settrace(noop_trace)
 
             # Create a generator in a C thread which exits after the call
-            import _testcapi
             _testcapi.call_in_temporary_c_thread(callback)
 
             # Call the generator in a different Python thread, check that the
@@ -1101,30 +1077,6 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(threading.getprofile(), old_profile)
         self.assertEqual(sys.getprofile(), old_profile)
 
-    @cpython_only
-    def test_shutdown_locks(self):
-        for daemon in (False, True):
-            with self.subTest(daemon=daemon):
-                event = threading.Event()
-                thread = threading.Thread(target=event.wait, daemon=daemon)
-
-                # Thread.start() must add lock to _shutdown_locks,
-                # but only for non-daemon thread
-                thread.start()
-                tstate_lock = thread._tstate_lock
-                if not daemon:
-                    self.assertIn(tstate_lock, threading._shutdown_locks)
-                else:
-                    self.assertNotIn(tstate_lock, threading._shutdown_locks)
-
-                # unblock the thread and join it
-                event.set()
-                thread.join()
-
-                # Thread._stop() must remove tstate_lock from _shutdown_locks.
-                # Daemon threads must never add it to _shutdown_locks.
-                self.assertNotIn(tstate_lock, threading._shutdown_locks)
-
     def test_locals_at_exit(self):
         # bpo-19466: thread locals must not be deleted before destructors
         # are called
@@ -1202,22 +1154,127 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
-    def test_start_new_thread_at_exit(self):
+    def test_start_new_thread_at_finalization(self):
         code = """if 1:
-            import atexit
             import _thread
 
             def f():
                 print("shouldn't be printed")
 
-            def exit_handler():
-                _thread.start_new_thread(f, ())
-
-            atexit.register(exit_handler)
+            class AtFinalization:
+                def __del__(self):
+                    print("OK")
+                    _thread.start_new_thread(f, ())
+            at_finalization = AtFinalization()
         """
         _, out, err = assert_python_ok("-c", code)
-        self.assertEqual(out, b'')
+        self.assertEqual(out.strip(), b"OK")
         self.assertIn(b"can't create new thread at interpreter shutdown", err)
+
+    def test_start_new_thread_failed(self):
+        # gh-109746: if Python fails to start newly created thread
+        # due to failure of underlying PyThread_start_new_thread() call,
+        # its state should be removed from interpreter' thread states list
+        # to avoid its double cleanup
+        try:
+            from resource import setrlimit, RLIMIT_NPROC
+        except ImportError as err:
+            self.skipTest(err)  # RLIMIT_NPROC is specific to Linux and BSD
+        code = """if 1:
+            import resource
+            import _thread
+
+            def f():
+                print("shouldn't be printed")
+
+            limits = resource.getrlimit(resource.RLIMIT_NPROC)
+            [_, hard] = limits
+            resource.setrlimit(resource.RLIMIT_NPROC, (0, hard))
+
+            try:
+                handle = _thread.start_joinable_thread(f)
+            except RuntimeError:
+                print('ok')
+            else:
+                print('!skip!')
+                handle.join()
+        """
+        _, out, err = assert_python_ok("-u", "-c", code)
+        out = out.strip()
+        if b'!skip!' in out:
+            self.skipTest('RLIMIT_NPROC had no effect; probably superuser')
+        self.assertEqual(out, b'ok')
+        self.assertEqual(err, b'')
+
+    @cpython_only
+    def test_finalize_daemon_thread_hang(self):
+        if support.check_sanitizer(thread=True, memory=True):
+            # the thread running `time.sleep(100)` below will still be alive
+            # at process exit
+            self.skipTest(
+                    "https://github.com/python/cpython/issues/124878 - Known"
+                    " race condition that TSAN identifies.")
+        # gh-87135: tests that daemon threads hang during finalization
+        script = textwrap.dedent('''
+            import os
+            import sys
+            import threading
+            import time
+            import _testcapi
+
+            lock = threading.Lock()
+            lock.acquire()
+            thread_started_event = threading.Event()
+            def thread_func():
+                try:
+                    thread_started_event.set()
+                    _testcapi.finalize_thread_hang(lock.acquire)
+                finally:
+                    # Control must not reach here.
+                    os._exit(2)
+
+            t = threading.Thread(target=thread_func)
+            t.daemon = True
+            t.start()
+            thread_started_event.wait()
+            # Sleep to ensure daemon thread is blocked on `lock.acquire`
+            #
+            # Note: This test is designed so that in the unlikely case that
+            # `0.1` seconds is not sufficient time for the thread to become
+            # blocked on `lock.acquire`, the test will still pass, it just
+            # won't be properly testing the thread behavior during
+            # finalization.
+            time.sleep(0.1)
+
+            def run_during_finalization():
+                # Wake up daemon thread
+                lock.release()
+                # Sleep to give the daemon thread time to crash if it is going
+                # to.
+                #
+                # Note: If due to an exceptionally slow execution this delay is
+                # insufficient, the test will still pass but will simply be
+                # ineffective as a test.
+                time.sleep(0.1)
+                # If control reaches here, the test succeeded.
+                os._exit(0)
+
+            # Replace sys.stderr.flush as a way to run code during finalization
+            orig_flush = sys.stderr.flush
+            def do_flush(*args, **kwargs):
+                orig_flush(*args, **kwargs)
+                if not sys.is_finalizing:
+                    return
+                sys.stderr.flush = orig_flush
+                run_during_finalization()
+
+            sys.stderr.flush = do_flush
+
+            # If the follow exit code is retained, `run_during_finalization`
+            # did not run.
+            sys.exit(1)
+        ''')
+        assert_python_ok("-c", script)
 
 class ThreadJoinOnShutdown(BaseTestCase):
 
@@ -1303,6 +1360,11 @@ class ThreadJoinOnShutdown(BaseTestCase):
         # Check that a daemon thread cannot crash the interpreter on shutdown
         # by manipulating internal structures that are being disposed of in
         # the main thread.
+        if support.check_sanitizer(thread=True):
+            # some of the threads running `random_io` below will still be alive
+            # at process exit
+            self.skipTest("TSAN would report thread leak")
+
         script = """if True:
             import os
             import random
@@ -1339,6 +1401,30 @@ class ThreadJoinOnShutdown(BaseTestCase):
             """
         rc, out, err = assert_python_ok('-c', script)
         self.assertFalse(err)
+
+    def test_thread_from_thread(self):
+        script = """if True:
+            import threading
+            import time
+
+            def thread2():
+                time.sleep(0.05)
+                print("OK")
+
+            def thread1():
+                time.sleep(0.05)
+                t2 = threading.Thread(target=thread2)
+                t2.start()
+
+            t = threading.Thread(target=thread1)
+            t.start()
+            # do not join() -- the interpreter waits for non-daemon threads to
+            # finish.
+            """
+        rc, out, err = assert_python_ok('-c', script)
+        self.assertEqual(err, b"")
+        self.assertEqual(out.strip(), b"OK")
+        self.assertEqual(rc, 0)
 
     @skip_unless_reliable_fork
     def test_reinit_tls_after_fork(self):
@@ -1478,7 +1564,7 @@ class SubinterpThreadingTests(BaseTestCase):
         DONE = b'D'
 
         interp = interpreters.create()
-        interp.exec_sync(f"""if True:
+        interp.exec(f"""if True:
             import os
             import threading
             import time
@@ -1509,6 +1595,7 @@ class SubinterpThreadingTests(BaseTestCase):
 
     @cpython_only
     def test_daemon_threads_fatal_error(self):
+        import_module("_testcapi")
         subinterp_code = f"""if 1:
             import os
             import threading
@@ -1535,6 +1622,7 @@ class SubinterpThreadingTests(BaseTestCase):
                        daemon_allowed=True,
                        daemon=False,
                        ):
+        import_module("_testinternalcapi")
         subinterp_code = textwrap.dedent(f"""
             import test.support
             import threading
@@ -1544,6 +1632,7 @@ class SubinterpThreadingTests(BaseTestCase):
             {before_start}
             t.start()
             """)
+        check_multi_interp_extensions = bool(support.Py_GIL_DISABLED)
         script = textwrap.dedent(f"""
             import test.support
             test.support.run_in_subinterp_with_config(
@@ -1553,7 +1642,7 @@ class SubinterpThreadingTests(BaseTestCase):
                 allow_exec=True,
                 allow_threads={allowed},
                 allow_daemon_threads={daemon_allowed},
-                check_multi_interp_extensions=False,
+                check_multi_interp_extensions={check_multi_interp_extensions},
                 own_gil=False,
             )
             """)
@@ -1809,6 +1898,7 @@ class ExceptHookTests(BaseTestCase):
         restore_default_excepthook(self)
         super().setUp()
 
+    @force_not_colorized
     def test_excepthook(self):
         with support.captured_output("stderr") as stderr:
             thread = ThreadRunFail(name="excepthook thread")
@@ -1822,6 +1912,7 @@ class ExceptHookTests(BaseTestCase):
         self.assertIn('ValueError: run failed', stderr)
 
     @support.cpython_only
+    @force_not_colorized
     def test_excepthook_thread_None(self):
         # threading.excepthook called with thread=None: log the thread
         # identifier in this case.
@@ -2013,6 +2104,110 @@ class MiscTestCase(unittest.TestCase):
         support.check__all__(self, threading, ('threading', '_thread'),
                              extra=extra, not_exported=not_exported)
 
+    @unittest.skipUnless(hasattr(_thread, 'set_name'), "missing _thread.set_name")
+    @unittest.skipUnless(hasattr(_thread, '_get_name'), "missing _thread._get_name")
+    def test_set_name(self):
+        # set_name() limit in bytes
+        truncate = getattr(_thread, "_NAME_MAXLEN", None)
+        limit = truncate or 100
+
+        tests = [
+            # test short ASCII name
+            "CustomName",
+
+            # test short non-ASCII name
+            "namé€",
+
+            # embedded null character: name is truncated
+            # at the first null character
+            "embed\0null",
+
+            # Test long ASCII names (not truncated)
+            "x" * limit,
+
+            # Test long ASCII names (truncated)
+            "x" * (limit + 10),
+
+            # Test long non-ASCII name (truncated)
+            "x" * (limit - 1) + "é€",
+
+            # Test long non-BMP names (truncated) creating surrogate pairs
+            # on Windows
+            "x" * (limit - 1) + "\U0010FFFF",
+            "x" * (limit - 2) + "\U0010FFFF" * 2,
+            "x" + "\U0001f40d" * limit,
+            "xx" + "\U0001f40d" * limit,
+            "xxx" + "\U0001f40d" * limit,
+            "xxxx" + "\U0001f40d" * limit,
+        ]
+        if os_helper.FS_NONASCII:
+            tests.append(f"nonascii:{os_helper.FS_NONASCII}")
+        if os_helper.TESTFN_UNENCODABLE:
+            tests.append(os_helper.TESTFN_UNENCODABLE)
+
+        if sys.platform.startswith("solaris"):
+            encoding = "utf-8"
+        else:
+            encoding = sys.getfilesystemencoding()
+
+        def work():
+            nonlocal work_name
+            work_name = _thread._get_name()
+
+        for name in tests:
+            if not support.MS_WINDOWS:
+                encoded = name.encode(encoding, "replace")
+                if b'\0' in encoded:
+                    encoded = encoded.split(b'\0', 1)[0]
+                if truncate is not None:
+                    encoded = encoded[:truncate]
+                if sys.platform.startswith("solaris"):
+                    expected = encoded.decode("utf-8", "surrogateescape")
+                else:
+                    expected = os.fsdecode(encoded)
+            else:
+                size = 0
+                chars = []
+                for ch in name:
+                    if ord(ch) > 0xFFFF:
+                        size += 2
+                    else:
+                        size += 1
+                    if size > truncate:
+                        break
+                    chars.append(ch)
+                expected = ''.join(chars)
+
+                if '\0' in expected:
+                    expected = expected.split('\0', 1)[0]
+
+            with self.subTest(name=name, expected=expected):
+                work_name = None
+                thread = threading.Thread(target=work, name=name)
+                thread.start()
+                thread.join()
+                self.assertEqual(work_name, expected,
+                                 f"{len(work_name)=} and {len(expected)=}")
+
+    @unittest.skipUnless(hasattr(_thread, 'set_name'), "missing _thread.set_name")
+    @unittest.skipUnless(hasattr(_thread, '_get_name'), "missing _thread._get_name")
+    def test_change_name(self):
+        # Change the name of a thread while the thread is running
+
+        name1 = None
+        name2 = None
+        def work():
+            nonlocal name1, name2
+            name1 = _thread._get_name()
+            threading.current_thread().name = "new name"
+            name2 = _thread._get_name()
+
+        thread = threading.Thread(target=work, name="name")
+        thread.start()
+        thread.join()
+        self.assertEqual(name1, "name")
+        self.assertEqual(name2, "new name")
+
 
 class InterruptMainTests(unittest.TestCase):
     def check_interrupt_main_with_signal_handler(self, signum):
@@ -2038,6 +2233,7 @@ class InterruptMainTests(unittest.TestCase):
             # Restore original handler
             signal.signal(signum, handler)
 
+    @requires_gil_enabled("gh-118433: Flaky due to a longstanding bug")
     def test_interrupt_main_subthread(self):
         # Calling start_new_thread with a function that executes interrupt_main
         # should raise KeyboardInterrupt upon completion.

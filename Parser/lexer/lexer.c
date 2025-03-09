@@ -211,9 +211,11 @@ _PyLexer_update_fstring_expr(struct tok_state *tok, char cur)
             break;
         case '}':
         case '!':
+            tok_mode->last_expr_end = strlen(tok->start);
+            break;
         case ':':
             if (tok_mode->last_expr_end == -1) {
-                tok_mode->last_expr_end = strlen(tok->start);
+               tok_mode->last_expr_end = strlen(tok->start);
             }
             break;
         default:
@@ -306,9 +308,7 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind) {
     return 1;
 }
 
-/* Verify that the identifier follows PEP 3131.
-   All identifier strings are guaranteed to be "ready" unicode objects.
- */
+/* Verify that the identifier follows PEP 3131. */
 static int
 verify_identifier(struct tok_state *tok)
 {
@@ -329,11 +329,7 @@ verify_identifier(struct tok_state *tok)
         return 0;
     }
     Py_ssize_t invalid = _PyUnicode_ScanIdentifier(s);
-    if (invalid < 0) {
-        Py_DECREF(s);
-        tok->done = E_ERROR;
-        return 0;
-    }
+    assert(invalid >= 0);
     assert(PyUnicode_GET_LENGTH(s) > 0);
     if (invalid < PyUnicode_GET_LENGTH(s)) {
         Py_UCS4 ch = PyUnicode_READ_CHAR(s, invalid);
@@ -884,7 +880,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 return MAKE_TOKEN(ERRORTOKEN);
             }
             {
-                /* Accept floating point numbers. */
+                /* Accept floating-point numbers. */
                 if (c == '.') {
                     c = tok_nextc(tok);
         fraction:
@@ -989,6 +985,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         the_current_tok->last_expr_buffer = NULL;
         the_current_tok->last_expr_size = 0;
         the_current_tok->last_expr_end = -1;
+        the_current_tok->in_format_spec = 0;
         the_current_tok->f_string_debug = 0;
 
         switch (*tok->start) {
@@ -1137,15 +1134,20 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
          * by the `{` case, so for ensuring that we are on the 0th level, we need
          * to adjust it manually */
         int cursor = current_tok->curly_bracket_depth - (c != '{');
-        if (cursor == 0 && !_PyLexer_update_fstring_expr(tok, c)) {
+        int in_format_spec = current_tok->in_format_spec;
+         int cursor_in_format_with_debug =
+             cursor == 1 && (current_tok->f_string_debug || in_format_spec);
+         int cursor_valid = cursor == 0 || cursor_in_format_with_debug;
+        if ((cursor_valid) && !_PyLexer_update_fstring_expr(tok, c)) {
             return MAKE_TOKEN(ENDMARKER);
         }
-        if (cursor == 0 && c != '{' && set_fstring_expr(tok, token, c)) {
+        if ((cursor_valid) && c != '{' && set_fstring_expr(tok, token, c)) {
             return MAKE_TOKEN(ERRORTOKEN);
         }
 
         if (c == ':' && cursor == current_tok->curly_bracket_expr_start_depth) {
             current_tok->kind = TOK_FSTRING_MODE;
+            current_tok->in_format_spec = 1;
             p_start = tok->start;
             p_end = tok->cur;
             return MAKE_TOKEN(_PyToken_OneChar(c));
@@ -1232,9 +1234,13 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
 
         if (INSIDE_FSTRING(tok)) {
             current_tok->curly_bracket_depth--;
+            if (current_tok->curly_bracket_depth < 0) {
+                return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: unmatched '%c'", c));
+            }
             if (c == '}' && current_tok->curly_bracket_depth == current_tok->curly_bracket_expr_start_depth) {
                 current_tok->curly_bracket_expr_start_depth--;
                 current_tok->kind = TOK_FSTRING_MODE;
+                current_tok->in_format_spec = 0;
                 current_tok->f_string_debug = 0;
             }
         }
@@ -1317,11 +1323,11 @@ f_string_middle:
     tok->multi_line_start = tok->line_start;
     while (end_quote_size != current_tok->f_string_quote_size) {
         int c = tok_nextc(tok);
-        if (tok->done == E_ERROR) {
+        if (tok->done == E_ERROR || tok->done == E_DECODE) {
             return MAKE_TOKEN(ERRORTOKEN);
         }
         int in_format_spec = (
-                current_tok->last_expr_end != -1
+                current_tok->in_format_spec
                 &&
                 INSIDE_FSTRING_EXPR(current_tok)
         );
@@ -1337,6 +1343,7 @@ f_string_middle:
             if (in_format_spec && c == '\n') {
                 tok_backup(tok, c);
                 TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
+                current_tok->in_format_spec = 0;
                 p_start = tok->start;
                 p_end = tok->cur;
                 return MAKE_TOKEN(FSTRING_MIDDLE);
@@ -1378,6 +1385,9 @@ f_string_middle:
         }
 
         if (c == '{') {
+            if (!_PyLexer_update_fstring_expr(tok, c)) {
+                return MAKE_TOKEN(ENDMARKER);
+            }
             int peek = tok_nextc(tok);
             if (peek != '{' || in_format_spec) {
                 tok_backup(tok, peek);
@@ -1387,6 +1397,7 @@ f_string_middle:
                     return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: expressions nested too deeply"));
                 }
                 TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
+                current_tok->in_format_spec = 0;
                 p_start = tok->start;
                 p_end = tok->cur;
             } else {
@@ -1406,13 +1417,15 @@ f_string_middle:
             // scanning (indicated by the end of the expression being set) and we are not at the top level
             // of the bracket stack (-1 is the top level). Since format specifiers can't legally use double
             // brackets, we can bypass it here.
-            if (peek == '}' && !in_format_spec) {
+            int cursor = current_tok->curly_bracket_depth;
+            if (peek == '}' && !in_format_spec && cursor == 0) {
                 p_start = tok->start;
                 p_end = tok->cur - 1;
             } else {
                 tok_backup(tok, peek);
                 tok_backup(tok, c);
                 TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
+                current_tok->in_format_spec = 0;
                 p_start = tok->start;
                 p_end = tok->cur;
             }

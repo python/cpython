@@ -62,21 +62,32 @@ typedef long stwodigits; /* signed variant of twodigits */
 #define PyLong_MASK     ((digit)(PyLong_BASE - 1))
 
 /* Long integer representation.
-   The absolute value of a number is equal to
-        SUM(for i=0 through abs(ob_size)-1) ob_digit[i] * 2**(SHIFT*i)
-   Negative numbers are represented with ob_size < 0;
-   zero is represented by ob_size == 0.
-   In a normalized number, ob_digit[abs(ob_size)-1] (the most significant
-   digit) is never zero.  Also, in all cases, for all valid i,
-        0 <= ob_digit[i] <= MASK.
-   The allocation function takes care of allocating extra memory
-   so that ob_digit[0] ... ob_digit[abs(ob_size)-1] are actually available.
-   We always allocate memory for at least one digit, so accessing ob_digit[0]
-   is always safe. However, in the case ob_size == 0, the contents of
-   ob_digit[0] may be undefined.
 
-   CAUTION:  Generic code manipulating subtypes of PyVarObject has to
-   aware that ints abuse  ob_size's sign bit.
+   Long integers are made up of a number of 30- or 15-bit digits, depending on
+   the platform. The number of digits (ndigits) is stored in the high bits of
+   the lv_tag field (lvtag >> _PyLong_NON_SIZE_BITS).
+
+   The absolute value of a number is equal to
+        SUM(for i=0 through ndigits-1) ob_digit[i] * 2**(PyLong_SHIFT*i)
+
+   The sign of the value is stored in the lower 2 bits of lv_tag.
+
+    - 0: Positive
+    - 1: Zero
+    - 2: Negative
+
+   The third lowest bit of lv_tag is
+   set to 1 for the small ints.
+
+   In a normalized number, ob_digit[ndigits-1] (the most significant
+   digit) is never zero.  Also, in all cases, for all valid i,
+        0 <= ob_digit[i] <= PyLong_MASK.
+
+   The allocation function takes care of allocating extra memory
+   so that ob_digit[0] ... ob_digit[ndigits-1] are actually available.
+   We always allocate memory for at least one digit, so accessing ob_digit[0]
+   is always safe. However, in the case ndigits == 0, the contents of
+   ob_digit[0] may be undefined.
 */
 
 typedef struct _PyLongValue {
@@ -89,12 +100,12 @@ struct _longobject {
     _PyLongValue long_value;
 };
 
-PyAPI_FUNC(PyLongObject*) _PyLong_New(Py_ssize_t);
+Py_DEPRECATED(3.14) PyAPI_FUNC(PyLongObject*) _PyLong_New(Py_ssize_t);
 
 // Return a copy of src.
 PyAPI_FUNC(PyObject*) _PyLong_Copy(PyLongObject *src);
 
-PyAPI_FUNC(PyLongObject*) _PyLong_FromDigits(
+Py_DEPRECATED(3.14) PyAPI_FUNC(PyLongObject*) _PyLong_FromDigits(
     int negative,
     Py_ssize_t digit_count,
     digit *digits);
@@ -109,7 +120,7 @@ PyAPI_FUNC(PyLongObject*) _PyLong_FromDigits(
 
 static inline int
 _PyLong_IsCompact(const PyLongObject* op) {
-    assert(PyType_HasFeature((op)->ob_base.ob_type, Py_TPFLAGS_LONG_SUBCLASS));
+    assert(PyType_HasFeature(op->ob_base.ob_type, Py_TPFLAGS_LONG_SUBCLASS));
     return op->long_value.lv_tag < (2 << _PyLong_NON_SIZE_BITS);
 }
 
@@ -118,14 +129,53 @@ _PyLong_IsCompact(const PyLongObject* op) {
 static inline Py_ssize_t
 _PyLong_CompactValue(const PyLongObject *op)
 {
-    assert(PyType_HasFeature((op)->ob_base.ob_type, Py_TPFLAGS_LONG_SUBCLASS));
+    Py_ssize_t sign;
+    assert(PyType_HasFeature(op->ob_base.ob_type, Py_TPFLAGS_LONG_SUBCLASS));
     assert(PyUnstable_Long_IsCompact(op));
-    Py_ssize_t sign = 1 - (op->long_value.lv_tag & _PyLong_SIGN_MASK);
+    sign = 1 - (op->long_value.lv_tag & _PyLong_SIGN_MASK);
     return sign * (Py_ssize_t)op->long_value.ob_digit[0];
 }
 
 #define PyUnstable_Long_CompactValue _PyLong_CompactValue
 
+
+/* --- Import/Export API -------------------------------------------------- */
+
+typedef struct PyLongLayout {
+    uint8_t bits_per_digit;
+    uint8_t digit_size;
+    int8_t digits_order;
+    int8_t digit_endianness;
+} PyLongLayout;
+
+PyAPI_FUNC(const PyLongLayout*) PyLong_GetNativeLayout(void);
+
+typedef struct PyLongExport {
+    int64_t value;
+    uint8_t negative;
+    Py_ssize_t ndigits;
+    const void *digits;
+    // Member used internally, must not be used for other purpose.
+    Py_uintptr_t _reserved;
+} PyLongExport;
+
+PyAPI_FUNC(int) PyLong_Export(
+    PyObject *obj,
+    PyLongExport *export_long);
+PyAPI_FUNC(void) PyLong_FreeExport(
+    PyLongExport *export_long);
+
+
+/* --- PyLongWriter API --------------------------------------------------- */
+
+typedef struct PyLongWriter PyLongWriter;
+
+PyAPI_FUNC(PyLongWriter*) PyLongWriter_Create(
+    int negative,
+    Py_ssize_t ndigits,
+    void **digits);
+PyAPI_FUNC(PyObject*) PyLongWriter_Finish(PyLongWriter *writer);
+PyAPI_FUNC(void) PyLongWriter_Discard(PyLongWriter *writer);
 
 #ifdef __cplusplus
 }
