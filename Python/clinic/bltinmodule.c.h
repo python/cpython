@@ -781,9 +781,14 @@ PyDoc_STRVAR(builtin_locals__doc__,
 "\n"
 "Return a dictionary containing the current scope\'s local variables.\n"
 "\n"
-"NOTE: Whether or not updates to this dictionary will affect name lookups in\n"
-"the local scope and vice-versa is *implementation dependent* and not\n"
-"covered by any backwards compatibility guarantees.");
+"In **non-optimized scopes** (e.g., module, class, `exec()`/`eval()`):\n"
+"  - Changes to the dictionary will affect the local variables, and vice versa.\n"
+"\n"
+"In **optimized scopes** (e.g., functions, generators, coroutines):\n"
+"  - The dictionary is a snapshot of local variables at the time of the call.\n"
+"  - Changes to the dictionary do not affect local variables, and changes to local variables are not reflected in the dictionary.\n"
+"\n"
+"NOTE: Behavior may vary by implementation, and changes to the dictionary in optimized scopes will not be reflected in local variables.");
 
 #define BUILTIN_LOCALS_METHODDEF    \
     {"locals", (PyCFunction)builtin_locals, METH_NOARGS, builtin_locals__doc__},
@@ -1239,4 +1244,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b0178189d13e8bf8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3278ccdf4dd07c2d input=a9049054013a1b77]*/
