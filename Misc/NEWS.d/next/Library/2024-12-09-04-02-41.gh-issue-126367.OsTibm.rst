@@ -1,0 +1,1 @@
+Modified the :func:`~urllib.request.url2pathname` function in :mod:`urllib.request` to correctly handle DOS drive paths in URLs on Windows. Previously, the function produced incorrect results for UNC paths and raised OS errors for some paths.
