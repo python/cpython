@@ -563,7 +563,7 @@ if hasattr(_socket.socket, "sendmsg"):
         import array
 
         return sock.sendmsg(buffers, [(_socket.SOL_SOCKET,
-            _socket.SCM_RIGHTS, array.array("i", fds))])
+            _socket.SCM_RIGHTS, array.array("i", fds))], flags, address)
     __all__.append("send_fds")
 
 if hasattr(_socket.socket, "recvmsg"):
