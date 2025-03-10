@@ -417,6 +417,9 @@ def decode_params(params):
         for name, continuations in rfc2231_params.items():
             value = []
             extended = False
+            if len(continuations) > 1 and any(num is None for num, *_ in continuations):
+                msg = f"Invalid RFC 2231 parameter continuation for '{name}'"
+                raise ValueError(msg)
             # Sort by number
             continuations.sort()
             # And now append all values in numerical order, converting
