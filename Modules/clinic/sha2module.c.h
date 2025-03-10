@@ -133,6 +133,19 @@ PyDoc_STRVAR(SHA256Type_update__doc__,
 #define SHA256TYPE_UPDATE_METHODDEF    \
     {"update", (PyCFunction)SHA256Type_update, METH_O, SHA256Type_update__doc__},
 
+static PyObject *
+SHA256Type_update_impl(SHA256object *self, PyObject *obj);
+
+static PyObject *
+SHA256Type_update(PyObject *self, PyObject *obj)
+{
+    PyObject *return_value = NULL;
+
+    return_value = SHA256Type_update_impl((SHA256object *)self, obj);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(SHA512Type_update__doc__,
 "update($self, obj, /)\n"
 "--\n"
@@ -141,6 +154,19 @@ PyDoc_STRVAR(SHA512Type_update__doc__,
 
 #define SHA512TYPE_UPDATE_METHODDEF    \
     {"update", (PyCFunction)SHA512Type_update, METH_O, SHA512Type_update__doc__},
+
+static PyObject *
+SHA512Type_update_impl(SHA512object *self, PyObject *obj);
+
+static PyObject *
+SHA512Type_update(PyObject *self, PyObject *obj)
+{
+    PyObject *return_value = NULL;
+
+    return_value = SHA512Type_update_impl((SHA512object *)self, obj);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_sha2_sha256__doc__,
 "sha256($module, /, string=b\'\', *, usedforsecurity=True)\n"
@@ -441,4 +467,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1d7fec114eb6b6e3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0c2eed5c77ec6987 input=a9049054013a1b77]*/

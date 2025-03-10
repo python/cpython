@@ -445,6 +445,19 @@ PyDoc_STRVAR(_io_BytesIO_write__doc__,
 #define _IO_BYTESIO_WRITE_METHODDEF    \
     {"write", (PyCFunction)_io_BytesIO_write, METH_O, _io_BytesIO_write__doc__},
 
+static PyObject *
+_io_BytesIO_write_impl(bytesio *self, PyObject *b);
+
+static PyObject *
+_io_BytesIO_write(PyObject *self, PyObject *b)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _io_BytesIO_write_impl((bytesio *)self, b);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_io_BytesIO_writelines__doc__,
 "writelines($self, lines, /)\n"
 "--\n"
@@ -457,6 +470,19 @@ PyDoc_STRVAR(_io_BytesIO_writelines__doc__,
 
 #define _IO_BYTESIO_WRITELINES_METHODDEF    \
     {"writelines", (PyCFunction)_io_BytesIO_writelines, METH_O, _io_BytesIO_writelines__doc__},
+
+static PyObject *
+_io_BytesIO_writelines_impl(bytesio *self, PyObject *lines);
+
+static PyObject *
+_io_BytesIO_writelines(PyObject *self, PyObject *lines)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _io_BytesIO_writelines_impl((bytesio *)self, lines);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_io_BytesIO_close__doc__,
 "close($self, /)\n"
@@ -535,4 +561,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8a5e153bc7584b55 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=477217b2bc464110 input=a9049054013a1b77]*/

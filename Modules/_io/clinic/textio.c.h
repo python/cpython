@@ -457,6 +457,20 @@ PyDoc_STRVAR(_io_IncrementalNewlineDecoder_setstate__doc__,
 #define _IO_INCREMENTALNEWLINEDECODER_SETSTATE_METHODDEF    \
     {"setstate", (PyCFunction)_io_IncrementalNewlineDecoder_setstate, METH_O, _io_IncrementalNewlineDecoder_setstate__doc__},
 
+static PyObject *
+_io_IncrementalNewlineDecoder_setstate_impl(nldecoder_object *self,
+                                            PyObject *state);
+
+static PyObject *
+_io_IncrementalNewlineDecoder_setstate(PyObject *self, PyObject *state)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _io_IncrementalNewlineDecoder_setstate_impl((nldecoder_object *)self, state);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_io_IncrementalNewlineDecoder_reset__doc__,
 "reset($self, /)\n"
 "--\n"
@@ -1290,4 +1304,4 @@ _io_TextIOWrapper__CHUNK_SIZE_set(PyObject *self, PyObject *value, void *Py_UNUS
 
     return return_value;
 }
-/*[clinic end generated code: output=6e64e43113a97340 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dad68d8c33d676e6 input=a9049054013a1b77]*/

@@ -4940,7 +4940,7 @@ static int
 Test_metho_not_default_return_converter_impl(TestObj *self, PyObject *a);
 
 static PyObject *
-Test_metho_not_default_return_converter(TestObj *self, PyObject *a)
+Test_metho_not_default_return_converter(PyObject *self, PyObject *a)
 {
     PyObject *return_value = NULL;
     int _return_value;
@@ -4957,7 +4957,7 @@ exit:
 
 static int
 Test_metho_not_default_return_converter_impl(TestObj *self, PyObject *a)
-/*[clinic end generated code: output=b2cce75a7af2e6ce input=428657129b521177]*/
+/*[clinic end generated code: output=8b03f5213c312138 input=428657129b521177]*/
 
 
 /*[clinic input]

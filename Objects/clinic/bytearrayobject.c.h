@@ -929,7 +929,7 @@ static PyObject *
 bytearray_partition_impl(PyByteArrayObject *self, PyObject *sep);
 
 static PyObject *
-bytearray_partition(PyByteArrayObject *self, PyObject *sep)
+bytearray_partition(PyObject *self, PyObject *sep)
 {
     PyObject *return_value = NULL;
 
@@ -961,7 +961,7 @@ static PyObject *
 bytearray_rpartition_impl(PyByteArrayObject *self, PyObject *sep);
 
 static PyObject *
-bytearray_rpartition(PyByteArrayObject *self, PyObject *sep)
+bytearray_rpartition(PyObject *self, PyObject *sep)
 {
     PyObject *return_value = NULL;
 
@@ -1186,7 +1186,7 @@ static PyObject *
 bytearray_extend_impl(PyByteArrayObject *self, PyObject *iterable_of_ints);
 
 static PyObject *
-bytearray_extend(PyByteArrayObject *self, PyObject *iterable_of_ints)
+bytearray_extend(PyObject *self, PyObject *iterable_of_ints)
 {
     PyObject *return_value = NULL;
 
@@ -1509,7 +1509,7 @@ static PyObject *
 bytearray_join_impl(PyByteArrayObject *self, PyObject *iterable_of_bytes);
 
 static PyObject *
-bytearray_join(PyByteArrayObject *self, PyObject *iterable_of_bytes)
+bytearray_join(PyObject *self, PyObject *iterable_of_bytes)
 {
     PyObject *return_value = NULL;
 
@@ -1789,4 +1789,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=5e33422343b47af9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7c924a56e0a8bfe6 input=a9049054013a1b77]*/
