@@ -162,12 +162,12 @@ the :option:`!-X` option takes precedence over the environment variable.
 
 Example, using the environment variable::
 
-   $ PYTHONPERFSUPPORT=1 perf record -F 9999 -g -o perf.data python script.py
+   $ PYTHONPERFSUPPORT=1 perf record -F 9999 -g -o perf.data python my_script.py
    $ perf report -g -i perf.data
 
 Example, using the :option:`!-X` option::
 
-   $ perf record -F 9999 -g -o perf.data python -X perf script.py
+   $ perf record -F 9999 -g -o perf.data python -X perf my_script.py
    $ perf report -g -i perf.data
 
 Example, using the :mod:`sys` APIs in file :file:`example.py`:
@@ -236,7 +236,7 @@ When using the perf JIT mode, you need an extra step before you can run ``perf
 report``. You need to call the ``perf inject`` command to inject the JIT
 information into the ``perf.data`` file.::
 
-    $ perf record -F 9999 -g --call-graph dwarf -o perf.data python -Xperf_jit my_script.py
+    $ perf record -F 9999 -g -k 1 --call-graph dwarf -o perf.data python -Xperf_jit my_script.py
     $ perf inject -i perf.data --jit --output perf.jit.data
     $ perf report -g -i perf.jit.data
 
