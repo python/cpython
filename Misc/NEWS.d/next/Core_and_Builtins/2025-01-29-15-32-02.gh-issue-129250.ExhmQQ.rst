@@ -1,0 +1,1 @@
+Fix pickling of generic classes instances.
