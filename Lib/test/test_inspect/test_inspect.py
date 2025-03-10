@@ -1746,6 +1746,72 @@ class TestClassesAndFunctions(unittest.TestCase):
         attrs = [a[0] for a in inspect.getmembers(C)]
         self.assertNotIn('missing', attrs)
 
+    def test_getmembers_function(self):
+        members = inspect.getmembers(mod.eggs)
+        callables = inspect.getmembers(mod.eggs, predicate=callable)
+        self.assertIn(('__name__', 'eggs'), members)
+        self.assertIn(('__doc__', 'A docstring.'), members)
+        self.assertTrue(any(name == '__call__' for name, _ in callables))
+
+    def test_getmembers_code(self):
+        code = mod.eggs.__code__
+        members = inspect.getmembers(code)
+        integers = inspect.getmembers(code, predicate=lambda x: isinstance(x, int))
+        self.assertIn(("co_name", "eggs"), members)
+        self.assertIn(("co_argcount", code.co_argcount), members)
+        self.assertIn(("co_argcount", code.co_argcount), integers)
+
+    def test_getmembers_frame(self):
+        members = inspect.getmembers(mod.currentframe)
+        dicts = inspect.getmembers(
+            mod.currentframe, predicate=lambda x: isinstance(x, dict)
+        )
+        self.assertIn(("f_code", mod.currentframe.f_code), members)
+        self.assertIn(("f_globals", mod.currentframe.f_globals), members)
+        self.assertIn(("f_globals", mod.currentframe.f_globals), dicts)
+
+    def test_getmembers_traceback(self):
+        try:
+            1 / 0
+        except ZeroDivisionError as e:
+            tb = e.__traceback__
+
+        members = inspect.getmembers(tb)
+        integers = inspect.getmembers(tb, predicate=lambda x: isinstance(x, int))
+        self.assertIn(("tb_frame", tb.tb_frame), members)
+        self.assertIn(("tb_lineno", tb.tb_lineno), members)
+        self.assertTrue(("tb_lineno", tb.tb_lineno) in integers)
+
+    def test_getmembers_generator(self):
+        gen = generator_function_example(1)
+        members = inspect.getmembers(gen)
+        attrs = inspect.getmembers(
+            gen, predicate=lambda x: hasattr(x, "__class__")
+        )
+        self.assertIn(("gi_code", gen.gi_code), members)
+        self.assertIn(("gi_running", gen.gi_running), members)
+        self.assertTrue(any(name.startswith("gi_") for name, _ in attrs))
+
+    def test_getmembers_coroutine(self):
+        coro = coroutine_function_example(1)
+        members = inspect.getmembers(coro)
+        attrs = inspect.getmembers(
+            coro, predicate=lambda x: hasattr(x, "__class__")
+        )
+        self.assertIn(("cr_code", coro.cr_code), members)
+        self.assertIn(("cr_running", coro.cr_running), members)
+        self.assertTrue(any(name.startswith("cr_") for name, _ in attrs))
+
+        coro.close()  # silence warnings
+
+    def test_getmembers_builtin(self):
+        members = inspect.getmembers(len)
+        callables = inspect.getmembers(len, predicate=callable)
+        self.assertIn(("__name__", "len"), members)
+        self.assertIn(("__doc__", len.__doc__), members)
+        self.assertTrue(any(name == "__call__" for name, _ in callables))
+
+
 
 class TestFormatAnnotation(unittest.TestCase):
     def test_typing_replacement(self):
