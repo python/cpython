@@ -55,7 +55,7 @@ class CAPITests(unittest.TestCase):
             ("filesystem_errors", str, None),
             ("hash_seed", int, None),
             ("home", str | None, None),
-            ("import_time", bool, None),
+            ("import_time", int, None),
             ("inspect", bool, None),
             ("install_signal_handlers", bool, None),
             ("int_max_str_digits", int, None),
