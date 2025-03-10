@@ -427,7 +427,9 @@ Command-line interface
 switch of the interpreter.  Similar to
 the previous example, this serves files relative to the current directory::
 
-   python -m http.server [--cgi] [-b ADDRESS] [-d DIRECTORY] [-p VERSION] [port]
+   python -m http.server
+
+The following options are accepted:
 
 .. program:: http.server
 
@@ -471,6 +473,24 @@ the previous example, this serves files relative to the current directory::
       python -m http.server --protocol HTTP/1.1
 
    .. versionadded:: 3.11
+
+.. option:: --cgi
+
+   :class:`CGIHTTPRequestHandler` can be enabled in the command line by passing
+   the ``--cgi`` option::
+
+      python -m http.server --cgi
+
+   .. deprecated-removed:: 3.13 3.15
+
+      :mod:`http.server` command line ``--cgi`` support is being removed
+      because :class:`CGIHTTPRequestHandler` is being removed.
+
+.. warning::
+
+   :class:`CGIHTTPRequestHandler` and the ``--cgi`` command line option
+   are not intended for use by untrusted clients and may be vulnerable
+   to exploitation. Always use within a secure environment.
 
 
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
@@ -521,21 +541,6 @@ the previous example, this serves files relative to the current directory::
       Retaining it could lead to further :ref:`security considerations
       <http.server-security>`.
 
-:class:`CGIHTTPRequestHandler` can be enabled in the command line by passing
-the ``--cgi`` option::
-
-        python -m http.server --cgi
-
-.. deprecated-removed:: 3.13 3.15
-
-   :mod:`http.server` command line ``--cgi`` support is being removed
-   because :class:`CGIHTTPRequestHandler` is being removed.
-
-.. warning::
-
-   :class:`CGIHTTPRequestHandler` and the ``--cgi`` command line option
-   are not intended for use by untrusted clients and may be vulnerable
-   to exploitation. Always use within a secure environment.
 
 .. _http.server-security:
 
