@@ -1392,10 +1392,18 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(expected_url, result,
                          "pathname2url() failed; %s != %s" %
                          (result, expected_url))
+        # Also test "pathname2url" for a bytes object
+        bytes_expected_path = bytes(expected_path,sys.getfilesystemencoding())
+        result = urllib.request.pathname2url(bytes_expected_path)
+        self.assertEqual(expected_url, result,
+                         "pathname2url() failed; %s != %s" %
+                         (result, expected_url))
+
         result = urllib.request.url2pathname(expected_url)
         self.assertEqual(expected_path, result,
                          "url2pathame() failed; %s != %s" %
                          (result, expected_path))
+
 
     def test_quoting(self):
         # Test automatic quoting and unquoting works for pathnam2url() and
