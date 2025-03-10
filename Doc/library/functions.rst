@@ -1729,8 +1729,8 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-range:
-.. class:: range(stop)
-           range(start, stop, step=1)
+.. class:: range(stop, /)
+           range(start, stop, step=1, /)
    :noindex:
 
    Rather than being a function, :class:`range` is actually an immutable
