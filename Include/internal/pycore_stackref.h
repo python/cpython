@@ -366,9 +366,12 @@ PyStackRef_AsStrongReference(_PyStackRef stackref)
 
 // With GIL
 
-#define Py_TAG_BITS 3
+/* References to immortal objects always have their tag bit set to Py_TAG_REFCNT
+ * as they can (must) have their reclamation deferred */
+
+#define Py_TAG_BITS 1
 #define Py_TAG_REFCNT 1
-#if Py_TAG_REFCNT != Py_TAG_REFCNT
+#if _Py_IMMORTAL_FLAGS != Py_TAG_REFCNT
 #  error "_Py_IMMORTAL_FLAGS != Py_TAG_REFCNT"
 #endif
 
@@ -413,12 +416,12 @@ static inline void PyStackRef_CheckValid(_PyStackRef ref) {
 #endif
 
 #ifdef _WIN32
-#define PyStackRef_IsUncountedMortal(REF) (((REF).bits & Py_TAG_BITS) == 0)
+#define PyStackRef_RefcountOnObject(REF) (((REF).bits & Py_TAG_BITS) == 0)
 #define PyStackRef_AsPyObjectBorrow BITS_TO_PTR_MASKED
 #else
-/* Does this ref not have an embedded refcount and refer to a mortal object? */
+/* Does this ref not have an embedded refcount and thus not refer to a declared immmortal object? */
 static inline int
-PyStackRef_IsUncountedMortal(_PyStackRef ref)
+PyStackRef_RefcountOnObject(_PyStackRef ref)
 {
     return (ref.bits & Py_TAG_BITS) == 0;
 }
@@ -433,7 +436,7 @@ PyStackRef_AsPyObjectBorrow(_PyStackRef ref)
 static inline PyObject *
 PyStackRef_AsPyObjectSteal(_PyStackRef ref)
 {
-    if (PyStackRef_IsUncountedMortal(ref)) {
+    if (PyStackRef_RefcountOnObject(ref)) {
         return BITS_TO_PTR(ref);
     }
     else {
@@ -504,16 +507,16 @@ PyStackRef_FromPyObjectImmortal(PyObject *obj)
     return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_REFCNT};
 }
 
-/* WARNING: This macro evaluates its argument twice */
+/* WARNING: This macro evaluates its argument more than once */
 #ifdef _WIN32
 #define PyStackRef_DUP(REF) \
-    (PyStackRef_IsUncountedMortal(REF) ? (Py_INCREF_MORTAL(BITS_TO_PTR(REF)), (REF)) : (REF))
+    (PyStackRef_RefcountOnObject(REF) ? (Py_INCREF_MORTAL(BITS_TO_PTR(REF)), (REF)) : (REF))
 #else
 static inline _PyStackRef
 PyStackRef_DUP(_PyStackRef ref)
 {
     assert(!PyStackRef_IsNull(ref));
-    if (PyStackRef_IsUncountedMortal(ref)) {
+    if (PyStackRef_RefcountOnObject(ref)) {
         Py_INCREF_MORTAL(BITS_TO_PTR(ref));
     }
     return ref;
@@ -543,14 +546,14 @@ PyStackRef_MakeHeapSafe(_PyStackRef ref)
 #define PyStackRef_CLOSE(REF) \
 do { \
     _PyStackRef _temp = (REF); \
-    if (PyStackRef_IsUncountedMortal(_temp)) Py_DECREF_MORTAL(BITS_TO_PTR(_temp)); \
+    if (PyStackRef_RefcountOnObject(_temp)) Py_DECREF_MORTAL(BITS_TO_PTR(_temp)); \
 } while (0)
 #else
 static inline void
 PyStackRef_CLOSE(_PyStackRef ref)
 {
     assert(!PyStackRef_IsNull(ref));
-    if (PyStackRef_IsUncountedMortal(ref)) {
+    if (PyStackRef_RefcountOnObject(ref)) {
         Py_DECREF_MORTAL(BITS_TO_PTR(ref));
     }
 }
@@ -560,7 +563,7 @@ static inline void
 PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct)
 {
     assert(!PyStackRef_IsNull(ref));
-    if (PyStackRef_IsUncountedMortal(ref)) {
+    if (PyStackRef_RefcountOnObject(ref)) {
         Py_DECREF_MORTAL_SPECIALIZED(BITS_TO_PTR(ref), destruct);
     }
 }
@@ -572,7 +575,7 @@ static inline void
 PyStackRef_XCLOSE(_PyStackRef ref)
 {
     assert(ref.bits != 0);
-    if (PyStackRef_IsUncountedMortal(ref)) {
+    if (PyStackRef_RefcountOnObject(ref)) {
         assert(!PyStackRef_IsNull(ref));
         Py_DECREF_MORTAL(BITS_TO_PTR(ref));
     }
@@ -592,7 +595,7 @@ PyStackRef_XCLOSE(_PyStackRef ref)
 
 // Note: this is a macro because MSVC (Windows) has trouble inlining it.
 
-#define PyStackRef_Is(a, b) (((a).bits & (~Py_TAG_BITS)) == ((b).bits & (~Py_TAG_BITS)))
+#define PyStackRef_Is(a, b) (((a).bits & (~Py_TAG_REFCNT)) == ((b).bits & (~Py_TAG_REFCNT)))
 
 #endif // !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
 
