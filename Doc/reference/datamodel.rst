@@ -3398,6 +3398,13 @@ left undefined.
    :ref:`faq-augmented-assignment-tuple-error`), but this behavior is in fact
    part of the data model.
 
+   Note that :meth:`__ipow__` should be defined to accept an optional third
+   argument if the third non-``None`` argument of
+   :c:func:`PyNumber_InPlacePower` is to be supported.
+
+   .. versionchanged:: next
+      :meth:`!__ipow__` can now be called with three arguments in
+      :c:func:`!PyNumber_InPlacePower`.
 
 .. method:: object.__neg__(self)
             object.__pos__(self)
