@@ -196,3 +196,9 @@ would typically correspond to a python function.
 
    Return true if the event corresponding to the event ID *ev* is
    a :ref:`local event <monitoring-event-local>`.
+
+   .. versionadded:: 3.13
+
+   .. deprecated:: next
+
+      This function is :term:`soft deprecated`.
