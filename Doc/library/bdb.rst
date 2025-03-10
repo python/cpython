@@ -20,15 +20,10 @@ The following exception is defined:
 
 The :mod:`bdb` module also defines two classes:
 
-.. class:: Breakpoint(self, file, line, temporary=False, cond=None, funcname=None)
+.. class:: Breakpoint(file, line, number, temporary=False, cond=None, funcname=None)
 
    This class implements temporary breakpoints, ignore counts, disabling and
    (re-)enabling, and conditionals.
-
-   Breakpoints are indexed by number through a list called :attr:`bpbynumber`
-   and by ``(file, line)`` pairs through :attr:`bplist`.  The former points to
-   a single instance of class :class:`Breakpoint`.  The latter points to a list
-   of such instances since there may be more than one breakpoint per line.
 
    When creating a breakpoint, its associated :attr:`file name <file>` should
    be in canonical form.  If a :attr:`funcname` is defined, a breakpoint
@@ -37,12 +32,6 @@ The :mod:`bdb` module also defines two classes:
    :attr:`hit <hits>`.
 
    :class:`Breakpoint` instances have the following methods:
-
-   .. method:: deleteMe()
-
-      Delete the breakpoint from the list associated to a file/line.  If it is
-      the last breakpoint in that position, it also deletes the entry for the
-      file/line.
 
 
    .. method:: enable()
@@ -100,15 +89,6 @@ The :mod:`bdb` module also defines two classes:
    .. attribute:: enabled
 
       ``True`` if :class:`Breakpoint` is enabled.
-
-   .. attribute:: bpbynumber
-
-      Numeric index for a single instance of a :class:`Breakpoint`.
-
-   .. attribute:: bplist
-
-      Dictionary of :class:`Breakpoint` instances indexed by
-      (:attr:`file`, :attr:`line`) tuples.
 
    .. attribute:: ignore
 
@@ -221,6 +201,25 @@ The :mod:`bdb` module also defines two classes:
 
       Return ``True`` if *frame* is below the starting frame in the stack.
 
+   .. method:: effective(file, line, frame)
+
+      Return ``(active breakpoint, delete temporary flag)`` or ``(None, None)`` as the
+      breakpoint to act upon.
+
+      The *active breakpoint* is the first entry in `self.breaks[file][line]`
+      (which must exist) that is :attr:`enabled <bdb.Breakpoint.enabled>`, for
+      which :func:`checkfuncname` is true, and that has neither a false
+      :attr:`condition <bdb.Breakpoint.cond>` nor positive
+      :attr:`ignore <bdb.Breakpoint.ignore>` count.  The *flag*, meaning that a
+      temporary breakpoint should be deleted, is ``False`` only when the
+      :attr:`cond <bdb.Breakpoint.cond>` cannot be evaluated (in which case,
+      :attr:`ignore <bdb.Breakpoint.ignore>` count is ignored).
+
+      If no such entry exists, then ``(None, None)`` is returned.
+
+      .. versionchanged:: 3.14
+         ``effective`` was originally a function, but has been converted to a method.
+
    .. method:: break_here(frame)
 
       Return ``True`` if there is an effective breakpoint for this line.
@@ -323,8 +322,8 @@ The :mod:`bdb` module also defines two classes:
 
    .. method:: clear_bpbynumber(arg)
 
-      Delete the breakpoint which has the index *arg* in the
-      :attr:`Breakpoint.bpbynumber`.  If *arg* is not numeric or out of range,
+      Delete the breakpoint which has the index *arg*.
+      If *arg* is not numeric or out of range,
       return an error message.
 
    .. method:: clear_all_file_breaks(filename)
@@ -421,24 +420,6 @@ Finally, the module defines the following functions:
    :attr:`function name <bdb.Breakpoint.funcname>`, we have to check we are in
    the right *frame* (the right function) and if we are on its first executable
    line.
-
-.. function:: effective(file, line, frame)
-
-   Return ``(active breakpoint, delete temporary flag)`` or ``(None, None)`` as the
-   breakpoint to act upon.
-
-   The *active breakpoint* is the first entry in
-   :attr:`bplist <bdb.Breakpoint.bplist>` for the
-   (:attr:`file <bdb.Breakpoint.file>`, :attr:`line <bdb.Breakpoint.line>`)
-   (which must exist) that is :attr:`enabled <bdb.Breakpoint.enabled>`, for
-   which :func:`checkfuncname` is true, and that has neither a false
-   :attr:`condition <bdb.Breakpoint.cond>` nor positive
-   :attr:`ignore <bdb.Breakpoint.ignore>` count.  The *flag*, meaning that a
-   temporary breakpoint should be deleted, is ``False`` only when the
-   :attr:`cond <bdb.Breakpoint.cond>` cannot be evaluated (in which case,
-   :attr:`ignore <bdb.Breakpoint.ignore>` count is ignored).
-
-   If no such entry exists, then ``(None, None)`` is returned.
 
 
 .. function:: set_trace()
