@@ -1,5 +1,6 @@
 """Tests for the Tools/i18n/msgfmt.py tool."""
 
+import json
 import sys
 import unittest
 from gettext import GNUTranslations
@@ -38,6 +39,28 @@ class CompilationTest(unittest.TestCase):
                         actual = GNUTranslations(f)
 
                     self.assertDictEqual(actual._catalog, expected._catalog)
+
+    def test_translations(self):
+        with open(data_dir / 'general.mo', 'rb') as f:
+            t = GNUTranslations(f)
+
+        self.assertEqual(t.gettext('foo'), 'foo')
+        self.assertEqual(t.gettext('bar'), 'baz')
+        self.assertEqual(t.pgettext('abc', 'foo'), 'bar')
+        self.assertEqual(t.pgettext('xyz', 'foo'), 'bar')
+        self.assertEqual(t.gettext('Multilinestring'), 'Multilinetranslation')
+        self.assertEqual(t.gettext('"escapes"'), '"translated"')
+        self.assertEqual(t.gettext('\n newlines \n'), '\n translated \n')
+        self.assertEqual(t.ngettext('One email sent.', '%d emails sent.', 1),
+                         'One email sent.')
+        self.assertEqual(t.ngettext('One email sent.', '%d emails sent.', 2),
+                         '%d emails sent.')
+        self.assertEqual(t.npgettext('abc', 'One email sent.',
+                                     '%d emails sent.', 1),
+                         'One email sent.')
+        self.assertEqual(t.npgettext('abc', 'One email sent.',
+                                     '%d emails sent.', 2),
+                         '%d emails sent.')
 
     def test_po_with_bom(self):
         with temp_cwd():
@@ -125,6 +148,16 @@ def update_catalog_snapshots():
     for po_file in data_dir.glob('*.po'):
         mo_file = po_file.with_suffix('.mo')
         compile_messages(po_file, mo_file)
+        # Create a human-readable JSON file which is
+        # easier to review than the binary .mo file.
+        with open(mo_file, 'rb') as f:
+            translations = GNUTranslations(f)
+        catalog_file = po_file.with_suffix('.json')
+        with open(catalog_file, 'w') as f:
+            data = translations._catalog.items()
+            data = sorted(data, key=lambda x: (isinstance(x[0], tuple), x[0]))
+            json.dump(data, f, indent=4)
+            f.write('\n')
 
 
 if __name__ == '__main__':
