@@ -737,14 +737,15 @@ class FindTestCase(unittest.TestCase):
         return mo_file
 
     def test_find_with_env_vars(self):
-        # test that find correctly finds the environment variable LANGUAGE
+        # test that find correctly finds the environment variables
         # when languages are not supplied
-        self.env.set('LANGUAGE', 'ga_IE')
         mo_file = self.create_mo_file("ga_IE")
-
-        result = gettext.find("mofile",
-                              localedir=os.path.join(self.tempdir, "locale"))
-        self.assertEqual(result, mo_file)
+        for var in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
+            self.env.set(var, 'ga_IE')
+            result = gettext.find("mofile",
+                                  localedir=os.path.join(self.tempdir, "locale"))
+            self.assertEqual(result, mo_file)
+            self.env.unset(var)
 
     def test_find_with_lanuages(self):
         # test that passed languages are used
