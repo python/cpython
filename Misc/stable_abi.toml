@@ -1253,7 +1253,6 @@
     added = '3.2'
 [function.PySequence_Fast]
     added = '3.2'
-    abi_only = true
 [function.PySequence_GetItem]
     added = '3.2'
 [function.PySequence_GetSlice]
