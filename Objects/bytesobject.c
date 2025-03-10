@@ -2554,8 +2554,9 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
 
     /* This overestimates if there are spaces */
     buf = _PyBytesWriter_Alloc(&writer, hexlen / 2);
-    if (buf == NULL)
+    if (buf == NULL) {
         goto release_buffer;
+    }
 
     start = str;
     end = str + hexlen;
