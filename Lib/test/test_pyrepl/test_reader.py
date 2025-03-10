@@ -319,3 +319,11 @@ class TestReader(TestCase):
         # Simulate a resize to 0 columns
         reader.screeninfo = []
         self.assertEqual(reader.pos2xy(), (0, 0))
+
+    def test_setpos_from_xy_for_non_printing_char(self):
+        code = "# non \u200c printing character"
+        events = code_to_events(code)
+
+        reader, _ = handle_all_events(events)
+        reader.setpos_from_xy(8, 0)
+        self.assertEqual(reader.pos, 7)
