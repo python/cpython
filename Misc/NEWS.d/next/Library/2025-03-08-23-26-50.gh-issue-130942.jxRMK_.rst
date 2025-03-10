@@ -1,1 +1,1 @@
-Glob.translate no longer matches path separators in ranges
+Glob.translate escapes regex ranges that ecompass path seperator.
