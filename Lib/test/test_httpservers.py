@@ -874,6 +874,19 @@ class CGIHTTPServerTestCase(BaseTestCase):
         res = self.request('///////////nocgi.py/../cgi-bin/nothere.sh')
         self.assertEqual(res.status, HTTPStatus.NOT_FOUND)
 
+    @unittest.skipIf(sys.platform != 'win32',
+                     'ADS is a win32 only feature')
+    def test_is_cgi_with_alternate_data_stream(self):
+        res = self.request('/cgi-bin::$INDEX_ALLOCATION/file1.py')
+        self.assertEqual(
+            (res.read(), res.getheader('Content-type'), res.status),
+            (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK))
+
+        res = self.request('/cgi-bin:$I30:$INDEX_ALLOCATION/file1.py')
+        self.assertEqual(
+            (res.read(), res.getheader('Content-type'), res.status),
+            (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK))
+
     def test_post(self):
         params = urllib.parse.urlencode(
             {'spam' : 1, 'eggs' : 'python', 'bacon' : 123456})
