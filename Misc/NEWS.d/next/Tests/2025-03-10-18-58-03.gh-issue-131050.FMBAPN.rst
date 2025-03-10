@@ -1,1 +1,1 @@
-Some cryptography TLS libraries lack support for "finite field" ephemeral Diffie-Hellman (FFDHE) TLS ciphersuites. This issue proposes modifying `test_ssl`'s `test_dh_params` to skip itself if the underlying TLS library does not support FFDHE.
+Some cryptography TLS libraries lack support for "finite field" ephemeral Diffie-Hellman (FFDHE) TLS ciphersuites. This issue proposes modifying ``test_ssl``'s ``test_dh_params`` to skip itself if the underlying TLS library does not support FFDHE.
