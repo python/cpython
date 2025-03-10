@@ -1405,6 +1405,9 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
         if (kind & CO_FAST_FREE && !(co->co_flags & CO_OPTIMIZED)) {
             continue;
         }
+        if (kind & CO_FAST_HIDDEN) {
+            continue;
+        }
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);
         PyObject *value = PyObject_GetItem(locals, name);
         /* We only care about NULLs if clear is true. */
