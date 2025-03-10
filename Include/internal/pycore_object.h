@@ -303,7 +303,20 @@ extern int _PyDict_CheckConsistency(PyObject *mp, int check_content);
 // Fast inlined version of PyType_HasFeature()
 static inline int
 _PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
-    return ((FT_ATOMIC_LOAD_ULONG_RELAXED(type->tp_flags) & feature) != 0);
+    return (type->tp_flags & feature) != 0;
+}
+
+// Variant of above function that uses safely reads type flags that can be
+// toggled after the type is first created.
+static inline int
+_PyType_HasFeatureSafe(PyTypeObject *type, unsigned long feature) {
+#ifdef Py_GIL_DISABLED
+    if (_PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        PyHeapTypeObject *ht = (PyHeapTypeObject*)type;
+        return (FT_ATOMIC_LOAD_ULONG_RELAXED(ht->ht_flags) & feature) != 0;
+    }
+#endif
+    return (type->tp_flags & feature) != 0;
 }
 
 extern void _PyType_InitCache(PyInterpreterState *interp);

@@ -3,6 +3,7 @@
 
 #include "parts.h"
 #include "clinic/vectorcall.c.h"
+#include "pycore_object.h" // _PyType_HasFeatureSafe()
 
 
 #include <stddef.h>                 // offsetof
@@ -255,7 +256,7 @@ static int
 _testcapi_has_vectorcall_flag_impl(PyObject *module, PyTypeObject *type)
 /*[clinic end generated code: output=3ae8d1374388c671 input=8eee492ac548749e]*/
 {
-    return PyType_HasFeature(type, Py_TPFLAGS_HAVE_VECTORCALL);
+    return _PyType_HasFeatureSafe(type, Py_TPFLAGS_HAVE_VECTORCALL);
 }
 
 static PyMethodDef TestMethods[] = {
