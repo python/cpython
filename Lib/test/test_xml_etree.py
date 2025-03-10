@@ -18,9 +18,11 @@ import sys
 import textwrap
 import types
 import unittest
+import unittest.mock as mock
 import warnings
 import weakref
 
+from contextlib import nullcontext
 from functools import partial
 from itertools import product, islice
 from test import support
@@ -120,6 +122,21 @@ ATTLIST_XML = """\
 <bar>&qux;</bar>
 </foo>
 """
+
+def is_python_implementation():
+    assert ET is not None, "ET must be initialized"
+    assert pyET is not None, "pyET must be initialized"
+    return ET is pyET
+
+
+def equal_wrapper(cls):
+    """Mock cls.__eq__ to check whether it has been called or not.
+
+    The behaviour of cls.__eq__ (side-effects included) is left as is.
+    """
+    eq = cls.__eq__
+    return mock.patch.object(cls, "__eq__", autospec=True, wraps=eq)
+
 
 def checkwarnings(*filters, quiet=False):
     def decorator(test):
@@ -2642,6 +2659,7 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
 
 
 class BadElementTest(ElementTestCase, unittest.TestCase):
+
     def test_extend_mutable_list(self):
         class X:
             @property
@@ -2680,18 +2698,215 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         e = ET.Element('foo')
         e.extend(L)
 
-    def test_remove_with_mutating(self):
-        class X(ET.Element):
-            def __eq__(self, o):
-                del e[:]
-                return False
-        e = ET.Element('foo')
-        e.extend([X('bar')])
-        self.assertRaises(ValueError, e.remove, ET.Element('baz'))
+    def test_remove_with_clear_assume_missing(self):
+        # gh-126033: Check that a concurrent clear() for an assumed-to-be
+        # missing element does not make the interpreter crash.
+        self.do_test_remove_with_clear(raises=True)
 
-        e = ET.Element('foo')
-        e.extend([ET.Element('bar')])
-        self.assertRaises(ValueError, e.remove, X('baz'))
+    def test_remove_with_clear_assume_existing(self):
+        # gh-126033: Check that a concurrent clear() for an assumed-to-be
+        # existing element does not make the interpreter crash.
+        self.do_test_remove_with_clear(raises=False)
+
+    def do_test_remove_with_clear(self, *, raises):
+
+        # Until the discrepency between "del root[:]" and "root.clear()" is
+        # resolved, we need to keep two tests. Previously, using "del root[:]"
+        # did not crash with the reproducer of gh-126033 while "root.clear()"
+        # did.
+
+        class E(ET.Element):
+            """Local class to be able to mock E.__eq__ for introspection."""
+
+        class X(E):
+            def __eq__(self, o):
+                del root[:]
+                return not raises
+
+        class Y(E):
+            def __eq__(self, o):
+                root.clear()
+                return not raises
+
+        if raises:
+            get_checker_context = lambda: self.assertRaises(ValueError)
+        else:
+            get_checker_context = nullcontext
+
+        self.assertIs(E.__eq__, object.__eq__)
+
+        for Z, side_effect in [(X, 'del root[:]'), (Y, 'root.clear()')]:
+            self.enterContext(self.subTest(side_effect=side_effect))
+
+            # test removing R() from [U()]
+            for R, U, description in [
+                (E, Z, "remove missing E() from [Z()]"),
+                (Z, E, "remove missing Z() from [E()]"),
+                (Z, Z, "remove missing Z() from [Z()]"),
+            ]:
+                with self.subTest(description):
+                    root = E('top')
+                    root.extend([U('one')])
+                    with get_checker_context():
+                        root.remove(R('missing'))
+
+            # test removing R() from [U(), V()]
+            cases = self.cases_for_remove_missing_with_mutations(E, Z)
+            for R, U, V, description in cases:
+                with self.subTest(description):
+                    root = E('top')
+                    root.extend([U('one'), V('two')])
+                    with get_checker_context():
+                        root.remove(R('missing'))
+
+            # Test removing root[0] from [Z()].
+            #
+            # Since we call root.remove() with root[0], Z.__eq__()
+            # will not be called (we branch on the fast Py_EQ path).
+            with self.subTest("remove root[0] from [Z()]"):
+                root = E('top')
+                root.append(Z('rem'))
+                with equal_wrapper(E) as f, equal_wrapper(Z) as g:
+                    root.remove(root[0])
+                f.assert_not_called()
+                g.assert_not_called()
+
+            # Test removing root[1] (of type R) from [U(), R()].
+            #
+            # In pure Python, using root.clear() sets the children
+            # list to [] without calling list.clear().
+            #
+            # For this reason, the call to root.remove() first
+            # checks root[0] and sets the children list to []
+            # since either root[0] or root[1] is an evil element.
+            #
+            # Since checking root[1] still uses the old reference
+            # to the children list, PyObject_RichCompareBool() branches
+            # to the fast Py_EQ path and Y.__eq__() is called exactly
+            # once (when checking root[0]).
+            #
+            # NOTE(picnixz): the Python and C implementations
+            #   could be aligned if 'self._children = []' is
+            #   replaced by 'self._children.clear()'; however,
+            #   this should be carefully addressed since any
+            #   reference to 'self._children' will be affected.
+            is_special = is_python_implementation() and raises and Z is Y
+            if is_special:
+                def check(f, never, arg0spec, arg1spec):
+                    never.assert_not_called()
+                    f.assert_called_once()
+
+                    arg0cls, arg0tag = arg0spec
+                    self.assertIs(f.call_args[0][0].__class__, arg0cls)
+                    self.assertIs(f.call_args[0][0].tag, arg0tag)
+
+                    arg1cls, arg1tag = arg1spec
+                    self.assertIs(f.call_args[0][1].__class__, arg1cls)
+                    self.assertIs(f.call_args[0][1].tag, arg1tag)
+
+                with self.subTest("remove root[1] from [E(), Z()]"):
+                    root = E('top')
+                    root.extend([E('one'), Z('rem')])
+                    with equal_wrapper(E) as never, equal_wrapper(Z) as f:
+                        root.remove(root[1])
+                    # Calling PyObject_RichCompareBool(root[0], root[1], Py_EQ)
+                    # delegates to Z.__eq__(root[1], root[0]) since E.__eq__ is
+                    # not implemented. In particular, E.__eq__ is never called
+                    # but Z.__eq__ is called when checking root[0].
+                    check(f, never, (Z, 'rem'), (E, 'one'))
+
+                with self.subTest("remove root[1] from [Z(), E()]"):
+                    root = E('top')
+                    root.extend([Z('one'), E('rem')])
+                    with equal_wrapper(E) as never, equal_wrapper(Z) as f:
+                        root.remove(root[1])
+                    # Calling PyObject_RichCompareBool(root[0], root[1], Py_EQ)
+                    # delegates to Z.__eq__(root[0], root[1]). In particular,
+                    # E.__eq__ is never called due to the Py_EQ fast path.
+                    check(f, never, (Z, 'one'), (E, 'rem'))
+
+                with self.subTest("remove root[1] from [Z(), Z()]"):
+                    root = E('top')
+                    root.extend([Z('one'), Z('rem')])
+                    self.assertNotEqual(list(root), [])
+                    with equal_wrapper(E) as never, equal_wrapper(Z) as f:
+                        root.remove(root[1])
+                    # Same arguments as for the [Z(), E()] case.
+                    check(f, never, (Z, 'one'), (Z, 'rem'))
+            else:
+                cases = self.cases_for_remove_existing_with_mutations(E, Z)
+                for R, U, description in cases:
+                    with self.subTest(description):
+                        root = E('top')
+                        root.extend([U('one'), R('rem')])
+                        with get_checker_context():
+                            root.remove(root[1])
+
+    def test_remove_with_mutate_root_assume_missing(self):
+        # gh-126033: Check that a concurrent mutation for an assumed-to-be
+        # missing element does not make the interpreter crash.
+        self.do_test_remove_with_mutate_root(raises=True)
+
+    def test_remove_with_mutate_root_assume_existing(self):
+        # gh-126033: Check that a concurrent mutation for an assumed-to-be
+        # existing element does not make the interpreter crash.
+        self.do_test_remove_with_mutate_root(raises=False)
+
+    def do_test_remove_with_mutate_root(self, *, raises):
+        E = ET.Element
+
+        class Z(E):
+            def __eq__(self, o):
+                del root[0]
+                return not raises
+
+        if raises:
+            get_checker_context = lambda: self.assertRaises(ValueError)
+        else:
+            get_checker_context = nullcontext
+
+        # test removing R() from [U(), V()]
+        cases = self.cases_for_remove_missing_with_mutations(E, Z)
+        for R, U, V, description in cases:
+            with self.subTest(description):
+                root = E('top')
+                root.extend([U('one'), V('two')])
+                with get_checker_context():
+                    root.remove(R('missing'))
+
+        # test removing root[1] (of type R) from [U(), R()]
+        cases = self.cases_for_remove_existing_with_mutations(E, Z)
+        for R, U, description in cases:
+            with self.subTest(description):
+                root = E('top')
+                root.extend([U('one'), R('rem')])
+                with get_checker_context():
+                    root.remove(root[1])
+
+    def cases_for_remove_missing_with_mutations(self, E, Z):
+        # Cases for removing R() from [U(), V()].
+        # The case U = V = R = E is not interesting as there is no mutation.
+        for U, V in [(E, Z), (Z, E), (Z, Z)]:
+            description = (f"remove missing {E.__name__}() from "
+                           f"[{U.__name__}(), {V.__name__}()]")
+            yield E, U, V, description
+
+        for U, V in [(E, E), (E, Z), (Z, E), (Z, Z)]:
+            description = (f"remove missing {Z.__name__}() from "
+                           f"[{U.__name__}(), {V.__name__}()]")
+            yield Z, U, V, description
+
+    def cases_for_remove_existing_with_mutations(self, E, Z):
+        # Cases for removing root[1] (of type R) from [U(), R()].
+        # The case U = R = E is not interesting as there is no mutation.
+        for U, R, description in [
+            (E, Z, "remove root[1] from [E(), Z()]"),
+            (Z, E, "remove root[1] from [Z(), E()]"),
+            (Z, Z, "remove root[1] from [Z(), Z()]"),
+        ]:
+            description = (f"remove root[1] (of type {R.__name__}) "
+                           f"from [{U.__name__}(), {R.__name__}()]")
+            yield R, U, description
 
     @support.infinite_recursion(25)
     def test_recursive_repr(self):
