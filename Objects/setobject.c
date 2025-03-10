@@ -2030,12 +2030,12 @@ set.issubset
     other: object
     /
 
-Report whether another set contains this set.
+Return True if the set is a subset of other.
 [clinic start generated code]*/
 
 static PyObject *
 set_issubset_impl(PySetObject *so, PyObject *other)
-/*[clinic end generated code: output=b2b59d5f314555ce input=f2a4fd0f2537758b]*/
+/*[clinic end generated code: output=b2b59d5f314555ce input=0c956d86fff5b094]*/
 {
     setentry *entry;
     Py_ssize_t pos = 0;
@@ -2075,12 +2075,12 @@ set.issuperset
     other: object
     /
 
-Report whether this set contains another set.
+Return True if the set is a superset of other.
 [clinic start generated code]*/
 
 static PyObject *
 set_issuperset_impl(PySetObject *so, PyObject *other)
-/*[clinic end generated code: output=ecf00ce552c09461 input=5f2e1f262e6e4ccc]*/
+/*[clinic end generated code: output=ecf00ce552c09461 input=c3b6ed4108639318]*/
 {
     if (PyAnySet_Check(other)) {
         return set_issubset((PySetObject *)other, (PyObject *)so);
