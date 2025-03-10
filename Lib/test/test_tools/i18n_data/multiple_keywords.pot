@@ -19,17 +19,17 @@ msgstr ""
 msgid "bar"
 msgstr ""
 
-#: multiple_keywords.py:4
+#: multiple_keywords.py:5
 msgctxt "baz"
 msgid "qux"
 msgstr ""
 
-#: multiple_keywords.py:6
+#: multiple_keywords.py:9
 msgctxt "corge"
 msgid "grault"
 msgstr ""
 
-#: multiple_keywords.py:7
+#: multiple_keywords.py:11
 msgctxt "xyzzy"
 msgid "foo"
 msgid_plural "foos"
