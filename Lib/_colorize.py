@@ -7,15 +7,19 @@ COLORIZE = True
 
 class ANSIColors:
     BACKGROUND_YELLOW = "\x1b[43m"
+    BOLD_BLUE = "\x1b[1;34m"
     BOLD_GREEN = "\x1b[1;32m"
     BOLD_MAGENTA = "\x1b[1;35m"
     BOLD_RED = "\x1b[1;31m"
+    BOLD_TEAL = "\x1b[1;36m"
+    BOLD_YELLOW =  "\x1b[1;33m"
     BLACK = "\x1b[30m"
     GREEN = "\x1b[32m"
     GREY = "\x1b[90m"
     MAGENTA = "\x1b[35m"
     RED = "\x1b[31m"
     RESET = "\x1b[0m"
+    TEAL = "\x1b[36m"
     YELLOW = "\x1b[33m"
 
 
