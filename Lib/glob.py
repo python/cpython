@@ -263,7 +263,7 @@ _special_parts = ('', '.', '..')
 _dir_open_flags = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
 _no_recurse_symlinks = object()
 
-def escape_pathname_range_including_seps(pat, seps):
+def escape_regex_range_including_seps(pat, seps):
     """Escape ranges containing seperators in a path
     """
     pat = list(pat)
@@ -369,7 +369,7 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
                 results.append(any_sep)
 
     res = ''.join(results)
-    res=escape_pathname_range_including_seps(res, seps=seps)
+    res=escape_regex_range_including_seps(res, seps=seps)
     return fr'(?s:{res})\Z'
 
 
