@@ -1,12 +1,15 @@
 import enum
 import errno
 from http import client, HTTPStatus
+from http.client import HTTPConnection
 import io
+from io import StringIO
 import itertools
 import os
 import array
 import re
 import socket
+import sys
 import threading
 
 import unittest
@@ -16,6 +19,7 @@ TestCase = unittest.TestCase
 from test import support
 from test.support import os_helper
 from test.support import socket_helper
+from unittest.mock import MagicMock
 
 support.requires_working_socket(module=True)
 
@@ -2524,6 +2528,76 @@ class TunnelTests(TestCase):
         self.assertIsNotNone(exc)
         self.assertTrue(sock.file_closed)
 
+
+
+class TestHTTPSocketShutdown(TestCase):
+    def test_close_with_shutdown(self):
+        mock_socket = MagicMock()
+        mock_socket.close = MagicMock()
+        mock_socket.shutdown = MagicMock()
+        connection = HTTPConnection('www.example.com')
+        connection.sock = mock_socket
+        original_stderr = sys.stderr
+        sys.stderr = StringIO()
+        try:
+            connection.close(shutdown=True)
+            mock_socket.shutdown.assert_called_once_with(2)  # SHUT_RDWR
+            mock_socket.close.assert_called_once()
+            error_output = sys.stderr.getvalue()
+            self.assertEqual(error_output, "")
+        finally:
+            sys.stderr = original_stderr
+
+    def test_close_without_shutdown(self):
+        mock_socket = MagicMock()
+        mock_socket.close = MagicMock()
+        mock_socket.shutdown = MagicMock()
+        connection = HTTPConnection('www.example.com')
+        connection.sock = mock_socket
+        original_stderr = sys.stderr
+        sys.stderr = StringIO()
+        try:
+            connection.close(shutdown=False)
+            mock_socket.shutdown.assert_not_called()
+            mock_socket.close.assert_called_once()
+            error_output = sys.stderr.getvalue()
+            self.assertEqual(error_output, "")
+        finally:
+            sys.stderr = original_stderr
+
+    def test_close_shutdown_error(self):
+        mock_socket = MagicMock()
+        mock_socket.close = MagicMock()
+        mock_socket.shutdown = MagicMock(side_effect=OSError("Shutdown error"))
+        connection = HTTPConnection('www.example.com')
+        connection.sock = mock_socket
+        original_stderr = sys.stderr
+        sys.stderr = StringIO()
+        try:
+            connection.close(shutdown=True)
+            mock_socket.shutdown.assert_called_once_with(2)  # SHUT_RDWR
+            mock_socket.close.assert_called_once()
+            error_output = sys.stderr.getvalue()
+            self.assertIn("Socket shutdown error: Shutdown error", error_output)
+        finally:
+            sys.stderr = original_stderr
+
+    def test_close_unexpected_error(self):
+        mock_socket = MagicMock()
+        mock_socket.close = MagicMock()
+        mock_socket.shutdown = MagicMock(side_effect=Exception("Unexpected error"))
+        connection = HTTPConnection('www.example.com')
+        connection.sock = mock_socket
+        original_stderr = sys.stderr
+        sys.stderr = StringIO()
+        try:
+            connection.close(shutdown=True)
+            mock_socket.shutdown.assert_called_once_with(2)  # SHUT_RDWR
+            mock_socket.close.assert_called_once()
+            error_output = sys.stderr.getvalue()
+            self.assertIn("Unexpected error during socket shutdown: Unexpected error", error_output)
+        finally:
+            sys.stderr = original_stderr
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
