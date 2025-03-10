@@ -2760,6 +2760,11 @@ tstate_ensure(PyInterpreterState *interp, PyThreadState *tcur,
         *errmsg = NULL;
     }
 
+    if (tcur != NULL && tcur->interp != interp) {
+        // The current thread state is from another interpreter
+        tcur = NULL;
+    }
+
     int has_gil;
     if (tcur == NULL) {
         /* Create a new Python thread state for this thread */
