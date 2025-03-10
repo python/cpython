@@ -921,7 +921,9 @@ _PyModule_IsPossiblyShadowing(PyObject *origin)
     if (sys_path_0[0] == L'\0') {
         // if sys.path[0] == "", treat it as if it were the current directory
         if (!_Py_wgetcwd(sys_path_0_buf, MAXPATHLEN)) {
-            return -1;
+            // If we failed to getcwd, don't raise an exception and instead
+            // let the caller proceed assuming no shadowing
+            return 0;
         }
         sys_path_0 = sys_path_0_buf;
     }

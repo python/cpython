@@ -566,30 +566,50 @@ class RFCTestCasesMixin(TestVectorsMixin):
             cache.pop('foo')
 
 
-class PyRFCTestCase(PyTestVectorsMixin, ThroughObjectMixin,
-                    RFCTestCasesMixin, unittest.TestCase):
-    """Python implementation of HMAC using hmac.HMAC()."""
-
-
-class PyDotNewRFCTestCase(PyTestVectorsMixin, ThroughModuleAPIMixin,
-                          RFCTestCasesMixin, unittest.TestCase):
-    """Python implementation of HMAC using hmac.new()."""
-
-
-@hashlib_helper.requires_hashlib()
-class OpenSSLRFCTestCase(OpenSSLTestVectorsMixin, RFCTestCasesMixin,
-                         unittest.TestCase):
-    """OpenSSL implementation of HMAC."""
+class RFCWithOpenSSLHashFunctionTestCasesMixin(RFCTestCasesMixin):
 
     def __init_subclass__(cls, *args, **kwargs):
         super().__init_subclass__(*args, **kwargs)
 
         for name in cls.ALGORITHMS:
             @property
+            @hashlib_helper.requires_hashlib()
             @hashlib_helper.requires_hashdigest(name, openssl=True)
             def func(self, *, __name=name):  # __name needed to bind 'name'
                 return getattr(_hashlib, f'openssl_{__name}')
             setattr(cls, name, func)
+
+
+class PyRFCTestCase(PyTestVectorsMixin, ThroughObjectMixin,
+                    RFCWithOpenSSLHashFunctionTestCasesMixin,
+                    unittest.TestCase):
+    """Python implementation of HMAC using hmac.HMAC().
+
+    The underlying hash functions are OpenSSL-based.
+    """
+
+
+class PyDotNewRFCTestCase(PyTestVectorsMixin, ThroughModuleAPIMixin,
+                          RFCWithOpenSSLHashFunctionTestCasesMixin,
+                          unittest.TestCase):
+    """Python implementation of HMAC using hmac.new().
+
+    The underlying hash functions are OpenSSL-based.
+    """
+
+
+class OpenSSLRFCTestCase(OpenSSLTestVectorsMixin,
+                         RFCWithOpenSSLHashFunctionTestCasesMixin,
+                         unittest.TestCase):
+    """OpenSSL implementation of HMAC.
+
+    The underlying hash functions are also OpenSSL-based."""
+
+
+# TODO(picnixz): once we have a HACL* HMAC, we should also test the Python
+# implementation of HMAC with a HACL*-based hash function. For now, we only
+# test it partially via the '_sha2' module, but for completeness we could
+# also test the RFC test vectors against all possible implementations.
 
 
 class DigestModTestCaseMixin(CreatorMixin, DigestMixin):
