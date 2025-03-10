@@ -516,6 +516,40 @@ sequence_tuple(PyObject *self, PyObject *obj)
 }
 
 
+static PyObject *
+sequence_fast(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    const char *err_msg;
+    if (!PyArg_ParseTuple(args, "Os", &obj, &err_msg)) {
+        return NULL;
+    }
+    NULLABLE(obj);
+    return PySequence_Fast(obj, err_msg);
+}
+
+
+static PyObject *
+sequence_fast_get_size(PyObject *self, PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyLong_FromSsize_t(PySequence_Fast_GET_SIZE(obj));
+}
+
+
+static PyObject *
+sequence_fast_get_item(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    Py_ssize_t index;
+    if (!PyArg_ParseTuple(args, "On", &obj, &index)) {
+        return NULL;
+    }
+    NULLABLE(obj);
+    return PySequence_Fast_GET_ITEM(obj, index);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"object_repr", object_repr, METH_O},
     {"object_ascii", object_ascii, METH_O},
@@ -567,6 +601,9 @@ static PyMethodDef test_methods[] = {
     {"sequence_index", sequence_index, METH_VARARGS},
     {"sequence_list", sequence_list, METH_O},
     {"sequence_tuple", sequence_tuple, METH_O},
+    {"sequence_fast", sequence_fast, METH_VARARGS},
+    {"sequence_fast_get_size", sequence_fast_get_size, METH_O},
+    {"sequence_fast_get_item", sequence_fast_get_item, METH_VARARGS},
 
     {NULL},
 };
