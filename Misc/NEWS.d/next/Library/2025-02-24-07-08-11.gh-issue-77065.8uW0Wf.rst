@@ -1,0 +1,2 @@
+Add keyword-only optional argument *echochar* for :meth:`getpass.getpass`.
+Patch by Semyon Moroz.
