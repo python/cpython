@@ -2729,7 +2729,9 @@ class TestDateTime(TestDate):
 
     def test_fromtimestamp_limits(self):
         try:
-            self.theclass.fromtimestamp(-2**32 - 1)
+            # See if the platform can handle timestamps that are near the min.
+            # Windows, for example, can't do anything before its epoch.
+            self.theclass.fromtimestamp(self.theclass.min.timestamp())
         except (OSError, OverflowError):
             self.skipTest("Test not valid on this platform")
 
