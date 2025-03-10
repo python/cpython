@@ -1681,6 +1681,35 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch left', 'func', 12, 12)])
 
 
+    def test_match(self):
+
+        def func(v=1):
+            x = 0
+            for v in range(4):
+                match v:
+                    case 1:
+                        x += 1
+                    case 2:
+                        x += 2
+                    case _:
+                        x += 3
+            return x
+
+        self.check_events(func, recorders = BRANCHES_RECORDERS, expected = [
+            ('branch left', 'func', 2, 2),
+            ('branch right', 'func', 4, 6),
+            ('branch right', 'func', 6, 8),
+            ('branch left', 'func', 2, 2),
+            ('branch left', 'func', 4, 5),
+            ('branch left', 'func', 2, 2),
+            ('branch right', 'func', 4, 6),
+            ('branch left', 'func', 6, 7),
+            ('branch left', 'func', 2, 2),
+            ('branch right', 'func', 4, 6),
+            ('branch right', 'func', 6, 8),
+            ('branch right', 'func', 2, 10)])
+
+
 class TestBranchConsistency(MonitoringTestBase, unittest.TestCase):
 
     def check_branches(self, run_func, test_func=None, tool=TEST_TOOL, recorders=BRANCH_OFFSET_RECORDERS):
