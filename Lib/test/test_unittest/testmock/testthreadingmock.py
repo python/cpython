@@ -2,8 +2,9 @@ import time
 import unittest
 import concurrent.futures
 
+from threading import Thread
 from test.support import threading_helper
-from unittest.mock import patch, ThreadingMock
+from unittest.mock import patch, ThreadingMock, MagicMock
 
 
 threading_helper.requires_working_threading(module=True)
@@ -195,6 +196,32 @@ class TestThreadingMock(unittest.TestCase):
         m.wait_until_called()
         m.wait_until_any_call_with()
         m.assert_called_once()
+
+
+class TestRaceConditions(unittest.TestCase):
+    def test_str(self):
+        def get_delayed_setattr(_setattr=MagicMock.__setattr__):
+            def _delayed_setattr(self, name, value):
+                if name == 'return_value' and type(value) is str:
+                    # double the delay time to allow __str__ to be called by
+                    # the other thread before return_value is set
+                    time.sleep(VERY_SHORT_TIMEOUT * 2)
+                return _setattr(self, name, value)
+            return _delayed_setattr
+        def f():
+            with patch.object(MagicMock, '__setattr__', get_delayed_setattr()):
+                str(m)
+        m = MagicMock()
+        thread = Thread(target=f)
+        thread.start()
+        # allow child mock for __str__ to be created by f() first
+        time.sleep(VERY_SHORT_TIMEOUT)
+        try:
+            str(m)
+        except TypeError:
+            raise AssertionError(
+                '__str__ called by a different thread before return_value is set')
+        thread.join()
 
 
 if __name__ == "__main__":
