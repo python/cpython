@@ -1,0 +1,23 @@
+from tkinter import *
+
+# Створюємо вікно
+tk = Tk()
+tk.title("Малюнок будиночка")
+canvas = Canvas(tk, width=500, height=500, bg="lightblue")
+canvas.pack()
+
+# Малюємо основу будинку
+canvas.create_rectangle(150, 250, 350, 400, fill="lightgray", outline="black", width=3)
+
+# Малюємо дах
+canvas.create_polygon(150, 250, 250, 150, 350, 250, fill="brown", outline="black", width=3)
+
+# Малюємо двері
+canvas.create_rectangle(220, 320, 280, 400, fill="saddlebrown", outline="black", width=3)
+
+# Малюємо вікна
+canvas.create_rectangle(170, 280, 210, 320, fill="yellow", outline="black", width=3)
+canvas.create_rectangle(290, 280, 330, 320, fill="yellow", outline="black", width=3)
+
+# Запускаємо головний цикл
+tk.mainloop()
