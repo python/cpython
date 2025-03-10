@@ -4558,11 +4558,11 @@ class MiscIOTest(unittest.TestCase):
         ''')
         proc = assert_python_ok('-X', 'warn_default_encoding', '-c', code)
         warnings = proc.err.splitlines()
-        self.assertEqual(len(warnings), 4)
+        self.assertEqual(len(warnings), 2)
         self.assertTrue(
             warnings[0].startswith(b"<string>:5: EncodingWarning: "))
         self.assertTrue(
-            warnings[2].startswith(b"<string>:8: EncodingWarning: "))
+            warnings[1].startswith(b"<string>:8: EncodingWarning: "))
 
     def test_text_encoding(self):
         # PEP 597, bpo-47000. io.text_encoding() returns "locale" or "utf-8"

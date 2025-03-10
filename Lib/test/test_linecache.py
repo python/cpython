@@ -8,6 +8,7 @@ import tokenize
 from importlib.machinery import ModuleSpec
 from test import support
 from test.support import os_helper
+from test.support.script_helper import assert_python_ok
 
 
 FILENAME = linecache.__file__
@@ -311,6 +312,12 @@ class LineCacheTests(unittest.TestCase):
         # just to be sure that we did not mess with cache
         linecache.clearcache()
 
+    def test_linecache_python_string(self):
+        cmdline = "import linecache;assert len(linecache.cache) == 0"
+        retcode, stdout, stderr = assert_python_ok('-c', cmdline)
+        self.assertEqual(retcode, 0)
+        self.assertEqual(stdout, b'')
+        self.assertEqual(stderr, b'')
 
 class LineCacheInvalidationTests(unittest.TestCase):
     def setUp(self):
