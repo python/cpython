@@ -1,0 +1,2 @@
+Emit a FutureWarning when truncating negative start and end indices in re.finditer
+and re.findall.
