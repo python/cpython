@@ -263,6 +263,54 @@ _special_parts = ('', '.', '..')
 _dir_open_flags = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
 _no_recurse_symlinks = object()
 
+def escape_pathname_range_including_seps(pat, seps):
+    """Escape ranges containing seperators in a path
+    """
+    pat = list(pat)
+    ordinal_seps=set(map(ord, seps))
+
+    insideRange = False
+    ds=[]
+
+    buf=''
+    idx1=0
+    idx2=0
+    rangeIncludesSep=False
+
+    for path_idx, path_ch in enumerate(pat):
+        if path_idx > 0:
+            if path_ch == '[' and pat[path_idx-1] != '\\':
+                insideRange = True
+                idx1=path_idx
+                continue
+            if path_ch == ']' and pat[path_idx-1] != '\\':
+                insideRange = False
+                idx2=path_idx+1
+
+        if insideRange:
+            buf+=path_ch
+            if path_ch == '-':
+                glob_range = list(range(ord(pat[path_idx-1]), ord(pat[path_idx+1])))
+                if ordinal_seps.intersection(glob_range):
+                    rangeIncludesSep = True
+
+        elif len(buf)>0:
+            ds.append([idx1, idx2, rangeIncludesSep])
+
+            buf=''
+            idx1=1
+            idx2=2
+            rangeIncludesSep=False
+
+    for ds_idx, ds_elem in enumerate(ds):
+        idx1=ds_elem[0]
+        idx2=ds_elem[1]
+        rangeIncludesSep=ds_elem[2]
+        if rangeIncludesSep:
+            pat.insert(idx1, '\\')
+            pat.insert(idx2, '\\')
+
+    return ''.join(pat)
 
 def translate(pat, *, recursive=False, include_hidden=False, seps=None):
     """Translate a pathname with shell wildcards to a regular expression.
@@ -282,6 +330,8 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
             seps = (os.path.sep, os.path.altsep)
         else:
             seps = os.path.sep
+
+
     escaped_seps = ''.join(map(re.escape, seps))
     any_sep = f'[{escaped_seps}]' if len(seps) > 1 else escaped_seps
     not_sep = f'[^{escaped_seps}]'
@@ -312,10 +362,14 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
             if part:
                 if not include_hidden and part[0] in '*?':
                     results.append(r'(?!\.)')
+
                 results.extend(fnmatch._translate(part, f'{not_sep}*', not_sep)[0])
+
             if idx < last_part_idx:
                 results.append(any_sep)
+
     res = ''.join(results)
+    res=escape_pathname_range_including_seps(res, seps=seps)
     return fr'(?s:{res})\Z'
 
 
