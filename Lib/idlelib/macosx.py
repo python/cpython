@@ -12,6 +12,7 @@ import tkinter
 ## _tk_type and its initializer are private to this section.
 
 _tk_type = None
+_idle_root = None
 
 def _init_tk_type():
     """ Initialize _tk_type for isXyzTk functions.
@@ -33,17 +34,20 @@ def _init_tk_type():
                 _tk_type = "cocoa"
                 return
 
-        root = tkinter.Tk()
-        ws = root.tk.call('tk', 'windowingsystem')
+            else:
+                if _idle_root is None:
+                    _tk_type = "cocoa"
+                    return
+
+        ws = _idle_root.tk.call('tk', 'windowingsystem')
         if 'x11' in ws:
             _tk_type = "xquartz"
         elif 'aqua' not in ws:
             _tk_type = "other"
-        elif 'AppKit' in root.tk.call('winfo', 'server', '.'):
+        elif 'AppKit' in _idle_root.tk.call('winfo', 'server', '.'):
             _tk_type = "cocoa"
         else:
             _tk_type = "carbon"
-        root.destroy()
     else:
         _tk_type = "other"
     return
@@ -216,11 +220,6 @@ def overrideRootMenu(root, flist):
     root.bind('<<open-config-dialog>>', config_dialog)
     root.createcommand('::tk::mac::ShowPreferences', config_dialog)
     if flist:
-        root.bind('<<close-all-windows>>', flist.close_all_callback)
-
-        # The binding above doesn't reliably work on all versions of Tk
-        # on macOS. Adding command definition below does seem to do the
-        # right thing for now.
         root.createcommand('::tk::mac::Quit', flist.close_all_callback)
 
     if isCarbonTk():
@@ -266,6 +265,8 @@ def setupApp(root, flist):
     isAquaTk(), isCarbonTk(), isCocoaTk(), isXQuartz() functions which
     are initialized here as well.
     """
+    global _idle_root
+    _idle_root = root
     if isAquaTk():
         hideTkConsole(root)
         overrideRootMenu(root, flist)
