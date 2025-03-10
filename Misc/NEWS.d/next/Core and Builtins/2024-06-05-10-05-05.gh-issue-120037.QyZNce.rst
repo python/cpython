@@ -1,0 +1,1 @@
+Fix user site packages directory being added to `sys.path` when site module is enabled in `._pth` file. Patch by Tanzim Husain.
