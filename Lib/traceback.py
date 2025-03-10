@@ -656,18 +656,29 @@ class StackSummary(list):
                         line = result[-1]
                         colorized_line_parts = []
                         colorized_carets_parts = []
-
-                        for color, group in itertools.groupby(itertools.zip_longest(line, carets, fillvalue=""), key=lambda x: x[1]):
-                            caret_group = list(group)
-                            if color == "^":
-                                colorized_line_parts.append(ANSIColors.BOLD_RED + "".join(char for char, _ in caret_group) + ANSIColors.RESET)
-                                colorized_carets_parts.append(ANSIColors.BOLD_RED + "".join(caret for _, caret in caret_group) + ANSIColors.RESET)
-                            elif color == "~":
-                                colorized_line_parts.append(ANSIColors.RED + "".join(char for char, _ in caret_group) + ANSIColors.RESET)
-                                colorized_carets_parts.append(ANSIColors.RED + "".join(caret for _, caret in caret_group) + ANSIColors.RESET)
+                        line_part_col = 0
+                        for char, group in itertools.groupby(carets):
+                            carets_part = "".join(group)
+                            width = len(carets_part)
+                            if char == "^":
+                                color = ANSIColors.BOLD_RED
+                            elif char == "~":
+                                color = ANSIColors.RED
                             else:
-                                colorized_line_parts.append("".join(char for char, _ in caret_group))
-                                colorized_carets_parts.append("".join(caret for _, caret in caret_group))
+                                colorized_carets_parts.append(carets_part)
+                                line_part_col, line_part = _offset_at_width(line, width, start=line_part_col)
+                                colorized_line_parts.append(line_part)
+                                continue
+
+                            colorized_carets_parts.append(color)
+                            colorized_carets_parts.append(carets_part)
+                            colorized_carets_parts.append(ANSIColors.RESET)
+
+                            colorized_line_parts.append(color)
+                            line_part_col, line_part = _offset_at_width(line, width, start=line_part_col)
+                            colorized_line_parts.append(line_part)
+                            colorized_line_parts.append(ANSIColors.RESET)
+                        colorized_line_parts.append(line[line_part_col:])
 
                         colorized_line = "".join(colorized_line_parts)
                         colorized_carets = "".join(colorized_carets_parts)
@@ -965,6 +976,19 @@ def _display_width(line, offset=None):
         for char in line[:offset]
     )
 
+def _offset_at_width(line, width, start=0):
+    col = start + width
+    part = line[start:col]
+    if part.isascii():
+        return col, part
+
+    from unicodedata import east_asian_width
+
+    for i in range(start, len(line)):
+        if width <= 0:
+            return i, line[start:i]
+        width -= 2 if east_asian_width(line[i]) in _WIDE_CHAR_SPECIFIERS else 1
+    return len(line), line[start:]
 
 
 class _ExceptionPrintContext:
