@@ -85,7 +85,7 @@ This module offers the following functions:
       See :ref:`above <exception-changed>`.
 
 
-.. function:: CreateKeyEx(key, sub_key, reserved=0, access=KEY_WRITE)
+.. function:: CreateKeyEx(key, sub_key, reserved=0, access=KEY_WRITE, options=0, create_only=False)
 
    Creates or opens the specified key, returning a
    :ref:`handle object <handle-object>`.
@@ -100,6 +100,13 @@ This module offers the following functions:
    *access* is an integer that specifies an access mask that describes the desired
    security access for the key.  Default is :const:`KEY_WRITE`.  See
    :ref:`Access Rights <access-rights>` for other allowed values.
+
+   *options* is an interger and can be zero or one of the predefined
+   :ref:`REG_OPTION_* constants <hkey-constants>`.
+
+   *create_only* is a boolean.
+   When set to True, a :exc:`FileExistsError` will be raised
+   if the key is already exists.  Default is ``False``.
 
    If *key* is one of the predefined keys, *sub_key* may be ``None``. In that
    case, the handle returned is the same key handle passed in to the function.
@@ -299,8 +306,8 @@ This module offers the following functions:
    .. audit-event:: winreg.LoadKey key,sub_key,file_name winreg.LoadKey
 
 
-.. function:: OpenKey(key, sub_key, reserved=0, access=KEY_READ)
-              OpenKeyEx(key, sub_key, reserved=0, access=KEY_READ)
+.. function:: OpenKey(key, sub_key, reserved=0, access=KEY_READ, options=0)
+              OpenKeyEx(key, sub_key, reserved=0, access=KEY_READ, options=0)
 
    Opens the specified key, returning a :ref:`handle object <handle-object>`.
 
@@ -309,11 +316,19 @@ This module offers the following functions:
 
    *sub_key* is a string that identifies the sub_key to open.
 
-   *reserved* is a reserved integer, and must be zero.  The default is zero.
+   *reserved* is a reserved integer and should be zero.
+   If it is not zero, it will be treated as the options parameter.
+   You should use the *options* parameter directly instead,
+   this parameter is only included for compatibility reasons.
+   The default value is zero.
 
    *access* is an integer that specifies an access mask that describes the desired
    security access for the key.  Default is :const:`KEY_READ`.  See :ref:`Access
    Rights <access-rights>` for other allowed values.
+
+   *options* specifies the option to apply when opening the key.
+   Can be zero or one of the predefined
+   :ref:`REG_OPTION_* constants <hkey-constants>`.
 
    The result is a new handle to the specified key.
 
