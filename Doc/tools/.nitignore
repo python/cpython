@@ -18,7 +18,6 @@ Doc/library/aifc.rst
 Doc/library/ast.rst
 Doc/library/asyncio-extending.rst
 Doc/library/asyncio-policy.rst
-Doc/library/asyncio-subprocess.rst
 Doc/library/audioop.rst
 Doc/library/cgi.rst
 Doc/library/chunk.rst
