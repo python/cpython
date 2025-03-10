@@ -157,7 +157,10 @@ class PreservePyIni:
             self._preserved = self.path.read_bytes()
         except FileNotFoundError:
             self._preserved = None
-        self.path.write_text(self.content, encoding="utf-16")
+        if isinstance(self.content, bytes):
+            self.path.write_bytes(self.content)
+        else:
+            self.path.write_text(self.content, encoding="utf-16")
 
     def __exit__(self, *exc_info):
         if self._preserved is None:
@@ -467,6 +470,15 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
 
     def test_py_default(self):
         with self.py_ini(TEST_PY_DEFAULTS):
+            data = self.run_py(["-arg"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100", data["SearchInfo.tag"])
+        self.assertEqual("X.Y.exe -arg", data["stdout"].strip())
+
+    @unittest.expectedFailure # fails until GH-99620 is fixed
+    def test_py_default_with_valid_bom(self):
+        content = TEST_PY_DEFAULTS.encode("utf-8")
+        with self.py_ini(b"\xEF\xBB\xBF" + content):
             data = self.run_py(["-arg"])
         self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
         self.assertEqual("3.100", data["SearchInfo.tag"])
