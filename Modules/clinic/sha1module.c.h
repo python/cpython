@@ -23,16 +23,11 @@ SHA1Type_copy_impl(SHA1object *self, PyTypeObject *cls);
 static PyObject *
 SHA1Type_copy(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
-        goto exit;
+        return NULL;
     }
-    return_value = SHA1Type_copy_impl((SHA1object *)self, cls);
-
-exit:
-    return return_value;
+    return SHA1Type_copy_impl((SHA1object *)self, cls);
 }
 
 PyDoc_STRVAR(SHA1Type_digest__doc__,
@@ -50,11 +45,7 @@ SHA1Type_digest_impl(SHA1object *self);
 static PyObject *
 SHA1Type_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = SHA1Type_digest_impl((SHA1object *)self);
-
-    return return_value;
+    return SHA1Type_digest_impl((SHA1object *)self);
 }
 
 PyDoc_STRVAR(SHA1Type_hexdigest__doc__,
@@ -72,11 +63,7 @@ SHA1Type_hexdigest_impl(SHA1object *self);
 static PyObject *
 SHA1Type_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = SHA1Type_hexdigest_impl((SHA1object *)self);
-
-    return return_value;
+    return SHA1Type_hexdigest_impl((SHA1object *)self);
 }
 
 PyDoc_STRVAR(SHA1Type_update__doc__,
@@ -175,4 +162,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d42333a7ee032349 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3cfa7b6a9f99b5b2 input=a9049054013a1b77]*/

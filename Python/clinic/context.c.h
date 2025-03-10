@@ -59,11 +59,7 @@ _contextvars_Context_items_impl(PyContext *self);
 static PyObject *
 _contextvars_Context_items(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _contextvars_Context_items_impl((PyContext *)self);
-
-    return return_value;
+    return _contextvars_Context_items_impl((PyContext *)self);
 }
 
 PyDoc_STRVAR(_contextvars_Context_keys__doc__,
@@ -81,11 +77,7 @@ _contextvars_Context_keys_impl(PyContext *self);
 static PyObject *
 _contextvars_Context_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _contextvars_Context_keys_impl((PyContext *)self);
-
-    return return_value;
+    return _contextvars_Context_keys_impl((PyContext *)self);
 }
 
 PyDoc_STRVAR(_contextvars_Context_values__doc__,
@@ -103,11 +95,7 @@ _contextvars_Context_values_impl(PyContext *self);
 static PyObject *
 _contextvars_Context_values(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _contextvars_Context_values_impl((PyContext *)self);
-
-    return return_value;
+    return _contextvars_Context_values_impl((PyContext *)self);
 }
 
 PyDoc_STRVAR(_contextvars_Context_copy__doc__,
@@ -125,11 +113,7 @@ _contextvars_Context_copy_impl(PyContext *self);
 static PyObject *
 _contextvars_Context_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _contextvars_Context_copy_impl((PyContext *)self);
-
-    return return_value;
+    return _contextvars_Context_copy_impl((PyContext *)self);
 }
 
 PyDoc_STRVAR(_contextvars_ContextVar_get__doc__,
@@ -237,11 +221,7 @@ token_enter_impl(PyContextToken *self);
 static PyObject *
 token_enter(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = token_enter_impl((PyContextToken *)self);
-
-    return return_value;
+    return token_enter_impl((PyContextToken *)self);
 }
 
 PyDoc_STRVAR(token_exit__doc__,
@@ -276,4 +256,4 @@ token_exit(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=65cc35e46da68d51 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3a04b2fddf24c3e9 input=a9049054013a1b77]*/

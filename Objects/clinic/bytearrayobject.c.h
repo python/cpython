@@ -222,11 +222,7 @@ bytearray_clear_impl(PyByteArrayObject *self);
 static PyObject *
 bytearray_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = bytearray_clear_impl((PyByteArrayObject *)self);
-
-    return return_value;
+    return bytearray_clear_impl((PyByteArrayObject *)self);
 }
 
 PyDoc_STRVAR(bytearray_copy__doc__,
@@ -1791,10 +1787,6 @@ bytearray_sizeof_impl(PyByteArrayObject *self);
 static PyObject *
 bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = bytearray_sizeof_impl((PyByteArrayObject *)self);
-
-    return return_value;
+    return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=e5c4d4489ac7d6a4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7c924a56e0a8bfe6 input=a9049054013a1b77]*/

@@ -94,11 +94,7 @@ _sha3_sha3_224_copy_impl(SHA3object *self);
 static PyObject *
 _sha3_sha3_224_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _sha3_sha3_224_copy_impl((SHA3object *)self);
-
-    return return_value;
+    return _sha3_sha3_224_copy_impl((SHA3object *)self);
 }
 
 PyDoc_STRVAR(_sha3_sha3_224_digest__doc__,
@@ -116,11 +112,7 @@ _sha3_sha3_224_digest_impl(SHA3object *self);
 static PyObject *
 _sha3_sha3_224_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _sha3_sha3_224_digest_impl((SHA3object *)self);
-
-    return return_value;
+    return _sha3_sha3_224_digest_impl((SHA3object *)self);
 }
 
 PyDoc_STRVAR(_sha3_sha3_224_hexdigest__doc__,
@@ -138,11 +130,7 @@ _sha3_sha3_224_hexdigest_impl(SHA3object *self);
 static PyObject *
 _sha3_sha3_224_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _sha3_sha3_224_hexdigest_impl((SHA3object *)self);
-
-    return return_value;
+    return _sha3_sha3_224_hexdigest_impl((SHA3object *)self);
 }
 
 PyDoc_STRVAR(_sha3_sha3_224_update__doc__,
@@ -220,4 +208,4 @@ _sha3_shake_128_hexdigest(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2e42278f2fd830ff input=a9049054013a1b77]*/
+/*[clinic end generated code: output=437023d9eac08551 input=a9049054013a1b77]*/

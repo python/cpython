@@ -974,11 +974,7 @@ _sre_SRE_Pattern___copy___impl(PatternObject *self);
 static PyObject *
 _sre_SRE_Pattern___copy__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _sre_SRE_Pattern___copy___impl((PatternObject *)self);
-
-    return return_value;
+    return _sre_SRE_Pattern___copy___impl((PatternObject *)self);
 }
 
 PyDoc_STRVAR(_sre_SRE_Pattern___deepcopy____doc__,
@@ -1477,11 +1473,7 @@ _sre_SRE_Match___copy___impl(MatchObject *self);
 static PyObject *
 _sre_SRE_Match___copy__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _sre_SRE_Match___copy___impl((MatchObject *)self);
-
-    return return_value;
+    return _sre_SRE_Match___copy___impl((MatchObject *)self);
 }
 
 PyDoc_STRVAR(_sre_SRE_Match___deepcopy____doc__,
@@ -1519,16 +1511,11 @@ _sre_SRE_Scanner_match_impl(ScannerObject *self, PyTypeObject *cls);
 static PyObject *
 _sre_SRE_Scanner_match(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "match() takes no arguments");
-        goto exit;
+        return NULL;
     }
-    return_value = _sre_SRE_Scanner_match_impl((ScannerObject *)self, cls);
-
-exit:
-    return return_value;
+    return _sre_SRE_Scanner_match_impl((ScannerObject *)self, cls);
 }
 
 PyDoc_STRVAR(_sre_SRE_Scanner_search__doc__,
@@ -1545,19 +1532,14 @@ _sre_SRE_Scanner_search_impl(ScannerObject *self, PyTypeObject *cls);
 static PyObject *
 _sre_SRE_Scanner_search(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "search() takes no arguments");
-        goto exit;
+        return NULL;
     }
-    return_value = _sre_SRE_Scanner_search_impl((ScannerObject *)self, cls);
-
-exit:
-    return return_value;
+    return _sre_SRE_Scanner_search_impl((ScannerObject *)self, cls);
 }
 
 #ifndef _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
     #define _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
 #endif /* !defined(_SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF) */
-/*[clinic end generated code: output=e3189955b9a16cf3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=45baae8bdfafdc51 input=a9049054013a1b77]*/

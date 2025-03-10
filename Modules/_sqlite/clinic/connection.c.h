@@ -374,11 +374,7 @@ pysqlite_connection_close_impl(pysqlite_Connection *self);
 static PyObject *
 pysqlite_connection_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = pysqlite_connection_close_impl((pysqlite_Connection *)self);
-
-    return return_value;
+    return pysqlite_connection_close_impl((pysqlite_Connection *)self);
 }
 
 PyDoc_STRVAR(pysqlite_connection_commit__doc__,
@@ -398,11 +394,7 @@ pysqlite_connection_commit_impl(pysqlite_Connection *self);
 static PyObject *
 pysqlite_connection_commit(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = pysqlite_connection_commit_impl((pysqlite_Connection *)self);
-
-    return return_value;
+    return pysqlite_connection_commit_impl((pysqlite_Connection *)self);
 }
 
 PyDoc_STRVAR(pysqlite_connection_rollback__doc__,
@@ -422,11 +414,7 @@ pysqlite_connection_rollback_impl(pysqlite_Connection *self);
 static PyObject *
 pysqlite_connection_rollback(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = pysqlite_connection_rollback_impl((pysqlite_Connection *)self);
-
-    return return_value;
+    return pysqlite_connection_rollback_impl((pysqlite_Connection *)self);
 }
 
 PyDoc_STRVAR(pysqlite_connection_create_function__doc__,
@@ -1236,11 +1224,7 @@ pysqlite_connection_interrupt_impl(pysqlite_Connection *self);
 static PyObject *
 pysqlite_connection_interrupt(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = pysqlite_connection_interrupt_impl((pysqlite_Connection *)self);
-
-    return return_value;
+    return pysqlite_connection_interrupt_impl((pysqlite_Connection *)self);
 }
 
 PyDoc_STRVAR(pysqlite_connection_iterdump__doc__,
@@ -1698,11 +1682,7 @@ pysqlite_connection_enter_impl(pysqlite_Connection *self);
 static PyObject *
 pysqlite_connection_enter(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = pysqlite_connection_enter_impl((pysqlite_Connection *)self);
-
-    return return_value;
+    return pysqlite_connection_enter_impl((pysqlite_Connection *)self);
 }
 
 PyDoc_STRVAR(pysqlite_connection_exit__doc__,
@@ -1915,4 +1895,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=c518b3e5ebe4b9b9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fc4857f09ad563b1 input=a9049054013a1b77]*/

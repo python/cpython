@@ -187,11 +187,7 @@ typevar_reduce_impl(typevarobject *self);
 static PyObject *
 typevar_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = typevar_reduce_impl((typevarobject *)self);
-
-    return return_value;
+    return typevar_reduce_impl((typevarobject *)self);
 }
 
 PyDoc_STRVAR(typevar_has_default__doc__,
@@ -208,11 +204,7 @@ typevar_has_default_impl(typevarobject *self);
 static PyObject *
 typevar_has_default(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = typevar_has_default_impl((typevarobject *)self);
-
-    return return_value;
+    return typevar_has_default_impl((typevarobject *)self);
 }
 
 PyDoc_STRVAR(paramspecargs_new__doc__,
@@ -496,11 +488,7 @@ paramspec_reduce_impl(paramspecobject *self);
 static PyObject *
 paramspec_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = paramspec_reduce_impl((paramspecobject *)self);
-
-    return return_value;
+    return paramspec_reduce_impl((paramspecobject *)self);
 }
 
 PyDoc_STRVAR(paramspec_has_default__doc__,
@@ -517,11 +505,7 @@ paramspec_has_default_impl(paramspecobject *self);
 static PyObject *
 paramspec_has_default(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = paramspec_has_default_impl((paramspecobject *)self);
-
-    return return_value;
+    return paramspec_has_default_impl((paramspecobject *)self);
 }
 
 PyDoc_STRVAR(typevartuple__doc__,
@@ -656,11 +640,7 @@ typevartuple_reduce_impl(typevartupleobject *self);
 static PyObject *
 typevartuple_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = typevartuple_reduce_impl((typevartupleobject *)self);
-
-    return return_value;
+    return typevartuple_reduce_impl((typevartupleobject *)self);
 }
 
 PyDoc_STRVAR(typevartuple_has_default__doc__,
@@ -677,11 +657,7 @@ typevartuple_has_default_impl(typevartupleobject *self);
 static PyObject *
 typevartuple_has_default(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = typevartuple_has_default_impl((typevartupleobject *)self);
-
-    return return_value;
+    return typevartuple_has_default_impl((typevartupleobject *)self);
 }
 
 PyDoc_STRVAR(typealias_reduce__doc__,
@@ -698,11 +674,7 @@ typealias_reduce_impl(typealiasobject *self);
 static PyObject *
 typealias_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = typealias_reduce_impl((typealiasobject *)self);
-
-    return return_value;
+    return typealias_reduce_impl((typealiasobject *)self);
 }
 
 PyDoc_STRVAR(typealias_new__doc__,
@@ -773,4 +745,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d3ce5c26c77401c0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d0cdf708e2e315a4 input=a9049054013a1b77]*/

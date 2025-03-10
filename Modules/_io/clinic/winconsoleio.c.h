@@ -29,16 +29,11 @@ _io__WindowsConsoleIO_close_impl(winconsoleio *self, PyTypeObject *cls);
 static PyObject *
 _io__WindowsConsoleIO_close(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "close() takes no arguments");
-        goto exit;
+        return NULL;
     }
-    return_value = _io__WindowsConsoleIO_close_impl((winconsoleio *)self, cls);
-
-exit:
-    return return_value;
+    return _io__WindowsConsoleIO_close_impl((winconsoleio *)self, cls);
 }
 
 #endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
@@ -161,11 +156,7 @@ _io__WindowsConsoleIO_fileno_impl(winconsoleio *self);
 static PyObject *
 _io__WindowsConsoleIO_fileno(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _io__WindowsConsoleIO_fileno_impl((winconsoleio *)self);
-
-    return return_value;
+    return _io__WindowsConsoleIO_fileno_impl((winconsoleio *)self);
 }
 
 #endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
@@ -187,11 +178,7 @@ _io__WindowsConsoleIO_readable_impl(winconsoleio *self);
 static PyObject *
 _io__WindowsConsoleIO_readable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _io__WindowsConsoleIO_readable_impl((winconsoleio *)self);
-
-    return return_value;
+    return _io__WindowsConsoleIO_readable_impl((winconsoleio *)self);
 }
 
 #endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
@@ -213,11 +200,7 @@ _io__WindowsConsoleIO_writable_impl(winconsoleio *self);
 static PyObject *
 _io__WindowsConsoleIO_writable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _io__WindowsConsoleIO_writable_impl((winconsoleio *)self);
-
-    return return_value;
+    return _io__WindowsConsoleIO_writable_impl((winconsoleio *)self);
 }
 
 #endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
@@ -298,11 +281,7 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self);
 static PyObject *
 _io__WindowsConsoleIO_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _io__WindowsConsoleIO_readall_impl((winconsoleio *)self);
-
-    return return_value;
+    return _io__WindowsConsoleIO_readall_impl((winconsoleio *)self);
 }
 
 #endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
@@ -442,11 +421,7 @@ _io__WindowsConsoleIO_isatty_impl(winconsoleio *self);
 static PyObject *
 _io__WindowsConsoleIO_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _io__WindowsConsoleIO_isatty_impl((winconsoleio *)self);
-
-    return return_value;
+    return _io__WindowsConsoleIO_isatty_impl((winconsoleio *)self);
 }
 
 #endif /* defined(HAVE_WINDOWS_CONSOLE_IO) */
@@ -486,4 +461,4 @@ _io__WindowsConsoleIO_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF) */
-/*[clinic end generated code: output=df1b04a95695734c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=edc47f5c49589045 input=a9049054013a1b77]*/

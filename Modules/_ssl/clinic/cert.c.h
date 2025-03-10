@@ -85,10 +85,6 @@ _ssl_Certificate_get_info_impl(PySSLCertificate *self);
 static PyObject *
 _ssl_Certificate_get_info(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _ssl_Certificate_get_info_impl((PySSLCertificate *)self);
-
-    return return_value;
+    return _ssl_Certificate_get_info_impl((PySSLCertificate *)self);
 }
-/*[clinic end generated code: output=9de85ca49784b7a1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=51365b498b975ee0 input=a9049054013a1b77]*/

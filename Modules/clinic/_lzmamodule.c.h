@@ -65,11 +65,7 @@ _lzma_LZMACompressor_flush_impl(Compressor *self);
 static PyObject *
 _lzma_LZMACompressor_flush(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _lzma_LZMACompressor_flush_impl((Compressor *)self);
-
-    return return_value;
+    return _lzma_LZMACompressor_flush_impl((Compressor *)self);
 }
 
 PyDoc_STRVAR(_lzma_LZMADecompressor_decompress__doc__,
@@ -333,4 +329,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=b60d44e0f424f625 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=19ed9b1182f5ddf9 input=a9049054013a1b77]*/

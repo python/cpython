@@ -1474,11 +1474,7 @@ _asyncio_Task_get_context_impl(TaskObj *self);
 static PyObject *
 _asyncio_Task_get_context(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _asyncio_Task_get_context_impl((TaskObj *)self);
-
-    return return_value;
+    return _asyncio_Task_get_context_impl((TaskObj *)self);
 }
 
 PyDoc_STRVAR(_asyncio_Task_get_name__doc__,
@@ -2204,4 +2200,4 @@ _asyncio_future_discard_from_awaited_by(PyObject *module, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f186505df0f9da89 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b1060b180d9dd54c input=a9049054013a1b77]*/

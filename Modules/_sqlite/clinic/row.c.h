@@ -54,10 +54,6 @@ pysqlite_row_keys_impl(pysqlite_Row *self);
 static PyObject *
 pysqlite_row_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = pysqlite_row_keys_impl((pysqlite_Row *)self);
-
-    return return_value;
+    return pysqlite_row_keys_impl((pysqlite_Row *)self);
 }
-/*[clinic end generated code: output=6d348877c833b604 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6c1acbb48f386468 input=a9049054013a1b77]*/

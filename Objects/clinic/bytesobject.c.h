@@ -24,11 +24,7 @@ bytes___bytes___impl(PyBytesObject *self);
 static PyObject *
 bytes___bytes__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = bytes___bytes___impl((PyBytesObject *)self);
-
-    return return_value;
+    return bytes___bytes___impl((PyBytesObject *)self);
 }
 
 PyDoc_STRVAR(bytes_split__doc__,
@@ -1408,4 +1404,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e9ae159473126636 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=61cb2cf6506df4c6 input=a9049054013a1b77]*/

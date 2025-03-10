@@ -673,11 +673,7 @@ select_epoll_fileno_impl(pyEpoll_Object *self);
 static PyObject *
 select_epoll_fileno(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = select_epoll_fileno_impl((pyEpoll_Object *)self);
-
-    return return_value;
+    return select_epoll_fileno_impl((pyEpoll_Object *)self);
 }
 
 #endif /* defined(HAVE_EPOLL) */
@@ -1037,11 +1033,7 @@ select_epoll___enter___impl(pyEpoll_Object *self);
 static PyObject *
 select_epoll___enter__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = select_epoll___enter___impl((pyEpoll_Object *)self);
-
-    return return_value;
+    return select_epoll___enter___impl((pyEpoll_Object *)self);
 }
 
 #endif /* defined(HAVE_EPOLL) */
@@ -1184,11 +1176,7 @@ select_kqueue_fileno_impl(kqueue_queue_Object *self);
 static PyObject *
 select_kqueue_fileno(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = select_kqueue_fileno_impl((kqueue_queue_Object *)self);
-
-    return return_value;
+    return select_kqueue_fileno_impl((kqueue_queue_Object *)self);
 }
 
 #endif /* defined(HAVE_KQUEUE) */
@@ -1377,4 +1365,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=c4c4122e737a5f7d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c18fd93efc5f4dce input=a9049054013a1b77]*/

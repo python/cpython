@@ -71,11 +71,7 @@ _elementtree_Element_clear_impl(ElementObject *self);
 static PyObject *
 _elementtree_Element_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _elementtree_Element_clear_impl((ElementObject *)self);
-
-    return return_value;
+    return _elementtree_Element_clear_impl((ElementObject *)self);
 }
 
 PyDoc_STRVAR(_elementtree_Element___copy____doc__,
@@ -92,16 +88,11 @@ _elementtree_Element___copy___impl(ElementObject *self, PyTypeObject *cls);
 static PyObject *
 _elementtree_Element___copy__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "__copy__() takes no arguments");
-        goto exit;
+        return NULL;
     }
-    return_value = _elementtree_Element___copy___impl((ElementObject *)self, cls);
-
-exit:
-    return return_value;
+    return _elementtree_Element___copy___impl((ElementObject *)self, cls);
 }
 
 PyDoc_STRVAR(_elementtree_Element___deepcopy____doc__,
@@ -173,11 +164,7 @@ _elementtree_Element___getstate___impl(ElementObject *self);
 static PyObject *
 _elementtree_Element___getstate__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _elementtree_Element___getstate___impl((ElementObject *)self);
-
-    return return_value;
+    return _elementtree_Element___getstate___impl((ElementObject *)self);
 }
 
 PyDoc_STRVAR(_elementtree_Element___setstate____doc__,
@@ -666,16 +653,11 @@ _elementtree_Element_itertext_impl(ElementObject *self, PyTypeObject *cls);
 static PyObject *
 _elementtree_Element_itertext(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "itertext() takes no arguments");
-        goto exit;
+        return NULL;
     }
-    return_value = _elementtree_Element_itertext_impl((ElementObject *)self, cls);
-
-exit:
-    return return_value;
+    return _elementtree_Element_itertext_impl((ElementObject *)self, cls);
 }
 
 PyDoc_STRVAR(_elementtree_Element_insert__doc__,
@@ -737,11 +719,7 @@ _elementtree_Element_items_impl(ElementObject *self);
 static PyObject *
 _elementtree_Element_items(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _elementtree_Element_items_impl((ElementObject *)self);
-
-    return return_value;
+    return _elementtree_Element_items_impl((ElementObject *)self);
 }
 
 PyDoc_STRVAR(_elementtree_Element_keys__doc__,
@@ -758,11 +736,7 @@ _elementtree_Element_keys_impl(ElementObject *self);
 static PyObject *
 _elementtree_Element_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _elementtree_Element_keys_impl((ElementObject *)self);
-
-    return return_value;
+    return _elementtree_Element_keys_impl((ElementObject *)self);
 }
 
 PyDoc_STRVAR(_elementtree_Element_makeelement__doc__,
@@ -1114,11 +1088,7 @@ _elementtree_TreeBuilder_close_impl(TreeBuilderObject *self);
 static PyObject *
 _elementtree_TreeBuilder_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _elementtree_TreeBuilder_close_impl((TreeBuilderObject *)self);
-
-    return return_value;
+    return _elementtree_TreeBuilder_close_impl((TreeBuilderObject *)self);
 }
 
 PyDoc_STRVAR(_elementtree_TreeBuilder_start__doc__,
@@ -1248,11 +1218,7 @@ _elementtree_XMLParser_close_impl(XMLParserObject *self);
 static PyObject *
 _elementtree_XMLParser_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _elementtree_XMLParser_close_impl((XMLParserObject *)self);
-
-    return return_value;
+    return _elementtree_XMLParser_close_impl((XMLParserObject *)self);
 }
 
 PyDoc_STRVAR(_elementtree_XMLParser_flush__doc__,
@@ -1269,11 +1235,7 @@ _elementtree_XMLParser_flush_impl(XMLParserObject *self);
 static PyObject *
 _elementtree_XMLParser_flush(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _elementtree_XMLParser_flush_impl((XMLParserObject *)self);
-
-    return return_value;
+    return _elementtree_XMLParser_flush_impl((XMLParserObject *)self);
 }
 
 PyDoc_STRVAR(_elementtree_XMLParser_feed__doc__,
@@ -1353,4 +1315,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4a5f5d213fe87e16 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0eed58350c3c1832 input=a9049054013a1b77]*/

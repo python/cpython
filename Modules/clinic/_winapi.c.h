@@ -50,11 +50,7 @@ _winapi_Overlapped_getbuffer_impl(OverlappedObject *self);
 static PyObject *
 _winapi_Overlapped_getbuffer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _winapi_Overlapped_getbuffer_impl((OverlappedObject *)self);
-
-    return return_value;
+    return _winapi_Overlapped_getbuffer_impl((OverlappedObject *)self);
 }
 
 PyDoc_STRVAR(_winapi_Overlapped_cancel__doc__,
@@ -71,11 +67,7 @@ _winapi_Overlapped_cancel_impl(OverlappedObject *self);
 static PyObject *
 _winapi_Overlapped_cancel(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _winapi_Overlapped_cancel_impl((OverlappedObject *)self);
-
-    return return_value;
+    return _winapi_Overlapped_cancel_impl((OverlappedObject *)self);
 }
 
 PyDoc_STRVAR(_winapi_CloseHandle__doc__,
@@ -2135,4 +2127,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=fa34c08199a78ab2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=06b56212b2186250 input=a9049054013a1b77]*/

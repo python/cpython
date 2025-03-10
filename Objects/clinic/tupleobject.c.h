@@ -125,10 +125,6 @@ tuple___getnewargs___impl(PyTupleObject *self);
 static PyObject *
 tuple___getnewargs__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = tuple___getnewargs___impl((PyTupleObject *)self);
-
-    return return_value;
+    return tuple___getnewargs___impl((PyTupleObject *)self);
 }
-/*[clinic end generated code: output=7d7754943df5c955 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bd11662d62d973c2 input=a9049054013a1b77]*/

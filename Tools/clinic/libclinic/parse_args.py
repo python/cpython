@@ -292,11 +292,13 @@ class ParseArgsCodeGen:
                 and not self.is_new_or_init())
 
     def use_simple_return(self) -> bool:
-        pyobject = 'PyObject *'
-        return (self.func.return_converter.type == pyobject
-                and not self.func.critical_section
-                and self.self_parameter_converter.type in (pyobject, None)
-                and self.self_parameter_converter.specified_type in (pyobject, None))
+        return (self.func.return_converter.type == 'PyObject *'
+                and not self.func.critical_section)
+
+    def use_pyobject_self(self) -> bool:
+        pyobject_types = ('PyObject *', None)
+        return (self.self_parameter_converter.type in pyobject_types
+                and self.self_parameter_converter.specified_type in pyobject_types)
 
     def select_prototypes(self) -> None:
         self.docstring_prototype = ''
@@ -408,7 +410,7 @@ class ParseArgsCodeGen:
             self.converters[0].format_unit == 'O'):
             meth_o_prototype = METH_O_PROTOTYPE
 
-            if self.use_simple_return():
+            if self.use_simple_return() and self.use_pyobject_self():
                 # maps perfectly to METH_O, doesn't need a return converter.
                 # so we skip making a parse function
                 # and call directly into the impl function.

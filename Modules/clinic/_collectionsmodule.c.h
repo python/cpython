@@ -449,11 +449,7 @@ deque___reduce___impl(dequeobject *deque);
 static PyObject *
 deque___reduce__(PyObject *deque, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = deque___reduce___impl((dequeobject *)deque);
-
-    return return_value;
+    return deque___reduce___impl((dequeobject *)deque);
 }
 
 PyDoc_STRVAR(deque_init__doc__,
@@ -564,11 +560,7 @@ deque___reversed___impl(dequeobject *deque);
 static PyObject *
 deque___reversed__(PyObject *deque, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = deque___reversed___impl((dequeobject *)deque);
-
-    return return_value;
+    return deque___reversed___impl((dequeobject *)deque);
 }
 
 PyDoc_STRVAR(_collections__count_elements__doc__,
@@ -638,4 +630,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=509297265c703000 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1eb3634d5ef8b407 input=a9049054013a1b77]*/

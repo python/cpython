@@ -24,11 +24,7 @@ _io_BytesIO_readable_impl(bytesio *self);
 static PyObject *
 _io_BytesIO_readable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _io_BytesIO_readable_impl((bytesio *)self);
-
-    return return_value;
+    return _io_BytesIO_readable_impl((bytesio *)self);
 }
 
 PyDoc_STRVAR(_io_BytesIO_writable__doc__,
@@ -46,11 +42,7 @@ _io_BytesIO_writable_impl(bytesio *self);
 static PyObject *
 _io_BytesIO_writable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _io_BytesIO_writable_impl((bytesio *)self);
-
-    return return_value;
+    return _io_BytesIO_writable_impl((bytesio *)self);
 }
 
 PyDoc_STRVAR(_io_BytesIO_seekable__doc__,
@@ -68,11 +60,7 @@ _io_BytesIO_seekable_impl(bytesio *self);
 static PyObject *
 _io_BytesIO_seekable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _io_BytesIO_seekable_impl((bytesio *)self);
-
-    return return_value;
+    return _io_BytesIO_seekable_impl((bytesio *)self);
 }
 
 PyDoc_STRVAR(_io_BytesIO_flush__doc__,
@@ -90,11 +78,7 @@ _io_BytesIO_flush_impl(bytesio *self);
 static PyObject *
 _io_BytesIO_flush(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _io_BytesIO_flush_impl((bytesio *)self);
-
-    return return_value;
+    return _io_BytesIO_flush_impl((bytesio *)self);
 }
 
 PyDoc_STRVAR(_io_BytesIO_getbuffer__doc__,
@@ -112,16 +96,11 @@ _io_BytesIO_getbuffer_impl(bytesio *self, PyTypeObject *cls);
 static PyObject *
 _io_BytesIO_getbuffer(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "getbuffer() takes no arguments");
-        goto exit;
+        return NULL;
     }
-    return_value = _io_BytesIO_getbuffer_impl((bytesio *)self, cls);
-
-exit:
-    return return_value;
+    return _io_BytesIO_getbuffer_impl((bytesio *)self, cls);
 }
 
 PyDoc_STRVAR(_io_BytesIO_getvalue__doc__,
@@ -139,11 +118,7 @@ _io_BytesIO_getvalue_impl(bytesio *self);
 static PyObject *
 _io_BytesIO_getvalue(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _io_BytesIO_getvalue_impl((bytesio *)self);
-
-    return return_value;
+    return _io_BytesIO_getvalue_impl((bytesio *)self);
 }
 
 PyDoc_STRVAR(_io_BytesIO_isatty__doc__,
@@ -163,11 +138,7 @@ _io_BytesIO_isatty_impl(bytesio *self);
 static PyObject *
 _io_BytesIO_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _io_BytesIO_isatty_impl((bytesio *)self);
-
-    return return_value;
+    return _io_BytesIO_isatty_impl((bytesio *)self);
 }
 
 PyDoc_STRVAR(_io_BytesIO_tell__doc__,
@@ -185,11 +156,7 @@ _io_BytesIO_tell_impl(bytesio *self);
 static PyObject *
 _io_BytesIO_tell(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _io_BytesIO_tell_impl((bytesio *)self);
-
-    return return_value;
+    return _io_BytesIO_tell_impl((bytesio *)self);
 }
 
 PyDoc_STRVAR(_io_BytesIO_read__doc__,
@@ -532,11 +499,7 @@ _io_BytesIO_close_impl(bytesio *self);
 static PyObject *
 _io_BytesIO_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _io_BytesIO_close_impl((bytesio *)self);
-
-    return return_value;
+    return _io_BytesIO_close_impl((bytesio *)self);
 }
 
 PyDoc_STRVAR(_io_BytesIO___init____doc__,
@@ -598,4 +561,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=81a64e1ff7660977 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=477217b2bc464110 input=a9049054013a1b77]*/

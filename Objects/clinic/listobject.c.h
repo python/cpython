@@ -446,11 +446,7 @@ list___sizeof___impl(PyListObject *self);
 static PyObject *
 list___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = list___sizeof___impl((PyListObject *)self);
-
-    return return_value;
+    return list___sizeof___impl((PyListObject *)self);
 }
 
 PyDoc_STRVAR(list___reversed____doc__,
@@ -468,10 +464,6 @@ list___reversed___impl(PyListObject *self);
 static PyObject *
 list___reversed__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = list___reversed___impl((PyListObject *)self);
-
-    return return_value;
+    return list___reversed___impl((PyListObject *)self);
 }
-/*[clinic end generated code: output=7047af1e69fd9d18 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bc45e43a621ac833 input=a9049054013a1b77]*/

@@ -139,11 +139,7 @@ memoryview_release_impl(PyMemoryViewObject *self);
 static PyObject *
 memoryview_release(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = memoryview_release_impl((PyMemoryViewObject *)self);
-
-    return return_value;
+    return memoryview_release_impl((PyMemoryViewObject *)self);
 }
 
 PyDoc_STRVAR(memoryview_cast__doc__,
@@ -229,11 +225,7 @@ memoryview_toreadonly_impl(PyMemoryViewObject *self);
 static PyObject *
 memoryview_toreadonly(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = memoryview_toreadonly_impl((PyMemoryViewObject *)self);
-
-    return return_value;
+    return memoryview_toreadonly_impl((PyMemoryViewObject *)self);
 }
 
 PyDoc_STRVAR(memoryview_tolist__doc__,
@@ -251,11 +243,7 @@ memoryview_tolist_impl(PyMemoryViewObject *self);
 static PyObject *
 memoryview_tolist(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = memoryview_tolist_impl((PyMemoryViewObject *)self);
-
-    return return_value;
+    return memoryview_tolist_impl((PyMemoryViewObject *)self);
 }
 
 PyDoc_STRVAR(memoryview_tobytes__doc__,
@@ -498,4 +486,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=37f6fd422ddd18af input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c0371164b68a6839 input=a9049054013a1b77]*/

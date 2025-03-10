@@ -22,11 +22,7 @@ _dbm_dbm_close_impl(dbmobject *self);
 static PyObject *
 _dbm_dbm_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _dbm_dbm_close_impl((dbmobject *)self);
-
-    return return_value;
+    return _dbm_dbm_close_impl((dbmobject *)self);
 }
 
 PyDoc_STRVAR(_dbm_dbm_keys__doc__,
@@ -44,16 +40,11 @@ _dbm_dbm_keys_impl(dbmobject *self, PyTypeObject *cls);
 static PyObject *
 _dbm_dbm_keys(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "keys() takes no arguments");
-        goto exit;
+        return NULL;
     }
-    return_value = _dbm_dbm_keys_impl((dbmobject *)self, cls);
-
-exit:
-    return return_value;
+    return _dbm_dbm_keys_impl((dbmobject *)self, cls);
 }
 
 PyDoc_STRVAR(_dbm_dbm_get__doc__,
@@ -161,16 +152,11 @@ _dbm_dbm_clear_impl(dbmobject *self, PyTypeObject *cls);
 static PyObject *
 _dbm_dbm_clear(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "clear() takes no arguments");
-        goto exit;
+        return NULL;
     }
-    return_value = _dbm_dbm_clear_impl((dbmobject *)self, cls);
-
-exit:
-    return return_value;
+    return _dbm_dbm_clear_impl((dbmobject *)self, cls);
 }
 
 PyDoc_STRVAR(dbmopen__doc__,
@@ -235,4 +221,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c6eba7e58b6f969a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3b456118f231b160 input=a9049054013a1b77]*/

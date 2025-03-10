@@ -518,11 +518,7 @@ _overlapped_Overlapped_cancel_impl(OverlappedObject *self);
 static PyObject *
 _overlapped_Overlapped_cancel(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _overlapped_Overlapped_cancel_impl((OverlappedObject *)self);
-
-    return return_value;
+    return _overlapped_Overlapped_cancel_impl((OverlappedObject *)self);
 }
 
 PyDoc_STRVAR(_overlapped_Overlapped_getresult__doc__,
@@ -1244,4 +1240,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=94e4cf1b39345ef4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d009cc9e53d9732a input=a9049054013a1b77]*/

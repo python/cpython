@@ -11985,11 +11985,7 @@ os_DirEntry_inode_impl(DirEntry *self);
 static PyObject *
 os_DirEntry_inode(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = os_DirEntry_inode_impl((DirEntry *)self);
-
-    return return_value;
+    return os_DirEntry_inode_impl((DirEntry *)self);
 }
 
 PyDoc_STRVAR(os_DirEntry___fspath____doc__,
@@ -12007,11 +12003,7 @@ os_DirEntry___fspath___impl(DirEntry *self);
 static PyObject *
 os_DirEntry___fspath__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = os_DirEntry___fspath___impl((DirEntry *)self);
-
-    return return_value;
+    return os_DirEntry___fspath___impl((DirEntry *)self);
 }
 
 PyDoc_STRVAR(os_scandir__doc__,
@@ -13204,4 +13196,4 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_DEBUGGER_METHODDEF) */
-/*[clinic end generated code: output=cb777904adc99e47 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8318c26fc2cd236c input=a9049054013a1b77]*/

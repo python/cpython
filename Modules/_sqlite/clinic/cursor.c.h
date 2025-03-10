@@ -165,11 +165,7 @@ pysqlite_cursor_fetchone_impl(pysqlite_Cursor *self);
 static PyObject *
 pysqlite_cursor_fetchone(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = pysqlite_cursor_fetchone_impl((pysqlite_Cursor *)self);
-
-    return return_value;
+    return pysqlite_cursor_fetchone_impl((pysqlite_Cursor *)self);
 }
 
 PyDoc_STRVAR(pysqlite_cursor_fetchmany__doc__,
@@ -254,11 +250,7 @@ pysqlite_cursor_fetchall_impl(pysqlite_Cursor *self);
 static PyObject *
 pysqlite_cursor_fetchall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = pysqlite_cursor_fetchall_impl((pysqlite_Cursor *)self);
-
-    return return_value;
+    return pysqlite_cursor_fetchall_impl((pysqlite_Cursor *)self);
 }
 
 PyDoc_STRVAR(pysqlite_cursor_setinputsizes__doc__,
@@ -333,10 +325,6 @@ pysqlite_cursor_close_impl(pysqlite_Cursor *self);
 static PyObject *
 pysqlite_cursor_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = pysqlite_cursor_close_impl((pysqlite_Cursor *)self);
-
-    return return_value;
+    return pysqlite_cursor_close_impl((pysqlite_Cursor *)self);
 }
-/*[clinic end generated code: output=ad3519acb068dcaf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=02831aed7377f5f6 input=a9049054013a1b77]*/

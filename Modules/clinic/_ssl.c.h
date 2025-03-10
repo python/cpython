@@ -255,11 +255,7 @@ _ssl__SSLSocket_compression_impl(PySSLSocket *self);
 static PyObject *
 _ssl__SSLSocket_compression(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _ssl__SSLSocket_compression_impl((PySSLSocket *)self);
-
-    return return_value;
+    return _ssl__SSLSocket_compression_impl((PySSLSocket *)self);
 }
 
 PyDoc_STRVAR(_ssl__SSLSocket_context__doc__,
@@ -2882,4 +2878,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=c0c80336beff60df input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c402c53dc30a14fa input=a9049054013a1b77]*/

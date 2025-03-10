@@ -414,11 +414,7 @@ _blake2_blake2b_copy_impl(Blake2Object *self);
 static PyObject *
 _blake2_blake2b_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _blake2_blake2b_copy_impl((Blake2Object *)self);
-
-    return return_value;
+    return _blake2_blake2b_copy_impl((Blake2Object *)self);
 }
 
 PyDoc_STRVAR(_blake2_blake2b_update__doc__,
@@ -458,11 +454,7 @@ _blake2_blake2b_digest_impl(Blake2Object *self);
 static PyObject *
 _blake2_blake2b_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _blake2_blake2b_digest_impl((Blake2Object *)self);
-
-    return return_value;
+    return _blake2_blake2b_digest_impl((Blake2Object *)self);
 }
 
 PyDoc_STRVAR(_blake2_blake2b_hexdigest__doc__,
@@ -480,10 +472,6 @@ _blake2_blake2b_hexdigest_impl(Blake2Object *self);
 static PyObject *
 _blake2_blake2b_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _blake2_blake2b_hexdigest_impl((Blake2Object *)self);
-
-    return return_value;
+    return _blake2_blake2b_hexdigest_impl((Blake2Object *)self);
 }
-/*[clinic end generated code: output=436fd660c7dce811 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b286a0d1be8729b0 input=a9049054013a1b77]*/

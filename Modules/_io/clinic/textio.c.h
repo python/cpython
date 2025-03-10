@@ -446,11 +446,7 @@ _io_IncrementalNewlineDecoder_getstate_impl(nldecoder_object *self);
 static PyObject *
 _io_IncrementalNewlineDecoder_getstate(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _io_IncrementalNewlineDecoder_getstate_impl((nldecoder_object *)self);
-
-    return return_value;
+    return _io_IncrementalNewlineDecoder_getstate_impl((nldecoder_object *)self);
 }
 
 PyDoc_STRVAR(_io_IncrementalNewlineDecoder_setstate__doc__,
@@ -489,11 +485,7 @@ _io_IncrementalNewlineDecoder_reset_impl(nldecoder_object *self);
 static PyObject *
 _io_IncrementalNewlineDecoder_reset(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _io_IncrementalNewlineDecoder_reset_impl((nldecoder_object *)self);
-
-    return return_value;
+    return _io_IncrementalNewlineDecoder_reset_impl((nldecoder_object *)self);
 }
 
 PyDoc_STRVAR(_io_TextIOWrapper___init____doc__,
@@ -1312,4 +1304,4 @@ _io_TextIOWrapper__CHUNK_SIZE_set(PyObject *self, PyObject *value, void *Py_UNUS
 
     return return_value;
 }
-/*[clinic end generated code: output=83429aa3b618a83d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dad68d8c33d676e6 input=a9049054013a1b77]*/

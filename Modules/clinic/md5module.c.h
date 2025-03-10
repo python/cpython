@@ -23,16 +23,11 @@ MD5Type_copy_impl(MD5object *self, PyTypeObject *cls);
 static PyObject *
 MD5Type_copy(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    PyObject *return_value = NULL;
-
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
-        goto exit;
+        return NULL;
     }
-    return_value = MD5Type_copy_impl((MD5object *)self, cls);
-
-exit:
-    return return_value;
+    return MD5Type_copy_impl((MD5object *)self, cls);
 }
 
 PyDoc_STRVAR(MD5Type_digest__doc__,
@@ -50,11 +45,7 @@ MD5Type_digest_impl(MD5object *self);
 static PyObject *
 MD5Type_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = MD5Type_digest_impl((MD5object *)self);
-
-    return return_value;
+    return MD5Type_digest_impl((MD5object *)self);
 }
 
 PyDoc_STRVAR(MD5Type_hexdigest__doc__,
@@ -72,11 +63,7 @@ MD5Type_hexdigest_impl(MD5object *self);
 static PyObject *
 MD5Type_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = MD5Type_hexdigest_impl((MD5object *)self);
-
-    return return_value;
+    return MD5Type_hexdigest_impl((MD5object *)self);
 }
 
 PyDoc_STRVAR(MD5Type_update__doc__,
@@ -175,4 +162,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bbca8d26f2a4258d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=10db0ff2ecf97159 input=a9049054013a1b77]*/

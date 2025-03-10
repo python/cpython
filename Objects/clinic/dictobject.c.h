@@ -54,11 +54,7 @@ dict_copy_impl(PyDictObject *self);
 static PyObject *
 dict_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = dict_copy_impl((PyDictObject *)self);
-
-    return return_value;
+    return dict_copy_impl((PyDictObject *)self);
 }
 
 PyDoc_STRVAR(dict___contains____doc__,
@@ -171,11 +167,7 @@ dict_clear_impl(PyDictObject *self);
 static PyObject *
 dict_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = dict_clear_impl((PyDictObject *)self);
-
-    return return_value;
+    return dict_clear_impl((PyDictObject *)self);
 }
 
 PyDoc_STRVAR(dict_pop__doc__,
@@ -257,11 +249,7 @@ dict___sizeof___impl(PyDictObject *self);
 static PyObject *
 dict___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = dict___sizeof___impl((PyDictObject *)self);
-
-    return return_value;
+    return dict___sizeof___impl((PyDictObject *)self);
 }
 
 PyDoc_STRVAR(dict___reversed____doc__,
@@ -279,11 +267,7 @@ dict___reversed___impl(PyDictObject *self);
 static PyObject *
 dict___reversed__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = dict___reversed___impl((PyDictObject *)self);
-
-    return return_value;
+    return dict___reversed___impl((PyDictObject *)self);
 }
 
 PyDoc_STRVAR(dict_keys__doc__,
@@ -301,11 +285,7 @@ dict_keys_impl(PyDictObject *self);
 static PyObject *
 dict_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = dict_keys_impl((PyDictObject *)self);
-
-    return return_value;
+    return dict_keys_impl((PyDictObject *)self);
 }
 
 PyDoc_STRVAR(dict_items__doc__,
@@ -323,11 +303,7 @@ dict_items_impl(PyDictObject *self);
 static PyObject *
 dict_items(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = dict_items_impl((PyDictObject *)self);
-
-    return return_value;
+    return dict_items_impl((PyDictObject *)self);
 }
 
 PyDoc_STRVAR(dict_values__doc__,
@@ -345,10 +321,6 @@ dict_values_impl(PyDictObject *self);
 static PyObject *
 dict_values(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = dict_values_impl((PyDictObject *)self);
-
-    return return_value;
+    return dict_values_impl((PyDictObject *)self);
 }
-/*[clinic end generated code: output=e5b485fd066e3751 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8a104741e4676c76 input=a9049054013a1b77]*/

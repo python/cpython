@@ -19,11 +19,7 @@ blob_close_impl(pysqlite_Blob *self);
 static PyObject *
 blob_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = blob_close_impl((pysqlite_Blob *)self);
-
-    return return_value;
+    return blob_close_impl((pysqlite_Blob *)self);
 }
 
 PyDoc_STRVAR(blob_read__doc__,
@@ -162,11 +158,7 @@ blob_tell_impl(pysqlite_Blob *self);
 static PyObject *
 blob_tell(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = blob_tell_impl((pysqlite_Blob *)self);
-
-    return return_value;
+    return blob_tell_impl((pysqlite_Blob *)self);
 }
 
 PyDoc_STRVAR(blob_enter__doc__,
@@ -184,11 +176,7 @@ blob_enter_impl(pysqlite_Blob *self);
 static PyObject *
 blob_enter(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = blob_enter_impl((pysqlite_Blob *)self);
-
-    return return_value;
+    return blob_enter_impl((pysqlite_Blob *)self);
 }
 
 PyDoc_STRVAR(blob_exit__doc__,
@@ -223,4 +211,4 @@ blob_exit(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b7553a77a3f36b31 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f03f4ba622b67ae0 input=a9049054013a1b77]*/

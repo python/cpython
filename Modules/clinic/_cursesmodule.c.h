@@ -1347,11 +1347,7 @@ _curses_window_noutrefresh_impl(PyCursesWindowObject *self);
 static PyObject *
 _curses_window_noutrefresh(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-
-    return_value = _curses_window_noutrefresh_impl((PyCursesWindowObject *)self);
-
-    return return_value;
+    return _curses_window_noutrefresh_impl((PyCursesWindowObject *)self);
 }
 
 #endif /* !defined(py_is_pad) */
@@ -4396,4 +4392,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=841c5e5714faf9c5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ce2d19df9e20bfa3 input=a9049054013a1b77]*/
