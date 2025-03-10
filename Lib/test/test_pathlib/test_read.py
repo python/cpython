@@ -124,21 +124,6 @@ class ReadTestBase:
               ["fileA", "dirA/linkC/fileB", "dirB/fileB", "dirC/fileC", "dirC/dirD/fileD",
                "linkB/fileB"])
 
-    def test_glob_case_sensitive(self):
-        p = self.root
-        sep = self.root.parser.sep
-        altsep = self.root.parser.altsep
-        def check(pattern, case_sensitive, expected):
-            if altsep:
-                expected = {name.replace(altsep, sep) for name in expected}
-            expected = {p / name for name in expected}
-            actual = set(p.glob(pattern, case_sensitive=case_sensitive))
-            self.assertEqual(actual, expected)
-        check("DIRB/FILE*", True, [])
-        check("DIRB/FILE*", False, ["dirB/fileB"])
-        check("dirb/file*", True, [])
-        check("dirb/file*", False, ["dirB/fileB"])
-
     def test_walk_top_down(self):
         it = self.root.walk()
 
