@@ -2922,6 +2922,7 @@ class TestDateTime(TestDate):
         with self.assertRaises(ValueError): strptime('٢5', '%y')
         with self.assertRaises(ValueError): strptime('٢555', '%G')
         with self.assertRaises(ValueError): strptime('٢/03 0٢a٢', '%j/%y %I%p:%M:%S')
+        with self.assertRaises(ValueError): strptime('06/4/2003', '%U/%V')
 
     def test_strptime_single_digit(self):
         # bpo-34903: Check that single digit dates and times are allowed.
