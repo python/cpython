@@ -459,7 +459,8 @@ class TestErrorHandling:
         seq = [CmpErr(), CmpErr(), CmpErr()]
         for f in (self.module.heapify, self.module.heappop):
             self.assertRaises(ZeroDivisionError, f, seq)
-        for f in (self.module.heappush, self.module.heapreplace):
+        for f in (self.module.heappush, self.module.heapreplace,
+                  self.module.heappush_max, self.module.heapreplace_max):
             self.assertRaises(ZeroDivisionError, f, seq, 10)
         for f in (self.module.nlargest, self.module.nsmallest):
             self.assertRaises(ZeroDivisionError, f, 2, seq)
@@ -540,6 +541,17 @@ class TestErrorHandling:
 
         self.assertRaises((IndexError, RuntimeError), self.module.heappush, list1, g(1))
         self.assertRaises((IndexError, RuntimeError), self.module.heappush, list2, h(1))
+
+        list1, list2 = [], []
+
+        self.module.heappush_max(list1, h(0))
+        self.module.heappush_max(list2, g(0))
+        self.module.heappush_max(list1, g(1))
+        self.module.heappush_max(list2, h(1))
+
+        TestHeap.check_max_invariant(self, list1)
+        TestHeap.check_max_invariant(self, list2)
+
 
 class TestErrorHandlingPython(TestErrorHandling, TestCase):
     module = py_heapq
