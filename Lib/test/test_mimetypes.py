@@ -438,7 +438,7 @@ class MimetypesCliTestCase(unittest.TestCase):
         retcode, out, err = self.mimetypes_cmd('foo.pic')
         self.assertEqual(retcode, 1)
         self.assertEqual(out, '')
-        self.assertEqual(err, f'error: unknown extension of foo.pic{linesep}')
+        self.assertEqual(err, f'error: media type unknown for foo.pic{linesep}')
 
 if __name__ == "__main__":
     unittest.main()
