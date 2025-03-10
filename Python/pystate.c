@@ -2888,7 +2888,7 @@ PyThreadState_Ensure(PyInterpreterState *interp, const char **errmsg)
         bind_gilstate_tstate(tcur);
 
         /* This is our thread state!  We'll need to delete it in the
-           matching call to PyGILState_Release(). */
+           matching call to PyThreadState_Release(). */
         assert(tcur->ensure_depth == 1);
         tcur->ensure_depth = 0;
 
