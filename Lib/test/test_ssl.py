@@ -4046,9 +4046,10 @@ class ThreadedTests(unittest.TestCase):
             return False
         if not (supports_dhe(client_context, dhe_aliases) and
                 supports_dhe(server_context, dhe_aliases)):
-            self.skipTest("ssl doesn't support FFDHE")
+            self.skipTest("libssl doesn't support (finite-field) DHE")
         # test scenario needs TLS <= 1.2
         client_context.maximum_version = ssl.TLSVersion.TLSv1_2
+        server_context.load_dh_params(DHFILE)
         server_context.set_ciphers("kEDH")
         server_context.maximum_version = ssl.TLSVersion.TLSv1_2
         stats = server_params_test(client_context, server_context,
