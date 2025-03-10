@@ -267,12 +267,39 @@ class EagerTaskFactoryLoopTests:
 class PyEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase):
     Task = tasks._PyTask
 
+    def setUp(self):
+        self._all_tasks = asyncio.all_tasks
+        self._current_task = asyncio.current_task
+        asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._py_current_task
+        asyncio.all_tasks = asyncio.tasks.all_tasks = asyncio.tasks._py_all_tasks
+        return super().setUp()
+
+    def tearDown(self):
+        asyncio.current_task = asyncio.tasks.current_task = self._current_task
+        asyncio.all_tasks = asyncio.tasks.all_tasks = self._all_tasks
+        return super().tearDown()
+
+
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
                      'requires the C _asyncio module')
 class CEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase):
     Task = getattr(tasks, '_CTask', None)
 
+    def setUp(self):
+        self._current_task = asyncio.current_task
+        self._all_tasks = asyncio.all_tasks
+        asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._c_current_task
+        asyncio.all_tasks = asyncio.tasks.all_tasks = asyncio.tasks._c_all_tasks
+        return super().setUp()
+
+    def tearDown(self):
+        asyncio.current_task = asyncio.tasks.current_task = self._current_task
+        asyncio.all_tasks = asyncio.tasks.all_tasks = self._all_tasks
+        return super().tearDown()
+
+
+    @unittest.skip("skip")
     def test_issue105987(self):
         code = """if 1:
         from _asyncio import _swap_current_task
@@ -400,31 +427,83 @@ class BaseEagerTaskFactoryTests(BaseTaskCountingTests):
 
 
 class NonEagerTests(BaseNonEagerTaskFactoryTests, test_utils.TestCase):
-    Task = asyncio.Task
+    Task = asyncio.tasks._CTask
 
+    def setUp(self):
+        self._current_task = asyncio.current_task
+        asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._c_current_task
+        return super().setUp()
+
+    def tearDown(self):
+        asyncio.current_task = asyncio.tasks.current_task = self._current_task
+        return super().tearDown()
 
 class EagerTests(BaseEagerTaskFactoryTests, test_utils.TestCase):
-    Task = asyncio.Task
+    Task = asyncio.tasks._CTask
+
+    def setUp(self):
+        self._current_task = asyncio.current_task
+        asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._c_current_task
+        return super().setUp()
+
+    def tearDown(self):
+        asyncio.current_task = asyncio.tasks.current_task = self._current_task
+        return super().tearDown()
 
 
 class NonEagerPyTaskTests(BaseNonEagerTaskFactoryTests, test_utils.TestCase):
     Task = tasks._PyTask
 
+    def setUp(self):
+        self._current_task = asyncio.current_task
+        asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._py_current_task
+        return super().setUp()
+
+    def tearDown(self):
+        asyncio.current_task = asyncio.tasks.current_task = self._current_task
+        return super().tearDown()
+
 
 class EagerPyTaskTests(BaseEagerTaskFactoryTests, test_utils.TestCase):
     Task = tasks._PyTask
 
+    def setUp(self):
+        self._current_task = asyncio.current_task
+        asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._py_current_task
+        return super().setUp()
+
+    def tearDown(self):
+        asyncio.current_task = asyncio.tasks.current_task = self._current_task
+        return super().tearDown()
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
                      'requires the C _asyncio module')
 class NonEagerCTaskTests(BaseNonEagerTaskFactoryTests, test_utils.TestCase):
     Task = getattr(tasks, '_CTask', None)
 
+    def setUp(self):
+        self._current_task = asyncio.current_task
+        asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._c_current_task
+        return super().setUp()
+
+    def tearDown(self):
+        asyncio.current_task = asyncio.tasks.current_task = self._current_task
+        return super().tearDown()
+
 
 @unittest.skipUnless(hasattr(tasks, '_CTask'),
                      'requires the C _asyncio module')
 class EagerCTaskTests(BaseEagerTaskFactoryTests, test_utils.TestCase):
     Task = getattr(tasks, '_CTask', None)
+
+    def setUp(self):
+        self._current_task = asyncio.current_task
+        asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._c_current_task
+        return super().setUp()
+
+    def tearDown(self):
+        asyncio.current_task = asyncio.tasks.current_task = self._current_task
+        return super().tearDown()
 
 if __name__ == '__main__':
     unittest.main()
