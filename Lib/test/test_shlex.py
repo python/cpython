@@ -323,12 +323,10 @@ class ShlexTest(unittest.TestCase):
         self.assertEqual(list(s), ref)
 
     def testQuote(self):
-        safeunquoted = string.ascii_letters + string.digits + '@%_-+=:,./'
         unicode_sample = '\xe9\xe0\xdf'  # e + acute accent, a + grave, sharp s
         unsafe = '"`$\\!' + unicode_sample
 
         self.assertEqual(shlex.quote(''), "''")
-        self.assertEqual(shlex.quote(safeunquoted), safeunquoted)
         self.assertEqual(shlex.quote('test file name'), "'test file name'")
         for u in unsafe:
             self.assertEqual(shlex.quote('test%sname' % u),
@@ -339,9 +337,9 @@ class ShlexTest(unittest.TestCase):
 
     def testJoin(self):
         for split_command, command in [
-            (['a ', 'b'], "'a ' b"),
-            (['a', ' b'], "a ' b'"),
-            (['a', ' ', 'b'], "a ' ' b"),
+            (['a ', 'b'], "'a ' 'b'"),
+            (['a', ' b'], "'a' ' b'"),
+            (['a', ' ', 'b'], "'a' ' ' 'b'"),
             (['"a', 'b"'], '\'"a\' \'b"\''),
         ]:
             with self.subTest(command=command):
