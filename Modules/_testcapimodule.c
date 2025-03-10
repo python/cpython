@@ -1431,9 +1431,7 @@ _test_tstate_ensure(int subinterpreter, int clear_current_before)
     PyThreadState_Release(state1);
 
     if (!clear_current_before) {
-        if (!subinterpreter) {
-            assert(PyThreadState_GetUnchecked() == oldts);
-        }
+        assert(PyThreadState_GetUnchecked() == expected_tstate);
     }
     else {
         assert(PyThreadState_GetUnchecked() == NULL);
