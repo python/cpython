@@ -13,7 +13,7 @@ The following modules have a command-line interface.
 * :mod:`cProfile`: see :ref:`profile <profile-cli>`
 * :ref:`difflib <difflib-interface>`
 * :ref:`dis <dis-cli>`
-* :mod:`doctest <doctest-cli>`
+* :ref:`doctest <doctest-cli>`
 * :mod:`!encodings.rot_13`
 * :mod:`ensurepip`
 * :mod:`filecmp`
