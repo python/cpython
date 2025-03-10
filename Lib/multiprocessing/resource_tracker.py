@@ -84,13 +84,19 @@ class ResourceTracker(object):
     def _stop(self, use_blocking_lock=True):
         if use_blocking_lock:
             with self._lock:
-                self._cleanup()
+                self._stop_unlocked()
         else:
-            self._lock.acquire(blocking=False)
-            self._cleanup()
-            self._lock.release()
+            acquired = self._lock.acquire(blocking=False)
+            self._stop_unlocked()
+            if acquired:
+                self._lock.release()
 
-    def _cleanup(self, close=os.close, waitpid=os.waitpid, waitstatus_to_exitcode=os.waitstatus_to_exitcode):
+    def _stop_unlocked(
+        self,
+        close=os.close,
+        waitpid=os.waitpid,
+        waitstatus_to_exitcode=os.waitstatus_to_exitcode,
+    ):
         # This shouldn't happen (it might when called by a finalizer)
         # so we check for it anyway.
         if self._lock._recursion_count() > 1:
