@@ -437,16 +437,20 @@ class SideEffectLT:
 class TestErrorHandling:
 
     def test_non_sequence(self):
-        for f in (self.module.heapify, self.module.heappop):
+        for f in (self.module.heapify, self.module.heappop,
+                  self.module.heapify_max, self.module.heappop_max):
             self.assertRaises((TypeError, AttributeError), f, 10)
         for f in (self.module.heappush, self.module.heapreplace,
+                  self.module.heappush_max, self.module.heapreplace_max,
                   self.module.nlargest, self.module.nsmallest):
             self.assertRaises((TypeError, AttributeError), f, 10, 10)
 
     def test_len_only(self):
-        for f in (self.module.heapify, self.module.heappop):
+        for f in (self.module.heapify, self.module.heappop,
+                  self.module.heapify_max, self.module.heappop_max):
             self.assertRaises((TypeError, AttributeError), f, LenOnly())
-        for f in (self.module.heappush, self.module.heapreplace):
+        for f in (self.module.heappush, self.module.heapreplace,
+                  self.module.heappush_max, self.module.heapreplace_max):
             self.assertRaises((TypeError, AttributeError), f, LenOnly(), 10)
         for f in (self.module.nlargest, self.module.nsmallest):
             self.assertRaises(TypeError, f, 2, LenOnly())
@@ -463,6 +467,8 @@ class TestErrorHandling:
     def test_arg_parsing(self):
         for f in (self.module.heapify, self.module.heappop,
                   self.module.heappush, self.module.heapreplace,
+                  self.module.heapify_max, self.module.heappop_max,
+                  self.module.heappush_max, self.module.heapreplace_max,
                   self.module.nlargest, self.module.nsmallest):
             self.assertRaises((TypeError, AttributeError), f, 10)
 
@@ -484,6 +490,10 @@ class TestErrorHandling:
         # Python version raises IndexError, C version RuntimeError
         with self.assertRaises((IndexError, RuntimeError)):
             self.module.heappush(heap, SideEffectLT(5, heap))
+        heap = []
+        heap.extend(SideEffectLT(i, heap) for i in range(200))
+        with self.assertRaises((IndexError, RuntimeError)):
+            self.module.heappush_max(heap, SideEffectLT(5, heap))
 
     def test_heappop_mutating_heap(self):
         heap = []
@@ -491,6 +501,10 @@ class TestErrorHandling:
         # Python version raises IndexError, C version RuntimeError
         with self.assertRaises((IndexError, RuntimeError)):
             self.module.heappop(heap)
+        heap = []
+        heap.extend(SideEffectLT(i, heap) for i in range(200))
+        with self.assertRaises((IndexError, RuntimeError)):
+            self.module.heappop_max(heap)
 
     def test_comparison_operator_modifiying_heap(self):
         # See bpo-39421: Strong references need to be taken
@@ -503,6 +517,9 @@ class TestErrorHandling:
         heap = []
         self.module.heappush(heap, EvilClass(0))
         self.assertRaises(IndexError, self.module.heappushpop, heap, 1)
+        heap = []
+        self.module.heappush_max(heap, EvilClass(0))
+        self.assertRaises(IndexError, self.module.heappushpop_max, heap, 1)
 
     def test_comparison_operator_modifiying_heap_two_heaps(self):
 

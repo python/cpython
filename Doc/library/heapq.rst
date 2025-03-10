@@ -124,15 +124,8 @@ For max-heaps, the following functions are provided:
    Pop and return the largest item from the max-heap *heap* and also push the new *item*.
    The max-heap size doesn't change. If the max-heap is empty, :exc:`IndexError` is raised.
 
-   This one step operation is more efficient than a :func:`heappop_max` followed by
-   :func:`heappush_max` and can be more appropriate when using a fixed-size heap.
-   The pop/push combination always returns an element from the heap and replaces
-   it with *item*.
-
-   The value returned may be larger than the *item* added.  If that isn't
-   desired, consider using :func:`heappushpop_max` instead.  Its push/pop
-   combination returns the larger of the two values, leaving the smaller value
-   on the heap.
+   The value returned may be smaller than the *item* added.  Refer to the analogous
+   function heapreplace for detailed usage notes.
 
    .. versionadded:: next
 
