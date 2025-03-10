@@ -1883,8 +1883,8 @@ Example: b'.'.join([b'ab', b'pq', b'rs']) -> b'ab.pq.rs'.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_join(PyBytesObject *self, PyObject *iterable_of_bytes)
-/*[clinic end generated code: output=a046f379f626f6f8 input=7fe377b95bd549d2]*/
+bytes_join_impl(PyBytesObject *self, PyObject *iterable_of_bytes)
+/*[clinic end generated code: output=0687abb94d7d438e input=7fe377b95bd549d2]*/
 {
     return stringlib_bytes_join((PyObject*)self, iterable_of_bytes);
 }

@@ -4234,8 +4234,8 @@ True if the dictionary has the specified key, else False.
 [clinic start generated code]*/
 
 static PyObject *
-dict___contains__(PyDictObject *self, PyObject *key)
-/*[clinic end generated code: output=a3d03db709ed6e6b input=fe1cb42ad831e820]*/
+dict___contains___impl(PyDictObject *self, PyObject *key)
+/*[clinic end generated code: output=1b314e6da7687dae input=fe1cb42ad831e820]*/
 {
     int contains = PyDict_Contains((PyObject *)self, key);
     if (contains < 0) {

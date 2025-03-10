@@ -27,11 +27,16 @@ _testmultiphase_StateAccessType_get_defining_module_impl(StateAccessTypeObject *
 static PyObject *
 _testmultiphase_StateAccessType_get_defining_module(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "get_defining_module() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _testmultiphase_StateAccessType_get_defining_module_impl((StateAccessTypeObject *)self, cls);
+    return_value = _testmultiphase_StateAccessType_get_defining_module_impl((StateAccessTypeObject *)self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_testmultiphase_StateAccessType_getmodulebydef_bad_def__doc__,
@@ -50,11 +55,16 @@ _testmultiphase_StateAccessType_getmodulebydef_bad_def_impl(StateAccessTypeObjec
 static PyObject *
 _testmultiphase_StateAccessType_getmodulebydef_bad_def(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "getmodulebydef_bad_def() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _testmultiphase_StateAccessType_getmodulebydef_bad_def_impl((StateAccessTypeObject *)self, cls);
+    return_value = _testmultiphase_StateAccessType_getmodulebydef_bad_def_impl((StateAccessTypeObject *)self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_testmultiphase_StateAccessType_increment_count_clinic__doc__,
@@ -157,10 +167,15 @@ _testmultiphase_StateAccessType_get_count_impl(StateAccessTypeObject *self,
 static PyObject *
 _testmultiphase_StateAccessType_get_count(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "get_count() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _testmultiphase_StateAccessType_get_count_impl((StateAccessTypeObject *)self, cls);
+    return_value = _testmultiphase_StateAccessType_get_count_impl((StateAccessTypeObject *)self, cls);
+
+exit:
+    return return_value;
 }
-/*[clinic end generated code: output=ea0ca98e467e53c2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fc80df68095b414a input=a9049054013a1b77]*/

@@ -222,7 +222,11 @@ bytearray_clear_impl(PyByteArrayObject *self);
 static PyObject *
 bytearray_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return bytearray_clear_impl((PyByteArrayObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = bytearray_clear_impl((PyByteArrayObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(bytearray_copy__doc__,
@@ -929,7 +933,7 @@ static PyObject *
 bytearray_partition_impl(PyByteArrayObject *self, PyObject *sep);
 
 static PyObject *
-bytearray_partition(PyByteArrayObject *self, PyObject *sep)
+bytearray_partition(PyObject *self, PyObject *sep)
 {
     PyObject *return_value = NULL;
 
@@ -961,7 +965,7 @@ static PyObject *
 bytearray_rpartition_impl(PyByteArrayObject *self, PyObject *sep);
 
 static PyObject *
-bytearray_rpartition(PyByteArrayObject *self, PyObject *sep)
+bytearray_rpartition(PyObject *self, PyObject *sep)
 {
     PyObject *return_value = NULL;
 
@@ -1186,7 +1190,7 @@ static PyObject *
 bytearray_extend_impl(PyByteArrayObject *self, PyObject *iterable_of_ints);
 
 static PyObject *
-bytearray_extend(PyByteArrayObject *self, PyObject *iterable_of_ints)
+bytearray_extend(PyObject *self, PyObject *iterable_of_ints)
 {
     PyObject *return_value = NULL;
 
@@ -1509,7 +1513,7 @@ static PyObject *
 bytearray_join_impl(PyByteArrayObject *self, PyObject *iterable_of_bytes);
 
 static PyObject *
-bytearray_join(PyByteArrayObject *self, PyObject *iterable_of_bytes)
+bytearray_join(PyObject *self, PyObject *iterable_of_bytes)
 {
     PyObject *return_value = NULL;
 
@@ -1787,6 +1791,10 @@ bytearray_sizeof_impl(PyByteArrayObject *self);
 static PyObject *
 bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return bytearray_sizeof_impl((PyByteArrayObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = bytearray_sizeof_impl((PyByteArrayObject *)self);
+
+    return return_value;
 }
-/*[clinic end generated code: output=5e33422343b47af9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e5c4d4489ac7d6a4 input=a9049054013a1b77]*/

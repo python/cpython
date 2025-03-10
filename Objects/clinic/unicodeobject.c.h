@@ -24,7 +24,11 @@ EncodingMap_size_impl(struct encoding_map *self);
 static PyObject *
 EncodingMap_size(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return EncodingMap_size_impl((struct encoding_map *)self);
+    PyObject *return_value = NULL;
+
+    return_value = EncodingMap_size_impl((struct encoding_map *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(unicode_title__doc__,
@@ -1894,4 +1898,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=db37497bf38a2c17 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5b50c21ec6f9cd28 input=a9049054013a1b77]*/

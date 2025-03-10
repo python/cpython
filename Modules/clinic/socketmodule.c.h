@@ -25,7 +25,11 @@ _socket_socket_close_impl(PySocketSockObject *s);
 static PyObject *
 _socket_socket_close(PyObject *s, PyObject *Py_UNUSED(ignored))
 {
-    return _socket_socket_close_impl((PySocketSockObject *)s);
+    PyObject *return_value = NULL;
+
+    return_value = _socket_socket_close_impl((PySocketSockObject *)s);
+
+    return return_value;
 }
 
 static int
@@ -280,4 +284,4 @@ exit:
 #ifndef _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
     #define _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
 #endif /* !defined(_SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF) */
-/*[clinic end generated code: output=d39efc30d811e74b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b6072fee513b1e0d input=a9049054013a1b77]*/

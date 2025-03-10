@@ -23,11 +23,16 @@ SHA256Type_copy_impl(SHA256object *self, PyTypeObject *cls);
 static PyObject *
 SHA256Type_copy(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return SHA256Type_copy_impl((SHA256object *)self, cls);
+    return_value = SHA256Type_copy_impl((SHA256object *)self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(SHA512Type_copy__doc__,
@@ -45,11 +50,16 @@ SHA512Type_copy_impl(SHA512object *self, PyTypeObject *cls);
 static PyObject *
 SHA512Type_copy(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return SHA512Type_copy_impl((SHA512object *)self, cls);
+    return_value = SHA512Type_copy_impl((SHA512object *)self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(SHA256Type_digest__doc__,
@@ -67,7 +77,11 @@ SHA256Type_digest_impl(SHA256object *self);
 static PyObject *
 SHA256Type_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return SHA256Type_digest_impl((SHA256object *)self);
+    PyObject *return_value = NULL;
+
+    return_value = SHA256Type_digest_impl((SHA256object *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(SHA512Type_digest__doc__,
@@ -85,7 +99,11 @@ SHA512Type_digest_impl(SHA512object *self);
 static PyObject *
 SHA512Type_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return SHA512Type_digest_impl((SHA512object *)self);
+    PyObject *return_value = NULL;
+
+    return_value = SHA512Type_digest_impl((SHA512object *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(SHA256Type_hexdigest__doc__,
@@ -103,7 +121,11 @@ SHA256Type_hexdigest_impl(SHA256object *self);
 static PyObject *
 SHA256Type_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return SHA256Type_hexdigest_impl((SHA256object *)self);
+    PyObject *return_value = NULL;
+
+    return_value = SHA256Type_hexdigest_impl((SHA256object *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(SHA512Type_hexdigest__doc__,
@@ -121,7 +143,11 @@ SHA512Type_hexdigest_impl(SHA512object *self);
 static PyObject *
 SHA512Type_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return SHA512Type_hexdigest_impl((SHA512object *)self);
+    PyObject *return_value = NULL;
+
+    return_value = SHA512Type_hexdigest_impl((SHA512object *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(SHA256Type_update__doc__,
@@ -133,6 +159,19 @@ PyDoc_STRVAR(SHA256Type_update__doc__,
 #define SHA256TYPE_UPDATE_METHODDEF    \
     {"update", (PyCFunction)SHA256Type_update, METH_O, SHA256Type_update__doc__},
 
+static PyObject *
+SHA256Type_update_impl(SHA256object *self, PyObject *obj);
+
+static PyObject *
+SHA256Type_update(PyObject *self, PyObject *obj)
+{
+    PyObject *return_value = NULL;
+
+    return_value = SHA256Type_update_impl((SHA256object *)self, obj);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(SHA512Type_update__doc__,
 "update($self, obj, /)\n"
 "--\n"
@@ -141,6 +180,19 @@ PyDoc_STRVAR(SHA512Type_update__doc__,
 
 #define SHA512TYPE_UPDATE_METHODDEF    \
     {"update", (PyCFunction)SHA512Type_update, METH_O, SHA512Type_update__doc__},
+
+static PyObject *
+SHA512Type_update_impl(SHA512object *self, PyObject *obj);
+
+static PyObject *
+SHA512Type_update(PyObject *self, PyObject *obj)
+{
+    PyObject *return_value = NULL;
+
+    return_value = SHA512Type_update_impl((SHA512object *)self, obj);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_sha2_sha256__doc__,
 "sha256($module, /, string=b\'\', *, usedforsecurity=True)\n"
@@ -441,4 +493,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1d7fec114eb6b6e3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b8cb790573fddd96 input=a9049054013a1b77]*/

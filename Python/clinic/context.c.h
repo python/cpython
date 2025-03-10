@@ -59,7 +59,11 @@ _contextvars_Context_items_impl(PyContext *self);
 static PyObject *
 _contextvars_Context_items(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _contextvars_Context_items_impl((PyContext *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _contextvars_Context_items_impl((PyContext *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_contextvars_Context_keys__doc__,
@@ -77,7 +81,11 @@ _contextvars_Context_keys_impl(PyContext *self);
 static PyObject *
 _contextvars_Context_keys(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _contextvars_Context_keys_impl((PyContext *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _contextvars_Context_keys_impl((PyContext *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_contextvars_Context_values__doc__,
@@ -95,7 +103,11 @@ _contextvars_Context_values_impl(PyContext *self);
 static PyObject *
 _contextvars_Context_values(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _contextvars_Context_values_impl((PyContext *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _contextvars_Context_values_impl((PyContext *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_contextvars_Context_copy__doc__,
@@ -113,7 +125,11 @@ _contextvars_Context_copy_impl(PyContext *self);
 static PyObject *
 _contextvars_Context_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _contextvars_Context_copy_impl((PyContext *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _contextvars_Context_copy_impl((PyContext *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_contextvars_ContextVar_get__doc__,
@@ -168,6 +184,19 @@ PyDoc_STRVAR(_contextvars_ContextVar_set__doc__,
 #define _CONTEXTVARS_CONTEXTVAR_SET_METHODDEF    \
     {"set", (PyCFunction)_contextvars_ContextVar_set, METH_O, _contextvars_ContextVar_set__doc__},
 
+static PyObject *
+_contextvars_ContextVar_set_impl(PyContextVar *self, PyObject *value);
+
+static PyObject *
+_contextvars_ContextVar_set(PyObject *self, PyObject *value)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _contextvars_ContextVar_set_impl((PyContextVar *)self, value);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_contextvars_ContextVar_reset__doc__,
 "reset($self, token, /)\n"
 "--\n"
@@ -179,6 +208,19 @@ PyDoc_STRVAR(_contextvars_ContextVar_reset__doc__,
 
 #define _CONTEXTVARS_CONTEXTVAR_RESET_METHODDEF    \
     {"reset", (PyCFunction)_contextvars_ContextVar_reset, METH_O, _contextvars_ContextVar_reset__doc__},
+
+static PyObject *
+_contextvars_ContextVar_reset_impl(PyContextVar *self, PyObject *token);
+
+static PyObject *
+_contextvars_ContextVar_reset(PyObject *self, PyObject *token)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _contextvars_ContextVar_reset_impl((PyContextVar *)self, token);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(token_enter__doc__,
 "__enter__($self, /)\n"
@@ -195,7 +237,11 @@ token_enter_impl(PyContextToken *self);
 static PyObject *
 token_enter(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return token_enter_impl((PyContextToken *)self);
+    PyObject *return_value = NULL;
+
+    return_value = token_enter_impl((PyContextToken *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(token_exit__doc__,
@@ -230,4 +276,4 @@ token_exit(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=01987cdbf68a951a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=65cc35e46da68d51 input=a9049054013a1b77]*/

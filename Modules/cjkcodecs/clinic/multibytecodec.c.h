@@ -270,7 +270,11 @@ _multibytecodec_MultibyteIncrementalEncoder_getstate_impl(MultibyteIncrementalEn
 static PyObject *
 _multibytecodec_MultibyteIncrementalEncoder_getstate(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multibytecodec_MultibyteIncrementalEncoder_getstate_impl((MultibyteIncrementalEncoderObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _multibytecodec_MultibyteIncrementalEncoder_getstate_impl((MultibyteIncrementalEncoderObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalEncoder_setstate__doc__,
@@ -316,7 +320,11 @@ _multibytecodec_MultibyteIncrementalEncoder_reset_impl(MultibyteIncrementalEncod
 static PyObject *
 _multibytecodec_MultibyteIncrementalEncoder_reset(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multibytecodec_MultibyteIncrementalEncoder_reset_impl((MultibyteIncrementalEncoderObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _multibytecodec_MultibyteIncrementalEncoder_reset_impl((MultibyteIncrementalEncoderObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalDecoder_decode__doc__,
@@ -407,7 +415,11 @@ _multibytecodec_MultibyteIncrementalDecoder_getstate_impl(MultibyteIncrementalDe
 static PyObject *
 _multibytecodec_MultibyteIncrementalDecoder_getstate(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multibytecodec_MultibyteIncrementalDecoder_getstate_impl((MultibyteIncrementalDecoderObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _multibytecodec_MultibyteIncrementalDecoder_getstate_impl((MultibyteIncrementalDecoderObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalDecoder_setstate__doc__,
@@ -453,7 +465,11 @@ _multibytecodec_MultibyteIncrementalDecoder_reset_impl(MultibyteIncrementalDecod
 static PyObject *
 _multibytecodec_MultibyteIncrementalDecoder_reset(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multibytecodec_MultibyteIncrementalDecoder_reset_impl((MultibyteIncrementalDecoderObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _multibytecodec_MultibyteIncrementalDecoder_reset_impl((MultibyteIncrementalDecoderObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_multibytecodec_MultibyteStreamReader_read__doc__,
@@ -566,7 +582,11 @@ _multibytecodec_MultibyteStreamReader_reset_impl(MultibyteStreamReaderObject *se
 static PyObject *
 _multibytecodec_MultibyteStreamReader_reset(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _multibytecodec_MultibyteStreamReader_reset_impl((MultibyteStreamReaderObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = _multibytecodec_MultibyteStreamReader_reset_impl((MultibyteStreamReaderObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_multibytecodec_MultibyteStreamWriter_write__doc__,
@@ -674,11 +694,16 @@ _multibytecodec_MultibyteStreamWriter_reset_impl(MultibyteStreamWriterObject *se
 static PyObject *
 _multibytecodec_MultibyteStreamWriter_reset(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "reset() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return _multibytecodec_MultibyteStreamWriter_reset_impl((MultibyteStreamWriterObject *)self, cls);
+    return_value = _multibytecodec_MultibyteStreamWriter_reset_impl((MultibyteStreamWriterObject *)self, cls);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
@@ -688,4 +713,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=6571941b8e45b013 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=54c020a95ab3de66 input=a9049054013a1b77]*/

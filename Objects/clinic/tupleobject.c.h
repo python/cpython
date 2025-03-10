@@ -59,6 +59,19 @@ PyDoc_STRVAR(tuple_count__doc__,
 #define TUPLE_COUNT_METHODDEF    \
     {"count", (PyCFunction)tuple_count, METH_O, tuple_count__doc__},
 
+static PyObject *
+tuple_count_impl(PyTupleObject *self, PyObject *value);
+
+static PyObject *
+tuple_count(PyObject *self, PyObject *value)
+{
+    PyObject *return_value = NULL;
+
+    return_value = tuple_count_impl((PyTupleObject *)self, value);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(tuple_new__doc__,
 "tuple(iterable=(), /)\n"
 "--\n"
@@ -112,6 +125,10 @@ tuple___getnewargs___impl(PyTupleObject *self);
 static PyObject *
 tuple___getnewargs__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return tuple___getnewargs___impl((PyTupleObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = tuple___getnewargs___impl((PyTupleObject *)self);
+
+    return return_value;
 }
-/*[clinic end generated code: output=779cb4a13db67397 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7d7754943df5c955 input=a9049054013a1b77]*/

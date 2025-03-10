@@ -23,7 +23,11 @@ complex_conjugate_impl(PyComplexObject *self);
 static PyObject *
 complex_conjugate(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return complex_conjugate_impl((PyComplexObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = complex_conjugate_impl((PyComplexObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(complex___getnewargs____doc__,
@@ -40,7 +44,11 @@ complex___getnewargs___impl(PyComplexObject *self);
 static PyObject *
 complex___getnewargs__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return complex___getnewargs___impl((PyComplexObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = complex___getnewargs___impl((PyComplexObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(complex___format____doc__,
@@ -87,7 +95,11 @@ complex___complex___impl(PyComplexObject *self);
 static PyObject *
 complex___complex__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return complex___complex___impl((PyComplexObject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = complex___complex___impl((PyComplexObject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(complex_new__doc__,
@@ -170,4 +182,4 @@ PyDoc_STRVAR(complex_from_number__doc__,
 
 #define COMPLEX_FROM_NUMBER_METHODDEF    \
     {"from_number", (PyCFunction)complex_from_number, METH_O|METH_CLASS, complex_from_number__doc__},
-/*[clinic end generated code: output=252cddef7f9169a0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9fe5ed58655d9f90 input=a9049054013a1b77]*/

@@ -52,7 +52,11 @@ pyexpat_xmlparser_GetReparseDeferralEnabled_impl(xmlparseobject *self);
 static PyObject *
 pyexpat_xmlparser_GetReparseDeferralEnabled(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return pyexpat_xmlparser_GetReparseDeferralEnabled_impl((xmlparseobject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = pyexpat_xmlparser_GetReparseDeferralEnabled_impl((xmlparseobject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(pyexpat_xmlparser_Parse__doc__,
@@ -208,7 +212,11 @@ pyexpat_xmlparser_GetBase_impl(xmlparseobject *self);
 static PyObject *
 pyexpat_xmlparser_GetBase(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return pyexpat_xmlparser_GetBase_impl((xmlparseobject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = pyexpat_xmlparser_GetBase_impl((xmlparseobject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(pyexpat_xmlparser_GetInputContext__doc__,
@@ -229,7 +237,11 @@ pyexpat_xmlparser_GetInputContext_impl(xmlparseobject *self);
 static PyObject *
 pyexpat_xmlparser_GetInputContext(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return pyexpat_xmlparser_GetInputContext_impl((xmlparseobject *)self);
+    PyObject *return_value = NULL;
+
+    return_value = pyexpat_xmlparser_GetInputContext_impl((xmlparseobject *)self);
+
+    return return_value;
 }
 
 PyDoc_STRVAR(pyexpat_xmlparser_ExternalEntityParserCreate__doc__,
@@ -550,4 +562,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=7ee30ae5b666d0a8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5ce407e79b4f0108 input=a9049054013a1b77]*/
