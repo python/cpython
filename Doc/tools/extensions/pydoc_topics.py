@@ -5,6 +5,7 @@ from __future__ import annotations
 from time import asctime
 from typing import TYPE_CHECKING
 
+from docutils import nodes
 from sphinx.builders.text import TextBuilder
 from sphinx.util import logging
 from sphinx.util.display import status_iterator
@@ -103,6 +104,15 @@ _PYDOC_TOPIC_LABELS: Sequence[str] = sorted({
 })
 
 
+class PydocTextTranslator(TextTranslator):
+    def visit_grammar_snippet(self, node: nodes.Element) -> None:
+        """For grammar snippets, return the "input" as is."""
+        self.new_state()
+        self.add_text(self.nl.join(node.grammar_snippet_content))
+        self.end_state(wrap=False)
+        raise nodes.SkipNode
+
+
 class PydocTopicsBuilder(TextBuilder):
     name = "pydoc-topics"
 
@@ -141,7 +151,7 @@ class PydocTopicsBuilder(TextBuilder):
             for topic_label, label_id in label_ids:
                 document = new_document("<section node>")
                 document.append(doc_ids[label_id])
-                visitor = TextTranslator(document, builder=self)
+                visitor = PydocTextTranslator(document, builder=self)
                 document.walkabout(visitor)
                 body = "\n".join(map(str.rstrip, visitor.body.splitlines()))
                 self.topics[topic_label] = body
