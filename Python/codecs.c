@@ -1256,7 +1256,6 @@ _PyCodec_SurrogatePassUnicodeEncodeError(PyObject *exc)
 
     unsigned char *outp = (unsigned char *)PyBytes_AsString(res);
     for (Py_ssize_t i = start; i < end; i++) {
-        /* object is guaranteed to be "ready" */
         Py_UCS4 ch = PyUnicode_READ_CHAR(obj, i);
         if (!Py_UNICODE_IS_SURROGATE(ch)) {
             /* Not a surrogate, fail with original exception */
