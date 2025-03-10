@@ -140,6 +140,8 @@ struct _ts {
     PyObject *dict;  /* Stores per-thread state */
 
     int gilstate_counter;
+    // PyThreadState_Ensure() call depth
+    int ensure_depth;
 
     PyObject *async_exc; /* Asynchronous exception to raise */
     unsigned long thread_id; /* Thread id where this tstate was created */
