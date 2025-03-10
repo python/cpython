@@ -747,7 +747,7 @@ class FindTestCase(unittest.TestCase):
             self.assertEqual(result, mo_file)
             self.env.unset(var)
 
-    def test_find_with_lanuages(self):
+    def test_find_with_languages(self):
         # test that passed languages are used
         self.env.set('LANGUAGE', 'pt_BR')
         mo_file = self.create_mo_file("ga_IE")
