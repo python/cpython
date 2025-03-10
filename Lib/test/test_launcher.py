@@ -618,7 +618,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
                 data = self.run_py([script, "-postarg"])
         self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
         self.assertEqual("3.100", data["SearchInfo.tag"])
-        self.assertEqual(f"X.Y.exe -prearg {quote(script)} -postarg", data["stdout"].strip())
+        self.assertEqual(f"X.Y.exe -prearg {script} -postarg", data["stdout"].strip())
 
     def test_py_shebang_invalid_bom(self):
         with self.py_ini(TEST_PY_DEFAULTS):
@@ -628,7 +628,7 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertIn("Invalid BOM", data["stderr"])
         self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
         self.assertEqual("3.100", data["SearchInfo.tag"])
-        self.assertEqual(f"X.Y.exe {quote(script)} -postarg", data["stdout"].strip())
+        self.assertEqual(f"X.Y.exe {script} -postarg", data["stdout"].strip())
 
     def test_py_handle_64_in_ini(self):
         with self.py_ini("\n".join(["[defaults]", "python=3.999-64"])):
