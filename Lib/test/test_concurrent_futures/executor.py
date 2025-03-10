@@ -129,4 +129,7 @@ class ExecutorTest:
             wr = weakref.ref(obj)
             del obj
             support.gc_collect()  # For PyPy or other GCs.
-            self.assertIsNone(wr())
+
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                if wr() is None:
+                    break
