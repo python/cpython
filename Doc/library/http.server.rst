@@ -420,47 +420,78 @@ such as using different index file names by overriding the class attribute
 
 .. _http-server-cli:
 
+Command-line interface
+----------------------
+
 :mod:`http.server` can also be invoked directly using the :option:`-m`
 switch of the interpreter.  Similar to
 the previous example, this serves files relative to the current directory::
 
-        python -m http.server
+   python -m http.server
 
-The server listens to port 8000 by default. The default can be overridden
-by passing the desired port number as an argument::
+The following options are accepted:
 
-        python -m http.server 9000
+.. program:: http.server
 
-By default, the server binds itself to all interfaces.  The option ``-b/--bind``
-specifies a specific address to which it should bind. Both IPv4 and IPv6
-addresses are supported. For example, the following command causes the server
-to bind to localhost only::
+.. option:: port
 
-        python -m http.server --bind 127.0.0.1
+   The server listens to port 8000 by default. The default can be overridden
+   by passing the desired port number as an argument::
 
-.. versionchanged:: 3.4
-   Added the ``--bind`` option.
+      python -m http.server 9000
 
-.. versionchanged:: 3.8
-   Support IPv6 in the ``--bind`` option.
+.. option:: -b, --bind <address>
 
-By default, the server uses the current directory. The option ``-d/--directory``
-specifies a directory to which it should serve the files. For example,
-the following command uses a specific directory::
+   Specifies a specific address to which it should bind. Both IPv4 and IPv6
+   addresses are supported. By default, the server binds itself to all
+   interfaces. For example, the following command causes the server to bind
+   to localhost only::
 
-        python -m http.server --directory /tmp/
+      python -m http.server --bind 127.0.0.1
 
-.. versionchanged:: 3.7
-   Added the ``--directory`` option.
+   .. versionadded:: 3.4
 
-By default, the server is conformant to HTTP/1.0. The option ``-p/--protocol``
-specifies the HTTP version to which the server is conformant. For example, the
-following command runs an HTTP/1.1 conformant server::
+   .. versionchanged:: 3.8
+      Support IPv6 in the ``--bind`` option.
 
-        python -m http.server --protocol HTTP/1.1
+.. option:: -d, --directory <dir>
 
-.. versionchanged:: 3.11
-   Added the ``--protocol`` option.
+   Specifies a directory to which it should serve the files. By default,
+   the server uses the current directory. For example, the following command
+   uses a specific directory::
+
+      python -m http.server --directory /tmp/
+
+   .. versionadded:: 3.7
+
+.. option:: -p, --protocol <version>
+
+   Specifies the HTTP version to which the server is conformant. By default,
+   the server is conformant to HTTP/1.0. For example, the following command
+   runs an HTTP/1.1 conformant server::
+
+      python -m http.server --protocol HTTP/1.1
+
+   .. versionadded:: 3.11
+
+.. option:: --cgi
+
+   :class:`CGIHTTPRequestHandler` can be enabled in the command line by passing
+   the ``--cgi`` option::
+
+      python -m http.server --cgi
+
+   .. deprecated-removed:: 3.13 3.15
+
+      :mod:`http.server` command line ``--cgi`` support is being removed
+      because :class:`CGIHTTPRequestHandler` is being removed.
+
+.. warning::
+
+   :class:`CGIHTTPRequestHandler` and the ``--cgi`` command line option
+   are not intended for use by untrusted clients and may be vulnerable
+   to exploitation. Always use within a secure environment.
+
 
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
 
@@ -510,21 +541,6 @@ following command runs an HTTP/1.1 conformant server::
       Retaining it could lead to further :ref:`security considerations
       <http.server-security>`.
 
-:class:`CGIHTTPRequestHandler` can be enabled in the command line by passing
-the ``--cgi`` option::
-
-        python -m http.server --cgi
-
-.. deprecated-removed:: 3.13 3.15
-
-   :mod:`http.server` command line ``--cgi`` support is being removed
-   because :class:`CGIHTTPRequestHandler` is being removed.
-
-.. warning::
-
-   :class:`CGIHTTPRequestHandler` and the ``--cgi`` command line option
-   are not intended for use by untrusted clients and may be vulnerable
-   to exploitation. Always use within a secure environment.
 
 .. _http.server-security:
 
