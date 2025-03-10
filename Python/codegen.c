@@ -37,15 +37,6 @@
 #define COMP_SETCOMP  2
 #define COMP_DICTCOMP 3
 
-/* A soft limit for stack use, to avoid excessive
- * memory use for large constants, etc.
- *
- * The value 30 is plucked out of thin air.
- * Code that could use more stack than this is
- * rare, so the exact value is unimportant.
- */
-#define STACK_USE_GUIDELINE 30
-
 #undef SUCCESS
 #undef ERROR
 #define SUCCESS 0
