@@ -112,7 +112,7 @@ static const int compare_masks[] = {
 
 
 int
-_Py_c_array_EnsureCapacity(_Py_c_array_t *c_array, int idx)
+_Py_CArray_EnsureCapacity(_Py_c_array_t *c_array, int idx)
 {
     void *arr = *c_array->array;
     int alloc = *c_array->allocated_entries;

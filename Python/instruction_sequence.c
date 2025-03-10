@@ -7,7 +7,7 @@
 
 #include "Python.h"
 
-#include "pycore_c_array.h" // _Py_c_array_EnsureCapacity
+#include "pycore_c_array.h" // _Py_CArray_EnsureCapacity
 #include "pycore_compile.h" // _PyInstruction
 #include "pycore_opcode_utils.h"
 #include "pycore_opcode_metadata.h" // OPCODE_HAS_ARG, etc
@@ -45,7 +45,7 @@ instr_sequence_next_inst(instr_sequence *seq) {
         .initial_num_entries = INITIAL_INSTR_SEQUENCE_SIZE,
     };
 
-    RETURN_IF_ERROR(_Py_c_array_EnsureCapacity(&array, seq->s_used + 1));
+    RETURN_IF_ERROR(_Py_CArray_EnsureCapacity(&array, seq->s_used + 1));
 
     assert(seq->s_allocated >= 0);
     assert(seq->s_used < seq->s_allocated);
@@ -70,7 +70,7 @@ _PyInstructionSequence_UseLabel(instr_sequence *seq, int lbl)
         .initial_num_entries = INITIAL_INSTR_SEQUENCE_LABELS_MAP_SIZE,
     };
 
-    RETURN_IF_ERROR(_Py_c_array_EnsureCapacity(&array, lbl));
+    RETURN_IF_ERROR(_Py_CArray_EnsureCapacity(&array, lbl));
 
     for(int i = old_size; i < seq->s_labelmap_size; i++) {
         seq->s_labelmap[i] = -111;  /* something weird, for debugging */

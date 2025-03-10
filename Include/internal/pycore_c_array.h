@@ -19,13 +19,13 @@ typedef struct {
     int initial_num_entries;  /* initial allocation size */
 } _Py_c_array_t;
 
-/* If idx is out of bouds:
+/* If idx is out of bounds:
  * If arr->array is NULL, allocate arr->initial_num_entries slots.
  * Otherwise, double its size.
  *
  * Return 0 if successful and -1 (with exception set) otherwise.
  */
-int _Py_c_array_EnsureCapacity(_Py_c_array_t *c_array, int idx);
+int _Py_CArray_EnsureCapacity(_Py_c_array_t *c_array, int idx);
 
 
 #ifdef __cplusplus

@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "opcode.h"
-#include "pycore_c_array.h"       // _Py_c_array_EnsureCapacity
+#include "pycore_c_array.h"       // _Py_CArray_EnsureCapacity
 #include "pycore_flowgraph.h"
 #include "pycore_compile.h"
 #include "pycore_intrinsics.h"
@@ -149,7 +149,7 @@ basicblock_next_instr(basicblock *b)
         .initial_num_entries = DEFAULT_BLOCK_SIZE,
     };
 
-    RETURN_IF_ERROR(_Py_c_array_EnsureCapacity(&array, b->b_iused + 1));
+    RETURN_IF_ERROR(_Py_CArray_EnsureCapacity(&array, b->b_iused + 1));
     return b->b_iused++;
 }
 
