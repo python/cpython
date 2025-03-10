@@ -143,13 +143,15 @@ basicblock_next_instr(basicblock *b)
 {
     assert(b != NULL);
     _Py_c_array_t array = {
-        .array = (void**)&b->b_instr,
-        .allocated_entries = &b->b_ialloc,
+        .array = (void*)b->b_instr,
+        .allocated_entries = b->b_ialloc,
         .item_size = sizeof(cfg_instr),
         .initial_num_entries = DEFAULT_BLOCK_SIZE,
     };
 
     RETURN_IF_ERROR(_Py_CArray_EnsureCapacity(&array, b->b_iused + 1));
+    b->b_instr = array.array;
+    b->b_ialloc = array.allocated_entries;
     return b->b_iused++;
 }
 

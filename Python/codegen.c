@@ -112,10 +112,27 @@ static const int compare_masks[] = {
 
 
 int
+_Py_CArray_Init(_Py_c_array_t* array, int item_size, int initial_num_entries) {
+    memset(array, 0, sizeof(_Py_c_array_t));
+    array->item_size = item_size;
+    array->initial_num_entries = initial_num_entries;
+    return 0;
+}
+
+void
+_Py_CArray_Fini(_Py_c_array_t* array)
+{
+    if (array->array) {
+        PyMem_Free(array->array);
+        array->allocated_entries = 0;
+    }
+}
+
+int
 _Py_CArray_EnsureCapacity(_Py_c_array_t *c_array, int idx)
 {
-    void *arr = *c_array->array;
-    int alloc = *c_array->allocated_entries;
+    void *arr = c_array->array;
+    int alloc = c_array->allocated_entries;
     if (arr == NULL) {
         int new_alloc = c_array->initial_num_entries;
         if (idx >= new_alloc) {
@@ -152,8 +169,8 @@ _Py_CArray_EnsureCapacity(_Py_c_array_t *c_array, int idx)
         memset((char *)arr + oldsize, 0, newsize - oldsize);
     }
 
-    *c_array->array = arr;
-    *c_array->allocated_entries = alloc;
+    c_array->array = arr;
+    c_array->allocated_entries = alloc;
     return SUCCESS;
 }
 
