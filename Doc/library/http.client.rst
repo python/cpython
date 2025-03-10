@@ -436,7 +436,8 @@ also send your request step by step, by using the four functions below.
    Send an :rfc:`822`\ -style header to the server.  It sends a line to the server
    consisting of the header, a colon and a space, and the first argument.  If more
    arguments are given, continuation lines are sent, each consisting of a tab and
-   an argument.
+   an argument. If a header's value cannot be encoded with ISO-8859-1 (latin-1),
+   then it will be put into :rfc:`2047` encoded-word format.
 
 
 .. method:: HTTPConnection.endheaders(message_body=None, *, encode_chunked=False)
