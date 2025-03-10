@@ -27,10 +27,11 @@ from . import commands, console, reader
 from .reader import Reader
 
 
-# types
-Command = commands.Command
-if False:
+TYPE_CHECKING = False
+if TYPE_CHECKING:
     from .types import KeySpec, CommandName
+
+Command = commands.Command
 
 
 def prefix(wordlist: list[str], j: int = 0) -> str:

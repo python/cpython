@@ -26,7 +26,6 @@ import time
 import msvcrt
 
 from collections import deque
-import ctypes
 from ctypes.wintypes import (
     _COORD,
     WORD,
@@ -568,7 +567,7 @@ class Char(Union):
     ]
 
 
-class KeyEvent(ctypes.Structure):
+class KeyEvent(Structure):
     _fields_ = [
         ("bKeyDown", BOOL),
         ("wRepeatCount", WORD),
@@ -579,11 +578,11 @@ class KeyEvent(ctypes.Structure):
     ]
 
 
-class WindowsBufferSizeEvent(ctypes.Structure):
+class WindowsBufferSizeEvent(Structure):
     _fields_ = [("dwSize", _COORD)]
 
 
-class ConsoleEvent(ctypes.Union):
+class ConsoleEvent(Union):
     _fields_ = [
         ("KeyEvent", KeyEvent),
         ("WindowsBufferSizeEvent", WindowsBufferSizeEvent),
@@ -624,7 +623,7 @@ if sys.platform == "win32":
     GetConsoleScreenBufferInfo = _KERNEL32.GetConsoleScreenBufferInfo
     GetConsoleScreenBufferInfo.argtypes = [
         HANDLE,
-        ctypes.POINTER(CONSOLE_SCREEN_BUFFER_INFO),
+        POINTER(CONSOLE_SCREEN_BUFFER_INFO),
     ]
     GetConsoleScreenBufferInfo.restype = BOOL
 
