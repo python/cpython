@@ -756,16 +756,18 @@ class FindTestCase(unittest.TestCase):
                               languages=['ga_IE'])
         self.assertEqual(result, mo_file)
 
-    def test_find_with_no_lang(self):
+    @unittest.mock.patch('gettext._expand_lang')
+    def test_find_with_no_lang(self, patch_expand_lang):
         # no language can be found
-        result = gettext.find('foo')
-        self.assertEqual(result, None)
+        gettext.find('foo')
+        patch_expand_lang.assert_called_with('C')
 
-    def test_find_with_c(self):
+    @unittest.mock.patch('gettext._expand_lang')
+    def test_find_with_c(self, patch_expand_lang):
         # 'C' is already in languages
         self.env.set('LANGUAGE', 'C')
-        result = gettext.find('foo')
-        self.assertEqual(result, None)
+        gettext.find('foo')
+        patch_expand_lang.assert_called_with('C')
 
     def test_find_all(self):
         # test that all are returned when all is set
