@@ -108,29 +108,6 @@ class JoinablePathTest(unittest.TestCase):
         self._check_str_subclass('\\\\some\\share\\a')
         self._check_str_subclass('\\\\some\\share\\a\\b.txt')
 
-    @needs_posix
-    def test_join_posix(self):
-        P = self.cls
-        p = P('//a')
-        pp = p.joinpath('b')
-        self.assertEqual(pp, P('//a/b'))
-        pp = P('/a').joinpath('//c')
-        self.assertEqual(pp, P('//c'))
-        pp = P('//a').joinpath('/c')
-        self.assertEqual(pp, P('/c'))
-
-    @needs_posix
-    def test_div_posix(self):
-        # Basically the same as joinpath().
-        P = self.cls
-        p = P('//a')
-        pp = p / 'b'
-        self.assertEqual(pp, P('//a/b'))
-        pp = P('/a') / '//c'
-        self.assertEqual(pp, P('//c'))
-        pp = P('//a') / '/c'
-        self.assertEqual(pp, P('/c'))
-
     def _check_str(self, expected, args):
         p = self.cls(*args)
         self.assertEqual(str(p), expected.replace('/', self.sep))
@@ -429,18 +406,6 @@ class ReadablePathTest(JoinablePathTest):
         P = self.cls
         p = P(self.base)
         self.assertEqual(list(p.glob("")), [p.joinpath("")])
-
-    def test_glob_case_sensitive(self):
-        P = self.cls
-        def _check(path, pattern, case_sensitive, expected):
-            actual = {str(q) for q in path.glob(pattern, case_sensitive=case_sensitive)}
-            expected = {str(P(self.base, q)) for q in expected}
-            self.assertEqual(actual, expected)
-        path = P(self.base)
-        _check(path, "DIRB/FILE*", True, [])
-        _check(path, "DIRB/FILE*", False, ["dirB/fileB"])
-        _check(path, "dirb/file*", True, [])
-        _check(path, "dirb/file*", False, ["dirB/fileB"])
 
     def test_info_exists(self):
         p = self.cls(self.base)
