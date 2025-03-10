@@ -2727,6 +2727,11 @@ class TestDateTime(TestDate):
             # If that assumption changes, this value can change as well
             self.assertEqual(max_ts, 253402300799.0)
 
+    def test_fromtimestamp_roundtrip_near_epoch(self):
+        for ts in range(0, 1, 2):
+            roundtripped_ts = self.theclass.fromtimestamp(ts).timestamp()
+            self.assertEqual(roundtripped_ts, ts)
+
     def test_fromtimestamp_limits(self):
         try:
             # See if the platform can handle timestamps that are near the min.
@@ -2829,13 +2834,11 @@ class TestDateTime(TestDate):
                 self.assertRaises(OverflowError, self.theclass.utcfromtimestamp,
                                   insane)
 
-    @unittest.skipIf(sys.platform == "win32", "Windows doesn't accept negative timestamps")
     def test_negative_float_fromtimestamp(self):
         # The result is tz-dependent; at least test that this doesn't
         # fail (like it did before bug 1646728 was fixed).
         self.theclass.fromtimestamp(-1.05)
 
-    @unittest.skipIf(sys.platform == "win32", "Windows doesn't accept negative timestamps")
     def test_negative_float_utcfromtimestamp(self):
         with self.assertWarns(DeprecationWarning):
             d = self.theclass.utcfromtimestamp(-1.05)
