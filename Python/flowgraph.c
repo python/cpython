@@ -1351,7 +1351,7 @@ add_const(PyObject *newconst, PyObject *consts, PyObject *const_cache)
    Returns boolean indicating whether succeeded to collect requested number of instructions.
 */
 static bool
-get_const_sequence_instructions(basicblock *bb, int start, cfg_instr **seq, int size)
+get_const_instr_sequence(basicblock *bb, int start, cfg_instr **seq, int size)
 {
     assert(start < bb->b_iused);
     assert(size >= 0);
@@ -1426,7 +1426,7 @@ fold_tuple_of_constants(basicblock *bb, int i, PyObject *consts, PyObject *const
     }
 
     cfg_instr *seq[STACK_USE_GUIDELINE];
-    if (!get_const_sequence_instructions(bb, i-1, seq, seq_size)) {
+    if (!get_const_instr_sequence(bb, i-1, seq, seq_size)) {
         /* not a const sequence */
         return SUCCESS;
     }
@@ -1482,7 +1482,7 @@ optimize_lists_and_sets(basicblock *bb, int i, int nextop,
     }
 
     cfg_instr *seq[STACK_USE_GUIDELINE];
-    if (!get_const_sequence_instructions(bb, i-1, seq, seq_size)) {  /* not a const sequence */
+    if (!get_const_instr_sequence(bb, i-1, seq, seq_size)) {  /* not a const sequence */
         if (contains_or_iter && instr->i_opcode == BUILD_LIST) {
             /* iterate over a tuple instead of list */
             INSTR_SET_OP1(instr, BUILD_TUPLE, instr->i_oparg);
@@ -1722,7 +1722,7 @@ fold_const_binop(basicblock *bb, int i, PyObject *consts, PyObject *const_cache)
     assert(binop->i_opcode == BINARY_OP);
 
     cfg_instr *seq[BINOP_OPERAND_COUNT];
-    if (!get_const_sequence_instructions(bb, i-1, seq, BINOP_OPERAND_COUNT)) {
+    if (!get_const_instr_sequence(bb, i-1, seq, BINOP_OPERAND_COUNT)) {
         /* not a const sequence */
         return SUCCESS;
     }
@@ -1804,7 +1804,7 @@ fold_const_unaryop(basicblock *bb, int i, PyObject *consts, PyObject *const_cach
     cfg_instr *unaryop = &bb->b_instr[i];
 
     cfg_instr *instr;
-    if (!get_const_sequence_instructions(bb, i - 1, &instr, UNARYOP_OPERAND_COUNT)) {
+    if (!get_const_instr_sequence(bb, i - 1, &instr, UNARYOP_OPERAND_COUNT)) {
         /* not a const */
         return SUCCESS;
     }
