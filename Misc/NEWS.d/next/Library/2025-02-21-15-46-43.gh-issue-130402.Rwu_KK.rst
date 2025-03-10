@@ -1,0 +1,2 @@
+Joining running daemon threads during interpreter shutdown without timeout
+now raises :exc:`PythonFinalizationError`.
