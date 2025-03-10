@@ -60,7 +60,7 @@
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_DigitValue
 #include "pycore_strhex.h"        // _Py_strhex_bytes_with_sep()
-#ifdef USE_ZLIB_CRC32
+#ifndef NO_ZLIB_CRC32
 #  include "zlib.h"
 #endif
 
@@ -616,7 +616,7 @@ binascii_crc_hqx_impl(PyObject *module, Py_buffer *data, unsigned int crc)
     return PyLong_FromUnsignedLong(crc);
 }
 
-#ifndef USE_ZLIB_CRC32
+#ifdef NO_ZLIB_CRC32
 /*  Crc - 32 BIT ANSI X3.66 CRC checksum files
     Also known as: ISO 3307
 **********************************************************************|
@@ -749,7 +749,7 @@ internal_crc32(const unsigned char *bin_data, Py_ssize_t len, unsigned int crc)
     result = (crc ^ 0xFFFFFFFF);
     return result & 0xffffffff;
 }
-#endif  /* USE_ZLIB_CRC32 */
+#endif  /* NO_ZLIB_CRC32 */
 
 /*[clinic input]
 binascii.crc32 -> unsigned_int
@@ -765,9 +765,11 @@ static unsigned int
 binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc)
 /*[clinic end generated code: output=52cf59056a78593b input=bbe340bc99d25aa8]*/
 
-#ifdef USE_ZLIB_CRC32
+#ifndef NO_ZLIB_CRC32
 /* This is the same as zlibmodule.c zlib_crc32_impl. It exists in two
- * modules for historical reasons. */
+ * modules for historical reasons. They should be consolidated in the future
+ * once WASI supports zlib.
+ */
 {
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
@@ -798,7 +800,7 @@ binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc)
     }
     return crc & 0xffffffff;
 }
-#else  /* USE_ZLIB_CRC32 */
+#else  /* NO_ZLIB_CRC32 */
 {
     const unsigned char *bin_data = data->buf;
     Py_ssize_t len = data->len;
@@ -815,7 +817,7 @@ binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc)
         return internal_crc32(bin_data, len, crc);
     }
 }
-#endif  /* USE_ZLIB_CRC32 */
+#endif  /* NO_ZLIB_CRC32 */
 
 /*[clinic input]
 binascii.b2a_hex

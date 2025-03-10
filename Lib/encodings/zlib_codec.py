@@ -6,7 +6,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 """
 
 import codecs
-import zlib # this codec needs the optional zlib module !
+import zlib
 
 ### Codec APIs
 
