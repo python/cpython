@@ -2599,6 +2599,14 @@ method. The ISO 8601 year and ISO 8601 week directives are not interchangeable
 with the year and week number directives above. Calling :meth:`~.datetime.strptime` with
 incomplete or ambiguous ISO 8601 directives will raise a :exc:`ValueError`.
 
+.. Note::
+   Provided input may be split unexpectedly to cope with the provided directives
+   in the format string, this aligns with the behaviour of the C implementation.::
+
+      >>> datetime.strptime('20110817T12','%Y%m%dT%H%M')
+      datetime.datetime(2011, 8, 17, 1, 2)
+
+
 The full set of format codes supported varies across platforms, because Python
 calls the platform C library's :c:func:`strftime` function, and platform
 variations are common. To see the full set of format codes supported on your
