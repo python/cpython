@@ -130,6 +130,20 @@ class TestDecode:
             with self.assertRaises(ValueError):
                 self.loads('1' * (maxdigits + 1))
 
+class TestRawDecode:
+    def test_whitespace(self):
+        decoder = self.json.JSONDecoder()
+        self.assertEqual(decoder.raw_decode(' {}'), ({}, 3))
+        self.assertEqual(decoder.raw_decode('  []'), ([], 4))
+        self.assertEqual(decoder.raw_decode('   ""'), ('', 5))
+        s = '  {   "key"    :    "value"    ,  "k":"v"    } \n' \
+            ' { "key": "value",  "k" :"v"} '
+        val1, n1 = decoder.raw_decode(s)
+        val2, n2 = decoder.raw_decode(s[n1:])
+        self.assertEqual(val1, {"key":"value", "k":"v"})
+        self.assertEqual(val2, {"key":"value", "k":"v"})
 
 class TestPyDecode(TestDecode, PyTest): pass
 class TestCDecode(TestDecode, CTest): pass
+class TestPyRawDecode(TestRawDecode, PyTest): pass
+class TestCRawDecode(TestRawDecode, CTest): pass
