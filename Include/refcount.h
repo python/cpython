@@ -19,8 +19,8 @@ immortal. The latter should be the only instances that require
 cleanup during runtime finalization.
 */
 
-/* Leave the low bits for refcount overflow for old stable ABI code */
-#define _Py_STATICALLY_ALLOCATED_FLAG (1 << 7)
+#define _Py_STATICALLY_ALLOCATED_FLAG 4
+#define _Py_IMMORTAL_FLAGS 1
 
 #if SIZEOF_VOID_P > 4
 /*
@@ -43,7 +43,8 @@ be done by checking the bit sign flag in the lower 32 bits.
 
 */
 #define _Py_IMMORTAL_INITIAL_REFCNT (3UL << 30)
-#define _Py_STATIC_IMMORTAL_INITIAL_REFCNT ((Py_ssize_t)(_Py_IMMORTAL_INITIAL_REFCNT | (((Py_ssize_t)_Py_STATICALLY_ALLOCATED_FLAG) << 32)))
+#define _Py_STATIC_FLAG_BITS ((Py_ssize_t)(_Py_STATICALLY_ALLOCATED_FLAG | _Py_IMMORTAL_FLAGS))
+#define _Py_STATIC_IMMORTAL_INITIAL_REFCNT (((Py_ssize_t)_Py_IMMORTAL_INITIAL_REFCNT) | (_Py_STATIC_FLAG_BITS << 48))
 
 #else
 /*
@@ -113,7 +114,6 @@ PyAPI_FUNC(Py_ssize_t) Py_REFCNT(PyObject *ob);
     #  define Py_REFCNT(ob) _Py_REFCNT(_PyObject_CAST(ob))
     #endif
 #endif
-
 
 static inline Py_ALWAYS_INLINE int _Py_IsImmortal(PyObject *op)
 {
@@ -241,6 +241,18 @@ PyAPI_FUNC(void) Py_DecRef(PyObject *);
 // Private functions used by Py_INCREF() and Py_DECREF().
 PyAPI_FUNC(void) _Py_IncRef(PyObject *);
 PyAPI_FUNC(void) _Py_DecRef(PyObject *);
+
+#ifndef Py_GIL_DISABLED
+static inline Py_ALWAYS_INLINE void Py_INCREF_MORTAL(PyObject *op)
+{
+    assert(!_Py_IsStaticImmortal(op));
+    op->ob_refcnt++;
+    _Py_INCREF_STAT_INC();
+#if defined(Py_REF_DEBUG) && !defined(Py_LIMITED_API)
+    _Py_INCREF_IncRefTotal();
+#endif
+}
+#endif
 
 static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 {
@@ -372,6 +384,36 @@ static inline void Py_DECREF(PyObject *op)
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
 
 #elif defined(Py_REF_DEBUG)
+static inline void Py_DECREF_MORTAL(const char *filename, int lineno, PyObject *op)
+{
+    if (op->ob_refcnt <= 0) {
+        _Py_NegativeRefcount(filename, lineno, op);
+    }
+    _Py_DECREF_STAT_INC();
+    assert(!_Py_IsStaticImmortal(op));
+    _Py_DECREF_DecRefTotal();
+    if (--op->ob_refcnt == 0) {
+        _Py_Dealloc(op);
+    }
+}
+#define Py_DECREF_MORTAL(op) Py_DECREF_MORTAL(__FILE__, __LINE__, _PyObject_CAST(op))
+
+
+
+static inline void _Py_DECREF_MORTAL_SPECIALIZED(const char *filename, int lineno, PyObject *op, destructor destruct)
+{
+    if (op->ob_refcnt <= 0) {
+        _Py_NegativeRefcount(filename, lineno, op);
+    }
+    _Py_DECREF_STAT_INC();
+    assert(!_Py_IsStaticImmortal(op));
+    _Py_DECREF_DecRefTotal();
+    if (--op->ob_refcnt == 0) {
+        destruct(op);
+    }
+}
+#define Py_DECREF_MORTAL_SPECIALIZED(op, destruct) _Py_DECREF_MORTAL_SPECIALIZED(__FILE__, __LINE__, op, destruct)
+
 static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 {
 #if SIZEOF_VOID_P > 4
@@ -396,6 +438,26 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 #define Py_DECREF(op) Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
 
 #else
+static inline void Py_DECREF_MORTAL(PyObject *op)
+{
+    assert(!_Py_IsStaticImmortal(op));
+    _Py_DECREF_STAT_INC();
+    if (--op->ob_refcnt == 0) {
+        _Py_Dealloc(op);
+    }
+}
+#define Py_DECREF_MORTAL(op) Py_DECREF_MORTAL(_PyObject_CAST(op))
+
+static inline void Py_DECREF_MORTAL_SPECIALIZED(PyObject *op, destructor destruct)
+{
+    assert(!_Py_IsStaticImmortal(op));
+    _Py_DECREF_STAT_INC();
+    if (--op->ob_refcnt == 0) {
+        destruct(op);
+    }
+}
+#define Py_DECREF_MORTAL_SPECIALIZED(op, destruct) Py_DECREF_MORTAL_SPECIALIZED(_PyObject_CAST(op), destruct)
+
 static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
 {
     // Non-limited C API and limited C API for Python 3.9 and older access
