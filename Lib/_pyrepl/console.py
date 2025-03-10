@@ -24,6 +24,7 @@ import _colorize  # type: ignore[import-not-found]
 from abc import ABC, abstractmethod
 import ast
 import code
+import io
 from dataclasses import dataclass, field
 import os.path
 import sys
@@ -177,7 +178,19 @@ class InteractiveColoredConsole(code.InteractiveConsole):
 
     def runcode(self, code):
         try:
+            temp_output = io.StringIO()
+            old_stdout = sys.stdout
+            sys.stdout = temp_output
             exec(code, self.locals)
+            output = ""
+            if hasattr(sys.stdout, "getvalue"):
+                output = sys.stdout.getvalue()
+                # Avoid restoring old stdout if it has been changed during exec
+                if sys.stdout is temp_output:
+                    sys.stdout = old_stdout
+            if not output.endswith("\n"):
+                output += "\n"
+            print(output, end="")
         except SystemExit:
             raise
         except BaseException:
