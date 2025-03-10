@@ -1,0 +1,41 @@
+#life_events_graph {
+  /*
+   * Unfortunately these colors don't seem to be exposed in any of the theme's
+   * variables, so they are manually copied here.
+   */
+  --svg-light-fgcolor: black;
+  --svg-light-bgcolor: white;
+  --svg-dark-fgcolor: rgba(255, 255, 255, 0.87);
+  --svg-dark-bgcolor: #222;
+  --svg-fgcolor: var(--svg-light-fgcolor);
+  --svg-bgcolor: var(--svg-light-bgcolor);
+}
+@media (prefers-color-scheme: dark) {
+  #life_events_graph {
+    --svg-fgcolor: var(--svg-dark-fgcolor);
+    --svg-bgcolor: var(--svg-dark-bgcolor);
+  }
+}
+@media (prefers-color-scheme: light) {
+  #life_events_graph {
+    --svg-fgcolor: var(--svg-light-fgcolor);
+    --svg-bgcolor: var(--svg-light-bgcolor);
+  }
+}
+:root:has(#pydoctheme_dark_css[media="not all"]) #life_events_graph {
+  --svg-fgcolor: var(--svg-light-fgcolor);
+  --svg-bgcolor: var(--svg-light-bgcolor);
+}
+:root:has(#pydoctheme_dark_css[media="all"]) #life_events_graph {
+  --svg-fgcolor: var(--svg-dark-fgcolor);
+  --svg-bgcolor: var(--svg-dark-bgcolor);
+}
+#life_events_graph [stroke="black"] {
+  stroke: var(--svg-fgcolor);
+}
+#life_events_graph :is(text, [fill="black"]) {
+  fill: var(--svg-fgcolor);
+}
+#life_events_graph :is([fill="white"]) {
+  fill: var(--svg-bgcolor);
+}
