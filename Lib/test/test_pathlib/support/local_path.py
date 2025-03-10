@@ -82,6 +82,8 @@ class LocalPathInfo(pathlib.types.PathInfo):
     """
     Simple implementation of PathInfo for a local path
     """
+    __slots__ = ('_path', '_exists', '_is_dir', '_is_file', '_is_symlink')
+
     def __init__(self, path):
         self._path = str(path)
         self._exists = None
@@ -124,11 +126,11 @@ class ReadableLocalPath(pathlib.types._ReadablePath, LexicalPath):
     """
     Simple implementation of a ReadablePath class for local filesystem paths.
     """
-    __slots__ = ('_info')
+    __slots__ = ('info',)
 
     def __init__(self, *pathsegments):
         super().__init__(*pathsegments)
-        self._info = None
+        self.info = LocalPathInfo(self)
 
     def __fspath__(self):
         return str(self)
@@ -141,9 +143,3 @@ class ReadableLocalPath(pathlib.types._ReadablePath, LexicalPath):
 
     def readlink(self):
         return self.with_segments(os.readlink(self))
-
-    @property
-    def info(self):
-        if self._info is None:
-            self._info = LocalPathInfo(self)
-        return self._info

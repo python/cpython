@@ -83,6 +83,7 @@ class MissingZipPathInfo:
     """
     PathInfo implementation that is used when a zip file member is missing.
     """
+    __slots__ = ()
 
     def exists(self, follow_symlinks=True):
         return False
@@ -195,12 +196,12 @@ class ZipFileList:
     tree of `ZipPathInfo` objects representing the zip file members.
     """
 
-    __slots__ = ('root', '_items')
+    __slots__ = ('tree', '_items')
 
-    def __init__(self, zip_file, items):
-        self.root = ZipPathInfo(zip_file)
+    def __init__(self, zip_file):
+        self.tree = ZipPathInfo(zip_file)
         self._items = []
-        for item in items:
+        for item in zip_file.filelist:
             self.append(item)
 
     def __len__(self):
@@ -211,7 +212,7 @@ class ZipFileList:
 
     def append(self, item):
         self._items.append(item)
-        self.root.resolve(item.filename, create=True).zip_info = item
+        self.tree.resolve(item.filename, create=True).zip_info = item
 
 
 class ReadableZipPath(pathlib.types._ReadablePath):
@@ -226,7 +227,7 @@ class ReadableZipPath(pathlib.types._ReadablePath):
         self._segments = pathsegments
         self.zip_file = zip_file
         if not isinstance(zip_file.filelist, ZipFileList):
-            zip_file.filelist = ZipFileList(zip_file, zip_file.filelist)
+            zip_file.filelist = ZipFileList(zip_file)
 
     def __hash__(self):
         return hash((str(self), self.zip_file))
@@ -249,8 +250,8 @@ class ReadableZipPath(pathlib.types._ReadablePath):
 
     @property
     def info(self):
-        root = self.zip_file.filelist.root
-        return root.resolve(str(self), follow_symlinks=False)
+        tree = self.zip_file.filelist.tree
+        return tree.resolve(str(self), follow_symlinks=False)
 
     def __open_rb__(self, buffering=-1):
         info = self.info.resolve()
