@@ -537,6 +537,9 @@ PyVarObject Slots
    initialized to zero. For :ref:`dynamically allocated type objects
    <heap-types>`, this field has a special internal meaning.
 
+   This field should be accessed using the :c:func:`Py_SIZE()` and
+   :c:func:`Py_SET_SIZE()` macros.
+
    **Inheritance:**
 
    This field is not inherited by subtypes.
@@ -610,6 +613,11 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    :c:member:`~PyVarObject.ob_size` in an implementation-defined
    way; the underlying storage and its size should be acessed using
    :c:func:`PyLong_Export`.
+
+   .. note::
+
+      The :c:member:`~PyVarObject.ob_size` field should be accessed using
+      the :c:func:`Py_SIZE()` and :c:func:`Py_SET_SIZE()` macros.
 
    Also, the presence of an :c:member:`~PyVarObject.ob_size` field in the
    instance layout doesn't mean that the instance structure is variable-length.
