@@ -4034,11 +4034,21 @@ class ThreadedTests(unittest.TestCase):
 
     @unittest.skipIf(Py_DEBUG_WIN32, "Avoid mixing debug/release CRT on Windows")
     def test_dh_params(self):
-        # Check we can get a connection with ephemeral Diffie-Hellman
+        # Check we can get a connection with ephemeral finite-field Diffie-
+        # Hellman (if supported).
         client_context, server_context, hostname = testing_context()
+        dhe_aliases = ["ADH", "EDH", "DHE"]
+        def supports_dhe(ctx, aliases) -> bool:
+            for cipher in ctx.get_ciphers():
+                for alias in aliases:
+                    if alias in cipher:
+                        return True
+            return False
+        if not (supports_dhe(client_context, dhe_aliases) and
+                supports_dhe(server_context, dhe_aliases)):
+            self.skipTest("ssl doesn't support FFDHE")
         # test scenario needs TLS <= 1.2
         client_context.maximum_version = ssl.TLSVersion.TLSv1_2
-        server_context.load_dh_params(DHFILE)
         server_context.set_ciphers("kEDH")
         server_context.maximum_version = ssl.TLSVersion.TLSv1_2
         stats = server_params_test(client_context, server_context,
@@ -4046,7 +4056,7 @@ class ThreadedTests(unittest.TestCase):
                                    sni_name=hostname)
         cipher = stats["cipher"][0]
         parts = cipher.split("-")
-        if "ADH" not in parts and "EDH" not in parts and "DHE" not in parts:
+        if all(a not in parts for a in aliases):
             self.fail("Non-DH key exchange: " + cipher[0])
 
     def test_ecdh_curve(self):
