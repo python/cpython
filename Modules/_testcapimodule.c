@@ -1376,6 +1376,108 @@ join_temporary_c_thread(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
+static PyObject*
+_test_tstate_ensure(int subinterpreter, int clear_current_before)
+{
+    PyThreadState *oldts = PyThreadState_Get();
+
+    PyInterpreterState *interp;
+    PyThreadState *subinterp_tstate = NULL;
+    PyThreadState *expected_tstate = NULL;
+    if (subinterpreter) {
+        // Create a sub-interpreter
+        subinterp_tstate = Py_NewInterpreter();
+        assert(PyThreadState_Get() == subinterp_tstate);
+        interp = PyThreadState_GetInterpreter(subinterp_tstate);
+        expected_tstate = subinterp_tstate;
+    }
+    else {
+        interp = PyThreadState_GetInterpreter(oldts);
+        expected_tstate = oldts;
+    }
+
+    if (clear_current_before) {
+        PyThreadState_Swap(NULL);
+        assert(PyThreadState_GetUnchecked() == NULL);
+    }
+
+    // First call
+    const char *errmsg;
+    int state1 = PyThreadState_Ensure(interp, &errmsg);
+    if (state1 < 0) {
+        fprintf(stderr, "ERROR: PyThreadState_Ensure() failed: %s", errmsg);
+        abort();
+    }
+    PyThreadState *ensure1 = PyThreadState_GetUnchecked();
+    if (clear_current_before) {
+        assert(ensure1 != expected_tstate);
+    }
+    else {
+        assert(ensure1 == expected_tstate);
+    }
+
+    {
+        // Second call
+        int state2 = PyThreadState_Ensure(interp, &errmsg);
+        if (state2 < 0) {
+            fprintf(stderr, "ERROR: PyThreadState_Ensure() failed: %s", errmsg);
+            abort();
+        }
+        PyThreadState *ensure2 = PyThreadState_GetUnchecked();
+        assert(ensure2 == ensure1);
+
+        PyThreadState_Release(state2);
+    }
+    PyThreadState_Release(state1);
+
+    if (!clear_current_before) {
+        if (!subinterpreter) {
+            assert(PyThreadState_GetUnchecked() == oldts);
+        }
+    }
+    else {
+        assert(PyThreadState_GetUnchecked() == NULL);
+    }
+
+    if (subinterpreter) {
+        PyThreadState_Swap(subinterp_tstate);
+        Py_EndInterpreter(subinterp_tstate);
+        assert(PyThreadState_GetUnchecked() == NULL);
+    }
+    PyThreadState_Swap(oldts);
+
+    Py_RETURN_NONE;
+}
+
+
+static PyObject *
+test_tstate_ensure(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return _test_tstate_ensure(0, 0);
+}
+
+
+static PyObject *
+test_tstate_ensure_clear(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return _test_tstate_ensure(0, 1);
+}
+
+
+static PyObject *
+test_tstate_ensure_subinterp(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return _test_tstate_ensure(1, 0);
+}
+
+
+static PyObject *
+test_tstate_ensure_subinterp_clear(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    return _test_tstate_ensure(1, 1);
+}
+
+
 /* marshal */
 
 static PyObject*
@@ -2543,6 +2645,10 @@ static PyMethodDef TestMethods[] = {
     {"call_in_temporary_c_thread", call_in_temporary_c_thread, METH_VARARGS,
      PyDoc_STR("set_error_class(error_class) -> None")},
     {"join_temporary_c_thread", join_temporary_c_thread, METH_NOARGS},
+    {"test_tstate_ensure", test_tstate_ensure, METH_NOARGS},
+    {"test_tstate_ensure_clear", test_tstate_ensure_clear, METH_NOARGS},
+    {"test_tstate_ensure_subinterp", test_tstate_ensure_subinterp, METH_NOARGS},
+    {"test_tstate_ensure_subinterp_clear", test_tstate_ensure_subinterp_clear, METH_NOARGS},
     {"pymarshal_write_long_to_file",
         pymarshal_write_long_to_file, METH_VARARGS},
     {"pymarshal_write_object_to_file",
