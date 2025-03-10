@@ -284,7 +284,7 @@ exit:
 
 PyDoc_STRVAR(winreg_CreateKeyEx__doc__,
 "CreateKeyEx($module, /, key, sub_key, reserved=0,\n"
-"            access=winreg.KEY_WRITE)\n"
+"            access=winreg.KEY_WRITE, options=0, create_only=False)\n"
 "--\n"
 "\n"
 "Creates or opens the specified key.\n"
@@ -298,6 +298,11 @@ PyDoc_STRVAR(winreg_CreateKeyEx__doc__,
 "  access\n"
 "    An integer that specifies an access mask that describes the\n"
 "    desired security access for the key. Default is KEY_WRITE.\n"
+"  options\n"
+"    Can be one of the REG_OPTION_* constants.\n"
+"  create_only\n"
+"    When set to True, raise FileExistsError if the key is already exists.\n"
+"    Default is False.\n"
 "\n"
 "If key is one of the predefined keys, sub_key may be None. In that case,\n"
 "the handle returned is the same key handle passed in to the function.\n"
@@ -312,7 +317,8 @@ PyDoc_STRVAR(winreg_CreateKeyEx__doc__,
 
 static HKEY
 winreg_CreateKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
-                        int reserved, REGSAM access);
+                        int reserved, REGSAM access, int options,
+                        int create_only);
 
 static PyObject *
 winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -320,14 +326,14 @@ winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 4
+    #define NUM_KEYWORDS 6
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(key), &_Py_ID(sub_key), &_Py_ID(reserved), &_Py_ID(access), },
+        .ob_item = { &_Py_ID(key), &_Py_ID(sub_key), &_Py_ID(reserved), &_Py_ID(access), &_Py_ID(options), &_Py_ID(create_only), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -336,23 +342,25 @@ winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
+    static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", "options", "create_only", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "CreateKeyEx",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[6];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     HKEY key;
     const wchar_t *sub_key = NULL;
     int reserved = 0;
     REGSAM access = KEY_WRITE;
+    int options = 0;
+    int create_only = 0;
     HKEY _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+            /*minpos*/ 2, /*maxpos*/ 6, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -384,12 +392,30 @@ winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
             goto skip_optional_pos;
         }
     }
-    access = PyLong_AsInt(args[3]);
-    if (access == -1 && PyErr_Occurred()) {
+    if (args[3]) {
+        access = PyLong_AsInt(args[3]);
+        if (access == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    if (args[4]) {
+        options = PyLong_AsInt(args[4]);
+        if (options == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    create_only = PyObject_IsTrue(args[5]);
+    if (create_only < 0) {
         goto exit;
     }
 skip_optional_pos:
-    _return_value = winreg_CreateKeyEx_impl(module, key, sub_key, reserved, access);
+    _return_value = winreg_CreateKeyEx_impl(module, key, sub_key, reserved, access, options, create_only);
     if (_return_value == NULL) {
         goto exit;
     }
@@ -906,7 +932,8 @@ exit:
 #if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_OpenKey__doc__,
-"OpenKey($module, /, key, sub_key, reserved=0, access=winreg.KEY_READ)\n"
+"OpenKey($module, /, key, sub_key, reserved=0, access=winreg.KEY_READ,\n"
+"        options=0)\n"
 "--\n"
 "\n"
 "Opens the specified key.\n"
@@ -916,10 +943,14 @@ PyDoc_STRVAR(winreg_OpenKey__doc__,
 "  sub_key\n"
 "    A string that identifies the sub_key to open.\n"
 "  reserved\n"
-"    A reserved integer that must be zero.  Default is zero.\n"
+"    A reserved integer that be should zero.  If it is not zero,\n"
+"    it will be used as the options parameter for compatibility reasons.\n"
+"    Default is zero.\n"
 "  access\n"
 "    An integer that specifies an access mask that describes the desired\n"
 "    security access for the key.  Default is KEY_READ.\n"
+"  options\n"
+"    Can be one of the REG_OPTION_* constants.\n"
 "\n"
 "The result is a new handle to the specified key.\n"
 "If the function fails, an OSError exception is raised.");
@@ -929,7 +960,7 @@ PyDoc_STRVAR(winreg_OpenKey__doc__,
 
 static HKEY
 winreg_OpenKey_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
-                    int reserved, REGSAM access);
+                    int reserved, REGSAM access, int options);
 
 static PyObject *
 winreg_OpenKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -937,14 +968,14 @@ winreg_OpenKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 4
+    #define NUM_KEYWORDS 5
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(key), &_Py_ID(sub_key), &_Py_ID(reserved), &_Py_ID(access), },
+        .ob_item = { &_Py_ID(key), &_Py_ID(sub_key), &_Py_ID(reserved), &_Py_ID(access), &_Py_ID(options), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -953,23 +984,24 @@ winreg_OpenKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
+    static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", "options", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "OpenKey",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     HKEY key;
     const wchar_t *sub_key = NULL;
     int reserved = 0;
     REGSAM access = KEY_READ;
+    int options = 0;
     HKEY _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+            /*minpos*/ 2, /*maxpos*/ 5, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1001,12 +1033,21 @@ winreg_OpenKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
             goto skip_optional_pos;
         }
     }
-    access = PyLong_AsInt(args[3]);
-    if (access == -1 && PyErr_Occurred()) {
+    if (args[3]) {
+        access = PyLong_AsInt(args[3]);
+        if (access == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    options = PyLong_AsInt(args[4]);
+    if (options == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional_pos:
-    _return_value = winreg_OpenKey_impl(module, key, sub_key, reserved, access);
+    _return_value = winreg_OpenKey_impl(module, key, sub_key, reserved, access, options);
     if (_return_value == NULL) {
         goto exit;
     }
@@ -1024,7 +1065,8 @@ exit:
 #if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES))
 
 PyDoc_STRVAR(winreg_OpenKeyEx__doc__,
-"OpenKeyEx($module, /, key, sub_key, reserved=0, access=winreg.KEY_READ)\n"
+"OpenKeyEx($module, /, key, sub_key, reserved=0, access=winreg.KEY_READ,\n"
+"          options=0)\n"
 "--\n"
 "\n"
 "Opens the specified key.\n"
@@ -1034,10 +1076,14 @@ PyDoc_STRVAR(winreg_OpenKeyEx__doc__,
 "  sub_key\n"
 "    A string that identifies the sub_key to open.\n"
 "  reserved\n"
-"    A reserved integer that must be zero.  Default is zero.\n"
+"    A reserved integer that be should zero.  If it is not zero,\n"
+"    it will be used as the options parameter for compatibility reasons.\n"
+"    Default is zero.\n"
 "  access\n"
 "    An integer that specifies an access mask that describes the desired\n"
 "    security access for the key.  Default is KEY_READ.\n"
+"  options\n"
+"    Can be one of the REG_OPTION_* constants.\n"
 "\n"
 "The result is a new handle to the specified key.\n"
 "If the function fails, an OSError exception is raised.");
@@ -1047,7 +1093,7 @@ PyDoc_STRVAR(winreg_OpenKeyEx__doc__,
 
 static HKEY
 winreg_OpenKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
-                      int reserved, REGSAM access);
+                      int reserved, REGSAM access, int options);
 
 static PyObject *
 winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -1055,14 +1101,14 @@ winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
 
-    #define NUM_KEYWORDS 4
+    #define NUM_KEYWORDS 5
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(key), &_Py_ID(sub_key), &_Py_ID(reserved), &_Py_ID(access), },
+        .ob_item = { &_Py_ID(key), &_Py_ID(sub_key), &_Py_ID(reserved), &_Py_ID(access), &_Py_ID(options), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1071,23 +1117,24 @@ winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
+    static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", "options", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "OpenKeyEx",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
-    PyObject *argsbuf[4];
+    PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     HKEY key;
     const wchar_t *sub_key = NULL;
     int reserved = 0;
     REGSAM access = KEY_READ;
+    int options = 0;
     HKEY _return_value;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+            /*minpos*/ 2, /*maxpos*/ 5, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1119,12 +1166,21 @@ winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
             goto skip_optional_pos;
         }
     }
-    access = PyLong_AsInt(args[3]);
-    if (access == -1 && PyErr_Occurred()) {
+    if (args[3]) {
+        access = PyLong_AsInt(args[3]);
+        if (access == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    options = PyLong_AsInt(args[4]);
+    if (options == -1 && PyErr_Occurred()) {
         goto exit;
     }
 skip_optional_pos:
-    _return_value = winreg_OpenKeyEx_impl(module, key, sub_key, reserved, access);
+    _return_value = winreg_OpenKeyEx_impl(module, key, sub_key, reserved, access, options);
     if (_return_value == NULL) {
         goto exit;
     }
@@ -1766,4 +1822,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=fbe9b075cd2fa833 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d34ae631e9716f93 input=a9049054013a1b77]*/
