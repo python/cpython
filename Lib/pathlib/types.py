@@ -11,7 +11,7 @@ Protocols for supporting classes in pathlib.
 
 
 from abc import ABC, abstractmethod
-from glob import _PathGlobber, _no_recurse_symlinks
+from glob import _PathGlobber
 from pathlib import PurePath, Path
 from pathlib._os import magic_open, ensure_distinct_paths, copy_file
 from typing import Optional, Protocol, runtime_checkable
@@ -216,15 +216,14 @@ class _JoinablePath(ABC):
             parent = split(path)[0]
         return tuple(parents)
 
-    def full_match(self, pattern, *, case_sensitive=None):
+    def full_match(self, pattern):
         """
         Return True if this path matches the given glob-style pattern. The
         pattern is matched against the entire path.
         """
         if not hasattr(pattern, 'with_segments'):
             pattern = self.with_segments(pattern)
-        if case_sensitive is None:
-            case_sensitive = self.parser.normcase('Aa') == 'Aa'
+        case_sensitive = self.parser.normcase('Aa') == 'Aa'
         globber = _PathGlobber(pattern.parser.sep, case_sensitive, recursive=True)
         match = globber.compile(str(pattern), altsep=pattern.parser.altsep)
         return match(str(self)) is not None
@@ -279,7 +278,7 @@ class _ReadablePath(_JoinablePath):
         """
         raise NotImplementedError
 
-    def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
+    def glob(self, pattern, *, recurse_symlinks=True):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
@@ -288,14 +287,10 @@ class _ReadablePath(_JoinablePath):
         anchor, parts = _explode_path(pattern)
         if anchor:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        case_sensitive_default = self.parser.normcase('Aa') == 'Aa'
-        if case_sensitive is None:
-            case_sensitive = case_sensitive_default
-            case_pedantic = False
-        else:
-            case_pedantic = case_sensitive_default != case_sensitive
-        recursive = True if recurse_symlinks else _no_recurse_symlinks
-        globber = _PathGlobber(self.parser.sep, case_sensitive, case_pedantic, recursive)
+        elif not recurse_symlinks:
+            raise NotImplementedError("recurse_symlinks=False is unsupported")
+        case_sensitive = self.parser.normcase('Aa') == 'Aa'
+        globber = _PathGlobber(self.parser.sep, case_sensitive, recursive=True)
         select = globber.selector(parts)
         return select(self.joinpath(''))
 

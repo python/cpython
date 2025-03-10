@@ -709,18 +709,6 @@ class ReadablePathTest(JoinablePathTest):
         p = P(self.base)
         self.assertEqual(list(p.glob("")), [p.joinpath("")])
 
-    def test_glob_case_sensitive(self):
-        P = self.cls
-        def _check(path, pattern, case_sensitive, expected):
-            actual = {str(q) for q in path.glob(pattern, case_sensitive=case_sensitive)}
-            expected = {str(P(self.base, q)) for q in expected}
-            self.assertEqual(actual, expected)
-        path = P(self.base)
-        _check(path, "DIRB/FILE*", True, [])
-        _check(path, "DIRB/FILE*", False, ["dirB/fileB"])
-        _check(path, "dirb/file*", True, [])
-        _check(path, "dirb/file*", False, ["dirB/fileB"])
-
     def test_info_exists(self):
         p = self.cls(self.base)
         self.assertTrue(p.info.exists())
