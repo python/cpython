@@ -515,6 +515,7 @@ class GlobTests(unittest.TestCase):
         self.assertEqual(fn('**/*'), r'(?s:(?:.+[/\\])?[^/\\]+)\Z')
 
         self.assertEqual(fn('foo[%-0]bar'), r'(?s:foo\[%-0\]bar)\Z')
+        self.assertEqual(fn('foo[U-d]bar'), r'(?s:foo\[U-d\]bar)\Z')
 
 
 if __name__ == "__main__":
