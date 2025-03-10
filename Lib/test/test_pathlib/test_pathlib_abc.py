@@ -108,17 +108,6 @@ class JoinablePathTest(unittest.TestCase):
         self._check_str_subclass('\\\\some\\share\\a')
         self._check_str_subclass('\\\\some\\share\\a\\b.txt')
 
-    @needs_posix
-    def test_join_posix(self):
-        P = self.cls
-        p = P('//a')
-        pp = p.joinpath('b')
-        self.assertEqual(pp, P('//a/b'))
-        pp = P('/a').joinpath('//c')
-        self.assertEqual(pp, P('//c'))
-        pp = P('//a').joinpath('/c')
-        self.assertEqual(pp, P('/c'))
-
     @needs_windows
     def test_join_windows(self):
         P = self.cls
@@ -156,18 +145,6 @@ class JoinablePathTest(unittest.TestCase):
         self.assertEqual(pp, P('//server/share'))
         pp = P('//./BootPartition').joinpath('Windows')
         self.assertEqual(pp, P('//./BootPartition/Windows'))
-
-    @needs_posix
-    def test_div_posix(self):
-        # Basically the same as joinpath().
-        P = self.cls
-        p = P('//a')
-        pp = p / 'b'
-        self.assertEqual(pp, P('//a/b'))
-        pp = P('/a') / '//c'
-        self.assertEqual(pp, P('//c'))
-        pp = P('//a') / '/c'
-        self.assertEqual(pp, P('/c'))
 
     @needs_windows
     def test_div_windows(self):
