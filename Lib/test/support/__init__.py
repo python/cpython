@@ -3015,3 +3015,16 @@ def is_libssl_fips_mode():
     except ImportError:
         return False  # more of a maybe, unless we add this to the _ssl module.
     return get_fips_mode() != 0
+
+
+def check_tk_version():
+    from .import_helper import import_module
+    import_module('_tkinter')
+    import tkinter
+    tcl = tkinter.Tcl()
+    major, minor, micro = tcl.call("info", "patchlevel").split(".")
+    version = f"{int(major):02d}{int(minor):02d}{int(micro):02d}"
+    # update max version number as necessary
+    if version > "080699":
+        raise unittest.SkipTest(f"Tk version {major}.{minor}.{micro}"
+                                " not supported")
