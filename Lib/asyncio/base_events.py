@@ -322,16 +322,15 @@ class Server(events.AbstractServer):
             self._wakeup()
 
     def _wakeup(self):
-        match self._state:
-            case _ServerState.SHUTDOWN:
-                # gh109564: the wakeup method has two possible call-sites,
-                # through an explicit call Server.close(), or indirectly through
-                # Server._detach() by the last connected client.
-                return
-            case _ServerState.INITIALIZED | _ServerState.SERVING:
-                raise RuntimeError("cannot wakeup server before closing")
-            case _ServerState.CLOSED:
-                self._state = _ServerState.SHUTDOWN
+        if self._state == _ServerState.CLOSED:
+            self._state = _ServerState.SHUTDOWN
+        elif self._state == _ServerState.SHUTDOWN:
+            # gh109564: the wakeup method has two possible call-sites,
+            # through an explicit call Server.close(), or indirectly through
+            # Server._detach() by the last connected client.
+            return
+        else:
+            raise RuntimeError(f"server {self!r} can only wakeup waiters after closing")
 
         waiters = self._waiters
         self._waiters = None
@@ -340,13 +339,12 @@ class Server(events.AbstractServer):
                 waiter.set_result(None)
 
     def _start_serving(self):
-        match self._state:
-            case _ServerState.SERVING:
-                return
-            case _ServerState.CLOSED | _ServerState.SHUTDOWN:
-                raise RuntimeError(f'server {self!r} is closed')
-            case _ServerState.INITIALIZED:
-                self._state = _ServerState.SERVING
+        if self._state == _ServerState.INITIALIZED:
+            self._state = _ServerState.SERVING
+        elif self._state == _ServerState.SERVING:
+            return
+        else:
+            raise RuntimeError(f'server {self!r} is closed')
 
         for sock in self._sockets:
             sock.listen(self._backlog)
@@ -368,12 +366,10 @@ class Server(events.AbstractServer):
         return tuple(trsock.TransportSocket(s) for s in self._sockets)
 
     def close(self):
-        match self._state:
-            case _ServerState.CLOSED | _ServerState.SHUTDOWN:
-                # Shutdown state can only be reached after closing.
-                return
-            case _:
-                self._state = _ServerState.CLOSED
+        if self._state == _ServerState.CLOSED or self._state == _ServerState.SHUTDOWN:
+            return
+        else:
+            self._state = _ServerState.CLOSED
 
         sockets = self._sockets
         if sockets is None:
