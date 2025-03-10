@@ -2756,6 +2756,10 @@ static int
 tstate_ensure(PyInterpreterState *interp, PyThreadState *tcur,
               const char **errmsg)
 {
+    if (errmsg) {
+        *errmsg = NULL;
+    }
+
     int has_gil;
     if (tcur == NULL) {
         /* Create a new Python thread state for this thread */
@@ -2790,9 +2794,6 @@ tstate_ensure(PyInterpreterState *interp, PyThreadState *tcur,
     */
     ++tcur->gilstate_counter;
 
-    if (errmsg) {
-        *errmsg = NULL;
-    }
     return has_gil ? PyGILState_LOCKED : PyGILState_UNLOCKED;
 }
 
