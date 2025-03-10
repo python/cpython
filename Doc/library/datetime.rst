@@ -2600,11 +2600,11 @@ with the year and week number directives above. Calling :meth:`~.datetime.strpti
 incomplete or ambiguous ISO 8601 directives will raise a :exc:`ValueError`.
 
 .. Note::
-   Provided input may be split unexpectedly to cope with the provided directives
-   in the format string, this aligns with the behaviour of the C implementation.::
+   Input will be split to cope with the provided directives in the format string,
+   this aligns with the behaviour of the C implementation.::
 
-      >>> datetime.strptime('20110817T12','%Y%m%dT%H%M')
-      datetime.datetime(2011, 8, 17, 1, 2)
+      >>> datetime.strptime('20250310T12','%Y%m%dT%H%M')
+      datetime.datetime(2025, 3, 10, 1, 2)
 
 
 The full set of format codes supported varies across platforms, because Python
