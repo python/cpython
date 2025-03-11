@@ -73,7 +73,39 @@ is_running_main(PyInterpreterState *interp)
 
 /* Cross-interpreter Buffer Views *******************************************/
 
-// XXX Release when the original interpreter is destroyed.
+/* When a memoryview object is "shared" between interpreters,
+ * its underlying "buffer" memory is actually shared, rather than just
+ * copied.  This facilitates efficient use of that data where otherwise
+ * interpreters are strictly isolated.  However, this also means that
+ * the underlying data is subject to the complexities of thread-safety,
+ * which the user must manage carefully.
+ *
+ * When the memoryview is "shared", it is essentially copied in the same
+ * way as PyMemory_FromObject() does, but in another interpreter.
+ * The Py_buffer value is copied like normal, including the "buf" pointer,
+ * with one key exception.
+ *
+ * When a Py_buffer is released and it holds a reference to an object,
+ * that object gets a chance to call its bf_releasebuffer() (if any)
+ * before the object is decref'ed.  The same is true with the memoryview
+ * tp_dealloc, which essentially calls PyBuffer_Release().
+ *
+ * The problem for a Py_buffer shared between two interpreters is that
+ * the naive approach breaks interpreter isolation.  Operations on an
+ * object must only happen while that object's interpreter is active.
+ * If the copied mv->view.obj pointed to the original memoryview then
+ * the PyBuffer_Release() would happen under the wrong interpreter.
+ *
+ * To work around this, we set mv->view.obj on the copied memoryview
+ * to a wrapper object with the only job of releasing the original
+ * buffer in a cross-interpreter-safe way.
+ */
+
+// XXX Note that there is still an issue to sort out, where the original
+// interpreter is destroyed but code in another interpreter is still
+// using dependent buffers.  Using such buffers segfaults.  This will
+// require a careful fix.  In the meantime, users will have to be
+// diligent about avoiding the problematic situation.
 
 typedef struct {
     PyObject base;
@@ -150,6 +182,7 @@ xibufferview_getbuf(PyObject *op, Py_buffer *view, int flags)
        via _memoryview_from_xid() below. */
     XIBufferViewObject *self = XIBufferViewObject_CAST(op);
     *view = *self->view;
+    /* This is the workaround mentioned earlier. */
     view->obj = op;
     // XXX Should we leave it alone?
     view->internal = NULL;
@@ -226,10 +259,14 @@ _pybuffer_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
         return -1;
     }
     view->used = 0;
+    /* This will increment the memoryview's export count, which won't get
+     * decremented until the view sent to other interpreters is released. */
     if (PyObject_GetBuffer(obj, &view->view, PyBUF_FULL_RO) < 0) {
         PyMem_RawFree(view);
         return -1;
     }
+    /* The view holds a reference to the object, so we don't worry
+     * about also tracking it on the cross-interpreter data. */
     _PyXIData_Init(data, tstate->interp, view, NULL, _memoryview_from_xid);
     data->free = _pybuffer_shared_free;
     return 0;
