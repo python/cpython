@@ -2148,9 +2148,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    to be called before attempting to break reference cycles, ensuring
    that it finds the object in a sane state.
 
-   :c:member:`~PyTypeObject.tp_finalize` should not mutate the current exception status;
-   therefore, a recommended way to write a non-trivial finalizer is with
-   :c:func:`PyErr_GetRaisedException`
+   :c:member:`~PyTypeObject.tp_finalize` should not mutate the current exception
+   status. Non-trivial finalizers should use :c:func:`PyErr_GetRaisedException`.
 
    **Inheritance:**
 
