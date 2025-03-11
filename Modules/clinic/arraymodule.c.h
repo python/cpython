@@ -833,4 +833,16 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=c9219e074c62e0c8 input=a9049054013a1b77]*/
+
+static PyObject *
+array_arrayiterator___setstate___impl(arrayiterobject *self, PyObject *state);
+
+static PyObject *
+array_arrayiterator___setstate__(PyObject *self, PyObject *state)
+{
+    PyObject *return_value = NULL;
+
+    return_value = array_arrayiterator___setstate___impl((arrayiterobject *)self, state);
+
+    return return_value;
+}

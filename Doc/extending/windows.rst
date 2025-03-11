@@ -96,6 +96,13 @@ gives you access to spam's names, but does not create a separate copy.  On Unix,
 linking with a library is more like ``from spam import *``; it does create a
 separate copy.
 
+.. c:macro:: Py_NO_LINK_LIB
+
+   Turn off the implicit, ``#pragma``-based linkage with the Python
+   library, performed inside CPython header files.
+
+   .. versionadded:: 3.14
+
 
 .. _win-dlls:
 
@@ -108,21 +115,46 @@ Using DLLs in Practice
 Windows Python is built in Microsoft Visual C++; using other compilers may or
 may not work.  The rest of this section is MSVC++ specific.
 
-When creating DLLs in Windows, you must pass :file:`pythonXY.lib` to the linker.
-To build two DLLs, spam and ni (which uses C functions found in spam), you could
-use these commands::
+When creating DLLs in Windows, you can use the CPython library in two ways:
 
-   cl /LD /I/python/include spam.c ../libs/pythonXY.lib
-   cl /LD /I/python/include ni.c spam.lib ../libs/pythonXY.lib
+1. By default, inclusion of :file:`PC/pyconfig.h` directly or via
+   :file:`Python.h` triggers an implicit, configure-aware link with the
+   library.  The header file chooses :file:`pythonXY_d.lib` for Debug,
+   :file:`pythonXY.lib` for Release, and :file:`pythonX.lib` for Release with
+   the `Limited API <stable-application-binary-interface>`_ enabled.
 
-The first command created three files: :file:`spam.obj`, :file:`spam.dll` and
-:file:`spam.lib`.  :file:`Spam.dll` does not contain any Python functions (such
-as :c:func:`PyArg_ParseTuple`), but it does know how to find the Python code
-thanks to :file:`pythonXY.lib`.
+   To build two DLLs, spam and ni (which uses C functions found in spam), you
+   could use these commands::
 
-The second command created :file:`ni.dll` (and :file:`.obj` and :file:`.lib`),
-which knows how to find the necessary functions from spam, and also from the
-Python executable.
+       cl /LD /I/python/include spam.c
+       cl /LD /I/python/include ni.c spam.lib
+
+   The first command created three files: :file:`spam.obj`, :file:`spam.dll`
+   and :file:`spam.lib`.  :file:`Spam.dll` does not contain any Python
+   functions (such as :c:func:`PyArg_ParseTuple`), but it does know how to find
+   the Python code thanks to the implicitly linked :file:`pythonXY.lib`.
+
+   The second command created :file:`ni.dll` (and :file:`.obj` and
+   :file:`.lib`), which knows how to find the necessary functions from spam,
+   and also from the Python executable.
+
+2. Manually by defining :c:macro:`Py_NO_LINK_LIB` macro before including
+   :file:`Python.h`. You must pass :file:`pythonXY.lib` to the linker.
+
+   To build two DLLs, spam and ni (which uses C functions found in spam), you
+   could use these commands::
+
+      cl /LD /DPy_NO_LINK_LIB /I/python/include spam.c ../libs/pythonXY.lib
+      cl /LD /DPy_NO_LINK_LIB /I/python/include ni.c spam.lib ../libs/pythonXY.lib
+
+   The first command created three files: :file:`spam.obj`, :file:`spam.dll`
+   and :file:`spam.lib`.  :file:`Spam.dll` does not contain any Python
+   functions (such as :c:func:`PyArg_ParseTuple`), but it does know how to find
+   the Python code thanks to :file:`pythonXY.lib`.
+
+   The second command created :file:`ni.dll` (and :file:`.obj` and
+   :file:`.lib`), which knows how to find the necessary functions from spam,
+   and also from the Python executable.
 
 Not every identifier is exported to the lookup table.  If you want any other
 modules (including Python) to be able to see your identifiers, you have to say

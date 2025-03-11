@@ -1,0 +1,3 @@
+Removed undocumented ``-t`` and ``-v`` arguments of ``python -m
+pickletools``. Use ``python -m doctest Lib/pickletools.py -v`` instead.
+Patch by Semyon Moroz.
