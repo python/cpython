@@ -138,7 +138,7 @@ class ThroughBuiltinAPIMixin(BuiltinModuleMixin, CreatorMixin, DigestMixin):
         return self.hmac.compute_digest(key, msg, digest=digestmod)
 
 
-class CheckerMixin:
+class ObjectCheckerMixin:
     """Mixin for checking HMAC objects (pure Python, OpenSSL or built-in)."""
 
     def check_object(self, h, hexdigest, hashname, digest_size, block_size):
@@ -159,7 +159,7 @@ class CheckerMixin:
         self.assertEqual(h.hexdigest().upper(), hexdigest.upper())
 
 
-class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
+class AssertersMixin(CreatorMixin, DigestMixin, ObjectCheckerMixin):
     """Mixin class for common tests."""
 
     def hmac_new_by_name(self, key, msg=None, *, hashname):
@@ -318,7 +318,7 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
         self.check_object(h1, hexdigest, hashname, digest_size, block_size)
 
 
-class PyTestVectorsMixin(PyModuleMixin, TestVectorsMixin):
+class PyAssertersMixin(PyModuleMixin, AssertersMixin):
 
     def assert_hmac_extra_cases(
         self, key, msg, hexdigest, digestmod, hashname, digest_size, block_size
@@ -332,7 +332,7 @@ class PyTestVectorsMixin(PyModuleMixin, TestVectorsMixin):
         self.check_object(h, hexdigest, hashname, digest_size, block_size)
 
 
-class OpenSSLTestVectorsMixin(ThroughOpenSSLAPIMixin, TestVectorsMixin):
+class OpenSSLAssertersMixin(ThroughOpenSSLAPIMixin, AssertersMixin):
 
     def hmac_new_by_name(self, key, msg=None, *, hashname):
         self.assertIsInstance(hashname, str)
@@ -345,7 +345,7 @@ class OpenSSLTestVectorsMixin(ThroughOpenSSLAPIMixin, TestVectorsMixin):
         return self.hmac_digest(key, msg, digestmod=openssl_func)
 
 
-class BuiltinAssertersMixin(ThroughBuiltinAPIMixin, TestVectorsMixin):
+class BuiltinAssertersMixin(ThroughBuiltinAPIMixin, AssertersMixin):
     pass
 
 
@@ -390,7 +390,7 @@ class WithNamedHashFunctions(HashFunctionsTrait):
             setattr(cls, name, name)
 
 
-class RFCTestCasesMixin(HashFunctionsTrait):
+class RFCTestCaseMixin(HashFunctionsTrait):
     """Test HMAC implementations against test vectors from the RFC."""
 
     def test_md5(self):
@@ -472,7 +472,6 @@ class RFCTestCasesMixin(HashFunctionsTrait):
         self._test_sha2_rfc4231(self.sha512, 'sha512', 64, 128)
 
     def _test_sha2_rfc4231(self, hashfunc, hashname, digest_size, block_size):
-
         def hmactest(key, data, hexdigests):
             hexdigest = hexdigests[hashname]
 
@@ -592,8 +591,8 @@ class RFCTestCasesMixin(HashFunctionsTrait):
                  })
 
 
-class PyRFCTestCase(ThroughObjectMixin, PyTestVectorsMixin,
-                    WithOpenSSLHashFunctions, RFCTestCasesMixin,
+class PyRFCTestCase(ThroughObjectMixin, PyAssertersMixin,
+                    WithOpenSSLHashFunctions, RFCTestCaseMixin,
                     unittest.TestCase):
     """Python implementation of HMAC using hmac.HMAC().
 
@@ -601,8 +600,8 @@ class PyRFCTestCase(ThroughObjectMixin, PyTestVectorsMixin,
     """
 
 
-class PyDotNewRFCTestCase(ThroughModuleAPIMixin, PyTestVectorsMixin,
-                          WithOpenSSLHashFunctions, RFCTestCasesMixin,
+class PyDotNewRFCTestCase(ThroughModuleAPIMixin, PyAssertersMixin,
+                          WithOpenSSLHashFunctions, RFCTestCaseMixin,
                           unittest.TestCase):
     """Python implementation of HMAC using hmac.new().
 
@@ -610,8 +609,8 @@ class PyDotNewRFCTestCase(ThroughModuleAPIMixin, PyTestVectorsMixin,
     """
 
 
-class OpenSSLRFCTestCase(OpenSSLTestVectorsMixin,
-                         WithOpenSSLHashFunctions, RFCTestCasesMixin,
+class OpenSSLRFCTestCase(OpenSSLAssertersMixin,
+                         WithOpenSSLHashFunctions, RFCTestCaseMixin,
                          unittest.TestCase):
     """OpenSSL implementation of HMAC.
 
@@ -620,7 +619,7 @@ class OpenSSLRFCTestCase(OpenSSLTestVectorsMixin,
 
 
 class BuiltinRFCTestCase(BuiltinAssertersMixin,
-                         WithNamedHashFunctions, RFCTestCasesMixin,
+                         WithNamedHashFunctions, RFCTestCaseMixin,
                          unittest.TestCase):
     """Built-in HACL* implementation of HMAC.
 
@@ -689,7 +688,7 @@ class DigestModTestCaseMixin(CreatorMixin, DigestMixin):
         return cases
 
 
-class ConstructorTestCaseMixin(CreatorMixin, DigestMixin, CheckerMixin):
+class ConstructorTestCaseMixin(CreatorMixin, DigestMixin, ObjectCheckerMixin):
     """HMAC constructor tests based on HMAC-SHA-2/256."""
 
     key = b"key"
