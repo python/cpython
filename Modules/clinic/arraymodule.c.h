@@ -70,7 +70,7 @@ static PyObject *
 array_array___deepcopy___impl(arrayobject *self, PyObject *unused);
 
 static PyObject *
-array_array___deepcopy__(arrayobject *self, PyObject *unused)
+array_array___deepcopy__(PyObject *self, PyObject *unused)
 {
     PyObject *return_value = NULL;
 
@@ -94,7 +94,7 @@ static PyObject *
 array_array_count_impl(arrayobject *self, PyObject *v);
 
 static PyObject *
-array_array_count(arrayobject *self, PyObject *v)
+array_array_count(PyObject *self, PyObject *v)
 {
     PyObject *return_value = NULL;
 
@@ -166,7 +166,7 @@ static PyObject *
 array_array_remove_impl(arrayobject *self, PyObject *v);
 
 static PyObject *
-array_array_remove(arrayobject *self, PyObject *v)
+array_array_remove(PyObject *self, PyObject *v)
 {
     PyObject *return_value = NULL;
 
@@ -351,7 +351,7 @@ static PyObject *
 array_array_append_impl(arrayobject *self, PyObject *v);
 
 static PyObject *
-array_array_append(arrayobject *self, PyObject *v)
+array_array_append(PyObject *self, PyObject *v)
 {
     PyObject *return_value = NULL;
 
@@ -530,7 +530,7 @@ static PyObject *
 array_array_fromlist_impl(arrayobject *self, PyObject *list);
 
 static PyObject *
-array_array_fromlist(arrayobject *self, PyObject *list)
+array_array_fromlist(PyObject *self, PyObject *list)
 {
     PyObject *return_value = NULL;
 
@@ -846,3 +846,4 @@ array_arrayiterator___setstate__(PyObject *self, PyObject *state)
 
     return return_value;
 }
+/*[clinic end generated code: output=46ca729af0fdb7cd input=a9049054013a1b77]*/

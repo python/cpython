@@ -1252,7 +1252,7 @@ Return a copy of the array.
 
 static PyObject *
 array_array___deepcopy___impl(arrayobject *self, PyObject *unused)
-/*[clinic end generated code: output=703b4c412feaaf31 input=2405ecb4933748c4]*/
+/*[clinic end generated code: output=703b4c412feaaf31 input=1a29f718f5b8a1dc]*/
 {
     return array_array___copy___impl(self);
 }
@@ -1528,7 +1528,7 @@ Return number of occurrences of v in the array.
 
 static PyObject *
 array_array_count_impl(arrayobject *self, PyObject *v)
-/*[clinic end generated code: output=93ead26a2affb739 input=d9bce9d65e39d1f5]*/
+/*[clinic end generated code: output=93ead26a2affb739 input=c12c0042c1d0e27e]*/
 {
     Py_ssize_t count = 0;
     Py_ssize_t i;
@@ -1640,7 +1640,7 @@ Remove the first occurrence of v in the array.
 
 static PyObject *
 array_array_remove_impl(arrayobject *self, PyObject *v)
-/*[clinic end generated code: output=f2a24e288ecb2a35 input=0b1e5aed25590027]*/
+/*[clinic end generated code: output=f2a24e288ecb2a35 input=78bef3fd40e62f7a]*/
 {
     Py_ssize_t i;
 
@@ -1794,7 +1794,7 @@ Append new value v to the end of the array.
 
 static PyObject *
 array_array_append_impl(arrayobject *self, PyObject *v)
-/*[clinic end generated code: output=2f1e8cbad70c2a8b input=0b98d9d78e78f0fa]*/
+/*[clinic end generated code: output=2f1e8cbad70c2a8b input=9cdd897c66a40c3f]*/
 {
     if (ins1(self, Py_SIZE(self), v) != 0)
         return NULL;
@@ -2022,7 +2022,7 @@ Append items to array from list.
 
 static PyObject *
 array_array_fromlist_impl(arrayobject *self, PyObject *list)
-/*[clinic end generated code: output=6c23733a68dd68df input=be2605a96c49680f]*/
+/*[clinic end generated code: output=6c23733a68dd68df input=c7c056aaf85d997a]*/
 {
     Py_ssize_t n;
 
