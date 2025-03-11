@@ -2060,10 +2060,3 @@ def restore(delta, which):
     for line in delta:
         if line[:2] in prefixes:
             yield line[2:]
-
-def _test():
-    import doctest, difflib
-    return doctest.testmod(difflib)
-
-if __name__ == "__main__":
-    _test()
