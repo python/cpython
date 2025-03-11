@@ -1344,14 +1344,14 @@ add_const(PyObject *newconst, PyObject *consts, PyObject *const_cache)
 }
 
 /*
-   Walk basic block backwards starting from "start" trying to collect "size" number of
-   subsequent instructions that load constants into instruction array "instrs" ignoring NOP's in between.
-   Caller must make sure that length of "instrs" is sufficient to fit in at least "size" instructions.
+  Traverse the instructions of the basic block backwards from index "start", skipping over NOPs.
+  Try to collect "size" number of consecutive instructions that load constants into the array "instrs".
+  Caller must make sure that length of "instrs" is sufficient to fit in at least "size" instructions.
 
-   Returns boolean indicating whether succeeded to collect requested number of instructions.
+  Return boolean indicating whether "size" such instructions were found.
 */
 static bool
-get_subsequent_const_instrs(basicblock *bb, int start, cfg_instr **instrs, int size)
+get_const_loading_instrs(basicblock *bb, int start, cfg_instr **instrs, int size)
 {
     assert(start < bb->b_iused);
     assert(size >= 0);
@@ -1428,7 +1428,7 @@ fold_tuple_of_constants(basicblock *bb, int i, PyObject *consts, PyObject *const
     }
 
     cfg_instr *const_instrs[_PY_STACK_USE_GUIDELINE];
-    if (!get_subsequent_const_instrs(bb, i-1, const_instrs, seq_size)) {
+    if (!get_const_loading_instrs(bb, i-1, const_instrs, seq_size)) {
         /* not a const sequence */
         return SUCCESS;
     }
@@ -1484,7 +1484,7 @@ optimize_lists_and_sets(basicblock *bb, int i, int nextop,
     }
 
     cfg_instr *const_instrs[_PY_STACK_USE_GUIDELINE];
-    if (!get_subsequent_const_instrs(bb, i-1, const_instrs, seq_size)) {  /* not a const sequence */
+    if (!get_const_loading_instrs(bb, i-1, const_instrs, seq_size)) {  /* not a const sequence */
         if (contains_or_iter && instr->i_opcode == BUILD_LIST) {
             /* iterate over a tuple instead of list */
             INSTR_SET_OP1(instr, BUILD_TUPLE, instr->i_oparg);
@@ -1724,7 +1724,7 @@ fold_const_binop(basicblock *bb, int i, PyObject *consts, PyObject *const_cache)
     assert(binop->i_opcode == BINARY_OP);
 
     cfg_instr *operands_instrs[BINOP_OPERAND_COUNT];
-    if (!get_subsequent_const_instrs(bb, i-1, operands_instrs, BINOP_OPERAND_COUNT)) {
+    if (!get_const_loading_instrs(bb, i-1, operands_instrs, BINOP_OPERAND_COUNT)) {
         /* not a const sequence */
         return SUCCESS;
     }
@@ -1806,7 +1806,7 @@ fold_const_unaryop(basicblock *bb, int i, PyObject *consts, PyObject *const_cach
     cfg_instr *unaryop = &bb->b_instr[i];
 
     cfg_instr *operand_instr;
-    if (!get_subsequent_const_instrs(bb, i-1, &operand_instr, UNARYOP_OPERAND_COUNT)) {
+    if (!get_const_loading_instrs(bb, i-1, &operand_instr, UNARYOP_OPERAND_COUNT)) {
         /* not a const */
         return SUCCESS;
     }
