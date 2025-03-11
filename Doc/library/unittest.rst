@@ -1635,7 +1635,8 @@ Test cases
 
       .. versionadded:: 3.13
 
-   .. coroutinemethod:: asyncSetUp()
+   .. method:: asyncSetUp()
+      :async:
 
       Method called to prepare the test fixture. This is called after :meth:`setUp`.
       This is called immediately before calling the test method; other than
@@ -1643,7 +1644,8 @@ Test cases
       will be considered an error rather than a test failure. The default implementation
       does nothing.
 
-   .. coroutinemethod:: asyncTearDown()
+   .. method:: asyncTearDown()
+      :async:
 
       Method called immediately after the test method has been called and the
       result recorded.  This is called before :meth:`tearDown`. This is called even if
@@ -1659,7 +1661,8 @@ Test cases
 
       This method accepts a coroutine that can be used as a cleanup function.
 
-   .. coroutinemethod:: enterAsyncContext(cm)
+   .. method:: enterAsyncContext(cm)
+      :async:
 
       Enter the supplied :term:`asynchronous context manager`.  If successful,
       also add its :meth:`~object.__aexit__` method as a cleanup function by
