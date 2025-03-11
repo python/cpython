@@ -531,40 +531,6 @@ class RFCTestCasesMixin(TestVectorsMixin):
                                '134676fb6de0446065c97440fa8c6a58',
                  })
 
-    @hashlib_helper.requires_hashdigest('sha256')
-    def test_legacy_block_size_warnings(self):
-        class MockCrazyHash(object):
-            """Ain't no block_size attribute here."""
-            def __init__(self, *args):
-                self._x = hashlib.sha256(*args)
-                self.digest_size = self._x.digest_size
-            def update(self, v):
-                self._x.update(v)
-            def digest(self):
-                return self._x.digest()
-
-        with warnings.catch_warnings():
-            warnings.simplefilter('error', RuntimeWarning)
-            with self.assertRaises(RuntimeWarning):
-                hmac.HMAC(b'a', b'b', digestmod=MockCrazyHash)
-                self.fail('Expected warning about missing block_size')
-
-            MockCrazyHash.block_size = 1
-            with self.assertRaises(RuntimeWarning):
-                hmac.HMAC(b'a', b'b', digestmod=MockCrazyHash)
-                self.fail('Expected warning about small block_size')
-
-    def test_with_fallback(self):
-        cache = getattr(hashlib, '__builtin_constructor_cache')
-        try:
-            cache['foo'] = hashlib.sha256
-            hexdigest = hmac.digest(b'key', b'message', 'foo').hex()
-            expected = ('6e9ef29b75fffc5b7abae527d58fdadb'
-                        '2fe42e7219011976917343065f58ed4a')
-            self.assertEqual(hexdigest, expected)
-        finally:
-            cache.pop('foo')
-
 
 class RFCWithOpenSSLHashFunctionTestCasesMixin(RFCTestCasesMixin):
 
@@ -1085,6 +1051,45 @@ class OpenSSLCompareDigestTestCase(CompareDigestMixin, unittest.TestCase):
 
 class OperatorCompareDigestTestCase(CompareDigestMixin, unittest.TestCase):
     compare_digest = operator_compare_digest
+
+
+class PyMiscellaneousTests(unittest.TestCase):
+    """Miscellaneous tests for the pure Python HMAC module."""
+
+    @hashlib_helper.requires_hashdigest('sha256')
+    def test_legacy_block_size_warnings(self):
+        class MockCrazyHash(object):
+            """Ain't no block_size attribute here."""
+            def __init__(self, *args):
+                self._x = hashlib.sha256(*args)
+                self.digest_size = self._x.digest_size
+            def update(self, v):
+                self._x.update(v)
+            def digest(self):
+                return self._x.digest()
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', RuntimeWarning)
+            with self.assertRaises(RuntimeWarning):
+                hmac.HMAC(b'a', b'b', digestmod=MockCrazyHash)
+                self.fail('Expected warning about missing block_size')
+
+            MockCrazyHash.block_size = 1
+            with self.assertRaises(RuntimeWarning):
+                hmac.HMAC(b'a', b'b', digestmod=MockCrazyHash)
+                self.fail('Expected warning about small block_size')
+
+    @hashlib_helper.requires_hashdigest('sha256')
+    def test_with_fallback(self):
+        cache = getattr(hashlib, '__builtin_constructor_cache')
+        try:
+            cache['foo'] = hashlib.sha256
+            hexdigest = hmac.digest(b'key', b'message', 'foo').hex()
+            expected = ('6e9ef29b75fffc5b7abae527d58fdadb'
+                        '2fe42e7219011976917343065f58ed4a')
+            self.assertEqual(hexdigest, expected)
+        finally:
+            cache.pop('foo')
 
 
 if __name__ == "__main__":
