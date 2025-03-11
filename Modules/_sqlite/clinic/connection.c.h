@@ -1195,6 +1195,20 @@ PyDoc_STRVAR(pysqlite_connection_executescript__doc__,
 #define PYSQLITE_CONNECTION_EXECUTESCRIPT_METHODDEF    \
     {"executescript", (PyCFunction)pysqlite_connection_executescript, METH_O, pysqlite_connection_executescript__doc__},
 
+static PyObject *
+pysqlite_connection_executescript_impl(pysqlite_Connection *self,
+                                       PyObject *script_obj);
+
+static PyObject *
+pysqlite_connection_executescript(PyObject *self, PyObject *script_obj)
+{
+    PyObject *return_value = NULL;
+
+    return_value = pysqlite_connection_executescript_impl((pysqlite_Connection *)self, script_obj);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(pysqlite_connection_interrupt__doc__,
 "interrupt($self, /)\n"
 "--\n"
@@ -1881,4 +1895,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=c59effb407b8ea4d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fc4857f09ad563b1 input=a9049054013a1b77]*/

@@ -710,8 +710,8 @@ Return the number of bytes written.
 [clinic start generated code]*/
 
 static PyObject *
-_io_BytesIO_write(bytesio *self, PyObject *b)
-/*[clinic end generated code: output=53316d99800a0b95 input=f5ec7c8c64ed720a]*/
+_io_BytesIO_write_impl(bytesio *self, PyObject *b)
+/*[clinic end generated code: output=d3e46bcec8d9e21c input=f5ec7c8c64ed720a]*/
 {
     Py_ssize_t n = write_bytes(self, b);
     return n >= 0 ? PyLong_FromSsize_t(n) : NULL;
@@ -730,8 +730,8 @@ each element.
 [clinic start generated code]*/
 
 static PyObject *
-_io_BytesIO_writelines(bytesio *self, PyObject *lines)
-/*[clinic end generated code: output=7f33aa3271c91752 input=e972539176fc8fc1]*/
+_io_BytesIO_writelines_impl(bytesio *self, PyObject *lines)
+/*[clinic end generated code: output=03a43a75773bc397 input=e972539176fc8fc1]*/
 {
     PyObject *it, *item;
 
@@ -842,7 +842,7 @@ bytesio_setstate(PyObject *op, PyObject *state)
 
     /* Set the value of the internal buffer. If state[0] does not support the
        buffer protocol, bytesio_write will raise the appropriate TypeError. */
-    result = _io_BytesIO_write(self, PyTuple_GET_ITEM(state, 0));
+    result = _io_BytesIO_write_impl(self, PyTuple_GET_ITEM(state, 0));
     if (result == NULL)
         return NULL;
     Py_DECREF(result);
@@ -958,7 +958,7 @@ _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
         }
         else {
             PyObject *res;
-            res = _io_BytesIO_write(self, initvalue);
+            res = _io_BytesIO_write_impl(self, initvalue);
             if (res == NULL)
                 return -1;
             Py_DECREF(res);
