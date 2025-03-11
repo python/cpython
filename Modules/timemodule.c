@@ -399,11 +399,6 @@ time_sleep(PyObject *self, PyObject *timeout_obj)
 
     PyTime_t timeout;
     if (_PyTime_FromSecondsObject(&timeout, timeout_obj, _PyTime_ROUND_TIMEOUT)) {
-        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-            PyErr_Format(PyExc_TypeError,
-                         "'%T' object cannot be interpreted as an integer or float",
-                         timeout_obj);
-        }
         return NULL;
     }
     if (timeout < 0) {
