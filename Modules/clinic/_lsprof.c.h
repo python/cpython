@@ -43,13 +43,13 @@ static PyObject *
 _lsprof_Profiler_getstats_impl(ProfilerObject *self, PyTypeObject *cls);
 
 static PyObject *
-_lsprof_Profiler_getstats(ProfilerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_lsprof_Profiler_getstats(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "getstats() takes no arguments");
         return NULL;
     }
-    return _lsprof_Profiler_getstats_impl(self, cls);
+    return _lsprof_Profiler_getstats_impl((ProfilerObject *)self, cls);
 }
 
 PyDoc_STRVAR(_lsprof_Profiler__pystart_callback__doc__,
@@ -65,7 +65,7 @@ _lsprof_Profiler__pystart_callback_impl(ProfilerObject *self, PyObject *code,
                                         PyObject *instruction_offset);
 
 static PyObject *
-_lsprof_Profiler__pystart_callback(ProfilerObject *self, PyObject *const *args, Py_ssize_t nargs)
+_lsprof_Profiler__pystart_callback(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *code;
@@ -76,7 +76,7 @@ _lsprof_Profiler__pystart_callback(ProfilerObject *self, PyObject *const *args, 
     }
     code = args[0];
     instruction_offset = args[1];
-    return_value = _lsprof_Profiler__pystart_callback_impl(self, code, instruction_offset);
+    return_value = _lsprof_Profiler__pystart_callback_impl((ProfilerObject *)self, code, instruction_offset);
 
 exit:
     return return_value;
@@ -97,7 +97,7 @@ _lsprof_Profiler__pyreturn_callback_impl(ProfilerObject *self,
                                          PyObject *retval);
 
 static PyObject *
-_lsprof_Profiler__pyreturn_callback(ProfilerObject *self, PyObject *const *args, Py_ssize_t nargs)
+_lsprof_Profiler__pyreturn_callback(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *code;
@@ -110,7 +110,7 @@ _lsprof_Profiler__pyreturn_callback(ProfilerObject *self, PyObject *const *args,
     code = args[0];
     instruction_offset = args[1];
     retval = args[2];
-    return_value = _lsprof_Profiler__pyreturn_callback_impl(self, code, instruction_offset, retval);
+    return_value = _lsprof_Profiler__pyreturn_callback_impl((ProfilerObject *)self, code, instruction_offset, retval);
 
 exit:
     return return_value;
@@ -130,7 +130,7 @@ _lsprof_Profiler__ccall_callback_impl(ProfilerObject *self, PyObject *code,
                                       PyObject *callable, PyObject *self_arg);
 
 static PyObject *
-_lsprof_Profiler__ccall_callback(ProfilerObject *self, PyObject *const *args, Py_ssize_t nargs)
+_lsprof_Profiler__ccall_callback(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *code;
@@ -145,7 +145,7 @@ _lsprof_Profiler__ccall_callback(ProfilerObject *self, PyObject *const *args, Py
     instruction_offset = args[1];
     callable = args[2];
     self_arg = args[3];
-    return_value = _lsprof_Profiler__ccall_callback_impl(self, code, instruction_offset, callable, self_arg);
+    return_value = _lsprof_Profiler__ccall_callback_impl((ProfilerObject *)self, code, instruction_offset, callable, self_arg);
 
 exit:
     return return_value;
@@ -167,7 +167,7 @@ _lsprof_Profiler__creturn_callback_impl(ProfilerObject *self, PyObject *code,
                                         PyObject *self_arg);
 
 static PyObject *
-_lsprof_Profiler__creturn_callback(ProfilerObject *self, PyObject *const *args, Py_ssize_t nargs)
+_lsprof_Profiler__creturn_callback(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *code;
@@ -182,7 +182,7 @@ _lsprof_Profiler__creturn_callback(ProfilerObject *self, PyObject *const *args, 
     instruction_offset = args[1];
     callable = args[2];
     self_arg = args[3];
-    return_value = _lsprof_Profiler__creturn_callback_impl(self, code, instruction_offset, callable, self_arg);
+    return_value = _lsprof_Profiler__creturn_callback_impl((ProfilerObject *)self, code, instruction_offset, callable, self_arg);
 
 exit:
     return return_value;
@@ -209,7 +209,7 @@ _lsprof_Profiler_enable_impl(ProfilerObject *self, int subcalls,
                              int builtins);
 
 static PyObject *
-_lsprof_Profiler_enable(ProfilerObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_lsprof_Profiler_enable(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -242,7 +242,8 @@ _lsprof_Profiler_enable(ProfilerObject *self, PyObject *const *args, Py_ssize_t 
     int subcalls = 1;
     int builtins = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -263,7 +264,7 @@ _lsprof_Profiler_enable(ProfilerObject *self, PyObject *const *args, Py_ssize_t 
         goto exit;
     }
 skip_optional_pos:
-    return_value = _lsprof_Profiler_enable_impl(self, subcalls, builtins);
+    return_value = _lsprof_Profiler_enable_impl((ProfilerObject *)self, subcalls, builtins);
 
 exit:
     return return_value;
@@ -282,9 +283,9 @@ static PyObject *
 _lsprof_Profiler_disable_impl(ProfilerObject *self);
 
 static PyObject *
-_lsprof_Profiler_disable(ProfilerObject *self, PyObject *Py_UNUSED(ignored))
+_lsprof_Profiler_disable(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _lsprof_Profiler_disable_impl(self);
+    return _lsprof_Profiler_disable_impl((ProfilerObject *)self);
 }
 
 PyDoc_STRVAR(_lsprof_Profiler_clear__doc__,
@@ -300,9 +301,9 @@ static PyObject *
 _lsprof_Profiler_clear_impl(ProfilerObject *self);
 
 static PyObject *
-_lsprof_Profiler_clear(ProfilerObject *self, PyObject *Py_UNUSED(ignored))
+_lsprof_Profiler_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _lsprof_Profiler_clear_impl(self);
+    return _lsprof_Profiler_clear_impl((ProfilerObject *)self);
 }
 
 PyDoc_STRVAR(profiler_init__doc__,
@@ -358,7 +359,8 @@ profiler_init(PyObject *self, PyObject *args, PyObject *kwargs)
     int subcalls = 1;
     int builtins = 1;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 4, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -405,4 +407,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0b71f52bee9a7bb1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d983dbf23fd8ac3b input=a9049054013a1b77]*/

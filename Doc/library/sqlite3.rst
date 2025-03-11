@@ -1148,7 +1148,7 @@ Connection objects
           the *remaining* number of pages still to be copied,
           and the *total* number of pages.
           Defaults to ``None``.
-      :type progress: :term:`callback` | None
+      :type progress: :term:`callback` | None
 
       :param str name:
           The name of the database to back up.

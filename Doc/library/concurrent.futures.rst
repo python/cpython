@@ -252,7 +252,7 @@ This results in several benefits that help balance the extra effort,
 including true multi-core parallelism,  For example, code written
 this way can make it easier to reason about concurrency.  Another
 major benefit is that you don't have to deal with several of the
-big pain points of using threads, like nrace conditions.
+big pain points of using threads, like race conditions.
 
 Each worker's interpreter is isolated from all the other interpreters.
 "Isolated" means each interpreter has its own runtime state and
@@ -414,6 +414,30 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
       :ref:`multiprocessing-start-methods`) changed away from *fork*. If you
       require the *fork* start method for :class:`ProcessPoolExecutor` you must
       explicitly pass ``mp_context=multiprocessing.get_context("fork")``.
+
+   .. method:: terminate_workers()
+
+      Attempt to terminate all living worker processes immediately by calling
+      :meth:`Process.terminate <multiprocessing.Process.terminate>` on each of them.
+      Internally, it will also call :meth:`Executor.shutdown` to ensure that all
+      other resources associated with the executor are freed.
+
+      After calling this method the caller should no longer submit tasks to the
+      executor.
+
+      .. versionadded:: next
+
+   .. method:: kill_workers()
+
+      Attempt to kill all living worker processes immediately by calling
+      :meth:`Process.kill <multiprocessing.Process.kill>` on each of them.
+      Internally, it will also call :meth:`Executor.shutdown` to ensure that all
+      other resources associated with the executor are freed.
+
+      After calling this method the caller should no longer submit tasks to the
+      executor.
+
+      .. versionadded:: next
 
 .. _processpoolexecutor-example:
 
@@ -690,7 +714,7 @@ Exception classes
    of a :class:`~concurrent.futures.InterpreterPoolExecutor`
    has failed initializing.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. exception:: ExecutionFailed
 
@@ -699,7 +723,7 @@ Exception classes
    :meth:`~concurrent.futures.Executor.submit` when there's an uncaught
    exception from the submitted task.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. currentmodule:: concurrent.futures.process
 

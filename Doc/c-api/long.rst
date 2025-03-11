@@ -582,6 +582,39 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. versionadded:: 3.14
 
 
+.. c:function:: int PyLong_IsPositive(PyObject *obj)
+
+   Check if the integer object *obj* is positive (``obj > 0``).
+
+   If *obj* is an instance of :c:type:`PyLongObject` or its subtype,
+   return ``1`` when it's positive and ``0`` otherwise.  Else set an
+   exception and return ``-1``.
+
+   .. versionadded:: 3.14
+
+
+.. c:function:: int PyLong_IsNegative(PyObject *obj)
+
+   Check if the integer object *obj* is negative (``obj < 0``).
+
+   If *obj* is an instance of :c:type:`PyLongObject` or its subtype,
+   return ``1`` when it's negative and ``0`` otherwise.  Else set an
+   exception and return ``-1``.
+
+   .. versionadded:: 3.14
+
+
+.. c:function:: int PyLong_IsZero(PyObject *obj)
+
+   Check if the integer object *obj* is zero.
+
+   If *obj* is an instance of :c:type:`PyLongObject` or its subtype,
+   return ``1`` when it's zero and ``0`` otherwise.  Else set an
+   exception and return ``-1``.
+
+   .. versionadded:: 3.14
+
+
 .. c:function:: PyObject* PyLong_GetInfo(void)
 
    On success, return a read only :term:`named tuple`, that holds
@@ -620,3 +653,177 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
    .. versionadded:: 3.12
 
+
+Export API
+^^^^^^^^^^
+
+.. versionadded:: 3.14
+
+.. c:struct:: PyLongLayout
+
+   Layout of an array of "digits" ("limbs" in the GMP terminology), used to
+   represent absolute value for arbitrary precision integers.
+
+   Use :c:func:`PyLong_GetNativeLayout` to get the native layout of Python
+   :class:`int` objects, used internally for integers with "big enough"
+   absolute value.
+
+   See also :data:`sys.int_info` which exposes similar information in Python.
+
+   .. c:member:: uint8_t bits_per_digit
+
+      Bits per digit. For example, a 15 bit digit means that bits 0-14 contain
+      meaningful information.
+
+   .. c:member:: uint8_t digit_size
+
+      Digit size in bytes. For example, a 15 bit digit will require at least 2
+      bytes.
+
+   .. c:member:: int8_t digits_order
+
+      Digits order:
+
+      - ``1`` for most significant digit first
+      - ``-1`` for least significant digit first
+
+   .. c:member:: int8_t digit_endianness
+
+      Digit endianness:
+
+      - ``1`` for most significant byte first (big endian)
+      - ``-1`` for least significant byte first (little endian)
+
+
+.. c:function:: const PyLongLayout* PyLong_GetNativeLayout(void)
+
+   Get the native layout of Python :class:`int` objects.
+
+   See the :c:struct:`PyLongLayout` structure.
+
+   The function must not be called before Python initialization nor after
+   Python finalization. The returned layout is valid until Python is
+   finalized. The layout is the same for all Python sub-interpreters
+   in a process, and so it can be cached.
+
+
+.. c:struct:: PyLongExport
+
+   Export of a Python :class:`int` object.
+
+   There are two cases:
+
+   * If :c:member:`digits` is ``NULL``, only use the :c:member:`value` member.
+   * If :c:member:`digits` is not ``NULL``, use :c:member:`negative`,
+     :c:member:`ndigits` and :c:member:`digits` members.
+
+   .. c:member:: int64_t value
+
+      The native integer value of the exported :class:`int` object.
+      Only valid if :c:member:`digits` is ``NULL``.
+
+   .. c:member:: uint8_t negative
+
+      ``1`` if the number is negative, ``0`` otherwise.
+      Only valid if :c:member:`digits` is not ``NULL``.
+
+   .. c:member:: Py_ssize_t ndigits
+
+      Number of digits in :c:member:`digits` array.
+      Only valid if :c:member:`digits` is not ``NULL``.
+
+   .. c:member:: const void *digits
+
+      Read-only array of unsigned digits. Can be ``NULL``.
+
+
+.. c:function:: int PyLong_Export(PyObject *obj, PyLongExport *export_long)
+
+   Export a Python :class:`int` object.
+
+   *export_long* must point to a :c:struct:`PyLongExport` structure allocated
+   by the caller. It must not be ``NULL``.
+
+   On success, fill in *\*export_long* and return ``0``.
+   On error, set an exception and return ``-1``.
+
+   :c:func:`PyLong_FreeExport` must be called when the export is no longer
+   needed.
+
+    .. impl-detail::
+        This function always succeeds if *obj* is a Python :class:`int` object
+        or a subclass.
+
+
+.. c:function:: void PyLong_FreeExport(PyLongExport *export_long)
+
+   Release the export *export_long* created by :c:func:`PyLong_Export`.
+
+   .. impl-detail::
+      Calling :c:func:`PyLong_FreeExport` is optional if *export_long->digits*
+      is ``NULL``.
+
+
+PyLongWriter API
+^^^^^^^^^^^^^^^^
+
+The :c:type:`PyLongWriter` API can be used to import an integer.
+
+.. versionadded:: 3.14
+
+.. c:struct:: PyLongWriter
+
+   A Python :class:`int` writer instance.
+
+   The instance must be destroyed by :c:func:`PyLongWriter_Finish` or
+   :c:func:`PyLongWriter_Discard`.
+
+
+.. c:function:: PyLongWriter* PyLongWriter_Create(int negative, Py_ssize_t ndigits, void **digits)
+
+   Create a :c:type:`PyLongWriter`.
+
+   On success, allocate *\*digits* and return a writer.
+   On error, set an exception and return ``NULL``.
+
+   *negative* is ``1`` if the number is negative, or ``0`` otherwise.
+
+   *ndigits* is the number of digits in the *digits* array. It must be
+   greater than 0.
+
+   *digits* must not be NULL.
+
+   After a successful call to this function, the caller should fill in the
+   array of digits *digits* and then call :c:func:`PyLongWriter_Finish` to get
+   a Python :class:`int`.
+   The layout of *digits* is described by :c:func:`PyLong_GetNativeLayout`.
+
+   Digits must be in the range [``0``; ``(1 << bits_per_digit) - 1``]
+   (where the :c:struct:`~PyLongLayout.bits_per_digit` is the number of bits
+   per digit).
+   Any unused most significant digits must be set to ``0``.
+
+   Alternately, call :c:func:`PyLongWriter_Discard` to destroy the writer
+   instance without creating an :class:`~int` object.
+
+
+.. c:function:: PyObject* PyLongWriter_Finish(PyLongWriter *writer)
+
+   Finish a :c:type:`PyLongWriter` created by :c:func:`PyLongWriter_Create`.
+
+   On success, return a Python :class:`int` object.
+   On error, set an exception and return ``NULL``.
+
+   The function takes care of normalizing the digits and converts the object
+   to a compact integer if needed.
+
+   The writer instance and the *digits* array are invalid after the call.
+
+
+.. c:function:: void PyLongWriter_Discard(PyLongWriter *writer)
+
+   Discard a :c:type:`PyLongWriter` created by :c:func:`PyLongWriter_Create`.
+
+   If *writer* is ``NULL``, no operation is performed.
+
+   The writer instance and the *digits* array are invalid after the call.

@@ -27,24 +27,14 @@
 
 #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
 
-void _Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime);
+void
+_Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime);
 
 PyObject*
-_PyEM_TrampolineCall_JavaScript(PyCFunctionWithKeywords func,
-                                PyObject* self,
-                                PyObject* args,
-                                PyObject* kw);
-
-PyObject*
-_PyEM_TrampolineCall_Reflection(PyCFunctionWithKeywords func,
-                                PyObject* self,
-                                PyObject* args,
-                                PyObject* kw);
-
-#define _PyEM_TrampolineCall(meth, self, args, kw) \
-    ((_PyRuntime.wasm_type_reflection_available) ? \
-        (_PyEM_TrampolineCall_Reflection((PyCFunctionWithKeywords)(meth), (self), (args), (kw))) : \
-        (_PyEM_TrampolineCall_JavaScript((PyCFunctionWithKeywords)(meth), (self), (args), (kw))))
+_PyEM_TrampolineCall(PyCFunctionWithKeywords func,
+                     PyObject* self,
+                     PyObject* args,
+                     PyObject* kw);
 
 #define _PyCFunction_TrampolineCall(meth, self, args) \
     _PyEM_TrampolineCall( \
@@ -61,8 +51,6 @@ _PyEM_TrampolineCall_Reflection(PyCFunctionWithKeywords func,
 
 
 #else // defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-
-#define _Py_EmscriptenTrampoline_Init(runtime)
 
 #define _PyCFunction_TrampolineCall(meth, self, args) \
     (meth)((self), (args))

@@ -33,7 +33,7 @@ from test.test_asyncio import utils as test_utils
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 MOCK_ANY = mock.ANY
@@ -1116,11 +1116,11 @@ class TestFunctional(unittest.TestCase):
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
+        asyncio._set_event_loop(self.loop)
 
     def tearDown(self):
         self.loop.close()
-        asyncio.set_event_loop(None)
+        asyncio._set_event_loop(None)
 
     def test_add_reader_invalid_argument(self):
         def assert_raises():

@@ -103,6 +103,7 @@
     <ClCompile Include="..\Modules\_testlimitedcapi\eval.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\float.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\heaptype_relative.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\import.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\list.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\long.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\object.c" />
@@ -112,6 +113,8 @@
     <ClCompile Include="..\Modules\_testlimitedcapi\tuple.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\unicode.c" />
     <ClCompile Include="..\Modules\_testlimitedcapi\vectorcall_limited.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\version.c" />
+    <ClCompile Include="..\Modules\_testlimitedcapi\file.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

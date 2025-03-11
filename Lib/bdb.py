@@ -4,6 +4,7 @@ import fnmatch
 import sys
 import os
 import weakref
+from contextlib import contextmanager
 from inspect import CO_GENERATOR, CO_COROUTINE, CO_ASYNC_GENERATOR
 
 __all__ = ["BdbQuit", "Bdb", "Breakpoint"]
@@ -65,6 +66,12 @@ class Bdb:
         self.botframe = None
         self._set_stopinfo(None, None)
 
+    @contextmanager
+    def set_enterframe(self, frame):
+        self.enterframe = frame
+        yield
+        self.enterframe = None
+
     def trace_dispatch(self, frame, event, arg):
         """Dispatch a trace function for debugged frames based on the event.
 
@@ -90,28 +97,27 @@ class Bdb:
         The arg parameter depends on the previous event.
         """
 
-        self.enterframe = frame
-
-        if self.quitting:
-            return # None
-        if event == 'line':
-            return self.dispatch_line(frame)
-        if event == 'call':
-            return self.dispatch_call(frame, arg)
-        if event == 'return':
-            return self.dispatch_return(frame, arg)
-        if event == 'exception':
-            return self.dispatch_exception(frame, arg)
-        if event == 'c_call':
+        with self.set_enterframe(frame):
+            if self.quitting:
+                return # None
+            if event == 'line':
+                return self.dispatch_line(frame)
+            if event == 'call':
+                return self.dispatch_call(frame, arg)
+            if event == 'return':
+                return self.dispatch_return(frame, arg)
+            if event == 'exception':
+                return self.dispatch_exception(frame, arg)
+            if event == 'c_call':
+                return self.trace_dispatch
+            if event == 'c_exception':
+                return self.trace_dispatch
+            if event == 'c_return':
+                return self.trace_dispatch
+            if event == 'opcode':
+                return self.dispatch_opcode(frame, arg)
+            print('bdb.Bdb.dispatch: unknown debugging event:', repr(event))
             return self.trace_dispatch
-        if event == 'c_exception':
-            return self.trace_dispatch
-        if event == 'c_return':
-            return self.trace_dispatch
-        if event == 'opcode':
-            return self.dispatch_opcode(frame, arg)
-        print('bdb.Bdb.dispatch: unknown debugging event:', repr(event))
-        return self.trace_dispatch
 
     def dispatch_line(self, frame):
         """Invoke user function and return trace function for line event.
@@ -209,10 +215,13 @@ class Bdb:
         If the debugger stops on the current opcode, invoke
         self.user_opcode(). Raise BdbQuit if self.quitting is set.
         Return self.trace_dispatch to continue tracing in this scope.
+
+        Opcode event will always trigger the user callback. For now the only
+        opcode event is from an inline set_trace() and we want to stop there
+        unconditionally.
         """
-        if self.stop_here(frame) or self.break_here(frame):
-            self.user_opcode(frame)
-            if self.quitting: raise BdbQuit
+        self.user_opcode(frame)
+        if self.quitting: raise BdbQuit
         return self.trace_dispatch
 
     # Normally derived classes don't override the following
@@ -395,15 +404,15 @@ class Bdb:
         if frame is None:
             frame = sys._getframe().f_back
         self.reset()
-        self.enterframe = frame
-        while frame:
-            frame.f_trace = self.trace_dispatch
-            self.botframe = frame
-            self.frame_trace_lines_opcodes[frame] = (frame.f_trace_lines, frame.f_trace_opcodes)
-            # We need f_trace_lines == True for the debugger to work
-            frame.f_trace_lines = True
-            frame = frame.f_back
-        self.set_stepinstr()
+        with self.set_enterframe(frame):
+            while frame:
+                frame.f_trace = self.trace_dispatch
+                self.botframe = frame
+                self.frame_trace_lines_opcodes[frame] = (frame.f_trace_lines, frame.f_trace_opcodes)
+                # We need f_trace_lines == True for the debugger to work
+                frame.f_trace_lines = True
+                frame = frame.f_back
+            self.set_stepinstr()
         sys.settrace(self.trace_dispatch)
 
     def set_continue(self):

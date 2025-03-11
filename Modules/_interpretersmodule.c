@@ -7,7 +7,7 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_crossinterp.h"   // struct _xid
+#include "pycore_crossinterp.h"   // _PyXIData_t
 #include "pycore_interp.h"        // _PyInterpreterState_IDIncref()
 #include "pycore_initconfig.h"    // _PyErr_SetFromPyStatus()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
@@ -83,25 +83,28 @@ typedef struct {
     int64_t interpid;
 } XIBufferViewObject;
 
+#define XIBufferViewObject_CAST(op) ((XIBufferViewObject *)(op))
+
 static PyObject *
-xibufferview_from_xid(PyTypeObject *cls, _PyCrossInterpreterData *data)
+xibufferview_from_xid(PyTypeObject *cls, _PyXIData_t *data)
 {
-    assert(_PyCrossInterpreterData_DATA(data) != NULL);
-    assert(_PyCrossInterpreterData_OBJ(data) == NULL);
-    assert(_PyCrossInterpreterData_INTERPID(data) >= 0);
+    assert(_PyXIData_DATA(data) != NULL);
+    assert(_PyXIData_OBJ(data) == NULL);
+    assert(_PyXIData_INTERPID(data) >= 0);
     XIBufferViewObject *self = PyObject_Malloc(sizeof(XIBufferViewObject));
     if (self == NULL) {
         return NULL;
     }
     PyObject_Init((PyObject *)self, cls);
-    self->view = (Py_buffer *)_PyCrossInterpreterData_DATA(data);
-    self->interpid = _PyCrossInterpreterData_INTERPID(data);
+    self->view = (Py_buffer *)_PyXIData_DATA(data);
+    self->interpid = _PyXIData_INTERPID(data);
     return (PyObject *)self;
 }
 
 static void
-xibufferview_dealloc(XIBufferViewObject *self)
+xibufferview_dealloc(PyObject *op)
 {
+    XIBufferViewObject *self = XIBufferViewObject_CAST(op);
     PyInterpreterState *interp = _PyInterpreterState_LookUpID(self->interpid);
     /* If the interpreter is no longer alive then we have problems,
        since other objects may be using the buffer still. */
@@ -124,20 +127,21 @@ xibufferview_dealloc(XIBufferViewObject *self)
 }
 
 static int
-xibufferview_getbuf(XIBufferViewObject *self, Py_buffer *view, int flags)
+xibufferview_getbuf(PyObject *op, Py_buffer *view, int flags)
 {
     /* Only PyMemoryView_FromObject() should ever call this,
        via _memoryview_from_xid() below. */
+    XIBufferViewObject *self = XIBufferViewObject_CAST(op);
     *view = *self->view;
-    view->obj = (PyObject *)self;
+    view->obj = op;
     // XXX Should we leave it alone?
     view->internal = NULL;
     return 0;
 }
 
 static PyType_Slot XIBufferViewType_slots[] = {
-    {Py_tp_dealloc, (destructor)xibufferview_dealloc},
-    {Py_bf_getbuffer, (getbufferproc)xibufferview_getbuf},
+    {Py_tp_dealloc, xibufferview_dealloc},
+    {Py_bf_getbuffer, xibufferview_getbuf},
     // We don't bother with Py_bf_releasebuffer since we don't need it.
     {0, NULL},
 };
@@ -154,7 +158,7 @@ static PyType_Spec XIBufferViewType_spec = {
 static PyTypeObject * _get_current_xibufferview_type(void);
 
 static PyObject *
-_memoryview_from_xid(_PyCrossInterpreterData *data)
+_memoryview_from_xid(_PyXIData_t *data)
 {
     PyTypeObject *cls = _get_current_xibufferview_type();
     if (cls == NULL) {
@@ -168,8 +172,7 @@ _memoryview_from_xid(_PyCrossInterpreterData *data)
 }
 
 static int
-_memoryview_shared(PyThreadState *tstate, PyObject *obj,
-                   _PyCrossInterpreterData *data)
+_memoryview_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
     Py_buffer *view = PyMem_RawMalloc(sizeof(Py_buffer));
     if (view == NULL) {
@@ -179,8 +182,7 @@ _memoryview_shared(PyThreadState *tstate, PyObject *obj,
         PyMem_RawFree(view);
         return -1;
     }
-    _PyCrossInterpreterData_Init(data, tstate->interp, view, NULL,
-                                 _memoryview_from_xid);
+    _PyXIData_Init(data, tstate->interp, view, NULL, _memoryview_from_xid);
     return 0;
 }
 
@@ -461,7 +463,12 @@ _run_in_interpreter(PyInterpreterState *interp,
 
     // Prep and switch interpreters.
     if (_PyXI_Enter(&session, interp, shareables) < 0) {
-        assert(!PyErr_Occurred());
+        if (PyErr_Occurred()) {
+            // If an error occured at this step, it means that interp
+            // was not prepared and switched.
+            return -1;
+        }
+        // Now, apply the error from another interpreter:
         PyObject *excinfo = _PyXI_ApplyError(session.error);
         if (excinfo != NULL) {
             *p_excinfo = excinfo;
@@ -938,6 +945,11 @@ static int
 _interp_exec(PyObject *self, PyInterpreterState *interp,
              PyObject *code_arg, PyObject *shared_arg, PyObject **p_excinfo)
 {
+    if (shared_arg != NULL && !PyDict_CheckExact(shared_arg)) {
+        PyErr_SetString(PyExc_TypeError, "expected 'shared' to be a dict");
+        return -1;
+    }
+
     // Extract code.
     Py_ssize_t codestrlen = -1;
     PyObject *bytes_obj = NULL;
@@ -1183,7 +1195,13 @@ object_is_shareable(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if (_PyObject_CheckCrossInterpreterData(obj) == 0) {
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _PyXIData_lookup_context_t ctx;
+    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
+        return NULL;
+    }
+
+    if (_PyObject_CheckXIData(&ctx, obj) == 0) {
         Py_RETURN_TRUE;
     }
     PyErr_Clear();
@@ -1482,6 +1500,11 @@ module_exec(PyObject *mod)
     PyInterpreterState *interp = PyInterpreterState_Get();
     module_state *state = get_module_state(mod);
 
+    _PyXIData_lookup_context_t ctx;
+    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
+        return -1;
+    }
+
 #define ADD_WHENCE(NAME) \
     if (PyModule_AddIntConstant(mod, "WHENCE_" #NAME,                   \
                                 _PyInterpreterState_WHENCE_##NAME) < 0) \
@@ -1503,9 +1526,7 @@ module_exec(PyObject *mod)
     if (PyModule_AddType(mod, (PyTypeObject *)PyExc_InterpreterNotFoundError) < 0) {
         goto error;
     }
-    PyObject *PyExc_NotShareableError = \
-                _PyInterpreterState_GetXIState(interp)->PyExc_NotShareableError;
-    if (PyModule_AddType(mod, (PyTypeObject *)PyExc_NotShareableError) < 0) {
+    if (PyModule_AddType(mod, (PyTypeObject *)ctx.PyExc_NotShareableError) < 0) {
         goto error;
     }
 
@@ -1531,7 +1552,7 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     module_state *state = get_module_state(mod);
     assert(state != NULL);
-    traverse_module_state(state, visit, arg);
+    (void)traverse_module_state(state, visit, arg);
     return 0;
 }
 
@@ -1540,16 +1561,16 @@ module_clear(PyObject *mod)
 {
     module_state *state = get_module_state(mod);
     assert(state != NULL);
-    clear_module_state(state);
+    (void)clear_module_state(state);
     return 0;
 }
 
 static void
 module_free(void *mod)
 {
-    module_state *state = get_module_state(mod);
+    module_state *state = get_module_state((PyObject *)mod);
     assert(state != NULL);
-    clear_module_state(state);
+    (void)clear_module_state(state);
 }
 
 static struct PyModuleDef moduledef = {
@@ -1561,7 +1582,7 @@ static struct PyModuleDef moduledef = {
     .m_slots = module_slots,
     .m_traverse = module_traverse,
     .m_clear = module_clear,
-    .m_free = (freefunc)module_free,
+    .m_free = module_free,
 };
 
 PyMODINIT_FUNC

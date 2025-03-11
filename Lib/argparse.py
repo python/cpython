@@ -863,6 +863,9 @@ class BooleanOptionalAction(Action):
             _option_strings.append(option_string)
 
             if option_string.startswith('--'):
+                if option_string.startswith('--no-'):
+                    raise ValueError(f'invalid option name {option_string!r} '
+                                     f'for BooleanOptionalAction')
                 option_string = '--no-' + option_string[2:]
                 _option_strings.append(option_string)
 
@@ -1706,14 +1709,7 @@ class _ArgumentGroup(_ActionsContainer):
         self._group_actions.remove(action)
 
     def add_argument_group(self, *args, **kwargs):
-        import warnings
-        warnings.warn(
-            "Nesting argument groups is deprecated.",
-            category=DeprecationWarning,
-            stacklevel=2
-        )
-        return super().add_argument_group(*args, **kwargs)
-
+        raise ValueError('argument groups cannot be nested')
 
 class _MutuallyExclusiveGroup(_ArgumentGroup):
 
@@ -1734,15 +1730,8 @@ class _MutuallyExclusiveGroup(_ArgumentGroup):
         self._container._remove_action(action)
         self._group_actions.remove(action)
 
-    def add_mutually_exclusive_group(self, *args, **kwargs):
-        import warnings
-        warnings.warn(
-            "Nesting mutually exclusive groups is deprecated.",
-            category=DeprecationWarning,
-            stacklevel=2
-        )
-        return super().add_mutually_exclusive_group(*args, **kwargs)
-
+    def add_mutually_exclusive_group(self, **kwargs):
+        raise ValueError('mutually exclusive groups cannot be nested')
 
 def _prog_name(prog=None):
     if prog is not None:
@@ -1886,7 +1875,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             formatter = self._get_formatter()
             positionals = self._get_positional_actions()
             groups = self._mutually_exclusive_groups
-            formatter.add_usage(self.usage, positionals, groups, '')
+            formatter.add_usage(None, positionals, groups, '')
             kwargs['prog'] = formatter.format_help().strip()
 
         # create the parsers action and add it to the positionals list

@@ -75,7 +75,7 @@ class AsyncIOInteractiveConsole(InteractiveColoredConsole):
                 self.write("\nKeyboardInterrupt\n")
             else:
                 self.showtraceback()
-
+            return self.STATEMENT_FAILED
 
 class REPLThread(threading.Thread):
 
@@ -149,7 +149,7 @@ if __name__ == '__main__':
 
     return_code = 0
     loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+    asyncio._set_event_loop(loop)
 
     repl_locals = {'asyncio': asyncio}
     for key in {'__name__', '__package__',

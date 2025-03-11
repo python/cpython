@@ -1906,28 +1906,30 @@ In the standard library code, you will see several common patterns for
 correctly using identity tests:
 
 1) As recommended by :pep:`8`, an identity test is the preferred way to check
-for ``None``.  This reads like plain English in code and avoids confusion with
-other objects that may have boolean values that evaluate to false.
+   for ``None``.  This reads like plain English in code and avoids confusion
+   with other objects that may have boolean values that evaluate to false.
 
 2) Detecting optional arguments can be tricky when ``None`` is a valid input
-value.  In those situations, you can create a singleton sentinel object
-guaranteed to be distinct from other objects.  For example, here is how
-to implement a method that behaves like :meth:`dict.pop`::
+   value.  In those situations, you can create a singleton sentinel object
+   guaranteed to be distinct from other objects.  For example, here is how
+   to implement a method that behaves like :meth:`dict.pop`:
 
-   _sentinel = object()
+   .. code-block:: python
 
-   def pop(self, key, default=_sentinel):
-       if key in self:
-           value = self[key]
-           del self[key]
-           return value
-       if default is _sentinel:
-           raise KeyError(key)
-       return default
+      _sentinel = object()
+
+      def pop(self, key, default=_sentinel):
+          if key in self:
+              value = self[key]
+              del self[key]
+              return value
+          if default is _sentinel:
+              raise KeyError(key)
+          return default
 
 3) Container implementations sometimes need to augment equality tests with
-identity tests.  This prevents the code from being confused by objects such as
-``float('NaN')`` that are not equal to themselves.
+   identity tests.  This prevents the code from being confused by objects
+   such as ``float('NaN')`` that are not equal to themselves.
 
 For example, here is the implementation of
 :meth:`!collections.abc.Sequence.__contains__`::

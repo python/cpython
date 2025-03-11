@@ -157,7 +157,13 @@ Currently the email package provides only one concrete content manager,
        :exc:`ValueError`.
 
        * For ``str`` objects, if *cte* is not set use heuristics to
-         determine the most compact encoding.
+         determine the most compact encoding.  Prior to encoding,
+         :meth:`str.splitlines` is used to normalize all line boundaries,
+         ensuring that each line of the payload is terminated by the
+         current policy's :data:`~email.policy.Policy.linesep` property
+         (even if the original string did not end with one).
+       * For ``bytes`` objects, *cte* is taken to be base64 if not set,
+         and the aforementioned newline translation is not performed.
        * For :class:`~email.message.EmailMessage`, per :rfc:`2046`, raise
          an error if a *cte* of ``quoted-printable`` or ``base64`` is
          requested for *subtype* ``rfc822``, and for any *cte* other than

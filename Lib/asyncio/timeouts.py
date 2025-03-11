@@ -1,7 +1,6 @@
 import enum
 
 from types import TracebackType
-from typing import final, Optional, Type
 
 from . import events
 from . import exceptions
@@ -23,14 +22,13 @@ class _State(enum.Enum):
     EXITED = "finished"
 
 
-@final
 class Timeout:
     """Asynchronous context manager for cancelling overdue coroutines.
 
     Use `timeout()` or `timeout_at()` rather than instantiating this class directly.
     """
 
-    def __init__(self, when: Optional[float]) -> None:
+    def __init__(self, when: float | None) -> None:
         """Schedule a timeout that will trigger at a given loop time.
 
         - If `when` is `None`, the timeout will never trigger.
@@ -39,15 +37,15 @@ class Timeout:
         """
         self._state = _State.CREATED
 
-        self._timeout_handler: Optional[events.TimerHandle] = None
-        self._task: Optional[tasks.Task] = None
+        self._timeout_handler: events.TimerHandle | None = None
+        self._task: tasks.Task | None = None
         self._when = when
 
-    def when(self) -> Optional[float]:
+    def when(self) -> float | None:
         """Return the current deadline."""
         return self._when
 
-    def reschedule(self, when: Optional[float]) -> None:
+    def reschedule(self, when: float | None) -> None:
         """Reschedule the timeout."""
         if self._state is not _State.ENTERED:
             if self._state is _State.CREATED:
@@ -96,10 +94,10 @@ class Timeout:
 
     async def __aexit__(
         self,
-        exc_type: Optional[Type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[TracebackType],
-    ) -> Optional[bool]:
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> bool | None:
         assert self._state in (_State.ENTERED, _State.EXPIRING)
 
         if self._timeout_handler is not None:
@@ -142,7 +140,7 @@ class Timeout:
             exc_val = exc_val.__context__
 
 
-def timeout(delay: Optional[float]) -> Timeout:
+def timeout(delay: float | None) -> Timeout:
     """Timeout async context manager.
 
     Useful in cases when you want to apply timeout logic around block
@@ -162,7 +160,7 @@ def timeout(delay: Optional[float]) -> Timeout:
     return Timeout(loop.time() + delay if delay is not None else None)
 
 
-def timeout_at(when: Optional[float]) -> Timeout:
+def timeout_at(when: float | None) -> Timeout:
     """Schedule the timeout at absolute time.
 
     Like timeout() but argument gives absolute time in the same clock system

@@ -1,2 +1,0 @@
-Fix venvwlauncher to launch pythonw instead of python so no extra console
-window is created.

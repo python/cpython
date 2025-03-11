@@ -161,7 +161,7 @@ class GenericTest:
         self.assertIs(self.pathmodule.lexists(path=filename), True)
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
-    @unittest.skipIf(is_emscripten, "Emscripten pipe fds have no stat")
+    @unittest.skipIf(is_emscripten, "Fixed in next Emscripten release after 4.0.1")
     def test_exists_fd(self):
         r, w = os.pipe()
         try:

@@ -24,6 +24,7 @@ import _colorize  # type: ignore[import-not-found]
 from abc import ABC, abstractmethod
 import ast
 import code
+import linecache
 from dataclasses import dataclass, field
 import os.path
 import sys
@@ -45,6 +46,7 @@ class Event:
 
 @dataclass
 class Console(ABC):
+    posxy: tuple[int, int]
     screen: list[str] = field(default_factory=list)
     height: int = 25
     width: int = 80
@@ -151,6 +153,8 @@ class Console(ABC):
 
 
 class InteractiveColoredConsole(code.InteractiveConsole):
+    STATEMENT_FAILED = object()
+
     def __init__(
         self,
         locals: dict[str, object] | None = None,
@@ -172,6 +176,16 @@ class InteractiveColoredConsole(code.InteractiveConsole):
                 limit=traceback.BUILTIN_EXCEPTION_LIMIT)
         self.write(''.join(lines))
 
+    def runcode(self, code):
+        try:
+            exec(code, self.locals)
+        except SystemExit:
+            raise
+        except BaseException:
+            self.showtraceback()
+            return self.STATEMENT_FAILED
+        return None
+
     def runsource(self, source, filename="<input>", symbol="single"):
         try:
             tree = self.compile.compiler(
@@ -192,6 +206,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             item = wrapper([stmt])
             try:
                 code = self.compile.compiler(item, filename, the_symbol)
+                linecache._register_code(code, source, filename)
             except SyntaxError as e:
                 if e.args[0] == "'await' outside function":
                     python = os.path.basename(sys.executable)
@@ -208,5 +223,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             if code is None:
                 return True
 
-            self.runcode(code)
+            result = self.runcode(code)
+            if result is self.STATEMENT_FAILED:
+                break
         return False

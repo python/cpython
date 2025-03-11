@@ -223,26 +223,62 @@ class MimeTypesTestCase(unittest.TestCase):
 
     def test_preferred_extension(self):
         def check_extensions():
-            self.assertEqual(mimetypes.guess_extension('application/octet-stream'), '.bin')
-            self.assertEqual(mimetypes.guess_extension('application/postscript'), '.ps')
-            self.assertEqual(mimetypes.guess_extension('application/vnd.apple.mpegurl'), '.m3u')
-            self.assertEqual(mimetypes.guess_extension('application/vnd.ms-excel'), '.xls')
-            self.assertEqual(mimetypes.guess_extension('application/vnd.ms-powerpoint'), '.ppt')
-            self.assertEqual(mimetypes.guess_extension('application/x-texinfo'), '.texi')
-            self.assertEqual(mimetypes.guess_extension('application/x-troff'), '.roff')
-            self.assertEqual(mimetypes.guess_extension('application/xml'), '.xsl')
-            self.assertEqual(mimetypes.guess_extension('audio/mpeg'), '.mp3')
-            self.assertEqual(mimetypes.guess_extension('image/avif'), '.avif')
-            self.assertEqual(mimetypes.guess_extension('image/webp'), '.webp')
-            self.assertEqual(mimetypes.guess_extension('image/jpeg'), '.jpg')
-            self.assertEqual(mimetypes.guess_extension('image/tiff'), '.tiff')
-            self.assertEqual(mimetypes.guess_extension('message/rfc822'), '.eml')
-            self.assertEqual(mimetypes.guess_extension('text/html'), '.html')
-            self.assertEqual(mimetypes.guess_extension('text/plain'), '.txt')
-            self.assertEqual(mimetypes.guess_extension('text/rtf'), '.rtf')
-            self.assertEqual(mimetypes.guess_extension('text/x-rst'), '.rst')
-            self.assertEqual(mimetypes.guess_extension('video/mpeg'), '.mpeg')
-            self.assertEqual(mimetypes.guess_extension('video/quicktime'), '.mov')
+            for mime_type, ext in (
+                ("application/epub+zip", ".epub"),
+                ("application/octet-stream", ".bin"),
+                ("application/ogg", ".ogx"),
+                ("application/postscript", ".ps"),
+                ("application/vnd.apple.mpegurl", ".m3u"),
+                ("application/vnd.ms-excel", ".xls"),
+                ("application/vnd.ms-fontobject", ".eot"),
+                ("application/vnd.ms-powerpoint", ".ppt"),
+                ("application/vnd.oasis.opendocument.graphics", ".odg"),
+                ("application/vnd.oasis.opendocument.presentation", ".odp"),
+                ("application/vnd.oasis.opendocument.spreadsheet", ".ods"),
+                ("application/vnd.oasis.opendocument.text", ".odt"),
+                ("application/vnd.openxmlformats-officedocument.presentationml.presentation", ".pptx"),
+                ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"),
+                ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx"),
+                ("application/x-texinfo", ".texi"),
+                ("application/x-troff", ".roff"),
+                ("application/xml", ".xsl"),
+                ("audio/flac", ".flac"),
+                ("audio/matroska", ".mka"),
+                ("audio/mp4", ".m4a"),
+                ("audio/mpeg", ".mp3"),
+                ("audio/ogg", ".ogg"),
+                ("audio/vnd.wave", ".wav"),
+                ("audio/webm", ".weba"),
+                ("font/otf", ".otf"),
+                ("font/ttf", ".ttf"),
+                ("font/woff", ".woff"),
+                ("font/woff2", ".woff2"),
+                ("image/avif", ".avif"),
+                ("image/emf", ".emf"),
+                ("image/fits", ".fits"),
+                ("image/g3fax", ".g3"),
+                ("image/jp2", ".jp2"),
+                ("image/jpeg", ".jpg"),
+                ("image/jpm", ".jpm"),
+                ("image/t38", ".t38"),
+                ("image/tiff", ".tiff"),
+                ("image/tiff-fx", ".tfx"),
+                ("image/webp", ".webp"),
+                ("image/wmf", ".wmf"),
+                ("message/rfc822", ".eml"),
+                ("text/html", ".html"),
+                ("text/plain", ".txt"),
+                ("text/rtf", ".rtf"),
+                ("text/x-rst", ".rst"),
+                ("video/matroska", ".mkv"),
+                ("video/matroska-3d", ".mk3d"),
+                ("video/mpeg", ".mpeg"),
+                ("video/ogg", ".ogv"),
+                ("video/quicktime", ".mov"),
+                ("video/vnd.avi", ".avi"),
+            ):
+                with self.subTest(mime_type=mime_type, ext=ext):
+                    self.assertEqual(mimetypes.guess_extension(mime_type), ext)
 
         check_extensions()
         mimetypes.init()
