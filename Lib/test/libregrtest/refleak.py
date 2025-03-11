@@ -74,6 +74,10 @@ def runtest_refleak(test_name, test_func,
     ps = copyreg.dispatch_table.copy()
     pic = sys.path_importer_cache.copy()
     zdc: dict[str, Any] | None
+    # Linecache holds a cache with the source of interactive code snippets
+    # (e.g. code typed in the REPL). This cache is not cleared by
+    # linecache.clearcache(). We need to save and restore it to avoid false
+    # positives.
     linecache_data = linecache.cache.copy(), linecache._interactive_cache.copy()
     try:
         import zipimport
