@@ -84,10 +84,6 @@ Allocating Objects on the Heap
       * :c:func:`PyType_GenericAlloc`
       * :c:member:`~PyTypeObject.tp_alloc`
 
-   Note that this function is unsuitable if *typeobj* has
-   :c:macro:`Py_TPFLAGS_HAVE_GC` set. For such objects,
-   use :c:func:`PyObject_GC_New` instead.
-
 
 .. c:macro:: PyObject_NewVar(TYPE, typeobj, size)
 
@@ -137,10 +133,6 @@ Allocating Objects on the Heap
       * :c:macro:`PyObject_GC_NewVar`
       * :c:func:`PyType_GenericAlloc`
       * :c:member:`~PyTypeObject.tp_alloc`
-
-   Note that this function is unsuitable if *typeobj* has
-   :c:macro:`Py_TPFLAGS_HAVE_GC` set. For such objects,
-   use :c:func:`PyObject_GC_NewVar` instead.
 
 
 .. c:function:: void PyObject_Del(void *op)
