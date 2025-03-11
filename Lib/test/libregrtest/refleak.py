@@ -78,7 +78,7 @@ def runtest_refleak(test_name, test_func,
     # (e.g. code typed in the REPL). This cache is not cleared by
     # linecache.clearcache(). We need to save and restore it to avoid false
     # positives.
-    linecache_data = linecache.cache.copy(), linecache._interactive_cache.copy()
+    linecache_data = linecache.cache.copy(), linecache._interactive_cache.copy() # type: ignore[attr-defined]
     try:
         import zipimport
     except ImportError:
