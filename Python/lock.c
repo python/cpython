@@ -8,7 +8,9 @@
 #include "pycore_time.h"          // _PyTime_Add()
 
 #ifdef MS_WINDOWS
-#  define WIN32_LEAN_AND_MEAN
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
 #  include <windows.h>            // SwitchToThread()
 #elif defined(HAVE_SCHED_H)
 #  include <sched.h>              // sched_yield()
