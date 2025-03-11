@@ -1,5 +1,6 @@
 """
-Implementation of ReadablePath for zip file members, for use in pathlib tests.
+Implementations of ReadablePath and WritablePath for zip file members, for use
+in pathlib tests.
 
 ZipPathGround is also defined here. It helps establish the "ground truth"
 about zip file members in tests.
@@ -276,3 +277,48 @@ class ReadableZipPath(pathlib.types._ReadablePath):
         elif not info.is_symlink():
             raise OSError(errno.EINVAL, "Not a symlink", self)
         return self.with_segments(self.zip_file.read(info.zip_info).decode())
+
+
+class WritableZipPath(pathlib.types._WritablePath):
+    """
+    Simple implementation of a WritablePath class for .zip files.
+    """
+
+    __slots__ = ('_segments', 'zip_file')
+    parser = posixpath
+
+    def __init__(self, *pathsegments, zip_file):
+        self._segments = pathsegments
+        self.zip_file = zip_file
+
+    def __hash__(self):
+        return hash((str(self), self.zip_file))
+
+    def __eq__(self, other):
+        if not isinstance(other, WritableZipPath):
+            return NotImplemented
+        return str(self) == str(other) and self.zip_file is other.zip_file
+
+    def __str__(self):
+        if not self._segments:
+            return ''
+        return self.parser.join(*self._segments)
+
+    def __repr__(self):
+        return f'{type(self).__name__}({str(self)!r}, zip_file={self.zip_file!r})'
+
+    def with_segments(self, *pathsegments):
+        return type(self)(*pathsegments, zip_file=self.zip_file)
+
+    def __open_wb__(self, buffering=-1):
+        return self.zip_file.open(str(self), 'w')
+
+    def mkdir(self, mode=0o777):
+        self.zip_file.mkdir(str(self), mode)
+
+    def symlink_to(self, target, target_is_directory=False):
+        zinfo = zipfile.ZipInfo(str(self))._for_archive(self.zip_file)
+        zinfo.external_attr = stat.S_IFLNK << 16
+        if target_is_directory:
+            zinfo.external_attr |= 0x10
+        self.zip_file.writestr(zinfo, str(target))

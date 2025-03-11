@@ -1,5 +1,6 @@
 """
-Implementation of ReadablePath for local paths, for use in pathlib tests.
+Implementations of ReadablePath and WritablePath for local paths, for use in
+pathlib tests.
 
 LocalPathGround is also defined here. It helps establish the "ground truth"
 about local paths in tests.
@@ -143,3 +144,23 @@ class ReadableLocalPath(pathlib.types._ReadablePath, LexicalPath):
 
     def readlink(self):
         return self.with_segments(os.readlink(self))
+
+
+class WritableLocalPath(pathlib.types._WritablePath, LexicalPath):
+    """
+    Simple implementation of a WritablePath class for local filesystem paths.
+    """
+
+    __slots__ = ()
+
+    def __fspath__(self):
+        return str(self)
+
+    def __open_wb__(self, buffering=-1):
+        return open(self, 'wb')
+
+    def mkdir(self, mode=0o777):
+        os.mkdir(self, mode)
+
+    def symlink_to(self, target, target_is_directory=False):
+        os.symlink(target, self, target_is_directory)
