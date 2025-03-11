@@ -31,6 +31,7 @@ from _colorize import can_colorize, ANSIColors  # type: ignore[import-not-found]
 
 from . import commands, console, input
 from .utils import ANSI_ESCAPE_SEQUENCE, wlen, str_width
+from .utils import DEFAULT_PS1, DEFAULT_PS2, DEFAULT_PS3, DEFAULT_PS4
 from .trace import trace
 
 
@@ -531,22 +532,37 @@ class Reader:
             return default
         return self.arg
 
+    @staticmethod
+    def __get_prompt_str(prompt, default_prompt) -> str:
+        """
+        Convert prompt object to string.
+
+        If prompt raise BaseException, MemoryError and SystemError then stop
+        the REPL. For other exceptions return default_prompt.
+        """
+        try:
+            return str(prompt)
+        except (MemoryError, SystemError):
+            raise
+        except Exception:
+            return default_prompt
+
     def get_prompt(self, lineno: int, cursor_on_line: bool) -> str:
         """Return what should be in the left-hand margin for line
         'lineno'."""
         if self.arg is not None and cursor_on_line:
-            prompt = f"(arg: {self.arg}) "
+            prompt = self.__get_prompt_str(f"(arg: {self.arg}) ", DEFAULT_PS1)
         elif self.paste_mode and not self.in_bracketed_paste:
             prompt = "(paste) "
         elif "\n" in self.buffer:
             if lineno == 0:
-                prompt = self.ps2
+                prompt = self.__get_prompt_str(self.ps2, DEFAULT_PS2)
             elif self.ps4 and lineno == self.buffer.count("\n"):
-                prompt = self.ps4
+                prompt = self.__get_prompt_str(self.ps4, DEFAULT_PS4)
             else:
-                prompt = self.ps3
+                prompt = self.__get_prompt_str(self.ps3, DEFAULT_PS3)
         else:
-            prompt = self.ps1
+            prompt = self.__get_prompt_str(self.ps1, DEFAULT_PS1)
 
         if self.can_colorize:
             prompt = f"{ANSIColors.BOLD_MAGENTA}{prompt}{ANSIColors.RESET}"

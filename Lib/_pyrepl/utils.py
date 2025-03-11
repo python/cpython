@@ -5,6 +5,12 @@ import functools
 ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
 
 
+DEFAULT_PS1 = ">>> "
+DEFAULT_PS2 = "... "
+DEFAULT_PS3 = "... "
+DEFAULT_PS4 = "... "
+
+
 @functools.cache
 def str_width(c: str) -> int:
     if ord(c) < 128:
