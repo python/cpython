@@ -511,6 +511,30 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
       Release the underlying buffer exposed by the PickleBuffer object.
 
 
+.. _pickle-cli:
+
+Command-line interface
+----------------------------------
+
+The :mod:`pickle` module can be invoked as a script from the command line,
+it will display contents of the pickle files. However, when the pickle file
+that you want to examine comes from an untrusted source, ``-m pickletools``
+is a safer option because it does not execute pickle bytecode, see
+:ref:`pickletools-cli`.
+
+.. code-block:: bash
+
+   python -m pickle [pickle_file ...]
+
+The following options are accepted:
+
+.. program:: pickle
+
+.. option:: pickle_file
+
+   The pickle file(s).
+
+
 .. _pickle-picklable:
 
 What can be pickled and unpickled?

@@ -26,7 +26,7 @@ The following modules have a command-line interface.
 * :ref:`json <json-commandline>`
 * :mod:`mimetypes`
 * :mod:`pdb`
-* :mod:`pickle`
+* :ref:`pickle <pickle-cli>`
 * :ref:`pickletools <pickletools-cli>`
 * :mod:`platform`
 * :mod:`poplib`
