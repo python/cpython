@@ -498,59 +498,65 @@ class IOTest(unittest.TestCase):
             (text_reader, "r"), (text_writer, "w"),
             (self.BytesIO, "rws"), (self.StringIO, "rws"),
         )
-        for [test, abilities] in tests:
-            if test == pipe_writer and not threading_helper.can_start_thread:
+
+        def do_test(obj):
+            readable = "r" in abilities
+            self.assertEqual(obj.readable(), readable)
+            writable = "w" in abilities
+            self.assertEqual(obj.writable(), writable)
+
+            if isinstance(obj, self.TextIOBase):
+                data = "3"
+            elif isinstance(obj, (self.BufferedIOBase, self.RawIOBase)):
+                data = b"3"
+            else:
+                self.fail("Unknown base class")
+
+            if "f" in abilities:
+                obj.fileno()
+            else:
+                self.assertRaises(OSError, obj.fileno)
+
+            if readable:
+                obj.read(1)
+                obj.read()
+            else:
+                self.assertRaises(OSError, obj.read, 1)
+                self.assertRaises(OSError, obj.read)
+
+            if writable:
+                obj.write(data)
+            else:
+                self.assertRaises(OSError, obj.write, data)
+
+            if sys.platform.startswith("win") and test in (
+                    pipe_reader, pipe_writer):
+                # Pipes seem to appear as seekable on Windows
                 continue
-            with self.subTest(test), test() as obj:
-                readable = "r" in abilities
-                self.assertEqual(obj.readable(), readable)
-                writable = "w" in abilities
-                self.assertEqual(obj.writable(), writable)
+            seekable = "s" in abilities
+            self.assertEqual(obj.seekable(), seekable)
 
-                if isinstance(obj, self.TextIOBase):
-                    data = "3"
-                elif isinstance(obj, (self.BufferedIOBase, self.RawIOBase)):
-                    data = b"3"
-                else:
-                    self.fail("Unknown base class")
+            if seekable:
+                obj.tell()
+                obj.seek(0)
+            else:
+                self.assertRaises(OSError, obj.tell)
+                self.assertRaises(OSError, obj.seek, 0)
 
-                if "f" in abilities:
-                    obj.fileno()
-                else:
-                    self.assertRaises(OSError, obj.fileno)
+            if writable and seekable:
+                obj.truncate()
+                obj.truncate(0)
+            else:
+                self.assertRaises(OSError, obj.truncate)
+                self.assertRaises(OSError, obj.truncate, 0)
 
-                if readable:
-                    obj.read(1)
-                    obj.read()
-                else:
-                    self.assertRaises(OSError, obj.read, 1)
-                    self.assertRaises(OSError, obj.read)
+        for [test, abilities] in tests:
+            with self.subTest(test):
+                if test == pipe_writer and not threading_helper.can_start_thread:
+                   skipTest()
+                with test() as obj:
+                    do_test(obj)
 
-                if writable:
-                    obj.write(data)
-                else:
-                    self.assertRaises(OSError, obj.write, data)
-
-                if sys.platform.startswith("win") and test in (
-                        pipe_reader, pipe_writer):
-                    # Pipes seem to appear as seekable on Windows
-                    continue
-                seekable = "s" in abilities
-                self.assertEqual(obj.seekable(), seekable)
-
-                if seekable:
-                    obj.tell()
-                    obj.seek(0)
-                else:
-                    self.assertRaises(OSError, obj.tell)
-                    self.assertRaises(OSError, obj.seek, 0)
-
-                if writable and seekable:
-                    obj.truncate()
-                    obj.truncate(0)
-                else:
-                    self.assertRaises(OSError, obj.truncate)
-                    self.assertRaises(OSError, obj.truncate, 0)
 
     def test_open_handles_NUL_chars(self):
         fn_with_NUL = 'foo\0bar'
