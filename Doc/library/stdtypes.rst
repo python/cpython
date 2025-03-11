@@ -1264,7 +1264,7 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 |                              |no default value is set, the    |                     |
 |                              |default value is None, so this  |                     |
 |                              |method will never raise an      |                     |
-|                              |`IndexError`.                   |                     |
+|                              |`IndexError`                    |                     |
 +------------------------------+--------------------------------+---------------------+
 
 
