@@ -10,6 +10,9 @@ extern "C" {
 
 PyAPI_FUNC(PyObject*) _PyList_Extend(PyListObject *, PyObject *);
 extern void _PyList_DebugMallocStats(FILE *out);
+// _PyList_GetItemRef should be used only when the object is known as a list
+// because it doesn't raise TypeError when the object is not a list, whereas PyList_GetItemRef does.
+extern PyObject* _PyList_GetItemRef(PyListObject *, Py_ssize_t i);
 
 #define _PyList_ITEMS(op) _Py_RVALUE(_PyList_CAST(op)->ob_item)
 
@@ -45,7 +48,7 @@ _Py_memory_repeat(char* dest, Py_ssize_t len_dest, Py_ssize_t len_src)
     Py_ssize_t copied = len_src;
     while (copied < len_dest) {
         Py_ssize_t bytes_to_copy = Py_MIN(copied, len_dest - copied);
-        memcpy(dest + copied, dest, bytes_to_copy);
+        memcpy(dest + copied, dest, (size_t)bytes_to_copy);
         copied += bytes_to_copy;
     }
 }
@@ -58,8 +61,8 @@ typedef struct {
 
 union _PyStackRef;
 
-PyAPI_FUNC(PyObject *)_PyList_FromStackRefSteal(const union _PyStackRef *src, Py_ssize_t n);
-
+PyAPI_FUNC(PyObject *)_PyList_FromStackRefStealOnSuccess(const union _PyStackRef *src, Py_ssize_t n);
+PyAPI_FUNC(PyObject *)_PyList_AsTupleAndClear(PyListObject *v);
 
 #ifdef __cplusplus
 }

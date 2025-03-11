@@ -1,3 +1,0 @@
-Remove the private ``_Py_CODEUNIT`` type from the public C API. The internal
-``pycore_code.h`` header should now be used to get this internal type. Patch by
-Victor Stinner.

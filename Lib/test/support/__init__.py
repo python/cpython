@@ -40,7 +40,7 @@ __all__ = [
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__", "skip_if_buggy_ucrt_strfptime",
     "check_disallow_instantiation", "check_sanitizer", "skip_if_sanitizer",
-    "requires_limited_api", "requires_specialization",
+    "requires_limited_api", "requires_specialization", "thread_unsafe",
     # sys
     "MS_WINDOWS", "is_jython", "is_android", "is_emscripten", "is_wasi",
     "is_apple_mobile", "check_impl_detail", "unix_shell", "setswitchinterval",
@@ -56,11 +56,16 @@ __all__ = [
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
-    "Py_DEBUG", "exceeds_recursion_limit", "get_c_recursion_limit",
-    "skip_on_s390x",
-    "without_optimizer",
+    "Py_DEBUG", "exceeds_recursion_limit", "skip_on_s390x",
+    "requires_jit_enabled",
+    "requires_jit_disabled",
     "force_not_colorized",
+    "force_not_colorized_test_class",
+    "make_clean_env",
     "BrokenIter",
+    "in_systemd_nspawn_sync_suppressed",
+    "run_no_yield_async_fn", "run_yielding_async_fn", "async_yield",
+    "reset_code",
     ]
 
 
@@ -252,22 +257,16 @@ def _is_gui_available():
         # process not running under the same user id as the current console
         # user.  To avoid that, raise an exception if the window manager
         # connection is not available.
-        from ctypes import cdll, c_int, pointer, Structure
-        from ctypes.util import find_library
-
-        app_services = cdll.LoadLibrary(find_library("ApplicationServices"))
-
-        if app_services.CGMainDisplayID() == 0:
-            reason = "gui tests cannot run without OS X window manager"
+        import subprocess
+        try:
+            rc = subprocess.run(["launchctl", "managername"],
+                                capture_output=True, check=True)
+            managername = rc.stdout.decode("utf-8").strip()
+        except subprocess.CalledProcessError:
+            reason = "unable to detect macOS launchd job manager"
         else:
-            class ProcessSerialNumber(Structure):
-                _fields_ = [("highLongOfPSN", c_int),
-                            ("lowLongOfPSN", c_int)]
-            psn = ProcessSerialNumber()
-            psn_p = pointer(psn)
-            if (  (app_services.GetCurrentProcess(psn_p) < 0) or
-                  (app_services.SetFrontProcess(psn_p) < 0) ):
-                reason = "cannot run without OS X gui process"
+            if managername != "Aqua":
+                reason = f"{managername=} -- can only run in a macOS GUI session"
 
     # check on every platform whether tkinter can actually do anything
     if not reason:
@@ -379,6 +378,21 @@ def requires_mac_ver(*min_version):
             return func(*args, **kw)
         wrapper.min_version = min_version
         return wrapper
+    return decorator
+
+
+def thread_unsafe(reason):
+    """Mark a test as not thread safe. When the test runner is run with
+    --parallel-threads=N, the test will be run in a single thread."""
+    def decorator(test_item):
+        test_item.__unittest_thread_unsafe__ = True
+        # the reason is not currently used
+        test_item.__unittest_thread_unsafe__why__ = reason
+        return test_item
+    if isinstance(reason, types.FunctionType):
+        test_item = reason
+        reason = ''
+        return decorator(test_item)
     return decorator
 
 
@@ -508,41 +522,14 @@ def requires_lzma(reason='requires lzma'):
 
 def has_no_debug_ranges():
     try:
-        import _testinternalcapi
+        import _testcapi
     except ImportError:
         raise unittest.SkipTest("_testinternalcapi required")
-    config = _testinternalcapi.get_config()
+    return not _testcapi.config_get('code_debug_ranges')
     return not bool(config['code_debug_ranges'])
 
 def requires_debug_ranges(reason='requires co_positions / debug_ranges'):
     return unittest.skipIf(has_no_debug_ranges(), reason)
-
-@contextlib.contextmanager
-def suppress_immortalization(suppress=True):
-    """Suppress immortalization of deferred objects."""
-    try:
-        import _testinternalcapi
-    except ImportError:
-        yield
-        return
-
-    if not suppress:
-        yield
-        return
-
-    _testinternalcapi.suppress_immortalization(True)
-    try:
-        yield
-    finally:
-        _testinternalcapi.suppress_immortalization(False)
-
-def skip_if_suppress_immortalization():
-    try:
-        import _testinternalcapi
-    except ImportError:
-        return
-    return unittest.skipUnless(_testinternalcapi.get_immortalize_deferred(),
-                                "requires immortalization of deferred objects")
 
 
 MS_WINDOWS = (sys.platform == 'win32')
@@ -551,6 +538,11 @@ MS_WINDOWS = (sys.platform == 'win32')
 is_jython = sys.platform.startswith('java')
 
 is_android = sys.platform == "android"
+
+def skip_android_selinux(name):
+    return unittest.skipIf(
+        sys.platform == "android", f"Android blocks {name} with SELinux"
+    )
 
 if sys.platform not in {"win32", "vxworks", "ios", "tvos", "watchos"}:
     unix_shell = '/system/bin/sh' if is_android else '/bin/sh'
@@ -561,6 +553,12 @@ else:
 # have subprocess or fork support.
 is_emscripten = sys.platform == "emscripten"
 is_wasi = sys.platform == "wasi"
+
+def skip_emscripten_stack_overflow():
+    return unittest.skipIf(is_emscripten, "Exhausts limited stack on Emscripten")
+
+def skip_wasi_stack_overflow():
+    return unittest.skipIf(is_wasi, "Exhausts stack on WASI")
 
 is_apple_mobile = sys.platform in {"ios", "tvos", "watchos"}
 is_apple = is_apple_mobile or sys.platform == "darwin"
@@ -837,7 +835,6 @@ def gc_threshold(*args):
     finally:
         gc.set_threshold(*old_threshold)
 
-
 def python_is_optimized():
     """Find if Python was built with optimizations."""
     cflags = sysconfig.get_config_var('PY_CFLAGS') or ''
@@ -845,7 +842,11 @@ def python_is_optimized():
     for opt in cflags.split():
         if opt.startswith('-O'):
             final_opt = opt
-    return final_opt not in ('', '-O0', '-Og')
+    if sysconfig.get_config_var("CC") == "gcc":
+        non_opts = ('', '-O0', '-Og')
+    else:
+        non_opts = ('', '-O0')
+    return final_opt not in non_opts
 
 
 def check_cflags_pgo():
@@ -929,8 +930,8 @@ def check_sizeof(test, o, size):
     test.assertEqual(result, size, msg)
 
 #=======================================================================
-# Decorator for running a function in a different locale, correctly resetting
-# it afterwards.
+# Decorator/context manager for running a code in a different locale,
+# correctly resetting it afterwards.
 
 @contextlib.contextmanager
 def run_with_locale(catstr, *locales):
@@ -941,22 +942,67 @@ def run_with_locale(catstr, *locales):
     except AttributeError:
         # if the test author gives us an invalid category string
         raise
-    except:
+    except Exception:
         # cannot retrieve original locale, so do nothing
         locale = orig_locale = None
+        if '' not in locales:
+            raise unittest.SkipTest('no locales')
     else:
         for loc in locales:
             try:
                 locale.setlocale(category, loc)
                 break
-            except:
+            except locale.Error:
                 pass
+        else:
+            if '' not in locales:
+                raise unittest.SkipTest(f'no locales {locales}')
 
     try:
         yield
     finally:
         if locale and orig_locale:
             locale.setlocale(category, orig_locale)
+
+#=======================================================================
+# Decorator for running a function in multiple locales (if they are
+# availasble) and resetting the original locale afterwards.
+
+def run_with_locales(catstr, *locales):
+    def deco(func):
+        @functools.wraps(func)
+        def wrapper(self, /, *args, **kwargs):
+            dry_run = '' in locales
+            try:
+                import locale
+                category = getattr(locale, catstr)
+                orig_locale = locale.setlocale(category)
+            except AttributeError:
+                # if the test author gives us an invalid category string
+                raise
+            except Exception:
+                # cannot retrieve original locale, so do nothing
+                pass
+            else:
+                try:
+                    for loc in locales:
+                        with self.subTest(locale=loc):
+                            try:
+                                locale.setlocale(category, loc)
+                            except locale.Error:
+                                self.skipTest(f'no locale {loc!r}')
+                            else:
+                                dry_run = False
+                                func(self, *args, **kwargs)
+                finally:
+                    locale.setlocale(category, orig_locale)
+            if dry_run:
+                # no locales available, so just run the test
+                # with the current locale
+                with self.subTest(locale=None):
+                    func(self, *args, **kwargs)
+        return wrapper
+    return deco
 
 #=======================================================================
 # Decorator for running a function in a specific timezone, correctly
@@ -1254,6 +1300,17 @@ TEST_MODULES_ENABLED = (sysconfig.get_config_var('TEST_MODULES') or 'yes') == 'y
 def requires_specialization(test):
     return unittest.skipUnless(
         _opcode.ENABLE_SPECIALIZATION, "requires specialization")(test)
+
+
+def requires_specialization_ft(test):
+    return unittest.skipUnless(
+        _opcode.ENABLE_SPECIALIZATION_FT, "requires specialization")(test)
+
+
+def reset_code(f: types.FunctionType) -> types.FunctionType:
+    """Clear all specializations, local instrumentation, and JIT code for the given function."""
+    f.__code__ = f.__code__.replace()
+    return f
 
 
 #=======================================================================
@@ -2208,7 +2265,15 @@ def skip_if_broken_multiprocessing_synchronize():
             # bpo-38377: On Linux, creating a semaphore fails with OSError
             # if the current user does not have the permission to create
             # a file in /dev/shm/ directory.
-            synchronize.Lock(ctx=None)
+            import multiprocessing
+            synchronize.Lock(ctx=multiprocessing.get_context('fork'))
+            # The explicit fork mp context is required in order for
+            # TestResourceTracker.test_resource_tracker_reused to work.
+            # synchronize creates a new multiprocessing.resource_tracker
+            # process at module import time via the above call in that
+            # scenario. Awkward. This enables gh-84559. No code involved
+            # should have threads at that point so fork() should be safe.
+
         except OSError as exc:
             raise unittest.SkipTest(f"broken multiprocessing SemLock: {exc!r}")
 
@@ -2564,40 +2629,24 @@ def adjust_int_max_str_digits(max_digits):
         sys.set_int_max_str_digits(current)
 
 
-def get_c_recursion_limit():
-    try:
-        import _testcapi
-        return _testcapi.Py_C_RECURSION_LIMIT
-    except ImportError:
-        raise unittest.SkipTest('requires _testcapi')
-
-
 def exceeds_recursion_limit():
     """For recursion tests, easily exceeds default recursion limit."""
-    return get_c_recursion_limit() * 3
+    return 150_000
 
 
-#Windows doesn't have os.uname() but it doesn't support s390x.
-skip_on_s390x = unittest.skipIf(hasattr(os, 'uname') and os.uname().machine == 's390x',
-                                'skipped on s390x')
+# Windows doesn't have os.uname() but it doesn't support s390x.
+is_s390x = hasattr(os, 'uname') and os.uname().machine == 's390x'
+skip_on_s390x = unittest.skipIf(is_s390x, 'skipped on s390x')
 
 Py_TRACE_REFS = hasattr(sys, 'getobjects')
 
-# Decorator to disable optimizer while a function run
-def without_optimizer(func):
-    try:
-        from _testinternalcapi import get_optimizer, set_optimizer
-    except ImportError:
-        return func
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        save_opt = get_optimizer()
-        try:
-            set_optimizer(None)
-            return func(*args, **kwargs)
-        finally:
-            set_optimizer(save_opt)
-    return wrapper
+try:
+    from _testinternalcapi import jit_enabled
+except ImportError:
+    requires_jit_enabled = requires_jit_disabled = unittest.skip("requires _testinternalcapi")
+else:
+    requires_jit_enabled = unittest.skipUnless(jit_enabled(), "requires JIT enabled")
+    requires_jit_disabled = unittest.skipIf(jit_enabled(), "requires JIT disabled")
 
 
 _BASE_COPY_SRC_DIR_IGNORED_NAMES = frozenset({
@@ -2797,28 +2846,52 @@ def iter_slot_wrappers(cls):
             yield name, True
 
 
+@contextlib.contextmanager
+def no_color():
+    import _colorize
+    from .os_helper import EnvironmentVarGuard
+
+    with (
+        swap_attr(_colorize, "can_colorize", lambda file=None: False),
+        EnvironmentVarGuard() as env,
+    ):
+        for var in {"FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS"}:
+            env.unset(var)
+        env.set("NO_COLOR", "1")
+        yield
+
+
 def force_not_colorized(func):
     """Force the terminal not to be colorized."""
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        import _colorize
-        original_fn = _colorize.can_colorize
-        variables: dict[str, str | None] = {
-            "PYTHON_COLORS": None, "FORCE_COLOR": None, "NO_COLOR": None
-        }
-        try:
-            for key in variables:
-                variables[key] = os.environ.pop(key, None)
-            os.environ["NO_COLOR"] = "1"
-            _colorize.can_colorize = lambda: False
+        with no_color():
             return func(*args, **kwargs)
-        finally:
-            _colorize.can_colorize = original_fn
-            del os.environ["NO_COLOR"]
-            for key, value in variables.items():
-                if value is not None:
-                    os.environ[key] = value
     return wrapper
+
+
+def force_not_colorized_test_class(cls):
+    """Force the terminal not to be colorized for the entire test class."""
+    original_setUpClass = cls.setUpClass
+
+    @classmethod
+    @functools.wraps(cls.setUpClass)
+    def new_setUpClass(cls):
+        cls.enterClassContext(no_color())
+        original_setUpClass()
+
+    cls.setUpClass = new_setUpClass
+    return cls
+
+
+def make_clean_env() -> dict[str, str]:
+    clean_env = os.environ.copy()
+    for k in clean_env.copy():
+        if k.startswith("PYTHON"):
+            clean_env.pop(k)
+    clean_env.pop("FORCE_COLOR", None)
+    clean_env.pop("NO_COLOR", None)
+    return clean_env
 
 
 def initialized_with_pyrepl():
@@ -2873,3 +2946,72 @@ class BrokenIter:
         if self.iter_raises:
             1/0
         return self
+
+
+def in_systemd_nspawn_sync_suppressed() -> bool:
+    """
+    Test whether the test suite is runing in systemd-nspawn
+    with ``--suppress-sync=true``.
+
+    This can be used to skip tests that rely on ``fsync()`` calls
+    and similar not being intercepted.
+    """
+
+    if not hasattr(os, "O_SYNC"):
+        return False
+
+    try:
+        with open("/run/systemd/container", "rb") as fp:
+            if fp.read().rstrip() != b"systemd-nspawn":
+                return False
+    except FileNotFoundError:
+        return False
+
+    # If systemd-nspawn is used, O_SYNC flag will immediately
+    # trigger EINVAL.  Otherwise, ENOENT will be given instead.
+    import errno
+    try:
+        fd = os.open(__file__, os.O_RDONLY | os.O_SYNC)
+    except OSError as err:
+        if err.errno == errno.EINVAL:
+            return True
+    else:
+        os.close(fd)
+
+    return False
+
+def run_no_yield_async_fn(async_fn, /, *args, **kwargs):
+    coro = async_fn(*args, **kwargs)
+    try:
+        coro.send(None)
+    except StopIteration as e:
+        return e.value
+    else:
+        raise AssertionError("coroutine did not complete")
+    finally:
+        coro.close()
+
+
+@types.coroutine
+def async_yield(v):
+    return (yield v)
+
+
+def run_yielding_async_fn(async_fn, /, *args, **kwargs):
+    coro = async_fn(*args, **kwargs)
+    try:
+        while True:
+            try:
+                coro.send(None)
+            except StopIteration as e:
+                return e.value
+    finally:
+        coro.close()
+
+
+def is_libssl_fips_mode():
+    try:
+        from _hashlib import get_fips_mode  # ask _hashopenssl.c
+    except ImportError:
+        return False  # more of a maybe, unless we add this to the _ssl module.
+    return get_fips_mode() != 0

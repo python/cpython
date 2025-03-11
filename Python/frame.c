@@ -13,8 +13,8 @@ _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
 {
     Py_VISIT(frame->frame_obj);
     Py_VISIT(frame->f_locals);
-    Py_VISIT(frame->f_funcobj);
-    Py_VISIT(_PyFrame_GetCode(frame));
+    _Py_VISIT_STACKREF(frame->f_funcobj);
+    _Py_VISIT_STACKREF(frame->f_executable);
     return _PyGC_VisitFrameStack(frame, visit, arg);
 }
 
@@ -40,7 +40,6 @@ _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame)
     // here.
     assert(frame->frame_obj == NULL);
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
-    assert(frame->owner != FRAME_CLEARED);
     f->f_frame = frame;
     frame->frame_obj = f;
     return f;
@@ -49,28 +48,27 @@ _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame)
 static void
 take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
 {
-    assert(frame->owner != FRAME_OWNED_BY_CSTACK);
+    assert(frame->owner < FRAME_OWNED_BY_INTERPRETER);
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
-    assert(frame->owner != FRAME_CLEARED);
-    Py_ssize_t size = ((char*)frame->stackpointer) - (char *)frame;
-    Py_INCREF(_PyFrame_GetCode(frame));
-    memcpy((_PyInterpreterFrame *)f->_f_frame_data, frame, size);
-    frame = (_PyInterpreterFrame *)f->_f_frame_data;
-    frame->stackpointer = (_PyStackRef *)(((char *)frame) + size);
-    f->f_frame = frame;
-    frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
-    if (_PyFrame_IsIncomplete(frame)) {
+    _PyInterpreterFrame *new_frame = (_PyInterpreterFrame *)f->_f_frame_data;
+    _PyFrame_Copy(frame, new_frame);
+    // _PyFrame_Copy takes the reference to the executable,
+    // so we need to restore it.
+    frame->f_executable = PyStackRef_DUP(new_frame->f_executable);
+    f->f_frame = new_frame;
+    new_frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
+    if (_PyFrame_IsIncomplete(new_frame)) {
         // This may be a newly-created generator or coroutine frame. Since it's
         // dead anyways, just pretend that the first RESUME ran:
-        PyCodeObject *code = _PyFrame_GetCode(frame);
-        frame->instr_ptr = _PyCode_CODE(code) + code->_co_firsttraceable + 1;
+        PyCodeObject *code = _PyFrame_GetCode(new_frame);
+        new_frame->instr_ptr =
+            _PyFrame_GetBytecode(new_frame) + code->_co_firsttraceable + 1;
     }
-    assert(!_PyFrame_IsIncomplete(frame));
+    assert(!_PyFrame_IsIncomplete(new_frame));
     assert(f->f_back == NULL);
     _PyInterpreterFrame *prev = _PyFrame_GetFirstComplete(frame->previous);
-    frame->previous = NULL;
     if (prev) {
-        assert(prev->owner != FRAME_OWNED_BY_CSTACK);
+        assert(prev->owner < FRAME_OWNED_BY_INTERPRETER);
         /* Link PyFrameObjects.f_back and remove link through _PyInterpreterFrame.previous */
         PyFrameObject *back = _PyFrame_GetFrameObject(prev);
         if (back == NULL) {
@@ -123,7 +121,7 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
         Py_DECREF(f);
     }
     _PyFrame_ClearLocals(frame);
-    Py_DECREF(frame->f_funcobj);
+    PyStackRef_CLEAR(frame->f_funcobj);
 }
 
 /* Unstable API functions */
@@ -131,9 +129,7 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
 PyObject *
 PyUnstable_InterpreterFrame_GetCode(struct _PyInterpreterFrame *frame)
 {
-    PyObject *code = frame->f_executable;
-    Py_INCREF(code);
-    return code;
+    return PyStackRef_AsPyObjectNew(frame->f_executable);
 }
 
 int

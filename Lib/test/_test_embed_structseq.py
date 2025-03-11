@@ -48,7 +48,14 @@ class TestStructSeq(unittest.TestCase):
 
 
 try:
-    unittest.main()
+    unittest.main(
+        module=(
+            '__main__'
+            if __name__ == '__main__'
+            # Avoiding a circular import:
+            else sys.modules['test._test_embed_structseq']
+        )
+    )
 except SystemExit as exc:
     if exc.args[0] != 0:
         raise

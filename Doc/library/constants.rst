@@ -46,11 +46,12 @@ A small number of constants live in the built-in namespace.  They are:
 
       See :ref:`implementing-the-arithmetic-operations` for examples.
 
-   .. note::
+   .. caution::
 
-      ``NotImplementedError`` and :data:`!NotImplemented` are not interchangeable,
-      even though they have similar names and purposes.
-      See :exc:`NotImplementedError` for details on when to use it.
+      :data:`!NotImplemented` and :exc:`!NotImplementedError` are not
+      interchangeable. This constant should only be used as described
+      above; see :exc:`NotImplementedError` for details on correct usage
+      of the exception.
 
    .. versionchanged:: 3.9
       Evaluating :data:`!NotImplemented` in a boolean context was deprecated.
@@ -82,6 +83,8 @@ A small number of constants live in the built-in namespace.  They are:
    :exc:`SyntaxError`), so they can be considered "true" constants.
 
 
+.. _site-consts:
+
 Constants added by the :mod:`site` module
 -----------------------------------------
 
@@ -96,6 +99,13 @@ should not be used in programs.
    Objects that when printed, print a message like "Use quit() or Ctrl-D
    (i.e. EOF) to exit", and when called, raise :exc:`SystemExit` with the
    specified exit code.
+
+.. data:: help
+   :noindex:
+
+   Object that when printed, prints the message "Type help() for interactive
+   help, or help(object) for help about object.", and when called,
+   acts as described :func:`elsewhere <help>`.
 
 .. data:: copyright
           credits

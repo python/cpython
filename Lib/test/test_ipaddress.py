@@ -894,8 +894,8 @@ class ComparisonTests(unittest.TestCase):
     v6net = ipaddress.IPv6Network(1)
     v6intf = ipaddress.IPv6Interface(1)
     v6addr_scoped = ipaddress.IPv6Address('::1%scope')
-    v6net_scoped= ipaddress.IPv6Network('::1%scope')
-    v6intf_scoped= ipaddress.IPv6Interface('::1%scope')
+    v6net_scoped = ipaddress.IPv6Network('::1%scope')
+    v6intf_scoped = ipaddress.IPv6Interface('::1%scope')
 
     v4_addresses = [v4addr, v4intf]
     v4_objects = v4_addresses + [v4net]
@@ -1083,6 +1083,7 @@ class IpaddrUnitTest(unittest.TestCase):
         self.ipv6_scoped_interface = ipaddress.IPv6Interface(
             '2001:658:22a:cafe:200:0:0:1%scope/64')
         self.ipv6_scoped_network = ipaddress.IPv6Network('2001:658:22a:cafe::%scope/64')
+        self.ipv6_with_ipv4_part = ipaddress.IPv6Interface('::1.2.3.4')
 
     def testRepr(self):
         self.assertEqual("IPv4Interface('1.2.3.4/32')",
@@ -1713,6 +1714,8 @@ class IpaddrUnitTest(unittest.TestCase):
 
         self.assertTrue(self.ipv6_scoped_interface ==
             ipaddress.IPv6Interface('2001:658:22a:cafe:200::1%scope/64'))
+        self.assertTrue(self.ipv6_with_ipv4_part ==
+            ipaddress.IPv6Interface('0000:0000:0000:0000:0000:0000:0102:0304'))
         self.assertFalse(self.ipv6_scoped_interface ==
             ipaddress.IPv6Interface('2001:658:22a:cafe:200::1%scope/63'))
         self.assertFalse(self.ipv6_scoped_interface ==
@@ -2189,11 +2192,18 @@ class IpaddrUnitTest(unittest.TestCase):
                           ipaddress.ip_address('FFFF::c000:201%scope'))
 
     def testIPVersion(self):
+        self.assertEqual(ipaddress.IPv4Address.version, 4)
+        self.assertEqual(ipaddress.IPv6Address.version, 6)
+
         self.assertEqual(self.ipv4_address.version, 4)
         self.assertEqual(self.ipv6_address.version, 6)
         self.assertEqual(self.ipv6_scoped_address.version, 6)
+        self.assertEqual(self.ipv6_with_ipv4_part.version, 6)
 
     def testMaxPrefixLength(self):
+        self.assertEqual(ipaddress.IPv4Address.max_prefixlen, 32)
+        self.assertEqual(ipaddress.IPv6Address.max_prefixlen, 128)
+
         self.assertEqual(self.ipv4_interface.max_prefixlen, 32)
         self.assertEqual(self.ipv6_interface.max_prefixlen, 128)
         self.assertEqual(self.ipv6_scoped_interface.max_prefixlen, 128)
@@ -2427,6 +2437,8 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertTrue(ipaddress.ip_address('2001:30::').is_global)
         self.assertFalse(ipaddress.ip_address('2001:40::').is_global)
         self.assertFalse(ipaddress.ip_address('2002::').is_global)
+        # gh-124217: conform with RFC 9637
+        self.assertFalse(ipaddress.ip_address('3fff::').is_global)
 
         # some generic IETF reserved addresses
         self.assertEqual(True, ipaddress.ip_address('100::').is_reserved)
@@ -2439,6 +2451,30 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(ipaddress.ip_address('::c0a8:101').ipv4_mapped, None)
         self.assertEqual(ipaddress.ip_address('::ffff:c0a8:101').ipv4_mapped,
                          ipaddress.ip_address('192.168.1.1'))
+
+    def testIpv4MappedProperties(self):
+        # Test that an IPv4 mapped IPv6 address has
+        # the same properties as an IPv4 address.
+        for addr4 in (
+            "178.62.3.251",     # global
+            "169.254.169.254",  # link local
+            "127.0.0.1",        # loopback
+            "224.0.0.1",        # multicast
+            "192.168.0.1",      # private
+            "0.0.0.0",          # unspecified
+            "100.64.0.1",       # public and not global
+        ):
+            with self.subTest(addr4):
+                ipv4 = ipaddress.IPv4Address(addr4)
+                ipv6 = ipaddress.IPv6Address(f"::ffff:{addr4}")
+
+                self.assertEqual(ipv4.is_global, ipv6.is_global)
+                self.assertEqual(ipv4.is_private, ipv6.is_private)
+                self.assertEqual(ipv4.is_reserved, ipv6.is_reserved)
+                self.assertEqual(ipv4.is_multicast, ipv6.is_multicast)
+                self.assertEqual(ipv4.is_unspecified, ipv6.is_unspecified)
+                self.assertEqual(ipv4.is_link_local, ipv6.is_link_local)
+                self.assertEqual(ipv4.is_loopback, ipv6.is_loopback)
 
     def testIpv4MappedPrivateCheck(self):
         self.assertEqual(

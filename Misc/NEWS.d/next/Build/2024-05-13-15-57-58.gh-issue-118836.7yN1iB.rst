@@ -1,2 +1,0 @@
-Fix an ``AssertionError`` when building with ``--enable-experimental-jit``
-and the compiler emits a ``SHT_NOTE`` section.

@@ -752,7 +752,7 @@ class ExplicitConstructionTest:
         for v in [-2**63-1, -2**63, -2**31-1, -2**31, 0,
                    2**31-1, 2**31, 2**63-1, 2**63]:
             d = nc.create_decimal(v)
-            self.assertTrue(isinstance(d, Decimal))
+            self.assertIsInstance(d, Decimal)
             self.assertEqual(int(d), v)
 
         nc.prec = 3
@@ -811,6 +811,29 @@ class ExplicitConstructionTest:
         for i in range(200):
             x = random.expovariate(0.01) * (random.random() * 2.0 - 1.0)
             self.assertEqual(x, float(nc.create_decimal(x))) # roundtrip
+
+    def test_from_number(self, cls=None):
+        Decimal = self.decimal.Decimal
+        if cls is None:
+            cls = Decimal
+
+        def check(arg, expected):
+            d = cls.from_number(arg)
+            self.assertIs(type(d), cls)
+            self.assertEqual(d, expected)
+
+        check(314, Decimal(314))
+        check(3.14, Decimal.from_float(3.14))
+        check(Decimal('3.14'), Decimal('3.14'))
+        self.assertRaises(TypeError, cls.from_number, 3+4j)
+        self.assertRaises(TypeError, cls.from_number, '314')
+        self.assertRaises(TypeError, cls.from_number, (0, (3, 1, 4), 0))
+        self.assertRaises(TypeError, cls.from_number, object())
+
+    def test_from_number_subclass(self, cls=None):
+        class DecimalSubclass(self.decimal.Decimal):
+            pass
+        self.test_from_number(DecimalSubclass)
 
     def test_unicode_digits(self):
         Decimal = self.decimal.Decimal
@@ -1253,7 +1276,7 @@ class FormatTest:
             self.assertRaises(ValueError, format, h, '10Nf')
             self.assertRaises(ValueError, format, h, 'Nx')
 
-    @run_with_locale('LC_ALL', 'ps_AF')
+    @run_with_locale('LC_ALL', 'ps_AF', '')
     def test_wide_char_separator_decimal_point(self):
         # locale with wide char separator and decimal point
         Decimal = self.decimal.Decimal
@@ -2071,7 +2094,9 @@ class UsabilityTest:
         #to quantize, which is already extensively tested
         test_triples = [
             ('123.456', -4, '0E+4'),
+            ('-123.456', -4, '-0E+4'),
             ('123.456', -3, '0E+3'),
+            ('-123.456', -3, '-0E+3'),
             ('123.456', -2, '1E+2'),
             ('123.456', -1, '1.2E+2'),
             ('123.456', 0, '123'),
@@ -2565,8 +2590,8 @@ class PythonAPItests:
     def test_abc(self):
         Decimal = self.decimal.Decimal
 
-        self.assertTrue(issubclass(Decimal, numbers.Number))
-        self.assertFalse(issubclass(Decimal, numbers.Real))
+        self.assertIsSubclass(Decimal, numbers.Number)
+        self.assertNotIsSubclass(Decimal, numbers.Real)
         self.assertIsInstance(Decimal(0), numbers.Number)
         self.assertNotIsInstance(Decimal(0), numbers.Real)
 
@@ -2665,7 +2690,7 @@ class PythonAPItests:
             def __init__(self, _):
                 self.x = 'y'
 
-        self.assertTrue(issubclass(MyDecimal, Decimal))
+        self.assertIsSubclass(MyDecimal, Decimal)
 
         r = MyDecimal.from_float(0.1)
         self.assertEqual(type(r), MyDecimal)
@@ -2883,31 +2908,31 @@ class PythonAPItests:
         Rounded = decimal.Rounded
         Clamped = decimal.Clamped
 
-        self.assertTrue(issubclass(DecimalException, ArithmeticError))
+        self.assertIsSubclass(DecimalException, ArithmeticError)
 
-        self.assertTrue(issubclass(InvalidOperation, DecimalException))
-        self.assertTrue(issubclass(FloatOperation, DecimalException))
-        self.assertTrue(issubclass(FloatOperation, TypeError))
-        self.assertTrue(issubclass(DivisionByZero, DecimalException))
-        self.assertTrue(issubclass(DivisionByZero, ZeroDivisionError))
-        self.assertTrue(issubclass(Overflow, Rounded))
-        self.assertTrue(issubclass(Overflow, Inexact))
-        self.assertTrue(issubclass(Overflow, DecimalException))
-        self.assertTrue(issubclass(Underflow, Inexact))
-        self.assertTrue(issubclass(Underflow, Rounded))
-        self.assertTrue(issubclass(Underflow, Subnormal))
-        self.assertTrue(issubclass(Underflow, DecimalException))
+        self.assertIsSubclass(InvalidOperation, DecimalException)
+        self.assertIsSubclass(FloatOperation, DecimalException)
+        self.assertIsSubclass(FloatOperation, TypeError)
+        self.assertIsSubclass(DivisionByZero, DecimalException)
+        self.assertIsSubclass(DivisionByZero, ZeroDivisionError)
+        self.assertIsSubclass(Overflow, Rounded)
+        self.assertIsSubclass(Overflow, Inexact)
+        self.assertIsSubclass(Overflow, DecimalException)
+        self.assertIsSubclass(Underflow, Inexact)
+        self.assertIsSubclass(Underflow, Rounded)
+        self.assertIsSubclass(Underflow, Subnormal)
+        self.assertIsSubclass(Underflow, DecimalException)
 
-        self.assertTrue(issubclass(Subnormal, DecimalException))
-        self.assertTrue(issubclass(Inexact, DecimalException))
-        self.assertTrue(issubclass(Rounded, DecimalException))
-        self.assertTrue(issubclass(Clamped, DecimalException))
+        self.assertIsSubclass(Subnormal, DecimalException)
+        self.assertIsSubclass(Inexact, DecimalException)
+        self.assertIsSubclass(Rounded, DecimalException)
+        self.assertIsSubclass(Clamped, DecimalException)
 
-        self.assertTrue(issubclass(decimal.ConversionSyntax, InvalidOperation))
-        self.assertTrue(issubclass(decimal.DivisionImpossible, InvalidOperation))
-        self.assertTrue(issubclass(decimal.DivisionUndefined, InvalidOperation))
-        self.assertTrue(issubclass(decimal.DivisionUndefined, ZeroDivisionError))
-        self.assertTrue(issubclass(decimal.InvalidContext, InvalidOperation))
+        self.assertIsSubclass(decimal.ConversionSyntax, InvalidOperation)
+        self.assertIsSubclass(decimal.DivisionImpossible, InvalidOperation)
+        self.assertIsSubclass(decimal.DivisionUndefined, InvalidOperation)
+        self.assertIsSubclass(decimal.DivisionUndefined, ZeroDivisionError)
+        self.assertIsSubclass(decimal.InvalidContext, InvalidOperation)
 
 @requires_cdecimal
 class CPythonAPItests(PythonAPItests, unittest.TestCase):
@@ -4379,7 +4404,8 @@ class CheckAttributes(unittest.TestCase):
 
         self.assertEqual(C.__version__, P.__version__)
 
-        self.assertEqual(dir(C), dir(P))
+        self.assertLessEqual(set(dir(C)), set(dir(P)))
+        self.assertEqual([n for n in dir(C) if n[:2] != '__'], sorted(P.__all__))
 
     def test_context_attributes(self):
 
@@ -4455,6 +4481,15 @@ class Coverage:
             self.assertIs(Decimal("NaN").fma(7, 1).is_nan(), True)
             # three arg power
             self.assertEqual(pow(Decimal(10), 2, 7), 2)
+            if self.decimal == C:
+                self.assertEqual(pow(10, Decimal(2), 7), 2)
+                self.assertEqual(pow(10, 2, Decimal(7)), 2)
+            else:
+                # XXX: Three-arg power doesn't use __rpow__.
+                self.assertRaises(TypeError, pow, 10, Decimal(2), 7)
+                # XXX: There is no special method to dispatch on the
+                # third arg of three-arg power.
+                self.assertRaises(TypeError, pow, 10, 2, Decimal(7))
             # exp
             self.assertEqual(Decimal("1.01").exp(), 3)
             # is_normal
