@@ -3,8 +3,9 @@ from threading import Barrier, Thread
 from test.support import threading_helper
 
 
+threading_helper.requires_working_threading(module=True)
+
 @threading_helper.reap_threads
-@threading_helper.requires_working_threading()
 class TestReversed(unittest.TestCase):
     def test_reversed_threading(self):
         # Test reading out the iterator with multiple threads cannot corrupt
@@ -31,11 +32,7 @@ class TestReversed(unittest.TestCase):
             worker_threads = []
             for ii in range(number_of_threads):
                 worker_threads.append(Thread(target=work, args=[r]))
-            for t in worker_threads:
-                t.start()
-            for t in worker_threads:
-                t.join()
-
+            threading_helper.start_threads(worker_threads)
             barrier.reset()
 
 if __name__ == "__main__":

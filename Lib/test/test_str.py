@@ -2596,7 +2596,7 @@ class StrTest(string_tests.StringLikeTest,
 
     def test_free_after_iterating(self):
         support.check_free_after_iterating(self, iter, str)
-        if not sys._is_gil_enabled():
+        if not support.Py_GIL_DISABLED:
             support.check_free_after_iterating(self, reversed, str)
 
     def test_check_encoding_errors(self):
