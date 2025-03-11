@@ -621,6 +621,8 @@ class Emitter:
 
 
 def cflags(p: Properties) -> str:
+    # HAS_{NAME}_FLAG names must be kept synchronized with the FLAGS list
+    # in opcode_metadata_generator.py.
     flags: list[str] = []
     if p.oparg:
         flags.append("HAS_ARG_FLAG")
