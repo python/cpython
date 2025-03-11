@@ -499,7 +499,7 @@ class IOTest(unittest.TestCase):
             (self.BytesIO, "rws"), (self.StringIO, "rws"),
         )
 
-        def do_test(obj):
+        def do_test(obj, abilities):
             readable = "r" in abilities
             self.assertEqual(obj.readable(), readable)
             writable = "w" in abilities
@@ -555,7 +555,7 @@ class IOTest(unittest.TestCase):
                 if test == pipe_writer and not threading_helper.can_start_thread:
                    skipTest()
                 with test() as obj:
-                    do_test(obj)
+                    do_test(obj, abilities)
 
 
     def test_open_handles_NUL_chars(self):
