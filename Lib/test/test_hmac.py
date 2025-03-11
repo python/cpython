@@ -152,7 +152,7 @@ class CheckerMixin:
 class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
     """Mixin class for common tests."""
 
-    def hmac_new_by_name(self, key, msg=None, hashname=None):
+    def hmac_new_by_name(self, key, msg=None, *, hashname):
         """Alternative implementation of hmac_new().
 
         This is typically useful when one needs to test against an HMAC
@@ -165,18 +165,17 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
         as it should only be used in tests that are expected to create
         a HMAC object.
         """
-        self.assertIsInstance(hashname, str | None)
+        self.assertIsInstance(hashname, str)
         return self.hmac_new(key, msg, digestmod=hashname)
 
-    def hmac_digest_by_name(self, key, msg=None, hashname=None):
-        """Alternative implementation of hmac_digest()."""
-        self.assertIsInstance(hashname, str | None)
+    def hmac_digest_by_name(self, key, msg=None, *, hashname):
         """Alternative implementation of hmac_digest().
 
         Unlike hmac_digest(), this method may assert the type of 'hashname'
         as it should only be used in tests that are expected to compute a
         HMAC digest.
         """
+        self.assertIsInstance(hashname, str)
         return self.hmac_digest(key, msg, digestmod=hashname)
 
     def assert_hmac(
@@ -311,20 +310,15 @@ class PyTestVectorsMixin(PyModuleMixin, TestVectorsMixin):
         self.check_object(h, hexdigest, hashname, digest_size, block_size)
 
 
-class OpenSSLTestVectorsMixin(TestVectorsMixin):
+class OpenSSLTestVectorsMixin(ThroughOpenSSLAPIMixin, TestVectorsMixin):
 
-    def hmac_new(self, key, msg=None, digestmod=None):
-        return _hashlib.hmac_new(key, msg, digestmod=digestmod)
-
-    def hmac_digest(self, key, msg=None, digestmod=None):
-        return _hashlib.hmac_digest(key, msg, digest=digestmod)
-
-    def hmac_new_by_name(self, key, msg=None, hashname=None):
-        # ignore 'digestmod' and use the exact openssl function
+    def hmac_new_by_name(self, key, msg=None, *, hashname):
+        self.assertIsInstance(hashname, str)
         openssl_func = getattr(_hashlib, f"openssl_{hashname}")
         return self.hmac_new(key, msg, digestmod=openssl_func)
 
-    def hmac_digest_by_name(self, key, msg=None, hashname=None):
+    def hmac_digest_by_name(self, key, msg=None, *, hashname):
+        self.assertIsInstance(hashname, str)
         openssl_func = getattr(_hashlib, f"openssl_{hashname}")
         return self.hmac_digest(key, msg, digestmod=openssl_func)
 
