@@ -136,6 +136,15 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_needs_classdict = 0;
     ste->ste_annotation_block = NULL;
 
+    ste->ste_has_docstring = 0;
+
+    ste->ste_method = 0;
+    if (st->st_cur != NULL &&
+        st->st_cur->ste_type == ClassBlock &&
+        block == FunctionBlock) {
+        ste->ste_method = 1;
+    }
+
     ste->ste_symbols = PyDict_New();
     ste->ste_varnames = PyList_New(0);
     ste->ste_children = PyList_New(0);
@@ -154,15 +163,17 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
 }
 
 static PyObject *
-ste_repr(PySTEntryObject *ste)
+ste_repr(PyObject *op)
 {
+    PySTEntryObject *ste = (PySTEntryObject *)op;
     return PyUnicode_FromFormat("<symtable entry %U(%R), line %d>",
                                 ste->ste_name, ste->ste_id, ste->ste_loc.lineno);
 }
 
 static void
-ste_dealloc(PySTEntryObject *ste)
+ste_dealloc(PyObject *op)
 {
+    PySTEntryObject *ste = (PySTEntryObject *)op;
     ste->ste_table = NULL;
     Py_XDECREF(ste->ste_id);
     Py_XDECREF(ste->ste_name);
@@ -194,12 +205,12 @@ PyTypeObject PySTEntry_Type = {
     "symtable entry",
     sizeof(PySTEntryObject),
     0,
-    (destructor)ste_dealloc,                /* tp_dealloc */
-    0,                                      /* tp_vectorcall_offset */
-    0,                                         /* tp_getattr */
+    ste_dealloc,                                /* tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
+    0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)ste_repr,                         /* tp_repr */
+    ste_repr,                                   /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
@@ -354,7 +365,7 @@ static void _dump_symtable(PySTEntryObject* ste, PyObject* prefix)
 
 static void dump_symtable(PySTEntryObject* ste)
 {
-    PyObject *empty = PyUnicode_FromString("");
+    PyObject *empty = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     assert(empty != NULL);
     _dump_symtable(ste, empty);
     Py_DECREF(empty);
@@ -397,7 +408,6 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
     asdl_stmt_seq *seq;
     Py_ssize_t i;
     PyThreadState *tstate;
-    int starting_recursion_depth;
 
     if (st == NULL)
         return NULL;
@@ -414,11 +424,6 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
         _PySymtable_Free(st);
         return NULL;
     }
-    /* Be careful here to prevent overflow. */
-    int recursion_depth = Py_C_RECURSION_LIMIT - tstate->c_recursion_remaining;
-    starting_recursion_depth = recursion_depth;
-    st->recursion_depth = starting_recursion_depth;
-    st->recursion_limit = Py_C_RECURSION_LIMIT;
 
     /* Make the initial symbol information gathering pass */
 
@@ -432,6 +437,9 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
     switch (mod->kind) {
     case Module_kind:
         seq = mod->v.Module.body;
+        if (_PyAST_GetDocString(seq)) {
+            st->st_cur->ste_has_docstring = 1;
+        }
         for (i = 0; i < asdl_seq_LEN(seq); i++)
             if (!symtable_visit_stmt(st,
                         (stmt_ty)asdl_seq_GET(seq, i)))
@@ -454,14 +462,6 @@ _PySymtable_Build(mod_ty mod, PyObject *filename, _PyFutureFeatures *future)
         goto error;
     }
     if (!symtable_exit_block(st)) {
-        _PySymtable_Free(st);
-        return NULL;
-    }
-    /* Check that the recursion depth counting balanced correctly */
-    if (st->recursion_depth != starting_recursion_depth) {
-        PyErr_Format(PyExc_SystemError,
-            "symtable analysis recursion depth mismatch (before=%d, after=%d)",
-            starting_recursion_depth, st->recursion_depth);
         _PySymtable_Free(st);
         return NULL;
     }
@@ -1724,19 +1724,12 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
         } \
     } while(0)
 
-#define ENTER_RECURSIVE(ST) \
-    do { \
-        if (++(ST)->recursion_depth > (ST)->recursion_limit) { \
-            PyErr_SetString(PyExc_RecursionError, \
-                "maximum recursion depth exceeded during compilation"); \
-            return 0; \
-        } \
-    } while(0)
+#define ENTER_RECURSIVE() \
+if (Py_EnterRecursiveCall(" during compilation")) { \
+    return 0; \
+}
 
-#define LEAVE_RECURSIVE(ST) \
-    do { \
-        --(ST)->recursion_depth; \
-    } while(0)
+#define LEAVE_RECURSIVE() Py_LeaveRecursiveCall();
 
 
 static int
@@ -1811,7 +1804,7 @@ maybe_set_ste_coroutine_for_module(struct symtable *st, stmt_ty s)
 static int
 symtable_visit_stmt(struct symtable *st, stmt_ty s)
 {
-    ENTER_RECURSIVE(st);
+    ENTER_RECURSIVE();
     switch (s->kind) {
     case FunctionDef_kind: {
         if (!symtable_add_def(st, s->v.FunctionDef.name, DEF_LOCAL, LOCATION(s)))
@@ -1839,6 +1832,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                                            LOCATION(s));
         if (!new_ste) {
             return 0;
+        }
+
+        if (_PyAST_GetDocString(s->v.FunctionDef.body)) {
+            new_ste->ste_has_docstring = 1;
         }
 
         if (!symtable_visit_annotations(st, s, s->v.FunctionDef.args,
@@ -1903,6 +1900,11 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
                 return 0;
             }
         }
+
+        if (_PyAST_GetDocString(s->v.ClassDef.body)) {
+            st->st_cur->ste_has_docstring = 1;
+        }
+
         VISIT_SEQ(st, stmt, s->v.ClassDef.body);
         if (!symtable_exit_block(st))
             return 0;
@@ -2168,6 +2170,10 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             return 0;
         }
 
+        if (_PyAST_GetDocString(s->v.AsyncFunctionDef.body)) {
+            new_ste->ste_has_docstring = 1;
+        }
+
         if (!symtable_visit_annotations(st, s, s->v.AsyncFunctionDef.args,
                                         s->v.AsyncFunctionDef.returns, new_ste)) {
             Py_DECREF(new_ste);
@@ -2210,7 +2216,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_SEQ(st, stmt, s->v.AsyncFor.orelse);
         break;
     }
-    LEAVE_RECURSIVE(st);
+    LEAVE_RECURSIVE();
     return 1;
 }
 
@@ -2333,7 +2339,7 @@ symtable_handle_namedexpr(struct symtable *st, expr_ty e)
 static int
 symtable_visit_expr(struct symtable *st, expr_ty e)
 {
-    ENTER_RECURSIVE(st);
+    ENTER_RECURSIVE();
     switch (e->kind) {
     case NamedExpr_kind:
         if (!symtable_raise_if_annotation_block(st, "named expression", e)) {
@@ -2504,7 +2510,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT_SEQ(st, expr, e->v.Tuple.elts);
         break;
     }
-    LEAVE_RECURSIVE(st);
+    LEAVE_RECURSIVE();
     return 1;
 }
 
@@ -2538,7 +2544,7 @@ symtable_visit_type_param_bound_or_default(
 static int
 symtable_visit_type_param(struct symtable *st, type_param_ty tp)
 {
-    ENTER_RECURSIVE(st);
+    ENTER_RECURSIVE();
     switch(tp->kind) {
     case TypeVar_kind:
         if (!symtable_add_def(st, tp->v.TypeVar.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
@@ -2587,14 +2593,14 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         }
         break;
     }
-    LEAVE_RECURSIVE(st);
+    LEAVE_RECURSIVE();
     return 1;
 }
 
 static int
 symtable_visit_pattern(struct symtable *st, pattern_ty p)
 {
-    ENTER_RECURSIVE(st);
+    ENTER_RECURSIVE();
     switch (p->kind) {
     case MatchValue_kind:
         VISIT(st, expr, p->v.MatchValue.value);
@@ -2643,7 +2649,7 @@ symtable_visit_pattern(struct symtable *st, pattern_ty p)
         VISIT_SEQ(st, pattern, p->v.MatchOr.patterns);
         break;
     }
-    LEAVE_RECURSIVE(st);
+    LEAVE_RECURSIVE();
     return 1;
 }
 
@@ -3120,33 +3126,30 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
     if (ipriv == plen) {
         return Py_NewRef(ident); /* Don't mangle if class is just underscores */
     }
-    plen -= ipriv;
 
-    if (plen + nlen >= PY_SSIZE_T_MAX - 1) {
+    if (nlen + (plen - ipriv) >= PY_SSIZE_T_MAX - 1) {
         PyErr_SetString(PyExc_OverflowError,
                         "private identifier too large to be mangled");
         return NULL;
     }
 
-    Py_UCS4 maxchar = PyUnicode_MAX_CHAR_VALUE(ident);
-    if (PyUnicode_MAX_CHAR_VALUE(privateobj) > maxchar) {
-        maxchar = PyUnicode_MAX_CHAR_VALUE(privateobj);
+    PyUnicodeWriter *writer = PyUnicodeWriter_Create(1 + nlen + (plen - ipriv));
+    if (!writer) {
+        return NULL;
     }
+    // ident = "_" + priv[ipriv:] + ident
+    if (PyUnicodeWriter_WriteChar(writer, '_') < 0) {
+        goto error;
+    }
+    if (PyUnicodeWriter_WriteSubstring(writer, privateobj, ipriv, plen) < 0) {
+        goto error;
+    }
+    if (PyUnicodeWriter_WriteStr(writer, ident) < 0) {
+        goto error;
+    }
+    return PyUnicodeWriter_Finish(writer);
 
-    PyObject *result = PyUnicode_New(1 + nlen + plen, maxchar);
-    if (!result) {
-        return NULL;
-    }
-    /* ident = "_" + priv[ipriv:] + ident # i.e. 1+plen+nlen bytes */
-    PyUnicode_WRITE(PyUnicode_KIND(result), PyUnicode_DATA(result), 0, '_');
-    if (PyUnicode_CopyCharacters(result, 1, privateobj, ipriv, plen) < 0) {
-        Py_DECREF(result);
-        return NULL;
-    }
-    if (PyUnicode_CopyCharacters(result, plen+1, ident, 0, nlen) < 0) {
-        Py_DECREF(result);
-        return NULL;
-    }
-    assert(_PyUnicode_CheckConsistency(result, 1));
-    return result;
+error:
+    PyUnicodeWriter_Discard(writer);
+    return NULL;
 }

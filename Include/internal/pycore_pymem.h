@@ -55,13 +55,6 @@ struct _Py_mem_interp_free_queue {
     struct llist_node head;  // queue of _mem_work_chunk items
 };
 
-/* Set the memory allocator of the specified domain to the default.
-   Save the old allocator into *old_alloc if it's non-NULL.
-   Return on success, or return -1 if the domain is unknown. */
-extern int _PyMem_SetDefaultAllocator(
-    PyMemAllocatorDomain domain,
-    PyMemAllocatorEx *old_alloc);
-
 /* Special bytes broadcast into debug memory blocks at appropriate times.
    Strings of these are unlikely to be valid addresses, floats, ints or
    7-bit ASCII.
@@ -113,6 +106,13 @@ extern int _PyMem_GetAllocatorName(
    PYMEM_ALLOCATOR_NOT_SET does nothing. */
 extern int _PyMem_SetupAllocators(PyMemAllocatorName allocator);
 
+// Default raw memory allocator that is not affected by PyMem_SetAllocator()
+extern void *_PyMem_DefaultRawMalloc(size_t);
+extern void *_PyMem_DefaultRawCalloc(size_t, size_t);
+extern void *_PyMem_DefaultRawRealloc(void *, size_t);
+extern void _PyMem_DefaultRawFree(void *);
+extern wchar_t *_PyMem_DefaultRawWcsdup(const wchar_t *str);
+
 /* Is the debug allocator enabled? */
 extern int _PyMem_DebugEnabled(void);
 
@@ -120,10 +120,23 @@ extern int _PyMem_DebugEnabled(void);
 extern void _PyMem_FreeDelayed(void *ptr);
 
 // Enqueue an object to be freed possibly after some delay
-extern void _PyObject_FreeDelayed(void *ptr);
+#ifdef Py_GIL_DISABLED
+PyAPI_FUNC(void) _PyObject_XDecRefDelayed(PyObject *obj);
+#else
+static inline void _PyObject_XDecRefDelayed(PyObject *obj)
+{
+    Py_XDECREF(obj);
+}
+#endif
 
 // Periodically process delayed free requests.
 extern void _PyMem_ProcessDelayed(PyThreadState *tstate);
+
+// Periodically process delayed free requests when the world is stopped.
+// Notify of any objects whic should be freeed.
+typedef void (*delayed_dealloc_cb)(PyObject *, void *);
+extern void _PyMem_ProcessDelayedNoDealloc(PyThreadState *tstate,
+                                           delayed_dealloc_cb cb, void *state);
 
 // Abandon all thread-local delayed free requests and push them to the
 // interpreter's queue.

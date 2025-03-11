@@ -332,7 +332,8 @@ signal_set_wakeup_fd(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     PyObject *fdobj;
     int warn_on_full_buffer = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -670,7 +671,7 @@ exit:
 
 #endif /* defined(HAVE_PTHREAD_KILL) */
 
-#if (defined(__linux__) && defined(__NR_pidfd_send_signal))
+#if (defined(__linux__) && defined(__NR_pidfd_send_signal) && !(defined(__ANDROID__) && __ANDROID_API__ < 31))
 
 PyDoc_STRVAR(signal_pidfd_send_signal__doc__,
 "pidfd_send_signal($module, pidfd, signalnum, siginfo=None, flags=0, /)\n"
@@ -723,7 +724,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(__linux__) && defined(__NR_pidfd_send_signal)) */
+#endif /* (defined(__linux__) && defined(__NR_pidfd_send_signal) && !(defined(__ANDROID__) && __ANDROID_API__ < 31)) */
 
 #ifndef SIGNAL_ALARM_METHODDEF
     #define SIGNAL_ALARM_METHODDEF
@@ -776,4 +777,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=6d8e17a32cef668f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=356e1acc44a4f377 input=a9049054013a1b77]*/

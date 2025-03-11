@@ -55,6 +55,10 @@
 #  include <intrin.h>             // __readgsqword()
 #endif
 
+#if defined(Py_GIL_DISABLED) && defined(__MINGW32__)
+#  include <intrin.h>             // __readgsqword()
+#endif
+
 // Include Python header files
 #include "pyport.h"
 #include "pymacro.h"
@@ -65,6 +69,7 @@
 #include "pystats.h"
 #include "pyatomic.h"
 #include "lock.h"
+#include "critical_section.h"
 #include "object.h"
 #include "refcount.h"
 #include "objimpl.h"
@@ -120,12 +125,12 @@
 #include "pylifecycle.h"
 #include "ceval.h"
 #include "sysmodule.h"
+#include "audit.h"
 #include "osmodule.h"
 #include "intrcheck.h"
 #include "import.h"
 #include "abstract.h"
 #include "bltinmodule.h"
-#include "critical_section.h"
 #include "cpython/pyctype.h"
 #include "pystrtod.h"
 #include "pystrcmp.h"

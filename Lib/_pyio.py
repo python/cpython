@@ -16,7 +16,7 @@ else:
     _setmode = None
 
 import io
-from io import (__all__, SEEK_SET, SEEK_CUR, SEEK_END)  # noqa: F401
+from io import (__all__, SEEK_SET, SEEK_CUR, SEEK_END, Reader, Writer)  # noqa: F401
 
 valid_seek_flags = {0, 1, 2}  # Hardwired values
 if hasattr(os, 'SEEK_HOLE') :
@@ -238,7 +238,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     result = raw
     try:
         line_buffering = False
-        if buffering == 1 or buffering < 0 and raw.isatty():
+        if buffering == 1 or buffering < 0 and raw._isatty_open_only():
             buffering = -1
             line_buffering = True
         if buffering < 0:
@@ -937,10 +937,8 @@ class BytesIO(BufferedIOBase):
             return 0
         pos = self._pos
         if pos > len(self._buffer):
-            # Inserts null bytes between the current end of the file
-            # and the new write position.
-            padding = b'\x00' * (pos - len(self._buffer))
-            self._buffer += padding
+            # Pad buffer to pos with null bytes.
+            self._buffer.resize(pos)
         self._buffer[pos:pos + n] = b
         self._pos += n
         return n
@@ -1456,6 +1454,17 @@ class BufferedRandom(BufferedWriter, BufferedReader):
         return BufferedWriter.write(self, b)
 
 
+def _new_buffersize(bytes_read):
+    # Parallels _io/fileio.c new_buffersize
+    if bytes_read > 65536:
+        addend = bytes_read >> 3
+    else:
+        addend = 256 + bytes_read
+    if addend < DEFAULT_BUFFER_SIZE:
+        addend = DEFAULT_BUFFER_SIZE
+    return bytes_read + addend
+
+
 class FileIO(RawIOBase):
     _fd = -1
     _created = False
@@ -1480,6 +1489,7 @@ class FileIO(RawIOBase):
         """
         if self._fd >= 0:
             # Have to close the existing file first.
+            self._stat_atopen = None
             try:
                 if self._closefd:
                     os.close(self._fd)
@@ -1583,6 +1593,7 @@ class FileIO(RawIOBase):
                     if e.errno != errno.ESPIPE:
                         raise
         except:
+            self._stat_atopen = None
             if owned_fd is not None:
                 os.close(owned_fd)
             raise
@@ -1634,7 +1645,13 @@ class FileIO(RawIOBase):
     def read(self, size=None):
         """Read at most size bytes, returned as bytes.
 
-        Only makes one system call, so less data may be returned than requested
+        If size is less than 0, read all bytes in the file making
+        multiple read calls. See ``FileIO.readall``.
+
+        Attempts to make only one system call, retrying only per
+        PEP 475 (EINTR). This means less data may be returned than
+        requested.
+
         In non-blocking mode, returns None if no data is available.
         Return an empty bytes object at EOF.
         """
@@ -1650,8 +1667,13 @@ class FileIO(RawIOBase):
     def readall(self):
         """Read all data from the file, returned as bytes.
 
-        In non-blocking mode, returns as much as is immediately available,
-        or None if no data is available.  Return an empty bytes object at EOF.
+        Reads until either there is an error or read() returns size 0
+        (indicates EOF). If the file is already at EOF, returns an
+        empty bytes object.
+
+        In non-blocking mode, returns as much data as could be read
+        before EAGAIN. If no data is available (EAGAIN is returned
+        before bytes are read) returns None.
         """
         self._checkClosed()
         self._checkReadable()
@@ -1672,31 +1694,30 @@ class FileIO(RawIOBase):
                 except OSError:
                     pass
 
-        result = bytearray()
-        while True:
-            if len(result) >= bufsize:
-                bufsize = len(result)
-                bufsize += max(bufsize, DEFAULT_BUFFER_SIZE)
-            n = bufsize - len(result)
-            try:
-                chunk = os.read(self._fd, n)
-            except BlockingIOError:
-                if result:
-                    break
+        result = bytearray(bufsize)
+        bytes_read = 0
+        try:
+            while n := os.readinto(self._fd, memoryview(result)[bytes_read:]):
+                bytes_read += n
+                if bytes_read >= len(result):
+                    result.resize(_new_buffersize(bytes_read))
+        except BlockingIOError:
+            if not bytes_read:
                 return None
-            if not chunk: # reached the end of the file
-                break
-            result += chunk
 
+        assert len(result) - bytes_read >= 1, \
+            "os.readinto buffer size 0 will result in erroneous EOF / returns 0"
+        result.resize(bytes_read)
         return bytes(result)
 
-    def readinto(self, b):
+    def readinto(self, buffer):
         """Same as RawIOBase.readinto()."""
-        m = memoryview(b).cast('B')
-        data = self.read(len(m))
-        n = len(data)
-        m[:n] = data
-        return n
+        self._checkClosed()
+        self._checkReadable()
+        try:
+            return os.readinto(self._fd, buffer)
+        except BlockingIOError:
+            return None
 
     def write(self, b):
         """Write bytes b to file, return number written.
@@ -1756,6 +1777,7 @@ class FileIO(RawIOBase):
         called more than once without error.
         """
         if not self.closed:
+            self._stat_atopen = None
             try:
                 if self._closefd:
                     os.close(self._fd)
@@ -1792,6 +1814,21 @@ class FileIO(RawIOBase):
     def isatty(self):
         """True if the file is connected to a TTY device."""
         self._checkClosed()
+        return os.isatty(self._fd)
+
+    def _isatty_open_only(self):
+        """Checks whether the file is a TTY using an open-only optimization.
+
+        TTYs are always character devices. If the interpreter knows a file is
+        not a character device when it would call ``isatty``, can skip that
+        call. Inside ``open()``  there is a fresh stat result that contains that
+        information. Use the stat result to skip a system call. Outside of that
+        context TOCTOU issues (the fd could be arbitrarily modified by
+        surrounding code).
+        """
+        if (self._stat_atopen is not None
+            and not stat.S_ISCHR(self._stat_atopen.st_mode)):
+            return False
         return os.isatty(self._fd)
 
     @property
@@ -2527,9 +2564,12 @@ class TextIOWrapper(TextIOBase):
                 size = size_index()
         decoder = self._decoder or self._get_decoder()
         if size < 0:
+            chunk = self.buffer.read()
+            if chunk is None:
+                raise BlockingIOError("Read returned None.")
             # Read everything.
             result = (self._get_decoded_chars() +
-                      decoder.decode(self.buffer.read(), final=True))
+                      decoder.decode(chunk, final=True))
             if self._snapshot is not None:
                 self._set_decoded_chars('')
                 self._snapshot = None

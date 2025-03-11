@@ -575,86 +575,6 @@ void Hacl_Hash_Blake2b_init(uint64_t *hash, uint32_t kk, uint32_t nn)
   r1[3U] = iv7_;
 }
 
-static void init_with_params(uint64_t *hash, Hacl_Hash_Blake2b_blake2_params p)
-{
-  uint64_t tmp[8U] = { 0U };
-  uint64_t *r0 = hash;
-  uint64_t *r1 = hash + 4U;
-  uint64_t *r2 = hash + 8U;
-  uint64_t *r3 = hash + 12U;
-  uint64_t iv0 = Hacl_Hash_Blake2b_ivTable_B[0U];
-  uint64_t iv1 = Hacl_Hash_Blake2b_ivTable_B[1U];
-  uint64_t iv2 = Hacl_Hash_Blake2b_ivTable_B[2U];
-  uint64_t iv3 = Hacl_Hash_Blake2b_ivTable_B[3U];
-  uint64_t iv4 = Hacl_Hash_Blake2b_ivTable_B[4U];
-  uint64_t iv5 = Hacl_Hash_Blake2b_ivTable_B[5U];
-  uint64_t iv6 = Hacl_Hash_Blake2b_ivTable_B[6U];
-  uint64_t iv7 = Hacl_Hash_Blake2b_ivTable_B[7U];
-  r2[0U] = iv0;
-  r2[1U] = iv1;
-  r2[2U] = iv2;
-  r2[3U] = iv3;
-  r3[0U] = iv4;
-  r3[1U] = iv5;
-  r3[2U] = iv6;
-  r3[3U] = iv7;
-  uint8_t kk = p.key_length;
-  uint8_t nn = p.digest_length;
-  KRML_MAYBE_FOR2(i,
-    0U,
-    2U,
-    1U,
-    uint64_t *os = tmp + 4U;
-    uint8_t *bj = p.salt + i * 8U;
-    uint64_t u = load64_le(bj);
-    uint64_t r = u;
-    uint64_t x = r;
-    os[i] = x;);
-  KRML_MAYBE_FOR2(i,
-    0U,
-    2U,
-    1U,
-    uint64_t *os = tmp + 6U;
-    uint8_t *bj = p.personal + i * 8U;
-    uint64_t u = load64_le(bj);
-    uint64_t r = u;
-    uint64_t x = r;
-    os[i] = x;);
-  tmp[0U] =
-    (uint64_t)nn
-    ^
-      ((uint64_t)kk
-      << 8U
-      ^ ((uint64_t)p.fanout << 16U ^ ((uint64_t)p.depth << 24U ^ (uint64_t)p.leaf_length << 32U)));
-  tmp[1U] = p.node_offset;
-  tmp[2U] = (uint64_t)p.node_depth ^ (uint64_t)p.inner_length << 8U;
-  tmp[3U] = 0ULL;
-  uint64_t tmp0 = tmp[0U];
-  uint64_t tmp1 = tmp[1U];
-  uint64_t tmp2 = tmp[2U];
-  uint64_t tmp3 = tmp[3U];
-  uint64_t tmp4 = tmp[4U];
-  uint64_t tmp5 = tmp[5U];
-  uint64_t tmp6 = tmp[6U];
-  uint64_t tmp7 = tmp[7U];
-  uint64_t iv0_ = iv0 ^ tmp0;
-  uint64_t iv1_ = iv1 ^ tmp1;
-  uint64_t iv2_ = iv2 ^ tmp2;
-  uint64_t iv3_ = iv3 ^ tmp3;
-  uint64_t iv4_ = iv4 ^ tmp4;
-  uint64_t iv5_ = iv5 ^ tmp5;
-  uint64_t iv6_ = iv6 ^ tmp6;
-  uint64_t iv7_ = iv7 ^ tmp7;
-  r0[0U] = iv0_;
-  r0[1U] = iv1_;
-  r0[2U] = iv2_;
-  r0[3U] = iv3_;
-  r1[0U] = iv4_;
-  r1[1U] = iv5_;
-  r1[2U] = iv6_;
-  r1[3U] = iv7_;
-}
-
 static void update_key(uint64_t *wv, uint64_t *hash, uint32_t kk, uint8_t *k, uint32_t ll)
 {
   FStar_UInt128_uint128 lb = FStar_UInt128_uint64_to_uint128((uint64_t)128U);
@@ -811,16 +731,92 @@ static Hacl_Hash_Blake2b_state_t
   uint8_t nn = p1->digest_length;
   bool last_node = block_state.thd;
   Hacl_Hash_Blake2b_index i = { .key_length = kk1, .digest_length = nn, .last_node = last_node };
-  uint32_t kk2 = (uint32_t)i.key_length;
+  uint64_t *h = block_state.f3.snd;
+  uint32_t kk20 = (uint32_t)i.key_length;
   uint8_t *k_1 = key.snd;
-  if (!(kk2 == 0U))
+  if (!(kk20 == 0U))
   {
-    uint8_t *sub_b = buf + kk2;
-    memset(sub_b, 0U, (128U - kk2) * sizeof (uint8_t));
-    memcpy(buf, k_1, kk2 * sizeof (uint8_t));
+    uint8_t *sub_b = buf + kk20;
+    memset(sub_b, 0U, (128U - kk20) * sizeof (uint8_t));
+    memcpy(buf, k_1, kk20 * sizeof (uint8_t));
   }
   Hacl_Hash_Blake2b_blake2_params pv = p1[0U];
-  init_with_params(block_state.f3.snd, pv);
+  uint64_t tmp[8U] = { 0U };
+  uint64_t *r0 = h;
+  uint64_t *r1 = h + 4U;
+  uint64_t *r2 = h + 8U;
+  uint64_t *r3 = h + 12U;
+  uint64_t iv0 = Hacl_Hash_Blake2b_ivTable_B[0U];
+  uint64_t iv1 = Hacl_Hash_Blake2b_ivTable_B[1U];
+  uint64_t iv2 = Hacl_Hash_Blake2b_ivTable_B[2U];
+  uint64_t iv3 = Hacl_Hash_Blake2b_ivTable_B[3U];
+  uint64_t iv4 = Hacl_Hash_Blake2b_ivTable_B[4U];
+  uint64_t iv5 = Hacl_Hash_Blake2b_ivTable_B[5U];
+  uint64_t iv6 = Hacl_Hash_Blake2b_ivTable_B[6U];
+  uint64_t iv7 = Hacl_Hash_Blake2b_ivTable_B[7U];
+  r2[0U] = iv0;
+  r2[1U] = iv1;
+  r2[2U] = iv2;
+  r2[3U] = iv3;
+  r3[0U] = iv4;
+  r3[1U] = iv5;
+  r3[2U] = iv6;
+  r3[3U] = iv7;
+  uint8_t kk2 = pv.key_length;
+  uint8_t nn1 = pv.digest_length;
+  KRML_MAYBE_FOR2(i0,
+    0U,
+    2U,
+    1U,
+    uint64_t *os = tmp + 4U;
+    uint8_t *bj = pv.salt + i0 * 8U;
+    uint64_t u = load64_le(bj);
+    uint64_t r4 = u;
+    uint64_t x = r4;
+    os[i0] = x;);
+  KRML_MAYBE_FOR2(i0,
+    0U,
+    2U,
+    1U,
+    uint64_t *os = tmp + 6U;
+    uint8_t *bj = pv.personal + i0 * 8U;
+    uint64_t u = load64_le(bj);
+    uint64_t r4 = u;
+    uint64_t x = r4;
+    os[i0] = x;);
+  tmp[0U] =
+    (uint64_t)nn1
+    ^
+      ((uint64_t)kk2
+      << 8U
+      ^ ((uint64_t)pv.fanout << 16U ^ ((uint64_t)pv.depth << 24U ^ (uint64_t)pv.leaf_length << 32U)));
+  tmp[1U] = pv.node_offset;
+  tmp[2U] = (uint64_t)pv.node_depth ^ (uint64_t)pv.inner_length << 8U;
+  tmp[3U] = 0ULL;
+  uint64_t tmp0 = tmp[0U];
+  uint64_t tmp1 = tmp[1U];
+  uint64_t tmp2 = tmp[2U];
+  uint64_t tmp3 = tmp[3U];
+  uint64_t tmp4 = tmp[4U];
+  uint64_t tmp5 = tmp[5U];
+  uint64_t tmp6 = tmp[6U];
+  uint64_t tmp7 = tmp[7U];
+  uint64_t iv0_ = iv0 ^ tmp0;
+  uint64_t iv1_ = iv1 ^ tmp1;
+  uint64_t iv2_ = iv2 ^ tmp2;
+  uint64_t iv3_ = iv3 ^ tmp3;
+  uint64_t iv4_ = iv4 ^ tmp4;
+  uint64_t iv5_ = iv5 ^ tmp5;
+  uint64_t iv6_ = iv6 ^ tmp6;
+  uint64_t iv7_ = iv7 ^ tmp7;
+  r0[0U] = iv0_;
+  r0[1U] = iv1_;
+  r0[2U] = iv2_;
+  r0[3U] = iv3_;
+  r1[0U] = iv4_;
+  r1[1U] = iv5_;
+  r1[2U] = iv6_;
+  r1[3U] = iv7_;
   return p;
 }
 
@@ -918,16 +914,92 @@ static void reset_raw(Hacl_Hash_Blake2b_state_t *state, Hacl_Hash_Blake2b_params
   bool last_node = block_state.thd;
   Hacl_Hash_Blake2b_index
   i1 = { .key_length = kk1, .digest_length = nn, .last_node = last_node };
-  uint32_t kk2 = (uint32_t)i1.key_length;
+  uint64_t *h = block_state.f3.snd;
+  uint32_t kk20 = (uint32_t)i1.key_length;
   uint8_t *k_1 = key.snd;
-  if (!(kk2 == 0U))
+  if (!(kk20 == 0U))
   {
-    uint8_t *sub_b = buf + kk2;
-    memset(sub_b, 0U, (128U - kk2) * sizeof (uint8_t));
-    memcpy(buf, k_1, kk2 * sizeof (uint8_t));
+    uint8_t *sub_b = buf + kk20;
+    memset(sub_b, 0U, (128U - kk20) * sizeof (uint8_t));
+    memcpy(buf, k_1, kk20 * sizeof (uint8_t));
   }
   Hacl_Hash_Blake2b_blake2_params pv = p[0U];
-  init_with_params(block_state.f3.snd, pv);
+  uint64_t tmp[8U] = { 0U };
+  uint64_t *r0 = h;
+  uint64_t *r1 = h + 4U;
+  uint64_t *r2 = h + 8U;
+  uint64_t *r3 = h + 12U;
+  uint64_t iv0 = Hacl_Hash_Blake2b_ivTable_B[0U];
+  uint64_t iv1 = Hacl_Hash_Blake2b_ivTable_B[1U];
+  uint64_t iv2 = Hacl_Hash_Blake2b_ivTable_B[2U];
+  uint64_t iv3 = Hacl_Hash_Blake2b_ivTable_B[3U];
+  uint64_t iv4 = Hacl_Hash_Blake2b_ivTable_B[4U];
+  uint64_t iv5 = Hacl_Hash_Blake2b_ivTable_B[5U];
+  uint64_t iv6 = Hacl_Hash_Blake2b_ivTable_B[6U];
+  uint64_t iv7 = Hacl_Hash_Blake2b_ivTable_B[7U];
+  r2[0U] = iv0;
+  r2[1U] = iv1;
+  r2[2U] = iv2;
+  r2[3U] = iv3;
+  r3[0U] = iv4;
+  r3[1U] = iv5;
+  r3[2U] = iv6;
+  r3[3U] = iv7;
+  uint8_t kk2 = pv.key_length;
+  uint8_t nn1 = pv.digest_length;
+  KRML_MAYBE_FOR2(i0,
+    0U,
+    2U,
+    1U,
+    uint64_t *os = tmp + 4U;
+    uint8_t *bj = pv.salt + i0 * 8U;
+    uint64_t u = load64_le(bj);
+    uint64_t r = u;
+    uint64_t x = r;
+    os[i0] = x;);
+  KRML_MAYBE_FOR2(i0,
+    0U,
+    2U,
+    1U,
+    uint64_t *os = tmp + 6U;
+    uint8_t *bj = pv.personal + i0 * 8U;
+    uint64_t u = load64_le(bj);
+    uint64_t r = u;
+    uint64_t x = r;
+    os[i0] = x;);
+  tmp[0U] =
+    (uint64_t)nn1
+    ^
+      ((uint64_t)kk2
+      << 8U
+      ^ ((uint64_t)pv.fanout << 16U ^ ((uint64_t)pv.depth << 24U ^ (uint64_t)pv.leaf_length << 32U)));
+  tmp[1U] = pv.node_offset;
+  tmp[2U] = (uint64_t)pv.node_depth ^ (uint64_t)pv.inner_length << 8U;
+  tmp[3U] = 0ULL;
+  uint64_t tmp0 = tmp[0U];
+  uint64_t tmp1 = tmp[1U];
+  uint64_t tmp2 = tmp[2U];
+  uint64_t tmp3 = tmp[3U];
+  uint64_t tmp4 = tmp[4U];
+  uint64_t tmp5 = tmp[5U];
+  uint64_t tmp6 = tmp[6U];
+  uint64_t tmp7 = tmp[7U];
+  uint64_t iv0_ = iv0 ^ tmp0;
+  uint64_t iv1_ = iv1 ^ tmp1;
+  uint64_t iv2_ = iv2 ^ tmp2;
+  uint64_t iv3_ = iv3 ^ tmp3;
+  uint64_t iv4_ = iv4 ^ tmp4;
+  uint64_t iv5_ = iv5 ^ tmp5;
+  uint64_t iv6_ = iv6 ^ tmp6;
+  uint64_t iv7_ = iv7 ^ tmp7;
+  r0[0U] = iv0_;
+  r0[1U] = iv1_;
+  r0[2U] = iv2_;
+  r0[3U] = iv3_;
+  r1[0U] = iv4_;
+  r1[1U] = iv5_;
+  r1[2U] = iv6_;
+  r1[3U] = iv7_;
   uint8_t kk11 = i.key_length;
   uint32_t ite;
   if (kk11 != 0U)
@@ -939,8 +1011,8 @@ static void reset_raw(Hacl_Hash_Blake2b_state_t *state, Hacl_Hash_Blake2b_params
     ite = 0U;
   }
   Hacl_Hash_Blake2b_state_t
-  tmp = { .block_state = block_state, .buf = buf, .total_len = (uint64_t)ite };
-  state[0U] = tmp;
+  tmp8 = { .block_state = block_state, .buf = buf, .total_len = (uint64_t)ite };
+  state[0U] = tmp8;
 }
 
 /**
@@ -957,7 +1029,8 @@ Hacl_Hash_Blake2b_reset_with_key_and_params(
   uint8_t *k
 )
 {
-  index_of_state(s);
+  Hacl_Hash_Blake2b_index i1 = index_of_state(s);
+  KRML_MAYBE_UNUSED_VAR(i1);
   reset_raw(s, ((Hacl_Hash_Blake2b_params_and_key){ .fst = p, .snd = k }));
 }
 

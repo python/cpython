@@ -296,72 +296,6 @@ Hacl_Hash_Blake2s_Simd128_init(Lib_IntVector_Intrinsics_vec128 *hash, uint32_t k
 }
 
 static void
-init_with_params(Lib_IntVector_Intrinsics_vec128 *hash, Hacl_Hash_Blake2b_blake2_params p)
-{
-  uint32_t tmp[8U] = { 0U };
-  Lib_IntVector_Intrinsics_vec128 *r0 = hash;
-  Lib_IntVector_Intrinsics_vec128 *r1 = hash + 1U;
-  Lib_IntVector_Intrinsics_vec128 *r2 = hash + 2U;
-  Lib_IntVector_Intrinsics_vec128 *r3 = hash + 3U;
-  uint32_t iv0 = Hacl_Hash_Blake2b_ivTable_S[0U];
-  uint32_t iv1 = Hacl_Hash_Blake2b_ivTable_S[1U];
-  uint32_t iv2 = Hacl_Hash_Blake2b_ivTable_S[2U];
-  uint32_t iv3 = Hacl_Hash_Blake2b_ivTable_S[3U];
-  uint32_t iv4 = Hacl_Hash_Blake2b_ivTable_S[4U];
-  uint32_t iv5 = Hacl_Hash_Blake2b_ivTable_S[5U];
-  uint32_t iv6 = Hacl_Hash_Blake2b_ivTable_S[6U];
-  uint32_t iv7 = Hacl_Hash_Blake2b_ivTable_S[7U];
-  r2[0U] = Lib_IntVector_Intrinsics_vec128_load32s(iv0, iv1, iv2, iv3);
-  r3[0U] = Lib_IntVector_Intrinsics_vec128_load32s(iv4, iv5, iv6, iv7);
-  KRML_MAYBE_FOR2(i,
-    0U,
-    2U,
-    1U,
-    uint32_t *os = tmp + 4U;
-    uint8_t *bj = p.salt + i * 4U;
-    uint32_t u = load32_le(bj);
-    uint32_t r = u;
-    uint32_t x = r;
-    os[i] = x;);
-  KRML_MAYBE_FOR2(i,
-    0U,
-    2U,
-    1U,
-    uint32_t *os = tmp + 6U;
-    uint8_t *bj = p.personal + i * 4U;
-    uint32_t u = load32_le(bj);
-    uint32_t r = u;
-    uint32_t x = r;
-    os[i] = x;);
-  tmp[0U] =
-    (uint32_t)p.digest_length
-    ^ ((uint32_t)p.key_length << 8U ^ ((uint32_t)p.fanout << 16U ^ (uint32_t)p.depth << 24U));
-  tmp[1U] = p.leaf_length;
-  tmp[2U] = (uint32_t)p.node_offset;
-  tmp[3U] =
-    (uint32_t)(p.node_offset >> 32U)
-    ^ ((uint32_t)p.node_depth << 16U ^ (uint32_t)p.inner_length << 24U);
-  uint32_t tmp0 = tmp[0U];
-  uint32_t tmp1 = tmp[1U];
-  uint32_t tmp2 = tmp[2U];
-  uint32_t tmp3 = tmp[3U];
-  uint32_t tmp4 = tmp[4U];
-  uint32_t tmp5 = tmp[5U];
-  uint32_t tmp6 = tmp[6U];
-  uint32_t tmp7 = tmp[7U];
-  uint32_t iv0_ = iv0 ^ tmp0;
-  uint32_t iv1_ = iv1 ^ tmp1;
-  uint32_t iv2_ = iv2 ^ tmp2;
-  uint32_t iv3_ = iv3 ^ tmp3;
-  uint32_t iv4_ = iv4 ^ tmp4;
-  uint32_t iv5_ = iv5 ^ tmp5;
-  uint32_t iv6_ = iv6 ^ tmp6;
-  uint32_t iv7_ = iv7 ^ tmp7;
-  r0[0U] = Lib_IntVector_Intrinsics_vec128_load32s(iv0_, iv1_, iv2_, iv3_);
-  r1[0U] = Lib_IntVector_Intrinsics_vec128_load32s(iv4_, iv5_, iv6_, iv7_);
-}
-
-static void
 update_key(
   Lib_IntVector_Intrinsics_vec128 *wv,
   Lib_IntVector_Intrinsics_vec128 *hash,
@@ -637,6 +571,7 @@ static Hacl_Hash_Blake2s_Simd128_state_t
   uint8_t nn = p1->digest_length;
   bool last_node = block_state.thd;
   Hacl_Hash_Blake2b_index i = { .key_length = kk1, .digest_length = nn, .last_node = last_node };
+  Lib_IntVector_Intrinsics_vec128 *h = block_state.f3.snd;
   uint32_t kk2 = (uint32_t)i.key_length;
   uint8_t *k_1 = key.snd;
   if (!(kk2 == 0U))
@@ -646,7 +581,67 @@ static Hacl_Hash_Blake2s_Simd128_state_t
     memcpy(buf, k_1, kk2 * sizeof (uint8_t));
   }
   Hacl_Hash_Blake2b_blake2_params pv = p1[0U];
-  init_with_params(block_state.f3.snd, pv);
+  uint32_t tmp[8U] = { 0U };
+  Lib_IntVector_Intrinsics_vec128 *r0 = h;
+  Lib_IntVector_Intrinsics_vec128 *r1 = h + 1U;
+  Lib_IntVector_Intrinsics_vec128 *r2 = h + 2U;
+  Lib_IntVector_Intrinsics_vec128 *r3 = h + 3U;
+  uint32_t iv0 = Hacl_Hash_Blake2b_ivTable_S[0U];
+  uint32_t iv1 = Hacl_Hash_Blake2b_ivTable_S[1U];
+  uint32_t iv2 = Hacl_Hash_Blake2b_ivTable_S[2U];
+  uint32_t iv3 = Hacl_Hash_Blake2b_ivTable_S[3U];
+  uint32_t iv4 = Hacl_Hash_Blake2b_ivTable_S[4U];
+  uint32_t iv5 = Hacl_Hash_Blake2b_ivTable_S[5U];
+  uint32_t iv6 = Hacl_Hash_Blake2b_ivTable_S[6U];
+  uint32_t iv7 = Hacl_Hash_Blake2b_ivTable_S[7U];
+  r2[0U] = Lib_IntVector_Intrinsics_vec128_load32s(iv0, iv1, iv2, iv3);
+  r3[0U] = Lib_IntVector_Intrinsics_vec128_load32s(iv4, iv5, iv6, iv7);
+  KRML_MAYBE_FOR2(i0,
+    0U,
+    2U,
+    1U,
+    uint32_t *os = tmp + 4U;
+    uint8_t *bj = pv.salt + i0 * 4U;
+    uint32_t u = load32_le(bj);
+    uint32_t r4 = u;
+    uint32_t x = r4;
+    os[i0] = x;);
+  KRML_MAYBE_FOR2(i0,
+    0U,
+    2U,
+    1U,
+    uint32_t *os = tmp + 6U;
+    uint8_t *bj = pv.personal + i0 * 4U;
+    uint32_t u = load32_le(bj);
+    uint32_t r4 = u;
+    uint32_t x = r4;
+    os[i0] = x;);
+  tmp[0U] =
+    (uint32_t)pv.digest_length
+    ^ ((uint32_t)pv.key_length << 8U ^ ((uint32_t)pv.fanout << 16U ^ (uint32_t)pv.depth << 24U));
+  tmp[1U] = pv.leaf_length;
+  tmp[2U] = (uint32_t)pv.node_offset;
+  tmp[3U] =
+    (uint32_t)(pv.node_offset >> 32U)
+    ^ ((uint32_t)pv.node_depth << 16U ^ (uint32_t)pv.inner_length << 24U);
+  uint32_t tmp0 = tmp[0U];
+  uint32_t tmp1 = tmp[1U];
+  uint32_t tmp2 = tmp[2U];
+  uint32_t tmp3 = tmp[3U];
+  uint32_t tmp4 = tmp[4U];
+  uint32_t tmp5 = tmp[5U];
+  uint32_t tmp6 = tmp[6U];
+  uint32_t tmp7 = tmp[7U];
+  uint32_t iv0_ = iv0 ^ tmp0;
+  uint32_t iv1_ = iv1 ^ tmp1;
+  uint32_t iv2_ = iv2 ^ tmp2;
+  uint32_t iv3_ = iv3 ^ tmp3;
+  uint32_t iv4_ = iv4 ^ tmp4;
+  uint32_t iv5_ = iv5 ^ tmp5;
+  uint32_t iv6_ = iv6 ^ tmp6;
+  uint32_t iv7_ = iv7 ^ tmp7;
+  r0[0U] = Lib_IntVector_Intrinsics_vec128_load32s(iv0_, iv1_, iv2_, iv3_);
+  r1[0U] = Lib_IntVector_Intrinsics_vec128_load32s(iv4_, iv5_, iv6_, iv7_);
   return p;
 }
 
@@ -747,6 +742,7 @@ reset_raw(Hacl_Hash_Blake2s_Simd128_state_t *state, Hacl_Hash_Blake2b_params_and
   bool last_node = block_state.thd;
   Hacl_Hash_Blake2b_index
   i1 = { .key_length = kk1, .digest_length = nn, .last_node = last_node };
+  Lib_IntVector_Intrinsics_vec128 *h = block_state.f3.snd;
   uint32_t kk2 = (uint32_t)i1.key_length;
   uint8_t *k_1 = key.snd;
   if (!(kk2 == 0U))
@@ -756,7 +752,67 @@ reset_raw(Hacl_Hash_Blake2s_Simd128_state_t *state, Hacl_Hash_Blake2b_params_and
     memcpy(buf, k_1, kk2 * sizeof (uint8_t));
   }
   Hacl_Hash_Blake2b_blake2_params pv = p[0U];
-  init_with_params(block_state.f3.snd, pv);
+  uint32_t tmp[8U] = { 0U };
+  Lib_IntVector_Intrinsics_vec128 *r0 = h;
+  Lib_IntVector_Intrinsics_vec128 *r1 = h + 1U;
+  Lib_IntVector_Intrinsics_vec128 *r2 = h + 2U;
+  Lib_IntVector_Intrinsics_vec128 *r3 = h + 3U;
+  uint32_t iv0 = Hacl_Hash_Blake2b_ivTable_S[0U];
+  uint32_t iv1 = Hacl_Hash_Blake2b_ivTable_S[1U];
+  uint32_t iv2 = Hacl_Hash_Blake2b_ivTable_S[2U];
+  uint32_t iv3 = Hacl_Hash_Blake2b_ivTable_S[3U];
+  uint32_t iv4 = Hacl_Hash_Blake2b_ivTable_S[4U];
+  uint32_t iv5 = Hacl_Hash_Blake2b_ivTable_S[5U];
+  uint32_t iv6 = Hacl_Hash_Blake2b_ivTable_S[6U];
+  uint32_t iv7 = Hacl_Hash_Blake2b_ivTable_S[7U];
+  r2[0U] = Lib_IntVector_Intrinsics_vec128_load32s(iv0, iv1, iv2, iv3);
+  r3[0U] = Lib_IntVector_Intrinsics_vec128_load32s(iv4, iv5, iv6, iv7);
+  KRML_MAYBE_FOR2(i0,
+    0U,
+    2U,
+    1U,
+    uint32_t *os = tmp + 4U;
+    uint8_t *bj = pv.salt + i0 * 4U;
+    uint32_t u = load32_le(bj);
+    uint32_t r = u;
+    uint32_t x = r;
+    os[i0] = x;);
+  KRML_MAYBE_FOR2(i0,
+    0U,
+    2U,
+    1U,
+    uint32_t *os = tmp + 6U;
+    uint8_t *bj = pv.personal + i0 * 4U;
+    uint32_t u = load32_le(bj);
+    uint32_t r = u;
+    uint32_t x = r;
+    os[i0] = x;);
+  tmp[0U] =
+    (uint32_t)pv.digest_length
+    ^ ((uint32_t)pv.key_length << 8U ^ ((uint32_t)pv.fanout << 16U ^ (uint32_t)pv.depth << 24U));
+  tmp[1U] = pv.leaf_length;
+  tmp[2U] = (uint32_t)pv.node_offset;
+  tmp[3U] =
+    (uint32_t)(pv.node_offset >> 32U)
+    ^ ((uint32_t)pv.node_depth << 16U ^ (uint32_t)pv.inner_length << 24U);
+  uint32_t tmp0 = tmp[0U];
+  uint32_t tmp1 = tmp[1U];
+  uint32_t tmp2 = tmp[2U];
+  uint32_t tmp3 = tmp[3U];
+  uint32_t tmp4 = tmp[4U];
+  uint32_t tmp5 = tmp[5U];
+  uint32_t tmp6 = tmp[6U];
+  uint32_t tmp7 = tmp[7U];
+  uint32_t iv0_ = iv0 ^ tmp0;
+  uint32_t iv1_ = iv1 ^ tmp1;
+  uint32_t iv2_ = iv2 ^ tmp2;
+  uint32_t iv3_ = iv3 ^ tmp3;
+  uint32_t iv4_ = iv4 ^ tmp4;
+  uint32_t iv5_ = iv5 ^ tmp5;
+  uint32_t iv6_ = iv6 ^ tmp6;
+  uint32_t iv7_ = iv7 ^ tmp7;
+  r0[0U] = Lib_IntVector_Intrinsics_vec128_load32s(iv0_, iv1_, iv2_, iv3_);
+  r1[0U] = Lib_IntVector_Intrinsics_vec128_load32s(iv4_, iv5_, iv6_, iv7_);
   uint8_t kk11 = i.key_length;
   uint32_t ite;
   if (kk11 != 0U)
@@ -768,8 +824,8 @@ reset_raw(Hacl_Hash_Blake2s_Simd128_state_t *state, Hacl_Hash_Blake2b_params_and
     ite = 0U;
   }
   Hacl_Hash_Blake2s_Simd128_state_t
-  tmp = { .block_state = block_state, .buf = buf, .total_len = (uint64_t)ite };
-  state[0U] = tmp;
+  tmp8 = { .block_state = block_state, .buf = buf, .total_len = (uint64_t)ite };
+  state[0U] = tmp8;
 }
 
 /**
@@ -786,7 +842,8 @@ Hacl_Hash_Blake2s_Simd128_reset_with_key_and_params(
   uint8_t *k
 )
 {
-  index_of_state(s);
+  Hacl_Hash_Blake2b_index i1 = index_of_state(s);
+  KRML_MAYBE_UNUSED_VAR(i1);
   reset_raw(s, ((Hacl_Hash_Blake2b_params_and_key){ .fst = p, .snd = k }));
 }
 

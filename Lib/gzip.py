@@ -5,11 +5,15 @@ but random access is not allowed."""
 
 # based on Andrew Kuchling's minigzip.py distributed with the zlib module
 
-import struct, sys, time, os
-import zlib
+import _compression
 import builtins
 import io
-import _compression
+import os
+import struct
+import sys
+import time
+import weakref
+import zlib
 
 __all__ = ["BadGzipFile", "GzipFile", "open", "compress", "decompress"]
 
@@ -125,10 +129,13 @@ class BadGzipFile(OSError):
 class _WriteBufferStream(io.RawIOBase):
     """Minimal object to pass WriteBuffer flushes into GzipFile"""
     def __init__(self, gzip_file):
-        self.gzip_file = gzip_file
+        self.gzip_file = weakref.ref(gzip_file)
 
     def write(self, data):
-        return self.gzip_file._write_raw(data)
+        gzip_file = self.gzip_file()
+        if gzip_file is None:
+            raise RuntimeError("lost gzip_file")
+        return gzip_file._write_raw(data)
 
     def seekable(self):
         return False
@@ -580,12 +587,12 @@ class _GzipReader(_compression.DecompressReader):
         self._new_member = True
 
 
-def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=None):
+def compress(data, compresslevel=_COMPRESS_LEVEL_BEST, *, mtime=0):
     """Compress data in one shot and return the compressed string.
 
     compresslevel sets the compression level in range of 0-9.
-    mtime can be used to set the modification time. The modification time is
-    set to the current time by default.
+    mtime can be used to set the modification time.
+    The modification time is set to 0 by default, for reproducibility.
     """
     # Wbits=31 automatically includes a gzip header and trailer.
     gzip_data = zlib.compress(data, level=compresslevel, wbits=31)

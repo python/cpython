@@ -437,11 +437,19 @@ class _TemporaryFileCloser:
     cleanup_called = False
     close_called = False
 
-    def __init__(self, file, name, delete=True, delete_on_close=True):
+    def __init__(
+        self,
+        file,
+        name,
+        delete=True,
+        delete_on_close=True,
+        warn_message="Implicitly cleaning up unknown file",
+    ):
         self.file = file
         self.name = name
         self.delete = delete
         self.delete_on_close = delete_on_close
+        self.warn_message = warn_message
 
     def cleanup(self, windows=(_os.name == 'nt'), unlink=_os.unlink):
         if not self.cleanup_called:
@@ -469,7 +477,10 @@ class _TemporaryFileCloser:
                     self.cleanup()
 
     def __del__(self):
+        close_called = self.close_called
         self.cleanup()
+        if not close_called:
+            _warnings.warn(self.warn_message, ResourceWarning)
 
 
 class _TemporaryFileWrapper:
@@ -483,8 +494,17 @@ class _TemporaryFileWrapper:
     def __init__(self, file, name, delete=True, delete_on_close=True):
         self.file = file
         self.name = name
-        self._closer = _TemporaryFileCloser(file, name, delete,
-                                            delete_on_close)
+        self._closer = _TemporaryFileCloser(
+            file,
+            name,
+            delete,
+            delete_on_close,
+            warn_message=f"Implicitly cleaning up {self!r}",
+        )
+
+    def __repr__(self):
+        file = self.__dict__['file']
+        return f"<{type(self).__name__} {file=}>"
 
     def __getattr__(self, name):
         # Attribute lookups are delegated to the underlying file
@@ -848,10 +868,14 @@ class SpooledTemporaryFile(_io.IOBase):
         return rv
 
     def writelines(self, iterable):
-        file = self._file
-        rv = file.writelines(iterable)
-        self._check(file)
-        return rv
+        if self._max_size == 0 or self._rolled:
+            return self._file.writelines(iterable)
+
+        it = iter(iterable)
+        for line in it:
+            self.write(line)
+            if self._rolled:
+                return self._file.writelines(it)
 
     def detach(self):
         return self._file.detach()

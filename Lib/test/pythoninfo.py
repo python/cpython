@@ -334,6 +334,7 @@ def collect_os(info_add):
         "_PYTHON_HOST_PLATFORM",
         "_PYTHON_PROJECT_BASE",
         "_PYTHON_SYSCONFIGDATA_NAME",
+        "_PYTHON_SYSCONFIGDATA_PATH",
         "__PYVENV_LAUNCHER__",
 
         # Sanitizer options
@@ -553,7 +554,6 @@ def collect_sysconfig(info_add):
     for name in (
         'WITH_DOC_STRINGS',
         'WITH_DTRACE',
-        'WITH_FREELISTS',
         'WITH_MIMALLOC',
         'WITH_PYMALLOC',
         'WITH_VALGRIND',
@@ -684,7 +684,6 @@ def collect_testcapi(info_add):
     for name in (
         'LONG_MAX',         # always 32-bit on Windows, 64-bit on 64-bit Unix
         'PY_SSIZE_T_MAX',
-        'Py_C_RECURSION_LIMIT',
         'SIZEOF_TIME_T',    # 32-bit or 64-bit depending on the platform
         'SIZEOF_WCHAR_T',   # 16-bit or 32-bit depending on the platform
     ):

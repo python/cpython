@@ -2,6 +2,7 @@ import builtins
 import codecs
 import _datetime
 import gc
+import io
 import locale
 import operator
 import os
@@ -79,6 +80,18 @@ class DisplayHookTest(unittest.TestCase):
         with support.swap_attr(sys, 'displayhook', baddisplayhook):
             code = compile("42", "<string>", "single")
             self.assertRaises(ValueError, eval, code)
+
+    def test_gh130163(self):
+        class X:
+            def __repr__(self):
+                sys.stdout = io.StringIO()
+                support.gc_collect()
+                return 'foo'
+
+        with support.swap_attr(sys, 'stdout', None):
+            sys.stdout = io.StringIO()  # the only reference
+            sys.displayhook(X())  # should not crash
+
 
 class ActiveExceptionTests(unittest.TestCase):
     def test_exc_info_no_exception(self):
@@ -203,6 +216,20 @@ class SysModuleTest(unittest.TestCase):
 
         rc, out, err = assert_python_ok('-c', 'import sys; sys.exit()')
         self.assertEqual(rc, 0)
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
+        # gh-125842: Windows uses 32-bit unsigned integers for exit codes
+        # so a -1 exit code is sometimes interpreted as 0xffff_ffff.
+        rc, out, err = assert_python_failure('-c', 'import sys; sys.exit(0xffff_ffff)')
+        self.assertIn(rc, (-1, 0xff, 0xffff_ffff))
+        self.assertEqual(out, b'')
+        self.assertEqual(err, b'')
+
+        # Overflow results in a -1 exit code, which may be converted to 0xff
+        # or 0xffff_ffff.
+        rc, out, err = assert_python_failure('-c', 'import sys; sys.exit(2**128)')
+        self.assertIn(rc, (-1, 0xff, 0xffff_ffff))
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
@@ -1042,14 +1069,10 @@ class SysModuleTest(unittest.TestCase):
         # Output of sys._debugmallocstats() depends on configure flags.
         # The sysconfig vars are not available on Windows.
         if sys.platform != "win32":
-            with_freelists = sysconfig.get_config_var("WITH_FREELISTS")
             with_pymalloc = sysconfig.get_config_var("WITH_PYMALLOC")
-            if with_freelists:
-                self.assertIn(b"free PyDictObjects", err)
+            self.assertIn(b"free PyDictObjects", err)
             if with_pymalloc:
                 self.assertIn(b'Small block threshold', err)
-            if not with_freelists and not with_pymalloc:
-                self.assertFalse(err)
 
         # The function has no parameter
         self.assertRaises(TypeError, sys._debugmallocstats, True)
@@ -1080,17 +1103,30 @@ class SysModuleTest(unittest.TestCase):
             # about the underlying implementation: the function might
             # return 0 or something greater.
             self.assertGreaterEqual(a, 0)
+        gc.collect()
+        b = sys.getallocatedblocks()
+        self.assertLessEqual(b, a)
         try:
             # While we could imagine a Python session where the number of
             # multiple buffer objects would exceed the sharing of references,
             # it is unlikely to happen in a normal test run.
-            self.assertLess(a, sys.gettotalrefcount())
+            #
+            # In free-threaded builds each code object owns an array of
+            # pointers to copies of the bytecode. When the number of
+            # code objects is a large fraction of the total number of
+            # references, this can cause the total number of allocated
+            # blocks to exceed the total number of references.
+            #
+            # For some reason, iOS seems to trigger the "unlikely to happen"
+            # case reliably under CI conditions. It's not clear why; but as
+            # this test is checking the behavior of getallocatedblock()
+            # under garbage collection, we can skip this pre-condition check
+            # for now. See GH-130384.
+            if not support.Py_GIL_DISABLED and not support.is_apple_mobile:
+                self.assertLess(a, sys.gettotalrefcount())
         except AttributeError:
             # gettotalrefcount() not available
             pass
-        gc.collect()
-        b = sys.getallocatedblocks()
-        self.assertLessEqual(b, a)
         gc.collect()
         c = sys.getallocatedblocks()
         self.assertIn(c, range(b - 50, b + 50))
@@ -1603,7 +1639,10 @@ class SizeofTest(unittest.TestCase):
         def func():
             return sys._getframe()
         x = func()
-        INTERPRETER_FRAME = '9PhcP'
+        if support.Py_GIL_DISABLED:
+            INTERPRETER_FRAME = '9PihcP'
+        else:
+            INTERPRETER_FRAME = '9PhcP'
         check(x, size('3PiccPP' + INTERPRETER_FRAME + 'P'))
         # function
         def func(): pass

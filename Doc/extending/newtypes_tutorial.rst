@@ -144,7 +144,7 @@ only used for variable-sized objects and should otherwise be zero.
    If you want your type to be subclassable from Python, and your type has the same
    :c:member:`~PyTypeObject.tp_basicsize` as its base type, you may have problems with multiple
    inheritance.  A Python subclass of your type will have to list your type first
-   in its :attr:`~class.__bases__`, or else it will not be able to call your type's
+   in its :attr:`~type.__bases__`, or else it will not be able to call your type's
    :meth:`~object.__new__` method without getting an error.  You can avoid this problem by
    ensuring that your type has a larger value for :c:member:`~PyTypeObject.tp_basicsize` than its
    base type does.  Most of the time, this will be true anyway, because either your

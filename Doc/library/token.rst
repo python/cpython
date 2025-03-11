@@ -79,6 +79,13 @@ the :mod:`tokenize` module.
    ``type_comments=True``.
 
 
+.. data:: EXACT_TOKEN_TYPES
+
+   A dictionary mapping the string representation of a token to its numeric code.
+
+   .. versionadded:: 3.8
+
+
 .. versionchanged:: 3.5
    Added :data:`!AWAIT` and :data:`!ASYNC` tokens.
 

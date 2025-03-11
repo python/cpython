@@ -16,7 +16,6 @@ import dataclasses
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import sphinx
 from docutils import nodes
 from docutils.statemachine import StringList
 from sphinx import addnodes
@@ -124,10 +123,7 @@ def add_annotations(app: Sphinx, doctree: nodes.document) -> None:
             continue
         if not par[0].get("ids", None):
             continue
-        name = par[0]["ids"][0]
-        if name.startswith("c."):
-            name = name[2:]
-
+        name = par[0]["ids"][0].removeprefix("c.")
         objtype = par["objtype"]
 
         # Stable ABI annotation.
@@ -287,16 +283,6 @@ def setup(app: Sphinx) -> ExtensionMetadata:
     app.add_directive("limited-api-list", LimitedAPIList)
     app.connect("builder-inited", init_annotations)
     app.connect("doctree-read", add_annotations)
-
-    if sphinx.version_info[:2] < (7, 2):
-        from docutils.parsers.rst import directives
-        from sphinx.domains.c import CObject
-
-        # monkey-patch C object...
-        CObject.option_spec |= {
-            "no-index-entry": directives.flag,
-            "no-contents-entry": directives.flag,
-        }
 
     return {
         "version": "1.0",

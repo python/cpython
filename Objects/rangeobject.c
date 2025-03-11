@@ -143,14 +143,14 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
 
 static PyObject *
-range_vectorcall(PyTypeObject *type, PyObject *const *args,
+range_vectorcall(PyObject *rangetype, PyObject *const *args,
                  size_t nargsf, PyObject *kwnames)
 {
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (!_PyArg_NoKwnames("range", kwnames)) {
         return NULL;
     }
-    return range_from_array(type, args, nargs);
+    return range_from_array((PyTypeObject *)rangetype, args, nargs);
 }
 
 PyDoc_STRVAR(range_doc,
@@ -803,7 +803,7 @@ PyTypeObject PyRange_Type = {
         0,                      /* tp_init */
         0,                      /* tp_alloc */
         range_new,              /* tp_new */
-        .tp_vectorcall = (vectorcallfunc)range_vectorcall
+        .tp_vectorcall = range_vectorcall
 };
 
 /*********************** range Iterator **************************/

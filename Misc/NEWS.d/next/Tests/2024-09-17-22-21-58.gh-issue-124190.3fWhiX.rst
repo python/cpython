@@ -1,1 +1,0 @@
-Add capability to ignore entire files or directories in check warning CI tool
