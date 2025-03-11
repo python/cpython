@@ -2059,6 +2059,29 @@ def test_pdb_next_command_for_generator():
     """
 
 if not SKIP_CORO_TESTS:
+    def test_pdb_asynctask():
+        """Testing $_asynctask is accessible in async context
+
+        >>> import asyncio
+
+        >>> async def test():
+        ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+        >>> def test_function():
+        ...     asyncio.run(test())
+
+        >>> with PdbTestInput([  # doctest: +ELLIPSIS
+        ...     '$_asynctask',
+        ...     'continue',
+        ... ]):
+        ...     test_function()
+        > <doctest test.test_pdb.test_pdb_asynctask[1]>(2)test()
+        -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+        (Pdb) $_asynctask
+        <Task pending name='Task-1' coro=<test() running at <doctest test.test_pdb.test_pdb_asynctask[1]>:2> ...
+        (Pdb) continue
+        """
+
     def test_pdb_next_command_for_coroutine():
         """Testing skip unwinding stack on yield for coroutines for "next" command
 
