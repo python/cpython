@@ -104,13 +104,15 @@ xibufferview_dealloc(PyObject *op)
 {
     XIBufferViewObject *self = XIBufferViewObject_CAST(op);
     PyInterpreterState *interp = _PyInterpreterState_LookUpID(self->interpid);
-    /* If the interpreter is no longer alive then we have problems,
-       since other objects may be using the buffer still. */
-    assert(interp != NULL);
-
-    if (_PyBuffer_ReleaseInInterpreterAndRawFree(interp, self->view) < 0) {
-        // XXX Emit a warning?
+    if (interp == NULL) {
+        /* That interpreter is alrady dead. */
         PyErr_Clear();
+    }
+    else {
+        if (_PyBuffer_ReleaseInInterpreterAndRawFree(interp, self->view) < 0) {
+            // XXX Emit a warning?
+            PyErr_Clear();
+        }
     }
 
     PyTypeObject *tp = Py_TYPE(self);
