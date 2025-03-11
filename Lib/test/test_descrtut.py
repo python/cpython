@@ -210,6 +210,7 @@ You can get the information from the list type:
      'copy',
      'count',
      'extend',
+     'get',
      'index',
      'insert',
      'pop',
