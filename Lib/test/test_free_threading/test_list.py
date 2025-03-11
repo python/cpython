@@ -1,6 +1,6 @@
 import unittest
 
-from threading import Thread
+from threading import Thread, Barrier
 from unittest import TestCase
 
 from test.support import threading_helper
@@ -70,6 +70,20 @@ class TestList(TestCase):
         writer.join()
         for reader in readers:
             reader.join()
+
+    def test_store_list_int(self):
+        def copy_back_and_forth(b, l):
+            b.wait()
+            for _ in range(100):
+                l[0] = l[1]
+                l[1] = l[0]
+
+        l = [0, 1]
+        barrier = Barrier(NTHREAD)
+        threads = [Thread(target=copy_back_and_forth, args=(barrier, l))
+                   for _ in range(NTHREAD)]
+        with threading_helper.start_threads(threads):
+            pass
 
 
 if __name__ == "__main__":

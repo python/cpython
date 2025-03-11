@@ -368,8 +368,8 @@ Update this hash object's state with the provided string.
 [clinic start generated code]*/
 
 static PyObject *
-SHA256Type_update(SHA256object *self, PyObject *obj)
-/*[clinic end generated code: output=1b240f965ddbd8c6 input=b2d449d5b30f0f5a]*/
+SHA256Type_update_impl(SHA256object *self, PyObject *obj)
+/*[clinic end generated code: output=dc58a580cf8905a5 input=b2d449d5b30f0f5a]*/
 {
     Py_buffer buf;
 
@@ -402,8 +402,8 @@ Update this hash object's state with the provided string.
 [clinic start generated code]*/
 
 static PyObject *
-SHA512Type_update(SHA512object *self, PyObject *obj)
-/*[clinic end generated code: output=745f51057a985884 input=ded2b46656566283]*/
+SHA512Type_update_impl(SHA512object *self, PyObject *obj)
+/*[clinic end generated code: output=9af211766c0b7365 input=ded2b46656566283]*/
 {
     Py_buffer buf;
 

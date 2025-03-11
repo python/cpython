@@ -268,12 +268,15 @@ class PyEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase
     Task = tasks._PyTask
 
     def setUp(self):
+        self._all_tasks = asyncio.all_tasks
         self._current_task = asyncio.current_task
         asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._py_current_task
+        asyncio.all_tasks = asyncio.tasks.all_tasks = asyncio.tasks._py_all_tasks
         return super().setUp()
 
     def tearDown(self):
         asyncio.current_task = asyncio.tasks.current_task = self._current_task
+        asyncio.all_tasks = asyncio.tasks.all_tasks = self._all_tasks
         return super().tearDown()
 
 
@@ -285,11 +288,14 @@ class CEagerTaskFactoryLoopTests(EagerTaskFactoryLoopTests, test_utils.TestCase)
 
     def setUp(self):
         self._current_task = asyncio.current_task
+        self._all_tasks = asyncio.all_tasks
         asyncio.current_task = asyncio.tasks.current_task = asyncio.tasks._c_current_task
+        asyncio.all_tasks = asyncio.tasks.all_tasks = asyncio.tasks._c_all_tasks
         return super().setUp()
 
     def tearDown(self):
         asyncio.current_task = asyncio.tasks.current_task = self._current_task
+        asyncio.all_tasks = asyncio.tasks.all_tasks = self._all_tasks
         return super().tearDown()
 
 

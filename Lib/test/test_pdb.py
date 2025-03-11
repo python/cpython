@@ -11,6 +11,7 @@ import subprocess
 import textwrap
 import linecache
 import zipapp
+import zipfile
 
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
@@ -18,6 +19,7 @@ from test import support
 from test.support import force_not_colorized, os_helper
 from test.support.import_helper import import_module
 from test.support.pty_helper import run_pty, FakeInput
+from test.support.script_helper import kill_python
 from unittest.mock import patch
 
 SKIP_CORO_TESTS = False
@@ -4207,6 +4209,38 @@ def bœr():
             self.assertIn('42', stdout)
             self.assertIn('return x + 1', stdout)
 
+    def test_zipimport(self):
+        with os_helper.temp_dir() as temp_dir:
+            os.mkdir(os.path.join(temp_dir, 'source'))
+            zipmodule = textwrap.dedent(
+                """
+                def bar():
+                    pass
+                """
+            )
+            script = textwrap.dedent(
+                f"""
+                import sys; sys.path.insert(0, {repr(os.path.join(temp_dir, 'zipmodule.zip'))})
+                import foo
+                foo.bar()
+                """
+            )
+
+            with zipfile.ZipFile(os.path.join(temp_dir, 'zipmodule.zip'), 'w') as zf:
+                zf.writestr('foo.py', zipmodule)
+            with open(os.path.join(temp_dir, 'script.py'), 'w') as f:
+                f.write(script)
+
+            stdout, _ = self._run_pdb([os.path.join(temp_dir, 'script.py')], '\n'.join([
+                'n',
+                'n',
+                'b foo.bar',
+                'c',
+                'p f"break in {$_frame.f_code.co_name}"',
+                'q'
+            ]))
+            self.assertIn('break in bar', stdout)
+
 
 class ChecklineTests(unittest.TestCase):
     def setUp(self):
@@ -4308,6 +4342,77 @@ class PdbTestInline(unittest.TestCase):
         # The quit prompt should be printed exactly twice
         self.assertEqual(stdout.count("Quit anyway"), 2)
 
+    def test_quit_after_interact(self):
+        """
+        interact command will set sys.ps1 temporarily, we need to make sure
+        that it's restored and pdb does not believe it's in interactive mode
+        after interact is done.
+        """
+        script = """
+            x = 1
+            breakpoint()
+        """
+
+        commands = """
+            interact
+            quit()
+            q
+            y
+        """
+
+        stdout, stderr = self._run_script(script, commands)
+        # Normal exit should not print anything to stderr
+        self.assertEqual(stderr, "")
+        # The quit prompt should be printed exactly once
+        self.assertEqual(stdout.count("Quit anyway"), 1)
+        # BdbQuit should not be printed
+        self.assertNotIn("BdbQuit", stdout)
+
+    def test_set_trace_with_skip(self):
+        """GH-82897
+        Inline set_trace() should break unconditionally. This example is a
+        bit oversimplified, but as `pdb.set_trace()` uses the previous Pdb
+        instance, it's possible that we had a previous pdb instance with
+        skip values when we use `pdb.set_trace()` - it would be confusing
+        to users when such inline breakpoints won't break immediately.
+        """
+        script = textwrap.dedent("""
+            import pdb
+            def foo():
+                x = 40 + 2
+                pdb.Pdb(skip=['__main__']).set_trace()
+            foo()
+        """)
+        commands = """
+            p x
+            c
+        """
+        stdout, _ = self._run_script(script, commands)
+        self.assertIn("42", stdout)
+
+
+@support.force_not_colorized_test_class
+@support.requires_subprocess()
+class TestREPLSession(unittest.TestCase):
+    def test_return_from_inline_mode_to_REPL(self):
+        # GH-124703: Raise BdbQuit when exiting pdb in REPL session.
+        # This allows the REPL session to continue.
+        from test.test_repl import spawn_repl
+        p = spawn_repl()
+        user_input = """
+            x = 'Spam'
+            import pdb
+            pdb.set_trace(commands=['x + "During"', 'q'])
+            x + 'After'
+        """
+        p.stdin.write(textwrap.dedent(user_input))
+        output = kill_python(p)
+        self.assertIn('SpamDuring', output)
+        self.assertNotIn("Quit anyway", output)
+        self.assertIn('BdbQuit', output)
+        self.assertIn('SpamAfter', output)
+        self.assertEqual(p.returncode, 0)
+
 
 @support.requires_subprocess()
 class PdbTestReadline(unittest.TestCase):
@@ -4407,6 +4512,32 @@ class PdbTestReadline(unittest.TestCase):
         output = run_pty(script, input)
 
         self.assertIn(b'42', output)
+
+    def test_multiline_indent_completion(self):
+        script = textwrap.dedent("""
+            import pdb; pdb.Pdb().set_trace()
+        """)
+
+        # \t should always complete a 4-space indent
+        # This piece of code will raise an IndentationError or a SyntaxError
+        # if the completion is not working as expected
+        input = textwrap.dedent("""\
+            def func():
+            \ta = 1
+             \ta += 1
+              \ta += 1
+               \tif a > 0:
+                    a += 1
+            \t\treturn a
+
+            func()
+            c
+        """).encode()
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'4', output)
+        self.assertNotIn(b'Error', output)
 
 
 def load_tests(loader, tests, pattern):

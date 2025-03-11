@@ -58,6 +58,7 @@ typedef struct {
                .end_col_offset = (n)->end_col_offset }
 
 static const _Py_SourceLocation NO_LOCATION = {-1, -1, -1, -1};
+static const _Py_SourceLocation NEXT_LOCATION = {-2, -2, -2, -2};
 
 /* __future__ information */
 typedef struct {
@@ -82,8 +83,6 @@ struct symtable {
     PyObject *st_private;           /* name of current class or NULL */
     _PyFutureFeatures *st_future;   /* module's future features that affect
                                        the symbol table */
-    int recursion_depth;            /* current recursion depth */
-    int recursion_limit;            /* recursion limit */
 };
 
 typedef struct _symtable_entry {
