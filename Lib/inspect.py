@@ -447,7 +447,8 @@ def isroutine(object):
             or isfunction(object)
             or ismethod(object)
             or ismethoddescriptor(object)
-            or ismethodwrapper(object))
+            or ismethodwrapper(object)
+            or isinstance(object, functools._singledispatchmethod_get))
 
 def isabstract(object):
     """Return true if the object is an abstract base class (ABC)."""
@@ -3077,6 +3078,9 @@ class Signature:
                         break
                     elif param.name in kwargs:
                         if param.kind == _POSITIONAL_ONLY:
+                            if param.default is _empty:
+                                msg = f'missing a required positional-only argument: {param.name!r}'
+                                raise TypeError(msg)
                             # Raise a TypeError once we are sure there is no
                             # **kwargs param later.
                             pos_only_param_in_kwargs.append(param)

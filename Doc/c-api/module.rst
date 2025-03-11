@@ -415,7 +415,7 @@ The available slot types are:
    in one module definition.
 
    If ``Py_mod_multiple_interpreters`` is not specified, the import
-   machinery defaults to ``Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED``.
+   machinery defaults to ``Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED``.
 
    .. versionadded:: 3.12
 

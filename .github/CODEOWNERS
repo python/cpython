@@ -106,6 +106,7 @@ Objects/exceptions.c          @iritkatriel
 
 # Hashing & cryptographic primitives
 **/*hashlib*                  @gpshead @tiran @picnixz
+**/*hashopenssl*              @gpshead @tiran @picnixz
 **/*pyhash*                   @gpshead @tiran
 **/sha*                       @gpshead @tiran @picnixz
 Modules/md5*                  @gpshead @tiran @picnixz

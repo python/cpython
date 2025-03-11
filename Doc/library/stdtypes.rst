@@ -949,9 +949,9 @@ Generator Types
 ---------------
 
 Python's :term:`generator`\s provide a convenient way to implement the iterator
-protocol.  If a container object's :meth:`~iterator.__iter__` method is implemented as a
+protocol.  If a container object's :meth:`~object.__iter__` method is implemented as a
 generator, it will automatically return an iterator object (technically, a
-generator object) supplying the :meth:`!__iter__` and :meth:`~generator.__next__`
+generator object) supplying the :meth:`~iterator.__iter__` and :meth:`~generator.__next__`
 methods.
 More information about generators can be found in :ref:`the documentation for
 the yield expression <yieldexpr>`.

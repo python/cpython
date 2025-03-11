@@ -1014,18 +1014,23 @@ tupleiter_next(PyObject *self)
 
     assert(it != NULL);
     seq = it->it_seq;
+#ifndef Py_GIL_DISABLED
     if (seq == NULL)
         return NULL;
+#endif
     assert(PyTuple_Check(seq));
 
-    if (it->it_index < PyTuple_GET_SIZE(seq)) {
-        item = PyTuple_GET_ITEM(seq, it->it_index);
-        ++it->it_index;
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+    if (index < PyTuple_GET_SIZE(seq)) {
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index + 1);
+        item = PyTuple_GET_ITEM(seq, index);
         return Py_NewRef(item);
     }
 
+#ifndef Py_GIL_DISABLED
     it->it_seq = NULL;
     Py_DECREF(seq);
+#endif
     return NULL;
 }
 
@@ -1034,8 +1039,15 @@ tupleiter_len(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
     Py_ssize_t len = 0;
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t idx = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+    Py_ssize_t seq_len = PyTuple_GET_SIZE(it->it_seq);
+    if (idx < seq_len)
+        len = seq_len - idx;
+#else
     if (it->it_seq)
         len = PyTuple_GET_SIZE(it->it_seq) - it->it_index;
+#endif
     return PyLong_FromSsize_t(len);
 }
 
@@ -1051,10 +1063,15 @@ tupleiter_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
      * see issue #101765 */
     _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
 
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t idx = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+    if (idx < PyTuple_GET_SIZE(it->it_seq))
+        return Py_BuildValue("N(O)n", iter, it->it_seq, idx);
+#else
     if (it->it_seq)
         return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
-    else
-        return Py_BuildValue("N(())", iter);
+#endif
+    return Py_BuildValue("N(())", iter);
 }
 
 static PyObject *
@@ -1069,7 +1086,7 @@ tupleiter_setstate(PyObject *self, PyObject *state)
             index = 0;
         else if (index > PyTuple_GET_SIZE(it->it_seq))
             index = PyTuple_GET_SIZE(it->it_seq); /* exhausted iterator */
-        it->it_index = index;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index);
     }
     Py_RETURN_NONE;
 }

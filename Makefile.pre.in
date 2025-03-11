@@ -2149,7 +2149,7 @@ testuniversal: all
 # a full Xcode install that has an iPhone SE (3rd edition) simulator available.
 # This must be run *after* a `make install` has completed the build. The
 # `--with-framework-name` argument *cannot* be used when configuring the build.
-XCFOLDER:=iOSTestbed.$(MULTIARCH).$(shell date +%s)
+XCFOLDER:=iOSTestbed.$(MULTIARCH).$(shell date +%s).$$PPID
 .PHONY: testios
 testios:
 	@if test "$(MACHDEP)" != "ios"; then \
@@ -2549,6 +2549,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_tomllib/data/valid/multiline-basic-str \
 		test/test_tools \
 		test/test_tools/i18n_data \
+		test/test_tools/msgfmt_data \
 		test/test_ttk \
 		test/test_unittest \
 		test/test_unittest/namespace_test_pkg \
