@@ -191,9 +191,15 @@ batched_next(batchedobject *bo)
     PyObject *item;
     PyObject *result;
 
+#ifdef Py_GIL_DISABLED
+    if (it == NULL) {
+        return NULL;
+    }
+#else
     if (n < 0) {
         return NULL;
     }
+#endif
     result = PyTuple_New(n);
     if (result == NULL) {
         return NULL;
@@ -213,19 +219,31 @@ batched_next(batchedobject *bo)
     if (PyErr_Occurred()) {
         if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
             /* Input raised an exception other than StopIteration */
+#ifdef Py_GIL_DISABLED
             FT_ATOMIC_STORE_SSIZE_RELAXED(bo->batch_size, -1);
+#else
+            Py_CLEAR(bo->it);
+#endif
             Py_DECREF(result);
             return NULL;
         }
         PyErr_Clear();
     }
     if (i == 0) {
+#ifdef Py_GIL_DISABLED
         FT_ATOMIC_STORE_SSIZE_RELAXED(bo->batch_size, -1);
+#else
+        Py_CLEAR(bo->it);
+#endif
         Py_DECREF(result);
         return NULL;
     }
     if (bo->strict) {
+#ifdef Py_GIL_DISABLED
         FT_ATOMIC_STORE_SSIZE_RELAXED(bo->batch_size, -1);
+#else
+        Py_CLEAR(bo->it);
+#endif
         Py_DECREF(result);
         PyErr_SetString(PyExc_ValueError, "batched(): incomplete batch");
         return NULL;
