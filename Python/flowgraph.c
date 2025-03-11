@@ -1345,7 +1345,7 @@ add_const(PyObject *newconst, PyObject *consts, PyObject *const_cache)
 
 /*
    Walk basic block backwards starting from "start" trying to collect "size" number of
-   subsequent instructions that load constants into instruciton array "instrs" ignoring NOP's in between.
+   subsequent instructions that load constants into instruction array "instrs" ignoring NOP's in between.
    Caller must make sure that length of "instrs" is sufficient to fit in at least "size" instructions.
 
    Returns boolean indicating whether succeeded to collect requested number of instructions.
@@ -1376,7 +1376,7 @@ get_subsequent_const_instrs(basicblock *bb, int start, cfg_instr **instrs, int s
   Caller must make sure "instrs" has at least "size" elements.
 */
 static void
-nop_out(basicblock *bb, cfg_instr **instrs, int size)
+nop_out(cfg_instr **instrs, int size)
 {
     for (int i = 0; i < size; i++) {
         cfg_instr *instr = instrs[i];
@@ -1449,7 +1449,7 @@ fold_tuple_of_constants(basicblock *bb, int i, PyObject *consts, PyObject *const
         PyTuple_SET_ITEM(const_tuple, i, element);
     }
 
-    nop_out(bb, const_instrs, seq_size);
+    nop_out(const_instrs, seq_size);
     return instr_make_load_const(instr, const_tuple, consts, const_cache);
 }
 
@@ -1519,7 +1519,7 @@ optimize_lists_and_sets(basicblock *bb, int i, int nextop,
 
     int index = add_const(const_result, consts, const_cache);
     RETURN_IF_ERROR(index);
-    nop_out(bb, const_instrs, seq_size);
+    nop_out(const_instrs, seq_size);
 
     if (contains_or_iter) {
         INSTR_SET_OP1(instr, LOAD_CONST, index);
@@ -1755,7 +1755,7 @@ fold_const_binop(basicblock *bb, int i, PyObject *consts, PyObject *const_cache)
         return SUCCESS;
     }
 
-    nop_out(bb, operands_instrs, BINOP_OPERAND_COUNT);
+    nop_out(operands_instrs, BINOP_OPERAND_COUNT);
     return instr_make_load_const(binop, newconst, consts, const_cache);
 }
 
@@ -1834,7 +1834,7 @@ fold_const_unaryop(basicblock *bb, int i, PyObject *consts, PyObject *const_cach
     if (unaryop->i_opcode == UNARY_NOT) {
         assert(PyBool_Check(newconst));
     }
-    nop_out(bb, &operand_instr, UNARYOP_OPERAND_COUNT);
+    nop_out(&operand_instr, UNARYOP_OPERAND_COUNT);
     return instr_make_load_const(unaryop, newconst, consts, const_cache);
 }
 
