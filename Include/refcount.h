@@ -249,7 +249,9 @@ static inline Py_ALWAYS_INLINE void Py_INCREF_MORTAL(PyObject *op)
     op->ob_refcnt++;
     _Py_INCREF_STAT_INC();
 #if defined(Py_REF_DEBUG) && !defined(Py_LIMITED_API)
-    _Py_INCREF_IncRefTotal();
+    if (!_Py_IsImmortal(op)) {
+        _Py_INCREF_IncRefTotal();
+    }
 #endif
 }
 #endif
@@ -391,7 +393,9 @@ static inline void Py_DECREF_MORTAL(const char *filename, int lineno, PyObject *
     }
     _Py_DECREF_STAT_INC();
     assert(!_Py_IsStaticImmortal(op));
-    _Py_DECREF_DecRefTotal();
+    if (!_Py_IsImmortal(op)) {
+        _Py_DECREF_DecRefTotal();
+    }
     if (--op->ob_refcnt == 0) {
         _Py_Dealloc(op);
     }
@@ -407,7 +411,9 @@ static inline void _Py_DECREF_MORTAL_SPECIALIZED(const char *filename, int linen
     }
     _Py_DECREF_STAT_INC();
     assert(!_Py_IsStaticImmortal(op));
-    _Py_DECREF_DecRefTotal();
+    if (!_Py_IsImmortal(op)) {
+        _Py_DECREF_DecRefTotal();
+    }
     if (--op->ob_refcnt == 0) {
         destruct(op);
     }
