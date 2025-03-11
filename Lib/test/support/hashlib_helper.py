@@ -1,6 +1,7 @@
 import functools
 import hashlib
 import unittest
+from test.support.import_helper import import_module
 
 try:
     import _hashlib
@@ -62,6 +63,28 @@ def requires_hashdigest(digestname, openssl=None, usedforsecurity=True):
             except ValueError as exc:
                 msg = f"missing hash algorithm: {digestname!r}"
                 raise unittest.SkipTest(msg) from exc
+            return func(*args, **kwargs)
+        return wrapper
+
+    def decorator(func_or_class):
+        return _decorate_func_or_class(func_or_class, decorator_func)
+    return decorator
+
+
+def requires_openssl_hashdigest(digestname, *, usedforsecurity=True):
+    """Decorator raising SkipTest if an OpenSSL hashing algorithm is missing.
+
+    The hashing algorithm may be missing or blocked by a strict crypto policy.
+    """
+    def decorator_func(func):
+        @requires_hashlib()
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                _hashlib.new(digestname, usedforsecurity=usedforsecurity)
+            except ValueError:
+                msg = f"missing OpenSSL hash algorithm: {digestname!r}"
+                raise unittest.SkipTest(msg)
             return func(*args, **kwargs)
         return wrapper
 

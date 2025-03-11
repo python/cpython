@@ -358,8 +358,7 @@ class WithOpenSSLHashFunctions(HashFunctionsTrait):
 
         for name in cls.ALGORITHMS:
             @property
-            @hashlib_helper.requires_hashlib()
-            @hashlib_helper.requires_hashdigest(name, openssl=True)
+            @hashlib_helper.requires_openssl_hashdigest(name)
             def func(self, *, __name=name):  # __name needed to bind 'name'
                 return getattr(_hashlib, f'openssl_{__name}')
             setattr(cls, name, func)
@@ -845,7 +844,7 @@ class PySanityTestCase(ThroughObjectMixin, PyModuleMixin, SanityTestCaseMixin,
         self.assertStartsWith(repr(h), "<hmac.HMAC object at")
 
 
-@hashlib_helper.requires_hashdigest('sha256', openssl=True)
+@hashlib_helper.requires_openssl_hashdigest('sha256')
 class OpenSSLSanityTestCase(ThroughOpenSSLAPIMixin, SanityTestCaseMixin,
                             unittest.TestCase):
 
@@ -897,8 +896,7 @@ class PyUpdateTestCase(UpdateTestCaseMixin, unittest.TestCase):
         return self.hmac.HMAC(key, msg, digestmod='sha256')
 
 
-@hashlib_helper.requires_hashlib()
-@hashlib_helper.requires_hashdigest('sha256', openssl=True)
+@hashlib_helper.requires_openssl_hashdigest('sha256')
 class OpenSSLUpdateTestCase(UpdateTestCaseMixin, unittest.TestCase):
 
     def HMAC(self, key, msg=None):
@@ -988,8 +986,7 @@ class ExtensionCopyTestCase(CopyBaseTestCase):
         self.assertNotEqual(id(h1._hmac), id(h2._hmac))
 
 
-@hashlib_helper.requires_hashlib()
-@hashlib_helper.requires_hashdigest('sha256', openssl=True)
+@hashlib_helper.requires_openssl_hashdigest('sha256')
 class OpenSSLCopyTestCase(ExtensionCopyTestCase, unittest.TestCase):
 
     def init(self, h):
