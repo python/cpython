@@ -4,7 +4,7 @@ import rlcompleter
 from unittest import TestCase
 from unittest.mock import MagicMock
 
-from .support import handle_all_events, handle_events_narrow_console, code_to_events, prepare_reader
+from .support import handle_all_events, handle_events_narrow_console, code_to_events, prepare_reader, prepare_console
 from _pyrepl.console import Event
 from _pyrepl.reader import Reader
 
@@ -197,7 +197,7 @@ class TestReader(TestCase):
                 Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
                 Event(evt="key", data="\x05", raw=bytearray(b"\x1bO5")),
                 # a double new line in-block should terminate the block
-                # even if its followed by whitespace
+                # even if its followed by whitespace
                 Event(evt="key", data="\n", raw=bytearray(b"\n")),
                 Event(evt="key", data="\n", raw=bytearray(b"\n")),
             ],
@@ -312,3 +312,10 @@ class TestReader(TestCase):
         reader, _ = handle_all_events(events, prepare_reader=completing_reader)
 
         self.assert_screen_equals(reader, f"{code}a")
+
+    def test_pos2xy_with_no_columns(self):
+        console = prepare_console([])
+        reader = prepare_reader(console)
+        # Simulate a resize to 0 columns
+        reader.screeninfo = []
+        self.assertEqual(reader.pos2xy(), (0, 0))

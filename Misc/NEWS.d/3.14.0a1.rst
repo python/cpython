@@ -798,7 +798,7 @@ when used with ``happy_eyeballs_delay``
 
 Fixed :exc:`AssertionError` when using
 :func:`!asyncio.staggered.staggered_race` with
-:attr:`asyncio.eager_task_factory`.
+:data:`asyncio.eager_task_factory`.
 
 ..
 
@@ -1755,8 +1755,8 @@ Adjust ``cmath.tanh(nanj)`` and ``cmath.tanh(infj)`` for recent C standards.
 Remove internal frames from tracebacks shown in
 :class:`code.InteractiveInterpreter` with non-default
 :func:`sys.excepthook`. Save correct tracebacks in
-:attr:`sys.last_traceback` and update ``__traceback__`` attribute of
-:attr:`sys.last_value` and :attr:`sys.last_exc`.
+:data:`sys.last_traceback` and update ``__traceback__`` attribute of
+:data:`sys.last_value` and :data:`sys.last_exc`.
 
 ..
 

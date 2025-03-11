@@ -151,10 +151,11 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(resize(ba, 3), 0)
         self.assertEqual(ba, bytearray(b'abc'))
 
+        self.assertRaises(ValueError, resize, bytearray(), -1)
+        self.assertRaises(ValueError, resize, bytearray(), -200)
         self.assertRaises(MemoryError, resize, bytearray(), PY_SSIZE_T_MAX)
         self.assertRaises(MemoryError, resize, bytearray(1000), PY_SSIZE_T_MAX)
 
-        # CRASHES resize(bytearray(b'abc'), -1)
         # CRASHES resize(b'abc', 0)
         # CRASHES resize(object(), 0)
         # CRASHES resize(NULL, 0)

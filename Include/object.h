@@ -683,7 +683,7 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 typedef enum {
     PYGEN_RETURN = 0,
     PYGEN_ERROR = -1,
-    PYGEN_NEXT = 1,
+    PYGEN_NEXT = 1
 } PySendResult;
 #endif
 

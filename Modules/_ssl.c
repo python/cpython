@@ -4666,7 +4666,8 @@ _servername_callback(SSL *s, int *al, void *args)
 
         servername_bytes = PyBytes_FromString(servername);
         if (servername_bytes == NULL) {
-            PyErr_WriteUnraisable((PyObject *) sslctx);
+            PyErr_FormatUnraisable("Exception ignored "
+                                   "in ssl servername callback");
             goto error;
         }
         /* server_hostname was encoded to an A-label by our caller; put it
@@ -4674,7 +4675,10 @@ _servername_callback(SSL *s, int *al, void *args)
          */
         servername_str = PyUnicode_FromEncodedObject(servername_bytes, "ascii", NULL);
         if (servername_str == NULL) {
-            PyErr_WriteUnraisable(servername_bytes);
+            PyErr_FormatUnraisable("Exception ignored "
+                                   "in ssl servername callback "
+                                   "while decoding name %R",
+                                   servername_bytes);
             Py_DECREF(servername_bytes);
             goto error;
         }
@@ -4687,7 +4691,10 @@ _servername_callback(SSL *s, int *al, void *args)
     Py_DECREF(ssl_socket);
 
     if (result == NULL) {
-        PyErr_WriteUnraisable(sslctx->set_sni_cb);
+        PyErr_FormatUnraisable("Exception ignored "
+                               "in ssl servername callback "
+                               "while calling set SNI callback %R",
+                               sslctx->set_sni_cb);
         *al = SSL_AD_HANDSHAKE_FAILURE;
         ret = SSL_TLSEXT_ERR_ALERT_FATAL;
     }
@@ -4700,7 +4707,11 @@ _servername_callback(SSL *s, int *al, void *args)
         } else {
             *al = (int) PyLong_AsLong(result);
             if (PyErr_Occurred()) {
-                PyErr_WriteUnraisable(result);
+                PyErr_FormatUnraisable("Exception ignored "
+                                       "in ssl servername callback "
+                                       "while calling set SNI callback "
+                                       "(result=%R)",
+                                       result);
                 *al = SSL_AD_INTERNAL_ERROR;
             }
             ret = SSL_TLSEXT_ERR_ALERT_FATAL;
@@ -5007,7 +5018,8 @@ static unsigned int psk_client_callback(SSL *s,
 
 error:
     if (PyErr_Occurred()) {
-        PyErr_WriteUnraisable(callback);
+        PyErr_FormatUnraisable("Exception ignored in ssl PSK client callback "
+                               "while calling callback %R", callback);
     }
     PyGILState_Release(gstate);
     return 0;
@@ -5116,7 +5128,8 @@ static unsigned int psk_server_callback(SSL *s,
 
 error:
     if (PyErr_Occurred()) {
-        PyErr_WriteUnraisable(callback);
+        PyErr_FormatUnraisable("Exception ignored in ssl PSK server callback "
+                               "while calling callback %R", callback);
     }
     PyGILState_Release(gstate);
     return 0;

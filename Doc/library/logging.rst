@@ -342,7 +342,7 @@ in a module, ``__name__`` is the module's name in the Python package namespace.
 
       If no handler is attached to this logger (or any of its ancestors,
       taking into account the relevant :attr:`Logger.propagate` attributes),
-      the message will be sent to the handler set on :attr:`lastResort`.
+      the message will be sent to the handler set on :data:`lastResort`.
 
       .. versionchanged:: 3.2
          The *stack_info* parameter was added.
@@ -562,7 +562,8 @@ subclasses. However, the :meth:`!__init__` method in subclasses needs to call
 
    .. method:: Handler.setFormatter(fmt)
 
-      Sets the :class:`Formatter` for this handler to *fmt*.
+      Sets the formatter for this handler to *fmt*.
+      The *fmt* argument must be a :class:`Formatter` instance or ``None``.
 
 
    .. method:: Handler.addFilter(filter)
@@ -592,10 +593,12 @@ subclasses. However, the :meth:`!__init__` method in subclasses needs to call
 
    .. method:: Handler.close()
 
-      Tidy up any resources used by the handler. This version does no output but
-      removes the handler from an internal list of handlers which is closed when
-      :func:`shutdown` is called. Subclasses should ensure that this gets called
-      from overridden :meth:`close` methods.
+      Tidy up any resources used by the handler. This version does no output
+      but removes the handler from an internal map of handlers, which is used
+      for handler lookup by name.
+
+      Subclasses should ensure that this gets called from overridden :meth:`close`
+      methods.
 
 
    .. method:: Handler.handle(record)
@@ -1495,7 +1498,7 @@ functions.
 Module-Level Attributes
 -----------------------
 
-.. attribute:: lastResort
+.. data:: lastResort
 
    A "handler of last resort" is available through this attribute. This
    is a :class:`StreamHandler` writing to ``sys.stderr`` with a level of
@@ -1507,7 +1510,7 @@ Module-Level Attributes
 
    .. versionadded:: 3.2
 
-.. attribute:: raiseExceptions
+.. data:: raiseExceptions
 
    Used to see if exceptions during handling should be propagated.
 

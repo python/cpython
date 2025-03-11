@@ -604,7 +604,7 @@ Process-wide parameters
    interpreter will change the contents of this storage.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_*` string.
+   :c:expr:`wchar_t*` string.
 
    .. deprecated-removed:: 3.11 3.15
 
@@ -622,7 +622,8 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :data:`sys.executable` instead.
+      Use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
+      (:data:`sys.executable`) instead.
 
 
 .. c:function:: wchar_t* Py_GetPrefix()
@@ -644,8 +645,10 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :data:`sys.base_prefix` instead, or :data:`sys.prefix` if
-      :ref:`virtual environments <venv-def>` need to be handled.
+      Use :c:func:`PyConfig_Get("base_prefix") <PyConfig_Get>`
+      (:data:`sys.base_prefix`) instead. Use :c:func:`PyConfig_Get("prefix")
+      <PyConfig_Get>` (:data:`sys.prefix`) if :ref:`virtual environments
+      <venv-def>` need to be handled.
 
 
 .. c:function:: wchar_t* Py_GetExecPrefix()
@@ -690,9 +693,11 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :data:`sys.base_exec_prefix` instead, or :data:`sys.exec_prefix` if
-      :ref:`virtual environments <venv-def>` need to be handled.
-
+      Use :c:func:`PyConfig_Get("base_exec_prefix") <PyConfig_Get>`
+      (:data:`sys.base_exec_prefix`) instead. Use
+      :c:func:`PyConfig_Get("exec_prefix") <PyConfig_Get>`
+      (:data:`sys.exec_prefix`) if :ref:`virtual environments <venv-def>` need
+      to be handled.
 
 .. c:function:: wchar_t* Py_GetProgramFullPath()
 
@@ -712,7 +717,8 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :data:`sys.executable` instead.
+      Use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
+      (:data:`sys.executable`) instead.
 
 
 .. c:function:: wchar_t* Py_GetPath()
@@ -740,8 +746,8 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :data:`sys.path` instead.
-
+      Use :c:func:`PyConfig_Get("module_search_paths") <PyConfig_Get>`
+      (:data:`sys.path`) instead.
 
 .. c:function:: const char* Py_GetVersion()
 
@@ -846,7 +852,7 @@ Process-wide parameters
      directory (``"."``).
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_*` string.
+   :c:expr:`wchar_t*` string.
 
    See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
    members of the :ref:`Python Initialization Configuration <init-config>`.
@@ -882,7 +888,7 @@ Process-wide parameters
    :option:`-I`.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_*` string.
+   :c:expr:`wchar_t*` string.
 
    See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
    members of the :ref:`Python Initialization Configuration <init-config>`.
@@ -908,7 +914,7 @@ Process-wide parameters
    this storage.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_*` string.
+   :c:expr:`wchar_t*` string.
 
    .. deprecated-removed:: 3.11 3.15
 
@@ -926,8 +932,8 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :c:member:`PyConfig.home` or :envvar:`PYTHONHOME` environment
-      variable instead.
+      Use :c:func:`PyConfig_Get("home") <PyConfig_Get>` or the
+      :envvar:`PYTHONHOME` environment variable instead.
 
 
 .. _threads:
@@ -1495,7 +1501,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
 .. c:function:: PyObject* PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
 
-   Return a :term:`strong reference` to the ``__main__`` `module object <moduleobjects>`_
+   Return a :term:`strong reference` to the ``__main__`` :ref:`module object <moduleobjects>`
    for the given interpreter.
 
    The caller must hold the GIL.

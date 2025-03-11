@@ -7,6 +7,11 @@ extern "C" {
 // Define this to get precise tracking of stackrefs.
 // #define Py_STACKREF_DEBUG 1
 
+// Define this to get precise tracking of closed stackrefs.
+// This will use unbounded memory, as it can only grow.
+// Use this to track double closes in short-lived programs
+// #define Py_STACKREF_CLOSE_DEBUG 1
+
 #ifndef Py_BUILD_CORE
 #  error "this header requires Py_BUILD_CORE define"
 #endif
@@ -64,7 +69,7 @@ typedef union _PyStackRef {
 #define Py_TAG_BITS 0
 
 PyAPI_FUNC(PyObject *) _Py_stackref_get_object(_PyStackRef ref);
-PyAPI_FUNC(PyObject *) _Py_stackref_close(_PyStackRef ref);
+PyAPI_FUNC(PyObject *) _Py_stackref_close(_PyStackRef ref, const char *filename, int linenumber);
 PyAPI_FUNC(_PyStackRef) _Py_stackref_create(PyObject *obj, const char *filename, int linenumber);
 PyAPI_FUNC(void) _Py_stackref_record_borrow(_PyStackRef ref, const char *filename, int linenumber);
 extern void _Py_stackref_associate(PyInterpreterState *interp, PyObject *obj, _PyStackRef ref);
@@ -111,10 +116,11 @@ _PyStackRef_AsPyObjectBorrow(_PyStackRef ref, const char *filename, int linenumb
 #define PyStackRef_AsPyObjectBorrow(REF) _PyStackRef_AsPyObjectBorrow((REF), __FILE__, __LINE__)
 
 static inline PyObject *
-PyStackRef_AsPyObjectSteal(_PyStackRef ref)
+_PyStackRef_AsPyObjectSteal(_PyStackRef ref, const char *filename, int linenumber)
 {
-    return _Py_stackref_close(ref);
+    return _Py_stackref_close(ref, filename, linenumber);
 }
+#define PyStackRef_AsPyObjectSteal(REF) _PyStackRef_AsPyObjectSteal((REF), __FILE__, __LINE__)
 
 static inline _PyStackRef
 _PyStackRef_FromPyObjectNew(PyObject *obj, const char *filename, int linenumber)
@@ -140,11 +146,12 @@ _PyStackRef_FromPyObjectImmortal(PyObject *obj, const char *filename, int linenu
 #define PyStackRef_FromPyObjectImmortal(obj) _PyStackRef_FromPyObjectImmortal(_PyObject_CAST(obj), __FILE__, __LINE__)
 
 static inline void
-PyStackRef_CLOSE(_PyStackRef ref)
+_PyStackRef_CLOSE(_PyStackRef ref, const char *filename, int linenumber)
 {
-    PyObject *obj = _Py_stackref_close(ref);
+    PyObject *obj = _Py_stackref_close(ref, filename, linenumber);
     Py_DECREF(obj);
 }
+#define PyStackRef_CLOSE(REF) _PyStackRef_CLOSE((REF), __FILE__, __LINE__)
 
 static inline _PyStackRef
 _PyStackRef_DUP(_PyStackRef ref, const char *filename, int linenumber)
@@ -219,7 +226,7 @@ PyStackRef_FromPyObjectNew(PyObject *obj)
     // Make sure we don't take an already tagged value.
     assert(((uintptr_t)obj & Py_TAG_BITS) == 0);
     assert(obj != NULL);
-    if (_Py_IsImmortal(obj) || _PyObject_HasDeferredRefcount(obj)) {
+    if (_PyObject_HasDeferredRefcount(obj)) {
         return (_PyStackRef){ .bits = (uintptr_t)obj | Py_TAG_DEFERRED };
     }
     else {
