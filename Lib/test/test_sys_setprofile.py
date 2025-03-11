@@ -516,7 +516,8 @@ class TestEdgeCases(unittest.TestCase):
         sys.setprofile(lambda frame, event, args: events.append(event))
         # Not important, we only want to trigger INSTRUMENTED_CALL_KW
         args = (1,)
-        B().f(*args, key=lambda x: 0)
+        m = B().f
+        m(*args, key=lambda x: 0)
         sys.setprofile(None)
         # The last c_call is the call to sys.setprofile
         # INSTRUMENTED_CALL_FUNCTION_EX has different behavior than the other
