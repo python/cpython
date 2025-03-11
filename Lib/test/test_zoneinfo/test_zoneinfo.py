@@ -1915,6 +1915,7 @@ class TestModule(ZoneInfoTestBase):
 class CTestModule(TestModule):
     module = c_zoneinfo
 
+
 @unittest.skipIf(c_zoneinfo == py_zoneinfo,"zoneinfo C extension not available")
 class ExtensionBuiltTest(unittest.TestCase):
     """Smoke test to ensure that the C and Python extensions are both tested.
