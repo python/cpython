@@ -584,8 +584,8 @@ I/O Base Classes
       most streams this is to EOF, but for non-blocking streams more data may
       become available.
 
-      The standard library :class:`io.BufferedReader` returns ``None`` if
-      reading would block and no data is available. Other implementations may
+      The standard library :class:`io.BufferedReader` returns ``None`` if the
+      stream is non-blocking and no data is available. Other implementations may
       return ``None`` or raise :exc:`BlockingIOError`.
 
    .. method:: read1(size=-1, /)
