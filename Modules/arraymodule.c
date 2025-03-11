@@ -215,140 +215,6 @@ arraydata_realloc(arraydata *data, Py_ssize_t size, int itemsize)
 
 #endif
 
-#ifdef Py_GIL_DISABLED
-
-// This really doesn't belong here, for show at the moment.
-static void
-_Py_atomic_source_memcpy_relaxed(void *dest, void *src, size_t n)
-{
-    int diff = (int)((uintptr_t)dest ^ (uintptr_t)src);
-
-    // the first half is needed to deal with misalignment
-
-    if (diff & 1) {  // dest and src not word aligned with each other
-        for (void *end = (char *)dest + n; dest < end;
-             dest = (char *)dest + 1, src = (char *)src + 1) {
-            *((char *)dest) = _Py_atomic_load_char_relaxed((char *)src);
-        }
-
-        return;
-    }
-
-    if ((uintptr_t)dest & 1) {  // dest and src not word aligned in memory
-        if (n) {
-            *(char *)dest = _Py_atomic_load_char_relaxed((char *)src);
-            dest = (char *)dest + 1;
-            src = (char *)src + 1;
-            n -= 1;
-        }
-
-        if (!n) {
-            return;
-        }
-    }
-
-    if (diff & 2) {  // dest and src not dword aligned with each other
-        size_t n2 = n / 2;
-
-        for (void *end = (short *)dest + n2; dest < end;
-             dest = (short *)dest + 1, src = (short *)src + 1) {
-            *((short *)dest) = _Py_atomic_load_short_relaxed((short *)src);
-        }
-
-        if (n & 1) {
-            *((char *)dest) = _Py_atomic_load_char_relaxed((char *)src);
-        }
-
-        return;
-    }
-
-    if ((uintptr_t)dest & 2) {  // dest and src not dword aligned in memory
-        if (n >= 2) {
-            *(short *)dest = _Py_atomic_load_short_relaxed((short *)src);
-            dest = (short *)dest + 1;
-            src = (short *)src + 1;
-            n -= 2;
-        }
-
-        if (!n) {
-            return;
-        }
-    }
-
-    if (diff & 4) {  // dest and src not qword aligned with each other
-        size_t n4 = n / 4;
-
-        for (void *end = (PY_UINT32_T *)dest + n4; dest < end;
-             dest = (PY_UINT32_T *)dest + 1, src = (PY_UINT32_T *)src + 1) {
-            *((PY_UINT32_T *)dest) = (PY_UINT32_T)_Py_atomic_load_uint32_relaxed((PY_UINT32_T *)src);
-        }
-
-        if (n & 2) {
-            *((short *)dest) = _Py_atomic_load_short_relaxed((short *)src);
-            dest = (short *)dest + 1;
-            src = (short *)src + 1;
-        }
-
-        if (n & 1) {
-            *((char *)dest) = _Py_atomic_load_char_relaxed((char *)src);
-        }
-
-        return;
-    }
-
-    if ((uintptr_t)dest & 4) {  // dest and src not qword aligned in memory
-        if (n >= 4) {
-            *(PY_UINT32_T *)dest = _Py_atomic_load_uint32_relaxed((PY_UINT32_T *)src);
-            dest = (PY_UINT32_T *)dest + 1;
-            src = (PY_UINT32_T *)src + 1;
-            n -= 4;
-        }
-
-        if (!n) {
-            return;
-        }
-    }
-
-    // the second half is aligned copy
-
-    size_t n8 = n / 8;
-
-    if (n8) {
-        for (void *end = (PY_UINT64_T *)dest + n8; dest < end;
-             dest = (PY_UINT64_T *)dest + 1, src = (PY_UINT64_T *)src + 1) {
-            *((PY_UINT64_T *)dest) = (PY_UINT64_T)_Py_atomic_load_uint64_relaxed((PY_UINT64_T *)src);
-        }
-
-        n -= n8 * 8;
-    }
-
-    if (n & 4) {
-        *((PY_UINT32_T *)dest) = (PY_UINT32_T)_Py_atomic_load_uint32_relaxed((PY_UINT32_T *)src);
-        dest = (PY_UINT32_T *)dest + 1;
-        src = (PY_UINT32_T *)src + 1;
-    }
-
-    if (n & 2) {
-        *((short *)dest) = _Py_atomic_load_short_relaxed((short *)src);
-        dest = (short *)dest + 1;
-        src = (short *)src + 1;
-    }
-
-    if (n & 1) {
-        *((char *)dest) = _Py_atomic_load_char_relaxed((char *)src);
-    }
-}
-
-#define FT_ATOMIC_SOURCE_MEMCPY_RELAXED(dest, src, n) \
-    _Py_atomic_source_memcpy_relaxed((dest), (src), (n))
-
-#else
-
-#define FT_ATOMIC_SOURCE_MEMCPY_RELAXED(dest, src, n) \
-    memcpy((dest), (src), (n))
-
-#endif
-
 static int
 array_resize(arrayobject *self, Py_ssize_t newsize)
 {
@@ -425,7 +291,7 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
     }
     if (data != NULL) {
         Py_ssize_t size = Py_SIZE(self);
-        FT_ATOMIC_SOURCE_MEMCPY_RELAXED(newdata->items, data->items, Py_MIN(size, newsize) * itemsize);
+        memcpy(newdata->items, data->items, Py_MIN(size, newsize) * itemsize);
         arraydata_free(data, _PyObject_GC_IS_SHARED(self));
     }
     _Py_atomic_store_ptr_release(&self->data, newdata);
@@ -1337,8 +1203,7 @@ array_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
     if (np == NULL)
         return NULL;
     if (ihigh > ilow) {
-        FT_ATOMIC_SOURCE_MEMCPY_RELAXED(
-            np->data->items, a->data->items + ilow * a->ob_descr->itemsize,
+        memcpy(np->data->items, a->data->items + ilow * a->ob_descr->itemsize,
             (ihigh-ilow) * a->ob_descr->itemsize);
     }
     return (PyObject *)np;
@@ -2990,7 +2855,7 @@ array_subscr_slice_lock_held(PyObject *op, PyObject *item)
                                     slicelength, self->ob_descr);
             if (result == NULL)
                 return NULL;
-            FT_ATOMIC_SOURCE_MEMCPY_RELAXED(((arrayobject *)result)->data->items,
+            memcpy(((arrayobject *)result)->data->items,
                    self->data->items + start * itemsize,
                    slicelength * itemsize);
             return result;

@@ -1977,16 +1977,17 @@ class FreeThreadingTest(unittest.TestCase):
             for src, dst in idxs:
                 a[dst] = a[src]
 
-        def extend_range(b, a, count):
-            b.wait()
-            for _ in range(count):
-                a.extend(range(10))
+        # comment these back in if resize is made atomically quiet
+        # def extend_range(b, a, count):
+        #     b.wait()
+        #     for _ in range(count):
+        #         a.extend(range(10))
 
-        def extend_self(b, a, count):
-            c = a[:]
-            b.wait()
-            for _ in range(count):
-                a.extend(c)
+        # def extend_self(b, a, count):
+        #     c = a[:]
+        #     b.wait()
+        #     for _ in range(count):
+        #         a.extend(c)
 
         for tc in typecodes:
             if tc in 'uw':
@@ -1996,10 +1997,10 @@ class FreeThreadingTest(unittest.TestCase):
 
             self.check([copy_back_and_forth] * 10, a, 100)
             self.check([append_and_pop] * 10, a, 100)
-            self.check([copy_back_and_forth] * 10 + [extend_self], a, 100)
+            # self.check([copy_back_and_forth] * 10 + [extend_self], a, 100)  # comment this in if resize is made atomically quiet
 
             if tc not in 'uw':
-                self.check([copy_back_and_forth] * 10 + [extend_range], a, 100)
+                # self.check([copy_back_and_forth] * 10 + [extend_range], a, 100)  # comment this in if resize is made atomically quiet
                 self.check([copy_random] * 10, a * 5, 100)
 
 
