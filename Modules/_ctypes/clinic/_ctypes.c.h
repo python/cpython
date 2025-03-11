@@ -22,7 +22,7 @@ static PyObject *
 _ctypes_CType_Type___sizeof___impl(PyObject *self, PyTypeObject *cls);
 
 static PyObject *
-_ctypes_CType_Type___sizeof__(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_ctypes_CType_Type___sizeof__(PyObject *self, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "__sizeof__() takes no arguments");
@@ -47,7 +47,7 @@ CDataType_from_address_impl(PyObject *type, PyTypeObject *cls,
                             PyObject *value);
 
 static PyObject *
-CDataType_from_address(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+CDataType_from_address(PyObject *type, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -94,7 +94,7 @@ CDataType_from_buffer_impl(PyObject *type, PyTypeObject *cls, PyObject *obj,
                            Py_ssize_t offset);
 
 static PyObject *
-CDataType_from_buffer(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+CDataType_from_buffer(PyObject *type, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -158,7 +158,7 @@ CDataType_from_buffer_copy_impl(PyObject *type, PyTypeObject *cls,
                                 Py_buffer *buffer, Py_ssize_t offset);
 
 static PyObject *
-CDataType_from_buffer_copy(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+CDataType_from_buffer_copy(PyObject *type, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -229,7 +229,7 @@ CDataType_in_dll_impl(PyObject *type, PyTypeObject *cls, PyObject *dll,
                       const char *name);
 
 static PyObject *
-CDataType_in_dll(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+CDataType_in_dll(PyObject *type, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -287,7 +287,7 @@ static PyObject *
 CDataType_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value);
 
 static PyObject *
-CDataType_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+CDataType_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -331,7 +331,7 @@ PyCPointerType_set_type_impl(PyTypeObject *self, PyTypeObject *cls,
                              PyObject *type);
 
 static PyObject *
-PyCPointerType_set_type(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+PyCPointerType_set_type(PyObject *self, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -376,7 +376,7 @@ PyCPointerType_from_param_impl(PyObject *type, PyTypeObject *cls,
                                PyObject *value);
 
 static PyObject *
-PyCPointerType_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+PyCPointerType_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -419,7 +419,7 @@ static PyObject *
 c_wchar_p_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value);
 
 static PyObject *
-c_wchar_p_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+c_wchar_p_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -462,7 +462,7 @@ static PyObject *
 c_char_p_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value);
 
 static PyObject *
-c_char_p_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+c_char_p_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -505,7 +505,7 @@ static PyObject *
 c_void_p_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value);
 
 static PyObject *
-c_void_p_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+c_void_p_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -550,7 +550,7 @@ PyCSimpleType_from_param_impl(PyObject *type, PyTypeObject *cls,
                               PyObject *value);
 
 static PyObject *
-PyCSimpleType_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+PyCSimpleType_from_param(PyObject *type, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -593,7 +593,7 @@ static PyObject *
 PyCData_reduce_impl(PyObject *myself, PyTypeObject *cls);
 
 static PyObject *
-PyCData_reduce(PyObject *myself, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+PyCData_reduce(PyObject *myself, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "__reduce__() takes no arguments");
@@ -785,7 +785,7 @@ static PyObject *
 Simple_from_outparm_impl(PyObject *self, PyTypeObject *cls);
 
 static PyObject *
-Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "__ctypes_from_outparam__() takes no arguments");
@@ -793,4 +793,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
-/*[clinic end generated code: output=a18d87239b6fb8ca input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6be8c0cae7bb0d4a input=a9049054013a1b77]*/

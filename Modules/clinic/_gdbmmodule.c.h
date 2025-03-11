@@ -107,7 +107,7 @@ static PyObject *
 _gdbm_gdbm_keys_impl(gdbmobject *self, PyTypeObject *cls);
 
 static PyObject *
-_gdbm_gdbm_keys(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_gdbm_gdbm_keys(PyObject *self, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "keys() takes no arguments");
@@ -133,7 +133,7 @@ static PyObject *
 _gdbm_gdbm_firstkey_impl(gdbmobject *self, PyTypeObject *cls);
 
 static PyObject *
-_gdbm_gdbm_firstkey(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_gdbm_gdbm_firstkey(PyObject *self, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "firstkey() takes no arguments");
@@ -164,7 +164,7 @@ _gdbm_gdbm_nextkey_impl(gdbmobject *self, PyTypeObject *cls, const char *key,
                         Py_ssize_t key_length);
 
 static PyObject *
-_gdbm_gdbm_nextkey(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_gdbm_gdbm_nextkey(PyObject *self, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -212,7 +212,7 @@ static PyObject *
 _gdbm_gdbm_reorganize_impl(gdbmobject *self, PyTypeObject *cls);
 
 static PyObject *
-_gdbm_gdbm_reorganize(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_gdbm_gdbm_reorganize(PyObject *self, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "reorganize() takes no arguments");
@@ -237,7 +237,7 @@ static PyObject *
 _gdbm_gdbm_sync_impl(gdbmobject *self, PyTypeObject *cls);
 
 static PyObject *
-_gdbm_gdbm_sync(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_gdbm_gdbm_sync(PyObject *self, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "sync() takes no arguments");
@@ -259,7 +259,7 @@ static PyObject *
 _gdbm_gdbm_clear_impl(gdbmobject *self, PyTypeObject *cls);
 
 static PyObject *
-_gdbm_gdbm_clear(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_gdbm_gdbm_clear(PyObject *self, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "clear() takes no arguments");
@@ -343,4 +343,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d974cb39e4ee5d67 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e155c4a5bde63bb3 input=a9049054013a1b77]*/

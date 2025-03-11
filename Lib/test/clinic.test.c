@@ -4758,7 +4758,7 @@ static PyObject *
 Test_cls_with_param_impl(TestObj *self, PyTypeObject *cls, int a);
 
 static PyObject *
-Test_cls_with_param(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+Test_cls_with_param(PyObject *self, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -4806,7 +4806,7 @@ exit:
 
 static PyObject *
 Test_cls_with_param_impl(TestObj *self, PyTypeObject *cls, int a)
-/*[clinic end generated code: output=7e893134a81fef92 input=af158077bd237ef9]*/
+/*[clinic end generated code: output=9f0983c4b628bed0 input=af158077bd237ef9]*/
 
 
 /*[clinic input]
@@ -4908,7 +4908,7 @@ static PyObject *
 Test_cls_no_params_impl(TestObj *self, PyTypeObject *cls);
 
 static PyObject *
-Test_cls_no_params(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+Test_cls_no_params(PyObject *self, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "cls_no_params() takes no arguments");
@@ -4919,7 +4919,7 @@ Test_cls_no_params(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_
 
 static PyObject *
 Test_cls_no_params_impl(TestObj *self, PyTypeObject *cls)
-/*[clinic end generated code: output=8845de054449f40a input=e7e2e4e344e96a11]*/
+/*[clinic end generated code: output=a6f8d26556050104 input=e7e2e4e344e96a11]*/
 
 
 /*[clinic input]
@@ -5708,7 +5708,7 @@ Test__pyarg_parsestackandkeywords_impl(TestObj *self, PyTypeObject *cls,
                                        Py_ssize_t key_length);
 
 static PyObject *
-Test__pyarg_parsestackandkeywords(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+Test__pyarg_parsestackandkeywords(PyObject *self, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -5741,7 +5741,7 @@ static PyObject *
 Test__pyarg_parsestackandkeywords_impl(TestObj *self, PyTypeObject *cls,
                                        const char *key,
                                        Py_ssize_t key_length)
-/*[clinic end generated code: output=7060c213d7b8200e input=fc72ef4b4cfafabc]*/
+/*[clinic end generated code: output=13887b728d0d74b2 input=fc72ef4b4cfafabc]*/
 
 
 /*[clinic input]

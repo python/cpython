@@ -118,7 +118,7 @@ PARSER_PROTOTYPE_FASTCALL_KEYWORDS: Final[str] = libclinic.normalize_snippet("""
 """)
 PARSER_PROTOTYPE_DEF_CLASS: Final[str] = libclinic.normalize_snippet("""
     static PyObject *
-    {c_basename}({self_type}{self_name}, PyTypeObject *{defining_class_name}, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+    {c_basename}({self_type}{self_name}, PyTypeObject *{defining_class_name}, PyObject *const *args, size_t nargs, PyObject *kwnames)
 """)
 PARSER_PROTOTYPE_NOARGS: Final[str] = libclinic.normalize_snippet("""
     static PyObject *

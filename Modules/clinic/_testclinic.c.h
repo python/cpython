@@ -3831,7 +3831,7 @@ _testclinic_TestClass_get_defining_class_impl(PyObject *self,
                                               PyTypeObject *cls);
 
 static PyObject *
-_testclinic_TestClass_get_defining_class(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_testclinic_TestClass_get_defining_class(PyObject *self, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "get_defining_class() takes no arguments");
@@ -3854,7 +3854,7 @@ _testclinic_TestClass_get_defining_class_arg_impl(PyObject *self,
                                                   PyObject *arg);
 
 static PyObject *
-_testclinic_TestClass_get_defining_class_arg(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_testclinic_TestClass_get_defining_class_arg(PyObject *self, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -3910,7 +3910,7 @@ _testclinic_TestClass_defclass_varpos_impl(PyObject *self, PyTypeObject *cls,
                                            PyObject *args);
 
 static PyObject *
-_testclinic_TestClass_defclass_varpos(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_testclinic_TestClass_defclass_varpos(PyObject *self, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -3963,7 +3963,7 @@ _testclinic_TestClass_defclass_posonly_varpos_impl(PyObject *self,
                                                    PyObject *args);
 
 static PyObject *
-_testclinic_TestClass_defclass_posonly_varpos(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_testclinic_TestClass_defclass_posonly_varpos(PyObject *self, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -4313,4 +4313,4 @@ posonly_poskw_varpos_array_no_fastcall(PyTypeObject *type, PyObject *args, PyObj
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=00085e5637450fe6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d1ae8a9aaa8989f5 input=a9049054013a1b77]*/

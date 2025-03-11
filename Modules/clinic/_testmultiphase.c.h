@@ -25,7 +25,7 @@ _testmultiphase_StateAccessType_get_defining_module_impl(StateAccessTypeObject *
                                                          PyTypeObject *cls);
 
 static PyObject *
-_testmultiphase_StateAccessType_get_defining_module(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_testmultiphase_StateAccessType_get_defining_module(PyObject *self, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "get_defining_module() takes no arguments");
@@ -48,7 +48,7 @@ _testmultiphase_StateAccessType_getmodulebydef_bad_def_impl(StateAccessTypeObjec
                                                             PyTypeObject *cls);
 
 static PyObject *
-_testmultiphase_StateAccessType_getmodulebydef_bad_def(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_testmultiphase_StateAccessType_getmodulebydef_bad_def(PyObject *self, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "getmodulebydef_bad_def() takes no arguments");
@@ -76,7 +76,7 @@ _testmultiphase_StateAccessType_increment_count_clinic_impl(StateAccessTypeObjec
                                                             int n, int twice);
 
 static PyObject *
-_testmultiphase_StateAccessType_increment_count_clinic(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_testmultiphase_StateAccessType_increment_count_clinic(PyObject *self, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -155,7 +155,7 @@ _testmultiphase_StateAccessType_get_count_impl(StateAccessTypeObject *self,
                                                PyTypeObject *cls);
 
 static PyObject *
-_testmultiphase_StateAccessType_get_count(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_testmultiphase_StateAccessType_get_count(PyObject *self, PyTypeObject *cls, PyObject *const *args, size_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "get_count() takes no arguments");
@@ -163,4 +163,4 @@ _testmultiphase_StateAccessType_get_count(PyObject *self, PyTypeObject *cls, PyO
     }
     return _testmultiphase_StateAccessType_get_count_impl((StateAccessTypeObject *)self, cls);
 }
-/*[clinic end generated code: output=ea0ca98e467e53c2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5495f2a30a7b8480 input=a9049054013a1b77]*/
