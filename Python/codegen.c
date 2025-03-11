@@ -734,29 +734,9 @@ codegen_leave_annotations_scope(compiler *c, location loc)
 }
 
 static int
-codegen_process_deferred_annotations(compiler *c, location loc)
+codegen_deferred_annotations_body(compiler *c, location loc,
+    PyObject *deferred_anno, PyObject *conditional_annotation_indices, int scope_type)
 {
-    PyObject *deferred_anno = NULL;
-    PyObject *conditional_annotation_indices = NULL;
-    _PyCompile_DeferredAnnotations(c, &deferred_anno, &conditional_annotation_indices);
-    if (deferred_anno == NULL) {
-        assert(conditional_annotation_indices == NULL);
-        return SUCCESS;
-    }
-
-    // It's possible that ste_annotations_block is set but
-    // u_deferred_annotations is not, because the former is still
-    // set if there are only non-simple annotations (i.e., annotations
-    // for attributes, subscripts, or parenthesized names). However, the
-    // reverse should not be possible.
-    PySTEntryObject *ste = SYMTABLE_ENTRY(c);
-    assert(ste->ste_annotation_block != NULL);
-    void *key = (void *)((uintptr_t)ste->ste_id + 1);
-    int scope_type = SCOPE_TYPE(c);
-    if (codegen_setup_annotations_scope(c, loc, key,
-                                        ste->ste_annotation_block->ste_name) < 0) {
-        goto error;
-    }
     Py_ssize_t annotations_len = PyList_Size(deferred_anno);
 
     assert(PyList_CheckExact(conditional_annotation_indices));
@@ -768,13 +748,11 @@ codegen_process_deferred_annotations(compiler *c, location loc)
         PyObject *ptr = PyList_GET_ITEM(deferred_anno, i);
         stmt_ty st = (stmt_ty)PyLong_AsVoidPtr(ptr);
         if (st == NULL) {
-            _PyCompile_ExitScope(c);
-            goto error;
+            return ERROR;
         }
         PyObject *mangled = _PyCompile_Mangle(c, st->v.AnnAssign.target->v.Name.id);
         if (!mangled) {
-            _PyCompile_ExitScope(c);
-            goto error;
+            return ERROR;
         }
         PyObject *cond_index = PyList_GET_ITEM(conditional_annotation_indices, i);
         assert(PyLong_CheckExact(cond_index));
@@ -805,6 +783,39 @@ codegen_process_deferred_annotations(compiler *c, location loc)
 
         USE_LABEL(c, not_set);
     }
+    return SUCCESS;
+}
+
+static int
+codegen_process_deferred_annotations(compiler *c, location loc)
+{
+    PyObject *deferred_anno = NULL;
+    PyObject *conditional_annotation_indices = NULL;
+    _PyCompile_DeferredAnnotations(c, &deferred_anno, &conditional_annotation_indices);
+    if (deferred_anno == NULL) {
+        assert(conditional_annotation_indices == NULL);
+        return SUCCESS;
+    }
+
+    // It's possible that ste_annotations_block is set but
+    // u_deferred_annotations is not, because the former is still
+    // set if there are only non-simple annotations (i.e., annotations
+    // for attributes, subscripts, or parenthesized names). However, the
+    // reverse should not be possible.
+    PySTEntryObject *ste = SYMTABLE_ENTRY(c);
+    assert(ste->ste_annotation_block != NULL);
+    void *key = (void *)((uintptr_t)ste->ste_id + 1);
+    int scope_type = SCOPE_TYPE(c);
+    if (codegen_setup_annotations_scope(c, loc, key,
+                                        ste->ste_annotation_block->ste_name) < 0) {
+        goto error;
+    }
+    if (codegen_deferred_annotations_body(c, loc, deferred_anno,
+                                          conditional_annotation_indices, scope_type) < 0) {
+        _PyCompile_ExitScope(c);
+        goto error;
+    }
+
     Py_DECREF(deferred_anno);
     Py_DECREF(conditional_annotation_indices);
 
