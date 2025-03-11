@@ -519,7 +519,7 @@ Hacl_Hash_Blake2s_Simd128_load_state128s_from_state32(
   r3[0U] = Lib_IntVector_Intrinsics_vec128_load32s(b3[0U], b3[1U], b3[2U], b3[3U]);
 }
 
-Lib_IntVector_Intrinsics_vec128 *Hacl_Hash_Blake2s_Simd128_malloc_with_key(void)
+Lib_IntVector_Intrinsics_vec128 *Hacl_Hash_Blake2s_Simd128_malloc_internal_state_with_key(void)
 {
   Lib_IntVector_Intrinsics_vec128
   *buf =
@@ -557,7 +557,7 @@ Hacl_Hash_Blake2s_Simd128_update_last_no_inline(
 }
 
 void
-Hacl_Hash_Blake2s_Simd128_copy(
+Hacl_Hash_Blake2s_Simd128_copy_internal_state(
   Lib_IntVector_Intrinsics_vec128 *src,
   Lib_IntVector_Intrinsics_vec128 *dst
 )
@@ -820,7 +820,7 @@ The caller must satisfy the following requirements.
 
 */
 Hacl_Hash_Blake2s_Simd128_state_t
-*Hacl_Hash_Blake2s_Simd128_malloc_with_key0(uint8_t *k, uint8_t kk)
+*Hacl_Hash_Blake2s_Simd128_malloc_with_key(uint8_t *k, uint8_t kk)
 {
   uint8_t nn = 32U;
   Hacl_Hash_Blake2b_index i = { .key_length = kk, .digest_length = nn, .last_node = false };
@@ -846,7 +846,7 @@ use Blake2 as a hash function. Further resettings of the state SHALL be done wit
 */
 Hacl_Hash_Blake2s_Simd128_state_t *Hacl_Hash_Blake2s_Simd128_malloc(void)
 {
-  return Hacl_Hash_Blake2s_Simd128_malloc_with_key0(NULL, 0U);
+  return Hacl_Hash_Blake2s_Simd128_malloc_with_key(NULL, 0U);
 }
 
 static Hacl_Hash_Blake2b_index index_of_state(Hacl_Hash_Blake2s_Simd128_state_t *s)
@@ -1322,7 +1322,7 @@ void Hacl_Hash_Blake2s_Simd128_free(Hacl_Hash_Blake2s_Simd128_state_t *state)
   Copying. This preserves all parameters.
 */
 Hacl_Hash_Blake2s_Simd128_state_t
-*Hacl_Hash_Blake2s_Simd128_copy0(Hacl_Hash_Blake2s_Simd128_state_t *state)
+*Hacl_Hash_Blake2s_Simd128_copy(Hacl_Hash_Blake2s_Simd128_state_t *state)
 {
   Hacl_Hash_Blake2s_Simd128_state_t scrut = *state;
   Hacl_Hash_Blake2s_Simd128_block_state_t block_state0 = scrut.block_state;

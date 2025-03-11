@@ -88,7 +88,7 @@ The caller must satisfy the following requirements.
 
 */
 Hacl_Hash_Blake2s_Simd128_state_t
-*Hacl_Hash_Blake2s_Simd128_malloc_with_key0(uint8_t *k, uint8_t kk);
+*Hacl_Hash_Blake2s_Simd128_malloc_with_key(uint8_t *k, uint8_t kk);
 
 /**
  Specialized allocation function that picks default values for all
@@ -165,7 +165,7 @@ void Hacl_Hash_Blake2s_Simd128_free(Hacl_Hash_Blake2s_Simd128_state_t *state);
   Copying. This preserves all parameters.
 */
 Hacl_Hash_Blake2s_Simd128_state_t
-*Hacl_Hash_Blake2s_Simd128_copy0(Hacl_Hash_Blake2s_Simd128_state_t *state);
+*Hacl_Hash_Blake2s_Simd128_copy(Hacl_Hash_Blake2s_Simd128_state_t *state);
 
 /**
 Write the BLAKE2s digest of message `input` using key `key` into `output`.

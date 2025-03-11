@@ -527,7 +527,7 @@ Hacl_Hash_Blake2b_Simd256_store_state256b_to_state32(
     os[i] = x;);
 }
 
-Lib_IntVector_Intrinsics_vec256 *Hacl_Hash_Blake2b_Simd256_malloc_with_key(void)
+Lib_IntVector_Intrinsics_vec256 *Hacl_Hash_Blake2b_Simd256_malloc_internal_state_with_key(void)
 {
   Lib_IntVector_Intrinsics_vec256
   *buf =
@@ -565,7 +565,7 @@ Hacl_Hash_Blake2b_Simd256_update_last_no_inline(
 }
 
 void
-Hacl_Hash_Blake2b_Simd256_copy(
+Hacl_Hash_Blake2b_Simd256_copy_internal_state(
   Lib_IntVector_Intrinsics_vec256 *src,
   Lib_IntVector_Intrinsics_vec256 *dst
 )
@@ -831,7 +831,7 @@ The caller must satisfy the following requirements.
 
 */
 Hacl_Hash_Blake2b_Simd256_state_t
-*Hacl_Hash_Blake2b_Simd256_malloc_with_key0(uint8_t *k, uint8_t kk)
+*Hacl_Hash_Blake2b_Simd256_malloc_with_key(uint8_t *k, uint8_t kk)
 {
   uint8_t nn = 64U;
   Hacl_Hash_Blake2b_index i = { .key_length = kk, .digest_length = nn, .last_node = false };
@@ -857,7 +857,7 @@ use Blake2 as a hash function. Further resettings of the state SHALL be done wit
 */
 Hacl_Hash_Blake2b_Simd256_state_t *Hacl_Hash_Blake2b_Simd256_malloc(void)
 {
-  return Hacl_Hash_Blake2b_Simd256_malloc_with_key0(NULL, 0U);
+  return Hacl_Hash_Blake2b_Simd256_malloc_with_key(NULL, 0U);
 }
 
 static Hacl_Hash_Blake2b_index index_of_state(Hacl_Hash_Blake2b_Simd256_state_t *s)
@@ -1367,7 +1367,7 @@ void Hacl_Hash_Blake2b_Simd256_free(Hacl_Hash_Blake2b_Simd256_state_t *state)
   Copying. This preserves all parameters.
 */
 Hacl_Hash_Blake2b_Simd256_state_t
-*Hacl_Hash_Blake2b_Simd256_copy0(Hacl_Hash_Blake2b_Simd256_state_t *state)
+*Hacl_Hash_Blake2b_Simd256_copy(Hacl_Hash_Blake2b_Simd256_state_t *state)
 {
   Hacl_Hash_Blake2b_Simd256_state_t scrut = *state;
   Hacl_Hash_Blake2b_Simd256_block_state_t block_state0 = scrut.block_state;

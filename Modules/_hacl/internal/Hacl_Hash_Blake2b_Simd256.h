@@ -81,7 +81,8 @@ Hacl_Hash_Blake2b_Simd256_store_state256b_to_state32(
   Lib_IntVector_Intrinsics_vec256 *st
 );
 
-Lib_IntVector_Intrinsics_vec256 *Hacl_Hash_Blake2b_Simd256_malloc_with_key(void);
+Lib_IntVector_Intrinsics_vec256
+*Hacl_Hash_Blake2b_Simd256_malloc_internal_state_with_key(void);
 
 void
 Hacl_Hash_Blake2b_Simd256_update_multi_no_inline(
@@ -100,7 +101,7 @@ Hacl_Hash_Blake2b_Simd256_update_last_no_inline(
 );
 
 void
-Hacl_Hash_Blake2b_Simd256_copy(
+Hacl_Hash_Blake2b_Simd256_copy_internal_state(
   Lib_IntVector_Intrinsics_vec256 *src,
   Lib_IntVector_Intrinsics_vec256 *dst
 );

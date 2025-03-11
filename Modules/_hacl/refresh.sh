@@ -22,7 +22,7 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good.
-expected_hacl_star_rev=809c320227eecc61a744953f1ee574b4f24aabe3
+expected_hacl_star_rev=322f6d58290e0ed7f4ecb84fcce12917aa0f594b
 
 hacl_dir="$(realpath "$1")"
 cd "$(dirname "$0")"
@@ -83,7 +83,6 @@ include_files=(
 declare -a lib_files
 lib_files=(
   krmllib/dist/minimal/FStar_UInt_8_16_32_64.h
-  krmllib/dist/minimal/FStar_UInt128.h
   krmllib/dist/minimal/fstar_uint128_struct_endianness.h
   krmllib/dist/minimal/FStar_UInt128_Verified.h
 )

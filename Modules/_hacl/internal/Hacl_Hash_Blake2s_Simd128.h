@@ -81,7 +81,8 @@ Hacl_Hash_Blake2s_Simd128_load_state128s_from_state32(
   uint32_t *st32
 );
 
-Lib_IntVector_Intrinsics_vec128 *Hacl_Hash_Blake2s_Simd128_malloc_with_key(void);
+Lib_IntVector_Intrinsics_vec128
+*Hacl_Hash_Blake2s_Simd128_malloc_internal_state_with_key(void);
 
 void
 Hacl_Hash_Blake2s_Simd128_update_multi_no_inline(
@@ -100,7 +101,7 @@ Hacl_Hash_Blake2s_Simd128_update_last_no_inline(
 );
 
 void
-Hacl_Hash_Blake2s_Simd128_copy(
+Hacl_Hash_Blake2s_Simd128_copy_internal_state(
   Lib_IntVector_Intrinsics_vec128 *src,
   Lib_IntVector_Intrinsics_vec128 *dst
 );

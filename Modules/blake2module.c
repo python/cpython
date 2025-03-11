@@ -707,12 +707,12 @@ _blake2_blake2b_copy_impl(Blake2Object *self)
     switch (self->impl) {
 #if HACL_CAN_COMPILE_SIMD256
         case Blake2b_256:
-            cpy->blake2b_256_state = Hacl_Hash_Blake2b_Simd256_copy0(self->blake2b_256_state);
+            cpy->blake2b_256_state = Hacl_Hash_Blake2b_Simd256_copy(self->blake2b_256_state);
             break;
 #endif
 #if HACL_CAN_COMPILE_SIMD128
         case Blake2s_128:
-            cpy->blake2s_128_state = Hacl_Hash_Blake2s_Simd128_copy0(self->blake2s_128_state);
+            cpy->blake2s_128_state = Hacl_Hash_Blake2s_Simd128_copy(self->blake2s_128_state);
             break;
 #endif
         case Blake2b:
