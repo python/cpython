@@ -113,8 +113,6 @@ typedef struct {
     int64_t interpid;
 } xibufferview;
 
-#define xibufferview_CAST(op) ((xibufferview *)(op))
-
 static PyObject *
 xibufferview_from_buffer(PyTypeObject *cls, Py_buffer *view, int64_t interpid)
 {
@@ -144,7 +142,7 @@ xibufferview_from_buffer(PyTypeObject *cls, Py_buffer *view, int64_t interpid)
 static void
 xibufferview_dealloc(PyObject *op)
 {
-    xibufferview *self = xibufferview_CAST(op);
+    xibufferview *self = (xibufferview *)op;
     if (self->view != NULL) {
         PyInterpreterState *interp =
                         _PyInterpreterState_LookUpID(self->interpid);
@@ -179,7 +177,7 @@ xibufferview_getbuf(PyObject *op, Py_buffer *view, int flags)
 {
     /* Only PyMemoryView_FromObject() should ever call this,
        via _memoryview_from_xid() below. */
-    xibufferview *self = xibufferview_CAST(op);
+    xibufferview *self = (xibufferview *)op;
     *view = *self->view;
     /* This is the workaround mentioned earlier. */
     view->obj = op;
