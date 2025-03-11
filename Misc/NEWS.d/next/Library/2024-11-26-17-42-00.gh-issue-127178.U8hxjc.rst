@@ -1,4 +1,0 @@
-A ``_sysconfig_vars_(...).json`` file is now shipped in the standard library
-directory. It contains the output of :func:`sysconfig.get_config_vars` on
-the default environment encoded as JSON data. This is an implementation
-detail, and may change at any time.

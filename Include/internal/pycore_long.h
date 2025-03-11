@@ -65,6 +65,8 @@ PyAPI_FUNC(void) _PyLong_ExactDealloc(PyObject *self);
 #  error "_PY_NSMALLPOSINTS must be greater than or equal to 257"
 #endif
 
+#define _PY_IS_SMALL_INT(val) ((val) >= 0 && (val) < 256 && (val) < _PY_NSMALLPOSINTS)
+
 // Return a reference to the immortal zero singleton.
 // The function cannot return NULL.
 static inline PyObject* _PyLong_GetZero(void)
@@ -159,13 +161,14 @@ PyAPI_FUNC(int) _PyLong_Size_t_Converter(PyObject *, void *);
 
 /* Long value tag bits:
  * 0-1: Sign bits value = (1-sign), ie. negative=2, positive=0, zero=1.
- * 2: Reserved for immortality bit
+ * 2: Set to 1 for the small ints
  * 3+ Unsigned digit count
  */
 #define SIGN_MASK 3
 #define SIGN_ZERO 1
 #define SIGN_NEGATIVE 2
 #define NON_SIZE_BITS 3
+#define IMMORTALITY_BIT_MASK (1 << 2)
 
 /* The functions _PyLong_IsCompact and _PyLong_CompactValue are defined
  * in Include/cpython/longobject.h, since they need to be inline.
@@ -196,7 +199,7 @@ PyAPI_FUNC(int) _PyLong_Size_t_Converter(PyObject *, void *);
 static inline int
 _PyLong_IsNonNegativeCompact(const PyLongObject* op) {
     assert(PyLong_Check(op));
-    return op->long_value.lv_tag <= (1 << NON_SIZE_BITS);
+    return ((op->long_value.lv_tag & ~IMMORTALITY_BIT_MASK) <= (1 << NON_SIZE_BITS));
 }
 
 
@@ -298,7 +301,7 @@ _PyLong_FlipSign(PyLongObject *op) {
         .long_value  = { \
             .lv_tag = TAG_FROM_SIGN_AND_SIZE( \
                 (val) == 0 ? 0 : ((val) < 0 ? -1 : 1), \
-                (val) == 0 ? 0 : 1), \
+                (val) == 0 ? 0 : 1) | IMMORTALITY_BIT_MASK, \
             { ((val) >= 0 ? (val) : -(val)) }, \
         } \
     }

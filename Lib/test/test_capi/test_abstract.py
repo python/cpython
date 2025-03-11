@@ -274,7 +274,7 @@ class CAPITest(unittest.TestCase):
 
         # PyObject_SetAttr(obj, attr_name, NULL) removes the attribute
         xsetattr(obj, 'a', NULL)
-        self.assertFalse(hasattr(obj, 'a'))
+        self.assertNotHasAttr(obj, 'a')
         self.assertRaises(AttributeError, xsetattr, obj, 'b', NULL)
         self.assertRaises(RuntimeError, xsetattr, obj, 'evil', NULL)
 
@@ -294,7 +294,7 @@ class CAPITest(unittest.TestCase):
 
         # PyObject_SetAttrString(obj, attr_name, NULL) removes the attribute
         setattrstring(obj, b'a', NULL)
-        self.assertFalse(hasattr(obj, 'a'))
+        self.assertNotHasAttr(obj, 'a')
         self.assertRaises(AttributeError, setattrstring, obj, b'b', NULL)
         self.assertRaises(RuntimeError, setattrstring, obj, b'evil', NULL)
 
@@ -311,10 +311,10 @@ class CAPITest(unittest.TestCase):
         obj.a = 1
         setattr(obj, '\U0001f40d', 2)
         xdelattr(obj, 'a')
-        self.assertFalse(hasattr(obj, 'a'))
+        self.assertNotHasAttr(obj, 'a')
         self.assertRaises(AttributeError, xdelattr, obj, 'b')
         xdelattr(obj, '\U0001f40d')
-        self.assertFalse(hasattr(obj, '\U0001f40d'))
+        self.assertNotHasAttr(obj, '\U0001f40d')
 
         self.assertRaises(AttributeError, xdelattr, 42, 'numerator')
         self.assertRaises(RuntimeError, xdelattr, obj, 'evil')
@@ -328,10 +328,10 @@ class CAPITest(unittest.TestCase):
         obj.a = 1
         setattr(obj, '\U0001f40d', 2)
         delattrstring(obj, b'a')
-        self.assertFalse(hasattr(obj, 'a'))
+        self.assertNotHasAttr(obj, 'a')
         self.assertRaises(AttributeError, delattrstring, obj, b'b')
         delattrstring(obj, '\U0001f40d'.encode())
-        self.assertFalse(hasattr(obj, '\U0001f40d'))
+        self.assertNotHasAttr(obj, '\U0001f40d')
 
         self.assertRaises(AttributeError, delattrstring, 42, b'numerator')
         self.assertRaises(RuntimeError, delattrstring, obj, b'evil')

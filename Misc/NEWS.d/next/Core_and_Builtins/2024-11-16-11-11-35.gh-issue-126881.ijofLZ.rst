@@ -1,1 +1,0 @@
-Fix crash in finalization of dtoa state. Patch by Kumar Aditya.

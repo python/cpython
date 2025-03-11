@@ -534,15 +534,18 @@ is semantically equivalent to::
     enter = type(manager).__enter__
     exit = type(manager).__exit__
     value = enter(manager)
+    hit_except = False
 
     try:
         TARGET = value
         SUITE
     except:
+        hit_except = True
         if not exit(manager, *sys.exc_info()):
             raise
-    else:
-        exit(manager, None, None, None)
+    finally:
+        if not hit_except:
+            exit(manager, None, None, None)
 
 With more than one item, the context managers are processed as if multiple
 :keyword:`with` statements were nested::
@@ -1214,8 +1217,10 @@ A function definition defines a user-defined function object (see section
                  :   | `parameter_list_no_posonly`
    parameter_list_no_posonly: `defparameter` ("," `defparameter`)* ["," [`parameter_list_starargs`]]
                             : | `parameter_list_starargs`
-   parameter_list_starargs: "*" [`star_parameter`] ("," `defparameter`)* ["," ["**" `parameter` [","]]]
-                          : | "**" `parameter` [","]
+   parameter_list_starargs: "*" [`star_parameter`] ("," `defparameter`)* ["," [`parameter_star_kwargs`]]
+                          : "*" ("," `defparameter`)+ ["," [`parameter_star_kwargs`]]
+                          : | `parameter_star_kwargs`
+   parameter_star_kwargs: "**" `parameter` [","]
    parameter: `identifier` [":" `expression`]
    star_parameter: `identifier` [":" ["*"] `expression`]
    defparameter: `parameter` ["=" `expression`]

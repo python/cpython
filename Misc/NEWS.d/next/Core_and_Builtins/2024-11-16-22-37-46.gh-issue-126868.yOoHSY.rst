@@ -1,1 +1,0 @@
-Increase performance of :class:`int` by adding a freelist for compact ints.

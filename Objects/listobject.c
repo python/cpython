@@ -335,11 +335,7 @@ list_item_impl(PyListObject *self, Py_ssize_t idx)
     if (!valid_index(idx, size)) {
         goto exit;
     }
-#ifdef Py_GIL_DISABLED
     item = _Py_NewRefWithLock(self->ob_item[idx]);
-#else
-    item = Py_NewRef(self->ob_item[idx]);
-#endif
 exit:
     Py_END_CRITICAL_SECTION();
     return item;
@@ -361,7 +357,7 @@ list_get_item_ref(PyListObject *op, Py_ssize_t i)
         return NULL;
     }
     Py_ssize_t cap = list_capacity(ob_item);
-    assert(cap != -1 && cap >= size);
+    assert(cap != -1);
     if (!valid_index(i, cap)) {
         return NULL;
     }
@@ -423,7 +419,6 @@ int
 PyList_SetItem(PyObject *op, Py_ssize_t i,
                PyObject *newitem)
 {
-    PyObject **p;
     if (!PyList_Check(op)) {
         Py_XDECREF(newitem);
         PyErr_BadInternalCall();
@@ -439,8 +434,9 @@ PyList_SetItem(PyObject *op, Py_ssize_t i,
         ret = -1;
         goto end;
     }
-    p = self->ob_item + i;
-    Py_XSETREF(*p, newitem);
+    PyObject *tmp = self->ob_item[i];
+    FT_ATOMIC_STORE_PTR_RELEASE(self->ob_item[i], newitem);
+    Py_XDECREF(tmp);
     ret = 0;
 end:;
     Py_END_CRITICAL_SECTION();
@@ -470,8 +466,8 @@ ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
         where = n;
     items = self->ob_item;
     for (i = n; --i >= where; )
-        items[i+1] = items[i];
-    items[where] = Py_NewRef(v);
+        FT_ATOMIC_STORE_PTR_RELAXED(items[i+1], items[i]);
+    FT_ATOMIC_STORE_PTR_RELEASE(items[where], Py_NewRef(v));
     return 0;
 }
 
@@ -537,6 +533,7 @@ list_dealloc(PyObject *self)
             Py_XDECREF(op->ob_item[i]);
         }
         free_list_items(op->ob_item, false);
+        op->ob_item = NULL;
     }
     if (PyList_CheckExact(op)) {
         _Py_FREELIST_FREE(lists, op, PyObject_GC_Del);
@@ -788,7 +785,8 @@ list_repeat_lock_held(PyListObject *a, Py_ssize_t n)
             _Py_RefcntAdd(*src, n);
             *dest++ = *src++;
         }
-
+        // TODO: _Py_memory_repeat calls are not safe for shared lists in
+        // GIL_DISABLED builds. (See issue #129069)
         _Py_memory_repeat((char *)np->ob_item, sizeof(PyObject *)*output_size,
                                         sizeof(PyObject *)*input_size);
     }
@@ -923,6 +921,8 @@ list_ass_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyO
     if (d < 0) { /* Delete -d items */
         Py_ssize_t tail;
         tail = (Py_SIZE(a) - ihigh) * sizeof(PyObject *);
+        // TODO: these memmove/memcpy calls are not safe for shared lists in
+        // GIL_DISABLED builds. (See issue #129069)
         memmove(&item[ihigh+d], &item[ihigh], tail);
         if (list_resize(a, Py_SIZE(a) + d) < 0) {
             memmove(&item[ihigh], &item[ihigh+d], tail);
@@ -936,12 +936,14 @@ list_ass_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyO
         if (list_resize(a, k+d) < 0)
             goto Error;
         item = a->ob_item;
+        // TODO: these memmove/memcpy calls are not safe for shared lists in
+        // GIL_DISABLED builds. (See issue #129069)
         memmove(&item[ihigh+d], &item[ihigh],
             (k - ihigh)*sizeof(PyObject *));
     }
     for (k = 0; k < n; k++, ilow++) {
         PyObject *w = vitem[k];
-        item[ilow] = Py_XNewRef(w);
+        FT_ATOMIC_STORE_PTR_RELEASE(item[ilow], Py_XNewRef(w));
     }
     for (k = norig - 1; k >= 0; --k)
         Py_XDECREF(recycle[k]);
@@ -1021,6 +1023,8 @@ list_inplace_repeat_lock_held(PyListObject *self, Py_ssize_t n)
     for (Py_ssize_t j = 0; j < input_size; j++) {
         _Py_RefcntAdd(items[j], n-1);
     }
+    // TODO: _Py_memory_repeat calls are not safe for shared lists in
+    // GIL_DISABLED builds. (See issue #129069)
     _Py_memory_repeat((char *)items, sizeof(PyObject *)*output_size,
                       sizeof(PyObject *)*input_size);
     return 0;
@@ -3194,7 +3198,7 @@ _PyList_AsTupleAndClear(PyListObject *self)
 }
 
 PyObject *
-_PyList_FromStackRefSteal(const _PyStackRef *src, Py_ssize_t n)
+_PyList_FromStackRefStealOnSuccess(const _PyStackRef *src, Py_ssize_t n)
 {
     if (n == 0) {
         return PyList_New(0);
@@ -3202,9 +3206,6 @@ _PyList_FromStackRefSteal(const _PyStackRef *src, Py_ssize_t n)
 
     PyListObject *list = (PyListObject *)PyList_New(n);
     if (list == NULL) {
-        for (Py_ssize_t i = 0; i < n; i++) {
-            PyStackRef_CLOSE(src[i]);
-        }
         return NULL;
     }
 
@@ -3910,15 +3911,17 @@ PyTypeObject PyListIter_Type = {
 static PyObject *
 list_iter(PyObject *seq)
 {
-    _PyListIterObject *it;
-
     if (!PyList_Check(seq)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    it = PyObject_GC_New(_PyListIterObject, &PyListIter_Type);
-    if (it == NULL)
-        return NULL;
+    _PyListIterObject *it = _Py_FREELIST_POP(_PyListIterObject, list_iters);
+    if (it == NULL) {
+        it = PyObject_GC_New(_PyListIterObject, &PyListIter_Type);
+        if (it == NULL) {
+            return NULL;
+        }
+    }
     it->it_index = 0;
     it->it_seq = (PyListObject *)Py_NewRef(seq);
     _PyObject_GC_TRACK(it);
@@ -3931,7 +3934,8 @@ listiter_dealloc(PyObject *self)
     _PyListIterObject *it = (_PyListIterObject *)self;
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
-    PyObject_GC_Del(it);
+    assert(Py_IS_TYPE(self, &PyListIter_Type));
+    _Py_FREELIST_FREE(list_iters, it, PyObject_GC_Del);
 }
 
 static int
@@ -3997,7 +4001,7 @@ listiter_setstate(PyObject *self, PyObject *state)
             index = -1;
         else if (index > PyList_GET_SIZE(it->it_seq))
             index = PyList_GET_SIZE(it->it_seq); /* iterator exhausted */
-        it->it_index = index;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index);
     }
     Py_RETURN_NONE;
 }
@@ -4149,7 +4153,7 @@ listreviter_setstate(PyObject *self, PyObject *state)
             index = -1;
         else if (index > PyList_GET_SIZE(it->it_seq) - 1)
             index = PyList_GET_SIZE(it->it_seq) - 1;
-        it->it_index = index;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index);
     }
     Py_RETURN_NONE;
 }
@@ -4166,18 +4170,19 @@ listiter_reduce_general(void *_it, int forward)
      * call must be before access of iterator pointers.
      * see issue #101765 */
 
-    /* the objects are not the same, index is of different types! */
     if (forward) {
         iter = _PyEval_GetBuiltin(&_Py_ID(iter));
         _PyListIterObject *it = (_PyListIterObject *)_it;
-        if (it->it_index >= 0) {
-            return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
+        Py_ssize_t idx = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+        if (idx >= 0) {
+            return Py_BuildValue("N(O)n", iter, it->it_seq, idx);
         }
     } else {
         iter = _PyEval_GetBuiltin(&_Py_ID(reversed));
         listreviterobject *it = (listreviterobject *)_it;
-        if (it->it_index >= 0) {
-            return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
+        Py_ssize_t idx = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+        if (idx >= 0) {
+            return Py_BuildValue("N(O)n", iter, it->it_seq, idx);
         }
     }
     /* empty iterator, create an empty list */

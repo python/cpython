@@ -566,11 +566,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "2e08072c0c57dac02b67f3f71d77068c537ac02e"
+          "checksumValue": "118dc712780ea680affa8d9794470440eb87ff10"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "e69fd3e84f77873ecb414f5300761b686321d01f5710ccf2517765236b08fc25"
+          "checksumValue": "b017e7d5662a308c938cf4e4b919680c8f3e27f42975ca152b62fe65c5f7fb0c"
         }
       ],
       "fileName": "Modules/_hacl/Lib_Memzero0.c"
@@ -622,11 +622,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "9881567f43deb32bae77a84b2d349858a24b6685"
+          "checksumValue": "9c5cac1582dcd6e0d0a4142e6e8b285b4cb7d9e6"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "3382156e32fcb376009177d3d2dc9712ff7c8c02afb97b3e16d98b41a2114f84"
+          "checksumValue": "b1e32138ac8c262e872f7da43ec80c1e54c08bcbdec4b7be17117aa25807f87e"
         }
       ],
       "fileName": "Modules/_hacl/include/krml/internal/target.h"
@@ -1280,11 +1280,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "9dcb50e3f9c3245972731be5da0b28e7583198d9"
+          "checksumValue": "5d6fdd98730584f74f7b731da6e488fe234504b3"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "7cac49fef5e9d952ec9390bf81c54d83f1b5da32fdf76091c2f0770ed943b7fe"
+          "checksumValue": "d74f365463166891f62e1326d22b2d39d865776b7ea5e0df2aea5eede4d85b0f"
         }
       ],
       "fileName": "Modules/_decimal/libmpdec/io.c"

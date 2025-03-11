@@ -14,6 +14,8 @@
 #include "pycore_pymath.h"        // _Py_ADJUST_ERANGE2()
 
 
+#define _PyComplexObject_CAST(op)   ((PyComplexObject *)(op))
+
 
 /*[clinic input]
 class complex "PyComplexObject *" "&PyComplex_Type"
@@ -553,11 +555,12 @@ PyComplex_AsCComplex(PyObject *op)
 }
 
 static PyObject *
-complex_repr(PyComplexObject *v)
+complex_repr(PyObject *op)
 {
     int precision = 0;
     char format_code = 'r';
     PyObject *result = NULL;
+    PyComplexObject *v = _PyComplexObject_CAST(op);
 
     /* If these are non-NULL, they'll need to be freed. */
     char *pre = NULL;
@@ -609,13 +612,14 @@ complex_repr(PyComplexObject *v)
 }
 
 static Py_hash_t
-complex_hash(PyComplexObject *v)
+complex_hash(PyObject *op)
 {
     Py_uhash_t hashreal, hashimag, combined;
-    hashreal = (Py_uhash_t)_Py_HashDouble((PyObject *) v, v->cval.real);
+    PyComplexObject *v = _PyComplexObject_CAST(op);
+    hashreal = (Py_uhash_t)_Py_HashDouble(op, v->cval.real);
     if (hashreal == (Py_uhash_t)-1)
         return -1;
-    hashimag = (Py_uhash_t)_Py_HashDouble((PyObject *)v, v->cval.imag);
+    hashimag = (Py_uhash_t)_Py_HashDouble(op, v->cval.imag);
     if (hashimag == (Py_uhash_t)-1)
         return -1;
     /* Note:  if the imaginary part is 0, hashimag is 0 now,
@@ -753,8 +757,9 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
 }
 
 static PyObject *
-complex_neg(PyComplexObject *v)
+complex_neg(PyObject *op)
 {
+    PyComplexObject *v = _PyComplexObject_CAST(op);
     Py_complex neg;
     neg.real = -v->cval.real;
     neg.imag = -v->cval.imag;
@@ -762,22 +767,20 @@ complex_neg(PyComplexObject *v)
 }
 
 static PyObject *
-complex_pos(PyComplexObject *v)
+complex_pos(PyObject *op)
 {
+    PyComplexObject *v = _PyComplexObject_CAST(op);
     if (PyComplex_CheckExact(v)) {
         return Py_NewRef(v);
     }
-    else
-        return PyComplex_FromCComplex(v->cval);
+    return PyComplex_FromCComplex(v->cval);
 }
 
 static PyObject *
-complex_abs(PyComplexObject *v)
+complex_abs(PyObject *op)
 {
-    double result;
-
-    result = _Py_c_abs(v->cval);
-
+    PyComplexObject *v = _PyComplexObject_CAST(op);
+    double result = _Py_c_abs(v->cval);
     if (errno == ERANGE) {
         PyErr_SetString(PyExc_OverflowError,
                         "absolute value too large");
@@ -787,8 +790,9 @@ complex_abs(PyComplexObject *v)
 }
 
 static int
-complex_bool(PyComplexObject *v)
+complex_bool(PyObject *op)
 {
+    PyComplexObject *v = _PyComplexObject_CAST(op);
     return v->cval.real != 0.0 || v->cval.imag != 0.0;
 }
 
@@ -1339,16 +1343,16 @@ static PyMemberDef complex_members[] = {
 };
 
 static PyNumberMethods complex_as_number = {
-    (binaryfunc)complex_add,                    /* nb_add */
-    (binaryfunc)complex_sub,                    /* nb_subtract */
-    (binaryfunc)complex_mul,                    /* nb_multiply */
+    complex_add,                                /* nb_add */
+    complex_sub,                                /* nb_subtract */
+    complex_mul,                                /* nb_multiply */
     0,                                          /* nb_remainder */
     0,                                          /* nb_divmod */
-    (ternaryfunc)complex_pow,                   /* nb_power */
-    (unaryfunc)complex_neg,                     /* nb_negative */
-    (unaryfunc)complex_pos,                     /* nb_positive */
-    (unaryfunc)complex_abs,                     /* nb_absolute */
-    (inquiry)complex_bool,                      /* nb_bool */
+    complex_pow,                                /* nb_power */
+    complex_neg,                                /* nb_negative */
+    complex_pos,                                /* nb_positive */
+    complex_abs,                                /* nb_absolute */
+    complex_bool,                               /* nb_bool */
     0,                                          /* nb_invert */
     0,                                          /* nb_lshift */
     0,                                          /* nb_rshift */
@@ -1369,7 +1373,7 @@ static PyNumberMethods complex_as_number = {
     0,                                          /* nb_inplace_xor */
     0,                                          /* nb_inplace_or */
     0,                                          /* nb_floor_divide */
-    (binaryfunc)complex_div,                    /* nb_true_divide */
+    complex_div,                                /* nb_true_divide */
     0,                                          /* nb_inplace_floor_divide */
     0,                                          /* nb_inplace_true_divide */
 };
@@ -1384,11 +1388,11 @@ PyTypeObject PyComplex_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)complex_repr,                     /* tp_repr */
+    complex_repr,                               /* tp_repr */
     &complex_as_number,                         /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
-    (hashfunc)complex_hash,                     /* tp_hash */
+    complex_hash,                               /* tp_hash */
     0,                                          /* tp_call */
     0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */

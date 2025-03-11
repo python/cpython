@@ -6,8 +6,8 @@
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
+#include "pycore_pystate.h"       // PyThread_hang_thread()
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
-#include "pycore_pythread.h"      // PyThread_hang_thread()
 
 /*
    Notes about the implementation:
@@ -206,7 +206,7 @@ drop_gil_impl(PyThreadState *tstate, struct _gil_runtime_state *gil)
     _Py_ANNOTATE_RWLOCK_RELEASED(&gil->locked, /*is_write=*/1);
     _Py_atomic_store_int_relaxed(&gil->locked, 0);
     if (tstate != NULL) {
-        tstate->_status.holds_gil = 0;
+        tstate->holds_gil = 0;
     }
     COND_SIGNAL(gil->cond);
     MUTEX_UNLOCK(gil->mutex);
@@ -231,7 +231,7 @@ drop_gil(PyInterpreterState *interp, PyThreadState *tstate, int final_release)
     // Check if we have the GIL before dropping it. tstate will be NULL if
     // take_gil() detected that this thread has been destroyed, in which case
     // we know we have the GIL.
-    if (tstate != NULL && !tstate->_status.holds_gil) {
+    if (tstate != NULL && !tstate->holds_gil) {
         return;
     }
 #endif
@@ -296,15 +296,14 @@ take_gil(PyThreadState *tstate)
            thread which called Py_Finalize(), this thread cannot continue.
 
            This code path can be reached by a daemon thread after Py_Finalize()
-           completes. In this case, tstate is a dangling pointer: points to
-           PyThreadState freed memory.
+           completes.
 
            This used to call a *thread_exit API, but that was not safe as it
            lacks stack unwinding and local variable destruction important to
            C++. gh-87135: The best that can be done is to hang the thread as
            the public APIs calling this have no error reporting mechanism (!).
          */
-        PyThread_hang_thread();
+        _PyThreadState_HangThread(tstate);
     }
 
     assert(_PyThreadState_CheckConsistency(tstate));
@@ -325,7 +324,10 @@ take_gil(PyThreadState *tstate)
     while (_Py_atomic_load_int_relaxed(&gil->locked)) {
         unsigned long saved_switchnum = gil->switch_number;
 
-        unsigned long interval = (gil->interval >= 1 ? gil->interval : 1);
+        unsigned long interval = _Py_atomic_load_ulong_relaxed(&gil->interval);
+        if (interval < 1) {
+            interval = 1;
+        }
         int timed_out = 0;
         COND_TIMED_WAIT(gil->cond, gil->mutex, interval, timed_out);
 
@@ -350,7 +352,7 @@ take_gil(PyThreadState *tstate)
                 }
                 // gh-87135: hang the thread as *thread_exit() is not a safe
                 // API. It lacks stack unwind and local variable destruction.
-                PyThread_hang_thread();
+                _PyThreadState_HangThread(tstate);
             }
             assert(_PyThreadState_CheckConsistency(tstate));
 
@@ -401,11 +403,11 @@ take_gil(PyThreadState *tstate)
         /* tstate could be a dangling pointer, so don't pass it to
            drop_gil(). */
         drop_gil(interp, NULL, 1);
-        PyThread_hang_thread();
+        _PyThreadState_HangThread(tstate);
     }
     assert(_PyThreadState_CheckConsistency(tstate));
 
-    tstate->_status.holds_gil = 1;
+    tstate->holds_gil = 1;
     _Py_unset_eval_breaker_bit(tstate, _PY_GIL_DROP_REQUEST_BIT);
     update_eval_breaker_for_thread(interp, tstate);
 
@@ -420,7 +422,7 @@ void _PyEval_SetSwitchInterval(unsigned long microseconds)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _gil_runtime_state *gil = interp->ceval.gil;
     assert(gil != NULL);
-    gil->interval = microseconds;
+    _Py_atomic_store_ulong_relaxed(&gil->interval, microseconds);
 }
 
 unsigned long _PyEval_GetSwitchInterval(void)
@@ -428,7 +430,7 @@ unsigned long _PyEval_GetSwitchInterval(void)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     struct _gil_runtime_state *gil = interp->ceval.gil;
     assert(gil != NULL);
-    return gil->interval;
+    return _Py_atomic_load_ulong_relaxed(&gil->interval);
 }
 
 
@@ -457,7 +459,7 @@ PyEval_ThreadsInitialized(void)
 static inline int
 current_thread_holds_gil(struct _gil_runtime_state *gil, PyThreadState *tstate)
 {
-    int holds_gil = tstate->_status.holds_gil;
+    int holds_gil = tstate->holds_gil;
 
     // holds_gil is the source of truth; check that last_holder and gil->locked
     // are consistent with it.
@@ -995,7 +997,7 @@ _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit)
 void
 _Py_FinishPendingCalls(PyThreadState *tstate)
 {
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
     assert(_PyThreadState_CheckConsistency(tstate));
 
     struct _pending_calls *pending = &tstate->interp->ceval.pending;
@@ -1056,7 +1058,7 @@ _PyEval_MakePendingCalls(PyThreadState *tstate)
 int
 Py_MakePendingCalls(void)
 {
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
 
     PyThreadState *tstate = _PyThreadState_GET();
     assert(_PyThreadState_CheckConsistency(tstate));

@@ -90,6 +90,8 @@ class MimeTypes:
         list of standard types, else to the list of non-standard
         types.
         """
+        if not type:
+            return
         self.types_map[strict][ext] = type
         exts = self.types_map_inv[strict].setdefault(type, [])
         if ext not in exts:
@@ -463,6 +465,7 @@ def _default_mime_types():
     types_map = _types_map_default = {
         '.js'     : 'text/javascript',
         '.mjs'    : 'text/javascript',
+        '.epub'   : 'application/epub+zip',
         '.json'   : 'application/json',
         '.webmanifest': 'application/manifest+json',
         '.doc'    : 'application/msword',
@@ -478,6 +481,7 @@ def _default_mime_types():
         '.obj'    : 'application/octet-stream',
         '.so'     : 'application/octet-stream',
         '.oda'    : 'application/oda',
+        '.ogx'    : 'application/ogg',
         '.pdf'    : 'application/pdf',
         '.p7c'    : 'application/pkcs7-mime',
         '.ps'     : 'application/postscript',
@@ -494,6 +498,13 @@ def _default_mime_types():
         '.ppa'    : 'application/vnd.ms-powerpoint',
         '.pps'    : 'application/vnd.ms-powerpoint',
         '.pwz'    : 'application/vnd.ms-powerpoint',
+        '.odg'    : 'application/vnd.oasis.opendocument.graphics',
+        '.odp'    : 'application/vnd.oasis.opendocument.presentation',
+        '.ods'    : 'application/vnd.oasis.opendocument.spreadsheet',
+        '.odt'    : 'application/vnd.oasis.opendocument.text',
+        '.pptx'   : 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        '.xlsx'   : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        '.docx'   : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         '.wasm'   : 'application/wasm',
         '.bcpio'  : 'application/x-bcpio',
         '.cpio'   : 'application/x-cpio',
@@ -544,17 +555,21 @@ def _default_mime_types():
         '.ass'    : 'audio/aac',
         '.au'     : 'audio/basic',
         '.snd'    : 'audio/basic',
+        '.flac'   : 'audio/flac',
         '.mka'    : 'audio/matroska',
+        '.m4a'    : 'audio/mp4',
         '.mp3'    : 'audio/mpeg',
         '.mp2'    : 'audio/mpeg',
+        '.ogg'    : 'audio/ogg',
         '.opus'   : 'audio/opus',
         '.aif'    : 'audio/x-aiff',
         '.aifc'   : 'audio/x-aiff',
         '.aiff'   : 'audio/x-aiff',
         '.ra'     : 'audio/x-pn-realaudio',
-        '.wav'    : 'audio/x-wav',
+        '.wav'    : 'audio/vnd.wave',
         '.otf'    : 'font/otf',
         '.ttf'    : 'font/ttf',
+        '.weba'   : 'audio/webm',
         '.woff'   : 'font/woff',
         '.woff2'  : 'font/woff2',
         '.avif'   : 'image/avif',
@@ -627,10 +642,11 @@ def _default_mime_types():
         '.mpa'    : 'video/mpeg',
         '.mpe'    : 'video/mpeg',
         '.mpg'    : 'video/mpeg',
+        '.ogv'    : 'video/ogg',
         '.mov'    : 'video/quicktime',
         '.qt'     : 'video/quicktime',
         '.webm'   : 'video/webm',
-        '.avi'    : 'video/x-msvideo',
+        '.avi'    : 'video/vnd.avi',
         '.movie'  : 'video/x-sgi-movie',
         }
 

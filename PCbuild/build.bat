@@ -39,6 +39,8 @@ echo.  --regen        Regenerate all opcodes, grammar and tokens.
 echo.  --experimental-jit          Enable the experimental just-in-time compiler.
 echo.  --experimental-jit-off      Ditto but off by default (PYTHON_JIT=1 enables).
 echo.  --experimental-jit-interpreter  Enable the experimental Tier 2 interpreter.
+echo.  --pystats      Enable PyStats collection.
+echo.  --tail-call-interp  Enable tail-calling interpreter (requires LLVM 19 or higher).
 echo.
 echo.Available flags to avoid building certain modules.
 echo.These flags have no effect if '-e' is not given:
@@ -93,6 +95,8 @@ if "%~1"=="--experimental-jit" (set UseJIT=true) & (set UseTIER2=1) & shift & go
 if "%~1"=="--experimental-jit-off" (set UseJIT=true) & (set UseTIER2=3) & shift & goto CheckOpts
 if "%~1"=="--experimental-jit-interpreter" (set UseTIER2=4) & shift & goto CheckOpts
 if "%~1"=="--experimental-jit-interpreter-off" (set UseTIER2=6) & shift & goto CheckOpts
+if "%~1"=="--pystats" (set PyStats=1) & shift & goto CheckOpts
+if "%~1"=="--tail-call-interp" (set UseTailCallInterp=true) & shift & goto CheckOpts
 rem These use the actual property names used by MSBuild.  We could just let
 rem them in through the environment, but we specify them on the command line
 rem anyway for visibility so set defaults after this
@@ -186,6 +190,8 @@ echo on
  /p:UseTestMarker=%UseTestMarker% %GITProperty%^
  /p:UseJIT=%UseJIT%^
  /p:UseTIER2=%UseTIER2%^
+ /p:PyStats=%PyStats%^
+ /p:UseTailCallInterp=%UseTailCallInterp%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 @echo off

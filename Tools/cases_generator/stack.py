@@ -224,13 +224,15 @@ def array_or_scalar(var: StackItem | Local) -> str:
     return "array" if var.is_array() else "scalar"
 
 class Stack:
-    def __init__(self) -> None:
+    def __init__(self, extract_bits: bool=True, cast_type: str = "uintptr_t") -> None:
         self.top_offset = StackOffset.empty()
         self.base_offset = StackOffset.empty()
         self.variables: list[Local] = []
         self.defined: set[str] = set()
+        self.extract_bits = extract_bits
+        self.cast_type = cast_type
 
-    def pop(self, var: StackItem, extract_bits: bool = True) -> tuple[str, Local]:
+    def pop(self, var: StackItem) -> tuple[str, Local]:
         self.top_offset.pop(var)
         indirect = "&" if var.is_array() else ""
         if self.variables:
@@ -272,7 +274,7 @@ class Stack:
             return "", Local.unused(var)
         self.defined.add(var.name)
         cast = f"({var.type})" if (not indirect and var.type) else ""
-        bits = ".bits" if cast and extract_bits else ""
+        bits = ".bits" if cast and self.extract_bits else ""
         assign = f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}]{bits};"
         if var.condition:
             if var.condition == "1":
@@ -297,8 +299,8 @@ class Stack:
         out: CWriter,
         var: StackItem,
         base_offset: StackOffset,
-        cast_type: str = "uintptr_t",
-        extract_bits: bool = True,
+        cast_type: str,
+        extract_bits: bool,
     ) -> None:
         cast = f"({cast_type})" if var.type else ""
         bits = ".bits" if cast and extract_bits else ""
@@ -314,9 +316,7 @@ class Stack:
             out.emit(f"stack_pointer += {number};\n")
             out.emit("assert(WITHIN_STACK_BOUNDS());\n")
 
-    def flush(
-        self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = True
-    ) -> None:
+    def flush(self, out: CWriter) -> None:
         out.start_line()
         var_offset = self.base_offset.copy()
         for var in self.variables:
@@ -324,7 +324,7 @@ class Stack:
                 var.defined and
                 not var.in_memory
             ):
-                Stack._do_emit(out, var.item, var_offset, cast_type, extract_bits)
+                Stack._do_emit(out, var.item, var_offset, self.cast_type, self.extract_bits)
                 var.in_memory = True
             var_offset.push(var.item)
         number = self.top_offset.to_c()
@@ -346,7 +346,7 @@ class Stack:
         )
 
     def copy(self) -> "Stack":
-        other = Stack()
+        other = Stack(self.extract_bits, self.cast_type)
         other.top_offset = self.top_offset.copy()
         other.base_offset = self.base_offset.copy()
         other.variables = [var.copy() for var in self.variables]
@@ -507,21 +507,26 @@ class Storage:
                 return True
         return False
 
-    def flush(self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = True) -> None:
+    def flush(self, out: CWriter) -> None:
         self.clear_dead_inputs()
         self._push_defined_outputs()
-        self.stack.flush(out, cast_type, extract_bits)
-
-    def pop_dead_inputs(self, out: CWriter, cast_type: str = "uintptr_t", extract_bits: bool = True) -> None:
-        self.clear_dead_inputs()
-        self.stack.flush(out, cast_type, extract_bits)
+        self.stack.flush(out)
 
     def save(self, out: CWriter) -> None:
         assert self.spilled >= 0
         if self.spilled == 0:
             self.flush(out)
             out.start_line()
-            out.emit("_PyFrame_SetStackPointer(frame, stack_pointer);\n")
+            out.emit_spill()
+        self.spilled += 1
+
+    def save_inputs(self, out: CWriter) -> None:
+        assert self.spilled >= 0
+        if self.spilled == 0:
+            self.clear_dead_inputs()
+            self.stack.flush(out)
+            out.start_line()
+            out.emit_spill()
         self.spilled += 1
 
     def reload(self, out: CWriter) -> None:
@@ -531,15 +536,15 @@ class Storage:
         self.spilled -= 1
         if self.spilled == 0:
             out.start_line()
-            out.emit("stack_pointer = _PyFrame_GetStackPointer(frame);\n")
+            out.emit_reload()
 
     @staticmethod
-    def for_uop(stack: Stack, uop: Uop, extract_bits: bool = True) -> tuple[list[str], "Storage"]:
+    def for_uop(stack: Stack, uop: Uop) -> tuple[list[str], "Storage"]:
         code_list: list[str] = []
         inputs: list[Local] = []
         peeks: list[Local] = []
         for input in reversed(uop.stack.inputs):
-            code, local = stack.pop(input, extract_bits)
+            code, local = stack.pop(input)
             code_list.append(code)
             if input.peek:
                 peeks.append(local)
@@ -573,7 +578,7 @@ class Storage:
         assert [v.name for v in inputs] == [v.name for v in self.inputs], (inputs, self.inputs)
         return Storage(
             new_stack, inputs,
-            self.copy_list(self.outputs), self.copy_list(self.peeks)
+            self.copy_list(self.outputs), self.copy_list(self.peeks), self.spilled
         )
 
     def sanity_check(self) -> None:
@@ -640,3 +645,91 @@ class Storage:
         outputs = ", ".join([var.compact_str() for var in self.outputs])
         peeks = ", ".join([var.name for var in self.peeks])
         return f"{stack_comment[:-2]}{next_line}inputs: {inputs}{next_line}outputs: {outputs}{next_line}peeks: {peeks} */"
+
+    def close_inputs(self, out: CWriter) -> None:
+        tmp_defined = False
+        def close_named(close: str, name: str, overwrite: str) -> None:
+            nonlocal tmp_defined
+            if overwrite:
+                if not tmp_defined:
+                    out.emit("_PyStackRef ")
+                    tmp_defined = True
+                out.emit(f"tmp = {name};\n")
+                out.emit(f"{name} = {overwrite};\n")
+                if not var.is_array():
+                    var.in_memory = False
+                    self.flush(out)
+                out.emit(f"{close}(tmp);\n")
+            else:
+                out.emit(f"{close}({name});\n")
+
+        def close_variable(var: Local, overwrite: str) -> None:
+            nonlocal tmp_defined
+            close = "PyStackRef_CLOSE"
+            if "null" in var.name or var.condition and var.condition != "1":
+                close = "PyStackRef_XCLOSE"
+            if var.size:
+                if var.size == "1":
+                    close_named(close, f"{var.name}[0]", overwrite)
+                else:
+                    if overwrite and not tmp_defined:
+                        out.emit("_PyStackRef tmp;\n")
+                        tmp_defined = True
+                    out.emit(f"for (int _i = {var.size}; --_i >= 0;) {{\n")
+                    close_named(close, f"{var.name}[_i]", overwrite)
+                    out.emit("}\n")
+            else:
+                if var.condition and var.condition == "0":
+                    return
+                close_named(close, var.name, overwrite)
+
+        self.clear_dead_inputs()
+        if not self.inputs:
+            return
+        output: Local | None = None
+        for var in self.outputs:
+            if var.is_array():
+                if len(self.inputs) > 1:
+                    raise StackError("Cannot call DECREF_INPUTS with multiple live input(s) and array output")
+            elif var.defined:
+                if output is not None:
+                    raise StackError("Cannot call DECREF_INPUTS with more than one live output")
+                output = var
+        self.save_inputs(out)
+        if output is not None:
+            lowest = self.inputs[0]
+            if lowest.is_array():
+                try:
+                    size = int(lowest.size)
+                except:
+                    size = -1
+                if size <= 0:
+                    raise StackError("Cannot call DECREF_INPUTS with non fixed size array as lowest input on stack")
+                if size > 1:
+                    raise StackError("Cannot call DECREF_INPUTS with array size > 1 as lowest input on stack")
+                output.defined = False
+                close_variable(lowest, output.name)
+            else:
+                lowest.in_memory = False
+                output.defined = False
+                close_variable(lowest, output.name)
+        to_close = self.inputs[: 0 if output is not None else None: -1]
+        if len(to_close) == 1 and not to_close[0].is_array():
+            self.reload(out)
+            to_close[0].defined = False
+            self.flush(out)
+            self.save_inputs(out)
+            close_variable(to_close[0], "")
+            self.reload(out)
+        else:
+            for var in to_close:
+                assert var.defined or var.is_array()
+                close_variable(var, "PyStackRef_NULL")
+            self.reload(out)
+        for var in self.inputs:
+            var.defined = False
+        if output is not None:
+            output.defined = True
+            # MyPy false positive
+            lowest.defined = False  # type: ignore[possibly-undefined]
+        self.flush(out)

@@ -83,6 +83,8 @@ typedef struct {
     int64_t interpid;
 } XIBufferViewObject;
 
+#define XIBufferViewObject_CAST(op) ((XIBufferViewObject *)(op))
+
 static PyObject *
 xibufferview_from_xid(PyTypeObject *cls, _PyXIData_t *data)
 {
@@ -100,8 +102,9 @@ xibufferview_from_xid(PyTypeObject *cls, _PyXIData_t *data)
 }
 
 static void
-xibufferview_dealloc(XIBufferViewObject *self)
+xibufferview_dealloc(PyObject *op)
 {
+    XIBufferViewObject *self = XIBufferViewObject_CAST(op);
     PyInterpreterState *interp = _PyInterpreterState_LookUpID(self->interpid);
     /* If the interpreter is no longer alive then we have problems,
        since other objects may be using the buffer still. */
@@ -124,20 +127,21 @@ xibufferview_dealloc(XIBufferViewObject *self)
 }
 
 static int
-xibufferview_getbuf(XIBufferViewObject *self, Py_buffer *view, int flags)
+xibufferview_getbuf(PyObject *op, Py_buffer *view, int flags)
 {
     /* Only PyMemoryView_FromObject() should ever call this,
        via _memoryview_from_xid() below. */
+    XIBufferViewObject *self = XIBufferViewObject_CAST(op);
     *view = *self->view;
-    view->obj = (PyObject *)self;
+    view->obj = op;
     // XXX Should we leave it alone?
     view->internal = NULL;
     return 0;
 }
 
 static PyType_Slot XIBufferViewType_slots[] = {
-    {Py_tp_dealloc, (destructor)xibufferview_dealloc},
-    {Py_bf_getbuffer, (getbufferproc)xibufferview_getbuf},
+    {Py_tp_dealloc, xibufferview_dealloc},
+    {Py_bf_getbuffer, xibufferview_getbuf},
     // We don't bother with Py_bf_releasebuffer since we don't need it.
     {0, NULL},
 };
@@ -459,7 +463,12 @@ _run_in_interpreter(PyInterpreterState *interp,
 
     // Prep and switch interpreters.
     if (_PyXI_Enter(&session, interp, shareables) < 0) {
-        assert(!PyErr_Occurred());
+        if (PyErr_Occurred()) {
+            // If an error occured at this step, it means that interp
+            // was not prepared and switched.
+            return -1;
+        }
+        // Now, apply the error from another interpreter:
         PyObject *excinfo = _PyXI_ApplyError(session.error);
         if (excinfo != NULL) {
             *p_excinfo = excinfo;
@@ -1543,7 +1552,7 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     module_state *state = get_module_state(mod);
     assert(state != NULL);
-    traverse_module_state(state, visit, arg);
+    (void)traverse_module_state(state, visit, arg);
     return 0;
 }
 
@@ -1552,16 +1561,16 @@ module_clear(PyObject *mod)
 {
     module_state *state = get_module_state(mod);
     assert(state != NULL);
-    clear_module_state(state);
+    (void)clear_module_state(state);
     return 0;
 }
 
 static void
 module_free(void *mod)
 {
-    module_state *state = get_module_state(mod);
+    module_state *state = get_module_state((PyObject *)mod);
     assert(state != NULL);
-    clear_module_state(state);
+    (void)clear_module_state(state);
 }
 
 static struct PyModuleDef moduledef = {
@@ -1573,7 +1582,7 @@ static struct PyModuleDef moduledef = {
     .m_slots = module_slots,
     .m_traverse = module_traverse,
     .m_clear = module_clear,
-    .m_free = (freefunc)module_free,
+    .m_free = module_free,
 };
 
 PyMODINIT_FUNC
