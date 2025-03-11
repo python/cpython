@@ -21,7 +21,7 @@ extern "C" {
  * Code that could use more stack than this is
  * rare, so the exact value is unimportant.
  */
-#define STACK_USE_GUIDELINE 30
+#define _PY_STACK_USE_GUIDELINE 30
 
 struct _arena;   // Type defined in pycore_pyarena.h
 struct _mod;     // Type defined in pycore_ast.h
