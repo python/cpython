@@ -2149,21 +2149,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    that it finds the object in a sane state.
 
    :c:member:`~PyTypeObject.tp_finalize` should not mutate the current exception status;
-   therefore, a recommended way to write a non-trivial finalizer is::
-
-      static void
-      local_finalize(PyObject *self)
-      {
-          PyObject *error_type, *error_value, *error_traceback;
-
-          /* Save the current exception, if any. */
-          PyErr_Fetch(&error_type, &error_value, &error_traceback);
-
-          /* ... */
-
-          /* Restore the saved exception. */
-          PyErr_Restore(error_type, error_value, error_traceback);
-      }
+   therefore, a recommended way to write a non-trivial finalizer is with
+   :c:func:`PyErr_GetRaisedException`
 
    **Inheritance:**
 
