@@ -400,9 +400,9 @@ time_sleep(PyObject *self, PyObject *timeout_obj)
     PyTime_t timeout;
     if (_PyTime_FromSecondsObject(&timeout, timeout_obj, _PyTime_ROUND_TIMEOUT)) {
         if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-            const char *type_name = Py_TYPE(timeout_obj)->tp_name;
-            PyObject* msg = PyUnicode_FromFormat("'%s' object cannot be interpreted as an integer or float", type_name);
-            PyErr_SetString(PyExc_TypeError, PyUnicode_AsUTF8(msg));
+            PyErr_Format(PyExc_TypeError,
+                         "'%T' object cannot be interpreted as an integer or float",
+                         timeout_obj);
         }
         return NULL;
     }
