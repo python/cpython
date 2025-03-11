@@ -608,6 +608,7 @@ APIs:
 
 
 .. c:function:: void PyUnicode_Append(PyObject **p_left, PyObject *right)
+
    Append the string *right* to the end of *p_left*.
    *p_left* must point to a :term:`strong reference` to a Unicode object;
    :c:func:`!PyUnicode_Append` releases ("steals") this reference.
