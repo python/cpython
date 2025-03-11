@@ -2771,7 +2771,7 @@ types.
 
       .. versionadded:: 3.13
 
-   See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
+   See the `TypedDict <https://typing.python.org/en/latest/spec/typeddict.html#typeddict>`_ section in the typing documentation for more examples and detailed rules.
 
    .. versionadded:: 3.8
 
