@@ -61,7 +61,11 @@ class CreatorMixin:
     """Mixin exposing a method creating a HMAC object."""
 
     def hmac_new(self, key, msg=None, digestmod=None):
-        """Create a new HMAC object."""
+        """Create a new HMAC object.
+
+        Implementations should accept arbitrary 'digestmod' as this
+        method can be used to test which exceptions are being raised.
+        """
         raise NotImplementedError
 
     def bind_hmac_new(self, digestmod):
@@ -73,7 +77,11 @@ class DigestMixin:
     """Mixin exposing a method computing a HMAC digest."""
 
     def hmac_digest(self, key, msg=None, digestmod=None):
-        """Compute a HMAC digest."""
+        """Compute a HMAC digest.
+
+        Implementations should accept arbitrary 'digestmod' as this
+        method can be used to test which exceptions are being raised.
+        """
         raise NotImplementedError
 
     def bind_hmac_digest(self, digestmod):
@@ -142,7 +150,7 @@ class CheckerMixin:
 
 
 class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
-    """Mixin class for all test vectors test cases."""
+    """Mixin class for common tests."""
 
     def hmac_new_by_name(self, key, msg=None, hashname=None):
         """Alternative implementation of hmac_new().
@@ -152,6 +160,10 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
         by their name (all HMAC implementations must at least recognize
         hash functions by their names but some may use aliases such as
         `hashlib.sha1` instead of "sha1").
+
+        Unlike hmac_new(), this method may assert the type of 'hashname'
+        as it should only be used in tests that are expected to create
+        a HMAC object.
         """
         self.assertIsInstance(hashname, str | None)
         return self.hmac_new(key, msg, digestmod=hashname)
@@ -159,6 +171,12 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
     def hmac_digest_by_name(self, key, msg=None, hashname=None):
         """Alternative implementation of hmac_digest()."""
         self.assertIsInstance(hashname, str | None)
+        """Alternative implementation of hmac_digest().
+
+        Unlike hmac_digest(), this method may assert the type of 'hashname'
+        as it should only be used in tests that are expected to compute a
+        HMAC digest.
+        """
         return self.hmac_digest(key, msg, digestmod=hashname)
 
     def assert_hmac(
