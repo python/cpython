@@ -37,11 +37,6 @@ def get_modules():
 
     py_module = import_fresh_module("zoneinfo", blocked=["_zoneinfo"])
 
-    try:
-        import _zoneinfo as c_module
-    except ImportError:
-        c_module = py_module
-
     return py_module, c_module
 
 
