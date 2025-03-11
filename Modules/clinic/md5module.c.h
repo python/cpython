@@ -75,6 +75,19 @@ PyDoc_STRVAR(MD5Type_update__doc__,
 #define MD5TYPE_UPDATE_METHODDEF    \
     {"update", (PyCFunction)MD5Type_update, METH_O, MD5Type_update__doc__},
 
+static PyObject *
+MD5Type_update_impl(MD5object *self, PyObject *obj);
+
+static PyObject *
+MD5Type_update(PyObject *self, PyObject *obj)
+{
+    PyObject *return_value = NULL;
+
+    return_value = MD5Type_update_impl((MD5object *)self, obj);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_md5_md5__doc__,
 "md5($module, /, string=b\'\', *, usedforsecurity=True)\n"
 "--\n"
@@ -149,4 +162,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a4292eab710dcb60 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=10db0ff2ecf97159 input=a9049054013a1b77]*/

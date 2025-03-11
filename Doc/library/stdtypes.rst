@@ -949,9 +949,9 @@ Generator Types
 ---------------
 
 Python's :term:`generator`\s provide a convenient way to implement the iterator
-protocol.  If a container object's :meth:`~iterator.__iter__` method is implemented as a
+protocol.  If a container object's :meth:`~object.__iter__` method is implemented as a
 generator, it will automatically return an iterator object (technically, a
-generator object) supplying the :meth:`!__iter__` and :meth:`~generator.__next__`
+generator object) supplying the :meth:`~iterator.__iter__` and :meth:`~generator.__next__`
 methods.
 More information about generators can be found in :ref:`the documentation for
 the yield expression <yieldexpr>`.
@@ -2012,13 +2012,19 @@ expression support in the :mod:`re` module).
 
 .. method:: str.isprintable()
 
-   Return ``True`` if all characters in the string are printable or the string is
-   empty, ``False`` otherwise.  Nonprintable characters are those characters defined
-   in the Unicode character database as "Other" or "Separator", excepting the
-   ASCII space (0x20) which is considered printable.  (Note that printable
-   characters in this context are those which should not be escaped when
-   :func:`repr` is invoked on a string.  It has no bearing on the handling of
-   strings written to :data:`sys.stdout` or :data:`sys.stderr`.)
+   Return true if all characters in the string are printable, false if it
+   contains at least one non-printable character.
+
+   Here "printable" means the character is suitable for :func:`repr` to use in
+   its output; "non-printable" means that :func:`repr` on built-in types will
+   hex-escape the character.  It has no bearing on the handling of strings
+   written to :data:`sys.stdout` or :data:`sys.stderr`.
+
+   The printable characters are those which in the Unicode character database
+   (see :mod:`unicodedata`) have a general category in group Letter, Mark,
+   Number, Punctuation, or Symbol (L, M, N, P, or S); plus the ASCII space 0x20.
+   Nonprintable characters are those in group Separator or Other (Z or C),
+   except the ASCII space.
 
 
 .. method:: str.isspace()
@@ -5358,7 +5364,7 @@ Union Type
 A union object holds the value of the ``|`` (bitwise or) operation on
 multiple :ref:`type objects <bltin-type-objects>`.  These types are intended
 primarily for :term:`type annotations <annotation>`. The union type expression
-enables cleaner type hinting syntax compared to :data:`typing.Union`.
+enables cleaner type hinting syntax compared to subscripting :class:`typing.Union`.
 
 .. describe:: X | Y | ...
 
@@ -5394,9 +5400,10 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
 
       int | str == str | int
 
-   * It is compatible with :data:`typing.Union`::
+   * It creates instances of :class:`typing.Union`::
 
       int | str == typing.Union[int, str]
+      type(int | str) is typing.Union
 
    * Optional types can be spelled as a union with ``None``::
 
@@ -5422,16 +5429,15 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       TypeError: isinstance() argument 2 cannot be a parameterized generic
 
 The user-exposed type for the union object can be accessed from
-:data:`types.UnionType` and used for :func:`isinstance` checks.  An object cannot be
-instantiated from the type::
+:class:`typing.Union` and used for :func:`isinstance` checks::
 
-   >>> import types
-   >>> isinstance(int | str, types.UnionType)
+   >>> import typing
+   >>> isinstance(int | str, typing.Union)
    True
-   >>> types.UnionType()
+   >>> typing.Union()
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: cannot create 'types.UnionType' instances
+   TypeError: cannot create 'typing.Union' instances
 
 .. note::
    The :meth:`!__or__` method for type objects was added to support the syntax
@@ -5457,6 +5463,11 @@ instantiated from the type::
    :pep:`604` -- PEP proposing the ``X | Y`` syntax and the Union type.
 
 .. versionadded:: 3.10
+
+.. versionchanged:: 3.14
+
+   Union objects are now instances of :class:`typing.Union`. Previously, they were instances
+   of :class:`types.UnionType`, which remains an alias for :class:`typing.Union`.
 
 
 .. _typesother:

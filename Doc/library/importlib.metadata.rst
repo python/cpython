@@ -268,8 +268,9 @@ Distribution versions
 
 .. function:: version(distribution_name)
 
-   Return the installed distribution package version for the named
-   distribution package.
+   Return the installed distribution package
+   `version <https://packaging.python.org/en/latest/specifications/core-metadata/#version>`__
+   for the named distribution package.
 
    Raises :exc:`PackageNotFoundError` if the named distribution
    package is not installed in the current Python environment.

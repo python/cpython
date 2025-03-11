@@ -2272,10 +2272,8 @@ class BaseTaskTests:
 
         self.assertEqual(self.all_tasks(loop=self.loop), {task})
 
-        asyncio._set_event_loop(None)
-
         # execute the task so it waits for future
-        self.loop._run_once()
+        self.loop.run_until_complete(asyncio.sleep(0))
         self.assertEqual(len(self.loop._ready), 0)
 
         coro = None
@@ -2303,15 +2301,18 @@ class BaseTaskTests:
             def __del__(self):
                 pass
 
-        async def coro():
+        async def corofn():
             await asyncio.sleep(0.01)
 
-        task = Subclass(coro(), loop = self.loop)
+        coro = corofn()
+        task = Subclass(coro, loop = self.loop)
         task._log_destroy_pending = False
 
         del task
 
         support.gc_collect()
+
+        coro.close()
 
     @mock.patch('asyncio.base_events.logger')
     def test_tb_logger_not_called_after_cancel(self, m_log):
@@ -2718,12 +2719,12 @@ class BaseTaskTests:
         coro = coroutine_function()
         with contextlib.closing(asyncio.EventLoop()) as loop:
             task = asyncio.Task.__new__(asyncio.Task)
-
             for _ in range(5):
                 with self.assertRaisesRegex(RuntimeError, 'break'):
                     task.__init__(coro, loop=loop, context=obj, name=Break())
 
             coro.close()
+            task._log_destroy_pending = False
             del task
 
             self.assertEqual(sys.getrefcount(obj), initial_refcount)

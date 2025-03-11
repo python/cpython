@@ -11,7 +11,9 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GetIDObject()
 
 #ifdef MS_WINDOWS
-#define WIN32_LEAN_AND_MEAN
+#ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>        // SwitchToThread()
 #elif defined(HAVE_SCHED_H)
 #include <sched.h>          // sched_yield()
@@ -2268,6 +2270,8 @@ typedef struct channelid {
     _channels *channels;
 } channelid;
 
+#define channelid_CAST(op)  ((channelid *)(op))
+
 struct channel_id_converter_data {
     PyObject *module;
     int64_t cid;
@@ -2396,10 +2400,11 @@ _channelid_new(PyObject *mod, PyTypeObject *cls,
 }
 
 static void
-channelid_dealloc(PyObject *self)
+channelid_dealloc(PyObject *op)
 {
-    int64_t cid = ((channelid *)self)->cid;
-    _channels *channels = ((channelid *)self)->channels;
+    channelid *self = channelid_CAST(op);
+    int64_t cid = self->cid;
+    _channels *channels = self->channels;
 
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free(self);
@@ -2420,7 +2425,7 @@ channelid_repr(PyObject *self)
     PyTypeObject *type = Py_TYPE(self);
     const char *name = _PyType_Name(type);
 
-    channelid *cidobj = (channelid *)self;
+    channelid *cidobj = channelid_CAST(self);
     const char *fmt;
     if (cidobj->end == CHANNEL_SEND) {
         fmt = "%s(%" PRId64 ", send=True)";
@@ -2437,21 +2442,21 @@ channelid_repr(PyObject *self)
 static PyObject *
 channelid_str(PyObject *self)
 {
-    channelid *cidobj = (channelid *)self;
+    channelid *cidobj = channelid_CAST(self);
     return PyUnicode_FromFormat("%" PRId64 "", cidobj->cid);
 }
 
 static PyObject *
 channelid_int(PyObject *self)
 {
-    channelid *cidobj = (channelid *)self;
+    channelid *cidobj = channelid_CAST(self);
     return PyLong_FromLongLong(cidobj->cid);
 }
 
 static Py_hash_t
 channelid_hash(PyObject *self)
 {
-    channelid *cidobj = (channelid *)self;
+    channelid *cidobj = channelid_CAST(self);
     PyObject *pyid = PyLong_FromLongLong(cidobj->cid);
     if (pyid == NULL) {
         return -1;
@@ -2483,10 +2488,10 @@ channelid_richcompare(PyObject *self, PyObject *other, int op)
         goto done;
     }
 
-    channelid *cidobj = (channelid *)self;
+    channelid *cidobj = channelid_CAST(self);
     int equal;
     if (PyObject_TypeCheck(other, state->ChannelIDType)) {
-        channelid *othercidobj = (channelid *)other;
+        channelid *othercidobj = (channelid *)other;  // fast safe cast
         equal = (cidobj->end == othercidobj->end) && (cidobj->cid == othercidobj->cid);
     }
     else if (PyLong_Check(other)) {
@@ -2606,9 +2611,10 @@ _channelid_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
         return -1;
     }
     struct _channelid_xid *xid = (struct _channelid_xid *)_PyXIData_DATA(data);
-    xid->cid = ((channelid *)obj)->cid;
-    xid->end = ((channelid *)obj)->end;
-    xid->resolve = ((channelid *)obj)->resolve;
+    channelid *cidobj = channelid_CAST(obj);
+    xid->cid = cidobj->cid;
+    xid->end = cidobj->end;
+    xid->resolve = cidobj->resolve;
     return 0;
 }
 
@@ -2616,7 +2622,7 @@ static PyObject *
 channelid_end(PyObject *self, void *end)
 {
     int force = 1;
-    channelid *cidobj = (channelid *)self;
+    channelid *cidobj = channelid_CAST(self);
     if (end != NULL) {
         PyObject *obj = NULL;
         int err = newchannelid(Py_TYPE(self), cidobj->cid, *(int *)end,
@@ -2649,11 +2655,11 @@ static int _channelid_end_send = CHANNEL_SEND;
 static int _channelid_end_recv = CHANNEL_RECV;
 
 static PyGetSetDef channelid_getsets[] = {
-    {"end", (getter)channelid_end, NULL,
+    {"end", channelid_end, NULL,
      PyDoc_STR("'send', 'recv', or 'both'")},
-    {"send", (getter)channelid_end, NULL,
+    {"send", channelid_end, NULL,
      PyDoc_STR("the 'send' end of the channel"), &_channelid_end_send},
-    {"recv", (getter)channelid_end, NULL,
+    {"recv", channelid_end, NULL,
      PyDoc_STR("the 'recv' end of the channel"), &_channelid_end_recv},
     {NULL}
 };
@@ -2662,16 +2668,16 @@ PyDoc_STRVAR(channelid_doc,
 "A channel ID identifies a channel and may be used as an int.");
 
 static PyType_Slot channelid_typeslots[] = {
-    {Py_tp_dealloc, (destructor)channelid_dealloc},
+    {Py_tp_dealloc, channelid_dealloc},
     {Py_tp_doc, (void *)channelid_doc},
-    {Py_tp_repr, (reprfunc)channelid_repr},
-    {Py_tp_str, (reprfunc)channelid_str},
+    {Py_tp_repr, channelid_repr},
+    {Py_tp_str, channelid_str},
     {Py_tp_hash, channelid_hash},
     {Py_tp_richcompare, channelid_richcompare},
     {Py_tp_getset, channelid_getsets},
     // number slots
-    {Py_nb_int, (unaryfunc)channelid_int},
-    {Py_nb_index,  (unaryfunc)channelid_int},
+    {Py_nb_int, channelid_int},
+    {Py_nb_index, channelid_int},
     {0, NULL},
 };
 
@@ -2904,10 +2910,10 @@ channelsmod_create(PyObject *self, PyObject *args, PyObject *kwds)
     if (state == NULL) {
         return NULL;
     }
-    PyObject *cidobj = NULL;
+    channelid *cidobj = NULL;
     int err = newchannelid(state->ChannelIDType, cid, 0,
                            &_globals.channels, 0, 0,
-                           (channelid **)&cidobj);
+                           &cidobj);
     if (handle_channel_error(err, self, cid)) {
         assert(cidobj == NULL);
         err = channel_destroy(&_globals.channels, cid);
@@ -2917,8 +2923,8 @@ channelsmod_create(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
     assert(cidobj != NULL);
-    assert(((channelid *)cidobj)->channels != NULL);
-    return cidobj;
+    assert(cidobj->channels != NULL);
+    return (PyObject *)cidobj;
 }
 
 PyDoc_STRVAR(channelsmod_create_doc,
@@ -3553,7 +3559,7 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     module_state *state = get_module_state(mod);
     assert(state != NULL);
-    traverse_module_state(state, visit, arg);
+    (void)traverse_module_state(state, visit, arg);
     return 0;
 }
 
@@ -3564,18 +3570,18 @@ module_clear(PyObject *mod)
     assert(state != NULL);
 
     // Now we clear the module state.
-    clear_module_state(state);
+    (void)clear_module_state(state);
     return 0;
 }
 
 static void
 module_free(void *mod)
 {
-    module_state *state = get_module_state(mod);
+    module_state *state = get_module_state((PyObject *)mod);
     assert(state != NULL);
 
     // Now we clear the module state.
-    clear_module_state(state);
+    (void)clear_module_state(state);
 
     _globals_fini();
 }

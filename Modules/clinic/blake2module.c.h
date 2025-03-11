@@ -426,6 +426,19 @@ PyDoc_STRVAR(_blake2_blake2b_update__doc__,
 #define _BLAKE2_BLAKE2B_UPDATE_METHODDEF    \
     {"update", (PyCFunction)_blake2_blake2b_update, METH_O, _blake2_blake2b_update__doc__},
 
+static PyObject *
+_blake2_blake2b_update_impl(Blake2Object *self, PyObject *data);
+
+static PyObject *
+_blake2_blake2b_update(PyObject *self, PyObject *data)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _blake2_blake2b_update_impl((Blake2Object *)self, data);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_blake2_blake2b_digest__doc__,
 "digest($self, /)\n"
 "--\n"
@@ -461,4 +474,4 @@ _blake2_blake2b_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2b_hexdigest_impl((Blake2Object *)self);
 }
-/*[clinic end generated code: output=6e03c947b7e0d973 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b286a0d1be8729b0 input=a9049054013a1b77]*/

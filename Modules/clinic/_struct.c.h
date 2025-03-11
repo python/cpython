@@ -209,6 +209,19 @@ PyDoc_STRVAR(Struct_iter_unpack__doc__,
 #define STRUCT_ITER_UNPACK_METHODDEF    \
     {"iter_unpack", (PyCFunction)Struct_iter_unpack, METH_O, Struct_iter_unpack__doc__},
 
+static PyObject *
+Struct_iter_unpack_impl(PyStructObject *self, PyObject *buffer);
+
+static PyObject *
+Struct_iter_unpack(PyObject *self, PyObject *buffer)
+{
+    PyObject *return_value = NULL;
+
+    return_value = Struct_iter_unpack_impl((PyStructObject *)self, buffer);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_clearcache__doc__,
 "_clearcache($module, /)\n"
 "--\n"
@@ -439,4 +452,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ec540c21be08e1d0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c7c051850b7ad427 input=a9049054013a1b77]*/
