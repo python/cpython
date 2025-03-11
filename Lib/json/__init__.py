@@ -242,12 +242,11 @@ _default_decoder = JSONDecoder(object_hook=None, object_pairs_hook=None)
 
 
 def detect_encoding(b):
-    bstartswith = b.startswith
-    if bstartswith((codecs.BOM_UTF32_BE, codecs.BOM_UTF32_LE)):
+    if b[:4] in (codecs.BOM_UTF32_BE, codecs.BOM_UTF32_LE):
         return 'utf-32'
-    if bstartswith((codecs.BOM_UTF16_BE, codecs.BOM_UTF16_LE)):
+    if b[:2] in (codecs.BOM_UTF16_BE, codecs.BOM_UTF16_LE):
         return 'utf-16'
-    if bstartswith(codecs.BOM_UTF8):
+    if b[:3] == codecs.BOM_UTF8:
         return 'utf-8-sig'
 
     if len(b) >= 4:
@@ -298,8 +297,8 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
 
 def loads(s, *, cls=None, object_hook=None, parse_float=None,
         parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
-    """Deserialize ``s`` (a ``str``, ``bytes`` or ``bytearray`` instance
-    containing a JSON document) to a Python object.
+    """Deserialize ``s`` (a ``str``, ``bytes``, ``bytearray`` or ``memoryview``
+    instance containing a JSON document) to a Python object.
 
     ``object_hook`` is an optional function that will be called with the
     result of any object literal decode (a ``dict``). The return value of
@@ -335,10 +334,10 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
             raise JSONDecodeError("Unexpected UTF-8 BOM (decode using utf-8-sig)",
                                   s, 0)
     else:
-        if not isinstance(s, (bytes, bytearray)):
-            raise TypeError(f'the JSON object must be str, bytes or bytearray, '
+        if not isinstance(s, (bytes, bytearray, memoryview)):
+            raise TypeError(f'the JSON object must be str, bytes, bytearray or memoryview, '
                             f'not {s.__class__.__name__}')
-        s = s.decode(detect_encoding(s), 'surrogatepass')
+        s = str(s, detect_encoding(s), 'surrogatepass')
 
     if (cls is None and object_hook is None and
             parse_int is None and parse_float is None and
