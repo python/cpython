@@ -811,6 +811,9 @@ pdb
   fill in a 4-space indentation now, instead of inserting a ``\t`` character.
   (Contributed by Tian Gao in :gh:`130471`.)
 
+* ``$_asynctask`` is added to access the current asyncio task if applicable.
+  (Contributed by Tian Gao in :gh:`124367`.)
+
 
 pickle
 ------

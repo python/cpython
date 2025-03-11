@@ -364,7 +364,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self._chained_exceptions = tuple()
         self._chained_exception_index = 0
 
-        self._running_loop = None
         self._current_task = None
 
     def set_trace(self, frame=None, *, commands=None):
@@ -409,7 +408,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             tb = tb.tb_next
         self.curframe = self.stack[self.curindex][0]
         self.set_convenience_variable(self.curframe, '_frame', self.curframe)
-        self.set_convenience_variable(self.curframe, '_asynctask', self._current_task)
+        if self._current_task:
+            self.set_convenience_variable(self.curframe, '_asynctask', self._current_task)
         self._save_initial_file_mtime(self.curframe)
 
         if self._chained_exceptions:
@@ -620,37 +620,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self._chained_exceptions = tuple()
             self._chained_exception_index = 0
 
-    def _get_asyncio_loop_and_task(self):
+    def _get_asyncio_task(self):
         try:
-            loop = asyncio.get_event_loop()
-            task = asyncio.current_task(loop)
+            task = asyncio.current_task()
         except RuntimeError:
-            loop = task = None
-        return loop, task
-
-    def _asyncio_task_repr(self, task):
-        import asyncio.base_futures
-
-        if task.cancelling() and not task.done():
-            status = 'cancelling'
-        else:
-            info = asyncio.base_futures._future_repr_info(task)
-            status = info[0]
-
-        coro = task._coro
-
-        if coro is not None:
-            if hasattr(coro, '__qualname__') and coro.__qualname__:
-                coro_name = coro.__qualname__
-            elif hasattr(coro, '__name__') and coro.__name__:
-                coro_name = coro.__name__
-            else:
-                # Stop masking Cython bugs, expose them in a friendly way.
-                coro_name = f'<{type(coro).__name__} without __name__>'
-        else:
-            coro_name = 'unknown'
-
-        return f"{task.get_name()}: <{coro_name} {status}>"
+            task = None
+        return task
 
     def interaction(self, frame, tb_or_exc):
         # Restore the previous signal handler at the Pdb prompt.
@@ -662,7 +637,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             else:
                 Pdb._previous_sigint_handler = None
 
-        self._running_loop, self._current_task = self._get_asyncio_loop_and_task()
+        self._current_task = self._get_asyncio_task()
 
         _chained_exceptions, tb = self._get_tb_and_exceptions(tb_or_exc)
         if isinstance(tb_or_exc, BaseException):
@@ -1067,8 +1042,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     # Pdb meta commands, only intended to be used internally by pdb
 
     def _pdbcmd_print_frame_status(self, arg):
-        if self._current_task:
-            self.message(self._asyncio_task_repr(self._current_task))
         self.print_stack_trace(0)
         self._validate_file_mtime()
         self._show_display()
