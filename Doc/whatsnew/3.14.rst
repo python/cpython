@@ -297,7 +297,7 @@ For further information on how to build Python, see
 
 .. attention::
 
-    This section previously reported a 9-15% geomean speedup. This number has since been
+    This section previously reported a 9-15% geometric mean speedup. This number has since been
     cautiously revised down to 3-5%. While we expect performance results to be better
     than what we report, our estimates are more conservative due to a
     `compiler bug <https://github.com/llvm/llvm-project/issues/106846>`_ found in
@@ -1414,6 +1414,10 @@ Build changes
 
 * GNU Autoconf 2.72 is now required to generate :file:`configure`.
   (Contributed by Erlend Aasland in :gh:`115765`.)
+
+* ``#pragma``-based linking with ``python3*.lib`` can now be switched off
+  with :c:expr:`Py_NO_LINK_LIB`. (Contributed by Jean-Christophe
+  Fillion-Robin in :gh:`82909`.)
 
 .. _whatsnew314-pep761:
 

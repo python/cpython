@@ -433,6 +433,13 @@ class PurePathTest(test_pathlib_abc.JoinablePathTest):
         with self.assertWarns(DeprecationWarning):
             p.is_reserved()
 
+    def test_full_match_case_sensitive(self):
+        P = self.cls
+        self.assertFalse(P('A.py').full_match('a.PY', case_sensitive=True))
+        self.assertTrue(P('A.py').full_match('a.PY', case_sensitive=False))
+        self.assertFalse(P('c:/a/B.Py').full_match('C:/A/*.pY', case_sensitive=True))
+        self.assertTrue(P('/a/b/c.py').full_match('/A/*/*.Py', case_sensitive=False))
+
     def test_match_empty(self):
         P = self.cls
         self.assertRaises(ValueError, P('a').match, '')
@@ -2736,6 +2743,18 @@ class PathTest(test_pathlib_abc.RWPathTest, PurePathTest):
         expect = {p / "dirB/fileB", p / "dirC/fileC"}
         self.assertEqual(expect, set(p.glob(P(pattern))))
         self.assertEqual(expect, set(p.glob(FakePath(pattern))))
+
+    def test_glob_case_sensitive(self):
+        P = self.cls
+        def _check(path, pattern, case_sensitive, expected):
+            actual = {str(q) for q in path.glob(pattern, case_sensitive=case_sensitive)}
+            expected = {str(P(self.base, q)) for q in expected}
+            self.assertEqual(actual, expected)
+        path = P(self.base)
+        _check(path, "DIRB/FILE*", True, [])
+        _check(path, "DIRB/FILE*", False, ["dirB/fileB"])
+        _check(path, "dirb/file*", True, [])
+        _check(path, "dirb/file*", False, ["dirB/fileB"])
 
     @needs_symlinks
     def test_glob_dot(self):

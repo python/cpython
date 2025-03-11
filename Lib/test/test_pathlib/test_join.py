@@ -130,11 +130,6 @@ class JoinTestBase:
         self.assertFalse(P('a/b/c.py').full_match('**/a/b/c./**'))
         self.assertFalse(P('a/b/c.py').full_match('/a/b/c.py/**'))
         self.assertFalse(P('a/b/c.py').full_match('/**/a/b/c.py'))
-        # Case-sensitive flag
-        self.assertFalse(P('A.py').full_match('a.PY', case_sensitive=True))
-        self.assertTrue(P('A.py').full_match('a.PY', case_sensitive=False))
-        self.assertFalse(P('c:/a/B.Py').full_match('C:/A/*.pY', case_sensitive=True))
-        self.assertTrue(P('/a/b/c.py').full_match('/A/*/*.Py', case_sensitive=False))
         # Matching against empty path
         self.assertFalse(P('').full_match('*'))
         self.assertTrue(P('').full_match('**'))
