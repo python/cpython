@@ -520,7 +520,7 @@ The :mod:`pickle` module can be invoked as a script from the command line,
 it will display contents of the pickle files. However, when the pickle file
 that you want to examine comes from an untrusted source, ``-m pickletools``
 is a safer option because it does not execute pickle bytecode, see
-:ref:`pickletools-cli`.
+:ref:`pickletools CLI usage <pickletools-cli>`.
 
 .. code-block:: bash
 
