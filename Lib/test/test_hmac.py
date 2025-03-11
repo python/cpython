@@ -213,7 +213,7 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
         self.assert_hmac_new_by_name(
             key, msg, hexdigest, hashname, digest_size, block_size
         )
-        self.assert_hmac_hexdigest_by_new(
+        self.assert_hmac_hexdigest_by_name(
             key, msg, hexdigest, hashname, digest_size
         )
 
@@ -272,16 +272,28 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
         self, key, msg, hexdigest, digestmod, digest_size,
     ):
         """Check a HMAC digest computed by hmac_digest()."""
-        d = self.hmac_digest(key, msg, digestmod=digestmod)
-        self.assertEqual(len(d), digest_size)
-        self.assertEqual(d, binascii.unhexlify(hexdigest))
+        self._check_hmac_hexdigest(
+            key, msg, hexdigest, digest_size,
+            hmac_digest_func=self.hmac_digest,
+            hmac_digest_kwds={'digestmod': digestmod},
+        )
 
-    def assert_hmac_hexdigest_by_new(
+    def assert_hmac_hexdigest_by_name(
         self, key, msg, hexdigest, hashname, digest_size
     ):
         """Check a HMAC digest computed by hmac_digest_by_name()."""
-        self.assertIsInstance(hashname, str | None)
-        d = self.hmac_digest_by_name(key, msg, hashname=hashname)
+        self.assertIsInstance(hashname, str)
+        self._check_hmac_hexdigest(
+            key, msg, hexdigest, digest_size,
+            hmac_digest_func=self.hmac_digest_by_name,
+            hmac_digest_kwds={'hashname': hashname},
+        )
+
+    def _check_hmac_hexdigest(
+        self, key, msg, hexdigest, digest_size,
+        hmac_digest_func, hmac_digest_kwds,
+    ):
+        d = hmac_digest_func(key, msg, **hmac_digest_kwds)
         self.assertEqual(len(d), digest_size)
         self.assertEqual(d, binascii.unhexlify(hexdigest))
 
