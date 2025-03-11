@@ -123,6 +123,13 @@ class EventQueueTestBase:
         self.assertEqual(eq.events[2].evt, "key")
         self.assertEqual(eq.events[2].data, "Z")
 
+    def test_push_unicode_character(self):
+        eq = self.make_eventqueue()
+        eq.keymap = {}
+        eq.push("ч")
+        self.assertEqual(eq.events[0].evt, "key")
+        self.assertEqual(eq.events[0].data, "ч")
+
 
 @unittest.skipIf(support.MS_WINDOWS, "No Unix event queue on Windows")
 class TestUnixEventQueue(EventQueueTestBase, unittest.TestCase):

@@ -309,3 +309,6 @@ Doc/reference/                @willingc @AA-Turner
 # Colorize
 Lib/_colorize.py              @hugovk
 Lib/test/test__colorize.py    @hugovk
+
+# Fuzzing
+Modules/_xxtestfuzz/          @ammaraskar
