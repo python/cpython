@@ -111,9 +111,9 @@ typedef struct {
     PyObject base;
     Py_buffer *view;
     int64_t interpid;
-} XIBufferViewObject;
+} xibufferview;
 
-#define XIBufferViewObject_CAST(op) ((XIBufferViewObject *)(op))
+#define xibufferview_CAST(op) ((xibufferview *)(op))
 
 static PyObject *
 xibufferview_from_buffer(PyTypeObject *cls, Py_buffer *view, int64_t interpid)
@@ -127,13 +127,13 @@ xibufferview_from_buffer(PyTypeObject *cls, Py_buffer *view, int64_t interpid)
     /* This steals the view->obj reference  */
     *copied = *view;
 
-    XIBufferViewObject *self = PyObject_Malloc(sizeof(XIBufferViewObject));
+    xibufferview *self = PyObject_Malloc(sizeof(xibufferview));
     if (self == NULL) {
         PyMem_RawFree(copied);
         return NULL;
     }
     PyObject_Init(&self->base, cls);
-    *self = (XIBufferViewObject){
+    *self = (xibufferview){
         .base = self->base,
         .view = copied,
         .interpid = interpid,
@@ -144,8 +144,7 @@ xibufferview_from_buffer(PyTypeObject *cls, Py_buffer *view, int64_t interpid)
 static void
 xibufferview_dealloc(PyObject *op)
 {
-    XIBufferViewObject *self = XIBufferViewObject_CAST(op);
-
+    xibufferview *self = xibufferview_CAST(op);
     if (self->view != NULL) {
         PyInterpreterState *interp =
                         _PyInterpreterState_LookUpID(self->interpid);
@@ -180,7 +179,7 @@ xibufferview_getbuf(PyObject *op, Py_buffer *view, int flags)
 {
     /* Only PyMemoryView_FromObject() should ever call this,
        via _memoryview_from_xid() below. */
-    XIBufferViewObject *self = XIBufferViewObject_CAST(op);
+    xibufferview *self = xibufferview_CAST(op);
     *view = *self->view;
     /* This is the workaround mentioned earlier. */
     view->obj = op;
@@ -198,7 +197,7 @@ static PyType_Slot XIBufferViewType_slots[] = {
 
 static PyType_Spec XIBufferViewType_spec = {
     .name = MODULE_NAME_STR ".CrossInterpreterBufferView",
-    .basicsize = sizeof(XIBufferViewObject),
+    .basicsize = sizeof(xibufferview),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
               Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE),
     .slots = XIBufferViewType_slots,
