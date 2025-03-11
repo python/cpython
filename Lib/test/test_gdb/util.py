@@ -16,7 +16,7 @@ CHECKOUT_HOOK_PATH = os.path.join(os.path.dirname(sys.executable),
                                   'python-gdb.py')
 
 SAMPLE_SCRIPT = os.path.join(os.path.dirname(__file__), 'gdb_sample.py')
-BREAKPOINT_FN = 'builtin_id'
+BREAKPOINT_FN = '_typing__idfunc'
 
 PYTHONHASHSEED = '123'
 
@@ -279,11 +279,6 @@ class DebuggerTests(unittest.TestCase):
                 raise unittest.SkipTest(f"{pattern!r} found in gdb output")
 
         return out
-
-    def assertEndsWith(self, actual, exp_end):
-        '''Ensure that the given "actual" string ends with "exp_end"'''
-        self.assertTrue(actual.endswith(exp_end),
-                        msg='%r did not end with %r' % (actual, exp_end))
 
     def assertMultilineMatches(self, actual, pattern):
         m = re.match(pattern, actual, re.DOTALL)

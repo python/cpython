@@ -35,7 +35,7 @@ from functools import partial
 from textwrap import dedent
 from typing import Iterator, List, Optional, Set, Tuple
 
-SCRIPT = sys.argv[0]
+SCRIPT = os.path.normpath(sys.argv[0])
 VERSION = "3.3"
 
 # The Unicode Database

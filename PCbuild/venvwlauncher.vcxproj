@@ -92,7 +92,7 @@
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup>
     <ClCompile>
-      <PreprocessorDefinitions>EXENAME=L"$(PyExeName)$(PyDebugExt).exe";_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>EXENAME=L"$(PyWExeName)$(PyDebugExt).exe";_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <ResourceCompile>
@@ -107,7 +107,7 @@
     <ClCompile Include="..\PC\venvlauncher.c" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\PC\launcher.ico" />
+    <None Include="..\PC\icons\launcher.ico" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\pylauncher.rc" />

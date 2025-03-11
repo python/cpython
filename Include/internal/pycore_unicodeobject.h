@@ -246,17 +246,14 @@ extern Py_ssize_t _PyUnicode_InsertThousandsGrouping(
     Py_ssize_t min_width,
     const char *grouping,
     PyObject *thousands_sep,
-    Py_UCS4 *maxchar);
+    Py_UCS4 *maxchar,
+    int forward);
 
 /* --- Misc functions ----------------------------------------------------- */
 
 extern PyObject* _PyUnicode_FormatLong(PyObject *, int, int, int);
 
-/* Fast equality check when the inputs are known to be exact unicode types
-   and where the hash values are equal (i.e. a very probable match) */
-extern int _PyUnicode_EQ(PyObject *, PyObject *);
-
-// Equality check.
+// Fast equality check when the inputs are known to be exact unicode types.
 // Export for '_pickle' shared extension.
 PyAPI_FUNC(int) _PyUnicode_Equal(PyObject *, PyObject *);
 

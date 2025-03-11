@@ -70,6 +70,7 @@ def run_on_interactive_mode(source):
     return output
 
 
+@support.force_not_colorized_test_class
 class TestInteractiveInterpreter(unittest.TestCase):
 
     @cpython_only
@@ -212,7 +213,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         p.stdin.write(user_input)
         user_input2 = dedent("""
         import linecache
-        print(linecache.cache['<stdin>-1'])
+        print(linecache._interactive_cache[id(foo.__code__)])
         """)
         p.stdin.write(user_input2)
         output = kill_python(p)
@@ -273,6 +274,8 @@ class TestInteractiveInterpreter(unittest.TestCase):
 
         self.assertEqual(exit_code, 0, "".join(output))
 
+
+@support.force_not_colorized_test_class
 class TestInteractiveModeSyntaxErrors(unittest.TestCase):
 
     def test_interactive_syntax_error_correct_line(self):
@@ -289,6 +292,51 @@ class TestInteractiveModeSyntaxErrors(unittest.TestCase):
             'SyntaxError: invalid syntax'
         ]
         self.assertEqual(traceback_lines, expected_lines)
+
+
+class TestAsyncioREPL(unittest.TestCase):
+    def test_multiple_statements_fail_early(self):
+        user_input = "1 / 0; print(f'afterwards: {1+1}')"
+        p = spawn_repl("-m", "asyncio")
+        p.stdin.write(user_input)
+        output = kill_python(p)
+        self.assertIn("ZeroDivisionError", output)
+        self.assertNotIn("afterwards: 2", output)
+
+    def test_toplevel_contextvars_sync(self):
+        user_input = dedent("""\
+        from contextvars import ContextVar
+        var = ContextVar("var", default="failed")
+        var.set("ok")
+        """)
+        p = spawn_repl("-m", "asyncio")
+        p.stdin.write(user_input)
+        user_input2 = dedent("""
+        print(f"toplevel contextvar test: {var.get()}")
+        """)
+        p.stdin.write(user_input2)
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+        expected = "toplevel contextvar test: ok"
+        self.assertIn(expected, output, expected)
+
+    def test_toplevel_contextvars_async(self):
+        user_input = dedent("""\
+        from contextvars import ContextVar
+        var = ContextVar('var', default='failed')
+        """)
+        p = spawn_repl("-m", "asyncio")
+        p.stdin.write(user_input)
+        user_input2 = "async def set_var(): var.set('ok')\n"
+        p.stdin.write(user_input2)
+        user_input3 = "await set_var()\n"
+        p.stdin.write(user_input3)
+        user_input4 = "print(f'toplevel contextvar test: {var.get()}')\n"
+        p.stdin.write(user_input4)
+        output = kill_python(p)
+        self.assertEqual(p.returncode, 0)
+        expected = "toplevel contextvar test: ok"
+        self.assertIn(expected, output, expected)
 
 
 if __name__ == "__main__":

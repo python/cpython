@@ -1,2 +1,0 @@
-Deactivate line wrap in the Apple Terminal via a ANSI escape code. Patch by
-Pablo Galindo

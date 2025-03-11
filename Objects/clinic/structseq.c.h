@@ -47,7 +47,8 @@ structseq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *arg;
     PyObject *dict = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -62,4 +63,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5bf39b3f06a34ce4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ef2406240ce0ad3f input=a9049054013a1b77]*/

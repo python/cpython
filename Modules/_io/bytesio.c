@@ -21,10 +21,14 @@ typedef struct {
     Py_ssize_t exports;
 } bytesio;
 
+#define bytesio_CAST(op)    ((bytesio *)(op))
+
 typedef struct {
     PyObject_HEAD
     bytesio *source;
 } bytesiobuf;
+
+#define bytesiobuf_CAST(op) ((bytesiobuf *)(op))
 
 /* The bytesio object can be in three states:
   * Py_REFCNT(buf) == 1, exports == 0.
@@ -239,8 +243,9 @@ write_bytes(bytesio *self, PyObject *b)
 }
 
 static PyObject *
-bytesio_get_closed(bytesio *self, void *Py_UNUSED(ignored))
+bytesio_get_closed(PyObject *op, void *Py_UNUSED(closure))
 {
+    bytesio *self = bytesio_CAST(op);
     if (self->buf == NULL) {
         Py_RETURN_TRUE;
     }
@@ -588,7 +593,7 @@ _io_BytesIO_readinto_impl(bytesio *self, Py_buffer *buffer)
 
 /*[clinic input]
 _io.BytesIO.truncate
-    size: Py_ssize_t(accept={int, NoneType}, c_default="self->pos") = None
+    size: Py_ssize_t(accept={int, NoneType}, c_default="((bytesio *)self)->pos") = None
     /
 
 Truncate the file to at most size bytes.
@@ -599,7 +604,7 @@ The current file position is unchanged.  Returns the new size.
 
 static PyObject *
 _io_BytesIO_truncate_impl(bytesio *self, Py_ssize_t size)
-/*[clinic end generated code: output=9ad17650c15fa09b input=423759dd42d2f7c1]*/
+/*[clinic end generated code: output=9ad17650c15fa09b input=dae4295e11c1bbb4]*/
 {
     CHECK_CLOSED(self);
     CHECK_EXPORTS(self);
@@ -620,9 +625,10 @@ _io_BytesIO_truncate_impl(bytesio *self, Py_ssize_t size)
 }
 
 static PyObject *
-bytesio_iternext(bytesio *self)
+bytesio_iternext(PyObject *op)
 {
     Py_ssize_t n;
+    bytesio *self = bytesio_CAST(op);
 
     CHECK_CLOSED(self);
 
@@ -783,8 +789,9 @@ _io_BytesIO_close_impl(bytesio *self)
  */
 
 static PyObject *
-bytesio_getstate(bytesio *self, PyObject *Py_UNUSED(ignored))
+bytesio_getstate(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
+    bytesio *self = bytesio_CAST(op);
     PyObject *initvalue = _io_BytesIO_getvalue_impl(self);
     PyObject *dict;
     PyObject *state;
@@ -808,12 +815,13 @@ bytesio_getstate(bytesio *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-bytesio_setstate(bytesio *self, PyObject *state)
+bytesio_setstate(PyObject *op, PyObject *state)
 {
     PyObject *result;
     PyObject *position_obj;
     PyObject *dict;
     Py_ssize_t pos;
+    bytesio *self = bytesio_CAST(op);
 
     assert(state != NULL);
 
@@ -883,8 +891,9 @@ bytesio_setstate(bytesio *self, PyObject *state)
 }
 
 static void
-bytesio_dealloc(bytesio *self)
+bytesio_dealloc(PyObject *op)
 {
+    bytesio *self = bytesio_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
     if (self->exports > 0) {
@@ -895,7 +904,7 @@ bytesio_dealloc(bytesio *self)
     Py_CLEAR(self->buf);
     Py_CLEAR(self->dict);
     if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) self);
+        PyObject_ClearWeakRefs(op);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -961,8 +970,9 @@ _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
 }
 
 static PyObject *
-bytesio_sizeof(bytesio *self, void *unused)
+bytesio_sizeof(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
+    bytesio *self = bytesio_CAST(op);
     size_t res = _PyObject_SIZE(Py_TYPE(self));
     if (self->buf && !SHARED_BUF(self)) {
         size_t s = _PySys_GetSizeOf(self->buf);
@@ -975,8 +985,9 @@ bytesio_sizeof(bytesio *self, void *unused)
 }
 
 static int
-bytesio_traverse(bytesio *self, visitproc visit, void *arg)
+bytesio_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    bytesio *self = bytesio_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     Py_VISIT(self->buf);
@@ -984,8 +995,9 @@ bytesio_traverse(bytesio *self, visitproc visit, void *arg)
 }
 
 static int
-bytesio_clear(bytesio *self)
+bytesio_clear(PyObject *op)
 {
+    bytesio *self = bytesio_CAST(op);
     Py_CLEAR(self->dict);
     if (self->exports == 0) {
         Py_CLEAR(self->buf);
@@ -999,7 +1011,7 @@ bytesio_clear(bytesio *self)
 #undef clinic_state
 
 static PyGetSetDef bytesio_getsetlist[] = {
-    {"closed",  (getter)bytesio_get_closed, NULL,
+    {"closed",  bytesio_get_closed, NULL,
      "True if the file is closed."},
     {NULL},            /* sentinel */
 };
@@ -1023,9 +1035,9 @@ static struct PyMethodDef bytesio_methods[] = {
     _IO_BYTESIO_GETVALUE_METHODDEF
     _IO_BYTESIO_SEEK_METHODDEF
     _IO_BYTESIO_TRUNCATE_METHODDEF
-    {"__getstate__",  (PyCFunction)bytesio_getstate,  METH_NOARGS, NULL},
-    {"__setstate__",  (PyCFunction)bytesio_setstate,  METH_O, NULL},
-    {"__sizeof__", (PyCFunction)bytesio_sizeof,     METH_NOARGS, NULL},
+    {"__getstate__",  bytesio_getstate,  METH_NOARGS, NULL},
+    {"__setstate__",  bytesio_setstate,  METH_O, NULL},
+    {"__sizeof__", bytesio_sizeof,     METH_NOARGS, NULL},
     {NULL, NULL}        /* sentinel */
 };
 
@@ -1065,9 +1077,10 @@ PyType_Spec bytesio_spec = {
  */
 
 static int
-bytesiobuf_getbuffer(bytesiobuf *obj, Py_buffer *view, int flags)
+bytesiobuf_getbuffer(PyObject *op, Py_buffer *view, int flags)
 {
-    bytesio *b = (bytesio *) obj->source;
+    bytesiobuf *obj = bytesiobuf_CAST(op);
+    bytesio *b = bytesio_CAST(obj->source);
 
     if (view == NULL) {
         PyErr_SetString(PyExc_BufferError,
@@ -1080,7 +1093,7 @@ bytesiobuf_getbuffer(bytesiobuf *obj, Py_buffer *view, int flags)
     }
 
     /* cannot fail if view != NULL and readonly == 0 */
-    (void)PyBuffer_FillInfo(view, (PyObject*)obj,
+    (void)PyBuffer_FillInfo(view, op,
                             PyBytes_AS_STRING(b->buf), b->string_size,
                             0, flags);
     b->exports++;
@@ -1088,26 +1101,29 @@ bytesiobuf_getbuffer(bytesiobuf *obj, Py_buffer *view, int flags)
 }
 
 static void
-bytesiobuf_releasebuffer(bytesiobuf *obj, Py_buffer *view)
+bytesiobuf_releasebuffer(PyObject *op, Py_buffer *Py_UNUSED(view))
 {
-    bytesio *b = (bytesio *) obj->source;
+    bytesiobuf *obj = bytesiobuf_CAST(op);
+    bytesio *b = bytesio_CAST(obj->source);
     b->exports--;
 }
 
 static int
-bytesiobuf_traverse(bytesiobuf *self, visitproc visit, void *arg)
+bytesiobuf_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    bytesiobuf *self = bytesiobuf_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->source);
     return 0;
 }
 
 static void
-bytesiobuf_dealloc(bytesiobuf *self)
+bytesiobuf_dealloc(PyObject *op)
 {
+    bytesiobuf *self = bytesiobuf_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
-    PyObject_GC_UnTrack(self);
+    PyObject_GC_UnTrack(op);
     Py_CLEAR(self->source);
     tp->tp_free(self);
     Py_DECREF(tp);

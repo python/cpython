@@ -14,8 +14,6 @@
  *
  */
 
-#include <stdbool.h>
-
 #include "Python.h"
 #include "pycore_ast.h"           // PyAST_Check, _PyAST_GetDocString()
 #include "pycore_compile.h"
@@ -25,15 +23,19 @@
 
 #include "cpython/code.h"
 
+#include <stdbool.h>
+
 #undef SUCCESS
 #undef ERROR
 #define SUCCESS 0
 #define ERROR -1
 
 #define RETURN_IF_ERROR(X)  \
-    if ((X) == -1) {        \
-        return ERROR;       \
-    }
+    do {                    \
+        if ((X) == -1) {    \
+            return ERROR;   \
+        }                   \
+    } while (0)
 
 typedef _Py_SourceLocation location;
 typedef _PyJumpTargetLabel jump_target_label;
@@ -702,12 +704,12 @@ _PyCompile_ExitScope(compiler *c)
         assert(c->u);
         /* we are deleting from a list so this really shouldn't fail */
         if (PySequence_DelItem(c->c_stack, n) < 0) {
-            PyErr_FormatUnraisable("Exception ignored on removing "
+            PyErr_FormatUnraisable("Exception ignored while removing "
                                    "the last compiler stack item");
         }
         if (nested_seq != NULL) {
             if (_PyInstructionSequence_AddNested(c->u->u_instr_sequence, nested_seq) < 0) {
-                PyErr_FormatUnraisable("Exception ignored on appending "
+                PyErr_FormatUnraisable("Exception ignored while appending "
                                        "nested instruction sequence");
             }
         }
@@ -901,7 +903,7 @@ _PyCompile_LookupArg(compiler *c, PyCodeObject *co, PyObject *name)
             c->u->u_metadata.u_name,
             co->co_name,
             freevars);
-        Py_DECREF(freevars);
+        Py_XDECREF(freevars);
         return ERROR;
     }
     return arg;
@@ -1285,6 +1287,10 @@ compute_code_flags(compiler *c)
             flags |= CO_VARARGS;
         if (ste->ste_varkeywords)
             flags |= CO_VARKEYWORDS;
+        if (ste->ste_has_docstring)
+            flags |= CO_HAS_DOCSTRING;
+        if (ste->ste_method)
+            flags |= CO_METHOD;
     }
 
     if (ste->ste_coroutine && !ste->ste_generator) {
@@ -1534,7 +1540,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
 
     _PyCompile_CodeUnitMetadata *umd = &c->u->u_metadata;
 
-#define SET_MATADATA_INT(key, value) do { \
+#define SET_METADATA_INT(key, value) do { \
         PyObject *v = PyLong_FromLong((long)value); \
         if (v == NULL) goto finally; \
         int res = PyDict_SetItemString(metadata, key, v); \
@@ -1542,10 +1548,10 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
         if (res < 0) goto finally; \
     } while (0);
 
-    SET_MATADATA_INT("argcount", umd->u_argcount);
-    SET_MATADATA_INT("posonlyargcount", umd->u_posonlyargcount);
-    SET_MATADATA_INT("kwonlyargcount", umd->u_kwonlyargcount);
-#undef SET_MATADATA_INT
+    SET_METADATA_INT("argcount", umd->u_argcount);
+    SET_METADATA_INT("posonlyargcount", umd->u_posonlyargcount);
+    SET_METADATA_INT("kwonlyargcount", umd->u_kwonlyargcount);
+#undef SET_METADATA_INT
 
     int addNone = mod->kind != Expression_kind;
     if (_PyCodegen_AddReturnAtEnd(c, addNone) < 0) {

@@ -1148,7 +1148,7 @@ Connection objects
           the *remaining* number of pages still to be copied,
           and the *total* number of pages.
           Defaults to ``None``.
-      :type progress: :term:`callback` | None
+      :type progress: :term:`callback` | None
 
       :param str name:
           The name of the database to back up.
@@ -2442,6 +2442,7 @@ Some useful URI tricks include:
    >>> con.execute("CREATE TABLE readonly(data)")
    Traceback (most recent call last):
    OperationalError: attempt to write a readonly database
+   >>> con.close()
 
 * Do not implicitly create a new database file if it does not already exist;
   will raise :exc:`~sqlite3.OperationalError` if unable to create a new file:

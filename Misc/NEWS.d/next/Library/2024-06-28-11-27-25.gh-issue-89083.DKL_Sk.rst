@@ -1,0 +1,2 @@
+Add :func:`uuid.uuid7` for generating UUIDv7 objects as specified in
+:rfc:`9562`. Patch by Bénédikt Tran.

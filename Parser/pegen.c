@@ -111,7 +111,7 @@ init_normalization(Parser *p)
     if (p->normalize) {
         return 1;
     }
-    p->normalize = _PyImport_GetModuleAttrString("unicodedata", "normalize");
+    p->normalize = PyImport_ImportModuleAttrString("unicodedata", "normalize");
     if (!p->normalize)
     {
         return 0;
@@ -509,8 +509,6 @@ _PyPegen_new_identifier(Parser *p, const char *n)
     if (!id) {
         goto error;
     }
-    /* PyUnicode_DecodeUTF8 should always return a ready string. */
-    assert(PyUnicode_IS_READY(id));
     /* Check whether there are non-ASCII characters in the
        identifier; if so, normalize to NFKC. */
     if (!PyUnicode_IS_ASCII(id))

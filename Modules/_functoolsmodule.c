@@ -18,7 +18,7 @@ class _functools._lru_cache_wrapper "PyObject *" "&lru_cache_type_spec"
 /* _functools module written and maintained
    by Hye-Shik Chang <perky@FreeBSD.org>
    with adaptations by Raymond Hettinger <python@rcn.com>
-   Copyright (c) 2004, 2005, 2006 Python Software Foundation.
+   Copyright (c) 2004 Python Software Foundation.
    All rights reserved.
 */
 
@@ -144,10 +144,13 @@ typedef struct {
     vectorcallfunc vectorcall;
 } partialobject;
 
+// cast a PyObject pointer PTR to a partialobject pointer (no type checks)
+#define partialobject_CAST(op)  ((partialobject *)(op))
+
 static void partial_setvectorcall(partialobject *pto);
 static struct PyModuleDef _functools_module;
 static PyObject *
-partial_call(partialobject *pto, PyObject *args, PyObject *kwargs);
+partial_call(PyObject *pto, PyObject *args, PyObject *kwargs);
 
 static inline _functools_state *
 get_functools_state_by_type(PyTypeObject *type)
@@ -307,8 +310,9 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 }
 
 static int
-partial_clear(partialobject *pto)
+partial_clear(PyObject *self)
 {
+    partialobject *pto = partialobject_CAST(self);
     Py_CLEAR(pto->fn);
     Py_CLEAR(pto->args);
     Py_CLEAR(pto->kw);
@@ -317,8 +321,9 @@ partial_clear(partialobject *pto)
 }
 
 static int
-partial_traverse(partialobject *pto, visitproc visit, void *arg)
+partial_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    partialobject *pto = partialobject_CAST(self);
     Py_VISIT(Py_TYPE(pto));
     Py_VISIT(pto->fn);
     Py_VISIT(pto->args);
@@ -328,16 +333,16 @@ partial_traverse(partialobject *pto, visitproc visit, void *arg)
 }
 
 static void
-partial_dealloc(partialobject *pto)
+partial_dealloc(PyObject *self)
 {
-    PyTypeObject *tp = Py_TYPE(pto);
+    PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
-    PyObject_GC_UnTrack(pto);
-    if (pto->weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject *) pto);
+    PyObject_GC_UnTrack(self);
+    if (partialobject_CAST(self)->weakreflist != NULL) {
+        PyObject_ClearWeakRefs(self);
     }
-    (void)partial_clear(pto);
-    tp->tp_free(pto);
+    (void)partial_clear(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -360,14 +365,14 @@ partial_vectorcall_fallback(PyThreadState *tstate, partialobject *pto,
 {
     pto->vectorcall = NULL;
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    return _PyObject_MakeTpCall(tstate, (PyObject *)pto,
-                                args, nargs, kwnames);
+    return _PyObject_MakeTpCall(tstate, (PyObject *)pto, args, nargs, kwnames);
 }
 
 static PyObject *
-partial_vectorcall(partialobject *pto, PyObject *const *args,
+partial_vectorcall(PyObject *self, PyObject *const *args,
                    size_t nargsf, PyObject *kwnames)
 {
+    partialobject *pto = partialobject_CAST(self);;
     PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
 
@@ -468,15 +473,16 @@ partial_setvectorcall(partialobject *pto)
      * but that is unlikely (why use partial without arguments?),
      * so we don't optimize that */
     else {
-        pto->vectorcall = (vectorcallfunc)partial_vectorcall;
+        pto->vectorcall = partial_vectorcall;
     }
 }
 
 
 // Not converted to argument clinic, because of `*args, **kwargs` arguments.
 static PyObject *
-partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
+partial_call(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+    partialobject *pto = partialobject_CAST(self);
     assert(PyCallable_Check(pto->fn));
     assert(PyTuple_Check(pto->args));
     assert(PyDict_Check(pto->kw));
@@ -587,8 +593,9 @@ static PyGetSetDef partial_getsetlist[] = {
 };
 
 static PyObject *
-partial_repr(partialobject *pto)
+partial_repr(PyObject *self)
 {
+    partialobject *pto = partialobject_CAST(self);
     PyObject *result = NULL;
     PyObject *arglist;
     PyObject *mod;
@@ -597,18 +604,18 @@ partial_repr(partialobject *pto)
     PyObject *key, *value;
     int status;
 
-    status = Py_ReprEnter((PyObject *)pto);
+    status = Py_ReprEnter(self);
     if (status != 0) {
         if (status < 0)
             return NULL;
         return PyUnicode_FromString("...");
     }
 
-    arglist = PyUnicode_FromString("");
+    arglist = Py_GetConstant(Py_CONSTANT_EMPTY_STR);
     if (arglist == NULL)
         goto done;
     /* Pack positional arguments */
-    assert (PyTuple_Check(pto->args));
+    assert(PyTuple_Check(pto->args));
     n = PyTuple_GET_SIZE(pto->args);
     for (i = 0; i < n; i++) {
         Py_SETREF(arglist, PyUnicode_FromFormat("%U, %R", arglist,
@@ -643,11 +650,11 @@ partial_repr(partialobject *pto)
     Py_DECREF(arglist);
 
  done:
-    Py_ReprLeave((PyObject *)pto);
+    Py_ReprLeave(self);
     return result;
  error:
     Py_DECREF(arglist);
-    Py_ReprLeave((PyObject *)pto);
+    Py_ReprLeave(self);
     return NULL;
 }
 
@@ -659,16 +666,18 @@ partial_repr(partialobject *pto)
  */
 
 static PyObject *
-partial_reduce(partialobject *pto, PyObject *unused)
+partial_reduce(PyObject *self, PyObject *Py_UNUSED(args))
 {
+    partialobject *pto = partialobject_CAST(self);
     return Py_BuildValue("O(O)(OOOO)", Py_TYPE(pto), pto->fn, pto->fn,
                          pto->args, pto->kw,
                          pto->dict ? pto->dict : Py_None);
 }
 
 static PyObject *
-partial_setstate(partialobject *pto, PyObject *state)
+partial_setstate(PyObject *self, PyObject *state)
 {
+    partialobject *pto = partialobject_CAST(self);
     PyObject *fn, *fnargs, *kw, *dict;
 
     if (!PyTuple_Check(state)) {
@@ -730,8 +739,8 @@ partial_setstate(partialobject *pto, PyObject *state)
 }
 
 static PyMethodDef partial_methods[] = {
-    {"__reduce__", (PyCFunction)partial_reduce, METH_NOARGS},
-    {"__setstate__", (PyCFunction)partial_setstate, METH_O},
+    {"__reduce__", partial_reduce, METH_NOARGS},
+    {"__setstate__", partial_setstate, METH_O},
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
@@ -749,7 +758,7 @@ static PyType_Slot partial_type_slots[] = {
     {Py_tp_methods, partial_methods},
     {Py_tp_members, partial_memberlist},
     {Py_tp_getset, partial_getsetlist},
-    {Py_tp_descr_get, (descrgetfunc)partial_descr_get},
+    {Py_tp_descr_get, partial_descr_get},
     {Py_tp_new, partial_new},
     {Py_tp_free, PyObject_GC_Del},
     {0, 0}
@@ -773,16 +782,19 @@ typedef struct {
     PyObject *object;
 } keyobject;
 
+#define keyobject_CAST(op)  ((keyobject *)(op))
+
 static int
-keyobject_clear(keyobject *ko)
+keyobject_clear(PyObject *op)
 {
+    keyobject *ko = keyobject_CAST(op);
     Py_CLEAR(ko->cmp);
     Py_CLEAR(ko->object);
     return 0;
 }
 
 static void
-keyobject_dealloc(keyobject *ko)
+keyobject_dealloc(PyObject *ko)
 {
     PyTypeObject *tp = Py_TYPE(ko);
     PyObject_GC_UnTrack(ko);
@@ -792,8 +804,9 @@ keyobject_dealloc(keyobject *ko)
 }
 
 static int
-keyobject_traverse(keyobject *ko, visitproc visit, void *arg)
+keyobject_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    keyobject *ko = keyobject_CAST(op);
     Py_VISIT(Py_TYPE(ko));
     Py_VISIT(ko->cmp);
     Py_VISIT(ko->object);
@@ -808,18 +821,18 @@ static PyMemberDef keyobject_members[] = {
 };
 
 static PyObject *
-keyobject_text_signature(PyObject *self, void *Py_UNUSED(ignored))
+keyobject_text_signature(PyObject *Py_UNUSED(self), void *Py_UNUSED(ignored))
 {
     return PyUnicode_FromString("(obj)");
 }
 
 static PyGetSetDef keyobject_getset[] = {
-    {"__text_signature__", keyobject_text_signature, (setter)NULL},
+    {"__text_signature__", keyobject_text_signature, NULL},
     {NULL}
 };
 
 static PyObject *
-keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds);
+keyobject_call(PyObject *ko, PyObject *args, PyObject *kwds);
 
 static PyObject *
 keyobject_richcompare(PyObject *ko, PyObject *other, int op);
@@ -845,11 +858,12 @@ static PyType_Spec keyobject_type_spec = {
 };
 
 static PyObject *
-keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds)
+keyobject_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *object;
     keyobject *result;
     static char *kwargs[] = {"obj", NULL};
+    keyobject *ko = keyobject_CAST(self);
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:K", kwargs, &object))
         return NULL;
@@ -865,17 +879,20 @@ keyobject_call(keyobject *ko, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
-keyobject_richcompare(PyObject *ko, PyObject *other, int op)
+keyobject_richcompare(PyObject *self, PyObject *other, int op)
 {
-    if (!Py_IS_TYPE(other, Py_TYPE(ko))) {
+    if (!Py_IS_TYPE(other, Py_TYPE(self))) {
         PyErr_Format(PyExc_TypeError, "other argument must be K instance");
         return NULL;
     }
 
-    PyObject *compare = ((keyobject *) ko)->cmp;
+    keyobject *lhs = keyobject_CAST(self);
+    keyobject *rhs = keyobject_CAST(other);
+
+    PyObject *compare = lhs->cmp;
     assert(compare != NULL);
-    PyObject *x = ((keyobject *) ko)->object;
-    PyObject *y = ((keyobject *) other)->object;
+    PyObject *x = lhs->object;
+    PyObject *y = rhs->object;
     if (!x || !y){
         PyErr_Format(PyExc_AttributeError, "object");
         return NULL;
@@ -923,15 +940,31 @@ _functools_cmp_to_key_impl(PyObject *module, PyObject *mycmp)
 
 /* reduce (used to be a builtin) ********************************************/
 
-// Not converted to argument clinic, because of `args` in-place modification.
-// AC will affect performance.
-static PyObject *
-functools_reduce(PyObject *self, PyObject *args)
-{
-    PyObject *seq, *func, *result = NULL, *it;
+/*[clinic input]
+_functools.reduce
 
-    if (!PyArg_UnpackTuple(args, "reduce", 2, 3, &func, &seq, &result))
-        return NULL;
+    function as func: object
+    iterable as seq: object
+    /
+    initial as result: object = NULL
+
+Apply a function of two arguments cumulatively to the items of an iterable, from left to right.
+
+This effectively reduces the iterable to a single value.  If initial is present,
+it is placed before the items of the iterable in the calculation, and serves as
+a default when the iterable is empty.
+
+For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])
+calculates ((((1 + 2) + 3) + 4) + 5).
+[clinic start generated code]*/
+
+static PyObject *
+_functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
+                       PyObject *result)
+/*[clinic end generated code: output=30d898fe1267c79d input=1511e9a8c38581ac]*/
+{
+    PyObject *args, *it;
+
     if (result != NULL)
         Py_INCREF(result);
 
@@ -997,16 +1030,6 @@ Fail:
     return NULL;
 }
 
-PyDoc_STRVAR(functools_reduce_doc,
-"reduce(function, iterable[, initial], /) -> value\n\
-\n\
-Apply a function of two arguments cumulatively to the items of a sequence\n\
-or iterable, from left to right, so as to reduce the iterable to a single\n\
-value.  For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates\n\
-((((1+2)+3)+4)+5).  If initial is present, it is placed before the items\n\
-of the iterable in the calculation, and serves as a default when the\n\
-iterable is empty.");
-
 /* lru_cache object **********************************************************/
 
 /* There are four principal algorithmic differences from the pure python version:
@@ -1038,9 +1061,12 @@ typedef struct lru_list_elem {
     PyObject *key, *result;
 } lru_list_elem;
 
+#define lru_list_elem_CAST(op)  ((lru_list_elem *)(op))
+
 static void
-lru_list_elem_dealloc(lru_list_elem *link)
+lru_list_elem_dealloc(PyObject *op)
 {
+    lru_list_elem *link = lru_list_elem_CAST(op);
     PyTypeObject *tp = Py_TYPE(link);
     Py_XDECREF(link->key);
     Py_XDECREF(link->result);
@@ -1080,6 +1106,8 @@ typedef struct lru_cache_object {
     PyObject *dict;
     PyObject *weakreflist;
 } lru_cache_object;
+
+#define lru_cache_object_CAST(op)   ((lru_cache_object *)(op))
 
 static PyObject *
 lru_cache_make_key(PyObject *kwd_mark, PyObject *args,
@@ -1516,8 +1544,9 @@ lru_cache_clear_list(lru_list_elem *link)
 }
 
 static int
-lru_cache_tp_clear(lru_cache_object *self)
+lru_cache_tp_clear(PyObject *op)
 {
+    lru_cache_object *self = lru_cache_object_CAST(op);
     lru_list_elem *list = lru_cache_unlink_list(self);
     Py_CLEAR(self->cache);
     Py_CLEAR(self->func);
@@ -1530,23 +1559,25 @@ lru_cache_tp_clear(lru_cache_object *self)
 }
 
 static void
-lru_cache_dealloc(lru_cache_object *obj)
+lru_cache_dealloc(PyObject *op)
 {
+    lru_cache_object *obj = lru_cache_object_CAST(op);
     PyTypeObject *tp = Py_TYPE(obj);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(obj);
     if (obj->weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*)obj);
+        PyObject_ClearWeakRefs(op);
     }
 
-    (void)lru_cache_tp_clear(obj);
+    (void)lru_cache_tp_clear(op);
     tp->tp_free(obj);
     Py_DECREF(tp);
 }
 
 static PyObject *
-lru_cache_call(lru_cache_object *self, PyObject *args, PyObject *kwds)
+lru_cache_call(PyObject *op, PyObject *args, PyObject *kwds)
 {
+    lru_cache_object *self = lru_cache_object_CAST(op);
     PyObject *result;
     Py_BEGIN_CRITICAL_SECTION(self);
     result = self->wrapper(self, args, kwds);
@@ -1623,8 +1654,9 @@ lru_cache_deepcopy(PyObject *self, PyObject *unused)
 }
 
 static int
-lru_cache_tp_traverse(lru_cache_object *self, visitproc visit, void *arg)
+lru_cache_tp_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    lru_cache_object *self = lru_cache_object_CAST(op);
     Py_VISIT(Py_TYPE(self));
     lru_list_elem *link = self->root.next;
     while (link != &self->root) {
@@ -1711,7 +1743,7 @@ PyDoc_STRVAR(_functools_doc,
 "Tools that operate on functions.");
 
 static PyMethodDef _functools_methods[] = {
-    {"reduce",          functools_reduce,     METH_VARARGS, functools_reduce_doc},
+    _FUNCTOOLS_REDUCE_METHODDEF
     _FUNCTOOLS_CMP_TO_KEY_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
@@ -1812,7 +1844,7 @@ _functools_clear(PyObject *module)
 static void
 _functools_free(void *module)
 {
-    _functools_clear((PyObject *)module);
+    (void)_functools_clear((PyObject *)module);
 }
 
 static struct PyModuleDef_Slot _functools_slots[] = {

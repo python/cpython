@@ -11,6 +11,7 @@ __all__ = ["getline", "clearcache", "checkcache", "lazycache"]
 # The cache. Maps filenames to either a thunk which will provide source code,
 # or a tuple (size, mtime, lines, fullname) once loaded.
 cache = {}
+_interactive_cache = {}
 
 
 def clearcache():
@@ -44,19 +45,38 @@ def getlines(filename, module_globals=None):
         return []
 
 
+def _getline_from_code(filename, lineno):
+    lines = _getlines_from_code(filename)
+    if 1 <= lineno <= len(lines):
+        return lines[lineno - 1]
+    return ''
+
+
+def _getlines_from_code(code):
+    code_id = id(code)
+    if code_id in _interactive_cache:
+        entry = _interactive_cache[code_id]
+        if len(entry) != 1:
+            return _interactive_cache[code_id][2]
+    return []
+
+
 def checkcache(filename=None):
     """Discard cache entries that are out of date.
     (This is not checked upon each call!)"""
 
     if filename is None:
-        filenames = list(cache.keys())
-    elif filename in cache:
-        filenames = [filename]
+        # get keys atomically
+        filenames = cache.copy().keys()
     else:
-        return
+        filenames = [filename]
 
     for filename in filenames:
-        entry = cache[filename]
+        try:
+            entry = cache[filename]
+        except KeyError:
+            continue
+
         if len(entry) == 1:
             # lazy cache entry, leave it lazy.
             continue
@@ -85,9 +105,13 @@ def updatecache(filename, module_globals=None):
     # These imports are not at top level because linecache is in the critical
     # path of the interpreter startup and importing os and sys take a lot of time
     # and slows down the startup sequence.
-    import os
-    import sys
-    import tokenize
+    try:
+        import os
+        import sys
+        import tokenize
+    except ImportError:
+        # These import can fail if the interpreter is shutting down
+        return []
 
     if filename in cache:
         if len(cache[filename]) != 1:
@@ -193,8 +217,14 @@ def lazycache(filename, module_globals):
 
 
 def _register_code(code, string, name):
-    cache[code] = (
-            len(string),
-            None,
-            [line + '\n' for line in string.splitlines()],
-            name)
+    entry = (len(string),
+             None,
+             [line + '\n' for line in string.splitlines()],
+             name)
+    stack = [code]
+    while stack:
+        code = stack.pop()
+        for const in code.co_consts:
+            if isinstance(const, type(code)):
+                stack.append(const)
+        _interactive_cache[id(code)] = entry
