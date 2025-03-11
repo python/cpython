@@ -404,6 +404,7 @@ class TestPartial:
         self.assertEqual(r, ((1, 2), {}))
         self.assertIs(type(r[0]), tuple)
 
+    @support.skip_if_sanitizer("thread sanitizer crashes in __tsan::FuncEntry", thread=True)
     @support.skip_emscripten_stack_overflow()
     def test_recursive_pickle(self):
         with replaced_module('functools', self.module):

@@ -143,7 +143,8 @@ class PydocTopicsBuilder(TextBuilder):
                 document.append(doc_ids[label_id])
                 visitor = TextTranslator(document, builder=self)
                 document.walkabout(visitor)
-                self.topics[topic_label] = visitor.body
+                body = "\n".join(map(str.rstrip, visitor.body.splitlines()))
+                self.topics[topic_label] = body
 
     def finish(self) -> None:
         topics_repr = "\n".join(

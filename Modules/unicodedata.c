@@ -77,9 +77,11 @@ typedef struct previous_version {
     Py_UCS4 (*normalization)(Py_UCS4);
 } PreviousDBVersion;
 
+#define PreviousDBVersion_CAST(op)  ((PreviousDBVersion *)(op))
+
 #include "clinic/unicodedata.c.h"
 
-#define get_old_record(self, v)    ((((PreviousDBVersion*)self)->getrecord)(v))
+#define get_old_record(self, v)    (PreviousDBVersion_CAST(self)->getrecord(v))
 
 static PyMemberDef DB_members[] = {
         {"unidata_version", Py_T_STRING, offsetof(PreviousDBVersion, name), Py_READONLY},
@@ -589,7 +591,7 @@ nfd_nfkd(PyObject *self, PyObject *input, int k)
     PyMem_Free(output);
     if (!result)
         return NULL;
-    /* result is guaranteed to be ready, as it is compact. */
+
     kind = PyUnicode_KIND(result);
     data = PyUnicode_DATA(result);
 
@@ -653,7 +655,7 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
     result = nfd_nfkd(self, input, k);
     if (!result)
         return NULL;
-    /* result will be "ready". */
+
     kind = PyUnicode_KIND(result);
     data = PyUnicode_DATA(result);
     len = PyUnicode_GET_LENGTH(result);
@@ -1591,14 +1593,14 @@ static PyMethodDef unicodedata_functions[] = {
 };
 
 static int
-ucd_traverse(PreviousDBVersion *self, visitproc visit, void *arg)
+ucd_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
 static void
-ucd_dealloc(PreviousDBVersion *self)
+ucd_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
