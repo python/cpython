@@ -168,7 +168,12 @@ _memoryview_from_xid(_PyXIData_t *data)
     if (obj == NULL) {
         return NULL;
     }
-    return PyMemoryView_FromObject(obj);
+    PyObject *res = PyMemoryView_FromObject(obj);
+    if (res == NULL) {
+        Py_DECREF(obj);
+        return NULL;
+    }
+    return res;
 }
 
 static int
