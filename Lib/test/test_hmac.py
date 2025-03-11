@@ -329,27 +329,49 @@ class OpenSSLTestVectorsMixin(TestVectorsMixin):
         return self.hmac_digest(key, msg, digestmod=openssl_func)
 
 
-class RFCTestCasesMixin(TestVectorsMixin):
-    """Test HMAC implementations against test vectors from the RFC.
-
-    Subclasses must override the 'md5' and other 'sha*' attributes
-    to test the implementations. Their value can be a string, a callable,
-    or a PEP-257 module.
-    """
+class HashFunctionsTrait:
+    """Trait class for 'hashfunc' in hmac_new() and hmac_digest()."""
 
     ALGORITHMS = [
         'md5', 'sha1',
         'sha224', 'sha256', 'sha384', 'sha512',
     ]
 
-    # Those will be automatically set to non-None on subclasses
-    # as they are set by __init_subclass()__.
-    md5 = sha1 = sha224 = sha256 = sha384 = sha512 = None
+    # By default, a missing algorithm skips the test that uses it.
+    md5 = sha1 = sha224 = sha256 = sha384 = sha512 = property(
+        lambda self: self.skipTest("missing hash function")
+    )
 
-    def __init_subclass__(cls, *args, **kwargs):
-        super().__init_subclass__(*args, **kwargs)
+
+class WithOpenSSLHashFunctions(HashFunctionsTrait):
+    """Test a HMAC implementation with an OpenSSL-based callable 'hashfunc'."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        for name in cls.ALGORITHMS:
+            @property
+            @hashlib_helper.requires_hashlib()
+            @hashlib_helper.requires_hashdigest(name, openssl=True)
+            def func(self, *, __name=name):  # __name needed to bind 'name'
+                return getattr(_hashlib, f'openssl_{__name}')
+            setattr(cls, name, func)
+
+
+class WithNamedHashFunctions(HashFunctionsTrait):
+    """Test a HMAC implementation with a named 'hashfunc'."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
         for name in cls.ALGORITHMS:
             setattr(cls, name, name)
+
+
+class RFCTestCasesMixin(HashFunctionsTrait):
+    """Test HMAC implementations against test vectors from the RFC."""
 
     def test_md5(self):
         def md5test(key, msg, hexdigest):
@@ -550,22 +572,8 @@ class RFCTestCasesMixin(TestVectorsMixin):
                  })
 
 
-class RFCWithOpenSSLHashFunctionTestCasesMixin(RFCTestCasesMixin):
-
-    def __init_subclass__(cls, *args, **kwargs):
-        super().__init_subclass__(*args, **kwargs)
-
-        for name in cls.ALGORITHMS:
-            @property
-            @hashlib_helper.requires_hashlib()
-            @hashlib_helper.requires_hashdigest(name, openssl=True)
-            def func(self, *, __name=name):  # __name needed to bind 'name'
-                return getattr(_hashlib, f'openssl_{__name}')
-            setattr(cls, name, func)
-
-
-class PyRFCTestCase(PyTestVectorsMixin, ThroughObjectMixin,
-                    RFCWithOpenSSLHashFunctionTestCasesMixin,
+class PyRFCTestCase(ThroughObjectMixin, PyTestVectorsMixin,
+                    WithOpenSSLHashFunctions, RFCTestCasesMixin,
                     unittest.TestCase):
     """Python implementation of HMAC using hmac.HMAC().
 
@@ -573,8 +581,8 @@ class PyRFCTestCase(PyTestVectorsMixin, ThroughObjectMixin,
     """
 
 
-class PyDotNewRFCTestCase(PyTestVectorsMixin, ThroughModuleAPIMixin,
-                          RFCWithOpenSSLHashFunctionTestCasesMixin,
+class PyDotNewRFCTestCase(ThroughModuleAPIMixin, PyTestVectorsMixin,
+                          WithOpenSSLHashFunctions, RFCTestCasesMixin,
                           unittest.TestCase):
     """Python implementation of HMAC using hmac.new().
 
@@ -583,11 +591,13 @@ class PyDotNewRFCTestCase(PyTestVectorsMixin, ThroughModuleAPIMixin,
 
 
 class OpenSSLRFCTestCase(OpenSSLTestVectorsMixin,
-                         RFCWithOpenSSLHashFunctionTestCasesMixin,
+                         WithOpenSSLHashFunctions, RFCTestCasesMixin,
                          unittest.TestCase):
     """OpenSSL implementation of HMAC.
 
-    The underlying hash functions are also OpenSSL-based."""
+    The underlying hash functions are also OpenSSL-based.
+    """
+
 
 
 # TODO(picnixz): once we have a HACL* HMAC, we should also test the Python
