@@ -3,11 +3,8 @@ from threading import Barrier, Thread
 from test.support import threading_helper
 
 
-threading_helper.requires_working_threading(module=True)
-
-@threading_helper.reap_threads
 class TestReversed(unittest.TestCase):
-    def test_reversed_threading(self):
+    def test_reversed(self):
         # Test reading out the iterator with multiple threads cannot corrupt
         # the reversed iterator state.
         # The reversed iterator is not guaranteed to be thread safe
