@@ -584,8 +584,9 @@ I/O Base Classes
       most streams this is to EOF, but for non-blocking streams more data may
       become available.
 
-      A :exc:`BlockingIOError` is raised if the underlying raw stream is in
-      non blocking-mode, and has no data available at the moment.
+      The standard library :class:`io.BufferedReader` returns ``None`` if
+      reading would block and no data is available. Other implementations may
+      return ``None`` or raise :exc:`BlockingIOError`.
 
    .. method:: read1(size=-1, /)
 
