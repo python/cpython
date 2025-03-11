@@ -33,9 +33,13 @@ def get_modules():
     one time — in other words, when using this function you will only ever
     get one copy of each module rather than a fresh import each time.
     """
-    import zoneinfo as c_module
 
     py_module = import_fresh_module("zoneinfo", blocked=["_zoneinfo"])
+
+    try:
+        import _zoneinfo as c_module
+    except ImportError:
+        c_module = py_module
 
     return py_module, c_module
 
