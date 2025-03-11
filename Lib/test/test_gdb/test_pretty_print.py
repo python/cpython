@@ -38,12 +38,12 @@ class PrettyPrintTests(DebuggerTests):
         # to (using its "wrap_here" function)
         m = re.search(
             # Match '#0 _typing_idfunc(module=..., x=...)'
-            r'#0\s+_typing__idfunc\s+\(module\=.*,\s+x=\s*(.*?)?\)'
+            r'#0\s+_typing__idfunc\s+\((?:module\=.*,\s+x=\s*(.*?)?)?\)'
             # Match ' at Python/bltinmodule.c'.
             # bpo-38239: typing_idfunc() is defined in Module/_typingmldule.c,
             # but accept any "Directory\file.c" to support Link Time
             # Optimization (LTO).
-            r'\s+at\s+\S*[A-Za-z]+/[A-Za-z0-9_-]+\.c',
+            r'\s+at\s+\S*[A-Za-z]+/[A-Za-z0-9_-]+\.[ch]',
             gdb_output, re.DOTALL)
         if not m:
             self.fail('Unexpected gdb output: %r\n%s' % (gdb_output, gdb_output))
