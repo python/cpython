@@ -1258,6 +1258,14 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 | ``s.reverse()``              | reverses the items of *s* in   | \(4)                |
 |                              | place                          |                     |
 +------------------------------+--------------------------------+---------------------+
+| ``s.get(i)`` or              |Returns the value for the index |                     |
+| ``s.get(i, x)``              |if the index is in the list,    |                     |
+|                              |otherwise the default value. If |                     |
+|                              |no default value is set, the    |                     |
+|                              |default value is None, so this  |                     |
+|                              |method will never raise an      |                     |
+|                              |`IndexError`.                   |                     |
++------------------------------+--------------------------------+---------------------+
 
 
 Notes:
