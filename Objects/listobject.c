@@ -3497,6 +3497,24 @@ list___sizeof___impl(PyListObject *self)
 static PyObject *list_iter(PyObject *seq);
 static PyObject *list_subscript(PyObject*, PyObject*);
 
+static PyObject *
+list_get(PyListObject *self, PyObject *args) {
+    Py_ssize_t index;
+    PyObject *default_value = Py_None;
+
+    if (!PyArg_ParseTuple(args, "n|O:get", &index, &default_value)) {
+        return NULL;
+    }
+
+    if (index < 0 || index >= Py_SIZE(self)) {
+        Py_INCREF(default_value);
+        return default_value;
+    }
+
+    Py_INCREF(self->ob_item[index]);
+    return self->ob_item[index];
+}
+
 static PyMethodDef list_methods[] = {
     {"__getitem__", list_subscript, METH_O|METH_COEXIST,
      PyDoc_STR("__getitem__($self, index, /)\n--\n\nReturn self[index].")},
@@ -3513,6 +3531,8 @@ static PyMethodDef list_methods[] = {
     LIST_COUNT_METHODDEF
     LIST_REVERSE_METHODDEF
     LIST_SORT_METHODDEF
+    {"get", list_get, METH_VARARGS,
+    PyDoc_STR("get(self, index, default=None)\n--\n\nReturn item at index or default value if index is out of range.")},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,              NULL}           /* sentinel */
 };
