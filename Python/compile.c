@@ -55,8 +55,8 @@ struct compiler_unit {
     PyObject *u_private;            /* for private name mangling */
     PyObject *u_static_attributes;  /* for class: attributes accessed via self.X */
     PyObject *u_deferred_annotations; /* AnnAssign nodes deferred to the end of compilation */
-    PyObject *u_conditional_annotation_indices;  /* indices of annotations that are conditionally executed (or -1) */
-    int u_next_conditional_annotation_index;  /* index of the next conditional annotation */
+    PyObject *u_conditional_annotation_indices;  /* indices of annotations that are conditionally executed (or -1 for unconditional annotations) */
+    long u_next_conditional_annotation_index;  /* index of the next conditional annotation */
 
     instr_sequence *u_instr_sequence; /* codegen output */
 

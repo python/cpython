@@ -1735,11 +1735,11 @@ symtable_enter_type_param_block(struct symtable *st, identifier name,
     } while(0)
 
 #define ENTER_CONDITIONAL_BLOCK(ST) \
-    int __in_conditional_block = (ST)->st_cur->ste_in_conditional_block; \
+    int in_conditional_block = (ST)->st_cur->ste_in_conditional_block; \
     (ST)->st_cur->ste_in_conditional_block = 1;
 
 #define LEAVE_CONDITIONAL_BLOCK(ST) \
-    (ST)->st_cur->ste_in_conditional_block = __in_conditional_block;
+    (ST)->st_cur->ste_in_conditional_block = in_conditional_block;
 
 #define ENTER_RECURSIVE() \
 if (Py_EnterRecursiveCall(" during compilation")) { \
@@ -2728,10 +2728,9 @@ symtable_visit_params(struct symtable *st, asdl_arg_seq *args)
 static int
 symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
 {
-    bool new_conditional = (st->st_cur->ste_type == ClassBlock || st->st_cur->ste_type == ModuleBlock)
-        && st->st_cur->ste_in_conditional_block
-        && !st->st_cur->ste_has_conditional_annotations;
-    if (new_conditional) {
+    if ((st->st_cur->ste_type == ClassBlock || st->st_cur->ste_type == ModuleBlock)
+            && st->st_cur->ste_in_conditional_block
+            && !st->st_cur->ste_has_conditional_annotations) {
         st->st_cur->ste_has_conditional_annotations = 1;
         if (!symtable_add_def(st, &_Py_ID(__conditional_annotations__), USE, LOCATION(annotation))) {
             return 0;
@@ -2756,11 +2755,6 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
     }
     else {
         if (!symtable_enter_existing_block(st, parent_ste->ste_annotation_block)) {
-            return 0;
-        }
-    }
-    if (new_conditional) {
-        if (!symtable_add_def(st, &_Py_ID(__conditional_annotations__), USE, LOCATION(annotation))) {
             return 0;
         }
     }

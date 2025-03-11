@@ -705,16 +705,19 @@ codegen_leave_annotations_scope(compiler *c, location loc)
     // co->co_localsplusnames = ("format", *co->co_localsplusnames[1:])
     const Py_ssize_t size = PyObject_Size(co->co_localsplusnames);
     if (size == -1) {
+        Py_DECREF(co);
         return ERROR;
     }
     PyObject *new_names = PyTuple_New(size);
     if (new_names == NULL) {
+        Py_DECREF(co);
         return ERROR;
     }
     PyTuple_SET_ITEM(new_names, 0, Py_NewRef(&_Py_ID(format)));
     for (int i = 1; i < size; i++) {
         PyObject *item = PyTuple_GetItem(co->co_localsplusnames, i);
         if (item == NULL) {
+            Py_DECREF(co);
             Py_DECREF(new_names);
             return ERROR;
         }
@@ -724,9 +727,6 @@ codegen_leave_annotations_scope(compiler *c, location loc)
     Py_SETREF(co->co_localsplusnames, new_names);
 
     _PyCompile_ExitScope(c);
-    if (co == NULL) {
-        return ERROR;
-    }
     int ret = codegen_make_closure(c, loc, co, 0);
     Py_DECREF(co);
     RETURN_IF_ERROR(ret);
@@ -2941,9 +2941,9 @@ codegen_stmt_expr(compiler *c, location loc, expr_ty value)
 #define CODEGEN_COND_BLOCK(FUNC, C, S) \
     do { \
         _PyCompile_EnterConditionalBlock((C)); \
-        int __result = FUNC((C), (S)); \
+        int result = FUNC((C), (S)); \
         _PyCompile_LeaveConditionalBlock((C)); \
-        return __result; \
+        return result; \
     } while(0)
 
 static int
