@@ -907,36 +907,41 @@ class OpenSSLUpdateTestCase(UpdateTestCaseMixin, unittest.TestCase):
         return hmac.new(key, msg, digestmod='sha256')
 
 
-@hashlib_helper.requires_hashdigest('sha256')
-class CopyTestCase(unittest.TestCase):
+class CopyBaseTestCase:
 
-    def test_attributes_old(self):
+    def test_attributes(self):
+        raise NotImplementedError
+
+    def test_realcopy(self):
+        raise NotImplementedError
+
+
+@hashlib_helper.requires_hashdigest('sha256')
+class PythonCopyTestCase(CopyBaseTestCase, unittest.TestCase):
+
+    def test_attributes(self):
         # Testing if attributes are of same type.
         h1 = hmac.HMAC.__new__(hmac.HMAC)
         h1._init_old(b"key", b"msg", digestmod="sha256")
+        self.assertIsNone(h1._hmac)
+        self.assertIsNotNone(h1._inner)
+        self.assertIsNotNone(h1._outer)
+
         h2 = h1.copy()
+        self.assertIsNotNone(h2._inner)
+        self.assertIsNotNone(h2._outer)
         self.assertEqual(type(h1._inner), type(h2._inner))
         self.assertEqual(type(h1._outer), type(h2._outer))
 
-    def test_realcopy_old(self):
+    def test_realcopy(self):
         # Testing if the copy method created a real copy.
         h1 = hmac.HMAC.__new__(hmac.HMAC)
         h1._init_old(b"key", b"msg", digestmod="sha256")
-        self.assertIsNone(h1._hmac)
-
         h2 = h1.copy()
-        self.assertIsNone(h2._hmac)
         # Using id() in case somebody has overridden __eq__/__ne__.
         self.assertNotEqual(id(h1), id(h2))
         self.assertNotEqual(id(h1._inner), id(h2._inner))
         self.assertNotEqual(id(h1._outer), id(h2._outer))
-
-    @hashlib_helper.requires_hashlib()
-    def test_realcopy_hmac(self):
-        h1 = hmac.HMAC.__new__(hmac.HMAC)
-        h1._init_hmac(b"key", b"msg", digestmod="sha256")
-        h2 = h1.copy()
-        self.assertNotEqual(id(h1._hmac), id(h2._hmac))
 
     def test_equality(self):
         # Testing if the copy has the same digests.
@@ -951,9 +956,46 @@ class CopyTestCase(unittest.TestCase):
         h1 = hmac.new(b"key", digestmod="sha256")
         h1.update(b"some random text")
         h2 = h1.copy()
+        # Using id() in case somebody has overridden __eq__/__ne__.
         self.assertNotEqual(id(h1), id(h2))
         self.assertEqual(h1.digest(), h2.digest())
         self.assertEqual(h1.hexdigest(), h2.hexdigest())
+
+
+class ExtensionCopyTestCase(CopyBaseTestCase):
+
+    def init(self, h):
+        """Call the dedicate init() method to test."""
+        raise NotImplementedError
+
+    def test_attributes(self):
+        # Testing if attributes are of same type.
+        h1 = hmac.HMAC.__new__(hmac.HMAC)
+
+        self.init(h1)
+        self.assertIsNotNone(h1._hmac)
+        self.assertNotHasAttr(h1, '_inner')
+        self.assertNotHasAttr(h1, '_outer')
+
+        h2 = h1.copy()
+        self.assertIsNotNone(h2._hmac)
+        self.assertNotHasAttr(h2, '_inner')
+        self.assertNotHasAttr(h2, '_outer')
+
+    def test_realcopy(self):
+        h1 = hmac.HMAC.__new__(hmac.HMAC)
+        self.init(h1)
+        h2 = h1.copy()
+        # Using id() in case somebody has overridden __eq__/__ne__.
+        self.assertNotEqual(id(h1._hmac), id(h2._hmac))
+
+
+@hashlib_helper.requires_hashlib()
+@hashlib_helper.requires_hashdigest('sha256', openssl=True)
+class OpenSSLCopyTestCase(ExtensionCopyTestCase, unittest.TestCase):
+
+    def init(self, h):
+        h._init_openssl_hmac(b"key", b"msg", digestmod="sha256")
 
 
 class CompareDigestMixin:
