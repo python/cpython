@@ -739,7 +739,7 @@ class EnumType(type):
         `value` is in `cls` if:
         1) `value` is a member of `cls`, or
         2) `value` is the value of one of the `cls`'s members.
-        3) `value` is a psuedo-member (flags)
+        3) `value` is a pseudo-member (flags)
         """
         if isinstance(value, cls):
             return True
