@@ -973,7 +973,7 @@ call_one_instrument(
 {
     assert(0 <= tool && tool < 8);
     assert(tstate->tracing == 0);
-    PyObject *instrument = interp->monitoring_callables[tool][event];
+    PyObject *instrument = _Py_atomic_load_ptr(&interp->monitoring_callables[tool][event]);
     if (instrument == NULL) {
         return 0;
     }
