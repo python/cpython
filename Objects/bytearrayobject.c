@@ -2543,8 +2543,8 @@ Example: bytearray.fromhex('B9 01EF') -> bytearray(b'\\xb9\\x01\\xef')
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_fromhex(PyTypeObject *type, PyObject *string)
-/*[clinic end generated code: output=da84dc708e9c4b36 input=7e314e5b2d7ab484]*/
+bytearray_fromhex_impl(PyTypeObject *type, PyObject *string)
+/*[clinic end generated code: output=8f0f0b6d30fb3ba0 input=7e314e5b2d7ab484]*/
 {
     PyObject *result = _PyBytes_FromHex(string, type == &PyByteArray_Type);
     if (type != &PyByteArray_Type && result != NULL) {

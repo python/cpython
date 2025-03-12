@@ -5235,14 +5235,14 @@ static PyObject *
 Test_class_method_impl(PyTypeObject *type);
 
 static PyObject *
-Test_class_method(PyTypeObject *type, PyObject *Py_UNUSED(ignored))
+Test_class_method(PyObject *type, PyObject *Py_UNUSED(ignored))
 {
-    return Test_class_method_impl(type);
+    return Test_class_method_impl((PyTypeObject *)type);
 }
 
 static PyObject *
 Test_class_method_impl(PyTypeObject *type)
-/*[clinic end generated code: output=47fb7ecca1abcaaa input=43bc4a0494547b80]*/
+/*[clinic end generated code: output=64f93e6252bde409 input=43bc4a0494547b80]*/
 
 
 /*[clinic input]
