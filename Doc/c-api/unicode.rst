@@ -614,6 +614,23 @@ APIs:
    decref'ing the returned objects.
 
 
+.. c:function:: void PyUnicode_Append(PyObject **p_left, PyObject *right)
+
+   Append the string *right* to the end of *p_left*.
+   *p_left* must point to a :term:`strong reference` to a Unicode object;
+   :c:func:`!PyUnicode_Append` releases ("steals") this reference.
+
+   On error, set *\*p_left* to ``NULL`` and set an exception.
+
+   On sucess, set *\*p_left* to a new strong reference to the result.
+
+
+.. c:function:: void PyUnicode_AppendAndDel(PyObject **p_left, PyObject *right)
+
+   The function is similar to :c:func:`PyUnicode_Append`, with the only
+   difference being that it decrements the reference count of *right* by one.
+
+
 .. c:function:: const char* PyUnicode_GetDefaultEncoding(void)
 
    Return the name of the default string encoding, ``"utf-8"``.

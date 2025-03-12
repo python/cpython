@@ -215,10 +215,13 @@ class Bdb:
         If the debugger stops on the current opcode, invoke
         self.user_opcode(). Raise BdbQuit if self.quitting is set.
         Return self.trace_dispatch to continue tracing in this scope.
+
+        Opcode event will always trigger the user callback. For now the only
+        opcode event is from an inline set_trace() and we want to stop there
+        unconditionally.
         """
-        if self.stop_here(frame) or self.break_here(frame):
-            self.user_opcode(frame)
-            if self.quitting: raise BdbQuit
+        self.user_opcode(frame)
+        if self.quitting: raise BdbQuit
         return self.trace_dispatch
 
     # Normally derived classes don't override the following

@@ -26,18 +26,12 @@ allowing multiline input and multiline history entries.
 from __future__ import annotations
 
 import _sitebuiltins
-import linecache
 import functools
 import os
 import sys
 import code
 
 from .readline import _get_reader, multiline_input
-
-TYPE_CHECKING = False
-
-if TYPE_CHECKING:
-    from typing import Any
 
 
 _error: tuple[type[Exception], ...] | type[Exception]
@@ -148,7 +142,6 @@ def run_multiline_interactive_console(
                 continue
 
             input_name = f"<python-input-{input_n}>"
-            linecache._register_code(input_name, statement, "<stdin>")  # type: ignore[attr-defined]
             more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]
             assert not more
             input_n += 1
