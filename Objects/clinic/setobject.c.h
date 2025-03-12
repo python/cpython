@@ -223,7 +223,7 @@ static PyObject *
 set_isdisjoint_impl(PySetObject *so, PyObject *other);
 
 static PyObject *
-set_isdisjoint(PySetObject *so, PyObject *other)
+set_isdisjoint(PyObject *so, PyObject *other)
 {
     PyObject *return_value = NULL;
 
@@ -297,6 +297,19 @@ PyDoc_STRVAR(set_symmetric_difference_update__doc__,
 #define SET_SYMMETRIC_DIFFERENCE_UPDATE_METHODDEF    \
     {"symmetric_difference_update", (PyCFunction)set_symmetric_difference_update, METH_O, set_symmetric_difference_update__doc__},
 
+static PyObject *
+set_symmetric_difference_update_impl(PySetObject *so, PyObject *other);
+
+static PyObject *
+set_symmetric_difference_update(PyObject *so, PyObject *other)
+{
+    PyObject *return_value = NULL;
+
+    return_value = set_symmetric_difference_update_impl((PySetObject *)so, other);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(set_symmetric_difference__doc__,
 "symmetric_difference($self, other, /)\n"
 "--\n"
@@ -310,7 +323,7 @@ static PyObject *
 set_symmetric_difference_impl(PySetObject *so, PyObject *other);
 
 static PyObject *
-set_symmetric_difference(PySetObject *so, PyObject *other)
+set_symmetric_difference(PyObject *so, PyObject *other)
 {
     PyObject *return_value = NULL;
 
@@ -334,7 +347,7 @@ static PyObject *
 set_issubset_impl(PySetObject *so, PyObject *other);
 
 static PyObject *
-set_issubset(PySetObject *so, PyObject *other)
+set_issubset(PyObject *so, PyObject *other)
 {
     PyObject *return_value = NULL;
 
@@ -358,7 +371,7 @@ static PyObject *
 set_issuperset_impl(PySetObject *so, PyObject *other);
 
 static PyObject *
-set_issuperset(PySetObject *so, PyObject *other)
+set_issuperset(PyObject *so, PyObject *other)
 {
     PyObject *return_value = NULL;
 
@@ -384,7 +397,7 @@ static PyObject *
 set_add_impl(PySetObject *so, PyObject *key);
 
 static PyObject *
-set_add(PySetObject *so, PyObject *key)
+set_add(PyObject *so, PyObject *key)
 {
     PyObject *return_value = NULL;
 
@@ -408,7 +421,7 @@ static PyObject *
 set___contains___impl(PySetObject *so, PyObject *key);
 
 static PyObject *
-set___contains__(PySetObject *so, PyObject *key)
+set___contains__(PyObject *so, PyObject *key)
 {
     PyObject *return_value = NULL;
 
@@ -434,7 +447,7 @@ static PyObject *
 set_remove_impl(PySetObject *so, PyObject *key);
 
 static PyObject *
-set_remove(PySetObject *so, PyObject *key)
+set_remove(PyObject *so, PyObject *key)
 {
     PyObject *return_value = NULL;
 
@@ -461,7 +474,7 @@ static PyObject *
 set_discard_impl(PySetObject *so, PyObject *key);
 
 static PyObject *
-set_discard(PySetObject *so, PyObject *key)
+set_discard(PyObject *so, PyObject *key)
 {
     PyObject *return_value = NULL;
 
@@ -519,4 +532,4 @@ set___sizeof__(PyObject *so, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
-/*[clinic end generated code: output=83b7742a762ce465 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e2f1470de062d661 input=a9049054013a1b77]*/

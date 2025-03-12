@@ -472,8 +472,8 @@ _io._Buffered._dealloc_warn
 [clinic start generated code]*/
 
 static PyObject *
-_io__Buffered__dealloc_warn(buffered *self, PyObject *source)
-/*[clinic end generated code: output=690dcc3df8967162 input=8f845f2a4786391c]*/
+_io__Buffered__dealloc_warn_impl(buffered *self, PyObject *source)
+/*[clinic end generated code: output=d8db21c6dec0e614 input=8f845f2a4786391c]*/
 {
     if (self->ok && self->raw) {
         PyObject *r;
@@ -560,7 +560,7 @@ _io__Buffered_close_impl(buffered *self)
     }
 
     if (self->finalizing) {
-        PyObject *r = _io__Buffered__dealloc_warn(self, (PyObject *) self);
+        PyObject *r = _io__Buffered__dealloc_warn_impl(self, (PyObject *)self);
         if (r)
             Py_DECREF(r);
         else

@@ -594,26 +594,30 @@ pytime_from_object(PyTime_t *tp, PyObject *obj, _PyTime_round_t round,
         }
         return pytime_from_double(tp, d, round, unit_to_ns);
     }
-    else {
-        long long sec = PyLong_AsLongLong(obj);
-        if (sec == -1 && PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
-                pytime_overflow();
-            }
-            return -1;
-        }
 
-        static_assert(sizeof(long long) <= sizeof(PyTime_t),
-                      "PyTime_t is smaller than long long");
-        PyTime_t ns = (PyTime_t)sec;
-        if (pytime_mul(&ns, unit_to_ns) < 0) {
+    long long sec = PyLong_AsLongLong(obj);
+    if (sec == -1 && PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
             pytime_overflow();
-            return -1;
         }
-
-        *tp = ns;
-        return 0;
+        else if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Format(PyExc_TypeError,
+                         "'%T' object cannot be interpreted as an integer or float",
+                         obj);
+        }
+        return -1;
     }
+
+    static_assert(sizeof(long long) <= sizeof(PyTime_t),
+                  "PyTime_t is smaller than long long");
+    PyTime_t ns = (PyTime_t)sec;
+    if (pytime_mul(&ns, unit_to_ns) < 0) {
+        pytime_overflow();
+        return -1;
+    }
+
+    *tp = ns;
+    return 0;
 }
 
 
