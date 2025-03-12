@@ -740,6 +740,16 @@ class ClinicWholeFileTest(TestCase):
         err = "Cannot use @text_signature when cloning a function"
         self.expect_failure(block, err, lineno=11)
 
+    def test_ignore_preprocessor_in_comments(self):
+        for dsl in "clinic", "python":
+            raw = dedent(f"""\
+                /*[{dsl} input]
+                # CPP directives, valid or not, should be ignored in C comments.
+                #
+                [{dsl} start generated code]*/
+            """)
+            self.clinic.parse(raw)
+
 
 class ParseFileUnitTest(TestCase):
     def expect_parsing_failure(

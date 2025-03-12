@@ -17,8 +17,9 @@ from _opcode_metadata import (_specializations, _specialized_opmap, opmap,  # no
 EXTENDED_ARG = opmap['EXTENDED_ARG']
 
 opname = ['<%r>' % (op,) for op in range(max(opmap.values()) + 1)]
-for op, i in opmap.items():
-    opname[i] = op
+for m in (opmap, _specialized_opmap):
+    for op, i in m.items():
+        opname[i] = op
 
 cmp_op = ('<', '<=', '==', '!=', '>', '>=')
 
@@ -51,6 +52,7 @@ _cache_format = {
     },
     "BINARY_OP": {
         "counter": 1,
+        "descr": 4,
     },
     "UNPACK_SEQUENCE": {
         "counter": 1,

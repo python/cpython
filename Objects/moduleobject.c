@@ -12,6 +12,7 @@
 #include "pycore_object.h"        // _PyType_AllocNoTrack
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttrString()
 
 #include "osdefs.h"               // MAXPATHLEN
 
@@ -703,7 +704,8 @@ _PyModule_ClearDict(PyObject *d)
                         PyErr_Clear();
                 }
                 if (PyDict_SetItem(d, key, Py_None) != 0) {
-                    PyErr_FormatUnraisable("Exception ignored on clearing module dict");
+                    PyErr_FormatUnraisable("Exception ignored while "
+                                           "clearing module dict");
                 }
             }
         }
@@ -724,7 +726,8 @@ _PyModule_ClearDict(PyObject *d)
                         PyErr_Clear();
                 }
                 if (PyDict_SetItem(d, key, Py_None) != 0) {
-                    PyErr_FormatUnraisable("Exception ignored on clearing module dict");
+                    PyErr_FormatUnraisable("Exception ignored while "
+                                           "clearing module dict");
                 }
             }
         }
@@ -918,7 +921,9 @@ _PyModule_IsPossiblyShadowing(PyObject *origin)
     if (sys_path_0[0] == L'\0') {
         // if sys.path[0] == "", treat it as if it were the current directory
         if (!_Py_wgetcwd(sys_path_0_buf, MAXPATHLEN)) {
-            return -1;
+            // If we failed to getcwd, don't raise an exception and instead
+            // let the caller proceed assuming no shadowing
+            return 0;
         }
         sys_path_0 = sys_path_0_buf;
     }
@@ -1001,13 +1006,18 @@ _Py_module_getattro_impl(PyModuleObject *m, PyObject *name, int suppress)
     }
     int is_possibly_shadowing_stdlib = 0;
     if (is_possibly_shadowing) {
-        PyObject *stdlib_modules = PySys_GetObject("stdlib_module_names");
+        PyObject *stdlib_modules;
+        if (_PySys_GetOptionalAttrString("stdlib_module_names", &stdlib_modules) < 0) {
+            goto done;
+        }
         if (stdlib_modules && PyAnySet_Check(stdlib_modules)) {
             is_possibly_shadowing_stdlib = PySet_Contains(stdlib_modules, mod_name);
             if (is_possibly_shadowing_stdlib < 0) {
+                Py_DECREF(stdlib_modules);
                 goto done;
             }
         }
+        Py_XDECREF(stdlib_modules);
     }
 
     if (is_possibly_shadowing_stdlib) {

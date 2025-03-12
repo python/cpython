@@ -106,6 +106,8 @@ Python/context.c	-	PyContextToken_Type	-
 Python/context.c	-	PyContextVar_Type	-
 Python/context.c	-	PyContext_Type	-
 Python/instruction_sequence.c	-	_PyInstructionSequence_Type	-
+Python/instrumentation.c	-	_PyLegacyBranchEventHandler_Type	-
+Python/instrumentation.c	-	_PyBranchesIterator	-
 Python/traceback.c	-	PyTraceBack_Type	-
 
 ##-----------------------
@@ -405,7 +407,8 @@ Modules/_tkinter.c	-	trbInCmd	-
 
 ## other
 Include/datetime.h	-	PyDateTimeAPI	-
-Modules/_ctypes/cfield.c	_ctypes_get_fielddesc	initialized	-
+Modules/_ctypes/cfield.c	_ctypes_init_fielddesc	initialized	-
+Modules/_ctypes/cfield.c	-	formattable	-
 Modules/_ctypes/malloc_closure.c	-	_pagesize	-
 Modules/_cursesmodule.c	-	curses_module_loaded	-
 Modules/_cursesmodule.c	-	curses_initscr_called	-
@@ -420,7 +423,6 @@ Modules/readline.c	-	libedit_history_start	-
 ##-----------------------
 ## state
 
-Modules/_ctypes/cfield.c	-	formattable	-
 Modules/_ctypes/malloc_closure.c	-	free_list	-
 Modules/_curses_panel.c	-	lop	-
 Modules/_ssl/debughelpers.c	_PySSL_keylog_callback	lock	-
@@ -442,3 +444,5 @@ Modules/readline.c	-	completed_input_string	-
 Modules/rotatingtree.c	-	random_stream	-
 Modules/rotatingtree.c	-	random_value	-
 Modules/rotatingtree.c	-	random_mutex	-
+Modules/socketmodule.c	-	accept4_works	-
+Modules/socketmodule.c	-	sock_cloexec_works	-

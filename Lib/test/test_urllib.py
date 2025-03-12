@@ -156,7 +156,7 @@ class urlopen_FileTests(unittest.TestCase):
         self.assertIsInstance(self.returned_obj.headers, email.message.Message)
 
     def test_url(self):
-        self.assertEqual(self.returned_obj.url, "file://" + self.quoted_pathname)
+        self.assertEqual(self.returned_obj.url, "file:" + self.quoted_pathname)
 
     def test_status(self):
         self.assertIsNone(self.returned_obj.status)
@@ -165,7 +165,7 @@ class urlopen_FileTests(unittest.TestCase):
         self.assertIsInstance(self.returned_obj.info(), email.message.Message)
 
     def test_geturl(self):
-        self.assertEqual(self.returned_obj.geturl(), "file://" + self.quoted_pathname)
+        self.assertEqual(self.returned_obj.geturl(), "file:" + self.quoted_pathname)
 
     def test_getcode(self):
         self.assertIsNone(self.returned_obj.getcode())
@@ -419,7 +419,9 @@ Connection: close
 Content-Type: text/html; charset=iso-8859-1
 ''', mock_close=True)
         try:
-            self.assertRaises(OSError, urllib.request.urlopen, "http://python.org/")
+            with self.assertRaises(urllib.error.HTTPError) as cm:
+                urllib.request.urlopen("http://python.org/")
+            cm.exception.close()
         finally:
             self.unfakehttp()
 
@@ -434,8 +436,9 @@ Content-Type: text/html; charset=iso-8859-1
 ''', mock_close=True)
         try:
             msg = "Redirection to url 'file:"
-            with self.assertRaisesRegex(urllib.error.HTTPError, msg):
+            with self.assertRaisesRegex(urllib.error.HTTPError, msg) as cm:
                 urllib.request.urlopen("http://python.org/")
+            cm.exception.close()
         finally:
             self.unfakehttp()
 
@@ -448,8 +451,9 @@ Location: file://guidocomputer.athome.com:/python/license
 Connection: close
 ''', mock_close=True)
             try:
-                self.assertRaises(urllib.error.HTTPError, urllib.request.urlopen,
-                    "http://something")
+                with self.assertRaises(urllib.error.HTTPError) as cm:
+                    urllib.request.urlopen("http://something")
+                cm.exception.close()
             finally:
                 self.unfakehttp()
 
@@ -471,11 +475,14 @@ Connection: close
 
     def test_file_notexists(self):
         fd, tmp_file = tempfile.mkstemp()
-        tmp_fileurl = 'file://localhost/' + tmp_file.replace(os.path.sep, '/')
+        tmp_file_canon_url = 'file:' + urllib.request.pathname2url(tmp_file)
+        parsed = urllib.parse.urlsplit(tmp_file_canon_url)
+        tmp_fileurl = parsed._replace(netloc='localhost').geturl()
         try:
             self.assertTrue(os.path.exists(tmp_file))
             with urllib.request.urlopen(tmp_fileurl) as fobj:
                 self.assertTrue(fobj)
+                self.assertEqual(fobj.url, tmp_file_canon_url)
         finally:
             os.close(fd)
             os.unlink(tmp_file)
@@ -526,10 +533,11 @@ class urlopen_DataTests(unittest.TestCase):
             "QOjdAAAAAXNSR0IArs4c6QAAAA9JREFUCNdj%0AYGBg%2BP//PwAGAQL%2BCm8 "
             "vHgAAAABJRU5ErkJggg%3D%3D%0A%20")
 
-        self.text_url_resp = urllib.request.urlopen(self.text_url)
-        self.text_url_base64_resp = urllib.request.urlopen(
-            self.text_url_base64)
-        self.image_url_resp = urllib.request.urlopen(self.image_url)
+        self.text_url_resp = self.enterContext(
+            urllib.request.urlopen(self.text_url))
+        self.text_url_base64_resp = self.enterContext(
+            urllib.request.urlopen(self.text_url_base64))
+        self.image_url_resp = self.enterContext(urllib.request.urlopen(self.image_url))
 
     def test_interface(self):
         # Make sure object returned by urlopen() has the specified methods
@@ -545,8 +553,10 @@ class urlopen_DataTests(unittest.TestCase):
             [('text/plain', ''), ('charset', 'ISO-8859-1')])
         self.assertEqual(self.image_url_resp.info()['content-length'],
             str(len(self.image)))
-        self.assertEqual(urllib.request.urlopen("data:,").info().get_params(),
+        r = urllib.request.urlopen("data:,")
+        self.assertEqual(r.info().get_params(),
             [('text/plain', ''), ('charset', 'US-ASCII')])
+        r.close()
 
     def test_geturl(self):
         self.assertEqual(self.text_url_resp.geturl(), self.text_url)
@@ -609,7 +619,7 @@ class urlretrieve_FileTests(unittest.TestCase):
 
     def constructLocalFileUrl(self, filePath):
         filePath = os.path.abspath(filePath)
-        return "file://%s" % urllib.request.pathname2url(filePath)
+        return "file:" + urllib.request.pathname2url(filePath)
 
     def createNewTempFile(self, data=b""):
         """Creates a new temporary file containing the specified data,

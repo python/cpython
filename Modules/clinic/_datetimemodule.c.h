@@ -21,6 +21,19 @@ PyDoc_STRVAR(datetime_date_fromtimestamp__doc__,
     {"fromtimestamp", (PyCFunction)datetime_date_fromtimestamp, METH_O|METH_CLASS, datetime_date_fromtimestamp__doc__},
 
 static PyObject *
+datetime_date_fromtimestamp_impl(PyTypeObject *type, PyObject *timestamp);
+
+static PyObject *
+datetime_date_fromtimestamp(PyObject *type, PyObject *timestamp)
+{
+    PyObject *return_value = NULL;
+
+    return_value = datetime_date_fromtimestamp_impl((PyTypeObject *)type, timestamp);
+
+    return return_value;
+}
+
+static PyObject *
 iso_calendar_date_new_impl(PyTypeObject *type, int year, int week,
                            int weekday);
 
@@ -97,7 +110,7 @@ datetime_date_replace_impl(PyDateTime_Date *self, int year, int month,
                            int day);
 
 static PyObject *
-datetime_date_replace(PyDateTime_Date *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+datetime_date_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -162,7 +175,7 @@ datetime_date_replace(PyDateTime_Date *self, PyObject *const *args, Py_ssize_t n
         goto exit;
     }
 skip_optional_pos:
-    return_value = datetime_date_replace_impl(self, year, month, day);
+    return_value = datetime_date_replace_impl((PyDateTime_Date *)self, year, month, day);
 
 exit:
     return return_value;
@@ -184,7 +197,7 @@ datetime_time_replace_impl(PyDateTime_Time *self, int hour, int minute,
                            int fold);
 
 static PyObject *
-datetime_time_replace(PyDateTime_Time *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+datetime_time_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -218,7 +231,7 @@ datetime_time_replace(PyDateTime_Time *self, PyObject *const *args, Py_ssize_t n
     int minute = TIME_GET_MINUTE(self);
     int second = TIME_GET_SECOND(self);
     int microsecond = TIME_GET_MICROSECOND(self);
-    PyObject *tzinfo = HASTZINFO(self) ? self->tzinfo : Py_None;
+    PyObject *tzinfo = HASTZINFO(self) ? ((PyDateTime_Time *)self)->tzinfo : Py_None;
     int fold = TIME_GET_FOLD(self);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -280,7 +293,7 @@ skip_optional_pos:
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = datetime_time_replace_impl(self, hour, minute, second, microsecond, tzinfo, fold);
+    return_value = datetime_time_replace_impl((PyDateTime_Time *)self, hour, minute, second, microsecond, tzinfo, fold);
 
 exit:
     return return_value;
@@ -304,7 +317,7 @@ static PyObject *
 datetime_datetime_now_impl(PyTypeObject *type, PyObject *tz);
 
 static PyObject *
-datetime_datetime_now(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+datetime_datetime_now(PyObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -346,7 +359,7 @@ datetime_datetime_now(PyTypeObject *type, PyObject *const *args, Py_ssize_t narg
     }
     tz = args[0];
 skip_optional_pos:
-    return_value = datetime_datetime_now_impl(type, tz);
+    return_value = datetime_datetime_now_impl((PyTypeObject *)type, tz);
 
 exit:
     return return_value;
@@ -370,7 +383,7 @@ datetime_datetime_replace_impl(PyDateTime_DateTime *self, int year,
                                int fold);
 
 static PyObject *
-datetime_datetime_replace(PyDateTime_DateTime *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+datetime_datetime_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -407,7 +420,7 @@ datetime_datetime_replace(PyDateTime_DateTime *self, PyObject *const *args, Py_s
     int minute = DATE_GET_MINUTE(self);
     int second = DATE_GET_SECOND(self);
     int microsecond = DATE_GET_MICROSECOND(self);
-    PyObject *tzinfo = HASTZINFO(self) ? self->tzinfo : Py_None;
+    PyObject *tzinfo = HASTZINFO(self) ? ((PyDateTime_DateTime *)self)->tzinfo : Py_None;
     int fold = DATE_GET_FOLD(self);
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
@@ -496,9 +509,9 @@ skip_optional_pos:
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = datetime_datetime_replace_impl(self, year, month, day, hour, minute, second, microsecond, tzinfo, fold);
+    return_value = datetime_datetime_replace_impl((PyDateTime_DateTime *)self, year, month, day, hour, minute, second, microsecond, tzinfo, fold);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=203217a61ea14171 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7b55f2d9a4596b58 input=a9049054013a1b77]*/

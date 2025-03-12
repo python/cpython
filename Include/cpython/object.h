@@ -5,6 +5,7 @@
 PyAPI_FUNC(void) _Py_NewReference(PyObject *op);
 PyAPI_FUNC(void) _Py_NewReferenceNoTotal(PyObject *op);
 PyAPI_FUNC(void) _Py_ResurrectReference(PyObject *op);
+PyAPI_FUNC(void) _Py_ForgetReference(PyObject *op);
 
 #ifdef Py_REF_DEBUG
 /* These are useful as debugging aids when chasing down refleaks. */
@@ -221,7 +222,9 @@ struct _typeobject {
     PyObject *tp_weaklist; /* not used for static builtin types */
     destructor tp_del;
 
-    /* Type attribute cache version tag. Added in version 2.6 */
+    /* Type attribute cache version tag. Added in version 2.6.
+     * If zero, the cache is invalid and must be initialized.
+     */
     unsigned int tp_version_tag;
 
     destructor tp_finalize;
@@ -229,8 +232,16 @@ struct _typeobject {
 
     /* bitset of which type-watchers care about this type */
     unsigned char tp_watched;
+
+    /* Number of tp_version_tag values used.
+     * Set to _Py_ATTR_CACHE_UNUSED if the attribute cache is
+     * disabled for this type (e.g. due to custom MRO entries).
+     * Otherwise, limited to MAX_VERSIONS_PER_CLASS (defined elsewhere).
+     */
     uint16_t tp_versions_used;
 };
+
+#define _Py_ATTR_CACHE_UNUSED (30000)  // (see tp_versions_used)
 
 /* This struct is used by the specializer
  * It should be treated as an opaque blob
@@ -465,9 +476,6 @@ partially-deallocated object. To check this, the tp_dealloc function must be
 passed as second argument to Py_TRASHCAN_BEGIN().
 */
 
-/* Python 3.9 private API, invoked by the macros below. */
-PyAPI_FUNC(int) _PyTrash_begin(PyThreadState *tstate, PyObject *op);
-PyAPI_FUNC(void) _PyTrash_end(PyThreadState *tstate);
 
 PyAPI_FUNC(void) _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op);
 PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(PyThreadState *tstate);
@@ -480,18 +488,19 @@ PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(PyThreadState *tstate);
  * we have headroom above the trigger limit */
 #define Py_TRASHCAN_HEADROOM 50
 
+/* Helper function for Py_TRASHCAN_BEGIN */
+PyAPI_FUNC(int) _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int margin_count);
+
 #define Py_TRASHCAN_BEGIN(op, dealloc) \
 do { \
     PyThreadState *tstate = PyThreadState_Get(); \
-    if (tstate->c_recursion_remaining <= Py_TRASHCAN_HEADROOM && Py_TYPE(op)->tp_dealloc == (destructor)dealloc) { \
+    if (_Py_ReachedRecursionLimitWithMargin(tstate, 2) && Py_TYPE(op)->tp_dealloc == (destructor)dealloc) { \
         _PyTrash_thread_deposit_object(tstate, (PyObject *)op); \
         break; \
-    } \
-    tstate->c_recursion_remaining--;
+    }
     /* The body of the deallocator is here. */
 #define Py_TRASHCAN_END \
-    tstate->c_recursion_remaining++; \
-    if (tstate->delete_later && tstate->c_recursion_remaining > (Py_TRASHCAN_HEADROOM*2)) { \
+    if (tstate->delete_later && !_Py_ReachedRecursionLimitWithMargin(tstate, 4)) { \
         _PyTrash_thread_destroy_chain(tstate); \
     } \
 } while (0);
@@ -534,3 +543,12 @@ PyAPI_FUNC(PyRefTracer) PyRefTracer_GetTracer(void**);
  * 0 if the runtime ignored it. This function cannot fail.
  */
 PyAPI_FUNC(int) PyUnstable_Object_EnableDeferredRefcount(PyObject *);
+
+/* Check whether the object is immortal. This cannot fail. */
+PyAPI_FUNC(int) PyUnstable_IsImmortal(PyObject *);
+
+// Increments the reference count of the object, if it's not zero.
+// PyUnstable_EnableTryIncRef() should be called on the object
+// before calling this function in order to avoid spurious failures.
+PyAPI_FUNC(int) PyUnstable_TryIncRef(PyObject *);
+PyAPI_FUNC(void) PyUnstable_EnableTryIncRef(PyObject *);

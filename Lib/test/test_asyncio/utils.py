@@ -541,7 +541,7 @@ class TestCase(unittest.TestCase):
         if loop is None:
             raise AssertionError('loop is None')
         # ensure that the event loop is passed explicitly in asyncio
-        events.set_event_loop(None)
+        events._set_event_loop(None)
         if cleanup:
             self.addCleanup(self.close_loop, loop)
 
@@ -554,7 +554,7 @@ class TestCase(unittest.TestCase):
         self._thread_cleanup = threading_helper.threading_setup()
 
     def tearDown(self):
-        events.set_event_loop(None)
+        events._set_event_loop(None)
 
         # Detect CPython bug #23353: ensure that yield/yield-from is not used
         # in an except block of a generator

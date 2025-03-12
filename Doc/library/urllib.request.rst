@@ -411,6 +411,9 @@ The following classes are provided:
    :ref:`http-password-mgr` for information on the interface that must be
    supported.
 
+   .. versionchanged:: 3.14
+      Added support for HTTP digest authentication algorithm ``SHA-256``.
+
 
 .. class:: HTTPDigestAuthHandler(password_mgr=None)
 

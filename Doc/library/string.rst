@@ -59,11 +59,18 @@ The constants defined in this module are:
    String of ASCII characters which are considered punctuation characters
    in the ``C`` locale: ``!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~``.
 
+
 .. data:: printable
 
-   String of ASCII characters which are considered printable.  This is a
-   combination of :const:`digits`, :const:`ascii_letters`, :const:`punctuation`,
-   and :const:`whitespace`.
+   String of ASCII characters which are considered printable by Python.
+   This is a combination of :const:`digits`, :const:`ascii_letters`,
+   :const:`punctuation`, and :const:`whitespace`.
+
+   .. note::
+
+      By design, :meth:`string.printable.isprintable() <str.isprintable>`
+      returns :const:`False`. In particular, ``string.printable`` is not
+      printable in the POSIX sense (see :manpage:`LC_CTYPE <locale(5)>`).
 
 
 .. data:: whitespace
@@ -312,14 +319,19 @@ non-empty format specification typically modifies the result.
 The general form of a *standard format specifier* is:
 
 .. productionlist:: format-spec
-   format_spec: [[`fill`]`align`][`sign`]["z"]["#"]["0"][`width`][`grouping_option`]["." `precision`][`type`]
+   format_spec: [`options`][`width_and_precision`][`type`]
+   options: [[`fill`]`align`][`sign`]["z"]["#"]["0"]
    fill: <any character>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
+   width_and_precision: [`width_with_grouping`][`precision_with_grouping`]
+   width_with_grouping: [`width`][`grouping_option`]
+   precision_with_grouping: "." [`precision`]`grouping_option`
    width: `~python-grammar:digit`+
    grouping_option: "_" | ","
    precision: `~python-grammar:digit`+
-   type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "s" | "x" | "X" | "%"
+   type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g"
+       : | "G" | "n" | "o" | "s" | "x" | "X" | "%"
 
 If a valid *align* value is specified, it can be preceded by a *fill*
 character that can be any character and defaults to a space if omitted.
@@ -409,7 +421,9 @@ conversions, trailing zeros are not removed from the result.
 
 .. index:: single: , (comma); in string formatting
 
-The ``','`` option signals the use of a comma for a thousands separator.
+The ``','`` option signals the use of a comma for a thousands separator for
+floating-point presentation types and for integer presentation type ``'d'``.
+For other presentation types, this option is an error.
 For a locale aware separator, use the ``'n'`` integer presentation type
 instead.
 
@@ -448,6 +462,13 @@ types ``'g'`` or ``'G'``.  For string presentation types the field
 indicates the maximum field size - in other words, how many characters will be
 used from the field content.  The *precision* is not allowed for integer
 presentation types.
+
+The ``'_'`` or ``','`` option after *precision* means the use of an underscore
+or a comma for a thousands separator of the fractional part for floating-point
+presentation types.
+
+.. versionchanged:: 3.14
+   Support thousands separators for the fractional part.
 
 Finally, the *type* determines how the data should be presented.
 
@@ -695,10 +716,18 @@ Replacing ``%x`` and ``%o`` and converting the value to different bases::
    >>> "int: {0:d};  hex: {0:#x};  oct: {0:#o};  bin: {0:#b}".format(42)
    'int: 42;  hex: 0x2a;  oct: 0o52;  bin: 0b101010'
 
-Using the comma as a thousands separator::
+Using the comma or the underscore as a thousands separator::
 
    >>> '{:,}'.format(1234567890)
    '1,234,567,890'
+   >>> '{:_}'.format(1234567890)
+   '1_234_567_890'
+   >>> '{:_}'.format(123456789.123456789)
+   '123_456_789.12345679'
+   >>> '{:._}'.format(123456789.123456789)
+   '123456789.123_456_79'
+   >>> '{:_._}'.format(123456789.123456789)
+   '123_456_789.123_456_79'
 
 Expressing a percentage::
 

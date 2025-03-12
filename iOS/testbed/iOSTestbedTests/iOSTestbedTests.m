@@ -24,8 +24,11 @@
 
     NSString *resourcePath = [[NSBundle mainBundle] resourcePath];
 
-    // Disable all color, as the Xcode log can't display color
+    // Set some other common environment indicators to disable color, as the
+    // Xcode log can't display color. Stdout will report that it is *not* a
+    // TTY.
     setenv("NO_COLOR", "1", true);
+    setenv("PYTHON_COLORS", "0", true);
 
     // Arguments to pass into the test suite runner.
     // argv[0] must identify the process; any subsequent arg
@@ -50,6 +53,8 @@
     // Enforce UTF-8 encoding for stderr, stdout, file-system encoding and locale.
     // See https://docs.python.org/3/library/os.html#python-utf-8-mode.
     preconfig.utf8_mode = 1;
+    // Use the system logger for stdout/err
+    config.use_system_logger = 1;
     // Don't buffer stdio. We want output to appears in the log immediately
     config.buffered_stdio = 0;
     // Don't write bytecode; we can't modify the app bundle

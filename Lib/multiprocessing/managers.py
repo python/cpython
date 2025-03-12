@@ -1195,6 +1195,36 @@ class DictProxy(_BaseDictProxy):
 
 collections.abc.MutableMapping.register(_BaseDictProxy)
 
+_BaseSetProxy = MakeProxyType("_BaseSetProxy", (
+    '__and__', '__class_getitem__', '__contains__', '__iand__', '__ior__',
+    '__isub__', '__iter__', '__ixor__', '__len__', '__or__', '__rand__',
+    '__ror__', '__rsub__', '__rxor__', '__sub__', '__xor__',
+    '__ge__', '__gt__', '__le__', '__lt__',
+    'add', 'clear', 'copy', 'difference', 'difference_update', 'discard',
+    'intersection', 'intersection_update', 'isdisjoint', 'issubset',
+    'issuperset', 'pop', 'remove', 'symmetric_difference',
+    'symmetric_difference_update', 'union', 'update',
+))
+
+class SetProxy(_BaseSetProxy):
+    def __ior__(self, value):
+        self._callmethod('__ior__', (value,))
+        return self
+    def __iand__(self, value):
+        self._callmethod('__iand__', (value,))
+        return self
+    def __ixor__(self, value):
+        self._callmethod('__ixor__', (value,))
+        return self
+    def __isub__(self, value):
+        self._callmethod('__isub__', (value,))
+        return self
+
+    __class_getitem__ = classmethod(types.GenericAlias)
+
+collections.abc.MutableMapping.register(_BaseSetProxy)
+
+
 ArrayProxy = MakeProxyType('ArrayProxy', (
     '__len__', '__getitem__', '__setitem__'
     ))
@@ -1245,6 +1275,7 @@ SyncManager.register('Barrier', threading.Barrier, BarrierProxy)
 SyncManager.register('Pool', pool.Pool, PoolProxy)
 SyncManager.register('list', list, ListProxy)
 SyncManager.register('dict', dict, DictProxy)
+SyncManager.register('set', set, SetProxy)
 SyncManager.register('Value', Value, ValueProxy)
 SyncManager.register('Array', Array, ArrayProxy)
 SyncManager.register('Namespace', Namespace, NamespaceProxy)

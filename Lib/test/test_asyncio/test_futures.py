@@ -17,7 +17,7 @@ from test import support
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 def _fakefunc(f):
@@ -178,8 +178,8 @@ class BaseFutureTests:
 
     def test_constructor_use_global_loop(self):
         # Deprecated in 3.10, undeprecated in 3.12
-        asyncio.set_event_loop(self.loop)
-        self.addCleanup(asyncio.set_event_loop, None)
+        asyncio._set_event_loop(self.loop)
+        self.addCleanup(asyncio._set_event_loop, None)
         f = self._new_future()
         self.assertIs(f._loop, self.loop)
         self.assertIs(f.get_loop(), self.loop)
@@ -242,7 +242,7 @@ class BaseFutureTests:
 
     def test_future_cancel_message_getter(self):
         f = self._new_future(loop=self.loop)
-        self.assertTrue(hasattr(f, '_cancel_message'))
+        self.assertHasAttr(f, '_cancel_message')
         self.assertEqual(f._cancel_message, None)
 
         f.cancel('my message')
@@ -566,8 +566,8 @@ class BaseFutureTests:
 
     def test_wrap_future_use_global_loop(self):
         # Deprecated in 3.10, undeprecated in 3.12
-        asyncio.set_event_loop(self.loop)
-        self.addCleanup(asyncio.set_event_loop, None)
+        asyncio._set_event_loop(self.loop)
+        self.addCleanup(asyncio._set_event_loop, None)
         def run(arg):
             return (arg, threading.get_ident())
         ex = concurrent.futures.ThreadPoolExecutor(1)

@@ -952,6 +952,49 @@ class TestExceptStarExceptionGroupSubclass(ExceptStarTest):
         self.assertExceptionIsLike(tes, FalsyEG("eg", [TypeError(1)]))
         self.assertExceptionIsLike(ves, FalsyEG("eg", [ValueError(2)]))
 
+    def test_exception_group_subclass_with_bad_split_func(self):
+        # see gh-128049.
+        class BadEG1(ExceptionGroup):
+            def split(self, *args):
+                return "NOT A 2-TUPLE!"
+
+        class BadEG2(ExceptionGroup):
+            def split(self, *args):
+                return ("NOT A 2-TUPLE!",)
+
+        eg_list = [
+            (BadEG1("eg", [OSError(123), ValueError(456)]),
+             r"split must return a tuple, not str"),
+            (BadEG2("eg", [OSError(123), ValueError(456)]),
+             r"split must return a 2-tuple, got tuple of size 1")
+        ]
+
+        for eg_class, msg in eg_list:
+            with self.assertRaisesRegex(TypeError, msg) as m:
+                try:
+                    raise eg_class
+                except* ValueError:
+                    pass
+                except* OSError:
+                    pass
+
+            self.assertExceptionIsLike(m.exception.__context__, eg_class)
+
+        # we allow tuples of length > 2 for backwards compatibility
+        class WeirdEG(ExceptionGroup):
+            def split(self, *args):
+                return super().split(*args) + ("anything", 123456, None)
+
+        try:
+            raise WeirdEG("eg", [OSError(123), ValueError(456)])
+        except* OSError as e:
+            oeg = e
+        except* ValueError as e:
+            veg = e
+
+        self.assertExceptionIsLike(oeg, WeirdEG("eg", [OSError(123)]))
+        self.assertExceptionIsLike(veg, WeirdEG("eg", [ValueError(456)]))
+
 
 class TestExceptStarCleanup(ExceptStarTest):
     def test_sys_exception_restored(self):

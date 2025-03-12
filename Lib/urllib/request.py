@@ -876,9 +876,9 @@ class HTTPPasswordMgrWithDefaultRealm(HTTPPasswordMgr):
 
 class HTTPPasswordMgrWithPriorAuth(HTTPPasswordMgrWithDefaultRealm):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         self.authenticated = {}
-        super().__init__(*args, **kwargs)
+        super().__init__()
 
     def add_password(self, realm, uri, user, passwd, is_authenticated=False):
         self.update_authenticated(uri, is_authenticated)
@@ -1048,7 +1048,7 @@ _randombytes = os.urandom
 
 
 class AbstractDigestAuthHandler:
-    # Digest authentication is specified in RFC 2617.
+    # Digest authentication is specified in RFC 2617/7616.
 
     # XXX The client does not inspect the Authentication-Info header
     # in a successful response.
@@ -1176,11 +1176,14 @@ class AbstractDigestAuthHandler:
         return base
 
     def get_algorithm_impls(self, algorithm):
+        # algorithm names taken from RFC 7616 Section 6.1
         # lambdas assume digest modules are imported at the top level
         if algorithm == 'MD5':
             H = lambda x: hashlib.md5(x.encode("ascii")).hexdigest()
-        elif algorithm == 'SHA':
+        elif algorithm == 'SHA':  # non-standard, retained for compatibility.
             H = lambda x: hashlib.sha1(x.encode("ascii")).hexdigest()
+        elif algorithm == 'SHA-256':
+            H = lambda x: hashlib.sha256(x.encode("ascii")).hexdigest()
         # XXX MD5-sess
         else:
             raise ValueError("Unsupported digest authentication "
@@ -1488,10 +1491,7 @@ class FileHandler(BaseHandler):
                 host, port = _splitport(host)
             if not host or \
                 (not port and _safe_gethostbyname(host) in self.get_names()):
-                if host:
-                    origurl = 'file://' + host + filename
-                else:
-                    origurl = 'file://' + filename
+                origurl = 'file:' + pathname2url(localfile)
                 return addinfourl(open(localfile, 'rb'), headers, origurl)
         except OSError as exp:
             raise URLError(exp, exp.filename)

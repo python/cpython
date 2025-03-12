@@ -21,7 +21,7 @@ from test.support import requires_subprocess, socket_helper
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class StreamTests(test_utils.TestCase):
@@ -50,7 +50,7 @@ class StreamTests(test_utils.TestCase):
         self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
         f = reader.read()
         data = self.loop.run_until_complete(f)
-        self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+        self.assertEndsWith(data, b'\r\n\r\nTest message')
         writer.close()
         self.assertEqual(messages, [])
 
@@ -71,11 +71,11 @@ class StreamTests(test_utils.TestCase):
         try:
             reader, writer = self.loop.run_until_complete(open_connection_fut)
         finally:
-            asyncio.set_event_loop(None)
+            asyncio._set_event_loop(None)
         writer.write(b'GET / HTTP/1.0\r\n\r\n')
         f = reader.read()
         data = self.loop.run_until_complete(f)
-        self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+        self.assertEndsWith(data, b'\r\n\r\nTest message')
 
         writer.close()
         self.assertEqual(messages, [])
@@ -839,8 +839,8 @@ class StreamTests(test_utils.TestCase):
         # asyncio issue #184: Ensure that StreamReaderProtocol constructor
         # retrieves the current loop if the loop parameter is not set
         # Deprecated in 3.10, undeprecated in 3.12
-        self.addCleanup(asyncio.set_event_loop, None)
-        asyncio.set_event_loop(self.loop)
+        self.addCleanup(asyncio._set_event_loop, None)
+        asyncio._set_event_loop(self.loop)
         reader = asyncio.StreamReader()
         self.assertIs(reader._loop, self.loop)
 
@@ -863,8 +863,8 @@ class StreamTests(test_utils.TestCase):
         # asyncio issue #184: Ensure that StreamReaderProtocol constructor
         # retrieves the current loop if the loop parameter is not set
         # Deprecated in 3.10, undeprecated in 3.12
-        self.addCleanup(asyncio.set_event_loop, None)
-        asyncio.set_event_loop(self.loop)
+        self.addCleanup(asyncio._set_event_loop, None)
+        asyncio._set_event_loop(self.loop)
         reader = mock.Mock()
         protocol = asyncio.StreamReaderProtocol(reader)
         self.assertIs(protocol._loop, self.loop)
@@ -1002,7 +1002,7 @@ class StreamTests(test_utils.TestCase):
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
             f = rd.read()
             data = self.loop.run_until_complete(f)
-            self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+            self.assertEndsWith(data, b'\r\n\r\nTest message')
             self.assertFalse(wr.is_closing())
             wr.close()
             self.assertTrue(wr.is_closing())
@@ -1028,7 +1028,7 @@ class StreamTests(test_utils.TestCase):
             data = await rd.readline()
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
             data = await rd.read()
-            self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+            self.assertEndsWith(data, b'\r\n\r\nTest message')
             wr.close()
             await wr.wait_closed()
 
@@ -1048,7 +1048,7 @@ class StreamTests(test_utils.TestCase):
             data = await rd.readline()
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
             data = await rd.read()
-            self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+            self.assertEndsWith(data, b'\r\n\r\nTest message')
             wr.close()
             with self.assertRaises(ConnectionResetError):
                 wr.write(b'data')
@@ -1089,12 +1089,12 @@ class StreamTests(test_utils.TestCase):
             data = await rd.readline()
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
             data = await rd.read()
-            self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+            self.assertEndsWith(data, b'\r\n\r\nTest message')
             with self.assertWarns(ResourceWarning) as cm:
                 del wr
                 gc.collect()
                 self.assertEqual(len(cm.warnings), 1)
-                self.assertTrue(str(cm.warnings[0].message).startswith("unclosed <StreamWriter"))
+                self.assertStartsWith(str(cm.warnings[0].message), "unclosed <StreamWriter")
 
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
@@ -1112,7 +1112,7 @@ class StreamTests(test_utils.TestCase):
             data = await rd.readline()
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
             data = await rd.read()
-            self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
+            self.assertEndsWith(data, b'\r\n\r\nTest message')
 
             # Make "loop is closed" occur first before "del wr" for this test.
             self.loop.stop()
@@ -1144,7 +1144,7 @@ class StreamTests(test_utils.TestCase):
                 del wr
                 gc.collect()
                 self.assertEqual(len(cm.warnings), 1)
-                self.assertTrue(str(cm.warnings[0].message).startswith("unclosed <StreamWriter"))
+                self.assertStartsWith(str(cm.warnings[0].message), "unclosed <StreamWriter")
 
         async def outer():
             srv = await asyncio.start_server(inner, socket_helper.HOSTv4, 0)

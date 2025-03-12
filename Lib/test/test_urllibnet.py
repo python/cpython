@@ -106,6 +106,7 @@ class urlopenNetworkTests(unittest.TestCase):
                 with urllib.request.urlopen(URL):
                     pass
             self.assertEqual(e.exception.code, 404)
+            e.exception.close()
 
     @support.requires_resource('walltime')
     def test_bad_address(self):

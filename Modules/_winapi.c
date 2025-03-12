@@ -144,14 +144,17 @@ typedef struct {
     Py_buffer write_buffer;
 } OverlappedObject;
 
+#define OverlappedObject_CAST(op)   ((OverlappedObject *)(op))
+
 /*
 Note: tp_clear (overlapped_clear) is not implemented because it
 requires cancelling the IO operation if it's pending and the cancellation is
 quite complex and can fail (see: overlapped_dealloc).
 */
 static int
-overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
+overlapped_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    OverlappedObject *self = OverlappedObject_CAST(op);
     Py_VISIT(self->read_buffer);
     Py_VISIT(self->write_buffer.obj);
     Py_VISIT(Py_TYPE(self));
@@ -159,10 +162,11 @@ overlapped_traverse(OverlappedObject *self, visitproc visit, void *arg)
 }
 
 static void
-overlapped_dealloc(OverlappedObject *self)
+overlapped_dealloc(PyObject *op)
 {
     DWORD bytes;
     int err = GetLastError();
+    OverlappedObject *self = OverlappedObject_CAST(op);
 
     PyObject_GC_UnTrack(self);
     if (self->pending) {
@@ -171,17 +175,16 @@ overlapped_dealloc(OverlappedObject *self)
         {
             /* The operation is no longer pending -- nothing to do. */
         }
-        else if (_Py_IsInterpreterFinalizing(_PyInterpreterState_GET()))
-        {
+        else if (_Py_IsInterpreterFinalizing(_PyInterpreterState_GET())) {
             /* The operation is still pending -- give a warning.  This
                will probably only happen on Windows XP. */
             PyErr_SetString(PyExc_PythonFinalizationError,
                             "I/O operations still in flight while destroying "
                             "Overlapped object, the process may crash");
-            PyErr_WriteUnraisable(NULL);
+            PyErr_FormatUnraisable("Exception ignored while deallocating "
+                                   "overlapped operation %R", self);
         }
-        else
-        {
+        else {
             /* The operation is still pending, but the process is
                probably about to exit, so we need not worry too much
                about memory leaks.  Leaking self prevents a potential
@@ -1048,7 +1051,7 @@ getenvironment(PyObject* environment)
     }
 
     normalized_environment = normalize_environment(environment);
-    if (normalize_environment == NULL) {
+    if (normalized_environment == NULL) {
         return NULL;
     }
 
@@ -3216,7 +3219,7 @@ winapi_clear(PyObject *module)
 static void
 winapi_free(void *module)
 {
-    winapi_clear((PyObject *)module);
+    (void)winapi_clear((PyObject *)module);
 }
 
 static struct PyModuleDef winapi_module = {

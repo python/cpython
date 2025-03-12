@@ -386,7 +386,7 @@ def _text_encoding():
 
 def call(*popenargs, timeout=None, **kwargs):
     """Run command with arguments.  Wait for command to complete or
-    timeout, then return the returncode attribute.
+    for timeout seconds, then return the returncode attribute.
 
     The arguments are the same as for the Popen constructor.  Example:
 
@@ -523,8 +523,8 @@ def run(*popenargs,
     in the returncode attribute, and output & stderr attributes if those streams
     were captured.
 
-    If timeout is given, and the process takes too long, a TimeoutExpired
-    exception will be raised.
+    If timeout (seconds) is given and the process takes too long,
+     a TimeoutExpired exception will be raised.
 
     There is an optional argument "input", allowing you to
     pass bytes or a string to the subprocess's stdin.  If you use this argument
@@ -1121,10 +1121,9 @@ class Popen:
                     except TimeoutExpired:
                         pass
                 self._sigint_wait_secs = 0  # Note that this has been done.
-                return  # resume the KeyboardInterrupt
-
-            # Wait for the process to terminate, to avoid zombies.
-            self.wait()
+            else:
+                # Wait for the process to terminate, to avoid zombies.
+                self.wait()
 
     def __del__(self, _maxsize=sys.maxsize, _warn=warnings.warn):
         if not self._child_created:
