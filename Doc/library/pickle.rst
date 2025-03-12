@@ -514,7 +514,7 @@ The :mod:`pickle` module exports three classes, :class:`Pickler`,
 .. _pickle-cli:
 
 Command-line interface
-----------------------------------
+----------------------
 
 The :mod:`pickle` module can be invoked as a script from the command line,
 it will display contents of the pickle files. However, when the pickle file
