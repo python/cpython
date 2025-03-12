@@ -171,8 +171,6 @@ class TimeTestCase(unittest.TestCase):
         with self.assertRaises(TypeError) as errmsg:
             time.sleep([])
         self.assertIn("integer or float", str(errmsg.exception))
-
-
     def test_sleep(self):
         for value in [-0.0, 0, 0.0, 1e-100, 1e-9, 1e-6, 1, 1.2]:
             with self.subTest(value=value):
