@@ -24,7 +24,7 @@ from generators_common import (
     Emitter,
 )
 from cwriter import CWriter
-from typing import TextIO, Callable
+from typing import TextIO
 from stack import Local, Stack, StackError, get_stack_effect, Storage
 
 DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"

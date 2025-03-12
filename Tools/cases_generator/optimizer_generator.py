@@ -21,7 +21,7 @@ from generators_common import (
     TokenIterator,
 )
 from cwriter import CWriter
-from typing import TextIO, Iterator
+from typing import TextIO
 from lexer import Token
 from stack import Local, Stack, StackError, Storage
 

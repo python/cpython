@@ -1,9 +1,8 @@
 import re
 from analyzer import StackItem, StackEffect, Instruction, Uop, PseudoInstruction
-from collections import defaultdict
 from dataclasses import dataclass
 from cwriter import CWriter
-from typing import Iterator, Tuple
+from typing import Iterator
 
 UNUSED = {"unused"}
 
