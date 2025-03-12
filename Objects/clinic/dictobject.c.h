@@ -18,7 +18,7 @@ static PyObject *
 dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value);
 
 static PyObject *
-dict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs)
+dict_fromkeys(PyObject *type, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *iterable;
@@ -33,7 +33,7 @@ dict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs)
     }
     value = args[1];
 skip_optional:
-    return_value = dict_fromkeys_impl(type, iterable, value);
+    return_value = dict_fromkeys_impl((PyTypeObject *)type, iterable, value);
 
 exit:
     return return_value;
@@ -323,4 +323,4 @@ dict_values(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict_values_impl((PyDictObject *)self);
 }
-/*[clinic end generated code: output=8a104741e4676c76 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9007b74432217017 input=a9049054013a1b77]*/
