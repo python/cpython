@@ -942,9 +942,7 @@ PyDoc_STRVAR(winreg_OpenKey__doc__,
 "  sub_key\n"
 "    A string that identifies the sub_key to open.\n"
 "  reserved\n"
-"    A reserved integer that be should zero.  If it is not zero,\n"
-"    it will be used as the options parameter for compatibility reasons.\n"
-"    Default is zero.\n"
+"    A reserved integer that must be zero. Default is zero.\n"
 "  access\n"
 "    An integer that specifies an access mask that describes the desired\n"
 "    security access for the key.  Default is KEY_READ.\n"
@@ -1809,4 +1807,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=2e7c0c73f6247000 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8112cdbe079ac8b8 input=a9049054013a1b77]*/

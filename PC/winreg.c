@@ -1426,7 +1426,7 @@ If the function fails, an OSError exception is raised.
 static HKEY
 winreg_OpenKey_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
                     int reserved, REGSAM access)
-/*[clinic end generated code: output=5efbad23b3ffe2e7 input=7fb70c602dd114dd]*/
+/*[clinic end generated code: output=5efbad23b3ffe2e7 input=a2fb7586bbed3b01]*/
 {
     return winreg_OpenKeyEx_impl(module, key, sub_key, reserved, access, 0);
 }
