@@ -171,7 +171,7 @@ class FunctionTests(unittest.TestCase):
         self.con.close()
 
     def test_func_error_on_create(self):
-        with self.assertRaises(sqlite.OperationalError):
+        with self.assertRaisesRegex(sqlite.ProgrammingError, "not -100"):
             self.con.create_function("bla", -100, lambda x: 2*x)
 
     def test_func_too_many_args(self):
@@ -507,9 +507,8 @@ class WindowFunctionTests(unittest.TestCase):
         self.assertEqual(self.cur.fetchall(), self.expected)
 
     def test_win_error_on_create(self):
-        self.assertRaises(sqlite.ProgrammingError,
-                          self.con.create_window_function,
-                          "shouldfail", -100, WindowSumInt)
+        with self.assertRaisesRegex(sqlite.ProgrammingError, "not -100"):
+            self.con.create_window_function("shouldfail", -100, WindowSumInt)
 
     @with_tracebacks(BadWindow)
     def test_win_exception_in_method(self):
@@ -638,7 +637,7 @@ class AggregateTests(unittest.TestCase):
         self.con.close()
 
     def test_aggr_error_on_create(self):
-        with self.assertRaises(sqlite.OperationalError):
+        with self.assertRaisesRegex(sqlite.ProgrammingError, "not -100"):
             self.con.create_function("bla", -100, AggrSum)
 
     @with_tracebacks(AttributeError, msg_regex="AggrNoStep")

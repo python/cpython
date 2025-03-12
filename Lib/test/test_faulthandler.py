@@ -795,6 +795,7 @@ class FaultHandlerTests(unittest.TestCase):
     def test_register_threads(self):
         self.check_register(all_threads=True)
 
+    @support.skip_if_sanitizer("gh-129825: hangs under TSAN", thread=True)
     def test_register_chain(self):
         self.check_register(chain=True)
 

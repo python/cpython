@@ -74,6 +74,7 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
     {                                               \
         .ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL,  \
         .ob_flags = _Py_STATICALLY_ALLOCATED_FLAG,  \
+        .ob_gc_bits = _PyGC_BITS_DEFERRED,          \
         .ob_type = (type)                           \
     }
 #else
@@ -81,7 +82,7 @@ PyAPI_FUNC(int) _PyObject_IsFreed(PyObject *);
 #define _PyObject_HEAD_INIT(type)         \
     {                                     \
         .ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT,  \
-        .ob_flags = _Py_STATICALLY_ALLOCATED_FLAG, \
+        .ob_flags = _Py_STATIC_FLAG_BITS, \
         .ob_type = (type)                 \
     }
 #else
@@ -121,7 +122,7 @@ PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
 
 extern void _Py_AddRefTotal(PyThreadState *, Py_ssize_t);
 extern PyAPI_FUNC(void) _Py_IncRefTotal(PyThreadState *);
-extern void _Py_DecRefTotal(PyThreadState *);
+extern PyAPI_FUNC(void) _Py_DecRefTotal(PyThreadState *);
 
 #  define _Py_DEC_REFTOTAL(interp) \
     interp->object_state.reftotal--
@@ -134,15 +135,20 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
         _Py_INCREF_IMMORTAL_STAT_INC();
         return;
     }
-#ifdef Py_REF_DEBUG
-    _Py_AddRefTotal(_PyThreadState_GET(), n);
-#endif
-#if !defined(Py_GIL_DISABLED)
-#if SIZEOF_VOID_P > 4
-    op->ob_refcnt += (PY_UINT32_T)n;
-#else
-    op->ob_refcnt += n;
-#endif
+#ifndef Py_GIL_DISABLED
+    Py_ssize_t refcnt = _Py_REFCNT(op);
+    Py_ssize_t new_refcnt = refcnt + n;
+    if (new_refcnt >= (Py_ssize_t)_Py_IMMORTAL_MINIMUM_REFCNT) {
+        new_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
+    }
+#  if SIZEOF_VOID_P > 4
+    op->ob_refcnt = (PY_UINT32_T)new_refcnt;
+#  else
+    op->ob_refcnt = new_refcnt;
+#  endif
+#  ifdef Py_REF_DEBUG
+    _Py_AddRefTotal(_PyThreadState_GET(), new_refcnt - refcnt);
+#  endif
 #else
     if (_Py_IsOwnedByCurrentThread(op)) {
         uint32_t local = op->ob_ref_local;
@@ -159,6 +165,9 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
     else {
         _Py_atomic_add_ssize(&op->ob_ref_shared, (n << _Py_REF_SHARED_SHIFT));
     }
+#  ifdef Py_REF_DEBUG
+    _Py_AddRefTotal(_PyThreadState_GET(), n);
+#  endif
 #endif
     // Although the ref count was increased by `n` (which may be greater than 1)
     // it is only a single increment (i.e. addition) operation, so only 1 refcnt
@@ -612,7 +621,7 @@ _Py_TryIncrefCompare(PyObject **src, PyObject *op)
 static inline int
 _Py_TryIncrefCompareStackRef(PyObject **src, PyObject *op, _PyStackRef *out)
 {
-    if (_Py_IsImmortal(op) || _PyObject_HasDeferredRefcount(op)) {
+    if (_PyObject_HasDeferredRefcount(op)) {
         *out = (_PyStackRef){ .bits = (intptr_t)op | Py_TAG_DEFERRED };
         return 1;
     }
@@ -710,7 +719,7 @@ _PyObject_SetMaybeWeakref(PyObject *op)
     }
 }
 
-extern int _PyObject_ResurrectEndSlow(PyObject *op);
+extern PyAPI_FUNC(int) _PyObject_ResurrectEndSlow(PyObject *op);
 #endif
 
 // Temporarily resurrects an object during deallocation. The refcount is set
@@ -729,6 +738,9 @@ _PyObject_ResurrectStart(PyObject *op)
 #else
     Py_SET_REFCNT(op, 1);
 #endif
+#ifdef Py_TRACE_REFS
+    _Py_ResurrectReference(op);
+#endif
 }
 
 // Undoes an object resurrection by decrementing the refcount without calling
@@ -742,13 +754,22 @@ _PyObject_ResurrectEnd(PyObject *op)
 #endif
 #ifndef Py_GIL_DISABLED
     Py_SET_REFCNT(op, Py_REFCNT(op) - 1);
-    return Py_REFCNT(op) != 0;
+    if (Py_REFCNT(op) == 0) {
+# ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+# endif
+        return 0;
+    }
+    return 1;
 #else
     uint32_t local = _Py_atomic_load_uint32_relaxed(&op->ob_ref_local);
     Py_ssize_t shared = _Py_atomic_load_ssize_acquire(&op->ob_ref_shared);
     if (_Py_IsOwnedByCurrentThread(op) && local == 1 && shared == 0) {
         // Fast-path: object has a single refcount and is owned by this thread
         _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, 0);
+# ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+# endif
         return 0;
     }
     // Slow-path: object has a shared refcount or is not owned by this thread

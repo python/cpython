@@ -27,6 +27,8 @@ typedef struct _PyScannerObject {
     PyObject *parse_constant;
 } PyScannerObject;
 
+#define PyScannerObject_CAST(op)    ((PyScannerObject *)(op))
+
 static PyMemberDef scanner_members[] = {
     {"strict", Py_T_BOOL, offsetof(PyScannerObject, strict), Py_READONLY, "strict"},
     {"object_hook", _Py_T_OBJECT, offsetof(PyScannerObject, object_hook), Py_READONLY, "object_hook"},
@@ -51,6 +53,8 @@ typedef struct _PyEncoderObject {
     PyCFunction fast_encode;
 } PyEncoderObject;
 
+#define PyEncoderObject_CAST(op)    ((PyEncoderObject *)(op))
+
 static PyMemberDef encoder_members[] = {
     {"markers", _Py_T_OBJECT, offsetof(PyEncoderObject, markers), Py_READONLY, "markers"},
     {"default", _Py_T_OBJECT, offsetof(PyEncoderObject, defaultfn), Py_READONLY, "default"},
@@ -69,6 +73,7 @@ static PyObject *
 ascii_escape_unicode(PyObject *pystr);
 static PyObject *
 py_encode_basestring_ascii(PyObject* Py_UNUSED(self), PyObject *pystr);
+
 static PyObject *
 scan_once_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *next_idx_ptr);
 static PyObject *
@@ -78,13 +83,14 @@ scanner_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static void
 scanner_dealloc(PyObject *self);
 static int
-scanner_clear(PyScannerObject *self);
+scanner_clear(PyObject *self);
+
 static PyObject *
 encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static void
 encoder_dealloc(PyObject *self);
 static int
-encoder_clear(PyEncoderObject *self);
+encoder_clear(PyObject *self);
 static int
 encoder_listencode_list(PyEncoderObject *s, PyUnicodeWriter *writer, PyObject *seq, Py_ssize_t indent_level, PyObject *indent_cache);
 static int
@@ -626,14 +632,15 @@ scanner_dealloc(PyObject *self)
     PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
-    scanner_clear((PyScannerObject *)self);
+    (void)scanner_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
 
 static int
-scanner_traverse(PyScannerObject *self, visitproc visit, void *arg)
+scanner_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyScannerObject *self = PyScannerObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->object_hook);
     Py_VISIT(self->object_pairs_hook);
@@ -644,8 +651,9 @@ scanner_traverse(PyScannerObject *self, visitproc visit, void *arg)
 }
 
 static int
-scanner_clear(PyScannerObject *self)
+scanner_clear(PyObject *op)
 {
+    PyScannerObject *self = PyScannerObject_CAST(op);
     Py_CLEAR(self->object_hook);
     Py_CLEAR(self->object_pairs_hook);
     Py_CLEAR(self->parse_float);
@@ -1115,7 +1123,7 @@ scan_once_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssize_
 }
 
 static PyObject *
-scanner_call(PyScannerObject *self, PyObject *args, PyObject *kwds)
+scanner_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
     /* Python callable interface to scan_once_{str,unicode} */
     PyObject *pystr;
@@ -1137,7 +1145,8 @@ scanner_call(PyScannerObject *self, PyObject *args, PyObject *kwds)
     if (memo == NULL) {
         return NULL;
     }
-    rval = scan_once_unicode(self, memo, pystr, idx, &next_idx);
+    rval = scan_once_unicode(PyScannerObject_CAST(self),
+                             memo, pystr, idx, &next_idx);
     Py_DECREF(memo);
     if (rval == NULL)
         return NULL;
@@ -1252,8 +1261,7 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (PyCFunction_Check(s->encoder)) {
         PyCFunction f = PyCFunction_GetFunction(s->encoder);
-        if (f == (PyCFunction)py_encode_basestring_ascii ||
-                f == (PyCFunction)py_encode_basestring) {
+        if (f == py_encode_basestring_ascii || f == py_encode_basestring) {
             s->fast_encode = f;
         }
     }
@@ -1348,12 +1356,13 @@ write_newline_indent(PyUnicodeWriter *writer,
 
 
 static PyObject *
-encoder_call(PyEncoderObject *self, PyObject *args, PyObject *kwds)
+encoder_call(PyObject *op, PyObject *args, PyObject *kwds)
 {
     /* Python callable interface to encode_listencode_obj */
     static char *kwlist[] = {"obj", "_current_indent_level", NULL};
     PyObject *obj;
     Py_ssize_t indent_level;
+    PyEncoderObject *self = PyEncoderObject_CAST(op);
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "On:_iterencode", kwlist,
                                      &obj, &indent_level))
@@ -1825,14 +1834,15 @@ encoder_dealloc(PyObject *self)
     PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
-    encoder_clear((PyEncoderObject *)self);
+    (void)encoder_clear(self);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
 
 static int
-encoder_traverse(PyEncoderObject *self, visitproc visit, void *arg)
+encoder_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyEncoderObject *self = PyEncoderObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->markers);
     Py_VISIT(self->defaultfn);
@@ -1844,8 +1854,9 @@ encoder_traverse(PyEncoderObject *self, visitproc visit, void *arg)
 }
 
 static int
-encoder_clear(PyEncoderObject *self)
+encoder_clear(PyObject *op)
 {
+    PyEncoderObject *self = PyEncoderObject_CAST(op);
     /* Deallocate Encoder */
     Py_CLEAR(self->markers);
     Py_CLEAR(self->defaultfn);
@@ -1879,15 +1890,15 @@ static PyType_Spec PyEncoderType_spec = {
 
 static PyMethodDef speedups_methods[] = {
     {"encode_basestring_ascii",
-        (PyCFunction)py_encode_basestring_ascii,
+        py_encode_basestring_ascii,
         METH_O,
         pydoc_encode_basestring_ascii},
     {"encode_basestring",
-        (PyCFunction)py_encode_basestring,
+        py_encode_basestring,
         METH_O,
         pydoc_encode_basestring},
     {"scanstring",
-        (PyCFunction)py_scanstring,
+        py_scanstring,
         METH_VARARGS,
         pydoc_scanstring},
     {NULL, NULL, 0, NULL}

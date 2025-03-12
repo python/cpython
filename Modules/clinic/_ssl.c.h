@@ -1520,7 +1520,7 @@ static PyObject *
 _ssl__SSLContext_load_dh_params_impl(PySSLContext *self, PyObject *filepath);
 
 static PyObject *
-_ssl__SSLContext_load_dh_params(PySSLContext *self, PyObject *filepath)
+_ssl__SSLContext_load_dh_params(PyObject *self, PyObject *filepath)
 {
     PyObject *return_value = NULL;
 
@@ -1784,7 +1784,7 @@ static PyObject *
 _ssl__SSLContext_set_ecdh_curve_impl(PySSLContext *self, PyObject *name);
 
 static PyObject *
-_ssl__SSLContext_set_ecdh_curve(PySSLContext *self, PyObject *name)
+_ssl__SSLContext_set_ecdh_curve(PyObject *self, PyObject *name)
 {
     PyObject *return_value = NULL;
 
@@ -2878,4 +2878,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=bededfb2b927bd41 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c402c53dc30a14fa input=a9049054013a1b77]*/

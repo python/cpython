@@ -1185,6 +1185,29 @@ except ImportError as e:
             for line in lines:
                 self.assertRegex(line, rb"cannot import name 'Fraction' from 'fractions' \(.*\)")
 
+    @unittest.skipIf(sys.platform == 'win32', 'Cannot delete cwd on Windows')
+    @unittest.skipIf(sys.platform == 'sunos5', 'Cannot delete cwd on Solaris/Illumos')
+    def test_script_shadowing_stdlib_cwd_failure(self):
+        with os_helper.temp_dir() as tmp:
+            subtmp = os.path.join(tmp, "subtmp")
+            os.mkdir(subtmp)
+            with open(os.path.join(subtmp, "main.py"), "w", encoding='utf-8') as f:
+                f.write(f"""
+import sys
+assert sys.path[0] == ''
+
+import os
+import shutil
+shutil.rmtree(os.getcwd())
+
+os.does_not_exist
+""")
+            # Use -c to ensure sys.path[0] is ""
+            popen = script_helper.spawn_python("-c", "import main", cwd=subtmp)
+            stdout, stderr = popen.communicate()
+            expected_error = rb"AttributeError: module 'os' has no attribute 'does_not_exist'"
+            self.assertRegex(stdout, expected_error)
+
     def test_script_shadowing_stdlib_sys_path_modification(self):
         script_errors = [
             (
@@ -2386,8 +2409,10 @@ class SubinterpImportTests(unittest.TestCase):
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_multi_init_extension_compat(self):
+        # Module with Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
         module = '_testmultiphase'
         require_extension(module)
+
         if not Py_GIL_DISABLED:
             with self.subTest(f'{module}: not strict'):
                 self.check_compatible_here(module, strict=False)
@@ -2398,6 +2423,8 @@ class SubinterpImportTests(unittest.TestCase):
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_multi_init_extension_non_isolated_compat(self):
+        # Module with Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED
+        # and Py_MOD_GIL_NOT_USED
         modname = '_test_non_isolated'
         filename = _testmultiphase.__file__
         module = import_extension_from_file(modname, filename)
@@ -2413,20 +2440,31 @@ class SubinterpImportTests(unittest.TestCase):
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_multi_init_extension_per_interpreter_gil_compat(self):
-        modname = '_test_shared_gil_only'
-        filename = _testmultiphase.__file__
-        module = import_extension_from_file(modname, filename)
 
-        require_extension(module)
-        with self.subTest(f'{modname}: isolated, strict'):
-            self.check_incompatible_here(modname, filename, isolated=True)
-        with self.subTest(f'{modname}: not isolated, strict'):
-            self.check_compatible_here(modname, filename,
-                                       strict=True, isolated=False)
-        if not Py_GIL_DISABLED:
-            with self.subTest(f'{modname}: not isolated, not strict'):
-                self.check_compatible_here(modname, filename,
-                                           strict=False, isolated=False)
+        # _test_shared_gil_only:
+        #   Explicit Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED (default)
+        #   and Py_MOD_GIL_NOT_USED
+        # _test_no_multiple_interpreter_slot:
+        #   No Py_mod_multiple_interpreters slot
+        #   and Py_MOD_GIL_NOT_USED
+        for modname in ('_test_shared_gil_only',
+                        '_test_no_multiple_interpreter_slot'):
+            with self.subTest(modname=modname):
+
+                filename = _testmultiphase.__file__
+                module = import_extension_from_file(modname, filename)
+
+                require_extension(module)
+                with self.subTest(f'{modname}: isolated, strict'):
+                    self.check_incompatible_here(modname, filename,
+                                                 isolated=True)
+                with self.subTest(f'{modname}: not isolated, strict'):
+                    self.check_compatible_here(modname, filename,
+                                               strict=True, isolated=False)
+                if not Py_GIL_DISABLED:
+                    with self.subTest(f'{modname}: not isolated, not strict'):
+                        self.check_compatible_here(
+                            modname, filename, strict=False, isolated=False)
 
     @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     def test_python_compat(self):

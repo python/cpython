@@ -1167,13 +1167,21 @@ compile_template(_sremodulestate *module_state,
                  PatternObject *pattern, PyObject *template)
 {
     /* delegate to Python code */
-    PyObject *func = module_state->compile_template;
+    PyObject *func = FT_ATOMIC_LOAD_PTR(module_state->compile_template);
     if (func == NULL) {
         func = PyImport_ImportModuleAttrString("re", "_compile_template");
         if (func == NULL) {
             return NULL;
         }
+#ifdef Py_GIL_DISABLED
+        PyObject *other_func = NULL;
+        if (!_Py_atomic_compare_exchange_ptr(&module_state->compile_template, &other_func, func))  {
+            Py_DECREF(func);
+            func = other_func;
+        }
+#else
         Py_XSETREF(module_state->compile_template, func);
+#endif
     }
 
     PyObject *args[] = {(PyObject *)pattern, template};
@@ -1474,8 +1482,8 @@ _sre.SRE_Pattern.__deepcopy__
 [clinic start generated code]*/
 
 static PyObject *
-_sre_SRE_Pattern___deepcopy__(PatternObject *self, PyObject *memo)
-/*[clinic end generated code: output=2ad25679c1f1204a input=a465b1602f997bed]*/
+_sre_SRE_Pattern___deepcopy___impl(PatternObject *self, PyObject *memo)
+/*[clinic end generated code: output=75efe69bd12c5d7d input=a465b1602f997bed]*/
 {
     return Py_NewRef(self);
 }
@@ -2651,8 +2659,8 @@ _sre.SRE_Match.__deepcopy__
 [clinic start generated code]*/
 
 static PyObject *
-_sre_SRE_Match___deepcopy__(MatchObject *self, PyObject *memo)
-/*[clinic end generated code: output=ba7cb46d655e4ee2 input=779d12a31c2c325e]*/
+_sre_SRE_Match___deepcopy___impl(MatchObject *self, PyObject *memo)
+/*[clinic end generated code: output=2b657578eb03f4a3 input=779d12a31c2c325e]*/
 {
     return Py_NewRef(self);
 }

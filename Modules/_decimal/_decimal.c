@@ -147,6 +147,24 @@ find_state_left_or_right(PyObject *left, PyObject *right)
     return (decimal_state *)state;
 }
 
+static inline decimal_state *
+find_state_ternary(PyObject *left, PyObject *right, PyObject *modulus)
+{
+    PyTypeObject *base;
+    if (PyType_GetBaseByToken(Py_TYPE(left), &dec_spec, &base) != 1) {
+        assert(!PyErr_Occurred());
+        if (PyType_GetBaseByToken(Py_TYPE(right), &dec_spec, &base) != 1) {
+            assert(!PyErr_Occurred());
+            PyType_GetBaseByToken(Py_TYPE(modulus), &dec_spec, &base);
+        }
+    }
+    assert(base != NULL);
+    void *state = _PyType_GetModuleState(base);
+    assert(state != NULL);
+    Py_DECREF(base);
+    return (decimal_state *)state;
+}
+
 
 #if !defined(MPD_VERSION_HEX) || MPD_VERSION_HEX < 0x02050000
   #error "libmpdec version >= 2.5.0 required"
@@ -4407,7 +4425,7 @@ nm_mpd_qpow(PyObject *base, PyObject *exp, PyObject *mod)
     PyObject *context;
     uint32_t status = 0;
 
-    decimal_state *state = find_state_left_or_right(base, exp);
+    decimal_state *state = find_state_ternary(base, exp, mod);
     CURRENT_CONTEXT(state, context);
     CONVERT_BINOP(&a, &b, base, exp, context);
 
