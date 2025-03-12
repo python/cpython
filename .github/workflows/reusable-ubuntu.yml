@@ -25,10 +25,10 @@ env:
   FORCE_COLOR: 1
 
 jobs:
-  build_ubuntu_reusable:
+  build-ubuntu-reusable:
     name: build and test (${{ inputs.os }})
-    timeout-minutes: 60
     runs-on: ${{ inputs.os }}
+    timeout-minutes: 60
     env:
       OPENSSL_VER: 3.0.15
       PYTHONSTRICTEXTENSIONBUILD: 1
@@ -78,12 +78,12 @@ jobs:
     - name: Bind mount sources read-only
       run: sudo mount --bind -o ro "$GITHUB_WORKSPACE" "$CPYTHON_RO_SRCDIR"
     - name: Runner image version
-      run: echo "IMAGE_VERSION=${ImageVersion}" >> "$GITHUB_ENV"
+      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
       uses: actions/cache@v4
       with:
         path: ${{ env.CPYTHON_BUILDDIR }}/config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}
+        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ inputs.config_hash }}
     - name: Configure CPython out-of-tree
       working-directory: ${{ env.CPYTHON_BUILDDIR }}
       # `test_unpickle_module_race` writes to the source directory, which is

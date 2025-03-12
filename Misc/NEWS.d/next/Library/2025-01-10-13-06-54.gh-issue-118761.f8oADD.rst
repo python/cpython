@@ -1,5 +1,0 @@
-Improve the performance of :func:`base64.b16decode` by up to ten times
-by more efficiently checking the byte-string for hexadecimal digits.
-Reduce the import time of :mod:`base64` by up to six times,
-by no longer importing :mod:`re`.
-Patch by Bénédikt Tran, Chris Markiewicz, and Adam Turner.

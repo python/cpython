@@ -19621,6 +19621,12 @@ then :
   printf "%s\n" "#define HAVE_PTHREAD_SETNAME_NP 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "pthread_getattr_np" "ac_cv_func_pthread_getattr_np"
+if test "x$ac_cv_func_pthread_getattr_np" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTHREAD_GETATTR_NP 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "ptsname" "ac_cv_func_ptsname"
 if test "x$ac_cv_func_ptsname" = xyes
 then :
@@ -29283,18 +29289,6 @@ printf "%s\n" "no value specified" >&6; } ;;
 esac
 fi
 
-
-# Do not enable tail-calling interpreter if tier 2 is enabled.
-if ${tier2_flags:+false} :
-then :
-
-    case "$ac_cv_tail_call" in yes*)
-
-printf "%s\n" "#define Py_TAIL_CALL_INTERP 1" >>confdefs.h
-
-    esac
-
-fi
 
 
 case $ac_sys_system in

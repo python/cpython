@@ -1,2 +1,0 @@
-Add :c:func:`PyUnstable_IsImmortal` for determining whether an object is
-:term:`immortal`.

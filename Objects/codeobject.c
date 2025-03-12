@@ -1,5 +1,3 @@
-#include <stdbool.h>
-
 #include "Python.h"
 #include "opcode.h"
 
@@ -19,6 +17,8 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_uniqueid.h"      // _PyObject_AssignUniqueId()
 #include "clinic/codeobject.c.h"
+
+#include <stdbool.h>
 
 #define INITIAL_SPECIALIZED_CODE_SIZE 16
 
@@ -135,6 +135,44 @@ should_intern_string(PyObject *o)
 
 #ifdef Py_GIL_DISABLED
 static PyObject *intern_one_constant(PyObject *op);
+
+// gh-130851: In the free threading build, we intern and immortalize most
+// constants, except code objects. However, users can generate code objects
+// with arbitrary co_consts. We don't want to immortalize or intern unexpected
+// constants or tuples/sets containing unexpected constants.
+static int
+should_immortalize_constant(PyObject *v)
+{
+    // Only immortalize containers if we've already immortalized all their
+    // elements.
+    if (PyTuple_CheckExact(v)) {
+        for (Py_ssize_t i = PyTuple_GET_SIZE(v); --i >= 0; ) {
+            if (!_Py_IsImmortal(PyTuple_GET_ITEM(v, i))) {
+                return 0;
+            }
+        }
+        return 1;
+    }
+    else if (PyFrozenSet_CheckExact(v)) {
+        PyObject *item;
+        Py_hash_t hash;
+        Py_ssize_t pos = 0;
+        while (_PySet_NextEntry(v, &pos, &item, &hash)) {
+            if (!_Py_IsImmortal(item)) {
+                return 0;
+            }
+        }
+        return 1;
+    }
+    else if (PySlice_Check(v)) {
+        PySliceObject *slice = (PySliceObject *)v;
+        return (_Py_IsImmortal(slice->start) &&
+                _Py_IsImmortal(slice->stop) &&
+                _Py_IsImmortal(slice->step));
+    }
+    return (PyLong_CheckExact(v) || PyFloat_CheckExact(v) ||
+            PyComplex_Check(v) || PyBytes_CheckExact(v));
+}
 #endif
 
 static int
@@ -241,8 +279,9 @@ intern_constants(PyObject *tuple, int *modified)
 
         // Intern non-string constants in the free-threaded build
         _PyThreadStateImpl *tstate = (_PyThreadStateImpl *)_PyThreadState_GET();
-        if (!_Py_IsImmortal(v) && !PyCode_Check(v) &&
-            !PyUnicode_CheckExact(v) && !tstate->suppress_co_const_immortalization)
+        if (!_Py_IsImmortal(v) && !PyUnicode_CheckExact(v) &&
+            should_immortalize_constant(v) &&
+            !tstate->suppress_co_const_immortalization)
         {
             PyObject *interned = intern_one_constant(v);
             if (interned == NULL) {
@@ -2587,6 +2626,7 @@ intern_one_constant(PyObject *op)
     _Py_hashtable_entry_t *entry = _Py_hashtable_get_entry(consts, op);
     if (entry == NULL) {
         if (_Py_hashtable_set(consts, op, op) != 0) {
+            PyErr_NoMemory();
             return NULL;
         }
 
@@ -2608,7 +2648,8 @@ intern_one_constant(PyObject *op)
 }
 
 static int
-compare_constants(const void *key1, const void *key2) {
+compare_constants(const void *key1, const void *key2)
+{
     PyObject *op1 = (PyObject *)key1;
     PyObject *op2 = (PyObject *)key2;
     if (op1 == op2) {
@@ -2668,8 +2709,8 @@ compare_constants(const void *key1, const void *key2) {
         Py_complex c2 = ((PyComplexObject *)op2)->cval;
         return memcmp(&c1, &c2, sizeof(Py_complex)) == 0;
     }
-    _Py_FatalErrorFormat("unexpected type in compare_constants: %s",
-                         Py_TYPE(op1)->tp_name);
+    // gh-130851: Treat instances of unexpected types as distinct if they are
+    // not the same object.
     return 0;
 }
 
@@ -2689,9 +2730,13 @@ hash_const(const void *key)
     }
     Py_hash_t h = PyObject_Hash(op);
     if (h == -1) {
-        // This should never happen: all the constants we support have
-        // infallible hash functions.
-        Py_FatalError("code: hash failed");
+        // gh-130851: Other than slice objects, every constant that the
+        // bytecode compiler generates is hashable. However, users can
+        // provide their own constants, when constructing code objects via
+        // types.CodeType(). If the user-provided constant is unhashable, we
+        // use the memory address of the object as a fallback hash value.
+        PyErr_Clear();
+        return (Py_uhash_t)(uintptr_t)key;
     }
     return (Py_uhash_t)h;
 }

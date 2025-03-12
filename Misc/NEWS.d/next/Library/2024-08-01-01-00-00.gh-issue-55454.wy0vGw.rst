@@ -1,1 +1,0 @@
-Add IMAP4 ``IDLE`` support to the :mod:`imaplib` module.  Patch by Forest.
