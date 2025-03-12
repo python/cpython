@@ -336,10 +336,6 @@ class ReadablePathTest(JoinablePathTest):
 class WritablePathTest(JoinablePathTest):
     cls = DummyWritablePath
 
-    def test_is_writable(self):
-        p = self.cls(self.base)
-        self.assertIsInstance(p, _WritablePath)
-
 
 class DummyRWPath(DummyWritablePath, DummyReadablePath):
     __slots__ = ()
