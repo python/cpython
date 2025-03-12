@@ -8,9 +8,8 @@ class TestReversed(unittest.TestCase):
 
     @threading_helper.reap_threads
     def test_reversed(self):
-        # Test reading out the iterator with multiple threads cannot corrupt
-        # the reversed iterator state.
-        # The reversed iterator is not guaranteed to be thread safe
+        # Iterating over the iterator with multiple threads should not 
+        # emit TSAN warnings
         number_of_iterations = 10
         number_of_threads = 10
         size = 1_000
