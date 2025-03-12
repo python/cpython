@@ -652,6 +652,9 @@ class TestRetrievingSourceCode(GetSourceBase):
                          'measured in kilowatts')
         self.assertEqual(inspect.getdoc(SlotUser.distance),
                          'measured in kilometers')
+        print('new test', file=sys.stderr)
+        self.assertEqual(inspect.getdoc(mod.MalodorousPervert.foo),
+                         inspect.getdoc(mod.StupidGit.foo))
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
