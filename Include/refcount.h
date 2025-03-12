@@ -287,7 +287,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
     }
 #elif SIZEOF_VOID_P > 4
     PY_UINT32_T cur_refcnt = op->ob_refcnt;
-    if (((int32_t)cur_refcnt) < 0) {
+    if (cur_refcnt >= _Py_IMMORTAL_INITIAL_REFCNT) < 0) {
         // the object is immortal
         _Py_INCREF_IMMORTAL_STAT_INC();
         return;
