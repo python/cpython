@@ -135,31 +135,14 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
         _Py_INCREF_IMMORTAL_STAT_INC();
         return;
     }
+    Py_ssize_t refcnt = _Py_REFCNT(op);
+    Py_ssize_t new_refcnt = refcnt + n;
+    if (new_refcnt >= (Py_ssize_t)_Py_IMMORTAL_MINIMUM_REFCNT) {
+        new_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
+    }
+    Py_SET_REFCNT(op, new_refcnt);
 #ifdef Py_REF_DEBUG
-    _Py_AddRefTotal(_PyThreadState_GET(), n);
-#endif
-#if !defined(Py_GIL_DISABLED)
-#if SIZEOF_VOID_P > 4
-    op->ob_refcnt += (PY_UINT32_T)n;
-#else
-    op->ob_refcnt += n;
-#endif
-#else
-    if (_Py_IsOwnedByCurrentThread(op)) {
-        uint32_t local = op->ob_ref_local;
-        Py_ssize_t refcnt = (Py_ssize_t)local + n;
-#  if PY_SSIZE_T_MAX > UINT32_MAX
-        if (refcnt > (Py_ssize_t)UINT32_MAX) {
-            // Make the object immortal if the 32-bit local reference count
-            // would overflow.
-            refcnt = _Py_IMMORTAL_REFCNT_LOCAL;
-        }
-#  endif
-        _Py_atomic_store_uint32_relaxed(&op->ob_ref_local, (uint32_t)refcnt);
-    }
-    else {
-        _Py_atomic_add_ssize(&op->ob_ref_shared, (n << _Py_REF_SHARED_SHIFT));
-    }
+    _Py_AddRefTotal(_PyThreadState_GET(), new_refcnt - refcnt);
 #endif
     // Although the ref count was increased by `n` (which may be greater than 1)
     // it is only a single increment (i.e. addition) operation, so only 1 refcnt
