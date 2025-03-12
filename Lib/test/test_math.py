@@ -2806,6 +2806,13 @@ class FMATests(unittest.TestCase):
         self.assertIsPositiveZero(math.fma(-tiny, -tiny, -0.0))
         self.assertIsNegativeZero(math.fma(-tiny, tiny, -0.0))
 
+    # gh-73468: On some platforms, libc fma() doesn't implement IEE 754-2008
+    # properly: it doesn't use the right sign when the result is zero.
+    @unittest.skipIf(
+        sys.platform.startswith(("freebsd", "netbsd", "emscripten"))
+        or (sys.platform == "android" and platform.machine() == "x86_64"),
+        f"this platform doesn't implement IEE 754-2008 properly")
+    def test_fma_zero_result2(self):
         # Corner case where rounding the multiplication would
         # give the wrong result.
         x = float.fromhex('0x1p-500')
