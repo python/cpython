@@ -2353,11 +2353,9 @@ math_fma_impl(PyObject *module, double x, double y, double z)
         // Emscripten, musl C library), libc fma() doesn't implement
         // IEEE 754-2008 properly: it doesn't use the right sign when the
         // result is zero.
-        if (x && y) {
-            r = x * y;
-        }
-        else {
-            r = copysign(1, z) == 1 ? x*y + z : x*y;
+        r = x * y;
+        if ((!x || !y) && copysign(1, z) == 1) {
+            r += z;
         }
     }
 
