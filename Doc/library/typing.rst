@@ -1379,7 +1379,7 @@ These can be used as types in annotations. They all support subscription using
       a1 = Annotated[int, ValueRange(3, 10), ctype("char")]
       a2 = Annotated[int, ctype("char"), ValueRange(3, 10)]
 
-      assert a1 != a2 # Order matters
+      assert a1 != a2  # Order matters
 
    It is up to the tool consuming the annotations to decide whether the
    client is allowed to add multiple metadata elements to one annotation and how to
@@ -1447,6 +1447,7 @@ These can be used as types in annotations. They all support subscription using
 
      .. doctest::
 
+        >>> from typing import Annotated, get_origin
         >>> Password = Annotated[str, "secret"]
         >>> Password.__origin__
         <class 'str'>
