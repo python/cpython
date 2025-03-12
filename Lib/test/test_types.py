@@ -1,8 +1,7 @@
 # Python test set -- part 6, built-in types
 
 from test.support import (
-    run_with_locale, is_apple_mobile, cpython_only, no_rerun,
-    iter_builtin_types, iter_slot_wrappers,
+    run_with_locale, cpython_only, no_rerun,
     MISSING_C_DOCSTRINGS,
 )
 import collections.abc

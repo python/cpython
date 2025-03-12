@@ -489,7 +489,6 @@ class TestMiscellaneous(unittest.TestCase):
         # valid. Furthermore LC_CTYPE=UTF is used by the UTF-8 locale coercing
         # during interpreter startup (on macOS).
         import _locale
-        import os
 
         self.assertEqual(locale._parse_localename('UTF-8'), (None, 'UTF-8'))
 
