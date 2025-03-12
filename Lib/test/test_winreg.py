@@ -233,8 +233,14 @@ class LocalWinregTests(BaseWinregTests):
                                                 options=REG_OPTION_VOLATILE)
         self._write_test_data(HKEY_CURRENT_USER, CreateKey=ckeo)
 
-        okeo = lambda key, sub_key: OpenKeyEx(key, sub_key, REG_OPTION_VOLATILE, KEY_READ)
+        okeo = lambda key, sub_key: OpenKeyEx(key, sub_key, REG_OPTION_VOLATILE,
+                                              KEY_READ)
         self._read_test_data(HKEY_CURRENT_USER, OpenKey=okeo)
+
+        with self.assertWarns(DeprecationWarning):
+            okeo = lambda key, sub_key: OpenKeyEx(key, sub_key,
+                                                  reserved=REG_OPTION_VOLATILE)
+            self._read_test_data(HKEY_CURRENT_USER, OpenKey=okeo)
 
         self._delete_test_data(HKEY_CURRENT_USER)
 
