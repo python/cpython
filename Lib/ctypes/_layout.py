@@ -6,7 +6,6 @@ may change at any time.
 
 import sys
 
-
 from _ctypes import CField, buffer_info
 import ctypes
 
