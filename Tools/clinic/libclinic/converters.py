@@ -1235,7 +1235,7 @@ class self_converter(CConverter):
             type_ptr = f'PyTypeObject *base_tp = {type_object};'
             template_dict['base_type_ptr'] = type_ptr
 
-    def use_pyobject_self(self, func):
+    def use_pyobject_self(self, func: Function) -> bool:
         conv_type = self.type
         if conv_type is None:
             conv_type, _ = correct_name_for_self(func)
