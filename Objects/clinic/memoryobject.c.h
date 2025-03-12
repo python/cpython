@@ -76,7 +76,7 @@ static PyObject *
 memoryview__from_flags_impl(PyTypeObject *type, PyObject *object, int flags);
 
 static PyObject *
-memoryview__from_flags(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+memoryview__from_flags(PyObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -118,7 +118,7 @@ memoryview__from_flags(PyTypeObject *type, PyObject *const *args, Py_ssize_t nar
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = memoryview__from_flags_impl(type, object, flags);
+    return_value = memoryview__from_flags_impl((PyTypeObject *)type, object, flags);
 
 exit:
     return return_value;
@@ -428,6 +428,19 @@ PyDoc_STRVAR(memoryview_count__doc__,
 #define MEMORYVIEW_COUNT_METHODDEF    \
     {"count", (PyCFunction)memoryview_count, METH_O, memoryview_count__doc__},
 
+static PyObject *
+memoryview_count_impl(PyMemoryViewObject *self, PyObject *value);
+
+static PyObject *
+memoryview_count(PyObject *self, PyObject *value)
+{
+    PyObject *return_value = NULL;
+
+    return_value = memoryview_count_impl((PyMemoryViewObject *)self, value);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(memoryview_index__doc__,
 "index($self, value, start=0, stop=sys.maxsize, /)\n"
 "--\n"
@@ -473,4 +486,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2ef6c061d9c4e3dc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ae3414e9311c02fb input=a9049054013a1b77]*/

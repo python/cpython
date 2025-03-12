@@ -749,8 +749,8 @@ typevar.__typing_subst__ as typevar_typing_subst
 [clinic start generated code]*/
 
 static PyObject *
-typevar_typing_subst(typevarobject *self, PyObject *arg)
-/*[clinic end generated code: output=0773735e8ce18968 input=9e87b57f0fc59b92]*/
+typevar_typing_subst_impl(typevarobject *self, PyObject *arg)
+/*[clinic end generated code: output=c76ced134ed8f4e1 input=9e87b57f0fc59b92]*/
 {
     PyObject *args[2] = {(PyObject *)self, arg};
     PyObject *result = call_typing_func_object("_typevar_subst", args, 2);
@@ -1358,8 +1358,8 @@ paramspec.__typing_subst__ as paramspec_typing_subst
 [clinic start generated code]*/
 
 static PyObject *
-paramspec_typing_subst(paramspecobject *self, PyObject *arg)
-/*[clinic end generated code: output=4c5b4aaada1c5814 input=2d5b5e3d4a717189]*/
+paramspec_typing_subst_impl(paramspecobject *self, PyObject *arg)
+/*[clinic end generated code: output=803e1ade3f13b57d input=2d5b5e3d4a717189]*/
 {
     PyObject *args[2] = {(PyObject *)self, arg};
     PyObject *result = call_typing_func_object("_paramspec_subst", args, 2);
@@ -1612,8 +1612,8 @@ typevartuple.__typing_subst__ as typevartuple_typing_subst
 [clinic start generated code]*/
 
 static PyObject *
-typevartuple_typing_subst(typevartupleobject *self, PyObject *arg)
-/*[clinic end generated code: output=237054c6d7484eea input=3fcf2dfd9eee7945]*/
+typevartuple_typing_subst_impl(typevartupleobject *self, PyObject *arg)
+/*[clinic end generated code: output=814316519441cd76 input=3fcf2dfd9eee7945]*/
 {
     PyErr_SetString(PyExc_TypeError, "Substitution of bare TypeVarTuple is not supported");
     return NULL;

@@ -142,6 +142,19 @@ PyDoc_STRVAR(_sha3_sha3_224_update__doc__,
 #define _SHA3_SHA3_224_UPDATE_METHODDEF    \
     {"update", (PyCFunction)_sha3_sha3_224_update, METH_O, _sha3_sha3_224_update__doc__},
 
+static PyObject *
+_sha3_sha3_224_update_impl(SHA3object *self, PyObject *data);
+
+static PyObject *
+_sha3_sha3_224_update(PyObject *self, PyObject *data)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _sha3_sha3_224_update_impl((SHA3object *)self, data);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_sha3_shake_128_digest__doc__,
 "digest($self, length, /)\n"
 "--\n"
@@ -195,4 +208,4 @@ _sha3_shake_128_hexdigest(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=21da06d9570969d8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=437023d9eac08551 input=a9049054013a1b77]*/
