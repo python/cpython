@@ -22,7 +22,6 @@ import errno
 import unittest
 from unittest import mock
 import weakref
-import warnings
 if sys.platform not in ('win32', 'vxworks'):
     import tty
 
@@ -36,7 +35,6 @@ from test import support
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import ALWAYS_EQ, LARGEST, SMALLEST
-from test.support import warnings_helper
 
 def tearDownModule():
     asyncio._set_event_loop_policy(None)

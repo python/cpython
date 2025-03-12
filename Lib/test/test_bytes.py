@@ -11,7 +11,6 @@ import sys
 import copy
 import functools
 import pickle
-import sysconfig
 import tempfile
 import textwrap
 import threading

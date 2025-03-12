@@ -10,11 +10,9 @@ import signal
 import socket
 import stat
 import sys
-import threading
 import time
 import unittest
 from unittest import mock
-import warnings
 
 from test import support
 from test.support import os_helper
@@ -27,7 +25,6 @@ if sys.platform == 'win32':
 
 
 import asyncio
-from asyncio import log
 from asyncio import unix_events
 from test.test_asyncio import utils as test_utils
 
