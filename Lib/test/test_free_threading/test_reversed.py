@@ -8,7 +8,7 @@ class TestReversed(unittest.TestCase):
 
     @threading_helper.reap_threads
     def test_reversed(self):
-        # Iterating over the iterator with multiple threads should not 
+        # Iterating over the iterator with multiple threads should not
         # emit TSAN warnings
         number_of_iterations = 10
         number_of_threads = 10
@@ -29,9 +29,10 @@ class TestReversed(unittest.TestCase):
         for _ in range(number_of_iterations):
             r = reversed(x)
             worker_threads = []
-            for ii in range(number_of_threads):
+            for _ in range(number_of_threads):
                 worker_threads.append(Thread(target=work, args=[r]))
-            threading_helper.start_threads(worker_threads)
+            with threading_helper.start_threads(worker_threads):
+                pass
             barrier.reset()
 
 if __name__ == "__main__":
