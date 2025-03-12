@@ -2527,6 +2527,27 @@ sys__is_gil_enabled_impl(PyObject *module)
 #endif
 }
 
+/*[clinic input]
+sys._get_world_stops
+
+Return the number of times the "stop-the-world" condition was true.
+[clinic start generated code]*/
+
+static PyObject *
+sys__get_world_stops_impl(PyObject *module)
+/*[clinic end generated code: output=7886d32b71a94e72 input=44a9bde7e07b30e3]*/
+{
+    Py_ssize_t stops;
+#ifdef Py_GIL_DISABLED
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    stops = interp->stoptheworld.world_stops;
+#else
+    stops = 0;
+#endif
+    return PyLong_FromLong(stops);
+}
+
+
 
 static PerfMapState perf_map_state;
 
@@ -2703,6 +2724,7 @@ static PyMethodDef sys_methods[] = {
 #endif
     SYS__GET_CPU_COUNT_CONFIG_METHODDEF
     SYS__IS_GIL_ENABLED_METHODDEF
+    SYS__GET_WORLD_STOPS_METHODDEF
     SYS__DUMP_TRACELETS_METHODDEF
     {NULL, NULL}  // sentinel
 };

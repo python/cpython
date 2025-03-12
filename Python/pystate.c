@@ -2355,6 +2355,7 @@ start_the_world(struct _stoptheworld_state *stw)
     assert(PyMutex_IsLocked(&stw->mutex));
 
     HEAD_LOCK(runtime);
+    stw->world_stops++;
     stw->requested = 0;
     stw->world_stopped = 0;
     // Switch threads back to the detached state.
@@ -2730,6 +2731,7 @@ _PyGILState_Fini(PyInterpreterState *interp)
         return;
     }
     interp->runtime->gilstate.autoInterpreterState = NULL;
+    //fprintf(stderr, "world stops %zd\n", interp->stoptheworld.world_stops);
 }
 
 

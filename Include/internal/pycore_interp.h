@@ -57,6 +57,7 @@ struct _stoptheworld_state {
     bool requested;      // Set when a pause is requested.
     bool world_stopped;  // Set when the world is stopped.
     bool is_global;      // Set when contained in PyRuntime struct.
+    Py_ssize_t world_stops; // Number of times the world was stopped.
 
     PyEvent stop_event;  // Set when thread_countdown reaches zero.
     Py_ssize_t thread_countdown;  // Number of threads that must pause.

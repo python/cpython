@@ -1711,6 +1711,24 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys__get_world_stops__doc__,
+"_get_world_stops($module, /)\n"
+"--\n"
+"\n"
+"Return the number of times the \"stop-the-world\" lock was used.");
+
+#define SYS__GET_WORLD_STOPS_METHODDEF    \
+    {"_get_world_stops", (PyCFunction)sys__get_world_stops, METH_NOARGS, sys__get_world_stops__doc__},
+
+static PyObject *
+sys__get_world_stops_impl(PyObject *module);
+
+static PyObject *
+sys__get_world_stops(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys__get_world_stops_impl(module);
+}
+
 #ifndef SYS_GETWINDOWSVERSION_METHODDEF
     #define SYS_GETWINDOWSVERSION_METHODDEF
 #endif /* !defined(SYS_GETWINDOWSVERSION_METHODDEF) */
@@ -1754,4 +1772,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=1e5f608092c12636 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=35e1d29a46e54085 input=a9049054013a1b77]*/

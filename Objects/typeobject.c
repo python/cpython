@@ -3490,6 +3490,9 @@ static int update_slot(PyTypeObject *, PyObject *);
 static void fixup_slot_dispatchers(PyTypeObject *);
 static int type_new_set_names(PyTypeObject *);
 static int type_new_init_subclass(PyTypeObject *, PyObject *);
+#ifdef Py_GIL_DISABLED
+static bool has_slotdef(PyObject *);
+#endif
 
 /*
  * Helpers for  __dict__ descriptor.  We don't want to expose the dicts
@@ -5943,6 +5946,23 @@ _Py_type_getattro(PyObject *tp, PyObject *name)
     return _Py_type_getattro_impl(type, name, NULL);
 }
 
+#ifdef Py_GIL_DISABLED
+static int
+update_slot_world_stopped(PyTypeObject *type, PyObject *name)
+{
+    // Modification of type slots is protected by the global type
+    // lock. However, type slots are read non-atomically without holding the
+    // type lock.  So, we need to stop-the-world while modifying slots, in
+    // order to avoid data races.  This is unfortunately quite expensive.
+    int ret;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    ret = update_slot(type, name);
+    _PyEval_StartTheWorld(interp);
+    return ret;
+}
+#endif
+
 static int
 type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
                  PyObject *value, PyObject **old_value)
@@ -5972,9 +5992,15 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
         return -1;
     }
 
+#if Py_GIL_DISABLED
+    if (is_dunder_name(name) && has_slotdef(name)) {
+        return update_slot_world_stopped(type, name);
+    }
+#else
     if (is_dunder_name(name)) {
         return update_slot(type, name);
     }
+#endif
 
     return 0;
 }
@@ -11002,6 +11028,21 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
 #undef ptrs
 }
 
+#ifdef Py_GIL_DISABLED
+// Return true if "name" corresponds to at least one slot definition.  This is
+// used to avoid calling update_slot() if is_dunder_name() is true but it's
+// not actually a slot.
+static bool
+has_slotdef(PyObject *name)
+{
+    for (pytype_slotdef *p = slotdefs; p->name_strobj; p++) {
+        if (p->name_strobj == name) {
+            return true;
+        }
+    }
+    return false;
+}
+#endif
 
 /* Common code for update_slots_callback() and fixup_slot_dispatchers().
  *
@@ -11241,12 +11282,20 @@ fixup_slot_dispatchers(PyTypeObject *type)
     END_TYPE_LOCK();
 }
 
+// Called when __bases__ is re-assigned.
 static void
 update_all_slots(PyTypeObject* type)
 {
     pytype_slotdef *p;
 
     ASSERT_TYPE_LOCK_HELD();
+
+    // Similar to update_slot_world_stopped(), this is required to
+    // avoid races.  We do it once here rather than once per-slot.
+#ifdef Py_GIL_DISABLED
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+#endif
 
     /* Clear the VALID_VERSION flag of 'type' and all its subclasses. */
     type_modified_unlocked(type);
@@ -11255,6 +11304,10 @@ update_all_slots(PyTypeObject* type)
         /* update_slot returns int but can't actually fail */
         update_slot(type, p->name_strobj);
     }
+
+#ifdef Py_GIL_DISABLED
+    _PyEval_StartTheWorld(interp);
+#endif
 }
 
 
