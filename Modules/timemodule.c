@@ -398,9 +398,8 @@ time_sleep(PyObject *self, PyObject *timeout_obj)
     }
 
     PyTime_t timeout;
-    if (_PyTime_FromSecondsObject(&timeout, timeout_obj, _PyTime_ROUND_TIMEOUT)) {
+    if (_PyTime_FromSecondsObject(&timeout, timeout_obj, _PyTime_ROUND_TIMEOUT))
         return NULL;
-    }
     if (timeout < 0) {
         PyErr_SetString(PyExc_ValueError,
                         "sleep length must be non-negative");
