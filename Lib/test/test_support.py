@@ -744,6 +744,11 @@ class TestSupport(unittest.TestCase):
             self.assertEqual(support.get_signal_name(exitcode), expected,
                              exitcode)
 
+    def test_compiler_flags(self):
+        self.assertIsInstance(support.check_cflags_pgo(), bool)
+        self.assertIsInstance(support.check_ldflags_lto(), bool)
+        self.assertIsInstance(support.check_bolt_optimized(), bool)
+
     # XXX -follows a list of untested API
     # make_legacy_pyc
     # is_resource_enabled

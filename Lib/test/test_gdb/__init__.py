@@ -24,6 +24,9 @@ if not sysconfig.is_python_build():
 if support.check_cflags_pgo():
     raise unittest.SkipTest("test_gdb is not reliable on PGO builds")
 
+if support.check_ldflags_lto():
+    raise unittest.SkipTest("test_gdb is not reliable on LTO builds")
+
 if support.check_bolt_optimized():
     raise unittest.SkipTest("test_gdb is not reliable on BOLT optimized builds")
 

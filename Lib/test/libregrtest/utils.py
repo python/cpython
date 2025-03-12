@@ -386,10 +386,11 @@ def get_build_info():
 
     # --with-lto
     optimizations = []
-    if '-flto=thin' in ldflags_nodist:
-        optimizations.append('ThinLTO')
-    elif '-flto' in ldflags_nodist:
-        optimizations.append('LTO')
+    if support.check_ldflags_lto():
+        if '-flto=thin' in ldflags_nodist:
+            optimizations.append('ThinLTO')
+        else:
+            optimizations.append('LTO')
 
     if support.check_cflags_pgo():
         # PGO (--enable-optimizations)

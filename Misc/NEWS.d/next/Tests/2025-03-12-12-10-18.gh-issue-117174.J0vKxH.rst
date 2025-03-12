@@ -1,0 +1,2 @@
+Skip test_gdb if Python is built with Link Time Optimization (LTO). Patch by
+Victor Stinner.

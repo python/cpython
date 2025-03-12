@@ -852,7 +852,7 @@ def python_is_optimized():
 def check_cflags_pgo():
     # Check if Python was built with ./configure --enable-optimizations:
     # with Profile Guided Optimization (PGO).
-    cflags_nodist = sysconfig.get_config_var('PY_CFLAGS_NODIST') or ''
+    cflags_nodist = (sysconfig.get_config_var('PY_CFLAGS_NODIST') or '')
     pgo_options = [
         # GCC
         '-fprofile-use',
@@ -867,13 +867,24 @@ def check_cflags_pgo():
     return any(option in cflags_nodist for option in pgo_options)
 
 
+def check_ldflags_lto():
+    # Check if Python was built with ./configure --with-lto:
+    # with Link Time Optimization (PGO).
+    ldflags_nodist = (sysconfig.get_config_var('PY_LDFLAGS_NODIST') or '')
+    lto_options = {
+        '-flto',
+        '-flto=thin',
+    }
+    return any(option in ldflags_nodist for option in lto_options)
+
+
 def check_bolt_optimized():
     # Always return false, if the platform is WASI,
     # because BOLT optimization does not support WASM binary.
     if is_wasi:
         return False
-    config_args = sysconfig.get_config_var('CONFIG_ARGS') or ''
-    return '--enable-bolt' in config_args
+    config_args = (sysconfig.get_config_var('CONFIG_ARGS') or '')
+    return ('--enable-bolt' in config_args)
 
 
 Py_GIL_DISABLED = bool(sysconfig.get_config_var('Py_GIL_DISABLED'))
