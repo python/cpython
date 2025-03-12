@@ -1,0 +1,2 @@
+An undocumented ``python -m random --test`` benchmark is moved into
+``random`` suite of pyperformance. Patch by Semyon Moroz.

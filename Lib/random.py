@@ -949,47 +949,6 @@ randbytes = _inst.randbytes
 
 
 ## ------------------------------------------------------
-## ----------------- test program -----------------------
-
-def _test_generator(n, func, args):
-    from statistics import stdev, fmean as mean
-    from time import perf_counter
-
-    t0 = perf_counter()
-    data = [func(*args) for i in _repeat(None, n)]
-    t1 = perf_counter()
-
-    xbar = mean(data)
-    sigma = stdev(data, xbar)
-    low = min(data)
-    high = max(data)
-
-    print(f'{t1 - t0:.3f} sec, {n} times {func.__name__}{args!r}')
-    print('avg %g, stddev %g, min %g, max %g\n' % (xbar, sigma, low, high))
-
-
-def _test(N=10_000):
-    _test_generator(N, random, ())
-    _test_generator(N, normalvariate, (0.0, 1.0))
-    _test_generator(N, lognormvariate, (0.0, 1.0))
-    _test_generator(N, vonmisesvariate, (0.0, 1.0))
-    _test_generator(N, binomialvariate, (15, 0.60))
-    _test_generator(N, binomialvariate, (100, 0.75))
-    _test_generator(N, gammavariate, (0.01, 1.0))
-    _test_generator(N, gammavariate, (0.1, 1.0))
-    _test_generator(N, gammavariate, (0.1, 2.0))
-    _test_generator(N, gammavariate, (0.5, 1.0))
-    _test_generator(N, gammavariate, (0.9, 1.0))
-    _test_generator(N, gammavariate, (1.0, 1.0))
-    _test_generator(N, gammavariate, (2.0, 1.0))
-    _test_generator(N, gammavariate, (20.0, 1.0))
-    _test_generator(N, gammavariate, (200.0, 1.0))
-    _test_generator(N, gauss, (0.0, 1.0))
-    _test_generator(N, betavariate, (3.0, 3.0))
-    _test_generator(N, triangular, (0.0, 1.0, 1.0 / 3.0))
-
-
-## ------------------------------------------------------
 ## ------------------ fork support  ---------------------
 
 if hasattr(_os, "fork"):
@@ -1014,9 +973,6 @@ def _parse_args(arg_list: list[str] | None):
     group.add_argument(
         "-f", "--float", type=float, metavar="N",
         help="print a random floating-point number between 0 and N inclusive")
-    group.add_argument(
-        "--test", type=int, const=10_000, nargs="?",
-        help=argparse.SUPPRESS)
     parser.add_argument("input", nargs="*",
                         help="""\
 if no options given, output depends on the input
@@ -1039,10 +995,6 @@ def main(arg_list: list[str] | None = None) -> int | str:
 
     if args.float is not None:
         return uniform(0, args.float)
-
-    if args.test:
-        _test(args.test)
-        return ""
 
     # No explicit argument, select based on input
     if len(args.input) == 1:
