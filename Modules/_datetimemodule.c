@@ -3274,22 +3274,17 @@ date_today(PyObject *cls, PyObject *Py_UNUSED(dummy))
                            tm.tm_mday,
                            (PyTypeObject*)cls);
     }
-    else {
-        PyObject *time;
-        PyObject *result;
-        time = time_time();
-        if (time == NULL) {
-            return NULL;
-        }
-
-        /* Note well:  today() is a class method, so this may not call
-         * date.fromtimestamp.  For example, it may call
-         * datetime.fromtimestamp.
-         */
-        result = PyObject_CallMethodOneArg(cls, &_Py_ID(fromtimestamp), time);
-        Py_DECREF(time);
-        return result;
+    PyObject *time = time_time();
+    if (time == NULL) {
+        return NULL;
     }
+
+    /* Note well: since today() is a class method, it may not call
+     * date.fromtimestamp, e.g., it may call datetime.fromtimestamp.
+     */
+    PyObject *result = PyObject_CallMethodOneArg(cls, &_Py_ID(fromtimestamp), time);
+    Py_DECREF(time);
+    return result;
 }
 
 /*[clinic input]
