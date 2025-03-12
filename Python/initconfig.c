@@ -130,9 +130,6 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
 #ifdef Py_DEBUG
     SPEC(run_presite, WSTR_OPT),
 #endif
-#ifdef __APPLE__
-    SPEC(use_system_logger, BOOL),
-#endif
 
     {NULL, 0, 0},
 };
@@ -751,9 +748,6 @@ config_check_consistency(const PyConfig *config)
     assert(config->cpu_count != 0);
     // config->use_frozen_modules is initialized later
     // by _PyConfig_InitImportConfig().
-#ifdef __APPLE__
-    assert(config->use_system_logger >= 0);
-#endif
 #ifdef Py_STATS
     assert(config->_pystats >= 0);
 #endif
@@ -856,9 +850,6 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
     config->cpu_count = -1;
-#ifdef __APPLE__
-    config->use_system_logger = 0;
-#endif
 #ifdef Py_GIL_DISABLED
     config->enable_gil = _PyConfig_GIL_DEFAULT;
 #endif
@@ -886,9 +877,6 @@ config_init_defaults(PyConfig *config)
     config->pathconfig_warnings = 1;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
-#endif
-#ifdef __APPLE__
-    config->use_system_logger = 0;
 #endif
 }
 
@@ -924,9 +912,6 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->pathconfig_warnings = 0;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
-#endif
-#ifdef __APPLE__
-    config->use_system_logger = 0;
 #endif
 }
 

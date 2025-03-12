@@ -179,9 +179,6 @@ typedef struct PyConfig {
     int use_frozen_modules;
     int safe_path;
     int int_max_str_digits;
-#ifdef __APPLE__
-    int use_system_logger;
-#endif
 
     int cpu_count;
 #ifdef Py_GIL_DISABLED
