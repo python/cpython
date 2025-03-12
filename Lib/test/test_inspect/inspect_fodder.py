@@ -2,7 +2,6 @@
 'A module docstring.'
 
 import inspect
-from functools import cached_property
 # line 5
 
 # line 7
@@ -51,11 +50,6 @@ class StupidGit:
         'The automatic gainsaying.'
         pass
 
-    @cached_property
-    def foo(self):
-        "StupidGit.foo docstring"
-        pass
-
 # line 53
 class MalodorousPervert(StupidGit):
     def abuse(self, a, b, c):
@@ -63,10 +57,6 @@ class MalodorousPervert(StupidGit):
 
     @property
     def contradiction(self):
-        pass
-
-    @cached_property
-    def foo(self):
         pass
 
 Tit = MalodorousPervert

@@ -46,6 +46,7 @@ from test import support
 
 from test.test_inspect import inspect_fodder as mod
 from test.test_inspect import inspect_fodder2 as mod2
+from test.test_inspect import inspect_fodder3 as mod3
 from test.test_inspect import inspect_stringized_annotations
 from test.test_inspect import inspect_deferred_annotations
 
@@ -653,8 +654,8 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertEqual(inspect.getdoc(SlotUser.distance),
                          'measured in kilometers')
         print('new test', file=sys.stderr)
-        self.assertEqual(inspect.getdoc(mod.MalodorousPervert.foo),
-                         inspect.getdoc(mod.StupidGit.foo))
+        self.assertEqual(inspect.getdoc(mod3.Parent.foo),
+                         inspect.getdoc(mod3.Child.foo))
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
