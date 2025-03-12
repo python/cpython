@@ -62,22 +62,29 @@ class GrammarSnippetBase(SphinxDirective):
 
         group_name = options['group']
         node_location = self.get_location()
-        production_nodes = []
-        production_node = None
+        current_lines = []
+        production_node = addnodes.production()
+        production_nodes = [production_node]
         for source_line in content:
             # Start a new production_node if there's text in the first
             # column of the line. (That means a new rule is starting.)
-            if production_node is None or not source_line[:1].isspace():
-                production_node = addnodes.production(source_line)
+            if not source_line[:1].isspace():
+                # set the raw source of the previous production
+                production_node.rawsource = '\n'.join(current_lines)
+                current_lines.clear()
+                # start a new production_node
+                production_node = addnodes.production()
                 production_nodes.append(production_node)
-            else:
-                production_node.rawsource += '\n' + source_line
+            current_lines.append(source_line)
             self.add_production_line(
                 production_node,
                 source_line,
                 group_name=group_name,
                 location=node_location,
             )
+        # set the raw source of the final production
+        production_node.rawsource = '\n'.join(current_lines)
+
         node = addnodes.productionlist(
             '',
             *production_nodes,
@@ -100,9 +107,8 @@ class GrammarSnippetBase(SphinxDirective):
         for match in self.grammar_re.finditer(source_line):
             # Handle text between matches
             if match.start() > last_pos:
-                production_node += nodes.Text(
-                    source_line[last_pos : match.start()]
-                )
+                unmatched_text = source_line[last_pos : match.start()]
+                production_node += nodes.Text(unmatched_text)
             last_pos = match.end()
 
             # Handle matches
