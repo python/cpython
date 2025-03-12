@@ -1,0 +1,2 @@
+Fix :func:`math.fma(x, y, z) <math.fma>` zero sign: fix the result sign when
+*z* is zero. Patch by Victor Stinner and Sergey B Kirpichev.
