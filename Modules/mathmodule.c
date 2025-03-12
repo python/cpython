@@ -2344,7 +2344,22 @@ static PyObject *
 math_fma_impl(PyObject *module, double x, double y, double z)
 /*[clinic end generated code: output=4fc8626dbc278d17 input=e3ad1f4a4c89626e]*/
 {
-    double r = fma(x, y, z);
+    double r;
+    if (z) {
+        r = fma(x, y, z);
+    }
+    else {
+        // gh-73468, gh-131032: On some platforms (ex: WASI, NetBSD,
+        // Emscripten, musl C library), libc fma() doesn't implement
+        // IEEE 754-2008 properly: it doesn't use the right sign when the
+        // result is zero.
+        if (x && y) {
+            r = x * y;
+        }
+        else {
+            r = copysign(1, z) == 1 ? x*y + z : x*y;
+        }
+    }
 
     /* Fast path: if we got a finite result, we're done. */
     if (isfinite(r)) {

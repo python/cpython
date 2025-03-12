@@ -2765,12 +2765,6 @@ class FMATests(unittest.TestCase):
                 self.assertEqual(math.fma(-b, -math.inf, c), math.inf)
                 self.assertEqual(math.fma(-b, math.inf, c), -math.inf)
 
-    # gh-73468: On some platforms, libc fma() doesn't implement IEE 754-2008
-    # properly: it doesn't use the right sign when the result is zero.
-    @unittest.skipIf(
-        sys.platform.startswith(("freebsd", "wasi", "netbsd", "emscripten"))
-        or (sys.platform == "android" and platform.machine() == "x86_64"),
-        f"this platform doesn't implement IEE 754-2008 properly")
     def test_fma_zero_result(self):
         nonnegative_finites = [0.0, 1e-300, 2.3, 1e300]
 
