@@ -29,14 +29,12 @@ import _sitebuiltins
 import functools
 import os
 import sys
-import code
 
-from .readline import _get_reader, multiline_input
+from .readline import _get_reader, multiline_input, _setup
 
 TYPE_CHECKING = False
-
 if TYPE_CHECKING:
-    from typing import Any
+    from code import InteractiveConsole
 
 
 _error: tuple[type[Exception], ...] | type[Exception]
@@ -82,7 +80,7 @@ REPL_COMMANDS = {
 }
 
 
-def _more_lines(console: code.InteractiveConsole, unicodetext: str) -> bool:
+def _more_lines(console: InteractiveConsole, unicodetext: str) -> bool:
     # ooh, look at the hack:
     src = _strip_final_indent(unicodetext)
     try:
@@ -102,11 +100,10 @@ def _more_lines(console: code.InteractiveConsole, unicodetext: str) -> bool:
 
 
 def run_multiline_interactive_console(
-    console: code.InteractiveConsole,
+    console: InteractiveConsole,
     *,
     future_flags: int = 0,
 ) -> None:
-    from .readline import _setup
     _setup(console.locals)
     if future_flags:
         console.compile.compiler.flags |= future_flags
