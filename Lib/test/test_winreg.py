@@ -233,8 +233,7 @@ class LocalWinregTests(BaseWinregTests):
                                                 options=REG_OPTION_VOLATILE)
         self._write_test_data(HKEY_CURRENT_USER, CreateKey=ckeo)
 
-        okeo = lambda key, sub_key: OpenKeyEx(key, sub_key, 0, KEY_READ,
-                                              options=REG_OPTION_VOLATILE)
+        okeo = lambda key, sub_key: OpenKeyEx(key, sub_key, REG_OPTION_VOLATILE, KEY_READ)
         self._read_test_data(HKEY_CURRENT_USER, OpenKey=okeo)
 
         self._delete_test_data(HKEY_CURRENT_USER)

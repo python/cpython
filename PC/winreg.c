@@ -18,6 +18,7 @@
 
 #include <windows.h>
 
+#define MS_WINDOWS_DESKTOP
 #if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)
 
 typedef struct {
@@ -1417,8 +1418,6 @@ winreg.OpenKey -> HKEY
     access: REGSAM(c_default='KEY_READ') = winreg.KEY_READ
         An integer that specifies an access mask that describes the desired
         security access for the key.  Default is KEY_READ.
-    options: int = 0
-        Can be one of the REG_OPTION_* constants.
 
 Opens the specified key.
 
@@ -1428,8 +1427,39 @@ If the function fails, an OSError exception is raised.
 
 static HKEY
 winreg_OpenKey_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
-                    int reserved, REGSAM access, int options)
-/*[clinic end generated code: output=1cb0239fad9672e0 input=2fff042272bfc4f6]*/
+                    int reserved, REGSAM access)
+/*[clinic end generated code: output=5efbad23b3ffe2e7 input=7fb70c602dd114dd]*/
+{
+    return winreg_OpenKeyEx_impl(module, key, sub_key, reserved, access, 0);
+}
+
+/*[clinic input]
+winreg.OpenKeyEx -> HKEY
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    sub_key: Py_UNICODE(accept={str, NoneType})
+        A string that identifies the sub_key to open.
+    options: int = 0
+        Can be one of the REG_OPTION_* constants.
+    access: REGSAM(c_default='KEY_READ') = winreg.KEY_READ
+        An integer that specifies an access mask that describes the desired
+        security access for the key.  Default is KEY_READ.
+    reserved: int = 0
+        A reserved integer that be should zero.  If it is not zero,
+        it will be used as the options parameter for compatibility reasons.
+        Default is zero.
+
+Opens the specified key.
+
+The result is a new handle to the specified key.
+If the function fails, an OSError exception is raised.
+[clinic start generated code]*/
+
+static HKEY
+winreg_OpenKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
+                      int options, REGSAM access, int reserved)
+/*[clinic end generated code: output=db8d3dc70876a046 input=d997970b48ac2e30]*/
 {
     HKEY retKey;
     long rc;
@@ -1439,8 +1469,13 @@ winreg_OpenKey_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
                     (Py_ssize_t)access) < 0) {
         return NULL;
     }
-    if (options != 0) {
-        reserved = options;
+    if (reserved != 0) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "reserved is deprecated, use options instead.", 1))
+        {
+            return NULL;
+        }
+        options = reserved;
     }
     Py_BEGIN_ALLOW_THREADS
     rc = RegOpenKeyExW(key, sub_key, reserved, access, &retKey);
@@ -1454,23 +1489,6 @@ winreg_OpenKey_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
         return NULL;
     }
     return retKey;
-}
-
-/*[clinic input]
-winreg.OpenKeyEx = winreg.OpenKey
-
-Opens the specified key.
-
-The result is a new handle to the specified key.
-If the function fails, an OSError exception is raised.
-[clinic start generated code]*/
-
-static HKEY
-winreg_OpenKeyEx_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
-                      int reserved, REGSAM access, int options)
-/*[clinic end generated code: output=08a607e6a6385ed4 input=c6c4972af8622959]*/
-{
-    return winreg_OpenKey_impl(module, key, sub_key, reserved, access, options);
 }
 
 /*[clinic input]
