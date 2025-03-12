@@ -42,7 +42,8 @@ beyond the refcount limit. Immortality checks for reference count decreases will
 be done by checking the bit sign flag in the lower 32 bits.
 
 */
-#define _Py_IMMORTAL_INITIAL_REFCNT (3UL << 30)
+#define _Py_IMMORTAL_INITIAL_REFCNT (3ULL << 30)
+#define _Py_IMMORTAL_MINIMUM_REFCNT (1ULL << 31)
 #define _Py_STATIC_FLAG_BITS ((Py_ssize_t)(_Py_STATICALLY_ALLOCATED_FLAG | _Py_IMMORTAL_FLAGS))
 #define _Py_STATIC_IMMORTAL_INITIAL_REFCNT (((Py_ssize_t)_Py_IMMORTAL_INITIAL_REFCNT) | (_Py_STATIC_FLAG_BITS << 48))
 

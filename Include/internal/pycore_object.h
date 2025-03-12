@@ -135,15 +135,20 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
         _Py_INCREF_IMMORTAL_STAT_INC();
         return;
     }
-#ifdef Py_REF_DEBUG
-    _Py_AddRefTotal(_PyThreadState_GET(), n);
-#endif
-#if !defined(Py_GIL_DISABLED)
-#if SIZEOF_VOID_P > 4
-    op->ob_refcnt += (PY_UINT32_T)n;
-#else
-    op->ob_refcnt += n;
-#endif
+#ifndef Py_GIL_DISABLED
+    Py_ssize_t refcnt = _Py_REFCNT(op);
+    Py_ssize_t new_refcnt = refcnt + n;
+    if (new_refcnt >= (Py_ssize_t)_Py_IMMORTAL_MINIMUM_REFCNT) {
+        new_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
+    }
+#  if SIZEOF_VOID_P > 4
+    op->ob_refcnt = (PY_UINT32_T)new_refcnt;
+#  else
+    op->ob_refcnt = new_refcnt;
+#  endif
+#  ifdef Py_REF_DEBUG
+    _Py_AddRefTotal(_PyThreadState_GET(), new_refcnt - refcnt);
+#  endif
 #else
     if (_Py_IsOwnedByCurrentThread(op)) {
         uint32_t local = op->ob_ref_local;
@@ -160,6 +165,9 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
     else {
         _Py_atomic_add_ssize(&op->ob_ref_shared, (n << _Py_REF_SHARED_SHIFT));
     }
+#  ifdef Py_REF_DEBUG
+    _Py_AddRefTotal(_PyThreadState_GET(), n);
+#  endif
 #endif
     // Although the ref count was increased by `n` (which may be greater than 1)
     // it is only a single increment (i.e. addition) operation, so only 1 refcnt
