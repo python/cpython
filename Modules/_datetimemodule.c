@@ -3272,8 +3272,9 @@ date_today(PyObject *cls, PyObject *Py_UNUSED(dummy))
         return new_date_ex(tm.tm_year + 1900,
                            tm.tm_mon + 1,
                            tm.tm_mday,
-                           (PyTypeObject*)cls);
+                           (PyTypeObject *)cls);
     }
+
     PyObject *time = time_time();
     if (time == NULL) {
         return NULL;
