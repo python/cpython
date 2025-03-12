@@ -1,6 +1,7 @@
 
 #include "Python.h"
 
+#include "pycore_object.h"
 #include "pycore_stackref.h"
 
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
@@ -47,7 +48,7 @@ _Py_stackref_get_object(_PyStackRef ref)
     if (ref.index >= interp->next_stackref) {
         _Py_FatalErrorFormat(__func__, "Garbled stack ref with ID %" PRIu64 "\n", ref.index);
     }
-    TableEntry *entry = _Py_hashtable_get(interp->stackref_debug_table, (void *)ref.index);
+    TableEntry *entry = _Py_hashtable_get(interp->open_stackrefs_table, (void *)ref.index);
     if (entry == NULL) {
         _Py_FatalErrorFormat(__func__, "Accessing closed stack ref with ID %" PRIu64 "\n", ref.index);
     }
@@ -55,25 +56,43 @@ _Py_stackref_get_object(_PyStackRef ref)
 }
 
 PyObject *
-_Py_stackref_close(_PyStackRef ref)
+_Py_stackref_close(_PyStackRef ref, const char *filename, int linenumber)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     if (ref.index >= interp->next_stackref) {
-        _Py_FatalErrorFormat(__func__, "Garbled stack ref with ID %" PRIu64 "\n", ref.index);
+        _Py_FatalErrorFormat(__func__, "Invalid StackRef with ID %" PRIu64 " at %s:%d\n", (void *)ref.index, filename, linenumber);
+
     }
     PyObject *obj;
     if (ref.index <= LAST_PREDEFINED_STACKREF_INDEX) {
         // Pre-allocated reference to None, False or True -- Do not clear
-        TableEntry *entry = _Py_hashtable_get(interp->stackref_debug_table, (void *)ref.index);
+        TableEntry *entry = _Py_hashtable_get(interp->open_stackrefs_table, (void *)ref.index);
         obj = entry->obj;
     }
     else {
-        TableEntry *entry = _Py_hashtable_steal(interp->stackref_debug_table, (void *)ref.index);
+        TableEntry *entry = _Py_hashtable_steal(interp->open_stackrefs_table, (void *)ref.index);
         if (entry == NULL) {
+#ifdef Py_STACKREF_CLOSE_DEBUG
+            entry = _Py_hashtable_get(interp->closed_stackrefs_table, (void *)ref.index);
+            if (entry != NULL) {
+                _Py_FatalErrorFormat(__func__,
+                    "Double close of ref ID %" PRIu64 " at %s:%d. Referred to instance of %s at %p. Closed at %s:%d\n",
+                    (void *)ref.index, filename, linenumber, entry->classname, entry->obj, entry->filename, entry->linenumber);
+            }
+#endif
             _Py_FatalErrorFormat(__func__, "Invalid StackRef with ID %" PRIu64 "\n", (void *)ref.index);
         }
         obj = entry->obj;
         free(entry);
+#ifdef Py_STACKREF_CLOSE_DEBUG
+        TableEntry *close_entry = make_table_entry(obj, filename, linenumber);
+        if (close_entry == NULL) {
+            Py_FatalError("No memory left for stackref debug table");
+        }
+        if (_Py_hashtable_set(interp->closed_stackrefs_table, (void *)ref.index, close_entry) < 0) {
+            Py_FatalError("No memory left for stackref debug table");
+        }
+#endif
     }
     return obj;
 }
@@ -90,7 +109,7 @@ _Py_stackref_create(PyObject *obj, const char *filename, int linenumber)
     if (entry == NULL) {
         Py_FatalError("No memory left for stackref debug table");
     }
-    if (_Py_hashtable_set(interp->stackref_debug_table, (void *)new_id, entry) < 0) {
+    if (_Py_hashtable_set(interp->open_stackrefs_table, (void *)new_id, entry) < 0) {
         Py_FatalError("No memory left for stackref debug table");
     }
     return (_PyStackRef){ .index = new_id };
@@ -103,9 +122,17 @@ _Py_stackref_record_borrow(_PyStackRef ref, const char *filename, int linenumber
         return;
     }
     PyInterpreterState *interp = PyInterpreterState_Get();
-    TableEntry *entry = _Py_hashtable_get(interp->stackref_debug_table, (void *)ref.index);
+    TableEntry *entry = _Py_hashtable_get(interp->open_stackrefs_table, (void *)ref.index);
     if (entry == NULL) {
-        _Py_FatalErrorFormat(__func__, "Invalid StackRef with ID %" PRIu64 "\n", (void *)ref.index);
+#ifdef Py_STACKREF_CLOSE_DEBUG
+        entry = _Py_hashtable_get(interp->closed_stackrefs_table, (void *)ref.index);
+        if (entry != NULL) {
+            _Py_FatalErrorFormat(__func__,
+                "Borrow of closed ref ID %" PRIu64 " at %s:%d. Referred to instance of %s at %p. Closed at %s:%d\n",
+                (void *)ref.index, filename, linenumber, entry->classname, entry->obj, entry->filename, entry->linenumber);
+        }
+#endif
+        _Py_FatalErrorFormat(__func__, "Invalid StackRef with ID %" PRIu64 " at %s:%d\n", (void *)ref.index, filename, linenumber);
     }
     entry->filename_borrow = filename;
     entry->linenumber_borrow = linenumber;
@@ -121,7 +148,7 @@ _Py_stackref_associate(PyInterpreterState *interp, PyObject *obj, _PyStackRef re
     if (entry == NULL) {
         Py_FatalError("No memory left for stackref debug table");
     }
-    if (_Py_hashtable_set(interp->stackref_debug_table, (void *)ref.index, (void *)entry) < 0) {
+    if (_Py_hashtable_set(interp->open_stackrefs_table, (void *)ref.index, (void *)entry) < 0) {
         Py_FatalError("No memory left for stackref debug table");
     }
 }
@@ -147,10 +174,18 @@ void
 _Py_stackref_report_leaks(PyInterpreterState *interp)
 {
     int leak = 0;
-    _Py_hashtable_foreach(interp->stackref_debug_table, report_leak, &leak);
+    _Py_hashtable_foreach(interp->open_stackrefs_table, report_leak, &leak);
     if (leak) {
+        fflush(stdout);
         Py_FatalError("Stackrefs leaked.");
     }
+}
+
+void
+PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct)
+{
+    PyObject *obj = _Py_stackref_close(ref);
+    _Py_DECREF_SPECIALIZED(obj, destruct);
 }
 
 #endif

@@ -2019,13 +2019,13 @@ codegen_for(compiler *c, stmt_ty s)
     return SUCCESS;
 }
 
-
 static int
 codegen_async_for(compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
 
     NEW_JUMP_TARGET_LABEL(c, start);
+    NEW_JUMP_TARGET_LABEL(c, send);
     NEW_JUMP_TARGET_LABEL(c, except);
     NEW_JUMP_TARGET_LABEL(c, end);
 
@@ -2039,6 +2039,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
     ADDOP(c, loc, GET_ANEXT);
     ADDOP_LOAD_CONST(c, loc, Py_None);
+    USE_LABEL(c, send);
     ADD_YIELD_FROM(c, loc, 1);
     ADDOP(c, loc, POP_BLOCK);  /* for SETUP_FINALLY */
     ADDOP(c, loc, NOT_TAKEN);
@@ -2057,7 +2058,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     /* Use same line number as the iterator,
      * as the END_ASYNC_FOR succeeds the `for`, not the body. */
     loc = LOC(s->v.AsyncFor.iter);
-    ADDOP(c, loc, END_ASYNC_FOR);
+    ADDOP_JUMP(c, loc, END_ASYNC_FOR, send);
 
     /* `else` block */
     VISIT_SEQ(c, stmt, s->v.AsyncFor.orelse);
@@ -4252,6 +4253,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
                                       int iter_on_stack)
 {
     NEW_JUMP_TARGET_LABEL(c, start);
+    NEW_JUMP_TARGET_LABEL(c, send);
     NEW_JUMP_TARGET_LABEL(c, except);
     NEW_JUMP_TARGET_LABEL(c, if_cleanup);
 
@@ -4279,6 +4281,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
     ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
     ADDOP(c, loc, GET_ANEXT);
     ADDOP_LOAD_CONST(c, loc, Py_None);
+    USE_LABEL(c, send);
     ADD_YIELD_FROM(c, loc, 1);
     ADDOP(c, loc, POP_BLOCK);
     VISIT(c, expr, gen->target);
@@ -4338,7 +4341,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
 
     USE_LABEL(c, except);
 
-    ADDOP(c, loc, END_ASYNC_FOR);
+    ADDOP_JUMP(c, loc, END_ASYNC_FOR, send);
 
     return SUCCESS;
 }
@@ -6121,7 +6124,8 @@ codegen_match_inner(compiler *c, stmt_ty s, pattern_context *pc)
         }
         // Success! Pop the subject off, we're done with it:
         if (i != cases - has_default - 1) {
-            ADDOP(c, LOC(m->pattern), POP_TOP);
+            /* Use the next location to give better locations for branch events */
+            ADDOP(c, NEXT_LOCATION, POP_TOP);
         }
         VISIT_SEQ(c, stmt, m->body);
         ADDOP_JUMP(c, NO_LOCATION, JUMP, end);

@@ -2131,8 +2131,8 @@ Requires that the bytes length be a multiple of the struct size.
 [clinic start generated code]*/
 
 static PyObject *
-Struct_iter_unpack(PyStructObject *self, PyObject *buffer)
-/*[clinic end generated code: output=172d83d0cd15dbab input=6d65b3f3107dbc99]*/
+Struct_iter_unpack_impl(PyStructObject *self, PyObject *buffer)
+/*[clinic end generated code: output=818f89ad4afa8d64 input=6d65b3f3107dbc99]*/
 {
     _structmodulestate *state = get_struct_state_structinst(self);
     unpackiterobject *iter;
@@ -2691,7 +2691,7 @@ iter_unpack_impl(PyObject *module, PyStructObject *s_object,
                  PyObject *buffer)
 /*[clinic end generated code: output=0ae50e250d20e74d input=b214a58869a3c98d]*/
 {
-    return Struct_iter_unpack(s_object, buffer);
+    return Struct_iter_unpack((PyObject*)s_object, buffer);
 }
 
 static struct PyMethodDef module_functions[] = {

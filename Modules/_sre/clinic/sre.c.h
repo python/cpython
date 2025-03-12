@@ -985,6 +985,19 @@ PyDoc_STRVAR(_sre_SRE_Pattern___deepcopy____doc__,
 #define _SRE_SRE_PATTERN___DEEPCOPY___METHODDEF    \
     {"__deepcopy__", (PyCFunction)_sre_SRE_Pattern___deepcopy__, METH_O, _sre_SRE_Pattern___deepcopy____doc__},
 
+static PyObject *
+_sre_SRE_Pattern___deepcopy___impl(PatternObject *self, PyObject *memo);
+
+static PyObject *
+_sre_SRE_Pattern___deepcopy__(PyObject *self, PyObject *memo)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _sre_SRE_Pattern___deepcopy___impl((PatternObject *)self, memo);
+
+    return return_value;
+}
+
 #if defined(Py_DEBUG)
 
 PyDoc_STRVAR(_sre_SRE_Pattern__fail_after__doc__,
@@ -1471,6 +1484,19 @@ PyDoc_STRVAR(_sre_SRE_Match___deepcopy____doc__,
 #define _SRE_SRE_MATCH___DEEPCOPY___METHODDEF    \
     {"__deepcopy__", (PyCFunction)_sre_SRE_Match___deepcopy__, METH_O, _sre_SRE_Match___deepcopy____doc__},
 
+static PyObject *
+_sre_SRE_Match___deepcopy___impl(MatchObject *self, PyObject *memo);
+
+static PyObject *
+_sre_SRE_Match___deepcopy__(PyObject *self, PyObject *memo)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _sre_SRE_Match___deepcopy___impl((MatchObject *)self, memo);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_sre_SRE_Scanner_match__doc__,
 "match($self, /)\n"
 "--\n"
@@ -1516,4 +1542,4 @@ _sre_SRE_Scanner_search(PyObject *self, PyTypeObject *cls, PyObject *const *args
 #ifndef _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
     #define _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
 #endif /* !defined(_SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF) */
-/*[clinic end generated code: output=3654103c87eb4830 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=45baae8bdfafdc51 input=a9049054013a1b77]*/
