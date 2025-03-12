@@ -371,10 +371,10 @@ This module offers the following functions:
 
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
-   
+
    .. versionchanged:: 3.14
       Added *options* parameter.
-      
+
    .. deprecated-removed:: 3.14 3.16
       *reserved* is deprecated and will be removed in the future.
       Please use *options* instead.
