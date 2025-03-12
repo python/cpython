@@ -160,7 +160,7 @@ def _translate(pat, star, question_mark):
                     add(question_mark)
                 else:
                     if question_mark != '.' and inside_range:
-                        add(f'(?={question_mark})')
+                        add(f'(?!)')
                     # Escape set operations (&&, ~~ and ||).
                     stuff = _re_setops_sub(r'\\\1', stuff)
                     if stuff[0] == '!':
