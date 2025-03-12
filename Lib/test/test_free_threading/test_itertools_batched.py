@@ -30,7 +30,8 @@ class EnumerateThreading(unittest.TestCase):
                 worker_threads.append(
                     Thread(target=work, args=[batch_iterator]))
 
-            threading_helper.start_threads(worker_threads)
+            with threading_helper.start_threads(worker_threads):
+                pass
 
             barrier.reset()
 
