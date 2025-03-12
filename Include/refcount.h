@@ -41,6 +41,10 @@ having all the lower 32 bits set, which will avoid the reference count to go
 beyond the refcount limit. Immortality checks for reference count decreases will
 be done by checking the bit sign flag in the lower 32 bits.
 
+To ensure that once an object becomes immortal, it remains immortal, the threshold
+for omitting increfs is much higher than for omitting decrefs. Consequently, once
+the refcount for an object exceeds _Py_IMMORTAL_MINIMUM_REFCNT it will gradually
+increase over time until it reaches _Py_IMMORTAL_INITIAL_REFCNT.
 */
 #define _Py_IMMORTAL_INITIAL_REFCNT (3UL << 30)
 #define _Py_STATIC_FLAG_BITS ((Py_ssize_t)(_Py_STATICALLY_ALLOCATED_FLAG | _Py_IMMORTAL_FLAGS))
@@ -287,7 +291,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
     }
 #elif SIZEOF_VOID_P > 4
     PY_UINT32_T cur_refcnt = op->ob_refcnt;
-    if (cur_refcnt >= _Py_IMMORTAL_INITIAL_REFCNT) < 0) {
+    if (cur_refcnt >= _Py_IMMORTAL_INITIAL_REFCNT) {
         // the object is immortal
         _Py_INCREF_IMMORTAL_STAT_INC();
         return;
