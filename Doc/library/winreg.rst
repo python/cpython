@@ -306,8 +306,7 @@ This module offers the following functions:
    .. audit-event:: winreg.LoadKey key,sub_key,file_name winreg.LoadKey
 
 
-.. function:: OpenKey(key, sub_key, reserved=0, access=KEY_READ, options=0)
-              OpenKeyEx(key, sub_key, reserved=0, access=KEY_READ, options=0)
+.. function:: OpenKey(key, sub_key, reserved=0, access=KEY_READ)
 
    Opens the specified key, returning a :ref:`handle object <handle-object>`.
 
@@ -316,19 +315,11 @@ This module offers the following functions:
 
    *sub_key* is a string that identifies the sub_key to open.
 
-   *reserved* is a reserved integer and should be zero.
-   If it is not zero, it will be treated as the options parameter.
-   You should use the *options* parameter directly instead,
-   this parameter is only included for compatibility reasons.
-   The default value is zero.
+   *reserved* is a reserved integer, and must be zero.  The default is zero.
 
    *access* is an integer that specifies an access mask that describes the desired
    security access for the key.  Default is :const:`KEY_READ`.  See :ref:`Access
    Rights <access-rights>` for other allowed values.
-
-   *options* specifies the option to apply when opening the key.
-   Can be zero or one of the predefined
-   :ref:`REG_OPTION_* constants <hkey-constants>`.
 
    The result is a new handle to the specified key.
 
@@ -343,6 +334,50 @@ This module offers the following functions:
 
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
+
+.. function:: OpenKeyEx(key, sub_key, options=0, access=KEY_READ, reserved=0)
+
+   Opens the specified key, returning a :ref:`handle object <handle-object>`.
+
+   *key* is an already open key, or one of the predefined
+   :ref:`HKEY_* constants <hkey-constants>`.
+
+   *sub_key* is a string that identifies the sub_key to open.
+
+   *access* is an integer that specifies an access mask that describes the desired
+   security access for the key.  Default is :const:`KEY_READ`.  See :ref:`Access
+   Rights <access-rights>` for other allowed values.
+
+   *options* specifies the option to apply when opening the key.
+   Can be zero or one of the predefined
+   :ref:`REG_OPTION_* constants <hkey-constants>`.
+
+   *reserved* is a reserved integer and should be zero.
+   If it is not zero, it will be treated as the options parameter.
+   You should use the *options* parameter directly instead,
+   this parameter is only included for compatibility reasons.
+   The default value is zero.
+
+   The result is a new handle to the specified key.
+
+   If the function fails, :exc:`OSError` is raised.
+
+   .. audit-event:: winreg.OpenKey key,sub_key,access winreg.OpenKey
+
+   .. audit-event:: winreg.OpenKey/result key winreg.OpenKey
+
+   .. versionchanged:: 3.2
+      Allow the use of named arguments.
+
+   .. versionchanged:: 3.3
+      See :ref:`above <exception-changed>`.
+   
+   .. versionchanged:: 3.14
+      Added *options* parameter.
+      
+   .. deprecated-removed:: 3.14 3.16
+      *reserved* is deprecated and will be removed in the future.
+      Please use *options* instead.
 
 
 .. function:: QueryInfoKey(key)
