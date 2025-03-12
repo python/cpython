@@ -336,10 +336,6 @@ class ReadablePathTest(JoinablePathTest):
 class WritablePathTest(JoinablePathTest):
     cls = DummyWritablePath
 
-    def test_is_writable(self):
-        p = self.cls(self.base)
-        self.assertIsInstance(p, _WritablePath)
-
 
 class DummyRWPath(DummyWritablePath, DummyReadablePath):
     __slots__ = ()
@@ -348,43 +344,6 @@ class DummyRWPath(DummyWritablePath, DummyReadablePath):
 class RWPathTest(WritablePathTest, ReadablePathTest):
     cls = DummyRWPath
     can_symlink = False
-
-    def test_read_write_bytes(self):
-        p = self.cls(self.base)
-        (p / 'fileA').write_bytes(b'abcdefg')
-        self.assertEqual((p / 'fileA').read_bytes(), b'abcdefg')
-        # Check that trying to write str does not truncate the file.
-        self.assertRaises(TypeError, (p / 'fileA').write_bytes, 'somestr')
-        self.assertEqual((p / 'fileA').read_bytes(), b'abcdefg')
-
-    def test_read_write_text(self):
-        p = self.cls(self.base)
-        (p / 'fileA').write_text('äbcdefg', encoding='latin-1')
-        self.assertEqual((p / 'fileA').read_text(
-            encoding='utf-8', errors='ignore'), 'bcdefg')
-        # Check that trying to write bytes does not truncate the file.
-        self.assertRaises(TypeError, (p / 'fileA').write_text, b'somebytes')
-        self.assertEqual((p / 'fileA').read_text(encoding='latin-1'), 'äbcdefg')
-
-    def test_write_text_with_newlines(self):
-        p = self.cls(self.base)
-        # Check that `\n` character change nothing
-        (p / 'fileA').write_text('abcde\r\nfghlk\n\rmnopq', newline='\n')
-        self.assertEqual((p / 'fileA').read_bytes(),
-                         b'abcde\r\nfghlk\n\rmnopq')
-        # Check that `\r` character replaces `\n`
-        (p / 'fileA').write_text('abcde\r\nfghlk\n\rmnopq', newline='\r')
-        self.assertEqual((p / 'fileA').read_bytes(),
-                         b'abcde\r\rfghlk\r\rmnopq')
-        # Check that `\r\n` character replaces `\n`
-        (p / 'fileA').write_text('abcde\r\nfghlk\n\rmnopq', newline='\r\n')
-        self.assertEqual((p / 'fileA').read_bytes(),
-                         b'abcde\r\r\nfghlk\r\n\rmnopq')
-        # Check that no argument passed will change `\n` to `os.linesep`
-        os_linesep_byte = bytes(os.linesep, encoding='ascii')
-        (p / 'fileA').write_text('abcde\nfghlk\n\rmnopq')
-        self.assertEqual((p / 'fileA').read_bytes(),
-                          b'abcde' + os_linesep_byte + b'fghlk' + os_linesep_byte + b'\rmnopq')
 
     def test_copy_file(self):
         base = self.cls(self.base)
