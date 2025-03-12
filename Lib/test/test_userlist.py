@@ -3,7 +3,6 @@
 from collections import UserList
 from test import list_tests
 import unittest
-from test import support
 
 
 class UserListTest(list_tests.CommonTest):

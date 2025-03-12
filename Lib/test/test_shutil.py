@@ -10,7 +10,6 @@ import os
 import os.path
 import errno
 import functools
-import pathlib
 import subprocess
 import random
 import string

@@ -1,5 +1,4 @@
 import unittest
-import math
 import string
 import sys
 from test import support

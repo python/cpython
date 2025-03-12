@@ -1,12 +1,10 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
-from test.libregrtest.utils import get_build_info
 from test.support import import_helper, os_helper, threading_helper, MS_WINDOWS
 import unittest
 
 from collections import namedtuple
 import contextlib
-import io
 import json
 import os
 import os.path
