@@ -10,12 +10,6 @@ import json
 import os
 import sys
 import sysconfig
-import traceback
-import warnings
-
-
-if False:  # TYPE_CHECKING
-    pass
 
 
 def version_info_to_dict(obj):  # (object) -> dict[str, Any]
