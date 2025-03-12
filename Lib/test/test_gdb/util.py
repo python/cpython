@@ -16,7 +16,7 @@ CHECKOUT_HOOK_PATH = os.path.join(os.path.dirname(sys.executable),
                                   'python-gdb.py')
 
 SAMPLE_SCRIPT = os.path.join(os.path.dirname(__file__), 'gdb_sample.py')
-BREAKPOINT_FN = '_typing__idfunc'
+BREAKPOINT_FN = 'builtin_id'
 
 PYTHONHASHSEED = '123'
 
