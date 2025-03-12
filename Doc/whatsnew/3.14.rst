@@ -505,9 +505,10 @@ datetime
   (Contributed by Wannes Boeykens in :gh:`41431`.)
 
 * The :meth:`datetime.date.strptime`, :meth:`datetime.datetime.strptime` and
-  :meth:`datetime.time.strptime` methods now only accept ASCII digits, will and
+  :meth:`datetime.time.strptime` methods now only accept ASCII digits and
   raise a :exc:`ValueError` if non-ASCII digits are specified.
   (Contributed by Stan Ulbrych in :gh:`131008`.)
+
 
 decimal
 -------
@@ -887,7 +888,7 @@ sys.monitoring
 time
 ----
 
-* The :meth:`time.strptime`, now only accept ASCII digits, and will raise a
+* The :meth:`time.strptime`, now only accept ASCII digits and raise a
   :exc:`ValueError` if non-ASCII digits are specified.
   (Contributed by Stan Ulbrych in :gh:`131008`.)
 
