@@ -653,9 +653,6 @@ class TestRetrievingSourceCode(GetSourceBase):
                          'measured in kilowatts')
         self.assertEqual(inspect.getdoc(SlotUser.distance),
                          'measured in kilometers')
-        print('new test', file=sys.stderr)
-        self.assertEqual(inspect.getdoc(mod3.Parent.foo),
-                         inspect.getdoc(mod3.Child.foo))
 
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
@@ -668,6 +665,10 @@ class TestRetrievingSourceCode(GetSourceBase):
                          'Another\n\ndocstring\n\ncontaining\n\ntabs')
         self.assertEqual(inspect.getdoc(mod.FesteringGob.contradiction),
                          'The automatic gainsaying.')
+
+    def test_getdoc_inherited_cached_property(self):
+        self.assertEqual(inspect.getdoc(mod3.Parent.foo),
+                         inspect.getdoc(mod3.Child.foo))
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS, "test requires docstrings")
     def test_finddoc(self):
