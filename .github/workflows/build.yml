@@ -638,7 +638,7 @@ jobs:
           build-windows-msi,
           build-ubuntu-ssltests,
           test-hypothesis,
-          cifuzz,
+          cifuzz
         allowed-skips: >-
           ${{
             !fromJSON(needs.build-context.outputs.run-docs)
