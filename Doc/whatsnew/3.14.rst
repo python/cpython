@@ -297,7 +297,7 @@ For further information on how to build Python, see
 
 .. attention::
 
-    This section previously reported a 9-15% geomean speedup. This number has since been
+    This section previously reported a 9-15% geometric mean speedup. This number has since been
     cautiously revised down to 3-5%. While we expect performance results to be better
     than what we report, our estimates are more conservative due to a
     `compiler bug <https://github.com/llvm/llvm-project/issues/106846>`_ found in
@@ -353,6 +353,10 @@ Other language changes
   for floating-point presentation types of the new-style string formatting
   (with :func:`format` or :ref:`f-strings`).
   (Contrubuted by Sergey B Kirpichev in :gh:`87790`.)
+
+* The :func:`bytes.fromhex` and :func:`bytearray.fromhex` methods now accept
+  ASCII :class:`bytes` and :term:`bytes-like objects <bytes-like object>`.
+  (Contributed by Daniel Pope in :gh:`129349`.)
 
 * ``\B`` in :mod:`regular expression <re>` now matches empty input string.
   Now it is always the opposite of ``\b``.

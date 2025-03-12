@@ -25,7 +25,6 @@ import sys
 import time
 import msvcrt
 
-from collections import deque
 import ctypes
 from ctypes.wintypes import (
     _COORD,
