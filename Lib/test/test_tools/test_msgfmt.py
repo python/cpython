@@ -1,5 +1,16 @@
-"""Tests for the Tools/i18n/msgfmt.py tool."""
+"""Tests for the Tools/i18n/msgfmt.py tool.
 
+These tests use data files (po and mo) in the msgfmt_data folder.
+The mo files can be generated (if the po file changes, or if msgfmt.py
+slightly changes its output format) by using the --snapshot-update flag
+with this script:
+
+    python test_msgfmt.py --snapshot-update
+"""
+
+import filecmp
+import os
+import shutil
 import sys
 import unittest
 from gettext import GNUTranslations
@@ -17,8 +28,8 @@ script_dir = Path(toolsdir) / 'i18n'
 msgfmt = script_dir / 'msgfmt.py'
 
 
-def compile_messages(po_file, mo_file):
-    assert_python_ok(msgfmt, '-o', mo_file, po_file)
+def compile_messages(mo_file, *po_files):
+    assert_python_ok(msgfmt, '-o', mo_file, *po_files)
 
 
 class CompilationTest(unittest.TestCase):
@@ -33,7 +44,7 @@ class CompilationTest(unittest.TestCase):
                         expected = GNUTranslations(f)
 
                     tmp_mo_file = mo_file.name
-                    compile_messages(po_file, tmp_mo_file)
+                    compile_messages(tmp_mo_file, po_file)
                     with open(tmp_mo_file, 'rb') as f:
                         actual = GNUTranslations(f)
 
@@ -91,6 +102,7 @@ msgstr "bar"
             err = res.err.decode('utf-8')
             self.assertIn('Syntax error', err)
 
+
 class CLITest(unittest.TestCase):
 
     def test_help(self):
@@ -121,10 +133,56 @@ class CLITest(unittest.TestCase):
         assert_python_failure(msgfmt, 'nonexistent.po')
 
 
+class MultiInputTest(unittest.TestCase):
+    """Tests for multiple input files
+    """
+
+    def test_no_outputfile(self):
+        """Test script without -o option - 1 single file"""
+        with temp_cwd(None):
+            shutil.copy(data_dir / 'file2_fr_lf.po', '.')
+            assert_python_ok(msgfmt, 'file2_fr_lf.po')
+            self.assertTrue(
+                filecmp.cmp(data_dir / 'file2_fr_lf.mo', 'file2_fr_lf.mo'),
+                'Wrong compiled file2_fr_lf.mo')
+
+    def test_both_with_outputfile(self):
+        """Test script with -o option and 2 input files
+
+        The current behaviour is to merge entries having distinct ids
+        and keep last one if the same id occurs in multiple files.
+
+        Here the first file has Windows endings (cflr) while second has
+        Unix endings (lf)
+        """
+        with temp_cwd(None):
+            assert_python_ok(msgfmt, '-o', 'file12.mo',
+                             data_dir / 'file1_fr_crlf.po',
+                             data_dir / 'file2_fr_lf.po')
+            self.assertTrue(
+                filecmp.cmp(data_dir / 'file12_fr.mo', 'file12.mo'))
+
+    def test_both_without_outputfile(self):
+        """Test script without -o option and 2 input files"""
+
+        with temp_cwd(None):
+            shutil.copy(data_dir / 'file1_fr_crlf.po', '.')
+            shutil.copy(data_dir / 'file2_fr_lf.po', '.')
+            assert_python_ok(msgfmt, 'file1_fr_crlf.po', 'file2_fr_lf.po')
+            self.assertTrue(
+                filecmp.cmp(data_dir / 'file1_fr_crlf.mo', 'file1_fr_crlf.mo'))
+            self.assertTrue(
+                filecmp.cmp(data_dir / 'file2_fr_lf.mo', 'file2_fr_lf.mo'))
+
+
 def update_catalog_snapshots():
     for po_file in data_dir.glob('*.po'):
         mo_file = po_file.with_suffix('.mo')
-        compile_messages(po_file, mo_file)
+        compile_messages(mo_file, po_file)
+    # special processing for file12_fr.mo which results from 2 input files
+    compile_messages(data_dir / 'file12_fr.mo',
+                     data_dir / 'file1_fr_crlf.po',
+                     data_dir / 'file2_fr_lf.po')
 
 
 if __name__ == '__main__':
