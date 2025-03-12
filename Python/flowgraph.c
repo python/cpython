@@ -849,7 +849,7 @@ calculate_stackdepth(cfg_builder *g)
                 goto error;
             }
             maxdepth = Py_MAX(maxdepth, depth + effects.max);
-            if (HAS_TARGET(instr->i_opcode)) {
+            if (HAS_TARGET(instr->i_opcode) && instr->i_opcode != END_ASYNC_FOR) {
                 if (get_stack_effects(instr->i_opcode, instr->i_oparg, 1, &effects) < 0) {
                     PyErr_Format(PyExc_SystemError,
                                  "Invalid stack effect for opcode=%d, arg=%i",
@@ -1078,8 +1078,8 @@ basicblock_remove_redundant_nops(basicblock *bb) {
                     location next_loc = NO_LOCATION;
                     for (int next_i=0; next_i < next->b_iused; next_i++) {
                         cfg_instr *instr = &next->b_instr[next_i];
-                        if (instr->i_opcode == NOP && instr->i_loc.lineno == NO_LOCATION.lineno) {
-                            /* Skip over NOPs without location, they will be removed */
+                        if (instr->i_opcode == NOP && instr->i_loc.lineno < 0) {
+                            /* Skip over NOPs without a location, they will be removed */
                             continue;
                         }
                         next_loc = instr->i_loc;
@@ -2976,7 +2976,7 @@ propagate_line_numbers(basicblock *entryblock) {
 
         location prev_location = NO_LOCATION;
         for (int i = 0; i < b->b_iused; i++) {
-            if (b->b_instr[i].i_loc.lineno < 0) {
+            if (b->b_instr[i].i_loc.lineno == NO_LOCATION.lineno) {
                 b->b_instr[i].i_loc = prev_location;
             }
             else {
@@ -2985,7 +2985,7 @@ propagate_line_numbers(basicblock *entryblock) {
         }
         if (BB_HAS_FALLTHROUGH(b) && b->b_next->b_predecessors == 1) {
             if (b->b_next->b_iused > 0) {
-                if (b->b_next->b_instr[0].i_loc.lineno < 0) {
+                if (b->b_next->b_instr[0].i_loc.lineno == NO_LOCATION.lineno) {
                     b->b_next->b_instr[0].i_loc = prev_location;
                 }
             }
@@ -2993,7 +2993,7 @@ propagate_line_numbers(basicblock *entryblock) {
         if (is_jump(last)) {
             basicblock *target = last->i_target;
             if (target->b_predecessors == 1) {
-                if (target->b_instr[0].i_loc.lineno < 0) {
+                if (target->b_instr[0].i_loc.lineno == NO_LOCATION.lineno) {
                     target->b_instr[0].i_loc = prev_location;
                 }
             }

@@ -428,6 +428,19 @@ PyDoc_STRVAR(memoryview_count__doc__,
 #define MEMORYVIEW_COUNT_METHODDEF    \
     {"count", (PyCFunction)memoryview_count, METH_O, memoryview_count__doc__},
 
+static PyObject *
+memoryview_count_impl(PyMemoryViewObject *self, PyObject *value);
+
+static PyObject *
+memoryview_count(PyObject *self, PyObject *value)
+{
+    PyObject *return_value = NULL;
+
+    return_value = memoryview_count_impl((PyMemoryViewObject *)self, value);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(memoryview_index__doc__,
 "index($self, value, start=0, stop=sys.maxsize, /)\n"
 "--\n"
@@ -473,4 +486,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2ef6c061d9c4e3dc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c0371164b68a6839 input=a9049054013a1b77]*/

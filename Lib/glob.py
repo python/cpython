@@ -320,11 +320,11 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
 
 
 @functools.lru_cache(maxsize=512)
-def _compile_pattern(pat, sep, case_sensitive, recursive=True):
+def _compile_pattern(pat, seps, case_sensitive, recursive=True):
     """Compile given glob pattern to a re.Pattern object (observing case
     sensitivity)."""
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
-    regex = translate(pat, recursive=recursive, include_hidden=True, seps=sep)
+    regex = translate(pat, recursive=recursive, include_hidden=True, seps=seps)
     return re.compile(regex, flags=flags).match
 
 
@@ -360,8 +360,9 @@ class _GlobberBase:
 
     # High-level methods
 
-    def compile(self, pat):
-        return _compile_pattern(pat, self.sep, self.case_sensitive, self.recursive)
+    def compile(self, pat, altsep=None):
+        seps = (self.sep, altsep) if altsep else self.sep
+        return _compile_pattern(pat, seps, self.case_sensitive, self.recursive)
 
     def selector(self, parts):
         """Returns a function that selects from a given path, walking and

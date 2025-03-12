@@ -296,6 +296,19 @@ PyDoc_STRVAR(bytes_join__doc__,
 #define BYTES_JOIN_METHODDEF    \
     {"join", (PyCFunction)bytes_join, METH_O, bytes_join__doc__},
 
+static PyObject *
+bytes_join_impl(PyBytesObject *self, PyObject *iterable_of_bytes);
+
+static PyObject *
+bytes_join(PyObject *self, PyObject *iterable_of_bytes)
+{
+    PyObject *return_value = NULL;
+
+    return_value = bytes_join_impl((PyBytesObject *)self, iterable_of_bytes);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(bytes_find__doc__,
 "find($self, sub[, start[, end]], /)\n"
 "--\n"
@@ -1191,26 +1204,6 @@ PyDoc_STRVAR(bytes_fromhex__doc__,
 #define BYTES_FROMHEX_METHODDEF    \
     {"fromhex", (PyCFunction)bytes_fromhex, METH_O|METH_CLASS, bytes_fromhex__doc__},
 
-static PyObject *
-bytes_fromhex_impl(PyTypeObject *type, PyObject *string);
-
-static PyObject *
-bytes_fromhex(PyTypeObject *type, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    PyObject *string;
-
-    if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("fromhex", "argument", "str", arg);
-        goto exit;
-    }
-    string = arg;
-    return_value = bytes_fromhex_impl(type, string);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(bytes_hex__doc__,
 "hex($self, /, sep=<unrepresentable>, bytes_per_sep=1)\n"
 "--\n"
@@ -1391,4 +1384,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=96fe2d6ef9ac8f6a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=967aae4b46423586 input=a9049054013a1b77]*/
