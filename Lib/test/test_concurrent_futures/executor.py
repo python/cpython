@@ -69,7 +69,9 @@ class ExecutorTest:
         else:
             self.fail('expected TimeoutError')
 
-        self.assertEqual([None, None], results)
+        # gh-110097: On heavily loaded systems, the launch of the worker may
+        # take longer than the specified timeout.
+        self.assertIn(results, ([None, None], [None], []))
 
     def test_shutdown_race_issue12456(self):
         # Issue #12456: race condition at shutdown where trying to post a
