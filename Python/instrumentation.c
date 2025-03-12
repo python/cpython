@@ -3031,7 +3031,7 @@ _PyMonitoring_RegisterCallback(int tool_id, int event_id, PyObject *obj)
         }
         PyInterpreterState *interp = _PyInterpreterState_GET();
         _PyEval_StopTheWorld(interp);
-        PyObject *old_right = &interp->monitoring_callables[tool_id][PY_MONITORING_EVENT_BRANCH_RIGHT];
+        PyObject *old_right = interp->monitoring_callables[tool_id][PY_MONITORING_EVENT_BRANCH_RIGHT];
         interp->monitoring_callables[tool_id][PY_MONITORING_EVENT_BRANCH_RIGHT] = right;
         res = interp->monitoring_callables[tool_id][PY_MONITORING_EVENT_BRANCH_LEFT];
         interp->monitoring_callables[tool_id][PY_MONITORING_EVENT_BRANCH_LEFT] = left;
