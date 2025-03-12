@@ -2273,7 +2273,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         switch (s->sock_proto) {
 #ifdef CAN_RAW
         case CAN_RAW:
-        #if !defined(__NetBSD__)
+        #ifdef CAN_BCM
             _Py_FALLTHROUGH;
         #endif
 #endif
