@@ -602,8 +602,8 @@ pytime_from_object(PyTime_t *tp, PyObject *obj, _PyTime_round_t round,
         }
         else if (PyErr_ExceptionMatches(PyExc_TypeError)) {
             PyErr_Format(PyExc_TypeError,
-                      "'%T' object cannot be interpreted as an integer or float",
-            obj);
+                         "'%T' object cannot be interpreted as an integer or float",
+                         obj);
         }
         return -1;
     }
