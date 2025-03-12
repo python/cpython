@@ -752,7 +752,7 @@ static PyObject *
 bytes_maketrans_impl(Py_buffer *frm, Py_buffer *to);
 
 static PyObject *
-bytes_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
+bytes_maketrans(PyObject *null, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer frm = {NULL, NULL};
@@ -1397,4 +1397,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=60d6a9f1333b76f0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c607024162df3ea8 input=a9049054013a1b77]*/
