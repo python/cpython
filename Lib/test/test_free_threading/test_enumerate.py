@@ -4,11 +4,11 @@ from threading import Thread, Barrier
 
 from test.support import threading_helper
 
+threading_helper.requires_working_threading(module=True)
 
 class EnumerateThreading(unittest.TestCase):
 
     @threading_helper.reap_threads
-    @threading_helper.requires_working_threading()
     def test_threading(self):
         number_of_threads = 10
         number_of_iterations = 8
@@ -29,10 +29,8 @@ class EnumerateThreading(unittest.TestCase):
             for ii in range(number_of_threads):
                 worker_threads.append(
                     Thread(target=work, args=[enum]))
-            for t in worker_threads:
-                t.start()
-            for t in worker_threads:
-                t.join()
+            with threading_helper.start_threads(worker_threads):
+                pass
 
             barrier.reset()
 
