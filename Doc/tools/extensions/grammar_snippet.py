@@ -13,7 +13,7 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx.util.nodes import make_id
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Iterator, Sequence
     from typing import Any, Final
 
     from docutils.nodes import Node
@@ -62,28 +62,15 @@ class GrammarSnippetBase(SphinxDirective):
 
         group_name = options['group']
         node_location = self.get_location()
-        current_lines = []
-        production_node = addnodes.production()
-        production_nodes = [production_node]
-        for source_line in content:
-            # Start a new production_node if there's text in the first
-            # column of the line. (That means a new rule is starting.)
-            if not source_line[:1].isspace():
-                # set the raw source of the previous production
-                production_node.rawsource = '\n'.join(current_lines)
-                current_lines.clear()
-                # start a new production_node
-                production_node = addnodes.production()
-                production_nodes.append(production_node)
-            current_lines.append(source_line)
-            self.add_production_line(
-                production_node,
-                source_line,
+        production_nodes = []
+        for rawsource, production_defs in self.production_definitions(content):
+            production = self.make_production(
+                rawsource,
+                production_defs,
                 group_name=group_name,
                 location=node_location,
             )
-        # set the raw source of the final production
-        production_node.rawsource = '\n'.join(current_lines)
+            production_nodes.append(production)
 
         node = addnodes.productionlist(
             '',
@@ -94,29 +81,59 @@ class GrammarSnippetBase(SphinxDirective):
         self.set_source_info(node)
         return [node]
 
-    def add_production_line(
+    def production_definitions(
+        self, lines: Iterable[str], /
+    ) -> Iterator[tuple[str, list[dict[str, str]]]]:
+        """Yield pairs of rawsource and production content dicts."""
+        production_lines: list[str] = []
+        production_content: list[dict[str, str]] = []
+        for line in lines:
+            # If this line is the start of a new rule (text in the column 1),
+            # emit the current production and start a new one.
+            if not line[:1].isspace():
+                rawsource = '\n'.join(production_lines)
+                production_lines.clear()
+                if production_content:
+                    yield rawsource, production_content
+                    production_content = []
+
+            # Append the current line for the raw source
+            production_lines.append(line)
+
+            # Parse the line into constituent parts
+            last_pos = 0
+            for match in self.grammar_re.finditer(line):
+                # Handle text between matches
+                if match.start() > last_pos:
+                    unmatched_text = line[last_pos : match.start()]
+                    production_content.append({'text': unmatched_text})
+                last_pos = match.end()
+
+                # Handle matches
+                group_dict = {
+                    name: content
+                    for name, content in match.groupdict().items()
+                    if content is not None
+                }
+                production_content.append(group_dict)
+            production_content.append({'text': line[last_pos:] + '\n'})
+
+        # Emit the final production
+        if production_content:
+            rawsource = '\n'.join(production_lines)
+            yield rawsource, production_content
+
+    def make_production(
         self,
-        production_node: addnodes.production,
-        source_line: str,
+        rawsource: str,
+        production_defs: list[dict[str, str]],
         *,
         group_name: str,
         location: str,
-    ) -> None:
-        """Add one line of content to the given production_node"""
-        last_pos = 0
-        for match in self.grammar_re.finditer(source_line):
-            # Handle text between matches
-            if match.start() > last_pos:
-                unmatched_text = source_line[last_pos : match.start()]
-                production_node += nodes.Text(unmatched_text)
-            last_pos = match.end()
-
-            # Handle matches
-            group_dict = {
-                name: content
-                for name, content in match.groupdict().items()
-                if content is not None
-            }
+    ) -> addnodes.production:
+        """Create a production node from a list of parts."""
+        production_node = addnodes.production(rawsource)
+        for group_dict in production_defs:
             match group_dict:
                 case {'rule_name': name}:
                     production_node += self.make_name_target(
@@ -128,9 +145,11 @@ class GrammarSnippetBase(SphinxDirective):
                     production_node += token_xrefs(ref_text, group_name)
                 case {'single_quoted': name} | {'double_quoted': name}:
                     production_node += snippet_string_node('', name)
+                case {'text': text}:
+                    production_node += nodes.Text(text)
                 case _:
                     raise ValueError('unhandled match')
-        production_node += nodes.Text(source_line[last_pos:] + '\n')
+        return production_node
 
     def make_name_target(
         self,
