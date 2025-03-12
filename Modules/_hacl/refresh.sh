@@ -120,10 +120,6 @@ $sed -i 's!#include "fstar_uint128_struct_endianness.h"!#include "krml/fstar_uin
 # use KRML_VERIFIED_UINT128
 $sed -i -z 's!#define KRML_TYPES_H!#define KRML_TYPES_H\n#define KRML_VERIFIED_UINT128!g' include/krml/internal/types.h
 
-# FStar_UInt_8_16_32_64 contains definitions useful in the general case, but not
-# for us; trim!
-$sed -i -z 's!\(extern\|typedef\)[^;]*;\n\n!!g' include/krml/FStar_UInt_8_16_32_64.h
-
 # This contains static inline prototypes that are defined in
 # FStar_UInt_8_16_32_64; they are by default repeated for safety of separate
 # compilation, but this is not necessary.
@@ -131,13 +127,6 @@ $sed -i 's!#include.*Hacl_Krmllib.h"!!g' "${all_files[@]}"
 
 # Use globally unique names for the Hacl_ C APIs to avoid linkage conflicts.
 $sed -i -z 's!#include <string.h>!#include <string.h>\n#include "python_hacl_namespaces.h"!' Hacl_Hash_*.h
-
-# Finally, we remove a bunch of ifdefs from target.h that are, again, useful in
-# the general case, but not exercised by the subset of HACL* that we vendor.
-$sed -z -i 's!#ifndef KRML_\(HOST_TIME\)\n\(\n\|#  [^\n]*\n\|[^#][^\n]*\n\)*#endif\n\n!!g' include/krml/internal/target.h
-$sed -z -i 's!\n\n\([^#][^\n]*\n\)*#define KRML_\(EABORT\|EXIT\)[^\n]*\(\n  [^\n]*\)*!!g' include/krml/internal/target.h
-$sed -z -i 's!\n\n\([^#][^\n]*\n\)*#if [^\n]*\n\(  [^\n]*\n\)*#define  KRML_\(EABORT\|EXIT\|CHECK_SIZE\)[^\n]*\(\n  [^\n]*\)*!!g' include/krml/internal/target.h
-$sed -z -i 's!\n\n\([^#][^\n]*\n\)*#if [^\n]*\n\(  [^\n]*\n\)*#  define _\?KRML_\(DEPRECATED\|HOST_SNPRINTF\)[^\n]*\n\([^#][^\n]*\n\|#el[^\n]*\n\|#  [^\n]*\n\)*#endif!!g' include/krml/internal/target.h
 
 # Step 3: trim whitespace (for the linter)
 
