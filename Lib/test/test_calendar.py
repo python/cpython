@@ -1126,7 +1126,8 @@ class MiscTestCase(unittest.TestCase):
         not_exported = {
             'mdays', 'January', 'February', 'EPOCH',
             'different_locale', 'c', 'prweek', 'week', 'format',
-            'formatstring', 'main', 'monthlen', 'prevmonth', 'nextmonth', ""}
+            'formatstring', 'main', 'monthlen', 'prevmonth', 'nextmonth',
+            'alt_month_name', 'alt_month_abbr', ""}
         support.check__all__(self, calendar, not_exported=not_exported)
 
 

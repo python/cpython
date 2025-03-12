@@ -139,6 +139,24 @@ day_abbr = _localized_day('%a')
 month_name = _localized_month('%B')
 month_abbr = _localized_month('%b')
 
+# Check if the platform supports the %OB format code
+def _is_alt_mon_available():
+    try:
+        datetime.date(2001, 1, 1).strftime('%OB')
+        datetime.date(2001, 1, 1).strftime('%Ob')
+    except ValueError:
+        return False
+    return True
+
+# In Greek and in many Slavic and Baltic languages, "%OB" will produce
+# the month in nominative case.
+if _is_alt_mon_available():
+    alt_month_name = _localized_month('%OB')
+    alt_month_abbr = _localized_month('%Ob')
+else:
+    alt_month_name = month_name
+    alt_month_abbr = month_abbr
+
 
 def isleap(year):
     """Return True for leap years, False for non-leap years."""
@@ -377,7 +395,7 @@ class TextCalendar(Calendar):
         """
         _validate_month(themonth)
 
-        s = month_name[themonth]
+        s = alt_month_name[themonth]
         if withyear:
             s = "%s %r" % (s, theyear)
         return s.center(width)
@@ -510,9 +528,9 @@ class HTMLCalendar(Calendar):
         """
         _validate_month(themonth)
         if withyear:
-            s = '%s %s' % (month_name[themonth], theyear)
+            s = '%s %s' % (alt_month_name[themonth], theyear)
         else:
-            s = '%s' % month_name[themonth]
+            s = '%s' % alt_month_name[themonth]
         return '<tr><th colspan="7" class="%s">%s</th></tr>' % (
             self.cssclass_month_head, s)
 
