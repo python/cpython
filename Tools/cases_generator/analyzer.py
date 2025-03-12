@@ -589,6 +589,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PySlice_New",
     "PyStackRef_AsPyObjectBorrow",
     "PyStackRef_AsPyObjectNew",
+    "PyStackRef_FromPyObjectNewMortal",
     "PyStackRef_AsPyObjectSteal",
     "PyStackRef_CLEAR",
     "PyStackRef_CLOSE_SPECIALIZED",
@@ -598,7 +599,10 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_FromPyObjectNew",
     "PyStackRef_FromPyObjectSteal",
     "PyStackRef_IsExactly",
+    "PyStackRef_FromPyObjectStealMortal",
     "PyStackRef_IsNone",
+    "PyStackRef_Is",
+    "PyStackRef_IsHeapSafe",
     "PyStackRef_IsTrue",
     "PyStackRef_IsFalse",
     "PyStackRef_IsNull",
@@ -635,7 +639,6 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyGen_GetGeneratorFromFrame",
     "_PyInterpreterState_GET",
     "_PyList_AppendTakeRef",
-    "_PyList_FromStackRefStealOnSuccess",
     "_PyList_ITEMS",
     "_PyLong_CompactValue",
     "_PyLong_DigitCount",
@@ -1084,8 +1087,8 @@ def assign_opcodes(
     # This helps catch cases where we attempt to execute a cache.
     instmap["RESERVED"] = 17
 
-    # 149 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
-    instmap["RESUME"] = 149
+    # 128 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
+    instmap["RESUME"] = 128
 
     # This is an historical oddity.
     instmap["BINARY_OP_INPLACE_ADD_UNICODE"] = 3
@@ -1115,7 +1118,7 @@ def assign_opcodes(
 
     # Specialized ops appear in their own section
     # Instrumented opcodes are at the end of the valid range
-    min_internal = 150
+    min_internal = instmap["RESUME"] + 1
     min_instrumented = 254 - (len(instrumented) - 1)
     assert min_internal + len(specialized) < min_instrumented
 

@@ -411,6 +411,18 @@ class PurePathTest(test_pathlib_abc.JoinablePathTest):
         self.assertEqual(P('').stem, '')
         self.assertEqual(P('.').stem, '')
 
+    @needs_windows
+    def test_with_name_windows(self):
+        P = self.cls
+        self.assertRaises(ValueError, P(r'c:').with_name, 'd.xml')
+        self.assertRaises(ValueError, P(r'c:\\').with_name, 'd.xml')
+        self.assertRaises(ValueError, P(r'\\My\Share').with_name, 'd.xml')
+        # NTFS alternate data streams
+        self.assertEqual(str(P('a').with_name('d:')), '.\\d:')
+        self.assertEqual(str(P('a').with_name('d:e')), '.\\d:e')
+        self.assertEqual(P(r'c:a\b').with_name('d:'), P(r'c:a\d:'))
+        self.assertEqual(P(r'c:a\b').with_name('d:e'), P(r'c:a\d:e'))
+
     def test_with_name_empty(self):
         P = self.cls
         self.assertRaises(ValueError, P('').with_name, 'd.xml')
@@ -418,6 +430,18 @@ class PurePathTest(test_pathlib_abc.JoinablePathTest):
         self.assertRaises(ValueError, P('/').with_name, 'd.xml')
         self.assertRaises(ValueError, P('a/b').with_name, '')
         self.assertRaises(ValueError, P('a/b').with_name, '.')
+
+    @needs_windows
+    def test_with_stem_windows(self):
+        P = self.cls
+        self.assertRaises(ValueError, P('c:').with_stem, 'd')
+        self.assertRaises(ValueError, P('c:/').with_stem, 'd')
+        self.assertRaises(ValueError, P('//My/Share').with_stem, 'd')
+        # NTFS alternate data streams
+        self.assertEqual(str(P('a').with_stem('d:')), '.\\d:')
+        self.assertEqual(str(P('a').with_stem('d:e')), '.\\d:e')
+        self.assertEqual(P('c:a/b').with_stem('d:'), P('c:a/d:'))
+        self.assertEqual(P('c:a/b').with_stem('d:e'), P('c:a/d:e'))
 
     def test_with_stem_empty(self):
         P = self.cls
@@ -432,6 +456,13 @@ class PurePathTest(test_pathlib_abc.JoinablePathTest):
         p = P('a/b')
         with self.assertWarns(DeprecationWarning):
             p.is_reserved()
+
+    def test_full_match_case_sensitive(self):
+        P = self.cls
+        self.assertFalse(P('A.py').full_match('a.PY', case_sensitive=True))
+        self.assertTrue(P('A.py').full_match('a.PY', case_sensitive=False))
+        self.assertFalse(P('c:/a/B.Py').full_match('C:/A/*.pY', case_sensitive=True))
+        self.assertTrue(P('/a/b/c.py').full_match('/A/*/*.Py', case_sensitive=False))
 
     def test_match_empty(self):
         P = self.cls
@@ -2398,6 +2429,33 @@ class PathTest(test_pathlib_abc.RWPathTest, PurePathTest):
         with self.assertRaises(pathlib.UnsupportedOperation):
             q.symlink_to(p)
 
+    def test_info_exists_caching(self):
+        p = self.cls(self.base)
+        q = p / 'myfile'
+        self.assertFalse(q.info.exists())
+        self.assertFalse(q.info.exists(follow_symlinks=False))
+        q.write_text('hullo')
+        self.assertFalse(q.info.exists())
+        self.assertFalse(q.info.exists(follow_symlinks=False))
+
+    def test_info_is_dir_caching(self):
+        p = self.cls(self.base)
+        q = p / 'mydir'
+        self.assertFalse(q.info.is_dir())
+        self.assertFalse(q.info.is_dir(follow_symlinks=False))
+        q.mkdir()
+        self.assertFalse(q.info.is_dir())
+        self.assertFalse(q.info.is_dir(follow_symlinks=False))
+
+    def test_info_is_file_caching(self):
+        p = self.cls(self.base)
+        q = p / 'myfile'
+        self.assertFalse(q.info.is_file())
+        self.assertFalse(q.info.is_file(follow_symlinks=False))
+        q.write_text('hullo')
+        self.assertFalse(q.info.is_file())
+        self.assertFalse(q.info.is_file(follow_symlinks=False))
+
     @needs_symlinks
     def test_info_is_symlink_caching(self):
         p = self.cls(self.base)
@@ -2736,6 +2794,18 @@ class PathTest(test_pathlib_abc.RWPathTest, PurePathTest):
         expect = {p / "dirB/fileB", p / "dirC/fileC"}
         self.assertEqual(expect, set(p.glob(P(pattern))))
         self.assertEqual(expect, set(p.glob(FakePath(pattern))))
+
+    def test_glob_case_sensitive(self):
+        P = self.cls
+        def _check(path, pattern, case_sensitive, expected):
+            actual = {str(q) for q in path.glob(pattern, case_sensitive=case_sensitive)}
+            expected = {str(P(self.base, q)) for q in expected}
+            self.assertEqual(actual, expected)
+        path = P(self.base)
+        _check(path, "DIRB/FILE*", True, [])
+        _check(path, "DIRB/FILE*", False, ["dirB/fileB"])
+        _check(path, "dirb/file*", True, [])
+        _check(path, "dirb/file*", False, ["dirB/fileB"])
 
     @needs_symlinks
     def test_glob_dot(self):
