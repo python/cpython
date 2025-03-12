@@ -1891,8 +1891,9 @@ odictkeys_iter(_PyDictViewObject *dv)
 }
 
 static PyObject *
-odictkeys_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored))
+odictkeys_reversed(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    _PyDictViewObject *dv = (_PyDictViewObject*)op;
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
     }
@@ -1901,7 +1902,7 @@ odictkeys_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored))
 }
 
 static PyMethodDef odictkeys_methods[] = {
-    {"__reversed__", (PyCFunction)odictkeys_reversed, METH_NOARGS, NULL},
+    {"__reversed__", odictkeys_reversed, METH_NOARGS, NULL},
     {NULL,          NULL}           /* sentinel */
 };
 
@@ -1958,8 +1959,9 @@ odictitems_iter(_PyDictViewObject *dv)
 }
 
 static PyObject *
-odictitems_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored))
+odictitems_reversed(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    _PyDictViewObject *dv = (_PyDictViewObject*)op;
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
     }
@@ -1968,7 +1970,7 @@ odictitems_reversed(_PyDictViewObject *dv, PyObject *Py_UNUSED(ignored))
 }
 
 static PyMethodDef odictitems_methods[] = {
-    {"__reversed__", (PyCFunction)odictitems_reversed, METH_NOARGS, NULL},
+    {"__reversed__", odictitems_reversed, METH_NOARGS, NULL},
     {NULL,          NULL}           /* sentinel */
 };
 
