@@ -680,8 +680,8 @@ context_aware_warnings<-X>` command-line option or by the
         it.  When true, the context established by :class:`catch_warnings`
         in one thread will also apply to new threads started by it.  If false,
         new threads will start with an empty warnings context variable,
-        meaning that only the filters in :data:`warnings.filters` will be
-        active.
+        meaning that any filtering that was established by a
+        :class:`catch_warnings` context manager will no longer be active.
 
 .. versionchanged:: 3.14
 
