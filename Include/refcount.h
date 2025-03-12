@@ -158,6 +158,9 @@ static inline void Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
         return;
     }
 #ifndef Py_GIL_DISABLED
+    if (refcnt >= (Py_ssize_t)_Py_IMMORTAL_MINIMUM_REFCNT) {
+        refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
+    }
 #if SIZEOF_VOID_P > 4
     ob->ob_refcnt = (PY_UINT32_T)refcnt;
 #else
