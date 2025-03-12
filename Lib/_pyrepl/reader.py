@@ -551,7 +551,10 @@ class Reader:
         """Return what should be in the left-hand margin for line
         'lineno'."""
         if self.arg is not None and cursor_on_line:
-            prompt = self.__get_prompt_str(f"(arg: {self.arg}) ", DEFAULT_PS1)
+            prompt = DEFAULT_PS1
+            arg = self.__get_prompt_str(self.arg, "")
+            if arg:
+                prompt = f"(arg: {self.arg}) "
         elif self.paste_mode and not self.in_bracketed_paste:
             prompt = "(paste) "
         elif "\n" in self.buffer:
