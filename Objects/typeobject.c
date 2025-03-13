@@ -84,6 +84,17 @@ class object "PyObject *" "&PyBaseObject_Type"
 
 #endif
 
+// Modification of type slots and type flags is protected by the global type
+// lock. However, the slots and flags are read non-atomically without holding
+// the type lock.  So, we need to stop-the-world while modifying these, in
+// order to avoid data races.  This is unfortunately a bit expensive.
+#ifdef Py_GIL_DISABLED
+// If defined, type slot updates (after initial creation) will stop-the-world.
+#define TYPE_SLOT_UPDATE_NEEDS_STOP
+// If defined, type flag updates (after initial creation) will stop-the-world.
+#define TYPE_FLAGS_UPDATE_NEEDS_STOP
+#endif
+
 #define PyTypeObject_CAST(op)   ((PyTypeObject *)(op))
 
 typedef struct PySlot_Offset {
@@ -1582,9 +1593,10 @@ type_set_abstractmethods(PyObject *tp, PyObject *value, void *Py_UNUSED(closure)
     BEGIN_TYPE_LOCK();
     type_modified_unlocked(type);
     if (abstract)
-        type_add_flags(type, Py_TPFLAGS_IS_ABSTRACT);
+        _PyType_SetFlags(type, 0, Py_TPFLAGS_IS_ABSTRACT);
     else
-        type_clear_flags(type, Py_TPFLAGS_IS_ABSTRACT);
+        _PyType_SetFlags(type, Py_TPFLAGS_IS_ABSTRACT, 0);
+
     END_TYPE_LOCK();
 
     return 0;
@@ -5780,7 +5792,17 @@ void
 _PyType_SetFlags(PyTypeObject *self, unsigned long mask, unsigned long flags)
 {
     BEGIN_TYPE_LOCK();
-    type_set_flags_with_mask(self, mask, flags);
+    unsigned long new_flags = (self->tp_flags & ~mask) | flags;
+    if (new_flags != self->tp_flags) {
+#ifdef TYPE_FLAGS_UPDATE_NEEDS_STOP
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyEval_StopTheWorld(interp);
+#endif
+        self->tp_flags = new_flags;
+#ifdef TYPE_FLAGS_UPDATE_NEEDS_STOP
+        _PyEval_StartTheWorld(interp);
+#endif
+    }
     END_TYPE_LOCK();
 }
 
@@ -5944,14 +5966,10 @@ _Py_type_getattro(PyObject *tp, PyObject *name)
     return _Py_type_getattro_impl(type, name, NULL);
 }
 
-#ifdef Py_GIL_DISABLED
+#ifdef TYPE_SLOT_UPDATE_NEEDS_STOP
 static int
 update_slot_world_stopped(PyTypeObject *type, PyObject *name)
 {
-    // Modification of type slots is protected by the global type
-    // lock. However, type slots are read non-atomically without holding the
-    // type lock.  So, we need to stop-the-world while modifying slots, in
-    // order to avoid data races.  This is unfortunately quite expensive.
     int ret;
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyEval_StopTheWorld(interp);
@@ -5990,7 +6008,7 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
         return -1;
     }
 
-#if Py_GIL_DISABLED
+#ifdef TYPE_SLOT_UPDATE_NEEDS_STOP
     if (is_dunder_name(name) && has_slotdef(name)) {
         return update_slot_world_stopped(type, name);
     }
@@ -11026,10 +11044,9 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
 #undef ptrs
 }
 
-#ifdef Py_GIL_DISABLED
+#ifdef TYPE_SLOT_UPDATE_NEEDS_STOP
 // Return true if "name" corresponds to at least one slot definition.  This is
-// used to avoid calling update_slot() if is_dunder_name() is true but it's
-// not actually a slot.
+// a more accurate but more expensive test compared to is_dunder_name().
 static bool
 has_slotdef(PyObject *name)
 {
@@ -11288,9 +11305,9 @@ update_all_slots(PyTypeObject* type)
 
     ASSERT_TYPE_LOCK_HELD();
 
+#ifdef TYPE_SLOT_UPDATE_NEEDS_STOP
     // Similar to update_slot_world_stopped(), this is required to
     // avoid races.  We do it once here rather than once per-slot.
-#ifdef Py_GIL_DISABLED
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyEval_StopTheWorld(interp);
 #endif
@@ -11303,7 +11320,7 @@ update_all_slots(PyTypeObject* type)
         update_slot(type, p->name_strobj);
     }
 
-#ifdef Py_GIL_DISABLED
+#ifdef TYPE_SLOT_UPDATE_NEEDS_STOP
     _PyEval_StartTheWorld(interp);
 #endif
 }
