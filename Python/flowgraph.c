@@ -2631,7 +2631,9 @@ optimize_load_fast(cfg_builder *g, bool compute_stackdepth)
     int max_instrs = 0;
     basicblock *entryblock = g->g_entryblock;
     if (compute_stackdepth) {
-        calculate_stackdepth(g);
+        if (calculate_stackdepth(g) == ERROR) {
+            return ERROR;
+        }
     }
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         max_instrs = Py_MAX(max_instrs, b->b_iused);
@@ -2665,7 +2667,10 @@ optimize_load_fast(cfg_builder *g, bool compute_stackdepth)
         // presence. Add dummy references as necessary.
         ref_stack_clear(&refs);
         for (int i = 0; i < block->b_startdepth; i++) {
-            ref_stack_push(&refs, DUMMY_REF);
+            if (ref_stack_push(&refs, DUMMY_REF) < 0) {
+                status = ERROR;
+                goto done;
+            }
         }
 
         for (int i = 0; i < block->b_iused; i++) {
