@@ -584,25 +584,25 @@ I/O Base Classes
       most streams this is to EOF, but for non-blocking streams more data may
       become available.
 
-      The standard library :class:`io.BufferedReader` returns ``None`` if the
-      stream is non-blocking and no data is available. Other implementations may
-      return ``None`` or raise :exc:`BlockingIOError`.
+      .. note::
+
+         When the underlying raw stream is non-blocking, implementations may
+         either raise :exc:`BlockingIOError` or return ``None`` if no data is
+         available. :mod:`io` implementations return ``None``.
 
    .. method:: read1(size=-1, /)
 
       Read and return up to *size* bytes, with at most one call to the
       underlying raw stream's :meth:`~RawIOBase.read` (or
-      :meth:`~RawIOBase.readinto`) method.  This can be useful if you are
-      implementing your own buffering on top of a :class:`BufferedIOBase`
-      object.
-
-      If *size* is ``-1`` (the default), an arbitrary number of bytes are
-      returned (more than zero unless EOF is reached).
+      :meth:`~RawIOBase.readinto`) method. If *size* is ``-1`` or not provided,
+      the implementation will decide a size to use and at most one call will be
+      made.
 
       .. note::
 
-         When the underlying raw stream is non-blocking, a :exc:`BlockingIOError`
-         may be raised if a read operation cannot be completed immediately.
+         When the underlying raw stream is non-blocking, implementations may
+         either raise :exc:`BlockingIOError` or return ``None`` if no data is
+         available. :mod:`io` implementations return ``None``.
 
    .. method:: readinto(b, /)
 
