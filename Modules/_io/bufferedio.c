@@ -1484,7 +1484,7 @@ end:
 static PyObject *
 buffered_iternext(PyObject *op)
 {
-    buffered *self = (buffered*)op;
+    buffered *self = buffered_CAST(op);
     PyObject *line;
     PyTypeObject *tp;
 
