@@ -11,9 +11,10 @@
 --------------
 
 This module provides immutable :class:`UUID` objects (the :class:`UUID` class)
-and the functions :func:`uuid1`, :func:`uuid3`, :func:`uuid4`, :func:`uuid5`,
-:func:`uuid6`, and :func:`uuid8` for generating version 1, 3, 4, 5, 6,
-and 8 UUIDs as specified in :rfc:`9562` (which supersedes :rfc:`4122`).
+and :ref:`functions <uuid-factory-functions>` for generating UUIDs corresponding
+to a specific UUID version as specified in :rfc:`9562` (which supersedes :rfc:`4122`),
+for example, :func:`uuid1` for UUID version 1, :func:`uuid3` for UUID version 3, and so on.
+Note that UUID version 2 is deliberately omitted as it is outside the scope of the RFC.
 
 If all you want is a unique ID, you should probably call :func:`uuid1` or
 :func:`uuid4`.  Note that :func:`uuid1` may compromise privacy since it creates
@@ -154,7 +155,7 @@ which relays any information about the UUID's safety, using this enumeration:
    :const:`RFC_4122`).
 
    .. versionchanged:: next
-      Added UUID versions 6 and 8.
+      Added UUID versions 6, 7 and 8.
 
 
 .. attribute:: UUID.is_safe
@@ -184,6 +185,8 @@ The :mod:`uuid` module defines the following functions:
       administered MAC addresses, since the former are guaranteed to be
       globally unique, while the latter are not.
 
+
+.. _uuid-factory-functions:
 
 .. function:: uuid1(node=None, clock_seq=None)
 
@@ -224,6 +227,18 @@ The :mod:`uuid` module defines the following functions:
 
    If *node* or *clock_seq* exceed their expected bit count, only their least
    significant bits are kept.
+
+   .. versionadded:: next
+
+
+.. function:: uuid7()
+
+   Generate a time-based UUID according to
+   :rfc:`RFC 9562, §5.7 <9562#section-5.7>`.
+
+   For portability across platforms lacking sub-millisecond precision, UUIDs
+   produced by this function embed a 48-bit timestamp and use a 42-bit counter
+   to guarantee monotonicity within a millisecond.
 
    .. versionadded:: next
 
@@ -330,7 +345,7 @@ The :mod:`uuid` module can be executed as a script from the command line.
 
 .. code-block:: sh
 
-   python -m uuid [-h] [-u {uuid1,uuid3,uuid4,uuid5,uuid6,uuid8}] [-n NAMESPACE] [-N NAME]
+   python -m uuid [-h] [-u {uuid1,uuid3,uuid4,uuid5,uuid6,uuid7,uuid8}] [-n NAMESPACE] [-N NAME]
 
 The following options are accepted:
 
@@ -347,7 +362,7 @@ The following options are accepted:
    is used.
 
    .. versionchanged:: next
-      Allow generating UUID versions 6 and 8.
+      Allow generating UUID versions 6, 7 and 8.
 
 .. option:: -n <namespace>
             --namespace <namespace>

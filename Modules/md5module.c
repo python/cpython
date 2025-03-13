@@ -194,8 +194,8 @@ Update this hash object's state with the provided string.
 [clinic start generated code]*/
 
 static PyObject *
-MD5Type_update(MD5object *self, PyObject *obj)
-/*[clinic end generated code: output=f6ad168416338423 input=6e1efcd9ecf17032]*/
+MD5Type_update_impl(MD5object *self, PyObject *obj)
+/*[clinic end generated code: output=b0fed9a7ce7ad253 input=6e1efcd9ecf17032]*/
 {
     Py_buffer buf;
 

@@ -871,6 +871,206 @@ class BaseTestUUID:
             equal((u.int >> 80) & 0xffff, 0x232a)
             equal((u.int >> 96) & 0xffff_ffff, 0x1ec9_414c)
 
+    def test_uuid7(self):
+        equal = self.assertEqual
+        u = self.uuid.uuid7()
+        equal(u.variant, self.uuid.RFC_4122)
+        equal(u.version, 7)
+
+        # 1 Jan 2023 12:34:56.123_456_789
+        timestamp_ns = 1672533296_123_456_789  # ns precision
+        timestamp_ms, _ = divmod(timestamp_ns, 1_000_000)
+
+        for _ in range(100):
+            counter_hi = random.getrandbits(11)
+            counter_lo = random.getrandbits(30)
+            counter = (counter_hi << 30) | counter_lo
+
+            tail = random.getrandbits(32)
+            # effective number of bits is 32 + 30 + 11 = 73
+            random_bits = counter << 32 | tail
+
+            # set all remaining MSB of fake random bits to 1 to ensure that
+            # the implementation correctly removes them
+            random_bits = (((1 << 7) - 1) << 73) | random_bits
+            random_data = random_bits.to_bytes(10)
+
+            with (
+                mock.patch.multiple(
+                    self.uuid,
+                    _last_timestamp_v7=None,
+                    _last_counter_v7=0,
+                ),
+                mock.patch('time.time_ns', return_value=timestamp_ns),
+                mock.patch('os.urandom', return_value=random_data) as urand
+            ):
+                u = self.uuid.uuid7()
+                urand.assert_called_once_with(10)
+                equal(u.variant, self.uuid.RFC_4122)
+                equal(u.version, 7)
+
+                equal(self.uuid._last_timestamp_v7, timestamp_ms)
+                equal(self.uuid._last_counter_v7, counter)
+
+                unix_ts_ms = timestamp_ms & 0xffff_ffff_ffff
+                equal((u.int >> 80) & 0xffff_ffff_ffff, unix_ts_ms)
+
+                equal((u.int >> 75) & 1, 0)  # check that the MSB is 0
+                equal((u.int >> 64) & 0xfff, counter_hi)
+                equal((u.int >> 32) & 0x3fff_ffff, counter_lo)
+                equal(u.int & 0xffff_ffff, tail)
+
+    def test_uuid7_uniqueness(self):
+        # Test that UUIDv7-generated values are unique.
+        #
+        # While UUIDv8 has an entropy of 122 bits, those 122 bits may not
+        # necessarily be sampled from a PRNG. On the other hand, UUIDv7
+        # uses os.urandom() as a PRNG which features better randomness.
+        N = 1000
+        uuids = {self.uuid.uuid7() for _ in range(N)}
+        self.assertEqual(len(uuids), N)
+
+        versions = {u.version for u in uuids}
+        self.assertSetEqual(versions, {7})
+
+    def test_uuid7_monotonicity(self):
+        equal = self.assertEqual
+
+        us = [self.uuid.uuid7() for _ in range(10_000)]
+        equal(us, sorted(us))
+
+        with mock.patch.multiple(
+            self.uuid,
+            _last_timestamp_v7=0,
+            _last_counter_v7=0,
+        ):
+            # 1 Jan 2023 12:34:56.123_456_789
+            timestamp_ns = 1672533296_123_456_789  # ns precision
+            timestamp_ms, _ = divmod(timestamp_ns, 1_000_000)
+
+            # counter_{hi,lo} are chosen so that "counter + 1" does not overflow
+            counter_hi = random.getrandbits(11)
+            counter_lo = random.getrandbits(29)
+            counter = (counter_hi << 30) | counter_lo
+            self.assertLess(counter + 1, 0x3ff_ffff_ffff)
+
+            tail = random.getrandbits(32)
+            random_bits = counter << 32 | tail
+            random_data = random_bits.to_bytes(10)
+
+            with (
+                mock.patch('time.time_ns', return_value=timestamp_ns),
+                mock.patch('os.urandom', return_value=random_data) as urand
+            ):
+                u1 = self.uuid.uuid7()
+                urand.assert_called_once_with(10)
+                equal(self.uuid._last_timestamp_v7, timestamp_ms)
+                equal(self.uuid._last_counter_v7, counter)
+                equal((u1.int >> 64) & 0xfff, counter_hi)
+                equal((u1.int >> 32) & 0x3fff_ffff, counter_lo)
+                equal(u1.int & 0xffff_ffff, tail)
+
+            # 1 Jan 2023 12:34:56.123_457_032 (same millisecond but not same ns)
+            next_timestamp_ns = 1672533296_123_457_032
+            next_timestamp_ms, _ = divmod(timestamp_ns, 1_000_000)
+            equal(timestamp_ms, next_timestamp_ms)
+
+            next_tail_bytes = os.urandom(4)
+            next_fail = int.from_bytes(next_tail_bytes)
+
+            with (
+                mock.patch('time.time_ns', return_value=next_timestamp_ns),
+                mock.patch('os.urandom', return_value=next_tail_bytes) as urand
+            ):
+                u2 = self.uuid.uuid7()
+                urand.assert_called_once_with(4)
+                # same milli-second
+                equal(self.uuid._last_timestamp_v7, timestamp_ms)
+                # 42-bit counter advanced by 1
+                equal(self.uuid._last_counter_v7, counter + 1)
+                equal((u2.int >> 64) & 0xfff, counter_hi)
+                equal((u2.int >> 32) & 0x3fff_ffff, counter_lo + 1)
+                equal(u2.int & 0xffff_ffff, next_fail)
+
+            self.assertLess(u1, u2)
+
+    def test_uuid7_timestamp_backwards(self):
+        equal = self.assertEqual
+        # 1 Jan 2023 12:34:56.123_456_789
+        timestamp_ns = 1672533296_123_456_789  # ns precision
+        timestamp_ms, _ = divmod(timestamp_ns, 1_000_000)
+        fake_last_timestamp_v7 = timestamp_ms + 1
+
+        # counter_{hi,lo} are chosen so that "counter + 1" does not overflow
+        counter_hi = random.getrandbits(11)
+        counter_lo = random.getrandbits(29)
+        counter = (counter_hi << 30) | counter_lo
+        self.assertLess(counter + 1, 0x3ff_ffff_ffff)
+
+        tail_bytes = os.urandom(4)
+        tail = int.from_bytes(tail_bytes)
+
+        with (
+            mock.patch.multiple(
+                self.uuid,
+                _last_timestamp_v7=fake_last_timestamp_v7,
+                _last_counter_v7=counter,
+            ),
+            mock.patch('time.time_ns', return_value=timestamp_ns),
+            mock.patch('os.urandom', return_value=tail_bytes) as urand
+        ):
+            u = self.uuid.uuid7()
+            urand.assert_called_once_with(4)
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 7)
+            equal(self.uuid._last_timestamp_v7, fake_last_timestamp_v7 + 1)
+            unix_ts_ms = (fake_last_timestamp_v7 + 1) & 0xffff_ffff_ffff
+            equal((u.int >> 80) & 0xffff_ffff_ffff, unix_ts_ms)
+            # 42-bit counter advanced by 1
+            equal(self.uuid._last_counter_v7, counter + 1)
+            equal((u.int >> 64) & 0xfff, counter_hi)
+            # 42-bit counter advanced by 1 (counter_hi is untouched)
+            equal((u.int >> 32) & 0x3fff_ffff, counter_lo + 1)
+            equal(u.int & 0xffff_ffff, tail)
+
+    def test_uuid7_overflow_counter(self):
+        equal = self.assertEqual
+        # 1 Jan 2023 12:34:56.123_456_789
+        timestamp_ns = 1672533296_123_456_789  # ns precision
+        timestamp_ms, _ = divmod(timestamp_ns, 1_000_000)
+
+        new_counter_hi = random.getrandbits(11)
+        new_counter_lo = random.getrandbits(30)
+        new_counter = (new_counter_hi << 30) | new_counter_lo
+
+        tail = random.getrandbits(32)
+        random_bits = (new_counter << 32) | tail
+        random_data = random_bits.to_bytes(10)
+
+        with (
+            mock.patch.multiple(
+                self.uuid,
+                _last_timestamp_v7=timestamp_ms,
+                # same timestamp, but force an overflow on the counter
+                _last_counter_v7=0x3ff_ffff_ffff,
+            ),
+            mock.patch('time.time_ns', return_value=timestamp_ns),
+            mock.patch('os.urandom', return_value=random_data) as urand
+        ):
+            u = self.uuid.uuid7()
+            urand.assert_called_with(10)
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 7)
+            # timestamp advanced due to overflow
+            equal(self.uuid._last_timestamp_v7, timestamp_ms + 1)
+            unix_ts_ms = (timestamp_ms + 1) & 0xffff_ffff_ffff
+            equal((u.int >> 80) & 0xffff_ffff_ffff, unix_ts_ms)
+            # counter overflowed, so we picked a new one
+            equal(self.uuid._last_counter_v7, new_counter)
+            equal((u.int >> 64) & 0xfff, new_counter_hi)
+            equal((u.int >> 32) & 0x3fff_ffff, new_counter_lo)
+            equal(u.int & 0xffff_ffff, tail)
+
     def test_uuid8(self):
         equal = self.assertEqual
         u = self.uuid.uuid8()
