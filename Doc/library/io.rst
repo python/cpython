@@ -592,7 +592,7 @@ I/O Base Classes
 
    .. method:: read1(size=-1, /)
 
-      Read and return up to *size* bytes, calilng :meth:`~raw.readinto`,
+      Read and return up to *size* bytes, calilng ``raw.readinto``,
       retrying if :py:const:`~errno.EINTR` is encountered per  :pep:`475`. If
       *size* is ``-1`` or not provided, the implementation will choose an
       arbitrary value for *size*.
