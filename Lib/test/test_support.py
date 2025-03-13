@@ -733,6 +733,10 @@ class TestSupport(unittest.TestCase):
         self.assertEqual(support.copy_python_src_ignore(path, os.listdir(path)),
                          ignored)
 
+    def test_linked_to_musl(self):
+        linked = support.linked_to_musl()
+        self.assertIsInstance(linked, bool)
+
     # XXX -follows a list of untested API
     # make_legacy_pyc
     # is_resource_enabled
