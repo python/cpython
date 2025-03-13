@@ -11,7 +11,6 @@ The following modules have a command-line interface.
 * :mod:`code`
 * :ref:`compileall <compileall-cli>`
 * :mod:`cProfile`: see :ref:`profile <profile-cli>`
-* :ref:`difflib <difflib-interface>`
 * :ref:`dis <dis-cli>`
 * :mod:`doctest`
 * :mod:`!encodings.rot_13`
