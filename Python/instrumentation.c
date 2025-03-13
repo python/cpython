@@ -3006,13 +3006,6 @@ static PyObject *make_branch_handler(int tool_id, PyObject *handler, bool right)
     return (PyObject *)callback;
 }
 
-/* Consumes a reference to obj */
-static PyObject *exchange_callables(int tool_id, int event_id, PyObject *obj)
-{
-    PyInterpreterState *is = _PyInterpreterState_GET();
-    return _Py_atomic_exchange_ptr(&is->monitoring_callables[tool_id][event_id], obj);
-}
-
 PyObject *
 _PyMonitoring_RegisterCallback(int tool_id, int event_id, PyObject *obj)
 {
@@ -3036,11 +3029,21 @@ _PyMonitoring_RegisterCallback(int tool_id, int event_id, PyObject *obj)
                 return NULL;
             }
         }
-        Py_XDECREF(exchange_callables(tool_id, PY_MONITORING_EVENT_BRANCH_RIGHT, right));
-        res = exchange_callables(tool_id, PY_MONITORING_EVENT_BRANCH_LEFT, left);
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyEval_StopTheWorld(interp);
+        PyObject *old_right = interp->monitoring_callables[tool_id][PY_MONITORING_EVENT_BRANCH_RIGHT];
+        interp->monitoring_callables[tool_id][PY_MONITORING_EVENT_BRANCH_RIGHT] = right;
+        res = interp->monitoring_callables[tool_id][PY_MONITORING_EVENT_BRANCH_LEFT];
+        interp->monitoring_callables[tool_id][PY_MONITORING_EVENT_BRANCH_LEFT] = left;
+        _PyEval_StartTheWorld(interp);
+        Py_XDECREF(old_right);
     }
     else {
-        res = exchange_callables(tool_id, event_id, Py_XNewRef(obj));
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyEval_StopTheWorld(interp);
+        res = interp->monitoring_callables[tool_id][event_id];
+        interp->monitoring_callables[tool_id][event_id] = Py_XNewRef(obj);
+        _PyEval_StartTheWorld(interp);
     }
     if (res != NULL && Py_TYPE(res) == &_PyLegacyBranchEventHandler_Type) {
         _PyLegacyBranchEventHandler *wrapper = (_PyLegacyBranchEventHandler *)res;
@@ -3109,6 +3112,14 @@ branchesiter_next(branchesiterator *bi)
                 int not_taken = next_offset + 1;
                 bi->bi_offset = not_taken;
                 return int_triple(offset*2, not_taken*2, (next_offset + oparg)*2);
+            case END_ASYNC_FOR:
+                oparg = (oparg << 8) | inst.op.arg;
+                int src_offset = next_offset - oparg;
+                bi->bi_offset = next_offset;
+                assert(_Py_GetBaseCodeUnit(bi->bi_code, src_offset).op.code == END_SEND);
+                assert(_Py_GetBaseCodeUnit(bi->bi_code, src_offset+1).op.code == NOT_TAKEN);
+                not_taken = src_offset + 2;
+                return int_triple(src_offset *2, not_taken*2, next_offset*2);
             default:
                 oparg = 0;
         }

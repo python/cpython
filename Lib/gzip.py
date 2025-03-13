@@ -193,6 +193,11 @@ class GzipFile(_compression.BaseStream):
 
         """
 
+        # Ensure attributes exist at __del__
+        self.mode = None
+        self.fileobj = None
+        self._buffer = None
+
         if mode and ('t' in mode or 'U' in mode):
             raise ValueError("Invalid mode: {!r}".format(mode))
         if mode and 'b' not in mode:
@@ -325,11 +330,15 @@ class GzipFile(_compression.BaseStream):
 
         return length
 
-    def read(self, size=-1):
-        self._check_not_closed()
+    def _check_read(self, caller):
         if self.mode != READ:
             import errno
-            raise OSError(errno.EBADF, "read() on write-only GzipFile object")
+            msg = f"{caller}() on write-only GzipFile object"
+            raise OSError(errno.EBADF, msg)
+
+    def read(self, size=-1):
+        self._check_not_closed()
+        self._check_read("read")
         return self._buffer.read(size)
 
     def read1(self, size=-1):
@@ -337,19 +346,25 @@ class GzipFile(_compression.BaseStream):
 
         Reads up to a buffer's worth of data if size is negative."""
         self._check_not_closed()
-        if self.mode != READ:
-            import errno
-            raise OSError(errno.EBADF, "read1() on write-only GzipFile object")
+        self._check_read("read1")
 
         if size < 0:
             size = io.DEFAULT_BUFFER_SIZE
         return self._buffer.read1(size)
 
+    def readinto(self, b):
+        self._check_not_closed()
+        self._check_read("readinto")
+        return self._buffer.readinto(b)
+
+    def readinto1(self, b):
+        self._check_not_closed()
+        self._check_read("readinto1")
+        return self._buffer.readinto1(b)
+
     def peek(self, n):
         self._check_not_closed()
-        if self.mode != READ:
-            import errno
-            raise OSError(errno.EBADF, "peek() on write-only GzipFile object")
+        self._check_read("peek")
         return self._buffer.peek(n)
 
     @property
@@ -358,7 +373,9 @@ class GzipFile(_compression.BaseStream):
 
     def close(self):
         fileobj = self.fileobj
-        if fileobj is None or self._buffer.closed:
+        if fileobj is None:
+            return
+        if self._buffer is None or self._buffer.closed:
             return
         try:
             if self.mode == WRITE:
@@ -435,6 +452,13 @@ class GzipFile(_compression.BaseStream):
         self._check_not_closed()
         return self._buffer.readline(size)
 
+    def __del__(self):
+        if self.mode == WRITE and not self.closed:
+            import warnings
+            warnings.warn("unclosed GzipFile",
+                          ResourceWarning, source=self, stacklevel=2)
+
+        super().__del__()
 
 def _read_exact(fp, n):
     '''Read exactly *n* bytes from `fp`

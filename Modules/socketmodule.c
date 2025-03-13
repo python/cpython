@@ -427,21 +427,6 @@ remove_unusable_flags(PyObject *m)
 #endif
 
 #ifdef __APPLE__
-/* On OS X, getaddrinfo returns no error indication of lookup
-   failure, so we must use the emulation instead of the libinfo
-   implementation. Unfortunately, performing an autoconf test
-   for this bug would require DNS access for the machine performing
-   the configuration, which is not acceptable. Therefore, we
-   determine the bug just by checking for __APPLE__. If this bug
-   gets ever fixed, perhaps checking for sys/version.h would be
-   appropriate, which is 10/0 on the system with the bug. */
-#ifndef HAVE_GETNAMEINFO
-/* This bug seems to be fixed in Jaguar. The easiest way I could
-   Find to check for Jaguar is that it has getnameinfo(), which
-   older releases don't have */
-#undef HAVE_GETADDRINFO
-#endif
-
 #ifdef HAVE_INET_ATON
 #define USE_INET_ATON_WEAKLINK
 #endif
@@ -2273,7 +2258,9 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         switch (s->sock_proto) {
 #ifdef CAN_RAW
         case CAN_RAW:
+        #ifdef CAN_BCM
             _Py_FALLTHROUGH;
+        #endif
 #endif
 #ifdef CAN_BCM
         case CAN_BCM:

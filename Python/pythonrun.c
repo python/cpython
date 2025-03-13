@@ -1410,7 +1410,7 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
 
         PyObject* result = PyObject_CallFunction(
             print_tb_func, "OOO",
-            interactive_filename,
+            co,
             interactive_src,
             filename
         );

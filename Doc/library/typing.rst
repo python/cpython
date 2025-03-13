@@ -2398,6 +2398,10 @@ types.
    .. versionchanged:: 3.11
       Added support for generic namedtuples.
 
+   .. versionchanged:: next
+      Using :func:`super` (and the ``__class__`` :term:`closure variable`) in methods of ``NamedTuple`` subclasses
+      is unsupported and causes a :class:`TypeError`.
+
    .. deprecated-removed:: 3.13 3.15
       The undocumented keyword argument syntax for creating NamedTuple classes
       (``NT = NamedTuple("NT", x=int)``) is deprecated, and will be disallowed
@@ -2767,7 +2771,7 @@ types.
 
       .. versionadded:: 3.13
 
-   See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
+   See the `TypedDict <https://typing.python.org/en/latest/spec/typeddict.html#typeddict>`_ section in the typing documentation for more examples and detailed rules.
 
    .. versionadded:: 3.8
 
@@ -2830,17 +2834,35 @@ with :func:`@runtime_checkable <runtime_checkable>`.
     An ABC with one abstract method ``__round__``
     that is covariant in its return type.
 
-ABCs for working with IO
-------------------------
+.. _typing-io:
 
-.. class:: IO
-           TextIO
-           BinaryIO
+ABCs and Protocols for working with I/O
+---------------------------------------
 
-   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
+.. class:: IO[AnyStr]
+           TextIO[AnyStr]
+           BinaryIO[AnyStr]
+
+   Generic class ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
    and ``BinaryIO(IO[bytes])``
    represent the types of I/O streams such as returned by
-   :func:`open`.
+   :func:`open`. Please note that these classes are not protocols, and
+   their interface is fairly broad.
+
+The protocols :class:`io.Reader` and :class:`io.Writer` offer a simpler
+alternative for argument types, when only the ``read()`` or ``write()``
+methods are accessed, respectively::
+
+   def read_and_write(reader: Reader[str], writer: Writer[bytes]):
+       data = reader.read()
+       writer.write(data.encode())
+
+Also consider using :class:`collections.abc.Iterable` for iterating over
+the lines of an input stream::
+
+   def read_config(stream: Iterable[str]):
+       for line in stream:
+           ...
 
 Functions and decorators
 ------------------------
