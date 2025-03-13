@@ -565,7 +565,7 @@ ThreadHandle_set_done(ThreadHandle *self)
         return -1;
     }
 
-    if (_PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)set_done, self) ==
+    if (_PyOnceFlag_CallOnce(&self->once, set_done, self) ==
         -1) {
         return -1;
     }
