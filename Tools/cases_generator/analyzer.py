@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import itertools
 import lexer
 import parser
@@ -587,6 +587,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_AsDeferred",
     "PyStackRef_AsPyObjectBorrow",
     "PyStackRef_AsPyObjectNew",
+    "PyStackRef_FromPyObjectNewMortal",
     "PyStackRef_AsPyObjectSteal",
     "PyStackRef_CLEAR",
     "PyStackRef_CLOSE_SPECIALIZED",
@@ -597,7 +598,10 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_FromPyObjectSteal",
     "PyStackRef_IsBorrowed",
     "PyStackRef_IsExactly",
+    "PyStackRef_FromPyObjectStealMortal",
     "PyStackRef_IsNone",
+    "PyStackRef_Is",
+    "PyStackRef_IsHeapSafe",
     "PyStackRef_IsTrue",
     "PyStackRef_IsFalse",
     "PyStackRef_IsNull",
@@ -634,7 +638,6 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyGen_GetGeneratorFromFrame",
     "_PyInterpreterState_GET",
     "_PyList_AppendTakeRef",
-    "_PyList_FromStackRefStealOnSuccess",
     "_PyList_ITEMS",
     "_PyLong_CompactValue",
     "_PyLong_DigitCount",
@@ -643,11 +646,13 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyLong_IsNonNegativeCompact",
     "_PyLong_IsZero",
     "_PyManagedDictPointer_IsValues",
+    "_PyObject_GC_IS_SHARED",
     "_PyObject_GC_IS_TRACKED",
     "_PyObject_GC_MAY_BE_TRACKED",
     "_PyObject_GC_TRACK",
     "_PyObject_GetManagedDict",
     "_PyObject_InlineValues",
+    "_PyObject_IsUniquelyReferenced",
     "_PyObject_ManagedDictPointer",
     "_PyStackRef_NewIfBorrowedOrSteal",
     "_PyThreadState_HasStackSpace",
@@ -661,6 +666,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_DECREF_NO_DEALLOC",
     "_Py_ID",
     "_Py_IsImmortal",
+    "_Py_IsOwnedByCurrentThread",
     "_Py_LeaveRecursiveCallPy",
     "_Py_LeaveRecursiveCallTstate",
     "_Py_NewRef",
@@ -1081,8 +1087,8 @@ def assign_opcodes(
     # This helps catch cases where we attempt to execute a cache.
     instmap["RESERVED"] = 17
 
-    # 149 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
-    instmap["RESUME"] = 149
+    # 128 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
+    instmap["RESUME"] = 128
 
     # This is an historical oddity.
     instmap["BINARY_OP_INPLACE_ADD_UNICODE"] = 3
@@ -1112,7 +1118,7 @@ def assign_opcodes(
 
     # Specialized ops appear in their own section
     # Instrumented opcodes are at the end of the valid range
-    min_internal = 150
+    min_internal = instmap["RESUME"] + 1
     min_instrumented = 254 - (len(instrumented) - 1)
     assert min_internal + len(specialized) < min_instrumented
 

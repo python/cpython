@@ -50,32 +50,23 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
 {
     assert(frame->owner < FRAME_OWNED_BY_INTERPRETER);
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
-    // While ownership of f_executable is transferred to the frame object, the
-    // reference in the frame will also be closed when the frame is popped from
-    // the stack. Create another reference to ensure that works correctly.
-    //
-    // This must happen in the source frame (not in the frame
-    // object). _PyFrame_CopyToHeap converts borrowed references in the source
-    // frame into strong references in the destination frame. duping the
-    // reference in the dest frame would result in a leak if the source was
-    // borrowed because the close on the source would not destroy the newly
-    // created reference.
-    frame->f_executable = PyStackRef_DUP(frame->f_executable);
-    _PyFrame_CopyToHeap(frame, (_PyInterpreterFrame *) f->_f_frame_data);
-    frame = (_PyInterpreterFrame *)f->_f_frame_data;
-    f->f_frame = frame;
-    frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
-    if (_PyFrame_IsIncomplete(frame)) {
+    _PyInterpreterFrame *new_frame = (_PyInterpreterFrame *)f->_f_frame_data;
+    _PyFrame_Copy(frame, new_frame);
+    // _PyFrame_Copy takes the reference to the executable,
+    // so we need to restore it.
+    frame->f_executable = PyStackRef_DUP(new_frame->f_executable);
+    f->f_frame = new_frame;
+    new_frame->owner = FRAME_OWNED_BY_FRAME_OBJECT;
+    if (_PyFrame_IsIncomplete(new_frame)) {
         // This may be a newly-created generator or coroutine frame. Since it's
         // dead anyways, just pretend that the first RESUME ran:
-        PyCodeObject *code = _PyFrame_GetCode(frame);
-        frame->instr_ptr =
-            _PyFrame_GetBytecode(frame) + code->_co_firsttraceable + 1;
+        PyCodeObject *code = _PyFrame_GetCode(new_frame);
+        new_frame->instr_ptr =
+            _PyFrame_GetBytecode(new_frame) + code->_co_firsttraceable + 1;
     }
-    assert(!_PyFrame_IsIncomplete(frame));
+    assert(!_PyFrame_IsIncomplete(new_frame));
     assert(f->f_back == NULL);
     _PyInterpreterFrame *prev = _PyFrame_GetFirstComplete(frame->previous);
-    frame->previous = NULL;
     if (prev) {
         assert(prev->owner < FRAME_OWNED_BY_INTERPRETER);
         /* Link PyFrameObjects.f_back and remove link through _PyInterpreterFrame.previous */

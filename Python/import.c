@@ -1146,8 +1146,9 @@ get_cached_m_dict(struct extensions_cache_value *value,
 }
 
 static void
-del_extensions_cache_value(struct extensions_cache_value *value)
+del_extensions_cache_value(void *raw)
 {
+    struct extensions_cache_value *value = raw;
     if (value != NULL) {
         del_cached_m_dict(value);
         del_cached_def(value);
@@ -1248,7 +1249,7 @@ _extensions_cache_init(void)
         hashtable_hash_str,
         hashtable_compare_str,
         hashtable_destroy_str,  // key
-        (_Py_hashtable_destroy_func)del_extensions_cache_value,  // value
+        del_extensions_cache_value,  // value
         &alloc
     );
     if (EXTENSIONS.hashtable == NULL) {

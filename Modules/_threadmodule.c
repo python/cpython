@@ -333,9 +333,6 @@ thread_run(void *boot_raw)
     // _PyRuntimeState_SetFinalizing() is called. At this point, all Python
     // threads must exit, except of the thread calling Py_Finalize() which
     // holds the GIL and must not exit.
-    //
-    // At this stage, tstate can be a dangling pointer (point to freed memory),
-    // it's ok to call _PyThreadState_MustExit() with a dangling pointer.
     if (_PyThreadState_MustExit(tstate)) {
         // Don't call PyThreadState_Clear() nor _PyThreadState_DeleteCurrent().
         // These functions are called on tstate indirectly by Py_Finalize()
@@ -548,8 +545,9 @@ ThreadHandle_join(ThreadHandle *self, PyTime_t timeout_ns)
 }
 
 static int
-set_done(ThreadHandle *handle)
+set_done(void *arg)
 {
+    ThreadHandle *handle = (ThreadHandle*)arg;
     assert(get_thread_handle_state(handle) == THREAD_HANDLE_RUNNING);
     if (detach_thread(handle) < 0) {
         PyErr_SetString(ThreadError, "failed detaching handle");
@@ -567,7 +565,7 @@ ThreadHandle_set_done(ThreadHandle *self)
         return -1;
     }
 
-    if (_PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)set_done, self) ==
+    if (_PyOnceFlag_CallOnce(&self->once, set_done, self) ==
         -1) {
         return -1;
     }

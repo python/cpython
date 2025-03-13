@@ -136,26 +136,6 @@ incorrect_keys(_PyUOpInstruction *inst, PyObject *obj)
     return 0;
 }
 
-static int
-check_next_uop(_PyUOpInstruction *buffer, int size, int pc, uint16_t expected)
-{
-    if (pc + 1 >= size) {
-        DPRINTF(1, "Cannot rewrite %s at pc %d: buffer too small\n",
-                _PyOpcode_uop_name[buffer[pc].opcode], pc);
-        return 0;
-    }
-    uint16_t next_opcode = buffer[pc + 1].opcode;
-    if (next_opcode != expected) {
-        DPRINTF(1,
-                "Cannot rewrite %s at pc %d: unexpected next opcode %s, "
-                "expected %s\n",
-                _PyOpcode_uop_name[buffer[pc].opcode], pc,
-                _PyOpcode_uop_name[next_opcode], _PyOpcode_uop_name[expected]);
-        return 0;
-    }
-    return 1;
-}
-
 /* Returns 1 if successfully optimized
  *         0 if the trace is not suitable for optimization (yet)
  *        -1 if there was an error. */
@@ -363,6 +343,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_tuple_getitem _Py_uop_sym_tuple_getitem
 #define sym_tuple_length _Py_uop_sym_tuple_length
 #define sym_is_immortal _Py_uop_sym_is_immortal
+#define sym_new_truthiness _Py_uop_sym_new_truthiness
 
 static int
 optimize_to_bool(
@@ -376,7 +357,7 @@ optimize_to_bool(
         *result_ptr = value;
         return 1;
     }
-    int truthiness = sym_truthiness(value);
+    int truthiness = sym_truthiness(ctx, value);
     if (truthiness >= 0) {
         PyObject *load = truthiness ? Py_True : Py_False;
         REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
