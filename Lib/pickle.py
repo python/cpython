@@ -1913,7 +1913,7 @@ if __name__ == "__main__":
         description='display contents of the pickle files')
     parser.add_argument(
         'pickle_file',
-        nargs='*', help='the pickle file')
+        nargs='+', help='the pickle file')
     args = parser.parse_args()
     if not args.pickle_file:
         parser.print_help()

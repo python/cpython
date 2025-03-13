@@ -524,7 +524,7 @@ is a safer option because it does not execute pickle bytecode, see
 
 .. code-block:: bash
 
-   python -m pickle pickle_file
+   python -m pickle pickle_file [pickle_file ...]
 
 The following option is accepted:
 
