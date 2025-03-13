@@ -989,7 +989,7 @@ typedef struct {
 } longrangeiterobject;
 
 static PyObject *
-longrangeiter_len(PyObject *op, PyObject *no_args)
+longrangeiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     longrangeiterobject *r = (longrangeiterobject*)op;
     Py_INCREF(r->len);
