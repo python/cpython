@@ -526,7 +526,7 @@ is a safer option because it does not execute pickle bytecode, see
 
    python -m pickle [pickle_file ...]
 
-The following options is accepted:
+The following option is accepted:
 
 .. program:: pickle
 
