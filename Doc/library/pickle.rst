@@ -526,13 +526,13 @@ is a safer option because it does not execute pickle bytecode, see
 
    python -m pickle [pickle_file ...]
 
-The following options are accepted:
+The following options is accepted:
 
 .. program:: pickle
 
 .. option:: pickle_file
 
-   The pickle file(s).
+   A pickle file.
 
 
 .. _pickle-picklable:
