@@ -2817,12 +2817,8 @@ optimize_load_fast(cfg_builder *g, bool compute_stackdepth)
 
 done:
     ref_stack_fini(&refs);
-    if (instr_flags != NULL) {
-        PyMem_Free(instr_flags);
-    }
-    if (blocks != NULL) {
-        PyMem_Free(blocks);
-    }
+    PyMem_Free(instr_flags);
+    PyMem_Free(blocks);
     return status;
 }
 
