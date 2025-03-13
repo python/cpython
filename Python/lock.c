@@ -137,8 +137,10 @@ _PyMutex_LockTimed(PyMutex *m, PyTime_t timeout, _PyLockFlags flags)
 }
 
 static void
-mutex_unpark(PyMutex *m, struct mutex_entry *entry, int has_more_waiters)
+mutex_unpark(void *arg, void *park_arg, int has_more_waiters)
 {
+    PyMutex *m = (PyMutex*)arg;
+    struct mutex_entry *entry = (struct mutex_entry*)park_arg;
     uint8_t v = 0;
     if (entry) {
         PyTime_t now;

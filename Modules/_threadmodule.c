@@ -461,8 +461,9 @@ start_failed:
 }
 
 static int
-join_thread(ThreadHandle *handle)
+join_thread(void *arg)
 {
+    ThreadHandle *handle = (ThreadHandle*)arg;
     assert(get_thread_handle_state(handle) == THREAD_HANDLE_RUNNING);
     PyThread_handle_t os_handle;
     if (ThreadHandle_get_os_handle(handle, &os_handle)) {
