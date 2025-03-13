@@ -43,6 +43,10 @@ def unix_getpass(prompt='Password: ', stream=None, *, echochar=None):
 
     Always restores terminal settings before returning.
     """
+    if echochar and not echochar.isascii():
+        return ValueError(f"Invalid echochar: {echochar}. "
+                          "ASCII character expected.")
+
     passwd = None
     with contextlib.ExitStack() as stack:
         try:
@@ -108,6 +112,9 @@ def win_getpass(prompt='Password: ', stream=None, *, echochar=None):
     """Prompt for password with echo off, using Windows getwch()."""
     if sys.stdin is not sys.__stdin__:
         return fallback_getpass(prompt, stream)
+    if echochar and not echochar.isascii():
+        return ValueError(f"Invalid echochar: {echochar}. "
+                          "ASCII character expected.")
 
     for c in prompt:
         msvcrt.putwch(c)
@@ -120,10 +127,9 @@ def win_getpass(prompt='Password: ', stream=None, *, echochar=None):
             raise KeyboardInterrupt
         if c == '\b':
             if echochar and pw:
-                for _ in echochar:
-                    msvcrt.putwch('\b')
-                    msvcrt.putwch(' ')
-                    msvcrt.putwch('\b')
+                msvcrt.putwch('\b')
+                msvcrt.putwch(' ')
+                msvcrt.putwch('\b')
             pw = pw[:-1]
         else:
             pw = pw + c
@@ -186,7 +192,7 @@ def _input_with_echochar(prompt, stream, input, echochar):
             raise KeyboardInterrupt
         if char == '\x7f' or char == '\b':
             if passwd:
-                stream.write("\b \b" * len(echochar))
+                stream.write("\b \b")
                 stream.flush()
             passwd = passwd[:-1]
         else:
