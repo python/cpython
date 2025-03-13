@@ -780,7 +780,7 @@ dummy_func(
              * only the locals reference, so PyUnicode_Append knows
              * that the string is safe to mutate.
              */
-            assert(Py_REFCNT(left_o) >= 2 || PyStackRef_IsBorrowed(left));
+            assert(Py_REFCNT(left_o) >= 2 || !PyStackRef_IsHeapSafe(left));
             PyStackRef_CLOSE_SPECIALIZED(left, _PyUnicode_ExactDealloc);
             DEAD(left);
             PyObject *temp = PyStackRef_AsPyObjectSteal(*target_local);
