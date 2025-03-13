@@ -1196,7 +1196,6 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     return;
 
  clear:
-    // TODO: clear errors from lookup, or is that handled somewhere else?
     assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
     set_version_unlocked(type, 0);  /* 0 is not a valid version tag */
     type->tp_versions_used = _Py_ATTR_CACHE_UNUSED;
@@ -2804,13 +2803,19 @@ _PyObject_LookupSpecialMethod(PyObject *self, PyObject *attr, PyObject **self_or
 /* lookup_maybe_method returns NotImplemented if lookup fails
 Exception 'exc_ignored' (if not NULL) is suppressed and converted to NotImplemented,
 All other errors during lookup return NULL with the error set
-TODO: some callers expected None as a possible value?
+
+NOTE: technically this doesn't check if the descriptor itself returned NotImplemented,
+when that would have been an error since its not callable.
+The logic is messier downstream to check combinations of NULL and PyErr_Occurred.
+NotImplemented <-> res == NULL && !PyErr_Occurred()
+Error <-> res == NULL && PyErr_Occurred()
 */
 static PyObject *
 lookup_maybe_method(PyObject *self, PyObject *attr, int *unbound, PyObject* exc_ignored)
 {
     PyObject *res = _PyType_LookupRef(Py_TYPE(self), attr);
     if (res == NULL) {
+        assert(!PyErr_Occurred());
         Py_RETURN_NOTIMPLEMENTED;
     }
 
@@ -2823,16 +2828,18 @@ lookup_maybe_method(PyObject *self, PyObject *attr, int *unbound, PyObject* exc_
         descrgetfunc f = Py_TYPE(res)->tp_descr_get;
         if (f != NULL) {
             Py_SETREF(res, f(res, self, (PyObject *)(Py_TYPE(self))));
+
+            assert(!!res || PyErr_Occurred());
+
+            if(res == NULL && exc_ignored && PyErr_ExceptionMatches(exc_ignored)){
+                // TODO: even though the docs say check before calling PyErr_ExceptionMatches,
+                // it seems like it could handle both being NULL?
+
+                // the descriptor caused exception, suppress only "exc_ignored" errors
+                PyErr_Clear();
+                Py_RETURN_NOTIMPLEMENTED;
+            }
         }
-    }
-
-    if(res == NULL && exc_ignored && PyErr_ExceptionMatches(exc_ignored)){
-        // TODO: even though the docs say check before calling PyErr_ExceptionMatches,
-        // it seems like it could handle both being NULL?
-
-        // the descriptor caused exception, suppress only "exc_ignored" errors
-        PyErr_Clear();
-        Py_RETURN_NOTIMPLEMENTED;
     }
 
     return res;
