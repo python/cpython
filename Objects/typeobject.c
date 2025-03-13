@@ -101,7 +101,7 @@ static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
 static PyObject *
-lookup_maybe_method(PyObject *self, PyObject *attr, int *unbound);
+lookup_maybe_method(PyObject *self, PyObject *attr, int *unbound, PyObject* exc_ignored);
 
 static int
 slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value);
@@ -1163,13 +1163,13 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     if (custom) {
         PyObject *mro_meth, *type_mro_meth;
         mro_meth = lookup_maybe_method(
-            (PyObject *)type, &_Py_ID(mro), &unbound);
-        if (mro_meth == NULL) {
+            (PyObject *)type, &_Py_ID(mro), &unbound, PyExc_AttributeError);
+        if (mro_meth == NULL || mro_meth == Py_NotImplemented) {
             goto clear;
         }
         type_mro_meth = lookup_maybe_method(
-            (PyObject *)&PyType_Type, &_Py_ID(mro), &unbound);
-        if (type_mro_meth == NULL) {
+            (PyObject *)&PyType_Type, &_Py_ID(mro), &unbound, PyExc_AttributeError);
+        if (type_mro_meth == NULL || type_mro_meth == Py_NotImplemented) {
             Py_DECREF(mro_meth);
             goto clear;
         }
@@ -1196,6 +1196,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     return;
 
  clear:
+    // TODO: clear errors from lookup, or is that handled somewhere else?
     assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
     set_version_unlocked(type, 0);  /* 0 is not a valid version tag */
     type->tp_versions_used = _Py_ATTR_CACHE_UNUSED;
@@ -2800,12 +2801,17 @@ _PyObject_LookupSpecialMethod(PyObject *self, PyObject *attr, PyObject **self_or
     return res;
 }
 
+/* lookup_maybe_method returns NotImplemented if lookup fails
+Exception 'exc_ignored' (if not NULL) is suppressed and converted to NotImplemented,
+All other errors during lookup return NULL with the error set
+TODO: some callers expected None as a possible value?
+*/
 static PyObject *
-lookup_maybe_method(PyObject *self, PyObject *attr, int *unbound)
+lookup_maybe_method(PyObject *self, PyObject *attr, int *unbound, PyObject* exc_ignored)
 {
     PyObject *res = _PyType_LookupRef(Py_TYPE(self), attr);
     if (res == NULL) {
-        return NULL;
+        Py_RETURN_NOTIMPLEMENTED;
     }
 
     if (_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
@@ -2819,14 +2825,28 @@ lookup_maybe_method(PyObject *self, PyObject *attr, int *unbound)
             Py_SETREF(res, f(res, self, (PyObject *)(Py_TYPE(self))));
         }
     }
+
+    if(res == NULL && exc_ignored && PyErr_ExceptionMatches(exc_ignored)){
+        // TODO: even though the docs say check before calling PyErr_ExceptionMatches,
+        // it seems like it could handle both being NULL?
+
+        // the descriptor caused exception, suppress only "exc_ignored" errors
+        PyErr_Clear();
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
     return res;
 }
 
+/* lookup_method is complement of lookup_maybe_method
+Does *not* supress any errors, and NotImplemented is converted to AttributeError
+*/
 static PyObject *
 lookup_method(PyObject *self, PyObject *attr, int *unbound)
 {
-    PyObject *res = lookup_maybe_method(self, attr, unbound);
-    if (res == NULL && !PyErr_Occurred()) {
+    PyObject *res = lookup_maybe_method(self, attr, unbound, NULL);
+    if (res == Py_NotImplemented) {
+        res = NULL;
         PyErr_SetObject(PyExc_AttributeError, attr);
     }
     return res;
@@ -2891,11 +2911,9 @@ vectorcall_maybe(PyThreadState *tstate, PyObject *name,
 
     int unbound;
     PyObject *self = args[0];
-    PyObject *func = lookup_maybe_method(self, name, &unbound);
-    if (func == NULL) {
-        if (!PyErr_Occurred())
-            Py_RETURN_NOTIMPLEMENTED;
-        return NULL;
+    PyObject *func = lookup_maybe_method(self, name, &unbound, PyExc_AttributeError);
+    if (func == NULL || func == Py_NotImplemented) {
+        return func;
     }
     PyObject *retval = vectorcall_unbound(tstate, unbound, func, args, nargs);
     Py_DECREF(func);
@@ -9801,7 +9819,11 @@ slot_sq_contains(PyObject *self, PyObject *value)
     PyObject *func, *res;
     int result = -1, unbound;
 
-    func = lookup_maybe_method(self, &_Py_ID(__contains__), &unbound);
+    func = lookup_maybe_method(self, &_Py_ID(__contains__), &unbound, PyExc_AttributeError);
+    if (func == NULL){
+        return -1;
+    }
+
     if (func == Py_None) {
         Py_DECREF(func);
         PyErr_Format(PyExc_TypeError,
@@ -9809,7 +9831,8 @@ slot_sq_contains(PyObject *self, PyObject *value)
                      Py_TYPE(self)->tp_name);
         return -1;
     }
-    if (func != NULL) {
+
+    if (func != Py_NotImplemented) {
         PyObject *args[2] = {self, value};
         res = vectorcall_unbound(tstate, unbound, func, args, 2);
         Py_DECREF(func);
@@ -9818,7 +9841,7 @@ slot_sq_contains(PyObject *self, PyObject *value)
             Py_DECREF(res);
         }
     }
-    else if (! PyErr_Occurred()) {
+    else {
         /* Possible results: -1 and 1 */
         result = (int)_PySequence_IterSearch(self, value,
                                          PY_ITERSEARCH_CONTAINS);
@@ -9890,19 +9913,21 @@ slot_nb_bool(PyObject *self)
     int result, unbound;
     int using_len = 0;
 
-    func = lookup_maybe_method(self, &_Py_ID(__bool__), &unbound);
+    func = lookup_maybe_method(self, &_Py_ID(__bool__), &unbound, PyExc_AttributeError);
     if (func == NULL) {
-        if (PyErr_Occurred()) {
+        return -1;
+    }
+
+    if (func == Py_NotImplemented) {
+        func = lookup_maybe_method(self, &_Py_ID(__len__), &unbound, PyExc_AttributeError);
+        if (func == NULL) {
             return -1;
         }
 
-        func = lookup_maybe_method(self, &_Py_ID(__len__), &unbound);
-        if (func == NULL) {
-            if (PyErr_Occurred()) {
-                return -1;
-            }
+        if (func == Py_NotImplemented) {
             return 1;
         }
+
         using_len = 1;
     }
 
@@ -9982,13 +10007,17 @@ slot_tp_repr(PyObject *self)
     PyObject *func, *res;
     int unbound;
 
-    func = lookup_maybe_method(self, &_Py_ID(__repr__), &unbound);
-    if (func != NULL) {
+    func = lookup_maybe_method(self, &_Py_ID(__repr__), &unbound, PyExc_AttributeError);
+    if (func == NULL) {
+        return NULL;
+    }
+
+    if (func != Py_NotImplemented) {
         res = call_unbound_noarg(unbound, func, self);
         Py_DECREF(func);
         return res;
     }
-    PyErr_Clear();
+
     return PyUnicode_FromFormat("<%s object at %p>",
                                Py_TYPE(self)->tp_name, self);
 }
@@ -10002,13 +10031,12 @@ slot_tp_hash(PyObject *self)
     Py_ssize_t h;
     int unbound;
 
-    func = lookup_maybe_method(self, &_Py_ID(__hash__), &unbound);
-
-    if (func == Py_None) {
-        Py_SETREF(func, NULL);
+    func = lookup_maybe_method(self, &_Py_ID(__hash__), &unbound, PyExc_AttributeError);
+    if (func == NULL) {
+        return -1;
     }
 
-    if (func == NULL) {
+    if (func == Py_None || func == Py_NotImplemented) {
         return PyObject_HashNotImplemented(self);
     }
 
@@ -10192,10 +10220,9 @@ slot_tp_richcompare(PyObject *self, PyObject *other, int op)
     PyThreadState *tstate = _PyThreadState_GET();
 
     int unbound;
-    PyObject *func = lookup_maybe_method(self, name_op[op], &unbound);
-    if (func == NULL) {
-        PyErr_Clear();
-        Py_RETURN_NOTIMPLEMENTED;
+    PyObject *func = lookup_maybe_method(self, name_op[op], &unbound, PyExc_AttributeError);
+    if (func == NULL || func == Py_NotImplemented){
+        return func;
     }
 
     PyObject *stack[2] = {self, other};
@@ -10210,7 +10237,11 @@ slot_tp_iter(PyObject *self)
     int unbound;
     PyObject *func, *res;
 
-    func = lookup_maybe_method(self, &_Py_ID(__iter__), &unbound);
+    func = lookup_maybe_method(self, &_Py_ID(__iter__), &unbound, PyExc_AttributeError);
+    if (func == NULL) {
+        return NULL;
+    }
+
     if (func == Py_None) {
         Py_DECREF(func);
         PyErr_Format(PyExc_TypeError,
@@ -10219,15 +10250,18 @@ slot_tp_iter(PyObject *self)
         return NULL;
     }
 
-    if (func != NULL) {
+    if (func != Py_NotImplemented) {
         res = call_unbound_noarg(unbound, func, self);
         Py_DECREF(func);
         return res;
     }
 
-    PyErr_Clear();
-    func = lookup_maybe_method(self, &_Py_ID(__getitem__), &unbound);
+    func = lookup_maybe_method(self, &_Py_ID(__getitem__), &unbound, PyExc_AttributeError);
     if (func == NULL) {
+        return NULL;
+    }
+
+    if (func == Py_NotImplemented) {
         PyErr_Format(PyExc_TypeError,
                      "'%.200s' object is not iterable",
                      Py_TYPE(self)->tp_name);
@@ -10346,8 +10380,13 @@ slot_tp_finalize(PyObject *self)
     PyObject *exc = PyErr_GetRaisedException();
 
     /* Execute __del__ method, if any. */
-    del = lookup_maybe_method(self, &_Py_ID(__del__), &unbound);
-    if (del != NULL) {
+    del = lookup_maybe_method(self, &_Py_ID(__del__), &unbound, PyExc_AttributeError);
+    if (del == NULL) {
+        PyErr_FormatUnraisable(
+            "Exception ignored while getting deallocator for %s object",
+            Py_TYPE(self)->tp_name);
+
+    }else if (del != Py_NotImplemented) {
         res = call_unbound_noarg(unbound, del, self);
         if (res == NULL) {
             PyErr_FormatUnraisable("Exception ignored while "
@@ -10611,8 +10650,12 @@ slot_am_await(PyObject *self)
     int unbound;
     PyObject *func, *res;
 
-    func = lookup_maybe_method(self, &_Py_ID(__await__), &unbound);
-    if (func != NULL) {
+    func = lookup_maybe_method(self, &_Py_ID(__await__), &unbound, PyExc_AttributeError);
+    if (func == NULL){
+        return NULL;
+    }
+
+    if (func != Py_NotImplemented) {
         res = call_unbound_noarg(unbound, func, self);
         Py_DECREF(func);
         return res;
@@ -10629,8 +10672,12 @@ slot_am_aiter(PyObject *self)
     int unbound;
     PyObject *func, *res;
 
-    func = lookup_maybe_method(self, &_Py_ID(__aiter__), &unbound);
-    if (func != NULL) {
+    func = lookup_maybe_method(self, &_Py_ID(__aiter__), &unbound, PyExc_AttributeError);
+    if (func == NULL){
+        return NULL;
+    }
+
+    if (func != Py_NotImplemented) {
         res = call_unbound_noarg(unbound, func, self);
         Py_DECREF(func);
         return res;
@@ -10647,8 +10694,12 @@ slot_am_anext(PyObject *self)
     int unbound;
     PyObject *func, *res;
 
-    func = lookup_maybe_method(self, &_Py_ID(__anext__), &unbound);
-    if (func != NULL) {
+    func = lookup_maybe_method(self, &_Py_ID(__anext__), &unbound, PyExc_AttributeError);
+    if (func == NULL){
+        return NULL;
+    }
+
+    if (func != Py_NotImplemented) {
         res = call_unbound_noarg(unbound, func, self);
         Py_DECREF(func);
         return res;
