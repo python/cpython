@@ -43,9 +43,8 @@ def unix_getpass(prompt='Password: ', stream=None, *, echochar=None):
 
     Always restores terminal settings before returning.
     """
-    if echochar and not echochar.isascii():
-        return ValueError(f"Invalid echochar: {echochar}. "
-                          "ASCII character expected.")
+    if _is_ascii(echochar):
+        return ValueError(f"'echochar' must be ASCII, got: {echochar!r}")
 
     passwd = None
     with contextlib.ExitStack() as stack:
@@ -82,13 +81,11 @@ def unix_getpass(prompt='Password: ', stream=None, *, echochar=None):
                     tcsetattr_flags |= termios.TCSASOFT
                 try:
                     termios.tcsetattr(fd, tcsetattr_flags, new)
-                    if not echochar:
+                    if echochar:
+                        passwd = _input_with_echochar(prompt, stream, input,
+                                                      echochar)
+                    else:
                         passwd = _raw_input(prompt, stream, input=input)
-                        stream.write('\n')
-                        return passwd
-
-                    passwd = _input_with_echochar(prompt, stream, input,
-                                                  echochar)
                 finally:
                     termios.tcsetattr(fd, tcsetattr_flags, old)
                     stream.flush()  # issue7208
@@ -112,9 +109,8 @@ def win_getpass(prompt='Password: ', stream=None, *, echochar=None):
     """Prompt for password with echo off, using Windows getwch()."""
     if sys.stdin is not sys.__stdin__:
         return fallback_getpass(prompt, stream)
-    if echochar and not echochar.isascii():
-        return ValueError(f"Invalid echochar: {echochar}. "
-                          "ASCII character expected.")
+    if _is_ascii(echochar):
+        return ValueError(f"'echochar' must be ASCII, got: {echochar!r}")
 
     for c in prompt:
         msvcrt.putwch(c)
@@ -127,9 +123,9 @@ def win_getpass(prompt='Password: ', stream=None, *, echochar=None):
             raise KeyboardInterrupt
         if c == '\b':
             if echochar and pw:
-                msvcrt.putwch('\b')
-                msvcrt.putwch(' ')
-                msvcrt.putwch('\b')
+                msvcrt.putch('\b')
+                msvcrt.putch(' ')
+                msvcrt.putch('\b')
             pw = pw[:-1]
         else:
             pw = pw + c
@@ -148,6 +144,13 @@ def fallback_getpass(prompt='Password: ', stream=None):
         stream = sys.stderr
     print("Warning: Password input may be echoed.", file=stream)
     return _raw_input(prompt, stream)
+
+
+def _is_ascii(echochar):
+    # ASCII excluding control characters
+    if echochar and not (32 <= ord(echochar) <= 127):
+        return False
+    return True
 
 
 def _raw_input(prompt="", stream=None, input=None):

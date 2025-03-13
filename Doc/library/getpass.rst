@@ -27,9 +27,9 @@ The :mod:`getpass` module provides two functions:
 
    The *echochar* argument controls how user input is displayed while typing.
    If *echochar* is ``None`` (default), input remains hidden. If *echochar* is
-   a string, each typed character is replaced with the given string.
-   For example, ``echochar='*'`` will display asterisks instead of the actual
-   input.
+   a string, each typed character is replaced with the given string. But this
+   string must be ASCII character. For example, ``echochar='*'`` will display
+   asterisks instead of the actual input.
 
    If echo free input is unavailable getpass() falls back to printing
    a warning message to *stream* and reading from ``sys.stdin`` and
