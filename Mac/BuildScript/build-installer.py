@@ -359,7 +359,7 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.39.1",
+              name="SQLite 3.49.1",
               url="https://sqlite.org/2025/sqlite-autoconf-3490100.tar.gz",
               checksum="106642d8ccb36c5f7323b64e4152e9b719f7c0215acf5bfeac3d5e7f97b59254",
               extra_cflags=('-Os '
