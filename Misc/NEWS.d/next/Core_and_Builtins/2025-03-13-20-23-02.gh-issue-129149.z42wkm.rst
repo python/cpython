@@ -1,0 +1,3 @@
+Add fast path for medium-size integers in :c:func:`PyLong_FromInt32`,
+:c:func:`PyLong_FromUInt32`, :c:func:`PyLong_FromInt64` and
+:c:func:`PyLong_FromUInt64`. Patch by Chris Eibl.
