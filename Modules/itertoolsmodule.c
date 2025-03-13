@@ -1166,7 +1166,7 @@ itertools_cycle_impl(PyTypeObject *type, PyObject *iterable)
     }
     lz->it = it;
     lz->saved = saved;
-    lz->index = 0;
+    lz->index = -1;
 
     return (PyObject *)lz;
 }
@@ -1199,7 +1199,9 @@ cycle_next(PyObject *op)
     cycleobject *lz = cycleobject_CAST(op);
     PyObject *item;
 
-    if (lz->it != NULL) {
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(lz->index);
+
+    if (index < 0) {
         item = PyIter_Next(lz->it);
         if (item != NULL) {
             if (PyList_Append(lz->saved, item)) {
@@ -1211,14 +1213,19 @@ cycle_next(PyObject *op)
         /* Note:  StopIteration is already cleared by PyIter_Next() */
         if (PyErr_Occurred())
             return NULL;
+        index = 0;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(lz->index, 0);
+#ifndef Py_GIL_DISABLED
         Py_CLEAR(lz->it);
+#endif
     }
     if (PyList_GET_SIZE(lz->saved) == 0)
         return NULL;
-    item = PyList_GET_ITEM(lz->saved, lz->index);
-    lz->index++;
-    if (lz->index >= PyList_GET_SIZE(lz->saved))
-        lz->index = 0;
+    item = PyList_GET_ITEM(lz->saved, index);
+    index++;
+    if (index >= PyList_GET_SIZE(lz->saved)) {
+        FT_ATOMIC_STORE_SSIZE_RELAXED(lz->index, 0);
+    }
     return Py_NewRef(item);
 }
 
