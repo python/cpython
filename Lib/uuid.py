@@ -321,9 +321,8 @@ class UUID:
         raise TypeError('UUID objects are immutable')
 
     def __str__(self):
-        hex = '%032x' % self.int
-        return '%s-%s-%s-%s-%s' % (
-            hex[:8], hex[8:12], hex[12:16], hex[16:20], hex[20:])
+        hex = self.hex
+        return f'{hex[:8]}-{hex[8:12]}-{hex[12:16]}-{hex[16:20]}-{hex[20:]}'
 
     @property
     def bytes(self):
@@ -387,7 +386,7 @@ class UUID:
 
     @property
     def hex(self):
-        return '%032x' % self.int
+        return self.bytes.hex()
 
     @property
     def urn(self):
