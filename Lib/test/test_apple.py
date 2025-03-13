@@ -1,10 +1,10 @@
 import unittest
 from _apple_support import SystemLog
-from test.support import is_apple
+from test.support import is_apple_mobile
 from unittest.mock import Mock, call
 
-if not is_apple:
-    raise unittest.SkipTest("Apple-specific")
+if not is_apple_mobile:
+    raise unittest.SkipTest("iOS-specific")
 
 
 # Test redirection of stdout and stderr to the Apple system log.
