@@ -168,12 +168,6 @@ PyStackRef_XCLOSE(_PyStackRef ref)
 }
 
 static inline _PyStackRef
-_PyStackRef_NewIfBorrowedOrSteal(_PyStackRef ref)
-{
-    return ref;
-}
-
-static inline _PyStackRef
 _PyStackRef_DUP(_PyStackRef ref, const char *filename, int linenumber)
 {
     PyObject *obj = _Py_stackref_get_object(ref);
@@ -285,9 +279,18 @@ PyStackRef_IsBorrowed(_PyStackRef stackref)
     return !(_Py_IsImmortal(obj) || _PyObject_HasDeferredRefcount(obj));
 }
 
+static inline bool
+PyStackRef_IsHeapSafe(_PyStackRef stackref)
+{
+    if (PyStackRef_IsDeferred(stackref)) {
+        PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
+        return obj == NULL || _Py_IsImmortal(obj) || _PyObject_HasDeferredRefcount(obj);
+    }
+    return true;
+}
 
 static inline _PyStackRef
-_PyStackRef_NewIfBorrowedOrSteal(_PyStackRef stackref)
+PyStackRef_MakeHeapSafe(_PyStackRef stackref)
 {
     if (PyStackRef_IsBorrowed(stackref)) {
         PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
@@ -363,18 +366,6 @@ static inline _PyStackRef
 PyStackRef_AsDeferred(_PyStackRef stackref)
 {
     return (_PyStackRef){ .bits = stackref.bits | Py_TAG_DEFERRED };
-}
-
-static inline bool
-PyStackRef_IsHeapSafe(_PyStackRef ref)
-{
-    return true;
-}
-
-static inline _PyStackRef
-PyStackRef_MakeHeapSafe(_PyStackRef ref)
-{
-    return ref;
 }
 
 // Convert a possibly deferred reference to a strong reference.

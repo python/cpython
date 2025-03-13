@@ -1125,7 +1125,7 @@ dummy_func(
         // is pushed to a different frame, the callers' frame.
         inst(RETURN_VALUE, (retval -- res)) {
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
-            _PyStackRef temp = PyStackRef_MakeHeapSafe(temp);
+            _PyStackRef temp = PyStackRef_MakeHeapSafe(retval);
             DEAD(retval);
             SAVE_STACK();
             assert(EMPTY());
@@ -1223,7 +1223,7 @@ dummy_func(
 
             PyObject *retval_o;
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
-            _PyStackRef tmp = _PyStackRef_NewIfBorrowedOrSteal(v);
+            _PyStackRef tmp = PyStackRef_MakeHeapSafe(v);
             DEAD(v);
             if ((tstate->interp->eval_frame == NULL) &&
                 (Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type) &&
@@ -1277,7 +1277,7 @@ dummy_func(
             DEOPT_IF(gen->gi_frame_state >= FRAME_EXECUTING);
             STAT_INC(SEND, hit);
             gen_frame = &gen->gi_iframe;
-            _PyFrame_StackPush(gen_frame, _PyStackRef_NewIfBorrowedOrSteal(v));
+            _PyFrame_StackPush(gen_frame, PyStackRef_MakeHeapSafe(v));
             DEAD(v);
             gen->gi_frame_state = FRAME_EXECUTING;
             gen->gi_exc_state.previous_item = tstate->exc_info;
@@ -1324,7 +1324,7 @@ dummy_func(
             #endif
             RELOAD_STACK();
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
-            value = _PyStackRef_NewIfBorrowedOrSteal(temp);
+            value = PyStackRef_MakeHeapSafe(temp);
             LLTRACE_RESUME_FRAME();
         }
 
@@ -4810,7 +4810,7 @@ dummy_func(
             SAVE_STACK();
             _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
             frame->instr_ptr++;
-            _PyFrame_CopyToNewGen(frame, gen_frame);
+            _PyFrame_Copy(frame, gen_frame);
             assert(frame->frame_obj == NULL);
             gen->gi_frame_state = FRAME_CREATED;
             gen_frame->owner = FRAME_OWNED_BY_GENERATOR;
