@@ -7969,10 +7969,9 @@ pickle_clear(PyObject *m)
 }
 
 static void
-pickle_free(void *arg)
+pickle_free(void *m)
 {
-    PyObject *m = (PyObject*)arg;
-    _Pickle_ClearState(_Pickle_GetState(m));
+    _Pickle_ClearState(_Pickle_GetState((PyObject*)m));
 }
 
 static int

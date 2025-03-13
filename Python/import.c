@@ -1249,7 +1249,7 @@ _extensions_cache_init(void)
         hashtable_hash_str,
         hashtable_compare_str,
         hashtable_destroy_str,  // key
-        (_Py_hashtable_destroy_func)del_extensions_cache_value,  // value
+        del_extensions_cache_value,  // value
         &alloc
     );
     if (EXTENSIONS.hashtable == NULL) {

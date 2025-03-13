@@ -454,7 +454,7 @@ _io__Buffered___sizeof___impl(buffered *self)
 static int
 buffered_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    buffered *self = (buffered*)op;
+    buffered *self = buffered_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->raw);
     Py_VISIT(self->dict);
