@@ -2258,7 +2258,9 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         switch (s->sock_proto) {
 #ifdef CAN_RAW
         case CAN_RAW:
+        #ifdef CAN_BCM
             _Py_FALLTHROUGH;
+        #endif
 #endif
 #ifdef CAN_BCM
         case CAN_BCM:
