@@ -183,14 +183,6 @@ int _PyCodegen_Expression(struct _PyCompiler *c, expr_ty e);
 int _PyCodegen_Body(struct _PyCompiler *c, _Py_SourceLocation loc, asdl_stmt_seq *stmts,
                     bool is_interactive);
 
-/* Utility for a number of growing arrays used in the compiler */
-int _PyCompile_EnsureArrayLargeEnough(
-        int idx,
-        void **array,
-        int *alloc,
-        int default_alloc,
-        size_t item_size);
-
 int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
 
 PyCodeObject *_PyCompile_OptimizeAndAssemble(struct _PyCompiler *c, int addNone);
