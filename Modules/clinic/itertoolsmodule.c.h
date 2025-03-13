@@ -486,6 +486,19 @@ PyDoc_STRVAR(itertools_chain_from_iterable__doc__,
 #define ITERTOOLS_CHAIN_FROM_ITERABLE_METHODDEF    \
     {"from_iterable", (PyCFunction)itertools_chain_from_iterable, METH_O|METH_CLASS, itertools_chain_from_iterable__doc__},
 
+static PyObject *
+itertools_chain_from_iterable_impl(PyTypeObject *type, PyObject *arg);
+
+static PyObject *
+itertools_chain_from_iterable(PyObject *type, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+
+    return_value = itertools_chain_from_iterable_impl((PyTypeObject *)type, arg);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(itertools_combinations__doc__,
 "combinations(iterable, r)\n"
 "--\n"
@@ -936,4 +949,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=199eeac2d17e8f23 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=688855b1dc77bf5a input=a9049054013a1b77]*/

@@ -2715,18 +2715,15 @@ class ShutdownTest(unittest.TestCase):
 class ImmortalTests(unittest.TestCase):
 
     if sys.maxsize < (1 << 32):
-        if support.Py_GIL_DISABLED:
-            IMMORTAL_REFCOUNT = 5 << 28
-        else:
-            IMMORTAL_REFCOUNT = 7 << 28
+        IMMORTAL_REFCOUNT_MINIMUM = 1 << 30
     else:
-        IMMORTAL_REFCOUNT = 3 << 30
+        IMMORTAL_REFCOUNT_MINIMUM = 1 << 31
 
     IMMORTALS = (None, True, False, Ellipsis, NotImplemented, *range(-5, 257))
 
     def assert_immortal(self, immortal):
         with self.subTest(immortal):
-            self.assertEqual(sys.getrefcount(immortal), self.IMMORTAL_REFCOUNT)
+            self.assertGreater(sys.getrefcount(immortal), self.IMMORTAL_REFCOUNT_MINIMUM)
 
     def test_immortals(self):
         for immortal in self.IMMORTALS:

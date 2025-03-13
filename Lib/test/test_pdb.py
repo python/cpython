@@ -4478,6 +4478,25 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn(b'special', output)
 
+    def test_convvar_completion(self):
+        script = textwrap.dedent("""
+            import pdb; pdb.Pdb().set_trace()
+        """)
+
+        # Complete: $_frame
+        input = b"$_fram\t\n"
+
+        # Complete: $_frame.f_lineno + 100
+        input += b"$_frame.f_line\t + 100\n"
+
+        # Continue
+        input += b"c\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'<frame at 0x', output)
+        self.assertIn(b'102', output)
+
     def test_local_namespace(self):
         script = textwrap.dedent("""
             def f():

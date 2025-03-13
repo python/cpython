@@ -134,35 +134,54 @@
 
 #ifdef Py_DEBUG
 static void
+dump_item(_PyStackRef item)
+{
+    if (PyStackRef_IsNull(item)) {
+        printf("<NULL>");
+        return;
+    }
+    PyObject *obj = PyStackRef_AsPyObjectBorrow(item);
+    if (obj == NULL) {
+        printf("<nil>");
+        return;
+    }
+    if (
+        obj == Py_None
+        || PyBool_Check(obj)
+        || PyLong_CheckExact(obj)
+        || PyFloat_CheckExact(obj)
+        || PyUnicode_CheckExact(obj)
+    ) {
+        if (PyObject_Print(obj, stdout, 0) == 0) {
+            return;
+        }
+        PyErr_Clear();
+    }
+    // Don't call __repr__(), it might recurse into the interpreter.
+    printf("<%s at %p>", Py_TYPE(obj)->tp_name, (void *)obj);
+}
+
+static void
 dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
 {
     _PyFrame_SetStackPointer(frame, stack_pointer);
+    _PyStackRef *locals_base = _PyFrame_GetLocalsArray(frame);
     _PyStackRef *stack_base = _PyFrame_Stackbase(frame);
     PyObject *exc = PyErr_GetRaisedException();
+    printf("    locals=[");
+    for (_PyStackRef *ptr = locals_base; ptr < stack_base; ptr++) {
+        if (ptr != locals_base) {
+            printf(", ");
+        }
+        dump_item(*ptr);
+    }
+    printf("]\n");
     printf("    stack=[");
     for (_PyStackRef *ptr = stack_base; ptr < stack_pointer; ptr++) {
         if (ptr != stack_base) {
             printf(", ");
         }
-        PyObject *obj = PyStackRef_AsPyObjectBorrow(*ptr);
-        if (obj == NULL) {
-            printf("<nil>");
-            continue;
-        }
-        if (
-            obj == Py_None
-            || PyBool_Check(obj)
-            || PyLong_CheckExact(obj)
-            || PyFloat_CheckExact(obj)
-            || PyUnicode_CheckExact(obj)
-        ) {
-            if (PyObject_Print(obj, stdout, 0) == 0) {
-                continue;
-            }
-            PyErr_Clear();
-        }
-        // Don't call __repr__(), it might recurse into the interpreter.
-        printf("<%s at %p>", Py_TYPE(obj)->tp_name, PyStackRef_AsPyObjectBorrow(*ptr));
+        dump_item(*ptr);
     }
     printf("]\n");
     fflush(stdout);
@@ -432,7 +451,12 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
     if (err == 0) {
         uintptr_t base = ((uintptr_t)stack_addr) + guard_size;
         _tstate->c_stack_top = base + stack_size;
+#ifdef _Py_THREAD_SANITIZER
+        // Thread sanitizer crashes if we use a bit more than half the stack.
+        _tstate->c_stack_soft_limit = base + (stack_size / 2);
+#else
         _tstate->c_stack_soft_limit = base + PYOS_STACK_MARGIN_BYTES * 2;
+#endif
         _tstate->c_stack_hard_limit = base + PYOS_STACK_MARGIN_BYTES;
         assert(_tstate->c_stack_soft_limit < here_addr);
         assert(here_addr < _tstate->c_stack_top);
@@ -1449,7 +1473,6 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 {
     PyCodeObject *co = (PyCodeObject*)func->func_code;
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
-
     /* Create a dictionary for keyword parameters (**kwags) */
     PyObject *kwdict;
     Py_ssize_t i;
