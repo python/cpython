@@ -4037,16 +4037,15 @@ class ThreadedTests(unittest.TestCase):
         # Check we can get a connection with ephemeral finite-field Diffie-
         # Hellman (if supported).
         client_context, server_context, hostname = testing_context()
-        dhe_aliases = ["ADH", "EDH", "DHE"]
-        def supports_dhe(ctx, aliases) -> bool:
+        dhe_aliases = {"ADH", "EDH", "DHE"}
+        def supports_dhe(ctx) -> bool:
             for cipher in ctx.get_ciphers():
-                for alias in aliases:
-                    if alias in cipher:
+                for alias in dhe_aliases:
+                    if f"Kx={alias}" in cipher['description']:
                         return True
             return False
-        if not (supports_dhe(client_context, dhe_aliases) and
-                supports_dhe(server_context, dhe_aliases)):
-            self.skipTest("libssl doesn't support (finite-field) DHE")
+        if not (supports_dhe(client_context) and supports_dhe(server_context)):
+            self.skipTest("libssl doesn't support ephemeral DH")
         # test scenario needs TLS <= 1.2
         client_context.maximum_version = ssl.TLSVersion.TLSv1_2
         server_context.load_dh_params(DHFILE)
@@ -4056,8 +4055,8 @@ class ThreadedTests(unittest.TestCase):
                                    chatty=True, connectionchatty=True,
                                    sni_name=hostname)
         cipher = stats["cipher"][0]
-        parts = cipher.split("-")
-        if all(a not in parts for a in aliases):
+        parts = set(cipher.split("-"))
+        if not dhe_aliases.intersection(parts):
             self.fail("Non-DH key exchange: " + cipher[0])
 
     def test_ecdh_curve(self):
