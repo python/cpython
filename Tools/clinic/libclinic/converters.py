@@ -1115,7 +1115,10 @@ def correct_name_for_self(
             return "PyObject *", "self"
         return "PyObject *", "module"
     if f.kind is STATIC_METHOD:
-        return "void *", "null"
+        if parser:
+            return "PyObject *", "null"
+        else:
+            return "void *", "null"
     if f.kind == CLASS_METHOD:
         if parser:
             return "PyObject *", "type"

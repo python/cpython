@@ -2,7 +2,6 @@ import contextlib
 import dis
 import io
 import itertools
-import marshal
 import math
 import opcode
 import os
