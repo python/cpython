@@ -1264,6 +1264,9 @@ class ImmortalityTest(unittest.TestCase):
     def test_stickiness(self, size):
         """Check that immortality is "sticky", so that
            once an object is immortal it remains so."""
+        if size < _2G:
+            # Not enough memory to cause immortality on overflow
+            return
         o1 = o2 = o3 = o4 = o5 = o6 = o7 = o8 = object()
         l = [o1] * (size-20)
         self.assertFalse(_testcapi.is_immortal(o1))
