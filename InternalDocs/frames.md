@@ -49,9 +49,8 @@ as the arguments on the stack are (usually) already in the correct
 location for the parameters. However, it requires the VM to maintain
 an extra pointer for the locals, which can hurt performance.
 
-### Generators and Coroutines
+### Specials
 
-Generators and coroutines contain a `_PyInterpreterFrame`
 The specials section contains the following pointers:
 
 * Globals dict
