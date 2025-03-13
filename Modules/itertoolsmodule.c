@@ -1126,7 +1126,6 @@ typedef struct {
     PyObject *it;
     PyObject *saved;
     Py_ssize_t index;
-    int firstpass;
 } cycleobject;
 
 #define cycleobject_CAST(op)    ((cycleobject *)(op))
@@ -1168,7 +1167,6 @@ itertools_cycle_impl(PyTypeObject *type, PyObject *iterable)
     lz->it = it;
     lz->saved = saved;
     lz->index = 0;
-    lz->firstpass = 0;
 
     return (PyObject *)lz;
 }
@@ -1204,8 +1202,6 @@ cycle_next(PyObject *op)
     if (lz->it != NULL) {
         item = PyIter_Next(lz->it);
         if (item != NULL) {
-            if (lz->firstpass)
-                return item;
             if (PyList_Append(lz->saved, item)) {
                 Py_DECREF(item);
                 return NULL;
