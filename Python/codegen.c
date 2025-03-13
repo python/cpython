@@ -12,8 +12,6 @@
  * objects.
  */
 
-#include <stdbool.h>
-
 #include "Python.h"
 #include "opcode.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
@@ -32,19 +30,12 @@
 #include "pycore_opcode_metadata.h" // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
 #undef NEED_OPCODE_METADATA
 
+#include <stdbool.h>
+
 #define COMP_GENEXP   0
 #define COMP_LISTCOMP 1
 #define COMP_SETCOMP  2
 #define COMP_DICTCOMP 3
-
-/* A soft limit for stack use, to avoid excessive
- * memory use for large constants, etc.
- *
- * The value 30 is plucked out of thin air.
- * Code that could use more stack than this is
- * rare, so the exact value is unimportant.
- */
-#define STACK_USE_GUIDELINE 30
 
 #undef SUCCESS
 #undef ERROR
@@ -2019,13 +2010,13 @@ codegen_for(compiler *c, stmt_ty s)
     return SUCCESS;
 }
 
-
 static int
 codegen_async_for(compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
 
     NEW_JUMP_TARGET_LABEL(c, start);
+    NEW_JUMP_TARGET_LABEL(c, send);
     NEW_JUMP_TARGET_LABEL(c, except);
     NEW_JUMP_TARGET_LABEL(c, end);
 
@@ -2039,6 +2030,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
     ADDOP(c, loc, GET_ANEXT);
     ADDOP_LOAD_CONST(c, loc, Py_None);
+    USE_LABEL(c, send);
     ADD_YIELD_FROM(c, loc, 1);
     ADDOP(c, loc, POP_BLOCK);  /* for SETUP_FINALLY */
     ADDOP(c, loc, NOT_TAKEN);
@@ -2057,7 +2049,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     /* Use same line number as the iterator,
      * as the END_ASYNC_FOR succeeds the `for`, not the body. */
     loc = LOC(s->v.AsyncFor.iter);
-    ADDOP(c, loc, END_ASYNC_FOR);
+    ADDOP_JUMP(c, loc, END_ASYNC_FOR, send);
 
     /* `else` block */
     VISIT_SEQ(c, stmt, s->v.AsyncFor.orelse);
@@ -3208,7 +3200,7 @@ starunpack_helper_impl(compiler *c, location loc,
                        int build, int add, int extend, int tuple)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
-    int big = n + pushed + (injected_arg ? 1 : 0) > STACK_USE_GUIDELINE;
+    int big = n + pushed + (injected_arg ? 1 : 0) > _PY_STACK_USE_GUIDELINE;
     int seen_star = 0;
     for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
@@ -3363,7 +3355,7 @@ static int
 codegen_subdict(compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end)
 {
     Py_ssize_t i, n = end - begin;
-    int big = n*2 > STACK_USE_GUIDELINE;
+    int big = n*2 > _PY_STACK_USE_GUIDELINE;
     location loc = LOC(e);
     if (big) {
         ADDOP_I(c, loc, BUILD_MAP, 0);
@@ -3410,7 +3402,7 @@ codegen_dict(compiler *c, expr_ty e)
             ADDOP_I(c, loc, DICT_UPDATE, 1);
         }
         else {
-            if (elements*2 > STACK_USE_GUIDELINE) {
+            if (elements*2 > _PY_STACK_USE_GUIDELINE) {
                 RETURN_IF_ERROR(codegen_subdict(c, e, i - elements, i + 1));
                 if (have_dict) {
                     ADDOP_I(c, loc, DICT_UPDATE, 1);
@@ -3751,7 +3743,7 @@ maybe_optimize_method_call(compiler *c, expr_ty e)
     /* Check that there aren't too many arguments */
     argsl = asdl_seq_LEN(args);
     kwdsl = asdl_seq_LEN(kwds);
-    if (argsl + kwdsl + (kwdsl != 0) >= STACK_USE_GUIDELINE) {
+    if (argsl + kwdsl + (kwdsl != 0) >= _PY_STACK_USE_GUIDELINE) {
         return 0;
     }
     /* Check that there are no *varargs types of arguments. */
@@ -3848,7 +3840,7 @@ codegen_joined_str(compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     Py_ssize_t value_count = asdl_seq_LEN(e->v.JoinedStr.values);
-    if (value_count > STACK_USE_GUIDELINE) {
+    if (value_count > _PY_STACK_USE_GUIDELINE) {
         _Py_DECLARE_STR(empty, "");
         ADDOP_LOAD_CONST_NEW(c, loc, Py_NewRef(&_Py_STR(empty)));
         ADDOP_NAME(c, loc, LOAD_METHOD, &_Py_ID(join), names);
@@ -3927,7 +3919,7 @@ codegen_subkwargs(compiler *c, location loc,
     Py_ssize_t i, n = end - begin;
     keyword_ty kw;
     assert(n > 0);
-    int big = n*2 > STACK_USE_GUIDELINE;
+    int big = n*2 > _PY_STACK_USE_GUIDELINE;
     if (big) {
         ADDOP_I(c, NO_LOCATION, BUILD_MAP, 0);
     }
@@ -3980,7 +3972,7 @@ codegen_call_helper_impl(compiler *c, location loc,
     nelts = asdl_seq_LEN(args);
     nkwelts = asdl_seq_LEN(keywords);
 
-    if (nelts + nkwelts*2 > STACK_USE_GUIDELINE) {
+    if (nelts + nkwelts*2 > _PY_STACK_USE_GUIDELINE) {
          goto ex_call;
     }
     for (i = 0; i < nelts; i++) {
@@ -4252,6 +4244,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
                                       int iter_on_stack)
 {
     NEW_JUMP_TARGET_LABEL(c, start);
+    NEW_JUMP_TARGET_LABEL(c, send);
     NEW_JUMP_TARGET_LABEL(c, except);
     NEW_JUMP_TARGET_LABEL(c, if_cleanup);
 
@@ -4279,6 +4272,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
     ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
     ADDOP(c, loc, GET_ANEXT);
     ADDOP_LOAD_CONST(c, loc, Py_None);
+    USE_LABEL(c, send);
     ADD_YIELD_FROM(c, loc, 1);
     ADDOP(c, loc, POP_BLOCK);
     VISIT(c, expr, gen->target);
@@ -4338,7 +4332,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
 
     USE_LABEL(c, except);
 
-    ADDOP(c, loc, END_ASYNC_FOR);
+    ADDOP_JUMP(c, loc, END_ASYNC_FOR, send);
 
     return SUCCESS;
 }
@@ -6121,7 +6115,8 @@ codegen_match_inner(compiler *c, stmt_ty s, pattern_context *pc)
         }
         // Success! Pop the subject off, we're done with it:
         if (i != cases - has_default - 1) {
-            ADDOP(c, LOC(m->pattern), POP_TOP);
+            /* Use the next location to give better locations for branch events */
+            ADDOP(c, NEXT_LOCATION, POP_TOP);
         }
         VISIT_SEQ(c, stmt, m->body);
         ADDOP_JUMP(c, NO_LOCATION, JUMP, end);

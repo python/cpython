@@ -8,8 +8,6 @@
 
 /* TODO: Cull includes following phase split */
 
-#include <stdbool.h>
-
 #include "Python.h"
 
 #include "pycore_ast.h"           // PyAST_mod2obj()
@@ -28,6 +26,8 @@
 
 #include "errcode.h"              // E_EOF
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()
+
+#include <stdbool.h>
 
 #ifdef MS_WINDOWS
 #  include "malloc.h"             // alloca()
@@ -1410,7 +1410,7 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
 
         PyObject* result = PyObject_CallFunction(
             print_tb_func, "OOO",
-            interactive_filename,
+            co,
             interactive_src,
             filename
         );

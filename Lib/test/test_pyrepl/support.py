@@ -1,4 +1,3 @@
-import os
 from code import InteractiveConsole
 from functools import partial
 from typing import Iterable
