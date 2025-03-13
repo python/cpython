@@ -532,7 +532,12 @@ The following option is accepted:
 
 .. option:: pickle_file
 
-   A pickle file.
+   A pickle file, which can be a regular filename or a filepath.
+   Additionally, you can use ``-`` to read from standard input (stdin).
+   For example, you can pipe a pickle file to the script using a command like:
+
+   .. code-block:: bash
+      echo ... | python -m pickle -
 
 
 .. _pickle-picklable:
