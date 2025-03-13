@@ -89,7 +89,7 @@ We have the following *internal* API for interning:
 All take an interpreter state, and a pointer to a `PyObject*` which they
 modify in place.
 
-The functions take ownership of (“steal”) the reference to their argument,
+The functions take ownership or (“steal”) the reference to their argument,
 and update the argument with a *new* reference.
 This means:
 
