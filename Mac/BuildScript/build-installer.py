@@ -372,8 +372,6 @@ def library_recipes():
                             ),
               configure_pre=[
                   '--enable-threadsafe',
-                  '--enable-shared=no',
-                  '--enable-static=yes',
                   '--disable-readline',
                   '--disable-dependency-tracking',
               ]
