@@ -1,0 +1,2 @@
+Add ``name`` attribute to :class:`datetime.timezone` that returns the ``name``
+provided during creation else an empty string.
