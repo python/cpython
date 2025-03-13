@@ -1598,9 +1598,10 @@ Limited C API changes
   implementation details.
   (Contributed by Victor Stinner in :gh:`120600` and :gh:`124127`.)
 
-* Remove :c:func:`PySequence_Fast` from the limited C API, since this function
-  has to be used with :c:macro:`PySequence_Fast_GET_ITEM` which never worked
-  in the limited C API.
+* Remove the :c:macro:`PySequence_Fast_GET_SIZE`,
+  :c:macro:`PySequence_Fast_GET_ITEM` and :c:macro:`PySequence_Fast_ITEMS`
+  macros from the limited C API, since these macros never worked in the limited
+  C API. Keep :c:func:`PySequence_Fast` in the limited C API.
   (Contributed by Victor Stinner in :gh:`91417`.)
 
 
