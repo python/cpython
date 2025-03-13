@@ -2254,15 +2254,17 @@ error:
 }
 
 static PyObject *
-generic_init_subclass(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
+generic_init_subclass(PyObject *cls, PyObject *args, PyObject *kwargs)
 {
-    return call_typing_args_kwargs("_generic_init_subclass", cls, args, kwargs);
+    return call_typing_args_kwargs("_generic_init_subclass",
+                                   (PyTypeObject*)cls, args, kwargs);
 }
 
 static PyObject *
-generic_class_getitem(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
+generic_class_getitem(PyObject *cls, PyObject *args, PyObject *kwargs)
 {
-    return call_typing_args_kwargs("_generic_class_getitem", cls, args, kwargs);
+    return call_typing_args_kwargs("_generic_class_getitem",
+                                   (PyTypeObject*)cls, args, kwargs);
 }
 
 PyObject *

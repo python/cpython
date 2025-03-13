@@ -1,5 +1,4 @@
 import unittest
-import sys
 from threading import Thread, Barrier
 from itertools import batched
 from test.support import threading_helper

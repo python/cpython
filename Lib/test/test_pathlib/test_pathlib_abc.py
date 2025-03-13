@@ -1,11 +1,9 @@
-import collections
 import io
 import os
 import errno
 import unittest
 
-from pathlib._os import magic_open
-from pathlib.types import _PathParser, PathInfo, _JoinablePath, _ReadablePath, _WritablePath
+from pathlib.types import _JoinablePath, _ReadablePath, _WritablePath
 import posixpath
 
 from test.support.os_helper import TESTFN

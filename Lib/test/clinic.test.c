@@ -5262,14 +5262,14 @@ static PyObject *
 Test_static_method_impl();
 
 static PyObject *
-Test_static_method(void *null, PyObject *Py_UNUSED(ignored))
+Test_static_method(PyObject *null, PyObject *Py_UNUSED(ignored))
 {
     return Test_static_method_impl();
 }
 
 static PyObject *
 Test_static_method_impl()
-/*[clinic end generated code: output=82524a63025cf7ab input=dae892fac55ae72b]*/
+/*[clinic end generated code: output=9e401fb6ed56a4f3 input=dae892fac55ae72b]*/
 
 
 /*[clinic input]
