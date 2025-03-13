@@ -433,36 +433,21 @@ class FreeThreadingTest(unittest.TestCase):
 
         self.check([completer_delims] * 100)
 
-    # output causing this to fail
+    def test_free_threading_doctest_difflib(self):
+        code = textwrap.dedent("""
+            from threading import Thread
+            import doctest, difflib
 
-    # @threading_helper.reap_threads
-    # @threading_helper.requires_working_threading()
-    # def test_free_threading_doctest_difflib(self):
-    #     import doctest, difflib
+            def _test():
+                try:
+                    doctest.testmod(difflib)
+                except RecursionError:
+                    pass
 
-    #     preserve_stdout = sys.stdout
-    #     COUNT = 40
-    #     funcs = []
-    #     results = [False] * COUNT
-
-    #     for i in range(COUNT):
-    #         def func(b, i=i):
-    #             try:
-    #                 doctest.testmod(difflib)
-    #             except RecursionError:
-    #                 results[i] = True
-    #             except Exception:
-    #                 pass
-    #             else:
-    #                 results[i] = True
-
-    #         funcs.append(func)
-
-    #     self.check(funcs)
-
-    #     sys.stdout = preserve_stdout
-
-    #     self.assertTrue(all(results))
+            for x in range(40):
+                Thread(target=_test, args=()).start()
+        """)
+        assert_python_ok("-c", code)
 
 
 if __name__ == "__main__":
