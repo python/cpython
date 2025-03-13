@@ -1,0 +1,2 @@
+Deleting :class:`gzip.GzipFile` before it is closed now emits a
+:exc:`ResourceWarning`.

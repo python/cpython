@@ -197,7 +197,7 @@ class TestReader(TestCase):
                 Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
                 Event(evt="key", data="\x05", raw=bytearray(b"\x1bO5")),
                 # a double new line in-block should terminate the block
-                # even if its followed by whitespace
+                # even if its followed by whitespace
                 Event(evt="key", data="\n", raw=bytearray(b"\n")),
                 Event(evt="key", data="\n", raw=bytearray(b"\n")),
             ],
@@ -319,3 +319,11 @@ class TestReader(TestCase):
         # Simulate a resize to 0 columns
         reader.screeninfo = []
         self.assertEqual(reader.pos2xy(), (0, 0))
+
+    def test_setpos_from_xy_for_non_printing_char(self):
+        code = "# non \u200c printing character"
+        events = code_to_events(code)
+
+        reader, _ = handle_all_events(events)
+        reader.setpos_from_xy(8, 0)
+        self.assertEqual(reader.pos, 7)

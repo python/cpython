@@ -63,7 +63,6 @@ although there is currently no date scheduled for their removal.
 
 * :mod:`importlib`:
 
-  * ``load_module()`` method: use ``exec_module()`` instead.
   * :func:`~importlib.util.cache_from_source` *debug_override* parameter is
     deprecated: use the *optimization* parameter instead.
 
@@ -128,6 +127,11 @@ although there is currently no date scheduled for their removal.
 
 * :class:`typing.Text` (:gh:`92332`).
 
+* The internal class ``typing._UnionGenericAlias`` is no longer used to implement
+  :class:`typing.Union`. To preserve compatibility with users using this private
+  class, a compatibility shim will be provided until at least Python 3.17. (Contributed by
+  Jelle Zijlstra in :gh:`105499`.)
+
 * :class:`unittest.IsolatedAsyncioTestCase`: it is deprecated to return a value
   that is not ``None`` from a test case.
 
@@ -152,6 +156,3 @@ although there is currently no date scheduled for their removal.
   :class:`~xml.etree.ElementTree.Element` is deprecated. In a future release it
   will always return ``True``. Prefer explicit ``len(elem)`` or
   ``elem is not None`` tests instead.
-
-* :meth:`zipimport.zipimporter.load_module` is deprecated:
-  use :meth:`~zipimport.zipimporter.exec_module` instead.

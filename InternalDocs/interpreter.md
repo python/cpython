@@ -105,7 +105,7 @@ snippet decode a complete instruction:
 For various reasons we'll get to later (mostly efficiency, given that `EXTENDED_ARG`
 is rare) the actual code is different.
 
-## Jumps
+## Jumps
 
 Note that when the `switch` statement is reached, `next_instr` (the "instruction offset")
 already points to the next instruction.

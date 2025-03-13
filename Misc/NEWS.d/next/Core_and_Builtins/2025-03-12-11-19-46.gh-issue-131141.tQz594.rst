@@ -1,0 +1,1 @@
+Fix data race in :data:`sys.monitoring` instrumentation while registering callback.
