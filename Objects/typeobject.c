@@ -353,9 +353,7 @@ type_set_flags(PyTypeObject *tp, unsigned long flags)
         // held when flags are modified.
         ASSERT_TYPE_LOCK_HELD();
     }
-    // Since PyType_HasFeature() reads the flags without holding the type
-    // lock, we need an atomic store here.
-    FT_ATOMIC_STORE_ULONG_RELAXED(tp->tp_flags, flags);
+    tp->tp_flags = flags;
 }
 
 static void
@@ -3690,7 +3688,7 @@ type_init(PyObject *cls, PyObject *args, PyObject *kwds)
 unsigned long
 PyType_GetFlags(PyTypeObject *type)
 {
-    return FT_ATOMIC_LOAD_ULONG_RELAXED(type->tp_flags);
+    return type->tp_flags;
 }
 
 
