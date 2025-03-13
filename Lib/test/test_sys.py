@@ -518,10 +518,12 @@ class SysModuleTest(unittest.TestCase):
         NUM_OBJECTS = 1000
         NUM_THREADS = 10
 
-        # 40 seconds should be enough for the test to be executed: if it
-        # is more than 40 seconds it means that the process is in deadlock
-        # hence the test fails
-        TIMEOUT = 40
+        # 160 seconds should be enough for the test to be executed: if it
+        # is more than 160 seconds it means that the process is in deadlock
+        # hence the test fails.
+        # The timeout is high because on older platforms it takes some time
+        # for the test to be executed when CPython is built with debug flags.
+        TIMEOUT = 160
 
         # Test the sys._current_frames and sys._current_exceptions calls
         pid = os.fork()
