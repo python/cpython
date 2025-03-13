@@ -61,12 +61,12 @@ To actually run a coroutine, asyncio provides the following mechanisms:
           print(what)
 
       async def main():
-          print(f"started at {time.strftime('%X')}")
+          print(f"started at {time:%X}")
 
           await say_after(1, 'hello')
           await say_after(2, 'world')
 
-          print(f"finished at {time.strftime('%X')}")
+          print(f"finished at {time:%X}")
 
       asyncio.run(main())
 
@@ -90,14 +90,14 @@ To actually run a coroutine, asyncio provides the following mechanisms:
           task2 = asyncio.create_task(
               say_after(2, 'world'))
 
-          print(f"started at {time.strftime('%X')}")
+          print(f"started at {time:%X}")
 
           # Wait until both tasks are completed (should take
           # around 2 seconds.)
           await task1
           await task2
 
-          print(f"finished at {time.strftime('%X')}")
+          print(f"finished at {time:%X}")
 
   Note that expected output now shows that the snippet runs
   1 second faster than before::
@@ -119,11 +119,11 @@ To actually run a coroutine, asyncio provides the following mechanisms:
               task2 = tg.create_task(
                   say_after(2, 'world'))
 
-              print(f"started at {time.strftime('%X')}")
+              print(f"started at {time:%X}")
 
           # The await is implicit when the context manager exits.
 
-          print(f"finished at {time.strftime('%X')}")
+          print(f"finished at {time:%X}")
 
   The timing and output should be the same as for the previous version.
 
@@ -1018,20 +1018,20 @@ Running in Threads
    they were run in the main thread. For example::
 
        def blocking_io():
-           print(f"start blocking_io at {time.strftime('%X')}")
+           print(f"start blocking_io at {time:%X}")
            # Note that time.sleep() can be replaced with any blocking
            # IO-bound operation, such as file operations.
            time.sleep(1)
-           print(f"blocking_io complete at {time.strftime('%X')}")
+           print(f"blocking_io complete at {time:%X}")
 
        async def main():
-           print(f"started main at {time.strftime('%X')}")
+           print(f"started main at {time:%X}")
 
            await asyncio.gather(
                asyncio.to_thread(blocking_io),
                asyncio.sleep(1))
 
-           print(f"finished main at {time.strftime('%X')}")
+           print(f"finished main at {time:%X}")
 
 
        asyncio.run(main())
