@@ -1433,7 +1433,7 @@ These can be used as types in annotations. They all support subscription using
         {'x': typing.Annotated[int, 'metadata'], 'return': <class 'NoneType'>}
 
    At runtime, the metadata associated with an ``Annotated`` type can be
-   retrieved via the :attr:`!__metadata__` attribute.
+   retrieved via the :attr:`!__metadata__` attribute:
 
      .. doctest::
 
