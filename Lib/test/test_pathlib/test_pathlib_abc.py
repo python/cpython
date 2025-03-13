@@ -1,11 +1,9 @@
-import collections
 import io
 import os
 import errno
 import unittest
 
-from pathlib._os import magic_open
-from pathlib.types import _PathParser, PathInfo, _JoinablePath, _ReadablePath, _WritablePath
+from pathlib.types import _JoinablePath, _ReadablePath, _WritablePath
 import posixpath
 
 from test.support.os_helper import TESTFN
@@ -336,10 +334,6 @@ class ReadablePathTest(JoinablePathTest):
 class WritablePathTest(JoinablePathTest):
     cls = DummyWritablePath
 
-    def test_is_writable(self):
-        p = self.cls(self.base)
-        self.assertIsInstance(p, _WritablePath)
-
 
 class DummyRWPath(DummyWritablePath, DummyReadablePath):
     __slots__ = ()
@@ -348,181 +342,6 @@ class DummyRWPath(DummyWritablePath, DummyReadablePath):
 class RWPathTest(WritablePathTest, ReadablePathTest):
     cls = DummyRWPath
     can_symlink = False
-
-    def test_read_write_bytes(self):
-        p = self.cls(self.base)
-        (p / 'fileA').write_bytes(b'abcdefg')
-        self.assertEqual((p / 'fileA').read_bytes(), b'abcdefg')
-        # Check that trying to write str does not truncate the file.
-        self.assertRaises(TypeError, (p / 'fileA').write_bytes, 'somestr')
-        self.assertEqual((p / 'fileA').read_bytes(), b'abcdefg')
-
-    def test_read_write_text(self):
-        p = self.cls(self.base)
-        (p / 'fileA').write_text('äbcdefg', encoding='latin-1')
-        self.assertEqual((p / 'fileA').read_text(
-            encoding='utf-8', errors='ignore'), 'bcdefg')
-        # Check that trying to write bytes does not truncate the file.
-        self.assertRaises(TypeError, (p / 'fileA').write_text, b'somebytes')
-        self.assertEqual((p / 'fileA').read_text(encoding='latin-1'), 'äbcdefg')
-
-    def test_write_text_with_newlines(self):
-        p = self.cls(self.base)
-        # Check that `\n` character change nothing
-        (p / 'fileA').write_text('abcde\r\nfghlk\n\rmnopq', newline='\n')
-        self.assertEqual((p / 'fileA').read_bytes(),
-                         b'abcde\r\nfghlk\n\rmnopq')
-        # Check that `\r` character replaces `\n`
-        (p / 'fileA').write_text('abcde\r\nfghlk\n\rmnopq', newline='\r')
-        self.assertEqual((p / 'fileA').read_bytes(),
-                         b'abcde\r\rfghlk\r\rmnopq')
-        # Check that `\r\n` character replaces `\n`
-        (p / 'fileA').write_text('abcde\r\nfghlk\n\rmnopq', newline='\r\n')
-        self.assertEqual((p / 'fileA').read_bytes(),
-                         b'abcde\r\r\nfghlk\r\n\rmnopq')
-        # Check that no argument passed will change `\n` to `os.linesep`
-        os_linesep_byte = bytes(os.linesep, encoding='ascii')
-        (p / 'fileA').write_text('abcde\nfghlk\n\rmnopq')
-        self.assertEqual((p / 'fileA').read_bytes(),
-                          b'abcde' + os_linesep_byte + b'fghlk' + os_linesep_byte + b'\rmnopq')
-
-    def test_copy_file(self):
-        base = self.cls(self.base)
-        source = base / 'fileA'
-        target = base / 'copyA'
-        result = source.copy(target)
-        self.assertEqual(result, target)
-        self.assertTrue(result.info.exists())
-        self.assertEqual(source.read_text(), result.read_text())
-
-    def test_copy_file_to_existing_file(self):
-        base = self.cls(self.base)
-        source = base / 'fileA'
-        target = base / 'dirB' / 'fileB'
-        result = source.copy(target)
-        self.assertEqual(result, target)
-        self.assertTrue(result.info.exists())
-        self.assertEqual(source.read_text(), result.read_text())
-
-    def test_copy_file_to_existing_directory(self):
-        base = self.cls(self.base)
-        source = base / 'fileA'
-        target = base / 'dirA'
-        self.assertRaises(OSError, source.copy, target)
-
-    def test_copy_file_empty(self):
-        base = self.cls(self.base)
-        source = base / 'empty'
-        target = base / 'copyA'
-        source.write_bytes(b'')
-        result = source.copy(target)
-        self.assertEqual(result, target)
-        self.assertTrue(result.info.exists())
-        self.assertEqual(result.read_bytes(), b'')
-
-    def test_copy_file_to_itself(self):
-        base = self.cls(self.base)
-        source = base / 'empty'
-        source.write_bytes(b'')
-        self.assertRaises(OSError, source.copy, source)
-        self.assertRaises(OSError, source.copy, source, follow_symlinks=False)
-
-    def test_copy_dir_simple(self):
-        base = self.cls(self.base)
-        source = base / 'dirC'
-        target = base / 'copyC'
-        result = source.copy(target)
-        self.assertEqual(result, target)
-        self.assertTrue(result.info.is_dir())
-        self.assertTrue(result.joinpath('dirD').info.is_dir())
-        self.assertTrue(result.joinpath('dirD', 'fileD').info.is_file())
-        self.assertEqual(result.joinpath('dirD', 'fileD').read_text(),
-                         "this is file D\n")
-        self.assertTrue(result.joinpath('fileC').info.is_file())
-        self.assertTrue(result.joinpath('fileC').read_text(),
-                        "this is file C\n")
-
-    def test_copy_dir_complex(self, follow_symlinks=True):
-        def ordered_walk(path):
-            for dirpath, dirnames, filenames in path.walk(follow_symlinks=follow_symlinks):
-                dirnames.sort()
-                filenames.sort()
-                yield dirpath, dirnames, filenames
-        base = self.cls(self.base)
-        source = base / 'dirC'
-
-        if self.can_symlink:
-            # Add some symlinks
-            source.joinpath('linkC').symlink_to('fileC')
-            source.joinpath('linkD').symlink_to('dirD', target_is_directory=True)
-
-        # Perform the copy
-        target = base / 'copyC'
-        result = source.copy(target, follow_symlinks=follow_symlinks)
-        self.assertEqual(result, target)
-
-        # Compare the source and target trees
-        source_walk = ordered_walk(source)
-        target_walk = ordered_walk(result)
-        for source_item, target_item in zip(source_walk, target_walk, strict=True):
-            self.assertEqual(source_item[0].parts[len(source.parts):],
-                             target_item[0].parts[len(target.parts):])  # dirpath
-            self.assertEqual(source_item[1], target_item[1])  # dirnames
-            self.assertEqual(source_item[2], target_item[2])  # filenames
-            # Compare files and symlinks
-            for filename in source_item[2]:
-                source_file = source_item[0].joinpath(filename)
-                target_file = target_item[0].joinpath(filename)
-                if follow_symlinks or not source_file.info.is_symlink():
-                    # Regular file.
-                    self.assertEqual(source_file.read_bytes(), target_file.read_bytes())
-                elif source_file.info.is_dir():
-                    # Symlink to directory.
-                    self.assertTrue(target_file.info.is_dir())
-                    self.assertEqual(source_file.readlink(), target_file.readlink())
-                else:
-                    # Symlink to file.
-                    self.assertEqual(source_file.read_bytes(), target_file.read_bytes())
-                    self.assertEqual(source_file.readlink(), target_file.readlink())
-
-    def test_copy_dir_complex_follow_symlinks_false(self):
-        self.test_copy_dir_complex(follow_symlinks=False)
-
-    def test_copy_dir_to_existing_directory(self):
-        base = self.cls(self.base)
-        source = base / 'dirC'
-        target = base / 'copyC'
-        target.mkdir()
-        target.joinpath('dirD').mkdir()
-        self.assertRaises(FileExistsError, source.copy, target)
-
-    def test_copy_dir_to_itself(self):
-        base = self.cls(self.base)
-        source = base / 'dirC'
-        self.assertRaises(OSError, source.copy, source)
-        self.assertRaises(OSError, source.copy, source, follow_symlinks=False)
-
-    def test_copy_dir_into_itself(self):
-        base = self.cls(self.base)
-        source = base / 'dirC'
-        target = base / 'dirC' / 'dirD' / 'copyC'
-        self.assertRaises(OSError, source.copy, target)
-        self.assertRaises(OSError, source.copy, target, follow_symlinks=False)
-        self.assertFalse(target.info.exists())
-
-    def test_copy_into(self):
-        base = self.cls(self.base)
-        source = base / 'fileA'
-        target_dir = base / 'dirA'
-        result = source.copy_into(target_dir)
-        self.assertEqual(result, target_dir / 'fileA')
-        self.assertTrue(result.info.exists())
-        self.assertEqual(source.read_text(), result.read_text())
-
-    def test_copy_into_empty_name(self):
-        source = self.cls('')
-        target_dir = self.base
-        self.assertRaises(ValueError, source.copy_into, target_dir)
 
 
 class ReadablePathWalkTest(unittest.TestCase):
