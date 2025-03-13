@@ -367,8 +367,8 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 
 #if defined(__EMSCRIPTEN__)
 
-// Temporary workaround to make `pthread_getattr_np` work on Emscripten until a
-// version of Emscripten is released containing the fix.
+// Temporary workaround to make `pthread_getattr_np` work on Emscripten.
+// Emscripten 4.0.6 will contain a fix:
 // https://github.com/emscripten-core/emscripten/pull/23887
 
 #include "emscripten/stack.h"
