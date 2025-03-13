@@ -4055,7 +4055,7 @@ class ThreadedTests(unittest.TestCase):
                                    chatty=True, connectionchatty=True,
                                    sni_name=hostname)
         cipher = stats["cipher"][0]
-        parts = set(cipher.split("-"))
+        parts = cipher.split("-")
         if not dhe_aliases.intersection(parts):
             self.fail("Non-DH key exchange: " + cipher[0])
 
