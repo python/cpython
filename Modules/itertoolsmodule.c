@@ -1224,8 +1224,9 @@ cycle_next(PyObject *op)
     item = PyList_GET_ITEM(lz->saved, index);
     index++;
     if (index >= PyList_GET_SIZE(lz->saved)) {
-        FT_ATOMIC_STORE_SSIZE_RELAXED(lz->index, 0);
+        index = 0;
     }
+    FT_ATOMIC_STORE_SSIZE_RELAXED(lz->index, index);
     return Py_NewRef(item);
 }
 
