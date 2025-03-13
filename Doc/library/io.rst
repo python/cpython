@@ -592,11 +592,10 @@ I/O Base Classes
 
    .. method:: read1(size=-1, /)
 
-      Read and return up to *size* bytes, with at most one call to the
-      underlying raw stream's :meth:`~RawIOBase.read` (or
-      :meth:`~RawIOBase.readinto`) method. If *size* is ``-1`` or not provided,
-      the implementation will decide a size to use and at most one call will be
-      made.
+      Read and return up to *size* bytes, calilng :meth:`~raw.readinto`,
+      retrying if :py:const:`~errno.EINTR` is encountered per  :pep:`475`. If
+      *size* is ``-1`` or not provided, the implementation will choose an
+      arbitrary value for *size*.
 
       .. note::
 
