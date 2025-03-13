@@ -1,2 +1,1 @@
-Validate negative :mod:`ast` locations, we only allow ``-1`` as a special
-value.
+Do not crash on negative ``column`` and ``end_column`` in :mod:`ast` locations.

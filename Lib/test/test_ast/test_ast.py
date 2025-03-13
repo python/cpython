@@ -204,7 +204,7 @@ class AST_Tests(unittest.TestCase):
         # Check that compilation doesn't crash. Note: this may crash explicitly only on debug mode.
         compile(tree, "<string>", "exec")
 
-    def test_compilation_of_ast_nodes_with_negative_position_values(self):
+    def test_negative_locations_for_compile(self):
         # See https://github.com/python/cpython/issues/130775
         alias = ast.alias(name='traceback', lineno=0, col_offset=0)
         for attrs in (
@@ -219,11 +219,10 @@ class AST_Tests(unittest.TestCase):
                 ], type_ignores=[])
 
                 # It used to crash on this step:
-                with self.assertRaisesRegex(
-                    ValueError,
-                    'AST node has invalid location',
-                ):
-                    compile(tree, "<string>", "exec")
+                compile(tree, "<string>", "exec")
+
+                # This also must not crash:
+                ast.parse(tree, optimize=2)
 
     def test_slice(self):
         slc = ast.parse("x[::]").body[0].value.slice

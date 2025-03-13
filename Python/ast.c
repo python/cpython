@@ -40,15 +40,6 @@ static int validate_typeparam(type_param_ty);
                      node->col_offset, node->end_col_offset, node->lineno, node->end_lineno); \
         return 0; \
     } \
-    if (node->lineno < -1 || node->end_lineno < -1 || \
-        node->col_offset < -1 || node->end_col_offset < -1) { \
-        PyErr_Format(PyExc_ValueError, \
-                     "AST node has invalid location: lineno=%d, end_lineno=%d, " \
-                     "col_offset=%d, end_col_offset=%d", \
-                     node->lineno, node->end_lineno, \
-                     node->col_offset, node->end_col_offset); \
-        return 0; \
-    } \
     if (node->lineno == node->end_lineno && node->col_offset > node->end_col_offset) { \
         PyErr_Format(PyExc_ValueError, \
                      "line %d, column %d-%d is not a valid range", \
