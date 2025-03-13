@@ -6,7 +6,10 @@ import os
 import sys
 import tempfile
 import textwrap
+import threading
 import unittest
+from test import support
+from test.support import threading_helper
 from test.support import verbose
 from test.support.import_helper import import_module
 from test.support.os_helper import unlink, temp_dir, TESTFN
@@ -401,6 +404,63 @@ readline.write_history_file(history_file)
         # possible deduplication with arbitrary previous content).
         # So, we've only tested that the read did not fail.
         # See TestHistoryManipulation for the full test.
+
+
+@unittest.skipUnless(support.Py_GIL_DISABLED, 'these tests can only possibly fail with GIL disabled')
+class FreeThreadingTest(unittest.TestCase):
+    def check(self, funcs, *args):
+        barrier = threading.Barrier(len(funcs))
+        threads = []
+
+        for func in funcs:
+            thread = threading.Thread(target=func, args=(barrier, *args))
+
+            threads.append(thread)
+
+        with threading_helper.start_threads(threads):
+            pass
+
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_free_threading(self):
+        def completer_delims(b):
+            b.wait()
+            for _ in range(100):
+                readline.get_completer_delims()
+                readline.set_completer_delims(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
+                readline.set_completer_delims(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
+                readline.get_completer_delims()
+
+        self.check([completer_delims] * 100)
+
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_free_threading_doctest_difflib(self):
+        import doctest, difflib
+
+        preserve_stdout = sys.stdout
+        COUNT = 40
+        funcs = []
+        results = [False] * COUNT
+
+        for i in range(COUNT):
+            def func(b, i=i):
+                try:
+                    doctest.testmod(difflib)
+                except RecursionError:
+                    results[i] = True
+                except Exception:
+                    pass
+                else:
+                    results[i] = True
+
+            funcs.append(func)
+
+        self.check(funcs)
+
+        sys.stdout = preserve_stdout
+
+        self.assertTrue(all(results))
 
 
 if __name__ == "__main__":
