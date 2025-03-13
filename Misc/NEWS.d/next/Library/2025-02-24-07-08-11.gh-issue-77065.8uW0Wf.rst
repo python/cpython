@@ -1,2 +1,2 @@
-Add keyword-only optional argument *echochar* for :meth:`getpass.getpass`.
-Patch by Semyon Moroz.
+Add keyword-only optional argument *echochar* for :meth:`getpass.getpass`
+for optional visual keyboard feedback support. Patch by Semyon Moroz.

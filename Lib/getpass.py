@@ -169,7 +169,7 @@ def _raw_input(prompt="", stream=None, input=None):
     return line
 
 
-def _input_with_echochar(prompt="", stream=None, input=None, echochar=""):
+def _input_with_echochar(prompt, stream, input, echochar):
     if not stream:
         stream = sys.stderr
     if not input:
