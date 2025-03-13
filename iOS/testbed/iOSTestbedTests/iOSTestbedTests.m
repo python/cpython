@@ -53,8 +53,6 @@
     // Enforce UTF-8 encoding for stderr, stdout, file-system encoding and locale.
     // See https://docs.python.org/3/library/os.html#python-utf-8-mode.
     preconfig.utf8_mode = 1;
-    // Use the system logger for stdout/err
-    config.use_system_logger = 1;
     // Don't buffer stdio. We want output to appears in the log immediately
     config.buffered_stdio = 0;
     // Don't write bytecode; we can't modify the app bundle
