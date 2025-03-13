@@ -2826,6 +2826,7 @@ PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
     StgDictObject *item_dict = PyType_stgdict(item_type);
 
     if (view == NULL) return 0;
+    assert(dict);
 
     view->buf = self->b_ptr;
     view->obj = Py_NewRef(myself);
@@ -2862,7 +2863,10 @@ PyCData_reduce(PyObject *myself, PyObject *args)
 {
     CDataObject *self = (CDataObject *)myself;
 
-    if (PyObject_stgdict(myself)->flags & (TYPEFLAG_ISPOINTER|TYPEFLAG_HASPOINTER)) {
+    StgDictObject *stgdict = PyObject_stgdict(myself);
+    assert(stgdict);
+
+    if (stgdict->flags & (TYPEFLAG_ISPOINTER|TYPEFLAG_HASPOINTER)) {
         PyErr_SetString(PyExc_ValueError,
                         "ctypes objects containing pointers cannot be pickled");
         return NULL;
