@@ -1418,8 +1418,12 @@ instr_make_load_const(cfg_instr *instr, PyObject *newconst,
                       PyObject *consts, PyObject *const_cache)
 {
     int res = maybe_instr_make_load_smallint(instr, newconst, consts, const_cache);
-    if (res) {
-        return res == -1 ? ERROR : SUCCESS;
+    if (res < 0) {
+        Py_DECREF(newconst);
+        return ERROR;
+    }
+    if (res > 0) {
+        return SUCCESS;
     }
     int oparg = add_const(newconst, consts, const_cache);
     RETURN_IF_ERROR(oparg);
