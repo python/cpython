@@ -3875,7 +3875,7 @@ date_timestamp(PyObject *self, PyObject *Py_UNUSED(dummy))
     if (!ordinal_obj) {
         return NULL;
     }
-    int days_since_epoch = PyLong_AsLong(ordinal_obj) - 719163;
+    long days_since_epoch = PyLong_AsLong(ordinal_obj) - 719163;
     Py_DECREF(ordinal_obj);
     double timestamp = days_since_epoch * 86400.0;
 

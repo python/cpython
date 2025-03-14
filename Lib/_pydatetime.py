@@ -1243,8 +1243,7 @@ class date:
 
     def timestamp(self):
         """Return POSIX timestamp as float (midnight UTC)."""
-        epoch = date(1970, 1, 1)
-        return float((self.toordinal() - epoch.toordinal()) * 86400)
+        return float((self.toordinal() - _DATE_EPOCH) * 86400)
 
     # Day-of-the-week and week-of-the-year, according to ISO
 
@@ -2537,6 +2536,7 @@ UTC = timezone.utc = timezone._create(timedelta(0))
 timezone.min = timezone._create(-timedelta(hours=23, minutes=59))
 timezone.max = timezone._create(timedelta(hours=23, minutes=59))
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+_DATE_EPOCH = date(1970, 1, 1).toordinal() # date.timestamp()
 
 # Some time zone algebra.  For a datetime x, let
 #     x.n = x stripped of its timezone -- its naive time.

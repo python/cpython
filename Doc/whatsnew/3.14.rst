@@ -508,6 +508,9 @@ datetime
 * Add :meth:`datetime.time.strptime` and :meth:`datetime.date.strptime`.
   (Contributed by Wannes Boeykens in :gh:`41431`.)
 
+* Add :meth:`datetime.date.timestamp`.
+  (Contributed by Stan Ulbrych in :gh:`131226`)
+
 decimal
 -------
 
