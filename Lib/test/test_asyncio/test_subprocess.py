@@ -35,6 +35,17 @@ PROGRAM_CAT = [
               'data = sys.stdin.buffer.read()',
               'sys.stdout.buffer.write(data)'))]
 
+# Program generating infinite data
+PROGRAM_YES = [
+    sys.executable, '-c', """\
+import sys
+while True:
+    try:
+        sys.stdout.buffer.write(b"y\\n")
+    except BrokenPipeError:
+        break
+"""]
+
 
 def tearDownModule():
     asyncio._set_event_loop_policy(None)
@@ -876,6 +887,23 @@ class SubprocessMixin:
                 except ProcessLookupError:
                     pass
                 self.assertNotEqual(await proc.wait(), 255)
+
+        self.loop.run_until_complete(main())
+
+    def test_subprocess_break_pipe(self):
+        # See https://github.com/python/cpython/issues/130925
+        async def main():
+            proc = await asyncio.create_subprocess_exec(*PROGRAM_YES,
+                                                        stdout=asyncio.subprocess.PIPE)
+            try:
+                # just make sure the program has executed correctly
+                data = await proc.stdout.readline()
+                self.assertEqual(data, b"y\n")
+            finally:
+                # we are testing that the following method exists and
+                # has the intended effect of signaling the sub-process to terminate
+                proc.stdout.close()
+                await proc.wait()
 
         self.loop.run_until_complete(main())
 
