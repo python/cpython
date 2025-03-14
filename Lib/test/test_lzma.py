@@ -602,7 +602,7 @@ class FileTestCase(unittest.TestCase):
             unlink(TESTFN)
             with LZMAFile(TESTFN, mode) as f:
                 self.assertIsInstance(f, LZMAFile)
-            self.assertEqual(f.mode, 'wb')
+                self.assertEqual(f.mode, 'wb')
             with self.assertRaises(FileExistsError):
                 LZMAFile(TESTFN, mode)
 
