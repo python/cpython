@@ -1,0 +1,3 @@
+Issue: :gh:`130850`
+
+Detailed changes: Modified _close_self_pipe function in selector_events.py in python/asyncio. This update introduces a shutdown parameter, allowing for either a socket shutdown or the default socket close
