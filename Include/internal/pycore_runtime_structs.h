@@ -17,59 +17,6 @@ extern "C" {
 #define FUNC_MAX_WATCHERS 8
 #define TYPE_MAX_WATCHERS 8
 
-/******** Monitoring ********/
-
-/* Total tool ids available */
-#define  PY_MONITORING_TOOL_IDS 8
-/* Count of all local monitoring events */
-#define  _PY_MONITORING_LOCAL_EVENTS 11
-/* Count of all "real" monitoring events (not derived from other events) */
-#define _PY_MONITORING_UNGROUPED_EVENTS 16
-/* Count of all  monitoring events */
-#define _PY_MONITORING_EVENTS 19
-
-/* Tables of which tools are active for each monitored event. */
-typedef struct _Py_LocalMonitors {
-    uint8_t tools[_PY_MONITORING_LOCAL_EVENTS];
-} _Py_LocalMonitors;
-
-typedef struct _Py_GlobalMonitors {
-    uint8_t tools[_PY_MONITORING_UNGROUPED_EVENTS];
-} _Py_GlobalMonitors;
-
-/* Ancillary data structure used for instrumentation.
-   Line instrumentation creates this with sufficient
-   space for one entry per code unit. The total size
-   of the data will be `bytes_per_entry * Py_SIZE(code)` */
-typedef struct {
-    uint8_t bytes_per_entry;
-    uint8_t data[1];
-} _PyCoLineInstrumentationData;
-
-
-/* Main data structure used for instrumentation.
- * This is allocated when needed for instrumentation
- */
-typedef struct _PyCoMonitoringData {
-    /* Monitoring specific to this code object */
-    _Py_LocalMonitors local_monitors;
-    /* Monitoring that is active on this code object */
-    _Py_LocalMonitors active_monitors;
-    /* The tools that are to be notified for events for the matching code unit */
-    uint8_t *tools;
-    /* The version of tools when they instrument the code */
-    uintptr_t tool_versions[PY_MONITORING_TOOL_IDS];
-    /* Information to support line events */
-    _PyCoLineInstrumentationData *lines;
-    /* The tools that are to be notified for line events for the matching code unit */
-    uint8_t *line_tools;
-    /* Information to support instruction events */
-    /* The underlying instructions, which can themselves be instrumented */
-    uint8_t *per_instruction_opcodes;
-    /* The tools that are to be notified for instruction events for the matching code unit */
-    uint8_t *per_instruction_tools;
-} _PyCoMonitoringData;
-
 typedef int (*_Py_pending_call_func)(void *);
 
 struct _pending_call {
@@ -745,6 +692,8 @@ struct _Py_interp_static_objects {
         PyBaseExceptionObject last_resort_memory_error;
     } singletons;
 };
+
+#include "pycore_instruments.h"
 
 /* PyInterpreterState holds the global state for one of the runtime's
    interpreters.  Typically the initial (main) interpreter is the only one.

@@ -12,6 +12,29 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 
+
+typedef struct {
+    uint16_t value_and_backoff;
+} _Py_BackoffCounter;
+
+/* Each instruction in a code object is a fixed-width value,
+ * currently 2 bytes: 1-byte opcode + 1-byte oparg.  The EXTENDED_ARG
+ * opcode allows for larger values but the current limit is 3 uses
+ * of EXTENDED_ARG (see Python/compile.c), for a maximum
+ * 32-bit value.  This aligns with the note in Python/compile.c
+ * (compiler_addop_i_line) indicating that the max oparg value is
+ * 2**32 - 1, rather than INT_MAX.
+ */
+typedef union {
+    uint16_t cache;
+    struct {
+        uint8_t code;
+        uint8_t arg;
+    } op;
+    _Py_BackoffCounter counter;  // First cache entry of specializable op
+} _Py_CODEUNIT;
+
+
 /* Abstract tree node. */
 typedef struct {
     PyObject_HEAD
