@@ -1,0 +1,1 @@
+Added :func:`datetime.date.timestamp` to :class:`datetime.date`.
