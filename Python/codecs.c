@@ -14,6 +14,7 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "pycore_lock.h"          // PyMutex
 #include "pycore_pyerrors.h"      // _PyErr_FormatNote()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
 static const char *codecs_builtin_error_handlers[] = {

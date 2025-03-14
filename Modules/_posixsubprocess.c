@@ -5,8 +5,10 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"
+#include "pycore_interp.h"        // _PyInterpreterState_GetFinalizing()
 #include "pycore_pystate.h"
 #include "pycore_signal.h"        // _Py_RestoreSignals()
+
 #if defined(HAVE_PIPE2) && !defined(_GNU_SOURCE)
 #  define _GNU_SOURCE
 #endif

@@ -1,7 +1,8 @@
 #include "Python.h"
 #include "pycore_call.h"
-#include "pycore_import.h"
 #include "pycore_fileutils.h"
+#include "pycore_import.h"
+#include "pycore_runtime.h"       // _Py_ID()
 #include "errcode.h"
 
 #ifdef HAVE_UNISTD_H
