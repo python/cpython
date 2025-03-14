@@ -43,8 +43,7 @@ def unix_getpass(prompt='Password: ', stream=None, *, echochar=None):
 
     Always restores terminal settings before returning.
     """
-    if not _is_ascii(echochar):
-        return ValueError(f"'echochar' must be ASCII, got: {echochar!r}")
+    _check_echochar(echochar)
 
     passwd = None
     with contextlib.ExitStack() as stack:
@@ -109,8 +108,7 @@ def win_getpass(prompt='Password: ', stream=None, *, echochar=None):
     """Prompt for password with echo off, using Windows getwch()."""
     if sys.stdin is not sys.__stdin__:
         return fallback_getpass(prompt, stream)
-    if not _is_ascii(echochar):
-        return ValueError(f"'echochar' must be ASCII, got: {echochar!r}")
+    _check_echochar(echochar)
 
     for c in prompt:
         msvcrt.putwch(c)
@@ -146,11 +144,12 @@ def fallback_getpass(prompt='Password: ', stream=None):
     return _raw_input(prompt, stream)
 
 
-def _is_ascii(echochar):
+def _check_echochar(echochar):
     # ASCII excluding control characters
-    if echochar and (32 <= ord(echochar) <= 127):
-        return True
-    return False
+    if echochar and not (len(echochar) == 1 and
+                         echochar.isprintable() and
+                         echochar.isascii()):
+        raise ValueError(f"'echochar' must be ASCII, got: {echochar!r}")
 
 
 def _raw_input(prompt="", stream=None, input=None):
