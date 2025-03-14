@@ -211,6 +211,20 @@ provide equivalent :meth:`~ConfigParser.getint` and
 :meth:`~ConfigParser.getfloat` methods.  You can register your own
 converters and customize the provided ones. [1]_
 
+Section names are also stored as strings and need to be converted
+manually when reading a section:
+
+.. doctest::
+
+   >>> config[123] = {}
+   >>> config[123]
+   Traceback (most recent call last):
+   ...
+   KeyError: 123
+   >>> config['123']
+   <Section: 123>
+
+
 Fallback Values
 ---------------
 
