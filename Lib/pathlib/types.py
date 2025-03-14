@@ -13,7 +13,7 @@ Protocols for supporting classes in pathlib.
 from abc import ABC, abstractmethod
 from glob import _PathGlobber
 from pathlib import PurePath, Path
-from pathlib._os import magic_open, ensure_distinct_paths, copy_file
+from pathlib._os import magic_open, ensure_distinct_paths, ensure_different_files, copyfileobj
 from typing import Optional, Protocol, runtime_checkable
 
 
@@ -332,18 +332,21 @@ class _ReadablePath(_JoinablePath):
         """
         raise NotImplementedError
 
-    def copy(self, target, follow_symlinks=True, preserve_metadata=False):
+    def copy(self, target, **kwargs):
         """
         Recursively copy this file or directory tree to the given destination.
         """
         if not hasattr(target, 'with_segments'):
             target = self.with_segments(target)
         ensure_distinct_paths(self, target)
-        copy_file(self, target, follow_symlinks, preserve_metadata)
+        try:
+            copy_to_target = target._copy_from
+        except AttributeError:
+            raise TypeError(f"Target path is not writable: {target!r}") from None
+        copy_to_target(self, **kwargs)
         return target.joinpath()  # Empty join to ensure fresh metadata.
 
-    def copy_into(self, target_dir, *, follow_symlinks=True,
-                  preserve_metadata=False):
+    def copy_into(self, target_dir, **kwargs):
         """
         Copy this file or directory tree into the given existing directory.
         """
@@ -354,8 +357,7 @@ class _ReadablePath(_JoinablePath):
             target = target_dir / name
         else:
             target = self.with_segments(target_dir, name)
-        return self.copy(target, follow_symlinks=follow_symlinks,
-                         preserve_metadata=preserve_metadata)
+        return self.copy(target, **kwargs)
 
 
 class _WritablePath(_JoinablePath):
@@ -409,11 +411,22 @@ class _WritablePath(_JoinablePath):
         with magic_open(self, mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
-    def _write_info(self, info, follow_symlinks=True):
+    def _copy_from(self, source, follow_symlinks=True):
         """
-        Write the given PathInfo to this path.
+        Recursively copy the given path to this path.
         """
-        pass
+        if not follow_symlinks and source.info.is_symlink():
+            self.symlink_to(str(source.readlink()), source.info.is_dir())
+        elif source.info.is_dir():
+            children = source.iterdir()
+            self.mkdir()
+            for child in children:
+                self.joinpath(child.name)._copy_from(child, follow_symlinks)
+        else:
+            ensure_different_files(source, self)
+            with magic_open(source, 'rb') as source_f:
+                with magic_open(self, 'wb') as target_f:
+                    copyfileobj(source_f, target_f)
 
 
 _JoinablePath.register(PurePath)
