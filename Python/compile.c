@@ -1119,6 +1119,7 @@ _PyCompile_EnterConditionalBlock(struct _PyCompiler *c)
 void
 _PyCompile_LeaveConditionalBlock(struct _PyCompiler *c)
 {
+    assert(c->u->u_in_conditional_block > 0);
     c->u->u_in_conditional_block--;
 }
 
@@ -1166,6 +1167,7 @@ _PyCompile_AddDeferredAnnotation(compiler *c, stmt_ty s,
         Py_DECREF(index);
         return ERROR;
     }
+    Py_DECREF(index);
     return SUCCESS;
 }
 

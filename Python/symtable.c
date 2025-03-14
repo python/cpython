@@ -2730,7 +2730,8 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
 {
     if ((st->st_cur->ste_type == ClassBlock || st->st_cur->ste_type == ModuleBlock)
             && st->st_cur->ste_in_conditional_block
-            && !st->st_cur->ste_has_conditional_annotations) {
+            && !st->st_cur->ste_has_conditional_annotations)
+    {
         st->st_cur->ste_has_conditional_annotations = 1;
         if (!symtable_add_def(st, &_Py_ID(__conditional_annotations__), USE, LOCATION(annotation))) {
             return 0;
