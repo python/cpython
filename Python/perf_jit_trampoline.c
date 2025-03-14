@@ -2,6 +2,7 @@
 #include "pycore_ceval.h"         // _PyPerf_Callbacks
 #include "pycore_frame.h"
 #include "pycore_interp.h"
+#include "pycore_runtime.h"       // _PyRuntime
 
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE

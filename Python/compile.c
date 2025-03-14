@@ -19,7 +19,9 @@
 #include "pycore_compile.h"
 #include "pycore_flowgraph.h"
 #include "pycore_pystate.h"       // _Py_GetConfig()
+#include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #include "cpython/code.h"
 

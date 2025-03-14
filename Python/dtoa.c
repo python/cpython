@@ -119,7 +119,9 @@
 
 #include "Python.h"
 #include "pycore_dtoa.h"          // _PY_SHORT_FLOAT_REPR
+#include "pycore_interp.h"        // PyInterpreterState
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+
 #include <stdlib.h>               // exit()
 
 /* if _PY_SHORT_FLOAT_REPR == 0, then don't even try to compile

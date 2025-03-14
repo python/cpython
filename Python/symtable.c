@@ -2,6 +2,7 @@
 #include "pycore_ast.h"           // stmt_ty
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_symtable.h"      // PySTEntryObject
 
 // Set this to 1 to dump all symtables to stdout for debugging
