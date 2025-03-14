@@ -4,9 +4,8 @@
 extern "C" {
 #endif
 
-/* This is the "core of the core".
- * All the mostly widely used structs are defined here.
- * This file must not import any other pycore_ files */
+/* This files contains various key structs that are widely used
+ * and do not depend on other headers. */
 
 #include <stddef.h>
 #include <stdint.h>
