@@ -416,6 +416,9 @@ static inline void _Py_DECREF_MORTAL_SPECIALIZED(const char *filename, int linen
         _Py_DECREF_DecRefTotal();
     }
     if (--op->ob_refcnt == 0) {
+#ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+#endif
         destruct(op);
     }
 }
@@ -460,6 +463,9 @@ static inline void Py_DECREF_MORTAL_SPECIALIZED(PyObject *op, destructor destruc
     assert(!_Py_IsStaticImmortal(op));
     _Py_DECREF_STAT_INC();
     if (--op->ob_refcnt == 0) {
+#ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+#endif
         destruct(op);
     }
 }
