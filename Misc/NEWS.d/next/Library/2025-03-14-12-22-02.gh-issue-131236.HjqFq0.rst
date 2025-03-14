@@ -1,0 +1,1 @@
+Add ``--count`` to main of the :mod:`uuid` module.
