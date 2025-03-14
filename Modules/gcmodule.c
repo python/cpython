@@ -334,6 +334,23 @@ gc_get_objects_impl(PyObject *module, Py_ssize_t generation)
     return _PyGC_GetObjects(interp, (int)generation);
 }
 
+extern PyObject *_PyGC_GetOldAliveObjects(PyInterpreterState *interp);
+
+/*[clinic input]
+gc.get_alive_objects
+
+Return a list of objects tracked by the collector (excluding the list returned).
+
+[clinic start generated code]*/
+
+static PyObject *
+gc_get_alive_objects_impl(PyObject *module)
+/*[clinic end generated code: output=24e4083e0f1b0ebf input=e421931cb78142b8]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    return _PyGC_GetOldAliveObjects(interp);
+}
+
 /*[clinic input]
 gc.get_stats
 
@@ -481,6 +498,7 @@ PyDoc_STRVAR(gc__doc__,
 "set_threshold() -- Set the collection thresholds.\n"
 "get_threshold() -- Return the current the collection thresholds.\n"
 "get_objects() -- Return a list of all objects tracked by the collector.\n"
+"get_alive_objects() -- Return a list of objects determined to be alive.\n"
 "is_tracked() -- Returns true if a given object is tracked.\n"
 "is_finalized() -- Returns true if a given object has been already finalized.\n"
 "get_referrers() -- Return the list of objects that refer to an object.\n"
@@ -500,6 +518,7 @@ static PyMethodDef GcMethods[] = {
     GC_GET_THRESHOLD_METHODDEF
     GC_COLLECT_METHODDEF
     GC_GET_OBJECTS_METHODDEF
+    GC_GET_ALIVE_OBJECTS_METHODDEF
     GC_GET_STATS_METHODDEF
     GC_IS_TRACKED_METHODDEF
     GC_IS_FINALIZED_METHODDEF
