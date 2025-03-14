@@ -737,7 +737,7 @@ static int
 codegen_deferred_annotations_body(compiler *c, location loc,
     PyObject *deferred_anno, PyObject *conditional_annotation_indices, int scope_type)
 {
-    Py_ssize_t annotations_len = PyList_Size(deferred_anno);
+    Py_ssize_t annotations_len = PyList_GET_SIZE(deferred_anno);
 
     assert(PyList_CheckExact(conditional_annotation_indices));
     assert(annotations_len == PyList_Size(conditional_annotation_indices));
@@ -756,7 +756,7 @@ codegen_deferred_annotations_body(compiler *c, location loc,
         }
         PyObject *cond_index = PyList_GET_ITEM(conditional_annotation_indices, i);
         assert(PyLong_CheckExact(cond_index));
-        long idx = PyLong_AsLong(cond_index);
+        long idx = PyLong_AS_LONG(cond_index);
         NEW_JUMP_TARGET_LABEL(c, not_set);
 
         if (idx != -1) {

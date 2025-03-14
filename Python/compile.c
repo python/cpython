@@ -1163,11 +1163,9 @@ _PyCompile_AddDeferredAnnotation(compiler *c, stmt_ty s,
             return ERROR;
         }
     }
-    if (PyList_Append(c->u->u_conditional_annotation_indices, index) < 0) {
-        Py_DECREF(index);
-        return ERROR;
-    }
+    int rc = PyList_Append(c->u->u_conditional_annotation_indices, index);
     Py_DECREF(index);
+    RETURN_IF_ERROR(rc);
     return SUCCESS;
 }
 
