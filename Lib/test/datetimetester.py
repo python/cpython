@@ -1213,7 +1213,7 @@ class TestDateOnly(unittest.TestCase):
         self.assertEqual(t.timestamp(), 0.0)
 
         t = date(2000, 1, 1)
-        self.assertEqual(t.timestamp(),946684800.0)
+        self.assertEqual(t.timestamp(), 946684800.0)
 
         t = date(2025, 3, 14)
         self.assertEqual(t, date.fromtimestamp(t.timestamp()))

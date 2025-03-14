@@ -3869,7 +3869,7 @@ date_weekday(PyObject *self, PyObject *Py_UNUSED(dummy))
 }
 
 static PyObject *
-date_timestamp(PyObject *self, PyObject *Py_UNUSED(ignored))
+date_timestamp(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     PyObject *ordinal_obj = date_toordinal(self, NULL);
     if (!ordinal_obj) {
@@ -3960,7 +3960,7 @@ static PyMethodDef date_methods[] = {
      PyDoc_STR("Return the day of the week represented by the date.\n"
                "Monday == 0 ... Sunday == 6")},
 
-     {"timestamp", (PyCFunction)date_timestamp, METH_NOARGS,
+     {"timestamp", date_timestamp, METH_NOARGS,
      PyDoc_STR("Return POSIX timestamp as float (midnight UTC).")},
 
     DATETIME_DATE_REPLACE_METHODDEF
