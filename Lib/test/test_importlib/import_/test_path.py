@@ -80,7 +80,7 @@ class FinderTests:
                 self.assertIsNone(self.find('os'))
                 self.assertIsNone(sys.path_importer_cache[path_entry])
                 self.assertEqual(len(w), 1)
-                self.assertTrue(issubclass(w[-1].category, ImportWarning))
+                self.assertIsSubclass(w[-1].category, ImportWarning)
 
     def test_path_importer_cache_empty_string(self):
         # The empty string should create a finder using the cwd.
