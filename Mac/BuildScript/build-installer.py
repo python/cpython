@@ -374,7 +374,8 @@ def library_recipes():
                   '--enable-threadsafe',
                   '--disable-readline',
                   '--disable-dependency-tracking',
-              ]
+              ],
+              install=f"make && ranlib libsqlite3.a && make install DESTDIR={shellQuote(os.path.join(WORKDIR, 'libraries'))}",
           ),
           dict(
               name="libmpdec 4.0.0",
