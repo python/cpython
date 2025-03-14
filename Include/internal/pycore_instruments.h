@@ -11,8 +11,6 @@
 extern "C" {
 #endif
 
-#define PY_MONITORING_TOOL_IDS 8
-
 typedef uint32_t _PyMonitoringEventSet;
 
 /* Tool IDs */

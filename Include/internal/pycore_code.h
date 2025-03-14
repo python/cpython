@@ -67,16 +67,10 @@ _py_set_opcode(_Py_CODEUNIT *word, uint8_t opcode)
 #define _PyCode_HAS_INSTRUMENTATION(CODE) \
     (CODE->_co_instrumentation_version > 0)
 
-struct _py_code_state {
-    PyMutex mutex;
-    // Interned constants from code objects. Used by the free-threaded build.
-    struct _Py_hashtable_t *constants;
-};
 
 extern PyStatus _PyCode_Init(PyInterpreterState *interp);
 extern void _PyCode_Fini(PyInterpreterState *interp);
 
-#define CODE_MAX_WATCHERS 8
 
 /* PEP 659
  * Specialization and quickening structs and helper functions
@@ -190,14 +184,6 @@ typedef struct {
 } _PyContainsOpCache;
 
 #define INLINE_CACHE_ENTRIES_CONTAINS_OP CACHE_ENTRIES(_PyContainsOpCache)
-
-// Borrowed references to common callables:
-struct callable_cache {
-    PyObject *isinstance;
-    PyObject *len;
-    PyObject *list_append;
-    PyObject *object__getattribute__;
-};
 
 /* "Locals plus" for a code object is the set of locals + cell vars +
  * free vars.  This relates to variable names as well as offsets into

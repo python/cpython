@@ -9,7 +9,7 @@
 
 
 #ifdef _POSIX_THREADS
-/*
+/*ru
  * POSIX support
  */
 #define Py_HAVE_CONDVAR
