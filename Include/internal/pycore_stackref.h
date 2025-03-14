@@ -4,9 +4,6 @@
 extern "C" {
 #endif
 
-// Define this to get precise tracking of stackrefs.
-// #define Py_STACKREF_DEBUG 1
-
 // Define this to get precise tracking of closed stackrefs.
 // This will use unbounded memory, as it can only grow.
 // Use this to track double closes in short-lived programs
@@ -59,10 +56,6 @@ extern "C" {
 
 
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
-
-typedef union _PyStackRef {
-    uint64_t index;
-} _PyStackRef;
 
 #define Py_TAG_BITS 0
 
@@ -202,10 +195,6 @@ PyStackRef_IsHeapSafe(_PyStackRef ref)
 
 
 #else
-
-typedef union _PyStackRef {
-    uintptr_t bits;
-} _PyStackRef;
 
 
 #ifdef Py_GIL_DISABLED

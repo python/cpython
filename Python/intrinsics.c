@@ -5,12 +5,15 @@
 #include "pycore_frame.h"
 #include "pycore_function.h"
 #include "pycore_global_objects.h"
+#include "pycore_genobject.h"     // _PyAsyncGenValueWrapperNew
 #include "pycore_compile.h"       // _PyCompile_GetUnaryIntrinsicName, etc
 #include "pycore_intrinsics.h"    // INTRINSIC_PRINT
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_typevarobject.h" // _Py_make_typevar()
+#include "pycore_unicodeobject.h" // _PyUnicode_FromASCII
 
 
 /******** Unary functions ********/

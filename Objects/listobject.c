@@ -13,6 +13,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_typeobject.h"    // _Py_TYPE_VERSION_LIST
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include <stddef.h>
 

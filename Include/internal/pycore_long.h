@@ -9,7 +9,8 @@ extern "C" {
 #endif
 
 #include "pycore_bytesobject.h"   // _PyBytesWriter
-#include "pycore_global_objects.h"// _PY_NSMALLNEGINTS
+#include "pycore_runtime_structs.h"// _PY_NSMALLNEGINTS
+#include "pycore_global_objects.h"// _PY_SINGLETON
 #include "pycore_runtime.h"       // _PyRuntime
 
 /*
