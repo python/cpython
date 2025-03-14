@@ -948,6 +948,10 @@ PyFrame_GetVarString:PyObject*::+1:
 PyFrame_GetVarString:PyFrameObject*:frame:0:
 PyFrame_GetVarString:const char*:name::
 
+PyFrame_SetBack:void:::
+PyFrame_SetBack:PyFrameObject*:frame:0:
+PyFrame_SetBack:PyFrameObject*:back:+1:
+
 PyFrozenSet_Check:int:::
 PyFrozenSet_Check:PyObject*:p:0:
 

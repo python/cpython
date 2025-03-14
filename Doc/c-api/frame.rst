@@ -140,6 +140,13 @@ See also :ref:`Reflection <reflection>`.
    Return the line number that *frame* is currently executing.
 
 
+.. c:function:: void PyFrame_SetBack(PyFrameObject *frame, PyFrameObject *back)
+
+   Set the *frame* next outer frame to a :term:`strong reference` to *back*.
+
+   .. versionadded:: next
+
+
 Frame Locals Proxies
 ^^^^^^^^^^^^^^^^^^^^
 
