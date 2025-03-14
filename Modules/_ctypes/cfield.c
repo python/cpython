@@ -142,8 +142,8 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
         if ((bitfield_size <= 0) || (bitfield_size > 255)) {
             if (!PyErr_Occurred()) {
                 PyErr_Format(PyExc_ValueError,
-                            "bit size of field %R out of range, got %zd",
-                            name, bitfield_size);
+                             "bit size of field %R out of range, got %zd",
+                             name, bitfield_size);
             }
             goto error;
         }
