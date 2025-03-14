@@ -140,6 +140,18 @@ See also :ref:`Reflection <reflection>`.
    Return the line number that *frame* is currently executing.
 
 
+.. c:function:: int PyFrame_SetLineNumber(PyFrameObject *frame, int lineno)
+
+   Set a frame line number.
+
+   *lineno* must be greater than or equal to ``1``.
+
+   Do not check if *lineno* is valid for the frame code object.
+   Do not update the instruction pointer.
+
+   .. versionadded:: next
+
+
 Frame Locals Proxies
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -191,5 +203,3 @@ Unless using :pep:`523`, you will not need this.
    Return the currently executing line number, or -1 if there is no line number.
 
    .. versionadded:: 3.12
-
-

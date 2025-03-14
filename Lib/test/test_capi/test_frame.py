@@ -4,6 +4,7 @@ from test.support import import_helper
 
 
 _testcapi = import_helper.import_module('_testcapi')
+_testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 
 
 class FrameTest(unittest.TestCase):
@@ -50,6 +51,22 @@ class FrameTest(unittest.TestCase):
         frame = _testcapi.frame_new(dummy.__code__, globals(), locals())
         # The following line should not cause a segmentation fault.
         self.assertIsNone(frame.f_back)
+
+    def test_lineno(self):
+        # Test PyFrame_GetLineNumber() and PyFrame_SetLineNumber()
+        frame_getlinenumber = _testlimitedcapi.frame_getlinenumber
+        frame_setlinenumber = _testcapi.frame_setlinenumber
+
+        frame = sys._getframe()
+        frame_setlinenumber(frame, 123)
+        self.assertEqual(frame_getlinenumber(frame), 123)
+        frame_setlinenumber(frame, 222)
+        self.assertEqual(frame_getlinenumber(frame), 222)
+
+        for invalid in (-10, -1, 0):
+            with self.subTest(invalid):
+                with self.assertRaises(ValueError):
+                    frame_setlinenumber(frame, invalid)
 
 
 if __name__ == "__main__":

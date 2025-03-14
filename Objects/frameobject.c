@@ -971,6 +971,21 @@ frame_getlineno(PyObject *op, void *Py_UNUSED(closure))
     }
 }
 
+
+int
+PyFrame_SetLineNumber(PyFrameObject *frame, int lineno)
+{
+    if (lineno < 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "lineno must be greater than or equal to 1");
+        return -1;
+    }
+
+    frame->f_lineno = lineno;
+    return 0;
+}
+
+
 static PyObject *
 frame_getlasti(PyObject *op, void *Py_UNUSED(closure))
 {

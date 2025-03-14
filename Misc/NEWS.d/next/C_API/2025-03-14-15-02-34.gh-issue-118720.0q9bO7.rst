@@ -1,0 +1,2 @@
+Add :c:func:`PyFrame_SetLineNumber` function to set a frame line number.
+Patch by Victor Stinner.

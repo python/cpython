@@ -1590,6 +1590,9 @@ New features
   take a C integer and produce a Python :class:`bool` object. (Contributed by
   Pablo Galindo in :issue:`45325`.)
 
+* Add :c:func:`PyFrame_SetLineNumber` function to set a frame line number.
+  (Contributed by Victor Stinner in :gh:`118720`.)
+
 
 Limited C API changes
 ---------------------
