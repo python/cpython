@@ -1241,6 +1241,11 @@ class date:
         "Return day of the week, where Monday == 0 ... Sunday == 6."
         return (self.toordinal() + 6) % 7
 
+    def timestamp(self):
+        """Return POSIX timestamp as float (midnight UTC)."""
+        epoch = date(1970, 1, 1)
+        return float((self.toordinal() - epoch.toordinal()) * 86400)
+
     # Day-of-the-week and week-of-the-year, according to ISO
 
     def isoweekday(self):

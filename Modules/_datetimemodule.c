@@ -3868,6 +3868,20 @@ date_weekday(PyObject *self, PyObject *Py_UNUSED(dummy))
     return PyLong_FromLong(dow);
 }
 
+static PyObject *
+date_timestamp(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *ordinal_obj = date_toordinal(self, NULL);
+    if (!ordinal_obj) {
+        return NULL;
+    }
+    int days_since_epoch = PyLong_AsLong(ordinal_obj) - 719163;
+    Py_DECREF(ordinal_obj);
+    double timestamp = days_since_epoch * 86400.0;
+
+    return PyFloat_FromDouble(timestamp);
+}
+
 /* Pickle support, a simple use of __reduce__. */
 
 /* __getstate__ isn't exposed */
@@ -3945,6 +3959,9 @@ static PyMethodDef date_methods[] = {
     {"weekday", date_weekday, METH_NOARGS,
      PyDoc_STR("Return the day of the week represented by the date.\n"
                "Monday == 0 ... Sunday == 6")},
+
+     {"timestamp", (PyCFunction)date_timestamp, METH_NOARGS,
+     PyDoc_STR("Return POSIX timestamp as float (midnight UTC).")},
 
     DATETIME_DATE_REPLACE_METHODDEF
 

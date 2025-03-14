@@ -1207,6 +1207,26 @@ class TestDateOnly(unittest.TestCase):
             date.strptime('20-03-14', '%y-%m-%d')
             date.strptime('02-29,2024', '%m-%d,%Y')
 
+    @support.run_with_tz('UTC+0')
+    def test_timestamp(self):
+        t = date(1970, 1, 1)
+        self.assertEqual(t.timestamp(), 0.0)
+
+        t = date(2000, 1, 1)
+        self.assertEqual(t.timestamp(),946684800.0)
+
+        t = date(2025, 3, 14)
+        self.assertEqual(t, date.fromtimestamp(t.timestamp()))
+
+        for t in [date(2, 1, 1), date(9998, 12, 12)]:
+            try:
+                s = t.timestamp()
+            except OverflowError:
+                pass
+            else:
+                self.assertEqual(date.fromtimestamp(s), t)
+
+
 class SubclassDate(date):
     sub_var = 1
 
