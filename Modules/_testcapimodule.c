@@ -3421,6 +3421,31 @@ error:
 #undef NTHREAD
 }
 
+static int
+_reftrace_printer(PyObject *obj, PyRefTracerEvent event, void *counter_data)
+{
+    if (event == PyRefTracer_CREATE) {
+        printf("CREATE %s\n", Py_TYPE(obj)->tp_name);
+    }
+    else {  // PyRefTracer_DESTROY
+        printf("DESTROY %s\n", Py_TYPE(obj)->tp_name);
+    }
+    return 0;
+}
+
+// A simple reftrace printer for very simple tests
+static PyObject *
+toggle_reftrace_printer(PyObject *ob, PyObject *arg)
+{
+    if (arg == Py_True) {
+        PyRefTracer_SetTracer(_reftrace_printer, NULL);
+    }
+    else {
+        PyRefTracer_SetTracer(NULL, NULL);
+    }
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -3564,6 +3589,7 @@ static PyMethodDef TestMethods[] = {
     {"test_critical_sections", test_critical_sections, METH_NOARGS},
     {"test_atexit", test_atexit, METH_NOARGS},
     {"tracemalloc_track_race", tracemalloc_track_race, METH_NOARGS},
+    {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
