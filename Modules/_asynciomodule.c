@@ -2170,7 +2170,10 @@ TaskStepMethWrapper_new(TaskObj *task, PyObject *arg)
 /* ----- Task._wakeup implementation */
 
 static  PyMethodDef TaskWakeupDef = {
-    "task_wakeup", task_wakeup, METH_O, NULL
+    "task_wakeup",
+    task_wakeup,
+    METH_O,
+    NULL
 };
 
 /* ----- Task introspection helpers */
