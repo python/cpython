@@ -2054,9 +2054,7 @@ basicblock_optimize_load_const(PyObject *const_cache, basicblock *bb, PyObject *
         cfg_instr *inst = &bb->b_instr[i];
         if (inst->i_opcode == LOAD_CONST) {
             PyObject *constant = get_const_value(inst->i_opcode, inst->i_oparg, consts);
-            if (maybe_instr_make_load_smallint(inst, constant, consts, const_cache)) {
-                assert(inst->i_opcode == LOAD_SMALL_INT);
-            }
+            (void)maybe_instr_make_load_smallint(inst, constant, consts, const_cache);
             Py_DECREF(constant);
         }
         bool is_copy_of_load_const = (opcode == LOAD_CONST &&
