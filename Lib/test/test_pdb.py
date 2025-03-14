@@ -2079,7 +2079,7 @@ if not SKIP_CORO_TESTS:
             > <doctest test.test_pdb.test_pdb_asynctask[1]>(2)test()
             -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
             (Pdb) $_asynctask
-            <Task pending name='Task-1' coro=<test() running at <doctest test.test_pdb.test_pdb_asynctask[1]>:2> ...
+            <Task pending name=... coro=<test() running at <doctest test.test_pdb.test_pdb_asynctask[1]>:2> ...
             (Pdb) continue
             """
 
