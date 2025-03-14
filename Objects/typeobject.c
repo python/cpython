@@ -5979,6 +5979,8 @@ update_slot_world_stopped(PyTypeObject *type, PyObject *name)
 }
 #endif
 
+// Called by type_setattro().  Updates both the type dict and
+// any type slots that correspond to the modified entry.
 static int
 type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
                  PyObject *value, PyObject **old_value)
@@ -11306,8 +11308,9 @@ update_all_slots(PyTypeObject* type)
     ASSERT_TYPE_LOCK_HELD();
 
 #ifdef TYPE_SLOT_UPDATE_NEEDS_STOP
-    // Similar to update_slot_world_stopped(), this is required to
-    // avoid races.  We do it once here rather than once per-slot.
+    // Similar to update_slot_world_stopped(), this is required to avoid
+    // races.  We don't use update_slot_world_stopped() here because we want
+    // to stop once rather than once per slot.
     PyInterpreterState *interp = _PyInterpreterState_GET();
     _PyEval_StopTheWorld(interp);
 #endif
