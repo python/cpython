@@ -415,18 +415,21 @@ class _WritablePath(_JoinablePath):
         """
         Recursively copy the given path to this path.
         """
-        if not follow_symlinks and source.info.is_symlink():
-            self.symlink_to(str(source.readlink()), source.info.is_dir())
-        elif source.info.is_dir():
-            children = source.iterdir()
-            self.mkdir()
-            for child in children:
-                self.joinpath(child.name)._copy_from(child, follow_symlinks)
-        else:
-            ensure_different_files(source, self)
-            with magic_open(source, 'rb') as source_f:
-                with magic_open(self, 'wb') as target_f:
-                    copyfileobj(source_f, target_f)
+        stack = [(source, self)]
+        while stack:
+            src, dst = stack.pop()
+            if not follow_symlinks and src.info.is_symlink():
+                dst.symlink_to(str(src.readlink()), src.info.is_dir())
+            elif src.info.is_dir():
+                children = src.iterdir()
+                dst.mkdir()
+                for child in children:
+                    stack.append((child, dst.joinpath(child.name)))
+            else:
+                ensure_different_files(src, dst)
+                with magic_open(src, 'rb') as source_f:
+                    with magic_open(dst, 'wb') as target_f:
+                        copyfileobj(source_f, target_f)
 
 
 _JoinablePath.register(PurePath)
