@@ -1393,7 +1393,6 @@ urllib
   :func:`~urllib.request.build_opener`.
   (Contributed by Barney Gale in :gh:`84850`.)
 
-
 Others
 ------
 
