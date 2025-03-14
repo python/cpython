@@ -1,0 +1,2 @@
+Removed undocumented ``python -m random --test`` benchmark.
+Patch by Semyon Moroz.
