@@ -1,1 +1,1 @@
-Add ``--count`` to main of the :mod:`uuid` module.
+Allow to generate multiple UUIDs at once via :option:`python -m uuid --count <uuid --count>`.
