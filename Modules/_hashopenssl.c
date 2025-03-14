@@ -645,8 +645,8 @@ Update this hash object's state with the provided string.
 [clinic start generated code]*/
 
 static PyObject *
-EVP_update(EVPobject *self, PyObject *obj)
-/*[clinic end generated code: output=ec1d55ed2432e966 input=9b30ec848f015501]*/
+EVP_update_impl(EVPobject *self, PyObject *obj)
+/*[clinic end generated code: output=d56f91c68348f95f input=9b30ec848f015501]*/
 {
     int result;
     Py_buffer view;

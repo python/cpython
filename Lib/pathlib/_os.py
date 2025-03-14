@@ -248,7 +248,7 @@ def copy_file(source, target, follow_symlinks=True, preserve_metadata=False):
     """
     info = source.info
     if not follow_symlinks and info.is_symlink():
-        target.symlink_to(source.readlink(), info.is_dir())
+        target.symlink_to(str(source.readlink()), info.is_dir())
         if preserve_metadata:
             target._write_info(info, follow_symlinks=False)
     elif info.is_dir():
