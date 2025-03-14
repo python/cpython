@@ -1,2 +1,0 @@
-Fix :func:`mimetypes.guess_type` to use default mapping for empty
-``Content-Type`` in registry.

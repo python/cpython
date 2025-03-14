@@ -1,2 +1,0 @@
-Ensure web browser is launched by :func:`webbrowser.open` on macOS, even for
-``file://`` URLs.

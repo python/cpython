@@ -1,1 +1,0 @@
-Use monospace font from System Font Stack for cross-platform support in  :class:`difflib.HtmlDiff`.
