@@ -453,4 +453,4 @@ Here are some examples of typical usage of the :mod:`uuid` command-line interfac
    $ python -m uuid -u uuid5 -n @url -N example.com
 
    # generate 42 random UUIDs
-   $ python -m uuid --count 42
+   $ python -m uuid -C 42
