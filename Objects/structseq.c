@@ -334,8 +334,9 @@ error:
 
 
 static PyObject *
-structseq_reduce(PyStructSequence* self, PyObject *Py_UNUSED(ignored))
+structseq_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyStructSequence *self = (PyStructSequence*)op;
     PyObject* tup = NULL;
     PyObject* dict = NULL;
     PyObject* result;
@@ -379,8 +380,9 @@ error:
 
 
 static PyObject *
-structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
+structseq_replace(PyObject *op, PyObject *args, PyObject *kwargs)
 {
+    PyStructSequence *self = (PyStructSequence*)op;
     PyStructSequence *result = NULL;
     Py_ssize_t n_fields, n_unnamed_fields, i;
 
@@ -449,7 +451,7 @@ error:
 }
 
 static PyMethodDef structseq_methods[] = {
-    {"__reduce__", (PyCFunction)structseq_reduce, METH_NOARGS, NULL},
+    {"__reduce__", structseq_reduce, METH_NOARGS, NULL},
     {"__replace__", _PyCFunction_CAST(structseq_replace), METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("__replace__($self, /, **changes)\n--\n\n"
         "Return a copy of the structure with new values for the specified fields.")},
