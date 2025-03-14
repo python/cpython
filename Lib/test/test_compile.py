@@ -793,9 +793,9 @@ class TestSpecifics(unittest.TestCase):
         f1, f2 = lambda: "not a name", lambda: ("not a name",)
         f3 = lambda x: x in {("not a name",)}
         self.assertIs(f1.__code__.co_consts[0],
-                      f2.__code__.co_consts[0][0])
+                      f2.__code__.co_consts[1][0])
         self.assertIs(next(iter(f3.__code__.co_consts[1])),
-                      f2.__code__.co_consts[0])
+                      f2.__code__.co_consts[1])
 
         # {0} is converted to a constant frozenset({0}) by the peephole
         # optimizer
@@ -1128,6 +1128,31 @@ class TestSpecifics(unittest.TestCase):
                 self.assertNotIn('LOAD_METHOD', instructions)
                 self.assertIn('LOAD_ATTR', instructions)
                 self.assertIn('CALL', instructions)
+
+    def test_folding_type_param(self):
+        get_code_fn_cls = lambda x: x.co_consts[0].co_consts[2]
+        get_code_type_alias = lambda x: x.co_consts[0].co_consts[3]
+        snippets = [
+            ("def foo[T = 40 + 5](): pass", get_code_fn_cls),
+            ("def foo[**P = 40 + 5](): pass", get_code_fn_cls),
+            ("def foo[*Ts = 40 + 5](): pass", get_code_fn_cls),
+            ("class foo[T = 40 + 5]: pass", get_code_fn_cls),
+            ("class foo[**P = 40 + 5]: pass", get_code_fn_cls),
+            ("class foo[*Ts = 40 + 5]: pass", get_code_fn_cls),
+            ("type foo[T = 40 + 5] = 1", get_code_type_alias),
+            ("type foo[**P = 40 + 5] = 1", get_code_type_alias),
+            ("type foo[*Ts = 40 + 5] = 1", get_code_type_alias),
+        ]
+        for snippet, get_code in snippets:
+            c = compile(snippet, "<dummy>", "exec")
+            code = get_code(c)
+            opcodes = list(dis.get_instructions(code))
+            instructions = [opcode.opname for opcode in opcodes]
+            args = [opcode.oparg for opcode in opcodes]
+            self.assertNotIn(40, args)
+            self.assertNotIn(5, args)
+            self.assertIn('LOAD_SMALL_INT', instructions)
+            self.assertIn(45, args)
 
     def test_lineno_procedure_call(self):
         def call():

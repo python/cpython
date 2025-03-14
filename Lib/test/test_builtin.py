@@ -554,7 +554,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(type(glob['ticker']()), AsyncGeneratorType)
 
     def test_compile_ast(self):
-        args = ("a*(1,2)", "f.py", "exec")
+        args = ("a*__debug__", "f.py", "exec")
         raw = compile(*args, flags = ast.PyCF_ONLY_AST).body[0]
         opt1 = compile(*args, flags = ast.PyCF_OPTIMIZED_AST).body[0]
         opt2 = compile(ast.parse(args[0]), *args[1:], flags = ast.PyCF_OPTIMIZED_AST).body[0]
@@ -565,14 +565,14 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             self.assertIsInstance(tree.value.left, ast.Name)
             self.assertEqual(tree.value.left.id, 'a')
 
-        raw_right = raw.value.right  # expect Tuple((1, 2))
-        self.assertIsInstance(raw_right, ast.Tuple)
-        self.assertListEqual([elt.value for elt in raw_right.elts], [1, 2])
+        raw_right = raw.value.right
+        self.assertIsInstance(raw_right, ast.Name)
+        self.assertEqual(raw_right.id, "__debug__")
 
         for opt in [opt1, opt2]:
-            opt_right = opt.value.right  # expect Constant((1,2))
+            opt_right = opt.value.right
             self.assertIsInstance(opt_right, ast.Constant)
-            self.assertEqual(opt_right.value, (1, 2))
+            self.assertEqual(opt_right.value, True)
 
     def test_delattr(self):
         sys.spam = 1
