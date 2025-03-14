@@ -942,11 +942,9 @@ def main():
     parser.add_argument("-u", "--uuid", choices=uuid_funcs.keys(), default="uuid4",
                         help="function to generate the UUID")
     parser.add_argument("-n", "--namespace", choices=["any UUID", *namespaces.keys()],
-                        help="a UUID, or a well-known predefined UUID addressed by namespace name "
-                        "(only required for uuid3/uuid5)")
+                        help="uuid3/uuid5 only: a UUID, or a well-known predefined UUID addressed by namespace name)")
     parser.add_argument("-N", "--name",
-                        help="name used as part of generating the UUID "
-                        "(only required for uuid3/uuid5)")
+                        help="uuid3/uuid5 only: name used as part of generating the UUID")
     parser.add_argument("-C", "--count", metavar="NUM", type=int, default=1,
                         help="generate NUM fresh UUIDs")
 
