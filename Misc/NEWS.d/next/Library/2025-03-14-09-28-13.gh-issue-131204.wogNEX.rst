@@ -1,1 +1,1 @@
-Fix :class:`difflib.HtmlDiff` may not use monospaced font
+Use monospace font from System Font Stack for cross-platform support in  :class:`difflib.HtmlDiff`.
