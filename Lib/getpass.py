@@ -146,9 +146,7 @@ def fallback_getpass(prompt='Password: ', stream=None):
 
 def _check_echochar(echochar):
     # ASCII excluding control characters
-    if echochar and not (len(echochar) == 1 and
-                         echochar.isprintable() and
-                         echochar.isascii()):
+    if echochar and not (echochar.isprintable() and echochar.isascii()):
         raise ValueError(f"'echochar' must be ASCII, got: {echochar!r}")
 
 
