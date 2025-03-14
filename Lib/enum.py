@@ -779,10 +779,7 @@ class EnumType(type):
             cls(value)
             return True
         except ValueError:
-            return (
-                    value in cls._unhashable_values_    # both structures are lists
-                    or value in cls._hashable_values_
-                    )
+            return value in cls._unhashable_values_
 
     def __delattr__(cls, attr):
         # nicer error message when someone tries to delete an attribute
