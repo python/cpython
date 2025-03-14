@@ -1390,6 +1390,12 @@ urllib
   :func:`~urllib.request.build_opener`.
   (Contributed by Barney Gale in :gh:`84850`.)
 
+uuid
+----
+
+* Allow to generate multiple UUIDs at once via :option:`python -m uuid --count <uuid --count>`.
+  (Contributed by Simon Legner in :gh:`131236`.)
+
 Others
 ------
 
