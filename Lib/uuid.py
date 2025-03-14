@@ -937,20 +937,20 @@ def main():
 
     import argparse
     parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="Generate a UUID using the selected UUID function.")
     parser.add_argument("-u", "--uuid", choices=uuid_funcs.keys(), default="uuid4",
-                        help="The function to use to generate the UUID. "
-                        "By default uuid4 function is used.")
-    parser.add_argument("-n", "--namespace",
-                        help="The namespace is a UUID, or '@ns' where 'ns' is a "
-                        "well-known predefined UUID addressed by namespace name. "
-                        "Such as @dns, @url, @oid, and @x500. "
-                        "Only required for uuid3/uuid5 functions.")
+                        help="function to generate the UUID")
+    parser.add_argument("-n", "--namespace", metavar="NS",
+                        help="a UUID, or '@ns' where 'ns' is a "
+                        "well-known predefined UUID addressed by namespace name, "
+                        "such as @dns, @url, @oid, and @x500 "
+                        "(only required for uuid3/uuid5)")
     parser.add_argument("-N", "--name",
-                        help="The name used as part of generating the UUID. "
-                        "Only required for uuid3/uuid5 functions.")
+                        help="name used as part of generating the UUID "
+                        "(only required for uuid3/uuid5)")
     parser.add_argument("-C", "--count", metavar="NUM", type=int, default=1,
-                        help="Generate NUM fresh UUIDs.")
+                        help="generate NUM fresh UUIDs")
 
     args = parser.parse_args()
     uuid_func = uuid_funcs[args.uuid]
