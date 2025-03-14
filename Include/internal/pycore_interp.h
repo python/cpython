@@ -43,12 +43,6 @@ extern "C" {
 
 
 
-#ifdef Py_GIL_DISABLED
-// This should be prime but otherwise the choice is arbitrary. A larger value
-// increases concurrency at the expense of memory.
-#  define NUM_WEAKREF_LIST_LOCKS 127
-#endif
-
 /* interpreter state */
 
 #define _PyInterpreterState_WHENCE_NOTSET -1

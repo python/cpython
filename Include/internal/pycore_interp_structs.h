@@ -19,6 +19,12 @@ extern "C" {
 #define TYPE_MAX_WATCHERS 8
 
 
+#ifdef Py_GIL_DISABLED
+// This should be prime but otherwise the choice is arbitrary. A larger value
+// increases concurrency at the expense of memory.
+#  define NUM_WEAKREF_LIST_LOCKS 127
+#endif
+
 typedef int (*_Py_pending_call_func)(void *);
 
 struct _pending_call {
@@ -696,6 +702,56 @@ struct _Py_interp_static_objects {
 };
 
 #include "pycore_instruments.h"
+
+
+#ifdef Py_GIL_DISABLED
+
+// A min-heap of indices
+typedef struct _PyIndexHeap {
+    int32_t *values;
+
+    // Number of items stored in values
+    Py_ssize_t size;
+
+    // Maximum number of items that can be stored in values
+    Py_ssize_t capacity;
+} _PyIndexHeap;
+
+// An unbounded pool of indices. Indices are allocated starting from 0. They
+// may be released back to the pool once they are no longer in use.
+typedef struct _PyIndexPool {
+    PyMutex mutex;
+
+    // Min heap of indices available for allocation
+    _PyIndexHeap free_indices;
+
+    // Next index to allocate if no free indices are available
+    int32_t next_index;
+} _PyIndexPool;
+
+typedef union _Py_unique_id_entry {
+    // Points to the next free type id, when part of the freelist
+    union _Py_unique_id_entry *next;
+
+    // Stores the object when the id is assigned
+    PyObject *obj;
+} _Py_unique_id_entry;
+
+struct _Py_unique_id_pool {
+    PyMutex mutex;
+
+    // combined table of object with allocated unique ids and unallocated ids.
+    _Py_unique_id_entry *table;
+
+    // Next entry to allocate inside 'table' or NULL
+    _Py_unique_id_entry *freelist;
+
+    // size of 'table'
+    Py_ssize_t size;
+};
+
+#endif
+
 
 /* PyInterpreterState holds the global state for one of the runtime's
    interpreters.  Typically the initial (main) interpreter is the only one.
