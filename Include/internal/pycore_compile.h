@@ -40,13 +40,16 @@ extern int _PyCompile_AstOptimize(
     PyObject *filename,
     PyCompilerFlags *flags,
     int optimize,
-    struct _arena *arena);
+    struct _arena *arena,
+    int syntax_check_only);
 
 extern int _PyAST_Optimize(
     struct _mod *,
     struct _arena *arena,
+    PyObject *filename,
     int optimize,
-    int ff_features);
+    int ff_features,
+    int syntax_check_only);
 
 
 typedef struct {
