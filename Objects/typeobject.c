@@ -2814,8 +2814,9 @@ static PyObject *
 lookup_maybe_method(PyObject *self, PyObject *attr, int *unbound, PyObject* exc_ignored)
 {
     PyObject *res = _PyType_LookupRef(Py_TYPE(self), attr);
+    assert(!PyErr_Occurred());
+
     if (res == NULL) {
-        assert(!PyErr_Occurred());
         Py_RETURN_NOTIMPLEMENTED;
     }
 
@@ -2829,7 +2830,7 @@ lookup_maybe_method(PyObject *self, PyObject *attr, int *unbound, PyObject* exc_
         if (f != NULL) {
             Py_SETREF(res, f(res, self, (PyObject *)(Py_TYPE(self))));
 
-            assert(!!res || PyErr_Occurred());
+            assert((!res)^(!PyErr_Occurred()));
 
             if(res == NULL && exc_ignored && PyErr_ExceptionMatches(exc_ignored)){
                 // TODO: even though the docs say check before calling PyErr_ExceptionMatches,
@@ -2918,6 +2919,7 @@ vectorcall_maybe(PyThreadState *tstate, PyObject *name,
 
     int unbound;
     PyObject *self = args[0];
+    // TODO: PyExc_AttributeError shouldn't be ignored in this case for some reason?
     PyObject *func = lookup_maybe_method(self, name, &unbound, PyExc_AttributeError);
     if (func == NULL || func == Py_NotImplemented) {
         return func;

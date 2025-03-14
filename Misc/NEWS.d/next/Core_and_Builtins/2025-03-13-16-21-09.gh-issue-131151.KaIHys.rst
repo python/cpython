@@ -1,8 +1,8 @@
-Change the handling of errors raised from descriptor :meth:`__get__`
+Change the handling of errors raised from descriptor ``__get__``
 accessing some special (dunder) methods.
 
-* Raising :class:`AttributeError` from :meth:`__get__`  will continue to treat the method *as though it was not defined*, and special methods that had a fallback will continue to fallback.
+* Raising ``AttributeError`` from ``__get__``  will continue to treat the method *as though it was not defined*, and special methods that had a fallback will continue to fallback.
 * Other errors will be propagated as-is.
-* Directly affects :meth:`__eq__` (and other comparisons), :meth:`__hash__`, :meth:`__repr__`, :meth:`__iter__`.
-* :meth:`__del__` will report as un-raisable.
-* May affect :meth:`__contains__`, :meth:`__bool__`, :meth:`__await__`, :meth:`__aiter__`, :meth:`__anext__`.
+* Directly affects ``__eq__`` (and other comparisons), ``__hash__``, ``__repr__``, ``__iter__``.
+* ``__del__`` will report as un-raisable.
+* May affect ``__contains__``, ``__bool__``, ``__await__``, ``__aiter__``, ``__anext__``.
