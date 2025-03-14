@@ -178,6 +178,12 @@ PyStackRef_MakeHeapSafe(_PyStackRef ref)
     return ref;
 }
 
+static inline _PyStackRef
+PyStackRef_Borrow(_PyStackRef ref)
+{
+    return PyStackRef_DUP(ref)
+}
+
 #define PyStackRef_CLEAR(REF) \
     do { \
         _PyStackRef *_tmp_op_ptr = &(REF); \
@@ -347,7 +353,7 @@ PyStackRef_DUP(_PyStackRef stackref)
 }
 
 static inline _PyStackRef
-PyStackRef_AsDeferred(_PyStackRef stackref)
+PyStackRef_Borrow(_PyStackRef stackref)
 {
     return (_PyStackRef){ .bits = stackref.bits | Py_TAG_DEFERRED };
 }
@@ -431,6 +437,8 @@ static inline void PyStackRef_CheckValid(_PyStackRef ref) {
 #define PyStackRef_CheckValid(REF) ((void)0)
 
 #endif
+
+#define PyStackRef_Borrow(ref) PyStackRef_DUP(ref)
 
 #ifdef _WIN32
 #define PyStackRef_RefcountOnObject(REF) (((REF).bits & Py_TAG_BITS) == 0)

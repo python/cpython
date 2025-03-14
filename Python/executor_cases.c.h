@@ -206,11 +206,7 @@
             oparg = 0;
             assert(oparg == CURRENT_OPARG());
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
-            #ifdef Py_GIL_DISABLED
-            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
-            #else
-            value = PyStackRef_DUP(GETLOCAL(oparg));
-            #endif
+            value = PyStackRef_Borrow(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -222,11 +218,7 @@
             oparg = 1;
             assert(oparg == CURRENT_OPARG());
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
-            #ifdef Py_GIL_DISABLED
-            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
-            #else
-            value = PyStackRef_DUP(GETLOCAL(oparg));
-            #endif
+            value = PyStackRef_Borrow(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -238,11 +230,7 @@
             oparg = 2;
             assert(oparg == CURRENT_OPARG());
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
-            #ifdef Py_GIL_DISABLED
-            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
-            #else
-            value = PyStackRef_DUP(GETLOCAL(oparg));
-            #endif
+            value = PyStackRef_Borrow(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -254,11 +242,7 @@
             oparg = 3;
             assert(oparg == CURRENT_OPARG());
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
-            #ifdef Py_GIL_DISABLED
-            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
-            #else
-            value = PyStackRef_DUP(GETLOCAL(oparg));
-            #endif
+            value = PyStackRef_Borrow(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -270,11 +254,7 @@
             oparg = 4;
             assert(oparg == CURRENT_OPARG());
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
-            #ifdef Py_GIL_DISABLED
-            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
-            #else
-            value = PyStackRef_DUP(GETLOCAL(oparg));
-            #endif
+            value = PyStackRef_Borrow(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -286,11 +266,7 @@
             oparg = 5;
             assert(oparg == CURRENT_OPARG());
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
-            #ifdef Py_GIL_DISABLED
-            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
-            #else
-            value = PyStackRef_DUP(GETLOCAL(oparg));
-            #endif
+            value = PyStackRef_Borrow(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -302,11 +278,7 @@
             oparg = 6;
             assert(oparg == CURRENT_OPARG());
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
-            #ifdef Py_GIL_DISABLED
-            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
-            #else
-            value = PyStackRef_DUP(GETLOCAL(oparg));
-            #endif
+            value = PyStackRef_Borrow(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -318,11 +290,7 @@
             oparg = 7;
             assert(oparg == CURRENT_OPARG());
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
-            #ifdef Py_GIL_DISABLED
-            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
-            #else
-            value = PyStackRef_DUP(GETLOCAL(oparg));
-            #endif
+            value = PyStackRef_Borrow(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -333,11 +301,7 @@
             _PyStackRef value;
             oparg = CURRENT_OPARG();
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
-            #ifdef Py_GIL_DISABLED
-            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
-            #else
-            value = PyStackRef_DUP(GETLOCAL(oparg));
-            #endif
+            value = PyStackRef_Borrow(GETLOCAL(oparg));
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());

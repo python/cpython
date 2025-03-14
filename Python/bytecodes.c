@@ -272,11 +272,7 @@ dummy_func(
 
         replicate(8) pure inst (LOAD_FAST_BORROW, (-- value)) {
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
-            #ifdef Py_GIL_DISABLED
-            value = PyStackRef_AsDeferred(GETLOCAL(oparg));
-            #else
-            value = PyStackRef_DUP(GETLOCAL(oparg));
-            #endif
+            value = PyStackRef_Borrow(GETLOCAL(oparg));
         }
 
         inst(LOAD_FAST_AND_CLEAR, (-- value)) {
@@ -294,13 +290,8 @@ dummy_func(
         inst(LOAD_FAST_BORROW_LOAD_FAST_BORROW, ( -- value1, value2)) {
             uint32_t oparg1 = oparg >> 4;
             uint32_t oparg2 = oparg & 15;
-            #ifdef Py_GIL_DISABLED
-            value1 = PyStackRef_AsDeferred(GETLOCAL(oparg1));
-            value2 = PyStackRef_AsDeferred(GETLOCAL(oparg2));
-            #else
-            value1 = PyStackRef_DUP(GETLOCAL(oparg1));
-            value2 = PyStackRef_DUP(GETLOCAL(oparg2));
-            #endif
+            value1 = PyStackRef_Borrow(GETLOCAL(oparg1));
+            value2 = PyStackRef_Borrow(GETLOCAL(oparg2));
         }
 
         family(LOAD_CONST, 0) = {
