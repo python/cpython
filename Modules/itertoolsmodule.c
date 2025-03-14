@@ -3634,9 +3634,10 @@ repeat_next(PyObject *op)
     if (cnt == 0) {
         return NULL;
     }
-    cnt--;
-    assert(cnt >=0);
-    FT_ATOMIC_STORE_SSIZE_RELAXED(ro->cnt, cnt);
+    if (cnt > 0) {
+        cnt--;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(ro->cnt, cnt);
+    }
     return Py_NewRef(ro->element);
 }
 
