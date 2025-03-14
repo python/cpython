@@ -949,8 +949,8 @@ def main():
     parser.add_argument("-N", "--name",
                         help="The name used as part of generating the uuid. "
                         "Only required for uuid3/uuid5 functions.")
-    parser.add_argument("--count", type=int, default=1,
-                        help="Generate more uuids in loop. ")
+    parser.add_argument("-c", "--count", metavar="NUM", type=int, default=1,
+                        help="Generate NUM fresh UUIDs.")
 
     args = parser.parse_args()
     uuid_func = uuid_funcs[args.uuid]

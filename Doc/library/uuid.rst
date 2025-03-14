@@ -377,9 +377,10 @@ The following options are accepted:
    The name used as part of generating the uuid. Only required for
    :func:`uuid3` / :func:`uuid5` functions.
 
-.. option:: --count <count>
+.. option:: -c <NUM>
+            --count <NUM>
 
-   Generate more uuids in loop.
+   Generate NUM fresh UUIDs.
 
 
 .. _uuid-example:
