@@ -61,7 +61,7 @@ class StructCheckMixin:
         cls_size = ctypes.sizeof(cls)
         for name, requested_type, *rest_of_tuple in cls._fields_:
             field = getattr(cls, name)
-            with self.subTest(field=field):
+            with self.subTest(name=name, field=field):
                 is_bitfield = len(rest_of_tuple) > 0
 
                 # name

@@ -134,8 +134,9 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
             // so they're limited to about 8 bytes.
             // This check is here to avoid overflow in later checks.
             PyErr_Format(PyExc_ValueError,
-                        "bit field %R size too large, got %zd",
-                        name, byte_size);
+                         "bit field %R size too large, got %zd",
+                         name, byte_size);
+            goto error;
         }
         bitfield_size = PyLong_AsSsize_t(bit_size_obj);
         if ((bitfield_size <= 0) || (bitfield_size > 255)) {
@@ -150,8 +151,8 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
         if ((bit_offset < 0) || (bit_offset > 255)) {
             if (!PyErr_Occurred()) {
                 PyErr_Format(PyExc_ValueError,
-                            "bit offset of field %R out of range, got %zd",
-                            name, bit_offset);
+                             "bit offset of field %R out of range, got %zd",
+                             name, bit_offset);
             }
             goto error;
         }
@@ -160,7 +161,7 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                 PyExc_ValueError,
                 "bit field %R overflows its type (%zd + %zd >= %zd)",
                 name, bit_offset, byte_size*8);
-                goto error;
+            goto error;
         }
     }
     else {
@@ -169,6 +170,7 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                 PyExc_ValueError,
                 "field %R: bit_offset must be specified if bit_size is",
                 name);
+            goto error;
         }
     }
 
@@ -180,7 +182,7 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
     if (!self->name) {
         goto error;
     }
-    assert (PyUnicode_CheckExact(self->name));
+    assert(PyUnicode_CheckExact(self->name));
 
     self->proto = Py_NewRef(proto);
     self->byte_size = byte_size;
@@ -284,14 +286,14 @@ PyCField_get(PyObject *op, PyObject *inst, PyTypeObject *type)
 }
 
 static PyObject *
-PyCField_get_legacy_size(PyObject *self, void *data)
+PyCField_get_legacy_size(PyObject *self, void *Py_UNUSED(closure))
 {
     CFieldObject *field = _CFieldObject_CAST(self);
     return PyLong_FromSsize_t(_pack_legacy_size(field));
 }
 
 static PyObject *
-PyCField_get_bit_size(PyObject *self, void *data)
+PyCField_get_bit_size(PyObject *self, void *Py_UNUSED(closure))
 {
     CFieldObject *field = _CFieldObject_CAST(self);
     if (field->bitfield_size) {
@@ -323,13 +325,13 @@ finally:
 }
 
 static PyObject *
-PyCField_is_bitfield(PyObject *self, void *data)
+PyCField_is_bitfield(PyObject *self, void *Py_UNUSED(closure))
 {
     return PyBool_FromLong(_CFieldObject_CAST(self)->bitfield_size);
 }
 
 static PyObject *
-PyCField_is_anonymous(PyObject *self, void *data)
+PyCField_is_anonymous(PyObject *self, void *Py_UNUSED(closure))
 {
     return PyBool_FromLong(_CFieldObject_CAST(self)->anonymous);
 }

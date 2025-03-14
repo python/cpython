@@ -1,7 +1,7 @@
 import unittest
 import sys
 from ctypes import Structure, Union, sizeof, c_char, c_int, CField
-from ._support import Py_TPFLAGS_IMMUTABLETYPE, StructCheckMixin)
+from ._support import Py_TPFLAGS_IMMUTABLETYPE, StructCheckMixin
 
 
 NOTHING = object()
