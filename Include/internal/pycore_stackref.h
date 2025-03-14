@@ -425,7 +425,6 @@ static inline void PyStackRef_CheckValid(_PyStackRef ref) {
             assert(!_Py_IsStaticImmortal(obj));
             break;
         case Py_TAG_REFCNT:
-            assert(obj == NULL || _Py_IsImmortal(obj));
             break;
         default:
             assert(0);
@@ -438,23 +437,28 @@ static inline void PyStackRef_CheckValid(_PyStackRef ref) {
 
 #endif
 
-#define PyStackRef_Borrow(ref) PyStackRef_DUP(ref)
-
 #ifdef _WIN32
-#define PyStackRef_RefcountOnObject(REF) (((REF).bits & Py_TAG_BITS) == 0)
+#define PyStackRef_RefcountOnObject(REF) (((REF).bits & Py_TAG_REFCNT) == 0)
 #define PyStackRef_AsPyObjectBorrow BITS_TO_PTR_MASKED
+#define PyStackRef_Borrow(REF) (_PyStackRef){ .bits = ((REF).bits) | Py_TAG_REFCNT};
 #else
 /* Does this ref not have an embedded refcount and thus not refer to a declared immmortal object? */
 static inline int
 PyStackRef_RefcountOnObject(_PyStackRef ref)
 {
-    return (ref.bits & Py_TAG_BITS) == 0;
+    return (ref.bits & Py_TAG_REFCNT) == 0;
 }
 
 static inline PyObject *
 PyStackRef_AsPyObjectBorrow(_PyStackRef ref)
 {
     return BITS_TO_PTR_MASKED(ref);
+}
+
+static inline _PyStackRef
+PyStackRef_Borrow(_PyStackRef ref)
+{
+    return (_PyStackRef){ .bits = ref.bits | Py_TAG_REFCNT };
 }
 #endif
 

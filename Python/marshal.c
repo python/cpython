@@ -382,11 +382,12 @@ w_ref(PyObject *v, char *flag, WFILE *p)
     if (p->version < 3 || p->hashtable == NULL)
         return 0; /* not writing object references */
 
-    /* If it has only one reference, it definitely isn't shared.
-     * But we use TYPE_REF always for interned string, to PYC file stable
+    /* If it has only one reference, it definitely isn't shared.  But we use
+     * TYPE_REF always for interned string and code objects, to PYC file stable
      * as possible.
      */
     if (Py_REFCNT(v) == 1 &&
+            !PyCode_Check(v) &&
             !(PyUnicode_CheckExact(v) && PyUnicode_CHECK_INTERNED(v))) {
         return 0;
     }
