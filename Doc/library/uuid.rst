@@ -377,6 +377,10 @@ The following options are accepted:
    The name used as part of generating the uuid. Only required for
    :func:`uuid3` / :func:`uuid5` functions.
 
+.. option:: --count <count>
+
+   Generate more uuids in loop.
+
 
 .. _uuid-example:
 
@@ -445,3 +449,5 @@ Here are some examples of typical usage of the :mod:`uuid` command line interfac
    # generate a uuid using uuid5
    $ python -m uuid -u uuid5 -n @url -N example.com
 
+   # generate 42 random uuids
+   $ python -m uuid --count 42

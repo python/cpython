@@ -949,6 +949,8 @@ def main():
     parser.add_argument("-N", "--name",
                         help="The name used as part of generating the uuid. "
                         "Only required for uuid3/uuid5 functions.")
+    parser.add_argument("--count", type=int, default=1,
+                        help="Generate more uuids in loop. ")
 
     args = parser.parse_args()
     uuid_func = uuid_funcs[args.uuid]
@@ -963,9 +965,11 @@ def main():
                 "Run 'python -m uuid -h' for more information."
             )
         namespace = namespaces[namespace] if namespace in namespaces else UUID(namespace)
-        print(uuid_func(namespace, name))
+        for _ in range(args.count):
+            print(uuid_func(namespace, name))
     else:
-        print(uuid_func())
+        for _ in range(args.count):
+            print(uuid_func())
 
 
 # The following standard UUIDs are for use with uuid3() or uuid5().
