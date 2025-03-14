@@ -1,11 +1,11 @@
 /* AST Optimizer */
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
+#include "pycore_c_array.h"       // _Py_CArray_EnsureCapacity()
 #include "pycore_format.h"        // F_LJUST
 #include "pycore_long.h"          // _PyLong
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
-#include "cpython/code.h"         // CO_MAXBLOCKS
 
 
 /* See PEP 765 */
@@ -24,8 +24,8 @@ typedef struct {
     int recursion_depth;            /* current recursion depth */
     int recursion_limit;            /* recursion limit */
 
-    int cf_finally_next;
-    ControlFlowInFinallyContext cf_finally[CO_MAXBLOCKS];
+    _Py_c_array_t cf_finally;       /* context for PEP 678 check */
+    int cf_finally_used;
 } _PyASTOptimizeState;
 
 #define ENTER_RECURSIVE() \
@@ -35,17 +35,23 @@ if (Py_EnterRecursiveCall(" during compilation")) { \
 
 #define LEAVE_RECURSIVE() Py_LeaveRecursiveCall();
 
+static ControlFlowInFinallyContext*
+get_cf_finally_top(_PyASTOptimizeState *state)
+{
+    int idx = state->cf_finally_used+1;
+    return state->cf_finally.array + idx * sizeof(ControlFlowInFinallyContext);
+}
 
 static int
 push_cf_context(_PyASTOptimizeState *state, stmt_ty node, bool finally, bool funcdef, bool loop)
 {
-    if (state->cf_finally_next == CO_MAXBLOCKS) {
-        PyErr_SetString(PyExc_SyntaxError, "too many statically nested blocks");
-        PyErr_RangedSyntaxLocationObject(state->filename, node->lineno, node->col_offset + 1,
-                                         node->end_lineno, node->end_col_offset + 1);
+    if (_Py_CArray_EnsureCapacity(&state->cf_finally, state->cf_finally_used+1) < 0) {
         return 0;
     }
-    ControlFlowInFinallyContext *ctx = &state->cf_finally[state->cf_finally_next++];
+
+    state->cf_finally_used++;
+    ControlFlowInFinallyContext *ctx = get_cf_finally_top(state);
+
     ctx->in_finally = finally;
     ctx->in_funcdef = funcdef;
     ctx->in_loop = loop;
@@ -55,8 +61,8 @@ push_cf_context(_PyASTOptimizeState *state, stmt_ty node, bool finally, bool fun
 static void
 pop_cf_context(_PyASTOptimizeState *state)
 {
-    assert(state->cf_finally_next > 0);
-    state->cf_finally_next--;
+    assert(state->cf_finally_used > 0);
+    state->cf_finally_used--;
 }
 
 static int
@@ -76,8 +82,8 @@ control_flow_in_finally_warning(const char *kw, stmt_ty n, _PyASTOptimizeState *
 static int
 before_return(_PyASTOptimizeState *state, stmt_ty node_)
 {
-    if (state->cf_finally_next > 0) {
-        ControlFlowInFinallyContext *ctx = &state->cf_finally[state->cf_finally_next - 1];
+    if (state->cf_finally_used > 0) {
+        ControlFlowInFinallyContext *ctx = get_cf_finally_top(state);
         if (ctx->in_finally && ! ctx->in_funcdef) {
             if (!control_flow_in_finally_warning("return", node_, state)) {
                 return 0;
@@ -90,8 +96,8 @@ before_return(_PyASTOptimizeState *state, stmt_ty node_)
 static int
 before_loop_exit(_PyASTOptimizeState *state, stmt_ty node_, const char *kw)
 {
-    if (state->cf_finally_next > 0) {
-        ControlFlowInFinallyContext *ctx = &state->cf_finally[state->cf_finally_next - 1];
+    if (state->cf_finally_used > 0) {
+        ControlFlowInFinallyContext *ctx = get_cf_finally_top(state);
         if (ctx->in_finally && ! ctx->in_loop) {
             if (!control_flow_in_finally_warning(kw, node_, state)) {
                 return 0;
@@ -978,9 +984,13 @@ _PyAST_Optimize(mod_ty mod, PyArena *arena, PyObject *filename, int optimize,
     state.optimize = optimize;
     state.ff_features = ff_features;
     state.syntax_check_only = syntax_check_only;
+    if (_Py_CArray_Init(&state.cf_finally, sizeof(ControlFlowInFinallyContext), 20) < 0) {
+        return -1;
+    }
 
     int ret = astfold_mod(mod, arena, &state);
     assert(ret || PyErr_Occurred());
 
+    _Py_CArray_Fini(&state.cf_finally);
     return ret;
 }
