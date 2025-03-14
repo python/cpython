@@ -439,18 +439,18 @@ Here are some examples of typical usage of the :mod:`uuid` module::
 Command-Line Example
 --------------------
 
-Here are some examples of typical usage of the :mod:`uuid` command line interface:
+Here are some examples of typical usage of the :mod:`uuid` command-line interface:
 
 .. code-block:: shell
 
-   # generate a random uuid - by default uuid4() is used
+   # generate a random UUID - by default uuid4() is used
    $ python -m uuid
 
-   # generate a uuid using uuid1()
+   # generate a UUID using uuid1()
    $ python -m uuid -u uuid1
 
-   # generate a uuid using uuid5
+   # generate a UUID using uuid5
    $ python -m uuid -u uuid5 -n @url -N example.com
 
-   # generate 42 random uuids
+   # generate 42 random UUIDs
    $ python -m uuid --count 42
