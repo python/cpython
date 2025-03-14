@@ -1,4 +1,7 @@
-s = """Gur Mra bs Clguba, ol Gvz Crgref
+ROOT_OFFSET = 13
+SIMPLE_AMOUNT = 26
+
+magic_string = """Gur Mra bs Clguba, ol Gvz Crgref
 
 Ornhgvshy vf orggre guna htyl.
 Rkcyvpvg vf orggre guna vzcyvpvg.
@@ -20,9 +23,20 @@ Vs gur vzcyrzragngvba vf uneq gb rkcynva, vg'f n onq vqrn.
 Vs gur vzcyrzragngvba vf rnfl gb rkcynva, vg znl or n tbbq vqrn.
 Anzrfcnprf ner bar ubaxvat terng vqrn -- yrg'f qb zber bs gubfr!"""
 
-d = {}
-for c in (65, 97):
-    for i in range(26):
-        d[chr(i+c)] = chr((i+13) % 26 + c)
+secret_mapping = {}
+for offset in (65, 97):
+    for some_kind_index in range(SIMPLE_AMOUNT):
+        secret_key = chr(some_kind_index + offset)
+        secret_value = chr(
+            (some_kind_index + ROOT_OFFSET) % SIMPLE_AMOUNT + offset
+        )
+        secret_mapping[secret_key] = secret_value
 
-print("".join([d.get(c, c) for c in s]))
+really_important_string = "".join(
+    [
+        secret_mapping.get(magic_char, magic_char)
+        for magic_char in magic_string
+    ]
+)
+
+print(really_important_string)
