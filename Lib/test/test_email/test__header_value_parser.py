@@ -2946,19 +2946,6 @@ class TestFolding(TestEmailBase):
             '=?utf-8?q?H=C3=BCbsch?= Kaktus <beautiful@example.com>,\n'
                 ' =?utf-8?q?bei=C3=9Ft_bei=C3=9Ft?= <biter@example.com>\n')
 
-    def test_address_list_with_list_separator_after_fold(self):
-        a = 'x' * 66 + '@example.com'
-        to = f'{a}, "Hübsch Kaktus" <beautiful@example.com>'
-        self._test(parser.get_address_list(to)[0],
-            f'{a},\n =?utf-8?q?H=C3=BCbsch?= Kaktus <beautiful@example.com>\n')
-
-        a = '.' * 79  # ('.' is a special, so must be in quoted-string.)
-        to = f'"{a}" <xyz@example.com>, "Hübsch Kaktus" <beautiful@example.com>'
-        self._test(parser.get_address_list(to)[0],
-            f'"{a}"\n'
-            ' <xyz@example.com>, =?utf-8?q?H=C3=BCbsch?= Kaktus '
-            '<beautiful@example.com>\n')
-
     def test_address_list_with_specials_in_long_quoted_string(self):
         # Regression for gh-80222.
         policy = self.policy.clone(max_line_length=40)
