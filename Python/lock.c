@@ -170,7 +170,7 @@ _PyMutex_TryUnlock(PyMutex *m)
         }
         else if ((v & _Py_HAS_PARKED)) {
             // wake up a single thread
-            _PyParkingLot_Unpark(&m->_bits, (_Py_unpark_fn_t *)mutex_unpark, m);
+            _PyParkingLot_Unpark(&m->_bits, mutex_unpark, m);
             return 0;
         }
         else if (_Py_atomic_compare_exchange_uint8(&m->_bits, &v, _Py_UNLOCKED)) {
