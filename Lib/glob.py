@@ -263,7 +263,6 @@ _special_parts = ('', '.', '..')
 _dir_open_flags = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
 _no_recurse_symlinks = object()
 
-
 def translate(pat, *, recursive=False, include_hidden=False, seps=None):
     """Translate a pathname with shell wildcards to a regular expression.
 
@@ -282,6 +281,8 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
             seps = (os.path.sep, os.path.altsep)
         else:
             seps = os.path.sep
+
+
     escaped_seps = ''.join(map(re.escape, seps))
     any_sep = f'[{escaped_seps}]' if len(seps) > 1 else escaped_seps
     not_sep = f'[^{escaped_seps}]'
@@ -312,9 +313,12 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
             if part:
                 if not include_hidden and part[0] in '*?':
                     results.append(r'(?!\.)')
+
                 results.extend(fnmatch._translate(part, f'{not_sep}*', not_sep)[0])
+
             if idx < last_part_idx:
                 results.append(any_sep)
+
     res = ''.join(results)
     return fr'(?s:{res})\Z'
 
