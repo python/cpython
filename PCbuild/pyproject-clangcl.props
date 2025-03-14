@@ -41,7 +41,7 @@
       <AdditionalOptions>-Wno-deprecated-non-prototype -Wno-unused-label -Wno-pointer-sign -Wno-incompatible-pointer-types-discards-qualifiers -Wno-unused-function %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(Platform)' == 'Win32'">-m32 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(Platform)' == 'x64'">-m64 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="$(Configuration) != 'Debug'">-flto %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="$(Configuration) != 'Debug'">-flto=thin %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="$(SupportPGO) and $(Configuration) == 'PGInstrument'">-fprofile-instr-generate=$(_CLANG_PROFILE_PATH)$(TargetName)_%m.profraw %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="$(SupportPGO) and $(Configuration) == 'PGUpdate'">-fprofile-instr-use=$(OutDir)instrumented\profdata.profdata -Wno-profile-instr-unprofiled %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>

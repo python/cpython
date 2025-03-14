@@ -1906,10 +1906,6 @@ except ImportError:
     Pickler, Unpickler = _Pickler, _Unpickler
     dump, dumps, load, loads = _dump, _dumps, _load, _loads
 
-# Doctest
-def _test():
-    import doctest
-    return doctest.testmod()
 
 if __name__ == "__main__":
     import argparse
@@ -1918,24 +1914,15 @@ if __name__ == "__main__":
     parser.add_argument(
         'pickle_file',
         nargs='*', help='the pickle file')
-    parser.add_argument(
-        '-t', '--test', action='store_true',
-        help='run self-test suite')
-    parser.add_argument(
-        '-v', action='store_true',
-        help='run verbosely; only affects self-test run')
     args = parser.parse_args()
-    if args.test:
-        _test()
+    if not args.pickle_file:
+        parser.print_help()
     else:
-        if not args.pickle_file:
-            parser.print_help()
-        else:
-            import pprint
-            for fn in args.pickle_file:
-                if fn == '-':
-                    obj = load(sys.stdin.buffer)
-                else:
-                    with open(fn, 'rb') as f:
-                        obj = load(f)
-                pprint.pprint(obj)
+        import pprint
+        for fn in args.pickle_file:
+            if fn == '-':
+                obj = load(sys.stdin.buffer)
+            else:
+                with open(fn, 'rb') as f:
+                    obj = load(f)
+            pprint.pprint(obj)
