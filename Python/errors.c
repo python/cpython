@@ -7,15 +7,18 @@
 #include "pycore_initconfig.h"    // _PyStatus_ERR()
 #include "pycore_pyerrors.h"      // _PyErr_Format()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 #include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame()
+#include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #  include <winbase.h>
 #  include <stdlib.h>             // _sys_nerr
 #endif
+
 
 /* Forward declarations */
 static PyObject *

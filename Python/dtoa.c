@@ -119,6 +119,7 @@
 
 #include "Python.h"
 #include "pycore_dtoa.h"          // _PY_SHORT_FLOAT_REPR
+#include "pycore_interp_structs.h"// struct Bigint
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include <stdlib.h>               // exit()
 
