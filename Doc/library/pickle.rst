@@ -1231,7 +1231,7 @@ The following option is accepted:
 
 .. option:: pickle_file
 
-   A pickle file to read or ``-`` to indicate reading from standard input.
+   A pickle file to read, or ``-`` to indicate reading from standard input.
 
 
 .. seealso::
