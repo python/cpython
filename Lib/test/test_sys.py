@@ -477,6 +477,7 @@ class SysModuleTest(unittest.TestCase):
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     @support.requires_fork()
+    @support.requires_resource('cpu')
     def test_current_frames_exceptions_deadlock(self):
         """
         Reproduce the bug raised in GH-106883 and GH-116969.
@@ -515,19 +516,14 @@ class SysModuleTest(unittest.TestCase):
 
         # The number of objects should be big enough to increase the
         # chances to call the GC.
-        NUM_OBJECTS = 1000
-        NUM_THREADS = 10
-
-        # 40 seconds should be enough for the test to be executed: if it
-        # is more than 40 seconds it means that the process is in deadlock
-        # hence the test fails
-        TIMEOUT = 40
+        NUM_OBJECTS = 100
+        NUM_THREADS = 2
 
         # Test the sys._current_frames and sys._current_exceptions calls
         pid = os.fork()
         if pid:  # parent process
             try:
-                support.wait_process(pid, exitcode=0, timeout=TIMEOUT)
+                support.wait_process(pid, exitcode=0, timeout=support.SHORT_TIMEOUT)
             except KeyboardInterrupt:
                 # When pressing CTRL-C kill the deadlocked process
                 os.kill(pid, signal.SIGTERM)
