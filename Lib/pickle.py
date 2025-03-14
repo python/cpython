@@ -1922,4 +1922,4 @@ if __name__ == "__main__":
         else:
             with open(fn, 'rb') as f:
                 obj = load(f)
-        pprint.pprint(obj)
+        pprint.pp(obj)
