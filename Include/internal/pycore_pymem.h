@@ -121,7 +121,7 @@ extern void _PyMem_FreeDelayed(void *ptr);
 
 // Enqueue an object to be freed possibly after some delay
 #ifdef Py_GIL_DISABLED
-extern void _PyObject_XDecRefDelayed(PyObject *obj);
+PyAPI_FUNC(void) _PyObject_XDecRefDelayed(PyObject *obj);
 #else
 static inline void _PyObject_XDecRefDelayed(PyObject *obj)
 {

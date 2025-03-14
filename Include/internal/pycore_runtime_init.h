@@ -171,6 +171,8 @@ extern PyTypeObject _PyExc_MemoryError;
 #define _PyThreadStateImpl_INIT \
     { \
         .base = _PyThreadState_INIT, \
+        /* The thread and the interpreter's linked list hold a reference */ \
+        .refcount = 2, \
     }
 
 #define _PyThreadState_INIT \

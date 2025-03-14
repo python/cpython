@@ -193,9 +193,25 @@ extern void _PyEval_DeactivateOpCache(void);
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 
-static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
+#if !_Py__has_builtin(__builtin_frame_address)
+static uintptr_t return_pointer_as_int(char* p) {
+    return (uintptr_t)p;
+}
+#endif
+
+static inline uintptr_t
+_Py_get_machine_stack_pointer(void) {
+#if _Py__has_builtin(__builtin_frame_address)
+    return (uintptr_t)__builtin_frame_address(0);
+#else
     char here;
-    uintptr_t here_addr = (uintptr_t)&here;
+    /* Avoid compiler warning about returning stack address */
+    return return_pointer_as_int(&here);
+#endif
+}
+
+static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     return here_addr < _tstate->c_stack_soft_limit;
 }
@@ -226,8 +242,7 @@ static inline void _Py_LeaveRecursiveCallTstate(PyThreadState *tstate) {
 PyAPI_FUNC(void) _Py_InitializeRecursionLimits(PyThreadState *tstate);
 
 static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
-    char here;
-    uintptr_t here_addr = (uintptr_t)&here;
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     if (here_addr > _tstate->c_stack_soft_limit) {
         return 0;
@@ -327,7 +342,7 @@ _Py_eval_breaker_bit_is_set(PyThreadState *tstate, uintptr_t bit)
 void _Py_set_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 void _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 
-PyAPI_FUNC(PyObject *) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value);
+PyAPI_FUNC(_PyStackRef) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value);
 
 #ifdef __cplusplus
 }
