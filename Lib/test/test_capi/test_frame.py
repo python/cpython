@@ -7,11 +7,11 @@ _testcapi = import_helper.import_module('_testcapi')
 
 
 class FrameTest(unittest.TestCase):
-    def getframe(self):
+    def create_frame(self):
         return sys._getframe()
 
     def test_frame_getters(self):
-        frame = self.getframe()
+        frame = self.create_frame()
         self.assertEqual(frame.f_locals, _testcapi.frame_getlocals(frame))
         self.assertIs(frame.f_globals, _testcapi.frame_getglobals(frame))
         self.assertIs(frame.f_builtins, _testcapi.frame_getbuiltins(frame))
@@ -50,6 +50,22 @@ class FrameTest(unittest.TestCase):
         frame = _testcapi.frame_new(dummy.__code__, globals(), locals())
         # The following line should not cause a segmentation fault.
         self.assertIsNone(frame.f_back)
+
+    def test_back(self):
+        # Test PyFrame_GetBack() and PyFrame_SetBack()
+        frame_getback = _testcapi.frame_getback
+        frame_setback = _testcapi.frame_setback
+
+        frame = self.create_frame()
+        current_frame = sys._getframe()
+        self.assertIs(frame_getback(frame), current_frame)
+
+        frame2 = self.create_frame()
+        try:
+            frame_setback(frame, frame2)
+            self.assertIs(frame_getback(frame), frame2)
+        finally:
+            frame_setback(frame, current_frame)
 
 
 if __name__ == "__main__":

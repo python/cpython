@@ -4,11 +4,21 @@
 #include "frameobject.h"          // PyFrame_New()
 
 
+static int
+check_frame(PyObject *op)
+{
+    if (!PyFrame_Check(op)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return -1;
+    }
+    return 0;
+}
+
+
 static PyObject *
 frame_getlocals(PyObject *self, PyObject *frame)
 {
-    if (!PyFrame_Check(frame)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+    if (check_frame(frame) < 0) {
         return NULL;
     }
     return PyFrame_GetLocals((PyFrameObject *)frame);
@@ -18,8 +28,7 @@ frame_getlocals(PyObject *self, PyObject *frame)
 static PyObject *
 frame_getglobals(PyObject *self, PyObject *frame)
 {
-    if (!PyFrame_Check(frame)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+    if (check_frame(frame) < 0) {
         return NULL;
     }
     return PyFrame_GetGlobals((PyFrameObject *)frame);
@@ -29,8 +38,7 @@ frame_getglobals(PyObject *self, PyObject *frame)
 static PyObject *
 frame_getgenerator(PyObject *self, PyObject *frame)
 {
-    if (!PyFrame_Check(frame)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+    if (check_frame(frame) < 0) {
         return NULL;
     }
     return PyFrame_GetGenerator((PyFrameObject *)frame);
@@ -40,8 +48,7 @@ frame_getgenerator(PyObject *self, PyObject *frame)
 static PyObject *
 frame_getbuiltins(PyObject *self, PyObject *frame)
 {
-    if (!PyFrame_Check(frame)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+    if (check_frame(frame) < 0) {
         return NULL;
     }
     return PyFrame_GetBuiltins((PyFrameObject *)frame);
@@ -51,8 +58,7 @@ frame_getbuiltins(PyObject *self, PyObject *frame)
 static PyObject *
 frame_getlasti(PyObject *self, PyObject *frame)
 {
-    if (!PyFrame_Check(frame)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+    if (check_frame(frame) < 0) {
         return NULL;
     }
     int lasti = PyFrame_GetLasti((PyFrameObject *)frame);
@@ -88,8 +94,7 @@ frame_getvar(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "OO", &frame, &name)) {
         return NULL;
     }
-    if (!PyFrame_Check(frame)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+    if (check_frame(frame) < 0) {
         return NULL;
     }
 
@@ -105,12 +110,44 @@ frame_getvarstring(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "Oy", &frame, &name)) {
         return NULL;
     }
-    if (!PyFrame_Check(frame)) {
-        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+    if (check_frame(frame) < 0) {
         return NULL;
     }
 
     return PyFrame_GetVarString((PyFrameObject *)frame, name);
+}
+
+
+static PyObject *
+frame_getback(PyObject *self, PyObject *frame)
+{
+    if (check_frame(frame) < 0) {
+        return NULL;
+    }
+    PyFrameObject *back = PyFrame_GetBack((PyFrameObject *)frame);
+    if (back == NULL) {
+        Py_RETURN_NONE;
+    }
+    return (PyObject*)back;
+}
+
+
+static PyObject *
+frame_setback(PyObject *self, PyObject *args)
+{
+    PyObject *frame, *back;
+    if (!PyArg_ParseTuple(args, "OO", &frame, &back)) {
+        return NULL;
+    }
+    if (check_frame(frame) < 0) {
+        return NULL;
+    }
+    if (check_frame(back) < 0) {
+        return NULL;
+    }
+
+    PyFrame_SetBack((PyFrameObject *)frame, (PyFrameObject *)back);
+    Py_RETURN_NONE;
 }
 
 
@@ -123,6 +160,8 @@ static PyMethodDef test_methods[] = {
     {"frame_new", frame_new, METH_VARARGS, NULL},
     {"frame_getvar", frame_getvar, METH_VARARGS, NULL},
     {"frame_getvarstring", frame_getvarstring, METH_VARARGS, NULL},
+    {"frame_getback", frame_getback, METH_O, NULL},
+    {"frame_setback", frame_setback, METH_VARARGS, NULL},
     {NULL},
 };
 

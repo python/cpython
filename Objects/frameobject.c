@@ -2250,6 +2250,16 @@ PyFrame_GetBack(PyFrameObject *frame)
     return (PyFrameObject*)Py_XNewRef(back);
 }
 
+
+void
+PyFrame_SetBack(PyFrameObject *frame, PyFrameObject *back)
+{
+    assert(frame != NULL);
+    assert(!_PyFrame_IsIncomplete(frame->f_frame));
+    Py_XSETREF(frame->f_back, (PyFrameObject*)Py_XNewRef(back));
+}
+
+
 PyObject*
 PyFrame_GetLocals(PyFrameObject *frame)
 {
