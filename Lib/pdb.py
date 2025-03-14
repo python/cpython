@@ -652,10 +652,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.message(repr(obj))
 
     @contextmanager
-    def _disable_command_completion(self):
+    def _enable_multiline_completion(self):
         completenames = self.completenames
         try:
-            self.completenames = self.completedefault
+            self.completenames = self.complete_multiline_names
             yield
         finally:
             self.completenames = completenames
@@ -753,7 +753,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             buffer = line
             if (code := codeop.compile_command(line + '\n', '<stdin>', 'single')) is None:
                 # Multi-line mode
-                with self._disable_command_completion():
+                with self._enable_multiline_completion():
                     buffer = line
                     continue_prompt = "...   "
                     while (code := codeop.compile_command(buffer, '<stdin>', 'single')) is None:
@@ -975,17 +975,16 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # complete builtins, and they clutter the namespace quite heavily, so we
         # leave them out.
         ns = {**self.curframe.f_globals, **self.curframe.f_locals}
-        if text.startswith("$"):
-            # Complete convenience variables
-            conv_vars = self.curframe.f_globals.get('__pdb_convenience_variables', {})
-            return [f"${name}" for name in conv_vars if name.startswith(text[1:])]
         if '.' in text:
             # Walk an attribute chain up to the last part, similar to what
             # rlcompleter does.  This will bail if any of the parts are not
             # simple attribute access, which is what we want.
             dotted = text.split('.')
             try:
-                obj = ns[dotted[0]]
+                if dotted[0].startswith('$'):
+                    obj = self.curframe.f_globals['__pdb_convenience_variables'][dotted[0][1:]]
+                else:
+                    obj = ns[dotted[0]]
                 for part in dotted[1:-1]:
                     obj = getattr(obj, part)
             except (KeyError, AttributeError):
@@ -993,8 +992,27 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             prefix = '.'.join(dotted[:-1]) + '.'
             return [prefix + n for n in dir(obj) if n.startswith(dotted[-1])]
         else:
+            if text.startswith("$"):
+                # Complete convenience variables
+                conv_vars = self.curframe.f_globals.get('__pdb_convenience_variables', {})
+                return [f"${name}" for name in conv_vars if name.startswith(text[1:])]
             # Complete a simple name.
             return [n for n in ns.keys() if n.startswith(text)]
+
+    def _complete_indentation(self, text, line, begidx, endidx):
+        try:
+            import readline
+        except ImportError:
+            return []
+        # Fill in spaces to form a 4-space indent
+        return [' ' * (4 - readline.get_begidx() % 4)]
+
+    def complete_multiline_names(self, text, line, begidx, endidx):
+        # If text is space-only, the user entered <tab> before any text.
+        # That normally means they want to indent the current line.
+        if not text.strip():
+            return self._complete_indentation(text, line, begidx, endidx)
+        return self.completedefault(text, line, begidx, endidx)
 
     def completedefault(self, text, line, begidx, endidx):
         if text.startswith("$"):
