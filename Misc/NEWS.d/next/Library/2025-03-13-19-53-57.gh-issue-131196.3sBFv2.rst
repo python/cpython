@@ -1,0 +1,1 @@
+Improve perfomance of :attr:`uuid.UUID.hex` and :meth:`uuid.UUID.__str__ <object.__str__>`.

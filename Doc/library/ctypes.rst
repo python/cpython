@@ -266,8 +266,8 @@ Fundamental data types
 (1)
    The constructor accepts any object with a truth value.
 
-Additionally, if IEC 60559 compatible complex arithmetic (Annex G) is supported, the following
-complex types are available:
+Additionally, if IEC 60559 compatible complex arithmetic (Annex G) is supported
+in both C and ``libffi``, the following complex types are available:
 
 +----------------------------------+---------------------------------+-----------------+
 | ctypes type                      | C type                          | Python type     |
@@ -306,7 +306,7 @@ Since these types are mutable, their value can also be changed afterwards::
 Assigning a new value to instances of the pointer types :class:`c_char_p`,
 :class:`c_wchar_p`, and :class:`c_void_p` changes the *memory location* they
 point to, *not the contents* of the memory block (of course not, because Python
-bytes objects are immutable)::
+string objects are immutable)::
 
    >>> s = "Hello, World"
    >>> c_s = c_wchar_p(s)
@@ -689,7 +689,7 @@ This matches what ``#pragma pack(n)`` does in MSVC.
 
 It is also possible to set a minimum alignment for how the subclass itself is packed in the
 same way ``#pragma align(n)`` works in MSVC.
-This can be achieved by specifying a ::attr:`~Structure._align_` class attribute
+This can be achieved by specifying a :attr:`~Structure._align_` class attribute
 in the subclass definition.
 
 :mod:`ctypes` uses the native byte order for Structures and Unions.  To build
@@ -1406,6 +1406,28 @@ the shared library name at development time, and hardcode that into the wrapper
 module instead of using :func:`~ctypes.util.find_library` to locate the library at runtime.
 
 
+.. _ctypes-listing-loaded-shared-libraries:
+
+Listing loaded shared libraries
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When writing code that relies on code loaded from shared libraries, it can be
+useful to know which shared libraries have already been loaded into the current
+process.
+
+The :mod:`!ctypes.util` module provides the :func:`~ctypes.util.dllist` function,
+which calls the different APIs provided by the various platforms to help determine
+which shared libraries have already been loaded into the current process.
+
+The exact output of this function will be system dependent. On most platforms,
+the first entry of this list represents the current process itself, which may
+be an empty string.
+For example, on glibc-based Linux, the return may look like::
+
+   >>> from ctypes.util import dllist
+   >>> dllist()
+   ['', 'linux-vdso.so.1', '/lib/x86_64-linux-gnu/libm.so.6', '/lib/x86_64-linux-gnu/libc.so.6', ... ]
+
 .. _ctypes-loading-shared-libraries:
 
 Loading shared libraries
@@ -2082,6 +2104,20 @@ Utility functions
 
    .. availability:: Windows
 
+
+.. function:: dllist()
+   :module: ctypes.util
+
+   Try to provide a list of paths of the shared libraries loaded into the current
+   process.  These paths are not normalized or processed in any way.  The function
+   can raise :exc:`OSError` if the underlying platform APIs fail.
+   The exact functionality is system dependent.
+
+   On most platforms, the first element of the list represents the current
+   executable file. It may be an empty string.
+
+   .. availability:: Windows, macOS, iOS, glibc, BSD libc, musl
+   .. versionadded:: 3.14
 
 .. function:: FormatError([code])
 

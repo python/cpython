@@ -26,11 +26,9 @@ EM_JS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
 // Binary module for the checks. It has to be done in web assembly because
 // clang/llvm have no support yet for the reference types yet. In fact, the wasm
 // binary toolkit doesn't yet support the ref.test instruction either. To
-// convert the following module to the binary, my approach is to find and
-// replace "ref.test $type" -> "drop i32.const n" on the source text. This
-// results in the bytes "0x1a, 0x41, n" where we need the bytes "0xfb, 0x14, n"
-// so doing a find and replace on the output from "0x1a, 0x41" -> "0xfb, 0x14"
-// gets us the output we need.
+// convert the following textual wasm to a binary, you can build wabt from this
+// branch: https://github.com/WebAssembly/wabt/pull/2529 and then use that
+// wat2wasm binary.
 //
 // (module
 //     (type $type0 (func (param) (result i32)))
@@ -79,7 +77,13 @@ EM_JS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
 //         i32.const -1
 //     )
 // )
-addOnPreRun(() => {
+
+function getPyEMCountArgsPtr() {
+    let isIOS = globalThis.navigator && /iPad|iPhone|iPod/.test(navigator.platform);
+    if (isIOS) {
+        return 0;
+    }
+
     // Try to initialize countArgsFunc
     const code = new Uint8Array([
         0x00, 0x61, 0x73, 0x6d, // \0asm magic number
@@ -151,18 +155,22 @@ addOnPreRun(() => {
             0x41, 0x7f,       // i32.const -1
             0x0b // end function
     ]);
-    let ptr = 0;
     try {
         const mod = new WebAssembly.Module(code);
-        const inst = new WebAssembly.Instance(mod, {e: {t: wasmTable}});
-        ptr = addFunction(inst.exports.f);
-    } catch(e) {
+        const inst = new WebAssembly.Instance(mod, { e: { t: wasmTable } });
+        return addFunction(inst.exports.f);
+    } catch (e) {
         // If something goes wrong, we'll null out _PyEM_CountFuncParams and fall
         // back to the JS trampoline.
+        return 0;
     }
+}
+
+addOnPreRun(() => {
+    const ptr = getPyEMCountArgsPtr();
     Module._PyEM_CountArgsPtr = ptr;
-    const offset = HEAP32[__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET/4];
-    HEAP32[__PyRuntime/4 + offset] = ptr;
+    const offset = HEAP32[__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET / 4];
+    HEAP32[(__PyRuntime + offset) / 4] = ptr;
 });
 );
 

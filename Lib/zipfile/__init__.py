@@ -13,7 +13,6 @@ import struct
 import sys
 import threading
 import time
-from typing import Self
 
 try:
     import zlib # We may need its compression method
@@ -606,7 +605,7 @@ class ZipInfo:
 
         return zinfo
 
-    def _for_archive(self, archive: ZipFile) -> Self:
+    def _for_archive(self, archive):
         """Resolve suitable defaults from the archive.
 
         Resolve the date_time, compression attributes, and external attributes
@@ -614,7 +613,11 @@ class ZipInfo:
 
         Return self.
         """
-        self.date_time = time.localtime(time.time())[:6]
+        # gh-91279: Set the SOURCE_DATE_EPOCH to a specific timestamp
+        epoch = os.environ.get('SOURCE_DATE_EPOCH')
+        get_time = int(epoch) if epoch else time.time()
+        self.date_time = time.localtime(get_time)[:6]
+
         self.compress_type = archive.compression
         self.compress_level = archive.compresslevel
         if self.filename.endswith('/'):  # pragma: no cover
@@ -1184,13 +1187,15 @@ class ZipExtFile(io.BufferedIOBase):
             self._offset = buff_offset
             read_offset = 0
         # Fast seek uncompressed unencrypted file
-        elif self._compress_type == ZIP_STORED and self._decrypter is None and read_offset > 0:
+        elif self._compress_type == ZIP_STORED and self._decrypter is None and read_offset != 0:
             # disable CRC checking after first seeking - it would be invalid
             self._expected_crc = None
             # seek actual file taking already buffered data into account
             read_offset -= len(self._readbuffer) - self._offset
             self._fileobj.seek(read_offset, os.SEEK_CUR)
             self._left -= read_offset
+            self._compress_left -= read_offset
+            self._eof = self._left <= 0
             read_offset = 0
             # flush read buffer
             self._readbuffer = b''

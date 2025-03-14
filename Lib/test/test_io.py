@@ -3928,7 +3928,7 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertEqual(res + f.readline(), 'foo\nbar\n')
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
-    @unittest.skipIf(support.is_emscripten, "Would be fixed by emscripten-core/emscripten#23306")
+    @unittest.skipIf(support.is_emscripten, "Fixed in next Emscripten release after 4.0.1")
     def test_read_non_blocking(self):
         import os
         r, w = os.pipe()
@@ -4558,11 +4558,11 @@ class MiscIOTest(unittest.TestCase):
         ''')
         proc = assert_python_ok('-X', 'warn_default_encoding', '-c', code)
         warnings = proc.err.splitlines()
-        self.assertEqual(len(warnings), 4)
+        self.assertEqual(len(warnings), 2)
         self.assertTrue(
             warnings[0].startswith(b"<string>:5: EncodingWarning: "))
         self.assertTrue(
-            warnings[2].startswith(b"<string>:8: EncodingWarning: "))
+            warnings[1].startswith(b"<string>:8: EncodingWarning: "))
 
     def test_text_encoding(self):
         # PEP 597, bpo-47000. io.text_encoding() returns "locale" or "utf-8"
@@ -4914,6 +4914,24 @@ class PySignalsTest(SignalsTest):
     # tests are disabled.
     test_reentrant_write_buffered = None
     test_reentrant_write_text = None
+
+
+class ProtocolsTest(unittest.TestCase):
+    class MyReader:
+        def read(self, sz=-1):
+            return b""
+
+    class MyWriter:
+        def write(self, b: bytes):
+            pass
+
+    def test_reader_subclass(self):
+        self.assertIsSubclass(MyReader, io.Reader[bytes])
+        self.assertNotIsSubclass(str, io.Reader[bytes])
+
+    def test_writer_subclass(self):
+        self.assertIsSubclass(MyWriter, io.Writer[bytes])
+        self.assertNotIsSubclass(str, io.Writer[bytes])
 
 
 def load_tests(loader, tests, pattern):

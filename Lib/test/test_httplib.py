@@ -1092,6 +1092,25 @@ class BasicTest(TestCase):
         self.assertEqual(resp.read(), expected)
         resp.close()
 
+        # Explicit full read
+        for n in (-123, -1, None):
+            with self.subTest('full read', n=n):
+                sock = FakeSocket(chunked_start + last_chunk + chunked_end)
+                resp = client.HTTPResponse(sock, method="GET")
+                resp.begin()
+                self.assertTrue(resp.chunked)
+                self.assertEqual(resp.read(n), expected)
+                resp.close()
+
+        # Read first chunk
+        with self.subTest('read1(-1)'):
+            sock = FakeSocket(chunked_start + last_chunk + chunked_end)
+            resp = client.HTTPResponse(sock, method="GET")
+            resp.begin()
+            self.assertTrue(resp.chunked)
+            self.assertEqual(resp.read1(-1), b"hello worl")
+            resp.close()
+
         # Various read sizes
         for n in range(1, 12):
             sock = FakeSocket(chunked_start + last_chunk + chunked_end)
