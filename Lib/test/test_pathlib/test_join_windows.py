@@ -5,8 +5,8 @@ Tests for Windows-flavoured pathlib.types._JoinablePath
 import os
 import unittest
 
-from pathlib import PureWindowsPath, WindowsPath
-from test.test_pathlib.support.lexical_path import LexicalWindowsPath
+from .support import is_pypi
+from .support.lexical_path import LexicalWindowsPath
 
 
 class JoinTestBase:
@@ -54,7 +54,7 @@ class JoinTestBase:
         self.assertEqual(p / 'x/y', P(r'C:/a/b\x/y'))
         self.assertEqual(p / 'x' / 'y', P(r'C:/a/b\x\y'))
         self.assertEqual(p / '/x/y', P('C:/x/y'))
-        self.assertEqual(p / '/x' / 'y', P('C:/x\y'))
+        self.assertEqual(p / '/x' / 'y', P(r'C:/x\y'))
         # Joining with a different drive => the first path is ignored, even
         # if the second path is relative.
         self.assertEqual(p / 'D:x/y', P('D:x/y'))
@@ -277,13 +277,15 @@ class LexicalWindowsPathJoinTest(JoinTestBase, unittest.TestCase):
     cls = LexicalWindowsPath
 
 
-class PureWindowsPathJoinTest(JoinTestBase, unittest.TestCase):
-    cls = PureWindowsPath
+if not is_pypi:
+    from pathlib import PureWindowsPath, WindowsPath
 
+    class PureWindowsPathJoinTest(JoinTestBase, unittest.TestCase):
+        cls = PureWindowsPath
 
-if os.name == 'nt':
-    class WindowsPathJoinTest(JoinTestBase, unittest.TestCase):
-        cls = WindowsPath
+    if os.name == 'nt':
+        class WindowsPathJoinTest(JoinTestBase, unittest.TestCase):
+            cls = WindowsPath
 
 
 if __name__ == "__main__":
