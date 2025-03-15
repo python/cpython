@@ -227,6 +227,13 @@ struct _is {
     PyMutex weakref_locks[NUM_WEAKREF_LIST_LOCKS];
     _PyIndexPool tlbc_indices;
 #endif
+    // Per-interpreter list of tasks, any lingering tasks from thread
+    // states gets added here and removed from the corresponding
+    // thread state's list.
+    struct llist_node asyncio_tasks_head;
+    // `asyncio_tasks_lock` is used when tasks are moved
+    // from thread's list to interpreter's list.
+    PyMutex asyncio_tasks_lock;
 
     // Per-interpreter state for the obmalloc allocator.  For the main
     // interpreter and for all interpreters that don't have their
@@ -289,7 +296,10 @@ struct _is {
 
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
     uint64_t next_stackref;
-    _Py_hashtable_t *stackref_debug_table;
+    _Py_hashtable_t *open_stackrefs_table;
+#  ifdef Py_STACKREF_CLOSE_DEBUG
+    _Py_hashtable_t *closed_stackrefs_table;
+#  endif
 #endif
 };
 

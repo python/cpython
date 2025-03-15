@@ -56,6 +56,15 @@ def create_worker_process(runtests: WorkerRunTests, output_fd: int,
     if USE_PROCESS_GROUP and test_name not in NEED_TTY:
         kwargs['start_new_session'] = True
 
+    # Include the test name in the TSAN log file name
+    if 'TSAN_OPTIONS' in env:
+        parts = env['TSAN_OPTIONS'].split(' ')
+        for i, part in enumerate(parts):
+            if part.startswith('log_path='):
+                parts[i] = f'{part}.{test_name}'
+                break
+        env['TSAN_OPTIONS'] = ' '.join(parts)
+
     # Pass json_file to the worker process
     json_file = runtests.json_file
     json_file.configure_subprocess(kwargs)
