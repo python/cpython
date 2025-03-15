@@ -1,6 +1,7 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // fileutils definitions
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_pystate.h"       // _Py_AssertHoldsTstate()
 #include "osdefs.h"               // SEP
 
 #include <stdlib.h>               // mbstowcs()
@@ -1311,7 +1312,7 @@ _Py_fstat(int fd, struct _Py_stat_struct *status)
 {
     int res;
 
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
 
     Py_BEGIN_ALLOW_THREADS
     res = _Py_fstat_noraise(fd, status);
@@ -1468,14 +1469,14 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
     assert(!(atomic_flag_works != NULL && inheritable));
 
     if (atomic_flag_works != NULL && !inheritable) {
-        if (*atomic_flag_works == -1) {
+        if (_Py_atomic_load_int_relaxed(atomic_flag_works) == -1) {
             int isInheritable = get_inheritable(fd, raise);
             if (isInheritable == -1)
                 return -1;
-            *atomic_flag_works = !isInheritable;
+            _Py_atomic_store_int_relaxed(atomic_flag_works, !isInheritable);
         }
 
-        if (*atomic_flag_works)
+        if (_Py_atomic_load_int_relaxed(atomic_flag_works))
             return 0;
     }
 
@@ -1691,7 +1692,7 @@ int
 _Py_open(const char *pathname, int flags)
 {
     /* _Py_open() must be called with the GIL held. */
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
     return _Py_open_impl(pathname, flags, 1);
 }
 
@@ -1748,8 +1749,10 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
 }
 
 
-/* Open a file. Call _wfopen() on Windows, or encode the path to the filesystem
-   encoding and call fopen() otherwise.
+/* Open a file.
+
+   On Windows, if 'path' is a Unicode string, call _wfopen(). Otherwise, encode
+   the path to the filesystem encoding and call fopen().
 
    Return the new file object on success. Raise an exception and return NULL
    on error.
@@ -1762,32 +1765,32 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
    Release the GIL to call _wfopen() or fopen(). The caller must hold
    the GIL. */
 FILE*
-_Py_fopen_obj(PyObject *path, const char *mode)
+Py_fopen(PyObject *path, const char *mode)
 {
-    FILE *f;
-    int async_err = 0;
-#ifdef MS_WINDOWS
-    wchar_t wmode[10];
-    int usize;
-
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
 
     if (PySys_Audit("open", "Osi", path, mode, 0) < 0) {
         return NULL;
     }
-    if (!PyUnicode_Check(path)) {
-        PyErr_Format(PyExc_TypeError,
-                     "str file path expected under Windows, got %R",
-                     Py_TYPE(path));
+
+    FILE *f;
+    int async_err = 0;
+    int saved_errno;
+#ifdef MS_WINDOWS
+    PyObject *unicode;
+    if (!PyUnicode_FSDecoder(path, &unicode)) {
         return NULL;
     }
 
-    wchar_t *wpath = PyUnicode_AsWideCharString(path, NULL);
-    if (wpath == NULL)
+    wchar_t *wpath = PyUnicode_AsWideCharString(unicode, NULL);
+    Py_DECREF(unicode);
+    if (wpath == NULL) {
         return NULL;
+    }
 
-    usize = MultiByteToWideChar(CP_ACP, 0, mode, -1,
-                                wmode, Py_ARRAY_LENGTH(wmode));
+    wchar_t wmode[10];
+    int usize = MultiByteToWideChar(CP_ACP, 0, mode, -1,
+                                    wmode, Py_ARRAY_LENGTH(wmode));
     if (usize == 0) {
         PyErr_SetFromWindowsErr(0);
         PyMem_Free(wpath);
@@ -1796,26 +1799,20 @@ _Py_fopen_obj(PyObject *path, const char *mode)
 
     do {
         Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_SUPPRESS_IPH
         f = _wfopen(wpath, wmode);
+        _Py_END_SUPPRESS_IPH
         Py_END_ALLOW_THREADS
     } while (f == NULL
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-    int saved_errno = errno;
+    saved_errno = errno;
     PyMem_Free(wpath);
 #else
     PyObject *bytes;
-    const char *path_bytes;
-
-    assert(PyGILState_Check());
-
-    if (!PyUnicode_FSConverter(path, &bytes))
-        return NULL;
-    path_bytes = PyBytes_AS_STRING(bytes);
-
-    if (PySys_Audit("open", "Osi", path, mode, 0) < 0) {
-        Py_DECREF(bytes);
+    if (!PyUnicode_FSConverter(path, &bytes)) {
         return NULL;
     }
+    const char *path_bytes = PyBytes_AS_STRING(bytes);
 
     do {
         Py_BEGIN_ALLOW_THREADS
@@ -1823,11 +1820,13 @@ _Py_fopen_obj(PyObject *path, const char *mode)
         Py_END_ALLOW_THREADS
     } while (f == NULL
              && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-    int saved_errno = errno;
+    saved_errno = errno;
     Py_DECREF(bytes);
 #endif
-    if (async_err)
+
+    if (async_err) {
         return NULL;
+    }
 
     if (f == NULL) {
         errno = saved_errno;
@@ -1841,6 +1840,19 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     }
     return f;
 }
+
+
+// Call fclose().
+//
+// On Windows, files opened by Py_fopen() in the Python DLL must be closed by
+// the Python DLL to use the same C runtime version. Otherwise, calling
+// fclose() directly can cause undefined behavior.
+int
+Py_fclose(FILE *file)
+{
+    return fclose(file);
+}
+
 
 /* Read count bytes from fd into buf.
 
@@ -1862,7 +1874,7 @@ _Py_read(int fd, void *buf, size_t count)
     int err;
     int async_err = 0;
 
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
 
     /* _Py_read() must not be called with an exception set, otherwise the
      * caller may think that read() was interrupted by a signal and the signal
@@ -2028,7 +2040,7 @@ _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
 Py_ssize_t
 _Py_write(int fd, const void *buf, size_t count)
 {
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
 
     /* _Py_write() must not be called with an exception set, otherwise the
      * caller may think that write() was interrupted by a signal and the signal
@@ -2656,7 +2668,7 @@ _Py_dup(int fd)
     HANDLE handle;
 #endif
 
-    assert(PyGILState_Check());
+    _Py_AssertHoldsTstate();
 
 #ifdef MS_WINDOWS
     handle = _Py_get_osfhandle(fd);

@@ -1,4 +1,3 @@
-import os
 from code import InteractiveConsole
 from functools import partial
 from typing import Iterable
@@ -99,16 +98,6 @@ handle_events_narrow_console = partial(
     handle_all_events,
     prepare_console=partial(prepare_console, width=10),
 )
-
-
-def make_clean_env() -> dict[str, str]:
-    clean_env = os.environ.copy()
-    for k in clean_env.copy():
-        if k.startswith("PYTHON"):
-            clean_env.pop(k)
-    clean_env.pop("FORCE_COLOR", None)
-    clean_env.pop("NO_COLOR", None)
-    return clean_env
 
 
 class FakeConsole(Console):

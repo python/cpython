@@ -97,8 +97,10 @@ _PyGen_Finalize(PyObject *self)
 
             PyObject *res = PyObject_CallOneArg(finalizer, self);
             if (res == NULL) {
-                PyErr_WriteUnraisable(self);
-            } else {
+                PyErr_FormatUnraisable("Exception ignored while "
+                                       "finalizing generator %R", self);
+            }
+            else {
                 Py_DECREF(res);
             }
             /* Restore the saved exception. */
@@ -122,7 +124,8 @@ _PyGen_Finalize(PyObject *self)
         PyObject *res = gen_close((PyObject*)gen, NULL);
         if (res == NULL) {
             if (PyErr_Occurred()) {
-                PyErr_WriteUnraisable(self);
+                PyErr_FormatUnraisable("Exception ignored while "
+                                       "closing generator %R", self);
             }
         }
         else {
@@ -132,6 +135,19 @@ _PyGen_Finalize(PyObject *self)
 
     /* Restore the saved exception. */
     PyErr_SetRaisedException(exc);
+}
+
+static void
+gen_clear_frame(PyGenObject *gen)
+{
+    if (gen->gi_frame_state == FRAME_CLEARED)
+        return;
+
+    gen->gi_frame_state = FRAME_CLEARED;
+    _PyInterpreterFrame *frame = &gen->gi_iframe;
+    frame->previous = NULL;
+    _PyFrame_ClearExceptCode(frame);
+    _PyErr_ClearExcState(&gen->gi_exc_state);
 }
 
 static void
@@ -159,13 +175,7 @@ gen_dealloc(PyObject *self)
     if (PyCoro_CheckExact(gen)) {
         Py_CLEAR(((PyCoroObject *)gen)->cr_origin_or_finalizer);
     }
-    if (gen->gi_frame_state != FRAME_CLEARED) {
-        _PyInterpreterFrame *frame = &gen->gi_iframe;
-        gen->gi_frame_state = FRAME_CLEARED;
-        frame->previous = NULL;
-        _PyFrame_ClearExceptCode(frame);
-        _PyErr_ClearExcState(&gen->gi_exc_state);
-    }
+    gen_clear_frame(gen);
     assert(gen->gi_exc_state.exc_value == NULL);
     PyStackRef_CLEAR(gen->gi_iframe.f_executable);
     Py_CLEAR(gen->gi_name);
@@ -331,7 +341,8 @@ gen_close_iter(PyObject *yf)
     else {
         PyObject *meth;
         if (PyObject_GetOptionalAttr(yf, &_Py_ID(close), &meth) < 0) {
-            PyErr_WriteUnraisable(yf);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "closing generator %R", yf);
         }
         if (meth) {
             retval = _PyObject_CallNoArgs(meth);
@@ -400,7 +411,7 @@ gen_close(PyObject *self, PyObject *args)
             // RESUME after YIELD_VALUE and exception depth is 1
             assert((oparg & RESUME_OPARG_LOCATION_MASK) != RESUME_AT_FUNC_START);
             gen->gi_frame_state = FRAME_COMPLETED;
-            _PyFrame_ClearLocals(&gen->gi_iframe);
+            gen_clear_frame(gen);
             Py_RETURN_NONE;
         }
     }
@@ -579,8 +590,9 @@ failed_throw:
 
 
 static PyObject *
-gen_throw(PyGenObject *gen, PyObject *const *args, Py_ssize_t nargs)
+gen_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs)
 {
+    PyGenObject *gen = _PyGen_CAST(op);
     PyObject *typ;
     PyObject *tb = NULL;
     PyObject *val = NULL;
@@ -633,30 +645,19 @@ gen_iternext(PyObject *self)
 int
 _PyGen_SetStopIterationValue(PyObject *value)
 {
-    PyObject *e;
-
-    if (value == NULL ||
-        (!PyTuple_Check(value) && !PyExceptionInstance_Check(value)))
-    {
-        /* Delay exception instantiation if we can */
-        PyErr_SetObject(PyExc_StopIteration, value);
-        return 0;
-    }
-    /* Construct an exception instance manually with
-     * PyObject_CallOneArg and pass it to PyErr_SetObject.
-     *
-     * We do this to handle a situation when "value" is a tuple, in which
-     * case PyErr_SetObject would set the value of StopIteration to
-     * the first element of the tuple.
-     *
-     * (See PyErr_SetObject/_PyErr_CreateException code for details.)
-     */
-    e = PyObject_CallOneArg(PyExc_StopIteration, value);
-    if (e == NULL) {
+    assert(!PyErr_Occurred());
+    // Construct an exception instance manually with PyObject_CallOneArg()
+    // but use PyErr_SetRaisedException() instead of PyErr_SetObject() as
+    // PyErr_SetObject(exc_type, value) has a fast path when 'value'
+    // is a tuple, where the value of the StopIteration exception would be
+    // set to 'value[0]' instead of 'value'.
+    PyObject *exc = value == NULL
+        ? PyObject_CallNoArgs(PyExc_StopIteration)
+        : PyObject_CallOneArg(PyExc_StopIteration, value);
+    if (exc == NULL) {
         return -1;
     }
-    PyErr_SetObject(PyExc_StopIteration, e);
-    Py_DECREF(e);
+    PyErr_SetRaisedException(exc /* stolen */);
     return 0;
 }
 
@@ -821,8 +822,9 @@ static PyMemberDef gen_memberlist[] = {
 };
 
 static PyObject *
-gen_sizeof(PyGenObject *gen, PyObject *Py_UNUSED(ignored))
+gen_sizeof(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyGenObject *gen = _PyGen_CAST(op);
     Py_ssize_t res;
     res = offsetof(PyGenObject, gi_iframe) + offsetof(_PyInterpreterFrame, localsplus);
     PyCodeObject *code = _PyGen_GetCode(gen);
@@ -837,7 +839,7 @@ static PyMethodDef gen_methods[] = {
     {"send", gen_send, METH_O, send_doc},
     {"throw", _PyCFunction_CAST(gen_throw), METH_FASTCALL, throw_doc},
     {"close", gen_close, METH_NOARGS, close_doc},
-    {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
+    {"__sizeof__", gen_sizeof, METH_NOARGS, sizeof__doc__},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
@@ -1157,7 +1159,6 @@ cr_getcode(PyObject *coro, void *Py_UNUSED(ignored))
     return _gen_getcode(_PyGen_CAST(coro), "cr_code");
 }
 
-
 static PyGetSetDef coro_getsetlist[] = {
     {"__name__", gen_get_name, gen_set_name,
      PyDoc_STR("name of the coroutine")},
@@ -1198,7 +1199,7 @@ static PyMethodDef coro_methods[] = {
     {"send", gen_send, METH_O, coro_send_doc},
     {"throw",_PyCFunction_CAST(gen_throw), METH_FASTCALL, coro_throw_doc},
     {"close", gen_close, METH_NOARGS, coro_close_doc},
-    {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
+    {"__sizeof__", gen_sizeof, METH_NOARGS, sizeof__doc__},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
 };
@@ -1289,7 +1290,7 @@ static PyObject *
 coro_wrapper_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyCoroWrapper *cw = _PyCoroWrapper_CAST(self);
-    return gen_throw((PyGenObject *)cw->cw_coroutine, args, nargs);
+    return gen_throw((PyObject*)cw->cw_coroutine, args, nargs);
 }
 
 static PyObject *
@@ -1626,7 +1627,7 @@ static PyMethodDef async_gen_methods[] = {
     {"asend", (PyCFunction)async_gen_asend, METH_O, async_asend_doc},
     {"athrow",(PyCFunction)async_gen_athrow, METH_VARARGS, async_athrow_doc},
     {"aclose", (PyCFunction)async_gen_aclose, METH_NOARGS, async_aclose_doc},
-    {"__sizeof__", (PyCFunction)gen_sizeof, METH_NOARGS, sizeof__doc__},
+    {"__sizeof__", gen_sizeof, METH_NOARGS, sizeof__doc__},
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
     {NULL, NULL}        /* Sentinel */
@@ -1843,7 +1844,7 @@ async_gen_asend_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         o->ags_gen->ag_running_async = 1;
     }
 
-    PyObject *result = gen_throw((PyGenObject*)o->ags_gen, args, nargs);
+    PyObject *result = gen_throw((PyObject*)o->ags_gen, args, nargs);
     result = async_gen_unwrap_value(o->ags_gen, result);
 
     if (result == NULL) {
@@ -2250,7 +2251,7 @@ async_gen_athrow_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         o->agt_gen->ag_running_async = 1;
     }
 
-    PyObject *retval = gen_throw((PyGenObject*)o->agt_gen, args, nargs);
+    PyObject *retval = gen_throw((PyObject*)o->agt_gen, args, nargs);
     if (o->agt_args) {
         retval = async_gen_unwrap_value(o->agt_gen, retval);
         if (retval == NULL) {

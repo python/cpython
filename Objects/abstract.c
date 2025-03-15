@@ -583,7 +583,7 @@ PyBuffer_SizeFromFormat(const char *format)
     PyObject *fmt = NULL;
     Py_ssize_t itemsize = -1;
 
-    calcsize = _PyImport_GetModuleAttrString("struct", "calcsize");
+    calcsize = PyImport_ImportModuleAttrString("struct", "calcsize");
     if (calcsize == NULL) {
         goto done;
     }

@@ -1325,8 +1325,7 @@ class ContextTests(unittest.TestCase):
     def test_load_dh_params(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ctx.load_dh_params(DHFILE)
-        if os.name != 'nt':
-            ctx.load_dh_params(BYTES_DHFILE)
+        ctx.load_dh_params(BYTES_DHFILE)
         self.assertRaises(TypeError, ctx.load_dh_params)
         self.assertRaises(TypeError, ctx.load_dh_params, None)
         with self.assertRaises(FileNotFoundError) as cm:
@@ -4494,7 +4493,8 @@ class ThreadedTests(unittest.TestCase):
                 s.connect((HOST, server.port))
 
 
-@unittest.skipUnless(has_tls_version('TLSv1_3'), "Test needs TLS 1.3")
+@unittest.skipUnless(has_tls_version('TLSv1_3') and ssl.HAS_PHA,
+                     "Test needs TLS 1.3 PHA")
 class TestPostHandshakeAuth(unittest.TestCase):
     def test_pha_setter(self):
         protocols = [

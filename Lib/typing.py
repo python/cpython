@@ -29,7 +29,13 @@ import functools
 import operator
 import sys
 import types
-from types import GenericAlias
+from types import (
+    WrapperDescriptorType,
+    MethodWrapperType,
+    MethodDescriptorType,
+    GenericAlias,
+)
+import warnings
 
 from _typing import (
     _idfunc,
@@ -40,6 +46,7 @@ from _typing import (
     ParamSpecKwargs,
     TypeAliasType,
     Generic,
+    Union,
     NoDefault,
 )
 
@@ -367,21 +374,6 @@ def _compare_args_orderless(first_args, second_args):
         return False
     return not t
 
-def _remove_dups_flatten(parameters):
-    """Internal helper for Union creation and substitution.
-
-    Flatten Unions among parameters, then remove duplicates.
-    """
-    # Flatten out Union[Union[...], ...].
-    params = []
-    for p in parameters:
-        if isinstance(p, (_UnionGenericAlias, types.UnionType)):
-            params.extend(p.__args__)
-        else:
-            params.append(p)
-
-    return tuple(_deduplicate(params, unhashable_fallback=True))
-
 
 def _flatten_literal_params(parameters):
     """Internal helper for Literal creation: flatten Literals among parameters."""
@@ -470,7 +462,7 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
         return evaluate_forward_ref(t, globals=globalns, locals=localns,
                                     type_params=type_params, owner=owner,
                                     _recursive_guard=recursive_guard, format=format)
-    if isinstance(t, (_GenericAlias, GenericAlias, types.UnionType)):
+    if isinstance(t, (_GenericAlias, GenericAlias, Union)):
         if isinstance(t, GenericAlias):
             args = tuple(
                 _make_forward_ref(arg) if isinstance(arg, str) else arg
@@ -495,7 +487,7 @@ def _eval_type(t, globalns, localns, type_params=_sentinel, *, recursive_guard=f
             return t
         if isinstance(t, GenericAlias):
             return GenericAlias(t.__origin__, ev_args)
-        if isinstance(t, types.UnionType):
+        if isinstance(t, Union):
             return functools.reduce(operator.or_, ev_args)
         else:
             return t.copy_with(ev_args)
@@ -750,59 +742,6 @@ def Final(self, parameters):
     return _GenericAlias(self, (item,))
 
 @_SpecialForm
-def Union(self, parameters):
-    """Union type; Union[X, Y] means either X or Y.
-
-    On Python 3.10 and higher, the | operator
-    can also be used to denote unions;
-    X | Y means the same thing to the type checker as Union[X, Y].
-
-    To define a union, use e.g. Union[int, str]. Details:
-    - The arguments must be types and there must be at least one.
-    - None as an argument is a special case and is replaced by
-      type(None).
-    - Unions of unions are flattened, e.g.::
-
-        assert Union[Union[int, str], float] == Union[int, str, float]
-
-    - Unions of a single argument vanish, e.g.::
-
-        assert Union[int] == int  # The constructor actually returns int
-
-    - Redundant arguments are skipped, e.g.::
-
-        assert Union[int, str, int] == Union[int, str]
-
-    - When comparing unions, the argument order is ignored, e.g.::
-
-        assert Union[int, str] == Union[str, int]
-
-    - You cannot subclass or instantiate a union.
-    - You can use Optional[X] as a shorthand for Union[X, None].
-    """
-    if parameters == ():
-        raise TypeError("Cannot take a Union of no types.")
-    if not isinstance(parameters, tuple):
-        parameters = (parameters,)
-    msg = "Union[arg, ...]: each arg must be a type."
-    parameters = tuple(_type_check(p, msg) for p in parameters)
-    parameters = _remove_dups_flatten(parameters)
-    if len(parameters) == 1:
-        return parameters[0]
-    if len(parameters) == 2 and type(None) in parameters:
-        return _UnionGenericAlias(self, parameters, name="Optional")
-    return _UnionGenericAlias(self, parameters)
-
-def _make_union(left, right):
-    """Used from the C implementation of TypeVar.
-
-    TypeVar.__or__ calls this instead of returning types.UnionType
-    because we want to allow unions between TypeVars and strings
-    (forward references).
-    """
-    return Union[left, right]
-
-@_SpecialForm
 def Optional(self, parameters):
     """Optional[X] is equivalent to Union[X, None]."""
     arg = _type_check(parameters, f"{self} requires a single type.")
@@ -1024,7 +963,7 @@ def evaluate_forward_ref(
     owner=None,
     globals=None,
     locals=None,
-    type_params=None,
+    type_params=_sentinel,
     format=annotationlib.Format.VALUE,
     _recursive_guard=frozenset(),
 ):
@@ -1708,41 +1647,34 @@ class _TupleType(_SpecialGenericAlias, _root=True):
         return self.copy_with(params)
 
 
-class _UnionGenericAlias(_NotIterable, _GenericAlias, _root=True):
-    def copy_with(self, params):
-        return Union[params]
+class _UnionGenericAliasMeta(type):
+    def __instancecheck__(self, inst: object) -> bool:
+        warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
+        return isinstance(inst, Union)
+
+    def __subclasscheck__(self, inst: type) -> bool:
+        warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
+        return issubclass(inst, Union)
 
     def __eq__(self, other):
-        if not isinstance(other, (_UnionGenericAlias, types.UnionType)):
-            return NotImplemented
-        try:  # fast path
-            return set(self.__args__) == set(other.__args__)
-        except TypeError:  # not hashable, slow path
-            return _compare_args_orderless(self.__args__, other.__args__)
+        warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
+        if other is _UnionGenericAlias or other is Union:
+            return True
+        return NotImplemented
 
-    def __hash__(self):
-        return hash(frozenset(self.__args__))
 
-    def __repr__(self):
-        args = self.__args__
-        if len(args) == 2:
-            if args[0] is type(None):
-                return f'typing.Optional[{_type_repr(args[1])}]'
-            elif args[1] is type(None):
-                return f'typing.Optional[{_type_repr(args[0])}]'
-        return super().__repr__()
+class _UnionGenericAlias(metaclass=_UnionGenericAliasMeta):
+    """Compatibility hack.
 
-    def __instancecheck__(self, obj):
-        return self.__subclasscheck__(type(obj))
+    A class named _UnionGenericAlias used to be used to implement
+    typing.Union. This class exists to serve as a shim to preserve
+    the meaning of some code that used to use _UnionGenericAlias
+    directly.
 
-    def __subclasscheck__(self, cls):
-        for arg in self.__args__:
-            if issubclass(cls, arg):
-                return True
-
-    def __reduce__(self):
-        func, (origin, args) = super().__reduce__()
-        return func, (Union, args)
+    """
+    def __new__(cls, self_cls, parameters, /, *, name=None):
+        warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
+        return Union[parameters]
 
 
 def _value_and_type_iter(parameters):
@@ -1944,6 +1876,7 @@ _PROTO_ALLOWLIST = {
         'Reversible', 'Buffer',
     ],
     'contextlib': ['AbstractContextManager', 'AbstractAsyncContextManager'],
+    'io': ['Reader', 'Writer'],
     'os': ['PathLike'],
 }
 
@@ -2468,7 +2401,7 @@ def _strip_annotations(t):
         if stripped_args == t.__args__:
             return t
         return GenericAlias(t.__origin__, stripped_args)
-    if isinstance(t, types.UnionType):
+    if isinstance(t, Union):
         stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
         if stripped_args == t.__args__:
             return t
@@ -2502,8 +2435,8 @@ def get_origin(tp):
         return tp.__origin__
     if tp is Generic:
         return Generic
-    if isinstance(tp, types.UnionType):
-        return types.UnionType
+    if isinstance(tp, Union):
+        return Union
     return None
 
 
@@ -2528,7 +2461,7 @@ def get_args(tp):
         if _should_unflatten_callable_args(tp, res):
             res = (list(res[:-1]), res[-1])
         return res
-    if isinstance(tp, types.UnionType):
+    if isinstance(tp, Union):
         return tp.__args__
     return ()
 
@@ -2957,6 +2890,9 @@ _special = frozenset({'__module__', '__name__', '__annotations__', '__annotate__
 class NamedTupleMeta(type):
     def __new__(cls, typename, bases, ns):
         assert _NamedTuple in bases
+        if "__classcell__" in ns:
+            raise TypeError(
+                "uses of super() and __class__ are unsupported in methods of NamedTuple subclasses")
         for base in bases:
             if base is not _NamedTuple and base is not Generic:
                 raise TypeError(

@@ -77,7 +77,7 @@ _csv_traverse(PyObject *module, visitproc visit, void *arg)
 static void
 _csv_free(void *module)
 {
-   _csv_clear((PyObject *)module);
+    (void)_csv_clear((PyObject *)module);
 }
 
 typedef enum {
@@ -151,6 +151,10 @@ typedef struct {
     PyObject *error_obj;       /* cached error object */
 } WriterObj;
 
+#define _DialectObj_CAST(op)    ((DialectObj *)(op))
+#define _ReaderObj_CAST(op)     ((ReaderObj *)(op))
+#define _WriterObj_CAST(op)     ((WriterObj *)(op))
+
 /*
  * DIALECT class
  */
@@ -176,32 +180,37 @@ get_char_or_None(Py_UCS4 c)
 }
 
 static PyObject *
-Dialect_get_lineterminator(DialectObj *self, void *Py_UNUSED(ignored))
+Dialect_get_lineterminator(PyObject *op, void *Py_UNUSED(ignored))
 {
+    DialectObj *self = _DialectObj_CAST(op);
     return Py_XNewRef(self->lineterminator);
 }
 
 static PyObject *
-Dialect_get_delimiter(DialectObj *self, void *Py_UNUSED(ignored))
+Dialect_get_delimiter(PyObject *op, void *Py_UNUSED(ignored))
 {
+    DialectObj *self = _DialectObj_CAST(op);
     return get_char_or_None(self->delimiter);
 }
 
 static PyObject *
-Dialect_get_escapechar(DialectObj *self, void *Py_UNUSED(ignored))
+Dialect_get_escapechar(PyObject *op, void *Py_UNUSED(ignored))
 {
+    DialectObj *self = _DialectObj_CAST(op);
     return get_char_or_None(self->escapechar);
 }
 
 static PyObject *
-Dialect_get_quotechar(DialectObj *self, void *Py_UNUSED(ignored))
+Dialect_get_quotechar(PyObject *op, void *Py_UNUSED(ignored))
 {
+    DialectObj *self = _DialectObj_CAST(op);
     return get_char_or_None(self->quotechar);
 }
 
 static PyObject *
-Dialect_get_quoting(DialectObj *self, void *Py_UNUSED(ignored))
+Dialect_get_quoting(PyObject *op, void *Py_UNUSED(ignored))
 {
+    DialectObj *self = _DialectObj_CAST(op);
     return PyLong_FromLong(self->quoting);
 }
 
@@ -371,16 +380,16 @@ static struct PyMemberDef Dialect_memberlist[] = {
 #undef D_OFF
 
 static PyGetSetDef Dialect_getsetlist[] = {
-    { "delimiter",          (getter)Dialect_get_delimiter},
-    { "escapechar",             (getter)Dialect_get_escapechar},
-    { "lineterminator",         (getter)Dialect_get_lineterminator},
-    { "quotechar",              (getter)Dialect_get_quotechar},
-    { "quoting",                (getter)Dialect_get_quoting},
+    {"delimiter",          Dialect_get_delimiter},
+    {"escapechar",         Dialect_get_escapechar},
+    {"lineterminator",     Dialect_get_lineterminator},
+    {"quotechar",          Dialect_get_quotechar},
+    {"quoting",            Dialect_get_quoting},
     {NULL},
 };
 
 static void
-Dialect_dealloc(DialectObj *self)
+Dialect_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
@@ -594,15 +603,17 @@ PyDoc_STRVAR(Dialect_Type_doc,
 "The Dialect type records CSV parsing and generation options.\n");
 
 static int
-Dialect_clear(DialectObj *self)
+Dialect_clear(PyObject *op)
 {
+    DialectObj *self = _DialectObj_CAST(op);
     Py_CLEAR(self->lineterminator);
     return 0;
 }
 
 static int
-Dialect_traverse(DialectObj *self, visitproc visit, void *arg)
+Dialect_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    DialectObj *self = _DialectObj_CAST(op);
     Py_VISIT(self->lineterminator);
     Py_VISIT(Py_TYPE(self));
     return 0;
@@ -916,8 +927,10 @@ parse_reset(ReaderObj *self)
 }
 
 static PyObject *
-Reader_iternext(ReaderObj *self)
+Reader_iternext(PyObject *op)
 {
+    ReaderObj *self = _ReaderObj_CAST(op);
+
     PyObject *fields = NULL;
     Py_UCS4 c;
     Py_ssize_t pos, linelen;
@@ -982,11 +995,12 @@ err:
 }
 
 static void
-Reader_dealloc(ReaderObj *self)
+Reader_dealloc(PyObject *op)
 {
+    ReaderObj *self = _ReaderObj_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    tp->tp_clear((PyObject *)self);
+    (void)tp->tp_clear(op);
     if (self->field != NULL) {
         PyMem_Free(self->field);
         self->field = NULL;
@@ -996,8 +1010,9 @@ Reader_dealloc(ReaderObj *self)
 }
 
 static int
-Reader_traverse(ReaderObj *self, visitproc visit, void *arg)
+Reader_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    ReaderObj *self = _ReaderObj_CAST(op);
     Py_VISIT(self->dialect);
     Py_VISIT(self->input_iter);
     Py_VISIT(self->fields);
@@ -1006,8 +1021,9 @@ Reader_traverse(ReaderObj *self, visitproc visit, void *arg)
 }
 
 static int
-Reader_clear(ReaderObj *self)
+Reader_clear(PyObject *op)
 {
+    ReaderObj *self = _ReaderObj_CAST(op);
     Py_CLEAR(self->dialect);
     Py_CLEAR(self->input_iter);
     Py_CLEAR(self->fields);
@@ -1122,7 +1138,7 @@ join_append_data(WriterObj *self, int field_kind, const void *field_data,
                  int copy_phase)
 {
     DialectObj *dialect = self->dialect;
-    int i;
+    Py_ssize_t i;
     Py_ssize_t rec_len;
 
 #define INCLEN \
@@ -1303,8 +1319,9 @@ PyDoc_STRVAR(csv_writerow_doc,
 "elements will be converted to string.");
 
 static PyObject *
-csv_writerow(WriterObj *self, PyObject *seq)
+csv_writerow(PyObject *op, PyObject *seq)
 {
+    WriterObj *self = _WriterObj_CAST(op);
     DialectObj *dialect = self->dialect;
     PyObject *iter, *field, *line, *result;
     bool null_field = false;
@@ -1412,7 +1429,7 @@ PyDoc_STRVAR(csv_writerows_doc,
 "elements will be converted to string.");
 
 static PyObject *
-csv_writerows(WriterObj *self, PyObject *seqseq)
+csv_writerows(PyObject *self, PyObject *seqseq)
 {
     PyObject *row_iter, *row_obj, *result;
 
@@ -1437,9 +1454,9 @@ csv_writerows(WriterObj *self, PyObject *seqseq)
 }
 
 static struct PyMethodDef Writer_methods[] = {
-    { "writerow", (PyCFunction)csv_writerow, METH_O, csv_writerow_doc},
-    { "writerows", (PyCFunction)csv_writerows, METH_O, csv_writerows_doc},
-    { NULL, NULL }
+    {"writerow", csv_writerow, METH_O, csv_writerow_doc},
+    {"writerows", csv_writerows, METH_O, csv_writerows_doc},
+    {NULL, NULL, 0, NULL}  /* sentinel */
 };
 
 #define W_OFF(x) offsetof(WriterObj, x)
@@ -1452,8 +1469,9 @@ static struct PyMemberDef Writer_memberlist[] = {
 #undef W_OFF
 
 static int
-Writer_traverse(WriterObj *self, visitproc visit, void *arg)
+Writer_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    WriterObj *self = _WriterObj_CAST(op);
     Py_VISIT(self->dialect);
     Py_VISIT(self->write);
     Py_VISIT(self->error_obj);
@@ -1462,8 +1480,9 @@ Writer_traverse(WriterObj *self, visitproc visit, void *arg)
 }
 
 static int
-Writer_clear(WriterObj *self)
+Writer_clear(PyObject *op)
 {
+    WriterObj *self = _WriterObj_CAST(op);
     Py_CLEAR(self->dialect);
     Py_CLEAR(self->write);
     Py_CLEAR(self->error_obj);
@@ -1471,11 +1490,12 @@ Writer_clear(WriterObj *self)
 }
 
 static void
-Writer_dealloc(WriterObj *self)
+Writer_dealloc(PyObject *op)
 {
+    WriterObj *self = _WriterObj_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    tp->tp_clear((PyObject *)self);
+    tp->tp_clear(op);
     if (self->rec != NULL) {
         PyMem_Free(self->rec);
     }

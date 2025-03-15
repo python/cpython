@@ -27,6 +27,10 @@ extern "C" {
 // "suspended" state. Only the thread performing a stop-the-world pause may
 // transition a thread from the "suspended" state back to the "detached" state.
 //
+// The "shutting down" state is used when the interpreter is being finalized.
+// Threads in this state can't do anything other than block the OS thread.
+// (See _PyThreadState_HangThread).
+//
 // State transition diagram:
 //
 //            (bound thread)        (stop-the-world thread)
@@ -37,9 +41,10 @@ extern "C" {
 //
 // The (bound thread) and (stop-the-world thread) labels indicate which thread
 // is allowed to perform the transition.
-#define _Py_THREAD_DETACHED     0
-#define _Py_THREAD_ATTACHED     1
-#define _Py_THREAD_SUSPENDED    2
+#define _Py_THREAD_DETACHED         0
+#define _Py_THREAD_ATTACHED         1
+#define _Py_THREAD_SUSPENDED        2
+#define _Py_THREAD_SHUTTING_DOWN    3
 
 
 /* Check if the current thread is the main thread.
@@ -118,7 +123,8 @@ extern _Py_thread_local PyThreadState *_Py_tss_tstate;
 extern int _PyThreadState_CheckConsistency(PyThreadState *tstate);
 #endif
 
-int _PyThreadState_MustExit(PyThreadState *tstate);
+extern int _PyThreadState_MustExit(PyThreadState *tstate);
+extern void _PyThreadState_HangThread(PyThreadState *tstate);
 
 // Export for most shared extensions, used via _PyThreadState_GET() static
 // inline function.
@@ -169,6 +175,11 @@ extern void _PyThreadState_Detach(PyThreadState *tstate);
 // to the "detached" state.
 extern void _PyThreadState_Suspend(PyThreadState *tstate);
 
+// Mark the thread state as "shutting down". This is used during interpreter
+// and runtime finalization. The thread may no longer attach to the
+// interpreter and will instead block via _PyThreadState_HangThread().
+extern void _PyThreadState_SetShuttingDown(PyThreadState *tstate);
+
 // Perform a stop-the-world pause for all threads in the all interpreters.
 //
 // Threads in the "attached" state are paused and transitioned to the "GC"
@@ -182,8 +193,8 @@ extern void _PyEval_StartTheWorldAll(_PyRuntimeState *runtime);
 // Perform a stop-the-world pause for threads in the specified interpreter.
 //
 // NOTE: This is a no-op outside of Py_GIL_DISABLED builds.
-extern void _PyEval_StopTheWorld(PyInterpreterState *interp);
-extern void _PyEval_StartTheWorld(PyInterpreterState *interp);
+extern PyAPI_FUNC(void) _PyEval_StopTheWorld(PyInterpreterState *interp);
+extern PyAPI_FUNC(void) _PyEval_StartTheWorld(PyInterpreterState *interp);
 
 
 static inline void
@@ -238,7 +249,7 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_NewBound(
     PyInterpreterState *interp,
     int whence);
 extern PyThreadState * _PyThreadState_RemoveExcept(PyThreadState *tstate);
-extern void _PyThreadState_DeleteList(PyThreadState *list);
+extern void _PyThreadState_DeleteList(PyThreadState *list, int is_after_fork);
 extern void _PyThreadState_ClearMimallocHeaps(PyThreadState *tstate);
 
 // Export for '_testinternalcapi' shared extension
@@ -299,6 +310,19 @@ PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 //
 // See also PyInterpreterState_Get() and _PyInterpreterState_GET().
 extern PyInterpreterState* _PyGILState_GetInterpreterStateUnsafe(void);
+
+#ifndef NDEBUG
+/* Modern equivalent of assert(PyGILState_Check()) */
+static inline void
+_Py_AssertHoldsTstateFunc(const char *func)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _Py_EnsureFuncTstateNotNULL(func, tstate);
+}
+#define _Py_AssertHoldsTstate() _Py_AssertHoldsTstateFunc(__func__)
+#else
+#define _Py_AssertHoldsTstate()
+#endif
 
 #ifdef __cplusplus
 }

@@ -473,6 +473,7 @@ fill_and_set_sslerror(_sslmodulestate *state,
     PyObject *err_value = NULL, *reason_obj = NULL, *lib_obj = NULL;
     PyObject *verify_obj = NULL, *verify_code_obj = NULL;
     PyObject *init_value, *msg, *key;
+    PyUnicodeWriter *writer = NULL;
 
     if (errcode != 0) {
         int lib, reason;
@@ -495,11 +496,10 @@ fill_and_set_sslerror(_sslmodulestate *state,
         if (lib_obj == NULL && PyErr_Occurred()) {
             goto fail;
         }
-        if (errstr == NULL)
+        if (errstr == NULL) {
             errstr = ERR_reason_error_string(errcode);
+        }
     }
-    if (errstr == NULL)
-        errstr = "unknown error";
 
     /* verify code for cert validation error */
     if ((sslsock != NULL) && (type == state->PySSLCertVerificationErrorObject)) {
@@ -539,20 +539,50 @@ fill_and_set_sslerror(_sslmodulestate *state,
         }
     }
 
-    if (verify_obj && reason_obj && lib_obj)
-        msg = PyUnicode_FromFormat("[%S: %S] %s: %S (_ssl.c:%d)",
-                                   lib_obj, reason_obj, errstr, verify_obj,
-                                   lineno);
-    else if (reason_obj && lib_obj)
-        msg = PyUnicode_FromFormat("[%S: %S] %s (_ssl.c:%d)",
-                                   lib_obj, reason_obj, errstr, lineno);
-    else if (lib_obj)
-        msg = PyUnicode_FromFormat("[%S] %s (_ssl.c:%d)",
-                                   lib_obj, errstr, lineno);
-    else
-        msg = PyUnicode_FromFormat("%s (_ssl.c:%d)", errstr, lineno);
-    if (msg == NULL)
+    // Format message roughly as:
+    // [lib_obj: reason_obj] errstr: verify_obj (_ssl.c:lineno)
+    // with parts missing/replaced if unavailable
+    writer = PyUnicodeWriter_Create(64);
+    if (!writer) {
         goto fail;
+    }
+    if (lib_obj) {
+        if (PyUnicodeWriter_Format(writer, "[%S", lib_obj) < 0) {
+            goto fail;
+        }
+        if (reason_obj) {
+            if (PyUnicodeWriter_Format(writer, ": %S", reason_obj) < 0) {
+                goto fail;
+            }
+        }
+        if (PyUnicodeWriter_WriteUTF8(writer, "] ", 2) < 0) {
+            goto fail;
+        }
+    }
+    if (errstr) {
+        if (PyUnicodeWriter_Format(writer, "%s", errstr) < 0) {
+            goto fail;
+        }
+    }
+    else {
+        if (PyUnicodeWriter_Format(
+                writer, "unknown error (0x%x)", errcode) < 0) {
+            goto fail;
+        }
+    }
+    if (verify_obj) {
+        if (PyUnicodeWriter_Format(writer, ": %S", verify_obj) < 0) {
+            goto fail;
+        }
+    }
+    if (PyUnicodeWriter_Format(writer, " (_ssl.c:%d)", lineno) < 0) {
+        goto fail;
+    }
+    msg = PyUnicodeWriter_Finish(writer);
+    writer = NULL;
+    if (!msg) {
+        goto fail;
+    }
 
     init_value = Py_BuildValue("iN", ERR_GET_REASON(ssl_errno), msg);
     if (init_value == NULL)
@@ -587,6 +617,7 @@ fail:
     Py_XDECREF(err_value);
     Py_XDECREF(verify_code_obj);
     Py_XDECREF(verify_obj);
+    PyUnicodeWriter_Discard(writer);
 }
 
 static int
@@ -934,13 +965,13 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
         }
     }
     if (owner && owner != Py_None) {
-        if (_ssl__SSLSocket_owner_set(self, owner, NULL) == -1) {
+        if (_ssl__SSLSocket_owner_set((PyObject *)self, owner, NULL) < 0) {
             Py_DECREF(self);
             return NULL;
         }
     }
     if (session && session != Py_None) {
-        if (_ssl__SSLSocket_session_set(self, session, NULL) == -1) {
+        if (_ssl__SSLSocket_session_set((PyObject *)self, session, NULL) < 0) {
             Py_DECREF(self);
             return NULL;
         }
@@ -4377,7 +4408,7 @@ _ssl__SSLContext_load_dh_params_impl(PySSLContext *self, PyObject *filepath)
     FILE *f;
     DH *dh;
 
-    f = _Py_fopen_obj(filepath, "rb");
+    f = Py_fopen(filepath, "rb");
     if (f == NULL)
         return NULL;
 
@@ -4635,7 +4666,8 @@ _servername_callback(SSL *s, int *al, void *args)
 
         servername_bytes = PyBytes_FromString(servername);
         if (servername_bytes == NULL) {
-            PyErr_WriteUnraisable((PyObject *) sslctx);
+            PyErr_FormatUnraisable("Exception ignored "
+                                   "in ssl servername callback");
             goto error;
         }
         /* server_hostname was encoded to an A-label by our caller; put it
@@ -4643,7 +4675,10 @@ _servername_callback(SSL *s, int *al, void *args)
          */
         servername_str = PyUnicode_FromEncodedObject(servername_bytes, "ascii", NULL);
         if (servername_str == NULL) {
-            PyErr_WriteUnraisable(servername_bytes);
+            PyErr_FormatUnraisable("Exception ignored "
+                                   "in ssl servername callback "
+                                   "while decoding name %R",
+                                   servername_bytes);
             Py_DECREF(servername_bytes);
             goto error;
         }
@@ -4656,7 +4691,10 @@ _servername_callback(SSL *s, int *al, void *args)
     Py_DECREF(ssl_socket);
 
     if (result == NULL) {
-        PyErr_WriteUnraisable(sslctx->set_sni_cb);
+        PyErr_FormatUnraisable("Exception ignored "
+                               "in ssl servername callback "
+                               "while calling set SNI callback %R",
+                               sslctx->set_sni_cb);
         *al = SSL_AD_HANDSHAKE_FAILURE;
         ret = SSL_TLSEXT_ERR_ALERT_FATAL;
     }
@@ -4669,7 +4707,11 @@ _servername_callback(SSL *s, int *al, void *args)
         } else {
             *al = (int) PyLong_AsLong(result);
             if (PyErr_Occurred()) {
-                PyErr_WriteUnraisable(result);
+                PyErr_FormatUnraisable("Exception ignored "
+                                       "in ssl servername callback "
+                                       "while calling set SNI callback "
+                                       "(result=%R)",
+                                       result);
                 *al = SSL_AD_INTERNAL_ERROR;
             }
             ret = SSL_TLSEXT_ERR_ALERT_FATAL;
@@ -4976,7 +5018,8 @@ static unsigned int psk_client_callback(SSL *s,
 
 error:
     if (PyErr_Occurred()) {
-        PyErr_WriteUnraisable(callback);
+        PyErr_FormatUnraisable("Exception ignored in ssl PSK client callback "
+                               "while calling callback %R", callback);
     }
     PyGILState_Release(gstate);
     return 0;
@@ -5085,7 +5128,8 @@ static unsigned int psk_server_callback(SSL *s,
 
 error:
     if (PyErr_Occurred()) {
-        PyErr_WriteUnraisable(callback);
+        PyErr_FormatUnraisable("Exception ignored in ssl PSK server callback "
+                               "while calling callback %R", callback);
     }
     PyGILState_Release(gstate);
     return 0;
@@ -6551,6 +6595,12 @@ sslmodule_init_constants(PyObject *m)
     addbool(m, "HAS_PSK", 0);
 #else
     addbool(m, "HAS_PSK", 1);
+#endif
+
+#ifdef SSL_VERIFY_POST_HANDSHAKE
+    addbool(m, "HAS_PHA", 1);
+#else
+    addbool(m, "HAS_PHA", 0);
 #endif
 
 #undef addbool

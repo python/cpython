@@ -1,4 +1,5 @@
 import os
+import re
 import token
 import tokenize
 import unittest
@@ -1537,6 +1538,7 @@ class TestDetectEncoding(TestCase):
         self.assertEqual(encoding, 'utf-8')
         self.assertEqual(consumed_lines, [b'print("#coding=fake")'])
 
+    @support.thread_unsafe
     def test_open(self):
         filename = os_helper.TESTFN + '.py'
         self.addCleanup(os_helper.unlink, filename)
@@ -1819,6 +1821,22 @@ class UntokenizeTest(TestCase):
         self.assertEqual(tokenize.untokenize(iter(tokens)), b'Hello ')
 
 
+def contains_ambiguous_backslash(source):
+    """Return `True` if the source contains a backslash on a
+    line by itself. For example:
+
+    a = (1
+        \\
+    )
+
+    Code like this cannot be untokenized exactly. This is because
+    the tokenizer does not produce any tokens for the line containing
+    the backslash and so there is no way to know its indent.
+    """
+    pattern = re.compile(br'\n\s*\\\r?\n')
+    return pattern.search(source) is not None
+
+
 class TestRoundtrip(TestCase):
 
     def check_roundtrip(self, f):
@@ -1828,6 +1846,9 @@ class TestRoundtrip(TestCase):
         Both sequences are converted back to source code via
         tokenize.untokenize(), and the latter tokenized again to 2-tuples.
         The test fails if the 3 pair tokenizations do not match.
+
+        If the source code can be untokenized unambiguously, the
+        untokenized code must match the original code exactly.
 
         When untokenize bugs are fixed, untokenize with 5-tuples should
         reproduce code that does not contain a backslash continuation
@@ -1851,6 +1872,13 @@ class TestRoundtrip(TestCase):
         readline5 = iter(bytes_from5.splitlines(keepends=True)).__next__
         tokens2_from5 = [tok[:2] for tok in tokenize.tokenize(readline5)]
         self.assertEqual(tokens2_from5, tokens2)
+
+        if not contains_ambiguous_backslash(code):
+            # The BOM does not produce a token so there is no way to preserve it.
+            code_without_bom = code.removeprefix(b'\xef\xbb\xbf')
+            readline = iter(code_without_bom.splitlines(keepends=True)).__next__
+            untokenized_code = tokenize.untokenize(tokenize.tokenize(readline))
+            self.assertEqual(code_without_bom, untokenized_code)
 
     def check_line_extraction(self, f):
         if isinstance(f, str):
@@ -3012,6 +3040,7 @@ async def f():
             with self.subTest(case=case):
                 self.assertRaises(tokenize.TokenError, get_tokens, case)
 
+    @support.skip_wasi_stack_overflow()
     def test_max_indent(self):
         MAXINDENT = 100
 
