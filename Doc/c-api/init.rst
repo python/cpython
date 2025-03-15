@@ -1064,8 +1064,37 @@ Note that the ``PyGILState_*`` functions assume there is only one global
 interpreter (created automatically by :c:func:`Py_Initialize`).  Python
 supports the creation of additional interpreters (using
 :c:func:`Py_NewInterpreter`), but mixing multiple interpreters and the
-``PyGILState_*`` API is unsupported.
+``PyGILState_*`` API is unsupported. This is because :c:func:`PyGILState_Ensure`
+and similar functions almost always acquire the :term:`GIL` of the main interpreter
+in threads created by subinterpreters, which can lead to data races or deadlocks.
 
+Supporting subinterpreters in non-Python threads
+------------------------------------------------
+
+If you would like to support subinterpreters with non-Python created threads, you
+must use the ``PyThreadState_*`` API instead of the traditional ``PyGILState_*``
+API.
+
+In particular, you must store the exact interpreter state from the calling
+function and pass it to :c:func:`PyThreadState_New` to ensure that the thread
+acquires the :term:`GIL` of the subinterpreter instead of the main interpreter.
+In turn, this means that the return value of :c:func:`PyInterpreterState_Get`
+should be stored alongside any information passed to the thread.::
+
+   /* The return value of PyInterpreterState_Get() from the
+      function that created this thread. */
+   PyInterpreterState *interp = ThreadData->interp;
+   PyThreadState *tstate = PyThreadState_New(interp);
+   PyThreadState_Swap(tstate);
+
+   /* GIL of the subinterpreter is now held.
+      Perform Python actions here. */
+   result = CallSomeFunction();
+   /* evaluate result or handle exception */
+
+   /* Destroy the thread state. No Python API allowed beyond this point. */
+   PyThreadState_Clear(tstate);
+   PyThreadState_DeleteCurrent();
 
 .. _fork-and-threads:
 
@@ -1243,6 +1272,10 @@ code, or when embedding the Python interpreter:
    *tstate*, which may be ``NULL``.  The global interpreter lock must be held
    and is not released.
 
+   .. note::
+      Similar to :c:func:`PyGILState_Ensure`, this function will hang the
+      thread if the runtime is finalizing.
+
 
 The following functions use thread-local storage, and are not compatible
 with sub-interpreters:
@@ -1269,10 +1302,10 @@ with sub-interpreters:
    When the function returns, the current thread will hold the GIL and be able
    to call arbitrary Python code.  Failure is a fatal error.
 
-   .. note::
-      Calling this function from a thread when the runtime is finalizing will
-      hang the thread until the program exits, even if the thread was not
-      created by Python.  Refer to
+   .. warning::
+      Calling this function when the runtime is finalizing is unsafe. Doing
+      so will either hang the thread until the program ends, or fully crash
+      the interpreter in rare cases. Refer to
       :ref:`cautions-regarding-runtime-finalization` for more details.
 
    .. versionchanged:: 3.14
@@ -1289,7 +1322,6 @@ with sub-interpreters:
    Every call to :c:func:`PyGILState_Ensure` must be matched by a call to
    :c:func:`PyGILState_Release` on the same thread.
 
-
 .. c:function:: PyThreadState* PyGILState_GetThisThreadState()
 
    Get the current thread state for this thread.  May return ``NULL`` if no
@@ -1297,6 +1329,11 @@ with sub-interpreters:
    always has such a thread-state, even if no auto-thread-state call has been
    made on the main thread.  This is mainly a helper/diagnostic function.
 
+   .. note::
+      This function does not account for thread states created by something
+      other than :c:func:`PyGILState_Ensure` (such as :c:func:`PyThreadState_New`).
+      Prefer :c:func:`PyThreadState_Get` or :c:func:`PyThreadState_GetUnchecked`
+      for most cases.
 
 .. c:function:: int PyGILState_Check()
 
@@ -1308,6 +1345,11 @@ with sub-interpreters:
    for example in callback contexts or memory allocation functions when
    knowing that the GIL is locked can allow the caller to perform sensitive
    actions or otherwise behave differently.
+
+   .. note::
+      If the current Python process has ever created a subinterpreter, this
+      function will *always* return ``1``. Prefer :c:func:`PyThreadState_GetUnchecked`
+      for most cases.
 
    .. versionadded:: 3.4
 
