@@ -731,7 +731,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       object becomes part of a refcount cycle, that cycle might be collected by
       a garbage collection on any thread).  This is not a problem for Python
       API calls, since the thread on which :c:member:`!tp_dealloc` is called
-      will own the Global Interpreter Lock (GIL).  However, if the object being
+      with an :term:`attached thread state`.  However, if the object being
       destroyed in turn destroys objects from some other C or C++ library, care
       should be taken to ensure that destroying those objects on the thread
       which called :c:member:`!tp_dealloc` will not violate any assumptions of
