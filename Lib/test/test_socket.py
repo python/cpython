@@ -1662,8 +1662,11 @@ class GeneralModuleTests(unittest.TestCase):
         # Issue #6697.
         self.assertRaises(UnicodeEncodeError, socket.getaddrinfo, 'localhost', '\uD800')
 
-        # Issue 17269: test workaround for OS X platform bug segfault
         if hasattr(socket, 'AI_NUMERICSERV'):
+            self.assertRaises(socket.gaierror, socket.getaddrinfo, "localhost", "http",
+                              flags=socket.AI_NUMERICSERV)
+
+            # Issue 17269: test workaround for OS X platform bug segfault
             try:
                 # The arguments here are undefined and the call may succeed
                 # or fail.  All we care here is that it doesn't segfault.
