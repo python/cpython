@@ -199,6 +199,10 @@ static uintptr_t return_pointer_as_int(char* p) {
 }
 #endif
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4172)
+#endif
 static inline uintptr_t
 _Py_get_machine_stack_pointer(void) {
 #if _Py__has_builtin(__builtin_frame_address)
@@ -209,6 +213,9 @@ _Py_get_machine_stack_pointer(void) {
     return return_pointer_as_int(&here);
 #endif
 }
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 static inline int _Py_MakeRecCheck(PyThreadState *tstate)  {
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
