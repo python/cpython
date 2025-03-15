@@ -14,6 +14,7 @@ import shutil
 import struct
 import tempfile
 import unittest
+import sys
 from datetime import date, datetime, time, timedelta, timezone
 from functools import cached_property
 
@@ -2252,6 +2253,43 @@ class ZoneDumpData:
 
     _ZONEDUMP_DATA = None
     _FIXED_OFFSET_ZONES = None
+
+class CZoneInfoSanityTest(CZoneInfoTest):
+    """gh-125318: custom non-PyDateTime types could cause out-of-bounds read"""
+
+    class CustomDateTime:
+        def __init__(self, year, month, day, hour=0, minute=0, second=0):
+            self.ordinal = date(year, month, day).toordinal()
+            self.hour = hour
+            self.minute = minute
+            self.second = second
+
+        def toordinal(self):
+            return self.ordinal
+
+    def _spray(self, depth):
+        if depth == 0:
+            return None
+        self._spray(depth - 1)
+
+    def test_find_ttinfo_sanity(self):
+        RECURSION_LIMIT = 1000000
+        SPRAY_TIMES = 10000
+        CHECK_TIMES = 10000
+
+        # spray some garbage on the stack
+        saved_limit = sys.getrecursionlimit()
+        sys.setrecursionlimit(RECURSION_LIMIT)
+        self._spray(SPRAY_TIMES)
+        sys.setrecursionlimit(saved_limit)
+
+        for _ in range(CHECK_TIMES):
+            zi = self.klass("UTC")
+            dt = self.CustomDateTime(2024, 10, 22, 10, 24, 20)
+            try:
+                zi.utcoffset(dt)
+            except MemoryError:
+                continue
 
 
 if __name__ == '__main__':
