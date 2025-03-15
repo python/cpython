@@ -228,6 +228,33 @@ class LocalWinregTests(BaseWinregTests):
 
         self._delete_test_data(HKEY_CURRENT_USER)
 
+    def test_registry_works_with_options(self):
+        ckeo = lambda key, sub_key: CreateKeyEx(key, sub_key, 0, KEY_ALL_ACCESS,
+                                                options=REG_OPTION_VOLATILE)
+        self._write_test_data(HKEY_CURRENT_USER, CreateKey=ckeo)
+
+        okeo = lambda key, sub_key: OpenKeyEx(key, sub_key, REG_OPTION_VOLATILE,
+                                              KEY_READ)
+        self._read_test_data(HKEY_CURRENT_USER, OpenKey=okeo)
+
+        with self.assertWarns(DeprecationWarning):
+            okeo = lambda key, sub_key: OpenKeyEx(key, sub_key,
+                                                  reserved=REG_OPTION_VOLATILE)
+            self._read_test_data(HKEY_CURRENT_USER, OpenKey=okeo)
+
+        with self.assertWarns(DeprecationWarning):
+            ok = lambda key, sub_key: OpenKey(key, sub_key,
+                                                reserved=REG_OPTION_VOLATILE)
+            self._read_test_data(HKEY_CURRENT_USER, OpenKey=ok)
+
+        self._delete_test_data(HKEY_CURRENT_USER)
+
+    def test_create_only(self):
+        CreateKeyEx(HKEY_CURRENT_USER, test_key_name)
+        with self.assertRaises(FileExistsError):
+            CreateKeyEx(HKEY_CURRENT_USER, test_key_name, create_only=True)
+        DeleteKey(HKEY_CURRENT_USER, test_key_name)
+
     def test_named_arguments(self):
         self._test_named_args(HKEY_CURRENT_USER, test_key_name)
         # Use the regular DeleteKey to clean up
