@@ -41,10 +41,6 @@ having all the lower 32 bits set, which will avoid the reference count to go
 beyond the refcount limit. Immortality checks for reference count decreases will
 be done by checking the bit sign flag in the lower 32 bits.
 
-To ensure that once an object becomes immortal, it remains immortal, the threshold
-for omitting increfs is much higher than for omitting decrefs. Consequently, once
-the refcount for an object exceeds _Py_IMMORTAL_MINIMUM_REFCNT it will gradually
-increase over time until it reaches _Py_IMMORTAL_INITIAL_REFCNT.
 */
 #define _Py_IMMORTAL_INITIAL_REFCNT (3ULL << 30)
 #define _Py_IMMORTAL_MINIMUM_REFCNT (1ULL << 31)
@@ -292,7 +288,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
     }
 #elif SIZEOF_VOID_P > 4
     PY_UINT32_T cur_refcnt = op->ob_refcnt;
-    if (cur_refcnt >= _Py_IMMORTAL_INITIAL_REFCNT) {
+    if (((int32_t)cur_refcnt) < 0) {
         // the object is immortal
         _Py_INCREF_IMMORTAL_STAT_INC();
         return;
@@ -420,6 +416,9 @@ static inline void _Py_DECREF_MORTAL_SPECIALIZED(const char *filename, int linen
         _Py_DECREF_DecRefTotal();
     }
     if (--op->ob_refcnt == 0) {
+#ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+#endif
         destruct(op);
     }
 }
@@ -464,6 +463,9 @@ static inline void Py_DECREF_MORTAL_SPECIALIZED(PyObject *op, destructor destruc
     assert(!_Py_IsStaticImmortal(op));
     _Py_DECREF_STAT_INC();
     if (--op->ob_refcnt == 0) {
+#ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+#endif
         destruct(op);
     }
 }

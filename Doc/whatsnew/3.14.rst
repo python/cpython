@@ -459,18 +459,19 @@ concurrent.futures
   ways to terminate or kill all living worker processes in the given pool.
   (Contributed by Charles Machalow in :gh:`130849`.)
 
-contextvars
------------
-
-* Support context manager protocol by :class:`contextvars.Token`.
-  (Contributed by Andrew Svetlov in :gh:`129889`.)
-
 * Add the optional ``buffersize`` parameter to
   :meth:`concurrent.futures.Executor.map` to limit the number of submitted
   tasks whose results have not yet been yielded. If the buffer is full,
   iteration over the *iterables* pauses until a result is yielded from the
   buffer.
   (Contributed by Enzo Bonnal and Josh Rosenberg in :gh:`74028`.)
+
+
+contextvars
+-----------
+
+* Support context manager protocol by :class:`contextvars.Token`.
+  (Contributed by Andrew Svetlov in :gh:`129889`.)
 
 
 ctypes
@@ -828,6 +829,9 @@ pdb
 * ``<tab>`` at the beginning of the line in :mod:`pdb` multi-line input will
   fill in a 4-space indentation now, instead of inserting a ``\t`` character.
   (Contributed by Tian Gao in :gh:`130471`.)
+
+* ``$_asynctask`` is added to access the current asyncio task if applicable.
+  (Contributed by Tian Gao in :gh:`124367`.)
 
 
 pickle

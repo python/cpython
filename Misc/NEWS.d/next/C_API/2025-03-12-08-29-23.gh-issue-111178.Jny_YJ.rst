@@ -1,2 +1,0 @@
-Fix :c:type:`PyCMethod` API: replace ``size_t nargs`` with ``Py_ssize_t nargs``
-in :c:type:`PyCMethod`. Patch by Victor Stinner.

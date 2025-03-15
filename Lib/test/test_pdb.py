@@ -16,7 +16,7 @@ import zipfile
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
-from test.support import force_not_colorized, os_helper
+from test.support import force_not_colorized, has_socket_support, os_helper
 from test.support.import_helper import import_module
 from test.support.pty_helper import run_pty, FakeInput
 from test.support.script_helper import kill_python
@@ -2059,6 +2059,30 @@ def test_pdb_next_command_for_generator():
     """
 
 if not SKIP_CORO_TESTS:
+    if has_socket_support:
+        def test_pdb_asynctask():
+            """Testing $_asynctask is accessible in async context
+
+            >>> import asyncio
+
+            >>> async def test():
+            ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+            >>> def test_function():
+            ...     asyncio.run(test())
+
+            >>> with PdbTestInput([  # doctest: +ELLIPSIS
+            ...     '$_asynctask',
+            ...     'continue',
+            ... ]):
+            ...     test_function()
+            > <doctest test.test_pdb.test_pdb_asynctask[1]>(2)test()
+            -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+            (Pdb) $_asynctask
+            <Task pending name=... coro=<test() running at <doctest test.test_pdb.test_pdb_asynctask[1]>:2> ...
+            (Pdb) continue
+            """
+
     def test_pdb_next_command_for_coroutine():
         """Testing skip unwinding stack on yield for coroutines for "next" command
 

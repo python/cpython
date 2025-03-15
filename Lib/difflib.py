@@ -1633,7 +1633,7 @@ _file_template = """
 
 _styles = """
         :root {color-scheme: light dark}
-        table.diff {font-family:Courier; border:medium;}
+        table.diff {font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console, monospace; border:medium}
         .diff_header {background-color:#e0e0e0}
         td.diff_header {text-align:right}
         .diff_next {background-color:#c0c0c0}
