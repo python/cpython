@@ -267,6 +267,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         &_Py_ID(is_struct),
         &_Py_ID(base));
     if (!kwnames) {
+        Py_DECREF(layout_func);
         goto error;
     }
     layout = PyObject_Vectorcall(
