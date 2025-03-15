@@ -474,8 +474,8 @@ Command-line interface
 ----------------------
 
 :mod:`http.server` can also be invoked directly using the :option:`-m`
-switch of the interpreter.  Similar to
-the previous example, this serves files relative to the current directory::
+switch of the interpreter.  The following example illustrates how to serve
+files relative to the current directory::
 
    python -m http.server [OPTIONS] [port]
 
