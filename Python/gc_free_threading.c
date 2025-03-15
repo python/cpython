@@ -4,6 +4,7 @@
 #include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
 #include "pycore_context.h"
 #include "pycore_dict.h"          // _PyInlineValuesSize()
+#include "pycore_frame.h"         // FRAME_CLEARED
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"
 #include "pycore_interp.h"        // PyInterpreterState.gc

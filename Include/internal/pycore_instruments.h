@@ -5,7 +5,7 @@
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_interpframe.h"   // _PyInterpreterFrame
 
 #ifdef __cplusplus
 extern "C" {
