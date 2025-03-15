@@ -1953,56 +1953,6 @@ class FreeThreadingTest(unittest.TestCase):
         # iterator stuff
         self.check([clear] + [iter_next] * 10, a := array.array('i', [1] * 10), iter(a))
 
-    @unittest.skipUnless(support.check_sanitizer(thread=True), 'meant for tsan')
-    @threading_helper.reap_threads
-    @threading_helper.requires_working_threading()
-    def test_free_threading_tsan(self):
-        def copy_back_and_forth(b, a, count):
-            b.wait()
-            for _ in range(count):
-                a[0] = a[1]
-                a[1] = a[0]
-
-        def append_and_pop(b, a, count):
-            v = a[0]
-            b.wait()
-            for _ in range(count):
-                a.append(v)
-                a.pop()
-
-        def copy_random(b, a, count):
-            end = len(a) - 1
-            idxs = [(random.randint(0, end), random.randint(0, end)) for _ in range(count)]
-            b.wait()
-            for src, dst in idxs:
-                a[dst] = a[src]
-
-        # comment these back in if resize is made atomically quiet
-        # def extend_range(b, a, count):
-        #     b.wait()
-        #     for _ in range(count):
-        #         a.extend(range(10))
-
-        # def extend_self(b, a, count):
-        #     c = a[:]
-        #     b.wait()
-        #     for _ in range(count):
-        #         a.extend(c)
-
-        for tc in typecodes:
-            if tc in 'uw':
-                a = array.array(tc, 'ab')
-            else:
-                a = array.array(tc, [0, 1])
-
-            self.check([copy_back_and_forth] * 10, a, 100)
-            self.check([append_and_pop] * 10, a, 100)
-            # self.check([copy_back_and_forth] * 10 + [extend_self], a, 100)  # comment this in if resize is made atomically quiet
-
-            if tc not in 'uw':
-                # self.check([copy_back_and_forth] * 10 + [extend_range], a, 100)  # comment this in if resize is made atomically quiet
-                self.check([copy_random] * 10, a * 5, 100)
-
 
 if __name__ == "__main__":
     unittest.main()
