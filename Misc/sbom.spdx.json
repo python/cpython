@@ -48,11 +48,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "373cc00d87782a736970644d863ff2ebbd0e4886"
+          "checksumValue": "1128a2c7acb539a7b8613aac182983c48e8d6eb9"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "0f750bc336e510d14ac9a3e63fc2399f60f3f04f0061c426e86751ed5fba90e4"
+          "checksumValue": "3f868d5366b7736096c6a53f1422cf2dca3795d04b5438fc1b54279effdab918"
         }
       ],
       "fileName": "Modules/expat/expat.h"
@@ -132,11 +132,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "a9b0a33b8359cfe94b23972a1605daf8dcc605d9"
+          "checksumValue": "1834a0629524eee116cf84251464fb368423fd73"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "19eb541460bc2ca8b87118acd3c048f6af77affbf8719ac29aa7b6c8d70f83fd"
+          "checksumValue": "a8e123d64c0c43fcc52e70c6573db071c3d007ecdad604fbc3a84beefe2ed3a1"
         }
       ],
       "fileName": "Modules/expat/refresh.sh"
@@ -188,11 +188,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "3199fbd38b6fb158f73d5c8de6b6e6e3812ef803"
+          "checksumValue": "2170362ee95a94d5c489f9430c8f63a89b7fd764"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "c1518244dd5ea397e345d00e12cc45d42f43453ed208218559c981c97a0583e2"
+          "checksumValue": "9da1080e3fe34cedaed53d3916978d07404dae55b3e3c2e8316abd5f13af8074"
         }
       ],
       "fileName": "Modules/expat/xmlparse.c"
