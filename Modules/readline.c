@@ -10,6 +10,7 @@
 
 /* Standard definitions */
 #include "Python.h"
+#include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_pylifecycle.h"   // _Py_SetLocaleFromEnv()
 
 #include <errno.h>                // errno
@@ -199,7 +200,7 @@ disable_bracketed_paste(void)
 /* Exported function to send one line to readline's init file parser */
 
 /*[clinic input]
-@critical_section module
+@critical_section
 readline.parse_and_bind
 
     string: object
@@ -234,7 +235,7 @@ readline_parse_and_bind_impl(PyObject *module, PyObject *string)
 /* Exported function to parse a readline init file */
 
 /*[clinic input]
-@critical_section module
+@critical_section
 readline.read_init_file
 
     filename as filename_obj: object = None
@@ -266,7 +267,7 @@ readline_read_init_file_impl(PyObject *module, PyObject *filename_obj)
 /* Exported function to load a readline history file */
 
 /*[clinic input]
-@critical_section module
+@critical_section
 readline.read_history_file
 
     filename as filename_obj: object = None
@@ -299,6 +300,7 @@ static int _history_length = -1; /* do not truncate history by default */
 /* Exported function to save a readline history file */
 
 /*[clinic input]
+@critical_section
 readline.write_history_file
 
     filename as filename_obj: object = None
@@ -325,8 +327,9 @@ readline_write_history_file_impl(PyObject *module, PyObject *filename_obj)
         filename = NULL;
     }
     errno = err = write_history(filename);
-    if (!err && _history_length >= 0)
-        history_truncate_file(filename, _history_length);
+    int history_length = FT_ATOMIC_LOAD_INT_RELAXED(_history_length);
+    if (!err && history_length >= 0)
+        history_truncate_file(filename, history_length);
     Py_XDECREF(filename_bytes);
     errno = err;
     if (errno)
@@ -338,6 +341,7 @@ readline_write_history_file_impl(PyObject *module, PyObject *filename_obj)
 /* Exported function to save part of a readline history file */
 
 /*[clinic input]
+@critical_section
 readline.append_history_file
 
     nelements: int
@@ -373,8 +377,9 @@ readline_append_history_file_impl(PyObject *module, int nelements,
     }
     errno = err = append_history(
         nelements - libedit_append_replace_history_offset, filename);
-    if (!err && _history_length >= 0)
-        history_truncate_file(filename, _history_length);
+    int history_length = FT_ATOMIC_LOAD_INT_RELAXED(_history_length);
+    if (!err && history_length >= 0)
+        history_truncate_file(filename, history_length);
     Py_XDECREF(filename_bytes);
     errno = err;
     if (errno)
@@ -401,7 +406,7 @@ static PyObject *
 readline_set_history_length_impl(PyObject *module, int length)
 /*[clinic end generated code: output=e161a53e45987dc7 input=b8901bf16488b760]*/
 {
-    _history_length = length;
+    FT_ATOMIC_STORE_INT_RELAXED(_history_length, length);
     Py_RETURN_NONE;
 }
 
@@ -417,7 +422,8 @@ static PyObject *
 readline_get_history_length_impl(PyObject *module)
 /*[clinic end generated code: output=83a2eeae35b6d2b9 input=5dce2eeba4327817]*/
 {
-    return PyLong_FromLong(_history_length);
+    int history_length = FT_ATOMIC_LOAD_INT_RELAXED(_history_length);
+    return PyLong_FromLong(history_length);
 }
 
 /* Generic hook function setter */
@@ -577,7 +583,7 @@ readline_get_endidx_impl(PyObject *module)
 /* Set the tab-completion word-delimiters that readline uses */
 
 /*[clinic input]
-@critical_section module
+@critical_section
 readline.set_completer_delims
 
     string: object
@@ -650,7 +656,7 @@ _py_free_history_entry_lock_held(HIST_ENTRY *entry)
 #endif
 
 /*[clinic input]
-@critical_section module
+@critical_section
 readline.remove_history_item
 
     pos as entry_number: int
@@ -683,7 +689,7 @@ readline_remove_history_item_impl(PyObject *module, int entry_number)
 }
 
 /*[clinic input]
-@critical_section module
+@critical_section
 readline.replace_history_item
 
     pos as entry_number: int
@@ -730,7 +736,7 @@ readline_replace_history_item_impl(PyObject *module, int entry_number,
 /* Add a line to the history buffer */
 
 /*[clinic input]
-@critical_section module
+@critical_section
 readline.add_history
 
     string: object
@@ -778,7 +784,7 @@ readline_set_auto_history_impl(PyObject *module,
 /* Get the tab-completion word-delimiters that readline uses */
 
 /*[clinic input]
-@critical_section module
+@critical_section
 readline.get_completer_delims
 
 Get the word delimiters for completion.
@@ -853,7 +859,7 @@ _py_get_history_length_lock_held(void)
 /* Exported function to get any element of history */
 
 /*[clinic input]
-@critical_section module
+@critical_section
 readline.get_history_item
 
     index as idx: int
@@ -897,7 +903,7 @@ readline_get_history_item_impl(PyObject *module, int idx)
 /* Exported function to get current length of history */
 
 /*[clinic input]
-@critical_section module
+@critical_section
 readline.get_current_history_length
 
 Return the current (not the maximum) length of history.
@@ -913,7 +919,7 @@ readline_get_current_history_length_impl(PyObject *module)
 /* Exported function to read the current line buffer */
 
 /*[clinic input]
-@critical_section module
+@critical_section
 readline.get_line_buffer
 
 Return the current contents of the line buffer.
@@ -931,7 +937,7 @@ readline_get_line_buffer_impl(PyObject *module)
 /* Exported function to clear the current history */
 
 /*[clinic input]
-@critical_section module
+@critical_section
 readline.clear_history
 
 Clear the current readline history.
@@ -950,7 +956,7 @@ readline_clear_history_impl(PyObject *module)
 /* Exported function to insert text into the line buffer */
 
 /*[clinic input]
-@critical_section module
+@critical_section
 readline.insert_text
 
     string: object
@@ -975,7 +981,7 @@ readline_insert_text_impl(PyObject *module, PyObject *string)
 /* Redisplay the line buffer */
 
 /*[clinic input]
-@critical_section module
+@critical_section
 readline.redisplay
 
 Change what's displayed on the screen to reflect contents of the line buffer.

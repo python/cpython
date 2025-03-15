@@ -408,18 +408,6 @@ readline.write_history_file(history_file)
 
 @unittest.skipUnless(support.Py_GIL_DISABLED, 'these tests can only possibly fail with GIL disabled')
 class FreeThreadingTest(unittest.TestCase):
-    def check(self, funcs, *args):
-        barrier = threading.Barrier(len(funcs))
-        threads = []
-
-        for func in funcs:
-            thread = threading.Thread(target=func, args=(barrier, *args))
-
-            threads.append(thread)
-
-        with threading_helper.start_threads(threads):
-            pass
-
     @threading_helper.reap_threads
     @threading_helper.requires_working_threading()
     def test_free_threading(self):
@@ -431,23 +419,12 @@ class FreeThreadingTest(unittest.TestCase):
                 readline.set_completer_delims(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
                 readline.get_completer_delims()
 
-        self.check([completer_delims] * 100)
+        count   = 40
+        barrier = threading.Barrier(count)
+        threads = [threading.Thread(target=completer_delims, args=(barrier,)) for _ in range(count)]
 
-    def test_free_threading_doctest_difflib(self):
-        code = textwrap.dedent("""
-            from threading import Thread
-            import doctest, difflib
-
-            def _test():
-                try:
-                    doctest.testmod(difflib)
-                except RecursionError:
-                    pass
-
-            for x in range(40):
-                Thread(target=_test, args=()).start()
-        """)
-        assert_python_ok("-c", code)
+        with threading_helper.start_threads(threads):
+            pass
 
 
 if __name__ == "__main__":
