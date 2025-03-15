@@ -3198,7 +3198,7 @@ class CommandLineTest(unittest.TestCase):
 
     def set_source(self, content):
         with open(self.filename, 'w') as fp:
-            fp.write(content+'\n')
+            fp.write(content)
 
     def invoke_tokenize(self, *flags):
         output = StringIO()
@@ -3240,7 +3240,7 @@ class CommandLineTest(unittest.TestCase):
             1,0-1,1:            NAME           'a'
             1,2-1,3:            OP             '='
             1,4-1,5:            NUMBER         '1'
-            1,5-1,6:            NEWLINE        '\\n'
+            1,5-1,6:            NEWLINE        ''
             2,0-2,0:            ENDMARKER      ''
         '''
         self.check_output(source, expect)
@@ -3253,7 +3253,7 @@ class CommandLineTest(unittest.TestCase):
             1,0-1,1:            NAME           'a'
             1,2-1,3:            EQUAL          '='
             1,4-1,5:            NUMBER         '1'
-            1,5-1,6:            NEWLINE        '\\n'
+            1,5-1,6:            NEWLINE        ''
             2,0-2,0:            ENDMARKER      ''
         '''
         for flag in ['-e', '--exact']:
