@@ -529,8 +529,8 @@ Extension notation
 
 .. _re-special-sequences:
 
-Special sequences
-"""""""""""""""""
+Escape sequences
+""""""""""""""""
 
 The special sequences consist of ``'\'`` and a character from the list below.
 If the ordinary character is not an ASCII digit or an ASCII letter, then the
@@ -681,8 +681,8 @@ character ``'$'``.
 
 .. _re-escape-sequences:
 
-Escape sequences
-""""""""""""""""
+String literal escapes
+""""""""""""""""""""""
 
 .. index::
    single: \a; in regular expressions
