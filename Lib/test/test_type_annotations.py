@@ -476,7 +476,6 @@ class ConditionalAnnotationTests(unittest.TestCase):
 
     def test_with(self):
         code = """
-            import contextlib
             class Swallower:
                 def __enter__(self):
                     pass
@@ -500,6 +499,21 @@ class ConditionalAnnotationTests(unittest.TestCase):
                 in_if: "else"
         """
         self.check_scopes(code, {"in_if": "if"}, {"in_if": "else"})
+
+    def test_if_elif(self):
+        code = """
+            if not len:
+                in_if: "if"
+            elif {cond}:
+                in_elif: "elif"
+            else:
+                in_else: "else"
+        """
+        self.check_scopes(
+            code,
+            {"in_elif": "elif"},
+            {"in_else": "else"}
+        )
 
     def test_try(self):
         code = """
@@ -560,6 +574,33 @@ class ConditionalAnnotationTests(unittest.TestCase):
             code,
             {"in_for": "for", "in_else": "else"},
             {"in_else": "else"}
+        )
+
+    def test_match(self):
+        code = """
+            match {cond}:
+                case True:
+                    x: "true"
+                case False:
+                    x: "false"
+        """
+        self.check_scopes(
+            code,
+            {"x": "true"},
+            {"x": "false"}
+        )
+
+    def test_nesting_override(self):
+        code = """
+            if {cond}:
+                x: "foo"
+                if {cond}:
+                    x: "bar"
+        """
+        self.check_scopes(
+            code,
+            {"x": "bar"},
+            {}
         )
 
     def test_nesting_outer(self):
