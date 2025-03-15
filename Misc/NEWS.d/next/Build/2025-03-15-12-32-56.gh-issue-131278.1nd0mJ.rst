@@ -1,2 +1,2 @@
 Add optimizing flag ``WITH_COMPUTED_GOTOS`` to support such builds using
-:prog:`clang-cl` on Windows. Patch by Chris Eibl.
+clang-cl on Windows. Patch by Chris Eibl.
