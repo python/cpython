@@ -592,6 +592,19 @@ getopt
 * Add support for returning intermixed options and non-option arguments in order.
   (Contributed by Serhiy Storchaka in :gh:`126390`.)
 
+
+heapq
+-----
+
+* Add functions for working with max-heaps:
+
+  * :func:`heapq.heapify_max`,
+  * :func:`heapq.heappush_max`,
+  * :func:`heapq.heappop_max`,
+  * :func:`heapq.heapreplace_max`
+  * :func:`heapq.heappushpop_max`
+
+
 http
 ----
 
