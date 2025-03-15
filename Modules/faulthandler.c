@@ -4,7 +4,6 @@
 #include "pycore_pyerrors.h"      // _Py_DumpExtensionModules
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_signal.h"        // Py_NSIG
-#include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads
 
@@ -112,7 +111,7 @@ faulthandler_get_fileno(PyObject **file_ptr)
     PyObject *file = *file_ptr;
 
     if (file == NULL || file == Py_None) {
-        file = _PySys_GetRequiredAttr(&_Py_ID(stderr));
+        file = PySys_GetAttr(&_Py_ID(stderr));
         if (file == NULL) {
             return -1;
         }
