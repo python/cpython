@@ -31,12 +31,10 @@ extern "C" {
 #endif
 
 #include <string.h>
-#include "krml/types.h"
+#include "krml/internal/types.h"
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 
-#include "internal/Hacl_Impl_Blake2_Constants.h"
-#include "internal/Hacl_Hash_Blake2b.h"
 #include "../Hacl_Hash_Blake2b_Simd256.h"
 #include "libintvector.h"
 
@@ -83,7 +81,54 @@ Hacl_Hash_Blake2b_Simd256_store_state256b_to_state32(
   Lib_IntVector_Intrinsics_vec256 *st
 );
 
-Lib_IntVector_Intrinsics_vec256 *Hacl_Hash_Blake2b_Simd256_malloc_with_key(void);
+Lib_IntVector_Intrinsics_vec256
+*Hacl_Hash_Blake2b_Simd256_malloc_internal_state_with_key(void);
+
+void
+Hacl_Hash_Blake2b_Simd256_update_multi_no_inline(
+  Lib_IntVector_Intrinsics_vec256 *s,
+  FStar_UInt128_uint128 ev,
+  uint8_t *blocks,
+  uint32_t n
+);
+
+void
+Hacl_Hash_Blake2b_Simd256_update_last_no_inline(
+  Lib_IntVector_Intrinsics_vec256 *s,
+  FStar_UInt128_uint128 prev,
+  uint8_t *input,
+  uint32_t input_len
+);
+
+void
+Hacl_Hash_Blake2b_Simd256_copy_internal_state(
+  Lib_IntVector_Intrinsics_vec256 *src,
+  Lib_IntVector_Intrinsics_vec256 *dst
+);
+
+typedef struct Hacl_Hash_Blake2b_Simd256_two_2b_256_s
+{
+  Lib_IntVector_Intrinsics_vec256 *fst;
+  Lib_IntVector_Intrinsics_vec256 *snd;
+}
+Hacl_Hash_Blake2b_Simd256_two_2b_256;
+
+typedef struct Hacl_Hash_Blake2b_Simd256_block_state_t_s
+{
+  uint8_t fst;
+  uint8_t snd;
+  bool thd;
+  Hacl_Hash_Blake2b_Simd256_two_2b_256 f3;
+}
+Hacl_Hash_Blake2b_Simd256_block_state_t;
+
+typedef struct Hacl_Hash_Blake2b_Simd256_state_t_s
+{
+  Hacl_Hash_Blake2b_Simd256_block_state_t block_state;
+  uint8_t *buf;
+  uint64_t total_len;
+}
+Hacl_Hash_Blake2b_Simd256_state_t;
 
 #if defined(__cplusplus)
 }
