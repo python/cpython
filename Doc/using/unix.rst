@@ -44,26 +44,26 @@ In some cases, IDLE might not be included in your Python installation.
 
 * For Debian and Ubuntu users:
 
-.. code-block:: shell
+.. code-block:: shell-session
 
    sudo apt update
    sudo apt install idle
 
 * For Fedora, RHEL, and CentOS users:
 
-.. code-block:: shell
+.. code-block:: shell-session
 
    sudo dnf install python3-idle
 
 * For SUSE and OpenSUSE users:
 
-.. code-block:: shell
+.. code-block:: shell-session
 
    sudo zypper in python3-idle
 
 * For Alpine Linux users:
 
-.. code-block:: shell
+.. code-block:: shell-session
 
    sudo apk add python3-idle
 
