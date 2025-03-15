@@ -553,6 +553,7 @@ class CommandLineTest(unittest.TestCase):
     def test_invocation(self):
         # test various combinations of parameters
         output_file = tempfile.mktemp()
+        self.addCleanup(os_helper.unlink, output_file)
         base_flags = [
             (f'-o={output_file}', f'--output={output_file}'),
             ('-m', '--memo'),
@@ -569,7 +570,6 @@ class CommandLineTest(unittest.TestCase):
                 for args in itertools.product(*choices):
                     with self.subTest(args=args[1:]):
                         _ = self.invoke_pickletools(*args)
-        self.addCleanup(os_helper.unlink, output_file)
 
         with self.assertRaises(SystemExit):
             # suppress argparse error message
@@ -579,6 +579,7 @@ class CommandLineTest(unittest.TestCase):
     def test_output_flag(self):
         # test 'python -m pickletools -o/--output'
         output_file = tempfile.mktemp()
+        self.addCleanup(os_helper.unlink, output_file)
         data = ("fake_data",)
         expect = '''
             0: \\x80 PROTO      5
@@ -601,7 +602,6 @@ class CommandLineTest(unittest.TestCase):
                 self.assertListEqual(res.splitlines(), [])
                 self.assertListEqual(res_from_file.splitlines(),
                                      expect.splitlines())
-        self.addCleanup(os_helper.unlink, output_file)
 
     def test_memo_flag(self):
         # test 'python -m pickletools -m/--memo'
