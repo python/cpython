@@ -447,7 +447,7 @@ set_hook(const char *funcname, PyObject **hook_var, PyObject *function)
 }
 
 /*[clinic input]
-@critical_section module
+@critical_section
 readline.set_completion_display_matches_hook
 
     function: object = None
@@ -463,7 +463,7 @@ once each time matches need to be displayed.
 static PyObject *
 readline_set_completion_display_matches_hook_impl(PyObject *module,
                                                   PyObject *function)
-/*[clinic end generated code: output=516e5cb8db75a328 input=5fddfa5edb69582c]*/
+/*[clinic end generated code: output=516e5cb8db75a328 input=ea4191e4a07d28d3]*/
 {
     readlinestate *state = get_readline_state(module);
     PyObject *result = set_hook("completion_display_matches_hook",
@@ -485,6 +485,7 @@ readline_set_completion_display_matches_hook_impl(PyObject *module,
 }
 
 /*[clinic input]
+@critical_section
 readline.set_startup_hook
 
     function: object = None
@@ -498,7 +499,7 @@ before readline prints the first prompt.
 
 static PyObject *
 readline_set_startup_hook_impl(PyObject *module, PyObject *function)
-/*[clinic end generated code: output=02cd0e0c4fa082ad input=7783b4334b26d16d]*/
+/*[clinic end generated code: output=02cd0e0c4fa082ad input=11fce34992f1125e]*/
 {
     readlinestate *state = get_readline_state(module);
     return set_hook("startup_hook", &state->startup_hook,
@@ -510,6 +511,7 @@ readline_set_startup_hook_impl(PyObject *module, PyObject *function)
 /* Set pre-input hook */
 
 /*[clinic input]
+@critical_section
 readline.set_pre_input_hook
 
     function: object = None
@@ -524,7 +526,7 @@ characters.
 
 static PyObject *
 readline_set_pre_input_hook_impl(PyObject *module, PyObject *function)
-/*[clinic end generated code: output=fe1a96505096f464 input=4f3eaeaf7ce1fdbe]*/
+/*[clinic end generated code: output=fe1a96505096f464 input=96d3d5ff4a0c7c28]*/
 {
     readlinestate *state = get_readline_state(module);
     return set_hook("pre_input_hook", &state->pre_input_hook,
@@ -800,6 +802,7 @@ readline_get_completer_delims_impl(PyObject *module)
 /* Set the completer function */
 
 /*[clinic input]
+@critical_section
 readline.set_completer
 
     function: object = None
@@ -814,7 +817,7 @@ It should return the next possible completion starting with 'text'.
 
 static PyObject *
 readline_set_completer_impl(PyObject *module, PyObject *function)
-/*[clinic end generated code: output=171a2a60f81d3204 input=51e81e13118eb877]*/
+/*[clinic end generated code: output=171a2a60f81d3204 input=97f539d8d0bfcb95]*/
 {
     readlinestate *state = get_readline_state(module);
     return set_hook("completer", &state->completer, function);

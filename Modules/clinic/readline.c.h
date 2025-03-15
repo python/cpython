@@ -299,7 +299,9 @@ readline_set_startup_hook(PyObject *module, PyObject *const *args, Py_ssize_t na
     }
     function = args[0];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(module);
     return_value = readline_set_startup_hook_impl(module, function);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -337,7 +339,9 @@ readline_set_pre_input_hook(PyObject *module, PyObject *const *args, Py_ssize_t 
     }
     function = args[0];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(module);
     return_value = readline_set_pre_input_hook_impl(module, function);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -602,7 +606,9 @@ readline_set_completer(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     }
     function = args[0];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(module);
     return_value = readline_set_completer_impl(module, function);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -791,4 +797,4 @@ readline_redisplay(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef READLINE_CLEAR_HISTORY_METHODDEF
     #define READLINE_CLEAR_HISTORY_METHODDEF
 #endif /* !defined(READLINE_CLEAR_HISTORY_METHODDEF) */
-/*[clinic end generated code: output=69d8c8e4a86e5e68 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=88d9812b6caa2102 input=a9049054013a1b77]*/
