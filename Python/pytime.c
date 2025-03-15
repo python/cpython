@@ -915,7 +915,7 @@ py_get_system_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
     /* 11,644,473,600,000,000,000: number of nanoseconds between
        the 1st january 1601 and the 1st january 1970 (369 years + 89 leap
        days). */
-    PyTime_t ns = large.QuadPart * 100 - 11644473600000000000;
+    PyTime_t ns = (large.QuadPart - 116444736000000000) * 100;
     *tp = ns;
     if (info) {
         // GetSystemTimePreciseAsFileTime() is implemented using
