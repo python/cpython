@@ -237,9 +237,8 @@ class CAPITest(unittest.TestCase):
         x = X()
         self.assertEqual(power(4, x), (x, 4))
         self.assertEqual(inplacepower(4, x), (x, 4))
-        # XXX: Three-arg power doesn't use __rpow__.
-        self.assertRaises(TypeError, power, 4, x, 5)
-        self.assertRaises(TypeError, inplacepower, 4, x, 5)
+        self.assertEqual(power(4, x, 5), (x, 4, 5))
+        self.assertEqual(inplacepower(4, x, 5), (x, 4, 5))
 
         class X:
             def __ipow__(*args):
