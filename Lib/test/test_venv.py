@@ -895,6 +895,49 @@ class BasicTest(BaseTest):
         except subprocess.CalledProcessError:
             self.fail("venvwlauncher.exe did not run %s" % exename)
 
+    @requires_subprocess()
+    @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
+    @unittest.skipUnless(can_symlink(), 'Needs symlinks')
+    @unittest.skipUnless(sysconfig.get_config_var('HAVE_READLINK'), "Requires HAVE_READLINK support")
+    def test_executable_symlink(self):
+        """
+        Test creation using a symlink to python executable.
+        """
+        rmtree(self.env_dir)
+        exe = pathlib.Path(sys.executable).absolute()
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            symlink_dir = pathlib.Path(tmp_dir).resolve(strict=True)
+            exe_symlink = symlink_dir / exe.name
+            exe_symlink.symlink_to(exe)
+            cmd = [exe_symlink, "-m", "venv", "--without-pip", self.env_dir]
+            subprocess.check_call(cmd)
+        data = self.get_text_file_contents('pyvenv.cfg')
+        path = os.path.dirname(os.path.abspath(sys._base_executable))
+        self.assertIn('home = %s' % path, data)
+        self.assertIn('executable = %s' % exe.resolve(), data)
+
+    @requires_subprocess()
+    @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
+    @unittest.skipUnless(can_symlink(), 'Needs symlinks')
+    @requireVenvCreate
+    def test_tree_symlink(self):
+        """
+        Test creation using a symlink to python tree.
+        """
+        rmtree(self.env_dir)
+        exe = pathlib.Path(sys._base_executable).absolute()
+        tree = exe.parent.parent
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            symlink_dir = pathlib.Path(tmp_dir).resolve(strict=True)
+            tree_symlink = symlink_dir / tree.name
+            exe_symlink = tree_symlink / exe.relative_to(tree)
+            tree_symlink.symlink_to(tree)
+            cmd = [exe_symlink, "-m", "venv", "--without-pip", self.env_dir]
+            subprocess.check_call(cmd)
+        data = self.get_text_file_contents('pyvenv.cfg')
+        self.assertIn('home = %s' % tree_symlink, data)
+        self.assertIn('executable = %s' % exe.resolve(), data)
+
 
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
