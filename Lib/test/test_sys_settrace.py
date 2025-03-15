@@ -3035,18 +3035,18 @@ class TestExtendedArgs(unittest.TestCase):
 
     def test_trace_lots_of_globals(self):
 
-        count = min(1000, int(support.get_c_recursion_limit() * 0.8))
+        count = 1000
 
         code = """if 1:
             def f():
                 return (
                     {}
                 )
-        """.format("\n+\n".join(f"var{i}\n" for i in range(count)))
+        """.format("\n,\n".join(f"var{i}\n" for i in range(count)))
         ns = {f"var{i}": i for i in range(count)}
         exec(code, ns)
         counts = self.count_traces(ns["f"])
-        self.assertEqual(counts, {'call': 1, 'line': count * 2, 'return': 1})
+        self.assertEqual(counts, {'call': 1, 'line': count * 2 + 1, 'return': 1})
 
 
 class TestEdgeCases(unittest.TestCase):

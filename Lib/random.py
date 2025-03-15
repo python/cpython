@@ -421,11 +421,11 @@ class Random(_random.Random):
             cum_counts = list(_accumulate(counts))
             if len(cum_counts) != n:
                 raise ValueError('The number of counts does not match the population')
-            total = cum_counts.pop()
+            total = cum_counts.pop() if cum_counts else 0
             if not isinstance(total, int):
                 raise TypeError('Counts must be integers')
-            if total <= 0:
-                raise ValueError('Total of counts must be greater than zero')
+            if total < 0:
+                raise ValueError('Counts must be non-negative')
             selections = self.sample(range(total), k=k)
             bisect = _bisect
             return [population[bisect(cum_counts, s)] for s in selections]
@@ -792,12 +792,18 @@ class Random(_random.Random):
 
             sum(random() < p for i in range(n))
 
-        Returns an integer in the range:   0 <= X <= n
+        Returns an integer in the range:
+
+            0 <= X <= n
+
+        The integer is chosen with the probability:
+
+            P(X == k) = math.comb(n, k) * p ** k * (1 - p) ** (n - k)
 
         The mean (expected value) and variance of the random variable are:
 
             E[X] = n * p
-            Var[x] = n * p * (1 - p)
+            Var[X] = n * p * (1 - p)
 
         """
         # Error check inputs and handle edge cases

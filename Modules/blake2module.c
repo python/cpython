@@ -366,6 +366,8 @@ typedef struct {
     PyMutex mutex;
 } Blake2Object;
 
+#define _Blake2Object_CAST(op)  ((Blake2Object *)(op))
+
 #include "clinic/blake2module.c.h"
 
 /*[clinic input]
@@ -737,8 +739,8 @@ Update this hash object's state with the provided bytes-like object.
 [clinic start generated code]*/
 
 static PyObject *
-_blake2_blake2b_update(Blake2Object *self, PyObject *data)
-/*[clinic end generated code: output=e6d1ac88471df308 input=ffc4aa6a6a225d31]*/
+_blake2_blake2b_update_impl(Blake2Object *self, PyObject *data)
+/*[clinic end generated code: output=99330230068e8c99 input=ffc4aa6a6a225d31]*/
 {
     Py_buffer buf;
 
@@ -849,24 +851,27 @@ static PyMethodDef py_blake2b_methods[] = {
 
 
 static PyObject *
-py_blake2b_get_name(Blake2Object *self, void *closure)
+py_blake2b_get_name(PyObject *op, void *Py_UNUSED(closure))
 {
+    Blake2Object *self = _Blake2Object_CAST(op);
     return PyUnicode_FromString(is_blake2b(self->impl) ? "blake2b" : "blake2s");
 }
 
 
 
 static PyObject *
-py_blake2b_get_block_size(Blake2Object *self, void *closure)
+py_blake2b_get_block_size(PyObject *op, void *Py_UNUSED(closure))
 {
+    Blake2Object *self = _Blake2Object_CAST(op);
     return PyLong_FromLong(is_blake2b(self->impl) ? HACL_HASH_BLAKE2B_BLOCK_BYTES : HACL_HASH_BLAKE2S_BLOCK_BYTES);
 }
 
 
 
 static PyObject *
-py_blake2b_get_digest_size(Blake2Object *self, void *closure)
+py_blake2b_get_digest_size(PyObject *op, void *Py_UNUSED(closure))
 {
+    Blake2Object *self = _Blake2Object_CAST(op);
     switch (self->impl) {
 #if HACL_CAN_COMPILE_SIMD256
         case Blake2b_256:
@@ -887,14 +892,12 @@ py_blake2b_get_digest_size(Blake2Object *self, void *closure)
 
 
 static PyGetSetDef py_blake2b_getsetters[] = {
-    {"name", (getter)py_blake2b_get_name,
-        NULL, NULL, NULL},
-    {"block_size", (getter)py_blake2b_get_block_size,
-        NULL, NULL, NULL},
-    {"digest_size", (getter)py_blake2b_get_digest_size,
-        NULL, NULL, NULL},
-    {NULL}
+    {"name", py_blake2b_get_name, NULL, NULL, NULL},
+    {"block_size", py_blake2b_get_block_size, NULL, NULL, NULL},
+    {"digest_size", py_blake2b_get_digest_size, NULL, NULL, NULL},
+    {NULL}  /* Sentinel */
 };
+
 
 static int
 py_blake2_clear(PyObject *op)

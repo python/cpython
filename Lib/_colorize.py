@@ -42,11 +42,11 @@ def can_colorize(*, file=None) -> bool:
             return False
         if os.environ.get("PYTHON_COLORS") == "1":
             return True
-    if "NO_COLOR" in os.environ:
+    if os.environ.get("NO_COLOR"):
         return False
     if not COLORIZE:
         return False
-    if "FORCE_COLOR" in os.environ:
+    if os.environ.get("FORCE_COLOR"):
         return True
     if os.environ.get("TERM") == "dumb":
         return False

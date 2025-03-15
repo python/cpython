@@ -18,7 +18,7 @@ static PyObject *
 dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value);
 
 static PyObject *
-dict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs)
+dict_fromkeys(PyObject *type, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *iterable;
@@ -33,7 +33,7 @@ dict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs)
     }
     value = args[1];
 skip_optional:
-    return_value = dict_fromkeys_impl(type, iterable, value);
+    return_value = dict_fromkeys_impl((PyTypeObject *)type, iterable, value);
 
 exit:
     return return_value;
@@ -66,6 +66,19 @@ PyDoc_STRVAR(dict___contains____doc__,
 #define DICT___CONTAINS___METHODDEF    \
     {"__contains__", (PyCFunction)dict___contains__, METH_O|METH_COEXIST, dict___contains____doc__},
 
+static PyObject *
+dict___contains___impl(PyDictObject *self, PyObject *key);
+
+static PyObject *
+dict___contains__(PyObject *self, PyObject *key)
+{
+    PyObject *return_value = NULL;
+
+    return_value = dict___contains___impl((PyDictObject *)self, key);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(dict_get__doc__,
 "get($self, key, default=None, /)\n"
 "--\n"
@@ -94,9 +107,7 @@ dict_get(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     default_value = args[1];
 skip_optional:
-    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = dict_get_impl((PyDictObject *)self, key, default_value);
-    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -312,4 +323,4 @@ dict_values(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict_values_impl((PyDictObject *)self);
 }
-/*[clinic end generated code: output=4956c5b276ea652f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9007b74432217017 input=a9049054013a1b77]*/

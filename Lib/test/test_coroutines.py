@@ -735,7 +735,7 @@ class CoroutineTest(unittest.TestCase):
 
     def test_func_12(self):
         async def g():
-            i = me.send(None)
+            me.send(None)
             await foo
         me = g()
         with self.assertRaisesRegex(ValueError,
@@ -2136,8 +2136,10 @@ class CoroutineTest(unittest.TestCase):
             coro = None
             support.gc_collect()
 
+            self.assertEqual(cm.unraisable.err_msg,
+                             f"Exception ignored while finalizing "
+                             f"coroutine {coro_repr}")
             self.assertIn("was never awaited", str(cm.unraisable.exc_value))
-            self.assertEqual(repr(cm.unraisable.object), coro_repr)
 
     def test_for_assign_raising_stop_async_iteration(self):
         class BadTarget:
@@ -2281,7 +2283,7 @@ class CoroAsyncIOCompatTest(unittest.TestCase):
                 buffer.append(exc_type.__name__)
 
         async def f():
-            async with CM() as c:
+            async with CM():
                 await asyncio.sleep(0.01)
                 raise MyException
             buffer.append('unreachable')
@@ -2373,7 +2375,7 @@ class OriginTrackingTest(unittest.TestCase):
 
         orig_depth = sys.get_coroutine_origin_tracking_depth()
         try:
-            msg = check(0, f"coroutine '{corofn.__qualname__}' was never awaited")
+            check(0, f"coroutine '{corofn.__qualname__}' was never awaited")
             check(1, "".join([
                 f"coroutine '{corofn.__qualname__}' was never awaited\n",
                 "Coroutine created at (most recent call last)\n",
@@ -2414,7 +2416,9 @@ class OriginTrackingTest(unittest.TestCase):
                 del coro
                 support.gc_collect()
 
-                self.assertEqual(repr(cm.unraisable.object), coro_repr)
+                self.assertEqual(cm.unraisable.err_msg,
+                                 f"Exception ignored while finalizing "
+                                 f"coroutine {coro_repr}")
                 self.assertEqual(cm.unraisable.exc_type, ZeroDivisionError)
 
             del warnings._warn_unawaited_coroutine

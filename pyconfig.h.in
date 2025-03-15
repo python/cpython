@@ -984,6 +984,9 @@
 /* Defined for Solaris 2.6 bug in pthread header. */
 #undef HAVE_PTHREAD_DESTRUCTOR
 
+/* Define to 1 if you have the 'pthread_getattr_np' function. */
+#undef HAVE_PTHREAD_GETATTR_NP
+
 /* Define to 1 if you have the 'pthread_getcpuclockid' function. */
 #undef HAVE_PTHREAD_GETCPUCLOCKID
 
@@ -1717,6 +1720,9 @@
 
 /* The version of SunOS/Solaris as reported by `uname -r' without the dot. */
 #undef Py_SUNOS_VERSION
+
+/* Define if you want to use tail-calling interpreters in CPython. */
+#undef Py_TAIL_CALL_INTERP
 
 /* Define if you want to enable tracing references for debugging purpose */
 #undef Py_TRACE_REFS
