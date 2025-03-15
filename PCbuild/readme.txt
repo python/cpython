@@ -312,14 +312,21 @@ for more on this topic.
 
 Optimization flags
 ------------------
+
 You can set optimization flags either via
- * environment variables, e.g.
-   set WITH_COMPUTED_GOTOS=true
- * or pass them as parameters to `build.bat`, e.g.
-   build.bat "/p:WITH_COMPUTED_GOTOS=true"
- * or put them in `msbuild.rsp` in the `PCbuild` directory, one flag per line
+
+ * environment variables, for example:
+
+     set WITH_COMPUTED_GOTOS=true
+
+ * or pass them as parameters to `build.bat`, for example:
+
+     build.bat "/p:WITH_COMPUTED_GOTOS=true"
+ 
+ * or put them in `msbuild.rsp` in the `PCbuild` directory, one flag per line.
 
 Supported flags are:
+
  * WITH_COMPUTED_GOTOS: build the interpreter using "computed gotos".
    Currently only supported by clang-cl.
 
