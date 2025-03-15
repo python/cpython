@@ -1990,7 +1990,6 @@ create_pointer_type(PyObject *module, PyObject *cls)
 {
     PyObject *result;
     PyTypeObject *typ;
-    PyObject *key;
 
     assert(module);
     ctypes_state *st = get_module_state(module);
@@ -1998,6 +1997,16 @@ create_pointer_type(PyObject *module, PyObject *cls)
         // found or error
         return result;
     }
+
+    StgInfo* info = NULL;
+    if (PyStgInfo_FromAny(st, cls, &info) < 0) {
+        return NULL;
+    }
+
+    if (info && info->pointer_type) {
+        return Py_XNewRef(info->pointer_type);
+    }
+
     // not found
     if (PyUnicode_CheckExact(cls)) {
         PyObject *name = PyUnicode_FromFormat("LP_%U", cls);
@@ -2007,11 +2016,6 @@ create_pointer_type(PyObject *module, PyObject *cls)
                                        st->PyCPointer_Type);
         if (result == NULL)
             return result;
-        key = PyLong_FromVoidPtr(result);
-        if (key == NULL) {
-            Py_DECREF(result);
-            return NULL;
-        }
     } else if (PyType_Check(cls)) {
         typ = (PyTypeObject *)cls;
         PyObject *name = PyUnicode_FromFormat("LP_%s", typ->tp_name);
@@ -2022,17 +2026,15 @@ create_pointer_type(PyObject *module, PyObject *cls)
                                        "_type_", cls);
         if (result == NULL)
             return result;
-        key = Py_NewRef(cls);
     } else {
         PyErr_SetString(PyExc_TypeError, "must be a ctypes type");
         return NULL;
     }
-    if (PyDict_SetItem(st->_ctypes_ptrtype_cache, key, result) < 0) {
-        Py_DECREF(result);
-        Py_DECREF(key);
-        return NULL;
+
+    if (info) {
+        info->pointer_type = Py_XNewRef(result);
     }
-    Py_DECREF(key);
+
     return result;
 }
 

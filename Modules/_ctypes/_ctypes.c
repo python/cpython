@@ -474,6 +474,7 @@ CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
         Py_VISIT(info->restype);
         Py_VISIT(info->checker);
         Py_VISIT(info->module);
+        Py_VISIT(info->pointer_type);
     }
     Py_VISIT(Py_TYPE(self));
     return PyType_Type.tp_traverse(self, visit, arg);
@@ -489,6 +490,7 @@ ctype_clear_stginfo(StgInfo *info)
     Py_CLEAR(info->restype);
     Py_CLEAR(info->checker);
     Py_CLEAR(info->module);
+    Py_CLEAR(info->pointer_type);
 }
 
 static int

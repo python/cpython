@@ -373,6 +373,7 @@ typedef struct {
     Py_ssize_t *shape;
 /*      Py_ssize_t *strides;    */ /* unused in ctypes */
 /*      Py_ssize_t *suboffsets; */ /* unused in ctypes */
+    PyObject *pointer_type;
 } StgInfo;
 
 extern int PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info);
@@ -566,6 +567,7 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
         return NULL;
     }
     info->module = Py_NewRef(module);
+    info->pointer_type = NULL;
 
     info->initialized = 1;
     return info;

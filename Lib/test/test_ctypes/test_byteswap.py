@@ -226,7 +226,6 @@ class Test(unittest.TestCase):
                 self.assertEqual(len(data), sizeof(TestStructure))
                 ptr = POINTER(TestStructure)
                 s = cast(data, ptr)[0]
-                del ctypes._pointer_type_cache[TestStructure]
                 self.assertEqual(s.point.x, 1)
                 self.assertEqual(s.point.y, 2)
 
@@ -359,7 +358,6 @@ class Test(unittest.TestCase):
                 self.assertEqual(len(data), sizeof(TestUnion))
                 ptr = POINTER(TestUnion)
                 s = cast(data, ptr)[0]
-                del ctypes._pointer_type_cache[TestUnion]
                 self.assertEqual(s.point.x, 1)
                 self.assertEqual(s.point.y, 2)
 
