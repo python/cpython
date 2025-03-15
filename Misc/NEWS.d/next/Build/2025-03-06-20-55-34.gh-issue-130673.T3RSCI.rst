@@ -1,0 +1,2 @@
+Fix potential ``KeyError`` when handling object sections during JIT building
+process.
