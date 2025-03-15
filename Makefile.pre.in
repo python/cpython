@@ -669,9 +669,10 @@ LIBHACL_HEADERS= \
                 Modules/_hacl/include/krml/FStar_UInt128_Verified.h \
                 Modules/_hacl/include/krml/FStar_UInt_8_16_32_64.h \
                 Modules/_hacl/include/krml/fstar_uint128_struct_endianness.h \
+                Modules/_hacl/include/krml/internal/compat.h \
                 Modules/_hacl/include/krml/internal/target.h \
+                Modules/_hacl/include/krml/internal/types.h \
                 Modules/_hacl/include/krml/lowstar_endianness.h \
-                Modules/_hacl/include/krml/types.h \
 		Modules/_hacl/Hacl_Streaming_Types.h \
                 Modules/_hacl/python_hacl_namespaces.h
 
@@ -690,6 +691,7 @@ LIBHACL_BLAKE2_HEADERS= \
 		Modules/_hacl/internal/Hacl_Impl_Blake2_Constants.h \
 		Modules/_hacl/internal/Hacl_Hash_Blake2s_Simd128.h \
 		Modules/_hacl/internal/Hacl_Hash_Blake2b_Simd256.h \
+		Modules/_hacl/internal/Hacl_Streaming_Types.h \
 		$(LIBHACL_HEADERS)
 
 #########################################################################
