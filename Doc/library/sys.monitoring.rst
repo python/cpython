@@ -173,6 +173,8 @@ events, use the expression ``PY_RETURN | PY_START``.
 
 Events are divided into three groups:
 
+.. _monitoring-event-local:
+
 Local events
 ''''''''''''
 
