@@ -114,6 +114,26 @@ frame_getvarstring(PyObject *self, PyObject *args)
 }
 
 
+static PyObject *
+frame_setlinenumber(PyObject *self, PyObject *args)
+{
+    PyObject *frame;
+    int lineno;
+    if (!PyArg_ParseTuple(args, "Oi", &frame, &lineno)) {
+        return NULL;
+    }
+    if (!PyFrame_Check(frame)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a frame");
+        return NULL;
+    }
+
+    if (PyFrame_SetLineNumber((PyFrameObject*)frame, lineno) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef test_methods[] = {
     {"frame_getlocals", frame_getlocals, METH_O, NULL},
     {"frame_getglobals", frame_getglobals, METH_O, NULL},
@@ -123,6 +143,7 @@ static PyMethodDef test_methods[] = {
     {"frame_new", frame_new, METH_VARARGS, NULL},
     {"frame_getvar", frame_getvar, METH_VARARGS, NULL},
     {"frame_getvarstring", frame_getvarstring, METH_VARARGS, NULL},
+    {"frame_setlinenumber", frame_setlinenumber, METH_VARARGS, NULL},
     {NULL},
 };
 
@@ -131,4 +152,3 @@ _PyTestCapi_Init_Frame(PyObject *m)
 {
     return PyModule_AddFunctions(m, test_methods);
 }
-

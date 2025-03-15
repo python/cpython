@@ -18,6 +18,7 @@ PyAPI_FUNC(PyObject *) PyFrame_GetGenerator(PyFrameObject *frame);
 PyAPI_FUNC(int) PyFrame_GetLasti(PyFrameObject *frame);
 PyAPI_FUNC(PyObject*) PyFrame_GetVar(PyFrameObject *frame, PyObject *name);
 PyAPI_FUNC(PyObject*) PyFrame_GetVarString(PyFrameObject *frame, const char *name);
+PyAPI_FUNC(int) PyFrame_SetLineNumber(PyFrameObject *frame, int lineno);
 
 /* The following functions are for use by debuggers and other tools
  * implementing custom frame evaluators with PEP 523. */

@@ -43,5 +43,6 @@ int _PyTestLimitedCAPI_Init_Unicode(PyObject *module);
 int _PyTestLimitedCAPI_Init_VectorcallLimited(PyObject *module);
 int _PyTestLimitedCAPI_Init_Version(PyObject *module);
 int _PyTestLimitedCAPI_Init_File(PyObject *module);
+int _PyTestLimitedCAPI_Init_Frame(PyObject *module);
 
 #endif // Py_TESTLIMITEDCAPI_PARTS_H
