@@ -2058,7 +2058,6 @@ create_pointer_inst(PyObject *module, PyObject *arg)
     PyObject *result;
     PyObject *typ;
 
-    ctypes_state *st = get_module_state(module);
     typ = create_pointer_type(module, (PyObject *)Py_TYPE(arg));
     if (typ == NULL)
         return NULL;
