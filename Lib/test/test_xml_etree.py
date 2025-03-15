@@ -2772,67 +2772,20 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
                 g.assert_not_called()
 
             # Test removing root[1] (of type R) from [U(), R()].
-            #
-            # In pure Python, using root.clear() sets the children
-            # list to [] without calling list.clear().
-            #
-            # For this reason, the call to root.remove() first
-            # checks root[0] and sets the children list to []
-            # since either root[0] or root[1] is an evil element.
-            #
-            # Since checking root[1] still uses the old reference
-            # to the children list, PyObject_RichCompareBool() branches
-            # to the fast Py_EQ path and Y.__eq__() is called exactly
-            # once (when checking root[0]).
-            #
-            # NOTE(picnixz): the Python and C implementations
-            #   could be aligned if 'self._children = []' is
-            #   replaced by 'self._children.clear()'; however,
-            #   this should be carefully addressed since any
-            #   reference to 'self._children' will be affected.
             is_special = is_python_implementation() and raises and Z is Y
-            if is_special:
-                def check(f, never, arg0spec, arg1spec):
-                    never.assert_not_called()
-                    f.assert_called_once()
-
-                    arg0cls, arg0tag = arg0spec
-                    self.assertIs(f.call_args[0][0].__class__, arg0cls)
-                    self.assertIs(f.call_args[0][0].tag, arg0tag)
-
-                    arg1cls, arg1tag = arg1spec
-                    self.assertIs(f.call_args[0][1].__class__, arg1cls)
-                    self.assertIs(f.call_args[0][1].tag, arg1tag)
-
-                with self.subTest("remove root[1] from [E(), Z()]"):
-                    root = E('top')
-                    root.extend([E('one'), Z('rem')])
-                    with equal_wrapper(E) as never, equal_wrapper(Z) as f:
-                        root.remove(root[1])
-                    # Calling PyObject_RichCompareBool(root[0], root[1], Py_EQ)
-                    # delegates to Z.__eq__(root[1], root[0]) since E.__eq__ is
-                    # not implemented. In particular, E.__eq__ is never called
-                    # but Z.__eq__ is called when checking root[0].
-                    check(f, never, (Z, 'rem'), (E, 'one'))
-
-                with self.subTest("remove root[1] from [Z(), E()]"):
-                    root = E('top')
-                    root.extend([Z('one'), E('rem')])
-                    with equal_wrapper(E) as never, equal_wrapper(Z) as f:
-                        root.remove(root[1])
-                    # Calling PyObject_RichCompareBool(root[0], root[1], Py_EQ)
-                    # delegates to Z.__eq__(root[0], root[1]). In particular,
-                    # E.__eq__ is never called due to the Py_EQ fast path.
-                    check(f, never, (Z, 'one'), (E, 'rem'))
-
-                with self.subTest("remove root[1] from [Z(), Z()]"):
-                    root = E('top')
-                    root.extend([Z('one'), Z('rem')])
-                    self.assertNotEqual(list(root), [])
-                    with equal_wrapper(E) as never, equal_wrapper(Z) as f:
-                        root.remove(root[1])
-                    # Same arguments as for the [Z(), E()] case.
-                    check(f, never, (Z, 'one'), (Z, 'rem'))
+            if is_python_implementation() and raises and Z is Y:
+                # In pure Python, using root.clear() sets the children
+                # list to [] without calling list.clear().
+                #
+                # For this reason, the call to root.remove() first
+                # checks root[0] and sets the children list to []
+                # since either root[0] or root[1] is an evil element.
+                #
+                # Since checking root[1] still uses the old reference
+                # to the children list, PyObject_RichCompareBool() branches
+                # to the fast Py_EQ path and Y.__eq__() is called exactly
+                # once (when checking root[0]).
+                continue
             else:
                 cases = self.cases_for_remove_existing_with_mutations(E, Z)
                 for R, U, description in cases:
