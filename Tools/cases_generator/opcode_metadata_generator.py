@@ -20,7 +20,8 @@ from generators_common import (
 )
 from cwriter import CWriter
 from dataclasses import dataclass
-from typing import TextIO
+from lexer import ANN_REPLACED, ANN_SPECIALIZING
+from typing import TextIO, TypedDict
 from stack import Stack, get_stack_effect, get_stack_effects
 
 # Constants used instead of size for macro expansions.
@@ -344,7 +345,7 @@ def generate_expansion_table(analysis: Analysis, out: CWriter) -> None:
                 size = part.size
                 if isinstance(part, Uop):
                     # Skip specializations
-                    if "specializing" in part.annotations:
+                    if ANN_SPECIALIZING in part.annotations:
                         continue
                     # Add the primary expansion.
                     fmt = "OPARG_SIMPLE"
@@ -352,7 +353,7 @@ def generate_expansion_table(analysis: Analysis, out: CWriter) -> None:
                         fmt = "OPARG_SAVE_RETURN_OFFSET"
                     elif part.caches:
                         fmt = str(part.caches[0].size)
-                    if "replaced" in part.annotations:
+                    if ANN_REPLACED in part.annotations:
                         fmt = "OPARG_REPLACED"
                     expansions.append((part.name, fmt, offset))
                     if len(part.caches) > 1:
@@ -393,9 +394,9 @@ def is_viable_expansion(inst: Instruction) -> bool:
     for part in inst.parts:
         if isinstance(part, Uop):
             # Skip specializing and replaced uops
-            if "specializing" in part.annotations:
+            if ANN_SPECIALIZING in part.annotations:
                 continue
-            if "replaced" in part.annotations:
+            if ANN_REPLACED in part.annotations:
                 continue
             if part.properties.tier == 1 or not part.is_viable():
                 return False

@@ -5,6 +5,7 @@ Writes the cases to executor_cases.c.h, which is #included in ceval.c.
 
 import argparse
 
+import lexer as lx  # for constants
 from analyzer import (
     Analysis,
     Instruction,
@@ -88,9 +89,9 @@ class Tier2Emitter(Emitter):
         self.out.emit_at("if ", tkn)
         lparen = next(tkn_iter)
         self.emit(lparen)
-        assert lparen.kind == "LPAREN"
+        assert lparen.kind == lx.LPAREN
         first_tkn = tkn_iter.peek()
-        emit_to(self.out, tkn_iter, "RPAREN")
+        emit_to(self.out, tkn_iter, lx.RPAREN)
         next(tkn_iter)  # Semi colon
         self.emit(") {\n")
         self.emit("UOP_STAT_INC(uopcode, miss);\n")
@@ -110,7 +111,7 @@ class Tier2Emitter(Emitter):
         lparen = next(tkn_iter)
         self.emit(lparen)
         first_tkn = tkn_iter.peek()
-        emit_to(self.out, tkn_iter, "RPAREN")
+        emit_to(self.out, tkn_iter, lx.RPAREN)
         next(tkn_iter)  # Semi colon
         self.emit(") {\n")
         self.emit("UOP_STAT_INC(uopcode, miss);\n")
