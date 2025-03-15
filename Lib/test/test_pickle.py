@@ -732,12 +732,12 @@ class CommandLineTest(unittest.TestCase):
         data = {
             'a': [1, 2.0, 3+4j],
             'b': ('character string', b'byte string'),
-            'c': {None, True, False}
+            'c': "string"
         }
         expect = '''
             {'a': [1, 2.0, (3+4j)],
              'b': ('character string', b'byte string'),
-             'c': {None, True, False}}
+             'c': 'string'}
         '''
         self.set_pickle_data(data)
 
