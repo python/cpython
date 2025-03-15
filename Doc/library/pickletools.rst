@@ -75,6 +75,10 @@ Command line options
    When more than one pickle file are specified, print given preamble
    before each disassembly.
 
+.. option:: pickle_file
+
+   A pickle file to read, or ``-`` to indicate reading from standard input.
+
 
 
 Programmatic Interface
