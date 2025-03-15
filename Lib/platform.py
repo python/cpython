@@ -190,14 +190,14 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
             return lib, version
 
     libc_search = re.compile(
-        b'(__libc_init)'
-        b'|'
-        b'(GLIBC_([0-9.]+))'
-        b'|'
+        br'(__libc_init)'
+        br'|'
+        br'(GLIBC_([0-9.]+))'
+        br'|'
         br'(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)'
-        b'|'
-        b'(musl-([0-9.]+))'
-        b'',
+        br'|'
+        br'(musl-([0-9.]+))'
+        br'',
         re.ASCII)
 
     V = _comparable_version
@@ -205,11 +205,12 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
     # here to work around problems with Cygwin not being
     # able to open symlinks for reading
     executable = os.path.realpath(executable)
+    ver = None
     with open(executable, 'rb') as f:
         binary = f.read(chunksize)
         pos = 0
         while pos < len(binary):
-            if b'libc' in binary or b'GLIBC' in binary:
+            if b'libc' in binary or b'GLIBC' or 'musl' in binary:
                 m = libc_search.search(binary, pos)
             else:
                 m = None
@@ -229,21 +230,22 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
             elif glibc:
                 if lib != 'glibc':
                     lib = 'glibc'
-                    version = glibcversion
-                elif V(glibcversion) > V(version):
-                    version = glibcversion
+                    ver = glibcversion
+                elif V(glibcversion) > V(ver):
+                    ver = glibcversion
             elif so:
                 if lib != 'glibc':
                     lib = 'libc'
-                    if soversion and (not version or V(soversion) > V(version)):
-                        version = soversion
-                    if threads and version[-len(threads):] != threads:
-                        version = version + threads
+                    if soversion and (not ver or V(soversion) > V(ver)):
+                        ver = soversion
+                    if threads and ver[-len(threads):] != threads:
+                        ver = ver + threads
             elif musl:
                 lib = 'musl'
-                version = muslversion
+                if not ver or V(muslversion) > V(ver):
+                    ver = muslversion
             pos = m.end()
-    return lib, version
+    return lib, version if ver is None else ver
 
 def _norm_version(version, build=''):
 
