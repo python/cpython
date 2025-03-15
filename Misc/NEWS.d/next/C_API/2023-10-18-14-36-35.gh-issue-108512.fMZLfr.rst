@@ -1,0 +1,1 @@
+Add functions :c:func:`PySys_GetAttr` and :c:func:`PySys_GetAttrString`.
