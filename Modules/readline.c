@@ -211,7 +211,7 @@ Execute the init line provided in the string argument.
 
 static PyObject *
 readline_parse_and_bind_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=828d9b6630d434f5 input=e89aac7c7a98067b]*/
+/*[clinic end generated code: output=828d9b6630d434f5 input=cefdc0f9f62f9fcc]*/
 {
     char *copy;
     PyObject *encoded = encode(string);
@@ -248,7 +248,7 @@ The default filename is the last filename used.
 
 static PyObject *
 readline_read_init_file_impl(PyObject *module, PyObject *filename_obj)
-/*[clinic end generated code: output=8e059b676142831e input=496974ffe38b85db]*/
+/*[clinic end generated code: output=8e059b676142831e input=62b767adfab6cc15]*/
 {
     PyObject *filename_bytes;
     if (filename_obj != Py_None) {
@@ -280,7 +280,7 @@ The default filename is ~/.history.
 
 static PyObject *
 readline_read_history_file_impl(PyObject *module, PyObject *filename_obj)
-/*[clinic end generated code: output=66a951836fb54fbb input=2eaa52b2bbf6fb83]*/
+/*[clinic end generated code: output=66a951836fb54fbb input=5d86fd7813172a67]*/
 {
     PyObject *filename_bytes;
     if (filename_obj != Py_None) {
@@ -313,7 +313,7 @@ The default filename is ~/.history.
 
 static PyObject *
 readline_write_history_file_impl(PyObject *module, PyObject *filename_obj)
-/*[clinic end generated code: output=fbcad13d8ef59ae6 input=28a8e062fe363703]*/
+/*[clinic end generated code: output=fbcad13d8ef59ae6 input=34aaada95120cfaa]*/
 {
     PyObject *filename_bytes;
     const char *filename;
@@ -356,7 +356,7 @@ The default filename is ~/.history.
 static PyObject *
 readline_append_history_file_impl(PyObject *module, int nelements,
                                   PyObject *filename_obj)
-/*[clinic end generated code: output=5df06fc9da56e4e4 input=784b774db3a4b7c5]*/
+/*[clinic end generated code: output=5df06fc9da56e4e4 input=78a6061a8d3a0275]*/
 {
     if (nelements < 0)
     {
@@ -594,7 +594,7 @@ Set the word delimiters for completion.
 
 static PyObject *
 readline_set_completer_delims_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=017e48e9704a2f64 input=4fd8ec0db0dbdae5]*/
+/*[clinic end generated code: output=017e48e9704a2f64 input=6c87bb1cbed7fcf1]*/
 {
     char *break_chars;
     PyObject *encoded = encode(string);
@@ -667,7 +667,7 @@ Remove history item given by its zero-based position.
 
 static PyObject *
 readline_remove_history_item_impl(PyObject *module, int entry_number)
-/*[clinic end generated code: output=ab114f029208c7e8 input=1abf7add5c28f23c]*/
+/*[clinic end generated code: output=ab114f029208c7e8 input=847d7cc7e7c25852]*/
 {
     HIST_ENTRY *entry;
 
@@ -704,7 +704,7 @@ pos is zero-based.
 static PyObject *
 readline_replace_history_item_impl(PyObject *module, int entry_number,
                                    PyObject *line)
-/*[clinic end generated code: output=f8cec2770ca125eb input=743ab534c4ac22f4]*/
+/*[clinic end generated code: output=f8cec2770ca125eb input=b44c8dcdc2dd87fe]*/
 {
     PyObject *encoded;
     HIST_ENTRY *old_entry;
@@ -747,7 +747,7 @@ Add an item to the history buffer.
 
 static PyObject *
 readline_add_history_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=89047062042ac344 input=9679efa5b99bc972]*/
+/*[clinic end generated code: output=89047062042ac344 input=faa7053b8612513b]*/
 {
     PyObject *encoded = encode(string);
     if (encoded == NULL) {
@@ -792,7 +792,7 @@ Get the word delimiters for completion.
 
 static PyObject *
 readline_get_completer_delims_impl(PyObject *module)
-/*[clinic end generated code: output=6b060280fa68ef43 input=e30288e365692aa8]*/
+/*[clinic end generated code: output=6b060280fa68ef43 input=80583cdf8176bcdd]*/
 {
     return decode(rl_completer_word_break_characters);
 }
@@ -870,7 +870,7 @@ Return the current contents of history item at one-based index.
 
 static PyObject *
 readline_get_history_item_impl(PyObject *module, int idx)
-/*[clinic end generated code: output=83d3e53ea5f34b3d input=55ad7d4510969b16]*/
+/*[clinic end generated code: output=83d3e53ea5f34b3d input=2835b50c7bde705f]*/
 {
     HIST_ENTRY *hist_ent;
 
@@ -911,7 +911,7 @@ Return the current (not the maximum) length of history.
 
 static PyObject *
 readline_get_current_history_length_impl(PyObject *module)
-/*[clinic end generated code: output=436b294f12ba1e3f input=b093b842cdbf4313]*/
+/*[clinic end generated code: output=436b294f12ba1e3f input=22e9fd0abbc2fd8d]*/
 {
     return PyLong_FromLong((long)_py_get_history_length_lock_held());
 }
@@ -927,7 +927,7 @@ Return the current contents of the line buffer.
 
 static PyObject *
 readline_get_line_buffer_impl(PyObject *module)
-/*[clinic end generated code: output=d22f9025ecad80e4 input=b7cfd10cfb4713ed]*/
+/*[clinic end generated code: output=d22f9025ecad80e4 input=8e02e0fe081feece]*/
 {
     return decode(rl_line_buffer);
 }
@@ -945,7 +945,7 @@ Clear the current readline history.
 
 static PyObject *
 readline_clear_history_impl(PyObject *module)
-/*[clinic end generated code: output=1f2dbb0dfa5d5ebb input=3b3732c56bbcf587]*/
+/*[clinic end generated code: output=1f2dbb0dfa5d5ebb input=b2c6b11551593053]*/
 {
     clear_history();
     Py_RETURN_NONE;
@@ -967,7 +967,7 @@ Insert text into the line buffer at the cursor position.
 
 static PyObject *
 readline_insert_text_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=4bf4e176f68750e0 input=d279c09ba6502577]*/
+/*[clinic end generated code: output=4bf4e176f68750e0 input=2f401f4316df33c2]*/
 {
     PyObject *encoded = encode(string);
     if (encoded == NULL) {
@@ -989,7 +989,7 @@ Change what's displayed on the screen to reflect contents of the line buffer.
 
 static PyObject *
 readline_redisplay_impl(PyObject *module)
-/*[clinic end generated code: output=a8b9725827c3c34b input=8bf90322518dc0e2]*/
+/*[clinic end generated code: output=a8b9725827c3c34b input=5895fd014615ff58]*/
 {
     rl_redisplay();
     Py_RETURN_NONE;

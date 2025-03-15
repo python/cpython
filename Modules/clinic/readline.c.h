@@ -129,7 +129,9 @@ readline_write_history_file(PyObject *module, PyObject *const *args, Py_ssize_t 
     }
     filename_obj = args[0];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(module);
     return_value = readline_write_history_file_impl(module, filename_obj);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -171,7 +173,9 @@ readline_append_history_file(PyObject *module, PyObject *const *args, Py_ssize_t
     }
     filename_obj = args[1];
 skip_optional:
+    Py_BEGIN_CRITICAL_SECTION(module);
     return_value = readline_append_history_file_impl(module, nelements, filename_obj);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -787,4 +791,4 @@ readline_redisplay(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef READLINE_CLEAR_HISTORY_METHODDEF
     #define READLINE_CLEAR_HISTORY_METHODDEF
 #endif /* !defined(READLINE_CLEAR_HISTORY_METHODDEF) */
-/*[clinic end generated code: output=00d8f14f21c1d274 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=69d8c8e4a86e5e68 input=a9049054013a1b77]*/
