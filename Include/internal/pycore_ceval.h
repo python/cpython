@@ -31,6 +31,8 @@ PyAPI_FUNC(void) _PyEval_SetCoroutineOriginTrackingDepth(
     PyThreadState *tstate,
     int new_depth);
 
+extern int _PyEval_NotifyThreadStateChange(PyThreadState *tstate, int event);
+
 void _PyEval_Fini(void);
 
 

@@ -924,19 +924,24 @@ sys_intern_impl(PyObject *module, PyObject *s)
  * Cached interned string objects used for calling the profile and
  * trace functions.  Initialized by trace_init().
  */
-static PyObject *whatstrings[8] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+static PyObject *whatstrings[16] = {
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+};
 
 static int
 trace_init(void)
 {
-    static const char * const whatnames[8] = {
+    static const char * const whatnames[16] = {
         "call", "exception", "line", "return",
         "c_call", "c_exception", "c_return",
-        "opcode"
+        "opcode", "lock_acquire", "lock_release",
+        "thread_preempt", "thread_resume", "thread_acquire",
+        "thread_release", "thread_save", "thread_restore"
     };
     PyObject *name;
     int i;
-    for (i = 0; i < 8; ++i) {
+    for (i = 0; i < 16; ++i) {
         if (whatstrings[i] == NULL) {
             name = PyUnicode_InternFromString(whatnames[i]);
             if (name == NULL)
@@ -952,21 +957,23 @@ static PyObject *
 call_trampoline(PyThreadState *tstate, PyObject* callback,
                 PyFrameObject *frame, int what, PyObject *arg)
 {
-    if (PyFrame_FastToLocalsWithError(frame) < 0) {
+    if (frame != NULL && PyFrame_FastToLocalsWithError(frame) < 0) {
         return NULL;
     }
 
     PyObject *stack[3];
-    stack[0] = (PyObject *)frame;
+    stack[0] = (frame != NULL) ? (PyObject *)frame : Py_None;
     stack[1] = whatstrings[what];
     stack[2] = (arg != NULL) ? arg : Py_None;
 
     /* call the Python-level function */
     PyObject *result = _PyObject_FastCallTstate(tstate, callback, stack, 3);
 
-    PyFrame_LocalsToFast(frame, 1);
-    if (result == NULL) {
-        PyTraceBack_Here(frame);
+    if (frame != NULL) {
+        PyFrame_LocalsToFast(frame, 1);
+        if (result == NULL) {
+            PyTraceBack_Here(frame);
+        }
     }
 
     return result;
@@ -1098,6 +1105,34 @@ PyDoc_STRVAR(setprofile_doc,
 \n\
 Set the profiling function.  It will be called on each function call\n\
 and return.  See the profiler chapter in the library manual."
+);
+
+static PyObject *
+sys__setprofileallthreads(PyObject *module, PyObject *arg)
+{
+    PyObject* argument = NULL;
+    Py_tracefunc func = NULL;
+
+    if (trace_init() == -1) {
+        return NULL;
+    }
+
+    if (arg != Py_None) {
+        func = profile_trampoline;
+        argument = arg;
+    }
+
+    PyEval_SetProfileAllThreads(func, argument);
+
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(_setprofileallthreads_doc,
+"_setprofileallthreads(function)\n\
+\n\
+Set the profiling function for current and all other running threads.\n\
+It will be called on each function calland return.  See the profiler\n\
+chapter in the library manual."
 );
 
 /*[clinic input]
@@ -2055,6 +2090,7 @@ static PyMethodDef sys_methods[] = {
     SYS_GETSWITCHINTERVAL_METHODDEF
     SYS_SETDLOPENFLAGS_METHODDEF
     {"setprofile",      sys_setprofile, METH_O, setprofile_doc},
+    {"_setprofileallthreads", sys__setprofileallthreads, METH_O, _setprofileallthreads_doc},
     SYS_GETPROFILE_METHODDEF
     SYS_SETRECURSIONLIMIT_METHODDEF
     {"settrace",        sys_settrace, METH_O, settrace_doc},

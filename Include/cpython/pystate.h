@@ -25,7 +25,14 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_C_EXCEPTION 5
 #define PyTrace_C_RETURN 6
 #define PyTrace_OPCODE 7
-
+#define PyTrace_LOCK_ACQUIRE 8
+#define PyTrace_LOCK_RELEASE 9
+#define PyTrace_THREAD_PREEMPT 10
+#define PyTrace_THREAD_RESUME 11
+#define PyTrace_THREAD_ACQUIRE 12
+#define PyTrace_THREAD_RELEASE 13
+#define PyTrace_THREAD_SAVE 14
+#define PyTrace_THREAD_RESTORE 15
 
 typedef struct _cframe {
     /* This struct will be threaded through the C stack

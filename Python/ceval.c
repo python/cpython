@@ -81,6 +81,7 @@ static int maybe_call_line_trace(Py_tracefunc, PyObject *,
 static void maybe_dtrace_line(PyFrameObject *, PyTraceInfo *, int);
 static void dtrace_function_entry(PyFrameObject *);
 static void dtrace_function_return(PyFrameObject *);
+static int notify_thread_state_change(PyThreadState *tstate, int event, long arg);
 
 static PyObject * import_name(PyThreadState *, PyFrameObject *,
                               PyObject *, PyObject *, PyObject *);
@@ -415,11 +416,19 @@ _PyEval_Fini(void)
 void
 PyEval_AcquireLock(void)
 {
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
     _PyRuntimeState *runtime = &_PyRuntime;
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
     _Py_EnsureTstateNotNULL(tstate);
 
     take_gil(tstate);
+
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    long timediff = ((long)end.tv_sec - (long)start.tv_sec) * (long)1000000
+         + ((long)end.tv_nsec - (long)start.tv_nsec) / 1000;
+    notify_thread_state_change(tstate, PyTrace_LOCK_ACQUIRE, timediff);
 }
 
 void
@@ -427,6 +436,11 @@ PyEval_ReleaseLock(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+
+    if (tstate != NULL) {
+        notify_thread_state_change(tstate, PyTrace_LOCK_RELEASE, -1);
+    }
+
     /* This function must succeed when the current thread state is NULL.
        We therefore avoid PyThreadState_Get() which dumps a fatal error
        in debug mode. */
@@ -438,6 +452,8 @@ PyEval_ReleaseLock(void)
 void
 _PyEval_ReleaseLock(PyThreadState *tstate)
 {
+    notify_thread_state_change(tstate, PyTrace_LOCK_RELEASE, -1);
+
     struct _ceval_runtime_state *ceval = &tstate->interp->runtime->ceval;
     struct _ceval_state *ceval2 = &tstate->interp->ceval;
     drop_gil(ceval, ceval2, tstate);
@@ -447,6 +463,9 @@ void
 PyEval_AcquireThread(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
+
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
 
     take_gil(tstate);
 
@@ -458,12 +477,19 @@ PyEval_AcquireThread(PyThreadState *tstate)
         Py_FatalError("non-NULL old thread state");
     }
 #endif
+
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    long timediff = ((long)end.tv_sec - (long)start.tv_sec) * (long)1000000
+         + ((long)end.tv_nsec - (long)start.tv_nsec) / 1000;
+    notify_thread_state_change(tstate, PyTrace_THREAD_ACQUIRE, timediff);
 }
 
 void
 PyEval_ReleaseThread(PyThreadState *tstate)
 {
     assert(is_tstate_valid(tstate));
+
+    notify_thread_state_change(tstate, PyTrace_THREAD_RELEASE, -1);
 
     _PyRuntimeState *runtime = tstate->interp->runtime;
     PyThreadState *new_tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
@@ -519,12 +545,16 @@ _PyEval_SignalAsyncExc(PyInterpreterState *interp)
 PyThreadState *
 PyEval_SaveThread(void)
 {
+    PyThreadState *tstate = PyGILState_GetThisThreadState();
+    if (tstate != NULL) {
+        notify_thread_state_change(tstate, PyTrace_THREAD_SAVE, -1);
+    }
     _PyRuntimeState *runtime = &_PyRuntime;
 #ifdef EXPERIMENTAL_ISOLATED_SUBINTERPRETERS
     PyThreadState *old_tstate = _PyThreadState_GET();
-    PyThreadState *tstate = _PyThreadState_Swap(&runtime->gilstate, old_tstate);
+    tstate = _PyThreadState_Swap(&runtime->gilstate, old_tstate);
 #else
-    PyThreadState *tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
+    tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
 #endif
     _Py_EnsureTstateNotNULL(tstate);
 
@@ -544,10 +574,18 @@ PyEval_RestoreThread(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
 
+    struct timespec start, end;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
     take_gil(tstate);
 
     struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
     _PyThreadState_Swap(gilstate, tstate);
+
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    long timediff = ((long)end.tv_sec - (long)start.tv_sec) * (long)1000000
+         + ((long)end.tv_nsec - (long)start.tv_nsec) / 1000;
+    notify_thread_state_change(tstate, PyTrace_THREAD_RESTORE, timediff);
 }
 
 
@@ -1177,7 +1215,9 @@ eval_frame_handle_pending(PyThreadState *tstate)
     }
 
     /* GIL drop request */
-    if (_Py_atomic_load_relaxed(&ceval2->gil_drop_request)) {
+    if (_Py_atomic_load_relaxed(&ceval2->gil_drop_request) && !tstate->tracing) {
+
+        notify_thread_state_change(tstate, PyTrace_THREAD_PREEMPT, -1);
         /* Give another thread a chance */
         if (_PyThreadState_Swap(&runtime->gilstate, NULL) != tstate) {
             Py_FatalError("tstate mix-up");
@@ -1185,6 +1225,9 @@ eval_frame_handle_pending(PyThreadState *tstate)
         drop_gil(ceval, ceval2, tstate);
 
         /* Other threads may run now */
+
+        struct timespec start, end;
+        clock_gettime(CLOCK_MONOTONIC, &start);
 
         take_gil(tstate);
 
@@ -1195,6 +1238,11 @@ eval_frame_handle_pending(PyThreadState *tstate)
             Py_FatalError("orphan tstate");
         }
 #endif
+
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        long timediff = ((long)end.tv_sec - (long)start.tv_sec) * (long)1000000
+            + ((long)end.tv_nsec - (long)start.tv_nsec) / 1000;
+        notify_thread_state_change(tstate, PyTrace_THREAD_RESUME, timediff);
     }
 
     /* Check for asynchronous exception. */
@@ -5572,6 +5620,27 @@ PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
     }
 }
 
+void
+PyEval_SetProfileAllThreads(Py_tracefunc func, PyObject *arg)
+{
+    PyThreadState *this_tstate = _PyThreadState_GET();
+    PyInterpreterState* interp = this_tstate->interp;
+
+    /* unused var _PyRuntimeState *runtime = &_PyRuntime; */
+    /* missing call to HEAD_LOCK(runtime); */
+    PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
+    /* missing call to HEAD_UNLOCK(runtime); */
+
+    while (ts) {
+        if (_PyEval_SetProfile(ts, func, arg) < 0) {
+            _PyErr_WriteUnraisableMsg("Exception ignored in PyEval_SetProfileAllThreads", NULL);
+        }
+        /* missing call to HEAD_LOCK(runtime); */
+        ts = PyThreadState_Next(ts);
+        /* missing call to HEAD_UNLOCK(runtime); */
+    }
+}
+
 int
 _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
 {
@@ -6512,6 +6581,31 @@ maybe_dtrace_line(PyFrameObject *frame,
     }
 }
 
+static int
+notify_thread_state_change(PyThreadState *tstate, int event, long arg)
+{
+    if (tstate->c_profilefunc == NULL)
+        return 0;
+    PyObject *arg_obj = Py_None;
+    if (arg >= 0) {
+        arg_obj = PyLong_FromLong(arg);
+    }
+    if (arg_obj == NULL) {
+        return -1;
+    }
+    PyTraceInfo trace_info;
+    /* Mark trace_info as uninitialized */
+    trace_info.code = NULL;
+    int res = call_trace_protected(tstate->c_profilefunc,
+                                    tstate->c_profileobj,
+                                    tstate, tstate->frame,
+                                    &trace_info,
+                                    event, arg_obj);
+    if (arg_obj != Py_None) {
+        Py_DECREF(arg_obj);
+    }
+    return res;
+}
 
 /* Implement Py_EnterRecursiveCall() and Py_LeaveRecursiveCall() as functions
    for the limited API. */
