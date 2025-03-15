@@ -181,7 +181,7 @@ class Pool(object):
         return ctx.Process(*args, **kwds)
 
     def __init__(self, processes=None, initializer=None, initargs=(),
-                 maxtasksperchild=None, context=None):
+                 maxtasksperchild=None, context=None, name='Process-Pool'):
         # Attributes initialized early to make sure that they exist in
         # __del__() if __init__() raises an exception
         self._pool = []
@@ -198,6 +198,7 @@ class Pool(object):
         self._maxtasksperchild = maxtasksperchild
         self._initializer = initializer
         self._initargs = initargs
+        self._name = name
 
         if processes is None:
             processes = os.process_cpu_count() or 1
@@ -224,6 +225,7 @@ class Pool(object):
         sentinels = self._get_sentinels()
 
         self._worker_handler = threading.Thread(
+            name='{}-Worker-Handler'.format(self._name),
             target=Pool._handle_workers,
             args=(self._cache, self._taskqueue, self._ctx, self.Process,
                   self._processes, self._pool, self._inqueue, self._outqueue,
@@ -236,6 +238,7 @@ class Pool(object):
 
 
         self._task_handler = threading.Thread(
+            name='{}-Task-Handler'.format(self._name),
             target=Pool._handle_tasks,
             args=(self._taskqueue, self._quick_put, self._outqueue,
                   self._pool, self._cache)
@@ -245,6 +248,7 @@ class Pool(object):
         self._task_handler.start()
 
         self._result_handler = threading.Thread(
+            name='{}-Result-Handler'.format(self._name),
             target=Pool._handle_results,
             args=(self._outqueue, self._quick_get, self._cache)
             )
@@ -309,17 +313,20 @@ class Pool(object):
                                             self._outqueue, self._initializer,
                                             self._initargs,
                                             self._maxtasksperchild,
-                                            self._wrap_exception)
+                                            self._wrap_exception,
+                                            self._name)
 
     @staticmethod
     def _repopulate_pool_static(ctx, Process, processes, pool, inqueue,
                                 outqueue, initializer, initargs,
-                                maxtasksperchild, wrap_exception):
+                                maxtasksperchild, wrap_exception,
+                                name):
         """Bring the number of pool processes up to the specified number,
         for use after reaping workers which have exited.
         """
         for i in range(processes - len(pool)):
             w = Process(ctx, target=worker,
+                        name='{}-Worker-{}'.format(name, i),
                         args=(inqueue, outqueue,
                               initializer,
                               initargs, maxtasksperchild,
@@ -926,8 +933,8 @@ class ThreadPool(Pool):
         from .dummy import Process
         return Process(*args, **kwds)
 
-    def __init__(self, processes=None, initializer=None, initargs=()):
-        Pool.__init__(self, processes, initializer, initargs)
+    def __init__(self, processes=None, initializer=None, initargs=(), name='Thread-Pool'):
+        Pool.__init__(self, processes, initializer, initargs, name='Thread-Pool')
 
     def _setup_queues(self):
         self._inqueue = queue.SimpleQueue()
