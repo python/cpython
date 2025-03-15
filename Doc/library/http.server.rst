@@ -538,14 +538,14 @@ The following options are accepted:
 
 .. warning::
 
-   :class:`CGIHTTPRequestHandler` and the ``--cgi`` command line option
+   :class:`CGIHTTPRequestHandler` and the ``--cgi`` command-line option
    are not intended for use by untrusted clients and may be vulnerable
    to exploitation. Always use within a secure environment.
 
 
 .. _http.server-security:
 
-Security Considerations
+Security considerations
 -----------------------
 
 .. index:: pair: http.server; security
