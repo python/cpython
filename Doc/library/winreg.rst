@@ -315,7 +315,11 @@ This module offers the following functions:
 
    *sub_key* is a string that identifies the sub_key to open.
 
-   *reserved* is a reserved integer, and must be zero.  The default is zero.
+   *reserved* is a reserved integer and should be zero.  If it is not zero,
+   it will be treated as the options parameter in :func:`OpenKeyEx`.
+   You should use the :func:`OpenKeyEx` directly instead in this case,
+   this parameter is only included for compatibility reasons.
+   The default value is zero.
 
    *access* is an integer that specifies an access mask that describes the desired
    security access for the key.  Default is :const:`KEY_READ`.  See :ref:`Access
@@ -334,6 +338,10 @@ This module offers the following functions:
 
    .. versionchanged:: 3.3
       See :ref:`above <exception-changed>`.
+
+   .. deprecated-removed:: 3.14 3.16
+      *reserved* is deprecated and will be removed in the future.
+      Please use :func:`OpenKeyEx` instead.
 
 .. function:: OpenKeyEx(key, sub_key, options=0, access=KEY_READ, reserved=0)
 

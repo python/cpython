@@ -18,6 +18,7 @@
 
 #include <windows.h>
 
+#define MS_WINDOWS_GAMES  // TODO(aisk): DELETE THIS
 #if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)
 
 typedef struct {
@@ -1411,7 +1412,9 @@ winreg.OpenKey -> HKEY
     sub_key: Py_UNICODE(accept={str, NoneType})
         A string that identifies the sub_key to open.
     reserved: int = 0
-        A reserved integer that must be zero. Default is zero.
+        A reserved integer that be should zero.  If it is not zero,
+        it will be used as the options parameter in OpenKeyEx.
+        You should use OpenKeyEx directly in this case.
     access: REGSAM(c_default='KEY_READ') = winreg.KEY_READ
         An integer that specifies an access mask that describes the desired
         security access for the key.  Default is KEY_READ.
@@ -1425,9 +1428,9 @@ If the function fails, an OSError exception is raised.
 static HKEY
 winreg_OpenKey_impl(PyObject *module, HKEY key, const wchar_t *sub_key,
                     int reserved, REGSAM access)
-/*[clinic end generated code: output=5efbad23b3ffe2e7 input=a2fb7586bbed3b01]*/
+/*[clinic end generated code: output=5efbad23b3ffe2e7 input=8bafb91546317c8e]*/
 {
-    return winreg_OpenKeyEx_impl(module, key, sub_key, reserved, access, 0);
+    return winreg_OpenKeyEx_impl(module, key, sub_key, 0, access, reserved);
 }
 
 /*[clinic input]

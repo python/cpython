@@ -242,6 +242,11 @@ class LocalWinregTests(BaseWinregTests):
                                                   reserved=REG_OPTION_VOLATILE)
             self._read_test_data(HKEY_CURRENT_USER, OpenKey=okeo)
 
+        with self.assertWarns(DeprecationWarning):
+            ok = lambda key, sub_key: OpenKey(key, sub_key,
+                                                reserved=REG_OPTION_VOLATILE)
+            self._read_test_data(HKEY_CURRENT_USER, OpenKey=ok)
+
         self._delete_test_data(HKEY_CURRENT_USER)
 
     def test_create_only(self):
