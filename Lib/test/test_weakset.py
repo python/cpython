@@ -1,6 +1,7 @@
 import unittest
 from weakref import WeakSet
 import copy
+import pickle
 import string
 from collections import UserString as ustr
 from collections.abc import Set, MutableSet
@@ -463,12 +464,16 @@ class TestWeakSet(unittest.TestCase):
             dup = copy.copy(s)
             self.assertIsInstance(dup, cls)
             self.assertEqual(dup, s)
+            self.assertEqual(sorted(dup), sorted(s))
             self.assertIsNot(dup, s)
             self.assertIs(dup.x, s.x)
             self.assertIs(dup.z, s.z)
             self.assertFalse(hasattr(dup, 'y'))
+            dup.remove(self.items[0])
+            self.assertEqual(sorted(dup), sorted(self.items[1:]))
+            self.assertEqual(sorted(s), sorted(self.items))
 
-            dup = copy.deepcopy(s)
+            dup, dupitems = copy.deepcopy([s, self.items])
             self.assertIsInstance(dup, cls)
             self.assertEqual(dup, s)
             self.assertIsNot(dup, s)
@@ -477,6 +482,45 @@ class TestWeakSet(unittest.TestCase):
             self.assertEqual(dup.z, s.z)
             self.assertIsNot(dup.z, s.z)
             self.assertFalse(hasattr(dup, 'y'))
+            dup.remove(self.items[0])
+            self.assertEqual(sorted(dup), sorted(self.items[1:]))
+            self.assertEqual(sorted(s), sorted(self.items))
+            del dupitems
+            support.gc_collect()  # For PyPy or other GCs.
+            self.assertEqual(list(dup), [])
+            self.assertEqual(sorted(s), sorted(self.items))
+
+    def test_copying_2(self):
+        for copyfunc in copy.copy, :#copy.deepcopy:
+            s = WeakSet()
+            dup = copyfunc(s)
+            x = ustr('x')
+            dup.add(x)
+            self.assertEqual(len(dup), 1)
+            self.assertEqual(len(s), 0)
+            del x
+            support.gc_collect()  # For PyPy or other GCs.
+            self.assertEqual(len(dup), 0)
+
+    def test_pickle(self):
+        for cls in WeakSet, WeakSetWithSlots:
+            s = cls(self.items)
+            s.x = ['x']
+            s.z = ['z']
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(proto=proto, csl=cls):
+                    pickled = pickle.dumps([s, self.items], protocol=proto)
+                    dup, dupitems = pickle.loads(pickled)
+                    self.assertIsInstance(dup, cls)
+                    self.assertEqual(dup, s)
+                    self.assertEqual(dup.x, s.x)
+                    self.assertEqual(dup.z, s.z)
+                    del dupitems[0]
+                    support.gc_collect()  # For PyPy or other GCs.
+                    self.assertEqual(sorted(dup), sorted(self.items[1:]))
+                    del dupitems
+                    support.gc_collect()  # For PyPy or other GCs.
+                    self.assertEqual(list(dup), [])
 
 
 if __name__ == "__main__":
