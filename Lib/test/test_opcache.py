@@ -1706,7 +1706,7 @@ class TestSpecializer(TestBase):
         binary_subscr_list_int()
         self.assert_specialized(binary_subscr_list_int,
                                 "BINARY_OP_SUBSCR_LIST_INT")
-        self.assert_no_opcode(binary_subscr_list_int, "BINARY_SUBSCR")
+        self.assert_no_opcode(binary_subscr_list_int, "BINARY_OP")
 
         def binary_subscr_tuple_int():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
@@ -1717,7 +1717,7 @@ class TestSpecializer(TestBase):
         binary_subscr_tuple_int()
         self.assert_specialized(binary_subscr_tuple_int,
                                 "BINARY_OP_SUBSCR_TUPLE_INT")
-        self.assert_no_opcode(binary_subscr_tuple_int, "BINARY_SUBSCR")
+        self.assert_no_opcode(binary_subscr_tuple_int, "BINARY_OP")
 
         def binary_subscr_dict():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
@@ -1737,7 +1737,7 @@ class TestSpecializer(TestBase):
 
         binary_subscr_str_int()
         self.assert_specialized(binary_subscr_str_int, "BINARY_OP_SUBSCR_STR_INT")
-        self.assert_no_opcode(binary_subscr_str_int, "BINARY_SUBSCR")
+        self.assert_no_opcode(binary_subscr_str_int, "BINARY_OP")
 
         def binary_subscr_getitems():
             class C:
@@ -1752,7 +1752,7 @@ class TestSpecializer(TestBase):
 
         binary_subscr_getitems()
         self.assert_specialized(binary_subscr_getitems, "BINARY_OP_SUBSCR_GETITEM")
-        self.assert_no_opcode(binary_subscr_getitems, "BINARY_SUBSCR")
+        self.assert_no_opcode(binary_subscr_getitems, "BINARY_OP")
 
     @cpython_only
     @requires_specialization_ft
