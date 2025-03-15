@@ -18,7 +18,6 @@
 
 #include <windows.h>
 
-#define MS_WINDOWS_GAMES  // TODO(aisk): DELETE THIS
 #if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)
 
 typedef struct {
