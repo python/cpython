@@ -133,13 +133,13 @@ The special characters are:
 ``*``
    Causes the resulting RE to match 0 or more repetitions of the preceding RE, as
    many repetitions as are possible.  ``ab*`` will match ``'a'``, ``'ab'``, or
-   ``'a'`` followed by any number of ``'b'`` s.
+   ``'a'``  followed by any number of ``'b'``\ s.
 
 .. index:: single: + (plus); in regular expressions
 
 ``+``
    Causes the resulting RE to match 1 or more repetitions of the preceding RE.
-   ``ab+`` will match ``'a'`` followed by any non-zero number of ``'b'`` s; it
+   ``ab+`` will match ``'a'`` followed by any non-zero number of ``'b'``\ s; it
    will not match just ``'a'``.
 
 .. index:: single: ? (question mark); in regular expressions
