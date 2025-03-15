@@ -245,11 +245,10 @@ class Random(_random.Random):
     def _randbelow_with_getrandbits(self, n):
         "Return a random int in the range [0,n).  Defined for n > 0."
 
-        getrandbits = self.getrandbits
         k = n.bit_length()
-        r = getrandbits(k)  # 0 <= r < 2**k
+        r = self.getrandbits(k)  # 0 <= r < 2**k
         while r >= n:
-            r = getrandbits(k)
+            r = self.getrandbits(k)
         return r
 
     def _randbelow_without_getrandbits(self, n, maxsize=1<<BPF):
@@ -258,7 +257,6 @@ class Random(_random.Random):
         The implementation does not use getrandbits, but only random.
         """
 
-        random = self.random
         if n >= maxsize:
             from warnings import warn
             warn("Underlying random() generator does not supply \n"
@@ -267,9 +265,9 @@ class Random(_random.Random):
             return _floor(random() * n)
         rem = maxsize % n
         limit = (maxsize - rem) / maxsize   # int(limit * maxsize) % n == 0
-        r = random()
+        r = self.random()
         while r >= limit:
-            r = random()
+            r = self.random()
         return _floor(r * maxsize) % n
 
     _randbelow = _randbelow_with_getrandbits
@@ -354,10 +352,9 @@ class Random(_random.Random):
     def shuffle(self, x):
         """Shuffle list x in place, and return None."""
 
-        randbelow = self._randbelow
         for i in reversed(range(1, len(x))):
             # pick an element in x[:i+1] with which to exchange x[i]
-            j = randbelow(i + 1)
+            j = self._randbelow(i + 1)
             x[i], x[j] = x[j], x[i]
 
     def sample(self, population, k, *, counts=None):
@@ -429,7 +426,6 @@ class Random(_random.Random):
             selections = self.sample(range(total), k=k)
             bisect = _bisect
             return [population[bisect(cum_counts, s)] for s in selections]
-        randbelow = self._randbelow
         if not 0 <= k <= n:
             raise ValueError("Sample larger than population or is negative")
         result = [None] * k
@@ -441,16 +437,16 @@ class Random(_random.Random):
             # Invariant:  non-selected at pool[0 : n-i]
             pool = list(population)
             for i in range(k):
-                j = randbelow(n - i)
+                j = self._randbelow(n - i)
                 result[i] = pool[j]
                 pool[j] = pool[n - i - 1]  # move non-selected item into vacancy
         else:
             selected = set()
             selected_add = selected.add
             for i in range(k):
-                j = randbelow(n)
+                j = self._randbelow(n)
                 while j in selected:
-                    j = randbelow(n)
+                    j = self._randbelow(n)
                 selected_add(j)
                 result[i] = population[j]
         return result
@@ -462,13 +458,12 @@ class Random(_random.Random):
         the selections are made with equal probability.
 
         """
-        random = self.random
         n = len(population)
         if cum_weights is None:
             if weights is None:
                 floor = _floor
                 n += 0.0    # convert to float for a small speed improvement
-                return [population[floor(random() * n)] for i in _repeat(None, k)]
+                return [population[floor(self.random() * n)] for i in _repeat(None, k)]
             try:
                 cum_weights = list(_accumulate(weights))
             except TypeError:
@@ -489,7 +484,7 @@ class Random(_random.Random):
             raise ValueError('Total of weights must be finite')
         bisect = _bisect
         hi = n - 1
-        return [population[bisect(cum_weights, random() * total, 0, hi)]
+        return [population[bisect(cum_weights, self.random() * total, 0, hi)]
                 for i in _repeat(None, k)]
 
 
@@ -542,10 +537,9 @@ class Random(_random.Random):
         # variables using the ratio of uniform deviates", ACM Trans
         # Math Software, 3, (1977), pp257-260.
 
-        random = self.random
         while True:
-            u1 = random()
-            u2 = 1.0 - random()
+            u1 = self.random()
+            u2 = 1.0 - self.random()
             z = NV_MAGICCONST * (u1 - 0.5) / u2
             zz = z * z / 4.0
             if zz <= -_log(u2):
@@ -579,12 +573,11 @@ class Random(_random.Random):
         # didn't want to slow this down in the serial case by using a
         # lock here.)
 
-        random = self.random
         z = self.gauss_next
         self.gauss_next = None
         if z is None:
-            x2pi = random() * TWOPI
-            g2rad = _sqrt(-2.0 * _log(1.0 - random()))
+            x2pi = self.random() * TWOPI
+            g2rad = _sqrt(-2.0 * _log(1.0 - self.random()))
             z = _cos(x2pi) * g2rad
             self.gauss_next = _sin(x2pi) * g2rad
 
@@ -636,25 +629,24 @@ class Random(_random.Random):
         # Thanks to Magnus Kessler for a correction to the
         # implementation of step 4.
 
-        random = self.random
         if kappa <= 1e-6:
-            return TWOPI * random()
+            return TWOPI * self.random()
 
         s = 0.5 / kappa
         r = s + _sqrt(1.0 + s * s)
 
         while True:
-            u1 = random()
+            u1 = self.random()
             z = _cos(_pi * u1)
 
             d = z / (r + z)
-            u2 = random()
+            u2 = self.random()
             if u2 < 1.0 - d * d or u2 <= (1.0 - d) * _exp(d):
                 break
 
         q = 1.0 / r
         f = (q + z) / (1.0 + q * z)
-        u3 = random()
+        u3 = self.random()
         if u3 > 0.5:
             theta = (mu + _acos(f)) % TWOPI
         else:
@@ -685,7 +677,6 @@ class Random(_random.Random):
         if alpha <= 0.0 or beta <= 0.0:
             raise ValueError('gammavariate: alpha and beta must be > 0.0')
 
-        random = self.random
         if alpha > 1.0:
 
             # Uses R.C.H. Cheng, "The generation of Gamma
@@ -697,10 +688,10 @@ class Random(_random.Random):
             ccc = alpha + ainv
 
             while True:
-                u1 = random()
+                u1 = self.random()
                 if not 1e-7 < u1 < 0.9999999:
                     continue
-                u2 = 1.0 - random()
+                u2 = 1.0 - self.random()
                 v = _log(u1 / (1.0 - u1)) / ainv
                 x = alpha * _exp(v)
                 z = u1 * u1 * u2
@@ -710,20 +701,20 @@ class Random(_random.Random):
 
         elif alpha == 1.0:
             # expovariate(1/beta)
-            return -_log(1.0 - random()) * beta
+            return -_log(1.0 - self.random()) * beta
 
         else:
             # alpha is between 0 and 1 (exclusive)
             # Uses ALGORITHM GS of Statistical Computing - Kennedy & Gentle
             while True:
-                u = random()
+                u = self.random()
                 b = (_e + alpha) / _e
                 p = b * u
                 if p <= 1.0:
                     x = p ** (1.0 / alpha)
                 else:
                     x = -_log((b - p) / alpha)
-                u1 = random()
+                u1 = self.random()
                 if p > 1.0:
                     if u1 <= x ** (alpha - 1.0):
                         break
@@ -816,11 +807,9 @@ class Random(_random.Random):
                 return n
             raise ValueError("p must be in the range 0.0 <= p <= 1.0")
 
-        random = self.random
-
         # Fast path for a common case
         if n == 1:
-            return _index(random() < p)
+            return _index(self.random() < p)
 
         # Exploit symmetry to establish:  p <= 0.5
         if p > 0.5:
@@ -834,7 +823,7 @@ class Random(_random.Random):
             if not c:
                 return x
             while True:
-                y += _floor(_log2(random()) / c) + 1
+                y += _floor(_log2(self.random()) / c) + 1
                 if y > n:
                     return x
                 x += 1
@@ -852,7 +841,7 @@ class Random(_random.Random):
 
         while True:
 
-            u = random()
+            u = self.random()
             u -= 0.5
             us = 0.5 - _fabs(u)
             k = _floor((2.0 * a / us + b) * u + c)
@@ -861,7 +850,7 @@ class Random(_random.Random):
 
             # The early-out "squeeze" test substantially reduces
             # the number of acceptance condition evaluations.
-            v = random()
+            v = self.random()
             if us >= 0.07 and v <= vr:
                 return k
 
