@@ -354,6 +354,10 @@ Other language changes
   (with :func:`format` or :ref:`f-strings`).
   (Contrubuted by Sergey B Kirpichev in :gh:`87790`.)
 
+* The :func:`bytes.fromhex` and :func:`bytearray.fromhex` methods now accept
+  ASCII :class:`bytes` and :term:`bytes-like objects <bytes-like object>`.
+  (Contributed by Daniel Pope in :gh:`129349`.)
+
 * ``\B`` in :mod:`regular expression <re>` now matches empty input string.
   Now it is always the opposite of ``\b``.
   (Contributed by Serhiy Storchaka in :gh:`124130`.)
@@ -454,6 +458,14 @@ concurrent.futures
   :meth:`concurrent.futures.ProcessPoolExecutor.kill_workers` as
   ways to terminate or kill all living worker processes in the given pool.
   (Contributed by Charles Machalow in :gh:`130849`.)
+
+* Add the optional ``buffersize`` parameter to
+  :meth:`concurrent.futures.Executor.map` to limit the number of submitted
+  tasks whose results have not yet been yielded. If the buffer is full,
+  iteration over the *iterables* pauses until a result is yielded from the
+  buffer.
+  (Contributed by Enzo Bonnal and Josh Rosenberg in :gh:`74028`.)
+
 
 contextvars
 -----------
@@ -641,6 +653,13 @@ json
 mimetypes
 ---------
 
+* Document the command-line for :mod:`mimetypes`.
+  It now exits with ``1`` on failure instead of ``0``
+  and ``2`` on incorrect command-line parameters instead of ``1``.
+  Also, errors are printed to stderr instead of stdout and their text is made
+  tighter.
+  (Contributed by Oleg Iarygin and Hugo van Kemenade in :gh:`93096`.)
+
 * Add MS and :rfc:`8081` MIME types for fonts:
 
   * Embedded OpenType: ``application/vnd.ms-fontobject``
@@ -810,6 +829,9 @@ pdb
 * ``<tab>`` at the beginning of the line in :mod:`pdb` multi-line input will
   fill in a 4-space indentation now, instead of inserting a ``\t`` character.
   (Contributed by Tian Gao in :gh:`130471`.)
+
+* ``$_asynctask`` is added to access the current asyncio task if applicable.
+  (Contributed by Tian Gao in :gh:`124367`.)
 
 
 pickle
@@ -1580,9 +1602,10 @@ Limited C API changes
   implementation details.
   (Contributed by Victor Stinner in :gh:`120600` and :gh:`124127`.)
 
-* Remove :c:func:`PySequence_Fast` from the limited C API, since this function
-  has to be used with :c:macro:`PySequence_Fast_GET_ITEM` which never worked
-  in the limited C API.
+* Remove the :c:macro:`PySequence_Fast_GET_SIZE`,
+  :c:macro:`PySequence_Fast_GET_ITEM` and :c:macro:`PySequence_Fast_ITEMS`
+  macros from the limited C API, since these macros never worked in the limited
+  C API. Keep :c:func:`PySequence_Fast` in the limited C API.
   (Contributed by Victor Stinner in :gh:`91417`.)
 
 

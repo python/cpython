@@ -296,9 +296,7 @@ class ParseArgsCodeGen:
                 and not self.func.critical_section)
 
     def use_pyobject_self(self) -> bool:
-        pyobject_types = ('PyObject *', None)
-        return (self.self_parameter_converter.type in pyobject_types
-                and self.self_parameter_converter.specified_type in pyobject_types)
+        return self.self_parameter_converter.use_pyobject_self(self.func)
 
     def select_prototypes(self) -> None:
         self.docstring_prototype = ''

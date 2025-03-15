@@ -323,7 +323,7 @@ _multiprocessing_SemLock__rebuild_impl(PyTypeObject *type, SEM_HANDLE handle,
                                        const char *name);
 
 static PyObject *
-_multiprocessing_SemLock__rebuild(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs)
+_multiprocessing_SemLock__rebuild(PyObject *type, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     SEM_HANDLE handle;
@@ -335,7 +335,7 @@ _multiprocessing_SemLock__rebuild(PyTypeObject *type, PyObject *const *args, Py_
         &handle, &kind, &maxvalue, &name)) {
         goto exit;
     }
-    return_value = _multiprocessing_SemLock__rebuild_impl(type, handle, kind, maxvalue, name);
+    return_value = _multiprocessing_SemLock__rebuild_impl((PyTypeObject *)type, handle, kind, maxvalue, name);
 
 exit:
     return return_value;
@@ -576,4 +576,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
     #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF) */
-/*[clinic end generated code: output=e28d0fdbfefd1235 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dddd8e989525f565 input=a9049054013a1b77]*/

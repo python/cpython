@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import itertools
 import lexer
 import parser
@@ -644,11 +644,13 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyLong_IsNonNegativeCompact",
     "_PyLong_IsZero",
     "_PyManagedDictPointer_IsValues",
+    "_PyObject_GC_IS_SHARED",
     "_PyObject_GC_IS_TRACKED",
     "_PyObject_GC_MAY_BE_TRACKED",
     "_PyObject_GC_TRACK",
     "_PyObject_GetManagedDict",
     "_PyObject_InlineValues",
+    "_PyObject_IsUniquelyReferenced",
     "_PyObject_ManagedDictPointer",
     "_PyThreadState_HasStackSpace",
     "_PyTuple_FromStackRefStealOnSuccess",
@@ -661,6 +663,7 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_DECREF_NO_DEALLOC",
     "_Py_ID",
     "_Py_IsImmortal",
+    "_Py_IsOwnedByCurrentThread",
     "_Py_LeaveRecursiveCallPy",
     "_Py_LeaveRecursiveCallTstate",
     "_Py_NewRef",
