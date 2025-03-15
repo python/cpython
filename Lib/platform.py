@@ -189,11 +189,16 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
             # sys.executable is not set.
             return lib, version
 
-    libc_search = re.compile(b'(__libc_init)'
-                          b'|'
-                          b'(GLIBC_([0-9.]+))'
-                          b'|'
-                          br'(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)', re.ASCII)
+    libc_search = re.compile(
+        b'(__libc_init)'
+        b'|'
+        b'(GLIBC_([0-9.]+))'
+        b'|'
+        br'(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)'
+        b'|'
+        b'(musl-([0-9.]+))'
+        b'',
+        re.ASCII)
 
     V = _comparable_version
     # We use os.path.realpath()
@@ -216,7 +221,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
                     continue
                 if not m:
                     break
-            libcinit, glibc, glibcversion, so, threads, soversion = [
+            libcinit, glibc, glibcversion, so, threads, soversion, musl, muslversion = [
                 s.decode('latin1') if s is not None else s
                 for s in m.groups()]
             if libcinit and not lib:
@@ -234,6 +239,9 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
                         version = soversion
                     if threads and version[-len(threads):] != threads:
                         version = version + threads
+            elif musl:
+                lib = 'musl'
+                version = muslversion
             pos = m.end()
     return lib, version
 
