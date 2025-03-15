@@ -986,8 +986,8 @@ There are various techniques.
      f()
 
 
-Is there an equivalent to Perl's chomp() for removing trailing newlines from strings?
--------------------------------------------------------------------------------------
+Is there an equivalent to Perl's ``chomp()`` for removing trailing newlines from strings?
+-----------------------------------------------------------------------------------------
 
 You can use ``S.rstrip("\r\n")`` to remove all occurrences of any line
 terminator from the end of the string ``S`` without removing other trailing
@@ -1005,8 +1005,8 @@ Since this is typically only desired when reading text one line at a time, using
 ``S.rstrip()`` this way works well.
 
 
-Is there a scanf() or sscanf() equivalent?
-------------------------------------------
+Is there a ``scanf()`` or ``sscanf()`` equivalent?
+--------------------------------------------------
 
 Not as such.
 
@@ -1020,8 +1020,8 @@ For more complicated input parsing, regular expressions are more powerful
 than C's ``sscanf`` and better suited for the task.
 
 
-What does 'UnicodeDecodeError' or 'UnicodeEncodeError' error  mean?
--------------------------------------------------------------------
+What does ``UnicodeDecodeError`` or ``UnicodeEncodeError`` error mean?
+----------------------------------------------------------------------
 
 See the :ref:`unicode-howto`.
 
@@ -1036,7 +1036,7 @@ A raw string ending with an odd number of backslashes will escape the string's q
    >>> r'C:\this\will\not\work\'
      File "<stdin>", line 1
        r'C:\this\will\not\work\'
-            ^
+       ^
    SyntaxError: unterminated string literal (detected at line 1)
 
 There are several workarounds for this. One is to use regular strings and double
