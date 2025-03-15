@@ -187,8 +187,8 @@ Update this hash object's state with the provided string.
 [clinic start generated code]*/
 
 static PyObject *
-SHA1Type_update(SHA1object *self, PyObject *obj)
-/*[clinic end generated code: output=d9902f0e5015e9ae input=aad8e07812edbba3]*/
+SHA1Type_update_impl(SHA1object *self, PyObject *obj)
+/*[clinic end generated code: output=cdc8e0e106dbec5f input=aad8e07812edbba3]*/
 {
     Py_buffer buf;
 

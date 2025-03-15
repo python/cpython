@@ -1361,7 +1361,8 @@ lineiter_dealloc(PyObject *self)
 }
 
 static PyObject *
-_source_offset_converter(int *value) {
+_source_offset_converter(void *arg) {
+    int *value = (int*)arg;
     if (*value == -1) {
         Py_RETURN_NONE;
     }
