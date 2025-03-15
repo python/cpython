@@ -731,7 +731,7 @@ class CommandLineTest(unittest.TestCase):
         data = {
             'a': [1, 2.0, 3+4j],
             'b': ('character string', b'byte string'),
-            'c': "string"
+            'c': 'string'
         }
         expect = '''
             {'a': [1, 2.0, (3+4j)],
