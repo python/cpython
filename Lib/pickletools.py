@@ -2845,7 +2845,7 @@ if __name__ == "__main__":
         description='disassemble one or more pickle files')
     parser.add_argument(
         'pickle_file',
-        nargs='*', help='the pickle file')
+        nargs='+', help='the pickle file')
     parser.add_argument(
         '-o', '--output',
         help='the file where the output should be written')
@@ -2863,26 +2863,23 @@ if __name__ == "__main__":
         help='if more than one pickle file is specified, print this before'
         ' each disassembly')
     args = parser.parse_args()
-    if not args.pickle_file:
-        parser.print_help()
+    annotate = 30 if args.annotate else 0
+    memo = {} if args.memo else None
+    if args.output is None:
+        output = sys.stdout
     else:
-        annotate = 30 if args.annotate else 0
-        memo = {} if args.memo else None
-        if args.output is None:
-            output = sys.stdout
-        else:
-            output = open(args.output, 'w')
-        try:
-            for arg in args.pickle_file:
-                if len(args.pickle_file) > 1:
-                    name = '<stdin>' if arg == '-' else arg
-                    preamble = args.preamble.format(name=name)
-                    output.write(preamble + '\n')
-                if arg == '-':
-                    dis(sys.stdin.buffer, output, memo, args.indentlevel, annotate)
-                else:
-                    with open(arg, 'rb') as f:
-                        dis(f, output, memo, args.indentlevel, annotate)
-        finally:
-            if output is not sys.stdout:
-                output.close()
+        output = open(args.output, 'w')
+    try:
+        for arg in args.pickle_file:
+            if len(args.pickle_file) > 1:
+                name = '<stdin>' if arg == '-' else arg
+                preamble = args.preamble.format(name=name)
+                output.write(preamble + '\n')
+            if arg == '-':
+                dis(sys.stdin.buffer, output, memo, args.indentlevel, annotate)
+            else:
+                with open(arg, 'rb') as f:
+                    dis(f, output, memo, args.indentlevel, annotate)
+    finally:
+        if output is not sys.stdout:
+            output.close()
