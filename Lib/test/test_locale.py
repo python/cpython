@@ -500,9 +500,7 @@ class TestMiscellaneous(unittest.TestCase):
 
         try:
             with os_helper.EnvironmentVarGuard() as env:
-                for key in ('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE'):
-                    env.unset(key)
-
+                env.unset('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')
                 env.set('LC_CTYPE', 'UTF-8')
 
                 with check_warnings(('', DeprecationWarning)):

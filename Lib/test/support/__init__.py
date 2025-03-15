@@ -2855,8 +2855,7 @@ def no_color():
         swap_attr(_colorize, "can_colorize", lambda file=None: False),
         EnvironmentVarGuard() as env,
     ):
-        for var in {"FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS"}:
-            env.unset(var)
+        env.unset("FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS")
         env.set("NO_COLOR", "1")
         yield
 
