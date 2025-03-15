@@ -1,0 +1,1 @@
+Do not crash on negative ``column`` and ``end_column`` in :mod:`ast` locations.
