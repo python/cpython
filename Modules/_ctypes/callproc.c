@@ -2059,14 +2059,10 @@ create_pointer_inst(PyObject *module, PyObject *arg)
     PyObject *typ;
 
     ctypes_state *st = get_module_state(module);
-    if (PyDict_GetItemRef(st->_ctypes_ptrtype_cache, (PyObject *)Py_TYPE(arg), &typ) < 0) {
+    typ = create_pointer_type(module, (PyObject *)Py_TYPE(arg));
+    if (typ == NULL)
         return NULL;
-    }
-    if (typ == NULL) {
-        typ = create_pointer_type(module, (PyObject *)Py_TYPE(arg));
-        if (typ == NULL)
-            return NULL;
-    }
+
     result = PyObject_CallOneArg(typ, arg);
     Py_DECREF(typ);
     return result;
