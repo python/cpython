@@ -12,8 +12,8 @@ Protocols for supporting classes in pathlib.
 
 from abc import ABC, abstractmethod
 from glob import _PathGlobber
-from pathlib import PurePath, Path
 from pathlib._os import magic_open, ensure_distinct_paths, ensure_different_files, copyfileobj
+from pathlib import PurePath, Path
 from typing import Optional, Protocol, runtime_checkable
 
 
