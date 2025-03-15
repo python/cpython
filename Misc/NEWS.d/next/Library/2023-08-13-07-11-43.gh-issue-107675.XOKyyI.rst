@@ -1,0 +1,1 @@
+Deprecate historic auth mechanism :meth:`login_cram_md5` from :class:`IMAP4`
