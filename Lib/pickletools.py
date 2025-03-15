@@ -2839,7 +2839,7 @@ __test__ = {'disassembler_test': _dis_test,
            }
 
 
-if __name__ == "__main__":
+def _main(args=None):
     import argparse
     parser = argparse.ArgumentParser(
         description='disassemble one or more pickle files')
@@ -2862,7 +2862,7 @@ if __name__ == "__main__":
         '-p', '--preamble', default="==> {name} <==",
         help='if more than one pickle file is specified, print this before'
         ' each disassembly')
-    args = parser.parse_args()
+    args = parser.parse_args(args)
     if not args.pickle_file:
         parser.print_help()
     else:
@@ -2886,3 +2886,7 @@ if __name__ == "__main__":
         finally:
             if output is not sys.stdout:
                 output.close()
+
+
+if __name__ == "__main__":
+    _main()
