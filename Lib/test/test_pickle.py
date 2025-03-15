@@ -13,7 +13,6 @@ import weakref
 
 import doctest
 import unittest
-from io import StringIO
 from textwrap import dedent
 from test import support
 from test.support import import_helper, os_helper
@@ -722,7 +721,7 @@ class CommandLineTest(unittest.TestCase):
             pickle.dump(data, f)
 
     def invoke_pickle(self, *flags):
-        output = StringIO()
+        output = io.StringIO()
         with contextlib.redirect_stdout(output):
             pickle._main(args=[*flags, self.filename])
         return self.text_normalize(output.getvalue())
@@ -751,7 +750,7 @@ class CommandLineTest(unittest.TestCase):
         self.set_pickle_data(data)
         with self.assertRaises(SystemExit):
             # suppress argparse error message
-            with contextlib.redirect_stderr(StringIO()):
+            with contextlib.redirect_stderr(io.StringIO()):
                 _ = self.invoke_pickle('--unknown')
 
 
