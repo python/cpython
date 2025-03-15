@@ -3198,7 +3198,7 @@ class CommandLineTest(unittest.TestCase):
 
     def set_source(self, content):
         with open(self.filename, 'w') as fp:
-            fp.write(content)
+            fp.write(content+'\n')
 
     def invoke_tokenize(self, *flags):
         output = StringIO()
@@ -3234,7 +3234,7 @@ class CommandLineTest(unittest.TestCase):
 
     def test_without_flag(self):
         # test 'python -m tokenize source.py'
-        source = 'a = 1\n'
+        source = 'a = 1'
         expect = '''
             0,0-0,0:            ENCODING       'utf-8'
             1,0-1,1:            NAME           'a'
@@ -3247,7 +3247,7 @@ class CommandLineTest(unittest.TestCase):
 
     def test_exact_flag(self):
         # test 'python -m tokenize -e/--exact source.py'
-        source = 'a = 1\n'
+        source = 'a = 1'
         expect = '''
             0,0-0,0:            ENCODING       'utf-8'
             1,0-1,1:            NAME           'a'
