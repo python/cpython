@@ -878,7 +878,6 @@ dummy_func(
             assert(res_o != NULL);
             res = PyStackRef_FromPyObjectNew(res_o);
 #endif
-            STAT_INC(BINARY_SUBSCR, hit);
             DECREF_INPUTS();
         }
 
