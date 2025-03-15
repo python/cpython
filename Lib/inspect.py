@@ -747,6 +747,12 @@ def _finddoc(obj):
         cls = _findclass(obj.fget)
         if cls is None or getattr(cls, name) is not obj:
             return None
+    # Should be tested before ismethoddescriptor()
+    elif isinstance(obj, functools.cached_property):
+        name = obj.attrname
+        cls = _findclass(obj.func)
+        if cls is None or getattr(cls, name) is not obj:
+            return None
     elif ismethoddescriptor(obj) or isdatadescriptor(obj):
         name = obj.__name__
         cls = obj.__objclass__
