@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 from .support import handle_all_events, handle_events_narrow_console, code_to_events, prepare_reader, prepare_console
 from _pyrepl.console import Event
 from _pyrepl.reader import Reader
+from _pyrepl.utils import DEFAULT_PS1, DEFAULT_PS2, DEFAULT_PS3, DEFAULT_PS4
 
 
 class TestReader(TestCase):
@@ -278,6 +279,113 @@ class TestReader(TestCase):
         prompt, l = Reader.process_prompt(ps1)
         self.assertEqual(prompt, "\033[0;32m樂>\033[0m> ")
         self.assertEqual(l, 5)
+
+    def test_prompt_ps1_raise_exception(self):
+        # Handles exceptions from ps1 prompt
+        class Prompt:
+            def __str__(self): 1/0
+
+        def prepare_reader_keep_prompts(*args, **kwargs):
+            reader = prepare_reader(*args, **kwargs)
+            del reader.get_prompt
+            reader.ps1 = Prompt()
+            reader.ps2 = "... "
+            reader.ps3 = "... "
+            reader.ps4 = ""
+            reader.can_colorize = False
+            reader.paste_mode = False
+            return reader
+
+        events = code_to_events("a=1")
+        reader, _ = handle_events_narrow_console(
+            events,
+            prepare_reader=prepare_reader_keep_prompts,
+        )
+
+        prompt = reader.get_prompt(0, False)
+        self.assertEqual(prompt, DEFAULT_PS1)
+
+    def test_prompt_ps2_ps3_ps4_raise_exception(self):
+        # Handles exceptions from ps2, ps3 and ps4 prompts
+        class Prompt:
+            def __str__(self): 1/0
+
+        def prepare_reader_keep_prompts(*args, **kwargs):
+            reader = prepare_reader(*args, **kwargs)
+            del reader.get_prompt
+            reader.ps1 = Prompt()
+            reader.ps2 = Prompt()
+            reader.ps3 = Prompt()
+            reader.ps4 = Prompt()
+            reader.can_colorize = False
+            reader.paste_mode = False
+            return reader
+
+        events = code_to_events("if some_condition:\nsome_function()\nsome_function()")
+        reader, _ = handle_events_narrow_console(
+            events,
+            prepare_reader=prepare_reader_keep_prompts,
+        )
+
+        prompt = reader.get_prompt(0, False)
+        self.assertEqual(prompt, DEFAULT_PS2)
+
+        prompt = reader.get_prompt(1, False)
+        self.assertEqual(prompt, DEFAULT_PS3)
+
+        prompt = reader.get_prompt(2, False)
+        self.assertEqual(prompt, DEFAULT_PS4)
+
+    def test_prompt_arg_raise_exception(self):
+        # Handles exceptions from arg prompt
+        class Prompt:
+            def __str__(self): 1/0
+
+            def __rmul__(self, b): return b
+
+        def prepare_reader_keep_prompts(*args, **kwargs):
+            reader = prepare_reader(*args, **kwargs)
+            del reader.get_prompt
+            reader.can_colorize = False
+            reader.paste_mode = False
+            return reader
+
+        events = code_to_events("if some_condition:\nsome_function()")
+        reader, _ = handle_events_narrow_console(
+            events,
+            prepare_reader=prepare_reader_keep_prompts,
+        )
+
+        reader.arg = Prompt()
+        prompt = reader.get_prompt(0, True)
+        self.assertEqual(prompt, DEFAULT_PS1)
+
+    def test_prompt_raise_exception(self):
+        # Tests unrecoverable exceptions from prompts
+        cases = [
+            (MemoryError, "No memory for prompt"),
+            (SystemError, "System error for prompt"),
+        ]
+        for cls, msg in cases:
+            with self.subTest(msg):
+
+                class Prompt:
+                    def __str__(self): raise cls(msg)
+
+                def prepare_reader_keep_prompts(*args, **kwargs):
+                    reader = prepare_reader(*args, **kwargs)
+                    del reader.get_prompt
+                    reader.ps1 = Prompt()
+                    reader.can_colorize = False
+                    reader.paste_mode = False
+                    return reader
+
+                with self.assertRaisesRegex(cls, msg):
+                    events = code_to_events("a=1")
+                    handle_events_narrow_console(
+                        events,
+                        prepare_reader=prepare_reader_keep_prompts,
+                    )
 
     def test_completions_updated_on_key_press(self):
         namespace = {"itertools": itertools}
