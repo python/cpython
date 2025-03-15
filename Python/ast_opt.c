@@ -39,7 +39,7 @@ static ControlFlowInFinallyContext*
 get_cf_finally_top(_PyASTOptimizeState *state)
 {
     int idx = state->cf_finally_used;
-    return state->cf_finally.array + idx * sizeof(ControlFlowInFinallyContext);
+    return ((ControlFlowInFinallyContext*)state->cf_finally.array) + idx;
 }
 
 static int
