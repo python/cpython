@@ -507,6 +507,7 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
             # On aarch64 Linux, intrinsics were being emitted and this flag
             # was required to disable them.
             "-mno-outline-atomics",
+            "-fplt",
         ]
         target = _ELF(host, alignment=8, args=args)
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
