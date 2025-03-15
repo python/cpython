@@ -1612,7 +1612,7 @@ sys_getrecursionlimit_impl(PyObject *module)
 
 #ifdef MS_WINDOWS
 
-static PyTypeObject WindowsVersionType = {0, 0, 0, 0, 0, 0};
+static PyTypeObject WindowsVersionType = { 0 };
 
 static PyStructSequence_Field windows_version_fields[] = {
     {"major", "Major version number"},
@@ -2527,8 +2527,9 @@ sys__is_gil_enabled_impl(PyObject *module)
 #endif
 }
 
-
+#ifndef MS_WINDOWS
 static PerfMapState perf_map_state;
+#endif
 
 PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void) {
 #ifndef MS_WINDOWS
