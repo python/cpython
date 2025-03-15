@@ -189,6 +189,7 @@ def process(infile, messages):
         elif l.startswith('msgid') and not l.startswith('msgid_plural'):
             if section == STR:
                 add(msgctxt, msgid, msgstr, fuzzy, messages)
+                msgctxt = None
                 if not msgid:
                     # See whether there is an encoding declaration
                     p = HeaderParser()

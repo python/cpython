@@ -241,7 +241,7 @@ _Py_qsbr_unregister(PyThreadState *tstate)
     // gh-119369: GIL must be released (if held) to prevent deadlocks, because
     // we might not have an active tstate, which means that blocking on PyMutex
     // locks will not implicitly release the GIL.
-    assert(!tstate->_status.holds_gil);
+    assert(!tstate->holds_gil);
 
     PyMutex_Lock(&shared->mutex);
     // NOTE: we must load (or reload) the thread state's qbsr inside the mutex

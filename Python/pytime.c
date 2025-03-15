@@ -594,26 +594,30 @@ pytime_from_object(PyTime_t *tp, PyObject *obj, _PyTime_round_t round,
         }
         return pytime_from_double(tp, d, round, unit_to_ns);
     }
-    else {
-        long long sec = PyLong_AsLongLong(obj);
-        if (sec == -1 && PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
-                pytime_overflow();
-            }
-            return -1;
-        }
 
-        static_assert(sizeof(long long) <= sizeof(PyTime_t),
-                      "PyTime_t is smaller than long long");
-        PyTime_t ns = (PyTime_t)sec;
-        if (pytime_mul(&ns, unit_to_ns) < 0) {
+    long long sec = PyLong_AsLongLong(obj);
+    if (sec == -1 && PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
             pytime_overflow();
-            return -1;
         }
-
-        *tp = ns;
-        return 0;
+        else if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Format(PyExc_TypeError,
+                         "'%T' object cannot be interpreted as an integer or float",
+                         obj);
+        }
+        return -1;
     }
+
+    static_assert(sizeof(long long) <= sizeof(PyTime_t),
+                  "PyTime_t is smaller than long long");
+    PyTime_t ns = (PyTime_t)sec;
+    if (pytime_mul(&ns, unit_to_ns) < 0) {
+        pytime_overflow();
+        return -1;
+    }
+
+    *tp = ns;
+    return 0;
 }
 
 
@@ -911,7 +915,7 @@ py_get_system_clock(PyTime_t *tp, _Py_clock_info_t *info, int raise_exc)
     /* 11,644,473,600,000,000,000: number of nanoseconds between
        the 1st january 1601 and the 1st january 1970 (369 years + 89 leap
        days). */
-    PyTime_t ns = large.QuadPart * 100 - 11644473600000000000;
+    PyTime_t ns = (large.QuadPart - 116444736000000000) * 100;
     *tp = ns;
     if (info) {
         // GetSystemTimePreciseAsFileTime() is implemented using
