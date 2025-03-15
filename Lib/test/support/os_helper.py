@@ -758,7 +758,7 @@ class EnvironmentVarGuard(collections.abc.MutableMapping):
         self[envvar] = value
 
     def unset(self, envvar, /, *envvars):
-        """Unset one or more known environment variables."""
+        """Unset one or more environment variables."""
         for ev in (envvar, *envvars):
             del self[ev]
 
