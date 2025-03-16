@@ -5534,7 +5534,6 @@ PySSLSession_richcompare(PyObject *left, PyObject *right, int op)
     }
 
     int result;
-
     PyTypeObject *sesstype = PySSLSession_CAST(left)->ctx->state->PySSLSession_Type;
 
     if (!Py_IS_TYPE(left, sesstype) || !Py_IS_TYPE(right, sesstype)) {
