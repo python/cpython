@@ -31,16 +31,18 @@ PySeqIter_New(PyObject *seq)
 }
 
 static void
-iter_dealloc(seqiterobject *it)
+iter_dealloc(PyObject *op)
 {
+    seqiterobject *it = (seqiterobject*)op;
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
     PyObject_GC_Del(it);
 }
 
 static int
-iter_traverse(seqiterobject *it, visitproc visit, void *arg)
+iter_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    seqiterobject *it = (seqiterobject*)op;
     Py_VISIT(it->it_seq);
     return 0;
 }
@@ -79,8 +81,9 @@ iter_iternext(PyObject *iterator)
 }
 
 static PyObject *
-iter_len(seqiterobject *it, PyObject *Py_UNUSED(ignored))
+iter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    seqiterobject *it = (seqiterobject*)op;
     Py_ssize_t seqsize, len;
 
     if (it->it_seq) {
@@ -102,8 +105,9 @@ iter_len(seqiterobject *it, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-iter_reduce(seqiterobject *it, PyObject *Py_UNUSED(ignored))
+iter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    seqiterobject *it = (seqiterobject*)op;
     PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
 
     /* _PyEval_GetBuiltin can invoke arbitrary code,
@@ -119,8 +123,9 @@ iter_reduce(seqiterobject *it, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyObject *
-iter_setstate(seqiterobject *it, PyObject *state)
+iter_setstate(PyObject *op, PyObject *state)
 {
+    seqiterobject *it = (seqiterobject*)op;
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
@@ -135,9 +140,9 @@ iter_setstate(seqiterobject *it, PyObject *state)
 PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
 
 static PyMethodDef seqiter_methods[] = {
-    {"__length_hint__", (PyCFunction)iter_len, METH_NOARGS, length_hint_doc},
-    {"__reduce__", (PyCFunction)iter_reduce, METH_NOARGS, reduce_doc},
-    {"__setstate__", (PyCFunction)iter_setstate, METH_O, setstate_doc},
+    {"__length_hint__", iter_len, METH_NOARGS, length_hint_doc},
+    {"__reduce__", iter_reduce, METH_NOARGS, reduce_doc},
+    {"__setstate__", iter_setstate, METH_O, setstate_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -147,7 +152,7 @@ PyTypeObject PySeqIter_Type = {
     sizeof(seqiterobject),                      /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)iter_dealloc,                   /* tp_dealloc */
+    iter_dealloc,                               /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -164,7 +169,7 @@ PyTypeObject PySeqIter_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)iter_traverse,                /* tp_traverse */
+    iter_traverse,                              /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
@@ -195,8 +200,9 @@ PyCallIter_New(PyObject *callable, PyObject *sentinel)
     return (PyObject *)it;
 }
 static void
-calliter_dealloc(calliterobject *it)
+calliter_dealloc(PyObject *op)
 {
+    calliterobject *it = (calliterobject*)op;
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_callable);
     Py_XDECREF(it->it_sentinel);
@@ -212,8 +218,9 @@ calliter_traverse(calliterobject *it, visitproc visit, void *arg)
 }
 
 static PyObject *
-calliter_iternext(calliterobject *it)
+calliter_iternext(PyObject *op)
 {
+    calliterobject *it = (calliterobject*)op;
     PyObject *result;
 
     if (it->it_callable == NULL) {
@@ -244,8 +251,9 @@ calliter_iternext(calliterobject *it)
 }
 
 static PyObject *
-calliter_reduce(calliterobject *it, PyObject *Py_UNUSED(ignored))
+calliter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    calliterobject *it = (calliterobject*)op;
     PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
 
     /* _PyEval_GetBuiltin can invoke arbitrary code,
@@ -259,7 +267,7 @@ calliter_reduce(calliterobject *it, PyObject *Py_UNUSED(ignored))
 }
 
 static PyMethodDef calliter_methods[] = {
-    {"__reduce__", (PyCFunction)calliter_reduce, METH_NOARGS, reduce_doc},
+    {"__reduce__", calliter_reduce, METH_NOARGS, reduce_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -269,7 +277,7 @@ PyTypeObject PyCallIter_Type = {
     sizeof(calliterobject),                     /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)calliter_dealloc,               /* tp_dealloc */
+    calliter_dealloc,                           /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -291,7 +299,7 @@ PyTypeObject PyCallIter_Type = {
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
-    (iternextfunc)calliter_iternext,            /* tp_iternext */
+    calliter_iternext,                          /* tp_iternext */
     calliter_methods,                           /* tp_methods */
 };
 

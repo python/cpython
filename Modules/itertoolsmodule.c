@@ -1843,8 +1843,8 @@ Alternative chain() constructor taking a single iterable argument that evaluates
 [clinic start generated code]*/
 
 static PyObject *
-itertools_chain_from_iterable(PyTypeObject *type, PyObject *arg)
-/*[clinic end generated code: output=667ae7a7f7b68654 input=72c39e3a2ca3be85]*/
+itertools_chain_from_iterable_impl(PyTypeObject *type, PyObject *arg)
+/*[clinic end generated code: output=3d7ea7d46b9e43f5 input=72c39e3a2ca3be85]*/
 {
     PyObject *source;
 

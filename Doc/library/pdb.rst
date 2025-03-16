@@ -313,15 +313,19 @@ sets a global variable ``$foo`` which you can use in the debugger session.  The
 less likely to interfere with your program compared to using normal variables
 like ``foo = 1``.
 
-There are three preset *convenience variables*:
+There are four preset *convenience variables*:
 
 * ``$_frame``: the current frame you are debugging
 * ``$_retval``: the return value if the frame is returning
 * ``$_exception``: the exception if the frame is raising an exception
+* ``$_asynctask``: the asyncio task if pdb stops in an async function
 
 .. versionadded:: 3.12
 
    Added the *convenience variable* feature.
+
+.. versionadded:: 3.14
+   Added the ``$_asynctask`` convenience variable.
 
 .. index::
    pair: .pdbrc; file

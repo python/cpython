@@ -2494,8 +2494,8 @@ Example: bytes.fromhex('B9 01EF') -> b'\\xb9\\x01\\xef'.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_fromhex(PyTypeObject *type, PyObject *string)
-/*[clinic end generated code: output=d458ec88195da6b3 input=f37d98ed51088a21]*/
+bytes_fromhex_impl(PyTypeObject *type, PyObject *string)
+/*[clinic end generated code: output=0973acc63661bb2e input=f37d98ed51088a21]*/
 {
     PyObject *result = _PyBytes_FromHex(string, 0);
     if (type != &PyBytes_Type && result != NULL) {

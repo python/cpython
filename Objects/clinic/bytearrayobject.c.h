@@ -719,7 +719,7 @@ static PyObject *
 bytearray_maketrans_impl(Py_buffer *frm, Py_buffer *to);
 
 static PyObject *
-bytearray_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
+bytearray_maketrans(PyObject *null, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_buffer frm = {NULL, NULL};
@@ -1601,6 +1601,19 @@ PyDoc_STRVAR(bytearray_fromhex__doc__,
 #define BYTEARRAY_FROMHEX_METHODDEF    \
     {"fromhex", (PyCFunction)bytearray_fromhex, METH_O|METH_CLASS, bytearray_fromhex__doc__},
 
+static PyObject *
+bytearray_fromhex_impl(PyTypeObject *type, PyObject *string);
+
+static PyObject *
+bytearray_fromhex(PyObject *type, PyObject *string)
+{
+    PyObject *return_value = NULL;
+
+    return_value = bytearray_fromhex_impl((PyTypeObject *)type, string);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(bytearray_hex__doc__,
 "hex($self, /, sep=<unrepresentable>, bytes_per_sep=1)\n"
 "--\n"
@@ -1769,4 +1782,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=13a4231325b7d3c1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0d1d1abc8b701ad9 input=a9049054013a1b77]*/

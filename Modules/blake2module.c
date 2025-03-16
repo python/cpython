@@ -92,10 +92,10 @@ void detect_cpu_features(cpu_flags *flags) {
     ebx7 = info7[1];
     ecx7 = info7[2];
     edx7 = info7[3];
-#else
+#endif
     (void) eax1; (void) ebx1; (void) ecx1; (void) edx1;
     (void) eax7; (void) ebx7; (void) ecx7; (void) edx7;
-#endif
+
 
     flags->avx = (ecx1 & ECX_AVX) != 0;
 
