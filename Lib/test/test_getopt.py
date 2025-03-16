@@ -13,8 +13,7 @@ sentinel = object()
 class GetoptTests(unittest.TestCase):
     def setUp(self):
         self.env = self.enterContext(EnvironmentVarGuard())
-        if "POSIXLY_CORRECT" in self.env:
-            del self.env["POSIXLY_CORRECT"]
+        del self.env["POSIXLY_CORRECT"]
 
     def assertError(self, *args, **kwargs):
         self.assertRaises(getopt.GetoptError, *args, **kwargs)
