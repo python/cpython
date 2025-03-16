@@ -1993,11 +1993,6 @@ create_pointer_type(PyObject *module, PyObject *cls)
 
     assert(module);
     ctypes_state *st = get_module_state(module);
-    if (PyDict_GetItemRef(st->_ctypes_ptrtype_cache, cls, &result) != 0) {
-        // found or error
-        return result;
-    }
-
     StgInfo* info = NULL;
     if (PyStgInfo_FromAny(st, cls, &info) < 0) {
         return NULL;
@@ -2005,6 +2000,11 @@ create_pointer_type(PyObject *module, PyObject *cls)
 
     if (info && info->pointer_type) {
         return Py_XNewRef(info->pointer_type);
+    }
+
+    if (PyDict_GetItemRef(st->_ctypes_ptrtype_cache, cls, &result) != 0) {
+        // found or error
+        return result;
     }
 
     // not found
