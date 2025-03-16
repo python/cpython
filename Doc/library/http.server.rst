@@ -427,7 +427,7 @@ such as using different index file names by overriding the class attribute
 
 
 By default, the server uses the MIME type ``'application/octet-stream'`` for
-the ``content-type`` header when the content type cannot be guessed from the
+the ``Content-Type`` header when the content type cannot be guessed from the
 URL's extension (if any). The option ``--default-content-type`` overrides
 this default with one of the user's choosing::
 
