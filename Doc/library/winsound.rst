@@ -138,7 +138,7 @@ provided by Windows platforms.  It includes functions and several constants.
 .. data:: SND_APPLICATION
 
    The *sound* parameter is an application-specific alias in the registry.
-   You can combine this flag with the :const:`SND_ALIAS` flag
+   This flag can be combined with the :const:`SND_ALIAS` flag
    to specify an application-defined sound alias.
 
 
