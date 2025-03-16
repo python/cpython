@@ -210,5 +210,18 @@ class CAPITest(unittest.TestCase):
         """
         self.check_negative_refcount(code)
 
+    def test_decref_delayed(self):
+        # gh-130519: Test that _PyObject_XDecRefDelayed() and QSBR code path
+        # handles destructors that are possibly re-entrant or trigger a GC.
+        import gc
+
+        class MyObj:
+            def __del__(self):
+                gc.collect()
+
+        for _ in range(1000):
+            obj = MyObj()
+            _testinternalcapi.incref_decref_delayed(obj)
+
 if __name__ == "__main__":
     unittest.main()

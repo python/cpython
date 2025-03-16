@@ -2896,8 +2896,7 @@ class TextIOWrapperTest(unittest.TestCase):
             # try to get a user preferred encoding different than the current
             # locale encoding to check that TextIOWrapper() uses the current
             # locale encoding and not the user preferred encoding
-            for key in ('LC_ALL', 'LANG', 'LC_CTYPE'):
-                env.unset(key)
+            env.unset('LC_ALL', 'LANG', 'LC_CTYPE')
 
             current_locale_encoding = locale.getencoding()
             b = self.BytesIO()
@@ -4558,11 +4557,11 @@ class MiscIOTest(unittest.TestCase):
         ''')
         proc = assert_python_ok('-X', 'warn_default_encoding', '-c', code)
         warnings = proc.err.splitlines()
-        self.assertEqual(len(warnings), 4)
+        self.assertEqual(len(warnings), 2)
         self.assertTrue(
             warnings[0].startswith(b"<string>:5: EncodingWarning: "))
         self.assertTrue(
-            warnings[2].startswith(b"<string>:8: EncodingWarning: "))
+            warnings[1].startswith(b"<string>:8: EncodingWarning: "))
 
     def test_text_encoding(self):
         # PEP 597, bpo-47000. io.text_encoding() returns "locale" or "utf-8"
@@ -4914,6 +4913,24 @@ class PySignalsTest(SignalsTest):
     # tests are disabled.
     test_reentrant_write_buffered = None
     test_reentrant_write_text = None
+
+
+class ProtocolsTest(unittest.TestCase):
+    class MyReader:
+        def read(self, sz=-1):
+            return b""
+
+    class MyWriter:
+        def write(self, b: bytes):
+            pass
+
+    def test_reader_subclass(self):
+        self.assertIsSubclass(MyReader, io.Reader[bytes])
+        self.assertNotIsSubclass(str, io.Reader[bytes])
+
+    def test_writer_subclass(self):
+        self.assertIsSubclass(MyWriter, io.Writer[bytes])
+        self.assertNotIsSubclass(str, io.Writer[bytes])
 
 
 def load_tests(loader, tests, pattern):
