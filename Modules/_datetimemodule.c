@@ -663,7 +663,7 @@ check_date_args(int year, int month, int day)
     int dim = days_in_month(year, month);
     if (day < 1 || day > dim) {
         PyErr_Format(PyExc_ValueError,
-                     `"day %i must be in range 1..%d for month %i in year %i",
+                     "day %i must be in range 1..%d for month %i in year %i",
                      day, dim, month, year);
         return -1;
     }
