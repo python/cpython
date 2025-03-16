@@ -169,11 +169,11 @@ provides three different variants:
 
    .. attribute:: default_content_type
 
-      Specifies the content-type header value sent when the mime-type cannot
-      be guessed from the file extension of the requested URL.
-      For backwards compatibility, the setting defaults to
-      ``'application/octet-stream'``.
+      Specifies the content-type header value sent when the MIME type
+      cannot be guessed from the file extension of the requested URL.
+      By default, it is set to ``'application/octet-stream'``.
 
+      .. versionadded:: next
    .. attribute:: MessageClass
 
       Specifies an :class:`email.message.Message`\ -like class to parse HTTP
