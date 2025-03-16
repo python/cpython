@@ -1337,5 +1337,5 @@ if __name__ == '__main__':
         port=args.port,
         bind=args.bind,
         protocol=args.protocol,
-        content_type=args.content_type
+        content_type=args.content_type,
     )
