@@ -1306,7 +1306,8 @@ if __name__ == '__main__':
                              '(default: %(default)s)')
     parser.add_argument('--content-type',
                         default=BaseHTTPRequestHandler.default_content_type,
-                        help='sets default content type for unknown extensions')
+                        help='default content type for unknown extensions'
+                             '(default: %(default)s)')
     parser.add_argument('port', default=8000, type=int, nargs='?',
                         help='bind to this port '
                              '(default: %(default)s)')
