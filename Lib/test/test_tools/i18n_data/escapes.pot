@@ -1,0 +1,33 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2000-01-01 00:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: escapes.py:4
+msgid "ascii"
+msgstr ""
+
+#: escapes.py:6
+msgid "\304\233 \305\241 \304\215 \305\231"
+msgstr ""
+
+#: escapes.py:8
+msgid "\316\261 \316\262 \316\263 \316\264"
+msgstr ""
+
+#: escapes.py:10
+msgid "\343\204\261 \343\204\262 \343\204\264 \343\204\267"
+msgstr ""
+
