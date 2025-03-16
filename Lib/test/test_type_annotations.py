@@ -462,7 +462,12 @@ class DeferredEvaluationTests(unittest.TestCase):
 class ConditionalAnnotationTests(unittest.TestCase):
     def check_scopes(self, code, true_annos, false_annos):
         for scope in ("class", "module"):
-            for (cond, expected) in ((True, true_annos), (False, false_annos)):
+            for (cond, expected) in (
+                # Constants (so code might get optimized out)
+                (True, true_annos), (False, false_annos),
+                # Non-constant expressions
+                ("not not len", true_annos), ("not len", false_annos),
+            ):
                 with self.subTest(scope=scope, cond=cond):
                     code_to_run = code.format(cond=cond)
                     if scope == "class":
