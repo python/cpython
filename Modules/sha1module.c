@@ -98,7 +98,10 @@ static void
 SHA1_dealloc(PyObject *op)
 {
     SHA1object *ptr = _SHA1object_CAST(op);
-    Hacl_Hash_SHA1_free(ptr->hash_state);
+    if (ptr->hash_state != NULL) {
+        Hacl_Hash_SHA1_free(ptr->hash_state);
+        ptr->hash_state = NULL;
+    }
     PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);

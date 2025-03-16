@@ -178,7 +178,10 @@ static void
 SHA256_dealloc(PyObject *op)
 {
     SHA256object *ptr = _SHA256object_CAST(op);
-    Hacl_Hash_SHA2_free_256(ptr->state);
+    if (ptr->state != NULL) {
+        Hacl_Hash_SHA2_free_256(ptr->state);
+        ptr->state = NULL;
+    }
     PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
@@ -189,7 +192,10 @@ static void
 SHA512_dealloc(PyObject *op)
 {
     SHA512object *ptr = _SHA512object_CAST(op);
-    Hacl_Hash_SHA2_free_512(ptr->state);
+    if (ptr->state != NULL) {
+        Hacl_Hash_SHA2_free_512(ptr->state);
+        ptr->state = NULL;
+    }
     PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
@@ -265,9 +271,8 @@ SHA256Type_copy_impl(SHA256object *self, PyTypeObject *cls)
         }
     }
 
-    int rc = 0;
     ENTER_HASHLIB(self);
-    rc = SHA256copy(self, newobj);
+    int rc = SHA256copy(self, newobj);
     LEAVE_HASHLIB(self);
     if (rc < 0) {
         Py_DECREF(newobj);
@@ -288,6 +293,7 @@ static PyObject *
 SHA512Type_copy_impl(SHA512object *self, PyTypeObject *cls)
 /*[clinic end generated code: output=66d2a8ef20de8302 input=f673a18f66527c90]*/
 {
+    int rc;
     SHA512object *newobj;
     sha2_state *state = _PyType_GetModuleState(cls);
 
@@ -302,7 +308,6 @@ SHA512Type_copy_impl(SHA512object *self, PyTypeObject *cls)
         }
     }
 
-    int rc = 0;
     ENTER_HASHLIB(self);
     rc = SHA512copy(self, newobj);
     LEAVE_HASHLIB(self);

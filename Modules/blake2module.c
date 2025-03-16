@@ -719,6 +719,7 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
 static int
 blake2_blake2b_copy_locked(Blake2Object *self, Blake2Object *cpy)
 {
+    assert(cpy != NULL);
     switch (self->impl) {
 #if HACL_CAN_COMPILE_SIMD256
         case Blake2b_256: {
@@ -773,13 +774,13 @@ static PyObject *
 _blake2_blake2b_copy_impl(Blake2Object *self)
 /*[clinic end generated code: output=622d1c56b91c50d8 input=e383c2d199fd8a2e]*/
 {
+    int rc;
     Blake2Object *cpy;
 
     if ((cpy = new_Blake2Object(Py_TYPE(self))) == NULL) {
         return NULL;
     }
 
-    int rc;
     ENTER_HASHLIB(self);
     rc = blake2_blake2b_copy_locked(self, cpy);
     LEAVE_HASHLIB(self);
