@@ -224,7 +224,9 @@ graph to the constructor of :class:`TopologicalSorter`:
 
    Return a dict mapping nodes to sets of successors. The returned graph will
    include a key for all nodes in the input graph, possibly with an empty set
-   of successors::
+   of successors:
+
+   .. code-block:: pycon
 
       >>> reverse({"a": ["b", "c"], "d": [], "c": ["e"]})
       {'b': {'a'}, 'c': {'a'}, 'a': set(), 'd': set(), 'e': {'c'}}
@@ -248,7 +250,9 @@ graph to the constructor of :class:`TopologicalSorter`:
 
    Nodes that do not appear as keys in the input graph, but appear as
    predecessors of other nodes, will not be included as keys in the returned
-   transitive graph::
+   transitive graph:
+
+   .. code-block:: pycon
 
         >>> as_transitive({"a": ["b"], "b": ["c"]})
         {'a': {'b', 'c'}, 'b': {'c'}}
