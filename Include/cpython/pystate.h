@@ -83,8 +83,6 @@ struct _ts {
         unsigned int bound_gilstate:1;
         /* Currently in use (maybe holds the GIL). */
         unsigned int active:1;
-        /* Currently holds the GIL. */
-        unsigned int holds_gil:1;
 
         /* various stages of finalization */
         unsigned int finalizing:1;
@@ -92,7 +90,7 @@ struct _ts {
         unsigned int finalized:1;
 
         /* padding to align to 4 bytes */
-        unsigned int :23;
+        unsigned int :24;
     } _status;
 #ifdef Py_BUILD_CORE
 #  define _PyThreadState_WHENCE_NOTSET -1
@@ -103,6 +101,10 @@ struct _ts {
 #  define _PyThreadState_WHENCE_GILSTATE 4
 #  define _PyThreadState_WHENCE_EXEC 5
 #endif
+
+    /* Currently holds the GIL. Must be its own field to avoid data races */
+    int holds_gil;
+
     int _whence;
 
     /* Thread state (_Py_THREAD_ATTACHED, _Py_THREAD_DETACHED, _Py_THREAD_SUSPENDED).

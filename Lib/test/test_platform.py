@@ -368,8 +368,7 @@ class PlatformTest(unittest.TestCase):
         with support.swap_attr(platform, '_wmi_query', raises_oserror):
             with os_helper.EnvironmentVarGuard() as environ:
                 try:
-                    if 'PROCESSOR_ARCHITEW6432' in environ:
-                        del environ['PROCESSOR_ARCHITEW6432']
+                    del environ['PROCESSOR_ARCHITEW6432']
                     environ['PROCESSOR_ARCHITECTURE'] = 'foo'
                     platform._uname_cache = None
                     system, node, release, version, machine, processor = platform.uname()

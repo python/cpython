@@ -256,7 +256,7 @@ struct _specialization_cache {
     // - If getitem is NULL, then getitem_version is meaningless.
     // - If getitem->func_version == getitem_version, then getitem can be called
     //   with two positional arguments and no keyword arguments, and has neither
-    //   *args nor **kwargs (as required by BINARY_SUBSCR_GETITEM):
+    //   *args nor **kwargs (as required by BINARY_OP_SUBSCR_GETITEM):
     PyObject *getitem;
     uint32_t getitem_version;
     PyObject *init;

@@ -16,7 +16,7 @@ import zipfile
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
-from test.support import force_not_colorized, os_helper
+from test.support import force_not_colorized, has_socket_support, os_helper
 from test.support.import_helper import import_module
 from test.support.pty_helper import run_pty, FakeInput
 from test.support.script_helper import kill_python
@@ -2059,6 +2059,30 @@ def test_pdb_next_command_for_generator():
     """
 
 if not SKIP_CORO_TESTS:
+    if has_socket_support:
+        def test_pdb_asynctask():
+            """Testing $_asynctask is accessible in async context
+
+            >>> import asyncio
+
+            >>> async def test():
+            ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+
+            >>> def test_function():
+            ...     asyncio.run(test())
+
+            >>> with PdbTestInput([  # doctest: +ELLIPSIS
+            ...     '$_asynctask',
+            ...     'continue',
+            ... ]):
+            ...     test_function()
+            > <doctest test.test_pdb.test_pdb_asynctask[1]>(2)test()
+            -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+            (Pdb) $_asynctask
+            <Task pending name=... coro=<test() running at <doctest test.test_pdb.test_pdb_asynctask[1]>:2> ...
+            (Pdb) continue
+            """
+
     def test_pdb_next_command_for_coroutine():
         """Testing skip unwinding stack on yield for coroutines for "next" command
 
@@ -4342,6 +4366,54 @@ class PdbTestInline(unittest.TestCase):
         # The quit prompt should be printed exactly twice
         self.assertEqual(stdout.count("Quit anyway"), 2)
 
+    def test_quit_after_interact(self):
+        """
+        interact command will set sys.ps1 temporarily, we need to make sure
+        that it's restored and pdb does not believe it's in interactive mode
+        after interact is done.
+        """
+        script = """
+            x = 1
+            breakpoint()
+        """
+
+        commands = """
+            interact
+            quit()
+            q
+            y
+        """
+
+        stdout, stderr = self._run_script(script, commands)
+        # Normal exit should not print anything to stderr
+        self.assertEqual(stderr, "")
+        # The quit prompt should be printed exactly once
+        self.assertEqual(stdout.count("Quit anyway"), 1)
+        # BdbQuit should not be printed
+        self.assertNotIn("BdbQuit", stdout)
+
+    def test_set_trace_with_skip(self):
+        """GH-82897
+        Inline set_trace() should break unconditionally. This example is a
+        bit oversimplified, but as `pdb.set_trace()` uses the previous Pdb
+        instance, it's possible that we had a previous pdb instance with
+        skip values when we use `pdb.set_trace()` - it would be confusing
+        to users when such inline breakpoints won't break immediately.
+        """
+        script = textwrap.dedent("""
+            import pdb
+            def foo():
+                x = 40 + 2
+                pdb.Pdb(skip=['__main__']).set_trace()
+            foo()
+        """)
+        commands = """
+            p x
+            c
+        """
+        stdout, _ = self._run_script(script, commands)
+        self.assertIn("42", stdout)
+
 
 @support.force_not_colorized_test_class
 @support.requires_subprocess()
@@ -4430,6 +4502,25 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn(b'special', output)
 
+    def test_convvar_completion(self):
+        script = textwrap.dedent("""
+            import pdb; pdb.Pdb().set_trace()
+        """)
+
+        # Complete: $_frame
+        input = b"$_fram\t\n"
+
+        # Complete: $_frame.f_lineno + 100
+        input += b"$_frame.f_line\t + 100\n"
+
+        # Continue
+        input += b"c\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'<frame at 0x', output)
+        self.assertIn(b'102', output)
+
     def test_local_namespace(self):
         script = textwrap.dedent("""
             def f():
@@ -4464,6 +4555,32 @@ class PdbTestReadline(unittest.TestCase):
         output = run_pty(script, input)
 
         self.assertIn(b'42', output)
+
+    def test_multiline_indent_completion(self):
+        script = textwrap.dedent("""
+            import pdb; pdb.Pdb().set_trace()
+        """)
+
+        # \t should always complete a 4-space indent
+        # This piece of code will raise an IndentationError or a SyntaxError
+        # if the completion is not working as expected
+        input = textwrap.dedent("""\
+            def func():
+            \ta = 1
+             \ta += 1
+              \ta += 1
+               \tif a > 0:
+                    a += 1
+            \t\treturn a
+
+            func()
+            c
+        """).encode()
+
+        output = run_pty(script, input)
+
+        self.assertIn(b'4', output)
+        self.assertNotIn(b'Error', output)
 
 
 def load_tests(loader, tests, pattern):

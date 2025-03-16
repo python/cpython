@@ -120,12 +120,6 @@ typedef struct {
 
 typedef struct {
     _Py_BackoffCounter counter;
-} _PyBinarySubscrCache;
-
-#define INLINE_CACHE_ENTRIES_BINARY_SUBSCR CACHE_ENTRIES(_PyBinarySubscrCache)
-
-typedef struct {
-    _Py_BackoffCounter counter;
 } _PySuperAttrCache;
 
 #define INLINE_CACHE_ENTRIES_LOAD_SUPER_ATTR CACHE_ENTRIES(_PySuperAttrCache)
