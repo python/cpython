@@ -42,7 +42,7 @@ def requires_hashdigest(digestname, openssl=None, usedforsecurity=True):
     HACL* implementations.
 
     The usedforsecurity flag is passed to the constructor but has no effect
-    for HACL* implementations.
+    on HACL* implementations.
 
     Examples of exceptions being suppressed:
     ValueError: [digital envelope routines: EVP_DigestInit_ex] disabled for FIPS
