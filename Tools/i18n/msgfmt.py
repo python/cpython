@@ -17,9 +17,9 @@ Options:
         file named filename.mo (based off the input file name(s)).
         If more than one input file is given, and if an output file is passed
         with -o option, then all the input files are merged. If keys are
-        repeated (common for "" key for the header) the one from last file is used.
+        repeated (common for "" key for the header) the one from the last file is used.
         If more than one input file is given, and no -o option is present, then
-        every input file is compiled in its corresponding mo file (same name
+        every input file is compiled to its corresponding mo file (same name
         with mo replacing po)
 
     -h
@@ -102,10 +102,10 @@ def generate(messages):
     return output
 
 
-def make(filenames, outfile):
+def make(filenames, outfile=None):
     """ Compiles one or more po files(s).
 
-    filenames is a string or an iterable of strings representing input file(s)
+    filenames is a string or an iterable of strings representing input file(s).
     outfile is a string for the name of an input file or None.
 
     If it is not None, the output file receives a merge of the input files.
