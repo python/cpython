@@ -970,13 +970,13 @@ class ExtensionCopyTestCase(CopyBaseTestCase):
 
         self.init(h1)
         self.assertIsNotNone(h1._hmac)
-        self.assertNotHasAttr(h1, '_inner')
-        self.assertNotHasAttr(h1, '_outer')
+        self.assertIsNone(h1._inner)
+        self.assertIsNone(h1._outer)
 
         h2 = h1.copy()
         self.assertIsNotNone(h2._hmac)
-        self.assertNotHasAttr(h2, '_inner')
-        self.assertNotHasAttr(h2, '_outer')
+        self.assertIsNone(h2._inner)
+        self.assertIsNone(h2._outer)
 
     def test_realcopy(self):
         h1 = hmac.HMAC.__new__(hmac.HMAC)
@@ -990,7 +990,7 @@ class ExtensionCopyTestCase(CopyBaseTestCase):
 class OpenSSLCopyTestCase(ExtensionCopyTestCase, unittest.TestCase):
 
     def init(self, h):
-        h._init_openssl_hmac(b"key", b"msg", digestmod="sha256")
+        h._init_hmac(b"key", b"msg", digestmod="sha256")
 
 
 class CompareDigestMixin:
