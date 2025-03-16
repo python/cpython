@@ -426,7 +426,7 @@ such as using different index file names by overriding the class attribute
 :attr:`index_pages`.
 
 
-.. option:: -default-content-type <content_type>
+.. option:: --default-content-type <content_type>
 
    Specifies the Content-Type HTTP header. By default, the server uses the
    MIME type ``'application/octet-stream'`` for the ``Content-Type`` header
