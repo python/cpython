@@ -92,7 +92,9 @@ class TopologicalSorter:
         therefore no more nodes can be added using "add".
         """
         if self._ready_nodes is not None:
-            raise ValueError("cannot prepare() more than once")
+            if self._npassedout > 0:
+                raise ValueError("cannot prepare() after starting sort")
+            return
 
         self._ready_nodes = [
             i.node for i in self._node2info.values() if i.npredecessors == 0
