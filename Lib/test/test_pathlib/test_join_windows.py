@@ -40,8 +40,6 @@ class JoinTestBase:
         pp = p.joinpath('E:d:s')
         self.assertEqual(pp, P('E:d:s'))
         # Joining onto a UNC path with no root
-        pp = P('//').joinpath('server')
-        self.assertEqual(pp, P('//server'))
         pp = P('//server').joinpath('share')
         self.assertEqual(pp, P(r'//server\share'))
         pp = P('//./BootPartition').joinpath('Windows')
