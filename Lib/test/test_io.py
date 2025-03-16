@@ -532,7 +532,7 @@ class IOTest(unittest.TestCase):
             if sys.platform.startswith("win") and test in (
                     pipe_reader, pipe_writer):
                 # Pipes seem to appear as seekable on Windows
-                continue
+                return
             seekable = "s" in abilities
             self.assertEqual(obj.seekable(), seekable)
 
