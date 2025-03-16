@@ -56,6 +56,8 @@ typedef struct {
     PyObject* missing;
 } ProfilerObject;
 
+#define ProfilerObject_CAST(op) ((ProfilerObject *)(op))
+
 #define POF_ENABLED     0x001
 #define POF_SUBCALLS    0x002
 #define POF_BUILTINS    0x004
@@ -921,18 +923,20 @@ _lsprof_Profiler_clear_impl(ProfilerObject *self)
 }
 
 static int
-profiler_traverse(ProfilerObject *op, visitproc visit, void *arg)
+profiler_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    ProfilerObject *self = ProfilerObject_CAST(op);
     Py_VISIT(Py_TYPE(op));
-    Py_VISIT(op->externalTimer);
+    Py_VISIT(self->externalTimer);
     return 0;
 }
 
 static void
-profiler_dealloc(ProfilerObject *op)
+profiler_dealloc(PyObject *op)
 {
-    PyObject_GC_UnTrack(op);
-    if (op->flags & POF_ENABLED) {
+    ProfilerObject *self = ProfilerObject_CAST(op);
+    PyObject_GC_UnTrack(self);
+    if (self->flags & POF_ENABLED) {
         PyThreadState *tstate = _PyThreadState_GET();
         if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
             PyErr_FormatUnraisable("Exception ignored while "
@@ -940,11 +944,11 @@ profiler_dealloc(ProfilerObject *op)
         }
     }
 
-    flush_unmatched(op);
-    clearEntries(op);
-    Py_XDECREF(op->externalTimer);
-    PyTypeObject *tp = Py_TYPE(op);
-    tp->tp_free(op);
+    flush_unmatched(self);
+    clearEntries(self);
+    Py_XDECREF(self->externalTimer);
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -1045,7 +1049,7 @@ _lsprof_clear(PyObject *module)
 static void
 _lsprof_free(void *module)
 {
-    _lsprof_clear((PyObject *)module);
+    (void)_lsprof_clear((PyObject *)module);
 }
 
 static int

@@ -73,7 +73,7 @@
 #define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg
 #define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, oparg
 
-#ifdef Py_TAIL_CALL_INTERP
+#if Py_TAIL_CALL_INTERP
     // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
 #   define Py_MUSTTAIL [[clang::musttail]]
 #   define Py_PRESERVE_NONE_CC __attribute__((preserve_none))
@@ -440,28 +440,13 @@ do { \
 /* How much scratch space to give stackref to PyObject* conversion. */
 #define MAX_STACKREF_SCRATCH 10
 
-#if defined(Py_GIL_DISABLED) || defined(Py_STACKREF_DEBUG)
 #define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
     /* +1 because vectorcall might use -1 to write self */ \
     PyObject *NAME##_temp[MAX_STACKREF_SCRATCH+1]; \
     PyObject **NAME = _PyObjectArray_FromStackRefArray(ARGS, ARG_COUNT, NAME##_temp + 1);
-#else
-#define STACKREFS_TO_PYOBJECTS(ARGS, ARG_COUNT, NAME) \
-    PyObject **NAME = (PyObject **)ARGS; \
-    assert(NAME != NULL);
-#endif
 
-#if defined(Py_GIL_DISABLED) || defined(Py_STACKREF_DEBUG)
 #define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
     /* +1 because we +1 previously */ \
     _PyObjectArray_Free(NAME - 1, NAME##_temp);
-#else
-#define STACKREFS_TO_PYOBJECTS_CLEANUP(NAME) \
-    (void)(NAME);
-#endif
 
-#if defined(Py_GIL_DISABLED) || defined(Py_STACKREF_DEBUG)
 #define CONVERSION_FAILED(NAME) ((NAME) == NULL)
-#else
-#define CONVERSION_FAILED(NAME) (0)
-#endif
