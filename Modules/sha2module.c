@@ -258,6 +258,7 @@ static PyObject *
 SHA256Type_copy_impl(SHA256object *self, PyTypeObject *cls)
 /*[clinic end generated code: output=fabd515577805cd3 input=3137146fcb88e212]*/
 {
+    int rc;
     SHA256object *newobj;
     sha2_state *state = _PyType_GetModuleState(cls);
     if (Py_IS_TYPE(self, state->sha256_type)) {
@@ -272,7 +273,7 @@ SHA256Type_copy_impl(SHA256object *self, PyTypeObject *cls)
     }
 
     ENTER_HASHLIB(self);
-    int rc = SHA256copy(self, newobj);
+    rc = SHA256copy(self, newobj);
     LEAVE_HASHLIB(self);
     if (rc < 0) {
         Py_DECREF(newobj);
