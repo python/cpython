@@ -44,6 +44,7 @@ Functions:
     timeit(string, string) -> float
     repeat(string, string) -> list
     default_timer() -> float
+
 """
 
 import gc
