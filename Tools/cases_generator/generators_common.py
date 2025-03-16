@@ -2,7 +2,6 @@ from pathlib import Path
 
 from analyzer import (
     Instruction,
-    Uop,
     Properties,
     StackItem,
     analysis_error,

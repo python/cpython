@@ -9,6 +9,7 @@ import os
 import struct
 import sys
 import unittest
+import warnings
 from subprocess import PIPE, Popen
 from test.support import catch_unraisable_exception
 from test.support import import_helper
@@ -899,9 +900,10 @@ class TestGzip(BaseTest):
         # fileobj would be closed before the GzipFile as the result of a
         # reference loop. See issue gh-129726
         with catch_unraisable_exception() as cm:
-            gzip.GzipFile(fileobj=io.BytesIO(), mode="w")
-            gc.collect()
-            self.assertIsNone(cm.unraisable)
+            with self.assertWarns(ResourceWarning):
+                gzip.GzipFile(fileobj=io.BytesIO(), mode="w")
+                gc.collect()
+                self.assertIsNone(cm.unraisable)
 
 
 class TestOpen(BaseTest):
