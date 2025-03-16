@@ -319,8 +319,8 @@ Free-threaded CPython
 
 Free-threaded CPython now supports :pep:`659` which is known
 as the specializing adaptive interpreter. The execution mechanism is almost same
-as the default build, but at free-threaded CPython build, each thread maintains
-a thread-local copy of specialized bytecode.
+as the default build, however in a free-threaded CPython build, each thread
+maintains a thread-local copy of specialized bytecode.
 
 With this change, the free-threaded CPython build achieves better performance,
 and is only 10-15% slower than the default build.
