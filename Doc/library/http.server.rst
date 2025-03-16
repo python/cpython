@@ -584,9 +584,7 @@ The following options are accepted:
 
 .. option:: --tls-cert
 
-   The server can also support TLS encryption. The option ``--tls-cert`` allow
-   specifying a TLS certificate chain for HTTPS connections. For example,
-   the following command runs the server with TLS enabled::
+   Specifies a TLS certificate chain for HTTPS connections::
 
       python -m http.server --tls-cert fullchain.pem
 
@@ -594,19 +592,22 @@ The following options are accepted:
 
 .. option:: --tls-key
 
-   Specifies private key for HTTPS connections.
+   Specifies a private key file for HTTPS connections.
+
+   This option requires ``--tls-cert`` to be specified.
 
    .. versionadded:: next
 
 .. option:: --tls-password-file
 
-   Use the ``--tls-password-file`` option if private keys are
-   password-protected::
+   Specifies the password file for password-protected private keys::
 
       python -m http.server \
              --tls-cert cert.pem \
              --tls-key key.pem \
              --tls-password-file password.txt
+
+   This option requires `--tls-cert`` to be specified.
 
    .. versionadded:: next
 
