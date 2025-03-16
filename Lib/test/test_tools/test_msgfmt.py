@@ -60,10 +60,14 @@ class CompilationTest(unittest.TestCase):
         self.assertEqual(t.gettext('Multilinestring'), 'Multilinetranslation')
         self.assertEqual(t.gettext('"escapes"'), '"translated"')
         self.assertEqual(t.gettext('\n newlines \n'), '\n translated \n')
-        self.assertEqual(t.ngettext('One email sent.', '%d emails sent.', 1), 'One email sent.')
-        self.assertEqual(t.ngettext('One email sent.', '%d emails sent.', 2), '%d emails sent.')
-        self.assertEqual(t.npgettext('abc', 'One email sent.', '%d emails sent.', 1), 'One email sent.')
-        self.assertEqual(t.npgettext('abc', 'One email sent.', '%d emails sent.', 2), '%d emails sent.')
+        self.assertEqual(t.ngettext('One email sent.', '%d emails sent.', 1),
+                         'One email sent.')
+        self.assertEqual(t.ngettext('One email sent.', '%d emails sent.', 2),
+                         '%d emails sent.')
+        self.assertEqual(t.npgettext('abc', 'One email sent.',
+                                     '%d emails sent.', 1), 'One email sent.')
+        self.assertEqual(t.npgettext('abc', 'One email sent.',
+                                     '%d emails sent.', 2), '%d emails sent.')
 
     def test_po_with_bom(self):
         with temp_cwd():
@@ -157,7 +161,9 @@ class MultiInputTest(unittest.TestCase):
         with temp_cwd(None):
             shutil.copy(data_dir / 'file2_fr_lf.po', '.')
             assert_python_ok(msgfmt, 'file2_fr_lf.po')
-            self.assertTrue(filecmp.cmp(data_dir / 'file2_fr_lf.mo', 'file2_fr_lf.mo'), 'Wrong compiled file2_fr_lf.mo')
+            self.assertTrue(filecmp.cmp(
+                data_dir / 'file2_fr_lf.mo','file2_fr_lf.mo'),
+                'Wrong compiled file2_fr_lf.mo')
 
     def test_both_with_outputfile(self):
         """Test script with -o option and 2 input files
@@ -169,8 +175,11 @@ class MultiInputTest(unittest.TestCase):
         Unix endings (lf)
         """
         with temp_cwd(None):
-            assert_python_ok(msgfmt, '-o', 'file12.mo', data_dir / 'file1_fr_crlf.po', data_dir / 'file2_fr_lf.po')
-            self.assertTrue(filecmp.cmp(data_dir / 'file12_fr.mo', 'file12.mo'))
+            assert_python_ok(msgfmt, '-o', 'file12.mo',
+                             data_dir / 'file1_fr_crlf.po',
+                             data_dir / 'file2_fr_lf.po')
+            self.assertTrue(filecmp.cmp(data_dir / 'file12_fr.mo',
+                                        'file12.mo'))
 
     def test_both_without_outputfile(self):
         """Test script without -o option and 2 input files"""
@@ -179,8 +188,10 @@ class MultiInputTest(unittest.TestCase):
             shutil.copy(data_dir / 'file1_fr_crlf.po', '.')
             shutil.copy(data_dir / 'file2_fr_lf.po', '.')
             assert_python_ok(msgfmt, 'file1_fr_crlf.po', 'file2_fr_lf.po')
-            self.assertTrue(filecmp.cmp(data_dir / 'file1_fr_crlf.mo', 'file1_fr_crlf.mo'))
-            self.assertTrue(filecmp.cmp(data_dir / 'file2_fr_lf.mo', 'file2_fr_lf.mo'))
+            self.assertTrue(filecmp.cmp(data_dir / 'file1_fr_crlf.mo',
+                                        'file1_fr_crlf.mo'))
+            self.assertTrue(filecmp.cmp(data_dir / 'file2_fr_lf.mo',
+                                        'file2_fr_lf.mo'))
 
 
 def make_message_files(mo_file, *po_files):
@@ -202,7 +213,9 @@ def update_catalog_snapshots():
         mo_file = po_file.with_suffix('.mo')
         make_message_files(mo_file, po_file)
     # special processing for file12_fr.mo which results from 2 input files
-    make_message_files(data_dir / 'file12_fr.mo', data_dir / 'file1_fr_crlf.po', data_dir / 'file2_fr_lf.po')
+    make_message_files(data_dir / 'file12_fr.mo',
+                       data_dir / 'file1_fr_crlf.po',
+                       data_dir / 'file2_fr_lf.po')
 
 
 if __name__ == '__main__':
