@@ -426,16 +426,6 @@ such as using different index file names by overriding the class attribute
 :attr:`index_pages`.
 
 
-.. option:: --default-content-type <content_type>
-
-   Specifies the Content-Type HTTP header. By default, the server uses the
-   MIME type ``'application/octet-stream'`` for the ``Content-Type`` header
-   when the content type cannot be guessed from the URL's extension (if any)::
-
-        python -m http.server --default-content-type text/html
-
-   .. versionadded:: next
-
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
 
    This class is used to serve either files or output of CGI scripts from the
@@ -540,6 +530,16 @@ The following options are accepted:
       python -m http.server --protocol HTTP/1.1
 
    .. versionadded:: 3.11
+
+.. option:: --default-content-type <content_type>
+
+   Specifies the Content-Type HTTP header. By default, the server uses the
+   MIME type ``'application/octet-stream'`` for the ``Content-Type`` header
+   when the content type cannot be guessed from the URL's extension (if any)::
+
+        python -m http.server --default-content-type text/html
+
+   .. versionadded:: next
 
 .. option:: --cgi
 
