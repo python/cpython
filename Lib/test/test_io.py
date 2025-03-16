@@ -2896,8 +2896,7 @@ class TextIOWrapperTest(unittest.TestCase):
             # try to get a user preferred encoding different than the current
             # locale encoding to check that TextIOWrapper() uses the current
             # locale encoding and not the user preferred encoding
-            for key in ('LC_ALL', 'LANG', 'LC_CTYPE'):
-                env.unset(key)
+            env.unset('LC_ALL', 'LANG', 'LC_CTYPE')
 
             current_locale_encoding = locale.getencoding()
             b = self.BytesIO()
