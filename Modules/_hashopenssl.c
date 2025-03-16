@@ -728,9 +728,6 @@ EVP_get_name(PyObject *op, void *Py_UNUSED(closure))
     EVPobject *self = EVPobject_CAST(op);
     const EVP_MD *md = EVP_MD_CTX_md(self->ctx);
     if (md == NULL) {
-        // TODO(picnixz): investigate whether this is dead code or not
-        // as OpenSSL define macros that do not check if EVP_MD_CTX_md()
-        // returns NULL or not.
         notify_ssl_error_occurred();
         return NULL;
     }
