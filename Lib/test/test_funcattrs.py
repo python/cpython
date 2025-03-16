@@ -3,6 +3,7 @@ import types
 import typing
 import unittest
 import warnings
+from test import support
 
 
 def global_function():
@@ -478,6 +479,7 @@ class BuiltinFunctionPropertiesTest(unittest.TestCase):
         self.assertEqual([1, 2, 3].append.__qualname__, 'list.append')
         self.assertEqual({'foo': 'bar'}.pop.__qualname__, 'dict.pop')
 
+    @support.cpython_only   # See gh-58211
     def test_builtin__self__(self):
         import time
         import builtins
