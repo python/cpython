@@ -148,17 +148,26 @@ _PyFrame_NumSlotsForCodeObject(PyCodeObject *code)
 
 static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
 {
-    *dest = *src;
-    assert(src->stackpointer != NULL);
-    int stacktop = (int)(src->stackpointer - src->localsplus);
-    assert(stacktop >= _PyFrame_GetCode(src)->co_nlocalsplus);
-    dest->stackpointer = dest->localsplus + stacktop;
-    for (int i = 1; i < stacktop; i++) {
-        dest->localsplus[i] = src->localsplus[i];
-    }
+    dest->f_executable = PyStackRef_MakeHeapSafe(src->f_executable);
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
     dest->previous = NULL;
+    dest->f_funcobj = PyStackRef_MakeHeapSafe(src->f_funcobj);
+    dest->f_globals = src->f_globals;
+    dest->f_builtins = src->f_builtins;
+    dest->f_locals = src->f_locals;
+    dest->frame_obj = src->frame_obj;
+    dest->instr_ptr = src->instr_ptr;
+#ifdef Py_GIL_DISABLED
+    dest->tlbc_index = src->tlbc_index;
+#endif
+    assert(src->stackpointer != NULL);
+    int stacktop = (int)(src->stackpointer - src->localsplus);
+    assert(stacktop >= 0);
+    dest->stackpointer = dest->localsplus + stacktop;
+    for (int i = 0; i < stacktop; i++) {
+        dest->localsplus[i] = PyStackRef_MakeHeapSafe(src->localsplus[i]);
+    }
 }
 
 #ifdef Py_GIL_DISABLED
@@ -393,7 +402,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
 
 PyAPI_FUNC(_PyInterpreterFrame *)
 _PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
-                        PyObject *locals, _PyStackRef const* args,
+                        PyObject *locals, _PyStackRef const *args,
                         size_t argcount, PyObject *kwnames,
                         _PyInterpreterFrame *previous);
 

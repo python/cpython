@@ -5,7 +5,7 @@
 Parsing arguments and building values
 =====================================
 
-These functions are useful when creating your own extensions functions and
+These functions are useful when creating your own extension functions and
 methods.  Additional information and examples are available in
 :ref:`extending-index`.
 
