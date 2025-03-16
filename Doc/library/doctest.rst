@@ -268,10 +268,11 @@ The :mod:`doctest` module can be invoked as a script from the command line:
       python -m doctest -v example.py
 
    This will import :file:`example.py` as a standalone module and run
-   :func:`testmod` on it.  Note that this may not work correctly if the file is
-   part of a package and imports other submodules from that package.
-   If the file name does not end with :file:`.py`, :mod:`doctest` infers that
-   it must be run with :func:`testfile`, not :func:`testmod`::
+   :func:`testmod` on it. Note that this may not work correctly if the
+   file is part of a package and imports other submodules from that package.
+
+   If the file name does not end with :file:`.py`, :mod:`!doctest` infers
+   that it must be run with :func:`testfile` instead::
 
       python -m doctest -v example.txt
 
