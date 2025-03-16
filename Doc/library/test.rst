@@ -1426,9 +1426,12 @@ The :mod:`test.support.os_helper` module provides support for os tests.
    ``value``.
 
 
-.. method:: EnvironmentVarGuard.unset(envvar)
+.. method:: EnvironmentVarGuard.unset(envvar, *others)
 
-   Temporarily unset the environment variable ``envvar``.
+   Temporarily unset one or more environment variables.
+
+   .. versionchanged:: next
+      More than one environment variable can be unset.
 
 
 .. function:: can_symlink()

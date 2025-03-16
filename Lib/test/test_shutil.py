@@ -2465,7 +2465,7 @@ class TestWhich(BaseTest, unittest.TestCase):
 
     def test_environ_path_missing(self):
         with os_helper.EnvironmentVarGuard() as env:
-            env.pop('PATH', None)
+            del env['PATH']
 
             # without confstr
             with unittest.mock.patch('os.confstr', side_effect=ValueError, \
@@ -2491,7 +2491,7 @@ class TestWhich(BaseTest, unittest.TestCase):
 
     def test_empty_path_no_PATH(self):
         with os_helper.EnvironmentVarGuard() as env:
-            env.pop('PATH', None)
+            del env['PATH']
             rv = shutil.which(self.file)
             self.assertIsNone(rv)
 
@@ -3424,8 +3424,7 @@ class TestGetTerminalSize(unittest.TestCase):
         expected = (int(size[1]), int(size[0])) # reversed order
 
         with os_helper.EnvironmentVarGuard() as env:
-            del env['LINES']
-            del env['COLUMNS']
+            env.unset('LINES', 'COLUMNS')
             actual = shutil.get_terminal_size()
 
         self.assertEqual(expected, actual)
@@ -3433,8 +3432,7 @@ class TestGetTerminalSize(unittest.TestCase):
     @unittest.skipIf(support.is_wasi, "WASI has no /dev/null")
     def test_fallback(self):
         with os_helper.EnvironmentVarGuard() as env:
-            del env['LINES']
-            del env['COLUMNS']
+            env.unset('LINES', 'COLUMNS')
 
             # sys.__stdout__ has no fileno()
             with support.swap_attr(sys, '__stdout__', None):
