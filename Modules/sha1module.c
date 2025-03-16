@@ -186,7 +186,7 @@ update(Hacl_Hash_SHA1_state_t *state, uint8_t *buf, Py_ssize_t len)
         buf += UINT32_MAX;
     }
 #endif
-    assert(len <= (Py_ssize_t)UINT32_MAX);
+    /* cast to uint32_t is now safe */
     (void)Hacl_Hash_SHA1_update(state, buf, (uint32_t)len);
 }
 

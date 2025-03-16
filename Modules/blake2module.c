@@ -415,7 +415,7 @@ new_Blake2Object(PyTypeObject *type)
 #define HACL_UPDATE(UPDATE_FUNC, STATE, BUF, LEN)               \
     do {                                                        \
         HACL_UPDATE_LOOP(UPDATE_FUNC, STATE, BUF, LEN);         \
-        assert((Py_ssize_t)(LEN) <= (Py_ssize_t)UINT32_MAX);    \
+        /* cast to uint32_t is now safe */                      \
         (void)UPDATE_FUNC(STATE, BUF, (uint32_t)LEN);           \
     } while (0)
 
