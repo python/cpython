@@ -459,27 +459,6 @@ such as using different index file names by overriding the class attribute
 :attr:`index_pages`.
 
 
-The server can also support TLS encryption. The options ``--tls-cert`` and
-``--tls-key`` allow specifying a TLS certificate chain and a private key for
-HTTPS connections. For example, the following command runs the server with
-TLS enabled:
-
-.. code-block:: bash
-
-   python -m http.server --tls-cert fullchain.pem
-
-Use the ``--tls-password-file`` option if private keys are password-protected:
-
-.. code-block:: bash
-
-   python -m http.server \
-          --tls-cert cert.pem \
-          --tls-key key.pem \
-          --tls-password-file password.txt
-
-.. versionchanged:: next
-   Added the ``--tls-cert``, ``--tls-key`` and ``--tls-password-file`` options.
-
 .. class:: CGIHTTPRequestHandler(request, client_address, server)
 
    This class is used to serve either files or output of CGI scripts from the
@@ -602,6 +581,34 @@ The following options are accepted:
    :class:`CGIHTTPRequestHandler` and the ``--cgi`` command-line option
    are not intended for use by untrusted clients and may be vulnerable
    to exploitation. Always use within a secure environment.
+
+.. option:: --tls-cert
+
+   The server can also support TLS encryption. The option ``--tls-cert`` allow
+   specifying a TLS certificate chain for HTTPS connections. For example,
+   the following command runs the server with TLS enabled::
+
+      python -m http.server --tls-cert fullchain.pem
+
+   .. versionadded:: next
+
+.. option:: --tls-key
+
+   Specifies private key for HTTPS connections.
+
+   .. versionadded:: next
+
+.. option:: --tls-password-file
+
+   Use the ``--tls-password-file`` option if private keys are
+   password-protected::
+
+      python -m http.server \
+             --tls-cert cert.pem \
+             --tls-key key.pem \
+             --tls-password-file password.txt
+
+   .. versionadded:: next
 
 
 .. _http.server-security:
