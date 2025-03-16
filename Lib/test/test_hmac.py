@@ -924,6 +924,7 @@ class PythonCopyTestCase(CopyBaseTestCase, unittest.TestCase):
         self.assertIsNotNone(h1._outer)
 
         h2 = h1.copy()
+        self.assertIsNone(h2._hmac)
         self.assertIsNotNone(h2._inner)
         self.assertIsNotNone(h2._outer)
         self.assertEqual(type(h1._inner), type(h2._inner))
