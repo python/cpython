@@ -367,6 +367,7 @@ notify_ssl_error_occurred(void)
 static PyObject*
 py_digest_name(const EVP_MD *md)
 {
+    assert(md != NULL);
     int nid = EVP_MD_nid(md);
     const char *name = NULL;
     const py_hashentry_t *h;
