@@ -1,15 +1,28 @@
 /* AST Optimizer */
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
+#include "pycore_c_array.h"       // _Py_CArray_EnsureCapacity()
 #include "pycore_format.h"        // F_LJUST
 #include "pycore_runtime.h"       // _Py_STR()
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 
+/* See PEP 765 */
 typedef struct {
+    bool in_finally;
+    bool in_funcdef;
+    bool in_loop;
+} ControlFlowInFinallyContext;
+
+typedef struct {
+    PyObject *filename;
     int optimize;
     int ff_features;
+    int syntax_check_only;
+
+    _Py_c_array_t cf_finally;       /* context for PEP 678 check */
+    int cf_finally_used;
 } _PyASTOptimizeState;
 
 #define ENTER_RECURSIVE() \
@@ -18,6 +31,102 @@ if (Py_EnterRecursiveCall(" during compilation")) { \
 }
 
 #define LEAVE_RECURSIVE() Py_LeaveRecursiveCall();
+
+static ControlFlowInFinallyContext*
+get_cf_finally_top(_PyASTOptimizeState *state)
+{
+    int idx = state->cf_finally_used;
+    return ((ControlFlowInFinallyContext*)state->cf_finally.array) + idx;
+}
+
+static int
+push_cf_context(_PyASTOptimizeState *state, stmt_ty node, bool finally, bool funcdef, bool loop)
+{
+    if (_Py_CArray_EnsureCapacity(&state->cf_finally, state->cf_finally_used+1) < 0) {
+        return 0;
+    }
+
+    state->cf_finally_used++;
+    ControlFlowInFinallyContext *ctx = get_cf_finally_top(state);
+
+    ctx->in_finally = finally;
+    ctx->in_funcdef = funcdef;
+    ctx->in_loop = loop;
+    return 1;
+}
+
+static void
+pop_cf_context(_PyASTOptimizeState *state)
+{
+    assert(state->cf_finally_used > 0);
+    state->cf_finally_used--;
+}
+
+static int
+control_flow_in_finally_warning(const char *kw, stmt_ty n, _PyASTOptimizeState *state)
+{
+    PyObject *msg = PyUnicode_FromFormat("'%s' in a 'finally' block", kw);
+    if (msg == NULL) {
+        return 0;
+    }
+    int ret = _PyErr_EmitSyntaxWarning(msg, state->filename, n->lineno,
+                                       n->col_offset + 1, n->end_lineno,
+                                       n->end_col_offset + 1);
+    Py_DECREF(msg);
+    return ret < 0 ? 0 : 1;
+}
+
+static int
+before_return(_PyASTOptimizeState *state, stmt_ty node_)
+{
+    if (state->cf_finally_used > 0) {
+        ControlFlowInFinallyContext *ctx = get_cf_finally_top(state);
+        if (ctx->in_finally && ! ctx->in_funcdef) {
+            if (!control_flow_in_finally_warning("return", node_, state)) {
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
+static int
+before_loop_exit(_PyASTOptimizeState *state, stmt_ty node_, const char *kw)
+{
+    if (state->cf_finally_used > 0) {
+        ControlFlowInFinallyContext *ctx = get_cf_finally_top(state);
+        if (ctx->in_finally && ! ctx->in_loop) {
+            if (!control_flow_in_finally_warning(kw, node_, state)) {
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
+#define PUSH_CONTEXT(S, N, FINALLY, FUNCDEF, LOOP) \
+    if (!push_cf_context((S), (N), (FINALLY), (FUNCDEF), (LOOP))) { \
+        return 0; \
+    }
+
+#define POP_CONTEXT(S) pop_cf_context(S)
+
+#define BEFORE_FINALLY(S, N)    PUSH_CONTEXT((S), (N), true, false, false)
+#define AFTER_FINALLY(S)        POP_CONTEXT(S)
+#define BEFORE_FUNC_BODY(S, N)  PUSH_CONTEXT((S), (N), false, true, false)
+#define AFTER_FUNC_BODY(S)      POP_CONTEXT(S)
+#define BEFORE_LOOP_BODY(S, N)  PUSH_CONTEXT((S), (N), false, false, true)
+#define AFTER_LOOP_BODY(S)      POP_CONTEXT(S)
+
+#define BEFORE_RETURN(S, N) \
+    if (!before_return((S), (N))) { \
+        return 0; \
+    }
+
+#define BEFORE_LOOP_EXIT(S, N, KW) \
+    if (!before_loop_exit((S), (N), (KW))) { \
+        return 0; \
+    }
 
 static int
 make_const(expr_ty node, PyObject *val, PyArena *arena)
@@ -259,6 +368,9 @@ optimize_format(expr_ty node, PyObject *fmt, asdl_expr_seq *elts, PyArena *arena
 static int
 fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
+    if (state->syntax_check_only) {
+        return 1;
+    }
     expr_ty lhs, rhs;
     lhs = node->v.BinOp.left;
     rhs = node->v.BinOp.right;
@@ -304,6 +416,9 @@ make_const_tuple(asdl_expr_seq *elts)
 static int
 fold_tuple(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
 {
+    if (state->syntax_check_only) {
+        return 1;
+    }
     PyObject *newval;
 
     if (node->v.Tuple.ctx != Load)
@@ -508,6 +623,9 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL(fold_tuple, expr_ty, node_);
         break;
     case Name_kind:
+        if (state->syntax_check_only) {
+            break;
+        }
         if (node_->v.Name.ctx == Load &&
                 _PyUnicode_EqualToASCIIString(node_->v.Name.id, "__debug__")) {
             LEAVE_RECURSIVE();
@@ -570,24 +688,30 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 {
     ENTER_RECURSIVE();
     switch (node_->kind) {
-    case FunctionDef_kind:
+    case FunctionDef_kind: {
         CALL_SEQ(astfold_type_param, type_param, node_->v.FunctionDef.type_params);
         CALL(astfold_arguments, arguments_ty, node_->v.FunctionDef.args);
+        BEFORE_FUNC_BODY(state, node_);
         CALL(astfold_body, asdl_seq, node_->v.FunctionDef.body);
+        AFTER_FUNC_BODY(state);
         CALL_SEQ(astfold_expr, expr, node_->v.FunctionDef.decorator_list);
         if (!(state->ff_features & CO_FUTURE_ANNOTATIONS)) {
             CALL_OPT(astfold_expr, expr_ty, node_->v.FunctionDef.returns);
         }
         break;
-    case AsyncFunctionDef_kind:
+    }
+    case AsyncFunctionDef_kind: {
         CALL_SEQ(astfold_type_param, type_param, node_->v.AsyncFunctionDef.type_params);
         CALL(astfold_arguments, arguments_ty, node_->v.AsyncFunctionDef.args);
+        BEFORE_FUNC_BODY(state, node_);
         CALL(astfold_body, asdl_seq, node_->v.AsyncFunctionDef.body);
+        AFTER_FUNC_BODY(state);
         CALL_SEQ(astfold_expr, expr, node_->v.AsyncFunctionDef.decorator_list);
         if (!(state->ff_features & CO_FUTURE_ANNOTATIONS)) {
             CALL_OPT(astfold_expr, expr_ty, node_->v.AsyncFunctionDef.returns);
         }
         break;
+    }
     case ClassDef_kind:
         CALL_SEQ(astfold_type_param, type_param, node_->v.ClassDef.type_params);
         CALL_SEQ(astfold_expr, expr, node_->v.ClassDef.bases);
@@ -596,6 +720,7 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL_SEQ(astfold_expr, expr, node_->v.ClassDef.decorator_list);
         break;
     case Return_kind:
+        BEFORE_RETURN(state, node_);
         CALL_OPT(astfold_expr, expr_ty, node_->v.Return.value);
         break;
     case Delete_kind:
@@ -621,23 +746,32 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL_SEQ(astfold_type_param, type_param, node_->v.TypeAlias.type_params);
         CALL(astfold_expr, expr_ty, node_->v.TypeAlias.value);
         break;
-    case For_kind:
+    case For_kind: {
         CALL(astfold_expr, expr_ty, node_->v.For.target);
         CALL(astfold_expr, expr_ty, node_->v.For.iter);
+        BEFORE_LOOP_BODY(state, node_);
         CALL_SEQ(astfold_stmt, stmt, node_->v.For.body);
+        AFTER_LOOP_BODY(state);
         CALL_SEQ(astfold_stmt, stmt, node_->v.For.orelse);
         break;
-    case AsyncFor_kind:
+    }
+    case AsyncFor_kind: {
         CALL(astfold_expr, expr_ty, node_->v.AsyncFor.target);
         CALL(astfold_expr, expr_ty, node_->v.AsyncFor.iter);
+        BEFORE_LOOP_BODY(state, node_);
         CALL_SEQ(astfold_stmt, stmt, node_->v.AsyncFor.body);
+        AFTER_LOOP_BODY(state);
         CALL_SEQ(astfold_stmt, stmt, node_->v.AsyncFor.orelse);
         break;
-    case While_kind:
+    }
+    case While_kind: {
         CALL(astfold_expr, expr_ty, node_->v.While.test);
+        BEFORE_LOOP_BODY(state, node_);
         CALL_SEQ(astfold_stmt, stmt, node_->v.While.body);
+        AFTER_LOOP_BODY(state);
         CALL_SEQ(astfold_stmt, stmt, node_->v.While.orelse);
         break;
+    }
     case If_kind:
         CALL(astfold_expr, expr_ty, node_->v.If.test);
         CALL_SEQ(astfold_stmt, stmt, node_->v.If.body);
@@ -655,18 +789,24 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL_OPT(astfold_expr, expr_ty, node_->v.Raise.exc);
         CALL_OPT(astfold_expr, expr_ty, node_->v.Raise.cause);
         break;
-    case Try_kind:
+    case Try_kind: {
         CALL_SEQ(astfold_stmt, stmt, node_->v.Try.body);
         CALL_SEQ(astfold_excepthandler, excepthandler, node_->v.Try.handlers);
         CALL_SEQ(astfold_stmt, stmt, node_->v.Try.orelse);
+        BEFORE_FINALLY(state, node_);
         CALL_SEQ(astfold_stmt, stmt, node_->v.Try.finalbody);
+        AFTER_FINALLY(state);
         break;
-    case TryStar_kind:
+    }
+    case TryStar_kind: {
         CALL_SEQ(astfold_stmt, stmt, node_->v.TryStar.body);
         CALL_SEQ(astfold_excepthandler, excepthandler, node_->v.TryStar.handlers);
         CALL_SEQ(astfold_stmt, stmt, node_->v.TryStar.orelse);
+        BEFORE_FINALLY(state, node_);
         CALL_SEQ(astfold_stmt, stmt, node_->v.TryStar.finalbody);
+        AFTER_FINALLY(state);
         break;
+    }
     case Assert_kind:
         CALL(astfold_expr, expr_ty, node_->v.Assert.test);
         CALL_OPT(astfold_expr, expr_ty, node_->v.Assert.msg);
@@ -678,14 +818,18 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         CALL(astfold_expr, expr_ty, node_->v.Match.subject);
         CALL_SEQ(astfold_match_case, match_case, node_->v.Match.cases);
         break;
+    case Break_kind:
+        BEFORE_LOOP_EXIT(state, node_, "break");
+        break;
+    case Continue_kind:
+        BEFORE_LOOP_EXIT(state, node_, "continue");
+        break;
     // The following statements don't contain any subexpressions to be folded
     case Import_kind:
     case ImportFrom_kind:
     case Global_kind:
     case Nonlocal_kind:
     case Pass_kind:
-    case Break_kind:
-    case Continue_kind:
         break;
     // No default case, so the compiler will emit a warning if new statement
     // kinds are added without being handled here
@@ -828,14 +972,22 @@ astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTOptimizeState *stat
 #undef CALL_SEQ
 
 int
-_PyAST_Optimize(mod_ty mod, PyArena *arena, int optimize, int ff_features)
+_PyAST_Optimize(mod_ty mod, PyArena *arena, PyObject *filename, int optimize,
+                int ff_features, int syntax_check_only)
 {
     _PyASTOptimizeState state;
+    memset(&state, 0, sizeof(_PyASTOptimizeState));
+    state.filename = filename;
     state.optimize = optimize;
     state.ff_features = ff_features;
+    state.syntax_check_only = syntax_check_only;
+    if (_Py_CArray_Init(&state.cf_finally, sizeof(ControlFlowInFinallyContext), 20) < 0) {
+        return -1;
+    }
 
     int ret = astfold_mod(mod, arena, &state);
     assert(ret || PyErr_Occurred());
 
+    _Py_CArray_Fini(&state.cf_finally);
     return ret;
 }

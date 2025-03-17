@@ -418,7 +418,9 @@ points discuss more complex cases when an exception occurs:
 
 * If the :keyword:`!finally` clause executes a :keyword:`break`,
   :keyword:`continue` or :keyword:`return` statement, exceptions are not
-  re-raised.
+  re-raised. This can be confusing and is therefore discouraged. From
+  version 3.14 the compiler emits a :exc:`SyntaxWarning` for it
+  (see :pep:`765`).
 
 * If the :keyword:`!try` statement reaches a :keyword:`break`,
   :keyword:`continue` or :keyword:`return` statement, the
@@ -430,7 +432,9 @@ points discuss more complex cases when an exception occurs:
   statement, the returned value will be the one from the
   :keyword:`!finally` clause's :keyword:`!return` statement, not the
   value from the :keyword:`!try` clause's :keyword:`!return`
-  statement.
+  statement. This can be confusing and is therefore discouraged. From
+  version 3.14 the compiler emits a :exc:`SyntaxWarning` for it
+  (see :pep:`765`).
 
 For example::
 
