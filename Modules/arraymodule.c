@@ -42,10 +42,21 @@ struct arraydescr {
     int is_signed;
 };
 
+#ifdef _MSC_VER
+
+typedef __declspec(align(8)) struct {
+    Py_ssize_t allocated;
+    char items[];
+} arraydata;
+
+#else
+
 typedef struct {
     Py_ssize_t allocated;
     _Alignas(8) char items[];
 } arraydata;
+
+#endif
 
 typedef struct arrayobject {
     PyObject_VAR_HEAD
