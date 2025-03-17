@@ -14,8 +14,9 @@ from itertools import repeat
 __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
            "firstweekday", "isleap", "leapdays", "weekday", "monthrange",
            "monthcalendar", "prmonth", "month", "prcal", "calendar",
-           "timegm", "month_name", "month_abbr", "day_name", "day_abbr",
-           "Calendar", "TextCalendar", "HTMLCalendar", "LocaleTextCalendar",
+           "timegm", "month_name", "month_abbr", "alt_month_name",
+           "alt_month_abbr", "day_name", "day_abbr", "Calendar",
+           "TextCalendar", "HTMLCalendar", "LocaleTextCalendar",
            "LocaleHTMLCalendar", "weekheader",
            "Day", "Month", "JANUARY", "FEBRUARY", "MARCH",
            "APRIL", "MAY", "JUNE", "JULY",
@@ -139,7 +140,7 @@ day_abbr = _localized_day('%a')
 month_name = _localized_month('%B')
 month_abbr = _localized_month('%b')
 
-# Check if the platform supports the %OB format code
+# Check if the platform supports %OB and %Ob specifiers
 def _is_alt_mon_available():
     try:
         datetime.date(2001, 1, 1).strftime('%OB')
@@ -148,8 +149,9 @@ def _is_alt_mon_available():
         return False
     return True
 
-# In Greek and in many Slavic and Baltic languages, "%OB" will produce
-# the month in nominative case.
+# On platforms that support the %OB and %Ob specifiers, it is used to get the
+# standalone form of the month name. This is required for some languages
+# such as Greek, Slavic, and Baltic languages.
 if _is_alt_mon_available():
     alt_month_name = _localized_month('%OB')
     alt_month_abbr = _localized_month('%Ob')
