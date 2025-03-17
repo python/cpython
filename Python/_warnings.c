@@ -513,10 +513,10 @@ get_filter(PyInterpreterState *interp, PyObject *category,
 
     /* check _warning_context _filters list */
     PyObject *context_filters = get_warnings_context_filters(interp);
-    bool use_global_filters = false;
     if (context_filters == NULL) {
         return NULL;
     }
+    bool use_global_filters = false;
     if (context_filters == Py_None) {
         use_global_filters = true;
     } else {
