@@ -86,34 +86,10 @@ struct _parser_runtime_state {
     struct _expr dummy_name;
 };
 
-
-// --- _PyTimeFraction -------------------------------------------------------
-
 typedef struct {
     PyTime_t numer;
     PyTime_t denom;
 } _PyTimeFraction;
-
-// Set a fraction.
-// Return 0 on success.
-// Return -1 if the fraction is invalid.
-extern int _PyTimeFraction_Set(
-    _PyTimeFraction *frac,
-    PyTime_t numer,
-    PyTime_t denom);
-
-// Compute ticks * frac.numer / frac.denom.
-// Clamp to [PyTime_MIN; PyTime_MAX] on overflow.
-extern PyTime_t _PyTimeFraction_Mul(
-    PyTime_t ticks,
-    const _PyTimeFraction *frac);
-
-// Compute a clock resolution: frac.numer / frac.denom / 1e9.
-extern double _PyTimeFraction_Resolution(
-    const _PyTimeFraction *frac);
-
-
-// --- _Py_time_runtime_state ------------------------------------------------
 
 struct _Py_time_runtime_state {
 #if defined(MS_WINDOWS) || defined(__APPLE__)
