@@ -3290,8 +3290,8 @@ as local time.
 [clinic start generated code]*/
 
 static PyObject *
-datetime_date_fromtimestamp(PyTypeObject *type, PyObject *timestamp)
-/*[clinic end generated code: output=fd045fda58168869 input=eabb3fe7f40491fe]*/
+datetime_date_fromtimestamp_impl(PyTypeObject *type, PyObject *timestamp)
+/*[clinic end generated code: output=59def4e32c028fb6 input=eabb3fe7f40491fe]*/
 {
     return date_fromtimestamp((PyObject *) type, timestamp);
 }

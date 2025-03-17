@@ -8,18 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-/* GC information is stored BEFORE the object structure. */
-typedef struct {
-    // Tagged pointer to next object in the list.
-    // 0 means the object is not tracked
-    uintptr_t _gc_next;
-
-    // Tagged pointer to previous object in the list.
-    // Lowest two bits are used for flags documented later.
-    uintptr_t _gc_prev;
-} PyGC_Head;
-
-#define _PyGC_Head_UNUSED PyGC_Head
+#include "pycore_runtime_structs.h"
 
 
 /* Get an object's GC head */
@@ -214,12 +203,6 @@ static inline void _PyGC_CLEAR_FINALIZED(PyObject *op) {
 #endif
 }
 
-
-/* GC runtime state */
-
-/* If we change this, we need to change the default value in the
-   signature of gc.collect. */
-#define NUM_GENERATIONS 3
 /*
    NOTE: about untracking of mutable objects.
 
@@ -260,90 +243,6 @@ static inline void _PyGC_CLEAR_FINALIZED(PyObject *op) {
    Untracking of certain containers was introduced in issue #4688, and
    the algorithm was refined in response to issue #14775.
 */
-
-struct gc_generation {
-    PyGC_Head head;
-    int threshold; /* collection threshold */
-    int count; /* count of allocations or collections of younger
-                  generations */
-};
-
-struct gc_collection_stats {
-    /* number of collected objects */
-    Py_ssize_t collected;
-    /* total number of uncollectable objects (put into gc.garbage) */
-    Py_ssize_t uncollectable;
-};
-
-/* Running stats per generation */
-struct gc_generation_stats {
-    /* total number of collections */
-    Py_ssize_t collections;
-    /* total number of collected objects */
-    Py_ssize_t collected;
-    /* total number of uncollectable objects (put into gc.garbage) */
-    Py_ssize_t uncollectable;
-};
-
-enum _GCPhase {
-    GC_PHASE_MARK = 0,
-    GC_PHASE_COLLECT = 1
-};
-
-struct _gc_runtime_state {
-    /* List of objects that still need to be cleaned up, singly linked
-     * via their gc headers' gc_prev pointers.  */
-    PyObject *trash_delete_later;
-    /* Current call-stack depth of tp_dealloc calls. */
-    int trash_delete_nesting;
-
-    /* Is automatic collection enabled? */
-    int enabled;
-    int debug;
-    /* linked lists of container objects */
-    struct gc_generation young;
-    struct gc_generation old[2];
-    /* a permanent generation which won't be collected */
-    struct gc_generation permanent_generation;
-    struct gc_generation_stats generation_stats[NUM_GENERATIONS];
-    /* true if we are currently running the collector */
-    int collecting;
-    /* list of uncollectable objects */
-    PyObject *garbage;
-    /* a list of callbacks to be invoked when collection is performed */
-    PyObject *callbacks;
-
-    Py_ssize_t heap_size;
-    Py_ssize_t work_to_do;
-    /* Which of the old spaces is the visited space */
-    int visited_space;
-    int phase;
-
-#ifdef Py_GIL_DISABLED
-    /* This is the number of objects that survived the last full
-       collection. It approximates the number of long lived objects
-       tracked by the GC.
-
-       (by "full collection", we mean a collection of the oldest
-       generation). */
-    Py_ssize_t long_lived_total;
-    /* This is the number of objects that survived all "non-full"
-       collections, and are awaiting to undergo a full collection for
-       the first time. */
-    Py_ssize_t long_lived_pending;
-
-    /* True if gc.freeze() has been used. */
-    int freeze_active;
-#endif
-};
-
-#ifdef Py_GIL_DISABLED
-struct _gc_thread_state {
-    /* Thread-local allocation count. */
-    Py_ssize_t alloc_count;
-};
-#endif
-
 
 extern void _PyGC_InitState(struct _gc_runtime_state *);
 

@@ -249,14 +249,6 @@ tracemalloc_get_frame(_PyInterpreterFrame *pyframe, frame_t *frame)
 #endif
         return;
     }
-    if (!PyUnicode_IS_READY(filename)) {
-        /* Don't make a Unicode string ready to avoid reentrant calls
-           to tracemalloc_alloc() or tracemalloc_realloc() */
-#ifdef TRACE_DEBUG
-        tracemalloc_error("filename is not a ready unicode string");
-#endif
-        return;
-    }
 
     /* intern the filename */
     _Py_hashtable_entry_t *entry;

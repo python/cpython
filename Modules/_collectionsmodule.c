@@ -484,7 +484,7 @@ deque_extend_impl(dequeobject *deque, PyObject *iterable)
         PyObject *s = PySequence_List(iterable);
         if (s == NULL)
             return NULL;
-        result = deque_extend(deque, s);
+        result = deque_extend((PyObject*)deque, s);
         Py_DECREF(s);
         return result;
     }
@@ -578,7 +578,7 @@ deque_inplace_concat(PyObject *self, PyObject *other)
     PyObject *result;
 
     // deque_extend is thread-safe
-    result = deque_extend(deque, other);
+    result = deque_extend((PyObject*)deque, other);
     if (result == NULL)
         return result;
     Py_INCREF(deque);
