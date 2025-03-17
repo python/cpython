@@ -3,6 +3,8 @@
 #define _PY_INTERPRETER
 
 #include "Python.h"
+#include "pycore_genobject.h"
+
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_EvalFrame()
 #include "pycore_frame.h"         // _PyInterpreterFrame
@@ -14,8 +16,6 @@
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_*
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-
-#include "pystats.h"
 
 // Forward declarations
 static PyObject* gen_close(PyObject *, PyObject *);
