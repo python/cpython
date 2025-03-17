@@ -857,7 +857,7 @@ The :mod:`test.support` module defines the following functions:
    ``musl``, otherwise return a version triple, either ``(0, 0, 0)`` if the
    version is unknown, or the actual version if it is known.  Intended for use
    in ``skip`` decorators.  ``emscripten`` and ``wasi`` are assumed to be
-   compiled with ``musl``; othewise ``platform.libc_ver`` is checked.
+   compiled with ``musl``; otherwise ``platform.libc_ver`` is checked.
 
 
 .. function:: check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=None)

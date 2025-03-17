@@ -2563,7 +2563,7 @@ class TestInvalidFD(unittest.TestCase):
         support.linked_to_musl(),
         'musl pathconf ignores the file descriptor and returns a constant',
         )
-    def test_fpathconf_with_bad_fd(self):
+    def test_fpathconf_bad_fd(self):
         self.check(os.pathconf, "PC_NAME_MAX")
         self.check(os.fpathconf, "PC_NAME_MAX")
 

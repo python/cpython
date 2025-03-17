@@ -747,10 +747,10 @@ class TestSupport(unittest.TestCase):
     def test_linked_to_musl(self):
         linked = support.linked_to_musl()
         self.assertIsNotNone(linked)
-        if support.is_wasi:
+        if support.is_wasi or support.is_emscripten:
             self.assertTrue(linked)
         # The value is cached, so make sure it returns the same value again.
-        self.assertEqual(linked, support.linked_to_musl())
+        self.assertIs(linked, support.linked_to_musl())
         # The unlike libc, the musl version is a triple.
         if linked:
             self.assertIsInstance(linked, tuple)
