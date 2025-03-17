@@ -9,8 +9,8 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
-#include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_emscripten_trampoline.h" // _PyCFunction_TrampolineCall()
+#include "pycore_object_deferred.h" // _PyObject_HasDeferredRefcount
 #include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_STORE_PTR_RELAXED
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_typeobject.h"    // _PyStaticType_GetState()
@@ -537,20 +537,6 @@ _Py_TryIncrefCompare(PyObject **src, PyObject *op)
         return 0;
     }
     return 1;
-}
-
-static inline int
-_Py_TryIncrefCompareStackRef(PyObject **src, PyObject *op, _PyStackRef *out)
-{
-    if (_PyObject_HasDeferredRefcount(op)) {
-        *out = (_PyStackRef){ .bits = (intptr_t)op | Py_TAG_DEFERRED };
-        return 1;
-    }
-    if (_Py_TryIncrefCompare(src, op)) {
-        *out = PyStackRef_FromPyObjectSteal(op);
-        return 1;
-    }
-    return 0;
 }
 
 /* Loads and increfs an object from ptr, which may contain a NULL value.
