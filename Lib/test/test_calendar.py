@@ -546,8 +546,8 @@ class CalendarTestCase(unittest.TestCase):
             self.assertEqual(value[::-1], list(reversed(value)))
 
     def test_months(self):
-        for attr in ["month_name", "month_abbr", "alt_month_name",
-                     "alt_month_abbr"]:
+        for attr in ("month_name", "month_abbr", "alt_month_name",
+                     "alt_month_abbr"):
             value = getattr(calendar, attr)
             self.assertEqual(len(value), 13)
             self.assertEqual(len(value[:]), 13)

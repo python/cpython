@@ -140,22 +140,14 @@ day_abbr = _localized_day('%a')
 month_name = _localized_month('%B')
 month_abbr = _localized_month('%b')
 
-# Check if the platform supports %OB and %Ob specifiers
-def _supports_alternative_month_names():
-    try:
-        datetime.date(2001, 1, 1).strftime('%OB')
-        datetime.date(2001, 1, 1).strftime('%Ob')
-    except ValueError:
-        return False
-    return True
-
 # On platforms that support the %OB and %Ob specifiers, it is used to get the
 # standalone form of the month name. This is required for some languages
 # such as Greek, Slavic, and Baltic languages.
-if _supports_alternative_month_names():
+try:
     alt_month_name = _localized_month('%OB')
     alt_month_abbr = _localized_month('%Ob')
-else:
+except ValueError:
+    # The platform does not support the %OB and %Ob specifiers.
     alt_month_name = month_name
     alt_month_abbr = month_abbr
 
