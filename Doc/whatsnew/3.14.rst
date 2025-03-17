@@ -510,6 +510,11 @@ ctypes
   loaded by the current process.
   (Contributed by Brian Ward in :gh:`119349`.)
 
+* Move :func:`ctypes.POINTER` types cache from the global ``_pointer_type_cache``
+  to the corresponding :mod:`ctypes` types. This will stop the cache from
+  growing without limits in some situations.
+  (Contributed by Sergey Miryanov in :gh:`100926`).
+
 datetime
 --------
 

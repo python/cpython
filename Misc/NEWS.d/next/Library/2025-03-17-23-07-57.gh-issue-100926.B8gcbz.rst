@@ -1,0 +1,2 @@
+Move :func:`ctypes.POINTER` types cache from the global ``_pointer_type_cache``
+to the corresponding :mod:`ctypes` types to avoid unlimited growth of the cache.
