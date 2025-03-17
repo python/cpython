@@ -1437,11 +1437,6 @@ Build changes
   with :c:expr:`Py_NO_LINK_LIB`. (Contributed by Jean-Christophe
   Fillion-Robin in :gh:`82909`.)
 
-* building with clang-cl on Windows now supports PGO (profile guided
-  optimization), uses ``-flto=thin`` and can be configured to use
-  computed gotos. (Contributed by Chris Eibl in
-  :gh:`130090`, :gh:`131035` and :gh:`131278`).
-
 .. _whatsnew314-pep761:
 
 PEP 761: Discontinuation of PGP signatures
