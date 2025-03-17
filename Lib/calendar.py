@@ -141,7 +141,7 @@ month_name = _localized_month('%B')
 month_abbr = _localized_month('%b')
 
 # Check if the platform supports %OB and %Ob specifiers
-def _is_alt_mon_available():
+def _supports_alternative_month_names():
     try:
         datetime.date(2001, 1, 1).strftime('%OB')
         datetime.date(2001, 1, 1).strftime('%Ob')
@@ -152,7 +152,7 @@ def _is_alt_mon_available():
 # On platforms that support the %OB and %Ob specifiers, it is used to get the
 # standalone form of the month name. This is required for some languages
 # such as Greek, Slavic, and Baltic languages.
-if _is_alt_mon_available():
+if _supports_alternative_month_names():
     alt_month_name = _localized_month('%OB')
     alt_month_abbr = _localized_month('%Ob')
 else:
@@ -532,7 +532,7 @@ class HTMLCalendar(Calendar):
         if withyear:
             s = '%s %s' % (alt_month_name[themonth], theyear)
         else:
-            s = '%s' % alt_month_name[themonth]
+            s = alt_month_name[themonth]
         return '<tr><th colspan="7" class="%s">%s</th></tr>' % (
             self.cssclass_month_head, s)
 

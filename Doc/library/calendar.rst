@@ -526,6 +526,8 @@ The :mod:`calendar` module exports the following data attributes:
        >>> list(calendar.alt_month_name)
        ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
+   .. versionadded:: next
+
 
 .. data:: alt_month_abbr
 
@@ -537,6 +539,8 @@ The :mod:`calendar` module exports the following data attributes:
        >>> import calendar
        >>> list(calendar.alt_month_abbr)
        ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+   .. versionadded:: next
 
 
 .. data:: JANUARY

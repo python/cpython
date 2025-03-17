@@ -561,8 +561,8 @@ class CalendarTestCase(unittest.TestCase):
         # Ensure that the alternate month names and abbreviations are equal
         # to the regular month names and abbreviations for the "C" locale.
         with calendar.different_locale("C"):
-            self.assertEqual(list(calendar.month_name), list(calendar.alt_month_name))
-            self.assertEqual(list(calendar.month_abbr), list(calendar.alt_month_abbr))
+            self.assertListEqual(list(calendar.month_name), list(calendar.alt_month_name))
+            self.assertListEqual(list(calendar.month_abbr), list(calendar.alt_month_abbr))
 
     def test_locale_text_calendar(self):
         try:
