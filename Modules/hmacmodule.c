@@ -574,6 +574,12 @@ static const py_hmac_hinfo py_hmac_static_hinfo[] = {
     },
 };
 
+/*
+ * Check whether 'name' is a known HMAC hash function name,
+ * storing the corresponding static information in 'info'.
+ *
+ * This function always succeeds and never set an exception.
+ */
 static inline bool
 find_hash_info_by_utf8name(hmacmodule_state *state,
                            const char *name,
@@ -584,6 +590,20 @@ find_hash_info_by_utf8name(hmacmodule_state *state,
     return *info != NULL;
 }
 
+/*
+ * Find the corresponding HMAC hash function static information by its name.
+ *
+ * On error, propagate the exception, set 'info' to NULL and return -1.
+ *
+ * If no correspondence exists, set 'info' to NULL and return 0.
+ * Otherwise, set 'info' to the deduced information and return 1.
+ *
+ * Parameters
+ *
+ *      state           The HMAC module state.
+ *      name            The hash function name.
+ *      info            The deduced information, if any.
+ */
 static int
 find_hash_info_by_name(hmacmodule_state *state,
                        PyObject *name,
@@ -619,9 +639,10 @@ error:
 /*
  * Find the corresponding HMAC hash function static information.
  *
- * If an error occurs or if nothing can be found, this
- * returns -1 or 0 respectively, and sets 'info' to NULL.
- * Otherwise, this returns 1 and stores the result in 'info'.
+ * On error, propagate the exception, set 'info' to NULL and return -1.
+ *
+ * If no correspondence exists, set 'info' to NULL and return 0.
+ * Otherwise, set 'info' to the deduced information and return 1.
  *
  * Parameters
  *
@@ -644,6 +665,12 @@ find_hash_info_impl(hmacmodule_state *state,
     return 0;
 }
 
+/*
+ * Find the corresponding HMAC hash function static information.
+ *
+ * If nothing can be found or if an error occurred, return NULL
+ * with an exception set. Otherwise return a non-NULL object.
+ */
 static const py_hmac_hinfo *
 find_hash_info(hmacmodule_state *state, PyObject *hash_info_ref)
 {
@@ -659,6 +686,7 @@ find_hash_info(hmacmodule_state *state, PyObject *hash_info_ref)
                      "unsupported hash type: %R", hash_info_ref);
         return NULL;
     }
+    assert(info != NULL);
     return info;
 }
 
@@ -705,7 +733,7 @@ hmac_set_hinfo(hmacmodule_state *state,
  * and after hmac_set_hinfo() has been called, lest the behaviour is
  * undefined.
  *
- * Return 0 on success and -1 on failure.
+ * Return 0 on success; otherwise, set an exception and return -1 on failure.
  */
 static int
 hmac_new_initial_state(HMACObject *self, uint8_t *key, Py_ssize_t len)
@@ -734,7 +762,7 @@ hmac_new_initial_state(HMACObject *self, uint8_t *key, Py_ssize_t len)
  * and after hmac_set_hinfo() and hmac_new_initial_state() have been
  * called, lest the behaviour is undefined.
  *
- * Return 0 on success and -1 on failure.
+ * Return 0 on success; otherwise, set an exception and return -1 on failure.
  */
 static int
 hmac_feed_initial_data(HMACObject *self, uint8_t *msg, Py_ssize_t len)
@@ -857,7 +885,7 @@ hmac_copy_hinfo(HMACObject *out, const HMACObject *src)
  *
  * The internal state of 'out' must not already exist.
  *
- * Return 0 on success and -1 on failure.
+ * Return 0 on success; otherwise, set an exception and return -1 on failure.
  */
 static int
 hmac_copy_state(HMACObject *out, const HMACObject *src)
@@ -912,9 +940,8 @@ _hmac_HMAC_copy_impl(HMACObject *self, PyTypeObject *cls)
  * This unconditionally acquires the lock on the HMAC object.
  *
  * On DEBUG builds, each update() call is verified.
- * On other builds, only the last update() call is verified.
  *
- * Return 0 on success and -1 on failure.
+ * Return 0 on success; otherwise, set an exception and return -1 on failure.
  */
 static int
 hmac_update_state_with_lock(HMACObject *self, uint8_t *buf, Py_ssize_t len)
@@ -942,9 +969,8 @@ done:
  * This conditionally acquires the lock on the HMAC object.
  *
  * On DEBUG builds, each update() call is verified.
- * On other builds, only the last update() call is verified.
  *
- * Return 0 on success and -1 on failure.
+ * Return 0 on success; otherwise, set an exception and return -1 on failure.
  */
 static int
 hmac_update_state_cond_lock(HMACObject *self, uint8_t *buf, Py_ssize_t len)
@@ -966,7 +992,7 @@ error:
 /*
  * Update the internal HMAC state with the given buffer.
  *
- * Return 0 on success and -1 on failure.
+ * Return 0 on success; otherwise, set an exception and return -1 on failure.
  */
 static inline int
 hmac_update_state(HMACObject *self, uint8_t *buf, Py_ssize_t len)
