@@ -1,1 +1,1 @@
-Fix incorrect argument passing in the function :func:`warnings.warn_explicit`.
+Fix incorrect argument passing in :func:`warnings.warn_explicit`.
