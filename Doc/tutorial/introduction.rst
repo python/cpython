@@ -145,7 +145,7 @@ Python can manipulate text (represented by type :class:`str`, so-called
 "strings") as well as numbers.  This includes characters "``!``", words
 "``rabbit``", names "``Paris``", sentences "``Got your back.``", etc.
 "``Yay! :)``". They can be enclosed in single quotes (``'...'``) or double
-quotes (``"..."``) with the same result [#]_.
+quotes (``"..."``) with the same result [#]_.::
 
    >>> 'spam eggs'  # single quotes
    'spam eggs'
