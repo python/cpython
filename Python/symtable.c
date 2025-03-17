@@ -3,6 +3,7 @@
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntryObject
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString
 
 // Set this to 1 to dump all symtables to stdout for debugging
 #define _PY_DUMP_SYMTABLE 0

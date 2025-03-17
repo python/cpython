@@ -6,6 +6,7 @@
 #include "pycore_critical_section.h"  // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED()
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
 #include "datetime.h"             // PyDateTime_TZInfo
 

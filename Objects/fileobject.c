@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8String
 
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // isatty()

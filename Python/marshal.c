@@ -15,6 +15,7 @@
 #include "pycore_setobject.h"        // _PySet_NextEntry()
 #include "marshal.h"                 // Py_MARSHAL_VERSION
 #include "pycore_pystate.h"          // _PyInterpreterState_GET()
+#include "pycore_unicodeobject.h"    // _PyUnicode_InternalImmortal()
 
 #ifdef __APPLE__
 #  include "TargetConditionals.h"
