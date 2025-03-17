@@ -22,7 +22,7 @@ It then calls the function `_PyOptimizer_Optimize()` in
 [`Python/optimizer.c`](../Python/optimizer.c), passing it the current
 [frame](frames.md) and instruction pointer. `_PyOptimizer_Optimize()`
 constructs an object of type
-[`_PyExecutorObject`](Include/internal/pycore_optimizer.h) which implements
+[`_PyExecutorObject`](../Include/internal/pycore_optimizer.h) which implements
 an optimized version of the instruction trace beginning at this jump.
 
 The optimizer determines where the trace ends, and the executor is set up
