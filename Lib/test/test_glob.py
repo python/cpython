@@ -513,9 +513,14 @@ class GlobTests(unittest.TestCase):
             return glob.translate(pat, recursive=True, include_hidden=True, seps=['/', '\\'])
         self.assertEqual(fn('foo/bar\\baz'), r'(?s:foo[/\\]bar[/\\]baz)\Z')
         self.assertEqual(fn('**/*'), r'(?s:(?:.+[/\\])?[^/\\]+)\Z')
-
-        self.assertEqual(fn('foo[%-0]bar'), r'(?s:foo(?=[^/\\])[%-0]bar)\Z')
-
+        self.assertEqual(fn('foo[!a]bar'), r'(?s:foo(?![/\\])[^a]bar)\Z')
+        self.assertEqual(fn('foo[%-0]bar'), r'(?s:foo(?![/\\])[%-0]bar)\Z')
+        self.assertEqual(fn('foo[%-0][1-9]bar'), r'(?s:foo(?![/\\])[%-0][1-9]bar)\Z')
+        self.assertEqual(fn('foo[0-%]bar'), r'(?s:foo(?!)bar)\Z')
+        self.assertEqual(fn('foo[^-'), r'(?s:foo\[\^\-)\Z')
+        self.assertEqual(fn('foo[/-/]bar'), r'(?s:foo\[[/\\]\-[/\\]\]bar)\Z')
+        self.assertEqual(fn('foo[%-/]bar'), r'(?s:foo\[%\-[/\\]\]bar)\Z')
+        self.assertEqual(fn('foo[/]bar'), r'(?s:foo\[[/\\]\]bar)\Z')
 
 if __name__ == "__main__":
     unittest.main()
