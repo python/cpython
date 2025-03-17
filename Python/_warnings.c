@@ -294,7 +294,7 @@ get_warnings_context_filters(PyInterpreterState *interp)
     }
     if (!PyList_Check(context_filters)) {
         PyErr_SetString(PyExc_ValueError,
-                        "warnings._warnings_context _filters must be a list");
+                        "_filters of warnings._warnings_context must be a list");
         Py_DECREF(context_filters);
         return NULL;
     }
