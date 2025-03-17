@@ -3376,14 +3376,47 @@ class TestSingleDispatch(unittest.TestCase):
         foo = Foo()
         self.assertEqual(foo.bar(42), 42)
 
+        # But, it shouldn't work on singledispatch()
         @functools.singledispatch
         def test(self: typing.Self, arg: int | str) -> int | str:
             pass
-        # But, it shouldn't work on singledispatch()
         with self.assertRaises(TypeError):
             @test.register
             def silly(self: typing.Self, arg: int | str) -> int | str:
                 pass
+
+        # typing.Self cannot be the only annotation
+        with self.assertRaises(TypeError):
+            class Foo:
+                @functools.singledispatchmethod
+                def bar(self: typing.Self, arg: int | str):
+                    pass
+
+                @bar.register
+                def _(self: typing.Self, arg):
+                    return arg
+
+        # typing.Self can only be used in the first parameter
+        with self.assertRaises(TypeError):
+            class Foo:
+                @functools.singledispatchmethod
+                def bar(self, arg: int | str):
+                    pass
+
+                @bar.register
+                def _(self, arg: typing.Self):
+                    return arg
+
+         # 'self' cannot be the only parameter
+         with self.assertRaises(TypeError):
+             class Foo:
+                 @functools.singledispatchmethod
+                 def bar(self: typing.Self, arg: int | str):
+                     pass
+
+                 @bar.register
+                 def _(self: typing.Self):
+                     pass
 
 
 class CachedCostItem:

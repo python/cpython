@@ -929,6 +929,32 @@ def _singledispatchimpl(func, *, is_method):
         return (_is_union_type(cls) and
                 all(isinstance(arg, type) for arg in get_args(cls)))
 
+    def _skip_self_type(argname, cls, hints_iter):
+        # GH-130827: Methods are sometimes annotated with
+        # typing.Self. We should skip that when it's a valid type.
+        from typing import Self
+        if cls is not Self:
+            return argname, cls
+        if not is_method:
+            # typing.Self is not valid in a normal function
+            raise TypeError(
+                f"Invalid annotation for {argname!r}. "
+                "typing.Self can only be used with singledispatchmethod()"
+            )
+        try:
+            argname, cls = next(hints_iter)
+            return argname, cls
+        except StopIteration:
+            # The method is one of some invalid edge cases:
+            # 1. method(self: Self) -> ...
+            # 2. method(self, weird: Self) -> ...
+            # 3. method(self: Self, unannotated) -> ...
+            raise TypeError(
+                f"Invalid annotation for {argname!r}. "
+                "typing.Self must be the first annotation and must "
+                "have a second parameter with an annotation"
+            ) from None
+
     def register(cls, func=None):
         """generic_func.register(cls, func) -> func
 
@@ -955,18 +981,11 @@ def _singledispatchimpl(func, *, is_method):
             func = cls
 
             # only import typing if annotation parsing is necessary
-            from typing import get_type_hints, Self
+            from typing import get_type_hints
             from annotationlib import Format, ForwardRef
             hints_iter = iter(get_type_hints(func, format=Format.FORWARDREF).items())
             argname, cls = next(hints_iter)
-            if cls is Self:
-                if not is_method:
-                    raise TypeError(
-                        f"Invalid annotation for {argname!r}. ",
-                        "typing.Self can only be used with singledispatchmethod()"
-                    )
-                else:
-                    argname, cls = next(hints_iter)
+            argname, cls = _skip_self_type(argname, cls, hints_iter)
 
             if not _is_valid_dispatch_type(cls):
                 if _is_union_type(cls):
