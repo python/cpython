@@ -87,6 +87,17 @@ class object "PyObject *" "&PyBaseObject_Type"
 
 #endif
 
+// Modification of type slots and type flags is protected by the global type
+// lock. However, the slots and flags are read non-atomically without holding
+// the type lock.  So, we need to stop-the-world while modifying these, in
+// order to avoid data races.  This is unfortunately a bit expensive.
+#ifdef Py_GIL_DISABLED
+// If defined, type slot updates (after initial creation) will stop-the-world.
+#define TYPE_SLOT_UPDATE_NEEDS_STOP
+// If defined, type flag updates (after initial creation) will stop-the-world.
+#define TYPE_FLAGS_UPDATE_NEEDS_STOP
+#endif
+
 #define PyTypeObject_CAST(op)   ((PyTypeObject *)(op))
 
 typedef struct PySlot_Offset {
@@ -356,9 +367,7 @@ type_set_flags(PyTypeObject *tp, unsigned long flags)
         // held when flags are modified.
         ASSERT_TYPE_LOCK_HELD();
     }
-    // Since PyType_HasFeature() reads the flags without holding the type
-    // lock, we need an atomic store here.
-    FT_ATOMIC_STORE_ULONG_RELAXED(tp->tp_flags, flags);
+    tp->tp_flags = flags;
 }
 
 static void
@@ -1587,9 +1596,10 @@ type_set_abstractmethods(PyObject *tp, PyObject *value, void *Py_UNUSED(closure)
     BEGIN_TYPE_LOCK();
     type_modified_unlocked(type);
     if (abstract)
-        type_add_flags(type, Py_TPFLAGS_IS_ABSTRACT);
+        _PyType_SetFlags(type, 0, Py_TPFLAGS_IS_ABSTRACT);
     else
-        type_clear_flags(type, Py_TPFLAGS_IS_ABSTRACT);
+        _PyType_SetFlags(type, Py_TPFLAGS_IS_ABSTRACT, 0);
+
     END_TYPE_LOCK();
 
     return 0;
@@ -3493,6 +3503,9 @@ static int update_slot(PyTypeObject *, PyObject *);
 static void fixup_slot_dispatchers(PyTypeObject *);
 static int type_new_set_names(PyTypeObject *);
 static int type_new_init_subclass(PyTypeObject *, PyObject *);
+#ifdef Py_GIL_DISABLED
+static bool has_slotdef(PyObject *);
+#endif
 
 /*
  * Helpers for  __dict__ descriptor.  We don't want to expose the dicts
@@ -3690,7 +3703,7 @@ type_init(PyObject *cls, PyObject *args, PyObject *kwds)
 unsigned long
 PyType_GetFlags(PyTypeObject *type)
 {
-    return FT_ATOMIC_LOAD_ULONG_RELAXED(type->tp_flags);
+    return type->tp_flags;
 }
 
 
@@ -5782,7 +5795,17 @@ void
 _PyType_SetFlags(PyTypeObject *self, unsigned long mask, unsigned long flags)
 {
     BEGIN_TYPE_LOCK();
-    type_set_flags_with_mask(self, mask, flags);
+    unsigned long new_flags = (self->tp_flags & ~mask) | flags;
+    if (new_flags != self->tp_flags) {
+#ifdef TYPE_FLAGS_UPDATE_NEEDS_STOP
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyEval_StopTheWorld(interp);
+#endif
+        self->tp_flags = new_flags;
+#ifdef TYPE_FLAGS_UPDATE_NEEDS_STOP
+        _PyEval_StartTheWorld(interp);
+#endif
+    }
     END_TYPE_LOCK();
 }
 
@@ -5946,6 +5969,21 @@ _Py_type_getattro(PyObject *tp, PyObject *name)
     return _Py_type_getattro_impl(type, name, NULL);
 }
 
+#ifdef TYPE_SLOT_UPDATE_NEEDS_STOP
+static int
+update_slot_world_stopped(PyTypeObject *type, PyObject *name)
+{
+    int ret;
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+    ret = update_slot(type, name);
+    _PyEval_StartTheWorld(interp);
+    return ret;
+}
+#endif
+
+// Called by type_setattro().  Updates both the type dict and
+// any type slots that correspond to the modified entry.
 static int
 type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
                  PyObject *value, PyObject **old_value)
@@ -5975,9 +6013,15 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
         return -1;
     }
 
+#ifdef TYPE_SLOT_UPDATE_NEEDS_STOP
+    if (is_dunder_name(name) && has_slotdef(name)) {
+        return update_slot_world_stopped(type, name);
+    }
+#else
     if (is_dunder_name(name)) {
         return update_slot(type, name);
     }
+#endif
 
     return 0;
 }
@@ -11005,6 +11049,20 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
 #undef ptrs
 }
 
+#ifdef TYPE_SLOT_UPDATE_NEEDS_STOP
+// Return true if "name" corresponds to at least one slot definition.  This is
+// a more accurate but more expensive test compared to is_dunder_name().
+static bool
+has_slotdef(PyObject *name)
+{
+    for (pytype_slotdef *p = slotdefs; p->name_strobj; p++) {
+        if (p->name_strobj == name) {
+            return true;
+        }
+    }
+    return false;
+}
+#endif
 
 /* Common code for update_slots_callback() and fixup_slot_dispatchers().
  *
@@ -11244,12 +11302,21 @@ fixup_slot_dispatchers(PyTypeObject *type)
     END_TYPE_LOCK();
 }
 
+// Called when __bases__ is re-assigned.
 static void
 update_all_slots(PyTypeObject* type)
 {
     pytype_slotdef *p;
 
     ASSERT_TYPE_LOCK_HELD();
+
+#ifdef TYPE_SLOT_UPDATE_NEEDS_STOP
+    // Similar to update_slot_world_stopped(), this is required to avoid
+    // races.  We don't use update_slot_world_stopped() here because we want
+    // to stop once rather than once per slot.
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    _PyEval_StopTheWorld(interp);
+#endif
 
     /* Clear the VALID_VERSION flag of 'type' and all its subclasses. */
     type_modified_unlocked(type);
@@ -11258,6 +11325,10 @@ update_all_slots(PyTypeObject* type)
         /* update_slot returns int but can't actually fail */
         update_slot(type, p->name_strobj);
     }
+
+#ifdef TYPE_SLOT_UPDATE_NEEDS_STOP
+    _PyEval_StartTheWorld(interp);
+#endif
 }
 
 
