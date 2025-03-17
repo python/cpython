@@ -170,4 +170,17 @@ PyDoc_STRVAR(complex_from_number__doc__,
 
 #define COMPLEX_FROM_NUMBER_METHODDEF    \
     {"from_number", (PyCFunction)complex_from_number, METH_O|METH_CLASS, complex_from_number__doc__},
-/*[clinic end generated code: output=252cddef7f9169a0 input=a9049054013a1b77]*/
+
+static PyObject *
+complex_from_number_impl(PyTypeObject *type, PyObject *number);
+
+static PyObject *
+complex_from_number(PyObject *type, PyObject *number)
+{
+    PyObject *return_value = NULL;
+
+    return_value = complex_from_number_impl((PyTypeObject *)type, number);
+
+    return return_value;
+}
+/*[clinic end generated code: output=307531cd6d6e7544 input=a9049054013a1b77]*/

@@ -297,7 +297,7 @@ For further information on how to build Python, see
 
 .. attention::
 
-    This section previously reported a 9-15% geomean speedup. This number has since been
+    This section previously reported a 9-15% geometric mean speedup. This number has since been
     cautiously revised down to 3-5%. While we expect performance results to be better
     than what we report, our estimates are more conservative due to a
     `compiler bug <https://github.com/llvm/llvm-project/issues/106846>`_ found in
@@ -353,6 +353,10 @@ Other language changes
   for floating-point presentation types of the new-style string formatting
   (with :func:`format` or :ref:`f-strings`).
   (Contrubuted by Sergey B Kirpichev in :gh:`87790`.)
+
+* The :func:`bytes.fromhex` and :func:`bytearray.fromhex` methods now accept
+  ASCII :class:`bytes` and :term:`bytes-like objects <bytes-like object>`.
+  (Contributed by Daniel Pope in :gh:`129349`.)
 
 * ``\B`` in :mod:`regular expression <re>` now matches empty input string.
   Now it is always the opposite of ``\b``.
@@ -459,6 +463,14 @@ concurrent.futures
   :meth:`concurrent.futures.ProcessPoolExecutor.kill_workers` as
   ways to terminate or kill all living worker processes in the given pool.
   (Contributed by Charles Machalow in :gh:`130849`.)
+
+* Add the optional ``buffersize`` parameter to
+  :meth:`concurrent.futures.Executor.map` to limit the number of submitted
+  tasks whose results have not yet been yielded. If the buffer is full,
+  iteration over the *iterables* pauses until a result is yielded from the
+  buffer.
+  (Contributed by Enzo Bonnal and Josh Rosenberg in :gh:`74028`.)
+
 
 contextvars
 -----------
@@ -646,6 +658,13 @@ json
 mimetypes
 ---------
 
+* Document the command-line for :mod:`mimetypes`.
+  It now exits with ``1`` on failure instead of ``0``
+  and ``2`` on incorrect command-line parameters instead of ``1``.
+  Also, errors are printed to stderr instead of stdout and their text is made
+  tighter.
+  (Contributed by Oleg Iarygin and Hugo van Kemenade in :gh:`93096`.)
+
 * Add MS and :rfc:`8081` MIME types for fonts:
 
   * Embedded OpenType: ``application/vnd.ms-fontobject``
@@ -816,6 +835,9 @@ pdb
   fill in a 4-space indentation now, instead of inserting a ``\t`` character.
   (Contributed by Tian Gao in :gh:`130471`.)
 
+* ``$_asynctask`` is added to access the current asyncio task if applicable.
+  (Contributed by Tian Gao in :gh:`124367`.)
+  
 * :mod:`pdb` now supports two backends: :func:`sys.settrace` and
   :mod:`sys.monitoring`. Using :mod:`pdb` CLI or :func:`breakpoint` will
   always use the :mod:`sys.monitoring` backend. Explicitly instantiating
@@ -1427,6 +1449,10 @@ Build changes
 * GNU Autoconf 2.72 is now required to generate :file:`configure`.
   (Contributed by Erlend Aasland in :gh:`115765`.)
 
+* ``#pragma``-based linking with ``python3*.lib`` can now be switched off
+  with :c:expr:`Py_NO_LINK_LIB`. (Contributed by Jean-Christophe
+  Fillion-Robin in :gh:`82909`.)
+
 .. _whatsnew314-pep761:
 
 PEP 761: Discontinuation of PGP signatures
@@ -1588,9 +1614,10 @@ Limited C API changes
   implementation details.
   (Contributed by Victor Stinner in :gh:`120600` and :gh:`124127`.)
 
-* Remove :c:func:`PySequence_Fast` from the limited C API, since this function
-  has to be used with :c:macro:`PySequence_Fast_GET_ITEM` which never worked
-  in the limited C API.
+* Remove the :c:macro:`PySequence_Fast_GET_SIZE`,
+  :c:macro:`PySequence_Fast_GET_ITEM` and :c:macro:`PySequence_Fast_ITEMS`
+  macros from the limited C API, since these macros never worked in the limited
+  C API. Keep :c:func:`PySequence_Fast` in the limited C API.
   (Contributed by Victor Stinner in :gh:`91417`.)
 
 

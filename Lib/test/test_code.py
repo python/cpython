@@ -953,6 +953,15 @@ class CodeLocationTest(unittest.TestCase):
             get_line_branches(with_extended_args),
             [(1,2,8)])
 
+        async def afunc():
+            async for letter in async_iter1:
+                2
+            3
+
+        self.assertEqual(
+            get_line_branches(afunc),
+            [(1,1,3)])
+
 if check_impl_detail(cpython=True) and ctypes is not None:
     py = ctypes.pythonapi
     freefunc = ctypes.CFUNCTYPE(None,ctypes.c_voidp)
