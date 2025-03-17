@@ -3137,3 +3137,41 @@ _PyThreadState_ClearMimallocHeaps(PyThreadState *tstate)
     }
 #endif
 }
+
+
+int
+_Py_IsMainThread(void)
+{
+    unsigned long thread = PyThread_get_thread_ident();
+    return (thread == _PyRuntime.main_thread);
+}
+
+
+PyInterpreterState *
+_PyInterpreterState_Main(void)
+{
+    return _PyRuntime.interpreters.main;
+}
+
+
+int
+_Py_IsMainInterpreterFinalizing(PyInterpreterState *interp)
+{
+    /* bpo-39877: Access _PyRuntime directly rather than using
+       tstate->interp->runtime to support calls from Python daemon threads.
+       After Py_Finalize() has been called, tstate can be a dangling pointer:
+       point to PyThreadState freed memory. */
+    return (_PyRuntimeState_GetFinalizing(&_PyRuntime) != NULL &&
+            interp == &_PyRuntime._main_interpreter);
+}
+
+
+const PyConfig *
+_Py_GetMainConfig(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_Main();
+    if (interp == NULL) {
+        return NULL;
+    }
+    return _PyInterpreterState_GetConfig(interp);
+}
