@@ -244,15 +244,15 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
             Py_XINCREF(value);
             PyCell_SetTakeRef((PyCellObject *)cell, value);
         } else if (value != PyStackRef_AsPyObjectBorrow(oldvalue)) {
-            if (!PyStackRef_IsNull(fast[i])) {
+            PyObject *old_obj = PyStackRef_AsPyObjectBorrow(fast[i]);
+            if (old_obj != NULL && !_Py_IsImmortal(old_obj)) {
                 if (frame->f_overwritten_fast_locals == NULL) {
                     frame->f_overwritten_fast_locals = PyList_New(0);
                     if (frame->f_overwritten_fast_locals == NULL) {
                         return -1;
                     }
                 }
-                PyObject *obj = PyStackRef_AsPyObjectBorrow(fast[i]);
-                if (PyList_Append(frame->f_overwritten_fast_locals, obj) < 0) {
+                if (PyList_Append(frame->f_overwritten_fast_locals, old_obj) < 0) {
                     return -1;
                 }
                 PyStackRef_CLOSE(fast[i]);
