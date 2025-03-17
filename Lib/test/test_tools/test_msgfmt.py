@@ -65,9 +65,11 @@ class CompilationTest(unittest.TestCase):
         self.assertEqual(t.ngettext('One email sent.', '%d emails sent.', 2),
                          '%d emails sent.')
         self.assertEqual(t.npgettext('abc', 'One email sent.',
-                                     '%d emails sent.', 1), 'One email sent.')
+                                     '%d emails sent.', 1),
+                         'One email sent.')
         self.assertEqual(t.npgettext('abc', 'One email sent.',
-                                     '%d emails sent.', 2), '%d emails sent.')
+                                     '%d emails sent.', 2),
+                         '%d emails sent.')
 
     def test_po_with_bom(self):
         with temp_cwd():
