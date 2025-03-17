@@ -11,6 +11,7 @@ __all__ = ["getline", "clearcache", "checkcache", "lazycache"]
 # The cache. Maps filenames to either a thunk which will provide source code,
 # or a tuple (size, mtime, lines, fullname) once loaded.
 cache = {}
+_interactive_cache = {}
 
 
 def clearcache():
@@ -42,6 +43,24 @@ def getlines(filename, module_globals=None):
     except MemoryError:
         clearcache()
         return []
+
+
+def _getline_from_code(filename, lineno):
+    lines = _getlines_from_code(filename)
+    if 1 <= lineno <= len(lines):
+        return lines[lineno - 1]
+    return ''
+
+def _make_key(code):
+    return (code.co_filename, code.co_qualname, code.co_firstlineno)
+
+def _getlines_from_code(code):
+    code_id = _make_key(code)
+    if code_id in _interactive_cache:
+        entry = _interactive_cache[code_id]
+        if len(entry) != 1:
+            return _interactive_cache[code_id][2]
+    return []
 
 
 def checkcache(filename=None):
@@ -88,9 +107,13 @@ def updatecache(filename, module_globals=None):
     # These imports are not at top level because linecache is in the critical
     # path of the interpreter startup and importing os and sys take a lot of time
     # and slows down the startup sequence.
-    import os
-    import sys
-    import tokenize
+    try:
+        import os
+        import sys
+        import tokenize
+    except ImportError:
+        # These import can fail if the interpreter is shutting down
+        return []
 
     if filename in cache:
         if len(cache[filename]) != 1:
@@ -194,10 +217,15 @@ def lazycache(filename, module_globals):
             return True
     return False
 
-
 def _register_code(code, string, name):
-    cache[code] = (
-            len(string),
-            None,
-            [line + '\n' for line in string.splitlines()],
-            name)
+    entry = (len(string),
+             None,
+             [line + '\n' for line in string.splitlines()],
+             name)
+    stack = [code]
+    while stack:
+        code = stack.pop()
+        for const in code.co_consts:
+            if isinstance(const, type(code)):
+                stack.append(const)
+        _interactive_cache[_make_key(code)] = entry

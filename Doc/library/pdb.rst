@@ -75,10 +75,12 @@ The debugger's prompt is ``(Pdb)``, which is the indicator that you are in debug
    arguments of the ``p`` command.
 
 
+.. program:: pdb
+
 You can also invoke :mod:`pdb` from the command line to debug other scripts.  For
 example::
 
-   python -m pdb myscript.py
+   python -m pdb [-c command] (-m module | pyfile) [args ...]
 
 When invoked as a module, pdb will automatically enter post-mortem debugging if
 the program being debugged exits abnormally.  After post-mortem debugging (or
@@ -86,14 +88,21 @@ after normal exit of the program), pdb will restart the program.  Automatic
 restarting preserves pdb's state (such as breakpoints) and in most cases is more
 useful than quitting the debugger upon program's exit.
 
-.. versionchanged:: 3.2
-   Added the ``-c`` option to execute commands as if given
-   in a :file:`.pdbrc` file; see :ref:`debugger-commands`.
+.. option:: -c, --command <command>
 
-.. versionchanged:: 3.7
-   Added the ``-m`` option to execute modules similar to the way
-   ``python -m`` does. As with a script, the debugger will pause execution just
-   before the first line of the module.
+   To execute commands as if given in a :file:`.pdbrc` file; see
+   :ref:`debugger-commands`.
+
+   .. versionchanged:: 3.2
+      Added the ``-c`` option.
+
+.. option:: -m <module>
+
+   To execute modules similar to the way ``python -m`` does. As with a script,
+   the debugger will pause execution just before the first line of the module.
+
+   .. versionchanged:: 3.7
+      Added the ``-m`` option.
 
 Typical usage to execute a statement under control of the debugger is::
 
@@ -245,6 +254,10 @@ access further features, you have to do this yourself:
    .. versionadded:: 3.14
       Added the *mode* argument.
 
+   .. versionchanged:: 3.14
+      Inline breakpoints like :func:`breakpoint` or :func:`pdb.set_trace` will
+      always stop the program at calling frame, ignoring the *skip* pattern (if any).
+
    .. method:: run(statement, globals=None, locals=None)
                runeval(expression, globals=None, locals=None)
                runcall(function, *args, **kwds)
@@ -300,15 +313,19 @@ sets a global variable ``$foo`` which you can use in the debugger session.  The
 less likely to interfere with your program compared to using normal variables
 like ``foo = 1``.
 
-There are three preset *convenience variables*:
+There are four preset *convenience variables*:
 
 * ``$_frame``: the current frame you are debugging
 * ``$_retval``: the return value if the frame is returning
 * ``$_exception``: the exception if the frame is raising an exception
+* ``$_asynctask``: the asyncio task if pdb stops in an async function
 
 .. versionadded:: 3.12
 
    Added the *convenience variable* feature.
+
+.. versionadded:: 3.14
+   Added the ``$_asynctask`` convenience variable.
 
 .. index::
    pair: .pdbrc; file

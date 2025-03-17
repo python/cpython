@@ -489,7 +489,6 @@ class TestMiscellaneous(unittest.TestCase):
         # valid. Furthermore LC_CTYPE=UTF is used by the UTF-8 locale coercing
         # during interpreter startup (on macOS).
         import _locale
-        import os
 
         self.assertEqual(locale._parse_localename('UTF-8'), (None, 'UTF-8'))
 
@@ -501,9 +500,7 @@ class TestMiscellaneous(unittest.TestCase):
 
         try:
             with os_helper.EnvironmentVarGuard() as env:
-                for key in ('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE'):
-                    env.unset(key)
-
+                env.unset('LC_ALL', 'LC_CTYPE', 'LANG', 'LANGUAGE')
                 env.set('LC_CTYPE', 'UTF-8')
 
                 with check_warnings(('', DeprecationWarning)):

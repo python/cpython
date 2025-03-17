@@ -21,11 +21,27 @@ if TYPE_CHECKING:
 GITHUB_DEFAULT_BRANCH = os.environ["GITHUB_DEFAULT_BRANCH"]
 GITHUB_CODEOWNERS_PATH = Path(".github/CODEOWNERS")
 GITHUB_WORKFLOWS_PATH = Path(".github/workflows")
+
 CONFIGURATION_FILE_NAMES = frozenset({
     ".pre-commit-config.yaml",
     ".ruff.toml",
     "mypy.ini",
 })
+UNIX_BUILD_SYSTEM_FILE_NAMES = frozenset({
+    Path("aclocal.m4"),
+    Path("config.guess"),
+    Path("config.sub"),
+    Path("configure"),
+    Path("configure.ac"),
+    Path("install-sh"),
+    Path("Makefile.pre.in"),
+    Path("Modules/makesetup"),
+    Path("Modules/Setup"),
+    Path("Modules/Setup.bootstrap.in"),
+    Path("Modules/Setup.stdlib.in"),
+    Path("Tools/build/regen-configure.sh"),
+})
+
 SUFFIXES_C_OR_CPP = frozenset({".c", ".h", ".cpp"})
 SUFFIXES_DOCUMENTATION = frozenset({".rst", ".md"})
 
@@ -36,6 +52,7 @@ class Outputs:
     run_docs: bool = False
     run_tests: bool = False
     run_windows_msi: bool = False
+    run_windows_tests: bool = False
 
 
 def compute_changes() -> None:
@@ -53,6 +70,8 @@ def compute_changes() -> None:
 
     if outputs.run_tests:
         print("Run tests")
+    if outputs.run_windows_tests:
+        print("Run Windows tests")
 
     if outputs.run_ci_fuzz:
         print("Run CIFuzz tests")
@@ -98,6 +117,7 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
     run_tests = False
     run_ci_fuzz = False
     run_docs = False
+    run_windows_tests = False
     run_windows_msi = False
 
     for file in changed_files:
@@ -119,6 +139,9 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
             or file.name in CONFIGURATION_FILE_NAMES
         ):
             run_tests = True
+
+            if file not in UNIX_BUILD_SYSTEM_FILE_NAMES:
+                run_windows_tests = True
 
         # The fuzz tests are pretty slow so they are executed only for PRs
         # changing relevant files.
@@ -142,6 +165,7 @@ def process_changed_files(changed_files: Set[Path]) -> Outputs:
         run_ci_fuzz=run_ci_fuzz,
         run_docs=run_docs,
         run_tests=run_tests,
+        run_windows_tests=run_windows_tests,
         run_windows_msi=run_windows_msi,
     )
 
@@ -172,6 +196,7 @@ def write_github_output(outputs: Outputs) -> None:
         f.write(f"run-ci-fuzz={bool_lower(outputs.run_ci_fuzz)}\n")
         f.write(f"run-docs={bool_lower(outputs.run_docs)}\n")
         f.write(f"run-tests={bool_lower(outputs.run_tests)}\n")
+        f.write(f"run-windows-tests={bool_lower(outputs.run_windows_tests)}\n")
         f.write(f"run-windows-msi={bool_lower(outputs.run_windows_msi)}\n")
 
 

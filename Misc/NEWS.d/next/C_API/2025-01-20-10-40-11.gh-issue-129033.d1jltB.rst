@@ -1,4 +1,0 @@
-Remove ``_PyInterpreterState_GetConfigCopy()`` and
-``_PyInterpreterState_SetConfig()`` private functions. Use instead
-:c:func:`PyConfig_Get` and :c:func:`PyConfig_Set`, public C API added by
-:pep:`741` "Python Configuration C API". Patch by Victor Stinner.

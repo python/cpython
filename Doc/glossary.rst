@@ -719,7 +719,7 @@ Glossary
       iterables include all sequence types (such as :class:`list`, :class:`str`,
       and :class:`tuple`) and some non-sequence types like :class:`dict`,
       :term:`file objects <file object>`, and objects of any classes you define
-      with an :meth:`~iterator.__iter__` method or with a
+      with an :meth:`~object.__iter__` method or with a
       :meth:`~object.__getitem__` method
       that implements :term:`sequence` semantics.
 
@@ -939,10 +939,15 @@ Glossary
       modules, respectively.
 
    namespace package
-      A :pep:`420` :term:`package` which serves only as a container for
-      subpackages.  Namespace packages may have no physical representation,
+      A :term:`package` which serves only as a container for subpackages.
+      Namespace packages may have no physical representation,
       and specifically are not like a :term:`regular package` because they
       have no ``__init__.py`` file.
+
+      Namespace packages allow several individually installable packages to have a common parent package.
+      Otherwise, it is recommended to use a :term:`regular package`.
+
+      For more information, see :pep:`420` and :ref:`reference-namespace-package`.
 
       See also :term:`module`.
 

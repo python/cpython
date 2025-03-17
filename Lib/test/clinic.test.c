@@ -3976,7 +3976,7 @@ test_preprocessor_guarded_if_with_continuation_impl(PyObject *module)
 /*[clinic end generated code: output=3d0712ca9e2d15b9 input=4a956fd91be30284]*/
 #endif
 
-#if CONDITION_E || CONDITION_F
+#if CONDITION_E || CONDITION_F
 #warning "different type of CPP directive"
 /*[clinic input]
 test_preprocessor_guarded_if_e_or_f
@@ -4940,7 +4940,7 @@ static int
 Test_metho_not_default_return_converter_impl(TestObj *self, PyObject *a);
 
 static PyObject *
-Test_metho_not_default_return_converter(TestObj *self, PyObject *a)
+Test_metho_not_default_return_converter(PyObject *self, PyObject *a)
 {
     PyObject *return_value = NULL;
     int _return_value;
@@ -4957,7 +4957,7 @@ exit:
 
 static int
 Test_metho_not_default_return_converter_impl(TestObj *self, PyObject *a)
-/*[clinic end generated code: output=b2cce75a7af2e6ce input=428657129b521177]*/
+/*[clinic end generated code: output=8b03f5213c312138 input=428657129b521177]*/
 
 
 /*[clinic input]
@@ -5235,14 +5235,14 @@ static PyObject *
 Test_class_method_impl(PyTypeObject *type);
 
 static PyObject *
-Test_class_method(PyTypeObject *type, PyObject *Py_UNUSED(ignored))
+Test_class_method(PyObject *type, PyObject *Py_UNUSED(ignored))
 {
-    return Test_class_method_impl(type);
+    return Test_class_method_impl((PyTypeObject *)type);
 }
 
 static PyObject *
 Test_class_method_impl(PyTypeObject *type)
-/*[clinic end generated code: output=47fb7ecca1abcaaa input=43bc4a0494547b80]*/
+/*[clinic end generated code: output=64f93e6252bde409 input=43bc4a0494547b80]*/
 
 
 /*[clinic input]
@@ -5262,14 +5262,14 @@ static PyObject *
 Test_static_method_impl();
 
 static PyObject *
-Test_static_method(void *null, PyObject *Py_UNUSED(ignored))
+Test_static_method(PyObject *null, PyObject *Py_UNUSED(ignored))
 {
     return Test_static_method_impl();
 }
 
 static PyObject *
 Test_static_method_impl()
-/*[clinic end generated code: output=82524a63025cf7ab input=dae892fac55ae72b]*/
+/*[clinic end generated code: output=9e401fb6ed56a4f3 input=dae892fac55ae72b]*/
 
 
 /*[clinic input]
