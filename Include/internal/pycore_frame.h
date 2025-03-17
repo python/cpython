@@ -32,9 +32,9 @@ struct _frame {
        PyEval_GetLocals requires a borrowed reference so the actual reference
        is stored here */
     PyObject *f_locals_cache;
-    /* A list containing strong references to fast locals that were overwritten
+    /* A tuple containing strong references to fast locals that were overwritten
      * via f_locals. Borrowed references to these locals may exist in frames
-     * closer to the top of the stack. The references in this list act as
+     * closer to the top of the stack. The references in this tuple act as
      * "support" for the borrowed references, ensuring that they remain valid.
      */
     PyObject *f_overwritten_fast_locals;

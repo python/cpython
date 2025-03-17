@@ -207,6 +207,29 @@ framelocalsproxy_getitem(PyObject *self, PyObject *key)
 }
 
 static int
+add_overwritten_fast_local(PyFrameObject *frame, PyObject *obj)
+{
+    Py_ssize_t new_size = 1;
+    if (frame->f_overwritten_fast_locals != NULL) {
+        new_size = PyTuple_Size(frame->f_overwritten_fast_locals);
+        if (new_size == -1) {
+            return -1;
+        }
+    }
+    PyObject *new_tuple = PyTuple_New(new_size);
+    if (new_tuple == NULL) {
+        return -1;
+    }
+    for (Py_ssize_t i = 0; i < new_size - 1; i++) {
+        PyObject *o = PyTuple_GET_ITEM(frame->f_overwritten_fast_locals, i);
+        PyTuple_SET_ITEM(new_tuple, i, Py_NewRef(o));
+    }
+    PyTuple_SET_ITEM(new_tuple, new_size - 1, Py_NewRef(obj));
+    Py_XSETREF(frame->f_overwritten_fast_locals, new_tuple);
+    return 0;
+}
+
+static int
 framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
 {
     /* Merge locals into fast locals */
@@ -246,13 +269,7 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
         } else if (value != PyStackRef_AsPyObjectBorrow(oldvalue)) {
             PyObject *old_obj = PyStackRef_AsPyObjectBorrow(fast[i]);
             if (old_obj != NULL && !_Py_IsImmortal(old_obj)) {
-                if (frame->f_overwritten_fast_locals == NULL) {
-                    frame->f_overwritten_fast_locals = PyList_New(0);
-                    if (frame->f_overwritten_fast_locals == NULL) {
-                        return -1;
-                    }
-                }
-                if (PyList_Append(frame->f_overwritten_fast_locals, old_obj) < 0) {
+                if (add_overwritten_fast_local(frame, old_obj) < 0) {
                     return -1;
                 }
                 PyStackRef_CLOSE(fast[i]);
