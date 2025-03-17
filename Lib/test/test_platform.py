@@ -553,6 +553,9 @@ class PlatformTest(unittest.TestCase):
                 (b'libc.so.1.2.5', ('libc', '1.2.5')),
                 (b'libc_pthread.so.1.2.5', ('libc', '1.2.5_pthread')),
                 (b'/aports/main/musl/src/musl-1.2.5', ('musl', '1.2.5')),
+                # musl uses semver, but we accept some variations anyway:
+                (b'/aports/main/musl/src/musl-12.5', ('musl', '12.5')),
+                (b'/aports/main/musl/src/musl-1.2.5.7', ('musl', '1.2.5.7')),
                 (b'', ('', '')),
             ):
                 with open(filename, 'wb') as fp:
