@@ -201,11 +201,9 @@ class InteractiveColoredConsole(code.InteractiveConsole):
         if tree.body:
             *_, last_stmt = tree.body
         for stmt in tree.body:
-            wrapper = ast.Interactive if stmt is last_stmt else ast.Module
-            the_symbol = symbol if stmt is last_stmt else "exec"
-            item = wrapper([stmt])
+            item = ast.Interactive([stmt])
             try:
-                code = self.compile.compiler(item, filename, the_symbol)
+                code = self.compile.compiler(item, filename, symbol)
                 linecache._register_code(code, source, filename)
             except SyntaxError as e:
                 if e.args[0] == "'await' outside function":
