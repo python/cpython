@@ -2001,7 +2001,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         # days out of range have their own error message, see issue 70647
         with self.assertRaises(ValueError) as msg:
             self.theclass(2009, 1, 32)
-        self.assertIn(f"day 32 must be in range 1..30 for month 4 in year 2009", str(msg.exception))
+        self.assertIn(f"day 32 must be in range 1..31 for month 1 in year 2009", str(msg.exception))
 
     def test_fromisoformat(self):
         # Test that isoformat() is reversible
