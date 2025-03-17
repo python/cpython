@@ -1404,8 +1404,8 @@ iterations of the loop.
 
 .. opcode:: LOAD_FAST_BORROW (var_num)
 
-   Pushes a borrowed reference to the local ``co_varnames[var_num]`` onto the stack
-   in free-threaded builds. In default builds this is identical to ``LOAD_FAST``.
+   Pushes a borrowed reference to the local ``co_varnames[var_num]`` onto the
+   stack.
 
    .. versionadded:: 3.14
 
@@ -1420,8 +1420,7 @@ iterations of the loop.
 .. opcode:: LOAD_FAST_BORROW_LOAD_FAST_BORROW (var_nums)
 
    Pushes borrowed references to ``co_varnames[var_nums >> 4]`` and
-   ``co_varnames[var_nums & 15]`` onto the stack in free-threaded builds. This is
-   identical to ``LOAD_FAST_LOAD_FAST`` in default builds.
+   ``co_varnames[var_nums & 15]`` onto the stack.
 
    .. versionadded:: 3.14
 
