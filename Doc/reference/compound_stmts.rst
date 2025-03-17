@@ -423,7 +423,7 @@ If the :keyword:`!finally` clause executes a :keyword:`return`, :keyword:`break`
 or :keyword:`continue` statement, the saved exception is discarded. For example,
 this function returns 42.
 
-.. code::
+.. code-block::
 
    def f():
        try:
@@ -448,7 +448,7 @@ statement executed.  Since the :keyword:`!finally` clause always executes, a
 :keyword:`!return` statement executed in the :keyword:`!finally` clause will
 always be the last one executed. The following function returns 'finally'.
 
-.. code::
+.. code-block::
 
    def foo():
        try:
@@ -460,7 +460,7 @@ always be the last one executed. The following function returns 'finally'.
    Prior to Python 3.8, a :keyword:`continue` statement was illegal in the
    :keyword:`!finally` clause due to a problem with the implementation.
 
-.. versionchanged:: 3.14
+.. versionchanged:: next
    The compiler emits a :exc:`SyntaxWarning` when a :keyword:`return`,
    :keyword:`break` or :keyword:`continue` appears in a :keyword:`!finally`
    block (see :pep:`765`).
