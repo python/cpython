@@ -125,7 +125,7 @@ For max-heaps, the following functions are provided:
    The max-heap size doesn't change. If the max-heap is empty, :exc:`IndexError` is raised.
 
    The value returned may be smaller than the *item* added.  Refer to the analogous
-   function heapreplace for detailed usage notes.
+   function :func:`heapreplace` for detailed usage notes.
 
    .. versionadded:: next
 
