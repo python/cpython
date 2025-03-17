@@ -5,10 +5,10 @@
 #include "Python.h"
 #include "pycore_ast.h"           // asdl_stmt_seq
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
-#include <assert.h>
-#include <stdbool.h>
+#include <stdbool.h>              // bool
+
 
 #define ENTER_RECURSIVE() \
 if (Py_EnterRecursiveCall(" during compilation")) { \

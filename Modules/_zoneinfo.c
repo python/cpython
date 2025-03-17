@@ -11,7 +11,8 @@
 #include "datetime.h"             // PyDateTime_TZInfo
 
 #include <stddef.h>               // offsetof()
-#include <stdint.h>
+#include <stdint.h>               // int64_t
+
 
 #include "clinic/_zoneinfo.c.h"
 /*[clinic input]
