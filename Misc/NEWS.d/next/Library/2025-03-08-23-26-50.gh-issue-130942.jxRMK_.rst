@@ -1,1 +1,1 @@
-Glob.translate escapes regex ranges that ecompass path seperator.
+Glob.translate negative-lookaheads path separators regex ranges that ecompass path seperator. For ranges which include path separator literals, the range is escaped.
