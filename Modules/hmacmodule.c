@@ -1030,20 +1030,32 @@ _hmac_HMAC_update_impl(HMACObject *self, PyObject *msgobj)
  *
  * At least 'self->digest_size' bytes should be available
  * in the 'digest' pointed memory area.
+ *
+ * Return 0 on success; otherwise, set an exception and return -1 on failure.
+ *
+ * Note: this function may raise a MemoryError.
  */
-static inline void
+static int
 hmac_digest_compute_cond_lock(HMACObject *self, uint8_t *digest)
 {
     assert(digest != NULL);
+    hacl_errno_t rc;
     ENTER_HASHLIB(self);  // conditionally acquire a lock
-    Hacl_Streaming_HMAC_digest(self->state, digest, self->digest_size);
+    rc = Hacl_Streaming_HMAC_digest(self->state, digest, self->digest_size);
     LEAVE_HASHLIB(self);
+    assert(
+        rc == Hacl_Streaming_Types_Success ||
+        rc == Hacl_Streaming_Types_OutOfMemory
+    );
+    return _hacl_convert_errno(rc, NULL);
 }
 
 /*[clinic input]
 _hmac.HMAC.digest
 
 Return the digest of the bytes passed to the update() method so far.
+
+This method may raise a MemoryError.
 [clinic start generated code]*/
 
 static PyObject *
@@ -1052,7 +1064,9 @@ _hmac_HMAC_digest_impl(HMACObject *self)
 {
     assert(self->digest_size <= Py_hmac_hash_max_digest_size);
     uint8_t digest[Py_hmac_hash_max_digest_size];
-    hmac_digest_compute_cond_lock(self, digest);
+    if (hmac_digest_compute_cond_lock(self, digest) < 0) {
+        return NULL;
+    }
     return PyBytes_FromStringAndSize((const char *)digest, self->digest_size);
 }
 
@@ -1063,6 +1077,8 @@ Return hexadecimal digest of the bytes passed to the update() method so far.
 
 This may be used to exchange the value safely in email or other non-binary
 environments.
+
+This method may raise a MemoryError.
 [clinic start generated code]*/
 
 static PyObject *
@@ -1071,7 +1087,9 @@ _hmac_HMAC_hexdigest_impl(HMACObject *self)
 {
     assert(self->digest_size <= Py_hmac_hash_max_digest_size);
     uint8_t digest[Py_hmac_hash_max_digest_size];
-    hmac_digest_compute_cond_lock(self, digest);
+    if (hmac_digest_compute_cond_lock(self, digest) < 0) {
+        return NULL;
+    }
     return _Py_strhex((const char *)digest, self->digest_size);
 }
 
