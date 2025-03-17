@@ -122,7 +122,6 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include <stdlib.h>               // exit()
 
-typedef uint32_t ULong;
 
 /* if _PY_SHORT_FLOAT_REPR == 0, then don't even try to compile
    the following code */
@@ -159,7 +158,7 @@ typedef uint32_t ULong;
 #endif
 
 
-// ULong is defined in pycore_dtoa.h.
+typedef uint32_t ULong;
 typedef int32_t Long;
 typedef uint64_t ULLong;
 
