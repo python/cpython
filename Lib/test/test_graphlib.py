@@ -149,6 +149,12 @@ class TestTopologicalSort(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"cannot prepare\(\) after starting sort"):
             ts.prepare()
 
+    def test_prepare_cycleerror_each_time(self):
+        ts = graphlib.TopologicalSorter({'a': 'b', 'b': 'a'})
+        for attempt in range(1, 4):
+            with self.assertRaises(graphlib.CycleError, msg=f"{attempt=}"):
+                ts.prepare()
+
     def test_invalid_nodes_in_done(self):
         ts = graphlib.TopologicalSorter()
         ts.add(1, 2, 3, 4)
