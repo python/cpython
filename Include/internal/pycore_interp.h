@@ -42,7 +42,6 @@ extern "C" {
 #include "pycore_warnings.h"      // struct _warnings_runtime_state
 
 
-
 /* interpreter state */
 
 #define _PyInterpreterState_WHENCE_NOTSET -1
@@ -133,6 +132,9 @@ extern int _PyInterpreterState_HasFeature(PyInterpreterState *interp,
 PyAPI_FUNC(PyStatus) _PyInterpreterState_New(
     PyThreadState *tstate,
     PyInterpreterState **pinterp);
+
+extern const PyConfig* _PyInterpreterState_GetConfig(
+    PyInterpreterState *interp);
 
 #ifdef __cplusplus
 }

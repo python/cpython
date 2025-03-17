@@ -5,9 +5,10 @@ extern "C" {
 #endif
 
 #include "pycore_ast_state.h"     // struct ast_state
-#include "pycore_llist.h"
+#include "pycore_llist.h"         // struct llist_node
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
-#include "pycore_structs.h"
+#include "pycore_structs.h"       // PyHamtObject
+#include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_typedefs.h"      // _PyRuntimeState
 
 
@@ -245,13 +246,6 @@ struct _gc_runtime_state {
     int freeze_active;
 #endif
 };
-
-#ifdef Py_GIL_DISABLED
-struct _gc_thread_state {
-    /* Thread-local allocation count. */
-    Py_ssize_t alloc_count;
-};
-#endif
 
 #include "pycore_gil.h"
 
