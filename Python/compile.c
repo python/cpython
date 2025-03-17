@@ -15,15 +15,20 @@
  */
 
 #include "Python.h"
-#include "pycore_ast.h"           // PyAST_Check, _PyAST_GetDocString()
+#include "pycore_ast.h"           // PyAST_Check()
+#include "pycore_code.h"
 #include "pycore_compile.h"
-#include "pycore_flowgraph.h"
+#include "pycore_flowgraph.h"     // _PyCfg_FromInstructionSequence()
 #include "pycore_pystate.h"       // _Py_GetConfig()
+#include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_stats.h"
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #include "cpython/code.h"
 
 #include <stdbool.h>
+
 
 #undef SUCCESS
 #undef ERROR

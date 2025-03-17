@@ -3,9 +3,9 @@
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #include "pycore_c_array.h"       // _Py_CArray_EnsureCapacity()
 #include "pycore_format.h"        // F_LJUST
-#include "pycore_long.h"          // _PyLong
-#include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_runtime.h"       // _Py_STR()
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 
 /* See PEP 765 */
