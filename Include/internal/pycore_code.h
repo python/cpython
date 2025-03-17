@@ -8,29 +8,12 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_structs.h"     // _Py_CODEUNIT
 #include "pycore_stackref.h"    // _PyStackRef
 #include "pycore_lock.h"        // PyMutex
 #include "pycore_backoff.h"     // _Py_BackoffCounter
 #include "pycore_tstate.h"      // _PyThreadStateImpl
 
-
-/* Each instruction in a code object is a fixed-width value,
- * currently 2 bytes: 1-byte opcode + 1-byte oparg.  The EXTENDED_ARG
- * opcode allows for larger values but the current limit is 3 uses
- * of EXTENDED_ARG (see Python/compile.c), for a maximum
- * 32-bit value.  This aligns with the note in Python/compile.c
- * (compiler_addop_i_line) indicating that the max oparg value is
- * 2**32 - 1, rather than INT_MAX.
- */
-
-typedef union {
-    uint16_t cache;
-    struct {
-        uint8_t code;
-        uint8_t arg;
-    } op;
-    _Py_BackoffCounter counter;  // First cache entry of specializable op
-} _Py_CODEUNIT;
 
 #define _PyCode_CODE(CO) _Py_RVALUE((_Py_CODEUNIT *)(CO)->co_code_adaptive)
 #define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
@@ -67,16 +50,10 @@ _py_set_opcode(_Py_CODEUNIT *word, uint8_t opcode)
 #define _PyCode_HAS_INSTRUMENTATION(CODE) \
     (CODE->_co_instrumentation_version > 0)
 
-struct _py_code_state {
-    PyMutex mutex;
-    // Interned constants from code objects. Used by the free-threaded build.
-    struct _Py_hashtable_t *constants;
-};
 
 extern PyStatus _PyCode_Init(PyInterpreterState *interp);
 extern void _PyCode_Fini(PyInterpreterState *interp);
 
-#define CODE_MAX_WATCHERS 8
 
 /* PEP 659
  * Specialization and quickening structs and helper functions
@@ -184,14 +161,6 @@ typedef struct {
 } _PyContainsOpCache;
 
 #define INLINE_CACHE_ENTRIES_CONTAINS_OP CACHE_ENTRIES(_PyContainsOpCache)
-
-// Borrowed references to common callables:
-struct callable_cache {
-    PyObject *isinstance;
-    PyObject *len;
-    PyObject *list_append;
-    PyObject *object__getattribute__;
-};
 
 /* "Locals plus" for a code object is the set of locals + cell vars +
  * free vars.  This relates to variable names as well as offsets into
