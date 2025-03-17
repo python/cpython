@@ -3408,15 +3408,15 @@ class TestSingleDispatch(unittest.TestCase):
                     return arg
 
          # 'self' cannot be the only parameter
-         with self.assertRaises(TypeError):
-             class Foo:
-                 @functools.singledispatchmethod
-                 def bar(self: typing.Self, arg: int | str):
-                     pass
+        with self.assertRaises(TypeError):
+            class Foo:
+                @functools.singledispatchmethod
+                def bar(self: typing.Self, arg: int | str):
+                    pass
 
-                 @bar.register
-                 def _(self: typing.Self):
-                     pass
+                @bar.register
+                def _(self: typing.Self):
+                    pass
 
 
 class CachedCostItem:
