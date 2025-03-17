@@ -1,2 +1,0 @@
-Correct :func:`time.sleep` error message when an object that cannot be interpreted
-as an integer or float is provided.

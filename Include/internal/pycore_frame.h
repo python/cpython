@@ -12,6 +12,7 @@ extern "C" {
 #include <stddef.h>               // offsetof()
 #include "pycore_code.h"          // STATS
 #include "pycore_stackref.h"      // _PyStackRef
+#include "pycore_stats.h"
 
 /* See InternalDocs/frames.md for an explanation of the frame stack
  * including explanation of the PyFrameObject and _PyInterpreterFrame

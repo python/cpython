@@ -9,16 +9,18 @@
 #include "Python.h"
 #include "pycore_call.h"             // _PyObject_CallNoArgs()
 #include "pycore_code.h"             // _PyCode_New()
-#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_hashtable.h"        // _Py_hashtable_t
-#include "pycore_long.h"             // _PyLong_DigitCount
-#include "pycore_setobject.h"        // _PySet_NextEntry()
-#include "marshal.h"                 // Py_MARSHAL_VERSION
+#include "pycore_long.h"             // _PyLong_IsZero()
 #include "pycore_pystate.h"          // _PyInterpreterState_GET()
+#include "pycore_setobject.h"        // _PySet_NextEntryRef()
+#include "pycore_unicodeobject.h"    // _PyUnicode_InternImmortal()
+
+#include "marshal.h"                 // Py_MARSHAL_VERSION
 
 #ifdef __APPLE__
 #  include "TargetConditionals.h"
 #endif /* __APPLE__ */
+
 
 /*[clinic input]
 module marshal

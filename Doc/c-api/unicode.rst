@@ -1868,7 +1868,7 @@ The following API is deprecated.
 
    .. versionadded:: 3.3
 
-   .. deprecated:: next
+   .. deprecated:: 3.14
       This API does nothing since Python 3.12.
       Previously, this could be called to check if
       :c:func:`PyUnicode_READY` is necessary.

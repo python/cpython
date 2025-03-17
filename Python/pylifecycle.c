@@ -1,7 +1,8 @@
 /* Python interpreter top-level routines, including init/exit */
 
 #include "Python.h"
-
+#include "pycore_runtime_structs.h"
+#include "pycore_unicodeobject.h"
 #include "pycore_audit.h"         // _PySys_ClearAuditHooks()
 #include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
@@ -13,6 +14,7 @@
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
 #include "pycore_global_objects_fini_generated.h"  // "_PyStaticObjects_CheckRefcnt()
+#include "pycore_hamt.h"          // _PyHamt_Type
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_list.h"          // _PyList_Fini()

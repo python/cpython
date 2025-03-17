@@ -702,7 +702,7 @@
             assert(res_o != NULL);
             res = PyStackRef_FromPyObjectNew(res_o);
             #endif
-            STAT_INC(BINARY_SUBSCR, hit);
+            STAT_INC(BINARY_OP, hit);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyStackRef tmp = list_st;
             list_st = res;

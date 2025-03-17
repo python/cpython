@@ -5,6 +5,7 @@
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_GetLocaleconvNumeric()
 #include "pycore_long.h"          // _PyLong_FormatWriter()
+#include "pycore_unicodeobject.h" // PyUnicode_MAX_CHAR_VALUE()
 #include <locale.h>
 
 /* Raises an exception about an unknown presentation type for this

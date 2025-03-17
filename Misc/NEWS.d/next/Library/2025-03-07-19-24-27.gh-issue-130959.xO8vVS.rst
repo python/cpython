@@ -1,3 +1,0 @@
-Fix pure-Python implementation of :func:`datetime.time.fromisoformat` to reject
-times with spaces in fractional part (for example, ``12:34:56.400 +02:00``),
-matching the C implementation. Patch by Michał Gorny.
