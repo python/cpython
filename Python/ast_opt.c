@@ -21,9 +21,6 @@ typedef struct {
     int ff_features;
     int syntax_check_only;
 
-    int recursion_depth;            /* current recursion depth */
-    int recursion_limit;            /* recursion limit */
-
     _Py_c_array_t cf_finally;       /* context for PEP 678 check */
     int cf_finally_used;
 } _PyASTOptimizeState;
