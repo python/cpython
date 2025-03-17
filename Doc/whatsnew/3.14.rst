@@ -837,7 +837,7 @@ pdb
 
 * ``$_asynctask`` is added to access the current asyncio task if applicable.
   (Contributed by Tian Gao in :gh:`124367`.)
-  
+
 * :mod:`pdb` now supports two backends: :func:`sys.settrace` and
   :mod:`sys.monitoring`. Using :mod:`pdb` CLI or :func:`breakpoint` will
   always use the :mod:`sys.monitoring` backend. Explicitly instantiating
