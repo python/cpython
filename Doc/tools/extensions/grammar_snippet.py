@@ -150,7 +150,7 @@ class GrammarSnippetBase(SphinxDirective):
                 case 'text':
                     production_node += nodes.Text(content)
                 case _:
-                    raise ValueError('unhandled match')
+                    raise ValueError(f'unhandled match: {re_group_name!r}')
         return production_node
 
     def make_name_target(
