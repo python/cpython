@@ -454,8 +454,10 @@ Module constants
    This flag may be combined with :const:`PARSE_COLNAMES` using the ``|``
    (bitwise or) operator.
 
-   Generated fields (for example ``MAX(data)``) are returned as :class:`str`;
-   use :const:`!PARSE_COLNAMES` to enforce types for such queries.
+   .. note::
+
+      Generated fields (for example ``MAX(p)``) are returned as :class:`str`.
+      Use :const:`!PARSE_COLNAMES` to enforce types for such queries.
 
 .. data:: PARSE_COLNAMES
 
