@@ -1,1 +1,1 @@
-Fix the :option:`--exclude-file` option in :program:`pygettext`.
+Fix the :option:`!--exclude-file` option in :program:`pygettext`.
