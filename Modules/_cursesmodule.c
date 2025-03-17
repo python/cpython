@@ -109,6 +109,7 @@ static const char PyCursesVersion[] = "2.2";
 #include "pycore_long.h"        // _PyLong_GetZero()
 #include "pycore_structseq.h"   // _PyStructSequence_NewType()
 #include "pycore_sysmodule.h"   // _PySys_GetOptionalAttrString()
+#include "pycore_fileutils.h"   // _Py_set_inheritable
 
 #ifdef __hpux
 #define STRICT_SYSV_CURSES

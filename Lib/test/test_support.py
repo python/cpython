@@ -744,6 +744,10 @@ class TestSupport(unittest.TestCase):
             self.assertEqual(support.get_signal_name(exitcode), expected,
                              exitcode)
 
+    def test_linked_to_musl(self):
+        linked = support.linked_to_musl()
+        self.assertIsInstance(linked, bool)
+
     # XXX -follows a list of untested API
     # make_legacy_pyc
     # is_resource_enabled

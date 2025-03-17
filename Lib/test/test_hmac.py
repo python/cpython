@@ -61,7 +61,11 @@ class CreatorMixin:
     """Mixin exposing a method creating a HMAC object."""
 
     def hmac_new(self, key, msg=None, digestmod=None):
-        """Create a new HMAC object."""
+        """Create a new HMAC object.
+
+        Implementations should accept arbitrary 'digestmod' as this
+        method can be used to test which exceptions are being raised.
+        """
         raise NotImplementedError
 
     def bind_hmac_new(self, digestmod):
@@ -73,7 +77,11 @@ class DigestMixin:
     """Mixin exposing a method computing a HMAC digest."""
 
     def hmac_digest(self, key, msg=None, digestmod=None):
-        """Compute a HMAC digest."""
+        """Compute a HMAC digest.
+
+        Implementations should accept arbitrary 'digestmod' as this
+        method can be used to test which exceptions are being raised.
+        """
         raise NotImplementedError
 
     def bind_hmac_digest(self, digestmod):
@@ -120,7 +128,7 @@ class ThroughOpenSSLAPIMixin(CreatorMixin, DigestMixin):
         return _hashlib.hmac_digest(key, msg, digest=digestmod)
 
 
-class CheckerMixin:
+class ObjectCheckerMixin:
     """Mixin for checking HMAC objects (pure Python, OpenSSL or built-in)."""
 
     def check_object(self, h, hexdigest, hashname, digest_size, block_size):
@@ -141,10 +149,10 @@ class CheckerMixin:
         self.assertEqual(h.hexdigest().upper(), hexdigest.upper())
 
 
-class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
-    """Mixin class for all test vectors test cases."""
+class AssertersMixin(CreatorMixin, DigestMixin, ObjectCheckerMixin):
+    """Mixin class for common tests."""
 
-    def hmac_new_by_name(self, key, msg=None, hashname=None):
+    def hmac_new_by_name(self, key, msg=None, *, hashname):
         """Alternative implementation of hmac_new().
 
         This is typically useful when one needs to test against an HMAC
@@ -152,13 +160,22 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
         by their name (all HMAC implementations must at least recognize
         hash functions by their names but some may use aliases such as
         `hashlib.sha1` instead of "sha1").
+
+        Unlike hmac_new(), this method may assert the type of 'hashname'
+        as it should only be used in tests that are expected to create
+        a HMAC object.
         """
-        self.assertIsInstance(hashname, str | None)
+        self.assertIsInstance(hashname, str)
         return self.hmac_new(key, msg, digestmod=hashname)
 
-    def hmac_digest_by_name(self, key, msg=None, hashname=None):
-        """Alternative implementation of hmac_digest()."""
-        self.assertIsInstance(hashname, str | None)
+    def hmac_digest_by_name(self, key, msg=None, *, hashname):
+        """Alternative implementation of hmac_digest().
+
+        Unlike hmac_digest(), this method may assert the type of 'hashname'
+        as it should only be used in tests that are expected to compute a
+        HMAC digest.
+        """
+        self.assertIsInstance(hashname, str)
         return self.hmac_digest(key, msg, digestmod=hashname)
 
     def assert_hmac(
@@ -196,7 +213,7 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
         self.assert_hmac_new_by_name(
             key, msg, hexdigest, hashname, digest_size, block_size
         )
-        self.assert_hmac_hexdigest_by_new(
+        self.assert_hmac_hexdigest_by_name(
             key, msg, hexdigest, hashname, digest_size
         )
 
@@ -255,16 +272,28 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
         self, key, msg, hexdigest, digestmod, digest_size,
     ):
         """Check a HMAC digest computed by hmac_digest()."""
-        d = self.hmac_digest(key, msg, digestmod=digestmod)
-        self.assertEqual(len(d), digest_size)
-        self.assertEqual(d, binascii.unhexlify(hexdigest))
+        self._check_hmac_hexdigest(
+            key, msg, hexdigest, digest_size,
+            hmac_digest_func=self.hmac_digest,
+            hmac_digest_kwds={'digestmod': digestmod},
+        )
 
-    def assert_hmac_hexdigest_by_new(
+    def assert_hmac_hexdigest_by_name(
         self, key, msg, hexdigest, hashname, digest_size
     ):
         """Check a HMAC digest computed by hmac_digest_by_name()."""
-        self.assertIsInstance(hashname, str | None)
-        d = self.hmac_digest_by_name(key, msg, hashname=hashname)
+        self.assertIsInstance(hashname, str)
+        self._check_hmac_hexdigest(
+            key, msg, hexdigest, digest_size,
+            hmac_digest_func=self.hmac_digest_by_name,
+            hmac_digest_kwds={'hashname': hashname},
+        )
+
+    def _check_hmac_hexdigest(
+        self, key, msg, hexdigest, digest_size,
+        hmac_digest_func, hmac_digest_kwds,
+    ):
+        d = hmac_digest_func(key, msg, **hmac_digest_kwds)
         self.assertEqual(len(d), digest_size)
         self.assertEqual(d, binascii.unhexlify(hexdigest))
 
@@ -279,7 +308,7 @@ class TestVectorsMixin(CreatorMixin, DigestMixin, CheckerMixin):
         self.check_object(h1, hexdigest, hashname, digest_size, block_size)
 
 
-class PyTestVectorsMixin(PyModuleMixin, TestVectorsMixin):
+class PyAssertersMixin(PyModuleMixin, AssertersMixin):
 
     def assert_hmac_extra_cases(
         self, key, msg, hexdigest, digestmod, hashname, digest_size, block_size
@@ -293,45 +322,61 @@ class PyTestVectorsMixin(PyModuleMixin, TestVectorsMixin):
         self.check_object(h, hexdigest, hashname, digest_size, block_size)
 
 
-class OpenSSLTestVectorsMixin(TestVectorsMixin):
+class OpenSSLAssertersMixin(ThroughOpenSSLAPIMixin, AssertersMixin):
 
-    def hmac_new(self, key, msg=None, digestmod=None):
-        return _hashlib.hmac_new(key, msg, digestmod=digestmod)
-
-    def hmac_digest(self, key, msg=None, digestmod=None):
-        return _hashlib.hmac_digest(key, msg, digest=digestmod)
-
-    def hmac_new_by_name(self, key, msg=None, hashname=None):
-        # ignore 'digestmod' and use the exact openssl function
+    def hmac_new_by_name(self, key, msg=None, *, hashname):
+        self.assertIsInstance(hashname, str)
         openssl_func = getattr(_hashlib, f"openssl_{hashname}")
         return self.hmac_new(key, msg, digestmod=openssl_func)
 
-    def hmac_digest_by_name(self, key, msg=None, hashname=None):
+    def hmac_digest_by_name(self, key, msg=None, *, hashname):
+        self.assertIsInstance(hashname, str)
         openssl_func = getattr(_hashlib, f"openssl_{hashname}")
         return self.hmac_digest(key, msg, digestmod=openssl_func)
 
 
-class RFCTestCasesMixin(TestVectorsMixin):
-    """Test HMAC implementations against test vectors from the RFC.
-
-    Subclasses must override the 'md5' and other 'sha*' attributes
-    to test the implementations. Their value can be a string, a callable,
-    or a PEP-257 module.
-    """
+class HashFunctionsTrait:
+    """Trait class for 'hashfunc' in hmac_new() and hmac_digest()."""
 
     ALGORITHMS = [
         'md5', 'sha1',
         'sha224', 'sha256', 'sha384', 'sha512',
     ]
 
-    # Those will be automatically set to non-None on subclasses
-    # as they are set by __init_subclass()__.
-    md5 = sha1 = sha224 = sha256 = sha384 = sha512 = None
+    # By default, a missing algorithm skips the test that uses it.
+    md5 = sha1 = sha224 = sha256 = sha384 = sha512 = property(
+        lambda self: self.skipTest("missing hash function")
+    )
 
-    def __init_subclass__(cls, *args, **kwargs):
-        super().__init_subclass__(*args, **kwargs)
+
+class WithOpenSSLHashFunctions(HashFunctionsTrait):
+    """Test a HMAC implementation with an OpenSSL-based callable 'hashfunc'."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
+        for name in cls.ALGORITHMS:
+            @property
+            @hashlib_helper.requires_openssl_hashdigest(name)
+            def func(self, *, __name=name):  # __name needed to bind 'name'
+                return getattr(_hashlib, f'openssl_{__name}')
+            setattr(cls, name, func)
+
+
+class WithNamedHashFunctions(HashFunctionsTrait):
+    """Test a HMAC implementation with a named 'hashfunc'."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+
         for name in cls.ALGORITHMS:
             setattr(cls, name, name)
+
+
+class RFCTestCaseMixin(HashFunctionsTrait):
+    """Test HMAC implementations against test vectors from the RFC."""
 
     def test_md5(self):
         def md5test(key, msg, hexdigest):
@@ -412,7 +457,6 @@ class RFCTestCasesMixin(TestVectorsMixin):
         self._test_sha2_rfc4231(self.sha512, 'sha512', 64, 128)
 
     def _test_sha2_rfc4231(self, hashfunc, hashname, digest_size, block_size):
-
         def hmactest(key, data, hexdigests):
             hexdigest = hexdigests[hashname]
 
@@ -531,57 +575,9 @@ class RFCTestCasesMixin(TestVectorsMixin):
                                '134676fb6de0446065c97440fa8c6a58',
                  })
 
-    @hashlib_helper.requires_hashdigest('sha256')
-    def test_legacy_block_size_warnings(self):
-        class MockCrazyHash(object):
-            """Ain't no block_size attribute here."""
-            def __init__(self, *args):
-                self._x = hashlib.sha256(*args)
-                self.digest_size = self._x.digest_size
-            def update(self, v):
-                self._x.update(v)
-            def digest(self):
-                return self._x.digest()
 
-        with warnings.catch_warnings():
-            warnings.simplefilter('error', RuntimeWarning)
-            with self.assertRaises(RuntimeWarning):
-                hmac.HMAC(b'a', b'b', digestmod=MockCrazyHash)
-                self.fail('Expected warning about missing block_size')
-
-            MockCrazyHash.block_size = 1
-            with self.assertRaises(RuntimeWarning):
-                hmac.HMAC(b'a', b'b', digestmod=MockCrazyHash)
-                self.fail('Expected warning about small block_size')
-
-    def test_with_fallback(self):
-        cache = getattr(hashlib, '__builtin_constructor_cache')
-        try:
-            cache['foo'] = hashlib.sha256
-            hexdigest = hmac.digest(b'key', b'message', 'foo').hex()
-            expected = ('6e9ef29b75fffc5b7abae527d58fdadb'
-                        '2fe42e7219011976917343065f58ed4a')
-            self.assertEqual(hexdigest, expected)
-        finally:
-            cache.pop('foo')
-
-
-class RFCWithOpenSSLHashFunctionTestCasesMixin(RFCTestCasesMixin):
-
-    def __init_subclass__(cls, *args, **kwargs):
-        super().__init_subclass__(*args, **kwargs)
-
-        for name in cls.ALGORITHMS:
-            @property
-            @hashlib_helper.requires_hashlib()
-            @hashlib_helper.requires_hashdigest(name, openssl=True)
-            def func(self, *, __name=name):  # __name needed to bind 'name'
-                return getattr(_hashlib, f'openssl_{__name}')
-            setattr(cls, name, func)
-
-
-class PyRFCTestCase(PyTestVectorsMixin, ThroughObjectMixin,
-                    RFCWithOpenSSLHashFunctionTestCasesMixin,
+class PyRFCTestCase(ThroughObjectMixin, PyAssertersMixin,
+                    WithOpenSSLHashFunctions, RFCTestCaseMixin,
                     unittest.TestCase):
     """Python implementation of HMAC using hmac.HMAC().
 
@@ -589,8 +585,8 @@ class PyRFCTestCase(PyTestVectorsMixin, ThroughObjectMixin,
     """
 
 
-class PyDotNewRFCTestCase(PyTestVectorsMixin, ThroughModuleAPIMixin,
-                          RFCWithOpenSSLHashFunctionTestCasesMixin,
+class PyDotNewRFCTestCase(ThroughModuleAPIMixin, PyAssertersMixin,
+                          WithOpenSSLHashFunctions, RFCTestCaseMixin,
                           unittest.TestCase):
     """Python implementation of HMAC using hmac.new().
 
@@ -598,12 +594,13 @@ class PyDotNewRFCTestCase(PyTestVectorsMixin, ThroughModuleAPIMixin,
     """
 
 
-class OpenSSLRFCTestCase(OpenSSLTestVectorsMixin,
-                         RFCWithOpenSSLHashFunctionTestCasesMixin,
+class OpenSSLRFCTestCase(OpenSSLAssertersMixin,
+                         WithOpenSSLHashFunctions, RFCTestCaseMixin,
                          unittest.TestCase):
     """OpenSSL implementation of HMAC.
 
-    The underlying hash functions are also OpenSSL-based."""
+    The underlying hash functions are also OpenSSL-based.
+    """
 
 
 # TODO(picnixz): once we have a HACL* HMAC, we should also test the Python
@@ -668,7 +665,7 @@ class DigestModTestCaseMixin(CreatorMixin, DigestMixin):
         return cases
 
 
-class ConstructorTestCaseMixin(CreatorMixin, DigestMixin, CheckerMixin):
+class ConstructorTestCaseMixin(CreatorMixin, DigestMixin, ObjectCheckerMixin):
     """HMAC constructor tests based on HMAC-SHA-2/256."""
 
     key = b"key"
@@ -847,7 +844,7 @@ class PySanityTestCase(ThroughObjectMixin, PyModuleMixin, SanityTestCaseMixin,
         self.assertStartsWith(repr(h), "<hmac.HMAC object at")
 
 
-@hashlib_helper.requires_hashdigest('sha256', openssl=True)
+@hashlib_helper.requires_openssl_hashdigest('sha256')
 class OpenSSLSanityTestCase(ThroughOpenSSLAPIMixin, SanityTestCaseMixin,
                             unittest.TestCase):
 
@@ -899,44 +896,49 @@ class PyUpdateTestCase(UpdateTestCaseMixin, unittest.TestCase):
         return self.hmac.HMAC(key, msg, digestmod='sha256')
 
 
-@hashlib_helper.requires_hashlib()
-@hashlib_helper.requires_hashdigest('sha256', openssl=True)
+@hashlib_helper.requires_openssl_hashdigest('sha256')
 class OpenSSLUpdateTestCase(UpdateTestCaseMixin, unittest.TestCase):
 
     def HMAC(self, key, msg=None):
         return hmac.new(key, msg, digestmod='sha256')
 
 
-@hashlib_helper.requires_hashdigest('sha256')
-class CopyTestCase(unittest.TestCase):
+class CopyBaseTestCase:
 
-    def test_attributes_old(self):
+    def test_attributes(self):
+        raise NotImplementedError
+
+    def test_realcopy(self):
+        raise NotImplementedError
+
+
+@hashlib_helper.requires_hashdigest('sha256')
+class PythonCopyTestCase(CopyBaseTestCase, unittest.TestCase):
+
+    def test_attributes(self):
         # Testing if attributes are of same type.
         h1 = hmac.HMAC.__new__(hmac.HMAC)
         h1._init_old(b"key", b"msg", digestmod="sha256")
-        h2 = h1.copy()
-        self.assertEqual(type(h1._inner), type(h2._inner))
-        self.assertEqual(type(h1._outer), type(h2._outer))
-
-    def test_realcopy_old(self):
-        # Testing if the copy method created a real copy.
-        h1 = hmac.HMAC.__new__(hmac.HMAC)
-        h1._init_old(b"key", b"msg", digestmod="sha256")
         self.assertIsNone(h1._hmac)
+        self.assertIsNotNone(h1._inner)
+        self.assertIsNotNone(h1._outer)
 
         h2 = h1.copy()
         self.assertIsNone(h2._hmac)
+        self.assertIsNotNone(h2._inner)
+        self.assertIsNotNone(h2._outer)
+        self.assertEqual(type(h1._inner), type(h2._inner))
+        self.assertEqual(type(h1._outer), type(h2._outer))
+
+    def test_realcopy(self):
+        # Testing if the copy method created a real copy.
+        h1 = hmac.HMAC.__new__(hmac.HMAC)
+        h1._init_old(b"key", b"msg", digestmod="sha256")
+        h2 = h1.copy()
         # Using id() in case somebody has overridden __eq__/__ne__.
         self.assertNotEqual(id(h1), id(h2))
         self.assertNotEqual(id(h1._inner), id(h2._inner))
         self.assertNotEqual(id(h1._outer), id(h2._outer))
-
-    @hashlib_helper.requires_hashlib()
-    def test_realcopy_hmac(self):
-        h1 = hmac.HMAC.__new__(hmac.HMAC)
-        h1._init_hmac(b"key", b"msg", digestmod="sha256")
-        h2 = h1.copy()
-        self.assertNotEqual(id(h1._hmac), id(h2._hmac))
 
     def test_equality(self):
         # Testing if the copy has the same digests.
@@ -951,9 +953,45 @@ class CopyTestCase(unittest.TestCase):
         h1 = hmac.new(b"key", digestmod="sha256")
         h1.update(b"some random text")
         h2 = h1.copy()
+        # Using id() in case somebody has overridden __eq__/__ne__.
         self.assertNotEqual(id(h1), id(h2))
         self.assertEqual(h1.digest(), h2.digest())
         self.assertEqual(h1.hexdigest(), h2.hexdigest())
+
+
+class ExtensionCopyTestCase(CopyBaseTestCase):
+
+    def init(self, h):
+        """Call the dedicate init() method to test."""
+        raise NotImplementedError
+
+    def test_attributes(self):
+        # Testing if attributes are of same type.
+        h1 = hmac.HMAC.__new__(hmac.HMAC)
+
+        self.init(h1)
+        self.assertIsNotNone(h1._hmac)
+        self.assertIsNone(h1._inner)
+        self.assertIsNone(h1._outer)
+
+        h2 = h1.copy()
+        self.assertIsNotNone(h2._hmac)
+        self.assertIsNone(h2._inner)
+        self.assertIsNone(h2._outer)
+
+    def test_realcopy(self):
+        h1 = hmac.HMAC.__new__(hmac.HMAC)
+        self.init(h1)
+        h2 = h1.copy()
+        # Using id() in case somebody has overridden __eq__/__ne__.
+        self.assertNotEqual(id(h1._hmac), id(h2._hmac))
+
+
+@hashlib_helper.requires_openssl_hashdigest('sha256')
+class OpenSSLCopyTestCase(ExtensionCopyTestCase, unittest.TestCase):
+
+    def init(self, h):
+        h._init_hmac(b"key", b"msg", digestmod="sha256")
 
 
 class CompareDigestMixin:
@@ -1085,6 +1123,45 @@ class OpenSSLCompareDigestTestCase(CompareDigestMixin, unittest.TestCase):
 
 class OperatorCompareDigestTestCase(CompareDigestMixin, unittest.TestCase):
     compare_digest = operator_compare_digest
+
+
+class PyMiscellaneousTests(unittest.TestCase):
+    """Miscellaneous tests for the pure Python HMAC module."""
+
+    @hashlib_helper.requires_hashdigest('sha256')
+    def test_legacy_block_size_warnings(self):
+        class MockCrazyHash(object):
+            """Ain't no block_size attribute here."""
+            def __init__(self, *args):
+                self._x = hashlib.sha256(*args)
+                self.digest_size = self._x.digest_size
+            def update(self, v):
+                self._x.update(v)
+            def digest(self):
+                return self._x.digest()
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', RuntimeWarning)
+            with self.assertRaises(RuntimeWarning):
+                hmac.HMAC(b'a', b'b', digestmod=MockCrazyHash)
+                self.fail('Expected warning about missing block_size')
+
+            MockCrazyHash.block_size = 1
+            with self.assertRaises(RuntimeWarning):
+                hmac.HMAC(b'a', b'b', digestmod=MockCrazyHash)
+                self.fail('Expected warning about small block_size')
+
+    @hashlib_helper.requires_hashdigest('sha256')
+    def test_with_fallback(self):
+        cache = getattr(hashlib, '__builtin_constructor_cache')
+        try:
+            cache['foo'] = hashlib.sha256
+            hexdigest = hmac.digest(b'key', b'message', 'foo').hex()
+            expected = ('6e9ef29b75fffc5b7abae527d58fdadb'
+                        '2fe42e7219011976917343065f58ed4a')
+            self.assertEqual(hexdigest, expected)
+        finally:
+            cache.pop('foo')
 
 
 if __name__ == "__main__":

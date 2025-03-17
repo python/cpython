@@ -1,7 +1,9 @@
+import itertools
 import threading
 import time
 import weakref
 from concurrent import futures
+from operator import add
 from test import support
 from test.support import Py_GIL_DISABLED
 
@@ -69,7 +71,77 @@ class ExecutorTest:
         else:
             self.fail('expected TimeoutError')
 
-        self.assertEqual([None, None], results)
+        # gh-110097: On heavily loaded systems, the launch of the worker may
+        # take longer than the specified timeout.
+        self.assertIn(results, ([None, None], [None], []))
+
+    def test_map_buffersize_type_validation(self):
+        for buffersize in ("foo", 2.0):
+            with self.subTest(buffersize=buffersize):
+                with self.assertRaisesRegex(
+                    TypeError,
+                    "buffersize must be an integer or None",
+                ):
+                    self.executor.map(str, range(4), buffersize=buffersize)
+
+    def test_map_buffersize_value_validation(self):
+        for buffersize in (0, -1):
+            with self.subTest(buffersize=buffersize):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "buffersize must be None or > 0",
+                ):
+                    self.executor.map(str, range(4), buffersize=buffersize)
+
+    def test_map_buffersize(self):
+        ints = range(4)
+        for buffersize in (1, 2, len(ints), len(ints) * 2):
+            with self.subTest(buffersize=buffersize):
+                res = self.executor.map(str, ints, buffersize=buffersize)
+                self.assertListEqual(list(res), ["0", "1", "2", "3"])
+
+    def test_map_buffersize_on_multiple_iterables(self):
+        ints = range(4)
+        for buffersize in (1, 2, len(ints), len(ints) * 2):
+            with self.subTest(buffersize=buffersize):
+                res = self.executor.map(add, ints, ints, buffersize=buffersize)
+                self.assertListEqual(list(res), [0, 2, 4, 6])
+
+    def test_map_buffersize_on_infinite_iterable(self):
+        res = self.executor.map(str, itertools.count(), buffersize=2)
+        self.assertEqual(next(res, None), "0")
+        self.assertEqual(next(res, None), "1")
+        self.assertEqual(next(res, None), "2")
+
+    def test_map_buffersize_on_multiple_infinite_iterables(self):
+        res = self.executor.map(
+            add,
+            itertools.count(),
+            itertools.count(),
+            buffersize=2
+        )
+        self.assertEqual(next(res, None), 0)
+        self.assertEqual(next(res, None), 2)
+        self.assertEqual(next(res, None), 4)
+
+    def test_map_buffersize_on_empty_iterable(self):
+        res = self.executor.map(str, [], buffersize=2)
+        self.assertIsNone(next(res, None))
+
+    def test_map_buffersize_without_iterable(self):
+        res = self.executor.map(str, buffersize=2)
+        self.assertIsNone(next(res, None))
+
+    def test_map_buffersize_when_buffer_is_full(self):
+        ints = iter(range(4))
+        buffersize = 2
+        self.executor.map(str, ints, buffersize=buffersize)
+        self.executor.shutdown(wait=True)  # wait for tasks to complete
+        self.assertEqual(
+            next(ints),
+            buffersize,
+            msg="should have fetched only `buffersize` elements from `ints`.",
+        )
 
     def test_shutdown_race_issue12456(self):
         # Issue #12456: race condition at shutdown where trying to post a

@@ -484,7 +484,14 @@ def warn(message, category=None, stacklevel=1, source=None,
         module = "<string>"
     registry = globals.setdefault("__warningregistry__", {})
     _wm.warn_explicit(
-        message, category, filename, lineno, module, registry, globals, source
+        message,
+        category,
+        filename,
+        lineno,
+        module,
+        registry,
+        globals,
+        source=source,
     )
 
 

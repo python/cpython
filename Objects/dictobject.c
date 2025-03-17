@@ -275,10 +275,10 @@ load_keys_nentries(PyDictObject *mp)
 
 #endif
 
-#define STORE_KEY(ep, key) FT_ATOMIC_STORE_PTR_RELEASE(ep->me_key, key)
-#define STORE_VALUE(ep, value) FT_ATOMIC_STORE_PTR_RELEASE(ep->me_value, value)
+#define STORE_KEY(ep, key) FT_ATOMIC_STORE_PTR_RELEASE((ep)->me_key, key)
+#define STORE_VALUE(ep, value) FT_ATOMIC_STORE_PTR_RELEASE((ep)->me_value, value)
 #define STORE_SPLIT_VALUE(mp, idx, value) FT_ATOMIC_STORE_PTR_RELEASE(mp->ma_values->values[idx], value)
-#define STORE_HASH(ep, hash) FT_ATOMIC_STORE_SSIZE_RELAXED(ep->me_hash, hash)
+#define STORE_HASH(ep, hash) FT_ATOMIC_STORE_SSIZE_RELAXED((ep)->me_hash, hash)
 #define STORE_KEYS_USABLE(keys, usable) FT_ATOMIC_STORE_SSIZE_RELAXED(keys->dk_usable, usable)
 #define STORE_KEYS_NENTRIES(keys, nentries) FT_ATOMIC_STORE_SSIZE_RELAXED(keys->dk_nentries, nentries)
 #define STORE_USED(mp, used) FT_ATOMIC_STORE_SSIZE_RELAXED(mp->ma_used, used)
@@ -4534,8 +4534,8 @@ dict_popitem_impl(PyDictObject *self)
         _PyDict_NotifyEvent(interp, PyDict_EVENT_DELETED, self, key, NULL);
         hash = unicode_get_hash(key);
         value = ep0[i].me_value;
-        ep0[i].me_key = NULL;
-        ep0[i].me_value = NULL;
+        STORE_KEY(&ep0[i], NULL);
+        STORE_VALUE(&ep0[i], NULL);
     }
     else {
         PyDictKeyEntry *ep0 = DK_ENTRIES(self->ma_keys);
@@ -4549,9 +4549,9 @@ dict_popitem_impl(PyDictObject *self)
         _PyDict_NotifyEvent(interp, PyDict_EVENT_DELETED, self, key, NULL);
         hash = ep0[i].me_hash;
         value = ep0[i].me_value;
-        ep0[i].me_key = NULL;
-        ep0[i].me_hash = -1;
-        ep0[i].me_value = NULL;
+        STORE_KEY(&ep0[i], NULL);
+        STORE_HASH(&ep0[i], -1);
+        STORE_VALUE(&ep0[i], NULL);
     }
 
     j = lookdict_index(self->ma_keys, hash, i);
