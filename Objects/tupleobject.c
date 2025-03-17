@@ -604,8 +604,8 @@ Return number of occurrences of value.
 [clinic start generated code]*/
 
 static PyObject *
-tuple_count(PyTupleObject *self, PyObject *value)
-/*[clinic end generated code: output=aa927affc5a97605 input=531721aff65bd772]*/
+tuple_count_impl(PyTupleObject *self, PyObject *value)
+/*[clinic end generated code: output=cf02888d4bc15d7a input=531721aff65bd772]*/
 {
     Py_ssize_t count = 0;
     Py_ssize_t i;

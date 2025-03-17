@@ -1,4 +1,0 @@
-Update MIME types for ``.avi`` and ``.wav``. Add MIME types for ``.docx``,
-``.pptx``, ``.xlsx``, ``.epub``, ``.flac``, ``.m4a``, ``.odg``, ``.odp``,
-``.ods``, ``.odt``, ``.oga``, ``.ogg``, ``.ogx`` and ``.weba``. Patch by
-Hugo van Kemenade.

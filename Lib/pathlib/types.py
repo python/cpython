@@ -11,10 +11,10 @@ Protocols for supporting classes in pathlib.
 
 
 from abc import ABC, abstractmethod
-from glob import _PathGlobber, _no_recurse_symlinks
+from glob import _PathGlobber
+from pathlib._os import magic_open, ensure_distinct_paths, ensure_different_files, copyfileobj
 from pathlib import PurePath, Path
-from pathlib._os import magic_open, ensure_distinct_paths, copy_file
-from typing import Protocol, runtime_checkable
+from typing import Optional, Protocol, runtime_checkable
 
 
 def _explode_path(path):
@@ -44,6 +44,7 @@ class _PathParser(Protocol):
     """
 
     sep: str
+    altsep: Optional[str]
     def split(self, path: str) -> tuple[str, str]: ...
     def splitext(self, path: str) -> tuple[str, str]: ...
     def normcase(self, path: str) -> str: ...
@@ -135,7 +136,9 @@ class _JoinablePath(ABC):
         split = self.parser.split
         if split(name)[0]:
             raise ValueError(f"Invalid name {name!r}")
-        return self.with_segments(split(str(self))[0], name)
+        path = str(self)
+        path = path.removesuffix(split(path)[1]) + name
+        return self.with_segments(path)
 
     def with_stem(self, stem):
         """Return a new path with the stem changed."""
@@ -213,17 +216,16 @@ class _JoinablePath(ABC):
             parent = split(path)[0]
         return tuple(parents)
 
-    def full_match(self, pattern, *, case_sensitive=None):
+    def full_match(self, pattern):
         """
         Return True if this path matches the given glob-style pattern. The
         pattern is matched against the entire path.
         """
         if not hasattr(pattern, 'with_segments'):
             pattern = self.with_segments(pattern)
-        if case_sensitive is None:
-            case_sensitive = self.parser.normcase('Aa') == 'Aa'
+        case_sensitive = self.parser.normcase('Aa') == 'Aa'
         globber = _PathGlobber(pattern.parser.sep, case_sensitive, recursive=True)
-        match = globber.compile(str(pattern))
+        match = globber.compile(str(pattern), altsep=pattern.parser.altsep)
         return match(str(self)) is not None
 
 
@@ -276,7 +278,7 @@ class _ReadablePath(_JoinablePath):
         """
         raise NotImplementedError
 
-    def glob(self, pattern, *, case_sensitive=None, recurse_symlinks=True):
+    def glob(self, pattern, *, recurse_symlinks=True):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
@@ -285,14 +287,10 @@ class _ReadablePath(_JoinablePath):
         anchor, parts = _explode_path(pattern)
         if anchor:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        case_sensitive_default = self.parser.normcase('Aa') == 'Aa'
-        if case_sensitive is None:
-            case_sensitive = case_sensitive_default
-            case_pedantic = False
-        else:
-            case_pedantic = case_sensitive_default != case_sensitive
-        recursive = True if recurse_symlinks else _no_recurse_symlinks
-        globber = _PathGlobber(self.parser.sep, case_sensitive, case_pedantic, recursive)
+        elif not recurse_symlinks:
+            raise NotImplementedError("recurse_symlinks=False is unsupported")
+        case_sensitive = self.parser.normcase('Aa') == 'Aa'
+        globber = _PathGlobber(self.parser.sep, case_sensitive, recursive=True)
         select = globber.selector(parts)
         return select(self.joinpath(''))
 
@@ -334,18 +332,21 @@ class _ReadablePath(_JoinablePath):
         """
         raise NotImplementedError
 
-    def copy(self, target, follow_symlinks=True, preserve_metadata=False):
+    def copy(self, target, **kwargs):
         """
         Recursively copy this file or directory tree to the given destination.
         """
         if not hasattr(target, 'with_segments'):
             target = self.with_segments(target)
         ensure_distinct_paths(self, target)
-        copy_file(self, target, follow_symlinks, preserve_metadata)
+        try:
+            copy_to_target = target._copy_from
+        except AttributeError:
+            raise TypeError(f"Target path is not writable: {target!r}") from None
+        copy_to_target(self, **kwargs)
         return target.joinpath()  # Empty join to ensure fresh metadata.
 
-    def copy_into(self, target_dir, *, follow_symlinks=True,
-                  preserve_metadata=False):
+    def copy_into(self, target_dir, **kwargs):
         """
         Copy this file or directory tree into the given existing directory.
         """
@@ -356,8 +357,7 @@ class _ReadablePath(_JoinablePath):
             target = target_dir / name
         else:
             target = self.with_segments(target_dir, name)
-        return self.copy(target, follow_symlinks=follow_symlinks,
-                         preserve_metadata=preserve_metadata)
+        return self.copy(target, **kwargs)
 
 
 class _WritablePath(_JoinablePath):
@@ -411,11 +411,25 @@ class _WritablePath(_JoinablePath):
         with magic_open(self, mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
-    def _write_info(self, info, follow_symlinks=True):
+    def _copy_from(self, source, follow_symlinks=True):
         """
-        Write the given PathInfo to this path.
+        Recursively copy the given path to this path.
         """
-        pass
+        stack = [(source, self)]
+        while stack:
+            src, dst = stack.pop()
+            if not follow_symlinks and src.info.is_symlink():
+                dst.symlink_to(str(src.readlink()), src.info.is_dir())
+            elif src.info.is_dir():
+                children = src.iterdir()
+                dst.mkdir()
+                for child in children:
+                    stack.append((child, dst.joinpath(child.name)))
+            else:
+                ensure_different_files(src, dst)
+                with magic_open(src, 'rb') as source_f:
+                    with magic_open(dst, 'wb') as target_f:
+                        copyfileobj(source_f, target_f)
 
 
 _JoinablePath.register(PurePath)
