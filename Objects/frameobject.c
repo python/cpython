@@ -209,12 +209,16 @@ framelocalsproxy_getitem(PyObject *self, PyObject *key)
 static int
 add_overwritten_fast_local(PyFrameObject *frame, PyObject *obj)
 {
-    Py_ssize_t new_size = 1;
-    if (frame->f_overwritten_fast_locals != NULL) {
-        new_size = PyTuple_Size(frame->f_overwritten_fast_locals);
-        if (new_size == -1) {
+    Py_ssize_t new_size;
+    if (frame->f_overwritten_fast_locals == NULL) {
+        new_size = 1;
+    }
+    else {
+        Py_ssize_t size = PyTuple_Size(frame->f_overwritten_fast_locals);
+        if (size == -1) {
             return -1;
         }
+        new_size = size + 1;
     }
     PyObject *new_tuple = PyTuple_New(new_size);
     if (new_tuple == NULL) {

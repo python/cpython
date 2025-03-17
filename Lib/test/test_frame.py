@@ -602,11 +602,13 @@ class TestFrameLocals(unittest.TestCase):
         # from an ancestor in the call stack.
         def f():
             xs = [1, 2, 3]
+            ys = [4, 5, 6]
             return g(xs)
 
         def g(xs):
             f = sys._getframe()
             f.f_back.f_locals["xs"] = None
+            f.f_back.f_locals["ys"] = None
             return xs[1]
 
         self.assertEqual(f(), 2)
