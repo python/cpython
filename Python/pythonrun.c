@@ -14,6 +14,7 @@
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_compile.h"       // _PyAST_Compile()
+#include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
@@ -1410,7 +1411,7 @@ run_mod(mod_ty mod, PyObject *filename, PyObject *globals, PyObject *locals,
 
         PyObject* result = PyObject_CallFunction(
             print_tb_func, "OOO",
-            interactive_filename,
+            co,
             interactive_src,
             filename
         );

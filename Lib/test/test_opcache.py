@@ -1706,7 +1706,7 @@ class TestSpecializer(TestBase):
         binary_subscr_list_int()
         self.assert_specialized(binary_subscr_list_int,
                                 "BINARY_OP_SUBSCR_LIST_INT")
-        self.assert_no_opcode(binary_subscr_list_int, "BINARY_SUBSCR")
+        self.assert_no_opcode(binary_subscr_list_int, "BINARY_OP")
 
         def binary_subscr_tuple_int():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
@@ -1717,7 +1717,7 @@ class TestSpecializer(TestBase):
         binary_subscr_tuple_int()
         self.assert_specialized(binary_subscr_tuple_int,
                                 "BINARY_OP_SUBSCR_TUPLE_INT")
-        self.assert_no_opcode(binary_subscr_tuple_int, "BINARY_SUBSCR")
+        self.assert_no_opcode(binary_subscr_tuple_int, "BINARY_OP")
 
         def binary_subscr_dict():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
@@ -1737,7 +1737,7 @@ class TestSpecializer(TestBase):
 
         binary_subscr_str_int()
         self.assert_specialized(binary_subscr_str_int, "BINARY_OP_SUBSCR_STR_INT")
-        self.assert_no_opcode(binary_subscr_str_int, "BINARY_SUBSCR")
+        self.assert_no_opcode(binary_subscr_str_int, "BINARY_OP")
 
         def binary_subscr_getitems():
             class C:
@@ -1752,7 +1752,7 @@ class TestSpecializer(TestBase):
 
         binary_subscr_getitems()
         self.assert_specialized(binary_subscr_getitems, "BINARY_OP_SUBSCR_GETITEM")
-        self.assert_no_opcode(binary_subscr_getitems, "BINARY_SUBSCR")
+        self.assert_no_opcode(binary_subscr_getitems, "BINARY_OP")
 
     @cpython_only
     @requires_specialization_ft
@@ -1801,6 +1801,45 @@ class TestSpecializer(TestBase):
         self.assert_specialized(load_const, "LOAD_CONST_IMMORTAL")
         self.assert_specialized(load_const, "LOAD_CONST_MORTAL")
         self.assert_no_opcode(load_const, "LOAD_CONST")
+
+    @cpython_only
+    @requires_specialization_ft
+    def test_for_iter(self):
+        L = list(range(10))
+        def for_iter_list():
+            for i in L:
+                self.assertIn(i, L)
+
+        for_iter_list()
+        self.assert_specialized(for_iter_list, "FOR_ITER_LIST")
+        self.assert_no_opcode(for_iter_list, "FOR_ITER")
+
+        t = tuple(range(10))
+        def for_iter_tuple():
+            for i in t:
+                self.assertIn(i, t)
+
+        for_iter_tuple()
+        self.assert_specialized(for_iter_tuple, "FOR_ITER_TUPLE")
+        self.assert_no_opcode(for_iter_tuple, "FOR_ITER")
+
+        r = range(10)
+        def for_iter_range():
+            for i in r:
+                self.assertIn(i, r)
+
+        for_iter_range()
+        self.assert_specialized(for_iter_range, "FOR_ITER_RANGE")
+        self.assert_no_opcode(for_iter_range, "FOR_ITER")
+
+        def for_iter_generator():
+            for i in (i for i in range(10)):
+                i + 1
+
+        for_iter_generator()
+        self.assert_specialized(for_iter_generator, "FOR_ITER_GEN")
+        self.assert_no_opcode(for_iter_generator, "FOR_ITER")
+
 
 if __name__ == "__main__":
     unittest.main()

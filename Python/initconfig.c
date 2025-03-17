@@ -8,6 +8,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromConfig()
 #include "pycore_pymem.h"         // _PyMem_DefaultRawMalloc()
+#include "pycore_pyhash.h"        // _Py_HashSecret
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pystats.h"       // _Py_StatsOn()
 #include "pycore_sysmodule.h"     // _PySys_SetIntMaxStrDigits()
@@ -22,6 +23,15 @@
 #  endif
 #  ifdef HAVE_FCNTL_H
 #    include <fcntl.h>            // O_BINARY
+#  endif
+#endif
+
+#ifdef __APPLE__
+/* Enable system log by default on non-macOS Apple platforms */
+#  if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+#define USE_SYSTEM_LOGGER_DEFAULT 1;
+#  else
+#define USE_SYSTEM_LOGGER_DEFAULT 0;
 #  endif
 #endif
 
@@ -1017,7 +1027,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->code_debug_ranges = 1;
     config->cpu_count = -1;
 #ifdef __APPLE__
-    config->use_system_logger = 0;
+    config->use_system_logger = USE_SYSTEM_LOGGER_DEFAULT;
 #endif
 #ifdef Py_GIL_DISABLED
     config->enable_gil = _PyConfig_GIL_DEFAULT;
@@ -1049,7 +1059,7 @@ config_init_defaults(PyConfig *config)
     config->legacy_windows_stdio = 0;
 #endif
 #ifdef __APPLE__
-    config->use_system_logger = 0;
+    config->use_system_logger = USE_SYSTEM_LOGGER_DEFAULT;
 #endif
 }
 
@@ -1086,7 +1096,7 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->legacy_windows_stdio = 0;
 #endif
 #ifdef __APPLE__
-    config->use_system_logger = 0;
+    config->use_system_logger = USE_SYSTEM_LOGGER_DEFAULT;
 #endif
 }
 

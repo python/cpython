@@ -969,6 +969,8 @@ def findsource(object):
     module = getmodule(object, file)
     if module:
         lines = linecache.getlines(file, module.__dict__)
+        if not lines and file.startswith('<') and hasattr(object, "__code__"):
+            lines = linecache._getlines_from_code(object.__code__)
     else:
         lines = linecache.getlines(file)
     if not lines:
