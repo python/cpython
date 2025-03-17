@@ -1,0 +1,1 @@
+Add encoding alias cseuckr for euc_kr
