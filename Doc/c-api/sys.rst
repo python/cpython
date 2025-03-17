@@ -258,10 +258,35 @@ These are utility functions that make functionality from the :mod:`sys` module
 accessible to C code.  They all work with the current interpreter thread's
 :mod:`sys` module's dict, which is contained in the internal thread state structure.
 
+.. c:function:: int PySys_GetAttr(PyObject *name, PyObject **result);
+
+   Get the attribute *name* of the :mod:`sys` module.
+
+   If the object exists, set *\*result* to a new :term:`strong reference`
+   to the object and return ``1``.
+   If the object does not exist, set *\*result* to ``NULL`` and return ``0``,
+   without setting an exception.
+   If other error occurred, set an exception, set *\*result* to ``NULL`` and
+   return ``-1``.
+
+   .. versionadded:: next
+
+.. c:function:: int PySys_GetAttrString(const char *name, PyObject **result);
+
+   This is the same as :c:func:`PySys_GetAttr`, but *name* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
+
+   .. versionadded:: next
+
 .. c:function:: PyObject *PySys_GetObject(const char *name)
 
    Return the object *name* from the :mod:`sys` module or ``NULL`` if it does
    not exist, without setting an exception.
+
+   Preserves exception that was set before the call.
+
+   It is recommended to use :c:func:`PySys_GetAttrString` instead.
 
 .. c:function:: int PySys_SetObject(const char *name, PyObject *v)
 
