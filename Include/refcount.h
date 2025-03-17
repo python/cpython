@@ -308,7 +308,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
     _Py_INCREF_STAT_INC();
 #ifdef Py_REF_DEBUG
     // Don't count the incref if the object is immortal.
-    if (_Py_IsImmortal(op)) {
+    if (!_Py_IsImmortal(op)) {
         _Py_INCREF_IncRefTotal();
     }
 #endif
