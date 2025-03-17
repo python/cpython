@@ -1931,6 +1931,8 @@ class ArgsTestCase(BaseTestCase):
 
     def test_unicode_guard_env(self):
         guard = os.environ.get(setup.UNICODE_GUARD_ENV)
+        # if you run the test directly,
+        # then look at the if __name__ == '__main__' of this file
         self.assertIsNotNone(guard, f"{setup.UNICODE_GUARD_ENV} not set")
         if guard.isascii():
             # Skip to signify that the env var value was changed by the user;
@@ -2546,4 +2548,5 @@ class TestColorized(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    os.environ['PYTHONREGRTEST_UNICODE_GUARD'] = 'some_value' # for test_unicode_guard_env
     unittest.main()
