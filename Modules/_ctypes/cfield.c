@@ -96,7 +96,7 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
     }
     if (info == NULL) {
         PyErr_Format(PyExc_TypeError,
-                     "type of field %R must be a C type", self->name);
+                     "type of field %R must be a C type", name);
         goto error;
     }
     assert(byte_size == info->size);
