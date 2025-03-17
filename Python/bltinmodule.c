@@ -5,6 +5,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_Vector()
 #include "pycore_compile.h"       // _PyAST_Compile()
+#include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_long.h"          // _PyLong_CompactValue
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _Py_AddToAllObjects()
@@ -1303,8 +1304,8 @@ This is guaranteed to be unique among simultaneously existing objects.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_id(PyModuleDef *self, PyObject *v)
-/*[clinic end generated code: output=0aa640785f697f65 input=5a534136419631f4]*/
+builtin_id_impl(PyModuleDef *self, PyObject *v)
+/*[clinic end generated code: output=4908a6782ed343e9 input=5a534136419631f4]*/
 {
     PyObject *id = PyLong_FromVoidPtr(v);
 

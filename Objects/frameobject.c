@@ -5,6 +5,7 @@
 #include "pycore_code.h"          // CO_FAST_LOCAL, etc.
 #include "pycore_dict.h"          // _PyDict_LoadBuiltinsFromGlobals()
 #include "pycore_function.h"      // _PyFunction_FromConstructor()
+#include "pycore_genobject.h"     // _PyGen_GetGeneratorFromFrame()
 #include "pycore_moduleobject.h"  // _PyModule_GetDict()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
