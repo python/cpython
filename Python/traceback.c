@@ -167,12 +167,17 @@ traceback_tb_next_set_impl(PyTracebackObject *self, PyObject *value)
 
     /* Check for loops */
     PyTracebackObject *cursor = (PyTracebackObject *)value;
+    Py_XINCREF(cursor);
     while (cursor) {
         if (cursor == self) {
             PyErr_Format(PyExc_ValueError, "traceback loop detected");
+            Py_DECREF(cursor);
             return -1;
         }
-        cursor = cursor->tb_next;
+        Py_BEGIN_CRITICAL_SECTION(cursor);
+        Py_XINCREF(cursor->tb_next);
+        Py_SETREF(cursor, cursor->tb_next);
+        Py_END_CRITICAL_SECTION();
     }
 
     Py_XSETREF(self->tb_next, (PyTracebackObject *)Py_XNewRef(value));
