@@ -505,10 +505,11 @@ get_filter(PyInterpreterState *interp, PyObject *category,
            PyObject *text, Py_ssize_t lineno,
            PyObject *module, PyObject **item)
 {
+#ifdef Py_DEBUG
     WarningsState *st = warnings_get_state(interp);
     assert(st != NULL);
-
     assert(warnings_lock_held(st));
+#endif
 
     /* check _warning_context _filters list */
     PyObject *context_filters = get_warnings_context_filters(interp);
