@@ -2,6 +2,7 @@
 #include "pycore_ceval.h"         // _PyEval_IsGILEnabled()
 #include "pycore_initconfig.h"    // _PyStatus_ERR()
 #include "pycore_pyerrors.h"      // _Py_DumpExtensionModules()
+#include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_signal.h"        // Py_NSIG

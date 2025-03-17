@@ -4,7 +4,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_symtable.h"      // PySTEntryObject
-#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString
 
 #include <stddef.h>               // offsetof()
 

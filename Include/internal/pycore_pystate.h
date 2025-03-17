@@ -11,7 +11,8 @@ extern "C" {
 #include "pycore_runtime_structs.h" // _PyRuntime
 #include "pycore_runtime.h"         // _PyRuntimeState_GetFinalizing
 #include "pycore_tstate.h"          // _PyThreadStateImpl
-#include "pycore_interp.h"          // _PyInterpreterState_GetConfig
+
+extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp);
 
 // Values for PyThreadState.state. A thread must be in the "attached" state
 // before calling most Python APIs. If the GIL is enabled, then "attached"

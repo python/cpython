@@ -4,7 +4,7 @@
 #include "string_parser.h"          // _PyPegen_decode_string()
 
 #include "pycore_pystate.h"         // _PyInterpreterState_GET()
-#include "pycore_runtime.h"         // _PyRuntime
+#include "pycore_unicodeobject.h"   // _PyUnicode_InternImmortal()
 #include "pycore_unicodeobject.h"   // _PyUnicode_InternImmortal()
 
 

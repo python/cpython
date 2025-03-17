@@ -4,6 +4,7 @@
 #include "pycore_format.h"        // F_LJUST
 #include "pycore_runtime.h"       // _Py_STR()
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 
 typedef struct {

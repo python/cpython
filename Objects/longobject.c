@@ -11,6 +11,7 @@
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
+#include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
 #include <float.h>                // DBL_MANT_DIG
 #include <stddef.h>               // offsetof
