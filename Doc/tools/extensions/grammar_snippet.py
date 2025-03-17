@@ -83,10 +83,10 @@ class GrammarSnippetBase(SphinxDirective):
 
     def production_definitions(
         self, lines: Iterable[str], /
-    ) -> Iterator[tuple[str, list[dict[str, str]]]]:
+    ) -> Iterator[tuple[str, list[tuple[str, str]]]]:
         """Yield pairs of rawsource and production content dicts."""
         production_lines: list[str] = []
-        production_content: list[dict[str, str]] = []
+        production_content: list[tuple[str, str]] = []
         for line in lines:
             # If this line is the start of a new rule (text in the column 1),
             # emit the current production and start a new one.
@@ -106,17 +106,19 @@ class GrammarSnippetBase(SphinxDirective):
                 # Handle text between matches
                 if match.start() > last_pos:
                     unmatched_text = line[last_pos : match.start()]
-                    production_content.append({'text': unmatched_text})
+                    production_content.append(('text', unmatched_text))
                 last_pos = match.end()
 
-                # Handle matches
-                group_dict = {
-                    name: content
-                    for name, content in match.groupdict().items()
+                # Handle matches.
+                # After filtering None (non-matches), exactly one groupdict()
+                # entry should remain.
+                [(re_group_name, content)] = (
+                    (re_group_name, content)
+                    for re_group_name, content in match.groupdict().items()
                     if content is not None
-                }
-                production_content.append(group_dict)
-            production_content.append({'text': line[last_pos:] + '\n'})
+                )
+                production_content.append((re_group_name, content))
+            production_content.append(('text', line[last_pos:] + '\n'))
 
         # Emit the final production
         if production_content:
@@ -126,27 +128,27 @@ class GrammarSnippetBase(SphinxDirective):
     def make_production(
         self,
         rawsource: str,
-        production_defs: list[dict[str, str]],
+        production_defs: list[tuple[str, str]],
         *,
         group_name: str,
         location: str,
     ) -> addnodes.production:
         """Create a production node from a list of parts."""
         production_node = addnodes.production(rawsource)
-        for group_dict in production_defs:
-            match group_dict:
-                case {'rule_name': name}:
+        for re_group_name, content in production_defs:
+            match re_group_name:
+                case 'rule_name':
                     production_node += self.make_name_target(
-                        name=name,
+                        name=content,
                         production_group=group_name,
                         location=location,
                     )
-                case {'rule_ref': ref_text}:
-                    production_node += token_xrefs(ref_text, group_name)
-                case {'single_quoted': name} | {'double_quoted': name}:
-                    production_node += snippet_string_node('', name)
-                case {'text': text}:
-                    production_node += nodes.Text(text)
+                case 'rule_ref':
+                    production_node += token_xrefs(content, group_name)
+                case 'single_quoted' | 'double_quoted':
+                    production_node += snippet_string_node('', content)
+                case 'text':
+                    production_node += nodes.Text(content)
                 case _:
                     raise ValueError('unhandled match')
         return production_node
