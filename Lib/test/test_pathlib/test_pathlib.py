@@ -1391,7 +1391,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         p7 = P(f'~{fakename}/Documents')
 
         with os_helper.EnvironmentVarGuard() as env:
-            env.pop('HOME', None)
+            env.unset('HOME')
 
             self.assertEqual(p1.expanduser(), P(userhome) / 'Documents')
             self.assertEqual(p2.expanduser(), P(userhome) / 'Documents')
@@ -1504,10 +1504,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
     def test_expanduser_windows(self):
         P = self.cls
         with os_helper.EnvironmentVarGuard() as env:
-            env.pop('HOME', None)
-            env.pop('USERPROFILE', None)
-            env.pop('HOMEPATH', None)
-            env.pop('HOMEDRIVE', None)
+            env.unset('HOME', 'USERPROFILE', 'HOMEPATH', 'HOMEDRIVE')
             env['USERNAME'] = 'alice'
 
             # test that the path returns unchanged
@@ -1545,8 +1542,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
             env['HOMEPATH'] = 'Users\\alice'
             check()
 
-            env.pop('HOMEDRIVE', None)
-            env.pop('HOMEPATH', None)
+            env.unset('HOMEDRIVE', 'HOMEPATH')
             env['USERPROFILE'] = 'C:\\Users\\alice'
             check()
 
