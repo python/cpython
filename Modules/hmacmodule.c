@@ -1061,7 +1061,7 @@ This method may raise a MemoryError.
 
 static PyObject *
 _hmac_HMAC_digest_impl(HMACObject *self)
-/*[clinic end generated code: output=5bf3cc5862d26ada input=46ada2d337ddcc85]*/
+/*[clinic end generated code: output=5bf3cc5862d26ada input=a70feb0b8e2bbe7d]*/
 {
     assert(self->digest_size <= Py_hmac_hash_max_digest_size);
     uint8_t digest[Py_hmac_hash_max_digest_size];
@@ -1084,7 +1084,7 @@ This method may raise a MemoryError.
 
 static PyObject *
 _hmac_HMAC_hexdigest_impl(HMACObject *self)
-/*[clinic end generated code: output=6659807a09ae14ec input=a7460247846b4c15]*/
+/*[clinic end generated code: output=6659807a09ae14ec input=493b2db8013982b9]*/
 {
     assert(self->digest_size <= Py_hmac_hash_max_digest_size);
     uint8_t digest[Py_hmac_hash_max_digest_size];

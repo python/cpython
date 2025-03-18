@@ -161,7 +161,9 @@ PyDoc_STRVAR(_hmac_HMAC_digest__doc__,
 "digest($self, /)\n"
 "--\n"
 "\n"
-"Return the digest of the bytes passed to the update() method so far.");
+"Return the digest of the bytes passed to the update() method so far.\n"
+"\n"
+"This method may raise a MemoryError.");
 
 #define _HMAC_HMAC_DIGEST_METHODDEF    \
     {"digest", (PyCFunction)_hmac_HMAC_digest, METH_NOARGS, _hmac_HMAC_digest__doc__},
@@ -182,7 +184,9 @@ PyDoc_STRVAR(_hmac_HMAC_hexdigest__doc__,
 "Return hexadecimal digest of the bytes passed to the update() method so far.\n"
 "\n"
 "This may be used to exchange the value safely in email or other non-binary\n"
-"environments.");
+"environments.\n"
+"\n"
+"This method may raise a MemoryError.");
 
 #define _HMAC_HMAC_HEXDIGEST_METHODDEF    \
     {"hexdigest", (PyCFunction)_hmac_HMAC_hexdigest, METH_NOARGS, _hmac_HMAC_hexdigest__doc__},
@@ -660,4 +664,4 @@ _hmac_compute_blake2b_32(PyObject *module, PyObject *const *args, Py_ssize_t nar
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f8ee3b852e0e09e3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7e0a5a87ff3fa5fa input=a9049054013a1b77]*/
