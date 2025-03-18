@@ -2437,7 +2437,6 @@ code___get_local_events___impl(PyCodeObject *self, int tool)
 /*[clinic input]
 code.__set_local_events__
 
-
     tool: int
     events: int
 
