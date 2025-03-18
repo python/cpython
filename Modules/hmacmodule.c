@@ -42,7 +42,7 @@
 
 #define UINT32_MAX_AS_SSIZE_T                   ((Py_ssize_t)UINT32_MAX)
 
-#define Py_hmac_hash_max_block_size             128
+#define Py_hmac_hash_max_block_size             144
 #define Py_hmac_hash_max_digest_size            64
 
 /* MD-5 */
