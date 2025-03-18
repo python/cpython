@@ -144,8 +144,8 @@ class Structures(unittest.TestCase):
             self.assertEqual(ret.top, top.value)
             self.assertEqual(ret.bottom, bottom.value)
 
-        self.assertEqual(id(PointInRect.argtypes[0]), id(ReturnRect.argtypes[2]))
-        self.assertEqual(id(PointInRect.argtypes[0]), id(ReturnRect.argtypes[5]))
+        self.assertIs(PointInRect.argtypes[0], ReturnRect.argtypes[2])
+        self.assertIs(PointInRect.argtypes[0], ReturnRect.argtypes[5])
 
 
 if __name__ == '__main__':
