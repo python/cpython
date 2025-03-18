@@ -105,26 +105,31 @@ def generate(messages):
 def make(filenames, outfile=None):
     """ Compiles one or more po files(s).
 
-    filenames is a string or an iterable of strings representing input file(s).
-    outfile is a string for the name of an input file or None.
+    filenames an iterable of strings representing the input file(s).
+    outfile is a string for the name of an output file or None.
 
     If it is not None, the output file receives a merge of the input files.
-    If it is None, then filenames must be a string and the name of the output
+    If it is None, then for each file from filenames the name of the output
     file is obtained by replacing the po extension with mo.
-    Both ways are for compatibility reasons with previous behaviour.
+    BEWARE: in previous version of make the first parameter was a string
+    containing a single filename.
     """
-    messages = {}
-    if isinstance(filenames, str):
-        infile, outfile = get_names(filenames, outfile)
-        process(infile, messages)
-    elif outfile is None:
-        raise TypeError("outfile cannot be None with more than one infile")
+    if outfile is None:
+        # each PO file generates its corresponding MO file
+        for filename in filenames:
+            messages = {}
+            infile, outfile = get_names(filename, None)
+            process(infile, messages)
+            output = generate(messages)
+            writefile(outfile, output)
     else:
+        # all PO files are combined into one single output file
+        messages = {}
         for filename in filenames:
             infile, _ = get_names(filename, outfile)
             process(infile, messages)
-    output = generate(messages)
-    writefile(outfile, output)
+        output = generate(messages)
+        writefile(outfile, output)
 
 def get_names(filename, outfile):
     # Compute .mo name from .po name and arguments
@@ -276,11 +281,7 @@ def main():
         print('No input file given', file=sys.stderr)
         print("Try `msgfmt --help' for more information.", file=sys.stderr)
         return
-    if outfile is None:
-        for filename in args:
-            make(filename, None)
-    else:
-        make(args, outfile)
+    make(args, outfile)
 
 
 if __name__ == '__main__':
