@@ -558,11 +558,14 @@ class CalendarTestCase(unittest.TestCase):
             self.assertEqual(value[::-1], list(reversed(value)))
 
     def test_standalone_month_name_and_abbr(self):
-        # Ensure that the standalone month names and abbreviations are equal
-        # to the regular month names and abbreviations for the "C" locale.
+        # Ensure that the standalone month names and abbreviations are
+        # equal to the regular month names and abbreviations for
+        # the "C" locale.
         with calendar.different_locale("C"):
-            self.assertListEqual(list(calendar.month_name), list(calendar.standalone_month_name))
-            self.assertListEqual(list(calendar.month_abbr), list(calendar.standalone_month_abbr))
+            self.assertListEqual(list(calendar.month_name),
+                                 list(calendar.standalone_month_name))
+            self.assertListEqual(list(calendar.month_abbr),
+                                 list(calendar.standalone_month_abbr))
 
     def test_locale_text_calendar(self):
         try:

@@ -140,9 +140,9 @@ day_abbr = _localized_day('%a')
 month_name = _localized_month('%B')
 month_abbr = _localized_month('%b')
 
-# On platforms that support the %OB and %Ob specifiers, it is used to get the
-# standalone form of the month name. This is required for some languages
-# such as Greek, Slavic, and Baltic languages.
+# On platforms that support the %OB and %Ob specifiers, it is used
+# to get the standalone form of the month name. This is required for
+# some languages such as Greek, Slavic, and Baltic languages.
 try:
     standalone_month_name = _localized_month('%OB')
     standalone_month_abbr = _localized_month('%Ob')
