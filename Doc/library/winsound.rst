@@ -181,3 +181,22 @@ provided by Windows platforms.  It includes functions and several constants.
 
    Play the ``SystemDefault`` sound.
 
+
+.. data:: MB_ICONERROR
+
+   Play the ``SystemHand`` sound.
+
+
+.. data:: MB_ICONINFORMATION
+
+   Play the ``SystemDefault`` sound.
+
+
+.. data:: MB_ICONSTOP
+
+   Play the ``SystemHand`` sound.
+
+
+.. data:: MB_ICONWARNING
+
+   Play the ``SystemExclamation`` sound.

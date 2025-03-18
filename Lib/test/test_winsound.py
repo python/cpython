@@ -82,6 +82,18 @@ class MessageBeepTest(unittest.TestCase):
     def test_question(self):
         safe_MessageBeep(winsound.MB_ICONQUESTION)
 
+    def test_error(self):
+        safe_MessageBeep(winsound.MB_ICONERROR)
+
+    def test_information(self):
+        safe_MessageBeep(winsound.MB_ICONINFORMATION)
+
+    def test_stop(self):
+        safe_MessageBeep(winsound.MB_ICONSTOP)
+
+    def test_warning(self):
+        safe_MessageBeep(winsound.MB_ICONWARNING)
+
     def test_keyword_args(self):
         safe_MessageBeep(type=winsound.MB_OK)
 
