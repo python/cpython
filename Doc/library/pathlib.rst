@@ -886,7 +886,7 @@ conforming to :rfc:`8089`.
       >>> p.as_uri()
       'file:///c:/Windows'
 
-   .. deprecated-removed:: 3.14 3.16
+   .. deprecated-removed:: 3.14 3.19
 
       Calling this method from :class:`PurePath` rather than :class:`Path` is
       possible but deprecated. The method's use of :func:`os.fsencode` makes

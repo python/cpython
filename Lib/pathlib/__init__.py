@@ -533,7 +533,7 @@ class PurePath:
     def as_uri(self):
         """Return the path as a URI."""
         msg = ("pathlib.PurePath.as_uri() is deprecated and scheduled "
-               "for removal in Python 3.16. Use pathlib.Path.as_uri().")
+               "for removal in Python 3.19. Use pathlib.Path.as_uri().")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
         if not self.is_absolute():
             raise ValueError("relative path can't be expressed as a file URI")

@@ -1112,7 +1112,7 @@ Deprecated
 
 * :mod:`pathlib`:
   :meth:`!pathlib.PurePath.as_uri` is deprecated and will be removed in Python
-  3.16. Use :meth:`pathlib.Path.as_uri` instead.
+  3.19. Use :meth:`pathlib.Path.as_uri` instead.
   (Contributed by Barney Gale in :gh:`123599`.)
 
 * :mod:`pdb`:
