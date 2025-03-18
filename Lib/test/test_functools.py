@@ -3011,7 +3011,8 @@ class TestSingleDispatch(unittest.TestCase):
                 try:
                     yield str(arg)
                 finally:
-                    return 'Done'
+                    pass
+                return 'Done'
 
             @classmethod_friendly_decorator
             @classmethod
@@ -3027,7 +3028,8 @@ class TestSingleDispatch(unittest.TestCase):
                 try:
                     yield str(arg)
                 finally:
-                    return 'Done'
+                    pass
+                return 'Done'
 
             @functools.singledispatchmethod
             @classmethod_friendly_decorator
