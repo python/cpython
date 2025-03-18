@@ -291,5 +291,70 @@ class CAPITest(unittest.TestCase):
             bytes_join(b'', NULL)
 
 
+class PyBytesWriterTest(unittest.TestCase):
+    def create_writer(self, prealloc):
+        return _testcapi.PyBytesWriter(prealloc)
+
+    def test_empty(self):
+        # Test PyBytesWriter_Create()
+        writer = self.create_writer(0)
+        self.assertEqual(writer.finish(), b'')
+
+    def test_write_bytes(self):
+        # Test PyBytesWriter_WriteBytes()
+
+        writer = self.create_writer(0)
+        writer.write_bytes(b'Hello World!', -1)
+        self.assertEqual(writer.finish(), b'Hello World!')
+
+        writer = self.create_writer(0)
+        writer.write_bytes(b'Hello ', -1)
+        writer.write_bytes(b'World! <truncated>', 6)
+        self.assertEqual(writer.finish(), b'Hello World!')
+
+    def test_extend(self):
+        # Test PyBytesWriter_Extend() and PyBytesWriter_SetSizeFromBuf()
+
+        writer = self.create_writer(0)
+        writer.extend(13, b'number=123456')
+        writer.extend(0, b'')
+        self.assertEqual(writer.finish(), b'number=123456')
+
+        writer = self.create_writer(0)
+        writer.extend(0, b'')
+        writer.extend(13, b'number=123456')
+        self.assertEqual(writer.finish(), b'number=123456')
+
+        writer = self.create_writer(0)
+        writer.extend(10, b'number=')
+        writer.extend(10, b'123456')
+        self.assertEqual(writer.finish(), b'number=123456')
+
+        writer = self.create_writer(0)
+        writer.extend(7, b'number=')
+        writer.extend(0, b'')
+        writer.extend(6, b'123456')
+        self.assertEqual(writer.finish(), b'number=123456')
+
+        writer = self.create_writer(0)
+        writer.extend(6, b'number')
+        writer.extend(1, b'=')
+        writer.extend(3, b'123')
+        writer.extend(3, b'456')
+        self.assertEqual(writer.finish(), b'number=123456')
+
+    def test_hello_world(self):
+        self.assertEqual(_testcapi.byteswriter_hello_world(),
+                         b'Hello World')
+
+    def test_alloc(self):
+        self.assertEqual(_testcapi.byteswriter_alloc(),
+                         b'abc')
+
+    def test_extend(self):
+        self.assertEqual(_testcapi.byteswriter_extend(),
+                         b'Hello World')
+
+
 if __name__ == "__main__":
     unittest.main()
