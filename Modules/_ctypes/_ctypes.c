@@ -2676,6 +2676,7 @@ make_funcptrtype_dict(ctypes_state *st, PyObject *attrdict, StgInfo *stginfo)
     if (ob) {
         StgInfo *info;
         if (PyStgInfo_FromType(st, ob, &info) < 0) {
+            Py_DECREF(ob);
             return -1;
         }
         if (ob != Py_None && !info && !PyCallable_Check(ob)) {
