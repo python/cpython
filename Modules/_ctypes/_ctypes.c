@@ -473,8 +473,8 @@ CType_Type_traverse(PyObject *self, visitproc visit, void *arg)
         Py_VISIT(info->converters);
         Py_VISIT(info->restype);
         Py_VISIT(info->checker);
-        Py_VISIT(info->module);
         Py_VISIT(info->pointer_type);
+        Py_VISIT(info->module);
     }
     Py_VISIT(Py_TYPE(self));
     return PyType_Type.tp_traverse(self, visit, arg);

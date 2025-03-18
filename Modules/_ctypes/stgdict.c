@@ -40,8 +40,8 @@ PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
     Py_XINCREF(dst_info->converters);
     Py_XINCREF(dst_info->restype);
     Py_XINCREF(dst_info->checker);
-    Py_XINCREF(dst_info->module);
     Py_XINCREF(dst_info->pointer_type);
+    Py_XINCREF(dst_info->module);
 
     if (src_info->format) {
         dst_info->format = PyMem_Malloc(strlen(src_info->format) + 1);

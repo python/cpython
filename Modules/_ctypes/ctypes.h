@@ -364,6 +364,7 @@ typedef struct {
     PyObject *converters;       /* tuple([t.from_param for t in argtypes]) */
     PyObject *restype;          /* CDataObject or NULL */
     PyObject *checker;
+    PyObject *pointer_type;
     PyObject *module;
     int flags;                  /* calling convention and such */
 
@@ -373,7 +374,6 @@ typedef struct {
     Py_ssize_t *shape;
 /*      Py_ssize_t *strides;    */ /* unused in ctypes */
 /*      Py_ssize_t *suboffsets; */ /* unused in ctypes */
-    PyObject *pointer_type;
 } StgInfo;
 
 extern int PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info);
@@ -566,8 +566,8 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
     if (!module) {
         return NULL;
     }
-    info->module = Py_NewRef(module);
     info->pointer_type = NULL;
+    info->module = Py_NewRef(module);
 
     info->initialized = 1;
     return info;
