@@ -489,8 +489,8 @@ ctype_clear_stginfo(StgInfo *info)
     Py_CLEAR(info->converters);
     Py_CLEAR(info->restype);
     Py_CLEAR(info->checker);
-    Py_CLEAR(info->module);
     Py_CLEAR(info->pointer_type);
+    Py_CLEAR(info->module);  // decref the module last
 }
 
 static int
