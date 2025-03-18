@@ -131,7 +131,7 @@ _PyEval_SetOpcodeTrace(
 ) {
     assert(frame != NULL);
 
-    PyCodeObject *code = _PyFrame_GetCode(frame->f_frame);
+    PyObject *code = (PyObject *)_PyFrame_GetCode(frame->f_frame);
     _PyMonitoringEventSet events = 0;
 
     if (_PyMonitoring_GetLocalEvents(code, PY_MONITORING_SYS_TRACE_ID, &events) < 0) {
