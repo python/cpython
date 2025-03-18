@@ -42,10 +42,6 @@ class PdbTestInput(object):
         if self.orig_trace:
             sys.settrace(self.orig_trace)
 
-        # To prevent a warning "test altered the execution environment" if
-        # asyncio features are used.
-        _set_event_loop_policy(None)
-
 
 def test_pdb_displayhook():
     """This tests the custom displayhook for pdb.
@@ -4675,13 +4671,33 @@ class PdbTestReadline(unittest.TestCase):
 
 def load_tests(loader, tests, pattern):
     from test import test_pdb
+
     def setUpPdbBackend(backend):
         def setUp(test):
             import pdb
             pdb.set_default_backend(backend)
         return setUp
-    tests.addTest(doctest.DocTestSuite(test_pdb, setUp=setUpPdbBackend('monitoring')))
-    tests.addTest(doctest.DocTestSuite(test_pdb, setUp=setUpPdbBackend('settrace')))
+
+    def tearDown(test):
+        # Ensure that asyncio state has been cleared at the end of the test.
+        # This prevents a "test altered the execution environment" warning if
+        # asyncio features are used.
+        _set_event_loop_policy(None)
+
+    tests.addTest(
+        doctest.DocTestSuite(
+            test_pdb,
+            setUp=setUpPdbBackend('monitoring'),
+            tearDown=tearDown,
+        )
+    )
+    tests.addTest(
+        doctest.DocTestSuite(
+            test_pdb,
+            setUp=setUpPdbBackend('settrace'),
+            tearDown=tearDown,
+        )
+    )
     return tests
 
 
