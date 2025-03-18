@@ -1520,8 +1520,9 @@ class TestInterestingEdgeCases(unittest.TestCase):
             try:
                 yield yielded_first
                 yield yielded_second
-            finally:
-                return returned
+            except:
+                pass
+            return returned
 
         def outer():
             return (yield from inner())
