@@ -22,9 +22,9 @@ static PyObject *
 EncodingMap_size_impl(struct encoding_map *self);
 
 static PyObject *
-EncodingMap_size(struct encoding_map *self, PyObject *Py_UNUSED(ignored))
+EncodingMap_size(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return EncodingMap_size_impl(self);
+    return EncodingMap_size_impl((struct encoding_map *)self);
 }
 
 PyDoc_STRVAR(unicode_title__doc__,
@@ -705,10 +705,9 @@ PyDoc_STRVAR(unicode_isprintable__doc__,
 "isprintable($self, /)\n"
 "--\n"
 "\n"
-"Return True if the string is printable, False otherwise.\n"
+"Return True if all characters in the string are printable, False otherwise.\n"
 "\n"
-"A string is printable if all of its characters are considered printable in\n"
-"repr() or if it is empty.");
+"A character is printable if repr() may use it in its output.");
 
 #define UNICODE_ISPRINTABLE_METHODDEF    \
     {"isprintable", (PyCFunction)unicode_isprintable, METH_NOARGS, unicode_isprintable__doc__},
@@ -1547,7 +1546,7 @@ static PyObject *
 unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z);
 
 static PyObject *
-unicode_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
+unicode_maketrans(PyObject *null, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *x;
@@ -1895,4 +1894,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=30efbf79c5a07dd2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=81d703159f829f1f input=a9049054013a1b77]*/

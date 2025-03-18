@@ -7,6 +7,7 @@ from sysconfig import (
     _PYTHON_BUILD,
     _get_sysconfigdata_name,
     get_config_h_filename,
+    get_config_var,
     get_config_vars,
     get_default_scheme,
     get_makefile_filename,
@@ -161,7 +162,7 @@ def _print_config_dict(d, stream):
 
 def _get_pybuilddir():
     pybuilddir = f'build/lib.{get_platform()}-{get_python_version()}'
-    if hasattr(sys, "gettotalrefcount"):
+    if get_config_var('Py_DEBUG') == '1':
         pybuilddir += '-pydebug'
     return pybuilddir
 
@@ -229,10 +230,18 @@ def _generate_posix_vars():
         f.write('build_time_vars = ')
         _print_config_dict(vars, stream=f)
 
+    print(f'Written {destfile}')
+
+    install_vars = get_config_vars()
+    # Fix config vars to match the values after install (of the default environment)
+    install_vars['projectbase'] = install_vars['BINDIR']
+    install_vars['srcdir'] = install_vars['LIBPL']
     # Write a JSON file with the output of sysconfig.get_config_vars
     jsonfile = os.path.join(pybuilddir, _get_json_data_name())
     with open(jsonfile, 'w') as f:
-        json.dump(get_config_vars(), f, indent=2)
+        json.dump(install_vars, f, indent=2)
+
+    print(f'Written {jsonfile}')
 
     # Create file used for sys.path fixup -- see Modules/getpath.c
     with open('pybuilddir.txt', 'w', encoding='utf8') as f:

@@ -84,9 +84,8 @@ _PATCH_FUNCS = {
     "R_AARCH64_MOVW_UABS_G3": "patch_aarch64_16d",
     # x86_64-unknown-linux-gnu:
     "R_X86_64_64": "patch_64",
-    "R_X86_64_GOTPCREL": "patch_32r",
     "R_X86_64_GOTPCRELX": "patch_x86_64_32rx",
-    "R_X86_64_PC32": "patch_32r",
+    "R_X86_64_PLT32": "patch_32r",
     "R_X86_64_REX_GOTPCRELX": "patch_x86_64_32rx",
     # x86_64-apple-darwin:
     "X86_64_RELOC_BRANCH": "patch_32r",
@@ -141,7 +140,11 @@ class Hole:
     def __post_init__(self) -> None:
         self.func = _PATCH_FUNCS[self.kind]
 
-    def fold(self, other: typing.Self, body: bytes) -> typing.Self | None:
+    def fold(
+        self,
+        other: typing.Self,
+        body: bytes | bytearray,
+    ) -> typing.Self | None:
         """Combine two holes into a single hole, if possible."""
         instruction_a = int.from_bytes(
             body[self.offset : self.offset + 4], byteorder=sys.byteorder
@@ -222,11 +225,11 @@ class Stencil:
                 offset -= 3
             case Hole(
                 offset=offset,
-                kind="IMAGE_REL_I386_REL32" | "X86_64_RELOC_BRANCH",
+                kind="IMAGE_REL_I386_REL32" | "R_X86_64_PLT32" | "X86_64_RELOC_BRANCH",
                 value=HoleValue.CONTINUE,
                 symbol=None,
-                addend=-4,
-            ) as hole:
+                addend=addend,
+            ) as hole if _signed(addend) == -4:
                 # jmp 5
                 jump = b"\xE9\x00\x00\x00\x00"
                 offset -= 1
@@ -239,17 +242,6 @@ class Stencil:
             ) as hole:
                 # b #4
                 jump = b"\x00\x00\x00\x14"
-            case Hole(
-                offset=offset,
-                kind="R_X86_64_GOTPCRELX",
-                value=HoleValue.GOT,
-                symbol="_JIT_CONTINUE",
-                addend=addend,
-            ) as hole:
-                assert _signed(addend) == -4
-                # jmp qword ptr [rip]
-                jump = b"\xFF\x25\x00\x00\x00\x00"
-                offset -= 2
             case _:
                 return
         if self.body[offset:] == jump and offset % alignment == 0:

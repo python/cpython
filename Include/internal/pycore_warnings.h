@@ -14,7 +14,7 @@ struct _warnings_runtime_state {
     PyObject *filters;  /* List */
     PyObject *once_registry;  /* Dict */
     PyObject *default_action; /* String */
-    PyMutex mutex;
+    _PyRecursiveMutex lock;
     long filters_version;
 };
 

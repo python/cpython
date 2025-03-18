@@ -978,18 +978,15 @@ class ReTests(unittest.TestCase):
         self.assertIsNone(re.fullmatch(br".+\B", b"abc", re.LOCALE))
         self.assertIsNone(re.fullmatch(r".+\B", "ьюя"))
         self.assertTrue(re.fullmatch(r".+\B", "ьюя", re.ASCII))
-        # However, an empty string contains no word boundaries, and also no
-        # non-boundaries.
+        # However, an empty string contains no word boundaries.
         self.assertIsNone(re.search(r"\b", ""))
         self.assertIsNone(re.search(r"\b", "", re.ASCII))
         self.assertIsNone(re.search(br"\b", b""))
         self.assertIsNone(re.search(br"\b", b"", re.LOCALE))
-        # This one is questionable and different from the perlre behaviour,
-        # but describes current behavior.
-        self.assertIsNone(re.search(r"\B", ""))
-        self.assertIsNone(re.search(r"\B", "", re.ASCII))
-        self.assertIsNone(re.search(br"\B", b""))
-        self.assertIsNone(re.search(br"\B", b"", re.LOCALE))
+        self.assertTrue(re.search(r"\B", ""))
+        self.assertTrue(re.search(r"\B", "", re.ASCII))
+        self.assertTrue(re.search(br"\B", b""))
+        self.assertTrue(re.search(br"\B", b"", re.LOCALE))
         # A single word-character string has two boundaries, but no
         # non-boundary gaps.
         self.assertEqual(len(re.findall(r"\b", "a")), 2)
