@@ -1,4 +1,4 @@
-Add :func:`calendar.alt_month_name` and :func:`calendar.alt_month_abbr` to
+Add :func:`calendar.standalone_month_name` and :func:`calendar.standalone_month_abbr` to
 provide alternative month names and abbreviations for the current locale
 when available. These are used when the month is named by itself, such as in
 a standalone date.

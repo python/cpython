@@ -14,8 +14,8 @@ from itertools import repeat
 __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
            "firstweekday", "isleap", "leapdays", "weekday", "monthrange",
            "monthcalendar", "prmonth", "month", "prcal", "calendar",
-           "timegm", "month_name", "month_abbr", "alt_month_name",
-           "alt_month_abbr", "day_name", "day_abbr", "Calendar",
+           "timegm", "month_name", "month_abbr", "standalone_month_name",
+           "standalone_month_abbr", "day_name", "day_abbr", "Calendar",
            "TextCalendar", "HTMLCalendar", "LocaleTextCalendar",
            "LocaleHTMLCalendar", "weekheader",
            "Day", "Month", "JANUARY", "FEBRUARY", "MARCH",
@@ -144,12 +144,12 @@ month_abbr = _localized_month('%b')
 # standalone form of the month name. This is required for some languages
 # such as Greek, Slavic, and Baltic languages.
 try:
-    alt_month_name = _localized_month('%OB')
-    alt_month_abbr = _localized_month('%Ob')
+    standalone_month_name = _localized_month('%OB')
+    standalone_month_abbr = _localized_month('%Ob')
 except ValueError:
     # The platform does not support the %OB and %Ob specifiers.
-    alt_month_name = month_name
-    alt_month_abbr = month_abbr
+    standalone_month_name = month_name
+    standalone_month_abbr = month_abbr
 
 
 def isleap(year):
@@ -389,7 +389,7 @@ class TextCalendar(Calendar):
         """
         _validate_month(themonth)
 
-        s = alt_month_name[themonth]
+        s = standalone_month_name[themonth]
         if withyear:
             s = "%s %r" % (s, theyear)
         return s.center(width)
@@ -522,9 +522,9 @@ class HTMLCalendar(Calendar):
         """
         _validate_month(themonth)
         if withyear:
-            s = '%s %s' % (alt_month_name[themonth], theyear)
+            s = '%s %s' % (standalone_month_name[themonth], theyear)
         else:
-            s = alt_month_name[themonth]
+            s = standalone_month_name[themonth]
         return '<tr><th colspan="7" class="%s">%s</th></tr>' % (
             self.cssclass_month_head, s)
 

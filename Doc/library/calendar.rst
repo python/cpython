@@ -493,8 +493,7 @@ The :mod:`calendar` module exports the following data attributes:
 
 .. data:: month_name
 
-   A sequence that represents the months of the year in the current locale
-   in the grammatical form used when the month is part of a complete date.
+   A sequence that represents the months of the year in the current locale.
    This follows normal convention of January being month number 1, so it has
    a length of 13 and ``month_name[0]`` is the empty string.
 
@@ -502,42 +501,55 @@ The :mod:`calendar` module exports the following data attributes:
        >>> list(calendar.month_name)
        ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
+   .. caution::
+
+      In locales with alternative forms of month names, the :data:`month_name` sequence
+      may not be suitable when a month name stands by itself and not as part of a date.
+      For instance, in Greek and in many Slavic and Baltic languages, :data:`month_name`
+      will produce the month in genitive case. Use :data:`standalone_month_name` for a form
+      suitable for standalone use.
+
 
 .. data:: month_abbr
 
    A sequence that represents the abbreviated months of the year in the current
-   locale in the grammatical form used when the month is part of a complete date.
-   This follows normal convention of January being month number 1, so it has
-   a length of 13 and  ``month_abbr[0]`` is the empty string.
+   locale. This follows normal convention of January being month number 1, so
+   it has a length of 13 and  ``month_abbr[0]`` is the empty string.
 
        >>> import calendar
        >>> list(calendar.month_abbr)
        ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
+   .. caution::
 
-.. data:: alt_month_name
+      In locales with alternative forms of month names, the :data:`month_abbr` sequence
+      may not be suitable when a month name stands by itself and not as part of a date.
+      Use :data:`standalone_month_abbr` for a form suitable for standalone use.
+
+
+.. data:: standalone_month_name
 
    A sequence that represents the months of the year in the current locale
-   in the grammatical form used when the month is named by itself if the locale
-   provides one. If the locale does not supply an alternative form, it falls back
-   to the behavior of :data:`month_name`.
+   in the grammatical form used when a month name stands by itself if the locale
+   provides one. If the locale does not supply an alternative form, it is equal to
+   :data:`month_name`.
 
        >>> import calendar
-       >>> list(calendar.alt_month_name)
+       >>> list(calendar.standalone_month_name)
        ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
    .. versionadded:: next
 
 
-.. data:: alt_month_abbr
+.. data:: standalone_month_abbr
 
    A sequence that represents the abbreviated months of the year in the current
-   locale in the grammatical form used when the month is named by itself if the
-   locale provides one. If the locale does not supply an alternative form, it falls
-   back to the behavior of :data:`month_abbr`.
+   locale in the grammatical form used when a month name stands by itself if the
+   locale provides one. If the locale does not supply an alternative form, it is equal to
+   :data:`month_abbr`.
 
        >>> import calendar
-       >>> list(calendar.alt_month_abbr)
+       >>> list(calendar.standalone_month_abbr)
        ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
    .. versionadded:: next
