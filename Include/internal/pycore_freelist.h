@@ -51,7 +51,7 @@ static inline int
 _PyFreeList_Push(struct _Py_freelist *fl, void *obj, Py_ssize_t maxsize)
 {
     if (fl->size < maxsize && fl->size >= 0) {
-        *(void **)obj = fl->freelist;
+        FT_ATOMIC_STORE_PTR_RELAXED(*(void **)obj, fl->freelist);
         fl->freelist = obj;
         fl->size++;
         OBJECT_STAT_INC(to_freelist);

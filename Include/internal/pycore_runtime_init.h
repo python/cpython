@@ -137,6 +137,7 @@ extern PyTypeObject _PyExc_MemoryError;
                 { .threshold = 0, }, \
             }, \
             .work_to_do = -5000, \
+            .phase = GC_PHASE_MARK, \
         }, \
         .qsbr = { \
             .wr_seq = QSBR_INITIAL, \
@@ -170,6 +171,8 @@ extern PyTypeObject _PyExc_MemoryError;
 #define _PyThreadStateImpl_INIT \
     { \
         .base = _PyThreadState_INIT, \
+        /* The thread and the interpreter's linked list hold a reference */ \
+        .refcount = 2, \
     }
 
 #define _PyThreadState_INIT \

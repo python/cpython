@@ -1,2 +1,0 @@
-The ``usage`` parameter of :class:`argparse.ArgumentParser` no longer
-affects the default value of the ``prog`` parameter in subparsers.

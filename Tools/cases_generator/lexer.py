@@ -213,6 +213,11 @@ kwds.append(OP)
 # A macro in the DSL
 MACRO = "MACRO"
 kwds.append(MACRO)
+# A label in the DSL
+LABEL = "LABEL"
+kwds.append(LABEL)
+SPILLED = "SPILLED"
+kwds.append(SPILLED)
 keywords = {name.lower(): name for name in kwds}
 
 ANNOTATION = "ANNOTATION"
@@ -226,6 +231,7 @@ annotations = {
     "replicate",
     "tier1",
     "tier2",
+    "no_save_ip",
 }
 
 __all__ = []
