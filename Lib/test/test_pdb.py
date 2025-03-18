@@ -13,6 +13,7 @@ import linecache
 import zipapp
 import zipfile
 
+from asyncio.events import _set_event_loop_policy
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
@@ -40,6 +41,10 @@ class PdbTestInput(object):
         sys.stdin = self.real_stdin
         if self.orig_trace:
             sys.settrace(self.orig_trace)
+
+        # To prevent a warning "test altered the execution environment" if
+        # asyncio features are used.
+        _set_event_loop_policy(None)
 
 
 def test_pdb_displayhook():
