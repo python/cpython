@@ -1,14 +1,20 @@
 import itertools
 import functools
 import rlcompleter
+from textwrap import dedent
 from unittest import TestCase
 from unittest.mock import MagicMock
 
 from .support import handle_all_events, handle_events_narrow_console
 from .support import ScreenEqualMixin, code_to_events
-from .support import prepare_reader, prepare_console
+from .support import prepare_reader, prepare_console, reader_force_colors
 from _pyrepl.console import Event
 from _pyrepl.reader import Reader
+from _pyrepl.utils import TAG_TO_ANSI
+
+
+colors = {k[0].lower(): v for k, v in TAG_TO_ANSI.items() if k != "SYNC"}
+colors["z"] = TAG_TO_ANSI["SYNC"]
 
 
 class TestReader(ScreenEqualMixin, TestCase):
@@ -123,8 +129,9 @@ class TestReader(ScreenEqualMixin, TestCase):
     def test_control_characters(self):
         code = 'flag = "🏳️‍🌈"'
         events = code_to_events(code)
-        reader, _ = handle_all_events(events)
+        reader, _ = handle_all_events(events, prepare_reader=reader_force_colors)
         self.assert_screen_equal(reader, 'flag = "🏳️\\u200d🌈"', clean=True)
+        self.assert_screen_equal(reader, 'flag = {s}"🏳️\\u200d🌈"{z}'.format(**colors))
 
     def test_setpos_from_xy_multiple_lines(self):
         # fmt: off
@@ -355,3 +362,60 @@ class TestReader(ScreenEqualMixin, TestCase):
         reader, _ = handle_all_events(events)
         reader.setpos_from_xy(8, 0)
         self.assertEqual(reader.pos, 7)
+
+    def test_syntax_highlighting_basic(self):
+        code = dedent(
+            """\
+            import re, sys
+            def funct(case: str = sys.platform) -> None:
+                match = re.search(
+                    "(me)",
+                    '''
+                    Come on
+                      Come on now
+                        You know that it's time to emerge
+                    ''',
+                )
+                match case:
+                    case "emscripten": print("on the web")
+                    case "ios" | "android": print("on the phone")
+                    case _: print('arms around', match.group(1))
+            """
+        )
+        expected = dedent(
+            """\
+            {k}import{z} re, sys
+            {a}{k}def{z} {d}funct{z}(case: {b}str{z} = sys.platform) -> {k}None{z}:
+                match = re.search(
+                    {s}"(me)"{z},
+                    {s}'''{z}
+            {s}        Come on{z}
+            {s}          Come on now{z}
+            {s}            You know that it's time to emerge{z}
+            {s}        '''{z},
+                )
+                {k}match{z} case:
+                    {k}case{z} {s}"emscripten"{z}: {b}print{z}({s}"on the web"{z})
+                    {k}case{z} {s}"ios"{z} | {s}"android"{z}: {b}print{z}({s}"on the phone"{z})
+                    {k}case{z} {k}_{z}: {b}print{z}({s}'arms around'{z}, match.group(1))
+            """
+        )
+        expected_sync = expected.format(a="", **colors)
+        events = code_to_events(code)
+        reader, _ = handle_all_events(events, prepare_reader=reader_force_colors)
+        self.assert_screen_equal(reader, code, clean=True)
+        self.assert_screen_equal(reader, expected_sync)
+        self.assertEqual(reader.pos, 2**7 + 2**8)
+        self.assertEqual(reader.cxy, (0, 14))
+
+        async_msg = "{k}async{z} ".format(**colors)
+        expected_async = expected.format(a=async_msg, **colors)
+        more_events = itertools.chain(
+            code_to_events(code),
+            [Event(evt="key", data="up", raw=bytearray(b"\x1bOA"))] * 13,
+            code_to_events("async "),
+        )
+        reader, _ = handle_all_events(more_events, prepare_reader=reader_force_colors)
+        self.assert_screen_equal(reader, expected_async)
+        self.assertEqual(reader.pos, 21)
+        self.assertEqual(reader.cxy, (6, 1))

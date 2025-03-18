@@ -27,9 +27,8 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
 from _colorize import can_colorize, ANSIColors
 
-
 from . import commands, console, input
-from .utils import wlen, unbracket, disp_str
+from .utils import wlen, unbracket, disp_str, gen_colors
 from .trace import trace
 
 
@@ -38,8 +37,7 @@ Command = commands.Command
 from .types import Callback, SimpleContextManager, KeySpec, CommandName
 
 
-# syntax classes:
-
+# syntax classes
 SYNTAX_WHITESPACE, SYNTAX_WORD, SYNTAX_SYMBOL = range(3)
 
 
@@ -144,16 +142,17 @@ class Reader:
     Instance variables of note include:
 
       * buffer:
-        A *list* (*not* a string at the moment :-) containing all the
-        characters that have been entered.
+        A per-character list containing all the characters that have been
+        entered. Does not include color information.
       * console:
         Hopefully encapsulates the OS dependent stuff.
       * pos:
         A 0-based index into 'buffer' for where the insertion point
         is.
       * screeninfo:
-        Ahem.  This list contains some info needed to move the
-        insertion point around reasonably efficiently.
+        A list of screen position tuples. Each list element is a tuple
+        representing information on visible line length for a given line.
+        Allows for efficient skipping of color escape sequences.
       * cxy, lxy:
         the position of the insertion point in screen ...
       * syntax_table:
@@ -316,6 +315,11 @@ class Reader:
         pos -= offset
 
         prompt_from_cache = (offset and self.buffer[offset - 1] != "\n")
+
+        if self.can_colorize:
+            colors = list(gen_colors(self.get_unicode()))
+        else:
+            colors = None
         lines = "".join(self.buffer[offset:]).split("\n")
         cursor_found = False
         lines_beyond_cursor = 0
@@ -343,7 +347,7 @@ class Reader:
                 screeninfo.append((0, []))
             pos -= line_len + 1
             prompt, prompt_len = self.process_prompt(prompt)
-            chars, char_widths = disp_str(line)
+            chars, char_widths = disp_str(line, colors, offset)
             wrapcount = (sum(char_widths) + prompt_len) // self.console.width
             trace("wrapcount = {wrapcount}", wrapcount=wrapcount)
             if wrapcount == 0 or not char_widths:
@@ -567,6 +571,7 @@ class Reader:
     def update_cursor(self) -> None:
         """Move the cursor to reflect changes in self.pos"""
         self.cxy = self.pos2xy()
+        trace("update_cursor({pos}) = {cxy}", pos=self.pos, cxy=self.cxy)
         self.console.move_cursor(*self.cxy)
 
     def after_command(self, cmd: Command) -> None:
