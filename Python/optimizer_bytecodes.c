@@ -446,7 +446,22 @@ dummy_func(void) {
     }
 
     op(_COMPARE_OP_INT, (left, right -- res)) {
-        res = sym_new_type(ctx, &PyBool_Type);
+        if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
+        sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
+        {
+            assert(PyLong_CheckExact(sym_get_const(ctx, left)));
+            assert(PyLong_CheckExact(sym_get_const(ctx, right)));
+
+            if (_Py_IsImmortal(res)) {
+                REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)true);
+            }
+            else {
+                res = sym_new_type(ctx, &PyBool_Type);
+            }
+        }
+        else {
+            res = sym_new_type(ctx, &PyBool_Type);
+        }
     }
 
     op(_COMPARE_OP_FLOAT, (left, right -- res)) {
