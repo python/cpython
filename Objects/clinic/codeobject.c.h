@@ -466,4 +466,130 @@ code__varname_from_oparg(PyObject *self, PyObject *const *args, Py_ssize_t nargs
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=73861c79e93aaee5 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(code___get_local_events____doc__,
+"__get_local_events__($self, /, tool)\n"
+"--\n"
+"\n");
+
+#define CODE___GET_LOCAL_EVENTS___METHODDEF    \
+    {"__get_local_events__", _PyCFunction_CAST(code___get_local_events__), METH_FASTCALL|METH_KEYWORDS, code___get_local_events____doc__},
+
+static int
+code___get_local_events___impl(PyCodeObject *self, int tool);
+
+static PyObject *
+code___get_local_events__(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(tool), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"tool", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__get_local_events__",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    int tool;
+    int _return_value;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    tool = PyLong_AsInt(args[0]);
+    if (tool == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    _return_value = code___get_local_events___impl((PyCodeObject *)self, tool);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(code___set_local_events____doc__,
+"__set_local_events__($self, /, tool, events)\n"
+"--\n"
+"\n");
+
+#define CODE___SET_LOCAL_EVENTS___METHODDEF    \
+    {"__set_local_events__", _PyCFunction_CAST(code___set_local_events__), METH_FASTCALL|METH_KEYWORDS, code___set_local_events____doc__},
+
+static PyObject *
+code___set_local_events___impl(PyCodeObject *self, int tool, int events);
+
+static PyObject *
+code___set_local_events__(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(tool), &_Py_ID(events), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"tool", "events", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "__set_local_events__",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    int tool;
+    int events;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    tool = PyLong_AsInt(args[0]);
+    if (tool == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    events = PyLong_AsInt(args[1]);
+    if (events == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = code___set_local_events___impl((PyCodeObject *)self, tool, events);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=1a1deec323e9b345 input=a9049054013a1b77]*/

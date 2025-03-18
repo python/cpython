@@ -918,6 +918,7 @@ extern "C" {
     INIT_ID(errors), \
     INIT_ID(event), \
     INIT_ID(eventmask), \
+    INIT_ID(events), \
     INIT_ID(exc_type), \
     INIT_ID(exc_value), \
     INIT_ID(excepthook), \
@@ -1255,6 +1256,7 @@ extern "C" {
     INIT_ID(times), \
     INIT_ID(timetuple), \
     INIT_ID(timeunit), \
+    INIT_ID(tool), \
     INIT_ID(top), \
     INIT_ID(trace_callback), \
     INIT_ID(traceback), \
