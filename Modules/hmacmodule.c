@@ -750,8 +750,9 @@ hmac_new_initial_state(HMACObject *self, uint8_t *key, Py_ssize_t len)
     }
 #endif
     assert(self->kind != Py_hmac_kind_hash_unknown);
+    // cast to uint32_t is now safe even on 32-bit platforms
+    self->state = _hacl_hmac_state_new(self->kind, key, (uint32_t)len);
     // _hacl_hmac_state_new() may set an exception on error
-    self->state = _hacl_hmac_state_new(self->kind, key, len);
     return self->state == NULL ? -1 : 0;
 }
 
