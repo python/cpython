@@ -2155,7 +2155,7 @@ if not SKIP_CORO_TESTS:
             ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
 
             >>> def test_function():
-            ...     asyncio.run(test())
+            ...     asyncio.run(test(), loop_factory=asyncio.EventLoop)
 
             >>> with PdbTestInput([  # doctest: +ELLIPSIS
             ...     '$_asynctask',
