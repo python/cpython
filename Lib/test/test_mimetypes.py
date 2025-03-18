@@ -1,7 +1,9 @@
+import contextlib
 import io
 import mimetypes
 import os
 import sys
+import tempfile
 import unittest.mock
 from os import linesep
 
@@ -392,9 +394,19 @@ class MiscTestCase(unittest.TestCase):
 
 class MimetypesCliTestCase(unittest.TestCase):
 
-    def mimetypes_cmd(cls, *args, **kwargs):
-        result, _ = run_python_until_end('-m', 'mimetypes', *args)
-        return result.rc, result.out.decode(), result.err.decode()
+    def mimetypes_cmd(self, *args):
+        # We cannot use run_python_until_end() as the latter would not
+        # call setUpModule() which unsets mimetypes.knowfiles. Instead,
+        # we need to directly call the main() function in order to avoid
+        # re-initializing the database.
+        rc, out, err = 0, io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            try:
+                mimetypes._main(args)
+            except SystemExit as exc:
+                self.assertIsInstance(exc.code, int)
+                rc = exc.code
+        return rc, out.getvalue(), err.getvalue()
 
     def test_help_option(self):
         retcode, out, err = self.mimetypes_cmd('-h')
@@ -430,15 +442,12 @@ class MimetypesCliTestCase(unittest.TestCase):
         self.assertEqual(out, f'type: image/webp encoding: None{linesep}')
         self.assertEqual(err, '')
 
-    @unittest.skipIf(
-        sys.platform == 'darwin',
-        'macOS lists common_types in mime.types thus making them always known'
-    )
-    def test_guess_type_conflicting_with_mimetypes(self):
+    def test_z_guess_type_conflicting_with_mimetypes(self):
         retcode, out, err = self.mimetypes_cmd('foo.pic')
         self.assertEqual(retcode, 1)
         self.assertEqual(out, '')
         self.assertEqual(err, f'error: media type unknown for foo.pic{linesep}')
+
 
 if __name__ == "__main__":
     unittest.main()
