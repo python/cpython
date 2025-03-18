@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_runtime_structs.h"
+#include "pycore_pystate.h"
 
 
 /* Get an object's GC head */
@@ -202,6 +203,86 @@ static inline void _PyGC_CLEAR_FINALIZED(PyObject *op) {
     gc->_gc_prev &= ~_PyGC_PREV_MASK_FINALIZED;
 #endif
 }
+
+
+/* Tell the GC to track this object.
+ *
+ * The object must not be tracked by the GC.
+ *
+ * NB: While the object is tracked by the collector, it must be safe to call the
+ * ob_traverse method.
+ *
+ * Internal note: interp->gc.generation0->_gc_prev doesn't have any bit flags
+ * because it's not object header.  So we don't use _PyGCHead_PREV() and
+ * _PyGCHead_SET_PREV() for it to avoid unnecessary bitwise operations.
+ *
+ * See also the public PyObject_GC_Track() function.
+ */
+static inline void _PyObject_GC_TRACK(
+// The preprocessor removes _PyObject_ASSERT_FROM() calls if NDEBUG is defined
+#ifndef NDEBUG
+    const char *filename, int lineno,
+#endif
+    PyObject *op)
+{
+    _PyObject_ASSERT_FROM(op, !_PyObject_GC_IS_TRACKED(op),
+                          "object already tracked by the garbage collector",
+                          filename, lineno, __func__);
+#ifdef Py_GIL_DISABLED
+    _PyObject_SET_GC_BITS(op, _PyGC_BITS_TRACKED);
+#else
+    PyGC_Head *gc = _Py_AS_GC(op);
+    _PyObject_ASSERT_FROM(op,
+                          (gc->_gc_prev & _PyGC_PREV_MASK_COLLECTING) == 0,
+                          "object is in generation which is garbage collected",
+                          filename, lineno, __func__);
+
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyGC_Head *generation0 = &interp->gc.young.head;
+    PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
+    _PyGCHead_SET_NEXT(last, gc);
+    _PyGCHead_SET_PREV(gc, last);
+    uintptr_t not_visited = 1 ^ interp->gc.visited_space;
+    gc->_gc_next = ((uintptr_t)generation0) | not_visited;
+    generation0->_gc_prev = (uintptr_t)gc;
+#endif
+}
+
+/* Tell the GC to stop tracking this object.
+ *
+ * Internal note: This may be called while GC. So _PyGC_PREV_MASK_COLLECTING
+ * must be cleared. But _PyGC_PREV_MASK_FINALIZED bit is kept.
+ *
+ * The object must be tracked by the GC.
+ *
+ * See also the public PyObject_GC_UnTrack() which accept an object which is
+ * not tracked.
+ */
+static inline void _PyObject_GC_UNTRACK(
+// The preprocessor removes _PyObject_ASSERT_FROM() calls if NDEBUG is defined
+#ifndef NDEBUG
+    const char *filename, int lineno,
+#endif
+    PyObject *op)
+{
+    _PyObject_ASSERT_FROM(op, _PyObject_GC_IS_TRACKED(op),
+                          "object not tracked by the garbage collector",
+                          filename, lineno, __func__);
+
+#ifdef Py_GIL_DISABLED
+    _PyObject_CLEAR_GC_BITS(op, _PyGC_BITS_TRACKED);
+#else
+    PyGC_Head *gc = _Py_AS_GC(op);
+    PyGC_Head *prev = _PyGCHead_PREV(gc);
+    PyGC_Head *next = _PyGCHead_NEXT(gc);
+    _PyGCHead_SET_NEXT(prev, next);
+    _PyGCHead_SET_PREV(next, prev);
+    gc->_gc_next = 0;
+    gc->_gc_prev &= _PyGC_PREV_MASK_FINALIZED;
+#endif
+}
+
+
 
 /*
    NOTE: about untracking of mutable objects.
