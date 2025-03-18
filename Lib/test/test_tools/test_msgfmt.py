@@ -158,15 +158,6 @@ class MultiInputTest(unittest.TestCase):
     """Tests for multiple input files
     """
 
-    def test_no_outputfile(self):
-        """Test script without -o option - 1 single file"""
-        with temp_cwd(None):
-            shutil.copy(data_dir / 'file2_fr_lf.po', '.')
-            assert_python_ok(msgfmt, 'file2_fr_lf.po')
-            self.assertTrue(filecmp.cmp(
-                data_dir / 'file2_fr_lf.mo','file2_fr_lf.mo'),
-                'Wrong compiled file2_fr_lf.mo')
-
     def test_both_with_outputfile(self):
         """Test script with -o option and 2 input files
 

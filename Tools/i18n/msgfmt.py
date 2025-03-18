@@ -102,7 +102,7 @@ def generate(messages):
     return output
 
 
-def make(filenames, outfile=None):
+def make(filenames, outfile):
     """ Compiles one or more po files(s).
 
     filenames an iterable of strings representing the input file(s).
@@ -111,25 +111,23 @@ def make(filenames, outfile=None):
     If it is not None, the output file receives a merge of the input files.
     If it is None, then for each file from filenames the name of the output
     file is obtained by replacing the po extension with mo.
-    BEWARE: in previous version of make the first parameter was a string
-    containing a single filename.
     """
     if outfile is None:
         # each PO file generates its corresponding MO file
         for filename in filenames:
             messages = {}
-            infile, outfile = get_names(filename, None)
-            process(infile, messages)
+            outfile = os.path.splitext(filename)[0] + '.mo'
+            process(filename, messages)
             output = generate(messages)
             writefile(outfile, output)
     else:
         # all PO files are combined into one single output file
         messages = {}
         for filename in filenames:
-            infile, _ = get_names(filename, outfile)
-            process(infile, messages)
+            process(filename, messages)
         output = generate(messages)
         writefile(outfile, output)
+
 
 def get_names(filename, outfile):
     # Compute .mo name from .po name and arguments
@@ -141,10 +139,14 @@ def get_names(filename, outfile):
         outfile = os.path.splitext(infile)[0] + '.mo'
     return infile, outfile
 
+
 def process(infile, messages):
     ID = 1
     STR = 2
     CTXT = 3
+
+    if not os.path.normcase(infile).endswith('.po'):
+        infile += '.po'
 
     try:
         with open(infile, 'rb') as f:
