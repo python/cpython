@@ -336,8 +336,11 @@ class Random(_random.Random):
     def randint(self, a, b):
         """Return random integer in range [a, b], including both end points.
         """
-
-        return self.randrange(a, b+1)
+        a = _index(a)
+        b = _index(b)
+        if b < a:
+            raise ValueError(f"empty range in randint({a}, {b})")
+        return a + self._randbelow(b - a + 1)
 
 
     ## -------------------- sequence methods  -------------------
