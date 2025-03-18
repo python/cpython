@@ -475,10 +475,8 @@ class GettextVisitor(ast.NodeVisitor):
 
     def _extract_message(self, node):
         func_name = self._get_func_name(node)
-        specs = self.options.keywords.get(func_name, [])
-        for spec in specs:
-            extracted = self._extract_message_with_spec(node, spec)
-            if extracted:
+        for spec in self.options.keywords.get(func_name, []):
+            if self._extract_message_with_spec(node, spec):
                 break
 
     def _extract_message_with_spec(self, node, spec):
