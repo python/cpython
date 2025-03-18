@@ -376,12 +376,12 @@ exit:
 }
 
 PyDoc_STRVAR(_hmac_compute_sha2_224__doc__,
-"compute_sha2_224($module, key, msg, /)\n"
+"compute_sha224($module, key, msg, /)\n"
 "--\n"
 "\n");
 
 #define _HMAC_COMPUTE_SHA2_224_METHODDEF    \
-    {"compute_sha2_224", _PyCFunction_CAST(_hmac_compute_sha2_224), METH_FASTCALL, _hmac_compute_sha2_224__doc__},
+    {"compute_sha224", _PyCFunction_CAST(_hmac_compute_sha2_224), METH_FASTCALL, _hmac_compute_sha2_224__doc__},
 
 static PyObject *
 _hmac_compute_sha2_224_impl(PyObject *module, PyObject *key, PyObject *msg);
@@ -393,7 +393,7 @@ _hmac_compute_sha2_224(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *key;
     PyObject *msg;
 
-    if (!_PyArg_CheckPositional("compute_sha2_224", nargs, 2, 2)) {
+    if (!_PyArg_CheckPositional("compute_sha224", nargs, 2, 2)) {
         goto exit;
     }
     key = args[0];
@@ -405,12 +405,12 @@ exit:
 }
 
 PyDoc_STRVAR(_hmac_compute_sha2_256__doc__,
-"compute_sha2_256($module, key, msg, /)\n"
+"compute_sha256($module, key, msg, /)\n"
 "--\n"
 "\n");
 
 #define _HMAC_COMPUTE_SHA2_256_METHODDEF    \
-    {"compute_sha2_256", _PyCFunction_CAST(_hmac_compute_sha2_256), METH_FASTCALL, _hmac_compute_sha2_256__doc__},
+    {"compute_sha256", _PyCFunction_CAST(_hmac_compute_sha2_256), METH_FASTCALL, _hmac_compute_sha2_256__doc__},
 
 static PyObject *
 _hmac_compute_sha2_256_impl(PyObject *module, PyObject *key, PyObject *msg);
@@ -422,7 +422,7 @@ _hmac_compute_sha2_256(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *key;
     PyObject *msg;
 
-    if (!_PyArg_CheckPositional("compute_sha2_256", nargs, 2, 2)) {
+    if (!_PyArg_CheckPositional("compute_sha256", nargs, 2, 2)) {
         goto exit;
     }
     key = args[0];
@@ -434,12 +434,12 @@ exit:
 }
 
 PyDoc_STRVAR(_hmac_compute_sha2_384__doc__,
-"compute_sha2_384($module, key, msg, /)\n"
+"compute_sha384($module, key, msg, /)\n"
 "--\n"
 "\n");
 
 #define _HMAC_COMPUTE_SHA2_384_METHODDEF    \
-    {"compute_sha2_384", _PyCFunction_CAST(_hmac_compute_sha2_384), METH_FASTCALL, _hmac_compute_sha2_384__doc__},
+    {"compute_sha384", _PyCFunction_CAST(_hmac_compute_sha2_384), METH_FASTCALL, _hmac_compute_sha2_384__doc__},
 
 static PyObject *
 _hmac_compute_sha2_384_impl(PyObject *module, PyObject *key, PyObject *msg);
@@ -451,7 +451,7 @@ _hmac_compute_sha2_384(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *key;
     PyObject *msg;
 
-    if (!_PyArg_CheckPositional("compute_sha2_384", nargs, 2, 2)) {
+    if (!_PyArg_CheckPositional("compute_sha384", nargs, 2, 2)) {
         goto exit;
     }
     key = args[0];
@@ -463,12 +463,12 @@ exit:
 }
 
 PyDoc_STRVAR(_hmac_compute_sha2_512__doc__,
-"compute_sha2_512($module, key, msg, /)\n"
+"compute_sha512($module, key, msg, /)\n"
 "--\n"
 "\n");
 
 #define _HMAC_COMPUTE_SHA2_512_METHODDEF    \
-    {"compute_sha2_512", _PyCFunction_CAST(_hmac_compute_sha2_512), METH_FASTCALL, _hmac_compute_sha2_512__doc__},
+    {"compute_sha512", _PyCFunction_CAST(_hmac_compute_sha2_512), METH_FASTCALL, _hmac_compute_sha2_512__doc__},
 
 static PyObject *
 _hmac_compute_sha2_512_impl(PyObject *module, PyObject *key, PyObject *msg);
@@ -480,7 +480,7 @@ _hmac_compute_sha2_512(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *key;
     PyObject *msg;
 
-    if (!_PyArg_CheckPositional("compute_sha2_512", nargs, 2, 2)) {
+    if (!_PyArg_CheckPositional("compute_sha512", nargs, 2, 2)) {
         goto exit;
     }
     key = args[0];
@@ -664,4 +664,4 @@ _hmac_compute_blake2b_32(PyObject *module, PyObject *const *args, Py_ssize_t nar
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7e0a5a87ff3fa5fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bdfd9d967c6a052c input=a9049054013a1b77]*/

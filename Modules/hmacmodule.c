@@ -1299,7 +1299,7 @@ _hmac_compute_sha1_impl(PyObject *module, PyObject *key, PyObject *msg)
 }
 
 /*[clinic input]
-_hmac.compute_sha2_224
+_hmac.compute_sha224 as _hmac_compute_sha2_224
 
     key: object
     msg: object
@@ -1309,13 +1309,13 @@ _hmac.compute_sha2_224
 
 static PyObject *
 _hmac_compute_sha2_224_impl(PyObject *module, PyObject *key, PyObject *msg)
-/*[clinic end generated code: output=7f21f1613e53979e input=bcaac7a3637484ce]*/
+/*[clinic end generated code: output=7f21f1613e53979e input=a1a75f25f23449af]*/
 {
     Py_HMAC_HACL_ONESHOT(sha2_224, key, msg);
 }
 
 /*[clinic input]
-_hmac.compute_sha2_256
+_hmac.compute_sha256 as _hmac_compute_sha2_256
 
     key: object
     msg: object
@@ -1325,13 +1325,13 @@ _hmac.compute_sha2_256
 
 static PyObject *
 _hmac_compute_sha2_256_impl(PyObject *module, PyObject *key, PyObject *msg)
-/*[clinic end generated code: output=d4a291f7d9a82459 input=6e2d1f6fe9c56d21]*/
+/*[clinic end generated code: output=d4a291f7d9a82459 input=5c9ccf2df048ace3]*/
 {
     Py_HMAC_HACL_ONESHOT(sha2_256, key, msg);
 }
 
 /*[clinic input]
-_hmac.compute_sha2_384
+_hmac.compute_sha384 as _hmac_compute_sha2_384
 
     key: object
     msg: object
@@ -1341,13 +1341,13 @@ _hmac.compute_sha2_384
 
 static PyObject *
 _hmac_compute_sha2_384_impl(PyObject *module, PyObject *key, PyObject *msg)
-/*[clinic end generated code: output=f211fa26e3700c27 input=9ce8de89dda79e62]*/
+/*[clinic end generated code: output=f211fa26e3700c27 input=2fee2c14766af231]*/
 {
     Py_HMAC_HACL_ONESHOT(sha2_384, key, msg);
 }
 
 /*[clinic input]
-_hmac.compute_sha2_512
+_hmac.compute_sha512 as _hmac_compute_sha2_512
 
     key: object
     msg: object
@@ -1357,7 +1357,7 @@ _hmac.compute_sha2_512
 
 static PyObject *
 _hmac_compute_sha2_512_impl(PyObject *module, PyObject *key, PyObject *msg)
-/*[clinic end generated code: output=d5c20373762cecca input=b964bb8487d7debd]*/
+/*[clinic end generated code: output=d5c20373762cecca input=3371eaac315c7864]*/
 {
     Py_HMAC_HACL_ONESHOT(sha2_512, key, msg);
 }
