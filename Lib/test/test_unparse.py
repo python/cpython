@@ -5,6 +5,7 @@ import test.support
 import pathlib
 import random
 import tokenize
+import warnings
 import ast
 from test.support.ast_helper import ASTTestMixin
 
@@ -839,13 +840,16 @@ class DirectoryTestCase(ASTTestCase):
         return items
 
     def test_files(self):
-        for item in self.files_to_test():
-            if test.support.verbose:
-                print(f"Testing {item.absolute()}")
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', SyntaxWarning)
 
-            with self.subTest(filename=item):
-                source = read_pyfile(item)
-                self.check_ast_roundtrip(source)
+            for item in self.files_to_test():
+                if test.support.verbose:
+                    print(f"Testing {item.absolute()}")
+
+                with self.subTest(filename=item):
+                    source = read_pyfile(item)
+                    self.check_ast_roundtrip(source)
 
 
 if __name__ == "__main__":
