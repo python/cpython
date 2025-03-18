@@ -383,9 +383,9 @@ class RFCTestCaseMixin(AssertersMixin, HashFunctionsTrait):
 
     - Test vectors for MD5 and SHA-1 are taken from RFC 2202.
     - Test vectors for SHA-2 are taken from RFC 4231.
-    - Test vectors for SHA-3 are NIST's test vectors.
+    - Test vectors for SHA-3 are NIST's test vectors [1].
 
-    [1] https://csrc.nist.gov/projects/cryptographic-standards-and-guidelines
+    [1] https://csrc.nist.gov/projects/message-authentication-codes
     """
 
     def test_md5_rfc2202(self):
