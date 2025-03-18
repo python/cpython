@@ -189,16 +189,13 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
             # sys.executable is not set.
             return lib, version
 
-    libc_search = re.compile(
-        br'(__libc_init)'
-        br'|'
-        br'(GLIBC_([0-9.]+))'
-        br'|'
-        br'(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)'
-        br'|'
-        br'(musl-([0-9.]+))'
-        br'',
-        re.ASCII)
+    libc_search = re.compile(br"""
+          (__libc_init)
+        | (GLIBC_([0-9.]+))
+        | (libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)
+        | (musl-([0-9.]+))
+        """,
+        re.ASCII | re.VERBOSE)
 
     V = _comparable_version
     # We use os.path.realpath()
