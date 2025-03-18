@@ -382,7 +382,6 @@ PyTypeObject _PyLegacyEventHandler_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "sys.legacy_event_handler",
     sizeof(_PyLegacyEventHandler),
-    .tp_dealloc = (destructor)PyObject_Free,
     .tp_vectorcall_offset = offsetof(_PyLegacyEventHandler, vectorcall),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
         Py_TPFLAGS_HAVE_VECTORCALL | Py_TPFLAGS_DISALLOW_INSTANTIATION,

@@ -38,6 +38,7 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
+#include "pycore_unicodeobject.h" // _PyUnicode_WideCharString_Opt_Converter
 
 
 

@@ -1249,7 +1249,10 @@ It is also possible to achieve the same result without using the
 
    >>> import urllib.request
    >>> f = urllib.request.urlopen('http://www.python.org/')
-   >>> print(f.read(100).decode('utf-8'))
+   >>> try:
+   ...     print(f.read(100).decode('utf-8'))
+   ... finally:
+   ...     f.close()
    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
    "http://www.w3.org/TR/xhtml1/DTD/xhtm
 
@@ -1294,7 +1297,8 @@ Use of Basic HTTP Authentication::
    opener = urllib.request.build_opener(auth_handler)
    # ...and install it globally so it can be used with urlopen.
    urllib.request.install_opener(opener)
-   urllib.request.urlopen('http://www.example.com/login.html')
+   with urllib.request.urlopen('http://www.example.com/login.html') as f:
+       print(f.read().decode('utf-8'))
 
 :func:`build_opener` provides many handlers by default, including a
 :class:`ProxyHandler`.  By default, :class:`ProxyHandler` uses the environment
@@ -1312,7 +1316,8 @@ programmatically supplied proxy URLs, and adds proxy authorization support with
 
    opener = urllib.request.build_opener(proxy_handler, proxy_auth_handler)
    # This time, rather than install the OpenerDirector, we use it directly:
-   opener.open('http://www.example.com/login.html')
+   with opener.open('http://www.example.com/login.html') as f:
+      print(f.read().decode('utf-8'))
 
 Adding HTTP headers:
 
@@ -1323,7 +1328,9 @@ Use the *headers* argument to the :class:`Request` constructor, or::
    req.add_header('Referer', 'http://www.python.org/')
    # Customize the default User-Agent header value:
    req.add_header('User-Agent', 'urllib-example/0.1 (Contact: . . .)')
-   r = urllib.request.urlopen(req)
+   with urllib.request.urlopen(req) as f:
+       print(f.read().decode('utf-8'))
+
 
 :class:`OpenerDirector` automatically adds a :mailheader:`User-Agent` header to
 every :class:`Request`.  To change this::
@@ -1331,7 +1338,8 @@ every :class:`Request`.  To change this::
    import urllib.request
    opener = urllib.request.build_opener()
    opener.addheaders = [('User-agent', 'Mozilla/5.0')]
-   opener.open('http://www.example.com/')
+   with opener.open('http://www.example.com/') as f:
+      print(f.read().decode('utf-8'))
 
 Also, remember that a few standard headers (:mailheader:`Content-Length`,
 :mailheader:`Content-Type` and :mailheader:`Host`)

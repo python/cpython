@@ -19,6 +19,7 @@
 #include "pycore_opcode_utils.h"
 #undef NEED_OPCODE_TABLES
 #include "pycore_c_array.h"       // _Py_c_array_t
+#include "pycore_code.h"          // COMPARISON_LESS_THAN
 #include "pycore_compile.h"
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_NewLabel()
 #include "pycore_intrinsics.h"
@@ -26,6 +27,7 @@
 #include "pycore_object.h"        // _Py_ANNOTATE_FORMAT_VALUE_WITH_FAKE_GLOBALS
 #include "pycore_pystate.h"       // _Py_GetConfig()
 #include "pycore_symtable.h"      // PySTEntryObject
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString
 
 #define NEED_OPCODE_METADATA
 #include "pycore_opcode_metadata.h" // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
@@ -282,14 +284,6 @@ codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 static int
 codegen_addop_load_const(compiler *c, location loc, PyObject *o)
 {
-    if (PyLong_CheckExact(o)) {
-        int overflow;
-        long val = PyLong_AsLongAndOverflow(o, &overflow);
-        if (!overflow && _PY_IS_SMALL_INT(val)) {
-            ADDOP_I(c, loc, LOAD_SMALL_INT, val);
-            return SUCCESS;
-        }
-    }
     Py_ssize_t arg = _PyCompile_AddConst(c, o);
     if (arg < 0) {
         return ERROR;

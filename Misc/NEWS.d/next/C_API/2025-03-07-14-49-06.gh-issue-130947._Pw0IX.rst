@@ -1,2 +1,0 @@
-Add again :c:func:`PySequence_Fast` to the limited C API.
-Patch by Victor Stinner.
