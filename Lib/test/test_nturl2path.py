@@ -56,6 +56,7 @@ class NTURL2PathTest(unittest.TestCase):
 
     def test_url2pathname(self):
         fn = nturl2path.url2pathname
+        self.assertEqual(fn('/'), '\\')
         self.assertEqual(fn('/C:/'), 'C:\\')
         self.assertEqual(fn("///C|"), 'C:')
         self.assertEqual(fn("///C:"), 'C:')

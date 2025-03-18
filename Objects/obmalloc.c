@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_code.h"          // stats
+#include "pycore_interp.h"        // _PyInterpreterState_HasFeature
 #include "pycore_object.h"        // _PyDebugAllocatorStats() definition
 #include "pycore_obmalloc.h"
 #include "pycore_pyerrors.h"      // _Py_FatalErrorFormat()

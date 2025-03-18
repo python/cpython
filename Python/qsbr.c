@@ -32,10 +32,10 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include "Python.h"
-#include "pycore_initconfig.h"      // _PyStatus_NO_MEMORY()
-#include "pycore_lock.h"            // PyMutex_Lock()
-#include "pycore_qsbr.h"
+#include "pycore_interp.h"          // PyInterpreterState
 #include "pycore_pystate.h"         // _PyThreadState_GET()
+#include "pycore_qsbr.h"
+#include "pycore_tstate.h"          // _PyThreadStateImpl
 
 
 // Starting size of the array of qsbr thread states
