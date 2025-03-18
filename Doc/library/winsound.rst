@@ -142,6 +142,21 @@ provided by Windows platforms.  It includes functions and several constants.
    to specify an application-defined sound alias.
 
 
+.. data:: SND_SENTRY
+
+   Triggers a SoundSentry event when the sound is played.
+
+
+.. data:: SND_SYNC
+
+   The sound is played synchronously.  This is the default behavior.
+
+
+.. data:: SND_SYSTEM
+
+   Assign the sound to the audio session for system notification sounds.
+
+
 .. data:: MB_ICONASTERISK
 
    Play the ``SystemDefault`` sound.

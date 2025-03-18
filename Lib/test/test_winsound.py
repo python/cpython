@@ -161,6 +161,15 @@ class PlaySoundTest(unittest.TestCase):
         # does not raise on systems without a sound card.
         winsound.PlaySound(None, winsound.SND_PURGE)
 
+    def test_sound_sentry(self):
+        safe_PlaySound("SystemExit", winsound.SND_ALIAS | winsound.SND_SENTRY)
+
+    def test_sound_sync(self):
+        safe_PlaySound("SystemExit", winsound.SND_ALIAS | winsound.SND_SYNC)
+
+    def test_sound_system(self):
+        safe_PlaySound("SystemExit", winsound.SND_ALIAS | winsound.SND_SYSTEM)
+
 
 if __name__ == "__main__":
     unittest.main()
