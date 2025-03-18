@@ -626,6 +626,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__fspath__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__ge__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__get__));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__get_local_events__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__getattr__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__getattribute__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__getinitargs__));
@@ -712,6 +713,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__rtruediv__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__rxor__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__set__));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__set_local_events__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__set_name__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__setattr__));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(__setitem__));

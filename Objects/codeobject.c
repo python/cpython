@@ -1540,6 +1540,73 @@ code_positionsiterator(PyObject *self, PyObject* Py_UNUSED(args))
     return (PyObject*)pi;
 }
 
+static PyObject*
+code_offset_to_position(PyObject *self, PyObject* offset)
+{
+    PyCodeObject *code = (PyCodeObject*)self;
+    int addrq;
+    int err = PyLong_AsInt32(offset, &addrq);
+    if (err != 0) {
+        return NULL;
+    }
+    positionsiterator pi;
+    pi.pi_code = (PyCodeObject*)Py_NewRef(code);
+    _PyCode_InitAddressRange(code, &pi.pi_range);
+    pi.pi_offset = pi.pi_range.ar_end;
+    while (pi.pi_range.ar_end <= addrq) {
+        if (pi.pi_offset >= pi.pi_range.ar_end) {
+            assert(pi.pi_offset == pi.pi_range.ar_end);
+            if (at_end(&pi.pi_range)) {
+                return NULL;
+            }
+            advance_with_locations(&pi.pi_range, &pi.pi_endline, &pi.pi_column, &pi.pi_endcolumn);
+        }
+        pi.pi_offset += 2;
+    }
+    return Py_BuildValue("(O&O&O&O&)",
+        _source_offset_converter, &pi.pi_range.ar_line,
+        _source_offset_converter, &pi.pi_endline,
+        _source_offset_converter, &pi.pi_column,
+        _source_offset_converter, &pi.pi_endcolumn);
+}
+
+static PyObject*
+code_get_local_events(PyObject *self, PyObject* tool) {
+    int tool_id;
+    int err = PyLong_AsInt32(tool, &tool_id);
+    if (err != 0) {
+        return NULL;
+    }
+    _PyMonitoringEventSet events;
+    err = _PyMonitoring_GetLocalEvents(self, tool_id, &events);
+    if (err != 0) {
+        return NULL;
+    }
+    return PyLong_FromUInt32(events);
+}
+
+static PyObject*
+code_set_local_events(PyObject *self, PyObject *const *args, Py_ssize_t nargs) {
+    int tool_id;
+    _PyMonitoringEventSet events;
+    if (!_PyArg_CheckPositional("__set_local_events__", nargs, 2, 2)) {
+        return NULL;
+    }
+    int err = PyLong_AsInt32(args[0], &tool_id);
+    if (err != 0) {
+        return NULL;
+    }
+    err = PyLong_AsUInt32(args[1], &events);
+    if (err != 0) {
+        return NULL;
+    }
+    err = _PyMonitoring_SetLocalEvents(self, tool_id, events);
+    if (err != 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
 
 /******************
  * "extra" frame eval info (see PEP 523)
@@ -2394,6 +2461,9 @@ static struct PyMethodDef code_methods[] = {
     CODE__VARNAME_FROM_OPARG_METHODDEF
     {"__replace__", _PyCFunction_CAST(code_replace), METH_FASTCALL|METH_KEYWORDS,
      PyDoc_STR("__replace__($self, /, **changes)\n--\n\nThe same as replace().")},
+    {"co_offset_to_position", code_offset_to_position, METH_O},
+    {"__get_local_events__", code_get_local_events, METH_O},
+    {"__set_local_events__", _PyCFunction_CAST(code_set_local_events), METH_FASTCALL},
     {NULL, NULL}                /* sentinel */
 };
 
@@ -2801,6 +2871,9 @@ _PyCode_Fini(PyInterpreterState *interp)
     _PyIndexPool_Fini(&interp->tlbc_indices);
 #endif
 }
+
+
+
 
 #ifdef Py_GIL_DISABLED
 

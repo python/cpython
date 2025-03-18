@@ -2035,8 +2035,29 @@ done:
 }
 
 int
-_PyMonitoring_SetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEventSet events)
+_PyMonitoring_SetLocalEvents(PyObject *codelike, int tool_id, _PyMonitoringEventSet events)
 {
+    if (!PyCode_Check(codelike)) {
+        PyObject *tool = PyLong_FromInt32(tool_id);
+        assert(tool != NULL);
+        PyObject *events_obj = PyLong_FromUInt32(events);
+        if (events_obj == NULL) {
+            return -1;
+        }
+        PyObject *args[3] = {
+            codelike,
+            tool,
+            events_obj
+        };
+        PyObject *res = PyObject_VectorcallMethod(&_Py_ID(__set_local_events__), args, 3, NULL);
+        Py_DECREF(events_obj);
+        if (res == NULL) {
+            return -1;
+        }
+        Py_DECREF(res);
+        return 0;
+    }
+    PyCodeObject *code = (PyCodeObject *)codelike;
     assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(events < (1 << _PY_MONITORING_LOCAL_EVENTS));
@@ -2073,9 +2094,24 @@ done:
 }
 
 int
-_PyMonitoring_GetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringEventSet *events)
+_PyMonitoring_GetLocalEvents(PyObject *codelike, int tool_id, _PyMonitoringEventSet *events)
 {
     assert(0 <= tool_id && tool_id < PY_MONITORING_TOOL_IDS);
+    if (!PyCode_Check(codelike)) {
+        PyObject *tool = PyLong_FromInt32(tool_id);
+        assert(tool != NULL);
+        PyObject *res = PyObject_CallMethodOneArg(codelike, &_Py_ID(__get_local_events__), tool);
+        if (res == NULL) {
+            return -1;
+        }
+        int err = PyLong_AsUInt32(res, events);
+        if (err < 0) {
+            return -1;
+        }
+        Py_DECREF(res);
+        return 0;
+    }
+    PyCodeObject *code = (PyCodeObject *)codelike;
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (check_tool(interp, tool_id)) {
         return -1;
@@ -2362,24 +2398,10 @@ monitoring_get_local_events_impl(PyObject *module, int tool_id,
                                  PyObject *code)
 /*[clinic end generated code: output=d3e92c1c9c1de8f9 input=bb0f927530386a94]*/
 {
-    if (!PyCode_Check(code)) {
-        PyErr_Format(
-            PyExc_TypeError,
-            "code must be a code object"
-        );
-        return -1;
-    }
-    if (check_valid_tool(tool_id))  {
-        return -1;
-    }
-    _PyMonitoringEventSet event_set = 0;
-    _PyCoMonitoringData *data = ((PyCodeObject *)code)->_co_monitoring;
-    if (data != NULL) {
-        for (int e = 0; e < _PY_MONITORING_LOCAL_EVENTS; e++) {
-            if ((data->local_monitors.tools[e] >> tool_id) & 1) {
-                event_set |= (1 << e);
-            }
-        }
+    _PyMonitoringEventSet event_set;
+    int err = _PyMonitoring_GetLocalEvents(code, tool_id, &event_set);
+    if (err < 0) {
+        return err;
     }
     return event_set;
 }
@@ -2399,13 +2421,6 @@ monitoring_set_local_events_impl(PyObject *module, int tool_id,
                                  PyObject *code, int event_set)
 /*[clinic end generated code: output=68cc755a65dfea99 input=5655ecd78d937a29]*/
 {
-    if (!PyCode_Check(code)) {
-        PyErr_Format(
-            PyExc_TypeError,
-            "code must be a code object"
-        );
-        return NULL;
-    }
     if (check_valid_tool(tool_id))  {
         return NULL;
     }
@@ -2423,7 +2438,7 @@ monitoring_set_local_events_impl(PyObject *module, int tool_id,
         return NULL;
     }
 
-    if (_PyMonitoring_SetLocalEvents((PyCodeObject*)code, tool_id, event_set)) {
+    if (_PyMonitoring_SetLocalEvents(code, tool_id, event_set)) {
         return NULL;
     }
     Py_RETURN_NONE;
