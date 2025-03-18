@@ -219,13 +219,22 @@
     <ClInclude Include="..\Include\refcount.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\runtime_structs.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\setobject.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\sliceobject.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\stats.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\structmember.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\structs.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\structseq.h">

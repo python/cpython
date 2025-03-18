@@ -19,6 +19,7 @@
 #include "pycore_opcode_utils.h"
 #undef NEED_OPCODE_TABLES
 #include "pycore_c_array.h"       // _Py_c_array_t
+#include "pycore_code.h"          // COMPARISON_LESS_THAN
 #include "pycore_compile.h"
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_NewLabel()
 #include "pycore_intrinsics.h"
@@ -26,6 +27,7 @@
 #include "pycore_object.h"        // _Py_ANNOTATE_FORMAT_VALUE_WITH_FAKE_GLOBALS
 #include "pycore_pystate.h"       // _Py_GetConfig()
 #include "pycore_symtable.h"      // PySTEntryObject
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString
 
 #define NEED_OPCODE_METADATA
 #include "pycore_opcode_metadata.h" // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed

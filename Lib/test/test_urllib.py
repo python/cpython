@@ -1484,6 +1484,7 @@ class Pathname_Tests(unittest.TestCase):
                          'test specific to Windows pathnames.')
     def test_url2pathname_win(self):
         fn = urllib.request.url2pathname
+        self.assertEqual(fn('/'), '\\')
         self.assertEqual(fn('/C:/'), 'C:\\')
         self.assertEqual(fn("///C|"), 'C:')
         self.assertEqual(fn("///C:"), 'C:')
@@ -1502,8 +1503,10 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('/C|/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn('///C|/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn("///C|/foo/bar/spam.foo"), 'C:\\foo\\bar\\spam.foo')
-        # Non-ASCII drive letter
-        self.assertRaises(IOError, fn, "///\u00e8|/")
+        # Colons in URI
+        self.assertEqual(fn('///\u00e8|/'), '\u00e8:\\')
+        self.assertEqual(fn('//host/share/spam.txt:eggs'), '\\\\host\\share\\spam.txt:eggs')
+        self.assertEqual(fn('///c:/spam.txt:eggs'), 'c:\\spam.txt:eggs')
         # UNC paths
         self.assertEqual(fn('//server/path/to/file'), '\\\\server\\path\\to\\file')
         self.assertEqual(fn('////server/path/to/file'), '\\\\server\\path\\to\\file')
