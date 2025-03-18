@@ -210,7 +210,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
         binary = f.read(chunksize)
         pos = 0
         while pos < len(binary):
-            if b'libc' in binary or b'GLIBC' or 'musl' in binary:
+            if b'libc' in binary or b'GLIBC' in binary or b'musl' in binary:
                 m = libc_search.search(binary, pos)
             else:
                 m = None
