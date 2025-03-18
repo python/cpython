@@ -26,7 +26,7 @@ def url2pathname(url):
         # Skip past extra slash before UNC drive in URL path.
         url = url[1:]
     else:
-        if url[:1] == '/' and url[2:3] in ':|':
+        if url[:1] == '/' and url[2:3] in (':', '|'):
             # Skip past extra slash before DOS drive in URL path.
             url = url[1:]
         if url[1:2] == '|':

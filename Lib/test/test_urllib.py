@@ -1484,6 +1484,7 @@ class Pathname_Tests(unittest.TestCase):
                          'test specific to Windows pathnames.')
     def test_url2pathname_win(self):
         fn = urllib.request.url2pathname
+        self.assertEqual(fn('/'), '\\')
         self.assertEqual(fn('/C:/'), 'C:\\')
         self.assertEqual(fn("///C|"), 'C:')
         self.assertEqual(fn("///C:"), 'C:')
