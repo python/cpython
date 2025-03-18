@@ -182,7 +182,9 @@ The :mod:`urllib.request` module defines the following functions:
       'C:\\Program Files'
 
    .. versionchanged:: 3.14
-      Windows drive letters are no longer converted to uppercase.
+      Windows drive letters are no longer converted to uppercase, and ``:``
+      characters not following a drive letter no longer cause an
+      :exc:`OSError` exception to be raised on Windows.
 
 
 .. function:: getproxies()
