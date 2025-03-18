@@ -3032,16 +3032,20 @@ def linked_to_musl():
     # emscripten (at least as far as we're concerned) and wasi use musl,
     # but platform doesn't know how to get the version, so set it to zero.
     if is_emscripten or is_wasi:
-        return (_linked_to_musl := (0, 0, 0))
+        _linked_to_musl = (0, 0, 0)
+        return _linked_to_musl
 
     # On all other non-linux platforms assume no musl.
     if sys.platform != 'linux':
-        return (_linked_to_musl := False)
+        _linked_to_musl = False
+        return _linked_to_musl
 
     # On linux, we'll depend on the platform module to do the check, so new
     # musl platforms should add support in that module if possible.
     import platform
     lib, version = platform.libc_ver()
     if lib != 'musl':
-        return (_linked_to_musl := False)
-    return (_linked_to_musl := tuple(map(int, version.split('.'))))
+        _linked_to_musl = False
+        return _linked_to_musl
+    _linked_to_musl = tuple(map(int, version.split('.')))
+    return _linked_to_musl
