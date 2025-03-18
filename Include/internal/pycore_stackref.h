@@ -4,9 +4,6 @@
 extern "C" {
 #endif
 
-// Define this to get precise tracking of stackrefs.
-// #define Py_STACKREF_DEBUG 1
-
 // Define this to get precise tracking of closed stackrefs.
 // This will use unbounded memory, as it can only grow.
 // Use this to track double closes in short-lived programs
@@ -17,6 +14,7 @@ extern "C" {
 #endif
 
 #include "pycore_object_deferred.h"
+#include "pycore_object.h"
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -59,10 +57,6 @@ extern "C" {
 
 
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
-
-typedef union _PyStackRef {
-    uint64_t index;
-} _PyStackRef;
 
 #define Py_TAG_BITS 0
 
@@ -202,10 +196,6 @@ PyStackRef_IsHeapSafe(_PyStackRef ref)
 
 
 #else
-
-typedef union _PyStackRef {
-    uintptr_t bits;
-} _PyStackRef;
 
 
 #ifdef Py_GIL_DISABLED
@@ -649,6 +639,24 @@ PyStackRef_FunctionCheck(_PyStackRef stackref)
 {
     return PyFunction_Check(PyStackRef_AsPyObjectBorrow(stackref));
 }
+
+#ifdef Py_GIL_DISABLED
+
+static inline int
+_Py_TryIncrefCompareStackRef(PyObject **src, PyObject *op, _PyStackRef *out)
+{
+    if (_PyObject_HasDeferredRefcount(op)) {
+        *out = (_PyStackRef){ .bits = (intptr_t)op | Py_TAG_DEFERRED };
+        return 1;
+    }
+    if (_Py_TryIncrefCompare(src, op)) {
+        *out = PyStackRef_FromPyObjectSteal(op);
+        return 1;
+    }
+    return 0;
+}
+
+#endif
 
 #ifdef __cplusplus
 }

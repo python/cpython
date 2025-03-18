@@ -3,10 +3,12 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8String()
 
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // isatty()
 #endif
+
 
 #if defined(HAVE_GETC_UNLOCKED) && !defined(_Py_MEMORY_SANITIZER)
    /* clang MemorySanitizer doesn't yet understand getc_unlocked. */

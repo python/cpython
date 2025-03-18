@@ -5,6 +5,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_Vector()
 #include "pycore_compile.h"       // _PyAST_Compile()
+#include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_long.h"          // _PyLong_CompactValue
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _Py_AddToAllObjects()
@@ -832,45 +833,35 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     if (is_ast == -1)
         goto error;
     if (is_ast) {
-        if ((flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST) {
-            if (PyAst_CheckMode(source, compile_mode) < 0) {
+        PyArena *arena = _PyArena_New();
+        if (arena == NULL) {
+            goto error;
+        }
+
+        if (flags & PyCF_ONLY_AST) {
+            mod_ty mod = PyAST_obj2mod(source, arena, compile_mode);
+            if (mod == NULL || !_PyAST_Validate(mod)) {
+                _PyArena_Free(arena);
                 goto error;
             }
-            // return an un-optimized AST
-            result = Py_NewRef(source);
+            int syntax_check_only = ((flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST); /* unoptiomized AST */
+            if (_PyCompile_AstOptimize(mod, filename, &cf, optimize,
+                                           arena, syntax_check_only) < 0) {
+                _PyArena_Free(arena);
+                goto error;
+            }
+            result = PyAST_mod2obj(mod);
         }
         else {
-            // Return an optimized AST or code object
-
-            PyArena *arena = _PyArena_New();
-            if (arena == NULL) {
+            mod_ty mod = PyAST_obj2mod(source, arena, compile_mode);
+            if (mod == NULL || !_PyAST_Validate(mod)) {
+                _PyArena_Free(arena);
                 goto error;
             }
-
-            if (flags & PyCF_ONLY_AST) {
-                mod_ty mod = PyAST_obj2mod(source, arena, compile_mode);
-                if (mod == NULL || !_PyAST_Validate(mod)) {
-                    _PyArena_Free(arena);
-                    goto error;
-                }
-                if (_PyCompile_AstOptimize(mod, filename, &cf, optimize,
-                                           arena) < 0) {
-                    _PyArena_Free(arena);
-                    goto error;
-                }
-                result = PyAST_mod2obj(mod);
-            }
-            else {
-                mod_ty mod = PyAST_obj2mod(source, arena, compile_mode);
-                if (mod == NULL || !_PyAST_Validate(mod)) {
-                    _PyArena_Free(arena);
-                    goto error;
-                }
-                result = (PyObject*)_PyAST_Compile(mod, filename,
-                                                   &cf, optimize, arena);
-            }
-            _PyArena_Free(arena);
+            result = (PyObject*)_PyAST_Compile(mod, filename,
+                                               &cf, optimize, arena);
         }
+        _PyArena_Free(arena);
         goto finally;
     }
 

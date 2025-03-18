@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_stats.h"
 
 /* Suggested size (number of positional arguments) for arrays of PyObject*
    allocated on a C stack to avoid allocating memory on the heap memory. Such
