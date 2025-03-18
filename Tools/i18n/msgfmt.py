@@ -105,7 +105,7 @@ def generate(messages):
 def make(filenames, outfile=None):
     """ Compiles one or more po files(s).
 
-    filenames an iterable of strings representing the input file(s).
+    filenames is an iterable of strings representing the input file(s).
     outfile is a string for the name of an output file or None.
 
     If it is not None, the output file receives a merge of the input files.
