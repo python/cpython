@@ -143,7 +143,7 @@ struct _Py_static_objects {
    That data is exported by the internal API as a global variable
    (_PyRuntime, defined near the top of pylifecycle.c).
    */
-typedef struct pyruntimestate {
+struct pyruntimestate {
     /* This field must be first to facilitate locating it by out of process
      * debuggers. Out of process debuggers will use the offsets contained in this
      * field to be able to locate other fields in several interpreter structures
@@ -307,7 +307,7 @@ typedef struct pyruntimestate {
     PyInterpreterState _main_interpreter;
     // _main_interpreter should be the last field of _PyRuntimeState.
     // See https://github.com/python/cpython/issues/127117.
-} _PyRuntimeState;
+};
 
 
 
