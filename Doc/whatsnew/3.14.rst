@@ -607,6 +607,15 @@ getopt
 * Add support for returning intermixed options and non-option arguments in order.
   (Contributed by Serhiy Storchaka in :gh:`126390`.)
 
+
+graphlib
+--------
+
+* Allow :meth:`graphlib.TopologicalSorter.prepare` to be called more than once
+  as long as sorting has not started.
+  (Contributed by Daniel Pope in :gh:`130914`)
+
+
 http
 ----
 
