@@ -73,7 +73,11 @@ _PyErr_Restore(PyThreadState *tstate, PyObject *type, PyObject *value,
     assert(PyExceptionClass_Check(type));
     if (value != NULL && type == (PyObject *)Py_TYPE(value)) {
         /* Already normalized */
-        assert(((PyBaseExceptionObject *)value)->traceback != Py_None);
+#ifdef Py_DEBUG
+        PyObject *tb = PyException_GetTraceback(value);
+        assert(tb != Py_None);
+        Py_XDECREF(tb);
+#endif
     }
     else {
         PyObject *exc = _PyErr_CreateException(type, value);
@@ -86,22 +90,15 @@ _PyErr_Restore(PyThreadState *tstate, PyObject *type, PyObject *value,
         value = exc;
     }
     assert(PyExceptionInstance_Check(value));
-    if (traceback != NULL && !PyTraceBack_Check(traceback)) {
-        if (traceback == Py_None) {
-            Py_DECREF(Py_None);
-            traceback = NULL;
-        }
-        else {
-            PyErr_SetString(PyExc_TypeError, "traceback must be a Traceback or None");
-            Py_XDECREF(value);
+    if (traceback != NULL) {
+        if (PyException_SetTraceback(value, traceback) < 0) {
+            Py_DECREF(traceback);
+            Py_DECREF(value);
             Py_DECREF(type);
-            Py_XDECREF(traceback);
             return;
         }
+        Py_DECREF(traceback);
     }
-    PyObject *old_traceback = ((PyBaseExceptionObject *)value)->traceback;
-    ((PyBaseExceptionObject *)value)->traceback = traceback;
-    Py_XDECREF(old_traceback);
     _PyErr_SetRaisedException(tstate, value);
     Py_DECREF(type);
 }
