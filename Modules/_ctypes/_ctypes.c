@@ -2379,6 +2379,7 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         }
         StgInfo *sw_info;
         if (PyStgInfo_FromType(st, swapped, &sw_info) < 0) {
+            Py_DECREF(swapped);
             return -1;
         }
         assert(sw_info);
