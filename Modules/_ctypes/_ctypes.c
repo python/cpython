@@ -5653,6 +5653,10 @@ Pointer_subscript(PyObject *myself, PyObject *item)
 
         for (cur = start, i = 0; i < len; cur += step, i++) {
             PyObject *v = Pointer_item(myself, cur);
+            if (!v) {
+                Py_DECREF(np);
+                return NULL;
+            }
             PyList_SET_ITEM(np, i, v);
         }
         return np;
