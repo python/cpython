@@ -357,7 +357,6 @@ class ASDLParser:
             elif self.cur_token.kind == TokenKind.Question:
                 quantifiers.append(Quantifier.OPTIONAL)
             self._advance()
-
         return quantifiers
 
     def _advance(self):
