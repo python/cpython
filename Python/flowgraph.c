@@ -1546,8 +1546,7 @@ fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
                     assert(consts_found > 0);
                     PyTuple_SET_ITEM(newconst, --consts_found, constant);
                 }
-                INSTR_SET_OP0(instr, NOP);
-                INSTR_SET_LOC(instr, NO_LOCATION);
+                nop_out(&instr, 1);
             }
             assert(consts_found == 0);
             return instr_make_load_const(intrinsic, newconst, consts, const_cache);
