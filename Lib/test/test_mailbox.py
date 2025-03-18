@@ -1361,7 +1361,7 @@ class TestMboxFromFile(unittest.TestCase):
         # Don't delete it!
 
     def checkmbox(self, name, matcher, count):
-        self._path = os.path.join(os.path.dirname(__file__), 'mailbox_data', name)
+        self._path = os.path.join(os.path.dirname(__file__), 'test_email/data', name)
         self._box = mailbox.mbox(self._path, create=False, from_matcher=matcher)
         self.assertEqual(len(self._box.keys()), count)
 
