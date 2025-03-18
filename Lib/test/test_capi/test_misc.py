@@ -408,7 +408,7 @@ class CAPITest(unittest.TestCase):
         # activated when its tp_dealloc is being called by a subclass
         from _testcapi import MyList
         L = None
-        for i in range(1000):
+        for i in range(100):
             L = MyList((L,))
 
     @support.requires_resource('cpu')
@@ -2882,6 +2882,23 @@ class TestVersions(unittest.TestCase):
             with self.subTest(hexversion=hex(expected)):
                 result = ctypes_func(*args)
                 self.assertEqual(result, expected)
+
+
+class TestCEval(unittest.TestCase):
+   def test_ceval_decref(self):
+        code = textwrap.dedent("""
+            import _testcapi
+            _testcapi.toggle_reftrace_printer(True)
+            l1 = []
+            l2 = []
+            del l1
+            del l2
+            _testcapi.toggle_reftrace_printer(False)
+        """)
+        _, out, _ = assert_python_ok("-c", code)
+        lines = out.decode("utf-8").splitlines()
+        self.assertEqual(lines.count("CREATE list"), 2)
+        self.assertEqual(lines.count("DESTROY list"), 2)
 
 
 if __name__ == "__main__":

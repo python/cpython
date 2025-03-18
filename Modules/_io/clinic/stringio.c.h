@@ -247,7 +247,7 @@ static PyObject *
 _io_StringIO_write_impl(stringio *self, PyObject *obj);
 
 static PyObject *
-_io_StringIO_write(stringio *self, PyObject *obj)
+_io_StringIO_write(PyObject *self, PyObject *obj)
 {
     PyObject *return_value = NULL;
 
@@ -465,7 +465,7 @@ static PyObject *
 _io_StringIO___setstate___impl(stringio *self, PyObject *state);
 
 static PyObject *
-_io_StringIO___setstate__(stringio *self, PyObject *state)
+_io_StringIO___setstate__(PyObject *self, PyObject *state)
 {
     PyObject *return_value = NULL;
 
@@ -550,4 +550,4 @@ _io_StringIO_newlines_get(PyObject *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-/*[clinic end generated code: output=7796e223e778a214 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=69c9b100a359cbd5 input=a9049054013a1b77]*/

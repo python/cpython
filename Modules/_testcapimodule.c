@@ -411,6 +411,31 @@ test_buildvalue_N(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_buildvalue_p(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *res = Py_BuildValue("p", 3);
+    if (res == NULL) {
+        return NULL;
+    }
+    if (!Py_IsTrue(res)) {
+        Py_DECREF(res);
+        return raiseTestError(self, "test_buildvalue_p", "Py_BuildValue(\"p\", 3) returned wrong result");
+    }
+    Py_DECREF(res);
+
+    res = Py_BuildValue("p", 0);
+    if (res == NULL) {
+        return NULL;
+    }
+    if (!Py_IsFalse(res)) {
+        Py_DECREF(res);
+        return raiseTestError(self, "test_buildvalue_p", "Py_BuildValue(\"p\", 0) returned wrong result");
+    }
+    Py_DECREF(res);
+
+    Py_RETURN_NONE;
+}
 
 static PyObject *
 pyobject_repr_from_null(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -2490,6 +2515,31 @@ code_offset_to_line(PyObject* self, PyObject* const* args, Py_ssize_t nargsf)
 }
 
 
+static int
+_reftrace_printer(PyObject *obj, PyRefTracerEvent event, void *counter_data)
+{
+    if (event == PyRefTracer_CREATE) {
+        printf("CREATE %s\n", Py_TYPE(obj)->tp_name);
+    }
+    else {  // PyRefTracer_DESTROY
+        printf("DESTROY %s\n", Py_TYPE(obj)->tp_name);
+    }
+    return 0;
+}
+
+// A simple reftrace printer for very simple tests
+static PyObject *
+toggle_reftrace_printer(PyObject *ob, PyObject *arg)
+{
+    if (arg == Py_True) {
+        PyRefTracer_SetTracer(_reftrace_printer, NULL);
+    }
+    else {
+        PyRefTracer_SetTracer(NULL, NULL);
+    }
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -2512,6 +2562,7 @@ static PyMethodDef TestMethods[] = {
     {"py_buildvalue",            py_buildvalue,                  METH_VARARGS},
     {"py_buildvalue_ints",       py_buildvalue_ints,             METH_VARARGS},
     {"test_buildvalue_N",        test_buildvalue_N,              METH_NOARGS},
+    {"test_buildvalue_p",       test_buildvalue_p,               METH_NOARGS},
     {"test_reftracer",          test_reftracer,                  METH_NOARGS},
     {"_test_thread_state",      test_thread_state,               METH_VARARGS},
     {"gilstate_ensure_release", gilstate_ensure_release,         METH_NOARGS},
@@ -2582,6 +2633,7 @@ static PyMethodDef TestMethods[] = {
     {"finalize_thread_hang", finalize_thread_hang, METH_O, NULL},
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
+    {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
@@ -3213,7 +3265,6 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
 
     PyModule_AddIntConstant(m, "the_number_three", 3);
-    PyModule_AddIntMacro(m, Py_C_RECURSION_LIMIT);
     PyModule_AddObject(m, "INT32_MIN", PyLong_FromInt32(INT32_MIN));
     PyModule_AddObject(m, "INT32_MAX", PyLong_FromInt32(INT32_MAX));
     PyModule_AddObject(m, "UINT32_MAX", PyLong_FromUInt32(UINT32_MAX));

@@ -1059,6 +1059,7 @@ class TestPasteEvent(TestCase):
 class TestDumbTerminal(ReplTestCase):
     def test_dumb_terminal_exits_cleanly(self):
         env = os.environ.copy()
+        env.pop('PYTHON_BASIC_REPL', None)
         env.update({"TERM": "dumb"})
         output, exit_code = self.run_repl("exit()\n", env=env)
         self.assertEqual(exit_code, 0)
