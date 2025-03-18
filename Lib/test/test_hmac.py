@@ -4,6 +4,7 @@ import hmac
 import hashlib
 import random
 import test.support.hashlib_helper as hashlib_helper
+import types
 import unittest
 import unittest.mock
 import warnings
@@ -215,6 +216,10 @@ class AssertersMixin(CreatorMixin, DigestMixin, ObjectCheckerMixin):
                 self.assert_hmac_hexdigest(
                     key, msg, hexdigest, digestmod, digest_size
                 )
+                self.assert_hmac_common_cases(
+                    key, msg, hexdigest, digestmod,
+                    hashname, digest_size, block_size
+                )
                 self.assert_hmac_extra_cases(
                     key, msg, hexdigest, digestmod,
                     hashname, digest_size, block_size
@@ -234,7 +239,7 @@ class AssertersMixin(CreatorMixin, DigestMixin, ObjectCheckerMixin):
 
         This test uses the `hmac_new()` method to create HMAC objects.
         """
-        self._check_hmac_new(
+        self.check_hmac_new(
             key, msg, hexdigest, hashname, digest_size, block_size,
             hmac_new_func=self.hmac_new,
             hmac_new_kwds={'digestmod': digestmod},
@@ -247,15 +252,15 @@ class AssertersMixin(CreatorMixin, DigestMixin, ObjectCheckerMixin):
 
         This test uses the `hmac_new_by_name()` method to create HMAC objects.
         """
-        self._check_hmac_new(
+        self.check_hmac_new(
             key, msg, hexdigest, hashname, digest_size, block_size,
             hmac_new_func=self.hmac_new_by_name,
             hmac_new_kwds={'hashname': hashname},
         )
 
-    def _check_hmac_new(
+    def check_hmac_new(
         self, key, msg, hexdigest, hashname, digest_size, block_size,
-        hmac_new_func, hmac_new_kwds,
+        hmac_new_func, hmac_new_kwds=types.MappingProxyType({}),
     ):
         """Check that HMAC(key, msg) == digest.
 
@@ -282,7 +287,7 @@ class AssertersMixin(CreatorMixin, DigestMixin, ObjectCheckerMixin):
         self, key, msg, hexdigest, digestmod, digest_size,
     ):
         """Check a HMAC digest computed by hmac_digest()."""
-        self._check_hmac_hexdigest(
+        self.check_hmac_hexdigest(
             key, msg, hexdigest, digest_size,
             hmac_digest_func=self.hmac_digest,
             hmac_digest_kwds={'digestmod': digestmod},
@@ -293,29 +298,43 @@ class AssertersMixin(CreatorMixin, DigestMixin, ObjectCheckerMixin):
     ):
         """Check a HMAC digest computed by hmac_digest_by_name()."""
         self.assertIsInstance(hashname, str)
-        self._check_hmac_hexdigest(
+        self.check_hmac_hexdigest(
             key, msg, hexdigest, digest_size,
             hmac_digest_func=self.hmac_digest_by_name,
             hmac_digest_kwds={'hashname': hashname},
         )
 
-    def _check_hmac_hexdigest(
+    def check_hmac_hexdigest(
         self, key, msg, hexdigest, digest_size,
-        hmac_digest_func, hmac_digest_kwds,
+        hmac_digest_func, hmac_digest_kwds=types.MappingProxyType({}),
     ):
+        """Check and return a HMAC digest computed by hmac_digest_func().
+
+        This HMAC digest is computed by:
+
+            hmac_digest_func(key, msg, **hmac_digest_kwds)
+
+        This is typically useful for checking one-shot HMAC functions.
+        """
         d = hmac_digest_func(key, msg, **hmac_digest_kwds)
         self.assertEqual(len(d), digest_size)
         self.assertEqual(d, binascii.unhexlify(hexdigest))
+        return d
 
-    def assert_hmac_extra_cases(
+    def assert_hmac_common_cases(
         self, key, msg, hexdigest, digestmod, hashname, digest_size, block_size
     ):
-        """Extra tests that can be added in subclasses."""
+        """Extra common tests executed by all subclasses."""
         h1 = self.hmac_new_by_name(key, hashname=hashname)
         h2 = h1.copy()
         h2.update(b"test update should not affect original")
         h1.update(msg)
         self.check_object(h1, hexdigest, hashname, digest_size, block_size)
+
+    def assert_hmac_extra_cases(
+        self, key, msg, hexdigest, digestmod, hashname, digest_size, block_size
+    ):
+        """Extra tests that can be added in subclasses."""
 
 
 class PyAssertersMixin(PyModuleMixin, AssertersMixin):
@@ -323,10 +342,6 @@ class PyAssertersMixin(PyModuleMixin, AssertersMixin):
     def assert_hmac_extra_cases(
         self, key, msg, hexdigest, digestmod, hashname, digest_size, block_size
     ):
-        super().assert_hmac_extra_cases(
-            key, msg, hexdigest, digestmod, hashname, digest_size, block_size
-        )
-
         h = self.hmac.HMAC.__new__(self.hmac.HMAC)
         h._init_old(key, msg, digestmod=digestmod)
         self.check_object(h, hexdigest, hashname, digest_size, block_size)
@@ -740,6 +755,15 @@ class BuiltinRFCTestCase(BuiltinAssertersMixin,
 
     The underlying hash functions are also HACL*-based.
     """
+
+    def assert_hmac_extra_cases(
+        self, key, msg, hexdigest, digestmod, hashname, digest_size, block_size
+    ):
+        # assert one-shot HMAC at the same time
+        with self.subTest(key=key, msg=msg, hashname=hashname):
+            func = eval(f'self.hmac.compute_{hashname}')
+            self.assertTrue(callable(func))
+            self.check_hmac_hexdigest(key, msg, hexdigest, digest_size, func)
 
 
 # TODO(picnixz): once we have a HACL* HMAC, we should also test the Python
