@@ -1,5 +1,3 @@
-#include <stdbool.h>
-
 #include "Python.h"
 #include "opcode.h"
 
@@ -19,6 +17,8 @@
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_uniqueid.h"      // _PyObject_AssignUniqueId()
 #include "clinic/codeobject.c.h"
+
+#include <stdbool.h>
 
 #define INITIAL_SPECIALIZED_CODE_SIZE 16
 

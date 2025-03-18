@@ -12,8 +12,6 @@
  * objects.
  */
 
-#include <stdbool.h>
-
 #include "Python.h"
 #include "opcode.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
@@ -31,6 +29,8 @@
 #define NEED_OPCODE_METADATA
 #include "pycore_opcode_metadata.h" // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
 #undef NEED_OPCODE_METADATA
+
+#include <stdbool.h>
 
 #define COMP_GENEXP   0
 #define COMP_LISTCOMP 1

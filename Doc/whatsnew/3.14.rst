@@ -444,6 +444,11 @@ contextvars
 * Support context manager protocol by :class:`contextvars.Token`.
   (Contributed by Andrew Svetlov in :gh:`129889`.)
 
+* Add :meth:`concurrent.futures.ProcessPoolExecutor.terminate_workers` and
+  :meth:`concurrent.futures.ProcessPoolExecutor.kill_workers` as
+  ways to terminate or kill all living worker processes in the given pool.
+  (Contributed by Charles Machalow in :gh:`128043`.)
+
 
 ctypes
 ------
@@ -919,8 +924,8 @@ urllib
 uuid
 ----
 
-* Add support for UUID version 8 via :func:`uuid.uuid8` as specified
-  in :rfc:`9562`.
+* Add support for UUID versions 6 and 8 via :func:`uuid.uuid6` and
+  :func:`uuid.uuid8` respectively, as specified in :rfc:`9562`.
   (Contributed by Bénédikt Tran in :gh:`89083`.)
 
 * :const:`uuid.NIL` and :const:`uuid.MAX` are now available to represent the

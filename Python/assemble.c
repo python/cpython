@@ -1,5 +1,3 @@
-#include <stdbool.h>
-
 #include "Python.h"
 #include "pycore_code.h"            // write_location_entry_start()
 #include "pycore_compile.h"
@@ -8,6 +6,7 @@
 #include "pycore_opcode_metadata.h" // is_pseudo_target, _PyOpcode_Caches
 #include "pycore_symtable.h"        // _Py_SourceLocation
 
+#include <stdbool.h>
 
 #define DEFAULT_CODE_SIZE 128
 #define DEFAULT_LNOTAB_SIZE 16
@@ -127,7 +126,7 @@ assemble_emit_exception_table_item(struct assembler *a, int value, int msb)
     write_except_byte(a, (value&0x3f) | msb);
 }
 
-/* See Objects/exception_handling_notes.txt for details of layout */
+/* See InternalDocs/exception_handling.md for details of layout */
 #define MAX_SIZE_OF_ENTRY 20
 
 static int

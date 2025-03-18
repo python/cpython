@@ -1,6 +1,3 @@
-import unittest
-from test import support
-from test.support import import_helper
 import builtins
 import contextlib
 import copy
@@ -10,9 +7,13 @@ import os
 import pickle
 import random
 import sys
+import unittest
 import weakref
 from itertools import product
 from unittest import mock
+
+from test import support
+from test.support import import_helper
 
 py_uuid = import_helper.import_fresh_module('uuid', blocked=['_uuid'])
 c_uuid = import_helper.import_fresh_module('uuid', fresh=['_uuid'])
@@ -723,6 +724,152 @@ class BaseTestUUID:
             equal(u.version, 5)
             equal(u, self.uuid.UUID(v))
             equal(str(u), v)
+
+    def test_uuid6(self):
+        equal = self.assertEqual
+        u = self.uuid.uuid6()
+        equal(u.variant, self.uuid.RFC_4122)
+        equal(u.version, 6)
+
+        fake_nanoseconds = 0x1571_20a1_de1a_c533
+        fake_node_value = 0x54e1_acf6_da7f
+        fake_clock_seq = 0x14c5
+        with (
+            mock.patch.object(self.uuid, '_last_timestamp_v6', None),
+            mock.patch.object(self.uuid, 'getnode', return_value=fake_node_value),
+            mock.patch('time.time_ns', return_value=fake_nanoseconds),
+            mock.patch('random.getrandbits', return_value=fake_clock_seq)
+        ):
+            u = self.uuid.uuid6()
+            equal(u.variant, self.uuid.RFC_4122)
+            equal(u.version, 6)
+
+            # 32 (top) | 16 (mid) | 12 (low) == 60 (timestamp)
+            equal(u.time, 0x1e901fca_7a55_b92)
+            equal(u.fields[0], 0x1e901fca)  # 32 top bits of time
+            equal(u.fields[1], 0x7a55)  # 16 mid bits of time
+            # 4 bits of version + 12 low bits of time
+            equal((u.fields[2] >> 12) & 0xf, 6)
+            equal((u.fields[2] & 0xfff), 0xb92)
+            # 2 bits of variant + 6 high bits of clock_seq
+            equal((u.fields[3] >> 6) & 0xf, 2)
+            equal(u.fields[3] & 0x3f, fake_clock_seq >> 8)
+            # 8 low bits of clock_seq
+            equal(u.fields[4], fake_clock_seq & 0xff)
+            equal(u.fields[5], fake_node_value)
+
+    def test_uuid6_uniqueness(self):
+        # Test that UUIDv6-generated values are unique.
+
+        # Unlike UUIDv8, only 62 bits can be randomized for UUIDv6.
+        # In practice, however, it remains unlikely to generate two
+        # identical UUIDs for the same 60-bit timestamp if neither
+        # the node ID nor the clock sequence is specified.
+        uuids = {self.uuid.uuid6() for _ in range(1000)}
+        self.assertEqual(len(uuids), 1000)
+        versions = {u.version for u in uuids}
+        self.assertSetEqual(versions, {6})
+
+        timestamp = 0x1ec9414c_232a_b00
+        fake_nanoseconds = (timestamp - 0x1b21dd21_3814_000) * 100
+
+        with mock.patch('time.time_ns', return_value=fake_nanoseconds):
+            def gen():
+                with mock.patch.object(self.uuid, '_last_timestamp_v6', None):
+                    return self.uuid.uuid6(node=0, clock_seq=None)
+
+            # By the birthday paradox, sampling N = 1024 UUIDs with identical
+            # node IDs and timestamps results in duplicates with probability
+            # close to 1 (not having a duplicate happens with probability of
+            # order 1E-15) since only the 14-bit clock sequence is randomized.
+            N = 1024
+            uuids = {gen() for _ in range(N)}
+            self.assertSetEqual({u.node for u in uuids}, {0})
+            self.assertSetEqual({u.time for u in uuids}, {timestamp})
+            self.assertLess(len(uuids), N, 'collision property does not hold')
+
+    def test_uuid6_node(self):
+        # Make sure the given node ID appears in the UUID.
+        #
+        # Note: when no node ID is specified, the same logic as for UUIDv1
+        # is applied to UUIDv6. In particular, there is no need to test that
+        # getnode() correctly returns positive integers of exactly 48 bits
+        # since this is done in test_uuid1_eui64().
+        self.assertLessEqual(self.uuid.uuid6().node.bit_length(), 48)
+
+        self.assertEqual(self.uuid.uuid6(0).node, 0)
+
+        # tests with explicit values
+        max_node = 0xffff_ffff_ffff
+        self.assertEqual(self.uuid.uuid6(max_node).node, max_node)
+        big_node = 0xE_1234_5678_ABCD  # 52-bit node
+        res_node = 0x0_1234_5678_ABCD  # truncated to 48 bits
+        self.assertEqual(self.uuid.uuid6(big_node).node, res_node)
+
+        # randomized tests
+        for _ in range(10):
+            # node with > 48 bits is truncated
+            for b in [24, 48, 72]:
+                node = (1 << (b - 1)) | random.getrandbits(b)
+                with self.subTest(node=node, bitlen=b):
+                    self.assertEqual(node.bit_length(), b)
+                    u = self.uuid.uuid6(node=node)
+                    self.assertEqual(u.node, node & 0xffff_ffff_ffff)
+
+    def test_uuid6_clock_seq(self):
+        # Make sure the supplied clock sequence appears in the UUID.
+        #
+        # For UUIDv6, clock sequence bits are stored from bit 48 to bit 62,
+        # with the convention that the least significant bit is bit 0 and
+        # the most significant bit is bit 127.
+        get_clock_seq = lambda u: (u.int >> 48) & 0x3fff
+
+        u = self.uuid.uuid6()
+        self.assertLessEqual(get_clock_seq(u).bit_length(), 14)
+
+        # tests with explicit values
+        big_clock_seq = 0xffff  # 16-bit clock sequence
+        res_clock_seq = 0x3fff  # truncated to 14 bits
+        u = self.uuid.uuid6(clock_seq=big_clock_seq)
+        self.assertEqual(get_clock_seq(u), res_clock_seq)
+
+        # some randomized tests
+        for _ in range(10):
+            # clock_seq with > 14 bits is truncated
+            for b in [7, 14, 28]:
+                node = random.getrandbits(48)
+                clock_seq = (1 << (b - 1)) | random.getrandbits(b)
+                with self.subTest(node=node, clock_seq=clock_seq, bitlen=b):
+                    self.assertEqual(clock_seq.bit_length(), b)
+                    u = self.uuid.uuid6(node=node, clock_seq=clock_seq)
+                    self.assertEqual(get_clock_seq(u), clock_seq & 0x3fff)
+
+    def test_uuid6_test_vectors(self):
+        equal = self.assertEqual
+        # https://www.rfc-editor.org/rfc/rfc9562#name-test-vectors
+        # (separators are put at the 12th and 28th bits)
+        timestamp = 0x1ec9414c_232a_b00
+        fake_nanoseconds = (timestamp - 0x1b21dd21_3814_000) * 100
+        # https://www.rfc-editor.org/rfc/rfc9562#name-example-of-a-uuidv6-value
+        node = 0x9f6bdeced846
+        clock_seq = (3 << 12) | 0x3c8
+
+        with (
+            mock.patch.object(self.uuid, '_last_timestamp_v6', None),
+            mock.patch('time.time_ns', return_value=fake_nanoseconds)
+        ):
+            u = self.uuid.uuid6(node=node, clock_seq=clock_seq)
+            equal(str(u).upper(), '1EC9414C-232A-6B00-B3C8-9F6BDECED846')
+            #   32          16      4      12       2      14         48
+            # time_hi | time_mid | ver | time_lo | var | clock_seq | node
+            equal(u.time, timestamp)
+            equal(u.int & 0xffff_ffff_ffff, node)
+            equal((u.int >> 48) & 0x3fff, clock_seq)
+            equal((u.int >> 62) & 0x3, 0b10)
+            equal((u.int >> 64) & 0xfff, 0xb00)
+            equal((u.int >> 76) & 0xf, 0x6)
+            equal((u.int >> 80) & 0xffff, 0x232a)
+            equal((u.int >> 96) & 0xffff_ffff, 0x1ec9_414c)
 
     def test_uuid8(self):
         equal = self.assertEqual
