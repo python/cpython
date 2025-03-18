@@ -409,9 +409,11 @@ typedef struct {
 #define _StructParamObject_CAST(op) ((StructParamObject *)(op))
 
 static int
-StructParam_traverse(PyObject *self, visitproc visit, void *arg)
+StructParam_traverse(PyObject *myself, visitproc visit, void *arg)
 {
+    StructParamObject *self = _StructParamObject_CAST(myself);
     Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->keep);
     return 0;
 }
 
