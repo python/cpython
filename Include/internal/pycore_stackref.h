@@ -14,6 +14,7 @@ extern "C" {
 #endif
 
 #include "pycore_object_deferred.h"
+#include "pycore_object.h"
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -638,6 +639,24 @@ PyStackRef_FunctionCheck(_PyStackRef stackref)
 {
     return PyFunction_Check(PyStackRef_AsPyObjectBorrow(stackref));
 }
+
+#ifdef Py_GIL_DISABLED
+
+static inline int
+_Py_TryIncrefCompareStackRef(PyObject **src, PyObject *op, _PyStackRef *out)
+{
+    if (_PyObject_HasDeferredRefcount(op)) {
+        *out = (_PyStackRef){ .bits = (intptr_t)op | Py_TAG_DEFERRED };
+        return 1;
+    }
+    if (_Py_TryIncrefCompare(src, op)) {
+        *out = PyStackRef_FromPyObjectSteal(op);
+        return 1;
+    }
+    return 0;
+}
+
+#endif
 
 #ifdef __cplusplus
 }

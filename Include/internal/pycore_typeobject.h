@@ -8,9 +8,10 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_function.h"
 #include "pycore_moduleobject.h"  // PyModuleObject
-#include "pycore_lock.h"          // PyMutex
 #include "pycore_runtime_structs.h" // type state
+#include "pycore_stats.h"
 
 
 /* state */

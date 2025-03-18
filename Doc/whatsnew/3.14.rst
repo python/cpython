@@ -68,6 +68,7 @@ Summary -- release highlights
 * :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
 * :ref:`A new type of interpreter  <whatsnew314-tail-call>`
+* :ref:`PEP 765: Disallow return/break/continue that exit a finally block <whatsnew314-pep765>`
 
 
 Incompatible changes
@@ -370,6 +371,15 @@ Other language changes
   The testbed can also be used to run the test suite of projects other than
   CPython itself. (Contributed by Russell Keith-Magee in :gh:`127592`.)
 
+.. _whatsnew314-pep765:
+
+PEP 765: Disallow return/break/continue that exit a finally block
+-----------------------------------------------------------------
+
+The compiler emits a :exc:`SyntaxWarning` when a :keyword:`return`, :keyword:`break` or
+:keyword:`continue` statements appears where it exits a :keyword:`finally` block.
+This change is specified in :pep:`765`.
+
 New modules
 ===========
 
@@ -413,6 +423,11 @@ ast
   that the root node type is appropriate.
   (Contributed by Irit Katriel in :gh:`130139`.)
 
+bdb
+---
+
+* The :mod:`bdb` module now supports the :mod:`sys.monitoring` backend.
+  (Contributed by Tian Gao in :gh:`124533`.)
 
 calendar
 --------
@@ -832,6 +847,13 @@ pdb
 
 * ``$_asynctask`` is added to access the current asyncio task if applicable.
   (Contributed by Tian Gao in :gh:`124367`.)
+
+* :mod:`pdb` now supports two backends: :func:`sys.settrace` and
+  :mod:`sys.monitoring`. Using :mod:`pdb` CLI or :func:`breakpoint` will
+  always use the :mod:`sys.monitoring` backend. Explicitly instantiating
+  :class:`pdb.Pdb` and its derived classes will use the :func:`sys.settrace`
+  backend by default, which is configurable.
+  (Contributed by Tian Gao in :gh:`124533`.)
 
 
 pickle
