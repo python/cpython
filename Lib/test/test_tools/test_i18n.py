@@ -543,6 +543,32 @@ class Test_pygettext(unittest.TestCase):
                     no_default_keywords=no_default_keywords)
                 self.assertEqual(processed, expected)
 
+    def test_multiple_keywords_same_funcname_errors(self):
+        # If at least one keyword spec for a given funcname matches,
+        # no error should be printed.
+        msgids, stderr = self.extract_from_str(dedent('''\
+        _("foo", 42)
+        _(42, "bar")
+        '''), args=('--keyword=_:1', '--keyword=_:2'), with_stderr=True)
+        self.assertIn('foo', msgids)
+        self.assertIn('bar', msgids)
+        self.assertEqual(stderr, b'')
+
+        # If no keyword spec for a given funcname matches,
+        # all errors are printed.
+        msgids, stderr = self.extract_from_str(dedent('''\
+        _(x, 42)
+        _(42, y)
+        '''), args=('--keyword=_:1', '--keyword=_:2'), with_stderr=True,
+              strict=False)
+        self.assertEqual(msgids, [''])
+        self.assertEqual(
+            stderr,
+            b'*** test.py:1: Expected a string constant for argument 1, got x\n'
+            b'*** test.py:1: Expected a string constant for argument 2, got 42\n'
+            b'*** test.py:2: Expected a string constant for argument 1, got 42\n'
+            b'*** test.py:2: Expected a string constant for argument 2, got y\n')
+
 
 def extract_from_snapshots():
     snapshots = {
