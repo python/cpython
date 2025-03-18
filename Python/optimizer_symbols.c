@@ -6,6 +6,7 @@
 #include "pycore_frame.h"
 #include "pycore_long.h"
 #include "pycore_optimizer.h"
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -298,6 +299,12 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptSymbol *sym, PyObject *const_val
             // value is falsey:
             else if (type == &PyBool_Type) {
                 _Py_uop_sym_set_const(ctx, value, Py_False);
+            }
+            else if (type == &PyLong_Type) {
+                _Py_uop_sym_set_const(ctx, value, Py_GetConstant(Py_CONSTANT_ZERO));
+            }
+            else if (type == &PyUnicode_Type) {
+                _Py_uop_sym_set_const(ctx, value, Py_GetConstant(Py_CONSTANT_EMPTY_STR));
             }
             // TODO: More types (GH-130415)!
             make_const(sym, const_val);

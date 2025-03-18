@@ -12,7 +12,9 @@
 #include "pycore_long.h"          // _PyLong_DigitCount
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
+#include "pycore_stackref.h"      // _Py_TryIncrefCompareStackRef()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_typeobject.h"    // _Py_TYPE_VERSION_LIST
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include <stddef.h>
 
@@ -415,6 +417,32 @@ _PyList_GetItemRef(PyListObject *list, Py_ssize_t i)
     return list_get_item_ref(list, i);
 }
 
+#ifdef Py_GIL_DISABLED
+int
+_PyList_GetItemRefNoLock(PyListObject *list, Py_ssize_t i, _PyStackRef *result)
+{
+    assert(_Py_IsOwnedByCurrentThread((PyObject *)list) ||
+           _PyObject_GC_IS_SHARED(list));
+    if (!valid_index(i, PyList_GET_SIZE(list))) {
+        return 0;
+    }
+    PyObject **ob_item = _Py_atomic_load_ptr(&list->ob_item);
+    if (ob_item == NULL) {
+        return 0;
+    }
+    Py_ssize_t cap = list_capacity(ob_item);
+    assert(cap != -1);
+    if (!valid_index(i, cap)) {
+        return 0;
+    }
+    PyObject *obj = _Py_atomic_load_ptr(&ob_item[i]);
+    if (obj == NULL || !_Py_TryIncrefCompareStackRef(&ob_item[i], obj, result)) {
+        return -1;
+    }
+    return 1;
+}
+#endif
+
 int
 PyList_SetItem(PyObject *op, Py_ssize_t i,
                PyObject *newitem)
@@ -533,6 +561,7 @@ list_dealloc(PyObject *self)
             Py_XDECREF(op->ob_item[i]);
         }
         free_list_items(op->ob_item, false);
+        op->ob_item = NULL;
     }
     if (PyList_CheckExact(op)) {
         _Py_FREELIST_FREE(lists, op, PyObject_GC_Del);
@@ -1415,8 +1444,8 @@ Extend list by appending elements from the iterable.
 [clinic start generated code]*/
 
 static PyObject *
-list_extend(PyListObject *self, PyObject *iterable)
-/*[clinic end generated code: output=630fb3bca0c8e789 input=979da7597a515791]*/
+list_extend_impl(PyListObject *self, PyObject *iterable)
+/*[clinic end generated code: output=b0eba9e0b186d5ce input=979da7597a515791]*/
 {
     if (_list_extend(self, iterable) < 0) {
         return NULL;
@@ -1427,7 +1456,7 @@ list_extend(PyListObject *self, PyObject *iterable)
 PyObject *
 _PyList_Extend(PyListObject *self, PyObject *iterable)
 {
-    return list_extend(self, iterable);
+    return list_extend((PyObject*)self, iterable);
 }
 
 int
@@ -3271,8 +3300,8 @@ Return number of occurrences of value.
 [clinic start generated code]*/
 
 static PyObject *
-list_count(PyListObject *self, PyObject *value)
-/*[clinic end generated code: output=b1f5d284205ae714 input=3bdc3a5e6f749565]*/
+list_count_impl(PyListObject *self, PyObject *value)
+/*[clinic end generated code: output=eff66f14aef2df86 input=3bdc3a5e6f749565]*/
 {
     Py_ssize_t count = 0;
     for (Py_ssize_t i = 0; ; i++) {

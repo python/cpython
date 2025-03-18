@@ -11,10 +11,11 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_interp.h"        // PyInterpreterState.codec_search_path
-#include "pycore_lock.h"          // PyMutex
 #include "pycore_pyerrors.h"      // _PyErr_FormatNote()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
+
 
 static const char *codecs_builtin_error_handlers[] = {
     "strict", "ignore", "replace",
@@ -956,49 +957,18 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
     return restuple;
 }
 
-PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
+
+// --- handler: 'backslashreplace' --------------------------------------------
+
+static PyObject *
+_PyCodec_BackslashReplaceUnicodeEncodeError(PyObject *exc)
 {
     PyObject *obj;
     Py_ssize_t objlen, start, end, slen;
-    if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
-        if (_PyUnicodeError_GetParams(exc,
-                                      &obj, &objlen,
-                                      &start, &end, &slen, true) < 0)
-        {
-            return NULL;
-        }
-        PyObject *res = PyUnicode_New(4 * slen, 127);
-        if (res == NULL) {
-            Py_DECREF(obj);
-            return NULL;
-        }
-        Py_UCS1 *outp = PyUnicode_1BYTE_DATA(res);
-        const unsigned char *p = (const unsigned char *)PyBytes_AS_STRING(obj);
-        for (Py_ssize_t i = start; i < end; i++, outp += 4) {
-            const unsigned char ch = p[i];
-            outp[0] = '\\';
-            outp[1] = 'x';
-            outp[2] = Py_hexdigits[(ch >> 4) & 0xf];
-            outp[3] = Py_hexdigits[ch & 0xf];
-        }
-        assert(_PyUnicode_CheckConsistency(res, 1));
-        Py_DECREF(obj);
-        return Py_BuildValue("(Nn)", res, end);
-    }
-
-    if (
-        PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)
-        || PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeTranslateError)
-    ) {
-        if (_PyUnicodeError_GetParams(exc,
-                                      &obj, &objlen,
-                                      &start, &end, &slen, false) < 0)
-        {
-            return NULL;
-        }
-    }
-    else {
-        wrong_exception_type(exc);
+    if (_PyUnicodeError_GetParams(exc,
+                                  &obj, &objlen,
+                                  &start, &end, &slen, false) < 0)
+    {
         return NULL;
     }
 
@@ -1032,6 +1002,65 @@ PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
     assert(_PyUnicode_CheckConsistency(res, 1));
     Py_DECREF(obj);
     return Py_BuildValue("(Nn)", res, end);
+}
+
+
+static PyObject *
+_PyCodec_BackslashReplaceUnicodeDecodeError(PyObject *exc)
+{
+    PyObject *obj;
+    Py_ssize_t objlen, start, end, slen;
+    if (_PyUnicodeError_GetParams(exc,
+                                  &obj, &objlen,
+                                  &start, &end, &slen, true) < 0)
+    {
+        return NULL;
+    }
+
+    PyObject *res = PyUnicode_New(4 * slen, 127);
+    if (res == NULL) {
+        Py_DECREF(obj);
+        return NULL;
+    }
+
+    Py_UCS1 *outp = PyUnicode_1BYTE_DATA(res);
+    const unsigned char *p = (const unsigned char *)PyBytes_AS_STRING(obj);
+    for (Py_ssize_t i = start; i < end; i++, outp += 4) {
+        const unsigned char ch = p[i];
+        outp[0] = '\\';
+        outp[1] = 'x';
+        outp[2] = Py_hexdigits[(ch >> 4) & 0xf];
+        outp[3] = Py_hexdigits[ch & 0xf];
+    }
+    assert(_PyUnicode_CheckConsistency(res, 1));
+    Py_DECREF(obj);
+    return Py_BuildValue("(Nn)", res, end);
+}
+
+
+static inline PyObject *
+_PyCodec_BackslashReplaceUnicodeTranslateError(PyObject *exc)
+{
+    // Same implementation as for UnicodeEncodeError objects.
+    return _PyCodec_BackslashReplaceUnicodeEncodeError(exc);
+}
+
+
+PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
+{
+    if (_PyIsUnicodeEncodeError(exc)) {
+        return _PyCodec_BackslashReplaceUnicodeEncodeError(exc);
+    }
+    else if (_PyIsUnicodeDecodeError(exc)) {
+        return _PyCodec_BackslashReplaceUnicodeDecodeError(exc);
+    }
+    else if (_PyIsUnicodeTranslateError(exc)) {
+        return _PyCodec_BackslashReplaceUnicodeTranslateError(exc);
+    }
+    else {
+        wrong_exception_type(exc);
+        return NULL;
+    }
 }
 
 
@@ -1228,7 +1257,6 @@ _PyCodec_SurrogatePassUnicodeEncodeError(PyObject *exc)
 
     unsigned char *outp = (unsigned char *)PyBytes_AsString(res);
     for (Py_ssize_t i = start; i < end; i++) {
-        /* object is guaranteed to be "ready" */
         Py_UCS4 ch = PyUnicode_READ_CHAR(obj, i);
         if (!Py_UNICODE_IS_SURROGATE(ch)) {
             /* Not a surrogate, fail with original exception */
@@ -1502,7 +1530,8 @@ xmlcharrefreplace_errors(PyObject *Py_UNUSED(self), PyObject *exc)
 }
 
 
-static PyObject *backslashreplace_errors(PyObject *self, PyObject *exc)
+static inline PyObject *
+backslashreplace_errors(PyObject *Py_UNUSED(self), PyObject *exc)
 {
     return PyCodec_BackslashReplaceErrors(exc);
 }
