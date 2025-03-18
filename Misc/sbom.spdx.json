@@ -128,20 +128,6 @@
       "fileName": "Modules/expat/nametab.h"
     },
     {
-      "SPDXID": "SPDXRef-FILE-Modules-expat-refresh.sh",
-      "checksums": [
-        {
-          "algorithm": "SHA1",
-          "checksumValue": "32a10fbb8027cea3134674912b896abca516b085"
-        },
-        {
-          "algorithm": "SHA256",
-          "checksumValue": "51d08c697d1e409f5ce0749c1a136a0e1618d3069cf544d86005f966f43a8f97"
-        }
-      ],
-      "fileName": "Modules/expat/refresh.sh"
-    },
-    {
       "SPDXID": "SPDXRef-FILE-Modules-expat-siphash.h",
       "checksums": [
         {
@@ -1711,11 +1697,6 @@
     },
     {
       "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-nametab.h",
-      "relationshipType": "CONTAINS",
-      "spdxElementId": "SPDXRef-PACKAGE-expat"
-    },
-    {
-      "relatedSpdxElement": "SPDXRef-FILE-Modules-expat-refresh.sh",
       "relationshipType": "CONTAINS",
       "spdxElementId": "SPDXRef-PACKAGE-expat"
     },
