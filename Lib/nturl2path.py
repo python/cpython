@@ -31,7 +31,7 @@ def url2pathname(url):
             url = url[1:]
         if url[1:2] == '|':
             # Older URLs use a pipe after a drive letter
-            url = url.replace('|', ':', 1)
+            url = url[:1] + ':' + url[2:]
     return urllib.parse.unquote(url.replace('/', '\\'))
 
 def pathname2url(p):
