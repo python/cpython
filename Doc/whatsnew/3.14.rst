@@ -1085,7 +1085,7 @@ zlib
 * On Windows, ``zlib-ng`` is now used as the implementation of the
   :mod:`zlib` module. This should produce compatible and comparable
   results with better performance, though it is worth noting that
-  :const:`~zlib.Z_BEST_SPEED` (1) may result in significantly less
+  ``zlib.Z_BEST_SPEED`` (1) may result in significantly less
   compression than the previous implementation (while also significantly
   reducing the time taken to compress).
   (Contributed by Steve Dower in :gh:`91349`.)
