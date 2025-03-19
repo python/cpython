@@ -1,5 +1,5 @@
 from decimal import Decimal
-from test.support import verbose, is_android, is_emscripten, is_wasi, os_helper
+from test.support import verbose, is_android, linked_to_musl, os_helper
 from test.support.warnings_helper import check_warnings
 from test.support.import_helper import import_fresh_module
 from unittest import mock
@@ -351,10 +351,7 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
-    @unittest.skipIf(
-        is_emscripten or is_wasi,
-        "musl libc issue on Emscripten/WASI, bpo-46390"
-    )
+    @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
     @unittest.skipIf(sys.platform.startswith("netbsd"),
                      "gh-124108: NetBSD doesn't support UTF-8 for LC_COLLATE")
     def test_strcoll_with_diacritic(self):
@@ -362,10 +359,7 @@ class TestEnUSCollation(BaseLocalizedTest, TestCollation):
 
     @unittest.skipIf(sys.platform.startswith('aix'),
                      'bpo-29972: broken test on AIX')
-    @unittest.skipIf(
-        is_emscripten or is_wasi,
-        "musl libc issue on Emscripten/WASI, bpo-46390"
-    )
+    @unittest.skipIf(linked_to_musl(), "musl libc issue, bpo-46390")
     @unittest.skipIf(sys.platform.startswith("netbsd"),
                      "gh-124108: NetBSD doesn't support UTF-8 for LC_COLLATE")
     def test_strxfrm_with_diacritic(self):

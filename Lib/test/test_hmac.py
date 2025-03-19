@@ -341,12 +341,15 @@ class HashFunctionsTrait:
     ALGORITHMS = [
         'md5', 'sha1',
         'sha224', 'sha256', 'sha384', 'sha512',
+        'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512',
     ]
 
     # By default, a missing algorithm skips the test that uses it.
-    md5 = sha1 = sha224 = sha256 = sha384 = sha512 = property(
-        lambda self: self.skipTest("missing hash function")
-    )
+    _ = property(lambda self: self.skipTest("missing hash function"))
+    md5 = sha1 = _
+    sha224 = sha256 = sha384 = sha512 = _
+    sha3_224 = sha3_256 = sha3_384 = sha3_512 = _
+    del _
 
 
 class WithOpenSSLHashFunctions(HashFunctionsTrait):
@@ -375,16 +378,23 @@ class WithNamedHashFunctions(HashFunctionsTrait):
             setattr(cls, name, name)
 
 
-class RFCTestCaseMixin(HashFunctionsTrait):
-    """Test HMAC implementations against test vectors from the RFC."""
+class RFCTestCaseMixin(AssertersMixin, HashFunctionsTrait):
+    """Test HMAC implementations against RFC 2202/4231 and NIST test vectors.
 
-    def test_md5(self):
+    - Test vectors for MD5 and SHA-1 are taken from RFC 2202.
+    - Test vectors for SHA-2 are taken from RFC 4231.
+    - Test vectors for SHA-3 are NIST's test vectors [1].
+
+    [1] https://csrc.nist.gov/projects/message-authentication-codes
+    """
+
+    def test_md5_rfc2202(self):
         def md5test(key, msg, hexdigest):
             self.assert_hmac(key, msg, hexdigest, self.md5, "md5", 16, 64)
 
         md5test(b"\x0b" * 16,
                 b"Hi There",
-                "9294727A3638BB1C13F48EF8158BFC9D")
+                "9294727a3638bb1c13f48ef8158bfc9d")
 
         md5test(b"Jefe",
                 b"what do ya want for nothing?",
@@ -411,7 +421,7 @@ class RFCTestCaseMixin(HashFunctionsTrait):
                  b"and Larger Than One Block-Size Data"),
                 "6f630fad67cda0ee1fb1f562db3aa53e")
 
-    def test_sha1(self):
+    def test_sha1_rfc2202(self):
         def shatest(key, msg, hexdigest):
             self.assert_hmac(key, msg, hexdigest, self.sha1, "sha1", 20, 64)
 
@@ -457,11 +467,11 @@ class RFCTestCaseMixin(HashFunctionsTrait):
         self._test_sha2_rfc4231(self.sha512, 'sha512', 64, 128)
 
     def _test_sha2_rfc4231(self, hashfunc, hashname, digest_size, block_size):
-        def hmactest(key, data, hexdigests):
+        def hmactest(key, msg, hexdigests):
             hexdigest = hexdigests[hashname]
 
             self.assert_hmac(
-                key, data, hexdigest,
+                key, msg, hexdigest,
                 hashfunc=hashfunc,
                 hashname=hashname,
                 digest_size=digest_size,
@@ -470,7 +480,7 @@ class RFCTestCaseMixin(HashFunctionsTrait):
 
         # 4.2.  Test Case 1
         hmactest(key=b'\x0b' * 20,
-                 data=b'Hi There',
+                 msg=b'Hi There',
                  hexdigests={
                      'sha224': '896fb1128abbdf196832107cd49df33f'
                                '47b4b1169912ba4f53684b22',
@@ -487,7 +497,7 @@ class RFCTestCaseMixin(HashFunctionsTrait):
 
         # 4.3.  Test Case 2
         hmactest(key=b'Jefe',
-                 data=b'what do ya want for nothing?',
+                 msg=b'what do ya want for nothing?',
                  hexdigests={
                      'sha224': 'a30e01098bc6dbbf45690f3a7e9e6d0f'
                                '8bbea2a39e6148008fd05e44',
@@ -504,7 +514,7 @@ class RFCTestCaseMixin(HashFunctionsTrait):
 
         # 4.4.  Test Case 3
         hmactest(key=b'\xaa' * 20,
-                 data=b'\xdd' * 50,
+                 msg=b'\xdd' * 50,
                  hexdigests={
                      'sha224': '7fb3cb3588c6c1f6ffa9694d7d6ad264'
                                '9365b0c1f65d69d1ec8333ea',
@@ -521,7 +531,7 @@ class RFCTestCaseMixin(HashFunctionsTrait):
 
         # 4.5.  Test Case 4
         hmactest(key=bytes(x for x in range(0x01, 0x19 + 1)),
-                 data=b'\xcd' * 50,
+                 msg=b'\xcd' * 50,
                  hexdigests={
                      'sha224': '6c11506874013cac6a2abc1bb382627c'
                                'ec6a90d86efc012de7afec5a',
@@ -538,8 +548,8 @@ class RFCTestCaseMixin(HashFunctionsTrait):
 
         # 4.7.  Test Case 6
         hmactest(key=b'\xaa' * 131,
-                 data=b'Test Using Larger Than Block-Siz'
-                      b'e Key - Hash Key First',
+                 msg=b'Test Using Larger Than Block-Siz'
+                     b'e Key - Hash Key First',
                  hexdigests={
                      'sha224': '95e9a0db962095adaebe9b2d6f0dbce2'
                                'd499f112f2d2b7273fa6870e',
@@ -556,11 +566,11 @@ class RFCTestCaseMixin(HashFunctionsTrait):
 
         # 4.8.  Test Case 7
         hmactest(key=b'\xaa' * 131,
-                 data=b'This is a test using a larger th'
-                      b'an block-size key and a larger t'
-                      b'han block-size data. The key nee'
-                      b'ds to be hashed before being use'
-                      b'd by the HMAC algorithm.',
+                 msg=b'This is a test using a larger th'
+                     b'an block-size key and a larger t'
+                     b'han block-size data. The key nee'
+                     b'ds to be hashed before being use'
+                     b'd by the HMAC algorithm.',
                  hexdigests={
                      'sha224': '3a854166ac5d9f023f54d517d0b39dbd'
                                '946770db9c2b95c9f6f565d1',
@@ -574,6 +584,112 @@ class RFCTestCaseMixin(HashFunctionsTrait):
                                'b6022cac3c4982b10d5eeb55c3e4de15'
                                '134676fb6de0446065c97440fa8c6a58',
                  })
+
+    def test_sha3_224_nist(self):
+        for key, msg, hexdigest in [
+            (
+                bytes(range(28)),
+                b'Sample message for keylen<blocklen',
+                '332cfd59347fdb8e576e77260be4aba2d6dc53117b3bfb52c6d18c04'
+            ), (
+                bytes(range(144)),
+                b'Sample message for keylen=blocklen',
+                'd8b733bcf66c644a12323d564e24dcf3fc75f231f3b67968359100c7'
+            ), (
+                bytes(range(172)),
+                b'Sample message for keylen>blocklen',
+                '078695eecc227c636ad31d063a15dd05a7e819a66ec6d8de1e193e59'
+            )
+        ]:
+            self.assert_hmac(
+                key, msg, hexdigest,
+                hashfunc=self.sha3_224, hashname='sha3_224',
+                digest_size=28, block_size=144
+            )
+
+    def test_sha3_256_nist(self):
+        for key, msg, hexdigest in [
+            (
+                bytes(range(32)),
+                b'Sample message for keylen<blocklen',
+                '4fe8e202c4f058e8dddc23d8c34e4673'
+                '43e23555e24fc2f025d598f558f67205'
+            ), (
+                bytes(range(136)),
+                b'Sample message for keylen=blocklen',
+                '68b94e2e538a9be4103bebb5aa016d47'
+                '961d4d1aa906061313b557f8af2c3faa'
+            ), (
+                bytes(range(168)),
+                b'Sample message for keylen>blocklen',
+                '9bcf2c238e235c3ce88404e813bd2f3a'
+                '97185ac6f238c63d6229a00b07974258'
+            )
+        ]:
+            self.assert_hmac(
+                key, msg, hexdigest,
+                hashfunc=self.sha3_256, hashname='sha3_256',
+                digest_size=32, block_size=136
+            )
+
+    def test_sha3_384_nist(self):
+        for key, msg, hexdigest in [
+            (
+                bytes(range(48)),
+                b'Sample message for keylen<blocklen',
+                'd588a3c51f3f2d906e8298c1199aa8ff'
+                '6296218127f6b38a90b6afe2c5617725'
+                'bc99987f79b22a557b6520db710b7f42'
+            ), (
+                bytes(range(104)),
+                b'Sample message for keylen=blocklen',
+                'a27d24b592e8c8cbf6d4ce6fc5bf62d8'
+                'fc98bf2d486640d9eb8099e24047837f'
+                '5f3bffbe92dcce90b4ed5b1e7e44fa90'
+            ), (
+                bytes(range(152)),
+                b'Sample message for keylen>blocklen',
+                'e5ae4c739f455279368ebf36d4f5354c'
+                '95aa184c899d3870e460ebc288ef1f94'
+                '70053f73f7c6da2a71bcaec38ce7d6ac'
+            )
+        ]:
+            self.assert_hmac(
+                key, msg, hexdigest,
+                hashfunc=self.sha3_384, hashname='sha3_384',
+                digest_size=48, block_size=104
+            )
+
+    def test_sha3_512_nist(self):
+        for key, msg, hexdigest in [
+            (
+                bytes(range(64)),
+                b'Sample message for keylen<blocklen',
+                '4efd629d6c71bf86162658f29943b1c3'
+                '08ce27cdfa6db0d9c3ce81763f9cbce5'
+                'f7ebe9868031db1a8f8eb7b6b95e5c5e'
+                '3f657a8996c86a2f6527e307f0213196'
+            ), (
+                bytes(range(72)),
+                b'Sample message for keylen=blocklen',
+                '544e257ea2a3e5ea19a590e6a24b724c'
+                'e6327757723fe2751b75bf007d80f6b3'
+                '60744bf1b7a88ea585f9765b47911976'
+                'd3191cf83c039f5ffab0d29cc9d9b6da'
+            ), (
+                bytes(range(136)),
+                b'Sample message for keylen>blocklen',
+                '5f464f5e5b7848e3885e49b2c385f069'
+                '4985d0e38966242dc4a5fe3fea4b37d4'
+                '6b65ceced5dcf59438dd840bab22269f'
+                '0ba7febdb9fcf74602a35666b2a32915'
+            )
+        ]:
+            self.assert_hmac(
+                key, msg, hexdigest,
+                hashfunc=self.sha3_512, hashname='sha3_512',
+                digest_size=64, block_size=72
+            )
 
 
 class PyRFCTestCase(ThroughObjectMixin, PyAssertersMixin,

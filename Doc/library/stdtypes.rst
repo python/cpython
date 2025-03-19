@@ -5244,6 +5244,8 @@ list is non-exhaustive.
 * :class:`set`
 * :class:`frozenset`
 * :class:`type`
+* :class:`asyncio.Future`
+* :class:`asyncio.Task`
 * :class:`collections.deque`
 * :class:`collections.defaultdict`
 * :class:`collections.OrderedDict`

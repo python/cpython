@@ -11,7 +11,8 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
-#include "pycore_pystate.h"   // _PyThreadState_GET()
+#include "pycore_interp.h"        // _PyInterpreterState_GetConfig()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
 #ifdef MS_WINDOWS
 #  ifndef WIN32_LEAN_AND_MEAN
 #    define WIN32_LEAN_AND_MEAN

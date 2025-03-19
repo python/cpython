@@ -430,6 +430,17 @@ void patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *s
 void
 patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state)
 {
+
+    uint64_t value = (uintptr_t)symbols_map[ordinal];
+    int64_t range = value - (uintptr_t)location;
+
+    // If we are in range of 28 signed bits, we patch the instruction with
+    // the address of the symbol.
+    if (range >= -(1 << 27) && range < (1 << 27)) {
+        patch_aarch64_26r(location, (uintptr_t)value);
+        return;
+    }
+
     // Masking is done modulo 32 as the mask is stored as an array of uint32_t
     const uint32_t symbol_mask = 1 << (ordinal % 32);
     const uint32_t trampoline_mask = state->trampolines.mask[ordinal / 32];
@@ -445,7 +456,6 @@ patch_aarch64_trampoline(unsigned char *location, int ordinal, jit_state *state)
     uint32_t *p = (uint32_t*)(state->trampolines.mem + index * TRAMPOLINE_SIZE);
     assert((size_t)(index + 1) * TRAMPOLINE_SIZE <= state->trampolines.size);
 
-    uint64_t value = (uintptr_t)symbols_map[ordinal];
 
     /* Generate the trampoline
        0: 58000048      ldr     x8, 8

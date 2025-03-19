@@ -2,20 +2,18 @@
 #include "Python.h"
 #include "pycore_brc.h"           // struct _brc_thread_state
 #include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
-#include "pycore_context.h"
 #include "pycore_dict.h"          // _PyInlineValuesSize()
+#include "pycore_frame.h"         // FRAME_CLEARED
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
-#include "pycore_initconfig.h"
+#include "pycore_initconfig.h"    // _PyStatus_NO_MEMORY()
 #include "pycore_interp.h"        // PyInterpreterState.gc
-#include "pycore_object.h"
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
-#include "pycore_object_stack.h"
-#include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tstate.h"        // _PyThreadStateImpl
+#include "pycore_tuple.h"         // _PyTuple_MaybeUntrack()
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
+
 #include "pydtrace.h"
-#include "pycore_uniqueid.h"      // _PyObject_MergeThreadLocalRefcounts()
 
 
 // enable the "mark alive" pass of GC

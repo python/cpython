@@ -8,8 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_runtime_structs.h"
 #include "pycore_pystate.h"
+#include "pycore_runtime_structs.h"
+#include "pycore_typedefs.h"      // _PyInterpreterFrame
 
 
 /* Get an object's GC head */
@@ -348,7 +349,7 @@ extern void _Py_RunGC(PyThreadState *tstate);
 union _PyStackRef;
 
 // GC visit callback for tracked interpreter frames
-extern int _PyGC_VisitFrameStack(struct _PyInterpreterFrame *frame, visitproc visit, void *arg);
+extern int _PyGC_VisitFrameStack(_PyInterpreterFrame *frame, visitproc visit, void *arg);
 extern int _PyGC_VisitStackRef(union _PyStackRef *ref, visitproc visit, void *arg);
 
 // Like Py_VISIT but for _PyStackRef fields

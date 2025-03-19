@@ -473,7 +473,7 @@ PyTypeObject Definition
 -----------------------
 
 The structure definition for :c:type:`PyTypeObject` can be found in
-:file:`Include/object.h`.  For convenience of reference, this repeats the
+:file:`Include/cpython/object.h`.  For convenience of reference, this repeats the
 definition found there:
 
 .. XXX Drop this?
@@ -2154,15 +2154,13 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       static void
       local_finalize(PyObject *self)
       {
-          PyObject *error_type, *error_value, *error_traceback;
-
           /* Save the current exception, if any. */
-          PyErr_Fetch(&error_type, &error_value, &error_traceback);
+          PyObject *exc = PyErr_GetRaisedException();
 
           /* ... */
 
           /* Restore the saved exception. */
-          PyErr_Restore(error_type, error_value, error_traceback);
+          PyErr_SetRaisedException(exc);
       }
 
    **Inheritance:**
