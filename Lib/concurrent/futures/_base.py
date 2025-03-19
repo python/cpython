@@ -621,6 +621,7 @@ class Executor(object):
         # collected independently of the result_iterator closure.
         executor_weakref = weakref.ref(self)
 
+        # used by the result_iterator to avoid keeping a reference to the result
         result = collections.deque(maxlen=1)
         # Yield must be hidden in closure so that the futures are submitted
         # before the first iterator value is required.
