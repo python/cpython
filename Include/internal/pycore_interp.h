@@ -8,9 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include <stdbool.h>              // bool
-
-#include "pycore_runtime_structs.h"
 #include "pycore_genobject.h"     // _PyGen_FetchStopIterationValue
 
 
