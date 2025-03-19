@@ -1,7 +1,4 @@
 #include "Python.h"
-
-#include "opcode_ids.h"
-
 #include "pycore_bitutils.h"      // _Py_popcount32
 #include "pycore_call.h"
 #include "pycore_ceval.h"         // _PY_EVAL_EVENTS_BITS
@@ -18,7 +15,11 @@
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_STORE_UINTPTR_RELEASE
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_runtime_structs.h"     // _PyCoMonitoringData
+#include "pycore_runtime_structs.h"  // _PyCoMonitoringData
+#include "pycore_tuple.h"         // _PyTuple_FromArraySteal()
+
+#include "opcode_ids.h"
+
 
 /* Uncomment this to dump debugging output when assertions fail */
 // #define INSTRUMENT_DEBUG 1
