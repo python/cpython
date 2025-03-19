@@ -8,7 +8,10 @@ for urllib.requests, thus do not use directly.
 import warnings
 
 
-warnings._deprecated(__name__, remove=(3, 19))
+warnings._deprecated(
+    __name__,
+    message=f"{warnings._DEPRECATED_MSG}; use 'urllib.request' instead",
+    remove=(3, 19))
 
 def url2pathname(url):
     """OS-specific conversion from a relative URL of the 'file' scheme

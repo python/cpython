@@ -1693,14 +1693,14 @@ def pathname2url(pathname):
             # DOS drive specified. Add three slashes to the start, producing
             # an authority section with a zero-length authority, and a path
             # section starting with a single slash.
-            prefix += '///'
+            prefix = '///'
         drive = quote(drive, encoding=encoding, errors=errors, safe='/:')
     elif root:
         # Add explicitly empty authority to absolute path. If the path
         # starts with exactly one slash then this change is mostly
         # cosmetic, but if it begins with two or more slashes then this
         # avoids interpreting the path as a URL authority.
-        prefix += '//'
+        prefix = '//'
     tail = quote(tail, encoding=encoding, errors=errors)
     return prefix + drive + root + tail
 
