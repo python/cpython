@@ -1,0 +1,2 @@
+Some :data:`!SND_*` and :data:`!MB_*` constants are added to
+:module:`winsound`.
