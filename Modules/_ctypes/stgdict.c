@@ -478,8 +478,8 @@ error:
 }
 
 /*
-  Copy array elements to stginfo->ffi_type_pointer.elements. Return -1 if error
-  occured.
+  Replace array elements at stginfo->ffi_type_pointer.elements.
+  Return -1 if error occured.
 */
 int
 _replace_array_elements(ctypes_state *st, PyObject *layout_fields,
