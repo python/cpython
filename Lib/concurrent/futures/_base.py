@@ -628,17 +628,18 @@ class Executor(object):
                 # reverse to keep finishing order
                 fs.reverse()
                 while fs:
+                    # Careful not to keep a reference to the popped future
+                    if timeout is None:
+                        result = _result_or_cancel(fs.pop())
+                    else:
+                        result = _result_or_cancel(fs.pop(), end_time - time.monotonic())
                     if (
                         buffersize
                         and (executor := executor_weakref())
                         and (args := next(zipped_iterables, None))
                     ):
                         fs.appendleft(executor.submit(fn, *args))
-                    # Careful not to keep a reference to the popped future
-                    if timeout is None:
-                        yield _result_or_cancel(fs.pop())
-                    else:
-                        yield _result_or_cancel(fs.pop(), end_time - time.monotonic())
+                    yield result
             finally:
                 for future in fs:
                     future.cancel()
