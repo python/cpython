@@ -1450,29 +1450,17 @@ def parse_http_list(s):
     return [part.strip() for part in res]
 
 class FileHandler(BaseHandler):
-    # names for the localhost
-    names = None
-    def get_names(self):
-        if FileHandler.names is None:
-            try:
-                FileHandler.names = tuple(
-                    socket.gethostbyname_ex('localhost')[2] +
-                    socket.gethostbyname_ex(socket.gethostname())[2])
-            except socket.gaierror:
-                FileHandler.names = (socket.gethostbyname('localhost'),)
-        return FileHandler.names
-
     # not entirely sure what the rules are here
     def open_local_file(self, req):
         import email.utils
         import mimetypes
-        filename = req.full_url
-        localfile = url2pathname(filename.removeprefix('file:'))
+        filename = _splittype(req.full_url)[1]
+        localfile = url2pathname(filename)
         try:
             stats = os.stat(localfile)
             size = stats.st_size
             modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
-            mtype = mimetypes.guess_type(filename)[0]
+            mtype = mimetypes.guess_file_type(localfile)[0]
             headers = email.message_from_string(
                 'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
                 (mtype or 'text/plain', size, modified))
@@ -1483,14 +1471,25 @@ class FileHandler(BaseHandler):
 
     file_open = open_local_file
 
-def _is_local_host(host):
-    if not host or host == 'localhost':
+_local_addresses = None
+
+def _is_local_authority(authority):
+    global _local_addresses
+
+    if not authority or authority == 'localhost':
         return True
     try:
-        name = socket.gethostbyname(host)
+        address = socket.gethostbyname(authority)
     except socket.gaierror:
         return False
-    return name in FileHandler().get_names()
+    if _local_addresses is None:
+        try:
+            _local_addresses = tuple(
+                socket.gethostbyname_ex('localhost')[2] +
+                socket.gethostbyname_ex(socket.gethostname())[2])
+        except socket.gaierror:
+            _local_addresses = (socket.gethostbyname('localhost'),)
+    return address in _local_addresses
 
 class FTPHandler(BaseHandler):
     def ftp_open(self, req):
@@ -1639,12 +1638,12 @@ def url2pathname(url):
     """OS-specific conversion from a relative URL of the 'file' scheme
     to a file system path; not recommended for general use."""
     authority, url = _splithost(url)
-
     if os.name == 'nt':
         if authority and authority != 'localhost':
+            # e.g. file://server/share/file.txt
             url = '//' + authority + url
         elif url[:3] == '///':
-            # Skip past extra slash before UNC drive in URL path.
+            # e.g. file://///server/share/file.txt
             url = url[1:]
         else:
             if url[:1] == '/' and url[2:3] in (':', '|'):
@@ -1654,8 +1653,8 @@ def url2pathname(url):
                 # Older URLs use a pipe after a drive letter
                 url = url[:1] + ':' + url[2:]
         url = url.replace('/', '\\')
-    elif not _is_local_host(authority):
-        raise URLError(f'URL {url!r} uses non-local authority {authority!r}')
+    elif not _is_local_authority(authority):
+        raise URLError("file:// scheme is supported only on localhost")
     encoding = sys.getfilesystemencoding()
     errors = sys.getfilesystemencodeerrors()
     return unquote(url, encoding=encoding, errors=errors)

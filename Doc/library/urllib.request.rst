@@ -182,6 +182,12 @@ The :mod:`urllib.request` module defines the following functions:
       'C:\\Program Files'
 
    .. versionchanged:: 3.14
+      On non-Windows platforms, if a URL authority (e.g. a hostname) is
+      present, then it is discarded if it resolves to ``localhost``, otherwise
+      :exc:`~urllib.error.URLError` is raised. In previous versions the
+      authority is included in the returned path.
+
+   .. versionchanged:: 3.14
       Windows drive letters are no longer converted to uppercase, and ``:``
       characters not following a drive letter no longer cause an
       :exc:`OSError` exception to be raised on Windows.
