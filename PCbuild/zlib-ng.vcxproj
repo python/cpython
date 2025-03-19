@@ -70,7 +70,6 @@
     <ProjectGuid>{FB91C8B2-6FBC-3A01-B644-1637111F902D}</ProjectGuid>
     <RootNamespace>zlib-ng</RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <TargetName>zlib-ng</TargetName>
   </PropertyGroup>
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
