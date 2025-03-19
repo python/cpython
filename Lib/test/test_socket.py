@@ -177,6 +177,17 @@ def _have_socket_bluetooth():
     return True
 
 
+def _have_socket_bluetooth_l2cap():
+    """Check whether BTPROTO_L2CAP sockets are supported on this host."""
+    try:
+        s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP)
+    except (AttributeError, OSError):
+        return False
+    else:
+        s.close()
+    return True
+
+
 def _have_socket_hyperv():
     """Check whether AF_HYPERV sockets are supported on this host."""
     try:
@@ -218,6 +229,8 @@ HAVE_SOCKET_UDPLITE = (
     and not (support.is_android and platform.android_ver().api_level < 29))
 
 HAVE_SOCKET_BLUETOOTH = _have_socket_bluetooth()
+
+HAVE_SOCKET_BLUETOOTH_L2CAP = _have_socket_bluetooth_l2cap()
 
 HAVE_SOCKET_HYPERV = _have_socket_hyperv()
 
@@ -1649,8 +1662,11 @@ class GeneralModuleTests(unittest.TestCase):
         # Issue #6697.
         self.assertRaises(UnicodeEncodeError, socket.getaddrinfo, 'localhost', '\uD800')
 
-        # Issue 17269: test workaround for OS X platform bug segfault
         if hasattr(socket, 'AI_NUMERICSERV'):
+            self.assertRaises(socket.gaierror, socket.getaddrinfo, "localhost", "http",
+                              flags=socket.AI_NUMERICSERV)
+
+            # Issue 17269: test workaround for OS X platform bug segfault
             try:
                 # The arguments here are undefined and the call may succeed
                 # or fail.  All we care here is that it doesn't segfault.
@@ -2607,6 +2623,33 @@ class BasicBluetoothTest(unittest.TestCase):
     def testCreateScoSocket(self):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_SCO) as s:
             pass
+
+    @unittest.skipUnless(HAVE_SOCKET_BLUETOOTH_L2CAP, 'Bluetooth L2CAP sockets required for this test')
+    def testBindLeAttL2capSocket(self):
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP) as f:
+            # ATT is the only CID allowed in userspace by the Linux kernel
+            CID_ATT = 4
+            f.bind((socket.BDADDR_ANY, 0, CID_ATT, socket.BDADDR_LE_PUBLIC))
+            addr = f.getsockname()
+            self.assertEqual(addr, (socket.BDADDR_ANY, 0, CID_ATT, socket.BDADDR_LE_PUBLIC))
+
+    @unittest.skipUnless(HAVE_SOCKET_BLUETOOTH_L2CAP, 'Bluetooth L2CAP sockets required for this test')
+    def testBindLePsmL2capSocket(self):
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP) as f:
+            # First user PSM in LE L2CAP
+            psm = 0x80
+            f.bind((socket.BDADDR_ANY, psm, 0, socket.BDADDR_LE_RANDOM))
+            addr = f.getsockname()
+            self.assertEqual(addr, (socket.BDADDR_ANY, psm, 0, socket.BDADDR_LE_RANDOM))
+
+    @unittest.skipUnless(HAVE_SOCKET_BLUETOOTH_L2CAP, 'Bluetooth L2CAP sockets required for this test')
+    def testBindBrEdrL2capSocket(self):
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP) as f:
+            # First user PSM in BR/EDR L2CAP
+            psm = 0x1001
+            f.bind((socket.BDADDR_ANY, psm))
+            addr = f.getsockname()
+            self.assertEqual(addr, (socket.BDADDR_ANY, psm))
 
 
 @unittest.skipUnless(HAVE_SOCKET_HYPERV,

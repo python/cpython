@@ -287,40 +287,6 @@ extern void _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **);
 
 /* --- Other API ---------------------------------------------------------- */
 
-struct _Py_unicode_runtime_ids {
-    PyMutex mutex;
-    // next_index value must be preserved when Py_Initialize()/Py_Finalize()
-    // is called multiple times: see _PyUnicode_FromId() implementation.
-    Py_ssize_t next_index;
-};
-
-struct _Py_unicode_runtime_state {
-    struct _Py_unicode_runtime_ids ids;
-};
-
-/* fs_codec.encoding is initialized to NULL.
-   Later, it is set to a non-NULL string by _PyUnicode_InitEncodings(). */
-struct _Py_unicode_fs_codec {
-    char *encoding;   // Filesystem encoding (encoded to UTF-8)
-    int utf8;         // encoding=="utf-8"?
-    char *errors;     // Filesystem errors (encoded to UTF-8)
-    _Py_error_handler error_handler;
-};
-
-struct _Py_unicode_ids {
-    Py_ssize_t size;
-    PyObject **array;
-};
-
-struct _Py_unicode_state {
-    struct _Py_unicode_fs_codec fs_codec;
-
-    _PyUnicode_Name_CAPI *ucnhash_capi;
-
-    // Unicode identifiers (_Py_Identifier): see _PyUnicode_FromId()
-    struct _Py_unicode_ids ids;
-};
-
 extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
 
 // Like PyUnicode_AsUTF8(), but check for embedded null characters.

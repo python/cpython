@@ -917,56 +917,59 @@ class GrammarTests(unittest.TestCase):
         check_syntax_error(self, "class foo:return 1")
 
     def test_break_in_finally(self):
-        count = 0
-        while count < 2:
-            count += 1
-            try:
-                pass
-            finally:
-                break
-        self.assertEqual(count, 1)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', SyntaxWarning)
 
-        count = 0
-        while count < 2:
-            count += 1
-            try:
-                continue
-            finally:
-                break
-        self.assertEqual(count, 1)
+            count = 0
+            while count < 2:
+                count += 1
+                try:
+                    pass
+                finally:
+                    break
+            self.assertEqual(count, 1)
 
-        count = 0
-        while count < 2:
-            count += 1
-            try:
-                1/0
-            finally:
-                break
-        self.assertEqual(count, 1)
+            count = 0
+            while count < 2:
+                count += 1
+                try:
+                    continue
+                finally:
+                    break
+            self.assertEqual(count, 1)
 
-        for count in [0, 1]:
+            count = 0
+            while count < 2:
+                count += 1
+                try:
+                    1/0
+                finally:
+                    break
+            self.assertEqual(count, 1)
+
+            for count in [0, 1]:
+                self.assertEqual(count, 0)
+                try:
+                    pass
+                finally:
+                    break
             self.assertEqual(count, 0)
-            try:
-                pass
-            finally:
-                break
-        self.assertEqual(count, 0)
 
-        for count in [0, 1]:
+            for count in [0, 1]:
+                self.assertEqual(count, 0)
+                try:
+                    continue
+                finally:
+                    break
             self.assertEqual(count, 0)
-            try:
-                continue
-            finally:
-                break
-        self.assertEqual(count, 0)
 
-        for count in [0, 1]:
+            for count in [0, 1]:
+                self.assertEqual(count, 0)
+                try:
+                    1/0
+                finally:
+                    break
             self.assertEqual(count, 0)
-            try:
-                1/0
-            finally:
-                break
-        self.assertEqual(count, 0)
 
     def test_continue_in_finally(self):
         count = 0
@@ -1971,6 +1974,18 @@ class GrammarTests(unittest.TestCase):
 
         with self.assertRaises(Done):
             foo().send(None)
+
+    def test_complex_lambda(self):
+        def test1(foo, bar):
+            return ""
+
+        def test2():
+            return f"{test1(
+                foo=lambda: '、、、、、、、、、、、、、、、、、',
+                bar=lambda: 'abcdefghijklmnopqrstuvwxyz 123456789 123456789',
+            )}"
+
+        self.assertEqual(test2(), "")
 
 
 if __name__ == '__main__':

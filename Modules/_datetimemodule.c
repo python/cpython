@@ -13,6 +13,7 @@
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_time.h"          // _PyTime_ObjectToTime_t()
+#include "pycore_unicodeobject.h" // _PyUnicode_Copy()
 
 #include "datetime.h"
 
@@ -3290,8 +3291,8 @@ as local time.
 [clinic start generated code]*/
 
 static PyObject *
-datetime_date_fromtimestamp(PyTypeObject *type, PyObject *timestamp)
-/*[clinic end generated code: output=fd045fda58168869 input=eabb3fe7f40491fe]*/
+datetime_date_fromtimestamp_impl(PyTypeObject *type, PyObject *timestamp)
+/*[clinic end generated code: output=59def4e32c028fb6 input=eabb3fe7f40491fe]*/
 {
     return date_fromtimestamp((PyObject *) type, timestamp);
 }
