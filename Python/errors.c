@@ -4,18 +4,22 @@
 #include "Python.h"
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_initconfig.h"    // _PyStatus_ERR()
 #include "pycore_pyerrors.h"      // _PyErr_Format()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
-#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame()
+#include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #  include <winbase.h>
 #  include <stdlib.h>             // _sys_nerr
 #endif
+
 
 /* Forward declarations */
 static PyObject *
@@ -69,7 +73,11 @@ _PyErr_Restore(PyThreadState *tstate, PyObject *type, PyObject *value,
     assert(PyExceptionClass_Check(type));
     if (value != NULL && type == (PyObject *)Py_TYPE(value)) {
         /* Already normalized */
-        assert(((PyBaseExceptionObject *)value)->traceback != Py_None);
+#ifdef Py_DEBUG
+        PyObject *tb = PyException_GetTraceback(value);
+        assert(tb != Py_None);
+        Py_XDECREF(tb);
+#endif
     }
     else {
         PyObject *exc = _PyErr_CreateException(type, value);
@@ -82,22 +90,15 @@ _PyErr_Restore(PyThreadState *tstate, PyObject *type, PyObject *value,
         value = exc;
     }
     assert(PyExceptionInstance_Check(value));
-    if (traceback != NULL && !PyTraceBack_Check(traceback)) {
-        if (traceback == Py_None) {
-            Py_DECREF(Py_None);
-            traceback = NULL;
-        }
-        else {
-            PyErr_SetString(PyExc_TypeError, "traceback must be a Traceback or None");
-            Py_XDECREF(value);
+    if (traceback != NULL) {
+        if (PyException_SetTraceback(value, traceback) < 0) {
+            Py_DECREF(traceback);
+            Py_DECREF(value);
             Py_DECREF(type);
-            Py_XDECREF(traceback);
             return;
         }
+        Py_DECREF(traceback);
     }
-    PyObject *old_traceback = ((PyBaseExceptionObject *)value)->traceback;
-    ((PyBaseExceptionObject *)value)->traceback = traceback;
-    Py_XDECREF(old_traceback);
     _PyErr_SetRaisedException(tstate, value);
     Py_DECREF(type);
 }
@@ -1532,14 +1533,15 @@ write_unraisable_exc(PyThreadState *tstate, PyObject *exc_type,
                      PyObject *exc_value, PyObject *exc_tb, PyObject *err_msg,
                      PyObject *obj)
 {
-    PyObject *file = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    PyObject *file;
+    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
+        return -1;
+    }
     if (file == NULL || file == Py_None) {
+        Py_XDECREF(file);
         return 0;
     }
 
-    /* Hold a strong reference to ensure that sys.stderr doesn't go away
-       while we use it */
-    Py_INCREF(file);
     int res = write_unraisable_exc_file(tstate, exc_type, exc_value, exc_tb,
                                         err_msg, obj, file);
     Py_DECREF(file);
@@ -1638,13 +1640,20 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
         goto error;
     }
 
-    PyObject *hook = _PySys_GetAttr(tstate, &_Py_ID(unraisablehook));
+    PyObject *hook;
+    if (_PySys_GetOptionalAttr(&_Py_ID(unraisablehook), &hook) < 0) {
+        Py_DECREF(hook_args);
+        err_msg_str = NULL;
+        obj = NULL;
+        goto error;
+    }
     if (hook == NULL) {
         Py_DECREF(hook_args);
         goto default_hook;
     }
 
     if (_PySys_Audit(tstate, "sys.unraisablehook", "OO", hook, hook_args) < 0) {
+        Py_DECREF(hook);
         Py_DECREF(hook_args);
         err_msg_str = "Exception ignored in audit hook";
         obj = NULL;
@@ -1652,11 +1661,13 @@ format_unraisable_v(const char *format, va_list va, PyObject *obj)
     }
 
     if (hook == Py_None) {
+        Py_DECREF(hook);
         Py_DECREF(hook_args);
         goto default_hook;
     }
 
     PyObject *res = PyObject_CallOneArg(hook, hook_args);
+    Py_DECREF(hook);
     Py_DECREF(hook_args);
     if (res != NULL) {
         Py_DECREF(res);

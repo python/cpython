@@ -2,7 +2,12 @@
 #include "pycore_ast.h"           // stmt_ty
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_symtable.h"      // PySTEntryObject
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString
+
+#include <stddef.h>               // offsetof()
+
 
 // Set this to 1 to dump all symtables to stdout for debugging
 #define _PY_DUMP_SYMTABLE 0
@@ -163,15 +168,17 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
 }
 
 static PyObject *
-ste_repr(PySTEntryObject *ste)
+ste_repr(PyObject *op)
 {
+    PySTEntryObject *ste = (PySTEntryObject *)op;
     return PyUnicode_FromFormat("<symtable entry %U(%R), line %d>",
                                 ste->ste_name, ste->ste_id, ste->ste_loc.lineno);
 }
 
 static void
-ste_dealloc(PySTEntryObject *ste)
+ste_dealloc(PyObject *op)
 {
+    PySTEntryObject *ste = (PySTEntryObject *)op;
     ste->ste_table = NULL;
     Py_XDECREF(ste->ste_id);
     Py_XDECREF(ste->ste_name);
@@ -203,12 +210,12 @@ PyTypeObject PySTEntry_Type = {
     "symtable entry",
     sizeof(PySTEntryObject),
     0,
-    (destructor)ste_dealloc,                /* tp_dealloc */
-    0,                                      /* tp_vectorcall_offset */
-    0,                                         /* tp_getattr */
+    ste_dealloc,                                /* tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
+    0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)ste_repr,                         /* tp_repr */
+    ste_repr,                                   /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */

@@ -14,6 +14,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_Type
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
+#include "pycore_hamt.h"          // _PyHamtItems_Type
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_object.h"        // PyAPI_DATA() _Py_SwappedOp definition
@@ -496,10 +497,22 @@ _PyObject_ResurrectEndSlow(PyObject *op)
         // merge the refcount. This isn't necessary in all cases, but it
         // simplifies the implementation.
         Py_ssize_t refcount = _Py_ExplicitMergeRefcount(op, -1);
-        return refcount != 0;
+        if (refcount == 0) {
+#ifdef Py_TRACE_REFS
+            _Py_ForgetReference(op);
+#endif
+            return 0;
+        }
+        return 1;
     }
     int is_dead = _Py_DecRefSharedIsDead(op, NULL, 0);
-    return !is_dead;
+    if (is_dead) {
+#ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+#endif
+        return 0;
+    }
+    return 1;
 }
 
 
@@ -589,20 +602,24 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
                               Py_REFCNT(self) > 0,
                               "refcount is too small");
 
+    _PyObject_ASSERT(self,
+                    (!_PyType_IS_GC(Py_TYPE(self))
+                    || _PyObject_GC_IS_TRACKED(self)));
+
     /* Undo the temporary resurrection; can't use DECREF here, it would
      * cause a recursive call. */
-    if (!_PyObject_ResurrectEnd(self)) {
-        return 0;         /* this is the normal path out */
+    if (_PyObject_ResurrectEnd(self)) {
+        /* tp_finalize resurrected it!
+           gh-130202: Note that the object may still be dead in the free
+           threaded build in some circumstances, so it's not safe to access
+           `self` after this point. For example, the last reference to the
+           resurrected `self` may be held by another thread, which can
+           concurrently deallocate it. */
+        return -1;
     }
 
-    /* tp_finalize resurrected it!  Make it look like the original Py_DECREF
-     * never happened. */
-    _Py_ResurrectReference(self);
-
-    _PyObject_ASSERT(self,
-                     (!_PyType_IS_GC(Py_TYPE(self))
-                      || _PyObject_GC_IS_TRACKED(self)));
-    return -1;
+    /* this is the normal path out, the caller continues with deallocation. */
+    return 0;
 }
 
 int
@@ -2524,6 +2541,9 @@ _Py_SetImmortalUntracked(PyObject *op)
     op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
     op->ob_ref_shared = 0;
     _Py_atomic_or_uint8(&op->ob_gc_bits, _PyGC_BITS_DEFERRED);
+#elif SIZEOF_VOID_P > 4
+    op->ob_flags = _Py_IMMORTAL_FLAGS;
+    op->ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
 #else
     op->ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
 #endif
@@ -2601,11 +2621,10 @@ _Py_ResurrectReference(PyObject *op)
 #endif
 }
 
-
-#ifdef Py_TRACE_REFS
 void
 _Py_ForgetReference(PyObject *op)
 {
+#ifdef Py_TRACE_REFS
     if (Py_REFCNT(op) < 0) {
         _PyObject_ASSERT_FAILED_MSG(op, "negative refcnt");
     }
@@ -2621,8 +2640,11 @@ _Py_ForgetReference(PyObject *op)
 #endif
 
     _PyRefchain_Remove(interp, op);
+#endif
 }
 
+
+#ifdef Py_TRACE_REFS
 static int
 _Py_PrintReference(_Py_hashtable_t *ht,
                    const void *key, const void *value,
@@ -2966,7 +2988,7 @@ _Py_Dealloc(PyObject *op)
     destructor dealloc = type->tp_dealloc;
 #ifdef Py_DEBUG
     PyThreadState *tstate = _PyThreadState_GET();
-#ifndef Py_GIL_DISABLED
+#if !defined(Py_GIL_DISABLED) && !defined(Py_STACKREF_DEBUG)
     /* This assertion doesn't hold for the free-threading build, as
      * PyStackRef_CLOSE_SPECIALIZED is not implemented */
     assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
