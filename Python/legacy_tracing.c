@@ -5,6 +5,7 @@
 #include "Python.h"
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_ceval.h"         // export _PyEval_SetProfile()
+#include "pycore_frame.h"         // PyFrameObject members
 #include "pycore_object.h"
 
 #include "opcode.h"
