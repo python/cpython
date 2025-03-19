@@ -256,6 +256,7 @@ class GzipFile(_compression.BaseStream):
             finally:
                 self.fileobj = None
             raise
+
     @property
     def mtime(self):
         """Last modification time read from stream, or None"""
