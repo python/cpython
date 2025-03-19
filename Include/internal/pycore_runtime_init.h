@@ -16,6 +16,7 @@ extern "C" {
 #include "pycore_floatobject.h"   // _py_float_format_unknown
 #include "pycore_function.h"
 #include "pycore_hamt.h"          // _PyHamt_BitmapNode_Type
+#include "pycore_import.h"        // IMPORTS_INIT
 #include "pycore_object.h"        // _PyObject_HEAD_INIT
 #include "pycore_obmalloc_init.h" // _obmalloc_global_state_INIT
 #include "pycore_parser.h"        // _parser_runtime_state_INIT
