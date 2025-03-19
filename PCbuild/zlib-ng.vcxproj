@@ -70,6 +70,7 @@
     <ProjectGuid>{FB91C8B2-6FBC-3A01-B644-1637111F902D}</ProjectGuid>
     <RootNamespace>zlib-ng</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <TargetName>zlib-ng</TargetName>
   </PropertyGroup>
   <Import Project="python.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -93,7 +94,7 @@
       <DisableSpecificWarnings>4206;4054;4324</DisableSpecificWarnings>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(zlibNgDir);$(PySourceDir)PC;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(zlibNgDir);$(PySourceDir)PC;$(GeneratedZlibNgDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);ZLIB_COMPAT;WITH_GZFILEOP;NO_FSEEKO;HAVE_BUILTIN_ASSUME_ALIGNED;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;X86_FEATURES;X86_HAVE_XSAVE_INTRIN;X86_SSE2;X86_SSSE3;X86_SSE42;X86_PCLMULQDQ_CRC;X86_AVX2;X86_AVX512;X86_AVX512VNNI;X86_VPCLMULQDQ_CRC</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="$(Configuration) == 'Debug'">%(PreprocessorDefinitions);ZLIB_DEBUG</PreprocessorDefinitions>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>

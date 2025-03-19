@@ -111,7 +111,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>version.lib;ws2_32.lib;pathcch.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalDependencies Condition="$(IncludeExternals)">zlib-ng$(PyDebugExt).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="$(IncludeExternals)">zlib-ng.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
