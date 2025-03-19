@@ -54,7 +54,7 @@ class JoinTestBase:
         self.assertEqual(p / 'x/y', P(r'C:/a/b\x/y'))
         self.assertEqual(p / 'x' / 'y', P(r'C:/a/b\x\y'))
         self.assertEqual(p / '/x/y', P('C:/x/y'))
-        self.assertEqual(p / '/x' / 'y', P('C:/x\y'))
+        self.assertEqual(p / '/x' / 'y', P(r'C:/x\y'))
         # Joining with a different drive => the first path is ignored, even
         # if the second path is relative.
         self.assertEqual(p / 'D:x/y', P('D:x/y'))
