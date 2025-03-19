@@ -82,7 +82,7 @@
   <PropertyGroup>
     <KillPython>true</KillPython>
     <RequireProfileData>true</RequireProfileData>
-    <IncludeExternals Condition="$(IncludeExternals) == '' and Exists('$(zlibDir)\zlib.h')">true</IncludeExternals>
+    <IncludeExternals Condition="$(IncludeExternals) == '' and Exists('$(zlibNgDir)\zlib-ng.h.in')">true</IncludeExternals>
     <IncludeExternals Condition="$(IncludeExternals) == ''">false</IncludeExternals>
   </PropertyGroup>
   <ImportGroup Label="PropertySheets">
@@ -101,8 +101,8 @@
     <ClCompile>
       <AdditionalOptions>/Zm200  %(AdditionalOptions)</AdditionalOptions>
       <AdditionalIncludeDirectories>$(PySourcePath)Modules\_hacl;$(PySourcePath)Modules\_hacl\include;$(PySourcePath)Python;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="$(IncludeExternals)">$(zlibDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_BUILD_CORE_BUILTIN;Py_ENABLE_SHARED;MS_DLL_ID="$(SysWinVer)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories Condition="$(IncludeExternals)">$(zlibNgDir);$(GeneratedZlibNgDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_BUILD_CORE_BUILTIN;Py_ENABLE_SHARED;MS_DLL_ID="$(SysWinVer)";ZLIB_COMPAT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="$(IncludeExternals)">_Py_HAVE_ZLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(UseJIT)' == 'true'">_Py_JIT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(UseTIER2)' != '' and '$(UseTIER2)' != '0'">_Py_TIER2=$(UseTIER2);%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -111,6 +111,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>version.lib;ws2_32.lib;pathcch.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="$(IncludeExternals)">zlib-ng$(PyDebugExt).lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -408,19 +409,6 @@
     <ClInclude Include="..\Python\stdlib_module_names.h" />
     <ClInclude Include="..\Python\thread_nt.h" />
   </ItemGroup>
-  <ItemGroup Condition="$(IncludeExternals)">
-    <ClInclude Include="$(zlibDir)\crc32.h" />
-    <ClInclude Include="$(zlibDir)\deflate.h" />
-    <ClInclude Include="$(zlibDir)\inffast.h" />
-    <ClInclude Include="$(zlibDir)\inffixed.h" />
-    <ClInclude Include="$(zlibDir)\inflate.h" />
-    <ClInclude Include="$(zlibDir)\inftrees.h" />
-    <ClInclude Include="$(zlibDir)\trees.h" />
-    <ClInclude Include="$(zlibDir)\zconf.h" />
-    <ClInclude Include="$(zlibDir)\zconf.h.in" />
-    <ClInclude Include="$(zlibDir)\zlib.h" />
-    <ClInclude Include="$(zlibDir)\zutil.h" />
-  </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_abc.c" />
     <ClCompile Include="..\Modules\_bisectmodule.c" />
@@ -669,25 +657,18 @@
   </ItemGroup>
   <ItemGroup Condition="$(IncludeExternals)">
     <ClCompile Include="..\Modules\zlibmodule.c" />
-    <ClCompile Include="$(zlibDir)\adler32.c" />
-    <ClCompile Include="$(zlibDir)\compress.c" />
-    <ClCompile Include="$(zlibDir)\crc32.c" />
-    <ClCompile Include="$(zlibDir)\deflate.c">
-      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="$(zlibDir)\infback.c" />
-    <ClCompile Include="$(zlibDir)\inffast.c" />
-    <ClCompile Include="$(zlibDir)\inflate.c" />
-    <ClCompile Include="$(zlibDir)\inftrees.c" />
-    <ClCompile Include="$(zlibDir)\trees.c" />
-    <ClCompile Include="$(zlibDir)\uncompr.c" />
-    <ClCompile Include="$(zlibDir)\zutil.c" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\PC\dl_nt.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="zlib-ng.vcxproj" Condition="$(IncludeExternals)">
+      <Project>{fb91c8b2-6fbc-3a01-b644-1637111f902d}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
@@ -750,7 +731,7 @@
     <Warning Text="Toolset $(PlatformToolset) is not used for official builds. Your build may have errors or incompatibilities." />
   </Target>
   <Target Name="_WarnAboutZlib" BeforeTargets="PrepareForBuild" Condition="!$(IncludeExternals)">
-    <Warning Text="Not including zlib is not a supported configuration." />
+    <Warning Text="Not including zlib or zlib-ng is not a supported configuration." />
   </Target>
 
   <Target Name="_CopyVCRuntime" AfterTargets="Build" Inputs="@(VCRuntimeDLL)" Outputs="$(OutDir)%(Filename)%(Extension)" DependsOnTargets="FindVCRuntime">
