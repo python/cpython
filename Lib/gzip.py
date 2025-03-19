@@ -245,8 +245,18 @@ class GzipFile(_compression.BaseStream):
 
         self.fileobj = fileobj
 
-        if self.mode == WRITE:
-            self._write_gzip_header(compresslevel)
+        try:
+            if self.mode == WRITE:
+                self._write_gzip_header(compresslevel)
+        except BaseException:
+            # Avoid a ResourceWarning if the write fails, eg read-only file or KI
+            try:
+                if self.myfileobj is not None:
+                    self.myfileobj.close()
+            finally:
+                self.fileobj = None
+            self.fileobj = None
+            raise
 
     @property
     def mtime(self):
