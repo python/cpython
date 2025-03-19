@@ -94,9 +94,10 @@
       <LanguageStandard_C>stdc11</LanguageStandard_C>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <AdditionalIncludeDirectories>$(zlibNgDir);$(PySourceDir)PC;$(GeneratedZlibNgDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);ZLIB_COMPAT;WITH_GZFILEOP;NO_FSEEKO;HAVE_BUILTIN_ASSUME_ALIGNED;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;X86_FEATURES;X86_HAVE_XSAVE_INTRIN;X86_SSE2;X86_SSSE3;X86_SSE42;X86_PCLMULQDQ_CRC;X86_AVX2;X86_AVX512;X86_AVX512VNNI;X86_VPCLMULQDQ_CRC</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);ZLIB_COMPAT;WITH_GZFILEOP;NO_FSEEKO;HAVE_BUILTIN_ASSUME_ALIGNED;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="$(Platform) == 'Win32' or $(Platform) == 'x64'">%(PreprocessorDefinitions);X86_FEATURES;X86_HAVE_XSAVE_INTRIN;X86_SSE2;X86_SSSE3;X86_SSE42;X86_PCLMULQDQ_CRC;X86_AVX2;X86_AVX512;X86_AVX512VNNI;X86_VPCLMULQDQ_CRC</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="$(Configuration) == 'Debug'">%(PreprocessorDefinitions);ZLIB_DEBUG</PreprocessorDefinitions>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet Condition="$(Platform) == 'Win32' or $(Platform) == 'x64'">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -130,9 +131,11 @@
     <ClCompile Include="$(zlibNgDir)\zutil.c" />
     <ClCompile Include="$(zlibNgDir)\cpu_features.c" />
     <ClInclude Include="$(zlibNgDir)\arch\generic\generic_functions.h" />
+    <ClInclude Include="$(zlibNgDir)\fallback_builtins.h" />
+  </ItemGroup>
+  <ItemGroup Condition="$(Platform) == 'Win32' or $(Platform) == 'x64'">
     <ClInclude Include="$(zlibNgDir)\arch\x86\x86_functions.h" />
     <ClInclude Include="$(zlibNgDir)\arch\x86\x86_features.h" />
-    <ClInclude Include="$(zlibNgDir)\fallback_builtins.h" />
     <ClInclude Include="$(zlibNgDir)\arch\x86\adler32_avx512_p.h" />
     <ClCompile Include="$(zlibNgDir)\arch\x86\x86_features.c" />
     <ClCompile Include="$(zlibNgDir)\arch\x86\chunkset_sse2.c" />
@@ -150,6 +153,8 @@
     <ClCompile Include="$(zlibNgDir)\arch\x86\chunkset_avx512.c" />
     <ClCompile Include="$(zlibNgDir)\arch\x86\adler32_avx512_vnni.c" />
     <ClCompile Include="$(zlibNgDir)\arch\x86\crc32_vpclmulqdq.c" />
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="..\PC\zconf.h" />
     <ClInclude Include="..\PC\zlib.h" />
     <ClInclude Include="$(zlibNgDir)\arch\generic\chunk_permute_table.h" />
