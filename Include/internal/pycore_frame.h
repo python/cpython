@@ -33,6 +33,12 @@ struct _frame {
        PyEval_GetLocals requires a borrowed reference so the actual reference
        is stored here */
     PyObject *f_locals_cache;
+    /* A tuple containing strong references to fast locals that were overwritten
+     * via f_locals. Borrowed references to these locals may exist in frames
+     * closer to the top of the stack. The references in this tuple act as
+     * "support" for the borrowed references, ensuring that they remain valid.
+     */
+    PyObject *f_overwritten_fast_locals;
     /* The frame data, if this frame object owns the frame */
     PyObject *_f_frame_data[1];
 };
@@ -148,7 +154,8 @@ _PyFrame_NumSlotsForCodeObject(PyCodeObject *code)
     return code->co_framesize - FRAME_SPECIALS_SIZE;
 }
 
-static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
+static inline void
+_PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
 {
     dest->f_executable = PyStackRef_MakeHeapSafe(src->f_executable);
     // Don't leave a dangling pointer to the old frame when creating generators
