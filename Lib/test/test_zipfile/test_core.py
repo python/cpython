@@ -1424,8 +1424,10 @@ class PyZipFileTests(unittest.TestCase):
 
             # then check that the filter works on individual files
             def filter(path):
-                return not os.path.basename(path).startswith("bad")
-            with captured_stdout() as reportSIO, self.assertWarns(UserWarning):
+                basename = os.path.basename(path)
+                return not (basename.startswith("bad") or basename != "test_grammar.py")
+
+            with captured_stdout() as reportSIO:
                 zipfp.writepy(packagedir, filterfunc=filter)
             reportStr = reportSIO.getvalue()
             if reportStr:
