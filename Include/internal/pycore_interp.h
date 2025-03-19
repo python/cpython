@@ -11,15 +11,7 @@ extern "C" {
 #include <stdbool.h>              // bool
 
 #include "pycore_runtime_structs.h"
-#include "pycore_code.h"          // struct callable_cache
-#include "pycore_floatobject.h"   // struct _Py_float_state
-#include "pycore_gc.h"            // struct _gc_runtime_state
 #include "pycore_genobject.h"     // _PyGen_FetchStopIterationValue
-#include "pycore_import.h"        // struct _import_state
-#include "pycore_optimizer.h"     // _PyExecutorObject
-#include "pycore_typeobject.h"    // struct types_state
-#include "pycore_unicodeobject.h" // struct _Py_unicode_state
-#include "pycore_warnings.h"      // struct _warnings_runtime_state
 
 
 /* interpreter state */

@@ -12,6 +12,7 @@
 #include "pycore_object.h"
 #include "pycore_opcode_metadata.h" // IS_VALID_OPCODE, _PyOpcode_Caches
 #include "pycore_opcode_utils.h" // IS_CONDITIONAL_JUMP_OPCODE
+#include "pycore_optimizer.h"     // _PyExecutorObject
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_STORE_UINTPTR_RELEASE
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
