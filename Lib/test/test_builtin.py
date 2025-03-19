@@ -16,7 +16,6 @@ import platform
 import random
 import re
 import sys
-import textwrap
 import traceback
 import types
 import typing
@@ -1569,8 +1568,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             # try to get a user preferred encoding different than the current
             # locale encoding to check that open() uses the current locale
             # encoding and not the user preferred encoding
-            for key in ('LC_ALL', 'LANG', 'LC_CTYPE'):
-                env.unset(key)
+            env.unset('LC_ALL', 'LANG', 'LC_CTYPE')
 
             self.write_testfile()
             current_locale_encoding = locale.getencoding()
@@ -2715,18 +2713,15 @@ class ShutdownTest(unittest.TestCase):
 class ImmortalTests(unittest.TestCase):
 
     if sys.maxsize < (1 << 32):
-        if support.Py_GIL_DISABLED:
-            IMMORTAL_REFCOUNT = 5 << 28
-        else:
-            IMMORTAL_REFCOUNT = 7 << 28
+        IMMORTAL_REFCOUNT_MINIMUM = 1 << 30
     else:
-        IMMORTAL_REFCOUNT = 3 << 30
+        IMMORTAL_REFCOUNT_MINIMUM = 1 << 31
 
     IMMORTALS = (None, True, False, Ellipsis, NotImplemented, *range(-5, 257))
 
     def assert_immortal(self, immortal):
         with self.subTest(immortal):
-            self.assertEqual(sys.getrefcount(immortal), self.IMMORTAL_REFCOUNT)
+            self.assertGreater(sys.getrefcount(immortal), self.IMMORTAL_REFCOUNT_MINIMUM)
 
     def test_immortals(self):
         for immortal in self.IMMORTALS:
