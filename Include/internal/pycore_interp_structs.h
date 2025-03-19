@@ -4,10 +4,11 @@
 extern "C" {
 #endif
 
-#include "pycore_structs.h"
-#include "pycore_pymath.h" // _PY_SHORT_FLOAT_REPR
-#include "pycore_llist.h"
 #include "pycore_ast_state.h"     // struct ast_state
+#include "pycore_llist.h"
+#include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
+#include "pycore_structs.h"
+#include "pycore_typedefs.h"      // _PyRuntimeState
 
 
 /* This file contains the struct definitions for interpreter state
@@ -802,7 +803,7 @@ struct _is {
     /* Reference to the _PyRuntime global variable. This field exists
        to not have to pass runtime in addition to tstate to a function.
        Get runtime from tstate: tstate->interp->runtime. */
-    struct pyruntimestate *runtime;
+    _PyRuntimeState *runtime;
 
     /* Set by Py_EndInterpreter().
 
