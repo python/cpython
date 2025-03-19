@@ -1138,7 +1138,7 @@ Deprecated
 * :mod:`!nturl2path`: This module is now deprecated. Call
   :func:`urllib.request.url2pathname` and :func:`~urllib.request.pathname2url`
   instead.
-  (Contributed by Barney Gale in gh:`125866`.)
+  (Contributed by Barney Gale in :gh:`125866`.)
 
 * :mod:`os`:
   :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
