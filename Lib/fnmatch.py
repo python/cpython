@@ -88,7 +88,6 @@ def _translate(pat, star, question_mark):
     add = res.append
     star_indices = []
     inside_range = False
-    add_negative_lookahead = False
     question_mark_char = re.sub(r'\[|\]|\^', '', question_mark)
 
     i, n = 0, len(pat)
@@ -138,7 +137,7 @@ def _translate(pat, star, question_mark):
                         if chunks[k-1][-1] > chunks[k][0]:
                             chunks[k-1] = chunks[k-1][:-1] + chunks[k][1:]
                             del chunks[k]
-                    if len(chunks)>1:
+                    if len(chunks) > 1:
                         if question_mark_char:
                             inside_range = chunks[0][-1] <= question_mark_char <= chunks[-1][0]
                     # Escape backslashes and hyphens for set difference (--).
@@ -155,20 +154,15 @@ def _translate(pat, star, question_mark):
                 else:
                     negative_lookahead=''
                     if question_mark != '.' and inside_range:
-                        add_negative_lookahead = True
-                        negative_lookahead = negative_lookahead + question_mark_char
+                        add(f'(?![{question_mark_char}])')
                     # Escape set operations (&&, ~~ and ||).
                     stuff = _re_setops_sub(r'\\\1', stuff)
                     if stuff[0] == '!':
                         if question_mark_char not in stuff and question_mark != '.':
-                            add_negative_lookahead = True
-                            negative_lookahead = negative_lookahead + question_mark_char
+                            stuff = f'^{question_mark_char}' + '^' + stuff[1:]
                         stuff = '^' + stuff[1:]
-                    elif stuff[0] in ('^', '[', question_mark_char):
+                    elif stuff[0] in ('^', '['):
                         stuff = '\\' + stuff
-                    if add_negative_lookahead:
-                        add(f'(?![{negative_lookahead}])')
-                        add_negative_lookahead = False
                     add(f'[{stuff}]')
         else:
             add(_re_escape(c))
