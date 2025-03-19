@@ -15,6 +15,7 @@
 #include "pycore_instruments.h"
 #include "pycore_intrinsics.h"
 #include "pycore_jit.h"
+#include "pycore_list.h"          // _PyList_GetItemRef()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
@@ -80,6 +81,7 @@
         } \
         _Py_DECREF_STAT_INC(); \
         if (--op->ob_refcnt == 0) { \
+            _PyReftracerTrack(op, PyRefTracer_DESTROY); \
             destructor dealloc = Py_TYPE(op)->tp_dealloc; \
             (*dealloc)(op); \
         } \
@@ -364,6 +366,65 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 #else
 #  define Py_C_STACK_SIZE 4000000
 #endif
+
+#if defined(__EMSCRIPTEN__)
+
+// Temporary workaround to make `pthread_getattr_np` work on Emscripten.
+// Emscripten 4.0.6 will contain a fix:
+// https://github.com/emscripten-core/emscripten/pull/23887
+
+#include "emscripten/stack.h"
+
+#define pthread_attr_t workaround_pthread_attr_t
+#define pthread_getattr_np workaround_pthread_getattr_np
+#define pthread_attr_getguardsize workaround_pthread_attr_getguardsize
+#define pthread_attr_getstack workaround_pthread_attr_getstack
+#define pthread_attr_destroy workaround_pthread_attr_destroy
+
+typedef struct {
+    void *_a_stackaddr;
+    size_t _a_stacksize, _a_guardsize;
+} pthread_attr_t;
+
+extern __attribute__((__visibility__("hidden"))) unsigned __default_guardsize;
+
+// Modified version of pthread_getattr_np from the upstream PR.
+
+int pthread_getattr_np(pthread_t thread, pthread_attr_t *attr) {
+  attr->_a_stackaddr = (void*)emscripten_stack_get_base();
+  attr->_a_stacksize = emscripten_stack_get_base() - emscripten_stack_get_end();
+  attr->_a_guardsize = __default_guardsize;
+  return 0;
+}
+
+// These three functions copied without any changes from Emscripten libc.
+
+int pthread_attr_getguardsize(const pthread_attr_t *restrict a, size_t *restrict size)
+{
+	*size = a->_a_guardsize;
+	return 0;
+}
+
+int pthread_attr_getstack(const pthread_attr_t *restrict a, void **restrict addr, size_t *restrict size)
+{
+/// XXX musl is not standard-conforming? It should not report EINVAL if _a_stackaddr is zero, and it should
+///     report EINVAL if a is null: http://pubs.opengroup.org/onlinepubs/009695399/functions/pthread_attr_getstack.html
+	if (!a) return EINVAL;
+//	if (!a->_a_stackaddr)
+//		return EINVAL;
+
+	*size = a->_a_stacksize;
+	*addr = (void *)(a->_a_stackaddr - *size);
+	return 0;
+}
+
+int pthread_attr_destroy(pthread_attr_t *a)
+{
+	return 0;
+}
+
+#endif
+
 
 void
 _Py_InitializeRecursionLimits(PyThreadState *tstate)

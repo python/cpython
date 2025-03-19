@@ -6,7 +6,9 @@
 #include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION_MUT()
 #include "pycore_dict.h"          // _PyDict_GetItem_KnownHash()
 #include "pycore_freelist.h"      // _Py_FREELIST_POP()
+#include "pycore_genobject.h"
 #include "pycore_llist.h"         // struct llist_node
+#include "pycore_list.h"          // _PyList_AppendTakeRef()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_SetMaybeWeakref
@@ -905,8 +907,9 @@ _asyncio_Future___init___impl(FutureObj *self, PyObject *loop)
 }
 
 static int
-FutureObj_clear(FutureObj *fut)
+FutureObj_clear(PyObject *op)
 {
+    FutureObj *fut = (FutureObj*)op;
     Py_CLEAR(fut->fut_loop);
     Py_CLEAR(fut->fut_callback0);
     Py_CLEAR(fut->fut_context0);
@@ -924,8 +927,9 @@ FutureObj_clear(FutureObj *fut)
 }
 
 static int
-FutureObj_traverse(FutureObj *fut, visitproc visit, void *arg)
+FutureObj_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    FutureObj *fut = (FutureObj*)op;
     Py_VISIT(Py_TYPE(fut));
     Py_VISIT(fut->fut_loop);
     Py_VISIT(fut->fut_callback0);
@@ -1639,8 +1643,9 @@ _asyncio_Future__state_get_impl(FutureObj *self)
 }
 
 static PyObject *
-FutureObj_repr(FutureObj *fut)
+FutureObj_repr(PyObject *op)
 {
+    FutureObj *fut = (FutureObj*)op;
     asyncio_state *state = get_asyncio_state_by_def((PyObject *)fut);
     ENSURE_FUTURE_ALIVE(state, fut)
     return PyObject_CallOneArg(state->asyncio_future_repr_func, (PyObject *)fut);
@@ -1665,8 +1670,9 @@ _asyncio_Future__make_cancelled_error_impl(FutureObj *self)
 }
 
 static void
-FutureObj_finalize(FutureObj *fut)
+FutureObj_finalize(PyObject *op)
 {
+    FutureObj *fut = (FutureObj*)op;
     PyObject *context;
     PyObject *message = NULL;
     PyObject *func;
@@ -1758,19 +1764,19 @@ static void FutureObj_dealloc(PyObject *self);
 
 static PyType_Slot Future_slots[] = {
     {Py_tp_dealloc, FutureObj_dealloc},
-    {Py_tp_repr, (reprfunc)FutureObj_repr},
+    {Py_tp_repr, FutureObj_repr},
     {Py_tp_doc, (void *)_asyncio_Future___init____doc__},
-    {Py_tp_traverse, (traverseproc)FutureObj_traverse},
-    {Py_tp_clear, (inquiry)FutureObj_clear},
-    {Py_tp_iter, (getiterfunc)future_new_iter},
+    {Py_tp_traverse, FutureObj_traverse},
+    {Py_tp_clear, FutureObj_clear},
+    {Py_tp_iter, future_new_iter},
     {Py_tp_methods, FutureType_methods},
     {Py_tp_getset, FutureType_getsetlist},
-    {Py_tp_init, (initproc)_asyncio_Future___init__},
+    {Py_tp_init, _asyncio_Future___init__},
     {Py_tp_new, PyType_GenericNew},
-    {Py_tp_finalize, (destructor)FutureObj_finalize},
+    {Py_tp_finalize, FutureObj_finalize},
 
     // async slots
-    {Py_am_await, (unaryfunc)future_new_iter},
+    {Py_am_await, future_new_iter},
     {0, NULL},
 };
 
@@ -1786,20 +1792,18 @@ static PyType_Spec Future_spec = {
 static void
 FutureObj_dealloc(PyObject *self)
 {
-    FutureObj *fut = (FutureObj *)self;
-
     if (PyObject_CallFinalizerFromDealloc(self) < 0) {
         // resurrected.
         return;
     }
 
-    PyTypeObject *tp = Py_TYPE(fut);
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
 
     PyObject_ClearWeakRefs(self);
 
-    (void)FutureObj_clear(fut);
-    tp->tp_free(fut);
+    (void)FutureObj_clear(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -1813,14 +1817,14 @@ typedef struct futureiterobject {
 
 
 static void
-FutureIter_dealloc(futureiterobject *it)
+FutureIter_dealloc(PyObject *it)
 {
     PyTypeObject *tp = Py_TYPE(it);
 
     assert(_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
 
     PyObject_GC_UnTrack(it);
-    tp->tp_clear((PyObject *)it);
+    tp->tp_clear(it);
 
     if (!_Py_FREELIST_PUSH(futureiters, it, Py_futureiters_MAXFREELIST)) {
         PyObject_GC_Del(it);
@@ -1858,10 +1862,11 @@ FutureIter_am_send_lock_held(futureiterobject *it, PyObject **result)
 }
 
 static PySendResult
-FutureIter_am_send(futureiterobject *it,
+FutureIter_am_send(PyObject *op,
                    PyObject *Py_UNUSED(arg),
                    PyObject **result)
 {
+    futureiterobject *it = (futureiterobject*)op;
     /* arg is unused, see the comment on FutureIter_send for clarification */
     PySendResult res;
     Py_BEGIN_CRITICAL_SECTION(it->future);
@@ -1872,7 +1877,7 @@ FutureIter_am_send(futureiterobject *it,
 
 
 static PyObject *
-FutureIter_iternext(futureiterobject *it)
+FutureIter_iternext(PyObject *it)
 {
     PyObject *result;
     switch (FutureIter_am_send(it, Py_None, &result)) {
@@ -1890,7 +1895,7 @@ FutureIter_iternext(futureiterobject *it)
 }
 
 static PyObject *
-FutureIter_send(futureiterobject *self, PyObject *unused)
+FutureIter_send(PyObject *self, PyObject *unused)
 {
     /* Future.__iter__ doesn't care about values that are pushed to the
      * generator, it just returns self.result().
@@ -1899,8 +1904,9 @@ FutureIter_send(futureiterobject *self, PyObject *unused)
 }
 
 static PyObject *
-FutureIter_throw(futureiterobject *self, PyObject *const *args, Py_ssize_t nargs)
+FutureIter_throw(PyObject *op, PyObject *const *args, Py_ssize_t nargs)
 {
+    futureiterobject *self = (futureiterobject*)op;
     PyObject *type, *val = NULL, *tb = NULL;
     if (!_PyArg_CheckPositional("throw", nargs, 1, 3)) {
         return NULL;
@@ -1973,45 +1979,47 @@ FutureIter_throw(futureiterobject *self, PyObject *const *args, Py_ssize_t nargs
 }
 
 static int
-FutureIter_clear(futureiterobject *it)
+FutureIter_clear(PyObject *op)
 {
+    futureiterobject *it = (futureiterobject*)op;
     Py_CLEAR(it->future);
     return 0;
 }
 
 static PyObject *
-FutureIter_close(futureiterobject *self, PyObject *arg)
+FutureIter_close(PyObject *self, PyObject *arg)
 {
     (void)FutureIter_clear(self);
     Py_RETURN_NONE;
 }
 
 static int
-FutureIter_traverse(futureiterobject *it, visitproc visit, void *arg)
+FutureIter_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    futureiterobject *it = (futureiterobject*)op;
     Py_VISIT(Py_TYPE(it));
     Py_VISIT(it->future);
     return 0;
 }
 
 static PyMethodDef FutureIter_methods[] = {
-    {"send",  (PyCFunction)FutureIter_send, METH_O, NULL},
+    {"send",  FutureIter_send, METH_O, NULL},
     {"throw", _PyCFunction_CAST(FutureIter_throw), METH_FASTCALL, NULL},
-    {"close", (PyCFunction)FutureIter_close, METH_NOARGS, NULL},
+    {"close", FutureIter_close, METH_NOARGS, NULL},
     {NULL, NULL}        /* Sentinel */
 };
 
 static PyType_Slot FutureIter_slots[] = {
-    {Py_tp_dealloc, (destructor)FutureIter_dealloc},
+    {Py_tp_dealloc, FutureIter_dealloc},
     {Py_tp_getattro, PyObject_GenericGetAttr},
-    {Py_tp_traverse, (traverseproc)FutureIter_traverse},
+    {Py_tp_traverse, FutureIter_traverse},
     {Py_tp_clear, FutureIter_clear},
     {Py_tp_iter, PyObject_SelfIter},
-    {Py_tp_iternext, (iternextfunc)FutureIter_iternext},
+    {Py_tp_iternext, FutureIter_iternext},
     {Py_tp_methods, FutureIter_methods},
 
     // async methods
-    {Py_am_send, (sendfunc)FutureIter_am_send},
+    {Py_am_send, FutureIter_am_send},
     {0, NULL},
 };
 
@@ -2054,34 +2062,37 @@ class _asyncio.Task "TaskObj *" "&Task_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=719dcef0fcc03b37]*/
 
 static int task_call_step_soon(asyncio_state *state, TaskObj *, PyObject *);
-static PyObject * task_wakeup(TaskObj *, PyObject *);
+static PyObject *task_wakeup(PyObject *op, PyObject *arg);
 static PyObject * task_step(asyncio_state *, TaskObj *, PyObject *);
 static int task_eager_start(asyncio_state *state, TaskObj *task);
 
 /* ----- Task._step wrapper */
 
 static int
-TaskStepMethWrapper_clear(TaskStepMethWrapper *o)
+TaskStepMethWrapper_clear(PyObject *op)
 {
+    TaskStepMethWrapper *o = (TaskStepMethWrapper*)op;
     Py_CLEAR(o->sw_task);
     Py_CLEAR(o->sw_arg);
     return 0;
 }
 
 static void
-TaskStepMethWrapper_dealloc(TaskStepMethWrapper *o)
+TaskStepMethWrapper_dealloc(PyObject *op)
 {
+    TaskStepMethWrapper *o = (TaskStepMethWrapper*)op;
     PyTypeObject *tp = Py_TYPE(o);
     PyObject_GC_UnTrack(o);
-    (void)TaskStepMethWrapper_clear(o);
+    (void)TaskStepMethWrapper_clear(op);
     Py_TYPE(o)->tp_free(o);
     Py_DECREF(tp);
 }
 
 static PyObject *
-TaskStepMethWrapper_call(TaskStepMethWrapper *o,
+TaskStepMethWrapper_call(PyObject *op,
                          PyObject *args, PyObject *kwds)
 {
+    TaskStepMethWrapper *o = (TaskStepMethWrapper*)op;
     if (kwds != NULL && PyDict_GET_SIZE(kwds) != 0) {
         PyErr_SetString(PyExc_TypeError, "function takes no keyword arguments");
         return NULL;
@@ -2099,9 +2110,10 @@ TaskStepMethWrapper_call(TaskStepMethWrapper *o,
 }
 
 static int
-TaskStepMethWrapper_traverse(TaskStepMethWrapper *o,
+TaskStepMethWrapper_traverse(PyObject *op,
                              visitproc visit, void *arg)
 {
+    TaskStepMethWrapper *o = (TaskStepMethWrapper*)op;
     Py_VISIT(Py_TYPE(o));
     Py_VISIT(o->sw_task);
     Py_VISIT(o->sw_arg);
@@ -2124,11 +2136,11 @@ static PyGetSetDef TaskStepMethWrapper_getsetlist[] = {
 
 static PyType_Slot TaskStepMethWrapper_slots[] = {
     {Py_tp_getset, TaskStepMethWrapper_getsetlist},
-    {Py_tp_dealloc, (destructor)TaskStepMethWrapper_dealloc},
-    {Py_tp_call, (ternaryfunc)TaskStepMethWrapper_call},
+    {Py_tp_dealloc, TaskStepMethWrapper_dealloc},
+    {Py_tp_call, TaskStepMethWrapper_call},
     {Py_tp_getattro, PyObject_GenericGetAttr},
-    {Py_tp_traverse, (traverseproc)TaskStepMethWrapper_traverse},
-    {Py_tp_clear, (inquiry)TaskStepMethWrapper_clear},
+    {Py_tp_traverse, TaskStepMethWrapper_traverse},
+    {Py_tp_clear, TaskStepMethWrapper_clear},
     {0, NULL},
 };
 
@@ -2161,7 +2173,7 @@ TaskStepMethWrapper_new(TaskObj *task, PyObject *arg)
 
 static  PyMethodDef TaskWakeupDef = {
     "task_wakeup",
-    (PyCFunction)task_wakeup,
+    task_wakeup,
     METH_O,
     NULL
 };
@@ -2387,9 +2399,10 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
 }
 
 static int
-TaskObj_clear(TaskObj *task)
+TaskObj_clear(PyObject *op)
 {
-    (void)FutureObj_clear((FutureObj*) task);
+    TaskObj *task = (TaskObj*)op;
+    (void)FutureObj_clear(op);
     clear_task_coro(task);
     Py_CLEAR(task->task_context);
     Py_CLEAR(task->task_name);
@@ -2398,8 +2411,9 @@ TaskObj_clear(TaskObj *task)
 }
 
 static int
-TaskObj_traverse(TaskObj *task, visitproc visit, void *arg)
+TaskObj_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    TaskObj *task = (TaskObj*)op;
     Py_VISIT(Py_TYPE(task));
     Py_VISIT(task->task_context);
     Py_VISIT(task->task_coro);
@@ -2516,11 +2530,10 @@ _asyncio_Task__fut_waiter_get_impl(TaskObj *self)
 }
 
 static PyObject *
-TaskObj_repr(TaskObj *task)
+TaskObj_repr(PyObject *task)
 {
-    asyncio_state *state = get_asyncio_state_by_def((PyObject *)task);
-    return PyObject_CallOneArg(state->asyncio_task_repr_func,
-                               (PyObject *)task);
+    asyncio_state *state = get_asyncio_state_by_def(task);
+    return PyObject_CallOneArg(state->asyncio_task_repr_func, task);
 }
 
 
@@ -2838,8 +2851,9 @@ _asyncio_Task_set_name_impl(TaskObj *self, PyObject *value)
 }
 
 static void
-TaskObj_finalize(TaskObj *task)
+TaskObj_finalize(PyObject *op)
 {
+    TaskObj *task = (TaskObj*)op;
     PyObject *context;
     PyObject *message = NULL;
     PyObject *func;
@@ -2896,7 +2910,7 @@ finally:
     PyErr_SetRaisedException(exc);
 
 done:
-    FutureObj_finalize((FutureObj*)task);
+    FutureObj_finalize((PyObject*)task);
 }
 
 static void TaskObj_dealloc(PyObject *);  /* Needs Task_CheckExact */
@@ -2934,19 +2948,19 @@ static PyGetSetDef TaskType_getsetlist[] = {
 
 static PyType_Slot Task_slots[] = {
     {Py_tp_dealloc, TaskObj_dealloc},
-    {Py_tp_repr, (reprfunc)TaskObj_repr},
+    {Py_tp_repr, TaskObj_repr},
     {Py_tp_doc, (void *)_asyncio_Task___init____doc__},
-    {Py_tp_traverse, (traverseproc)TaskObj_traverse},
-    {Py_tp_clear, (inquiry)TaskObj_clear},
-    {Py_tp_iter, (getiterfunc)future_new_iter},
+    {Py_tp_traverse, TaskObj_traverse},
+    {Py_tp_clear, TaskObj_clear},
+    {Py_tp_iter, future_new_iter},
     {Py_tp_methods, TaskType_methods},
     {Py_tp_getset, TaskType_getsetlist},
     {Py_tp_init, (initproc)_asyncio_Task___init__},
     {Py_tp_new, PyType_GenericNew},
-    {Py_tp_finalize, (destructor)TaskObj_finalize},
+    {Py_tp_finalize, TaskObj_finalize},
 
     // async slots
-    {Py_am_await, (unaryfunc)future_new_iter},
+    {Py_am_await, future_new_iter},
     {0, NULL},
 };
 
@@ -2962,12 +2976,10 @@ static PyType_Spec Task_spec = {
 static void
 TaskObj_dealloc(PyObject *self)
 {
-    TaskObj *task = (TaskObj *)self;
-
     _PyObject_ResurrectStart(self);
     // Unregister the task here so that even if any subclass of Task
     // which doesn't end up calling TaskObj_finalize not crashes.
-    unregister_task(task);
+    unregister_task((TaskObj *)self);
 
     PyObject_CallFinalizer(self);
 
@@ -2975,13 +2987,13 @@ TaskObj_dealloc(PyObject *self)
         return;
     }
 
-    PyTypeObject *tp = Py_TYPE(task);
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
 
     PyObject_ClearWeakRefs(self);
 
-    (void)TaskObj_clear(task);
-    tp->tp_free(task);
+    (void)TaskObj_clear(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -3567,11 +3579,12 @@ task_wakeup_lock_held(TaskObj *task, PyObject *o)
 }
 
 static PyObject *
-task_wakeup(TaskObj *task, PyObject *o)
+task_wakeup(PyObject *op, PyObject *arg)
 {
+    TaskObj *task = (TaskObj*)op;
     PyObject *res;
     Py_BEGIN_CRITICAL_SECTION(task);
-    res = task_wakeup_lock_held(task, o);
+    res = task_wakeup_lock_held(task, arg);
     Py_END_CRITICAL_SECTION();
     return res;
 }

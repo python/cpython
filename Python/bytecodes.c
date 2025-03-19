@@ -29,6 +29,7 @@
 #include "pycore_long.h"          // _PyLong_ExactDealloc()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
+#include "pycore_stackref.h"
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 
@@ -878,7 +879,7 @@ dummy_func(
             assert(res_o != NULL);
             res = PyStackRef_FromPyObjectNew(res_o);
 #endif
-            STAT_INC(BINARY_SUBSCR, hit);
+            STAT_INC(BINARY_OP, hit);
             DECREF_INPUTS();
         }
 

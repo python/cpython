@@ -12,7 +12,6 @@ extern "C" {
 
 /* Forward declarations */
 struct _PyArgv;
-struct pyruntimestate;
 
 extern int _Py_SetFileSystemEncoding(
     const char *encoding,

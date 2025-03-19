@@ -7,8 +7,10 @@
 #include "pycore_freelist.h"      // _Py_FREELIST_PUSH(), _Py_FREELIST_POP()
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_list.h"          // _Py_memory_repeat()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK(), _Py_FatalRefcountError(), _PyDebugAllocatorStats()
+#include "pycore_tuple.h"         // _PyTupleIterObject
 
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"
