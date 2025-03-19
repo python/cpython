@@ -761,7 +761,7 @@ class BuiltinRFCTestCase(BuiltinAssertersMixin,
     ):
         # assert one-shot HMAC at the same time
         with self.subTest(key=key, msg=msg, hashname=hashname):
-            func = eval(f'self.hmac.compute_{hashname}')
+            func = getattr(self.hmac, f'compute_{hashname}')
             self.assertTrue(callable(func))
             self.check_hmac_hexdigest(key, msg, hexdigest, digest_size, func)
 
