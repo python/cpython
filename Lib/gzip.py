@@ -249,7 +249,8 @@ class GzipFile(_compression.BaseStream):
             if self.mode == WRITE:
                 self._write_gzip_header(compresslevel)
         except:
-            # Avoid a ResourceWarning if the write fails, eg read-only file or KeyboardInterrupt
+            # Avoid a ResourceWarning if the write fails,
+            # eg read-only file or KeyboardInterrupt
             self._close()
             raise
 
