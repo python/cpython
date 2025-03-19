@@ -116,8 +116,8 @@ def make(filenames, outfile):
         # each PO file generates its corresponding MO file
         for filename in filenames:
             messages = {}
-            outfile = os.path.splitext(filename)[0] + '.mo'
-            process(filename, messages)
+            infile = process(filename, messages)
+            outfile = os.path.splitext(infile)[0] + '.mo'
             output = generate(messages)
             writefile(outfile, output)
     else:
@@ -129,18 +129,15 @@ def make(filenames, outfile):
         writefile(outfile, output)
 
 
-def get_names(filename, outfile):
-    # Compute .mo name from .po name and arguments
-    if filename.endswith('.po'):
-        infile = filename
-    else:
-        infile = filename + '.po'
-    if outfile is None:
-        outfile = os.path.splitext(infile)[0] + '.mo'
-    return infile, outfile
-
-
 def process(infile, messages):
+    """Extracts the translations from a PO file into a dict
+
+    Params:
+    infile: the path to a PO file - the .po extension is inferred if absent
+    messages: a dict that will be fed with the translations
+
+    Returns: the actual input file path with a .po extension
+    """
     ID = 1
     STR = 2
     CTXT = 3
@@ -252,6 +249,7 @@ def process(infile, messages):
     # Add last entry
     if section == STR:
         add(msgctxt, msgid, msgstr, fuzzy, messages)
+    return infile
 
 def writefile(outfile, output):
     try:
