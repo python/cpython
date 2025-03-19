@@ -1640,7 +1640,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
 
             f = BadFile()
             with (
-                warnings_helper.check_no_resource_warning(),
+                warnings_helper.check_no_resource_warning(self),
                 self.assertRaises(exctype),
             ):
                 tarfile.open(tmpname, self.mode, fileobj=f,
