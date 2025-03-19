@@ -10,6 +10,7 @@ with this script:
 
 import filecmp
 import json
+import os.path
 import shutil
 import sys
 import unittest
@@ -185,6 +186,28 @@ class MultiInputTest(unittest.TestCase):
                                         'file1_fr_crlf.mo'))
             self.assertTrue(filecmp.cmp(data_dir / 'file2_fr_lf.mo',
                                         'file2_fr_lf.mo'))
+
+
+class PONamesTest(unittest.TestCase):
+    def test_no_extension(self):
+        with temp_cwd(None):
+            shutil.copy(data_dir / 'file1_fr_crlf.po', 'file1.fr.po')
+            assert_python_ok(msgfmt, 'file1.fr')
+            self.assertTrue(os.path.exists('file1.fr.mo'))
+
+    def test_wrong_extension(self):
+        with temp_cwd(None):
+            shutil.copy(data_dir / 'file1_fr_crlf.po', 'file1_fr.pox')
+            assert_python_failure(msgfmt, 'file1_fr.pox')
+            self.assertFalse(os.path.exists('file1_fr.mo'))
+            self.assertFalse(os.path.exists('file1_fr.pox.mo'))
+
+    @unittest.skipUnless(sys.platform.startswith("win"), "uppercase on Windows")
+    def test_MAJ_on_Windows(self):
+        with temp_cwd(None):
+            shutil.copy(data_dir / 'file1_fr_crlf.po', 'File1.PO')
+            assert_python_ok(msgfmt, 'FIle1.Po')
+            self.assertTrue(os.path.exists('file1.mo'))
 
 
 def make_message_files(mo_file, *po_files):
