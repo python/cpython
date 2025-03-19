@@ -10,7 +10,6 @@ extern "C" {
 
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
-#include "pycore_global_objects.h"  // _Py_SINGLETON
 
 /* --- Characters Type APIs ----------------------------------------------- */
 
