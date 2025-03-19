@@ -5,8 +5,6 @@ for urllib.requests, thus do not use directly.
 """
 __all__ = ["url2pathname", "pathname2url"]
 
-import urllib.parse
-
 def url2pathname(url):
     """OS-specific conversion from a relative URL of the 'file' scheme
     to a file system path; not recommended for general use."""
@@ -16,7 +14,7 @@ def url2pathname(url):
     #   ///C:/foo/bar/spam.foo
     # become
     #   C:\foo\bar\spam.foo
-    import string
+    import string, urllib.parse
     # Windows itself uses ":" even in URLs.
     url = url.replace(':', '|')
     if not '|' in url:
@@ -51,6 +49,7 @@ def pathname2url(p):
     #   C:\foo\bar\spam.foo
     # becomes
     #   ///C:/foo/bar/spam.foo
+    import urllib.parse
     # First, clean up some special forms. We are going to sacrifice
     # the additional information anyway
     if p[:4] == '\\\\?\\':
