@@ -1524,8 +1524,9 @@ buffered_iternext(PyObject *op)
 }
 
 static PyObject *
-buffered_repr(buffered *self)
+buffered_repr(PyObject *op)
 {
+    buffered *self = buffered_CAST(op);
     PyObject *nameobj, *res;
 
     if (PyObject_GetOptionalAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {

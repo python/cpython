@@ -210,8 +210,9 @@ calliter_dealloc(PyObject *op)
 }
 
 static int
-calliter_traverse(calliterobject *it, visitproc visit, void *arg)
+calliter_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    calliterobject *it = (calliterobject*)op;
     Py_VISIT(it->it_callable);
     Py_VISIT(it->it_sentinel);
     return 0;
@@ -294,7 +295,7 @@ PyTypeObject PyCallIter_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)calliter_traverse,            /* tp_traverse */
+    calliter_traverse,                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */

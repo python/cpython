@@ -885,7 +885,9 @@ static PyNumberMethods ga_as_number = {
 };
 
 static PyObject *
-ga_iternext(gaiterobject *gi) {
+ga_iternext(PyObject *op)
+{
+    gaiterobject *gi = (gaiterobject*)op;
     if (gi->obj == NULL) {
         PyErr_SetNone(PyExc_StopIteration);
         return NULL;
@@ -901,21 +903,25 @@ ga_iternext(gaiterobject *gi) {
 }
 
 static void
-ga_iter_dealloc(gaiterobject *gi) {
+ga_iter_dealloc(PyObject *op)
+{
+    gaiterobject *gi = (gaiterobject*)op;
     PyObject_GC_UnTrack(gi);
     Py_XDECREF(gi->obj);
     PyObject_GC_Del(gi);
 }
 
 static int
-ga_iter_traverse(gaiterobject *gi, visitproc visit, void *arg)
+ga_iter_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    gaiterobject *gi = (gaiterobject*)op;
     Py_VISIT(gi->obj);
     return 0;
 }
 
 static int
-ga_iter_clear(PyObject *self) {
+ga_iter_clear(PyObject *self)
+{
     gaiterobject *gi = (gaiterobject *)self;
     Py_CLEAR(gi->obj);
     return 0;
@@ -949,11 +955,11 @@ PyTypeObject _Py_GenericAliasIterType = {
     .tp_name = "generic_alias_iterator",
     .tp_basicsize = sizeof(gaiterobject),
     .tp_iter = PyObject_SelfIter,
-    .tp_iternext = (iternextfunc)ga_iternext,
-    .tp_traverse = (traverseproc)ga_iter_traverse,
+    .tp_iternext = ga_iternext,
+    .tp_traverse = ga_iter_traverse,
     .tp_methods = ga_iter_methods,
-    .tp_dealloc = (destructor)ga_iter_dealloc,
-    .tp_clear = (inquiry)ga_iter_clear,
+    .tp_dealloc = ga_iter_dealloc,
+    .tp_clear = ga_iter_clear,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
 };
 
