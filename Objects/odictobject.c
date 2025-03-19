@@ -2004,7 +2004,7 @@ PyTypeObject PyODictItems_Type = {
     0,                                        /* tp_clear */
     0,                                        /* tp_richcompare */
     0,                                        /* tp_weaklistoffset */
-    (getiterfunc)odictitems_iter,             /* tp_iter */
+    odictitems_iter,                          /* tp_iter */
     0,                                        /* tp_iternext */
     odictitems_methods,                       /* tp_methods */
     0,                                        /* tp_members */
