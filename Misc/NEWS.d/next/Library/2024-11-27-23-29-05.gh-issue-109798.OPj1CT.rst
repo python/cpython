@@ -1,1 +1,0 @@
-Added additional information into error messages in :mod:`datetime`, and made the messages more consistent between the C and Python implementations. Patch by Semyon Moroz.

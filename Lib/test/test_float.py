@@ -754,6 +754,44 @@ class FormatTestCase(unittest.TestCase):
         self.assertEqual(format(INF, 'f'), 'inf')
         self.assertEqual(format(INF, 'F'), 'INF')
 
+        # thousands separators
+        x = 123_456.123_456
+        self.assertEqual(format(x, '_f'), '123_456.123456')
+        self.assertEqual(format(x, ',f'), '123,456.123456')
+        self.assertEqual(format(x, '._f'), '123456.123_456')
+        self.assertEqual(format(x, '.,f'), '123456.123,456')
+        self.assertEqual(format(x, '_._f'), '123_456.123_456')
+        self.assertEqual(format(x, ',.,f'), '123,456.123,456')
+        self.assertEqual(format(x, '.10_f'), '123456.123_456_000_0')
+        self.assertEqual(format(x, '.10,f'), '123456.123,456,000,0')
+        self.assertEqual(format(x, '>21._f'), '       123456.123_456')
+        self.assertEqual(format(x, '<21._f'), '123456.123_456       ')
+        self.assertEqual(format(x, '+.11_e'), '+1.234_561_234_56e+05')
+        self.assertEqual(format(x, '+.11,e'), '+1.234,561,234,56e+05')
+        self.assertEqual(format(x, '021_._f'), '0_000_123_456.123_456')
+        self.assertEqual(format(x, '020_._f'), '0_000_123_456.123_456')
+        self.assertEqual(format(x, '+021_._f'), '+0_000_123_456.123_456')
+        self.assertEqual(format(x, '21_._f'), '      123_456.123_456')
+        self.assertEqual(format(x, '>021_._f'), '000000123_456.123_456')
+        self.assertEqual(format(x, '<021_._f'), '123_456.123_456000000')
+        self.assertEqual(format(x, '023_.10_f'), '0_123_456.123_456_000_0')
+        self.assertEqual(format(x, '022_.10_f'), '0_123_456.123_456_000_0')
+        self.assertEqual(format(x, '+023_.10_f'), '+0_123_456.123_456_000_0')
+        self.assertEqual(format(x, '023_.9_f'), '000_123_456.123_456_000')
+        self.assertEqual(format(x, '021_._e'), '0_000_001.234_561e+05')
+        self.assertEqual(format(x, '020_._e'), '0_000_001.234_561e+05')
+        self.assertEqual(format(x, '+021_._e'), '+0_000_001.234_561e+05')
+        self.assertEqual(format(x, '023_.10_e'), '0_001.234_561_234_6e+05')
+        self.assertEqual(format(x, '022_.10_e'), '0_001.234_561_234_6e+05')
+        self.assertEqual(format(x, '023_.9_e'), '000_001.234_561_235e+05')
+
+        self.assertRaises(ValueError, format, x, '._6f')
+        self.assertRaises(ValueError, format, x, '.,_f')
+        self.assertRaises(ValueError, format, x, '.6,_f')
+        self.assertRaises(ValueError, format, x, '.6_,f')
+        self.assertRaises(ValueError, format, x, '.6_n')
+        self.assertRaises(ValueError, format, x, '.6,n')
+
     @support.requires_IEEE_754
     def test_format_testfile(self):
         with open(format_testfile, encoding="utf-8") as testfile:

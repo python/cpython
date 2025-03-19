@@ -14,7 +14,7 @@ def url2pathname(url):
     #   ///C:/foo/bar/spam.foo
     # become
     #   C:\foo\bar\spam.foo
-    import string, urllib.parse
+    import urllib.parse
     if url[:3] == '///':
         # URL has an empty authority section, so the path begins on the third
         # character.
@@ -25,19 +25,14 @@ def url2pathname(url):
     if url[:3] == '///':
         # Skip past extra slash before UNC drive in URL path.
         url = url[1:]
-    # Windows itself uses ":" even in URLs.
-    url = url.replace(':', '|')
-    if not '|' in url:
-        # No drive specifier, just convert slashes
-        # make sure not to convert quoted slashes :-)
-        return urllib.parse.unquote(url.replace('/', '\\'))
-    comp = url.split('|')
-    if len(comp) != 2 or comp[0][-1] not in string.ascii_letters:
-        error = 'Bad URL: ' + url
-        raise OSError(error)
-    drive = comp[0][-1]
-    tail = urllib.parse.unquote(comp[1].replace('/', '\\'))
-    return drive + ':' + tail
+    else:
+        if url[:1] == '/' and url[2:3] in (':', '|'):
+            # Skip past extra slash before DOS drive in URL path.
+            url = url[1:]
+        if url[1:2] == '|':
+            # Older URLs use a pipe after a drive letter
+            url = url[:1] + ':' + url[2:]
+    return urllib.parse.unquote(url.replace('/', '\\'))
 
 def pathname2url(p):
     """OS-specific conversion from a file system path to a relative URL

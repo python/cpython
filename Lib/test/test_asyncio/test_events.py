@@ -22,7 +22,6 @@ import errno
 import unittest
 from unittest import mock
 import weakref
-import warnings
 if sys.platform not in ('win32', 'vxworks'):
     import tty
 
@@ -36,7 +35,6 @@ from test import support
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import ALWAYS_EQ, LARGEST, SMALLEST
-from test.support import warnings_helper
 
 def tearDownModule():
     asyncio._set_event_loop_policy(None)
@@ -3003,6 +3001,22 @@ class GetEventLoopTestsMixin:
             self.assertEqual(
                 self.loop.run_until_complete(main()),
                 'hello')
+
+    def test_get_running_loop_already_running(self):
+        async def main():
+            running_loop = asyncio.get_running_loop()
+            loop = asyncio.new_event_loop()
+            try:
+                loop.run_forever()
+            except RuntimeError:
+                pass
+            else:
+                self.fail("RuntimeError not raised")
+
+            self.assertIs(asyncio.get_running_loop(), running_loop)
+
+        self.loop.run_until_complete(main())
+
 
     def test_get_event_loop_returns_running_loop(self):
         class TestError(Exception):
