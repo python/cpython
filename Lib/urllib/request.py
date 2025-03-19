@@ -1639,7 +1639,7 @@ def url2pathname(url):
     to a file system path; not recommended for general use."""
     authority, url = _splithost(url)
     if os.name == 'nt':
-        if authority and authority != 'localhost':
+        if not _is_local_authority(authority):
             # e.g. file://server/share/file.txt
             url = '//' + authority + url
         elif url[:3] == '///':

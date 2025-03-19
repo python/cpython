@@ -1,6 +1,5 @@
 Fix issue where :func:`urllib.request.url2pathname` mishandled file URLs with
-non-empty, non-``localhost`` authorities on non-Windows systems. Authorities
-that resolve to ``localhost`` are now discarded; other authorities now cause
-a :exc:`urllib.error.URLError` to be raised. Previously these authorities
-were incorrectly included in the returned path. This change does not affect
-Windows, where UNC paths are returned for non-local URLs.
+authorities. If an authority is present and resolves to ``localhost``, it is
+now discarded. If an authority is present but *doesn't* resolve to
+``localhost``, then on Windows a UNC path is returned (as before), and on
+other platforms a :exc:`urllib.errors.URLError` is now raised.

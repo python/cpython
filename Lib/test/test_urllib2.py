@@ -816,17 +816,14 @@ class HandlerTests(unittest.TestCase):
         urls = [
             canonurl,
             parsed._replace(netloc='localhost').geturl(),
+            parsed._replace(netloc=socket.gethostbyname('localhost')).geturl(),
             ]
-        if os.name != 'nt':
-            # On POSIX the local hostname may appear in a local file URL.
-            # On Windows this would be decoded as a UNC path.
-            urls.append(parsed._replace(netloc=socket.gethostbyname('localhost')).geturl())
-            try:
-                localaddr = socket.gethostbyname(socket.gethostname())
-            except socket.gaierror:
-                localaddr = ''
-            if localaddr:
-                urls.append(parsed._replace(netloc=localaddr).geturl())
+        try:
+            localaddr = socket.gethostbyname(socket.gethostname())
+        except socket.gaierror:
+            localaddr = ''
+        if localaddr:
+            urls.append(parsed._replace(netloc=localaddr).geturl())
 
         for url in urls:
             f = open(TESTFN, "wb")
