@@ -5,6 +5,11 @@ for urllib.requests, thus do not use directly.
 """
 # Testing is done through test_nturl2path.
 
+import warnings
+
+
+warnings._deprecated(__name__, remove=(3, 19))
+
 def url2pathname(url):
     """OS-specific conversion from a relative URL of the 'file' scheme
     to a file system path; not recommended for general use."""

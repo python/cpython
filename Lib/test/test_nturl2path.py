@@ -1,5 +1,9 @@
-import nturl2path
 import unittest
+
+from test.support import warnings_helper
+
+nturl2path = warnings_helper.import_deprecated("nturl2path")
+
 
 
 class NTURL2PathTest(unittest.TestCase):
