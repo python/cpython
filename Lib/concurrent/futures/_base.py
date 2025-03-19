@@ -629,7 +629,7 @@ class Executor(object):
                 # reverse to keep finishing order
                 fs.reverse()
                 while fs:
-                    # Careful not to keep a reference to the popped future
+                    # Careful not to keep a reference to the popped future or its result
                     if timeout is None:
                         result.append(_result_or_cancel(fs.pop()))
                     else:
