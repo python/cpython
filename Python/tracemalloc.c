@@ -378,13 +378,21 @@ tracemalloc_create_traces_table(void)
 }
 
 
+static void
+tracemalloc_destroy_domain(void *value)
+{
+    _Py_hashtable_t *ht = (_Py_hashtable_t*)value;
+    _Py_hashtable_destroy(ht);
+}
+
+
 static _Py_hashtable_t*
 tracemalloc_create_domains_table(void)
 {
     return hashtable_new(hashtable_hash_uint,
                          _Py_hashtable_compare_direct,
                          NULL,
-                         (_Py_hashtable_destroy_func)_Py_hashtable_destroy);
+                         tracemalloc_destroy_domain);
 }
 
 
