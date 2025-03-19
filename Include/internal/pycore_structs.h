@@ -1,15 +1,13 @@
+/* This files contains various key structs that are widely used
+ * and do not depend on other headers. */
+
 #ifndef Py_INTERNAL_STRUCTS_H
 #define Py_INTERNAL_STRUCTS_H
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* This files contains various key structs that are widely used
- * and do not depend on other headers. */
-
-#include <stddef.h>
-#include <stdint.h>
-#include <stdbool.h>
+#include <stdint.h>      // uint16_t
 
 
 typedef struct {
@@ -54,7 +52,7 @@ typedef struct {
     PyObject *b_array[1];
 } PyHamtNode_Bitmap;
 
-#include "pycore_context.h"
+#include "pycore_context.h"       // _PyContextTokenMissing
 
 // Define this to get precise tracking of stackrefs.
 // #define Py_STACKREF_DEBUG 1

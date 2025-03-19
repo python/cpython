@@ -1,3 +1,6 @@
+/* This file contains the struct definitions for interpreter state
+ * and other necessary structs */
+
 #ifndef Py_INTERNAL_INTERP_STRUCTS_H
 #define Py_INTERNAL_INTERP_STRUCTS_H
 #ifdef __cplusplus
@@ -11,9 +14,6 @@ extern "C" {
 #include "pycore_tstate.h"        // _PyThreadStateImpl
 #include "pycore_typedefs.h"      // _PyRuntimeState
 
-
-/* This file contains the struct definitions for interpreter state
- * and other necessary structs */
 
 #define CODE_MAX_WATCHERS 8
 #define CONTEXT_MAX_WATCHERS 8
@@ -247,13 +247,7 @@ struct _gc_runtime_state {
 #endif
 };
 
-#include "pycore_gil.h"
-
-/****** Thread state **************/
-#include "pytypedefs.h"
-#include "pystate.h"
-#include "pycore_tstate.h"
-
+#include "pycore_gil.h"           // struct _gil_runtime_state
 
 /**** Import ********/
 
@@ -327,8 +321,8 @@ struct _import_state {
 
 /********** Interpreter state **************/
 
-#include "pycore_object_state.h"
-#include "pycore_crossinterp.h"
+#include "pycore_object_state.h"  // struct _py_object_state
+#include "pycore_crossinterp.h"   // _PyXI_state_t
 
 
 struct _Py_long_state {
@@ -453,8 +447,8 @@ struct _py_func_state {
     struct _func_version_cache_item func_version_cache[FUNC_VERSION_CACHE_SIZE];
 };
 
-#include "pycore_dict_state.h"
-#include "pycore_exceptions.h"
+#include "pycore_dict_state.h"    // struct _Py_dict_state
+#include "pycore_exceptions.h"    // struct _Py_exc_state
 
 
 /****** type state *********/
@@ -635,7 +629,7 @@ struct _Py_unicode_ids {
     PyObject **array;
 };
 
-#include "pycore_ucnhash.h"
+#include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 
 struct _Py_unicode_state {
     struct _Py_unicode_fs_codec fs_codec;
@@ -653,8 +647,6 @@ struct callable_cache {
     PyObject *list_append;
     PyObject *object__getattribute__;
 };
-
-#include "pycore_obmalloc.h"
 
 /* Length of array of slotdef pointers used to store slots with the
    same __name__.  There should be at most MAX_EQUIV-1 slotdef entries with
@@ -696,7 +688,7 @@ struct _Py_interp_static_objects {
     } singletons;
 };
 
-#include "pycore_instruments.h"
+#include "pycore_instruments.h"   // PY_MONITORING_TOOL_IDS
 
 
 #ifdef Py_GIL_DISABLED
@@ -953,7 +945,6 @@ struct _is {
 #  endif
 #endif
 };
-
 
 
 #ifdef __cplusplus
