@@ -78,4 +78,3 @@ INVALID_UNDERSCORE_LITERALS = [
     '(1+1.5_j_)',
     '(1+1.5_j)',
 ]
-
