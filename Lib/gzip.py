@@ -255,7 +255,6 @@ class GzipFile(_compression.BaseStream):
                     self.myfileobj.close()
             finally:
                 self.fileobj = None
-            raise
 
     @property
     def mtime(self):
