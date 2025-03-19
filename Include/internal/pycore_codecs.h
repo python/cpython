@@ -9,7 +9,6 @@ extern "C" {
 #endif
 
 #include "pycore_interp_structs.h" // struct codecs_state
-#include "pycore_lock.h"          // PyMutex
 
 /* Initialize codecs-related state for the given interpreter, including
    registering the first codec search function. Must be called before any other
