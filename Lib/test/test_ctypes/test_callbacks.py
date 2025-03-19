@@ -324,7 +324,7 @@ class SampleCallbacksTestCase(unittest.TestCase):
 
             self.assertIsInstance(cm.unraisable.exc_value, TypeError)
             self.assertEqual(cm.unraisable.err_msg,
-                             f"Exception ignored on converting result "
+                             f"Exception ignored while converting result "
                              f"of ctypes callback function {func!r}")
             self.assertIsNone(cm.unraisable.object)
 

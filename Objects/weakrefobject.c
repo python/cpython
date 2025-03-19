@@ -932,6 +932,19 @@ PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
     return (PyObject *)get_or_create_weakref(type, ob, callback);
 }
 
+int
+PyWeakref_IsDead(PyObject *ref)
+{
+    if (ref == NULL) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    if (!PyWeakref_Check(ref)) {
+        PyErr_Format(PyExc_TypeError, "expected a weakref, got %T", ref);
+        return -1;
+    }
+    return _PyWeakref_IS_DEAD(ref);
+}
 
 int
 PyWeakref_GetRef(PyObject *ref, PyObject **pobj)
@@ -974,10 +987,13 @@ handle_callback(PyWeakReference *ref, PyObject *callback)
 {
     PyObject *cbresult = PyObject_CallOneArg(callback, (PyObject *)ref);
 
-    if (cbresult == NULL)
-        PyErr_WriteUnraisable(callback);
-    else
+    if (cbresult == NULL) {
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "calling weakref callback %R", callback);
+    }
+    else {
         Py_DECREF(cbresult);
+    }
 }
 
 /* This function is called by the tp_dealloc handler to clear weak references.
@@ -1029,7 +1045,8 @@ PyObject_ClearWeakRefs(PyObject *object)
     PyObject *tuple = PyTuple_New(num_weakrefs * 2);
     if (tuple == NULL) {
         _PyWeakref_ClearWeakRefsNoCallbacks(object);
-        PyErr_WriteUnraisable(NULL);
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "clearing object weakrefs");
         PyErr_SetRaisedException(exc);
         return;
     }

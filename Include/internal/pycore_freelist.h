@@ -11,7 +11,7 @@ extern "C" {
 #include "pycore_freelist_state.h"      // struct _Py_freelists
 #include "pycore_object.h"              // _PyObject_IS_GC
 #include "pycore_pystate.h"             // _PyThreadState_GET
-#include "pycore_code.h"                // OBJECT_STAT_INC
+#include "pycore_stats.h"               // OBJECT_STAT_INC
 
 static inline struct _Py_freelists *
 _Py_freelists_GET(void)
@@ -51,7 +51,7 @@ static inline int
 _PyFreeList_Push(struct _Py_freelist *fl, void *obj, Py_ssize_t maxsize)
 {
     if (fl->size < maxsize && fl->size >= 0) {
-        *(void **)obj = fl->freelist;
+        FT_ATOMIC_STORE_PTR_RELAXED(*(void **)obj, fl->freelist);
         fl->freelist = obj;
         fl->size++;
         OBJECT_STAT_INC(to_freelist);

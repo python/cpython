@@ -12,7 +12,6 @@ extern "C" {
 
 /* Forward declarations */
 struct _PyArgv;
-struct pyruntimestate;
 
 extern int _Py_SetFileSystemEncoding(
     const char *encoding,
@@ -75,7 +74,7 @@ extern PyStatus _Py_PreInitializeFromConfig(
 
 extern wchar_t * _Py_GetStdlibDir(void);
 
-extern int _Py_HandleSystemExit(int *exitcode_p);
+extern int _Py_HandleSystemExitAndKeyboardInterrupt(int *exitcode_p);
 
 extern PyObject* _PyErr_WriteUnraisableDefaultHook(PyObject *unraisable);
 

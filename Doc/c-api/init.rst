@@ -109,7 +109,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    Set by the :option:`-b` option.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_DebugFlag
 
@@ -123,7 +123,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-d` option and the :envvar:`PYTHONDEBUG` environment
    variable.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_DontWriteBytecodeFlag
 
@@ -137,7 +137,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-B` option and the :envvar:`PYTHONDONTWRITEBYTECODE`
    environment variable.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_FrozenFlag
 
@@ -150,7 +150,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    Private flag used by ``_freeze_module`` and ``frozenmain`` programs.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_HashRandomizationFlag
 
@@ -165,7 +165,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    If the flag is non-zero, read the :envvar:`PYTHONHASHSEED` environment
    variable to initialize the secret hash seed.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_IgnoreEnvironmentFlag
 
@@ -178,7 +178,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    Set by the :option:`-E` and :option:`-I` options.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_InspectFlag
 
@@ -193,7 +193,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-i` option and the :envvar:`PYTHONINSPECT` environment
    variable.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_InteractiveFlag
 
@@ -218,7 +218,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. versionadded:: 3.4
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_LegacyWindowsFSEncodingFlag
 
@@ -237,7 +237,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. availability:: Windows.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_LegacyWindowsStdioFlag
 
@@ -255,7 +255,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. availability:: Windows.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_NoSiteFlag
 
@@ -270,7 +270,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    Set by the :option:`-S` option.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_NoUserSiteDirectory
 
@@ -284,7 +284,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-s` and :option:`-I` options, and the
    :envvar:`PYTHONNOUSERSITE` environment variable.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_OptimizeFlag
 
@@ -295,7 +295,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-O` option and the :envvar:`PYTHONOPTIMIZE` environment
    variable.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_QuietFlag
 
@@ -309,7 +309,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
 
    .. versionadded:: 3.2
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_UnbufferedStdioFlag
 
@@ -322,7 +322,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-u` option and the :envvar:`PYTHONUNBUFFERED`
    environment variable.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 .. c:var:: int Py_VerboseFlag
 
@@ -338,7 +338,7 @@ to 1 and ``-bb`` sets :c:data:`Py_BytesWarningFlag` to 2.
    Set by the :option:`-v` option and the :envvar:`PYTHONVERBOSE` environment
    variable.
 
-   .. deprecated-removed:: 3.12 3.14
+   .. deprecated-removed:: 3.12 3.15
 
 
 Initializing and finalizing the interpreter
@@ -567,6 +567,15 @@ Initializing and finalizing the interpreter
    customized Python that always runs in isolated mode using
    :c:func:`Py_RunMain`.
 
+.. c:function:: int PyUnstable_AtExit(PyInterpreterState *interp, void (*func)(void *), void *data)
+
+   Register an :mod:`atexit` callback for the target interpreter *interp*.
+   This is similar to :c:func:`Py_AtExit`, but takes an explicit interpreter and
+   data pointer for the callback.
+
+   The :term:`GIL` must be held for *interp*.
+
+   .. versionadded:: 3.13
 
 Process-wide parameters
 =======================
@@ -595,9 +604,9 @@ Process-wide parameters
    interpreter will change the contents of this storage.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_*` string.
+   :c:expr:`wchar_t*` string.
 
-   .. deprecated:: 3.11
+   .. deprecated-removed:: 3.11 3.15
 
 
 .. c:function:: wchar_t* Py_GetProgramName()
@@ -613,7 +622,8 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :data:`sys.executable` instead.
+      Use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
+      (:data:`sys.executable`) instead.
 
 
 .. c:function:: wchar_t* Py_GetPrefix()
@@ -635,8 +645,10 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :data:`sys.base_prefix` instead, or :data:`sys.prefix` if
-      :ref:`virtual environments <venv-def>` need to be handled.
+      Use :c:func:`PyConfig_Get("base_prefix") <PyConfig_Get>`
+      (:data:`sys.base_prefix`) instead. Use :c:func:`PyConfig_Get("prefix")
+      <PyConfig_Get>` (:data:`sys.prefix`) if :ref:`virtual environments
+      <venv-def>` need to be handled.
 
 
 .. c:function:: wchar_t* Py_GetExecPrefix()
@@ -681,9 +693,11 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :data:`sys.base_exec_prefix` instead, or :data:`sys.exec_prefix` if
-      :ref:`virtual environments <venv-def>` need to be handled.
-
+      Use :c:func:`PyConfig_Get("base_exec_prefix") <PyConfig_Get>`
+      (:data:`sys.base_exec_prefix`) instead. Use
+      :c:func:`PyConfig_Get("exec_prefix") <PyConfig_Get>`
+      (:data:`sys.exec_prefix`) if :ref:`virtual environments <venv-def>` need
+      to be handled.
 
 .. c:function:: wchar_t* Py_GetProgramFullPath()
 
@@ -703,7 +717,8 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :data:`sys.executable` instead.
+      Use :c:func:`PyConfig_Get("executable") <PyConfig_Get>`
+      (:data:`sys.executable`) instead.
 
 
 .. c:function:: wchar_t* Py_GetPath()
@@ -731,8 +746,8 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :data:`sys.path` instead.
-
+      Use :c:func:`PyConfig_Get("module_search_paths") <PyConfig_Get>`
+      (:data:`sys.path`) instead.
 
 .. c:function:: const char* Py_GetVersion()
 
@@ -837,7 +852,7 @@ Process-wide parameters
      directory (``"."``).
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_*` string.
+   :c:expr:`wchar_t*` string.
 
    See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
    members of the :ref:`Python Initialization Configuration <init-config>`.
@@ -859,7 +874,7 @@ Process-wide parameters
    .. XXX impl. doesn't seem consistent in allowing ``0``/``NULL`` for the params;
       check w/ Guido.
 
-   .. deprecated:: 3.11
+   .. deprecated-removed:: 3.11 3.15
 
 
 .. c:function:: void PySys_SetArgv(int argc, wchar_t **argv)
@@ -873,14 +888,14 @@ Process-wide parameters
    :option:`-I`.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_*` string.
+   :c:expr:`wchar_t*` string.
 
    See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
    members of the :ref:`Python Initialization Configuration <init-config>`.
 
    .. versionchanged:: 3.4 The *updatepath* value depends on :option:`-I`.
 
-   .. deprecated:: 3.11
+   .. deprecated-removed:: 3.11 3.15
 
 
 .. c:function:: void Py_SetPythonHome(const wchar_t *home)
@@ -899,9 +914,9 @@ Process-wide parameters
    this storage.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_*` string.
+   :c:expr:`wchar_t*` string.
 
-   .. deprecated:: 3.11
+   .. deprecated-removed:: 3.11 3.15
 
 
 .. c:function:: wchar_t* Py_GetPythonHome()
@@ -917,8 +932,8 @@ Process-wide parameters
       It now returns ``NULL`` if called before :c:func:`Py_Initialize`.
 
    .. deprecated-removed:: 3.13 3.15
-      Get :c:member:`PyConfig.home` or :envvar:`PYTHONHOME` environment
-      variable instead.
+      Use :c:func:`PyConfig_Get("home") <PyConfig_Get>` or the
+      :envvar:`PYTHONHOME` environment variable instead.
 
 
 .. _threads:
@@ -1379,6 +1394,9 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
       This function now calls the :c:member:`PyThreadState.on_delete` callback.
       Previously, that happened in :c:func:`PyThreadState_Delete`.
 
+   .. versionchanged:: 3.13
+      The :c:member:`PyThreadState.on_delete` callback was removed.
+
 
 .. c:function:: void PyThreadState_Delete(PyThreadState *tstate)
 
@@ -1479,6 +1497,17 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    extensions should use to store interpreter-specific state information.
 
    .. versionadded:: 3.8
+
+
+.. c:function:: PyObject* PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
+
+   Return a :term:`strong reference` to the ``__main__`` :ref:`module object <moduleobjects>`
+   for the given interpreter.
+
+   The caller must hold the GIL.
+
+   .. versionadded:: 3.13
+
 
 .. c:type:: PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 
@@ -1735,7 +1764,11 @@ function. You can create and destroy them using the following functions:
           .check_multi_interp_extensions = 1,
           .gil = PyInterpreterConfig_OWN_GIL,
       };
-      PyThreadState *tstate = Py_NewInterpreterFromConfig(&config);
+      PyThreadState *tstate = NULL;
+      PyStatus status = Py_NewInterpreterFromConfig(&tstate, &config);
+      if (PyStatus_Exception(status)) {
+          Py_ExitStatusException(status);
+      }
 
    Note that the config is used only briefly and does not get modified.
    During initialization the config's values are converted into various
@@ -2463,7 +2496,7 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
       {
           PyCriticalSection2 _py_cs2;
-          PyCriticalSection_Begin2(&_py_cs2, (PyObject*)(a), (PyObject*)(b))
+          PyCriticalSection2_Begin(&_py_cs2, (PyObject*)(a), (PyObject*)(b))
 
    In the default build, this macro expands to ``{``.
 
@@ -2475,7 +2508,7 @@ code triggered by the finalizer blocks and calls :c:func:`PyEval_SaveThread`.
 
    In the free-threaded build, this macro expands to::
 
-          PyCriticalSection_End2(&_py_cs2);
+          PyCriticalSection2_End(&_py_cs2);
       }
 
    In the default build, this macro expands to ``}``.

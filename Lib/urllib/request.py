@@ -876,9 +876,9 @@ class HTTPPasswordMgrWithDefaultRealm(HTTPPasswordMgr):
 
 class HTTPPasswordMgrWithPriorAuth(HTTPPasswordMgrWithDefaultRealm):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         self.authenticated = {}
-        super().__init__(*args, **kwargs)
+        super().__init__()
 
     def add_password(self, realm, uri, user, passwd, is_authenticated=False):
         self.update_authenticated(uri, is_authenticated)
@@ -1048,7 +1048,7 @@ _randombytes = os.urandom
 
 
 class AbstractDigestAuthHandler:
-    # Digest authentication is specified in RFC 2617.
+    # Digest authentication is specified in RFC 2617/7616.
 
     # XXX The client does not inspect the Authentication-Info header
     # in a successful response.
@@ -1176,11 +1176,14 @@ class AbstractDigestAuthHandler:
         return base
 
     def get_algorithm_impls(self, algorithm):
+        # algorithm names taken from RFC 7616 Section 6.1
         # lambdas assume digest modules are imported at the top level
         if algorithm == 'MD5':
             H = lambda x: hashlib.md5(x.encode("ascii")).hexdigest()
-        elif algorithm == 'SHA':
+        elif algorithm == 'SHA':  # non-standard, retained for compatibility.
             H = lambda x: hashlib.sha1(x.encode("ascii")).hexdigest()
+        elif algorithm == 'SHA-256':
+            H = lambda x: hashlib.sha256(x.encode("ascii")).hexdigest()
         # XXX MD5-sess
         else:
             raise ValueError("Unsupported digest authentication "
@@ -1473,7 +1476,8 @@ class FileHandler(BaseHandler):
             headers = email.message_from_string(
                 'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
                 (mtype or 'text/plain', size, modified))
-            return addinfourl(open(localfile, 'rb'), headers, filename)
+            origurl = 'file:' + pathname2url(localfile)
+            return addinfourl(open(localfile, 'rb'), headers, origurl)
         except OSError as exp:
             raise URLError(exp, exp.filename)
 
@@ -1631,26 +1635,61 @@ class DataHandler(BaseHandler):
 
 # Code move from the old urllib module
 
-# Helper for non-unix systems
-if os.name == 'nt':
-    from nturl2path import url2pathname, pathname2url
-else:
-    def url2pathname(url):
-        """OS-specific conversion from a relative URL of the 'file' scheme
-        to a file system path; not recommended for general use."""
-        authority, pathname = urlsplit(f'file:{url}')[1:3]
-        if not _is_local_host(authority):
-            raise URLError(f'URL {url!r} uses non-local authority {authority!r}')
-        encoding = sys.getfilesystemencoding()
-        errors = sys.getfilesystemencodeerrors()
-        return unquote(pathname, encoding=encoding, errors=errors)
+def url2pathname(url):
+    """OS-specific conversion from a relative URL of the 'file' scheme
+    to a file system path; not recommended for general use."""
+    authority, url = _splithost(url)
 
-    def pathname2url(pathname):
-        """OS-specific conversion from a file system path to a relative URL
-        of the 'file' scheme; not recommended for general use."""
-        encoding = sys.getfilesystemencoding()
-        errors = sys.getfilesystemencodeerrors()
-        return quote(pathname, encoding=encoding, errors=errors)
+    if os.name == 'nt':
+        if authority and authority != 'localhost':
+            url = '//' + authority + url
+        elif url[:3] == '///':
+            # Skip past extra slash before UNC drive in URL path.
+            url = url[1:]
+        else:
+            if url[:1] == '/' and url[2:3] in (':', '|'):
+                # Skip past extra slash before DOS drive in URL path.
+                url = url[1:]
+            if url[1:2] == '|':
+                # Older URLs use a pipe after a drive letter
+                url = url[:1] + ':' + url[2:]
+        url = url.replace('/', '\\')
+    elif not _is_local_host(authority):
+        raise URLError(f'URL {url!r} uses non-local authority {authority!r}')
+    encoding = sys.getfilesystemencoding()
+    errors = sys.getfilesystemencodeerrors()
+    return unquote(url, encoding=encoding, errors=errors)
+
+
+def pathname2url(pathname):
+    """OS-specific conversion from a file system path to a relative URL
+    of the 'file' scheme; not recommended for general use."""
+    if os.name == 'nt':
+        pathname = pathname.replace('\\', '/')
+    encoding = sys.getfilesystemencoding()
+    errors = sys.getfilesystemencodeerrors()
+    drive, root, tail = os.path.splitroot(pathname)
+    if drive:
+        # First, clean up some special forms. We are going to sacrifice the
+        # additional information anyway
+        if drive[:4] == '//?/':
+            drive = drive[4:]
+            if drive[:4].upper() == 'UNC/':
+                drive = '//' + drive[4:]
+        if drive[1:] == ':':
+            # DOS drive specified. Add three slashes to the start, producing
+            # an authority section with a zero-length authority, and a path
+            # section starting with a single slash.
+            drive = '///' + drive
+        drive = quote(drive, encoding=encoding, errors=errors, safe='/:')
+    elif root:
+        # Add explicitly empty authority to absolute path. If the path
+        # starts with exactly one slash then this change is mostly
+        # cosmetic, but if it begins with two or more slashes then this
+        # avoids interpreting the path as a URL authority.
+        root = '//' + root
+    tail = quote(tail, encoding=encoding, errors=errors)
+    return drive + root + tail
 
 
 # Utility functions

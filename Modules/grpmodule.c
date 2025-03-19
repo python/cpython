@@ -1,9 +1,8 @@
 /* UNIX group file access module */
 
-// Need limited C API version 3.13 for PyMem_RawRealloc()
-#include "pyconfig.h"   // Py_GIL_DISABLED
-#ifndef Py_GIL_DISABLED
-#define Py_LIMITED_API 0x030d0000
+// Argument Clinic uses the internal C API
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
 #endif
 
 #include "Python.h"
@@ -281,23 +280,33 @@ static PyObject *
 grp_getgrall_impl(PyObject *module)
 /*[clinic end generated code: output=585dad35e2e763d7 input=d7df76c825c367df]*/
 {
-    PyObject *d;
-    struct group *p;
-
-    if ((d = PyList_New(0)) == NULL)
+    PyObject *d = PyList_New(0);
+    if (d == NULL) {
         return NULL;
+    }
+
+    static PyMutex getgrall_mutex = {0};
+    PyMutex_Lock(&getgrall_mutex);
     setgrent();
+
+    struct group *p;
     while ((p = getgrent()) != NULL) {
+        // gh-126316: Don't release the mutex around mkgrent() since
+        // setgrent()/endgrent() are not reentrant / thread-safe. A deadlock
+        // is unlikely since mkgrent() should not be able to call arbitrary
+        // Python code.
         PyObject *v = mkgrent(module, p);
         if (v == NULL || PyList_Append(d, v) != 0) {
             Py_XDECREF(v);
-            Py_DECREF(d);
-            endgrent();
-            return NULL;
+            Py_CLEAR(d);
+            goto done;
         }
         Py_DECREF(v);
     }
+
+done:
     endgrent();
+    PyMutex_Unlock(&getgrall_mutex);
     return d;
 }
 

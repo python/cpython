@@ -187,7 +187,7 @@ def test_monkeypatch():
 
 
 def test_open(testfn):
-    # SSLContext.load_dh_params uses _Py_fopen_obj rather than normal open()
+    # SSLContext.load_dh_params uses Py_fopen() rather than normal open()
     try:
         import ssl
 
