@@ -1450,7 +1450,6 @@ def parse_http_list(s):
     return [part.strip() for part in res]
 
 class FileHandler(BaseHandler):
-    # not entirely sure what the rules are here
     def open_local_file(self, req):
         import email.utils
         import mimetypes
@@ -1480,7 +1479,7 @@ def _is_local_authority(authority):
         return True
     try:
         address = socket.gethostbyname(authority)
-    except socket.gaierror:
+    except (socket.gaierror, AttributeError):
         return False
     if _local_addresses is None:
         try:

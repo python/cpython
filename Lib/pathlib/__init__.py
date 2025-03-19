@@ -1274,10 +1274,9 @@ class Path(PurePath):
         from urllib.error import URLError
         from urllib.request import url2pathname
         try:
-            pathname = url2pathname(uri.removeprefix('file:'))
+            path = cls(url2pathname(uri.removeprefix('file:')))
         except URLError as exc:
             raise ValueError(exc.reason) from None
-        path = cls(pathname)
         if not path.is_absolute():
             raise ValueError(f"URI is not absolute: {uri!r}")
         return path
