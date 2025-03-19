@@ -202,50 +202,51 @@ class GzipFile(_compression.BaseStream):
             raise ValueError("Invalid mode: {!r}".format(mode))
         if mode and 'b' not in mode:
             mode += 'b'
-        if fileobj is None:
-            fileobj = self.myfileobj = builtins.open(filename, mode or 'rb')
-        if filename is None:
-            filename = getattr(fileobj, 'name', '')
-            if not isinstance(filename, (str, bytes)):
-                filename = ''
-        else:
-            filename = os.fspath(filename)
-        origmode = mode
-        if mode is None:
-            mode = getattr(fileobj, 'mode', 'rb')
-
-
-        if mode.startswith('r'):
-            self.mode = READ
-            raw = _GzipReader(fileobj)
-            self._buffer = io.BufferedReader(raw)
-            self.name = filename
-
-        elif mode.startswith(('w', 'a', 'x')):
-            if origmode is None:
-                import warnings
-                warnings.warn(
-                    "GzipFile was opened for writing, but this will "
-                    "change in future Python releases.  "
-                    "Specify the mode argument for opening it for writing.",
-                    FutureWarning, 2)
-            self.mode = WRITE
-            self._init_write(filename)
-            self.compress = zlib.compressobj(compresslevel,
-                                             zlib.DEFLATED,
-                                             -zlib.MAX_WBITS,
-                                             zlib.DEF_MEM_LEVEL,
-                                             0)
-            self._write_mtime = mtime
-            self._buffer_size = _WRITE_BUFFER_SIZE
-            self._buffer = io.BufferedWriter(_WriteBufferStream(self),
-                                             buffer_size=self._buffer_size)
-        else:
-            raise ValueError("Invalid mode: {!r}".format(mode))
-
-        self.fileobj = fileobj
 
         try:
+            if fileobj is None:
+                fileobj = self.myfileobj = builtins.open(filename, mode or 'rb')
+            if filename is None:
+                filename = getattr(fileobj, 'name', '')
+                if not isinstance(filename, (str, bytes)):
+                    filename = ''
+            else:
+                filename = os.fspath(filename)
+            origmode = mode
+            if mode is None:
+                mode = getattr(fileobj, 'mode', 'rb')
+
+
+            if mode.startswith('r'):
+                self.mode = READ
+                raw = _GzipReader(fileobj)
+                self._buffer = io.BufferedReader(raw)
+                self.name = filename
+
+            elif mode.startswith(('w', 'a', 'x')):
+                if origmode is None:
+                    import warnings
+                    warnings.warn(
+                        "GzipFile was opened for writing, but this will "
+                        "change in future Python releases.  "
+                        "Specify the mode argument for opening it for writing.",
+                        FutureWarning, 2)
+                self.mode = WRITE
+                self._init_write(filename)
+                self.compress = zlib.compressobj(compresslevel,
+                                                 zlib.DEFLATED,
+                                                 -zlib.MAX_WBITS,
+                                                 zlib.DEF_MEM_LEVEL,
+                                                 0)
+                self._write_mtime = mtime
+                self._buffer_size = _WRITE_BUFFER_SIZE
+                self._buffer = io.BufferedWriter(_WriteBufferStream(self),
+                                                 buffer_size=self._buffer_size)
+            else:
+                raise ValueError("Invalid mode: {!r}".format(mode))
+
+            self.fileobj = fileobj
+
             if self.mode == WRITE:
                 self._write_gzip_header(compresslevel)
         except:
