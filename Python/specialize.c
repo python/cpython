@@ -1009,6 +1009,9 @@ specialize_dict_access_hint(
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
 
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(dict);
+#ifdef Py_GIL_DISABLED
+    _PyDict_EnsureSharedOnRead(dict);
+#endif
 
     // We found an instance with a __dict__.
     if (_PyDict_HasSplitTable(dict)) {
