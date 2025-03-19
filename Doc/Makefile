@@ -204,6 +204,7 @@ dist-html:
 	find dist -name 'python-$(DISTVERSION)-docs-html*' -exec rm -rf {} \;
 	$(MAKE) html
 	cp -pPR build/html dist/python-$(DISTVERSION)-docs-html
+	rm -rf dist/python-$(DISTVERSION)-docs-html/_images/social_previews/
 	tar -C dist -cf dist/python-$(DISTVERSION)-docs-html.tar python-$(DISTVERSION)-docs-html
 	bzip2 -9 -k dist/python-$(DISTVERSION)-docs-html.tar
 	(cd dist; zip -q -r -9 python-$(DISTVERSION)-docs-html.zip python-$(DISTVERSION)-docs-html)
