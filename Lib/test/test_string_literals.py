@@ -188,7 +188,7 @@ class TestLiterals(unittest.TestCase):
 
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('always', category=SyntaxWarning)
-            eval("\"''Incorrect \ logic?\"")
+            eval("\"''Incorrect \\ logic?\"")
         self.assertEqual(len(w), 1)
         self.assertEqual(str(w[0].message),
                             r'"\ " is an invalid escape sequence. Such sequences '
