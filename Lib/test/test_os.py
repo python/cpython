@@ -4350,7 +4350,8 @@ class TimerfdTests(unittest.TestCase):
         self.assertEqual(self.read_count_signaled(fd), 1)
 
     @unittest.skipIf(sys.platform.startswith('netbsd'),
-                     "gh-131263: Skip on NetBSD due to system freeze with negative timer values")
+                     "gh-131263: Skip on NetBSD due to system freeze "
+                     "with negative timer values")
     def test_timerfd_negative(self):
         one_sec_in_nsec = 10**9
         fd = self.timerfd_create(time.CLOCK_REALTIME)
