@@ -715,7 +715,7 @@ PyOS_AfterFork_Child(void)
     // may call destructors.
     PyThreadState *list = _PyThreadState_RemoveExcept(tstate);
     _PyEval_StartTheWorldAll(&_PyRuntime);
-    _PyThreadState_DeleteList(list);
+    _PyThreadState_DeleteList(list, /*is_after_fork=*/1);
 
     _PyImport_ReInitLock(tstate->interp);
     _PyImport_ReleaseLock(tstate->interp);

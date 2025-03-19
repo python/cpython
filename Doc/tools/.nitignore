@@ -14,12 +14,9 @@ Doc/c-api/typeobj.rst
 Doc/extending/extending.rst
 Doc/library/ast.rst
 Doc/library/asyncio-extending.rst
-Doc/library/asyncio-subprocess.rst
-Doc/library/collections.rst
 Doc/library/decimal.rst
 Doc/library/email.charset.rst
 Doc/library/email.compat32-message.rst
-Doc/library/email.errors.rst
 Doc/library/email.parser.rst
 Doc/library/exceptions.rst
 Doc/library/functools.rst

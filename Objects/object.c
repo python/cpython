@@ -11,19 +11,22 @@
 #include "pycore_dict.h"          // _PyObject_MakeDictFromInstanceAttributes()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
+#include "pycore_hamt.h"          // _PyHamtItems_Type
+#include "pycore_hashtable.h"     // _Py_hashtable_new()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_Type
-#include "pycore_hashtable.h"     // _Py_hashtable_new()
+#include "pycore_list.h"          // _PyList_DebugMallocStats()
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_object.h"        // PyAPI_DATA() _Py_SwappedOp definition
 #include "pycore_object_state.h"  // struct _reftracer_runtime_state
-#include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_optimizer.h"     // _PyUOpExecutor_Type, ...
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
+#include "pycore_tuple.h"         // _PyTuple_DebugMallocStats()
 #include "pycore_typeobject.h"    // _PyBufferWrapper_Type
 #include "pycore_typevarobject.h" // _PyTypeAlias_Type, _Py_initialize_generic
 #include "pycore_unionobject.h"   // _PyUnion_Type
@@ -2540,6 +2543,9 @@ _Py_SetImmortalUntracked(PyObject *op)
     op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
     op->ob_ref_shared = 0;
     _Py_atomic_or_uint8(&op->ob_gc_bits, _PyGC_BITS_DEFERRED);
+#elif SIZEOF_VOID_P > 4
+    op->ob_flags = _Py_IMMORTAL_FLAGS;
+    op->ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
 #else
     op->ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
 #endif
@@ -2984,7 +2990,7 @@ _Py_Dealloc(PyObject *op)
     destructor dealloc = type->tp_dealloc;
 #ifdef Py_DEBUG
     PyThreadState *tstate = _PyThreadState_GET();
-#ifndef Py_GIL_DISABLED
+#if !defined(Py_GIL_DISABLED) && !defined(Py_STACKREF_DEBUG)
     /* This assertion doesn't hold for the free-threading build, as
      * PyStackRef_CLOSE_SPECIALIZED is not implemented */
     assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);

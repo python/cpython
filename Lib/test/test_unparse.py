@@ -5,6 +5,7 @@ import test.support
 import pathlib
 import random
 import tokenize
+import warnings
 import ast
 from test.support.ast_helper import ASTTestMixin
 
@@ -422,9 +423,11 @@ class UnparseTestCase(ASTTestCase):
             self.check_ast_roundtrip(f"'''{docstring}'''")
 
     def test_constant_tuples(self):
-        self.check_src_roundtrip(ast.Module([ast.Constant(value=(1,))]), "(1,)")
+        locs = ast.fix_missing_locations
         self.check_src_roundtrip(
-            ast.Module([ast.Constant(value=(1, 2, 3))]), "(1, 2, 3)"
+            locs(ast.Module([ast.Expr(ast.Constant(value=(1,)))])), "(1,)")
+        self.check_src_roundtrip(
+            locs(ast.Module([ast.Expr(ast.Constant(value=(1, 2, 3)))])), "(1, 2, 3)"
         )
 
     def test_function_type(self):
@@ -951,13 +954,16 @@ class DirectoryTestCase(ASTTestCase):
         return items
 
     def test_files(self):
-        for item in self.files_to_test():
-            if test.support.verbose:
-                print(f"Testing {item.absolute()}")
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', SyntaxWarning)
 
-            with self.subTest(filename=item):
-                source = read_pyfile(item)
-                self.check_ast_roundtrip(source)
+            for item in self.files_to_test():
+                if test.support.verbose:
+                    print(f"Testing {item.absolute()}")
+
+                with self.subTest(filename=item):
+                    source = read_pyfile(item)
+                    self.check_ast_roundtrip(source)
 
 
 if __name__ == "__main__":
