@@ -1,0 +1,85 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2024-10-26 18:06+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "foo"
+msgstr "bar"
+
+# Selected escape sequences are allowed
+msgid "Escape sequences \" \n \t"
+msgstr ""
+
+# Octal escape sequences are allowed
+msgid "\120\171\164\150\157\156"
+msgstr "Python"
+
+# Hex escape sequences are allowed
+msgid "\x50\x79\x74\x68\x6f\x6e (2)"
+msgstr "Python (2)"
+
+# non-ascii
+msgid "αβ"
+msgstr "αβ"
+
+# Empty lines are ignored
+msgid ""
+"bar"
+
+"baz"
+msgstr ""
+"qux"
+
+"xyz"
+
+# Keyword line does not need to contain a string
+msgid
+"xyz"
+msgstr ""
+
+# comment
+# comment
+
+msgctxt "context"
+msgid "foo"
+msgstr "bar"
+
+msgctxt "xyz"
+msgid "foo"
+msgstr "bar"
+
+msgid "One email sent."
+msgid_plural "%d emails sent."
+msgstr[0] "One email sent."
+msgstr[1] "%d emails sent."
+
+# Each message can have a different number of msgstr[N]
+msgid "One message sent."
+msgid_plural "%d messages sent."
+msgstr[0] "%d message sent."
+
+msgctxt "abc"
+msgid "One email sent."
+msgid_plural "%d emails sent."
+msgstr[0] "One email sent."
+msgstr[1] "%d emails sent."
+
+msgid "qux"
+msgid_plural "quxs"
+msgstr[0] "a"
+"b"
+"c"
+msgstr[1] "x"
+"y"
+"z"
+
+msgid "baz"
+msgstr ""
+
+# trailing comments are allowed

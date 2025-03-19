@@ -1,13 +1,14 @@
-import gettext as _
+from gettext import gettext as _, ngettext, npgettext, pgettext
 
 
 _('foo')
 
 _('excluded')
 
-_('also excluded')
+_('multiline\nexcluded')
 
-_('excluded with trailing whitespace  ')
+ngettext('singular excluded', 'plural excluded', 2)
 
-_('msgids containing newlines \n'
-  'cannot be currently excluded')
+pgettext('context', 'context excluded')
+
+npgettext('context', 'context singular excluded', 'context plural excluded', 2)

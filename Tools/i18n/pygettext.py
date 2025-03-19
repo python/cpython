@@ -125,7 +125,7 @@ Options:
         Set width of output to columns.
 
     -x filename
-    --exclude-file=filename
+    --exclude-file=filename.po
         Specify a file that contains a list of strings that are not be
         extracted from the input files.  Each string to be excluded must
         appear on a line by itself in the file.
@@ -140,15 +140,19 @@ If `inputfile' is -, standard input is read.
 """
 
 import ast
+import codecs
 import getopt
 import glob
 import importlib.machinery
 import importlib.util
 import os
+import re
 import sys
 import time
 import tokenize
 from dataclasses import dataclass, field
+from email.parser import HeaderParser
+from enum import StrEnum, auto
 from io import BytesIO
 from operator import itemgetter
 
@@ -277,6 +281,272 @@ def getFilesForName(name):
         return [name]
 
     return []
+
+
+def _key_for(msgid, msgctxt=None):
+    if msgctxt is None:
+        return msgid
+    return (msgctxt, msgid)
+
+
+class POSection(StrEnum):
+    COMMENT = 'comment'
+    CTXT = 'msgctxt'
+    ID = 'msgid'
+    PLURAL = 'msgid_plural'
+    STR = 'msgstr'
+
+
+def parse_po(po, filename):
+    """Parse a PO file."""
+    if po.startswith(codecs.BOM_UTF8):
+        raise ValueError(
+            f"The file {filename} starts with a UTF-8 BOM which is not "
+            "allowed in .po files.\nPlease save the file without a BOM "
+            "and try again.")
+
+    @dataclass
+    class ParserState:
+        filename: str
+        lineno: int = 0
+        # Start off assuming Latin-1, so everything decodes without failure,
+        # until we know the exact encoding
+        encoding: str = 'latin-1'
+        # Current section
+        section: POSection | None = None
+        # Current message data
+        msgid: str | None = None
+        msgid_plural: str | None = None
+        msgctxt: str | None = None
+        msgstr: str | list[str] | None = None
+        # All parsed messages
+        messages: dict = field(default_factory=dict)
+
+        @property
+        def is_plural(self):
+            return self.msgid_plural is not None
+
+
+    state = ParserState(filename)
+    # Parse the PO file
+    for line in po.splitlines():
+        state.lineno += 1
+
+        # Skip empty lines
+        if not line.strip():
+            continue
+
+        if line.startswith(b'#'):
+            parse_comment(state)
+        elif line.startswith(b'msgctxt'):
+            parse_msgctxt(state, line)
+        elif line.startswith(b'msgid_plural'):
+            parse_msgid_plural(state, line)
+        elif line.startswith(b'msgid'):
+            parse_msgid(state, line)
+        elif line.startswith(b'msgstr'):
+            parse_msgstr(state, line)
+        else:
+            # Line containing only a string without a keyword
+            # This will be appended to the previous section
+            parse_line(state, line)
+
+    if state.section == POSection.CTXT:
+        raise ValueError(f'{filename}:{state.lineno}: '
+                         'Missing msgid after msgctxt')
+    if state.section == POSection.ID:
+        raise ValueError(f'{filename}:{state.lineno}: '
+                         'Missing msgstr after msgid')
+    elif state.section == POSection.STR:
+        # Add last entry
+        _add_message(state)
+    return list(state.messages.values())
+
+
+def parse_comment(state):
+    if state.section not in (None, POSection.COMMENT, POSection.STR):
+        raise ValueError(f'{state.filename}:{state.lineno}: '
+                         f'Comment line not allowed after {state.section}')
+
+    if state.section == POSection.STR:
+        # Previous msgstr section is finished so we need to add the message
+        _add_message(state)
+    state.section = POSection.COMMENT
+
+
+def parse_msgctxt(state, line):
+    if state.section not in (None, POSection.COMMENT, POSection.STR):
+        raise ValueError(f'{state.filename}:{state.lineno}: '
+                         f'msgctxt not allowed after {state.section}')
+
+    if state.section == POSection.STR:
+        # Previous msgstr section is finished so we need to add the message
+        _add_message(state)
+    line = line.decode(state.encoding).removeprefix('msgctxt')
+    state.msgctxt = parse_quoted_strings(state, line)
+    state.section = POSection.CTXT
+
+
+def parse_msgid_plural(state, line):
+    if state.section is None:
+        raise ValueError(f'{state.filename}:{state.lineno}: '
+                         'msgid_plural must be preceded by msgid')
+    if state.section != POSection.ID:
+        raise ValueError(f'{state.filename}:{state.lineno}: '
+                         f'msgid_plural not allowed after {state.section}')
+
+    line = line.decode(state.encoding).removeprefix('msgid_plural')
+    state.msgid_plural = parse_quoted_strings(state, line)
+    state.section = POSection.PLURAL
+
+
+def parse_msgid(state, line):
+    if state.section not in (None, POSection.COMMENT,
+                             POSection.STR, POSection.CTXT):
+        raise ValueError(f'{state.filename}:{state.lineno}: '
+                         f'msgid not allowed after {state.section}')
+
+    if state.section == POSection.STR:
+        # Previous msgstr section is finished so we need to add the message
+        _add_message(state)
+    line = line.decode(state.encoding).removeprefix('msgid')
+    state.msgid = parse_quoted_strings(state, line)
+    state.section = POSection.ID
+
+
+def parse_msgstr(state, line):
+    if state.section is None:
+        raise ValueError(f'{state.filename}:{state.lineno}: '
+                         'msgstr must be preceded by msgid')
+    if state.section not in (POSection.STR, POSection.ID, POSection.PLURAL):
+        raise ValueError(f'{state.filename}:{state.lineno}: '
+                         f'msgstr not allowed after {state.section}')
+
+    line = line.decode(state.encoding)
+    if match := re.match(r'^msgstr\[(\d+)\]', line):
+        # This is a plural msgstr, e.g. msgstr[0]
+        if not state.is_plural:
+            raise ValueError(f'{state.filename}:{state.lineno}: '
+                             'Missing msgid_plural section')
+        index = int(match.group(1))
+        line = line.removeprefix(match.group())
+        if state.msgstr is None:
+            state.msgstr = []
+        next_plural_index = len(state.msgstr)
+        if index != next_plural_index:
+            raise ValueError(f'{state.filename}:{state.lineno}: '
+                             'Plural form has incorrect index, found '
+                             f"'{index}' but should be '{next_plural_index}'")
+        state.msgstr.append(parse_quoted_strings(state, line))
+    else:
+        # This is a regular (non-plural) msgstr
+        if state.is_plural:
+            raise ValueError(f'{state.filename}:{state.lineno}: '
+                             'Indexed msgstr required after msgid_plural')
+        if state.section == POSection.STR:
+            raise ValueError(f'{state.filename}:{state.lineno}: '
+                             'msgstr not allowed after msgstr')
+        line = line.removeprefix('msgstr')
+        state.msgstr = parse_quoted_strings(state, line)
+    state.section = POSection.STR
+
+
+def parse_line(state, line):
+    line = parse_quoted_strings(state, line.decode(state.encoding))
+    if state.section == POSection.CTXT:
+        state.msgctxt += line
+    elif state.section == POSection.PLURAL:
+        state.msgid_plural += line
+    elif state.section == POSection.ID:
+        state.msgid += line
+    elif state.section == POSection.STR:
+        if isinstance(state.msgstr, list):
+            # This belongs to the last msgstr[N] entry
+            state.msgstr[-1] += line
+        else:
+            state.msgstr += line
+    else:
+        raise ValueError(f'{state.filename}:{state.lineno}: '
+                         f'Syntax error before:\n{line}')
+
+
+def parse_quoted_strings(state, line):
+    """
+    Parse a line containing one or more quoted PO strings separated
+    by whitespace.
+
+    Example: "Hello, " "world!" -> 'Hello, world!'
+    """
+    line = line.strip()
+    if not line:
+        return ''
+
+    quoted_string = r'"([^"\\]|\\.)*"'
+    # One or more quoted strings, possibly separated by whitespace
+    quoted_strings = fr'^({quoted_string}\s*)+$'
+
+    if not re.match(quoted_strings, line):
+        raise ValueError(f'{state.filename}:{state.lineno}: '
+                         f'Syntax error: {line}')
+
+    string = ''
+    for match in re.finditer(quoted_string, line):
+        part = match.group()
+        string += parse_quoted_string(state, part)
+    return string
+
+
+def parse_quoted_string(state, string):
+    """Parse a single quoted PO string."""
+    # Check if there are any disallowed escape sequences
+    # The allowed escape sequences are:
+    #   - \n, \r, \t, \\, \", \a, \b, \f, \v
+    #   - Octal escapes: \o, \oo, \ooo
+    #   - Hex escapes: \xh, \xhh, ...
+    if match := re.search(r'\\[^"\\abfnrtvx0-7]|\\x[^0-9a-fA-F]', string):
+        escape = match.group()
+        raise ValueError(f'{state.filename}:{state.lineno}: '
+                         f"Invalid escape sequence: '{escape}'")
+
+    try:
+        return ast.literal_eval(string)
+    except (ValueError, SyntaxError) as e:
+        raise ValueError(f'{state.filename}:{state.lineno}: '
+                         f"Invalid syntax: {string}") from e
+
+def _add_message(state):
+    key = _key_for(state.msgid, state.msgctxt)
+    if key in state.messages:
+        # PO files don't allow duplicate entries
+        raise ValueError(f"{state.filename}:{state.lineno}: "
+                         f"Duplicate entry: {key!r}")
+    state.messages[key] = {'msgctxt': state.msgctxt,
+                           'msgid': state.msgid,
+                           'msgid_plural': state.msgid_plural,
+                           'msgstr': state.msgstr}
+    if state.msgid == "":
+        # This is the header, see whether there is an encoding declaration
+        state.encoding = _get_encoding(state.msgstr)
+    # Reset the message data
+    state.msgctxt = None
+    state.msgid = None
+    state.msgid_plural = None
+    state.msgstr = None
+
+
+def _get_encoding(msgstr):
+    """Get the encoding from the header msgstr, if provided."""
+    p = HeaderParser()
+    charset = p.parsestr(msgstr).get_content_charset()
+    return charset or 'latin-1'
+
+
+def get_msgids_from_exclude_file(filename):
+    with open(filename, 'rb') as f:
+        po = f.read()
+
+    messages = parse_po(po, filename)
+    return {m['msgid'] for m in messages}
 
 
 # Key is the function name, value is a dictionary mapping argument positions to the
@@ -533,7 +803,7 @@ class GettextVisitor(ast.NodeVisitor):
         if not comments:
             comments = []
 
-        key = self._key_for(msgid, msgctxt)
+        key = _key_for(msgid, msgctxt)
         message = self.messages.get(key)
         if message:
             message.add_location(
@@ -552,12 +822,6 @@ class GettextVisitor(ast.NodeVisitor):
                 is_docstring=is_docstring,
                 comments=comments,
             )
-
-    @staticmethod
-    def _key_for(msgid, msgctxt=None):
-        if msgctxt is not None:
-            return (msgctxt, msgid)
-        return msgid
 
     def _get_func_name(self, node):
         match node.func:
@@ -742,14 +1006,18 @@ def main():
     # initialize list of strings to exclude
     if options.excludefilename:
         try:
-            with open(options.excludefilename) as fp:
-                options.toexclude = fp.read().splitlines()
+            options.toexclude = get_msgids_from_exclude_file(
+                options.excludefilename)
+        except ValueError as e:
+            print(f'Invalid exclude file ({options.excludefilename}): {e}',
+                  file=sys.stderr)
+            sys.exit(1)
         except IOError:
             print(f"Can't read --exclude-file: {options.excludefilename}",
                   file=sys.stderr)
             sys.exit(1)
     else:
-        options.toexclude = []
+        options.toexclude = set()
 
     # resolve args to module lists
     expanded = []

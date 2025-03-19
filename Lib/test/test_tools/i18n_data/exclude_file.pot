@@ -15,7 +15,24 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: excluded.py:4
-msgid "foo"
+msgid "excluded"
 msgstr ""
+
+msgid "multiline\nexcluded"
+msgstr ""
+
+msgid "singular excluded"
+msgid_plural "plural excluded"
+msgstr[0] ""
+msgstr[1] ""
+
+msgctxt "context"
+msgid "context excluded"
+msgstr ""
+
+msgctxt "context"
+msgid "context singular excluded"
+msgid_plural "context plural excluded"
+msgstr[0] ""
+msgstr[1] ""
 

@@ -1,5 +1,7 @@
 """Tests to cover the Tools/i18n package"""
 
+import codecs
+import json
 import os
 import re
 import sys
@@ -18,7 +20,7 @@ DATA_DIR = Path(__file__).resolve().parent / 'i18n_data'
 
 
 with imports_under_tool("i18n"):
-    from pygettext import parse_spec
+    from pygettext import parse_po, parse_quoted_strings, parse_spec
 
 
 def normalize_POT_file(pot):
@@ -522,13 +524,250 @@ class Test_pygettext(unittest.TestCase):
         --exclude-file) does not exist.
         """
         _, _, stderr = assert_python_failure(self.script,
-                                             '--exclude-file=foo.txt')
-        self.assertIn("Can't read --exclude-file: foo.txt",
+                                             '--exclude-file=foo.po')
+        self.assertIn("Can't read --exclude-file: foo.po",
                       stderr.decode('utf-8'))
+
+    def test_invalid_exclude_file(self):
+        """
+        Test that an error is raised if the exclude file (passed via
+        --exclude-file) is not a valid PO file.
+        """
+        with temp_cwd(None):
+            # Create an invalid PO file
+            Path('invalid.po').write_text('Invalid PO file', encoding='utf-8')
+
+            _, _, stderr = assert_python_failure(self.script,
+                                                 '--exclude-file=invalid.po')
+            self.assertIn("Invalid exclude file (invalid.po):",
+                          stderr.decode('utf-8'))
+
+
+class TestPOParser(unittest.TestCase):
+    def test_parse_quoted_strings(self):
+        class DummyState:
+            filename = 'foo.po'
+            lineno = 1
+
+        valid_strings = (
+            # no strings
+            ('', ''),
+            (' ', ''),
+            ('\t', ''),
+            # empty strings
+            ('""', ''),
+            ('"" "" ""', ''),
+            # allowed escape sequences
+            (r'"\\"', '\\'),
+            (r'"\""', '"'),
+            (r'"\t"', '\t'),
+            (r'"\n"', '\n'),
+            (r'"\r"', '\r'),
+            (r'"\f"', '\f'),
+            (r'"\a"', '\a'),
+            (r'"\b"', '\b'),
+            (r'"\v"', '\v'),
+            # non-empty strings
+            ('"foo"', 'foo'),
+            ('"foo" "bar"', 'foobar'),
+            ('"foo""bar"', 'foobar'),
+            ('"" "foo" ""', 'foo'),
+            # newlines and tabs
+            (r'"foo\nbar"', 'foo\nbar'),
+            (r'"foo\n" "bar"', 'foo\nbar'),
+            (r'"foo\tbar"', 'foo\tbar'),
+            (r'"foo\t" "bar"', 'foo\tbar'),
+            # escaped quotes
+            (r'"foo\"bar"', 'foo"bar'),
+            (r'"foo\"" "bar"', 'foo"bar'),
+            (r'"foo\\" "bar"', 'foo\\bar'),
+            # octal escapes
+            (r'"\120\171\164\150\157\156"', 'Python'),
+            (r'"\120\171\164" "\150\157\156"', 'Python'),
+            (r'"\"\120\171\164" "\150\157\156\""', '"Python"'),
+            # hex escapes
+            (r'"\x50\x79\x74\x68\x6f\x6e"', 'Python'),
+            (r'"\x50\x79\x74" "\x68\x6f\x6e"', 'Python'),
+            (r'"\"\x50\x79\x74" "\x68\x6f\x6e\""', '"Python"'),
+        )
+        for string, expected in valid_strings:
+            with self.subTest(string=string):
+                parsed = parse_quoted_strings(DummyState(), string)
+                self.assertEqual(parsed, expected)
+
+        invalid_strings = (
+            "''",
+            '"',
+            '"""',
+            '"" "',
+            'foo',
+            '"" "foo',
+            '"foo" foo',
+            '42',
+            '"" 42 ""',
+            # disallowed escape sequences
+            r"\'",
+            r'"\e"',
+            r'"\8"',
+            r'"\9"',
+            r'"\x"',
+            r'\u1234',
+            r'"\N{ROMAN NUMERAL NINE}"'
+        )
+        for string in invalid_strings:
+            with self.subTest(string=string):
+                with self.assertRaises(ValueError):
+                    parse_quoted_strings(DummyState(), string)
+
+    def test_semantic_errors(self):
+        pos = (
+            # parse_po
+            ('msgctxt "foo"', 'Missing msgid after msgctxt'),
+            ('msgid "foo"', 'Missing msgstr after msgid'),
+            # parse_comment
+            ('msgctxt "foo"\n# comment',
+             'Comment line not allowed after msgctxt'),
+            ('msgid "foo"\n# comment',
+             'Comment line not allowed after msgid'),
+            ('msgid "foo"\nmsgid_plural "foos"\n# comment',
+             'Comment line not allowed after msgid_plural'),
+            # parse_msgctxt
+            ('msgctxt "foo"\nmsgctxt "bar"',
+             'msgctxt not allowed after msgctxt'),
+            ('msgid "foo"\nmsgctxt "bar"', 'msgctxt not allowed after msgid'),
+            ('msgid "foo"\nmsgid_plural "foos"\nmsgctxt "bar"',
+             'msgctxt not allowed after msgid_plural'),
+            # parse_msgid
+            ('msgid "foo"\nmsgid "bar"', 'msgid not allowed after msgid'),
+            ('msgid "foo"\nmsgid_plural "foos"\nmsgid "bar"',
+             'msgid not allowed after msgid_plural'),
+            # parse_msgid_plural
+            ('msgid_plural "foos"', 'msgid_plural must be preceded by msgid'),
+            ('# comment\nmsgid_plural "foos"',
+             'msgid_plural not allowed after comment'),
+            ('msgid "foo"\nmsgid_plural "foos"\nmsgid_plural "bars"',
+             'msgid_plural not allowed after msgid_plural'),
+            ('msgctxt "foo"\nmsgid_plural "foos"',
+             'msgid_plural not allowed after msgctxt'),
+            ('msgid "foo"\nmsgstr "bar"\nmsgid_plural "foos"',
+             'msgid_plural not allowed after msgstr'),
+            # parse_msgstr
+            ('msgstr "foo"', 'msgstr must be preceded by msgid'),
+            ('# comment\nmsgstr "foo"', 'msgstr not allowed after comment'),
+            ('msgctxt "foo"\nmsgstr "bar"',
+             'msgstr not allowed after msgctxt'),
+            ('msgid "foo"\nmsgstr "bar"\nmsgstr "baz"',
+             'msgstr not allowed after msgstr'),
+            # parse_line
+            ('"foo"', 'Syntax error before:'),
+            ('# comment\n"foo"', 'Syntax error before:'),
+        )
+        for po, message in pos:
+            with self.subTest(po=po):
+                with self.assertRaises(ValueError) as cm:
+                    parse_po(po.encode('utf-8'), 'foo.po')
+                self.assertIn(message, str(cm.exception))
+
+    def test_msgstr_invalid_indices(self):
+        pos = (
+            ('''
+msgid "foo"
+msgstr[0] "bar"       
+''', 'Missing msgid_plural section'),
+            ('''
+msgid "foo"
+msgid_plural "foos"
+msgstr[0] "bar"
+msgstr[42] "bars"
+''', "Plural form has incorrect index, found '42' but should be '1'"),
+            ('''
+msgid "foo"
+msgid_plural "foos"
+msgstr "bar"
+''', "Indexed msgstr required after msgid_plural"),
+        )
+        for po, message in pos:
+            with self.subTest(po=po):
+                with self.assertRaises(ValueError) as cm:
+                    parse_po(po.encode('utf-8'), 'foo.po')
+                self.assertIn(message, str(cm.exception))
+
+    def test_duplicate_entries(self):
+        po = b'''
+msgid "foo"
+msgstr "bar"
+
+msgid "foo"
+msgstr "baz"
+'''
+        with self.assertRaisesRegex(ValueError, "Duplicate entry: 'foo'"):
+            parse_po(po, 'foo.po')
+
+        po = b'''
+msgctxt "context"
+msgid "foo"
+msgstr "bar"
+
+msgctxt "context"
+msgid "foo"
+msgstr "baz"
+'''
+        with self.assertRaises(ValueError) as cm:
+            parse_po(po, 'foo.po')
+        self.assertIn("Duplicate entry: ('context', 'foo')", str(cm.exception))
+
+    def test_encoding(self):
+        po = r'''
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "αβ"
+msgstr "αβ"
+'''
+        expected = [{
+            'msgctxt': None,
+            'msgid': '',
+            'msgid_plural': None,
+            'msgstr': 'Content-Type: text/plain; charset=UTF-8\n',
+        }, {
+            'msgctxt': None,
+            'msgid': 'αβ',
+            'msgid_plural': None,
+            'msgstr': 'αβ',
+        }]
+        self.assertEqual(parse_po(po.encode('utf-8'), 'foo.po'), expected)
+
+    def test_missing_encoding(self):
+        po = '''
+msgid "αβ"
+msgstr "αβ"
+'''
+        ab = "αβ".encode('utf-8').decode('latin-1')
+        expected = [{
+            'msgctxt': None,
+            'msgid': ab,
+            'msgid_plural': None,
+            'msgstr': ab,
+        }]
+        self.assertEqual(parse_po(po.encode('utf-8'), 'foo.po'), expected)
+
+    def test_invalid_BOM(self):
+        po = codecs.BOM_UTF8 + b'msgid "foo"\nmsgstr "bar"'
+        with self.assertRaises(ValueError) as cm:
+            parse_po(po, 'foo.po')
+        self.assertIn("starts with a UTF-8 BOM", str(cm.exception))
+
+    def test_parse(self):
+        filename = DATA_DIR / 'general.po'
+        messages = parse_po(filename.read_bytes(), filename)
+        expected = json.loads(
+            (DATA_DIR / 'general.json').read_text(encoding='utf-8'))
+        self.assertEqual(messages, expected)
 
 
 def extract_from_snapshots():
-    exclude_file = DATA_DIR / 'excluded.txt'
+    exclude_file = DATA_DIR / 'exclude_file.pot'
     snapshots = {
         'messages.py': (),
         'fileloc.py': ('--docstrings',),
@@ -559,9 +798,16 @@ def update_POT_snapshots():
         output_file.write_text(output, encoding='utf-8')
 
 
+def update_PO_snapshots():
+    messages = parse_po((DATA_DIR / 'general.po').read_bytes(), 'general.po')
+    data = json.dumps(messages, indent=4, ensure_ascii=False)
+    (DATA_DIR / 'general.json').write_text(data, encoding='utf-8')
+
+
 if __name__ == '__main__':
     # To regenerate POT files
     if len(sys.argv) > 1 and sys.argv[1] == '--snapshot-update':
         update_POT_snapshots()
+        update_PO_snapshots()
         sys.exit(0)
     unittest.main()
