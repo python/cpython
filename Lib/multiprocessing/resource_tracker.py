@@ -84,14 +84,16 @@ class ResourceTracker(object):
     def _stop(self, use_blocking_lock=True):
         if use_blocking_lock:
             with self._lock:
-                self._stop_unlocked()
+                self._stop_locked()
         else:
             acquired = self._lock.acquire(blocking=False)
-            self._stop_unlocked()
-            if acquired:
-                self._lock.release()
+            try:
+                self._stop_locked()
+            finally:
+                if acquired:
+                    self._lock.release()
 
-    def _stop_unlocked(
+    def _stop_locked(
         self,
         close=os.close,
         waitpid=os.waitpid,
