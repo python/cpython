@@ -13,6 +13,7 @@ extern "C" {
 #include "pycore_code.h"          // STATS
 #include "pycore_stackref.h"      // _PyStackRef
 #include "pycore_stats.h"
+#include "pycore_typedefs.h"      // _PyInterpreterFrame
 
 /* See InternalDocs/frames.md for an explanation of the frame stack
  * including explanation of the PyFrameObject and _PyInterpreterFrame
@@ -22,7 +23,7 @@ extern "C" {
 struct _frame {
     PyObject_HEAD
     PyFrameObject *f_back;      /* previous frame, or NULL */
-    struct _PyInterpreterFrame *f_frame; /* points to the frame data */
+    _PyInterpreterFrame *f_frame; /* points to the frame data */
     PyObject *f_trace;          /* Trace function */
     int f_lineno;               /* Current line number. Only valid if non-zero */
     char f_trace_lines;         /* Emit per-line trace events? */
@@ -61,7 +62,7 @@ enum _frameowner {
     FRAME_OWNED_BY_CSTACK = 4,
 };
 
-typedef struct _PyInterpreterFrame {
+struct _PyInterpreterFrame {
     _PyStackRef f_executable; /* Deferred or strong reference (code object or None) */
     struct _PyInterpreterFrame *previous;
     _PyStackRef f_funcobj; /* Deferred or strong reference. Only valid if not on C stack */
@@ -85,7 +86,7 @@ typedef struct _PyInterpreterFrame {
 #endif
     /* Locals and stack */
     _PyStackRef localsplus[1];
-} _PyInterpreterFrame;
+};
 
 #define _PyInterpreterFrame_LASTI(IF) \
     ((int)((IF)->instr_ptr - _PyFrame_GetBytecode((IF))))

@@ -12,9 +12,10 @@ extern "C" {
 
 #include "pycore_interp.h"        // PyInterpreterState.eval_frame
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_typedefs.h"      // _PyInterpreterFrame
+
 
 /* Forward declarations */
-struct pyruntimestate;
 struct _ceval_runtime_state;
 
 // Export for '_lsprof' shared extension
@@ -109,7 +110,7 @@ extern _PyPerf_Callbacks _Py_perfmap_jit_callbacks;
 #endif
 
 static inline PyObject*
-_PyEval_EvalFrame(PyThreadState *tstate, struct _PyInterpreterFrame *frame, int throwflag)
+_PyEval_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     EVAL_CALL_STAT_INC(EVAL_CALL_TOTAL);
     if (tstate->interp->eval_frame == NULL) {
@@ -256,7 +257,7 @@ static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
 static inline void _Py_LeaveRecursiveCall(void)  {
 }
 
-extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);
+extern _PyInterpreterFrame* _PyEval_GetFrame(void);
 
 PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func);
 
