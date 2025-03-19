@@ -621,6 +621,7 @@ class Executor(object):
         # collected independently of the result_iterator closure.
         executor_weakref = weakref.ref(self)
 
+        result = collections.deque(maxlen=1)
         # Yield must be hidden in closure so that the futures are submitted
         # before the first iterator value is required.
         def result_iterator():
@@ -630,16 +631,18 @@ class Executor(object):
                 while fs:
                     # Careful not to keep a reference to the popped future
                     if timeout is None:
-                        result = _result_or_cancel(fs.pop())
+                        result.append(_result_or_cancel(fs.pop()))
                     else:
-                        result = _result_or_cancel(fs.pop(), end_time - time.monotonic())
+                        result.append(
+                            _result_or_cancel(fs.pop(), end_time - time.monotonic())
+                        )
                     if (
                         buffersize
                         and (executor := executor_weakref())
                         and (args := next(zipped_iterables, None))
                     ):
                         fs.appendleft(executor.submit(fn, *args))
-                    yield result
+                    yield result.pop()
             finally:
                 for future in fs:
                     future.cancel()
