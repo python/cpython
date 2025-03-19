@@ -871,6 +871,11 @@ conforming to :rfc:`8089`.
 
    .. versionadded:: 3.13
 
+   .. versionchanged:: 3.14
+      On non-Windows platforms, if a URL authority (e.g. a hostname) is
+      present, then it is discarded if it resolves to ``localhost``, otherwise
+      :exc:`ValueError` is raised. In previous versions the authority is
+      included in the returned path.
 
 .. method:: Path.as_uri()
 

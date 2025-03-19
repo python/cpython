@@ -390,44 +390,6 @@ fold_binop(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
     return 1;
 }
 
-static PyObject*
-make_const_tuple(asdl_expr_seq *elts)
-{
-    for (Py_ssize_t i = 0; i < asdl_seq_LEN(elts); i++) {
-        expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
-        if (e->kind != Constant_kind) {
-            return NULL;
-        }
-    }
-
-    PyObject *newval = PyTuple_New(asdl_seq_LEN(elts));
-    if (newval == NULL) {
-        return NULL;
-    }
-
-    for (Py_ssize_t i = 0; i < asdl_seq_LEN(elts); i++) {
-        expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
-        PyObject *v = e->v.Constant.value;
-        PyTuple_SET_ITEM(newval, i, Py_NewRef(v));
-    }
-    return newval;
-}
-
-static int
-fold_tuple(expr_ty node, PyArena *arena, _PyASTOptimizeState *state)
-{
-    if (state->syntax_check_only) {
-        return 1;
-    }
-    PyObject *newval;
-
-    if (node->v.Tuple.ctx != Load)
-        return 1;
-
-    newval = make_const_tuple(node->v.Tuple.elts);
-    return make_const(node, newval, arena);
-}
-
 static int astfold_mod(mod_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_stmt(stmt_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
 static int astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state);
@@ -620,7 +582,6 @@ astfold_expr(expr_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
         break;
     case Tuple_kind:
         CALL_SEQ(astfold_expr, expr, node_->v.Tuple.elts);
-        CALL(fold_tuple, expr_ty, node_);
         break;
     case Name_kind:
         if (state->syntax_check_only) {

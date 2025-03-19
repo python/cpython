@@ -430,11 +430,11 @@
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2s.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2b_Simd256.c" Condition="'$(Platform)' == 'x64'">
       <PreprocessorDefinitions>HACL_CAN_COMPILE_VEC256;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalOptions>/arch:AVX2</AdditionalOptions>
+      <AdditionalOptions>/arch:AVX2 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2s_Simd128.c" Condition="'$(Platform)' == 'x64'">
       <PreprocessorDefinitions>HACL_CAN_COMPILE_VEC128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalOptions>/arch:AVX</AdditionalOptions>
+      <AdditionalOptions>/arch:AVX %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="..\Modules\_heapqmodule.c" />
     <ClCompile Include="..\Modules\_json.c" />

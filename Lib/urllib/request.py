@@ -1460,7 +1460,7 @@ class FileHandler(BaseHandler):
             stats = os.stat(localfile)
             size = stats.st_size
             modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
-            mtype = mimetypes.guess_file_type(localfile)[0]
+            mtype = mimetypes.guess_type(filename)[0]
             headers = email.message_from_string(
                 'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
                 (mtype or 'text/plain', size, modified))
