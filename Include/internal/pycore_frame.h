@@ -12,6 +12,8 @@ extern "C" {
 #include <stddef.h>               // offsetof()
 #include "pycore_code.h"          // STATS
 #include "pycore_stackref.h"      // _PyStackRef
+#include "pycore_stats.h"
+#include "pycore_typedefs.h"      // _PyInterpreterFrame
 
 /* See InternalDocs/frames.md for an explanation of the frame stack
  * including explanation of the PyFrameObject and _PyInterpreterFrame
@@ -21,7 +23,7 @@ extern "C" {
 struct _frame {
     PyObject_HEAD
     PyFrameObject *f_back;      /* previous frame, or NULL */
-    struct _PyInterpreterFrame *f_frame; /* points to the frame data */
+    _PyInterpreterFrame *f_frame; /* points to the frame data */
     PyObject *f_trace;          /* Trace function */
     int f_lineno;               /* Current line number. Only valid if non-zero */
     char f_trace_lines;         /* Emit per-line trace events? */
@@ -60,7 +62,7 @@ enum _frameowner {
     FRAME_OWNED_BY_CSTACK = 4,
 };
 
-typedef struct _PyInterpreterFrame {
+struct _PyInterpreterFrame {
     _PyStackRef f_executable; /* Deferred or strong reference (code object or None) */
     struct _PyInterpreterFrame *previous;
     _PyStackRef f_funcobj; /* Deferred or strong reference. Only valid if not on C stack */
@@ -84,7 +86,7 @@ typedef struct _PyInterpreterFrame {
 #endif
     /* Locals and stack */
     _PyStackRef localsplus[1];
-} _PyInterpreterFrame;
+};
 
 #define _PyInterpreterFrame_LASTI(IF) \
     ((int)((IF)->instr_ptr - _PyFrame_GetBytecode((IF))))
@@ -148,17 +150,26 @@ _PyFrame_NumSlotsForCodeObject(PyCodeObject *code)
 
 static inline void _PyFrame_Copy(_PyInterpreterFrame *src, _PyInterpreterFrame *dest)
 {
-    *dest = *src;
-    assert(src->stackpointer != NULL);
-    int stacktop = (int)(src->stackpointer - src->localsplus);
-    assert(stacktop >= _PyFrame_GetCode(src)->co_nlocalsplus);
-    dest->stackpointer = dest->localsplus + stacktop;
-    for (int i = 1; i < stacktop; i++) {
-        dest->localsplus[i] = src->localsplus[i];
-    }
+    dest->f_executable = PyStackRef_MakeHeapSafe(src->f_executable);
     // Don't leave a dangling pointer to the old frame when creating generators
     // and coroutines:
     dest->previous = NULL;
+    dest->f_funcobj = PyStackRef_MakeHeapSafe(src->f_funcobj);
+    dest->f_globals = src->f_globals;
+    dest->f_builtins = src->f_builtins;
+    dest->f_locals = src->f_locals;
+    dest->frame_obj = src->frame_obj;
+    dest->instr_ptr = src->instr_ptr;
+#ifdef Py_GIL_DISABLED
+    dest->tlbc_index = src->tlbc_index;
+#endif
+    assert(src->stackpointer != NULL);
+    int stacktop = (int)(src->stackpointer - src->localsplus);
+    assert(stacktop >= 0);
+    dest->stackpointer = dest->localsplus + stacktop;
+    for (int i = 0; i < stacktop; i++) {
+        dest->localsplus[i] = PyStackRef_MakeHeapSafe(src->localsplus[i]);
+    }
 }
 
 #ifdef Py_GIL_DISABLED
@@ -393,7 +404,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
 
 PyAPI_FUNC(_PyInterpreterFrame *)
 _PyEvalFramePushAndInit(PyThreadState *tstate, _PyStackRef func,
-                        PyObject *locals, _PyStackRef const* args,
+                        PyObject *locals, _PyStackRef const *args,
                         size_t argcount, PyObject *kwnames,
                         _PyInterpreterFrame *previous);
 

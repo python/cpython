@@ -513,7 +513,7 @@
                 REPLACE_OP(this_instr, _NOP, 0 ,0);
             }
             sym_set_type(left, &PyUnicode_Type);
-            sym_set_type(left, &PyUnicode_Type);
+            sym_set_type(right, &PyUnicode_Type);
             break;
         }
 
@@ -1458,7 +1458,9 @@
             break;
         }
 
-        case _ITER_NEXT_LIST: {
+        /* _ITER_NEXT_LIST is not a viable micro-op for tier 2 */
+
+        case _ITER_NEXT_LIST_TIER_TWO: {
             JitOptSymbol *next;
             next = sym_new_not_null(ctx);
             stack_pointer[0] = next;

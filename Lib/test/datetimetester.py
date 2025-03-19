@@ -3556,6 +3556,9 @@ class TestDateTime(TestDate):
             '9999-12-31T24:00:00.000000',  # Year is invalid after wrapping due to 24:00
             '2009-04-19T12:30Z12:00',      # Extra time zone info after Z
             '2009-04-19T12:30:45:334034',  # Invalid microsecond separator
+            '2009-04-19T12:30:45.400 +02:30',  # Space between ms and timezone (gh-130959)
+            '2009-04-19T12:30:45.400 ',        # Trailing space (gh-130959)
+            '2009-04-19T12:30:45. 400',        # Space before fraction (gh-130959)
         ]
 
         for bad_str in bad_strs:
@@ -4773,6 +4776,9 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             '12:30,5',                  # Decimal mark at end of minute
             '12:30:45.123456Z12:00',    # Extra time zone info after Z
             '12:30:45:334034',          # Invalid microsecond separator
+            '12:30:45.400 +02:30',      # Space between ms and timezone (gh-130959)
+            '12:30:45.400 ',            # Trailing space (gh-130959)
+            '12:30:45. 400',            # Space before fraction (gh-130959)
         ]
 
         for bad_str in bad_strs:

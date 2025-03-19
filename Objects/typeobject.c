@@ -6,6 +6,7 @@
 #include "pycore_code.h"          // CO_FAST_FREE
 #include "pycore_dict.h"          // _PyDict_KeysSize()
 #include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
 #include "pycore_lock.h"          // _PySeqLock_*
 #include "pycore_long.h"          // _PyLong_IsNegative(), _PyLong_GetOne()
 #include "pycore_memoryobject.h"  // _PyMemoryView_FromBufferProc()
@@ -18,9 +19,11 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // _Py_Mangle()
 #include "pycore_typeobject.h"    // struct type_cache
+#include "pycore_unicodeobject.h" // _PyUnicode_Copy
 #include "pycore_unionobject.h"   // _Py_union_type_or
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 #include "pycore_cell.h"          // PyCell_GetRef()
+#include "pycore_stats.h"
 #include "opcode.h"               // MAKE_CELL
 
 #include <stddef.h>               // ptrdiff_t

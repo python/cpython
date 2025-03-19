@@ -291,6 +291,7 @@ write_location_info_entry(struct assembler* a, location loc, int isize)
         RETURN_IF_ERROR(_PyBytes_Resize(&a->a_linetable, len*2));
     }
     if (loc.lineno < 0) {
+        assert(loc.lineno == NO_LOCATION.lineno);
         write_location_info_none(a, isize);
         return SUCCESS;
     }
@@ -341,6 +342,18 @@ assemble_location_info(struct assembler *a, instr_sequence *instrs,
 {
     a->a_lineno = firstlineno;
     location loc = NO_LOCATION;
+    for (int i = instrs->s_used-1; i >= 0; i--) {
+        instruction *instr = &instrs->s_instrs[i];
+        if (same_location(instr->i_loc, NEXT_LOCATION)) {
+            if (IS_TERMINATOR_OPCODE(instr->i_opcode)) {
+                instr->i_loc = NO_LOCATION;
+            }
+            else {
+                assert(i < instrs->s_used-1);
+                instr->i_loc = instr[1].i_loc;
+            }
+        }
+    }
     int size = 0;
     for (int i = 0; i < instrs->s_used; i++) {
         instruction *instr = &instrs->s_instrs[i];
@@ -632,6 +645,10 @@ error:
     return co;
 }
 
+
+// The offset (in code units) of the END_SEND from the SEND in the `yield from` sequence.
+#define END_SEND_OFFSET 5
+
 static int
 resolve_jump_offsets(instr_sequence *instrs)
 {
@@ -670,7 +687,12 @@ resolve_jump_offsets(instr_sequence *instrs)
             if (OPCODE_HAS_JUMP(instr->i_opcode)) {
                 instruction *target = &instrs->s_instrs[instr->i_target];
                 instr->i_oparg = target->i_offset;
-                if (instr->i_oparg < offset) {
+                if (instr->i_opcode == END_ASYNC_FOR) {
+                    // sys.monitoring needs to be able to find the matching END_SEND
+                    // but the target is the SEND, so we adjust it here.
+                    instr->i_oparg = offset - instr->i_oparg - END_SEND_OFFSET;
+                }
+                else if (instr->i_oparg < offset) {
                     assert(IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
                     instr->i_oparg = offset - instr->i_oparg;
                 }
