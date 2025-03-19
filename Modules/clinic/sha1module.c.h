@@ -75,6 +75,19 @@ PyDoc_STRVAR(SHA1Type_update__doc__,
 #define SHA1TYPE_UPDATE_METHODDEF    \
     {"update", (PyCFunction)SHA1Type_update, METH_O, SHA1Type_update__doc__},
 
+static PyObject *
+SHA1Type_update_impl(SHA1object *self, PyObject *obj);
+
+static PyObject *
+SHA1Type_update(PyObject *self, PyObject *obj)
+{
+    PyObject *return_value = NULL;
+
+    return_value = SHA1Type_update_impl((SHA1object *)self, obj);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_sha1_sha1__doc__,
 "sha1($module, /, string=b\'\', *, usedforsecurity=True)\n"
 "--\n"
@@ -149,4 +162,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ad6f3788a6e7ff6f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3cfa7b6a9f99b5b2 input=a9049054013a1b77]*/

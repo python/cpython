@@ -10,14 +10,7 @@ extern "C" {
 #endif
 
 #include <assert.h>
-#include <stdbool.h>
-#include <stdint.h>
-
-
-typedef struct {
-    uint16_t value_and_backoff;
-} _Py_BackoffCounter;
-
+#include "pycore_structs.h" // _Py_BackoffCounter
 
 /* 16-bit countdown counters using exponential backoff.
 

@@ -18,6 +18,8 @@
 #define NEED_OPCODE_TABLES
 #include "pycore_opcode_utils.h"
 #undef NEED_OPCODE_TABLES
+#include "pycore_c_array.h"       // _Py_c_array_t
+#include "pycore_code.h"          // COMPARISON_LESS_THAN
 #include "pycore_compile.h"
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_NewLabel()
 #include "pycore_intrinsics.h"
@@ -25,6 +27,7 @@
 #include "pycore_object.h"        // _Py_ANNOTATE_FORMAT_VALUE_WITH_FAKE_GLOBALS
 #include "pycore_pystate.h"       // _Py_GetConfig()
 #include "pycore_symtable.h"      // PySTEntryObject
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString
 
 #define NEED_OPCODE_METADATA
 #include "pycore_opcode_metadata.h" // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
@@ -36,15 +39,6 @@
 #define COMP_LISTCOMP 1
 #define COMP_SETCOMP  2
 #define COMP_DICTCOMP 3
-
-/* A soft limit for stack use, to avoid excessive
- * memory use for large constants, etc.
- *
- * The value 30 is plucked out of thin air.
- * Code that could use more stack than this is
- * rare, so the exact value is unimportant.
- */
-#define STACK_USE_GUIDELINE 30
 
 #undef SUCCESS
 #undef ERROR
@@ -109,40 +103,48 @@ static const int compare_masks[] = {
     [Py_GE] = COMPARISON_GREATER_THAN | COMPARISON_EQUALS,
 };
 
-/*
- * Resize the array if index is out of range.
- *
- * idx: the index we want to access
- * arr: pointer to the array
- * alloc: pointer to the capacity of the array
- * default_alloc: initial number of items
- * item_size: size of each item
- *
- */
+
 int
-_PyCompile_EnsureArrayLargeEnough(int idx, void **array, int *alloc,
-                                  int default_alloc, size_t item_size)
+_Py_CArray_Init(_Py_c_array_t* array, int item_size, int initial_num_entries) {
+    memset(array, 0, sizeof(_Py_c_array_t));
+    array->item_size = item_size;
+    array->initial_num_entries = initial_num_entries;
+    return 0;
+}
+
+void
+_Py_CArray_Fini(_Py_c_array_t* array)
 {
-    void *arr = *array;
+    if (array->array) {
+        PyMem_Free(array->array);
+        array->allocated_entries = 0;
+    }
+}
+
+int
+_Py_CArray_EnsureCapacity(_Py_c_array_t *c_array, int idx)
+{
+    void *arr = c_array->array;
+    int alloc = c_array->allocated_entries;
     if (arr == NULL) {
-        int new_alloc = default_alloc;
+        int new_alloc = c_array->initial_num_entries;
         if (idx >= new_alloc) {
-            new_alloc = idx + default_alloc;
+            new_alloc = idx + c_array->initial_num_entries;
         }
-        arr = PyMem_Calloc(new_alloc, item_size);
+        arr = PyMem_Calloc(new_alloc, c_array->item_size);
         if (arr == NULL) {
             PyErr_NoMemory();
             return ERROR;
         }
-        *alloc = new_alloc;
+        alloc = new_alloc;
     }
-    else if (idx >= *alloc) {
-        size_t oldsize = *alloc * item_size;
-        int new_alloc = *alloc << 1;
+    else if (idx >= alloc) {
+        size_t oldsize = alloc * c_array->item_size;
+        int new_alloc = alloc << 1;
         if (idx >= new_alloc) {
-            new_alloc = idx + default_alloc;
+            new_alloc = idx + c_array->initial_num_entries;
         }
-        size_t newsize = new_alloc * item_size;
+        size_t newsize = new_alloc * c_array->item_size;
 
         if (oldsize > (SIZE_MAX >> 1)) {
             PyErr_NoMemory();
@@ -155,12 +157,13 @@ _PyCompile_EnsureArrayLargeEnough(int idx, void **array, int *alloc,
             PyErr_NoMemory();
             return ERROR;
         }
-        *alloc = new_alloc;
+        alloc = new_alloc;
         arr = tmp;
         memset((char *)arr + oldsize, 0, newsize - oldsize);
     }
 
-    *array = arr;
+    c_array->array = arr;
+    c_array->allocated_entries = alloc;
     return SUCCESS;
 }
 
@@ -281,14 +284,6 @@ codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 static int
 codegen_addop_load_const(compiler *c, location loc, PyObject *o)
 {
-    if (PyLong_CheckExact(o)) {
-        int overflow;
-        long val = PyLong_AsLongAndOverflow(o, &overflow);
-        if (!overflow && _PY_IS_SMALL_INT(val)) {
-            ADDOP_I(c, loc, LOAD_SMALL_INT, val);
-            return SUCCESS;
-        }
-    }
     Py_ssize_t arg = _PyCompile_AddConst(c, o);
     if (arg < 0) {
         return ERROR;
@@ -3209,7 +3204,7 @@ starunpack_helper_impl(compiler *c, location loc,
                        int build, int add, int extend, int tuple)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
-    int big = n + pushed + (injected_arg ? 1 : 0) > STACK_USE_GUIDELINE;
+    int big = n + pushed + (injected_arg ? 1 : 0) > _PY_STACK_USE_GUIDELINE;
     int seen_star = 0;
     for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
@@ -3364,7 +3359,7 @@ static int
 codegen_subdict(compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end)
 {
     Py_ssize_t i, n = end - begin;
-    int big = n*2 > STACK_USE_GUIDELINE;
+    int big = n*2 > _PY_STACK_USE_GUIDELINE;
     location loc = LOC(e);
     if (big) {
         ADDOP_I(c, loc, BUILD_MAP, 0);
@@ -3411,7 +3406,7 @@ codegen_dict(compiler *c, expr_ty e)
             ADDOP_I(c, loc, DICT_UPDATE, 1);
         }
         else {
-            if (elements*2 > STACK_USE_GUIDELINE) {
+            if (elements*2 > _PY_STACK_USE_GUIDELINE) {
                 RETURN_IF_ERROR(codegen_subdict(c, e, i - elements, i + 1));
                 if (have_dict) {
                     ADDOP_I(c, loc, DICT_UPDATE, 1);
@@ -3752,7 +3747,7 @@ maybe_optimize_method_call(compiler *c, expr_ty e)
     /* Check that there aren't too many arguments */
     argsl = asdl_seq_LEN(args);
     kwdsl = asdl_seq_LEN(kwds);
-    if (argsl + kwdsl + (kwdsl != 0) >= STACK_USE_GUIDELINE) {
+    if (argsl + kwdsl + (kwdsl != 0) >= _PY_STACK_USE_GUIDELINE) {
         return 0;
     }
     /* Check that there are no *varargs types of arguments. */
@@ -3849,7 +3844,7 @@ codegen_joined_str(compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     Py_ssize_t value_count = asdl_seq_LEN(e->v.JoinedStr.values);
-    if (value_count > STACK_USE_GUIDELINE) {
+    if (value_count > _PY_STACK_USE_GUIDELINE) {
         _Py_DECLARE_STR(empty, "");
         ADDOP_LOAD_CONST_NEW(c, loc, Py_NewRef(&_Py_STR(empty)));
         ADDOP_NAME(c, loc, LOAD_METHOD, &_Py_ID(join), names);
@@ -3928,7 +3923,7 @@ codegen_subkwargs(compiler *c, location loc,
     Py_ssize_t i, n = end - begin;
     keyword_ty kw;
     assert(n > 0);
-    int big = n*2 > STACK_USE_GUIDELINE;
+    int big = n*2 > _PY_STACK_USE_GUIDELINE;
     if (big) {
         ADDOP_I(c, NO_LOCATION, BUILD_MAP, 0);
     }
@@ -3981,7 +3976,7 @@ codegen_call_helper_impl(compiler *c, location loc,
     nelts = asdl_seq_LEN(args);
     nkwelts = asdl_seq_LEN(keywords);
 
-    if (nelts + nkwelts*2 > STACK_USE_GUIDELINE) {
+    if (nelts + nkwelts*2 > _PY_STACK_USE_GUIDELINE) {
          goto ex_call;
     }
     for (i = 0; i < nelts; i++) {

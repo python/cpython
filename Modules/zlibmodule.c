@@ -2101,6 +2101,12 @@ zlib_exec(PyObject *mod)
                      PyUnicode_FromString(zlibVersion())) < 0) {
         return -1;
     }
+#ifdef ZLIBNG_VERSION
+    if (PyModule_Add(mod, "ZLIBNG_VERSION",
+                     PyUnicode_FromString(ZLIBNG_VERSION)) < 0) {
+        return -1;
+    }
+#endif
     if (PyModule_AddStringConstant(mod, "__version__", "1.0") < 0) {
         return -1;
     }

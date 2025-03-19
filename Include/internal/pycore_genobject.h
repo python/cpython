@@ -8,7 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_frame.h"
+#include "pycore_interpframe.h"   // _PyInterpreterFrame
+
 
 /* _PyGenObject_HEAD defines the initial segment of generator
    and coroutine objects. */
@@ -27,7 +28,7 @@ extern "C" {
     char prefix##_running_async;                                            \
     /* The frame */                                                         \
     int8_t prefix##_frame_state;                                            \
-    struct _PyInterpreterFrame prefix##_iframe;                             \
+    _PyInterpreterFrame prefix##_iframe;                                    \
 
 struct _PyGenObject {
     /* The gi_ prefix is intended to remind of generator-iterator. */

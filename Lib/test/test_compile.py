@@ -2,7 +2,6 @@ import contextlib
 import dis
 import io
 import itertools
-import marshal
 import math
 import opcode
 import os
@@ -2416,7 +2415,9 @@ class TestStackSizeStability(unittest.TestCase):
             script = """def func():\n""" + i * snippet
             if async_:
                 script = "async " + script
-            code = compile(script, "<script>", "exec")
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', SyntaxWarning)
+                code = compile(script, "<script>", "exec")
             exec(code, ns, ns)
             return ns['func'].__code__
 
