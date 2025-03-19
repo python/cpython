@@ -26,7 +26,7 @@ Note that additional file formats which can be decompressed by the
 The module defines the following items:
 
 
-.. function:: open(filename, mode='rb', compresslevel=9, encoding=None, errors=None, newline=None)
+.. function:: open(filename, mode='rb', compresslevel=6, encoding=None, errors=None, newline=None)
 
    Open a gzip-compressed file in binary or text mode, returning a :term:`file
    object`.
@@ -67,7 +67,7 @@ The module defines the following items:
 
    .. versionadded:: 3.8
 
-.. class:: GzipFile(filename=None, mode=None, compresslevel=9, fileobj=None, mtime=None)
+.. class:: GzipFile(filename=None, mode=None, compresslevel=6, fileobj=None, mtime=None)
 
    Constructor for the :class:`GzipFile` class, which simulates most of the
    methods of a :term:`file object`, with the exception of the :meth:`~io.IOBase.truncate`
@@ -182,7 +182,7 @@ The module defines the following items:
       attribute instead.
 
 
-.. function:: compress(data, compresslevel=9, *, mtime=0)
+.. function:: compress(data, compresslevel=6, *, mtime=0)
 
    Compress the *data*, returning a :class:`bytes` object containing
    the compressed data.  *compresslevel* and *mtime* have the same meaning as in

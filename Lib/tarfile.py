@@ -1953,7 +1953,7 @@ class TarFile(object):
         return cls(name, mode, fileobj, **kwargs)
 
     @classmethod
-    def gzopen(cls, name, mode="r", fileobj=None, compresslevel=9, **kwargs):
+    def gzopen(cls, name, mode="r", fileobj=None, compresslevel=6, **kwargs):
         """Open gzip compressed tar archive name for reading or writing.
            Appending is not allowed.
         """
