@@ -1026,6 +1026,7 @@ zipinfo
   to produce reproducible output.
   (Contributed by Jiahao Li in :gh:`91279`.)
 
+
 .. Add improved modules above alphabetically, not here at the end.
 
 Optimizations
@@ -1076,6 +1077,18 @@ uuid
     respectively.
 
   (Contributed by Bénédikt Tran in :gh:`128150`.)
+
+
+zlib
+----
+
+* On Windows, ``zlib-ng`` is now used as the implementation of the
+  :mod:`zlib` module. This should produce compatible and comparable
+  results with better performance, though it is worth noting that
+  ``zlib.Z_BEST_SPEED`` (1) may result in significantly less
+  compression than the previous implementation (while also significantly
+  reducing the time taken to compress).
+  (Contributed by Steve Dower in :gh:`91349`.)
 
 
 Deprecated
@@ -1134,6 +1147,11 @@ Deprecated
   Calling the Python implementation of :func:`functools.reduce` with *function*
   or *sequence* as keyword arguments is now deprecated.
   (Contributed by Kirill Podoprigora in :gh:`121676`.)
+
+* :mod:`!nturl2path`: This module is now deprecated. Call
+  :func:`urllib.request.url2pathname` and :func:`~urllib.request.pathname2url`
+  instead.
+  (Contributed by Barney Gale in :gh:`125866`.)
 
 * :mod:`os`:
   :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
