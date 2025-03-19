@@ -2,8 +2,8 @@ import unittest
 
 from test.support import warnings_helper
 
-nturl2path = warnings_helper.import_deprecated("nturl2path")
 
+nturl2path = warnings_helper.import_deprecated("nturl2path")
 
 
 class NTURL2PathTest(unittest.TestCase):
@@ -101,7 +101,6 @@ class NTURL2PathTest(unittest.TestCase):
                  r'C:\foo\bar\spam.foo']
         for path in paths:
             self.assertEqual(fn(nturl2path.pathname2url(path)), path)
-
 
 
 if __name__ == '__main__':

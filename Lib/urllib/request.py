@@ -1646,7 +1646,6 @@ class DataHandler(BaseHandler):
 
 # Code move from the old urllib module
 
-# Helper for non-unix systems
 def url2pathname(url):
     """OS-specific conversion from a relative URL of the 'file' scheme
     to a file system path; not recommended for general use."""
