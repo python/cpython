@@ -250,11 +250,7 @@ class GzipFile(_compression.BaseStream):
                 self._write_gzip_header(compresslevel)
         except BaseException:
             # Avoid a ResourceWarning if the write fails, eg read-only file or KeyboardInterrupt
-            try:
-                if self.myfileobj is not None:
-                    self.myfileobj.close()
-            finally:
-                self.fileobj = None
+            self._close()
             raise
 
     @property
@@ -396,11 +392,14 @@ class GzipFile(_compression.BaseStream):
             elif self.mode == READ:
                 self._buffer.close()
         finally:
-            self.fileobj = None
-            myfileobj = self.myfileobj
-            if myfileobj:
-                self.myfileobj = None
-                myfileobj.close()
+            self._close()
+
+    def _close(self):
+        self.fileobj = None
+        myfileobj = self.myfileobj
+        if myfileobj is not None:
+            self.myfileobj = None
+            myfileobj.close()
 
     def flush(self,zlib_mode=zlib.Z_SYNC_FLUSH):
         self._check_not_closed()
