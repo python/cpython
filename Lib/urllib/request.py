@@ -1680,7 +1680,6 @@ def pathname2url(pathname):
         pathname = pathname.replace('\\', '/')
     encoding = sys.getfilesystemencoding()
     errors = sys.getfilesystemencodeerrors()
-    prefix = ''
     drive, root, tail = os.path.splitroot(pathname)
     if drive:
         # First, clean up some special forms. We are going to sacrifice the
@@ -1693,16 +1692,16 @@ def pathname2url(pathname):
             # DOS drive specified. Add three slashes to the start, producing
             # an authority section with a zero-length authority, and a path
             # section starting with a single slash.
-            prefix = '///'
+            drive = '///' + drive
         drive = quote(drive, encoding=encoding, errors=errors, safe='/:')
     elif root:
         # Add explicitly empty authority to absolute path. If the path
         # starts with exactly one slash then this change is mostly
         # cosmetic, but if it begins with two or more slashes then this
         # avoids interpreting the path as a URL authority.
-        prefix = '//'
+        root = '//' + root
     tail = quote(tail, encoding=encoding, errors=errors)
-    return prefix + drive + root + tail
+    return drive + root + tail
 
 
 # Utility functions
