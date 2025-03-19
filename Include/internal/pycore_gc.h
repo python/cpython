@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_interp_structs.h" // PyGC_Head
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_typedefs.h"      // _PyInterpreterFrame
 
 
