@@ -56,6 +56,7 @@ PyDoc_STRVAR(sound_module_doc,
 "SND_NODEFAULT - Do not play a default beep if the sound can not be found\n"
 "SND_NOSTOP - Do not interrupt any sounds currently playing\n"  // Raising RuntimeError if needed
 "SND_NOWAIT - Return immediately if the sound driver is busy\n" // Without any errors
+"SND_APPLICATION - sound is an application-specific alias in the registry."
 "\n"
 "Beep(frequency, duration) - Make a beep through the PC speaker.\n"
 "MessageBeep(type) - Call Windows MessageBeep.");

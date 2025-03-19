@@ -12,7 +12,9 @@
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_tuple.h"         // _PyTuple_MaybeUntrack()
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
+
 #include "pydtrace.h"
 
 #ifndef Py_GIL_DISABLED
@@ -1488,11 +1490,11 @@ mark_stacks(PyInterpreterState *interp, PyGC_Head *visited, int visited_space, b
             objects_marked += move_to_reachable(func, &reachable, visited_space);
             while (sp > locals) {
                 sp--;
-                if (PyStackRef_IsNull(*sp)) {
+                PyObject *op = PyStackRef_AsPyObjectBorrow(*sp);
+                if (op == NULL || _Py_IsImmortal(op)) {
                     continue;
                 }
-                PyObject *op = PyStackRef_AsPyObjectBorrow(*sp);
-                if (!_Py_IsImmortal(op) && _PyObject_IS_GC(op)) {
+                if (_PyObject_IS_GC(op)) {
                     PyGC_Head *gc = AS_GC(op);
                     if (_PyObject_GC_IS_TRACKED(op) &&
                         gc_old_space(gc) != visited_space) {

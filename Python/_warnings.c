@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION_MUT()
+#include "pycore_frame.h"         // PyFrameObject members
 #include "pycore_interp.h"        // PyInterpreterState.warnings
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()

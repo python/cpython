@@ -1,7 +1,10 @@
 #include <Python.h>
 #include "pycore_ast.h"           // _PyAST_Validate(),
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_parser.h"        // _PYPEGEN_NSTATISTICS
 #include "pycore_pyerrors.h"      // PyExc_IncompleteInputError
+#include "pycore_runtime.h"     // _PyRuntime
+#include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal
 #include <errcode.h>
 
 #include "lexer/lexer.h"
@@ -509,8 +512,6 @@ _PyPegen_new_identifier(Parser *p, const char *n)
     if (!id) {
         goto error;
     }
-    /* PyUnicode_DecodeUTF8 should always return a ready string. */
-    assert(PyUnicode_IS_READY(id));
     /* Check whether there are non-ASCII characters in the
        identifier; if so, normalize to NFKC. */
     if (!PyUnicode_IS_ASCII(id))

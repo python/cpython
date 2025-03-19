@@ -1,7 +1,8 @@
 /* Python interpreter top-level routines, including init/exit */
 
 #include "Python.h"
-
+#include "pycore_runtime_structs.h"
+#include "pycore_unicodeobject.h"
 #include "pycore_audit.h"         // _PySys_ClearAuditHooks()
 #include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
@@ -13,6 +14,7 @@
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_floatobject.h"   // _PyFloat_InitTypes()
 #include "pycore_global_objects_fini_generated.h"  // "_PyStaticObjects_CheckRefcnt()
+#include "pycore_hamt.h"          // _PyHamt_Type
 #include "pycore_import.h"        // _PyImport_BootstrapImp()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_list.h"          // _PyList_Fini()
@@ -2036,18 +2038,23 @@ _Py_Finalize(_PyRuntimeState *runtime)
 
     // XXX Call something like _PyImport_Disable() here?
 
-    /* Destroy the state of all threads of the interpreter, except of the
+    /* Remove the state of all threads of the interpreter, except for the
        current thread. In practice, only daemon threads should still be alive,
        except if wait_for_thread_shutdown() has been cancelled by CTRL+C.
-       Clear frames of other threads to call objects destructors. Destructors
-       will be called in the current Python thread. Since
-       _PyRuntimeState_SetFinalizing() has been called, no other Python thread
-       can take the GIL at this point: if they try, they will exit
-       immediately. We start the world once we are the only thread state left,
+       We start the world once we are the only thread state left,
        before we call destructors. */
     PyThreadState *list = _PyThreadState_RemoveExcept(tstate);
+    for (PyThreadState *p = list; p != NULL; p = p->next) {
+        _PyThreadState_SetShuttingDown(p);
+    }
     _PyEval_StartTheWorldAll(runtime);
-    _PyThreadState_DeleteList(list);
+
+    /* Clear frames of other threads to call objects destructors. Destructors
+       will be called in the current Python thread. Since
+       _PyRuntimeState_SetFinalizing() has been called, no other Python thread
+       can take the GIL at this point: if they try, they will hang in
+       _PyThreadState_HangThread. */
+    _PyThreadState_DeleteList(list, /*is_after_fork=*/0);
 
     /* At this point no Python code should be running at all.
        The only thread state left should be the main thread of the main
