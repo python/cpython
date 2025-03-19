@@ -18,6 +18,7 @@
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_STORE_UINTPTR_RELEASE
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_runtime_structs.h"     // _PyCoMonitoringData
 
 /* Uncomment this to dump debugging output when assertions fail */
 // #define INSTRUMENT_DEBUG 1
@@ -3006,13 +3007,6 @@ static PyObject *make_branch_handler(int tool_id, PyObject *handler, bool right)
     return (PyObject *)callback;
 }
 
-/* Consumes a reference to obj */
-static PyObject *exchange_callables(int tool_id, int event_id, PyObject *obj)
-{
-    PyInterpreterState *is = _PyInterpreterState_GET();
-    return _Py_atomic_exchange_ptr(&is->monitoring_callables[tool_id][event_id], obj);
-}
-
 PyObject *
 _PyMonitoring_RegisterCallback(int tool_id, int event_id, PyObject *obj)
 {
@@ -3036,11 +3030,21 @@ _PyMonitoring_RegisterCallback(int tool_id, int event_id, PyObject *obj)
                 return NULL;
             }
         }
-        Py_XDECREF(exchange_callables(tool_id, PY_MONITORING_EVENT_BRANCH_RIGHT, right));
-        res = exchange_callables(tool_id, PY_MONITORING_EVENT_BRANCH_LEFT, left);
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyEval_StopTheWorld(interp);
+        PyObject *old_right = interp->monitoring_callables[tool_id][PY_MONITORING_EVENT_BRANCH_RIGHT];
+        interp->monitoring_callables[tool_id][PY_MONITORING_EVENT_BRANCH_RIGHT] = right;
+        res = interp->monitoring_callables[tool_id][PY_MONITORING_EVENT_BRANCH_LEFT];
+        interp->monitoring_callables[tool_id][PY_MONITORING_EVENT_BRANCH_LEFT] = left;
+        _PyEval_StartTheWorld(interp);
+        Py_XDECREF(old_right);
     }
     else {
-        res = exchange_callables(tool_id, event_id, Py_XNewRef(obj));
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        _PyEval_StopTheWorld(interp);
+        res = interp->monitoring_callables[tool_id][event_id];
+        interp->monitoring_callables[tool_id][event_id] = Py_XNewRef(obj);
+        _PyEval_StartTheWorld(interp);
     }
     if (res != NULL && Py_TYPE(res) == &_PyLegacyBranchEventHandler_Type) {
         _PyLegacyBranchEventHandler *wrapper = (_PyLegacyBranchEventHandler *)res;

@@ -1107,15 +1107,24 @@ class Py_buffer_converter(CConverter):
 
 
 def correct_name_for_self(
-        f: Function
+        f: Function,
+        parser: bool = False
 ) -> tuple[str, str]:
     if f.kind in {CALLABLE, METHOD_INIT, GETTER, SETTER}:
         if f.cls:
             return "PyObject *", "self"
         return "PyObject *", "module"
     if f.kind is STATIC_METHOD:
-        return "void *", "null"
-    if f.kind in (CLASS_METHOD, METHOD_NEW):
+        if parser:
+            return "PyObject *", "null"
+        else:
+            return "void *", "null"
+    if f.kind == CLASS_METHOD:
+        if parser:
+            return "PyObject *", "type"
+        else:
+            return "PyTypeObject *", "type"
+    if f.kind == METHOD_NEW:
         return "PyTypeObject *", "type"
     raise AssertionError(f"Unhandled type of function f: {f.kind!r}")
 
@@ -1184,7 +1193,7 @@ class self_converter(CConverter):
     @property
     def parser_type(self) -> str:
         assert self.type is not None
-        tp, _ = correct_name_for_self(self.function)
+        tp, _ = correct_name_for_self(self.function, parser=True)
         return tp
 
     def render(self, parameter: Parameter, data: CRenderData) -> None:
@@ -1228,6 +1237,13 @@ class self_converter(CConverter):
             type_object = cls.type_object
             type_ptr = f'PyTypeObject *base_tp = {type_object};'
             template_dict['base_type_ptr'] = type_ptr
+
+    def use_pyobject_self(self, func: Function) -> bool:
+        conv_type = self.type
+        if conv_type is None:
+            conv_type, _ = correct_name_for_self(func)
+        return (conv_type in ('PyObject *', None)
+                and self.specified_type in ('PyObject *', None))
 
 
 # Converters for var-positional parameter.

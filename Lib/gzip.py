@@ -193,6 +193,11 @@ class GzipFile(_compression.BaseStream):
 
         """
 
+        # Ensure attributes exist at __del__
+        self.mode = None
+        self.fileobj = None
+        self._buffer = None
+
         if mode and ('t' in mode or 'U' in mode):
             raise ValueError("Invalid mode: {!r}".format(mode))
         if mode and 'b' not in mode:
@@ -368,7 +373,9 @@ class GzipFile(_compression.BaseStream):
 
     def close(self):
         fileobj = self.fileobj
-        if fileobj is None or self._buffer.closed:
+        if fileobj is None:
+            return
+        if self._buffer is None or self._buffer.closed:
             return
         try:
             if self.mode == WRITE:
@@ -445,6 +452,13 @@ class GzipFile(_compression.BaseStream):
         self._check_not_closed()
         return self._buffer.readline(size)
 
+    def __del__(self):
+        if self.mode == WRITE and not self.closed:
+            import warnings
+            warnings.warn("unclosed GzipFile",
+                          ResourceWarning, source=self, stacklevel=2)
+
+        super().__del__()
 
 def _read_exact(fp, n):
     '''Read exactly *n* bytes from `fp`

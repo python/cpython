@@ -1,1 +1,0 @@
-Make it possible to override default keywords in :program:`pygettext`.

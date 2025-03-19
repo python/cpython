@@ -693,7 +693,7 @@ static PyObject *
 select_epoll_fromfd_impl(PyTypeObject *type, int fd);
 
 static PyObject *
-select_epoll_fromfd(PyTypeObject *type, PyObject *arg)
+select_epoll_fromfd(PyObject *type, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -702,7 +702,7 @@ select_epoll_fromfd(PyTypeObject *type, PyObject *arg)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = select_epoll_fromfd_impl(type, fd);
+    return_value = select_epoll_fromfd_impl((PyTypeObject *)type, fd);
 
 exit:
     return return_value;
@@ -1196,7 +1196,7 @@ static PyObject *
 select_kqueue_fromfd_impl(PyTypeObject *type, int fd);
 
 static PyObject *
-select_kqueue_fromfd(PyTypeObject *type, PyObject *arg)
+select_kqueue_fromfd(PyObject *type, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -1205,7 +1205,7 @@ select_kqueue_fromfd(PyTypeObject *type, PyObject *arg)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = select_kqueue_fromfd_impl(type, fd);
+    return_value = select_kqueue_fromfd_impl((PyTypeObject *)type, fd);
 
 exit:
     return return_value;
@@ -1365,4 +1365,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=c18fd93efc5f4dce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=60c3edb2745c9f33 input=a9049054013a1b77]*/

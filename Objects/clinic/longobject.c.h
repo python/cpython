@@ -394,7 +394,7 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
                     PyObject *byteorder, int is_signed);
 
 static PyObject *
-int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+int_from_bytes(PyObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -456,7 +456,7 @@ skip_optional_pos:
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = int_from_bytes_impl(type, bytes_obj, byteorder, is_signed);
+    return_value = int_from_bytes_impl((PyTypeObject *)type, bytes_obj, byteorder, is_signed);
 
 exit:
     return return_value;
@@ -479,4 +479,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=fb96bd642a643f75 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=591cffa2b80b5184 input=a9049054013a1b77]*/

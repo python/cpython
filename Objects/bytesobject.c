@@ -2484,7 +2484,7 @@ bytes_splitlines_impl(PyBytesObject *self, int keepends)
 @classmethod
 bytes.fromhex
 
-    string: unicode
+    string: object
     /
 
 Create a bytes object from a string of hexadecimal numbers.
@@ -2495,7 +2495,7 @@ Example: bytes.fromhex('B9 01EF') -> b'\\xb9\\x01\\xef'.
 
 static PyObject *
 bytes_fromhex_impl(PyTypeObject *type, PyObject *string)
-/*[clinic end generated code: output=0973acc63661bb2e input=bf4d1c361670acd3]*/
+/*[clinic end generated code: output=0973acc63661bb2e input=f37d98ed51088a21]*/
 {
     PyObject *result = _PyBytes_FromHex(string, 0);
     if (type != &PyBytes_Type && result != NULL) {
@@ -2510,37 +2510,55 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     char *buf;
     Py_ssize_t hexlen, invalid_char;
     unsigned int top, bot;
-    const Py_UCS1 *str, *end;
+    const Py_UCS1 *str, *start, *end;
     _PyBytesWriter writer;
+    Py_buffer view;
+    view.obj = NULL;
 
     _PyBytesWriter_Init(&writer);
     writer.use_bytearray = use_bytearray;
 
-    assert(PyUnicode_Check(string));
-    hexlen = PyUnicode_GET_LENGTH(string);
+    if (PyUnicode_Check(string)) {
+        hexlen = PyUnicode_GET_LENGTH(string);
 
-    if (!PyUnicode_IS_ASCII(string)) {
-        const void *data = PyUnicode_DATA(string);
-        int kind = PyUnicode_KIND(string);
-        Py_ssize_t i;
+        if (!PyUnicode_IS_ASCII(string)) {
+            const void *data = PyUnicode_DATA(string);
+            int kind = PyUnicode_KIND(string);
+            Py_ssize_t i;
 
-        /* search for the first non-ASCII character */
-        for (i = 0; i < hexlen; i++) {
-            if (PyUnicode_READ(kind, data, i) >= 128)
-                break;
+            /* search for the first non-ASCII character */
+            for (i = 0; i < hexlen; i++) {
+                if (PyUnicode_READ(kind, data, i) >= 128)
+                    break;
+            }
+            invalid_char = i;
+            goto error;
         }
-        invalid_char = i;
-        goto error;
-    }
 
-    assert(PyUnicode_KIND(string) == PyUnicode_1BYTE_KIND);
-    str = PyUnicode_1BYTE_DATA(string);
+        assert(PyUnicode_KIND(string) == PyUnicode_1BYTE_KIND);
+        str = PyUnicode_1BYTE_DATA(string);
+    }
+    else if (PyObject_CheckBuffer(string)) {
+        if (PyObject_GetBuffer(string, &view, PyBUF_SIMPLE) != 0) {
+            return NULL;
+        }
+        hexlen = view.len;
+        str = view.buf;
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "fromhex() argument must be str or bytes-like, not %T",
+                     string);
+        return NULL;
+    }
 
     /* This overestimates if there are spaces */
     buf = _PyBytesWriter_Alloc(&writer, hexlen / 2);
-    if (buf == NULL)
-        return NULL;
+    if (buf == NULL) {
+        goto release_buffer;
+    }
 
+    start = str;
     end = str + hexlen;
     while (str < end) {
         /* skip over spaces in the input */
@@ -2554,7 +2572,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
 
         top = _PyLong_DigitValue[*str];
         if (top >= 16) {
-            invalid_char = str - PyUnicode_1BYTE_DATA(string);
+            invalid_char = str - start;
             goto error;
         }
         str++;
@@ -2565,7 +2583,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
             if (str >= end){
                 invalid_char = -1;
             } else {
-                invalid_char = str - PyUnicode_1BYTE_DATA(string);
+                invalid_char = str - start;
             }
             goto error;
         }
@@ -2574,6 +2592,9 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         *buf++ = (unsigned char)((top << 4) + bot);
     }
 
+    if (view.obj != NULL) {
+       PyBuffer_Release(&view);
+    }
     return _PyBytesWriter_Finish(&writer, buf);
 
   error:
@@ -2586,6 +2607,11 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
                      "fromhex() arg at position %zd", invalid_char);
     }
     _PyBytesWriter_Dealloc(&writer);
+
+  release_buffer:
+    if (view.obj != NULL) {
+        PyBuffer_Release(&view);
+    }
     return NULL;
 }
 
