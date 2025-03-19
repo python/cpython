@@ -976,7 +976,7 @@ dummy_func(
 
         inst(SET_ADD, (set, unused[oparg-1], v -- set, unused[oparg-1])) {
             int err = _PySet_AddTakeRef((PySetObject *)PyStackRef_AsPyObjectBorrow(set),
-                                PyStackRef_AsPyObjectSteal(v));
+                                        PyStackRef_AsPyObjectSteal(v));
             ERROR_IF(err, error);
         }
 
