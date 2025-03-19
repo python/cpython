@@ -1339,8 +1339,8 @@ with sub-interpreters:
 
    Return ``1`` if the current thread is holding the GIL and ``0`` otherwise.
    This function can be called from any thread at any time.
-   Only if it has had its Python thread state initialized and currently is
-   holding the GIL will it return ``1``.
+   Only if it has had its Python thread state initialized via :c:func:`PyGILState_Ensure`
+   and currently is holding the GIL will it return ``1``.
    This is mainly a helper/diagnostic function.  It can be useful
    for example in callback contexts or memory allocation functions when
    knowing that the GIL is locked can allow the caller to perform sensitive
