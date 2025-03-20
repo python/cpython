@@ -5,13 +5,16 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_Vector()
 #include "pycore_compile.h"       // _PyAST_Compile()
+#include "pycore_fileutils.h"     // _PyFile_Flush
+#include "pycore_floatobject.h"   // _PyFloat_ExactDealloc()
+#include "pycore_interp.h"        // _PyInterpreterState_GetConfig()
 #include "pycore_long.h"          // _PyLong_CompactValue
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _Py_AddToAllObjects()
 #include "pycore_pyerrors.h"      // _PyErr_NoMemory()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pythonrun.h"     // _Py_SourceAsString()
-#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_cell.h"          // PyCell_GetRef()
 
@@ -462,18 +465,16 @@ builtin_callable(PyObject *module, PyObject *obj)
 static PyObject *
 builtin_breakpoint(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *keywords)
 {
-    PyObject *hook = PySys_GetObject("breakpointhook");
-
+    PyObject *hook = _PySys_GetRequiredAttrString("breakpointhook");
     if (hook == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "lost sys.breakpointhook");
         return NULL;
     }
 
     if (PySys_Audit("builtins.breakpoint", "O", hook) < 0) {
+        Py_DECREF(hook);
         return NULL;
     }
 
-    Py_INCREF(hook);
     PyObject *retval = PyObject_Vectorcall(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
@@ -834,42 +835,35 @@ builtin_compile_impl(PyObject *module, PyObject *source, PyObject *filename,
     if (is_ast == -1)
         goto error;
     if (is_ast) {
-        if ((flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST) {
-            // return an un-optimized AST
-            result = Py_NewRef(source);
+        PyArena *arena = _PyArena_New();
+        if (arena == NULL) {
+            goto error;
         }
-        else {
-            // Return an optimized AST or code object
 
-            PyArena *arena = _PyArena_New();
-            if (arena == NULL) {
+        if (flags & PyCF_ONLY_AST) {
+            mod_ty mod = PyAST_obj2mod(source, arena, compile_mode);
+            if (mod == NULL || !_PyAST_Validate(mod)) {
+                _PyArena_Free(arena);
                 goto error;
             }
-
-            if (flags & PyCF_ONLY_AST) {
-                mod_ty mod = PyAST_obj2mod(source, arena, compile_mode);
-                if (mod == NULL || !_PyAST_Validate(mod)) {
-                    _PyArena_Free(arena);
-                    goto error;
-                }
-                if (_PyCompile_AstOptimize(mod, filename, &cf, optimize,
-                                           arena) < 0) {
-                    _PyArena_Free(arena);
-                    goto error;
-                }
-                result = PyAST_mod2obj(mod);
+            int syntax_check_only = ((flags & PyCF_OPTIMIZED_AST) == PyCF_ONLY_AST); /* unoptiomized AST */
+            if (_PyCompile_AstOptimize(mod, filename, &cf, optimize,
+                                           arena, syntax_check_only) < 0) {
+                _PyArena_Free(arena);
+                goto error;
             }
-            else {
-                mod_ty mod = PyAST_obj2mod(source, arena, compile_mode);
-                if (mod == NULL || !_PyAST_Validate(mod)) {
-                    _PyArena_Free(arena);
-                    goto error;
-                }
-                result = (PyObject*)_PyAST_Compile(mod, filename,
-                                                   &cf, optimize, arena);
-            }
-            _PyArena_Free(arena);
+            result = PyAST_mod2obj(mod);
         }
+        else {
+            mod_ty mod = PyAST_obj2mod(source, arena, compile_mode);
+            if (mod == NULL || !_PyAST_Validate(mod)) {
+                _PyArena_Free(arena);
+                goto error;
+            }
+            result = (PyObject*)_PyAST_Compile(mod, filename,
+                                               &cf, optimize, arena);
+        }
+        _PyArena_Free(arena);
         goto finally;
     }
 
@@ -1302,8 +1296,8 @@ This is guaranteed to be unique among simultaneously existing objects.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_id(PyModuleDef *self, PyObject *v)
-/*[clinic end generated code: output=0aa640785f697f65 input=5a534136419631f4]*/
+builtin_id_impl(PyModuleDef *self, PyObject *v)
+/*[clinic end generated code: output=4908a6782ed343e9 input=5a534136419631f4]*/
 {
     PyObject *id = PyLong_FromVoidPtr(v);
 
@@ -2168,17 +2162,19 @@ builtin_print_impl(PyObject *module, PyObject * const *args,
     int i, err;
 
     if (file == Py_None) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        file = _PySys_GetAttr(tstate, &_Py_ID(stdout));
+        file = _PySys_GetRequiredAttr(&_Py_ID(stdout));
         if (file == NULL) {
-            PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
             return NULL;
         }
 
         /* sys.stdout may be None when FILE* stdout isn't connected */
         if (file == Py_None) {
+            Py_DECREF(file);
             Py_RETURN_NONE;
         }
+    }
+    else {
+        Py_INCREF(file);
     }
 
     if (sep == Py_None) {
@@ -2188,6 +2184,7 @@ builtin_print_impl(PyObject *module, PyObject * const *args,
         PyErr_Format(PyExc_TypeError,
                      "sep must be None or a string, not %.200s",
                      Py_TYPE(sep)->tp_name);
+        Py_DECREF(file);
         return NULL;
     }
     if (end == Py_None) {
@@ -2197,6 +2194,7 @@ builtin_print_impl(PyObject *module, PyObject * const *args,
         PyErr_Format(PyExc_TypeError,
                      "end must be None or a string, not %.200s",
                      Py_TYPE(end)->tp_name);
+        Py_DECREF(file);
         return NULL;
     }
 
@@ -2209,11 +2207,13 @@ builtin_print_impl(PyObject *module, PyObject * const *args,
                 err = PyFile_WriteObject(sep, file, Py_PRINT_RAW);
             }
             if (err) {
+                Py_DECREF(file);
                 return NULL;
             }
         }
         err = PyFile_WriteObject(args[i], file, Py_PRINT_RAW);
         if (err) {
+            Py_DECREF(file);
             return NULL;
         }
     }
@@ -2225,14 +2225,17 @@ builtin_print_impl(PyObject *module, PyObject * const *args,
         err = PyFile_WriteObject(end, file, Py_PRINT_RAW);
     }
     if (err) {
+        Py_DECREF(file);
         return NULL;
     }
 
     if (flush) {
         if (_PyFile_Flush(file) < 0) {
+            Py_DECREF(file);
             return NULL;
         }
     }
+    Py_DECREF(file);
 
     Py_RETURN_NONE;
 }
@@ -2257,36 +2260,41 @@ static PyObject *
 builtin_input_impl(PyObject *module, PyObject *prompt)
 /*[clinic end generated code: output=83db5a191e7a0d60 input=159c46d4ae40977e]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *fin = _PySys_GetAttr(
-        tstate, &_Py_ID(stdin));
-    PyObject *fout = _PySys_GetAttr(
-        tstate, &_Py_ID(stdout));
-    PyObject *ferr = _PySys_GetAttr(
-        tstate, &_Py_ID(stderr));
+    PyObject *fin = NULL;
+    PyObject *fout = NULL;
+    PyObject *ferr = NULL;
     PyObject *tmp;
     long fd;
     int tty;
 
     /* Check that stdin/out/err are intact */
-    if (fin == NULL || fin == Py_None) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "input(): lost sys.stdin");
-        return NULL;
+    fin = _PySys_GetRequiredAttr(&_Py_ID(stdin));
+    if (fin == NULL) {
+        goto error;
     }
-    if (fout == NULL || fout == Py_None) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "input(): lost sys.stdout");
-        return NULL;
+    if (fin == Py_None) {
+        PyErr_SetString(PyExc_RuntimeError, "lost sys.stdin");
+        goto error;
     }
-    if (ferr == NULL || ferr == Py_None) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "input(): lost sys.stderr");
-        return NULL;
+    fout = _PySys_GetRequiredAttr(&_Py_ID(stdout));
+    if (fout == NULL) {
+        goto error;
+    }
+    if (fout == Py_None) {
+        PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
+        goto error;
+    }
+    ferr = _PySys_GetRequiredAttr(&_Py_ID(stderr));
+    if (ferr == NULL) {
+        goto error;
+    }
+    if (ferr == Py_None) {
+        PyErr_SetString(PyExc_RuntimeError, "lost sys.stderr");
+        goto error;
     }
 
     if (PySys_Audit("builtins.input", "O", prompt ? prompt : Py_None) < 0) {
-        return NULL;
+        goto error;
     }
 
     /* First of all, flush stderr */
@@ -2305,8 +2313,9 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
     else {
         fd = PyLong_AsLong(tmp);
         Py_DECREF(tmp);
-        if (fd < 0 && PyErr_Occurred())
-            return NULL;
+        if (fd < 0 && PyErr_Occurred()) {
+            goto error;
+        }
         tty = fd == fileno(stdin) && isatty(fd);
     }
     if (tty) {
@@ -2319,7 +2328,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
             fd = PyLong_AsLong(tmp);
             Py_DECREF(tmp);
             if (fd < 0 && PyErr_Occurred())
-                return NULL;
+                goto error;
             tty = fd == fileno(stdout) && isatty(fd);
         }
     }
@@ -2447,10 +2456,13 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
 
         if (result != NULL) {
             if (PySys_Audit("builtins.input/result", "O", result) < 0) {
-                return NULL;
+                goto error;
             }
         }
 
+        Py_DECREF(fin);
+        Py_DECREF(fout);
+        Py_DECREF(ferr);
         return result;
 
     _readline_errors:
@@ -2460,7 +2472,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         Py_XDECREF(stdout_errors);
         Py_XDECREF(po);
         if (tty)
-            return NULL;
+            goto error;
 
         PyErr_Clear();
     }
@@ -2468,12 +2480,22 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
     /* Fallback if we're not interactive */
     if (prompt != NULL) {
         if (PyFile_WriteObject(prompt, fout, Py_PRINT_RAW) != 0)
-            return NULL;
+            goto error;
     }
     if (_PyFile_Flush(fout) < 0) {
         PyErr_Clear();
     }
-    return PyFile_GetLine(fin, -1);
+    tmp = PyFile_GetLine(fin, -1);
+    Py_DECREF(fin);
+    Py_DECREF(fout);
+    Py_DECREF(ferr);
+    return tmp;
+
+error:
+    Py_XDECREF(fin);
+    Py_XDECREF(fout);
+    Py_XDECREF(ferr);
+    return NULL;
 }
 
 

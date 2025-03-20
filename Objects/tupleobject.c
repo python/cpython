@@ -1,14 +1,16 @@
-
 /* Tuple object implementation */
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
-#include "pycore_freelist.h"      // _Py_FREELIST_PUSH(), _Py_FREELIST_POP()
+#include "pycore_freelist.h"      // _Py_FREELIST_PUSH()
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
-#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_list.h"          // _Py_memory_repeat()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
-#include "pycore_object.h"        // _PyObject_GC_TRACK(), _Py_FatalRefcountError(), _PyDebugAllocatorStats()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_stackref.h"      // PyStackRef_AsPyObjectSteal()
+#include "pycore_tuple.h"         // _PyTupleIterObject
+
 
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"
@@ -604,8 +606,8 @@ Return number of occurrences of value.
 [clinic start generated code]*/
 
 static PyObject *
-tuple_count(PyTupleObject *self, PyObject *value)
-/*[clinic end generated code: output=aa927affc5a97605 input=531721aff65bd772]*/
+tuple_count_impl(PyTupleObject *self, PyObject *value)
+/*[clinic end generated code: output=cf02888d4bc15d7a input=531721aff65bd772]*/
 {
     Py_ssize_t count = 0;
     Py_ssize_t i;
@@ -1014,18 +1016,23 @@ tupleiter_next(PyObject *self)
 
     assert(it != NULL);
     seq = it->it_seq;
+#ifndef Py_GIL_DISABLED
     if (seq == NULL)
         return NULL;
+#endif
     assert(PyTuple_Check(seq));
 
-    if (it->it_index < PyTuple_GET_SIZE(seq)) {
-        item = PyTuple_GET_ITEM(seq, it->it_index);
-        ++it->it_index;
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+    if (index < PyTuple_GET_SIZE(seq)) {
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index + 1);
+        item = PyTuple_GET_ITEM(seq, index);
         return Py_NewRef(item);
     }
 
+#ifndef Py_GIL_DISABLED
     it->it_seq = NULL;
     Py_DECREF(seq);
+#endif
     return NULL;
 }
 
@@ -1034,8 +1041,15 @@ tupleiter_len(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
     Py_ssize_t len = 0;
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t idx = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+    Py_ssize_t seq_len = PyTuple_GET_SIZE(it->it_seq);
+    if (idx < seq_len)
+        len = seq_len - idx;
+#else
     if (it->it_seq)
         len = PyTuple_GET_SIZE(it->it_seq) - it->it_index;
+#endif
     return PyLong_FromSsize_t(len);
 }
 
@@ -1051,10 +1065,15 @@ tupleiter_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
      * see issue #101765 */
     _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
 
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t idx = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+    if (idx < PyTuple_GET_SIZE(it->it_seq))
+        return Py_BuildValue("N(O)n", iter, it->it_seq, idx);
+#else
     if (it->it_seq)
         return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
-    else
-        return Py_BuildValue("N(())", iter);
+#endif
+    return Py_BuildValue("N(())", iter);
 }
 
 static PyObject *
@@ -1069,7 +1088,7 @@ tupleiter_setstate(PyObject *self, PyObject *state)
             index = 0;
         else if (index > PyTuple_GET_SIZE(it->it_seq))
             index = PyTuple_GET_SIZE(it->it_seq); /* exhausted iterator */
-        it->it_index = index;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index);
     }
     Py_RETURN_NONE;
 }

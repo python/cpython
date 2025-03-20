@@ -23,7 +23,7 @@ extern "C" {
    declaration                                      \
    _GENERATE_DEBUG_SECTION_LINUX(name)
 
-#if defined(MS_WINDOWS)
+#if defined(MS_WINDOWS) && !defined(__clang__)
 #define _GENERATE_DEBUG_SECTION_WINDOWS(name)                       \
    _Pragma(Py_STRINGIFY(section(Py_STRINGIFY(name), read, write))) \
    __declspec(allocate(Py_STRINGIFY(name)))
