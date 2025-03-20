@@ -202,7 +202,7 @@ typedef struct _jit_opt_tuple {
 
 typedef struct {
     uint8_t tag;
-    bool not;
+    bool invert;
     uint16_t value;
 } JitOptTruthiness;
 
