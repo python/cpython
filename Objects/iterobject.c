@@ -187,6 +187,8 @@ typedef struct {
     PyObject *it_sentinel; /* Set to NULL when iterator is exhausted */
 } calliterobject;
 
+#define calliterobject_CAST(op) ((calliterobject *)(op))
+
 PyObject *
 PyCallIter_New(PyObject *callable, PyObject *sentinel)
 {
@@ -202,7 +204,7 @@ PyCallIter_New(PyObject *callable, PyObject *sentinel)
 static void
 calliter_dealloc(PyObject *op)
 {
-    calliterobject *it = (calliterobject*)op;
+    calliterobject *it = calliterobject_CAST(op);
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_callable);
     Py_XDECREF(it->it_sentinel);
@@ -210,8 +212,9 @@ calliter_dealloc(PyObject *op)
 }
 
 static int
-calliter_traverse(calliterobject *it, visitproc visit, void *arg)
+calliter_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    calliterobject *it = calliterobject_CAST(op);
     Py_VISIT(it->it_callable);
     Py_VISIT(it->it_sentinel);
     return 0;
@@ -220,7 +223,7 @@ calliter_traverse(calliterobject *it, visitproc visit, void *arg)
 static PyObject *
 calliter_iternext(PyObject *op)
 {
-    calliterobject *it = (calliterobject*)op;
+    calliterobject *it = calliterobject_CAST(op);
     PyObject *result;
 
     if (it->it_callable == NULL) {
@@ -253,7 +256,7 @@ calliter_iternext(PyObject *op)
 static PyObject *
 calliter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    calliterobject *it = (calliterobject*)op;
+    calliterobject *it = calliterobject_CAST(op);
     PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
 
     /* _PyEval_GetBuiltin can invoke arbitrary code,
@@ -294,7 +297,7 @@ PyTypeObject PyCallIter_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)calliter_traverse,            /* tp_traverse */
+    calliter_traverse,                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
