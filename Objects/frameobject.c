@@ -1079,6 +1079,7 @@ frame_back_get_impl(PyFrameObject *self)
 }
 
 /*[clinic input]
+@critical_section
 @getter
 frame.f_trace_opcodes as frame_trace_opcodes
 
@@ -1087,19 +1088,20 @@ Return True if opcode tracing is enabled, False otherwise.
 
 static PyObject *
 frame_trace_opcodes_get_impl(PyFrameObject *self)
-/*[clinic end generated code: output=53ff41d09cc32e87 input=1ce9af95c28e903f]*/
+/*[clinic end generated code: output=53ff41d09cc32e87 input=4eb91dc88e04677a]*/
 {
     return self->f_trace_opcodes ? Py_True : Py_False;
 }
 
 /*[clinic input]
+@critical_section
 @setter
 frame.f_trace_opcodes as frame_trace_opcodes
 [clinic start generated code]*/
 
 static int
 frame_trace_opcodes_set_impl(PyFrameObject *self, PyObject *value)
-/*[clinic end generated code: output=92619da2bfccd449 input=0b0f3df0ef997359]*/
+/*[clinic end generated code: output=92619da2bfccd449 input=7e286eea3c0333ff]*/
 {
     if (!PyBool_Check(value)) {
         PyErr_SetString(PyExc_TypeError,
@@ -1793,6 +1795,7 @@ frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
 }
 
 /*[clinic input]
+@critical_section
 @getter
 frame.f_trace as frame_trace
 
@@ -1801,7 +1804,7 @@ Return the trace function for this frame, or None if no trace function is set.
 
 static PyObject *
 frame_trace_get_impl(PyFrameObject *self)
-/*[clinic end generated code: output=5475cbfce07826cd input=7b47c6f37b8ad405]*/
+/*[clinic end generated code: output=5475cbfce07826cd input=f382612525829773]*/
 {
     PyObject* trace = self->f_trace;
     if (trace == NULL) {
@@ -1811,13 +1814,14 @@ frame_trace_get_impl(PyFrameObject *self)
 }
 
 /*[clinic input]
+@critical_section
 @setter
 frame.f_trace as frame_trace
 [clinic start generated code]*/
 
 static int
 frame_trace_set_impl(PyFrameObject *self, PyObject *value)
-/*[clinic end generated code: output=d6fe08335cf76ae4 input=3476aee610ee0aef]*/
+/*[clinic end generated code: output=d6fe08335cf76ae4 input=d96a18bda085707f]*/
 {
     if (value == Py_None) {
         value = NULL;
@@ -2355,21 +2359,21 @@ PyObject*
 PyFrame_GetLocals(PyFrameObject *frame)
 {
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    return frame_locals_get_impl(frame);
+    return frame_locals_get(frame, NULL);
 }
 
 PyObject*
 PyFrame_GetGlobals(PyFrameObject *frame)
 {
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    return frame_globals_get_impl(frame);
+    return frame_globals_get(frame, NULL);
 }
 
 PyObject*
 PyFrame_GetBuiltins(PyFrameObject *frame)
 {
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    return frame_builtins_get_impl(frame);
+    return frame_builtins_get(frame, NULL);
 }
 
 int

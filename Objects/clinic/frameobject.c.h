@@ -226,7 +226,13 @@ frame_trace_opcodes_get_impl(PyFrameObject *self);
 static PyObject *
 frame_trace_opcodes_get(PyObject *self, void *Py_UNUSED(context))
 {
-    return frame_trace_opcodes_get_impl((PyFrameObject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = frame_trace_opcodes_get_impl((PyFrameObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 #if !defined(frame_trace_opcodes_DOCSTR)
@@ -247,7 +253,9 @@ frame_trace_opcodes_set(PyObject *self, PyObject *value, void *Py_UNUSED(context
 {
     int return_value;
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = frame_trace_opcodes_set_impl((PyFrameObject *)self, value);
+    Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
@@ -300,7 +308,13 @@ frame_trace_get_impl(PyFrameObject *self);
 static PyObject *
 frame_trace_get(PyObject *self, void *Py_UNUSED(context))
 {
-    return frame_trace_get_impl((PyFrameObject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = frame_trace_get_impl((PyFrameObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 #if !defined(frame_trace_DOCSTR)
@@ -321,7 +335,9 @@ frame_trace_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
 {
     int return_value;
 
+    Py_BEGIN_CRITICAL_SECTION(self);
     return_value = frame_trace_set_impl((PyFrameObject *)self, value);
+    Py_END_CRITICAL_SECTION();
 
     return return_value;
 }
@@ -399,4 +415,4 @@ frame___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return frame___sizeof___impl((PyFrameObject *)self);
 }
-/*[clinic end generated code: output=6e0bb6fbf4ee5b18 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5f7e0418e005fa0c input=a9049054013a1b77]*/
