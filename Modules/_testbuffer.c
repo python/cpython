@@ -1778,8 +1778,9 @@ err_nomem:
 }
 
 static PyObject *
-ndarray_subscript(NDArrayObject *self, PyObject *key)
+ndarray_subscript(PyObject *op, PyObject *key)
 {
+    NDArrayObject *self = (NDArrayObject*)op;
     NDArrayObject *nd;
     ndbuf_t *ndbuf;
     Py_buffer *base = &self->head->base;
@@ -1862,8 +1863,9 @@ err_occurred:
 
 
 static int
-ndarray_ass_subscript(NDArrayObject *self, PyObject *key, PyObject *value)
+ndarray_ass_subscript(PyObject *op, PyObject *key, PyObject *value)
 {
+    NDArrayObject *self = (NDArrayObject*)op;
     NDArrayObject *nd;
     Py_buffer *dest = &self->head->base;
     Py_buffer src;
@@ -1907,7 +1909,7 @@ ndarray_ass_subscript(NDArrayObject *self, PyObject *key, PyObject *value)
     if (PyObject_GetBuffer(value, &src, PyBUF_FULL_RO) == -1)
         return -1;
 
-    nd = (NDArrayObject *)ndarray_subscript(self, key);
+    nd = (NDArrayObject *)ndarray_subscript((PyObject*)self, key);
     if (nd != NULL) {
         dest = &nd->head->base;
         ret = copy_buffer(dest, &src);
@@ -1959,8 +1961,8 @@ error:
 
 static PyMappingMethods ndarray_as_mapping = {
     NULL,                                 /* mp_length */
-    (binaryfunc)ndarray_subscript,        /* mp_subscript */
-    (objobjargproc)ndarray_ass_subscript  /* mp_ass_subscript */
+    ndarray_subscript,                    /* mp_subscript */
+    ndarray_ass_subscript                 /* mp_ass_subscript */
 };
 
 static PySequenceMethods ndarray_as_sequence = {
