@@ -2956,7 +2956,7 @@ static PyType_Slot Task_slots[] = {
     {Py_tp_iter, future_new_iter},
     {Py_tp_methods, TaskType_methods},
     {Py_tp_getset, TaskType_getsetlist},
-    {Py_tp_init, (initproc)_asyncio_Task___init__},
+    {Py_tp_init, _asyncio_Task___init__},
     {Py_tp_new, PyType_GenericNew},
     {Py_tp_finalize, TaskObj_finalize},
 
