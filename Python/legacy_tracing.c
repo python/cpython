@@ -327,9 +327,10 @@ trace_line(
 
 static PyObject *
 sys_trace_line_func(
-    _PyLegacyEventHandler *self, PyObject *const *args,
+    PyObject *op, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
+    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(op);
     assert(kwnames == NULL);
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate->c_tracefunc == NULL) {
@@ -353,9 +354,10 @@ sys_trace_line_func(
  * Handle that case here */
 static PyObject *
 sys_trace_jump_func(
-    _PyLegacyEventHandler *self, PyObject *const *args,
+    PyObject *op, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
+    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(op);
     assert(kwnames == NULL);
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate->c_tracefunc == NULL) {
