@@ -1941,11 +1941,6 @@ class datetime(date):
         # Split this at the separator
         try:
             separator_location = _find_isoformat_datetime_separator(date_string)
-            if separator_location != len(date_string) and date_string[separator_location] != 'T':
-                import warnings
-                warnings.warn("Support of date/time separators other than "
-                              "[\"T\"] is deprecated in accordance with ISO "
-                              "8601:2 and will be removed in 3.15", DeprecationWarning)
             dstr = date_string[0:separator_location]
             tstr = date_string[(separator_location+1):]
 
