@@ -1952,3 +1952,22 @@ The following API is deprecated.
       This API does nothing since Python 3.12.
       Previously, this could be called to check if
       :c:func:`PyUnicode_READY` is necessary.
+
+
+Unstable API
+^^^^^^^^^^^^
+
+.. c:type:: PyUnstable_ASCIIObject
+            PyUnstable_CompactUnicodeObject
+            PyUnstable_UnicodeObject
+
+   Aliases of :c:type:`PyASCIIObject`, :c:type:`PyCompactUnicodeObject`
+   and :c:type:`PyUnicodeObject`.
+
+   Use these names to avoid deprecation warnings at build time,
+   when necessary for advanced use cases such as subclassing :py:type:`str`.
+
+   Like all unstable API, the structures may be removed in a feature release
+   of Python (such as 3.16.0).
+   Users are encouraged to test with CPython pre-releases and use CPython
+   development channels to discuss replacement APIs.
