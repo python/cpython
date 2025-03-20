@@ -38,79 +38,6 @@ to avoid the expense of doing their own locking).
 extern "C" {
 #endif
 
-
-/****************************************/
-/* helpers for the current thread state */
-/****************************************/
-
-// API for the current thread state is further down.
-
-/* "current" means one of:
-   - bound to the current OS thread
-   - holds the GIL
- */
-
-//-------------------------------------------------
-// a highly efficient lookup for the current thread
-//-------------------------------------------------
-
-/*
-   The stored thread state is set by PyThreadState_Swap().
-
-   For each of these functions, the GIL must be held by the current thread.
- */
-
-
-#ifdef HAVE_THREAD_LOCAL
-_Py_thread_local PyThreadState *_Py_tss_tstate = NULL;
-#endif
-
-static inline PyThreadState *
-current_fast_get(_PyRuntimeState *Py_UNUSED(runtime))
-{
-#ifdef HAVE_THREAD_LOCAL
-    return _Py_tss_tstate;
-#else
-    // XXX Fall back to the PyThread_tss_*() API.
-#  error "no supported thread-local variable storage classifier"
-#endif
-}
-
-static inline void
-current_fast_set(_PyRuntimeState *Py_UNUSED(runtime), PyThreadState *tstate)
-{
-    assert(tstate != NULL);
-#ifdef HAVE_THREAD_LOCAL
-    _Py_tss_tstate = tstate;
-#else
-    // XXX Fall back to the PyThread_tss_*() API.
-#  error "no supported thread-local variable storage classifier"
-#endif
-}
-
-static inline void
-current_fast_clear(_PyRuntimeState *Py_UNUSED(runtime))
-{
-#ifdef HAVE_THREAD_LOCAL
-    _Py_tss_tstate = NULL;
-#else
-    // XXX Fall back to the PyThread_tss_*() API.
-#  error "no supported thread-local variable storage classifier"
-#endif
-}
-
-#define tstate_verify_not_active(tstate) \
-    if (tstate == current_fast_get((tstate)->interp->runtime)) { \
-        _Py_FatalErrorFormat(__func__, "tstate %p is still current", tstate); \
-    }
-
-PyThreadState *
-_PyThreadState_GetCurrent(void)
-{
-    return current_fast_get(&_PyRuntime);
-}
-
-
 //------------------------------------------------
 // the thread state bound to the current OS thread
 //------------------------------------------------
@@ -156,6 +83,82 @@ tstate_tss_clear(Py_tss_t *key)
     assert(tstate_tss_initialized(key));
     return PyThread_tss_set(key, (void *)NULL);
 }
+
+
+/****************************************/
+/* helpers for the current thread state */
+/****************************************/
+
+// API for the current thread state is further down.
+
+/* "current" means one of:
+   - bound to the current OS thread
+   - holds the GIL
+ */
+
+//-------------------------------------------------
+// a highly efficient lookup for the current thread
+//-------------------------------------------------
+
+/*
+   The stored thread state is set by PyThreadState_Swap().
+
+   For each of these functions, the GIL must be held by the current thread.
+ */
+
+
+#ifdef HAVE_THREAD_LOCAL
+_Py_thread_local PyThreadState *_Py_tss_tstate = NULL;
+#else
+Py_tss_t key;
+PyThreadState *_Py_tss_tstate = NULL;
+#endif
+
+static inline PyThreadState *
+current_fast_get(_PyRuntimeState *Py_UNUSED(runtime))
+{
+#ifdef HAVE_THREAD_LOCAL
+    return _Py_tss_tstate;
+#else
+    if (!tstate_tss_initialized(&key)) {
+        PyThread_tss_create(&key);
+    }
+    return (PyThreadState *)PyThread_tss_get(&key);
+#endif
+}
+
+static inline void
+current_fast_set(_PyRuntimeState *Py_UNUSED(runtime), PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+#ifdef HAVE_THREAD_LOCAL
+    _Py_tss_tstate = tstate;
+#else
+    tstate_tss_set(&key, tstate);
+#endif
+}
+
+static inline void
+current_fast_clear(_PyRuntimeState *Py_UNUSED(runtime))
+{
+#ifdef HAVE_THREAD_LOCAL
+    _Py_tss_tstate = NULL;
+#else
+    tstate_tss_clear(&key);
+#endif
+}
+
+#define tstate_verify_not_active(tstate) \
+    if (tstate == current_fast_get((tstate)->interp->runtime)) { \
+        _Py_FatalErrorFormat(__func__, "tstate %p is still current", tstate); \
+    }
+
+PyThreadState *
+_PyThreadState_GetCurrent(void)
+{
+    return current_fast_get(&_PyRuntime);
+}
+
 
 #ifdef HAVE_FORK
 /* Reset the TSS key - called by PyOS_AfterFork_Child().
