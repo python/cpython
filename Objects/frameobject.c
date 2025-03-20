@@ -2359,21 +2359,21 @@ PyObject*
 PyFrame_GetLocals(PyFrameObject *frame)
 {
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    return frame_locals_get(frame, NULL);
+    return frame_locals_get((PyObject *)frame, NULL);
 }
 
 PyObject*
 PyFrame_GetGlobals(PyFrameObject *frame)
 {
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    return frame_globals_get(frame, NULL);
+    return frame_globals_get((PyObject *)frame, NULL);
 }
 
 PyObject*
 PyFrame_GetBuiltins(PyFrameObject *frame)
 {
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    return frame_builtins_get(frame, NULL);
+    return frame_builtins_get((PyObject *)frame, NULL);
 }
 
 int
