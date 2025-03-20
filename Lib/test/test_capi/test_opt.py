@@ -1418,7 +1418,6 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_NOS_INT", uops)
         self.assertNotIn("_GUARD_TOS_INT", uops)
 
-
     def test_decref_escapes(self):
         class Convert9999ToNone:
             def __del__(self):
