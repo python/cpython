@@ -2533,7 +2533,7 @@ class OptimizeLoadFastTestCase(CompilationStepTestCase):
             ("LOAD_FAST", 0, 1),
             ("LOAD_CONST", 0, 2),
             ("LOAD_CONST", 0, 3),
-            ("STORE_FAST_STORE_FAST", 0 << 4 | 1, 4),
+            ("STORE_FAST_STORE_FAST", ((0 << 4) | 1), 4),
             ("POP_TOP", None, 5),
         ]
         self.check(insts, insts)
@@ -2548,7 +2548,7 @@ class OptimizeLoadFastTestCase(CompilationStepTestCase):
         insts = [
             ("LOAD_FAST", 0, 1),
             ("LOAD_CONST", 0, 3),
-            ("STORE_FAST_STORE_FAST", 0 << 4 | 1, 4),
+            ("STORE_FAST_STORE_FAST", ((0 << 4) | 1), 4),
         ]
         self.check(insts, insts)
 
