@@ -787,9 +787,6 @@ get_stack_effects(int opcode, int oparg, int jump, stack_effects *effects)
         effects->max = 0;
         return 0;
     }
-    if (_PyOpcode_max_stack_effect(opcode, oparg, &effects->max) < 0) {
-        return -1;
-    }
     effects->net = pushed - popped;
     assert(effects->max >= effects->net);
     return 0;
