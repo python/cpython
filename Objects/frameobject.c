@@ -7,10 +7,12 @@
 #include "pycore_function.h"      // _PyFunction_FromConstructor()
 #include "pycore_genobject.h"     // _PyGen_GetGeneratorFromFrame()
 #include "pycore_moduleobject.h"  // _PyModule_GetDict()
+#include "pycore_cell.h"          // PyCell_GetRef() PyCell_SetTakeRef()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "pycore_cell.h"          // PyCell_GetRef() PyCell_SetTakeRef()
 #include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
+#include "pycore_optimizer.h"     // _Py_Executors_InvalidateDependency()
+#include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
 
 #include "frameobject.h"          // PyFrameObject

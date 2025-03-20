@@ -6,6 +6,7 @@
 #include "pycore_frame.h"
 #include "pycore_long.h"
 #include "pycore_optimizer.h"
+#include "pycore_stats.h"
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include <stdbool.h>

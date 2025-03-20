@@ -21,6 +21,7 @@
 #include "pycore_uop_metadata.h"
 #include "pycore_dict.h"
 #include "pycore_long.h"
+#include "pycore_interpframe.h"  // _PyFrame_GetCode
 #include "pycore_optimizer.h"
 #include "pycore_object.h"
 #include "pycore_dict.h"

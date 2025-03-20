@@ -1883,8 +1883,9 @@ odictiter_new(PyODictObject *od, int kind)
 /* keys() */
 
 static PyObject *
-odictkeys_iter(_PyDictViewObject *dv)
+odictkeys_iter(PyObject *op)
 {
+    _PyDictViewObject *dv = (_PyDictViewObject*)op;
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
     }
@@ -1934,7 +1935,7 @@ PyTypeObject PyODictKeys_Type = {
     0,                                        /* tp_clear */
     0,                                        /* tp_richcompare */
     0,                                        /* tp_weaklistoffset */
-    (getiterfunc)odictkeys_iter,              /* tp_iter */
+    odictkeys_iter,                           /* tp_iter */
     0,                                        /* tp_iternext */
     odictkeys_methods,                        /* tp_methods */
     0,                                        /* tp_members */
@@ -1951,8 +1952,9 @@ odictkeys_new(PyObject *od, PyObject *Py_UNUSED(ignored))
 /* items() */
 
 static PyObject *
-odictitems_iter(_PyDictViewObject *dv)
+odictitems_iter(PyObject *op)
 {
+    _PyDictViewObject *dv = (_PyDictViewObject*)op;
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
     }
@@ -2002,7 +2004,7 @@ PyTypeObject PyODictItems_Type = {
     0,                                        /* tp_clear */
     0,                                        /* tp_richcompare */
     0,                                        /* tp_weaklistoffset */
-    (getiterfunc)odictitems_iter,             /* tp_iter */
+    odictitems_iter,                          /* tp_iter */
     0,                                        /* tp_iternext */
     odictitems_methods,                       /* tp_methods */
     0,                                        /* tp_members */
