@@ -92,7 +92,7 @@ Example_getattro(PyObject *op, PyObject *name)
 }
 
 static int
-Example_setattr(PyObject *op, const char *name, PyObject *v)
+Example_setattr(PyObject *op, char *name, PyObject *v)
 {
     ExampleObject *self = ExampleObject_CAST(op);
     if (self->x_attr == NULL) {
