@@ -103,7 +103,5 @@ Expression input
 :func:`eval` is used for expression input.  It ignores leading whitespace. The
 string argument to :func:`eval` must have the following form:
 
-.. grammar-snippet::
-   :group: python-grammar
-
-   eval_input: `expression_list` NEWLINE* ENDMARKER
+.. productionlist:: python-grammar
+   eval_input: `expression_list` NEWLINE*
