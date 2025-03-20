@@ -10372,9 +10372,12 @@ typedef struct _PyBufferWrapper {
     PyObject *obj;
 } PyBufferWrapper;
 
+#define PyBufferWrapper_CAST(op)    ((PyBufferWrapper *)(op))
+
 static int
-bufferwrapper_traverse(PyBufferWrapper *self, visitproc visit, void *arg)
+bufferwrapper_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyBufferWrapper *self = PyBufferWrapper_CAST(op);
     Py_VISIT(self->mv);
     Py_VISIT(self->obj);
     return 0;
@@ -10383,7 +10386,7 @@ bufferwrapper_traverse(PyBufferWrapper *self, visitproc visit, void *arg)
 static void
 bufferwrapper_dealloc(PyObject *self)
 {
-    PyBufferWrapper *bw = (PyBufferWrapper *)self;
+    PyBufferWrapper *bw = PyBufferWrapper_CAST(self);
 
     _PyObject_GC_UNTRACK(self);
     Py_XDECREF(bw->mv);
@@ -10394,7 +10397,7 @@ bufferwrapper_dealloc(PyObject *self)
 static void
 bufferwrapper_releasebuf(PyObject *self, Py_buffer *view)
 {
-    PyBufferWrapper *bw = (PyBufferWrapper *)self;
+    PyBufferWrapper *bw = PyBufferWrapper_CAST(self);
 
     if (bw->mv == NULL || bw->obj == NULL) {
         // Already released
@@ -10429,7 +10432,7 @@ PyTypeObject _PyBufferWrapper_Type = {
     .tp_basicsize = sizeof(PyBufferWrapper),
     .tp_alloc = PyType_GenericAlloc,
     .tp_free = PyObject_GC_Del,
-    .tp_traverse = (traverseproc)bufferwrapper_traverse,
+    .tp_traverse = bufferwrapper_traverse,
     .tp_dealloc = bufferwrapper_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_as_buffer = &bufferwrapper_as_buffer,
