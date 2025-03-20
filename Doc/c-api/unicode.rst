@@ -1867,7 +1867,7 @@ The following API is deprecated.
         * :c:func:`PyUnicode_GET_LENGTH`
         * :c:func:`PyObject_Length`
       * * ``hash``
-        * N/A
+        * :c:func:`PyUnstable_Unicode_GET_CACHED_HASH`
         * :c:func:`PyObject_Hash`
       * * ``interned``
         * :c:func:`PyUnicode_CHECK_INTERNED`
@@ -1971,3 +1971,17 @@ Unstable API
    of Python (such as 3.16.0).
    Users are encouraged to test with CPython pre-releases and use CPython
    development channels to discuss replacement APIs.
+
+
+.. c:function:: Py_hash_t PyUnstable_Unicode_GET_CACHED_HASH(PyObject *str)
+
+   Return the hash of *str*, as with :c:func:`PyObject_Hash`, if the hash
+   has been cached and is immediately available.
+   Otherwise, return ``-1`` *without* setting an exception.
+
+   The *str* argument must be a string (:c:expr:`PyUnicode_Check(obj)`
+   must be true). This is not checked.
+
+   This function never fails with an exception.
+
+   Note that there are no guarantees on when a Unicode object's hash is cached.

@@ -220,6 +220,12 @@ unicode_copycharacters(PyObject *self, PyObject *args)
     return Py_BuildValue("(Nn)", to_copy, copied);
 }
 
+static PyObject*
+unicode_GET_CACHED_HASH(PyObject *self, PyObject *arg)
+{
+    return PyLong_FromLong((long)PyUnstable_Unicode_GET_CACHED_HASH(arg));
+}
+
 
 // --- PyUnicodeWriter type -------------------------------------------------
 
@@ -548,6 +554,7 @@ static PyMethodDef TestMethods[] = {
     {"unicode_asucs4copy",       unicode_asucs4copy,             METH_VARARGS},
     {"unicode_asutf8",           unicode_asutf8,                 METH_VARARGS},
     {"unicode_copycharacters",   unicode_copycharacters,         METH_VARARGS},
+    {"unicode_GET_CACHED_HASH",  unicode_GET_CACHED_HASH,        METH_O},
     {NULL},
 };
 
