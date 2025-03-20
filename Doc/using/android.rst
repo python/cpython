@@ -27,9 +27,8 @@ details.
 Adding Python to an Android app
 -------------------------------
 
-These instructions are only needed if you're planning to compile Python for
-Android yourself. Most users should *not* need to do this. Instead, use one of
-the following tools, which will provide a much easier experience:
+Most app developers should use one of the following tools, which will provide a
+much easier experience:
 
 * `Briefcase <https://briefcase.readthedocs.io>`__, from the BeeWare project
 * `Buildozer <https://buildozer.readthedocs.io>`__, from the Kivy project
@@ -41,11 +40,12 @@ If you're sure you want to do all of this manually, read on. You can use the
 :source:`testbed app <Android/testbed>` as a guide; each step below contains a
 link to the relevant file.
 
-* Build Python by following the instructions in :source:`Android/README.md`.
+* Build Python by following the instructions in :source:`Android/README.md`,
+  or download a pre-built package from python.org.
 
 * Add code to your :source:`build.gradle <Android/testbed/app/build.gradle.kts>`
   file to copy the following items into your project. All except your own Python
-  code can be copied from ``cross-build/HOST/prefix/lib``:
+  code can be copied from ``prefix/HOST/lib``:
 
   * In your JNI libraries:
 

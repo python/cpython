@@ -6,8 +6,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-val PYTHON_DIR = file("../../..").canonicalPath
-val ANDROID_DIR = "$PYTHON_DIR/Android"
+val ANDROID_DIR = file("../..").canonicalPath
 val PREFIX_DIR = "$ANDROID_DIR/prefix"
 
 val ABIS = mapOf(
@@ -147,8 +146,14 @@ androidComponents.onVariants { variant ->
             }
 
             into("lib/$pyPlusVer") {
-                // To aid debugging, the source directory takes priority.
-                from("$PYTHON_DIR/Lib")
+                // To aid debugging, the source directory takes priority when
+                // running inside a Python source tree.
+                if (
+                    file(ANDROID_DIR).name == "Android"
+                    && file("$ANDROID_DIR/../pyconfig.h.in").exists()
+                ) {
+                    from("$ANDROID_DIR/../Lib")
+                }
 
                 // The predix directory provides ABI-specific files such as
                 // sysconfigdata.

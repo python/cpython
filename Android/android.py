@@ -2,7 +2,7 @@
 
 import asyncio
 import argparse
-from glob import glob
+import json
 import os
 import re
 import shlex
@@ -13,6 +13,8 @@ import sys
 import sysconfig
 from asyncio import wait_for
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+from glob import glob
 from os.path import basename, relpath
 from pathlib import Path
 from subprocess import CalledProcessError
@@ -20,8 +22,8 @@ from tempfile import TemporaryDirectory
 
 
 SCRIPT_NAME = Path(__file__).name
-CHECKOUT = Path(__file__).resolve().parent.parent
-ANDROID_DIR = CHECKOUT / "Android"
+ANDROID_DIR = Path(__file__).resolve().parent
+CHECKOUT = ANDROID_DIR.parent
 BUILD_DIR = ANDROID_DIR / "build"
 DIST_DIR = ANDROID_DIR / "dist"
 PREFIX_DIR = ANDROID_DIR / "prefix"
@@ -544,6 +546,67 @@ async def run_testbed(context):
         raise e.exceptions[0]
 
 
+def package_version(prefix_subdir):
+    vars_glob = f"{prefix_subdir}/lib/python*/_sysconfig_vars__android_*.json"
+    vars_paths = glob(vars_glob)
+    if len(vars_paths) != 1:
+        sys.exit(f"{vars_glob} matched {len(vars_paths)} paths.")
+    with open(vars_paths[0]) as vars_file:
+        version = json.load(vars_file)["py_version"]
+
+    # If not building against a tagged commit, add a timestamp to the version.
+    # Follow the PyPA version number rules, as this will make it easier to
+    # process with other tools.
+    if version.endswith("+"):
+        version += datetime.now(timezone.utc).strftime("%Y%m%d.%H%M%S")
+
+    return version
+
+
+def package(context):
+    prefix_subdir = subdir(PREFIX_DIR, context.host)
+    version = package_version(prefix_subdir)
+
+    with TemporaryDirectory(prefix=SCRIPT_NAME) as temp_dir:
+        temp_dir = Path(temp_dir)
+
+        # All tracked files in the Android directory.
+        for line in run(
+            ["git", "ls-files"],
+            cwd=ANDROID_DIR, capture_output=True, text=True, log=False,
+        ).stdout.splitlines():
+            src = ANDROID_DIR / line
+            dst = temp_dir / line
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst, follow_symlinks=False)
+
+        # Anything in the prefix directory which could be useful either for
+        # apps embedding Python, or packages built against it.
+        for rel_dir, patterns in [
+            ("include", ["openssl*", "python*", "sqlite*"]),
+            ("lib", ["engines-3", "libcrypto*.so", "libpython*", "libsqlite*",
+                     "libssl*.so", "ossl-modules", "python*"]),
+            ("lib/pkgconfig", ["*crypto*", "*ssl*", "*python*", "*sqlite*"]),
+        ]:
+            for pattern in patterns:
+                for src in glob(f"{prefix_subdir}/{rel_dir}/{pattern}"):
+                    dst = temp_dir / relpath(src, ANDROID_DIR)
+                    dst.parent.mkdir(parents=True, exist_ok=True)
+                    if Path(src).is_dir():
+                        shutil.copytree(
+                            src, dst, symlinks=True,
+                            ignore=lambda *args: ["__pycache__"]
+                        )
+                    else:
+                        shutil.copy2(src, dst, follow_symlinks=False)
+
+        DIST_DIR.mkdir(exist_ok=True)
+        package_path = shutil.make_archive(
+            f"{DIST_DIR}/python-{version}-{context.host}", "gztar", temp_dir
+        )
+        print(f"Wrote {package_path}")
+
+
 # Handle SIGTERM the same way as SIGINT. This ensures that if we're terminated
 # by the buildbot worker, we'll make an attempt to clean up our subprocesses.
 def install_signal_handler():
@@ -556,6 +619,8 @@ def install_signal_handler():
 def parse_args():
     parser = argparse.ArgumentParser()
     subcommands = parser.add_subparsers(dest="subcommand")
+
+    # Subcommands
     build = subcommands.add_parser("build", help="Build everything")
     configure_build = subcommands.add_parser("configure-build",
                                              help="Run `configure` for the "
@@ -567,25 +632,27 @@ def parse_args():
     make_host = subcommands.add_parser("make-host",
                                        help="Run `make` for Android")
     subcommands.add_parser(
-        "clean", help="Delete the cross-build directory")
+        "clean", help="Delete all build and prefix directories")
+    subcommands.add_parser(
+        "build-testbed", help="Build the testbed app")
+    test = subcommands.add_parser(
+        "test", help="Run the test suite")
+    package = subcommands.add_parser("package", help="Make a release package")
 
+    # Common arguments
     for subcommand in build, configure_build, configure_host:
         subcommand.add_argument(
             "--clean", action="store_true", default=False, dest="clean",
-            help="Delete any relevant directories before building")
-    for subcommand in build, configure_host, make_host:
+            help="Delete the relevant build and prefix directories first")
+    for subcommand in [build, configure_host, make_host, package]:
         subcommand.add_argument(
-            "host", metavar="HOST",
-            choices=["aarch64-linux-android", "x86_64-linux-android"],
+            "host", metavar="HOST", choices=HOSTS,
             help="Host triplet: choices=[%(choices)s]")
     for subcommand in build, configure_build, configure_host:
         subcommand.add_argument("args", nargs="*",
                                 help="Extra arguments to pass to `configure`")
 
-    subcommands.add_parser(
-        "build-testbed", help="Build the testbed app")
-    test = subcommands.add_parser(
-        "test", help="Run the test suite")
+    # Test arguments
     test.add_argument(
         "-v", "--verbose", action="count", default=0,
         help="Show Gradle output, and non-Python logcat messages. "
@@ -614,14 +681,17 @@ def main():
         stream.reconfigure(line_buffering=True)
 
     context = parse_args()
-    dispatch = {"configure-build": configure_build_python,
-                "make-build": make_build_python,
-                "configure-host": configure_host_python,
-                "make-host": make_host_python,
-                "build": build_all,
-                "clean": clean_all,
-                "build-testbed": build_testbed,
-                "test": run_testbed}
+    dispatch = {
+        "configure-build": configure_build_python,
+        "make-build": make_build_python,
+        "configure-host": configure_host_python,
+        "make-host": make_host_python,
+        "build": build_all,
+        "clean": clean_all,
+        "build-testbed": build_testbed,
+        "test": run_testbed,
+        "package": package,
+    }
 
     try:
         result = dispatch[context.subcommand](context)

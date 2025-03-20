@@ -1,19 +1,22 @@
 # Python for Android
 
-These instructions are only needed if you're planning to compile Python for
-Android yourself. Most users should *not* need to do this. Instead, use one of
-the tools listed in `Doc/using/android.rst`, which will provide a much easier
-experience.
+If you obtained this README as part of a release package, then the only
+applicable sections are "Prerequisites", "Testing", and "Using in your own app".
+
+If you obtained this README as part of the CPython source tree, then you can
+also follow the other sections to compile Python for Android yourself.
+
+However, most app developers should not need to do any of these things manually.
+Instead, use one of the tools listed
+[here](https://docs.python.org/3/using/android.html), which will provide a much
+easier experience.
 
 
 ## Prerequisites
 
-First, make sure you have all the usual tools and libraries needed to build
-Python for your development machine.
-
-Second, you'll need an Android SDK. If you already have the SDK installed,
-export the `ANDROID_HOME` environment variable to point at its location.
-Otherwise, here's how to install it:
+If you already have an Android SDK installed, export the `ANDROID_HOME`
+environment variable to point at its location. Otherwise, here's how to install
+it:
 
 * Download the "Command line tools" from <https://developer.android.com/studio>.
 * Create a directory `android-sdk/cmdline-tools`, and unzip the command line
@@ -33,9 +36,11 @@ The `android.py` script also requires the following commands to be on the `PATH`
 ## Building
 
 Python can be built for Android on any POSIX platform supported by the Android
-development tools, which currently means Linux or macOS. This involves doing a
-cross-build where you use a "build" Python (for your development machine) to
-help produce a "host" Python for Android.
+development tools, which currently means Linux or macOS.
+
+First we'll make a "build" Python (for your development machine), then use it to
+help produce a "host" Python for Android. So make sure you have all the usual
+tools and libraries needed to build Python for your development machine.
 
 The easiest way to do a build is to use the `android.py` script. You can either
 have it perform the entire build process from start to finish in one step, or
@@ -73,9 +78,24 @@ call. For example, if you want a pydebug build that also caches the results from
 ```
 
 
+## Packaging
+
+After building an architecture as described in the section above, you can
+package it for release with this command:
+
+```sh
+./android.py package HOST
+```
+
+`HOST` is defined in the section above.
+
+This will generate a tarball in the `dist` directory, whose structure is similar
+to the `Android` directory of the CPython source tree.
+
+
 ## Testing
 
-The test suite can be run on Linux, macOS, or Windows:
+The Python test suite can be run on Linux, macOS, or Windows:
 
 * On Linux, the emulator needs access to the KVM virtualization interface, and
   a DISPLAY environment variable pointing at an X server.
@@ -90,7 +110,7 @@ and find `hw.ramSize` in both config.ini and hardware-qemu.ini. Either set these
 manually to the same value, or use the Android Studio Device Manager, which will
 update both files.
 
-Before running the test suite, follow the instructions in the previous section
+Before running the test suite, follow the instructions in the section above
 to build the architecture you want to test. Then run the test script in one of
 the following modes:
 
@@ -133,4 +153,4 @@ until you re-run `android.py make-host` or `build`.
 
 ## Using in your own app
 
-See `Doc/using/android.rst`.
+See https://docs.python.org/3/using/android.html.
