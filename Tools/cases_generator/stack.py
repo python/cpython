@@ -63,7 +63,7 @@ class Local:
     def from_memory(defn: StackItem) -> "Local":
         return Local(defn, True, True, True)
 
-    def kill(self):
+    def kill(self) -> None:
         self.defined = False
         self.in_memory = False
 
