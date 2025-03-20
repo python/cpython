@@ -521,7 +521,7 @@ class GettextVisitor(ast.NodeVisitor):
     def _extract_message_with_spec(self, node, spec):
         """Extract a gettext call with the given spec.
 
-        Return `None` if the gettext call was successfully extracted,
+        Return None if the gettext call was successfully extracted,
         otherwise return an error message.
         """
         max_index = max(spec.values())
