@@ -68,7 +68,7 @@ testbuf_getbuf(PyObject *op, Py_buffer *view, int flags)
 }
 
 static void
-testbuf_releasebuf(PyObject *self, Py_buffer *Py_UNUSED(view))
+testbuf_releasebuf(PyObject *op, Py_buffer *Py_UNUSED(view))
 {
     testBufObject *self = testBufObject_CAST(op);
     self->references--;
