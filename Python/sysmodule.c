@@ -2529,6 +2529,7 @@ sys__is_gil_enabled_impl(PyObject *module)
 #endif
 }
 
+
 #ifndef MS_WINDOWS
 static PerfMapState perf_map_state;
 #endif
