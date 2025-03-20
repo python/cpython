@@ -13,6 +13,7 @@ extern "C" {
 #include "pycore_object_deferred.h" // _PyObject_HasDeferredRefcount
 #include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_STORE_PTR_RELAXED
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_typeobject.h"    // _PyStaticType_GetState()
 #include "pycore_uniqueid.h"      // _PyObject_ThreadIncrefSlow()
 

@@ -1159,6 +1159,11 @@ Deprecated
   write new code.  The :mod:`subprocess` module is recommended instead.
   (Contributed by Victor Stinner in :gh:`120743`.)
 
+* :mod:`pathlib`:
+  :meth:`!pathlib.PurePath.as_uri` is deprecated and will be removed in Python
+  3.19. Use :meth:`pathlib.Path.as_uri` instead.
+  (Contributed by Barney Gale in :gh:`123599`.)
+
 * :mod:`pdb`:
   The undocumented ``pdb.Pdb.curframe_locals`` attribute is now a deprecated
   read-only property. The low overhead dynamic frame locals access added in

@@ -16,6 +16,7 @@
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_*
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_warnings.h"      // _PyErr_WarnUnawaitedCoroutine()
 
 // Forward declarations
 static PyObject* gen_close(PyObject *, PyObject *);

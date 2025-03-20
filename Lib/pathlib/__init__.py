@@ -525,13 +525,17 @@ class PurePath:
         msg = ("pathlib.PurePath.is_reserved() is deprecated and scheduled "
                "for removal in Python 3.15. Use os.path.isreserved() to "
                "detect reserved paths on Windows.")
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        warnings._deprecated("pathlib.PurePath.is_reserved", msg, remove=(3, 15))
         if self.parser is ntpath:
             return self.parser.isreserved(self)
         return False
 
     def as_uri(self):
         """Return the path as a URI."""
+        import warnings
+        msg = ("pathlib.PurePath.as_uri() is deprecated and scheduled "
+               "for removal in Python 3.19. Use pathlib.Path.as_uri().")
+        warnings._deprecated("pathlib.PurePath.as_uri", msg, remove=(3, 19))
         if not self.is_absolute():
             raise ValueError("relative path can't be expressed as a file URI")
 
@@ -1265,6 +1269,13 @@ class Path(PurePath):
         if homedir == "~":
             raise RuntimeError("Could not determine home directory.")
         return cls(homedir)
+
+    def as_uri(self):
+        """Return the path as a URI."""
+        if not self.is_absolute():
+            raise ValueError("relative paths can't be expressed as file URIs")
+        from urllib.request import pathname2url
+        return f'file:{pathname2url(str(self))}'
 
     @classmethod
     def from_uri(cls, uri):
