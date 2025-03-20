@@ -9,6 +9,7 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // PyThread_hang_thread()
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
+#include "pycore_time.h"          // _PyDeadline_Init()
 
 
 /*
@@ -776,7 +777,8 @@ _pop_pending_call(struct _pending_calls *pending,
 
 _Py_add_pending_call_result
 _PyEval_AddPendingCall(PyInterpreterState *interp,
-                       _Py_pending_call_func func, void *arg, int flags)
+                       _Py_pending_call_func func, void *arg, int flags,
+                       PY_TIMEOUT_T timeout)
 {
     struct _pending_calls *pending = &interp->ceval.pending;
     int main_only = (flags & _Py_PENDING_MAINTHREADONLY) != 0;
@@ -786,11 +788,41 @@ _PyEval_AddPendingCall(PyInterpreterState *interp,
         pending = &_PyRuntime.ceval.pending_mainthread;
     }
 
+    PyTime_t endtime = 0;
+    if (timeout > 0) {
+        endtime = _PyDeadline_Init(timeout);
+    }
+
     PyMutex_Lock(&pending->mutex);
     _Py_add_pending_call_result result =
-        _push_pending_call(pending, func, arg, flags);
+            _push_pending_call(pending, func, arg, flags);
     PyMutex_Unlock(&pending->mutex);
 
+    if (timeout > 0) {
+        /* We use this lock only to sleep. */
+        // XXX Use time.sleep()?  Don't sleep at all?
+        PyMutex timeout_sleeper = (PyMutex){0};
+        PyMutex_Lock(&timeout_sleeper);
+        while (result == _Py_ADD_PENDING_FULL) {
+            if (timeout <= 0) {
+                result = _Py_ADD_PENDING_TIMED_OUT;
+                break;
+            }
+// XXX Use a smaller sleep interval?
+#define SLEEP_NS 1000  /* 1 millisecond */
+            (void)_PyMutex_LockTimed(
+                    &timeout_sleeper, SLEEP_NS, _Py_LOCK_DONT_DETACH);
+
+            PyMutex_Lock(&pending->mutex);
+            result = _push_pending_call(pending, func, arg, flags);
+            PyMutex_Unlock(&pending->mutex);
+
+            timeout = _PyDeadline_Get(endtime);
+        }
+        PyMutex_Unlock(&timeout_sleeper);
+    }
+
+    // XXX Do not update the eval breaker if not _Py_ADD_PENDING_SUCCESS.
     if (main_only) {
         _Py_set_eval_breaker_bit(_PyRuntime.main_tstate, _PY_CALLS_TO_DO_BIT);
     }
@@ -811,14 +843,18 @@ Py_AddPendingCall(_Py_pending_call_func func, void *arg)
     /* Legacy users of this API will continue to target the main thread
        (of the main interpreter). */
     PyInterpreterState *interp = _PyInterpreterState_Main();
-    _Py_add_pending_call_result r =
-        _PyEval_AddPendingCall(interp, func, arg, _Py_PENDING_MAINTHREADONLY);
-    if (r == _Py_ADD_PENDING_FULL) {
+    _Py_add_pending_call_result r = _PyEval_AddPendingCall(
+            interp, func, arg, _Py_PENDING_MAINTHREADONLY, 0);
+    switch (r) {
+    case _Py_ADD_PENDING_TIMED_OUT:  // fall through
+    case _Py_ADD_PENDING_FULL:
         return -1;
-    }
-    else {
-        assert(r == _Py_ADD_PENDING_SUCCESS);
+    case _Py_ADD_PENDING_SUCCESS:
         return 0;
+    default:
+        // We added a new result kind but forgot to handle it here.
+        assert(0);
+        return -1;
     }
 }
 
