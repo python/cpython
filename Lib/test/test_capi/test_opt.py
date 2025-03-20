@@ -1580,7 +1580,7 @@ def test_compare_pop_two_load_const_inline_borrow(self):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_COMPARE_OP_INT", uops)
-        self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
 def global_identity(x):
     return x
