@@ -528,6 +528,9 @@ class Test_pygettext(unittest.TestCase):
             (['foo', 'foo:1,2'], True),
             (['foo'], False),
             (['_:1,2', '_:1c,2,3', 'pgettext'], False),
+            # Duplicate entries
+            (['foo', 'foo'], True),
+            (['_'], False)
         )
         expected = (
             {'foo': [{'msgid': 0}]},
@@ -535,8 +538,12 @@ class Test_pygettext(unittest.TestCase):
             {'foo': [{'msgid': 0}, {'msgid': 0, 'msgid_plural': 1}]},
             default_keywords | {'foo': [{'msgid': 0}]},
             default_keywords | {'_': [{'msgid': 0, 'msgid_plural': 1},
-                                      {'msgctxt': 0, 'msgid': 1, 'msgid_plural': 2}],
-                                'pgettext': [{'msgid': 0}]},
+                                      {'msgctxt': 0, 'msgid': 1, 'msgid_plural': 2},
+                                      {'msgid': 0}],
+                                'pgettext': [{'msgid': 0},
+                                             {'msgctxt': 0, 'msgid': 1}]},
+            {'foo': [{'msgid': 0}]},
+            default_keywords,
         )
         for (keywords, no_default_keywords), expected in zip(inputs, expected):
             with self.subTest(keywords=keywords,

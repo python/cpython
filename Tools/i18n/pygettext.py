@@ -391,7 +391,8 @@ def unparse_spec(name, spec):
 
 
 def process_keywords(keywords, *, no_default_keywords):
-    custom_keywords_list = [parse_spec(spec) for spec in keywords]
+    custom_keywords_list = [parse_spec(spec) for
+                            spec in dict.fromkeys(keywords)]
     custom_keywords = {}
     for name, spec in custom_keywords_list:
         if name not in custom_keywords:
@@ -401,9 +402,13 @@ def process_keywords(keywords, *, no_default_keywords):
     if no_default_keywords:
         return custom_keywords
 
-    default_keywords = {name: [spec] for name, spec in DEFAULTKEYWORDS.items()}
     # custom keywords override default keywords
-    return default_keywords | custom_keywords
+    for name, spec in DEFAULTKEYWORDS.items():
+        if name not in custom_keywords:
+            custom_keywords[name] = []
+        if spec not in custom_keywords[name]:
+            custom_keywords[name].append(spec)
+    return custom_keywords
 
 
 @dataclass(frozen=True)
