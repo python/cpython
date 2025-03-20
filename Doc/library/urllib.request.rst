@@ -181,7 +181,7 @@ The :mod:`urllib.request` module defines the following functions:
       >>> url2pathname(url.removeprefix('file:'))
       'C:\\Program Files'
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       If a URL authority (e.g. a hostname) is present and resolves to
       ``localhost``, it is discarded. If an authority is present and
       *doesn't* resolve to ``localhost``, then on Windows a UNC path is

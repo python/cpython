@@ -1463,7 +1463,7 @@ class FileHandler(BaseHandler):
             headers = email.message_from_string(
                 'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
                 (mtype or 'text/plain', size, modified))
-            origurl = 'file:' + pathname2url(localfile)
+            origurl = f'file:{pathname2url(localfile)}'
             return addinfourl(open(localfile, 'rb'), headers, origurl)
         except OSError as exp:
             raise URLError(exp, exp.filename)
