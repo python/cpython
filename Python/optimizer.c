@@ -6,11 +6,15 @@
 #include "pycore_interp.h"
 #include "pycore_backoff.h"
 #include "pycore_bitutils.h"        // _Py_popcount32()
+#include "pycore_code.h"            // _Py_GetBaseCodeUnit
+#include "pycore_interpframe.h"
 #include "pycore_object.h"          // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_OpName[]
 #include "pycore_opcode_utils.h"  // MAX_REAL_OPCODE
 #include "pycore_optimizer.h"     // _Py_uop_analyze_and_optimize()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_tuple.h" // _PyTuple_FromArraySteal
+#include "pycore_unicodeobject.h" // _PyUnicode_FromASCII
 #include "pycore_uop_ids.h"
 #include "pycore_jit.h"
 #include <stdbool.h>
@@ -363,6 +367,7 @@ _PyUOp_Replacements[MAX_UOP_ID + 1] = {
     [_ITER_JUMP_LIST] = _GUARD_NOT_EXHAUSTED_LIST,
     [_ITER_JUMP_TUPLE] = _GUARD_NOT_EXHAUSTED_TUPLE,
     [_FOR_ITER] = _FOR_ITER_TIER_TWO,
+    [_ITER_NEXT_LIST] = _ITER_NEXT_LIST_TIER_TWO,
 };
 
 static const uint8_t
@@ -1225,11 +1230,7 @@ uop_optimize(
     for (int pc = 0; pc < length; pc++) {
         int opcode = buffer[pc].opcode;
         int oparg = buffer[pc].oparg;
-        if (_PyUop_Flags[opcode] & HAS_OPARG_AND_1_FLAG) {
-            buffer[pc].opcode = opcode + 1 + (oparg & 1);
-            assert(strncmp(_PyOpcode_uop_name[buffer[pc].opcode], _PyOpcode_uop_name[opcode], strlen(_PyOpcode_uop_name[opcode])) == 0);
-        }
-        else if (oparg < _PyUop_Replication[opcode]) {
+        if (oparg < _PyUop_Replication[opcode]) {
             buffer[pc].opcode = opcode + oparg + 1;
             assert(strncmp(_PyOpcode_uop_name[buffer[pc].opcode], _PyOpcode_uop_name[opcode], strlen(_PyOpcode_uop_name[opcode])) == 0);
         }

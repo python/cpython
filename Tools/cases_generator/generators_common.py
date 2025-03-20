@@ -2,7 +2,6 @@ from pathlib import Path
 
 from analyzer import (
     Instruction,
-    Uop,
     Properties,
     StackItem,
     analysis_error,
@@ -649,8 +648,6 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_PURE_FLAG")
     if p.no_save_ip:
         flags.append("HAS_NO_SAVE_IP_FLAG")
-    if p.oparg_and_1:
-        flags.append("HAS_OPARG_AND_1_FLAG")
     if flags:
         return " | ".join(flags)
     else:
