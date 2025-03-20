@@ -264,10 +264,10 @@ def generate_global_strings(identifiers, strings):
                     assert name.isidentifier(), name
                     printer.write(f'STRUCT_FOR_ID({name})')
             with printer.block('struct', ' ascii[128];'):
-                printer.write("_PyASCIIObject _ascii;")
+                printer.write("PyUnstable_ASCIIObject _ascii;")
                 printer.write("uint8_t _data[2];")
             with printer.block('struct', ' latin1[128];'):
-                printer.write("_PyCompactUnicodeObject _latin1;")
+                printer.write("PyUnstable_CompactUnicodeObject _latin1;")
                 printer.write("uint8_t _data[2];")
         printer.write(END)
         printer.write(after)
