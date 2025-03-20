@@ -42,7 +42,7 @@ struct arraydescr {
     int is_signed;
 };
 
-#ifdef MS_WINDOWS
+#ifdef _MSC_VER
 #define Py_ALIGN_AS(x) __declspec(align(x))
 #else
 #define Py_ALIGN_AS(x) _Alignas(x)
