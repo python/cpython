@@ -24,9 +24,11 @@ PyCField_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_uhash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(name), &_Py_ID(type), &_Py_ID(size), &_Py_ID(offset), &_Py_ID(index), &_Py_ID(bit_size), },
     };
     #undef NUM_KEYWORDS
@@ -111,4 +113,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6b450bdd861571e7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8c374594b413138b input=a9049054013a1b77]*/

@@ -77,6 +77,7 @@ PyTuple_New(Py_ssize_t size)
     if (op == NULL) {
         return NULL;
     }
+    _PyTuple_RESET_HASH_CACHE(op);
     for (Py_ssize_t i = 0; i < size; i++) {
         op->ob_item[i] = NULL;
     }
@@ -169,6 +170,7 @@ PyTuple_Pack(Py_ssize_t n, ...)
         va_end(vargs);
         return NULL;
     }
+    _PyTuple_RESET_HASH_CACHE(result);
     items = result->ob_item;
     for (i = 0; i < n; i++) {
         o = va_arg(vargs, PyObject *);
@@ -314,15 +316,22 @@ error:
 #define _PyHASH_XXROTATE(x) ((x << 13) | (x >> 19))  /* Rotate left 13 bits */
 #endif
 
-/* Tests have shown that it's not worth to cache the hash value, see
-   https://bugs.python.org/issue9685 */
 static Py_hash_t
 tuple_hash(PyObject *op)
 {
     PyTupleObject *v = _PyTuple_CAST(op);
+
+    // For the empty singleton, we don't need to dereference the pointer
+    if (op == (PyObject *)&_Py_SINGLETON(tuple_empty)) {
+        return _PyHASH_XXPRIME_5 + (_PyHASH_XXPRIME_5 ^ 3527539UL);
+    }
+
+    if (v->ob_hash != (Py_uhash_t)-1) {
+        return v->ob_hash;
+    }
+
     Py_ssize_t len = Py_SIZE(v);
     PyObject **item = v->ob_item;
-
     Py_uhash_t acc = _PyHASH_XXPRIME_5;
     for (Py_ssize_t i = 0; i < len; i++) {
         Py_uhash_t lane = PyObject_Hash(item[i]);
@@ -338,8 +347,11 @@ tuple_hash(PyObject *op)
     acc += len ^ (_PyHASH_XXPRIME_5 ^ 3527539UL);
 
     if (acc == (Py_uhash_t)-1) {
-        return 1546275796;
+        acc = 1546275796;
     }
+
+    v->ob_hash = acc;
+
     return acc;
 }
 
@@ -383,6 +395,7 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
     if (tuple == NULL) {
         return NULL;
     }
+    _PyTuple_RESET_HASH_CACHE(tuple);
     PyObject **dst = tuple->ob_item;
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *item = src[i];
@@ -402,6 +415,7 @@ _PyTuple_FromStackRefStealOnSuccess(const _PyStackRef *src, Py_ssize_t n)
     if (tuple == NULL) {
         return NULL;
     }
+    _PyTuple_RESET_HASH_CACHE(tuple);
     PyObject **dst = tuple->ob_item;
     for (Py_ssize_t i = 0; i < n; i++) {
         dst[i] = PyStackRef_AsPyObjectSteal(src[i]);
@@ -423,6 +437,7 @@ _PyTuple_FromArraySteal(PyObject *const *src, Py_ssize_t n)
         }
         return NULL;
     }
+    _PyTuple_RESET_HASH_CACHE(tuple);
     PyObject **dst = tuple->ob_item;
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *item = src[i];
@@ -487,6 +502,8 @@ tuple_concat(PyObject *aa, PyObject *bb)
         return NULL;
     }
 
+    _PyTuple_RESET_HASH_CACHE(np);
+
     PyObject **src = a->ob_item;
     PyObject **dest = np->ob_item;
     for (Py_ssize_t i = 0; i < Py_SIZE(a); i++) {
@@ -529,6 +546,8 @@ tuple_repeat(PyObject *self, Py_ssize_t n)
     PyTupleObject *np = tuple_alloc(output_size);
     if (np == NULL)
         return NULL;
+
+    _PyTuple_RESET_HASH_CACHE(np);
 
     PyObject **dest = np->ob_item;
     if (input_size == 1) {
@@ -764,6 +783,8 @@ tuple_subtype_new(PyTypeObject *type, PyObject *iterable)
     }
     Py_DECREF(tmp);
 
+    _PyTuple_RESET_HASH_CACHE(newobj);
+
     // Don't track if a subclass tp_alloc is PyType_GenericAlloc()
     if (!_PyObject_GC_IS_TRACKED(newobj)) {
         _PyObject_GC_TRACK(newobj);
@@ -818,6 +839,7 @@ tuple_subscript(PyObject *op, PyObject* item)
             PyTupleObject* result = tuple_alloc(slicelength);
             if (!result) return NULL;
 
+            _PyTuple_RESET_HASH_CACHE(result);
             src = self->ob_item;
             dest = result->ob_item;
             for (cur = start, i = 0; i < slicelength;

@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED
 #include "pycore_structs.h"       // _PyStackRef
 
 extern void _PyTuple_MaybeUntrack(PyObject *);
@@ -31,6 +32,20 @@ typedef struct {
     Py_ssize_t it_index;
     PyTupleObject *it_seq; /* Set to NULL when iterator is exhausted */
 } _PyTupleIterObject;
+
+#define _PyTuple_RESET_HASH_CACHE(op) (_PyTuple_CAST(op)->ob_hash = -1)
+
+/*
+   bpo-42536: If reusing a tuple object, this should be called to re-track it
+   with the garbage collector and reset its hash cache. */
+static inline void
+_PyTuple_Recycle(PyObject *op)
+{
+    _PyTuple_RESET_HASH_CACHE(op);
+    if (!_PyObject_GC_IS_TRACKED(op)) {
+        _PyObject_GC_TRACK(op);
+    }
+}
 
 #ifdef __cplusplus
 }
