@@ -2531,7 +2531,9 @@ sys__is_gil_enabled_impl(PyObject *module)
 }
 
 
+#ifndef MS_WINDOWS
 static PerfMapState perf_map_state;
+#endif
 
 PyAPI_FUNC(int) PyUnstable_PerfMapState_Init(void) {
 #ifndef MS_WINDOWS
