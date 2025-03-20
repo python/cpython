@@ -147,7 +147,7 @@ Glossary
       including during blocking C calls and by the bytecode interpreter in between
       calls.
 
-      On most builds of Python, having an attached context means that the
+      On most builds of Python, having an attached thread state implies that the
       caller holds the :term:`GIL` for the current interpreter, so only
       one OS thread can have an attached thread state at a given moment. In
       :term:`free-threaded <free threading>` builds of Python, threads can concurrently
