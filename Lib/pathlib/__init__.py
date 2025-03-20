@@ -11,7 +11,6 @@ import operator
 import os
 import posixpath
 import sys
-import warnings
 from errno import *
 from glob import _StringGlobber, _no_recurse_symlinks
 from itertools import chain
@@ -522,19 +521,21 @@ class PurePath:
     def is_reserved(self):
         """Return True if the path contains one of the special names reserved
         by the system, if any."""
+        import warnings
         msg = ("pathlib.PurePath.is_reserved() is deprecated and scheduled "
                "for removal in Python 3.15. Use os.path.isreserved() to "
                "detect reserved paths on Windows.")
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        warnings._deprecated("pathlib.PurePath.is_reserved", msg, remove=(3, 15))
         if self.parser is ntpath:
             return self.parser.isreserved(self)
         return False
 
     def as_uri(self):
         """Return the path as a URI."""
+        import warnings
         msg = ("pathlib.PurePath.as_uri() is deprecated and scheduled "
                "for removal in Python 3.19. Use pathlib.Path.as_uri().")
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        warnings._deprecated("pathlib.PurePath.as_uri", msg, remove=(3, 19))
         if not self.is_absolute():
             raise ValueError("relative path can't be expressed as a file URI")
 
