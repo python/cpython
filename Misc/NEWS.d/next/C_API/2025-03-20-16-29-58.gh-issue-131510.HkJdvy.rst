@@ -1,0 +1,5 @@
+C structures for :py:type:`str` instances, and a macro for querying a
+string's memory layout, are deprecated and planned for removal in Python
+3.16: :c:type:`PyASCIIObject`, :c:type:`PyCompactUnicodeObject`,
+:c:type:`PyUnicodeObject`, :c:type:`PyUnicode_IS_COMPACT`. Unstable API is
+added to ease migration for known use cases.
