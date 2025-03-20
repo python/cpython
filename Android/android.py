@@ -22,9 +22,12 @@ from tempfile import TemporaryDirectory
 SCRIPT_NAME = Path(__file__).name
 CHECKOUT = Path(__file__).resolve().parent.parent
 ANDROID_DIR = CHECKOUT / "Android"
+BUILD_DIR = ANDROID_DIR / "build"
+DIST_DIR = ANDROID_DIR / "dist"
+PREFIX_DIR = ANDROID_DIR / "prefix"
 TESTBED_DIR = ANDROID_DIR / "testbed"
-CROSS_BUILD_DIR = CHECKOUT / "cross-build"
 
+HOSTS = ["aarch64-linux-android", "x86_64-linux-android"]
 APP_ID = "org.python.testbed"
 DECODE_ARGS = ("UTF-8", "backslashreplace")
 
@@ -58,12 +61,10 @@ def delete_glob(pattern):
             path.unlink()
 
 
-def subdir(name, *, clean=None):
-    path = CROSS_BUILD_DIR / name
-    if clean:
-        delete_glob(path)
+def subdir(parent, host, *, create=False):
+    path = parent / host
     if not path.exists():
-        if clean is None:
+        if not create:
             sys.exit(
                 f"{path} does not exist. Create it by running the appropriate "
                 f"`configure` subcommand of {SCRIPT_NAME}.")
@@ -83,7 +84,7 @@ def run(command, *, host=None, env=None, log=True, **kwargs):
         env_output = subprocess.run(
             f"set -eu; "
             f"HOST={host}; "
-            f"PREFIX={subdir(host)}/prefix; "
+            f"PREFIX={subdir(PREFIX_DIR, host)}; "
             f". {env_script}; "
             f"export",
             check=True, shell=True, text=True, stdout=subprocess.PIPE
@@ -111,19 +112,21 @@ def run(command, *, host=None, env=None, log=True, **kwargs):
 
 def build_python_path():
     """The path to the build Python binary."""
-    build_dir = subdir("build")
-    binary = build_dir / "python"
+    build_subdir = subdir(BUILD_DIR, "build")
+    binary = build_subdir / "python"
     if not binary.is_file():
         binary = binary.with_suffix(".exe")
         if not binary.is_file():
             raise FileNotFoundError("Unable to find `python(.exe)` in "
-                                    f"{build_dir}")
+                                    f"{build_subdir}")
 
     return binary
 
 
 def configure_build_python(context):
-    os.chdir(subdir("build", clean=context.clean))
+    if context.clean:
+        clean("build")
+    os.chdir(subdir(BUILD_DIR, "build", create=True))
 
     command = [relpath(CHECKOUT / "configure")]
     if context.args:
@@ -132,7 +135,7 @@ def configure_build_python(context):
 
 
 def make_build_python(context):
-    os.chdir(subdir("build"))
+    os.chdir(subdir(BUILD_DIR, "build"))
     run(["make", "-j", str(os.cpu_count())])
 
 
@@ -153,17 +156,16 @@ def download(url, target_dir="."):
 
 
 def configure_host_python(context):
-    host_dir = subdir(context.host, clean=context.clean)
+    if context.clean:
+        clean(context.host)
 
-    prefix_dir = host_dir / "prefix"
-    if not prefix_dir.exists():
-        prefix_dir.mkdir()
-        os.chdir(prefix_dir)
+    prefix_subdir = subdir(PREFIX_DIR, context.host, create=True)
+    if not (prefix_subdir / "include").exists():
+        os.chdir(prefix_subdir)
         unpack_deps(context.host)
 
-    build_dir = host_dir / "build"
-    build_dir.mkdir(exist_ok=True)
-    os.chdir(build_dir)
+    build_subdir = subdir(BUILD_DIR, context.host, create=True)
+    os.chdir(build_subdir)
 
     command = [
         # Basic cross-compiling configuration
@@ -179,7 +181,7 @@ def configure_host_python(context):
 
         # Dependent libraries. The others are found using pkg-config: see
         # android-env.sh.
-        f"--with-openssl={prefix_dir}",
+        f"--with-openssl={prefix_subdir}",
     ]
 
     if context.args:
@@ -191,15 +193,13 @@ def make_host_python(context):
     # The CFLAGS and LDFLAGS set in android-env include the prefix dir, so
     # delete any previous Python installation to prevent it being used during
     # the build.
-    host_dir = subdir(context.host)
-    prefix_dir = host_dir / "prefix"
-    delete_glob(f"{prefix_dir}/include/python*")
-    delete_glob(f"{prefix_dir}/lib/libpython*")
-    delete_glob(f"{prefix_dir}/lib/python*")
+    prefix_subdir = subdir(PREFIX_DIR, context.host)
+    for pattern in ("include/python*", "lib/libpython*", "lib/python*"):
+        delete_glob(f"{prefix_subdir}/{pattern}")
 
-    os.chdir(host_dir / "build")
+    os.chdir(subdir(BUILD_DIR, context.host))
     run(["make", "-j", str(os.cpu_count())], host=context.host)
-    run(["make", "install", f"prefix={prefix_dir}"], host=context.host)
+    run(["make", "install", f"prefix={prefix_subdir}"], host=context.host)
 
 
 def build_all(context):
@@ -209,8 +209,14 @@ def build_all(context):
         step(context)
 
 
+def clean(host):
+    for parent in (BUILD_DIR, PREFIX_DIR):
+        delete_glob(f"{parent}/{host}")
+
+
 def clean_all(context):
-    delete_glob(CROSS_BUILD_DIR)
+    for parent in (BUILD_DIR, PREFIX_DIR):
+        delete_glob(parent)
 
 
 def setup_sdk():

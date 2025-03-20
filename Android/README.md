@@ -60,8 +60,8 @@ To do all steps in a single command, run:
 ./android.py build HOST
 ```
 
-In the end you should have a build Python in `cross-build/build`, and an Android
-build in `cross-build/HOST`.
+In the end you should have an Android build of Python and its supporting
+libraries in `prefix/HOST`.
 
 You can use `--` as a separator for any of the `configure`-related commands –
 including `build` itself – to pass arguments to the underlying `configure`
@@ -80,7 +80,7 @@ The test suite can be run on Linux, macOS, or Windows:
 * On Linux, the emulator needs access to the KVM virtualization interface, and
   a DISPLAY environment variable pointing at an X server.
 * On Windows, you won't be able to do the build on the same machine, so you'll
-  have to copy the `cross-build/HOST` directory from somewhere else.
+  have to copy the `prefix/HOST` directory from somewhere else.
 
 The test suite can usually be run on a device with 2 GB of RAM, but this is
 borderline, so you may need to increase it to 4 GB. As of Android

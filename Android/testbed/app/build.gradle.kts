@@ -7,24 +7,26 @@ plugins {
 }
 
 val PYTHON_DIR = file("../../..").canonicalPath
-val PYTHON_CROSS_DIR = "$PYTHON_DIR/cross-build"
+val ANDROID_DIR = "$PYTHON_DIR/Android"
+val PREFIX_DIR = "$ANDROID_DIR/prefix"
 
 val ABIS = mapOf(
     "arm64-v8a" to "aarch64-linux-android",
     "x86_64" to "x86_64-linux-android",
-).filter { file("$PYTHON_CROSS_DIR/${it.value}").exists() }
+).filter { file("$PREFIX_DIR/${it.value}").exists() }
 if (ABIS.isEmpty()) {
     throw GradleException(
-        "No Android ABIs found in $PYTHON_CROSS_DIR: see Android/README.md " +
+        "No Android ABIs found in $PREFIX_DIR: see Android/README.md " +
         "for building instructions."
     )
 }
 
-val PYTHON_VERSION = file("$PYTHON_DIR/Include/patchlevel.h").useLines {
-    for (line in it) {
-        val match = """#define PY_VERSION\s+"(\d+\.\d+)""".toRegex().find(line)
+val PYTHON_VERSION = run {
+    val includeDir = file("$PREFIX_DIR/${ABIS.values.iterator().next()}/include")
+    for (filename in includeDir.list()!!) {
+        val match = """python(\d+\.\d+)""".toRegex().matchEntire(filename)
         if (match != null) {
-            return@useLines match.groupValues[1]
+            return@run match.groupValues[1]
         }
     }
     throw GradleException("Failed to find Python version")
@@ -55,7 +57,7 @@ android {
 
         ndk.abiFilters.addAll(ABIS.keys)
         externalNativeBuild.cmake.arguments(
-            "-DPYTHON_CROSS_DIR=$PYTHON_CROSS_DIR",
+            "-DPYTHON_PREFIX_DIR=$PREFIX_DIR",
             "-DPYTHON_VERSION=$PYTHON_VERSION",
             "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
         )
@@ -136,9 +138,10 @@ androidComponents.onVariants { variant ->
     val pyPlusVer = "python$PYTHON_VERSION"
     generateTask(variant, variant.sources.assets!!) {
         into("python") {
+            // Include files such as pyconfig.h are used by some of the tests.
             into("include/$pyPlusVer") {
                 for (triplet in ABIS.values) {
-                    from("$PYTHON_CROSS_DIR/$triplet/prefix/include/$pyPlusVer")
+                    from("$PREFIX_DIR/$triplet/include/$pyPlusVer")
                 }
                 duplicatesStrategy = DuplicatesStrategy.EXCLUDE
             }
@@ -147,10 +150,10 @@ androidComponents.onVariants { variant ->
                 // To aid debugging, the source directory takes priority.
                 from("$PYTHON_DIR/Lib")
 
-                // The cross-build directory provides ABI-specific files such as
+                // The predix directory provides ABI-specific files such as
                 // sysconfigdata.
                 for (triplet in ABIS.values) {
-                    from("$PYTHON_CROSS_DIR/$triplet/prefix/lib/$pyPlusVer")
+                    from("$PREFIX_DIR/$triplet/lib/$pyPlusVer")
                 }
 
                 into("site-packages") {
@@ -166,7 +169,7 @@ androidComponents.onVariants { variant ->
     generateTask(variant, variant.sources.jniLibs!!) {
         for ((abi, triplet) in ABIS.entries) {
             into(abi) {
-                from("$PYTHON_CROSS_DIR/$triplet/prefix/lib")
+                from("$PREFIX_DIR/$triplet/lib")
                 include("libpython*.*.so")
                 include("lib*_python.so")
             }
