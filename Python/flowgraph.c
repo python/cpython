@@ -2703,7 +2703,7 @@ load_fast_push_block(basicblock ***sp, basicblock *target,
 }
 
 /*
- * Strength reduce LOAD_FAST{_LOAD_FAST} instructions into weaker variants that
+ * Strength reduce LOAD_FAST{_LOAD_FAST} instructions into faster variants that
  * load borrowed references onto the operand stack.
  *
  * This is only safe when we can prove that the reference in the frame outlives
