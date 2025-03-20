@@ -2740,17 +2740,12 @@ load_fast_push_block(basicblock ***sp, basicblock *target,
  * non-violating LOAD_FAST{_LOAD_FAST} can be optimized.
  */
 static int
-optimize_load_fast(cfg_builder *g, bool compute_stackdepth)
+optimize_load_fast(cfg_builder *g)
 {
     int status;
     ref_stack refs = {0};
     int max_instrs = 0;
     basicblock *entryblock = g->g_entryblock;
-    if (compute_stackdepth) {
-        if (calculate_stackdepth(g) == ERROR) {
-            return ERROR;
-        }
-    }
     for (basicblock *b = entryblock; b != NULL; b = b->b_next) {
         max_instrs = Py_MAX(max_instrs, b->b_iused);
     }
@@ -3885,7 +3880,7 @@ _PyCfg_OptimizedCfgToInstructionSequence(cfg_builder *g,
     /* Can't modify the bytecode after inserting instructions that produce
      * borrowed references.
      */
-    RETURN_IF_ERROR(optimize_load_fast(g, /* compute_stackdepth */ false));
+    RETURN_IF_ERROR(optimize_load_fast(g));
 
     /* Can't modify the bytecode after computing jump offsets. */
     if (_PyCfg_ToInstructionSequence(g, seq) < 0) {
@@ -3991,7 +3986,12 @@ _PyCompile_OptimizeLoadFast(PyObject *seq)
         return NULL;
     }
 
-    if (optimize_load_fast(g, /* compute_stackdepth */ true) != SUCCESS) {
+    if (calculate_stackdepth(g) == ERROR) {
+        _PyCfgBuilder_Free(g);
+        return NULL;
+    }
+
+    if (optimize_load_fast(g) != SUCCESS) {
         _PyCfgBuilder_Free(g);
         return NULL;
     }
