@@ -1614,7 +1614,7 @@ sys_getrecursionlimit_impl(PyObject *module)
 
 #ifdef MS_WINDOWS
 
-static PyTypeObject WindowsVersionType = {0, 0, 0, 0, 0, 0};
+static PyTypeObject WindowsVersionType = { 0 };
 
 static PyStructSequence_Field windows_version_fields[] = {
     {"major", "Major version number"},
