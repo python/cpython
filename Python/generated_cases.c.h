@@ -8754,8 +8754,31 @@
                 val = PyExc_AssertionError;
             }
             else {
-                assert(oparg == CONSTANT_NOTIMPLEMENTEDERROR);
-                val = PyExc_NotImplementedError;
+                if (oparg == CONSTANT_NOTIMPLEMENTEDERROR) {
+                    val = PyExc_NotImplementedError;
+                }
+                else {
+                    if (oparg == CONSTANT_BUILTIN_TUPLE) {
+                        val = (PyObject*)&PyTuple_Type;
+                    }
+                    else {
+                        if (oparg == CONSTANT_BUILTIN_ALL) {
+                            _PyFrame_SetStackPointer(frame, stack_pointer);
+                            val = PyDict_GetItemWithError(builtins_dict, &_Py_ID(all));
+                            stack_pointer = _PyFrame_GetStackPointer(frame);
+                        }
+                        else {
+                            if (oparg == CONSTANT_BUILTIN_ANY) {
+                                _PyFrame_SetStackPointer(frame, stack_pointer);
+                                val = PyDict_GetItemWithError(builtins_dict, &_Py_ID(any));
+                                stack_pointer = _PyFrame_GetStackPointer(frame);
+                            }
+                            else {
+                                Py_UNREACHABLE();
+                            }
+                        }
+                    }
+                }
             }
             value = PyStackRef_FromPyObjectImmortal(val);
             stack_pointer[0] = value;

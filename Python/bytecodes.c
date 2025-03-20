@@ -1409,9 +1409,20 @@ dummy_func(
             if (oparg == CONSTANT_ASSERTIONERROR) {
                 val = PyExc_AssertionError;
             }
-            else {
-                assert(oparg == CONSTANT_NOTIMPLEMENTEDERROR);
+            else if (oparg == CONSTANT_NOTIMPLEMENTEDERROR) {
                 val = PyExc_NotImplementedError;
+            }
+            else if (oparg == CONSTANT_BUILTIN_TUPLE) {
+                val = (PyObject*)&PyTuple_Type;
+            }
+            else if (oparg == CONSTANT_BUILTIN_ALL) {
+                val = PyDict_GetItemWithError(builtins_dict, &_Py_ID(all));
+            }
+            else if (oparg == CONSTANT_BUILTIN_ANY) {
+                val = PyDict_GetItemWithError(builtins_dict, &_Py_ID(any));
+            }
+            else {
+                Py_UNREACHABLE();
             }
             value = PyStackRef_FromPyObjectImmortal(val);
         }
