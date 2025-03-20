@@ -458,6 +458,12 @@ class GlobTests(unittest.TestCase):
         self.assertIsNone(match(os.path.join('foo', '.bar.txt')))
         match = re.compile(glob.translate('foo[%-0]bar', recursive=True)).match
         self.assertIsNone(match(os.path.join('foo', 'bar')))
+        match = re.compile(glob.translate('foo?bar', recursive=True)).match
+        self.assertIsNone(match('foo/bar'))
+        match = re.compile(glob.translate('foo.', recursive=True)).match
+        self.assertIsNone(match('foo/'))
+        match = re.compile(glob.translate('foo*', recursive=True)).match
+        self.assertIsNone(match('foo/'))
 
     def test_translate(self):
         def fn(pat):
