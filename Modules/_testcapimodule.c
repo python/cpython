@@ -2768,6 +2768,7 @@ typedef struct {
     PyObject *ao_iterator;
 } awaitObject;
 
+#define awaitObject_CAST(op)    ((awaitObject *)(op))
 
 static PyObject *
 awaitObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -2790,21 +2791,23 @@ awaitObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 
 static void
-awaitObject_dealloc(awaitObject *ao)
+awaitObject_dealloc(PyObject *op)
 {
+    awaitObject *ao = awaitObject_CAST(op);
     Py_CLEAR(ao->ao_iterator);
     Py_TYPE(ao)->tp_free(ao);
 }
 
 
 static PyObject *
-awaitObject_await(awaitObject *ao)
+awaitObject_await(PyObject *op)
 {
+    awaitObject *ao = awaitObject_CAST(op);
     return Py_NewRef(ao->ao_iterator);
 }
 
 static PyAsyncMethods awaitType_as_async = {
-    (unaryfunc)awaitObject_await,           /* am_await */
+    awaitObject_await,                      /* am_await */
     0,                                      /* am_aiter */
     0,                                      /* am_anext */
     0,                                      /* am_send  */
@@ -2816,7 +2819,7 @@ static PyTypeObject awaitType = {
     "awaitType",
     sizeof(awaitObject),                /* tp_basicsize */
     0,                                  /* tp_itemsize */
-    (destructor)awaitObject_dealloc,    /* destructor tp_dealloc */
+    awaitObject_dealloc,                /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
