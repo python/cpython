@@ -42,12 +42,15 @@ struct arraydescr {
     int is_signed;
 };
 
+#ifdef MS_WINDOWS
+#define Py_ALIGN_AS(x) __declspec(align(x))
+#else
+#define Py_ALIGN_AS(x) _Alignas(x)
+#endif
+
 typedef struct {
-    union {
-        Py_ssize_t allocated;
-        double __alignment_padding; /* In case Py_ssize_t is 4 bytes */
-    };
-    char items[];
+    Py_ssize_t allocated;
+    Py_ALIGN_AS(8) char items[];
 } arraydata;
 
 typedef struct arrayobject {
