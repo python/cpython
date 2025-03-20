@@ -629,13 +629,13 @@ class Executor(object):
                 fs.reverse()
                 # Careful not to keep a reference to the popped future or its result
                 while fs:
-                    # wait for the next result
+                    # Wait for the next result
                     if timeout is None:
                         _result_or_cancel(fs[-1])
                     else:
                         _result_or_cancel(fs[-1], end_time - time.monotonic())
 
-                    # buffer next task
+                    # Buffer next task
                     if (
                         buffersize
                         and (executor := executor_weakref())
@@ -643,7 +643,7 @@ class Executor(object):
                     ):
                         fs.appendleft(executor.submit(fn, *args))
 
-                    # yield the awaited result
+                    # Yield the awaited result
                     yield fs.pop().result()
             finally:
                 for future in fs:
