@@ -9,6 +9,7 @@
 #include "pycore_interpframe.h"   // FRAME_SPECIALS_SIZE
 #include "pycore_opcode_metadata.h" // _PyOpcode_Caches
 #include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
+#include "pycore_optimizer.h"     // _Py_ExecutorDetach
 #include "pycore_pymem.h"         // _PyMem_FreeDelayed()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
