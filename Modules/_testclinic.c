@@ -1446,39 +1446,54 @@ _testclinic_TestClass_defclass_posonly_varpos_impl(PyObject *self,
 /*[clinic input]
 @disable fastcall
 @classmethod
-_testclinic.TestClass.__new__ as varpos_no_fastcall
+_testclinic.TestClass.varpos_no_fastcall
 
     *args: tuple
 
 # Do NOT use __new__ to generate this method. Compare:
 #
-# With __new__
+# [1] With __new__ (METH_KEYWORDS must be added even if we don't want to)
 #
-#   varpos_no_fastcall_1(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-#   varpos_no_fastcall_impl_1(PyTypeObject *type, PyObject *args)
+#   varpos_no_fastcall(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+#   varpos_no_fastcall_impl(PyTypeObject *type, PyObject *args)
+#   no auto-generated METHODDEF macro
 #
-# Without __new__ and an explicit "@disable fastcall"
+# [2] Without __new__ (automatically METH_FASTCALL, not good for this test)
 #
-#   varpos_no_fastcall_2(PyObject *type, PyObject *args)
-#   varpos_no_fastcall_impl_2(PyTypeObject *type, PyObject *args)
+#   varpos_no_fastcall_impl(PyObject *type, PyObject *args)
+#   varpos_no_fastcall(PyObject *type, PyObject *const *args, Py_ssize_t nargs)
+#   flags = METH_FASTCALL|METH_CLASS
 #
-# We want to test a non-fastcall class method (i.e. something like __new__)
-# but without triggering an undefined behaviour at runtime in cfunction_call().
+# [3] Without __new__ + "@disable fastcall" (what we want)
+#
+#   varpos_no_fastcall(PyObject *type, PyObject *args)
+#   varpos_no_fastcall_impl(PyTypeObject *type, PyObject *args)
+#   flags = METH_VARARGS|METH_CLASS
+#
+# We want to test a non-fastcall class method but without triggering an
+# undefined behaviour at runtime in cfunction_call().
 #
 # At runtime, a METH_VARARGS method called in cfunction_call() must be:
 #
 #       (PyObject *, PyObject *)             -> PyObject *
 #       (PyObject *, PyObject *, PyObject *) -> PyObject *
 #
-# depending on whether METH_KEYWORDS is present or not. Changin AC to make
-# varpos_no_fastcall_1() compatible with cfunction_call() would also affect
-# how the regular __new__ methods are generated (they ALWAYS support 'kwargs').
-# Thus, for testing non-fastcall class methods, "@disable fastcall" is needed.
+# depending on whether METH_KEYWORDS is present or not.
+#
+# AC determines whether a method is a __new__-like method solely bsaed
+# on the method name, and not on its usage or its c_basename, and those
+# methods must always be used with METH_VARARGS|METH_KEYWORDS|METH_CLASS.
+#
+# In particular, using [1] forces us to add METH_KEYWORDS even though
+# the test shouldn't be expecting keyword arguments. Using [2] is also
+# not possible since we want to test non-fastcalls. This is the reason
+# why we need to be able to disable the METH_FASTCALL flag.
 [clinic start generated code]*/
 
 static PyObject *
-varpos_no_fastcall_impl(PyTypeObject *type, PyObject *args)
-/*[clinic end generated code: output=04e94f2898bb2dde input=df0b72d3e7784a18]*/
+_testclinic_TestClass_varpos_no_fastcall_impl(PyTypeObject *type,
+                                              PyObject *args)
+/*[clinic end generated code: output=edfacec733aeb9c5 input=e385fc8a3af7ae44]*/
 {
     return Py_NewRef(args);
 }
@@ -1487,7 +1502,7 @@ varpos_no_fastcall_impl(PyTypeObject *type, PyObject *args)
 /*[clinic input]
 @disable fastcall
 @classmethod
-_testclinic.TestClass.cm as posonly_varpos_no_fastcall
+_testclinic.TestClass.posonly_varpos_no_fastcall
 
     a: object
     b: object
@@ -1497,9 +1512,11 @@ _testclinic.TestClass.cm as posonly_varpos_no_fastcall
 [clinic start generated code]*/
 
 static PyObject *
-posonly_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a, PyObject *b,
-                                PyObject *args)
-/*[clinic end generated code: output=b0a0425719f69f5a input=c8870f84456e68be]*/
+_testclinic_TestClass_posonly_varpos_no_fastcall_impl(PyTypeObject *type,
+                                                      PyObject *a,
+                                                      PyObject *b,
+                                                      PyObject *args)
+/*[clinic end generated code: output=2c5184aebe020085 input=3621dd172c5193d8]*/
 {
     return pack_arguments_newref(3, a, b, args);
 }
@@ -1508,7 +1525,7 @@ posonly_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a, PyObject *b,
 /*[clinic input]
 @disable fastcall
 @classmethod
-_testclinic.TestClass.cm as posonly_req_opt_varpos_no_fastcall
+_testclinic.TestClass.posonly_req_opt_varpos_no_fastcall
 
     a: object
     b: object = False
@@ -1518,9 +1535,11 @@ _testclinic.TestClass.cm as posonly_req_opt_varpos_no_fastcall
 [clinic start generated code]*/
 
 static PyObject *
-posonly_req_opt_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a,
-                                        PyObject *b, PyObject *args)
-/*[clinic end generated code: output=3c44915b1a554e2d input=9e29ef335e399e8e]*/
+_testclinic_TestClass_posonly_req_opt_varpos_no_fastcall_impl(PyTypeObject *type,
+                                                              PyObject *a,
+                                                              PyObject *b,
+                                                              PyObject *args)
+/*[clinic end generated code: output=08e533d59bceadf6 input=922fa7851b32e2dd]*/
 {
     return pack_arguments_newref(3, a, b, args);
 }
@@ -1529,7 +1548,7 @@ posonly_req_opt_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a,
 /*[clinic input]
 @disable fastcall
 @classmethod
-_testclinic.TestClass.cm as posonly_poskw_varpos_no_fastcall
+_testclinic.TestClass.posonly_poskw_varpos_no_fastcall
 
     a: object
     /
@@ -1539,9 +1558,11 @@ _testclinic.TestClass.cm as posonly_poskw_varpos_no_fastcall
 [clinic start generated code]*/
 
 static PyObject *
-posonly_poskw_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a,
-                                      PyObject *b, PyObject *args)
-/*[clinic end generated code: output=6ad74bed4bdc7f96 input=66226ea6c3d38c36]*/
+_testclinic_TestClass_posonly_poskw_varpos_no_fastcall_impl(PyTypeObject *type,
+                                                            PyObject *a,
+                                                            PyObject *b,
+                                                            PyObject *args)
+/*[clinic end generated code: output=8ecfda20850e689f input=60443fe0bb8fe3e0]*/
 {
     return pack_arguments_newref(3, a, b, args);
 }
@@ -1550,16 +1571,17 @@ posonly_poskw_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a,
 /*[clinic input]
 @disable fastcall
 @classmethod
-_testclinic.TestClass.cm as varpos_array_no_fastcall
+_testclinic.TestClass.varpos_array_no_fastcall
 
     *args: array
 
 [clinic start generated code]*/
 
 static PyObject *
-varpos_array_no_fastcall_impl(PyTypeObject *type, PyObject * const *args,
-                              Py_ssize_t args_length)
-/*[clinic end generated code: output=f99d984346c60d42 input=52b2e8011dbee112]*/
+_testclinic_TestClass_varpos_array_no_fastcall_impl(PyTypeObject *type,
+                                                    PyObject * const *args,
+                                                    Py_ssize_t args_length)
+/*[clinic end generated code: output=27c9da663e942617 input=9ba5ae1f1eb58777]*/
 {
     return _PyTuple_FromArray(args, args_length);
 }
@@ -1568,7 +1590,7 @@ varpos_array_no_fastcall_impl(PyTypeObject *type, PyObject * const *args,
 /*[clinic input]
 @disable fastcall
 @classmethod
-_testclinic.TestClass.cm as posonly_varpos_array_no_fastcall
+_testclinic.TestClass.posonly_varpos_array_no_fastcall
 
     a: object
     b: object
@@ -1578,10 +1600,12 @@ _testclinic.TestClass.cm as posonly_varpos_array_no_fastcall
 [clinic start generated code]*/
 
 static PyObject *
-posonly_varpos_array_no_fastcall_impl(PyTypeObject *type, PyObject *a,
-                                      PyObject *b, PyObject * const *args,
-                                      Py_ssize_t args_length)
-/*[clinic end generated code: output=1eec4da1fb5b5978 input=78fd1e9358b8987f]*/
+_testclinic_TestClass_posonly_varpos_array_no_fastcall_impl(PyTypeObject *type,
+                                                            PyObject *a,
+                                                            PyObject *b,
+                                                            PyObject * const *args,
+                                                            Py_ssize_t args_length)
+/*[clinic end generated code: output=71e676f1870b5a7e input=18eadf4c6eaab613]*/
 {
     return pack_arguments_2pos_varpos(a, b, args, args_length);
 }
@@ -1590,7 +1614,7 @@ posonly_varpos_array_no_fastcall_impl(PyTypeObject *type, PyObject *a,
 /*[clinic input]
 @disable fastcall
 @classmethod
-_testclinic.TestClass.cm as posonly_req_opt_varpos_array_no_fastcall
+_testclinic.TestClass.posonly_req_opt_varpos_array_no_fastcall
 
     a: object
     b: object = False
@@ -1600,11 +1624,12 @@ _testclinic.TestClass.cm as posonly_req_opt_varpos_array_no_fastcall
 [clinic start generated code]*/
 
 static PyObject *
-posonly_req_opt_varpos_array_no_fastcall_impl(PyTypeObject *type,
-                                              PyObject *a, PyObject *b,
-                                              PyObject * const *args,
-                                              Py_ssize_t args_length)
-/*[clinic end generated code: output=88041c2176135218 input=f730318da80b94c1]*/
+_testclinic_TestClass_posonly_req_opt_varpos_array_no_fastcall_impl(PyTypeObject *type,
+                                                                    PyObject *a,
+                                                                    PyObject *b,
+                                                                    PyObject * const *args,
+                                                                    Py_ssize_t args_length)
+/*[clinic end generated code: output=abb395cae91d48ac input=5bf791fdad70b480]*/
 {
     return pack_arguments_2pos_varpos(a, b, args, args_length);
 }
@@ -1613,7 +1638,7 @@ posonly_req_opt_varpos_array_no_fastcall_impl(PyTypeObject *type,
 /*[clinic input]
 @disable fastcall
 @classmethod
-_testclinic.TestClass.cm as posonly_poskw_varpos_array_no_fastcall
+_testclinic.TestClass.posonly_poskw_varpos_array_no_fastcall
 
     a: object
     /
@@ -1623,11 +1648,12 @@ _testclinic.TestClass.cm as posonly_poskw_varpos_array_no_fastcall
 [clinic start generated code]*/
 
 static PyObject *
-posonly_poskw_varpos_array_no_fastcall_impl(PyTypeObject *type, PyObject *a,
-                                            PyObject *b,
-                                            PyObject * const *args,
-                                            Py_ssize_t args_length)
-/*[clinic end generated code: output=70eda18c3667681e input=a98374a618ec8d36]*/
+_testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall_impl(PyTypeObject *type,
+                                                                  PyObject *a,
+                                                                  PyObject *b,
+                                                                  PyObject * const *args,
+                                                                  Py_ssize_t args_length)
+/*[clinic end generated code: output=aaddd9530048b229 input=9ed3842f4d472d45]*/
 {
     return pack_arguments_2pos_varpos(a, b, args, args_length);
 }
@@ -1638,28 +1664,15 @@ static struct PyMethodDef test_class_methods[] = {
     _TESTCLINIC_TESTCLASS_DEFCLASS_VARPOS_METHODDEF
     _TESTCLINIC_TESTCLASS_DEFCLASS_POSONLY_VARPOS_METHODDEF
 
-    {"varpos_no_fastcall", varpos_no_fastcall,
-        METH_VARARGS|METH_CLASS, ""},
-    {"posonly_varpos_no_fastcall", posonly_varpos_no_fastcall,
-        METH_VARARGS|METH_CLASS, ""},
-    {"posonly_req_opt_varpos_no_fastcall", posonly_req_opt_varpos_no_fastcall,
-        METH_VARARGS|METH_CLASS, ""},
-    {"posonly_poskw_varpos_no_fastcall",
-        _PyCFunction_CAST(posonly_poskw_varpos_no_fastcall),
-        METH_VARARGS|METH_KEYWORDS|METH_CLASS, ""},
+    _TESTCLINIC_TESTCLASS_VARPOS_NO_FASTCALL_METHODDEF
+    _TESTCLINIC_TESTCLASS_POSONLY_VARPOS_NO_FASTCALL_METHODDEF
+    _TESTCLINIC_TESTCLASS_POSONLY_REQ_OPT_VARPOS_NO_FASTCALL_METHODDEF
+    _TESTCLINIC_TESTCLASS_POSONLY_POSKW_VARPOS_NO_FASTCALL_METHODDEF
 
-    {"varpos_array_no_fastcall",
-        varpos_array_no_fastcall,
-        METH_VARARGS|METH_CLASS, ""},
-    {"posonly_varpos_array_no_fastcall",
-        posonly_varpos_array_no_fastcall,
-        METH_VARARGS|METH_CLASS, ""},
-    {"posonly_req_opt_varpos_array_no_fastcall",
-        posonly_req_opt_varpos_array_no_fastcall,
-        METH_VARARGS|METH_CLASS, ""},
-    {"posonly_poskw_varpos_array_no_fastcall",
-        _PyCFunction_CAST(posonly_poskw_varpos_array_no_fastcall),
-        METH_VARARGS|METH_KEYWORDS|METH_CLASS, ""},
+    _TESTCLINIC_TESTCLASS_VARPOS_ARRAY_NO_FASTCALL_METHODDEF
+    _TESTCLINIC_TESTCLASS_POSONLY_VARPOS_ARRAY_NO_FASTCALL_METHODDEF
+    _TESTCLINIC_TESTCLASS_POSONLY_REQ_OPT_VARPOS_ARRAY_NO_FASTCALL_METHODDEF
+    _TESTCLINIC_TESTCLASS_POSONLY_POSKW_VARPOS_ARRAY_NO_FASTCALL_METHODDEF
 
     {NULL, NULL}
 };
