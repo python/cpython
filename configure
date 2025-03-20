@@ -28740,7 +28740,7 @@ case $host_cpu in #(
   wasm32|wasm64) :
     MODULE_BUILDTYPE=static ;; #(
   *) :
-    MODULE_BUILDTYPE=${MODULE_BUILDTYPE:-shared}
+    MODULE_BUILDTYPE=static
  ;;
 esac
 

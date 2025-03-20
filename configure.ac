@@ -7377,7 +7377,7 @@ dnl AC_MSG_NOTICE([m4_set_list([_PY_STDLIB_MOD_SET_NA])])
 dnl Default value for Modules/Setup.stdlib build type
 AS_CASE([$host_cpu],
   [wasm32|wasm64], [MODULE_BUILDTYPE=static],
-  [MODULE_BUILDTYPE=${MODULE_BUILDTYPE:-shared}]
+  [MODULE_BUILDTYPE=static]
 )
 AC_SUBST([MODULE_BUILDTYPE])
 
