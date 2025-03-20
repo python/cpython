@@ -627,14 +627,13 @@ class Executor(object):
             try:
                 # reverse to keep finishing order
                 fs.reverse()
-                current_timeout = timeout
+                # Careful not to keep a reference to the popped future or its result
                 while fs:
-                    # Careful not to keep a reference to the popped future or its result
-                    if current_timeout is not None:
-                        current_timeout = end_time - time.monotonic()
-
                     # wait for the next result
-                    _result_or_cancel(fs[-1], current_timeout)
+                    if timeout is None:
+                        _result_or_cancel(fs[-1])
+                    else:
+                        _result_or_cancel(fs[-1], end_time - time.monotonic())
 
                     # buffer next task
                     if (
