@@ -1647,6 +1647,17 @@ New features
   take a C integer and produce a Python :class:`bool` object. (Contributed by
   Pablo Galindo in :issue:`45325`.)
 
+* Add unstable API for ``PyUnicode`` objects, for advanced use cases that
+  require complex migration from deprecated structures:
+
+  * :c:type:`PyUnstable_ASCIIObject`
+  * :c:type:`PyUnstable_CompactUnicodeObject`
+  * :c:type:`PyUnstable_UnicodeObject`
+  * :c:type:`PyUnstable_Unicode_GET_CACHED_HASH`
+
+  See the documentation for caveats.
+  (Contributed by Petr Viktorin in :gh:`131510`)
+
 
 Limited C API changes
 ---------------------
