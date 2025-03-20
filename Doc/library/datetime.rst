@@ -1076,13 +1076,12 @@ Other constructors, all class methods:
    ISO 8601 format, with the following exceptions:
 
    1. Time zone offsets may have fractional seconds.
-   2. The ``T`` separator may be replaced by any single unicode character.
-   3. Fractional hours and minutes are not supported.
-   4. Reduced precision dates are not currently supported (``YYYY-MM``,
+   2. Fractional hours and minutes are not supported.
+   3. Reduced precision dates are not currently supported (``YYYY-MM``,
       ``YYYY``).
-   5. Extended date representations are not currently supported
+   4. Extended date representations are not currently supported
       (``±YYYYYY-MM-DD``).
-   6. Ordinal dates are not currently supported (``YYYY-OOO``).
+   5. Ordinal dates are not currently supported (``YYYY-OOO``).
 
    Examples::
 
@@ -1111,6 +1110,8 @@ Other constructors, all class methods:
    .. versionchanged:: 3.11
       Previously, this method only supported formats that could be emitted by
       :meth:`date.isoformat` or :meth:`datetime.isoformat`.
+   .. versionchanged:: next
+      Separators other than ``T`` are deprecated.
 
 
 .. classmethod:: datetime.fromisocalendar(year, week, day)
