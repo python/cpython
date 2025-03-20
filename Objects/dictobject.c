@@ -6339,7 +6339,7 @@ dictviews_xor(PyObject* self, PyObject *other)
 
 static PyNumberMethods dictviews_as_number = {
     0,                                  /*nb_add*/
-    (binaryfunc)dictviews_sub,          /*nb_subtract*/
+    dictviews_sub,                      /*nb_subtract*/
     0,                                  /*nb_multiply*/
     0,                                  /*nb_remainder*/
     0,                                  /*nb_divmod*/
@@ -6351,9 +6351,9 @@ static PyNumberMethods dictviews_as_number = {
     0,                                  /*nb_invert*/
     0,                                  /*nb_lshift*/
     0,                                  /*nb_rshift*/
-    (binaryfunc)_PyDictView_Intersect,  /*nb_and*/
-    (binaryfunc)dictviews_xor,          /*nb_xor*/
-    (binaryfunc)dictviews_or,           /*nb_or*/
+    _PyDictView_Intersect,              /*nb_and*/
+    dictviews_xor,                      /*nb_xor*/
+    dictviews_or,                       /*nb_or*/
 };
 
 static PyObject*
@@ -6611,7 +6611,7 @@ static PySequenceMethods dictvalues_as_sequence = {
     0,                                  /* sq_slice */
     0,                                  /* sq_ass_item */
     0,                                  /* sq_ass_slice */
-    (objobjproc)0,                      /* sq_contains */
+    0,                                  /* sq_contains */
 };
 
 static PyObject* dictvalues_reversed(PyObject *dv, PyObject *Py_UNUSED(ignored));
