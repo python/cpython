@@ -21,7 +21,7 @@ from generators_common import (
 from cwriter import CWriter
 from dataclasses import dataclass
 from typing import TextIO
-from stack import Stack, get_stack_effect, get_stack_effects
+from stack import get_stack_effect
 
 # Constants used instead of size for macro expansions.
 # Note: 1, 2, 4 must match actual cache entry sizes.
