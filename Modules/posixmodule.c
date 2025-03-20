@@ -18,6 +18,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
 #include "pycore_fileutils.h"     // _Py_closerange()
+#include "pycore_import.h"        // _PyImport_AcquireLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
@@ -5695,7 +5696,6 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
     int result;
 #ifdef MS_WINDOWS
     int error = 0;
-    int pathError = 0;
     SECURITY_ATTRIBUTES secAttr = { sizeof(secAttr) };
     SECURITY_ATTRIBUTES *pSecAttr = NULL;
 #endif

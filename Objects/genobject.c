@@ -16,6 +16,7 @@
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_*
 #include "pycore_pyerrors.h"      // _PyErr_ClearExcState()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_warnings.h"      // _PyErr_WarnUnawaitedCoroutine()
 
 // Forward declarations
 static PyObject* gen_close(PyObject *, PyObject *);
@@ -1533,8 +1534,9 @@ async_gen_anext(PyObject *self)
 
 
 static PyObject *
-async_gen_asend(PyAsyncGenObject *o, PyObject *arg)
+async_gen_asend(PyObject *op, PyObject *arg)
 {
+    PyAsyncGenObject *o = (PyAsyncGenObject*)op;
     if (async_gen_init_hooks(o)) {
         return NULL;
     }
@@ -1543,8 +1545,9 @@ async_gen_asend(PyAsyncGenObject *o, PyObject *arg)
 
 
 static PyObject *
-async_gen_aclose(PyAsyncGenObject *o, PyObject *arg)
+async_gen_aclose(PyObject *op, PyObject *arg)
 {
+    PyAsyncGenObject *o = (PyAsyncGenObject*)op;
     if (async_gen_init_hooks(o)) {
         return NULL;
     }
@@ -1552,8 +1555,9 @@ async_gen_aclose(PyAsyncGenObject *o, PyObject *arg)
 }
 
 static PyObject *
-async_gen_athrow(PyAsyncGenObject *o, PyObject *args)
+async_gen_athrow(PyObject *op, PyObject *args)
 {
+    PyAsyncGenObject *o = (PyAsyncGenObject*)op;
     if (PyTuple_GET_SIZE(args) > 1) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                             "the (type, exc, tb) signature of athrow() is deprecated, "
@@ -1624,9 +1628,9 @@ the (type, val, tb) signature is deprecated, \n\
 and may be removed in a future version of Python.");
 
 static PyMethodDef async_gen_methods[] = {
-    {"asend", (PyCFunction)async_gen_asend, METH_O, async_asend_doc},
-    {"athrow",(PyCFunction)async_gen_athrow, METH_VARARGS, async_athrow_doc},
-    {"aclose", (PyCFunction)async_gen_aclose, METH_NOARGS, async_aclose_doc},
+    {"asend", async_gen_asend, METH_O, async_asend_doc},
+    {"athrow", async_gen_athrow, METH_VARARGS, async_athrow_doc},
+    {"aclose", async_gen_aclose, METH_NOARGS, async_aclose_doc},
     {"__sizeof__", gen_sizeof, METH_NOARGS, sizeof__doc__},
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
@@ -2323,8 +2327,9 @@ async_gen_athrow_close(PyObject *self, PyObject *args)
 
 
 static void
-async_gen_athrow_finalize(PyAsyncGenAThrow *o)
+async_gen_athrow_finalize(PyObject *op)
 {
+    PyAsyncGenAThrow *o = (PyAsyncGenAThrow*)op;
     if (o->agt_state == AWAITABLE_STATE_INIT) {
         PyObject *method = o->agt_args ? &_Py_ID(athrow) : &_Py_ID(aclose);
         _PyErr_WarnUnawaitedAgenMethod(o->agt_gen, method);
@@ -2388,7 +2393,7 @@ PyTypeObject _PyAsyncGenAThrow_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     0,                                          /* tp_new */
-    .tp_finalize = (destructor)async_gen_athrow_finalize,
+    .tp_finalize = async_gen_athrow_finalize,
 };
 
 
