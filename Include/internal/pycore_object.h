@@ -445,9 +445,6 @@ static inline void Py_DECREF_MORTAL(const char *filename, int lineno, PyObject *
         _Py_DECREF_DecRefTotal();
     }
     if (--op->ob_refcnt == 0) {
-#ifdef Py_TRACE_REFS
-        _Py_ForgetReference(op);
-#endif
         _Py_Dealloc(op);
     }
 }
