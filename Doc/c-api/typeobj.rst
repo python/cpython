@@ -2,8 +2,8 @@
 
 .. _type-structs:
 
-Type Objects
-============
+Type Object Structures
+======================
 
 Perhaps one of the most important structures of the Python object system is the
 structure that defines a new type: the :c:type:`PyTypeObject` structure.  Type
@@ -473,7 +473,7 @@ PyTypeObject Definition
 -----------------------
 
 The structure definition for :c:type:`PyTypeObject` can be found in
-:file:`Include/object.h`.  For convenience of reference, this repeats the
+:file:`Include/cpython/object.h`.  For convenience of reference, this repeats the
 definition found there:
 
 .. XXX Drop this?
@@ -731,7 +731,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       object becomes part of a refcount cycle, that cycle might be collected by
       a garbage collection on any thread).  This is not a problem for Python
       API calls, since the thread on which :c:member:`!tp_dealloc` is called
-      will own the Global Interpreter Lock (GIL).  However, if the object being
+      with an :term:`attached thread state`.  However, if the object being
       destroyed in turn destroys objects from some other C or C++ library, care
       should be taken to ensure that destroying those objects on the thread
       which called :c:member:`!tp_dealloc` will not violate any assumptions of
@@ -2154,15 +2154,13 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       static void
       local_finalize(PyObject *self)
       {
-          PyObject *error_type, *error_value, *error_traceback;
-
           /* Save the current exception, if any. */
-          PyErr_Fetch(&error_type, &error_value, &error_traceback);
+          PyObject *exc = PyErr_GetRaisedException();
 
           /* ... */
 
           /* Restore the saved exception. */
-          PyErr_Restore(error_type, error_value, error_traceback);
+          PyErr_SetRaisedException(exc);
       }
 
    **Inheritance:**

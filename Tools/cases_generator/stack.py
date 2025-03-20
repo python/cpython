@@ -1,9 +1,8 @@
 import re
 from analyzer import StackItem, StackEffect, Instruction, Uop, PseudoInstruction
-from collections import defaultdict
 from dataclasses import dataclass
 from cwriter import CWriter
-from typing import Iterator, Tuple
+from typing import Iterator
 
 UNUSED = {"unused"}
 
@@ -415,16 +414,6 @@ def get_stack_effect(inst: Instruction | PseudoInstruction) -> Stack:
     for s in stacks(inst):
         apply_stack_effect(stack, s)
     return stack
-
-
-def get_stack_effects(inst: Instruction | PseudoInstruction) -> list[Stack]:
-    """Returns a list of stack effects after each uop"""
-    result = []
-    stack = Stack()
-    for s in stacks(inst):
-        apply_stack_effect(stack, s)
-        result.append(stack.copy())
-    return result
 
 
 @dataclass

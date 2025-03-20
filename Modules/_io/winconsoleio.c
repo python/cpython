@@ -331,7 +331,6 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
     int ret = 0;
     int rwa = 0;
     int fd = -1;
-    int fd_is_own = 0;
     HANDLE handle = NULL;
 
 #ifndef NDEBUG

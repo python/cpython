@@ -239,8 +239,9 @@ _get_col_offsets(tokenizeriterobject *it, struct token token, const char *line_s
 }
 
 static PyObject *
-tokenizeriter_next(tokenizeriterobject *it)
+tokenizeriter_next(PyObject *op)
 {
+    tokenizeriterobject *it = (tokenizeriterobject*)op;
     PyObject* result = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(it);
@@ -348,8 +349,9 @@ exit:
 }
 
 static void
-tokenizeriter_dealloc(tokenizeriterobject *it)
+tokenizeriter_dealloc(PyObject *op)
 {
+    tokenizeriterobject *it = (tokenizeriterobject*)op;
     PyTypeObject *tp = Py_TYPE(it);
     Py_XDECREF(it->last_line);
     _PyTokenizer_Free(it->tok);
