@@ -621,8 +621,6 @@ class Executor(object):
         # collected independently of the result_iterator closure.
         executor_weakref = weakref.ref(self)
 
-        # used by the result_iterator to avoid keeping a reference to the result
-        result = collections.deque(maxlen=1)
         # Yield must be hidden in closure so that the futures are submitted
         # before the first iterator value is required.
         def result_iterator():
@@ -635,8 +633,10 @@ class Executor(object):
                     if current_timeout is not None:
                         current_timeout = end_time - time.monotonic()
 
-                    result.append(_result_or_cancel(fs.pop(), current_timeout))
+                    # wait for the next result
+                    _result_or_cancel(fs[-1], current_timeout)
 
+                    # buffer next task
                     if (
                         buffersize
                         and (executor := executor_weakref())
@@ -644,7 +644,8 @@ class Executor(object):
                     ):
                         fs.appendleft(executor.submit(fn, *args))
 
-                    yield result.pop()
+                    # yield the awaited result
+                    yield fs.pop().result()
             finally:
                 for future in fs:
                     future.cancel()
