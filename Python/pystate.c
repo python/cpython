@@ -2,32 +2,31 @@
 /* Thread and interpreter state structures and their interfaces */
 
 #include "Python.h"
-#include "pycore_runtime_structs.h"
+#include "pycore_genobject.h"     // included first to break dependency cycle
 
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_audit.h"         // _Py_AuditHookEntry
-#include "pycore_ceval.h"
-#include "pycore_code.h"          // stats
+#include "pycore_ceval.h"         // _PyEval_AcquireLock()
 #include "pycore_codecs.h"        // _PyCodec_Fini()
-#include "pycore_critical_section.h"       // _PyCriticalSection_Resume()
+#include "pycore_critical_section.h" // _PyCriticalSection_Resume()
 #include "pycore_dtoa.h"          // _dtoa_state_INIT()
-#include "pycore_emscripten_trampoline.h"  // _Py_EmscriptenTrampoline_Init()
-#include "pycore_frame.h"
+#include "pycore_emscripten_trampoline.h" // _Py_EmscriptenTrampoline_Init()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_interpframe.h"   // _PyThreadState_HasStackSpace()
 #include "pycore_object.h"        // _PyType_InitCache()
+#include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
 #include "pycore_optimizer.h"     // JIT_CLEANUP_THRESHOLD
 #include "pycore_parking_lot.h"   // _PyParkingLot_AfterFork()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
 #include "pycore_pylifecycle.h"   // _PyAST_Fini()
 #include "pycore_pymem.h"         // _PyMem_DebugEnabled()
-#include "pycore_pystate.h"
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_stackref.h"      // Py_STACKREF_DEBUG
 #include "pycore_time.h"          // _PyTime_Init()
-#include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
+
 
 /* --------------------------------------------------------------------------
 CAUTION

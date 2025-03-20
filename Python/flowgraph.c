@@ -760,11 +760,6 @@ make_cfg_traversal_stack(basicblock *entryblock) {
 typedef struct {
     /* The stack effect of the instruction. */
     int net;
-
-    /* The maximum stack usage of the instruction. Some instructions may
-     * temporarily push extra values to the stack while they are executing.
-     */
-    int max;
 } stack_effects;
 
 Py_LOCAL(int)
@@ -784,14 +779,9 @@ get_stack_effects(int opcode, int oparg, int jump, stack_effects *effects)
     }
     if (IS_BLOCK_PUSH_OPCODE(opcode) && !jump) {
         effects->net = 0;
-        effects->max = 0;
         return 0;
     }
-    if (_PyOpcode_max_stack_effect(opcode, oparg, &effects->max) < 0) {
-        return -1;
-    }
     effects->net = pushed - popped;
-    assert(effects->max >= effects->net);
     return 0;
 }
 
@@ -852,7 +842,7 @@ calculate_stackdepth(cfg_builder *g)
                              "Invalid CFG, stack underflow");
                 goto error;
             }
-            maxdepth = Py_MAX(maxdepth, depth + effects.max);
+            maxdepth = Py_MAX(maxdepth, depth);
             if (HAS_TARGET(instr->i_opcode) && instr->i_opcode != END_ASYNC_FOR) {
                 if (get_stack_effects(instr->i_opcode, instr->i_oparg, 1, &effects) < 0) {
                     PyErr_Format(PyExc_SystemError,
@@ -862,7 +852,7 @@ calculate_stackdepth(cfg_builder *g)
                 }
                 int target_depth = depth + effects.net;
                 assert(target_depth >= 0); /* invalid code or bug in stackdepth() */
-                maxdepth = Py_MAX(maxdepth, depth + effects.max);
+                maxdepth = Py_MAX(maxdepth, depth);
                 if (stackdepth_push(&sp, instr->i_target, target_depth) < 0) {
                     goto error;
                 }

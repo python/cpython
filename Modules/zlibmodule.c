@@ -1363,8 +1363,9 @@ class zlib.ZlibDecompressor "ZlibDecompressor *" "&ZlibDecompressorType"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=0658178ab94645df]*/
 
 static void
-ZlibDecompressor_dealloc(ZlibDecompressor *self)
+ZlibDecompressor_dealloc(PyObject *op)
 {
+    ZlibDecompressor *self = (ZlibDecompressor*)op;
     PyObject *type = (PyObject *)Py_TYPE(self);
     PyThread_free_lock(self->lock);
     if (self->is_initialised) {
