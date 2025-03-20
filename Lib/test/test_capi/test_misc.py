@@ -2884,5 +2884,22 @@ class TestVersions(unittest.TestCase):
                 self.assertEqual(result, expected)
 
 
+class TestCEval(unittest.TestCase):
+   def test_ceval_decref(self):
+        code = textwrap.dedent("""
+            import _testcapi
+            _testcapi.toggle_reftrace_printer(True)
+            l1 = []
+            l2 = []
+            del l1
+            del l2
+            _testcapi.toggle_reftrace_printer(False)
+        """)
+        _, out, _ = assert_python_ok("-c", code)
+        lines = out.decode("utf-8").splitlines()
+        self.assertEqual(lines.count("CREATE list"), 2)
+        self.assertEqual(lines.count("DESTROY list"), 2)
+
+
 if __name__ == "__main__":
     unittest.main()

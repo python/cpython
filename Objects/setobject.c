@@ -816,8 +816,9 @@ setiter_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 static PyObject *
-setiter_len(setiterobject *si, PyObject *Py_UNUSED(ignored))
+setiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    setiterobject *si = (setiterobject*)op;
     Py_ssize_t len = 0;
     if (si->si_set != NULL && si->si_used == si->si_set->used)
         len = si->len;
@@ -827,8 +828,10 @@ setiter_len(setiterobject *si, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-setiter_reduce(setiterobject *si, PyObject *Py_UNUSED(ignored))
+setiter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    setiterobject *si = (setiterobject*)op;
+
     /* copy the iterator state */
     setiterobject tmp = *si;
     Py_XINCREF(tmp.si_set);
@@ -845,8 +848,8 @@ setiter_reduce(setiterobject *si, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyMethodDef setiter_methods[] = {
-    {"__length_hint__", (PyCFunction)setiter_len, METH_NOARGS, length_hint_doc},
-    {"__reduce__", (PyCFunction)setiter_reduce, METH_NOARGS, reduce_doc},
+    {"__length_hint__", setiter_len, METH_NOARGS, length_hint_doc},
+    {"__reduce__", setiter_reduce, METH_NOARGS, reduce_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -1933,8 +1936,8 @@ Update the set, keeping only elements found in either set, but not in both.
 [clinic start generated code]*/
 
 static PyObject *
-set_symmetric_difference_update(PySetObject *so, PyObject *other)
-/*[clinic end generated code: output=fbb049c0806028de input=a50acf0365e1f0a5]*/
+set_symmetric_difference_update_impl(PySetObject *so, PyObject *other)
+/*[clinic end generated code: output=79f80b4ee5da66c1 input=a50acf0365e1f0a5]*/
 {
     if (Py_Is((PyObject *)so, other)) {
         return set_clear((PyObject *)so, NULL);
@@ -2004,7 +2007,7 @@ set_xor(PyObject *self, PyObject *other)
     if (!PyAnySet_Check(self) || !PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
     PySetObject *so = _PySet_CAST(self);
-    return set_symmetric_difference(so, other);
+    return set_symmetric_difference((PyObject*)so, other);
 }
 
 static PyObject *
@@ -2016,7 +2019,7 @@ set_ixor(PyObject *self, PyObject *other)
         Py_RETURN_NOTIMPLEMENTED;
     PySetObject *so = _PySet_CAST(self);
 
-    result = set_symmetric_difference_update(so, other);
+    result = set_symmetric_difference_update((PyObject*)so, other);
     if (result == NULL)
         return NULL;
     Py_DECREF(result);
@@ -2083,7 +2086,7 @@ set_issuperset_impl(PySetObject *so, PyObject *other)
 /*[clinic end generated code: output=ecf00ce552c09461 input=5f2e1f262e6e4ccc]*/
 {
     if (PyAnySet_Check(other)) {
-        return set_issubset((PySetObject *)other, (PyObject *)so);
+        return set_issubset(other, (PyObject *)so);
     }
 
     PyObject *key, *it = PyObject_GetIter(other);
@@ -2127,7 +2130,7 @@ set_richcompare(PyObject *self, PyObject *w, int op)
             ((PySetObject *)w)->hash != -1 &&
             v->hash != ((PySetObject *)w)->hash)
             Py_RETURN_FALSE;
-        return set_issubset(v, w);
+        return set_issubset((PyObject*)v, w);
     case Py_NE:
         r1 = set_richcompare((PyObject*)v, w, Py_EQ);
         if (r1 == NULL)
@@ -2138,17 +2141,17 @@ set_richcompare(PyObject *self, PyObject *w, int op)
             return NULL;
         return PyBool_FromLong(!r2);
     case Py_LE:
-        return set_issubset(v, w);
+        return set_issubset((PyObject*)v, w);
     case Py_GE:
-        return set_issuperset(v, w);
+        return set_issuperset((PyObject*)v, w);
     case Py_LT:
         if (PySet_GET_SIZE(v) >= PySet_GET_SIZE(w))
             Py_RETURN_FALSE;
-        return set_issubset(v, w);
+        return set_issubset((PyObject*)v, w);
     case Py_GT:
         if (PySet_GET_SIZE(v) <= PySet_GET_SIZE(w))
             Py_RETURN_FALSE;
-        return set_issuperset(v, w);
+        return set_issuperset((PyObject*)v, w);
     }
     Py_RETURN_NOTIMPLEMENTED;
 }

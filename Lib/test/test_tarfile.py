@@ -19,7 +19,6 @@ from test import archiver_tests
 from test import support
 from test.support import os_helper
 from test.support import script_helper
-from test.support import warnings_helper
 
 # Check for our compression modules.
 try:

@@ -792,12 +792,18 @@ class Random(_random.Random):
 
             sum(random() < p for i in range(n))
 
-        Returns an integer in the range:   0 <= X <= n
+        Returns an integer in the range:
+
+            0 <= X <= n
+
+        The integer is chosen with the probability:
+
+            P(X == k) = math.comb(n, k) * p ** k * (1 - p) ** (n - k)
 
         The mean (expected value) and variance of the random variable are:
 
             E[X] = n * p
-            Var[x] = n * p * (1 - p)
+            Var[X] = n * p * (1 - p)
 
         """
         # Error check inputs and handle edge cases

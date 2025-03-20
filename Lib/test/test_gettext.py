@@ -718,6 +718,76 @@ class ExpandLangTestCase(unittest.TestCase):
                     self.assertEqual(gettext._expand_lang(locale), expanded)
 
 
+class FindTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.env = self.enterContext(os_helper.EnvironmentVarGuard())
+        self.tempdir = self.enterContext(os_helper.temp_cwd())
+
+        for key in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
+            self.env.unset(key)
+
+    def create_mo_file(self, lang):
+        locale_dir = os.path.join(self.tempdir, "locale")
+        mofile_dir = os.path.join(locale_dir, lang, "LC_MESSAGES")
+        os.makedirs(mofile_dir)
+        mo_file = os.path.join(mofile_dir, "mofile.mo")
+        with open(mo_file, "wb") as f:
+            f.write(GNU_MO_DATA)
+        return mo_file
+
+    def test_find_with_env_vars(self):
+        # test that find correctly finds the environment variables
+        # when languages are not supplied
+        mo_file = self.create_mo_file("ga_IE")
+        for var in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
+            self.env.set(var, 'ga_IE')
+            result = gettext.find("mofile",
+                                  localedir=os.path.join(self.tempdir, "locale"))
+            self.assertEqual(result, mo_file)
+            self.env.unset(var)
+
+    def test_find_with_languages(self):
+        # test that passed languages are used
+        self.env.set('LANGUAGE', 'pt_BR')
+        mo_file = self.create_mo_file("ga_IE")
+
+        result = gettext.find("mofile",
+                              localedir=os.path.join(self.tempdir, "locale"),
+                              languages=['ga_IE'])
+        self.assertEqual(result, mo_file)
+
+    @unittest.mock.patch('gettext._expand_lang')
+    def test_find_with_no_lang(self, patch_expand_lang):
+        # no language can be found
+        gettext.find('foo')
+        patch_expand_lang.assert_called_with('C')
+
+    @unittest.mock.patch('gettext._expand_lang')
+    def test_find_with_c(self, patch_expand_lang):
+        # 'C' is already in languages
+        self.env.set('LANGUAGE', 'C')
+        gettext.find('foo')
+        patch_expand_lang.assert_called_with('C')
+
+    def test_find_all(self):
+        # test that all are returned when all is set
+        paths = []
+        for lang in ["ga_IE", "es_ES"]:
+            paths.append(self.create_mo_file(lang))
+        result = gettext.find('mofile',
+                              localedir=os.path.join(self.tempdir, "locale"),
+                              languages=["ga_IE", "es_ES"], all=True)
+        self.assertEqual(sorted(result), sorted(paths))
+
+    def test_find_deduplication(self):
+        # test that find removes duplicate languages
+        mo_file = [self.create_mo_file('ga_IE')]
+        result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"),
+                              languages=['ga_IE', 'ga_IE'], all=True)
+        self.assertEqual(result, mo_file)
+
+
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         support.check__all__(self, gettext,

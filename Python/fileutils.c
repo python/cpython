@@ -55,7 +55,9 @@ int _Py_open_cloexec_works = -1;
 
 // mbstowcs() and mbrtowc() errors
 static const size_t DECODE_ERROR = ((size_t)-1);
+#ifdef HAVE_MBRTOWC
 static const size_t INCOMPLETE_CHARACTER = (size_t)-2;
+#endif
 
 
 static int
@@ -129,6 +131,7 @@ is_valid_wide_char(wchar_t ch)
         // Reject lone surrogate characters
         return 0;
     }
+#if SIZEOF_WCHAR_T > 2
     if (ch > MAX_UNICODE) {
         // bpo-35883: Reject characters outside [U+0000; U+10ffff] range.
         // The glibc mbstowcs() UTF-8 decoder does not respect the RFC 3629,
@@ -136,6 +139,7 @@ is_valid_wide_char(wchar_t ch)
         // https://sourceware.org/bugzilla/show_bug.cgi?id=2373
         return 0;
     }
+#endif
     return 1;
 }
 
