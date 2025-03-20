@@ -3120,7 +3120,7 @@ _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwarg
     }
     else if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
         PyObject *exc = _PyErr_GetRaisedException(tstate);
-        PyObject *args = ((PyBaseExceptionObject *)exc)->args;
+        PyObject *args = PyException_GetArgs(exc);
         if (exc && PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1) {
             _PyErr_Clear(tstate);
             PyObject *funcstr = _PyObject_FunctionStr(func);
@@ -3137,6 +3137,7 @@ _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwarg
         else {
             _PyErr_SetRaisedException(tstate, exc);
         }
+        Py_DECREF(args);
     }
 }
 
