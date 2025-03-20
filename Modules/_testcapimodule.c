@@ -52,7 +52,7 @@ get_testerror(PyObject *self) {
     return state->error;
 }
 
-static PyObject *
+static void
 simple_object_destructor(PyObject *self)
 {
     PyObject_Free(self);
