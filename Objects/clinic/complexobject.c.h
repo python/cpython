@@ -15,7 +15,7 @@ PyDoc_STRVAR(complex_conjugate__doc__,
 "Return the complex conjugate of its argument. (3-4j).conjugate() == 3+4j.");
 
 #define COMPLEX_CONJUGATE_METHODDEF    \
-    {"conjugate", (PyCFunction)complex_conjugate, METH_NOARGS, complex_conjugate__doc__},
+    {"conjugate", complex_conjugate, METH_NOARGS, complex_conjugate__doc__},
 
 static PyObject *
 complex_conjugate_impl(PyComplexObject *self);
@@ -32,7 +32,7 @@ PyDoc_STRVAR(complex___getnewargs____doc__,
 "\n");
 
 #define COMPLEX___GETNEWARGS___METHODDEF    \
-    {"__getnewargs__", (PyCFunction)complex___getnewargs__, METH_NOARGS, complex___getnewargs____doc__},
+    {"__getnewargs__", complex___getnewargs__, METH_NOARGS, complex___getnewargs____doc__},
 
 static PyObject *
 complex___getnewargs___impl(PyComplexObject *self);
@@ -50,7 +50,7 @@ PyDoc_STRVAR(complex___format____doc__,
 "Convert to a string according to format_spec.");
 
 #define COMPLEX___FORMAT___METHODDEF    \
-    {"__format__", (PyCFunction)complex___format__, METH_O, complex___format____doc__},
+    {"__format__", complex___format__, METH_O, complex___format____doc__},
 
 static PyObject *
 complex___format___impl(PyComplexObject *self, PyObject *format_spec);
@@ -79,7 +79,7 @@ PyDoc_STRVAR(complex___complex____doc__,
 "Convert this value to exact type complex.");
 
 #define COMPLEX___COMPLEX___METHODDEF    \
-    {"__complex__", (PyCFunction)complex___complex__, METH_NOARGS, complex___complex____doc__},
+    {"__complex__", complex___complex__, METH_NOARGS, complex___complex____doc__},
 
 static PyObject *
 complex___complex___impl(PyComplexObject *self);
@@ -169,7 +169,7 @@ PyDoc_STRVAR(complex_from_number__doc__,
 "Convert number to a complex floating-point number.");
 
 #define COMPLEX_FROM_NUMBER_METHODDEF    \
-    {"from_number", (PyCFunction)complex_from_number, METH_O|METH_CLASS, complex_from_number__doc__},
+    {"from_number", complex_from_number, METH_O|METH_CLASS, complex_from_number__doc__},
 
 static PyObject *
 complex_from_number_impl(PyTypeObject *type, PyObject *number);
@@ -183,4 +183,4 @@ complex_from_number(PyObject *type, PyObject *number)
 
     return return_value;
 }
-/*[clinic end generated code: output=307531cd6d6e7544 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=46767f8412462a4e input=a9049054013a1b77]*/

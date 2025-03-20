@@ -10,7 +10,7 @@ PyDoc_STRVAR(_testcapi_pyfile_newstdprinter__doc__,
 "\n");
 
 #define _TESTCAPI_PYFILE_NEWSTDPRINTER_METHODDEF    \
-    {"pyfile_newstdprinter", (PyCFunction)_testcapi_pyfile_newstdprinter, METH_O, _testcapi_pyfile_newstdprinter__doc__},
+    {"pyfile_newstdprinter", _testcapi_pyfile_newstdprinter, METH_O, _testcapi_pyfile_newstdprinter__doc__},
 
 static PyObject *
 _testcapi_pyfile_newstdprinter_impl(PyObject *module, int fd);
@@ -61,4 +61,4 @@ _testcapi_py_fopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e943bbd7f181d079 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9a88e7c10f6c58d5 input=a9049054013a1b77]*/

@@ -406,7 +406,7 @@ PyDoc_STRVAR(_blake2_blake2b_copy__doc__,
 "Return a copy of the hash object.");
 
 #define _BLAKE2_BLAKE2B_COPY_METHODDEF    \
-    {"copy", (PyCFunction)_blake2_blake2b_copy, METH_NOARGS, _blake2_blake2b_copy__doc__},
+    {"copy", _blake2_blake2b_copy, METH_NOARGS, _blake2_blake2b_copy__doc__},
 
 static PyObject *
 _blake2_blake2b_copy_impl(Blake2Object *self);
@@ -424,7 +424,7 @@ PyDoc_STRVAR(_blake2_blake2b_update__doc__,
 "Update this hash object\'s state with the provided bytes-like object.");
 
 #define _BLAKE2_BLAKE2B_UPDATE_METHODDEF    \
-    {"update", (PyCFunction)_blake2_blake2b_update, METH_O, _blake2_blake2b_update__doc__},
+    {"update", _blake2_blake2b_update, METH_O, _blake2_blake2b_update__doc__},
 
 static PyObject *
 _blake2_blake2b_update_impl(Blake2Object *self, PyObject *data);
@@ -446,7 +446,7 @@ PyDoc_STRVAR(_blake2_blake2b_digest__doc__,
 "Return the digest value as a bytes object.");
 
 #define _BLAKE2_BLAKE2B_DIGEST_METHODDEF    \
-    {"digest", (PyCFunction)_blake2_blake2b_digest, METH_NOARGS, _blake2_blake2b_digest__doc__},
+    {"digest", _blake2_blake2b_digest, METH_NOARGS, _blake2_blake2b_digest__doc__},
 
 static PyObject *
 _blake2_blake2b_digest_impl(Blake2Object *self);
@@ -464,7 +464,7 @@ PyDoc_STRVAR(_blake2_blake2b_hexdigest__doc__,
 "Return the digest value as a string of hexadecimal digits.");
 
 #define _BLAKE2_BLAKE2B_HEXDIGEST_METHODDEF    \
-    {"hexdigest", (PyCFunction)_blake2_blake2b_hexdigest, METH_NOARGS, _blake2_blake2b_hexdigest__doc__},
+    {"hexdigest", _blake2_blake2b_hexdigest, METH_NOARGS, _blake2_blake2b_hexdigest__doc__},
 
 static PyObject *
 _blake2_blake2b_hexdigest_impl(Blake2Object *self);
@@ -474,4 +474,4 @@ _blake2_blake2b_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _blake2_blake2b_hexdigest_impl((Blake2Object *)self);
 }
-/*[clinic end generated code: output=b286a0d1be8729b0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ee76e3b8d44532e4 input=a9049054013a1b77]*/

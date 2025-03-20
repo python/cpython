@@ -16,7 +16,7 @@ PyDoc_STRVAR(_io__BufferedIOBase_readinto__doc__,
 "\n");
 
 #define _IO__BUFFEREDIOBASE_READINTO_METHODDEF    \
-    {"readinto", (PyCFunction)_io__BufferedIOBase_readinto, METH_O, _io__BufferedIOBase_readinto__doc__},
+    {"readinto", _io__BufferedIOBase_readinto, METH_O, _io__BufferedIOBase_readinto__doc__},
 
 static PyObject *
 _io__BufferedIOBase_readinto_impl(PyObject *self, Py_buffer *buffer);
@@ -50,7 +50,7 @@ PyDoc_STRVAR(_io__BufferedIOBase_readinto1__doc__,
 "\n");
 
 #define _IO__BUFFEREDIOBASE_READINTO1_METHODDEF    \
-    {"readinto1", (PyCFunction)_io__BufferedIOBase_readinto1, METH_O, _io__BufferedIOBase_readinto1__doc__},
+    {"readinto1", _io__BufferedIOBase_readinto1, METH_O, _io__BufferedIOBase_readinto1__doc__},
 
 static PyObject *
 _io__BufferedIOBase_readinto1_impl(PyObject *self, Py_buffer *buffer);
@@ -282,7 +282,7 @@ PyDoc_STRVAR(_io__Buffered___sizeof____doc__,
 "\n");
 
 #define _IO__BUFFERED___SIZEOF___METHODDEF    \
-    {"__sizeof__", (PyCFunction)_io__Buffered___sizeof__, METH_NOARGS, _io__Buffered___sizeof____doc__},
+    {"__sizeof__", _io__Buffered___sizeof__, METH_NOARGS, _io__Buffered___sizeof____doc__},
 
 static PyObject *
 _io__Buffered___sizeof___impl(buffered *self);
@@ -305,7 +305,7 @@ PyDoc_STRVAR(_io__Buffered__dealloc_warn__doc__,
 "\n");
 
 #define _IO__BUFFERED__DEALLOC_WARN_METHODDEF    \
-    {"_dealloc_warn", (PyCFunction)_io__Buffered__dealloc_warn, METH_O, _io__Buffered__dealloc_warn__doc__},
+    {"_dealloc_warn", _io__Buffered__dealloc_warn, METH_O, _io__Buffered__dealloc_warn__doc__},
 
 static PyObject *
 _io__Buffered__dealloc_warn_impl(buffered *self, PyObject *source);
@@ -326,7 +326,7 @@ PyDoc_STRVAR(_io__Buffered_simple_flush__doc__,
 "\n");
 
 #define _IO__BUFFERED_SIMPLE_FLUSH_METHODDEF    \
-    {"flush", (PyCFunction)_io__Buffered_simple_flush, METH_NOARGS, _io__Buffered_simple_flush__doc__},
+    {"flush", _io__Buffered_simple_flush, METH_NOARGS, _io__Buffered_simple_flush__doc__},
 
 static PyObject *
 _io__Buffered_simple_flush_impl(buffered *self);
@@ -374,7 +374,7 @@ PyDoc_STRVAR(_io__Buffered_close__doc__,
 "\n");
 
 #define _IO__BUFFERED_CLOSE_METHODDEF    \
-    {"close", (PyCFunction)_io__Buffered_close, METH_NOARGS, _io__Buffered_close__doc__},
+    {"close", _io__Buffered_close, METH_NOARGS, _io__Buffered_close__doc__},
 
 static PyObject *
 _io__Buffered_close_impl(buffered *self);
@@ -397,7 +397,7 @@ PyDoc_STRVAR(_io__Buffered_detach__doc__,
 "\n");
 
 #define _IO__BUFFERED_DETACH_METHODDEF    \
-    {"detach", (PyCFunction)_io__Buffered_detach, METH_NOARGS, _io__Buffered_detach__doc__},
+    {"detach", _io__Buffered_detach, METH_NOARGS, _io__Buffered_detach__doc__},
 
 static PyObject *
 _io__Buffered_detach_impl(buffered *self);
@@ -420,7 +420,7 @@ PyDoc_STRVAR(_io__Buffered_seekable__doc__,
 "\n");
 
 #define _IO__BUFFERED_SEEKABLE_METHODDEF    \
-    {"seekable", (PyCFunction)_io__Buffered_seekable, METH_NOARGS, _io__Buffered_seekable__doc__},
+    {"seekable", _io__Buffered_seekable, METH_NOARGS, _io__Buffered_seekable__doc__},
 
 static PyObject *
 _io__Buffered_seekable_impl(buffered *self);
@@ -443,7 +443,7 @@ PyDoc_STRVAR(_io__Buffered_readable__doc__,
 "\n");
 
 #define _IO__BUFFERED_READABLE_METHODDEF    \
-    {"readable", (PyCFunction)_io__Buffered_readable, METH_NOARGS, _io__Buffered_readable__doc__},
+    {"readable", _io__Buffered_readable, METH_NOARGS, _io__Buffered_readable__doc__},
 
 static PyObject *
 _io__Buffered_readable_impl(buffered *self);
@@ -466,7 +466,7 @@ PyDoc_STRVAR(_io__Buffered_writable__doc__,
 "\n");
 
 #define _IO__BUFFERED_WRITABLE_METHODDEF    \
-    {"writable", (PyCFunction)_io__Buffered_writable, METH_NOARGS, _io__Buffered_writable__doc__},
+    {"writable", _io__Buffered_writable, METH_NOARGS, _io__Buffered_writable__doc__},
 
 static PyObject *
 _io__Buffered_writable_impl(buffered *self);
@@ -539,7 +539,7 @@ PyDoc_STRVAR(_io__Buffered_fileno__doc__,
 "\n");
 
 #define _IO__BUFFERED_FILENO_METHODDEF    \
-    {"fileno", (PyCFunction)_io__Buffered_fileno, METH_NOARGS, _io__Buffered_fileno__doc__},
+    {"fileno", _io__Buffered_fileno, METH_NOARGS, _io__Buffered_fileno__doc__},
 
 static PyObject *
 _io__Buffered_fileno_impl(buffered *self);
@@ -562,7 +562,7 @@ PyDoc_STRVAR(_io__Buffered_isatty__doc__,
 "\n");
 
 #define _IO__BUFFERED_ISATTY_METHODDEF    \
-    {"isatty", (PyCFunction)_io__Buffered_isatty, METH_NOARGS, _io__Buffered_isatty__doc__},
+    {"isatty", _io__Buffered_isatty, METH_NOARGS, _io__Buffered_isatty__doc__},
 
 static PyObject *
 _io__Buffered_isatty_impl(buffered *self);
@@ -585,7 +585,7 @@ PyDoc_STRVAR(_io__Buffered_flush__doc__,
 "\n");
 
 #define _IO__BUFFERED_FLUSH_METHODDEF    \
-    {"flush", (PyCFunction)_io__Buffered_flush, METH_NOARGS, _io__Buffered_flush__doc__},
+    {"flush", _io__Buffered_flush, METH_NOARGS, _io__Buffered_flush__doc__},
 
 static PyObject *
 _io__Buffered_flush_impl(buffered *self);
@@ -731,7 +731,7 @@ PyDoc_STRVAR(_io__Buffered_readinto__doc__,
 "\n");
 
 #define _IO__BUFFERED_READINTO_METHODDEF    \
-    {"readinto", (PyCFunction)_io__Buffered_readinto, METH_O, _io__Buffered_readinto__doc__},
+    {"readinto", _io__Buffered_readinto, METH_O, _io__Buffered_readinto__doc__},
 
 static PyObject *
 _io__Buffered_readinto_impl(buffered *self, Py_buffer *buffer);
@@ -765,7 +765,7 @@ PyDoc_STRVAR(_io__Buffered_readinto1__doc__,
 "\n");
 
 #define _IO__BUFFERED_READINTO1_METHODDEF    \
-    {"readinto1", (PyCFunction)_io__Buffered_readinto1, METH_O, _io__Buffered_readinto1__doc__},
+    {"readinto1", _io__Buffered_readinto1, METH_O, _io__Buffered_readinto1__doc__},
 
 static PyObject *
 _io__Buffered_readinto1_impl(buffered *self, Py_buffer *buffer);
@@ -834,7 +834,7 @@ PyDoc_STRVAR(_io__Buffered_tell__doc__,
 "\n");
 
 #define _IO__BUFFERED_TELL_METHODDEF    \
-    {"tell", (PyCFunction)_io__Buffered_tell, METH_NOARGS, _io__Buffered_tell__doc__},
+    {"tell", _io__Buffered_tell, METH_NOARGS, _io__Buffered_tell__doc__},
 
 static PyObject *
 _io__Buffered_tell_impl(buffered *self);
@@ -1096,7 +1096,7 @@ PyDoc_STRVAR(_io_BufferedWriter_write__doc__,
 "\n");
 
 #define _IO_BUFFEREDWRITER_WRITE_METHODDEF    \
-    {"write", (PyCFunction)_io_BufferedWriter_write, METH_O, _io_BufferedWriter_write__doc__},
+    {"write", _io_BufferedWriter_write, METH_O, _io_BufferedWriter_write__doc__},
 
 static PyObject *
 _io_BufferedWriter_write_impl(buffered *self, Py_buffer *buffer);
@@ -1259,4 +1259,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1a0562c66776fd53 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c9f9d2206eaf7514 input=a9049054013a1b77]*/

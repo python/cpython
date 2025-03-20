@@ -17,7 +17,7 @@ PyDoc_STRVAR(_thread__get_name__doc__,
 "Get the name of the current thread.");
 
 #define _THREAD__GET_NAME_METHODDEF    \
-    {"_get_name", (PyCFunction)_thread__get_name, METH_NOARGS, _thread__get_name__doc__},
+    {"_get_name", _thread__get_name, METH_NOARGS, _thread__get_name__doc__},
 
 static PyObject *
 _thread__get_name_impl(PyObject *module);
@@ -101,4 +101,4 @@ exit:
 #ifndef _THREAD_SET_NAME_METHODDEF
     #define _THREAD_SET_NAME_METHODDEF
 #endif /* !defined(_THREAD_SET_NAME_METHODDEF) */
-/*[clinic end generated code: output=6e88ef6b126cece8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bb347b8a0b815db6 input=a9049054013a1b77]*/

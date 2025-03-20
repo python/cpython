@@ -109,6 +109,7 @@ class Function:
     docstring_only: bool = False
     forced_text_signature: str | None = None
     critical_section: bool = False
+    disable_fastcall: bool = False
     target_critical_section: list[str] = dc.field(default_factory=list)
 
     def __post_init__(self) -> None:

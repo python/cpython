@@ -258,7 +258,10 @@ class ParseArgsCodeGen:
         if self.func.critical_section:
             self.codegen.add_include('pycore_critical_section.h',
                                      'Py_BEGIN_CRITICAL_SECTION()')
-        self.fastcall = not self.is_new_or_init()
+        if self.func.disable_fastcall:
+            self.fastcall = False
+        else:
+            self.fastcall = not self.is_new_or_init()
 
         self.pos_only = 0
         self.min_pos = 0
@@ -831,9 +834,9 @@ class ParseArgsCodeGen:
     def process_methoddef(self, clang: CLanguage) -> None:
         methoddef_cast_end = ""
         if self.flags in ('METH_NOARGS', 'METH_O', 'METH_VARARGS'):
-            methoddef_cast = "(PyCFunction)"
+            methoddef_cast = ""  # no need to cast to PyCFunction
         elif self.func.kind is GETTER:
-            methoddef_cast = "" # This should end up unused
+            methoddef_cast = ""  # This should end up unused
         elif self.limited_capi:
             methoddef_cast = "(PyCFunction)(void(*)(void))"
         else:

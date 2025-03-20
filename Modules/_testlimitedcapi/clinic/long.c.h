@@ -8,7 +8,7 @@ PyDoc_STRVAR(_testlimitedcapi_test_long_api__doc__,
 "\n");
 
 #define _TESTLIMITEDCAPI_TEST_LONG_API_METHODDEF    \
-    {"test_long_api", (PyCFunction)_testlimitedcapi_test_long_api, METH_NOARGS, _testlimitedcapi_test_long_api__doc__},
+    {"test_long_api", _testlimitedcapi_test_long_api, METH_NOARGS, _testlimitedcapi_test_long_api__doc__},
 
 static PyObject *
 _testlimitedcapi_test_long_api_impl(PyObject *module);
@@ -25,7 +25,7 @@ PyDoc_STRVAR(_testlimitedcapi_test_longlong_api__doc__,
 "\n");
 
 #define _TESTLIMITEDCAPI_TEST_LONGLONG_API_METHODDEF    \
-    {"test_longlong_api", (PyCFunction)_testlimitedcapi_test_longlong_api, METH_NOARGS, _testlimitedcapi_test_longlong_api__doc__},
+    {"test_longlong_api", _testlimitedcapi_test_longlong_api, METH_NOARGS, _testlimitedcapi_test_longlong_api__doc__},
 
 static PyObject *
 _testlimitedcapi_test_longlong_api_impl(PyObject *module);
@@ -46,7 +46,7 @@ PyDoc_STRVAR(_testlimitedcapi_test_long_and_overflow__doc__,
 "This test will concentrate on proper handling of overflow.");
 
 #define _TESTLIMITEDCAPI_TEST_LONG_AND_OVERFLOW_METHODDEF    \
-    {"test_long_and_overflow", (PyCFunction)_testlimitedcapi_test_long_and_overflow, METH_NOARGS, _testlimitedcapi_test_long_and_overflow__doc__},
+    {"test_long_and_overflow", _testlimitedcapi_test_long_and_overflow, METH_NOARGS, _testlimitedcapi_test_long_and_overflow__doc__},
 
 static PyObject *
 _testlimitedcapi_test_long_and_overflow_impl(PyObject *module);
@@ -67,7 +67,7 @@ PyDoc_STRVAR(_testlimitedcapi_test_long_long_and_overflow__doc__,
 "This test will concentrate on proper handling of overflow.");
 
 #define _TESTLIMITEDCAPI_TEST_LONG_LONG_AND_OVERFLOW_METHODDEF    \
-    {"test_long_long_and_overflow", (PyCFunction)_testlimitedcapi_test_long_long_and_overflow, METH_NOARGS, _testlimitedcapi_test_long_long_and_overflow__doc__},
+    {"test_long_long_and_overflow", _testlimitedcapi_test_long_long_and_overflow, METH_NOARGS, _testlimitedcapi_test_long_long_and_overflow__doc__},
 
 static PyObject *
 _testlimitedcapi_test_long_long_and_overflow_impl(PyObject *module);
@@ -88,7 +88,7 @@ PyDoc_STRVAR(_testlimitedcapi_test_long_as_size_t__doc__,
 "It should be extended to test overflow handling.");
 
 #define _TESTLIMITEDCAPI_TEST_LONG_AS_SIZE_T_METHODDEF    \
-    {"test_long_as_size_t", (PyCFunction)_testlimitedcapi_test_long_as_size_t, METH_NOARGS, _testlimitedcapi_test_long_as_size_t__doc__},
+    {"test_long_as_size_t", _testlimitedcapi_test_long_as_size_t, METH_NOARGS, _testlimitedcapi_test_long_as_size_t__doc__},
 
 static PyObject *
 _testlimitedcapi_test_long_as_size_t_impl(PyObject *module);
@@ -105,7 +105,7 @@ PyDoc_STRVAR(_testlimitedcapi_test_long_as_unsigned_long_long_mask__doc__,
 "\n");
 
 #define _TESTLIMITEDCAPI_TEST_LONG_AS_UNSIGNED_LONG_LONG_MASK_METHODDEF    \
-    {"test_long_as_unsigned_long_long_mask", (PyCFunction)_testlimitedcapi_test_long_as_unsigned_long_long_mask, METH_NOARGS, _testlimitedcapi_test_long_as_unsigned_long_long_mask__doc__},
+    {"test_long_as_unsigned_long_long_mask", _testlimitedcapi_test_long_as_unsigned_long_long_mask, METH_NOARGS, _testlimitedcapi_test_long_as_unsigned_long_long_mask__doc__},
 
 static PyObject *
 _testlimitedcapi_test_long_as_unsigned_long_long_mask_impl(PyObject *module);
@@ -122,7 +122,7 @@ PyDoc_STRVAR(_testlimitedcapi_test_long_as_double__doc__,
 "\n");
 
 #define _TESTLIMITEDCAPI_TEST_LONG_AS_DOUBLE_METHODDEF    \
-    {"test_long_as_double", (PyCFunction)_testlimitedcapi_test_long_as_double, METH_NOARGS, _testlimitedcapi_test_long_as_double__doc__},
+    {"test_long_as_double", _testlimitedcapi_test_long_as_double, METH_NOARGS, _testlimitedcapi_test_long_as_double__doc__},
 
 static PyObject *
 _testlimitedcapi_test_long_as_double_impl(PyObject *module);
@@ -139,5 +139,5 @@ PyDoc_STRVAR(_testlimitedcapi_PyLong_AsInt__doc__,
 "\n");
 
 #define _TESTLIMITEDCAPI_PYLONG_ASINT_METHODDEF    \
-    {"PyLong_AsInt", (PyCFunction)_testlimitedcapi_PyLong_AsInt, METH_O, _testlimitedcapi_PyLong_AsInt__doc__},
-/*[clinic end generated code: output=bc52b73c599f96c2 input=a9049054013a1b77]*/
+    {"PyLong_AsInt", _testlimitedcapi_PyLong_AsInt, METH_O, _testlimitedcapi_PyLong_AsInt__doc__},
+/*[clinic end generated code: output=b2d9fb30e9c058f5 input=a9049054013a1b77]*/

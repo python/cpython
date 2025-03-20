@@ -160,7 +160,7 @@ PyDoc_STRVAR(unicodedata_UCD_category__doc__,
 "Returns the general category assigned to the character chr as string.");
 
 #define UNICODEDATA_UCD_CATEGORY_METHODDEF    \
-    {"category", (PyCFunction)unicodedata_UCD_category, METH_O, unicodedata_UCD_category__doc__},
+    {"category", unicodedata_UCD_category, METH_O, unicodedata_UCD_category__doc__},
 
 static PyObject *
 unicodedata_UCD_category_impl(PyObject *self, int chr);
@@ -198,7 +198,7 @@ PyDoc_STRVAR(unicodedata_UCD_bidirectional__doc__,
 "If no such value is defined, an empty string is returned.");
 
 #define UNICODEDATA_UCD_BIDIRECTIONAL_METHODDEF    \
-    {"bidirectional", (PyCFunction)unicodedata_UCD_bidirectional, METH_O, unicodedata_UCD_bidirectional__doc__},
+    {"bidirectional", unicodedata_UCD_bidirectional, METH_O, unicodedata_UCD_bidirectional__doc__},
 
 static PyObject *
 unicodedata_UCD_bidirectional_impl(PyObject *self, int chr);
@@ -236,7 +236,7 @@ PyDoc_STRVAR(unicodedata_UCD_combining__doc__,
 "Returns 0 if no combining class is defined.");
 
 #define UNICODEDATA_UCD_COMBINING_METHODDEF    \
-    {"combining", (PyCFunction)unicodedata_UCD_combining, METH_O, unicodedata_UCD_combining__doc__},
+    {"combining", unicodedata_UCD_combining, METH_O, unicodedata_UCD_combining__doc__},
 
 static int
 unicodedata_UCD_combining_impl(PyObject *self, int chr);
@@ -280,7 +280,7 @@ PyDoc_STRVAR(unicodedata_UCD_mirrored__doc__,
 "character in bidirectional text, 0 otherwise.");
 
 #define UNICODEDATA_UCD_MIRRORED_METHODDEF    \
-    {"mirrored", (PyCFunction)unicodedata_UCD_mirrored, METH_O, unicodedata_UCD_mirrored__doc__},
+    {"mirrored", unicodedata_UCD_mirrored, METH_O, unicodedata_UCD_mirrored__doc__},
 
 static int
 unicodedata_UCD_mirrored_impl(PyObject *self, int chr);
@@ -321,7 +321,7 @@ PyDoc_STRVAR(unicodedata_UCD_east_asian_width__doc__,
 "Returns the east asian width assigned to the character chr as string.");
 
 #define UNICODEDATA_UCD_EAST_ASIAN_WIDTH_METHODDEF    \
-    {"east_asian_width", (PyCFunction)unicodedata_UCD_east_asian_width, METH_O, unicodedata_UCD_east_asian_width__doc__},
+    {"east_asian_width", unicodedata_UCD_east_asian_width, METH_O, unicodedata_UCD_east_asian_width__doc__},
 
 static PyObject *
 unicodedata_UCD_east_asian_width_impl(PyObject *self, int chr);
@@ -359,7 +359,7 @@ PyDoc_STRVAR(unicodedata_UCD_decomposition__doc__,
 "An empty string is returned in case no such mapping is defined.");
 
 #define UNICODEDATA_UCD_DECOMPOSITION_METHODDEF    \
-    {"decomposition", (PyCFunction)unicodedata_UCD_decomposition, METH_O, unicodedata_UCD_decomposition__doc__},
+    {"decomposition", unicodedata_UCD_decomposition, METH_O, unicodedata_UCD_decomposition__doc__},
 
 static PyObject *
 unicodedata_UCD_decomposition_impl(PyObject *self, int chr);
@@ -528,7 +528,7 @@ PyDoc_STRVAR(unicodedata_UCD_lookup__doc__,
 "corresponding character.  If not found, KeyError is raised.");
 
 #define UNICODEDATA_UCD_LOOKUP_METHODDEF    \
-    {"lookup", (PyCFunction)unicodedata_UCD_lookup, METH_O, unicodedata_UCD_lookup__doc__},
+    {"lookup", unicodedata_UCD_lookup, METH_O, unicodedata_UCD_lookup__doc__},
 
 static PyObject *
 unicodedata_UCD_lookup_impl(PyObject *self, const char *name,
@@ -549,4 +549,4 @@ unicodedata_UCD_lookup(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8a59d430cee41058 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=21e9a48655bd516f input=a9049054013a1b77]*/
