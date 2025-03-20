@@ -23,17 +23,7 @@ def maybe_parenthesize(sym: str) -> str:
 
 
 def var_size(var: StackItem) -> str:
-    if var.condition:
-        # Special case simplifications
-        if var.condition == "0":
-            return "0"
-        elif var.condition == "1":
-            return var.get_size()
-        elif var.condition == "oparg & 1" and not var.size:
-            return f"({var.condition})"
-        else:
-            return f"(({var.condition}) ? {var.get_size()} : 0)"
-    elif var.size:
+    if var.size:
         return var.size
     else:
         return "1"
@@ -88,10 +78,6 @@ class Local:
     @property
     def name(self) -> str:
         return self.item.name
-
-    @property
-    def condition(self) -> str | None:
-        return self.item.condition
 
     def is_array(self) -> bool:
         return self.item.is_array()
@@ -275,15 +261,7 @@ class Stack:
         cast = f"({var.type})" if (not indirect and var.type) else ""
         bits = ".bits" if cast and self.extract_bits else ""
         assign = f"{var.name} = {cast}{indirect}stack_pointer[{self.base_offset.to_c()}]{bits};"
-        if var.condition:
-            if var.condition == "1":
-                assign = f"{assign}\n"
-            elif var.condition == "0":
-                return "", Local.unused(var)
-            else:
-                assign = f"if ({var.condition}) {{ {assign} }}\n"
-        else:
-            assign = f"{assign}\n"
+        assign = f"{assign}\n"
         return assign, Local.from_memory(var)
 
     def push(self, var: Local) -> None:
@@ -303,10 +281,6 @@ class Stack:
     ) -> None:
         cast = f"({cast_type})" if var.type else ""
         bits = ".bits" if cast and extract_bits else ""
-        if var.condition == "0":
-            return
-        if var.condition and var.condition != "1":
-            out.emit(f"if ({var.condition}) ")
         out.emit(f"stack_pointer[{base_offset.to_c()}]{bits} = {cast}{var.name};\n")
 
     def _adjust_stack_pointer(self, out: CWriter, number: str) -> None:
@@ -655,7 +629,7 @@ class Storage:
         def close_variable(var: Local, overwrite: str) -> None:
             nonlocal tmp_defined
             close = "PyStackRef_CLOSE"
-            if "null" in var.name or var.condition and var.condition != "1":
+            if "null" in var.name:
                 close = "PyStackRef_XCLOSE"
             if var.size:
                 if var.size == "1":
@@ -668,8 +642,6 @@ class Storage:
                     close_named(close, f"{var.name}[_i]", overwrite)
                     out.emit("}\n")
             else:
-                if var.condition and var.condition == "0":
-                    return
                 close_named(close, var.name, overwrite)
 
         self.clear_dead_inputs()

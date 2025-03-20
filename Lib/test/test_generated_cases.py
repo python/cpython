@@ -59,14 +59,14 @@ class TestEffects(unittest.TestCase):
     def test_effect_sizes(self):
         stack = Stack()
         inputs = [
-            x := StackItem("x", None, "", "1"),
-            y := StackItem("y", None, "", "oparg"),
-            z := StackItem("z", None, "", "oparg*2"),
+            x := StackItem("x", None, "1"),
+            y := StackItem("y", None, "oparg"),
+            z := StackItem("z", None, "oparg*2"),
         ]
         outputs = [
-            StackItem("x", None, "", "1"),
-            StackItem("b", None, "", "oparg*4"),
-            StackItem("c", None, "", "1"),
+            StackItem("x", None, "1"),
+            StackItem("b", None, "oparg*4"),
+            StackItem("c", None, "1"),
         ]
         stack.pop(z)
         stack.pop(y)
@@ -897,98 +897,6 @@ class TestGeneratedCases(unittest.TestCase):
                 JUMP_TO_LABEL(somewhere);
             }
             stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
-            DISPATCH();
-        }
-    """
-        self.run_cases_test(input, output)
-
-    def test_cond_effect(self):
-        input = """
-        inst(OP, (aa, input if ((oparg & 1) == 1), cc -- xx, output if (oparg & 2), zz)) {
-            output = SPAM(oparg, aa, cc, input);
-            INPUTS_DEAD();
-            xx = 0;
-            zz = 0;
-        }
-    """
-        output = """
-        TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
-            int opcode = OP;
-            (void)(opcode);
-            #endif
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(OP);
-            _PyStackRef aa;
-            _PyStackRef input = PyStackRef_NULL;
-            _PyStackRef cc;
-            _PyStackRef xx;
-            _PyStackRef output = PyStackRef_NULL;
-            _PyStackRef zz;
-            cc = stack_pointer[-1];
-            if ((oparg & 1) == 1) { input = stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)]; }
-            aa = stack_pointer[-2 - (((oparg & 1) == 1) ? 1 : 0)];
-            output = SPAM(oparg, aa, cc, input);
-            xx = 0;
-            zz = 0;
-            stack_pointer[-2 - (((oparg & 1) == 1) ? 1 : 0)] = xx;
-            if (oparg & 2) stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)] = output;
-            stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0) + ((oparg & 2) ? 1 : 0)] = zz;
-            stack_pointer += -(((oparg & 1) == 1) ? 1 : 0) + ((oparg & 2) ? 1 : 0);
-            assert(WITHIN_STACK_BOUNDS());
-            DISPATCH();
-        }
-    """
-        self.run_cases_test(input, output)
-
-    def test_macro_cond_effect(self):
-        input = """
-        op(A, (left, middle, right --)) {
-            USE(left, middle, right);
-            INPUTS_DEAD();
-        }
-        op(B, (-- deep, extra if (oparg), res)) {
-            deep = -1;
-            res = 0;
-            extra = 1;
-            INPUTS_DEAD();
-        }
-        macro(M) = A + B;
-    """
-        output = """
-        TARGET(M) {
-            #if Py_TAIL_CALL_INTERP
-            int opcode = M;
-            (void)(opcode);
-            #endif
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(M);
-            _PyStackRef left;
-            _PyStackRef middle;
-            _PyStackRef right;
-            _PyStackRef deep;
-            _PyStackRef extra = PyStackRef_NULL;
-            _PyStackRef res;
-            // A
-            {
-                right = stack_pointer[-1];
-                middle = stack_pointer[-2];
-                left = stack_pointer[-3];
-                USE(left, middle, right);
-            }
-            // B
-            {
-                deep = -1;
-                res = 0;
-                extra = 1;
-            }
-            stack_pointer[-3] = deep;
-            if (oparg) stack_pointer[-2] = extra;
-            stack_pointer[-2 + ((oparg) ? 1 : 0)] = res;
-            stack_pointer += -1 + ((oparg) ? 1 : 0);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }

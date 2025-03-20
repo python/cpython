@@ -59,7 +59,6 @@
 #define guard
 #define override
 #define specializing
-#define split
 #define replicate(TIMES)
 #define tier1
 #define no_save_ip
@@ -1686,8 +1685,10 @@ dummy_func(
             ERROR_IF(PyStackRef_IsNull(*res), error);
         }
 
-        op(_PUSH_NULL_CONDITIONAL, ( -- null if (oparg & 1))) {
-            null = PyStackRef_NULL;
+        op(_PUSH_NULL_CONDITIONAL, ( -- null[oparg & 1])) {
+            if (oparg & 1) {
+                null[0] = PyStackRef_NULL;
+            }
         }
 
         macro(LOAD_GLOBAL) =

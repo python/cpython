@@ -8,7 +8,11 @@
 #include "pycore_ceval.h"
 #include "pycore_critical_section.h"
 #include "pycore_dict.h"
+#include "pycore_floatobject.h"
+#include "pycore_frame.h"
+#include "pycore_interpframe.h"
 #include "pycore_intrinsics.h"
+#include "pycore_list.h"
 #include "pycore_long.h"
 #include "pycore_opcode_metadata.h"
 #include "pycore_opcode_utils.h"
@@ -16,6 +20,9 @@
 #include "pycore_pyerrors.h"
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
+#include "pycore_tuple.h"
+#include "pycore_unicodeobject.h"
+
 #include "pycore_jit.h"
 
 // Memory management stuff: ////////////////////////////////////////////////////
