@@ -625,9 +625,9 @@ class Executor(object):
         # before the first iterator value is required.
         def result_iterator():
             try:
-                # reverse to keep finishing order
+                # Reverse so that the next (FIFO) future is on the right
                 fs.reverse()
-                # Careful not to keep a reference to the popped future or its result
+                # Careful not to keep references to futures or results
                 while fs:
                     # Wait for the next result
                     if timeout is None:
