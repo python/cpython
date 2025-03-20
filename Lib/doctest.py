@@ -239,22 +239,7 @@ def _normalize_module(module, depth=2):
 def _load_testfile(filename, package, module_relative, encoding):
     if module_relative:
         package = _normalize_module(package, 3)
-        try:
-            loader = package.__loader__
-        except AttributeError:
-            pass
-        else:
-            if loader is not None:
-                return (
-                    importlib.resources.read_text(package, filename, encoding=encoding),
-                    filename,
-                )
-
-        try:
-            package.__spec__.loader
-        except AttributeError:
-            pass
-        else:
+        with contextlib.suppress(Exception):
             return (
                 importlib.resources.read_text(package, filename, encoding=encoding),
                 filename,
