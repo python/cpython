@@ -1655,7 +1655,7 @@ New features
   * :c:type:`PyUnstable_UnicodeObject`
   * :c:type:`PyUnstable_Unicode_GET_CACHED_HASH`
 
-  See the documentation for caveats.
+  See their documentation for caveats.
   (Contributed by Petr Viktorin in :gh:`131510`)
 
 
