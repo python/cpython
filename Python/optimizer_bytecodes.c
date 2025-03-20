@@ -552,7 +552,7 @@ dummy_func(void) {
             null[0] = sym_new_null(ctx);
         }
         else {
-            REPLACE_OP(this_instr, _NOP);
+            REPLACE_OP(this_instr, _NOP, 0, 0);
         }
     }
 

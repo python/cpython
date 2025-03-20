@@ -928,7 +928,7 @@
                 null[0] = sym_new_null(ctx);
             }
             else {
-                REPLACE_OP(this_instr, _NOP);
+                REPLACE_OP(this_instr, _NOP, 0, 0);
             }
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());

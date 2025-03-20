@@ -6,11 +6,15 @@
 #include "pycore_interp.h"
 #include "pycore_backoff.h"
 #include "pycore_bitutils.h"        // _Py_popcount32()
+#include "pycore_code.h"            // _Py_GetBaseCodeUnit
+#include "pycore_interpframe.h"
 #include "pycore_object.h"          // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_OpName[]
 #include "pycore_opcode_utils.h"  // MAX_REAL_OPCODE
 #include "pycore_optimizer.h"     // _Py_uop_analyze_and_optimize()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_tuple.h" // _PyTuple_FromArraySteal
+#include "pycore_unicodeobject.h" // _PyUnicode_FromASCII
 #include "pycore_uop_ids.h"
 #include "pycore_jit.h"
 #include <stdbool.h>
