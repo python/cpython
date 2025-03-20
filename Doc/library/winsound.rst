@@ -146,15 +146,21 @@ provided by Windows platforms.  It includes functions and several constants.
 
    Triggers a SoundSentry event when the sound is played.
 
+   .. versionadded:: 3.14
+
 
 .. data:: SND_SYNC
 
    The sound is played synchronously.  This is the default behavior.
 
+   .. versionadded:: 3.14
+
 
 .. data:: SND_SYSTEM
 
    Assign the sound to the audio session for system notification sounds.
+
+   .. versionadded:: 3.14
 
 
 .. data:: MB_ICONASTERISK
@@ -186,17 +192,25 @@ provided by Windows platforms.  It includes functions and several constants.
 
    Play the ``SystemHand`` sound.
 
+   .. versionadded:: 3.14
+
 
 .. data:: MB_ICONINFORMATION
 
    Play the ``SystemDefault`` sound.
+
+   .. versionadded:: 3.14
 
 
 .. data:: MB_ICONSTOP
 
    Play the ``SystemHand`` sound.
 
+   .. versionadded:: 3.14
+
 
 .. data:: MB_ICONWARNING
 
    Play the ``SystemExclamation`` sound.
+
+   .. versionadded:: 3.14
