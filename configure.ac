@@ -547,6 +547,9 @@ then
 	*-*-linux*)
 		ac_sys_system=Linux
 		;;
+  *-nanvix*)
+    ac_sys_system=Nanvix
+    ;;
 	*-*-cygwin*)
 		ac_sys_system=Cygwin
 		;;
@@ -585,6 +588,7 @@ then
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
+  nanvix*) MACHDEP="nanvix";;
 	'')	MACHDEP="unknown";;
     esac
 
@@ -613,6 +617,9 @@ if test "$cross_compiling" = yes; then
 	*-*-cygwin*)
 		_host_cpu=
 		;;
+  *-nanvix)
+    _host_cpu=$host_cpu
+    ;;
 	*-*-vxworks*)
 		_host_cpu=$host_cpu
 		;;
@@ -3399,6 +3406,9 @@ then
 	CYGWIN*)
 		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
 		LDCXXSHARED="g++ -shared -Wl,--enable-auto-image-base";;
+  Nanvix*)
+		dnl not iplemented yet
+      ;;
 	*)	LDSHARED="ld";;
 	esac
 fi
@@ -7254,6 +7264,64 @@ AS_CASE([$ac_sys_system],
   [CYGWIN*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
   [QNX*], [PY_STDLIB_MOD_SET_NA([_scproxy], [nis])],
   [FreeBSD*], [PY_STDLIB_MOD_SET_NA([_scproxy], [spwd])],
+  [Nanvix*], [
+    PY_STDLIB_MOD_SET_NA(
+      [_asyncio],
+      [_bisect],
+      [_contextvars],
+      [_lsprof],
+      [_multiprocessing],
+      [_socket],
+      [_zoneinfo],
+      [audioop],
+      [binascii],
+      [mmap],
+      [select],
+      [_elementtree],
+      [pyexpat],
+      [_posixsubprocess],
+      [_posixshmem],
+      [fcntl],
+      [grp],
+      [ossaudiodev],
+      [resource],
+      [pwd],
+      [spwd],
+      [syslog],
+      [termios],
+      [_crypt],
+      [nis],
+      [_bz2],
+      [_ctypes],
+      [_dbm],
+      [_gdbm],
+      [_lzma],
+      [_uuid],
+      [zlib],
+      [readline],
+      [_ssl],
+      [_hashlib],
+      [_tkinter],
+      [_curses],
+      [_curses_panel],
+      [_scproxy],
+      [xxlimited],
+      [xxlimited_35],
+      [xxsubtype],
+      [_xxsubinterpreters],
+      [_xxinterpchannels],
+      [_xxtestfuzz],
+      [_testbuffer],
+      [_testinternalcapi],
+      [_ctypes_test],
+      [_testcapi],
+      [_testimportmultiple],
+      [_testmultiphase],
+      [_testsinglephase],
+      [_testclinic],
+      [_sqlite3],
+    )
+  ],
   [Emscripten|WASI], [
     dnl subprocess and multiprocessing are not supported (no fork syscall).
     dnl curses and tkinter user interface are not available.

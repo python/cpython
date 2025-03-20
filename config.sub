@@ -419,6 +419,10 @@ case $1 in
 				basic_machine=i686-pc
 				basic_os=msys
 				;;
+			nanvix)
+				basic_machine=i686-pc
+				basic_os=nanvix
+				;;
 			mvs)
 				basic_machine=i370-ibm
 				basic_os=mvs
@@ -1455,6 +1459,9 @@ case $os in
 	nova*)
 		os=rtmk-nova
 		;;
+	nanvix*)
+		os=nanvix
+		;;
 	ns2)
 		os=nextstep2
 		;;
@@ -1748,7 +1755,7 @@ case $os in
 	     | skyos* | haiku* | rdos* | toppers* | drops* | es* \
 	     | onefs* | tirtos* | phoenix* | fuchsia* | redox* | bme* \
 	     | midnightbsd* | amdhsa* | unleashed* | emscripten* | wasi* \
-	     | nsk* | powerunix* | genode* | zvmoe* | qnx* | emx* | zephyr*)
+	     | nsk* | powerunix* | genode* | zvmoe* | qnx* | emx* | zephyr* | nanvix* )
 		;;
 	# This one is extra strict with allowed versions
 	sco3.2v2 | sco3.2v[4-9]* | sco5v6*)

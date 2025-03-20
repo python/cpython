@@ -4267,6 +4267,9 @@ then
 	*-*-linux*)
 		ac_sys_system=Linux
 		;;
+  *-nanvix*)
+    ac_sys_system=Nanvix
+    ;;
 	*-*-cygwin*)
 		ac_sys_system=Cygwin
 		;;
@@ -4305,6 +4308,7 @@ then
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
+  nanvix*) MACHDEP="nanvix";;
 	'')	MACHDEP="unknown";;
     esac
 
@@ -4335,6 +4339,9 @@ if test "$cross_compiling" = yes; then
 	*-*-cygwin*)
 		_host_cpu=
 		;;
+  *-nanvix)
+    _host_cpu=$host_cpu
+    ;;
 	*-*-vxworks*)
 		_host_cpu=$host_cpu
 		;;
@@ -12842,6 +12849,8 @@ fi;;
 	CYGWIN*)
 		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
 		LDCXXSHARED="g++ -shared -Wl,--enable-auto-image-base";;
+  Nanvix*)
+		      ;;
 	*)	LDSHARED="ld";;
 	esac
 fi
@@ -28604,6 +28613,67 @@ case $ac_sys_system in #(
     py_cv_module__scproxy=n/a
     py_cv_module_spwd=n/a
  ;; #(
+  Nanvix*) :
+
+
+
+    py_cv_module__asyncio=n/a
+    py_cv_module__bisect=n/a
+    py_cv_module__contextvars=n/a
+    py_cv_module__lsprof=n/a
+    py_cv_module__multiprocessing=n/a
+    py_cv_module__socket=n/a
+    py_cv_module__zoneinfo=n/a
+    py_cv_module_audioop=n/a
+    py_cv_module_binascii=n/a
+    py_cv_module_mmap=n/a
+    py_cv_module_select=n/a
+    py_cv_module__elementtree=n/a
+    py_cv_module_pyexpat=n/a
+    py_cv_module__posixsubprocess=n/a
+    py_cv_module__posixshmem=n/a
+    py_cv_module_fcntl=n/a
+    py_cv_module_grp=n/a
+    py_cv_module_ossaudiodev=n/a
+    py_cv_module_resource=n/a
+    py_cv_module_pwd=n/a
+    py_cv_module_spwd=n/a
+    py_cv_module_syslog=n/a
+    py_cv_module_termios=n/a
+    py_cv_module__crypt=n/a
+    py_cv_module_nis=n/a
+    py_cv_module__bz2=n/a
+    py_cv_module__ctypes=n/a
+    py_cv_module__dbm=n/a
+    py_cv_module__gdbm=n/a
+    py_cv_module__lzma=n/a
+    py_cv_module__uuid=n/a
+    py_cv_module_zlib=n/a
+    py_cv_module_readline=n/a
+    py_cv_module__ssl=n/a
+    py_cv_module__hashlib=n/a
+    py_cv_module__tkinter=n/a
+    py_cv_module__curses=n/a
+    py_cv_module__curses_panel=n/a
+    py_cv_module__scproxy=n/a
+    py_cv_module_xxlimited=n/a
+    py_cv_module_xxlimited_35=n/a
+    py_cv_module_xxsubtype=n/a
+    py_cv_module__xxsubinterpreters=n/a
+    py_cv_module__xxinterpchannels=n/a
+    py_cv_module__xxtestfuzz=n/a
+    py_cv_module__testbuffer=n/a
+    py_cv_module__testinternalcapi=n/a
+    py_cv_module__ctypes_test=n/a
+    py_cv_module__testcapi=n/a
+    py_cv_module__testimportmultiple=n/a
+    py_cv_module__testmultiphase=n/a
+    py_cv_module__testsinglephase=n/a
+    py_cv_module__testclinic=n/a
+    py_cv_module__sqlite3=n/a
+    py_cv_module_=n/a
+
+   ;; #(
   Emscripten|WASI) :
 
 
