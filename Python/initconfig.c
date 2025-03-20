@@ -8,6 +8,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromConfig()
 #include "pycore_pymem.h"         // _PyMem_DefaultRawMalloc()
+#include "pycore_pyhash.h"        // _Py_HashSecret
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pystats.h"       // _Py_StatsOn()
 #include "pycore_sysmodule.h"     // _PySys_SetIntMaxStrDigits()

@@ -2,6 +2,7 @@
 /* Interface to Sjoerd's portable C thread library */
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_interp.h"        // _PyInterpreterState.threads.count
 #include "pycore_lock.h"
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
