@@ -98,7 +98,10 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
     else:
         X_TAG = X_ARCH_TAG = ""
 
-    ID_TAG = XY_TAG if TAG_ARCH == "-64" else XY_ARCH_TAG
+    # Tag used in runtime ID (for side-by-side install/updates)
+    ID_TAG = XY_ARCH_TAG
+    # Tag shown in 'py list' output
+    DISPLAY_TAG = f"{XY_TAG}-dev{TAG_ARCH}" if VER_SUFFIX else XY_ARCH_TAG
 
     DISPLAY_SUFFIX = ", ".join(i for i in DISPLAY_TAGS if i)
     if DISPLAY_SUFFIX:
@@ -157,6 +160,13 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
                 {**base, "name": f"{ALIAS_PREFIX}{X_TAG}.exe"},
                 {**base, "name": f"{ALIAS_PREFIX}{X_ARCH_TAG}.exe"},
             ])
+        if VER_SUFFIX:
+            STD_RUN_FOR.extend([
+                {**base, "tag": f"{XY_TAG}-dev" if XY_TAG else ""},
+                {**base, "tag": f"{XY_TAG}-dev{TAG_ARCH}" if XY_TAG else ""},
+                {**base, "tag": f"{X_TAG}-dev" if X_TAG else ""},
+                {**base, "tag": f"{X_TAG}-dev{TAG_ARCH}" if X_TAG else ""},
+            ])
 
     STD_PEP514.append({
         "kind": "pep514",
@@ -167,12 +177,12 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
         "SysVersion": VER_DOT,
         "Version": FULL_VERSION,
         "InstallPath": {
-            "": "%PREFIX%",
+            "_": "%PREFIX%",
             "ExecutablePath": f"%PREFIX%{TARGET}",
         },
         "Help": {
             "Online Python Documentation": {
-                "": f"https://docs.python.org/{VER_DOT}/"
+                "_": f"https://docs.python.org/{VER_DOT}/"
             },
         },
     })
@@ -216,7 +226,7 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
             STD_PEP514[0]["InstallPath"]["WindowedExecutablePath"] = f"%PREFIX%{TARGETW}"
         if ns.include_html_doc:
             STD_PEP514[0]["Help"]["Main Python Documentation"] = {
-                "": rf"%PREFIX%Doc\html\index.html",
+                "_": rf"%PREFIX%Doc\html\index.html",
             }
             STD_START[0]["Items"].append({
                 "Name": f"{DISPLAY_NAME} {VER_DOT} Manuals{DISPLAY_SUFFIX}",
@@ -224,7 +234,7 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
             })
         elif ns.include_chm:
             STD_PEP514[0]["Help"]["Main Python Documentation"] = {
-                "": rf"%PREFIX%Doc\{PYTHON_CHM_NAME}",
+                "_": rf"%PREFIX%Doc\{PYTHON_CHM_NAME}",
             }
             STD_START[0]["Items"].append({
                 "Name": f"{DISPLAY_NAME} {VER_DOT} Manuals{DISPLAY_SUFFIX}",
@@ -244,7 +254,7 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
         "id": f"{COMPANY.lower()}-{ID_TAG}",
         "sort-version": FULL_VERSION,
         "company": COMPANY,
-        "tag": FULL_TAG if TAG_ARCH == "-64" else FULL_ARCH_TAG,
+        "tag": DISPLAY_TAG,
         "install-for": _unique(INSTALL_TAGS),
         "run-for": _not_empty(STD_RUN_FOR, "tag"),
         "alias": _not_empty(STD_ALIAS, "name"),
