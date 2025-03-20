@@ -18,7 +18,8 @@ DATA_DIR = Path(__file__).resolve().parent / 'i18n_data'
 
 
 with imports_under_tool("i18n"):
-    from pygettext import parse_spec, process_keywords, DEFAULTKEYWORDS
+    from pygettext import (parse_spec, process_keywords, DEFAULTKEYWORDS,
+                           unparse_spec)
 
 
 def normalize_POT_file(pot):
@@ -497,6 +498,8 @@ class Test_pygettext(unittest.TestCase):
         for spec, expected in valid:
             with self.subTest(spec=spec):
                 self.assertEqual(parse_spec(spec), expected)
+                # test unparse-parse round-trip
+                self.assertEqual(parse_spec(unparse_spec(*expected)), expected)
 
         invalid = (
             ('foo:', "Invalid keyword spec 'foo:': missing argument positions"),

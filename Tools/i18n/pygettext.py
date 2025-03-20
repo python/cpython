@@ -376,6 +376,20 @@ def parse_spec(spec):
     return name, result
 
 
+def unparse_spec(name, spec):
+    """Unparse a keyword spec dictionary into a string."""
+    if spec == {'msgid': 0}:
+        return name
+
+    parts = []
+    for arg, pos in sorted(spec.items(), key=lambda x: x[1]):
+        if arg == 'msgctxt':
+            parts.append(f'{pos + 1}c')
+        else:
+            parts.append(str(pos + 1))
+    return f'{name}:{','.join(parts)}'
+
+
 def process_keywords(keywords, *, no_default_keywords):
     custom_keywords_list = [parse_spec(spec) for spec in keywords]
     custom_keywords = {}
