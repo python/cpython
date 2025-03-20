@@ -26,7 +26,7 @@ import sys
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
 import unicodedata
-from _colorize import can_colorize, ANSIColors  # type: ignore[import-not-found]
+from _colorize import can_colorize, ANSIColors
 
 
 from . import commands, console, input
