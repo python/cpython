@@ -2121,8 +2121,9 @@ TaskStepMethWrapper_traverse(PyObject *op,
 }
 
 static PyObject *
-TaskStepMethWrapper_get___self__(TaskStepMethWrapper *o, void *Py_UNUSED(ignored))
+TaskStepMethWrapper_get___self__(PyObject *op, void *Py_UNUSED(closure))
 {
+    TaskStepMethWrapper *o = (TaskStepMethWrapper*)op;
     if (o->sw_task) {
         return Py_NewRef(o->sw_task);
     }
@@ -2130,7 +2131,7 @@ TaskStepMethWrapper_get___self__(TaskStepMethWrapper *o, void *Py_UNUSED(ignored
 }
 
 static PyGetSetDef TaskStepMethWrapper_getsetlist[] = {
-    {"__self__", (getter)TaskStepMethWrapper_get___self__, NULL, NULL},
+    {"__self__", TaskStepMethWrapper_get___self__, NULL, NULL},
     {NULL} /* Sentinel */
 };
 
