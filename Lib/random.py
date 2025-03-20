@@ -245,11 +245,10 @@ class Random(_random.Random):
     def _randbelow_with_getrandbits(self, n):
         "Return a random int in the range [0,n).  Defined for n > 0."
 
-        getrandbits = self.getrandbits
         k = n.bit_length()
-        r = getrandbits(k)  # 0 <= r < 2**k
+        r = self.getrandbits(k)  # 0 <= r < 2**k
         while r >= n:
-            r = getrandbits(k)
+            r = self.getrandbits(k)
         return r
 
     def _randbelow_without_getrandbits(self, n, maxsize=1<<BPF):
