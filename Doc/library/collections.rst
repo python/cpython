@@ -731,6 +731,11 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
     will create a dict with a key of ``'default_factory'`` and a value of
     :class:`list`. Instead, call ``defaultdict(list)``.
 
+        >>> defaultdict(default_factory=list)
+        defaultdict(None, {'default_factory': <class 'list'>})
+        >>> defaultdict(list)
+        defaultdict(<class 'list'>, {})
+        >>>
 
     :class:`defaultdict` objects support the following method in addition to the
     standard :class:`dict` operations:
