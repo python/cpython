@@ -1002,7 +1002,7 @@ urllib
 
   In :func:`urllib.request.url2pathname`:
 
-  - Discard URL authorities that resolve to ``localhost``.
+  - Discard URL authorities that resolve to a local address.
   - Raise :exc:`~urllib.error.URLError` if a URL authority doesn't resolve
     to ``localhost``, except on Windows where we return a UNC path.
 

@@ -1483,11 +1483,11 @@ def _is_local_authority(authority):
         return False
     if _local_addresses is None:
         try:
-            _local_addresses = tuple(
+            _local_addresses = frozenset(
                 socket.gethostbyname_ex('localhost')[2] +
                 socket.gethostbyname_ex(socket.gethostname())[2])
         except socket.gaierror:
-            _local_addresses = (socket.gethostbyname('localhost'),)
+            _local_addresses = frozenset(socket.gethostbyname('localhost'),)
     return address in _local_addresses
 
 class FTPHandler(BaseHandler):

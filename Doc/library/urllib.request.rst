@@ -182,11 +182,10 @@ The :mod:`urllib.request` module defines the following functions:
       'C:\\Program Files'
 
    .. versionchanged:: next
-      If a URL authority (e.g. a hostname) is present and resolves to
-      ``localhost``, it is discarded. If an authority is present and
-      *doesn't* resolve to ``localhost``, then on Windows a UNC path is
-      returned (as before), and on other platforms a
-      :exc:`~urllib.error.URLError` is raised.
+      If a URL authority (e.g. a hostname) is present and resolves to a local
+      address, it is discarded. If an authority is present and *doesn't*
+      resolve to a local address, then on Windows a UNC path is returned (as
+      before), and on other platforms :exc:`~urllib.error.URLError` is raised.
 
    .. versionchanged:: 3.14
       Windows drive letters are no longer converted to uppercase, and ``:``
