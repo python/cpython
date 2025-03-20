@@ -4005,26 +4005,24 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(varpos_no_fastcall__doc__,
-"class_method($type, /, *args)\n"
-"--\n"
-"\n");
-
-#define VARPOS_NO_FASTCALL_METHODDEF    \
-    {"class_method", varpos_no_fastcall, METH_VARARGS|METH_CLASS, varpos_no_fastcall__doc__},
-
 static PyObject *
 varpos_no_fastcall_impl(PyTypeObject *type, PyObject *args);
 
 static PyObject *
-varpos_no_fastcall(PyObject *type, PyObject *args)
+varpos_no_fastcall(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    PyTypeObject *base_tp = &PyBaseObject_Type;
     PyObject *__clinic_args = NULL;
 
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("TestClass", kwargs)) {
+        goto exit;
+    }
     __clinic_args = Py_NewRef(args);
-    return_value = varpos_no_fastcall_impl((PyTypeObject *)type, __clinic_args);
+    return_value = varpos_no_fastcall_impl(type, __clinic_args);
 
+exit:
     /* Cleanup for args */
     Py_XDECREF(__clinic_args);
 
@@ -4032,12 +4030,12 @@ varpos_no_fastcall(PyObject *type, PyObject *args)
 }
 
 PyDoc_STRVAR(posonly_varpos_no_fastcall__doc__,
-"class_method($type, a, b, /, *args)\n"
+"cm($type, a, b, /, *args)\n"
 "--\n"
 "\n");
 
 #define POSONLY_VARPOS_NO_FASTCALL_METHODDEF    \
-    {"class_method", posonly_varpos_no_fastcall, METH_VARARGS|METH_CLASS, posonly_varpos_no_fastcall__doc__},
+    {"cm", posonly_varpos_no_fastcall, METH_VARARGS|METH_CLASS, posonly_varpos_no_fastcall__doc__},
 
 static PyObject *
 posonly_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a, PyObject *b,
@@ -4051,7 +4049,7 @@ posonly_varpos_no_fastcall(PyObject *type, PyObject *args)
     PyObject *b;
     PyObject *__clinic_args = NULL;
 
-    if (!_PyArg_CheckPositional("class_method", PyTuple_GET_SIZE(args), 2, PY_SSIZE_T_MAX)) {
+    if (!_PyArg_CheckPositional("cm", PyTuple_GET_SIZE(args), 2, PY_SSIZE_T_MAX)) {
         goto exit;
     }
     a = PyTuple_GET_ITEM(args, 0);
@@ -4070,12 +4068,12 @@ exit:
 }
 
 PyDoc_STRVAR(posonly_req_opt_varpos_no_fastcall__doc__,
-"class_method($type, a, b=False, /, *args)\n"
+"cm($type, a, b=False, /, *args)\n"
 "--\n"
 "\n");
 
 #define POSONLY_REQ_OPT_VARPOS_NO_FASTCALL_METHODDEF    \
-    {"class_method", posonly_req_opt_varpos_no_fastcall, METH_VARARGS|METH_CLASS, posonly_req_opt_varpos_no_fastcall__doc__},
+    {"cm", posonly_req_opt_varpos_no_fastcall, METH_VARARGS|METH_CLASS, posonly_req_opt_varpos_no_fastcall__doc__},
 
 static PyObject *
 posonly_req_opt_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a,
@@ -4089,7 +4087,7 @@ posonly_req_opt_varpos_no_fastcall(PyObject *type, PyObject *args)
     PyObject *b = Py_False;
     PyObject *__clinic_args = NULL;
 
-    if (!_PyArg_CheckPositional("class_method", PyTuple_GET_SIZE(args), 1, PY_SSIZE_T_MAX)) {
+    if (!_PyArg_CheckPositional("cm", PyTuple_GET_SIZE(args), 1, PY_SSIZE_T_MAX)) {
         goto exit;
     }
     a = PyTuple_GET_ITEM(args, 0);
@@ -4112,12 +4110,12 @@ exit:
 }
 
 PyDoc_STRVAR(posonly_poskw_varpos_no_fastcall__doc__,
-"class_method($type, a, /, b, *args)\n"
+"cm($type, a, /, b, *args)\n"
 "--\n"
 "\n");
 
 #define POSONLY_POSKW_VARPOS_NO_FASTCALL_METHODDEF    \
-    {"class_method", _PyCFunction_CAST(posonly_poskw_varpos_no_fastcall), METH_VARARGS|METH_KEYWORDS|METH_CLASS, posonly_poskw_varpos_no_fastcall__doc__},
+    {"cm", _PyCFunction_CAST(posonly_poskw_varpos_no_fastcall), METH_VARARGS|METH_KEYWORDS|METH_CLASS, posonly_poskw_varpos_no_fastcall__doc__},
 
 static PyObject *
 posonly_poskw_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a,
@@ -4148,7 +4146,7 @@ posonly_poskw_varpos_no_fastcall(PyObject *type, PyObject *args, PyObject *kwarg
     static const char * const _keywords[] = {"", "b", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "class_method",
+        .fname = "cm",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -4180,12 +4178,12 @@ exit:
 }
 
 PyDoc_STRVAR(varpos_array_no_fastcall__doc__,
-"class_method($type, /, *args)\n"
+"cm($type, /, *args)\n"
 "--\n"
 "\n");
 
 #define VARPOS_ARRAY_NO_FASTCALL_METHODDEF    \
-    {"class_method", varpos_array_no_fastcall, METH_VARARGS|METH_CLASS, varpos_array_no_fastcall__doc__},
+    {"cm", varpos_array_no_fastcall, METH_VARARGS|METH_CLASS, varpos_array_no_fastcall__doc__},
 
 static PyObject *
 varpos_array_no_fastcall_impl(PyTypeObject *type, PyObject * const *args,
@@ -4206,12 +4204,12 @@ varpos_array_no_fastcall(PyObject *type, PyObject *args)
 }
 
 PyDoc_STRVAR(posonly_varpos_array_no_fastcall__doc__,
-"class_method($type, a, b, /, *args)\n"
+"cm($type, a, b, /, *args)\n"
 "--\n"
 "\n");
 
 #define POSONLY_VARPOS_ARRAY_NO_FASTCALL_METHODDEF    \
-    {"class_method", posonly_varpos_array_no_fastcall, METH_VARARGS|METH_CLASS, posonly_varpos_array_no_fastcall__doc__},
+    {"cm", posonly_varpos_array_no_fastcall, METH_VARARGS|METH_CLASS, posonly_varpos_array_no_fastcall__doc__},
 
 static PyObject *
 posonly_varpos_array_no_fastcall_impl(PyTypeObject *type, PyObject *a,
@@ -4227,7 +4225,7 @@ posonly_varpos_array_no_fastcall(PyObject *type, PyObject *args)
     PyObject * const *__clinic_args;
     Py_ssize_t args_length;
 
-    if (!_PyArg_CheckPositional("class_method", PyTuple_GET_SIZE(args), 2, PY_SSIZE_T_MAX)) {
+    if (!_PyArg_CheckPositional("cm", PyTuple_GET_SIZE(args), 2, PY_SSIZE_T_MAX)) {
         goto exit;
     }
     a = PyTuple_GET_ITEM(args, 0);
@@ -4241,12 +4239,12 @@ exit:
 }
 
 PyDoc_STRVAR(posonly_req_opt_varpos_array_no_fastcall__doc__,
-"class_method($type, a, b=False, /, *args)\n"
+"cm($type, a, b=False, /, *args)\n"
 "--\n"
 "\n");
 
 #define POSONLY_REQ_OPT_VARPOS_ARRAY_NO_FASTCALL_METHODDEF    \
-    {"class_method", posonly_req_opt_varpos_array_no_fastcall, METH_VARARGS|METH_CLASS, posonly_req_opt_varpos_array_no_fastcall__doc__},
+    {"cm", posonly_req_opt_varpos_array_no_fastcall, METH_VARARGS|METH_CLASS, posonly_req_opt_varpos_array_no_fastcall__doc__},
 
 static PyObject *
 posonly_req_opt_varpos_array_no_fastcall_impl(PyTypeObject *type,
@@ -4263,7 +4261,7 @@ posonly_req_opt_varpos_array_no_fastcall(PyObject *type, PyObject *args)
     PyObject * const *__clinic_args;
     Py_ssize_t args_length;
 
-    if (!_PyArg_CheckPositional("class_method", PyTuple_GET_SIZE(args), 1, PY_SSIZE_T_MAX)) {
+    if (!_PyArg_CheckPositional("cm", PyTuple_GET_SIZE(args), 1, PY_SSIZE_T_MAX)) {
         goto exit;
     }
     a = PyTuple_GET_ITEM(args, 0);
@@ -4281,12 +4279,12 @@ exit:
 }
 
 PyDoc_STRVAR(posonly_poskw_varpos_array_no_fastcall__doc__,
-"class_method($type, a, /, b, *args)\n"
+"cm($type, a, /, b, *args)\n"
 "--\n"
 "\n");
 
 #define POSONLY_POSKW_VARPOS_ARRAY_NO_FASTCALL_METHODDEF    \
-    {"class_method", _PyCFunction_CAST(posonly_poskw_varpos_array_no_fastcall), METH_VARARGS|METH_KEYWORDS|METH_CLASS, posonly_poskw_varpos_array_no_fastcall__doc__},
+    {"cm", _PyCFunction_CAST(posonly_poskw_varpos_array_no_fastcall), METH_VARARGS|METH_KEYWORDS|METH_CLASS, posonly_poskw_varpos_array_no_fastcall__doc__},
 
 static PyObject *
 posonly_poskw_varpos_array_no_fastcall_impl(PyTypeObject *type, PyObject *a,
@@ -4319,7 +4317,7 @@ posonly_poskw_varpos_array_no_fastcall(PyObject *type, PyObject *args, PyObject 
     static const char * const _keywords[] = {"", "b", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "class_method",
+        .fname = "cm",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -4345,4 +4343,4 @@ posonly_poskw_varpos_array_no_fastcall(PyObject *type, PyObject *args, PyObject 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=181834e956ff0fea input=a9049054013a1b77]*/
+/*[clinic end generated code: output=97b90a15296eb10b input=a9049054013a1b77]*/
