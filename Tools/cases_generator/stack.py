@@ -416,16 +416,6 @@ def get_stack_effect(inst: Instruction | PseudoInstruction) -> Stack:
     return stack
 
 
-def get_stack_effects(inst: Instruction | PseudoInstruction) -> list[Stack]:
-    """Returns a list of stack effects after each uop"""
-    result = []
-    stack = Stack()
-    for s in stacks(inst):
-        apply_stack_effect(stack, s)
-        result.append(stack.copy())
-    return result
-
-
 @dataclass
 class Storage:
 
