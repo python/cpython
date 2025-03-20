@@ -52,6 +52,12 @@ get_testerror(PyObject *self) {
     return state->error;
 }
 
+static PyObject *
+simple_object_destructor(PyObject *self)
+{
+    PyObject_Free(self);
+}
+
 /* Raise _testcapi.error with test_name + ": " + msg, and return NULL. */
 
 static PyObject *
@@ -171,7 +177,7 @@ static PyTypeObject _HashInheritanceTester_Type = {
     "hashinheritancetester",            /* Name of this type */
     sizeof(PyObject),           /* Basic object size */
     0,                          /* Item size for varobject */
-    (destructor)PyObject_Free,  /* tp_dealloc */
+    simple_object_destructor,   /* tp_dealloc */
     0,                          /* tp_vectorcall_offset */
     0,                          /* tp_getattr */
     0,                          /* tp_setattr */
@@ -1737,7 +1743,7 @@ meth_o(PyObject* self, PyObject* obj)
 }
 
 static PyObject*
-meth_noargs(PyObject* self, PyObject* ignored)
+meth_noargs(PyObject* self, PyObject *Py_UNUSED(dummy))
 {
     return _null_to_none(self);
 }
@@ -2552,10 +2558,10 @@ static PyMethodDef TestMethods[] = {
     {"pyobject_repr_from_null", pyobject_repr_from_null, METH_NOARGS},
     {"pyobject_str_from_null",  pyobject_str_from_null, METH_NOARGS},
     {"pyobject_bytes_from_null", pyobject_bytes_from_null, METH_NOARGS},
-    {"test_capsule", (PyCFunction)test_capsule, METH_NOARGS},
-    {"test_from_contiguous", (PyCFunction)test_from_contiguous, METH_NOARGS},
+    {"test_capsule", test_capsule, METH_NOARGS},
+    {"test_from_contiguous", test_from_contiguous, METH_NOARGS},
 #if (defined(__linux__) || defined(__FreeBSD__)) && defined(__GNUC__)
-    {"test_pep3118_obsolete_write_locks", (PyCFunction)test_pep3118_obsolete_write_locks, METH_NOARGS},
+    {"test_pep3118_obsolete_write_locks", test_pep3118_obsolete_write_locks, METH_NOARGS},
 #endif
     {"getbuffer_with_null_view", getbuffer_with_null_view,       METH_O},
     {"PyBuffer_SizeFromFormat",  test_PyBuffer_SizeFromFormat,   METH_VARARGS},
@@ -2874,8 +2880,9 @@ MyList_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 void
-MyList_dealloc(MyListObject* op)
+MyList_dealloc(PyObject *self)
 {
+    MyListObject *op = (MyListObject *)self;
     if (op->deallocated) {
         /* We cannot raise exceptions here but we still want the testsuite
          * to fail when we hit this */
@@ -2890,7 +2897,7 @@ static PyTypeObject MyList_Type = {
     "MyList",
     sizeof(MyListObject),
     0,
-    (destructor)MyList_dealloc,                 /* tp_dealloc */
+    MyList_dealloc,                             /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -2933,21 +2940,25 @@ typedef struct {
     PyObject *item;
 } PyGenericAliasObject;
 
+#define PyGenericAliasObject_CAST(op)   ((PyGenericAliasObject *)(op))
+
 static void
-generic_alias_dealloc(PyGenericAliasObject *self)
+generic_alias_dealloc(PyObject *op)
 {
+    PyGenericAliasObject *self = PyGenericAliasObject_CAST(op);
     Py_CLEAR(self->item);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static PyObject *
-generic_alias_mro_entries(PyGenericAliasObject *self, PyObject *bases)
+generic_alias_mro_entries(PyObject *op, PyObject *Py_UNUSED(bases))
 {
+    PyGenericAliasObject *self = PyGenericAliasObject_CAST(op);
     return PyTuple_Pack(1, self->item);
 }
 
 static PyMethodDef generic_alias_methods[] = {
-    {"__mro_entries__", _PyCFunction_CAST(generic_alias_mro_entries), METH_O, NULL},
+    {"__mro_entries__", generic_alias_mro_entries, METH_O, NULL},
     {NULL}  /* sentinel */
 };
 
@@ -2956,7 +2967,7 @@ static PyTypeObject GenericAlias_Type = {
     "GenericAlias",
     sizeof(PyGenericAliasObject),
     0,
-    .tp_dealloc = (destructor)generic_alias_dealloc,
+    .tp_dealloc = generic_alias_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_methods = generic_alias_methods,
 };
@@ -3069,6 +3080,8 @@ typedef struct {
     PyObject *value;
 } ContainerNoGCobject;
 
+#define ContainerNoGCobject_CAST(op)    ((ContainerNoGCobject *)(op))
+
 static PyObject *
 ContainerNoGC_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
@@ -3087,10 +3100,11 @@ ContainerNoGC_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 }
 
 static void
-ContainerNoGC_dealloc(ContainerNoGCobject *self)
+ContainerNoGC_dealloc(PyObject *op)
 {
+    ContainerNoGCobject *self = ContainerNoGCobject_CAST(op);
     Py_DECREF(self->value);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free(self);
 }
 
 static PyMemberDef ContainerNoGC_members[] = {
@@ -3103,7 +3117,7 @@ static PyTypeObject ContainerNoGC_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_testcapi.ContainerNoGC",
     sizeof(ContainerNoGCobject),
-    .tp_dealloc = (destructor)ContainerNoGC_dealloc,
+    .tp_dealloc = ContainerNoGC_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_members = ContainerNoGC_members,
     .tp_new = ContainerNoGC_new,
