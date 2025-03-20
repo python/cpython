@@ -2476,6 +2476,10 @@ a new value when a key is not present, in __getitem__ only.\n\
 A defaultdict compares equal to a dict with the same items.\n\
 All remaining arguments are treated the same as if they were\n\
 passed to the dict constructor, including keyword arguments.\n\
+\n\
+Note that this means defaultdict(default_factory=list) (for\n\
+example), will create a dict with a key of 'default_factory'\n\
+and a value of <class 'list'>. Instead, call defaultdict(list).\n\
 ");
 
 /* See comment in xxsubtype.c */

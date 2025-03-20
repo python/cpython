@@ -727,6 +727,10 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
     as if they were passed to the :class:`dict` constructor, including keyword
     arguments.
 
+    Note that this means ``defaultdict(default_factory=list)`` (for example),
+    will create a dict with a key of ``'default_factory'`` and a value of
+    :class:`list`. Instead, call ``defaultdict(list)``.
+
 
     :class:`defaultdict` objects support the following method in addition to the
     standard :class:`dict` operations:
