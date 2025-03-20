@@ -567,10 +567,12 @@ class Test_pygettext(unittest.TestCase):
         self.assertEqual(msgids, [''])
         self.assertEqual(
             stderr,
-            b'*** test.py:1: Expected a string constant for argument 1, got x\n'
-            b'*** test.py:1: Expected a string constant for argument 2, got 42\n'
-            b'*** test.py:2: Expected a string constant for argument 1, got 42\n'
-            b'*** test.py:2: Expected a string constant for argument 2, got y\n')
+            b'*** test.py:1: No keywords matched gettext call "_":\n'
+            b'\tkeyword="_": Expected a string constant for argument 1, got x\n'
+            b'\tkeyword="_:2": Expected a string constant for argument 2, got 42\n'
+            b'*** test.py:2: No keywords matched gettext call "_":\n'
+            b'\tkeyword="_": Expected a string constant for argument 1, got 42\n'
+            b'\tkeyword="_:2": Expected a string constant for argument 2, got y\n')
 
 
 def extract_from_snapshots():

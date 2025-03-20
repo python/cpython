@@ -490,14 +490,28 @@ class GettextVisitor(ast.NodeVisitor):
     def _extract_message(self, node):
         func_name = self._get_func_name(node)
         errors = []
-        for spec in self.options.keywords.get(func_name, []):
+        specs = self.options.keywords.get(func_name, [])
+        for spec in specs:
             err = self._extract_message_with_spec(node, spec)
             if err is None:
-                break
+                return
             errors.append(err)
+
+        if not errors:
+            return
+        if len(errors) == 1:
+            print(f'*** {self.filename}:{node.lineno}: {errors[0]}',
+                    file=sys.stderr)
         else:
-            for err in errors:
-                print(err, file=sys.stderr)
+            # There are multiple keyword specs for the function name and
+            # none of them could be exxtracted. Print a general error
+            # message and list the errors for each keyword spec.
+            print(f'*** {self.filename}:{node.lineno}: '
+                    f'No keywords matched gettext call "{func_name}":',
+                    file=sys.stderr)
+            for spec, err in zip(specs, errors, strict=True):
+                unparsed = unparse_spec(func_name, spec)
+                print(f'\tkeyword="{unparsed}": {err}', file=sys.stderr)
 
     def _extract_message_with_spec(self, node, spec):
         """Extract a gettext call with the given spec.
@@ -509,21 +523,19 @@ class GettextVisitor(ast.NodeVisitor):
         has_var_positional = any(isinstance(arg, ast.Starred) for
                                  arg in node.args[:max_index+1])
         if has_var_positional:
-            return (f'*** {self.filename}:{node.lineno}: Variable positional '
-                   f'arguments are not allowed in gettext calls')
+            return ('Variable positional arguments are not '
+                    'allowed in gettext calls')
 
         if max_index >= len(node.args):
-            return (f'*** {self.filename}:{node.lineno}: Expected at least '
-                    f'{max_index + 1} positional argument(s) in gettext call, '
-                    f'got {len(node.args)}')
+            return (f'Expected at least {max_index + 1} positional '
+                    f'argument(s) in gettext call, got {len(node.args)}')
 
         msg_data = {}
         for arg_type, position in spec.items():
             arg = node.args[position]
             if not self._is_string_const(arg):
-                return (f'*** {self.filename}:{arg.lineno}: Expected a string '
-                        f'constant for argument {position + 1}, '
-                        f'got {ast.unparse(arg)}')
+                return (f'Expected a string constant for argument '
+                        f'{position + 1}, got {ast.unparse(arg)}')
             msg_data[arg_type] = arg.value
 
         lineno = node.lineno
