@@ -15,10 +15,12 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
 #include "pycore_uniqueid.h"      // _PyObject_AssignUniqueId()
-#include "clinic/codeobject.c.h"
 
+#include "clinic/codeobject.c.h"
 #include <stdbool.h>
+
 
 #define INITIAL_SPECIALIZED_CODE_SIZE 16
 
