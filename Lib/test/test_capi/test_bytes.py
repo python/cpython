@@ -343,15 +343,15 @@ class PyBytesWriterTest(unittest.TestCase):
         writer.extend(3, b'456')
         self.assertEqual(writer.finish(), b'number=123456')
 
-    def test_hello_world(self):
+    def test_hello_world_example(self):
         self.assertEqual(_testcapi.byteswriter_hello_world(),
                          b'Hello World')
 
-    def test_alloc(self):
+    def test_alloc_example(self):
         self.assertEqual(_testcapi.byteswriter_alloc(),
                          b'abc')
 
-    def test_extend(self):
+    def test_extend_example(self):
         self.assertEqual(_testcapi.byteswriter_extend(),
                          b'Hello World')
 
