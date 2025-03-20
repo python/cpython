@@ -457,15 +457,11 @@ dummy_func(void) {
             if (tmp == NULL) {
                 goto error;
             }
+            assert(PyBool_Check(tmp));
+            assert(_Py_IsImmortal(tmp));
+            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)tmp);
             res = sym_new_const(ctx, tmp);
             Py_DECREF(tmp);
-
-            if (_Py_IsImmortal(res)) {
-                REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)tmp);
-            }
-            else {
-                res = sym_new_type(ctx, &PyBool_Type);
-            }
         }
         else {
             res = sym_new_type(ctx, &PyBool_Type);

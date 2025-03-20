@@ -5132,7 +5132,7 @@ dummy_func(
             value = PyStackRef_FromPyObjectImmortal(ptr);
         }
 
-        tier2 pure op (_POP_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, pop1, pop2 -- value)) {
+        tier2 pure op(_POP_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, pop1, pop2 -- value)) {
             PyStackRef_CLOSE(pop2);
             PyStackRef_CLOSE(pop1);
             value = PyStackRef_FromPyObjectImmortal(ptr);
