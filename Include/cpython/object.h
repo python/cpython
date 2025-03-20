@@ -494,7 +494,8 @@ PyAPI_FUNC(int) _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int m
 #define Py_TRASHCAN_BEGIN(op, dealloc) \
 do { \
     PyThreadState *tstate = PyThreadState_Get(); \
-    if (_Py_ReachedRecursionLimitWithMargin(tstate, 2) && Py_TYPE(op)->tp_dealloc == (destructor)dealloc) { \
+    /* TODO(picnixz): remove '(destructor)' cast to detect runtime UBs */ \
+    if (tstate->c_recursion_remaining <= Py_TRASHCAN_HEADROOM && Py_TYPE(op)->tp_dealloc == (destructor)dealloc) { \
         _PyTrash_thread_deposit_object(tstate, (PyObject *)op); \
         break; \
     }
