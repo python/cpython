@@ -338,7 +338,7 @@ Even more formally, names are described by the following lexical definitions:
                   in (`id_continue`*)">
    identifier:   <`NAME`, except keywords>
 
-A non-normative HTML file listing all valid identifier characters for Unicode
+A non-normative text file listing all valid identifier characters for Unicode
 16.0.0 can be found at
 https://www.unicode.org/Public/16.0.0/ucd/DerivedCoreProperties.txt
 
