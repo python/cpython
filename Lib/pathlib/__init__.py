@@ -1272,9 +1272,9 @@ class Path(PurePath):
     def as_uri(self):
         """Return the path as a URI."""
         if not self.is_absolute():
-            raise ValueError("relative path can't be expressed as a file URI")
+            raise ValueError("relative paths can't be expressed as file URIs")
         from urllib.request import pathname2url
-        return 'file:' + pathname2url(str(self))
+        return f'file:{pathname2url(str(self))}'
 
     @classmethod
     def from_uri(cls, uri):
