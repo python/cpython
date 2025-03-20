@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED
+#include "pycore_object.h"            // _PyObject_GC_IS_TRACKED
 #include "pycore_structs.h"       // _PyStackRef
 
 extern void _PyTuple_MaybeUntrack(PyObject *);
