@@ -218,13 +218,12 @@ PyDoc_STRVAR(_StateAccessType_decrement_count__doc__,
 
 // Intentionally does not use Argument Clinic
 static PyObject *
-_StateAccessType_increment_count_noclinic(PyObject *op,
+_StateAccessType_increment_count_noclinic(PyObject *self,
                                           PyTypeObject *defining_class,
                                           PyObject *const *args,
                                           Py_ssize_t nargs,
                                           PyObject *kwnames)
 {
-    StateAccessTypeObject *self = (StateAccessTypeObject *)op;
     if (!_PyArg_CheckPositional("StateAccessTypeObject.decrement_count", nargs, 0, 1)) {
         return NULL;
     }
