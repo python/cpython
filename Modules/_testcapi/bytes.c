@@ -161,7 +161,7 @@ writer_extend(PyObject *self_raw, PyObject *args)
     }
     assert(extend >= str_size);
 
-    void *buf = PyBytesWriter_Alloc(self->writer, extend);
+    char *buf = PyBytesWriter_Alloc(self->writer, extend);
     if (buf == NULL) {
         return NULL;
     }
