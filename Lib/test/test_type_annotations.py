@@ -1,10 +1,8 @@
 import annotationlib
 import inspect
-import tempfile
 import textwrap
 import types
 import unittest
-from pathlib import Path
 from test.support import run_code, check_syntax_error, import_helper
 
 
