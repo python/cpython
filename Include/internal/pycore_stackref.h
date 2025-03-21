@@ -13,11 +13,11 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_object_deferred.h"
-#include "pycore_object.h"
+#include "pycore_object.h"        // Py_DECREF_MORTAL
+#include "pycore_object_deferred.h" // _PyObject_HasDeferredRefcount()
 
-#include <stddef.h>
-#include <stdbool.h>
+#include <stdbool.h>              // bool
+
 
 /*
   This file introduces a new API for handling references on the stack, called
