@@ -1,5 +1,5 @@
-:mod:`doctest` --- Test interactive Python examples
-===================================================
+:mod:`!doctest` --- Test interactive Python examples
+====================================================
 
 .. module:: doctest
    :synopsis: Test pieces of code within docstrings.
@@ -123,10 +123,10 @@ And so on, eventually ending with:
        OverflowError: n too large
    ok
    2 items passed all tests:
-      1 tests in __main__
-      8 tests in __main__.factorial
-   9 tests in 2 items.
-   9 passed and 0 failed.
+      1 test in __main__
+      6 tests in __main__.factorial
+   7 tests in 2 items.
+   7 passed.
    Test passed.
    $
 
@@ -135,6 +135,10 @@ Jump in.  The following sections provide full details.  Note that there are many
 examples of doctests in the standard Python test suite and libraries.
 Especially useful examples can be found in the standard test file
 :file:`Lib/test/test_doctest/test_doctest.py`.
+
+.. versionadded:: 3.13
+   Output is colorized by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
 
 
 .. _doctest-simple-testmod:
@@ -173,15 +177,8 @@ prohibit it by passing ``verbose=False``.  In either of those cases,
 ``sys.argv`` is not examined by :func:`testmod` (so passing ``-v`` or not
 has no effect).
 
-There is also a command line shortcut for running :func:`testmod`.  You can
-instruct the Python interpreter to run the doctest module directly from the
-standard library and pass the module name(s) on the command line::
-
-   python -m doctest -v example.py
-
-This will import :file:`example.py` as a standalone module and run
-:func:`testmod` on it.  Note that this may not work correctly if the file is
-part of a package and imports other submodules from that package.
+There is also a command line shortcut for running :func:`testmod`, see section
+:ref:`doctest-cli`.
 
 For more information on :func:`testmod`, see section :ref:`doctest-basic-api`.
 
@@ -244,16 +241,53 @@ Like :func:`testmod`, :func:`testfile`'s verbosity can be set with the
 ``-v`` command-line switch or with the optional keyword argument
 *verbose*.
 
-There is also a command line shortcut for running :func:`testfile`.  You can
-instruct the Python interpreter to run the doctest module directly from the
-standard library and pass the file name(s) on the command line::
-
-   python -m doctest -v example.txt
-
-Because the file name does not end with :file:`.py`, :mod:`doctest` infers that
-it must be run with :func:`testfile`, not :func:`testmod`.
+There is also a command line shortcut for running :func:`testfile`, see section
+:ref:`doctest-cli`.
 
 For more information on :func:`testfile`, see section :ref:`doctest-basic-api`.
+
+
+.. _doctest-cli:
+
+Command-line Usage
+------------------
+
+The :mod:`doctest` module can be invoked as a script from the command line:
+
+.. code-block:: bash
+
+   python -m doctest [-v] [-o OPTION] [-f] file [file ...]
+
+.. program:: doctest
+
+.. option:: -v, --verbose
+
+   Detailed report of all examples tried is printed to standard output,
+   along with assorted summaries at the end::
+
+      python -m doctest -v example.py
+
+   This will import :file:`example.py` as a standalone module and run
+   :func:`testmod` on it. Note that this may not work correctly if the
+   file is part of a package and imports other submodules from that package.
+
+   If the file name does not end with :file:`.py`, :mod:`!doctest` infers
+   that it must be run with :func:`testfile` instead::
+
+      python -m doctest -v example.txt
+
+.. option:: -o, --option <option>
+
+   Option flags control various aspects of doctest's behavior, see section
+   :ref:`doctest-options`.
+
+   .. versionadded:: 3.4
+
+.. option:: -f, --fail-fast
+
+   This is shorthand for ``-o FAIL_FAST``.
+
+   .. versionadded:: 3.4
 
 
 .. _doctest-how-it-works:
@@ -430,10 +464,10 @@ Simple example::
    >>> [1, 2, 3].remove(42)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ValueError: 42 is not in list
+   ValueError: list.remove(x): x not in list
 
-That doctest succeeds if :exc:`ValueError` is raised, with the ``42 is not in list``
-detail as shown.
+That doctest succeeds if :exc:`ValueError` is raised, with the ``list.remove(x):
+x not in list`` detail as shown.
 
 The expected output for an exception must start with a traceback header, which
 may be either of the following two lines, indented the same as the first line of
@@ -535,9 +569,6 @@ Symbolic names for the flags are supplied as module constants, which can be
 :ref:`bitwise ORed <bitwise>` together and passed to various functions.
 The names can also be used in :ref:`doctest directives <doctest-directives>`,
 and may be passed to the doctest command line interface via the ``-o`` option.
-
-.. versionadded:: 3.4
-   The ``-o`` command line option.
 
 The first group of options define test semantics, controlling aspects of how
 doctest decides whether actual output matches an example's expected output:
@@ -678,11 +709,6 @@ The second group of options controls how test failures are reported:
    1.  This flag may be useful during debugging, since examples after the first
    failure won't even produce debugging output.
 
-   The doctest command line accepts the option ``-f`` as a shorthand for ``-o
-   FAIL_FAST``.
-
-   .. versionadded:: 3.4
-
 
 .. data:: REPORTING_FLAGS
 
@@ -800,18 +826,18 @@ guarantee about output.  For example, when printing a set, Python doesn't
 guarantee that the element is printed in any particular order, so a test like ::
 
    >>> foo()
-   {"Hermione", "Harry"}
+   {"spam", "eggs"}
 
 is vulnerable!  One workaround is to do ::
 
-   >>> foo() == {"Hermione", "Harry"}
+   >>> foo() == {"spam", "eggs"}
    True
 
 instead.  Another is to do ::
 
    >>> d = sorted(foo())
    >>> d
-   ['Harry', 'Hermione']
+   ['eggs', 'spam']
 
 There are others, but you get the idea.
 
@@ -1021,7 +1047,8 @@ from text files and modules with doctests:
    and runs the interactive examples in each file.  If an example in any file
    fails, then the synthesized unit test fails, and a :exc:`failureException`
    exception is raised showing the name of the file containing the test and a
-   (sometimes approximate) line number.
+   (sometimes approximate) line number.  If all the examples in a file are
+   skipped, then the synthesized unit test is also marked as skipped.
 
    Pass one or more paths (as strings) to text files to be examined.
 
@@ -1087,7 +1114,8 @@ from text files and modules with doctests:
    and runs each doctest in the module.  If any of the doctests fail, then the
    synthesized unit test fails, and a :exc:`failureException` exception is raised
    showing the name of the file containing the test and a (sometimes approximate)
-   line number.
+   line number.  If all the examples in a docstring are skipped, then the
+   synthesized unit test is also marked as skipped.
 
    Optional argument *module* provides the module to be tested.  It can be a module
    object or a (possibly dotted) module name.  If not specified, the module calling
@@ -1933,7 +1961,7 @@ such a test runner::
                                            optionflags=flags)
         else:
             fail, total = doctest.testmod(optionflags=flags)
-            print("{} failures out of {} tests".format(fail, total))
+            print(f"{fail} failures out of {total} tests")
 
 
 .. rubric:: Footnotes

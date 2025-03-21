@@ -22,9 +22,9 @@ static PyObject *
 EVP_copy_impl(EVPobject *self);
 
 static PyObject *
-EVP_copy(EVPobject *self, PyObject *Py_UNUSED(ignored))
+EVP_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return EVP_copy_impl(self);
+    return EVP_copy_impl((EVPobject *)self);
 }
 
 PyDoc_STRVAR(EVP_digest__doc__,
@@ -40,9 +40,9 @@ static PyObject *
 EVP_digest_impl(EVPobject *self);
 
 static PyObject *
-EVP_digest(EVPobject *self, PyObject *Py_UNUSED(ignored))
+EVP_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return EVP_digest_impl(self);
+    return EVP_digest_impl((EVPobject *)self);
 }
 
 PyDoc_STRVAR(EVP_hexdigest__doc__,
@@ -58,9 +58,9 @@ static PyObject *
 EVP_hexdigest_impl(EVPobject *self);
 
 static PyObject *
-EVP_hexdigest(EVPobject *self, PyObject *Py_UNUSED(ignored))
+EVP_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return EVP_hexdigest_impl(self);
+    return EVP_hexdigest_impl((EVPobject *)self);
 }
 
 PyDoc_STRVAR(EVP_update__doc__,
@@ -71,6 +71,19 @@ PyDoc_STRVAR(EVP_update__doc__,
 
 #define EVP_UPDATE_METHODDEF    \
     {"update", (PyCFunction)EVP_update, METH_O, EVP_update__doc__},
+
+static PyObject *
+EVP_update_impl(EVPobject *self, PyObject *obj);
+
+static PyObject *
+EVP_update(PyObject *self, PyObject *obj)
+{
+    PyObject *return_value = NULL;
+
+    return_value = EVP_update_impl((EVPobject *)self, obj);
+
+    return return_value;
+}
 
 #if defined(PY_OPENSSL_HAS_SHAKE)
 
@@ -87,7 +100,7 @@ static PyObject *
 EVPXOF_digest_impl(EVPobject *self, Py_ssize_t length);
 
 static PyObject *
-EVPXOF_digest(EVPobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+EVPXOF_digest(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -118,7 +131,8 @@ EVPXOF_digest(EVPobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     PyObject *argsbuf[1];
     Py_ssize_t length;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -134,7 +148,7 @@ EVPXOF_digest(EVPobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
         }
         length = ival;
     }
-    return_value = EVPXOF_digest_impl(self, length);
+    return_value = EVPXOF_digest_impl((EVPobject *)self, length);
 
 exit:
     return return_value;
@@ -157,7 +171,7 @@ static PyObject *
 EVPXOF_hexdigest_impl(EVPobject *self, Py_ssize_t length);
 
 static PyObject *
-EVPXOF_hexdigest(EVPobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+EVPXOF_hexdigest(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -188,7 +202,8 @@ EVPXOF_hexdigest(EVPobject *self, PyObject *const *args, Py_ssize_t nargs, PyObj
     PyObject *argsbuf[1];
     Py_ssize_t length;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -204,7 +219,7 @@ EVPXOF_hexdigest(EVPobject *self, PyObject *const *args, Py_ssize_t nargs, PyObj
         }
         length = ival;
     }
-    return_value = EVPXOF_hexdigest_impl(self, length);
+    return_value = EVPXOF_hexdigest_impl((EVPobject *)self, length);
 
 exit:
     return return_value;
@@ -265,7 +280,8 @@ EVP_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     PyObject *data_obj = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -341,7 +357,8 @@ _hashlib_openssl_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     PyObject *data_obj = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -416,7 +433,8 @@ _hashlib_openssl_sha1(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     PyObject *data_obj = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -491,7 +509,8 @@ _hashlib_openssl_sha224(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *data_obj = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -566,7 +585,8 @@ _hashlib_openssl_sha256(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *data_obj = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -641,7 +661,8 @@ _hashlib_openssl_sha384(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *data_obj = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -716,7 +737,8 @@ _hashlib_openssl_sha512(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *data_obj = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -793,7 +815,8 @@ _hashlib_openssl_sha3_224(PyObject *module, PyObject *const *args, Py_ssize_t na
     PyObject *data_obj = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -872,7 +895,8 @@ _hashlib_openssl_sha3_256(PyObject *module, PyObject *const *args, Py_ssize_t na
     PyObject *data_obj = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -951,7 +975,8 @@ _hashlib_openssl_sha3_384(PyObject *module, PyObject *const *args, Py_ssize_t na
     PyObject *data_obj = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1030,7 +1055,8 @@ _hashlib_openssl_sha3_512(PyObject *module, PyObject *const *args, Py_ssize_t na
     PyObject *data_obj = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1109,7 +1135,8 @@ _hashlib_openssl_shake_128(PyObject *module, PyObject *const *args, Py_ssize_t n
     PyObject *data_obj = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1188,7 +1215,8 @@ _hashlib_openssl_shake_256(PyObject *module, PyObject *const *args, Py_ssize_t n
     PyObject *data_obj = NULL;
     int usedforsecurity = 1;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1270,7 +1298,8 @@ pbkdf2_hmac(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     long iterations;
     PyObject *dklen_obj = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 5, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 4, /*maxpos*/ 5, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1347,7 +1376,7 @@ _hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(password), &_Py_ID(salt), &_Py_ID(n), &_Py_ID(r), &_Py_ID(p), &_Py_ID(maxmem), &_Py_ID(dklen), },
+        .ob_item = { &_Py_ID(password), &_Py_ID(salt), _Py_LATIN1_CHR('n'), _Py_LATIN1_CHR('r'), _Py_LATIN1_CHR('p'), &_Py_ID(maxmem), &_Py_ID(dklen), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -1373,7 +1402,8 @@ _hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     long maxmem = 0;
     long dklen = 64;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1499,7 +1529,8 @@ _hashlib_hmac_singleshot(PyObject *module, PyObject *const *args, Py_ssize_t nar
     Py_buffer msg = {NULL, NULL};
     PyObject *digest;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 3, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1573,7 +1604,8 @@ _hashlib_hmac_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     PyObject *msg_obj = NULL;
     PyObject *digestmod = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1615,9 +1647,9 @@ static PyObject *
 _hashlib_HMAC_copy_impl(HMACobject *self);
 
 static PyObject *
-_hashlib_HMAC_copy(HMACobject *self, PyObject *Py_UNUSED(ignored))
+_hashlib_HMAC_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _hashlib_HMAC_copy_impl(self);
+    return _hashlib_HMAC_copy_impl((HMACobject *)self);
 }
 
 PyDoc_STRVAR(_hashlib_HMAC_update__doc__,
@@ -1633,7 +1665,7 @@ static PyObject *
 _hashlib_HMAC_update_impl(HMACobject *self, PyObject *msg);
 
 static PyObject *
-_hashlib_HMAC_update(HMACobject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_hashlib_HMAC_update(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -1664,12 +1696,13 @@ _hashlib_HMAC_update(HMACobject *self, PyObject *const *args, Py_ssize_t nargs, 
     PyObject *argsbuf[1];
     PyObject *msg;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     msg = args[0];
-    return_value = _hashlib_HMAC_update_impl(self, msg);
+    return_value = _hashlib_HMAC_update_impl((HMACobject *)self, msg);
 
 exit:
     return return_value;
@@ -1688,9 +1721,9 @@ static PyObject *
 _hashlib_HMAC_digest_impl(HMACobject *self);
 
 static PyObject *
-_hashlib_HMAC_digest(HMACobject *self, PyObject *Py_UNUSED(ignored))
+_hashlib_HMAC_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _hashlib_HMAC_digest_impl(self);
+    return _hashlib_HMAC_digest_impl((HMACobject *)self);
 }
 
 PyDoc_STRVAR(_hashlib_HMAC_hexdigest__doc__,
@@ -1709,9 +1742,9 @@ static PyObject *
 _hashlib_HMAC_hexdigest_impl(HMACobject *self);
 
 static PyObject *
-_hashlib_HMAC_hexdigest(HMACobject *self, PyObject *Py_UNUSED(ignored))
+_hashlib_HMAC_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _hashlib_HMAC_hexdigest_impl(self);
+    return _hashlib_HMAC_hexdigest_impl((HMACobject *)self);
 }
 
 PyDoc_STRVAR(_hashlib_get_fips_mode__doc__,
@@ -1824,4 +1857,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=b7eddeb3d6ccdeec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e9624853a73bb65a input=a9049054013a1b77]*/

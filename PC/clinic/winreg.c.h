@@ -26,9 +26,9 @@ static PyObject *
 winreg_HKEYType_Close_impl(PyHKEYObject *self);
 
 static PyObject *
-winreg_HKEYType_Close(PyHKEYObject *self, PyObject *Py_UNUSED(ignored))
+winreg_HKEYType_Close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return winreg_HKEYType_Close_impl(self);
+    return winreg_HKEYType_Close_impl((PyHKEYObject *)self);
 }
 
 #endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
@@ -56,9 +56,9 @@ static PyObject *
 winreg_HKEYType_Detach_impl(PyHKEYObject *self);
 
 static PyObject *
-winreg_HKEYType_Detach(PyHKEYObject *self, PyObject *Py_UNUSED(ignored))
+winreg_HKEYType_Detach(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return winreg_HKEYType_Detach_impl(self);
+    return winreg_HKEYType_Detach_impl((PyHKEYObject *)self);
 }
 
 #endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
@@ -77,12 +77,12 @@ static PyHKEYObject *
 winreg_HKEYType___enter___impl(PyHKEYObject *self);
 
 static PyObject *
-winreg_HKEYType___enter__(PyHKEYObject *self, PyObject *Py_UNUSED(ignored))
+winreg_HKEYType___enter__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     PyHKEYObject *_return_value;
 
-    _return_value = winreg_HKEYType___enter___impl(self);
+    _return_value = winreg_HKEYType___enter___impl((PyHKEYObject *)self);
     return_value = (PyObject *)_return_value;
 
     return return_value;
@@ -105,7 +105,7 @@ winreg_HKEYType___exit___impl(PyHKEYObject *self, PyObject *exc_type,
                               PyObject *exc_value, PyObject *traceback);
 
 static PyObject *
-winreg_HKEYType___exit__(PyHKEYObject *self, PyObject *const *args, Py_ssize_t nargs)
+winreg_HKEYType___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *exc_type;
@@ -118,7 +118,7 @@ winreg_HKEYType___exit__(PyHKEYObject *self, PyObject *const *args, Py_ssize_t n
     exc_type = args[0];
     exc_value = args[1];
     traceback = args[2];
-    return_value = winreg_HKEYType___exit___impl(self, exc_type, exc_value, traceback);
+    return_value = winreg_HKEYType___exit___impl((PyHKEYObject *)self, exc_type, exc_value, traceback);
 
 exit:
     return return_value;
@@ -351,7 +351,8 @@ winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     REGSAM access = KEY_WRITE;
     HKEY _return_value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -534,7 +535,8 @@ winreg_DeleteKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     REGSAM access = KEY_WOW64_64KEY;
     int reserved = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -966,7 +968,8 @@ winreg_OpenKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     REGSAM access = KEY_READ;
     HKEY _return_value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1083,7 +1086,8 @@ winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     REGSAM access = KEY_READ;
     HKEY _return_value;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 4, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -1762,4 +1766,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=1ee4098b2f143b6a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fbe9b075cd2fa833 input=a9049054013a1b77]*/

@@ -3,6 +3,7 @@ import importlib
 import io
 import os
 import shutil
+import signal
 import socket
 import stat
 import subprocess
@@ -70,7 +71,7 @@ class TestSupport(unittest.TestCase):
         self.assertEqual(support.get_original_stdout(), sys.stdout)
 
     def test_unload(self):
-        import sched
+        import sched  # noqa: F401
         self.assertIn("sched", sys.modules)
         import_helper.unload("sched")
         self.assertNotIn("sched", sys.modules)
@@ -547,13 +548,13 @@ class TestSupport(unittest.TestCase):
             with self.subTest(opts=opts):
                 self.check_options(opts, 'optim_args_from_interpreter_flags')
 
-    @unittest.skipIf(support.is_emscripten, "Unstable in Emscripten")
+    @unittest.skipIf(support.is_apple_mobile, "Unstable on Apple Mobile")
     @unittest.skipIf(support.is_wasi, "Unavailable on WASI")
     def test_fd_count(self):
-        # We cannot test the absolute value of fd_count(): on old Linux
-        # kernel or glibc versions, os.urandom() keeps a FD open on
-        # /dev/urandom device and Python has 4 FD opens instead of 3.
-        # Test is unstable on Emscripten. The platform starts and stops
+        # We cannot test the absolute value of fd_count(): on old Linux kernel
+        # or glibc versions, os.urandom() keeps a FD open on /dev/urandom
+        # device and Python has 4 FD opens instead of 3. Test is unstable on
+        # Emscripten and Apple Mobile platforms; these platforms start and stop
         # background threads that use pipes and epoll fds.
         start = os_helper.fd_count()
         fd = os.open(__file__, os.O_RDONLY)
@@ -576,7 +577,7 @@ class TestSupport(unittest.TestCase):
                                  'Warning -- a\nWarning -- b\n')
 
     def test_has_strftime_extensions(self):
-        if support.is_emscripten or sys.platform == "win32":
+        if sys.platform == "win32":
             self.assertFalse(support.has_strftime_extensions)
         else:
             self.assertTrue(support.has_strftime_extensions)
@@ -731,6 +732,32 @@ class TestSupport(unittest.TestCase):
         path = os.path.join(src_dir, 'Objects')
         self.assertEqual(support.copy_python_src_ignore(path, os.listdir(path)),
                          ignored)
+
+    def test_get_signal_name(self):
+        for exitcode, expected in (
+            (-int(signal.SIGINT), 'SIGINT'),
+            (-int(signal.SIGSEGV), 'SIGSEGV'),
+            (128 + int(signal.SIGABRT), 'SIGABRT'),
+            (3221225477, "STATUS_ACCESS_VIOLATION"),
+            (0xC00000FD, "STATUS_STACK_OVERFLOW"),
+        ):
+            self.assertEqual(support.get_signal_name(exitcode), expected,
+                             exitcode)
+
+    def test_linked_to_musl(self):
+        linked = support.linked_to_musl()
+        self.assertIsNotNone(linked)
+        if support.is_wasi or support.is_emscripten:
+            self.assertTrue(linked)
+        # The value is cached, so make sure it returns the same value again.
+        self.assertIs(linked, support.linked_to_musl())
+        # The unlike libc, the musl version is a triple.
+        if linked:
+            self.assertIsInstance(linked, tuple)
+            self.assertEqual(3, len(linked))
+            for v in linked:
+                self.assertIsInstance(v, int)
+
 
     # XXX -follows a list of untested API
     # make_legacy_pyc

@@ -1,5 +1,5 @@
-:mod:`bisect` --- Array bisection algorithm
-===========================================
+:mod:`!bisect` --- Array bisection algorithm
+============================================
 
 .. module:: bisect
    :synopsis: Array bisection algorithms for binary searching.
