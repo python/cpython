@@ -2033,7 +2033,7 @@ create_pointer_type(PyObject *module, PyObject *cls)
     }
 
     if (info) {
-        info->pointer_type = Py_NewRef(result);
+        // info->pointer_type = Py_NewRef(result);
     }
 
     return result;

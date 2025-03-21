@@ -565,6 +565,21 @@ _ctypes_CType_Type___sizeof___impl(PyObject *self, PyTypeObject *cls)
 }
 
 static PyObject *
+ctype_get_pointer_type(PyObject *self, void *Py_UNUSED(ignored))
+{
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(self));
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, self, &info) < 0) {
+        return NULL;
+    }
+    assert(info); /* Cannot be NULL  */
+    if (info->pointer_type) {
+        return Py_NewRef(info->pointer_type);
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject *
 CType_Type_repeat(PyObject *self, Py_ssize_t length);
 
 
@@ -573,12 +588,18 @@ static PyMethodDef ctype_methods[] = {
     {0},
 };
 
+static PyGetSetDef ctype_getsets[] = {
+    { "__pointer_type__", ctype_get_pointer_type, NULL, "pointer type", NULL },
+    { NULL, NULL }
+};
+
 static PyType_Slot ctype_type_slots[] = {
     {Py_tp_token, Py_TP_USE_SPEC},
     {Py_tp_traverse, CType_Type_traverse},
     {Py_tp_clear, CType_Type_clear},
     {Py_tp_dealloc, CType_Type_dealloc},
     {Py_tp_methods, ctype_methods},
+    {Py_tp_getset, ctype_getsets},
     // Sequence protocol.
     {Py_sq_repeat, CType_Type_repeat},
     {0, NULL},
@@ -1174,7 +1195,7 @@ class _ctypes.PyCPointerType "PyObject *" "clinic_state()->PyCPointerType_Type"
 
 
 static int
-PyCPointerType_SetProto(ctypes_state *st, StgInfo *stginfo, PyObject *proto)
+PyCPointerType_SetProto(ctypes_state *st, PyObject *self, StgInfo *stginfo, PyObject *proto)
 {
     if (!proto || !PyType_Check(proto)) {
         PyErr_SetString(PyExc_TypeError,
@@ -1190,8 +1211,17 @@ PyCPointerType_SetProto(ctypes_state *st, StgInfo *stginfo, PyObject *proto)
                         "_type_ must have storage info");
         return -1;
     }
+    if (info->pointer_type) {
+        PyErr_Format(PyExc_TypeError,
+            "pointer type already set: old=%R, new=%R",
+            info->pointer_type, self);
+        return -1;
+    }
+
     Py_INCREF(proto);
     Py_XSETREF(stginfo->proto, proto);
+
+    Py_XSETREF(info->pointer_type, Py_NewRef(self));
     return 0;
 }
 
@@ -1243,7 +1273,7 @@ PyCPointerType_init(PyObject *self, PyObject *args, PyObject *kwds)
     }
     if (proto) {
         const char *current_format;
-        if (PyCPointerType_SetProto(st, stginfo, proto) < 0) {
+        if (PyCPointerType_SetProto(st, self, stginfo, proto) < 0) {
             Py_DECREF(proto);
             return -1;
         }
@@ -1307,7 +1337,7 @@ PyCPointerType_set_type_impl(PyTypeObject *self, PyTypeObject *cls,
         return NULL;
     }
 
-    if (PyCPointerType_SetProto(st, info, type) < 0) {
+    if (PyCPointerType_SetProto(st, (PyObject *)self, info, type) < 0) {
         Py_DECREF(attrdict);
         return NULL;
     }
