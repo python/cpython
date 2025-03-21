@@ -1468,8 +1468,9 @@ def _parse_args(args: list[str] | None):
     import argparse
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("args", nargs="*", choices=["nonaliased", "terse"])
     parser.add_argument("--terse", action="store_true")
-    parser.add_argument("--nonaliased", action="store_true")
+    parser.add_argument("--nonaliased", dest="aliased", action="store_false")
 
     return parser.parse_args(args)
 
@@ -1477,9 +1478,10 @@ def _parse_args(args: list[str] | None):
 def _main(args: list[str] | None = None):
     args = _parse_args(args)
 
-    aliased = not args.nonaliased
+    terse = args.terse or ("terse" in args.args)
+    aliased = args.aliased and ('nonaliased' not in args.args)
 
-    print(platform(aliased, args.terse))
+    print(platform(aliased, terse))
 
 
 if __name__ == "__main__":
