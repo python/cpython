@@ -919,6 +919,7 @@ static PyMemberDef frame_memberlist[] = {
 };
 
 /*[clinic input]
+@critical_section
 @getter
 frame.f_locals as frame_locals
 
@@ -927,7 +928,7 @@ Return the mapping used by the frame to look up local variables.
 
 static PyObject *
 frame_locals_get_impl(PyFrameObject *self)
-/*[clinic end generated code: output=b4ace8bb4cae71f4 input=badf3ad13216129f]*/
+/*[clinic end generated code: output=b4ace8bb4cae71f4 input=7bd444d0dc8ddf44]*/
 {
     assert(!_PyFrame_IsIncomplete(self->f_frame));
 
@@ -989,6 +990,7 @@ frame_lineno_get_impl(PyFrameObject *self)
 }
 
 /*[clinic input]
+@critical_section
 @getter
 frame.f_lasti as frame_lasti
 
@@ -997,7 +999,7 @@ Return the index of the last attempted instruction in the frame.
 
 static PyObject *
 frame_lasti_get_impl(PyFrameObject *self)
-/*[clinic end generated code: output=03275b4f0327d1a2 input=50404c3d0708e39e]*/
+/*[clinic end generated code: output=03275b4f0327d1a2 input=0225ed49cb1fbeeb]*/
 {
     int lasti = _PyInterpreterFrame_LASTI(self->f_frame);
     if (lasti < 0) {
@@ -1982,6 +1984,7 @@ suspended:
 }
 
 /*[clinic input]
+@critical_section
 frame.__sizeof__
 
 Return the size of the frame in memory, in bytes.
@@ -1989,7 +1992,7 @@ Return the size of the frame in memory, in bytes.
 
 static PyObject *
 frame___sizeof___impl(PyFrameObject *self)
-/*[clinic end generated code: output=82948688e81078e2 input=1a07b2d6a8e166a5]*/
+/*[clinic end generated code: output=82948688e81078e2 input=908f90a83e73131d]*/
 {
     Py_ssize_t res;
     res = offsetof(PyFrameObject, _f_frame_data) + offsetof(_PyInterpreterFrame, localsplus);
@@ -2379,21 +2382,18 @@ PyFrame_GetBuiltins(PyFrameObject *frame)
 int
 PyFrame_GetLasti(PyFrameObject *frame)
 {
+    int ret;
+    Py_BEGIN_CRITICAL_SECTION(frame);
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
     int lasti = _PyInterpreterFrame_LASTI(frame->f_frame);
-    if (lasti < 0) {
-        return -1;
-    }
-    return lasti * sizeof(_Py_CODEUNIT);
+    ret = lasti < 0 ? -1 : lasti * sizeof(_Py_CODEUNIT);
+    Py_END_CRITICAL_SECTION();
+    return ret;
 }
 
 PyObject *
 PyFrame_GetGenerator(PyFrameObject *frame)
 {
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    if (frame->f_frame->owner != FRAME_OWNED_BY_GENERATOR) {
-        return NULL;
-    }
-    PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame->f_frame);
-    return Py_NewRef(gen);
+    return frame_generator_get((PyObject *)frame, NULL);
 }

@@ -27,7 +27,13 @@ frame_locals_get_impl(PyFrameObject *self);
 static PyObject *
 frame_locals_get(PyObject *self, void *Py_UNUSED(context))
 {
-    return frame_locals_get_impl((PyFrameObject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = frame_locals_get_impl((PyFrameObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(frame_lineno__doc__,
@@ -85,7 +91,13 @@ frame_lasti_get_impl(PyFrameObject *self);
 static PyObject *
 frame_lasti_get(PyObject *self, void *Py_UNUSED(context))
 {
-    return frame_lasti_get_impl((PyFrameObject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = frame_lasti_get_impl((PyFrameObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(frame_globals__doc__,
@@ -413,6 +425,12 @@ frame___sizeof___impl(PyFrameObject *self);
 static PyObject *
 frame___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return frame___sizeof___impl((PyFrameObject *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = frame___sizeof___impl((PyFrameObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
-/*[clinic end generated code: output=5f7e0418e005fa0c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=74abf652547c0c11 input=a9049054013a1b77]*/
