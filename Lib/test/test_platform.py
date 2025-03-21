@@ -1,8 +1,8 @@
-import io
-import itertools
 import os
 import copy
 import contextlib
+import io
+import itertools
 import pickle
 import platform
 import shlex
