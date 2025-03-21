@@ -324,7 +324,7 @@ tuple_hash(PyObject *op)
 {
     PyTupleObject *v = _PyTuple_CAST(op);
 
-    if (v->ob_hash != (Py_uhash_t)-1) {
+    if (v->ob_hash != -1) {
         return v->ob_hash;
     }
 
@@ -348,7 +348,11 @@ tuple_hash(PyObject *op)
         acc = 1546275796;
     }
 
-    v->ob_hash = acc;
+    #ifdef Py_GIL_DISABLED
+        _Py_atomic_store_ssize_relaxed(&v->ob_hash, acc);
+    #else
+        v->ob_hash = acc;
+    #endif
 
     return acc;
 }

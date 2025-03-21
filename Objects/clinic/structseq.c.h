@@ -21,7 +21,7 @@ structseq_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
-        Py_uhash_t ob_hash;
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
@@ -65,4 +65,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=cc63c5a36eba50b9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=112d59f5e98d652b input=a9049054013a1b77]*/

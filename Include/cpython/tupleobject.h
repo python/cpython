@@ -5,7 +5,7 @@
 typedef struct {
     PyObject_VAR_HEAD
     /* Cached hash.  Initially set to -1. */
-    Py_uhash_t ob_hash;
+    Py_hash_t ob_hash;
     /* ob_item contains space for 'ob_size' elements.
        Items must normally not be NULL, except during construction when
        the tuple is not yet visible outside the function that builds it. */
