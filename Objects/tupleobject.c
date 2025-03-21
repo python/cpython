@@ -321,11 +321,6 @@ tuple_hash(PyObject *op)
 {
     PyTupleObject *v = _PyTuple_CAST(op);
 
-    // For the empty singleton, we don't need to dereference the pointer
-    if (op == (PyObject *)&_Py_SINGLETON(tuple_empty)) {
-        return _PyHASH_XXPRIME_5 + (_PyHASH_XXPRIME_5 ^ 3527539UL);
-    }
-
     if (v->ob_hash != (Py_uhash_t)-1) {
         return v->ob_hash;
     }

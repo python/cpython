@@ -106,6 +106,9 @@ extern PyTypeObject _PyExc_MemoryError;
                 }, \
                 .tuple_empty = { \
                     .ob_base = _PyVarObject_HEAD_INIT(&PyTuple_Type, 0), \
+                    /* Using the hash constants in tupleobject.c
+                       _PyHASH_XXPRIME_5 + (_PyHASH_XXPRIME_5 ^ 3527539UL) */ \
+                    .ob_hash = 5740354900026072187, \
                 }, \
                 .hamt_bitmap_node_empty = { \
                     .ob_base = _PyVarObject_HEAD_INIT(&_PyHamt_BitmapNode_Type, 0), \
