@@ -104,7 +104,7 @@ class JSONEncoder(object):
     key_separator = ': '
     def __init__(self, *, skipkeys=False, ensure_ascii=True,
             check_circular=True, allow_nan=True, sort_keys=False,
-            indent=None, separators=None, default=None):
+            indent=None, separators=None, default=None, arr_oneline=False):
         """Constructor for JSONEncoder, with sensible defaults.
 
         If skipkeys is false, then it is a TypeError to attempt
@@ -129,6 +129,10 @@ class JSONEncoder(object):
         sorted by key; this is useful for regression tests to ensure
         that JSON serializations can be compared on a day-to-day basis.
 
+        If arr_oneline is true, then lists/tuples will be output as arrays
+        on a single line. If false, a newline character will be placed after each
+        array element.
+
         If indent is a non-negative integer, then JSON array
         elements and object members will be pretty-printed with that
         indent level.  An indent level of 0 will only insert newlines.
@@ -151,6 +155,7 @@ class JSONEncoder(object):
         self.allow_nan = allow_nan
         self.sort_keys = sort_keys
         self.indent = indent
+        self.arr_oneline = arr_oneline
         if separators is not None:
             self.item_separator, self.key_separator = separators
         elif indent is not None:
@@ -257,11 +262,12 @@ class JSONEncoder(object):
             _iterencode = _make_iterencode(
                 markers, self.default, _encoder, indent, floatstr,
                 self.key_separator, self.item_separator, self.sort_keys,
-                self.skipkeys, _one_shot)
+                self.skipkeys, _one_shot, self.arr_oneline)
         return _iterencode(o, 0)
 
 def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         _key_separator, _item_separator, _sort_keys, _skipkeys, _one_shot,
+        arr_oneline,
         ## HACK: hand-optimized bytecode; turn globals into locals
         ValueError=ValueError,
         dict=dict,
@@ -287,7 +293,10 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         buf = '['
         if _indent is not None:
             _current_indent_level += 1
-            newline_indent = '\n' + _indent * _current_indent_level
+            if not arr_oneline:
+                newline_indent = '\n' + _indent * _current_indent_level
+            else:
+                newline_indent = ''
             separator = _item_separator + newline_indent
             buf += newline_indent
         else:
@@ -329,7 +338,8 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 raise
         if newline_indent is not None:
             _current_indent_level -= 1
-            yield '\n' + _indent * _current_indent_level
+            if not arr_oneline:
+                yield '\n' + _indent * _current_indent_level
         yield ']'
         if markers is not None:
             del markers[markerid]
