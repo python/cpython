@@ -110,7 +110,7 @@ class TypeAnnotationTests(unittest.TestCase):
         self.assertEqual(D.__annotations__, {})
 
     def test_partially_executed_module(self):
-        partialexe = import_helper.import_module("test.typinganndata.partialexecution")
+        partialexe = import_helper.import_fresh_module("test.typinganndata.partialexecution")
         self.assertEqual(
             partialexe.a.__annotations__,
             {"v1": int, "v2": int},
