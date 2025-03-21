@@ -59,14 +59,14 @@ class TestEffects(unittest.TestCase):
     def test_effect_sizes(self):
         stack = Stack()
         inputs = [
-            x := StackItem("x", None, "", "1"),
-            y := StackItem("y", None, "", "oparg"),
-            z := StackItem("z", None, "", "oparg*2"),
+            x := StackItem("x", None, "1"),
+            y := StackItem("y", None, "oparg"),
+            z := StackItem("z", None, "oparg*2"),
         ]
         outputs = [
-            StackItem("x", None, "", "1"),
-            StackItem("b", None, "", "oparg*4"),
-            StackItem("c", None, "", "1"),
+            StackItem("x", None, "1"),
+            StackItem("b", None, "oparg*4"),
+            StackItem("c", None, "1"),
         ]
         stack.pop(z)
         stack.pop(y)
@@ -75,171 +75,6 @@ class TestEffects(unittest.TestCase):
             stack.push(Local.undefined(out))
         self.assertEqual(stack.base_offset.to_c(), "-1 - oparg - oparg*2")
         self.assertEqual(stack.top_offset.to_c(), "1 - oparg - oparg*2 + oparg*4")
-
-
-class TestGenerateMaxStackEffect(unittest.TestCase):
-    def check(self, input, output):
-        analysis = analyze_forest(parse_src(input))
-        buf = StringIO()
-        writer = CWriter(buf, 0, False)
-        opcode_metadata_generator.generate_max_stack_effect_function(analysis, writer)
-        buf.seek(0)
-        generated = buf.read()
-        matches = re.search(r"(case OP: {[^}]+})", generated)
-        if matches is None:
-            self.fail(f"Couldn't find case statement for OP in:\n {generated}")
-        self.assertEqual(output.strip(), matches.group(1))
-
-    def test_push_one(self):
-        input = """
-        inst(OP, (a -- b, c)) {
-            SPAM();
-        }
-        """
-        output = """
-        case OP: {
-            *effect = 1;
-            return 0;
-        }
-        """
-        self.check(input, output)
-
-    def test_cond_push(self):
-        input = """
-        inst(OP, (a -- b, c if (oparg))) {
-            SPAM();
-        }
-        """
-        output = """
-        case OP: {
-            *effect = ((oparg) ? 1 : 0);
-            return 0;
-        }
-        """
-        self.check(input, output)
-
-    def test_ops_pass_two(self):
-        input = """
-        op(A, (-- val1)) {
-            val1 = SPAM();
-        }
-        op(B, (-- val2)) {
-            val2 = SPAM();
-        }
-        op(C, (val1, val2 --)) {
-        }
-        macro(OP) = A + B + C;
-        """
-        output = """
-        case OP: {
-            *effect = 2;
-            return 0;
-        }
-        """
-        self.check(input, output)
-
-    def test_ops_pass_two_cond_push(self):
-        input = """
-        op(A, (-- val1, val2)) {
-            val1 = 0;
-            val2 = 1;
-        }
-        op(B, (val1, val2 -- val1, val2, val3 if (oparg))) {
-            val3 = SPAM();
-        }
-        macro(OP) = A + B;
-        """
-        output = """
-        case OP: {
-            *effect = Py_MAX(2, 2 + ((oparg) ? 1 : 0));
-            return 0;
-        }
-        """
-        self.check(input, output)
-
-    def test_pop_push_array(self):
-        input = """
-        inst(OP, (values[oparg] -- values[oparg], above)) {
-            SPAM(values, oparg);
-            above = 0;
-        }
-        """
-        output = """
-        case OP: {
-            *effect = 1;
-            return 0;
-        }
-        """
-        self.check(input, output)
-
-    def test_family(self):
-        input = """
-        op(A, (-- val1, val2)) {
-            val1 = 0;
-            val2 = 1;
-        }
-        op(B, (val1, val2 -- val3)) {
-            val3 = 2;
-        }
-        macro(OP1) = A + B;
-
-        inst(OP, (-- val)) {
-            val = 0;
-        }
-
-        family(OP, 0) = { OP1 };
-        """
-        output = """
-        case OP: {
-            *effect = 2;
-            return 0;
-        }
-        """
-        self.check(input, output)
-
-    def test_family_intermediate_array(self):
-        input = """
-        op(A, (-- values[oparg])) {
-            val1 = 0;
-            val2 = 1;
-        }
-        op(B, (values[oparg] -- val3)) {
-            val3 = 2;
-        }
-        macro(OP1) = A + B;
-
-        inst(OP, (-- val)) {
-            val = 0;
-        }
-
-        family(OP, 0) = { OP1 };
-        """
-        output = """
-        case OP: {
-            *effect = Py_MAX(1, oparg);
-            return 0;
-        }
-        """
-        self.check(input, output)
-
-    def test_negative_effect(self):
-        input = """
-        op(A, (val1 -- )) {
-        }
-        op(B, (val2 --)) {
-        }
-        op(C, (val3 --)) {
-        }
-
-        macro(OP) = A + B + C;
-        """
-        output = """
-        case OP: {
-            *effect = -1;
-            return 0;
-        }
-        """
-        self.check(input, output)
 
 
 class TestGeneratedCases(unittest.TestCase):
@@ -287,12 +122,6 @@ class TestGeneratedCases(unittest.TestCase):
             _, labels_with_postlude = labels_with_prelude_and_postlude.split(tier1_generator.LABEL_START_MARKER)
             labels, _ = labels_with_postlude.split(tier1_generator.LABEL_END_MARKER)
             actual = instructions.strip() + "\n\n        " + labels.strip()
-        # if actual.strip() != expected.strip():
-        #     print("Actual:")
-        #     print(actual)
-        #     print("Expected:")
-        #     print(expected)
-        #     print("End")
 
         self.assertEqual(actual.strip(), expected.strip())
 
@@ -1068,98 +897,6 @@ class TestGeneratedCases(unittest.TestCase):
                 JUMP_TO_LABEL(somewhere);
             }
             stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
-            DISPATCH();
-        }
-    """
-        self.run_cases_test(input, output)
-
-    def test_cond_effect(self):
-        input = """
-        inst(OP, (aa, input if ((oparg & 1) == 1), cc -- xx, output if (oparg & 2), zz)) {
-            output = SPAM(oparg, aa, cc, input);
-            INPUTS_DEAD();
-            xx = 0;
-            zz = 0;
-        }
-    """
-        output = """
-        TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
-            int opcode = OP;
-            (void)(opcode);
-            #endif
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(OP);
-            _PyStackRef aa;
-            _PyStackRef input = PyStackRef_NULL;
-            _PyStackRef cc;
-            _PyStackRef xx;
-            _PyStackRef output = PyStackRef_NULL;
-            _PyStackRef zz;
-            cc = stack_pointer[-1];
-            if ((oparg & 1) == 1) { input = stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)]; }
-            aa = stack_pointer[-2 - (((oparg & 1) == 1) ? 1 : 0)];
-            output = SPAM(oparg, aa, cc, input);
-            xx = 0;
-            zz = 0;
-            stack_pointer[-2 - (((oparg & 1) == 1) ? 1 : 0)] = xx;
-            if (oparg & 2) stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)] = output;
-            stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0) + ((oparg & 2) ? 1 : 0)] = zz;
-            stack_pointer += -(((oparg & 1) == 1) ? 1 : 0) + ((oparg & 2) ? 1 : 0);
-            assert(WITHIN_STACK_BOUNDS());
-            DISPATCH();
-        }
-    """
-        self.run_cases_test(input, output)
-
-    def test_macro_cond_effect(self):
-        input = """
-        op(A, (left, middle, right --)) {
-            USE(left, middle, right);
-            INPUTS_DEAD();
-        }
-        op(B, (-- deep, extra if (oparg), res)) {
-            deep = -1;
-            res = 0;
-            extra = 1;
-            INPUTS_DEAD();
-        }
-        macro(M) = A + B;
-    """
-        output = """
-        TARGET(M) {
-            #if Py_TAIL_CALL_INTERP
-            int opcode = M;
-            (void)(opcode);
-            #endif
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(M);
-            _PyStackRef left;
-            _PyStackRef middle;
-            _PyStackRef right;
-            _PyStackRef deep;
-            _PyStackRef extra = PyStackRef_NULL;
-            _PyStackRef res;
-            // A
-            {
-                right = stack_pointer[-1];
-                middle = stack_pointer[-2];
-                left = stack_pointer[-3];
-                USE(left, middle, right);
-            }
-            // B
-            {
-                deep = -1;
-                res = 0;
-                extra = 1;
-            }
-            stack_pointer[-3] = deep;
-            if (oparg) stack_pointer[-2] = extra;
-            stack_pointer[-2 + ((oparg) ? 1 : 0)] = res;
-            stack_pointer += -1 + ((oparg) ? 1 : 0);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }

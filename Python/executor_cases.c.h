@@ -2285,10 +2285,12 @@
         }
 
         case _PUSH_NULL_CONDITIONAL: {
-            _PyStackRef null = PyStackRef_NULL;
+            _PyStackRef *null;
             oparg = CURRENT_OPARG();
-            null = PyStackRef_NULL;
-            if (oparg & 1) stack_pointer[0] = null;
+            null = &stack_pointer[0];
+            if (oparg & 1) {
+                null[0] = PyStackRef_NULL;
+            }
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             break;

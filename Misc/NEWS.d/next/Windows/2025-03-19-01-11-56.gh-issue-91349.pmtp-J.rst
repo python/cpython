@@ -1,0 +1,2 @@
+Replaces our copy of ``zlib`` with ``zlib-ng``, for performance improvements
+in :mod:`zlib`.

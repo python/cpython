@@ -921,11 +921,15 @@
         }
 
         case _PUSH_NULL_CONDITIONAL: {
-            JitOptSymbol *null = NULL;
-            int opcode = (oparg & 1) ? _PUSH_NULL : _NOP;
-            REPLACE_OP(this_instr, opcode, 0, 0);
-            null = sym_new_null(ctx);
-            if (oparg & 1) stack_pointer[0] = null;
+            JitOptSymbol **null;
+            null = &stack_pointer[0];
+            if (oparg & 1) {
+                REPLACE_OP(this_instr, _PUSH_NULL, 0, 0);
+                null[0] = sym_new_null(ctx);
+            }
+            else {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             break;

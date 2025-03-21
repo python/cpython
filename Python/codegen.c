@@ -1688,11 +1688,26 @@ codegen_typealias(compiler *c, stmt_ty s)
     return SUCCESS;
 }
 
+static bool
+is_const_tuple(asdl_expr_seq *elts)
+{
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(elts); i++) {
+        expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
+        if (e->kind != Constant_kind) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /* Return false if the expression is a constant value except named singletons.
    Return true otherwise. */
 static bool
 check_is_arg(expr_ty e)
 {
+    if (e->kind == Tuple_kind) {
+        return !is_const_tuple(e->v.Tuple.elts);
+    }
     if (e->kind != Constant_kind) {
         return true;
     }
