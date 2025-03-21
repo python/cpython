@@ -1,14 +1,14 @@
+/* This file contains the struct definitions for the runtime, interpreter
+ * and thread states, plus all smaller structs contained therein */
+
 #ifndef Py_INTERNAL_RUNTIME_STRUCTS_H
 #define Py_INTERNAL_RUNTIME_STRUCTS_H
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* This file contains the struct definitions for the runtime, interpreter
- * and thread states, plus all smaller structs contained therein */
-
-#include "pycore_structs.h"
-#include "pycore_interp_structs.h"
+#include "pycore_interp_structs.h" // _PyGC_Head_UNUSED
+#include "pycore_obmalloc.h"      // struct _obmalloc_global_state
 
 /************ Runtime state ************/
 
@@ -58,17 +58,16 @@ struct pyhash_runtime_state {
     } urandom_cache;
 };
 
-#include "pycore_tracemalloc.h"
+#include "pycore_tracemalloc.h"   // struct _tracemalloc_runtime_state
 
 struct _fileutils_state {
     int force_ascii;
 };
 
-#include "pycore_debug_offsets.h"
-#include "pycore_signal.h"
-#include "pycore_faulthandler.h"
-#include "pycore_pythread.h"
-#include "pycore_ast.h"
+#include "pycore_debug_offsets.h" // _Py_DebugOffsets
+#include "pycore_signal.h"        // struct _signals_runtime_state
+#include "pycore_faulthandler.h"  // struct _faulthandler_runtime_state
+#include "pycore_ast.h"           // struct _expr
 
 #ifdef Py_DEBUG
 #define _PYPEGEN_NSTATISTICS 2000
@@ -109,7 +108,7 @@ struct _Py_cached_objects {
 #define _PY_NSMALLPOSINTS           257
 #define _PY_NSMALLNEGINTS           5
 
-#include "pycore_global_strings.h"
+#include "pycore_global_strings.h" // struct _Py_global_strings
 
 struct _Py_static_objects {
     struct {
@@ -308,7 +307,6 @@ struct pyruntimestate {
     // _main_interpreter should be the last field of _PyRuntimeState.
     // See https://github.com/python/cpython/issues/127117.
 };
-
 
 
 #ifdef __cplusplus

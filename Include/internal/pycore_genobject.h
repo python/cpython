@@ -8,8 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_frame.h"
-#include "pycore_typedefs.h"      // _PyInterpreterFrame
+#include "pycore_interpframe.h"   // _PyInterpreterFrame
 
 
 /* _PyGenObject_HEAD defines the initial segment of generator

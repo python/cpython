@@ -9,8 +9,8 @@ extern "C" {
 #endif
 
 #include "pycore_function.h"
+#include "pycore_interp_structs.h" // managed_static_type_state
 #include "pycore_moduleobject.h"  // PyModuleObject
-#include "pycore_runtime_structs.h" // type state
 #include "pycore_stats.h"
 
 
