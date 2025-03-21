@@ -2635,7 +2635,7 @@ will be pulled from the default value.
     >>> datetime.strptime(value, "%m/%d")
     Traceback (most recent call last):
     ...
-    ValueError: day is out of range for month
+    ValueError: day 29 must be in range 1..28 for month 2 in year 1900
     >>> datetime.strptime(f"1904 {value}", "%Y %m/%d")
     datetime.datetime(1904, 2, 29, 0, 0)
 
