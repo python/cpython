@@ -2285,10 +2285,12 @@
         }
 
         case _PUSH_NULL_CONDITIONAL: {
-            _PyStackRef null = PyStackRef_NULL;
+            _PyStackRef *null;
             oparg = CURRENT_OPARG();
-            null = PyStackRef_NULL;
-            if (oparg & 1) stack_pointer[0] = null;
+            null = &stack_pointer[0];
+            if (oparg & 1) {
+                null[0] = PyStackRef_NULL;
+            }
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -6915,6 +6917,30 @@
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyStackRef_CLOSE(pop);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            value = PyStackRef_FromPyObjectImmortal(ptr);
+            stack_pointer[0] = value;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _POP_TWO_LOAD_CONST_INLINE_BORROW: {
+            _PyStackRef pop2;
+            _PyStackRef pop1;
+            _PyStackRef value;
+            pop2 = stack_pointer[-1];
+            pop1 = stack_pointer[-2];
+            PyObject *ptr = (PyObject *)CURRENT_OPERAND0();
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(pop2);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(pop1);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             value = PyStackRef_FromPyObjectImmortal(ptr);
             stack_pointer[0] = value;

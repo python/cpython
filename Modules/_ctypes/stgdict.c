@@ -217,13 +217,17 @@ MakeAnonFields(PyObject *type)
 int
 PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct)
 {
-    PyObject *tmp;
     Py_ssize_t ffi_ofs;
     int arrays_seen = 0;
 
     int retval = -1;
     // The following are NULL or hold strong references.
     // They're cleared on error.
+    PyObject *layout_func = NULL;
+    PyObject *kwnames = NULL;
+    PyObject* align = NULL;
+    PyObject* size = NULL;
+    PyObject *layout_fields_obj = NULL;
     PyObject *layout_fields = NULL;
     PyObject *layout = NULL;
     PyObject *format_spec_obj = NULL;
@@ -257,12 +261,11 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         goto error;
     }
 
-    PyObject *layout_func = PyImport_ImportModuleAttrString("ctypes._layout",
-                                                            "get_layout");
+    layout_func = PyImport_ImportModuleAttrString("ctypes._layout", "get_layout");
     if (!layout_func) {
         goto error;
     }
-    PyObject *kwnames = PyTuple_Pack(
+    kwnames = PyTuple_Pack(
         2,
         &_Py_ID(is_struct),
         &_Py_ID(base));
@@ -281,19 +284,19 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             baseinfo ? base : Py_None},
         2 | PY_VECTORCALL_ARGUMENTS_OFFSET,
         kwnames);
-    Py_DECREF(kwnames);
-    Py_DECREF(layout_func);
+    Py_CLEAR(kwnames);
+    Py_CLEAR(layout_func);
     fields = NULL; // a borrowed reference we won't be using again
     if (!layout) {
         goto error;
     }
 
-    tmp = PyObject_GetAttr(layout, &_Py_ID(align));
-    if (!tmp) {
+    align = PyObject_GetAttr(layout, &_Py_ID(align));
+    if (!align) {
         goto error;
     }
-    Py_ssize_t total_align = PyLong_AsSsize_t(tmp);
-    Py_DECREF(tmp);
+    Py_ssize_t total_align = PyLong_AsSsize_t(align);
+    Py_CLEAR(align);
     if (total_align < 0) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError,
@@ -302,12 +305,12 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         goto error;
     }
 
-    tmp = PyObject_GetAttr(layout, &_Py_ID(size));
-    if (!tmp) {
+    size = PyObject_GetAttr(layout, &_Py_ID(size));
+    if (!size) {
         goto error;
     }
-    Py_ssize_t total_size = PyLong_AsSsize_t(tmp);
-    Py_DECREF(tmp);
+    Py_ssize_t total_size = PyLong_AsSsize_t(size);
+    Py_CLEAR(size);
     if (total_size < 0) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError,
@@ -338,15 +341,15 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     }
     memcpy(stginfo->format, format_spec, format_spec_size + 1);
 
-    PyObject *layout_fields_obj = PyObject_GetAttr(layout, &_Py_ID(fields));
+    layout_fields_obj = PyObject_GetAttr(layout, &_Py_ID(fields));
     if (!layout_fields_obj) {
         goto error;
     }
     layout_fields = PySequence_Tuple(layout_fields_obj);
-    Py_DECREF(layout_fields_obj);
     if (!layout_fields) {
         goto error;
     }
+    Py_CLEAR(layout_fields_obj);
     Py_CLEAR(layout);
 
     Py_ssize_t len = PyTuple_GET_SIZE(layout_fields);
@@ -664,6 +667,11 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
     retval = MakeAnonFields(type);
 error:
+    Py_XDECREF(layout_func);
+    Py_XDECREF(kwnames);
+    Py_XDECREF(align);
+    Py_XDECREF(size);
+    Py_XDECREF(layout_fields_obj);
     Py_XDECREF(layout_fields);
     Py_XDECREF(layout);
     Py_XDECREF(format_spec_obj);

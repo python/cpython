@@ -13,6 +13,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_structseq.h"     // PyStructSequence_InitType()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_typeobject.h"    // _PyStaticType_FiniBuiltin()
 
 static const char visible_length_key[] = "n_sequence_fields";
 static const char real_length_key[] = "n_fields";
