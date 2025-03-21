@@ -1,25 +1,25 @@
 /* Frame object implementation */
 
 #include "Python.h"
+#include "pycore_cell.h"          // PyCell_GetRef()
 #include "pycore_ceval.h"         // _PyEval_SetOpcodeTrace()
-#include "pycore_code.h"          // CO_FAST_LOCAL, etc.
+#include "pycore_code.h"          // CO_FAST_LOCAL
 #include "pycore_dict.h"          // _PyDict_LoadBuiltinsFromGlobals()
+#include "pycore_frame.h"         // PyFrameObject
 #include "pycore_function.h"      // _PyFunction_FromConstructor()
 #include "pycore_genobject.h"     // _PyGen_GetGeneratorFromFrame()
-#include "pycore_moduleobject.h"  // _PyModule_GetDict()
-#include "pycore_cell.h"          // PyCell_GetRef() PyCell_SetTakeRef()
+#include "pycore_interpframe.h"   // _PyFrame_GetLocalsArray()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
+#include "pycore_opcode_metadata.h" // _PyOpcode_Caches
 #include "pycore_optimizer.h"     // _Py_Executors_InvalidateDependency()
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
-
-#include "frameobject.h"          // PyFrameObject
-#include "pycore_frame.h"
+#include "frameobject.h"          // PyFrameLocalsProxyObject
 #include "opcode.h"               // EXTENDED_ARG
 
 #include "clinic/frameobject.c.h"
+
 
 #define PyFrameObject_CAST(op)  \
     (assert(PyObject_TypeCheck((op), &PyFrame_Type)), (PyFrameObject *)(op))

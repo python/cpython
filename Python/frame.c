@@ -1,13 +1,11 @@
-
 #define _PY_INTERPRETER
 
 #include "Python.h"
-#include "frameobject.h"
-#include "pycore_code.h"          // stats
-#include "pycore_frame.h"
-#include "pycore_genobject.h"
-#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "opcode.h"
+#include "pycore_frame.h"         // _PyFrame_New_NoTrack()
+#include "pycore_interpframe.h"   // _PyFrame_GetCode()
+#include "pycore_genobject.h"     // _PyGen_GetGeneratorFromFrame()
+#include "pycore_stackref.h"      // _Py_VISIT_STACKREF()
+
 
 int
 _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
