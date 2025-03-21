@@ -2588,8 +2588,9 @@ class Stopwatch:
     process_time does not exist everywhere (e.g. WASM).
 
     N.B.:
+    - This *includes* time spent in other threads/processes.
     - Some systems only have a coarse resolution; check
-      stopwatch.clock_info.resolution if.
+      stopwatch.clock_info.resolution when using the results.
 
     Usage:
 
