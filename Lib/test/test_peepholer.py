@@ -154,7 +154,7 @@ class TestTranforms(BytecodeTestCase):
         for line, elem in (
             ('a = 1,2,3', (1, 2, 3)),
             ('("a","b","c")', ('a', 'b', 'c')),
-            ('a,b,c = 1,2,3', (1, 2, 3)),
+            ('a,b,c,d = 1,2,3,4', (1, 2, 3, 4)),
             ('(None, 1, None)', (None, 1, None)),
             ('((1, 2), 3, 4)', ((1, 2), 3, 4)),
             ):
@@ -1345,6 +1345,111 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('LOAD_NAME', 0, 0),
             ('LOAD_SMALL_INT', 2, 0),
             ('BUILD_TUPLE', 3, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(same, same, consts=[])
+
+    def test_fold_constant_intrinsic_list_to_tuple(self):
+        INTRINSIC_LIST_TO_TUPLE = 6
+
+        # long tuple
+        consts = 1000
+        before = (
+            [('BUILD_LIST', 0, 0)] +
+            [('LOAD_CONST', 0, 0), ('LIST_APPEND', 1, 0)] * consts +
+            [('CALL_INTRINSIC_1', INTRINSIC_LIST_TO_TUPLE, 0), ('RETURN_VALUE', None, 0)]
+        )
+        after = [
+            ('LOAD_CONST', 1, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        result_const = tuple(["test"] * consts)
+        self.cfg_optimization_test(before, after, consts=["test"], expected_consts=["test", result_const])
+
+        # empty list
+        before = [
+            ('BUILD_LIST', 0, 0),
+            ('CALL_INTRINSIC_1', INTRINSIC_LIST_TO_TUPLE, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[()])
+
+        # multiple BUILD_LIST 0: ([], 1, [], 2)
+        same = [
+            ('BUILD_LIST', 0, 0),
+            ('BUILD_LIST', 0, 0),
+            ('LIST_APPEND', 1, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LIST_APPEND', 1, 0),
+            ('BUILD_LIST', 0, 0),
+            ('LIST_APPEND', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LIST_APPEND', 1, 0),
+            ('CALL_INTRINSIC_1', INTRINSIC_LIST_TO_TUPLE, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(same, same, consts=[])
+
+        # nested folding: (1, 1+1, 3)
+        before = [
+            ('BUILD_LIST', 0, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LIST_APPEND', 1, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('BINARY_OP', get_binop_argval('NB_ADD'), 0),
+            ('LIST_APPEND', 1, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('LIST_APPEND', 1, 0),
+            ('CALL_INTRINSIC_1', INTRINSIC_LIST_TO_TUPLE, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[(1, 2, 3)])
+
+        # NOP's in between: (1, 2, 3)
+        before = [
+            ('BUILD_LIST', 0, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('NOP', None, 0),
+            ('NOP', None, 0),
+            ('LIST_APPEND', 1, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('NOP', None, 0),
+            ('NOP', None, 0),
+            ('LIST_APPEND', 1, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('NOP', None, 0),
+            ('LIST_APPEND', 1, 0),
+            ('NOP', None, 0),
+            ('CALL_INTRINSIC_1', INTRINSIC_LIST_TO_TUPLE, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[(1, 2, 3)])
+
+        # no sequence start
+        same = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LIST_APPEND', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LIST_APPEND', 1, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('LIST_APPEND', 1, 0),
+            ('CALL_INTRINSIC_1', INTRINSIC_LIST_TO_TUPLE, 0),
             ('RETURN_VALUE', None, 0)
         ]
         self.cfg_optimization_test(same, same, consts=[])

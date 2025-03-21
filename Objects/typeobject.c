@@ -5,8 +5,8 @@
 #include "pycore_call.h"          // _PyObject_VectorcallTstate()
 #include "pycore_code.h"          // CO_FAST_FREE
 #include "pycore_dict.h"          // _PyDict_KeysSize()
-#include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
+#include "pycore_interpframe.h"   // _PyInterpreterFrame
 #include "pycore_lock.h"          // _PySeqLock_*
 #include "pycore_long.h"          // _PyLong_IsNegative(), _PyLong_GetOne()
 #include "pycore_memoryobject.h"  // _PyMemoryView_FromBufferProc()
