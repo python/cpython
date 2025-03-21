@@ -1,9 +1,11 @@
 import annotationlib
 import inspect
+import tempfile
 import textwrap
 import types
 import unittest
-from test.support import run_code, check_syntax_error
+from pathlib import Path
+from test.support import run_code, check_syntax_error, import_helper
 
 
 class TypeAnnotationTests(unittest.TestCase):
@@ -108,6 +110,18 @@ class TypeAnnotationTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del D.__annotations__
         self.assertEqual(D.__annotations__, {})
+
+    def test_partially_executed_module(self):
+        partialexe = import_helper.import_module("test.typinganndata.partialexecution")
+        self.assertEqual(
+            partialexe.a.__annotations__,
+            {"v1": int, "v2": int},
+        )
+        self.assertIsInstance(partialexe.b.exc, RuntimeError)
+        self.assertEqual(
+            str(partialexe.b.exc),
+            "cannot access __annotations__ while module is initializing",
+        )
 
 
 def build_module(code: str, name: str = "top") -> types.ModuleType:

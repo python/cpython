@@ -1247,6 +1247,28 @@ module_get_annotations(PyObject *self, void *Py_UNUSED(ignored))
 
     PyObject *annotations;
     if (PyDict_GetItemRef(dict, &_Py_ID(__annotations__), &annotations) == 0) {
+        PyObject *spec;
+        if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__spec__), &spec) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        if (spec != NULL) {
+            int rc = _PyModuleSpec_IsInitializing(spec);
+            if (rc < 0) {
+                Py_DECREF(spec);
+                Py_DECREF(dict);
+                return NULL;
+            }
+            Py_DECREF(spec);
+            if (rc) {
+                PyErr_SetString(PyExc_RuntimeError,
+                                "cannot access __annotations__ "
+                                "while module is initializing");
+                Py_DECREF(dict);
+                return NULL;
+            }
+        }
+
         PyObject *annotate;
         int annotate_result = PyDict_GetItemRef(dict, &_Py_ID(__annotate__), &annotate);
         if (annotate_result < 0) {
