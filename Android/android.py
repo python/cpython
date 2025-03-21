@@ -2,7 +2,6 @@
 
 import asyncio
 import argparse
-import json
 import os
 import re
 import shlex
@@ -547,12 +546,17 @@ async def run_testbed(context):
 
 
 def package_version(prefix_subdir):
-    vars_glob = f"{prefix_subdir}/lib/python*/_sysconfig_vars__android_*.json"
-    vars_paths = glob(vars_glob)
-    if len(vars_paths) != 1:
-        sys.exit(f"{vars_glob} matched {len(vars_paths)} paths.")
-    with open(vars_paths[0]) as vars_file:
-        version = json.load(vars_file)["py_version"]
+    patchlevel_glob = f"{prefix_subdir}/include/python*/patchlevel.h"
+    patchlevel_paths = glob(patchlevel_glob)
+    if len(patchlevel_paths) != 1:
+        sys.exit(f"{patchlevel_glob} matched {len(patchlevel_paths)} paths.")
+
+    for line in open(patchlevel_paths[0]):
+        if match := re.fullmatch(r'\s*#define\s+PY_VERSION\s+"(.+)"\s*', line):
+            version = match[1]
+            break
+    else:
+        sys.exit(f"Failed to find Python version in {patchlevel_paths[0]}.")
 
     # If not building against a tagged commit, add a timestamp to the version.
     # Follow the PyPA version number rules, as this will make it easier to
