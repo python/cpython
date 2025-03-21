@@ -2631,8 +2631,12 @@ will be pulled from the default value.
 .. doctest::
 
     >>> from datetime import datetime
+    >>> import warnings
     >>> value = "2/29"
-    >>> datetime.strptime(value, "%m/%d")
+    >>> with warnings.catch_warnings():
+    ...     warnings.simplefilter("ignore")
+    ...     datetime.strptime(value, "%m/%d")
+    ...
     Traceback (most recent call last):
     ...
     ValueError: day 29 must be in range 1..28 for month 2 in year 1900
