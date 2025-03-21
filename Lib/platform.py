@@ -1472,13 +1472,16 @@ def _parse_args(args: list[str] | None):
     parser.add_argument(
         "--terse",
         action="store_true",
-        help="return only the absolute minimum information needed to identify the platform",
+        help=("return only the absolute minimum information needed to identify the "
+            "platform"),
     )
     parser.add_argument(
         "--nonaliased",
         dest="aliased",
         action="store_false",
-        help="prevent the system/ OS name from being aliased to common marketing names e.g. win32 instead of Windows"
+        help=("disable system/ OS name aliasing. If aliasing is enabled, some "
+            "platforms will report system names which differ from their common "
+            "names, e.g. SunOS will be reported as Solaris"),
     )
 
     return parser.parse_args(args)
