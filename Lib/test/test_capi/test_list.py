@@ -53,6 +53,7 @@ class CAPITest(unittest.TestCase):
     def test_list_size(self):
         # Test PyList_Size()
         size = _testcapi.list_size
+        self.assertEqual(size([]), 0)
         self.assertEqual(size([1, 2]), 2)
         self.assertEqual(size(ListSubclass([1, 2])), 2)
         self.assertRaises(SystemError, size, UserList())
@@ -64,6 +65,7 @@ class CAPITest(unittest.TestCase):
     def test_list_get_size(self):
         # Test PyList_GET_SIZE()
         size = _testcapi.list_get_size
+        self.assertEqual(size([]), 0)
         self.assertEqual(size([1, 2]), 2)
         self.assertEqual(size(ListSubclass([1, 2])), 2)
         # CRASHES size(object())
@@ -261,6 +263,7 @@ class CAPITest(unittest.TestCase):
 
         self.assertEqual(list_reverse([]), [])
         self.assertEqual(list_reverse([2, 5, 10]), [10, 5, 2])
+        self.assertEqual(list_reverse(list_reverse([2, 5, 10])), [2, 5, 10])
 
         self.assertRaises(SystemError, reverse, ())
         self.assertRaises(SystemError, reverse, object())
@@ -270,6 +273,7 @@ class CAPITest(unittest.TestCase):
         # Test PyList_AsTuple()
         astuple = _testcapi.list_astuple
         self.assertEqual(astuple([]), ())
+        self.assertEqual(astuple([[]]), ([],))
         self.assertEqual(astuple([2, 5, 10]), (2, 5, 10))
 
         self.assertRaises(SystemError, astuple, ())
