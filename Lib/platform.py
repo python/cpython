@@ -1480,8 +1480,8 @@ def _main(args: list[str] | None = None):
     aliased = not args.nonaliased
 
     print(platform(aliased, args.terse))
-    return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(_main())
+    _main()
+    sys.exit(0)
