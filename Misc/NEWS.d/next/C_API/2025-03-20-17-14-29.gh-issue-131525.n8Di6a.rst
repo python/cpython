@@ -1,7 +1,2 @@
 The PyTupleObject now caches the computed hash value in the new field
 ob_hash.
-
-# Write your Misc/NEWS.d entry below.  It should be a simple ReST paragraph.
-# Don't start with "- Issue #<n>: " or "- gh-issue-<n>: " or that sort of
-stuff.
-###########################################################################
