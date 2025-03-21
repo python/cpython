@@ -574,7 +574,7 @@ def package(context):
     with TemporaryDirectory(prefix=SCRIPT_NAME) as temp_dir:
         temp_dir = Path(temp_dir)
 
-        # All tracked files in the Android directory.
+        # Include all tracked files from the Android directory.
         for line in run(
             ["git", "ls-files"],
             cwd=ANDROID_DIR, capture_output=True, text=True, log=False,
@@ -584,8 +584,9 @@ def package(context):
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst, follow_symlinks=False)
 
-        # Anything in the prefix directory which could be useful either for
-        # apps embedding Python, or packages built against it.
+        # Include anything from the prefix directory which could be useful
+        # either for embedding Python in an app, or building third-party
+        # packages against it.
         for rel_dir, patterns in [
             ("include", ["openssl*", "python*", "sqlite*"]),
             ("lib", ["engines-3", "libcrypto*.so", "libpython*", "libsqlite*",

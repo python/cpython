@@ -147,7 +147,7 @@ androidComponents.onVariants { variant ->
 
             into("lib/$pyPlusVer") {
                 // To aid debugging, the source directory takes priority when
-                // running inside a Python source tree.
+                // running inside a CPython source tree.
                 if (
                     file(ANDROID_DIR).name == "Android"
                     && file("$ANDROID_DIR/../pyconfig.h.in").exists()
@@ -155,7 +155,7 @@ androidComponents.onVariants { variant ->
                     from("$ANDROID_DIR/../Lib")
                 }
 
-                // The predix directory provides ABI-specific files such as
+                // The prefix directory provides ABI-specific files such as
                 // sysconfigdata.
                 for (triplet in ABIS.values) {
                     from("$PREFIX_DIR/$triplet/lib/$pyPlusVer")
