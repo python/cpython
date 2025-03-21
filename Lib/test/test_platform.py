@@ -5,8 +5,8 @@ import copy
 import contextlib
 import pickle
 import platform
-import subprocess
 import shlex
+import subprocess
 import sys
 import unittest
 from unittest import mock
