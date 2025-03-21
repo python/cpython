@@ -2717,7 +2717,7 @@ load_fast_push_block(basicblock ***sp, basicblock *target,
  *
  * 2. Locals live until they are either killed by an instruction
  *    (e.g. STORE_FAST) or the frame is unwound. Any local that is overwritten
- *    via `f_locals` is added to a list owned by the frame object.
+ *    via `f_locals` is added to a tuple owned by the frame object.
  *
  * To simplify the problem of detecting which supporting references in the
  * frame are killed by instructions that overwrite locals, we only allow
@@ -3965,38 +3965,18 @@ _PyCompile_OptimizeCfg(PyObject *seq, PyObject *consts, int nlocals)
                                 nparams, firstlineno) < 0) {
         goto error;
     }
-    res = cfg_to_instruction_sequence(g);
-error:
-    Py_DECREF(const_cache);
-    _PyCfgBuilder_Free(g);
-    return res;
-}
-
-PyObject *
-_PyCompile_OptimizeLoadFast(PyObject *seq)
-{
-    if (!_PyInstructionSequence_Check(seq)) {
-        PyErr_SetString(PyExc_ValueError, "expected an instruction sequence");
-        return NULL;
-    }
-
-    cfg_builder *g =
-        _PyCfg_FromInstructionSequence((_PyInstructionSequence *)seq);
-    if (g == NULL) {
-        return NULL;
-    }
 
     if (calculate_stackdepth(g) == ERROR) {
-        _PyCfgBuilder_Free(g);
-        return NULL;
+        goto error;
     }
 
     if (optimize_load_fast(g) != SUCCESS) {
-        _PyCfgBuilder_Free(g);
-        return NULL;
+        goto error;
     }
 
-    PyObject *res = cfg_to_instruction_sequence(g);
+    res = cfg_to_instruction_sequence(g);
+error:
+    Py_DECREF(const_cache);
     _PyCfgBuilder_Free(g);
     return res;
 }

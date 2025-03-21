@@ -2435,9 +2435,9 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         expected_insts = [
             ("BUILD_LIST", 0, 1),
-            ("LOAD_FAST", 0, 2),
+            ("LOAD_FAST_BORROW", 0, 2),
             ("LIST_EXTEND", 1, 3),
-            ("LOAD_FAST", 1, 4),
+            ("LOAD_FAST_BORROW", 1, 4),
             ("LIST_EXTEND", 1, 5),
             ("NOP", None, 6),  # ("CALL_INTRINSIC_1", INTRINSIC_LIST_TO_TUPLE, 6),
             ("GET_ITER", None, 7),
@@ -2463,15 +2463,24 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         self.assertEqual(items, [])
 
 
-@unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
-class OptimizeLoadFastTestCase(CompilationStepTestCase):
-    def check(self, insts, expected_insts):
-        self.check_instructions(insts)
-        self.check_instructions(expected_insts)
-        seq = self.seq_from_insts(insts)
-        opt_insts = _testinternalcapi.optimize_load_fast(seq)
-        expected_insts = self.seq_from_insts(expected_insts).get_instructions()
-        self.assertInstructionsMatch(opt_insts, expected_insts)
+class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
+    def make_bb(self, insts):
+        last_loc = insts[-1][2]
+        maxconst = 0
+        for op, arg, _ in insts:
+            if op == "LOAD_CONST":
+                maxconst = max(maxconst, arg)
+        consts = [None for _ in range(maxconst + 1)]
+        return insts + [
+            ("LOAD_CONST", 0, last_loc + 1),
+            ("RETURN_VALUE", None, last_loc + 2),
+        ], consts
+
+    def check(self, insts, expected_insts, consts=None):
+        insts_bb, insts_consts = self.make_bb(insts)
+        expected_insts_bb, exp_consts = self.make_bb(expected_insts)
+        self.cfg_optimization_test(insts_bb, expected_insts_bb,
+                                   consts=insts_consts, expected_consts=exp_consts)
 
     def test_optimized(self):
         insts = [
@@ -2518,7 +2527,12 @@ class OptimizeLoadFastTestCase(CompilationStepTestCase):
             ("COPY", 1, 2),
             ("POP_TOP", None, 3),
         ]
-        self.check(insts, insts)
+        expected = [
+            ("LOAD_FAST", 0, 1),
+            ("NOP", None, 2),
+            ("NOP", None, 3),
+        ]
+        self.check(insts, expected)
 
     def test_unoptimized_if_support_killed(self):
         insts = [
