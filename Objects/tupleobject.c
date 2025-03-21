@@ -45,6 +45,7 @@ tuple_alloc(Py_ssize_t size)
     if (index < PyTuple_MAXSAVESIZE) {
         PyTupleObject *op = _Py_FREELIST_POP(PyTupleObject, tuples[index]);
         if (op != NULL) {
+            _PyTuple_RESET_HASH_CACHE(op);
             return op;
         }
     }
@@ -53,7 +54,11 @@ tuple_alloc(Py_ssize_t size)
                 sizeof(PyObject *))) / sizeof(PyObject *)) {
         return (PyTupleObject *)PyErr_NoMemory();
     }
-    return PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
+    PyTupleObject *result = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
+    if (result != NULL) {
+        _PyTuple_RESET_HASH_CACHE(result);
+    }
+    return result;
 }
 
 // The empty tuple singleton is not tracked by the GC.
@@ -77,7 +82,6 @@ PyTuple_New(Py_ssize_t size)
     if (op == NULL) {
         return NULL;
     }
-    _PyTuple_RESET_HASH_CACHE(op);
     for (Py_ssize_t i = 0; i < size; i++) {
         op->ob_item[i] = NULL;
     }
@@ -170,7 +174,6 @@ PyTuple_Pack(Py_ssize_t n, ...)
         va_end(vargs);
         return NULL;
     }
-    _PyTuple_RESET_HASH_CACHE(result);
     items = result->ob_item;
     for (i = 0; i < n; i++) {
         o = va_arg(vargs, PyObject *);
@@ -390,7 +393,6 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
     if (tuple == NULL) {
         return NULL;
     }
-    _PyTuple_RESET_HASH_CACHE(tuple);
     PyObject **dst = tuple->ob_item;
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *item = src[i];
@@ -410,7 +412,6 @@ _PyTuple_FromStackRefStealOnSuccess(const _PyStackRef *src, Py_ssize_t n)
     if (tuple == NULL) {
         return NULL;
     }
-    _PyTuple_RESET_HASH_CACHE(tuple);
     PyObject **dst = tuple->ob_item;
     for (Py_ssize_t i = 0; i < n; i++) {
         dst[i] = PyStackRef_AsPyObjectSteal(src[i]);
@@ -432,7 +433,6 @@ _PyTuple_FromArraySteal(PyObject *const *src, Py_ssize_t n)
         }
         return NULL;
     }
-    _PyTuple_RESET_HASH_CACHE(tuple);
     PyObject **dst = tuple->ob_item;
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *item = src[i];
@@ -497,8 +497,6 @@ tuple_concat(PyObject *aa, PyObject *bb)
         return NULL;
     }
 
-    _PyTuple_RESET_HASH_CACHE(np);
-
     PyObject **src = a->ob_item;
     PyObject **dest = np->ob_item;
     for (Py_ssize_t i = 0; i < Py_SIZE(a); i++) {
@@ -541,8 +539,6 @@ tuple_repeat(PyObject *self, Py_ssize_t n)
     PyTupleObject *np = tuple_alloc(output_size);
     if (np == NULL)
         return NULL;
-
-    _PyTuple_RESET_HASH_CACHE(np);
 
     PyObject **dest = np->ob_item;
     if (input_size == 1) {
@@ -834,7 +830,6 @@ tuple_subscript(PyObject *op, PyObject* item)
             PyTupleObject* result = tuple_alloc(slicelength);
             if (!result) return NULL;
 
-            _PyTuple_RESET_HASH_CACHE(result);
             src = self->ob_item;
             dest = result->ob_item;
             for (cur = start, i = 0; i < slicelength;
