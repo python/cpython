@@ -262,7 +262,7 @@ class Emitter:
         next(tkn_iter)
         next(tkn_iter)
         for var in storage.inputs:
-            var.defined = False
+            var.kill()
         return True
 
     def kill(
@@ -280,7 +280,7 @@ class Emitter:
         next(tkn_iter)
         for var in storage.inputs:
             if var.name == name:
-                var.defined = False
+                var.kill()
                 break
         else:
             raise analysis_error(
@@ -301,7 +301,7 @@ class Emitter:
                     raise analysis_error(
                         f"Cannot close '{name.text}' when "
                         f"'{live}' is still live", name)
-                var.defined = False
+                var.kill()
                 break
             if var.defined:
                 live = var.name
@@ -526,7 +526,7 @@ class Emitter:
     ) -> tuple[bool, Token, Storage]:
         """ Returns (reachable?, closing '}', stack)."""
         braces = 1
-        out_stores = set(uop.output_stores)
+        local_stores = set(uop.local_stores)
         tkn = next(tkn_iter)
         reload: Token | None = None
         try:
@@ -574,11 +574,19 @@ class Emitter:
                         if not self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst):
                             reachable = False
                     else:
-                        if tkn in out_stores:
-                            for out in storage.outputs:
-                                if out.name == tkn.text:
-                                    out.defined = True
-                                    out.in_memory = False
+                        if tkn in local_stores:
+                            for var in storage.inputs:
+                                if var.name == tkn.text:
+                                    if var.defined or var.in_memory:
+                                        msg = f"Cannot assign to already defined input variable '{tkn.text}'"
+                                        raise analysis_error(msg, tkn)
+                                    var.defined = True
+                                    var.in_memory = False
+                                    break
+                            for var in storage.outputs:
+                                if var.name == tkn.text:
+                                    var.defined = True
+                                    var.in_memory = False
                                     break
                         if tkn.text.startswith("DISPATCH"):
                             self._print_storage(storage)
