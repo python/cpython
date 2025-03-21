@@ -2388,7 +2388,7 @@ PyFrame_GetLasti(PyFrameObject *frame)
     Py_BEGIN_CRITICAL_SECTION(frame);
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
     int lasti = _PyInterpreterFrame_LASTI(frame->f_frame);
-    ret = lasti < 0 ? -1 : lasti * sizeof(_Py_CODEUNIT);
+    ret = lasti < 0 ? -1 : lasti * (int)sizeof(_Py_CODEUNIT);
     Py_END_CRITICAL_SECTION();
     return ret;
 }
