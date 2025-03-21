@@ -2584,7 +2584,6 @@ insert_superinstructions(cfg_builder *g)
 
 #define NOT_LOCAL -1
 #define DUMMY_INSTR -1
-#define DUMMY_REF (ref){DUMMY_INSTR, NOT_LOCAL}
 
 typedef struct {
     // Index of instruction that produced the reference or DUMMY_INSTR.
@@ -2766,6 +2765,14 @@ optimize_load_fast(cfg_builder *g)
     entryblock->b_startdepth = 0;
     entryblock->b_visited = 1;
 
+    #define PUSH_REF(instr, local)                \
+        do {                                      \
+            if (ref_stack_push(&refs, (ref){(instr), (local)}) < 0) { \
+                status = ERROR;                   \
+                goto done;                        \
+            }                                     \
+        } while(0)
+
     while (sp != blocks) {
         basicblock *block = *--sp;
         assert(block->b_startdepth > -1);
@@ -2778,10 +2785,7 @@ optimize_load_fast(cfg_builder *g)
         // presence. Add dummy references as necessary.
         ref_stack_clear(&refs);
         for (int i = 0; i < block->b_startdepth; i++) {
-            if (ref_stack_push(&refs, DUMMY_REF) < 0) {
-                status = ERROR;
-                goto done;
-            }
+            PUSH_REF(DUMMY_INSTR, NOT_LOCAL);
         }
 
         for (int i = 0; i < block->b_iused; i++) {
@@ -2802,31 +2806,19 @@ optimize_load_fast(cfg_builder *g)
                 }
 
                 case LOAD_FAST: {
-                    if (ref_stack_push(&refs, (ref){i, oparg}) < 0) {
-                        status = ERROR;
-                        goto done;
-                    }
+                    PUSH_REF(i, oparg);
                     break;
                 }
 
                 case LOAD_FAST_AND_CLEAR: {
                     kill_local(instr_flags, &refs, oparg);
-                    if (ref_stack_push(&refs, (ref){i, oparg}) < 0) {
-                        status = ERROR;
-                        goto done;
-                    }
+                    PUSH_REF(i, oparg);
                     break;
                 }
 
                 case LOAD_FAST_LOAD_FAST: {
-                    if (ref_stack_push(&refs, (ref){i, oparg >> 4}) < 0) {
-                        status = ERROR;
-                        goto done;
-                    }
-                    if (ref_stack_push(&refs, (ref){i, oparg & 15}) < 0) {
-                        status = ERROR;
-                        goto done;
-                    }
+                    PUSH_REF(i, oparg >> 4);
+                    PUSH_REF(i, oparg & 15);
                     break;
                 }
 
@@ -2841,10 +2833,7 @@ optimize_load_fast(cfg_builder *g)
                     ref r = ref_stack_pop(&refs);
                     store_local(instr_flags, &refs, oparg >> 4, r);
                     // LOAD_FAST
-                    if (ref_stack_push(&refs, (ref){i, oparg & 15}) < 0) {
-                        status = ERROR;
-                        goto done;
-                    }
+                    PUSH_REF(i, oparg & 15);
                     break;
                 }
 
@@ -2877,10 +2866,7 @@ optimize_load_fast(cfg_builder *g)
                             ref_stack_pop(&refs);
                         }
                         for (int j = 0; j < num_pushed; j++) {
-                            if (ref_stack_push(&refs, (ref){i, NOT_LOCAL}) < 0) {
-                                status = ERROR;
-                                goto done;
-                            }
+                            PUSH_REF(i, NOT_LOCAL);
                         }
                     }
                     break;
@@ -2923,6 +2909,8 @@ optimize_load_fast(cfg_builder *g)
             }
         }
     }
+
+    #undef PUSH_REF
 
     status = SUCCESS;
 
