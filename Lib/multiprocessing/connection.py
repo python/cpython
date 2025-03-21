@@ -343,10 +343,10 @@ if _winapi:
                             elif err == _winapi.ERROR_MORE_DATA:
                                 return_value = self._get_more_data(ov, maxsize)
                     except:
-                        if return_value == sentinel:
+                        if return_value is sentinel:
                             raise
 
-                    if return_value != sentinel:
+                    if return_value is not sentinel:
                         return return_value
                 except OSError as e:
                     if e.winerror == _winapi.ERROR_BROKEN_PIPE:
