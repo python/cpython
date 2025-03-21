@@ -1282,8 +1282,7 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-                sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right))
             {
                 assert(PyLong_CheckExact(sym_get_const(ctx, left)));
                 assert(PyLong_CheckExact(sym_get_const(ctx, right)));
@@ -1295,17 +1294,14 @@
                 if (tmp == NULL) {
                     goto error;
                 }
+                assert(PyBool_Check(tmp));
+                assert(_Py_IsImmortal(tmp));
+                REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)tmp);
                 res = sym_new_const(ctx, tmp);
                 stack_pointer[0] = res;
                 stack_pointer += 1;
                 assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(tmp);
-                if (_Py_IsImmortal(res)) {
-                    REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)tmp);
-                }
-                else {
-                    res = sym_new_type(ctx, &PyBool_Type);
-                }
             }
             else {
                 res = sym_new_type(ctx, &PyBool_Type);

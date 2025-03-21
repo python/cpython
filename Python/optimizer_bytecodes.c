@@ -446,8 +446,7 @@ dummy_func(void) {
     }
 
     op(_COMPARE_OP_INT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-        sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
+        if (sym_is_const(ctx, left) && sym_is_const(ctx, right))
         {
             assert(PyLong_CheckExact(sym_get_const(ctx, left)));
             assert(PyLong_CheckExact(sym_get_const(ctx, right)));

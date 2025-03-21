@@ -1531,7 +1531,7 @@ class TestUopsOptimization(unittest.TestCase):
         # But all of the appends we care about are still there:
         self.assertEqual(uops.count("_CALL_LIST_APPEND"), len("ABCDEFG"))
 
-def test_narrow_type_to_constant_str_empty(self):
+    def test_narrow_type_to_constant_str_empty(self):
         def f(n):
             trace = []
             for i in range(n):
@@ -1564,7 +1564,7 @@ def test_narrow_type_to_constant_str_empty(self):
         # But all of the appends we care about are still there:
         self.assertEqual(uops.count("_CALL_LIST_APPEND"), len("ABCDEFG"))
 
-def test_compare_pop_two_load_const_inline_borrow(self):
+    def test_compare_pop_two_load_const_inline_borrow(self):
         def testfunc(n):
             x = 0
             for _ in range(n):
