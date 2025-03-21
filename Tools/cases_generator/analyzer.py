@@ -177,7 +177,7 @@ class Uop:
     stack: StackEffect
     caches: list[CacheEntry]
     deferred_refs: dict[lexer.Token, str | None]
-    output_stores: list[lexer.Token]
+    local_stores: list[lexer.Token]
     body: list[lexer.Token]
     properties: Properties
     _size: int = -1
@@ -236,7 +236,7 @@ class Label:
         self.properties = properties
 
     size:int = 0
-    output_stores: list[lexer.Token] = []
+    local_stores: list[lexer.Token] = []
     instruction_size = None
 
     def __str__(self) -> str:
@@ -431,7 +431,7 @@ def find_assignment_target(node: parser.InstDef, idx: int) -> list[lexer.Token]:
     return []
 
 
-def find_stores_outputs(node: parser.InstDef) -> list[lexer.Token]:
+def find_variable_stores(node: parser.InstDef) -> list[lexer.Token]:
     res: list[lexer.Token] = []
     outnames = { out.name for out in node.outputs }
     innames = { out.name for out in node.inputs }
@@ -449,9 +449,7 @@ def find_stores_outputs(node: parser.InstDef) -> list[lexer.Token]:
         if len(lhs) != 1 or lhs[0].kind != "IDENTIFIER":
             continue
         name = lhs[0]
-        if name.text in innames:
-            raise analysis_error(f"Cannot assign to input variable '{name.text}'", name)
-        if name.text in outnames:
+        if name.text in outnames or name.text in innames:
             res.append(name)
     return res
 
@@ -877,7 +875,7 @@ def make_uop(
         stack=analyze_stack(op),
         caches=analyze_caches(inputs),
         deferred_refs=analyze_deferred_refs(op),
-        output_stores=find_stores_outputs(op),
+        local_stores=find_variable_stores(op),
         body=op.block.tokens,
         properties=compute_properties(op),
     )
@@ -899,7 +897,7 @@ def make_uop(
             stack=analyze_stack(op),
             caches=analyze_caches(inputs),
             deferred_refs=analyze_deferred_refs(op),
-            output_stores=find_stores_outputs(op),
+            local_stores=find_variable_stores(op),
             body=op.block.tokens,
             properties=properties,
         )
