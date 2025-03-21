@@ -6,6 +6,7 @@ import contextlib
 import pickle
 import platform
 import subprocess
+import shlex
 import sys
 import unittest
 from unittest import mock
@@ -777,10 +778,36 @@ class CommandLineTest(unittest.TestCase):
                 _ = self.invoke_platform('--unknown')
 
     def test_invocation(self):
-        self.invoke_platform("--terse", "--nonaliased")
-        self.invoke_platform("--nonaliased")
-        self.invoke_platform("--terse")
-        self.invoke_platform()
+        flags = (
+            "--terse", "--nonaliased", "terse", "nonaliased"
+        )
+
+        for r in range(len(flags) + 1):
+            for combination in itertools.combinations(flags, r):
+                self.invoke_platform(*combination)
+
+    def test_arg_parsing(self):
+        # Due to backwards compatibility, the `aliased` and `terse` parameters
+        # are computed based on a combination of positional arguments and flags.
+        #
+        # This test tests that the arguments are correctly passed to the underlying
+        # `platform.platform()` call. The parameters are two booleans for `aliased`
+        # and `terse`
+        options = (
+            ("--nonaliased", (False, False)),
+            ("nonaliased", (False, False)),
+            ("--terse", (True, True)),
+            ("terse", (True, True)),
+            ("nonaliased terse", (False, True)),
+            ("--nonaliased terse", (False, True)),
+            ("--terse nonaliased", (False, True)),
+        )
+
+        for flags, args in options:
+            with self.subTest(f"{flags}, {args}"):
+                with mock.patch.object(platform, 'platform') as obj:
+                    self.invoke_platform(*shlex.split(flags))
+                    obj.assert_called_once_with(*args)
 
     def test_help(self):
         output = io.StringIO()
