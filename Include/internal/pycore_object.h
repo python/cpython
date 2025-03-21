@@ -8,14 +8,16 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include <stdbool.h>
 #include "pycore_emscripten_trampoline.h" // _PyCFunction_TrampolineCall()
-#include "pycore_object_deferred.h" // _PyObject_HasDeferredRefcount
-#include "pycore_pyatomic_ft_wrappers.h"  // FT_ATOMIC_STORE_PTR_RELAXED
+#include "pycore_gc.h"            // _PyObject_GC_TRACK()
+#include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_PTR_ACQUIRE()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_typeobject.h"    // _PyStaticType_GetState()
 #include "pycore_uniqueid.h"      // _PyObject_ThreadIncrefSlow()
+
+#include <stdbool.h>              // bool
+
 
 // This value is added to `ob_ref_shared` for objects that use deferred
 // reference counting so that they are not immediately deallocated when the

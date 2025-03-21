@@ -10,8 +10,9 @@
 #endif
 
 #include "pycore_code.h"          // _PyCode_CODE()
-#include "pycore_structs.h"       // _PyStackRef
 #include "pycore_stackref.h"      // PyStackRef_AsPyObjectBorrow()
+#include "pycore_stats.h"         // CALL_STAT_INC()
+#include "pycore_structs.h"       // _PyStackRef
 #include "pycore_typedefs.h"      // _PyInterpreterFrame
 
 
