@@ -93,6 +93,7 @@ __all__ = [
 ]
 
 import __future__
+import contextlib
 import difflib
 import inspect
 import linecache
