@@ -8,8 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_interpframe.h"   // _PyInterpreterFrame
 #include "pycore_interpframe_structs.h" // _PyGenObject
+
+#include <stddef.h>               // offsetof()
 
 
 static inline
