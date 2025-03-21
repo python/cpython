@@ -19,7 +19,7 @@
 
 from __future__ import annotations
 
-import _colorize  # type: ignore[import-not-found]
+import _colorize
 
 from abc import ABC, abstractmethod
 import ast
@@ -162,7 +162,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
         *,
         local_exit: bool = False,
     ) -> None:
-        super().__init__(locals=locals, filename=filename, local_exit=local_exit)  # type: ignore[call-arg]
+        super().__init__(locals=locals, filename=filename, local_exit=local_exit)
         self.can_colorize = _colorize.can_colorize()
 
     def showsyntaxerror(self, filename=None, **kwargs):

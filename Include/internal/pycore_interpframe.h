@@ -1,7 +1,3 @@
-/* See InternalDocs/frames.md for an explanation of the frame stack
- * including explanation of the PyFrameObject and _PyInterpreterFrame
- * structs. */
-
 #ifndef Py_INTERNAL_INTERP_FRAME_H
 #define Py_INTERNAL_INTERP_FRAME_H
 
@@ -10,48 +6,13 @@
 #endif
 
 #include "pycore_code.h"          // _PyCode_CODE()
-#include "pycore_structs.h"       // _PyStackRef
+#include "pycore_interpframe_structs.h" // _PyInterpreterFrame
 #include "pycore_stackref.h"      // PyStackRef_AsPyObjectBorrow()
-#include "pycore_typedefs.h"      // _PyInterpreterFrame
-
+#include "pycore_stats.h"         // CALL_STAT_INC()
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-enum _frameowner {
-    FRAME_OWNED_BY_THREAD = 0,
-    FRAME_OWNED_BY_GENERATOR = 1,
-    FRAME_OWNED_BY_FRAME_OBJECT = 2,
-    FRAME_OWNED_BY_INTERPRETER = 3,
-    FRAME_OWNED_BY_CSTACK = 4,
-};
-
-struct _PyInterpreterFrame {
-    _PyStackRef f_executable; /* Deferred or strong reference (code object or None) */
-    struct _PyInterpreterFrame *previous;
-    _PyStackRef f_funcobj; /* Deferred or strong reference. Only valid if not on C stack */
-    PyObject *f_globals; /* Borrowed reference. Only valid if not on C stack */
-    PyObject *f_builtins; /* Borrowed reference. Only valid if not on C stack */
-    PyObject *f_locals; /* Strong reference, may be NULL. Only valid if not on C stack */
-    PyFrameObject *frame_obj; /* Strong reference, may be NULL. Only valid if not on C stack */
-    _Py_CODEUNIT *instr_ptr; /* Instruction currently executing (or about to begin) */
-    _PyStackRef *stackpointer;
-#ifdef Py_GIL_DISABLED
-    /* Index of thread-local bytecode containing instr_ptr. */
-    int32_t tlbc_index;
-#endif
-    uint16_t return_offset;  /* Only relevant during a function call */
-    char owner;
-#ifdef Py_DEBUG
-    uint8_t visited:1;
-    uint8_t lltrace:7;
-#else
-    uint8_t visited;
-#endif
-    /* Locals and stack */
-    _PyStackRef localsplus[1];
-};
 
 #define _PyInterpreterFrame_LASTI(IF) \
     ((int)((IF)->instr_ptr - _PyFrame_GetBytecode((IF))))

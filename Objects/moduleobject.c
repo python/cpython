@@ -1,4 +1,3 @@
-
 /* Module object implementation */
 
 #include "Python.h"
