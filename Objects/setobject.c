@@ -816,8 +816,9 @@ setiter_traverse(PyObject *self, visitproc visit, void *arg)
 }
 
 static PyObject *
-setiter_len(setiterobject *si, PyObject *Py_UNUSED(ignored))
+setiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    setiterobject *si = (setiterobject*)op;
     Py_ssize_t len = 0;
     if (si->si_set != NULL && si->si_used == si->si_set->used)
         len = si->len;
@@ -827,8 +828,10 @@ setiter_len(setiterobject *si, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-setiter_reduce(setiterobject *si, PyObject *Py_UNUSED(ignored))
+setiter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    setiterobject *si = (setiterobject*)op;
+
     /* copy the iterator state */
     setiterobject tmp = *si;
     Py_XINCREF(tmp.si_set);
@@ -845,8 +848,8 @@ setiter_reduce(setiterobject *si, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyMethodDef setiter_methods[] = {
-    {"__length_hint__", (PyCFunction)setiter_len, METH_NOARGS, length_hint_doc},
-    {"__reduce__", (PyCFunction)setiter_reduce, METH_NOARGS, reduce_doc},
+    {"__length_hint__", setiter_len, METH_NOARGS, length_hint_doc},
+    {"__reduce__", setiter_reduce, METH_NOARGS, reduce_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
