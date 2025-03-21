@@ -33,7 +33,6 @@ class Properties:
     pure: bool
     uses_opcode: bool
     tier: int | None = None
-    oparg_and_1: bool = False
     const_oparg: int = -1
     needs_prev: bool = False
     no_save_ip: bool = False
@@ -136,16 +135,14 @@ class Flush:
 class StackItem:
     name: str
     type: str | None
-    condition: str | None
     size: str
     peek: bool = False
     used: bool = False
 
     def __str__(self) -> str:
-        cond = f" if ({self.condition})" if self.condition else ""
         size = f"[{self.size}]" if self.size else ""
         type = "" if self.type is None else f"{self.type} "
-        return f"{type}{self.name}{size}{cond} {self.peek}"
+        return f"{type}{self.name}{size} {self.peek}"
 
     def is_array(self) -> bool:
         return self.size != ""
@@ -348,10 +345,7 @@ def override_error(
 def convert_stack_item(
     item: parser.StackEffect, replace_op_arg_1: str | None
 ) -> StackItem:
-    cond = item.cond
-    if replace_op_arg_1 and OPARG_AND_1.match(item.cond):
-        cond = replace_op_arg_1
-    return StackItem(item.name, item.type, cond, item.size)
+    return StackItem(item.name, item.type, item.size)
 
 def check_unused(stack: list[StackItem], input_names: dict[str, lexer.Token]) -> None:
     "Unused items cannot be on the stack above used, non-peek items"
@@ -815,31 +809,10 @@ def stack_effect_only_peeks(instr: parser.InstDef) -> bool:
         return False
     if len(stack_inputs) == 0:
         return False
-    if any(s.cond for s in stack_inputs) or any(s.cond for s in instr.outputs):
-        return False
     return all(
         (s.name == other.name and s.type == other.type and s.size == other.size)
         for s, other in zip(stack_inputs, instr.outputs)
     )
-
-
-OPARG_AND_1 = re.compile("\\(*oparg *& *1")
-
-
-def effect_depends_on_oparg_1(op: parser.InstDef) -> bool:
-    for effect in op.inputs:
-        if isinstance(effect, parser.CacheEffect):
-            continue
-        if not effect.cond:
-            continue
-        if OPARG_AND_1.match(effect.cond):
-            return True
-    for effect in op.outputs:
-        if not effect.cond:
-            continue
-        if OPARG_AND_1.match(effect.cond):
-            return True
-    return False
 
 
 def compute_properties(op: parser.CodeDef) -> Properties:
@@ -908,29 +881,6 @@ def make_uop(
         body=op.block.tokens,
         properties=compute_properties(op),
     )
-    if effect_depends_on_oparg_1(op) and "split" in op.annotations:
-        result.properties.oparg_and_1 = True
-        for bit in ("0", "1"):
-            name_x = name + "_" + bit
-            properties = compute_properties(op)
-            if properties.oparg:
-                # May not need oparg anymore
-                properties.oparg = any(
-                    token.text == "oparg" for token in op.block.tokens
-                )
-            rep = Uop(
-                name=name_x,
-                context=op.context,
-                annotations=op.annotations,
-                stack=analyze_stack(op, bit),
-                caches=analyze_caches(inputs),
-                deferred_refs=analyze_deferred_refs(op),
-                output_stores=find_stores_outputs(op),
-                body=op.block.tokens,
-                properties=properties,
-            )
-            rep.replicates = result
-            uops[name_x] = rep
     for anno in op.annotations:
         if anno.startswith("replicate"):
             result.replicated = int(anno[10:-1])

@@ -29,6 +29,7 @@
 #include "pycore_long.h"          // _PyLong_ExactDealloc()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
+#include "pycore_stackref.h"
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 
@@ -58,7 +59,6 @@
 #define guard
 #define override
 #define specializing
-#define split
 #define replicate(TIMES)
 #define tier1
 #define no_save_ip
@@ -1685,8 +1685,10 @@ dummy_func(
             ERROR_IF(PyStackRef_IsNull(*res), error);
         }
 
-        op(_PUSH_NULL_CONDITIONAL, ( -- null if (oparg & 1))) {
-            null = PyStackRef_NULL;
+        op(_PUSH_NULL_CONDITIONAL, ( -- null[oparg & 1])) {
+            if (oparg & 1) {
+                null[0] = PyStackRef_NULL;
+            }
         }
 
         macro(LOAD_GLOBAL) =

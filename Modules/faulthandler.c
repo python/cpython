@@ -1,8 +1,10 @@
 #include "Python.h"
-#include "pycore_ceval.h"         // _PyEval_IsGILEnabled
-#include "pycore_initconfig.h"    // _PyStatus_ERR
-#include "pycore_pyerrors.h"      // _Py_DumpExtensionModules
+#include "pycore_ceval.h"         // _PyEval_IsGILEnabled()
+#include "pycore_initconfig.h"    // _PyStatus_ERR()
+#include "pycore_pyerrors.h"      // _Py_DumpExtensionModules()
+#include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_signal.h"        // Py_NSIG
 #include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
@@ -27,6 +29,7 @@
 #  include <linux/auxvec.h>       // AT_MINSIGSTKSZ
 #  include <sys/auxv.h>           // getauxval()
 #endif
+
 
 /* Sentinel to ignore all_threads on free-threading */
 #define FT_IGNORE_ALL_THREADS 2
@@ -403,7 +406,6 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
 {
     const int fd = fatal_error.fd;
     DWORD code = exc_info->ExceptionRecord->ExceptionCode;
-    DWORD flags = exc_info->ExceptionRecord->ExceptionFlags;
 
     if (faulthandler_ignore_exception(code)) {
         /* ignore the exception: call the next exception handler */
