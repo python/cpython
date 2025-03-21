@@ -1,11 +1,15 @@
+import io
+import itertools
 import os
 import copy
+import contextlib
 import pickle
 import platform
 import subprocess
 import sys
 import unittest
 from unittest import mock
+from textwrap import dedent
 
 from test import support
 from test.support import os_helper
@@ -739,6 +743,53 @@ class PlatformTest(unittest.TestCase):
         }
         self.assertEqual(info, expected)
         self.assertEqual(len(info["SPECIALS"]), 5)
+
+
+class CommandLineTest(unittest.TestCase):
+    def setUp(self):
+        self.clear_caches()
+        self.addCleanup(self.clear_caches)
+
+    def clear_caches(self):
+        platform._platform_cache.clear()
+        platform._sys_version_cache.clear()
+        platform._uname_cache = None
+        platform._os_release_cache = None
+
+    @staticmethod
+    def text_normalize(string):
+        """Dedent *string* and strip it from its surrounding whitespaces.
+        This method is used by the other utility functions so that any
+        string to write or to match against can be freely indented.
+        """
+        return dedent(string).strip()
+
+    def invoke_platform(self, *flags):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            platform._main(args=flags)
+        return self.text_normalize(output.getvalue())
+
+    def test_unknown_flag(self):
+        with self.assertRaises(SystemExit):
+            # suppress argparse error message
+            with contextlib.redirect_stderr(io.StringIO()):
+                _ = self.invoke_platform('--unknown')
+
+    def test_invocation(self):
+        self.invoke_platform("--terse", "--nonaliased")
+        self.invoke_platform("--nonaliased")
+        self.invoke_platform("--terse")
+        self.invoke_platform()
+
+    def test_help(self):
+        output = io.StringIO()
+
+        with self.assertRaises(SystemExit):
+            with contextlib.redirect_stdout(output):
+                platform._main(args=["--help"])
+
+        self.assertIn("usage:", output.getvalue())
 
 
 if __name__ == '__main__':

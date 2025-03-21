@@ -1464,9 +1464,24 @@ def invalidate_caches():
 
 ### Command line interface
 
-if __name__ == '__main__':
-    # Default is to print the aliased verbose platform string
-    terse = ('terse' in sys.argv or '--terse' in sys.argv)
-    aliased = (not 'nonaliased' in sys.argv and not '--nonaliased' in sys.argv)
-    print(platform(aliased, terse))
-    sys.exit(0)
+def _parse_args(args: list[str] | None):
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--terse", action="store_true")
+    parser.add_argument("--nonaliased", action="store_true")
+
+    return parser.parse_args(args)
+
+
+def _main(args: list[str] | None = None):
+    args = _parse_args(args)
+
+    aliased = not args.nonaliased
+
+    print(platform(aliased, args.terse))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(_main())
