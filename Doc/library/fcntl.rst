@@ -214,6 +214,38 @@ The module defines the following functions:
 
    .. audit-event:: fcntl.lockf fd,cmd,len,start,whence fcntl.lockf
 
+.. function:: getlk(fd, cmd, len=0, start=0, whence=0)
+
+   Like :func:`lockf`, essentially a wrapper for the ``F_GETLK`` lock operation.
+
+   *fd* is the file descriptor (file objects providing a :meth:`~io.IOBase.fileno`
+   method are accepted as well) of the file to retrieve lock information on,
+   and *cmd* specifies an operation to check for would-be conflicts on:
+
+   * :const:`LOCK_SH` -- check for conflicting exclusive lock
+   * :const:`LOCK_EX` -- check for conflicting shared or exclusive lock
+
+   Note that the returned information identifies a lock that would conflict
+   with acquiring the type of lock specified in *cmd*.  Calling with
+   :const:`LOCK_SH` therefore only returns information on a conflicting
+   :const:`LOCK_EX`, while calling with :const:`LOCK_EX` returns information
+   on either :const:`LOCK_SH` or :const:`LOCK_EX` locks.
+
+   The *len*, *start* and *whence* parameters are as with :func:`lockf`.
+
+   Returns a tuple ``(pid, cmd, len, start, whence)`` if a conflicting lock is
+   found.  If more than one lock conflicts, platform code chooses one.  There
+   may not be an associated process, in which case *pid* will be -1.
+
+   If no other lock would conflict with the request, this function returns
+   ``None``.
+
+   The information returned by this call may already be outdated by the time it
+   returns.  Additionally, only locks acquired using :func:`lockf` (or rather
+   the underlying ``fcntl(F_SETLK)`` system call) are considered by this call.
+
+   .. audit-event:: fcntl.getlk fd,cmd,len,start,whence fcntl.getlk
+
 Examples (all on a SVR4 compliant system)::
 
    import struct, fcntl, os
