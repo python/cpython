@@ -1570,7 +1570,9 @@ class time:
     # Conversion to string
 
     def _tzstr(self, basic):
-        """Return formatted timezone offset (+xx:xx) or an empty string."""
+        """Return formatted timezone offset (+xx:xx) or an empty string.
+        The colon separator is omitted if *basic* is true.
+        """
         off = self.utcoffset()
         sep = '' if basic else ':'
         return _format_offset(off, sep)
@@ -1600,7 +1602,7 @@ class time:
         The full format is 'HH:MM:SS.mmmmmm+zz:zz'. By default, the fractional
         part is omitted if self.microsecond == 0.
 
-        If *basic* is true, separators ':' are removed from the output.
+        If *basic* is true, separators ':' are omitted.
 
         The optional argument timespec specifies the number of additional
         terms of the time to include. Valid options are 'auto', 'hours',

@@ -788,7 +788,7 @@ Instance methods:
        >>> date(2002, 12, 4).isoformat(basic=True)
        '20021204'
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       Added the *basic* parameter.
 
 
@@ -1622,7 +1622,7 @@ Instance methods:
    .. versionchanged:: 3.6
       Added the *timespec* parameter.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
       Added the *basic* parameter.
 
 
@@ -1985,12 +1985,7 @@ Instance methods:
    - ``HH:MM:SS.ffffff+HH:MM[:SS[.ffffff]]``, if :meth:`utcoffset` does not return ``None``
    - ``HH:MM:SS+HH:MM[:SS[.ffffff]]``, if :attr:`microsecond` is 0 and :meth:`utcoffset` does not return ``None``
 
-   If *basic* is true, this uses the ISO 8601 basic format, one of:
-
-   - ``HHMMSS``
-   - ``HHMMSS.ffffff``
-   - ``HHMMSS+HHMM[SS[.ffffff]]``
-   - ``HHMMSS.ffffff+HHMM[SS[.ffffff]]``
+   If *basic* is true, this uses the ISO 8601 basic format which omits the colons.
 
    The optional argument *timespec* specifies the number of additional
    components of the time to include (the default is ``'auto'``).
@@ -2026,7 +2021,7 @@ Instance methods:
    .. versionchanged:: 3.6
       Added the *timespec* parameter.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       Added the *basic* parameter.
 
 
