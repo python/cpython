@@ -1606,7 +1606,7 @@ Instance methods:
 
    .. versionadded:: 3.6
       Added the *timespec* argument.
-   .. versionadded:: 3.11
+   .. versionadded:: next
       Added the *use_utc_designator* argument.
 
 .. method:: datetime.__str__()
@@ -2003,15 +2003,12 @@ Instance methods:
       >>> dt.isoformat(timespec='auto')
       '12:34:56'
       >>> dt = time(12, 30, 59, tzinfo=timezone.utc)
-      >>> dt.isoformat()
-      '12:30:59+00:00'
       >>> dt.isoformat(use_utc_designator=True)
       '12:30:59Z'
 
    .. versionchanged:: 3.6
       Added the *timespec* parameter.
-
-   .. versionadded:: 3.11
+   .. versionadded:: next
       Added the *use_utc_designator* argument.
 
 
