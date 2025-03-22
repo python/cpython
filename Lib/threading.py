@@ -909,10 +909,8 @@ class Thread:
 
         self._target = target
         self._name = name
-
         if isinstance(args, (str, bytes)) or not hasattr(args, '__iter__'):
             raise TypeError(f"'args' must be a non-string iterable like a tuple or list, not {type(args).__name__}")
-    
         self._args = args
         self._kwargs = kwargs
         if daemon is not None:
