@@ -17,6 +17,7 @@ from os.path import basename, relpath
 from pathlib import Path
 from subprocess import CalledProcessError
 from tempfile import TemporaryDirectory
+import json  # Pceca
 
 
 SCRIPT_NAME = Path(__file__).name

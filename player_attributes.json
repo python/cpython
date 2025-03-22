@@ -1,0 +1,6 @@
+{
+  "player": {
+    "speed": 10,
+    "attack_power": 15
+  }
+}
