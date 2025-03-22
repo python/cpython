@@ -60,11 +60,14 @@ struct compiler_unit {
     PyObject *u_private;            /* for private name mangling */
     PyObject *u_static_attributes;  /* for class: attributes accessed via self.X */
     PyObject *u_deferred_annotations; /* AnnAssign nodes deferred to the end of compilation */
+    PyObject *u_conditional_annotation_indices;  /* indices of annotations that are conditionally executed (or -1 for unconditional annotations) */
+    long u_next_conditional_annotation_index;  /* index of the next conditional annotation */
 
     instr_sequence *u_instr_sequence; /* codegen output */
 
     int u_nfblocks;
     int u_in_inlined_comp;
+    int u_in_conditional_block;
 
     _PyCompile_FBlockInfo u_fblock[CO_MAXBLOCKS];
 
@@ -187,6 +190,7 @@ compiler_unit_free(struct compiler_unit *u)
     Py_CLEAR(u->u_private);
     Py_CLEAR(u->u_static_attributes);
     Py_CLEAR(u->u_deferred_annotations);
+    Py_CLEAR(u->u_conditional_annotation_indices);
     PyMem_Free(u);
 }
 
@@ -620,6 +624,16 @@ _PyCompile_EnterScope(compiler *c, identifier name, int scope_type,
             return ERROR;
         }
     }
+    if (u->u_ste->ste_has_conditional_annotations) {
+        /* Cook up an implicit __conditional__annotations__ cell */
+        Py_ssize_t res;
+        assert(u->u_scope_type == COMPILE_SCOPE_CLASS || u->u_scope_type == COMPILE_SCOPE_MODULE);
+        res = _PyCompile_DictAddObj(u->u_metadata.u_cellvars, &_Py_ID(__conditional_annotations__));
+        if (res < 0) {
+            compiler_unit_free(u);
+            return ERROR;
+        }
+    }
 
     u->u_metadata.u_freevars = dictbytype(u->u_ste->ste_symbols, FREE, DEF_FREE_CLASS,
                                PyDict_GET_SIZE(u->u_metadata.u_cellvars));
@@ -649,6 +663,8 @@ _PyCompile_EnterScope(compiler *c, identifier name, int scope_type,
     }
 
     u->u_deferred_annotations = NULL;
+    u->u_conditional_annotation_indices = NULL;
+    u->u_next_conditional_annotation_index = 0;
     if (scope_type == COMPILE_SCOPE_CLASS) {
         u->u_static_attributes = PySet_New(0);
         if (!u->u_static_attributes) {
@@ -768,10 +784,13 @@ _PyCompile_TopFBlock(compiler *c)
     return &c->u->u_fblock[c->u->u_nfblocks - 1];
 }
 
-PyObject *
-_PyCompile_DeferredAnnotations(compiler *c)
+void
+_PyCompile_DeferredAnnotations(compiler *c,
+                               PyObject **deferred_annotations,
+                               PyObject **conditional_annotation_indices)
 {
-    return c->u->u_deferred_annotations;
+    *deferred_annotations = Py_XNewRef(c->u->u_deferred_annotations);
+    *conditional_annotation_indices = Py_XNewRef(c->u->u_conditional_annotation_indices);
 }
 
 static location
@@ -797,13 +816,13 @@ compiler_codegen(compiler *c, mod_ty mod)
     switch (mod->kind) {
     case Module_kind: {
         asdl_stmt_seq *stmts = mod->v.Module.body;
-        RETURN_IF_ERROR(_PyCodegen_Body(c, start_location(stmts), stmts, false));
+        RETURN_IF_ERROR(_PyCodegen_Module(c, start_location(stmts), stmts, false));
         break;
     }
     case Interactive_kind: {
         c->c_interactive = 1;
         asdl_stmt_seq *stmts = mod->v.Interactive.body;
-        RETURN_IF_ERROR(_PyCodegen_Body(c, start_location(stmts), stmts, true));
+        RETURN_IF_ERROR(_PyCodegen_Module(c, start_location(stmts), stmts, true));
         break;
     }
     case Expression_kind: {
@@ -838,7 +857,8 @@ _PyCompile_GetRefType(compiler *c, PyObject *name)
 {
     if (c->u->u_scope_type == COMPILE_SCOPE_CLASS &&
         (_PyUnicode_EqualToASCIIString(name, "__class__") ||
-         _PyUnicode_EqualToASCIIString(name, "__classdict__"))) {
+         _PyUnicode_EqualToASCIIString(name, "__classdict__") ||
+         _PyUnicode_EqualToASCIIString(name, "__conditional_annotations__"))) {
         return CELL;
     }
     PySTEntryObject *ste = c->u->u_ste;
@@ -1095,12 +1115,32 @@ _PyCompile_RevertInlinedComprehensionScopes(compiler *c, location loc,
     return SUCCESS;
 }
 
+void
+_PyCompile_EnterConditionalBlock(struct _PyCompiler *c)
+{
+    c->u->u_in_conditional_block++;
+}
+
+void
+_PyCompile_LeaveConditionalBlock(struct _PyCompiler *c)
+{
+    assert(c->u->u_in_conditional_block > 0);
+    c->u->u_in_conditional_block--;
+}
+
 int
-_PyCompile_AddDeferredAnnotaion(compiler *c, stmt_ty s)
+_PyCompile_AddDeferredAnnotation(compiler *c, stmt_ty s,
+                                 PyObject **conditional_annotation_index)
 {
     if (c->u->u_deferred_annotations == NULL) {
         c->u->u_deferred_annotations = PyList_New(0);
         if (c->u->u_deferred_annotations == NULL) {
+            return ERROR;
+        }
+    }
+    if (c->u->u_conditional_annotation_indices == NULL) {
+        c->u->u_conditional_annotation_indices = PyList_New(0);
+        if (c->u->u_conditional_annotation_indices == NULL) {
             return ERROR;
         }
     }
@@ -1113,6 +1153,24 @@ _PyCompile_AddDeferredAnnotaion(compiler *c, stmt_ty s)
         return ERROR;
     }
     Py_DECREF(ptr);
+    PyObject *index;
+    if (c->u->u_in_conditional_block) {
+        index = PyLong_FromLong(c->u->u_next_conditional_annotation_index);
+        if (index == NULL) {
+            return ERROR;
+        }
+        *conditional_annotation_index = Py_NewRef(index);
+        c->u->u_next_conditional_annotation_index++;
+    }
+    else {
+        index = PyLong_FromLong(-1);
+        if (index == NULL) {
+            return ERROR;
+        }
+    }
+    int rc = PyList_Append(c->u->u_conditional_annotation_indices, index);
+    Py_DECREF(index);
+    RETURN_IF_ERROR(rc);
     return SUCCESS;
 }
 
