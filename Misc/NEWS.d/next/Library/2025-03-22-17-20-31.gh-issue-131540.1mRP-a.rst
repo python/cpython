@@ -1,0 +1,1 @@
+Added validation in threading.Thread to ensure that 'args' is a tuple or list. Raises TypeError if a string, bytes, or non-iterable is passed.
