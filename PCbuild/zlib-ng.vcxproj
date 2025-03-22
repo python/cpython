@@ -98,7 +98,6 @@
       <PreprocessorDefinitions Condition="$(Platform) == 'Win32' or $(Platform) == 'x64'">%(PreprocessorDefinitions);X86_FEATURES;X86_HAVE_XSAVE_INTRIN;X86_SSE2;X86_SSSE3;X86_SSE42;X86_PCLMULQDQ_CRC;X86_AVX2;X86_AVX512;X86_AVX512VNNI;X86_VPCLMULQDQ_CRC</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="$(Configuration) == 'Debug'">%(PreprocessorDefinitions);ZLIB_DEBUG</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="$(PlatformToolset) == 'ClangCL'">%(PreprocessorDefinitions);HAVE_BUILTIN_CTZ</PreprocessorDefinitions>
-      <EnableEnhancedInstructionSet Condition="$(Platform) == 'Win32' or $(Platform) == 'x64'">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -155,28 +154,30 @@
       <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -mssse3 -mpclmul</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="$(zlibNgDir)\arch\x86\slide_hash_avx2.c">
-      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -mavx2</AdditionalOptions>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <ClCompile Include="$(zlibNgDir)\arch\x86\chunkset_avx2.c">
-      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -mavx2</AdditionalOptions>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <ClCompile Include="$(zlibNgDir)\arch\x86\compare256_avx2.c">
-      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -mavx2</AdditionalOptions>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <ClCompile Include="$(zlibNgDir)\arch\x86\adler32_avx2.c">
-      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -mavx2</AdditionalOptions>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <ClCompile Include="$(zlibNgDir)\arch\x86\adler32_avx512.c">
-      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -mavx512bw</AdditionalOptions>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
     </ClCompile>
     <ClCompile Include="$(zlibNgDir)\arch\x86\chunkset_avx512.c">
-      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -mavx512bw -mavx512vl -mbmi2</AdditionalOptions>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
     </ClCompile>
     <ClCompile Include="$(zlibNgDir)\arch\x86\adler32_avx512_vnni.c">
-      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -mavx512bw -mavx512vl  -mavx512vnni</AdditionalOptions>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -mavx512vnni</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="$(zlibNgDir)\arch\x86\crc32_vpclmulqdq.c">
-      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -mavx512f -mvpclmulqdq</AdditionalOptions>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions512</EnableEnhancedInstructionSet>
+      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -mvpclmulqdq</AdditionalOptions>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
