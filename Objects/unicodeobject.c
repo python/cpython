@@ -46,7 +46,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_codecs.h"        // _PyCodec_Lookup()
 #include "pycore_critical_section.h" // Py_*_CRITICAL_SECTION_SEQUENCE_FAST
 #include "pycore_format.h"        // F_LJUST
-#include "pycore_freelist.h"      // _Py_FREELIST_FREE(), _Py_FREELIST_POP()
+#include "pycore_freelist.h"      // _Py_FREELIST_FREE()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // PyInterpreterState.fs_codec
 #include "pycore_long.h"          // _PyLong_FormatWriter()

@@ -7,6 +7,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
 #include "pycore_format.h"        // F_LJUST
+#include "pycore_freelist.h"      // _Py_FREELIST_FREE()
 #include "pycore_global_objects.h"// _Py_GET_GLOBAL_OBJECT()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_long.h"          // _PyLong_DigitValue
@@ -198,7 +199,6 @@ PyBytes_FromString(const char *str)
 PyObject *
 PyBytes_FromFormatV(const char *format, va_list vargs)
 {
-    char *s;
     const char *f;
     const char *p;
     Py_ssize_t prec;
@@ -212,21 +212,29 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
        Longest 64-bit pointer representation:
        "0xffffffffffffffff\0" (19 bytes). */
     char buffer[21];
-    _PyBytesWriter writer;
 
-    _PyBytesWriter_Init(&writer);
-
-    s = _PyBytesWriter_Alloc(&writer, strlen(format));
-    if (s == NULL)
+    size_t format_len = strlen(format);
+    PyBytesWriter *writer = PyBytesWriter_Create(format_len);
+    if (writer == NULL) {
         return NULL;
-    writer.overallocate = 1;
+    }
 
-#define WRITE_BYTES(str) \
+    char *s = PyBytesWriter_Alloc(writer, format_len);
+    if (s == NULL) {
+        goto error;
+    }
+
+#define WRITE_BYTES_LEN(str, len_expr) \
     do { \
-        s = _PyBytesWriter_WriteBytes(&writer, s, (str), strlen(str)); \
-        if (s == NULL) \
+        size_t len = (len_expr); \
+        s = PyBytesWriter_Extend(writer, s, len); \
+        if (s == NULL) { \
             goto error; \
+        } \
+        memcpy(s, (str), len); \
+        s += len; \
     } while (0)
+#define WRITE_BYTES(str) WRITE_BYTES_LEN(str, strlen(str))
 
     for (f = format; *f; f++) {
         if (*f != '%') {
@@ -267,10 +275,6 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
             ++f;
         }
 
-        /* subtract bytes preallocated for the format string
-           (ex: 2 for "%s") */
-        writer.min_size -= (f - p + 1);
-
         switch (*f) {
         case 'c':
         {
@@ -281,7 +285,6 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
                                 "expects an integer in range [0; 255]");
                 goto error;
             }
-            writer.min_size++;
             *s++ = (unsigned char)c;
             break;
         }
@@ -340,9 +343,7 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
                     i++;
                 }
             }
-            s = _PyBytesWriter_WriteBytes(&writer, s, p, i);
-            if (s == NULL)
-                goto error;
+            WRITE_BYTES_LEN(p, i);
             break;
         }
 
@@ -361,28 +362,26 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
             break;
 
         case '%':
-            writer.min_size++;
             *s++ = '%';
             break;
 
         default:
-            if (*f == 0) {
-                /* fix min_size if we reached the end of the format string */
-                writer.min_size++;
-            }
-
             /* invalid format string: copy unformatted string and exit */
             WRITE_BYTES(p);
-            return _PyBytesWriter_Finish(&writer, s);
+            goto done;
         }
     }
-
 #undef WRITE_BYTES
+#undef WRITE_BYTES_LEN
 
-    return _PyBytesWriter_Finish(&writer, s);
+done:
+    if (PyBytesWriter_Truncate(writer, s) < 0) {
+        goto error;
+    }
+    return PyBytesWriter_Finish(writer);
 
- error:
-    _PyBytesWriter_Dealloc(&writer);
+error:
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
@@ -1083,16 +1082,17 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
                                 const char **first_invalid_escape)
 {
     int c;
-    char *p;
     const char *end;
-    _PyBytesWriter writer;
 
-    _PyBytesWriter_Init(&writer);
-
-    p = _PyBytesWriter_Alloc(&writer, len);
-    if (p == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(len);
+    if (writer == NULL) {
         return NULL;
-    writer.overallocate = 1;
+    }
+
+    char *p = PyBytesWriter_Alloc(writer, len);
+    if (p == NULL) {
+        goto failed;
+    }
 
     *first_invalid_escape = NULL;
 
@@ -1184,10 +1184,13 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
         }
     }
 
-    return _PyBytesWriter_Finish(&writer, p);
+    if (PyBytesWriter_Truncate(writer, p) < 0) {
+        goto failed;
+    }
+    return PyBytesWriter_Finish(writer);
 
   failed:
-    _PyBytesWriter_Dealloc(&writer);
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
@@ -3728,3 +3731,219 @@ _PyBytes_Repeat(char* dest, Py_ssize_t len_dest,
     }
 }
 
+
+// --- PyBytesWriter API -----------------------------------------------------
+
+struct PyBytesWriter {
+    char small_buffer[256];
+    PyObject *obj;
+    Py_ssize_t size;
+};
+
+
+static inline char*
+byteswriter_start(PyBytesWriter *writer)
+{
+    if (writer->obj == NULL) {
+        return writer->small_buffer;
+    }
+    else {
+        return PyBytes_AS_STRING(writer->obj);
+    }
+}
+
+
+#ifdef MS_WINDOWS
+   /* On Windows, overallocate by 50% is the best factor */
+#  define OVERALLOCATE_FACTOR 2
+#else
+   /* On Linux, overallocate by 25% is the best factor */
+#  define OVERALLOCATE_FACTOR 4
+#endif
+
+
+static inline char*
+byteswriter_alloc(PyBytesWriter *writer, Py_ssize_t size, int overallocate)
+{
+    if (writer->obj == NULL) {
+        if ((size_t)size <= sizeof(writer->small_buffer)) {
+            return writer->small_buffer;
+        }
+    }
+    else {
+        if (size <= PyBytes_GET_SIZE(writer->obj)) {
+            return PyBytes_AS_STRING(writer->obj);
+        }
+    }
+
+    if (overallocate) {
+        if (size <= (PY_SSIZE_T_MAX - size / OVERALLOCATE_FACTOR)) {
+            size += size / OVERALLOCATE_FACTOR;
+        }
+    }
+
+    if (writer->obj != NULL) {
+        if (_PyBytes_Resize(&writer->obj, size)) {
+            return NULL;
+        }
+        assert(writer->obj != NULL);
+    }
+    else {
+        writer->obj = PyBytes_FromStringAndSize(NULL, size);
+        if (writer->obj == NULL) {
+            return NULL;
+        }
+        if (writer->size) {
+            memcpy(PyBytes_AS_STRING(writer->obj),
+                   writer->small_buffer,
+                   writer->size);
+        }
+    }
+    return byteswriter_start(writer);
+}
+
+
+PyBytesWriter*
+PyBytesWriter_Create(Py_ssize_t prealloc)
+{
+    if (prealloc < 0) {
+        PyErr_SetString(PyExc_ValueError, "prealloc must be >= 0");
+        return NULL;
+    }
+
+    PyBytesWriter *writer = _Py_FREELIST_POP_MEM(bytes_writers);
+    if (writer == NULL) {
+        writer = (PyBytesWriter *)PyMem_Malloc(sizeof(PyBytesWriter));
+        if (writer == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+    }
+    writer->obj = NULL;
+    writer->size = 0;
+
+    if (prealloc >= 1) {
+        char *start = byteswriter_alloc(writer, prealloc, 0);
+        if (start == NULL) {
+            PyBytesWriter_Discard(writer);
+            return NULL;
+        }
+    }
+    return writer;
+}
+
+
+void
+PyBytesWriter_Discard(PyBytesWriter *writer)
+{
+    if (writer == NULL) {
+        return;
+    }
+
+    Py_XDECREF(writer->obj);
+    _Py_FREELIST_FREE(bytes_writers, writer, PyMem_Free);
+}
+
+
+PyObject*
+PyBytesWriter_Finish(PyBytesWriter *writer)
+{
+    Py_ssize_t final_size = writer->size;
+    writer->size = -1;
+
+    PyObject *result;
+    if (final_size == 0) {
+        result = bytes_get_empty();
+    }
+    else if (writer->obj != NULL) {
+        if (final_size != PyBytes_GET_SIZE(writer->obj)) {
+            if (_PyBytes_Resize(&writer->obj, final_size)) {
+                goto error;
+            }
+        }
+        result = writer->obj;
+        writer->obj = NULL;
+    }
+    else {
+        result = PyBytes_FromStringAndSize(writer->small_buffer, final_size);
+    }
+    PyBytesWriter_Discard(writer);
+    return result;
+
+error:
+    PyBytesWriter_Discard(writer);
+    return NULL;
+}
+
+
+int
+PyBytesWriter_Truncate(PyBytesWriter *writer, void *buf)
+{
+    char *start = byteswriter_start(writer);
+    if ((char*)buf < start || (start + writer->size < (char*)buf)) {
+        PyErr_SetString(PyExc_ValueError, "invalid buffer pointer");
+        return -1;
+    }
+    writer->size = (char*)buf - start;
+    return 0;
+}
+
+
+void*
+PyBytesWriter_Alloc(PyBytesWriter *writer, Py_ssize_t alloc)
+{
+    Py_ssize_t size = writer->size;
+    if (alloc > PY_SSIZE_T_MAX - size) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    size += alloc;
+
+    Py_ssize_t pos = writer->size;
+    char *start = byteswriter_alloc(writer, size, 1);
+    if (start == NULL) {
+        return NULL;
+    }
+    writer->size = size;
+
+    return start + pos;
+}
+
+
+void*
+PyBytesWriter_Extend(PyBytesWriter *writer, void *buf, Py_ssize_t extend)
+{
+    Py_ssize_t alloc_size = writer->size;
+    if (extend > PY_SSIZE_T_MAX - alloc_size) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    alloc_size += extend;
+
+    Py_ssize_t pos = (char*)buf - byteswriter_start(writer);
+    char *start = byteswriter_alloc(writer, alloc_size, 1);
+    if (start == NULL) {
+        return NULL;
+    }
+    writer->size = alloc_size;
+
+    return start + pos;
+}
+
+
+int
+PyBytesWriter_WriteBytes(PyBytesWriter *writer,
+                         const void *bytes, Py_ssize_t size)
+{
+    if (size < 0) {
+        size = strlen(bytes);
+    }
+
+    void *buf = PyBytesWriter_Alloc(writer, size);
+    if (buf == NULL) {
+        return -1;
+    }
+
+    memcpy(buf, bytes, size);
+    return 0;
+}
