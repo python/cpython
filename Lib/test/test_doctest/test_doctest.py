@@ -1264,33 +1264,46 @@ unexpected exception:
     >>> _colorize.COLORIZE = save_colorize
 """
     def displayhook(): r"""
-Test that changing sys.displayhook doesn't matter for doctest.
+Test changing sys.displayhook.
+
+Run with a custom displayhook:
 
     >>> import sys
-    >>> orig_displayhook = sys.displayhook
     >>> def my_displayhook(x):
     ...     print('hi!')
+    ...     sys.__displayhook__(x)
     >>> sys.displayhook = my_displayhook
+    >>> 3
+    hi!
+    3
     >>> def f():
     ...     '''
     ...     >>> 3
+    ...     hi!
     ...     3
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
-    >>> r = doctest.DocTestRunner(verbose=False).run(test)
-    >>> post_displayhook = sys.displayhook
-
-    We need to restore sys.displayhook now, so that we'll be able to test
-    results.
-
-    >>> sys.displayhook = orig_displayhook
-
-    Ok, now we can check that everything is ok.
-
-    >>> r
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    hi!
     TestResults(failed=0, attempted=1)
-    >>> post_displayhook is my_displayhook
-    True
+    >>> sys.displayhook = sys.__displayhook__
+    >>> 3
+    3
+
+Test changing displayhook in the doctest:
+
+    >>> def g():
+    ...     '''
+    ...     >>> import sys
+    ...     >>> sys.displayhook = lambda x: print('spam')
+    ...     >>> 3
+    ...     spam
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(g)[0]
+    >>> doctest.DocTestRunner(verbose=False).run(test)
+    TestResults(failed=0, attempted=3)
+    >>> 42
+    42
 """
     def optionflags(): r"""
 Tests of `DocTestRunner`'s option flag handling.
