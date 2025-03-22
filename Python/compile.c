@@ -1231,6 +1231,12 @@ _PyCompile_Metadata(compiler *c)
     return &c->u->u_metadata;
 }
 
+PyObject *
+_PyCompile_Filename(compiler *c)
+{
+    return c->c_filename;
+}
+
 // Merge *obj* with constant cache, without recursion.
 int
 _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj)

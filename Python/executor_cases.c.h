@@ -1918,13 +1918,13 @@
                     else {
                         if (oparg == CONSTANT_BUILTIN_ALL) {
                             _PyFrame_SetStackPointer(frame, stack_pointer);
-                            val = PyDict_GetItemWithError(builtins_dict, &_Py_ID(all));
+                            val = PyDict_GetItemWithError(BUILTINS(), &_Py_ID(all));
                             stack_pointer = _PyFrame_GetStackPointer(frame);
                         }
                         else {
                             if (oparg == CONSTANT_BUILTIN_ANY) {
                                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                                val = PyDict_GetItemWithError(builtins_dict, &_Py_ID(any));
+                                val = PyDict_GetItemWithError(BUILTINS(), &_Py_ID(any));
                                 stack_pointer = _PyFrame_GetStackPointer(frame);
                             }
                             else {
@@ -1934,7 +1934,7 @@
                     }
                 }
             }
-            value = PyStackRef_FromPyObjectImmortal(val);
+            value = PyStackRef_FromPyObjectNew(val);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());

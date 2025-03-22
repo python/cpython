@@ -1416,15 +1416,15 @@ dummy_func(
                 val = (PyObject*)&PyTuple_Type;
             }
             else if (oparg == CONSTANT_BUILTIN_ALL) {
-                val = PyDict_GetItemWithError(builtins_dict, &_Py_ID(all));
+                val = PyDict_GetItemWithError(BUILTINS(), &_Py_ID(all));
             }
             else if (oparg == CONSTANT_BUILTIN_ANY) {
-                val = PyDict_GetItemWithError(builtins_dict, &_Py_ID(any));
+                val = PyDict_GetItemWithError(BUILTINS(), &_Py_ID(any));
             }
             else {
                 Py_UNREACHABLE();
             }
-            value = PyStackRef_FromPyObjectImmortal(val);
+            value = PyStackRef_FromPyObjectNew(val);
         }
 
         inst(LOAD_BUILD_CLASS, ( -- bc)) {
