@@ -1,0 +1,1 @@
+Optimization of string search algorithms. Performance optimizations extended to reverse search (``str.rfind``).
