@@ -36,7 +36,7 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
                 else:
                     ptr_bases = (self, POINTER(bases[0]))
                 p = p_meta(f"POINTER({self.__name__})", ptr_bases, {})
-                ctypes._pointer_type_cache[self] = p
+                cls.__pointer_type__ = p
                 return self
 
         class p_meta(PyCSimpleType, ct_meta):
@@ -69,7 +69,7 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
                 if isinstance(self, p_meta):
                     return self
                 p = p_meta(f"POINTER({self.__name__})", (self, c_void_p), {})
-                ctypes._pointer_type_cache[self] = p
+                cls.__pointer_type__ = p
                 return self
 
         class p_meta(PyCSimpleType, ct_meta):
@@ -103,7 +103,7 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
                 else:
                     ptr_bases = (self, POINTER(bases[0]))
                 p = p_meta(f"POINTER({self.__name__})", ptr_bases, {})
-                ctypes._pointer_type_cache[self] = p
+                type(self).__pointer_type__ = p
 
         class p_meta(PyCSimpleType, ct_meta):
             pass
@@ -135,7 +135,7 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
                 if isinstance(self, p_meta):
                     return
                 p = p_meta(f"POINTER({self.__name__})", (self, c_void_p), {})
-                ctypes._pointer_type_cache[self] = p
+                type(self).__pointer_type__ = p
 
         class p_meta(PyCSimpleType, ct_meta):
             pass

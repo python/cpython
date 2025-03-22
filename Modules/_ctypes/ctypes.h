@@ -364,6 +364,7 @@ typedef struct {
     PyObject *converters;       /* tuple([t.from_param for t in argtypes]) */
     PyObject *restype;          /* CDataObject or NULL */
     PyObject *checker;
+    PyObject *pointer_type;
     PyObject *module;
     int flags;                  /* calling convention and such */
 
@@ -565,6 +566,7 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
     if (!module) {
         return NULL;
     }
+    info->pointer_type = NULL;
     info->module = Py_NewRef(module);
 
     info->initialized = 1;

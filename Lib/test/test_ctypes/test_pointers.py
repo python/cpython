@@ -3,7 +3,7 @@ import ctypes
 import sys
 import unittest
 from ctypes import (CDLL, CFUNCTYPE, Structure,
-                    POINTER, pointer, _Pointer, _pointer_type_cache,
+                    POINTER, pointer, _Pointer,
                     byref, sizeof,
                     c_void_p, c_char_p,
                     c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
@@ -141,8 +141,6 @@ class PointersTestCase(unittest.TestCase):
 
         pt.contents.c = 33
 
-        del _pointer_type_cache[Table]
-
     def test_basic(self):
         p = pointer(c_int(42))
         # Although a pointer can be indexed, it has no length
@@ -210,16 +208,10 @@ class PointersTestCase(unittest.TestCase):
         LargeNamedType = type('T' * 2 ** 25, (Structure,), {})
         self.assertTrue(POINTER(LargeNamedType))
 
-        # to not leak references, we must clean _pointer_type_cache
-        del _pointer_type_cache[LargeNamedType]
-
     def test_pointer_type_str_name(self):
         large_string = 'T' * 2 ** 25
         P = POINTER(large_string)
         self.assertTrue(P)
-
-        # to not leak references, we must clean _pointer_type_cache
-        del _pointer_type_cache[id(P)]
 
     def test_abstract(self):
         self.assertRaises(TypeError, _Pointer.set_type, 42)

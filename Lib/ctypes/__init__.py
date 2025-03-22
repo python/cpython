@@ -266,6 +266,28 @@ class c_bool(_SimpleCData):
 
 from _ctypes import POINTER, pointer, _pointer_type_cache
 
+CType_Type = _Pointer.__base__
+
+def POINTER(cls):
+    if cls is None:
+        return c_void_p
+    try:
+        pt = cls.__pointer_type__
+        if pt is not None:
+            return pt
+    except AttributeError:
+        pass
+    if isinstance(cls, str):
+        return type(f'LP_{cls}', (_Pointer,), {})
+    if issubclass(cls, CType_Type):
+        return type(f'LP_{cls.__name__}', (_Pointer,), {'_type_': cls})
+
+    raise TypeError(f'must be a ctypes-like type: {cls}')
+
+def pointer(arg):
+    typ = POINTER(type(arg))
+    return typ(arg)
+
 class c_wchar_p(_SimpleCData):
     _type_ = "Z"
     def __repr__(self):
@@ -319,11 +341,9 @@ def SetPointerType(pointer, cls):
     warnings._deprecated("ctypes.SetPointerType", remove=(3, 15))
     if _pointer_type_cache.get(cls, None) is not None:
         raise RuntimeError("This type already exists in the cache")
-    if id(pointer) not in _pointer_type_cache:
-        raise RuntimeError("What's this???")
+
     pointer.set_type(cls)
     _pointer_type_cache[cls] = pointer
-    del _pointer_type_cache[id(pointer)]
 
 def ARRAY(typ, len):
     return typ * len
