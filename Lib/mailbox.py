@@ -895,15 +895,31 @@ class _mboxMMDF(_singlefileMailbox):
 class mbox(_mboxMMDF):
     """A classic mbox mailbox."""
 
+    # This is the full syntax, i.e. From sender asctime[ moreinfo]
+    DAY_RE = b' (?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)'
+    MON_RE = b' (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)'
+    DTY_RE = b' [ 123]\\d \\d\\d:\\d\\d:\\d\\d \\d{4}' # day, time, year
+    FULL_RE = b'From \\S+' + DAY_RE + MON_RE + DTY_RE + b'( .+)?' + linesep + b'\\Z'
+    # we capture the optional moreinfo group so we can check for lines that end in the date
+
     _mangle_from_ = True
 
     # All messages must end in a newline character, and
     # _post_message_hooks outputs an empty line between messages.
     _append_newline = True
 
-    def __init__(self, path, factory=None, create=True):
+    def __init__(self, path, factory=None, create=True, from_matcher=None):
         """Initialize an mbox mailbox."""
         self._message_factory = mboxMessage
+        if from_matcher is None:
+            # default to original matcher
+            self._from_matcher = lambda line: line.startswith(b'From ')
+        elif from_matcher == 'full': # From sender date[ moreinfo]
+            import re
+            regex = re.compile(self.FULL_RE) # compile once
+            self._from_matcher = lambda line: re.match(regex, line)
+        else: # assume it is a boolean function with one parameter
+            self._from_matcher = from_matcher
         _mboxMMDF.__init__(self, path, factory, create)
 
     def _post_message_hook(self, f):
@@ -918,7 +934,7 @@ class mbox(_mboxMMDF):
         while True:
             line_pos = self._file.tell()
             line = self._file.readline()
-            if line.startswith(b'From '):
+            if self._from_matcher(line):
                 if len(stops) < len(starts):
                     if last_was_empty:
                         stops.append(line_pos - len(linesep))
