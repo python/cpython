@@ -1,0 +1,2 @@
+Fixed an issue with :meth:`~class.__subclasscheck__` where it can be called within :meth:`~object.__init_subclass__` before the subclass is initialized with the necessary ABC cache.
+Patch by Ben Hsing
