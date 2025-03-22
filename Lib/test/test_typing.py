@@ -7114,6 +7114,24 @@ class GetTypeHintsTests(BaseTestCase):
         right_hints = get_type_hints(t.add_right, globals(), locals())
         self.assertEqual(right_hints['node'], Node[T])
 
+    def test_get_type_hints_preserve_generic_alias_subclasses(self):
+        # https://github.com/python/cpython/issues/130870
+        # A real world example of this is `collections.abc.Callable`. When parameterized,
+        # the result is a subclass of `types.GenericAlias`.
+        class MyAlias(types.GenericAlias):
+            pass
+
+        class MyClass:
+            def __class_getitem__(cls, args):
+                return MyAlias(cls, args)
+
+        # Using a forward reference is important, otherwise it works as expected.
+        # `y` tests that the `GenericAlias` subclass is preserved when stripping `Annotated`.
+        def func(x: MyClass['int'], y: MyClass[Annotated[int, ...]]): ...
+
+        assert isinstance(get_type_hints(func)['x'], MyAlias)
+        assert isinstance(get_type_hints(func)['y'], MyAlias)
+
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
