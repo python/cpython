@@ -1536,7 +1536,7 @@ Instance methods:
    and ``weekday``. The same as ``self.date().isocalendar()``.
 
 
-.. method:: datetime.isoformat(sep='T', timespec='auto')
+.. method:: datetime.isoformat(sep='T', timespec='auto', use_utc_designator=False)
 
    Return a string representing the date and time in ISO 8601 format:
 
@@ -1600,9 +1600,14 @@ Instance methods:
       >>> dt.isoformat(timespec='microseconds')
       '2015-01-01T12:30:59.000000'
 
-   .. versionchanged:: 3.6
-      Added the *timespec* parameter.
+   If the optional argument *use_utc_designator* is set to :const:`True` and
+   :meth:`tzname` returns exactly ``"UTC"``, then "Z" will be given as the UTC
+   offset in the formatted string.
 
+   .. versionadded:: 3.6
+      Added the *timespec* argument.
+   .. versionadded:: 3.11
+      Added the *use_utc_designator* argument.
 
 .. method:: datetime.__str__()
 
@@ -1954,7 +1959,7 @@ Instance methods:
       Added the *fold* parameter.
 
 
-.. method:: time.isoformat(timespec='auto')
+.. method:: time.isoformat(timespec='auto', use_utc_designator=False)
 
    Return a string representing the time in ISO 8601 format, one of:
 
@@ -1983,9 +1988,13 @@ Instance methods:
 
    :exc:`ValueError` will be raised on an invalid *timespec* argument.
 
+   If the optional argument *use_utc_designator* is set to :const:`True` and
+   :meth:`tzname` returns exactly ``"UTC"``, then "Z" will be given as the UTC
+   offset in the formatted string.
+
    Example::
 
-      >>> from datetime import time
+      >>> from datetime import time, timezone
       >>> time(hour=12, minute=34, second=56, microsecond=123456).isoformat(timespec='minutes')
       '12:34'
       >>> dt = time(hour=12, minute=34, second=56, microsecond=0)
@@ -1993,9 +2002,17 @@ Instance methods:
       '12:34:56.000000'
       >>> dt.isoformat(timespec='auto')
       '12:34:56'
+      >>> dt = time(12, 30, 59, tzinfo=timezone.utc)
+      >>> dt.isoformat()
+      '12:30:59+00:00'
+      >>> dt.isoformat(use_utc_designator=True)
+      '12:30:59Z'
 
    .. versionchanged:: 3.6
       Added the *timespec* parameter.
+
+   .. versionadded:: 3.11
+      Added the *use_utc_designator* argument.
 
 
 .. method:: time.__str__()
