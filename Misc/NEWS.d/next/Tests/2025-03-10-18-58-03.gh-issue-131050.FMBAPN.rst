@@ -1,0 +1,1 @@
+``test_ssl.test_dh_params`` is skipped if the underlying TLS library does not support finite-field ephemeral Diffie-Hellman.
