@@ -1542,6 +1542,36 @@ code_positionsiterator(PyObject *self, PyObject* Py_UNUSED(args))
     return (PyObject*)pi;
 }
 
+static PyObject*
+code_offset_to_position(PyObject *self, PyObject* offset)
+{
+    PyCodeObject *code = (PyCodeObject*)self;
+    int addrq;
+    int err = PyLong_AsInt32(offset, &addrq);
+    if (err != 0) {
+        return NULL;
+    }
+    positionsiterator pi;
+    pi.pi_code = (PyCodeObject*)Py_NewRef(code);
+    _PyCode_InitAddressRange(code, &pi.pi_range);
+    pi.pi_offset = pi.pi_range.ar_end;
+    while (pi.pi_range.ar_end <= addrq) {
+        if (pi.pi_offset >= pi.pi_range.ar_end) {
+            assert(pi.pi_offset == pi.pi_range.ar_end);
+            if (at_end(&pi.pi_range)) {
+                return NULL;
+            }
+            advance_with_locations(&pi.pi_range, &pi.pi_endline, &pi.pi_column, &pi.pi_endcolumn);
+        }
+        pi.pi_offset += 2;
+    }
+    return Py_BuildValue("(O&O&O&O&)",
+        _source_offset_converter, &pi.pi_range.ar_line,
+        _source_offset_converter, &pi.pi_endline,
+        _source_offset_converter, &pi.pi_column,
+        _source_offset_converter, &pi.pi_endcolumn);
+}
+
 
 /******************
  * "extra" frame eval info (see PEP 523)
@@ -2385,6 +2415,47 @@ code__varname_from_oparg_impl(PyCodeObject *self, int oparg)
     return Py_NewRef(name);
 }
 
+
+/*[clinic input]
+code.__get_local_events__ -> int
+
+    tool: int
+
+[clinic start generated code]*/
+
+static int
+code___get_local_events___impl(PyCodeObject *self, int tool)
+/*[clinic end generated code: output=e66c1af8a8c6c2aa input=660474646897971f]*/
+{
+    _PyMonitoringEventSet events;
+    int err = _PyMonitoring_GetLocalEvents((PyObject *)self, tool, &events);
+    if (err != 0) {
+        return err;
+    }
+    return events;
+}
+
+
+/*[clinic input]
+code.__set_local_events__
+
+    tool: int
+    events: int
+
+[clinic start generated code]*/
+
+static PyObject *
+code___set_local_events___impl(PyCodeObject *self, int tool, int events)
+/*[clinic end generated code: output=d80a9ef8386753f7 input=68cdcca03494b242]*/
+{
+    int err = _PyMonitoring_SetLocalEvents((PyObject *)self, tool, events);
+    if (err < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
 /* XXX code objects need to participate in GC? */
 
 static struct PyMethodDef code_methods[] = {
@@ -2396,6 +2467,9 @@ static struct PyMethodDef code_methods[] = {
     CODE__VARNAME_FROM_OPARG_METHODDEF
     {"__replace__", _PyCFunction_CAST(code_replace), METH_FASTCALL|METH_KEYWORDS,
      PyDoc_STR("__replace__($self, /, **changes)\n--\n\nThe same as replace().")},
+    {"co_offset_to_position", code_offset_to_position, METH_O},
+    CODE___GET_LOCAL_EVENTS___METHODDEF
+    CODE___SET_LOCAL_EVENTS___METHODDEF
     {NULL, NULL}                /* sentinel */
 };
 
@@ -2803,6 +2877,9 @@ _PyCode_Fini(PyInterpreterState *interp)
     _PyIndexPool_Fini(&interp->tlbc_indices);
 #endif
 }
+
+
+
 
 #ifdef Py_GIL_DISABLED
 

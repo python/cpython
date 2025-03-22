@@ -1412,7 +1412,6 @@ class TestLocalEvents(MonitoringTestBase, unittest.TestCase):
             for recorder in recorders:
                 sys.monitoring.register_callback(tool, recorder.event_type, None)
 
-
     def test_simple(self):
 
         def func1():
@@ -1460,6 +1459,27 @@ class TestLocalEvents(MonitoringTestBase, unittest.TestCase):
     def test_set_non_local_event(self):
         with self.assertRaises(ValueError):
             sys.monitoring.set_local_events(TEST_TOOL, just_call.__code__, E.RAISE)
+
+
+    def test_code_like(self):
+        class CodeLike:
+
+            def __init__(self):
+                self.events = [ 0 ] * 8
+
+            def __get_local_events__(self, tool):
+                return self.events[tool]
+
+            def __set_local_events__(self, tool, events):
+                self.events[tool] = events
+
+        codelike = CodeLike()
+        tool = TEST_TOOL
+        for events in ((E.LINE | E.PY_START), (E.BRANCH_LEFT | E.BRANCH_RIGHT), 0):
+            sys.monitoring.set_local_events(tool, codelike, events)
+            self.assertEqual(codelike.__get_local_events__(tool), events)
+            self.assertEqual(sys.monitoring.get_local_events(tool, codelike), events)
+
 
 def line_from_offset(code, offset):
     for start, end, line in code.co_lines():
@@ -2062,7 +2082,13 @@ class TestUninitialized(unittest.TestCase, MonitoringTestBase):
         pass
 
     def test_get_local_events_uninitialized(self):
-        self.assertEqual(sys.monitoring.get_local_events(TEST_TOOL, self.f.__code__), 0)
+        with self.assertRaises(ValueError):
+            sys.monitoring.get_local_events(TEST_TOOL, self.f.__code__)
+        sys.monitoring.use_tool_id(TEST_TOOL, "test unitialized")
+        try:
+            self.assertEqual(sys.monitoring.get_local_events(TEST_TOOL, self.f.__code__), 0)
+        finally:
+            sys.monitoring.free_tool_id(TEST_TOOL)
 
 class TestRegressions(MonitoringTestBase, unittest.TestCase):
 
