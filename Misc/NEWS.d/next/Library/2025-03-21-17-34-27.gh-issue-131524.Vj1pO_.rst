@@ -1,0 +1,2 @@
+Add help message to :mod:`platform` command-line interface. Contributed by
+Harry Lees.
