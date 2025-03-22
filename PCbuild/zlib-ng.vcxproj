@@ -149,7 +149,7 @@
       <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -mssse3</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="$(zlibNgDir)\arch\x86\adler32_sse42.c">
-      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -mssse3</AdditionalOptions>
+      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -msse4.2</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="$(zlibNgDir)\arch\x86\crc32_pclmulqdq.c">
       <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -mssse3 -mpclmul</AdditionalOptions>
