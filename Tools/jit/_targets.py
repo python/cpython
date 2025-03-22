@@ -44,6 +44,15 @@ class _Target(typing.Generic[_S, _R]):
     verbose: bool = False
     known_symbols: dict[str, int] = dataclasses.field(default_factory=dict)
 
+    def _get_nop(self) -> bytes:
+        if re.fullmatch(r"aarch64-.*", self.triple):
+            nop = b"\x1f\x20\x03\xD5"
+        elif re.fullmatch(r"x86_64-.*|i686.*", self.triple):
+            nop = b"\x90"
+        else:
+            raise ValueError(f"NOP not defined for {self.triple}")
+        return nop
+
     def _compute_digest(self, out: pathlib.Path) -> str:
         hasher = hashlib.sha256()
         hasher.update(self.triple.encode())
@@ -172,7 +181,9 @@ class _Target(typing.Generic[_S, _R]):
         stencil_groups = {task.get_name(): task.result() for task in tasks}
         for stencil_group in stencil_groups.values():
             stencil_group.process_relocations(
-                known_symbols=self.known_symbols, alignment=self.alignment
+                known_symbols=self.known_symbols,
+                alignment=self.alignment,
+                nop=self._get_nop(),
             )
         return stencil_groups
 

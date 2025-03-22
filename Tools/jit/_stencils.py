@@ -209,7 +209,24 @@ class Stencil:
             self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
         self.body.extend([0] * padding)
 
-    def remove_jump(self, *, alignment: int = 1) -> None:
+    def add_nops(self, nop: bytes, alignment: int) -> None:
+        """Add NOPs until there is alignment. Fail if it is not possible."""
+        offset = len(self.body)
+        nop_size = len(nop)
+
+        # Calculate the gap to the next multiple of alignment.
+        gap = -offset % alignment
+        if gap:
+            if gap % nop_size == 0:
+                count = gap // nop_size
+                self.body.extend(nop * count)
+            else:
+                raise ValueError(
+                    f"Cannot add nops of size '{nop_size}' to a body with "
+                    f"offset '{offset}' to align with '{alignment}'"
+                )
+
+    def remove_jump(self) -> None:
         """Remove a zero-length continuation jump, if it exists."""
         hole = max(self.holes, key=lambda hole: hole.offset)
         match hole:
@@ -244,7 +261,7 @@ class Stencil:
                 jump = b"\x00\x00\x00\x14"
             case _:
                 return
-        if self.body[offset:] == jump and offset % alignment == 0:
+        if self.body[offset:] == jump:
             self.body = self.body[:offset]
             self.holes.remove(hole)
 
@@ -266,10 +283,7 @@ class StencilGroup:
     _trampolines: set[int] = dataclasses.field(default_factory=set, init=False)
 
     def process_relocations(
-        self,
-        known_symbols: dict[str, int],
-        *,
-        alignment: int = 1,
+        self, known_symbols: dict[str, int], *, alignment: int = 1, nop: bytes = b""
     ) -> None:
         """Fix up all GOT and internal relocations for this stencil group."""
         for hole in self.code.holes.copy():
@@ -289,8 +303,8 @@ class StencilGroup:
                 self._trampolines.add(ordinal)
                 hole.addend = ordinal
                 hole.symbol = None
-        self.code.remove_jump(alignment=alignment)
-        self.code.pad(alignment)
+        self.code.remove_jump()
+        self.code.add_nops(nop=nop, alignment=alignment)
         self.data.pad(8)
         for stencil in [self.code, self.data]:
             for hole in stencil.holes:
