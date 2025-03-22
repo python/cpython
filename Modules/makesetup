@@ -92,7 +92,12 @@ for i in ${*-Setup}
 do
 	case $i in
 	-n)	echo '*noobjects*';;
-	*)	echo '*doconfig*'; cat "$i";;
+	*)
+        echo '*doconfig*'; cat "$i"
+        if [ "$(tail -c 1 $i)" != "" ]; then
+            echo ""
+        fi
+        ;;
 	esac
 done |
 sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
