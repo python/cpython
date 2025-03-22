@@ -266,7 +266,7 @@ class c_bool(_SimpleCData):
 
 from _ctypes import POINTER, pointer, _pointer_type_cache
 
-CType_Type = _Pointer.__base__
+_CType_Type = type(_Pointer).__base__
 
 def POINTER(cls):
     if cls is None:
