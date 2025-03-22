@@ -1,5 +1,6 @@
 """Test the datetime module."""
 import bisect
+import contextlib
 import copy
 import decimal
 import io
@@ -20,7 +21,7 @@ from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
 from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
-from test.support import script_helper, warnings_helper
+from test.support import os_helper, script_helper, warnings_helper
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -6691,6 +6692,17 @@ class ZoneInfoTest(unittest.TestCase):
                 ldt = tz.fromutc(udt.replace(tzinfo=tz))
                 self.assertEqual(ldt.fold, 0)
 
+    @classmethod
+    @contextlib.contextmanager
+    def _change_tz(cls, new_tzinfo):
+        try:
+            with os_helper.EnvironmentVarGuard() as env:
+                env["TZ"] = new_tzinfo
+                _time.tzset()
+                yield
+        finally:
+            _time.tzset()
+
     @unittest.skipUnless(
         hasattr(_time, "tzset"), "time module has no attribute tzset"
     )
@@ -6705,10 +6717,7 @@ class ZoneInfoTest(unittest.TestCase):
                 self.zonename.startswith('right/')):
             self.skipTest("Skipping %s" % self.zonename)
         tz = self.tz
-        TZ = os.environ.get('TZ')
-        os.environ['TZ'] = self.zonename
-        try:
-            _time.tzset()
+        with self._change_tz(self.zonename):
             for udt, shift in tz.transitions():
                 if udt.year >= 2037:
                     # System support for times around the end of 32-bit time_t
@@ -6716,7 +6725,7 @@ class ZoneInfoTest(unittest.TestCase):
                     break
                 s0 = (udt - datetime(1970, 1, 1)) // SEC
                 ss = shift // SEC   # shift seconds
-                for x in [-40 * 3600, -20*3600, -1, 0,
+                for x in [-40 * 3600, -20 * 3600, -1, 0,
                           ss - 1, ss + 20 * 3600, ss + 40 * 3600]:
                     s = s0 + x
                     sdt = datetime.fromtimestamp(s)
@@ -6735,12 +6744,6 @@ class ZoneInfoTest(unittest.TestCase):
                     utc0 = dt.astimezone(timezone.utc)
                     utc1 = dt.replace(fold=1).astimezone(timezone.utc)
                     self.assertEqual(utc0, utc1 + timedelta(0, ss))
-        finally:
-            if TZ is None:
-                del os.environ['TZ']
-            else:
-                os.environ['TZ'] = TZ
-            _time.tzset()
 
 
 class ZoneInfoCompleteTest(unittest.TestSuite):
