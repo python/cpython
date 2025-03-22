@@ -657,7 +657,6 @@ _PyThreadState_PopCStackRef(PyThreadState *tstate, _PyCStackRef *ref)
 #ifdef Py_GIL_DISABLED
     _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
     assert(tstate_impl->c_stack_refs == ref);
-    _PyCStackRef *ref = tstate_impl->c_stack_refs;
     tstate_impl->c_stack_refs = ref->next;
 #endif
     PyStackRef_XCLOSE(ref->ref);
