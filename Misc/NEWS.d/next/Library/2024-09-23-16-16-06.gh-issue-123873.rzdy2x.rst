@@ -1,0 +1,1 @@
+:attr:`sqlite3.threadsafety` property temporarily aligned with effective module capabilities. Currently, only the module can be used by multiple threads.
