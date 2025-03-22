@@ -1,4 +1,0 @@
-For cross builds, there is now support for having a different install
-``prefix`` than the ``host_prefix`` used by ``getpath.py``. This is set to ``/`` by
-default for Emscripten, on other platforms the default behavior is the same
-as before.

@@ -549,7 +549,6 @@ class TestSupport(unittest.TestCase):
                 self.check_options(opts, 'optim_args_from_interpreter_flags')
 
     @unittest.skipIf(support.is_apple_mobile, "Unstable on Apple Mobile")
-    @unittest.skipIf(support.is_emscripten, "Unstable in Emscripten")
     @unittest.skipIf(support.is_wasi, "Unavailable on WASI")
     def test_fd_count(self):
         # We cannot test the absolute value of fd_count(): on old Linux kernel
@@ -578,7 +577,7 @@ class TestSupport(unittest.TestCase):
                                  'Warning -- a\nWarning -- b\n')
 
     def test_has_strftime_extensions(self):
-        if support.is_emscripten or sys.platform == "win32":
+        if sys.platform == "win32":
             self.assertFalse(support.has_strftime_extensions)
         else:
             self.assertTrue(support.has_strftime_extensions)
@@ -744,6 +743,21 @@ class TestSupport(unittest.TestCase):
         ):
             self.assertEqual(support.get_signal_name(exitcode), expected,
                              exitcode)
+
+    def test_linked_to_musl(self):
+        linked = support.linked_to_musl()
+        self.assertIsNotNone(linked)
+        if support.is_wasi or support.is_emscripten:
+            self.assertTrue(linked)
+        # The value is cached, so make sure it returns the same value again.
+        self.assertIs(linked, support.linked_to_musl())
+        # The unlike libc, the musl version is a triple.
+        if linked:
+            self.assertIsInstance(linked, tuple)
+            self.assertEqual(3, len(linked))
+            for v in linked:
+                self.assertIsInstance(v, int)
+
 
     # XXX -follows a list of untested API
     # make_legacy_pyc

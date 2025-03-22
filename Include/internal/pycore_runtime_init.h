@@ -8,11 +8,15 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_structs.h"
 #include "pycore_ceval_state.h"   // _PyEval_RUNTIME_PERF_INIT
 #include "pycore_debug_offsets.h"  // _Py_DebugOffsets_INIT()
+#include "pycore_dtoa.h"          // _dtoa_state_INIT()
 #include "pycore_faulthandler.h"  // _faulthandler_runtime_state_INIT
 #include "pycore_floatobject.h"   // _py_float_format_unknown
 #include "pycore_function.h"
+#include "pycore_hamt.h"          // _PyHamt_BitmapNode_Type
+#include "pycore_import.h"        // IMPORTS_INIT
 #include "pycore_object.h"        // _PyObject_HEAD_INIT
 #include "pycore_obmalloc_init.h" // _obmalloc_global_state_INIT
 #include "pycore_parser.h"        // _parser_runtime_state_INIT
@@ -118,6 +122,9 @@ extern PyTypeObject _PyExc_MemoryError;
     { \
         .id_refcount = -1, \
         ._whence = _PyInterpreterState_WHENCE_NOTSET, \
+        .threads = { \
+            .preallocated = &(INTERP)._initial_thread, \
+        }, \
         .imports = IMPORTS_INIT, \
         .ceval = { \
             .recursion_limit = Py_DEFAULT_RECURSION_LIMIT, \
@@ -134,6 +141,7 @@ extern PyTypeObject _PyExc_MemoryError;
                 { .threshold = 0, }, \
             }, \
             .work_to_do = -5000, \
+            .phase = GC_PHASE_MARK, \
         }, \
         .qsbr = { \
             .wr_seq = QSBR_INITIAL, \
@@ -167,6 +175,8 @@ extern PyTypeObject _PyExc_MemoryError;
 #define _PyThreadStateImpl_INIT \
     { \
         .base = _PyThreadState_INIT, \
+        /* The thread and the interpreter's linked list hold a reference */ \
+        .refcount = 2, \
     }
 
 #define _PyThreadState_INIT \

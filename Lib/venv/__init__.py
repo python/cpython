@@ -103,8 +103,6 @@ class EnvBuilder:
         vars = {
             'base': env_dir,
             'platbase': env_dir,
-            'installed_base': env_dir,
-            'installed_platbase': env_dir,
         }
         return sysconfig.get_path(name, scheme='venv', vars=vars)
 
@@ -175,8 +173,19 @@ class EnvBuilder:
         context.python_dir = dirname
         context.python_exe = exename
         binpath = self._venv_path(env_dir, 'scripts')
-        incpath = self._venv_path(env_dir, 'include')
         libpath = self._venv_path(env_dir, 'purelib')
+
+        # PEP 405 says venvs should create a local include directory.
+        # See https://peps.python.org/pep-0405/#include-files
+        # XXX: This directory is not exposed in sysconfig or anywhere else, and
+        #      doesn't seem to be utilized by modern packaging tools. We keep it
+        #      for backwards-compatibility, and to follow the PEP, but I would
+        #      recommend against using it, as most tooling does not pass it to
+        #      compilers. Instead, until we standardize a site-specific include
+        #      directory, I would recommend installing headers as package data,
+        #      and providing some sort of API to get the include directories.
+        #      Example: https://numpy.org/doc/2.1/reference/generated/numpy.get_include.html
+        incpath = os.path.join(env_dir, 'Include' if os.name == 'nt' else 'include')
 
         context.inc_path = incpath
         create_if_needed(incpath)

@@ -1,7 +1,6 @@
 """
 Tests PyConfig_Get() and PyConfig_Set() C API (PEP 741).
 """
-import os
 import sys
 import sysconfig
 import types
@@ -109,6 +108,10 @@ class CAPITests(unittest.TestCase):
         if Py_STATS:
             options.extend((
                 ("_pystats", bool, None),
+            ))
+        if support.is_apple:
+            options.extend((
+                ("use_system_logger", bool, None),
             ))
 
         for name, option_type, sys_attr in options:

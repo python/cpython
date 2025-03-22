@@ -1,2 +1,0 @@
-Allow the *initial* parameter of :func:`functools.reduce` to be passed as a keyword argument.
-Patch by Sayandip Dutta.

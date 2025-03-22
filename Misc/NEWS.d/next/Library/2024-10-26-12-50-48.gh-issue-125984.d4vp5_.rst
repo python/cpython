@@ -1,3 +1,0 @@
-Fix use-after-free crashes on :class:`asyncio.Future` objects for which the
-underlying event loop implements an evil :meth:`~object.__getattribute__`.
-Reported by Nico-Posada. Patch by Bénédikt Tran.

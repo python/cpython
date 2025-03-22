@@ -7,11 +7,14 @@ on:
         required: true
         type: string
 
+env:
+  FORCE_COLOR: 1
+
 jobs:
-  build_wasi_reusable:
+  build-wasi-reusable:
     name: 'build and test'
-    timeout-minutes: 60
     runs-on: ubuntu-24.04
+    timeout-minutes: 60
     env:
       WASMTIME_VERSION: 22.0.0
       WASI_SDK_VERSION: 24
@@ -20,6 +23,8 @@ jobs:
       CROSS_BUILD_WASI: cross-build/wasm32-wasip1
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     # No problem resolver registered as one doesn't currently exist for Clang.
     - name: "Install wasmtime"
       uses: bytecodealliance/actions/wasmtime/setup@v1
@@ -34,9 +39,9 @@ jobs:
     - name: "Install WASI SDK"  # Hard-coded to x64.
       if: steps.cache-wasi-sdk.outputs.cache-hit != 'true'
       run: |
-        mkdir ${{ env.WASI_SDK_PATH }} && \
-        curl -s -S --location https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${{ env.WASI_SDK_VERSION }}/wasi-sdk-${{ env.WASI_SDK_VERSION }}.0-x86_64-linux.tar.gz | \
-        tar --strip-components 1 --directory ${{ env.WASI_SDK_PATH }} --extract --gunzip
+        mkdir "${WASI_SDK_PATH}" && \
+        curl -s -S --location "https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_SDK_VERSION}/wasi-sdk-${WASI_SDK_VERSION}.0-x86_64-linux.tar.gz" | \
+        tar --strip-components 1 --directory "${WASI_SDK_PATH}" --extract --gunzip
     - name: "Configure ccache action"
       uses: hendrikmuhs/ccache-action@v1.2
       with:
@@ -48,6 +53,8 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.x'
+    - name: "Runner image version"
+      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: "Restore Python build config.cache"
       uses: actions/cache@v4
       with:
@@ -55,7 +62,7 @@ jobs:
         # Include env.pythonLocation in key to avoid changes in environment when setup-python updates Python.
         # Include the hash of `Tools/wasm/wasi.py` as it may change the environment variables.
         # (Make sure to keep the key in sync with the other config.cache step below.)
-        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ env.WASI_SDK_VERSION }}-${{ env.WASMTIME_VERSION }}-${{ inputs.config_hash }}-${{ hashFiles('Tools/wasm/wasi.py') }}-${{ env.pythonLocation }}
+        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ env.WASI_SDK_VERSION }}-${{ env.WASMTIME_VERSION }}-${{ inputs.config_hash }}-${{ hashFiles('Tools/wasm/wasi.py') }}-${{ env.pythonLocation }}
     - name: "Configure build Python"
       run: python3 Tools/wasm/wasi.py configure-build-python -- --config-cache --with-pydebug
     - name: "Make build Python"
@@ -65,13 +72,13 @@ jobs:
       with:
         path: ${{ env.CROSS_BUILD_WASI }}/config.cache
         # Should be kept in sync with the other config.cache step above.
-        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ env.WASI_SDK_VERSION }}-${{ env.WASMTIME_VERSION }}-${{ inputs.config_hash }}-${{ hashFiles('Tools/wasm/wasi.py') }}-${{ env.pythonLocation }}
+        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ env.WASI_SDK_VERSION }}-${{ env.WASMTIME_VERSION }}-${{ inputs.config_hash }}-${{ hashFiles('Tools/wasm/wasi.py') }}-${{ env.pythonLocation }}
     - name: "Configure host"
       # `--with-pydebug` inferred from configure-build-python
       run: python3 Tools/wasm/wasi.py configure-host -- --config-cache
     - name: "Make host"
       run: python3 Tools/wasm/wasi.py make-host
     - name: "Display build info"
-      run: make --directory ${{ env.CROSS_BUILD_WASI }} pythoninfo
+      run: make --directory "${CROSS_BUILD_WASI}" pythoninfo
     - name: "Test"
-      run: make --directory ${{ env.CROSS_BUILD_WASI }} test
+      run: make --directory "${CROSS_BUILD_WASI}" test
