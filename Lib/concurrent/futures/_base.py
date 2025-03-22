@@ -625,20 +625,26 @@ class Executor(object):
         # before the first iterator value is required.
         def result_iterator():
             try:
-                # reverse to keep finishing order
+                # Reverse so that the next (FIFO) future is on the right
                 fs.reverse()
+                # Careful not to keep references to futures or results
                 while fs:
+                    # Wait for the next result
+                    if timeout is None:
+                        _result_or_cancel(fs[-1])
+                    else:
+                        _result_or_cancel(fs[-1], end_time - time.monotonic())
+
+                    # Buffer next task
                     if (
                         buffersize
                         and (executor := executor_weakref())
                         and (args := next(zipped_iterables, None))
                     ):
                         fs.appendleft(executor.submit(fn, *args))
-                    # Careful not to keep a reference to the popped future
-                    if timeout is None:
-                        yield _result_or_cancel(fs.pop())
-                    else:
-                        yield _result_or_cancel(fs.pop(), end_time - time.monotonic())
+
+                    # Yield the awaited result
+                    yield fs.pop().result()
             finally:
                 for future in fs:
                     future.cancel()
