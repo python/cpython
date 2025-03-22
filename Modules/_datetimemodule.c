@@ -1722,8 +1722,9 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
     assert(buflen >= 1);
 
     if (use_utc_designator) {
-        PyObject *name = PyObject_CallMethod(tzinfo, "tzname", "O", tzinfoarg);
-        if (PyUnicode_Check(name) && strcmp("UTC", PyUnicode_AsUTF8(name))) {
+        PyObject* name = PyObject_CallMethod(tzinfo, "tzname", "O", tzinfoarg);
+
+        if (PyUnicode_Check(name) && strcmp("UTC", PyUnicode_AsUTF8(name)) == 0) {
             PyOS_snprintf(buf, buflen, "Z");
             return 0;
         }
