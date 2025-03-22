@@ -139,7 +139,9 @@ PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame)
     return _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
 }
 
-int
+// NOTE: We allow racy accesses to the instruction pointer from other threads
+// for sys._current_frames() and similar APIs.
+int _Py_NO_SANITIZE_THREAD
 PyUnstable_InterpreterFrame_GetLine(_PyInterpreterFrame *frame)
 {
     int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
