@@ -3535,7 +3535,7 @@ date_repr(PyObject *op)
 }
 
 static PyObject *
-date_isoformat(PyObject *self, PyObject *args, PyObject *kw)
+date_isoformat(PyObject *op, PyObject *args, PyObject *kw)
 {
     int basic = 0;
     static char *keywords[] = {"basic", NULL};
