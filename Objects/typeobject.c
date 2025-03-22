@@ -5811,6 +5811,7 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
         if (error == -1) {
             PyErr_Clear();
         }
+        *out = PyStackRef_NULL;
         return 0;
     }
 
