@@ -1111,13 +1111,13 @@ class date:
         return str(self)
 
     def isoformat(self, basic=False):
-        """Return the date formatted according to ISO.
+        """Return the date formatted according to ISO 8601.
 
         This is 'YYYY-MM-DD' or 'YYYYMMDD' if *basic* is true.
 
         References:
-        - http://www.w3.org/TR/NOTE-datetime
-        - http://www.cl.cam.ac.uk/~mgk25/iso-time.html
+        - https://www.w3.org/TR/NOTE-datetime
+        - https://www.cl.cam.ac.uk/~mgk25/iso-time.html
         """
         if basic:
             return f"{self._year:04d}{self._month:02d}{self._day:02d}"
@@ -2138,7 +2138,7 @@ class datetime(date):
         The full format looks like 'YYYY-MM-DD HH:MM:SS.mmmmmm'.
         By default, the fractional part is omitted if self.microsecond == 0.
 
-        If *basic* is true, separators ':' and '-' are removed from the output.
+        If *basic* is true, separators ':' and '-' are omitted.
 
         If self.tzinfo is not None, the UTC offset is also attached, giving
         giving a full format of 'YYYY-MM-DD HH:MM:SS.mmmmmm+HH:MM'.

@@ -427,7 +427,7 @@ operator
 datetime
 --------
 
-* Add support for ISO 8601 basic format for the following methods:
+* Add support for the ISO 8601 basic format for the following methods:
 
   - :meth:`date.isoformat <datetime.date.isoformat>`
   - :meth:`datetime.isoformat <datetime.datetime.isoformat>`
