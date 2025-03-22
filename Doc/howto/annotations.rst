@@ -29,6 +29,39 @@ Annotations Best Practices
   in your code, please see the :mod:`typing` module.
 
 
+.. _annotations-howto-general:
+
+General rules
+=============
+
+When defining annotations, remember about the execution order. For example::
+
+   class User:
+      username: str = 'miss-islington'
+
+1. Value ``'miss-islington'`` will be assigned
+   to name ``username`` in ``User`` class scope
+2. Name ``str`` is evaluated in the annotated assignment statement
+3. Name ``str`` is assigned as annotation
+   to ``username`` key in ``User.__annotations__``
+
+This means that a code like ``int: int = 1`` will produce annotations like
+``{"int": 1}`` because of how the execution order works.
+If you need to shadow some names, use this approach:
+
+.. doctest::
+
+   >>> from typing import TypeAlias
+
+   >>> int_: TypeAlias = int  # type alias for future name shadowing
+
+   >>> class Response:
+   ...   int: int_ = 200
+
+   >>> Response.__annotations__
+   {'int': <class 'int'>}
+
+
 Accessing The Annotations Dict Of An Object In Python 3.10 And Newer
 ====================================================================
 
