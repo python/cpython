@@ -1,0 +1,1 @@
+Fix a bug where :func:`types.new_class` cannot find the most specific metaclass even when it exists.
