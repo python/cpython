@@ -5,7 +5,8 @@ import sys
 
 __all__ = ["warn", "warn_explicit", "showwarning",
            "formatwarning", "filterwarnings", "simplefilter",
-           "resetwarnings", "catch_warnings", "deprecated"]
+           "resetwarnings", "catch_warnings", "deprecated",
+           "WarningMessage"]
 
 def showwarning(message, category, filename, lineno, file=None, line=None):
     """Hook to write a warning to a file; replace if you like."""
