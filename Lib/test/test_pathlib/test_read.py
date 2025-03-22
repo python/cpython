@@ -6,12 +6,16 @@ import collections.abc
 import io
 import unittest
 
-from pathlib import Path
-from pathlib.types import PathInfo, _ReadablePath
-from pathlib._os import magic_open
+from .support import is_pypi
+from .support.local_path import ReadableLocalPath, LocalPathGround
+from .support.zip_path import ReadableZipPath, ZipPathGround
 
-from test.test_pathlib.support.local_path import ReadableLocalPath, LocalPathGround
-from test.test_pathlib.support.zip_path import ReadableZipPath, ZipPathGround
+if is_pypi:
+    from pathlib_abc import PathInfo, _ReadablePath
+    from pathlib_abc._os import magic_open
+else:
+    from pathlib.types import PathInfo, _ReadablePath
+    from pathlib._os import magic_open
 
 
 class ReadTestBase:
@@ -301,8 +305,11 @@ class LocalPathReadTest(ReadTestBase, unittest.TestCase):
     ground = LocalPathGround(ReadableLocalPath)
 
 
-class PathReadTest(ReadTestBase, unittest.TestCase):
-    ground = LocalPathGround(Path)
+if not is_pypi:
+    from pathlib import Path
+
+    class PathReadTest(ReadTestBase, unittest.TestCase):
+        ground = LocalPathGround(Path)
 
 
 if __name__ == "__main__":

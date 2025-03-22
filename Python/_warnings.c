@@ -1,8 +1,8 @@
 #include "Python.h"
-#include "pycore_frame.h"         // PyFrameObject members
+#include "pycore_frame.h"         // PyFrameObject
 #include "pycore_genobject.h"     // PyAsyncGenObject
 #include "pycore_import.h"        // _PyImport_GetModules()
-#include "pycore_interp.h"        // PyInterpreterState.warnings
+#include "pycore_interpframe.h"   // _PyFrame_GetCode()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
