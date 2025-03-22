@@ -795,7 +795,12 @@ class _SelectorTransport(transports._FlowControlMixin,
         self._paused = False  # Set when pause_reading() called
 
         if self._server is not None:
-            self._server._attach(self)
+            if self._server.is_serving():
+                self._server._attach(self)
+            else:
+                self.abort()
+                return
+
         loop._transports[self._sock_fd] = self
 
     def __repr__(self):
