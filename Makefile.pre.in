@@ -730,7 +730,8 @@ list-targets:
 
 .PHONY: build_all
 build_all:	check-clean-src check-app-store-compliance $(BUILDPYTHON) platform sharedmods \
-		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil build-details.json
+		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil \
+		$(shell [ -f pybuilddir.txt ] && cat pybuilddir.txt)/build-details.json
 
 .PHONY: build_wasm
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
@@ -936,8 +937,8 @@ pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
 		exit 1 ; \
 	fi
 
-build-details.json: pybuilddir.txt
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate-build-details.py `cat pybuilddir.txt`/build-details.json
+$(shell [ -f pybuilddir.txt ] && cat pybuilddir.txt)/build-details.json: pybuilddir.txt
+	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate-build-details.py $(shell cat pybuilddir.txt)/build-details.json
 
 # Build static library
 $(LIBRARY): $(LIBRARY_OBJS)
