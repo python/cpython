@@ -1319,5 +1319,32 @@ _Py_HandlePending(PyThreadState *tstate)
             return -1;
         }
     }
+
+#ifdef Py_REMOTE_DEBUG
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->remote_debug) {
+        if (tstate->remote_debugger_support.debugger_pending_call) {
+            tstate->remote_debugger_support.debugger_pending_call = 0;
+            const char *path = tstate->remote_debugger_support.debugger_script_path;
+            if (*path) {
+                if (0 != PySys_Audit("debugger_script", "%s", path)) {
+                    PyErr_Clear();
+                } else {
+                    FILE* f = fopen(path, "r");
+                    if (!f) {
+                        PyErr_SetFromErrno(PyExc_OSError);
+                    } else {
+                        PyRun_AnyFile(f, path);
+                        fclose(f);
+                    }
+                    if (PyErr_Occurred()) {
+                        PyErr_FormatUnraisable("Error executing debugger script %s", path);
+                    }
+                }
+            }
+        }
+    }
+#endif
+
     return 0;
 }
