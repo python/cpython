@@ -36,7 +36,7 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
                 else:
                     ptr_bases = (self, POINTER(bases[0]))
                 p = p_meta(f"POINTER({self.__name__})", ptr_bases, {})
-                cls.__pointer_type__ = p
+                self.__pointer_type__ = p
                 return self
 
         class p_meta(PyCSimpleType, ct_meta):

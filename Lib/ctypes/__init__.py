@@ -279,7 +279,7 @@ def POINTER(cls):
         pass
     if isinstance(cls, str):
         return type(f'LP_{cls}', (_Pointer,), {})
-    if issubclass(cls, CType_Type):
+    if isinstance(cls, _CType_Type):
         return type(f'LP_{cls.__name__}', (_Pointer,), {'_type_': cls})
 
     raise TypeError(f'must be a ctypes-like type: {cls}')
