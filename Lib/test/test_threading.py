@@ -174,6 +174,21 @@ class ThreadTests(BaseTestCase):
                 t.start()
                 t.join()
 
+    def test_args_invalid_arguments_raises_typeerror(self):
+        def task(x):
+            pass
+
+        invalid_args = (
+            "test string",
+            1,
+            b"Bytes"
+        )
+
+        for args in invalid_args:
+            with self.subTest(args=args):
+                with self.assertRaises(TypeError):
+                    threading.Thread(target=task, args=args)
+
     def test_lock_no_args(self):
         threading.Lock()  # works
         self.assertRaises(TypeError, threading.Lock, 1)
