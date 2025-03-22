@@ -2553,6 +2553,125 @@ class OptimizeLoadFastTestCase(DirectCfgOptimizerTests):
         ]
         self.check(insts, insts)
 
+    def test_consume_no_inputs(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("GET_LEN", None, 2),
+            ("STORE_FAST", 1 , 3),
+            ("STORE_FAST", 2, 4),
+        ]
+        self.check(insts, insts)
+
+    def test_consume_some_inputs_no_outputs(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("GET_LEN", None, 2),
+            ("LIST_APPEND", 0, 3),
+        ]
+        self.check(insts, insts)
+
+    def test_check_exc_match(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_FAST", 1, 2),
+            ("CHECK_EXC_MATCH", None, 3)
+        ]
+        expected = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_FAST_BORROW", 1, 2),
+            ("CHECK_EXC_MATCH", None, 3)
+        ]
+        self.check(insts, expected)
+
+    def test_for_iter(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            top := self.Label(),
+            ("FOR_ITER", end := self.Label(), 2),
+            ("STORE_FAST", 2, 3),
+            ("JUMP", top, 4),
+            end,
+            ("END_FOR", None, 5),
+            ("POP_TOP", None, 6),
+            ("LOAD_CONST", 0, 7),
+            ("RETURN_VALUE", None, 8),
+        ]
+        self.cfg_optimization_test(insts, insts, consts=[None])
+
+    def test_load_attr(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_ATTR", 0, 2),
+        ]
+        expected = [
+            ("LOAD_FAST_BORROW", 0, 1),
+            ("LOAD_ATTR", 0, 2),
+        ]
+        self.check(insts, expected)
+
+        # Method call, leaves self on stack unconsumed
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_ATTR", 1, 2),
+        ]
+        expected = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_ATTR", 1, 2),
+        ]
+        self.check(insts, expected)
+
+    def test_super_attr(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_FAST", 1, 2),
+            ("LOAD_FAST", 2, 3),
+            ("LOAD_SUPER_ATTR", 0, 4),
+        ]
+        expected = [
+            ("LOAD_FAST_BORROW", 0, 1),
+            ("LOAD_FAST_BORROW", 1, 2),
+            ("LOAD_FAST_BORROW", 2, 3),
+            ("LOAD_SUPER_ATTR", 0, 4),
+        ]
+        self.check(insts, expected)
+
+        # Method call, leaves self on stack unconsumed
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_FAST", 1, 2),
+            ("LOAD_FAST", 2, 3),
+            ("LOAD_SUPER_ATTR", 1, 4),
+        ]
+        expected = [
+            ("LOAD_FAST_BORROW", 0, 1),
+            ("LOAD_FAST_BORROW", 1, 2),
+            ("LOAD_FAST", 2, 3),
+            ("LOAD_SUPER_ATTR", 1, 4),
+        ]
+        self.check(insts, expected)
+
+    def test_send(self):
+        insts = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_FAST", 1, 2),
+            ("SEND", end := self.Label(), 3),
+            ("LOAD_CONST", 0, 4),
+            ("RETURN_VALUE", None, 5),
+            end,
+            ("LOAD_CONST", 0, 6),
+            ("RETURN_VALUE", None, 7)
+        ]
+        expected = [
+            ("LOAD_FAST", 0, 1),
+            ("LOAD_FAST_BORROW", 1, 2),
+            ("SEND", end := self.Label(), 3),
+            ("LOAD_CONST", 0, 4),
+            ("RETURN_VALUE", None, 5),
+            end,
+            ("LOAD_CONST", 0, 6),
+            ("RETURN_VALUE", None, 7)
+        ]
+        self.cfg_optimization_test(insts, expected, consts=[None])
 
 
 

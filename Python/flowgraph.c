@@ -2794,17 +2794,7 @@ optimize_load_fast(cfg_builder *g)
             int oparg = instr->i_oparg;
             assert(opcode != EXTENDED_ARG);
             switch (opcode) {
-                case COPY: {
-                    assert(oparg > 0);
-                    Py_ssize_t idx = refs.size - oparg;
-                    ref r = ref_stack_at(&refs, idx);
-                    if (ref_stack_push(&refs, r) < 0) {
-                        status = ERROR;
-                        goto done;
-                    }
-                    break;
-                }
-
+                // Opcodes that load and store locals
                 case LOAD_FAST: {
                     PUSH_REF(i, oparg);
                     break;
@@ -2847,12 +2837,99 @@ optimize_load_fast(cfg_builder *g)
                     break;
                 }
 
+                // Opcodes that shuffle values on the stack
+                case COPY: {
+                    assert(oparg > 0);
+                    Py_ssize_t idx = refs.size - oparg;
+                    ref r = ref_stack_at(&refs, idx);
+                    PUSH_REF(r.instr, r.local);
+                    break;
+                }
+
                 case SWAP: {
                     assert(oparg >= 2);
                     ref_stack_swap_top(&refs, oparg);
                     break;
                 }
 
+                // We treat opcodes that do not consume all of their inputs on
+                // a case by case basis, as we have no generic way of knowing
+                // how many inputs should be left on the stack.
+
+                // Opcodes that consume no inputs
+                case GET_ANEXT:
+                case GET_LEN:
+                case IMPORT_FROM:
+                case MATCH_KEYS:
+                case MATCH_MAPPING:
+                case MATCH_SEQUENCE:
+                case WITH_EXCEPT_START: {
+                    int num_popped = _PyOpcode_num_popped(opcode, oparg);
+                    int num_pushed = _PyOpcode_num_pushed(opcode, oparg);
+                    int net_pushed = num_pushed - num_popped;
+                    assert(net_pushed >= 0);
+                    for (int i = 0; i < net_pushed; i++) {
+                        PUSH_REF(i, NOT_LOCAL);
+                    }
+                    break;
+                }
+
+                // Opcodes that consume some inputs and push no new values
+                case DICT_MERGE:
+                case DICT_UPDATE:
+                case LIST_APPEND:
+                case LIST_EXTEND:
+                case MAP_ADD:
+                case RERAISE:
+                case SET_ADD:
+                case SET_UPDATE: {
+                    int num_popped = _PyOpcode_num_popped(opcode, oparg);
+                    int num_pushed = _PyOpcode_num_pushed(opcode, oparg);
+                    int net_popped = num_popped - num_pushed;
+                    assert(net_popped > 0);
+                    for (int i = 0; i < net_popped; i++) {
+                        ref_stack_pop(&refs);
+                    }
+                    break;
+                }
+
+                // Opcodes that consume some inputs and push new values
+                case CHECK_EXC_MATCH: {
+                    ref_stack_pop(&refs);
+                    PUSH_REF(i, NOT_LOCAL);
+                    break;
+                }
+
+                case FOR_ITER: {
+                    load_fast_push_block(&sp, instr->i_target, refs.size + 1);
+                    PUSH_REF(i, NOT_LOCAL);
+                    break;
+                }
+
+                case LOAD_ATTR:
+                case LOAD_SUPER_ATTR: {
+                    ref self = ref_stack_pop(&refs);
+                    if (opcode == LOAD_SUPER_ATTR) {
+                        ref_stack_pop(&refs);
+                        ref_stack_pop(&refs);
+                    }
+                    PUSH_REF(i, NOT_LOCAL);
+                    if (oparg & 1) {
+                        // A method call; conservatively assume that self is pushed
+                        // back onto the stack
+                        PUSH_REF(self.instr, self.local);
+                    }
+                    break;
+                }
+
+                case SEND: {
+                    load_fast_push_block(&sp, instr->i_target, refs.size);
+                    ref_stack_pop(&refs);
+                    PUSH_REF(i, NOT_LOCAL);
+                    break;
+                }
+
+                // Opcodes that consume all of their inputs
                 default: {
                     int num_popped = _PyOpcode_num_popped(opcode, oparg);
                     int num_pushed = _PyOpcode_num_pushed(opcode, oparg);
