@@ -1,0 +1,1 @@
+Add attribute :attr:`zipfile.ZipInfo.extended_mtime`.
