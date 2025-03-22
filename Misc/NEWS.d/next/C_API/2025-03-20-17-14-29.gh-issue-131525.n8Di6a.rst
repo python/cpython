@@ -1,0 +1,2 @@
+The PyTupleObject now caches the computed hash value in the new field
+ob_hash.
