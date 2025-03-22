@@ -1450,34 +1450,10 @@ def parse_http_list(s):
     return [part.strip() for part in res]
 
 class FileHandler(BaseHandler):
-    # Use local file or FTP depending on form of URL
-    def file_open(self, req):
-        url = req.selector
-        if url[:2] == '//' and url[2:3] != '/' and (req.host and
-                req.host != 'localhost'):
-            if not req.host in self.get_names():
-                raise URLError("file:// scheme is supported only on localhost")
-        else:
-            return self.open_local_file(req)
-
-    # names for the localhost
-    names = None
-    def get_names(self):
-        if FileHandler.names is None:
-            try:
-                FileHandler.names = tuple(
-                    socket.gethostbyname_ex('localhost')[2] +
-                    socket.gethostbyname_ex(socket.gethostname())[2])
-            except socket.gaierror:
-                FileHandler.names = (socket.gethostbyname('localhost'),)
-        return FileHandler.names
-
-    # not entirely sure what the rules are here
     def open_local_file(self, req):
         import email.utils
         import mimetypes
-        host = req.host
-        filename = req.selector
+        filename = _splittype(req.full_url)[1]
         localfile = url2pathname(filename)
         try:
             stats = os.stat(localfile)
@@ -1487,21 +1463,32 @@ class FileHandler(BaseHandler):
             headers = email.message_from_string(
                 'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
                 (mtype or 'text/plain', size, modified))
-            if host:
-                host, port = _splitport(host)
-            if not host or \
-                (not port and _safe_gethostbyname(host) in self.get_names()):
-                origurl = 'file:' + pathname2url(localfile)
-                return addinfourl(open(localfile, 'rb'), headers, origurl)
+            origurl = f'file:{pathname2url(localfile)}'
+            return addinfourl(open(localfile, 'rb'), headers, origurl)
         except OSError as exp:
             raise URLError(exp, exp.filename)
-        raise URLError('file not on local host')
 
-def _safe_gethostbyname(host):
+    file_open = open_local_file
+
+_local_addresses = None
+
+def _is_local_authority(authority):
+    global _local_addresses
+
+    if not authority or authority == 'localhost':
+        return True
     try:
-        return socket.gethostbyname(host)
-    except socket.gaierror:
-        return None
+        address = socket.gethostbyname(authority)
+    except (socket.gaierror, AttributeError):
+        return False
+    if _local_addresses is None:
+        try:
+            _local_addresses = frozenset(
+                socket.gethostbyname_ex('localhost')[2] +
+                socket.gethostbyname_ex(socket.gethostname())[2])
+        except socket.gaierror:
+            _local_addresses = frozenset(socket.gethostbyname('localhost'),)
+    return address in _local_addresses
 
 class FTPHandler(BaseHandler):
     def ftp_open(self, req):
@@ -1649,16 +1636,13 @@ class DataHandler(BaseHandler):
 def url2pathname(url):
     """OS-specific conversion from a relative URL of the 'file' scheme
     to a file system path; not recommended for general use."""
-    if url[:3] == '///':
-        # Empty authority section, so the path begins on the third character.
-        url = url[2:]
-    elif url[:12] == '//localhost/':
-        # Skip past 'localhost' authority.
-        url = url[11:]
-
+    authority, url = _splithost(url)
     if os.name == 'nt':
-        if url[:3] == '///':
-            # Skip past extra slash before UNC drive in URL path.
+        if not _is_local_authority(authority):
+            # e.g. file://server/share/file.txt
+            url = '//' + authority + url
+        elif url[:3] == '///':
+            # e.g. file://///server/share/file.txt
             url = url[1:]
         else:
             if url[:1] == '/' and url[2:3] in (':', '|'):
@@ -1668,6 +1652,8 @@ def url2pathname(url):
                 # Older URLs use a pipe after a drive letter
                 url = url[:1] + ':' + url[2:]
         url = url.replace('/', '\\')
+    elif not _is_local_authority(authority):
+        raise URLError("file:// scheme is supported only on localhost")
     encoding = sys.getfilesystemencoding()
     errors = sys.getfilesystemencodeerrors()
     return unquote(url, encoding=encoding, errors=errors)

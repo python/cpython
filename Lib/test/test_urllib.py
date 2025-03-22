@@ -11,6 +11,7 @@ from test import support
 from test.support import os_helper
 from test.support import socket_helper
 import os
+import socket
 try:
     import ssl
 except ImportError:
@@ -1531,10 +1532,12 @@ class Pathname_Tests(unittest.TestCase):
     def test_url2pathname_posix(self):
         fn = urllib.request.url2pathname
         self.assertEqual(fn('/foo/bar'), '/foo/bar')
-        self.assertEqual(fn('//foo/bar'), '//foo/bar')
+        self.assertRaises(urllib.error.URLError, fn, '//foo/bar')
         self.assertEqual(fn('///foo/bar'), '/foo/bar')
         self.assertEqual(fn('////foo/bar'), '//foo/bar')
         self.assertEqual(fn('//localhost/foo/bar'), '/foo/bar')
+        self.assertEqual(fn('//127.0.0.1/foo/bar'), '/foo/bar')
+        self.assertEqual(fn(f'//{socket.gethostname()}/foo/bar'), '/foo/bar')
 
     @unittest.skipUnless(os_helper.FS_NONASCII, 'need os_helper.FS_NONASCII')
     def test_url2pathname_nonascii(self):
