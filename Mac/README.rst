@@ -37,12 +37,12 @@ macOS specific arguments to configure
   into that directory. This can be used to install a python framework into
   your home directory::
 
-     $ ./configure --enable-framework=/Users/ronald/Library/Frameworks
+     $ ./configure --enable-framework=/Users/`id -un`/Library/Frameworks
      $ make && make install
 
-  This will install the framework itself in ``/Users/ronald/Library/Frameworks``,
-  the applications in a subdirectory of ``/Users/ronald/Applications`` and the
-  command-line tools in ``/Users/ronald/bin``.
+  This will install the framework itself in ``/Users/`id -un`/Library/Frameworks``,
+  the applications in a subdirectory of ``/Users/`id -un`/Applications`` and the
+  command-line tools in ``/Users/`id -un`/bin``.
 
 * ``--with-framework-name=NAME``
 
