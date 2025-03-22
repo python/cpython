@@ -81,9 +81,9 @@ class CAPITest(unittest.TestCase):
         self.assertTypedEqual(object_str('\U0001f40d'), '\U0001f40d')
         self.assertTypedEqual(object_str(StrSubclass('abc')), 'abc')
         self.assertTypedEqual(object_str(WithStr('abc')), 'abc')
-        self.assertTypedEqual(object_str(WithStr(StrSubclass('abc'))), StrSubclass('abc'))
+        self.assertTypedEqual(object_str(WithStr(StrSubclass('abc'))), 'abc')
         self.assertTypedEqual(object_str(WithRepr('<abc>')), '<abc>')
-        self.assertTypedEqual(object_str(WithRepr(StrSubclass('<abc>'))), StrSubclass('<abc>'))
+        self.assertTypedEqual(object_str(WithRepr(StrSubclass('<abc>'))), '<abc>')
         self.assertTypedEqual(object_str(NULL), '<NULL>')
 
     def test_object_repr(self):
@@ -94,9 +94,9 @@ class CAPITest(unittest.TestCase):
         self.assertTypedEqual(object_repr('\U0001f40d'), "'\U0001f40d'")
         self.assertTypedEqual(object_repr(StrSubclass('abc')), "'abc'")
         self.assertTypedEqual(object_repr(WithRepr('<abc>')), '<abc>')
-        self.assertTypedEqual(object_repr(WithRepr(StrSubclass('<abc>'))), StrSubclass('<abc>'))
+        self.assertTypedEqual(object_repr(WithRepr(StrSubclass('<abc>'))), '<abc>')
         self.assertTypedEqual(object_repr(WithRepr('<\U0001f40d>')), '<\U0001f40d>')
-        self.assertTypedEqual(object_repr(WithRepr(StrSubclass('<\U0001f40d>'))), StrSubclass('<\U0001f40d>'))
+        self.assertTypedEqual(object_repr(WithRepr(StrSubclass('<\U0001f40d>'))), '<\U0001f40d>')
         self.assertTypedEqual(object_repr(NULL), '<NULL>')
 
     def test_object_ascii(self):
@@ -107,7 +107,7 @@ class CAPITest(unittest.TestCase):
         self.assertTypedEqual(object_ascii('\U0001f40d'), r"'\U0001f40d'")
         self.assertTypedEqual(object_ascii(StrSubclass('abc')), "'abc'")
         self.assertTypedEqual(object_ascii(WithRepr('<abc>')), '<abc>')
-        self.assertTypedEqual(object_ascii(WithRepr(StrSubclass('<abc>'))), StrSubclass('<abc>'))
+        self.assertTypedEqual(object_ascii(WithRepr(StrSubclass('<abc>'))), '<abc>')
         self.assertTypedEqual(object_ascii(WithRepr('<\U0001f40d>')), r'<\U0001f40d>')
         self.assertTypedEqual(object_ascii(WithRepr(StrSubclass('<\U0001f40d>'))), r'<\U0001f40d>')
         self.assertTypedEqual(object_ascii(NULL), '<NULL>')
@@ -119,7 +119,7 @@ class CAPITest(unittest.TestCase):
         self.assertTypedEqual(object_bytes(b'abc'), b'abc')
         self.assertTypedEqual(object_bytes(BytesSubclass(b'abc')), b'abc')
         self.assertTypedEqual(object_bytes(WithBytes(b'abc')), b'abc')
-        self.assertTypedEqual(object_bytes(WithBytes(BytesSubclass(b'abc'))), BytesSubclass(b'abc'))
+        self.assertTypedEqual(object_bytes(WithBytes(BytesSubclass(b'abc'))), b'abc')
         self.assertTypedEqual(object_bytes(bytearray(b'abc')), b'abc')
         self.assertTypedEqual(object_bytes(memoryview(b'abc')), b'abc')
         self.assertTypedEqual(object_bytes([97, 98, 99]), b'abc')
