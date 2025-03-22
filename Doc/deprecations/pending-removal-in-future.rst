@@ -153,3 +153,6 @@ although there is currently no date scheduled for their removal.
   :class:`~xml.etree.ElementTree.Element` is deprecated. In a future release it
   will always return ``True``. Prefer explicit ``len(elem)`` or
   ``elem is not None`` tests instead.
+
+* :func:`sys._clear_type_cache` is deprecated:
+  use :func:`sys._clear_internal_caches` instead.
