@@ -1,0 +1,1 @@
+inspect.getdoc(), if run on a cached_property that does not define a docstring but inherits from a class that did define a docstring, will now return the inherited docstring rather than None.

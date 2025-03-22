@@ -46,6 +46,7 @@ from test import support
 
 from test.test_inspect import inspect_fodder as mod
 from test.test_inspect import inspect_fodder2 as mod2
+from test.test_inspect import inspect_fodder3 as mod3
 from test.test_inspect import inspect_stringized_annotations
 from test.test_inspect import inspect_deferred_annotations
 
@@ -664,6 +665,10 @@ class TestRetrievingSourceCode(GetSourceBase):
                          'Another\n\ndocstring\n\ncontaining\n\ntabs')
         self.assertEqual(inspect.getdoc(mod.FesteringGob.contradiction),
                          'The automatic gainsaying.')
+
+    def test_getdoc_inherited_cached_property(self):
+        self.assertEqual(inspect.getdoc(mod3.Parent.foo),
+                         inspect.getdoc(mod3.Child.foo))
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS, "test requires docstrings")
     def test_finddoc(self):
