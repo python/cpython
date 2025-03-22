@@ -101,8 +101,7 @@ class FaultHandlerTests(unittest.TestCase):
         Raise an error if the output doesn't match the expected format.
         """
         all_threads_disabled = (
-            (not py_fatal_error)
-            and all_threads
+            all_threads
             and (not sys._is_gil_enabled())
         )
         if all_threads and not all_threads_disabled:
@@ -116,12 +115,15 @@ class FaultHandlerTests(unittest.TestCase):
         if py_fatal_error:
             regex.append("Python runtime state: initialized")
         regex.append('')
-        if all_threads_disabled:
+        if all_threads_disabled and not py_fatal_error:
             regex.append("<Cannot show all threads while the GIL is disabled>")
         regex.append(fr'{header} \(most recent call first\):')
-        if garbage_collecting and not all_threads_disabled:
-            regex.append('  Garbage-collecting')
-        regex.append(fr'  File "<string>", line {lineno} in {function}')
+        if support.Py_GIL_DISABLED and py_fatal_error and not know_current_thread:
+            regex.append("  <tstate is freed>")
+        else:
+            if garbage_collecting and not all_threads_disabled:
+                regex.append('  Garbage-collecting')
+            regex.append(fr'  File "<string>", line {lineno} in {function}')
         regex = '\n'.join(regex)
 
         if other_regex:
@@ -225,6 +227,7 @@ class FaultHandlerTests(unittest.TestCase):
             func='faulthandler_fatal_error_thread',
             py_fatal_error=True)
 
+    @support.skip_if_sanitizer("TSAN itercepts SIGABRT", thread=True)
     def test_sigabrt(self):
         self.check_fatal_error("""
             import faulthandler
@@ -236,6 +239,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == 'win32',
                      "SIGFPE cannot be caught on Windows")
+    @support.skip_if_sanitizer("TSAN itercepts SIGFPE", thread=True)
     def test_sigfpe(self):
         self.check_fatal_error("""
             import faulthandler
@@ -247,6 +251,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     @unittest.skipUnless(hasattr(signal, 'SIGBUS'), 'need signal.SIGBUS')
+    @support.skip_if_sanitizer("TSAN itercepts SIGBUS", thread=True)
     @skip_segfault_on_android
     def test_sigbus(self):
         self.check_fatal_error("""
@@ -261,6 +266,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     @unittest.skipUnless(hasattr(signal, 'SIGILL'), 'need signal.SIGILL')
+    @support.skip_if_sanitizer("TSAN itercepts SIGILL", thread=True)
     @skip_segfault_on_android
     def test_sigill(self):
         self.check_fatal_error("""
@@ -793,6 +799,7 @@ class FaultHandlerTests(unittest.TestCase):
     def test_register_threads(self):
         self.check_register(all_threads=True)
 
+    @support.skip_if_sanitizer("gh-129825: hangs under TSAN", thread=True)
     def test_register_chain(self):
         self.check_register(chain=True)
 

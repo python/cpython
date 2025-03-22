@@ -10,6 +10,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallMethod()
+#include "pycore_fileutils.h"           // _PyFile_Flush
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyType_HasFeature()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
@@ -34,6 +35,8 @@ typedef struct {
     PyObject *dict;
     PyObject *weakreflist;
 } iobase;
+
+#define iobase_CAST(op) ((iobase *)(op))
 
 PyDoc_STRVAR(iobase_doc,
     "The abstract base class for all I/O classes.\n"
@@ -314,7 +317,8 @@ iobase_finalize(PyObject *self)
             PyErr_Clear();
         res = PyObject_CallMethodNoArgs((PyObject *)self, &_Py_ID(close));
         if (res == NULL) {
-            PyErr_WriteUnraisable(self);
+            PyErr_FormatUnraisable("Exception ignored "
+                                   "while finalizing file %R", self);
         }
         else {
             Py_DECREF(res);
@@ -342,16 +346,18 @@ _PyIOBase_finalize(PyObject *self)
 }
 
 static int
-iobase_traverse(iobase *self, visitproc visit, void *arg)
+iobase_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    iobase *self = iobase_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     return 0;
 }
 
 static int
-iobase_clear(iobase *self)
+iobase_clear(PyObject *op)
 {
+    iobase *self = iobase_CAST(op);
     Py_CLEAR(self->dict);
     return 0;
 }
@@ -359,14 +365,15 @@ iobase_clear(iobase *self)
 /* Destructor */
 
 static void
-iobase_dealloc(iobase *self)
+iobase_dealloc(PyObject *op)
 {
     /* NOTE: since IOBaseObject has its own dict, Python-defined attributes
        are still available here for close() to use.
        However, if the derived class declares a __slots__, those slots are
        already gone.
     */
-    if (_PyIOBase_finalize((PyObject *) self) < 0) {
+    iobase *self = iobase_CAST(op);
+    if (_PyIOBase_finalize(op) < 0) {
         /* When called from a heap type's dealloc, the type will be
            decref'ed on return (see e.g. subtype_dealloc in typeobject.c). */
         if (_PyType_HasFeature(Py_TYPE(self), Py_TPFLAGS_HEAPTYPE)) {
@@ -377,9 +384,9 @@ iobase_dealloc(iobase *self)
     PyTypeObject *tp = Py_TYPE(self);
     _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) self);
+        PyObject_ClearWeakRefs(op);
     Py_CLEAR(self->dict);
-    tp->tp_free((PyObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -852,7 +859,7 @@ static PyMethodDef iobase_methods[] = {
 
 static PyGetSetDef iobase_getset[] = {
     {"__dict__", PyObject_GenericGetDict, NULL, NULL},
-    {"closed", (getter)iobase_closed_get, NULL, NULL},
+    {"closed", iobase_closed_get, NULL, NULL},
     {NULL}
 };
 

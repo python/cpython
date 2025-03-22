@@ -16,7 +16,6 @@ import platform
 import random
 import re
 import sys
-import textwrap
 import traceback
 import types
 import typing
@@ -555,7 +554,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(type(glob['ticker']()), AsyncGeneratorType)
 
     def test_compile_ast(self):
-        args = ("a*(1+2)", "f.py", "exec")
+        args = ("a*__debug__", "f.py", "exec")
         raw = compile(*args, flags = ast.PyCF_ONLY_AST).body[0]
         opt1 = compile(*args, flags = ast.PyCF_OPTIMIZED_AST).body[0]
         opt2 = compile(ast.parse(args[0]), *args[1:], flags = ast.PyCF_OPTIMIZED_AST).body[0]
@@ -566,17 +565,14 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             self.assertIsInstance(tree.value.left, ast.Name)
             self.assertEqual(tree.value.left.id, 'a')
 
-        raw_right = raw.value.right  # expect BinOp(1, '+', 2)
-        self.assertIsInstance(raw_right, ast.BinOp)
-        self.assertIsInstance(raw_right.left, ast.Constant)
-        self.assertEqual(raw_right.left.value, 1)
-        self.assertIsInstance(raw_right.right, ast.Constant)
-        self.assertEqual(raw_right.right.value, 2)
+        raw_right = raw.value.right
+        self.assertIsInstance(raw_right, ast.Name)
+        self.assertEqual(raw_right.id, "__debug__")
 
         for opt in [opt1, opt2]:
-            opt_right = opt.value.right  # expect Constant(3)
+            opt_right = opt.value.right
             self.assertIsInstance(opt_right, ast.Constant)
-            self.assertEqual(opt_right.value, 3)
+            self.assertEqual(opt_right.value, True)
 
     def test_delattr(self):
         sys.spam = 1
@@ -1055,6 +1051,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             f2 = filter(filter_char, "abcdeabcde")
             self.check_iter_pickle(f1, list(f2), proto)
 
+    @support.skip_wasi_stack_overflow()
     @support.requires_resource('cpu')
     def test_filter_dealloc(self):
         # Tests recursive deallocation of nested filter objects using the
@@ -1567,14 +1564,11 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
     @unittest.skipIf(sys.flags.utf8_mode, "utf-8 mode is enabled")
     def test_open_default_encoding(self):
-        old_environ = dict(os.environ)
-        try:
+        with EnvironmentVarGuard() as env:
             # try to get a user preferred encoding different than the current
             # locale encoding to check that open() uses the current locale
             # encoding and not the user preferred encoding
-            for key in ('LC_ALL', 'LANG', 'LC_CTYPE'):
-                if key in os.environ:
-                    del os.environ[key]
+            env.unset('LC_ALL', 'LANG', 'LC_CTYPE')
 
             self.write_testfile()
             current_locale_encoding = locale.getencoding()
@@ -1583,9 +1577,6 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
                 fp = open(TESTFN, 'w')
             with fp:
                 self.assertEqual(fp.encoding, current_locale_encoding)
-        finally:
-            os.environ.clear()
-            os.environ.update(old_environ)
 
     @support.requires_subprocess()
     def test_open_non_inheritable(self):
@@ -1717,6 +1708,29 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             sys.stdout = savestdout
             fp.close()
 
+    def test_input_gh130163(self):
+        class X(io.StringIO):
+            def __getattribute__(self, name):
+                nonlocal patch
+                if patch:
+                    patch = False
+                    sys.stdout = X()
+                    sys.stderr = X()
+                    sys.stdin = X('input\n')
+                    support.gc_collect()
+                return io.StringIO.__getattribute__(self, name)
+
+        with (support.swap_attr(sys, 'stdout', None),
+              support.swap_attr(sys, 'stderr', None),
+              support.swap_attr(sys, 'stdin', None)):
+            patch = False
+            # the only references:
+            sys.stdout = X()
+            sys.stderr = X()
+            sys.stdin = X('input\n')
+            patch = True
+            input()  # should not crash
+
     # test_int(): see test_int.py for tests of built-in function int().
 
     def test_repr(self):
@@ -1838,7 +1852,10 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
     def test_setattr(self):
         setattr(sys, 'spam', 1)
-        self.assertEqual(sys.spam, 1)
+        try:
+            self.assertEqual(sys.spam, 1)
+        finally:
+            del sys.spam
         self.assertRaises(TypeError, setattr)
         self.assertRaises(TypeError, setattr, sys)
         self.assertRaises(TypeError, setattr, sys, 'spam')
@@ -2696,18 +2713,15 @@ class ShutdownTest(unittest.TestCase):
 class ImmortalTests(unittest.TestCase):
 
     if sys.maxsize < (1 << 32):
-        if support.Py_GIL_DISABLED:
-            IMMORTAL_REFCOUNT = 5 << 28
-        else:
-            IMMORTAL_REFCOUNT = 7 << 28
+        IMMORTAL_REFCOUNT_MINIMUM = 1 << 30
     else:
-        IMMORTAL_REFCOUNT = 3 << 30
+        IMMORTAL_REFCOUNT_MINIMUM = 1 << 31
 
     IMMORTALS = (None, True, False, Ellipsis, NotImplemented, *range(-5, 257))
 
     def assert_immortal(self, immortal):
         with self.subTest(immortal):
-            self.assertEqual(sys.getrefcount(immortal), self.IMMORTAL_REFCOUNT)
+            self.assertGreater(sys.getrefcount(immortal), self.IMMORTAL_REFCOUNT_MINIMUM)
 
     def test_immortals(self):
         for immortal in self.IMMORTALS:

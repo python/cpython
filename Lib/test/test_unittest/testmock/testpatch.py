@@ -366,7 +366,7 @@ class PatchTest(unittest.TestCase):
             self.assertEqual(SomeClass.frooble, sentinel.Frooble)
 
         test()
-        self.assertFalse(hasattr(SomeClass, 'frooble'))
+        self.assertNotHasAttr(SomeClass, 'frooble')
 
 
     def test_patch_wont_create_by_default(self):
@@ -383,7 +383,7 @@ class PatchTest(unittest.TestCase):
             @patch.object(SomeClass, 'ord', sentinel.Frooble)
             def test(): pass
             test()
-        self.assertFalse(hasattr(SomeClass, 'ord'))
+        self.assertNotHasAttr(SomeClass, 'ord')
 
 
     def test_patch_builtins_without_create(self):
@@ -748,7 +748,7 @@ class PatchTest(unittest.TestCase):
     def test_exit_idempotent(self):
         patcher = patch(foo_name, 'bar', 3)
         with patcher:
-            patcher.stop()
+            patcher.__exit__(None, None, None)
 
 
     def test_second_start_failure(self):
@@ -1477,7 +1477,7 @@ class PatchTest(unittest.TestCase):
         finally:
             patcher.stop()
 
-        self.assertFalse(hasattr(Foo, 'blam'))
+        self.assertNotHasAttr(Foo, 'blam')
 
 
     def test_patch_multiple_spec_set(self):

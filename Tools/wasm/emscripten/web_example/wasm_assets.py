@@ -12,7 +12,6 @@ contains:
 
 import argparse
 import pathlib
-import shutil
 import sys
 import sysconfig
 import zipfile
