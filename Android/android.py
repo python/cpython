@@ -2,7 +2,6 @@
 
 import asyncio
 import argparse
-from glob import glob
 import os
 import re
 import shlex
@@ -13,6 +12,8 @@ import sys
 import sysconfig
 from asyncio import wait_for
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+from glob import glob
 from os.path import basename, relpath
 from pathlib import Path
 from subprocess import CalledProcessError
@@ -20,11 +21,14 @@ from tempfile import TemporaryDirectory
 
 
 SCRIPT_NAME = Path(__file__).name
-CHECKOUT = Path(__file__).resolve().parent.parent
-ANDROID_DIR = CHECKOUT / "Android"
+ANDROID_DIR = Path(__file__).resolve().parent
+CHECKOUT = ANDROID_DIR.parent
+BUILD_DIR = ANDROID_DIR / "build"
+DIST_DIR = ANDROID_DIR / "dist"
+PREFIX_DIR = ANDROID_DIR / "prefix"
 TESTBED_DIR = ANDROID_DIR / "testbed"
-CROSS_BUILD_DIR = CHECKOUT / "cross-build"
 
+HOSTS = ["aarch64-linux-android", "x86_64-linux-android"]
 APP_ID = "org.python.testbed"
 DECODE_ARGS = ("UTF-8", "backslashreplace")
 
@@ -58,12 +62,10 @@ def delete_glob(pattern):
             path.unlink()
 
 
-def subdir(name, *, clean=None):
-    path = CROSS_BUILD_DIR / name
-    if clean:
-        delete_glob(path)
+def subdir(parent, host, *, create=False):
+    path = parent / host
     if not path.exists():
-        if clean is None:
+        if not create:
             sys.exit(
                 f"{path} does not exist. Create it by running the appropriate "
                 f"`configure` subcommand of {SCRIPT_NAME}.")
@@ -83,7 +85,7 @@ def run(command, *, host=None, env=None, log=True, **kwargs):
         env_output = subprocess.run(
             f"set -eu; "
             f"HOST={host}; "
-            f"PREFIX={subdir(host)}/prefix; "
+            f"PREFIX={subdir(PREFIX_DIR, host)}; "
             f". {env_script}; "
             f"export",
             check=True, shell=True, text=True, stdout=subprocess.PIPE
@@ -111,19 +113,21 @@ def run(command, *, host=None, env=None, log=True, **kwargs):
 
 def build_python_path():
     """The path to the build Python binary."""
-    build_dir = subdir("build")
-    binary = build_dir / "python"
+    build_subdir = subdir(BUILD_DIR, "build")
+    binary = build_subdir / "python"
     if not binary.is_file():
         binary = binary.with_suffix(".exe")
         if not binary.is_file():
             raise FileNotFoundError("Unable to find `python(.exe)` in "
-                                    f"{build_dir}")
+                                    f"{build_subdir}")
 
     return binary
 
 
 def configure_build_python(context):
-    os.chdir(subdir("build", clean=context.clean))
+    if context.clean:
+        clean("build")
+    os.chdir(subdir(BUILD_DIR, "build", create=True))
 
     command = [relpath(CHECKOUT / "configure")]
     if context.args:
@@ -132,7 +136,7 @@ def configure_build_python(context):
 
 
 def make_build_python(context):
-    os.chdir(subdir("build"))
+    os.chdir(subdir(BUILD_DIR, "build"))
     run(["make", "-j", str(os.cpu_count())])
 
 
@@ -153,17 +157,16 @@ def download(url, target_dir="."):
 
 
 def configure_host_python(context):
-    host_dir = subdir(context.host, clean=context.clean)
+    if context.clean:
+        clean(context.host)
 
-    prefix_dir = host_dir / "prefix"
-    if not prefix_dir.exists():
-        prefix_dir.mkdir()
-        os.chdir(prefix_dir)
+    prefix_subdir = subdir(PREFIX_DIR, context.host, create=True)
+    if not (prefix_subdir / "include").exists():
+        os.chdir(prefix_subdir)
         unpack_deps(context.host)
 
-    build_dir = host_dir / "build"
-    build_dir.mkdir(exist_ok=True)
-    os.chdir(build_dir)
+    build_subdir = subdir(BUILD_DIR, context.host, create=True)
+    os.chdir(build_subdir)
 
     command = [
         # Basic cross-compiling configuration
@@ -179,7 +182,7 @@ def configure_host_python(context):
 
         # Dependent libraries. The others are found using pkg-config: see
         # android-env.sh.
-        f"--with-openssl={prefix_dir}",
+        f"--with-openssl={prefix_subdir}",
     ]
 
     if context.args:
@@ -191,15 +194,13 @@ def make_host_python(context):
     # The CFLAGS and LDFLAGS set in android-env include the prefix dir, so
     # delete any previous Python installation to prevent it being used during
     # the build.
-    host_dir = subdir(context.host)
-    prefix_dir = host_dir / "prefix"
-    delete_glob(f"{prefix_dir}/include/python*")
-    delete_glob(f"{prefix_dir}/lib/libpython*")
-    delete_glob(f"{prefix_dir}/lib/python*")
+    prefix_subdir = subdir(PREFIX_DIR, context.host)
+    for pattern in ("include/python*", "lib/libpython*", "lib/python*"):
+        delete_glob(f"{prefix_subdir}/{pattern}")
 
-    os.chdir(host_dir / "build")
+    os.chdir(subdir(BUILD_DIR, context.host))
     run(["make", "-j", str(os.cpu_count())], host=context.host)
-    run(["make", "install", f"prefix={prefix_dir}"], host=context.host)
+    run(["make", "install", f"prefix={prefix_subdir}"], host=context.host)
 
 
 def build_all(context):
@@ -209,8 +210,14 @@ def build_all(context):
         step(context)
 
 
+def clean(host):
+    for parent in (BUILD_DIR, PREFIX_DIR):
+        delete_glob(f"{parent}/{host}")
+
+
 def clean_all(context):
-    delete_glob(CROSS_BUILD_DIR)
+    for parent in (BUILD_DIR, PREFIX_DIR):
+        delete_glob(parent)
 
 
 def setup_sdk():
@@ -538,6 +545,73 @@ async def run_testbed(context):
         raise e.exceptions[0]
 
 
+def package_version(prefix_subdir):
+    patchlevel_glob = f"{prefix_subdir}/include/python*/patchlevel.h"
+    patchlevel_paths = glob(patchlevel_glob)
+    if len(patchlevel_paths) != 1:
+        sys.exit(f"{patchlevel_glob} matched {len(patchlevel_paths)} paths.")
+
+    for line in open(patchlevel_paths[0]):
+        if match := re.fullmatch(r'\s*#define\s+PY_VERSION\s+"(.+)"\s*', line):
+            version = match[1]
+            break
+    else:
+        sys.exit(f"Failed to find Python version in {patchlevel_paths[0]}.")
+
+    # If not building against a tagged commit, add a timestamp to the version.
+    # Follow the PyPA version number rules, as this will make it easier to
+    # process with other tools.
+    if version.endswith("+"):
+        version += datetime.now(timezone.utc).strftime("%Y%m%d.%H%M%S")
+
+    return version
+
+
+def package(context):
+    prefix_subdir = subdir(PREFIX_DIR, context.host)
+    version = package_version(prefix_subdir)
+
+    with TemporaryDirectory(prefix=SCRIPT_NAME) as temp_dir:
+        temp_dir = Path(temp_dir)
+
+        # Include all tracked files from the Android directory.
+        for line in run(
+            ["git", "ls-files"],
+            cwd=ANDROID_DIR, capture_output=True, text=True, log=False,
+        ).stdout.splitlines():
+            src = ANDROID_DIR / line
+            dst = temp_dir / line
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst, follow_symlinks=False)
+
+        # Include anything from the prefix directory which could be useful
+        # either for embedding Python in an app, or building third-party
+        # packages against it.
+        for rel_dir, patterns in [
+            ("include", ["openssl*", "python*", "sqlite*"]),
+            ("lib", ["engines-3", "libcrypto*.so", "libpython*", "libsqlite*",
+                     "libssl*.so", "ossl-modules", "python*"]),
+            ("lib/pkgconfig", ["*crypto*", "*ssl*", "*python*", "*sqlite*"]),
+        ]:
+            for pattern in patterns:
+                for src in glob(f"{prefix_subdir}/{rel_dir}/{pattern}"):
+                    dst = temp_dir / relpath(src, ANDROID_DIR)
+                    dst.parent.mkdir(parents=True, exist_ok=True)
+                    if Path(src).is_dir():
+                        shutil.copytree(
+                            src, dst, symlinks=True,
+                            ignore=lambda *args: ["__pycache__"]
+                        )
+                    else:
+                        shutil.copy2(src, dst, follow_symlinks=False)
+
+        DIST_DIR.mkdir(exist_ok=True)
+        package_path = shutil.make_archive(
+            f"{DIST_DIR}/python-{version}-{context.host}", "gztar", temp_dir
+        )
+        print(f"Wrote {package_path}")
+
+
 # Handle SIGTERM the same way as SIGINT. This ensures that if we're terminated
 # by the buildbot worker, we'll make an attempt to clean up our subprocesses.
 def install_signal_handler():
@@ -550,6 +624,8 @@ def install_signal_handler():
 def parse_args():
     parser = argparse.ArgumentParser()
     subcommands = parser.add_subparsers(dest="subcommand")
+
+    # Subcommands
     build = subcommands.add_parser("build", help="Build everything")
     configure_build = subcommands.add_parser("configure-build",
                                              help="Run `configure` for the "
@@ -561,25 +637,27 @@ def parse_args():
     make_host = subcommands.add_parser("make-host",
                                        help="Run `make` for Android")
     subcommands.add_parser(
-        "clean", help="Delete the cross-build directory")
+        "clean", help="Delete all build and prefix directories")
+    subcommands.add_parser(
+        "build-testbed", help="Build the testbed app")
+    test = subcommands.add_parser(
+        "test", help="Run the test suite")
+    package = subcommands.add_parser("package", help="Make a release package")
 
+    # Common arguments
     for subcommand in build, configure_build, configure_host:
         subcommand.add_argument(
             "--clean", action="store_true", default=False, dest="clean",
-            help="Delete any relevant directories before building")
-    for subcommand in build, configure_host, make_host:
+            help="Delete the relevant build and prefix directories first")
+    for subcommand in [build, configure_host, make_host, package]:
         subcommand.add_argument(
-            "host", metavar="HOST",
-            choices=["aarch64-linux-android", "x86_64-linux-android"],
+            "host", metavar="HOST", choices=HOSTS,
             help="Host triplet: choices=[%(choices)s]")
     for subcommand in build, configure_build, configure_host:
         subcommand.add_argument("args", nargs="*",
                                 help="Extra arguments to pass to `configure`")
 
-    subcommands.add_parser(
-        "build-testbed", help="Build the testbed app")
-    test = subcommands.add_parser(
-        "test", help="Run the test suite")
+    # Test arguments
     test.add_argument(
         "-v", "--verbose", action="count", default=0,
         help="Show Gradle output, and non-Python logcat messages. "
@@ -608,14 +686,17 @@ def main():
         stream.reconfigure(line_buffering=True)
 
     context = parse_args()
-    dispatch = {"configure-build": configure_build_python,
-                "make-build": make_build_python,
-                "configure-host": configure_host_python,
-                "make-host": make_host_python,
-                "build": build_all,
-                "clean": clean_all,
-                "build-testbed": build_testbed,
-                "test": run_testbed}
+    dispatch = {
+        "configure-build": configure_build_python,
+        "make-build": make_build_python,
+        "configure-host": configure_host_python,
+        "make-host": make_host_python,
+        "build": build_all,
+        "clean": clean_all,
+        "build-testbed": build_testbed,
+        "test": run_testbed,
+        "package": package,
+    }
 
     try:
         result = dispatch[context.subcommand](context)
