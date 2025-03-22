@@ -74,7 +74,7 @@ jobs:
             runner: windows-latest
           - target: aarch64-pc-windows-msvc/msvc
             architecture: ARM64
-            runner: windows-latest
+            runner: windows-aarch64
           - target: x86_64-apple-darwin/clang
             architecture: x86_64
             runner: macos-13
@@ -96,18 +96,10 @@ jobs:
           python-version: '3.11'
 
       - name: Native Windows
-        if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-
-      # No tests (yet):
-      - name: Emulated Windows
-        if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
-        run: |
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
-          ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
 
         # The `find` line is required as a result of https://github.com/actions/runner-images/issues/9966.
         # This is a bug in the macOS runner image where the pre-installed Python is installed in the same

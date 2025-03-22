@@ -164,10 +164,10 @@ jobs:
           - false
           - true
         include:
-          - os: windows-latest # FIXME(diegorusso): change to os: windows-aarch64
+          - os: windows-aarch64
             arch: arm64
             free-threading: false
-          - os: windows-latest # FIXME(diegorusso): change to os: windows-aarch64
+          - os: windows-aarch64
             arch: arm64
             free-threading: true
           - os: windows-latest
@@ -187,12 +187,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        os:
+          - windows-latest
         arch:
-        - x86
-        - x64
-        - arm64
+          - x86
+          - x64
+        include:
+          - os: windows-aarch64
+            arch: arm64
     uses: ./.github/workflows/reusable-windows-msi.yml
     with:
+      os: ${{ matrix.os }}
       arch: ${{ matrix.arch }}
 
   build-macos:
