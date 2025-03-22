@@ -225,7 +225,7 @@ def length_hint(obj, default=0):
 
 def call(obj, /, *args, **kwargs):
     """Same as obj(*args, **kwargs)."""
-    return obj(*args, **kwargs)
+    return obj(*args,kwargs)
 
 # Generalized Lookup Objects **************************************************#
 
