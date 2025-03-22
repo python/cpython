@@ -69,7 +69,7 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
                 if isinstance(self, p_meta):
                     return self
                 p = p_meta(f"POINTER({self.__name__})", (self, c_void_p), {})
-                cls.__pointer_type__ = p
+                self.__pointer_type__ = p
                 return self
 
         class p_meta(PyCSimpleType, ct_meta):
