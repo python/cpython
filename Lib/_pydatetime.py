@@ -2119,7 +2119,9 @@ class datetime(date):
     # Ways to produce a string.
 
     def _tzstr(self, basic):
-        """Return formatted timezone offset (+xx:xx) or an empty string."""
+        """Return formatted timezone offset (+xx:xx) or an empty string.
+        The colon separator is omitted if *basic* is true.
+        """
         off = self.utcoffset()
         sep = '' if basic else ':'
         return _format_offset(off, sep)
