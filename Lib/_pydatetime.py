@@ -1614,7 +1614,7 @@ class time:
         s = _format_time(self._hour, self._minute, self._second,
                           self._microsecond, timespec)
 
-        if use_utc_designator and self.tzname() == 'UTC':
+        if use_utc_designator and (self.tzinfo is timezone.utc or self.tzname() == 'UTC'):
             s += 'Z'
         else:
             tz = self._tzstr()

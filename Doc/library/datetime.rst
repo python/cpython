@@ -1601,12 +1601,12 @@ Instance methods:
       '2015-01-01T12:30:59.000000'
 
    If the optional argument *use_utc_designator* is set to :const:`True` and
-   :meth:`tzname` returns exactly ``"UTC"``, then "Z" will be given as the UTC
+   :meth:`tzname` returns exactly ``'UTC'``, then 'Z' will be given as the
    offset in the formatted string.
 
-   .. versionadded:: 3.6
+   .. versionchanged:: 3.6
       Added the *timespec* argument.
-   .. versionadded:: next
+   .. versionchanged:: next
       Added the *use_utc_designator* argument.
 
 .. method:: datetime.__str__()
@@ -2008,7 +2008,7 @@ Instance methods:
 
    .. versionchanged:: 3.6
       Added the *timespec* parameter.
-   .. versionadded:: next
+   .. versionchanged:: next
       Added the *use_utc_designator* argument.
 
 

@@ -1700,8 +1700,8 @@ static PyObject *delta_negative(PyObject *op);
 
 /* Add formatted UTC offset string to buf.  buf has no more than
  * buflen bytes remaining.  If use_utc_designator is true,
- * tzinfo.tzname(tzinfoarg) will be called, and if it returns "UTC",
- * only "Z\0" will be added. Otherwise, the UTC offset is gotten by calling
+ * tzinfo.tzname(tzinfoarg) will be called, and if it returns 'UTC',
+ * only 'Z\0' will be added. Otherwise, the UTC offset is gotten by calling
  * tzinfo.utcoffset(tzinfoarg).  If that returns None, \0 is stored into
  * *buf, and that's all.  Else the returned value is checked for sanity (an
  * integer in range), and if that's OK it's converted to an hours & minutes
@@ -1712,8 +1712,8 @@ static PyObject *delta_negative(PyObject *op);
  */
 static int
 format_utcoffset(char *buf, size_t buflen, const char *sep,
-                int use_utc_designator,
-                PyObject *tzinfo, PyObject *tzinfoarg)
+                 int use_utc_designator,
+                 PyObject *tzinfo, PyObject *tzinfoarg)
 {
     PyObject *offset;
     int hours, minutes, seconds, microseconds;
@@ -1722,14 +1722,8 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
     assert(buflen >= 1);
 
     if (use_utc_designator) {
-        PyObject* name = PyObject_CallMethod(tzinfo, "tzname", "O", tzinfoarg);
-        if (name == NULL)
-            return -1;
-        int tz_is_utc = (PyUnicode_Check(name) &&
-                         0 == strcmp("UTC", PyUnicode_AsUTF8(name)));
-        Py_DECREF(name);
-
-        if (tz_is_utc) {
+        PyObject *name = PyObject_CallMethod(tzinfo, "tzname", "O", tzinfoarg);
+        if (PyUnicode_Check(name) && strcmp("UTC", PyUnicode_AsUTF8(name))) {
             PyOS_snprintf(buf, buflen, "Z");
             return 0;
         }
@@ -1787,6 +1781,7 @@ make_somezreplacement(PyObject *object, char *sep, PyObject *tzinfoarg)
     if (format_utcoffset(buf,
                          sizeof(buf),
                          sep,
+                         0,
                          tzinfo,
                          tzinfoarg) < 0)
         return NULL;
