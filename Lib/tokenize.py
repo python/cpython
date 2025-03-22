@@ -499,7 +499,7 @@ def generate_tokens(readline):
     """
     return _generate_tokens_from_c_tokenizer(readline, extra_tokens=True)
 
-def main():
+def _main(args=None):
     import argparse
 
     # Helper error handling routines
@@ -524,7 +524,7 @@ def main():
                         help='the file to tokenize; defaults to stdin')
     parser.add_argument('-e', '--exact', dest='exact', action='store_true',
                         help='display token names using the exact type')
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     try:
         # Tokenize the input
@@ -589,4 +589,4 @@ def _generate_tokens_from_c_tokenizer(source, encoding=None, extra_tokens=False)
 
 
 if __name__ == "__main__":
-    main()
+    _main()
