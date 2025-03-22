@@ -145,6 +145,7 @@ import glob
 import importlib.machinery
 import importlib.util
 import os
+import re
 import sys
 import time
 import tokenize
@@ -154,6 +155,7 @@ from operator import itemgetter
 
 __version__ = '1.5'
 
+from test.test_doctest.test_doctest import wrapped
 
 # The normal pot-file header. msgmerge and Emacs's po-mode work better if it's
 # there.
@@ -213,21 +215,40 @@ def escape_nonascii(s, encoding):
     return ''.join(escapes[b] for b in s.encode(encoding))
 
 
-def normalize(s, encoding):
+_space_splitter = re.compile(r'\s+|\S+\s*')
+
+def normalize(s, encoding, prefix, width):
     # This converts the various Python string types into a format that is
-    # appropriate for .po files, namely much closer to C style.
-    lines = s.split('\n')
-    if len(lines) == 1:
-        s = '"' + escape(s, encoding) + '"'
-    else:
-        if not lines[-1]:
-            del lines[-1]
-            lines[-1] = lines[-1] + '\n'
-        for i in range(len(lines)):
-            lines[i] = escape(lines[i], encoding)
-        lineterm = '\\n"\n"'
-        s = '""\n"' + lineterm.join(lines) + '"'
-    return s
+    # appropriate for .po files, namely much closer to C style,
+    # while wrapping to options.width.
+    lines = []
+    wrap = False
+    for line in s.splitlines(True):
+        escaped_line = escape(line, encoding)
+        if len(escaped_line) + len(prefix) + 3 > width:
+            wrap = True
+            words = _space_splitter.findall(line)
+            words.reverse()
+            buf = []
+            size = 0
+            while words:
+                word = words.pop()
+                escaped_word = escape(word, encoding)
+                escaped_word_len = len(escaped_word)
+                new_size = size + escaped_word_len
+                if new_size + 2 <= width or not buf:
+                    buf.append(escaped_word)
+                    size = new_size
+                else:
+                    lines.append(''.join(buf))
+                    buf = [escaped_word]
+                    size = escaped_word_len
+            lines.append(''.join(buf))
+        else:
+            lines.append(escaped_line)
+    if len(lines) <= 1 and (not wrap or len(_space_splitter.findall(lines[0])) == 1):
+        return f'"{escape(s, encoding)}"'
+    return '""\n' + '\n'.join(f'"{line}"' for line in lines)
 
 
 def containsAny(str, set):
@@ -618,10 +639,10 @@ def write_pot_file(messages, options, fp):
             # to skip translating some unimportant docstrings.
             print('#, docstring', file=fp)
         if msg.msgctxt is not None:
-            print('msgctxt', normalize(msg.msgctxt, encoding), file=fp)
-        print('msgid', normalize(msg.msgid, encoding), file=fp)
+            print('msgctxt', normalize(msg.msgctxt, encoding, 'msgctxt', options.width), file=fp)
+        print('msgid', normalize(msg.msgid, encoding, 'msgid', options.width), file=fp)
         if msg.msgid_plural is not None:
-            print('msgid_plural', normalize(msg.msgid_plural, encoding), file=fp)
+            print('msgid_plural', normalize(msg.msgid_plural, encoding, 'msgid_plural', options.width), file=fp)
             print('msgstr[0] ""', file=fp)
             print('msgstr[1] ""\n', file=fp)
         else:
