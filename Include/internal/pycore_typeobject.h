@@ -144,6 +144,8 @@ struct types_state {
         managed_static_type_state initialized[_Py_MAX_MANAGED_STATIC_EXT_TYPES];
     } for_extensions;
     PyMutex mutex;
+    // used to check correct usage of the above mutex
+    unsigned long long mutex_tid;
 
     // Borrowed references to type objects whose
     // tp_version_tag % TYPE_VERSION_CACHE_SIZE

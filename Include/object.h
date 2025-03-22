@@ -576,8 +576,8 @@ given type object has a specified feature.
 /* Objects behave like an unbound method */
 #define Py_TPFLAGS_METHOD_DESCRIPTOR (1UL << 17)
 
-/* Unused. Legacy flag */
-#define Py_TPFLAGS_VALID_VERSION_TAG  (1UL << 19)
+/* Type structure is potentially exposed (revealed) to other threads */
+#define Py_TPFLAGS_EXPOSED  (1UL << 19)
 
 /* Type is abstract and cannot be instantiated */
 #define Py_TPFLAGS_IS_ABSTRACT (1UL << 20)
