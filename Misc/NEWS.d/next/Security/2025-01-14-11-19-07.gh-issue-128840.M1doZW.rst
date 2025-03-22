@@ -1,0 +1,2 @@
+Short-circuit the processing of long IPv6 addresses early to prevent excessive
+memory consumption and a minor denial-of-service.
