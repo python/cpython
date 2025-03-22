@@ -1,0 +1,3 @@
+excluded
+also excluded
+excluded with trailing whitespace  
