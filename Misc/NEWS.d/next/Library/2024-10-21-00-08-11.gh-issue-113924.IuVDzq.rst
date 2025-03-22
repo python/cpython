@@ -1,0 +1,1 @@
+Added `zipfile.ZipFile.copy_files` to  allow copying from a zipfile.
