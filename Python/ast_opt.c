@@ -824,6 +824,9 @@ astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 static int
 fold_const_match_patterns(expr_ty node, PyArena *ctx_, _PyASTOptimizeState *state)
 {
+    if (state->syntax_check_only) {
+        return 1;
+    }
     switch (node->kind)
     {
         case UnaryOp_kind:
