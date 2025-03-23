@@ -1,0 +1,3 @@
+Allow :meth:`graphlib.TopologicalSorter.prepare` to be called more than once
+as long as sorting has not started.
+Patch by Daniel Pope.
