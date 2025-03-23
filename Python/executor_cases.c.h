@@ -4399,38 +4399,36 @@
             break;
         }
 
-        case _LOAD_SPECIAL: {
-            _PyStackRef owner;
-            _PyStackRef attr;
-            _PyStackRef self_or_null;
-            oparg = CURRENT_OPARG();
-            owner = stack_pointer[-1];
-            assert(oparg <= SPECIAL_MAX);
-            PyObject *owner_o = PyStackRef_AsPyObjectSteal(owner);
-            PyObject *name = _Py_SpecialMethods[oparg].name;
-            PyObject *self_or_null_o;
-            stack_pointer += -1;
+        case _INSERT_NULL: {
+            _PyStackRef arg;
+            _PyStackRef *args;
+            arg = stack_pointer[-1];
+            args = &stack_pointer[-1];
+            args[0] = PyStackRef_NULL;
+            args[1] = arg;
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_SPECIAL: {
+            _PyStackRef *method_and_self;
+            oparg = CURRENT_OPARG();
+            method_and_self = &stack_pointer[-2];
+            PyObject *name = _Py_SpecialMethods[oparg].name;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *attr_o = _PyObject_LookupSpecialMethod(owner_o, name, &self_or_null_o);
+            int err = _PyObject_LookupSpecialMethod(name, method_and_self);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (attr_o == NULL) {
+            if (err < 0) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _PyErr_Format(tstate, PyExc_TypeError,
                                   _Py_SpecialMethods[oparg].error,
-                                  Py_TYPE(owner_o)->tp_name);
+                                  PyStackRef_TYPE(method_and_self[1])->tp_name);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                 }
                 JUMP_TO_ERROR();
             }
-            attr = PyStackRef_FromPyObjectSteal(attr_o);
-            self_or_null = self_or_null_o == NULL ?
-            PyStackRef_NULL : PyStackRef_FromPyObjectSteal(self_or_null_o);
-            stack_pointer[0] = attr;
-            stack_pointer[1] = self_or_null;
-            stack_pointer += 2;
-            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 

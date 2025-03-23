@@ -259,7 +259,7 @@ class Stack:
             else:
                 rename = ""
             if not popped.in_local:
-                assert popped.memory_offset is not None
+                # assert popped.memory_offset is not None
                 if var.is_array():
                     defn = f"{var.name} = &stack_pointer[{self.top_offset.to_c()}];\n"
                 else:
