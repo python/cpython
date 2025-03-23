@@ -1958,19 +1958,17 @@ class LWPCookieTests(unittest.TestCase):
 
         # Check that the HttpOnly prefix is added to the correct cookies
         for key in ["foo1", "foo2", "foo3"]:
-            matches = [x for x in lines if key in x]
-            self.assertEqual(len(matches), 1,
-                             "Incorrect number of matches for cookie with value %r" % key)
-            self.assertTrue(matches[0].startswith("#HttpOnly_"),
-                            "Cookie with value %r is missing the HttpOnly prefix" % key)
+            with self.subTest(key=key):
+                matches = [x for x in lines if key in x]
+                self.assertEqual(len(matches), 1)
+                self.assertTrue(matches[0].startswith("#HttpOnly_"))
 
         # Check that the HttpOnly prefix is not added to the correct cookies
         for key in ["foo4"]:
-            matches = [x for x in lines if key in x]
-            self.assertEqual(len(matches), 1,
-                             "Incorrect number of matches for cookie with value %r" % key)
-            self.assertFalse(matches[0].startswith("#HttpOnly_"),
-                             "Cookie with value %r has the HttpOnly prefix" % key)
+            with self.subTest(key=key):
+                matches = [x for x in lines if key in x]
+                self.assertEqual(len(matches), 1)
+                self.assertFalse(matches[0].startswith("#HttpOnly_"))
 
     def test_netscape_misc(self):
         # Some additional Netscape cookies tests.
