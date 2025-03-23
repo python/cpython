@@ -1210,11 +1210,8 @@ dummy_func(
 
         op(_SEND, (receiver, v -- receiver, retval)) {
             PyObject *receiver_o = PyStackRef_AsPyObjectBorrow(receiver);
-
             PyObject *retval_o;
             assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
-            _PyStackRef tmp = PyStackRef_MakeHeapSafe(v);
-            DEAD(v);
             if ((tstate->interp->eval_frame == NULL) &&
                 (Py_TYPE(receiver_o) == &PyGen_Type || Py_TYPE(receiver_o) == &PyCoro_Type) &&
                 ((PyGenObject *)receiver_o)->gi_frame_state < FRAME_EXECUTING)
@@ -1222,7 +1219,7 @@ dummy_func(
                 PyGenObject *gen = (PyGenObject *)receiver_o;
                 _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
                 STACK_SHRINK(1);
-                _PyFrame_StackPush(gen_frame, tmp);
+                _PyFrame_StackPush(gen_frame, PyStackRef_MakeHeapSafe(v));
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
@@ -1238,7 +1235,7 @@ dummy_func(
             else {
                 retval_o = PyObject_CallMethodOneArg(receiver_o,
                                                      &_Py_ID(send),
-                                                     PyStackRef_AsPyObjectBorrow(tmp));
+                                                     PyStackRef_AsPyObjectBorrow(v));
             }
             if (retval_o == NULL) {
                 int matches = _PyErr_ExceptionMatches(tstate, PyExc_StopIteration);
@@ -1251,11 +1248,11 @@ dummy_func(
                     JUMPBY(oparg);
                 }
                 else {
-                    PyStackRef_CLOSE(tmp);
+                    PyStackRef_CLOSE(v);
                     ERROR_IF(true, error);
                 }
             }
-            PyStackRef_CLOSE(tmp);
+            PyStackRef_CLOSE(v);
             retval = PyStackRef_FromPyObjectSteal(retval_o);
         }
 
