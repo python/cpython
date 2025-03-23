@@ -633,7 +633,7 @@ Functions
    documented as supported.
 
    .. versionchanged::
-   Added the ``%F`` directive.
+      Added the ``%F`` directive.
 
 
 .. class:: struct_time
