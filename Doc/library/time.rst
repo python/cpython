@@ -431,7 +431,8 @@ Functions
    :func:`gmtime` or :func:`localtime` to a string as specified by the *format*
    argument.  If *t* is not provided, the current time as returned by
    :func:`localtime` is used.  *format* must be a string.  :exc:`ValueError` is
-   raised if any field in *t* is outside of the allowed range.
+   raised if any field in *t* is outside of the allowed range or if digits are
+   not ASCII.
 
    0 is a legal argument for any position in the time tuple; if it is normally
    illegal the value is forced to a correct one.
@@ -591,11 +592,11 @@ Functions
 
    The *format* parameter uses the same directives as those used by
    :func:`strftime`; it defaults to ``"%a %b %d %H:%M:%S %Y"`` which matches the
-   formatting returned by :func:`ctime`.
-   If *string* cannot be parsed according to *format*, if it has excess data
-   after parsing, or if digits are not ASCII, a :exc:`ValueError` is raised. The
-   default values, ``(1900, 1, 1, 0, 0, 0, 0, 1, -1)``, are used to fill in any
-   missing data when more accurate values cannot be inferred.
+   formatting returned by :func:`ctime`. If *string* cannot be parsed according
+   to *format*, or if it has excess data after parsing, :exc:`ValueError` is
+   raised. The default values used to fill in any missing data when more
+   accurate values cannot be inferred are ``(1900, 1, 1, 0, 0, 0, 0, 1, -1)``.
+   Both *string* and *format* must be strings.
 
    For example:
 

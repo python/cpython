@@ -2432,8 +2432,7 @@ Class attributes:
 
 :class:`date`, :class:`.datetime`, and :class:`.time` objects all support a
 ``strftime(format)`` method, to create a string representing the time under the
-control of an explicit format string. A :exc:`ValueError` will be raised if digits
-are not ASCII.
+control of an explicit format string.
 
 Conversely, the :meth:`date.strptime`, :meth:`datetime.strptime` and
 :meth:`time.strptime` class methods create an object from a string
@@ -2617,6 +2616,8 @@ differences between platforms in handling of unsupported format specifiers.
 
 Technical Detail
 ^^^^^^^^^^^^^^^^
+
+A :exc:`ValueError` will be raised if digits are not ASCII.
 
 Broadly speaking, ``d.strftime(fmt)`` acts like the :mod:`time` module's
 ``time.strftime(fmt, d.timetuple())`` although not all objects support a
