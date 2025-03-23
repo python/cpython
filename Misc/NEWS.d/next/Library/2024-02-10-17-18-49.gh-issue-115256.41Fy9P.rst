@@ -1,5 +1,0 @@
-Added DeprecationWarning when accessing the tarfile attribute of TarInfo
-objects. The attribute is never used internally and is only attached to
-TarInfos when the tarfile is opened in write-mode, not read-mode. The
-attribute creates an unnecessary reference cycle which may cause
-corruption when not closing the handle after writing a tarfile.

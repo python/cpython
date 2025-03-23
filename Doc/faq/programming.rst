@@ -869,7 +869,7 @@ How do I convert a string to a number?
 --------------------------------------
 
 For integers, use the built-in :func:`int` type constructor, e.g. ``int('144')
-== 144``.  Similarly, :func:`float` converts to floating-point,
+== 144``.  Similarly, :func:`float` converts to a floating-point number,
 e.g. ``float('144') == 144.0``.
 
 By default, these interpret the number as decimal, so that ``int('0144') ==
@@ -1013,7 +1013,7 @@ Not as such.
 For simple input parsing, the easiest approach is usually to split the line into
 whitespace-delimited words using the :meth:`~str.split` method of string objects
 and then convert decimal strings to numeric values using :func:`int` or
-:func:`float`.  :meth:`!split()` supports an optional "sep" parameter which is useful
+:func:`float`.  :meth:`!split` supports an optional "sep" parameter which is useful
 if the line uses something other than whitespace as a separator.
 
 For more complicated input parsing, regular expressions are more powerful
@@ -1613,9 +1613,16 @@ method too, and it must do so carefully.  The basic implementation of
            self.__dict__[name] = value
        ...
 
-Most :meth:`!__setattr__` implementations must modify
-:meth:`self.__dict__ <object.__dict__>` to store
-local state for self without causing an infinite recursion.
+Many :meth:`~object.__setattr__` implementations call :meth:`!object.__setattr__` to set
+an attribute on self without causing infinite recursion::
+
+   class X:
+       def __setattr__(self, name, value):
+           # Custom logic here...
+           object.__setattr__(self, name, value)
+
+Alternatively, it is possible to set attributes by inserting
+entries into :attr:`self.__dict__ <object.__dict__>` directly.
 
 
 How do I call a method defined in a base class from a derived class that extends it?
@@ -1741,11 +1748,31 @@ but effective way to define class private variables.  Any identifier of the form
 is textually replaced with ``_classname__spam``, where ``classname`` is the
 current class name with any leading underscores stripped.
 
-This doesn't guarantee privacy: an outside user can still deliberately access
-the "_classname__spam" attribute, and private values are visible in the object's
-``__dict__``.  Many Python programmers never bother to use private variable
-names at all.
+The identifier can be used unchanged within the class, but to access it outside
+the class, the mangled name must be used:
 
+.. code-block:: python
+
+   class A:
+       def __one(self):
+           return 1
+       def two(self):
+           return 2 * self.__one()
+
+   class B(A):
+       def three(self):
+           return 3 * self._A__one()
+
+   four = 4 * A()._A__one()
+
+In particular, this does not guarantee privacy since an outside user can still
+deliberately access the private attribute; many Python programmers never bother
+to use private variable names at all.
+
+.. seealso::
+
+   The :ref:`private name mangling specifications <private-name-mangling>`
+   for details and special cases.
 
 My class defines __del__ but it is not called when I delete the object.
 -----------------------------------------------------------------------
@@ -1879,28 +1906,30 @@ In the standard library code, you will see several common patterns for
 correctly using identity tests:
 
 1) As recommended by :pep:`8`, an identity test is the preferred way to check
-for ``None``.  This reads like plain English in code and avoids confusion with
-other objects that may have boolean values that evaluate to false.
+   for ``None``.  This reads like plain English in code and avoids confusion
+   with other objects that may have boolean values that evaluate to false.
 
 2) Detecting optional arguments can be tricky when ``None`` is a valid input
-value.  In those situations, you can create a singleton sentinel object
-guaranteed to be distinct from other objects.  For example, here is how
-to implement a method that behaves like :meth:`dict.pop`::
+   value.  In those situations, you can create a singleton sentinel object
+   guaranteed to be distinct from other objects.  For example, here is how
+   to implement a method that behaves like :meth:`dict.pop`:
 
-   _sentinel = object()
+   .. code-block:: python
 
-   def pop(self, key, default=_sentinel):
-       if key in self:
-           value = self[key]
-           del self[key]
-           return value
-       if default is _sentinel:
-           raise KeyError(key)
-       return default
+      _sentinel = object()
+
+      def pop(self, key, default=_sentinel):
+          if key in self:
+              value = self[key]
+              del self[key]
+              return value
+          if default is _sentinel:
+              raise KeyError(key)
+          return default
 
 3) Container implementations sometimes need to augment equality tests with
-identity tests.  This prevents the code from being confused by objects such as
-``float('NaN')`` that are not equal to themselves.
+   identity tests.  This prevents the code from being confused by objects
+   such as ``float('NaN')`` that are not equal to themselves.
 
 For example, here is the implementation of
 :meth:`!collections.abc.Sequence.__contains__`::

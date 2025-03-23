@@ -1,10 +1,12 @@
 import array
 import collections
 import dataclasses
+import dis
 import enum
 import inspect
 import sys
 import unittest
+from test import support
 
 
 @dataclasses.dataclass
@@ -2957,6 +2959,14 @@ class TestSyntaxErrors(unittest.TestCase):
                 pass
         """)
 
+    def test_len1_tuple_sequence_pattern_comma(self):
+        # correct syntax would be `case(*x,):`
+        self.assert_syntax_error("""
+        match ...:
+            case (*x):
+                pass
+        """)
+
     def test_mapping_pattern_keys_may_only_match_literals_and_attribute_lookups(self):
         self.assert_syntax_error("""
         match ...:
@@ -3003,6 +3013,13 @@ class TestSyntaxErrors(unittest.TestCase):
         self.assert_syntax_error("""
         match ...:
             case a as a:
+                pass
+        """)
+
+    def test_multiple_assignments_to_name_in_pattern_6(self):
+        self.assert_syntax_error("""
+        match ...:
+            case a as a + 1:  # NAME and expression with no ()
                 pass
         """)
 
@@ -3369,6 +3386,24 @@ class TestValueErrors(unittest.TestCase):
         self.assertIs(y, None)
         self.assertIs(z, None)
 
+class TestSourceLocations(unittest.TestCase):
+    def test_jump_threading(self):
+        # See gh-123048
+        def f():
+            x = 0
+            v = 1
+            match v:
+                case 1:
+                    if x < 0:
+                        x = 1
+                case 2:
+                    if x < 0:
+                        x = 1
+            x += 1
+
+        for inst in dis.get_instructions(f):
+            if inst.opcode in dis.hasjump:
+                self.assertIsNotNone(inst.positions.lineno, "jump without location")
 
 class TestTracing(unittest.TestCase):
 
@@ -3464,6 +3499,7 @@ class TestTracing(unittest.TestCase):
         self.assertListEqual(self._trace(f, 1), [1, 2, 3])
         self.assertListEqual(self._trace(f, 0), [1, 2, 5, 6])
 
+    @support.skip_wasi_stack_overflow()
     def test_parser_deeply_nested_patterns(self):
         # Deeply nested patterns can cause exponential backtracking when parsing.
         # See gh-93671 for more information.

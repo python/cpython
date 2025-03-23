@@ -289,6 +289,54 @@ class ThreadRunningTests(BasicThreadTest):
             with self.assertRaisesRegex(RuntimeError, "Cannot join current thread"):
                 raise error
 
+    def test_join_with_timeout(self):
+        lock = thread.allocate_lock()
+        lock.acquire()
+
+        def thr():
+            lock.acquire()
+
+        with threading_helper.wait_threads_exit():
+            handle = thread.start_joinable_thread(thr)
+            handle.join(0.1)
+            self.assertFalse(handle.is_done())
+            lock.release()
+            handle.join()
+            self.assertTrue(handle.is_done())
+
+    def test_join_unstarted(self):
+        handle = thread._ThreadHandle()
+        with self.assertRaisesRegex(RuntimeError, "thread not started"):
+            handle.join()
+
+    def test_set_done_unstarted(self):
+        handle = thread._ThreadHandle()
+        with self.assertRaisesRegex(RuntimeError, "thread not started"):
+            handle._set_done()
+
+    def test_start_duplicate_handle(self):
+        lock = thread.allocate_lock()
+        lock.acquire()
+
+        def func():
+            lock.acquire()
+
+        handle = thread._ThreadHandle()
+        with threading_helper.wait_threads_exit():
+            thread.start_joinable_thread(func, handle=handle)
+            with self.assertRaisesRegex(RuntimeError, "thread already started"):
+                thread.start_joinable_thread(func, handle=handle)
+            lock.release()
+            handle.join()
+
+    def test_start_with_none_handle(self):
+        def func():
+            pass
+
+        with threading_helper.wait_threads_exit():
+            handle = thread.start_joinable_thread(func, handle=None)
+            handle.join()
+
 
 class Barrier:
     def __init__(self, num_threads):

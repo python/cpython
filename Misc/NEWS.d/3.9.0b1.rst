@@ -532,7 +532,7 @@ Remove ``_random.Random.randbytes()``: the C implementation of
 .. section: Library
 
 Added default arguments to
-:meth:`difflib.SequenceMatcher.find_longest_match()`.
+:meth:`difflib.SequenceMatcher.find_longest_match`.
 
 ..
 

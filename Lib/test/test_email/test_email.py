@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2010 Python Software Foundation
+# Copyright (C) 2001 Python Software Foundation
 # Contact: email-sig@python.org
 # email package unit tests
 
@@ -809,6 +809,16 @@ class TestMessageAPI(TestEmailBase):
 
             w4kgdGVzdGFiYwo=
             """))
+
+    def test_string_payload_with_base64_cte(self):
+        msg = email.message_from_string(textwrap.dedent("""\
+        Content-Transfer-Encoding: base64
+
+        SGVsbG8uIFRlc3Rpbmc=
+        """), policy=email.policy.default)
+        self.assertEqual(msg.get_payload(decode=True), b"Hello. Testing")
+        self.assertDefectsEqual(msg['content-transfer-encoding'].defects, [])
+
 
 
 # Test the email.encoders module
@@ -2351,6 +2361,40 @@ counter to RFC 2822, there's no separating newline here
         self.assertEqual(msg.get_payload(), 'not a header\nTo: abc\n\nb\n')
         self.assertDefectsEqual(msg.defects,
                                 [errors.MissingHeaderBodySeparatorDefect])
+
+    def test_string_payload_with_extra_space_after_cte(self):
+        # https://github.com/python/cpython/issues/98188
+        cte = "base64 "
+        msg = email.message_from_string(textwrap.dedent(f"""\
+        Content-Transfer-Encoding: {cte}
+
+        SGVsbG8uIFRlc3Rpbmc=
+        """), policy=email.policy.default)
+        self.assertEqual(msg.get_payload(decode=True), b"Hello. Testing")
+        self.assertDefectsEqual(msg['content-transfer-encoding'].defects, [])
+
+    def test_string_payload_with_extra_text_after_cte(self):
+        msg = email.message_from_string(textwrap.dedent("""\
+        Content-Transfer-Encoding: base64 some text
+
+        SGVsbG8uIFRlc3Rpbmc=
+        """), policy=email.policy.default)
+        self.assertEqual(msg.get_payload(decode=True), b"Hello. Testing")
+        cte = msg['content-transfer-encoding']
+        self.assertDefectsEqual(cte.defects, [email.errors.InvalidHeaderDefect])
+
+    def test_string_payload_with_extra_space_after_cte_compat32(self):
+        cte = "base64 "
+        msg = email.message_from_string(textwrap.dedent(f"""\
+        Content-Transfer-Encoding: {cte}
+
+        SGVsbG8uIFRlc3Rpbmc=
+        """), policy=email.policy.compat32)
+        pasted_cte = msg['content-transfer-encoding']
+        self.assertEqual(pasted_cte, cte)
+        self.assertEqual(msg.get_payload(decode=True), b"Hello. Testing")
+        self.assertDefectsEqual(msg.defects, [])
+
 
 
 # Test RFC 2047 header encoding and decoding
@@ -4180,6 +4224,21 @@ class Test8BitBytesHandling(TestEmailBase):
         msg = email.message_from_bytes(m)
         self.assertEqual(msg.get_payload(decode=True),
                          '<,.V<W1A; á \n'.encode('utf-8'))
+
+    def test_rfc2231_charset_8bit_CTE(self):
+        m = textwrap.dedent("""\
+        From: foo@bar.com
+        To: baz
+        Mime-Version: 1.0
+        Content-Type: text/plain; charset*=ansi-x3.4-1968''utf-8
+        Content-Transfer-Encoding: 8bit
+
+        pöstal
+        """).encode('utf-8')
+        msg = email.message_from_bytes(m)
+        self.assertEqual(msg.get_payload(), "pöstal\n")
+        self.assertEqual(msg.get_payload(decode=True),
+                         "pöstal\n".encode('utf-8'))
 
 
     headertest_headers = (

@@ -1,4 +1,0 @@
-Fix UnicodeEncodeError in :meth:`email.Message.as_string` that results when
-a message that claims to be in the ascii character set actually has non-ascii
-characters. Non-ascii characters are now replaced with the U+FFFD replacement
-character, like in the ``replace`` error handler.

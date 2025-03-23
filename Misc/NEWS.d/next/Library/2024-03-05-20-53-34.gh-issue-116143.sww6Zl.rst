@@ -1,3 +1,0 @@
-Fix a race in pydoc ``_start_server``, eliminating a window in which
-``_start_server`` can return a thread that is "serving" but without a
-``docserver`` set.

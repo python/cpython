@@ -47,7 +47,7 @@ batched_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(iterable), &_Py_ID(n), &_Py_ID(strict), },
+        .ob_item = { &_Py_ID(iterable), _Py_LATIN1_CHR('n'), &_Py_ID(strict), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -71,7 +71,8 @@ batched_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_ssize_t n;
     int strict = 0;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -186,7 +187,8 @@ itertools_groupby(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *it;
     PyObject *keyfunc = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -484,6 +486,19 @@ PyDoc_STRVAR(itertools_chain_from_iterable__doc__,
 #define ITERTOOLS_CHAIN_FROM_ITERABLE_METHODDEF    \
     {"from_iterable", (PyCFunction)itertools_chain_from_iterable, METH_O|METH_CLASS, itertools_chain_from_iterable__doc__},
 
+static PyObject *
+itertools_chain_from_iterable_impl(PyTypeObject *type, PyObject *arg);
+
+static PyObject *
+itertools_chain_from_iterable(PyObject *type, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+
+    return_value = itertools_chain_from_iterable_impl((PyTypeObject *)type, arg);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(itertools_combinations__doc__,
 "combinations(iterable, r)\n"
 "--\n"
@@ -509,7 +524,7 @@ itertools_combinations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(iterable), &_Py_ID(r), },
+        .ob_item = { &_Py_ID(iterable), _Py_LATIN1_CHR('r'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -531,7 +546,8 @@ itertools_combinations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *iterable;
     Py_ssize_t r;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -580,7 +596,7 @@ itertools_combinations_with_replacement(PyTypeObject *type, PyObject *args, PyOb
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(iterable), &_Py_ID(r), },
+        .ob_item = { &_Py_ID(iterable), _Py_LATIN1_CHR('r'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -602,7 +618,8 @@ itertools_combinations_with_replacement(PyTypeObject *type, PyObject *args, PyOb
     PyObject *iterable;
     Py_ssize_t r;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -650,7 +667,7 @@ itertools_permutations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(iterable), &_Py_ID(r), },
+        .ob_item = { &_Py_ID(iterable), _Py_LATIN1_CHR('r'), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -673,7 +690,8 @@ itertools_permutations(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *iterable;
     PyObject *robj = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -736,7 +754,8 @@ itertools_accumulate(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *binop = Py_None;
     PyObject *initial = Py_None;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -809,7 +828,8 @@ itertools_compress(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *seq1;
     PyObject *seq2;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 2, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -908,7 +928,8 @@ itertools_count(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *long_cnt = NULL;
     PyObject *long_step = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 2, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -928,4 +949,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c6a515f765da86b5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=688855b1dc77bf5a input=a9049054013a1b77]*/

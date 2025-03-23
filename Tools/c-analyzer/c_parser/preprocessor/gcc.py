@@ -7,6 +7,7 @@ from . import common as _common
 FILES_WITHOUT_INTERNAL_CAPI = frozenset((
     # Modules/
     '_testcapimodule.c',
+    '_testlimitedcapi.c',
     '_testclinic_limited.c',
     'xxlimited.c',
     'xxlimited_35.c',
@@ -148,7 +149,7 @@ def _iter_top_include_lines(lines, topfile, cwd,
                             raw):
     partial = 0  # depth
     files = [topfile]
-    # We start at 1 in case there are source lines (including blank onces)
+    # We start at 1 in case there are source lines (including blank ones)
     # before the first marker line.  Also, we already verified in
     # _parse_marker_line() that the preprocessor reported lno as 1.
     lno = 1

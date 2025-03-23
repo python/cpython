@@ -144,7 +144,7 @@ only used for variable-sized objects and should otherwise be zero.
    If you want your type to be subclassable from Python, and your type has the same
    :c:member:`~PyTypeObject.tp_basicsize` as its base type, you may have problems with multiple
    inheritance.  A Python subclass of your type will have to list your type first
-   in its :attr:`~class.__bases__`, or else it will not be able to call your type's
+   in its :attr:`~type.__bases__`, or else it will not be able to call your type's
    :meth:`~object.__new__` method without getting an error.  You can avoid this problem by
    ensuring that your type has a larger value for :c:member:`~PyTypeObject.tp_basicsize` than its
    base type does.  Most of the time, this will be true anyway, because either your
@@ -403,8 +403,8 @@ the new attribute values.  We might be tempted, for example to assign the
 But this would be risky.  Our type doesn't restrict the type of the
 ``first`` member, so it could be any kind of object.  It could have a
 destructor that causes code to be executed that tries to access the
-``first`` member; or that destructor could release the
-:term:`Global interpreter Lock <GIL>` and let arbitrary code run in other
+``first`` member; or that destructor could detach the
+:term:`thread state <attached thread state>` and let arbitrary code run in other
 threads that accesses and modifies our object.
 
 To be paranoid and protect ourselves against this possibility, we almost
@@ -413,8 +413,8 @@ don't we have to do this?
 
 * when we absolutely know that the reference count is greater than 1;
 
-* when we know that deallocation of the object [#]_ will neither release
-  the :term:`GIL` nor cause any calls back into our type's code;
+* when we know that deallocation of the object [#]_ will neither detach
+  the :term:`thread state <attached thread state>` nor cause any calls back into our type's code;
 
 * when decrementing a reference count in a :c:member:`~PyTypeObject.tp_dealloc`
   handler on a type which doesn't support cyclic garbage collection [#]_.
@@ -447,7 +447,7 @@ Further, the attributes can be deleted, setting the C pointers to ``NULL``.  Eve
 though we can make sure the members are initialized to non-``NULL`` values, the
 members can be set to ``NULL`` if the attributes are deleted.
 
-We define a single method, :meth:`!Custom.name()`, that outputs the objects name as the
+We define a single method, :meth:`!Custom.name`, that outputs the objects name as the
 concatenation of the first and last names. ::
 
    static PyObject *

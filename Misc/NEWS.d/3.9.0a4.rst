@@ -755,7 +755,7 @@ dependencies.
 .. nonce: X7FRaN
 .. section: Windows
 
-:meth:`~pathlib.Path.home()` and :meth:`~pathlib.Path.expanduser()` on
+:meth:`~pathlib.Path.home` and :meth:`~pathlib.Path.expanduser` on
 Windows now prefer :envvar:`USERPROFILE` and no longer use :envvar:`HOME`,
 which is not normally set for regular user accounts. This makes them again
 behave like :func:`os.path.expanduser`, which was changed to ignore
