@@ -20,6 +20,7 @@ class CAPITest(unittest.TestCase):
     def test_check(self):
         # Test PyByteArray_Check()
         check = _testcapi.bytearray_check
+        self.assertTrue(check(bytearray(b'')))
         self.assertTrue(check(bytearray(b'abc')))
         self.assertFalse(check(b'abc'))
         self.assertTrue(check(ByteArraySubclass(b'abc')))
@@ -33,6 +34,7 @@ class CAPITest(unittest.TestCase):
     def test_checkexact(self):
         # Test PyByteArray_CheckExact()
         check = _testcapi.bytearray_checkexact
+        self.assertTrue(check(bytearray(b'')))
         self.assertTrue(check(bytearray(b'abc')))
         self.assertFalse(check(b'abc'))
         self.assertFalse(check(ByteArraySubclass(b'abc')))
@@ -79,6 +81,7 @@ class CAPITest(unittest.TestCase):
         # Test PyByteArray_Size()
         size = _testcapi.bytearray_size
 
+        self.assertEqual(size(bytearray(b'')), 0)
         self.assertEqual(size(bytearray(b'abc')), 3)
         self.assertEqual(size(ByteArraySubclass(b'abc')), 3)
 
@@ -90,6 +93,7 @@ class CAPITest(unittest.TestCase):
         """Test PyByteArray_AsString()"""
         asstring = _testcapi.bytearray_asstring
 
+        self.assertEqual(asstring(bytearray(b''), 1), b'\0')
         self.assertEqual(asstring(bytearray(b'abc'), 4), b'abc\0')
         self.assertEqual(asstring(ByteArraySubclass(b'abc'), 4), b'abc\0')
         self.assertEqual(asstring(bytearray(b'abc\0def'), 8), b'abc\0def\0')
@@ -105,6 +109,7 @@ class CAPITest(unittest.TestCase):
         ba = bytearray(b'abc')
         self.assertEqual(concat(ba, b'def'), bytearray(b'abcdef'))
         self.assertEqual(ba, b'abc')
+        self.assertEqual(concat(ba, ba), bytearray(b'abcabc'))
 
         self.assertEqual(concat(b'abc', b'def'), bytearray(b'abcdef'))
         self.assertEqual(concat(b'a\0b', b'c\0d'), bytearray(b'a\0bc\0d'))

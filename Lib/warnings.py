@@ -409,7 +409,7 @@ def warn_explicit(message, category, filename, lineno,
               "Unrecognized action (%r) in warnings.filters:\n %s" %
               (action, item))
     # Print message and context
-    msg = WarningMessage(message, category, filename, lineno, source)
+    msg = WarningMessage(message, category, filename, lineno, source=source)
     _showwarnmsg(msg)
 
 
