@@ -1443,6 +1443,47 @@ _testclinic_TestClass_defclass_posonly_varpos_impl(PyObject *self,
 }
 
 
+/*
+ * # Do NOT use __new__ to generate this method. Compare:
+ *
+ * [1] With __new__ (METH_KEYWORDS must be added even if we don't want to)
+ *
+ *   varpos_no_fastcall(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+ *   varpos_no_fastcall_impl(PyTypeObject *type, PyObject *args)
+ *   no auto-generated METHODDEF macro
+ *
+ * [2] Without __new__ (automatically METH_FASTCALL, not good for this test)
+ *
+ *   varpos_no_fastcall_impl(PyObject *type, PyObject *args)
+ *   varpos_no_fastcall(PyObject *type, PyObject *const *args, Py_ssize_t nargs)
+ *   flags = METH_FASTCALL|METH_CLASS
+ *
+ * [3] Without __new__ + "@disable fastcall" (what we want)
+ *
+ *   varpos_no_fastcall(PyObject *type, PyObject *args)
+ *   varpos_no_fastcall_impl(PyTypeObject *type, PyObject *args)
+ *   flags = METH_VARARGS|METH_CLASS
+ *
+ * We want to test a non-fastcall class method but without triggering an
+ * undefined behaviour at runtime in cfunction_call().
+ *
+ * At runtime, a METH_VARARGS method called in cfunction_call() must be:
+ *
+ *       (PyObject *, PyObject *)             -> PyObject *
+ *       (PyObject *, PyObject *, PyObject *) -> PyObject *
+ *
+ * depending on whether METH_KEYWORDS is present or not.
+ *
+ * AC determines whether a method is a __new__-like method solely bsaed
+ * on the method name, and not on its usage or its c_basename, and those
+ * methods must always be used with METH_VARARGS|METH_KEYWORDS|METH_CLASS.
+ *
+ * In particular, using [1] forces us to add METH_KEYWORDS even though
+ * the test shouldn't be expecting keyword arguments. Using [2] is also
+ * not possible since we want to test non-fastcalls. This is the reason
+ * why we need to be able to disable the METH_FASTCALL flag.
+ */
+
 /*[clinic input]
 @disable fastcall
 @classmethod
@@ -1450,44 +1491,6 @@ _testclinic.TestClass.varpos_no_fastcall
 
     *args: tuple
 
-# Do NOT use __new__ to generate this method. Compare:
-#
-# [1] With __new__ (METH_KEYWORDS must be added even if we don't want to)
-#
-#   varpos_no_fastcall(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-#   varpos_no_fastcall_impl(PyTypeObject *type, PyObject *args)
-#   no auto-generated METHODDEF macro
-#
-# [2] Without __new__ (automatically METH_FASTCALL, not good for this test)
-#
-#   varpos_no_fastcall_impl(PyObject *type, PyObject *args)
-#   varpos_no_fastcall(PyObject *type, PyObject *const *args, Py_ssize_t nargs)
-#   flags = METH_FASTCALL|METH_CLASS
-#
-# [3] Without __new__ + "@disable fastcall" (what we want)
-#
-#   varpos_no_fastcall(PyObject *type, PyObject *args)
-#   varpos_no_fastcall_impl(PyTypeObject *type, PyObject *args)
-#   flags = METH_VARARGS|METH_CLASS
-#
-# We want to test a non-fastcall class method but without triggering an
-# undefined behaviour at runtime in cfunction_call().
-#
-# At runtime, a METH_VARARGS method called in cfunction_call() must be:
-#
-#       (PyObject *, PyObject *)             -> PyObject *
-#       (PyObject *, PyObject *, PyObject *) -> PyObject *
-#
-# depending on whether METH_KEYWORDS is present or not.
-#
-# AC determines whether a method is a __new__-like method solely bsaed
-# on the method name, and not on its usage or its c_basename, and those
-# methods must always be used with METH_VARARGS|METH_KEYWORDS|METH_CLASS.
-#
-# In particular, using [1] forces us to add METH_KEYWORDS even though
-# the test shouldn't be expecting keyword arguments. Using [2] is also
-# not possible since we want to test non-fastcalls. This is the reason
-# why we need to be able to disable the METH_FASTCALL flag.
 [clinic start generated code]*/
 
 static PyObject *
