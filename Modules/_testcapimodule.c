@@ -2940,8 +2940,6 @@ typedef struct {
     PyObject *item;
 } PyGenericAliasObject;
 
-#define PyGenericAliasObject_CAST(op)   ((PyGenericAliasObject *)(op))
-
 static void
 generic_alias_dealloc(PyObject *op)
 {
@@ -3079,8 +3077,6 @@ typedef struct {
     PyObject_HEAD
     PyObject *value;
 } ContainerNoGCobject;
-
-#define ContainerNoGCobject_CAST(op)    ((ContainerNoGCobject *)(op))
 
 static PyObject *
 ContainerNoGC_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
