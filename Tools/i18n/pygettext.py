@@ -506,14 +506,14 @@ class GettextVisitor(ast.NodeVisitor):
             return
         if len(errors) == 1:
             print(f'*** {self.filename}:{node.lineno}: {errors[0]}',
-                    file=sys.stderr)
+                  file=sys.stderr)
         else:
             # There are multiple keyword specs for the function name and
             # none of them could be exxtracted. Print a general error
             # message and list the errors for each keyword spec.
             print(f'*** {self.filename}:{node.lineno}: '
-                    f'No keywords matched gettext call "{func_name}":',
-                    file=sys.stderr)
+                  f'No keywords matched gettext call "{func_name}":',
+                  file=sys.stderr)
             for spec, err in zip(specs, errors, strict=True):
                 unparsed = unparse_spec(func_name, spec)
                 print(f'\tkeyword="{unparsed}": {err}', file=sys.stderr)
