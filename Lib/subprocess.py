@@ -551,6 +551,10 @@ def run(*popenargs,
         kwargs['stdout'] = PIPE
         kwargs['stderr'] = PIPE
 
+    # backward compatibility
+    if not isinstance(popenargs, os.PathLike) and len(popenargs) == 1:
+        popenargs = popenargs[0]
+
     with Popen(popenargs, **kwargs) as process:
         try:
             stdout, stderr = process.communicate(input, timeout=timeout)
