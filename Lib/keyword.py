@@ -19,6 +19,7 @@ kwlist = [
     'False',
     'None',
     'True',
+    '__type_checking__',
     'and',
     'as',
     'assert',
