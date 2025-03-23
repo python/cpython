@@ -30,15 +30,6 @@ class MD5Type "MD5object *" "&PyType_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=6e5261719957a912]*/
 
-/* Some useful types */
-
-#if SIZEOF_INT == 4
-typedef unsigned int MD5_INT32; /* 32-bit integer */
-typedef long long MD5_INT64; /* 64-bit integer */
-#else
-/* not defined. compilation will die. */
-#endif
-
 /* The MD5 block size and message digest sizes, in bytes */
 
 #define MD5_BLOCKSIZE    64
