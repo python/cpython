@@ -80,6 +80,7 @@ if hasattr(os, 'copy_file_range'):
             if sent == 0:
                 break  # EOF
             offset += sent
+            yield sent
 else:
     _copy_file_range = None
 
@@ -97,6 +98,7 @@ if hasattr(os, 'sendfile'):
             if sent == 0:
                 break  # EOF
             offset += sent
+            yield sent
 else:
     _sendfile = None
 
@@ -141,14 +143,14 @@ def copyfileobj(source_f, target_f):
                         raise err
             if _copy_file_range:
                 try:
-                    _copy_file_range(source_fd, target_fd)
+                    yield from _copy_file_range(source_fd, target_fd)
                     return
                 except OSError as err:
                     if err.errno not in (ETXTBSY, EXDEV):
                         raise err
             if _sendfile:
                 try:
-                    _sendfile(source_fd, target_fd)
+                    yield from _sendfile(source_fd, target_fd)
                     return
                 except OSError as err:
                     if err.errno != ENOTSOCK:
