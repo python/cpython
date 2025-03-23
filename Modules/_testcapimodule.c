@@ -2945,7 +2945,7 @@ typedef struct {
 static void
 generic_alias_dealloc(PyObject *op)
 {
-    PyGenericAliasObject *self = PyGenericAliasObject_CAST(op);
+    PyGenericAliasObject *self = (PyGenericAliasObject*)op;
     Py_CLEAR(self->item);
     Py_TYPE(self)->tp_free(self);
 }
@@ -2953,7 +2953,7 @@ generic_alias_dealloc(PyObject *op)
 static PyObject *
 generic_alias_mro_entries(PyObject *op, PyObject *Py_UNUSED(bases))
 {
-    PyGenericAliasObject *self = PyGenericAliasObject_CAST(op);
+    PyGenericAliasObject *self = (PyGenericAliasObject*)op;
     return PyTuple_Pack(1, self->item);
 }
 
@@ -3102,7 +3102,7 @@ ContainerNoGC_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 static void
 ContainerNoGC_dealloc(PyObject *op)
 {
-    ContainerNoGCobject *self = ContainerNoGCobject_CAST(op);
+    ContainerNoGCobject *self = (ContainerNoGCobject*)op;
     Py_DECREF(self->value);
     Py_TYPE(self)->tp_free(self);
 }

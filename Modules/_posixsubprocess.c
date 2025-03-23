@@ -4,6 +4,7 @@
 #endif
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _Py_set_inheritable_async_safe()
 #include "pycore_interp.h"        // _PyInterpreterState_GetFinalizing()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // _Py_RestoreSignals()
