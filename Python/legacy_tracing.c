@@ -58,10 +58,10 @@ call_profile_func(_PyLegacyEventHandler *self, PyObject *arg)
 
 static PyObject *
 sys_profile_start(
-    PyObject *op, PyObject *const *args,
+    PyObject *callable, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
-    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(op);
+    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 2);
     return call_profile_func(self, Py_None);
@@ -69,10 +69,10 @@ sys_profile_start(
 
 static PyObject *
 sys_profile_throw(
-    PyObject *op, PyObject *const *args,
+    PyObject *callable, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
-    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(op);
+    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 3);
     return call_profile_func(self, Py_None);
@@ -80,10 +80,10 @@ sys_profile_throw(
 
 static PyObject *
 sys_profile_return(
-    PyObject *op, PyObject *const *args,
+    PyObject *callable, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
-    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(op);
+    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 3);
     return call_profile_func(self, args[2]);
@@ -91,10 +91,10 @@ sys_profile_return(
 
 static PyObject *
 sys_profile_unwind(
-    PyObject *op, PyObject *const *args,
+    PyObject *callable, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
-     _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(op);
+     _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 3);
    return call_profile_func(self, NULL);
@@ -102,10 +102,10 @@ sys_profile_unwind(
 
 static PyObject *
 sys_profile_call_or_return(
-    PyObject *op, PyObject *const *args,
+    PyObject *callable, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
-    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(op);
+    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 4);
     PyObject *callable = args[2];
