@@ -1496,7 +1496,7 @@ _testclinic.TestClass.varpos_no_fastcall
 static PyObject *
 _testclinic_TestClass_varpos_no_fastcall_impl(PyTypeObject *type,
                                               PyObject *args)
-/*[clinic end generated code: output=edfacec733aeb9c5 input=e385fc8a3af7ae44]*/
+/*[clinic end generated code: output=edfacec733aeb9c5 input=3f298d143aa98048]*/
 {
     return Py_NewRef(args);
 }
