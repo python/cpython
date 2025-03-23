@@ -1,6 +1,7 @@
 
 #include "Python.h"
 
+#include "pycore_object.h"
 #include "pycore_stackref.h"
 
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
@@ -175,8 +176,16 @@ _Py_stackref_report_leaks(PyInterpreterState *interp)
     int leak = 0;
     _Py_hashtable_foreach(interp->open_stackrefs_table, report_leak, &leak);
     if (leak) {
+        fflush(stdout);
         Py_FatalError("Stackrefs leaked.");
     }
+}
+
+void
+PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct)
+{
+    PyObject *obj = _Py_stackref_close(ref);
+    _Py_DECREF_SPECIALIZED(obj, destruct);
 }
 
 #endif
