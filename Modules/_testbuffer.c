@@ -2753,7 +2753,7 @@ staticarray_dealloc(PyObject *self)
 static int
 staticarray_getbuf(PyObject *op, Py_buffer *view, int flags)
 {
-    StaticArrayObject *a = (StaticArrayObject *)op;
+    StaticArrayObject *self = (StaticArrayObject *)op;
     *view = static_buffer;
 
     if (self->legacy_mode) {
