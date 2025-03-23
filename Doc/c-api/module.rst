@@ -633,7 +633,7 @@ state:
 
    Add a string constant to *module* as *name*.  This convenience function can be
    used from the module's initialization function.  The string *value* must be
-   ``NULL``-terminated.
+   ``NULL``-terminated and UTF-8 encoded.
    Return ``-1`` with an exception set on error, ``0`` on success.
 
    This is a convenience function that calls
