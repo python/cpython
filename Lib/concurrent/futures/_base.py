@@ -304,18 +304,6 @@ def wait(fs, timeout=None, return_when=ALL_COMPLETED):
     done.update(waiter.finished_futures)
     return DoneAndNotDoneFutures(done, fs - done)
 
-
-def _result_or_cancel(fut, timeout=None):
-    try:
-        try:
-            return fut.result(timeout)
-        finally:
-            fut.cancel()
-    finally:
-        # Break a reference cycle with the exception in self._exception
-        del fut
-
-
 class Future(object):
     """Represents the result of an asynchronous computation."""
 
@@ -631,9 +619,9 @@ class Executor(object):
                 while fs:
                     # wait for the next result
                     if timeout is None:
-                        _result_or_cancel(fs[-1])
+                        fs[-1].result()
                     else:
-                        _result_or_cancel(fs[-1], end_time - time.monotonic())
+                        fs[-1].result(end_time - time.monotonic())
 
                     # buffer next task
                     if (
