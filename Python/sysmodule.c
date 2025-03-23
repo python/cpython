@@ -2459,7 +2459,7 @@ it hasn't been overwritten.
 
 Args:
      pid (int): The process ID of the target Python process.
-     script (str|bytes|PathLike): The path to a file containing
+     script (str|bytes): The path to a file containing
          the Python code to be executed.
 [clinic start generated code]*/
 

@@ -595,14 +595,25 @@ _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
     }
     eval_breaker |= _PY_EVAL_PLEASE_STOP_BIT;
 
-    bytes = write_memory(
-            pid,
-            address_of_thread + local_debug_offsets.debugger_support.eval_breaker,
-            sizeof(uintptr_t),
-            &eval_breaker);
-
-    if (bytes == -1) {
+    // Ensure our path is not too long
+    if (local_debug_offsets.debugger_support.debugger_script_path_size <= strlen(debugger_script_path)) {
+        PyErr_SetString(PyExc_ValueError, "Debugger script path is too long");
         return -1;
+    }
+
+    if (debugger_script_path != NULL) {
+        uintptr_t debugger_script_path_addr = (
+                address_of_thread +
+                local_debug_offsets.debugger_support.remote_debugger_support +
+                local_debug_offsets.debugger_support.debugger_script_path);
+        bytes = write_memory(
+                pid,
+                debugger_script_path_addr,
+                strlen(debugger_script_path) + 1,
+                debugger_script_path);
+        if (bytes == -1) {
+            return -1;
+        }
     }
 
     int pending_call = 1;
@@ -620,19 +631,14 @@ _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
         return -1;
     }
 
-    if (debugger_script_path != NULL) {
-        uintptr_t debugger_script_path_addr = (
-                address_of_thread +
-                local_debug_offsets.debugger_support.remote_debugger_support +
-                local_debug_offsets.debugger_support.debugger_script_path);
-        bytes = write_memory(
-                pid,
-                debugger_script_path_addr,
-                strlen(debugger_script_path) + 1,
-                debugger_script_path);
-        if (bytes == -1) {
-            return -1;
-        }
+    bytes = write_memory(
+            pid,
+            address_of_thread + local_debug_offsets.debugger_support.eval_breaker,
+            sizeof(uintptr_t),
+            &eval_breaker);
+
+    if (bytes == -1) {
+        return -1;
     }
 
     return 0;

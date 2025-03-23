@@ -12,12 +12,15 @@ import subprocess
 import sys
 import sysconfig
 import test.support
+from io import StringIO
+from unittest import mock
 from test import support
 from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test.support import threading_helper
 from test.support import import_helper
 from test.support import force_not_colorized
+from test.support import SHORT_TIMEOUT
 try:
     from test.support import interpreters
 except ImportError:
@@ -1922,6 +1925,194 @@ class SizeofTest(unittest.TestCase):
         rc, out, err = assert_python_failure('-c', code)
         self.assertEqual(out, b"")
         self.assertEqual(err, b"")
+
+
+def _supports_remote_attaching():
+    PROCESS_VM_READV_SUPPORTED = False
+
+    try:
+        from _testexternalinspection import PROCESS_VM_READV_SUPPORTED
+    except ImportError:
+        pass
+
+    return PROCESS_VM_READV_SUPPORTED
+
+@unittest.skipIf(not sys.is_remote_debug_enabled(), "Remote debugging is not enabled")
+@unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux",
+                    "Test only runs on Linux and MacOS")
+@unittest.skipIf(sys.platform == "linux" and not _supports_remote_attaching(),
+                    "Test only runs on Linux with process_vm_readv support")
+class TestRemoteExec(unittest.TestCase):
+    def tearDown(self):
+        test.support.reap_children()
+
+    def _run_remote_exec_test(self, script_code, python_args=None, env=None, prologue=''):
+        # Create the script that will be remotely executed
+        script = os_helper.TESTFN + '_remote.py'
+        self.addCleanup(os_helper.unlink, script)
+
+        with open(script, 'w') as f:
+            f.write(script_code)
+
+        # Create and run the target process
+        target = os_helper.TESTFN + '_target.py'
+        self.addCleanup(os_helper.unlink, target)
+
+        with os_helper.temp_dir() as work_dir:
+            fifo = f"{work_dir}/the_fifo"
+            os.mkfifo(fifo)
+            self.addCleanup(os_helper.unlink, fifo)
+
+            with open(target, 'w') as f:
+                f.write(f'''
+import sys
+import time
+
+with open("{fifo}", "w") as fifo:
+    fifo.write("ready")
+
+{prologue}
+
+print("Target process running...")
+
+# Wait for remote script to be executed
+# (the execution will happen as the following
+# code is processed as soon as the read() call
+# unblocks)
+with open("{fifo}", "r") as fifo:
+    fifo.read()
+
+# Write confirmation back
+with open("{fifo}", "w") as fifo:
+    fifo.write("executed")
+''')
+
+            # Start the target process and capture its output
+            cmd = [sys.executable]
+            if python_args:
+                cmd.extend(python_args)
+            cmd.append(target)
+
+            with subprocess.Popen(cmd,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE,
+                                  env=env) as proc:
+                try:
+                    # Wait for process to be ready
+                    with open(fifo, "r") as fifo_file:
+                        response = fifo_file.read()
+                    self.assertEqual(response, "ready")
+
+                    # Try remote exec on the target process
+                    sys.remote_exec(proc.pid, script)
+
+                    # Signal script to continue
+                    with open(fifo, "w") as fifo_file:
+                        fifo_file.write("continue")
+
+                    # Wait for execution confirmation
+                    with open(fifo, "r") as fifo_file:
+                        response = fifo_file.read()
+                    self.assertEqual(response, "executed")
+
+                    # Return output for test verification
+                    stdout, stderr = proc.communicate(timeout=1.0)
+                    return proc.returncode, stdout, stderr
+                except PermissionError:
+                    self.skipTest("Insufficient permissions to execute code in remote process")
+                finally:
+                    proc.kill()
+                    proc.terminate()
+                    proc.wait(timeout=SHORT_TIMEOUT)
+
+    def test_remote_exec(self):
+        """Test basic remote exec functionality"""
+        script = '''
+print("Remote script executed successfully!")
+'''
+        returncode, stdout, stderr = self._run_remote_exec_test(script)
+        self.assertEqual(returncode, 0)
+        self.assertIn(b"Remote script executed successfully!", stdout)
+        self.assertEqual(stderr, b"")
+
+    def test_remote_exec_with_self_process(self):
+        """Test remote exec with the target process being the same as the test process"""
+
+        code = 'import sys;print("Remote script executed successfully!", file=sys.stderr)'
+        file = os_helper.TESTFN + '_remote.py'
+        with open(file, 'w') as f:
+            f.write(code)
+        self.addCleanup(os_helper.unlink, file)
+        with mock.patch('sys.stderr', new_callable=StringIO) as mock_stderr:
+            with mock.patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+                sys.remote_exec(os.getpid(), file)
+                print("Done")
+                self.assertEqual(mock_stderr.getvalue(), "Remote script executed successfully!\n")
+                self.assertEqual(mock_stdout.getvalue(), "Done\n")
+
+    def test_remote_exec_raises_audit_event(self):
+        """Test remote exec raises an audit event"""
+        prologue = '''\
+import sys
+def audit_hook(event, arg):
+    print(f"Audit event: {event}, arg: {arg}")
+sys.addaudithook(audit_hook)
+'''
+        script = '''
+print("Remote script executed successfully!")
+'''
+        returncode, stdout, stderr = self._run_remote_exec_test(script, prologue=prologue)
+        self.assertEqual(returncode, 0)
+        self.assertIn(b"Remote script executed successfully!", stdout)
+        self.assertIn(b"Audit event: remote_debugger_script, arg: ", stdout)
+        self.assertEqual(stderr, b"")
+
+    def test_remote_exec_with_exception(self):
+        """Test remote exec with an exception raised in the target process
+
+        The exception should be raised in the main thread of the target process
+        but not crash the target process.
+        """
+        script = '''
+raise Exception("Remote script exception")
+'''
+        returncode, stdout, stderr = self._run_remote_exec_test(script)
+        self.assertEqual(returncode, 0)
+        self.assertIn(b"Remote script exception", stderr)
+        self.assertEqual(stdout, b"Target process running...\n")
+
+    def test_remote_exec_disabled_by_env(self):
+        """Test remote exec is disabled when PYTHON_DISABLE_REMOTE_DEBUG is set"""
+        env = os.environ.copy()
+        env['PYTHON_DISABLE_REMOTE_DEBUG'] = '1'
+        with self.assertRaisesRegex(RuntimeError, "Remote debugging is not enabled in the remote process"):
+            self._run_remote_exec_test("print('should not run')", env=env)
+
+    def test_remote_exec_disabled_by_xoption(self):
+        """Test remote exec is disabled with -Xdisable-remote-debug"""
+        with self.assertRaisesRegex(RuntimeError, "Remote debugging is not enabled in the remote process"):
+            self._run_remote_exec_test("print('should not run')", python_args=['-Xdisable-remote-debug'])
+
+    def test_remote_exec_invalid_pid(self):
+        """Test remote exec with invalid process ID"""
+        with self.assertRaises(OSError):
+            sys.remote_exec(999999, "print('should not run')")
+
+    def test_remote_exec_syntax_error(self):
+        """Test remote exec with syntax error in script"""
+        script = '''
+this is invalid python code
+'''
+        returncode, stdout, stderr = self._run_remote_exec_test(script)
+        self.assertEqual(returncode, 0)
+        self.assertIn(b"SyntaxError", stderr)
+        self.assertEqual(stdout, b"Target process running...\n")
+
+    def test_remote_exec_invalid_script_path(self):
+        """Test remote exec with invalid script path"""
+        with self.assertRaises(OSError):
+            sys.remote_exec(os.getpid(), "invalid_script_path")
+
 
 if __name__ == "__main__":
     unittest.main()
