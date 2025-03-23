@@ -760,11 +760,6 @@ make_cfg_traversal_stack(basicblock *entryblock) {
 typedef struct {
     /* The stack effect of the instruction. */
     int net;
-
-    /* The maximum stack usage of the instruction. Some instructions may
-     * temporarily push extra values to the stack while they are executing.
-     */
-    int max;
 } stack_effects;
 
 Py_LOCAL(int)
@@ -784,14 +779,9 @@ get_stack_effects(int opcode, int oparg, int jump, stack_effects *effects)
     }
     if (IS_BLOCK_PUSH_OPCODE(opcode) && !jump) {
         effects->net = 0;
-        effects->max = 0;
         return 0;
     }
-    if (_PyOpcode_max_stack_effect(opcode, oparg, &effects->max) < 0) {
-        return -1;
-    }
     effects->net = pushed - popped;
-    assert(effects->max >= effects->net);
     return 0;
 }
 
@@ -852,7 +842,7 @@ calculate_stackdepth(cfg_builder *g)
                              "Invalid CFG, stack underflow");
                 goto error;
             }
-            maxdepth = Py_MAX(maxdepth, depth + effects.max);
+            maxdepth = Py_MAX(maxdepth, depth);
             if (HAS_TARGET(instr->i_opcode) && instr->i_opcode != END_ASYNC_FOR) {
                 if (get_stack_effects(instr->i_opcode, instr->i_oparg, 1, &effects) < 0) {
                     PyErr_Format(PyExc_SystemError,
@@ -862,7 +852,7 @@ calculate_stackdepth(cfg_builder *g)
                 }
                 int target_depth = depth + effects.net;
                 assert(target_depth >= 0); /* invalid code or bug in stackdepth() */
-                maxdepth = Py_MAX(maxdepth, depth + effects.max);
+                maxdepth = Py_MAX(maxdepth, depth);
                 if (stackdepth_push(&sp, instr->i_target, target_depth) < 0) {
                     goto error;
                 }
@@ -1480,6 +1470,95 @@ fold_tuple_of_constants(basicblock *bb, int i, PyObject *consts, PyObject *const
 
     nop_out(const_instrs, seq_size);
     return instr_make_load_const(instr, const_tuple, consts, const_cache);
+}
+
+/* Replace:
+    BUILD_LIST 0
+    LOAD_CONST c1
+    LIST_APPEND 1
+    LOAD_CONST c2
+    LIST_APPEND 1
+    ...
+    LOAD_CONST cN
+    LIST_APPEND 1
+    CALL_INTRINSIC_1 INTRINSIC_LIST_TO_TUPLE
+   with:
+    LOAD_CONST (c1, c2, ... cN)
+*/
+static int
+fold_constant_intrinsic_list_to_tuple(basicblock *bb, int i,
+                                      PyObject *consts, PyObject *const_cache)
+{
+    assert(PyDict_CheckExact(const_cache));
+    assert(PyList_CheckExact(consts));
+    assert(i >= 0);
+    assert(i < bb->b_iused);
+
+    cfg_instr *intrinsic = &bb->b_instr[i];
+    assert(intrinsic->i_opcode == CALL_INTRINSIC_1);
+    assert(intrinsic->i_oparg == INTRINSIC_LIST_TO_TUPLE);
+
+    int consts_found = 0;
+    bool expect_append = true;
+
+    for (int pos = i - 1; pos >= 0; pos--) {
+        cfg_instr *instr = &bb->b_instr[pos];
+        int opcode = instr->i_opcode;
+        int oparg = instr->i_oparg;
+
+        if (opcode == NOP) {
+            continue;
+        }
+
+        if (opcode == BUILD_LIST && oparg == 0) {
+            if (!expect_append) {
+                /* Not a sequence start. */
+                return SUCCESS;
+            }
+
+            /* Sequence start, we are done. */
+            PyObject *newconst = PyTuple_New((Py_ssize_t)consts_found);
+            if (newconst == NULL) {
+                return ERROR;
+            }
+
+            for (int newpos = i - 1; newpos >= pos; newpos--) {
+                instr = &bb->b_instr[newpos];
+                if (instr->i_opcode == NOP) {
+                    continue;
+                }
+                if (loads_const(instr->i_opcode)) {
+                    PyObject *constant = get_const_value(instr->i_opcode, instr->i_oparg, consts);
+                    if (constant == NULL) {
+                        Py_DECREF(newconst);
+                        return ERROR;
+                    }
+                    assert(consts_found > 0);
+                    PyTuple_SET_ITEM(newconst, --consts_found, constant);
+                }
+                nop_out(&instr, 1);
+            }
+            assert(consts_found == 0);
+            return instr_make_load_const(intrinsic, newconst, consts, const_cache);
+        }
+
+        if (expect_append) {
+            if (opcode != LIST_APPEND || oparg != 1) {
+                return SUCCESS;
+            }
+        }
+        else {
+            if (!loads_const(opcode)) {
+                return SUCCESS;
+            }
+            consts_found++;
+        }
+
+        expect_append = !expect_append;
+    }
+
+    /* Did not find sequence start. */
+    return SUCCESS;
 }
 
 #define MIN_CONST_SEQUENCE_SIZE 3
@@ -2378,9 +2457,13 @@ optimize_basic_block(PyObject *const_cache, basicblock *bb, PyObject *consts)
                 RETURN_IF_ERROR(fold_const_unaryop(bb, i, consts, const_cache));
                 break;
             case CALL_INTRINSIC_1:
-                // for _ in (*foo, *bar) -> for _ in [*foo, *bar]
-                if (oparg == INTRINSIC_LIST_TO_TUPLE && nextop == GET_ITER) {
-                    INSTR_SET_OP0(inst, NOP);
+                if (oparg == INTRINSIC_LIST_TO_TUPLE) {
+                    if (nextop == GET_ITER) {
+                        INSTR_SET_OP0(inst, NOP);
+                    }
+                    else {
+                        RETURN_IF_ERROR(fold_constant_intrinsic_list_to_tuple(bb, i, consts, const_cache));
+                    }
                 }
                 else if (oparg == INTRINSIC_UNARY_POSITIVE) {
                     RETURN_IF_ERROR(fold_const_unaryop(bb, i, consts, const_cache));

@@ -2931,20 +2931,22 @@ typedef struct {
 } PyGenericAliasObject;
 
 static void
-generic_alias_dealloc(PyGenericAliasObject *self)
+generic_alias_dealloc(PyObject *op)
 {
+    PyGenericAliasObject *self = (PyGenericAliasObject*)op;
     Py_CLEAR(self->item);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *
-generic_alias_mro_entries(PyGenericAliasObject *self, PyObject *bases)
+generic_alias_mro_entries(PyObject *op, PyObject *bases)
 {
+    PyGenericAliasObject *self = (PyGenericAliasObject*)op;
     return PyTuple_Pack(1, self->item);
 }
 
 static PyMethodDef generic_alias_methods[] = {
-    {"__mro_entries__", _PyCFunction_CAST(generic_alias_mro_entries), METH_O, NULL},
+    {"__mro_entries__", generic_alias_mro_entries, METH_O, NULL},
     {NULL}  /* sentinel */
 };
 
@@ -2953,7 +2955,7 @@ static PyTypeObject GenericAlias_Type = {
     "GenericAlias",
     sizeof(PyGenericAliasObject),
     0,
-    .tp_dealloc = (destructor)generic_alias_dealloc,
+    .tp_dealloc = generic_alias_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_methods = generic_alias_methods,
 };
@@ -3084,8 +3086,9 @@ ContainerNoGC_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 }
 
 static void
-ContainerNoGC_dealloc(ContainerNoGCobject *self)
+ContainerNoGC_dealloc(PyObject *op)
 {
+    ContainerNoGCobject *self = (ContainerNoGCobject*)op;
     Py_DECREF(self->value);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -3100,7 +3103,7 @@ static PyTypeObject ContainerNoGC_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_testcapi.ContainerNoGC",
     sizeof(ContainerNoGCobject),
-    .tp_dealloc = (destructor)ContainerNoGC_dealloc,
+    .tp_dealloc = ContainerNoGC_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_members = ContainerNoGC_members,
     .tp_new = ContainerNoGC_new,

@@ -5,8 +5,9 @@
 #include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_interp.h"        // _PyInterpreterState.threads.count
 #include "pycore_lock.h"
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object_deferred.h" // _PyObject_SetDeferredRefcount()
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
 #include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
@@ -2392,8 +2393,16 @@ PyDoc_STRVAR(thread__get_main_thread_ident_doc,
 Internal only. Return a non-zero integer that uniquely identifies the main thread\n\
 of the main interpreter.");
 
+#if defined(__OpenBSD__)
+    /* pthread_*_np functions, especially pthread_{get,set}_name_np().
+       pthread_np.h exists on both OpenBSD and FreeBSD but the latter declares
+       pthread_getname_np() and pthread_setname_np() in pthread.h as long as
+       __BSD_VISIBLE remains set.
+     */
+#   include <pthread_np.h>
+#endif
 
-#if defined(HAVE_PTHREAD_GETNAME_NP) || defined(MS_WINDOWS)
+#if defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP) || defined(MS_WINDOWS)
 /*[clinic input]
 _thread._get_name
 
@@ -2408,7 +2417,12 @@ _thread__get_name_impl(PyObject *module)
     // Linux and macOS are limited to respectively 16 and 64 bytes
     char name[100];
     pthread_t thread = pthread_self();
+#ifdef HAVE_PTHREAD_GETNAME_NP
     int rc = pthread_getname_np(thread, name, Py_ARRAY_LENGTH(name));
+#else /* defined(HAVE_PTHREAD_GET_NAME_NP) */
+    int rc = 0; /* pthread_get_name_np() returns void */
+    pthread_get_name_np(thread, name, Py_ARRAY_LENGTH(name));
+#endif
     if (rc) {
         errno = rc;
         return PyErr_SetFromErrno(PyExc_OSError);
@@ -2435,10 +2449,10 @@ _thread__get_name_impl(PyObject *module)
     return name_obj;
 #endif
 }
-#endif  // HAVE_PTHREAD_GETNAME_NP
+#endif  // HAVE_PTHREAD_GETNAME_NP || HAVE_PTHREAD_GET_NAME_NP || MS_WINDOWS
 
 
-#if defined(HAVE_PTHREAD_SETNAME_NP) || defined(MS_WINDOWS)
+#if defined(HAVE_PTHREAD_SETNAME_NP) || defined(HAVE_PTHREAD_SET_NAME_NP) || defined(MS_WINDOWS)
 /*[clinic input]
 _thread.set_name
 
@@ -2487,9 +2501,13 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 #elif defined(__NetBSD__)
     pthread_t thread = pthread_self();
     int rc = pthread_setname_np(thread, "%s", (void *)name);
-#else
+#elif defined(HAVE_PTHREAD_SETNAME_NP)
     pthread_t thread = pthread_self();
     int rc = pthread_setname_np(thread, name);
+#else /* defined(HAVE_PTHREAD_SET_NAME_NP) */
+    pthread_t thread = pthread_self();
+    int rc = 0; /* pthread_set_name_np() returns void */
+    pthread_set_name_np(thread, name);
 #endif
     Py_DECREF(name_encoded);
     if (rc) {
@@ -2527,7 +2545,7 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
     Py_RETURN_NONE;
 #endif
 }
-#endif  // HAVE_PTHREAD_SETNAME_NP
+#endif  // HAVE_PTHREAD_SETNAME_NP || HAVE_PTHREAD_SET_NAME_NP || MS_WINDOWS
 
 
 static PyMethodDef thread_methods[] = {

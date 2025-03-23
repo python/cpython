@@ -406,7 +406,6 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
 {
     const int fd = fatal_error.fd;
     DWORD code = exc_info->ExceptionRecord->ExceptionCode;
-    DWORD flags = exc_info->ExceptionRecord->ExceptionFlags;
 
     if (faulthandler_ignore_exception(code)) {
         /* ignore the exception: call the next exception handler */
