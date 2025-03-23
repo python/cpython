@@ -2368,7 +2368,7 @@ def write_internal_h_header(mod, f):
         #ifndef Py_INTERNAL_AST_STATE_H
         #define Py_INTERNAL_AST_STATE_H
 
-        #include "pycore_lock.h"    // _PyOnceFlag
+        #include "pycore_lock.h"          // _PyOnceFlag
 
         #ifdef __cplusplus
         extern "C" {

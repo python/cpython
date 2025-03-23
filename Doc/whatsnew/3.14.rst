@@ -615,6 +615,15 @@ getopt
 * Add support for returning intermixed options and non-option arguments in order.
   (Contributed by Serhiy Storchaka in :gh:`126390`.)
 
+
+graphlib
+--------
+
+* Allow :meth:`graphlib.TopologicalSorter.prepare` to be called more than once
+  as long as sorting has not started.
+  (Contributed by Daniel Pope in :gh:`130914`)
+
+
 http
 ----
 
@@ -1033,6 +1042,7 @@ zipinfo
   to produce reproducible output.
   (Contributed by Jiahao Li in :gh:`91279`.)
 
+
 .. Add improved modules above alphabetically, not here at the end.
 
 Optimizations
@@ -1083,6 +1093,18 @@ uuid
     respectively.
 
   (Contributed by Bénédikt Tran in :gh:`128150`.)
+
+
+zlib
+----
+
+* On Windows, ``zlib-ng`` is now used as the implementation of the
+  :mod:`zlib` module. This should produce compatible and comparable
+  results with better performance, though it is worth noting that
+  ``zlib.Z_BEST_SPEED`` (1) may result in significantly less
+  compression than the previous implementation (while also significantly
+  reducing the time taken to compress).
+  (Contributed by Steve Dower in :gh:`91349`.)
 
 
 Deprecated
@@ -1142,11 +1164,21 @@ Deprecated
   or *sequence* as keyword arguments is now deprecated.
   (Contributed by Kirill Podoprigora in :gh:`121676`.)
 
+* :mod:`!nturl2path`: This module is now deprecated. Call
+  :func:`urllib.request.url2pathname` and :func:`~urllib.request.pathname2url`
+  instead.
+  (Contributed by Barney Gale in :gh:`125866`.)
+
 * :mod:`os`:
   :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
   :func:`os.spawn* <os.spawnl>` functions. They should no longer be used to
   write new code.  The :mod:`subprocess` module is recommended instead.
   (Contributed by Victor Stinner in :gh:`120743`.)
+
+* :mod:`pathlib`:
+  :meth:`!pathlib.PurePath.as_uri` is deprecated and will be removed in Python
+  3.19. Use :meth:`pathlib.Path.as_uri` instead.
+  (Contributed by Barney Gale in :gh:`123599`.)
 
 * :mod:`pdb`:
   The undocumented ``pdb.Pdb.curframe_locals`` attribute is now a deprecated
