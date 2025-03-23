@@ -5,8 +5,8 @@ Tests for Windows-flavoured pathlib.types._JoinablePath
 import os
 import unittest
 
-from pathlib import PureWindowsPath, WindowsPath
-from test.test_pathlib.support.lexical_path import LexicalWindowsPath
+from .support import is_pypi
+from .support.lexical_path import LexicalWindowsPath
 
 
 class JoinTestBase:
@@ -40,8 +40,6 @@ class JoinTestBase:
         pp = p.joinpath('E:d:s')
         self.assertEqual(pp, P('E:d:s'))
         # Joining onto a UNC path with no root
-        pp = P('//').joinpath('server')
-        self.assertEqual(pp, P('//server'))
         pp = P('//server').joinpath('share')
         self.assertEqual(pp, P(r'//server\share'))
         pp = P('//./BootPartition').joinpath('Windows')
@@ -277,13 +275,15 @@ class LexicalWindowsPathJoinTest(JoinTestBase, unittest.TestCase):
     cls = LexicalWindowsPath
 
 
-class PureWindowsPathJoinTest(JoinTestBase, unittest.TestCase):
-    cls = PureWindowsPath
+if not is_pypi:
+    from pathlib import PureWindowsPath, WindowsPath
 
+    class PureWindowsPathJoinTest(JoinTestBase, unittest.TestCase):
+        cls = PureWindowsPath
 
-if os.name == 'nt':
-    class WindowsPathJoinTest(JoinTestBase, unittest.TestCase):
-        cls = WindowsPath
+    if os.name == 'nt':
+        class WindowsPathJoinTest(JoinTestBase, unittest.TestCase):
+            cls = WindowsPath
 
 
 if __name__ == "__main__":

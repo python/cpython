@@ -705,6 +705,9 @@
     <ClInclude Include="..\Include\internal\pycore_interpframe.h">
       <Filter>Include\internal</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_interpframe_structs.h">
+      <Filter>Include\internal</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_intrinsics.h">
       <Filter>Include\cpython</Filter>
     </ClInclude>
