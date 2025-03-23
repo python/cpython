@@ -988,9 +988,9 @@ def findsource(object):
             raise OSError('lineno is out of bounds')
         return lines, lnum
 
-    if ismethod(object):
+    if hasattr(object, '__func__'):
         object = object.__func__
-    if isfunction(object):
+    if hasattr(object, '__code__'):
         object = object.__code__
     if istraceback(object):
         object = object.tb_frame
