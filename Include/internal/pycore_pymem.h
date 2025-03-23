@@ -2,7 +2,6 @@
 #define Py_INTERNAL_PYMEM_H
 
 #include "pycore_llist.h"           // struct llist_node
-#include "pycore_lock.h"            // PyMutex
 
 #ifdef __cplusplus
 extern "C" {

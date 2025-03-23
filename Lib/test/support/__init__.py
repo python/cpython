@@ -3016,20 +3016,35 @@ def is_libssl_fips_mode():
     return get_fips_mode() != 0
 
 
+_linked_to_musl = None
 def linked_to_musl():
     """
-    Test if the Python executable is linked to the musl C library.
-    """
-    if sys.platform != 'linux':
-        return False
+    Report if the Python executable is linked to the musl C library.
 
-    import subprocess
-    exe = getattr(sys, '_base_executable', sys.executable)
-    cmd = ['ldd', exe]
-    try:
-        stdout = subprocess.check_output(cmd,
-                                         text=True,
-                                         stderr=subprocess.STDOUT)
-    except (OSError, subprocess.CalledProcessError):
-        return False
-    return ('musl' in stdout)
+    Return False if we don't think it is, or a version triple otherwise.
+    """
+    # This is can be a relatively expensive check, so we use a cache.
+    global _linked_to_musl
+    if _linked_to_musl is not None:
+        return _linked_to_musl
+
+    # emscripten (at least as far as we're concerned) and wasi use musl,
+    # but platform doesn't know how to get the version, so set it to zero.
+    if is_emscripten or is_wasi:
+        _linked_to_musl = (0, 0, 0)
+        return _linked_to_musl
+
+    # On all other non-linux platforms assume no musl.
+    if sys.platform != 'linux':
+        _linked_to_musl = False
+        return _linked_to_musl
+
+    # On linux, we'll depend on the platform module to do the check, so new
+    # musl platforms should add support in that module if possible.
+    import platform
+    lib, version = platform.libc_ver()
+    if lib != 'musl':
+        _linked_to_musl = False
+        return _linked_to_musl
+    _linked_to_musl = tuple(map(int, version.split('.')))
+    return _linked_to_musl

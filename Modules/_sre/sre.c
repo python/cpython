@@ -2710,8 +2710,9 @@ match_regs_get(PyObject *op, void *Py_UNUSED(ignored))
 }
 
 static PyObject *
-match_repr(MatchObject *self)
+match_repr(PyObject *op)
 {
+    MatchObject *self = _MatchObject_CAST(op);
     PyObject *result;
     PyObject *group0 = match_getslice_by_index(self, 0, Py_None);
     if (group0 == NULL)
