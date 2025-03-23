@@ -748,14 +748,8 @@ class PlatformTest(unittest.TestCase):
 
 class CommandLineTest(unittest.TestCase):
     def setUp(self):
-        self.clear_caches()
-        self.addCleanup(self.clear_caches)
-
-    def clear_caches(self):
-        platform._platform_cache.clear()
-        platform._sys_version_cache.clear()
-        platform._uname_cache = None
-        platform._os_release_cache = None
+        platform.invalidate_caches()
+        self.addCleanup(platform.invalidate_caches)
 
     @staticmethod
     def text_normalize(string):
