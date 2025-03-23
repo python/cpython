@@ -451,8 +451,9 @@ PyDoc_STRVAR(SSLEOFError_doc,
 "SSL/TLS connection terminated abruptly.");
 
 static PyObject *
-SSLError_str(PyOSErrorObject *self)
+SSLError_str(PyObject *op)
 {
+    PyOSErrorObject *self = (PyOSErrorObject*)op;
     if (self->strerror != NULL && PyUnicode_Check(self->strerror)) {
         return Py_NewRef(self->strerror);
     }
