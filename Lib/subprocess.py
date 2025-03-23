@@ -551,7 +551,7 @@ def run(*popenargs,
         kwargs['stdout'] = PIPE
         kwargs['stderr'] = PIPE
 
-    with Popen(*popenargs, **kwargs) as process:
+    with Popen(popenargs, **kwargs) as process:
         try:
             stdout, stderr = process.communicate(input, timeout=timeout)
         except TimeoutExpired as exc:
