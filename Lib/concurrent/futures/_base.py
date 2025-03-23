@@ -625,17 +625,17 @@ class Executor(object):
         # before the first iterator value is required.
         def result_iterator():
             try:
-                # Reverse so that the next (FIFO) future is on the right
+                # reverse so that the next (FIFO) future is on the right
                 fs.reverse()
-                # Careful not to keep references to futures or results
+                # careful not to keep references to futures or results
                 while fs:
-                    # Wait for the next result
+                    # wait for the next result
                     if timeout is None:
                         _result_or_cancel(fs[-1])
                     else:
                         _result_or_cancel(fs[-1], end_time - time.monotonic())
 
-                    # Buffer next task
+                    # buffer next task
                     if (
                         buffersize
                         and (executor := executor_weakref())
@@ -643,7 +643,7 @@ class Executor(object):
                     ):
                         fs.appendleft(executor.submit(fn, *args))
 
-                    # Yield the awaited result
+                    # yield the awaited result
                     yield fs.pop().result()
             finally:
                 for future in fs:
