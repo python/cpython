@@ -102,10 +102,10 @@ sys_profile_unwind(
 
 static PyObject *
 sys_profile_call_or_return(
-    PyObject *callable, PyObject *const *args,
+    PyObject *op, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
-    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
+    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(op);
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 4);
     PyObject *callable = args[2];
