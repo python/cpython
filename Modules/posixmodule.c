@@ -16181,6 +16181,7 @@ typedef struct {
 #ifdef HAVE_FDOPENDIR
     int fd;
 #endif
+    PyMutex mutex;
 } ScandirIterator;
 
 #define ScandirIterator_CAST(op)    ((ScandirIterator *)(op))
@@ -16190,18 +16191,21 @@ typedef struct {
 static int
 ScandirIterator_is_closed(ScandirIterator *iterator)
 {
-    return iterator->handle == INVALID_HANDLE_VALUE;
+    return _Py_atomic_load_ptr_relaxed(&iterator->handle) == INVALID_HANDLE_VALUE;
 }
 
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
+    PyMutex_Lock(&iterator->mutex);
     HANDLE handle = iterator->handle;
-
-    if (handle == INVALID_HANDLE_VALUE)
-        return;
-
     iterator->handle = INVALID_HANDLE_VALUE;
+    PyMutex_Unlock(&iterator->mutex);
+
+    if (handle == INVALID_HANDLE_VALUE) {
+        return;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     FindClose(handle);
     Py_END_ALLOW_THREADS
@@ -16215,11 +16219,8 @@ ScandirIterator_iternext(PyObject *op)
     BOOL success;
     PyObject *entry;
 
-    /* Happens if the iterator is iterated twice, or closed explicitly */
-    if (iterator->handle == INVALID_HANDLE_VALUE)
-        return NULL;
-
-    while (1) {
+    PyMutex_Lock(&iterator->mutex);
+    while (iterator->handle != INVALID_HANDLE_VALUE) {
         if (!iterator->first_time) {
             Py_BEGIN_ALLOW_THREADS
             success = FindNextFileW(iterator->handle, file_data);
@@ -16241,13 +16242,15 @@ ScandirIterator_iternext(PyObject *op)
             entry = DirEntry_from_find_data(module, &iterator->path, file_data);
             if (!entry)
                 break;
+            PyMutex_Unlock(&iterator->mutex);
             return entry;
         }
 
         /* Loop till we get a non-dot directory or finish iterating */
     }
 
-    /* Error or no more files */
+    /* Already closed, error, or no more files */
+    PyMutex_Unlock(&iterator->mutex);
     ScandirIterator_closedir(iterator);
     return NULL;
 }
@@ -16257,18 +16260,21 @@ ScandirIterator_iternext(PyObject *op)
 static int
 ScandirIterator_is_closed(ScandirIterator *iterator)
 {
-    return !iterator->dirp;
+    return !_Py_atomic_load_ptr_relaxed(&iterator->dirp);
 }
 
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
+    PyMutex_Lock(&iterator->mutex);
     DIR *dirp = iterator->dirp;
-
-    if (!dirp)
-        return;
-
     iterator->dirp = NULL;
+    PyMutex_Unlock(&iterator->mutex);
+
+    if (!dirp) {
+        return;
+    }
+
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_FDOPENDIR
     if (iterator->path.fd != -1)
@@ -16288,11 +16294,8 @@ ScandirIterator_iternext(PyObject *op)
     int is_dot;
     PyObject *entry;
 
-    /* Happens if the iterator is iterated twice, or closed explicitly */
-    if (!iterator->dirp)
-        return NULL;
-
-    while (1) {
+    PyMutex_Lock(&iterator->mutex);
+    while (iterator->dirp) {
         errno = 0;
         Py_BEGIN_ALLOW_THREADS
         direntp = readdir(iterator->dirp);
@@ -16320,13 +16323,15 @@ ScandirIterator_iternext(PyObject *op)
                                             );
             if (!entry)
                 break;
+            PyMutex_Unlock(&iterator->mutex);
             return entry;
         }
 
         /* Loop till we get a non-dot directory or finish iterating */
     }
 
-    /* Error or no more files */
+    /* Already closed, error, or no more files */
+    PyMutex_Unlock(&iterator->mutex);
     ScandirIterator_closedir(iterator);
     return NULL;
 }
@@ -16459,6 +16464,7 @@ os_scandir_impl(PyObject *module, path_t *path)
     if (!iterator)
         return NULL;
 
+    iterator->mutex = (PyMutex){0};
 #ifdef MS_WINDOWS
     iterator->handle = INVALID_HANDLE_VALUE;
 #else
