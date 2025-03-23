@@ -70,7 +70,7 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "<TODO(picnixz)>"
+          "checksumValue": "6bb739ecddbd2cfb6d255eb5898437a9b5739277dee931338d3275bac5d96ba2"
         }
       ],
       "downloadLocation": "https://github.com/python/cpython-source-deps/archive/refs/tags/openssl-3.0.16.tar.gz",

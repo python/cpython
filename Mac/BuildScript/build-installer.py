@@ -248,7 +248,7 @@ def library_recipes():
           dict(
               name="OpenSSL 3.0.16",
               url="https://github.com/openssl/openssl/releases/download/openssl-3.0.16/openssl-3.0.16.tar.gz",
-              checksum='<TODO(picnixz)>',
+              checksum='57e03c50feab5d31b152af2b764f10379aecd8ee92f16c985983ce4a99f7ef86',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
