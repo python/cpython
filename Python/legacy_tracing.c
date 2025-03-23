@@ -447,7 +447,8 @@ setup_profile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg, PyObject 
         tstate->interp->sys_profile_initialized = true;
         if (set_callbacks(PY_MONITORING_SYS_PROFILE_ID,
                           sys_profile_start, PyTrace_CALL,
-                          PY_MONITORING_EVENT_PY_START, PY_MONITORING_EVENT_PY_RESUME)) {
+                          PY_MONITORING_EVENT_PY_START,
+                          PY_MONITORING_EVENT_PY_RESUME)) {
             return -1;
         }
         if (set_callbacks(PY_MONITORING_SYS_PROFILE_ID,
@@ -457,7 +458,8 @@ setup_profile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg, PyObject 
         }
         if (set_callbacks(PY_MONITORING_SYS_PROFILE_ID,
                           sys_profile_return, PyTrace_RETURN,
-                          PY_MONITORING_EVENT_PY_RETURN, PY_MONITORING_EVENT_PY_YIELD)) {
+                          PY_MONITORING_EVENT_PY_RETURN,
+                          PY_MONITORING_EVENT_PY_YIELD)) {
             return -1;
         }
         if (set_callbacks(PY_MONITORING_SYS_PROFILE_ID,
