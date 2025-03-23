@@ -1,12 +1,11 @@
 import itertools
-import operator
 import threading
 import time
 import weakref
 from concurrent import futures
-from operator import add
-from functools import partial
 from contextlib import suppress
+from functools import partial
+from operator import add, truediv
 from test import support
 from test.support import Py_GIL_DISABLED
 
@@ -151,7 +150,7 @@ class ExecutorTest:
         index_of_zero = ints.index(0)
         ints_iter = iter(ints)
         buffersize = 2
-        reciprocal = partial(operator.truediv, 1)
+        reciprocal = partial(truediv, 1)
         results = []
         with suppress(ZeroDivisionError):
             for result in self.executor.map(
