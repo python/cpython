@@ -72,15 +72,12 @@ if hasattr(os, 'copy_file_range'):
         copy.
         This should work on Linux >= 4.5 only.
         """
+        fn = os.copy_file_range
         blocksize = _get_copy_blocksize(source_fd)
         offset = 0
-        while True:
-            sent = os.copy_file_range(source_fd, target_fd, blocksize,
-                                      offset_dst=offset)
-            if sent == 0:
-                break  # EOF
-            offset += sent
+        while sent := fn(source_fd, target_fd, blocksize, None, offset):
             yield sent
+            offset += sent
 else:
     _copy_file_range = None
 
@@ -91,14 +88,12 @@ if hasattr(os, 'sendfile'):
         high-performance sendfile(2) syscall.
         This should work on Linux >= 2.6.33 only.
         """
+        fn = os.sendfile
         blocksize = _get_copy_blocksize(source_fd)
         offset = 0
-        while True:
-            sent = os.sendfile(target_fd, source_fd, offset, blocksize)
-            if sent == 0:
-                break  # EOF
-            offset += sent
+        while sent := fn(target_fd, source_fd, offset, blocksize):
             yield sent
+            offset += sent
 else:
     _sendfile = None
 
