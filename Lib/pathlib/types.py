@@ -331,11 +331,7 @@ class _ReadablePath(_JoinablePath):
         Recursively copy this file or directory tree to the given destination.
         """
         ensure_distinct_paths(self, target)
-        try:
-            copy_to_target = target._copy_from
-        except AttributeError:
-            raise TypeError(f"Target path is not writable: {target!r}") from None
-        copy_to_target(self, **kwargs)
+        target._copy_from(self, **kwargs)
         return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def copy_into(self, target_dir, **kwargs):
