@@ -148,7 +148,7 @@ created.  Socket addresses are represented as follows:
       one of :const:`BDADDR_BREDR` (default), :const:`BDADDR_LE_PUBLIC`,
       :const:`BDADDR_LE_RANDOM`.
 
-    .. versionchanged:: next
+    .. versionchanged:: 3.14
       Added ``cid`` and ``bdaddr_type`` fields.
 
   - :const:`BTPROTO_RFCOMM` accepts ``(bdaddr, channel)`` where ``bdaddr``
@@ -660,7 +660,7 @@ Constants
    These constants describe the Bluetooth address type when binding or
    connecting a :const:`BTPROTO_L2CAP` socket.
 
-    .. versionadded:: next
+    .. versionadded:: 3.14
 
 .. data:: HCI_FILTER
           HCI_TIME_STAMP

@@ -921,11 +921,15 @@
         }
 
         case _PUSH_NULL_CONDITIONAL: {
-            JitOptSymbol *null = NULL;
-            int opcode = (oparg & 1) ? _PUSH_NULL : _NOP;
-            REPLACE_OP(this_instr, opcode, 0, 0);
-            null = sym_new_null(ctx);
-            if (oparg & 1) stack_pointer[0] = null;
+            JitOptSymbol **null;
+            null = &stack_pointer[0];
+            if (oparg & 1) {
+                REPLACE_OP(this_instr, _PUSH_NULL, 0, 0);
+                null[0] = sym_new_null(ctx);
+            }
+            else {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -1277,11 +1281,38 @@
         }
 
         case _COMPARE_OP_INT: {
+            JitOptSymbol *right;
+            JitOptSymbol *left;
             JitOptSymbol *res;
-            res = sym_new_type(ctx, &PyBool_Type);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right))
+            {
+                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
+                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
+                stack_pointer += -2;
+                assert(WITHIN_STACK_BOUNDS());
+                PyObject *tmp = PyObject_RichCompare(sym_get_const(ctx, left),
+                    sym_get_const(ctx, right),
+                    oparg >> 5);
+                if (tmp == NULL) {
+                    goto error;
+                }
+                assert(PyBool_Check(tmp));
+                assert(_Py_IsImmortal(tmp));
+                REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)tmp);
+                res = sym_new_const(ctx, tmp);
+                stack_pointer[0] = res;
+                stack_pointer += 1;
+                assert(WITHIN_STACK_BOUNDS());
+                Py_DECREF(tmp);
+            }
+            else {
+                res = sym_new_type(ctx, &PyBool_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+            }
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -2385,6 +2416,15 @@
             PyObject *ptr = (PyObject *)this_instr->operand0;
             value = sym_new_const(ctx, ptr);
             stack_pointer[-1] = value;
+            break;
+        }
+
+        case _POP_TWO_LOAD_CONST_INLINE_BORROW: {
+            JitOptSymbol *value;
+            value = sym_new_not_null(ctx);
+            stack_pointer[-2] = value;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 

@@ -1,1 +1,0 @@
-Inline breakpoints like :func:`breakpoint` or :func:`pdb.set_trace` will always stop the program at calling frame, ignoring the ``skip`` pattern (if any).

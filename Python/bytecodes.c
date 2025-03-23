@@ -29,6 +29,7 @@
 #include "pycore_long.h"          // _PyLong_ExactDealloc()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
+#include "pycore_stackref.h"
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 
@@ -58,7 +59,6 @@
 #define guard
 #define override
 #define specializing
-#define split
 #define replicate(TIMES)
 #define tier1
 #define no_save_ip
@@ -878,7 +878,7 @@ dummy_func(
             assert(res_o != NULL);
             res = PyStackRef_FromPyObjectNew(res_o);
 #endif
-            STAT_INC(BINARY_SUBSCR, hit);
+            STAT_INC(BINARY_OP, hit);
             DECREF_INPUTS();
         }
 
@@ -975,9 +975,8 @@ dummy_func(
         }
 
         inst(SET_ADD, (set, unused[oparg-1], v -- set, unused[oparg-1])) {
-            int err = PySet_Add(PyStackRef_AsPyObjectBorrow(set),
-                                PyStackRef_AsPyObjectBorrow(v));
-            PyStackRef_CLOSE(v);
+            int err = _PySet_AddTakeRef((PySetObject *)PyStackRef_AsPyObjectBorrow(set),
+                                        PyStackRef_AsPyObjectSteal(v));
             ERROR_IF(err, error);
         }
 
@@ -1685,8 +1684,10 @@ dummy_func(
             ERROR_IF(PyStackRef_IsNull(*res), error);
         }
 
-        op(_PUSH_NULL_CONDITIONAL, ( -- null if (oparg & 1))) {
-            null = PyStackRef_NULL;
+        op(_PUSH_NULL_CONDITIONAL, ( -- null[oparg & 1])) {
+            if (oparg & 1) {
+                null[0] = PyStackRef_NULL;
+            }
         }
 
         macro(LOAD_GLOBAL) =
@@ -1914,17 +1915,24 @@ dummy_func(
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
+
             int err = 0;
-            for (int i = 0; i < oparg; i++) {
+            for (Py_ssize_t i = 0; i < oparg; i++) {
+                _PyStackRef value = values[i];
+                values[i] = PyStackRef_NULL;
                 if (err == 0) {
-                    err = PySet_Add(set_o, PyStackRef_AsPyObjectBorrow(values[i]));
+                    err = _PySet_AddTakeRef((PySetObject *)set_o, PyStackRef_AsPyObjectSteal(value));
+                }
+                else {
+                    PyStackRef_CLOSE(value);
                 }
             }
-            DECREF_INPUTS();
-            if (err != 0) {
+            if (err) {
                 Py_DECREF(set_o);
                 ERROR_IF(true, error);
             }
+
+            INPUTS_DEAD();
             set = PyStackRef_FromPyObjectStealMortal(set_o);
         }
 
@@ -5128,6 +5136,12 @@ dummy_func(
 
         tier2 pure op (_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
             PyStackRef_CLOSE(pop);
+            value = PyStackRef_FromPyObjectImmortal(ptr);
+        }
+
+        tier2 pure op(_POP_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, pop1, pop2 -- value)) {
+            PyStackRef_CLOSE(pop2);
+            PyStackRef_CLOSE(pop1);
             value = PyStackRef_FromPyObjectImmortal(ptr);
         }
 

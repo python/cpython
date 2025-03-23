@@ -4,7 +4,9 @@
 #include "pycore_abstract.h"      // _PyObject_HasLen()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
+#include "pycore_genobject.h"     // _PyCoro_GetAwaitableIter()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+
 
 typedef struct {
     PyObject_HEAD
@@ -200,8 +202,9 @@ PyCallIter_New(PyObject *callable, PyObject *sentinel)
     return (PyObject *)it;
 }
 static void
-calliter_dealloc(calliterobject *it)
+calliter_dealloc(PyObject *op)
 {
+    calliterobject *it = (calliterobject*)op;
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_callable);
     Py_XDECREF(it->it_sentinel);
@@ -209,16 +212,18 @@ calliter_dealloc(calliterobject *it)
 }
 
 static int
-calliter_traverse(calliterobject *it, visitproc visit, void *arg)
+calliter_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    calliterobject *it = (calliterobject*)op;
     Py_VISIT(it->it_callable);
     Py_VISIT(it->it_sentinel);
     return 0;
 }
 
 static PyObject *
-calliter_iternext(calliterobject *it)
+calliter_iternext(PyObject *op)
 {
+    calliterobject *it = (calliterobject*)op;
     PyObject *result;
 
     if (it->it_callable == NULL) {
@@ -249,8 +254,9 @@ calliter_iternext(calliterobject *it)
 }
 
 static PyObject *
-calliter_reduce(calliterobject *it, PyObject *Py_UNUSED(ignored))
+calliter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    calliterobject *it = (calliterobject*)op;
     PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
 
     /* _PyEval_GetBuiltin can invoke arbitrary code,
@@ -264,7 +270,7 @@ calliter_reduce(calliterobject *it, PyObject *Py_UNUSED(ignored))
 }
 
 static PyMethodDef calliter_methods[] = {
-    {"__reduce__", (PyCFunction)calliter_reduce, METH_NOARGS, reduce_doc},
+    {"__reduce__", calliter_reduce, METH_NOARGS, reduce_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -274,7 +280,7 @@ PyTypeObject PyCallIter_Type = {
     sizeof(calliterobject),                     /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)calliter_dealloc,               /* tp_dealloc */
+    calliter_dealloc,                           /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -291,12 +297,12 @@ PyTypeObject PyCallIter_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)calliter_traverse,            /* tp_traverse */
+    calliter_traverse,                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
-    (iternextfunc)calliter_iternext,            /* tp_iternext */
+    calliter_iternext,                          /* tp_iternext */
     calliter_methods,                           /* tp_methods */
 };
 

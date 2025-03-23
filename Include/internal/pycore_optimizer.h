@@ -8,6 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
+#include "pycore_typedefs.h"      // _PyInterpreterFrame
 #include "pycore_uop_ids.h"
 #include <stdbool.h>
 
@@ -117,7 +118,7 @@ PyAPI_FUNC(void) _Py_Executors_InvalidateCold(PyInterpreterState *interp);
 
 #define TRACE_STACK_SIZE 5
 
-int _Py_uop_analyze_and_optimize(struct _PyInterpreterFrame *frame,
+int _Py_uop_analyze_and_optimize(_PyInterpreterFrame *frame,
     _PyUOpInstruction *trace, int trace_len, int curr_stackentries,
     _PyBloomFilter *dependencies);
 
@@ -201,7 +202,7 @@ typedef struct _jit_opt_tuple {
 
 typedef struct {
     uint8_t tag;
-    bool not;
+    bool invert;
     uint16_t value;
 } JitOptTruthiness;
 
@@ -291,7 +292,7 @@ extern int _Py_uop_frame_pop(JitOptContext *ctx);
 
 PyAPI_FUNC(PyObject *) _Py_uop_symbols_test(PyObject *self, PyObject *ignored);
 
-PyAPI_FUNC(int) _PyOptimizer_Optimize(struct _PyInterpreterFrame *frame, _Py_CODEUNIT *start, _PyExecutorObject **exec_ptr, int chain_depth);
+PyAPI_FUNC(int) _PyOptimizer_Optimize(_PyInterpreterFrame *frame, _Py_CODEUNIT *start, _PyExecutorObject **exec_ptr, int chain_depth);
 
 static inline int is_terminator(const _PyUOpInstruction *uop)
 {

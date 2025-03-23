@@ -2744,7 +2744,7 @@ data and are closely related to string objects in a variety of other ways.
          :meth:`bytes.fromhex` now skips all ASCII whitespace in the string,
          not just spaces.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.14
          :meth:`bytes.fromhex` now accepts ASCII :class:`bytes` and
          :term:`bytes-like objects <bytes-like object>` as input.
 
@@ -2833,7 +2833,7 @@ objects.
          :meth:`bytearray.fromhex` now skips all ASCII whitespace in the string,
          not just spaces.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.14
          :meth:`bytearray.fromhex` now accepts ASCII :class:`bytes` and
          :term:`bytes-like objects <bytes-like object>` as input.
 
@@ -5244,6 +5244,8 @@ list is non-exhaustive.
 * :class:`set`
 * :class:`frozenset`
 * :class:`type`
+* :class:`asyncio.Future`
+* :class:`asyncio.Task`
 * :class:`collections.deque`
 * :class:`collections.defaultdict`
 * :class:`collections.OrderedDict`

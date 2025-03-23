@@ -4,18 +4,22 @@
 #include "Python.h"
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_initconfig.h"    // _PyStatus_ERR()
 #include "pycore_pyerrors.h"      // _PyErr_Format()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 #include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame()
+#include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
 #ifdef MS_WINDOWS
 #  include <windows.h>
 #  include <winbase.h>
 #  include <stdlib.h>             // _sys_nerr
 #endif
+
 
 /* Forward declarations */
 static PyObject *
@@ -69,7 +73,11 @@ _PyErr_Restore(PyThreadState *tstate, PyObject *type, PyObject *value,
     assert(PyExceptionClass_Check(type));
     if (value != NULL && type == (PyObject *)Py_TYPE(value)) {
         /* Already normalized */
-        assert(((PyBaseExceptionObject *)value)->traceback != Py_None);
+#ifdef Py_DEBUG
+        PyObject *tb = PyException_GetTraceback(value);
+        assert(tb != Py_None);
+        Py_XDECREF(tb);
+#endif
     }
     else {
         PyObject *exc = _PyErr_CreateException(type, value);
@@ -82,22 +90,15 @@ _PyErr_Restore(PyThreadState *tstate, PyObject *type, PyObject *value,
         value = exc;
     }
     assert(PyExceptionInstance_Check(value));
-    if (traceback != NULL && !PyTraceBack_Check(traceback)) {
-        if (traceback == Py_None) {
-            Py_DECREF(Py_None);
-            traceback = NULL;
-        }
-        else {
-            PyErr_SetString(PyExc_TypeError, "traceback must be a Traceback or None");
-            Py_XDECREF(value);
+    if (traceback != NULL) {
+        if (PyException_SetTraceback(value, traceback) < 0) {
+            Py_DECREF(traceback);
+            Py_DECREF(value);
             Py_DECREF(type);
-            Py_XDECREF(traceback);
             return;
         }
+        Py_DECREF(traceback);
     }
-    PyObject *old_traceback = ((PyBaseExceptionObject *)value)->traceback;
-    ((PyBaseExceptionObject *)value)->traceback = traceback;
-    Py_XDECREF(old_traceback);
     _PyErr_SetRaisedException(tstate, value);
     Py_DECREF(type);
 }
@@ -516,7 +517,7 @@ _PyErr_Fetch(PyThreadState *tstate, PyObject **p_type, PyObject **p_value,
     }
     else {
         *p_type = Py_NewRef(Py_TYPE(exc));
-        *p_traceback = Py_XNewRef(((PyBaseExceptionObject *)exc)->traceback);
+        *p_traceback = PyException_GetTraceback(exc);
     }
 }
 
@@ -544,7 +545,7 @@ PyErr_Clear(void)
 }
 
 static PyObject*
-get_exc_type(PyObject *exc_value)  /* returns a borrowed ref */
+get_exc_type(PyObject *exc_value)  /* returns a strong ref */
 {
     if (exc_value == NULL || exc_value == Py_None) {
         return Py_None;
@@ -553,12 +554,12 @@ get_exc_type(PyObject *exc_value)  /* returns a borrowed ref */
         assert(PyExceptionInstance_Check(exc_value));
         PyObject *type = PyExceptionInstance_Class(exc_value);
         assert(type != NULL);
-        return type;
+        return Py_NewRef(type);
     }
 }
 
 static PyObject*
-get_exc_traceback(PyObject *exc_value)  /* returns a borrowed ref */
+get_exc_traceback(PyObject *exc_value)  /* returns a strong ref */
 {
     if (exc_value == NULL || exc_value == Py_None) {
         return Py_None;
@@ -566,7 +567,6 @@ get_exc_traceback(PyObject *exc_value)  /* returns a borrowed ref */
     else {
         assert(PyExceptionInstance_Check(exc_value));
         PyObject *tb = PyException_GetTraceback(exc_value);
-        Py_XDECREF(tb);
         return tb ? tb : Py_None;
     }
 }
@@ -577,9 +577,9 @@ _PyErr_GetExcInfo(PyThreadState *tstate,
 {
     _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
 
-    *p_type = Py_XNewRef(get_exc_type(exc_info->exc_value));
+    *p_type = get_exc_type(exc_info->exc_value);
     *p_value = Py_XNewRef(exc_info->exc_value);
-    *p_traceback = Py_XNewRef(get_exc_traceback(exc_info->exc_value));
+    *p_traceback = get_exc_traceback(exc_info->exc_value);
 }
 
 PyObject*
@@ -640,14 +640,19 @@ _PyErr_StackItemToExcInfoTuple(_PyErr_StackItem *err_info)
            exc_value == Py_None ||
            PyExceptionInstance_Check(exc_value));
 
+    PyObject *ret = PyTuple_New(3);
+    if (ret == NULL) {
+        return NULL;
+    }
+
     PyObject *exc_type = get_exc_type(exc_value);
     PyObject *exc_traceback = get_exc_traceback(exc_value);
 
-    return PyTuple_Pack(
-        3,
-        exc_type ? exc_type : Py_None,
-        exc_value ? exc_value : Py_None,
-        exc_traceback ? exc_traceback : Py_None);
+    PyTuple_SET_ITEM(ret, 0, exc_type ? exc_type : Py_None);
+    PyTuple_SET_ITEM(ret, 1, exc_value ? Py_NewRef(exc_value) : Py_None);
+    PyTuple_SET_ITEM(ret, 2, exc_traceback ? exc_traceback : Py_None);
+
+    return ret;
 }
 
 
