@@ -632,7 +632,7 @@ class Executor(object):
                         fs.appendleft(executor.submit(fn, *args))
 
                     # yield the awaited result
-                    yield fs.pop().result()
+                    yield fs.pop()._result
             finally:
                 for future in fs:
                     future.cancel()
