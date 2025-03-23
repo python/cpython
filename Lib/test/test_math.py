@@ -2772,6 +2772,9 @@ class FMATests(unittest.TestCase):
         or (sys.platform == "android" and platform.machine() == "x86_64")
         or support.linked_to_musl(),  # gh-131032
         f"this platform doesn't implement IEE 754-2008 properly")
+    # gh-131032: musl is fixed but the fix is not yet released; when the fixed
+    # version is known change this to:
+    #   or support.linked_to_musl() < (1, <m>, <p>)
     def test_fma_zero_result(self):
         nonnegative_finites = [0.0, 1e-300, 2.3, 1e300]
 

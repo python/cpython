@@ -273,6 +273,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_POP_TOP_LOAD_CONST_INLINE] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
     [_LOAD_CONST_INLINE_BORROW] = HAS_PURE_FLAG,
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
+    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = HAS_ESCAPES_FLAG | HAS_PURE_FLAG,
     [_CHECK_FUNCTION] = HAS_DEOPT_FLAG,
     [_START_EXECUTOR] = HAS_ESCAPES_FLAG,
     [_MAKE_WARM] = 0,
@@ -495,6 +496,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_POP_TOP] = "_POP_TOP",
     [_POP_TOP_LOAD_CONST_INLINE] = "_POP_TOP_LOAD_CONST_INLINE",
     [_POP_TOP_LOAD_CONST_INLINE_BORROW] = "_POP_TOP_LOAD_CONST_INLINE_BORROW",
+    [_POP_TWO_LOAD_CONST_INLINE_BORROW] = "_POP_TWO_LOAD_CONST_INLINE_BORROW",
     [_PUSH_EXC_INFO] = "_PUSH_EXC_INFO",
     [_PUSH_FRAME] = "_PUSH_FRAME",
     [_PUSH_NULL] = "_PUSH_NULL",
@@ -1065,6 +1067,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _POP_TOP_LOAD_CONST_INLINE_BORROW:
             return 1;
+        case _POP_TWO_LOAD_CONST_INLINE_BORROW:
+            return 2;
         case _CHECK_FUNCTION:
             return 0;
         case _START_EXECUTOR:

@@ -13,10 +13,11 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"      // struct _PyErr_SetRaisedException
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include "osdefs.h"               // SEP
-
 #include "clinic/exceptions.c.h"
+
 
 /*[clinic input]
 class BaseException "PyBaseExceptionObject *" "&PyExc_BaseException"

@@ -365,6 +365,7 @@ class CreateTests(TestBase):
 
         self.assertEqual(len(seen), 100)
 
+    @support.skip_if_sanitizer('gh-129824: race on tp_flags', thread=True)
     def test_in_thread(self):
         lock = threading.Lock()
         id = None

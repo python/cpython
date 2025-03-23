@@ -13,6 +13,7 @@ import linecache
 import zipapp
 import zipfile
 
+from asyncio.events import _set_event_loop_policy
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
@@ -2154,7 +2155,7 @@ if not SKIP_CORO_TESTS:
             ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
 
             >>> def test_function():
-            ...     asyncio.run(test())
+            ...     asyncio.run(test(), loop_factory=asyncio.EventLoop)
 
             >>> with PdbTestInput([  # doctest: +ELLIPSIS
             ...     '$_asynctask',
@@ -4670,13 +4671,33 @@ class PdbTestReadline(unittest.TestCase):
 
 def load_tests(loader, tests, pattern):
     from test import test_pdb
+
     def setUpPdbBackend(backend):
         def setUp(test):
             import pdb
             pdb.set_default_backend(backend)
         return setUp
-    tests.addTest(doctest.DocTestSuite(test_pdb, setUp=setUpPdbBackend('monitoring')))
-    tests.addTest(doctest.DocTestSuite(test_pdb, setUp=setUpPdbBackend('settrace')))
+
+    def tearDown(test):
+        # Ensure that asyncio state has been cleared at the end of the test.
+        # This prevents a "test altered the execution environment" warning if
+        # asyncio features are used.
+        _set_event_loop_policy(None)
+
+    tests.addTest(
+        doctest.DocTestSuite(
+            test_pdb,
+            setUp=setUpPdbBackend('monitoring'),
+            tearDown=tearDown,
+        )
+    )
+    tests.addTest(
+        doctest.DocTestSuite(
+            test_pdb,
+            setUp=setUpPdbBackend('settrace'),
+            tearDown=tearDown,
+        )
+    )
     return tests
 
 
