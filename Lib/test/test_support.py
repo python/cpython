@@ -27,59 +27,17 @@ TESTFN = os_helper.TESTFN
 
 
 class LogCaptureHandler(logging.StreamHandler):
-    """
-    A logging handler that stores log records and the log text.
-
-    Derived from pytest caplog.
-
-    The MIT License (MIT)
-
-    Copyright (c) 2004 Holger Krekel and others
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy of
-    this software and associated documentation files (the "Software"), to deal in
-    the Software without restriction, including without limitation the rights to
-    use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-    of the Software, and to permit persons to whom the Software is furnished to do
-    so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in all
-    copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.
-    """
-
+    # Inspired by pytest's caplog
     def __init__(self):
-        """Create a new log handler."""
         super().__init__(io.StringIO())
         self.records = []
 
     def emit(self, record) -> None:
-        """Keep the log records in a list in addition to the log text."""
         self.records.append(record)
         super().emit(record)
 
-    def reset(self):
-        self.records = []
-        self.stream = io.StringIO()
-
-    def clear(self):
-        self.records.clear()
-        self.stream = io.StringIO()
-
     def handleError(self, record):
-        if logging.raiseExceptions:
-            # Fail the test if the log message is bad (emit failed).
-            # The default behavior of logging is to print "Logging error"
-            # to stderr with the call stack and some extra details.
-            # pytest wants to make such mistakes visible during testing.
-            raise
+        raise
 
 
 @contextlib.contextmanager
