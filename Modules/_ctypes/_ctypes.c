@@ -494,6 +494,20 @@ ctype_clear_stginfo(StgInfo *info)
     Py_CLEAR(info->module);  // decref the module last
 }
 
+void
+ctype_free_stginfo_members(StgInfo *info)
+{
+    assert(info);
+
+    PyMem_Free(info->ffi_type_pointer.elements);
+    info->ffi_type_pointer.elements = NULL;
+    PyMem_Free(info->format);
+    info->format = NULL;
+    PyMem_Free(info->shape);
+    info->shape = NULL;
+    ctype_clear_stginfo(info);
+}
+
 static int
 CType_Type_clear(PyObject *self)
 {
@@ -517,13 +531,7 @@ CType_Type_dealloc(PyObject *self)
                                "deallocating ctypes %R", self);
     }
     if (info) {
-        PyMem_Free(info->ffi_type_pointer.elements);
-        info->ffi_type_pointer.elements = NULL;
-        PyMem_Free(info->format);
-        info->format = NULL;
-        PyMem_Free(info->shape);
-        info->shape = NULL;
-        ctype_clear_stginfo(info);
+        ctype_free_stginfo_members(info);
     }
 
     PyTypeObject *tp = Py_TYPE(self);
