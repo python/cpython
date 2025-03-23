@@ -15582,6 +15582,7 @@ typedef struct {
     ino_t d_ino;
     int dir_fd;
 #endif
+    PyMutex mutex;
 } DirEntry;
 
 #define DirEntry_CAST(op)   ((DirEntry *)(op))
@@ -15591,10 +15592,12 @@ DirEntry_dealloc(PyObject *op)
 {
     DirEntry *entry = DirEntry_CAST(op);
     PyTypeObject *tp = Py_TYPE(entry);
+    PyMutex_Lock(&entry->mutex);
     Py_XDECREF(entry->name);
     Py_XDECREF(entry->path);
     Py_XDECREF(entry->stat);
     Py_XDECREF(entry->lstat);
+    PyMutex_Unlock(&entry->mutex);
     freefunc free_func = PyType_GetSlot(tp, Py_tp_free);
     free_func(entry);
     Py_DECREF(tp);
@@ -15712,6 +15715,7 @@ DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
 static PyObject *
 DirEntry_get_lstat(PyTypeObject *defining_class, DirEntry *self)
 {
+    /* Must be called with self->mutex held */
     if (!self->lstat) {
         PyObject *module = PyType_GetModule(defining_class);
 #ifdef MS_WINDOWS
@@ -15739,12 +15743,17 @@ os_DirEntry_stat_impl(DirEntry *self, PyTypeObject *defining_class,
 /*[clinic end generated code: output=23f803e19c3e780e input=e816273c4e67ee98]*/
 {
     if (!follow_symlinks) {
-        return DirEntry_get_lstat(defining_class, self);
+        PyMutex_Lock(&self->mutex);
+        PyObject *stat = DirEntry_get_lstat(defining_class, self);
+        PyMutex_Unlock(&self->mutex);
+        return stat;
     }
 
+    PyMutex_Lock(&self->mutex);
     if (!self->stat) {
         int result = os_DirEntry_is_symlink_impl(self, defining_class);
         if (result == -1) {
+            PyMutex_Unlock(&self->mutex);
             return NULL;
         }
         if (result) {
@@ -15755,6 +15764,7 @@ os_DirEntry_stat_impl(DirEntry *self, PyTypeObject *defining_class,
             self->stat = DirEntry_get_lstat(defining_class, self);
         }
     }
+    PyMutex_Unlock(&self->mutex);
 
     return Py_XNewRef(self->stat);
 }
@@ -16029,6 +16039,7 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
     entry->stat = NULL;
     entry->lstat = NULL;
     entry->got_file_index = 0;
+    entry->mutex = (PyMutex){0};
 
     entry->name = PyUnicode_FromWideChar(dataW->cFileName, -1);
     if (!entry->name)
@@ -16121,6 +16132,7 @@ DirEntry_from_posix_info(PyObject *module, path_t *path, const char *name,
     entry->path = NULL;
     entry->stat = NULL;
     entry->lstat = NULL;
+    entry->mutex = (PyMutex){0};
 
     if (path->fd != -1) {
         entry->dir_fd = path->fd;
