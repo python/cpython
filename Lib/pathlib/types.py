@@ -343,7 +343,7 @@ class _ReadablePath(_JoinablePath):
             copy_to_target = target._copy_from
         except AttributeError:
             raise TypeError(f"Target path is not writable: {target!r}") from None
-        copy_to_target(self, **kwargs)
+        list(copy_to_target(self, **kwargs))  # Consume generator.
         return target.joinpath()  # Empty join to ensure fresh metadata.
 
     def copy_into(self, target_dir, **kwargs):
@@ -413,23 +413,27 @@ class _WritablePath(_JoinablePath):
 
     def _copy_from(self, source, follow_symlinks=True):
         """
-        Recursively copy the given path to this path.
+        Recursively copy the given path to this path. This a generator
+        function that yields (target, source, part_size) tuples as the copying
+        operation progresses.
         """
-        stack = [(source, self)]
+        stack = [(self, source)]
         while stack:
-            src, dst = stack.pop()
+            dst, src = stack.pop()
+            yield dst, src, 0
             if not follow_symlinks and src.info.is_symlink():
                 dst.symlink_to(str(src.readlink()), src.info.is_dir())
             elif src.info.is_dir():
                 children = src.iterdir()
                 dst.mkdir()
                 for child in children:
-                    stack.append((child, dst.joinpath(child.name)))
+                    stack.append((dst.joinpath(child.name), child))
             else:
                 ensure_different_files(src, dst)
                 with magic_open(src, 'rb') as source_f:
                     with magic_open(dst, 'wb') as target_f:
-                        copyfileobj(source_f, target_f)
+                        for part_size in copyfileobj(source_f, target_f):
+                            yield dst, src, part_size
 
 
 _JoinablePath.register(PurePath)

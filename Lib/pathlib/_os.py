@@ -163,7 +163,7 @@ def copyfileobj(source_f, target_f):
     read_source = source_f.read
     write_target = target_f.write
     while buf := read_source(1024 * 1024):
-        write_target(buf)
+        yield write_target(buf)
 
 
 def magic_open(path, mode='r', buffering=-1, encoding=None, errors=None,
