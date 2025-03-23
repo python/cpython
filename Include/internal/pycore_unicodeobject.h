@@ -8,10 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_lock.h"          // PyMutex
 #include "pycore_fileutils.h"     // _Py_error_handler
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
-#include "pycore_global_objects.h"  // _Py_SINGLETON
 
 /* --- Characters Type APIs ----------------------------------------------- */
 

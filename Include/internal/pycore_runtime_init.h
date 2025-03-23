@@ -11,10 +11,12 @@ extern "C" {
 #include "pycore_structs.h"
 #include "pycore_ceval_state.h"   // _PyEval_RUNTIME_PERF_INIT
 #include "pycore_debug_offsets.h"  // _Py_DebugOffsets_INIT()
+#include "pycore_dtoa.h"          // _dtoa_state_INIT()
 #include "pycore_faulthandler.h"  // _faulthandler_runtime_state_INIT
 #include "pycore_floatobject.h"   // _py_float_format_unknown
 #include "pycore_function.h"
 #include "pycore_hamt.h"          // _PyHamt_BitmapNode_Type
+#include "pycore_import.h"        // IMPORTS_INIT
 #include "pycore_object.h"        // _PyObject_HEAD_INIT
 #include "pycore_obmalloc_init.h" // _obmalloc_global_state_INIT
 #include "pycore_parser.h"        // _parser_runtime_state_INIT

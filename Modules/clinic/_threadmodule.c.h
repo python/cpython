@@ -8,7 +8,7 @@ preserve
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
-#if (defined(HAVE_PTHREAD_GETNAME_NP) || defined(MS_WINDOWS))
+#if (defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP) || defined(MS_WINDOWS))
 
 PyDoc_STRVAR(_thread__get_name__doc__,
 "_get_name($module, /)\n"
@@ -28,9 +28,9 @@ _thread__get_name(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _thread__get_name_impl(module);
 }
 
-#endif /* (defined(HAVE_PTHREAD_GETNAME_NP) || defined(MS_WINDOWS)) */
+#endif /* (defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP) || defined(MS_WINDOWS)) */
 
-#if (defined(HAVE_PTHREAD_SETNAME_NP) || defined(MS_WINDOWS))
+#if (defined(HAVE_PTHREAD_SETNAME_NP) || defined(HAVE_PTHREAD_SET_NAME_NP) || defined(MS_WINDOWS))
 
 PyDoc_STRVAR(_thread_set_name__doc__,
 "set_name($module, /, name)\n"
@@ -92,7 +92,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_PTHREAD_SETNAME_NP) || defined(MS_WINDOWS)) */
+#endif /* (defined(HAVE_PTHREAD_SETNAME_NP) || defined(HAVE_PTHREAD_SET_NAME_NP) || defined(MS_WINDOWS)) */
 
 #ifndef _THREAD__GET_NAME_METHODDEF
     #define _THREAD__GET_NAME_METHODDEF
@@ -101,4 +101,4 @@ exit:
 #ifndef _THREAD_SET_NAME_METHODDEF
     #define _THREAD_SET_NAME_METHODDEF
 #endif /* !defined(_THREAD_SET_NAME_METHODDEF) */
-/*[clinic end generated code: output=bb347b8a0b815db6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=05074845049408ff input=a9049054013a1b77]*/
