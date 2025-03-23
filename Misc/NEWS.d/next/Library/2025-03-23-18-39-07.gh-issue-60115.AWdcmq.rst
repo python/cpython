@@ -1,1 +1,1 @@
-Support frozen modules for :func:`linecache.getlines()`
+Support frozen modules for :func:`linecache.getlines`.
