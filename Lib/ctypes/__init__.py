@@ -276,8 +276,9 @@ def POINTER(cls):
     except AttributeError:
         pass
     if isinstance(cls, str):
-        return type(f'LP_{cls}', (_Pointer,), {})  # deprecated
+        return type(f'LP_{cls}', (_Pointer,), {})
     return type(f'LP_{cls.__name__}', (_Pointer,), {'_type_': cls})
+
 def pointer(arg):
     typ = POINTER(type(arg))
     return typ(arg)

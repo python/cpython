@@ -216,6 +216,31 @@ class PointersTestCase(unittest.TestCase):
     def test_abstract(self):
         self.assertRaises(TypeError, _Pointer.set_type, 42)
 
+    def test_pointer_types_equal(self):
+        t1 = POINTER(c_int)
+        t2 = POINTER(c_int)
+
+        self.assertIs(t1, t2)
+
+    def test_incomplete_pointer_types_not_equal(self):
+        t1 = POINTER("LP_C")
+        t2 = POINTER("LP_C")
+
+        self.assertIsNot(t1, t2)
+
+    def test_pointer_set_type_twice(self):
+        t1 = POINTER(c_int)
+        t1.set_type(c_int)
+
+    def test_pointer_set_wrong_type(self):
+        t1 = POINTER(c_int)
+        with self.assertRaisesRegex(TypeError, "pointer type already set"):
+            t1.set_type(c_float)
+
+    def test_pointer_not_ctypes_type(self):
+        with self.assertRaisesRegex(TypeError, "must have storage info"):
+            POINTER(int)
+
 
 if __name__ == '__main__':
     unittest.main()
