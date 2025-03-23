@@ -294,6 +294,33 @@ def skip_unless_working_chmod(test):
     return test if ok else unittest.skip(msg)(test)
 
 
+@contextlib.contextmanager
+def save_mode(path, *, quiet=False):
+    """Context manager that restores the mode (permissions) of *path* on exit.
+
+    Arguments:
+
+      path: Path of the file to restore the mode of.
+
+      quiet: if False (the default), the context manager raises an exception
+        on error.  Otherwise, it issues only a warning and keeps the current
+        working directory the same.
+
+    """
+    saved_mode = os.stat(path)
+    try:
+        yield
+    finally:
+        try:
+            os.chmod(path, saved_mode.st_mode)
+        except OSError as exc:
+            if not quiet:
+                raise
+            warnings.warn(f'tests may fail, unable to restore the mode of '
+                          f'{path!r} to {saved_mode.st_mode}: {exc}',
+                          RuntimeWarning, stacklevel=3)
+
+
 # Check whether the current effective user has the capability to override
 # DAC (discretionary access control). Typically user root is able to
 # bypass file read, write, and execute permission checks. The capability
@@ -693,9 +720,10 @@ else:
 
 
 class EnvironmentVarGuard(collections.abc.MutableMapping):
+    """Class to help protect the environment variable properly.
 
-    """Class to help protect the environment variable properly.  Can be used as
-    a context manager."""
+    Can be used as a context manager.
+    """
 
     def __init__(self):
         self._environ = os.environ
@@ -729,8 +757,10 @@ class EnvironmentVarGuard(collections.abc.MutableMapping):
     def set(self, envvar, value):
         self[envvar] = value
 
-    def unset(self, envvar):
-        del self[envvar]
+    def unset(self, envvar, /, *envvars):
+        """Unset one or more environment variables."""
+        for ev in (envvar, *envvars):
+            del self[ev]
 
     def copy(self):
         # We do what os.environ.copy() does.

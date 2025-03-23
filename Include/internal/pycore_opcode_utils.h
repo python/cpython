@@ -45,6 +45,12 @@ extern "C" {
          (opcode) == JUMP_BACKWARD || \
          (opcode) == JUMP_BACKWARD_NO_INTERRUPT)
 
+#define IS_CONDITIONAL_JUMP_OPCODE(opcode) \
+        ((opcode) == POP_JUMP_IF_FALSE || \
+         (opcode) == POP_JUMP_IF_TRUE || \
+         (opcode) == POP_JUMP_IF_NONE || \
+         (opcode) == POP_JUMP_IF_NOT_NONE)
+
 #define IS_SCOPE_EXIT_OPCODE(opcode) \
         ((opcode) == RETURN_VALUE || \
          (opcode) == RAISE_VARARGS || \

@@ -18,12 +18,12 @@ static PyObject *
 _random_Random_random_impl(RandomObject *self);
 
 static PyObject *
-_random_Random_random(RandomObject *self, PyObject *Py_UNUSED(ignored))
+_random_Random_random(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _random_Random_random_impl(self);
+    return_value = _random_Random_random_impl((RandomObject *)self);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -45,7 +45,7 @@ static PyObject *
 _random_Random_seed_impl(RandomObject *self, PyObject *n);
 
 static PyObject *
-_random_Random_seed(RandomObject *self, PyObject *const *args, Py_ssize_t nargs)
+_random_Random_seed(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *n = Py_None;
@@ -59,7 +59,7 @@ _random_Random_seed(RandomObject *self, PyObject *const *args, Py_ssize_t nargs)
     n = args[0];
 skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _random_Random_seed_impl(self, n);
+    return_value = _random_Random_seed_impl((RandomObject *)self, n);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -79,12 +79,12 @@ static PyObject *
 _random_Random_getstate_impl(RandomObject *self);
 
 static PyObject *
-_random_Random_getstate(RandomObject *self, PyObject *Py_UNUSED(ignored))
+_random_Random_getstate(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _random_Random_getstate_impl(self);
+    return_value = _random_Random_getstate_impl((RandomObject *)self);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -103,12 +103,12 @@ static PyObject *
 _random_Random_setstate_impl(RandomObject *self, PyObject *state);
 
 static PyObject *
-_random_Random_setstate(RandomObject *self, PyObject *state)
+_random_Random_setstate(PyObject *self, PyObject *state)
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _random_Random_setstate_impl(self, state);
+    return_value = _random_Random_setstate_impl((RandomObject *)self, state);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -127,7 +127,7 @@ static PyObject *
 _random_Random_getrandbits_impl(RandomObject *self, int k);
 
 static PyObject *
-_random_Random_getrandbits(RandomObject *self, PyObject *arg)
+_random_Random_getrandbits(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int k;
@@ -137,10 +137,10 @@ _random_Random_getrandbits(RandomObject *self, PyObject *arg)
         goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _random_Random_getrandbits_impl(self, k);
+    return_value = _random_Random_getrandbits_impl((RandomObject *)self, k);
     Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bf49ece1d341b1b6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4458b5a69201ebea input=a9049054013a1b77]*/

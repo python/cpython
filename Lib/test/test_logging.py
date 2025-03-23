@@ -22,6 +22,7 @@ import logging
 import logging.handlers
 import logging.config
 
+
 import codecs
 import configparser
 import copy
@@ -680,9 +681,6 @@ class HandlerTest(BaseTest):
             os.unlink(fn)
 
     @unittest.skipIf(os.name == 'nt', 'WatchedFileHandler not appropriate for Windows.')
-    @unittest.skipIf(
-        support.is_emscripten, "Emscripten cannot fstat unlinked files."
-    )
     @threading_helper.requires_working_threading()
     @support.requires_resource('walltime')
     def test_race(self):
@@ -1137,7 +1135,7 @@ class SMTPHandlerTest(BaseTest):
         self.assertEqual(mailfrom, 'me')
         self.assertEqual(rcpttos, ['you'])
         self.assertIn('\nSubject: Log\n', data)
-        self.assertTrue(data.endswith('\n\nHello \u2713'))
+        self.assertEndsWith(data, '\n\nHello \u2713')
         h.close()
 
     def process_message(self, *args):
@@ -2097,6 +2095,18 @@ class SysLogHandlerTest(BaseTest):
         logger.error("sp\xe4m")
         self.handled.wait(support.LONG_TIMEOUT)
         self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m\x00')
+
+    @patch('socket.socket')
+    def test_tcp_timeout(self, mock_socket):
+        instance_mock_sock = mock_socket.return_value
+        instance_mock_sock.connect.side_effect = socket.timeout
+
+        with self.assertRaises(socket.timeout):
+            logging.handlers.SysLogHandler(address=('localhost', 514),
+                                           socktype=socket.SOCK_STREAM,
+                                           timeout=1)
+
+        instance_mock_sock.close.assert_called()
 
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 class UnixSysLogHandlerTest(SysLogHandlerTest):
@@ -3527,7 +3537,7 @@ class ConfigDictTest(BaseTest):
             self.assertEqual(h.foo, 'bar')
             self.assertEqual(h.terminator, '!\n')
             logging.warning('Exclamation')
-            self.assertTrue(output.getvalue().endswith('Exclamation!\n'))
+            self.assertEndsWith(output.getvalue(), 'Exclamation!\n')
 
     def test_config15_ok(self):
 
@@ -4284,7 +4294,7 @@ class QueueHandlerTest(BaseTest):
         msg = self.next_message()
         self.que_logger.warning(msg)
         data = self.queue.get_nowait()
-        self.assertTrue(isinstance(data, logging.LogRecord))
+        self.assertIsInstance(data, logging.LogRecord)
         self.assertEqual(data.name, self.que_logger.name)
         self.assertEqual((data.msg, data.args), (msg, None))
 
@@ -4882,14 +4892,14 @@ class ExceptionTest(BaseTest):
         r.removeHandler(h)
         h.close()
         r = h.records[0]
-        self.assertTrue(r.exc_text.startswith('Traceback (most recent '
-                                              'call last):\n'))
-        self.assertTrue(r.exc_text.endswith('\nRuntimeError: '
-                                            'deliberate mistake'))
-        self.assertTrue(r.stack_info.startswith('Stack (most recent '
-                                              'call last):\n'))
-        self.assertTrue(r.stack_info.endswith('logging.exception(\'failed\', '
-                                            'stack_info=True)'))
+        self.assertStartsWith(r.exc_text,
+                'Traceback (most recent call last):\n')
+        self.assertEndsWith(r.exc_text,
+                '\nRuntimeError: deliberate mistake')
+        self.assertStartsWith(r.stack_info,
+                'Stack (most recent call last):\n')
+        self.assertEndsWith(r.stack_info,
+                "logging.exception('failed', stack_info=True)")
 
 
 class LastResortTest(BaseTest):
@@ -5232,8 +5242,8 @@ class LogRecordTest(BaseTest):
     def test_str_rep(self):
         r = logging.makeLogRecord({})
         s = str(r)
-        self.assertTrue(s.startswith('<LogRecord: '))
-        self.assertTrue(s.endswith('>'))
+        self.assertStartsWith(s, '<LogRecord: ')
+        self.assertEndsWith(s, '>')
 
     def test_dict_arg(self):
         h = RecordingHandler()
@@ -5355,7 +5365,7 @@ class LogRecordTest(BaseTest):
                 logging.logAsyncioTasks = False
                 runner.run(make_record(self.assertIsNone))
         finally:
-            asyncio.set_event_loop_policy(None)
+            asyncio._set_event_loop_policy(None)
 
     @support.requires_working_socket()
     def test_taskName_without_asyncio_imported(self):
@@ -5367,7 +5377,7 @@ class LogRecordTest(BaseTest):
                 logging.logAsyncioTasks = False
                 runner.run(make_record(self.assertIsNone))
         finally:
-            asyncio.set_event_loop_policy(None)
+            asyncio._set_event_loop_policy(None)
 
 
 class BasicConfigTest(unittest.TestCase):
@@ -5671,7 +5681,7 @@ class BasicConfigTest(unittest.TestCase):
                 data = f.read().strip()
             self.assertRegex(data, r'Task-\d+ - hello world')
         finally:
-            asyncio.set_event_loop_policy(None)
+            asyncio._set_event_loop_policy(None)
             if handler:
                 handler.close()
 
@@ -5883,14 +5893,14 @@ class LoggerAdapterTest(unittest.TestCase):
         self.adapter.critical('foo should be here')
         self.assertEqual(len(self.recording.records), 1)
         record = self.recording.records[0]
-        self.assertTrue(hasattr(record, 'foo'))
+        self.assertHasAttr(record, 'foo')
         self.assertEqual(record.foo, '1')
 
     def test_extra_not_merged_by_default(self):
         self.adapter.critical('foo should NOT be here', extra={'foo': 'nope'})
         self.assertEqual(len(self.recording.records), 1)
         record = self.recording.records[0]
-        self.assertFalse(hasattr(record, 'foo'))
+        self.assertNotHasAttr(record, 'foo')
 
     def test_extra_merged(self):
         self.adapter = logging.LoggerAdapter(logger=self.logger,
@@ -5900,8 +5910,8 @@ class LoggerAdapterTest(unittest.TestCase):
         self.adapter.critical('foo and bar should be here', extra={'bar': '2'})
         self.assertEqual(len(self.recording.records), 1)
         record = self.recording.records[0]
-        self.assertTrue(hasattr(record, 'foo'))
-        self.assertTrue(hasattr(record, 'bar'))
+        self.assertHasAttr(record, 'foo')
+        self.assertHasAttr(record, 'bar')
         self.assertEqual(record.foo, '1')
         self.assertEqual(record.bar, '2')
 
@@ -5913,7 +5923,7 @@ class LoggerAdapterTest(unittest.TestCase):
         self.adapter.critical('foo shall be min', extra={'foo': '2'})
         self.assertEqual(len(self.recording.records), 1)
         record = self.recording.records[0]
-        self.assertTrue(hasattr(record, 'foo'))
+        self.assertHasAttr(record, 'foo')
         self.assertEqual(record.foo, '2')
 
 
@@ -6627,18 +6637,19 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
                 p = '%s.log.' % prefix
                 for c in candidates:
                     d, fn = os.path.split(c)
-                    self.assertTrue(fn.startswith(p))
+                    self.assertStartsWith(fn, p)
             elif prefix.startswith('d.e'):
                 for c in candidates:
                     d, fn = os.path.split(c)
-                    self.assertTrue(fn.endswith('.log'), fn)
-                    self.assertTrue(fn.startswith(prefix + '.') and
-                                    fn[len(prefix) + 2].isdigit())
+                    self.assertEndsWith(fn, '.log')
+                    self.assertStartsWith(fn, prefix + '.')
+                    self.assertTrue(fn[len(prefix) + 2].isdigit())
             elif prefix == 'g':
                 for c in candidates:
                     d, fn = os.path.split(c)
-                    self.assertTrue(fn.endswith('.oldlog'))
-                    self.assertTrue(fn.startswith('g') and fn[1].isdigit())
+                    self.assertEndsWith(fn, '.oldlog')
+                    self.assertStartsWith(fn, 'g')
+                    self.assertTrue(fn[1].isdigit())
 
     def test_compute_files_to_delete_same_filename_different_extensions(self):
         # See GH-93205 for background
@@ -6676,7 +6687,7 @@ class TimedRotatingFileHandlerTest(BaseFileTest):
             matcher = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\Z")
             for c in candidates:
                 d, fn = os.path.split(c)
-                self.assertTrue(fn.startswith(prefix+'.'))
+                self.assertStartsWith(fn, prefix+'.')
                 suffix = fn[(len(prefix)+1):]
                 self.assertRegex(suffix, matcher)
 
