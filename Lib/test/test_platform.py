@@ -754,6 +754,7 @@ class CommandLineTest(unittest.TestCase):
     @staticmethod
     def text_normalize(string):
         """Dedent *string* and strip it from its surrounding whitespaces.
+
         This method is used by the other utility functions so that any
         string to write or to match against can be freely indented.
         """
