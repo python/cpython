@@ -1,3 +1,0 @@
-Remove :c:func:`PySequence_Fast` from the limited C API, since this function
-has to be used with :c:macro:`PySequence_Fast_GET_ITEM` which never worked
-in the limited C API. Patch by Victor Stinner.

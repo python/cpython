@@ -6,11 +6,16 @@
 #include "pycore_interp.h"
 #include "pycore_backoff.h"
 #include "pycore_bitutils.h"        // _Py_popcount32()
+#include "pycore_code.h"            // _Py_GetBaseCodeUnit
+#include "pycore_function.h"        // _PyFunction_LookupByVersion()
+#include "pycore_interpframe.h"
 #include "pycore_object.h"          // _PyObject_GC_UNTRACK()
 #include "pycore_opcode_metadata.h" // _PyOpcode_OpName[]
 #include "pycore_opcode_utils.h"  // MAX_REAL_OPCODE
 #include "pycore_optimizer.h"     // _Py_uop_analyze_and_optimize()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_tuple.h" // _PyTuple_FromArraySteal
+#include "pycore_unicodeobject.h" // _PyUnicode_FromASCII
 #include "pycore_uop_ids.h"
 #include "pycore_jit.h"
 #include <stdbool.h>
@@ -230,16 +235,18 @@ _PyUOpPrint(const _PyUOpInstruction *uop)
     }
     switch(uop->format) {
         case UOP_FORMAT_TARGET:
-            printf(" (%d, target=%d, operand=%#" PRIx64,
+            printf(" (%d, target=%d, operand0=%#" PRIx64 ", operand1=%#" PRIx64,
                 uop->oparg,
                 uop->target,
-                (uint64_t)uop->operand0);
+                (uint64_t)uop->operand0,
+                (uint64_t)uop->operand1);
             break;
         case UOP_FORMAT_JUMP:
-            printf(" (%d, jump_target=%d, operand=%#" PRIx64,
+            printf(" (%d, jump_target=%d, operand0=%#" PRIx64 ", operand1=%#" PRIx64,
                 uop->oparg,
                 uop->jump_target,
-                (uint64_t)uop->operand0);
+                (uint64_t)uop->operand0,
+                (uint64_t)uop->operand1);
             break;
         default:
             printf(" (%d, Unknown format)", uop->oparg);
@@ -361,6 +368,7 @@ _PyUOp_Replacements[MAX_UOP_ID + 1] = {
     [_ITER_JUMP_LIST] = _GUARD_NOT_EXHAUSTED_LIST,
     [_ITER_JUMP_TUPLE] = _GUARD_NOT_EXHAUSTED_TUPLE,
     [_FOR_ITER] = _FOR_ITER_TIER_TWO,
+    [_ITER_NEXT_LIST] = _ITER_NEXT_LIST_TIER_TWO,
 };
 
 static const uint8_t
@@ -671,7 +679,7 @@ translate_bytecode_to_trace(
                         if (trace_stack_depth == 0) {
                             DPRINTF(2, "Trace stack underflow\n");
                             OPT_STAT_INC(trace_stack_underflow);
-                            goto done;
+                            return 0;
                         }
                     }
                     uint32_t orig_oparg = oparg;  // For OPARG_TOP/BOTTOM
@@ -682,7 +690,7 @@ translate_bytecode_to_trace(
                         // Add one to account for the actual opcode/oparg pair:
                         int offset = expansion->uops[i].offset + 1;
                         switch (expansion->uops[i].size) {
-                            case OPARG_FULL:
+                            case OPARG_SIMPLE:
                                 assert(opcode != JUMP_BACKWARD_NO_INTERRUPT && opcode != JUMP_BACKWARD);
                                 break;
                             case OPARG_CACHE_1:
@@ -716,6 +724,21 @@ translate_bytecode_to_trace(
                                 }
 #endif
                                 break;
+                            case OPERAND1_1:
+                                assert(trace[trace_length-1].opcode == uop);
+                                operand = read_u16(&instr[offset].cache);
+                                trace[trace_length-1].operand1 = operand;
+                                continue;
+                            case OPERAND1_2:
+                                assert(trace[trace_length-1].opcode == uop);
+                                operand = read_u32(&instr[offset].cache);
+                                trace[trace_length-1].operand1 = operand;
+                                continue;
+                            case OPERAND1_4:
+                                assert(trace[trace_length-1].opcode == uop);
+                                operand = read_u64(&instr[offset].cache);
+                                trace[trace_length-1].operand1 = operand;
+                                continue;
                             default:
                                 fprintf(stderr,
                                         "opcode=%d, oparg=%d; nuops=%d, i=%d; size=%d, offset=%d\n",
@@ -1208,11 +1231,7 @@ uop_optimize(
     for (int pc = 0; pc < length; pc++) {
         int opcode = buffer[pc].opcode;
         int oparg = buffer[pc].oparg;
-        if (_PyUop_Flags[opcode] & HAS_OPARG_AND_1_FLAG) {
-            buffer[pc].opcode = opcode + 1 + (oparg & 1);
-            assert(strncmp(_PyOpcode_uop_name[buffer[pc].opcode], _PyOpcode_uop_name[opcode], strlen(_PyOpcode_uop_name[opcode])) == 0);
-        }
-        else if (oparg < _PyUop_Replication[opcode]) {
+        if (oparg < _PyUop_Replication[opcode]) {
             buffer[pc].opcode = opcode + oparg + 1;
             assert(strncmp(_PyOpcode_uop_name[buffer[pc].opcode], _PyOpcode_uop_name[opcode], strlen(_PyOpcode_uop_name[opcode])) == 0);
         }
