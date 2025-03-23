@@ -19609,10 +19609,22 @@ then :
   printf "%s\n" "#define HAVE_PTHREAD_KILL 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "pthread_get_name_np" "ac_cv_func_pthread_get_name_np"
+if test "x$ac_cv_func_pthread_get_name_np" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTHREAD_GET_NAME_NP 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "pthread_getname_np" "ac_cv_func_pthread_getname_np"
 if test "x$ac_cv_func_pthread_getname_np" = xyes
 then :
   printf "%s\n" "#define HAVE_PTHREAD_GETNAME_NP 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "pthread_set_name_np" "ac_cv_func_pthread_set_name_np"
+if test "x$ac_cv_func_pthread_set_name_np" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTHREAD_SET_NAME_NP 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "pthread_setname_np" "ac_cv_func_pthread_setname_np"
@@ -30455,6 +30467,7 @@ case "$ac_sys_system" in
   Darwin) _PYTHREAD_NAME_MAXLEN=63;;
   iOS) _PYTHREAD_NAME_MAXLEN=63;;
   FreeBSD*) _PYTHREAD_NAME_MAXLEN=19;; # gh-131268
+  OpenBSD*) _PYTHREAD_NAME_MAXLEN=23;; # gh-131268
   *) _PYTHREAD_NAME_MAXLEN=;;
 esac
 if test -n "$_PYTHREAD_NAME_MAXLEN"; then

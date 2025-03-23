@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 #include <locale.h>               // struct lconv
-#include "pycore_runtime_structs.h" // _Py_error_handler
+#include "pycore_interp_structs.h" // _Py_error_handler
 
 
 /* A routine to check if a file descriptor can be select()-ed. */

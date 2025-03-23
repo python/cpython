@@ -6,12 +6,16 @@ import io
 import os
 import unittest
 
-from pathlib import Path
-from pathlib.types import _WritablePath
-from pathlib._os import magic_open
+from .support import is_pypi
+from .support.local_path import WritableLocalPath, LocalPathGround
+from .support.zip_path import WritableZipPath, ZipPathGround
 
-from test.test_pathlib.support.local_path import WritableLocalPath, LocalPathGround
-from test.test_pathlib.support.zip_path import WritableZipPath, ZipPathGround
+if is_pypi:
+    from pathlib_abc import _WritablePath
+    from pathlib_abc._os import magic_open
+else:
+    from pathlib.types import _WritablePath
+    from pathlib._os import magic_open
 
 
 class WriteTestBase:
@@ -101,8 +105,11 @@ class LocalPathWriteTest(WriteTestBase, unittest.TestCase):
     ground = LocalPathGround(WritableLocalPath)
 
 
-class PathWriteTest(WriteTestBase, unittest.TestCase):
-    ground = LocalPathGround(Path)
+if not is_pypi:
+    from pathlib import Path
+
+    class PathWriteTest(WriteTestBase, unittest.TestCase):
+        ground = LocalPathGround(Path)
 
 
 if __name__ == "__main__":

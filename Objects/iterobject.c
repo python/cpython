@@ -4,7 +4,9 @@
 #include "pycore_abstract.h"      // _PyObject_HasLen()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
+#include "pycore_genobject.h"     // _PyCoro_GetAwaitableIter()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+
 
 typedef struct {
     PyObject_HEAD
@@ -187,8 +189,6 @@ typedef struct {
     PyObject *it_sentinel; /* Set to NULL when iterator is exhausted */
 } calliterobject;
 
-#define calliterobject_CAST(op) ((calliterobject *)(op))
-
 PyObject *
 PyCallIter_New(PyObject *callable, PyObject *sentinel)
 {
@@ -204,7 +204,7 @@ PyCallIter_New(PyObject *callable, PyObject *sentinel)
 static void
 calliter_dealloc(PyObject *op)
 {
-    calliterobject *it = calliterobject_CAST(op);
+    calliterobject *it = (calliterobject*)op;
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_callable);
     Py_XDECREF(it->it_sentinel);
@@ -214,7 +214,7 @@ calliter_dealloc(PyObject *op)
 static int
 calliter_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    calliterobject *it = calliterobject_CAST(op);
+    calliterobject *it = (calliterobject*)op;
     Py_VISIT(it->it_callable);
     Py_VISIT(it->it_sentinel);
     return 0;
@@ -223,7 +223,7 @@ calliter_traverse(PyObject *op, visitproc visit, void *arg)
 static PyObject *
 calliter_iternext(PyObject *op)
 {
-    calliterobject *it = calliterobject_CAST(op);
+    calliterobject *it = (calliterobject*)op;
     PyObject *result;
 
     if (it->it_callable == NULL) {
@@ -256,7 +256,7 @@ calliter_iternext(PyObject *op)
 static PyObject *
 calliter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
-    calliterobject *it = calliterobject_CAST(op);
+    calliterobject *it = (calliterobject*)op;
     PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
 
     /* _PyEval_GetBuiltin can invoke arbitrary code,
