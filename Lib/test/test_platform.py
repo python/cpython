@@ -786,7 +786,7 @@ class CommandLineTest(unittest.TestCase):
         #
         # This test tests that the arguments are correctly passed to the underlying
         # `platform.platform()` call. The parameters are two booleans for `aliased`
-        # and `terse`
+        # and `terse`.
         options = (
             ("--nonaliased", (False, False)),
             ("nonaliased", (False, False)),
