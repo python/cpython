@@ -1230,7 +1230,7 @@ the returned bytes object to string once it determines or guesses
 the appropriate encoding.
 
 The following HTML spec document, https://html.spec.whatwg.org/#charset, lists
-the various ways in which an HTML document could have specified its
+the various ways in which an HTML or an XML document could have specified its
 encoding information.
 
 For additional information, see the W3C document: https://www.w3.org/International/questions/qa-html-encoding-declarations.
