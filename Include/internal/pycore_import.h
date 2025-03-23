@@ -9,9 +9,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_lock.h"          // PyMutex
-#include "pycore_runtime_structs.h"  // _import_state
 #include "pycore_hashtable.h"     // _Py_hashtable_t
+#include "pycore_interp_structs.h" // _import_state
 
 extern int _PyImport_IsInitialized(PyInterpreterState *);
 
