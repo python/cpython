@@ -5,8 +5,8 @@ Tests for Posix-flavoured pathlib.types._JoinablePath
 import os
 import unittest
 
-from pathlib import PurePosixPath, PosixPath
-from test.test_pathlib.support.lexical_path import LexicalPosixPath
+from .support import is_pypi
+from .support.lexical_path import LexicalPosixPath
 
 
 class JoinTestBase:
@@ -36,13 +36,15 @@ class LexicalPosixPathJoinTest(JoinTestBase, unittest.TestCase):
     cls = LexicalPosixPath
 
 
-class PurePosixPathJoinTest(JoinTestBase, unittest.TestCase):
-    cls = PurePosixPath
+if not is_pypi:
+    from pathlib import PurePosixPath, PosixPath
 
+    class PurePosixPathJoinTest(JoinTestBase, unittest.TestCase):
+        cls = PurePosixPath
 
-if os.name != 'nt':
-    class PosixPathJoinTest(JoinTestBase, unittest.TestCase):
-        cls = PosixPath
+    if os.name != 'nt':
+        class PosixPathJoinTest(JoinTestBase, unittest.TestCase):
+            cls = PosixPath
 
 
 if __name__ == "__main__":

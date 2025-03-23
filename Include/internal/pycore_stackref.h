@@ -13,11 +13,11 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_object_deferred.h"
-#include "pycore_object.h"
+#include "pycore_object.h"        // Py_DECREF_MORTAL
+#include "pycore_object_deferred.h" // _PyObject_HasDeferredRefcount()
 
-#include <stddef.h>
-#include <stdbool.h>
+#include <stdbool.h>              // bool
+
 
 /*
   This file introduces a new API for handling references on the stack, called
@@ -679,6 +679,16 @@ _Py_TryIncrefCompareStackRef(PyObject **src, PyObject *op, _PyStackRef *out)
 }
 
 #endif
+
+// Like Py_VISIT but for _PyStackRef fields
+#define _Py_VISIT_STACKREF(ref)                                         \
+    do {                                                                \
+        if (!PyStackRef_IsNull(ref)) {                                  \
+            int vret = _PyGC_VisitStackRef(&(ref), visit, arg);         \
+            if (vret)                                                   \
+                return vret;                                            \
+        }                                                               \
+    } while (0)
 
 #ifdef __cplusplus
 }
