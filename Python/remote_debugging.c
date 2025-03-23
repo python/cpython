@@ -65,8 +65,12 @@ module _pdb
 
 #if defined(__APPLE__) && TARGET_OS_OSX
 static uintptr_t
-return_section_address(const char* section, mach_port_t proc_ref, uintptr_t base, void* map)
-{
+return_section_address(
+    const char* section,
+    mach_port_t proc_ref,
+    uintptr_t base,
+    void* map
+) {
     struct mach_header_64* hdr = (struct mach_header_64*)map;
     int ncmds = hdr->ncmds;
 
@@ -76,35 +80,37 @@ return_section_address(const char* section, mach_port_t proc_ref, uintptr_t base
     mach_vm_size_t size = 0;
     mach_msg_type_number_t count = sizeof(vm_region_basic_info_data_64_t);
     mach_vm_address_t address = (mach_vm_address_t)base;
-    vm_region_basic_info_data_64_t region_info;
+    vm_region_basic_info_data_64_t r_info;
     mach_port_t object_name;
     uintptr_t vmaddr = 0;
 
     for (int i = 0; cmd_cnt < 2 && i < ncmds; i++) {
         if (cmd->cmd == LC_SEGMENT_64 && strcmp(cmd->segname, "__TEXT") == 0) {
-                vmaddr = cmd->vmaddr;
+            vmaddr = cmd->vmaddr;
         }
         if (cmd->cmd == LC_SEGMENT_64 && strcmp(cmd->segname, "__DATA") == 0) {
             while (cmd->filesize != size) {
                 address += size;
-                if (mach_vm_region(
-                            proc_ref,
-                            &address,
-                            &size,
-                            VM_REGION_BASIC_INFO_64,
-                            (vm_region_info_t)&region_info,  // cppcheck-suppress [uninitvar]
-                            &count,
-                            &object_name)
-                    != KERN_SUCCESS)
-                {
-                    PyErr_SetString(PyExc_RuntimeError, "Cannot get any more VM maps.\n");
+                kern_return_t ret = mach_vm_region(
+                    proc_ref,
+                    &address,
+                    &size,
+                    VM_REGION_BASIC_INFO_64,
+                    (vm_region_info_t)&r_info,  // cppcheck-suppress [uninitvar]
+                    &count,
+                    &object_name
+                );
+                if (ret != KERN_SUCCESS) {
+                    PyErr_SetString(
+                        PyExc_RuntimeError, "Cannot get any more VM maps.\n");
                     return 0;
                 }
             }
 
             int nsects = cmd->nsects;
-            struct section_64* sec =
-                    (struct section_64*)((void*)cmd + sizeof(struct segment_command_64));
+            struct section_64* sec = (struct section_64*)(
+                (void*)cmd + sizeof(struct segment_command_64)
+            );
             for (int j = 0; j < nsects; j++) {
                 if (strcmp(sec[j].sectname, section) == 0) {
                     return base + sec[j].addr - vmaddr;
@@ -115,6 +121,10 @@ return_section_address(const char* section, mach_port_t proc_ref, uintptr_t base
 
         cmd = (struct segment_command_64*)((void*)cmd + cmd->cmdsize);
     }
+
+    // We should not be here, but if we are there, we should say about this
+    PyErr_SetString(
+        PyExc_RuntimeError, "Cannot find section address.\n");
     return 0;
 }
 
@@ -204,10 +214,16 @@ search_map_for_section(pid_t pid, const char* secname, const char* substr) {
                    VM_REGION_BASIC_INFO_64,
                    (vm_region_info_t)&region_info,
                    &count,
-                   &object_name)
-           == KERN_SUCCESS)
+                   &object_name) == KERN_SUCCESS)
     {
-        int path_len = proc_regionfilename(pid, address, map_filename, MAXPATHLEN);
+        if ((region_info.protection & VM_PROT_READ) == 0
+            || (region_info.protection & VM_PROT_EXECUTE) == 0) {
+            address += size;
+            continue;
+        }
+
+        int path_len = proc_regionfilename(
+            pid, address, map_filename, MAXPATHLEN);
         if (path_len == 0) {
             address += size;
             continue;
@@ -222,11 +238,15 @@ search_map_for_section(pid_t pid, const char* secname, const char* substr) {
 
         if (!match_found && strncmp(filename, substr, strlen(substr)) == 0) {
             match_found = 1;
-            return search_section_in_file(secname, map_filename, address, size, proc_ref);
+            return search_section_in_file(
+                secname, map_filename, address, size, proc_ref);
         }
 
         address += size;
     }
+
+    PyErr_SetString(PyExc_RuntimeError,
+        "mach_vm_region failed to find the section");
     return 0;
 }
 
@@ -359,6 +379,8 @@ get_py_runtime(pid_t pid)
 {
     uintptr_t address = search_map_for_section(pid, "PyRuntime", "libpython");
     if (address == 0) {
+        // TODO: Differentiate between not found and error
+        PyErr_Clear();
         address = search_map_for_section(pid, "PyRuntime", "python");
     }
     return address;
@@ -413,6 +435,9 @@ read_memory(pid_t pid, uintptr_t remote_address, size_t len, void* dst)
     }
     total_bytes = len;
 #else
+    PyErr_SetString(
+        PyExc_RuntimeError,
+        "Memory reading is not supported on this platform");
     return -1;
 #endif
     return total_bytes;
@@ -507,6 +532,12 @@ _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
     }
 
     uintptr_t runtime_start_address = get_py_runtime(pid);
+    if (runtime_start_address == 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_RuntimeError, "Failed to get .PyRuntime address");
+        }
+        return -1;
+    }
     struct _Py_DebugOffsets local_debug_offsets;
 
     if (read_offsets(pid, &runtime_start_address, &local_debug_offsets)) {

@@ -2096,7 +2096,7 @@ raise Exception("Remote script exception")
     def test_remote_exec_invalid_pid(self):
         """Test remote exec with invalid process ID"""
         with self.assertRaises(OSError):
-            sys.remote_exec(999999, "print('should not run')")
+            sys.remote_exec(99999, "print('should not run')")
 
     def test_remote_exec_syntax_error(self):
         """Test remote exec with syntax error in script"""
