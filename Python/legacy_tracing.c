@@ -5,10 +5,12 @@
 #include "Python.h"
 #include "pycore_audit.h"         // _PySys_Audit()
 #include "pycore_ceval.h"         // export _PyEval_SetProfile()
-#include "pycore_object.h"
+#include "pycore_frame.h"         // PyFrameObject members
+#include "pycore_interpframe.h"   // _PyFrame_GetCode()
 
 #include "opcode.h"
 #include <stddef.h>
+
 
 typedef struct _PyLegacyEventHandler {
     PyObject_HEAD
@@ -190,10 +192,10 @@ call_trace_func(_PyLegacyEventHandler *self, PyObject *arg)
 
 static PyObject *
 sys_trace_exception_func(
-    PyObject *op, PyObject *const *args,
+    PyObject *callable, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
-    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(op);
+    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 3);
     PyObject *exc = args[2];
@@ -215,10 +217,10 @@ sys_trace_exception_func(
 
 static PyObject *
 sys_trace_start(
-    PyObject *op, PyObject *const *args,
+    PyObject *callable, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
-    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(op);
+    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 2);
     return call_trace_func(self, Py_None);
@@ -226,10 +228,10 @@ sys_trace_start(
 
 static PyObject *
 sys_trace_throw(
-    PyObject *op, PyObject *const *args,
+    PyObject *callable, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
-    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(op);
+    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 3);
     return call_trace_func(self, Py_None);
@@ -237,10 +239,10 @@ sys_trace_throw(
 
 static PyObject *
 sys_trace_unwind(
-    PyObject *op, PyObject *const *args,
+    PyObject *callable, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
-    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(op);
+    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 3);
     return call_trace_func(self, NULL);
@@ -248,10 +250,10 @@ sys_trace_unwind(
 
 static PyObject *
 sys_trace_return(
-    PyObject *op, PyObject *const *args,
+    PyObject *callable, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
-    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(op);
+    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(!PyErr_Occurred());
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 3);
@@ -263,10 +265,10 @@ sys_trace_return(
 
 static PyObject *
 sys_trace_yield(
-    PyObject *op, PyObject *const *args,
+    PyObject *callable, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
-    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(op);
+    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 3);
     return call_trace_func(self, args[2]);
@@ -274,10 +276,10 @@ sys_trace_yield(
 
 static PyObject *
 sys_trace_instruction_func(
-    PyObject *op, PyObject *const *args,
+    PyObject *callable, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
-    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(op);
+    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     assert(PyVectorcall_NARGS(nargsf) == 2);
     PyFrameObject *frame = PyEval_GetFrame();
@@ -327,10 +329,10 @@ trace_line(
 
 static PyObject *
 sys_trace_line_func(
-    PyObject *op, PyObject *const *args,
+    PyObject *callable, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
-    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(op);
+    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate->c_tracefunc == NULL) {
@@ -354,10 +356,10 @@ sys_trace_line_func(
  * Handle that case here */
 static PyObject *
 sys_trace_jump_func(
-    PyObject *op, PyObject *const *args,
+    PyObject *callable, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
-    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(op);
+    _PyLegacyEventHandler *self = _PyLegacyEventHandler_CAST(callable);
     assert(kwnames == NULL);
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate->c_tracefunc == NULL) {
@@ -530,7 +532,8 @@ setup_tracing(PyThreadState *tstate, Py_tracefunc func, PyObject *arg, PyObject 
         tstate->interp->sys_trace_initialized = true;
         if (set_callbacks(PY_MONITORING_SYS_TRACE_ID,
                           sys_trace_start, PyTrace_CALL,
-                          PY_MONITORING_EVENT_PY_START, PY_MONITORING_EVENT_PY_RESUME)) {
+                          PY_MONITORING_EVENT_PY_START,
+                          PY_MONITORING_EVENT_PY_RESUME)) {
             return -1;
         }
         if (set_callbacks(PY_MONITORING_SYS_TRACE_ID,
@@ -550,7 +553,8 @@ setup_tracing(PyThreadState *tstate, Py_tracefunc func, PyObject *arg, PyObject 
         }
         if (set_callbacks(PY_MONITORING_SYS_TRACE_ID,
                           sys_trace_exception_func, PyTrace_EXCEPTION,
-                          PY_MONITORING_EVENT_RAISE, PY_MONITORING_EVENT_STOP_ITERATION)) {
+                          PY_MONITORING_EVENT_RAISE,
+                          PY_MONITORING_EVENT_STOP_ITERATION)) {
             return -1;
         }
         if (set_callbacks(PY_MONITORING_SYS_TRACE_ID,
@@ -597,10 +601,10 @@ _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg)
     if (_PySys_Audit(current_tstate, "sys.settrace", NULL) < 0) {
         return -1;
     }
-    assert(tstate->interp->sys_tracing_threads >= 0);
     // needs to be decref'd outside of the lock
     PyObject *old_traceobj;
     LOCK_SETUP();
+    assert(tstate->interp->sys_tracing_threads >= 0);
     Py_ssize_t tracing_threads = setup_tracing(tstate, func, arg, &old_traceobj);
     UNLOCK_SETUP();
     Py_XDECREF(old_traceobj);
