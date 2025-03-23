@@ -266,8 +266,6 @@ class c_bool(_SimpleCData):
 
 from _ctypes import POINTER, pointer, _pointer_type_cache
 
-_CType_Type = type(_Pointer).__base__
-
 def POINTER(cls):
     if cls is None:
         return c_void_p
@@ -278,12 +276,8 @@ def POINTER(cls):
     except AttributeError:
         pass
     if isinstance(cls, str):
-        return type(f'LP_{cls}', (_Pointer,), {})
-    if isinstance(cls, _CType_Type):
-        return type(f'LP_{cls.__name__}', (_Pointer,), {'_type_': cls})
-
-    raise TypeError(f'must be a ctypes-like type: {cls}')
-
+        return type(f'LP_{cls}', (_Pointer,), {})  # deprecated
+    return type(f'LP_{cls.__name__}', (_Pointer,), {'_type_': cls})
 def pointer(arg):
     typ = POINTER(type(arg))
     return typ(arg)
