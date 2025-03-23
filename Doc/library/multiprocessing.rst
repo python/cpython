@@ -1953,7 +1953,7 @@ their parent process exits.  The manager classes are defined in the
 
       Create a shared :class:`set` object and return a proxy for it.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
          :class:`set` support was added.
 
    .. versionchanged:: 3.6

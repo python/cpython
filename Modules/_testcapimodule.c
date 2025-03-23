@@ -2515,6 +2515,31 @@ code_offset_to_line(PyObject* self, PyObject* const* args, Py_ssize_t nargsf)
 }
 
 
+static int
+_reftrace_printer(PyObject *obj, PyRefTracerEvent event, void *counter_data)
+{
+    if (event == PyRefTracer_CREATE) {
+        printf("CREATE %s\n", Py_TYPE(obj)->tp_name);
+    }
+    else {  // PyRefTracer_DESTROY
+        printf("DESTROY %s\n", Py_TYPE(obj)->tp_name);
+    }
+    return 0;
+}
+
+// A simple reftrace printer for very simple tests
+static PyObject *
+toggle_reftrace_printer(PyObject *ob, PyObject *arg)
+{
+    if (arg == Py_True) {
+        PyRefTracer_SetTracer(_reftrace_printer, NULL);
+    }
+    else {
+        PyRefTracer_SetTracer(NULL, NULL);
+    }
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -2608,6 +2633,7 @@ static PyMethodDef TestMethods[] = {
     {"finalize_thread_hang", finalize_thread_hang, METH_O, NULL},
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
+    {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
@@ -2905,20 +2931,22 @@ typedef struct {
 } PyGenericAliasObject;
 
 static void
-generic_alias_dealloc(PyGenericAliasObject *self)
+generic_alias_dealloc(PyObject *op)
 {
+    PyGenericAliasObject *self = (PyGenericAliasObject*)op;
     Py_CLEAR(self->item);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *
-generic_alias_mro_entries(PyGenericAliasObject *self, PyObject *bases)
+generic_alias_mro_entries(PyObject *op, PyObject *bases)
 {
+    PyGenericAliasObject *self = (PyGenericAliasObject*)op;
     return PyTuple_Pack(1, self->item);
 }
 
 static PyMethodDef generic_alias_methods[] = {
-    {"__mro_entries__", _PyCFunction_CAST(generic_alias_mro_entries), METH_O, NULL},
+    {"__mro_entries__", generic_alias_mro_entries, METH_O, NULL},
     {NULL}  /* sentinel */
 };
 
@@ -2927,7 +2955,7 @@ static PyTypeObject GenericAlias_Type = {
     "GenericAlias",
     sizeof(PyGenericAliasObject),
     0,
-    .tp_dealloc = (destructor)generic_alias_dealloc,
+    .tp_dealloc = generic_alias_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_methods = generic_alias_methods,
 };
@@ -3058,8 +3086,9 @@ ContainerNoGC_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 }
 
 static void
-ContainerNoGC_dealloc(ContainerNoGCobject *self)
+ContainerNoGC_dealloc(PyObject *op)
 {
+    ContainerNoGCobject *self = (ContainerNoGCobject*)op;
     Py_DECREF(self->value);
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -3074,7 +3103,7 @@ static PyTypeObject ContainerNoGC_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_testcapi.ContainerNoGC",
     sizeof(ContainerNoGCobject),
-    .tp_dealloc = (destructor)ContainerNoGC_dealloc,
+    .tp_dealloc = ContainerNoGC_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_members = ContainerNoGC_members,
     .tp_new = ContainerNoGC_new,
@@ -3239,7 +3268,6 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
 
     PyModule_AddIntConstant(m, "the_number_three", 3);
-    PyModule_AddIntMacro(m, Py_C_RECURSION_LIMIT);
     PyModule_AddObject(m, "INT32_MIN", PyLong_FromInt32(INT32_MIN));
     PyModule_AddObject(m, "INT32_MAX", PyLong_FromInt32(INT32_MAX));
     PyModule_AddObject(m, "UINT32_MAX", PyLong_FromUInt32(UINT32_MAX));

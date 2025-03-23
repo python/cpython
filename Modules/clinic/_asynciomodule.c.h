@@ -1403,6 +1403,19 @@ PyDoc_STRVAR(_asyncio_Task_set_result__doc__,
 #define _ASYNCIO_TASK_SET_RESULT_METHODDEF    \
     {"set_result", (PyCFunction)_asyncio_Task_set_result, METH_O, _asyncio_Task_set_result__doc__},
 
+static PyObject *
+_asyncio_Task_set_result_impl(TaskObj *self, PyObject *result);
+
+static PyObject *
+_asyncio_Task_set_result(PyObject *self, PyObject *result)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _asyncio_Task_set_result_impl((TaskObj *)self, result);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_asyncio_Task_set_exception__doc__,
 "set_exception($self, exception, /)\n"
 "--\n"
@@ -1410,6 +1423,19 @@ PyDoc_STRVAR(_asyncio_Task_set_exception__doc__,
 
 #define _ASYNCIO_TASK_SET_EXCEPTION_METHODDEF    \
     {"set_exception", (PyCFunction)_asyncio_Task_set_exception, METH_O, _asyncio_Task_set_exception__doc__},
+
+static PyObject *
+_asyncio_Task_set_exception_impl(TaskObj *self, PyObject *exception);
+
+static PyObject *
+_asyncio_Task_set_exception(PyObject *self, PyObject *exception)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _asyncio_Task_set_exception_impl((TaskObj *)self, exception);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_asyncio_Task_get_coro__doc__,
 "get_coro($self, /)\n"
@@ -1486,7 +1512,7 @@ static PyObject *
 _asyncio_Task_set_name_impl(TaskObj *self, PyObject *value);
 
 static PyObject *
-_asyncio_Task_set_name(TaskObj *self, PyObject *value)
+_asyncio_Task_set_name(PyObject *self, PyObject *value)
 {
     PyObject *return_value = NULL;
 
@@ -2174,4 +2200,4 @@ _asyncio_future_discard_from_awaited_by(PyObject *module, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f14ff14c29c691ec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b1060b180d9dd54c input=a9049054013a1b77]*/

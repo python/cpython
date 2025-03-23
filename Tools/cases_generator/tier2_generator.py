@@ -26,7 +26,7 @@ from generators_common import (
     always_true,
 )
 from cwriter import CWriter
-from typing import TextIO, Iterator
+from typing import TextIO
 from lexer import Token
 from stack import Local, Stack, StackError, Storage
 
@@ -41,14 +41,7 @@ def declare_variable(
     required.remove(var.name)
     type, null = type_and_null(var)
     space = " " if type[-1].isalnum() else ""
-    if var.condition:
-        out.emit(f"{type}{space}{var.name} = {null};\n")
-        if uop.replicates:
-            # Replicas may not use all their conditional variables
-            # So avoid a compiler warning with a fake use
-            out.emit(f"(void){var.name};\n")
-    else:
-        out.emit(f"{type}{space}{var.name};\n")
+    out.emit(f"{type}{space}{var.name};\n")
 
 
 def declare_variables(uop: Uop, out: CWriter) -> None:
@@ -153,7 +146,8 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
         code_list, storage = Storage.for_uop(stack, uop)
         for code in code_list:
             emitter.emit(code)
-        for idx, cache in enumerate(uop.caches):
+        idx = 0
+        for cache in uop.caches:
             if cache.name != "unused":
                 if cache.size == 4:
                     type = cast = "PyObject *"
@@ -161,6 +155,7 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
                     type = f"uint{cache.size*16}_t "
                     cast = f"uint{cache.size*16}_t"
                 emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND{idx}();\n")
+                idx += 1
         storage = emitter.emit_tokens(uop, storage, None)
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0]) from None
@@ -186,9 +181,6 @@ def generate_tier2(
     out.emit("\n")
     for name, uop in analysis.uops.items():
         if uop.properties.tier == 1:
-            continue
-        if uop.properties.oparg_and_1:
-            out.emit(f"/* {uop.name} is split on (oparg & 1) */\n\n")
             continue
         if uop.is_super():
             continue
