@@ -2536,7 +2536,7 @@ UTC = timezone.utc = timezone._create(timedelta(0))
 timezone.min = timezone._create(-timedelta(hours=23, minutes=59))
 timezone.max = timezone._create(timedelta(hours=23, minutes=59))
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
-_DATE_EPOCH = date(1970, 1, 1).toordinal() # date.timestamp()
+_DATE_EPOCH = date(1970, 1, 1).toordinal()  # used by date.timestamp()
 
 # Some time zone algebra.  For a datetime x, let
 #     x.n = x stripped of its timezone -- its naive time.

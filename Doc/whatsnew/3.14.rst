@@ -511,6 +511,7 @@ datetime
 * Add :meth:`datetime.date.timestamp`.
   (Contributed by Stan Ulbrych in :gh:`131226`)
 
+
 decimal
 -------
 
