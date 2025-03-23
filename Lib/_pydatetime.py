@@ -1162,6 +1162,10 @@ class date:
         """
         return _ymd2ord(self._year, self._month, self._day)
 
+    def timestamp(self):
+        """Return POSIX timestamp as float (midnight UTC)."""
+        return float((self.toordinal() - _DATE_EPOCH) * 86400)
+
     def replace(self, year=None, month=None, day=None):
         """Return a new date with new values for the specified fields."""
         if year is None:
@@ -1240,10 +1244,6 @@ class date:
     def weekday(self):
         "Return day of the week, where Monday == 0 ... Sunday == 6."
         return (self.toordinal() + 6) % 7
-
-    def timestamp(self):
-        """Return POSIX timestamp as float (midnight UTC)."""
-        return float((self.toordinal() - _DATE_EPOCH) * 86400)
 
     # Day-of-the-week and week-of-the-year, according to ISO
 
