@@ -1,14 +1,14 @@
 /* Python's malloc wrappers (see pymem.h) */
 
 #include "Python.h"
-#include "pycore_code.h"          // stats
 #include "pycore_interp.h"        // _PyInterpreterState_HasFeature
 #include "pycore_object.h"        // _PyDebugAllocatorStats() definition
 #include "pycore_obmalloc.h"
+#include "pycore_obmalloc_init.h"
 #include "pycore_pyerrors.h"      // _Py_FatalErrorFormat()
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
-#include "pycore_obmalloc_init.h"
+#include "pycore_stats.h"         // OBJECT_STAT_INC_COND()
 
 #include <stdlib.h>               // malloc()
 #include <stdbool.h>

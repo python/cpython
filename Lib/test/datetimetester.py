@@ -1988,8 +1988,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             r"(year|month|day) must be in \d+\.\.\d+, not \d+"
         )
         test_cases = [
-            (2009, 1, 32),      # Day out of range
-            (2009, 2, 31),      # Day out of range
             (2009, 13, 1),      # Month out of range
             (2009, 0, 1),       # Month out of range
             (10000, 12, 31),    # Year out of range
@@ -1999,6 +1997,11 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             with self.subTest(case):
                 with self.assertRaisesRegex(ValueError, pattern):
                     self.theclass(*case)
+
+        # days out of range have their own error message, see issue 70647
+        with self.assertRaises(ValueError) as msg:
+            self.theclass(2009, 1, 32)
+        self.assertIn(f"day 32 must be in range 1..31 for month 1 in year 2009", str(msg.exception))
 
     def test_fromisoformat(self):
         # Test that isoformat() is reversible
@@ -3259,7 +3262,6 @@ class TestDateTime(TestDate):
             (2009, 4, 1, 12, 30, 90),   # Second out of range
             (2009, 4, 1, 12, 90, 45),   # Minute out of range
             (2009, 4, 1, 25, 30, 45),   # Hour out of range
-            (2009, 4, 32, 24, 0, 0),    # Day out of range
             (2009, 13, 1, 24, 0, 0),    # Month out of range
             (9999, 12, 31, 24, 0, 0),   # Year out of range
         ]
@@ -3267,6 +3269,11 @@ class TestDateTime(TestDate):
             with self.subTest(case):
                 with self.assertRaisesRegex(ValueError, pattern):
                     self.theclass(*case)
+
+        # days out of range have their own error message, see issue 70647
+        with self.assertRaises(ValueError) as msg:
+            self.theclass(2009, 4, 32, 24, 0, 0)
+        self.assertIn(f"day 32 must be in range 1..30 for month 4 in year 2009", str(msg.exception))
 
     def test_fromisoformat_datetime(self):
         # Test that isoformat() is reversible
@@ -3575,7 +3582,6 @@ class TestDateTime(TestDate):
             "2009-04-01T12:30:90",          # Second out of range
             "2009-04-01T12:90:45",          # Minute out of range
             "2009-04-01T25:30:45",          # Hour out of range
-            "2009-04-32T24:00:00",          # Day out of range
             "2009-13-01T24:00:00",          # Month out of range
             "9999-12-31T24:00:00",          # Year out of range
         ]
@@ -3584,6 +3590,11 @@ class TestDateTime(TestDate):
             with self.subTest(bad_str=bad_str):
                 with self.assertRaisesRegex(ValueError, pattern):
                     self.theclass.fromisoformat(bad_str)
+
+        # days out of range have their own error message, see issue 70647
+        with self.assertRaises(ValueError) as msg:
+            self.theclass.fromisoformat("2009-04-32T24:00:00")
+        self.assertIn(f"day 32 must be in range 1..30 for month 4 in year 2009", str(msg.exception))
 
     def test_fromisoformat_fails_surrogate(self):
         # Test that when fromisoformat() fails with a surrogate character as
