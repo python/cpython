@@ -4874,7 +4874,8 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
     return SUCCESS;
 }
 
-static int codegen_async_with(compiler *c, stmt_ty s)
+static int
+codegen_async_with(compiler *c, stmt_ty s)
 {
     return codegen_async_with_inner(c, s, 0);
 }
