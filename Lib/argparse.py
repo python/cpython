@@ -708,9 +708,8 @@ def _get_action_name(argument):
         metavar = argument.metavar
         if not isinstance(metavar, tuple):
             return metavar
-        if argument.nargs == ZERO_OR_MORE and len(metavar) == 2:
-            return '%s[, %s]' % metavar
-        elif argument.nargs == ONE_OR_MORE:
+        if (argument.nargs == ZERO_OR_MORE and len(metavar) == 2) \
+            or argument.nargs == ONE_OR_MORE:
             return '%s[, %s]' % metavar
         else:
             return ', '.join(metavar)
