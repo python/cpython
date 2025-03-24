@@ -414,6 +414,8 @@ anextawaitable_proxy(anextawaitableobject *obj, char *meth, PyObject *arg)
     if (awaitable == NULL) {
         return NULL;
     }
+    // When specified, 'arg' may be a tuple (if coming from a METH_VARARGS
+    // method) or a single object (if coming from a METH_O method).
     PyObject *ret = arg == NULL
         ? PyObject_CallMethod(awaitable, meth, NULL)
         : PyObject_CallMethod(awaitable, meth, "O", arg);
