@@ -40,3 +40,33 @@ _PyBytes_Join(PyObject *sep, PyObject *iterable)
 {
     return PyBytes_Join(sep, iterable);
 }
+
+
+// --- PyBytesWriter API -----------------------------------------------------
+
+typedef struct PyBytesWriter PyBytesWriter;
+
+PyAPI_FUNC(PyBytesWriter *) PyBytesWriter_Create(
+    Py_ssize_t alloc);
+PyAPI_FUNC(void) PyBytesWriter_Discard(
+    PyBytesWriter *writer);
+PyAPI_FUNC(PyObject*) PyBytesWriter_Finish(
+    PyBytesWriter *writer);
+PyAPI_FUNC(PyObject*) PyBytesWriter_FinishWithSize(
+    PyBytesWriter *writer,
+    Py_ssize_t size);
+PyAPI_FUNC(PyObject*) PyBytesWriter_FinishWithEndPointer(
+    PyBytesWriter *writer,
+    void *data);
+
+PyAPI_FUNC(void*) PyBytesWriter_Data(
+    PyBytesWriter *writer);
+PyAPI_FUNC(Py_ssize_t) PyBytesWriter_Allocated(
+    PyBytesWriter *writer);
+
+PyAPI_FUNC(int) PyBytesWriter_SetSize(
+    PyBytesWriter *writer,
+    Py_ssize_t size);
+PyAPI_FUNC(int) PyBytesWriter_Resize(
+    PyBytesWriter *writer,
+    Py_ssize_t alloc);
