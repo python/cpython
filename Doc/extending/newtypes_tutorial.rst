@@ -255,7 +255,7 @@ allocation and deallocation.  At a minimum, we need a deallocation method::
        CustomObject *self = (CustomObject *) op;
        Py_XDECREF(self->first);
        Py_XDECREF(self->last);
-       Py_TYPE(self)->tp_free(op);
+       Py_TYPE(self)->tp_free(self);
    }
 
 which is assigned to the :c:member:`~PyTypeObject.tp_dealloc` member::
