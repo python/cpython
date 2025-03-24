@@ -268,6 +268,19 @@ class c_bool(_SimpleCData):
 from _ctypes import POINTER, pointer, _pointer_type_cache
 
 def POINTER(cls):
+    """
+    Create and return a new ctypes pointer type.
+
+        cls
+            A ctypes type.
+
+    Pointer types are cached and reused internally,
+    so calling this function repeatedly is cheap.
+
+    Pointer types for incomplete types are not cached,
+    so calling this function repeatedly will give
+    different types.
+    """
     if cls is None:
         return c_void_p
     try:
@@ -280,9 +293,16 @@ def POINTER(cls):
         return type(f'LP_{cls}', (_Pointer,), {})
     return type(f'LP_{cls.__name__}', (_Pointer,), {'_type_': cls})
 
-def pointer(arg):
-    typ = POINTER(type(arg))
-    return typ(arg)
+def pointer(obj):
+    """
+    Create a new pointer instance, pointing to 'obj'.
+
+    The returned object is of the type POINTER(type(obj)). Note that if you
+    just want to pass a pointer to an object to a foreign function call, you
+    should use byref(obj) which is much faster.
+    """
+    typ = POINTER(type(obj))
+    return typ(obj)
 
 class c_wchar_p(_SimpleCData):
     _type_ = "Z"
