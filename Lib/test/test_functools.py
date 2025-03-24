@@ -2078,7 +2078,7 @@ class TestLRU:
 
     @support.skip_on_s390x
     @unittest.skipIf(support.is_wasi, "WASI has limited C stack")
-    @support.skip_if_sanitizer("requires deep stack", thread=True)
+    @support.skip_if_sanitizer("requires deep stack", ub=True, thread=True)
     @support.skip_emscripten_stack_overflow()
     def test_lru_recursion(self):
 

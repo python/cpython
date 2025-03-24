@@ -281,6 +281,8 @@ class _ReadablePath(_JoinablePath):
         anchor, parts = _explode_path(pattern, self.parser.split)
         if anchor:
             raise NotImplementedError("Non-relative patterns are unsupported")
+        elif not parts:
+            raise ValueError(f"Unacceptable pattern: {pattern!r}")
         elif not recurse_symlinks:
             raise NotImplementedError("recurse_symlinks=False is unsupported")
         case_sensitive = self.parser.normcase('Aa') == 'Aa'
