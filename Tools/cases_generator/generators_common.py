@@ -248,6 +248,7 @@ class Emitter:
         except Exception as ex:
             ex.args = (ex.args[0] + str(tkn),)
             raise
+        self._print_storage(storage)
         return True
 
     def kill_inputs(
@@ -402,6 +403,7 @@ class Emitter:
         self.out.emit(")")
 
     def emit_save(self, storage: Storage) -> None:
+        storage.flush(self.out)
         storage.save(self.out)
         self._print_storage(storage)
 
@@ -498,6 +500,9 @@ class Emitter:
                 else:
                     if PRINT_STACKS:
                         self.emit("/* Merge */\n")
+                        self.out.emit(if_storage.as_comment())
+                        self.out.emit("\n")
+                        self.out.emit(else_storage.as_comment())
                     else_storage.merge(if_storage, self.out)
                     storage = else_storage
                     self._print_storage(storage)
@@ -577,16 +582,16 @@ class Emitter:
                         if tkn in local_stores:
                             for var in storage.inputs:
                                 if var.name == tkn.text:
-                                    if var.in_local or var.in_memory:
+                                    if var.in_local or var.in_memory():
                                         msg = f"Cannot assign to already defined input variable '{tkn.text}'"
                                         raise analysis_error(msg, tkn)
                                     var.in_local = True
-                                    var.in_memory = False
+                                    var.memory_offset = None
                                     break
                             for var in storage.outputs:
                                 if var.name == tkn.text:
                                     var.in_local = True
-                                    var.in_memory = False
+                                    var.memory_offset = None
                                     break
                         if tkn.text.startswith("DISPATCH"):
                             self._print_storage(storage)
@@ -619,7 +624,7 @@ class Emitter:
                 storage.push_outputs()
                 self._print_storage(storage)
         except StackError as ex:
-            raise analysis_error(ex.args[0], rbrace) from None
+            raise analysis_error(ex.args[0], rbrace) # from None
         return storage
 
     def emit(self, txt: str | Token) -> None:

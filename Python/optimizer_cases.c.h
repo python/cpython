@@ -851,6 +851,7 @@
             for (int _i = oparg; --_i >= 0;) {
                 values[_i] = sym_new_not_null(ctx);
             }
+            stack_pointer[-1] = values;
             stack_pointer += -1 + oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -915,6 +916,7 @@
             JitOptSymbol **res;
             res = &stack_pointer[0];
             res[0] = sym_new_not_null(ctx);
+            stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -1173,6 +1175,7 @@
                     stack_pointer[-1] = attr;
                     uint64_t watched_mutations = get_mutations(dict);
                     if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
+                        stack_pointer[-1] = attr;
                         PyDict_Watch(GLOBALS_WATCHER_ID, dict);
                         _Py_BloomFilter_Add(dependencies, dict);
                         PyObject *res = convert_global_to_const(this_instr, dict, true);
