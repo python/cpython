@@ -45,19 +45,35 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
         class PtrBase(c_void_p, metaclass=p_meta):
             pass
 
+        ptr_base_pointer = POINTER(PtrBase)
+
         class CtBase(object, metaclass=ct_meta):
             pass
+
+        ct_base_pointer = POINTER(CtBase)
 
         class Sub(CtBase):
             pass
 
+        sub_pointer = POINTER(Sub)
+
         class Sub2(Sub):
             pass
+
+        sub2_pointer = POINTER(Sub2)
+
+        self.assertIsNot(ptr_base_pointer, ct_base_pointer)
+        self.assertIsNot(ct_base_pointer, sub_pointer)
+        self.assertIsNot(sub_pointer, sub2_pointer)
 
         self.assertIsInstance(POINTER(Sub2), p_meta)
         self.assertIsSubclass(POINTER(Sub2), Sub2)
         self.assertIsSubclass(POINTER(Sub2), POINTER(Sub))
         self.assertIsSubclass(POINTER(Sub), POINTER(CtBase))
+
+        self.assertIs(POINTER(Sub2), sub2_pointer)
+        self.assertIs(POINTER(Sub), sub_pointer)
+        self.assertIs(POINTER(CtBase), ct_base_pointer)
 
     def test_creating_pointer_in_dunder_new_2(self):
         # A simpler variant of the above, used in `CoClass` of the `comtypes`
@@ -78,14 +94,26 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
         class Core(object):
             pass
 
+        with self.assertRaisesRegex(TypeError, "must have storage info"):
+            POINTER(Core)
+
         class CtBase(Core, metaclass=ct_meta):
             pass
+
+        ct_base_pointer = POINTER(CtBase)
 
         class Sub(CtBase):
             pass
 
+        sub_pointer = POINTER(Sub)
+
+        self.assertIsNot(ct_base_pointer, sub_pointer)
+
         self.assertIsInstance(POINTER(Sub), p_meta)
         self.assertIsSubclass(POINTER(Sub), Sub)
+
+        self.assertIs(POINTER(Sub), sub_pointer)
+        self.assertIs(POINTER(CtBase), ct_base_pointer)
 
     def test_creating_pointer_in_dunder_init_1(self):
         class ct_meta(type):
@@ -103,7 +131,7 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
                 else:
                     ptr_bases = (self, POINTER(bases[0]))
                 p = p_meta(f"POINTER({self.__name__})", ptr_bases, {})
-                type(self).__pointer_type__ = p
+                self.__pointer_type__ = p
 
         class p_meta(PyCSimpleType, ct_meta):
             pass
@@ -111,19 +139,36 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
         class PtrBase(c_void_p, metaclass=p_meta):
             pass
 
+        ptr_base_pointer = POINTER(PtrBase)
+
         class CtBase(object, metaclass=ct_meta):
             pass
+
+        ct_base_pointer = POINTER(CtBase)
 
         class Sub(CtBase):
             pass
 
+        sub_pointer = POINTER(Sub)
+
         class Sub2(Sub):
             pass
+
+        sub2_pointer = POINTER(Sub2)
+
+        self.assertIsNot(ptr_base_pointer, ct_base_pointer)
+        self.assertIsNot(ct_base_pointer, sub_pointer)
+        self.assertIsNot(sub_pointer, sub2_pointer)
 
         self.assertIsInstance(POINTER(Sub2), p_meta)
         self.assertIsSubclass(POINTER(Sub2), Sub2)
         self.assertIsSubclass(POINTER(Sub2), POINTER(Sub))
         self.assertIsSubclass(POINTER(Sub), POINTER(CtBase))
+
+        self.assertIs(POINTER(PtrBase), ptr_base_pointer)
+        self.assertIs(POINTER(CtBase), ct_base_pointer)
+        self.assertIs(POINTER(Sub), sub_pointer)
+        self.assertIs(POINTER(Sub2), sub2_pointer)
 
     def test_creating_pointer_in_dunder_init_2(self):
         class ct_meta(type):
@@ -135,7 +180,7 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
                 if isinstance(self, p_meta):
                     return
                 p = p_meta(f"POINTER({self.__name__})", (self, c_void_p), {})
-                type(self).__pointer_type__ = p
+                self.__pointer_type__ = p
 
         class p_meta(PyCSimpleType, ct_meta):
             pass
@@ -146,11 +191,20 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
         class CtBase(Core, metaclass=ct_meta):
             pass
 
+        ct_base_pointer = POINTER(CtBase)
+
         class Sub(CtBase):
             pass
 
+        sub_pointer = POINTER(Sub)
+
+        self.assertIsNot(ct_base_pointer, sub_pointer)
+
         self.assertIsInstance(POINTER(Sub), p_meta)
         self.assertIsSubclass(POINTER(Sub), Sub)
+
+        self.assertIs(POINTER(CtBase), ct_base_pointer)
+        self.assertIs(POINTER(Sub), sub_pointer)
 
     def test_bad_type_message(self):
         """Verify the error message that lists all available type codes"""
