@@ -149,7 +149,7 @@ PyDoc_STRVAR(pysqlite_enable_callback_trace__doc__,
 "Enable or disable callback functions throwing errors to stderr.");
 
 #define PYSQLITE_ENABLE_CALLBACK_TRACE_METHODDEF    \
-    {"enable_callback_tracebacks", (PyCFunction)pysqlite_enable_callback_trace, METH_O, pysqlite_enable_callback_trace__doc__},
+    {"enable_callback_tracebacks", pysqlite_enable_callback_trace, METH_O, pysqlite_enable_callback_trace__doc__},
 
 static PyObject *
 pysqlite_enable_callback_trace_impl(PyObject *module, int enable);
@@ -209,4 +209,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=db9bf7ecad197343 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e435309143741fb9 input=a9049054013a1b77]*/

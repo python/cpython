@@ -27,7 +27,7 @@ PyDoc_STRVAR(_curses_window_addch__doc__,
 "current settings for the window object.");
 
 #define _CURSES_WINDOW_ADDCH_METHODDEF    \
-    {"addch", (PyCFunction)_curses_window_addch, METH_VARARGS, _curses_window_addch__doc__},
+    {"addch", _curses_window_addch, METH_VARARGS, _curses_window_addch__doc__},
 
 static PyObject *
 _curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1,
@@ -99,7 +99,7 @@ PyDoc_STRVAR(_curses_window_addstr__doc__,
 "current settings for the window object.");
 
 #define _CURSES_WINDOW_ADDSTR_METHODDEF    \
-    {"addstr", (PyCFunction)_curses_window_addstr, METH_VARARGS, _curses_window_addstr__doc__},
+    {"addstr", _curses_window_addstr, METH_VARARGS, _curses_window_addstr__doc__},
 
 static PyObject *
 _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
@@ -173,7 +173,7 @@ PyDoc_STRVAR(_curses_window_addnstr__doc__,
 "current settings for the window object.");
 
 #define _CURSES_WINDOW_ADDNSTR_METHODDEF    \
-    {"addnstr", (PyCFunction)_curses_window_addnstr, METH_VARARGS, _curses_window_addnstr__doc__},
+    {"addnstr", _curses_window_addnstr, METH_VARARGS, _curses_window_addnstr__doc__},
 
 static PyObject *
 _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
@@ -276,7 +276,7 @@ PyDoc_STRVAR(_curses_window_attroff__doc__,
 "Remove attribute attr from the \"background\" set.");
 
 #define _CURSES_WINDOW_ATTROFF_METHODDEF    \
-    {"attroff", (PyCFunction)_curses_window_attroff, METH_O, _curses_window_attroff__doc__},
+    {"attroff", _curses_window_attroff, METH_O, _curses_window_attroff__doc__},
 
 static PyObject *
 _curses_window_attroff_impl(PyCursesWindowObject *self, long attr);
@@ -304,7 +304,7 @@ PyDoc_STRVAR(_curses_window_attron__doc__,
 "Add attribute attr from the \"background\" set.");
 
 #define _CURSES_WINDOW_ATTRON_METHODDEF    \
-    {"attron", (PyCFunction)_curses_window_attron, METH_O, _curses_window_attron__doc__},
+    {"attron", _curses_window_attron, METH_O, _curses_window_attron__doc__},
 
 static PyObject *
 _curses_window_attron_impl(PyCursesWindowObject *self, long attr);
@@ -332,7 +332,7 @@ PyDoc_STRVAR(_curses_window_attrset__doc__,
 "Set the \"background\" set of attributes.");
 
 #define _CURSES_WINDOW_ATTRSET_METHODDEF    \
-    {"attrset", (PyCFunction)_curses_window_attrset, METH_O, _curses_window_attrset__doc__},
+    {"attrset", _curses_window_attrset, METH_O, _curses_window_attrset__doc__},
 
 static PyObject *
 _curses_window_attrset_impl(PyCursesWindowObject *self, long attr);
@@ -504,7 +504,7 @@ PyDoc_STRVAR(_curses_window_box__doc__,
 "horch.  The default corner characters are always used by this function.");
 
 #define _CURSES_WINDOW_BOX_METHODDEF    \
-    {"box", (PyCFunction)_curses_window_box, METH_VARARGS, _curses_window_box__doc__},
+    {"box", _curses_window_box, METH_VARARGS, _curses_window_box__doc__},
 
 static PyObject *
 _curses_window_box_impl(PyCursesWindowObject *self, int group_right_1,
@@ -547,7 +547,7 @@ PyDoc_STRVAR(_curses_window_delch__doc__,
 "    X-coordinate.");
 
 #define _CURSES_WINDOW_DELCH_METHODDEF    \
-    {"delch", (PyCFunction)_curses_window_delch, METH_VARARGS, _curses_window_delch__doc__},
+    {"delch", _curses_window_delch, METH_VARARGS, _curses_window_delch__doc__},
 
 static PyObject *
 _curses_window_delch_impl(PyCursesWindowObject *self, int group_right_1,
@@ -598,7 +598,7 @@ PyDoc_STRVAR(_curses_window_derwin__doc__,
 "screen.");
 
 #define _CURSES_WINDOW_DERWIN_METHODDEF    \
-    {"derwin", (PyCFunction)_curses_window_derwin, METH_VARARGS, _curses_window_derwin__doc__},
+    {"derwin", _curses_window_derwin, METH_VARARGS, _curses_window_derwin__doc__},
 
 static PyObject *
 _curses_window_derwin_impl(PyCursesWindowObject *self, int group_left_1,
@@ -731,7 +731,7 @@ PyDoc_STRVAR(_curses_window_getbkgd__doc__,
 "Return the window\'s current background character/attribute pair.");
 
 #define _CURSES_WINDOW_GETBKGD_METHODDEF    \
-    {"getbkgd", (PyCFunction)_curses_window_getbkgd, METH_NOARGS, _curses_window_getbkgd__doc__},
+    {"getbkgd", _curses_window_getbkgd, METH_NOARGS, _curses_window_getbkgd__doc__},
 
 static long
 _curses_window_getbkgd_impl(PyCursesWindowObject *self);
@@ -766,7 +766,7 @@ PyDoc_STRVAR(_curses_window_getch__doc__,
 "is returned if there is no input, else getch() waits until a key is pressed.");
 
 #define _CURSES_WINDOW_GETCH_METHODDEF    \
-    {"getch", (PyCFunction)_curses_window_getch, METH_VARARGS, _curses_window_getch__doc__},
+    {"getch", _curses_window_getch, METH_VARARGS, _curses_window_getch__doc__},
 
 static int
 _curses_window_getch_impl(PyCursesWindowObject *self, int group_right_1,
@@ -818,7 +818,7 @@ PyDoc_STRVAR(_curses_window_getkey__doc__,
 "key name.  In no-delay mode, an exception is raised if there is no input.");
 
 #define _CURSES_WINDOW_GETKEY_METHODDEF    \
-    {"getkey", (PyCFunction)_curses_window_getkey, METH_VARARGS, _curses_window_getkey__doc__},
+    {"getkey", _curses_window_getkey, METH_VARARGS, _curses_window_getkey__doc__},
 
 static PyObject *
 _curses_window_getkey_impl(PyCursesWindowObject *self, int group_right_1,
@@ -866,7 +866,7 @@ PyDoc_STRVAR(_curses_window_get_wch__doc__,
 "keypad keys, and other special keys.");
 
 #define _CURSES_WINDOW_GET_WCH_METHODDEF    \
-    {"get_wch", (PyCFunction)_curses_window_get_wch, METH_VARARGS, _curses_window_get_wch__doc__},
+    {"get_wch", _curses_window_get_wch, METH_VARARGS, _curses_window_get_wch__doc__},
 
 static PyObject *
 _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
@@ -917,7 +917,7 @@ PyDoc_STRVAR(_curses_window_hline__doc__,
 "    Attributes for the characters.");
 
 #define _CURSES_WINDOW_HLINE_METHODDEF    \
-    {"hline", (PyCFunction)_curses_window_hline, METH_VARARGS, _curses_window_hline__doc__},
+    {"hline", _curses_window_hline, METH_VARARGS, _curses_window_hline__doc__},
 
 static PyObject *
 _curses_window_hline_impl(PyCursesWindowObject *self, int group_left_1,
@@ -988,7 +988,7 @@ PyDoc_STRVAR(_curses_window_insch__doc__,
 "the rightmost characters on the line being lost.");
 
 #define _CURSES_WINDOW_INSCH_METHODDEF    \
-    {"insch", (PyCFunction)_curses_window_insch, METH_VARARGS, _curses_window_insch__doc__},
+    {"insch", _curses_window_insch, METH_VARARGS, _curses_window_insch__doc__},
 
 static PyObject *
 _curses_window_insch_impl(PyCursesWindowObject *self, int group_left_1,
@@ -1053,7 +1053,7 @@ PyDoc_STRVAR(_curses_window_inch__doc__,
 "The bottom 8 bits are the character proper, and upper bits are the attributes.");
 
 #define _CURSES_WINDOW_INCH_METHODDEF    \
-    {"inch", (PyCFunction)_curses_window_inch, METH_VARARGS, _curses_window_inch__doc__},
+    {"inch", _curses_window_inch, METH_VARARGS, _curses_window_inch__doc__},
 
 static unsigned long
 _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
@@ -1111,7 +1111,7 @@ PyDoc_STRVAR(_curses_window_insstr__doc__,
 "if specified).");
 
 #define _CURSES_WINDOW_INSSTR_METHODDEF    \
-    {"insstr", (PyCFunction)_curses_window_insstr, METH_VARARGS, _curses_window_insstr__doc__},
+    {"insstr", _curses_window_insstr, METH_VARARGS, _curses_window_insstr__doc__},
 
 static PyObject *
 _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
@@ -1187,7 +1187,7 @@ PyDoc_STRVAR(_curses_window_insnstr__doc__,
 "specified).");
 
 #define _CURSES_WINDOW_INSNSTR_METHODDEF    \
-    {"insnstr", (PyCFunction)_curses_window_insnstr, METH_VARARGS, _curses_window_insnstr__doc__},
+    {"insnstr", _curses_window_insnstr, METH_VARARGS, _curses_window_insnstr__doc__},
 
 static PyObject *
 _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
@@ -1253,7 +1253,7 @@ PyDoc_STRVAR(_curses_window_is_linetouched__doc__,
 "Raise a curses.error exception if line is not valid for the given window.");
 
 #define _CURSES_WINDOW_IS_LINETOUCHED_METHODDEF    \
-    {"is_linetouched", (PyCFunction)_curses_window_is_linetouched, METH_O, _curses_window_is_linetouched__doc__},
+    {"is_linetouched", _curses_window_is_linetouched, METH_O, _curses_window_is_linetouched__doc__},
 
 static PyObject *
 _curses_window_is_linetouched_impl(PyCursesWindowObject *self, int line);
@@ -1285,7 +1285,7 @@ PyDoc_STRVAR(_curses_window_noutrefresh__doc__,
 "that, call doupdate().");
 
 #define _CURSES_WINDOW_NOUTREFRESH_METHODDEF    \
-    {"noutrefresh", (PyCFunction)_curses_window_noutrefresh, METH_VARARGS, _curses_window_noutrefresh__doc__},
+    {"noutrefresh", _curses_window_noutrefresh, METH_VARARGS, _curses_window_noutrefresh__doc__},
 
 static PyObject *
 _curses_window_noutrefresh_impl(PyCursesWindowObject *self,
@@ -1339,7 +1339,7 @@ PyDoc_STRVAR(_curses_window_noutrefresh__doc__,
 "that, call doupdate().");
 
 #define _CURSES_WINDOW_NOUTREFRESH_METHODDEF    \
-    {"noutrefresh", (PyCFunction)_curses_window_noutrefresh, METH_NOARGS, _curses_window_noutrefresh__doc__},
+    {"noutrefresh", _curses_window_noutrefresh, METH_NOARGS, _curses_window_noutrefresh__doc__},
 
 static PyObject *
 _curses_window_noutrefresh_impl(PyCursesWindowObject *self);
@@ -1366,7 +1366,7 @@ PyDoc_STRVAR(_curses_window_overlay__doc__,
 "destination window.");
 
 #define _CURSES_WINDOW_OVERLAY_METHODDEF    \
-    {"overlay", (PyCFunction)_curses_window_overlay, METH_VARARGS, _curses_window_overlay__doc__},
+    {"overlay", _curses_window_overlay, METH_VARARGS, _curses_window_overlay__doc__},
 
 static PyObject *
 _curses_window_overlay_impl(PyCursesWindowObject *self,
@@ -1424,7 +1424,7 @@ PyDoc_STRVAR(_curses_window_overwrite__doc__,
 "window.");
 
 #define _CURSES_WINDOW_OVERWRITE_METHODDEF    \
-    {"overwrite", (PyCFunction)_curses_window_overwrite, METH_VARARGS, _curses_window_overwrite__doc__},
+    {"overwrite", _curses_window_overwrite, METH_VARARGS, _curses_window_overwrite__doc__},
 
 static PyObject *
 _curses_window_overwrite_impl(PyCursesWindowObject *self,
@@ -1477,7 +1477,7 @@ PyDoc_STRVAR(_curses_window_putwin__doc__,
 "This information can be later retrieved using the getwin() function.");
 
 #define _CURSES_WINDOW_PUTWIN_METHODDEF    \
-    {"putwin", (PyCFunction)_curses_window_putwin, METH_O, _curses_window_putwin__doc__},
+    {"putwin", _curses_window_putwin, METH_O, _curses_window_putwin__doc__},
 
 static PyObject *
 _curses_window_putwin_impl(PyCursesWindowObject *self, PyObject *file);
@@ -1552,7 +1552,7 @@ PyDoc_STRVAR(_curses_window_refresh__doc__,
 "sminrow, or smincol are treated as if they were zero.");
 
 #define _CURSES_WINDOW_REFRESH_METHODDEF    \
-    {"refresh", (PyCFunction)_curses_window_refresh, METH_VARARGS, _curses_window_refresh__doc__},
+    {"refresh", _curses_window_refresh, METH_VARARGS, _curses_window_refresh__doc__},
 
 static PyObject *
 _curses_window_refresh_impl(PyCursesWindowObject *self, int group_right_1,
@@ -1651,7 +1651,7 @@ PyDoc_STRVAR(_curses_window_subwin__doc__,
 "lower right corner of the window.");
 
 #define _CURSES_WINDOW_SUBWIN_METHODDEF    \
-    {"subwin", (PyCFunction)_curses_window_subwin, METH_VARARGS, _curses_window_subwin__doc__},
+    {"subwin", _curses_window_subwin, METH_VARARGS, _curses_window_subwin__doc__},
 
 static PyObject *
 _curses_window_subwin_impl(PyCursesWindowObject *self, int group_left_1,
@@ -1699,7 +1699,7 @@ PyDoc_STRVAR(_curses_window_scroll__doc__,
 "Scroll upward if the argument is positive and downward if it is negative.");
 
 #define _CURSES_WINDOW_SCROLL_METHODDEF    \
-    {"scroll", (PyCFunction)_curses_window_scroll, METH_VARARGS, _curses_window_scroll__doc__},
+    {"scroll", _curses_window_scroll, METH_VARARGS, _curses_window_scroll__doc__},
 
 static PyObject *
 _curses_window_scroll_impl(PyCursesWindowObject *self, int group_right_1,
@@ -1739,7 +1739,7 @@ PyDoc_STRVAR(_curses_window_touchline__doc__,
 "as having been changed (changed=True) or unchanged (changed=False).");
 
 #define _CURSES_WINDOW_TOUCHLINE_METHODDEF    \
-    {"touchline", (PyCFunction)_curses_window_touchline, METH_VARARGS, _curses_window_touchline__doc__},
+    {"touchline", _curses_window_touchline, METH_VARARGS, _curses_window_touchline__doc__},
 
 static PyObject *
 _curses_window_touchline_impl(PyCursesWindowObject *self, int start,
@@ -1792,7 +1792,7 @@ PyDoc_STRVAR(_curses_window_vline__doc__,
 "    Attributes for the character.");
 
 #define _CURSES_WINDOW_VLINE_METHODDEF    \
-    {"vline", (PyCFunction)_curses_window_vline, METH_VARARGS, _curses_window_vline__doc__},
+    {"vline", _curses_window_vline, METH_VARARGS, _curses_window_vline__doc__},
 
 static PyObject *
 _curses_window_vline_impl(PyCursesWindowObject *self, int group_left_1,
@@ -1854,7 +1854,7 @@ PyDoc_STRVAR(_curses_filter__doc__,
 "\n");
 
 #define _CURSES_FILTER_METHODDEF    \
-    {"filter", (PyCFunction)_curses_filter, METH_NOARGS, _curses_filter__doc__},
+    {"filter", _curses_filter, METH_NOARGS, _curses_filter__doc__},
 
 static PyObject *
 _curses_filter_impl(PyObject *module);
@@ -1874,7 +1874,7 @@ PyDoc_STRVAR(_curses_baudrate__doc__,
 "Return the output speed of the terminal in bits per second.");
 
 #define _CURSES_BAUDRATE_METHODDEF    \
-    {"baudrate", (PyCFunction)_curses_baudrate, METH_NOARGS, _curses_baudrate__doc__},
+    {"baudrate", _curses_baudrate, METH_NOARGS, _curses_baudrate__doc__},
 
 static PyObject *
 _curses_baudrate_impl(PyObject *module);
@@ -1892,7 +1892,7 @@ PyDoc_STRVAR(_curses_beep__doc__,
 "Emit a short attention sound.");
 
 #define _CURSES_BEEP_METHODDEF    \
-    {"beep", (PyCFunction)_curses_beep, METH_NOARGS, _curses_beep__doc__},
+    {"beep", _curses_beep, METH_NOARGS, _curses_beep__doc__},
 
 static PyObject *
 _curses_beep_impl(PyObject *module);
@@ -1910,7 +1910,7 @@ PyDoc_STRVAR(_curses_can_change_color__doc__,
 "Return True if the programmer can change the colors displayed by the terminal.");
 
 #define _CURSES_CAN_CHANGE_COLOR_METHODDEF    \
-    {"can_change_color", (PyCFunction)_curses_can_change_color, METH_NOARGS, _curses_can_change_color__doc__},
+    {"can_change_color", _curses_can_change_color, METH_NOARGS, _curses_can_change_color__doc__},
 
 static PyObject *
 _curses_can_change_color_impl(PyObject *module);
@@ -1978,7 +1978,7 @@ PyDoc_STRVAR(_curses_color_content__doc__,
 "which will be between 0 (no component) and 1000 (maximum amount of component).");
 
 #define _CURSES_COLOR_CONTENT_METHODDEF    \
-    {"color_content", (PyCFunction)_curses_color_content, METH_O, _curses_color_content__doc__},
+    {"color_content", _curses_color_content, METH_O, _curses_color_content__doc__},
 
 static PyObject *
 _curses_color_content_impl(PyObject *module, int color_number);
@@ -2011,7 +2011,7 @@ PyDoc_STRVAR(_curses_color_pair__doc__,
 "other A_* attributes.  pair_number() is the counterpart to this function.");
 
 #define _CURSES_COLOR_PAIR_METHODDEF    \
-    {"color_pair", (PyCFunction)_curses_color_pair, METH_O, _curses_color_pair__doc__},
+    {"color_pair", _curses_color_pair, METH_O, _curses_color_pair__doc__},
 
 static PyObject *
 _curses_color_pair_impl(PyObject *module, int pair_number);
@@ -2047,7 +2047,7 @@ PyDoc_STRVAR(_curses_curs_set__doc__,
 "a block cursor.");
 
 #define _CURSES_CURS_SET_METHODDEF    \
-    {"curs_set", (PyCFunction)_curses_curs_set, METH_O, _curses_curs_set__doc__},
+    {"curs_set", _curses_curs_set, METH_O, _curses_curs_set__doc__},
 
 static PyObject *
 _curses_curs_set_impl(PyObject *module, int visibility);
@@ -2079,7 +2079,7 @@ PyDoc_STRVAR(_curses_def_prog_mode__doc__,
 "Subsequent calls to reset_prog_mode() will restore this mode.");
 
 #define _CURSES_DEF_PROG_MODE_METHODDEF    \
-    {"def_prog_mode", (PyCFunction)_curses_def_prog_mode, METH_NOARGS, _curses_def_prog_mode__doc__},
+    {"def_prog_mode", _curses_def_prog_mode, METH_NOARGS, _curses_def_prog_mode__doc__},
 
 static PyObject *
 _curses_def_prog_mode_impl(PyObject *module);
@@ -2101,7 +2101,7 @@ PyDoc_STRVAR(_curses_def_shell_mode__doc__,
 "Subsequent calls to reset_shell_mode() will restore this mode.");
 
 #define _CURSES_DEF_SHELL_MODE_METHODDEF    \
-    {"def_shell_mode", (PyCFunction)_curses_def_shell_mode, METH_NOARGS, _curses_def_shell_mode__doc__},
+    {"def_shell_mode", _curses_def_shell_mode, METH_NOARGS, _curses_def_shell_mode__doc__},
 
 static PyObject *
 _curses_def_shell_mode_impl(PyObject *module);
@@ -2122,7 +2122,7 @@ PyDoc_STRVAR(_curses_delay_output__doc__,
 "    Duration in milliseconds.");
 
 #define _CURSES_DELAY_OUTPUT_METHODDEF    \
-    {"delay_output", (PyCFunction)_curses_delay_output, METH_O, _curses_delay_output__doc__},
+    {"delay_output", _curses_delay_output, METH_O, _curses_delay_output__doc__},
 
 static PyObject *
 _curses_delay_output_impl(PyObject *module, int ms);
@@ -2150,7 +2150,7 @@ PyDoc_STRVAR(_curses_doupdate__doc__,
 "Update the physical screen to match the virtual screen.");
 
 #define _CURSES_DOUPDATE_METHODDEF    \
-    {"doupdate", (PyCFunction)_curses_doupdate, METH_NOARGS, _curses_doupdate__doc__},
+    {"doupdate", _curses_doupdate, METH_NOARGS, _curses_doupdate__doc__},
 
 static PyObject *
 _curses_doupdate_impl(PyObject *module);
@@ -2208,7 +2208,7 @@ PyDoc_STRVAR(_curses_endwin__doc__,
 "De-initialize the library, and return terminal to normal status.");
 
 #define _CURSES_ENDWIN_METHODDEF    \
-    {"endwin", (PyCFunction)_curses_endwin, METH_NOARGS, _curses_endwin__doc__},
+    {"endwin", _curses_endwin, METH_NOARGS, _curses_endwin__doc__},
 
 static PyObject *
 _curses_endwin_impl(PyObject *module);
@@ -2226,7 +2226,7 @@ PyDoc_STRVAR(_curses_erasechar__doc__,
 "Return the user\'s current erase character.");
 
 #define _CURSES_ERASECHAR_METHODDEF    \
-    {"erasechar", (PyCFunction)_curses_erasechar, METH_NOARGS, _curses_erasechar__doc__},
+    {"erasechar", _curses_erasechar, METH_NOARGS, _curses_erasechar__doc__},
 
 static PyObject *
 _curses_erasechar_impl(PyObject *module);
@@ -2246,7 +2246,7 @@ PyDoc_STRVAR(_curses_flash__doc__,
 "That is, change it to reverse-video and then change it back in a short interval.");
 
 #define _CURSES_FLASH_METHODDEF    \
-    {"flash", (PyCFunction)_curses_flash, METH_NOARGS, _curses_flash__doc__},
+    {"flash", _curses_flash, METH_NOARGS, _curses_flash__doc__},
 
 static PyObject *
 _curses_flash_impl(PyObject *module);
@@ -2267,7 +2267,7 @@ PyDoc_STRVAR(_curses_flushinp__doc__,
 "yet been processed by the program.");
 
 #define _CURSES_FLUSHINP_METHODDEF    \
-    {"flushinp", (PyCFunction)_curses_flushinp, METH_NOARGS, _curses_flushinp__doc__},
+    {"flushinp", _curses_flushinp, METH_NOARGS, _curses_flushinp__doc__},
 
 static PyObject *
 _curses_flushinp_impl(PyObject *module);
@@ -2289,7 +2289,7 @@ PyDoc_STRVAR(_curses_getsyx__doc__,
 "Return a (y, x) tuple.  If leaveok is currently true, return (-1, -1).");
 
 #define _CURSES_GETSYX_METHODDEF    \
-    {"getsyx", (PyCFunction)_curses_getsyx, METH_NOARGS, _curses_getsyx__doc__},
+    {"getsyx", _curses_getsyx, METH_NOARGS, _curses_getsyx__doc__},
 
 static PyObject *
 _curses_getsyx_impl(PyObject *module);
@@ -2314,7 +2314,7 @@ PyDoc_STRVAR(_curses_getmouse__doc__,
 "returns a 5-tuple (id, x, y, z, bstate).");
 
 #define _CURSES_GETMOUSE_METHODDEF    \
-    {"getmouse", (PyCFunction)_curses_getmouse, METH_NOARGS, _curses_getmouse__doc__},
+    {"getmouse", _curses_getmouse, METH_NOARGS, _curses_getmouse__doc__},
 
 static PyObject *
 _curses_getmouse_impl(PyObject *module);
@@ -2411,7 +2411,7 @@ PyDoc_STRVAR(_curses_getwin__doc__,
 "returning the new window object.");
 
 #define _CURSES_GETWIN_METHODDEF    \
-    {"getwin", (PyCFunction)_curses_getwin, METH_O, _curses_getwin__doc__},
+    {"getwin", _curses_getwin, METH_O, _curses_getwin__doc__},
 
 PyDoc_STRVAR(_curses_halfdelay__doc__,
 "halfdelay($module, tenths, /)\n"
@@ -2425,7 +2425,7 @@ PyDoc_STRVAR(_curses_halfdelay__doc__,
 "Use nocbreak() to leave half-delay mode.");
 
 #define _CURSES_HALFDELAY_METHODDEF    \
-    {"halfdelay", (PyCFunction)_curses_halfdelay, METH_O, _curses_halfdelay__doc__},
+    {"halfdelay", _curses_halfdelay, METH_O, _curses_halfdelay__doc__},
 
 static PyObject *
 _curses_halfdelay_impl(PyObject *module, unsigned char tenths);
@@ -2468,7 +2468,7 @@ PyDoc_STRVAR(_curses_has_colors__doc__,
 "Return True if the terminal can display colors; otherwise, return False.");
 
 #define _CURSES_HAS_COLORS_METHODDEF    \
-    {"has_colors", (PyCFunction)_curses_has_colors, METH_NOARGS, _curses_has_colors__doc__},
+    {"has_colors", _curses_has_colors, METH_NOARGS, _curses_has_colors__doc__},
 
 static PyObject *
 _curses_has_colors_impl(PyObject *module);
@@ -2486,7 +2486,7 @@ PyDoc_STRVAR(_curses_has_ic__doc__,
 "Return True if the terminal has insert- and delete-character capabilities.");
 
 #define _CURSES_HAS_IC_METHODDEF    \
-    {"has_ic", (PyCFunction)_curses_has_ic, METH_NOARGS, _curses_has_ic__doc__},
+    {"has_ic", _curses_has_ic, METH_NOARGS, _curses_has_ic__doc__},
 
 static PyObject *
 _curses_has_ic_impl(PyObject *module);
@@ -2504,7 +2504,7 @@ PyDoc_STRVAR(_curses_has_il__doc__,
 "Return True if the terminal has insert- and delete-line capabilities.");
 
 #define _CURSES_HAS_IL_METHODDEF    \
-    {"has_il", (PyCFunction)_curses_has_il, METH_NOARGS, _curses_has_il__doc__},
+    {"has_il", _curses_has_il, METH_NOARGS, _curses_has_il__doc__},
 
 static PyObject *
 _curses_has_il_impl(PyObject *module);
@@ -2527,7 +2527,7 @@ PyDoc_STRVAR(_curses_has_key__doc__,
 "    Key number.");
 
 #define _CURSES_HAS_KEY_METHODDEF    \
-    {"has_key", (PyCFunction)_curses_has_key, METH_O, _curses_has_key__doc__},
+    {"has_key", _curses_has_key, METH_O, _curses_has_key__doc__},
 
 static PyObject *
 _curses_has_key_impl(PyObject *module, int key);
@@ -2663,7 +2663,7 @@ PyDoc_STRVAR(_curses_initscr__doc__,
 "Return a WindowObject which represents the whole screen.");
 
 #define _CURSES_INITSCR_METHODDEF    \
-    {"initscr", (PyCFunction)_curses_initscr, METH_NOARGS, _curses_initscr__doc__},
+    {"initscr", _curses_initscr, METH_NOARGS, _curses_initscr__doc__},
 
 static PyObject *
 _curses_initscr_impl(PyObject *module);
@@ -2782,7 +2782,7 @@ PyDoc_STRVAR(_curses_get_escdelay__doc__,
 "keyboard from escape sequences sent by cursor and function keys.");
 
 #define _CURSES_GET_ESCDELAY_METHODDEF    \
-    {"get_escdelay", (PyCFunction)_curses_get_escdelay, METH_NOARGS, _curses_get_escdelay__doc__},
+    {"get_escdelay", _curses_get_escdelay, METH_NOARGS, _curses_get_escdelay__doc__},
 
 static PyObject *
 _curses_get_escdelay_impl(PyObject *module);
@@ -2811,7 +2811,7 @@ PyDoc_STRVAR(_curses_set_escdelay__doc__,
 "keyboard from escape sequences sent by cursor and function keys.");
 
 #define _CURSES_SET_ESCDELAY_METHODDEF    \
-    {"set_escdelay", (PyCFunction)_curses_set_escdelay, METH_O, _curses_set_escdelay__doc__},
+    {"set_escdelay", _curses_set_escdelay, METH_O, _curses_set_escdelay__doc__},
 
 static PyObject *
 _curses_set_escdelay_impl(PyObject *module, int ms);
@@ -2846,7 +2846,7 @@ PyDoc_STRVAR(_curses_get_tabsize__doc__,
 "character to spaces as it adds the tab to a window.");
 
 #define _CURSES_GET_TABSIZE_METHODDEF    \
-    {"get_tabsize", (PyCFunction)_curses_get_tabsize, METH_NOARGS, _curses_get_tabsize__doc__},
+    {"get_tabsize", _curses_get_tabsize, METH_NOARGS, _curses_get_tabsize__doc__},
 
 static PyObject *
 _curses_get_tabsize_impl(PyObject *module);
@@ -2874,7 +2874,7 @@ PyDoc_STRVAR(_curses_set_tabsize__doc__,
 "character to spaces as it adds the tab to a window.");
 
 #define _CURSES_SET_TABSIZE_METHODDEF    \
-    {"set_tabsize", (PyCFunction)_curses_set_tabsize, METH_O, _curses_set_tabsize__doc__},
+    {"set_tabsize", _curses_set_tabsize, METH_O, _curses_set_tabsize__doc__},
 
 static PyObject *
 _curses_set_tabsize_impl(PyObject *module, int size);
@@ -2903,7 +2903,7 @@ PyDoc_STRVAR(_curses_intrflush__doc__,
 "\n");
 
 #define _CURSES_INTRFLUSH_METHODDEF    \
-    {"intrflush", (PyCFunction)_curses_intrflush, METH_O, _curses_intrflush__doc__},
+    {"intrflush", _curses_intrflush, METH_O, _curses_intrflush__doc__},
 
 static PyObject *
 _curses_intrflush_impl(PyObject *module, int flag);
@@ -2931,7 +2931,7 @@ PyDoc_STRVAR(_curses_isendwin__doc__,
 "Return True if endwin() has been called.");
 
 #define _CURSES_ISENDWIN_METHODDEF    \
-    {"isendwin", (PyCFunction)_curses_isendwin, METH_NOARGS, _curses_isendwin__doc__},
+    {"isendwin", _curses_isendwin, METH_NOARGS, _curses_isendwin__doc__},
 
 static PyObject *
 _curses_isendwin_impl(PyObject *module);
@@ -2997,7 +2997,7 @@ PyDoc_STRVAR(_curses_keyname__doc__,
 "    Key number.");
 
 #define _CURSES_KEYNAME_METHODDEF    \
-    {"keyname", (PyCFunction)_curses_keyname, METH_O, _curses_keyname__doc__},
+    {"keyname", _curses_keyname, METH_O, _curses_keyname__doc__},
 
 static PyObject *
 _curses_keyname_impl(PyObject *module, int key);
@@ -3025,7 +3025,7 @@ PyDoc_STRVAR(_curses_killchar__doc__,
 "Return the user\'s current line kill character.");
 
 #define _CURSES_KILLCHAR_METHODDEF    \
-    {"killchar", (PyCFunction)_curses_killchar, METH_NOARGS, _curses_killchar__doc__},
+    {"killchar", _curses_killchar, METH_NOARGS, _curses_killchar__doc__},
 
 static PyObject *
 _curses_killchar_impl(PyObject *module);
@@ -3046,7 +3046,7 @@ PyDoc_STRVAR(_curses_longname__doc__,
 "only after the call to initscr().");
 
 #define _CURSES_LONGNAME_METHODDEF    \
-    {"longname", (PyCFunction)_curses_longname, METH_NOARGS, _curses_longname__doc__},
+    {"longname", _curses_longname, METH_NOARGS, _curses_longname__doc__},
 
 static PyObject *
 _curses_longname_impl(PyObject *module);
@@ -3067,7 +3067,7 @@ PyDoc_STRVAR(_curses_meta__doc__,
 "allow only 7-bit characters.");
 
 #define _CURSES_META_METHODDEF    \
-    {"meta", (PyCFunction)_curses_meta, METH_O, _curses_meta__doc__},
+    {"meta", _curses_meta, METH_O, _curses_meta__doc__},
 
 static PyObject *
 _curses_meta_impl(PyObject *module, int yes);
@@ -3104,7 +3104,7 @@ PyDoc_STRVAR(_curses_mouseinterval__doc__,
 "value.");
 
 #define _CURSES_MOUSEINTERVAL_METHODDEF    \
-    {"mouseinterval", (PyCFunction)_curses_mouseinterval, METH_O, _curses_mouseinterval__doc__},
+    {"mouseinterval", _curses_mouseinterval, METH_O, _curses_mouseinterval__doc__},
 
 static PyObject *
 _curses_mouseinterval_impl(PyObject *module, int interval);
@@ -3141,7 +3141,7 @@ PyDoc_STRVAR(_curses_mousemask__doc__,
 "If this function is never called, no mouse events are ever reported.");
 
 #define _CURSES_MOUSEMASK_METHODDEF    \
-    {"mousemask", (PyCFunction)_curses_mousemask, METH_O, _curses_mousemask__doc__},
+    {"mousemask", _curses_mousemask, METH_O, _curses_mousemask__doc__},
 
 static PyObject *
 _curses_mousemask_impl(PyObject *module, unsigned long newmask);
@@ -3175,7 +3175,7 @@ PyDoc_STRVAR(_curses_napms__doc__,
 "    Duration in milliseconds.");
 
 #define _CURSES_NAPMS_METHODDEF    \
-    {"napms", (PyCFunction)_curses_napms, METH_O, _curses_napms__doc__},
+    {"napms", _curses_napms, METH_O, _curses_napms__doc__},
 
 static int
 _curses_napms_impl(PyObject *module, int ms);
@@ -3259,7 +3259,7 @@ PyDoc_STRVAR(_curses_newwin__doc__,
 "right corner of the screen.");
 
 #define _CURSES_NEWWIN_METHODDEF    \
-    {"newwin", (PyCFunction)_curses_newwin, METH_VARARGS, _curses_newwin__doc__},
+    {"newwin", _curses_newwin, METH_VARARGS, _curses_newwin__doc__},
 
 static PyObject *
 _curses_newwin_impl(PyObject *module, int nlines, int ncols,
@@ -3347,7 +3347,7 @@ PyDoc_STRVAR(_curses_nocbreak__doc__,
 "Return to normal \"cooked\" mode with line buffering.");
 
 #define _CURSES_NOCBREAK_METHODDEF    \
-    {"nocbreak", (PyCFunction)_curses_nocbreak, METH_NOARGS, _curses_nocbreak__doc__},
+    {"nocbreak", _curses_nocbreak, METH_NOARGS, _curses_nocbreak__doc__},
 
 static PyObject *
 _curses_nocbreak_impl(PyObject *module);
@@ -3367,7 +3367,7 @@ PyDoc_STRVAR(_curses_noecho__doc__,
 "Echoing of input characters is turned off.");
 
 #define _CURSES_NOECHO_METHODDEF    \
-    {"noecho", (PyCFunction)_curses_noecho, METH_NOARGS, _curses_noecho__doc__},
+    {"noecho", _curses_noecho, METH_NOARGS, _curses_noecho__doc__},
 
 static PyObject *
 _curses_noecho_impl(PyObject *module);
@@ -3388,7 +3388,7 @@ PyDoc_STRVAR(_curses_nonl__doc__,
 "translation of newline into newline/return on output.");
 
 #define _CURSES_NONL_METHODDEF    \
-    {"nonl", (PyCFunction)_curses_nonl, METH_NOARGS, _curses_nonl__doc__},
+    {"nonl", _curses_nonl, METH_NOARGS, _curses_nonl__doc__},
 
 static PyObject *
 _curses_nonl_impl(PyObject *module);
@@ -3409,7 +3409,7 @@ PyDoc_STRVAR(_curses_noqiflush__doc__,
 "associated with the INTR, QUIT and SUSP characters will not be done.");
 
 #define _CURSES_NOQIFLUSH_METHODDEF    \
-    {"noqiflush", (PyCFunction)_curses_noqiflush, METH_NOARGS, _curses_noqiflush__doc__},
+    {"noqiflush", _curses_noqiflush, METH_NOARGS, _curses_noqiflush__doc__},
 
 static PyObject *
 _curses_noqiflush_impl(PyObject *module);
@@ -3429,7 +3429,7 @@ PyDoc_STRVAR(_curses_noraw__doc__,
 "Return to normal \"cooked\" mode with line buffering.");
 
 #define _CURSES_NORAW_METHODDEF    \
-    {"noraw", (PyCFunction)_curses_noraw, METH_NOARGS, _curses_noraw__doc__},
+    {"noraw", _curses_noraw, METH_NOARGS, _curses_noraw__doc__},
 
 static PyObject *
 _curses_noraw_impl(PyObject *module);
@@ -3450,7 +3450,7 @@ PyDoc_STRVAR(_curses_pair_content__doc__,
 "    The number of the color pair (0 - (COLOR_PAIRS-1)).");
 
 #define _CURSES_PAIR_CONTENT_METHODDEF    \
-    {"pair_content", (PyCFunction)_curses_pair_content, METH_O, _curses_pair_content__doc__},
+    {"pair_content", _curses_pair_content, METH_O, _curses_pair_content__doc__},
 
 static PyObject *
 _curses_pair_content_impl(PyObject *module, int pair_number);
@@ -3479,7 +3479,7 @@ PyDoc_STRVAR(_curses_pair_number__doc__,
 "color_pair() is the counterpart to this function.");
 
 #define _CURSES_PAIR_NUMBER_METHODDEF    \
-    {"pair_number", (PyCFunction)_curses_pair_number, METH_O, _curses_pair_number__doc__},
+    {"pair_number", _curses_pair_number, METH_O, _curses_pair_number__doc__},
 
 static PyObject *
 _curses_pair_number_impl(PyObject *module, int attr);
@@ -3509,7 +3509,7 @@ PyDoc_STRVAR(_curses_putp__doc__,
 "Note that the output of putp() always goes to standard output.");
 
 #define _CURSES_PUTP_METHODDEF    \
-    {"putp", (PyCFunction)_curses_putp, METH_O, _curses_putp__doc__},
+    {"putp", _curses_putp, METH_O, _curses_putp__doc__},
 
 static PyObject *
 _curses_putp_impl(PyObject *module, const char *string);
@@ -3578,7 +3578,7 @@ PyDoc_STRVAR(_curses_update_lines_cols__doc__,
 "\n");
 
 #define _CURSES_UPDATE_LINES_COLS_METHODDEF    \
-    {"update_lines_cols", (PyCFunction)_curses_update_lines_cols, METH_NOARGS, _curses_update_lines_cols__doc__},
+    {"update_lines_cols", _curses_update_lines_cols, METH_NOARGS, _curses_update_lines_cols__doc__},
 
 static PyObject *
 _curses_update_lines_cols_impl(PyObject *module);
@@ -3640,7 +3640,7 @@ PyDoc_STRVAR(_curses_reset_prog_mode__doc__,
 "Restore the terminal to \"program\" mode, as previously saved by def_prog_mode().");
 
 #define _CURSES_RESET_PROG_MODE_METHODDEF    \
-    {"reset_prog_mode", (PyCFunction)_curses_reset_prog_mode, METH_NOARGS, _curses_reset_prog_mode__doc__},
+    {"reset_prog_mode", _curses_reset_prog_mode, METH_NOARGS, _curses_reset_prog_mode__doc__},
 
 static PyObject *
 _curses_reset_prog_mode_impl(PyObject *module);
@@ -3658,7 +3658,7 @@ PyDoc_STRVAR(_curses_reset_shell_mode__doc__,
 "Restore the terminal to \"shell\" mode, as previously saved by def_shell_mode().");
 
 #define _CURSES_RESET_SHELL_MODE_METHODDEF    \
-    {"reset_shell_mode", (PyCFunction)_curses_reset_shell_mode, METH_NOARGS, _curses_reset_shell_mode__doc__},
+    {"reset_shell_mode", _curses_reset_shell_mode, METH_NOARGS, _curses_reset_shell_mode__doc__},
 
 static PyObject *
 _curses_reset_shell_mode_impl(PyObject *module);
@@ -3676,7 +3676,7 @@ PyDoc_STRVAR(_curses_resetty__doc__,
 "Restore terminal mode.");
 
 #define _CURSES_RESETTY_METHODDEF    \
-    {"resetty", (PyCFunction)_curses_resetty, METH_NOARGS, _curses_resetty__doc__},
+    {"resetty", _curses_resetty, METH_NOARGS, _curses_resetty__doc__},
 
 static PyObject *
 _curses_resetty_impl(PyObject *module);
@@ -3853,7 +3853,7 @@ PyDoc_STRVAR(_curses_savetty__doc__,
 "Save terminal mode.");
 
 #define _CURSES_SAVETTY_METHODDEF    \
-    {"savetty", (PyCFunction)_curses_savetty, METH_NOARGS, _curses_savetty__doc__},
+    {"savetty", _curses_savetty, METH_NOARGS, _curses_savetty__doc__},
 
 static PyObject *
 _curses_savetty_impl(PyObject *module);
@@ -3925,7 +3925,7 @@ PyDoc_STRVAR(_curses_start_color__doc__,
 "terminal was just turned on.");
 
 #define _CURSES_START_COLOR_METHODDEF    \
-    {"start_color", (PyCFunction)_curses_start_color, METH_NOARGS, _curses_start_color__doc__},
+    {"start_color", _curses_start_color, METH_NOARGS, _curses_start_color__doc__},
 
 static PyObject *
 _curses_start_color_impl(PyObject *module);
@@ -3943,7 +3943,7 @@ PyDoc_STRVAR(_curses_termattrs__doc__,
 "Return a logical OR of all video attributes supported by the terminal.");
 
 #define _CURSES_TERMATTRS_METHODDEF    \
-    {"termattrs", (PyCFunction)_curses_termattrs, METH_NOARGS, _curses_termattrs__doc__},
+    {"termattrs", _curses_termattrs, METH_NOARGS, _curses_termattrs__doc__},
 
 static PyObject *
 _curses_termattrs_impl(PyObject *module);
@@ -3961,7 +3961,7 @@ PyDoc_STRVAR(_curses_termname__doc__,
 "Return the value of the environment variable TERM, truncated to 14 characters.");
 
 #define _CURSES_TERMNAME_METHODDEF    \
-    {"termname", (PyCFunction)_curses_termname, METH_NOARGS, _curses_termname__doc__},
+    {"termname", _curses_termname, METH_NOARGS, _curses_termname__doc__},
 
 static PyObject *
 _curses_termname_impl(PyObject *module);
@@ -3985,7 +3985,7 @@ PyDoc_STRVAR(_curses_tigetflag__doc__,
 "it is canceled or absent from the terminal description.");
 
 #define _CURSES_TIGETFLAG_METHODDEF    \
-    {"tigetflag", (PyCFunction)_curses_tigetflag, METH_O, _curses_tigetflag__doc__},
+    {"tigetflag", _curses_tigetflag, METH_O, _curses_tigetflag__doc__},
 
 static PyObject *
 _curses_tigetflag_impl(PyObject *module, const char *capname);
@@ -4028,7 +4028,7 @@ PyDoc_STRVAR(_curses_tigetnum__doc__,
 "it is canceled or absent from the terminal description.");
 
 #define _CURSES_TIGETNUM_METHODDEF    \
-    {"tigetnum", (PyCFunction)_curses_tigetnum, METH_O, _curses_tigetnum__doc__},
+    {"tigetnum", _curses_tigetnum, METH_O, _curses_tigetnum__doc__},
 
 static PyObject *
 _curses_tigetnum_impl(PyObject *module, const char *capname);
@@ -4071,7 +4071,7 @@ PyDoc_STRVAR(_curses_tigetstr__doc__,
 "absent from the terminal description.");
 
 #define _CURSES_TIGETSTR_METHODDEF    \
-    {"tigetstr", (PyCFunction)_curses_tigetstr, METH_O, _curses_tigetstr__doc__},
+    {"tigetstr", _curses_tigetstr, METH_O, _curses_tigetstr__doc__},
 
 static PyObject *
 _curses_tigetstr_impl(PyObject *module, const char *capname);
@@ -4157,7 +4157,7 @@ PyDoc_STRVAR(_curses_typeahead__doc__,
 "If fd is -1, then no typeahead checking is done.");
 
 #define _CURSES_TYPEAHEAD_METHODDEF    \
-    {"typeahead", (PyCFunction)_curses_typeahead, METH_O, _curses_typeahead__doc__},
+    {"typeahead", _curses_typeahead, METH_O, _curses_typeahead__doc__},
 
 static PyObject *
 _curses_typeahead_impl(PyObject *module, int fd);
@@ -4190,7 +4190,7 @@ PyDoc_STRVAR(_curses_unctrl__doc__,
 "for example as ^C.  Printing characters are left as they are.");
 
 #define _CURSES_UNCTRL_METHODDEF    \
-    {"unctrl", (PyCFunction)_curses_unctrl, METH_O, _curses_unctrl__doc__},
+    {"unctrl", _curses_unctrl, METH_O, _curses_unctrl__doc__},
 
 PyDoc_STRVAR(_curses_ungetch__doc__,
 "ungetch($module, ch, /)\n"
@@ -4199,7 +4199,7 @@ PyDoc_STRVAR(_curses_ungetch__doc__,
 "Push ch so the next getch() will return it.");
 
 #define _CURSES_UNGETCH_METHODDEF    \
-    {"ungetch", (PyCFunction)_curses_ungetch, METH_O, _curses_ungetch__doc__},
+    {"ungetch", _curses_ungetch, METH_O, _curses_ungetch__doc__},
 
 #if defined(HAVE_NCURSESW)
 
@@ -4210,7 +4210,7 @@ PyDoc_STRVAR(_curses_unget_wch__doc__,
 "Push ch so the next get_wch() will return it.");
 
 #define _CURSES_UNGET_WCH_METHODDEF    \
-    {"unget_wch", (PyCFunction)_curses_unget_wch, METH_O, _curses_unget_wch__doc__},
+    {"unget_wch", _curses_unget_wch, METH_O, _curses_unget_wch__doc__},
 
 #endif /* defined(HAVE_NCURSESW) */
 
@@ -4232,7 +4232,7 @@ PyDoc_STRVAR(_curses_use_env__doc__,
 "not set).");
 
 #define _CURSES_USE_ENV_METHODDEF    \
-    {"use_env", (PyCFunction)_curses_use_env, METH_O, _curses_use_env__doc__},
+    {"use_env", _curses_use_env, METH_O, _curses_use_env__doc__},
 
 static PyObject *
 _curses_use_env_impl(PyObject *module, int flag);
@@ -4267,7 +4267,7 @@ PyDoc_STRVAR(_curses_use_default_colors__doc__,
 "is assigned to the color number -1.");
 
 #define _CURSES_USE_DEFAULT_COLORS_METHODDEF    \
-    {"use_default_colors", (PyCFunction)_curses_use_default_colors, METH_NOARGS, _curses_use_default_colors__doc__},
+    {"use_default_colors", _curses_use_default_colors, METH_NOARGS, _curses_use_default_colors__doc__},
 
 static PyObject *
 _curses_use_default_colors_impl(PyObject *module);
@@ -4290,7 +4290,7 @@ PyDoc_STRVAR(_curses_has_extended_color_support__doc__,
 "that support more than 16 colors (e.g. xterm-256color).");
 
 #define _CURSES_HAS_EXTENDED_COLOR_SUPPORT_METHODDEF    \
-    {"has_extended_color_support", (PyCFunction)_curses_has_extended_color_support, METH_NOARGS, _curses_has_extended_color_support__doc__},
+    {"has_extended_color_support", _curses_has_extended_color_support, METH_NOARGS, _curses_has_extended_color_support__doc__},
 
 static PyObject *
 _curses_has_extended_color_support_impl(PyObject *module);
@@ -4392,4 +4392,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=ce2d19df9e20bfa3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c03ac7b812675584 input=a9049054013a1b77]*/

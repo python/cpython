@@ -191,7 +191,7 @@ PyDoc_STRVAR(InstructionSequenceType_new_label__doc__,
 "Return a new label.");
 
 #define INSTRUCTIONSEQUENCETYPE_NEW_LABEL_METHODDEF    \
-    {"new_label", (PyCFunction)InstructionSequenceType_new_label, METH_NOARGS, InstructionSequenceType_new_label__doc__},
+    {"new_label", InstructionSequenceType_new_label, METH_NOARGS, InstructionSequenceType_new_label__doc__},
 
 static int
 InstructionSequenceType_new_label_impl(_PyInstructionSequence *self);
@@ -276,7 +276,7 @@ PyDoc_STRVAR(InstructionSequenceType_get_nested__doc__,
 "Add a nested sequence.");
 
 #define INSTRUCTIONSEQUENCETYPE_GET_NESTED_METHODDEF    \
-    {"get_nested", (PyCFunction)InstructionSequenceType_get_nested, METH_NOARGS, InstructionSequenceType_get_nested__doc__},
+    {"get_nested", InstructionSequenceType_get_nested, METH_NOARGS, InstructionSequenceType_get_nested__doc__},
 
 static PyObject *
 InstructionSequenceType_get_nested_impl(_PyInstructionSequence *self);
@@ -294,7 +294,7 @@ PyDoc_STRVAR(InstructionSequenceType_get_instructions__doc__,
 "Return the instructions as a list of tuples or labels.");
 
 #define INSTRUCTIONSEQUENCETYPE_GET_INSTRUCTIONS_METHODDEF    \
-    {"get_instructions", (PyCFunction)InstructionSequenceType_get_instructions, METH_NOARGS, InstructionSequenceType_get_instructions__doc__},
+    {"get_instructions", InstructionSequenceType_get_instructions, METH_NOARGS, InstructionSequenceType_get_instructions__doc__},
 
 static PyObject *
 InstructionSequenceType_get_instructions_impl(_PyInstructionSequence *self);
@@ -304,4 +304,4 @@ InstructionSequenceType_get_instructions(PyObject *self, PyObject *Py_UNUSED(ign
 {
     return InstructionSequenceType_get_instructions_impl((_PyInstructionSequence *)self);
 }
-/*[clinic end generated code: output=e6b5d05bde008cc2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=608608dbfba9a80c input=a9049054013a1b77]*/

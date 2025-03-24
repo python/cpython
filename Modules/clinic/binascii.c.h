@@ -15,7 +15,7 @@ PyDoc_STRVAR(binascii_a2b_uu__doc__,
 "Decode a line of uuencoded data.");
 
 #define BINASCII_A2B_UU_METHODDEF    \
-    {"a2b_uu", (PyCFunction)binascii_a2b_uu, METH_O, binascii_a2b_uu__doc__},
+    {"a2b_uu", binascii_a2b_uu, METH_O, binascii_a2b_uu__doc__},
 
 static PyObject *
 binascii_a2b_uu_impl(PyObject *module, Py_buffer *data);
@@ -548,7 +548,7 @@ PyDoc_STRVAR(binascii_a2b_hex__doc__,
 "This function is also available as \"unhexlify()\".");
 
 #define BINASCII_A2B_HEX_METHODDEF    \
-    {"a2b_hex", (PyCFunction)binascii_a2b_hex, METH_O, binascii_a2b_hex__doc__},
+    {"a2b_hex", binascii_a2b_hex, METH_O, binascii_a2b_hex__doc__},
 
 static PyObject *
 binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr);
@@ -581,7 +581,7 @@ PyDoc_STRVAR(binascii_unhexlify__doc__,
 "hexstr must contain an even number of hex digits (upper or lower case).");
 
 #define BINASCII_UNHEXLIFY_METHODDEF    \
-    {"unhexlify", (PyCFunction)binascii_unhexlify, METH_O, binascii_unhexlify__doc__},
+    {"unhexlify", binascii_unhexlify, METH_O, binascii_unhexlify__doc__},
 
 static PyObject *
 binascii_unhexlify_impl(PyObject *module, Py_buffer *hexstr);
@@ -774,4 +774,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=9ed7fbeec13c6606 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6c6cb05b69d40658 input=a9049054013a1b77]*/

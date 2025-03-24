@@ -20,7 +20,7 @@ PyDoc_STRVAR(winreg_HKEYType_Close__doc__,
 "If the handle is already closed, no error is raised.");
 
 #define WINREG_HKEYTYPE_CLOSE_METHODDEF    \
-    {"Close", (PyCFunction)winreg_HKEYType_Close, METH_NOARGS, winreg_HKEYType_Close__doc__},
+    {"Close", winreg_HKEYType_Close, METH_NOARGS, winreg_HKEYType_Close__doc__},
 
 static PyObject *
 winreg_HKEYType_Close_impl(PyHKEYObject *self);
@@ -50,7 +50,7 @@ PyDoc_STRVAR(winreg_HKEYType_Detach__doc__,
 "handle object.");
 
 #define WINREG_HKEYTYPE_DETACH_METHODDEF    \
-    {"Detach", (PyCFunction)winreg_HKEYType_Detach, METH_NOARGS, winreg_HKEYType_Detach__doc__},
+    {"Detach", winreg_HKEYType_Detach, METH_NOARGS, winreg_HKEYType_Detach__doc__},
 
 static PyObject *
 winreg_HKEYType_Detach_impl(PyHKEYObject *self);
@@ -71,7 +71,7 @@ PyDoc_STRVAR(winreg_HKEYType___enter____doc__,
 "\n");
 
 #define WINREG_HKEYTYPE___ENTER___METHODDEF    \
-    {"__enter__", (PyCFunction)winreg_HKEYType___enter__, METH_NOARGS, winreg_HKEYType___enter____doc__},
+    {"__enter__", winreg_HKEYType___enter__, METH_NOARGS, winreg_HKEYType___enter____doc__},
 
 static PyHKEYObject *
 winreg_HKEYType___enter___impl(PyHKEYObject *self);
@@ -141,7 +141,7 @@ PyDoc_STRVAR(winreg_CloseKey__doc__,
 "closed when the hkey object is destroyed by Python.");
 
 #define WINREG_CLOSEKEY_METHODDEF    \
-    {"CloseKey", (PyCFunction)winreg_CloseKey, METH_O, winreg_CloseKey__doc__},
+    {"CloseKey", winreg_CloseKey, METH_O, winreg_CloseKey__doc__},
 
 #endif /* (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM) || defined(MS_WINDOWS_GAMES)) */
 
@@ -749,7 +749,7 @@ PyDoc_STRVAR(winreg_ExpandEnvironmentStrings__doc__,
 "Expand environment vars.");
 
 #define WINREG_EXPANDENVIRONMENTSTRINGS_METHODDEF    \
-    {"ExpandEnvironmentStrings", (PyCFunction)winreg_ExpandEnvironmentStrings, METH_O, winreg_ExpandEnvironmentStrings__doc__},
+    {"ExpandEnvironmentStrings", winreg_ExpandEnvironmentStrings, METH_O, winreg_ExpandEnvironmentStrings__doc__},
 
 static PyObject *
 winreg_ExpandEnvironmentStrings_impl(PyObject *module, const wchar_t *string);
@@ -801,7 +801,7 @@ PyDoc_STRVAR(winreg_FlushKey__doc__,
 "a FlushKey() call is required, it probably isn\'t.");
 
 #define WINREG_FLUSHKEY_METHODDEF    \
-    {"FlushKey", (PyCFunction)winreg_FlushKey, METH_O, winreg_FlushKey__doc__},
+    {"FlushKey", winreg_FlushKey, METH_O, winreg_FlushKey__doc__},
 
 static PyObject *
 winreg_FlushKey_impl(PyObject *module, HKEY key);
@@ -1157,7 +1157,7 @@ PyDoc_STRVAR(winreg_QueryInfoKey__doc__,
 "as 100\'s of nanoseconds since Jan 1, 1600.");
 
 #define WINREG_QUERYINFOKEY_METHODDEF    \
-    {"QueryInfoKey", (PyCFunction)winreg_QueryInfoKey, METH_O, winreg_QueryInfoKey__doc__},
+    {"QueryInfoKey", winreg_QueryInfoKey, METH_O, winreg_QueryInfoKey__doc__},
 
 static PyObject *
 winreg_QueryInfoKey_impl(PyObject *module, HKEY key);
@@ -1563,7 +1563,7 @@ PyDoc_STRVAR(winreg_DisableReflectionKey__doc__,
 "of any subkeys.");
 
 #define WINREG_DISABLEREFLECTIONKEY_METHODDEF    \
-    {"DisableReflectionKey", (PyCFunction)winreg_DisableReflectionKey, METH_O, winreg_DisableReflectionKey__doc__},
+    {"DisableReflectionKey", winreg_DisableReflectionKey, METH_O, winreg_DisableReflectionKey__doc__},
 
 static PyObject *
 winreg_DisableReflectionKey_impl(PyObject *module, HKEY key);
@@ -1601,7 +1601,7 @@ PyDoc_STRVAR(winreg_EnableReflectionKey__doc__,
 "subkeys.");
 
 #define WINREG_ENABLEREFLECTIONKEY_METHODDEF    \
-    {"EnableReflectionKey", (PyCFunction)winreg_EnableReflectionKey, METH_O, winreg_EnableReflectionKey__doc__},
+    {"EnableReflectionKey", winreg_EnableReflectionKey, METH_O, winreg_EnableReflectionKey__doc__},
 
 static PyObject *
 winreg_EnableReflectionKey_impl(PyObject *module, HKEY key);
@@ -1637,7 +1637,7 @@ PyDoc_STRVAR(winreg_QueryReflectionKey__doc__,
 "Will generally raise NotImplementedError if executed on a 32bit OS.");
 
 #define WINREG_QUERYREFLECTIONKEY_METHODDEF    \
-    {"QueryReflectionKey", (PyCFunction)winreg_QueryReflectionKey, METH_O, winreg_QueryReflectionKey__doc__},
+    {"QueryReflectionKey", winreg_QueryReflectionKey, METH_O, winreg_QueryReflectionKey__doc__},
 
 static PyObject *
 winreg_QueryReflectionKey_impl(PyObject *module, HKEY key);
@@ -1766,4 +1766,4 @@ exit:
 #ifndef WINREG_QUERYREFLECTIONKEY_METHODDEF
     #define WINREG_QUERYREFLECTIONKEY_METHODDEF
 #endif /* !defined(WINREG_QUERYREFLECTIONKEY_METHODDEF) */
-/*[clinic end generated code: output=fbe9b075cd2fa833 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e273adb99f26e8fb input=a9049054013a1b77]*/
