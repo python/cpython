@@ -134,7 +134,6 @@ The token constants are:
 .. data:: ENDMARKER
 
    Token value that indicates the end of input.
-   Used in :ref:`top-level grammar rules <top-level>`.
 
 .. data:: ENCODING
 
