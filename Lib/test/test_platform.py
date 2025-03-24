@@ -5,12 +5,11 @@ import io
 import itertools
 import pickle
 import platform
-import shlex
 import subprocess
 import sys
 import unittest
-from unittest import mock
 from textwrap import dedent
+from unittest import mock
 
 from test import support
 from test.support import os_helper
@@ -789,19 +788,19 @@ class CommandLineTest(unittest.TestCase):
         # `platform.platform()` call. The parameters are two booleans for `aliased`
         # and `terse`.
         options = (
-            ("--nonaliased", (False, False)),
-            ("nonaliased", (False, False)),
-            ("--terse", (True, True)),
-            ("terse", (True, True)),
-            ("nonaliased terse", (False, True)),
-            ("--nonaliased terse", (False, True)),
-            ("--terse nonaliased", (False, True)),
+            (["--nonaliased"], (False, False)),
+            (["nonaliased"], (False, False)),
+            (["--terse"], (True, True)),
+            (["terse"], (True, True)),
+            (["nonaliased", "terse"], (False, True)),
+            (["--nonaliased", "terse"], (False, True)),
+            (["--terse", "nonaliased"], (False, True)),
         )
 
         for flags, args in options:
-            with self.subTest(f"{flags}, {args}"):
+            with self.subTest(flags=flags, args=args):
                 with mock.patch.object(platform, 'platform') as obj:
-                    self.invoke_platform(*shlex.split(flags))
+                    self.invoke_platform(*flags)
                     obj.assert_called_once_with(*args)
 
     def test_help(self):
