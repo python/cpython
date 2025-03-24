@@ -15582,7 +15582,7 @@ typedef struct {
     ino_t d_ino;
     int dir_fd;
 #endif
-    PyMutex mutex;
+    _PyRecursiveMutex mutex;
 } DirEntry;
 
 #define DirEntry_CAST(op)   ((DirEntry *)(op))
@@ -15592,12 +15592,12 @@ DirEntry_dealloc(PyObject *op)
 {
     DirEntry *entry = DirEntry_CAST(op);
     PyTypeObject *tp = Py_TYPE(entry);
-    PyMutex_Lock(&entry->mutex);
+    _PyRecursiveMutex_Lock(&entry->mutex);
     Py_XDECREF(entry->name);
     Py_XDECREF(entry->path);
     Py_XDECREF(entry->stat);
     Py_XDECREF(entry->lstat);
-    PyMutex_Unlock(&entry->mutex);
+    _PyRecursiveMutex_Unlock(&entry->mutex);
     freefunc free_func = PyType_GetSlot(tp, Py_tp_free);
     free_func(entry);
     Py_DECREF(tp);
@@ -15743,17 +15743,17 @@ os_DirEntry_stat_impl(DirEntry *self, PyTypeObject *defining_class,
 /*[clinic end generated code: output=23f803e19c3e780e input=e816273c4e67ee98]*/
 {
     if (!follow_symlinks) {
-        PyMutex_Lock(&self->mutex);
+        _PyRecursiveMutex_Lock(&self->mutex);
         PyObject *stat = DirEntry_get_lstat(defining_class, self);
-        PyMutex_Unlock(&self->mutex);
+        _PyRecursiveMutex_Unlock(&self->mutex);
         return stat;
     }
 
-    PyMutex_Lock(&self->mutex);
+    _PyRecursiveMutex_Lock(&self->mutex);
     if (!self->stat) {
         int result = os_DirEntry_is_symlink_impl(self, defining_class);
         if (result == -1) {
-            PyMutex_Unlock(&self->mutex);
+            _PyRecursiveMutex_Unlock(&self->mutex);
             return NULL;
         }
         if (result) {
@@ -15764,7 +15764,7 @@ os_DirEntry_stat_impl(DirEntry *self, PyTypeObject *defining_class,
             self->stat = DirEntry_get_lstat(defining_class, self);
         }
     }
-    PyMutex_Unlock(&self->mutex);
+    _PyRecursiveMutex_Unlock(&self->mutex);
 
     return Py_XNewRef(self->stat);
 }
@@ -16039,7 +16039,7 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
     entry->stat = NULL;
     entry->lstat = NULL;
     entry->got_file_index = 0;
-    entry->mutex = (PyMutex){0};
+    entry->mutex = (_PyRecursiveMutex){0};
 
     entry->name = PyUnicode_FromWideChar(dataW->cFileName, -1);
     if (!entry->name)
@@ -16132,7 +16132,7 @@ DirEntry_from_posix_info(PyObject *module, path_t *path, const char *name,
     entry->path = NULL;
     entry->stat = NULL;
     entry->lstat = NULL;
-    entry->mutex = (PyMutex){0};
+    entry->mutex = (_PyRecursiveMutex){0};
 
     if (path->fd != -1) {
         entry->dir_fd = path->fd;
@@ -16193,7 +16193,7 @@ typedef struct {
 #ifdef HAVE_FDOPENDIR
     int fd;
 #endif
-    PyMutex mutex;
+    _PyRecursiveMutex mutex;
 } ScandirIterator;
 
 #define ScandirIterator_CAST(op)    ((ScandirIterator *)(op))
@@ -16209,10 +16209,10 @@ ScandirIterator_is_closed(ScandirIterator *iterator)
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
-    PyMutex_Lock(&iterator->mutex);
+    _PyRecursiveMutex_Lock(&iterator->mutex);
     HANDLE handle = iterator->handle;
     iterator->handle = INVALID_HANDLE_VALUE;
-    PyMutex_Unlock(&iterator->mutex);
+    _PyRecursiveMutex_Unlock(&iterator->mutex);
 
     if (handle == INVALID_HANDLE_VALUE) {
         return;
@@ -16231,7 +16231,7 @@ ScandirIterator_iternext(PyObject *op)
     BOOL success;
     PyObject *entry;
 
-    PyMutex_Lock(&iterator->mutex);
+    _PyRecursiveMutex_Lock(&iterator->mutex);
     while (iterator->handle != INVALID_HANDLE_VALUE) {
         if (!iterator->first_time) {
             Py_BEGIN_ALLOW_THREADS
@@ -16254,7 +16254,7 @@ ScandirIterator_iternext(PyObject *op)
             entry = DirEntry_from_find_data(module, &iterator->path, file_data);
             if (!entry)
                 break;
-            PyMutex_Unlock(&iterator->mutex);
+            _PyRecursiveMutex_Unlock(&iterator->mutex);
             return entry;
         }
 
@@ -16262,7 +16262,7 @@ ScandirIterator_iternext(PyObject *op)
     }
 
     /* Already closed, error, or no more files */
-    PyMutex_Unlock(&iterator->mutex);
+    _PyRecursiveMutex_Unlock(&iterator->mutex);
     ScandirIterator_closedir(iterator);
     return NULL;
 }
@@ -16278,10 +16278,10 @@ ScandirIterator_is_closed(ScandirIterator *iterator)
 static void
 ScandirIterator_closedir(ScandirIterator *iterator)
 {
-    PyMutex_Lock(&iterator->mutex);
+    _PyRecursiveMutex_Lock(&iterator->mutex);
     DIR *dirp = iterator->dirp;
     iterator->dirp = NULL;
-    PyMutex_Unlock(&iterator->mutex);
+    _PyRecursiveMutex_Unlock(&iterator->mutex);
 
     if (!dirp) {
         return;
@@ -16306,7 +16306,7 @@ ScandirIterator_iternext(PyObject *op)
     int is_dot;
     PyObject *entry;
 
-    PyMutex_Lock(&iterator->mutex);
+    _PyRecursiveMutex_Lock(&iterator->mutex);
     while (iterator->dirp) {
         errno = 0;
         Py_BEGIN_ALLOW_THREADS
@@ -16335,7 +16335,7 @@ ScandirIterator_iternext(PyObject *op)
                                             );
             if (!entry)
                 break;
-            PyMutex_Unlock(&iterator->mutex);
+            _PyRecursiveMutex_Unlock(&iterator->mutex);
             return entry;
         }
 
@@ -16343,7 +16343,7 @@ ScandirIterator_iternext(PyObject *op)
     }
 
     /* Already closed, error, or no more files */
-    PyMutex_Unlock(&iterator->mutex);
+    _PyRecursiveMutex_Unlock(&iterator->mutex);
     ScandirIterator_closedir(iterator);
     return NULL;
 }
@@ -16476,7 +16476,7 @@ os_scandir_impl(PyObject *module, path_t *path)
     if (!iterator)
         return NULL;
 
-    iterator->mutex = (PyMutex){0};
+    iterator->mutex = (_PyRecursiveMutex){0};
 #ifdef MS_WINDOWS
     iterator->handle = INVALID_HANDLE_VALUE;
 #else
