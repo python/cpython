@@ -333,11 +333,7 @@ tuple_hash(PyObject *op)
         acc = 1546275796;
     }
 
-    #ifdef Py_GIL_DISABLED
-        _Py_atomic_store_ssize_relaxed(&v->ob_hash, acc);
-    #else
-        v->ob_hash = acc;
-    #endif
+    FT_ATOMIC_STORE_SSIZE_RELAXED(v->ob_hash, acc);
 
     return acc;
 }
