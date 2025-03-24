@@ -12,7 +12,7 @@ typedef struct {
 static void
 Custom_dealloc(PyObject *op)
 {
-    CustomObject *self = (CustomObject *)op;
+    CustomObject *self = (CustomObject *) op;
     Py_XDECREF(self->first);
     Py_XDECREF(self->last);
     Py_TYPE(self)->tp_free(self);
@@ -42,7 +42,7 @@ Custom_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 Custom_init(PyObject *op, PyObject *args, PyObject *kwds)
 {
-    CustomObject *self = (CustomObject *)op;
+    CustomObject *self = (CustomObject *) op;
     static char *kwlist[] = {"first", "last", "number", NULL};
     PyObject *first = NULL, *last = NULL;
 
@@ -73,7 +73,7 @@ static PyMemberDef Custom_members[] = {
 static PyObject *
 Custom_name(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
-    CustomObject *self = (CustomObject *)op;
+    CustomObject *self = (CustomObject *) op;
     if (self->first == NULL) {
         PyErr_SetString(PyExc_AttributeError, "first");
         return NULL;

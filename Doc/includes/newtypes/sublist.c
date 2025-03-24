@@ -9,7 +9,7 @@ typedef struct {
 static PyObject *
 SubList_increment(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
-    SubListObject *self = (SubListObject *)op;
+    SubListObject *self = (SubListObject *) op;
     self->state++;
     return PyLong_FromLong(self->state);
 }
@@ -23,8 +23,8 @@ static PyMethodDef SubList_methods[] = {
 static int
 SubList_init(PyObject *op, PyObject *args, PyObject *kwds)
 {
-    SubListObject *self = (SubListObject *)op;
-    if (PyList_Type.tp_init((PyObject *) self, args, kwds) < 0)
+    SubListObject *self = (SubListObject *) op;
+    if (PyList_Type.tp_init(op, args, kwds) < 0)
         return -1;
     self->state = 0;
     return 0;

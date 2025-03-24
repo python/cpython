@@ -12,7 +12,7 @@ typedef struct {
 static void
 Custom_dealloc(PyObject *op)
 {
-    CustomObject *self = (CustomObject *)op;
+    CustomObject *self = (CustomObject *) op;
     Py_XDECREF(self->first);
     Py_XDECREF(self->last);
     Py_TYPE(self)->tp_free(self);
@@ -42,7 +42,7 @@ Custom_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 Custom_init(PyObject *op, PyObject *args, PyObject *kwds)
 {
-    CustomObject *self = (CustomObject *)op;
+    CustomObject *self = (CustomObject *) op;
     static char *kwlist[] = {"first", "last", "number", NULL};
     PyObject *first = NULL, *last = NULL;
 
@@ -69,14 +69,14 @@ static PyMemberDef Custom_members[] = {
 static PyObject *
 Custom_getfirst(PyObject *op, void *closure)
 {
-    CustomObject *self = (CustomObject *)op;
+    CustomObject *self = (CustomObject *) op;
     return Py_NewRef(self->first);
 }
 
 static int
 Custom_setfirst(PyObject *op, PyObject *value, void *closure)
 {
-    CustomObject *self = (CustomObject *)op;
+    CustomObject *self = (CustomObject *) op;
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete the first attribute");
         return -1;
@@ -93,14 +93,14 @@ Custom_setfirst(PyObject *op, PyObject *value, void *closure)
 static PyObject *
 Custom_getlast(PyObject *op, void *closure)
 {
-    CustomObject *self = (CustomObject *)op;
+    CustomObject *self = (CustomObject *) op;
     return Py_NewRef(self->last);
 }
 
 static int
 Custom_setlast(PyObject *op, PyObject *value, void *closure)
 {
-    CustomObject *self = (CustomObject *)op;
+    CustomObject *self = (CustomObject *) op;
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError, "Cannot delete the last attribute");
         return -1;
@@ -125,7 +125,7 @@ static PyGetSetDef Custom_getsetters[] = {
 static PyObject *
 Custom_name(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
-    CustomObject *self = (CustomObject *)op;
+    CustomObject *self = (CustomObject *) op;
     return PyUnicode_FromFormat("%S %S", self->first, self->last);
 }
 
