@@ -410,9 +410,11 @@ typedef struct {
 #define _StructParamObject_CAST(op) ((StructParamObject *)(op))
 
 static int
-StructParam_traverse(PyObject *self, visitproc visit, void *arg)
+StructParam_traverse(PyObject *myself, visitproc visit, void *arg)
 {
+    StructParamObject *self = _StructParamObject_CAST(myself);
     Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->keep);
     return 0;
 }
 
@@ -2378,6 +2380,7 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         }
         StgInfo *sw_info;
         if (PyStgInfo_FromType(st, swapped, &sw_info) < 0) {
+            Py_DECREF(swapped);
             return -1;
         }
         assert(sw_info);
@@ -2674,6 +2677,7 @@ make_funcptrtype_dict(ctypes_state *st, PyObject *attrdict, StgInfo *stginfo)
     if (ob) {
         StgInfo *info;
         if (PyStgInfo_FromType(st, ob, &info) < 0) {
+            Py_DECREF(ob);
             return -1;
         }
         if (ob != Py_None && !info && !PyCallable_Check(ob)) {
@@ -5650,6 +5654,10 @@ Pointer_subscript(PyObject *myself, PyObject *item)
 
         for (cur = start, i = 0; i < len; cur += step, i++) {
             PyObject *v = Pointer_item(myself, cur);
+            if (!v) {
+                Py_DECREF(np);
+                return NULL;
+            }
             PyList_SET_ITEM(np, i, v);
         }
         return np;
