@@ -634,6 +634,9 @@ class Executor(object):
                     # yield the awaited result
                     yield fs.pop()._result
             finally:
+                if fs:
+                    # break a reference cycle with fs[-1]._exception
+                    fs.pop().cancel()
                 for future in fs:
                     future.cancel()
         return result_iterator()
