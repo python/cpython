@@ -107,8 +107,6 @@ module _ctypes
 #include "../_complex.h"          // complex
 #endif
 
-#include "clinic/callproc.c.h"
-
 #define CTYPES_CAPSULE_NAME_PYMEM "_ctypes pymem"
 
 
@@ -1971,103 +1969,6 @@ error:
     return NULL;
 }
 
-/*[clinic input]
-_ctypes.POINTER as create_pointer_type
-
-    type as cls: object
-        A ctypes type.
-    /
-
-Create and return a new ctypes pointer type.
-
-Pointer types are cached and reused internally,
-so calling this function repeatedly is cheap.
-[clinic start generated code]*/
-
-static PyObject *
-create_pointer_type(PyObject *module, PyObject *cls)
-/*[clinic end generated code: output=98c3547ab6f4f40b input=3b81cff5ff9b9d5b]*/
-{
-    PyObject *result;
-    PyTypeObject *typ;
-
-    assert(module);
-    ctypes_state *st = get_module_state(module);
-    StgInfo *info = NULL;
-    if (PyType_Check(cls)) {
-        if (PyStgInfo_FromType(st, cls, &info) < 0) {
-            return NULL;
-        }
-        if (info && info->pointer_type) {
-            return Py_NewRef(info->pointer_type);
-        }
-    }
-
-    if (PyDict_GetItemRef(st->_ctypes_ptrtype_cache, cls, &result) != 0) {
-        // found or error
-        return result;
-    }
-
-    // not found
-    if (PyUnicode_CheckExact(cls)) {
-        PyObject *name = PyUnicode_FromFormat("LP_%U", cls);
-        result = PyObject_CallFunction((PyObject *)Py_TYPE(st->PyCPointer_Type),
-                                       "N(O){}",
-                                       name,
-                                       st->PyCPointer_Type);
-        if (result == NULL)
-            return result;
-    } else if (PyType_Check(cls)) {
-        typ = (PyTypeObject *)cls;
-        PyObject *name = PyUnicode_FromFormat("LP_%s", typ->tp_name);
-        result = PyObject_CallFunction((PyObject *)Py_TYPE(st->PyCPointer_Type),
-                                       "N(O){sO}",
-                                       name,
-                                       st->PyCPointer_Type,
-                                       "_type_", cls);
-        if (result == NULL)
-            return result;
-    } else {
-        PyErr_SetString(PyExc_TypeError, "must be a ctypes type");
-        return NULL;
-    }
-
-    if (info) {
-        // info->pointer_type = Py_NewRef(result);
-    }
-
-    return result;
-}
-
-/*[clinic input]
-_ctypes.pointer as create_pointer_inst
-
-    obj as arg: object
-    /
-
-Create a new pointer instance, pointing to 'obj'.
-
-The returned object is of the type POINTER(type(obj)). Note that if you
-just want to pass a pointer to an object to a foreign function call, you
-should use byref(obj) which is much faster.
-[clinic start generated code]*/
-
-static PyObject *
-create_pointer_inst(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=3b543bc9f0de2180 input=713685fdb4d9bc27]*/
-{
-    PyObject *result;
-    PyObject *typ;
-
-    typ = create_pointer_type(module, (PyObject *)Py_TYPE(arg));
-    if (typ == NULL)
-        return NULL;
-
-    result = PyObject_CallOneArg(typ, arg);
-    Py_DECREF(typ);
-    return result;
-}
-
 static PyObject *
 buffer_info(PyObject *self, PyObject *arg)
 {
@@ -2102,8 +2003,6 @@ buffer_info(PyObject *self, PyObject *arg)
 PyMethodDef _ctypes_module_methods[] = {
     {"get_errno", get_errno, METH_NOARGS},
     {"set_errno", set_errno, METH_VARARGS},
-    CREATE_POINTER_TYPE_METHODDEF
-    CREATE_POINTER_INST_METHODDEF
     {"_unpickle", unpickle, METH_VARARGS },
     {"buffer_info", buffer_info, METH_O, "Return buffer interface information"},
     {"resize", resize, METH_VARARGS, "Resize the memory buffer of a ctypes instance"},
