@@ -408,7 +408,9 @@ anextawaitable_proxy(anextawaitableobject *obj, char *meth, PyObject *arg) {
     if (awaitable == NULL) {
         return NULL;
     }
-    PyObject *ret = PyObject_CallMethod(awaitable, meth, "O", arg);
+    PyObject *ret = arg == NULL
+        ? PyObject_CallMethod(awaitable, meth, NULL)
+        : PyObject_CallMethod(awaitable, meth, "O", arg);
     Py_DECREF(awaitable);
     if (ret != NULL) {
         return ret;
@@ -439,8 +441,8 @@ anextawaitable_throw(anextawaitableobject *obj, PyObject *arg) {
 
 
 static PyObject *
-anextawaitable_close(anextawaitableobject *obj, PyObject *arg) {
-    return anextawaitable_proxy(obj, "close", arg);
+anextawaitable_close(anextawaitableobject *obj, PyObject *Py_UNUSED(dummy)) {
+    return anextawaitable_proxy(obj, "close", NULL);
 }
 
 
@@ -466,7 +468,7 @@ PyDoc_STRVAR(close_doc,
 static PyMethodDef anextawaitable_methods[] = {
     {"send",(PyCFunction)anextawaitable_send, METH_O, send_doc},
     {"throw",(PyCFunction)anextawaitable_throw, METH_VARARGS, throw_doc},
-    {"close",(PyCFunction)anextawaitable_close, METH_VARARGS, close_doc},
+    {"close",(PyCFunction)anextawaitable_close, METH_NOARGS, close_doc},
     {NULL, NULL}        /* Sentinel */
 };
 
