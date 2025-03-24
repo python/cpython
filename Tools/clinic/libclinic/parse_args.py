@@ -831,9 +831,9 @@ class ParseArgsCodeGen:
     def process_methoddef(self, clang: CLanguage) -> None:
         methoddef_cast_end = ""
         if self.flags in ('METH_NOARGS', 'METH_O', 'METH_VARARGS'):
-            methoddef_cast = "(PyCFunction)"
+            methoddef_cast = ""  # no need for a PyCFunction cast
         elif self.func.kind is GETTER:
-            methoddef_cast = "" # This should end up unused
+            methoddef_cast = ""  # this should end up unused
         elif self.limited_capi:
             methoddef_cast = "(PyCFunction)(void(*)(void))"
         else:
