@@ -116,7 +116,7 @@ static inline void _Py_NO_SANITIZE_UNDEFINED
 CALL_XML_HANDLER_SETTER(const struct HandlerInfo *handler_info,
                         XML_Parser xml_parser, xmlhandler xml_handler)
 {
-    xmlhandlersetter setter = (xmlhandlersetter)(handler_info->setter);
+    xmlhandlersetter setter = (xmlhandlersetter)handler_info->setter;
     setter(xml_parser, xml_handler);
 }
 
@@ -592,7 +592,7 @@ my_ElementDeclHandler(void *userData,
 
         if (flush_character_buffer(self) < 0)
             goto finally;
-        modelobj = conv_content_model(model, (conv_string_to_unicode_void));
+        modelobj = conv_content_model(model, conv_string_to_unicode_void);
         if (modelobj == NULL) {
             flag_error(self);
             goto finally;
