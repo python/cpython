@@ -15,12 +15,10 @@ from glob import _PathGlobber
 from pathlib._os import magic_open, ensure_distinct_paths, ensure_different_files, copyfileobj
 from pathlib import PurePath, Path
 from typing import (
-    Any, BinaryIO, Callable, Generator, Iterator, Literal, Optional, Protocol, Sequence, TypeVar,
+    Any, BinaryIO, Callable, Generator, Iterator, Literal, Optional, Protocol, Self, Sequence, TypeVar,
     runtime_checkable,
 )
 
-_JP = TypeVar("_JP", bound="_JoinablePath")
-_RP = TypeVar("_RP", bound="_ReadablePath")
 _WP = TypeVar("_WP", bound="_WritablePath")
 
 
@@ -84,7 +82,7 @@ class _JoinablePath(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def with_segments(self: _JP, *pathsegments: str) -> _JP:
+    def with_segments(self, *pathsegments: str) -> Self:
         """Construct a new path object from any number of path-like objects.
         Subclasses may override this method to customize how new path objects
         are created from methods like `iterdir()`.
@@ -136,7 +134,7 @@ class _JoinablePath(ABC):
         """The final path component, minus its last suffix."""
         return self.parser.splitext(self.name)[0]
 
-    def with_name(self: _JP, name: str) -> _JP:
+    def with_name(self, name: str) -> Self:
         """Return a new path with the file name changed."""
         split = self.parser.split
         if split(name)[0]:
@@ -145,7 +143,7 @@ class _JoinablePath(ABC):
         path = path.removesuffix(split(path)[1]) + name
         return self.with_segments(path)
 
-    def with_stem(self: _JP, stem: str) -> _JP:
+    def with_stem(self, stem: str) -> Self:
         """Return a new path with the stem changed."""
         suffix = self.suffix
         if not suffix:
@@ -156,7 +154,7 @@ class _JoinablePath(ABC):
         else:
             return self.with_name(stem + suffix)
 
-    def with_suffix(self: _JP, suffix: str) -> _JP:
+    def with_suffix(self, suffix: str) -> Self:
         """Return a new path with the file suffix changed.  If the path
         has no suffix, add given suffix.  If the given suffix is an empty
         string, remove the suffix from the path.
@@ -179,7 +177,7 @@ class _JoinablePath(ABC):
             parts.append(anchor)
         return tuple(reversed(parts))
 
-    def joinpath(self: _JP, *pathsegments: str) -> _JP:
+    def joinpath(self, *pathsegments: str) -> Self:
         """Combine this path with one or several arguments, and return a
         new path representing either a subpath (if all arguments are relative
         paths) or a totally different path (if one of the arguments is
@@ -187,20 +185,20 @@ class _JoinablePath(ABC):
         """
         return self.with_segments(str(self), *pathsegments)
 
-    def __truediv__(self: _JP, key: str) -> _JP:
+    def __truediv__(self, key: str) -> Self:
         try:
             return self.with_segments(str(self), key)
         except TypeError:
             return NotImplemented
 
-    def __rtruediv__(self: _JP, key: str) -> _JP:
+    def __rtruediv__(self, key: str) -> Self:
         try:
             return self.with_segments(key, str(self))
         except TypeError:
             return NotImplemented
 
     @property
-    def parent(self: _JP) -> _JP:
+    def parent(self) -> Self:
         """The logical parent of the path."""
         path = str(self)
         parent = self.parser.split(path)[0]
@@ -209,7 +207,7 @@ class _JoinablePath(ABC):
         return self
 
     @property
-    def parents(self: _JP) -> Sequence[_JP]:
+    def parents(self) -> Sequence[Self]:
         """A sequence of this path's logical parents."""
         split = self.parser.split
         path = str(self)
@@ -221,7 +219,7 @@ class _JoinablePath(ABC):
             parent = split(path)[0]
         return tuple(parents)
 
-    def full_match(self: _JP, pattern: str) -> bool:
+    def full_match(self, pattern: str) -> bool:
         """
         Return True if this path matches the given glob-style pattern. The
         pattern is matched against the entire path.
@@ -278,7 +276,7 @@ class _ReadablePath(_JoinablePath):
             return f.read()
 
     @abstractmethod
-    def iterdir(self: _RP) -> Iterator[_RP]:
+    def iterdir(self) -> Iterator[Self]:
         """Yield path objects of the directory contents.
 
         The children are yielded in arbitrary order, and the
@@ -286,7 +284,7 @@ class _ReadablePath(_JoinablePath):
         """
         raise NotImplementedError
 
-    def glob(self: _RP, pattern: str, *, recurse_symlinks: Literal[True] = True) -> Iterator[_RP]:
+    def glob(self, pattern: str, *, recurse_symlinks: Literal[True] = True) -> Iterator[Self]:
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
@@ -303,11 +301,11 @@ class _ReadablePath(_JoinablePath):
         return select(self.joinpath(''))
 
     def walk(
-        self: _RP,
+        self,
         top_down: bool = True,
         on_error: Optional[Callable[[Exception], None]] = None,
         follow_symlinks: bool = False,
-    ) -> Generator[tuple[_RP, list[str], list[str]], None, None]:
+    ) -> Generator[tuple[Self, list[str], list[str]], None, None]:
         """Walk the directory tree from this directory, similar to os.walk()."""
         paths = [self]
         while paths:
@@ -339,7 +337,7 @@ class _ReadablePath(_JoinablePath):
                 paths += [path.joinpath(d) for d in reversed(dirnames)]
 
     @abstractmethod
-    def readlink(self: _RP) -> _RP:
+    def readlink(self) -> Self:
         """
         Return the path to which the symbolic link points.
         """
