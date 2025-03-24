@@ -2,6 +2,7 @@
 #include "opcode.h"
 
 #include "pycore_code.h"          // _PyCodeConstructor
+#include "pycore_function.h"      // _PyFunction_ClearCodeByVersion()
 #include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "pycore_index_pool.h"    // _PyIndexPool_Fini()
 #include "pycore_initconfig.h"    // _PyStatus_OK()

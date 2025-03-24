@@ -1,13 +1,11 @@
-
 #define _PY_INTERPRETER
 
 #include "Python.h"
-#include "frameobject.h"
-#include "pycore_code.h"          // stats
-#include "pycore_frame.h"
-#include "pycore_genobject.h"
-#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "opcode.h"
+#include "pycore_frame.h"         // _PyFrame_New_NoTrack()
+#include "pycore_interpframe.h"   // _PyFrame_GetCode()
+#include "pycore_genobject.h"     // _PyGen_GetGeneratorFromFrame()
+#include "pycore_stackref.h"      // _Py_VISIT_STACKREF()
+
 
 int
 _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
@@ -141,7 +139,9 @@ PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame)
     return _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
 }
 
-int
+// NOTE: We allow racy accesses to the instruction pointer from other threads
+// for sys._current_frames() and similar APIs.
+int _Py_NO_SANITIZE_THREAD
 PyUnstable_InterpreterFrame_GetLine(_PyInterpreterFrame *frame)
 {
     int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
