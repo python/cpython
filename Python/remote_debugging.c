@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#include "pyconfig.h"
 
 #ifdef __linux__
 #    include <elf.h>
@@ -35,6 +36,13 @@
 #  endif
 #endif
 
+#ifdef MS_WINDOWS
+    // Windows includes and definitions
+    #include <windows.h>
+    #include <psapi.h>
+    #include <tlhelp32.h>
+#endif
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stddef.h>
@@ -42,10 +50,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/param.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
+#ifndef MS_WINDOWS
+    #include <sys/param.h>
+    #include <sys/stat.h>
+    #include <sys/types.h>
+    #include <unistd.h>
+#endif
 
 #ifndef Py_BUILD_CORE_BUILTIN
 #    define Py_BUILD_CORE_MODULE 1
@@ -57,6 +67,42 @@
 #ifndef HAVE_PROCESS_VM_READV
 #    define HAVE_PROCESS_VM_READV 0
 #endif
+
+// Define a platform-independent process handle structure
+typedef struct {
+    pid_t pid;
+#ifdef MS_WINDOWS
+    HANDLE hProcess;
+#endif
+} proc_handle_t;
+
+// Initialize the process handle
+static int
+init_proc_handle(proc_handle_t *handle, pid_t pid) {
+    handle->pid = pid;
+#ifdef MS_WINDOWS
+    handle->hProcess = OpenProcess(
+        PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION | PROCESS_QUERY_INFORMATION,
+        FALSE, pid);
+    if (handle->hProcess == NULL) {
+        PyErr_SetFromWindowsErr(0);
+        return -1;
+    }
+#endif
+    return 0;
+}
+
+// Clean up the process handle
+static void
+cleanup_proc_handle(proc_handle_t *handle) {
+#ifdef MS_WINDOWS
+    if (handle->hProcess != NULL) {
+        CloseHandle(handle->hProcess);
+        handle->hProcess = NULL;
+    }
+#endif
+    handle->pid = 0;
+}
 
 /*[clinic input]
 module _pdb
@@ -192,14 +238,14 @@ pid_to_task(pid_t pid)
 }
 
 static uintptr_t
-search_map_for_section(pid_t pid, const char* secname, const char* substr) {
+search_map_for_section(proc_handle_t *handle, const char* secname, const char* substr) {
     mach_vm_address_t address = 0;
     mach_vm_size_t size = 0;
     mach_msg_type_number_t count = sizeof(vm_region_basic_info_data_64_t);
     vm_region_basic_info_data_64_t region_info;
     mach_port_t object_name;
 
-    mach_port_t proc_ref = pid_to_task(pid);
+    mach_port_t proc_ref = pid_to_task(handle->pid);
     if (proc_ref == 0) {
         PyErr_SetString(PyExc_PermissionError, "Cannot get task for PID");
         return 0;
@@ -223,7 +269,7 @@ search_map_for_section(pid_t pid, const char* secname, const char* substr) {
         }
 
         int path_len = proc_regionfilename(
-            pid, address, map_filename, MAXPATHLEN);
+            handle->pid, address, map_filename, MAXPATHLEN);
         if (path_len == 0) {
             address += size;
             continue;
@@ -250,14 +296,14 @@ search_map_for_section(pid_t pid, const char* secname, const char* substr) {
     return 0;
 }
 
-#endif
+#endif // (__APPLE__ && TARGET_OS_OSX)
 
 #ifdef __linux__
 static uintptr_t
-find_map_start_address(pid_t pid, char* result_filename, const char* map)
+find_map_start_address(proc_handle_t *handle, char* result_filename, const char* map)
 {
     char maps_file_path[64];
-    sprintf(maps_file_path, "/proc/%d/maps", pid);
+    sprintf(maps_file_path, "/proc/%d/maps", handle->pid);
 
     FILE* maps_file = fopen(maps_file_path, "r");
     if (maps_file == NULL) {
@@ -298,10 +344,10 @@ find_map_start_address(pid_t pid, char* result_filename, const char* map)
 }
 
 static uintptr_t
-search_map_for_section(pid_t pid, const char* secname, const char* map)
+search_map_for_section(proc_handle_t *handle, const char* secname, const char* map)
 {
     char elf_file[256];
-    uintptr_t start_address = find_map_start_address(pid, elf_file, map);
+    uintptr_t start_address = find_map_start_address(handle, elf_file, map);
 
     if (start_address == 0) {
         return 0;
@@ -363,7 +409,7 @@ search_map_for_section(pid_t pid, const char* secname, const char* map)
     }
 
 exit:
-    if (close(fd) != 0) {
+    if (fd >= 0 && close(fd) != 0) {
         PyErr_SetFromErrno(PyExc_OSError);
     }
     if (file_memory != NULL) {
@@ -372,49 +418,67 @@ exit:
     return result;
 }
 
-#endif
+#endif // __linux__
+
+#ifdef MS_WINDOWS
 
 static uintptr_t
-get_py_runtime(pid_t pid)
+static uintptr_t
+search_map_for_section(proc_handle_t *handle, const char* secname, const char* substr) {
+    //TODO: Implement this function
+    PyErr_SetString(PyExc_RuntimeError, "search_map_for_section not implemented on Windows");
+    return 0;
+}
+
+#endif // MS_WINDOWS
+
+// Get the PyRuntime section address for any platform
+static uintptr_t
+get_py_runtime(proc_handle_t *handle)
 {
-    uintptr_t address = search_map_for_section(pid, "PyRuntime", "libpython");
+    // Try libpython first, then fall back to python
+    uintptr_t address = search_map_for_section(handle, "PyRuntime", "libpython");
     if (address == 0) {
         // TODO: Differentiate between not found and error
         PyErr_Clear();
-        address = search_map_for_section(pid, "PyRuntime", "python");
+        address = search_map_for_section(handle, "PyRuntime", "python");
     }
     return address;
 }
 
-static ssize_t
-read_memory(pid_t pid, uintptr_t remote_address, size_t len, void* dst)
+// Platform-independent memory read function
+static Py_ssize_t
+read_memory(proc_handle_t *handle, uint64_t remote_address, size_t len, void* dst)
 {
-    ssize_t total_bytes = 0;
-#if defined(__linux__) && HAVE_PROCESS_VM_READV
+#ifdef MS_WINDOWS
+    // TODO: Implement this function
+    PyErr_SetString(PyExc_RuntimeError, "Memory reading is not supported on Windows");
+    return -1;
+#elif defined(__linux__) && HAVE_PROCESS_VM_READV
     struct iovec local[1];
     struct iovec remote[1];
-    ssize_t result = 0;
-    ssize_t read = 0;
+    Py_ssize_t result = 0;
+    Py_ssize_t read_bytes = 0;
 
     do {
-        local[0].iov_base = dst + result;
+        local[0].iov_base = (char*)dst + result;
         local[0].iov_len = len - result;
         remote[0].iov_base = (void*)(remote_address + result);
         remote[0].iov_len = len - result;
 
-        read = process_vm_readv(pid, local, 1, remote, 1, 0);
-        if (read < 0) {
+        read_bytes = process_vm_readv(handle->pid, local, 1, remote, 1, 0);
+        if (read_bytes < 0) {
             PyErr_SetFromErrno(PyExc_OSError);
             return -1;
         }
 
-        result += read;
-    } while ((size_t)read != local[0].iov_len);
-    total_bytes = result;
+        result += read_bytes;
+    } while ((size_t)read_bytes != local[0].iov_len);
+    return result;
 #elif defined(__APPLE__) && TARGET_OS_OSX
-    ssize_t result = -1;
+    Py_ssize_t result = -1;
     kern_return_t kr = mach_vm_read_overwrite(
-            pid_to_task(pid),
+            pid_to_task(handle->pid),
             (mach_vm_address_t)remote_address,
             len,
             (mach_vm_address_t)dst,
@@ -433,25 +497,28 @@ read_memory(pid_t pid, uintptr_t remote_address, size_t len, void* dst)
         }
         return -1;
     }
-    total_bytes = len;
+    return len;
 #else
     PyErr_SetString(
         PyExc_RuntimeError,
         "Memory reading is not supported on this platform");
     return -1;
 #endif
-    return total_bytes;
 }
 
-ssize_t
-write_memory(pid_t pid, uintptr_t remote_address, size_t len, const void* src)
+// Platform-independent memory write function
+static Py_ssize_t
+write_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const void* src)
 {
-    ssize_t total_bytes_written = 0;
-#if defined(__linux__) && HAVE_PROCESS_VM_READV
+#ifdef MS_WINDOWS
+    // TODO: Implement this function
+    PyErr_SetString(PyExc_RuntimeError, "Memory writing is not supported on Windows");
+    return -1;
+#elif defined(__linux__) && HAVE_PROCESS_VM_READV
     struct iovec local[1];
     struct iovec remote[1];
-    ssize_t result = 0;
-    ssize_t written = 0;
+    Py_ssize_t result = 0;
+    Py_ssize_t written = 0;
 
     do {
         local[0].iov_base = (void*)((char*)src + result);
@@ -459,7 +526,7 @@ write_memory(pid_t pid, uintptr_t remote_address, size_t len, const void* src)
         remote[0].iov_base = (void*)((char*)remote_address + result);
         remote[0].iov_len = len - result;
 
-        written = process_vm_writev(pid, local, 1, remote, 1, 0);
+        written = process_vm_writev(handle->pid, local, 1, remote, 1, 0);
         if (written < 0) {
             PyErr_SetFromErrno(PyExc_OSError);
             return -1;
@@ -467,10 +534,10 @@ write_memory(pid_t pid, uintptr_t remote_address, size_t len, const void* src)
 
         result += written;
     } while ((size_t)written != local[0].iov_len);
-    total_bytes_written = result;
+    return result;
 #elif defined(__APPLE__) && TARGET_OS_OSX
     kern_return_t kr = mach_vm_write(
-            pid_to_task(pid),
+            pid_to_task(handle->pid),
             (mach_vm_address_t)remote_address,
             (vm_offset_t)src,
             (mach_msg_type_number_t)len);
@@ -488,31 +555,30 @@ write_memory(pid_t pid, uintptr_t remote_address, size_t len, const void* src)
         }
         return -1;
     }
-    total_bytes_written = len;
+    return len;
 #else
     PyErr_Format(PyExc_RuntimeError, "Writing memory is not supported on this platform");
     return -1;
 #endif
-    return total_bytes_written;
 }
 
 static int
 read_offsets(
-    int pid,
+    proc_handle_t *handle,
     uintptr_t *runtime_start_address,
     _Py_DebugOffsets* debug_offsets
 ) {
-    *runtime_start_address = get_py_runtime(pid);
+    *runtime_start_address = get_py_runtime(handle);
     if (!*runtime_start_address) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(
-                PyExc_RuntimeError, "Failed to get .PyRuntime address");
+                PyExc_RuntimeError, "Failed to get PyRuntime address");
         }
         return -1;
     }
     size_t size = sizeof(struct _Py_DebugOffsets);
-    ssize_t bytes = read_memory(
-        pid, *runtime_start_address, size, debug_offsets);
+    Py_ssize_t bytes = read_memory(
+        handle, *runtime_start_address, size, debug_offsets);
     if (bytes == -1) {
         return -1;
     }
@@ -522,113 +588,143 @@ read_offsets(
 int
 _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
 {
-#if (!defined(__linux__) && !defined(__APPLE__)) || (defined(__linux__) && !HAVE_PROCESS_VM_READV)
-    PyErr_SetString(PyExc_RuntimeError, "get_stack_trace is not supported on this platform");
+#if (!defined(__linux__) && !defined(__APPLE__) && !defined(MS_WINDOWS)) || (defined(__linux__) && !HAVE_PROCESS_VM_READV)
+    PyErr_SetString(PyExc_RuntimeError, "Remote debugging is not supported on this platform");
     return -1;
 #endif
+
+    proc_handle_t handle;
+    if (init_proc_handle(&handle, pid) < 0) {
+        return -1;
+    }
+
+#ifdef MS_WINDOWS
+    if (debugger_script_path != NULL && strlen(debugger_script_path) > MAX_PATH) {
+#else
     if (debugger_script_path != NULL && strlen(debugger_script_path) > PATH_MAX) {
+#endif
         PyErr_SetString(PyExc_ValueError, "Debugger script path is too long");
+        cleanup_proc_handle(&handle);
         return -1;
     }
 
-    uintptr_t runtime_start_address = get_py_runtime(pid);
-    if (runtime_start_address == 0) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_RuntimeError, "Failed to get .PyRuntime address");
-        }
-        return -1;
-    }
+    uintptr_t runtime_start_address;
     struct _Py_DebugOffsets local_debug_offsets;
-
-    if (read_offsets(pid, &runtime_start_address, &local_debug_offsets)) {
+    
+    if (read_offsets(&handle, &runtime_start_address, &local_debug_offsets)) {
+        cleanup_proc_handle(&handle);
         return -1;
     }
 
-    off_t interpreter_state_list_head = local_debug_offsets.runtime_state.interpreters_head;
+    uintptr_t interpreter_state_list_head = local_debug_offsets.runtime_state.interpreters_head;
 
     uintptr_t address_of_interpreter_state;
-    int bytes = read_memory(
-            pid,
+    Py_ssize_t bytes = read_memory(
+            &handle,
             runtime_start_address + interpreter_state_list_head,
             sizeof(void*),
             &address_of_interpreter_state);
     if (bytes == -1) {
+        cleanup_proc_handle(&handle);
         return -1;
     }
 
     if (address_of_interpreter_state == 0) {
         PyErr_SetString(PyExc_RuntimeError, "No interpreter state found");
+        cleanup_proc_handle(&handle);
         return -1;
     }
 
     int is_remote_debugging_enabled = 0;
     bytes = read_memory(
-            pid,
+            &handle,
             address_of_interpreter_state + local_debug_offsets.debugger_support.remote_debugging_enabled,
             sizeof(int),
             &is_remote_debugging_enabled);
     if (bytes == -1) {
+        cleanup_proc_handle(&handle);
         return -1;
     }
+    
     if (is_remote_debugging_enabled == 0) {
         PyErr_SetString(PyExc_RuntimeError, "Remote debugging is not enabled in the remote process");
+        cleanup_proc_handle(&handle);
         return -1;
     }
 
     uintptr_t address_of_thread;
-    bytes = read_memory(
-            pid,
-            address_of_interpreter_state + local_debug_offsets.interpreter_state.threads_head,
-            sizeof(void*),
-            &address_of_thread);
-    if (bytes == -1) {
-        return -1;
-    }
-
     pid_t this_tid = 0;
+    
     if (tid != 0) {
+        bytes = read_memory(
+                &handle,
+                address_of_interpreter_state + local_debug_offsets.interpreter_state.threads_head,
+                sizeof(void*),
+                &address_of_thread);
+        if (bytes == -1) {
+            cleanup_proc_handle(&handle);
+            return -1;
+        }
         while (address_of_thread != 0) {
             bytes = read_memory(
-                    pid,
+                    &handle,
                     address_of_thread + local_debug_offsets.thread_state.native_thread_id,
                     sizeof(pid_t),
                     &this_tid);
             if (bytes == -1) {
+                cleanup_proc_handle(&handle);
                 return -1;
             }
+            
             if (this_tid == tid) {
                 break;
             }
+            
             bytes = read_memory(
-                    pid,
+                    &handle,
                     address_of_thread + local_debug_offsets.thread_state.next,
                     sizeof(void*),
                     &address_of_thread);
             if (bytes == -1) {
+                cleanup_proc_handle(&handle);
                 return -1;
             }
+        }
+    } else {
+        bytes = read_memory(
+                &handle,
+                address_of_interpreter_state + local_debug_offsets.interpreter_state.threads_main,
+                sizeof(void*),
+                &address_of_thread);
+        if (bytes == -1) {
+            cleanup_proc_handle(&handle);
+            return -1;
         }
     }
 
     if (address_of_thread == 0) {
         PyErr_SetString(PyExc_RuntimeError, "No thread state found");
+        cleanup_proc_handle(&handle);
         return -1;
     }
 
     uintptr_t eval_breaker;
     bytes = read_memory(
-            pid,
+            &handle,
             address_of_thread + local_debug_offsets.debugger_support.eval_breaker,
             sizeof(uintptr_t),
             &eval_breaker);
     if (bytes == -1) {
+        cleanup_proc_handle(&handle);
         return -1;
     }
+    
     eval_breaker |= _PY_EVAL_PLEASE_STOP_BIT;
 
     // Ensure our path is not too long
     if (local_debug_offsets.debugger_support.debugger_script_path_size <= strlen(debugger_script_path)) {
         PyErr_SetString(PyExc_ValueError, "Debugger script path is too long");
+        cleanup_proc_handle(&handle);
         return -1;
     }
 
@@ -638,11 +734,12 @@ _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
                 local_debug_offsets.debugger_support.remote_debugger_support +
                 local_debug_offsets.debugger_support.debugger_script_path);
         bytes = write_memory(
-                pid,
+                &handle,
                 debugger_script_path_addr,
                 strlen(debugger_script_path) + 1,
                 debugger_script_path);
         if (bytes == -1) {
+            cleanup_proc_handle(&handle);
             return -1;
         }
     }
@@ -653,24 +750,35 @@ _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
             local_debug_offsets.debugger_support.remote_debugger_support +
             local_debug_offsets.debugger_support.debugger_pending_call);
     bytes = write_memory(
-            pid,
+            &handle,
             debugger_pending_call_addr,
             sizeof(int),
             &pending_call);
 
     if (bytes == -1) {
+        cleanup_proc_handle(&handle);
         return -1;
     }
 
     bytes = write_memory(
-            pid,
+            &handle,
             address_of_thread + local_debug_offsets.debugger_support.eval_breaker,
             sizeof(uintptr_t),
             &eval_breaker);
 
     if (bytes == -1) {
+        cleanup_proc_handle(&handle);
         return -1;
     }
 
+    bytes = read_memory(
+            &handle,
+            address_of_thread + local_debug_offsets.debugger_support.eval_breaker,
+            sizeof(uintptr_t),
+            &eval_breaker);
+
+    printf("Eval breaker: %p\n", (void*)eval_breaker);
+
+    cleanup_proc_handle(&handle);
     return 0;
 }

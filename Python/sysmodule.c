@@ -2467,15 +2467,19 @@ static PyObject *
 sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
 /*[clinic end generated code: output=7d94c56afe4a52c0 input=5749b0253d5b588c]*/
 {
-    const char *debugger_script_path = PyUnicode_AsUTF8(script);
-    if (debugger_script_path == NULL) {
+#ifdef MS_WINDOWS
+    // Get UTF-16 (wide char) version of the path for Windows
+    wchar_t *debugger_script_path_w = PyUnicode_AsWideCharString(script, NULL);
+    if (debugger_script_path_w == NULL) {
         return NULL;
     }
 
-#ifdef MS_WINDOWS
-    DWORD attr = GetFileAttributesA(debugger_script_path);
+    // Check file attributes using wide character version (W) instead of ANSI (A)
+    DWORD attr = GetFileAttributesW(debugger_script_path_w);
     if (attr == INVALID_FILE_ATTRIBUTES) {
         DWORD err = GetLastError();
+        PyMem_Free(debugger_script_path_w);
+        
         if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
             PyErr_SetString(PyExc_FileNotFoundError, "Script file does not exist");
         }
@@ -2487,7 +2491,21 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
         }
         return NULL;
     }
+
+    // Get UTF-8 version for the rest of the code
+    const char *debugger_script_path = PyUnicode_AsUTF8(script);
+    if (debugger_script_path == NULL) {
+        PyMem_Free(debugger_script_path_w);
+        return NULL;
+    }
+    
+    PyMem_Free(debugger_script_path_w);
 #else
+    const char *debugger_script_path = PyUnicode_AsUTF8(script);
+    if (debugger_script_path == NULL) {
+        return NULL;
+    }
+    
     if (access(debugger_script_path, F_OK | R_OK) != 0) {
         switch (errno) {
             case ENOENT:
@@ -2502,7 +2520,6 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
         return NULL;
     }
 #endif
-
     if (_PySysRemoteDebug_SendExec(pid, 0, debugger_script_path) < 0) {
         return NULL;
     }

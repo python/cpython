@@ -73,6 +73,7 @@ typedef struct _Py_DebugOffsets {
         uint64_t id;
         uint64_t next;
         uint64_t threads_head;
+        uint64_t threads_main;
         uint64_t gc;
         uint64_t imports_modules;
         uint64_t sysdict;
@@ -232,6 +233,7 @@ typedef struct _Py_DebugOffsets {
         .id = offsetof(PyInterpreterState, id), \
         .next = offsetof(PyInterpreterState, next), \
         .threads_head = offsetof(PyInterpreterState, threads.head), \
+        .threads_main = offsetof(PyInterpreterState, threads.main), \
         .gc = offsetof(PyInterpreterState, gc), \
         .imports_modules = offsetof(PyInterpreterState, imports.modules), \
         .sysdict = offsetof(PyInterpreterState, sysdict), \
