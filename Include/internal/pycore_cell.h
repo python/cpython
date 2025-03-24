@@ -3,6 +3,7 @@
 
 #include "pycore_critical_section.h"
 #include "pycore_object.h"
+#include "pycore_stackref.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,7 +39,11 @@ PyCell_GetRef(PyCellObject *cell)
 {
     PyObject *res;
     Py_BEGIN_CRITICAL_SECTION(cell);
+#ifdef Py_GIL_DISABLED
+    res = _Py_XNewRefWithLock(cell->ob_ref);
+#else
     res = Py_XNewRef(cell->ob_ref);
+#endif
     Py_END_CRITICAL_SECTION();
     return res;
 }
