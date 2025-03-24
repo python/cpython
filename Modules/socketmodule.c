@@ -2045,7 +2045,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             memset(addr, 0, sizeof(struct sockaddr_l2));
             _BT_L2_MEMB(addr, family) = AF_BLUETOOTH;
             int psm;
-            int cid = _BT_L2_MEMB(addr, cid);
+            int cid = 0;
             unsigned char bdaddr_type = BDADDR_BREDR;
             if (!PyArg_ParseTuple(args, "si|iB", &straddr,
                                   &psm,
