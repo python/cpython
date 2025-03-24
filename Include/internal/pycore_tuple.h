@@ -33,10 +33,10 @@ typedef struct {
     PyTupleObject *it_seq; /* Set to NULL when iterator is exhausted */
 } _PyTupleIterObject;
 
-#define _PyTuple_RESET_HASH_CACHE(op) \
-    do { \
-        assert(op != NULL); \
-        _PyTuple_CAST(op)->ob_hash = -1; \
+#define _PyTuple_RESET_HASH_CACHE(op)       \
+    do {                                    \
+        assert(op != NULL);                 \
+        _PyTuple_CAST(op)->ob_hash = -1;    \
     } while (0)
 
 /*
