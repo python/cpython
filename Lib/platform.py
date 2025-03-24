@@ -1479,9 +1479,9 @@ def _parse_args(args: list[str] | None):
         "--nonaliased",
         dest="aliased",
         action="store_false",
-        help=("disable system/ OS name aliasing. If aliasing is enabled, some "
-            "platforms will report system names which differ from their common "
-            "names, e.g. SunOS will be reported as Solaris"),
+        help=("disable system/OS name aliasing. If aliasing is enabled, "
+            "some platforms will report system names which differ from "
+            "their common names, e.g. SunOS will be reported as Solaris"),
     )
 
     return parser.parse_args(args)
