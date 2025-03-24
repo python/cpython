@@ -127,6 +127,8 @@ class ReadTestBase:
         check("**/file*",
               ["fileA", "dirA/linkC/fileB", "dirB/fileB", "dirC/fileC", "dirC/dirD/fileD",
                "linkB/fileB"])
+        with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
+            list(p.glob(''))
 
     def test_walk_top_down(self):
         it = self.root.walk()
