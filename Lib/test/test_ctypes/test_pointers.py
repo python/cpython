@@ -1,5 +1,6 @@
 import array
 import ctypes
+import gc
 import sys
 import unittest
 from ctypes import (CDLL, CFUNCTYPE, Structure,
@@ -10,6 +11,7 @@ from ctypes import (CDLL, CFUNCTYPE, Structure,
                     c_long, c_ulong, c_longlong, c_ulonglong,
                     c_float, c_double)
 from test.support import import_helper
+from weakref import WeakSet
 _ctypes_test = import_helper.import_module("_ctypes_test")
 from ._support import (_CData, PyCPointerType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
                        Py_TPFLAGS_IMMUTABLETYPE)
@@ -245,6 +247,35 @@ class PointersTestCase(unittest.TestCase):
         p1 = POINTER(c_int)
         with self.assertRaisesRegex(TypeError, "must have storage info"):
             p1.set_type(int)
+
+    def test_pointer_types_factory(self):
+        """Shouldn't leak"""
+        def factory():
+            class Cls(Structure):
+                _fields_ = (
+                    ('a', c_int),
+                    ('b', c_float),
+                )
+
+            return Cls
+
+        ws_typ = WeakSet()
+        ws_ptr = WeakSet()
+        for _ in range(10):
+            typ = factory()
+            ptr = POINTER(typ)
+
+            ws_typ.add(typ)
+            ws_ptr.add(ptr)
+
+        typ = None
+        ptr = None
+
+        gc.collect()
+
+        self.assertEqual(len(ws_typ), 0, ws_typ)
+        self.assertEqual(len(ws_ptr), 0, ws_ptr)
+
 
 if __name__ == '__main__':
     unittest.main()
