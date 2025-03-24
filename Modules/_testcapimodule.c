@@ -53,7 +53,7 @@ get_testerror(PyObject *self) {
 }
 
 static void
-simple_object_destructor(PyObject *self)
+simple_object_dealloc(PyObject *self)
 {
     PyObject_Free(self);
 }
@@ -177,7 +177,7 @@ static PyTypeObject _HashInheritanceTester_Type = {
     "hashinheritancetester",            /* Name of this type */
     sizeof(PyObject),           /* Basic object size */
     0,                          /* Item size for varobject */
-    simple_object_destructor,   /* tp_dealloc */
+    simple_object_dealloc,      /* tp_dealloc */
     0,                          /* tp_vectorcall_offset */
     0,                          /* tp_getattr */
     0,                          /* tp_setattr */
