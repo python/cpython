@@ -28,6 +28,8 @@
 
 #define MAX_EXECUTORS_SIZE 256
 
+#define _PyExecutorObject_CAST(op)  ((_PyExecutorObject *)(op))
+
 static bool
 has_space_for_executor(PyCodeObject *code, _Py_CODEUNIT *instr)
 {
@@ -199,11 +201,12 @@ get_oparg(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 ///////////////////// Experimental UOp Optimizer /////////////////////
 
-static int executor_clear(_PyExecutorObject *executor);
+static int executor_clear(PyObject *executor);
 static void unlink_executor(_PyExecutorObject *executor);
 
 static void
-uop_dealloc(_PyExecutorObject *self) {
+uop_dealloc(PyObject *op) {
+    _PyExecutorObject *self = _PyExecutorObject_CAST(op);
     _PyObject_GC_UNTRACK(self);
     assert(self->vm_data.code == NULL);
     unlink_executor(self);
@@ -260,15 +263,17 @@ _PyUOpPrint(const _PyUOpInstruction *uop)
 #endif
 
 static Py_ssize_t
-uop_len(_PyExecutorObject *self)
+uop_len(PyObject *op)
 {
+    _PyExecutorObject *self = _PyExecutorObject_CAST(op);
     return self->code_size;
 }
 
 static PyObject *
-uop_item(_PyExecutorObject *self, Py_ssize_t index)
+uop_item(PyObject *op, Py_ssize_t index)
 {
-    Py_ssize_t len = uop_len(self);
+    _PyExecutorObject *self = _PyExecutorObject_CAST(op);
+    Py_ssize_t len = uop_len(op);
     if (index < 0 || index >= len) {
         PyErr_SetNone(PyExc_IndexError);
         return NULL;
@@ -304,14 +309,14 @@ uop_item(_PyExecutorObject *self, Py_ssize_t index)
 }
 
 PySequenceMethods uop_as_sequence = {
-    .sq_length = (lenfunc)uop_len,
-    .sq_item = (ssizeargfunc)uop_item,
+    .sq_length = uop_len,
+    .sq_item = uop_item,
 };
 
 static int
 executor_traverse(PyObject *o, visitproc visit, void *arg)
 {
-    _PyExecutorObject *executor = (_PyExecutorObject *)o;
+    _PyExecutorObject *executor = _PyExecutorObject_CAST(o);
     for (uint32_t i = 0; i < executor->exit_count; i++) {
         Py_VISIT(executor->exits[i].executor);
     }
@@ -325,7 +330,7 @@ get_jit_code(PyObject *self, PyObject *Py_UNUSED(ignored))
     PyErr_SetString(PyExc_RuntimeError, "JIT support not enabled.");
     return NULL;
 #else
-    _PyExecutorObject *executor = (_PyExecutorObject *)self;
+    _PyExecutorObject *executor = _PyExecutorObject_CAST(self);
     if (executor->jit_code == NULL || executor->jit_size == 0) {
         Py_RETURN_NONE;
     }
@@ -353,11 +358,11 @@ PyTypeObject _PyUOpExecutor_Type = {
     .tp_basicsize = offsetof(_PyExecutorObject, exits),
     .tp_itemsize = 1,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_HAVE_GC,
-    .tp_dealloc = (destructor)uop_dealloc,
+    .tp_dealloc = uop_dealloc,
     .tp_as_sequence = &uop_as_sequence,
     .tp_methods = uop_executor_methods,
     .tp_traverse = executor_traverse,
-    .tp_clear = (inquiry)executor_clear,
+    .tp_clear = executor_clear,
     .tp_is_gc = executor_is_gc,
 };
 
@@ -1422,8 +1427,9 @@ _Py_ExecutorDetach(_PyExecutorObject *executor)
 }
 
 static int
-executor_clear(_PyExecutorObject *executor)
+executor_clear(PyObject *op)
 {
+    _PyExecutorObject *executor = _PyExecutorObject_CAST(op);
     if (!executor->vm_data.valid) {
         return 0;
     }
@@ -1479,7 +1485,7 @@ _Py_Executors_InvalidateDependency(PyInterpreterState *interp, void *obj, int is
         exec = next;
     }
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
-        _PyExecutorObject *exec = (_PyExecutorObject *)PyList_GET_ITEM(invalidate, i);
+        PyObject *exec = PyList_GET_ITEM(invalidate, i);
         executor_clear(exec);
         if (is_invalidation) {
             OPT_STAT_INC(executors_invalidated);
@@ -1506,7 +1512,7 @@ _Py_Executors_InvalidateAll(PyInterpreterState *interp, int is_invalidation)
             _PyCode_Clear_Executors(executor->vm_data.code);
         }
         else {
-            executor_clear(executor);
+            executor_clear((PyObject *)executor);
         }
         if (is_invalidation) {
             OPT_STAT_INC(executors_invalidated);
@@ -1540,7 +1546,7 @@ _Py_Executors_InvalidateCold(PyInterpreterState *interp)
         exec = next;
     }
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(invalidate); i++) {
-        _PyExecutorObject *exec = (_PyExecutorObject *)PyList_GET_ITEM(invalidate, i);
+        PyObject *exec = PyList_GET_ITEM(invalidate, i);
         executor_clear(exec);
     }
     Py_DECREF(invalidate);
