@@ -189,8 +189,11 @@ _PyFrame_SetStackPointer(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
  * Frames on the frame stack are incomplete until the
  * first RESUME instruction.
  * Frames owned by a generator are always complete.
+ *
+ * NOTE: We allow racy accesses to the instruction pointer
+ * from other threads for sys._current_frames() and similar APIs.
  */
-static inline bool
+static inline bool _Py_NO_SANITIZE_THREAD
 _PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
 {
     if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
