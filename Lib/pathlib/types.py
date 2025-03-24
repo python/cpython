@@ -15,7 +15,7 @@ from glob import _PathGlobber
 from pathlib._os import magic_open, ensure_distinct_paths, ensure_different_files, copyfileobj
 from pathlib import PurePath, Path
 from typing import (
-    Any, BinaryIO, Callable, Generator, Optional, Protocol, Sequence, TypeVar, Union,
+    Any, BinaryIO, Callable, Generator, Iterator, Optional, Protocol, Sequence, TypeVar, Union,
     runtime_checkable,
 )
 
@@ -283,7 +283,7 @@ class _ReadablePath(_JoinablePath):
             return f.read()
 
     @abstractmethod
-    def iterdir(self: _RP) -> Generator[_RP, None, None]:
+    def iterdir(self: _RP) -> Iterator[_RP]:
         """Yield path objects of the directory contents.
 
         The children are yielded in arbitrary order, and the
@@ -291,7 +291,7 @@ class _ReadablePath(_JoinablePath):
         """
         raise NotImplementedError
 
-    def glob(self: _RP, pattern: Union[_RP, str], *, recurse_symlinks: bool = True) -> Generator[_RP, None, None]:
+    def glob(self: _RP, pattern: Union[_RP, str], *, recurse_symlinks: bool = True) -> Iterator[_RP]:
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
