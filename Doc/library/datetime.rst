@@ -650,8 +650,8 @@ Instance methods:
 
 .. method:: date.replace(year=self.year, month=self.month, day=self.day)
 
-   Return a date with the same value, except for those parameters given new
-   values by whichever keyword arguments are specified.
+   Return a new :class:`date` object with the same values, but with specified
+   parameters updated.
 
    Example::
 
@@ -659,6 +659,9 @@ Instance methods:
        >>> d = date(2002, 12, 31)
        >>> d.replace(day=26)
        datetime.date(2002, 12, 26)
+
+   The generic function :func:`copy.replace` also supports :class:`date`
+   objects.
 
 
 .. method:: date.timetuple()
@@ -1274,10 +1277,10 @@ Instance methods:
    hour=self.hour, minute=self.minute, second=self.second, microsecond=self.microsecond, \
    tzinfo=self.tzinfo, *, fold=0)
 
-   Return a datetime with the same attributes, except for those attributes given
-   new values by whichever keyword arguments are specified. Note that
-   ``tzinfo=None`` can be specified to create a naive datetime from an aware
-   datetime with no conversion of date and time data.
+   Return a new :class:`datetime` object with the same attributes, but with
+   specified parameters updated. Note that ``tzinfo=None`` can be specified to
+   create a naive datetime from an aware datetime with no conversion of date
+   and time data.
 
    .. versionchanged:: 3.6
       Added the *fold* parameter.
@@ -1849,10 +1852,10 @@ Instance methods:
 .. method:: time.replace(hour=self.hour, minute=self.minute, second=self.second, \
    microsecond=self.microsecond, tzinfo=self.tzinfo, *, fold=0)
 
-   Return a :class:`.time` with the same value, except for those attributes given
-   new values by whichever keyword arguments are specified. Note that
-   ``tzinfo=None`` can be specified to create a naive :class:`.time` from an
-   aware :class:`.time`, without conversion of the time data.
+   Return a new :class:`.time` with the same values, but with specified
+   parameters updated. Note that ``tzinfo=None`` can be specified to create a
+   naive :class:`.time` from an aware :class:`.time`, without conversion of the
+   time data.
 
    .. versionchanged:: 3.6
       Added the *fold* parameter.
