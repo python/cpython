@@ -611,7 +611,7 @@ PyDoc_STRVAR(_opcode_get_specialization_stats__doc__,
 "Return the specialization stats");
 
 #define _OPCODE_GET_SPECIALIZATION_STATS_METHODDEF    \
-    {"get_specialization_stats", _opcode_get_specialization_stats, METH_NOARGS, _opcode_get_specialization_stats__doc__},
+    {"get_specialization_stats", (PyCFunction)_opcode_get_specialization_stats, METH_NOARGS, _opcode_get_specialization_stats__doc__},
 
 static PyObject *
 _opcode_get_specialization_stats_impl(PyObject *module);
@@ -631,7 +631,7 @@ PyDoc_STRVAR(_opcode_get_nb_ops__doc__,
 "Indexed by the BINARY_OP oparg value.");
 
 #define _OPCODE_GET_NB_OPS_METHODDEF    \
-    {"get_nb_ops", _opcode_get_nb_ops, METH_NOARGS, _opcode_get_nb_ops__doc__},
+    {"get_nb_ops", (PyCFunction)_opcode_get_nb_ops, METH_NOARGS, _opcode_get_nb_ops__doc__},
 
 static PyObject *
 _opcode_get_nb_ops_impl(PyObject *module);
@@ -649,7 +649,7 @@ PyDoc_STRVAR(_opcode_get_intrinsic1_descs__doc__,
 "Return a list of names of the unary intrinsics.");
 
 #define _OPCODE_GET_INTRINSIC1_DESCS_METHODDEF    \
-    {"get_intrinsic1_descs", _opcode_get_intrinsic1_descs, METH_NOARGS, _opcode_get_intrinsic1_descs__doc__},
+    {"get_intrinsic1_descs", (PyCFunction)_opcode_get_intrinsic1_descs, METH_NOARGS, _opcode_get_intrinsic1_descs__doc__},
 
 static PyObject *
 _opcode_get_intrinsic1_descs_impl(PyObject *module);
@@ -667,7 +667,7 @@ PyDoc_STRVAR(_opcode_get_intrinsic2_descs__doc__,
 "Return a list of names of the binary intrinsics.");
 
 #define _OPCODE_GET_INTRINSIC2_DESCS_METHODDEF    \
-    {"get_intrinsic2_descs", _opcode_get_intrinsic2_descs, METH_NOARGS, _opcode_get_intrinsic2_descs__doc__},
+    {"get_intrinsic2_descs", (PyCFunction)_opcode_get_intrinsic2_descs, METH_NOARGS, _opcode_get_intrinsic2_descs__doc__},
 
 static PyObject *
 _opcode_get_intrinsic2_descs_impl(PyObject *module);
@@ -685,7 +685,7 @@ PyDoc_STRVAR(_opcode_get_special_method_names__doc__,
 "Return a list of special method names.");
 
 #define _OPCODE_GET_SPECIAL_METHOD_NAMES_METHODDEF    \
-    {"get_special_method_names", _opcode_get_special_method_names, METH_NOARGS, _opcode_get_special_method_names__doc__},
+    {"get_special_method_names", (PyCFunction)_opcode_get_special_method_names, METH_NOARGS, _opcode_get_special_method_names__doc__},
 
 static PyObject *
 _opcode_get_special_method_names_impl(PyObject *module);
@@ -756,4 +756,4 @@ _opcode_get_executor(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a02840cf31912b4d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2e0c39286d0253e7 input=a9049054013a1b77]*/

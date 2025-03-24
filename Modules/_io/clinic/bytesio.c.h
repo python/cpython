@@ -16,7 +16,7 @@ PyDoc_STRVAR(_io_BytesIO_readable__doc__,
 "Returns True if the IO object can be read.");
 
 #define _IO_BYTESIO_READABLE_METHODDEF    \
-    {"readable", _io_BytesIO_readable, METH_NOARGS, _io_BytesIO_readable__doc__},
+    {"readable", (PyCFunction)_io_BytesIO_readable, METH_NOARGS, _io_BytesIO_readable__doc__},
 
 static PyObject *
 _io_BytesIO_readable_impl(bytesio *self);
@@ -34,7 +34,7 @@ PyDoc_STRVAR(_io_BytesIO_writable__doc__,
 "Returns True if the IO object can be written.");
 
 #define _IO_BYTESIO_WRITABLE_METHODDEF    \
-    {"writable", _io_BytesIO_writable, METH_NOARGS, _io_BytesIO_writable__doc__},
+    {"writable", (PyCFunction)_io_BytesIO_writable, METH_NOARGS, _io_BytesIO_writable__doc__},
 
 static PyObject *
 _io_BytesIO_writable_impl(bytesio *self);
@@ -52,7 +52,7 @@ PyDoc_STRVAR(_io_BytesIO_seekable__doc__,
 "Returns True if the IO object can be seeked.");
 
 #define _IO_BYTESIO_SEEKABLE_METHODDEF    \
-    {"seekable", _io_BytesIO_seekable, METH_NOARGS, _io_BytesIO_seekable__doc__},
+    {"seekable", (PyCFunction)_io_BytesIO_seekable, METH_NOARGS, _io_BytesIO_seekable__doc__},
 
 static PyObject *
 _io_BytesIO_seekable_impl(bytesio *self);
@@ -70,7 +70,7 @@ PyDoc_STRVAR(_io_BytesIO_flush__doc__,
 "Does nothing.");
 
 #define _IO_BYTESIO_FLUSH_METHODDEF    \
-    {"flush", _io_BytesIO_flush, METH_NOARGS, _io_BytesIO_flush__doc__},
+    {"flush", (PyCFunction)_io_BytesIO_flush, METH_NOARGS, _io_BytesIO_flush__doc__},
 
 static PyObject *
 _io_BytesIO_flush_impl(bytesio *self);
@@ -110,7 +110,7 @@ PyDoc_STRVAR(_io_BytesIO_getvalue__doc__,
 "Retrieve the entire contents of the BytesIO object.");
 
 #define _IO_BYTESIO_GETVALUE_METHODDEF    \
-    {"getvalue", _io_BytesIO_getvalue, METH_NOARGS, _io_BytesIO_getvalue__doc__},
+    {"getvalue", (PyCFunction)_io_BytesIO_getvalue, METH_NOARGS, _io_BytesIO_getvalue__doc__},
 
 static PyObject *
 _io_BytesIO_getvalue_impl(bytesio *self);
@@ -130,7 +130,7 @@ PyDoc_STRVAR(_io_BytesIO_isatty__doc__,
 "BytesIO objects are not connected to a TTY-like device.");
 
 #define _IO_BYTESIO_ISATTY_METHODDEF    \
-    {"isatty", _io_BytesIO_isatty, METH_NOARGS, _io_BytesIO_isatty__doc__},
+    {"isatty", (PyCFunction)_io_BytesIO_isatty, METH_NOARGS, _io_BytesIO_isatty__doc__},
 
 static PyObject *
 _io_BytesIO_isatty_impl(bytesio *self);
@@ -148,7 +148,7 @@ PyDoc_STRVAR(_io_BytesIO_tell__doc__,
 "Current file position, an integer.");
 
 #define _IO_BYTESIO_TELL_METHODDEF    \
-    {"tell", _io_BytesIO_tell, METH_NOARGS, _io_BytesIO_tell__doc__},
+    {"tell", (PyCFunction)_io_BytesIO_tell, METH_NOARGS, _io_BytesIO_tell__doc__},
 
 static PyObject *
 _io_BytesIO_tell_impl(bytesio *self);
@@ -317,7 +317,7 @@ PyDoc_STRVAR(_io_BytesIO_readinto__doc__,
 "is set not to block and has no data to read.");
 
 #define _IO_BYTESIO_READINTO_METHODDEF    \
-    {"readinto", _io_BytesIO_readinto, METH_O, _io_BytesIO_readinto__doc__},
+    {"readinto", (PyCFunction)_io_BytesIO_readinto, METH_O, _io_BytesIO_readinto__doc__},
 
 static PyObject *
 _io_BytesIO_readinto_impl(bytesio *self, Py_buffer *buffer);
@@ -443,7 +443,7 @@ PyDoc_STRVAR(_io_BytesIO_write__doc__,
 "Return the number of bytes written.");
 
 #define _IO_BYTESIO_WRITE_METHODDEF    \
-    {"write", _io_BytesIO_write, METH_O, _io_BytesIO_write__doc__},
+    {"write", (PyCFunction)_io_BytesIO_write, METH_O, _io_BytesIO_write__doc__},
 
 static PyObject *
 _io_BytesIO_write_impl(bytesio *self, PyObject *b);
@@ -469,7 +469,7 @@ PyDoc_STRVAR(_io_BytesIO_writelines__doc__,
 "each element.");
 
 #define _IO_BYTESIO_WRITELINES_METHODDEF    \
-    {"writelines", _io_BytesIO_writelines, METH_O, _io_BytesIO_writelines__doc__},
+    {"writelines", (PyCFunction)_io_BytesIO_writelines, METH_O, _io_BytesIO_writelines__doc__},
 
 static PyObject *
 _io_BytesIO_writelines_impl(bytesio *self, PyObject *lines);
@@ -491,7 +491,7 @@ PyDoc_STRVAR(_io_BytesIO_close__doc__,
 "Disable all I/O operations.");
 
 #define _IO_BYTESIO_CLOSE_METHODDEF    \
-    {"close", _io_BytesIO_close, METH_NOARGS, _io_BytesIO_close__doc__},
+    {"close", (PyCFunction)_io_BytesIO_close, METH_NOARGS, _io_BytesIO_close__doc__},
 
 static PyObject *
 _io_BytesIO_close_impl(bytesio *self);
@@ -561,4 +561,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=094ee2072ceab962 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=477217b2bc464110 input=a9049054013a1b77]*/

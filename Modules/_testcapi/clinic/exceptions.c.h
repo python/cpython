@@ -14,7 +14,7 @@ PyDoc_STRVAR(_testcapi_err_set_raised__doc__,
 "\n");
 
 #define _TESTCAPI_ERR_SET_RAISED_METHODDEF    \
-    {"err_set_raised", _testcapi_err_set_raised, METH_O, _testcapi_err_set_raised__doc__},
+    {"err_set_raised", (PyCFunction)_testcapi_err_set_raised, METH_O, _testcapi_err_set_raised__doc__},
 
 PyDoc_STRVAR(_testcapi_exception_print__doc__,
 "exception_print($module, exception, legacy=False, /)\n"
@@ -316,7 +316,7 @@ PyDoc_STRVAR(_testcapi_raise_memoryerror__doc__,
 "\n");
 
 #define _TESTCAPI_RAISE_MEMORYERROR_METHODDEF    \
-    {"raise_memoryerror", _testcapi_raise_memoryerror, METH_NOARGS, _testcapi_raise_memoryerror__doc__},
+    {"raise_memoryerror", (PyCFunction)_testcapi_raise_memoryerror, METH_NOARGS, _testcapi_raise_memoryerror__doc__},
 
 static PyObject *
 _testcapi_raise_memoryerror_impl(PyObject *module);
@@ -394,7 +394,7 @@ PyDoc_STRVAR(_testcapi_set_exception__doc__,
 "\n");
 
 #define _TESTCAPI_SET_EXCEPTION_METHODDEF    \
-    {"set_exception", _testcapi_set_exception, METH_O, _testcapi_set_exception__doc__},
+    {"set_exception", (PyCFunction)_testcapi_set_exception, METH_O, _testcapi_set_exception__doc__},
 
 PyDoc_STRVAR(_testcapi_traceback_print__doc__,
 "traceback_print($module, traceback, file, /)\n"
@@ -457,4 +457,4 @@ _testcapi_unstable_exc_prep_reraise_star(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c47d4b239c0cb5fc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d917e9ec082e69ee input=a9049054013a1b77]*/

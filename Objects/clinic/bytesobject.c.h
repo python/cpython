@@ -16,7 +16,7 @@ PyDoc_STRVAR(bytes___bytes____doc__,
 "Convert this value to exact type bytes.");
 
 #define BYTES___BYTES___METHODDEF    \
-    {"__bytes__", bytes___bytes__, METH_NOARGS, bytes___bytes____doc__},
+    {"__bytes__", (PyCFunction)bytes___bytes__, METH_NOARGS, bytes___bytes____doc__},
 
 static PyObject *
 bytes___bytes___impl(PyBytesObject *self);
@@ -128,7 +128,7 @@ PyDoc_STRVAR(bytes_partition__doc__,
 "object and two empty bytes objects.");
 
 #define BYTES_PARTITION_METHODDEF    \
-    {"partition", bytes_partition, METH_O, bytes_partition__doc__},
+    {"partition", (PyCFunction)bytes_partition, METH_O, bytes_partition__doc__},
 
 static PyObject *
 bytes_partition_impl(PyBytesObject *self, Py_buffer *sep);
@@ -167,7 +167,7 @@ PyDoc_STRVAR(bytes_rpartition__doc__,
 "objects and the original bytes object.");
 
 #define BYTES_RPARTITION_METHODDEF    \
-    {"rpartition", bytes_rpartition, METH_O, bytes_rpartition__doc__},
+    {"rpartition", (PyCFunction)bytes_rpartition, METH_O, bytes_rpartition__doc__},
 
 static PyObject *
 bytes_rpartition_impl(PyBytesObject *self, Py_buffer *sep);
@@ -294,7 +294,7 @@ PyDoc_STRVAR(bytes_join__doc__,
 "Example: b\'.\'.join([b\'ab\', b\'pq\', b\'rs\']) -> b\'ab.pq.rs\'.");
 
 #define BYTES_JOIN_METHODDEF    \
-    {"join", bytes_join, METH_O, bytes_join__doc__},
+    {"join", (PyCFunction)bytes_join, METH_O, bytes_join__doc__},
 
 static PyObject *
 bytes_join_impl(PyBytesObject *self, PyObject *iterable_of_bytes);
@@ -860,7 +860,7 @@ PyDoc_STRVAR(bytes_removeprefix__doc__,
 "Otherwise, return a copy of the original bytes.");
 
 #define BYTES_REMOVEPREFIX_METHODDEF    \
-    {"removeprefix", bytes_removeprefix, METH_O, bytes_removeprefix__doc__},
+    {"removeprefix", (PyCFunction)bytes_removeprefix, METH_O, bytes_removeprefix__doc__},
 
 static PyObject *
 bytes_removeprefix_impl(PyBytesObject *self, Py_buffer *prefix);
@@ -896,7 +896,7 @@ PyDoc_STRVAR(bytes_removesuffix__doc__,
 "bytes.");
 
 #define BYTES_REMOVESUFFIX_METHODDEF    \
-    {"removesuffix", bytes_removesuffix, METH_O, bytes_removesuffix__doc__},
+    {"removesuffix", (PyCFunction)bytes_removesuffix, METH_O, bytes_removesuffix__doc__},
 
 static PyObject *
 bytes_removesuffix_impl(PyBytesObject *self, Py_buffer *suffix);
@@ -1202,7 +1202,7 @@ PyDoc_STRVAR(bytes_fromhex__doc__,
 "Example: bytes.fromhex(\'B9 01EF\') -> b\'\\\\xb9\\\\x01\\\\xef\'.");
 
 #define BYTES_FROMHEX_METHODDEF    \
-    {"fromhex", bytes_fromhex, METH_O|METH_CLASS, bytes_fromhex__doc__},
+    {"fromhex", (PyCFunction)bytes_fromhex, METH_O|METH_CLASS, bytes_fromhex__doc__},
 
 static PyObject *
 bytes_fromhex_impl(PyTypeObject *type, PyObject *string);
@@ -1397,4 +1397,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1ad32b60503522c2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c607024162df3ea8 input=a9049054013a1b77]*/

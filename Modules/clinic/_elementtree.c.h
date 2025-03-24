@@ -63,7 +63,7 @@ PyDoc_STRVAR(_elementtree_Element_clear__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_CLEAR_METHODDEF    \
-    {"clear", _elementtree_Element_clear, METH_NOARGS, _elementtree_Element_clear__doc__},
+    {"clear", (PyCFunction)_elementtree_Element_clear, METH_NOARGS, _elementtree_Element_clear__doc__},
 
 static PyObject *
 _elementtree_Element_clear_impl(ElementObject *self);
@@ -101,7 +101,7 @@ PyDoc_STRVAR(_elementtree_Element___deepcopy____doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT___DEEPCOPY___METHODDEF    \
-    {"__deepcopy__", _elementtree_Element___deepcopy__, METH_O, _elementtree_Element___deepcopy____doc__},
+    {"__deepcopy__", (PyCFunction)_elementtree_Element___deepcopy__, METH_O, _elementtree_Element___deepcopy____doc__},
 
 static PyObject *
 _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo);
@@ -129,7 +129,7 @@ PyDoc_STRVAR(_elementtree_Element___sizeof____doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT___SIZEOF___METHODDEF    \
-    {"__sizeof__", _elementtree_Element___sizeof__, METH_NOARGS, _elementtree_Element___sizeof____doc__},
+    {"__sizeof__", (PyCFunction)_elementtree_Element___sizeof__, METH_NOARGS, _elementtree_Element___sizeof____doc__},
 
 static size_t
 _elementtree_Element___sizeof___impl(ElementObject *self);
@@ -156,7 +156,7 @@ PyDoc_STRVAR(_elementtree_Element___getstate____doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT___GETSTATE___METHODDEF    \
-    {"__getstate__", _elementtree_Element___getstate__, METH_NOARGS, _elementtree_Element___getstate____doc__},
+    {"__getstate__", (PyCFunction)_elementtree_Element___getstate__, METH_NOARGS, _elementtree_Element___getstate____doc__},
 
 static PyObject *
 _elementtree_Element___getstate___impl(ElementObject *self);
@@ -711,7 +711,7 @@ PyDoc_STRVAR(_elementtree_Element_items__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_ITEMS_METHODDEF    \
-    {"items", _elementtree_Element_items, METH_NOARGS, _elementtree_Element_items__doc__},
+    {"items", (PyCFunction)_elementtree_Element_items, METH_NOARGS, _elementtree_Element_items__doc__},
 
 static PyObject *
 _elementtree_Element_items_impl(ElementObject *self);
@@ -728,7 +728,7 @@ PyDoc_STRVAR(_elementtree_Element_keys__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_KEYS_METHODDEF    \
-    {"keys", _elementtree_Element_keys, METH_NOARGS, _elementtree_Element_keys__doc__},
+    {"keys", (PyCFunction)_elementtree_Element_keys, METH_NOARGS, _elementtree_Element_keys__doc__},
 
 static PyObject *
 _elementtree_Element_keys_impl(ElementObject *self);
@@ -795,7 +795,7 @@ PyDoc_STRVAR(_elementtree_Element_remove__doc__,
 "\n");
 
 #define _ELEMENTTREE_ELEMENT_REMOVE_METHODDEF    \
-    {"remove", _elementtree_Element_remove, METH_O, _elementtree_Element_remove__doc__},
+    {"remove", (PyCFunction)_elementtree_Element_remove, METH_O, _elementtree_Element_remove__doc__},
 
 static PyObject *
 _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement);
@@ -982,7 +982,7 @@ PyDoc_STRVAR(_elementtree_TreeBuilder_data__doc__,
 "\n");
 
 #define _ELEMENTTREE_TREEBUILDER_DATA_METHODDEF    \
-    {"data", _elementtree_TreeBuilder_data, METH_O, _elementtree_TreeBuilder_data__doc__},
+    {"data", (PyCFunction)_elementtree_TreeBuilder_data, METH_O, _elementtree_TreeBuilder_data__doc__},
 
 static PyObject *
 _elementtree_TreeBuilder_data_impl(TreeBuilderObject *self, PyObject *data);
@@ -1003,7 +1003,7 @@ PyDoc_STRVAR(_elementtree_TreeBuilder_end__doc__,
 "\n");
 
 #define _ELEMENTTREE_TREEBUILDER_END_METHODDEF    \
-    {"end", _elementtree_TreeBuilder_end, METH_O, _elementtree_TreeBuilder_end__doc__},
+    {"end", (PyCFunction)_elementtree_TreeBuilder_end, METH_O, _elementtree_TreeBuilder_end__doc__},
 
 static PyObject *
 _elementtree_TreeBuilder_end_impl(TreeBuilderObject *self, PyObject *tag);
@@ -1024,7 +1024,7 @@ PyDoc_STRVAR(_elementtree_TreeBuilder_comment__doc__,
 "\n");
 
 #define _ELEMENTTREE_TREEBUILDER_COMMENT_METHODDEF    \
-    {"comment", _elementtree_TreeBuilder_comment, METH_O, _elementtree_TreeBuilder_comment__doc__},
+    {"comment", (PyCFunction)_elementtree_TreeBuilder_comment, METH_O, _elementtree_TreeBuilder_comment__doc__},
 
 static PyObject *
 _elementtree_TreeBuilder_comment_impl(TreeBuilderObject *self,
@@ -1080,7 +1080,7 @@ PyDoc_STRVAR(_elementtree_TreeBuilder_close__doc__,
 "\n");
 
 #define _ELEMENTTREE_TREEBUILDER_CLOSE_METHODDEF    \
-    {"close", _elementtree_TreeBuilder_close, METH_NOARGS, _elementtree_TreeBuilder_close__doc__},
+    {"close", (PyCFunction)_elementtree_TreeBuilder_close, METH_NOARGS, _elementtree_TreeBuilder_close__doc__},
 
 static PyObject *
 _elementtree_TreeBuilder_close_impl(TreeBuilderObject *self);
@@ -1210,7 +1210,7 @@ PyDoc_STRVAR(_elementtree_XMLParser_close__doc__,
 "\n");
 
 #define _ELEMENTTREE_XMLPARSER_CLOSE_METHODDEF    \
-    {"close", _elementtree_XMLParser_close, METH_NOARGS, _elementtree_XMLParser_close__doc__},
+    {"close", (PyCFunction)_elementtree_XMLParser_close, METH_NOARGS, _elementtree_XMLParser_close__doc__},
 
 static PyObject *
 _elementtree_XMLParser_close_impl(XMLParserObject *self);
@@ -1227,7 +1227,7 @@ PyDoc_STRVAR(_elementtree_XMLParser_flush__doc__,
 "\n");
 
 #define _ELEMENTTREE_XMLPARSER_FLUSH_METHODDEF    \
-    {"flush", _elementtree_XMLParser_flush, METH_NOARGS, _elementtree_XMLParser_flush__doc__},
+    {"flush", (PyCFunction)_elementtree_XMLParser_flush, METH_NOARGS, _elementtree_XMLParser_flush__doc__},
 
 static PyObject *
 _elementtree_XMLParser_flush_impl(XMLParserObject *self);
@@ -1244,7 +1244,7 @@ PyDoc_STRVAR(_elementtree_XMLParser_feed__doc__,
 "\n");
 
 #define _ELEMENTTREE_XMLPARSER_FEED_METHODDEF    \
-    {"feed", _elementtree_XMLParser_feed, METH_O, _elementtree_XMLParser_feed__doc__},
+    {"feed", (PyCFunction)_elementtree_XMLParser_feed, METH_O, _elementtree_XMLParser_feed__doc__},
 
 static PyObject *
 _elementtree_XMLParser_feed_impl(XMLParserObject *self, PyObject *data);
@@ -1265,7 +1265,7 @@ PyDoc_STRVAR(_elementtree_XMLParser__parse_whole__doc__,
 "\n");
 
 #define _ELEMENTTREE_XMLPARSER__PARSE_WHOLE_METHODDEF    \
-    {"_parse_whole", _elementtree_XMLParser__parse_whole, METH_O, _elementtree_XMLParser__parse_whole__doc__},
+    {"_parse_whole", (PyCFunction)_elementtree_XMLParser__parse_whole, METH_O, _elementtree_XMLParser__parse_whole__doc__},
 
 static PyObject *
 _elementtree_XMLParser__parse_whole_impl(XMLParserObject *self,
@@ -1315,4 +1315,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b3b1fa09802c069f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0eed58350c3c1832 input=a9049054013a1b77]*/

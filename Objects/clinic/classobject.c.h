@@ -10,7 +10,7 @@ PyDoc_STRVAR(method___reduce____doc__,
 "\n");
 
 #define METHOD___REDUCE___METHODDEF    \
-    {"__reduce__", method___reduce__, METH_NOARGS, method___reduce____doc__},
+    {"__reduce__", (PyCFunction)method___reduce__, METH_NOARGS, method___reduce____doc__},
 
 static PyObject *
 method___reduce___impl(PyMethodObject *self);
@@ -82,4 +82,4 @@ instancemethod_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bebe7e84ba161657 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ab546abf90aac94e input=a9049054013a1b77]*/

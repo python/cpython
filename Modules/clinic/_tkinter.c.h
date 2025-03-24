@@ -10,7 +10,7 @@ PyDoc_STRVAR(_tkinter_tkapp_eval__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_EVAL_METHODDEF    \
-    {"eval", _tkinter_tkapp_eval, METH_O, _tkinter_tkapp_eval__doc__},
+    {"eval", (PyCFunction)_tkinter_tkapp_eval, METH_O, _tkinter_tkapp_eval__doc__},
 
 static PyObject *
 _tkinter_tkapp_eval_impl(TkappObject *self, const char *script);
@@ -46,7 +46,7 @@ PyDoc_STRVAR(_tkinter_tkapp_evalfile__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_EVALFILE_METHODDEF    \
-    {"evalfile", _tkinter_tkapp_evalfile, METH_O, _tkinter_tkapp_evalfile__doc__},
+    {"evalfile", (PyCFunction)_tkinter_tkapp_evalfile, METH_O, _tkinter_tkapp_evalfile__doc__},
 
 static PyObject *
 _tkinter_tkapp_evalfile_impl(TkappObject *self, const char *fileName);
@@ -82,7 +82,7 @@ PyDoc_STRVAR(_tkinter_tkapp_record__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_RECORD_METHODDEF    \
-    {"record", _tkinter_tkapp_record, METH_O, _tkinter_tkapp_record__doc__},
+    {"record", (PyCFunction)_tkinter_tkapp_record, METH_O, _tkinter_tkapp_record__doc__},
 
 static PyObject *
 _tkinter_tkapp_record_impl(TkappObject *self, const char *script);
@@ -118,7 +118,7 @@ PyDoc_STRVAR(_tkinter_tkapp_adderrorinfo__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_ADDERRORINFO_METHODDEF    \
-    {"adderrorinfo", _tkinter_tkapp_adderrorinfo, METH_O, _tkinter_tkapp_adderrorinfo__doc__},
+    {"adderrorinfo", (PyCFunction)_tkinter_tkapp_adderrorinfo, METH_O, _tkinter_tkapp_adderrorinfo__doc__},
 
 static PyObject *
 _tkinter_tkapp_adderrorinfo_impl(TkappObject *self, const char *msg);
@@ -154,7 +154,7 @@ PyDoc_STRVAR(_tkinter_tkapp_getint__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_GETINT_METHODDEF    \
-    {"getint", _tkinter_tkapp_getint, METH_O, _tkinter_tkapp_getint__doc__},
+    {"getint", (PyCFunction)_tkinter_tkapp_getint, METH_O, _tkinter_tkapp_getint__doc__},
 
 static PyObject *
 _tkinter_tkapp_getint_impl(TkappObject *self, PyObject *arg);
@@ -175,7 +175,7 @@ PyDoc_STRVAR(_tkinter_tkapp_getdouble__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_GETDOUBLE_METHODDEF    \
-    {"getdouble", _tkinter_tkapp_getdouble, METH_O, _tkinter_tkapp_getdouble__doc__},
+    {"getdouble", (PyCFunction)_tkinter_tkapp_getdouble, METH_O, _tkinter_tkapp_getdouble__doc__},
 
 static PyObject *
 _tkinter_tkapp_getdouble_impl(TkappObject *self, PyObject *arg);
@@ -196,7 +196,7 @@ PyDoc_STRVAR(_tkinter_tkapp_getboolean__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_GETBOOLEAN_METHODDEF    \
-    {"getboolean", _tkinter_tkapp_getboolean, METH_O, _tkinter_tkapp_getboolean__doc__},
+    {"getboolean", (PyCFunction)_tkinter_tkapp_getboolean, METH_O, _tkinter_tkapp_getboolean__doc__},
 
 static PyObject *
 _tkinter_tkapp_getboolean_impl(TkappObject *self, PyObject *arg);
@@ -217,7 +217,7 @@ PyDoc_STRVAR(_tkinter_tkapp_exprstring__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_EXPRSTRING_METHODDEF    \
-    {"exprstring", _tkinter_tkapp_exprstring, METH_O, _tkinter_tkapp_exprstring__doc__},
+    {"exprstring", (PyCFunction)_tkinter_tkapp_exprstring, METH_O, _tkinter_tkapp_exprstring__doc__},
 
 static PyObject *
 _tkinter_tkapp_exprstring_impl(TkappObject *self, const char *s);
@@ -253,7 +253,7 @@ PyDoc_STRVAR(_tkinter_tkapp_exprlong__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_EXPRLONG_METHODDEF    \
-    {"exprlong", _tkinter_tkapp_exprlong, METH_O, _tkinter_tkapp_exprlong__doc__},
+    {"exprlong", (PyCFunction)_tkinter_tkapp_exprlong, METH_O, _tkinter_tkapp_exprlong__doc__},
 
 static PyObject *
 _tkinter_tkapp_exprlong_impl(TkappObject *self, const char *s);
@@ -289,7 +289,7 @@ PyDoc_STRVAR(_tkinter_tkapp_exprdouble__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_EXPRDOUBLE_METHODDEF    \
-    {"exprdouble", _tkinter_tkapp_exprdouble, METH_O, _tkinter_tkapp_exprdouble__doc__},
+    {"exprdouble", (PyCFunction)_tkinter_tkapp_exprdouble, METH_O, _tkinter_tkapp_exprdouble__doc__},
 
 static PyObject *
 _tkinter_tkapp_exprdouble_impl(TkappObject *self, const char *s);
@@ -325,7 +325,7 @@ PyDoc_STRVAR(_tkinter_tkapp_exprboolean__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_EXPRBOOLEAN_METHODDEF    \
-    {"exprboolean", _tkinter_tkapp_exprboolean, METH_O, _tkinter_tkapp_exprboolean__doc__},
+    {"exprboolean", (PyCFunction)_tkinter_tkapp_exprboolean, METH_O, _tkinter_tkapp_exprboolean__doc__},
 
 static PyObject *
 _tkinter_tkapp_exprboolean_impl(TkappObject *self, const char *s);
@@ -361,7 +361,7 @@ PyDoc_STRVAR(_tkinter_tkapp_splitlist__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_SPLITLIST_METHODDEF    \
-    {"splitlist", _tkinter_tkapp_splitlist, METH_O, _tkinter_tkapp_splitlist__doc__},
+    {"splitlist", (PyCFunction)_tkinter_tkapp_splitlist, METH_O, _tkinter_tkapp_splitlist__doc__},
 
 static PyObject *
 _tkinter_tkapp_splitlist_impl(TkappObject *self, PyObject *arg);
@@ -424,7 +424,7 @@ PyDoc_STRVAR(_tkinter_tkapp_deletecommand__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_DELETECOMMAND_METHODDEF    \
-    {"deletecommand", _tkinter_tkapp_deletecommand, METH_O, _tkinter_tkapp_deletecommand__doc__},
+    {"deletecommand", (PyCFunction)_tkinter_tkapp_deletecommand, METH_O, _tkinter_tkapp_deletecommand__doc__},
 
 static PyObject *
 _tkinter_tkapp_deletecommand_impl(TkappObject *self, const char *name);
@@ -501,7 +501,7 @@ PyDoc_STRVAR(_tkinter_tkapp_deletefilehandler__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF    \
-    {"deletefilehandler", _tkinter_tkapp_deletefilehandler, METH_O, _tkinter_tkapp_deletefilehandler__doc__},
+    {"deletefilehandler", (PyCFunction)_tkinter_tkapp_deletefilehandler, METH_O, _tkinter_tkapp_deletefilehandler__doc__},
 
 static PyObject *
 _tkinter_tkapp_deletefilehandler_impl(TkappObject *self, PyObject *file);
@@ -524,7 +524,7 @@ PyDoc_STRVAR(_tkinter_tktimertoken_deletetimerhandler__doc__,
 "\n");
 
 #define _TKINTER_TKTIMERTOKEN_DELETETIMERHANDLER_METHODDEF    \
-    {"deletetimerhandler", _tkinter_tktimertoken_deletetimerhandler, METH_NOARGS, _tkinter_tktimertoken_deletetimerhandler__doc__},
+    {"deletetimerhandler", (PyCFunction)_tkinter_tktimertoken_deletetimerhandler, METH_NOARGS, _tkinter_tktimertoken_deletetimerhandler__doc__},
 
 static PyObject *
 _tkinter_tktimertoken_deletetimerhandler_impl(TkttObject *self);
@@ -642,7 +642,7 @@ PyDoc_STRVAR(_tkinter_tkapp_quit__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_QUIT_METHODDEF    \
-    {"quit", _tkinter_tkapp_quit, METH_NOARGS, _tkinter_tkapp_quit__doc__},
+    {"quit", (PyCFunction)_tkinter_tkapp_quit, METH_NOARGS, _tkinter_tkapp_quit__doc__},
 
 static PyObject *
 _tkinter_tkapp_quit_impl(TkappObject *self);
@@ -659,7 +659,7 @@ PyDoc_STRVAR(_tkinter_tkapp_interpaddr__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_INTERPADDR_METHODDEF    \
-    {"interpaddr", _tkinter_tkapp_interpaddr, METH_NOARGS, _tkinter_tkapp_interpaddr__doc__},
+    {"interpaddr", (PyCFunction)_tkinter_tkapp_interpaddr, METH_NOARGS, _tkinter_tkapp_interpaddr__doc__},
 
 static PyObject *
 _tkinter_tkapp_interpaddr_impl(TkappObject *self);
@@ -676,7 +676,7 @@ PyDoc_STRVAR(_tkinter_tkapp_loadtk__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_LOADTK_METHODDEF    \
-    {"loadtk", _tkinter_tkapp_loadtk, METH_NOARGS, _tkinter_tkapp_loadtk__doc__},
+    {"loadtk", (PyCFunction)_tkinter_tkapp_loadtk, METH_NOARGS, _tkinter_tkapp_loadtk__doc__},
 
 static PyObject *
 _tkinter_tkapp_loadtk_impl(TkappObject *self);
@@ -694,7 +694,7 @@ PyDoc_STRVAR(_tkinter_tkapp_settrace__doc__,
 "Set the tracing function.");
 
 #define _TKINTER_TKAPP_SETTRACE_METHODDEF    \
-    {"settrace", _tkinter_tkapp_settrace, METH_O, _tkinter_tkapp_settrace__doc__},
+    {"settrace", (PyCFunction)_tkinter_tkapp_settrace, METH_O, _tkinter_tkapp_settrace__doc__},
 
 static PyObject *
 _tkinter_tkapp_settrace_impl(TkappObject *self, PyObject *func);
@@ -716,7 +716,7 @@ PyDoc_STRVAR(_tkinter_tkapp_gettrace__doc__,
 "Get the tracing function.");
 
 #define _TKINTER_TKAPP_GETTRACE_METHODDEF    \
-    {"gettrace", _tkinter_tkapp_gettrace, METH_NOARGS, _tkinter_tkapp_gettrace__doc__},
+    {"gettrace", (PyCFunction)_tkinter_tkapp_gettrace, METH_NOARGS, _tkinter_tkapp_gettrace__doc__},
 
 static PyObject *
 _tkinter_tkapp_gettrace_impl(TkappObject *self);
@@ -733,7 +733,7 @@ PyDoc_STRVAR(_tkinter_tkapp_willdispatch__doc__,
 "\n");
 
 #define _TKINTER_TKAPP_WILLDISPATCH_METHODDEF    \
-    {"willdispatch", _tkinter_tkapp_willdispatch, METH_NOARGS, _tkinter_tkapp_willdispatch__doc__},
+    {"willdispatch", (PyCFunction)_tkinter_tkapp_willdispatch, METH_NOARGS, _tkinter_tkapp_willdispatch__doc__},
 
 static PyObject *
 _tkinter_tkapp_willdispatch_impl(TkappObject *self);
@@ -750,7 +750,7 @@ PyDoc_STRVAR(_tkinter__flatten__doc__,
 "\n");
 
 #define _TKINTER__FLATTEN_METHODDEF    \
-    {"_flatten", _tkinter__flatten, METH_O, _tkinter__flatten__doc__},
+    {"_flatten", (PyCFunction)_tkinter__flatten, METH_O, _tkinter__flatten__doc__},
 
 PyDoc_STRVAR(_tkinter_create__doc__,
 "create($module, screenName=None, baseName=\'\', className=\'Tk\',\n"
@@ -910,7 +910,7 @@ PyDoc_STRVAR(_tkinter_setbusywaitinterval__doc__,
 "It should be set to a divisor of the maximum time between frames in an animation.");
 
 #define _TKINTER_SETBUSYWAITINTERVAL_METHODDEF    \
-    {"setbusywaitinterval", _tkinter_setbusywaitinterval, METH_O, _tkinter_setbusywaitinterval__doc__},
+    {"setbusywaitinterval", (PyCFunction)_tkinter_setbusywaitinterval, METH_O, _tkinter_setbusywaitinterval__doc__},
 
 static PyObject *
 _tkinter_setbusywaitinterval_impl(PyObject *module, int new_val);
@@ -938,7 +938,7 @@ PyDoc_STRVAR(_tkinter_getbusywaitinterval__doc__,
 "Return the current busy-wait interval between successive calls to Tcl_DoOneEvent in a threaded Python interpreter.");
 
 #define _TKINTER_GETBUSYWAITINTERVAL_METHODDEF    \
-    {"getbusywaitinterval", _tkinter_getbusywaitinterval, METH_NOARGS, _tkinter_getbusywaitinterval__doc__},
+    {"getbusywaitinterval", (PyCFunction)_tkinter_getbusywaitinterval, METH_NOARGS, _tkinter_getbusywaitinterval__doc__},
 
 static int
 _tkinter_getbusywaitinterval_impl(PyObject *module);
@@ -966,4 +966,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=9643e57d76763b5a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=052c067aa69237be input=a9049054013a1b77]*/

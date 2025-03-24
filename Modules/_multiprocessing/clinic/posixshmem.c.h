@@ -55,7 +55,7 @@ PyDoc_STRVAR(_posixshmem_shm_unlink__doc__,
 "region.");
 
 #define _POSIXSHMEM_SHM_UNLINK_METHODDEF    \
-    {"shm_unlink", _posixshmem_shm_unlink, METH_O, _posixshmem_shm_unlink__doc__},
+    {"shm_unlink", (PyCFunction)_posixshmem_shm_unlink, METH_O, _posixshmem_shm_unlink__doc__},
 
 static PyObject *
 _posixshmem_shm_unlink_impl(PyObject *module, PyObject *path);
@@ -86,4 +86,4 @@ exit:
 #ifndef _POSIXSHMEM_SHM_UNLINK_METHODDEF
     #define _POSIXSHMEM_SHM_UNLINK_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_UNLINK_METHODDEF) */
-/*[clinic end generated code: output=69688922c0d9548a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=74588a5abba6e36c input=a9049054013a1b77]*/

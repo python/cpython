@@ -17,7 +17,7 @@ PyDoc_STRVAR(gc_enable__doc__,
 "Enable automatic garbage collection.");
 
 #define GC_ENABLE_METHODDEF    \
-    {"enable", gc_enable, METH_NOARGS, gc_enable__doc__},
+    {"enable", (PyCFunction)gc_enable, METH_NOARGS, gc_enable__doc__},
 
 static PyObject *
 gc_enable_impl(PyObject *module);
@@ -35,7 +35,7 @@ PyDoc_STRVAR(gc_disable__doc__,
 "Disable automatic garbage collection.");
 
 #define GC_DISABLE_METHODDEF    \
-    {"disable", gc_disable, METH_NOARGS, gc_disable__doc__},
+    {"disable", (PyCFunction)gc_disable, METH_NOARGS, gc_disable__doc__},
 
 static PyObject *
 gc_disable_impl(PyObject *module);
@@ -53,7 +53,7 @@ PyDoc_STRVAR(gc_isenabled__doc__,
 "Returns true if automatic garbage collection is enabled.");
 
 #define GC_ISENABLED_METHODDEF    \
-    {"isenabled", gc_isenabled, METH_NOARGS, gc_isenabled__doc__},
+    {"isenabled", (PyCFunction)gc_isenabled, METH_NOARGS, gc_isenabled__doc__},
 
 static int
 gc_isenabled_impl(PyObject *module);
@@ -167,7 +167,7 @@ PyDoc_STRVAR(gc_set_debug__doc__,
 "Debugging information is written to sys.stderr.");
 
 #define GC_SET_DEBUG_METHODDEF    \
-    {"set_debug", gc_set_debug, METH_O, gc_set_debug__doc__},
+    {"set_debug", (PyCFunction)gc_set_debug, METH_O, gc_set_debug__doc__},
 
 static PyObject *
 gc_set_debug_impl(PyObject *module, int flags);
@@ -195,7 +195,7 @@ PyDoc_STRVAR(gc_get_debug__doc__,
 "Get the garbage collection debugging flags.");
 
 #define GC_GET_DEBUG_METHODDEF    \
-    {"get_debug", gc_get_debug, METH_NOARGS, gc_get_debug__doc__},
+    {"get_debug", (PyCFunction)gc_get_debug, METH_NOARGS, gc_get_debug__doc__},
 
 static int
 gc_get_debug_impl(PyObject *module);
@@ -223,7 +223,7 @@ PyDoc_STRVAR(gc_set_threshold__doc__,
 "Setting \'threshold0\' to zero disables collection.");
 
 #define GC_SET_THRESHOLD_METHODDEF    \
-    {"set_threshold", gc_set_threshold, METH_VARARGS, gc_set_threshold__doc__},
+    {"set_threshold", (PyCFunction)gc_set_threshold, METH_VARARGS, gc_set_threshold__doc__},
 
 static PyObject *
 gc_set_threshold_impl(PyObject *module, int threshold0, int group_right_1,
@@ -275,7 +275,7 @@ PyDoc_STRVAR(gc_get_threshold__doc__,
 "Return the current collection thresholds.");
 
 #define GC_GET_THRESHOLD_METHODDEF    \
-    {"get_threshold", gc_get_threshold, METH_NOARGS, gc_get_threshold__doc__},
+    {"get_threshold", (PyCFunction)gc_get_threshold, METH_NOARGS, gc_get_threshold__doc__},
 
 static PyObject *
 gc_get_threshold_impl(PyObject *module);
@@ -293,7 +293,7 @@ PyDoc_STRVAR(gc_get_count__doc__,
 "Return a three-tuple of the current collection counts.");
 
 #define GC_GET_COUNT_METHODDEF    \
-    {"get_count", gc_get_count, METH_NOARGS, gc_get_count__doc__},
+    {"get_count", (PyCFunction)gc_get_count, METH_NOARGS, gc_get_count__doc__},
 
 static PyObject *
 gc_get_count_impl(PyObject *module);
@@ -442,7 +442,7 @@ PyDoc_STRVAR(gc_get_stats__doc__,
 "Return a list of dictionaries containing per-generation statistics.");
 
 #define GC_GET_STATS_METHODDEF    \
-    {"get_stats", gc_get_stats, METH_NOARGS, gc_get_stats__doc__},
+    {"get_stats", (PyCFunction)gc_get_stats, METH_NOARGS, gc_get_stats__doc__},
 
 static PyObject *
 gc_get_stats_impl(PyObject *module);
@@ -462,7 +462,7 @@ PyDoc_STRVAR(gc_is_tracked__doc__,
 "Simple atomic objects will return false.");
 
 #define GC_IS_TRACKED_METHODDEF    \
-    {"is_tracked", gc_is_tracked, METH_O, gc_is_tracked__doc__},
+    {"is_tracked", (PyCFunction)gc_is_tracked, METH_O, gc_is_tracked__doc__},
 
 static int
 gc_is_tracked_impl(PyObject *module, PyObject *obj);
@@ -490,7 +490,7 @@ PyDoc_STRVAR(gc_is_finalized__doc__,
 "Returns true if the object has been already finalized by the GC.");
 
 #define GC_IS_FINALIZED_METHODDEF    \
-    {"is_finalized", gc_is_finalized, METH_O, gc_is_finalized__doc__},
+    {"is_finalized", (PyCFunction)gc_is_finalized, METH_O, gc_is_finalized__doc__},
 
 static int
 gc_is_finalized_impl(PyObject *module, PyObject *obj);
@@ -522,7 +522,7 @@ PyDoc_STRVAR(gc_freeze__doc__,
 "which can cause copy-on-write.");
 
 #define GC_FREEZE_METHODDEF    \
-    {"freeze", gc_freeze, METH_NOARGS, gc_freeze__doc__},
+    {"freeze", (PyCFunction)gc_freeze, METH_NOARGS, gc_freeze__doc__},
 
 static PyObject *
 gc_freeze_impl(PyObject *module);
@@ -542,7 +542,7 @@ PyDoc_STRVAR(gc_unfreeze__doc__,
 "Put all objects in the permanent generation back into oldest generation.");
 
 #define GC_UNFREEZE_METHODDEF    \
-    {"unfreeze", gc_unfreeze, METH_NOARGS, gc_unfreeze__doc__},
+    {"unfreeze", (PyCFunction)gc_unfreeze, METH_NOARGS, gc_unfreeze__doc__},
 
 static PyObject *
 gc_unfreeze_impl(PyObject *module);
@@ -560,7 +560,7 @@ PyDoc_STRVAR(gc_get_freeze_count__doc__,
 "Return the number of objects in the permanent generation.");
 
 #define GC_GET_FREEZE_COUNT_METHODDEF    \
-    {"get_freeze_count", gc_get_freeze_count, METH_NOARGS, gc_get_freeze_count__doc__},
+    {"get_freeze_count", (PyCFunction)gc_get_freeze_count, METH_NOARGS, gc_get_freeze_count__doc__},
 
 static Py_ssize_t
 gc_get_freeze_count_impl(PyObject *module);
@@ -580,4 +580,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=77b7d847ba2d4ed6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3e33248997e06c34 input=a9049054013a1b77]*/

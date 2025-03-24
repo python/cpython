@@ -15,7 +15,7 @@ PyDoc_STRVAR(_winapi_Overlapped_GetOverlappedResult__doc__,
 "\n");
 
 #define _WINAPI_OVERLAPPED_GETOVERLAPPEDRESULT_METHODDEF    \
-    {"GetOverlappedResult", _winapi_Overlapped_GetOverlappedResult, METH_O, _winapi_Overlapped_GetOverlappedResult__doc__},
+    {"GetOverlappedResult", (PyCFunction)_winapi_Overlapped_GetOverlappedResult, METH_O, _winapi_Overlapped_GetOverlappedResult__doc__},
 
 static PyObject *
 _winapi_Overlapped_GetOverlappedResult_impl(OverlappedObject *self, int wait);
@@ -42,7 +42,7 @@ PyDoc_STRVAR(_winapi_Overlapped_getbuffer__doc__,
 "\n");
 
 #define _WINAPI_OVERLAPPED_GETBUFFER_METHODDEF    \
-    {"getbuffer", _winapi_Overlapped_getbuffer, METH_NOARGS, _winapi_Overlapped_getbuffer__doc__},
+    {"getbuffer", (PyCFunction)_winapi_Overlapped_getbuffer, METH_NOARGS, _winapi_Overlapped_getbuffer__doc__},
 
 static PyObject *
 _winapi_Overlapped_getbuffer_impl(OverlappedObject *self);
@@ -59,7 +59,7 @@ PyDoc_STRVAR(_winapi_Overlapped_cancel__doc__,
 "\n");
 
 #define _WINAPI_OVERLAPPED_CANCEL_METHODDEF    \
-    {"cancel", _winapi_Overlapped_cancel, METH_NOARGS, _winapi_Overlapped_cancel__doc__},
+    {"cancel", (PyCFunction)_winapi_Overlapped_cancel, METH_NOARGS, _winapi_Overlapped_cancel__doc__},
 
 static PyObject *
 _winapi_Overlapped_cancel_impl(OverlappedObject *self);
@@ -77,7 +77,7 @@ PyDoc_STRVAR(_winapi_CloseHandle__doc__,
 "Close handle.");
 
 #define _WINAPI_CLOSEHANDLE_METHODDEF    \
-    {"CloseHandle", _winapi_CloseHandle, METH_O, _winapi_CloseHandle__doc__},
+    {"CloseHandle", (PyCFunction)_winapi_CloseHandle, METH_O, _winapi_CloseHandle__doc__},
 
 static PyObject *
 _winapi_CloseHandle_impl(PyObject *module, HANDLE handle);
@@ -634,7 +634,7 @@ PyDoc_STRVAR(_winapi_ExitProcess__doc__,
 "\n");
 
 #define _WINAPI_EXITPROCESS_METHODDEF    \
-    {"ExitProcess", _winapi_ExitProcess, METH_O, _winapi_ExitProcess__doc__},
+    {"ExitProcess", (PyCFunction)_winapi_ExitProcess, METH_O, _winapi_ExitProcess__doc__},
 
 static PyObject *
 _winapi_ExitProcess_impl(PyObject *module, UINT ExitCode);
@@ -661,7 +661,7 @@ PyDoc_STRVAR(_winapi_GetCurrentProcess__doc__,
 "Return a handle object for the current process.");
 
 #define _WINAPI_GETCURRENTPROCESS_METHODDEF    \
-    {"GetCurrentProcess", _winapi_GetCurrentProcess, METH_NOARGS, _winapi_GetCurrentProcess__doc__},
+    {"GetCurrentProcess", (PyCFunction)_winapi_GetCurrentProcess, METH_NOARGS, _winapi_GetCurrentProcess__doc__},
 
 static HANDLE
 _winapi_GetCurrentProcess_impl(PyObject *module);
@@ -692,7 +692,7 @@ PyDoc_STRVAR(_winapi_GetExitCodeProcess__doc__,
 "Return the termination status of the specified process.");
 
 #define _WINAPI_GETEXITCODEPROCESS_METHODDEF    \
-    {"GetExitCodeProcess", _winapi_GetExitCodeProcess, METH_O, _winapi_GetExitCodeProcess__doc__},
+    {"GetExitCodeProcess", (PyCFunction)_winapi_GetExitCodeProcess, METH_O, _winapi_GetExitCodeProcess__doc__},
 
 static DWORD
 _winapi_GetExitCodeProcess_impl(PyObject *module, HANDLE process);
@@ -723,7 +723,7 @@ PyDoc_STRVAR(_winapi_GetLastError__doc__,
 "\n");
 
 #define _WINAPI_GETLASTERROR_METHODDEF    \
-    {"GetLastError", _winapi_GetLastError, METH_NOARGS, _winapi_GetLastError__doc__},
+    {"GetLastError", (PyCFunction)_winapi_GetLastError, METH_NOARGS, _winapi_GetLastError__doc__},
 
 static DWORD
 _winapi_GetLastError_impl(PyObject *module);
@@ -829,7 +829,7 @@ PyDoc_STRVAR(_winapi_GetModuleFileName__doc__,
 "of the current process.");
 
 #define _WINAPI_GETMODULEFILENAME_METHODDEF    \
-    {"GetModuleFileName", _winapi_GetModuleFileName, METH_O, _winapi_GetModuleFileName__doc__},
+    {"GetModuleFileName", (PyCFunction)_winapi_GetModuleFileName, METH_O, _winapi_GetModuleFileName__doc__},
 
 static PyObject *
 _winapi_GetModuleFileName_impl(PyObject *module, HMODULE module_handle);
@@ -932,7 +932,7 @@ PyDoc_STRVAR(_winapi_GetStdHandle__doc__,
 "The integer associated with the handle object is returned.");
 
 #define _WINAPI_GETSTDHANDLE_METHODDEF    \
-    {"GetStdHandle", _winapi_GetStdHandle, METH_O, _winapi_GetStdHandle__doc__},
+    {"GetStdHandle", (PyCFunction)_winapi_GetStdHandle, METH_O, _winapi_GetStdHandle__doc__},
 
 static HANDLE
 _winapi_GetStdHandle_impl(PyObject *module, DWORD std_handle);
@@ -967,7 +967,7 @@ PyDoc_STRVAR(_winapi_GetVersion__doc__,
 "Return the version number of the current operating system.");
 
 #define _WINAPI_GETVERSION_METHODDEF    \
-    {"GetVersion", _winapi_GetVersion, METH_NOARGS, _winapi_GetVersion__doc__},
+    {"GetVersion", (PyCFunction)_winapi_GetVersion, METH_NOARGS, _winapi_GetVersion__doc__},
 
 static long
 _winapi_GetVersion_impl(PyObject *module);
@@ -1033,7 +1033,7 @@ PyDoc_STRVAR(_winapi_UnmapViewOfFile__doc__,
 "\n");
 
 #define _WINAPI_UNMAPVIEWOFFILE_METHODDEF    \
-    {"UnmapViewOfFile", _winapi_UnmapViewOfFile, METH_O, _winapi_UnmapViewOfFile__doc__},
+    {"UnmapViewOfFile", (PyCFunction)_winapi_UnmapViewOfFile, METH_O, _winapi_UnmapViewOfFile__doc__},
 
 static PyObject *
 _winapi_UnmapViewOfFile_impl(PyObject *module, LPCVOID address);
@@ -1631,7 +1631,7 @@ PyDoc_STRVAR(_winapi_VirtualQuerySize__doc__,
 "\n");
 
 #define _WINAPI_VIRTUALQUERYSIZE_METHODDEF    \
-    {"VirtualQuerySize", _winapi_VirtualQuerySize, METH_O, _winapi_VirtualQuerySize__doc__},
+    {"VirtualQuerySize", (PyCFunction)_winapi_VirtualQuerySize, METH_O, _winapi_VirtualQuerySize__doc__},
 
 static size_t
 _winapi_VirtualQuerySize_impl(PyObject *module, LPCVOID address);
@@ -1890,7 +1890,7 @@ PyDoc_STRVAR(_winapi_GetACP__doc__,
 "Get the current Windows ANSI code page identifier.");
 
 #define _WINAPI_GETACP_METHODDEF    \
-    {"GetACP", _winapi_GetACP, METH_NOARGS, _winapi_GetACP__doc__},
+    {"GetACP", (PyCFunction)_winapi_GetACP, METH_NOARGS, _winapi_GetACP__doc__},
 
 static PyObject *
 _winapi_GetACP_impl(PyObject *module);
@@ -2024,7 +2024,7 @@ PyDoc_STRVAR(_winapi_NeedCurrentDirectoryForExePath__doc__,
 "\n");
 
 #define _WINAPI_NEEDCURRENTDIRECTORYFOREXEPATH_METHODDEF    \
-    {"NeedCurrentDirectoryForExePath", _winapi_NeedCurrentDirectoryForExePath, METH_O, _winapi_NeedCurrentDirectoryForExePath__doc__},
+    {"NeedCurrentDirectoryForExePath", (PyCFunction)_winapi_NeedCurrentDirectoryForExePath, METH_O, _winapi_NeedCurrentDirectoryForExePath__doc__},
 
 static int
 _winapi_NeedCurrentDirectoryForExePath_impl(PyObject *module,
@@ -2127,4 +2127,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=10664fcb729a1aa8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=06b56212b2186250 input=a9049054013a1b77]*/

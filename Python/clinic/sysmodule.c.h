@@ -120,7 +120,7 @@ PyDoc_STRVAR(sys_displayhook__doc__,
 "Print an object to sys.stdout and also save it in builtins._");
 
 #define SYS_DISPLAYHOOK_METHODDEF    \
-    {"displayhook", sys_displayhook, METH_O, sys_displayhook__doc__},
+    {"displayhook", (PyCFunction)sys_displayhook, METH_O, sys_displayhook__doc__},
 
 PyDoc_STRVAR(sys_excepthook__doc__,
 "excepthook($module, exctype, value, traceback, /)\n"
@@ -166,7 +166,7 @@ PyDoc_STRVAR(sys_exception__doc__,
 "if no such exception exists.");
 
 #define SYS_EXCEPTION_METHODDEF    \
-    {"exception", sys_exception, METH_NOARGS, sys_exception__doc__},
+    {"exception", (PyCFunction)sys_exception, METH_NOARGS, sys_exception__doc__},
 
 static PyObject *
 sys_exception_impl(PyObject *module);
@@ -187,7 +187,7 @@ PyDoc_STRVAR(sys_exc_info__doc__,
 "clause in the current stack frame or in an older stack frame.");
 
 #define SYS_EXC_INFO_METHODDEF    \
-    {"exc_info", sys_exc_info, METH_NOARGS, sys_exc_info__doc__},
+    {"exc_info", (PyCFunction)sys_exc_info, METH_NOARGS, sys_exc_info__doc__},
 
 static PyObject *
 sys_exc_info_impl(PyObject *module);
@@ -213,7 +213,7 @@ PyDoc_STRVAR(sys_unraisablehook__doc__,
 "* object: Object causing the exception, can be None.");
 
 #define SYS_UNRAISABLEHOOK_METHODDEF    \
-    {"unraisablehook", sys_unraisablehook, METH_O, sys_unraisablehook__doc__},
+    {"unraisablehook", (PyCFunction)sys_unraisablehook, METH_O, sys_unraisablehook__doc__},
 
 PyDoc_STRVAR(sys_exit__doc__,
 "exit($module, status=None, /)\n"
@@ -259,7 +259,7 @@ PyDoc_STRVAR(sys_getdefaultencoding__doc__,
 "Return the current default encoding used by the Unicode implementation.");
 
 #define SYS_GETDEFAULTENCODING_METHODDEF    \
-    {"getdefaultencoding", sys_getdefaultencoding, METH_NOARGS, sys_getdefaultencoding__doc__},
+    {"getdefaultencoding", (PyCFunction)sys_getdefaultencoding, METH_NOARGS, sys_getdefaultencoding__doc__},
 
 static PyObject *
 sys_getdefaultencoding_impl(PyObject *module);
@@ -277,7 +277,7 @@ PyDoc_STRVAR(sys_getfilesystemencoding__doc__,
 "Return the encoding used to convert Unicode filenames to OS filenames.");
 
 #define SYS_GETFILESYSTEMENCODING_METHODDEF    \
-    {"getfilesystemencoding", sys_getfilesystemencoding, METH_NOARGS, sys_getfilesystemencoding__doc__},
+    {"getfilesystemencoding", (PyCFunction)sys_getfilesystemencoding, METH_NOARGS, sys_getfilesystemencoding__doc__},
 
 static PyObject *
 sys_getfilesystemencoding_impl(PyObject *module);
@@ -295,7 +295,7 @@ PyDoc_STRVAR(sys_getfilesystemencodeerrors__doc__,
 "Return the error mode used Unicode to OS filename conversion.");
 
 #define SYS_GETFILESYSTEMENCODEERRORS_METHODDEF    \
-    {"getfilesystemencodeerrors", sys_getfilesystemencodeerrors, METH_NOARGS, sys_getfilesystemencodeerrors__doc__},
+    {"getfilesystemencodeerrors", (PyCFunction)sys_getfilesystemencodeerrors, METH_NOARGS, sys_getfilesystemencodeerrors__doc__},
 
 static PyObject *
 sys_getfilesystemencodeerrors_impl(PyObject *module);
@@ -317,7 +317,7 @@ PyDoc_STRVAR(sys_intern__doc__,
 "the previously interned string object with the same value.");
 
 #define SYS_INTERN_METHODDEF    \
-    {"intern", sys_intern, METH_O, sys_intern__doc__},
+    {"intern", (PyCFunction)sys_intern, METH_O, sys_intern__doc__},
 
 static PyObject *
 sys_intern_impl(PyObject *module, PyObject *s);
@@ -346,7 +346,7 @@ PyDoc_STRVAR(sys__is_interned__doc__,
 "Return True if the given string is \"interned\".");
 
 #define SYS__IS_INTERNED_METHODDEF    \
-    {"_is_interned", sys__is_interned, METH_O, sys__is_interned__doc__},
+    {"_is_interned", (PyCFunction)sys__is_interned, METH_O, sys__is_interned__doc__},
 
 static int
 sys__is_interned_impl(PyObject *module, PyObject *string);
@@ -382,7 +382,7 @@ PyDoc_STRVAR(sys__is_immortal__doc__,
 "This function should be used for specialized purposes only.");
 
 #define SYS__IS_IMMORTAL_METHODDEF    \
-    {"_is_immortal", sys__is_immortal, METH_O, sys__is_immortal__doc__},
+    {"_is_immortal", (PyCFunction)sys__is_immortal, METH_O, sys__is_immortal__doc__},
 
 static int
 sys__is_immortal_impl(PyObject *module, PyObject *op);
@@ -413,7 +413,7 @@ PyDoc_STRVAR(sys_settrace__doc__,
 "in the library manual.");
 
 #define SYS_SETTRACE_METHODDEF    \
-    {"settrace", sys_settrace, METH_O, sys_settrace__doc__},
+    {"settrace", (PyCFunction)sys_settrace, METH_O, sys_settrace__doc__},
 
 PyDoc_STRVAR(sys__settraceallthreads__doc__,
 "_settraceallthreads($module, function, /)\n"
@@ -425,7 +425,7 @@ PyDoc_STRVAR(sys__settraceallthreads__doc__,
 "in the library manual.");
 
 #define SYS__SETTRACEALLTHREADS_METHODDEF    \
-    {"_settraceallthreads", sys__settraceallthreads, METH_O, sys__settraceallthreads__doc__},
+    {"_settraceallthreads", (PyCFunction)sys__settraceallthreads, METH_O, sys__settraceallthreads__doc__},
 
 PyDoc_STRVAR(sys_gettrace__doc__,
 "gettrace($module, /)\n"
@@ -436,7 +436,7 @@ PyDoc_STRVAR(sys_gettrace__doc__,
 "See the debugger chapter in the library manual.");
 
 #define SYS_GETTRACE_METHODDEF    \
-    {"gettrace", sys_gettrace, METH_NOARGS, sys_gettrace__doc__},
+    {"gettrace", (PyCFunction)sys_gettrace, METH_NOARGS, sys_gettrace__doc__},
 
 static PyObject *
 sys_gettrace_impl(PyObject *module);
@@ -457,7 +457,7 @@ PyDoc_STRVAR(sys_setprofile__doc__,
 "chapter in the library manual.");
 
 #define SYS_SETPROFILE_METHODDEF    \
-    {"setprofile", sys_setprofile, METH_O, sys_setprofile__doc__},
+    {"setprofile", (PyCFunction)sys_setprofile, METH_O, sys_setprofile__doc__},
 
 PyDoc_STRVAR(sys__setprofileallthreads__doc__,
 "_setprofileallthreads($module, function, /)\n"
@@ -469,7 +469,7 @@ PyDoc_STRVAR(sys__setprofileallthreads__doc__,
 "chapter in the library manual.");
 
 #define SYS__SETPROFILEALLTHREADS_METHODDEF    \
-    {"_setprofileallthreads", sys__setprofileallthreads, METH_O, sys__setprofileallthreads__doc__},
+    {"_setprofileallthreads", (PyCFunction)sys__setprofileallthreads, METH_O, sys__setprofileallthreads__doc__},
 
 PyDoc_STRVAR(sys_getprofile__doc__,
 "getprofile($module, /)\n"
@@ -480,7 +480,7 @@ PyDoc_STRVAR(sys_getprofile__doc__,
 "See the profiler chapter in the library manual.");
 
 #define SYS_GETPROFILE_METHODDEF    \
-    {"getprofile", sys_getprofile, METH_NOARGS, sys_getprofile__doc__},
+    {"getprofile", (PyCFunction)sys_getprofile, METH_NOARGS, sys_getprofile__doc__},
 
 static PyObject *
 sys_getprofile_impl(PyObject *module);
@@ -505,7 +505,7 @@ PyDoc_STRVAR(sys_setswitchinterval__doc__,
 "A typical value is 0.005 (5 milliseconds).");
 
 #define SYS_SETSWITCHINTERVAL_METHODDEF    \
-    {"setswitchinterval", sys_setswitchinterval, METH_O, sys_setswitchinterval__doc__},
+    {"setswitchinterval", (PyCFunction)sys_setswitchinterval, METH_O, sys_setswitchinterval__doc__},
 
 static PyObject *
 sys_setswitchinterval_impl(PyObject *module, double interval);
@@ -539,7 +539,7 @@ PyDoc_STRVAR(sys_getswitchinterval__doc__,
 "Return the current thread switch interval; see sys.setswitchinterval().");
 
 #define SYS_GETSWITCHINTERVAL_METHODDEF    \
-    {"getswitchinterval", sys_getswitchinterval, METH_NOARGS, sys_getswitchinterval__doc__},
+    {"getswitchinterval", (PyCFunction)sys_getswitchinterval, METH_NOARGS, sys_getswitchinterval__doc__},
 
 static double
 sys_getswitchinterval_impl(PyObject *module);
@@ -571,7 +571,7 @@ PyDoc_STRVAR(sys_setrecursionlimit__doc__,
 "dependent.");
 
 #define SYS_SETRECURSIONLIMIT_METHODDEF    \
-    {"setrecursionlimit", sys_setrecursionlimit, METH_O, sys_setrecursionlimit__doc__},
+    {"setrecursionlimit", (PyCFunction)sys_setrecursionlimit, METH_O, sys_setrecursionlimit__doc__},
 
 static PyObject *
 sys_setrecursionlimit_impl(PyObject *module, int new_limit);
@@ -663,7 +663,7 @@ PyDoc_STRVAR(sys_get_coroutine_origin_tracking_depth__doc__,
 "Check status of origin tracking for coroutine objects in this thread.");
 
 #define SYS_GET_COROUTINE_ORIGIN_TRACKING_DEPTH_METHODDEF    \
-    {"get_coroutine_origin_tracking_depth", sys_get_coroutine_origin_tracking_depth, METH_NOARGS, sys_get_coroutine_origin_tracking_depth__doc__},
+    {"get_coroutine_origin_tracking_depth", (PyCFunction)sys_get_coroutine_origin_tracking_depth, METH_NOARGS, sys_get_coroutine_origin_tracking_depth__doc__},
 
 static int
 sys_get_coroutine_origin_tracking_depth_impl(PyObject *module);
@@ -693,7 +693,7 @@ PyDoc_STRVAR(sys_get_asyncgen_hooks__doc__,
 "This returns a namedtuple of the form (firstiter, finalizer).");
 
 #define SYS_GET_ASYNCGEN_HOOKS_METHODDEF    \
-    {"get_asyncgen_hooks", sys_get_asyncgen_hooks, METH_NOARGS, sys_get_asyncgen_hooks__doc__},
+    {"get_asyncgen_hooks", (PyCFunction)sys_get_asyncgen_hooks, METH_NOARGS, sys_get_asyncgen_hooks__doc__},
 
 static PyObject *
 sys_get_asyncgen_hooks_impl(PyObject *module);
@@ -715,7 +715,7 @@ PyDoc_STRVAR(sys_getrecursionlimit__doc__,
 "of the C stack and crashing Python.");
 
 #define SYS_GETRECURSIONLIMIT_METHODDEF    \
-    {"getrecursionlimit", sys_getrecursionlimit, METH_NOARGS, sys_getrecursionlimit__doc__},
+    {"getrecursionlimit", (PyCFunction)sys_getrecursionlimit, METH_NOARGS, sys_getrecursionlimit__doc__},
 
 static PyObject *
 sys_getrecursionlimit_impl(PyObject *module);
@@ -745,7 +745,7 @@ PyDoc_STRVAR(sys_getwindowsversion__doc__,
 "intended for identifying the OS rather than feature detection.");
 
 #define SYS_GETWINDOWSVERSION_METHODDEF    \
-    {"getwindowsversion", sys_getwindowsversion, METH_NOARGS, sys_getwindowsversion__doc__},
+    {"getwindowsversion", (PyCFunction)sys_getwindowsversion, METH_NOARGS, sys_getwindowsversion__doc__},
 
 static PyObject *
 sys_getwindowsversion_impl(PyObject *module);
@@ -773,7 +773,7 @@ PyDoc_STRVAR(sys__enablelegacywindowsfsencoding__doc__,
 "environment variable before launching Python.");
 
 #define SYS__ENABLELEGACYWINDOWSFSENCODING_METHODDEF    \
-    {"_enablelegacywindowsfsencoding", sys__enablelegacywindowsfsencoding, METH_NOARGS, sys__enablelegacywindowsfsencoding__doc__},
+    {"_enablelegacywindowsfsencoding", (PyCFunction)sys__enablelegacywindowsfsencoding, METH_NOARGS, sys__enablelegacywindowsfsencoding__doc__},
 
 static PyObject *
 sys__enablelegacywindowsfsencoding_impl(PyObject *module);
@@ -803,7 +803,7 @@ PyDoc_STRVAR(sys_setdlopenflags__doc__,
 "os.RTLD_LAZY).");
 
 #define SYS_SETDLOPENFLAGS_METHODDEF    \
-    {"setdlopenflags", sys_setdlopenflags, METH_O, sys_setdlopenflags__doc__},
+    {"setdlopenflags", (PyCFunction)sys_setdlopenflags, METH_O, sys_setdlopenflags__doc__},
 
 static PyObject *
 sys_setdlopenflags_impl(PyObject *module, int new_val);
@@ -837,7 +837,7 @@ PyDoc_STRVAR(sys_getdlopenflags__doc__,
 "The flag constants are defined in the os module.");
 
 #define SYS_GETDLOPENFLAGS_METHODDEF    \
-    {"getdlopenflags", sys_getdlopenflags, METH_NOARGS, sys_getdlopenflags__doc__},
+    {"getdlopenflags", (PyCFunction)sys_getdlopenflags, METH_NOARGS, sys_getdlopenflags__doc__},
 
 static PyObject *
 sys_getdlopenflags_impl(PyObject *module);
@@ -858,7 +858,7 @@ PyDoc_STRVAR(sys_mdebug__doc__,
 "\n");
 
 #define SYS_MDEBUG_METHODDEF    \
-    {"mdebug", sys_mdebug, METH_O, sys_mdebug__doc__},
+    {"mdebug", (PyCFunction)sys_mdebug, METH_O, sys_mdebug__doc__},
 
 static PyObject *
 sys_mdebug_impl(PyObject *module, int flag);
@@ -888,7 +888,7 @@ PyDoc_STRVAR(sys_get_int_max_str_digits__doc__,
 "Return the maximum string digits limit for non-binary int<->str conversions.");
 
 #define SYS_GET_INT_MAX_STR_DIGITS_METHODDEF    \
-    {"get_int_max_str_digits", sys_get_int_max_str_digits, METH_NOARGS, sys_get_int_max_str_digits__doc__},
+    {"get_int_max_str_digits", (PyCFunction)sys_get_int_max_str_digits, METH_NOARGS, sys_get_int_max_str_digits__doc__},
 
 static PyObject *
 sys_get_int_max_str_digits_impl(PyObject *module);
@@ -969,7 +969,7 @@ PyDoc_STRVAR(sys_getrefcount__doc__,
 "getrefcount().");
 
 #define SYS_GETREFCOUNT_METHODDEF    \
-    {"getrefcount", sys_getrefcount, METH_O, sys_getrefcount__doc__},
+    {"getrefcount", (PyCFunction)sys_getrefcount, METH_O, sys_getrefcount__doc__},
 
 static Py_ssize_t
 sys_getrefcount_impl(PyObject *module, PyObject *object);
@@ -998,7 +998,7 @@ PyDoc_STRVAR(sys_gettotalrefcount__doc__,
 "\n");
 
 #define SYS_GETTOTALREFCOUNT_METHODDEF    \
-    {"gettotalrefcount", sys_gettotalrefcount, METH_NOARGS, sys_gettotalrefcount__doc__},
+    {"gettotalrefcount", (PyCFunction)sys_gettotalrefcount, METH_NOARGS, sys_gettotalrefcount__doc__},
 
 static Py_ssize_t
 sys_gettotalrefcount_impl(PyObject *module);
@@ -1028,7 +1028,7 @@ PyDoc_STRVAR(sys_getallocatedblocks__doc__,
 "Return the number of memory blocks currently allocated.");
 
 #define SYS_GETALLOCATEDBLOCKS_METHODDEF    \
-    {"getallocatedblocks", sys_getallocatedblocks, METH_NOARGS, sys_getallocatedblocks__doc__},
+    {"getallocatedblocks", (PyCFunction)sys_getallocatedblocks, METH_NOARGS, sys_getallocatedblocks__doc__},
 
 static Py_ssize_t
 sys_getallocatedblocks_impl(PyObject *module);
@@ -1170,7 +1170,7 @@ PyDoc_STRVAR(sys__current_frames__doc__,
 "This function should be used for specialized purposes only.");
 
 #define SYS__CURRENT_FRAMES_METHODDEF    \
-    {"_current_frames", sys__current_frames, METH_NOARGS, sys__current_frames__doc__},
+    {"_current_frames", (PyCFunction)sys__current_frames, METH_NOARGS, sys__current_frames__doc__},
 
 static PyObject *
 sys__current_frames_impl(PyObject *module);
@@ -1190,7 +1190,7 @@ PyDoc_STRVAR(sys__current_exceptions__doc__,
 "This function should be used for specialized purposes only.");
 
 #define SYS__CURRENT_EXCEPTIONS_METHODDEF    \
-    {"_current_exceptions", sys__current_exceptions, METH_NOARGS, sys__current_exceptions__doc__},
+    {"_current_exceptions", (PyCFunction)sys__current_exceptions, METH_NOARGS, sys__current_exceptions__doc__},
 
 static PyObject *
 sys__current_exceptions_impl(PyObject *module);
@@ -1249,7 +1249,7 @@ PyDoc_STRVAR(sys__debugmallocstats__doc__,
 "checks.");
 
 #define SYS__DEBUGMALLOCSTATS_METHODDEF    \
-    {"_debugmallocstats", sys__debugmallocstats, METH_NOARGS, sys__debugmallocstats__doc__},
+    {"_debugmallocstats", (PyCFunction)sys__debugmallocstats, METH_NOARGS, sys__debugmallocstats__doc__},
 
 static PyObject *
 sys__debugmallocstats_impl(PyObject *module);
@@ -1267,7 +1267,7 @@ PyDoc_STRVAR(sys__clear_type_cache__doc__,
 "Clear the internal type lookup cache.");
 
 #define SYS__CLEAR_TYPE_CACHE_METHODDEF    \
-    {"_clear_type_cache", sys__clear_type_cache, METH_NOARGS, sys__clear_type_cache__doc__},
+    {"_clear_type_cache", (PyCFunction)sys__clear_type_cache, METH_NOARGS, sys__clear_type_cache__doc__},
 
 static PyObject *
 sys__clear_type_cache_impl(PyObject *module);
@@ -1285,7 +1285,7 @@ PyDoc_STRVAR(sys__clear_internal_caches__doc__,
 "Clear all internal performance-related caches.");
 
 #define SYS__CLEAR_INTERNAL_CACHES_METHODDEF    \
-    {"_clear_internal_caches", sys__clear_internal_caches, METH_NOARGS, sys__clear_internal_caches__doc__},
+    {"_clear_internal_caches", (PyCFunction)sys__clear_internal_caches, METH_NOARGS, sys__clear_internal_caches__doc__},
 
 static PyObject *
 sys__clear_internal_caches_impl(PyObject *module);
@@ -1303,7 +1303,7 @@ PyDoc_STRVAR(sys_is_finalizing__doc__,
 "Return True if Python is exiting.");
 
 #define SYS_IS_FINALIZING_METHODDEF    \
-    {"is_finalizing", sys_is_finalizing, METH_NOARGS, sys_is_finalizing__doc__},
+    {"is_finalizing", (PyCFunction)sys_is_finalizing, METH_NOARGS, sys_is_finalizing__doc__},
 
 static PyObject *
 sys_is_finalizing_impl(PyObject *module);
@@ -1323,7 +1323,7 @@ PyDoc_STRVAR(sys__stats_on__doc__,
 "Turns on stats gathering (stats gathering is off by default).");
 
 #define SYS__STATS_ON_METHODDEF    \
-    {"_stats_on", sys__stats_on, METH_NOARGS, sys__stats_on__doc__},
+    {"_stats_on", (PyCFunction)sys__stats_on, METH_NOARGS, sys__stats_on__doc__},
 
 static PyObject *
 sys__stats_on_impl(PyObject *module);
@@ -1345,7 +1345,7 @@ PyDoc_STRVAR(sys__stats_off__doc__,
 "Turns off stats gathering (stats gathering is off by default).");
 
 #define SYS__STATS_OFF_METHODDEF    \
-    {"_stats_off", sys__stats_off, METH_NOARGS, sys__stats_off__doc__},
+    {"_stats_off", (PyCFunction)sys__stats_off, METH_NOARGS, sys__stats_off__doc__},
 
 static PyObject *
 sys__stats_off_impl(PyObject *module);
@@ -1367,7 +1367,7 @@ PyDoc_STRVAR(sys__stats_clear__doc__,
 "Clears the stats.");
 
 #define SYS__STATS_CLEAR_METHODDEF    \
-    {"_stats_clear", sys__stats_clear, METH_NOARGS, sys__stats_clear__doc__},
+    {"_stats_clear", (PyCFunction)sys__stats_clear, METH_NOARGS, sys__stats_clear__doc__},
 
 static PyObject *
 sys__stats_clear_impl(PyObject *module);
@@ -1391,7 +1391,7 @@ PyDoc_STRVAR(sys__stats_dump__doc__,
 "Return False if no statistics were not dumped because stats gathering was off.");
 
 #define SYS__STATS_DUMP_METHODDEF    \
-    {"_stats_dump", sys__stats_dump, METH_NOARGS, sys__stats_dump__doc__},
+    {"_stats_dump", (PyCFunction)sys__stats_dump, METH_NOARGS, sys__stats_dump__doc__},
 
 static int
 sys__stats_dump_impl(PyObject *module);
@@ -1423,7 +1423,7 @@ PyDoc_STRVAR(sys_getandroidapilevel__doc__,
 "Return the build time API version of Android as an integer.");
 
 #define SYS_GETANDROIDAPILEVEL_METHODDEF    \
-    {"getandroidapilevel", sys_getandroidapilevel, METH_NOARGS, sys_getandroidapilevel__doc__},
+    {"getandroidapilevel", (PyCFunction)sys_getandroidapilevel, METH_NOARGS, sys_getandroidapilevel__doc__},
 
 static PyObject *
 sys_getandroidapilevel_impl(PyObject *module);
@@ -1443,7 +1443,7 @@ PyDoc_STRVAR(sys_activate_stack_trampoline__doc__,
 "Activate stack profiler trampoline *backend*.");
 
 #define SYS_ACTIVATE_STACK_TRAMPOLINE_METHODDEF    \
-    {"activate_stack_trampoline", sys_activate_stack_trampoline, METH_O, sys_activate_stack_trampoline__doc__},
+    {"activate_stack_trampoline", (PyCFunction)sys_activate_stack_trampoline, METH_O, sys_activate_stack_trampoline__doc__},
 
 static PyObject *
 sys_activate_stack_trampoline_impl(PyObject *module, const char *backend);
@@ -1482,7 +1482,7 @@ PyDoc_STRVAR(sys_deactivate_stack_trampoline__doc__,
 "If no stack profiler is activated, this function has no effect.");
 
 #define SYS_DEACTIVATE_STACK_TRAMPOLINE_METHODDEF    \
-    {"deactivate_stack_trampoline", sys_deactivate_stack_trampoline, METH_NOARGS, sys_deactivate_stack_trampoline__doc__},
+    {"deactivate_stack_trampoline", (PyCFunction)sys_deactivate_stack_trampoline, METH_NOARGS, sys_deactivate_stack_trampoline__doc__},
 
 static PyObject *
 sys_deactivate_stack_trampoline_impl(PyObject *module);
@@ -1500,7 +1500,7 @@ PyDoc_STRVAR(sys_is_stack_trampoline_active__doc__,
 "Return *True* if a stack profiler trampoline is active.");
 
 #define SYS_IS_STACK_TRAMPOLINE_ACTIVE_METHODDEF    \
-    {"is_stack_trampoline_active", sys_is_stack_trampoline_active, METH_NOARGS, sys_is_stack_trampoline_active__doc__},
+    {"is_stack_trampoline_active", (PyCFunction)sys_is_stack_trampoline_active, METH_NOARGS, sys_is_stack_trampoline_active__doc__},
 
 static PyObject *
 sys_is_stack_trampoline_active_impl(PyObject *module);
@@ -1644,7 +1644,7 @@ PyDoc_STRVAR(sys__get_cpu_count_config__doc__,
 "Private function for getting PyConfig.cpu_count");
 
 #define SYS__GET_CPU_COUNT_CONFIG_METHODDEF    \
-    {"_get_cpu_count_config", sys__get_cpu_count_config, METH_NOARGS, sys__get_cpu_count_config__doc__},
+    {"_get_cpu_count_config", (PyCFunction)sys__get_cpu_count_config, METH_NOARGS, sys__get_cpu_count_config__doc__},
 
 static int
 sys__get_cpu_count_config_impl(PyObject *module);
@@ -1672,7 +1672,7 @@ PyDoc_STRVAR(sys__baserepl__doc__,
 "Private function for getting the base REPL");
 
 #define SYS__BASEREPL_METHODDEF    \
-    {"_baserepl", sys__baserepl, METH_NOARGS, sys__baserepl__doc__},
+    {"_baserepl", (PyCFunction)sys__baserepl, METH_NOARGS, sys__baserepl__doc__},
 
 static PyObject *
 sys__baserepl_impl(PyObject *module);
@@ -1690,7 +1690,7 @@ PyDoc_STRVAR(sys__is_gil_enabled__doc__,
 "Return True if the GIL is currently enabled and False otherwise.");
 
 #define SYS__IS_GIL_ENABLED_METHODDEF    \
-    {"_is_gil_enabled", sys__is_gil_enabled, METH_NOARGS, sys__is_gil_enabled__doc__},
+    {"_is_gil_enabled", (PyCFunction)sys__is_gil_enabled, METH_NOARGS, sys__is_gil_enabled__doc__},
 
 static int
 sys__is_gil_enabled_impl(PyObject *module);
@@ -1754,4 +1754,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=f600d96ec198ada5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1e5f608092c12636 input=a9049054013a1b77]*/

@@ -37,7 +37,7 @@ PyDoc_STRVAR(SHA1Type_digest__doc__,
 "Return the digest value as a bytes object.");
 
 #define SHA1TYPE_DIGEST_METHODDEF    \
-    {"digest", SHA1Type_digest, METH_NOARGS, SHA1Type_digest__doc__},
+    {"digest", (PyCFunction)SHA1Type_digest, METH_NOARGS, SHA1Type_digest__doc__},
 
 static PyObject *
 SHA1Type_digest_impl(SHA1object *self);
@@ -55,7 +55,7 @@ PyDoc_STRVAR(SHA1Type_hexdigest__doc__,
 "Return the digest value as a string of hexadecimal digits.");
 
 #define SHA1TYPE_HEXDIGEST_METHODDEF    \
-    {"hexdigest", SHA1Type_hexdigest, METH_NOARGS, SHA1Type_hexdigest__doc__},
+    {"hexdigest", (PyCFunction)SHA1Type_hexdigest, METH_NOARGS, SHA1Type_hexdigest__doc__},
 
 static PyObject *
 SHA1Type_hexdigest_impl(SHA1object *self);
@@ -73,7 +73,7 @@ PyDoc_STRVAR(SHA1Type_update__doc__,
 "Update this hash object\'s state with the provided string.");
 
 #define SHA1TYPE_UPDATE_METHODDEF    \
-    {"update", SHA1Type_update, METH_O, SHA1Type_update__doc__},
+    {"update", (PyCFunction)SHA1Type_update, METH_O, SHA1Type_update__doc__},
 
 static PyObject *
 SHA1Type_update_impl(SHA1object *self, PyObject *obj);
@@ -162,4 +162,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a8844599cf058548 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3cfa7b6a9f99b5b2 input=a9049054013a1b77]*/

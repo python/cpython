@@ -16,7 +16,7 @@ PyDoc_STRVAR(EncodingMap_size__doc__,
 "Return the size (in bytes) of this object.");
 
 #define ENCODINGMAP_SIZE_METHODDEF    \
-    {"size", EncodingMap_size, METH_NOARGS, EncodingMap_size__doc__},
+    {"size", (PyCFunction)EncodingMap_size, METH_NOARGS, EncodingMap_size__doc__},
 
 static PyObject *
 EncodingMap_size_impl(struct encoding_map *self);
@@ -37,7 +37,7 @@ PyDoc_STRVAR(unicode_title__doc__,
 "cased characters have lower case.");
 
 #define UNICODE_TITLE_METHODDEF    \
-    {"title", unicode_title, METH_NOARGS, unicode_title__doc__},
+    {"title", (PyCFunction)unicode_title, METH_NOARGS, unicode_title__doc__},
 
 static PyObject *
 unicode_title_impl(PyObject *self);
@@ -58,7 +58,7 @@ PyDoc_STRVAR(unicode_capitalize__doc__,
 "case.");
 
 #define UNICODE_CAPITALIZE_METHODDEF    \
-    {"capitalize", unicode_capitalize, METH_NOARGS, unicode_capitalize__doc__},
+    {"capitalize", (PyCFunction)unicode_capitalize, METH_NOARGS, unicode_capitalize__doc__},
 
 static PyObject *
 unicode_capitalize_impl(PyObject *self);
@@ -76,7 +76,7 @@ PyDoc_STRVAR(unicode_casefold__doc__,
 "Return a version of the string suitable for caseless comparisons.");
 
 #define UNICODE_CASEFOLD_METHODDEF    \
-    {"casefold", unicode_casefold, METH_NOARGS, unicode_casefold__doc__},
+    {"casefold", (PyCFunction)unicode_casefold, METH_NOARGS, unicode_casefold__doc__},
 
 static PyObject *
 unicode_casefold_impl(PyObject *self);
@@ -480,7 +480,7 @@ PyDoc_STRVAR(unicode_isascii__doc__,
 "Empty string is ASCII too.");
 
 #define UNICODE_ISASCII_METHODDEF    \
-    {"isascii", unicode_isascii, METH_NOARGS, unicode_isascii__doc__},
+    {"isascii", (PyCFunction)unicode_isascii, METH_NOARGS, unicode_isascii__doc__},
 
 static PyObject *
 unicode_isascii_impl(PyObject *self);
@@ -501,7 +501,7 @@ PyDoc_STRVAR(unicode_islower__doc__,
 "there is at least one cased character in the string.");
 
 #define UNICODE_ISLOWER_METHODDEF    \
-    {"islower", unicode_islower, METH_NOARGS, unicode_islower__doc__},
+    {"islower", (PyCFunction)unicode_islower, METH_NOARGS, unicode_islower__doc__},
 
 static PyObject *
 unicode_islower_impl(PyObject *self);
@@ -522,7 +522,7 @@ PyDoc_STRVAR(unicode_isupper__doc__,
 "there is at least one cased character in the string.");
 
 #define UNICODE_ISUPPER_METHODDEF    \
-    {"isupper", unicode_isupper, METH_NOARGS, unicode_isupper__doc__},
+    {"isupper", (PyCFunction)unicode_isupper, METH_NOARGS, unicode_isupper__doc__},
 
 static PyObject *
 unicode_isupper_impl(PyObject *self);
@@ -543,7 +543,7 @@ PyDoc_STRVAR(unicode_istitle__doc__,
 "follow uncased characters and lowercase characters only cased ones.");
 
 #define UNICODE_ISTITLE_METHODDEF    \
-    {"istitle", unicode_istitle, METH_NOARGS, unicode_istitle__doc__},
+    {"istitle", (PyCFunction)unicode_istitle, METH_NOARGS, unicode_istitle__doc__},
 
 static PyObject *
 unicode_istitle_impl(PyObject *self);
@@ -564,7 +564,7 @@ PyDoc_STRVAR(unicode_isspace__doc__,
 "is at least one character in the string.");
 
 #define UNICODE_ISSPACE_METHODDEF    \
-    {"isspace", unicode_isspace, METH_NOARGS, unicode_isspace__doc__},
+    {"isspace", (PyCFunction)unicode_isspace, METH_NOARGS, unicode_isspace__doc__},
 
 static PyObject *
 unicode_isspace_impl(PyObject *self);
@@ -585,7 +585,7 @@ PyDoc_STRVAR(unicode_isalpha__doc__,
 "is at least one character in the string.");
 
 #define UNICODE_ISALPHA_METHODDEF    \
-    {"isalpha", unicode_isalpha, METH_NOARGS, unicode_isalpha__doc__},
+    {"isalpha", (PyCFunction)unicode_isalpha, METH_NOARGS, unicode_isalpha__doc__},
 
 static PyObject *
 unicode_isalpha_impl(PyObject *self);
@@ -606,7 +606,7 @@ PyDoc_STRVAR(unicode_isalnum__doc__,
 "there is at least one character in the string.");
 
 #define UNICODE_ISALNUM_METHODDEF    \
-    {"isalnum", unicode_isalnum, METH_NOARGS, unicode_isalnum__doc__},
+    {"isalnum", (PyCFunction)unicode_isalnum, METH_NOARGS, unicode_isalnum__doc__},
 
 static PyObject *
 unicode_isalnum_impl(PyObject *self);
@@ -627,7 +627,7 @@ PyDoc_STRVAR(unicode_isdecimal__doc__,
 "there is at least one character in the string.");
 
 #define UNICODE_ISDECIMAL_METHODDEF    \
-    {"isdecimal", unicode_isdecimal, METH_NOARGS, unicode_isdecimal__doc__},
+    {"isdecimal", (PyCFunction)unicode_isdecimal, METH_NOARGS, unicode_isdecimal__doc__},
 
 static PyObject *
 unicode_isdecimal_impl(PyObject *self);
@@ -648,7 +648,7 @@ PyDoc_STRVAR(unicode_isdigit__doc__,
 "is at least one character in the string.");
 
 #define UNICODE_ISDIGIT_METHODDEF    \
-    {"isdigit", unicode_isdigit, METH_NOARGS, unicode_isdigit__doc__},
+    {"isdigit", (PyCFunction)unicode_isdigit, METH_NOARGS, unicode_isdigit__doc__},
 
 static PyObject *
 unicode_isdigit_impl(PyObject *self);
@@ -669,7 +669,7 @@ PyDoc_STRVAR(unicode_isnumeric__doc__,
 "least one character in the string.");
 
 #define UNICODE_ISNUMERIC_METHODDEF    \
-    {"isnumeric", unicode_isnumeric, METH_NOARGS, unicode_isnumeric__doc__},
+    {"isnumeric", (PyCFunction)unicode_isnumeric, METH_NOARGS, unicode_isnumeric__doc__},
 
 static PyObject *
 unicode_isnumeric_impl(PyObject *self);
@@ -690,7 +690,7 @@ PyDoc_STRVAR(unicode_isidentifier__doc__,
 "such as \"def\" or \"class\".");
 
 #define UNICODE_ISIDENTIFIER_METHODDEF    \
-    {"isidentifier", unicode_isidentifier, METH_NOARGS, unicode_isidentifier__doc__},
+    {"isidentifier", (PyCFunction)unicode_isidentifier, METH_NOARGS, unicode_isidentifier__doc__},
 
 static PyObject *
 unicode_isidentifier_impl(PyObject *self);
@@ -710,7 +710,7 @@ PyDoc_STRVAR(unicode_isprintable__doc__,
 "A character is printable if repr() may use it in its output.");
 
 #define UNICODE_ISPRINTABLE_METHODDEF    \
-    {"isprintable", unicode_isprintable, METH_NOARGS, unicode_isprintable__doc__},
+    {"isprintable", (PyCFunction)unicode_isprintable, METH_NOARGS, unicode_isprintable__doc__},
 
 static PyObject *
 unicode_isprintable_impl(PyObject *self);
@@ -733,7 +733,7 @@ PyDoc_STRVAR(unicode_join__doc__,
 "Example: \'.\'.join([\'ab\', \'pq\', \'rs\']) -> \'ab.pq.rs\'");
 
 #define UNICODE_JOIN_METHODDEF    \
-    {"join", unicode_join, METH_O, unicode_join__doc__},
+    {"join", (PyCFunction)unicode_join, METH_O, unicode_join__doc__},
 
 PyDoc_STRVAR(unicode_ljust__doc__,
 "ljust($self, width, fillchar=\' \', /)\n"
@@ -791,7 +791,7 @@ PyDoc_STRVAR(unicode_lower__doc__,
 "Return a copy of the string converted to lowercase.");
 
 #define UNICODE_LOWER_METHODDEF    \
-    {"lower", unicode_lower, METH_NOARGS, unicode_lower__doc__},
+    {"lower", (PyCFunction)unicode_lower, METH_NOARGS, unicode_lower__doc__},
 
 static PyObject *
 unicode_lower_impl(PyObject *self);
@@ -1006,7 +1006,7 @@ PyDoc_STRVAR(unicode_removeprefix__doc__,
 "Otherwise, return a copy of the original string.");
 
 #define UNICODE_REMOVEPREFIX_METHODDEF    \
-    {"removeprefix", unicode_removeprefix, METH_O, unicode_removeprefix__doc__},
+    {"removeprefix", (PyCFunction)unicode_removeprefix, METH_O, unicode_removeprefix__doc__},
 
 static PyObject *
 unicode_removeprefix_impl(PyObject *self, PyObject *prefix);
@@ -1039,7 +1039,7 @@ PyDoc_STRVAR(unicode_removesuffix__doc__,
 "string.");
 
 #define UNICODE_REMOVESUFFIX_METHODDEF    \
-    {"removesuffix", unicode_removesuffix, METH_O, unicode_removesuffix__doc__},
+    {"removesuffix", (PyCFunction)unicode_removesuffix, METH_O, unicode_removesuffix__doc__},
 
 static PyObject *
 unicode_removesuffix_impl(PyObject *self, PyObject *suffix);
@@ -1331,7 +1331,7 @@ PyDoc_STRVAR(unicode_partition__doc__,
 "and two empty strings.");
 
 #define UNICODE_PARTITION_METHODDEF    \
-    {"partition", unicode_partition, METH_O, unicode_partition__doc__},
+    {"partition", (PyCFunction)unicode_partition, METH_O, unicode_partition__doc__},
 
 PyDoc_STRVAR(unicode_rpartition__doc__,
 "rpartition($self, sep, /)\n"
@@ -1347,7 +1347,7 @@ PyDoc_STRVAR(unicode_rpartition__doc__,
 "and the original string.");
 
 #define UNICODE_RPARTITION_METHODDEF    \
-    {"rpartition", unicode_rpartition, METH_O, unicode_rpartition__doc__},
+    {"rpartition", (PyCFunction)unicode_rpartition, METH_O, unicode_rpartition__doc__},
 
 PyDoc_STRVAR(unicode_rsplit__doc__,
 "rsplit($self, /, sep=None, maxsplit=-1)\n"
@@ -1514,7 +1514,7 @@ PyDoc_STRVAR(unicode_swapcase__doc__,
 "Convert uppercase characters to lowercase and lowercase characters to uppercase.");
 
 #define UNICODE_SWAPCASE_METHODDEF    \
-    {"swapcase", unicode_swapcase, METH_NOARGS, unicode_swapcase__doc__},
+    {"swapcase", (PyCFunction)unicode_swapcase, METH_NOARGS, unicode_swapcase__doc__},
 
 static PyObject *
 unicode_swapcase_impl(PyObject *self);
@@ -1595,7 +1595,7 @@ PyDoc_STRVAR(unicode_translate__doc__,
 "left untouched.  Characters mapped to None are deleted.");
 
 #define UNICODE_TRANSLATE_METHODDEF    \
-    {"translate", unicode_translate, METH_O, unicode_translate__doc__},
+    {"translate", (PyCFunction)unicode_translate, METH_O, unicode_translate__doc__},
 
 PyDoc_STRVAR(unicode_upper__doc__,
 "upper($self, /)\n"
@@ -1604,7 +1604,7 @@ PyDoc_STRVAR(unicode_upper__doc__,
 "Return a copy of the string converted to uppercase.");
 
 #define UNICODE_UPPER_METHODDEF    \
-    {"upper", unicode_upper, METH_NOARGS, unicode_upper__doc__},
+    {"upper", (PyCFunction)unicode_upper, METH_NOARGS, unicode_upper__doc__},
 
 static PyObject *
 unicode_upper_impl(PyObject *self);
@@ -1624,7 +1624,7 @@ PyDoc_STRVAR(unicode_zfill__doc__,
 "The string is never truncated.");
 
 #define UNICODE_ZFILL_METHODDEF    \
-    {"zfill", unicode_zfill, METH_O, unicode_zfill__doc__},
+    {"zfill", (PyCFunction)unicode_zfill, METH_O, unicode_zfill__doc__},
 
 static PyObject *
 unicode_zfill_impl(PyObject *self, Py_ssize_t width);
@@ -1762,7 +1762,7 @@ PyDoc_STRVAR(unicode___format____doc__,
 "Return a formatted version of the string as described by format_spec.");
 
 #define UNICODE___FORMAT___METHODDEF    \
-    {"__format__", unicode___format__, METH_O, unicode___format____doc__},
+    {"__format__", (PyCFunction)unicode___format__, METH_O, unicode___format____doc__},
 
 static PyObject *
 unicode___format___impl(PyObject *self, PyObject *format_spec);
@@ -1791,7 +1791,7 @@ PyDoc_STRVAR(unicode_sizeof__doc__,
 "Return the size of the string in memory, in bytes.");
 
 #define UNICODE_SIZEOF_METHODDEF    \
-    {"__sizeof__", unicode_sizeof, METH_NOARGS, unicode_sizeof__doc__},
+    {"__sizeof__", (PyCFunction)unicode_sizeof, METH_NOARGS, unicode_sizeof__doc__},
 
 static PyObject *
 unicode_sizeof_impl(PyObject *self);
@@ -1894,4 +1894,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=511da6f2cde6dab3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=81d703159f829f1f input=a9049054013a1b77]*/

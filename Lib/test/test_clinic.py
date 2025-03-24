@@ -432,11 +432,11 @@ class ClinicWholeFileTest(TestCase):
             "\\n");
 
             #define FN_METHODDEF    \\
-                {"fn", fn, METH_O, fn__doc__},
+                {"fn", (PyCFunction)fn, METH_O, fn__doc__},
 
             static PyObject *
             fn(PyObject *module, PyObject *a)
-            /*[clinic end generated code: output=9ca52938037af908 input=524ce2e021e4eba6]*/
+            /*[clinic end generated code: output=be6798b148ab4e53 input=524ce2e021e4eba6]*/
         """)
         block = dedent("""
             /*[clinic input]
@@ -2930,11 +2930,11 @@ class ClinicExternalTest(TestCase):
             "\\n");
 
             #define FUNC_METHODDEF    \\
-                {"func", func, METH_O, func__doc__},
+                {"func", (PyCFunction)func, METH_O, func__doc__},
 
             static PyObject *
             func(PyObject *module, PyObject *a)
-            /*[clinic end generated code: output=c710c5cbbd6f0a2f input=a9049054013a1b77]*/
+            /*[clinic end generated code: output=3dde2d13002165b9 input=a9049054013a1b77]*/
         """)
         with os_helper.temp_dir() as tmp_dir:
             in_fn = os.path.join(tmp_dir, "test.c")

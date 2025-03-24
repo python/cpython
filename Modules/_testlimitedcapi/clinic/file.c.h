@@ -77,5 +77,5 @@ PyDoc_STRVAR(_testcapi_pyobject_asfiledescriptor__doc__,
 "\n");
 
 #define _TESTCAPI_PYOBJECT_ASFILEDESCRIPTOR_METHODDEF    \
-    {"pyobject_asfiledescriptor", _testcapi_pyobject_asfiledescriptor, METH_O, _testcapi_pyobject_asfiledescriptor__doc__},
-/*[clinic end generated code: output=fb0d76fd0f7d8035 input=a9049054013a1b77]*/
+    {"pyobject_asfiledescriptor", (PyCFunction)_testcapi_pyobject_asfiledescriptor, METH_O, _testcapi_pyobject_asfiledescriptor__doc__},
+/*[clinic end generated code: output=ea572aaaa01aec7b input=a9049054013a1b77]*/

@@ -96,7 +96,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock_release__doc__,
 "Release the semaphore/lock.");
 
 #define _MULTIPROCESSING_SEMLOCK_RELEASE_METHODDEF    \
-    {"release", _multiprocessing_SemLock_release, METH_NOARGS, _multiprocessing_SemLock_release__doc__},
+    {"release", (PyCFunction)_multiprocessing_SemLock_release, METH_NOARGS, _multiprocessing_SemLock_release__doc__},
 
 static PyObject *
 _multiprocessing_SemLock_release_impl(SemLockObject *self);
@@ -202,7 +202,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock_release__doc__,
 "Release the semaphore/lock.");
 
 #define _MULTIPROCESSING_SEMLOCK_RELEASE_METHODDEF    \
-    {"release", _multiprocessing_SemLock_release, METH_NOARGS, _multiprocessing_SemLock_release__doc__},
+    {"release", (PyCFunction)_multiprocessing_SemLock_release, METH_NOARGS, _multiprocessing_SemLock_release__doc__},
 
 static PyObject *
 _multiprocessing_SemLock_release_impl(SemLockObject *self);
@@ -352,7 +352,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock__count__doc__,
 "Num of `acquire()`s minus num of `release()`s for this process.");
 
 #define _MULTIPROCESSING_SEMLOCK__COUNT_METHODDEF    \
-    {"_count", _multiprocessing_SemLock__count, METH_NOARGS, _multiprocessing_SemLock__count__doc__},
+    {"_count", (PyCFunction)_multiprocessing_SemLock__count, METH_NOARGS, _multiprocessing_SemLock__count__doc__},
 
 static PyObject *
 _multiprocessing_SemLock__count_impl(SemLockObject *self);
@@ -380,7 +380,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock__is_mine__doc__,
 "Whether the lock is owned by this thread.");
 
 #define _MULTIPROCESSING_SEMLOCK__IS_MINE_METHODDEF    \
-    {"_is_mine", _multiprocessing_SemLock__is_mine, METH_NOARGS, _multiprocessing_SemLock__is_mine__doc__},
+    {"_is_mine", (PyCFunction)_multiprocessing_SemLock__is_mine, METH_NOARGS, _multiprocessing_SemLock__is_mine__doc__},
 
 static PyObject *
 _multiprocessing_SemLock__is_mine_impl(SemLockObject *self);
@@ -402,7 +402,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock__get_value__doc__,
 "Get the value of the semaphore.");
 
 #define _MULTIPROCESSING_SEMLOCK__GET_VALUE_METHODDEF    \
-    {"_get_value", _multiprocessing_SemLock__get_value, METH_NOARGS, _multiprocessing_SemLock__get_value__doc__},
+    {"_get_value", (PyCFunction)_multiprocessing_SemLock__get_value, METH_NOARGS, _multiprocessing_SemLock__get_value__doc__},
 
 static PyObject *
 _multiprocessing_SemLock__get_value_impl(SemLockObject *self);
@@ -424,7 +424,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock__is_zero__doc__,
 "Return whether semaphore has value zero.");
 
 #define _MULTIPROCESSING_SEMLOCK__IS_ZERO_METHODDEF    \
-    {"_is_zero", _multiprocessing_SemLock__is_zero, METH_NOARGS, _multiprocessing_SemLock__is_zero__doc__},
+    {"_is_zero", (PyCFunction)_multiprocessing_SemLock__is_zero, METH_NOARGS, _multiprocessing_SemLock__is_zero__doc__},
 
 static PyObject *
 _multiprocessing_SemLock__is_zero_impl(SemLockObject *self);
@@ -446,7 +446,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock__after_fork__doc__,
 "Rezero the net acquisition count after fork().");
 
 #define _MULTIPROCESSING_SEMLOCK__AFTER_FORK_METHODDEF    \
-    {"_after_fork", _multiprocessing_SemLock__after_fork, METH_NOARGS, _multiprocessing_SemLock__after_fork__doc__},
+    {"_after_fork", (PyCFunction)_multiprocessing_SemLock__after_fork, METH_NOARGS, _multiprocessing_SemLock__after_fork__doc__},
 
 static PyObject *
 _multiprocessing_SemLock__after_fork_impl(SemLockObject *self);
@@ -468,7 +468,7 @@ PyDoc_STRVAR(_multiprocessing_SemLock___enter____doc__,
 "Enter the semaphore/lock.");
 
 #define _MULTIPROCESSING_SEMLOCK___ENTER___METHODDEF    \
-    {"__enter__", _multiprocessing_SemLock___enter__, METH_NOARGS, _multiprocessing_SemLock___enter____doc__},
+    {"__enter__", (PyCFunction)_multiprocessing_SemLock___enter__, METH_NOARGS, _multiprocessing_SemLock___enter____doc__},
 
 static PyObject *
 _multiprocessing_SemLock___enter___impl(SemLockObject *self);
@@ -576,4 +576,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
     #define _MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEMLOCK___EXIT___METHODDEF) */
-/*[clinic end generated code: output=5fb620cdc3ae67af input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dddd8e989525f565 input=a9049054013a1b77]*/

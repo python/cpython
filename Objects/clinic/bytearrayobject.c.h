@@ -214,7 +214,7 @@ PyDoc_STRVAR(bytearray_clear__doc__,
 "Remove all items from the bytearray.");
 
 #define BYTEARRAY_CLEAR_METHODDEF    \
-    {"clear", bytearray_clear, METH_NOARGS, bytearray_clear__doc__},
+    {"clear", (PyCFunction)bytearray_clear, METH_NOARGS, bytearray_clear__doc__},
 
 static PyObject *
 bytearray_clear_impl(PyByteArrayObject *self);
@@ -232,7 +232,7 @@ PyDoc_STRVAR(bytearray_copy__doc__,
 "Return a copy of B.");
 
 #define BYTEARRAY_COPY_METHODDEF    \
-    {"copy", bytearray_copy, METH_NOARGS, bytearray_copy__doc__},
+    {"copy", (PyCFunction)bytearray_copy, METH_NOARGS, bytearray_copy__doc__},
 
 static PyObject *
 bytearray_copy_impl(PyByteArrayObject *self);
@@ -525,7 +525,7 @@ PyDoc_STRVAR(bytearray_removeprefix__doc__,
 "bytearray.");
 
 #define BYTEARRAY_REMOVEPREFIX_METHODDEF    \
-    {"removeprefix", bytearray_removeprefix, METH_O, bytearray_removeprefix__doc__},
+    {"removeprefix", (PyCFunction)bytearray_removeprefix, METH_O, bytearray_removeprefix__doc__},
 
 static PyObject *
 bytearray_removeprefix_impl(PyByteArrayObject *self, Py_buffer *prefix);
@@ -563,7 +563,7 @@ PyDoc_STRVAR(bytearray_removesuffix__doc__,
 "the original bytearray.");
 
 #define BYTEARRAY_REMOVESUFFIX_METHODDEF    \
-    {"removesuffix", bytearray_removesuffix, METH_O, bytearray_removesuffix__doc__},
+    {"removesuffix", (PyCFunction)bytearray_removesuffix, METH_O, bytearray_removesuffix__doc__},
 
 static PyObject *
 bytearray_removesuffix_impl(PyByteArrayObject *self, Py_buffer *suffix);
@@ -600,7 +600,7 @@ PyDoc_STRVAR(bytearray_resize__doc__,
 "    New size to resize to..");
 
 #define BYTEARRAY_RESIZE_METHODDEF    \
-    {"resize", bytearray_resize, METH_O, bytearray_resize__doc__},
+    {"resize", (PyCFunction)bytearray_resize, METH_O, bytearray_resize__doc__},
 
 static PyObject *
 bytearray_resize_impl(PyByteArrayObject *self, Py_ssize_t size);
@@ -923,7 +923,7 @@ PyDoc_STRVAR(bytearray_partition__doc__,
 "original bytearray object and two empty bytearray objects.");
 
 #define BYTEARRAY_PARTITION_METHODDEF    \
-    {"partition", bytearray_partition, METH_O, bytearray_partition__doc__},
+    {"partition", (PyCFunction)bytearray_partition, METH_O, bytearray_partition__doc__},
 
 static PyObject *
 bytearray_partition_impl(PyByteArrayObject *self, PyObject *sep);
@@ -955,7 +955,7 @@ PyDoc_STRVAR(bytearray_rpartition__doc__,
 "objects and the copy of the original bytearray object.");
 
 #define BYTEARRAY_RPARTITION_METHODDEF    \
-    {"rpartition", bytearray_rpartition, METH_O, bytearray_rpartition__doc__},
+    {"rpartition", (PyCFunction)bytearray_rpartition, METH_O, bytearray_rpartition__doc__},
 
 static PyObject *
 bytearray_rpartition_impl(PyByteArrayObject *self, PyObject *sep);
@@ -1071,7 +1071,7 @@ PyDoc_STRVAR(bytearray_reverse__doc__,
 "Reverse the order of the values in B in place.");
 
 #define BYTEARRAY_REVERSE_METHODDEF    \
-    {"reverse", bytearray_reverse, METH_NOARGS, bytearray_reverse__doc__},
+    {"reverse", (PyCFunction)bytearray_reverse, METH_NOARGS, bytearray_reverse__doc__},
 
 static PyObject *
 bytearray_reverse_impl(PyByteArrayObject *self);
@@ -1148,7 +1148,7 @@ PyDoc_STRVAR(bytearray_append__doc__,
 "    The item to be appended.");
 
 #define BYTEARRAY_APPEND_METHODDEF    \
-    {"append", bytearray_append, METH_O, bytearray_append__doc__},
+    {"append", (PyCFunction)bytearray_append, METH_O, bytearray_append__doc__},
 
 static PyObject *
 bytearray_append_impl(PyByteArrayObject *self, int item);
@@ -1180,7 +1180,7 @@ PyDoc_STRVAR(bytearray_extend__doc__,
 "    The iterable of items to append.");
 
 #define BYTEARRAY_EXTEND_METHODDEF    \
-    {"extend", bytearray_extend, METH_O, bytearray_extend__doc__},
+    {"extend", (PyCFunction)bytearray_extend, METH_O, bytearray_extend__doc__},
 
 static PyObject *
 bytearray_extend_impl(PyByteArrayObject *self, PyObject *iterable_of_ints);
@@ -1258,7 +1258,7 @@ PyDoc_STRVAR(bytearray_remove__doc__,
 "    The value to remove.");
 
 #define BYTEARRAY_REMOVE_METHODDEF    \
-    {"remove", bytearray_remove, METH_O, bytearray_remove__doc__},
+    {"remove", (PyCFunction)bytearray_remove, METH_O, bytearray_remove__doc__},
 
 static PyObject *
 bytearray_remove_impl(PyByteArrayObject *self, int value);
@@ -1503,7 +1503,7 @@ PyDoc_STRVAR(bytearray_join__doc__,
 "The result is returned as a new bytearray object.");
 
 #define BYTEARRAY_JOIN_METHODDEF    \
-    {"join", bytearray_join, METH_O, bytearray_join__doc__},
+    {"join", (PyCFunction)bytearray_join, METH_O, bytearray_join__doc__},
 
 static PyObject *
 bytearray_join_impl(PyByteArrayObject *self, PyObject *iterable_of_bytes);
@@ -1599,7 +1599,7 @@ PyDoc_STRVAR(bytearray_fromhex__doc__,
 "Example: bytearray.fromhex(\'B9 01EF\') -> bytearray(b\'\\\\xb9\\\\x01\\\\xef\')");
 
 #define BYTEARRAY_FROMHEX_METHODDEF    \
-    {"fromhex", bytearray_fromhex, METH_O|METH_CLASS, bytearray_fromhex__doc__},
+    {"fromhex", (PyCFunction)bytearray_fromhex, METH_O|METH_CLASS, bytearray_fromhex__doc__},
 
 static PyObject *
 bytearray_fromhex_impl(PyTypeObject *type, PyObject *string);
@@ -1711,7 +1711,7 @@ PyDoc_STRVAR(bytearray_reduce__doc__,
 "Return state information for pickling.");
 
 #define BYTEARRAY_REDUCE_METHODDEF    \
-    {"__reduce__", bytearray_reduce, METH_NOARGS, bytearray_reduce__doc__},
+    {"__reduce__", (PyCFunction)bytearray_reduce, METH_NOARGS, bytearray_reduce__doc__},
 
 static PyObject *
 bytearray_reduce_impl(PyByteArrayObject *self);
@@ -1772,7 +1772,7 @@ PyDoc_STRVAR(bytearray_sizeof__doc__,
 "Returns the size of the bytearray object in memory, in bytes.");
 
 #define BYTEARRAY_SIZEOF_METHODDEF    \
-    {"__sizeof__", bytearray_sizeof, METH_NOARGS, bytearray_sizeof__doc__},
+    {"__sizeof__", (PyCFunction)bytearray_sizeof, METH_NOARGS, bytearray_sizeof__doc__},
 
 static PyObject *
 bytearray_sizeof_impl(PyByteArrayObject *self);
@@ -1782,4 +1782,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=8d5aaf1f23292613 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0d1d1abc8b701ad9 input=a9049054013a1b77]*/

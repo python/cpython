@@ -14,7 +14,7 @@ PyDoc_STRVAR(msvcrt_heapmin__doc__,
 "to the operating system. On failure, this raises OSError.");
 
 #define MSVCRT_HEAPMIN_METHODDEF    \
-    {"heapmin", msvcrt_heapmin, METH_NOARGS, msvcrt_heapmin__doc__},
+    {"heapmin", (PyCFunction)msvcrt_heapmin, METH_NOARGS, msvcrt_heapmin__doc__},
 
 static PyObject *
 msvcrt_heapmin_impl(PyObject *module);
@@ -173,7 +173,7 @@ PyDoc_STRVAR(msvcrt_get_osfhandle__doc__,
 "Raises OSError if fd is not recognized.");
 
 #define MSVCRT_GET_OSFHANDLE_METHODDEF    \
-    {"get_osfhandle", msvcrt_get_osfhandle, METH_O, msvcrt_get_osfhandle__doc__},
+    {"get_osfhandle", (PyCFunction)msvcrt_get_osfhandle, METH_O, msvcrt_get_osfhandle__doc__},
 
 static void *
 msvcrt_get_osfhandle_impl(PyObject *module, int fd);
@@ -206,7 +206,7 @@ PyDoc_STRVAR(msvcrt_kbhit__doc__,
 "Returns a nonzero value if a keypress is waiting to be read. Otherwise, return 0.");
 
 #define MSVCRT_KBHIT_METHODDEF    \
-    {"kbhit", msvcrt_kbhit, METH_NOARGS, msvcrt_kbhit__doc__},
+    {"kbhit", (PyCFunction)msvcrt_kbhit, METH_NOARGS, msvcrt_kbhit__doc__},
 
 static long
 msvcrt_kbhit_impl(PyObject *module);
@@ -240,7 +240,7 @@ PyDoc_STRVAR(msvcrt_getch__doc__,
 "cannot be read with this function.");
 
 #define MSVCRT_GETCH_METHODDEF    \
-    {"getch", msvcrt_getch, METH_NOARGS, msvcrt_getch__doc__},
+    {"getch", (PyCFunction)msvcrt_getch, METH_NOARGS, msvcrt_getch__doc__},
 
 static int
 msvcrt_getch_impl(PyObject *module);
@@ -266,7 +266,7 @@ PyDoc_STRVAR(msvcrt_getwch__doc__,
 "Wide char variant of getch(), returning a Unicode value.");
 
 #define MSVCRT_GETWCH_METHODDEF    \
-    {"getwch", msvcrt_getwch, METH_NOARGS, msvcrt_getwch__doc__},
+    {"getwch", (PyCFunction)msvcrt_getwch, METH_NOARGS, msvcrt_getwch__doc__},
 
 static wchar_t
 msvcrt_getwch_impl(PyObject *module);
@@ -292,7 +292,7 @@ PyDoc_STRVAR(msvcrt_getche__doc__,
 "Similar to getch(), but the keypress will be echoed if possible.");
 
 #define MSVCRT_GETCHE_METHODDEF    \
-    {"getche", msvcrt_getche, METH_NOARGS, msvcrt_getche__doc__},
+    {"getche", (PyCFunction)msvcrt_getche, METH_NOARGS, msvcrt_getche__doc__},
 
 static int
 msvcrt_getche_impl(PyObject *module);
@@ -318,7 +318,7 @@ PyDoc_STRVAR(msvcrt_getwche__doc__,
 "Wide char variant of getche(), returning a Unicode value.");
 
 #define MSVCRT_GETWCHE_METHODDEF    \
-    {"getwche", msvcrt_getwche, METH_NOARGS, msvcrt_getwche__doc__},
+    {"getwche", (PyCFunction)msvcrt_getwche, METH_NOARGS, msvcrt_getwche__doc__},
 
 static wchar_t
 msvcrt_getwche_impl(PyObject *module);
@@ -344,7 +344,7 @@ PyDoc_STRVAR(msvcrt_putch__doc__,
 "Print the byte string char to the console without buffering.");
 
 #define MSVCRT_PUTCH_METHODDEF    \
-    {"putch", msvcrt_putch, METH_O, msvcrt_putch__doc__},
+    {"putch", (PyCFunction)msvcrt_putch, METH_O, msvcrt_putch__doc__},
 
 static PyObject *
 msvcrt_putch_impl(PyObject *module, char char_value);
@@ -394,7 +394,7 @@ PyDoc_STRVAR(msvcrt_putwch__doc__,
 "Wide char variant of putch(), accepting a Unicode value.");
 
 #define MSVCRT_PUTWCH_METHODDEF    \
-    {"putwch", msvcrt_putwch, METH_O, msvcrt_putwch__doc__},
+    {"putwch", (PyCFunction)msvcrt_putwch, METH_O, msvcrt_putwch__doc__},
 
 static PyObject *
 msvcrt_putwch_impl(PyObject *module, int unicode_char);
@@ -436,7 +436,7 @@ PyDoc_STRVAR(msvcrt_ungetch__doc__,
 "getch() or getche().");
 
 #define MSVCRT_UNGETCH_METHODDEF    \
-    {"ungetch", msvcrt_ungetch, METH_O, msvcrt_ungetch__doc__},
+    {"ungetch", (PyCFunction)msvcrt_ungetch, METH_O, msvcrt_ungetch__doc__},
 
 static PyObject *
 msvcrt_ungetch_impl(PyObject *module, char char_value);
@@ -486,7 +486,7 @@ PyDoc_STRVAR(msvcrt_ungetwch__doc__,
 "Wide char variant of ungetch(), accepting a Unicode value.");
 
 #define MSVCRT_UNGETWCH_METHODDEF    \
-    {"ungetwch", msvcrt_ungetwch, METH_O, msvcrt_ungetwch__doc__},
+    {"ungetwch", (PyCFunction)msvcrt_ungetwch, METH_O, msvcrt_ungetwch__doc__},
 
 static PyObject *
 msvcrt_ungetwch_impl(PyObject *module, int unicode_char);
@@ -622,7 +622,7 @@ PyDoc_STRVAR(msvcrt_set_error_mode__doc__,
 "Only available on Debug builds.");
 
 #define MSVCRT_SET_ERROR_MODE_METHODDEF    \
-    {"set_error_mode", msvcrt_set_error_mode, METH_O, msvcrt_set_error_mode__doc__},
+    {"set_error_mode", (PyCFunction)msvcrt_set_error_mode, METH_O, msvcrt_set_error_mode__doc__},
 
 static long
 msvcrt_set_error_mode_impl(PyObject *module, int mode);
@@ -659,7 +659,7 @@ PyDoc_STRVAR(msvcrt_GetErrorMode__doc__,
 "Wrapper around GetErrorMode.");
 
 #define MSVCRT_GETERRORMODE_METHODDEF    \
-    {"GetErrorMode", msvcrt_GetErrorMode, METH_NOARGS, msvcrt_GetErrorMode__doc__},
+    {"GetErrorMode", (PyCFunction)msvcrt_GetErrorMode, METH_NOARGS, msvcrt_GetErrorMode__doc__},
 
 static PyObject *
 msvcrt_GetErrorMode_impl(PyObject *module);
@@ -679,7 +679,7 @@ PyDoc_STRVAR(msvcrt_SetErrorMode__doc__,
 "Wrapper around SetErrorMode.");
 
 #define MSVCRT_SETERRORMODE_METHODDEF    \
-    {"SetErrorMode", msvcrt_SetErrorMode, METH_O, msvcrt_SetErrorMode__doc__},
+    {"SetErrorMode", (PyCFunction)msvcrt_SetErrorMode, METH_O, msvcrt_SetErrorMode__doc__},
 
 static PyObject *
 msvcrt_SetErrorMode_impl(PyObject *module, unsigned int mode);
@@ -731,4 +731,4 @@ exit:
 #ifndef MSVCRT_GETERRORMODE_METHODDEF
     #define MSVCRT_GETERRORMODE_METHODDEF
 #endif /* !defined(MSVCRT_GETERRORMODE_METHODDEF) */
-/*[clinic end generated code: output=849e852d970e7b24 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=692c6f52bb9193ce input=a9049054013a1b77]*/

@@ -14,7 +14,7 @@ PyDoc_STRVAR(_dbm_dbm_close__doc__,
 "Close the database.");
 
 #define _DBM_DBM_CLOSE_METHODDEF    \
-    {"close", _dbm_dbm_close, METH_NOARGS, _dbm_dbm_close__doc__},
+    {"close", (PyCFunction)_dbm_dbm_close, METH_NOARGS, _dbm_dbm_close__doc__},
 
 static PyObject *
 _dbm_dbm_close_impl(dbmobject *self);
@@ -221,4 +221,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=eafa31670cd71bae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3b456118f231b160 input=a9049054013a1b77]*/

@@ -17,7 +17,7 @@ PyDoc_STRVAR(test_empty_function__doc__,
 "\n");
 
 #define TEST_EMPTY_FUNCTION_METHODDEF    \
-    {"test_empty_function", test_empty_function, METH_NOARGS, test_empty_function__doc__},
+    {"test_empty_function", (PyCFunction)test_empty_function, METH_NOARGS, test_empty_function__doc__},
 
 static PyObject *
 test_empty_function_impl(PyObject *module);
@@ -67,7 +67,7 @@ PyDoc_STRVAR(bytes_object_converter__doc__,
 "\n");
 
 #define BYTES_OBJECT_CONVERTER_METHODDEF    \
-    {"bytes_object_converter", bytes_object_converter, METH_O, bytes_object_converter__doc__},
+    {"bytes_object_converter", (PyCFunction)bytes_object_converter, METH_O, bytes_object_converter__doc__},
 
 static PyObject *
 bytes_object_converter_impl(PyObject *module, PyBytesObject *a);
@@ -95,7 +95,7 @@ PyDoc_STRVAR(byte_array_object_converter__doc__,
 "\n");
 
 #define BYTE_ARRAY_OBJECT_CONVERTER_METHODDEF    \
-    {"byte_array_object_converter", byte_array_object_converter, METH_O, byte_array_object_converter__doc__},
+    {"byte_array_object_converter", (PyCFunction)byte_array_object_converter, METH_O, byte_array_object_converter__doc__},
 
 static PyObject *
 byte_array_object_converter_impl(PyObject *module, PyByteArrayObject *a);
@@ -123,7 +123,7 @@ PyDoc_STRVAR(unicode_converter__doc__,
 "\n");
 
 #define UNICODE_CONVERTER_METHODDEF    \
-    {"unicode_converter", unicode_converter, METH_O, unicode_converter__doc__},
+    {"unicode_converter", (PyCFunction)unicode_converter, METH_O, unicode_converter__doc__},
 
 static PyObject *
 unicode_converter_impl(PyObject *module, PyObject *a);
@@ -1309,7 +1309,7 @@ PyDoc_STRVAR(py_complex_converter__doc__,
 "\n");
 
 #define PY_COMPLEX_CONVERTER_METHODDEF    \
-    {"py_complex_converter", py_complex_converter, METH_O, py_complex_converter__doc__},
+    {"py_complex_converter", (PyCFunction)py_complex_converter, METH_O, py_complex_converter__doc__},
 
 static PyObject *
 py_complex_converter_impl(PyObject *module, Py_complex a);
@@ -4011,7 +4011,7 @@ PyDoc_STRVAR(_testclinic_TestClass_varpos_no_fastcall__doc__,
 "\n");
 
 #define _TESTCLINIC_TESTCLASS_VARPOS_NO_FASTCALL_METHODDEF    \
-    {"varpos_no_fastcall", _testclinic_TestClass_varpos_no_fastcall, METH_VARARGS|METH_CLASS, _testclinic_TestClass_varpos_no_fastcall__doc__},
+    {"varpos_no_fastcall", (PyCFunction)_testclinic_TestClass_varpos_no_fastcall, METH_VARARGS|METH_CLASS, _testclinic_TestClass_varpos_no_fastcall__doc__},
 
 static PyObject *
 _testclinic_TestClass_varpos_no_fastcall_impl(PyTypeObject *type,
@@ -4038,7 +4038,7 @@ PyDoc_STRVAR(_testclinic_TestClass_posonly_varpos_no_fastcall__doc__,
 "\n");
 
 #define _TESTCLINIC_TESTCLASS_POSONLY_VARPOS_NO_FASTCALL_METHODDEF    \
-    {"posonly_varpos_no_fastcall", _testclinic_TestClass_posonly_varpos_no_fastcall, METH_VARARGS|METH_CLASS, _testclinic_TestClass_posonly_varpos_no_fastcall__doc__},
+    {"posonly_varpos_no_fastcall", (PyCFunction)_testclinic_TestClass_posonly_varpos_no_fastcall, METH_VARARGS|METH_CLASS, _testclinic_TestClass_posonly_varpos_no_fastcall__doc__},
 
 static PyObject *
 _testclinic_TestClass_posonly_varpos_no_fastcall_impl(PyTypeObject *type,
@@ -4078,7 +4078,7 @@ PyDoc_STRVAR(_testclinic_TestClass_posonly_req_opt_varpos_no_fastcall__doc__,
 "\n");
 
 #define _TESTCLINIC_TESTCLASS_POSONLY_REQ_OPT_VARPOS_NO_FASTCALL_METHODDEF    \
-    {"posonly_req_opt_varpos_no_fastcall", _testclinic_TestClass_posonly_req_opt_varpos_no_fastcall, METH_VARARGS|METH_CLASS, _testclinic_TestClass_posonly_req_opt_varpos_no_fastcall__doc__},
+    {"posonly_req_opt_varpos_no_fastcall", (PyCFunction)_testclinic_TestClass_posonly_req_opt_varpos_no_fastcall, METH_VARARGS|METH_CLASS, _testclinic_TestClass_posonly_req_opt_varpos_no_fastcall__doc__},
 
 static PyObject *
 _testclinic_TestClass_posonly_req_opt_varpos_no_fastcall_impl(PyTypeObject *type,
@@ -4192,7 +4192,7 @@ PyDoc_STRVAR(_testclinic_TestClass_varpos_array_no_fastcall__doc__,
 "\n");
 
 #define _TESTCLINIC_TESTCLASS_VARPOS_ARRAY_NO_FASTCALL_METHODDEF    \
-    {"varpos_array_no_fastcall", _testclinic_TestClass_varpos_array_no_fastcall, METH_VARARGS|METH_CLASS, _testclinic_TestClass_varpos_array_no_fastcall__doc__},
+    {"varpos_array_no_fastcall", (PyCFunction)_testclinic_TestClass_varpos_array_no_fastcall, METH_VARARGS|METH_CLASS, _testclinic_TestClass_varpos_array_no_fastcall__doc__},
 
 static PyObject *
 _testclinic_TestClass_varpos_array_no_fastcall_impl(PyTypeObject *type,
@@ -4219,7 +4219,7 @@ PyDoc_STRVAR(_testclinic_TestClass_posonly_varpos_array_no_fastcall__doc__,
 "\n");
 
 #define _TESTCLINIC_TESTCLASS_POSONLY_VARPOS_ARRAY_NO_FASTCALL_METHODDEF    \
-    {"posonly_varpos_array_no_fastcall", _testclinic_TestClass_posonly_varpos_array_no_fastcall, METH_VARARGS|METH_CLASS, _testclinic_TestClass_posonly_varpos_array_no_fastcall__doc__},
+    {"posonly_varpos_array_no_fastcall", (PyCFunction)_testclinic_TestClass_posonly_varpos_array_no_fastcall, METH_VARARGS|METH_CLASS, _testclinic_TestClass_posonly_varpos_array_no_fastcall__doc__},
 
 static PyObject *
 _testclinic_TestClass_posonly_varpos_array_no_fastcall_impl(PyTypeObject *type,
@@ -4256,7 +4256,7 @@ PyDoc_STRVAR(_testclinic_TestClass_posonly_req_opt_varpos_array_no_fastcall__doc
 "\n");
 
 #define _TESTCLINIC_TESTCLASS_POSONLY_REQ_OPT_VARPOS_ARRAY_NO_FASTCALL_METHODDEF    \
-    {"posonly_req_opt_varpos_array_no_fastcall", _testclinic_TestClass_posonly_req_opt_varpos_array_no_fastcall, METH_VARARGS|METH_CLASS, _testclinic_TestClass_posonly_req_opt_varpos_array_no_fastcall__doc__},
+    {"posonly_req_opt_varpos_array_no_fastcall", (PyCFunction)_testclinic_TestClass_posonly_req_opt_varpos_array_no_fastcall, METH_VARARGS|METH_CLASS, _testclinic_TestClass_posonly_req_opt_varpos_array_no_fastcall__doc__},
 
 static PyObject *
 _testclinic_TestClass_posonly_req_opt_varpos_array_no_fastcall_impl(PyTypeObject *type,
@@ -4357,4 +4357,4 @@ _testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall(PyObject *type, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dbf17d873e9e8626 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3743b66729741d41 input=a9049054013a1b77]*/

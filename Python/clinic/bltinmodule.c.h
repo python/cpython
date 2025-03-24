@@ -118,7 +118,7 @@ PyDoc_STRVAR(builtin_abs__doc__,
 "Return the absolute value of the argument.");
 
 #define BUILTIN_ABS_METHODDEF    \
-    {"abs", builtin_abs, METH_O, builtin_abs__doc__},
+    {"abs", (PyCFunction)builtin_abs, METH_O, builtin_abs__doc__},
 
 PyDoc_STRVAR(builtin_all__doc__,
 "all($module, iterable, /)\n"
@@ -129,7 +129,7 @@ PyDoc_STRVAR(builtin_all__doc__,
 "If the iterable is empty, return True.");
 
 #define BUILTIN_ALL_METHODDEF    \
-    {"all", builtin_all, METH_O, builtin_all__doc__},
+    {"all", (PyCFunction)builtin_all, METH_O, builtin_all__doc__},
 
 PyDoc_STRVAR(builtin_any__doc__,
 "any($module, iterable, /)\n"
@@ -140,7 +140,7 @@ PyDoc_STRVAR(builtin_any__doc__,
 "If the iterable is empty, return False.");
 
 #define BUILTIN_ANY_METHODDEF    \
-    {"any", builtin_any, METH_O, builtin_any__doc__},
+    {"any", (PyCFunction)builtin_any, METH_O, builtin_any__doc__},
 
 PyDoc_STRVAR(builtin_ascii__doc__,
 "ascii($module, obj, /)\n"
@@ -154,7 +154,7 @@ PyDoc_STRVAR(builtin_ascii__doc__,
 "to that returned by repr() in Python 2.");
 
 #define BUILTIN_ASCII_METHODDEF    \
-    {"ascii", builtin_ascii, METH_O, builtin_ascii__doc__},
+    {"ascii", (PyCFunction)builtin_ascii, METH_O, builtin_ascii__doc__},
 
 PyDoc_STRVAR(builtin_bin__doc__,
 "bin($module, number, /)\n"
@@ -166,7 +166,7 @@ PyDoc_STRVAR(builtin_bin__doc__,
 "   \'0b1010101010101010101010\'");
 
 #define BUILTIN_BIN_METHODDEF    \
-    {"bin", builtin_bin, METH_O, builtin_bin__doc__},
+    {"bin", (PyCFunction)builtin_bin, METH_O, builtin_bin__doc__},
 
 PyDoc_STRVAR(builtin_callable__doc__,
 "callable($module, obj, /)\n"
@@ -178,7 +178,7 @@ PyDoc_STRVAR(builtin_callable__doc__,
 "__call__() method.");
 
 #define BUILTIN_CALLABLE_METHODDEF    \
-    {"callable", builtin_callable, METH_O, builtin_callable__doc__},
+    {"callable", (PyCFunction)builtin_callable, METH_O, builtin_callable__doc__},
 
 PyDoc_STRVAR(builtin_format__doc__,
 "format($module, value, format_spec=\'\', /)\n"
@@ -232,7 +232,7 @@ PyDoc_STRVAR(builtin_chr__doc__,
 "Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff.");
 
 #define BUILTIN_CHR_METHODDEF    \
-    {"chr", builtin_chr, METH_O, builtin_chr__doc__},
+    {"chr", (PyCFunction)builtin_chr, METH_O, builtin_chr__doc__},
 
 PyDoc_STRVAR(builtin_compile__doc__,
 "compile($module, /, source, filename, mode, flags=0,\n"
@@ -573,7 +573,7 @@ PyDoc_STRVAR(builtin_globals__doc__,
 "global scope and vice-versa.");
 
 #define BUILTIN_GLOBALS_METHODDEF    \
-    {"globals", builtin_globals, METH_NOARGS, builtin_globals__doc__},
+    {"globals", (PyCFunction)builtin_globals, METH_NOARGS, builtin_globals__doc__},
 
 static PyObject *
 builtin_globals_impl(PyObject *module);
@@ -626,7 +626,7 @@ PyDoc_STRVAR(builtin_id__doc__,
 "(CPython uses the object\'s memory address.)");
 
 #define BUILTIN_ID_METHODDEF    \
-    {"id", builtin_id, METH_O, builtin_id__doc__},
+    {"id", (PyCFunction)builtin_id, METH_O, builtin_id__doc__},
 
 static PyObject *
 builtin_id_impl(PyModuleDef *self, PyObject *v);
@@ -718,7 +718,7 @@ PyDoc_STRVAR(builtin_hash__doc__,
 "reverse is not necessarily true.");
 
 #define BUILTIN_HASH_METHODDEF    \
-    {"hash", builtin_hash, METH_O, builtin_hash__doc__},
+    {"hash", (PyCFunction)builtin_hash, METH_O, builtin_hash__doc__},
 
 PyDoc_STRVAR(builtin_hex__doc__,
 "hex($module, number, /)\n"
@@ -730,7 +730,7 @@ PyDoc_STRVAR(builtin_hex__doc__,
 "   \'0xc0ffee\'");
 
 #define BUILTIN_HEX_METHODDEF    \
-    {"hex", builtin_hex, METH_O, builtin_hex__doc__},
+    {"hex", (PyCFunction)builtin_hex, METH_O, builtin_hex__doc__},
 
 PyDoc_STRVAR(builtin_aiter__doc__,
 "aiter($module, async_iterable, /)\n"
@@ -739,7 +739,7 @@ PyDoc_STRVAR(builtin_aiter__doc__,
 "Return an AsyncIterator for an AsyncIterable object.");
 
 #define BUILTIN_AITER_METHODDEF    \
-    {"aiter", builtin_aiter, METH_O, builtin_aiter__doc__},
+    {"aiter", (PyCFunction)builtin_aiter, METH_O, builtin_aiter__doc__},
 
 PyDoc_STRVAR(builtin_anext__doc__,
 "anext($module, aiterator, default=<unrepresentable>, /)\n"
@@ -786,7 +786,7 @@ PyDoc_STRVAR(builtin_len__doc__,
 "Return the number of items in a container.");
 
 #define BUILTIN_LEN_METHODDEF    \
-    {"len", builtin_len, METH_O, builtin_len__doc__},
+    {"len", (PyCFunction)builtin_len, METH_O, builtin_len__doc__},
 
 PyDoc_STRVAR(builtin_locals__doc__,
 "locals($module, /)\n"
@@ -799,7 +799,7 @@ PyDoc_STRVAR(builtin_locals__doc__,
 "covered by any backwards compatibility guarantees.");
 
 #define BUILTIN_LOCALS_METHODDEF    \
-    {"locals", builtin_locals, METH_NOARGS, builtin_locals__doc__},
+    {"locals", (PyCFunction)builtin_locals, METH_NOARGS, builtin_locals__doc__},
 
 static PyObject *
 builtin_locals_impl(PyObject *module);
@@ -820,7 +820,7 @@ PyDoc_STRVAR(builtin_oct__doc__,
 "   \'0o1234567\'");
 
 #define BUILTIN_OCT_METHODDEF    \
-    {"oct", builtin_oct, METH_O, builtin_oct__doc__},
+    {"oct", (PyCFunction)builtin_oct, METH_O, builtin_oct__doc__},
 
 PyDoc_STRVAR(builtin_ord__doc__,
 "ord($module, c, /)\n"
@@ -829,7 +829,7 @@ PyDoc_STRVAR(builtin_ord__doc__,
 "Return the Unicode code point for a one-character string.");
 
 #define BUILTIN_ORD_METHODDEF    \
-    {"ord", builtin_ord, METH_O, builtin_ord__doc__},
+    {"ord", (PyCFunction)builtin_ord, METH_O, builtin_ord__doc__},
 
 PyDoc_STRVAR(builtin_pow__doc__,
 "pow($module, /, base, exp, mod=None)\n"
@@ -1048,7 +1048,7 @@ PyDoc_STRVAR(builtin_repr__doc__,
 "For many object types, including most builtins, eval(repr(obj)) == obj.");
 
 #define BUILTIN_REPR_METHODDEF    \
-    {"repr", builtin_repr, METH_O, builtin_repr__doc__},
+    {"repr", (PyCFunction)builtin_repr, METH_O, builtin_repr__doc__},
 
 PyDoc_STRVAR(builtin_round__doc__,
 "round($module, /, number, ndigits=None)\n"
@@ -1252,4 +1252,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=95665fce5b257fe3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c08e0e086a791ff0 input=a9049054013a1b77]*/

@@ -76,7 +76,7 @@ PyDoc_STRVAR(int___getnewargs____doc__,
 "\n");
 
 #define INT___GETNEWARGS___METHODDEF    \
-    {"__getnewargs__", int___getnewargs__, METH_NOARGS, int___getnewargs____doc__},
+    {"__getnewargs__", (PyCFunction)int___getnewargs__, METH_NOARGS, int___getnewargs____doc__},
 
 static PyObject *
 int___getnewargs___impl(PyObject *self);
@@ -94,7 +94,7 @@ PyDoc_STRVAR(int___format____doc__,
 "Convert to a string according to format_spec.");
 
 #define INT___FORMAT___METHODDEF    \
-    {"__format__", int___format__, METH_O, int___format____doc__},
+    {"__format__", (PyCFunction)int___format__, METH_O, int___format____doc__},
 
 static PyObject *
 int___format___impl(PyObject *self, PyObject *format_spec);
@@ -157,7 +157,7 @@ PyDoc_STRVAR(int___sizeof____doc__,
 "Returns size in memory, in bytes.");
 
 #define INT___SIZEOF___METHODDEF    \
-    {"__sizeof__", int___sizeof__, METH_NOARGS, int___sizeof____doc__},
+    {"__sizeof__", (PyCFunction)int___sizeof__, METH_NOARGS, int___sizeof____doc__},
 
 static Py_ssize_t
 int___sizeof___impl(PyObject *self);
@@ -190,7 +190,7 @@ PyDoc_STRVAR(int_bit_length__doc__,
 "6");
 
 #define INT_BIT_LENGTH_METHODDEF    \
-    {"bit_length", int_bit_length, METH_NOARGS, int_bit_length__doc__},
+    {"bit_length", (PyCFunction)int_bit_length, METH_NOARGS, int_bit_length__doc__},
 
 static PyObject *
 int_bit_length_impl(PyObject *self);
@@ -215,7 +215,7 @@ PyDoc_STRVAR(int_bit_count__doc__,
 "3");
 
 #define INT_BIT_COUNT_METHODDEF    \
-    {"bit_count", int_bit_count, METH_NOARGS, int_bit_count__doc__},
+    {"bit_count", (PyCFunction)int_bit_count, METH_NOARGS, int_bit_count__doc__},
 
 static PyObject *
 int_bit_count_impl(PyObject *self);
@@ -242,7 +242,7 @@ PyDoc_STRVAR(int_as_integer_ratio__doc__,
 "(0, 1)");
 
 #define INT_AS_INTEGER_RATIO_METHODDEF    \
-    {"as_integer_ratio", int_as_integer_ratio, METH_NOARGS, int_as_integer_ratio__doc__},
+    {"as_integer_ratio", (PyCFunction)int_as_integer_ratio, METH_NOARGS, int_as_integer_ratio__doc__},
 
 static PyObject *
 int_as_integer_ratio_impl(PyObject *self);
@@ -469,7 +469,7 @@ PyDoc_STRVAR(int_is_integer__doc__,
 "Returns True. Exists for duck type compatibility with float.is_integer.");
 
 #define INT_IS_INTEGER_METHODDEF    \
-    {"is_integer", int_is_integer, METH_NOARGS, int_is_integer__doc__},
+    {"is_integer", (PyCFunction)int_is_integer, METH_NOARGS, int_is_integer__doc__},
 
 static PyObject *
 int_is_integer_impl(PyObject *self);
@@ -479,4 +479,4 @@ int_is_integer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return int_is_integer_impl(self);
 }
-/*[clinic end generated code: output=a8319a611dd6fa31 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=591cffa2b80b5184 input=a9049054013a1b77]*/

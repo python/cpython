@@ -75,7 +75,7 @@ PyDoc_STRVAR(_testinternalcapi_new_instruction_sequence__doc__,
 "Return a new, empty InstructionSequence.");
 
 #define _TESTINTERNALCAPI_NEW_INSTRUCTION_SEQUENCE_METHODDEF    \
-    {"new_instruction_sequence", _testinternalcapi_new_instruction_sequence, METH_NOARGS, _testinternalcapi_new_instruction_sequence__doc__},
+    {"new_instruction_sequence", (PyCFunction)_testinternalcapi_new_instruction_sequence, METH_NOARGS, _testinternalcapi_new_instruction_sequence__doc__},
 
 static PyObject *
 _testinternalcapi_new_instruction_sequence_impl(PyObject *module);
@@ -294,7 +294,7 @@ PyDoc_STRVAR(_testinternalcapi_test_long_numbits__doc__,
 "\n");
 
 #define _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF    \
-    {"test_long_numbits", _testinternalcapi_test_long_numbits, METH_NOARGS, _testinternalcapi_test_long_numbits__doc__},
+    {"test_long_numbits", (PyCFunction)_testinternalcapi_test_long_numbits, METH_NOARGS, _testinternalcapi_test_long_numbits__doc__},
 
 static PyObject *
 _testinternalcapi_test_long_numbits_impl(PyObject *module);
@@ -365,4 +365,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bc3d1afd54a902ef input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ec77971c6c2663da input=a9049054013a1b77]*/

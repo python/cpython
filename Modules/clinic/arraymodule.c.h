@@ -15,7 +15,7 @@ PyDoc_STRVAR(array_array_clear__doc__,
 "Remove all items from the array.");
 
 #define ARRAY_ARRAY_CLEAR_METHODDEF    \
-    {"clear", array_array_clear, METH_NOARGS, array_array_clear__doc__},
+    {"clear", (PyCFunction)array_array_clear, METH_NOARGS, array_array_clear__doc__},
 
 static PyObject *
 array_array_clear_impl(arrayobject *self);
@@ -33,7 +33,7 @@ PyDoc_STRVAR(array_array___copy____doc__,
 "Return a copy of the array.");
 
 #define ARRAY_ARRAY___COPY___METHODDEF    \
-    {"__copy__", array_array___copy__, METH_NOARGS, array_array___copy____doc__},
+    {"__copy__", (PyCFunction)array_array___copy__, METH_NOARGS, array_array___copy____doc__},
 
 static PyObject *
 array_array___copy___impl(arrayobject *self);
@@ -51,7 +51,7 @@ PyDoc_STRVAR(array_array___deepcopy____doc__,
 "Return a copy of the array.");
 
 #define ARRAY_ARRAY___DEEPCOPY___METHODDEF    \
-    {"__deepcopy__", array_array___deepcopy__, METH_O, array_array___deepcopy____doc__},
+    {"__deepcopy__", (PyCFunction)array_array___deepcopy__, METH_O, array_array___deepcopy____doc__},
 
 static PyObject *
 array_array___deepcopy___impl(arrayobject *self, PyObject *unused);
@@ -73,7 +73,7 @@ PyDoc_STRVAR(array_array_count__doc__,
 "Return number of occurrences of v in the array.");
 
 #define ARRAY_ARRAY_COUNT_METHODDEF    \
-    {"count", array_array_count, METH_O, array_array_count__doc__},
+    {"count", (PyCFunction)array_array_count, METH_O, array_array_count__doc__},
 
 static PyObject *
 array_array_count_impl(arrayobject *self, PyObject *v);
@@ -141,7 +141,7 @@ PyDoc_STRVAR(array_array_remove__doc__,
 "Remove the first occurrence of v in the array.");
 
 #define ARRAY_ARRAY_REMOVE_METHODDEF    \
-    {"remove", array_array_remove, METH_O, array_array_remove__doc__},
+    {"remove", (PyCFunction)array_array_remove, METH_O, array_array_remove__doc__},
 
 static PyObject *
 array_array_remove_impl(arrayobject *self, PyObject *v);
@@ -296,7 +296,7 @@ PyDoc_STRVAR(array_array_buffer_info__doc__,
 "the buffer length in bytes.");
 
 #define ARRAY_ARRAY_BUFFER_INFO_METHODDEF    \
-    {"buffer_info", array_array_buffer_info, METH_NOARGS, array_array_buffer_info__doc__},
+    {"buffer_info", (PyCFunction)array_array_buffer_info, METH_NOARGS, array_array_buffer_info__doc__},
 
 static PyObject *
 array_array_buffer_info_impl(arrayobject *self);
@@ -314,7 +314,7 @@ PyDoc_STRVAR(array_array_append__doc__,
 "Append new value v to the end of the array.");
 
 #define ARRAY_ARRAY_APPEND_METHODDEF    \
-    {"append", array_array_append, METH_O, array_array_append__doc__},
+    {"append", (PyCFunction)array_array_append, METH_O, array_array_append__doc__},
 
 static PyObject *
 array_array_append_impl(arrayobject *self, PyObject *v);
@@ -339,7 +339,7 @@ PyDoc_STRVAR(array_array_byteswap__doc__,
 "raised.");
 
 #define ARRAY_ARRAY_BYTESWAP_METHODDEF    \
-    {"byteswap", array_array_byteswap, METH_NOARGS, array_array_byteswap__doc__},
+    {"byteswap", (PyCFunction)array_array_byteswap, METH_NOARGS, array_array_byteswap__doc__},
 
 static PyObject *
 array_array_byteswap_impl(arrayobject *self);
@@ -357,7 +357,7 @@ PyDoc_STRVAR(array_array_reverse__doc__,
 "Reverse the order of the items in the array.");
 
 #define ARRAY_ARRAY_REVERSE_METHODDEF    \
-    {"reverse", array_array_reverse, METH_NOARGS, array_array_reverse__doc__},
+    {"reverse", (PyCFunction)array_array_reverse, METH_NOARGS, array_array_reverse__doc__},
 
 static PyObject *
 array_array_reverse_impl(arrayobject *self);
@@ -477,7 +477,7 @@ PyDoc_STRVAR(array_array_fromlist__doc__,
 "Append items to array from list.");
 
 #define ARRAY_ARRAY_FROMLIST_METHODDEF    \
-    {"fromlist", array_array_fromlist, METH_O, array_array_fromlist__doc__},
+    {"fromlist", (PyCFunction)array_array_fromlist, METH_O, array_array_fromlist__doc__},
 
 static PyObject *
 array_array_fromlist_impl(arrayobject *self, PyObject *list);
@@ -499,7 +499,7 @@ PyDoc_STRVAR(array_array_tolist__doc__,
 "Convert array to an ordinary list with the same items.");
 
 #define ARRAY_ARRAY_TOLIST_METHODDEF    \
-    {"tolist", array_array_tolist, METH_NOARGS, array_array_tolist__doc__},
+    {"tolist", (PyCFunction)array_array_tolist, METH_NOARGS, array_array_tolist__doc__},
 
 static PyObject *
 array_array_tolist_impl(arrayobject *self);
@@ -517,7 +517,7 @@ PyDoc_STRVAR(array_array_frombytes__doc__,
 "Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method.");
 
 #define ARRAY_ARRAY_FROMBYTES_METHODDEF    \
-    {"frombytes", array_array_frombytes, METH_O, array_array_frombytes__doc__},
+    {"frombytes", (PyCFunction)array_array_frombytes, METH_O, array_array_frombytes__doc__},
 
 static PyObject *
 array_array_frombytes_impl(arrayobject *self, Py_buffer *buffer);
@@ -549,7 +549,7 @@ PyDoc_STRVAR(array_array_tobytes__doc__,
 "Convert the array to an array of machine values and return the bytes representation.");
 
 #define ARRAY_ARRAY_TOBYTES_METHODDEF    \
-    {"tobytes", array_array_tobytes, METH_NOARGS, array_array_tobytes__doc__},
+    {"tobytes", (PyCFunction)array_array_tobytes, METH_NOARGS, array_array_tobytes__doc__},
 
 static PyObject *
 array_array_tobytes_impl(arrayobject *self);
@@ -571,7 +571,7 @@ PyDoc_STRVAR(array_array_fromunicode__doc__,
 "some other type.");
 
 #define ARRAY_ARRAY_FROMUNICODE_METHODDEF    \
-    {"fromunicode", array_array_fromunicode, METH_O, array_array_fromunicode__doc__},
+    {"fromunicode", (PyCFunction)array_array_fromunicode, METH_O, array_array_fromunicode__doc__},
 
 static PyObject *
 array_array_fromunicode_impl(arrayobject *self, PyObject *ustr);
@@ -604,7 +604,7 @@ PyDoc_STRVAR(array_array_tounicode__doc__,
 "unicode string from an array of some other type.");
 
 #define ARRAY_ARRAY_TOUNICODE_METHODDEF    \
-    {"tounicode", array_array_tounicode, METH_NOARGS, array_array_tounicode__doc__},
+    {"tounicode", (PyCFunction)array_array_tounicode, METH_NOARGS, array_array_tounicode__doc__},
 
 static PyObject *
 array_array_tounicode_impl(arrayobject *self);
@@ -622,7 +622,7 @@ PyDoc_STRVAR(array_array___sizeof____doc__,
 "Size of the array in memory, in bytes.");
 
 #define ARRAY_ARRAY___SIZEOF___METHODDEF    \
-    {"__sizeof__", array_array___sizeof__, METH_NOARGS, array_array___sizeof____doc__},
+    {"__sizeof__", (PyCFunction)array_array___sizeof__, METH_NOARGS, array_array___sizeof____doc__},
 
 static PyObject *
 array_array___sizeof___impl(arrayobject *self);
@@ -759,7 +759,7 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 "Set state information for unpickling.");
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
-    {"__setstate__", array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
+    {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
 
 static PyObject *
 array_arrayiterator___setstate___impl(arrayiterobject *self, PyObject *state);
@@ -773,4 +773,4 @@ array_arrayiterator___setstate__(PyObject *self, PyObject *state)
 
     return return_value;
 }
-/*[clinic end generated code: output=88448cc228e01197 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dd49451ac1cc3f39 input=a9049054013a1b77]*/

@@ -145,7 +145,7 @@ PyDoc_STRVAR(_io_FileIO_fileno__doc__,
 "Return the underlying file descriptor (an integer).");
 
 #define _IO_FILEIO_FILENO_METHODDEF    \
-    {"fileno", _io_FileIO_fileno, METH_NOARGS, _io_FileIO_fileno__doc__},
+    {"fileno", (PyCFunction)_io_FileIO_fileno, METH_NOARGS, _io_FileIO_fileno__doc__},
 
 static PyObject *
 _io_FileIO_fileno_impl(fileio *self);
@@ -163,7 +163,7 @@ PyDoc_STRVAR(_io_FileIO_readable__doc__,
 "True if file was opened in a read mode.");
 
 #define _IO_FILEIO_READABLE_METHODDEF    \
-    {"readable", _io_FileIO_readable, METH_NOARGS, _io_FileIO_readable__doc__},
+    {"readable", (PyCFunction)_io_FileIO_readable, METH_NOARGS, _io_FileIO_readable__doc__},
 
 static PyObject *
 _io_FileIO_readable_impl(fileio *self);
@@ -181,7 +181,7 @@ PyDoc_STRVAR(_io_FileIO_writable__doc__,
 "True if file was opened in a write mode.");
 
 #define _IO_FILEIO_WRITABLE_METHODDEF    \
-    {"writable", _io_FileIO_writable, METH_NOARGS, _io_FileIO_writable__doc__},
+    {"writable", (PyCFunction)_io_FileIO_writable, METH_NOARGS, _io_FileIO_writable__doc__},
 
 static PyObject *
 _io_FileIO_writable_impl(fileio *self);
@@ -199,7 +199,7 @@ PyDoc_STRVAR(_io_FileIO_seekable__doc__,
 "True if file supports random-access.");
 
 #define _IO_FILEIO_SEEKABLE_METHODDEF    \
-    {"seekable", _io_FileIO_seekable, METH_NOARGS, _io_FileIO_seekable__doc__},
+    {"seekable", (PyCFunction)_io_FileIO_seekable, METH_NOARGS, _io_FileIO_seekable__doc__},
 
 static PyObject *
 _io_FileIO_seekable_impl(fileio *self);
@@ -275,7 +275,7 @@ PyDoc_STRVAR(_io_FileIO_readall__doc__,
 "data is available (EAGAIN is returned before bytes are read) returns None.");
 
 #define _IO_FILEIO_READALL_METHODDEF    \
-    {"readall", _io_FileIO_readall, METH_NOARGS, _io_FileIO_readall__doc__},
+    {"readall", (PyCFunction)_io_FileIO_readall, METH_NOARGS, _io_FileIO_readall__doc__},
 
 static PyObject *
 _io_FileIO_readall_impl(fileio *self);
@@ -454,7 +454,7 @@ PyDoc_STRVAR(_io_FileIO_tell__doc__,
 "Can raise OSError for non seekable files.");
 
 #define _IO_FILEIO_TELL_METHODDEF    \
-    {"tell", _io_FileIO_tell, METH_NOARGS, _io_FileIO_tell__doc__},
+    {"tell", (PyCFunction)_io_FileIO_tell, METH_NOARGS, _io_FileIO_tell__doc__},
 
 static PyObject *
 _io_FileIO_tell_impl(fileio *self);
@@ -527,7 +527,7 @@ PyDoc_STRVAR(_io_FileIO_isatty__doc__,
 "True if the file is connected to a TTY device.");
 
 #define _IO_FILEIO_ISATTY_METHODDEF    \
-    {"isatty", _io_FileIO_isatty, METH_NOARGS, _io_FileIO_isatty__doc__},
+    {"isatty", (PyCFunction)_io_FileIO_isatty, METH_NOARGS, _io_FileIO_isatty__doc__},
 
 static PyObject *
 _io_FileIO_isatty_impl(fileio *self);
@@ -541,4 +541,4 @@ _io_FileIO_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=472dfa3229b4e10f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f4e1f74c03d4ecdf input=a9049054013a1b77]*/

@@ -148,7 +148,7 @@ PyDoc_STRVAR(_functools__lru_cache_wrapper_cache_info__doc__,
 "Report cache statistics");
 
 #define _FUNCTOOLS__LRU_CACHE_WRAPPER_CACHE_INFO_METHODDEF    \
-    {"cache_info", _functools__lru_cache_wrapper_cache_info, METH_NOARGS, _functools__lru_cache_wrapper_cache_info__doc__},
+    {"cache_info", (PyCFunction)_functools__lru_cache_wrapper_cache_info, METH_NOARGS, _functools__lru_cache_wrapper_cache_info__doc__},
 
 static PyObject *
 _functools__lru_cache_wrapper_cache_info_impl(PyObject *self);
@@ -172,7 +172,7 @@ PyDoc_STRVAR(_functools__lru_cache_wrapper_cache_clear__doc__,
 "Clear the cache and cache statistics");
 
 #define _FUNCTOOLS__LRU_CACHE_WRAPPER_CACHE_CLEAR_METHODDEF    \
-    {"cache_clear", _functools__lru_cache_wrapper_cache_clear, METH_NOARGS, _functools__lru_cache_wrapper_cache_clear__doc__},
+    {"cache_clear", (PyCFunction)_functools__lru_cache_wrapper_cache_clear, METH_NOARGS, _functools__lru_cache_wrapper_cache_clear__doc__},
 
 static PyObject *
 _functools__lru_cache_wrapper_cache_clear_impl(PyObject *self);
@@ -188,4 +188,4 @@ _functools__lru_cache_wrapper_cache_clear(PyObject *self, PyObject *Py_UNUSED(ig
 
     return return_value;
 }
-/*[clinic end generated code: output=cd7afa547ff66d08 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e6edcc01f0720daf input=a9049054013a1b77]*/

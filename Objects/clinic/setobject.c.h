@@ -13,7 +13,7 @@ PyDoc_STRVAR(set_pop__doc__,
 "Raises KeyError if the set is empty.");
 
 #define SET_POP_METHODDEF    \
-    {"pop", set_pop, METH_NOARGS, set_pop__doc__},
+    {"pop", (PyCFunction)set_pop, METH_NOARGS, set_pop__doc__},
 
 static PyObject *
 set_pop_impl(PySetObject *so);
@@ -64,7 +64,7 @@ PyDoc_STRVAR(set_copy__doc__,
 "Return a shallow copy of a set.");
 
 #define SET_COPY_METHODDEF    \
-    {"copy", set_copy, METH_NOARGS, set_copy__doc__},
+    {"copy", (PyCFunction)set_copy, METH_NOARGS, set_copy__doc__},
 
 static PyObject *
 set_copy_impl(PySetObject *so);
@@ -88,7 +88,7 @@ PyDoc_STRVAR(frozenset_copy__doc__,
 "Return a shallow copy of a set.");
 
 #define FROZENSET_COPY_METHODDEF    \
-    {"copy", frozenset_copy, METH_NOARGS, frozenset_copy__doc__},
+    {"copy", (PyCFunction)frozenset_copy, METH_NOARGS, frozenset_copy__doc__},
 
 static PyObject *
 frozenset_copy_impl(PySetObject *so);
@@ -112,7 +112,7 @@ PyDoc_STRVAR(set_clear__doc__,
 "Remove all elements from this set.");
 
 #define SET_CLEAR_METHODDEF    \
-    {"clear", set_clear, METH_NOARGS, set_clear__doc__},
+    {"clear", (PyCFunction)set_clear, METH_NOARGS, set_clear__doc__},
 
 static PyObject *
 set_clear_impl(PySetObject *so);
@@ -217,7 +217,7 @@ PyDoc_STRVAR(set_isdisjoint__doc__,
 "Return True if two sets have a null intersection.");
 
 #define SET_ISDISJOINT_METHODDEF    \
-    {"isdisjoint", set_isdisjoint, METH_O, set_isdisjoint__doc__},
+    {"isdisjoint", (PyCFunction)set_isdisjoint, METH_O, set_isdisjoint__doc__},
 
 static PyObject *
 set_isdisjoint_impl(PySetObject *so, PyObject *other);
@@ -295,7 +295,7 @@ PyDoc_STRVAR(set_symmetric_difference_update__doc__,
 "Update the set, keeping only elements found in either set, but not in both.");
 
 #define SET_SYMMETRIC_DIFFERENCE_UPDATE_METHODDEF    \
-    {"symmetric_difference_update", set_symmetric_difference_update, METH_O, set_symmetric_difference_update__doc__},
+    {"symmetric_difference_update", (PyCFunction)set_symmetric_difference_update, METH_O, set_symmetric_difference_update__doc__},
 
 static PyObject *
 set_symmetric_difference_update_impl(PySetObject *so, PyObject *other);
@@ -317,7 +317,7 @@ PyDoc_STRVAR(set_symmetric_difference__doc__,
 "Return a new set with elements in either the set or other but not both.");
 
 #define SET_SYMMETRIC_DIFFERENCE_METHODDEF    \
-    {"symmetric_difference", set_symmetric_difference, METH_O, set_symmetric_difference__doc__},
+    {"symmetric_difference", (PyCFunction)set_symmetric_difference, METH_O, set_symmetric_difference__doc__},
 
 static PyObject *
 set_symmetric_difference_impl(PySetObject *so, PyObject *other);
@@ -341,7 +341,7 @@ PyDoc_STRVAR(set_issubset__doc__,
 "Report whether another set contains this set.");
 
 #define SET_ISSUBSET_METHODDEF    \
-    {"issubset", set_issubset, METH_O, set_issubset__doc__},
+    {"issubset", (PyCFunction)set_issubset, METH_O, set_issubset__doc__},
 
 static PyObject *
 set_issubset_impl(PySetObject *so, PyObject *other);
@@ -365,7 +365,7 @@ PyDoc_STRVAR(set_issuperset__doc__,
 "Report whether this set contains another set.");
 
 #define SET_ISSUPERSET_METHODDEF    \
-    {"issuperset", set_issuperset, METH_O, set_issuperset__doc__},
+    {"issuperset", (PyCFunction)set_issuperset, METH_O, set_issuperset__doc__},
 
 static PyObject *
 set_issuperset_impl(PySetObject *so, PyObject *other);
@@ -391,7 +391,7 @@ PyDoc_STRVAR(set_add__doc__,
 "This has no effect if the element is already present.");
 
 #define SET_ADD_METHODDEF    \
-    {"add", set_add, METH_O, set_add__doc__},
+    {"add", (PyCFunction)set_add, METH_O, set_add__doc__},
 
 static PyObject *
 set_add_impl(PySetObject *so, PyObject *key);
@@ -415,7 +415,7 @@ PyDoc_STRVAR(set___contains____doc__,
 "x.__contains__(y) <==> y in x.");
 
 #define SET___CONTAINS___METHODDEF    \
-    {"__contains__", set___contains__, METH_O|METH_COEXIST, set___contains____doc__},
+    {"__contains__", (PyCFunction)set___contains__, METH_O|METH_COEXIST, set___contains____doc__},
 
 static PyObject *
 set___contains___impl(PySetObject *so, PyObject *key);
@@ -441,7 +441,7 @@ PyDoc_STRVAR(set_remove__doc__,
 "If the element is not a member, raise a KeyError.");
 
 #define SET_REMOVE_METHODDEF    \
-    {"remove", set_remove, METH_O, set_remove__doc__},
+    {"remove", (PyCFunction)set_remove, METH_O, set_remove__doc__},
 
 static PyObject *
 set_remove_impl(PySetObject *so, PyObject *key);
@@ -468,7 +468,7 @@ PyDoc_STRVAR(set_discard__doc__,
 "an exception when an element is missing from the set.");
 
 #define SET_DISCARD_METHODDEF    \
-    {"discard", set_discard, METH_O, set_discard__doc__},
+    {"discard", (PyCFunction)set_discard, METH_O, set_discard__doc__},
 
 static PyObject *
 set_discard_impl(PySetObject *so, PyObject *key);
@@ -492,7 +492,7 @@ PyDoc_STRVAR(set___reduce____doc__,
 "Return state information for pickling.");
 
 #define SET___REDUCE___METHODDEF    \
-    {"__reduce__", set___reduce__, METH_NOARGS, set___reduce____doc__},
+    {"__reduce__", (PyCFunction)set___reduce__, METH_NOARGS, set___reduce____doc__},
 
 static PyObject *
 set___reduce___impl(PySetObject *so);
@@ -516,7 +516,7 @@ PyDoc_STRVAR(set___sizeof____doc__,
 "S.__sizeof__() -> size of S in memory, in bytes.");
 
 #define SET___SIZEOF___METHODDEF    \
-    {"__sizeof__", set___sizeof__, METH_NOARGS, set___sizeof____doc__},
+    {"__sizeof__", (PyCFunction)set___sizeof__, METH_NOARGS, set___sizeof____doc__},
 
 static PyObject *
 set___sizeof___impl(PySetObject *so);
@@ -532,4 +532,4 @@ set___sizeof__(PyObject *so, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
-/*[clinic end generated code: output=222f962570251614 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e2f1470de062d661 input=a9049054013a1b77]*/

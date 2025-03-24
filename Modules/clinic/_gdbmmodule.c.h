@@ -83,7 +83,7 @@ PyDoc_STRVAR(_gdbm_gdbm_close__doc__,
 "Close the database.");
 
 #define _GDBM_GDBM_CLOSE_METHODDEF    \
-    {"close", _gdbm_gdbm_close, METH_NOARGS, _gdbm_gdbm_close__doc__},
+    {"close", (PyCFunction)_gdbm_gdbm_close, METH_NOARGS, _gdbm_gdbm_close__doc__},
 
 static PyObject *
 _gdbm_gdbm_close_impl(gdbmobject *self);
@@ -343,4 +343,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=54dc05a2b1a17c4b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d974cb39e4ee5d67 input=a9049054013a1b77]*/

@@ -484,7 +484,7 @@ PyDoc_STRVAR(itertools_chain_from_iterable__doc__,
 "Alternative chain() constructor taking a single iterable argument that evaluates lazily.");
 
 #define ITERTOOLS_CHAIN_FROM_ITERABLE_METHODDEF    \
-    {"from_iterable", itertools_chain_from_iterable, METH_O|METH_CLASS, itertools_chain_from_iterable__doc__},
+    {"from_iterable", (PyCFunction)itertools_chain_from_iterable, METH_O|METH_CLASS, itertools_chain_from_iterable__doc__},
 
 static PyObject *
 itertools_chain_from_iterable_impl(PyTypeObject *type, PyObject *arg);
@@ -949,4 +949,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=95dd74389890ba45 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=688855b1dc77bf5a input=a9049054013a1b77]*/

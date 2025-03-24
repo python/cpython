@@ -59,7 +59,7 @@ PyDoc_STRVAR(SHA256Type_digest__doc__,
 "Return the digest value as a bytes object.");
 
 #define SHA256TYPE_DIGEST_METHODDEF    \
-    {"digest", SHA256Type_digest, METH_NOARGS, SHA256Type_digest__doc__},
+    {"digest", (PyCFunction)SHA256Type_digest, METH_NOARGS, SHA256Type_digest__doc__},
 
 static PyObject *
 SHA256Type_digest_impl(SHA256object *self);
@@ -77,7 +77,7 @@ PyDoc_STRVAR(SHA512Type_digest__doc__,
 "Return the digest value as a bytes object.");
 
 #define SHA512TYPE_DIGEST_METHODDEF    \
-    {"digest", SHA512Type_digest, METH_NOARGS, SHA512Type_digest__doc__},
+    {"digest", (PyCFunction)SHA512Type_digest, METH_NOARGS, SHA512Type_digest__doc__},
 
 static PyObject *
 SHA512Type_digest_impl(SHA512object *self);
@@ -95,7 +95,7 @@ PyDoc_STRVAR(SHA256Type_hexdigest__doc__,
 "Return the digest value as a string of hexadecimal digits.");
 
 #define SHA256TYPE_HEXDIGEST_METHODDEF    \
-    {"hexdigest", SHA256Type_hexdigest, METH_NOARGS, SHA256Type_hexdigest__doc__},
+    {"hexdigest", (PyCFunction)SHA256Type_hexdigest, METH_NOARGS, SHA256Type_hexdigest__doc__},
 
 static PyObject *
 SHA256Type_hexdigest_impl(SHA256object *self);
@@ -113,7 +113,7 @@ PyDoc_STRVAR(SHA512Type_hexdigest__doc__,
 "Return the digest value as a string of hexadecimal digits.");
 
 #define SHA512TYPE_HEXDIGEST_METHODDEF    \
-    {"hexdigest", SHA512Type_hexdigest, METH_NOARGS, SHA512Type_hexdigest__doc__},
+    {"hexdigest", (PyCFunction)SHA512Type_hexdigest, METH_NOARGS, SHA512Type_hexdigest__doc__},
 
 static PyObject *
 SHA512Type_hexdigest_impl(SHA512object *self);
@@ -131,7 +131,7 @@ PyDoc_STRVAR(SHA256Type_update__doc__,
 "Update this hash object\'s state with the provided string.");
 
 #define SHA256TYPE_UPDATE_METHODDEF    \
-    {"update", SHA256Type_update, METH_O, SHA256Type_update__doc__},
+    {"update", (PyCFunction)SHA256Type_update, METH_O, SHA256Type_update__doc__},
 
 static PyObject *
 SHA256Type_update_impl(SHA256object *self, PyObject *obj);
@@ -153,7 +153,7 @@ PyDoc_STRVAR(SHA512Type_update__doc__,
 "Update this hash object\'s state with the provided string.");
 
 #define SHA512TYPE_UPDATE_METHODDEF    \
-    {"update", SHA512Type_update, METH_O, SHA512Type_update__doc__},
+    {"update", (PyCFunction)SHA512Type_update, METH_O, SHA512Type_update__doc__},
 
 static PyObject *
 SHA512Type_update_impl(SHA512object *self, PyObject *obj);
@@ -467,4 +467,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f056fc5485e0b4b4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0c2eed5c77ec6987 input=a9049054013a1b77]*/

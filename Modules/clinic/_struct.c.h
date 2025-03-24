@@ -81,7 +81,7 @@ PyDoc_STRVAR(Struct_unpack__doc__,
 "See help(struct) for more on format strings.");
 
 #define STRUCT_UNPACK_METHODDEF    \
-    {"unpack", Struct_unpack, METH_O, Struct_unpack__doc__},
+    {"unpack", (PyCFunction)Struct_unpack, METH_O, Struct_unpack__doc__},
 
 static PyObject *
 Struct_unpack_impl(PyStructObject *self, Py_buffer *buffer);
@@ -207,7 +207,7 @@ PyDoc_STRVAR(Struct_iter_unpack__doc__,
 "Requires that the bytes length be a multiple of the struct size.");
 
 #define STRUCT_ITER_UNPACK_METHODDEF    \
-    {"iter_unpack", Struct_iter_unpack, METH_O, Struct_iter_unpack__doc__},
+    {"iter_unpack", (PyCFunction)Struct_iter_unpack, METH_O, Struct_iter_unpack__doc__},
 
 static PyObject *
 Struct_iter_unpack_impl(PyStructObject *self, PyObject *buffer);
@@ -229,7 +229,7 @@ PyDoc_STRVAR(_clearcache__doc__,
 "Clear the internal cache.");
 
 #define _CLEARCACHE_METHODDEF    \
-    {"_clearcache", _clearcache, METH_NOARGS, _clearcache__doc__},
+    {"_clearcache", (PyCFunction)_clearcache, METH_NOARGS, _clearcache__doc__},
 
 static PyObject *
 _clearcache_impl(PyObject *module);
@@ -247,7 +247,7 @@ PyDoc_STRVAR(calcsize__doc__,
 "Return size in bytes of the struct described by the format string.");
 
 #define CALCSIZE_METHODDEF    \
-    {"calcsize", calcsize, METH_O, calcsize__doc__},
+    {"calcsize", (PyCFunction)calcsize, METH_O, calcsize__doc__},
 
 static Py_ssize_t
 calcsize_impl(PyObject *module, PyStructObject *s_object);
@@ -452,4 +452,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=e1d169d3c17deaae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c7c051850b7ad427 input=a9049054013a1b77]*/

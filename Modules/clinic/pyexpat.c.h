@@ -15,7 +15,7 @@ PyDoc_STRVAR(pyexpat_xmlparser_SetReparseDeferralEnabled__doc__,
 "Enable/Disable reparse deferral; enabled by default with Expat >=2.6.0.");
 
 #define PYEXPAT_XMLPARSER_SETREPARSEDEFERRALENABLED_METHODDEF    \
-    {"SetReparseDeferralEnabled", pyexpat_xmlparser_SetReparseDeferralEnabled, METH_O, pyexpat_xmlparser_SetReparseDeferralEnabled__doc__},
+    {"SetReparseDeferralEnabled", (PyCFunction)pyexpat_xmlparser_SetReparseDeferralEnabled, METH_O, pyexpat_xmlparser_SetReparseDeferralEnabled__doc__},
 
 static PyObject *
 pyexpat_xmlparser_SetReparseDeferralEnabled_impl(xmlparseobject *self,
@@ -44,7 +44,7 @@ PyDoc_STRVAR(pyexpat_xmlparser_GetReparseDeferralEnabled__doc__,
 "Retrieve reparse deferral enabled status; always returns false with Expat <2.6.0.");
 
 #define PYEXPAT_XMLPARSER_GETREPARSEDEFERRALENABLED_METHODDEF    \
-    {"GetReparseDeferralEnabled", pyexpat_xmlparser_GetReparseDeferralEnabled, METH_NOARGS, pyexpat_xmlparser_GetReparseDeferralEnabled__doc__},
+    {"GetReparseDeferralEnabled", (PyCFunction)pyexpat_xmlparser_GetReparseDeferralEnabled, METH_NOARGS, pyexpat_xmlparser_GetReparseDeferralEnabled__doc__},
 
 static PyObject *
 pyexpat_xmlparser_GetReparseDeferralEnabled_impl(xmlparseobject *self);
@@ -163,7 +163,7 @@ PyDoc_STRVAR(pyexpat_xmlparser_SetBase__doc__,
 "Set the base URL for the parser.");
 
 #define PYEXPAT_XMLPARSER_SETBASE_METHODDEF    \
-    {"SetBase", pyexpat_xmlparser_SetBase, METH_O, pyexpat_xmlparser_SetBase__doc__},
+    {"SetBase", (PyCFunction)pyexpat_xmlparser_SetBase, METH_O, pyexpat_xmlparser_SetBase__doc__},
 
 static PyObject *
 pyexpat_xmlparser_SetBase_impl(xmlparseobject *self, const char *base);
@@ -200,7 +200,7 @@ PyDoc_STRVAR(pyexpat_xmlparser_GetBase__doc__,
 "Return base URL string for the parser.");
 
 #define PYEXPAT_XMLPARSER_GETBASE_METHODDEF    \
-    {"GetBase", pyexpat_xmlparser_GetBase, METH_NOARGS, pyexpat_xmlparser_GetBase__doc__},
+    {"GetBase", (PyCFunction)pyexpat_xmlparser_GetBase, METH_NOARGS, pyexpat_xmlparser_GetBase__doc__},
 
 static PyObject *
 pyexpat_xmlparser_GetBase_impl(xmlparseobject *self);
@@ -221,7 +221,7 @@ PyDoc_STRVAR(pyexpat_xmlparser_GetInputContext__doc__,
 "for an element with many attributes), not all of the text may be available.");
 
 #define PYEXPAT_XMLPARSER_GETINPUTCONTEXT_METHODDEF    \
-    {"GetInputContext", pyexpat_xmlparser_GetInputContext, METH_NOARGS, pyexpat_xmlparser_GetInputContext__doc__},
+    {"GetInputContext", (PyCFunction)pyexpat_xmlparser_GetInputContext, METH_NOARGS, pyexpat_xmlparser_GetInputContext__doc__},
 
 static PyObject *
 pyexpat_xmlparser_GetInputContext_impl(xmlparseobject *self);
@@ -327,7 +327,7 @@ PyDoc_STRVAR(pyexpat_xmlparser_SetParamEntityParsing__doc__,
 "was successful.");
 
 #define PYEXPAT_XMLPARSER_SETPARAMENTITYPARSING_METHODDEF    \
-    {"SetParamEntityParsing", pyexpat_xmlparser_SetParamEntityParsing, METH_O, pyexpat_xmlparser_SetParamEntityParsing__doc__},
+    {"SetParamEntityParsing", (PyCFunction)pyexpat_xmlparser_SetParamEntityParsing, METH_O, pyexpat_xmlparser_SetParamEntityParsing__doc__},
 
 static PyObject *
 pyexpat_xmlparser_SetParamEntityParsing_impl(xmlparseobject *self, int flag);
@@ -526,7 +526,7 @@ PyDoc_STRVAR(pyexpat_ErrorString__doc__,
 "Returns string error for given number.");
 
 #define PYEXPAT_ERRORSTRING_METHODDEF    \
-    {"ErrorString", pyexpat_ErrorString, METH_O, pyexpat_ErrorString__doc__},
+    {"ErrorString", (PyCFunction)pyexpat_ErrorString, METH_O, pyexpat_ErrorString__doc__},
 
 static PyObject *
 pyexpat_ErrorString_impl(PyObject *module, long code);
@@ -550,4 +550,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=65190af4649c6524 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7ee30ae5b666d0a8 input=a9049054013a1b77]*/

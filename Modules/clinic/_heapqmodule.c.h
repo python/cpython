@@ -45,7 +45,7 @@ PyDoc_STRVAR(_heapq_heappop__doc__,
 "Pop the smallest item off the heap, maintaining the heap invariant.");
 
 #define _HEAPQ_HEAPPOP_METHODDEF    \
-    {"heappop", _heapq_heappop, METH_O, _heapq_heappop__doc__},
+    {"heappop", (PyCFunction)_heapq_heappop, METH_O, _heapq_heappop__doc__},
 
 static PyObject *
 _heapq_heappop_impl(PyObject *module, PyObject *heap);
@@ -153,7 +153,7 @@ PyDoc_STRVAR(_heapq_heapify__doc__,
 "Transform list into a heap, in-place, in O(len(heap)) time.");
 
 #define _HEAPQ_HEAPIFY_METHODDEF    \
-    {"heapify", _heapq_heapify, METH_O, _heapq_heapify__doc__},
+    {"heapify", (PyCFunction)_heapq_heapify, METH_O, _heapq_heapify__doc__},
 
 static PyObject *
 _heapq_heapify_impl(PyObject *module, PyObject *heap);
@@ -182,7 +182,7 @@ PyDoc_STRVAR(_heapq__heappop_max__doc__,
 "Maxheap variant of heappop.");
 
 #define _HEAPQ__HEAPPOP_MAX_METHODDEF    \
-    {"_heappop_max", _heapq__heappop_max, METH_O, _heapq__heappop_max__doc__},
+    {"_heappop_max", (PyCFunction)_heapq__heappop_max, METH_O, _heapq__heappop_max__doc__},
 
 static PyObject *
 _heapq__heappop_max_impl(PyObject *module, PyObject *heap);
@@ -246,7 +246,7 @@ PyDoc_STRVAR(_heapq__heapify_max__doc__,
 "Maxheap variant of heapify.");
 
 #define _HEAPQ__HEAPIFY_MAX_METHODDEF    \
-    {"_heapify_max", _heapq__heapify_max, METH_O, _heapq__heapify_max__doc__},
+    {"_heapify_max", (PyCFunction)_heapq__heapify_max, METH_O, _heapq__heapify_max__doc__},
 
 static PyObject *
 _heapq__heapify_max_impl(PyObject *module, PyObject *heap);
@@ -267,4 +267,4 @@ _heapq__heapify_max(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=06ad2cf6ef705d99 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=05f2afdf3bc54c9d input=a9049054013a1b77]*/

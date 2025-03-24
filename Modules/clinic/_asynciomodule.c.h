@@ -91,7 +91,7 @@ PyDoc_STRVAR(_asyncio_Future_result__doc__,
 "the future is done and has an exception set, this exception is raised.");
 
 #define _ASYNCIO_FUTURE_RESULT_METHODDEF    \
-    {"result", _asyncio_Future_result, METH_NOARGS, _asyncio_Future_result__doc__},
+    {"result", (PyCFunction)_asyncio_Future_result, METH_NOARGS, _asyncio_Future_result__doc__},
 
 static PyObject *
 _asyncio_Future_result_impl(FutureObj *self);
@@ -436,7 +436,7 @@ PyDoc_STRVAR(_asyncio_Future_cancelled__doc__,
 "Return True if the future was cancelled.");
 
 #define _ASYNCIO_FUTURE_CANCELLED_METHODDEF    \
-    {"cancelled", _asyncio_Future_cancelled, METH_NOARGS, _asyncio_Future_cancelled__doc__},
+    {"cancelled", (PyCFunction)_asyncio_Future_cancelled, METH_NOARGS, _asyncio_Future_cancelled__doc__},
 
 static PyObject *
 _asyncio_Future_cancelled_impl(FutureObj *self);
@@ -463,7 +463,7 @@ PyDoc_STRVAR(_asyncio_Future_done__doc__,
 "future was cancelled.");
 
 #define _ASYNCIO_FUTURE_DONE_METHODDEF    \
-    {"done", _asyncio_Future_done, METH_NOARGS, _asyncio_Future_done__doc__},
+    {"done", (PyCFunction)_asyncio_Future_done, METH_NOARGS, _asyncio_Future_done__doc__},
 
 static PyObject *
 _asyncio_Future_done_impl(FutureObj *self);
@@ -845,7 +845,7 @@ PyDoc_STRVAR(_asyncio_Future__make_cancelled_error__doc__,
 "it erases the context exception value.");
 
 #define _ASYNCIO_FUTURE__MAKE_CANCELLED_ERROR_METHODDEF    \
-    {"_make_cancelled_error", _asyncio_Future__make_cancelled_error, METH_NOARGS, _asyncio_Future__make_cancelled_error__doc__},
+    {"_make_cancelled_error", (PyCFunction)_asyncio_Future__make_cancelled_error, METH_NOARGS, _asyncio_Future__make_cancelled_error__doc__},
 
 static PyObject *
 _asyncio_Future__make_cancelled_error_impl(FutureObj *self);
@@ -1085,7 +1085,7 @@ PyDoc_STRVAR(_asyncio_Task__make_cancelled_error__doc__,
 "it erases the context exception value.");
 
 #define _ASYNCIO_TASK__MAKE_CANCELLED_ERROR_METHODDEF    \
-    {"_make_cancelled_error", _asyncio_Task__make_cancelled_error, METH_NOARGS, _asyncio_Task__make_cancelled_error__doc__},
+    {"_make_cancelled_error", (PyCFunction)_asyncio_Task__make_cancelled_error, METH_NOARGS, _asyncio_Task__make_cancelled_error__doc__},
 
 static PyObject *
 _asyncio_Task__make_cancelled_error_impl(TaskObj *self);
@@ -1194,7 +1194,7 @@ PyDoc_STRVAR(_asyncio_Task_cancelling__doc__,
 "and may be decremented using .uncancel().");
 
 #define _ASYNCIO_TASK_CANCELLING_METHODDEF    \
-    {"cancelling", _asyncio_Task_cancelling, METH_NOARGS, _asyncio_Task_cancelling__doc__},
+    {"cancelling", (PyCFunction)_asyncio_Task_cancelling, METH_NOARGS, _asyncio_Task_cancelling__doc__},
 
 static PyObject *
 _asyncio_Task_cancelling_impl(TaskObj *self);
@@ -1223,7 +1223,7 @@ PyDoc_STRVAR(_asyncio_Task_uncancel__doc__,
 "Returns the remaining number of cancellation requests.");
 
 #define _ASYNCIO_TASK_UNCANCEL_METHODDEF    \
-    {"uncancel", _asyncio_Task_uncancel, METH_NOARGS, _asyncio_Task_uncancel__doc__},
+    {"uncancel", (PyCFunction)_asyncio_Task_uncancel, METH_NOARGS, _asyncio_Task_uncancel__doc__},
 
 static PyObject *
 _asyncio_Task_uncancel_impl(TaskObj *self);
@@ -1401,7 +1401,7 @@ PyDoc_STRVAR(_asyncio_Task_set_result__doc__,
 "\n");
 
 #define _ASYNCIO_TASK_SET_RESULT_METHODDEF    \
-    {"set_result", _asyncio_Task_set_result, METH_O, _asyncio_Task_set_result__doc__},
+    {"set_result", (PyCFunction)_asyncio_Task_set_result, METH_O, _asyncio_Task_set_result__doc__},
 
 static PyObject *
 _asyncio_Task_set_result_impl(TaskObj *self, PyObject *result);
@@ -1422,7 +1422,7 @@ PyDoc_STRVAR(_asyncio_Task_set_exception__doc__,
 "\n");
 
 #define _ASYNCIO_TASK_SET_EXCEPTION_METHODDEF    \
-    {"set_exception", _asyncio_Task_set_exception, METH_O, _asyncio_Task_set_exception__doc__},
+    {"set_exception", (PyCFunction)_asyncio_Task_set_exception, METH_O, _asyncio_Task_set_exception__doc__},
 
 static PyObject *
 _asyncio_Task_set_exception_impl(TaskObj *self, PyObject *exception);
@@ -1443,7 +1443,7 @@ PyDoc_STRVAR(_asyncio_Task_get_coro__doc__,
 "\n");
 
 #define _ASYNCIO_TASK_GET_CORO_METHODDEF    \
-    {"get_coro", _asyncio_Task_get_coro, METH_NOARGS, _asyncio_Task_get_coro__doc__},
+    {"get_coro", (PyCFunction)_asyncio_Task_get_coro, METH_NOARGS, _asyncio_Task_get_coro__doc__},
 
 static PyObject *
 _asyncio_Task_get_coro_impl(TaskObj *self);
@@ -1466,7 +1466,7 @@ PyDoc_STRVAR(_asyncio_Task_get_context__doc__,
 "\n");
 
 #define _ASYNCIO_TASK_GET_CONTEXT_METHODDEF    \
-    {"get_context", _asyncio_Task_get_context, METH_NOARGS, _asyncio_Task_get_context__doc__},
+    {"get_context", (PyCFunction)_asyncio_Task_get_context, METH_NOARGS, _asyncio_Task_get_context__doc__},
 
 static PyObject *
 _asyncio_Task_get_context_impl(TaskObj *self);
@@ -1483,7 +1483,7 @@ PyDoc_STRVAR(_asyncio_Task_get_name__doc__,
 "\n");
 
 #define _ASYNCIO_TASK_GET_NAME_METHODDEF    \
-    {"get_name", _asyncio_Task_get_name, METH_NOARGS, _asyncio_Task_get_name__doc__},
+    {"get_name", (PyCFunction)_asyncio_Task_get_name, METH_NOARGS, _asyncio_Task_get_name__doc__},
 
 static PyObject *
 _asyncio_Task_get_name_impl(TaskObj *self);
@@ -1506,7 +1506,7 @@ PyDoc_STRVAR(_asyncio_Task_set_name__doc__,
 "\n");
 
 #define _ASYNCIO_TASK_SET_NAME_METHODDEF    \
-    {"set_name", _asyncio_Task_set_name, METH_O, _asyncio_Task_set_name__doc__},
+    {"set_name", (PyCFunction)_asyncio_Task_set_name, METH_O, _asyncio_Task_set_name__doc__},
 
 static PyObject *
 _asyncio_Task_set_name_impl(TaskObj *self, PyObject *value);
@@ -1533,7 +1533,7 @@ PyDoc_STRVAR(_asyncio__get_running_loop__doc__,
 "This function is thread-specific.");
 
 #define _ASYNCIO__GET_RUNNING_LOOP_METHODDEF    \
-    {"_get_running_loop", _asyncio__get_running_loop, METH_NOARGS, _asyncio__get_running_loop__doc__},
+    {"_get_running_loop", (PyCFunction)_asyncio__get_running_loop, METH_NOARGS, _asyncio__get_running_loop__doc__},
 
 static PyObject *
 _asyncio__get_running_loop_impl(PyObject *module);
@@ -1554,7 +1554,7 @@ PyDoc_STRVAR(_asyncio__set_running_loop__doc__,
 "This function is thread-specific.");
 
 #define _ASYNCIO__SET_RUNNING_LOOP_METHODDEF    \
-    {"_set_running_loop", _asyncio__set_running_loop, METH_O, _asyncio__set_running_loop__doc__},
+    {"_set_running_loop", (PyCFunction)_asyncio__set_running_loop, METH_O, _asyncio__set_running_loop__doc__},
 
 PyDoc_STRVAR(_asyncio_get_event_loop__doc__,
 "get_event_loop($module, /)\n"
@@ -1570,7 +1570,7 @@ PyDoc_STRVAR(_asyncio_get_event_loop__doc__,
 "the result of `get_event_loop_policy().get_event_loop()` call.");
 
 #define _ASYNCIO_GET_EVENT_LOOP_METHODDEF    \
-    {"get_event_loop", _asyncio_get_event_loop, METH_NOARGS, _asyncio_get_event_loop__doc__},
+    {"get_event_loop", (PyCFunction)_asyncio_get_event_loop, METH_NOARGS, _asyncio_get_event_loop__doc__},
 
 static PyObject *
 _asyncio_get_event_loop_impl(PyObject *module);
@@ -1590,7 +1590,7 @@ PyDoc_STRVAR(_asyncio_get_running_loop__doc__,
 "This function is thread-specific.");
 
 #define _ASYNCIO_GET_RUNNING_LOOP_METHODDEF    \
-    {"get_running_loop", _asyncio_get_running_loop, METH_NOARGS, _asyncio_get_running_loop__doc__},
+    {"get_running_loop", (PyCFunction)_asyncio_get_running_loop, METH_NOARGS, _asyncio_get_running_loop__doc__},
 
 static PyObject *
 _asyncio_get_running_loop_impl(PyObject *module);
@@ -2200,4 +2200,4 @@ _asyncio_future_discard_from_awaited_by(PyObject *module, PyObject *const *args,
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=02be76f30a66fa14 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b1060b180d9dd54c input=a9049054013a1b77]*/

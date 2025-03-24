@@ -10,7 +10,7 @@ PyDoc_STRVAR(resource_getrusage__doc__,
 "\n");
 
 #define RESOURCE_GETRUSAGE_METHODDEF    \
-    {"getrusage", resource_getrusage, METH_O, resource_getrusage__doc__},
+    {"getrusage", (PyCFunction)resource_getrusage, METH_O, resource_getrusage__doc__},
 
 static PyObject *
 resource_getrusage_impl(PyObject *module, int who);
@@ -39,7 +39,7 @@ PyDoc_STRVAR(resource_getrlimit__doc__,
 "\n");
 
 #define RESOURCE_GETRLIMIT_METHODDEF    \
-    {"getrlimit", resource_getrlimit, METH_O, resource_getrlimit__doc__},
+    {"getrlimit", (PyCFunction)resource_getrlimit, METH_O, resource_getrlimit__doc__},
 
 static PyObject *
 resource_getrlimit_impl(PyObject *module, int resource);
@@ -150,7 +150,7 @@ PyDoc_STRVAR(resource_getpagesize__doc__,
 "\n");
 
 #define RESOURCE_GETPAGESIZE_METHODDEF    \
-    {"getpagesize", resource_getpagesize, METH_NOARGS, resource_getpagesize__doc__},
+    {"getpagesize", (PyCFunction)resource_getpagesize, METH_NOARGS, resource_getpagesize__doc__},
 
 static int
 resource_getpagesize_impl(PyObject *module);
@@ -178,4 +178,4 @@ exit:
 #ifndef RESOURCE_PRLIMIT_METHODDEF
     #define RESOURCE_PRLIMIT_METHODDEF
 #endif /* !defined(RESOURCE_PRLIMIT_METHODDEF) */
-/*[clinic end generated code: output=3d91aec3c1e3a374 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e45883ace510414a input=a9049054013a1b77]*/

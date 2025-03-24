@@ -12,7 +12,7 @@ PyDoc_STRVAR(_multiprocessing_closesocket__doc__,
 "\n");
 
 #define _MULTIPROCESSING_CLOSESOCKET_METHODDEF    \
-    {"closesocket", _multiprocessing_closesocket, METH_O, _multiprocessing_closesocket__doc__},
+    {"closesocket", (PyCFunction)_multiprocessing_closesocket, METH_O, _multiprocessing_closesocket__doc__},
 
 static PyObject *
 _multiprocessing_closesocket_impl(PyObject *module, HANDLE handle);
@@ -123,7 +123,7 @@ PyDoc_STRVAR(_multiprocessing_sem_unlink__doc__,
 "\n");
 
 #define _MULTIPROCESSING_SEM_UNLINK_METHODDEF    \
-    {"sem_unlink", _multiprocessing_sem_unlink, METH_O, _multiprocessing_sem_unlink__doc__},
+    {"sem_unlink", (PyCFunction)_multiprocessing_sem_unlink, METH_O, _multiprocessing_sem_unlink__doc__},
 
 static PyObject *
 _multiprocessing_sem_unlink_impl(PyObject *module, const char *name);
@@ -164,4 +164,4 @@ exit:
 #ifndef _MULTIPROCESSING_SEND_METHODDEF
     #define _MULTIPROCESSING_SEND_METHODDEF
 #endif /* !defined(_MULTIPROCESSING_SEND_METHODDEF) */
-/*[clinic end generated code: output=978917b569b6ffb0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=73b4cb8428d816da input=a9049054013a1b77]*/

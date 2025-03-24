@@ -11,7 +11,7 @@ PyDoc_STRVAR(time_clock_gettime__doc__,
 "Return the time of the specified clock clk_id as a float.");
 
 #define TIME_CLOCK_GETTIME_METHODDEF    \
-    {"clock_gettime", time_clock_gettime, METH_O, time_clock_gettime__doc__},
+    {"clock_gettime", (PyCFunction)time_clock_gettime, METH_O, time_clock_gettime__doc__},
 
 static PyObject *
 time_clock_gettime_impl(PyObject *module, clockid_t clk_id);
@@ -42,7 +42,7 @@ PyDoc_STRVAR(time_clock_gettime_ns__doc__,
 "Return the time of the specified clock clk_id as nanoseconds (int).");
 
 #define TIME_CLOCK_GETTIME_NS_METHODDEF    \
-    {"clock_gettime_ns", time_clock_gettime_ns, METH_O, time_clock_gettime_ns__doc__},
+    {"clock_gettime_ns", (PyCFunction)time_clock_gettime_ns, METH_O, time_clock_gettime_ns__doc__},
 
 static PyObject *
 time_clock_gettime_ns_impl(PyObject *module, clockid_t clk_id);
@@ -71,4 +71,4 @@ exit:
 #ifndef TIME_CLOCK_GETTIME_NS_METHODDEF
     #define TIME_CLOCK_GETTIME_NS_METHODDEF
 #endif /* !defined(TIME_CLOCK_GETTIME_NS_METHODDEF) */
-/*[clinic end generated code: output=0a5e10de8e92d3da input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b589a2132aa9df47 input=a9049054013a1b77]*/

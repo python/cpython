@@ -438,7 +438,7 @@ PyDoc_STRVAR(_io_IncrementalNewlineDecoder_getstate__doc__,
 "\n");
 
 #define _IO_INCREMENTALNEWLINEDECODER_GETSTATE_METHODDEF    \
-    {"getstate", _io_IncrementalNewlineDecoder_getstate, METH_NOARGS, _io_IncrementalNewlineDecoder_getstate__doc__},
+    {"getstate", (PyCFunction)_io_IncrementalNewlineDecoder_getstate, METH_NOARGS, _io_IncrementalNewlineDecoder_getstate__doc__},
 
 static PyObject *
 _io_IncrementalNewlineDecoder_getstate_impl(nldecoder_object *self);
@@ -455,7 +455,7 @@ PyDoc_STRVAR(_io_IncrementalNewlineDecoder_setstate__doc__,
 "\n");
 
 #define _IO_INCREMENTALNEWLINEDECODER_SETSTATE_METHODDEF    \
-    {"setstate", _io_IncrementalNewlineDecoder_setstate, METH_O, _io_IncrementalNewlineDecoder_setstate__doc__},
+    {"setstate", (PyCFunction)_io_IncrementalNewlineDecoder_setstate, METH_O, _io_IncrementalNewlineDecoder_setstate__doc__},
 
 static PyObject *
 _io_IncrementalNewlineDecoder_setstate_impl(nldecoder_object *self,
@@ -477,7 +477,7 @@ PyDoc_STRVAR(_io_IncrementalNewlineDecoder_reset__doc__,
 "\n");
 
 #define _IO_INCREMENTALNEWLINEDECODER_RESET_METHODDEF    \
-    {"reset", _io_IncrementalNewlineDecoder_reset, METH_NOARGS, _io_IncrementalNewlineDecoder_reset__doc__},
+    {"reset", (PyCFunction)_io_IncrementalNewlineDecoder_reset, METH_NOARGS, _io_IncrementalNewlineDecoder_reset__doc__},
 
 static PyObject *
 _io_IncrementalNewlineDecoder_reset_impl(nldecoder_object *self);
@@ -752,7 +752,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_detach__doc__,
 "\n");
 
 #define _IO_TEXTIOWRAPPER_DETACH_METHODDEF    \
-    {"detach", _io_TextIOWrapper_detach, METH_NOARGS, _io_TextIOWrapper_detach__doc__},
+    {"detach", (PyCFunction)_io_TextIOWrapper_detach, METH_NOARGS, _io_TextIOWrapper_detach__doc__},
 
 static PyObject *
 _io_TextIOWrapper_detach_impl(textio *self);
@@ -775,7 +775,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_write__doc__,
 "\n");
 
 #define _IO_TEXTIOWRAPPER_WRITE_METHODDEF    \
-    {"write", _io_TextIOWrapper_write, METH_O, _io_TextIOWrapper_write__doc__},
+    {"write", (PyCFunction)_io_TextIOWrapper_write, METH_O, _io_TextIOWrapper_write__doc__},
 
 static PyObject *
 _io_TextIOWrapper_write_impl(textio *self, PyObject *text);
@@ -944,7 +944,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_tell__doc__,
 "previous stream position.");
 
 #define _IO_TEXTIOWRAPPER_TELL_METHODDEF    \
-    {"tell", _io_TextIOWrapper_tell, METH_NOARGS, _io_TextIOWrapper_tell__doc__},
+    {"tell", (PyCFunction)_io_TextIOWrapper_tell, METH_NOARGS, _io_TextIOWrapper_tell__doc__},
 
 static PyObject *
 _io_TextIOWrapper_tell_impl(textio *self);
@@ -1000,7 +1000,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_fileno__doc__,
 "\n");
 
 #define _IO_TEXTIOWRAPPER_FILENO_METHODDEF    \
-    {"fileno", _io_TextIOWrapper_fileno, METH_NOARGS, _io_TextIOWrapper_fileno__doc__},
+    {"fileno", (PyCFunction)_io_TextIOWrapper_fileno, METH_NOARGS, _io_TextIOWrapper_fileno__doc__},
 
 static PyObject *
 _io_TextIOWrapper_fileno_impl(textio *self);
@@ -1023,7 +1023,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_seekable__doc__,
 "\n");
 
 #define _IO_TEXTIOWRAPPER_SEEKABLE_METHODDEF    \
-    {"seekable", _io_TextIOWrapper_seekable, METH_NOARGS, _io_TextIOWrapper_seekable__doc__},
+    {"seekable", (PyCFunction)_io_TextIOWrapper_seekable, METH_NOARGS, _io_TextIOWrapper_seekable__doc__},
 
 static PyObject *
 _io_TextIOWrapper_seekable_impl(textio *self);
@@ -1046,7 +1046,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_readable__doc__,
 "\n");
 
 #define _IO_TEXTIOWRAPPER_READABLE_METHODDEF    \
-    {"readable", _io_TextIOWrapper_readable, METH_NOARGS, _io_TextIOWrapper_readable__doc__},
+    {"readable", (PyCFunction)_io_TextIOWrapper_readable, METH_NOARGS, _io_TextIOWrapper_readable__doc__},
 
 static PyObject *
 _io_TextIOWrapper_readable_impl(textio *self);
@@ -1069,7 +1069,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_writable__doc__,
 "\n");
 
 #define _IO_TEXTIOWRAPPER_WRITABLE_METHODDEF    \
-    {"writable", _io_TextIOWrapper_writable, METH_NOARGS, _io_TextIOWrapper_writable__doc__},
+    {"writable", (PyCFunction)_io_TextIOWrapper_writable, METH_NOARGS, _io_TextIOWrapper_writable__doc__},
 
 static PyObject *
 _io_TextIOWrapper_writable_impl(textio *self);
@@ -1092,7 +1092,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_isatty__doc__,
 "\n");
 
 #define _IO_TEXTIOWRAPPER_ISATTY_METHODDEF    \
-    {"isatty", _io_TextIOWrapper_isatty, METH_NOARGS, _io_TextIOWrapper_isatty__doc__},
+    {"isatty", (PyCFunction)_io_TextIOWrapper_isatty, METH_NOARGS, _io_TextIOWrapper_isatty__doc__},
 
 static PyObject *
 _io_TextIOWrapper_isatty_impl(textio *self);
@@ -1115,7 +1115,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_flush__doc__,
 "\n");
 
 #define _IO_TEXTIOWRAPPER_FLUSH_METHODDEF    \
-    {"flush", _io_TextIOWrapper_flush, METH_NOARGS, _io_TextIOWrapper_flush__doc__},
+    {"flush", (PyCFunction)_io_TextIOWrapper_flush, METH_NOARGS, _io_TextIOWrapper_flush__doc__},
 
 static PyObject *
 _io_TextIOWrapper_flush_impl(textio *self);
@@ -1138,7 +1138,7 @@ PyDoc_STRVAR(_io_TextIOWrapper_close__doc__,
 "\n");
 
 #define _IO_TEXTIOWRAPPER_CLOSE_METHODDEF    \
-    {"close", _io_TextIOWrapper_close, METH_NOARGS, _io_TextIOWrapper_close__doc__},
+    {"close", (PyCFunction)_io_TextIOWrapper_close, METH_NOARGS, _io_TextIOWrapper_close__doc__},
 
 static PyObject *
 _io_TextIOWrapper_close_impl(textio *self);
@@ -1304,4 +1304,4 @@ _io_TextIOWrapper__CHUNK_SIZE_set(PyObject *self, PyObject *value, void *Py_UNUS
 
     return return_value;
 }
-/*[clinic end generated code: output=fa7f387a4f8689a4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dad68d8c33d676e6 input=a9049054013a1b77]*/

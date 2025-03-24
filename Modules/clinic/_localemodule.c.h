@@ -65,7 +65,7 @@ PyDoc_STRVAR(_locale_localeconv__doc__,
 "Returns numeric and monetary locale-specific parameters.");
 
 #define _LOCALE_LOCALECONV_METHODDEF    \
-    {"localeconv", _locale_localeconv, METH_NOARGS, _locale_localeconv__doc__},
+    {"localeconv", (PyCFunction)_locale_localeconv, METH_NOARGS, _locale_localeconv__doc__},
 
 static PyObject *
 _locale_localeconv_impl(PyObject *module);
@@ -127,7 +127,7 @@ PyDoc_STRVAR(_locale_strxfrm__doc__,
 "Return a string that can be used as a key for locale-aware comparisons.");
 
 #define _LOCALE_STRXFRM_METHODDEF    \
-    {"strxfrm", _locale_strxfrm, METH_O, _locale_strxfrm__doc__},
+    {"strxfrm", (PyCFunction)_locale_strxfrm, METH_O, _locale_strxfrm__doc__},
 
 static PyObject *
 _locale_strxfrm_impl(PyObject *module, PyObject *str);
@@ -159,7 +159,7 @@ PyDoc_STRVAR(_locale__getdefaultlocale__doc__,
 "\n");
 
 #define _LOCALE__GETDEFAULTLOCALE_METHODDEF    \
-    {"_getdefaultlocale", _locale__getdefaultlocale, METH_NOARGS, _locale__getdefaultlocale__doc__},
+    {"_getdefaultlocale", (PyCFunction)_locale__getdefaultlocale, METH_NOARGS, _locale__getdefaultlocale__doc__},
 
 static PyObject *
 _locale__getdefaultlocale_impl(PyObject *module);
@@ -181,7 +181,7 @@ PyDoc_STRVAR(_locale_nl_langinfo__doc__,
 "Return the value for the locale information associated with key.");
 
 #define _LOCALE_NL_LANGINFO_METHODDEF    \
-    {"nl_langinfo", _locale_nl_langinfo, METH_O, _locale_nl_langinfo__doc__},
+    {"nl_langinfo", (PyCFunction)_locale_nl_langinfo, METH_O, _locale_nl_langinfo__doc__},
 
 static PyObject *
 _locale_nl_langinfo_impl(PyObject *module, int item);
@@ -215,7 +215,7 @@ PyDoc_STRVAR(_locale_gettext__doc__,
 "Return translation of msg.");
 
 #define _LOCALE_GETTEXT_METHODDEF    \
-    {"gettext", _locale_gettext, METH_O, _locale_gettext__doc__},
+    {"gettext", (PyCFunction)_locale_gettext, METH_O, _locale_gettext__doc__},
 
 static PyObject *
 _locale_gettext_impl(PyObject *module, const char *in);
@@ -390,7 +390,7 @@ PyDoc_STRVAR(_locale_textdomain__doc__,
 "Set the C library\'s textdmain to domain, returning the new domain.");
 
 #define _LOCALE_TEXTDOMAIN_METHODDEF    \
-    {"textdomain", _locale_textdomain, METH_O, _locale_textdomain__doc__},
+    {"textdomain", (PyCFunction)_locale_textdomain, METH_O, _locale_textdomain__doc__},
 
 static PyObject *
 _locale_textdomain_impl(PyObject *module, const char *domain);
@@ -545,7 +545,7 @@ PyDoc_STRVAR(_locale_getencoding__doc__,
 "Get the current locale encoding.");
 
 #define _LOCALE_GETENCODING_METHODDEF    \
-    {"getencoding", _locale_getencoding, METH_NOARGS, _locale_getencoding__doc__},
+    {"getencoding", (PyCFunction)_locale_getencoding, METH_NOARGS, _locale_getencoding__doc__},
 
 static PyObject *
 _locale_getencoding_impl(PyObject *module);
@@ -595,4 +595,4 @@ _locale_getencoding(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
     #define _LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF
 #endif /* !defined(_LOCALE_BIND_TEXTDOMAIN_CODESET_METHODDEF) */
-/*[clinic end generated code: output=ec091fccbb896f06 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=034a3c219466d207 input=a9049054013a1b77]*/

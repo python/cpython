@@ -42,7 +42,7 @@ PyDoc_STRVAR(monitoring_clear_tool_id__doc__,
 "\n");
 
 #define MONITORING_CLEAR_TOOL_ID_METHODDEF    \
-    {"clear_tool_id", monitoring_clear_tool_id, METH_O, monitoring_clear_tool_id__doc__},
+    {"clear_tool_id", (PyCFunction)monitoring_clear_tool_id, METH_O, monitoring_clear_tool_id__doc__},
 
 static PyObject *
 monitoring_clear_tool_id_impl(PyObject *module, int tool_id);
@@ -69,7 +69,7 @@ PyDoc_STRVAR(monitoring_free_tool_id__doc__,
 "\n");
 
 #define MONITORING_FREE_TOOL_ID_METHODDEF    \
-    {"free_tool_id", monitoring_free_tool_id, METH_O, monitoring_free_tool_id__doc__},
+    {"free_tool_id", (PyCFunction)monitoring_free_tool_id, METH_O, monitoring_free_tool_id__doc__},
 
 static PyObject *
 monitoring_free_tool_id_impl(PyObject *module, int tool_id);
@@ -96,7 +96,7 @@ PyDoc_STRVAR(monitoring_get_tool__doc__,
 "\n");
 
 #define MONITORING_GET_TOOL_METHODDEF    \
-    {"get_tool", monitoring_get_tool, METH_O, monitoring_get_tool__doc__},
+    {"get_tool", (PyCFunction)monitoring_get_tool, METH_O, monitoring_get_tool__doc__},
 
 static PyObject *
 monitoring_get_tool_impl(PyObject *module, int tool_id);
@@ -161,7 +161,7 @@ PyDoc_STRVAR(monitoring_get_events__doc__,
 "\n");
 
 #define MONITORING_GET_EVENTS_METHODDEF    \
-    {"get_events", monitoring_get_events, METH_O, monitoring_get_events__doc__},
+    {"get_events", (PyCFunction)monitoring_get_events, METH_O, monitoring_get_events__doc__},
 
 static int
 monitoring_get_events_impl(PyObject *module, int tool_id);
@@ -304,7 +304,7 @@ PyDoc_STRVAR(monitoring_restart_events__doc__,
 "\n");
 
 #define MONITORING_RESTART_EVENTS_METHODDEF    \
-    {"restart_events", monitoring_restart_events, METH_NOARGS, monitoring_restart_events__doc__},
+    {"restart_events", (PyCFunction)monitoring_restart_events, METH_NOARGS, monitoring_restart_events__doc__},
 
 static PyObject *
 monitoring_restart_events_impl(PyObject *module);
@@ -321,7 +321,7 @@ PyDoc_STRVAR(monitoring__all_events__doc__,
 "\n");
 
 #define MONITORING__ALL_EVENTS_METHODDEF    \
-    {"_all_events", monitoring__all_events, METH_NOARGS, monitoring__all_events__doc__},
+    {"_all_events", (PyCFunction)monitoring__all_events, METH_NOARGS, monitoring__all_events__doc__},
 
 static PyObject *
 monitoring__all_events_impl(PyObject *module);
@@ -331,4 +331,4 @@ monitoring__all_events(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return monitoring__all_events_impl(module);
 }
-/*[clinic end generated code: output=c67603c41007f5ba input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8f81876c6aba9be8 input=a9049054013a1b77]*/

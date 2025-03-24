@@ -8,7 +8,7 @@ PyDoc_STRVAR(_testlimitedcapi_call_vectorcall__doc__,
 "\n");
 
 #define _TESTLIMITEDCAPI_CALL_VECTORCALL_METHODDEF    \
-    {"call_vectorcall", _testlimitedcapi_call_vectorcall, METH_O, _testlimitedcapi_call_vectorcall__doc__},
+    {"call_vectorcall", (PyCFunction)_testlimitedcapi_call_vectorcall, METH_O, _testlimitedcapi_call_vectorcall__doc__},
 
 PyDoc_STRVAR(_testlimitedcapi_call_vectorcall_method__doc__,
 "call_vectorcall_method($module, callable, /)\n"
@@ -16,5 +16,5 @@ PyDoc_STRVAR(_testlimitedcapi_call_vectorcall_method__doc__,
 "\n");
 
 #define _TESTLIMITEDCAPI_CALL_VECTORCALL_METHOD_METHODDEF    \
-    {"call_vectorcall_method", _testlimitedcapi_call_vectorcall_method, METH_O, _testlimitedcapi_call_vectorcall_method__doc__},
-/*[clinic end generated code: output=7d87830093608031 input=a9049054013a1b77]*/
+    {"call_vectorcall_method", (PyCFunction)_testlimitedcapi_call_vectorcall_method, METH_O, _testlimitedcapi_call_vectorcall_method__doc__},
+/*[clinic end generated code: output=5976b9b360e1ff30 input=a9049054013a1b77]*/

@@ -37,7 +37,7 @@ PyDoc_STRVAR(MD5Type_digest__doc__,
 "Return the digest value as a bytes object.");
 
 #define MD5TYPE_DIGEST_METHODDEF    \
-    {"digest", MD5Type_digest, METH_NOARGS, MD5Type_digest__doc__},
+    {"digest", (PyCFunction)MD5Type_digest, METH_NOARGS, MD5Type_digest__doc__},
 
 static PyObject *
 MD5Type_digest_impl(MD5object *self);
@@ -55,7 +55,7 @@ PyDoc_STRVAR(MD5Type_hexdigest__doc__,
 "Return the digest value as a string of hexadecimal digits.");
 
 #define MD5TYPE_HEXDIGEST_METHODDEF    \
-    {"hexdigest", MD5Type_hexdigest, METH_NOARGS, MD5Type_hexdigest__doc__},
+    {"hexdigest", (PyCFunction)MD5Type_hexdigest, METH_NOARGS, MD5Type_hexdigest__doc__},
 
 static PyObject *
 MD5Type_hexdigest_impl(MD5object *self);
@@ -73,7 +73,7 @@ PyDoc_STRVAR(MD5Type_update__doc__,
 "Update this hash object\'s state with the provided string.");
 
 #define MD5TYPE_UPDATE_METHODDEF    \
-    {"update", MD5Type_update, METH_O, MD5Type_update__doc__},
+    {"update", (PyCFunction)MD5Type_update, METH_O, MD5Type_update__doc__},
 
 static PyObject *
 MD5Type_update_impl(MD5object *self, PyObject *obj);
@@ -162,4 +162,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6b3d1a9abaf59b63 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=10db0ff2ecf97159 input=a9049054013a1b77]*/

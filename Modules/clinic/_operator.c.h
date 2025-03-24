@@ -12,7 +12,7 @@ PyDoc_STRVAR(_operator_truth__doc__,
 "Return True if a is true, False otherwise.");
 
 #define _OPERATOR_TRUTH_METHODDEF    \
-    {"truth", _operator_truth, METH_O, _operator_truth__doc__},
+    {"truth", (PyCFunction)_operator_truth, METH_O, _operator_truth__doc__},
 
 static int
 _operator_truth_impl(PyObject *module, PyObject *a);
@@ -250,7 +250,7 @@ PyDoc_STRVAR(_operator_neg__doc__,
 "Same as -a.");
 
 #define _OPERATOR_NEG_METHODDEF    \
-    {"neg", _operator_neg, METH_O, _operator_neg__doc__},
+    {"neg", (PyCFunction)_operator_neg, METH_O, _operator_neg__doc__},
 
 PyDoc_STRVAR(_operator_pos__doc__,
 "pos($module, a, /)\n"
@@ -259,7 +259,7 @@ PyDoc_STRVAR(_operator_pos__doc__,
 "Same as +a.");
 
 #define _OPERATOR_POS_METHODDEF    \
-    {"pos", _operator_pos, METH_O, _operator_pos__doc__},
+    {"pos", (PyCFunction)_operator_pos, METH_O, _operator_pos__doc__},
 
 PyDoc_STRVAR(_operator_abs__doc__,
 "abs($module, a, /)\n"
@@ -268,7 +268,7 @@ PyDoc_STRVAR(_operator_abs__doc__,
 "Same as abs(a).");
 
 #define _OPERATOR_ABS_METHODDEF    \
-    {"abs", _operator_abs, METH_O, _operator_abs__doc__},
+    {"abs", (PyCFunction)_operator_abs, METH_O, _operator_abs__doc__},
 
 PyDoc_STRVAR(_operator_inv__doc__,
 "inv($module, a, /)\n"
@@ -277,7 +277,7 @@ PyDoc_STRVAR(_operator_inv__doc__,
 "Same as ~a.");
 
 #define _OPERATOR_INV_METHODDEF    \
-    {"inv", _operator_inv, METH_O, _operator_inv__doc__},
+    {"inv", (PyCFunction)_operator_inv, METH_O, _operator_inv__doc__},
 
 PyDoc_STRVAR(_operator_invert__doc__,
 "invert($module, a, /)\n"
@@ -286,7 +286,7 @@ PyDoc_STRVAR(_operator_invert__doc__,
 "Same as ~a.");
 
 #define _OPERATOR_INVERT_METHODDEF    \
-    {"invert", _operator_invert, METH_O, _operator_invert__doc__},
+    {"invert", (PyCFunction)_operator_invert, METH_O, _operator_invert__doc__},
 
 PyDoc_STRVAR(_operator_lshift__doc__,
 "lshift($module, a, b, /)\n"
@@ -355,7 +355,7 @@ PyDoc_STRVAR(_operator_not___doc__,
 "Same as not a.");
 
 #define _OPERATOR_NOT__METHODDEF    \
-    {"not_", _operator_not_, METH_O, _operator_not___doc__},
+    {"not_", (PyCFunction)_operator_not_, METH_O, _operator_not___doc__},
 
 static int
 _operator_not__impl(PyObject *module, PyObject *a);
@@ -1331,7 +1331,7 @@ PyDoc_STRVAR(_operator_index__doc__,
 "Same as a.__index__()");
 
 #define _OPERATOR_INDEX_METHODDEF    \
-    {"index", _operator_index, METH_O, _operator_index__doc__},
+    {"index", (PyCFunction)_operator_index, METH_O, _operator_index__doc__},
 
 PyDoc_STRVAR(_operator_is___doc__,
 "is_($module, a, b, /)\n"
@@ -1400,7 +1400,7 @@ PyDoc_STRVAR(_operator_is_none__doc__,
 "Same as a is None.");
 
 #define _OPERATOR_IS_NONE_METHODDEF    \
-    {"is_none", _operator_is_none, METH_O, _operator_is_none__doc__},
+    {"is_none", (PyCFunction)_operator_is_none, METH_O, _operator_is_none__doc__},
 
 PyDoc_STRVAR(_operator_is_not_none__doc__,
 "is_not_none($module, a, /)\n"
@@ -1409,7 +1409,7 @@ PyDoc_STRVAR(_operator_is_not_none__doc__,
 "Same as a is not None.");
 
 #define _OPERATOR_IS_NOT_NONE_METHODDEF    \
-    {"is_not_none", _operator_is_not_none, METH_O, _operator_is_not_none__doc__},
+    {"is_not_none", (PyCFunction)_operator_is_not_none, METH_O, _operator_is_not_none__doc__},
 
 PyDoc_STRVAR(_operator_length_hint__doc__,
 "length_hint($module, obj, default=0, /)\n"
@@ -1507,4 +1507,4 @@ _operator__compare_digest(PyObject *module, PyObject *const *args, Py_ssize_t na
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5b58ed7c1fee66b5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=972e2543c4fcf1ba input=a9049054013a1b77]*/

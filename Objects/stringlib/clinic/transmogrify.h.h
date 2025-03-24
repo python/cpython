@@ -294,7 +294,7 @@ PyDoc_STRVAR(stringlib_zfill__doc__,
 "The original string is never truncated.");
 
 #define STRINGLIB_ZFILL_METHODDEF    \
-    {"zfill", stringlib_zfill, METH_O, stringlib_zfill__doc__},
+    {"zfill", (PyCFunction)stringlib_zfill, METH_O, stringlib_zfill__doc__},
 
 static PyObject *
 stringlib_zfill_impl(PyObject *self, Py_ssize_t width);
@@ -322,4 +322,4 @@ stringlib_zfill(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3847956f44e24623 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0e24a10bac3ec053 input=a9049054013a1b77]*/

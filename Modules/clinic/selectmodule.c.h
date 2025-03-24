@@ -177,7 +177,7 @@ PyDoc_STRVAR(select_poll_unregister__doc__,
 "Remove a file descriptor being tracked by the polling object.");
 
 #define SELECT_POLL_UNREGISTER_METHODDEF    \
-    {"unregister", select_poll_unregister, METH_O, select_poll_unregister__doc__},
+    {"unregister", (PyCFunction)select_poll_unregister, METH_O, select_poll_unregister__doc__},
 
 static PyObject *
 select_poll_unregister_impl(pollObject *self, int fd);
@@ -362,7 +362,7 @@ PyDoc_STRVAR(select_devpoll_unregister__doc__,
 "Remove a file descriptor being tracked by the polling object.");
 
 #define SELECT_DEVPOLL_UNREGISTER_METHODDEF    \
-    {"unregister", select_devpoll_unregister, METH_O, select_devpoll_unregister__doc__},
+    {"unregister", (PyCFunction)select_devpoll_unregister, METH_O, select_devpoll_unregister__doc__},
 
 static PyObject *
 select_devpoll_unregister_impl(devpollObject *self, int fd);
@@ -443,7 +443,7 @@ PyDoc_STRVAR(select_devpoll_close__doc__,
 "Further operations on the devpoll object will raise an exception.");
 
 #define SELECT_DEVPOLL_CLOSE_METHODDEF    \
-    {"close", select_devpoll_close, METH_NOARGS, select_devpoll_close__doc__},
+    {"close", (PyCFunction)select_devpoll_close, METH_NOARGS, select_devpoll_close__doc__},
 
 static PyObject *
 select_devpoll_close_impl(devpollObject *self);
@@ -471,7 +471,7 @@ PyDoc_STRVAR(select_devpoll_fileno__doc__,
 "Return the file descriptor.");
 
 #define SELECT_DEVPOLL_FILENO_METHODDEF    \
-    {"fileno", select_devpoll_fileno, METH_NOARGS, select_devpoll_fileno__doc__},
+    {"fileno", (PyCFunction)select_devpoll_fileno, METH_NOARGS, select_devpoll_fileno__doc__},
 
 static PyObject *
 select_devpoll_fileno_impl(devpollObject *self);
@@ -502,7 +502,7 @@ PyDoc_STRVAR(select_poll__doc__,
 "polling them for I/O events.");
 
 #define SELECT_POLL_METHODDEF    \
-    {"poll", select_poll, METH_NOARGS, select_poll__doc__},
+    {"poll", (PyCFunction)select_poll, METH_NOARGS, select_poll__doc__},
 
 static PyObject *
 select_poll_impl(PyObject *module);
@@ -527,7 +527,7 @@ PyDoc_STRVAR(select_devpoll__doc__,
 "polling them for I/O events.");
 
 #define SELECT_DEVPOLL_METHODDEF    \
-    {"devpoll", select_devpoll, METH_NOARGS, select_devpoll__doc__},
+    {"devpoll", (PyCFunction)select_devpoll, METH_NOARGS, select_devpoll__doc__},
 
 static PyObject *
 select_devpoll_impl(PyObject *module);
@@ -637,7 +637,7 @@ PyDoc_STRVAR(select_epoll_close__doc__,
 "Further operations on the epoll object will raise an exception.");
 
 #define SELECT_EPOLL_CLOSE_METHODDEF    \
-    {"close", select_epoll_close, METH_NOARGS, select_epoll_close__doc__},
+    {"close", (PyCFunction)select_epoll_close, METH_NOARGS, select_epoll_close__doc__},
 
 static PyObject *
 select_epoll_close_impl(pyEpoll_Object *self);
@@ -665,7 +665,7 @@ PyDoc_STRVAR(select_epoll_fileno__doc__,
 "Return the epoll control file descriptor.");
 
 #define SELECT_EPOLL_FILENO_METHODDEF    \
-    {"fileno", select_epoll_fileno, METH_NOARGS, select_epoll_fileno__doc__},
+    {"fileno", (PyCFunction)select_epoll_fileno, METH_NOARGS, select_epoll_fileno__doc__},
 
 static PyObject *
 select_epoll_fileno_impl(pyEpoll_Object *self);
@@ -687,7 +687,7 @@ PyDoc_STRVAR(select_epoll_fromfd__doc__,
 "Create an epoll object from a given control fd.");
 
 #define SELECT_EPOLL_FROMFD_METHODDEF    \
-    {"fromfd", select_epoll_fromfd, METH_O|METH_CLASS, select_epoll_fromfd__doc__},
+    {"fromfd", (PyCFunction)select_epoll_fromfd, METH_O|METH_CLASS, select_epoll_fromfd__doc__},
 
 static PyObject *
 select_epoll_fromfd_impl(PyTypeObject *type, int fd);
@@ -1025,7 +1025,7 @@ PyDoc_STRVAR(select_epoll___enter____doc__,
 "\n");
 
 #define SELECT_EPOLL___ENTER___METHODDEF    \
-    {"__enter__", select_epoll___enter__, METH_NOARGS, select_epoll___enter____doc__},
+    {"__enter__", (PyCFunction)select_epoll___enter__, METH_NOARGS, select_epoll___enter____doc__},
 
 static PyObject *
 select_epoll___enter___impl(pyEpoll_Object *self);
@@ -1140,7 +1140,7 @@ PyDoc_STRVAR(select_kqueue_close__doc__,
 "Further operations on the kqueue object will raise an exception.");
 
 #define SELECT_KQUEUE_CLOSE_METHODDEF    \
-    {"close", select_kqueue_close, METH_NOARGS, select_kqueue_close__doc__},
+    {"close", (PyCFunction)select_kqueue_close, METH_NOARGS, select_kqueue_close__doc__},
 
 static PyObject *
 select_kqueue_close_impl(kqueue_queue_Object *self);
@@ -1168,7 +1168,7 @@ PyDoc_STRVAR(select_kqueue_fileno__doc__,
 "Return the kqueue control file descriptor.");
 
 #define SELECT_KQUEUE_FILENO_METHODDEF    \
-    {"fileno", select_kqueue_fileno, METH_NOARGS, select_kqueue_fileno__doc__},
+    {"fileno", (PyCFunction)select_kqueue_fileno, METH_NOARGS, select_kqueue_fileno__doc__},
 
 static PyObject *
 select_kqueue_fileno_impl(kqueue_queue_Object *self);
@@ -1190,7 +1190,7 @@ PyDoc_STRVAR(select_kqueue_fromfd__doc__,
 "Create a kqueue object from a given control fd.");
 
 #define SELECT_KQUEUE_FROMFD_METHODDEF    \
-    {"fromfd", select_kqueue_fromfd, METH_O|METH_CLASS, select_kqueue_fromfd__doc__},
+    {"fromfd", (PyCFunction)select_kqueue_fromfd, METH_O|METH_CLASS, select_kqueue_fromfd__doc__},
 
 static PyObject *
 select_kqueue_fromfd_impl(PyTypeObject *type, int fd);
@@ -1365,4 +1365,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=1a72074ea7c1b656 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=60c3edb2745c9f33 input=a9049054013a1b77]*/

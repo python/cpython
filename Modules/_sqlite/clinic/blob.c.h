@@ -11,7 +11,7 @@ PyDoc_STRVAR(blob_close__doc__,
 "Close the blob.");
 
 #define BLOB_CLOSE_METHODDEF    \
-    {"close", blob_close, METH_NOARGS, blob_close__doc__},
+    {"close", (PyCFunction)blob_close, METH_NOARGS, blob_close__doc__},
 
 static PyObject *
 blob_close_impl(pysqlite_Blob *self);
@@ -74,7 +74,7 @@ PyDoc_STRVAR(blob_write__doc__,
 "blob will result in an exception being raised.");
 
 #define BLOB_WRITE_METHODDEF    \
-    {"write", blob_write, METH_O, blob_write__doc__},
+    {"write", (PyCFunction)blob_write, METH_O, blob_write__doc__},
 
 static PyObject *
 blob_write_impl(pysqlite_Blob *self, Py_buffer *data);
@@ -150,7 +150,7 @@ PyDoc_STRVAR(blob_tell__doc__,
 "Return the current access position for the blob.");
 
 #define BLOB_TELL_METHODDEF    \
-    {"tell", blob_tell, METH_NOARGS, blob_tell__doc__},
+    {"tell", (PyCFunction)blob_tell, METH_NOARGS, blob_tell__doc__},
 
 static PyObject *
 blob_tell_impl(pysqlite_Blob *self);
@@ -168,7 +168,7 @@ PyDoc_STRVAR(blob_enter__doc__,
 "Blob context manager enter.");
 
 #define BLOB_ENTER_METHODDEF    \
-    {"__enter__", blob_enter, METH_NOARGS, blob_enter__doc__},
+    {"__enter__", (PyCFunction)blob_enter, METH_NOARGS, blob_enter__doc__},
 
 static PyObject *
 blob_enter_impl(pysqlite_Blob *self);
@@ -211,4 +211,4 @@ blob_exit(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bbd981c41a4b42e3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f03f4ba622b67ae0 input=a9049054013a1b77]*/
