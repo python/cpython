@@ -646,7 +646,7 @@ PyDoc_STRVAR(heapctype__doc__,
 static void
 heapctype_dealloc(PyObject *op)
 {
-    HeapCTypeObject *self = (HeapCTypeObject *)op;
+    HeapCTypeObject *self = (HeapCTypeObject*)op;
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_Free(self);
     Py_DECREF(tp);
@@ -721,7 +721,7 @@ typedef struct {
 static int
 heapctypewithbuffer_getbuffer(PyObject *op, Py_buffer *view, int flags)
 {
-    HeapCTypeWithBufferObject *self = (HeapCTypeWithBufferObject *)op;
+    HeapCTypeWithBufferObject *self = (HeapCTypeWithBufferObject*)op;
     self->buffer[0] = '1';
     self->buffer[1] = '2';
     self->buffer[2] = '3';
@@ -733,7 +733,7 @@ heapctypewithbuffer_getbuffer(PyObject *op, Py_buffer *view, int flags)
 static void
 heapctypewithbuffer_releasebuffer(PyObject *op, Py_buffer *view)
 {
-    HeapCTypeWithBufferObject *self = (HeapCTypeWithBufferObject *)op;
+    HeapCTypeWithBufferObject *self = (HeapCTypeWithBufferObject*)op;
     assert(view->obj == (void*) self);
 }
 
@@ -1247,7 +1247,7 @@ HeapCCollection_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
 static Py_ssize_t
 HeapCCollection_length(PyObject *op)
 {
-    PyVarObject *self = (PyVarObject *)op;
+    PyVarObject *self = (PyVarObject*)op;
     return Py_SIZE(self);
 }
 
