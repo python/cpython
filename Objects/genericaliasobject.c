@@ -1000,7 +1000,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_new = ga_new,
     .tp_free = PyObject_GC_Del,
     .tp_getset = ga_properties,
-    .tp_iter = (getiterfunc)ga_iter,
+    .tp_iter = ga_iter,
     .tp_vectorcall_offset = offsetof(gaobject, vectorcall),
 };
 
