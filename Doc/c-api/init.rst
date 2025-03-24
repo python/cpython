@@ -1084,8 +1084,9 @@ interpreter (created automatically by :c:func:`Py_Initialize`).  Python
 supports the creation of additional interpreters (using
 :c:func:`Py_NewInterpreter`), but mixing multiple interpreters and the
 ``PyGILState_*`` API is unsupported. This is because :c:func:`PyGILState_Ensure`
-and similar functions almost always acquire the :term:`GIL` of the main interpreter
-in threads created by subinterpreters, which can lead to data races or deadlocks.
+and similar functions default to :term:`attaching <attached thread state>` a
+:term:`thread state` for the main interpreter, meaning that the thread can't safely
+interact with the calling subinterpreter.
 
 Supporting subinterpreters in non-Python threads
 ------------------------------------------------
@@ -1094,11 +1095,9 @@ If you would like to support subinterpreters with non-Python created threads, yo
 must use the ``PyThreadState_*`` API instead of the traditional ``PyGILState_*``
 API.
 
-In particular, you must store the exact interpreter state from the calling
-function and pass it to :c:func:`PyThreadState_New` to ensure that the thread
-acquires the :term:`GIL` of the subinterpreter instead of the main interpreter.
-In turn, this means that the return value of :c:func:`PyInterpreterState_Get`
-should be stored alongside any information passed to the thread.::
+In particular, you must store the interpreter state from the calling
+function and pass it to :c:func:`PyThreadState_New`, which will ensure that
+the :term:`thread state` is targeting the correct interpreter.::
 
    /* The return value of PyInterpreterState_Get() from the
       function that created this thread. */
