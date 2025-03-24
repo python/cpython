@@ -1380,6 +1380,11 @@ makebdaddr(bdaddr_t *bdaddr)
 }
 #endif
 
+PyObject*
+unicode_fsdecode(void *arg)
+{
+    return PyUnicode_DecodeFSDefault((const char*)arg);
+}
 
 /* Create an object representing the given socket address,
    suitable for passing it back to bind(), connect() etc.
@@ -1616,26 +1621,25 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
 #ifdef CAN_ISOTP
           case CAN_ISOTP:
           {
-              return Py_BuildValue("O&kk", PyUnicode_DecodeFSDefault,
-                                          ifname,
-                                          a->can_addr.tp.rx_id,
-                                          a->can_addr.tp.tx_id);
+              return Py_BuildValue("O&kk", unicode_fsdecode,
+                                   ifname,
+                                   a->can_addr.tp.rx_id,
+                                   a->can_addr.tp.tx_id);
           }
 #endif /* CAN_ISOTP */
 #ifdef CAN_J1939
           case CAN_J1939:
           {
-              return Py_BuildValue("O&KIB", PyUnicode_DecodeFSDefault,
-                                          ifname,
-                                          (unsigned long long)a->can_addr.j1939.name,
-                                          (unsigned int)a->can_addr.j1939.pgn,
-                                          a->can_addr.j1939.addr);
+              return Py_BuildValue("O&KIB", unicode_fsdecode,
+                                   ifname,
+                                   (unsigned long long)a->can_addr.j1939.name,
+                                   (unsigned int)a->can_addr.j1939.pgn,
+                                   a->can_addr.j1939.addr);
           }
 #endif /* CAN_J1939 */
           default:
           {
-              return Py_BuildValue("(O&)", PyUnicode_DecodeFSDefault,
-                                        ifname);
+              return Py_BuildValue("(O&)", unicode_fsdecode, ifname);
           }
         }
     }
@@ -7161,7 +7165,7 @@ socket_if_nameindex(PyObject *self, PyObject *arg)
         }
 #endif
         PyObject *ni_tuple = Py_BuildValue("IO&",
-                ni[i].if_index, PyUnicode_DecodeFSDefault, ni[i].if_name);
+                ni[i].if_index, unicode_fsdecode, ni[i].if_name);
 
         if (ni_tuple == NULL || PyList_Append(list, ni_tuple) == -1) {
             Py_XDECREF(ni_tuple);
