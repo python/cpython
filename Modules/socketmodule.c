@@ -1622,25 +1622,24 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
           case CAN_ISOTP:
           {
               return Py_BuildValue("O&kk", unicode_fsdecode,
-                                          ifname,
-                                          a->can_addr.tp.rx_id,
-                                          a->can_addr.tp.tx_id);
+                                   ifname,
+                                   a->can_addr.tp.rx_id,
+                                   a->can_addr.tp.tx_id);
           }
 #endif /* CAN_ISOTP */
 #ifdef CAN_J1939
           case CAN_J1939:
           {
               return Py_BuildValue("O&KIB", unicode_fsdecode,
-                                          ifname,
-                                          (unsigned long long)a->can_addr.j1939.name,
-                                          (unsigned int)a->can_addr.j1939.pgn,
-                                          a->can_addr.j1939.addr);
+                                   ifname,
+                                   (unsigned long long)a->can_addr.j1939.name,
+                                   (unsigned int)a->can_addr.j1939.pgn,
+                                   a->can_addr.j1939.addr);
           }
 #endif /* CAN_J1939 */
           default:
           {
-              return Py_BuildValue("(O&)", unicode_fsdecode,
-                                        ifname);
+              return Py_BuildValue("(O&)", unicode_fsdecode, ifname);
           }
         }
     }
