@@ -225,8 +225,8 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     // They're cleared on error.
     PyObject *layout_func = NULL;
     PyObject *kwnames = NULL;
-    PyObject* align = NULL;
-    PyObject* size = NULL;
+    PyObject *align_obj = NULL;
+    PyObject *size_obj = NULL;
     PyObject *layout_fields_obj = NULL;
     PyObject *layout_fields = NULL;
     PyObject *layout = NULL;
@@ -291,12 +291,12 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         goto error;
     }
 
-    align = PyObject_GetAttr(layout, &_Py_ID(align));
-    if (!align) {
+    align_obj = PyObject_GetAttr(layout, &_Py_ID(align));
+    if (!align_obj) {
         goto error;
     }
-    Py_ssize_t total_align = PyLong_AsSsize_t(align);
-    Py_CLEAR(align);
+    Py_ssize_t total_align = PyLong_AsSsize_t(align_obj);
+    Py_CLEAR(align_obj);
     if (total_align < 0) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError,
@@ -305,12 +305,12 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         goto error;
     }
 
-    size = PyObject_GetAttr(layout, &_Py_ID(size));
-    if (!size) {
+    size_obj = PyObject_GetAttr(layout, &_Py_ID(size));
+    if (!size_obj) {
         goto error;
     }
-    Py_ssize_t total_size = PyLong_AsSsize_t(size);
-    Py_CLEAR(size);
+    Py_ssize_t total_size = PyLong_AsSsize_t(size_obj);
+    Py_CLEAR(size_obj);
     if (total_size < 0) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError,
@@ -669,8 +669,8 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 error:
     Py_XDECREF(layout_func);
     Py_XDECREF(kwnames);
-    Py_XDECREF(align);
-    Py_XDECREF(size);
+    Py_XDECREF(align_obj);
+    Py_XDECREF(size_obj);
     Py_XDECREF(layout_fields_obj);
     Py_XDECREF(layout_fields);
     Py_XDECREF(layout);
