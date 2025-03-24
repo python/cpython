@@ -81,8 +81,6 @@ typedef struct {
 #ifdef MS_WIN32
     PyTypeObject *PyComError_Type;
 #endif
-    /* This dict maps ctypes types to POINTER types */
-    PyObject *_ctypes_ptrtype_cache;
     /* a callable object used for unpickling:
        strong reference to _ctypes._unpickle() function */
     PyObject *_unpickle;

@@ -6080,7 +6080,6 @@ _ctypes_add_objects(PyObject *mod)
     } while (0)
 
     ctypes_state *st = get_module_state(mod);
-    MOD_ADD("_pointer_type_cache", Py_NewRef(st->_ctypes_ptrtype_cache));
 
 #ifdef MS_WIN32
     MOD_ADD("COMError", Py_NewRef(st->PyComError_Type));
@@ -6141,11 +6140,6 @@ _ctypes_mod_exec(PyObject *mod)
         return -1;
     }
 
-    st->_ctypes_ptrtype_cache = PyDict_New();
-    if (st->_ctypes_ptrtype_cache == NULL) {
-        return -1;
-    }
-
     st->PyExc_ArgError = PyErr_NewException("ctypes.ArgumentError", NULL, NULL);
     if (!st->PyExc_ArgError) {
         return -1;
@@ -6165,7 +6159,6 @@ _ctypes_mod_exec(PyObject *mod)
 static int
 module_traverse(PyObject *module, visitproc visit, void *arg) {
     ctypes_state *st = get_module_state(module);
-    Py_VISIT(st->_ctypes_ptrtype_cache);
     Py_VISIT(st->_unpickle);
     Py_VISIT(st->array_cache);
     Py_VISIT(st->error_object_name);
@@ -6200,7 +6193,6 @@ module_traverse(PyObject *module, visitproc visit, void *arg) {
 static int
 module_clear(PyObject *module) {
     ctypes_state *st = get_module_state(module);
-    Py_CLEAR(st->_ctypes_ptrtype_cache);
     Py_CLEAR(st->_unpickle);
     Py_CLEAR(st->array_cache);
     Py_CLEAR(st->error_object_name);
