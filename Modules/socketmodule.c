@@ -2045,14 +2045,21 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             memset(addr, 0, sizeof(struct sockaddr_l2));
             _BT_L2_MEMB(addr, family) = AF_BLUETOOTH;
             _BT_L2_MEMB(addr, bdaddr_type) = BDADDR_BREDR;
+            int psm;
+            int cid = _BT_L2_MEMB(addr, cid);
+            unsigned char bdaddr_type = _BT_L2_MEMB(addr, bdaddr_type);
             if (!PyArg_ParseTuple(args, "si|iB", &straddr,
-                                  &_BT_L2_MEMB(addr, psm),
-                                  &_BT_L2_MEMB(addr, cid),
-                                  &_BT_L2_MEMB(addr, bdaddr_type))) {
+                                  &psm,
+                                  &cid,
+                                  &bdaddr_type)) {
                 PyErr_Format(PyExc_OSError,
                              "%s(): wrong format", caller);
                 return 0;
             }
+            _BT_L2_MEMB(addr, psm) = psm;
+            _BT_L2_MEMB(addr, cid) = cid;
+            _BT_L2_MEMB(addr, bdaddr_type) = bdaddr_type;
+
             if (setbdaddr(straddr, &_BT_L2_MEMB(addr, bdaddr)) < 0)
                 return 0;
 
