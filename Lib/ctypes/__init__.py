@@ -265,8 +265,6 @@ _check_size(c_void_p)
 class c_bool(_SimpleCData):
     _type_ = "?"
 
-from _ctypes import POINTER, pointer, _pointer_type_cache
-
 def POINTER(cls):
     """
     Create and return a new ctypes pointer type.
@@ -303,6 +301,9 @@ def pointer(obj):
     """
     typ = POINTER(type(obj))
     return typ(obj)
+
+_pointer_type_cache = {}
+"""XXX: Subject to change."""
 
 class c_wchar_p(_SimpleCData):
     _type_ = "Z"
