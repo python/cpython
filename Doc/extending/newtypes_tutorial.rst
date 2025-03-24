@@ -271,6 +271,7 @@ the object's type might not be :class:`!CustomType`, because the object may
 be an instance of a subclass.
 
 .. note::
+
    The explicit cast to ``CustomObject *`` above is needed because we defined
    ``Custom_dealloc`` to take a ``PyObject *`` argument, as the ``tp_dealloc``
    function pointer expects to receive a ``PyObject *`` argument.
