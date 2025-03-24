@@ -2580,7 +2580,7 @@ initialize_caches(zoneinfo_state *state)
 }
 
 static PyObject *
-zoneinfo_init_subclass(PyObject *cls, PyObject *args, PyObject **kwargs)
+zoneinfo_init_subclass(PyObject *cls, PyObject *args, PyObject *kwargs)
 {
     PyObject *weak_cache = new_weak_cache();
     if (weak_cache == NULL) {
