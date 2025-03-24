@@ -16,7 +16,7 @@ env:
   FORCE_COLOR: 1
 
 jobs:
-  build_tsan_reusable:
+  build-tsan-reusable:
     name: 'Thread sanitizer'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
@@ -25,13 +25,13 @@ jobs:
       with:
         persist-credentials: false
     - name: Runner image version
-      run: echo "IMAGE_VERSION=${ImageVersion}" >> "$GITHUB_ENV"
+      run: echo "IMAGE_OS_VERSION=${ImageOS}-${ImageVersion}" >> "$GITHUB_ENV"
     - name: Restore config.cache
       uses: actions/cache@v4
       with:
         path: config.cache
-        key: ${{ github.job }}-${{ runner.os }}-${{ env.IMAGE_VERSION }}-${{ inputs.config_hash }}
-    - name: Install Dependencies
+        key: ${{ github.job }}-${{ env.IMAGE_OS_VERSION }}-${{ inputs.config_hash }}
+    - name: Install dependencies
       run: |
         sudo ./.github/workflows/posix-deps-apt.sh
         # Install clang-18
@@ -44,7 +44,7 @@ jobs:
         sudo update-alternatives --set clang++ /usr/bin/clang++-17
         # Reduce ASLR to avoid TSAN crashing
         sudo sysctl -w vm.mmap_rnd_bits=28
-    - name: TSAN Option Setup
+    - name: TSAN option setup
       run: |
         echo "TSAN_OPTIONS=log_path=${GITHUB_WORKSPACE}/tsan_log suppressions=${GITHUB_WORKSPACE}/Tools/tsan/suppressions${{
             fromJSON(inputs.free-threading)

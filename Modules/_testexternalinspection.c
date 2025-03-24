@@ -52,7 +52,8 @@
 #endif
 #include "Python.h"
 #include <internal/pycore_debug_offsets.h>  // _Py_DebugOffsets
-#include <internal/pycore_frame.h>          // FRAME_OWNED_BY_CSTACK
+#include <internal/pycore_frame.h>          // FRAME_SUSPENDED_YIELD_FROM
+#include <internal/pycore_interpframe.h>    // FRAME_OWNED_BY_CSTACK
 #include <internal/pycore_stackref.h>       // Py_TAG_BITS
 
 #ifndef HAVE_PROCESS_VM_READV
@@ -133,6 +134,10 @@ return_section_address(
 
         cmd = (struct segment_command_64*)((void*)cmd + cmd->cmdsize);
     }
+
+    // We should not be here, but if we are there, we should say about this
+    PyErr_SetString(
+        PyExc_RuntimeError, "Cannot find section address.\n");
     return 0;
 }
 
@@ -188,6 +193,8 @@ search_section_in_file(
 
     munmap(map, fs.st_size);
     if (close(fd) != 0) {
+        // This might hide one of the above exceptions, maybe we
+        // should chain them?
         PyErr_SetFromErrno(PyExc_OSError);
     }
     return result;
@@ -217,7 +224,6 @@ search_map_for_section(pid_t pid, const char* secname, const char* substr) {
 
     mach_port_t proc_ref = pid_to_task(pid);
     if (proc_ref == 0) {
-        PyErr_SetString(PyExc_PermissionError, "Cannot get task for PID");
         return 0;
     }
 
@@ -260,6 +266,9 @@ search_map_for_section(pid_t pid, const char* secname, const char* substr) {
 
         address += size;
     }
+
+    PyErr_SetString(PyExc_RuntimeError,
+        "mach_vm_region failed to find the section");
     return 0;
 }
 
@@ -306,6 +315,8 @@ find_map_start_address(pid_t pid, char* result_filename, const char* map)
 
     if (!match_found) {
         map_filename[0] = '\0';
+        PyErr_Format(PyExc_RuntimeError,
+            "Cannot find map start address for map: %s", map);
     }
 
     return result_address;
@@ -401,6 +412,8 @@ exit:
 static uintptr_t
 search_map_for_section(pid_t pid, const char* secname, const char* map)
 {
+    PyErr_SetString(PyExc_NotImplementedError,
+        "Not supported on this platform");
     return 0;
 }
 #endif
@@ -410,6 +423,7 @@ get_py_runtime(pid_t pid)
 {
     uintptr_t address = search_map_for_section(pid, "PyRuntime", "libpython");
     if (address == 0) {
+        PyErr_Clear();
         address = search_map_for_section(pid, "PyRuntime", "python");
     }
     return address;
@@ -418,7 +432,8 @@ get_py_runtime(pid_t pid)
 static uintptr_t
 get_async_debug(pid_t pid)
 {
-    uintptr_t result = search_map_for_section(pid, "AsyncioDebug", "_asyncio.cpython");
+    uintptr_t result = search_map_for_section(pid, "AsyncioDebug",
+        "_asyncio.cpython");
     if (result == 0 && !PyErr_Occurred()) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot find AsyncioDebug section");
     }
@@ -481,6 +496,9 @@ read_memory(pid_t pid, uintptr_t remote_address, size_t len, void* dst)
     }
     total_bytes_read = len;
 #else
+    PyErr_SetString(
+        PyExc_RuntimeError,
+        "Memory reading is not supported on this platform");
     return -1;
 #endif
     return total_bytes_read;
@@ -788,6 +806,9 @@ parse_coro_chain(
         pid,
         coro_address + offsets->gen_object.gi_frame_state,
         &gi_frame_state);
+    if (err) {
+        return -1;
+    }
 
     if (gi_frame_state == FRAME_SUSPENDED_YIELD_FROM) {
         char owner;
@@ -1458,6 +1479,13 @@ get_stack_trace(PyObject* self, PyObject* args)
     }
 
     uintptr_t runtime_start_address = get_py_runtime(pid);
+    if (runtime_start_address == 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(
+                PyExc_RuntimeError, "Failed to get .PyRuntime address");
+        }
+        return NULL;
+    }
     struct _Py_DebugOffsets local_debug_offsets;
 
     if (read_offsets(pid, &runtime_start_address, &local_debug_offsets)) {
@@ -1511,6 +1539,13 @@ get_async_stack_trace(PyObject* self, PyObject* args)
     }
 
     uintptr_t runtime_start_address = get_py_runtime(pid);
+    if (runtime_start_address == 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(
+                PyExc_RuntimeError, "Failed to get .PyRuntime address");
+        }
+        return NULL;
+    }
     struct _Py_DebugOffsets local_debug_offsets;
 
     if (read_offsets(pid, &runtime_start_address, &local_debug_offsets)) {

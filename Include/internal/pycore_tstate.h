@@ -14,12 +14,28 @@ extern "C" {
 #include "pycore_qsbr.h"            // struct qsbr
 
 
+#ifdef Py_GIL_DISABLED
+struct _gc_thread_state {
+    /* Thread-local allocation count. */
+    Py_ssize_t alloc_count;
+};
+#endif
+
 // Every PyThreadState is actually allocated as a _PyThreadStateImpl. The
 // PyThreadState fields are exposed as part of the C API, although most fields
 // are intended to be private. The _PyThreadStateImpl fields not exposed.
 typedef struct _PyThreadStateImpl {
     // semi-public fields are in PyThreadState.
     PyThreadState base;
+
+    // The reference count field is used to synchronize deallocation of the
+    // thread state during runtime finalization.
+    Py_ssize_t refcount;
+
+    // These are addresses, but we need to convert to ints to avoid UB.
+    uintptr_t c_stack_top;
+    uintptr_t c_stack_soft_limit;
+    uintptr_t c_stack_hard_limit;
 
     PyObject *asyncio_running_loop; // Strong reference
     PyObject *asyncio_running_task; // Strong reference

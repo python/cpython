@@ -108,6 +108,7 @@ bytes(cdata)
 
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 #ifdef MS_WIN32
 #  include "pycore_modsupport.h"  // _PyArg_NoKeywords()
 #endif
@@ -409,9 +410,11 @@ typedef struct {
 #define _StructParamObject_CAST(op) ((StructParamObject *)(op))
 
 static int
-StructParam_traverse(PyObject *self, visitproc visit, void *arg)
+StructParam_traverse(PyObject *myself, visitproc visit, void *arg)
 {
+    StructParamObject *self = _StructParamObject_CAST(myself);
     Py_VISIT(Py_TYPE(self));
+    Py_VISIT(self->keep);
     return 0;
 }
 
@@ -2377,6 +2380,7 @@ PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
         }
         StgInfo *sw_info;
         if (PyStgInfo_FromType(st, swapped, &sw_info) < 0) {
+            Py_DECREF(swapped);
             return -1;
         }
         assert(sw_info);
@@ -2673,6 +2677,7 @@ make_funcptrtype_dict(ctypes_state *st, PyObject *attrdict, StgInfo *stginfo)
     if (ob) {
         StgInfo *info;
         if (PyStgInfo_FromType(st, ob, &info) < 0) {
+            Py_DECREF(ob);
             return -1;
         }
         if (ob != Py_None && !info && !PyCallable_Check(ob)) {
@@ -3800,8 +3805,9 @@ _validate_paramflags(ctypes_state *st, PyTypeObject *type, PyObject *paramflags)
 }
 
 static int
-_get_name(PyObject *obj, const char **pname)
+_get_name(PyObject *obj, void *arg)
 {
+    const char **pname = (const char **)arg;
 #ifdef MS_WIN32
     if (PyLong_Check(obj)) {
         /* We have to use MAKEINTRESOURCEA for Windows CE.
@@ -5649,6 +5655,10 @@ Pointer_subscript(PyObject *myself, PyObject *item)
 
         for (cur = start, i = 0; i < len; cur += step, i++) {
             PyObject *v = Pointer_item(myself, cur);
+            if (!v) {
+                Py_DECREF(np);
+                return NULL;
+            }
             PyList_SET_ITEM(np, i, v);
         }
         return np;
@@ -6061,6 +6071,18 @@ _ctypes_add_objects(PyObject *mod)
 static int
 _ctypes_mod_exec(PyObject *mod)
 {
+    // See https://github.com/python/cpython/issues/128485
+    // This allocates some memory and then frees it to ensure that the
+    // the dlmalloc allocator initializes itself to avoid data races
+    // in free-threading.
+    void *codeloc = NULL;
+    void *ptr = Py_ffi_closure_alloc(sizeof(void *), &codeloc);
+    if (ptr == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    Py_ffi_closure_free(ptr);
+
     ctypes_state *st = get_module_state(mod);
     st->_unpickle = PyObject_GetAttrString(mod, "_unpickle");
     if (st->_unpickle == NULL) {
@@ -6188,9 +6210,3 @@ PyInit__ctypes(void)
 {
     return PyModuleDef_Init(&_ctypesmodule);
 }
-
-/*
- Local Variables:
- compile-command: "cd .. && python setup.py -q build -g && python setup.py -q build install --home ~"
- End:
-*/

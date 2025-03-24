@@ -24,7 +24,7 @@ from generators_common import (
     Emitter,
 )
 from cwriter import CWriter
-from typing import TextIO, Callable
+from typing import TextIO
 from stack import Local, Stack, StackError, get_stack_effect, Storage
 
 DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
@@ -40,10 +40,7 @@ LABEL_END_MARKER = "/* END LABELS */"
 def declare_variable(var: StackItem, out: CWriter) -> None:
     type, null = type_and_null(var)
     space = " " if type[-1].isalnum() else ""
-    if var.condition:
-        out.emit(f"{type}{space}{var.name} = {null};\n")
-    else:
-        out.emit(f"{type}{space}{var.name};\n")
+    out.emit(f"{type}{space}{var.name};\n")
 
 
 def declare_variables(inst: Instruction, out: CWriter) -> None:
@@ -160,7 +157,7 @@ def generate_tier1(
 #define TIER_ONE 1
 """)
     outfile.write(f"""
-#ifndef Py_TAIL_CALL_INTERP
+#if !Py_TAIL_CALL_INTERP
 #if !USE_COMPUTED_GOTOS
     dispatch_opcode:
         switch (opcode)
@@ -173,7 +170,7 @@ def generate_tier1(
     generate_tier1_cases(analysis, outfile, lines)
     outfile.write(f"""
             {INSTRUCTION_END_MARKER}
-#ifndef Py_TAIL_CALL_INTERP
+#if !Py_TAIL_CALL_INTERP
 #if USE_COMPUTED_GOTOS
         _unknown_opcode:
 #else
@@ -229,7 +226,7 @@ def generate_tier1_cases(
         out.emit(f"TARGET({name}) {{\n")
         # We need to ifdef it because this breaks platforms
         # without computed gotos/tail calling.
-        out.emit(f"#if defined(Py_TAIL_CALL_INTERP)\n")
+        out.emit(f"#if Py_TAIL_CALL_INTERP\n")
         out.emit(f"int opcode = {name};\n")
         out.emit(f"(void)(opcode);\n")
         out.emit(f"#endif\n")
