@@ -453,8 +453,6 @@ anextawaitable_throw(PyObject *op, PyObject *args)
 static PyObject *
 anextawaitable_close(PyObject *op, PyObject *args)
 {
-    // TODO(picnixz): investigate why close() is marked with METH_VARARGS
-    // despite its docs indicating that it should be using METH_NOARGS.
     anextawaitableobject *obj = anextawaitableobject_CAST(op);
     return anextawaitable_proxy(obj, "close", args);
 }
