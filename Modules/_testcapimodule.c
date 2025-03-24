@@ -2871,8 +2871,9 @@ MyList_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 void
-MyList_dealloc(MyListObject* op)
+MyList_dealloc(PyObject *self)
 {
+    MyListObject *op = (MyListObject*)self;
     if (op->deallocated) {
         /* We cannot raise exceptions here but we still want the testsuite
          * to fail when we hit this */
