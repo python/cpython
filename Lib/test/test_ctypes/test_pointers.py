@@ -241,6 +241,10 @@ class PointersTestCase(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "must have storage info"):
             POINTER(int)
 
+    def test_pointer_set_python_type(self):
+        p1 = POINTER(c_int)
+        with self.assertRaisesRegex(TypeError, "must have storage info"):
+            p1.set_type(int)
 
 if __name__ == '__main__':
     unittest.main()
