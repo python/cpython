@@ -459,7 +459,7 @@ ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
     return 0;
 
 start_failed:
-    _PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)force_done, self);
+    _PyOnceFlag_CallOnce(&self->once, force_done, self);
     return -1;
 }
 
