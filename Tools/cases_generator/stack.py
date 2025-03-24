@@ -33,14 +33,14 @@ def var_size(var: StackItem) -> str:
 class Local:
     item: StackItem
     in_memory: bool
-    defined: bool
+    in_local: bool
 
     def __repr__(self) -> str:
-        return f"Local('{self.item.name}', mem={self.in_memory}, defined={self.defined}, array={self.is_array()})"
+        return f"Local('{self.item.name}', mem={self.in_memory}, local={self.in_local}, array={self.is_array()})"
 
     def compact_str(self) -> str:
         mtag = "M" if self.in_memory else ""
-        dtag = "D" if self.defined else ""
+        dtag = "D" if self.in_local else ""
         atag = "A" if self.is_array() else ""
         return f"'{self.item.name}'{mtag}{dtag}{atag}"
 
@@ -63,14 +63,14 @@ class Local:
         return Local(defn, True, True)
 
     def kill(self) -> None:
-        self.defined = False
+        self.in_local = False
         self.in_memory = False
 
     def copy(self) -> "Local":
         return Local(
             self.item,
             self.in_memory,
-            self.defined
+            self.in_local
         )
 
     @property
@@ -90,7 +90,7 @@ class Local:
         return (
             self.item is other.item
             and self.in_memory is other.in_memory
-            and self.defined is other.defined
+            and self.in_local is other.in_local
         )
 
 
@@ -242,7 +242,7 @@ class Stack:
             if not var.used:
                 return "", popped
             self.defined.add(var.name)
-            if popped.defined:
+            if popped.in_local:
                 if popped.name == var.name:
                     return "", popped
                 else:
@@ -295,7 +295,7 @@ class Stack:
         var_offset = self.base_offset.copy()
         for var in self.variables:
             if (
-                var.defined and
+                var.in_local and
                 not var.in_memory
             ):
                 Stack._do_emit(out, var.item, var_offset, self.cast_type, self.extract_bits)
@@ -355,7 +355,7 @@ class Stack:
         for self_var, other_var in zip(self.variables, other.variables):
             if self_var.name != other_var.name:
                 raise StackError(f"Mismatched variables on stack: {self_var.name} and {other_var.name}")
-            self_var.defined = self_var.defined and other_var.defined
+            self_var.in_local = self_var.in_local and other_var.in_local
             self_var.in_memory = self_var.in_memory and other_var.in_memory
         self.align(other, out)
 
@@ -403,7 +403,7 @@ class Storage:
     @staticmethod
     def needs_defining(var: Local) -> bool:
         return (
-            not var.defined and
+            not var.in_local and
             not var.is_array() and
             var.name != "unused"
         )
@@ -411,13 +411,13 @@ class Storage:
     @staticmethod
     def is_live(var: Local) -> bool:
         return (
-            var.defined and
+            var.in_local and
             var.name != "unused"
         )
 
     def first_input_not_cleared(self) -> str:
         for input in self.inputs:
-            if input.defined:
+            if input.in_local:
                 return input.name
         return ""
 
@@ -440,7 +440,7 @@ class Storage:
             self.inputs.pop()
             self.stack.pop(tos.item)
         for var in self.inputs:
-            if not var.defined and not var.is_array() and var.name != "unused":
+            if not var.in_local and not var.is_array() and var.name != "unused":
                 raise StackError(
                     f"Input '{var.name}' is not live, but '{live}' is"
                 )
@@ -448,14 +448,14 @@ class Storage:
     def _push_defined_outputs(self) -> None:
         defined_output = ""
         for output in self.outputs:
-            if output.defined and not output.in_memory:
+            if output.in_local and not output.in_memory:
                 defined_output = output.name
         if not defined_output:
             return
         self.clear_inputs(f"when output '{defined_output}' is defined")
         undefined = ""
         for out in self.outputs:
-            if out.defined:
+            if out.in_local:
                 if undefined:
                     f"Locals not defined in stack order. "
                     f"Expected '{undefined}' to be defined before '{out.name}'"
@@ -467,7 +467,7 @@ class Storage:
 
     def locals_cached(self) -> bool:
         for out in self.outputs:
-            if out.defined:
+            if out.in_local:
                 return True
         return False
 
@@ -564,7 +564,7 @@ class Storage:
 
     def is_flushed(self) -> bool:
         for var in self.outputs:
-            if var.defined and not var.in_memory:
+            if var.in_local and not var.in_memory:
                 return False
         return self.stack.is_flushed()
 
@@ -577,7 +577,7 @@ class Storage:
             diff = self.inputs[-1] if len(self.inputs) > len(other.inputs) else other.inputs[-1]
             raise StackError(f"Unmergeable inputs. Differing state of '{diff.name}'")
         for var, other_var in zip(self.inputs, other.inputs):
-            if var.defined != other_var.defined:
+            if var.in_local != other_var.in_local:
                 raise StackError(f"'{var.name}' is cleared on some paths, but not all")
         if len(self.outputs) != len(other.outputs):
             self._push_defined_outputs()
@@ -653,7 +653,7 @@ class Storage:
             if var.is_array():
                 if len(self.inputs) > 1:
                     raise StackError("Cannot call DECREF_INPUTS with multiple live input(s) and array output")
-            elif var.defined:
+            elif var.in_local:
                 if output is not None:
                     raise StackError("Cannot call DECREF_INPUTS with more than one live output")
                 output = var
@@ -669,29 +669,29 @@ class Storage:
                     raise StackError("Cannot call DECREF_INPUTS with non fixed size array as lowest input on stack")
                 if size > 1:
                     raise StackError("Cannot call DECREF_INPUTS with array size > 1 as lowest input on stack")
-                output.defined = False
+                output.in_local = False
                 close_variable(lowest, output.name)
             else:
                 lowest.in_memory = False
-                output.defined = False
+                output.in_local = False
                 close_variable(lowest, output.name)
         to_close = self.inputs[: 0 if output is not None else None: -1]
         if len(to_close) == 1 and not to_close[0].is_array():
             self.reload(out)
-            to_close[0].defined = False
+            to_close[0].in_local = False
             self.flush(out)
             self.save_inputs(out)
             close_variable(to_close[0], "")
             self.reload(out)
         else:
             for var in to_close:
-                assert var.defined or var.is_array()
+                assert var.in_local or var.is_array()
                 close_variable(var, "PyStackRef_NULL")
             self.reload(out)
         for var in self.inputs:
-            var.defined = False
+            var.in_local = False
         if output is not None:
-            output.defined = True
+            output.in_local = True
             # MyPy false positive
-            lowest.defined = False  # type: ignore[possibly-undefined]
+            lowest.in_local = False  # type: ignore[possibly-undefined]
         self.flush(out)

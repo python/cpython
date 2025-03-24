@@ -303,7 +303,7 @@ class Emitter:
                         f"'{live}' is still live", name)
                 var.kill()
                 break
-            if var.defined:
+            if var.in_local:
                 live = var.name
         return True
 
@@ -577,15 +577,15 @@ class Emitter:
                         if tkn in local_stores:
                             for var in storage.inputs:
                                 if var.name == tkn.text:
-                                    if var.defined or var.in_memory:
+                                    if var.in_local or var.in_memory:
                                         msg = f"Cannot assign to already defined input variable '{tkn.text}'"
                                         raise analysis_error(msg, tkn)
-                                    var.defined = True
+                                    var.in_local = True
                                     var.in_memory = False
                                     break
                             for var in storage.outputs:
                                 if var.name == tkn.text:
-                                    var.defined = True
+                                    var.in_local = True
                                     var.in_memory = False
                                     break
                         if tkn.text.startswith("DISPATCH"):
