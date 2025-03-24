@@ -634,11 +634,10 @@ class Executor(object):
                     # yield the awaited result
                     yield fs.pop()._result
             finally:
-                if fs:
-                    # break a reference cycle with fs[-1]._exception
+                while fs:
+                    # cancel pending futures, popping them to break potential
+                    # reference cycles with future._exception.__traceback__
                     fs.pop().cancel()
-                for future in fs:
-                    future.cancel()
         return result_iterator()
 
     def shutdown(self, wait=True, *, cancel_futures=False):
