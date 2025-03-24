@@ -32,7 +32,6 @@ def var_size(var: StackItem) -> str:
 @dataclass
 class Local:
     item: StackItem
-    cached: bool
     in_memory: bool
     defined: bool
 
@@ -47,21 +46,21 @@ class Local:
 
     @staticmethod
     def unused(defn: StackItem) -> "Local":
-        return Local(defn, False, defn.is_array(), False)
+        return Local(defn, defn.is_array(), False)
 
     @staticmethod
     def undefined(defn: StackItem) -> "Local":
         array = defn.is_array()
-        return Local(defn, not array, array, False)
+        return Local(defn, array, False)
 
     @staticmethod
     def redefinition(var: StackItem, prev: "Local") -> "Local":
         assert var.is_array() == prev.is_array()
-        return Local(var, prev.cached, prev.in_memory, True)
+        return Local(var, prev.in_memory, True)
 
     @staticmethod
     def from_memory(defn: StackItem) -> "Local":
-        return Local(defn, True, True, True)
+        return Local(defn, True, True)
 
     def kill(self) -> None:
         self.defined = False
@@ -70,7 +69,6 @@ class Local:
     def copy(self) -> "Local":
         return Local(
             self.item,
-            self.cached,
             self.in_memory,
             self.defined
         )
@@ -91,7 +89,6 @@ class Local:
             return NotImplemented
         return (
             self.item is other.item
-            and self.cached is other.cached
             and self.in_memory is other.in_memory
             and self.defined is other.defined
         )
