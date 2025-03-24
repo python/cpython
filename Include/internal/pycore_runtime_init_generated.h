@@ -754,6 +754,7 @@ extern "C" {
     INIT_ID(_get_sourcefile), \
     INIT_ID(_handle_fromlist), \
     INIT_ID(_initializing), \
+    INIT_ID(_internal_use), \
     INIT_ID(_io), \
     INIT_ID(_is_text_encoding), \
     INIT_ID(_isatty_open_only), \
@@ -804,6 +805,7 @@ extern "C" {
     INIT_ID(before), \
     INIT_ID(big), \
     INIT_ID(binary_form), \
+    INIT_ID(bit_offset), \
     INIT_ID(bit_size), \
     INIT_ID(block), \
     INIT_ID(bound), \
@@ -814,6 +816,8 @@ extern "C" {
     INIT_ID(buffers), \
     INIT_ID(bufsize), \
     INIT_ID(builtins), \
+    INIT_ID(byte_offset), \
+    INIT_ID(byte_size), \
     INIT_ID(byteorder), \
     INIT_ID(bytes), \
     INIT_ID(bytes_per_sep), \
