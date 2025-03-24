@@ -3805,8 +3805,9 @@ _validate_paramflags(ctypes_state *st, PyTypeObject *type, PyObject *paramflags)
 }
 
 static int
-_get_name(PyObject *obj, const char **pname)
+_get_name(PyObject *obj, void *arg)
 {
+    const char **pname = (const char **)arg;
 #ifdef MS_WIN32
     if (PyLong_Check(obj)) {
         /* We have to use MAKEINTRESOURCEA for Windows CE.

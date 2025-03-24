@@ -266,7 +266,7 @@ PyCField_set(PyObject *op, PyObject *inst, PyObject *value)
 }
 
 static PyObject *
-PyCField_get(PyObject *op, PyObject *inst, PyTypeObject *type)
+PyCField_get(PyObject *op, PyObject *inst, PyObject *type)
 {
     CDataObject *src;
     CFieldObject *self = _CFieldObject_CAST(op);
