@@ -8,18 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include <stdbool.h>              // bool
-
-#include "pycore_runtime_structs.h"
-#include "pycore_code.h"          // struct callable_cache
-#include "pycore_floatobject.h"   // struct _Py_float_state
-#include "pycore_gc.h"            // struct _gc_runtime_state
-#include "pycore_genobject.h"     // _PyGen_FetchStopIterationValue
-#include "pycore_import.h"        // struct _import_state
-#include "pycore_optimizer.h"     // _PyExecutorObject
-#include "pycore_typeobject.h"    // struct types_state
-#include "pycore_unicodeobject.h" // struct _Py_unicode_state
-#include "pycore_warnings.h"      // struct _warnings_runtime_state
+#include "pycore_interp_structs.h" // PyInterpreterState
 
 
 /* interpreter state */
@@ -37,7 +26,6 @@ extern "C" {
 /* other API */
 
 extern void _PyInterpreterState_Clear(PyThreadState *tstate);
-
 
 static inline PyThreadState*
 _PyInterpreterState_GetFinalizing(PyInterpreterState *interp) {
@@ -62,7 +50,6 @@ _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tst
                                        tstate->thread_id);
     }
 }
-
 
 
 // Exports for the _testinternalcapi module.
