@@ -233,10 +233,10 @@ def prepare(data):
         for path in data['sys_path']:
             if path in sys.path:
                 sys_path.remove(path)
-        sys.path.extend(sys_path)
+        sys.path.extend(sys_path) # For cross-interpreter support
 
     if 'sys_argv' in data:
-        sys.argv = data['sys_argv'] # For cross-interpreter support
+        sys.argv = data['sys_argv']
 
     if 'dir' in data:
         os.chdir(data['dir'])
