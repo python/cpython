@@ -1,0 +1,2 @@
+Fix :func:`anext` failing on sync :meth:`~object.__anext__` that raises
+:exc:`StopAsyncIteration`.

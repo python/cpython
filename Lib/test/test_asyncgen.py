@@ -1169,6 +1169,25 @@ class AsyncGenAsyncioTest(unittest.TestCase):
 
         self.loop.run_until_complete(run())
 
+    def test_sync_anext_raises_exception(self):
+        # See: https://github.com/python/cpython/issues/131670
+        msg = 'custom'
+        for exc in [
+            StopAsyncIteration(msg),
+            StopIteration(msg),
+            ValueError(msg),
+            Exception(msg),
+        ]:
+            with self.subTest(exc=exc):
+                class A:
+                    def __anext__(self):
+                        raise exc
+
+                with self.assertRaisesRegex(type(exc), msg):
+                    anext(A())
+                with self.assertRaisesRegex(type(exc), msg):
+                    anext(A(), 1)
+
     def test_async_gen_asyncio_anext_stopiteration(self):
         async def foo():
             try:
