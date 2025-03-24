@@ -1,3 +1,4 @@
+import gc
 import itertools
 import threading
 import time
@@ -55,8 +56,20 @@ class ExecutorTest:
         i = self.executor.map(divmod, [1, 1, 1, 1], [2, 3, 0, 5])
         self.assertEqual(i.__next__(), (0, 1))
         self.assertEqual(i.__next__(), (0, 1))
-        with self.assertRaises(ZeroDivisionError):
-            i.__next__()
+
+        error = None
+        try:
+            next(i)
+        except ZeroDivisionError as zero_div_error:
+            error = zero_div_error
+        self.assertIsNotNone(
+            error,
+            msg="next one should raise a ZeroDivisionError",
+        )
+
+        # a failed future must not be captured in its
+        # future._exception.__traceback__ to avoid a reference cycle
+        self.assertFalse(gc.get_referrers(error))
 
     @support.requires_resource('walltime')
     def test_map_timeout(self):
