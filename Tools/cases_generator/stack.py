@@ -397,7 +397,6 @@ class Storage:
     stack: Stack
     inputs: list[Local]
     outputs: list[Local]
-    peeks: list[Local]
     spilled: int = 0
 
     @staticmethod
@@ -523,7 +522,7 @@ class Storage:
         for var in inputs:
             stack.push(var)
         outputs = [ Local.undefined(var) for var in uop.stack.outputs if not var.peek ]
-        return code_list, Storage(stack, inputs, outputs, peeks)
+        return code_list, Storage(stack, inputs, outputs)
 
     @staticmethod
     def copy_list(arg: list[Local]) -> list[Local]:
@@ -536,7 +535,7 @@ class Storage:
         assert [v.name for v in inputs] == [v.name for v in self.inputs], (inputs, self.inputs)
         return Storage(
             new_stack, inputs,
-            self.copy_list(self.outputs), self.copy_list(self.peeks), self.spilled
+            self.copy_list(self.outputs), self.spilled
         )
 
     def sanity_check(self) -> None:
@@ -601,8 +600,7 @@ class Storage:
         next_line = "\n               "
         inputs = ", ".join([var.compact_str() for var in self.inputs])
         outputs = ", ".join([var.compact_str() for var in self.outputs])
-        peeks = ", ".join([var.name for var in self.peeks])
-        return f"{stack_comment[:-2]}{next_line}inputs: {inputs}{next_line}outputs: {outputs}{next_line}peeks: {peeks} */"
+        return f"{stack_comment[:-2]}{next_line}inputs: {inputs}{next_line}outputs: {outputs}*/"
 
     def close_inputs(self, out: CWriter) -> None:
         tmp_defined = False
