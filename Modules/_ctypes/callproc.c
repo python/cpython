@@ -1353,8 +1353,9 @@ PyObject *_ctypes_callproc(ctypes_state *st,
 }
 
 static int
-_parse_voidp(PyObject *obj, void **address)
+_parse_voidp(PyObject *obj, void *arg)
 {
+    void **address = (void **)arg;
     *address = PyLong_AsVoidPtr(obj);
     if (*address == NULL)
         return 0;
@@ -1846,8 +1847,9 @@ addressof(PyObject *self, PyObject *obj)
 }
 
 static int
-converter(PyObject *obj, void **address)
+converter(PyObject *obj, void *arg)
 {
+    void **address = (void **)arg;
     *address = PyLong_AsVoidPtr(obj);
     return *address != NULL;
 }
