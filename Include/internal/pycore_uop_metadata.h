@@ -930,7 +930,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _LOAD_ATTR_METHOD_LAZY_DICT:
             return 1;
         case _MAYBE_EXPAND_METHOD:
-            return 2 + oparg;
+            return 0;
         case _PY_FRAME_GENERAL:
             return 2 + oparg;
         case _CHECK_FUNCTION_VERSION:
@@ -976,7 +976,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CALL_TUPLE_1:
             return 3;
         case _CHECK_AND_ALLOCATE_OBJECT:
-            return 2 + oparg;
+            return 0;
         case _CREATE_INIT_FRAME:
             return 2 + oparg;
         case _EXIT_INIT_CHECK:
@@ -1004,7 +1004,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CALL_METHOD_DESCRIPTOR_FAST:
             return 2 + oparg;
         case _MAYBE_EXPAND_METHOD_KW:
-            return 3 + oparg;
+            return 1;
         case _PY_FRAME_KW:
             return 3 + oparg;
         case _CHECK_FUNCTION_VERSION_KW:

@@ -793,6 +793,7 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         inst(OP, (below, values[oparg*2], above --)) {
             SPAM(values, oparg);
+            DEAD(values);
         }
     """
         output = """
@@ -1056,6 +1057,7 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         inst(OP, (arg[1] -- out[1])) {
             out[0] = arg[0];
+            DEAD(arg);
         }
         """
         output = """

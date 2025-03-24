@@ -418,7 +418,7 @@ class Storage:
     def clear_inputs(self, reason:str) -> None:
         while self.inputs:
             tos = self.inputs.pop()
-            if self.is_live(tos) and not tos.is_array():
+            if self.is_live(tos):
                 raise StackError(
                     f"Input '{tos.name}' is still live {reason}"
                 )
