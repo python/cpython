@@ -1838,6 +1838,50 @@ class TestGeneratedCases(unittest.TestCase):
         """
         self.run_cases_test(input, output)
 
+    def test_reassigning_live_inputs(self):
+        input = """
+        inst(OP, (in -- )) {
+            in = 0;
+            DEAD(in);
+        }
+        """
+        with self.assertRaises(SyntaxError):
+            self.run_cases_test(input, "")
+
+    def test_reassigning_dead_inputs(self):
+        input = """
+        inst(OP, (in -- )) {
+            temp = use(in);
+            DEAD(in);
+            in = temp;
+            PyStackRef_CLOSE(in);
+        }
+        """
+        output = """
+        TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef in;
+            in = stack_pointer[-1];
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            temp = use(in);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            in = temp;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(in);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
+
 
 class TestGeneratedAbstractCases(unittest.TestCase):
     def setUp(self) -> None:

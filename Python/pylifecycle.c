@@ -1,8 +1,6 @@
 /* Python interpreter top-level routines, including init/exit */
 
 #include "Python.h"
-#include "pycore_genobject.h"     // included first to break dependency cycle
-
 #include "pycore_audit.h"         // _PySys_ClearAuditHooks()
 #include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
