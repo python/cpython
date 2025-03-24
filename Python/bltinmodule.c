@@ -1837,6 +1837,9 @@ builtin_anext_impl(PyObject *module, PyObject *aiterator,
     }
 
     awaitable = (*t->tp_as_async->am_anext)(aiterator);
+    if (awaitable == NULL) {
+        return NULL;
+    }
     if (default_value == NULL) {
         return awaitable;
     }
