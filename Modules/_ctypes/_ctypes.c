@@ -1236,11 +1236,11 @@ PyCPointerType_SetProto(ctypes_state *st, PyObject *self, StgInfo *stginfo, PyOb
     }
 
     if (!stginfo->proto) {
-        Py_XSETREF(stginfo->proto, Py_NewRef(proto));
+        stginfo->proto = Py_NewRef(proto);
     }
 
     if (!info->pointer_type) {
-        Py_XSETREF(info->pointer_type, Py_NewRef(self));
+        info->pointer_type = Py_NewRef(self);
     }
     return 0;
 }
