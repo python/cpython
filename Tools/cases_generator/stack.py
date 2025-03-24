@@ -415,12 +415,6 @@ class Storage:
             var.name != "unused"
         )
 
-    def first_input_not_cleared(self) -> str:
-        for input in self.inputs:
-            if input.in_local:
-                return input.name
-        return ""
-
     def clear_inputs(self, reason:str) -> None:
         while self.inputs:
             tos = self.inputs.pop()
