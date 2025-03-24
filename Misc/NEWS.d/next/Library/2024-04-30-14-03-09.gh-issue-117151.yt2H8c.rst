@@ -1,5 +1,0 @@
-Increase ``io.DEFAULT_BUFFER_SIZE`` from 8k to 128k and adjust :func:`open` on
-platforms where :meth:`os.fstat` provides a ``st_blksize`` field (such as Linux)
-to use ``max(min(blocksize, 8 MiB), io.DEFAULT_BUFFER_SIZE)`` rather
-than always using the device block size. This should improve I/O performance.
-Patch by Romain Morotti.

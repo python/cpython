@@ -90,13 +90,17 @@ class TopologicalSorter:
         still be used to obtain as many nodes as possible until cycles block more
         progress. After a call to this function, the graph cannot be modified and
         therefore no more nodes can be added using "add".
-        """
-        if self._ready_nodes is not None:
-            raise ValueError("cannot prepare() more than once")
 
-        self._ready_nodes = [
-            i.node for i in self._node2info.values() if i.npredecessors == 0
-        ]
+        Raise ValueError if nodes have already been passed out of the sorter.
+
+        """
+        if self._npassedout > 0:
+            raise ValueError("cannot prepare() after starting sort")
+
+        if self._ready_nodes is None:
+            self._ready_nodes = [
+                i.node for i in self._node2info.values() if i.npredecessors == 0
+            ]
         # ready_nodes is set before we look for cycles on purpose:
         # if the user wants to catch the CycleError, that's fine,
         # they can continue using the instance to grab as many

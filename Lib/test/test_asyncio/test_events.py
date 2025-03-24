@@ -1,6 +1,7 @@
 """Tests for events.py."""
 
 import concurrent.futures
+import contextlib
 import functools
 import io
 import multiprocessing
@@ -22,7 +23,6 @@ import errno
 import unittest
 from unittest import mock
 import weakref
-import warnings
 if sys.platform not in ('win32', 'vxworks'):
     import tty
 
@@ -36,7 +36,6 @@ from test import support
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import ALWAYS_EQ, LARGEST, SMALLEST
-from test.support import warnings_helper
 
 def tearDownModule():
     asyncio._set_event_loop_policy(None)
@@ -57,9 +56,9 @@ def _test_get_event_loop_new_process__sub_proc():
     async def doit():
         return 'hello'
 
-    loop = asyncio.new_event_loop()
-    asyncio._set_event_loop(loop)
-    return loop.run_until_complete(doit())
+    with contextlib.closing(asyncio.new_event_loop()) as loop:
+        asyncio._set_event_loop(loop)
+        return loop.run_until_complete(doit())
 
 
 class CoroLike:
@@ -3007,13 +3006,13 @@ class GetEventLoopTestsMixin:
     def test_get_running_loop_already_running(self):
         async def main():
             running_loop = asyncio.get_running_loop()
-            loop = asyncio.new_event_loop()
-            try:
-                loop.run_forever()
-            except RuntimeError:
-                pass
-            else:
-                self.fail("RuntimeError not raised")
+            with contextlib.closing(asyncio.new_event_loop()) as loop:
+                try:
+                    loop.run_forever()
+                except RuntimeError:
+                    pass
+                else:
+                    self.fail("RuntimeError not raised")
 
             self.assertIs(asyncio.get_running_loop(), running_loop)
 

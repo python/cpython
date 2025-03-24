@@ -21,7 +21,7 @@ static PyObject *
 OrderedDict_fromkeys_impl(PyTypeObject *type, PyObject *seq, PyObject *value);
 
 static PyObject *
-OrderedDict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+OrderedDict_fromkeys(PyObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -65,7 +65,7 @@ OrderedDict_fromkeys(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs
     }
     value = args[1];
 skip_optional_pos:
-    return_value = OrderedDict_fromkeys_impl(type, seq, value);
+    return_value = OrderedDict_fromkeys_impl((PyTypeObject *)type, seq, value);
 
 exit:
     return return_value;
@@ -337,4 +337,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=55bd390bb516e997 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6f84d0649fcd0c1f input=a9049054013a1b77]*/

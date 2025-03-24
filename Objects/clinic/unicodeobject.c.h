@@ -1546,7 +1546,7 @@ static PyObject *
 unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z);
 
 static PyObject *
-unicode_maketrans(void *null, PyObject *const *args, Py_ssize_t nargs)
+unicode_maketrans(PyObject *null, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *x;
@@ -1894,4 +1894,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=db37497bf38a2c17 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=81d703159f829f1f input=a9049054013a1b77]*/

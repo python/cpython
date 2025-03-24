@@ -16,7 +16,6 @@ import platform
 import random
 import re
 import sys
-import textwrap
 import traceback
 import types
 import typing
@@ -555,7 +554,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(type(glob['ticker']()), AsyncGeneratorType)
 
     def test_compile_ast(self):
-        args = ("a*(1,2)", "f.py", "exec")
+        args = ("a*__debug__", "f.py", "exec")
         raw = compile(*args, flags = ast.PyCF_ONLY_AST).body[0]
         opt1 = compile(*args, flags = ast.PyCF_OPTIMIZED_AST).body[0]
         opt2 = compile(ast.parse(args[0]), *args[1:], flags = ast.PyCF_OPTIMIZED_AST).body[0]
@@ -566,14 +565,14 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             self.assertIsInstance(tree.value.left, ast.Name)
             self.assertEqual(tree.value.left.id, 'a')
 
-        raw_right = raw.value.right  # expect Tuple((1, 2))
-        self.assertIsInstance(raw_right, ast.Tuple)
-        self.assertListEqual([elt.value for elt in raw_right.elts], [1, 2])
+        raw_right = raw.value.right
+        self.assertIsInstance(raw_right, ast.Name)
+        self.assertEqual(raw_right.id, "__debug__")
 
         for opt in [opt1, opt2]:
-            opt_right = opt.value.right  # expect Constant((1,2))
+            opt_right = opt.value.right
             self.assertIsInstance(opt_right, ast.Constant)
-            self.assertEqual(opt_right.value, (1, 2))
+            self.assertEqual(opt_right.value, True)
 
     def test_delattr(self):
         sys.spam = 1
@@ -1569,8 +1568,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             # try to get a user preferred encoding different than the current
             # locale encoding to check that open() uses the current locale
             # encoding and not the user preferred encoding
-            for key in ('LC_ALL', 'LANG', 'LC_CTYPE'):
-                env.unset(key)
+            env.unset('LC_ALL', 'LANG', 'LC_CTYPE')
 
             self.write_testfile()
             current_locale_encoding = locale.getencoding()
@@ -2715,18 +2713,15 @@ class ShutdownTest(unittest.TestCase):
 class ImmortalTests(unittest.TestCase):
 
     if sys.maxsize < (1 << 32):
-        if support.Py_GIL_DISABLED:
-            IMMORTAL_REFCOUNT = 5 << 28
-        else:
-            IMMORTAL_REFCOUNT = 7 << 28
+        IMMORTAL_REFCOUNT_MINIMUM = 1 << 30
     else:
-        IMMORTAL_REFCOUNT = 3 << 30
+        IMMORTAL_REFCOUNT_MINIMUM = 1 << 31
 
     IMMORTALS = (None, True, False, Ellipsis, NotImplemented, *range(-5, 257))
 
     def assert_immortal(self, immortal):
         with self.subTest(immortal):
-            self.assertEqual(sys.getrefcount(immortal), self.IMMORTAL_REFCOUNT)
+            self.assertGreater(sys.getrefcount(immortal), self.IMMORTAL_REFCOUNT_MINIMUM)
 
     def test_immortals(self):
         for immortal in self.IMMORTALS:
