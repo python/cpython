@@ -15,17 +15,16 @@ from glob import _PathGlobber
 from pathlib._os import magic_open, ensure_distinct_paths, ensure_different_files, copyfileobj
 from pathlib import PurePath, Path
 from typing import (
-    Any, BinaryIO, Callable, Generator, Iterator, Optional, Protocol, Sequence, TypeVar, Union,
+    Any, BinaryIO, Callable, Generator, Iterator, Literal, Optional, Protocol, Sequence, TypeVar,
     runtime_checkable,
 )
-
 
 _JP = TypeVar("_JP", bound="_JoinablePath")
 _RP = TypeVar("_RP", bound="_ReadablePath")
 _WP = TypeVar("_WP", bound="_WritablePath")
 
 
-def _explode_path(path, split):
+def _explode_path(path: str, split: Callable[[str], tuple[str, str]]) -> tuple[str, list[str]]:
     """
     Split the path into a 2-tuple (anchor, parts), where *anchor* is the
     uppermost parent of the path (equivalent to path.parents[-1]), and
@@ -85,7 +84,7 @@ class _JoinablePath(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def with_segments(self: _JP, *pathsegments: Union[_JP, str]) -> _JP:
+    def with_segments(self: _JP, *pathsegments: str) -> _JP:
         """Construct a new path object from any number of path-like objects.
         Subclasses may override this method to customize how new path objects
         are created from methods like `iterdir()`.
@@ -180,7 +179,7 @@ class _JoinablePath(ABC):
             parts.append(anchor)
         return tuple(reversed(parts))
 
-    def joinpath(self: _JP, *pathsegments: Union[_JP, str]) -> _JP:
+    def joinpath(self: _JP, *pathsegments: str) -> _JP:
         """Combine this path with one or several arguments, and return a
         new path representing either a subpath (if all arguments are relative
         paths) or a totally different path (if one of the arguments is
@@ -188,13 +187,13 @@ class _JoinablePath(ABC):
         """
         return self.with_segments(str(self), *pathsegments)
 
-    def __truediv__(self: _JP, key: Union[_JP, str]) -> _JP:
+    def __truediv__(self: _JP, key: str) -> _JP:
         try:
             return self.with_segments(str(self), key)
         except TypeError:
             return NotImplemented
 
-    def __rtruediv__(self: _JP, key: Union[_JP, str]) -> _JP:
+    def __rtruediv__(self: _JP, key: str) -> _JP:
         try:
             return self.with_segments(key, str(self))
         except TypeError:
@@ -222,7 +221,7 @@ class _JoinablePath(ABC):
             parent = split(path)[0]
         return tuple(parents)
 
-    def full_match(self: _JP, pattern: Union[_JP, str]) -> bool:
+    def full_match(self: _JP, pattern: str) -> bool:
         """
         Return True if this path matches the given glob-style pattern. The
         pattern is matched against the entire path.
@@ -287,7 +286,7 @@ class _ReadablePath(_JoinablePath):
         """
         raise NotImplementedError
 
-    def glob(self: _RP, pattern: Union[_RP, str], *, recurse_symlinks: bool = True) -> Iterator[_RP]:
+    def glob(self: _RP, pattern: str, *, recurse_symlinks: Literal[True] = True) -> Iterator[_RP]:
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
@@ -374,7 +373,7 @@ class _WritablePath(_JoinablePath):
     __slots__ = ()
 
     @abstractmethod
-    def symlink_to(self: _WP, target: _WP, target_is_directory: bool = False) -> None:
+    def symlink_to(self, target: str, target_is_directory: bool = False) -> None:
         """
         Make this path a symlink pointing to the target path.
         Note the order of arguments (link, target) is the reverse of os.symlink.
