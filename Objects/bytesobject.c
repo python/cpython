@@ -215,7 +215,7 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
        "0xffffffffffffffff\0" (19 bytes). */
     char buffer[21];
 
-    char *s = PyBytesWriter_GetData(writer) + writer_pos;
+    char *s = (char*)PyBytesWriter_GetData(writer) + writer_pos;
     Py_ssize_t alloc = PyBytesWriter_GetSize(writer);
 
 #define WRITE_BYTES_LEN(str, len_expr) \
