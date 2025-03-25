@@ -406,11 +406,14 @@ _PyPegen_lookahead_with_int(int positive, Token *(func)(Parser *, int), Parser *
     return (res != NULL) == positive;
 }
 
-int
+// gh-111178: Use _Py_NO_SANITIZE_UNDEFINED to disable sanitizer checks on
+// undefined behavior (UBsan) in this function, rather than changing 'func'
+// callback API.
+int _Py_NO_SANITIZE_UNDEFINED
 _PyPegen_lookahead(int positive, void *(func)(Parser *), Parser *p)
 {
     int mark = p->mark;
-    void *res = (void*)func(p);
+    void *res = func(p);
     p->mark = mark;
     return (res != NULL) == positive;
 }
