@@ -8,7 +8,7 @@ import sys
 import unittest
 import weakref
 from test import support
-from test.support import import_helper, get_c_recursion_limit
+from test.support import import_helper
 
 
 class DictTest(unittest.TestCase):
@@ -594,10 +594,11 @@ class DictTest(unittest.TestCase):
         d = {1: BadRepr()}
         self.assertRaises(Exc, repr, d)
 
+    @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     def test_repr_deep(self):
         d = {}
-        for i in range(get_c_recursion_limit() + 1):
+        for i in range(support.exceeds_recursion_limit()):
             d = {1: d}
         self.assertRaises(RecursionError, repr, d)
 

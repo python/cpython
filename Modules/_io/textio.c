@@ -7,14 +7,15 @@
 */
 
 #include "Python.h"
-#include "pycore_call.h"              // _PyObject_CallMethod()
-#include "pycore_codecs.h"            // _PyCodecInfo_GetIncrementalDecoder()
-#include "pycore_fileutils.h"         // _Py_GetLocaleEncoding()
-#include "pycore_interp.h"            // PyInterpreterState.fs_codec
-#include "pycore_long.h"              // _PyLong_GetZero()
-#include "pycore_object.h"            // _PyObject_GC_UNTRACK()
-#include "pycore_pyerrors.h"          // _PyErr_ChainExceptions1()
-#include "pycore_pystate.h"           // _PyInterpreterState_GET()
+#include "pycore_call.h"          // _PyObject_CallMethod()
+#include "pycore_codecs.h"        // _PyCodecInfo_GetIncrementalDecoder()
+#include "pycore_fileutils.h"     // _Py_GetLocaleEncoding()
+#include "pycore_interp.h"        // PyInterpreterState.fs_codec
+#include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsASCIIString()
 
 #include "_iomodule.h"
 
@@ -358,7 +359,7 @@ _PyIncrementalNewlineDecoder_decode(PyObject *myself,
         out = PyUnicode_DATA(modified);
         PyUnicode_WRITE(kind, out, 0, '\r');
         memcpy(out + kind, PyUnicode_DATA(output), kind * output_len);
-        Py_SETREF(output, modified); /* output remains ready */
+        Py_SETREF(output, modified);
         self->pendingcr = 0;
         output_len++;
     }
@@ -579,9 +580,9 @@ _io.IncrementalNewlineDecoder.setstate
 [clinic start generated code]*/
 
 static PyObject *
-_io_IncrementalNewlineDecoder_setstate(nldecoder_object *self,
-                                       PyObject *state)
-/*[clinic end generated code: output=c10c622508b576cb input=c53fb505a76dbbe2]*/
+_io_IncrementalNewlineDecoder_setstate_impl(nldecoder_object *self,
+                                            PyObject *state)
+/*[clinic end generated code: output=09135cb6e78a1dc8 input=c53fb505a76dbbe2]*/
 {
     PyObject *buffer;
     unsigned long long flag;
@@ -1818,7 +1819,6 @@ textiowrapper_get_decoded_chars(textio *self, Py_ssize_t n)
     if (self->decoded_chars == NULL)
         return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
 
-    /* decoded_chars is guaranteed to be "ready". */
     avail = (PyUnicode_GET_LENGTH(self->decoded_chars)
              - self->decoded_chars_used);
 
