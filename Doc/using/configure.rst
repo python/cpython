@@ -29,7 +29,7 @@ Features and minimum versions required to build CPython:
 
 * Tcl/Tk 8.5.12 for the :mod:`tkinter` module.
 
-* Autoconf 2.71 and aclocal 1.16.5 are required to regenerate the
+* Autoconf 2.72 and aclocal 1.16.5 are required to regenerate the
   :file:`configure` script.
 
 .. versionchanged:: 3.1
@@ -57,6 +57,9 @@ Features and minimum versions required to build CPython:
 
 .. versionchanged:: 3.13
    Autoconf 2.71, aclocal 1.16.5 and SQLite 3.15.2 are now required.
+
+.. versionchanged:: 3.14
+   Autoconf 2.72 is now required.
 
 See also :pep:`7` "Style Guide for C Code" and :pep:`11` "CPython platform
 support".
@@ -307,6 +310,10 @@ General Options
    * ``interpreter`` - build the interpreter without the JIT, but with the tier 2 enabled interpreter.
 
    By convention, ``--enable-experimental-jit`` is a shorthand for ``--enable-experimental-jit=yes``.
+
+   .. note::
+
+      When building CPython with JIT enabled, ensure that your system has Python 3.11 or later installed.
 
    .. versionadded:: 3.13
 
@@ -610,6 +617,16 @@ also be used to improve performance.
 
    Enable computed gotos in evaluation loop (enabled by default on supported
    compilers).
+
+.. option:: --with-tail-call-interp
+
+   Enable interpreters using tail calls in CPython. If enabled, enabling PGO
+   (:option:`--enable-optimizations`) is highly recommended. This option specifically
+   requires a C compiler with proper tail call support, and the
+   `preserve_none <https://clang.llvm.org/docs/AttributeReference.html#preserve-none>`_
+   calling convention. For example, Clang 19 and newer supports this feature.
+
+   .. versionadded:: 3.14
 
 .. option:: --without-mimalloc
 
@@ -961,14 +978,20 @@ See :source:`Mac/README.rst`.
 
    Options:
 
-   * ``universal2``;
-   * ``32-bit``;
-   * ``64-bit``;
-   * ``3-way``;
-   * ``intel``;
-   * ``intel-32``;
-   * ``intel-64``;
-   * ``all``.
+   * ``universal2`` (x86-64 and arm64);
+   * ``32-bit`` (PPC and i386);
+   * ``64-bit``  (PPC64 and x86-64);
+   * ``3-way`` (i386, PPC and x86-64);
+   * ``intel`` (i386 and x86-64);
+   * ``intel-32`` (i386);
+   * ``intel-64`` (x86-64);
+   * ``all``  (PPC, i386, PPC64 and x86-64).
+
+   Note that values for this configuration item are *not* the same as the
+   identifiers used for universal binary wheels on macOS. See the Python
+   Packaging User Guide for details on the `packaging platform compatibility
+   tags used on macOS
+   <https://packaging.python.org/en/latest/specifications/platform-compatibility-tags/#macos>`_
 
 .. option:: --with-framework-name=FRAMEWORK
 

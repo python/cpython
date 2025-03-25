@@ -12,14 +12,14 @@
  * objects.
  */
 
-#include <stdbool.h>
-
 #include "Python.h"
 #include "opcode.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #define NEED_OPCODE_TABLES
 #include "pycore_opcode_utils.h"
 #undef NEED_OPCODE_TABLES
+#include "pycore_c_array.h"       // _Py_c_array_t
+#include "pycore_code.h"          // COMPARISON_LESS_THAN
 #include "pycore_compile.h"
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_NewLabel()
 #include "pycore_intrinsics.h"
@@ -27,24 +27,18 @@
 #include "pycore_object.h"        // _Py_ANNOTATE_FORMAT_VALUE_WITH_FAKE_GLOBALS
 #include "pycore_pystate.h"       // _Py_GetConfig()
 #include "pycore_symtable.h"      // PySTEntryObject
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString
 
 #define NEED_OPCODE_METADATA
 #include "pycore_opcode_metadata.h" // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
 #undef NEED_OPCODE_METADATA
 
+#include <stdbool.h>
+
 #define COMP_GENEXP   0
 #define COMP_LISTCOMP 1
 #define COMP_SETCOMP  2
 #define COMP_DICTCOMP 3
-
-/* A soft limit for stack use, to avoid excessive
- * memory use for large constants, etc.
- *
- * The value 30 is plucked out of thin air.
- * Code that could use more stack than this is
- * rare, so the exact value is unimportant.
- */
-#define STACK_USE_GUIDELINE 30
 
 #undef SUCCESS
 #undef ERROR
@@ -109,40 +103,48 @@ static const int compare_masks[] = {
     [Py_GE] = COMPARISON_GREATER_THAN | COMPARISON_EQUALS,
 };
 
-/*
- * Resize the array if index is out of range.
- *
- * idx: the index we want to access
- * arr: pointer to the array
- * alloc: pointer to the capacity of the array
- * default_alloc: initial number of items
- * item_size: size of each item
- *
- */
+
 int
-_PyCompile_EnsureArrayLargeEnough(int idx, void **array, int *alloc,
-                                  int default_alloc, size_t item_size)
+_Py_CArray_Init(_Py_c_array_t* array, int item_size, int initial_num_entries) {
+    memset(array, 0, sizeof(_Py_c_array_t));
+    array->item_size = item_size;
+    array->initial_num_entries = initial_num_entries;
+    return 0;
+}
+
+void
+_Py_CArray_Fini(_Py_c_array_t* array)
 {
-    void *arr = *array;
+    if (array->array) {
+        PyMem_Free(array->array);
+        array->allocated_entries = 0;
+    }
+}
+
+int
+_Py_CArray_EnsureCapacity(_Py_c_array_t *c_array, int idx)
+{
+    void *arr = c_array->array;
+    int alloc = c_array->allocated_entries;
     if (arr == NULL) {
-        int new_alloc = default_alloc;
+        int new_alloc = c_array->initial_num_entries;
         if (idx >= new_alloc) {
-            new_alloc = idx + default_alloc;
+            new_alloc = idx + c_array->initial_num_entries;
         }
-        arr = PyMem_Calloc(new_alloc, item_size);
+        arr = PyMem_Calloc(new_alloc, c_array->item_size);
         if (arr == NULL) {
             PyErr_NoMemory();
             return ERROR;
         }
-        *alloc = new_alloc;
+        alloc = new_alloc;
     }
-    else if (idx >= *alloc) {
-        size_t oldsize = *alloc * item_size;
-        int new_alloc = *alloc << 1;
+    else if (idx >= alloc) {
+        size_t oldsize = alloc * c_array->item_size;
+        int new_alloc = alloc << 1;
         if (idx >= new_alloc) {
-            new_alloc = idx + default_alloc;
+            new_alloc = idx + c_array->initial_num_entries;
         }
-        size_t newsize = new_alloc * item_size;
+        size_t newsize = new_alloc * c_array->item_size;
 
         if (oldsize > (SIZE_MAX >> 1)) {
             PyErr_NoMemory();
@@ -155,12 +157,13 @@ _PyCompile_EnsureArrayLargeEnough(int idx, void **array, int *alloc,
             PyErr_NoMemory();
             return ERROR;
         }
-        *alloc = new_alloc;
+        alloc = new_alloc;
         arr = tmp;
         memset((char *)arr + oldsize, 0, newsize - oldsize);
     }
 
-    *array = arr;
+    c_array->array = arr;
+    c_array->allocated_entries = alloc;
     return SUCCESS;
 }
 
@@ -200,9 +203,6 @@ static int codegen_annassign(compiler *, stmt_ty);
 static int codegen_subscript(compiler *, expr_ty);
 static int codegen_slice_two_parts(compiler *, expr_ty);
 static int codegen_slice(compiler *, expr_ty);
-
-static bool are_all_items_const(asdl_expr_seq *, Py_ssize_t, Py_ssize_t);
-
 
 static int codegen_with(compiler *, stmt_ty, int);
 static int codegen_async_with(compiler *, stmt_ty, int);
@@ -284,14 +284,6 @@ codegen_addop_noarg(instr_sequence *seq, int opcode, location loc)
 static int
 codegen_addop_load_const(compiler *c, location loc, PyObject *o)
 {
-    if (PyLong_CheckExact(o)) {
-        int overflow;
-        long val = PyLong_AsLongAndOverflow(o, &overflow);
-        if (!overflow && val >= 0 && val < 256 && val < _PY_NSMALLPOSINTS) {
-            ADDOP_I(c, loc, LOAD_SMALL_INT, val);
-            return SUCCESS;
-        }
-    }
     Py_ssize_t arg = _PyCompile_AddConst(c, o);
     if (arg < 0) {
         return ERROR;
@@ -406,13 +398,7 @@ codegen_addop_j(instr_sequence *seq, location loc,
     assert(IS_JUMP_TARGET_LABEL(target));
     assert(OPCODE_HAS_JUMP(opcode) || IS_BLOCK_PUSH_OPCODE(opcode));
     assert(!IS_ASSEMBLER_OPCODE(opcode));
-    if (_PyInstructionSequence_Addop(seq, opcode, target.id, loc) != SUCCESS) {
-        return ERROR;
-    }
-    if (IS_CONDITIONAL_JUMP_OPCODE(opcode) || opcode == FOR_ITER) {
-        return _PyInstructionSequence_Addop(seq, NOT_TAKEN, 0, NO_LOCATION);
-    }
-    return SUCCESS;
+    return _PyInstructionSequence_Addop(seq, opcode, target.id, loc);
 }
 
 #define ADDOP_JUMP(C, LOC, OP, O) \
@@ -701,6 +687,33 @@ codegen_leave_annotations_scope(compiler *c, location loc,
     ADDOP_I(c, loc, BUILD_MAP, annotations_len);
     ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
     PyCodeObject *co = _PyCompile_OptimizeAndAssemble(c, 1);
+
+    // We want the parameter to __annotate__ to be named "format" in the
+    // signature  shown by inspect.signature(), but we need to use a
+    // different name (.format) in the symtable; if the name
+    // "format" appears in the annotations, it doesn't get clobbered
+    // by this name.  This code is essentially:
+    // co->co_localsplusnames = ("format", *co->co_localsplusnames[1:])
+    const Py_ssize_t size = PyObject_Size(co->co_localsplusnames);
+    if (size == -1) {
+        return ERROR;
+    }
+    PyObject *new_names = PyTuple_New(size);
+    if (new_names == NULL) {
+        return ERROR;
+    }
+    PyTuple_SET_ITEM(new_names, 0, Py_NewRef(&_Py_ID(format)));
+    for (int i = 1; i < size; i++) {
+        PyObject *item = PyTuple_GetItem(co->co_localsplusnames, i);
+        if (item == NULL) {
+            Py_DECREF(new_names);
+            return ERROR;
+        }
+        Py_INCREF(item);
+        PyTuple_SET_ITEM(new_names, i, item);
+    }
+    Py_SETREF(co->co_localsplusnames, new_names);
+
     _PyCompile_ExitScope(c);
     if (co == NULL) {
         return ERROR;
@@ -1675,11 +1688,26 @@ codegen_typealias(compiler *c, stmt_ty s)
     return SUCCESS;
 }
 
+static bool
+is_const_tuple(asdl_expr_seq *elts)
+{
+    for (Py_ssize_t i = 0; i < asdl_seq_LEN(elts); i++) {
+        expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
+        if (e->kind != Constant_kind) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /* Return false if the expression is a constant value except named singletons.
    Return true otherwise. */
 static bool
 check_is_arg(expr_ty e)
 {
+    if (e->kind == Tuple_kind) {
+        return !is_const_tuple(e->v.Tuple.elts);
+    }
     if (e->kind != Constant_kind) {
         return true;
     }
@@ -1991,7 +2019,7 @@ codegen_for(compiler *c, stmt_ty s)
     * but a non-generator will jump to a later instruction.
     */
     ADDOP(c, NO_LOCATION, END_FOR);
-    ADDOP(c, NO_LOCATION, POP_TOP);
+    ADDOP(c, NO_LOCATION, POP_ITER);
 
     _PyCompile_PopFBlock(c, COMPILE_FBLOCK_FOR_LOOP, start);
 
@@ -2001,13 +2029,13 @@ codegen_for(compiler *c, stmt_ty s)
     return SUCCESS;
 }
 
-
 static int
 codegen_async_for(compiler *c, stmt_ty s)
 {
     location loc = LOC(s);
 
     NEW_JUMP_TARGET_LABEL(c, start);
+    NEW_JUMP_TARGET_LABEL(c, send);
     NEW_JUMP_TARGET_LABEL(c, except);
     NEW_JUMP_TARGET_LABEL(c, end);
 
@@ -2021,8 +2049,10 @@ codegen_async_for(compiler *c, stmt_ty s)
     ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
     ADDOP(c, loc, GET_ANEXT);
     ADDOP_LOAD_CONST(c, loc, Py_None);
+    USE_LABEL(c, send);
     ADD_YIELD_FROM(c, loc, 1);
     ADDOP(c, loc, POP_BLOCK);  /* for SETUP_FINALLY */
+    ADDOP(c, loc, NOT_TAKEN);
 
     /* Success block for __anext__ */
     VISIT(c, expr, s->v.AsyncFor.target);
@@ -2038,7 +2068,7 @@ codegen_async_for(compiler *c, stmt_ty s)
     /* Use same line number as the iterator,
      * as the END_ASYNC_FOR succeeds the `for`, not the body. */
     loc = LOC(s->v.AsyncFor.iter);
-    ADDOP(c, loc, END_ASYNC_FOR);
+    ADDOP_JUMP(c, loc, END_ASYNC_FOR, send);
 
     /* `else` block */
     VISIT_SEQ(c, stmt, s->v.AsyncFor.orelse);
@@ -3189,35 +3219,7 @@ starunpack_helper_impl(compiler *c, location loc,
                        int build, int add, int extend, int tuple)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
-    if (!injected_arg && n > 2 && are_all_items_const(elts, 0, n)) {
-        PyObject *folded = PyTuple_New(n);
-        if (folded == NULL) {
-            return ERROR;
-        }
-        for (Py_ssize_t i = 0; i < n; i++) {
-            PyObject *val = ((expr_ty)asdl_seq_GET(elts, i))->v.Constant.value;
-            PyTuple_SET_ITEM(folded, i, Py_NewRef(val));
-        }
-        if (tuple && !pushed) {
-            ADDOP_LOAD_CONST_NEW(c, loc, folded);
-        } else {
-            if (add == SET_ADD) {
-                Py_SETREF(folded, PyFrozenSet_New(folded));
-                if (folded == NULL) {
-                    return ERROR;
-                }
-            }
-            ADDOP_I(c, loc, build, pushed);
-            ADDOP_LOAD_CONST_NEW(c, loc, folded);
-            ADDOP_I(c, loc, extend, 1);
-            if (tuple) {
-                ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_LIST_TO_TUPLE);
-            }
-        }
-        return SUCCESS;
-    }
-
-    int big = n + pushed + (injected_arg ? 1 : 0) > STACK_USE_GUIDELINE;
+    int big = n + pushed + (injected_arg ? 1 : 0) > _PY_STACK_USE_GUIDELINE;
     int seen_star = 0;
     for (Py_ssize_t i = 0; i < n; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
@@ -3368,23 +3370,11 @@ codegen_set(compiler *c, expr_ty e)
                              BUILD_SET, SET_ADD, SET_UPDATE, 0);
 }
 
-static bool
-are_all_items_const(asdl_expr_seq *seq, Py_ssize_t begin, Py_ssize_t end)
-{
-    for (Py_ssize_t i = begin; i < end; i++) {
-        expr_ty key = (expr_ty)asdl_seq_GET(seq, i);
-        if (key == NULL || key->kind != Constant_kind) {
-            return false;
-        }
-    }
-    return true;
-}
-
 static int
 codegen_subdict(compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end)
 {
     Py_ssize_t i, n = end - begin;
-    int big = n*2 > STACK_USE_GUIDELINE;
+    int big = n*2 > _PY_STACK_USE_GUIDELINE;
     location loc = LOC(e);
     if (big) {
         ADDOP_I(c, loc, BUILD_MAP, 0);
@@ -3431,7 +3421,7 @@ codegen_dict(compiler *c, expr_ty e)
             ADDOP_I(c, loc, DICT_UPDATE, 1);
         }
         else {
-            if (elements*2 > STACK_USE_GUIDELINE) {
+            if (elements*2 > _PY_STACK_USE_GUIDELINE) {
                 RETURN_IF_ERROR(codegen_subdict(c, e, i - elements, i + 1));
                 if (have_dict) {
                     ADDOP_I(c, loc, DICT_UPDATE, 1);
@@ -3772,7 +3762,7 @@ maybe_optimize_method_call(compiler *c, expr_ty e)
     /* Check that there aren't too many arguments */
     argsl = asdl_seq_LEN(args);
     kwdsl = asdl_seq_LEN(kwds);
-    if (argsl + kwdsl + (kwdsl != 0) >= STACK_USE_GUIDELINE) {
+    if (argsl + kwdsl + (kwdsl != 0) >= _PY_STACK_USE_GUIDELINE) {
         return 0;
     }
     /* Check that there are no *varargs types of arguments. */
@@ -3869,7 +3859,7 @@ codegen_joined_str(compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     Py_ssize_t value_count = asdl_seq_LEN(e->v.JoinedStr.values);
-    if (value_count > STACK_USE_GUIDELINE) {
+    if (value_count > _PY_STACK_USE_GUIDELINE) {
         _Py_DECLARE_STR(empty, "");
         ADDOP_LOAD_CONST_NEW(c, loc, Py_NewRef(&_Py_STR(empty)));
         ADDOP_NAME(c, loc, LOAD_METHOD, &_Py_ID(join), names);
@@ -3948,7 +3938,7 @@ codegen_subkwargs(compiler *c, location loc,
     Py_ssize_t i, n = end - begin;
     keyword_ty kw;
     assert(n > 0);
-    int big = n*2 > STACK_USE_GUIDELINE;
+    int big = n*2 > _PY_STACK_USE_GUIDELINE;
     if (big) {
         ADDOP_I(c, NO_LOCATION, BUILD_MAP, 0);
     }
@@ -4001,7 +3991,7 @@ codegen_call_helper_impl(compiler *c, location loc,
     nelts = asdl_seq_LEN(args);
     nkwelts = asdl_seq_LEN(keywords);
 
-    if (nelts + nkwelts*2 > STACK_USE_GUIDELINE) {
+    if (nelts + nkwelts*2 > _PY_STACK_USE_GUIDELINE) {
          goto ex_call;
     }
     for (i = 0; i < nelts; i++) {
@@ -4087,7 +4077,10 @@ ex_call:
         }
         assert(have_dict);
     }
-    ADDOP_I(c, loc, CALL_FUNCTION_EX, nkwelts > 0);
+    if (nkwelts == 0) {
+        ADDOP(c, loc, PUSH_NULL);
+    }
+    ADDOP(c, loc, CALL_FUNCTION_EX);
     return SUCCESS;
 }
 
@@ -4256,7 +4249,7 @@ codegen_sync_comprehension_generator(compiler *c, location loc,
         * but a non-generator will jump to a later instruction.
         */
         ADDOP(c, NO_LOCATION, END_FOR);
-        ADDOP(c, NO_LOCATION, POP_TOP);
+        ADDOP(c, NO_LOCATION, POP_ITER);
     }
 
     return SUCCESS;
@@ -4270,6 +4263,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
                                       int iter_on_stack)
 {
     NEW_JUMP_TARGET_LABEL(c, start);
+    NEW_JUMP_TARGET_LABEL(c, send);
     NEW_JUMP_TARGET_LABEL(c, except);
     NEW_JUMP_TARGET_LABEL(c, if_cleanup);
 
@@ -4297,6 +4291,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
     ADDOP_JUMP(c, loc, SETUP_FINALLY, except);
     ADDOP(c, loc, GET_ANEXT);
     ADDOP_LOAD_CONST(c, loc, Py_None);
+    USE_LABEL(c, send);
     ADD_YIELD_FROM(c, loc, 1);
     ADDOP(c, loc, POP_BLOCK);
     VISIT(c, expr, gen->target);
@@ -4356,7 +4351,7 @@ codegen_async_comprehension_generator(compiler *c, location loc,
 
     USE_LABEL(c, except);
 
-    ADDOP(c, loc, END_ASYNC_FOR);
+    ADDOP_JUMP(c, loc, END_ASYNC_FOR, send);
 
     return SUCCESS;
 }
@@ -4904,6 +4899,9 @@ codegen_with(compiler *c, stmt_ty s, int pos)
 static int
 codegen_visit_expr(compiler *c, expr_ty e)
 {
+    if (Py_EnterRecursiveCall(" during compilation")) {
+        return ERROR;
+    }
     location loc = LOC(e);
     switch (e->kind) {
     case NamedExpr_kind:
@@ -5095,7 +5093,7 @@ codegen_augassign(compiler *c, stmt_ty s)
             VISIT(c, expr, e->v.Subscript.slice);
             ADDOP_I(c, loc, COPY, 2);
             ADDOP_I(c, loc, COPY, 2);
-            ADDOP(c, loc, BINARY_SUBSCR);
+            ADDOP_I(c, loc, BINARY_OP, NB_SUBSCR);
         }
         break;
     case Name_kind:
@@ -5261,7 +5259,6 @@ codegen_subscript(compiler *c, expr_ty e)
 {
     location loc = LOC(e);
     expr_context_ty ctx = e->v.Subscript.ctx;
-    int op = 0;
 
     if (ctx == Load) {
         RETURN_IF_ERROR(check_subscripter(c, e->v.Subscript.value));
@@ -5284,12 +5281,16 @@ codegen_subscript(compiler *c, expr_ty e)
     else {
         VISIT(c, expr, e->v.Subscript.slice);
         switch (ctx) {
-            case Load:    op = BINARY_SUBSCR; break;
-            case Store:   op = STORE_SUBSCR; break;
-            case Del:     op = DELETE_SUBSCR; break;
+            case Load:
+                ADDOP_I(c, loc, BINARY_OP, NB_SUBSCR);
+                break;
+            case Store:
+                ADDOP(c, loc, STORE_SUBSCR);
+                break;
+            case Del:
+                ADDOP(c, loc, DELETE_SUBSCR);
+                break;
         }
-        assert(op);
-        ADDOP(c, loc, op);
     }
     return SUCCESS;
 }
@@ -5521,7 +5522,7 @@ pattern_helper_sequence_unpack(compiler *c, location loc,
     return SUCCESS;
 }
 
-// Like pattern_helper_sequence_unpack, but uses BINARY_SUBSCR instead of
+// Like pattern_helper_sequence_unpack, but uses BINARY_OP/NB_SUBSCR instead of
 // UNPACK_SEQUENCE / UNPACK_EX. This is more efficient for patterns with a
 // starred wildcard like [first, *_] / [first, *_, last] / [*_, last] / etc.
 static int
@@ -5552,7 +5553,7 @@ pattern_helper_sequence_subscr(compiler *c, location loc,
             ADDOP_LOAD_CONST_NEW(c, loc, PyLong_FromSsize_t(size - i));
             ADDOP_BINARY(c, loc, Sub);
         }
-        ADDOP(c, loc, BINARY_SUBSCR);
+        ADDOP_I(c, loc, BINARY_OP, NB_SUBSCR);
         RETURN_IF_ERROR(codegen_pattern_subpattern(c, pattern, pc));
     }
     // Pop the subject, we're done with it:
@@ -6133,7 +6134,8 @@ codegen_match_inner(compiler *c, stmt_ty s, pattern_context *pc)
         }
         // Success! Pop the subject off, we're done with it:
         if (i != cases - has_default - 1) {
-            ADDOP(c, LOC(m->pattern), POP_TOP);
+            /* Use the next location to give better locations for branch events */
+            ADDOP(c, NEXT_LOCATION, POP_TOP);
         }
         VISIT_SEQ(c, stmt, m->body);
         ADDOP_JUMP(c, NO_LOCATION, JUMP, end);

@@ -9,6 +9,40 @@ preserve
 #include "pycore_abstract.h"      // _PyNumber_Index()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
+PyDoc_STRVAR(warnings_acquire_lock__doc__,
+"_acquire_lock($module, /)\n"
+"--\n"
+"\n");
+
+#define WARNINGS_ACQUIRE_LOCK_METHODDEF    \
+    {"_acquire_lock", (PyCFunction)warnings_acquire_lock, METH_NOARGS, warnings_acquire_lock__doc__},
+
+static PyObject *
+warnings_acquire_lock_impl(PyObject *module);
+
+static PyObject *
+warnings_acquire_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return warnings_acquire_lock_impl(module);
+}
+
+PyDoc_STRVAR(warnings_release_lock__doc__,
+"_release_lock($module, /)\n"
+"--\n"
+"\n");
+
+#define WARNINGS_RELEASE_LOCK_METHODDEF    \
+    {"_release_lock", (PyCFunction)warnings_release_lock, METH_NOARGS, warnings_release_lock__doc__},
+
+static PyObject *
+warnings_release_lock_impl(PyObject *module);
+
+static PyObject *
+warnings_release_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return warnings_release_lock_impl(module);
+}
+
 PyDoc_STRVAR(warnings_warn__doc__,
 "warn($module, /, message, category=None, stacklevel=1, source=None, *,\n"
 "     skip_file_prefixes=<unrepresentable>)\n"
@@ -230,20 +264,20 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(warnings_filters_mutated__doc__,
-"_filters_mutated($module, /)\n"
+PyDoc_STRVAR(warnings_filters_mutated_lock_held__doc__,
+"_filters_mutated_lock_held($module, /)\n"
 "--\n"
 "\n");
 
-#define WARNINGS_FILTERS_MUTATED_METHODDEF    \
-    {"_filters_mutated", (PyCFunction)warnings_filters_mutated, METH_NOARGS, warnings_filters_mutated__doc__},
+#define WARNINGS_FILTERS_MUTATED_LOCK_HELD_METHODDEF    \
+    {"_filters_mutated_lock_held", (PyCFunction)warnings_filters_mutated_lock_held, METH_NOARGS, warnings_filters_mutated_lock_held__doc__},
 
 static PyObject *
-warnings_filters_mutated_impl(PyObject *module);
+warnings_filters_mutated_lock_held_impl(PyObject *module);
 
 static PyObject *
-warnings_filters_mutated(PyObject *module, PyObject *Py_UNUSED(ignored))
+warnings_filters_mutated_lock_held(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    return warnings_filters_mutated_impl(module);
+    return warnings_filters_mutated_lock_held_impl(module);
 }
-/*[clinic end generated code: output=ed02c0f521a03a37 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d9d32a8b59a30683 input=a9049054013a1b77]*/
