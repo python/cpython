@@ -264,7 +264,14 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     /* If this structure/union is already marked final we cannot assign
        _fields_ anymore. */
 
-    if (stginfo->flags & DICTFLAG_FINAL) {/* is final ? */
+    if (stginfo_get_dict_final(stginfo) == 1) {/* is final ? */
+        PyErr_SetString(PyExc_AttributeError,
+                        "_fields_ is final");
+        goto error;
+    }
+    STGINFO_LOCK(stginfo);
+    // check again after locking
+    if (stginfo_get_dict_final(stginfo) == 1) {/* is final ? */
         PyErr_SetString(PyExc_AttributeError,
                         "_fields_ is final");
         goto error;
@@ -422,12 +429,13 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
             goto error;
         }
         assert(info);
-
+        STGINFO_LOCK(info);
         stginfo->ffi_type_pointer.elements[ffi_ofs + i] = &info->ffi_type_pointer;
         if (info->flags & (TYPEFLAG_ISPOINTER | TYPEFLAG_HASPOINTER))
             stginfo->flags |= TYPEFLAG_HASPOINTER;
-        info->flags |= DICTFLAG_FINAL; /* mark field type final */
 
+        stginfo_set_dict_final(info); /* mark field type final */
+        STGINFO_UNLOCK();
         if (-1 == PyObject_SetAttr(type, prop->name, prop_obj)) {
             goto error;
         }
@@ -461,15 +469,15 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
 
     /* We did check that this flag was NOT set above, it must not
        have been set until now. */
-    if (stginfo->flags & DICTFLAG_FINAL) {
+    if (stginfo_get_dict_final(stginfo) == 1) {
         PyErr_SetString(PyExc_AttributeError,
                         "Structure or union cannot contain itself");
         goto error;
     }
-    stginfo->flags |= DICTFLAG_FINAL;
+    stginfo_set_dict_final(stginfo);
 
     retval = MakeAnonFields(type);
-error:
+error:;
     Py_XDECREF(layout_func);
     Py_XDECREF(kwnames);
     Py_XDECREF(align_obj);
@@ -478,6 +486,7 @@ error:
     Py_XDECREF(layout_fields);
     Py_XDECREF(layout);
     Py_XDECREF(format_spec_obj);
+    STGINFO_UNLOCK();
     return retval;
 }
 

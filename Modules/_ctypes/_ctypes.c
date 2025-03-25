@@ -109,6 +109,7 @@ bytes(cdata)
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
+#include "pycore_pyatomic_ft_wrappers.h"
 #ifdef MS_WIN32
 #  include "pycore_modsupport.h"  // _PyArg_NoKeywords()
 #endif
@@ -710,13 +711,16 @@ StructUnionType_init(PyObject *self, PyObject *args, PyObject *kwds, int isStruc
         if (baseinfo == NULL) {
             return 0;
         }
-
+        int ret = 0;
+        STGINFO_LOCK2(info, baseinfo);
         /* copy base info */
-        if (PyCStgInfo_clone(info, baseinfo) < 0) {
-            return -1;
+        ret = PyCStgInfo_clone(info, baseinfo);
+        if (ret >= 0) {
+            stginfo_set_dict_final(info);
+            stginfo_set_dict_final(baseinfo);
         }
-        info->flags &= ~DICTFLAG_FINAL; /* clear the 'final' flag in the subclass info */
-        baseinfo->flags |= DICTFLAG_FINAL; /* set the 'final' flag in the baseclass info */
+        STGINFO_UNLOCK2();
+        return ret;
     }
     return 0;
 }
@@ -3178,11 +3182,11 @@ PyCData_FromBaseObj(ctypes_state *st,
         return NULL;
     }
 
-    info->flags |= DICTFLAG_FINAL;
     cmem = (CDataObject *)((PyTypeObject *)type)->tp_alloc((PyTypeObject *)type, 0);
     if (cmem == NULL) {
         return NULL;
     }
+    STGINFO_LOCK(info);
     assert(CDataObject_Check(st, cmem));
     cmem->b_length = info->length;
     cmem->b_size = info->size;
@@ -3194,12 +3198,15 @@ PyCData_FromBaseObj(ctypes_state *st,
         cmem->b_index = index;
     } else { /* copy contents of adr */
         if (-1 == PyCData_MallocBuffer(cmem, info)) {
-            Py_DECREF(cmem);
-            return NULL;
+            Py_CLEAR(cmem);
+            goto exit;
         }
         memcpy(cmem->b_ptr, adr, info->size);
         cmem->b_index = index;
     }
+exit:;
+    stginfo_set_dict_final(info);
+    STGINFO_UNLOCK();
     return (PyObject *)cmem;
 }
 
@@ -3226,8 +3233,11 @@ PyCData_AtAddress(ctypes_state *st, PyObject *type, void *buf)
                         "abstract class");
         return NULL;
     }
-
-    info->flags |= DICTFLAG_FINAL;
+    if (stginfo_get_dict_final(info) != 1) {
+        STGINFO_LOCK(info);
+        stginfo_set_dict_final(info);
+        STGINFO_UNLOCK();
+    }
 
     pd = (CDataObject *)((PyTypeObject *)type)->tp_alloc((PyTypeObject *)type, 0);
     if (!pd) {
@@ -3461,8 +3471,11 @@ generic_pycdata_new(ctypes_state *st,
                         "abstract class");
         return NULL;
     }
-
-    info->flags |= DICTFLAG_FINAL;
+    if (stginfo_get_dict_final(info) != 1) {
+        STGINFO_LOCK(info);
+        stginfo_set_dict_final(info);
+        STGINFO_UNLOCK();
+    }
 
     obj = (CDataObject *)type->tp_alloc(type, 0);
     if (!obj)

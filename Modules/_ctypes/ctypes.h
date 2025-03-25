@@ -6,6 +6,8 @@
 
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
+#include "pycore_critical_section.h"
+#include "pycore_pyatomic_ft_wrappers.h"
 
 // Do we support C99 complex types in ffi?
 // For Apple's libffi, this must be determined at runtime (see gh-128156).
@@ -373,6 +375,9 @@ typedef struct CFieldObject {
 *****************************************************************/
 
 typedef struct {
+#ifdef Py_GIL_DISABLED
+    PyMutex mutex;
+#endif
     int initialized;
     Py_ssize_t size;            /* number of bytes */
     Py_ssize_t align;           /* alignment requirements */
@@ -390,6 +395,7 @@ typedef struct {
     PyObject *checker;
     PyObject *module;
     int flags;                  /* calling convention and such */
+    int dict_final;
 
     /* pep3118 fields, pointers need PyMem_Free */
     char *format;
@@ -398,6 +404,26 @@ typedef struct {
 /*      Py_ssize_t *strides;    */ /* unused in ctypes */
 /*      Py_ssize_t *suboffsets; */ /* unused in ctypes */
 } StgInfo;
+
+
+#define STGINFO_LOCK(stginfo)   Py_BEGIN_CRITICAL_SECTION_MUT(&(stginfo)->mutex)
+#define STGINFO_LOCK2(stginfo1, stginfo2)   Py_BEGIN_CRITICAL_SECTION2_MUT(&(stginfo1)->mutex, &(stginfo2)->mutex)
+#define STGINFO_UNLOCK()        Py_END_CRITICAL_SECTION()
+#define STGINFO_UNLOCK2()       Py_END_CRITICAL_SECTION2()
+
+static inline void
+stginfo_set_dict_final(StgInfo *info)
+{
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&info->mutex);
+    FT_ATOMIC_STORE_INT(info->dict_final, 1);
+}
+
+static inline int
+stginfo_get_dict_final(StgInfo *info)
+{
+    return FT_ATOMIC_LOAD_INT(info->dict_final);
+}
+
 
 extern int PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info);
 extern void ctype_clear_stginfo(StgInfo *info);
@@ -426,8 +452,6 @@ PyObject *_ctypes_callproc(ctypes_state *st,
 
 #define TYPEFLAG_ISPOINTER 0x100
 #define TYPEFLAG_HASPOINTER 0x200
-
-#define DICTFLAG_FINAL 0x1000
 
 struct tagPyCArgObject {
     PyObject_HEAD
