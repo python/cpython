@@ -977,7 +977,6 @@ sys_exit_impl(PyObject *module, PyObject *status)
 // This function is used to warn about the future change of sys.abiflags
 // from absent to a meaningful value on all platforms.
 // It can be removed when the change is made.
-#ifndef ABIFLAGS
 static PyObject *
 sys___getattr__(PyObject *module, PyObject *name)
 {
@@ -998,7 +997,6 @@ PyDoc_STRVAR(__getattr___doc,
 "\n"
 "Get a sys attribute by name.\n"
 );
-#endif
 
 
 static PyObject *
@@ -2731,10 +2729,8 @@ static PyMethodDef sys_methods[] = {
     SYS_EXC_INFO_METHODDEF
     SYS_EXCEPTHOOK_METHODDEF
     SYS_EXIT_METHODDEF
-#ifndef ABIFLAGS
     {"__getattr__", _PyCFunction_CAST(sys___getattr__),
      METH_O, __getattr___doc},
-#endif
     SYS_GETDEFAULTENCODING_METHODDEF
     SYS_GETDLOPENFLAGS_METHODDEF
     SYS_GETALLOCATEDBLOCKS_METHODDEF
