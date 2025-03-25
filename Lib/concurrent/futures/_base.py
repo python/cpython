@@ -633,11 +633,12 @@ class Executor(object):
 
                     # yield the awaited result
                     yield fs.pop()._result
-            except:
-                # break the reference cycle with fs[-1]._exception's traceback
-                fs.pop().cancel()
-                raise
+
             finally:
+                # break the reference cycle with fs[-1]._exception's traceback
+                if fs:
+                    fs.pop().cancel()
+
                 for future in fs:
                     future.cancel()
 
