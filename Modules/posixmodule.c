@@ -4430,6 +4430,25 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
 }
 #endif
 
+#ifdef MS_WINDOWS
+
+static int
+_is_dot_filename(WIN32_FIND_DATAW *entry)
+{
+    return wcscmp(entry->cFileName, L".") == 0 || wcscmp(entry->cFileName, L"..") == 0;
+}
+
+#else
+
+static int
+_is_dot_filename(struct dirent *entry)
+{
+    Py_ssize_t name_len = NAMLEN(entry);
+    return entry->d_name[0] == '.' &&
+           (name_len == 1 || (entry->d_name[1] == '.' && name_len == 2));
+}
+
+#endif
 
 #if defined(MS_WINDOWS) && !defined(HAVE_OPENDIR)
 static PyObject *
@@ -4484,8 +4503,7 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
     }
     do {
         /* Skip over . and .. */
-        if (wcscmp(wFileData.cFileName, L".") != 0 &&
-            wcscmp(wFileData.cFileName, L"..") != 0) {
+        if (!_is_dot_filename(&wFileData)) {
             v = PyUnicode_FromWideChar(wFileData.cFileName,
                                        wcslen(wFileData.cFileName));
             if (return_bytes && v) {
@@ -16020,7 +16038,7 @@ join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename)
 }
 
 static PyObject *
-DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
+DirEntry_from_os(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
 {
     DirEntry *entry;
     BY_HANDLE_FILE_INFORMATION file_info;
@@ -16110,15 +16128,12 @@ join_path_filename(const char *path_narrow, const char* filename, Py_ssize_t fil
 }
 
 static PyObject *
-DirEntry_from_posix_info(PyObject *module, path_t *path, const char *name,
-                         Py_ssize_t name_len, ino_t d_ino
-#ifdef HAVE_DIRENT_D_TYPE
-                         , unsigned char d_type
-#endif
-                         )
+DirEntry_from_os(PyObject *module, path_t *path, struct dirent *direntp)
 {
     DirEntry *entry;
     char *joined_path;
+    const char *name = direntp->d_name;
+    Py_ssize_t name_len = NAMLEN(direntp);
 
     PyObject *DirEntryType = get_posix_state(module)->DirEntryType;
     entry = PyObject_New(DirEntry, (PyTypeObject *)DirEntryType);
@@ -16161,9 +16176,9 @@ DirEntry_from_posix_info(PyObject *module, path_t *path, const char *name,
         goto error;
 
 #ifdef HAVE_DIRENT_D_TYPE
-    entry->d_type = d_type;
+    entry->d_type = direntp->d_type;
 #endif
-    entry->d_ino = d_ino;
+    entry->d_ino = direntp->d_ino;
 
     return (PyObject *)entry;
 
@@ -16245,33 +16260,6 @@ ScandirIterator_nextdirentry(ScandirIterator *iterator, WIN32_FIND_DATAW *file_d
     return has_result;
 }
 
-static PyObject *
-ScandirIterator_iternext(PyObject *op)
-{
-    ScandirIterator *iterator = ScandirIterator_CAST(op);
-    WIN32_FIND_DATAW file_data;
-    PyObject *entry;
-
-    while (ScandirIterator_nextdirentry(iterator, &file_data)) {
-        /* Skip over . and .. */
-        if (wcscmp(file_data.cFileName, L".") != 0 &&
-            wcscmp(file_data.cFileName, L"..") != 0)
-        {
-            PyObject *module = PyType_GetModule(Py_TYPE(iterator));
-            entry = DirEntry_from_find_data(module, &iterator->path, &file_data);
-            if (!entry)
-                break;
-            return entry;
-        }
-
-        /* Loop till we get a non-dot directory or finish iterating */
-    }
-
-    /* Already closed, error, or no more files */
-    ScandirIterator_closedir(iterator);
-    return NULL;
-}
-
 #else /* POSIX */
 
 static int
@@ -16327,43 +16315,35 @@ ScandirIterator_nextdirentry(ScandirIterator *iterator, struct dirent *direntp)
     return result != NULL;
 }
 
+#endif
+
 static PyObject *
 ScandirIterator_iternext(PyObject *op)
 {
-    ScandirIterator *iterator = ScandirIterator_CAST(op);
-    struct dirent direntp;
-    Py_ssize_t name_len;
-    int is_dot;
-    PyObject *entry;
-
-    while ((ScandirIterator_nextdirentry(iterator, &direntp))) {
-        /* Skip over . and .. */
-        name_len = NAMLEN(&direntp);
-        is_dot = direntp.d_name[0] == '.' &&
-                 (name_len == 1 || (direntp.d_name[1] == '.' && name_len == 2));
-        if (!is_dot) {
-            PyObject *module = PyType_GetModule(Py_TYPE(iterator));
-            entry = DirEntry_from_posix_info(module,
-                                             &iterator->path, direntp.d_name,
-                                             name_len, direntp.d_ino
-#ifdef HAVE_DIRENT_D_TYPE
-                                             , direntp.d_type
+#ifdef MS_WINDOWS
+    WIN32_FIND_DATAW dirent;
+#else
+    struct dirent dirent;
 #endif
-                                            );
-            if (!entry)
-                break;
-            return entry;
-        }
+    ScandirIterator *iterator = ScandirIterator_CAST(op);
 
-        /* Loop till we get a non-dot directory or finish iterating */
+    while ((ScandirIterator_nextdirentry(iterator, &dirent))) {
+
+        /* Skip over . and .. */
+        if (_is_dot_filename(&dirent))
+            continue;
+
+        PyObject *module = PyType_GetModule(Py_TYPE(iterator));
+        PyObject *entry = DirEntry_from_os(module, &iterator->path, &dirent);
+        if (!entry)
+            break;
+        return entry;
     }
 
     /* Already closed, error, or no more files */
     ScandirIterator_closedir(iterator);
     return NULL;
 }
-
-#endif
 
 static PyObject *
 ScandirIterator_close(PyObject *op, PyObject *Py_UNUSED(dummy))
