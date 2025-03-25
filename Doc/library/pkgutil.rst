@@ -49,25 +49,6 @@ support.
    this function to raise an exception (in line with :func:`os.path.isdir`
    behavior).
 
-.. function:: find_loader(fullname)
-
-   Retrieve a module :term:`loader` for the given *fullname*.
-
-   This is a backwards compatibility wrapper around
-   :func:`importlib.util.find_spec` that converts most failures to
-   :exc:`ImportError` and only returns the loader rather than the full
-   :class:`importlib.machinery.ModuleSpec`.
-
-   .. versionchanged:: 3.3
-      Updated to be based directly on :mod:`importlib` rather than relying
-      on the package internal :pep:`302` import emulation.
-
-   .. versionchanged:: 3.4
-      Updated to be based on :pep:`451`
-
-   .. deprecated-removed:: 3.12 3.14
-      Use :func:`importlib.util.find_spec` instead.
-
 
 .. function:: get_importer(path_item)
 
@@ -82,27 +63,6 @@ support.
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
       on the package internal :pep:`302` import emulation.
-
-
-.. function:: get_loader(module_or_name)
-
-   Get a :term:`loader` object for *module_or_name*.
-
-   If the module or package is accessible via the normal import mechanism, a
-   wrapper around the relevant part of that machinery is returned.  Returns
-   ``None`` if the module cannot be found or imported.  If the named module is
-   not already imported, its containing package (if any) is imported, in order
-   to establish the package ``__path__``.
-
-   .. versionchanged:: 3.3
-      Updated to be based directly on :mod:`importlib` rather than relying
-      on the package internal :pep:`302` import emulation.
-
-   .. versionchanged:: 3.4
-      Updated to be based on :pep:`451`
-
-   .. deprecated-removed:: 3.12 3.14
-      Use :func:`importlib.util.find_spec` instead.
 
 
 .. function:: iter_importers(fullname='')

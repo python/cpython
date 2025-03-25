@@ -12,6 +12,7 @@ import unittest
 from test import support
 from test.support import os_helper
 from test.support import force_not_colorized
+from test.support import threading_helper
 from test.support.script_helper import (
     spawn_python, kill_python, assert_python_ok, assert_python_failure,
     interpreter_requires_environment
@@ -335,6 +336,8 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(stdout, expected)
         self.assertEqual(p.returncode, 0)
 
+    @unittest.skipIf(os.environ.get("PYTHONUNBUFFERED", "0") != "0",
+                     "Python stdio buffering is disabled.")
     def test_non_interactive_output_buffering(self):
         code = textwrap.dedent("""
             import sys
@@ -488,7 +491,7 @@ class CmdLineTest(unittest.TestCase):
         rc, out, err = assert_python_failure('-c', code)
         self.assertEqual(b'', out)
         self.assertEqual(120, rc)
-        self.assertIn(b'Exception ignored on flushing sys.stdout:\n'
+        self.assertIn(b'Exception ignored while flushing sys.stdout:\n'
                       b'OSError: '.replace(b'\n', os.linesep.encode()),
                       err)
 
@@ -924,7 +927,7 @@ class CmdLineTest(unittest.TestCase):
                 self.assertEqual(proc.stderr, '')
 
     def test_python_asyncio_debug(self):
-        code = "import asyncio; print(asyncio.get_event_loop().get_debug())"
+        code = "import asyncio; print(asyncio.new_event_loop().get_debug())"
         rc, out, err = assert_python_ok('-c', code, PYTHONASYNCIODEBUG='1')
         self.assertIn(b'True', out)
 
@@ -1011,7 +1014,7 @@ class CmdLineTest(unittest.TestCase):
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE,
                               text=True)
-        err_msg = "unknown option --unknown-option\nusage: "
+        err_msg = "Unknown option: --unknown-option\nusage: "
         self.assertTrue(proc.stderr.startswith(err_msg), proc.stderr)
         self.assertNotEqual(proc.returncode, 0)
 
@@ -1067,6 +1070,57 @@ class CmdLineTest(unittest.TestCase):
     def res2int(self, res):
         out = res.out.strip().decode("utf-8")
         return tuple(int(i) for i in out.split())
+
+    @unittest.skipUnless(support.Py_GIL_DISABLED,
+                         "PYTHON_TLBC and -X tlbc"
+                         " only supported in Py_GIL_DISABLED builds")
+    @threading_helper.requires_working_threading()
+    def test_disable_thread_local_bytecode(self):
+        code = """if 1:
+            import threading
+            def test(x, y):
+                return x + y
+            t = threading.Thread(target=test, args=(1,2))
+            t.start()
+            t.join()"""
+        assert_python_ok("-W", "always", "-X", "tlbc=0", "-c", code)
+        assert_python_ok("-W", "always", "-c", code, PYTHON_TLBC="0")
+
+    @unittest.skipUnless(support.Py_GIL_DISABLED,
+                         "PYTHON_TLBC and -X tlbc"
+                         " only supported in Py_GIL_DISABLED builds")
+    @threading_helper.requires_working_threading()
+    def test_enable_thread_local_bytecode(self):
+        code = """if 1:
+            import threading
+            def test(x, y):
+                return x + y
+            t = threading.Thread(target=test, args=(1,2))
+            t.start()
+            t.join()"""
+        # The functionality of thread-local bytecode is tested more extensively
+        # in test_thread_local_bytecode
+        assert_python_ok("-W", "always", "-X", "tlbc=1", "-c", code)
+        assert_python_ok("-W", "always", "-c", code, PYTHON_TLBC="1")
+
+    @unittest.skipUnless(support.Py_GIL_DISABLED,
+                         "PYTHON_TLBC and -X tlbc"
+                         " only supported in Py_GIL_DISABLED builds")
+    def test_invalid_thread_local_bytecode(self):
+        rc, out, err = assert_python_failure("-X", "tlbc")
+        self.assertIn(b"tlbc=n: n is missing or invalid", err)
+        rc, out, err = assert_python_failure("-X", "tlbc=foo")
+        self.assertIn(b"tlbc=n: n is missing or invalid", err)
+        rc, out, err = assert_python_failure("-X", "tlbc=-1")
+        self.assertIn(b"tlbc=n: n is missing or invalid", err)
+        rc, out, err = assert_python_failure("-X", "tlbc=2")
+        self.assertIn(b"tlbc=n: n is missing or invalid", err)
+        rc, out, err = assert_python_failure(PYTHON_TLBC="foo")
+        self.assertIn(b"PYTHON_TLBC=N: N is missing or invalid", err)
+        rc, out, err = assert_python_failure(PYTHON_TLBC="-1")
+        self.assertIn(b"PYTHON_TLBC=N: N is missing or invalid", err)
+        rc, out, err = assert_python_failure(PYTHON_TLBC="2")
+        self.assertIn(b"PYTHON_TLBC=N: N is missing or invalid", err)
 
 
 @unittest.skipIf(interpreter_requires_environment(),

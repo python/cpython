@@ -53,6 +53,19 @@ class TestSimpleInteract(unittest.TestCase):
         self.assertFalse(more)
         self.assertEqual(f.getvalue(), "1\n")
 
+    @force_not_colorized
+    def test_multiple_statements_fail_early(self):
+        console = InteractiveColoredConsole()
+        code = dedent("""\
+        raise Exception('foobar')
+        print('spam&eggs')
+        """)
+        f = io.StringIO()
+        with contextlib.redirect_stderr(f):
+            console.runsource(code)
+        self.assertIn('Exception: foobar', f.getvalue())
+        self.assertNotIn('spam&eggs', f.getvalue())
+
     def test_empty(self):
         namespace = {}
         code = ""
@@ -116,6 +129,15 @@ SyntaxError: duplicate argument 'x' in function definition"""
         with patch.object(console, "showsyntaxerror") as mock_showsyntaxerror:
             console.runsource(source)
             mock_showsyntaxerror.assert_called_once()
+
+    def test_runsource_survives_null_bytes(self):
+        console = InteractiveColoredConsole()
+        source = "\x00\n"
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f), contextlib.redirect_stderr(f):
+            result = console.runsource(source)
+        self.assertFalse(result)
+        self.assertIn("source code string cannot contain null bytes", f.getvalue())
 
     def test_no_active_future(self):
         console = InteractiveColoredConsole()

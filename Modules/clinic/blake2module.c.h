@@ -72,7 +72,8 @@ py_blake2b_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int last_node = 0;
     int usedforsecurity = 1;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -266,7 +267,8 @@ py_blake2s_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int last_node = 0;
     int usedforsecurity = 1;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 1, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -410,9 +412,9 @@ static PyObject *
 _blake2_blake2b_copy_impl(Blake2Object *self);
 
 static PyObject *
-_blake2_blake2b_copy(Blake2Object *self, PyObject *Py_UNUSED(ignored))
+_blake2_blake2b_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _blake2_blake2b_copy_impl(self);
+    return _blake2_blake2b_copy_impl((Blake2Object *)self);
 }
 
 PyDoc_STRVAR(_blake2_blake2b_update__doc__,
@@ -423,6 +425,19 @@ PyDoc_STRVAR(_blake2_blake2b_update__doc__,
 
 #define _BLAKE2_BLAKE2B_UPDATE_METHODDEF    \
     {"update", (PyCFunction)_blake2_blake2b_update, METH_O, _blake2_blake2b_update__doc__},
+
+static PyObject *
+_blake2_blake2b_update_impl(Blake2Object *self, PyObject *data);
+
+static PyObject *
+_blake2_blake2b_update(PyObject *self, PyObject *data)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _blake2_blake2b_update_impl((Blake2Object *)self, data);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_blake2_blake2b_digest__doc__,
 "digest($self, /)\n"
@@ -437,9 +452,9 @@ static PyObject *
 _blake2_blake2b_digest_impl(Blake2Object *self);
 
 static PyObject *
-_blake2_blake2b_digest(Blake2Object *self, PyObject *Py_UNUSED(ignored))
+_blake2_blake2b_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _blake2_blake2b_digest_impl(self);
+    return _blake2_blake2b_digest_impl((Blake2Object *)self);
 }
 
 PyDoc_STRVAR(_blake2_blake2b_hexdigest__doc__,
@@ -455,8 +470,8 @@ static PyObject *
 _blake2_blake2b_hexdigest_impl(Blake2Object *self);
 
 static PyObject *
-_blake2_blake2b_hexdigest(Blake2Object *self, PyObject *Py_UNUSED(ignored))
+_blake2_blake2b_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _blake2_blake2b_hexdigest_impl(self);
+    return _blake2_blake2b_hexdigest_impl((Blake2Object *)self);
 }
-/*[clinic end generated code: output=d1a351f44e20e273 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b286a0d1be8729b0 input=a9049054013a1b77]*/
