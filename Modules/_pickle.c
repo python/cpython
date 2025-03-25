@@ -2632,11 +2632,10 @@ raw_unicode_escape(PyObject *obj)
         if (ch >= 0x10000) {
             /* -1: subtract 1 preallocated byte */
             alloc += 10-1;
-            Py_ssize_t pos = p - (char*)PyBytesWriter_GetData(writer);
-            if (PyBytesWriter_Resize(writer, alloc) < 0) {
+            p = PyBytesWriter_ResizeAndUpdatePointer(writer, alloc, p);
+            if (p == NULL) {
                 goto error;
             }
-            p = (char*)PyBytesWriter_GetData(writer) + pos;
 
             *p++ = '\\';
             *p++ = 'U';
@@ -2656,11 +2655,10 @@ raw_unicode_escape(PyObject *obj)
         {
             /* -1: subtract 1 preallocated byte */
             alloc += 6-1;
-            Py_ssize_t pos = p - (char*)PyBytesWriter_GetData(writer);
-            if (PyBytesWriter_Resize(writer, alloc) < 0) {
+            p = PyBytesWriter_ResizeAndUpdatePointer(writer, alloc, p);
+            if (p == NULL) {
                 goto error;
             }
-            p = (char*)PyBytesWriter_GetData(writer) + pos;
 
             *p++ = '\\';
             *p++ = 'u';

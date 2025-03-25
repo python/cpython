@@ -222,11 +222,10 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
     do { \
         size_t len = (len_expr); \
         alloc += len; \
-        Py_ssize_t pos = s - (char*)PyBytesWriter_GetData(writer); \
-        if (PyBytesWriter_Resize(writer, alloc) < 0) { \
+        s = PyBytesWriter_ResizeAndUpdatePointer(writer, alloc, s); \
+        if (s == NULL) { \
             goto error; \
         } \
-        s = (char*)PyBytesWriter_GetData(writer) + pos; \
         memcpy(s, (str), len); \
         s += len; \
     } while (0)
@@ -2889,11 +2888,10 @@ _PyBytes_FromList(PyObject *x)
         }
 
         if (i >= size) {
-            Py_ssize_t pos = str - (char*)PyBytesWriter_GetData(writer);
-            if (PyBytesWriter_Resize(writer, size + 1) < 0) {
+            str = PyBytesWriter_ResizeAndUpdatePointer(writer, size + 1, str);
+            if (str == NULL) {
                 goto error;
             }
-            str = (char*)PyBytesWriter_GetData(writer) + pos;
             size = PyBytesWriter_GetAllocated(writer);
         }
         *str++ = (char) value;
@@ -3991,4 +3989,16 @@ PyBytesWriter_Format(PyBytesWriter *writer, const char *format, ...)
 
     Py_ssize_t size = buf - byteswriter_data(writer);
     return PyBytesWriter_Resize(writer, size);
+}
+
+
+void*
+PyBytesWriter_ResizeAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size,
+                                     void *data)
+{
+    Py_ssize_t pos = (char*)data - byteswriter_data(writer);
+    if (PyBytesWriter_Resize(writer, size) < 0) {
+        return NULL;
+    }
+    return byteswriter_data(writer) + pos;
 }
