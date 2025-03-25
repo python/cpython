@@ -562,8 +562,7 @@ pymain_run_stdin(PyConfig *config)
         int run = PyRun_AnyFileExFlags(stdin, "<stdin>", 0, &cf);
         return (run != 0);
     }
-    int run = pymain_run_module(L"_pyrepl", 0);
-    return run;
+    return pymain_run_module(L"_pyrepl", 0);
 }
 
 
