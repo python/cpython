@@ -10,7 +10,9 @@
 #include "pycore_pythread.h"      // _POSIX_SEMAPHORES
 
 #ifdef MS_WINDOWS
-#   define WIN32_LEAN_AND_MEAN
+#   ifndef WIN32_LEAN_AND_MEAN
+#       define WIN32_LEAN_AND_MEAN
+#   endif
 #   include <windows.h>
 #elif defined(HAVE_PTHREAD_H)
 #   include <pthread.h>

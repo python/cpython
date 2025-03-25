@@ -331,7 +331,7 @@ PyCPointerType_set_type_impl(PyTypeObject *self, PyTypeObject *cls,
                              PyObject *type);
 
 static PyObject *
-PyCPointerType_set_type(PyTypeObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+PyCPointerType_set_type(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -356,7 +356,7 @@ PyCPointerType_set_type(PyTypeObject *self, PyTypeObject *cls, PyObject *const *
         goto exit;
     }
     type = args[0];
-    return_value = PyCPointerType_set_type_impl(self, cls, type);
+    return_value = PyCPointerType_set_type_impl((PyTypeObject *)self, cls, type);
 
 exit:
     return return_value;
@@ -616,12 +616,12 @@ static int
 _ctypes_CFuncPtr_errcheck_set_impl(PyCFuncPtrObject *self, PyObject *value);
 
 static int
-_ctypes_CFuncPtr_errcheck_set(PyCFuncPtrObject *self, PyObject *value, void *Py_UNUSED(context))
+_ctypes_CFuncPtr_errcheck_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
 {
     int return_value;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _ctypes_CFuncPtr_errcheck_set_impl(self, value);
+    return_value = _ctypes_CFuncPtr_errcheck_set_impl((PyCFuncPtrObject *)self, value);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -648,12 +648,12 @@ static PyObject *
 _ctypes_CFuncPtr_errcheck_get_impl(PyCFuncPtrObject *self);
 
 static PyObject *
-_ctypes_CFuncPtr_errcheck_get(PyCFuncPtrObject *self, void *Py_UNUSED(context))
+_ctypes_CFuncPtr_errcheck_get(PyObject *self, void *Py_UNUSED(context))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _ctypes_CFuncPtr_errcheck_get_impl(self);
+    return_value = _ctypes_CFuncPtr_errcheck_get_impl((PyCFuncPtrObject *)self);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -673,12 +673,12 @@ static int
 _ctypes_CFuncPtr_restype_set_impl(PyCFuncPtrObject *self, PyObject *value);
 
 static int
-_ctypes_CFuncPtr_restype_set(PyCFuncPtrObject *self, PyObject *value, void *Py_UNUSED(context))
+_ctypes_CFuncPtr_restype_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
 {
     int return_value;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _ctypes_CFuncPtr_restype_set_impl(self, value);
+    return_value = _ctypes_CFuncPtr_restype_set_impl((PyCFuncPtrObject *)self, value);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -705,12 +705,12 @@ static PyObject *
 _ctypes_CFuncPtr_restype_get_impl(PyCFuncPtrObject *self);
 
 static PyObject *
-_ctypes_CFuncPtr_restype_get(PyCFuncPtrObject *self, void *Py_UNUSED(context))
+_ctypes_CFuncPtr_restype_get(PyObject *self, void *Py_UNUSED(context))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _ctypes_CFuncPtr_restype_get_impl(self);
+    return_value = _ctypes_CFuncPtr_restype_get_impl((PyCFuncPtrObject *)self);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -730,12 +730,12 @@ static int
 _ctypes_CFuncPtr_argtypes_set_impl(PyCFuncPtrObject *self, PyObject *value);
 
 static int
-_ctypes_CFuncPtr_argtypes_set(PyCFuncPtrObject *self, PyObject *value, void *Py_UNUSED(context))
+_ctypes_CFuncPtr_argtypes_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
 {
     int return_value;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _ctypes_CFuncPtr_argtypes_set_impl(self, value);
+    return_value = _ctypes_CFuncPtr_argtypes_set_impl((PyCFuncPtrObject *)self, value);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -762,12 +762,12 @@ static PyObject *
 _ctypes_CFuncPtr_argtypes_get_impl(PyCFuncPtrObject *self);
 
 static PyObject *
-_ctypes_CFuncPtr_argtypes_get(PyCFuncPtrObject *self, void *Py_UNUSED(context))
+_ctypes_CFuncPtr_argtypes_get(PyObject *self, void *Py_UNUSED(context))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = _ctypes_CFuncPtr_argtypes_get_impl(self);
+    return_value = _ctypes_CFuncPtr_argtypes_get_impl((PyCFuncPtrObject *)self);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -793,4 +793,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
-/*[clinic end generated code: output=cb3583522a2c5ce5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a18d87239b6fb8ca input=a9049054013a1b77]*/
