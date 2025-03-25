@@ -1,6 +1,9 @@
 #include "parts.h"
 #include "util.h"
 
+#define Py_BUILD_CORE
+#include "pycore_complexobject.h"
+
 
 static PyObject *
 complex_fromccomplex(PyObject *Py_UNUSED(module), PyObject *obj)
