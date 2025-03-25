@@ -23,8 +23,6 @@
 int
 PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
 {
-    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&src_info->mutex);
-    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&dst_info->mutex);
     Py_ssize_t size;
 
     ctype_clear_stginfo(dst_info);
@@ -36,6 +34,9 @@ PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
     dst_info->ffi_type_pointer.elements = NULL;
 
     memcpy(dst_info, src_info, sizeof(StgInfo));
+#ifdef Py_GIL_DISABLED
+    dst_info->mutex = (PyMutex){0};
+#endif
 
     Py_XINCREF(dst_info->proto);
     Py_XINCREF(dst_info->argtypes);

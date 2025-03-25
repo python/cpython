@@ -712,14 +712,16 @@ StructUnionType_init(PyObject *self, PyObject *args, PyObject *kwds, int isStruc
             return 0;
         }
         int ret = 0;
-        STGINFO_LOCK2(info, baseinfo);
+        STGINFO_LOCK(baseinfo);
         /* copy base info */
         ret = PyCStgInfo_clone(info, baseinfo);
         if (ret >= 0) {
-            stginfo_clear_dict_final_lock_held(info);
-            stginfo_set_dict_final_lock_held(baseinfo);
+            // clear the 'final' bit in the subclass info
+            // safe to modify without atomics as it is not exposed to other threads
+            info->dict_final = 0;
+            stginfo_set_dict_final_lock_held(baseinfo); /* set the 'final' flag in the baseclass info */
         }
-        STGINFO_UNLOCK2();
+        STGINFO_UNLOCK();
         return ret;
     }
     return 0;
