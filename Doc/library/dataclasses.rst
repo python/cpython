@@ -270,10 +270,11 @@ Module contents
      string returned by the generated :meth:`~object.__repr__` method.
 
    - *hash*: This can be a bool or ``None``.  If true, this field is
-     included in the generated :meth:`~object.__hash__` method.  If ``None`` (the
-     default), use the value of *compare*: this would normally be
-     the expected behavior.  A field should be considered in the hash
-     if it's used for comparisons.  Setting this value to anything
+     included in the generated :meth:`~object.__hash__` method.  If false,
+     this field is excluded from the generated :meth:`~object.__hash__`.
+     If ``None`` (the default), use the value of *compare*: this would
+     normally be the expected behavior, since a field should be included
+     in the hash if it's used for comparisons.  Setting this value to anything
      other than ``None`` is discouraged.
 
      One possible reason to set ``hash=False`` but ``compare=True``

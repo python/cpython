@@ -4,6 +4,33 @@ preserve
 
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
+PyDoc_STRVAR(_testcapi_pyfile_newstdprinter__doc__,
+"pyfile_newstdprinter($module, fd, /)\n"
+"--\n"
+"\n");
+
+#define _TESTCAPI_PYFILE_NEWSTDPRINTER_METHODDEF    \
+    {"pyfile_newstdprinter", (PyCFunction)_testcapi_pyfile_newstdprinter, METH_O, _testcapi_pyfile_newstdprinter__doc__},
+
+static PyObject *
+_testcapi_pyfile_newstdprinter_impl(PyObject *module, int fd);
+
+static PyObject *
+_testcapi_pyfile_newstdprinter(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    int fd;
+
+    fd = PyLong_AsInt(arg);
+    if (fd == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _testcapi_pyfile_newstdprinter_impl(module, fd);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_testcapi_py_fopen__doc__,
 "py_fopen($module, path, mode, /)\n"
 "--\n"
@@ -34,4 +61,4 @@ _testcapi_py_fopen(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c4dc92400306c3eb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e943bbd7f181d079 input=a9049054013a1b77]*/

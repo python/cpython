@@ -984,6 +984,19 @@ PyDoc_STRVAR(_elementtree_TreeBuilder_data__doc__,
 #define _ELEMENTTREE_TREEBUILDER_DATA_METHODDEF    \
     {"data", (PyCFunction)_elementtree_TreeBuilder_data, METH_O, _elementtree_TreeBuilder_data__doc__},
 
+static PyObject *
+_elementtree_TreeBuilder_data_impl(TreeBuilderObject *self, PyObject *data);
+
+static PyObject *
+_elementtree_TreeBuilder_data(PyObject *self, PyObject *data)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _elementtree_TreeBuilder_data_impl((TreeBuilderObject *)self, data);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_elementtree_TreeBuilder_end__doc__,
 "end($self, tag, /)\n"
 "--\n"
@@ -992,6 +1005,19 @@ PyDoc_STRVAR(_elementtree_TreeBuilder_end__doc__,
 #define _ELEMENTTREE_TREEBUILDER_END_METHODDEF    \
     {"end", (PyCFunction)_elementtree_TreeBuilder_end, METH_O, _elementtree_TreeBuilder_end__doc__},
 
+static PyObject *
+_elementtree_TreeBuilder_end_impl(TreeBuilderObject *self, PyObject *tag);
+
+static PyObject *
+_elementtree_TreeBuilder_end(PyObject *self, PyObject *tag)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _elementtree_TreeBuilder_end_impl((TreeBuilderObject *)self, tag);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_elementtree_TreeBuilder_comment__doc__,
 "comment($self, text, /)\n"
 "--\n"
@@ -999,6 +1025,20 @@ PyDoc_STRVAR(_elementtree_TreeBuilder_comment__doc__,
 
 #define _ELEMENTTREE_TREEBUILDER_COMMENT_METHODDEF    \
     {"comment", (PyCFunction)_elementtree_TreeBuilder_comment, METH_O, _elementtree_TreeBuilder_comment__doc__},
+
+static PyObject *
+_elementtree_TreeBuilder_comment_impl(TreeBuilderObject *self,
+                                      PyObject *text);
+
+static PyObject *
+_elementtree_TreeBuilder_comment(PyObject *self, PyObject *text)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _elementtree_TreeBuilder_comment_impl((TreeBuilderObject *)self, text);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_elementtree_TreeBuilder_pi__doc__,
 "pi($self, target, text=None, /)\n"
@@ -1206,6 +1246,19 @@ PyDoc_STRVAR(_elementtree_XMLParser_feed__doc__,
 #define _ELEMENTTREE_XMLPARSER_FEED_METHODDEF    \
     {"feed", (PyCFunction)_elementtree_XMLParser_feed, METH_O, _elementtree_XMLParser_feed__doc__},
 
+static PyObject *
+_elementtree_XMLParser_feed_impl(XMLParserObject *self, PyObject *data);
+
+static PyObject *
+_elementtree_XMLParser_feed(PyObject *self, PyObject *data)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _elementtree_XMLParser_feed_impl((XMLParserObject *)self, data);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_elementtree_XMLParser__parse_whole__doc__,
 "_parse_whole($self, file, /)\n"
 "--\n"
@@ -1213,6 +1266,20 @@ PyDoc_STRVAR(_elementtree_XMLParser__parse_whole__doc__,
 
 #define _ELEMENTTREE_XMLPARSER__PARSE_WHOLE_METHODDEF    \
     {"_parse_whole", (PyCFunction)_elementtree_XMLParser__parse_whole, METH_O, _elementtree_XMLParser__parse_whole__doc__},
+
+static PyObject *
+_elementtree_XMLParser__parse_whole_impl(XMLParserObject *self,
+                                         PyObject *file);
+
+static PyObject *
+_elementtree_XMLParser__parse_whole(PyObject *self, PyObject *file)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _elementtree_XMLParser__parse_whole_impl((XMLParserObject *)self, file);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_elementtree_XMLParser__setevents__doc__,
 "_setevents($self, events_queue, events_to_report=None, /)\n"
@@ -1248,4 +1315,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e5c758958f14f102 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0eed58350c3c1832 input=a9049054013a1b77]*/
