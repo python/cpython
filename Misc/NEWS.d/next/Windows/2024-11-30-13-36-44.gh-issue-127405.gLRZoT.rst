@@ -1,1 +1,0 @@
-Set :data:`sys.abiflags` on Windows. Patch by Xuehai Pan.
