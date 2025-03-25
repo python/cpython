@@ -940,11 +940,11 @@ _PyAST_Optimize(mod_ty mod, PyArena *arena, PyObject *filename, int optimize,
                 int ff_features, int syntax_check_only)
 {
     _PyASTOptimizeState state;
-    memset(&state, 0, sizeof(_PyASTOptimizeState));
     state.filename = filename;
     state.optimize = optimize;
     state.ff_features = ff_features;
     state.syntax_check_only = syntax_check_only;
+    state.cf_finally_used = 0;
     if (_Py_CArray_Init(&state.cf_finally, sizeof(ControlFlowInFinallyContext), 20) < 0) {
         return -1;
     }
