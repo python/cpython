@@ -376,7 +376,7 @@ typedef struct CFieldObject {
 
 typedef struct {
 #ifdef Py_GIL_DISABLED
-    PyMutex mutex;
+    PyMutex mutex;              /* critical section mutex */
 #endif
     int initialized;
     Py_ssize_t size;            /* number of bytes */
@@ -405,6 +405,23 @@ typedef struct {
 /*      Py_ssize_t *suboffsets; */ /* unused in ctypes */
 } StgInfo;
 
+/*
+    In free-threading, concurrent mutations to StgInfo is not thread safe.
+    Therefore to make it thread safe, when modifying StgInfo, `STGINFO_LOCK` and
+    `STGINFO_UNLOCK` macros are used to acquire critical section of the StgInfo.
+    The critical section is write only and is acquired when modifying the
+    StgInfo fields and while setting the `dict_final` bit. Once the `dict_final`
+    is set, StgInfo is treated as read only and no further modifications are
+    allowed. This allows to avoid acquiring the critical section for most
+    read operations when `dict_final` is set (general case).
+
+    It is important to set all the fields before setting the `dict_final` bit
+    in functions like `PyCStructUnionType_update_stginfo` because the store of
+    `dict_final` uses sequential consistency memory ordering. This ensures that
+    all the other fields are visible to other threads before the `dict_final` bit
+    is set thus allowing for lock free reads when `dict_final` is set.
+
+*/
 
 #define STGINFO_LOCK(stginfo)   Py_BEGIN_CRITICAL_SECTION_MUT(&(stginfo)->mutex)
 #define STGINFO_LOCK2(stginfo1, stginfo2)   Py_BEGIN_CRITICAL_SECTION2_MUT(&(stginfo1)->mutex, &(stginfo2)->mutex)
@@ -424,10 +441,12 @@ stginfo_set_dict_final_lock_held(StgInfo *info)
     FT_ATOMIC_STORE_INT(info->dict_final, 1);
 }
 
+
+// Set the `dict_final` bit in StgInfo. It checks if the bit is already set
+// and in that avoids acquiring the critical section (general case).
 static inline void
 stginfo_set_dict_final(StgInfo *info)
 {
-    // avoid acquiring the lock if final is already set
     if (stginfo_get_dict_final(info) == 1) {
         return;
     }
