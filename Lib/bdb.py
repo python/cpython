@@ -342,7 +342,12 @@ class Bdb:
             self.botframe = frame.f_back # (CT) Note that this may also be None!
             return self.trace_dispatch
         if not (self.stop_here(frame) or self.break_anywhere(frame)):
-            # No need to trace this function
+            # We already know there's no breakpoint in this function
+            # If it's a next/until/return command, we don't need any CALL event
+            # and we don't need to set the f_trace on any new frame.
+            # If it's a step command, it must either hit stop_here, or skip the
+            # whole module. Either way, we don't need the CALL event here.
+            self.disable_current_event()
             return # None
         # Ignore call events in generator except when stepping.
         if self.stopframe and frame.f_code.co_flags & GENERATOR_AND_COROUTINE_FLAGS:
