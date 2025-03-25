@@ -5120,7 +5120,6 @@ PyCArrayType_from_ctype(ctypes_state *st, PyObject *itemtype, Py_ssize_t length)
     PyObject *len;
 
     assert(st->array_cache != NULL);
-
     len = PyLong_FromSsize_t(length);
     if (len == NULL)
         return NULL;
