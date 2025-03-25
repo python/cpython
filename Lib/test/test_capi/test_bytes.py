@@ -356,11 +356,16 @@ class PyBytesWriterTest(unittest.TestCase):
         writer.resize(len(b'number=123456'), b'456')
         self.assertEqual(writer.finish(), b'number=123456')
 
-    # def test_format(self):
-    #     # Test PyBytesWriter_Format()
-    #     writer = self.create_writer()
-    #     writer.format_i(123456)
-    #     self.assertEqual(writer.finish(), b'123456')
+    def test_format_i(self):
+        # Test PyBytesWriter_Format()
+        writer = self.create_writer()
+        writer.format_i(b'x=%i', 123456)
+        self.assertEqual(writer.finish(), b'x=123456')
+
+        writer = self.create_writer()
+        writer.format_i(b'x=%i, ', 123)
+        writer.format_i(b'y=%i', 456)
+        self.assertEqual(writer.finish(), b'x=123, y=456')
 
 
 if __name__ == "__main__":

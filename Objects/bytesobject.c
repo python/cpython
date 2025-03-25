@@ -196,8 +196,10 @@ PyBytes_FromString(const char *str)
     return (PyObject *) op;
 }
 
-PyObject *
-PyBytes_FromFormatV(const char *format, va_list vargs)
+
+static char*
+bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
+                 const char *format, va_list vargs)
 {
     const char *f;
     const char *p;
@@ -213,12 +215,8 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
        "0xffffffffffffffff\0" (19 bytes). */
     char buffer[21];
 
-    Py_ssize_t alloc = strlen(format);
-    PyBytesWriter *writer = PyBytesWriter_Create(alloc);
-    if (writer == NULL) {
-        return NULL;
-    }
-    char *s = PyBytesWriter_GetData(writer);
+    char *s = PyBytesWriter_GetData(writer) + writer_pos;
+    Py_ssize_t alloc = PyBytesWriter_GetSize(writer);
 
 #define WRITE_BYTES_LEN(str, len_expr) \
     do { \
@@ -366,19 +364,38 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
         default:
             /* invalid format string: copy unformatted string and exit */
             WRITE_BYTES(p);
-            return PyBytesWriter_FinishWithEndPointer(writer, s);
+            return s;
         }
     }
 
 #undef WRITE_BYTES
 #undef WRITE_BYTES_LEN
 
-    return PyBytesWriter_FinishWithEndPointer(writer, s);
+    return s;
 
  error:
-    PyBytesWriter_Discard(writer);
     return NULL;
 }
+
+
+PyObject *
+PyBytes_FromFormatV(const char *format, va_list vargs)
+{
+    Py_ssize_t alloc = strlen(format);
+    PyBytesWriter *writer = PyBytesWriter_Create(alloc);
+    if (writer == NULL) {
+        return NULL;
+    }
+
+    char *s = bytes_fromformat(writer, 0, format, vargs);
+    if (s == NULL) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+
+    return PyBytesWriter_FinishWithEndPointer(writer, s);
+}
+
 
 PyObject *
 PyBytes_FromFormat(const char *format, ...)
@@ -391,6 +408,7 @@ PyBytes_FromFormat(const char *format, ...)
     va_end(vargs);
     return ret;
 }
+
 
 /* Helpers for formatstring */
 
@@ -3948,4 +3966,29 @@ PyBytesWriter_WriteBytes(PyBytesWriter *writer,
     char *buf = byteswriter_data(writer);
     memcpy(buf + pos, bytes, size);
     return 0;
+}
+
+
+int
+PyBytesWriter_Format(PyBytesWriter *writer, const char *format, ...)
+{
+    Py_ssize_t pos = writer->size;
+    Py_ssize_t format_len = strlen(format);
+    if (format_len > PY_SSIZE_T_MAX - pos) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    Py_ssize_t alloc = pos + format_len;
+
+    if (PyBytesWriter_Resize(writer, alloc) < 0) {
+        return -1;
+    }
+
+    va_list vargs;
+    va_start(vargs, format);
+    char *buf = bytes_fromformat(writer, pos, format, vargs);
+    va_end(vargs);
+
+    Py_ssize_t size = buf - byteswriter_data(writer);
+    return PyBytesWriter_Resize(writer, size);
 }
