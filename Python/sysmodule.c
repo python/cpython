@@ -75,6 +75,13 @@ module sys
 #include "clinic/sysmodule.c.h"
 
 
+#define WarnIncomingSysAbiflagsChange()                       \
+    PyErr_WarnEx(PyExc_DeprecationWarning,                    \
+        "sys.abiflags will be set to a meaningful value "     \
+        "on all platforms in Python 3.16 instead of absent",  \
+        /*stack_level=*/1)
+
+
 PyObject *
 _PySys_GetRequiredAttr(PyObject *name)
 {
@@ -94,10 +101,7 @@ _PySys_GetRequiredAttr(PyObject *name)
     if (PyDict_GetItemRef(sysdict, name, &value) == 0) {
 #ifndef ABIFLAGS
             if (_PyUnicode_EqualToASCIIString(name, "abiflags")) {
-                if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                                 "sys.abiflags will be set to a meaningful value "
-                                 "on all platforms in Python 3.16 instead of absent",
-                                 /*stack_level=*/1) < 0) {
+                if (WarnIncomingSysAbiflagsChange() < 0) {
                     return NULL;
                 }
             }
@@ -120,10 +124,7 @@ _PySys_GetRequiredAttrString(const char *name)
     if (PyDict_GetItemStringRef(sysdict, name, &value) == 0) {
 #ifndef ABIFLAGS
             if (strcmp(name, "abiflags") == 0) {
-                if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                                 "sys.abiflags will be set to a meaningful value "
-                                 "on all platforms in Python 3.16 instead of absent",
-                                 /*stack_level=*/1) < 0) {
+                if (WarnIncomingSysAbiflagsChange() < 0) {
                     return NULL;
                 }
             }
@@ -152,10 +153,7 @@ _PySys_GetOptionalAttr(PyObject *name, PyObject **value)
     int ret = PyDict_GetItemRef(sysdict, name, value);
 #ifndef ABIFLAGS
     if (ret == 0 && _PyUnicode_EqualToASCIIString(name, "abiflags")) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "sys.abiflags will be set to a meaningful value "
-                         "on all platforms in Python 3.16 instead of absent",
-                         /*stack_level=*/1) < 0) {
+        if (WarnIncomingSysAbiflagsChange() < 0) {
             return -1;
         }
     }
@@ -175,10 +173,7 @@ _PySys_GetOptionalAttrString(const char *name, PyObject **value)
     int ret = PyDict_GetItemStringRef(sysdict, name, value);
 #ifndef ABIFLAGS
     if (ret == 0 && strcmp(name, "abiflags") == 0) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "sys.abiflags will be set to a meaningful value "
-                         "on all platforms in Python 3.16 instead of absent",
-                         /*stack_level=*/1) < 0) {
+        if (WarnIncomingSysAbiflagsChange() < 0) {
             return -1;
         }
     }
@@ -206,10 +201,7 @@ PySys_GetObject(const char *name)
     Py_XDECREF(value);  // return a borrowed reference
 #ifndef ABIFLAGS
     if (ret == 0 && strcmp(name, "abiflags") == 0) {
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "sys.abiflags will be set to a meaningful value "
-                         "on all platforms in Python 3.16 instead of absent",
-                         /*stack_level=*/1) < 0) {
+        if (WarnIncomingSysAbiflagsChange() < 0) {
             return NULL;
         }
     }
