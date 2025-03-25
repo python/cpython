@@ -702,7 +702,7 @@ class SysModuleTest(unittest.TestCase):
             absent = object()
             with self.assertWarnsRegex(
                 DeprecationWarning,
-                r'sys\.abiflags is going to be set.*on all platforms',
+                r'sys\.abiflags will be set.*on all platforms',
             ):
                 self.assertIs(getattr(sys, 'abiflags', absent), absent)
 
