@@ -38,6 +38,17 @@ always available. Unless explicitly noted otherwise, all variables are read-only
          <python-input-2>:1: DeprecationWarning: sys.abiflags will be set to a meaningful value on all platforms ...
          False
 
+      To suppress this warning, use the :mod:`warnings` module:
+
+      .. code-block:: python
+
+         import warnings
+
+         with warnings.catch_warnings():
+             # ignore DeprecationWarning on sys.abiflags change
+             warnings.simplefilter('ignore', DeprecationWarning)
+             abiflags = getattr(sys, 'abiflags', '')
+
       Due to historical reasons, :data:`sys.abiflags` is not covered by
       :pep:`3149` on Windows. Now we have multiple builds, such as the
       :term:`free-threaded <free threading>` build, that provide different ABIs.
@@ -48,6 +59,18 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       Windows in Python 3.16. This means the :data:`sys.abiflags` member will
       always be available on all platforms starting from Python 3.16.
 
+      The following table shows how to migrate from the old code to the new code
+      without changing the behavior:
+
+      +---------------------------------------+---------------------------------------------------------------------+
+      | Code Prior to Python 3.14             | Code in Python 3.14-3.15                                            |
+      +=======================================+=====================================================================+
+      | ``sys.abiflags``                      | ``sys.abiflags``                                                    |
+      +---------------------------------------+---------------------------------------------------------------------+
+      | ``getattr(sys, 'abiflags', default)`` | ``sys.abiflags if not sys.platform.startswith('win') else default`` |
+      +---------------------------------------+---------------------------------------------------------------------+
+      | ``hasattr(sys, 'abiflags')``          | ``not sys.platform.startswith('win')``                              |
+      +---------------------------------------+---------------------------------------------------------------------+
 
 .. function:: addaudithook(hook)
 
