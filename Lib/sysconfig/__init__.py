@@ -496,6 +496,8 @@ def get_path(name, scheme=get_default_scheme(), vars=None, expand=True):
 
 
 def _init_config_vars():
+    import warnings
+
     global _CONFIG_VARS
     _CONFIG_VARS = {}
 
@@ -505,7 +507,9 @@ def _init_config_vars():
     base_exec_prefix = _BASE_EXEC_PREFIX
 
     try:
-        abiflags = sys.abiflags
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            abiflags = sys.abiflags
     except AttributeError:
         abiflags = ''
 

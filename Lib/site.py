@@ -75,6 +75,7 @@ import builtins
 import _sitebuiltins
 import io
 import stat
+import warnings
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -318,7 +319,10 @@ def _getuserbase():
 # Same to sysconfig.get_path('purelib', os.name+'_user')
 def _get_path(userbase):
     version = sys.version_info
-    if hasattr(sys, 'abiflags') and 't' in sys.abiflags:
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', DeprecationWarning)
+        abiflags = getattr(sys, 'abiflags', '')
+    if 't' in abiflags:
         abi_thread = 't'
     else:
         abi_thread = ''
@@ -400,7 +404,10 @@ def getsitepackages(prefixes=None):
 
         implementation = _get_implementation().lower()
         ver = sys.version_info
-        if hasattr(sys, 'abiflags') and 't' in sys.abiflags:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            abiflags = getattr(sys, 'abiflags', '')
+        if 't' in abiflags:
             abi_thread = 't'
         else:
             abi_thread = ''
