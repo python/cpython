@@ -172,9 +172,7 @@ arraydata_free(arraydata *data, bool use_qsbr)
 {
 #ifdef Py_GIL_DISABLED
     if (use_qsbr) {
-        if (data != NULL) {
-            _PyMem_FreeDelayed(data);
-        }
+        _PyMem_FreeDelayed(data);
     }
     else {
         PyMem_Free(data);
