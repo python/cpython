@@ -574,14 +574,16 @@ _PyType_GetMRO(PyTypeObject *self)
 static inline void
 set_tp_mro(PyTypeObject *self, PyObject *mro, int initial)
 {
-    assert(PyTuple_CheckExact(mro));
-    if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
-        // XXX tp_mro can probably be statically allocated for each
-        // static builtin type.
-        assert(initial);
-        assert(self->tp_mro == NULL);
-        /* Other checks are done via set_tp_bases. */
-        _Py_SetImmortal(mro);
+    if (mro != NULL) {
+        assert(PyTuple_CheckExact(mro));
+        if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
+            // XXX tp_mro can probably be statically allocated for each
+            // static builtin type.
+            assert(initial);
+            assert(self->tp_mro == NULL);
+            /* Other checks are done via set_tp_bases. */
+            _Py_SetImmortal(mro);
+        }
     }
     self->tp_mro = mro;
 }
