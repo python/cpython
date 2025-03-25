@@ -698,6 +698,13 @@ class SysModuleTest(unittest.TestCase):
         self.assertIn(sys.float_repr_style, ('short', 'legacy'))
         if not sys.platform.startswith('win'):
             self.assertIsInstance(sys.abiflags, str)
+        else:
+            absent = object()
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                r'sys\.abiflags is going to be set.*on all platforms',
+            ):
+                self.assertIs(getattr(sys, 'abiflags', absent), absent)
 
     def test_thread_info(self):
         info = sys.thread_info

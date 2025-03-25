@@ -92,6 +92,16 @@ _PySys_GetRequiredAttr(PyObject *name)
     }
     PyObject *value;
     if (PyDict_GetItemRef(sysdict, name, &value) == 0) {
+#ifndef ABIFLAGS
+            if (_PyUnicode_EqualToASCIIString(name, "abiflags")) {
+                if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                    "sys.abiflags will be set to a meaningful value "
+                    "on all platforms in Python 3.16 instead of absent",
+                    /*stack_level=*/1) < 0) {
+                    return NULL;
+                }
+            }
+#endif
         PyErr_Format(PyExc_RuntimeError, "lost sys.%U", name);
     }
     return value;
@@ -108,6 +118,16 @@ _PySys_GetRequiredAttrString(const char *name)
     }
     PyObject *value;
     if (PyDict_GetItemStringRef(sysdict, name, &value) == 0) {
+#ifndef ABIFLAGS
+            if (strcmp(name, "abiflags") == 0) {
+                if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                    "sys.abiflags will be set to a meaningful value "
+                    "on all platforms in Python 3.16 instead of absent",
+                    /*stack_level=*/1) < 0) {
+                    return NULL;
+                }
+            }
+#endif
         PyErr_Format(PyExc_RuntimeError, "lost sys.%s", name);
     }
     return value;
@@ -129,7 +149,18 @@ _PySys_GetOptionalAttr(PyObject *name, PyObject **value)
         *value = NULL;
         return 0;
     }
-    return PyDict_GetItemRef(sysdict, name, value);
+    int ret = PyDict_GetItemRef(sysdict, name, value);
+#ifndef ABIFLAGS
+    if (ret == 0 && _PyUnicode_EqualToASCIIString(name, "abiflags")) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "sys.abiflags will be set to a meaningful value "
+            "on all platforms in Python 3.16 instead of absent",
+            /*stack_level=*/1) < 0) {
+            return -1;
+        }
+    }
+#endif
+    return ret;
 }
 
 int
@@ -141,7 +172,18 @@ _PySys_GetOptionalAttrString(const char *name, PyObject **value)
         *value = NULL;
         return 0;
     }
-    return PyDict_GetItemStringRef(sysdict, name, value);
+    int ret = PyDict_GetItemStringRef(sysdict, name, value);
+#ifndef ABIFLAGS
+    if (ret == 0 && strcmp(name, "abiflags") == 0) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "sys.abiflags will be set to a meaningful value "
+            "on all platforms in Python 3.16 instead of absent",
+            /*stack_level=*/1) < 0) {
+            return -1;
+        }
+    }
+#endif
+    return ret;
 }
 
 PyObject *
@@ -154,7 +196,7 @@ PySys_GetObject(const char *name)
     }
     PyObject *exc = _PyErr_GetRaisedException(tstate);
     PyObject *value;
-    (void) PyDict_GetItemStringRef(sysdict, name, &value);
+    int ret = PyDict_GetItemStringRef(sysdict, name, &value);
     /* XXX Suppress a new exception if it was raised and restore
      * the old one. */
     if (_PyErr_Occurred(tstate)) {
@@ -162,6 +204,16 @@ PySys_GetObject(const char *name)
     }
     _PyErr_SetRaisedException(tstate, exc);
     Py_XDECREF(value);  // return a borrowed reference
+#ifndef ABIFLAGS
+    if (ret == 0 && strcmp(name, "abiflags") == 0) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "sys.abiflags will be set to a meaningful value "
+            "on all platforms in Python 3.16 instead of absent",
+            /*stack_level=*/1) < 0) {
+            return NULL;
+        }
+    }
+#endif
     return value;
 }
 
