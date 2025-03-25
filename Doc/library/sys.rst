@@ -72,6 +72,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       | ``hasattr(sys, 'abiflags')``          | ``not sys.platform.startswith('win')``                              |
       +---------------------------------------+---------------------------------------------------------------------+
 
+
 .. function:: addaudithook(hook)
 
    Append the callable *hook* to the list of active auditing hooks for the

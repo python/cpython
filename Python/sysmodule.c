@@ -966,6 +966,7 @@ sys_exit_impl(PyObject *module, PyObject *status)
     return NULL;
 }
 
+
 // This function is used to warn about the future change of sys.abiflags
 // from absent to a meaningful value on all platforms.
 // It can be removed when the change is made.
