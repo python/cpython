@@ -2415,6 +2415,7 @@ PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
         goto done;
     }
     visit_generation(callback, arg, &gcstate->old[1]);
+    visit_generation(callback, arg, &gcstate->permanent_generation);
 done:
     gcstate->enabled = origenstate;
 }
