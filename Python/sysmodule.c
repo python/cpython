@@ -976,6 +976,28 @@ sys_exit_impl(PyObject *module, PyObject *status)
 
 
 static PyObject *
+sys___getattr__(PyObject *module, PyObject *name)
+{
+    PyObject *value = NULL;
+    if (_PySys_GetOptionalAttr(name, &value) < 0) {
+        return NULL;
+    }
+    if (value == NULL) {
+        PyErr_Format(PyExc_AttributeError,
+                     "module 'sys' has no attribute '%U'", name);
+    }
+    return value;
+}
+
+PyDoc_STRVAR(__getattr___doc,
+"__getattr__($module, name, /)\n"
+"--\n"
+"\n"
+"Get a sys attribute by name.\n"
+);
+
+
+static PyObject *
 get_utf8_unicode(void)
 {
     _Py_DECLARE_STR(utf_8, "utf-8");
@@ -2705,6 +2727,8 @@ static PyMethodDef sys_methods[] = {
     SYS_EXC_INFO_METHODDEF
     SYS_EXCEPTHOOK_METHODDEF
     SYS_EXIT_METHODDEF
+    {"__getattr__", _PyCFunction_CAST(sys___getattr__),
+     METH_O, __getattr___doc},
     SYS_GETDEFAULTENCODING_METHODDEF
     SYS_GETDLOPENFLAGS_METHODDEF
     SYS_GETALLOCATEDBLOCKS_METHODDEF
