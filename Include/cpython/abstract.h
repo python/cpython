@@ -86,15 +86,6 @@ PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
 #define PySequence_ITEM(o, i)\
     ( Py_TYPE(o)->tp_as_sequence->sq_item((o), (i)) )
 
-/* Return the sequence 'o' as a list, unless it's already a tuple or list.
-
-   Use PySequence_Fast_GET_ITEM to access the members of this list, and
-   PySequence_Fast_GET_SIZE to get its length.
-
-   Returns NULL on failure.  If the object does not support iteration, raises a
-   TypeError exception with 'm' as the message text. */
-PyAPI_FUNC(PyObject *) PySequence_Fast(PyObject *o, const char* m);
-
 /* Return the size of the sequence 'o', assuming that 'o' was returned by
    PySequence_Fast and is not NULL. */
 #define PySequence_Fast_GET_SIZE(o) \

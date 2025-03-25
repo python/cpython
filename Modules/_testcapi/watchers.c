@@ -6,9 +6,9 @@
 #include "clinic/watchers.c.h"
 
 #define Py_BUILD_CORE
-#include "pycore_function.h"  // FUNC_MAX_WATCHERS
-#include "pycore_code.h"  // CODE_MAX_WATCHERS
-#include "pycore_context.h" // CONTEXT_MAX_WATCHERS
+#include "pycore_function.h"      // FUNC_MAX_WATCHERS
+#include "pycore_interp_structs.h" // CODE_MAX_WATCHERS
+#include "pycore_context.h"       // CONTEXT_MAX_WATCHERS
 
 /*[clinic input]
 module _testcapi

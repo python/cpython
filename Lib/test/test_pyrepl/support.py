@@ -1,4 +1,3 @@
-import os
 from code import InteractiveConsole
 from functools import partial
 from typing import Iterable
@@ -7,14 +6,24 @@ from unittest.mock import MagicMock
 from _pyrepl.console import Console, Event
 from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
 from _pyrepl.simple_interact import _strip_final_indent
+from _pyrepl.utils import unbracket, ANSI_ESCAPE_SEQUENCE
+
+
+class ScreenEqualMixin:
+    def assert_screen_equal(
+        self, reader: ReadlineAlikeReader, expected: str, clean: bool = False
+    ):
+        actual = clean_screen(reader) if clean else reader.screen
+        expected = expected.split("\n")
+        self.assertListEqual(actual, expected)
 
 
 def multiline_input(reader: ReadlineAlikeReader, namespace: dict | None = None):
     saved = reader.more_lines
     try:
         reader.more_lines = partial(more_lines, namespace=namespace)
-        reader.ps1 = reader.ps2 = ">>>"
-        reader.ps3 = reader.ps4 = "..."
+        reader.ps1 = reader.ps2 = ">>> "
+        reader.ps3 = reader.ps4 = "... "
         return reader.readline()
     finally:
         reader.more_lines = saved
@@ -39,18 +48,22 @@ def code_to_events(code: str):
         yield Event(evt="key", data=c, raw=bytearray(c.encode("utf-8")))
 
 
-def clean_screen(screen: Iterable[str]):
+def clean_screen(reader: ReadlineAlikeReader) -> list[str]:
     """Cleans color and console characters out of a screen output.
 
     This is useful for screen testing, it increases the test readability since
     it strips out all the unreadable side of the screen.
     """
     output = []
-    for line in screen:
-        if line.startswith(">>>") or line.startswith("..."):
-            line = line[3:]
+    for line in reader.screen:
+        line = unbracket(line, including_content=True)
+        line = ANSI_ESCAPE_SEQUENCE.sub("", line)
+        for prefix in (reader.ps1, reader.ps2, reader.ps3, reader.ps4):
+            if line.startswith(prefix):
+                line = line[len(prefix):]
+                break
         output.append(line)
-    return "\n".join(output).strip()
+    return output
 
 
 def prepare_reader(console: Console, **kwargs):
@@ -99,6 +112,9 @@ handle_events_narrow_console = partial(
     handle_all_events,
     prepare_console=partial(prepare_console, width=10),
 )
+
+reader_no_colors = partial(prepare_reader, can_colorize=False)
+reader_force_colors = partial(prepare_reader, can_colorize=True)
 
 
 class FakeConsole(Console):

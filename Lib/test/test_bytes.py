@@ -5,13 +5,13 @@ the latter should be modernized).
 """
 
 import array
+import operator
 import os
 import re
 import sys
 import copy
 import functools
 import pickle
-import sysconfig
 import tempfile
 import textwrap
 import threading
@@ -450,13 +450,34 @@ class BaseBytesTest:
 
         # check that ASCII whitespace is ignored
         self.assertEqual(self.type2test.fromhex(' 1A\n2B\t30\v'), b)
+        self.assertEqual(self.type2test.fromhex(b' 1A\n2B\t30\v'), b)
         for c in "\x09\x0A\x0B\x0C\x0D\x20":
             self.assertEqual(self.type2test.fromhex(c), self.type2test())
         for c in "\x1C\x1D\x1E\x1F\x85\xa0\u2000\u2002\u2028":
             self.assertRaises(ValueError, self.type2test.fromhex, c)
 
+        # Check that we can parse bytes and bytearray
+        tests = [
+            ("bytes", bytes),
+            ("bytearray", bytearray),
+            ("memoryview", memoryview),
+            ("array.array", lambda bs: array.array('B', bs)),
+        ]
+        for name, factory in tests:
+            with self.subTest(name=name):
+                self.assertEqual(self.type2test.fromhex(factory(b' 1A 2B 30 ')), b)
+
+        # Invalid bytes are rejected
+        for u8 in b"\0\x1C\x1D\x1E\x1F\x85\xa0":
+            b = bytes([30, 31, u8])
+            self.assertRaises(ValueError, self.type2test.fromhex, b)
+
         self.assertEqual(self.type2test.fromhex('0000'), b'\0\0')
-        self.assertRaises(TypeError, self.type2test.fromhex, b'1B')
+        with self.assertRaisesRegex(
+            TypeError,
+            r'fromhex\(\) argument must be str or bytes-like, not tuple',
+        ):
+            self.type2test.fromhex(())
         self.assertRaises(ValueError, self.type2test.fromhex, 'a')
         self.assertRaises(ValueError, self.type2test.fromhex, 'rt')
         self.assertRaises(ValueError, self.type2test.fromhex, '1a b cd')
@@ -750,6 +771,9 @@ class BaseBytesTest:
         check(b'%i %*.*b', (10, 5, 3, b'abc',), b'10   abc')
         check(b'%i%b %*.*b', (10, b'3', 5, 3, b'abc',), b'103   abc')
         check(b'%c', b'a', b'a')
+
+        self.assertRaisesRegex(TypeError, '%i format: a real number is required, not complex', operator.mod, '%i', 2j)
+        self.assertRaisesRegex(TypeError, '%d format: a real number is required, not complex', operator.mod, '%d', 2j)
 
     def test_imod(self):
         b = self.type2test(b'hello, %b!')

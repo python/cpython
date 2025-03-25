@@ -1,7 +1,6 @@
 # Test the internal _wmi module on Windows
 # This is used by the platform module, and potentially others
 
-import time
 import unittest
 from test import support
 from test.support import import_helper

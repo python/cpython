@@ -1,0 +1,3 @@
+Deprecate the :mod:`!nturl2path` module. Call
+:func:`urllib.request.url2pathname` and :func:`~urllib.request.pathname2url`
+instead.

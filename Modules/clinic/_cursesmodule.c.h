@@ -1479,6 +1479,19 @@ PyDoc_STRVAR(_curses_window_putwin__doc__,
 #define _CURSES_WINDOW_PUTWIN_METHODDEF    \
     {"putwin", (PyCFunction)_curses_window_putwin, METH_O, _curses_window_putwin__doc__},
 
+static PyObject *
+_curses_window_putwin_impl(PyCursesWindowObject *self, PyObject *file);
+
+static PyObject *
+_curses_window_putwin(PyObject *self, PyObject *file)
+{
+    PyObject *return_value = NULL;
+
+    return_value = _curses_window_putwin_impl((PyCursesWindowObject *)self, file);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_curses_window_redrawln__doc__,
 "redrawln($self, beg, num, /)\n"
 "--\n"
@@ -4379,4 +4392,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=c4211865ed96c2af input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ce2d19df9e20bfa3 input=a9049054013a1b77]*/

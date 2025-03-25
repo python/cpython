@@ -63,9 +63,6 @@ _cache_format = {
     "CONTAINS_OP": {
         "counter": 1,
     },
-    "BINARY_SUBSCR": {
-        "counter": 1,
-    },
     "FOR_ITER": {
         "counter": 1,
     },

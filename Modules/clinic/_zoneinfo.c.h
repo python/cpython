@@ -80,7 +80,7 @@ zoneinfo_ZoneInfo_from_file_impl(PyTypeObject *type, PyTypeObject *cls,
                                  PyObject *file_obj, PyObject *key);
 
 static PyObject *
-zoneinfo_ZoneInfo_from_file(PyTypeObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zoneinfo_ZoneInfo_from_file(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -124,7 +124,7 @@ zoneinfo_ZoneInfo_from_file(PyTypeObject *type, PyTypeObject *cls, PyObject *con
     }
     key = args[1];
 skip_optional_pos:
-    return_value = zoneinfo_ZoneInfo_from_file_impl(type, cls, file_obj, key);
+    return_value = zoneinfo_ZoneInfo_from_file_impl((PyTypeObject *)type, cls, file_obj, key);
 
 exit:
     return return_value;
@@ -144,7 +144,7 @@ zoneinfo_ZoneInfo_no_cache_impl(PyTypeObject *type, PyTypeObject *cls,
                                 PyObject *key);
 
 static PyObject *
-zoneinfo_ZoneInfo_no_cache(PyTypeObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zoneinfo_ZoneInfo_no_cache(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -181,7 +181,7 @@ zoneinfo_ZoneInfo_no_cache(PyTypeObject *type, PyTypeObject *cls, PyObject *cons
         goto exit;
     }
     key = args[0];
-    return_value = zoneinfo_ZoneInfo_no_cache_impl(type, cls, key);
+    return_value = zoneinfo_ZoneInfo_no_cache_impl((PyTypeObject *)type, cls, key);
 
 exit:
     return return_value;
@@ -201,7 +201,7 @@ zoneinfo_ZoneInfo_clear_cache_impl(PyTypeObject *type, PyTypeObject *cls,
                                    PyObject *only_keys);
 
 static PyObject *
-zoneinfo_ZoneInfo_clear_cache(PyTypeObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zoneinfo_ZoneInfo_clear_cache(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -244,7 +244,7 @@ zoneinfo_ZoneInfo_clear_cache(PyTypeObject *type, PyTypeObject *cls, PyObject *c
     only_keys = args[0];
 skip_optional_kwonly:
     Py_BEGIN_CRITICAL_SECTION(type);
-    return_value = zoneinfo_ZoneInfo_clear_cache_impl(type, cls, only_keys);
+    return_value = zoneinfo_ZoneInfo_clear_cache_impl((PyTypeObject *)type, cls, only_keys);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -399,7 +399,7 @@ zoneinfo_ZoneInfo__unpickle_impl(PyTypeObject *type, PyTypeObject *cls,
                                  PyObject *key, unsigned char from_cache);
 
 static PyObject *
-zoneinfo_ZoneInfo__unpickle(PyTypeObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+zoneinfo_ZoneInfo__unpickle(PyObject *type, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -434,9 +434,9 @@ zoneinfo_ZoneInfo__unpickle(PyTypeObject *type, PyTypeObject *cls, PyObject *con
             from_cache = (unsigned char) ival;
         }
     }
-    return_value = zoneinfo_ZoneInfo__unpickle_impl(type, cls, key, from_cache);
+    return_value = zoneinfo_ZoneInfo__unpickle_impl((PyTypeObject *)type, cls, key, from_cache);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f8a4fb4ff634d6c9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=786e8579e58c2f1c input=a9049054013a1b77]*/

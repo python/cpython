@@ -31,12 +31,10 @@ extern "C" {
 #endif
 
 #include <string.h>
-#include "krml/types.h"
+#include "krml/internal/types.h"
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 
-#include "internal/Hacl_Impl_Blake2_Constants.h"
-#include "internal/Hacl_Hash_Blake2b.h"
 #include "../Hacl_Hash_Blake2s.h"
 
 void Hacl_Hash_Blake2s_init(uint32_t *hash, uint32_t kk, uint32_t nn);
@@ -63,6 +61,30 @@ Hacl_Hash_Blake2s_update_last(
 );
 
 void Hacl_Hash_Blake2s_finish(uint32_t nn, uint8_t *output, uint32_t *hash);
+
+typedef struct K____uint32_t___uint32_t__s
+{
+  uint32_t *fst;
+  uint32_t *snd;
+}
+K____uint32_t___uint32_t_;
+
+typedef struct Hacl_Hash_Blake2s_block_state_t_s
+{
+  uint8_t fst;
+  uint8_t snd;
+  bool thd;
+  K____uint32_t___uint32_t_ f3;
+}
+Hacl_Hash_Blake2s_block_state_t;
+
+typedef struct Hacl_Hash_Blake2s_state_t_s
+{
+  Hacl_Hash_Blake2s_block_state_t block_state;
+  uint8_t *buf;
+  uint64_t total_len;
+}
+Hacl_Hash_Blake2s_state_t;
 
 #if defined(__cplusplus)
 }

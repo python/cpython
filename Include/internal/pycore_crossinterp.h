@@ -8,7 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_lock.h"            // PyMutex
 #include "pycore_pyerrors.h"
 
 

@@ -1,4 +1,0 @@
-Fix corner case for :func:`random.sample` allowing the *counts* parameter to
-specify an empty population. So now, ``sample([], 0, counts=[])`` and
-``sample('abc', k=0, counts=[0, 0, 0])`` both give the same result as
-``sample([], 0)``.

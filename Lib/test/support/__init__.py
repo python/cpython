@@ -2855,8 +2855,7 @@ def no_color():
         swap_attr(_colorize, "can_colorize", lambda file=None: False),
         EnvironmentVarGuard() as env,
     ):
-        for var in {"FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS"}:
-            env.unset(var)
+        env.unset("FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS")
         env.set("NO_COLOR", "1")
         yield
 
@@ -3015,3 +3014,37 @@ def is_libssl_fips_mode():
     except ImportError:
         return False  # more of a maybe, unless we add this to the _ssl module.
     return get_fips_mode() != 0
+
+
+_linked_to_musl = None
+def linked_to_musl():
+    """
+    Report if the Python executable is linked to the musl C library.
+
+    Return False if we don't think it is, or a version triple otherwise.
+    """
+    # This is can be a relatively expensive check, so we use a cache.
+    global _linked_to_musl
+    if _linked_to_musl is not None:
+        return _linked_to_musl
+
+    # emscripten (at least as far as we're concerned) and wasi use musl,
+    # but platform doesn't know how to get the version, so set it to zero.
+    if is_emscripten or is_wasi:
+        _linked_to_musl = (0, 0, 0)
+        return _linked_to_musl
+
+    # On all other non-linux platforms assume no musl.
+    if sys.platform != 'linux':
+        _linked_to_musl = False
+        return _linked_to_musl
+
+    # On linux, we'll depend on the platform module to do the check, so new
+    # musl platforms should add support in that module if possible.
+    import platform
+    lib, version = platform.libc_ver()
+    if lib != 'musl':
+        _linked_to_musl = False
+        return _linked_to_musl
+    _linked_to_musl = tuple(map(int, version.split('.')))
+    return _linked_to_musl

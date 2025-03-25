@@ -1,4 +1,0 @@
-Improve display of :class:`annotationlib.ForwardRef` object
-within :class:`inspect.Signature` representations.
-This also fixes a :exc:`NameError` that was raised when using
-:func:`dataclasses.dataclass` on classes with unresolvable forward references.

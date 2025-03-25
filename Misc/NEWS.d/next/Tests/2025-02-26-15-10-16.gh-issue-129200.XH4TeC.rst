@@ -1,2 +1,0 @@
-Multiple iOS testbed runners can now be started at the same time without
-introducing an ambiguity over simulator ownership.

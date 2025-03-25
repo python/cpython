@@ -14,6 +14,15 @@ extern "C" {
 #include "pycore_symtable.h"  // _Py_SourceLocation
 #include "pycore_instruction_sequence.h"
 
+/* A soft limit for stack use, to avoid excessive
+ * memory use for large constants, etc.
+ *
+ * The value 30 is plucked out of thin air.
+ * Code that could use more stack than this is
+ * rare, so the exact value is unimportant.
+ */
+#define _PY_STACK_USE_GUIDELINE 30
+
 struct _arena;   // Type defined in pycore_pyarena.h
 struct _mod;     // Type defined in pycore_ast.h
 
@@ -31,13 +40,16 @@ extern int _PyCompile_AstOptimize(
     PyObject *filename,
     PyCompilerFlags *flags,
     int optimize,
-    struct _arena *arena);
+    struct _arena *arena,
+    int syntax_check_only);
 
 extern int _PyAST_Optimize(
     struct _mod *,
     struct _arena *arena,
+    PyObject *filename,
     int optimize,
-    int ff_features);
+    int ff_features,
+    int syntax_check_only);
 
 
 typedef struct {
@@ -173,14 +185,6 @@ int _PyCodegen_EnterAnonymousScope(struct _PyCompiler* c, mod_ty mod);
 int _PyCodegen_Expression(struct _PyCompiler *c, expr_ty e);
 int _PyCodegen_Body(struct _PyCompiler *c, _Py_SourceLocation loc, asdl_stmt_seq *stmts,
                     bool is_interactive);
-
-/* Utility for a number of growing arrays used in the compiler */
-int _PyCompile_EnsureArrayLargeEnough(
-        int idx,
-        void **array,
-        int *alloc,
-        int default_alloc,
-        size_t item_size);
 
 int _PyCompile_ConstCacheMergeOne(PyObject *const_cache, PyObject **obj);
 

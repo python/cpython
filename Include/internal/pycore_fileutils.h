@@ -9,6 +9,7 @@ extern "C" {
 #endif
 
 #include <locale.h>               // struct lconv
+#include "pycore_interp_structs.h" // _Py_error_handler
 
 
 /* A routine to check if a file descriptor can be select()-ed. */
@@ -18,22 +19,6 @@ extern "C" {
 #else
     #define _PyIsSelectable_fd(FD) ((unsigned int)(FD) < (unsigned int)FD_SETSIZE)
 #endif
-
-struct _fileutils_state {
-    int force_ascii;
-};
-
-typedef enum {
-    _Py_ERROR_UNKNOWN=0,
-    _Py_ERROR_STRICT,
-    _Py_ERROR_SURROGATEESCAPE,
-    _Py_ERROR_REPLACE,
-    _Py_ERROR_IGNORE,
-    _Py_ERROR_BACKSLASHREPLACE,
-    _Py_ERROR_SURROGATEPASS,
-    _Py_ERROR_XMLCHARREFREPLACE,
-    _Py_ERROR_OTHER
-} _Py_error_handler;
 
 // Export for '_testinternalcapi' shared extension
 PyAPI_FUNC(_Py_error_handler) _Py_GetErrorHandler(const char *errors);

@@ -1295,8 +1295,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                 read = await self.run_in_executor(None, file.readinto, view)
                 if not read:
                     return total_sent  # EOF
-                await proto.drain()
                 transp.write(view[:read])
+                await proto.drain()
                 total_sent += read
         finally:
             if total_sent > 0 and hasattr(file, 'seek'):

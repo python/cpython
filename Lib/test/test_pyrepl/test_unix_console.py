@@ -7,7 +7,7 @@ from test.support import os_helper
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, ANY
 
-from .support import handle_all_events, code_to_events
+from .support import handle_all_events, code_to_events, reader_no_colors
 
 try:
     from _pyrepl.console import Event
@@ -252,7 +252,9 @@ class TestConsole(TestCase):
         # fmt: on
 
         events = itertools.chain(code_to_events(code))
-        reader, console = handle_events_short_unix_console(events)
+        reader, console = handle_events_short_unix_console(
+            events, prepare_reader=reader_no_colors
+        )
 
         console.height = 2
         console.getheightwidth = MagicMock(lambda _: (2, 80))

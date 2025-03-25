@@ -1,12 +1,11 @@
-
 #define _PY_INTERPRETER
 
 #include "Python.h"
-#include "frameobject.h"
-#include "pycore_code.h"          // stats
-#include "pycore_frame.h"
-#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "opcode.h"
+#include "pycore_frame.h"         // _PyFrame_New_NoTrack()
+#include "pycore_interpframe.h"   // _PyFrame_GetCode()
+#include "pycore_genobject.h"     // _PyGen_GetGeneratorFromFrame()
+#include "pycore_stackref.h"      // _Py_VISIT_STACKREF()
+
 
 int
 _PyFrame_Traverse(_PyInterpreterFrame *frame, visitproc visit, void *arg)
@@ -48,6 +47,7 @@ _PyFrame_MakeAndSetFrameObject(_PyInterpreterFrame *frame)
 static void
 take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
 {
+    Py_BEGIN_CRITICAL_SECTION(f);
     assert(frame->owner < FRAME_OWNED_BY_INTERPRETER);
     assert(frame->owner != FRAME_OWNED_BY_FRAME_OBJECT);
     _PyInterpreterFrame *new_frame = (_PyInterpreterFrame *)f->_f_frame_data;
@@ -84,6 +84,7 @@ take_ownership(PyFrameObject *f, _PyInterpreterFrame *frame)
     if (!_PyObject_GC_IS_TRACKED((PyObject *)f)) {
         _PyObject_GC_TRACK((PyObject *)f);
     }
+    Py_END_CRITICAL_SECTION();
 }
 
 void
@@ -113,7 +114,7 @@ _PyFrame_ClearExceptCode(_PyInterpreterFrame *frame)
     if (frame->frame_obj) {
         PyFrameObject *f = frame->frame_obj;
         frame->frame_obj = NULL;
-        if (Py_REFCNT(f) > 1) {
+        if (!_PyObject_IsUniquelyReferenced((PyObject *)f)) {
             take_ownership(f, frame);
             Py_DECREF(f);
             return;
@@ -138,7 +139,9 @@ PyUnstable_InterpreterFrame_GetLasti(struct _PyInterpreterFrame *frame)
     return _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);
 }
 
-int
+// NOTE: We allow racy accesses to the instruction pointer from other threads
+// for sys._current_frames() and similar APIs.
+int _Py_NO_SANITIZE_THREAD
 PyUnstable_InterpreterFrame_GetLine(_PyInterpreterFrame *frame)
 {
     int addr = _PyInterpreterFrame_LASTI(frame) * sizeof(_Py_CODEUNIT);

@@ -8,25 +8,6 @@
 extern "C" {
 #endif
 
-/* Total tool ids available */
-#define  _PY_MONITORING_TOOL_IDS 8
-/* Count of all local monitoring events */
-#define  _PY_MONITORING_LOCAL_EVENTS 11
-/* Count of all "real" monitoring events (not derived from other events) */
-#define _PY_MONITORING_UNGROUPED_EVENTS 16
-/* Count of all  monitoring events */
-#define _PY_MONITORING_EVENTS 19
-
-/* Tables of which tools are active for each monitored event. */
-typedef struct _Py_LocalMonitors {
-    uint8_t tools[_PY_MONITORING_LOCAL_EVENTS];
-} _Py_LocalMonitors;
-
-typedef struct _Py_GlobalMonitors {
-    uint8_t tools[_PY_MONITORING_UNGROUPED_EVENTS];
-} _Py_GlobalMonitors;
-
-
 typedef struct {
     PyObject *_co_code;
     PyObject *_co_varnames;
@@ -34,44 +15,12 @@ typedef struct {
     PyObject *_co_freevars;
 } _PyCoCached;
 
-/* Ancillary data structure used for instrumentation.
-   Line instrumentation creates this with sufficient
-   space for one entry per code unit. The total size
-   of the data will be `bytes_per_entry * Py_SIZE(code)` */
-typedef struct {
-    uint8_t bytes_per_entry;
-    uint8_t data[1];
-} _PyCoLineInstrumentationData;
-
-
 typedef struct {
     int size;
     int capacity;
     struct _PyExecutorObject *executors[1];
 } _PyExecutorArray;
 
-/* Main data structure used for instrumentation.
- * This is allocated when needed for instrumentation
- */
-typedef struct {
-    /* Monitoring specific to this code object */
-    _Py_LocalMonitors local_monitors;
-    /* Monitoring that is active on this code object */
-    _Py_LocalMonitors active_monitors;
-    /* The tools that are to be notified for events for the matching code unit */
-    uint8_t *tools;
-    /* The version of tools when they instrument the code */
-    uintptr_t tool_versions[_PY_MONITORING_TOOL_IDS];
-    /* Information to support line events */
-    _PyCoLineInstrumentationData *lines;
-    /* The tools that are to be notified for line events for the matching code unit */
-    uint8_t *line_tools;
-    /* Information to support instruction events */
-    /* The underlying instructions, which can themselves be instrumented */
-    uint8_t *per_instruction_opcodes;
-    /* The tools that are to be notified for instruction events for the matching code unit */
-    uint8_t *per_instruction_tools;
-} _PyCoMonitoringData;
 
 #ifdef Py_GIL_DISABLED
 
@@ -151,7 +100,7 @@ typedef struct {
     _PyExecutorArray *co_executors;      /* executors from optimizer */        \
     _PyCoCached *_co_cached;      /* cached co_* attributes */                 \
     uintptr_t _co_instrumentation_version; /* current instrumentation version */ \
-    _PyCoMonitoringData *_co_monitoring; /* Monitoring data */                 \
+    struct _PyCoMonitoringData *_co_monitoring; /* Monitoring data */          \
     Py_ssize_t _co_unique_id;     /* ID used for per-thread refcounting */   \
     int _co_firsttraceable;       /* index of first traceable instruction */   \
     /* Scratch space for extra data relating to the code object.               \

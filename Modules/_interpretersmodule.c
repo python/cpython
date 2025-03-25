@@ -6,16 +6,14 @@
 #endif
 
 #include "Python.h"
-#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_code.h"          // _PyCode_HAS_EXECUTORS()
 #include "pycore_crossinterp.h"   // _PyXIData_t
 #include "pycore_interp.h"        // _PyInterpreterState_IDIncref()
-#include "pycore_initconfig.h"    // _PyErr_SetFromPyStatus()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_pybuffer.h"      // _PyBuffer_ReleaseInInterpreterAndRawFree()
-#include "pycore_pyerrors.h"      // _Py_excinfo
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_AsDict()
-#include "pycore_pystate.h"       // _PyInterpreterState_SetRunningMain()
+#include "pycore_pystate.h"       // _PyInterpreterState_IsRunningMain()
 
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
 

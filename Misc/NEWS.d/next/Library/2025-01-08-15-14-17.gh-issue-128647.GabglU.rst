@@ -1,4 +1,0 @@
-Eagerly write to buffers passed to :class:`gzip.GzipFile`'s
-:meth:`~io.BufferedIOBase.readinto` and
-:meth:`~io.BufferedIOBase.readinto1` implementations,
-avoiding unnecessary allocations. Patch by Chris Markiewicz.

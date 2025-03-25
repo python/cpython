@@ -24,26 +24,6 @@ extern "C" {
 // Each entry implicitly represents a unique id based on its offset in the
 // table. Non-allocated entries form a free-list via the 'next' pointer.
 // Allocated entries store the corresponding PyObject.
-typedef union _Py_unique_id_entry {
-    // Points to the next free type id, when part of the freelist
-    union _Py_unique_id_entry *next;
-
-    // Stores the object when the id is assigned
-    PyObject *obj;
-} _Py_unique_id_entry;
-
-struct _Py_unique_id_pool {
-    PyMutex mutex;
-
-    // combined table of object with allocated unique ids and unallocated ids.
-    _Py_unique_id_entry *table;
-
-    // Next entry to allocate inside 'table' or NULL
-    _Py_unique_id_entry *freelist;
-
-    // size of 'table'
-    Py_ssize_t size;
-};
 
 #define _Py_INVALID_UNIQUE_ID 0
 

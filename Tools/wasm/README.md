@@ -24,8 +24,9 @@ https://github.com/psf/webassembly for more information.
 To cross compile to the ``wasm32-emscripten`` platform you need
 [the Emscripten compiler toolchain](https://emscripten.org/), 
 a Python interpreter, and an installation of Node version 18 or newer.
-Emscripten version 3.1.73 or newer is recommended. All commands below are
-relative to a checkout of the Python repository.
+Emscripten version 4.0.2 is recommended; newer versions may also work, but all
+official testing is performed with that version. All commands below are relative
+to a checkout of the Python repository.
 
 #### Install [the Emscripten compiler toolchain](https://emscripten.org/docs/getting_started/downloads.html)
 
@@ -266,7 +267,7 @@ if os.name == "posix":
 posix.uname_result(
     sysname='Emscripten',
     nodename='emscripten',
-    release='3.1.19',
+    release='4.0.2',
     version='#1',
     machine='wasm32'
 )

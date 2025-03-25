@@ -994,6 +994,42 @@ class CAPITest(unittest.TestCase):
         self.assertRaises(TypeError, xtuple, 42)
         self.assertRaises(SystemError, xtuple, NULL)
 
+    def test_sequence_fast(self):
+        # Test PySequence_Fast()
+        sequence_fast = _testlimitedcapi.sequence_fast
+        sequence_fast_get_size = _testcapi.sequence_fast_get_size
+        sequence_fast_get_item = _testcapi.sequence_fast_get_item
+
+        tpl = ('a', 'b', 'c')
+        fast = sequence_fast(tpl, "err_msg")
+        self.assertIs(fast, tpl)
+        self.assertEqual(sequence_fast_get_size(fast), 3)
+        self.assertEqual(sequence_fast_get_item(fast, 2), 'c')
+
+        lst = ['a', 'b', 'c']
+        fast = sequence_fast(lst, "err_msg")
+        self.assertIs(fast, lst)
+        self.assertEqual(sequence_fast_get_size(fast), 3)
+        self.assertEqual(sequence_fast_get_item(fast, 2), 'c')
+
+        it = iter(['A', 'B'])
+        fast = sequence_fast(it, "err_msg")
+        self.assertEqual(fast, ['A', 'B'])
+        self.assertEqual(sequence_fast_get_size(fast), 2)
+        self.assertEqual(sequence_fast_get_item(fast, 1), 'B')
+
+        text = 'fast'
+        fast = sequence_fast(text, "err_msg")
+        self.assertEqual(fast, ['f', 'a', 's', 't'])
+        self.assertEqual(sequence_fast_get_size(fast), 4)
+        self.assertEqual(sequence_fast_get_item(fast, 0), 'f')
+
+        self.assertRaises(TypeError, sequence_fast, 42, "err_msg")
+        self.assertRaises(SystemError, sequence_fast, NULL, "err_msg")
+
+        # CRASHES sequence_fast_get_size(NULL)
+        # CRASHES sequence_fast_get_item(NULL, 0)
+
     def test_object_generichash(self):
         # Test PyObject_GenericHash()
         generichash = _testcapi.object_generichash

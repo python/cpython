@@ -9631,7 +9631,7 @@ fi
 
         as_fn_append LINKFORSHARED " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
     as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV"
-    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET"
+    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET,_PyGILState_GetThisThreadState,__Py_DumpTraceback"
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
 
     if test "x$enable_wasm_dynamic_linking" = xyes
@@ -19609,10 +19609,22 @@ then :
   printf "%s\n" "#define HAVE_PTHREAD_KILL 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "pthread_get_name_np" "ac_cv_func_pthread_get_name_np"
+if test "x$ac_cv_func_pthread_get_name_np" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTHREAD_GET_NAME_NP 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "pthread_getname_np" "ac_cv_func_pthread_getname_np"
 if test "x$ac_cv_func_pthread_getname_np" = xyes
 then :
   printf "%s\n" "#define HAVE_PTHREAD_GETNAME_NP 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "pthread_set_name_np" "ac_cv_func_pthread_set_name_np"
+if test "x$ac_cv_func_pthread_set_name_np" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTHREAD_SET_NAME_NP 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "pthread_setname_np" "ac_cv_func_pthread_setname_np"
@@ -30451,10 +30463,11 @@ CPPFLAGS=$save_CPPFLAGS
 case "$ac_sys_system" in
   Linux*) _PYTHREAD_NAME_MAXLEN=15;;  # Linux and Android
   SunOS*) _PYTHREAD_NAME_MAXLEN=31;;
-  NetBSD*) _PYTHREAD_NAME_MAXLEN=31;;
+  NetBSD*) _PYTHREAD_NAME_MAXLEN=15;; # gh-131268
   Darwin) _PYTHREAD_NAME_MAXLEN=63;;
   iOS) _PYTHREAD_NAME_MAXLEN=63;;
-  FreeBSD*) _PYTHREAD_NAME_MAXLEN=98;;
+  FreeBSD*) _PYTHREAD_NAME_MAXLEN=19;; # gh-131268
+  OpenBSD*) _PYTHREAD_NAME_MAXLEN=23;; # gh-131268
   *) _PYTHREAD_NAME_MAXLEN=;;
 esac
 if test -n "$_PYTHREAD_NAME_MAXLEN"; then

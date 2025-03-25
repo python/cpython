@@ -2,6 +2,7 @@
 #include "Python.h"
 #include "pycore_object.h"  // _PyObject_GC_TRACK/UNTRACK
 #include "pycore_typevarobject.h"  // _PyTypeAlias_Type, _Py_typing_type_repr
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString
 #include "pycore_unionobject.h"
 
 

@@ -6,11 +6,13 @@
 #include "pycore_critical_section.h"  // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED()
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
 
 #include "datetime.h"             // PyDateTime_TZInfo
 
 #include <stddef.h>               // offsetof()
-#include <stdint.h>
+#include <stdint.h>               // int64_t
+
 
 #include "clinic/_zoneinfo.c.h"
 /*[clinic input]
@@ -2578,14 +2580,14 @@ initialize_caches(zoneinfo_state *state)
 }
 
 static PyObject *
-zoneinfo_init_subclass(PyTypeObject *cls, PyObject *args, PyObject **kwargs)
+zoneinfo_init_subclass(PyObject *cls, PyObject *args, PyObject *kwargs)
 {
     PyObject *weak_cache = new_weak_cache();
     if (weak_cache == NULL) {
         return NULL;
     }
 
-    if (PyObject_SetAttrString((PyObject *)cls, "_weak_cache",
+    if (PyObject_SetAttrString(cls, "_weak_cache",
                                weak_cache) < 0) {
         Py_DECREF(weak_cache);
         return NULL;
@@ -2609,7 +2611,7 @@ static PyMethodDef zoneinfo_methods[] = {
     {"__reduce__", (PyCFunction)zoneinfo_reduce, METH_NOARGS,
      PyDoc_STR("Function for serialization with the pickle protocol.")},
     ZONEINFO_ZONEINFO__UNPICKLE_METHODDEF
-    {"__init_subclass__", (PyCFunction)(void (*)(void))zoneinfo_init_subclass,
+    {"__init_subclass__", _PyCFunction_CAST(zoneinfo_init_subclass),
      METH_VARARGS | METH_KEYWORDS | METH_CLASS,
      PyDoc_STR("Function to initialize subclasses.")},
     {NULL} /* Sentinel */

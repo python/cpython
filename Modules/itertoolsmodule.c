@@ -191,12 +191,12 @@ batched_next(PyObject *op)
 {
     batchedobject *bo = batchedobject_CAST(op);
     Py_ssize_t i;
-    Py_ssize_t n = bo->batch_size;
+    Py_ssize_t n = FT_ATOMIC_LOAD_SSIZE_RELAXED(bo->batch_size);
     PyObject *it = bo->it;
     PyObject *item;
     PyObject *result;
 
-    if (it == NULL) {
+    if (n < 0) {
         return NULL;
     }
     result = PyTuple_New(n);
@@ -218,19 +218,28 @@ batched_next(PyObject *op)
     if (PyErr_Occurred()) {
         if (!PyErr_ExceptionMatches(PyExc_StopIteration)) {
             /* Input raised an exception other than StopIteration */
+            FT_ATOMIC_STORE_SSIZE_RELAXED(bo->batch_size, -1);
+#ifndef Py_GIL_DISABLED
             Py_CLEAR(bo->it);
+#endif
             Py_DECREF(result);
             return NULL;
         }
         PyErr_Clear();
     }
     if (i == 0) {
+        FT_ATOMIC_STORE_SSIZE_RELAXED(bo->batch_size, -1);
+#ifndef Py_GIL_DISABLED
         Py_CLEAR(bo->it);
+#endif
         Py_DECREF(result);
         return NULL;
     }
     if (bo->strict) {
+        FT_ATOMIC_STORE_SSIZE_RELAXED(bo->batch_size, -1);
+#ifndef Py_GIL_DISABLED
         Py_CLEAR(bo->it);
+#endif
         Py_DECREF(result);
         PyErr_SetString(PyExc_ValueError, "batched(): incomplete batch");
         return NULL;
@@ -1834,8 +1843,8 @@ Alternative chain() constructor taking a single iterable argument that evaluates
 [clinic start generated code]*/
 
 static PyObject *
-itertools_chain_from_iterable(PyTypeObject *type, PyObject *arg)
-/*[clinic end generated code: output=667ae7a7f7b68654 input=72c39e3a2ca3be85]*/
+itertools_chain_from_iterable_impl(PyTypeObject *type, PyObject *arg)
+/*[clinic end generated code: output=3d7ea7d46b9e43f5 input=72c39e3a2ca3be85]*/
 {
     PyObject *source;
 

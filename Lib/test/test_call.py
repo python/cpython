@@ -1,7 +1,9 @@
 import unittest
 from test.support import (cpython_only, is_wasi, requires_limited_api, Py_DEBUG,
-                          set_recursion_limit, skip_on_s390x, exceeds_recursion_limit, skip_emscripten_stack_overflow, skip_wasi_stack_overflow,
-                          skip_if_sanitizer, import_helper)
+                          set_recursion_limit, skip_on_s390x,
+                          skip_emscripten_stack_overflow,
+                          skip_wasi_stack_overflow, skip_if_sanitizer,
+                          import_helper)
 try:
     import _testcapi
 except ImportError:

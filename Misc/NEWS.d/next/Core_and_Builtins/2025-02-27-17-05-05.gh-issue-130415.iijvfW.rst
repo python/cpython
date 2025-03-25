@@ -1,2 +1,0 @@
-Improve the experimental JIT's ability to narrow boolean values based on the
-results of truthiness tests.

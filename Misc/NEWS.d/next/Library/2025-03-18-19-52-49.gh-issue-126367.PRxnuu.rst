@@ -1,0 +1,3 @@
+Fix issue where :func:`urllib.request.url2pathname` raised :exc:`OSError`
+when given a Windows URI containing a colon character not following a drive
+letter, such as before an NTFS alternate data stream.

@@ -204,8 +204,9 @@ namespace_richcompare(PyObject *self, PyObject *other, int op)
 PyDoc_STRVAR(namespace_reduce__doc__, "Return state information for pickling");
 
 static PyObject *
-namespace_reduce(_PyNamespaceObject *ns, PyObject *Py_UNUSED(ignored))
+namespace_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    _PyNamespaceObject *ns = (_PyNamespaceObject*)op;
     PyObject *result, *args = PyTuple_New(0);
 
     if (!args)
@@ -245,7 +246,7 @@ namespace_replace(PyObject *self, PyObject *args, PyObject *kwargs)
 
 
 static PyMethodDef namespace_methods[] = {
-    {"__reduce__", (PyCFunction)namespace_reduce, METH_NOARGS,
+    {"__reduce__", namespace_reduce, METH_NOARGS,
      namespace_reduce__doc__},
     {"__replace__", _PyCFunction_CAST(namespace_replace), METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("__replace__($self, /, **changes)\n--\n\n"

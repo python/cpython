@@ -1,8 +1,9 @@
 #include "Python.h"
-#include "pycore_call.h"
-#include "pycore_import.h"
-#include "pycore_fileutils.h"
-#include "errcode.h"
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_fileutils.h"     // _Py_UniversalNewlineFgetsWithSize()
+#include "pycore_runtime.h"       // _Py_ID()
+
+#include "errcode.h"              // E_NOMEM
 
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // lseek(), read()
@@ -12,6 +13,7 @@
 #include "../lexer/state.h"
 #include "../lexer/lexer.h"
 #include "../lexer/buffer.h"
+
 
 static int
 tok_concatenate_interactive_new_line(struct tok_state *tok, const char *line) {

@@ -1,2 +1,0 @@
-Improve repr of :class:`functools.singledispatchmethod` methods and
-descriptors.

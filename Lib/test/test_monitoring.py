@@ -1733,7 +1733,6 @@ class TestBranchConsistency(MonitoringTestBase, unittest.TestCase):
             for (src, left, right) in test_func.__code__.co_branches():
                 lefts.add((src, left))
                 rights.add((src, right))
-            print(event_list)
             for event in event_list:
                 way, _, src, dest = event
                 if "left" in way:

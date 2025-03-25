@@ -2,14 +2,17 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_pybuffer.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_crossinterp.h"   // _Py_CallInInterpreter()
+#include "pycore_genobject.h"     // _PyGen_FetchStopIterationValue()
+#include "pycore_list.h"          // _PyList_AppendTakeRef()
+#include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_object.h"        // _Py_CheckSlotResult()
-#include "pycore_long.h"          // _Py_IsNegative
+#include "pycore_pybuffer.h"      // _PyBuffer_ReleaseInInterpreterAndRawFree()
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_tuple.h"         // _PyTuple_FromArraySteal()
 #include "pycore_unionobject.h"   // _PyUnion_Check()
 
 #include <stddef.h>               // offsetof()

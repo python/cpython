@@ -1,13 +1,13 @@
-
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
+#include "pycore_gc.h"            // _Py_RunGC()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
-#include "pycore_interp.h"        // _Py_RunGC()
+#include "pycore_optimizer.h"     // _Py_Executors_InvalidateCold()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
-#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
-#include "pycore_pystate.h"       // PyThread_hang_thread()
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
+#include "pycore_runtime.h"       // _PyRuntime
+
 
 /*
    Notes about the implementation:

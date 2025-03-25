@@ -1411,6 +1411,7 @@ class TestPendingCalls(unittest.TestCase):
                 self.assertNotIn(task.requester_tid, runner_tids)
 
     @requires_subinterpreters
+    @support.skip_if_sanitizer("gh-129824: race on assign_version_tag", thread=True)
     def test_isolated_subinterpreter(self):
         # We exercise the most important permutations.
 
@@ -2882,6 +2883,23 @@ class TestVersions(unittest.TestCase):
             with self.subTest(hexversion=hex(expected)):
                 result = ctypes_func(*args)
                 self.assertEqual(result, expected)
+
+
+class TestCEval(unittest.TestCase):
+   def test_ceval_decref(self):
+        code = textwrap.dedent("""
+            import _testcapi
+            _testcapi.toggle_reftrace_printer(True)
+            l1 = []
+            l2 = []
+            del l1
+            del l2
+            _testcapi.toggle_reftrace_printer(False)
+        """)
+        _, out, _ = assert_python_ok("-c", code)
+        lines = out.decode("utf-8").splitlines()
+        self.assertEqual(lines.count("CREATE list"), 2)
+        self.assertEqual(lines.count("DESTROY list"), 2)
 
 
 if __name__ == "__main__":

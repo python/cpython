@@ -1,2 +1,0 @@
-Add branch monitoring (``BRANCH_LEFT`` and ``BRANCH_RIGHT`` events) for
-``async for`` loops.

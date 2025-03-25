@@ -3,10 +3,12 @@
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8String()
 
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // isatty()
 #endif
+
 
 #if defined(HAVE_GETC_UNLOCKED) && !defined(_Py_MEMORY_SANITIZER)
    /* clang MemorySanitizer doesn't yet understand getc_unlocked. */
@@ -303,8 +305,9 @@ PyFile_NewStdPrinter(int fd)
 }
 
 static PyObject *
-stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
+stdprinter_write(PyObject *op, PyObject *args)
 {
+    PyStdPrinter_Object *self = (PyStdPrinter_Object*)op;
     PyObject *unicode;
     PyObject *bytes = NULL;
     const char *str;
@@ -355,27 +358,30 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
 }
 
 static PyObject *
-stdprinter_fileno(PyStdPrinter_Object *self, PyObject *Py_UNUSED(ignored))
+stdprinter_fileno(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyStdPrinter_Object *self = (PyStdPrinter_Object*)op;
     return PyLong_FromLong((long) self->fd);
 }
 
 static PyObject *
-stdprinter_repr(PyStdPrinter_Object *self)
+stdprinter_repr(PyObject *op)
 {
+    PyStdPrinter_Object *self = (PyStdPrinter_Object*)op;
     return PyUnicode_FromFormat("<stdprinter(fd=%d) object at %p>",
                                 self->fd, self);
 }
 
 static PyObject *
-stdprinter_noop(PyStdPrinter_Object *self, PyObject *Py_UNUSED(ignored))
+stdprinter_noop(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     Py_RETURN_NONE;
 }
 
 static PyObject *
-stdprinter_isatty(PyStdPrinter_Object *self, PyObject *Py_UNUSED(ignored))
+stdprinter_isatty(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyStdPrinter_Object *self = (PyStdPrinter_Object*)op;
     long res;
     if (self->fd < 0) {
         Py_RETURN_FALSE;
@@ -389,36 +395,36 @@ stdprinter_isatty(PyStdPrinter_Object *self, PyObject *Py_UNUSED(ignored))
 }
 
 static PyMethodDef stdprinter_methods[] = {
-    {"close",           (PyCFunction)stdprinter_noop, METH_NOARGS, ""},
-    {"flush",           (PyCFunction)stdprinter_noop, METH_NOARGS, ""},
-    {"fileno",          (PyCFunction)stdprinter_fileno, METH_NOARGS, ""},
-    {"isatty",          (PyCFunction)stdprinter_isatty, METH_NOARGS, ""},
-    {"write",           (PyCFunction)stdprinter_write, METH_VARARGS, ""},
+    {"close", stdprinter_noop, METH_NOARGS, ""},
+    {"flush", stdprinter_noop, METH_NOARGS, ""},
+    {"fileno", stdprinter_fileno, METH_NOARGS, ""},
+    {"isatty", stdprinter_isatty, METH_NOARGS, ""},
+    {"write", stdprinter_write, METH_VARARGS, ""},
     {NULL,              NULL}  /*sentinel */
 };
 
 static PyObject *
-get_closed(PyStdPrinter_Object *self, void *closure)
+get_closed(PyObject *self, void *Py_UNUSED(closure))
 {
     Py_RETURN_FALSE;
 }
 
 static PyObject *
-get_mode(PyStdPrinter_Object *self, void *closure)
+get_mode(PyObject *self, void *Py_UNUSED(closure))
 {
     return PyUnicode_FromString("w");
 }
 
 static PyObject *
-get_encoding(PyStdPrinter_Object *self, void *closure)
+get_encoding(PyObject *self, void *Py_UNUSED(closure))
 {
     Py_RETURN_NONE;
 }
 
 static PyGetSetDef stdprinter_getsetlist[] = {
-    {"closed", (getter)get_closed, NULL, "True if the file is closed"},
-    {"encoding", (getter)get_encoding, NULL, "Encoding of the file"},
-    {"mode", (getter)get_mode, NULL, "String giving the file mode"},
+    {"closed", get_closed, NULL, "True if the file is closed"},
+    {"encoding", get_encoding, NULL, "Encoding of the file"},
+    {"mode", get_mode, NULL, "String giving the file mode"},
     {0},
 };
 
@@ -433,7 +439,7 @@ PyTypeObject PyStdPrinter_Type = {
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)stdprinter_repr,                  /* tp_repr */
+    stdprinter_repr,                            /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */

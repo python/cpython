@@ -1,2 +1,0 @@
-Execution of multiple statements in the new REPL now stops immediately upon
-the first exception encountered. Patch by Bartosz Sławecki.

@@ -522,8 +522,9 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
 /* Implementation of slice.indices. */
 
 static PyObject*
-slice_indices(PySliceObject* self, PyObject* len)
+slice_indices(PyObject *op, PyObject* len)
 {
+    PySliceObject *self = _PySlice_CAST(op);
     PyObject *start, *stop, *step;
     PyObject *length;
     int error;
@@ -557,18 +558,17 @@ S. Out of bounds indices are clipped in a manner consistent with the\n\
 handling of normal slices.");
 
 static PyObject *
-slice_reduce(PySliceObject* self, PyObject *Py_UNUSED(ignored))
+slice_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PySliceObject *self = _PySlice_CAST(op);
     return Py_BuildValue("O(OOO)", Py_TYPE(self), self->start, self->stop, self->step);
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyMethodDef slice_methods[] = {
-    {"indices",         (PyCFunction)slice_indices,
-     METH_O,            slice_indices_doc},
-    {"__reduce__",      (PyCFunction)slice_reduce,
-     METH_NOARGS,       reduce_doc},
+    {"indices", slice_indices, METH_O, slice_indices_doc},
+    {"__reduce__", slice_reduce, METH_NOARGS, reduce_doc},
     {NULL, NULL}
 };
 

@@ -288,11 +288,11 @@ class FrameSummary:
     """
 
     __slots__ = ('filename', 'lineno', 'end_lineno', 'colno', 'end_colno',
-                 'name', '_lines', '_lines_dedented', 'locals')
+                 'name', '_lines', '_lines_dedented', 'locals', '_code')
 
     def __init__(self, filename, lineno, name, *, lookup_line=True,
             locals=None, line=None,
-            end_lineno=None, colno=None, end_colno=None):
+            end_lineno=None, colno=None, end_colno=None, **kwargs):
         """Construct a FrameSummary.
 
         :param lookup_line: If True, `linecache` is consulted for the source
@@ -308,6 +308,7 @@ class FrameSummary:
         self.colno = colno
         self.end_colno = end_colno
         self.name = name
+        self._code = kwargs.get("_code")
         self._lines = line
         self._lines_dedented = None
         if lookup_line:
@@ -347,7 +348,10 @@ class FrameSummary:
             lines = []
             for lineno in range(self.lineno, self.end_lineno + 1):
                 # treat errors (empty string) and empty lines (newline) as the same
-                lines.append(linecache.getline(self.filename, lineno).rstrip())
+                line = linecache.getline(self.filename, lineno).rstrip()
+                if not line and self._code is not None and self.filename.startswith("<"):
+                    line = linecache._getline_from_code(self._code, lineno).rstrip()
+                lines.append(line)
             self._lines = "\n".join(lines) + "\n"
 
     @property
@@ -484,9 +488,13 @@ class StackSummary(list):
                 f_locals = f.f_locals
             else:
                 f_locals = None
-            result.append(FrameSummary(
-                filename, lineno, name, lookup_line=False, locals=f_locals,
-                end_lineno=end_lineno, colno=colno, end_colno=end_colno))
+            result.append(
+                FrameSummary(filename, lineno, name,
+                    lookup_line=False, locals=f_locals,
+                    end_lineno=end_lineno, colno=colno, end_colno=end_colno,
+                    _code=f.f_code,
+                )
+            )
         for filename in fnames:
             linecache.checkcache(filename)
 

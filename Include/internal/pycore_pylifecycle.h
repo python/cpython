@@ -8,11 +8,10 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_runtime.h"       // _PyRuntimeState
+#include "pycore_typedefs.h"      // _PyRuntimeState
 
 /* Forward declarations */
 struct _PyArgv;
-struct pyruntimestate;
 
 extern int _Py_SetFileSystemEncoding(
     const char *encoding,

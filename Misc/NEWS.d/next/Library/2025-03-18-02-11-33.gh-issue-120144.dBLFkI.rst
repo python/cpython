@@ -1,0 +1,1 @@
+Disable ``CALL`` event in :mod:`bdb` in ``monitoring`` backend when we don't need any new events on the code object to get a better performance.

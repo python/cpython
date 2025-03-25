@@ -127,7 +127,7 @@ Dictionary Objects
       Prefer the :c:func:`PyDict_GetItemWithError` function instead.
 
    .. versionchanged:: 3.10
-      Calling this API without :term:`GIL` held had been allowed for historical
+      Calling this API without an :term:`attached thread state` had been allowed for historical
       reason. It is no longer allowed.
 
 

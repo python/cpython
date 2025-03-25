@@ -1,7 +1,7 @@
 import concurrent.futures
 import unittest
 import inspect
-from threading import Thread, Barrier
+from threading import Barrier
 from unittest import TestCase
 
 from test.support import threading_helper, Py_GIL_DISABLED

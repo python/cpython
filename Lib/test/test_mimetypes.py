@@ -3,9 +3,11 @@ import mimetypes
 import os
 import sys
 import unittest.mock
+from os import linesep
 
 from test import support
 from test.support import os_helper
+from test.support.script_helper import run_python_until_end
 from platform import win32_edition
 
 try:
@@ -390,50 +392,53 @@ class MiscTestCase(unittest.TestCase):
 
 class MimetypesCliTestCase(unittest.TestCase):
 
-    def mimetypes_cmd(self, *args, **kwargs):
-        support.patch(self, sys, "argv", [sys.executable, *args])
-        with support.captured_stdout() as output:
-            mimetypes._main()
-            return output.getvalue().strip()
+    def mimetypes_cmd(cls, *args, **kwargs):
+        result, _ = run_python_until_end('-m', 'mimetypes', *args)
+        return result.rc, result.out.decode(), result.err.decode()
 
     def test_help_option(self):
-        support.patch(self, sys, "argv", [sys.executable, "-h"])
-        with support.captured_stdout() as output:
-            with self.assertRaises(SystemExit) as cm:
-                mimetypes._main()
-
-        self.assertIn("Usage: mimetypes.py", output.getvalue())
-        self.assertEqual(cm.exception.code, 0)
+        retcode, out, err = self.mimetypes_cmd('-h')
+        self.assertEqual(retcode, 0)
+        self.assertStartsWith(out, 'usage: ')
+        self.assertEqual(err, '')
 
     def test_invalid_option(self):
-        support.patch(self, sys, "argv", [sys.executable, "--invalid"])
-        with support.captured_stdout() as output:
-            with self.assertRaises(SystemExit) as cm:
-                mimetypes._main()
-
-        self.assertIn("Usage: mimetypes.py", output.getvalue())
-        self.assertEqual(cm.exception.code, 1)
+        retcode, out, err = self.mimetypes_cmd('--invalid')
+        self.assertEqual(retcode, 2)
+        self.assertEqual(out, '')
+        self.assertStartsWith(err, 'usage: ')
 
     def test_guess_extension(self):
-        eq = self.assertEqual
+        retcode, out, err = self.mimetypes_cmd('-l', '-e', 'image/jpg')
+        self.assertEqual(retcode, 0)
+        self.assertEqual(out, f'.jpg{linesep}')
+        self.assertEqual(err, '')
 
-        extension = self.mimetypes_cmd("-l", "-e", "image/jpg")
-        eq(extension, ".jpg")
+        retcode, out, err = self.mimetypes_cmd('-e', 'image/jpg')
+        self.assertEqual(retcode, 1)
+        self.assertEqual(out, '')
+        self.assertEqual(err, f'error: unknown type image/jpg{linesep}')
 
-        extension = self.mimetypes_cmd("-e", "image/jpg")
-        eq(extension, "I don't know anything about type image/jpg")
-
-        extension = self.mimetypes_cmd("-e", "image/jpeg")
-        eq(extension, ".jpg")
+        retcode, out, err = self.mimetypes_cmd('-e', 'image/jpeg')
+        self.assertEqual(retcode, 0)
+        self.assertEqual(out, f'.jpg{linesep}')
+        self.assertEqual(err, '')
 
     def test_guess_type(self):
-        eq = self.assertEqual
+        retcode, out, err = self.mimetypes_cmd('-l', 'foo.webp')
+        self.assertEqual(retcode, 0)
+        self.assertEqual(out, f'type: image/webp encoding: None{linesep}')
+        self.assertEqual(err, '')
 
-        type_info = self.mimetypes_cmd("-l", "foo.pic")
-        eq(type_info, "type: image/pict encoding: None")
-
-        type_info = self.mimetypes_cmd("foo.pic")
-        eq(type_info, "I don't know anything about type foo.pic")
+    @unittest.skipIf(
+        sys.platform == 'darwin',
+        'macOS lists common_types in mime.types thus making them always known'
+    )
+    def test_guess_type_conflicting_with_mimetypes(self):
+        retcode, out, err = self.mimetypes_cmd('foo.pic')
+        self.assertEqual(retcode, 1)
+        self.assertEqual(out, '')
+        self.assertEqual(err, f'error: media type unknown for foo.pic{linesep}')
 
 if __name__ == "__main__":
     unittest.main()

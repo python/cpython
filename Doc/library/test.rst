@@ -246,7 +246,27 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: is_android
 
-   ``True`` if the system is Android.
+   ``True`` if ``sys.platform`` is ``android``.
+
+
+.. data:: is_emscripten
+
+   ``True`` if ``sys.platform`` is ``emscripten``.
+
+
+.. data:: is_wasi
+
+   ``True`` if ``sys.platform`` is ``wasi``.
+
+
+.. data:: is_apple_mobile
+
+   ``True`` if ``sys.platform`` is ``ios``, ``tvos``, or ``watchos``.
+
+
+.. data:: is_apple
+
+   ``True`` if ``sys.platform`` is ``darwin`` or ``is_apple_mobile`` is ``True``.
 
 
 .. data:: unix_shell
@@ -829,6 +849,15 @@ The :mod:`test.support` module defines the following functions:
 .. decorator:: bigaddrspacetest
 
    Decorator for tests that fill the address space.
+
+
+.. function:: linked_with_musl()
+
+   Return ``False`` if there is no evidence the interperter was compiled with
+   ``musl``, otherwise return a version triple, either ``(0, 0, 0)`` if the
+   version is unknown, or the actual version if it is known.  Intended for use
+   in ``skip`` decorators.  ``emscripten`` and ``wasi`` are assumed to be
+   compiled with ``musl``; otherwise ``platform.libc_ver`` is checked.
 
 
 .. function:: check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=None)
@@ -1435,9 +1464,12 @@ The :mod:`test.support.os_helper` module provides support for os tests.
    ``value``.
 
 
-.. method:: EnvironmentVarGuard.unset(envvar)
+.. method:: EnvironmentVarGuard.unset(envvar, *others)
 
-   Temporarily unset the environment variable ``envvar``.
+   Temporarily unset one or more environment variables.
+
+   .. versionchanged:: next
+      More than one environment variable can be unset.
 
 
 .. function:: can_symlink()

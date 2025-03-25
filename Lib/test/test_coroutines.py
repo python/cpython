@@ -1191,6 +1191,17 @@ class CoroutineTest(unittest.TestCase):
         _, result = run_async(g())
         self.assertIsNone(result.__context__)
 
+    def test_await_17(self):
+        # See https://github.com/python/cpython/issues/131666 for details.
+        class A:
+            async def __anext__(self):
+                raise StopAsyncIteration
+            def __aiter__(self):
+                return self
+
+        with contextlib.closing(anext(A(), "a").__await__()) as anext_awaitable:
+            self.assertRaises(TypeError, anext_awaitable.close, 1)
+
     def test_with_1(self):
         class Manager:
             def __init__(self, name):

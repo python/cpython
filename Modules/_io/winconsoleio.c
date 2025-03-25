@@ -23,7 +23,7 @@
 #include <stddef.h> /* For offsetof */
 
 #ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
 #include <fcntl.h>
@@ -331,7 +331,6 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
     int ret = 0;
     int rwa = 0;
     int fd = -1;
-    int fd_is_own = 0;
     HANDLE handle = NULL;
 
 #ifndef NDEBUG

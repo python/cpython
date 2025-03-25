@@ -1,5 +1,0 @@
-``from __future__ import barry_as_FLUFL`` now works in more contexts,
-including when it is used in files, with the ``-c`` flag, and in the REPL
-when there are multiple statements on the same line. Previously, it worked
-only on subsequent lines in the REPL, and when the appropriate flags were
-passed directly to :func:`compile`. Patch by Pablo Galindo.

@@ -29,7 +29,7 @@ except ImportError:
 from pathlib._os import (
     PathInfo, DirEntryInfo,
     ensure_different_files, ensure_distinct_paths,
-    copy_file, copy_info,
+    copyfile2, copyfileobj, magic_open, copy_info,
 )
 
 
@@ -525,13 +525,17 @@ class PurePath:
         msg = ("pathlib.PurePath.is_reserved() is deprecated and scheduled "
                "for removal in Python 3.15. Use os.path.isreserved() to "
                "detect reserved paths on Windows.")
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        warnings._deprecated("pathlib.PurePath.is_reserved", msg, remove=(3, 15))
         if self.parser is ntpath:
             return self.parser.isreserved(self)
         return False
 
     def as_uri(self):
         """Return the path as a URI."""
+        import warnings
+        msg = ("pathlib.PurePath.as_uri() is deprecated and scheduled "
+               "for removal in Python 3.19. Use pathlib.Path.as_uri().")
+        warnings._deprecated("pathlib.PurePath.as_uri", msg, remove=(3, 19))
         if not self.is_absolute():
             raise ValueError("relative path can't be expressed as a file URI")
 
@@ -809,12 +813,6 @@ class Path(PurePath):
                             data.__class__.__name__)
         with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
-
-    def _write_info(self, info, follow_symlinks=True):
-        """
-        Write the given PathInfo to this path.
-        """
-        copy_info(info, self, follow_symlinks=follow_symlinks)
 
     _remove_leading_dot = operator.itemgetter(slice(2, None))
     _remove_trailing_slash = operator.itemgetter(slice(-1))
@@ -1100,18 +1098,17 @@ class Path(PurePath):
             target = self.with_segments(target)
         return target
 
-    def copy(self, target, follow_symlinks=True, preserve_metadata=False):
+    def copy(self, target, **kwargs):
         """
         Recursively copy this file or directory tree to the given destination.
         """
         if not hasattr(target, 'with_segments'):
             target = self.with_segments(target)
         ensure_distinct_paths(self, target)
-        copy_file(self, target, follow_symlinks, preserve_metadata)
+        target._copy_from(self, **kwargs)
         return target.joinpath()  # Empty join to ensure fresh metadata.
 
-    def copy_into(self, target_dir, *, follow_symlinks=True,
-                  preserve_metadata=False):
+    def copy_into(self, target_dir, **kwargs):
         """
         Copy this file or directory tree into the given existing directory.
         """
@@ -1122,8 +1119,59 @@ class Path(PurePath):
             target = target_dir / name
         else:
             target = self.with_segments(target_dir, name)
-        return self.copy(target, follow_symlinks=follow_symlinks,
-                         preserve_metadata=preserve_metadata)
+        return self.copy(target, **kwargs)
+
+    def _copy_from(self, source, follow_symlinks=True, preserve_metadata=False):
+        """
+        Recursively copy the given path to this path.
+        """
+        if not follow_symlinks and source.info.is_symlink():
+            self._copy_from_symlink(source, preserve_metadata)
+        elif source.info.is_dir():
+            children = source.iterdir()
+            os.mkdir(self)
+            for child in children:
+                self.joinpath(child.name)._copy_from(
+                    child, follow_symlinks, preserve_metadata)
+            if preserve_metadata:
+                copy_info(source.info, self)
+        else:
+            self._copy_from_file(source, preserve_metadata)
+
+    def _copy_from_file(self, source, preserve_metadata=False):
+        ensure_different_files(source, self)
+        with magic_open(source, 'rb') as source_f:
+            with open(self, 'wb') as target_f:
+                copyfileobj(source_f, target_f)
+        if preserve_metadata:
+            copy_info(source.info, self)
+
+    if copyfile2:
+        # Use fast OS routine for local file copying where available.
+        _copy_from_file_fallback = _copy_from_file
+        def _copy_from_file(self, source, preserve_metadata=False):
+            try:
+                source = os.fspath(source)
+            except TypeError:
+                pass
+            else:
+                copyfile2(source, str(self))
+                return
+            self._copy_from_file_fallback(source, preserve_metadata)
+
+    if os.name == 'nt':
+        # If a directory-symlink is copied *before* its target, then
+        # os.symlink() incorrectly creates a file-symlink on Windows. Avoid
+        # this by passing *target_is_dir* to os.symlink() on Windows.
+        def _copy_from_symlink(self, source, preserve_metadata=False):
+            os.symlink(str(source.readlink()), self, source.info.is_dir())
+            if preserve_metadata:
+                copy_info(source.info, self, follow_symlinks=False)
+    else:
+        def _copy_from_symlink(self, source, preserve_metadata=False):
+            os.symlink(str(source.readlink()), self)
+            if preserve_metadata:
+                copy_info(source.info, self, follow_symlinks=False)
 
     def move(self, target):
         """
@@ -1218,26 +1266,20 @@ class Path(PurePath):
             raise RuntimeError("Could not determine home directory.")
         return cls(homedir)
 
+    def as_uri(self):
+        """Return the path as a URI."""
+        if not self.is_absolute():
+            raise ValueError("relative paths can't be expressed as file URIs")
+        from urllib.request import pathname2url
+        return f'file:{pathname2url(str(self))}'
+
     @classmethod
     def from_uri(cls, uri):
         """Return a new path from the given 'file' URI."""
         if not uri.startswith('file:'):
             raise ValueError(f"URI does not start with 'file:': {uri!r}")
-        path = uri[5:]
-        if path[:3] == '///':
-            # Remove empty authority
-            path = path[2:]
-        elif path[:12] == '//localhost/':
-            # Remove 'localhost' authority
-            path = path[11:]
-        if path[:3] == '///' or (path[:1] == '/' and path[2:3] in ':|'):
-            # Remove slash before DOS device/UNC path
-            path = path[1:]
-        if path[1:2] == '|':
-            # Replace bar with colon in DOS drive
-            path = path[:1] + ':' + path[2:]
-        from urllib.parse import unquote_to_bytes
-        path = cls(os.fsdecode(unquote_to_bytes(path)))
+        from urllib.request import url2pathname
+        path = cls(url2pathname(uri.removeprefix('file:')))
         if not path.is_absolute():
             raise ValueError(f"URI is not absolute: {uri!r}")
         return path

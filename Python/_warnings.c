@@ -1,16 +1,18 @@
 #include "Python.h"
-#include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION_MUT()
-#include "pycore_interp.h"        // PyInterpreterState.warnings
+#include "pycore_frame.h"         // PyFrameObject
+#include "pycore_genobject.h"     // PyAsyncGenObject
+#include "pycore_import.h"        // _PyImport_GetModules()
+#include "pycore_interpframe.h"   // _PyFrame_GetCode()
 #include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
 #include "pycore_traceback.h"     // _Py_DisplaySourceLine()
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #include <stdbool.h>
-
 #include "clinic/_warnings.c.h"
+
 
 #define MODULE_NAME "_warnings"
 

@@ -1,3 +1,0 @@
-Using :func:`super` and ``__class__`` :term:`closure variable` in
-user-defined methods of :class:`typing.NamedTuple` subclasses is now
-explicitly prohibited at runtime. Contributed by Bartosz Sławecki in :gh:`130082`.

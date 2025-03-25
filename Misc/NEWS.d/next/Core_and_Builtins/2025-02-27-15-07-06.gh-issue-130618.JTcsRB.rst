@@ -1,3 +1,0 @@
-Fix a bug that was causing ``UnicodeDecodeError`` or ``SystemError`` to be
-raised when using f-strings with ``lambda`` expressions with non-ASCII
-characters. Patch by Pablo Galindo

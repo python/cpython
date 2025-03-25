@@ -505,6 +505,10 @@ Configuration Options
      - :c:member:`use_hash_seed <PyConfig.use_hash_seed>`
      - ``bool``
      - Read-only
+   * - ``"use_system_logger"``
+     - :c:member:`use_system_logger <PyConfig.use_system_logger>`
+     - ``bool``
+     - Read-only
    * - ``"user_site_directory"``
      - :c:member:`user_site_directory <PyConfig.user_site_directory>`
      - ``bool``
@@ -574,8 +578,8 @@ Some options are read from the :mod:`sys` attributes. For example, the option
    * ``list[str]``
    * ``dict[str, str]``
 
-   The caller must hold the GIL. The function cannot be called before
-   Python initialization nor after Python finalization.
+   The caller must have an :term:`attached thread state`. The function cannot
+   be called before Python initialization nor after Python finalization.
 
    .. versionadded:: 3.14
 
@@ -597,8 +601,8 @@ Some options are read from the :mod:`sys` attributes. For example, the option
    * Return a new reference on success.
    * Set an exception and return ``NULL`` on error.
 
-   The caller must hold the GIL. The function cannot be called before
-   Python initialization nor after Python finalization.
+   The caller must have an :term:`attached thread state`. The function cannot
+   be called before Python initialization nor after Python finalization.
 
    .. versionadded:: 3.14
 
@@ -612,8 +616,8 @@ Some options are read from the :mod:`sys` attributes. For example, the option
    * Raise a :exc:`ValueError` if the option is read-only (cannot be set).
    * Raise a :exc:`TypeError` if *value* has not the proper type.
 
-   The caller must hold the GIL. The function cannot be called before
-   Python initialization nor after Python finalization.
+   The caller must have an :term:`attached thread state`. The function cannot
+   be called before Python initialization nor after Python finalization.
 
    .. versionadded:: 3.14
 
@@ -1927,9 +1931,10 @@ PyConfig
 
       Only available on macOS 10.12 and later, and on iOS.
 
-      Default: ``0`` (don't use system log).
+      Default: ``0`` (don't use the system log) on macOS; ``1`` on iOS (use the
+      system log).
 
-      .. versionadded:: 3.13.2
+      .. versionadded:: 3.14
 
    .. c:member:: int user_site_directory
 

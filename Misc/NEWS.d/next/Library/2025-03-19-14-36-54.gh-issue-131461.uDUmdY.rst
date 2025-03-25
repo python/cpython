@@ -1,0 +1,1 @@
+Fix :exc:`ResourceWarning` when constructing a :class:`gzip.GzipFile` in write mode with a broken file object.

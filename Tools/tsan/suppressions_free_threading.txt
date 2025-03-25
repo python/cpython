@@ -13,11 +13,9 @@
 # These warnings trigger directly in a CPython function.
 
 race_top:assign_version_tag
-race_top:_multiprocessing_SemLock_acquire_impl
 race_top:_Py_slot_tp_getattr_hook
 race_top:dump_traceback
 race_top:fatal_error
-race_top:_multiprocessing_SemLock_release_impl
 race_top:_PyFrame_GetCode
 race_top:_PyFrame_Initialize
 race_top:_PyObject_TryGetInstanceAttribute

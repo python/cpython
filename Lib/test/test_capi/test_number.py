@@ -1,10 +1,9 @@
 import itertools
 import operator
-import sys
 import unittest
 import warnings
 
-from test.support import cpython_only, import_helper
+from test.support import import_helper
 
 _testcapi = import_helper.import_module('_testcapi')
 from _testcapi import PY_SSIZE_T_MAX, PY_SSIZE_T_MIN

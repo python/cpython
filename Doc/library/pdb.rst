@@ -203,13 +203,32 @@ slightly different way:
    Enter post-mortem debugging of the exception found in
    :data:`sys.last_exc`.
 
+.. function:: set_default_backend(backend)
+
+   There are two supported backends for pdb: ``'settrace'`` and ``'monitoring'``.
+   See :class:`bdb.Bdb` for details. The user can set the default backend to
+   use if none is specified when instantiating :class:`Pdb`. If no backend is
+   specified, the default is ``'settrace'``.
+
+   .. note::
+
+      :func:`breakpoint` and :func:`set_trace` will not be affected by this
+      function. They always use ``'monitoring'`` backend.
+
+   .. versionadded:: 3.14
+
+.. function:: get_default_backend()
+
+   Returns the default backend for pdb.
+
+   .. versionadded:: 3.14
 
 The ``run*`` functions and :func:`set_trace` are aliases for instantiating the
 :class:`Pdb` class and calling the method of the same name.  If you want to
 access further features, you have to do this yourself:
 
 .. class:: Pdb(completekey='tab', stdin=None, stdout=None, skip=None, \
-               nosigint=False, readrc=True, mode=None)
+               nosigint=False, readrc=True, mode=None, backend=None)
 
    :class:`Pdb` is the debugger class.
 
@@ -235,6 +254,10 @@ access further features, you have to do this yourself:
    or ``None`` (for backwards compatible behaviour, as before the *mode*
    argument was added).
 
+   The *backend* argument specifies the backend to use for the debugger. If ``None``
+   is passed, the default backend will be used. See :func:`set_default_backend`.
+   Otherwise the supported backends are ``'settrace'`` and ``'monitoring'``.
+
    Example call to enable tracing with *skip*::
 
       import pdb; pdb.Pdb(skip=['django.*']).set_trace()
@@ -253,6 +276,9 @@ access further features, you have to do this yourself:
 
    .. versionadded:: 3.14
       Added the *mode* argument.
+
+   .. versionadded:: 3.14
+      Added the *backend* argument.
 
    .. versionchanged:: 3.14
       Inline breakpoints like :func:`breakpoint` or :func:`pdb.set_trace` will
@@ -313,15 +339,19 @@ sets a global variable ``$foo`` which you can use in the debugger session.  The
 less likely to interfere with your program compared to using normal variables
 like ``foo = 1``.
 
-There are three preset *convenience variables*:
+There are four preset *convenience variables*:
 
 * ``$_frame``: the current frame you are debugging
 * ``$_retval``: the return value if the frame is returning
 * ``$_exception``: the exception if the frame is raising an exception
+* ``$_asynctask``: the asyncio task if pdb stops in an async function
 
 .. versionadded:: 3.12
 
    Added the *convenience variable* feature.
+
+.. versionadded:: 3.14
+   Added the ``$_asynctask`` convenience variable.
 
 .. index::
    pair: .pdbrc; file

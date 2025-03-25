@@ -1639,10 +1639,13 @@ class WriteTest(WriteTestBase, unittest.TestCase):
                         raise exctype
 
             f = BadFile()
-            with self.assertRaises(exctype):
-                tar = tarfile.open(tmpname, self.mode, fileobj=f,
-                                   format=tarfile.PAX_FORMAT,
-                                   pax_headers={'non': 'empty'})
+            with (
+                warnings_helper.check_no_resource_warning(self),
+                self.assertRaises(exctype),
+            ):
+                tarfile.open(tmpname, self.mode, fileobj=f,
+                             format=tarfile.PAX_FORMAT,
+                             pax_headers={'non': 'empty'})
             self.assertFalse(f.closed)
 
     def test_missing_fileobj(self):

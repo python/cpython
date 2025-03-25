@@ -1,4 +1,0 @@
-Reverts a change in the previous release attempting to make some stdlib
-imports used within the :mod:`subprocess` module lazy as this was causing
-errors during ``__del__`` finalizers calling methods such as ``terminate``, or
-``kill``, or ``send_signal``.

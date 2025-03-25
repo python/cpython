@@ -72,6 +72,19 @@ PyDoc_STRVAR(EVP_update__doc__,
 #define EVP_UPDATE_METHODDEF    \
     {"update", (PyCFunction)EVP_update, METH_O, EVP_update__doc__},
 
+static PyObject *
+EVP_update_impl(EVPobject *self, PyObject *obj);
+
+static PyObject *
+EVP_update(PyObject *self, PyObject *obj)
+{
+    PyObject *return_value = NULL;
+
+    return_value = EVP_update_impl((EVPobject *)self, obj);
+
+    return return_value;
+}
+
 #if defined(PY_OPENSSL_HAS_SHAKE)
 
 PyDoc_STRVAR(EVPXOF_digest__doc__,
@@ -1844,4 +1857,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=811a8b50beae1018 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e9624853a73bb65a input=a9049054013a1b77]*/
