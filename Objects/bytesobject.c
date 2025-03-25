@@ -3925,3 +3925,27 @@ PyBytesWriter_Resize(PyBytesWriter *writer, Py_ssize_t size)
     writer->size = size;
     return 0;
 }
+
+
+int
+PyBytesWriter_WriteBytes(PyBytesWriter *writer,
+                         const void *bytes, Py_ssize_t size)
+{
+    if (size < 0) {
+        size = strlen(bytes);
+    }
+
+    Py_ssize_t pos = writer->size;
+    if (size > PY_SSIZE_T_MAX - pos) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    Py_ssize_t total = pos + size;
+
+    if (PyBytesWriter_Resize(writer, total) < 0) {
+        return -1;
+    }
+    char *buf = byteswriter_data(writer);
+    memcpy(buf + pos, bytes, size);
+    return 0;
+}

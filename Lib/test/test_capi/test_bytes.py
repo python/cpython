@@ -297,15 +297,13 @@ class PyBytesWriterTest(unittest.TestCase):
     def create_writer(self, alloc=0, string=b''):
         return _testcapi.PyBytesWriter(alloc, string)
 
-    def test_empty(self):
+    def test_create(self):
         # Test PyBytesWriter_Create()
         writer = self.create_writer()
         self.assertEqual(writer.get_size(), 0)
         self.assertEqual(writer.get_allocated(), self.SMALL_BUFFER)
         self.assertEqual(writer.finish(), b'')
 
-    def test_abc(self):
-        # Test PyBytesWriter_Create()
         writer = self.create_writer(3, b'abc')
         self.assertEqual(writer.get_size(), 3)
         self.assertEqual(writer.get_allocated(), self.SMALL_BUFFER)
@@ -316,21 +314,19 @@ class PyBytesWriterTest(unittest.TestCase):
         self.assertEqual(writer.get_allocated(), self.SMALL_BUFFER)
         self.assertEqual(writer.finish_with_size(3), b'abc')
 
-    # def test_write_bytes(self):
-    #     # Test PyBytesWriter_WriteBytes()
+    def test_write_bytes(self):
+         # Test PyBytesWriter_WriteBytes()
+         writer = self.create_writer()
+         writer.write_bytes(b'Hello World!', -1)
+         self.assertEqual(writer.finish(), b'Hello World!')
 
-    #     writer = self.create_writer()
-    #     writer.write_bytes(b'Hello World!', -1)
-    #     self.assertEqual(writer.finish(), b'Hello World!')
-
-    #     writer = self.create_writer()
-    #     writer.write_bytes(b'Hello ', -1)
-    #     writer.write_bytes(b'World! <truncated>', 6)
-    #     self.assertEqual(writer.finish(), b'Hello World!')
+         writer = self.create_writer()
+         writer.write_bytes(b'Hello ', -1)
+         writer.write_bytes(b'World! <truncated>', 6)
+         self.assertEqual(writer.finish(), b'Hello World!')
 
     def test_resize(self):
-        # Test PyBytesWriter_Extend()
-
+        # Test PyBytesWriter_Resize()
         writer = self.create_writer()
         writer.resize(len(b'number=123456'), b'number=123456')
         writer.resize(len(b'number=123456'), b'')

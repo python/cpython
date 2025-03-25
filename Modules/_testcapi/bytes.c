@@ -131,6 +131,27 @@ writer_check(WriterObject *self)
 
 
 static PyObject*
+writer_write_bytes(PyObject *self_raw, PyObject *args)
+{
+    WriterObject *self = (WriterObject *)self_raw;
+    if (writer_check(self) < 0) {
+        return NULL;
+    }
+
+    char *bytes;
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "yn", &bytes, &size)) {
+        return NULL;
+    }
+
+    if (PyBytesWriter_WriteBytes(self->writer, bytes, size) < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+
+static PyObject*
 writer_resize(PyObject *self_raw, PyObject *args)
 {
     WriterObject *self = (WriterObject *)self_raw;
@@ -220,6 +241,7 @@ writer_finish_with_size(PyObject *self_raw, PyObject *args)
 
 
 static PyMethodDef writer_methods[] = {
+    {"write_bytes", _PyCFunction_CAST(writer_write_bytes), METH_VARARGS},
     {"resize", _PyCFunction_CAST(writer_resize), METH_VARARGS},
     {"get_size", _PyCFunction_CAST(writer_get_size), METH_NOARGS},
     {"get_allocated", _PyCFunction_CAST(writer_get_allocated), METH_NOARGS},
