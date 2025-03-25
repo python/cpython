@@ -5730,9 +5730,8 @@ _PyType_LookupRefAndVersion(PyTypeObject *type, PyObject *name, unsigned int *ve
 }
 
 /* Internal API to look for a name through the MRO.
-   This returns a strong reference, and doesn't set an exception!
-   If nonzero, version is set to the value of type->tp_version at the time of
-   the lookup.
+   This stores a stack reference in out and returns the value of
+   type->tp_version or zero if name is missing. It doesn't set an exception!
 */
 unsigned int
 _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef *out)
