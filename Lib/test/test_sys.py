@@ -702,9 +702,25 @@ class SysModuleTest(unittest.TestCase):
             absent = object()
             with self.assertWarnsRegex(
                 DeprecationWarning,
-                r'sys\.abiflags will be set.*on all platforms',
+                r'sys\.abiflags will be set\b.*\bon all platforms',
             ):
                 self.assertIs(getattr(sys, 'abiflags', absent), absent)
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                r'sys\.abiflags will be set\b.*\bon all platforms',
+            ):
+                self.assertFalse(hasattr(sys, 'abiflags'))
+
+            # Emit a deprecated warning and also raise an AttributeError
+            with self.assertRaisesRegex(
+                AttributeError,
+                r"module 'sys' has no attribute 'abiflags'",
+            ):
+                with self.assertWarnsRegex(
+                    DeprecationWarning,
+                    r'sys\.abiflags will be set\b.*\bon all platforms',
+                ):
+                    _ = sys.abiflags
 
     def test_thread_info(self):
         info = sys.thread_info
