@@ -3172,13 +3172,11 @@ PyCData_FromBaseObj(ctypes_state *st,
         return NULL;
     }
 
+    stginfo_set_dict_final(info);
     cmem = (CDataObject *)((PyTypeObject *)type)->tp_alloc((PyTypeObject *)type, 0);
     if (cmem == NULL) {
         return NULL;
     }
-
-    stginfo_set_dict_final(info);
-
     assert(CDataObject_Check(st, cmem));
     cmem->b_length = info->length;
     cmem->b_size = info->size;
