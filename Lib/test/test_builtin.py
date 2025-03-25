@@ -264,7 +264,6 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
 
         # check the overriding the builtins works
-        bltin_outputs = [f() for f in funcs]
 
         global all, any, tuple
         saved = all, any, tuple
@@ -273,15 +272,26 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             any = lambda x : "any"
             tuple = lambda x : "tuple"
 
-            return [f() for f in funcs]
+            overridden_outputs = [f() for f in funcs]
         finally:
             all, any, tuple = saved
 
-        overridden_outputs = run_with_overrides()
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple'])
 
-        for f, out1, out2 in zip(funcs, bltin_outputs, overridden_outputs):
-            with self.subTest(func = f.__name__):
-                self.assertNotEqual(out1, out2)
+        # Now repeat, overriding the builtins module as well
+        saved = all, any, tuple
+        try:
+            builtins.all = all = lambda x : "all"
+            builtins.any = any = lambda x : "any"
+            builtins.tuple = tuple = lambda x : "tuple"
+
+            overridden_outputs = [f() for f in funcs]
+        finally:
+            all, any, tuple = saved
+            builtins.all, builtins.any, builtins.tuple = saved
+
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple'])
+
 
     def test_ascii(self):
         self.assertEqual(ascii(''), '\'\'')

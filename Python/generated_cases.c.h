@@ -8749,38 +8749,35 @@
             _PyStackRef value;
             // Keep in sync with _common_constants in opcode.py
             // If we ever have more than two constants, use a lookup table
-            PyObject *val;
             if (oparg == CONSTANT_ASSERTIONERROR) {
-                val = PyExc_AssertionError;
+                value = PyStackRef_FromPyObjectImmortal(PyExc_AssertionError);
             }
             else {
                 if (oparg == CONSTANT_NOTIMPLEMENTEDERROR) {
-                    val = PyExc_NotImplementedError;
+                    value = PyStackRef_FromPyObjectImmortal(PyExc_NotImplementedError);
                 }
                 else {
                     if (oparg == CONSTANT_BUILTIN_TUPLE) {
-                        val = (PyObject*)&PyTuple_Type;
+                        value = PyStackRef_FromPyObjectImmortal((PyObject*)&PyTuple_Type);
                     }
                     else {
                         if (oparg == CONSTANT_BUILTIN_ALL) {
-                            _PyFrame_SetStackPointer(frame, stack_pointer);
-                            val = PyDict_GetItemWithError(BUILTINS(), &_Py_ID(all));
-                            stack_pointer = _PyFrame_GetStackPointer(frame);
+                            value = PyStackRef_FromPyObjectNew(tstate->interp->callable_cache.all);
                         }
                         else {
                             if (oparg == CONSTANT_BUILTIN_ANY) {
-                                _PyFrame_SetStackPointer(frame, stack_pointer);
-                                val = PyDict_GetItemWithError(BUILTINS(), &_Py_ID(any));
-                                stack_pointer = _PyFrame_GetStackPointer(frame);
+                                value = PyStackRef_FromPyObjectNew(tstate->interp->callable_cache.any);
                             }
                             else {
-                                Py_UNREACHABLE();
+                                _PyFrame_SetStackPointer(frame, stack_pointer);
+                                _PyErr_SetString(tstate, PyExc_ValueError, "unknown common const");
+                                stack_pointer = _PyFrame_GetStackPointer(frame);
+                                JUMP_TO_LABEL(error);
                             }
                         }
                     }
                 }
             }
-            value = PyStackRef_FromPyObjectNew(val);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());

@@ -794,6 +794,18 @@ pycore_init_builtins(PyThreadState *tstate)
     }
     interp->callable_cache.len = len;
 
+    PyObject *all = PyDict_GetItemWithError(builtins_dict, &_Py_ID(all));
+    if (!all) {
+        goto error;
+    }
+    interp->callable_cache.all = all;
+
+    PyObject *any = PyDict_GetItemWithError(builtins_dict, &_Py_ID(any));
+    if (!any) {
+        goto error;
+    }
+    interp->callable_cache.any = any;
+
     PyObject *list_append = _PyType_Lookup(&PyList_Type, &_Py_ID(append));
     if (list_append == NULL) {
         goto error;
