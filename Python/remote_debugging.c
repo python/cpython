@@ -423,8 +423,7 @@ exit:
 #ifdef MS_WINDOWS
 
 static uintptr_t
-static uintptr_t
-search_map_for_section(proc_handle_t *handle, const char* secname, const char* substr) {
+search_map_for_section(proc_handle_t* handle, const char* secname, const char* substr) {
     //TODO: Implement this function
     PyErr_SetString(PyExc_RuntimeError, "search_map_for_section not implemented on Windows");
     return 0;
