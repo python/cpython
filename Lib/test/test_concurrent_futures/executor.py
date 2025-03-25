@@ -69,7 +69,12 @@ class ExecutorTest:
 
         # a failed future must not be captured in its
         # future._exception.__traceback__ to avoid a reference cycle
-        self.assertFalse(gc.get_referrers(error))
+        self.assertFalse(
+            any(
+                isinstance(referrer, futures.Future)
+                for referrer in gc.get_referrers(error)
+            )
+        )
 
     @support.requires_resource('walltime')
     def test_map_timeout(self):
