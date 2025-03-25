@@ -13,6 +13,7 @@
     <!-- pyconfig.h is updated by pythoncore.vcxproj, so it's always in pythoncore's IntDir -->
     <GeneratedPyConfigDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)$(ArchName)_$(Configuration)\pythoncore\</GeneratedPyConfigDir>
     <GeneratedFrozenModulesDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)_frozen\</GeneratedFrozenModulesDir>
+    <GeneratedZlibNgDir>$(Py_IntDir)\$(MajorVersionNumber)$(MinorVersionNumber)$(ArchName)_$(Configuration)\zlib-ng\</GeneratedZlibNgDir>
     <TargetName Condition="'$(TargetName)' == ''">$(ProjectName)</TargetName>
     <TargetName>$(TargetName)$(PyDebugExt)</TargetName>
     <GenerateManifest>false</GenerateManifest>
@@ -23,6 +24,9 @@
     <SupportSigning Condition="'$(ConfigurationType)' == 'StaticLibrary'">false</SupportSigning>
     <LinkIncremental Condition="$(Configuration) != 'Debug'">false</LinkIncremental>
   </PropertyGroup>
+
+  <!-- We need the above overridden OutDir, so this must be imported after PropertyGroup -->
+  <Import Project="pyproject-clangcl.props" Condition="$(PlatformToolset) == 'ClangCL' and $(__PyprojectClangCl_Props_Imported) != 'true'" />
 
   <PropertyGroup Condition="$(TargetExt) != ''">
     <TargetNameExt>$(TargetName)$(TargetExt)</TargetNameExt>
@@ -53,6 +57,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>$(PySourcePath)Include;$(PySourcePath)Include\internal;$(PySourcePath)Include\internal\mimalloc;$(GeneratedPyConfigDir);$(PySourcePath)PC;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;$(_Py3NamePreprocessorDefinition);$(_PlatformPreprocessorDefinition)$(_DebugPreprocessorDefinition)$(_PyStatsPreprocessorDefinition)$(_PydPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(SupportPGO)' and ($(Configuration) == 'PGInstrument' or $(Configuration) == 'PGUpdate')">_Py_USING_PGO=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -68,8 +73,6 @@
       <ControlFlowGuard Condition="$(EnableControlFlowGuard) != ''">$(EnableControlFlowGuard)</ControlFlowGuard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">-Wno-deprecated-non-prototype -Wno-unused-label -Wno-pointer-sign -Wno-incompatible-pointer-types-discards-qualifiers -Wno-unused-function %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="$(Configuration) != 'Debug' and $(PlatformToolset) == 'ClangCL'">-flto %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="$(MSVCHasBrokenARM64Clamping) == 'true' and $(Platform) == 'ARM64'">-d2pattern-opt-disable:-932189325 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="$(MSVCHasBrokenARM64SignExtension) == 'true' and $(Platform) == 'ARM64'">-d2ssa-patterns-all- %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="$(GenerateSourceDependencies) == 'true'">/sourceDependencies "$(IntDir.Trim(`\`))" %(AdditionalOptions)</AdditionalOptions>
@@ -105,6 +108,7 @@
       <AdditionalOptions Condition="$(MSVCHasBrokenARM64Clamping) == 'true' and $(Platform) == 'ARM64'">-d2:-pattern-opt-disable:-932189325 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <Lib>
+      <LinkTimeCodeGeneration>false</LinkTimeCodeGeneration>
       <LinkTimeCodeGeneration Condition="$(Configuration) == 'Release'">true</LinkTimeCodeGeneration>
       <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGInstrument'">true</LinkTimeCodeGeneration>
       <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGUpdate'">true</LinkTimeCodeGeneration>
@@ -185,7 +189,7 @@ public override bool Execute() {
              Targets="CleanAll" />
   </Target>
 
-  <Target Name="CopyPGCFiles" BeforeTargets="PrepareForBuild" Condition="$(Configuration) == 'PGUpdate'">
+  <Target Name="CopyPGCFiles" BeforeTargets="PrepareForBuild" Condition="$(Configuration) == 'PGUpdate' and $(PlatformToolset) != 'ClangCL'">
     <ItemGroup>
       <_PGCFiles Include="$(OutDir)instrumented\$(TargetName)!*.pgc" />
       <_PGDFile Include="$(OutDir)instrumented\$(TargetName).pgd" />
@@ -193,7 +197,7 @@ public override bool Execute() {
     </ItemGroup>
     <Delete Files="@(_CopyFiles->'$(OutDir)%(Filename)%(Extension)')" />
     <Error Text="PGO run did not succeed (no $(TargetName)!*.pgc files) and there is no data to merge"
-           Condition="$(RequirePGCFiles) == 'true' and @(_PGCFiles) == ''" />
+           Condition="$(RequireProfileData) == 'true' and @(_PGCFiles) == ''" />
     <Copy SourceFiles="@(_CopyFiles)"
           DestinationFolder="$(OutDir)"
           UseHardLinksIfPossible="true"

@@ -1819,7 +1819,7 @@ Build Changes
 * ``PYTHON_FOR_REGEN`` now require Python 3.10 or newer.
 
 * Autoconf 2.71 and aclocal 1.16.4 is now required to regenerate
-  :file:`!configure`.
+  :file:`configure`.
   (Contributed by Christian Heimes in :gh:`89886`.)
 
 * Windows builds and macOS installers from python.org now use OpenSSL 3.0.

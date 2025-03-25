@@ -52,6 +52,7 @@ STORE_FAST_LOAD_FAST = opmap['STORE_FAST_LOAD_FAST']
 STORE_FAST_STORE_FAST = opmap['STORE_FAST_STORE_FAST']
 IS_OP = opmap['IS_OP']
 CONTAINS_OP = opmap['CONTAINS_OP']
+END_ASYNC_FOR = opmap['END_ASYNC_FOR']
 
 CACHE = opmap["CACHE"]
 
@@ -376,6 +377,14 @@ class Instruction(_Instruction):
                         entries (if any)
     """
 
+    @staticmethod
+    def make(
+        opname, arg, argval, argrepr, offset, start_offset, starts_line,
+        line_number, label=None, positions=None, cache_info=None
+    ):
+        return Instruction(opname, _all_opmap[opname], arg, argval, argrepr, offset,
+                           start_offset, starts_line, line_number, label, positions, cache_info)
+
     @property
     def oparg(self):
         """Alias for Instruction.arg."""
@@ -597,7 +606,8 @@ class ArgResolver:
                 argval = self.offset_from_jump_arg(op, arg, offset)
                 lbl = self.get_label_for_offset(argval)
                 assert lbl is not None
-                argrepr = f"to L{lbl}"
+                preposition = "from" if deop == END_ASYNC_FOR else "to"
+                argrepr = f"{preposition} L{lbl}"
             elif deop in (LOAD_FAST_LOAD_FAST, STORE_FAST_LOAD_FAST, STORE_FAST_STORE_FAST):
                 arg1 = arg >> 4
                 arg2 = arg & 15
@@ -737,7 +747,8 @@ def _parse_exception_table(code):
 
 def _is_backward_jump(op):
     return opname[op] in ('JUMP_BACKWARD',
-                          'JUMP_BACKWARD_NO_INTERRUPT')
+                          'JUMP_BACKWARD_NO_INTERRUPT',
+                          'END_ASYNC_FOR') # Not really a jump, but it has a "target"
 
 def _get_instructions_bytes(code, linestarts=None, line_offset=0, co_positions=None,
                             original_code=None, arg_resolver=None):

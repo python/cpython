@@ -17,20 +17,23 @@
 #include "pycore_code.h"          // _PyCode_GetTLBCFast()
 #include "pycore_compile.h"       // _PyCompile_CodeGen()
 #include "pycore_context.h"       // _PyContext_NewHamtForTests()
-#include "pycore_dict.h"          // _PyManagedDictPointer_GetValues()
+#include "pycore_dict.h"          // PyDictValues
 #include "pycore_fileutils.h"     // _Py_normpath()
 #include "pycore_flowgraph.h"     // _PyCompile_OptimizeCfg()
 #include "pycore_frame.h"         // _PyInterpreterFrame
 #include "pycore_gc.h"            // PyGC_Head
 #include "pycore_hashtable.h"     // _Py_hashtable_new()
+#include "pycore_import.h"        // _PyImport_ClearExtension()
 #include "pycore_initconfig.h"    // _Py_GetConfigsAsDict()
 #include "pycore_instruction_sequence.h"  // _PyInstructionSequence_New()
+#include "pycore_interpframe.h"   // _PyFrame_GetFunction()
 #include "pycore_object.h"        // _PyObject_IsFreed()
-#include "pycore_optimizer.h"     // JitOptSymbol, etc.
+#include "pycore_optimizer.h"     // _Py_Executor_DependsOn
 #include "pycore_pathconfig.h"    // _PyPathConfig_ClearGlobal()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
-#include "pycore_pylifecycle.h"   // _PyInterpreterConfig_AsDict()
+#include "pycore_pylifecycle.h"   // _PyInterpreterConfig_InitFromDict()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_unicodeobject.h" // _PyUnicode_TransformDecimalAndSpaceToASCII()
 
 #include "clinic/_testinternalcapi.c.h"
 
@@ -115,7 +118,10 @@ static PyObject*
 get_c_recursion_remaining(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return PyLong_FromLong(tstate->c_recursion_remaining);
+    uintptr_t here_addr = _Py_get_machine_stack_pointer();
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    int remaining = (int)((here_addr - _tstate->c_stack_soft_limit)/PYOS_STACK_MARGIN_BYTES * 50);
+    return PyLong_FromLong(remaining);
 }
 
 
@@ -1992,6 +1998,13 @@ is_static_immortal(PyObject *self, PyObject *op)
     Py_RETURN_FALSE;
 }
 
+static PyObject *
+incref_decref_delayed(PyObject *self, PyObject *op)
+{
+    _PyObject_XDecRefDelayed(Py_NewRef(op));
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef module_functions[] = {
     {"get_configs", get_configs, METH_NOARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
@@ -2086,6 +2099,7 @@ static PyMethodDef module_functions[] = {
     {"has_deferred_refcount", has_deferred_refcount, METH_O},
     {"get_tracked_heap_size", get_tracked_heap_size, METH_NOARGS},
     {"is_static_immortal", is_static_immortal, METH_O},
+    {"incref_decref_delayed", incref_decref_delayed, METH_O},
     {NULL, NULL} /* sentinel */
 };
 

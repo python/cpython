@@ -2636,6 +2636,13 @@ PyUnicode_DecodeMBCSStateful:Py_ssize_t:size::
 PyUnicode_DecodeMBCSStateful:const char*:errors::
 PyUnicode_DecodeMBCSStateful:Py_ssize_t*:consumed::
 
+PyUnicode_DecodeCodePageStateful:PyObject*::+1:
+PyUnicode_DecodeCodePageStateful:int:code_page::
+PyUnicode_DecodeCodePageStateful:const char*:s::
+PyUnicode_DecodeCodePageStateful:Py_ssize_t:size::
+PyUnicode_DecodeCodePageStateful:const char*:errors::
+PyUnicode_DecodeCodePageStateful:Py_ssize_t*:consumed::
+
 PyUnicode_EncodeCodePage:PyObject*::+1:
 PyUnicode_EncodeCodePage:int:code_page::
 PyUnicode_EncodeCodePage:PyObject*:unicode:0:
@@ -2648,13 +2655,26 @@ PyUnicode_Concat:PyObject*::+1:
 PyUnicode_Concat:PyObject*:left:0:
 PyUnicode_Concat:PyObject*:right:0:
 
+PyUnicode_Partition:PyObject*::+1:
+PyUnicode_Partition:PyObject*:unicode:0:
+PyUnicode_Partition:PyObject*:sep:0:
+
+PyUnicode_RPartition:PyObject*::+1:
+PyUnicode_RPartition:PyObject*:unicode:0:
+PyUnicode_RPartition:PyObject*:sep:0:
+
+PyUnicode_RSplit:PyObject*::+1:
+PyUnicode_RSplit:PyObject*:unicode:0:
+PyUnicode_RSplit:PyObject*:sep:0:
+PyUnicode_RSplit:Py_ssize_t:maxsplit::
+
 PyUnicode_Split:PyObject*::+1:
-PyUnicode_Split:PyObject*:left:0:
-PyUnicode_Split:PyObject*:right:0:
+PyUnicode_Split:PyObject*:unicode:0:
+PyUnicode_Split:PyObject*:sep:0:
 PyUnicode_Split:Py_ssize_t:maxsplit::
 
 PyUnicode_Splitlines:PyObject*::+1:
-PyUnicode_Splitlines:PyObject*:s:0:
+PyUnicode_Splitlines:PyObject*:unicode:0:
 PyUnicode_Splitlines:int:keepend::
 
 PyUnicode_Translate:PyObject*::+1:
@@ -2749,6 +2769,17 @@ PyUnicode_FromFormat::...::
 PyUnicode_FromFormatV:PyObject*::+1:
 PyUnicode_FromFormatV:const char*:format::
 PyUnicode_FromFormatV:va_list:args::
+
+PyUnicode_Append:void:::
+PyUnicode_Append:PyObject**:p_left:0:
+PyUnicode_Append:PyObject*:right::
+
+PyUnicode_AppendAndDel:void:::
+PyUnicode_AppendAndDel:PyObject**:p_left:0:
+PyUnicode_AppendAndDel:PyObject*:right:-1:
+
+PyUnicode_GetDefaultEncoding:const char*:::
+PyUnicode_GetDefaultEncoding::void::
 
 PyUnicode_GetLength:Py_ssize_t:::
 PyUnicode_GetLength:PyObject*:unicode:0:

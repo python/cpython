@@ -1,1 +1,0 @@
-Improve memory layout of JIT traces. Patch by Diego Russo

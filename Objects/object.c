@@ -6,26 +6,28 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_context.h"       // _PyContextTokenMissing_Type
-#include "pycore_critical_section.h"     // Py_BEGIN_CRITICAL_SECTION, Py_END_CRITICAL_SECTION
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
-#include "pycore_dict.h"          // _PyObject_MakeDictFromInstanceAttributes()
+#include "pycore_dict.h"          // _PyObject_MaterializeManagedDict()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
-#include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_genobject.h"     // _PyAsyncGenAThrow_Type
+#include "pycore_hamt.h"          // _PyHamtItems_Type
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_Type
-#include "pycore_hashtable.h"     // _Py_hashtable_new()
+#include "pycore_list.h"          // _PyList_DebugMallocStats()
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_namespace.h"     // _PyNamespace_Type
-#include "pycore_object.h"        // PyAPI_DATA() _Py_SwappedOp definition
-#include "pycore_object_state.h"  // struct _reftracer_runtime_state
-#include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_optimizer.h"     // _PyUOpExecutor_Type, ...
+#include "pycore_object.h"        // export _Py_SwappedOp
+#include "pycore_optimizer.h"     // _PyUOpExecutor_Type
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
+#include "pycore_tuple.h"         // _PyTuple_DebugMallocStats()
 #include "pycore_typeobject.h"    // _PyBufferWrapper_Type
-#include "pycore_typevarobject.h" // _PyTypeAlias_Type, _Py_initialize_generic
+#include "pycore_typevarobject.h" // _PyTypeAlias_Type
 #include "pycore_unionobject.h"   // _PyUnion_Type
 
 
@@ -496,10 +498,22 @@ _PyObject_ResurrectEndSlow(PyObject *op)
         // merge the refcount. This isn't necessary in all cases, but it
         // simplifies the implementation.
         Py_ssize_t refcount = _Py_ExplicitMergeRefcount(op, -1);
-        return refcount != 0;
+        if (refcount == 0) {
+#ifdef Py_TRACE_REFS
+            _Py_ForgetReference(op);
+#endif
+            return 0;
+        }
+        return 1;
     }
     int is_dead = _Py_DecRefSharedIsDead(op, NULL, 0);
-    return !is_dead;
+    if (is_dead) {
+#ifdef Py_TRACE_REFS
+        _Py_ForgetReference(op);
+#endif
+        return 0;
+    }
+    return 1;
 }
 
 
@@ -589,20 +603,24 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
                               Py_REFCNT(self) > 0,
                               "refcount is too small");
 
+    _PyObject_ASSERT(self,
+                    (!_PyType_IS_GC(Py_TYPE(self))
+                    || _PyObject_GC_IS_TRACKED(self)));
+
     /* Undo the temporary resurrection; can't use DECREF here, it would
      * cause a recursive call. */
-    if (!_PyObject_ResurrectEnd(self)) {
-        return 0;         /* this is the normal path out */
+    if (_PyObject_ResurrectEnd(self)) {
+        /* tp_finalize resurrected it!
+           gh-130202: Note that the object may still be dead in the free
+           threaded build in some circumstances, so it's not safe to access
+           `self` after this point. For example, the last reference to the
+           resurrected `self` may be held by another thread, which can
+           concurrently deallocate it. */
+        return -1;
     }
 
-    /* tp_finalize resurrected it!  Make it look like the original Py_DECREF
-     * never happened. */
-    _Py_ResurrectReference(self);
-
-    _PyObject_ASSERT(self,
-                     (!_PyType_IS_GC(Py_TYPE(self))
-                      || _PyObject_GC_IS_TRACKED(self)));
-    return -1;
+    /* this is the normal path out, the caller continues with deallocation. */
+    return 0;
 }
 
 int
@@ -612,12 +630,9 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
     int write_error = 0;
     if (PyErr_CheckSignals())
         return -1;
-#ifdef USE_STACKCHECK
-    if (PyOS_CheckStack()) {
-        PyErr_SetString(PyExc_MemoryError, "stack overflow");
+    if (_Py_EnterRecursiveCall(" printing an object")) {
         return -1;
     }
-#endif
     clearerr(fp); /* Clear any previous error condition */
     if (op == NULL) {
         Py_BEGIN_ALLOW_THREADS
@@ -738,12 +753,6 @@ PyObject_Repr(PyObject *v)
     PyObject *res;
     if (PyErr_CheckSignals())
         return NULL;
-#ifdef USE_STACKCHECK
-    if (PyOS_CheckStack()) {
-        PyErr_SetString(PyExc_MemoryError, "stack overflow");
-        return NULL;
-    }
-#endif
     if (v == NULL)
         return PyUnicode_FromString("<NULL>");
     if (Py_TYPE(v)->tp_repr == NULL)
@@ -786,12 +795,6 @@ PyObject_Str(PyObject *v)
     PyObject *res;
     if (PyErr_CheckSignals())
         return NULL;
-#ifdef USE_STACKCHECK
-    if (PyOS_CheckStack()) {
-        PyErr_SetString(PyExc_MemoryError, "stack overflow");
-        return NULL;
-    }
-#endif
     if (v == NULL)
         return PyUnicode_FromString("<NULL>");
     if (PyUnicode_CheckExact(v)) {
@@ -1612,7 +1615,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     else {
         PyObject **dictptr = _PyObject_ComputedDictPointer(obj);
         if (dictptr != NULL) {
-            dict = *dictptr;
+            dict = FT_ATOMIC_LOAD_PTR_ACQUIRE(*dictptr);
         }
         else {
             dict = NULL;
@@ -2538,6 +2541,10 @@ _Py_SetImmortalUntracked(PyObject *op)
     op->ob_tid = _Py_UNOWNED_TID;
     op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
     op->ob_ref_shared = 0;
+    _Py_atomic_or_uint8(&op->ob_gc_bits, _PyGC_BITS_DEFERRED);
+#elif SIZEOF_VOID_P > 4
+    op->ob_flags = _Py_IMMORTAL_FLAGS;
+    op->ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
 #else
     op->ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
 #endif
@@ -2615,11 +2622,10 @@ _Py_ResurrectReference(PyObject *op)
 #endif
 }
 
-
-#ifdef Py_TRACE_REFS
 void
 _Py_ForgetReference(PyObject *op)
 {
+#ifdef Py_TRACE_REFS
     if (Py_REFCNT(op) < 0) {
         _PyObject_ASSERT_FAILED_MSG(op, "negative refcnt");
     }
@@ -2635,8 +2641,11 @@ _Py_ForgetReference(PyObject *op)
 #endif
 
     _PyRefchain_Remove(interp, op);
+#endif
 }
 
+
+#ifdef Py_TRACE_REFS
 static int
 _Py_PrintReference(_Py_hashtable_t *ht,
                    const void *key, const void *value,
@@ -2899,19 +2908,6 @@ _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op)
 void
 _PyTrash_thread_destroy_chain(PyThreadState *tstate)
 {
-    /* We need to increase c_recursion_remaining here, otherwise,
-       _PyTrash_thread_destroy_chain will be called recursively
-       and then possibly crash.  An example that may crash without
-       increase:
-           N = 500000  # need to be large enough
-           ob = object()
-           tups = [(ob,) for i in range(N)]
-           for i in range(49):
-               tups = [(tup,) for tup in tups]
-           del tups
-    */
-    assert(tstate->c_recursion_remaining > Py_TRASHCAN_HEADROOM);
-    tstate->c_recursion_remaining--;
     while (tstate->delete_later) {
         PyObject *op = tstate->delete_later;
         destructor dealloc = Py_TYPE(op)->tp_dealloc;
@@ -2933,7 +2929,6 @@ _PyTrash_thread_destroy_chain(PyThreadState *tstate)
         _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
         (*dealloc)(op);
     }
-    tstate->c_recursion_remaining++;
 }
 
 void _Py_NO_RETURN
@@ -2994,6 +2989,11 @@ _Py_Dealloc(PyObject *op)
     destructor dealloc = type->tp_dealloc;
 #ifdef Py_DEBUG
     PyThreadState *tstate = _PyThreadState_GET();
+#if !defined(Py_GIL_DISABLED) && !defined(Py_STACKREF_DEBUG)
+    /* This assertion doesn't hold for the free-threading build, as
+     * PyStackRef_CLOSE_SPECIALIZED is not implemented */
+    assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
+#endif
     PyObject *old_exc = tstate != NULL ? tstate->current_exception : NULL;
     // Keep the old exception type alive to prevent undefined behavior
     // on (tstate->curexc_type != old_exc_type) below

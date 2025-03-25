@@ -7,6 +7,7 @@ import annotationlib
 import inspect
 import unittest
 import sys
+import textwrap
 import warnings
 # testing import *
 from sys import *
@@ -916,186 +917,292 @@ class GrammarTests(unittest.TestCase):
         self.assertEqual(y, (1, 2, 3), "unparenthesized star expr return")
         check_syntax_error(self, "class foo:return 1")
 
-    def test_break_in_finally(self):
-        count = 0
-        while count < 2:
-            count += 1
-            try:
-                pass
-            finally:
-                break
-        self.assertEqual(count, 1)
+    def test_control_flow_in_finally(self):
 
-        count = 0
-        while count < 2:
-            count += 1
-            try:
-                continue
-            finally:
-                break
-        self.assertEqual(count, 1)
+        def run_case(self, src, expected):
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', SyntaxWarning)
+                g, l = {}, { 'self': self }
+                exec(textwrap.dedent(src), g, l)
+                self.assertEqual(expected, l['result'])
 
-        count = 0
-        while count < 2:
-            count += 1
-            try:
-                1/0
-            finally:
-                break
-        self.assertEqual(count, 1)
 
-        for count in [0, 1]:
-            self.assertEqual(count, 0)
-            try:
-                pass
-            finally:
-                break
-        self.assertEqual(count, 0)
+        # *********** Break in finally ***********
 
-        for count in [0, 1]:
-            self.assertEqual(count, 0)
-            try:
-                continue
-            finally:
-                break
-        self.assertEqual(count, 0)
-
-        for count in [0, 1]:
-            self.assertEqual(count, 0)
-            try:
-                1/0
-            finally:
-                break
-        self.assertEqual(count, 0)
-
-    def test_continue_in_finally(self):
-        count = 0
-        while count < 2:
-            count += 1
-            try:
-                pass
-            finally:
-                continue
-            break
-        self.assertEqual(count, 2)
-
-        count = 0
-        while count < 2:
-            count += 1
-            try:
-                break
-            finally:
-                continue
-        self.assertEqual(count, 2)
-
-        count = 0
-        while count < 2:
-            count += 1
-            try:
-                1/0
-            finally:
-                continue
-            break
-        self.assertEqual(count, 2)
-
-        for count in [0, 1]:
-            try:
-                pass
-            finally:
-                continue
-            break
-        self.assertEqual(count, 1)
-
-        for count in [0, 1]:
-            try:
-                break
-            finally:
-                continue
-        self.assertEqual(count, 1)
-
-        for count in [0, 1]:
-            try:
-                1/0
-            finally:
-                continue
-            break
-        self.assertEqual(count, 1)
-
-    def test_return_in_finally(self):
-        def g1():
-            try:
-                pass
-            finally:
-                return 1
-        self.assertEqual(g1(), 1)
-
-        def g2():
-            try:
-                return 2
-            finally:
-                return 3
-        self.assertEqual(g2(), 3)
-
-        def g3():
-            try:
-                1/0
-            finally:
-                return 4
-        self.assertEqual(g3(), 4)
-
-    def test_break_in_finally_after_return(self):
-        # See issue #37830
-        def g1(x):
-            for count in [0, 1]:
-                count2 = 0
-                while count2 < 20:
-                    count2 += 10
+        run_case(
+            self,
+            """
+                result = 0
+                while result < 2:
+                    result += 1
                     try:
-                        return count + count2
+                        pass
+                    finally:
+                        break
+            """,
+            1)
+
+        run_case(
+            self,
+            """
+                result = 0
+                while result < 2:
+                    result += 1
+                    try:
+                        continue
+                    finally:
+                        break
+            """,
+            1)
+
+        run_case(
+            self,
+            """
+            result = 0
+            while result < 2:
+                result += 1
+                try:
+                    1/0
+                finally:
+                    break
+            """,
+            1)
+
+        run_case(
+            self,
+            """
+            for result in [0, 1]:
+                self.assertEqual(result, 0)
+                try:
+                    pass
+                finally:
+                    break
+            """,
+            0)
+
+        run_case(
+            self,
+            """
+            for result in [0, 1]:
+                self.assertEqual(result, 0)
+                try:
+                    continue
+                finally:
+                    break
+            """,
+            0)
+
+        run_case(
+            self,
+            """
+            for result in [0, 1]:
+                self.assertEqual(result, 0)
+                try:
+                    1/0
+                finally:
+                    break
+            """,
+            0)
+
+
+        # *********** Continue in finally ***********
+
+        run_case(
+            self,
+            """
+            result = 0
+            while result < 2:
+                result += 1
+                try:
+                    pass
+                finally:
+                    continue
+                break
+            """,
+            2)
+
+
+        run_case(
+            self,
+            """
+            result = 0
+            while result < 2:
+                result += 1
+                try:
+                    break
+                finally:
+                    continue
+            """,
+            2)
+
+        run_case(
+            self,
+            """
+            result = 0
+            while result < 2:
+                result += 1
+                try:
+                    1/0
+                finally:
+                    continue
+                break
+            """,
+            2)
+
+        run_case(
+            self,
+            """
+            for result in [0, 1]:
+                try:
+                    pass
+                finally:
+                    continue
+                break
+            """,
+            1)
+
+        run_case(
+            self,
+            """
+            for result in [0, 1]:
+                try:
+                    break
+                finally:
+                    continue
+            """,
+            1)
+
+        run_case(
+            self,
+            """
+            for result in [0, 1]:
+                try:
+                    1/0
+                finally:
+                    continue
+                break
+            """,
+            1)
+
+
+        # *********** Return in finally ***********
+
+        run_case(
+            self,
+            """
+            def f():
+                try:
+                    pass
+                finally:
+                    return 1
+            result = f()
+            """,
+            1)
+
+        run_case(
+            self,
+            """
+            def f():
+                try:
+                    return 2
+                finally:
+                    return 3
+            result = f()
+            """,
+            3)
+
+        run_case(
+            self,
+            """
+            def f():
+                try:
+                    1/0
+                finally:
+                    return 4
+            result = f()
+            """,
+            4)
+
+        # See issue #37830
+        run_case(
+            self,
+            """
+            def break_in_finally_after_return1(x):
+                for count in [0, 1]:
+                    count2 = 0
+                    while count2 < 20:
+                        count2 += 10
+                        try:
+                            return count + count2
+                        finally:
+                            if x:
+                                break
+                return 'end', count, count2
+
+            self.assertEqual(break_in_finally_after_return1(False), 10)
+            self.assertEqual(break_in_finally_after_return1(True), ('end', 1, 10))
+            result = True
+            """,
+            True)
+
+
+        run_case(
+            self,
+            """
+            def break_in_finally_after_return2(x):
+                for count in [0, 1]:
+                    for count2 in [10, 20]:
+                        try:
+                            return count + count2
+                        finally:
+                            if x:
+                                break
+                return 'end', count, count2
+
+            self.assertEqual(break_in_finally_after_return2(False), 10)
+            self.assertEqual(break_in_finally_after_return2(True), ('end', 1, 10))
+            result = True
+            """,
+            True)
+
+        # See issue #37830
+        run_case(
+            self,
+            """
+            def continue_in_finally_after_return1(x):
+                count = 0
+                while count < 100:
+                    count += 1
+                    try:
+                        return count
                     finally:
                         if x:
-                            break
-            return 'end', count, count2
-        self.assertEqual(g1(False), 10)
-        self.assertEqual(g1(True), ('end', 1, 10))
+                            continue
+                return 'end', count
 
-        def g2(x):
-            for count in [0, 1]:
-                for count2 in [10, 20]:
+            self.assertEqual(continue_in_finally_after_return1(False), 1)
+            self.assertEqual(continue_in_finally_after_return1(True), ('end', 100))
+            result = True
+            """,
+            True)
+
+        run_case(
+            self,
+            """
+            def continue_in_finally_after_return2(x):
+                for count in [0, 1]:
                     try:
-                        return count + count2
+                        return count
                     finally:
                         if x:
-                            break
-            return 'end', count, count2
-        self.assertEqual(g2(False), 10)
-        self.assertEqual(g2(True), ('end', 1, 10))
+                            continue
+                return 'end', count
 
-    def test_continue_in_finally_after_return(self):
-        # See issue #37830
-        def g1(x):
-            count = 0
-            while count < 100:
-                count += 1
-                try:
-                    return count
-                finally:
-                    if x:
-                        continue
-            return 'end', count
-        self.assertEqual(g1(False), 1)
-        self.assertEqual(g1(True), ('end', 100))
-
-        def g2(x):
-            for count in [0, 1]:
-                try:
-                    return count
-                finally:
-                    if x:
-                        continue
-            return 'end', count
-        self.assertEqual(g2(False), 0)
-        self.assertEqual(g2(True), ('end', 1))
+            self.assertEqual(continue_in_finally_after_return2(False), 0)
+            self.assertEqual(continue_in_finally_after_return2(True), ('end', 1))
+            result = True
+            """,
+            True)
 
     def test_yield(self):
         # Allowed as standalone statement
@@ -1971,6 +2078,18 @@ class GrammarTests(unittest.TestCase):
 
         with self.assertRaises(Done):
             foo().send(None)
+
+    def test_complex_lambda(self):
+        def test1(foo, bar):
+            return ""
+
+        def test2():
+            return f"{test1(
+                foo=lambda: '、、、、、、、、、、、、、、、、、',
+                bar=lambda: 'abcdefghijklmnopqrstuvwxyz 123456789 123456789',
+            )}"
+
+        self.assertEqual(test2(), "")
 
 
 if __name__ == '__main__':

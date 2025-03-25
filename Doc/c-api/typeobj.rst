@@ -2,8 +2,8 @@
 
 .. _type-structs:
 
-Type Objects
-============
+Type Object Structures
+======================
 
 Perhaps one of the most important structures of the Python object system is the
 structure that defines a new type: the :c:type:`PyTypeObject` structure.  Type
@@ -473,7 +473,7 @@ PyTypeObject Definition
 -----------------------
 
 The structure definition for :c:type:`PyTypeObject` can be found in
-:file:`Include/object.h`.  For convenience of reference, this repeats the
+:file:`Include/cpython/object.h`.  For convenience of reference, this repeats the
 definition found there:
 
 .. XXX Drop this?
@@ -537,6 +537,9 @@ PyVarObject Slots
    initialized to zero. For :ref:`dynamically allocated type objects
    <heap-types>`, this field has a special internal meaning.
 
+   This field should be accessed using the :c:func:`Py_SIZE()` and
+   :c:func:`Py_SET_SIZE()` macros.
+
    **Inheritance:**
 
    This field is not inherited by subtypes.
@@ -587,47 +590,86 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 
 .. c:member:: Py_ssize_t PyTypeObject.tp_basicsize
-             Py_ssize_t PyTypeObject.tp_itemsize
+              Py_ssize_t PyTypeObject.tp_itemsize
 
    These fields allow calculating the size in bytes of instances of the type.
 
    There are two kinds of types: types with fixed-length instances have a zero
-   :c:member:`~PyTypeObject.tp_itemsize` field, types with variable-length instances have a non-zero
-   :c:member:`~PyTypeObject.tp_itemsize` field.  For a type with fixed-length instances, all
-   instances have the same size, given in :c:member:`~PyTypeObject.tp_basicsize`.
+   :c:member:`!tp_itemsize` field, types with variable-length instances have a non-zero
+   :c:member:`!tp_itemsize` field.  For a type with fixed-length instances, all
+   instances have the same size, given in :c:member:`!tp_basicsize`.
+   (Exceptions to this rule can be made using
+   :c:func:`PyUnstable_Object_GC_NewWithExtraData`.)
 
    For a type with variable-length instances, the instances must have an
-   :c:member:`~PyVarObject.ob_size` field, and the instance size is :c:member:`~PyTypeObject.tp_basicsize` plus N
-   times :c:member:`~PyTypeObject.tp_itemsize`, where N is the "length" of the object.  The value of
-   N is typically stored in the instance's :c:member:`~PyVarObject.ob_size` field.  There are
-   exceptions:  for example, ints use a negative :c:member:`~PyVarObject.ob_size` to indicate a
-   negative number, and N is ``abs(ob_size)`` there.  Also, the presence of an
-   :c:member:`~PyVarObject.ob_size` field in the instance layout doesn't mean that the instance
-   structure is variable-length (for example, the structure for the list type has
-   fixed-length instances, yet those instances have a meaningful :c:member:`~PyVarObject.ob_size`
-   field).
+   :c:member:`~PyVarObject.ob_size` field, and the instance size is
+   :c:member:`!tp_basicsize` plus N times :c:member:`!tp_itemsize`,
+   where N is the "length" of the object.
 
-   The basic size includes the fields in the instance declared by the macro
-   :c:macro:`PyObject_HEAD` or :c:macro:`PyObject_VAR_HEAD` (whichever is used to
-   declare the instance struct) and this in turn includes the  :c:member:`~PyObject._ob_prev` and
-   :c:member:`~PyObject._ob_next` fields if they are present.  This means that the only correct
-   way to get an initializer for the :c:member:`~PyTypeObject.tp_basicsize` is to use the
+   Functions like :c:func:`PyObject_NewVar` will take the value of N as an
+   argument, and store in the instance's :c:member:`~PyVarObject.ob_size` field.
+   Note that the :c:member:`~PyVarObject.ob_size` field may later be used for
+   other purposes. For example, :py:type:`int` instances use the bits of
+   :c:member:`~PyVarObject.ob_size` in an implementation-defined
+   way; the underlying storage and its size should be acessed using
+   :c:func:`PyLong_Export`.
+
+   .. note::
+
+      The :c:member:`~PyVarObject.ob_size` field should be accessed using
+      the :c:func:`Py_SIZE()` and :c:func:`Py_SET_SIZE()` macros.
+
+   Also, the presence of an :c:member:`~PyVarObject.ob_size` field in the
+   instance layout doesn't mean that the instance structure is variable-length.
+   For example, the :py:type:`list` type has fixed-length instances, yet those
+   instances have a :c:member:`~PyVarObject.ob_size` field.
+   (As with :py:type:`int`, avoid reading lists' :c:member:`!ob_size` directly.
+   Call :c:func:`PyList_Size` instead.)
+
+   The :c:member:`!tp_basicsize` includes size needed for data of the type's
+   :c:member:`~PyTypeObject.tp_base`, plus any extra data needed
+   by each instance.
+
+   The  correct way to set :c:member:`!tp_basicsize` is to use the
    ``sizeof`` operator on the struct used to declare the instance layout.
-   The basic size does not include the GC header size.
+   This struct must include the struct used to declare the base type.
+   In other words, :c:member:`!tp_basicsize` must be greater than or equal
+   to the base's :c:member:`!tp_basicsize`.
 
-   A note about alignment: if the variable items require a particular alignment,
-   this should be taken care of by the value of :c:member:`~PyTypeObject.tp_basicsize`.  Example:
-   suppose a type implements an array of ``double``. :c:member:`~PyTypeObject.tp_itemsize` is
-   ``sizeof(double)``. It is the programmer's responsibility that
-   :c:member:`~PyTypeObject.tp_basicsize` is a multiple of ``sizeof(double)`` (assuming this is the
-   alignment requirement for ``double``).
+   Since every type is a subtype of :py:type:`object`, this struct must
+   include :c:type:`PyObject` or :c:type:`PyVarObject` (depending on
+   whether :c:member:`~PyVarObject.ob_size` should be included). These are
+   usually defined by the macro :c:macro:`PyObject_HEAD` or
+   :c:macro:`PyObject_VAR_HEAD`, respectively.
 
-   For any type with variable-length instances, this field must not be ``NULL``.
+   The basic size does not include the GC header size, as that header is not
+   part of :c:macro:`PyObject_HEAD`.
+
+   For cases where struct used to declare the base type is unknown,
+   see :c:member:`PyType_Spec.basicsize` and :c:func:`PyType_FromMetaclass`.
+
+   Notes about alignment:
+
+   - :c:member:`!tp_basicsize` must be a multiple of ``_Alignof(PyObject)``.
+     When using ``sizeof`` on a ``struct`` that includes
+     :c:macro:`PyObject_HEAD`, as recommended, the compiler ensures this.
+     When not using a C ``struct``, or when using compiler
+     extensions like ``__attribute__((packed))``, it is up to you.
+   - If the variable items require a particular alignment,
+     :c:member:`!tp_basicsize` and :c:member:`!tp_itemsize` must each be a
+     multiple of that alignment.
+     For example, if a type's variable part stores a ``double``, it is
+     your responsibility that both fields are a multiple of
+     ``_Alignof(double)``.
 
    **Inheritance:**
 
-   These fields are inherited separately by subtypes.  If the base type has a
-   non-zero :c:member:`~PyTypeObject.tp_itemsize`, it is generally not safe to set
+   These fields are inherited separately by subtypes.
+   (That is, if the field is set to zero, :c:func:`PyType_Ready` will copy
+   the value from the base type, indicating that the instances do not
+   need additional storage.)
+
+   If the base type has a non-zero :c:member:`~PyTypeObject.tp_itemsize`, it is generally not safe to set
    :c:member:`~PyTypeObject.tp_itemsize` to a different non-zero value in a subtype (though this
    depends on the implementation of the base type).
 
@@ -689,7 +731,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       object becomes part of a refcount cycle, that cycle might be collected by
       a garbage collection on any thread).  This is not a problem for Python
       API calls, since the thread on which :c:member:`!tp_dealloc` is called
-      will own the Global Interpreter Lock (GIL).  However, if the object being
+      with an :term:`attached thread state`.  However, if the object being
       destroyed in turn destroys objects from some other C or C++ library, care
       should be taken to ensure that destroying those objects on the thread
       which called :c:member:`!tp_dealloc` will not violate any assumptions of
@@ -1830,7 +1872,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    dictionary, so it is may be more efficient to call :c:func:`PyObject_GetAttr`
    when accessing an attribute on the object.
 
-   It is an error to set both the :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` bit and
+   It is an error to set both the :c:macro:`Py_TPFLAGS_MANAGED_DICT` bit and
    :c:member:`~PyTypeObject.tp_dictoffset`.
 
    **Inheritance:**
@@ -2112,15 +2154,13 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       static void
       local_finalize(PyObject *self)
       {
-          PyObject *error_type, *error_value, *error_traceback;
-
           /* Save the current exception, if any. */
-          PyErr_Fetch(&error_type, &error_value, &error_traceback);
+          PyObject *exc = PyErr_GetRaisedException();
 
           /* ... */
 
           /* Restore the saved exception. */
-          PyErr_Restore(error_type, error_value, error_traceback);
+          PyErr_SetRaisedException(exc);
       }
 
    **Inheritance:**
