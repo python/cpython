@@ -3723,14 +3723,6 @@ update_start_location_to_match_attr(compiler *c, location loc,
     return loc;
 }
 
-static int push_inlined_comprehension_state(compiler *c, location loc,
-                                            PySTEntryObject *comp,
-                                            _PyCompile_InlinedComprehensionState *state);
-static int pop_inlined_comprehension_state(compiler *c, location loc,
-                                           _PyCompile_InlinedComprehensionState *state);
-
-PyObject *_PyCompile_Filename(compiler *c);
-
 static int
 maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
 {
@@ -4650,7 +4642,6 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
         }
 
         ADDOP_I(c, loc, op, 0);
-
         if (is_inlined) {
             ADDOP_I(c, loc, SWAP, 2);
         }
