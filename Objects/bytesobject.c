@@ -225,9 +225,6 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
         size_t len = (len_expr); \
         alloc += len; \
         Py_ssize_t pos = s - (char*)PyBytesWriter_Data(writer); \
-        if (PyBytesWriter_SetSize(writer, pos) < 0) { \
-            goto error; \
-        } \
         if (PyBytesWriter_Resize(writer, alloc) < 0) { \
             goto error; \
         } \
@@ -2875,9 +2872,6 @@ _PyBytes_FromList(PyObject *x)
 
         if (i >= size) {
             Py_ssize_t pos = str - (char*)PyBytesWriter_Data(writer);
-            if (PyBytesWriter_SetSize(writer, pos) < 0) {
-                goto error;
-            }
             if (PyBytesWriter_Resize(writer, size + 1) < 0) {
                 goto error;
             }
@@ -3798,11 +3792,10 @@ byteswriter_resize(PyBytesWriter *writer, Py_ssize_t size, int overallocate)
         if (writer->obj == NULL) {
             return -1;
         }
-        if (writer->size) {
-            memcpy(PyBytes_AS_STRING(writer->obj),
-                   writer->small_buffer,
-                   writer->size);
-        }
+        assert((size_t)size > sizeof(writer->small_buffer));
+        memcpy(PyBytes_AS_STRING(writer->obj),
+               writer->small_buffer,
+               sizeof(writer->small_buffer));
     }
     return 0;
 }
@@ -3912,23 +3905,15 @@ PyBytesWriter_Allocated(PyBytesWriter *writer)
 
 
 int
-PyBytesWriter_SetSize(PyBytesWriter *writer, Py_ssize_t size)
+PyBytesWriter_Resize(PyBytesWriter *writer, Py_ssize_t size)
 {
-    if (size < 0 || size > byteswriter_allocated(writer)) {
-        PyErr_SetString(PyExc_ValueError, "invalid size");
+    if (size < 0) {
+        PyErr_SetString(PyExc_ValueError, "size must be >= 0");
+        return -1;
+    }
+    if (byteswriter_resize(writer, size, 1) < 0) {
         return -1;
     }
     writer->size = size;
     return 0;
-}
-
-
-int
-PyBytesWriter_Resize(PyBytesWriter *writer, Py_ssize_t alloc)
-{
-    if (alloc < 0) {
-        PyErr_SetString(PyExc_ValueError, "alloc must be >= 0");
-        return -1;
-    }
-    return byteswriter_resize(writer, alloc, 1);
 }

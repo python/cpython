@@ -2633,9 +2633,6 @@ raw_unicode_escape(PyObject *obj)
             /* -1: subtract 1 preallocated byte */
             alloc += 10-1;
             Py_ssize_t pos = p - (char*)PyBytesWriter_Data(writer);
-            if (PyBytesWriter_SetSize(writer, pos) < 0) {
-                goto error;
-            }
             if (PyBytesWriter_Resize(writer, alloc) < 0) {
                 goto error;
             }
@@ -2660,9 +2657,6 @@ raw_unicode_escape(PyObject *obj)
             /* -1: subtract 1 preallocated byte */
             alloc += 6-1;
             Py_ssize_t pos = p - (char*)PyBytesWriter_Data(writer);
-            if (PyBytesWriter_SetSize(writer, pos) < 0) {
-                goto error;
-            }
             if (PyBytesWriter_Resize(writer, alloc) < 0) {
                 goto error;
             }

@@ -64,9 +64,6 @@ PyAPI_FUNC(void*) PyBytesWriter_Data(
 PyAPI_FUNC(Py_ssize_t) PyBytesWriter_Allocated(
     PyBytesWriter *writer);
 
-PyAPI_FUNC(int) PyBytesWriter_SetSize(
-    PyBytesWriter *writer,
-    Py_ssize_t size);
 PyAPI_FUNC(int) PyBytesWriter_Resize(
     PyBytesWriter *writer,
-    Py_ssize_t alloc);
+    Py_ssize_t size);
