@@ -5,7 +5,8 @@
 #include "pycore_call.h"          // _PyObject_VectorcallTstate()
 #include "pycore_code.h"          // CO_FAST_FREE
 #include "pycore_dict.h"          // _PyDict_KeysSize()
-#include "pycore_frame.h"         // _PyInterpreterFrame
+#include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
+#include "pycore_interpframe.h"   // _PyInterpreterFrame
 #include "pycore_lock.h"          // _PySeqLock_*
 #include "pycore_long.h"          // _PyLong_IsNegative(), _PyLong_GetOne()
 #include "pycore_memoryobject.h"  // _PyMemoryView_FromBufferProc()
@@ -18,9 +19,11 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // _Py_Mangle()
 #include "pycore_typeobject.h"    // struct type_cache
+#include "pycore_unicodeobject.h" // _PyUnicode_Copy
 #include "pycore_unionobject.h"   // _Py_union_type_or
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 #include "pycore_cell.h"          // PyCell_GetRef()
+#include "pycore_stats.h"
 #include "opcode.h"               // MAKE_CELL
 
 #include <stddef.h>               // ptrdiff_t
@@ -10369,9 +10372,12 @@ typedef struct _PyBufferWrapper {
     PyObject *obj;
 } PyBufferWrapper;
 
+#define PyBufferWrapper_CAST(op)    ((PyBufferWrapper *)(op))
+
 static int
-bufferwrapper_traverse(PyBufferWrapper *self, visitproc visit, void *arg)
+bufferwrapper_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyBufferWrapper *self = PyBufferWrapper_CAST(op);
     Py_VISIT(self->mv);
     Py_VISIT(self->obj);
     return 0;
@@ -10380,7 +10386,7 @@ bufferwrapper_traverse(PyBufferWrapper *self, visitproc visit, void *arg)
 static void
 bufferwrapper_dealloc(PyObject *self)
 {
-    PyBufferWrapper *bw = (PyBufferWrapper *)self;
+    PyBufferWrapper *bw = PyBufferWrapper_CAST(self);
 
     _PyObject_GC_UNTRACK(self);
     Py_XDECREF(bw->mv);
@@ -10391,7 +10397,7 @@ bufferwrapper_dealloc(PyObject *self)
 static void
 bufferwrapper_releasebuf(PyObject *self, Py_buffer *view)
 {
-    PyBufferWrapper *bw = (PyBufferWrapper *)self;
+    PyBufferWrapper *bw = PyBufferWrapper_CAST(self);
 
     if (bw->mv == NULL || bw->obj == NULL) {
         // Already released
@@ -10426,7 +10432,7 @@ PyTypeObject _PyBufferWrapper_Type = {
     .tp_basicsize = sizeof(PyBufferWrapper),
     .tp_alloc = PyType_GenericAlloc,
     .tp_free = PyObject_GC_Del,
-    .tp_traverse = (traverseproc)bufferwrapper_traverse,
+    .tp_traverse = bufferwrapper_traverse,
     .tp_dealloc = bufferwrapper_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_as_buffer = &bufferwrapper_as_buffer,

@@ -1,0 +1,1 @@
+Fix sendfile fallback implementation to drain data after writing to transport in :mod:`asyncio`.
