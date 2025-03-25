@@ -716,7 +716,7 @@ StructUnionType_init(PyObject *self, PyObject *args, PyObject *kwds, int isStruc
         /* copy base info */
         ret = PyCStgInfo_clone(info, baseinfo);
         if (ret >= 0) {
-            stginfo_set_dict_final(info);
+            assert(stginfo_get_dict_final(info) == 0);
             stginfo_set_dict_final(baseinfo);
         }
         STGINFO_UNLOCK2();
@@ -2152,18 +2152,7 @@ static PyObject *CreateSwappedType(ctypes_state *st, PyTypeObject *type,
     if (!swapped_args)
         return NULL;
 
-    if (st->swapped_suffix == NULL) {
-#ifdef WORDS_BIGENDIAN
-        st->swapped_suffix = PyUnicode_InternFromString("_le");
-#else
-        st->swapped_suffix = PyUnicode_InternFromString("_be");
-#endif
-    }
-    if (st->swapped_suffix == NULL) {
-        Py_DECREF(swapped_args);
-        return NULL;
-    }
-
+    assert(st->swapped_suffix != NULL);
     newname = PyUnicode_Concat(name, st->swapped_suffix);
     if (newname == NULL) {
         Py_DECREF(swapped_args);
@@ -3137,6 +3126,7 @@ PyCData_MallocBuffer(CDataObject *obj, StgInfo *info)
      * access.
      */
    assert (Py_REFCNT(obj) == 1);
+   assert(stginfo_get_dict_final(info) == 1);
 
     if ((size_t)info->size <= sizeof(obj->b_value)) {
         /* No need to call malloc, can use the default buffer */
@@ -3186,7 +3176,13 @@ PyCData_FromBaseObj(ctypes_state *st,
     if (cmem == NULL) {
         return NULL;
     }
-    STGINFO_LOCK(info);
+
+    if (stginfo_get_dict_final(info) != 1) {
+        STGINFO_LOCK(info);
+        stginfo_set_dict_final(info);
+        STGINFO_UNLOCK();
+    }
+
     assert(CDataObject_Check(st, cmem));
     cmem->b_length = info->length;
     cmem->b_size = info->size;
@@ -3198,15 +3194,12 @@ PyCData_FromBaseObj(ctypes_state *st,
         cmem->b_index = index;
     } else { /* copy contents of adr */
         if (-1 == PyCData_MallocBuffer(cmem, info)) {
-            Py_CLEAR(cmem);
-            goto exit;
+            Py_DECREF(cmem);
+            return NULL;
         }
         memcpy(cmem->b_ptr, adr, info->size);
         cmem->b_index = index;
     }
-exit:;
-    stginfo_set_dict_final(info);
-    STGINFO_UNLOCK();
     return (PyObject *)cmem;
 }
 
@@ -5126,12 +5119,8 @@ PyCArrayType_from_ctype(ctypes_state *st, PyObject *itemtype, Py_ssize_t length)
     char name[256];
     PyObject *len;
 
-    if (st->array_cache == NULL) {
-        st->array_cache = PyDict_New();
-        if (st->array_cache == NULL) {
-            return NULL;
-        }
-    }
+    assert(st->array_cache != NULL);
+
     len = PyLong_FromSsize_t(length);
     if (len == NULL)
         return NULL;
@@ -6109,6 +6098,20 @@ _ctypes_mod_exec(PyObject *mod)
 
     st->PyExc_ArgError = PyErr_NewException("ctypes.ArgumentError", NULL, NULL);
     if (!st->PyExc_ArgError) {
+        return -1;
+    }
+
+    st->array_cache = PyDict_New();
+    if (st->array_cache == NULL) {
+        return -1;
+    }
+
+#ifdef WORDS_BIGENDIAN
+        st->swapped_suffix = PyUnicode_InternFromString("_le");
+#else
+        st->swapped_suffix = PyUnicode_InternFromString("_be");
+#endif
+    if (st->swapped_suffix == NULL) {
         return -1;
     }
 

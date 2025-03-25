@@ -23,6 +23,8 @@
 int
 PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
 {
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&src_info->mutex);
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&dst_info->mutex);
     Py_ssize_t size;
 
     ctype_clear_stginfo(dst_info);
@@ -248,17 +250,17 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     ctypes_state *st = get_module_state_by_def(Py_TYPE(type));
     StgInfo *stginfo;
     if (PyStgInfo_FromType(st, type, &stginfo) < 0) {
-        goto error;
+        return -1;
     }
     if (!stginfo) {
         PyErr_SetString(PyExc_TypeError,
                         "ctypes state is not initialized");
-        goto error;
+        return -1;
     }
     PyObject *base = (PyObject *)((PyTypeObject *)type)->tp_base;
     StgInfo *baseinfo;
     if (PyStgInfo_FromType(st, base, &baseinfo) < 0) {
-        goto error;
+        return -1;
     }
 
     /* If this structure/union is already marked final we cannot assign
@@ -267,7 +269,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
     if (stginfo_get_dict_final(stginfo) == 1) {/* is final ? */
         PyErr_SetString(PyExc_AttributeError,
                         "_fields_ is final");
-        goto error;
+        return -1;
     }
     STGINFO_LOCK(stginfo);
     // check again after locking
