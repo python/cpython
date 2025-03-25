@@ -309,13 +309,14 @@ tuple_hash(PyObject *op)
 {
     PyTupleObject *v = _PyTuple_CAST(op);
 
-    if (v->ob_hash != -1) {
-        return v->ob_hash;
+    Py_uhash_t acc = FT_ATOMIC_LOAD_SSIZE_RELAXED(v->ob_hash);
+    if (acc != (Py_uhash_t)-1) {
+        return acc;
     }
 
     Py_ssize_t len = Py_SIZE(v);
     PyObject **item = v->ob_item;
-    Py_uhash_t acc = _PyTuple_HASH_XXPRIME_5;
+    acc = _PyTuple_HASH_XXPRIME_5;
     for (Py_ssize_t i = 0; i < len; i++) {
         Py_uhash_t lane = PyObject_Hash(item[i]);
         if (lane == (Py_uhash_t)-1) {
