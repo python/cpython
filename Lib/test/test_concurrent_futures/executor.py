@@ -73,7 +73,8 @@ class ExecutorTest:
             all(
                 not isinstance(referrer, futures.Future)
                 for referrer in gc.get_referrers(error)
-            )
+            ),
+            msg="none of the referrers should be a Future.",
         )
 
     @support.requires_resource('walltime')
