@@ -2691,7 +2691,7 @@ class BaseTaskTests:
 
         async def asyncfn():
             nonlocal name
-            name = asyncio.current_task().get_name()
+            name = self.current_task().get_name()
 
         async def main():
             t = self.new_task(coro=asyncfn(), loop=asyncio.get_running_loop(), eager_start=True, name="example")
@@ -2704,7 +2704,7 @@ class BaseTaskTests:
 
         async def asyncfn():
             nonlocal name
-            name = asyncio.current_task().get_name()
+            name = self.current_task().get_name()
 
         async def main():
             t = self.new_task(coro=asyncfn(), loop=asyncio.get_running_loop(), eager_start=False, name="example")
