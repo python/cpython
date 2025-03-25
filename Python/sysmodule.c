@@ -95,9 +95,9 @@ _PySys_GetRequiredAttr(PyObject *name)
 #ifndef ABIFLAGS
             if (_PyUnicode_EqualToASCIIString(name, "abiflags")) {
                 if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                    "sys.abiflags will be set to a meaningful value "
-                    "on all platforms in Python 3.16 instead of absent",
-                    /*stack_level=*/1) < 0) {
+                                 "sys.abiflags will be set to a meaningful value "
+                                 "on all platforms in Python 3.16 instead of absent",
+                                 /*stack_level=*/1) < 0) {
                     return NULL;
                 }
             }
@@ -121,9 +121,9 @@ _PySys_GetRequiredAttrString(const char *name)
 #ifndef ABIFLAGS
             if (strcmp(name, "abiflags") == 0) {
                 if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                    "sys.abiflags will be set to a meaningful value "
-                    "on all platforms in Python 3.16 instead of absent",
-                    /*stack_level=*/1) < 0) {
+                                 "sys.abiflags will be set to a meaningful value "
+                                 "on all platforms in Python 3.16 instead of absent",
+                                 /*stack_level=*/1) < 0) {
                     return NULL;
                 }
             }
@@ -153,9 +153,9 @@ _PySys_GetOptionalAttr(PyObject *name, PyObject **value)
 #ifndef ABIFLAGS
     if (ret == 0 && _PyUnicode_EqualToASCIIString(name, "abiflags")) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "sys.abiflags will be set to a meaningful value "
-            "on all platforms in Python 3.16 instead of absent",
-            /*stack_level=*/1) < 0) {
+                         "sys.abiflags will be set to a meaningful value "
+                         "on all platforms in Python 3.16 instead of absent",
+                         /*stack_level=*/1) < 0) {
             return -1;
         }
     }
@@ -176,9 +176,9 @@ _PySys_GetOptionalAttrString(const char *name, PyObject **value)
 #ifndef ABIFLAGS
     if (ret == 0 && strcmp(name, "abiflags") == 0) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "sys.abiflags will be set to a meaningful value "
-            "on all platforms in Python 3.16 instead of absent",
-            /*stack_level=*/1) < 0) {
+                         "sys.abiflags will be set to a meaningful value "
+                         "on all platforms in Python 3.16 instead of absent",
+                         /*stack_level=*/1) < 0) {
             return -1;
         }
     }
@@ -207,9 +207,9 @@ PySys_GetObject(const char *name)
 #ifndef ABIFLAGS
     if (ret == 0 && strcmp(name, "abiflags") == 0) {
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "sys.abiflags will be set to a meaningful value "
-            "on all platforms in Python 3.16 instead of absent",
-            /*stack_level=*/1) < 0) {
+                         "sys.abiflags will be set to a meaningful value "
+                         "on all platforms in Python 3.16 instead of absent",
+                         /*stack_level=*/1) < 0) {
             return NULL;
         }
     }
