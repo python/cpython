@@ -2940,21 +2940,19 @@ _PyBytes_FromTuple(PyObject *x)
 static PyObject *
 _PyBytes_FromIterator(PyObject *it, PyObject *x)
 {
-    char *str;
     Py_ssize_t i, size;
-    _PyBytesWriter writer;
 
     /* For iterator version, create a bytes object and resize as needed */
     size = PyObject_LengthHint(x, 64);
     if (size == -1 && PyErr_Occurred())
         return NULL;
 
-    _PyBytesWriter_Init(&writer);
-    str = _PyBytesWriter_Alloc(&writer, size);
-    if (str == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(size);
+    if (writer == NULL) {
         return NULL;
-    writer.overallocate = 1;
-    size = writer.allocated;
+    }
+    char *str = PyBytesWriter_GetData(writer);
+    size = PyBytesWriter_GetAllocated(writer);
 
     /* Run the iterator to exhaustion */
     for (i = 0; ; i++) {
@@ -2984,18 +2982,18 @@ _PyBytes_FromIterator(PyObject *it, PyObject *x)
 
         /* Append the byte */
         if (i >= size) {
-            str = _PyBytesWriter_Resize(&writer, str, size+1);
-            if (str == NULL)
-                return NULL;
-            size = writer.allocated;
+            str = PyBytesWriter_ResizeAndUpdatePointer(writer, size + 1, str);
+            if (str == NULL) {
+                goto error;
+            }
+            size = PyBytesWriter_GetAllocated(writer);
         }
         *str++ = (char) value;
     }
-
-    return _PyBytesWriter_Finish(&writer, str);
+    return PyBytesWriter_FinishWithEndPointer(writer, str);
 
   error:
-    _PyBytesWriter_Dealloc(&writer);
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
