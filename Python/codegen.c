@@ -3758,7 +3758,7 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
     NEW_JUMP_TARGET_LABEL(c, skip_optimization);
 
     int const_oparg = -1;
-    PyObject *initial_res;
+    PyObject *initial_res = NULL;
     int continue_jump_opcode = -1;
     if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "all")) {
         const_oparg = CONSTANT_BUILTIN_ALL;
