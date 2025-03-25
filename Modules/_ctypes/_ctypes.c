@@ -717,7 +717,7 @@ StructUnionType_init(PyObject *self, PyObject *args, PyObject *kwds, int isStruc
         ret = PyCStgInfo_clone(info, baseinfo);
         if (ret >= 0) {
             assert(stginfo_get_dict_final(info) == 0);
-            stginfo_set_dict_final(baseinfo);
+            stginfo_set_dict_final_lock_held(baseinfo);
         }
         STGINFO_UNLOCK2();
         return ret;
@@ -3177,11 +3177,7 @@ PyCData_FromBaseObj(ctypes_state *st,
         return NULL;
     }
 
-    if (stginfo_get_dict_final(info) != 1) {
-        STGINFO_LOCK(info);
-        stginfo_set_dict_final(info);
-        STGINFO_UNLOCK();
-    }
+    stginfo_set_dict_final(info);
 
     assert(CDataObject_Check(st, cmem));
     cmem->b_length = info->length;
@@ -3226,11 +3222,8 @@ PyCData_AtAddress(ctypes_state *st, PyObject *type, void *buf)
                         "abstract class");
         return NULL;
     }
-    if (stginfo_get_dict_final(info) != 1) {
-        STGINFO_LOCK(info);
-        stginfo_set_dict_final(info);
-        STGINFO_UNLOCK();
-    }
+
+    stginfo_set_dict_final(info);
 
     pd = (CDataObject *)((PyTypeObject *)type)->tp_alloc((PyTypeObject *)type, 0);
     if (!pd) {
@@ -3464,11 +3457,8 @@ generic_pycdata_new(ctypes_state *st,
                         "abstract class");
         return NULL;
     }
-    if (stginfo_get_dict_final(info) != 1) {
-        STGINFO_LOCK(info);
-        stginfo_set_dict_final(info);
-        STGINFO_UNLOCK();
-    }
+
+    stginfo_set_dict_final(info);
 
     obj = (CDataObject *)type->tp_alloc(type, 0);
     if (!obj)

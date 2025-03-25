@@ -411,19 +411,30 @@ typedef struct {
 #define STGINFO_UNLOCK()        Py_END_CRITICAL_SECTION()
 #define STGINFO_UNLOCK2()       Py_END_CRITICAL_SECTION2()
 
-static inline void
-stginfo_set_dict_final(StgInfo *info)
-{
-    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&info->mutex);
-    FT_ATOMIC_STORE_INT(info->dict_final, 1);
-}
-
 static inline int
 stginfo_get_dict_final(StgInfo *info)
 {
     return FT_ATOMIC_LOAD_INT(info->dict_final);
 }
 
+static inline void
+stginfo_set_dict_final_lock_held(StgInfo *info)
+{
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&info->mutex);
+    FT_ATOMIC_STORE_INT(info->dict_final, 1);
+}
+
+static inline void
+stginfo_set_dict_final(StgInfo *info)
+{
+    // avoid acquiring the lock if final is already set
+    if (stginfo_get_dict_final(info) == 1) {
+        return;
+    }
+    STGINFO_LOCK(info);
+    stginfo_set_dict_final_lock_held(info);
+    STGINFO_UNLOCK();
+}
 
 extern int PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info);
 extern void ctype_clear_stginfo(StgInfo *info);

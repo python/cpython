@@ -436,7 +436,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         if (info->flags & (TYPEFLAG_ISPOINTER | TYPEFLAG_HASPOINTER))
             stginfo->flags |= TYPEFLAG_HASPOINTER;
 
-        stginfo_set_dict_final(info); /* mark field type final */
+        stginfo_set_dict_final_lock_held(info); /* mark field type final */
         STGINFO_UNLOCK();
         if (-1 == PyObject_SetAttr(type, prop->name, prop_obj)) {
             goto error;
@@ -476,7 +476,7 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
                         "Structure or union cannot contain itself");
         goto error;
     }
-    stginfo_set_dict_final(stginfo);
+    stginfo_set_dict_final_lock_held(stginfo);
 
     retval = MakeAnonFields(type);
 error:;
