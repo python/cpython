@@ -266,11 +266,7 @@ class c_bool(_SimpleCData):
     _type_ = "?"
 
 def POINTER(cls):
-    """
-    Create and return a new ctypes pointer type.
-
-        cls
-            A ctypes type.
+    """Create and return a new ctypes pointer type.
 
     Pointer types are cached and reused internally,
     so calling this function repeatedly is cheap.
@@ -292,8 +288,7 @@ def POINTER(cls):
     return type(f'LP_{cls.__name__}', (_Pointer,), {'_type_': cls})
 
 def pointer(obj):
-    """
-    Create a new pointer instance, pointing to 'obj'.
+    """Create a new pointer instance, pointing to 'obj'.
 
     The returned object is of the type POINTER(type(obj)). Note that if you
     just want to pass a pointer to an object to a foreign function call, you
