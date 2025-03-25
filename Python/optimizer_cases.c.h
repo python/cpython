@@ -702,6 +702,9 @@
             JitOptSymbol *retval;
             JitOptSymbol *res;
             retval = stack_pointer[-1];
+            JitOptSymbol *temp = retval;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             ctx->frame->stack_pointer = stack_pointer;
             frame_pop(ctx);
             stack_pointer = ctx->frame->stack_pointer;
@@ -717,8 +720,10 @@
                 // might be impossible, but bailing is still safe
                 ctx->done = true;
             }
-            res = retval;
-            stack_pointer[-1] = res;
+            res = temp;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
