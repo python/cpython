@@ -2544,3 +2544,5 @@
     added = '3.14'
 [function.Py_PACK_VERSION]
     added = '3.14'
+[function.PyComplex_FromString]
+    added = '3.14'

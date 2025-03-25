@@ -130,6 +130,7 @@ SYMBOL_NAMES = (
     "PyCodec_Unregister",
     "PyCodec_XMLCharRefReplaceErrors",
     "PyComplex_FromDoubles",
+    "PyComplex_FromString",
     "PyComplex_ImagAsDouble",
     "PyComplex_RealAsDouble",
     "PyComplex_Type",

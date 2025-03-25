@@ -1080,6 +1080,12 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
     return result;
 }
 
+PyObject *
+PyComplex_FromString(PyObject *op)
+{
+    return complex_subtype_from_string(&PyComplex_Type, op);
+}
+
 /* The constructor should only accept a string as a positional argument,
  * not as by the 'real' keyword.  But Argument Clinic does not allow
  * to distinguish between argument passed positionally and by keyword.

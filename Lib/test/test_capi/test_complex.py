@@ -131,6 +131,19 @@ class CAPIComplexTest(ComplexesAreIdenticalMixin, unittest.TestCase):
 
         # CRASHES imagasdouble(NULL)
 
+    def test_fromstring(self):
+        # Test PyComplex_FromString()
+        fromstring = _testlimitedcapi.complex_fromstring
+
+        self.assertEqual(fromstring("1+2j"), 1+2j)
+        self.assertEqual(fromstring("(1+2j)"), 1+2j)
+        self.assertEqual(fromstring("2j"), 2j)
+
+        self.assertRaises(ValueError, fromstring, "2j\0")
+        self.assertRaises(TypeError, fromstring, 2j)
+
+        # CRASHES fromstring(NULL)
+
     def test_asccomplex(self):
         # Test PyComplex_AsCComplex()
         asccomplex = _testcapi.complex_asccomplex

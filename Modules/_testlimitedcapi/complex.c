@@ -58,6 +58,13 @@ complex_imagasdouble(PyObject *Py_UNUSED(module), PyObject *obj)
     return PyFloat_FromDouble(imag);
 }
 
+static PyObject *
+complex_fromstring(PyObject *Py_UNUSED(module), PyObject *obj)
+{
+    NULLABLE(obj);
+    return PyComplex_FromString(obj);
+}
+
 
 static PyMethodDef test_methods[] = {
     {"complex_check", complex_check, METH_O},
@@ -65,6 +72,7 @@ static PyMethodDef test_methods[] = {
     {"complex_fromdoubles", complex_fromdoubles, METH_VARARGS},
     {"complex_realasdouble", complex_realasdouble, METH_O},
     {"complex_imagasdouble", complex_imagasdouble, METH_O},
+    {"complex_fromstring", complex_fromstring, METH_O},
     {NULL},
 };
 
