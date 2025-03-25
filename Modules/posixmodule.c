@@ -15582,7 +15582,6 @@ typedef struct {
     ino_t d_ino;
     int dir_fd;
 #endif
-    _PyRecursiveMutex mutex;
 } DirEntry;
 
 #define DirEntry_CAST(op)   ((DirEntry *)(op))
@@ -15592,12 +15591,10 @@ DirEntry_dealloc(PyObject *op)
 {
     DirEntry *entry = DirEntry_CAST(op);
     PyTypeObject *tp = Py_TYPE(entry);
-    _PyRecursiveMutex_Lock(&entry->mutex);
     Py_XDECREF(entry->name);
     Py_XDECREF(entry->path);
     Py_XDECREF(entry->stat);
     Py_XDECREF(entry->lstat);
-    _PyRecursiveMutex_Unlock(&entry->mutex);
     freefunc free_func = PyType_GetSlot(tp, Py_tp_free);
     free_func(entry);
     Py_DECREF(tp);
@@ -15715,16 +15712,19 @@ DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
 static PyObject *
 DirEntry_get_lstat(PyTypeObject *defining_class, DirEntry *self)
 {
-    /* Must be called with self->mutex held */
-    if (!self->lstat) {
+    if (!FT_ATOMIC_LOAD_PTR(self->lstat)) {
         PyObject *module = PyType_GetModule(defining_class);
+        PyObject *lstat;
+        PyObject *null_ptr = NULL;
 #ifdef MS_WINDOWS
-        self->lstat = _pystat_fromstructstat(module, &self->win32_lstat);
+        lstat = _pystat_fromstructstat(module, &self->win32_lstat);
 #else /* POSIX */
-        self->lstat = DirEntry_fetch_stat(module, self, 0);
+        lstat = DirEntry_fetch_stat(module, self, 0);
 #endif
+        if (!_Py_atomic_compare_exchange_ptr(&self->lstat, &null_ptr, lstat))
+            Py_XDECREF(lstat);
     }
-    return Py_XNewRef(self->lstat);
+    return Py_XNewRef(FT_ATOMIC_LOAD_PTR(self->lstat));
 }
 
 /*[clinic input]
@@ -15742,31 +15742,28 @@ os_DirEntry_stat_impl(DirEntry *self, PyTypeObject *defining_class,
                       int follow_symlinks)
 /*[clinic end generated code: output=23f803e19c3e780e input=e816273c4e67ee98]*/
 {
-    if (!follow_symlinks) {
-        _PyRecursiveMutex_Lock(&self->mutex);
-        PyObject *stat = DirEntry_get_lstat(defining_class, self);
-        _PyRecursiveMutex_Unlock(&self->mutex);
-        return stat;
-    }
+    if (!follow_symlinks)
+        return DirEntry_get_lstat(defining_class, self);
 
-    _PyRecursiveMutex_Lock(&self->mutex);
-    if (!self->stat) {
+    if (!FT_ATOMIC_LOAD_PTR(self->stat)) {
+        PyObject *stat;
+        PyObject *null_ptr = NULL;
         int result = os_DirEntry_is_symlink_impl(self, defining_class);
         if (result == -1) {
-            _PyRecursiveMutex_Unlock(&self->mutex);
             return NULL;
         }
         if (result) {
             PyObject *module = PyType_GetModule(defining_class);
-            self->stat = DirEntry_fetch_stat(module, self, 1);
+            stat = DirEntry_fetch_stat(module, self, 1);
         }
         else {
-            self->stat = DirEntry_get_lstat(defining_class, self);
+            stat = DirEntry_get_lstat(defining_class, self);
         }
+        if (!_Py_atomic_compare_exchange_ptr(&self->stat, &null_ptr, stat))
+            Py_XDECREF(stat);
     }
-    _PyRecursiveMutex_Unlock(&self->mutex);
 
-    return Py_XNewRef(self->stat);
+    return Py_XNewRef(FT_ATOMIC_LOAD_PTR(self->stat));
 }
 
 /* Set exception and return -1 on error, 0 for False, 1 for True */
@@ -16039,7 +16036,6 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
     entry->stat = NULL;
     entry->lstat = NULL;
     entry->got_file_index = 0;
-    entry->mutex = (_PyRecursiveMutex){0};
 
     entry->name = PyUnicode_FromWideChar(dataW->cFileName, -1);
     if (!entry->name)
@@ -16132,7 +16128,6 @@ DirEntry_from_posix_info(PyObject *module, path_t *path, const char *name,
     entry->path = NULL;
     entry->stat = NULL;
     entry->lstat = NULL;
-    entry->mutex = (_PyRecursiveMutex){0};
 
     if (path->fd != -1) {
         entry->dir_fd = path->fd;
