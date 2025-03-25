@@ -30,8 +30,11 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       .. code-block:: python
 
          >>> import sys
-         >>> getattr(sys, 'abiflags', '')
-         DeprecationWarning: sys.abiflags will be set to a meaningful value on all platforms ...
+         >>> getattr(sys, 'abiflags', None)
+         <python-input-1>:1: DeprecationWarning: sys.abiflags will be set to a meaningful value on all platforms ...
+         >>> hasattr(sys, 'abiflags')
+         <python-input-2>:1: DeprecationWarning: sys.abiflags will be set to a meaningful value on all platforms ...
+         False
 
       Due to historical reasons, :data:`sys.abiflags` is not covered by
       :pep:`3149` on Windows. Now we have multiple builds, such as the
