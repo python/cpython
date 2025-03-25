@@ -127,7 +127,10 @@ class PointersTestCase(unittest.TestCase):
     def test_from_address(self):
         a = array.array('i', [100, 200, 300, 400, 500])
         addr = a.buffer_info()[0]
-        p = POINTER(POINTER(c_int))
+        p1 = POINTER(c_int)
+        p2 = POINTER(p1)
+
+        self.assertIsNot(p1, p2)
 
     def test_other(self):
         class Table(Structure):
@@ -224,15 +227,37 @@ class PointersTestCase(unittest.TestCase):
 
         self.assertIs(t1, t2)
 
+        p1 = t1(c_int(1))
+        p2 = t2(c_int(1))
+        p3 = pointer(c_int(1))
+
+        self.assertIsInstance(p1, t1)
+        self.assertIsInstance(p2, t1)
+        self.assertIsInstance(p3, t1)
+
     def test_incomplete_pointer_types_not_equal(self):
         t1 = POINTER("LP_C")
         t2 = POINTER("LP_C")
 
         self.assertIsNot(t1, t2)
 
+    def test_incomplete_pointer_types_cannot_instantiate(self):
+        t1 = POINTER("LP_C")
+        with self.assertRaisesRegex(TypeError, "has no _type_"):
+            t1()
+
+        msg = "<class 'str'> must have storage info"
+        with self.assertRaisesRegex(TypeError, msg):
+            pointer("LP_C")
+
     def test_pointer_set_type_twice(self):
         t1 = POINTER(c_int)
+        self.assertIs(c_int.__pointer_type__, t1)
+        self.assertIs(t1._type_, c_int)
+
         t1.set_type(c_int)
+        self.assertIs(c_int.__pointer_type__, t1)
+        self.assertIs(t1._type_, c_int)
 
     def test_pointer_set_wrong_type(self):
         t1 = POINTER(c_int)
@@ -242,6 +267,12 @@ class PointersTestCase(unittest.TestCase):
     def test_pointer_not_ctypes_type(self):
         with self.assertRaisesRegex(TypeError, "must have storage info"):
             POINTER(int)
+
+        with self.assertRaisesRegex(TypeError, "must have storage info"):
+            pointer(int)
+
+        with self.assertRaisesRegex(TypeError, "must have storage info"):
+            pointer(int(1))
 
     def test_pointer_set_python_type(self):
         p1 = POINTER(c_int)
