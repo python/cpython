@@ -532,7 +532,8 @@ ctypes
 
 * Move :func:`ctypes.POINTER` types cache from the global ``_pointer_type_cache``
   to the corresponding :mod:`ctypes` types. This will stop the cache from
-  growing without limits in some situations.
+  growing without limits in some situations. Also :mod:`ctypes` pointer types
+  can be accessed with ``__pointer_type__`` attribute from corresponding type.
   (Contributed by Sergey Miryanov in :gh:`100926`).
 
 datetime
