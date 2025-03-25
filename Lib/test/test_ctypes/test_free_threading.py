@@ -28,7 +28,6 @@ class FreeThreadingTests(unittest.TestCase):
             func(packed_args)
 
         num_workers = 20
-
         barrier = threading.Barrier(num_workers)
 
         threads = []
@@ -48,7 +47,6 @@ class FreeThreadingTests(unittest.TestCase):
             return POINT(1, 2)
 
         num_workers = 20
-
         barrier = threading.Barrier(num_workers)
 
         threads = []
@@ -69,10 +67,8 @@ class FreeThreadingTests(unittest.TestCase):
 
             return MemRefDescriptor
 
-
         class F32(ctypes.Structure):
             _fields_ = [("f32", ctypes.c_float)]
-
 
         def race():
             barrier.wait()
@@ -81,9 +77,7 @@ class FreeThreadingTests(unittest.TestCase):
                 ctypes.pointer(make_nd_memref_descriptor(1, ctp)())
             )
 
-
         num_workers = 20
-
         barrier = threading.Barrier(num_workers)
 
         threads = []
