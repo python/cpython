@@ -36,7 +36,7 @@ Data members:
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
 #include "pycore_structseq.h"     // _PyStructSequence_InitBuiltinWithFlags()
 #include "pycore_sysmodule.h"     // export _PySys_GetSizeOf()
-#include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
+#include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal(), _PyUnicode_EqualToASCIIString()
 
 #include "pydtrace.h"             // PyDTrace_AUDIT()
 #include "osdefs.h"               // DELIM
@@ -213,6 +213,8 @@ PySys_GetObject(const char *name)
             return NULL;
         }
     }
+#else
+    (void) ret;  // ignore unused variable warning
 #endif
     return value;
 }
