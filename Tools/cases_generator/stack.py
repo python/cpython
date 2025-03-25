@@ -171,7 +171,7 @@ class Local:
         self.in_local = False
         self.memory_offset = None
 
-    def in_memory(self):
+    def in_memory(self) -> bool:
         return self.memory_offset is not None or self.is_array()
 
     def is_dead(self) -> bool:
@@ -220,7 +220,7 @@ class Stack:
         self.extract_bits = extract_bits
         self.cast_type = cast_type
 
-    def drop(self, var: StackItem, check_liveness: bool):
+    def drop(self, var: StackItem, check_liveness: bool) -> None:
         self.top_offset.pop(var)
         if self.variables:
             popped = self.variables.pop()
@@ -376,7 +376,7 @@ class Stack:
         for self_var, other_var in zip(self.variables, other.variables):
             if self_var.memory_offset is not None:
                 if self_var.memory_offset != other_var.memory_offset:
-                    raise StackError(f"Mismatched stack depths for {self_var.name}: {self_var.memory_offset.to_c()} and {other_var.memory_offset.to_c()}")
+                    raise StackError(f"Mismatched stack depths for {self_var.name}: {self_var.memory_offset} and {other_var.memory_offset}")
 
 
 def stacks(inst: Instruction | PseudoInstruction) -> Iterator[StackEffect]:
@@ -518,7 +518,7 @@ class Storage:
             out.emit_reload()
 
     @staticmethod
-    def for_uop(stack: Stack, uop: Uop, check_liveness=True) -> tuple[list[str], "Storage"]:
+    def for_uop(stack: Stack, uop: Uop, check_liveness: bool = True) -> tuple[list[str], "Storage"]:
         code_list: list[str] = []
         inputs: list[Local] = []
         peeks: list[Local] = []
@@ -687,7 +687,7 @@ class Storage:
                 self.stack.drop(output.item, self.check_liveness)
                 self.inputs = []
                 return
-            if var_size(lowest) != var_size(output):
+            if var_size(lowest.item) != var_size(output.item):
                 raise StackError("Cannot call DECREF_INPUTS with live output not matching first input size")
             lowest.in_local = True
             close_variable(lowest, output.name)
@@ -702,7 +702,7 @@ class Storage:
         self.stack.pop(self.inputs[0].item)
         output_in_place = self.outputs and output is self.outputs[0] and lowest.memory_offset is not None
         if output_in_place:
-            output.memory_offset = lowest.memory_offset.copy()
+            output.memory_offset = lowest.memory_offset.copy()  # type: ignore[union-attr]
         else:
             self.stack.flush(out)
         if output is not None:
