@@ -320,6 +320,7 @@ def _getuserbase():
 def _get_path(userbase):
     version = sys.version_info
     with warnings.catch_warnings():
+        # ignore DeprecationWarning on sys.abiflags change
         warnings.simplefilter('ignore', DeprecationWarning)
         abiflags = getattr(sys, 'abiflags', '')
     if 't' in abiflags:
@@ -405,6 +406,7 @@ def getsitepackages(prefixes=None):
         implementation = _get_implementation().lower()
         ver = sys.version_info
         with warnings.catch_warnings():
+            # ignore DeprecationWarning on sys.abiflags change
             warnings.simplefilter('ignore', DeprecationWarning)
             abiflags = getattr(sys, 'abiflags', '')
         if 't' in abiflags:

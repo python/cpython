@@ -47,7 +47,13 @@ class PythonInfo:
 
 def copy_attributes(info_add, obj, name_fmt, attributes, *, formatter=None):
     for attr in attributes:
-        value = getattr(obj, attr, None)
+        if attr == 'abiflags':
+            with warnings.catch_warnings():
+                # ignore DeprecationWarning on sys.abiflags change
+                warnings.simplefilter("ignore", DeprecationWarning)
+                value = getattr(obj, attr, None)
+        else:
+            value = getattr(obj, attr, None)
         if value is None:
             continue
         name = name_fmt % attr
