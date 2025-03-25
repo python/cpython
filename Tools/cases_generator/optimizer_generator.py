@@ -123,7 +123,7 @@ def write_uop(
     try:
         out.start_line()
         if override:
-            code_list, storage = Storage.for_uop(stack, prototype)
+            code_list, storage = Storage.for_uop(stack, prototype, check_liveness=False)
             for code in code_list:
                 out.emit(code)
         if debug:

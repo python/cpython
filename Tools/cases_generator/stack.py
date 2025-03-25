@@ -220,13 +220,14 @@ class Stack:
         self.extract_bits = extract_bits
         self.cast_type = cast_type
 
-    def drop(self, var: StackItem):
+    def drop(self, var: StackItem, check_liveness: bool):
         self.top_offset.pop(var)
         if self.variables:
             popped = self.variables.pop()
             if popped.is_dead() or not var.used:
                 return
-        raise StackError(f"Dropping live value '{var.name}'")
+        if check_liveness:
+            raise StackError(f"Dropping live value '{var.name}'")
 
     def pop(self, var: StackItem) -> tuple[str, Local]:
         self.top_offset.pop(var)
@@ -415,6 +416,7 @@ class Storage:
     stack: Stack
     inputs: list[Local]
     outputs: list[Local]
+    check_liveness: bool
     spilled: int = 0
 
     @staticmethod
@@ -438,11 +440,11 @@ class Storage:
     def clear_inputs(self, reason:str) -> None:
         while self.inputs:
             tos = self.inputs.pop()
-            if self.is_live(tos):
+            if self.is_live(tos) and self.check_liveness:
                 raise StackError(
                     f"Input '{tos.name}' is still live {reason}"
                 )
-            self.stack.drop(tos.item)
+            self.stack.drop(tos.item, self.check_liveness)
 
     def clear_dead_inputs(self) -> None:
         live = ""
@@ -452,7 +454,7 @@ class Storage:
                 live = tos.name
                 break
             self.inputs.pop()
-            self.stack.drop(tos.item)
+            self.stack.drop(tos.item, self.check_liveness)
         for var in self.inputs:
             if not self.is_live(var):
                 raise StackError(
@@ -516,7 +518,7 @@ class Storage:
             out.emit_reload()
 
     @staticmethod
-    def for_uop(stack: Stack, uop: Uop) -> tuple[list[str], "Storage"]:
+    def for_uop(stack: Stack, uop: Uop, check_liveness=True) -> tuple[list[str], "Storage"]:
         code_list: list[str] = []
         inputs: list[Local] = []
         peeks: list[Local] = []
@@ -542,7 +544,7 @@ class Storage:
         for var in inputs:
             stack.push(var)
         outputs = [ Local.undefined(var) for var in uop.stack.outputs if not var.peek ]
-        return code_list, Storage(stack, inputs, outputs)
+        return code_list, Storage(stack, inputs, outputs, check_liveness)
 
     @staticmethod
     def copy_list(arg: list[Local]) -> list[Local]:
@@ -554,8 +556,8 @@ class Storage:
         inputs = [ variables[var.name] for var in self.inputs]
         assert [v.name for v in inputs] == [v.name for v in self.inputs], (inputs, self.inputs)
         return Storage(
-            new_stack, inputs,
-            self.copy_list(self.outputs), self.spilled
+            new_stack, inputs, self.copy_list(self.outputs),
+            self.check_liveness, self.spilled
         )
 
     def sanity_check(self) -> None:
@@ -586,7 +588,7 @@ class Storage:
         if len(self.inputs) != len(other.inputs):
             self.clear_dead_inputs()
             other.clear_dead_inputs()
-        if len(self.inputs) != len(other.inputs):
+        if len(self.inputs) != len(other.inputs) and self.check_liveness:
             diff = self.inputs[-1] if len(self.inputs) > len(other.inputs) else other.inputs[-1]
             raise StackError(f"Unmergeable inputs. Differing state of '{diff.name}'")
         for var, other_var in zip(self.inputs, other.inputs):
@@ -605,7 +607,7 @@ class Storage:
         if self.spilled:
             raise StackError(f"Unbalanced stack spills")
         self.clear_inputs("at the end of the micro-op")
-        if self.inputs:
+        if self.inputs and self.check_liveness:
             raise StackError(f"Input variable '{self.inputs[-1].name}' is still live")
         self._push_defined_outputs()
         if self.outputs:
@@ -682,7 +684,7 @@ class Storage:
                 self.stack.push(output)
                 self.stack.flush(out)
                 close_variable(self.inputs[0], "")
-                self.stack.drop(output.item)
+                self.stack.drop(output.item, self.check_liveness)
                 self.inputs = []
                 return
             if var_size(lowest) != var_size(output):
@@ -696,7 +698,7 @@ class Storage:
             close_variable(self.inputs[0], "PyStackRef_NULL")
         for input in reversed(self.inputs[1:]):
             input.kill()
-            self.stack.drop(input.item)
+            self.stack.drop(input.item, self.check_liveness)
         self.stack.pop(self.inputs[0].item)
         output_in_place = self.outputs and output is self.outputs[0] and lowest.memory_offset is not None
         if output_in_place:
