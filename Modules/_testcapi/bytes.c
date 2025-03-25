@@ -88,11 +88,18 @@ writer_init(PyObject *self_raw, PyObject *args, PyObject *kwargs)
     Py_ssize_t alloc;
     char *str;
     Py_ssize_t str_size;
-    if (!PyArg_ParseTuple(args, "ny#", &alloc, &str, &str_size)) {
+    int use_bytearray;
+    if (!PyArg_ParseTuple(args, "ny#i",
+                          &alloc, &str, &str_size, &use_bytearray)) {
         return -1;
     }
 
-    self->writer = PyBytesWriter_Create(alloc);
+    if (use_bytearray) {
+        self->writer = _PyBytesWriter_CreateByteArray(alloc);
+    }
+    else {
+        self->writer = PyBytesWriter_Create(alloc);
+    }
     if (self->writer == NULL) {
         return -1;
     }
