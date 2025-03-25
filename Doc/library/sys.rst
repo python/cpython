@@ -22,6 +22,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       Default flags became an empty string (``m`` flag for pymalloc has been
       removed).
 
+   .. availability:: Unix.
+
    .. versionchanged:: 3.14
       A deprecation warning will be emitted if the :data:`sys.abiflags` member
       is accessed on Windows.
@@ -30,9 +32,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       .. code-block:: python
 
          >>> import sys
-         >>> getattr(sys, 'abiflags', None)
+         >>> getattr(sys, 'abiflags', None)  # on Windows
          <python-input-1>:1: DeprecationWarning: sys.abiflags will be set to a meaningful value on all platforms ...
-         >>> hasattr(sys, 'abiflags')
+         >>> hasattr(sys, 'abiflags')  # on Windows
          <python-input-2>:1: DeprecationWarning: sys.abiflags will be set to a meaningful value on all platforms ...
          False
 
@@ -45,8 +47,6 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       The :data:`sys.abiflags` member will be set to a meaningful value on
       Windows in Python 3.16. This means the :data:`sys.abiflags` member will
       always be available on all platforms starting from Python 3.16.
-
-   .. availability:: Unix.
 
 
 .. function:: addaudithook(hook)
