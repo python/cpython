@@ -327,7 +327,7 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
     if (writer == NULL) {
         return NULL;
     }
-    unsigned char *ascii_data = PyBytesWriter_Data(writer);
+    unsigned char *ascii_data = PyBytesWriter_GetData(writer);
 
     /* Store the length */
     if (backtick && !bin_len)
@@ -390,7 +390,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
     if (writer == NULL) {
         return NULL;
     }
-    unsigned char *bin_data = PyBytesWriter_Data(writer);
+    unsigned char *bin_data = PyBytesWriter_GetData(writer);
 
     if (strict_mode && ascii_len > 0 && ascii_data[0] == '=') {
         state = get_binascii_state(module);
@@ -493,7 +493,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
             ** This is an invalid length, as there is no possible input that
             ** could encoded into such a base64 string.
             */
-            unsigned char *bin_data_start = PyBytesWriter_Data(writer);
+            unsigned char *bin_data_start = PyBytesWriter_GetData(writer);
             PyErr_Format(state->Error,
                          "Invalid base64-encoded string: "
                          "number of data characters (%zd) cannot be 1 more "
@@ -561,7 +561,7 @@ binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int newline)
     if (writer == NULL) {
         return NULL;
     }
-    unsigned char *ascii_data = PyBytesWriter_Data(writer);
+    unsigned char *ascii_data = PyBytesWriter_GetData(writer);
 
     for( ; bin_len > 0 ; bin_len--, bin_data++ ) {
         /* Shift the data into our buffer */

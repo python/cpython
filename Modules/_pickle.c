@@ -2624,7 +2624,7 @@ raw_unicode_escape(PyObject *obj)
     if (writer == NULL) {
         return NULL;
     }
-    char *p = PyBytesWriter_Data(writer);
+    char *p = PyBytesWriter_GetData(writer);
 
     for (Py_ssize_t i=0; i < size; i++) {
         Py_UCS4 ch = PyUnicode_READ(kind, data, i);
@@ -2632,11 +2632,11 @@ raw_unicode_escape(PyObject *obj)
         if (ch >= 0x10000) {
             /* -1: subtract 1 preallocated byte */
             alloc += 10-1;
-            Py_ssize_t pos = p - (char*)PyBytesWriter_Data(writer);
+            Py_ssize_t pos = p - (char*)PyBytesWriter_GetData(writer);
             if (PyBytesWriter_Resize(writer, alloc) < 0) {
                 goto error;
             }
-            p = (char*)PyBytesWriter_Data(writer) + pos;
+            p = (char*)PyBytesWriter_GetData(writer) + pos;
 
             *p++ = '\\';
             *p++ = 'U';
@@ -2656,11 +2656,11 @@ raw_unicode_escape(PyObject *obj)
         {
             /* -1: subtract 1 preallocated byte */
             alloc += 6-1;
-            Py_ssize_t pos = p - (char*)PyBytesWriter_Data(writer);
+            Py_ssize_t pos = p - (char*)PyBytesWriter_GetData(writer);
             if (PyBytesWriter_Resize(writer, alloc) < 0) {
                 goto error;
             }
-            p = (char*)PyBytesWriter_Data(writer) + pos;
+            p = (char*)PyBytesWriter_GetData(writer) + pos;
 
             *p++ = '\\';
             *p++ = 'u';

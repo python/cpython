@@ -2291,7 +2291,7 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (writer == NULL) {
         return NULL;
     }
-    char *buf = PyBytesWriter_Data(writer);
+    char *buf = PyBytesWriter_GetData(writer);
 
     /* Call the guts */
     if ( s_pack_internal(soself, args, 0, buf, state) != 0 ) {

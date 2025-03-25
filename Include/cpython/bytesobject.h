@@ -47,7 +47,7 @@ _PyBytes_Join(PyObject *sep, PyObject *iterable)
 typedef struct PyBytesWriter PyBytesWriter;
 
 PyAPI_FUNC(PyBytesWriter *) PyBytesWriter_Create(
-    Py_ssize_t alloc);
+    Py_ssize_t size);
 PyAPI_FUNC(void) PyBytesWriter_Discard(
     PyBytesWriter *writer);
 PyAPI_FUNC(PyObject*) PyBytesWriter_Finish(
@@ -59,9 +59,11 @@ PyAPI_FUNC(PyObject*) PyBytesWriter_FinishWithEndPointer(
     PyBytesWriter *writer,
     void *data);
 
-PyAPI_FUNC(void*) PyBytesWriter_Data(
+PyAPI_FUNC(void*) PyBytesWriter_GetData(
     PyBytesWriter *writer);
-PyAPI_FUNC(Py_ssize_t) PyBytesWriter_Allocated(
+PyAPI_FUNC(Py_ssize_t) PyBytesWriter_GetSize(
+    PyBytesWriter *writer);
+PyAPI_FUNC(Py_ssize_t) PyBytesWriter_GetAllocated(
     PyBytesWriter *writer);
 
 PyAPI_FUNC(int) PyBytesWriter_Resize(
