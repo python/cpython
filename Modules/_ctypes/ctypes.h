@@ -436,6 +436,13 @@ stginfo_set_dict_final(StgInfo *info)
     STGINFO_UNLOCK();
 }
 
+static inline void
+stginfo_clear_dict_final_lock_held(StgInfo *info)
+{
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&info->mutex);
+    FT_ATOMIC_STORE_INT(info->dict_final, 0);
+}
+
 extern int PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info);
 extern void ctype_clear_stginfo(StgInfo *info);
 

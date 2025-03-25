@@ -716,7 +716,7 @@ StructUnionType_init(PyObject *self, PyObject *args, PyObject *kwds, int isStruc
         /* copy base info */
         ret = PyCStgInfo_clone(info, baseinfo);
         if (ret >= 0) {
-            assert(stginfo_get_dict_final(info) == 0);
+            stginfo_clear_dict_final_lock_held(info);
             stginfo_set_dict_final_lock_held(baseinfo);
         }
         STGINFO_UNLOCK2();
