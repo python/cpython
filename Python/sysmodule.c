@@ -98,7 +98,6 @@ _PySys_GetRequiredAttr(PyObject *name)
                     "sys.abiflags will be set to a meaningful value "
                     "on all platforms in Python 3.16 instead of absent",
                     /*stack_level=*/1) < 0) {
-                    Py_XDECREF(value);
                     return NULL;
                 }
             }
@@ -125,7 +124,6 @@ _PySys_GetRequiredAttrString(const char *name)
                     "sys.abiflags will be set to a meaningful value "
                     "on all platforms in Python 3.16 instead of absent",
                     /*stack_level=*/1) < 0) {
-                    Py_XDECREF(value);
                     return NULL;
                 }
             }
