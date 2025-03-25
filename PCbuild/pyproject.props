@@ -25,9 +25,6 @@
     <LinkIncremental Condition="$(Configuration) != 'Debug'">false</LinkIncremental>
   </PropertyGroup>
 
-  <!-- We need the above overridden OutDir, so this must be imported after PropertyGroup -->
-  <Import Project="pyproject-clangcl.props" Condition="$(PlatformToolset) == 'ClangCL' and $(__PyprojectClangCl_Props_Imported) != 'true'" />
-
   <PropertyGroup Condition="$(TargetExt) != ''">
     <TargetNameExt>$(TargetName)$(TargetExt)</TargetNameExt>
     <_TargetNameSep>$(TargetNameExt.LastIndexOf(`.`))</_TargetNameSep>
@@ -129,6 +126,13 @@
       <ProxyFileName>$(MSBuildProjectName)_p.c</ProxyFileName>
     </Midl>
   </ItemDefinitionGroup>
+
+  <!--
+  We need the overridden OutDir (PropertyGroup Label="Globals"),
+  and want to be able to override some ClCompile parameters,
+  so this must not be included erlier.
+  -->
+  <Import Project="pyproject-clangcl.props" Condition="$(PlatformToolset) == 'ClangCL' and $(__PyprojectClangCl_Props_Imported) != 'true'" />
 
   <UsingTask TaskName="KillPython" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
     <ParameterGroup>
