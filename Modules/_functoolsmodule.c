@@ -1312,7 +1312,7 @@ bounded_lru_cache_wrapper_pre_call_lock_held(lru_cache_object *self, PyObject *a
     return 0;
 }
 
-PyObject *
+static PyObject *
 bounded_lru_cache_wrapper_post_call_lock_held(lru_cache_object *self,
                                               PyObject *result, PyObject *key, Py_hash_t hash)
 {
