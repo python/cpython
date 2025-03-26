@@ -440,6 +440,24 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(gc_get_alive_objects__doc__,
+"get_alive_objects($module, /)\n"
+"--\n"
+"\n"
+"Return a list of objects tracked by the collector (excluding the list returned).");
+
+#define GC_GET_ALIVE_OBJECTS_METHODDEF    \
+    {"get_alive_objects", (PyCFunction)gc_get_alive_objects, METH_NOARGS, gc_get_alive_objects__doc__},
+
+static PyObject *
+gc_get_alive_objects_impl(PyObject *module);
+
+static PyObject *
+gc_get_alive_objects(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return gc_get_alive_objects_impl(module);
+}
+
 PyDoc_STRVAR(gc_get_stats__doc__,
 "get_stats($module, /)\n"
 "--\n"
@@ -585,4 +603,4 @@ gc_get_freeze_count(PyObject *module, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0a7e91917adcb937 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=debb8f0db8f3a13e input=a9049054013a1b77]*/

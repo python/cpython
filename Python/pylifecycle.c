@@ -1180,6 +1180,7 @@ run_presite(PyThreadState *tstate)
 }
 #endif
 
+extern void _PyGC_Freeze(PyInterpreterState *interp);
 
 static PyStatus
 init_interp_main(PyThreadState *tstate)
@@ -1381,6 +1382,11 @@ init_interp_main(PyThreadState *tstate)
     if (PyDict_Watch(0, interp->builtins) != 0) {
         return _PyStatus_ERR("failed to set builtin dict watcher");
     }
+
+#if 0
+    fprintf(stderr, "freezing\n");
+    _PyGC_Freeze(interp);
+#endif
 
     assert(!_PyErr_Occurred(tstate));
 
@@ -2264,7 +2270,6 @@ Py_Finalize(void)
 {
     (void)_Py_Finalize(&_PyRuntime);
 }
-
 
 /* Create and initialize a new interpreter and thread, and return the
    new thread.  This requires that Py_Initialize() has been called
