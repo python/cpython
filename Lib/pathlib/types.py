@@ -23,12 +23,13 @@ from typing import (
 _WP = TypeVar("_WP", bound="_WritablePath")
 
 
-def _explode_path(path: str, split: Callable[[str], tuple[str, str]]) -> tuple[str, list[str]]:
+def _explode_path(path: str, parser: "_PathParser") -> tuple[str, list[str]]:
     """
     Split the path into a 2-tuple (anchor, parts), where *anchor* is the
     uppermost parent of the path (equivalent to path.parents[-1]), and
     *parts* is a reversed list of parts following the anchor.
     """
+    split = parser.split
     parent, name = split(path)
     names = []
     while path != parent:
@@ -99,7 +100,7 @@ class _JoinablePath(ABC):
     @property
     def anchor(self) -> str:
         """The concatenation of the drive and root, or ''."""
-        return _explode_path(str(self), self.parser.split)[0]
+        return _explode_path(str(self), self.parser)[0]
 
     @property
     def name(self) -> str:
@@ -173,7 +174,7 @@ class _JoinablePath(ABC):
     def parts(self) -> Sequence[str]:
         """An object providing sequence-like access to the
         components in the filesystem path."""
-        anchor, parts = _explode_path(str(self), self.parser.split)
+        anchor, parts = _explode_path(str(self), self.parser)
         if anchor:
             parts.append(anchor)
         return tuple(reversed(parts))
@@ -289,7 +290,7 @@ class _ReadablePath(_JoinablePath):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
-        anchor, parts = _explode_path(pattern, self.parser.split)
+        anchor, parts = _explode_path(pattern, self.parser)
         if anchor:
             raise NotImplementedError("Non-relative patterns are unsupported")
         elif not parts:
