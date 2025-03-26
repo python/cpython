@@ -1250,7 +1250,7 @@ class TestGeneratedCases(unittest.TestCase):
             }
             // THIRD
             {
-                y = stack_pointer[-1];
+                y = x;
                 USE(y);
             }
             DISPATCH();
