@@ -305,7 +305,7 @@ class _ReadablePath(_JoinablePath):
         top_down: bool = True,
         on_error: Optional[Callable[[Exception], None]] = None,
         follow_symlinks: bool = False,
-    ) -> Generator[tuple[Self, list[str], list[str]]]:
+    ) -> Iterator[tuple[Self, list[str], list[str]]]:
         """Walk the directory tree from this directory, similar to os.walk()."""
         paths = [self]
         while paths:
