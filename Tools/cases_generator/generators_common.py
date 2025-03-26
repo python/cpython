@@ -518,7 +518,7 @@ class Emitter:
                     reachable = True
         except StackError as ex:
             self._print_storage(if_storage)
-            raise analysis_error(ex.args[0], rbrace) # from None
+            raise analysis_error(ex.args[0], rbrace) from None
         return reachable, rbrace, storage
 
     def _emit_block(
@@ -624,7 +624,7 @@ class Emitter:
                 storage.push_outputs()
                 self._print_storage(storage)
         except StackError as ex:
-            raise analysis_error(ex.args[0], rbrace) # from None
+            raise analysis_error(ex.args[0], rbrace) from None
         return storage
 
     def emit(self, txt: str | Token) -> None:
