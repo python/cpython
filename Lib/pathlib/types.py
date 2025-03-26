@@ -11,11 +11,12 @@ Protocols for supporting classes in pathlib.
 
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Iterator, Sequence
 from glob import _PathGlobber
 from pathlib._os import magic_open, ensure_distinct_paths, ensure_different_files, copyfileobj
 from pathlib import PurePath, Path
 from typing import (
-    Any, BinaryIO, Callable, Generator, Iterator, Literal, Optional, Protocol, Self, Sequence, TypeVar,
+    Any, BinaryIO, Literal, Optional, Protocol, Self, TypeVar,
     runtime_checkable,
 )
 
