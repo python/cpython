@@ -1098,6 +1098,20 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.verify_expected_headers(result[1:result.index(b'\r\n')])
         self.assertFalse(self.handler.get_called)
 
+    def test_unicode_space(self):
+        # HTTP defines SP as *only* b'\x20' -- other space characters
+        # (such as this Latin-1 encoded non-breaking space) should not
+        # be used to delimit method, request-target, and HTTP-version.
+        result = self.send_typical_request(
+            b'GET /spaced\xa0out HTTP/1.1\r\n'
+            b'Host: dummy\r\n'
+            b'\r\n'
+        )
+        expected = b'HTTP/1.1 200 '
+        self.assertEqual(expected, result[0][:len(expected)])
+        self.verify_expected_headers(result[1:result.index(b'\r\n')])
+        self.assertTrue(self.handler.get_called)
+
     def test_with_continue_1_0(self):
         result = self.send_typical_request(b'GET / HTTP/1.0\r\nExpect: 100-continue\r\n\r\n')
         self.verify_http_server_response(result[0])
