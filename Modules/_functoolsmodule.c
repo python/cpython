@@ -41,6 +41,12 @@ get_functools_state(PyObject *module)
     return (_functools_state *)state;
 }
 
+#ifdef Py_GIL_DISABLED
+#define FT_ATOMIC_ADD_SSIZE(value, new_value) \
+    _Py_atomic_add_ssize(&value, new_value)
+#else
+#define FT_ATOMIC_ADD_SSIZE(value, new_value) value += new_value
+#endif
 
 /* partial object **********************************************************/
 
@@ -1176,11 +1182,7 @@ uncached_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
 {
     PyObject *result;
 
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_add_ssize(&self->misses, 1);
-#else
-    self->misses++;
-#endif
+    FT_ATOMIC_ADD_SSIZE(self->misses, 1);
     result = PyObject_Call(self->func, args, kwds);
     if (!result)
         return NULL;
@@ -1202,11 +1204,7 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
     }
     int res = _PyDict_GetItemRef_KnownHash((PyDictObject *)self->cache, key, hash, &result);
     if (res > 0) {
-#ifdef Py_GIL_DISABLED
-        _Py_atomic_add_ssize(&self->hits, 1);
-#else
-        self->hits++;
-#endif
+        FT_ATOMIC_ADD_SSIZE(self->hits, 1);
         Py_DECREF(key);
         return result;
     }
@@ -1214,11 +1212,7 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
         Py_DECREF(key);
         return NULL;
     }
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_add_ssize(&self->misses, 1);
-#else
-    self->misses++;
-#endif
+    FT_ATOMIC_ADD_SSIZE(self->misses, 1);
     result = PyObject_Call(self->func, args, kwds);
     if (!result) {
         Py_DECREF(key);
