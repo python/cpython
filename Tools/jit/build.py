@@ -26,21 +26,14 @@ if __name__ == "__main__":
         "-v", "--verbose", action="store_true", help="echo commands as they are run"
     )
     args = parser.parse_args()
-    print(args.target)
 
     if len(args.target) == 1:
-        # Single triple specified, assume this is a normal build
-        target = args.target[0]
-        target.debug = args.debug
-        target.force = args.force
-        target.verbose = args.verbose
-        target.build(pathlib.Path.cwd(), comment=comment)
+        args.target.debug = args.debug
+        args.target.verbose = args.verbose
+        args.target.build(pathlib.Path.cwd(), comment=comment, force=args.force)
 
     else:
-        # Multiple triples specified, assume this is a macOS multi-architecture build
-        # - Generate multiple stencil headers
-        # - Generate a helper header that includes the stencils for the current
-        #   architecture.
+        # Build for multiple targets (e.g. universal2)
         for target in args.target:
             target.debug = args.debug
             target.force = args.force
@@ -49,6 +42,7 @@ if __name__ == "__main__":
                 pathlib.Path.cwd(),
                 comment=comment,
                 stencils_h=f"jit_stencils-{target.triple}.h",
+                force=args.force,
             )
 
         with open("jit_stencils.h", "w") as fp:
@@ -57,5 +51,5 @@ if __name__ == "__main__":
                 fp.write(f'#   include "jit_stencils-{target.triple}.h"\n')
 
             fp.write("#else\n")
-            fp.write('#  error "unexpected cpu type"\n')
+            fp.write('#  error "unexpected target"\n')
             fp.write("#endif\n")

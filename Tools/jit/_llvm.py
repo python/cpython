@@ -32,12 +32,19 @@ def _async_cache(f: _C[_P, _R]) -> _C[_P, _R]:
     return wrapper
 
 
-_CORES = asyncio.BoundedSemaphore(os.cpu_count() or 1)
+_CORES: asyncio.BoundedSemaphore | None = None
+
+
+def _get_cores() -> asyncio.BoundedSemaphore:
+    global _CORES
+    if _CORES is None:
+        _CORES = asyncio.BoundedSemaphore(os.cpu_count() or 1)
+    return _CORES
 
 
 async def _run(tool: str, args: typing.Iterable[str], echo: bool = False) -> str | None:
     command = [tool, *args]
-    async with _CORES:
+    async with _get_cores():
         if echo:
             print(shlex.join(command))
         try:
