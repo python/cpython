@@ -702,7 +702,7 @@
             assert(res_o != NULL);
             res = PyStackRef_FromPyObjectNew(res_o);
             #endif
-            STAT_INC(BINARY_SUBSCR, hit);
+            STAT_INC(BINARY_OP, hit);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyStackRef tmp = list_st;
             list_st = res;
@@ -1110,32 +1110,31 @@
                 JUMP_TO_LABEL(error);
             }
             int err = 0;
-            for (int i = 0; i < oparg; i++) {
+            for (Py_ssize_t i = 0; i < oparg; i++) {
+                _PyStackRef value = values[i];
+                values[i] = PyStackRef_NULL;
                 if (err == 0) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    err = PySet_Add(set_o, PyStackRef_AsPyObjectBorrow(values[i]));
+                    err = _PySet_AddTakeRef((PySetObject *)set_o, PyStackRef_AsPyObjectSteal(value));
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                }
+                else {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    PyStackRef_CLOSE(value);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                 }
             }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyStackRef tmp;
-            for (int _i = oparg; --_i >= 0;) {
-                tmp = values[_i];
-                values[_i] = PyStackRef_NULL;
-                PyStackRef_CLOSE(tmp);
-            }
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            stack_pointer += -oparg;
-            assert(WITHIN_STACK_BOUNDS());
-            if (err != 0) {
+            if (err) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 Py_DECREF(set_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
+                stack_pointer += -oparg;
+                assert(WITHIN_STACK_BOUNDS());
                 JUMP_TO_LABEL(error);
             }
             set = PyStackRef_FromPyObjectStealMortal(set_o);
-            stack_pointer[0] = set;
-            stack_pointer += 1;
+            stack_pointer[-oparg] = set;
+            stack_pointer += 1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
@@ -6982,7 +6981,7 @@
             _PyStackRef class_st;
             _PyStackRef self_st;
             _PyStackRef attr;
-            _PyStackRef null = PyStackRef_NULL;
+            _PyStackRef *null;
             /* Skip 1 cache entry */
             // _LOAD_SUPER_ATTR
             {
@@ -7078,10 +7077,12 @@
             }
             // _PUSH_NULL_CONDITIONAL
             {
-                null = PyStackRef_NULL;
+                null = &stack_pointer[1];
+                if (oparg & 1) {
+                    null[0] = PyStackRef_NULL;
+                }
             }
             stack_pointer[0] = attr;
-            if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -7840,7 +7841,7 @@
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
-            _PyStackRef null = PyStackRef_NULL;
+            _PyStackRef *null;
             /* Skip 1 cache entry */
             // _CHECK_ATTR_CLASS
             {
@@ -7876,9 +7877,11 @@
             }
             // _PUSH_NULL_CONDITIONAL
             {
-                null = PyStackRef_NULL;
+                null = &stack_pointer[0];
+                if (oparg & 1) {
+                    null[0] = PyStackRef_NULL;
+                }
             }
-            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -7897,7 +7900,7 @@
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
-            _PyStackRef null = PyStackRef_NULL;
+            _PyStackRef *null;
             /* Skip 1 cache entry */
             // _CHECK_ATTR_CLASS
             {
@@ -7943,9 +7946,11 @@
             }
             // _PUSH_NULL_CONDITIONAL
             {
-                null = PyStackRef_NULL;
+                null = &stack_pointer[0];
+                if (oparg & 1) {
+                    null[0] = PyStackRef_NULL;
+                }
             }
-            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -8022,7 +8027,7 @@
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
-            _PyStackRef null = PyStackRef_NULL;
+            _PyStackRef *null;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             {
@@ -8078,9 +8083,11 @@
             /* Skip 5 cache entries */
             // _PUSH_NULL_CONDITIONAL
             {
-                null = PyStackRef_NULL;
+                null = &stack_pointer[0];
+                if (oparg & 1) {
+                    null[0] = PyStackRef_NULL;
+                }
             }
-            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -8270,7 +8277,7 @@
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
-            _PyStackRef null = PyStackRef_NULL;
+            _PyStackRef *null;
             /* Skip 1 cache entry */
             // _LOAD_ATTR_MODULE
             {
@@ -8321,9 +8328,11 @@
             /* Skip 5 cache entries */
             // _PUSH_NULL_CONDITIONAL
             {
-                null = PyStackRef_NULL;
+                null = &stack_pointer[0];
+                if (oparg & 1) {
+                    null[0] = PyStackRef_NULL;
+                }
             }
-            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -8552,7 +8561,7 @@
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
-            _PyStackRef null = PyStackRef_NULL;
+            _PyStackRef *null;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             {
@@ -8599,9 +8608,11 @@
             /* Skip 5 cache entries */
             // _PUSH_NULL_CONDITIONAL
             {
-                null = PyStackRef_NULL;
+                null = &stack_pointer[0];
+                if (oparg & 1) {
+                    null[0] = PyStackRef_NULL;
+                }
             }
-            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -8620,7 +8631,7 @@
             static_assert(INLINE_CACHE_ENTRIES_LOAD_ATTR == 9, "incorrect cache size");
             _PyStackRef owner;
             _PyStackRef attr;
-            _PyStackRef null = PyStackRef_NULL;
+            _PyStackRef *null;
             /* Skip 1 cache entry */
             // _GUARD_TYPE_VERSION
             {
@@ -8700,9 +8711,11 @@
             /* Skip 5 cache entries */
             // _PUSH_NULL_CONDITIONAL
             {
-                null = PyStackRef_NULL;
+                null = &stack_pointer[0];
+                if (oparg & 1) {
+                    null[0] = PyStackRef_NULL;
+                }
             }
-            if (oparg & 1) stack_pointer[0] = null;
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -9080,7 +9093,7 @@
             _Py_CODEUNIT* const this_instr = next_instr - 5;
             (void)this_instr;
             _PyStackRef *res;
-            _PyStackRef null = PyStackRef_NULL;
+            _PyStackRef *null;
             // _SPECIALIZE_LOAD_GLOBAL
             {
                 uint16_t counter = read_u16(&this_instr[1].cache);
@@ -9114,9 +9127,11 @@
             }
             // _PUSH_NULL_CONDITIONAL
             {
-                null = PyStackRef_NULL;
+                null = &stack_pointer[1];
+                if (oparg & 1) {
+                    null[0] = PyStackRef_NULL;
+                }
             }
-            if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -9134,7 +9149,7 @@
             INSTRUCTION_STATS(LOAD_GLOBAL_BUILTIN);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
             _PyStackRef res;
-            _PyStackRef null = PyStackRef_NULL;
+            _PyStackRef *null;
             /* Skip 1 cache entry */
             // _GUARD_GLOBALS_VERSION
             {
@@ -9191,10 +9206,12 @@
             }
             // _PUSH_NULL_CONDITIONAL
             {
-                null = PyStackRef_NULL;
+                null = &stack_pointer[1];
+                if (oparg & 1) {
+                    null[0] = PyStackRef_NULL;
+                }
             }
             stack_pointer[0] = res;
-            if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -9212,7 +9229,7 @@
             INSTRUCTION_STATS(LOAD_GLOBAL_MODULE);
             static_assert(INLINE_CACHE_ENTRIES_LOAD_GLOBAL == 4, "incorrect cache size");
             _PyStackRef res;
-            _PyStackRef null = PyStackRef_NULL;
+            _PyStackRef *null;
             /* Skip 1 cache entry */
             // _NOP
             {
@@ -9256,10 +9273,12 @@
             }
             // _PUSH_NULL_CONDITIONAL
             {
-                null = PyStackRef_NULL;
+                null = &stack_pointer[1];
+                if (oparg & 1) {
+                    null[0] = PyStackRef_NULL;
+                }
             }
             stack_pointer[0] = res;
-            if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -9387,7 +9406,7 @@
             _PyStackRef class_st;
             _PyStackRef self_st;
             _PyStackRef attr;
-            _PyStackRef null = PyStackRef_NULL;
+            _PyStackRef *null;
             // _SPECIALIZE_LOAD_SUPER_ATTR
             {
                 class_st = stack_pointer[-2];
@@ -9499,10 +9518,12 @@
             }
             // _PUSH_NULL_CONDITIONAL
             {
-                null = PyStackRef_NULL;
+                null = &stack_pointer[1];
+                if (oparg & 1) {
+                    null[0] = PyStackRef_NULL;
+                }
             }
             stack_pointer[0] = attr;
-            if (oparg & 1) stack_pointer[1] = null;
             stack_pointer += 1 + (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
@@ -10619,17 +10640,14 @@
             v = stack_pointer[-1];
             set = stack_pointer[-2 - (oparg-1)];
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            int err = PySet_Add(PyStackRef_AsPyObjectBorrow(set),
-                                PyStackRef_AsPyObjectBorrow(v));
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(v);
+            int err = _PySet_AddTakeRef((PySetObject *)PyStackRef_AsPyObjectBorrow(set),
+                                        PyStackRef_AsPyObjectSteal(v));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (err) {
-                JUMP_TO_LABEL(error);
+                JUMP_TO_LABEL(pop_1_error);
             }
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 

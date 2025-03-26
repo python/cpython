@@ -193,55 +193,67 @@ class GzipFile(_compression.BaseStream):
 
         """
 
+        # Ensure attributes exist at __del__
+        self.mode = None
+        self.fileobj = None
+        self._buffer = None
+
         if mode and ('t' in mode or 'U' in mode):
             raise ValueError("Invalid mode: {!r}".format(mode))
         if mode and 'b' not in mode:
             mode += 'b'
-        if fileobj is None:
-            fileobj = self.myfileobj = builtins.open(filename, mode or 'rb')
-        if filename is None:
-            filename = getattr(fileobj, 'name', '')
-            if not isinstance(filename, (str, bytes)):
-                filename = ''
-        else:
-            filename = os.fspath(filename)
-        origmode = mode
-        if mode is None:
-            mode = getattr(fileobj, 'mode', 'rb')
+
+        try:
+            if fileobj is None:
+                fileobj = self.myfileobj = builtins.open(filename, mode or 'rb')
+            if filename is None:
+                filename = getattr(fileobj, 'name', '')
+                if not isinstance(filename, (str, bytes)):
+                    filename = ''
+            else:
+                filename = os.fspath(filename)
+            origmode = mode
+            if mode is None:
+                mode = getattr(fileobj, 'mode', 'rb')
 
 
-        if mode.startswith('r'):
-            self.mode = READ
-            raw = _GzipReader(fileobj)
-            self._buffer = io.BufferedReader(raw)
-            self.name = filename
+            if mode.startswith('r'):
+                self.mode = READ
+                raw = _GzipReader(fileobj)
+                self._buffer = io.BufferedReader(raw)
+                self.name = filename
 
-        elif mode.startswith(('w', 'a', 'x')):
-            if origmode is None:
-                import warnings
-                warnings.warn(
-                    "GzipFile was opened for writing, but this will "
-                    "change in future Python releases.  "
-                    "Specify the mode argument for opening it for writing.",
-                    FutureWarning, 2)
-            self.mode = WRITE
-            self._init_write(filename)
-            self.compress = zlib.compressobj(compresslevel,
-                                             zlib.DEFLATED,
-                                             -zlib.MAX_WBITS,
-                                             zlib.DEF_MEM_LEVEL,
-                                             0)
-            self._write_mtime = mtime
-            self._buffer_size = _WRITE_BUFFER_SIZE
-            self._buffer = io.BufferedWriter(_WriteBufferStream(self),
-                                             buffer_size=self._buffer_size)
-        else:
-            raise ValueError("Invalid mode: {!r}".format(mode))
+            elif mode.startswith(('w', 'a', 'x')):
+                if origmode is None:
+                    import warnings
+                    warnings.warn(
+                        "GzipFile was opened for writing, but this will "
+                        "change in future Python releases.  "
+                        "Specify the mode argument for opening it for writing.",
+                        FutureWarning, 2)
+                self.mode = WRITE
+                self._init_write(filename)
+                self.compress = zlib.compressobj(compresslevel,
+                                                 zlib.DEFLATED,
+                                                 -zlib.MAX_WBITS,
+                                                 zlib.DEF_MEM_LEVEL,
+                                                 0)
+                self._write_mtime = mtime
+                self._buffer_size = _WRITE_BUFFER_SIZE
+                self._buffer = io.BufferedWriter(_WriteBufferStream(self),
+                                                 buffer_size=self._buffer_size)
+            else:
+                raise ValueError("Invalid mode: {!r}".format(mode))
 
-        self.fileobj = fileobj
+            self.fileobj = fileobj
 
-        if self.mode == WRITE:
-            self._write_gzip_header(compresslevel)
+            if self.mode == WRITE:
+                self._write_gzip_header(compresslevel)
+        except:
+            # Avoid a ResourceWarning if the write fails,
+            # eg read-only file or KeyboardInterrupt
+            self._close()
+            raise
 
     @property
     def mtime(self):
@@ -368,7 +380,9 @@ class GzipFile(_compression.BaseStream):
 
     def close(self):
         fileobj = self.fileobj
-        if fileobj is None or self._buffer.closed:
+        if fileobj is None:
+            return
+        if self._buffer is None or self._buffer.closed:
             return
         try:
             if self.mode == WRITE:
@@ -380,11 +394,14 @@ class GzipFile(_compression.BaseStream):
             elif self.mode == READ:
                 self._buffer.close()
         finally:
-            self.fileobj = None
-            myfileobj = self.myfileobj
-            if myfileobj:
-                self.myfileobj = None
-                myfileobj.close()
+            self._close()
+
+    def _close(self):
+        self.fileobj = None
+        myfileobj = self.myfileobj
+        if myfileobj is not None:
+            self.myfileobj = None
+            myfileobj.close()
 
     def flush(self,zlib_mode=zlib.Z_SYNC_FLUSH):
         self._check_not_closed()
@@ -445,6 +462,13 @@ class GzipFile(_compression.BaseStream):
         self._check_not_closed()
         return self._buffer.readline(size)
 
+    def __del__(self):
+        if self.mode == WRITE and not self.closed:
+            import warnings
+            warnings.warn("unclosed GzipFile",
+                          ResourceWarning, source=self, stacklevel=2)
+
+        super().__del__()
 
 def _read_exact(fp, n):
     '''Read exactly *n* bytes from `fp`

@@ -5,13 +5,13 @@ the latter should be modernized).
 """
 
 import array
+import operator
 import os
 import re
 import sys
 import copy
 import functools
 import pickle
-import sysconfig
 import tempfile
 import textwrap
 import threading
@@ -771,6 +771,9 @@ class BaseBytesTest:
         check(b'%i %*.*b', (10, 5, 3, b'abc',), b'10   abc')
         check(b'%i%b %*.*b', (10, b'3', 5, 3, b'abc',), b'103   abc')
         check(b'%c', b'a', b'a')
+
+        self.assertRaisesRegex(TypeError, '%i format: a real number is required, not complex', operator.mod, '%i', 2j)
+        self.assertRaisesRegex(TypeError, '%d format: a real number is required, not complex', operator.mod, '%d', 2j)
 
     def test_imod(self):
         b = self.type2test(b'hello, %b!')
