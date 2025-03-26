@@ -4,6 +4,7 @@
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_GC_TRACK
+#include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
@@ -1175,7 +1176,11 @@ uncached_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
 {
     PyObject *result;
 
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_add_ssize(&self->misses, 1);
+#else
     self->misses++;
+#endif
     result = PyObject_Call(self->func, args, kwds);
     if (!result)
         return NULL;
@@ -1197,7 +1202,11 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
     }
     int res = _PyDict_GetItemRef_KnownHash((PyDictObject *)self->cache, key, hash, &result);
     if (res > 0) {
+#ifdef Py_GIL_DISABLED
+        _Py_atomic_add_ssize(&self->hits, 1);
+#else
         self->hits++;
+#endif
         Py_DECREF(key);
         return result;
     }
@@ -1205,7 +1214,11 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
         Py_DECREF(key);
         return NULL;
     }
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_add_ssize(&self->misses, 1);
+#else
     self->misses++;
+#endif
     result = PyObject_Call(self->func, args, kwds);
     if (!result) {
         Py_DECREF(key);
@@ -1281,8 +1294,8 @@ lru_cache_prepend_link(lru_cache_object *self, lru_list_elem *link)
  */
 
 static int
-bounded_lru_cache_wrapper_pre_call_lock_held(lru_cache_object *self, PyObject *args, PyObject *kwds,
-                                             PyObject **result, PyObject **key, Py_hash_t *hash)
+bounded_lru_cache_get_lock_held(lru_cache_object *self, PyObject *args, PyObject *kwds,
+                                PyObject **result, PyObject **key, Py_hash_t *hash)
 {
     lru_list_elem *link;
 
@@ -1299,7 +1312,11 @@ bounded_lru_cache_wrapper_pre_call_lock_held(lru_cache_object *self, PyObject *a
         lru_cache_extract_link(link);
         lru_cache_append_link(self, link);
         *result = link->result;
+#ifdef Py_GIL_DISABLED
+        _Py_atomic_add_ssize(&self->hits, 1);
+#else
         self->hits++;
+#endif
         Py_INCREF(link->result);
         Py_DECREF(key_);
         return 1;
@@ -1308,12 +1325,16 @@ bounded_lru_cache_wrapper_pre_call_lock_held(lru_cache_object *self, PyObject *a
         Py_DECREF(key_);
         return -1;
     }
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_add_ssize(&self->misses, 1);
+#else
     self->misses++;
+#endif
     return 0;
 }
 
 static PyObject *
-bounded_lru_cache_wrapper_post_call_lock_held(lru_cache_object *self,
+bounded_lru_cache_update_lock_held(lru_cache_object *self,
                                               PyObject *result, PyObject *key, Py_hash_t hash)
 {
     lru_list_elem *link;
@@ -1462,7 +1483,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     int res;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    res = bounded_lru_cache_wrapper_pre_call_lock_held(self, args, kwds, &result, &key, &hash);
+    res = bounded_lru_cache_get_lock_held(self, args, kwds, &result, &key, &hash);
     Py_END_CRITICAL_SECTION();
 
     if (res < 0) {
@@ -1475,7 +1496,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     result = PyObject_Call(self->func, args, kwds);
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    result = bounded_lru_cache_wrapper_post_call_lock_held(self, result, key, hash);
+    result = bounded_lru_cache_update_lock_held(self, result, key, hash);
     Py_END_CRITICAL_SECTION();
 
     return result;
@@ -1640,11 +1661,15 @@ _functools__lru_cache_wrapper_cache_info_impl(PyObject *self)
     lru_cache_object *_self = (lru_cache_object *) self;
     if (_self->maxsize == -1) {
         return PyObject_CallFunction(_self->cache_info_type, "nnOn",
-                                     _self->hits, _self->misses, Py_None,
+                                     FT_ATOMIC_LOAD_SSIZE_RELAXED(_self->hits),
+                                     FT_ATOMIC_LOAD_SSIZE_RELAXED(_self->misses),
+                                     Py_None,
                                      PyDict_GET_SIZE(_self->cache));
     }
     return PyObject_CallFunction(_self->cache_info_type, "nnnn",
-                                 _self->hits, _self->misses, _self->maxsize,
+                                 FT_ATOMIC_LOAD_SSIZE_RELAXED(_self->hits),
+                                 FT_ATOMIC_LOAD_SSIZE_RELAXED(_self->misses),
+                                 _self->maxsize,
                                  PyDict_GET_SIZE(_self->cache));
 }
 
@@ -1661,7 +1686,8 @@ _functools__lru_cache_wrapper_cache_clear_impl(PyObject *self)
 {
     lru_cache_object *_self = (lru_cache_object *) self;
     lru_list_elem *list = lru_cache_unlink_list(_self);
-    _self->hits = _self->misses = 0;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(_self->hits, 0);
+    FT_ATOMIC_STORE_SSIZE_RELAXED(_self->misses, 0);
     PyDict_Clear(_self->cache);
     lru_cache_clear_list(list);
     Py_RETURN_NONE;
