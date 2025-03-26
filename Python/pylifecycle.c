@@ -804,8 +804,8 @@ pycore_init_builtins(PyThreadState *tstate)
         goto error;
     }
 
-    interp->common_consts[CONSTANT_ASSERTIONERROR] = (PyObject*)&PyTuple_Type;
-    interp->common_consts[CONSTANT_NOTIMPLEMENTEDERROR] = (PyObject*)&PyTuple_Type;
+    interp->common_consts[CONSTANT_ASSERTIONERROR] = PyExc_AssertionError;
+    interp->common_consts[CONSTANT_NOTIMPLEMENTEDERROR] = PyExc_NotImplementedError;
     interp->common_consts[CONSTANT_BUILTIN_TUPLE] = (PyObject*)&PyTuple_Type;
     interp->common_consts[CONSTANT_BUILTIN_ALL] = all;
     interp->common_consts[CONSTANT_BUILTIN_ANY] = any;
