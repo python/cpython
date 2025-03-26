@@ -565,27 +565,45 @@ extern "C" {
 #  if __has_feature(memory_sanitizer)
 #    if !defined(_Py_MEMORY_SANITIZER)
 #      define _Py_MEMORY_SANITIZER
+#      define _Py_NO_SANITIZE_MEMORY __attribute__((no_sanitize_memory))
 #    endif
 #  endif
 #  if __has_feature(address_sanitizer)
 #    if !defined(_Py_ADDRESS_SANITIZER)
 #      define _Py_ADDRESS_SANITIZER
+#      define _Py_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
 #    endif
 #  endif
 #  if __has_feature(thread_sanitizer)
 #    if !defined(_Py_THREAD_SANITIZER)
 #      define _Py_THREAD_SANITIZER
+#      define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
 #    endif
 #  endif
 #elif defined(__GNUC__)
 #  if defined(__SANITIZE_ADDRESS__)
 #    define _Py_ADDRESS_SANITIZER
+#    define _Py_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
 #  endif
 #  if defined(__SANITIZE_THREAD__)
 #    define _Py_THREAD_SANITIZER
+#    define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
+#  elif  __GNUC__ > 5 || (__GNUC__ == 5 && __GNUC_MINOR__ >= 1)
+     // TSAN is supported since GCC 5.1, but __SANITIZE_THREAD__ macro
+     // is provided only since GCC 7.
+#    define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
 #  endif
 #endif
 
+#ifndef _Py_NO_SANITIZE_ADDRESS
+#  define _Py_NO_SANITIZE_ADDRESS
+#endif
+#ifndef _Py_NO_SANITIZE_THREAD
+#  define _Py_NO_SANITIZE_THREAD
+#endif
+#ifndef _Py_NO_SANITIZE_MEMORY
+#  define _Py_NO_SANITIZE_MEMORY
+#endif
 
 /* AIX has __bool__ redefined in it's system header file. */
 #if defined(_AIX) && defined(__bool__)
