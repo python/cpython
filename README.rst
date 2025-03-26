@@ -14,7 +14,7 @@ This is Python version 3.14.0 alpha 6
    :target: https://discuss.python.org/
 
 
-Copyright © 2001 Python Software Foundation.  All rights reserved.
+Copyright © 2001-present Python Software Foundation.  All rights reserved.
 
 See the end of this file for further copyright and license information.
 
