@@ -32,7 +32,7 @@ This module supports retrieving annotations in three main formats
   for annotations that cannot be resolved, allowing you to inspect the
   annotations without evaluating them. This is useful when you need to
   work with annotations that may contain unresolved forward references.
-* :attr:`~Format.SOURCE` returns the annotations as a string, similar
+* :attr:`~Format.STRING` returns the annotations as a string, similar
   to how it would appear in the source file. This is useful for documentation
   generators that want to display annotations in a readable way.
 
@@ -135,7 +135,7 @@ Classes
       values. Real objects may contain references to, :class:`ForwardRef`
       proxy objects.
 
-   .. attribute:: SOURCE
+   .. attribute:: STRING
       :value: 3
 
       Values are the text string of the annotation as it appears in the
@@ -143,6 +143,17 @@ Classes
       whitespace normalizations and constant values optimizations.
 
       The exact values of these strings may change in future versions of Python.
+
+   .. attribute:: VALUE_WITH_FAKE_GLOBALS
+      :value: 4
+
+      Special value used to signal that an annotate function is being
+      evaluated in a special environment with fake globals. When passed this
+      value, annotate functions should either return the same value as for
+      the :attr:`Format.VALUE` format, or raise :exc:`NotImplementedError`
+      to signal that they do not support execution in this environment.
+      This format is only used internally and should not be passed to
+      the functions in this module.
 
    .. versionadded:: 3.14
 
@@ -196,6 +207,27 @@ Classes
 
 Functions
 ---------
+
+.. function:: annotations_to_string(annotations)
+
+   Convert an annotations dict containing runtime values to a
+   dict containing only strings. If the values are not already strings,
+   they are converted using :func:`value_to_string`.
+   This is meant as a helper for user-provided
+   annotate functions that support the :attr:`~Format.STRING` format but
+   do not have access to the code creating the annotations.
+
+   For example, this is used to implement the :attr:`~Format.STRING` for
+   :class:`typing.TypedDict` classes created through the functional syntax:
+
+   .. doctest::
+
+       >>> from typing import TypedDict
+       >>> Movie = TypedDict("movie", {"name": str, "year": int})
+       >>> get_annotations(Movie, format=Format.STRING)
+       {'name': 'str', 'year': 'int'}
+
+   .. versionadded:: 3.14
 
 .. function:: call_annotate_function(annotate, format, *, owner=None)
 
@@ -261,7 +293,7 @@ Functions
       NameError: name 'undefined' is not defined
       >>> call_evaluate_function(Alias.evaluate_value, Format.FORWARDREF)
       ForwardRef('undefined')
-      >>> call_evaluate_function(Alias.evaluate_value, Format.SOURCE)
+      >>> call_evaluate_function(Alias.evaluate_value, Format.STRING)
       'undefined'
 
    .. versionadded:: 3.14
@@ -347,3 +379,18 @@ Functions
       {'a': <class 'int'>, 'b': <class 'str'>, 'return': <class 'float'>}
 
    .. versionadded:: 3.14
+
+.. function:: value_to_string(value)
+
+   Convert an arbitrary Python value to a format suitable for use by the
+   :attr:`~Format.STRING` format. This calls :func:`repr` for most
+   objects, but has special handling for some objects, such as type objects.
+
+   This is meant as a helper for user-provided
+   annotate functions that support the :attr:`~Format.STRING` format but
+   do not have access to the code creating the annotations. It can also
+   be used to provide a user-friendly string representation for other
+   objects that contain values that are commonly encountered in annotations.
+
+   .. versionadded:: 3.14
+

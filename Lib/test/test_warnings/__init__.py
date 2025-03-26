@@ -533,6 +533,18 @@ class WarnTests(BaseTest):
                 warning_tests.package("prefix02", stacklevel=3)
                 self.assertIn("unittest", w[-1].filename)
 
+    def test_skip_file_prefixes_file_path(self):
+        # see: gh-126209
+        with warnings_state(self.module):
+            skipped = warning_tests.__file__
+            with original_warnings.catch_warnings(
+                record=True, module=self.module,
+            ) as w:
+                warning_tests.outer("msg", skip_file_prefixes=(skipped,))
+
+            self.assertEqual(len(w), 1)
+            self.assertNotEqual(w[-1].filename, skipped)
+
     def test_skip_file_prefixes_type_errors(self):
         with warnings_state(self.module):
             warn = warning_tests.warnings.warn
@@ -1420,6 +1432,17 @@ class PyEnvironmentVariableTests(EnvironmentVariableTests, unittest.TestCase):
     module = py_warnings
 
 
+class LocksTest(unittest.TestCase):
+    @support.cpython_only
+    @unittest.skipUnless(c_warnings, 'C module is required')
+    def test_release_lock_no_lock(self):
+        with self.assertRaisesRegex(
+            RuntimeError,
+            'cannot release un-acquired lock',
+        ):
+            c_warnings._release_lock()
+
+
 class _DeprecatedTest(BaseTest, unittest.TestCase):
 
     """Test _deprecated()."""
@@ -1509,7 +1532,7 @@ a=A()
         self.assertTrue(err.startswith(expected), ascii(err))
 
 
-class DeprecatedTests(unittest.TestCase):
+class DeprecatedTests(PyPublicAPITests):
     def test_dunder_deprecated(self):
         @deprecated("A will go away soon")
         class A:

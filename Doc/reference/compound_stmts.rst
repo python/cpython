@@ -420,16 +420,16 @@ is executed.  If there is a saved exception it is re-raised at the end of the
 :keyword:`!finally` clause.  If the :keyword:`!finally` clause raises another
 exception, the saved exception is set as the context of the new exception.
 If the :keyword:`!finally` clause executes a :keyword:`return`, :keyword:`break`
-or :keyword:`continue` statement, the saved exception is discarded::
+or :keyword:`continue` statement, the saved exception is discarded. For example,
+this function returns 42.
 
-   >>> def f():
-   ...     try:
-   ...         1/0
-   ...     finally:
-   ...         return 42
-   ...
-   >>> f()
-   42
+.. code-block::
+
+   def f():
+       try:
+           1/0
+       finally:
+           return 42
 
 The exception information is not available to the program during execution of
 the :keyword:`!finally` clause.
@@ -446,20 +446,24 @@ statement, the :keyword:`!finally` clause is also executed 'on the way out.'
 The return value of a function is determined by the last :keyword:`return`
 statement executed.  Since the :keyword:`!finally` clause always executes, a
 :keyword:`!return` statement executed in the :keyword:`!finally` clause will
-always be the last one executed::
+always be the last one executed. The following function returns 'finally'.
 
-   >>> def foo():
-   ...     try:
-   ...         return 'try'
-   ...     finally:
-   ...         return 'finally'
-   ...
-   >>> foo()
-   'finally'
+.. code-block::
+
+   def foo():
+       try:
+           return 'try'
+       finally:
+           return 'finally'
 
 .. versionchanged:: 3.8
    Prior to Python 3.8, a :keyword:`continue` statement was illegal in the
    :keyword:`!finally` clause due to a problem with the implementation.
+
+.. versionchanged:: next
+   The compiler emits a :exc:`SyntaxWarning` when a :keyword:`return`,
+   :keyword:`break` or :keyword:`continue` appears in a :keyword:`!finally`
+   block (see :pep:`765`).
 
 
 .. _with:
@@ -1217,9 +1221,12 @@ A function definition defines a user-defined function object (see section
                  :   | `parameter_list_no_posonly`
    parameter_list_no_posonly: `defparameter` ("," `defparameter`)* ["," [`parameter_list_starargs`]]
                             : | `parameter_list_starargs`
-   parameter_list_starargs: "*" [`parameter`] ("," `defparameter`)* ["," ["**" `parameter` [","]]]
-                          : | "**" `parameter` [","]
+   parameter_list_starargs: "*" [`star_parameter`] ("," `defparameter`)* ["," [`parameter_star_kwargs`]]
+                          : | "*" ("," `defparameter`)+ ["," [`parameter_star_kwargs`]]
+                          : | `parameter_star_kwargs`
+   parameter_star_kwargs: "**" `parameter` [","]
    parameter: `identifier` [":" `expression`]
+   star_parameter: `identifier` [":" ["*"] `expression`]
    defparameter: `parameter` ["=" `expression`]
    funcname: `identifier`
 
@@ -1326,10 +1333,15 @@ and may only be passed by positional arguments.
 
 Parameters may have an :term:`annotation <function annotation>` of the form "``: expression``"
 following the parameter name.  Any parameter may have an annotation, even those of the form
-``*identifier`` or ``**identifier``.  Functions may have "return" annotation of
+``*identifier`` or ``**identifier``. (As a special case, parameters of the form
+``*identifier`` may have an annotation "``: *expression``".) Functions may have "return" annotation of
 the form "``-> expression``" after the parameter list.  These annotations can be
 any valid Python expression.  The presence of annotations does not change the
 semantics of a function. See :ref:`annotations` for more information on annotations.
+
+.. versionchanged:: 3.11
+   Parameters of the form "``*identifier``" may have an annotation
+   "``: *expression``". See :pep:`646`.
 
 .. index:: pair: lambda; expression
 

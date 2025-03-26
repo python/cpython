@@ -14,16 +14,21 @@
  *
  */
 
-#include <stdbool.h>
-
 #include "Python.h"
-#include "pycore_ast.h"           // PyAST_Check, _PyAST_GetDocString()
+#include "pycore_ast.h"           // PyAST_Check()
+#include "pycore_code.h"
 #include "pycore_compile.h"
-#include "pycore_flowgraph.h"
+#include "pycore_flowgraph.h"     // _PyCfg_FromInstructionSequence()
 #include "pycore_pystate.h"       // _Py_GetConfig()
+#include "pycore_runtime.h"       // _Py_ID()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_stats.h"
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #include "cpython/code.h"
+
+#include <stdbool.h>
+
 
 #undef SUCCESS
 #undef ERROR
@@ -31,9 +36,11 @@
 #define ERROR -1
 
 #define RETURN_IF_ERROR(X)  \
-    if ((X) == -1) {        \
-        return ERROR;       \
-    }
+    do {                    \
+        if ((X) == -1) {    \
+            return ERROR;   \
+        }                   \
+    } while (0)
 
 typedef _Py_SourceLocation location;
 typedef _PyJumpTargetLabel jump_target_label;
@@ -124,7 +131,7 @@ compiler_setup(compiler *c, mod_ty mod, PyObject *filename,
     c->c_optimize = (optimize == -1) ? _Py_GetConfig()->optimization_level : optimize;
     c->c_save_nested_seqs = false;
 
-    if (!_PyAST_Optimize(mod, arena, c->c_optimize, merged)) {
+    if (!_PyAST_Optimize(mod, arena, filename, c->c_optimize, merged, 0)) {
         return ERROR;
     }
     c->c_st = _PySymtable_Build(mod, filename, &c->c_future);
@@ -702,12 +709,12 @@ _PyCompile_ExitScope(compiler *c)
         assert(c->u);
         /* we are deleting from a list so this really shouldn't fail */
         if (PySequence_DelItem(c->c_stack, n) < 0) {
-            PyErr_FormatUnraisable("Exception ignored on removing "
+            PyErr_FormatUnraisable("Exception ignored while removing "
                                    "the last compiler stack item");
         }
         if (nested_seq != NULL) {
             if (_PyInstructionSequence_AddNested(c->u->u_instr_sequence, nested_seq) < 0) {
-                PyErr_FormatUnraisable("Exception ignored on appending "
+                PyErr_FormatUnraisable("Exception ignored while appending "
                                        "nested instruction sequence");
             }
         }
@@ -901,7 +908,7 @@ _PyCompile_LookupArg(compiler *c, PyCodeObject *co, PyObject *name)
             c->u->u_metadata.u_name,
             co->co_name,
             freevars);
-        Py_DECREF(freevars);
+        Py_XDECREF(freevars);
         return ERROR;
     }
     return arg;
@@ -911,7 +918,17 @@ PyObject *
 _PyCompile_StaticAttributesAsTuple(compiler *c)
 {
     assert(c->u->u_static_attributes);
-    return PySequence_Tuple(c->u->u_static_attributes);
+    PyObject *static_attributes_unsorted = PySequence_List(c->u->u_static_attributes);
+    if (static_attributes_unsorted == NULL) {
+        return NULL;
+    }
+    if (PyList_Sort(static_attributes_unsorted) != 0) {
+        Py_DECREF(static_attributes_unsorted);
+        return NULL;
+    }
+    PyObject *static_attributes = PySequence_Tuple(static_attributes_unsorted);
+    Py_DECREF(static_attributes_unsorted);
+    return static_attributes;
 }
 
 int
@@ -1275,6 +1292,10 @@ compute_code_flags(compiler *c)
             flags |= CO_VARARGS;
         if (ste->ste_varkeywords)
             flags |= CO_VARKEYWORDS;
+        if (ste->ste_has_docstring)
+            flags |= CO_HAS_DOCSTRING;
+        if (ste->ste_method)
+            flags |= CO_METHOD;
     }
 
     if (ste->ste_coroutine && !ste->ste_generator) {
@@ -1371,7 +1392,7 @@ _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
 
 int
 _PyCompile_AstOptimize(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
-                       int optimize, PyArena *arena)
+                       int optimize, PyArena *arena, int no_const_folding)
 {
     _PyFutureFeatures future;
     if (!_PyFuture_FromAST(mod, filename, &future)) {
@@ -1381,7 +1402,7 @@ _PyCompile_AstOptimize(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
     if (optimize == -1) {
         optimize = _Py_GetConfig()->optimization_level;
     }
-    if (!_PyAST_Optimize(mod, arena, optimize, flags)) {
+    if (!_PyAST_Optimize(mod, arena, filename, optimize, flags, no_const_folding)) {
         return -1;
     }
     return 0;
@@ -1524,7 +1545,7 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
 
     _PyCompile_CodeUnitMetadata *umd = &c->u->u_metadata;
 
-#define SET_MATADATA_INT(key, value) do { \
+#define SET_METADATA_INT(key, value) do { \
         PyObject *v = PyLong_FromLong((long)value); \
         if (v == NULL) goto finally; \
         int res = PyDict_SetItemString(metadata, key, v); \
@@ -1532,10 +1553,10 @@ _PyCompile_CodeGen(PyObject *ast, PyObject *filename, PyCompilerFlags *pflags,
         if (res < 0) goto finally; \
     } while (0);
 
-    SET_MATADATA_INT("argcount", umd->u_argcount);
-    SET_MATADATA_INT("posonlyargcount", umd->u_posonlyargcount);
-    SET_MATADATA_INT("kwonlyargcount", umd->u_kwonlyargcount);
-#undef SET_MATADATA_INT
+    SET_METADATA_INT("argcount", umd->u_argcount);
+    SET_METADATA_INT("posonlyargcount", umd->u_posonlyargcount);
+    SET_METADATA_INT("kwonlyargcount", umd->u_kwonlyargcount);
+#undef SET_METADATA_INT
 
     int addNone = mod->kind != Expression_kind;
     if (_PyCodegen_AddReturnAtEnd(c, addNone) < 0) {

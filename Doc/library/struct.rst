@@ -267,11 +267,25 @@ platform-dependent.
 | ``P``  | :c:expr:`void \*`        | integer            |                | \(5)       |
 +--------+--------------------------+--------------------+----------------+------------+
 
+Additionally, if IEC 60559 compatible complex arithmetic (Annex G of the
+C11 standard) is supported, the following format characters are available:
+
++--------+--------------------------+--------------------+----------------+------------+
+| Format | C Type                   | Python type        | Standard size  | Notes      |
++========+==========================+====================+================+============+
+| ``E``  | :c:expr:`float complex`  | complex            | 8              | \(10)      |
++--------+--------------------------+--------------------+----------------+------------+
+| ``C``  | :c:expr:`double complex` | complex            | 16             | \(10)      |
++--------+--------------------------+--------------------+----------------+------------+
+
 .. versionchanged:: 3.3
    Added support for the ``'n'`` and ``'N'`` formats.
 
 .. versionchanged:: 3.6
    Added support for the ``'e'`` format.
+
+.. versionchanged:: 3.14
+   Added support for the ``'E'`` and ``'C'`` formats.
 
 
 Notes:
@@ -348,6 +362,11 @@ Notes:
    unpacking, the resulting bytes object always has exactly the specified number
    of bytes.  As a special case, ``'0s'`` means a single, empty string (while
    ``'0c'`` means 0 characters).
+
+(10)
+   For the ``'E'`` and ``'C'`` format characters, the packed representation uses
+   the IEEE 754 binary32 and binary64 format for components of the complex
+   number, regardless of the floating-point format used by the platform.
 
 A format character may be preceded by an integral repeat count.  For example,
 the format string ``'4h'`` means exactly the same as ``'hhhh'``.

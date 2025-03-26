@@ -1,1 +1,0 @@
-Add an Android platform guide, and flag modules not available on Android.

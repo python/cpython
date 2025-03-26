@@ -12,11 +12,13 @@ import builtins
 import types
 import weakref
 import traceback
+import textwrap
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
 from typing import get_type_hints
 from collections import deque, OrderedDict, namedtuple, defaultdict
+from copy import deepcopy
 from functools import total_ordering, wraps
 
 import typing       # Needed for the string "typing.ClassVar[int]" to work as an annotation.
@@ -60,7 +62,7 @@ class TestCase(unittest.TestCase):
                 x: int = field(default=1, default_factory=int)
 
     def test_field_repr(self):
-        int_field = field(default=1, init=True, repr=False)
+        int_field = field(default=1, init=True, repr=False, doc='Docstring')
         int_field.name = "id"
         repr_output = repr(int_field)
         expected_output = "Field(name='id',type=None," \
@@ -68,6 +70,7 @@ class TestCase(unittest.TestCase):
                            "init=True,repr=False,hash=None," \
                            "compare=True,metadata=mappingproxy({})," \
                            f"kw_only={MISSING!r}," \
+                           "doc='Docstring'," \
                            "_field_type=None)"
 
         self.assertEqual(repr_output, expected_output)
@@ -2311,7 +2314,7 @@ class TestDocString(unittest.TestCase):
         class C:
             x: Union[int, type(None)] = None
 
-        self.assertDocStrEqual(C.__doc__, "C(x:Optional[int]=None)")
+        self.assertDocStrEqual(C.__doc__, "C(x:int|None=None)")
 
     def test_docstring_list_field(self):
         @dataclass
@@ -2340,6 +2343,31 @@ class TestDocString(unittest.TestCase):
             x: deque = field(default_factory=deque)
 
         self.assertDocStrEqual(C.__doc__, "C(x:collections.deque=<factory>)")
+
+    def test_docstring_undefined_name(self):
+        @dataclass
+        class C:
+            x: undef
+
+        self.assertDocStrEqual(C.__doc__, "C(x:undef)")
+
+    def test_docstring_with_unsolvable_forward_ref_in_init(self):
+        # See: https://github.com/python/cpython/issues/128184
+        ns = {}
+        exec(
+            textwrap.dedent(
+                """
+                from dataclasses import dataclass
+
+                @dataclass
+                class C:
+                    def __init__(self, x: X, num: int) -> None: ...
+                """,
+            ),
+            ns,
+        )
+
+        self.assertDocStrEqual(ns['C'].__doc__, "C(x:X,num:int)")
 
     def test_docstring_with_no_signature(self):
         # See https://github.com/python/cpython/issues/103449
@@ -3175,6 +3203,48 @@ class TestFrozen(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'unhashable type'):
             hash(C({}))
 
+    def test_frozen_deepcopy_without_slots(self):
+        # see: https://github.com/python/cpython/issues/89683
+        @dataclass(frozen=True, slots=False)
+        class C:
+            s: str
+
+        c = C('hello')
+        self.assertEqual(deepcopy(c), c)
+
+    def test_frozen_deepcopy_with_slots(self):
+        # see: https://github.com/python/cpython/issues/89683
+        with self.subTest('generated __slots__'):
+            @dataclass(frozen=True, slots=True)
+            class C:
+                s: str
+
+            c = C('hello')
+            self.assertEqual(deepcopy(c), c)
+
+        with self.subTest('user-defined __slots__ and no __{get,set}state__'):
+            @dataclass(frozen=True, slots=False)
+            class C:
+                __slots__ = ('s',)
+                s: str
+
+            # with user-defined slots, __getstate__ and __setstate__ are not
+            # automatically added, hence the error
+            err = r"^cannot\ assign\ to\ field\ 's'$"
+            self.assertRaisesRegex(FrozenInstanceError, err, deepcopy, C(''))
+
+        with self.subTest('user-defined __slots__ and __{get,set}state__'):
+            @dataclass(frozen=True, slots=False)
+            class C:
+                __slots__ = ('s',)
+                __getstate__ = dataclasses._dataclass_getstate
+                __setstate__ = dataclasses._dataclass_setstate
+
+                s: str
+
+            c = C('hello')
+            self.assertEqual(deepcopy(c), c)
+
 
 class TestSlots(unittest.TestCase):
     def test_simple(self):
@@ -3261,7 +3331,7 @@ class TestSlots(unittest.TestCase):
             j: str
             h: str
 
-        self.assertEqual(Base.__slots__, ('y', ))
+        self.assertEqual(Base.__slots__, ('y',))
 
         @dataclass(slots=True)
         class Derived(Base):
@@ -3271,13 +3341,31 @@ class TestSlots(unittest.TestCase):
             k: str
             h: str
 
-        self.assertEqual(Derived.__slots__, ('z', ))
+        self.assertEqual(Derived.__slots__, ('z',))
 
         @dataclass
         class AnotherDerived(Base):
             z: int
 
         self.assertNotIn('__slots__', AnotherDerived.__dict__)
+
+    def test_slots_with_docs(self):
+        class Root:
+            __slots__ = {'x': 'x'}
+
+        @dataclass(slots=True)
+        class Base(Root):
+            y1: int = field(doc='y1')
+            y2: int
+
+        self.assertEqual(Base.__slots__, {'y1': 'y1', 'y2': None})
+
+        @dataclass(slots=True)
+        class Child(Base):
+            z1: int = field(doc='z1')
+            z2: int
+
+        self.assertEqual(Child.__slots__, {'z1': 'z1', 'z2': None})
 
     def test_cant_inherit_from_iterator_slots(self):
 
@@ -4254,6 +4342,23 @@ class TestMakeDataclass(unittest.TestCase):
             with self.subTest(classname=classname):
                 C = make_dataclass(classname, ['a', 'b'])
                 self.assertEqual(C.__name__, classname)
+
+    def test_dataclass_decorator_default(self):
+        C = make_dataclass('C', [('x', int)], decorator=dataclass)
+        c = C(10)
+        self.assertEqual(c.x, 10)
+
+    def test_dataclass_custom_decorator(self):
+        def custom_dataclass(cls, *args, **kwargs):
+            dc = dataclass(cls, *args, **kwargs)
+            dc.__custom__ = True
+            return dc
+
+        C = make_dataclass('C', [('x', int)], decorator=custom_dataclass)
+        c = C(10)
+        self.assertEqual(c.x, 10)
+        self.assertEqual(c.__custom__, True)
+
 
 class TestReplace(unittest.TestCase):
     def test(self):
