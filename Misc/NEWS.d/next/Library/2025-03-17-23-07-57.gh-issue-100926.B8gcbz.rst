@@ -1,7 +1,7 @@
 Move :func:`ctypes.POINTER` types cache from the global ``_pointer_type_cache``
 to the corresponding :mod:`ctypes` types to avoid unlimited growth of the cache.
 As from now, :mod:`ctypes` pointer types can be accessed with a
-:attr:`~_CData.__pointer_type__` attribute. :func:`ctypes.POINTER` checks this attribute
+``__pointer_type__`` attribute. :func:`ctypes.POINTER` checks this attribute
 first before creating a new pointer type, so if needed to mimic :mod:`ctypes`
 pointer type then type should have this attribute
 (see :ref:`ctypes-pointers-ctypes-like-types`).
