@@ -350,11 +350,12 @@ class _DataclassParams:
                  'kw_only',
                  'slots',
                  'weakref_slot',
+                 'signature'
                  )
 
     def __init__(self,
                  init, repr, eq, order, unsafe_hash, frozen,
-                 match_args, kw_only, slots, weakref_slot):
+                 match_args, kw_only, slots, weakref_slot, signature):
         self.init = init
         self.repr = repr
         self.eq = eq
@@ -365,6 +366,7 @@ class _DataclassParams:
         self.kw_only = kw_only
         self.slots = slots
         self.weakref_slot = weakref_slot
+        self.signature = signature
 
     def __repr__(self):
         return ('_DataclassParams('
@@ -377,7 +379,8 @@ class _DataclassParams:
                 f'match_args={self.match_args!r},'
                 f'kw_only={self.kw_only!r},'
                 f'slots={self.slots!r},'
-                f'weakref_slot={self.weakref_slot!r}'
+                f'weakref_slot={self.weakref_slot!r},'
+                f'signature={self.signature!r}'
                 ')')
 
 
@@ -928,7 +931,7 @@ _hash_action = {(False, False, False, False): None,
 
 
 def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
-                   match_args, kw_only, slots, weakref_slot):
+                   match_args, kw_only, slots, weakref_slot, signature):
     # Now that dicts retain insertion order, there's no reason to use
     # an ordered dict.  I am leveraging that ordering here, because
     # derived class fields overwrite base class fields, but the order
@@ -948,7 +951,8 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     setattr(cls, _PARAMS, _DataclassParams(init, repr, eq, order,
                                            unsafe_hash, frozen,
                                            match_args, kw_only,
-                                           slots, weakref_slot))
+                                           slots, weakref_slot, 
+                                           signature))
 
     # Find our base classes in reverse MRO order, and exclude
     # ourselves.  In reversed order so that more derived classes
@@ -1182,6 +1186,9 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen,
     if slots:
         cls = _add_slots(cls, frozen, weakref_slot, fields)
 
+    if signature:
+        _set_new_attribute(cls, '__signature__', inspect.signature(cls))
+
     abc.update_abstractmethods(cls)
 
     return cls
@@ -1339,7 +1346,7 @@ def _add_slots(cls, is_frozen, weakref_slot, defined_fields):
 
 def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,
               unsafe_hash=False, frozen=False, match_args=True,
-              kw_only=False, slots=False, weakref_slot=False):
+              kw_only=False, slots=False, weakref_slot=False, signature=False):
     """Add dunder methods based on the fields defined in the class.
 
     Examines PEP 526 __annotations__ to determine fields.
@@ -1357,7 +1364,7 @@ def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,
     def wrap(cls):
         return _process_class(cls, init, repr, eq, order, unsafe_hash,
                               frozen, match_args, kw_only, slots,
-                              weakref_slot)
+                              weakref_slot, signature)
 
     # See if we're being called as @dataclass or @dataclass().
     if cls is None:
