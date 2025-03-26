@@ -172,7 +172,7 @@ class TestLiterals(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('error', category=SyntaxWarning)
             with self.assertRaises(SyntaxError) as cm:
-                eval("\"'''''''''''''''''''''invalid\ Escape\"")
+                eval("\"'''''''''''''''''''''invalid\\ Escape\"")
             exc = cm.exception
         self.assertEqual(w, [])
         self.assertEqual(exc.msg, r"invalid escape sequence '\ '")
@@ -183,7 +183,7 @@ class TestLiterals(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('error', category=SyntaxWarning)
             with self.assertRaises(SyntaxError) as cm:
-                eval("\"''Incorrect \ logic?\"")
+                eval("\"''Incorrect \\ logic?\"")
             exc = cm.exception
         self.assertEqual(w, [])
         self.assertEqual(exc.msg, r"invalid escape sequence '\ '")
