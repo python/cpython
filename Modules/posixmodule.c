@@ -204,6 +204,9 @@
 #  include <sanitizer/msan_interface.h> // __msan_unpoison()
 #endif
 
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#endif
 
 // --- More complex system includes -----------------------------------------
 
@@ -16303,9 +16306,19 @@ ScandirIterator_nextdirentry(ScandirIterator *iterator, struct dirent *direntp)
         Py_END_ALLOW_THREADS
         has_error = !result && errno != 0;
     }
+
     /* We need to make a copy of the result before releasing the lock */
-    if (result)
-        memcpy(direntp, result, sizeof(struct dirent));
+    if (result) {
+
+        /* A note on calculating the size: the dirent structure may be variable
+         * length with the d_name field being a flexible array member, so we
+         * cannot just use sizeof(struct dirent). On Linux there is a d_reclen
+         * field, however that is not guaranteed to exist (and doesn't on WASI,
+         * which happens to be the platform where this is an issue). Hence we
+         * calculate the relevant record size thus. */
+        size_t reclen = offsetof(struct dirent, d_name) + strlen(result->d_name) + 1;
+        memcpy(direntp, result, reclen);
+    }
     PyMutex_Unlock(&iterator->mutex);
 
     /* Error or no more files */
@@ -16320,12 +16333,22 @@ ScandirIterator_nextdirentry(ScandirIterator *iterator, struct dirent *direntp)
 static PyObject *
 ScandirIterator_iternext(PyObject *op)
 {
+    ScandirIterator *iterator = ScandirIterator_CAST(op);
 #ifdef MS_WINDOWS
     WIN32_FIND_DATAW dirent;
 #else
+    /*
+     * This may be a variable length structure, with the final "d_name" field
+     * possibly being a flexible array member. In that case allocate enough
+     * extra space on the stack, immediately following the structure,
+     * sufficient to handle the longest possible filename. */
     struct dirent dirent;
+    if (sizeof(dirent) - offsetof(struct dirent, d_name) < (NAME_MAX + 1)
+        && !alloca(NAME_MAX + 1 - (sizeof(dirent) - offsetof(struct dirent, d_name)))) {
+        PyErr_NoMemory();
+        goto error;
+    }
 #endif
-    ScandirIterator *iterator = ScandirIterator_CAST(op);
 
     while ((ScandirIterator_nextdirentry(iterator, &dirent))) {
 
@@ -16341,6 +16364,7 @@ ScandirIterator_iternext(PyObject *op)
     }
 
     /* Already closed, error, or no more files */
+error:
     ScandirIterator_closedir(iterator);
     return NULL;
 }
