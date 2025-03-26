@@ -160,16 +160,19 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       import mmap
       import os
 
-      mm = mmap.mmap(-1, 13)
-      mm.write(b"Hello world!")
+      pid = os.getpid()
+      mem = mmap.mmap(-1, 4, mmap.MAP_SHARED)
+      mem[:4] = pid.to_bytes(4, 'big')
 
-      pid = os.fork()
+      # child process
+      if os.fork() == 0:
+          print(int.from_bytes(mem[:4], 'big'))
+          mem[:4] = os.getpid().to_bytes(4, 'big')
+          exit(0)
 
-      if pid == 0:  # In a child process
-          mm.seek(0)
-          print(mm.readline())
-
-          mm.close()
+      # parent process
+      os.wait()
+      print(int.from_bytes(mem[:4], 'big'))
 
    .. audit-event:: mmap.__new__ fileno,length,access,offset mmap.mmap
 
