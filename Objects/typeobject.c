@@ -60,23 +60,32 @@ class object "PyObject *" "&PyBaseObject_Type"
 
 #ifdef Py_GIL_DISABLED
 
-// There's a global lock for mutation of types.  This avoids having to take
+// There's a global lock for types that ensures that the tp_version_tag is
+// correctly updated if the type is modified.  This avoids having to take
 // additional locks while doing various subclass processing which may result
 // in odd behaviors w.r.t. running with the GIL as the outer type lock could
 // be released and reacquired during a subclass update if there's contention
 // on the subclass lock.
 //
-// While modification of type slots and type flags is protected by the
-// global types lock. However, the slots and flags are read non-atomically
-// without holding the type lock.  So, we need to stop-the-world while
-// modifying these, in order to avoid data races.
+// Note that this lock does not protect when updating type slots or the
+// tp_flags member.  Instead, we either ensure those updates are done before
+// the type has been revealed to other threads or we only do those updates
+// while the stop-the-world mechanism is active.  The slots and flags are read
+// in many places without holding a lock and without atomics.
+//
+// Since TYPE_LOCK is used as regular mutex, we must take special care about
+// potential re-entrant code paths.  We use TYPE_LOCK_TID in debug builds to
+// ensure that we are not trying to re-acquire the mutex when it is already
+// held by the current thread.  There are a couple cases when we release the
+// mutex, when we call functions that might re-enter.
 #define TYPE_LOCK &PyInterpreterState_Get()->types.mutex
 
-// Used to check for correct use of the TYPE_LOCK mutex.  It is a simple
+// Used to check for correct use of the TYPE_LOCK mutex.  It is a regular
 // mutex and does not support re-entrancy.  If we already hold the lock and
 // try to acquire it again with the same thread, it is a bug on the code.
 #define TYPE_LOCK_TID &PyInterpreterState_Get()->types.mutex_tid
 
+// Return true if the world is currently stopped.
 static bool
 types_world_is_stopped(void)
 {
@@ -109,6 +118,7 @@ types_start_world(void)
 }
 
 #ifdef Py_DEBUG
+// Return true if the TYPE_LOCK mutex is held by the current thread.
 static bool
 types_mutex_is_owned(void)
 {
@@ -117,6 +127,7 @@ types_mutex_is_owned(void)
 }
 #endif
 
+// Set the TID of the thread currently holding TYPE_LOCK.
 static void
 types_mutex_set_owned(PyThread_ident_t tid)
 {
@@ -3401,6 +3412,7 @@ mro_invoke(PyTypeObject *type)
     if (mro_result == NULL)
         return NULL;
 
+    // FIXME: possible re-entrancy, drop lock?
     new_mro = PySequence_Tuple(mro_result);
     Py_DECREF(mro_result);
     if (new_mro == NULL) {
@@ -4576,6 +4588,7 @@ type_new_impl(type_new_ctx *ctx)
     }
 
     assert(_PyType_CheckConsistency(type));
+    // After this point, other threads can potentally use this type.
     type->tp_flags |= Py_TPFLAGS_EXPOSED;
 
     return (PyObject *)type;
@@ -5290,6 +5303,7 @@ PyType_FromMetaclass(
     }
 
     assert(_PyType_CheckConsistency(type));
+    // After this point, other threads can potentally use this type.
     type->tp_flags |= Py_TPFLAGS_EXPOSED;
 
  finally:
