@@ -378,6 +378,8 @@ class Stack:
             if self_var.memory_offset is not None:
                 if self_var.memory_offset != other_var.memory_offset:
                     raise StackError(f"Mismatched stack depths for {self_var.name}: {self_var.memory_offset} and {other_var.memory_offset}")
+            elif other_var.memory_offset is None:
+                self_var.memory_offset = None
 
 
 def stacks(inst: Instruction | PseudoInstruction) -> Iterator[StackEffect]:
@@ -601,6 +603,11 @@ class Storage:
         if len(self.outputs) != len(other.outputs):
             var = self.outputs[0] if len(self.outputs) > len(other.outputs) else other.outputs[0]
             raise StackError(f"'{var.name}' is set on some paths, but not all")
+        for var, other_var in zip(self.outputs, other.outputs):
+            if var.memory_offset is None:
+                other_var.memory_offset = None
+            elif other_var.memory_offset is None:
+                var.memory_offset = None
         self.stack.merge(other.stack, out)
         self.sanity_check()
 
