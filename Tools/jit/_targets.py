@@ -323,7 +323,11 @@ class _ELF(
         if section_type == "SHT_RELA":
             assert "SHF_INFO_LINK" in flags, flags
             assert not section["Symbols"]
-            value, base = group.symbols[section["Info"]]
+            maybe_symbol = group.symbols.get(section["Info"])
+            if maybe_symbol is None:
+                # These are relocations for a section we're not emitting. Skip:
+                return
+            value, base = maybe_symbol
             if value is _stencils.HoleValue.CODE:
                 stencil = group.code
             else:
