@@ -694,16 +694,16 @@ def _main(args=None):
             if guess:
                 print(guess)
             else:
-                print(f"error: unknown type {gtype}", file=sys.stderr)
-                sys.exit(1)
+                # do not use parser.error() as it prints a help message
+                parser.exit(1, f"error: unknown type {gtype}\n")
     else:
         for gtype in args.type:
             guess, encoding = guess_type(gtype, not args.lenient)
             if guess:
                 print('type:', guess, 'encoding:', encoding)
             else:
-                print(f"error: media type unknown for {gtype}", file=sys.stderr)
-                sys.exit(1)
+                # do not use parser.error() as it prints a help message
+                parser.exit(1, f"error: media type unknown for {gtype}\n")
 
 
 if __name__ == '__main__':

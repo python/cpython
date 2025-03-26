@@ -5,11 +5,11 @@ import os
 import sys
 import tempfile
 import unittest.mock
-
+from os import linesep
+from platform import win32_edition
 from test import support
 from test.support import os_helper
 from test.support.script_helper import run_python_until_end
-from platform import win32_edition
 
 try:
     import _winapi
@@ -422,30 +422,30 @@ class MimetypesCliTestCase(unittest.TestCase):
     def test_guess_extension(self):
         retcode, out, err = self.mimetypes_cmd('-l', '-e', 'image/jpg')
         self.assertEqual(retcode, 0)
-        self.assertEqual(out, '.jpg\n')
+        self.assertEqual(out, f'.jpg{linesep}')
         self.assertEqual(err, '')
 
         retcode, out, err = self.mimetypes_cmd('-e', 'image/jpg')
         self.assertEqual(retcode, 1)
         self.assertEqual(out, '')
-        self.assertEqual(err, 'error: unknown type image/jpg\n')
+        self.assertEqual(err, f'error: unknown type image/jpg{linesep}')
 
         retcode, out, err = self.mimetypes_cmd('-e', 'image/jpeg')
         self.assertEqual(retcode, 0)
-        self.assertEqual(out, '.jpg\n')
+        self.assertEqual(out, f'.jpg{linesep}')
         self.assertEqual(err, '')
 
     def test_guess_type(self):
         retcode, out, err = self.mimetypes_cmd('-l', 'foo.webp')
         self.assertEqual(retcode, 0)
-        self.assertEqual(out, 'type: image/webp encoding: None\n')
+        self.assertEqual(out, f'type: image/webp encoding: None{linesep}')
         self.assertEqual(err, '')
 
-    def test_z_guess_type_conflicting_with_mimetypes(self):
+    def test_guess_type_conflicting_with_mimetypes(self):
         retcode, out, err = self.mimetypes_cmd('foo.pic')
         self.assertEqual(retcode, 1)
         self.assertEqual(out, '')
-        self.assertEqual(err, 'error: media type unknown for foo.pic\n')
+        self.assertEqual(err, f'error: media type unknown for foo.pic{linesep}')
 
 
 if __name__ == "__main__":
