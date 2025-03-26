@@ -1286,26 +1286,26 @@ bounded_lru_cache_wrapper_pre_call_lock_held(lru_cache_object *self, PyObject *a
 {
     lru_list_elem *link;
 
-    PyObject *_key = *key = lru_cache_make_key(self->kwd_mark, args, kwds, self->typed);
-    if (!_key)
+    PyObject *key_ = *key = lru_cache_make_key(self->kwd_mark, args, kwds, self->typed);
+    if (!key_)
         return -1;
-    Py_hash_t _hash = *hash = PyObject_Hash(_key);
-    if (_hash == -1) {
-        Py_DECREF(_key);
+    Py_hash_t hash_ = *hash = PyObject_Hash(key_);
+    if (hash_ == -1) {
+        Py_DECREF(key_);
         return -1;
     }
-    link = (lru_list_elem *)_PyDict_GetItem_KnownHash(self->cache, _key, _hash);
+    link = (lru_list_elem *)_PyDict_GetItem_KnownHash(self->cache, key_, hash_);
     if (link != NULL) {
         lru_cache_extract_link(link);
         lru_cache_append_link(self, link);
         *result = link->result;
         self->hits++;
         Py_INCREF(link->result);
-        Py_DECREF(_key);
+        Py_DECREF(key_);
         return 1;
     }
     if (PyErr_Occurred()) {
-        Py_DECREF(_key);
+        Py_DECREF(key_);
         return -1;
     }
     self->misses++;
