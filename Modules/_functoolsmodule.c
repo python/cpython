@@ -1195,14 +1195,13 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
         Py_DECREF(key);
         return NULL;
     }
-    result = _PyDict_GetItem_KnownHash(self->cache, key, hash);
-    if (result) {
-        Py_INCREF(result);
+    int res = _PyDict_GetItemRef_KnownHash((PyDictObject *)self->cache, key, hash, &result);
+    if (res > 0) {
         self->hits++;
         Py_DECREF(key);
         return result;
     }
-    if (PyErr_Occurred()) {
+    if (res < 0) {
         Py_DECREF(key);
         return NULL;
     }
@@ -1281,37 +1280,45 @@ lru_cache_prepend_link(lru_cache_object *self, lru_list_elem *link)
    so that we know the cache is a consistent state.
  */
 
-static PyObject *
-bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds)
+static int
+bounded_lru_cache_wrapper_pre_call_lock_held(lru_cache_object *self, PyObject *args, PyObject *kwds,
+                                             PyObject **result, PyObject **key, Py_hash_t *hash)
 {
     lru_list_elem *link;
-    PyObject *key, *result, *testresult;
-    Py_hash_t hash;
 
-    key = lru_cache_make_key(self->kwd_mark, args, kwds, self->typed);
-    if (!key)
-        return NULL;
-    hash = PyObject_Hash(key);
-    if (hash == -1) {
-        Py_DECREF(key);
-        return NULL;
+    PyObject *_key = *key = lru_cache_make_key(self->kwd_mark, args, kwds, self->typed);
+    if (!_key)
+        return -1;
+    Py_hash_t _hash = *hash = PyObject_Hash(_key);
+    if (_hash == -1) {
+        Py_DECREF(_key);
+        return -1;
     }
-    link  = (lru_list_elem *)_PyDict_GetItem_KnownHash(self->cache, key, hash);
+    link = (lru_list_elem *)_PyDict_GetItem_KnownHash(self->cache, _key, _hash);
     if (link != NULL) {
         lru_cache_extract_link(link);
         lru_cache_append_link(self, link);
-        result = link->result;
+        *result = link->result;
         self->hits++;
-        Py_INCREF(result);
-        Py_DECREF(key);
-        return result;
+        Py_INCREF(link->result);
+        Py_DECREF(_key);
+        return 1;
     }
     if (PyErr_Occurred()) {
-        Py_DECREF(key);
-        return NULL;
+        Py_DECREF(_key);
+        return -1;
     }
     self->misses++;
-    result = PyObject_Call(self->func, args, kwds);
+    return 0;
+}
+
+PyObject *
+bounded_lru_cache_wrapper_post_call_lock_held(lru_cache_object *self,
+                                              PyObject *result, PyObject *key, Py_hash_t hash)
+{
+    lru_list_elem *link;
+    PyObject *testresult;
+
     if (!result) {
         Py_DECREF(key);
         return NULL;
@@ -1448,6 +1455,33 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
 }
 
 static PyObject *
+bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *key, *result;
+    Py_hash_t hash;
+    int res;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    res = bounded_lru_cache_wrapper_pre_call_lock_held(self, args, kwds, &result, &key, &hash);
+    Py_END_CRITICAL_SECTION();
+
+    if (res < 0) {
+        return NULL;
+    }
+    if (res > 0) {
+        return result;
+    }
+
+    result = PyObject_Call(self->func, args, kwds);
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = bounded_lru_cache_wrapper_post_call_lock_held(self, result, key, hash);
+    Py_END_CRITICAL_SECTION();
+
+    return result;
+}
+
+static PyObject *
 lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
     PyObject *func, *maxsize_O, *cache_info_type, *cachedict;
@@ -1579,9 +1613,7 @@ lru_cache_call(PyObject *op, PyObject *args, PyObject *kwds)
 {
     lru_cache_object *self = lru_cache_object_CAST(op);
     PyObject *result;
-    Py_BEGIN_CRITICAL_SECTION(self);
     result = self->wrapper(self, args, kwds);
-    Py_END_CRITICAL_SECTION();
     return result;
 }
 
