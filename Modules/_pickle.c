@@ -2672,7 +2672,7 @@ raw_unicode_escape(PyObject *obj)
             *p++ = (char) ch;
     }
 
-    return PyBytesWriter_FinishWithEndPointer(writer, p);
+    return PyBytesWriter_FinishWithPointer(writer, p);
 
 error:
     PyBytesWriter_Discard(writer);

@@ -392,7 +392,7 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
         return NULL;
     }
 
-    return PyBytesWriter_FinishWithEndPointer(writer, s);
+    return PyBytesWriter_FinishWithPointer(writer, s);
 }
 
 
@@ -1070,7 +1070,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
     if (args_owned) {
         Py_DECREF(args);
     }
-    return PyBytesWriter_FinishWithEndPointer(writer, res);
+    return PyBytesWriter_FinishWithPointer(writer, res);
 
  error:
     PyBytesWriter_Discard(writer);
@@ -1184,7 +1184,7 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
         }
     }
 
-    return PyBytesWriter_FinishWithEndPointer(writer, p);
+    return PyBytesWriter_FinishWithPointer(writer, p);
 
   failed:
     PyBytesWriter_Discard(writer);
@@ -2593,7 +2593,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     if (view.obj != NULL) {
        PyBuffer_Release(&view);
     }
-    return PyBytesWriter_FinishWithEndPointer(writer, buf);
+    return PyBytesWriter_FinishWithPointer(writer, buf);
 
   error:
     if (invalid_char == -1) {
@@ -2886,7 +2886,7 @@ _PyBytes_FromList(PyObject *x)
         }
         *str++ = (char) value;
     }
-    return PyBytesWriter_FinishWithEndPointer(writer, str);
+    return PyBytesWriter_FinishWithPointer(writer, str);
 
 error:
     PyBytesWriter_Discard(writer);
@@ -2980,7 +2980,7 @@ _PyBytes_FromIterator(PyObject *it, PyObject *x)
         }
         *str++ = (char) value;
     }
-    return PyBytesWriter_FinishWithEndPointer(writer, str);
+    return PyBytesWriter_FinishWithPointer(writer, str);
 
   error:
     PyBytesWriter_Discard(writer);
@@ -3921,7 +3921,7 @@ PyBytesWriter_Finish(PyBytesWriter *writer)
 
 
 PyObject*
-PyBytesWriter_FinishWithEndPointer(PyBytesWriter *writer, void *data)
+PyBytesWriter_FinishWithPointer(PyBytesWriter *writer, void *data)
 {
     Py_ssize_t size = (char*)data - byteswriter_data(writer);
     if (size < 0 || size > byteswriter_allocated(writer)) {

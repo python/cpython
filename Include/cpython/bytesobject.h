@@ -57,7 +57,7 @@ PyAPI_FUNC(PyObject*) PyBytesWriter_Finish(
 PyAPI_FUNC(PyObject*) PyBytesWriter_FinishWithSize(
     PyBytesWriter *writer,
     Py_ssize_t size);
-PyAPI_FUNC(PyObject*) PyBytesWriter_FinishWithEndPointer(
+PyAPI_FUNC(PyObject*) PyBytesWriter_FinishWithPointer(
     PyBytesWriter *writer,
     void *data);
 

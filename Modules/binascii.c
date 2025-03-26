@@ -355,7 +355,7 @@ binascii_b2a_uu_impl(PyObject *module, Py_buffer *data, int backtick)
     }
     *ascii_data++ = '\n';       /* Append a courtesy newline */
 
-    return PyBytesWriter_FinishWithEndPointer(writer, ascii_data);
+    return PyBytesWriter_FinishWithPointer(writer, ascii_data);
 }
 
 /*[clinic input]
@@ -506,7 +506,7 @@ binascii_a2b_base64_impl(PyObject *module, Py_buffer *data, int strict_mode)
     }
 
 done:
-    return PyBytesWriter_FinishWithEndPointer(writer, bin_data);
+    return PyBytesWriter_FinishWithPointer(writer, bin_data);
 
 error_end:
     PyBytesWriter_Discard(writer);
@@ -586,7 +586,7 @@ binascii_b2a_base64_impl(PyObject *module, Py_buffer *data, int newline)
     if (newline)
         *ascii_data++ = '\n';       /* Append a courtesy newline */
 
-    return PyBytesWriter_FinishWithEndPointer(writer, ascii_data);
+    return PyBytesWriter_FinishWithPointer(writer, ascii_data);
 }
 
 
