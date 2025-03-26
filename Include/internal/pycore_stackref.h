@@ -13,11 +13,11 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_object_deferred.h"
-#include "pycore_object.h"
+#include "pycore_object.h"        // Py_DECREF_MORTAL
+#include "pycore_object_deferred.h" // _PyObject_HasDeferredRefcount()
 
-#include <stddef.h>
-#include <stdbool.h>
+#include <stdbool.h>              // bool
+
 
 /*
   This file introduces a new API for handling references on the stack, called
@@ -592,7 +592,7 @@ PyStackRef_XCLOSE(_PyStackRef ref)
 
 // Note: this is a macro because MSVC (Windows) has trouble inlining it.
 
-#define PyStackRef_Is(a, b) (((a).bits & (~Py_TAG_REFCNT)) == ((b).bits & (~Py_TAG_REFCNT)))
+#define PyStackRef_Is(a, b) (((a).bits & (~Py_TAG_BITS)) == ((b).bits & (~Py_TAG_BITS)))
 
 #endif // !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
 
@@ -640,6 +640,28 @@ PyStackRef_FunctionCheck(_PyStackRef stackref)
     return PyFunction_Check(PyStackRef_AsPyObjectBorrow(stackref));
 }
 
+static inline void
+_PyThreadState_PushCStackRef(PyThreadState *tstate, _PyCStackRef *ref)
+{
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    ref->next = tstate_impl->c_stack_refs;
+    tstate_impl->c_stack_refs = ref;
+#endif
+    ref->ref = PyStackRef_NULL;
+}
+
+static inline void
+_PyThreadState_PopCStackRef(PyThreadState *tstate, _PyCStackRef *ref)
+{
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    assert(tstate_impl->c_stack_refs == ref);
+    tstate_impl->c_stack_refs = ref->next;
+#endif
+    PyStackRef_XCLOSE(ref->ref);
+}
+
 #ifdef Py_GIL_DISABLED
 
 static inline int
@@ -656,7 +678,28 @@ _Py_TryIncrefCompareStackRef(PyObject **src, PyObject *op, _PyStackRef *out)
     return 0;
 }
 
+static inline int
+_Py_TryXGetStackRef(PyObject **src, _PyStackRef *out)
+{
+    PyObject *op = _Py_atomic_load_ptr_relaxed(src);
+    if (op == NULL) {
+        *out = PyStackRef_NULL;
+        return 1;
+    }
+    return _Py_TryIncrefCompareStackRef(src, op, out);
+}
+
 #endif
+
+// Like Py_VISIT but for _PyStackRef fields
+#define _Py_VISIT_STACKREF(ref)                                         \
+    do {                                                                \
+        if (!PyStackRef_IsNull(ref)) {                                  \
+            int vret = _PyGC_VisitStackRef(&(ref), visit, arg);         \
+            if (vret)                                                   \
+                return vret;                                            \
+        }                                                               \
+    } while (0)
 
 #ifdef __cplusplus
 }

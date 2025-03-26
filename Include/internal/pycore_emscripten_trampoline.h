@@ -1,7 +1,7 @@
 #ifndef Py_EMSCRIPTEN_TRAMPOLINE_H
 #define Py_EMSCRIPTEN_TRAMPOLINE_H
 
-#include "pycore_runtime.h"  // _PyRuntimeState
+#include "pycore_typedefs.h"      // _PyRuntimeState
 
 /**
  * C function call trampolines to mitigate bad function pointer casts.
