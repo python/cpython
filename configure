@@ -902,8 +902,6 @@ LDSHARED
 SHLIB_SUFFIX
 DSYMUTIL_PATH
 DSYMUTIL
-JIT_STENCILS_H
-REGEN_JIT_COMMAND
 UNIVERSAL_ARCH_FLAGS
 WASM_STDLIB
 WASM_ASSETS_DIR
@@ -1094,16 +1092,13 @@ with_pydebug
 with_trace_refs
 enable_pystats
 with_assertions
+enable_experimental_jit
 enable_optimizations
 with_lto
 enable_bolt
 with_strict_overflow
-<<<<<<< HEAD
-enable_experimental_jit
-=======
 enable_safety
 enable_slower_safety
->>>>>>> main
 with_dsymutil
 with_address_sanitizer
 with_memory_sanitizer
@@ -1826,26 +1821,20 @@ Optional Features:
   --disable-gil           enable experimental support for running without the
                           GIL (default is no)
   --enable-pystats        enable internal statistics gathering (default is no)
-<<<<<<< HEAD
-=======
   --enable-experimental-jit[=no|yes|yes-off|interpreter]
                           build the experimental just-in-time compiler
                           (default is no)
->>>>>>> main
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
   --enable-bolt           enable usage of the llvm-bolt post-link optimizer
                           (default is no)
-<<<<<<< HEAD
-  --enable-experimental-jit
-                          build the experimental just-in-time compiler
-                          (default is no)
-=======
   --enable-safety         enable usage of the security compiler options with
                           no performance overhead
   --enable-slower-safety  enable usage of the security compiler options with
                           performance overhead
->>>>>>> main
+  --enable-experimental-jit
+                          build the experimental just-in-time compiler
+                          (default is no)
   --enable-loadable-sqlite-extensions
                           support loadable extensions in the sqlite3 module,
                           see Doc/library/sqlite3.rst (default is no)
@@ -8304,6 +8293,8 @@ printf "%s\n" "no" >&6; }
 fi
 
 # Check for --enable-experimental-jit:
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-experimental-jit" >&5
+printf %s "checking for --enable-experimental-jit... " >&6; }
 # Check whether --enable-experimental-jit was given.
 if test ${enable_experimental_jit+y}
 then :
@@ -8344,6 +8335,7 @@ fi
 printf "%s\n" "$tier2_flags $jit_flags" >&6; }
 
 # Enable optimization flags
+
 
 Py_OPT='false'
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-optimizations" >&5

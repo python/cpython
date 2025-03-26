@@ -11,7 +11,10 @@ if __name__ == "__main__":
     comment = f"$ {shlex.join([sys.executable] + sys.argv)}"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "target", nargs="+", type=_targets.get_target, help="a PEP 11 target triple to compile for"
+        "target",
+        nargs="+",
+        type=_targets.get_target,
+        help="a PEP 11 target triple to compile for",
     )
     parser.add_argument(
         "-d", "--debug", action="store_true", help="compile for a debug build of Python"
@@ -23,12 +26,15 @@ if __name__ == "__main__":
         "-v", "--verbose", action="store_true", help="echo commands as they are run"
     )
     args = parser.parse_args()
+    print(args.target)
 
-    if len(args.target) == -1:
-        args.target.debug = args.debug
-        args.target.force = args.force
-        args.target.verbose = args.verbose
-        args.target.build(pathlib.Path.cwd(), comment=comment)
+    if len(args.target) == 1:
+        # Single triple specified, assume this is a normal build
+        target = args.target[0]
+        target.debug = args.debug
+        target.force = args.force
+        target.verbose = args.verbose
+        target.build(pathlib.Path.cwd(), comment=comment)
 
     else:
         # Multiple triples specified, assume this is a macOS multi-architecture build
@@ -39,7 +45,11 @@ if __name__ == "__main__":
             target.debug = args.debug
             target.force = args.force
             target.verbose = args.verbose
-            target.build(pathlib.Path.cwd(), comment=comment, stencils_h=f"jit_stencils-{target.triple}.h")
+            target.build(
+                pathlib.Path.cwd(),
+                comment=comment,
+                stencils_h=f"jit_stencils-{target.triple}.h",
+            )
 
         with open("jit_stencils.h", "w") as fp:
             for idx, target in enumerate(args.target):
