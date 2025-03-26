@@ -4972,7 +4972,8 @@ codegen_with_inner(compiler *c, stmt_ty s, int pos)
 }
 
 static int
-codegen_with(compiler *c, stmt_ty s) {
+codegen_with(compiler *c, stmt_ty s)
+{
     return codegen_with_inner(c, s, 0);
 }
 
