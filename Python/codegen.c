@@ -3760,10 +3760,11 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         const_oparg = CONSTANT_BUILTIN_TUPLE;
     }
     if (const_oparg != -1) {
-        RETURN_IF_ERROR(codegen_nameop(c, loc, func->v.Name.id, Load));
+        ADDOP_I(c, loc, COPY, 1); // the function
         ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, const_oparg);
         ADDOP_COMPARE(c, loc, Is);
         ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, skip_optimization);
+        ADDOP(c, loc, POP_TOP);
 
         if (const_oparg == CONSTANT_BUILTIN_TUPLE) {
             ADDOP_I(c, loc, BUILD_LIST, 0);
@@ -3916,9 +3917,9 @@ codegen_call(compiler *c, expr_ty e)
         return SUCCESS;
     }
     NEW_JUMP_TARGET_LABEL(c, skip_normal_call);
-    RETURN_IF_ERROR(maybe_optimize_function_call(c, e, skip_normal_call));
     RETURN_IF_ERROR(check_caller(c, e->v.Call.func));
     VISIT(c, expr, e->v.Call.func);
+    RETURN_IF_ERROR(maybe_optimize_function_call(c, e, skip_normal_call));
     location loc = LOC(e->v.Call.func);
     ADDOP(c, loc, PUSH_NULL);
     loc = LOC(e);
