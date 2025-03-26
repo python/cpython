@@ -3356,6 +3356,38 @@ AC_MSG_RESULT([no])
 with_tsan="no"
 ])
 
+# Check for --with-relative-rpath
+AC_MSG_CHECKING([for --with-relative-rpath])
+AC_ARG_WITH([relative-rpath],
+  [AS_HELP_STRING([--with-relative-rpath],
+    [use relative rpath with $ORIGIN for binaries (Linux only)])],
+  [], [with_relative_rpath=no])
+
+# Initialize empty RPATH variables
+PY_RPATH_EXEC=""
+PY_RPATH_LIB=""
+PY_RPATH_MOD=""
+
+if test "$with_relative_rpath" = "yes"; then
+  if test "$ac_sys_system" = "Linux"; then
+    # Define the RPATH settings for each binary type
+    PY_RPATH_EXEC="-Wl,-rpath,\\\$\$ORIGIN/../\$(PLATLIBDIR)"
+    PY_RPATH_LIB="-Wl,-rpath,\\\$\$ORIGIN"
+    PY_RPATH_MOD="-Wl,-rpath,\\\$\$ORIGIN/../../"
+    AC_MSG_RESULT([yes])
+  else
+    AC_MSG_RESULT([no - only supported on Linux])
+    with_relative_rpath=no
+  fi
+else
+  AC_MSG_RESULT([no])
+fi
+
+# Export these variables for the Makefile
+AC_SUBST([PY_RPATH_EXEC])
+AC_SUBST([PY_RPATH_LIB])
+AC_SUBST([PY_RPATH_MOD])
+
 # Set info about shared libraries.
 AC_SUBST([SHLIB_SUFFIX])
 AC_SUBST([LDSHARED])

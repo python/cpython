@@ -894,6 +894,9 @@ BLDSHARED
 LDCXXSHARED
 LDSHARED
 SHLIB_SUFFIX
+PY_RPATH_MOD
+PY_RPATH_LIB
+PY_RPATH_EXEC
 DSYMUTIL_PATH
 DSYMUTIL
 UNIVERSAL_ARCH_FLAGS
@@ -1100,6 +1103,7 @@ with_address_sanitizer
 with_memory_sanitizer
 with_undefined_behavior_sanitizer
 with_thread_sanitizer
+with_relative_rpath
 with_hash_algorithm
 with_tzpath
 with_libs
@@ -1889,6 +1893,8 @@ Optional Packages:
                           behaviour detector, 'ubsan' (default is no)
   --with-thread-sanitizer enable ThreadSanitizer data race detector, 'tsan'
                           (default is no)
+  --with-relative-rpath   use relative rpath with $ORIGIN for binaries (Linux
+                          only)
   --with-hash-algorithm=[fnv|siphash13|siphash24]
                           select hash algorithm for use in Python/pyhash.c
                           (default is SipHash13)
@@ -13439,6 +13445,48 @@ with_tsan="no"
  ;;
 esac
 fi
+
+
+# Check for --with-relative-rpath
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-relative-rpath" >&5
+printf %s "checking for --with-relative-rpath... " >&6; }
+
+# Check whether --with-relative-rpath was given.
+if test ${with_relative_rpath+y}
+then :
+  withval=$with_relative_rpath;
+else case e in #(
+  e) with_relative_rpath=no ;;
+esac
+fi
+
+
+# Initialize empty RPATH variables
+PY_RPATH_EXEC=""
+PY_RPATH_LIB=""
+PY_RPATH_MOD=""
+
+if test "$with_relative_rpath" = "yes"; then
+  if test "$ac_sys_system" = "Linux"; then
+    # Define the RPATH settings for each binary type
+    PY_RPATH_EXEC="-Wl,-rpath,\\\$\$ORIGIN/../\$(PLATLIBDIR)"
+    PY_RPATH_LIB="-Wl,-rpath,\\\$\$ORIGIN"
+    PY_RPATH_MOD="-Wl,-rpath,\\\$\$ORIGIN/../../"
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+  else
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no - only supported on Linux" >&5
+printf "%s\n" "no - only supported on Linux" >&6; }
+    with_relative_rpath=no
+  fi
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+# Export these variables for the Makefile
+
+
 
 
 # Set info about shared libraries.
