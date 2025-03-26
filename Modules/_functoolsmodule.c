@@ -1312,11 +1312,7 @@ bounded_lru_cache_get_lock_held(lru_cache_object *self, PyObject *args, PyObject
         lru_cache_extract_link(link);
         lru_cache_append_link(self, link);
         *result = link->result;
-#ifdef Py_GIL_DISABLED
-        _Py_atomic_add_ssize(&self->hits, 1);
-#else
         self->hits++;
-#endif
         Py_INCREF(link->result);
         Py_DECREF(key_);
         return 1;
@@ -1325,11 +1321,7 @@ bounded_lru_cache_get_lock_held(lru_cache_object *self, PyObject *args, PyObject
         Py_DECREF(key_);
         return -1;
     }
-#ifdef Py_GIL_DISABLED
-    _Py_atomic_add_ssize(&self->misses, 1);
-#else
     self->misses++;
-#endif
     return 0;
 }
 
