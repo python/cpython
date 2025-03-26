@@ -1301,17 +1301,19 @@ bounded_lru_cache_get_lock_held(lru_cache_object *self, PyObject *args, PyObject
         Py_DECREF(key_);
         return -1;
     }
-    link = (lru_list_elem *)_PyDict_GetItem_KnownHash(self->cache, key_, hash_);
-    if (link != NULL) {
+    int res = _PyDict_GetItemRef_KnownHash_LockHeld((PyDictObject *)self->cache, key_, hash_,
+                                                    (PyObject **)&link);
+    if (res > 0) {
         lru_cache_extract_link(link);
         lru_cache_append_link(self, link);
         *result = link->result;
         self->hits++;
         Py_INCREF(link->result);
+        Py_DECREF(link);
         Py_DECREF(key_);
         return 1;
     }
-    if (PyErr_Occurred()) {
+    if (res < 0) {
         Py_DECREF(key_);
         return -1;
     }
@@ -1325,20 +1327,23 @@ bounded_lru_cache_update_lock_held(lru_cache_object *self,
 {
     lru_list_elem *link;
     PyObject *testresult;
+    int res;
 
     if (!result) {
         Py_DECREF(key);
         return NULL;
     }
-    testresult = _PyDict_GetItem_KnownHash(self->cache, key, hash);
-    if (testresult != NULL) {
+    res = _PyDict_GetItemRef_KnownHash_LockHeld((PyDictObject *)self->cache, key, hash,
+                                                &testresult);
+    if (res > 0) {
         /* Getting here means that this same key was added to the cache
            during the PyObject_Call().  Since the link update is already
            done, we need only return the computed result. */
+        Py_DECREF(testresult);
         Py_DECREF(key);
         return result;
     }
-    if (PyErr_Occurred()) {
+    if (res < 0) {
         /* This is an unusual case since this same lookup
            did not previously trigger an error during lookup.
            Treat it the same as an error in user function
@@ -1402,7 +1407,7 @@ bounded_lru_cache_update_lock_held(lru_cache_object *self,
        The cache dict holds one reference to the link.
        We created one other reference when the link was created.
        The linked list only has borrowed references. */
-    int res = _PyDict_Pop_KnownHash((PyDictObject*)self->cache, link->key,
+    res = _PyDict_Pop_KnownHash((PyDictObject*)self->cache, link->key,
                                     link->hash, &popresult);
     if (res < 0) {
         /* An error arose while trying to remove the oldest key (the one
