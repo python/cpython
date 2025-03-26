@@ -764,25 +764,25 @@ static int
 send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_script_path)
 {
     uintptr_t runtime_start_address;
-    struct _Py_DebugOffsets local_debug_offsets;
+    struct _Py_DebugOffsets debug_offsets;
 
-    if (read_offsets(handle, &runtime_start_address, &local_debug_offsets)) {
+    if (read_offsets(handle, &runtime_start_address, &debug_offsets)) {
         return -1;
     }
 
-    uintptr_t interpreter_state_list_head = local_debug_offsets.runtime_state.interpreters_head;
+    uintptr_t interpreter_state_list_head = debug_offsets.runtime_state.interpreters_head;
 
-    uintptr_t address_of_interpreter_state;
+    uintptr_t interpreter_state_addr;
     Py_ssize_t bytes = read_memory(
         handle,
         runtime_start_address + interpreter_state_list_head,
         sizeof(void*),
-        &address_of_interpreter_state);
+        &interpreter_state_addr);
     if (bytes == -1) {
         return -1;
     }
 
-    if (address_of_interpreter_state == 0) {
+    if (interpreter_state_addr == 0) {
         PyErr_SetString(PyExc_RuntimeError, "No interpreter state found");
         return -1;
     }
@@ -790,7 +790,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     int is_remote_debugging_enabled = 0;
     bytes = read_memory(
         handle,
-        address_of_interpreter_state + local_debug_offsets.debugger_support.remote_debugging_enabled,
+        interpreter_state_addr + debug_offsets.debugger_support.remote_debugging_enabled,
         sizeof(int),
         &is_remote_debugging_enabled);
     if (bytes == -1) {
@@ -802,22 +802,22 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
         return -1;
     }
 
-    uintptr_t address_of_thread;
+    uintptr_t thread_state_addr;
     pid_t this_tid = 0;
 
     if (tid != 0) {
         bytes = read_memory(
             handle,
-            address_of_interpreter_state + local_debug_offsets.interpreter_state.threads_head,
+            interpreter_state_addr + debug_offsets.interpreter_state.threads_head,
             sizeof(void*),
-            &address_of_thread);
+            &thread_state_addr);
         if (bytes == -1) {
             return -1;
         }
-        while (address_of_thread != 0) {
+        while (thread_state_addr != 0) {
             bytes = read_memory(
                 handle,
-                address_of_thread + local_debug_offsets.thread_state.native_thread_id,
+                thread_state_addr + debug_offsets.thread_state.native_thread_id,
                 sizeof(pid_t),
                 &this_tid);
             if (bytes == -1) {
@@ -830,9 +830,9 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
 
             bytes = read_memory(
                 handle,
-                address_of_thread + local_debug_offsets.thread_state.next,
+                thread_state_addr + debug_offsets.thread_state.next,
                 sizeof(void*),
-                &address_of_thread);
+                &thread_state_addr);
             if (bytes == -1) {
                 return -1;
             }
@@ -840,15 +840,15 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     } else {
         bytes = read_memory(
             handle,
-            address_of_interpreter_state + local_debug_offsets.interpreter_state.threads_main,
+            interpreter_state_addr + debug_offsets.interpreter_state.threads_main,
             sizeof(void*),
-            &address_of_thread);
+            &thread_state_addr);
         if (bytes == -1) {
             return -1;
         }
     }
 
-    if (address_of_thread == 0) {
+    if (thread_state_addr == 0) {
         PyErr_SetString(PyExc_RuntimeError, "No thread state found");
         return -1;
     }
@@ -856,7 +856,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     uintptr_t eval_breaker;
     bytes = read_memory(
         handle,
-        address_of_thread + local_debug_offsets.debugger_support.eval_breaker,
+        thread_state_addr + debug_offsets.debugger_support.eval_breaker,
         sizeof(uintptr_t),
         &eval_breaker);
     if (bytes == -1) {
@@ -866,16 +866,16 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     eval_breaker |= _PY_EVAL_PLEASE_STOP_BIT;
 
     // Ensure our path is not too long
-    if (local_debug_offsets.debugger_support.debugger_script_path_size <= strlen(debugger_script_path)) {
+    if (debug_offsets.debugger_support.debugger_script_path_size <= strlen(debugger_script_path)) {
         PyErr_SetString(PyExc_ValueError, "Debugger script path is too long");
         return -1;
     }
 
     if (debugger_script_path != NULL) {
         uintptr_t debugger_script_path_addr = (
-            address_of_thread +
-            local_debug_offsets.debugger_support.remote_debugger_support +
-            local_debug_offsets.debugger_support.debugger_script_path);
+            thread_state_addr +
+            debug_offsets.debugger_support.remote_debugger_support +
+            debug_offsets.debugger_support.debugger_script_path);
         bytes = write_memory(
             handle,
             debugger_script_path_addr,
@@ -888,9 +888,9 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
 
     int pending_call = 1;
     uintptr_t debugger_pending_call_addr = (
-        address_of_thread +
-        local_debug_offsets.debugger_support.remote_debugger_support +
-        local_debug_offsets.debugger_support.debugger_pending_call);
+        thread_state_addr +
+        debug_offsets.debugger_support.remote_debugger_support +
+        debug_offsets.debugger_support.debugger_pending_call);
     bytes = write_memory(
         handle,
         debugger_pending_call_addr,
@@ -903,7 +903,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
 
     bytes = write_memory(
         handle,
-        address_of_thread + local_debug_offsets.debugger_support.eval_breaker,
+        thread_state_addr + debug_offsets.debugger_support.eval_breaker,
         sizeof(uintptr_t),
         &eval_breaker);
 
@@ -913,7 +913,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
 
     bytes = read_memory(
         handle,
-        address_of_thread + local_debug_offsets.debugger_support.eval_breaker,
+        thread_state_addr + debug_offsets.debugger_support.eval_breaker,
         sizeof(uintptr_t),
         &eval_breaker);
 
