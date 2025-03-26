@@ -45,7 +45,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
          import warnings
 
          with warnings.catch_warnings():
-             # ignore DeprecationWarning on sys.abiflags change
+             # ignore DeprecationWarning on sys.abiflags change on Windows
              warnings.simplefilter('ignore', DeprecationWarning)
              abiflags = getattr(sys, 'abiflags', '')
 

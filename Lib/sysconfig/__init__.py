@@ -335,7 +335,7 @@ def get_makefile_filename():
         return os.path.join(_PROJECT_BASE, "Makefile")
 
     with warnings.catch_warnings():
-        # ignore DeprecationWarning on sys.abiflags change
+        # ignore DeprecationWarning on sys.abiflags change on Windows
         warnings.simplefilter('ignore', DeprecationWarning)
         has_abiflags = hasattr(sys, 'abiflags')
 
@@ -513,7 +513,7 @@ def _init_config_vars():
     base_exec_prefix = _BASE_EXEC_PREFIX
 
     with warnings.catch_warnings():
-        # ignore DeprecationWarning on sys.abiflags change
+        # ignore DeprecationWarning on sys.abiflags change on Windows
         warnings.simplefilter('ignore', DeprecationWarning)
         abiflags = getattr(sys, 'abiflags', '')
 

@@ -49,7 +49,7 @@ def copy_attributes(info_add, obj, name_fmt, attributes, *, formatter=None):
     for attr in attributes:
         if attr == 'abiflags':
             with warnings.catch_warnings():
-                # ignore DeprecationWarning on sys.abiflags change
+                # ignore DeprecationWarning on sys.abiflags change on Windows
                 warnings.simplefilter("ignore", DeprecationWarning)
                 value = getattr(obj, attr, None)
         else:
