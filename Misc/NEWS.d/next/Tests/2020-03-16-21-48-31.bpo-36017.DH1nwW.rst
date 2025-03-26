@@ -1,0 +1,1 @@
+Use a heuristic to find nonexistent gid in test_grp test_errors test that works better for network directory services such as LDAP.
