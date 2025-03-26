@@ -1412,18 +1412,20 @@ compare_unicode_unicode_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
 {
     PyDictUnicodeEntry *ep = &((PyDictUnicodeEntry *)ep0)[ix];
     PyObject *startkey = _Py_atomic_load_ptr_relaxed(&ep->me_key);
-    assert(startkey == NULL || PyUnicode_CheckExact(startkey));
     if (startkey == key) {
+        assert(PyUnicode_CheckExact(startkey));
         return 1;
     }
     if (startkey != NULL) {
         if (_Py_IsImmortal(startkey)) {
+            assert(PyUnicode_CheckExact(startkey));
             return unicode_get_hash(startkey) == hash && unicode_eq(startkey, key);
         }
         else {
             if (!_Py_TryIncrefCompare(&ep->me_key, startkey)) {
                 return DKIX_KEY_CHANGED;
             }
+            assert(PyUnicode_CheckExact(startkey));
             if (unicode_get_hash(startkey) == hash && unicode_eq(startkey, key)) {
                 Py_DECREF(startkey);
                 return 1;
