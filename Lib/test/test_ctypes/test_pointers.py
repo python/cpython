@@ -183,6 +183,7 @@ class PointersTestCase(unittest.TestCase):
         q = pointer(y)
         pp[0] = q         # <==
         self.assertEqual(p[0], 6)
+
     def test_c_void_p(self):
         # http://sourceforge.net/tracker/?func=detail&aid=1518190&group_id=5470&atid=105470
         if sizeof(c_void_p) == 4:
@@ -200,6 +201,30 @@ class PointersTestCase(unittest.TestCase):
 
         self.assertRaises(TypeError, c_void_p, 3.14) # make sure floats are NOT accepted
         self.assertRaises(TypeError, c_void_p, object()) # nor other objects
+
+    def test_read_null_pointer(self):
+        null_ptr = POINTER(c_int)()
+        with self.assertRaisesRegex(ValueError, "NULL pointer access"):
+            null_ptr[0]
+
+    def test_write_null_pointer(self):
+        null_ptr = POINTER(c_int)()
+        with self.assertRaisesRegex(ValueError, "NULL pointer access"):
+            null_ptr[0] = 1
+
+    def test_set_pointer_to_null_and_read(self):
+        class Bar(Structure):
+            _fields_ = [("values", POINTER(c_int))]
+
+        bar = Bar()
+        bar.values = (c_int * 3)(1, 2, 3)
+
+        values = [bar.values[0], bar.values[1], bar.values[2]]
+        self.assertEqual(values, [1, 2, 3])
+
+        bar.values = None
+        with self.assertRaisesRegex(ValueError, "NULL pointer access"):
+            bar.values[0]
 
     def test_pointers_bool(self):
         # NULL pointers have a boolean False value, non-NULL pointers True.
