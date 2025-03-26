@@ -759,6 +759,9 @@ class timedelta:
         return self
 
     def __repr__(self):
+        # handle negative values
+        if self._days < 0:
+            return f"- {-self!r}"
         args = []
         if self._days:
             args.append("days=%d" % self._days)
@@ -773,6 +776,9 @@ class timedelta:
                              ', '.join(args))
 
     def __str__(self):
+        # handle negative values
+        if self._days < 0:
+            return f"-{-self}"
         mm, ss = divmod(self._seconds, 60)
         hh, mm = divmod(mm, 60)
         s = "%d:%02d:%02d" % (hh, mm, ss)
