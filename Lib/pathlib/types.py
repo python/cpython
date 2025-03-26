@@ -20,7 +20,7 @@ from typing import (
     runtime_checkable,
 )
 
-_WP = TypeVar("_WP", bound="_WritablePath")
+_WritablePathT = TypeVar("_WritablePathT", bound="_WritablePath")
 
 
 def _explode_path(path: str, parser: "_PathParser") -> tuple[str, list[str]]:
@@ -345,7 +345,7 @@ class _ReadablePath(_JoinablePath):
         """
         raise NotImplementedError
 
-    def copy(self, target: _WP, **kwargs: Any) -> _WP:
+    def copy(self, target: _WritablePathT, **kwargs: Any) -> _WritablePathT:
         """
         Recursively copy this file or directory tree to the given destination.
         """
@@ -353,7 +353,7 @@ class _ReadablePath(_JoinablePath):
         target._copy_from(self, **kwargs)
         return target.joinpath()  # Empty join to ensure fresh metadata.
 
-    def copy_into(self, target_dir: _WP, **kwargs: Any) -> _WP:
+    def copy_into(self, target_dir: _WritablePathT, **kwargs: Any) -> _WritablePathT:
         """
         Copy this file or directory tree into the given existing directory.
         """
