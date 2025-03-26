@@ -431,8 +431,7 @@ Functions
    :func:`gmtime` or :func:`localtime` to a string as specified by the *format*
    argument.  If *t* is not provided, the current time as returned by
    :func:`localtime` is used.  *format* must be a string.  :exc:`ValueError` is
-   raised if any field in *t* is outside of the allowed range or if digits are
-   not ASCII.
+   raised if any field in *t* is outside of the allowed range.
 
    0 is a legal argument for any position in the time tuple; if it is normally
    illegal the value is forced to a correct one.
@@ -563,6 +562,9 @@ Functions
    (4)
       When used with the :func:`strptime` function, ``%U`` and ``%W`` are only used in
       calculations when the day of the week and the year are specified.
+
+   (5)
+      The :func:`strptime` function does not accept non-ASCII digits for numeric values.
 
    Here is an example, a format for dates compatible with that specified  in the
    :rfc:`2822` Internet email standard.  [1]_ ::
