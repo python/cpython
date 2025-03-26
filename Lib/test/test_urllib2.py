@@ -44,10 +44,6 @@ class TrivialTests(unittest.TestCase):
             context = {}
             exec('from urllib.%s import *' % module, context)
             del context['__builtins__']
-            if module == 'request' and os.name == 'nt':
-                u, p = context.pop('url2pathname'), context.pop('pathname2url')
-                self.assertEqual(u.__module__, 'nturl2path')
-                self.assertEqual(p.__module__, 'nturl2path')
             for k, v in context.items():
                 self.assertEqual(v.__module__, 'urllib.%s' % module,
                     "%r is exposed in 'urllib.%s' but defined in %r" %

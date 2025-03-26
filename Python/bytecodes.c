@@ -59,7 +59,6 @@
 #define guard
 #define override
 #define specializing
-#define split
 #define replicate(TIMES)
 #define tier1
 #define no_save_ip
@@ -976,9 +975,8 @@ dummy_func(
         }
 
         inst(SET_ADD, (set, unused[oparg-1], v -- set, unused[oparg-1])) {
-            int err = PySet_Add(PyStackRef_AsPyObjectBorrow(set),
-                                PyStackRef_AsPyObjectBorrow(v));
-            PyStackRef_CLOSE(v);
+            int err = _PySet_AddTakeRef((PySetObject *)PyStackRef_AsPyObjectBorrow(set),
+                                        PyStackRef_AsPyObjectSteal(v));
             ERROR_IF(err, error);
         }
 
@@ -1679,8 +1677,10 @@ dummy_func(
             ERROR_IF(PyStackRef_IsNull(*res), error);
         }
 
-        op(_PUSH_NULL_CONDITIONAL, ( -- null if (oparg & 1))) {
-            null = PyStackRef_NULL;
+        op(_PUSH_NULL_CONDITIONAL, ( -- null[oparg & 1])) {
+            if (oparg & 1) {
+                null[0] = PyStackRef_NULL;
+            }
         }
 
         macro(LOAD_GLOBAL) =
@@ -1815,12 +1815,11 @@ dummy_func(
 
         inst(LOAD_DEREF, ( -- value)) {
             PyCellObject *cell = (PyCellObject *)PyStackRef_AsPyObjectBorrow(GETLOCAL(oparg));
-            PyObject *value_o = PyCell_GetRef(cell);
-            if (value_o == NULL) {
+            value = _PyCell_GetStackRef(cell);
+            if (PyStackRef_IsNull(value)) {
                 _PyEval_FormatExcUnbound(tstate, _PyFrame_GetCode(frame), oparg);
                 ERROR_IF(true, error);
             }
-            value = PyStackRef_FromPyObjectSteal(value_o);
         }
 
         inst(STORE_DEREF, (v --)) {
@@ -1908,17 +1907,25 @@ dummy_func(
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
+
             int err = 0;
-            for (int i = 0; i < oparg; i++) {
+            for (Py_ssize_t i = 0; i < oparg; i++) {
+                _PyStackRef value = values[i];
+                values[i] = PyStackRef_NULL;
                 if (err == 0) {
-                    err = PySet_Add(set_o, PyStackRef_AsPyObjectBorrow(values[i]));
+                    err = _PySet_AddTakeRef((PySetObject *)set_o, PyStackRef_AsPyObjectSteal(value));
+                }
+                else {
+                    PyStackRef_CLOSE(value);
                 }
             }
-            DECREF_INPUTS();
-            if (err != 0) {
+            DEAD(values);
+            if (err) {
                 Py_DECREF(set_o);
                 ERROR_IF(true, error);
             }
+
+            INPUTS_DEAD();
             set = PyStackRef_FromPyObjectStealMortal(set_o);
         }
 
@@ -3569,15 +3576,15 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
-        op(_MAYBE_EXPAND_METHOD, (callable[1], self_or_null[1], args[oparg] -- func[1], maybe_self[1], args[oparg])) {
+        op(_MAYBE_EXPAND_METHOD, (callable[1], self_or_null[1], args[oparg] -- callable[1], self_or_null[1], args[oparg])) {
             (void)args;
             if (PyStackRef_TYPE(callable[0]) == &PyMethod_Type && PyStackRef_IsNull(self_or_null[0])) {
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
                 PyObject *self = ((PyMethodObject *)callable_o)->im_self;
-                maybe_self[0] = PyStackRef_FromPyObjectNew(self);
+                self_or_null[0] = PyStackRef_FromPyObjectNew(self);
                 PyObject *method = ((PyMethodObject *)callable_o)->im_func;
                 _PyStackRef temp = callable[0];
-                func[0] = PyStackRef_FromPyObjectNew(method);
+                callable[0] = PyStackRef_FromPyObjectNew(method);
                 PyStackRef_CLOSE(temp);
             }
         }
@@ -3604,6 +3611,9 @@ dummy_func(
                     tstate, callable[0], locals,
                     arguments, total_args, NULL, frame
                 );
+                DEAD(args);
+                DEAD(self_or_null);
+                DEAD(callable);
                 // Manipulate stack directly since we leave using DISPATCH_INLINED().
                 SYNC_SP();
                 // The frame has stolen all the arguments from the stack,
@@ -3936,10 +3946,10 @@ dummy_func(
             _CALL_TUPLE_1 +
             _CHECK_PERIODIC;
 
-        op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable[1], null[1], args[oparg] -- init[1], self[1], args[oparg])) {
+        op(_CHECK_AND_ALLOCATE_OBJECT, (type_version/2, callable[1], self_or_null[1], args[oparg] -- callable[1], self_or_null[1], args[oparg])) {
             (void)args;
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
-            DEOPT_IF(!PyStackRef_IsNull(null[0]));
+            DEOPT_IF(!PyStackRef_IsNull(self_or_null[0]));
             DEOPT_IF(!PyType_Check(callable_o));
             PyTypeObject *tp = (PyTypeObject *)callable_o;
             DEOPT_IF(FT_ATOMIC_LOAD_UINT32_RELAXED(tp->tp_version_tag) != type_version);
@@ -3955,9 +3965,9 @@ dummy_func(
             if (self_o == NULL) {
                 ERROR_NO_POP();
             }
-            self[0] = PyStackRef_FromPyObjectSteal(self_o);
+            self_or_null[0] = PyStackRef_FromPyObjectSteal(self_o);
             _PyStackRef temp = callable[0];
-            init[0] = PyStackRef_FromPyObjectNew(init_func);
+            callable[0] = PyStackRef_FromPyObjectNew(init_func);
             PyStackRef_CLOSE(temp);
         }
 
@@ -3968,10 +3978,11 @@ dummy_func(
             assert(_PyFrame_GetBytecode(shim)[1].op.code == RETURN_VALUE);
             /* Push self onto stack of shim */
             shim->localsplus[0] = PyStackRef_DUP(self[0]);
-            DEAD(init);
-            DEAD(self);
             _PyInterpreterFrame *temp = _PyEvalFramePushAndInit(
                 tstate, init[0], NULL, args-1, oparg+1, NULL, shim);
+            DEAD(init);
+            DEAD(self);
+            DEAD(args);
             SYNC_SP();
             if (temp == NULL) {
                 _PyEval_FrameClearAndPop(tstate, shim);
@@ -4173,9 +4184,9 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
-        inst(CALL_ISINSTANCE, (unused/1, unused/2, callable[1], self_or_null[1], args[oparg] -- res)) {
+        inst(CALL_ISINSTANCE, (unused/1, unused/2, callable, self_or_null[1], args[oparg] -- res)) {
             /* isinstance(o, o2) */
-            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
 
             int total_args = oparg;
             _PyStackRef *arguments = args;
@@ -4406,15 +4417,15 @@ dummy_func(
             ERROR_IF(err, error);
         }
 
-        op(_MAYBE_EXPAND_METHOD_KW, (callable[1], self_or_null[1], args[oparg], kwnames_in -- func[1], maybe_self[1], args[oparg], kwnames_out)) {
+        op(_MAYBE_EXPAND_METHOD_KW, (callable[1], self_or_null[1], args[oparg], kwnames_in -- callable[1], self_or_null[1], args[oparg], kwnames_out)) {
             (void)args;
             if (PyStackRef_TYPE(callable[0]) == &PyMethod_Type && PyStackRef_IsNull(self_or_null[0])) {
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
                 PyObject *self = ((PyMethodObject *)callable_o)->im_self;
-                maybe_self[0] = PyStackRef_FromPyObjectNew(self);
+                self_or_null[0] = PyStackRef_FromPyObjectNew(self);
                 PyObject *method = ((PyMethodObject *)callable_o)->im_func;
                 _PyStackRef temp = callable[0];
-                func[0] = PyStackRef_FromPyObjectNew(method);
+                callable[0] = PyStackRef_FromPyObjectNew(method);
                 PyStackRef_CLOSE(temp);
             }
             kwnames_out = kwnames_in;
@@ -4444,6 +4455,9 @@ dummy_func(
                     tstate, callable[0], locals,
                     arguments, positional_args, kwnames_o, frame
                 );
+                DEAD(args);
+                DEAD(self_or_null);
+                DEAD(callable);
                 PyStackRef_CLOSE(kwnames);
                 // Sync stack explicitly since we leave using DISPATCH_INLINED().
                 SYNC_SP();
@@ -4511,6 +4525,9 @@ dummy_func(
             PyStackRef_CLOSE(kwnames);
             // The frame has stolen all the arguments from the stack,
             // so there is no need to clean them up.
+            DEAD(args);
+            DEAD(self_or_null);
+            DEAD(callable);
             SYNC_SP();
             ERROR_IF(temp == NULL, error);
             new_frame = temp;
@@ -5122,6 +5139,12 @@ dummy_func(
 
         tier2 pure op (_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
             PyStackRef_CLOSE(pop);
+            value = PyStackRef_FromPyObjectImmortal(ptr);
+        }
+
+        tier2 pure op(_POP_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, pop1, pop2 -- value)) {
+            PyStackRef_CLOSE(pop2);
+            PyStackRef_CLOSE(pop1);
             value = PyStackRef_FromPyObjectImmortal(ptr);
         }
 
