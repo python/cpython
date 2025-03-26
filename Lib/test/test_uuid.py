@@ -1166,6 +1166,20 @@ class BaseTestUUID:
         self.assertEqual(output, str(uuid_output))
         self.assertEqual(uuid_output.version, 4)
 
+    @mock.patch.object(sys, "argv", ["", "-C", "3"])
+    def test_cli_uuid4_outputted_with_count(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.uuid.main()
+
+        output = stdout.getvalue().strip().splitlines()
+
+        # Check that 3 UUIDs in the format of uuid4 have been generated
+        self.assertEqual(len(output), 3)
+        for o in output:
+            uuid_output = self.uuid.UUID(o)
+            self.assertEqual(uuid_output.version, 4)
+
     @mock.patch.object(sys, "argv",
                        ["", "-u", "uuid3", "-n", "@dns", "-N", "python.org"])
     def test_cli_uuid3_ouputted_with_valid_namespace_and_name(self):

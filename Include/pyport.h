@@ -655,4 +655,24 @@ extern "C" {
 #  define _Py_FALLTHROUGH do { } while (0)
 #endif
 
+
+// _Py_NO_SANITIZE_UNDEFINED(): Disable Undefined Behavior sanitizer (UBsan)
+// on a function.
+//
+// Clang and GCC 9.0+ use __attribute__((no_sanitize("undefined"))).
+// GCC 4.9+ uses __attribute__((no_sanitize_undefined)).
+#if defined(__has_feature)
+#  if __has_feature(undefined_behavior_sanitizer)
+#    define _Py_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
+#  endif
+#endif
+#if !defined(_Py_NO_SANITIZE_UNDEFINED) && defined(__GNUC__) \
+    && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 9))
+#  define _Py_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize_undefined))
+#endif
+#ifndef _Py_NO_SANITIZE_UNDEFINED
+#  define _Py_NO_SANITIZE_UNDEFINED
+#endif
+
+
 #endif /* Py_PYPORT_H */
