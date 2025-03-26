@@ -75,10 +75,17 @@ module sys
 #include "clinic/sysmodule.c.h"
 
 
-#define WarnIncomingSysAbiflagsChange()                       \
-    PyErr_WarnEx(PyExc_DeprecationWarning,                    \
-        "sys.abiflags will be set to a meaningful value "     \
-        "on all platforms in Python 3.16 instead of absent",  \
+PyDoc_STRVAR(IncomingSysAbiflagsChange_msg,
+"sys.abiflags will be set to a meaningful value on all platforms "
+"in Python 3.16 instead of absent.\n\n"
+"Please consider using `warnings.simplefilter()` with the "
+"`warnings.catch_warnings()` context manager.\n"
+"Or update the code with `if sys.platform.startswith('win')` condition."
+);
+
+#define WarnIncomingSysAbiflagsChange()     \
+    PyErr_WarnEx(PyExc_DeprecationWarning,  \
+        IncomingSysAbiflagsChange_msg,      \
         /*stack_level=*/1)
 
 

@@ -63,7 +63,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       without changing the behavior:
 
       +---------------------------------------+---------------------------------------------------------------------+
-      | Code Prior to Python 3.14             | Code in Python 3.14-3.15                                            |
+      | Code prior to Python 3.14             | Code prior to Python 3.16 with the same behavior                    |
       +=======================================+=====================================================================+
       | ``sys.abiflags``                      | ``sys.abiflags``                                                    |
       +---------------------------------------+---------------------------------------------------------------------+
