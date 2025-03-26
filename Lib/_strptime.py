@@ -313,8 +313,8 @@ class TimeRE(dict):
                                 'Z'),
             '%': '%'}
         for d in 'dmyHIMS':
-            mapping['O' + d] = r'(?P<%s>[0-9][0-9]|[0-9]| [0-9])' % d
-        mapping['Ow'] = r'(?P<w>[0-9])'
+            mapping['O' + d] = r'(?P<%s>\d\d|\d| \d)' % d
+        mapping['Ow'] = r'(?P<w>\d)'
         mapping['W'] = mapping['U'].replace('U', 'W')
         base.__init__(mapping)
         base.__setitem__('X', self.pattern(self.locale_time.LC_time))
