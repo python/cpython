@@ -2617,50 +2617,50 @@ AS_VAR_IF([ac_cv_gcc_compat], [yes], [
                UNIVERSAL_ARCH_FLAGS="-arch ppc -arch i386"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
-	             ARCH_TRIPLES=`echo {ppc,i386}-apple-darwin`
+               ARCH_TRIPLES=`echo {ppc,i386}-apple-darwin`
                ;;
             64-bit)
                UNIVERSAL_ARCH_FLAGS="-arch ppc64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT="true"
-	             ARCH_TRIPLES=`echo {ppc64,x86_64}-apple-darwin`
+               ARCH_TRIPLES=`echo {ppc64,x86_64}-apple-darwin`
                ;;
             all)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch ppc64 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
-	             ARCH_TRIPLES=`echo {i386,ppc,ppc64,x86_64}-apple-darwin`
+               ARCH_TRIPLES=`echo {i386,ppc,ppc64,x86_64}-apple-darwin`
                ;;
             universal2)
                UNIVERSAL_ARCH_FLAGS="-arch arm64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
                LIPO_INTEL64_FLAGS="-extract x86_64"
                ARCH_RUN_32BIT="true"
-	             ARCH_TRIPLES=`echo {aarch64,x86_64}-apple-darwin`
+               ARCH_TRIPLES=`echo {aarch64,x86_64}-apple-darwin`
                ;;
             intel)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386"
-	             ARCH_TRIPLES=`echo {i386,x86_64}-apple-darwin`
+               ARCH_TRIPLES=`echo {i386,x86_64}-apple-darwin`
                ;;
             intel-32)
                UNIVERSAL_ARCH_FLAGS="-arch i386"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
-	             ARCH_TRIPLES=i386-apple-darwin
+               ARCH_TRIPLES=i386-apple-darwin
                ;;
             intel-64)
                UNIVERSAL_ARCH_FLAGS="-arch x86_64"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT="true"
-	             ARCH_TRIPLES=x86_64-apple-darwin
+               ARCH_TRIPLES=x86_64-apple-darwin
                ;;
             3-way)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
-	             ARCH_TRIPLES=`echo {i386,ppc,x86_64}-apple-darwin`
+               ARCH_TRIPLES=`echo {i386,ppc,x86_64}-apple-darwin`
                ;;
             *)
                AC_MSG_ERROR([proper usage is --with-universal-arch=universal2|32-bit|64-bit|all|intel|3-way])
@@ -2776,7 +2776,7 @@ AS_VAR_IF([jit_flags],
           [],
           [AS_VAR_APPEND([CFLAGS_NODIST], [" $jit_flags"])
            AS_VAR_SET([REGEN_JIT_COMMAND],
-                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-host}"])
+                      ["\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host}"])
            AS_VAR_SET([JIT_STENCILS_H], ["jit_stencils.h"])
            AS_VAR_IF([Py_DEBUG],
                      [true],

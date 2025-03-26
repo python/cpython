@@ -28,9 +28,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if len(args.target) == 1:
-        args.target.debug = args.debug
-        args.target.verbose = args.verbose
-        args.target.build(pathlib.Path.cwd(), comment=comment, force=args.force)
+        target = args.target[0]
+        target.debug = args.debug
+        target.verbose = args.verbose
+        target.build(pathlib.Path.cwd(), comment=comment, force=args.force)
 
     else:
         # Build for multiple targets (e.g. universal2)
