@@ -306,6 +306,17 @@ class PointersTestCase(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "must have storage info"):
             p1.set_type(int)
 
+    def test_pointer_type_attribute_is_none(self):
+        class Cls(Structure):
+            _fields_ = (
+                ('a', c_int),
+                ('b', c_float),
+            )
+
+        self.assertIsNone(Cls.__pointer_type__)
+        p = POINTER(Cls)
+        self.assertIs(Cls.__pointer_type__, p)
+
     def test_pointer_types_factory(self):
         """Shouldn't leak"""
         def factory():
