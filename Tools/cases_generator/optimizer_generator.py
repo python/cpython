@@ -74,12 +74,12 @@ def decref_inputs(
 def emit_default(out: CWriter, uop: Uop, stack: Stack) -> None:
     for var in reversed(uop.stack.inputs):
         stack.pop(var)
-    top_offset = stack.top_offset.copy()
+    offset = stack.base_offset - stack.physical_sp
     for var in uop.stack.outputs:
         if var.is_array() and not var.peek and not var.name == "unused":
-            c_offset = top_offset.to_c()
+            c_offset = offset.to_c()
             out.emit(f"{var.name} = &stack_pointer[{c_offset}];\n")
-        top_offset.push(var)
+        offset = offset.push(var)
     for var in uop.stack.outputs:
         local = Local.undefined(var)
         stack.push(local)
