@@ -3738,12 +3738,6 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         return 0;
     }
 
-    expr_ty generator_exp = asdl_seq_GET(args, 0);
-
-    if (asdl_seq_LEN(generator_exp->v.GeneratorExp.generators) != 1) {
-        return 0;
-    }
-
     location loc = LOC(func);
 
     int optimized = 0;
@@ -3777,6 +3771,7 @@ maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
         else {
             ADDOP_LOAD_CONST(c, loc, initial_res);
         }
+        expr_ty generator_exp = asdl_seq_GET(args, 0);
         VISIT(c, expr, generator_exp);
 
         NEW_JUMP_TARGET_LABEL(c, loop);
