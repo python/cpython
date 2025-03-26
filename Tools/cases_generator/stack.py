@@ -264,6 +264,7 @@ class Stack:
                     defn = f"{var.name} = &stack_pointer[{self.top_offset.to_c()}];\n"
                 else:
                     defn = f"{var.name} = stack_pointer[{self.top_offset.to_c()}];\n"
+                    popped.in_local = True
             else:
                 defn = rename
             return defn, popped
@@ -680,7 +681,7 @@ class Storage:
         if output is not None:
             if output.is_array():
                 assert len(self.inputs) == 1
-                self.stack.pop(self.inputs[0].item)
+                self.stack.drop(self.inputs[0].item, False)
                 self.stack.push(output)
                 self.stack.flush(out)
                 close_variable(self.inputs[0], "")
@@ -699,7 +700,9 @@ class Storage:
         for input in reversed(self.inputs[1:]):
             input.kill()
             self.stack.drop(input.item, self.check_liveness)
-        self.stack.pop(self.inputs[0].item)
+        if output is None:
+            self.inputs[0].kill()
+        self.stack.drop(self.inputs[0].item, False)
         output_in_place = self.outputs and output is self.outputs[0] and lowest.memory_offset is not None
         if output_in_place:
             output.memory_offset = lowest.memory_offset.copy()  # type: ignore[union-attr]

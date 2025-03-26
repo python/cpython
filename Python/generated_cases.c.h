@@ -2966,6 +2966,7 @@
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     _PyStackRef tmp = kwnames;
                     kwnames = PyStackRef_NULL;
+                    stack_pointer[-1] = kwnames;
                     PyStackRef_CLOSE(tmp);
                     for (int _i = oparg; --_i >= 0;) {
                         tmp = args[_i];
@@ -4714,6 +4715,7 @@
                 PyStackRef_CLOSE(tmp);
                 tmp = left;
                 left = PyStackRef_NULL;
+                stack_pointer[-2] = left;
                 PyStackRef_CLOSE(tmp);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 stack_pointer += -2;
@@ -9402,6 +9404,7 @@
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         _PyStackRef tmp = self_st;
                         self_st = PyStackRef_NULL;
+                        stack_pointer[-1] = self_st;
                         PyStackRef_CLOSE(tmp);
                         tmp = class_st;
                         class_st = PyStackRef_NULL;
@@ -9448,6 +9451,7 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyStackRef tmp = self_st;
                 self_st = PyStackRef_NULL;
+                stack_pointer[-1] = self_st;
                 PyStackRef_CLOSE(tmp);
                 tmp = class_st;
                 class_st = PyStackRef_NULL;
@@ -11172,9 +11176,11 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 _PyStackRef tmp = container;
                 container = PyStackRef_NULL;
+                stack_pointer[-1] = container;
                 PyStackRef_CLOSE(tmp);
                 tmp = v;
                 v = PyStackRef_NULL;
+                stack_pointer[-2] = v;
                 PyStackRef_CLOSE(tmp);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 stack_pointer += -2;
