@@ -1,0 +1,3 @@
+Fix the incorrect :func:`isinstance` and :func:`issubclass` results when
+throwing exceptions in ``__init_subclass__`` in subclasses of
+:class:`abc.ABCMeta`. Patch by Weipeng Hong.
