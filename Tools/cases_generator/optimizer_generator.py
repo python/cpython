@@ -84,7 +84,7 @@ def emit_default(out: CWriter, uop: Uop, stack: Stack) -> None:
         local = Local.undefined(var)
         stack.push(local)
         if var.name != "unused" and not var.peek:
-            local.defined = True
+            local.in_local = True
             if var.is_array():
                 if var.size == "1":
                     out.emit(f"{var.name}[0] = sym_new_not_null(ctx);\n")
@@ -123,7 +123,7 @@ def write_uop(
     try:
         out.start_line()
         if override:
-            code_list, storage = Storage.for_uop(stack, prototype)
+            code_list, storage = Storage.for_uop(stack, prototype, check_liveness=False)
             for code in code_list:
                 out.emit(code)
         if debug:
@@ -145,7 +145,7 @@ def write_uop(
             emitter = OptimizerEmitter(out, {})
             # No reference management of inputs needed.
             for var in storage.inputs:  # type: ignore[possibly-undefined]
-                var.defined = False
+                var.in_local = False
             storage = emitter.emit_tokens(override, storage, None)
             out.start_line()
             storage.flush(out)
