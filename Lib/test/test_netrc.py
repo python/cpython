@@ -156,6 +156,28 @@ class NetrcTestCase(unittest.TestCase):
             machine host.domain.com login log password \xa1\xa2 account acct
             """, 'password', '\xa1\xa2')
 
+    def test_token_value_with_backslash(self):
+        self._test_token_x("""\
+            machine host.domain.com login lo\gin password pass account acct
+            """, 'login', 'lo\gin')
+        self._test_token_x("""\
+            machine host.domain.com login log password pass account \account
+            """, 'account', '\account')
+        self._test_token_x("""\
+            machine host.domain.com login log password pass\word account acct
+            """, 'password', 'pass\word')
+
+    def test_token_value_with_backslash_enclosed_in_quotes(self):
+        self._test_token_x("""\
+            machine host.domain.com login "lo\gin" password pass account acct
+            """, 'login', 'lo\gin')
+        self._test_token_x("""\
+            machine host.domain.com login log password pass account "acc\ount"
+            """, 'account', 'acc\ount')
+        self._test_token_x("""\
+            machine host.domain.com login log password "pass\word" account acct
+            """, 'password', 'pass\word')
+
     def test_token_value_leading_hash(self):
         self._test_token_x("""\
             machine host.domain.com login #log password pass account acct
