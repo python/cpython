@@ -119,9 +119,11 @@ Scheduler Objects
    function passed to the constructor) for the next event, then execute it and so
    on until there are no more scheduled events.
 
-   If *blocking* is false executes the scheduled events due to expire soonest
-   (if any) and then return the deadline of the next scheduled call in the
-   scheduler (if any).
+   If *blocking* is false, immediately executes all events in the queue which have
+   a time value less than or equal to the current *timefunc* value (if any) and
+   returns the difference between the current *timefunc* value and the time value
+   of the next scheduled event in the scheduler's event queue.  If the queue is
+   empty, returns None.
 
    Either *action* or *delayfunc* can raise an exception.  In either case, the
    scheduler will maintain a consistent state and propagate the exception.  If an
