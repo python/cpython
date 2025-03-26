@@ -72,12 +72,10 @@ class object "PyObject *" "&PyBaseObject_Type"
 // modifying these, in order to avoid data races.
 #define TYPE_LOCK &PyInterpreterState_Get()->types.mutex
 
-#ifdef Py_DEBUG
 // Used to check for correct use of the TYPE_LOCK mutex.  It is a simple
 // mutex and does not support re-entrancy.  If we already hold the lock and
 // try to acquire it again with the same thread, it is a bug on the code.
 #define TYPE_LOCK_TID &PyInterpreterState_Get()->types.mutex_tid
-#endif
 
 static bool
 types_world_is_stopped(void)
@@ -110,12 +108,14 @@ types_start_world(void)
     assert(!types_world_is_stopped());
 }
 
+#ifdef Py_DEBUG
 static bool
 types_mutex_is_owned(void)
 {
     PyThread_ident_t tid = PyThread_get_thread_ident_ex();
     return _Py_atomic_load_ullong_relaxed(TYPE_LOCK_TID) == tid;
 }
+#endif
 
 static void
 types_mutex_set_owned(PyThread_ident_t tid)

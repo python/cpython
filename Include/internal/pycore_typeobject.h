@@ -32,6 +32,7 @@ extern "C" {
 #define _Py_TYPE_BASE_VERSION_TAG (2<<16)
 #define _Py_MAX_GLOBAL_TYPE_VERSION_TAG (_Py_TYPE_BASE_VERSION_TAG - 1)
 
+
 /* runtime lifecycle */
 
 extern PyStatus _PyTypes_InitTypes(PyInterpreterState *);
