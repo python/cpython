@@ -23,22 +23,6 @@ from typing import (
 _WritablePathT = TypeVar("_WritablePathT", bound="_WritablePath")
 
 
-def _explode_path(path: str, parser: "_PathParser") -> tuple[str, list[str]]:
-    """
-    Split the path into a 2-tuple (anchor, parts), where *anchor* is the
-    uppermost parent of the path (equivalent to path.parents[-1]), and
-    *parts* is a reversed list of parts following the anchor.
-    """
-    split = parser.split
-    parent, name = split(path)
-    names = []
-    while path != parent:
-        names.append(name)
-        path = parent
-        parent, name = split(path)
-    return path, names
-
-
 @runtime_checkable
 class _PathParser(Protocol):
     """Protocol for path parsers, which do low-level path manipulation.
@@ -53,6 +37,22 @@ class _PathParser(Protocol):
     def split(self, path: str) -> tuple[str, str]: ...
     def splitext(self, path: str) -> tuple[str, str]: ...
     def normcase(self, path: str) -> str: ...
+
+
+def _explode_path(path: str, parser: _PathParser) -> tuple[str, list[str]]:
+    """
+    Split the path into a 2-tuple (anchor, parts), where *anchor* is the
+    uppermost parent of the path (equivalent to path.parents[-1]), and
+    *parts* is a reversed list of parts following the anchor.
+    """
+    split = parser.split
+    parent, name = split(path)
+    names = []
+    while path != parent:
+        names.append(name)
+        path = parent
+        parent, name = split(path)
+    return path, names
 
 
 @runtime_checkable
