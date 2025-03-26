@@ -1405,25 +1405,8 @@ dummy_func(
         inst(LOAD_COMMON_CONSTANT, ( -- value)) {
             // Keep in sync with _common_constants in opcode.py
             // If we ever have more than two constants, use a lookup table
-            if (oparg == CONSTANT_ASSERTIONERROR) {
-                value = PyStackRef_FromPyObjectImmortal(PyExc_AssertionError);
-            }
-            else if (oparg == CONSTANT_NOTIMPLEMENTEDERROR) {
-                value = PyStackRef_FromPyObjectImmortal(PyExc_NotImplementedError);
-            }
-            else if (oparg == CONSTANT_BUILTIN_TUPLE) {
-                value = PyStackRef_FromPyObjectImmortal((PyObject*)&PyTuple_Type);
-            }
-            else if (oparg == CONSTANT_BUILTIN_ALL) {
-                value = PyStackRef_FromPyObjectNew(tstate->interp->callable_cache.all);
-            }
-            else if (oparg == CONSTANT_BUILTIN_ANY) {
-                value = PyStackRef_FromPyObjectNew(tstate->interp->callable_cache.any);
-            }
-            else {
-                _PyErr_SetString(tstate, PyExc_ValueError, "unknown common const");
-                ERROR_IF(true, error);
-            }
+            assert(oparg < NUM_COMMON_CONSTANTS);
+            value = PyStackRef_FromPyObjectNew(tstate->interp->common_consts[oparg]);
         }
 
         inst(LOAD_BUILD_CLASS, ( -- bc)) {

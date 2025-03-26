@@ -4,6 +4,7 @@
 extern "C" {
 #endif
 
+#include "pycore_opcode_utils.h" // NUM_COMMON_CONSTANTS
 #include "pycore_structs.h"
 #include "pycore_pymath.h" // _PY_SHORT_FLOAT_REPR
 #include "pycore_llist.h"
@@ -655,8 +656,6 @@ struct _Py_unicode_state {
 struct callable_cache {
     PyObject *isinstance;
     PyObject *len;
-    PyObject *all;
-    PyObject *any;
     PyObject *list_append;
     PyObject *object__getattribute__;
 };
@@ -927,6 +926,7 @@ struct _is {
     struct ast_state ast;
     struct types_state types;
     struct callable_cache callable_cache;
+    PyObject *common_consts[NUM_COMMON_CONSTANTS];
     bool jit;
     struct _PyExecutorObject *executor_list_head;
     size_t trace_run_counter;

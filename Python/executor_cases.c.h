@@ -1903,35 +1903,8 @@
             oparg = CURRENT_OPARG();
             // Keep in sync with _common_constants in opcode.py
             // If we ever have more than two constants, use a lookup table
-            if (oparg == CONSTANT_ASSERTIONERROR) {
-                value = PyStackRef_FromPyObjectImmortal(PyExc_AssertionError);
-            }
-            else {
-                if (oparg == CONSTANT_NOTIMPLEMENTEDERROR) {
-                    value = PyStackRef_FromPyObjectImmortal(PyExc_NotImplementedError);
-                }
-                else {
-                    if (oparg == CONSTANT_BUILTIN_TUPLE) {
-                        value = PyStackRef_FromPyObjectImmortal((PyObject*)&PyTuple_Type);
-                    }
-                    else {
-                        if (oparg == CONSTANT_BUILTIN_ALL) {
-                            value = PyStackRef_FromPyObjectNew(tstate->interp->callable_cache.all);
-                        }
-                        else {
-                            if (oparg == CONSTANT_BUILTIN_ANY) {
-                                value = PyStackRef_FromPyObjectNew(tstate->interp->callable_cache.any);
-                            }
-                            else {
-                                _PyFrame_SetStackPointer(frame, stack_pointer);
-                                _PyErr_SetString(tstate, PyExc_ValueError, "unknown common const");
-                                stack_pointer = _PyFrame_GetStackPointer(frame);
-                                JUMP_TO_ERROR();
-                            }
-                        }
-                    }
-                }
-            }
+            assert(oparg < NUM_COMMON_CONSTANTS);
+            value = PyStackRef_FromPyObjectNew(tstate->interp->common_consts[oparg]);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());

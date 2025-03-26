@@ -798,13 +798,21 @@ pycore_init_builtins(PyThreadState *tstate)
     if (!all) {
         goto error;
     }
-    interp->callable_cache.all = all;
 
     PyObject *any = PyDict_GetItemWithError(builtins_dict, &_Py_ID(any));
     if (!any) {
         goto error;
     }
-    interp->callable_cache.any = any;
+
+    interp->common_consts[CONSTANT_ASSERTIONERROR] = (PyObject*)&PyTuple_Type;
+    interp->common_consts[CONSTANT_NOTIMPLEMENTEDERROR] = (PyObject*)&PyTuple_Type;
+    interp->common_consts[CONSTANT_BUILTIN_TUPLE] = (PyObject*)&PyTuple_Type;
+    interp->common_consts[CONSTANT_BUILTIN_ALL] = all;
+    interp->common_consts[CONSTANT_BUILTIN_ANY] = any;
+
+    for (int i=0; i < NUM_COMMON_CONSTANTS; i++) {
+        assert(interp->common_consts[i] != NULL);
+    }
 
     PyObject *list_append = _PyType_Lookup(&PyList_Type, &_Py_ID(append));
     if (list_append == NULL) {
