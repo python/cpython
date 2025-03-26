@@ -301,7 +301,7 @@ error:
    For the xxHash specification, see
    https://github.com/Cyan4973/xxHash/blob/master/doc/xxhash_spec.md
 
-   The constants for the hard function are defined in pycore_tuple.h.
+   The constants for the hash function are defined in pycore_tuple.h.
 */
 
 static Py_hash_t
