@@ -2047,9 +2047,8 @@ pylong_int_to_decimal_string(PyObject *aa,
         Py_ssize_t size = PyUnicode_GET_LENGTH(s);
         const void *data = PyUnicode_DATA(s);
         int kind = PyUnicode_KIND(s);
-        Py_ssize_t resize = PyBytesWriter_GetSize(bytes_writer) + size;
-        *bytes_str = PyBytesWriter_ResizeAndUpdatePointer(bytes_writer, resize,
-                                                          *bytes_str);
+        *bytes_str = PyBytesWriter_GrowAndUpdatePointer(bytes_writer, size,
+                                                        *bytes_str);
         if (*bytes_str == NULL) {
             goto error;
         }
@@ -2212,9 +2211,8 @@ long_to_decimal_string_internal(PyObject *aa,
         }
     }
     else if (bytes_writer) {
-        Py_ssize_t resize = PyBytesWriter_GetSize(bytes_writer) + strlen;
-        *bytes_str = PyBytesWriter_ResizeAndUpdatePointer(bytes_writer, resize,
-                                                          *bytes_str);
+        *bytes_str = PyBytesWriter_GrowAndUpdatePointer(bytes_writer, strlen,
+                                                        *bytes_str);
         if (*bytes_str == NULL) {
             Py_DECREF(scratch);
             return -1;
@@ -2385,9 +2383,8 @@ long_format_binary(PyObject *aa, int base, int alternate,
             return -1;
     }
     else if (bytes_writer) {
-        Py_ssize_t resize = PyBytesWriter_GetSize(bytes_writer) + sz;
-        *bytes_str = PyBytesWriter_ResizeAndUpdatePointer(bytes_writer, resize,
-                                                          *bytes_str);
+        *bytes_str = PyBytesWriter_GrowAndUpdatePointer(bytes_writer, sz,
+                                                        *bytes_str);
         if (*bytes_str == NULL)
             return -1;
     }

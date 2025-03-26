@@ -221,8 +221,7 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
 #define WRITE_BYTES_LEN(str, len_expr) \
     do { \
         size_t len = (len_expr); \
-        alloc += len; \
-        s = PyBytesWriter_ResizeAndUpdatePointer(writer, alloc, s); \
+        s = PyBytesWriter_GrowAndUpdatePointer(writer, len, s); \
         if (s == NULL) { \
             goto error; \
         } \
@@ -459,8 +458,7 @@ formatfloat(PyObject *v, int flags, int prec, int type,
 
     len = strlen(p);
     if (writer != NULL) {
-        Py_ssize_t resize = PyBytesWriter_GetSize(writer) + len;
-        str = PyBytesWriter_ResizeAndUpdatePointer(writer, resize, str);
+        str = PyBytesWriter_GrowAndUpdatePointer(writer, len, str);
         if (str == NULL) {
             PyMem_Free(p);
             return NULL;
@@ -982,8 +980,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 alloc++;
             /* 2: size preallocated for %s */
             if (alloc > 2) {
-                Py_ssize_t resize = PyBytesWriter_GetSize(writer) + alloc - 2;
-                res = PyBytesWriter_ResizeAndUpdatePointer(writer, resize, res);
+                res = PyBytesWriter_GrowAndUpdatePointer(writer, alloc - 2, res);
                 if (res == NULL) {
                     goto error;
                 }
@@ -3971,6 +3968,28 @@ PyBytesWriter_Resize(PyBytesWriter *writer, Py_ssize_t size)
 
 
 int
+PyBytesWriter_Grow(PyBytesWriter *writer, Py_ssize_t size)
+{
+    if (size < 0) {
+        PyErr_SetString(PyExc_ValueError, "size must be >= 0");
+        return -1;
+    }
+
+    if (size > PY_SSIZE_T_MAX - writer->size) {
+        PyErr_NoMemory();
+        return -1;
+    }
+    size = writer->size + size;
+
+    if (byteswriter_resize(writer, size, 1) < 0) {
+        return -1;
+    }
+    writer->size = size;
+    return 0;
+}
+
+
+int
 PyBytesWriter_WriteBytes(PyBytesWriter *writer,
                          const void *bytes, Py_ssize_t size)
 {
@@ -3979,13 +3998,7 @@ PyBytesWriter_WriteBytes(PyBytesWriter *writer,
     }
 
     Py_ssize_t pos = writer->size;
-    if (size > PY_SSIZE_T_MAX - pos) {
-        PyErr_NoMemory();
-        return -1;
-    }
-    Py_ssize_t total = pos + size;
-
-    if (PyBytesWriter_Resize(writer, total) < 0) {
+    if (PyBytesWriter_Grow(writer, size) < 0) {
         return -1;
     }
     char *buf = byteswriter_data(writer);
@@ -3998,14 +4011,7 @@ int
 PyBytesWriter_Format(PyBytesWriter *writer, const char *format, ...)
 {
     Py_ssize_t pos = writer->size;
-    Py_ssize_t format_len = strlen(format);
-    if (format_len > PY_SSIZE_T_MAX - pos) {
-        PyErr_NoMemory();
-        return -1;
-    }
-    Py_ssize_t alloc = pos + format_len;
-
-    if (PyBytesWriter_Resize(writer, alloc) < 0) {
+    if (PyBytesWriter_Grow(writer, strlen(format)) < 0) {
         return -1;
     }
 
@@ -4025,6 +4031,18 @@ PyBytesWriter_ResizeAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size,
 {
     Py_ssize_t pos = (char*)data - byteswriter_data(writer);
     if (PyBytesWriter_Resize(writer, size) < 0) {
+        return NULL;
+    }
+    return byteswriter_data(writer) + pos;
+}
+
+
+void*
+PyBytesWriter_GrowAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size,
+                                   void *data)
+{
+    Py_ssize_t pos = (char*)data - byteswriter_data(writer);
+    if (PyBytesWriter_Grow(writer, size) < 0) {
         return NULL;
     }
     return byteswriter_data(writer) + pos;

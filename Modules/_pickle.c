@@ -2631,8 +2631,7 @@ raw_unicode_escape(PyObject *obj)
         /* Map 32-bit characters to '\Uxxxxxxxx' */
         if (ch >= 0x10000) {
             /* -1: subtract 1 preallocated byte */
-            alloc += 10-1;
-            p = PyBytesWriter_ResizeAndUpdatePointer(writer, alloc, p);
+            p = PyBytesWriter_GrowAndUpdatePointer(writer, 10-1, p);
             if (p == NULL) {
                 goto error;
             }
@@ -2654,8 +2653,7 @@ raw_unicode_escape(PyObject *obj)
                  ch == 0x1a)
         {
             /* -1: subtract 1 preallocated byte */
-            alloc += 6-1;
-            p = PyBytesWriter_ResizeAndUpdatePointer(writer, alloc, p);
+            p = PyBytesWriter_GrowAndUpdatePointer(writer, 6-1, p);
             if (p == NULL) {
                 goto error;
             }
