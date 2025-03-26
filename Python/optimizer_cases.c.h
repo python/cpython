@@ -222,9 +222,6 @@
             JitOptSymbol *value;
             JitOptSymbol *res;
             value = stack_pointer[-1];
-            if (sym_matches_type(value, &PyUnicode_Type)) {
-                REPLACE_OP(this_instr, _NOP, 0, 0);
-            }
             if (!optimize_to_bool(this_instr, ctx, value, &res)) {
                 res = sym_new_truthiness(ctx, value, true);
                 sym_set_type(value, &PyUnicode_Type);
