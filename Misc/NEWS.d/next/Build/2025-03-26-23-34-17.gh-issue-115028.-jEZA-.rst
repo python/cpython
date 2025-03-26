@@ -1,0 +1,4 @@
+Add a new ``--with-relative-rpath`` configure option that sets $ORIGIN-based
+RPATHs for Python binaries when enabled. This is a first step towards making
+Python installations more relocatable on Linux by allowing shared libraries
+to be found relative to their binary locations. Currently Linux-only.
