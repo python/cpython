@@ -744,6 +744,21 @@ class TestSupport(unittest.TestCase):
             self.assertEqual(support.get_signal_name(exitcode), expected,
                              exitcode)
 
+    def test_linked_to_musl(self):
+        linked = support.linked_to_musl()
+        self.assertIsNotNone(linked)
+        if support.is_wasi or support.is_emscripten:
+            self.assertTrue(linked)
+        # The value is cached, so make sure it returns the same value again.
+        self.assertIs(linked, support.linked_to_musl())
+        # The unlike libc, the musl version is a triple.
+        if linked:
+            self.assertIsInstance(linked, tuple)
+            self.assertEqual(3, len(linked))
+            for v in linked:
+                self.assertIsInstance(v, int)
+
+
     # XXX -follows a list of untested API
     # make_legacy_pyc
     # is_resource_enabled

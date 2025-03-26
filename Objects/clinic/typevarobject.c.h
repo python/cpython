@@ -130,6 +130,19 @@ PyDoc_STRVAR(typevar_typing_subst__doc__,
 #define TYPEVAR_TYPING_SUBST_METHODDEF    \
     {"__typing_subst__", (PyCFunction)typevar_typing_subst, METH_O, typevar_typing_subst__doc__},
 
+static PyObject *
+typevar_typing_subst_impl(typevarobject *self, PyObject *arg);
+
+static PyObject *
+typevar_typing_subst(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+
+    return_value = typevar_typing_subst_impl((typevarobject *)self, arg);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(typevar_typing_prepare_subst__doc__,
 "__typing_prepare_subst__($self, alias, args, /)\n"
 "--\n"
@@ -418,6 +431,19 @@ PyDoc_STRVAR(paramspec_typing_subst__doc__,
 #define PARAMSPEC_TYPING_SUBST_METHODDEF    \
     {"__typing_subst__", (PyCFunction)paramspec_typing_subst, METH_O, paramspec_typing_subst__doc__},
 
+static PyObject *
+paramspec_typing_subst_impl(paramspecobject *self, PyObject *arg);
+
+static PyObject *
+paramspec_typing_subst(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+
+    return_value = paramspec_typing_subst_impl((paramspecobject *)self, arg);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(paramspec_typing_prepare_subst__doc__,
 "__typing_prepare_subst__($self, alias, args, /)\n"
 "--\n"
@@ -556,6 +582,19 @@ PyDoc_STRVAR(typevartuple_typing_subst__doc__,
 
 #define TYPEVARTUPLE_TYPING_SUBST_METHODDEF    \
     {"__typing_subst__", (PyCFunction)typevartuple_typing_subst, METH_O, typevartuple_typing_subst__doc__},
+
+static PyObject *
+typevartuple_typing_subst_impl(typevartupleobject *self, PyObject *arg);
+
+static PyObject *
+typevartuple_typing_subst(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+
+    return_value = typevartuple_typing_subst_impl((typevartupleobject *)self, arg);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(typevartuple_typing_prepare_subst__doc__,
 "__typing_prepare_subst__($self, alias, args, /)\n"
@@ -706,4 +745,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f499d959a942c599 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d0cdf708e2e315a4 input=a9049054013a1b77]*/
