@@ -5729,10 +5729,6 @@ _PyType_LookupRefAndVersion(PyTypeObject *type, PyObject *name, unsigned int *ve
     return PyStackRef_AsPyObjectSteal(out);
 }
 
-/* Internal API to look for a name through the MRO.
-   This stores a stack reference in out and returns the value of
-   type->tp_version or zero if name is missing. It doesn't set an exception!
-*/
 unsigned int
 _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef *out)
 {

@@ -890,7 +890,11 @@ extern bool _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name,
                                               PyObject **attr);
 extern PyObject *_PyType_LookupRefAndVersion(PyTypeObject *, PyObject *,
                                              unsigned int *);
- extern unsigned int
+
+// Internal API to look for a name through the MRO.
+// This stores a stack reference in out and returns the value of
+// type->tp_version or zero if name is missing. It doesn't set an exception!
+extern unsigned int
 _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef *out);
 
 // Cache the provided init method in the specialization cache of type if the
