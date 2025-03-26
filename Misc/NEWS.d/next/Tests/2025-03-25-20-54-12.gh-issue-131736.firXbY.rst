@@ -1,1 +1,0 @@
-Only do seclevel workaround if seclevel greater than 1.
