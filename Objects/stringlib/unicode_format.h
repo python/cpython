@@ -321,14 +321,13 @@ field_name_split(PyObject *str, Py_ssize_t start, Py_ssize_t end, SubString *fir
                  Py_ssize_t *first_idx, FieldNameIterator *rest,
                  AutoNumber *auto_number)
 {
-    Py_UCS4 c;
     Py_ssize_t i = start;
     int field_name_is_empty;
     int using_numeric_index;
 
     /* find the part up until the first '.' or '[' */
     while (i < end) {
-        switch (c = PyUnicode_READ_CHAR(str, i++)) {
+        switch (PyUnicode_READ_CHAR(str, i++)) {
         case '[':
         case '.':
             /* backup so that we this character is available to the
@@ -620,7 +619,7 @@ parse_field(SubString *str, SubString *field_name, SubString *format_spec,
         format_spec->start = str->start;
         count = 1;
         while (str->start < str->end) {
-            switch ((c = PyUnicode_READ_CHAR(str->str, str->start++))) {
+            switch (PyUnicode_READ_CHAR(str->str, str->start++)) {
             case '{':
                 *format_spec_needs_expanding = 1;
                 count++;
