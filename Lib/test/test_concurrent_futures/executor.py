@@ -67,7 +67,7 @@ class ExecutorTest:
             msg="next one should raise a ZeroDivisionError",
         )
 
-        # a failed future must not be captured in its
+        # a failed future should not be captured in its
         # future._exception.__traceback__ to avoid a reference cycle
         self.assertFalse(
             [
