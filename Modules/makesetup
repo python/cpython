@@ -266,7 +266,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		esac
 		for mod in $mods
 		do
-			file="$srcdir/$mod\$(EXT_SUFFIX)"
+			file="\$(PYBUILDDIR)/$mod\$(EXT_SUFFIX)"
 			case $doconfig in
 			no)
 				SHAREDMODS="$SHAREDMODS $file"
@@ -274,7 +274,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 				;;
 			esac
 			rule="$file: $objs"
-			rule="$rule; \$(BLDSHARED) $objs $libs \$(LIBPYTHON) -o $file"
+			rule="$rule; @mkdir -p \$(PYBUILDDIR); \$(BLDSHARED) $objs $libs \$(LIBPYTHON) -o $file"
 			echo "$rule" >>$rulesf
 		done
 	done
