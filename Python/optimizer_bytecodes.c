@@ -717,6 +717,8 @@ dummy_func(void) {
     }
 
     op(_RETURN_VALUE, (retval -- res)) {
+        JitOptSymbol *temp = retval;
+        DEAD(retval);
         SAVE_STACK();
         ctx->frame->stack_pointer = stack_pointer;
         frame_pop(ctx);
@@ -736,7 +738,7 @@ dummy_func(void) {
             ctx->done = true;
         }
         RELOAD_STACK();
-        res = retval;
+        res = temp;
     }
 
     op(_RETURN_GENERATOR, ( -- res)) {
