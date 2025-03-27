@@ -15,7 +15,7 @@ PyDoc_STRVAR(create_pointer_type__doc__,
 "so calling this function repeatedly is cheap.");
 
 #define CREATE_POINTER_TYPE_METHODDEF    \
-    {"POINTER", (PyCFunction)create_pointer_type, METH_O, create_pointer_type__doc__},
+    {"POINTER", create_pointer_type, METH_O, create_pointer_type__doc__},
 
 PyDoc_STRVAR(create_pointer_inst__doc__,
 "pointer($module, obj, /)\n"
@@ -28,5 +28,5 @@ PyDoc_STRVAR(create_pointer_inst__doc__,
 "should use byref(obj) which is much faster.");
 
 #define CREATE_POINTER_INST_METHODDEF    \
-    {"pointer", (PyCFunction)create_pointer_inst, METH_O, create_pointer_inst__doc__},
-/*[clinic end generated code: output=51b311ea369e5adf input=a9049054013a1b77]*/
+    {"pointer", create_pointer_inst, METH_O, create_pointer_inst__doc__},
+/*[clinic end generated code: output=a3affa6de5689703 input=a9049054013a1b77]*/

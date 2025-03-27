@@ -148,7 +148,7 @@ PyDoc_STRVAR(_io__WindowsConsoleIO_fileno__doc__,
 "Return the underlying file descriptor (an integer).");
 
 #define _IO__WINDOWSCONSOLEIO_FILENO_METHODDEF    \
-    {"fileno", (PyCFunction)_io__WindowsConsoleIO_fileno, METH_NOARGS, _io__WindowsConsoleIO_fileno__doc__},
+    {"fileno", _io__WindowsConsoleIO_fileno, METH_NOARGS, _io__WindowsConsoleIO_fileno__doc__},
 
 static PyObject *
 _io__WindowsConsoleIO_fileno_impl(winconsoleio *self);
@@ -170,7 +170,7 @@ PyDoc_STRVAR(_io__WindowsConsoleIO_readable__doc__,
 "True if console is an input buffer.");
 
 #define _IO__WINDOWSCONSOLEIO_READABLE_METHODDEF    \
-    {"readable", (PyCFunction)_io__WindowsConsoleIO_readable, METH_NOARGS, _io__WindowsConsoleIO_readable__doc__},
+    {"readable", _io__WindowsConsoleIO_readable, METH_NOARGS, _io__WindowsConsoleIO_readable__doc__},
 
 static PyObject *
 _io__WindowsConsoleIO_readable_impl(winconsoleio *self);
@@ -192,7 +192,7 @@ PyDoc_STRVAR(_io__WindowsConsoleIO_writable__doc__,
 "True if console is an output buffer.");
 
 #define _IO__WINDOWSCONSOLEIO_WRITABLE_METHODDEF    \
-    {"writable", (PyCFunction)_io__WindowsConsoleIO_writable, METH_NOARGS, _io__WindowsConsoleIO_writable__doc__},
+    {"writable", _io__WindowsConsoleIO_writable, METH_NOARGS, _io__WindowsConsoleIO_writable__doc__},
 
 static PyObject *
 _io__WindowsConsoleIO_writable_impl(winconsoleio *self);
@@ -273,7 +273,7 @@ PyDoc_STRVAR(_io__WindowsConsoleIO_readall__doc__,
 "Return an empty bytes object at EOF.");
 
 #define _IO__WINDOWSCONSOLEIO_READALL_METHODDEF    \
-    {"readall", (PyCFunction)_io__WindowsConsoleIO_readall, METH_NOARGS, _io__WindowsConsoleIO_readall__doc__},
+    {"readall", _io__WindowsConsoleIO_readall, METH_NOARGS, _io__WindowsConsoleIO_readall__doc__},
 
 static PyObject *
 _io__WindowsConsoleIO_readall_impl(winconsoleio *self);
@@ -413,7 +413,7 @@ PyDoc_STRVAR(_io__WindowsConsoleIO_isatty__doc__,
 "Always True.");
 
 #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF    \
-    {"isatty", (PyCFunction)_io__WindowsConsoleIO_isatty, METH_NOARGS, _io__WindowsConsoleIO_isatty__doc__},
+    {"isatty", _io__WindowsConsoleIO_isatty, METH_NOARGS, _io__WindowsConsoleIO_isatty__doc__},
 
 static PyObject *
 _io__WindowsConsoleIO_isatty_impl(winconsoleio *self);
@@ -461,4 +461,4 @@ _io__WindowsConsoleIO_isatty(PyObject *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
     #define _IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF
 #endif /* !defined(_IO__WINDOWSCONSOLEIO_ISATTY_METHODDEF) */
-/*[clinic end generated code: output=edc47f5c49589045 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=10c53819f68d4b50 input=a9049054013a1b77]*/

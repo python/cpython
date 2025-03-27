@@ -15,7 +15,7 @@ PyDoc_STRVAR(cmath_acos__doc__,
 "Return the arc cosine of z.");
 
 #define CMATH_ACOS_METHODDEF    \
-    {"acos", (PyCFunction)cmath_acos, METH_O, cmath_acos__doc__},
+    {"acos", cmath_acos, METH_O, cmath_acos__doc__},
 
 static Py_complex
 cmath_acos_impl(PyObject *module, Py_complex z);
@@ -57,7 +57,7 @@ PyDoc_STRVAR(cmath_acosh__doc__,
 "Return the inverse hyperbolic cosine of z.");
 
 #define CMATH_ACOSH_METHODDEF    \
-    {"acosh", (PyCFunction)cmath_acosh, METH_O, cmath_acosh__doc__},
+    {"acosh", cmath_acosh, METH_O, cmath_acosh__doc__},
 
 static Py_complex
 cmath_acosh_impl(PyObject *module, Py_complex z);
@@ -99,7 +99,7 @@ PyDoc_STRVAR(cmath_asin__doc__,
 "Return the arc sine of z.");
 
 #define CMATH_ASIN_METHODDEF    \
-    {"asin", (PyCFunction)cmath_asin, METH_O, cmath_asin__doc__},
+    {"asin", cmath_asin, METH_O, cmath_asin__doc__},
 
 static Py_complex
 cmath_asin_impl(PyObject *module, Py_complex z);
@@ -141,7 +141,7 @@ PyDoc_STRVAR(cmath_asinh__doc__,
 "Return the inverse hyperbolic sine of z.");
 
 #define CMATH_ASINH_METHODDEF    \
-    {"asinh", (PyCFunction)cmath_asinh, METH_O, cmath_asinh__doc__},
+    {"asinh", cmath_asinh, METH_O, cmath_asinh__doc__},
 
 static Py_complex
 cmath_asinh_impl(PyObject *module, Py_complex z);
@@ -183,7 +183,7 @@ PyDoc_STRVAR(cmath_atan__doc__,
 "Return the arc tangent of z.");
 
 #define CMATH_ATAN_METHODDEF    \
-    {"atan", (PyCFunction)cmath_atan, METH_O, cmath_atan__doc__},
+    {"atan", cmath_atan, METH_O, cmath_atan__doc__},
 
 static Py_complex
 cmath_atan_impl(PyObject *module, Py_complex z);
@@ -225,7 +225,7 @@ PyDoc_STRVAR(cmath_atanh__doc__,
 "Return the inverse hyperbolic tangent of z.");
 
 #define CMATH_ATANH_METHODDEF    \
-    {"atanh", (PyCFunction)cmath_atanh, METH_O, cmath_atanh__doc__},
+    {"atanh", cmath_atanh, METH_O, cmath_atanh__doc__},
 
 static Py_complex
 cmath_atanh_impl(PyObject *module, Py_complex z);
@@ -267,7 +267,7 @@ PyDoc_STRVAR(cmath_cos__doc__,
 "Return the cosine of z.");
 
 #define CMATH_COS_METHODDEF    \
-    {"cos", (PyCFunction)cmath_cos, METH_O, cmath_cos__doc__},
+    {"cos", cmath_cos, METH_O, cmath_cos__doc__},
 
 static Py_complex
 cmath_cos_impl(PyObject *module, Py_complex z);
@@ -309,7 +309,7 @@ PyDoc_STRVAR(cmath_cosh__doc__,
 "Return the hyperbolic cosine of z.");
 
 #define CMATH_COSH_METHODDEF    \
-    {"cosh", (PyCFunction)cmath_cosh, METH_O, cmath_cosh__doc__},
+    {"cosh", cmath_cosh, METH_O, cmath_cosh__doc__},
 
 static Py_complex
 cmath_cosh_impl(PyObject *module, Py_complex z);
@@ -351,7 +351,7 @@ PyDoc_STRVAR(cmath_exp__doc__,
 "Return the exponential value e**z.");
 
 #define CMATH_EXP_METHODDEF    \
-    {"exp", (PyCFunction)cmath_exp, METH_O, cmath_exp__doc__},
+    {"exp", cmath_exp, METH_O, cmath_exp__doc__},
 
 static Py_complex
 cmath_exp_impl(PyObject *module, Py_complex z);
@@ -393,7 +393,7 @@ PyDoc_STRVAR(cmath_log10__doc__,
 "Return the base-10 logarithm of z.");
 
 #define CMATH_LOG10_METHODDEF    \
-    {"log10", (PyCFunction)cmath_log10, METH_O, cmath_log10__doc__},
+    {"log10", cmath_log10, METH_O, cmath_log10__doc__},
 
 static Py_complex
 cmath_log10_impl(PyObject *module, Py_complex z);
@@ -435,7 +435,7 @@ PyDoc_STRVAR(cmath_sin__doc__,
 "Return the sine of z.");
 
 #define CMATH_SIN_METHODDEF    \
-    {"sin", (PyCFunction)cmath_sin, METH_O, cmath_sin__doc__},
+    {"sin", cmath_sin, METH_O, cmath_sin__doc__},
 
 static Py_complex
 cmath_sin_impl(PyObject *module, Py_complex z);
@@ -477,7 +477,7 @@ PyDoc_STRVAR(cmath_sinh__doc__,
 "Return the hyperbolic sine of z.");
 
 #define CMATH_SINH_METHODDEF    \
-    {"sinh", (PyCFunction)cmath_sinh, METH_O, cmath_sinh__doc__},
+    {"sinh", cmath_sinh, METH_O, cmath_sinh__doc__},
 
 static Py_complex
 cmath_sinh_impl(PyObject *module, Py_complex z);
@@ -519,7 +519,7 @@ PyDoc_STRVAR(cmath_sqrt__doc__,
 "Return the square root of z.");
 
 #define CMATH_SQRT_METHODDEF    \
-    {"sqrt", (PyCFunction)cmath_sqrt, METH_O, cmath_sqrt__doc__},
+    {"sqrt", cmath_sqrt, METH_O, cmath_sqrt__doc__},
 
 static Py_complex
 cmath_sqrt_impl(PyObject *module, Py_complex z);
@@ -561,7 +561,7 @@ PyDoc_STRVAR(cmath_tan__doc__,
 "Return the tangent of z.");
 
 #define CMATH_TAN_METHODDEF    \
-    {"tan", (PyCFunction)cmath_tan, METH_O, cmath_tan__doc__},
+    {"tan", cmath_tan, METH_O, cmath_tan__doc__},
 
 static Py_complex
 cmath_tan_impl(PyObject *module, Py_complex z);
@@ -603,7 +603,7 @@ PyDoc_STRVAR(cmath_tanh__doc__,
 "Return the hyperbolic tangent of z.");
 
 #define CMATH_TANH_METHODDEF    \
-    {"tanh", (PyCFunction)cmath_tanh, METH_O, cmath_tanh__doc__},
+    {"tanh", cmath_tanh, METH_O, cmath_tanh__doc__},
 
 static Py_complex
 cmath_tanh_impl(PyObject *module, Py_complex z);
@@ -684,7 +684,7 @@ PyDoc_STRVAR(cmath_phase__doc__,
 "Return argument, also known as the phase angle, of a complex.");
 
 #define CMATH_PHASE_METHODDEF    \
-    {"phase", (PyCFunction)cmath_phase, METH_O, cmath_phase__doc__},
+    {"phase", cmath_phase, METH_O, cmath_phase__doc__},
 
 static PyObject *
 cmath_phase_impl(PyObject *module, Py_complex z);
@@ -714,7 +714,7 @@ PyDoc_STRVAR(cmath_polar__doc__,
 "r is the distance from 0 and phi the phase angle.");
 
 #define CMATH_POLAR_METHODDEF    \
-    {"polar", (PyCFunction)cmath_polar, METH_O, cmath_polar__doc__},
+    {"polar", cmath_polar, METH_O, cmath_polar__doc__},
 
 static PyObject *
 cmath_polar_impl(PyObject *module, Py_complex z);
@@ -790,7 +790,7 @@ PyDoc_STRVAR(cmath_isfinite__doc__,
 "Return True if both the real and imaginary parts of z are finite, else False.");
 
 #define CMATH_ISFINITE_METHODDEF    \
-    {"isfinite", (PyCFunction)cmath_isfinite, METH_O, cmath_isfinite__doc__},
+    {"isfinite", cmath_isfinite, METH_O, cmath_isfinite__doc__},
 
 static PyObject *
 cmath_isfinite_impl(PyObject *module, Py_complex z);
@@ -818,7 +818,7 @@ PyDoc_STRVAR(cmath_isnan__doc__,
 "Checks if the real or imaginary part of z not a number (NaN).");
 
 #define CMATH_ISNAN_METHODDEF    \
-    {"isnan", (PyCFunction)cmath_isnan, METH_O, cmath_isnan__doc__},
+    {"isnan", cmath_isnan, METH_O, cmath_isnan__doc__},
 
 static PyObject *
 cmath_isnan_impl(PyObject *module, Py_complex z);
@@ -846,7 +846,7 @@ PyDoc_STRVAR(cmath_isinf__doc__,
 "Checks if the real or imaginary part of z is infinite.");
 
 #define CMATH_ISINF_METHODDEF    \
-    {"isinf", (PyCFunction)cmath_isinf, METH_O, cmath_isinf__doc__},
+    {"isinf", cmath_isinf, METH_O, cmath_isinf__doc__},
 
 static PyObject *
 cmath_isinf_impl(PyObject *module, Py_complex z);
@@ -983,4 +983,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5fda69f15dc9dfc9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=90e4f6fb7954daa5 input=a9049054013a1b77]*/

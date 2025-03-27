@@ -15,7 +15,7 @@ PyDoc_STRVAR(warnings_acquire_lock__doc__,
 "\n");
 
 #define WARNINGS_ACQUIRE_LOCK_METHODDEF    \
-    {"_acquire_lock", (PyCFunction)warnings_acquire_lock, METH_NOARGS, warnings_acquire_lock__doc__},
+    {"_acquire_lock", warnings_acquire_lock, METH_NOARGS, warnings_acquire_lock__doc__},
 
 static PyObject *
 warnings_acquire_lock_impl(PyObject *module);
@@ -32,7 +32,7 @@ PyDoc_STRVAR(warnings_release_lock__doc__,
 "\n");
 
 #define WARNINGS_RELEASE_LOCK_METHODDEF    \
-    {"_release_lock", (PyCFunction)warnings_release_lock, METH_NOARGS, warnings_release_lock__doc__},
+    {"_release_lock", warnings_release_lock, METH_NOARGS, warnings_release_lock__doc__},
 
 static PyObject *
 warnings_release_lock_impl(PyObject *module);
@@ -270,7 +270,7 @@ PyDoc_STRVAR(warnings_filters_mutated_lock_held__doc__,
 "\n");
 
 #define WARNINGS_FILTERS_MUTATED_LOCK_HELD_METHODDEF    \
-    {"_filters_mutated_lock_held", (PyCFunction)warnings_filters_mutated_lock_held, METH_NOARGS, warnings_filters_mutated_lock_held__doc__},
+    {"_filters_mutated_lock_held", warnings_filters_mutated_lock_held, METH_NOARGS, warnings_filters_mutated_lock_held__doc__},
 
 static PyObject *
 warnings_filters_mutated_lock_held_impl(PyObject *module);
@@ -280,4 +280,4 @@ warnings_filters_mutated_lock_held(PyObject *module, PyObject *Py_UNUSED(ignored
 {
     return warnings_filters_mutated_lock_held_impl(module);
 }
-/*[clinic end generated code: output=d9d32a8b59a30683 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=71dbb864ea857762 input=a9049054013a1b77]*/

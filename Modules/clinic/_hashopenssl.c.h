@@ -16,7 +16,7 @@ PyDoc_STRVAR(EVP_copy__doc__,
 "Return a copy of the hash object.");
 
 #define EVP_COPY_METHODDEF    \
-    {"copy", (PyCFunction)EVP_copy, METH_NOARGS, EVP_copy__doc__},
+    {"copy", EVP_copy, METH_NOARGS, EVP_copy__doc__},
 
 static PyObject *
 EVP_copy_impl(EVPobject *self);
@@ -34,7 +34,7 @@ PyDoc_STRVAR(EVP_digest__doc__,
 "Return the digest value as a bytes object.");
 
 #define EVP_DIGEST_METHODDEF    \
-    {"digest", (PyCFunction)EVP_digest, METH_NOARGS, EVP_digest__doc__},
+    {"digest", EVP_digest, METH_NOARGS, EVP_digest__doc__},
 
 static PyObject *
 EVP_digest_impl(EVPobject *self);
@@ -52,7 +52,7 @@ PyDoc_STRVAR(EVP_hexdigest__doc__,
 "Return the digest value as a string of hexadecimal digits.");
 
 #define EVP_HEXDIGEST_METHODDEF    \
-    {"hexdigest", (PyCFunction)EVP_hexdigest, METH_NOARGS, EVP_hexdigest__doc__},
+    {"hexdigest", EVP_hexdigest, METH_NOARGS, EVP_hexdigest__doc__},
 
 static PyObject *
 EVP_hexdigest_impl(EVPobject *self);
@@ -70,7 +70,7 @@ PyDoc_STRVAR(EVP_update__doc__,
 "Update this hash object\'s state with the provided string.");
 
 #define EVP_UPDATE_METHODDEF    \
-    {"update", (PyCFunction)EVP_update, METH_O, EVP_update__doc__},
+    {"update", EVP_update, METH_O, EVP_update__doc__},
 
 static PyObject *
 EVP_update_impl(EVPobject *self, PyObject *obj);
@@ -1641,7 +1641,7 @@ PyDoc_STRVAR(_hashlib_HMAC_copy__doc__,
 "Return a copy (\"clone\") of the HMAC object.");
 
 #define _HASHLIB_HMAC_COPY_METHODDEF    \
-    {"copy", (PyCFunction)_hashlib_HMAC_copy, METH_NOARGS, _hashlib_HMAC_copy__doc__},
+    {"copy", _hashlib_HMAC_copy, METH_NOARGS, _hashlib_HMAC_copy__doc__},
 
 static PyObject *
 _hashlib_HMAC_copy_impl(HMACobject *self);
@@ -1715,7 +1715,7 @@ PyDoc_STRVAR(_hashlib_HMAC_digest__doc__,
 "Return the digest of the bytes passed to the update() method so far.");
 
 #define _HASHLIB_HMAC_DIGEST_METHODDEF    \
-    {"digest", (PyCFunction)_hashlib_HMAC_digest, METH_NOARGS, _hashlib_HMAC_digest__doc__},
+    {"digest", _hashlib_HMAC_digest, METH_NOARGS, _hashlib_HMAC_digest__doc__},
 
 static PyObject *
 _hashlib_HMAC_digest_impl(HMACobject *self);
@@ -1736,7 +1736,7 @@ PyDoc_STRVAR(_hashlib_HMAC_hexdigest__doc__,
 "environments.");
 
 #define _HASHLIB_HMAC_HEXDIGEST_METHODDEF    \
-    {"hexdigest", (PyCFunction)_hashlib_HMAC_hexdigest, METH_NOARGS, _hashlib_HMAC_hexdigest__doc__},
+    {"hexdigest", _hashlib_HMAC_hexdigest, METH_NOARGS, _hashlib_HMAC_hexdigest__doc__},
 
 static PyObject *
 _hashlib_HMAC_hexdigest_impl(HMACobject *self);
@@ -1761,7 +1761,7 @@ PyDoc_STRVAR(_hashlib_get_fips_mode__doc__,
 "values other than 1 may have additional significance.");
 
 #define _HASHLIB_GET_FIPS_MODE_METHODDEF    \
-    {"get_fips_mode", (PyCFunction)_hashlib_get_fips_mode, METH_NOARGS, _hashlib_get_fips_mode__doc__},
+    {"get_fips_mode", _hashlib_get_fips_mode, METH_NOARGS, _hashlib_get_fips_mode__doc__},
 
 static int
 _hashlib_get_fips_mode_impl(PyObject *module);
@@ -1857,4 +1857,4 @@ exit:
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=e9624853a73bb65a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=26fd290225cb8d0a input=a9049054013a1b77]*/

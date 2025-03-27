@@ -53,7 +53,7 @@ PyDoc_STRVAR(signal_alarm__doc__,
 "Arrange for SIGALRM to arrive after the given number of seconds.");
 
 #define SIGNAL_ALARM_METHODDEF    \
-    {"alarm", (PyCFunction)signal_alarm, METH_O, signal_alarm__doc__},
+    {"alarm", signal_alarm, METH_O, signal_alarm__doc__},
 
 static long
 signal_alarm_impl(PyObject *module, int seconds);
@@ -90,7 +90,7 @@ PyDoc_STRVAR(signal_pause__doc__,
 "Wait until a signal arrives.");
 
 #define SIGNAL_PAUSE_METHODDEF    \
-    {"pause", (PyCFunction)signal_pause, METH_NOARGS, signal_pause__doc__},
+    {"pause", signal_pause, METH_NOARGS, signal_pause__doc__},
 
 static PyObject *
 signal_pause_impl(PyObject *module);
@@ -110,7 +110,7 @@ PyDoc_STRVAR(signal_raise_signal__doc__,
 "Send a signal to the executing process.");
 
 #define SIGNAL_RAISE_SIGNAL_METHODDEF    \
-    {"raise_signal", (PyCFunction)signal_raise_signal, METH_O, signal_raise_signal__doc__},
+    {"raise_signal", signal_raise_signal, METH_O, signal_raise_signal__doc__},
 
 static PyObject *
 signal_raise_signal_impl(PyObject *module, int signalnum);
@@ -184,7 +184,7 @@ PyDoc_STRVAR(signal_getsignal__doc__,
 "  anything else -- the callable Python object used as a handler");
 
 #define SIGNAL_GETSIGNAL_METHODDEF    \
-    {"getsignal", (PyCFunction)signal_getsignal, METH_O, signal_getsignal__doc__},
+    {"getsignal", signal_getsignal, METH_O, signal_getsignal__doc__},
 
 static PyObject *
 signal_getsignal_impl(PyObject *module, int signalnum);
@@ -216,7 +216,7 @@ PyDoc_STRVAR(signal_strsignal__doc__,
 "description. Raises :exc:`ValueError` if *signalnum* is invalid.");
 
 #define SIGNAL_STRSIGNAL_METHODDEF    \
-    {"strsignal", (PyCFunction)signal_strsignal, METH_O, signal_strsignal__doc__},
+    {"strsignal", signal_strsignal, METH_O, signal_strsignal__doc__},
 
 static PyObject *
 signal_strsignal_impl(PyObject *module, int signalnum);
@@ -410,7 +410,7 @@ PyDoc_STRVAR(signal_getitimer__doc__,
 "Returns current value of given itimer.");
 
 #define SIGNAL_GETITIMER_METHODDEF    \
-    {"getitimer", (PyCFunction)signal_getitimer, METH_O, signal_getitimer__doc__},
+    {"getitimer", signal_getitimer, METH_O, signal_getitimer__doc__},
 
 static PyObject *
 signal_getitimer_impl(PyObject *module, int which);
@@ -484,7 +484,7 @@ PyDoc_STRVAR(signal_sigpending__doc__,
 "the calling thread.");
 
 #define SIGNAL_SIGPENDING_METHODDEF    \
-    {"sigpending", (PyCFunction)signal_sigpending, METH_NOARGS, signal_sigpending__doc__},
+    {"sigpending", signal_sigpending, METH_NOARGS, signal_sigpending__doc__},
 
 static PyObject *
 signal_sigpending_impl(PyObject *module);
@@ -510,7 +510,7 @@ PyDoc_STRVAR(signal_sigwait__doc__,
 "and returns the signal number.");
 
 #define SIGNAL_SIGWAIT_METHODDEF    \
-    {"sigwait", (PyCFunction)signal_sigwait, METH_O, signal_sigwait__doc__},
+    {"sigwait", signal_sigwait, METH_O, signal_sigwait__doc__},
 
 static PyObject *
 signal_sigwait_impl(PyObject *module, sigset_t sigset);
@@ -544,7 +544,7 @@ PyDoc_STRVAR(signal_valid_signals__doc__,
 "functions like `pthread_sigmask`.");
 
 #define SIGNAL_VALID_SIGNALS_METHODDEF    \
-    {"valid_signals", (PyCFunction)signal_valid_signals, METH_NOARGS, signal_valid_signals__doc__},
+    {"valid_signals", signal_valid_signals, METH_NOARGS, signal_valid_signals__doc__},
 
 static PyObject *
 signal_valid_signals_impl(PyObject *module);
@@ -568,7 +568,7 @@ PyDoc_STRVAR(signal_sigwaitinfo__doc__,
 "Returns a struct_siginfo containing information about the signal.");
 
 #define SIGNAL_SIGWAITINFO_METHODDEF    \
-    {"sigwaitinfo", (PyCFunction)signal_sigwaitinfo, METH_O, signal_sigwaitinfo__doc__},
+    {"sigwaitinfo", signal_sigwaitinfo, METH_O, signal_sigwaitinfo__doc__},
 
 static PyObject *
 signal_sigwaitinfo_impl(PyObject *module, sigset_t sigset);
@@ -777,4 +777,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=356e1acc44a4f377 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=86c4efb878e7f49d input=a9049054013a1b77]*/

@@ -366,7 +366,7 @@ PyDoc_STRVAR(pysqlite_connection_close__doc__,
 "Any pending transaction is not committed implicitly.");
 
 #define PYSQLITE_CONNECTION_CLOSE_METHODDEF    \
-    {"close", (PyCFunction)pysqlite_connection_close, METH_NOARGS, pysqlite_connection_close__doc__},
+    {"close", pysqlite_connection_close, METH_NOARGS, pysqlite_connection_close__doc__},
 
 static PyObject *
 pysqlite_connection_close_impl(pysqlite_Connection *self);
@@ -386,7 +386,7 @@ PyDoc_STRVAR(pysqlite_connection_commit__doc__,
 "If there is no open transaction, this method is a no-op.");
 
 #define PYSQLITE_CONNECTION_COMMIT_METHODDEF    \
-    {"commit", (PyCFunction)pysqlite_connection_commit, METH_NOARGS, pysqlite_connection_commit__doc__},
+    {"commit", pysqlite_connection_commit, METH_NOARGS, pysqlite_connection_commit__doc__},
 
 static PyObject *
 pysqlite_connection_commit_impl(pysqlite_Connection *self);
@@ -406,7 +406,7 @@ PyDoc_STRVAR(pysqlite_connection_rollback__doc__,
 "If there is no open transaction, this method is a no-op.");
 
 #define PYSQLITE_CONNECTION_ROLLBACK_METHODDEF    \
-    {"rollback", (PyCFunction)pysqlite_connection_rollback, METH_NOARGS, pysqlite_connection_rollback__doc__},
+    {"rollback", pysqlite_connection_rollback, METH_NOARGS, pysqlite_connection_rollback__doc__},
 
 static PyObject *
 pysqlite_connection_rollback_impl(pysqlite_Connection *self);
@@ -990,7 +990,7 @@ PyDoc_STRVAR(pysqlite_connection_enable_load_extension__doc__,
 "Enable dynamic loading of SQLite extension modules.");
 
 #define PYSQLITE_CONNECTION_ENABLE_LOAD_EXTENSION_METHODDEF    \
-    {"enable_load_extension", (PyCFunction)pysqlite_connection_enable_load_extension, METH_O, pysqlite_connection_enable_load_extension__doc__},
+    {"enable_load_extension", pysqlite_connection_enable_load_extension, METH_O, pysqlite_connection_enable_load_extension__doc__},
 
 static PyObject *
 pysqlite_connection_enable_load_extension_impl(pysqlite_Connection *self,
@@ -1193,7 +1193,7 @@ PyDoc_STRVAR(pysqlite_connection_executescript__doc__,
 "Executes multiple SQL statements at once.");
 
 #define PYSQLITE_CONNECTION_EXECUTESCRIPT_METHODDEF    \
-    {"executescript", (PyCFunction)pysqlite_connection_executescript, METH_O, pysqlite_connection_executescript__doc__},
+    {"executescript", pysqlite_connection_executescript, METH_O, pysqlite_connection_executescript__doc__},
 
 static PyObject *
 pysqlite_connection_executescript_impl(pysqlite_Connection *self,
@@ -1216,7 +1216,7 @@ PyDoc_STRVAR(pysqlite_connection_interrupt__doc__,
 "Abort any pending database operation.");
 
 #define PYSQLITE_CONNECTION_INTERRUPT_METHODDEF    \
-    {"interrupt", (PyCFunction)pysqlite_connection_interrupt, METH_NOARGS, pysqlite_connection_interrupt__doc__},
+    {"interrupt", pysqlite_connection_interrupt, METH_NOARGS, pysqlite_connection_interrupt__doc__},
 
 static PyObject *
 pysqlite_connection_interrupt_impl(pysqlite_Connection *self);
@@ -1674,7 +1674,7 @@ PyDoc_STRVAR(pysqlite_connection_enter__doc__,
 "Returns itself as a convenience to the caller.");
 
 #define PYSQLITE_CONNECTION_ENTER_METHODDEF    \
-    {"__enter__", (PyCFunction)pysqlite_connection_enter, METH_NOARGS, pysqlite_connection_enter__doc__},
+    {"__enter__", pysqlite_connection_enter, METH_NOARGS, pysqlite_connection_enter__doc__},
 
 static PyObject *
 pysqlite_connection_enter_impl(pysqlite_Connection *self);
@@ -1776,7 +1776,7 @@ PyDoc_STRVAR(getlimit__doc__,
 "    The limit category to be queried.");
 
 #define GETLIMIT_METHODDEF    \
-    {"getlimit", (PyCFunction)getlimit, METH_O, getlimit__doc__},
+    {"getlimit", getlimit, METH_O, getlimit__doc__},
 
 static PyObject *
 getlimit_impl(pysqlite_Connection *self, int category);
@@ -1850,7 +1850,7 @@ PyDoc_STRVAR(getconfig__doc__,
 "    The configuration verb; one of the sqlite3.SQLITE_DBCONFIG codes.");
 
 #define GETCONFIG_METHODDEF    \
-    {"getconfig", (PyCFunction)getconfig, METH_O, getconfig__doc__},
+    {"getconfig", getconfig, METH_O, getconfig__doc__},
 
 static int
 getconfig_impl(pysqlite_Connection *self, int op);
@@ -1895,4 +1895,4 @@ exit:
 #ifndef DESERIALIZE_METHODDEF
     #define DESERIALIZE_METHODDEF
 #endif /* !defined(DESERIALIZE_METHODDEF) */
-/*[clinic end generated code: output=fc4857f09ad563b1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bd39929e8cd492bd input=a9049054013a1b77]*/

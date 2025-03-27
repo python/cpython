@@ -201,7 +201,7 @@ PyDoc_STRVAR(_overlapped_UnregisterWait__doc__,
 "Unregister wait handle.");
 
 #define _OVERLAPPED_UNREGISTERWAIT_METHODDEF    \
-    {"UnregisterWait", (PyCFunction)_overlapped_UnregisterWait, METH_O, _overlapped_UnregisterWait__doc__},
+    {"UnregisterWait", _overlapped_UnregisterWait, METH_O, _overlapped_UnregisterWait__doc__},
 
 static PyObject *
 _overlapped_UnregisterWait_impl(PyObject *module, HANDLE WaitHandle);
@@ -326,7 +326,7 @@ PyDoc_STRVAR(_overlapped_SetEvent__doc__,
 "Set event.");
 
 #define _OVERLAPPED_SETEVENT_METHODDEF    \
-    {"SetEvent", (PyCFunction)_overlapped_SetEvent, METH_O, _overlapped_SetEvent__doc__},
+    {"SetEvent", _overlapped_SetEvent, METH_O, _overlapped_SetEvent__doc__},
 
 static PyObject *
 _overlapped_SetEvent_impl(PyObject *module, HANDLE Handle);
@@ -354,7 +354,7 @@ PyDoc_STRVAR(_overlapped_ResetEvent__doc__,
 "Reset event.");
 
 #define _OVERLAPPED_RESETEVENT_METHODDEF    \
-    {"ResetEvent", (PyCFunction)_overlapped_ResetEvent, METH_O, _overlapped_ResetEvent__doc__},
+    {"ResetEvent", _overlapped_ResetEvent, METH_O, _overlapped_ResetEvent__doc__},
 
 static PyObject *
 _overlapped_ResetEvent_impl(PyObject *module, HANDLE Handle);
@@ -420,7 +420,7 @@ PyDoc_STRVAR(_overlapped_FormatMessage__doc__,
 "Return error message for an error code.");
 
 #define _OVERLAPPED_FORMATMESSAGE_METHODDEF    \
-    {"FormatMessage", (PyCFunction)_overlapped_FormatMessage, METH_O, _overlapped_FormatMessage__doc__},
+    {"FormatMessage", _overlapped_FormatMessage, METH_O, _overlapped_FormatMessage__doc__},
 
 static PyObject *
 _overlapped_FormatMessage_impl(PyObject *module, DWORD code);
@@ -510,7 +510,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_cancel__doc__,
 "Cancel overlapped operation.");
 
 #define _OVERLAPPED_OVERLAPPED_CANCEL_METHODDEF    \
-    {"cancel", (PyCFunction)_overlapped_Overlapped_cancel, METH_NOARGS, _overlapped_Overlapped_cancel__doc__},
+    {"cancel", _overlapped_Overlapped_cancel, METH_NOARGS, _overlapped_Overlapped_cancel__doc__},
 
 static PyObject *
 _overlapped_Overlapped_cancel_impl(OverlappedObject *self);
@@ -994,7 +994,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_ConnectNamedPipe__doc__,
 "Start overlapped wait for a client to connect.");
 
 #define _OVERLAPPED_OVERLAPPED_CONNECTNAMEDPIPE_METHODDEF    \
-    {"ConnectNamedPipe", (PyCFunction)_overlapped_Overlapped_ConnectNamedPipe, METH_O, _overlapped_Overlapped_ConnectNamedPipe__doc__},
+    {"ConnectNamedPipe", _overlapped_Overlapped_ConnectNamedPipe, METH_O, _overlapped_Overlapped_ConnectNamedPipe__doc__},
 
 static PyObject *
 _overlapped_Overlapped_ConnectNamedPipe_impl(OverlappedObject *self,
@@ -1023,7 +1023,7 @@ PyDoc_STRVAR(_overlapped_Overlapped_ConnectPipe__doc__,
 "Connect to the pipe for asynchronous I/O (overlapped).");
 
 #define _OVERLAPPED_OVERLAPPED_CONNECTPIPE_METHODDEF    \
-    {"ConnectPipe", (PyCFunction)_overlapped_Overlapped_ConnectPipe, METH_O, _overlapped_Overlapped_ConnectPipe__doc__},
+    {"ConnectPipe", _overlapped_Overlapped_ConnectPipe, METH_O, _overlapped_Overlapped_ConnectPipe__doc__},
 
 static PyObject *
 _overlapped_Overlapped_ConnectPipe_impl(OverlappedObject *self,
@@ -1240,4 +1240,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=d009cc9e53d9732a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=049ff4e0635ea636 input=a9049054013a1b77]*/

@@ -17,7 +17,7 @@ PyDoc_STRVAR(test_empty_function__doc__,
 "\n");
 
 #define TEST_EMPTY_FUNCTION_METHODDEF    \
-    {"test_empty_function", (PyCFunction)test_empty_function, METH_NOARGS, test_empty_function__doc__},
+    {"test_empty_function", test_empty_function, METH_NOARGS, test_empty_function__doc__},
 
 static PyObject *
 test_empty_function_impl(PyObject *module);
@@ -67,7 +67,7 @@ PyDoc_STRVAR(bytes_object_converter__doc__,
 "\n");
 
 #define BYTES_OBJECT_CONVERTER_METHODDEF    \
-    {"bytes_object_converter", (PyCFunction)bytes_object_converter, METH_O, bytes_object_converter__doc__},
+    {"bytes_object_converter", bytes_object_converter, METH_O, bytes_object_converter__doc__},
 
 static PyObject *
 bytes_object_converter_impl(PyObject *module, PyBytesObject *a);
@@ -95,7 +95,7 @@ PyDoc_STRVAR(byte_array_object_converter__doc__,
 "\n");
 
 #define BYTE_ARRAY_OBJECT_CONVERTER_METHODDEF    \
-    {"byte_array_object_converter", (PyCFunction)byte_array_object_converter, METH_O, byte_array_object_converter__doc__},
+    {"byte_array_object_converter", byte_array_object_converter, METH_O, byte_array_object_converter__doc__},
 
 static PyObject *
 byte_array_object_converter_impl(PyObject *module, PyByteArrayObject *a);
@@ -123,7 +123,7 @@ PyDoc_STRVAR(unicode_converter__doc__,
 "\n");
 
 #define UNICODE_CONVERTER_METHODDEF    \
-    {"unicode_converter", (PyCFunction)unicode_converter, METH_O, unicode_converter__doc__},
+    {"unicode_converter", unicode_converter, METH_O, unicode_converter__doc__},
 
 static PyObject *
 unicode_converter_impl(PyObject *module, PyObject *a);
@@ -1309,7 +1309,7 @@ PyDoc_STRVAR(py_complex_converter__doc__,
 "\n");
 
 #define PY_COMPLEX_CONVERTER_METHODDEF    \
-    {"py_complex_converter", (PyCFunction)py_complex_converter, METH_O, py_complex_converter__doc__},
+    {"py_complex_converter", py_complex_converter, METH_O, py_complex_converter__doc__},
 
 static PyObject *
 py_complex_converter_impl(PyObject *module, Py_complex a);
@@ -4313,4 +4313,4 @@ posonly_poskw_varpos_array_no_fastcall(PyTypeObject *type, PyObject *args, PyObj
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=00085e5637450fe6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=07b1350399ae051b input=a9049054013a1b77]*/

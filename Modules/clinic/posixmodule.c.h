@@ -321,7 +321,7 @@ PyDoc_STRVAR(os_ttyname__doc__,
 "    Integer file descriptor handle.");
 
 #define OS_TTYNAME_METHODDEF    \
-    {"ttyname", (PyCFunction)os_ttyname, METH_O, os_ttyname__doc__},
+    {"ttyname", os_ttyname, METH_O, os_ttyname__doc__},
 
 static PyObject *
 os_ttyname_impl(PyObject *module, int fd);
@@ -353,7 +353,7 @@ PyDoc_STRVAR(os_ctermid__doc__,
 "Return the name of the controlling terminal for this process.");
 
 #define OS_CTERMID_METHODDEF    \
-    {"ctermid", (PyCFunction)os_ctermid, METH_NOARGS, os_ctermid__doc__},
+    {"ctermid", os_ctermid, METH_NOARGS, os_ctermid__doc__},
 
 static PyObject *
 os_ctermid_impl(PyObject *module);
@@ -1057,7 +1057,7 @@ PyDoc_STRVAR(os_sync__doc__,
 "Force write of everything to disk.");
 
 #define OS_SYNC_METHODDEF    \
-    {"sync", (PyCFunction)os_sync, METH_NOARGS, os_sync__doc__},
+    {"sync", os_sync, METH_NOARGS, os_sync__doc__},
 
 static PyObject *
 os_sync_impl(PyObject *module);
@@ -1406,7 +1406,7 @@ PyDoc_STRVAR(os_getcwd__doc__,
 "Return a unicode string representing the current working directory.");
 
 #define OS_GETCWD_METHODDEF    \
-    {"getcwd", (PyCFunction)os_getcwd, METH_NOARGS, os_getcwd__doc__},
+    {"getcwd", os_getcwd, METH_NOARGS, os_getcwd__doc__},
 
 static PyObject *
 os_getcwd_impl(PyObject *module);
@@ -1424,7 +1424,7 @@ PyDoc_STRVAR(os_getcwdb__doc__,
 "Return a bytes string representing the current working directory.");
 
 #define OS_GETCWDB_METHODDEF    \
-    {"getcwdb", (PyCFunction)os_getcwdb, METH_NOARGS, os_getcwdb__doc__},
+    {"getcwdb", os_getcwdb, METH_NOARGS, os_getcwdb__doc__},
 
 static PyObject *
 os_getcwdb_impl(PyObject *module);
@@ -1634,7 +1634,7 @@ PyDoc_STRVAR(os_listdrives__doc__,
 "A drive name typically looks like \'C:\\\\\'.");
 
 #define OS_LISTDRIVES_METHODDEF    \
-    {"listdrives", (PyCFunction)os_listdrives, METH_NOARGS, os_listdrives__doc__},
+    {"listdrives", os_listdrives, METH_NOARGS, os_listdrives__doc__},
 
 static PyObject *
 os_listdrives_impl(PyObject *module);
@@ -1658,7 +1658,7 @@ PyDoc_STRVAR(os_listvolumes__doc__,
 "Volumes are typically represented as a GUID path.");
 
 #define OS_LISTVOLUMES_METHODDEF    \
-    {"listvolumes", (PyCFunction)os_listvolumes, METH_NOARGS, os_listvolumes__doc__},
+    {"listvolumes", os_listvolumes, METH_NOARGS, os_listvolumes__doc__},
 
 static PyObject *
 os_listvolumes_impl(PyObject *module);
@@ -1811,7 +1811,7 @@ PyDoc_STRVAR(os__getfullpathname__doc__,
 "\n");
 
 #define OS__GETFULLPATHNAME_METHODDEF    \
-    {"_getfullpathname", (PyCFunction)os__getfullpathname, METH_O, os__getfullpathname__doc__},
+    {"_getfullpathname", os__getfullpathname, METH_O, os__getfullpathname__doc__},
 
 static PyObject *
 os__getfullpathname_impl(PyObject *module, path_t *path);
@@ -1845,7 +1845,7 @@ PyDoc_STRVAR(os__getfinalpathname__doc__,
 "A helper function for samepath on windows.");
 
 #define OS__GETFINALPATHNAME_METHODDEF    \
-    {"_getfinalpathname", (PyCFunction)os__getfinalpathname, METH_O, os__getfinalpathname__doc__},
+    {"_getfinalpathname", os__getfinalpathname, METH_O, os__getfinalpathname__doc__},
 
 static PyObject *
 os__getfinalpathname_impl(PyObject *module, path_t *path);
@@ -1879,7 +1879,7 @@ PyDoc_STRVAR(os__findfirstfile__doc__,
 "A function to get the real file name without accessing the file in Windows.");
 
 #define OS__FINDFIRSTFILE_METHODDEF    \
-    {"_findfirstfile", (PyCFunction)os__findfirstfile, METH_O, os__findfirstfile__doc__},
+    {"_findfirstfile", os__findfirstfile, METH_O, os__findfirstfile__doc__},
 
 static PyObject *
 os__findfirstfile_impl(PyObject *module, path_t *path);
@@ -2679,7 +2679,7 @@ PyDoc_STRVAR(os_nice__doc__,
 "Add increment to the priority of process and return the new priority.");
 
 #define OS_NICE_METHODDEF    \
-    {"nice", (PyCFunction)os_nice, METH_O, os_nice__doc__},
+    {"nice", os_nice, METH_O, os_nice__doc__},
 
 static PyObject *
 os_nice_impl(PyObject *module, int increment);
@@ -3256,7 +3256,7 @@ PyDoc_STRVAR(os_umask__doc__,
 "Set the current numeric umask and return the previous umask.");
 
 #define OS_UMASK_METHODDEF    \
-    {"umask", (PyCFunction)os_umask, METH_O, os_umask__doc__},
+    {"umask", os_umask, METH_O, os_umask__doc__},
 
 static PyObject *
 os_umask_impl(PyObject *module, int mask);
@@ -3441,7 +3441,7 @@ PyDoc_STRVAR(os_uname__doc__,
 "  (sysname, nodename, release, version, machine)");
 
 #define OS_UNAME_METHODDEF    \
-    {"uname", (PyCFunction)os_uname, METH_NOARGS, os_uname__doc__},
+    {"uname", os_uname, METH_NOARGS, os_uname__doc__},
 
 static PyObject *
 os_uname_impl(PyObject *module);
@@ -4267,7 +4267,7 @@ PyDoc_STRVAR(os_fork1__doc__,
 "Return 0 to child process and PID of child to parent process.");
 
 #define OS_FORK1_METHODDEF    \
-    {"fork1", (PyCFunction)os_fork1, METH_NOARGS, os_fork1__doc__},
+    {"fork1", os_fork1, METH_NOARGS, os_fork1__doc__},
 
 static PyObject *
 os_fork1_impl(PyObject *module);
@@ -4291,7 +4291,7 @@ PyDoc_STRVAR(os_fork__doc__,
 "Return 0 to child process and PID of child to parent process.");
 
 #define OS_FORK_METHODDEF    \
-    {"fork", (PyCFunction)os_fork, METH_NOARGS, os_fork__doc__},
+    {"fork", os_fork, METH_NOARGS, os_fork__doc__},
 
 static PyObject *
 os_fork_impl(PyObject *module);
@@ -4441,7 +4441,7 @@ PyDoc_STRVAR(os_sched_getscheduler__doc__,
 "Passing 0 for pid returns the scheduling policy for the calling process.");
 
 #define OS_SCHED_GETSCHEDULER_METHODDEF    \
-    {"sched_getscheduler", (PyCFunction)os_sched_getscheduler, METH_O, os_sched_getscheduler__doc__},
+    {"sched_getscheduler", os_sched_getscheduler, METH_O, os_sched_getscheduler__doc__},
 
 static PyObject *
 os_sched_getscheduler_impl(PyObject *module, pid_t pid);
@@ -4584,7 +4584,7 @@ PyDoc_STRVAR(os_sched_getparam__doc__,
 "Return value is an instance of sched_param.");
 
 #define OS_SCHED_GETPARAM_METHODDEF    \
-    {"sched_getparam", (PyCFunction)os_sched_getparam, METH_O, os_sched_getparam__doc__},
+    {"sched_getparam", os_sched_getparam, METH_O, os_sched_getparam__doc__},
 
 static PyObject *
 os_sched_getparam_impl(PyObject *module, pid_t pid);
@@ -4658,7 +4658,7 @@ PyDoc_STRVAR(os_sched_rr_get_interval__doc__,
 "Value returned is a float.");
 
 #define OS_SCHED_RR_GET_INTERVAL_METHODDEF    \
-    {"sched_rr_get_interval", (PyCFunction)os_sched_rr_get_interval, METH_O, os_sched_rr_get_interval__doc__},
+    {"sched_rr_get_interval", os_sched_rr_get_interval, METH_O, os_sched_rr_get_interval__doc__},
 
 static double
 os_sched_rr_get_interval_impl(PyObject *module, pid_t pid);
@@ -4695,7 +4695,7 @@ PyDoc_STRVAR(os_sched_yield__doc__,
 "Voluntarily relinquish the CPU.");
 
 #define OS_SCHED_YIELD_METHODDEF    \
-    {"sched_yield", (PyCFunction)os_sched_yield, METH_NOARGS, os_sched_yield__doc__},
+    {"sched_yield", os_sched_yield, METH_NOARGS, os_sched_yield__doc__},
 
 static PyObject *
 os_sched_yield_impl(PyObject *module);
@@ -4758,7 +4758,7 @@ PyDoc_STRVAR(os_sched_getaffinity__doc__,
 "The affinity is returned as a set of CPU identifiers.");
 
 #define OS_SCHED_GETAFFINITY_METHODDEF    \
-    {"sched_getaffinity", (PyCFunction)os_sched_getaffinity, METH_O, os_sched_getaffinity__doc__},
+    {"sched_getaffinity", os_sched_getaffinity, METH_O, os_sched_getaffinity__doc__},
 
 static PyObject *
 os_sched_getaffinity_impl(PyObject *module, pid_t pid);
@@ -4794,7 +4794,7 @@ PyDoc_STRVAR(os_posix_openpt__doc__,
 "of posix_openpt() of your system.");
 
 #define OS_POSIX_OPENPT_METHODDEF    \
-    {"posix_openpt", (PyCFunction)os_posix_openpt, METH_O, os_posix_openpt__doc__},
+    {"posix_openpt", os_posix_openpt, METH_O, os_posix_openpt__doc__},
 
 static int
 os_posix_openpt_impl(PyObject *module, int oflag);
@@ -4836,7 +4836,7 @@ PyDoc_STRVAR(os_grantpt__doc__,
 "Performs a grantpt() C function call.");
 
 #define OS_GRANTPT_METHODDEF    \
-    {"grantpt", (PyCFunction)os_grantpt, METH_O, os_grantpt__doc__},
+    {"grantpt", os_grantpt, METH_O, os_grantpt__doc__},
 
 static PyObject *
 os_grantpt_impl(PyObject *module, int fd);
@@ -4873,7 +4873,7 @@ PyDoc_STRVAR(os_unlockpt__doc__,
 "Performs an unlockpt() C function call.");
 
 #define OS_UNLOCKPT_METHODDEF    \
-    {"unlockpt", (PyCFunction)os_unlockpt, METH_O, os_unlockpt__doc__},
+    {"unlockpt", os_unlockpt, METH_O, os_unlockpt__doc__},
 
 static PyObject *
 os_unlockpt_impl(PyObject *module, int fd);
@@ -4911,7 +4911,7 @@ PyDoc_STRVAR(os_ptsname__doc__,
 "otherwise, performs a ptsname() C function call.");
 
 #define OS_PTSNAME_METHODDEF    \
-    {"ptsname", (PyCFunction)os_ptsname, METH_O, os_ptsname__doc__},
+    {"ptsname", os_ptsname, METH_O, os_ptsname__doc__},
 
 static PyObject *
 os_ptsname_impl(PyObject *module, int fd);
@@ -4946,7 +4946,7 @@ PyDoc_STRVAR(os_openpty__doc__,
 "for both the master and slave ends.");
 
 #define OS_OPENPTY_METHODDEF    \
-    {"openpty", (PyCFunction)os_openpty, METH_NOARGS, os_openpty__doc__},
+    {"openpty", os_openpty, METH_NOARGS, os_openpty__doc__},
 
 static PyObject *
 os_openpty_impl(PyObject *module);
@@ -4972,7 +4972,7 @@ PyDoc_STRVAR(os_login_tty__doc__,
 "calling process; close fd.");
 
 #define OS_LOGIN_TTY_METHODDEF    \
-    {"login_tty", (PyCFunction)os_login_tty, METH_O, os_login_tty__doc__},
+    {"login_tty", os_login_tty, METH_O, os_login_tty__doc__},
 
 static PyObject *
 os_login_tty_impl(PyObject *module, int fd);
@@ -5009,7 +5009,7 @@ PyDoc_STRVAR(os_forkpty__doc__,
 "To both, return fd of newly opened pseudo-terminal.");
 
 #define OS_FORKPTY_METHODDEF    \
-    {"forkpty", (PyCFunction)os_forkpty, METH_NOARGS, os_forkpty__doc__},
+    {"forkpty", os_forkpty, METH_NOARGS, os_forkpty__doc__},
 
 static PyObject *
 os_forkpty_impl(PyObject *module);
@@ -5031,7 +5031,7 @@ PyDoc_STRVAR(os_getegid__doc__,
 "Return the current process\'s effective group id.");
 
 #define OS_GETEGID_METHODDEF    \
-    {"getegid", (PyCFunction)os_getegid, METH_NOARGS, os_getegid__doc__},
+    {"getegid", os_getegid, METH_NOARGS, os_getegid__doc__},
 
 static PyObject *
 os_getegid_impl(PyObject *module);
@@ -5053,7 +5053,7 @@ PyDoc_STRVAR(os_geteuid__doc__,
 "Return the current process\'s effective user id.");
 
 #define OS_GETEUID_METHODDEF    \
-    {"geteuid", (PyCFunction)os_geteuid, METH_NOARGS, os_geteuid__doc__},
+    {"geteuid", os_geteuid, METH_NOARGS, os_geteuid__doc__},
 
 static PyObject *
 os_geteuid_impl(PyObject *module);
@@ -5075,7 +5075,7 @@ PyDoc_STRVAR(os_getgid__doc__,
 "Return the current process\'s group id.");
 
 #define OS_GETGID_METHODDEF    \
-    {"getgid", (PyCFunction)os_getgid, METH_NOARGS, os_getgid__doc__},
+    {"getgid", os_getgid, METH_NOARGS, os_getgid__doc__},
 
 static PyObject *
 os_getgid_impl(PyObject *module);
@@ -5097,7 +5097,7 @@ PyDoc_STRVAR(os_getpid__doc__,
 "Return the current process id.");
 
 #define OS_GETPID_METHODDEF    \
-    {"getpid", (PyCFunction)os_getpid, METH_NOARGS, os_getpid__doc__},
+    {"getpid", os_getpid, METH_NOARGS, os_getpid__doc__},
 
 static PyObject *
 os_getpid_impl(PyObject *module);
@@ -5226,7 +5226,7 @@ PyDoc_STRVAR(os_getgroups__doc__,
 "Return list of supplemental group IDs for the process.");
 
 #define OS_GETGROUPS_METHODDEF    \
-    {"getgroups", (PyCFunction)os_getgroups, METH_NOARGS, os_getgroups__doc__},
+    {"getgroups", os_getgroups, METH_NOARGS, os_getgroups__doc__},
 
 static PyObject *
 os_getgroups_impl(PyObject *module);
@@ -5402,7 +5402,7 @@ PyDoc_STRVAR(os_getpgrp__doc__,
 "Return the current process group id.");
 
 #define OS_GETPGRP_METHODDEF    \
-    {"getpgrp", (PyCFunction)os_getpgrp, METH_NOARGS, os_getpgrp__doc__},
+    {"getpgrp", os_getpgrp, METH_NOARGS, os_getpgrp__doc__},
 
 static PyObject *
 os_getpgrp_impl(PyObject *module);
@@ -5424,7 +5424,7 @@ PyDoc_STRVAR(os_setpgrp__doc__,
 "Make the current process the leader of its process group.");
 
 #define OS_SETPGRP_METHODDEF    \
-    {"setpgrp", (PyCFunction)os_setpgrp, METH_NOARGS, os_setpgrp__doc__},
+    {"setpgrp", os_setpgrp, METH_NOARGS, os_setpgrp__doc__},
 
 static PyObject *
 os_setpgrp_impl(PyObject *module);
@@ -5449,7 +5449,7 @@ PyDoc_STRVAR(os_getppid__doc__,
 "return its id; others systems will return the id of the \'init\' process (1).");
 
 #define OS_GETPPID_METHODDEF    \
-    {"getppid", (PyCFunction)os_getppid, METH_NOARGS, os_getppid__doc__},
+    {"getppid", os_getppid, METH_NOARGS, os_getppid__doc__},
 
 static PyObject *
 os_getppid_impl(PyObject *module);
@@ -5471,7 +5471,7 @@ PyDoc_STRVAR(os_getlogin__doc__,
 "Return the actual login name.");
 
 #define OS_GETLOGIN_METHODDEF    \
-    {"getlogin", (PyCFunction)os_getlogin, METH_NOARGS, os_getlogin__doc__},
+    {"getlogin", os_getlogin, METH_NOARGS, os_getlogin__doc__},
 
 static PyObject *
 os_getlogin_impl(PyObject *module);
@@ -5493,7 +5493,7 @@ PyDoc_STRVAR(os_getuid__doc__,
 "Return the current process\'s user id.");
 
 #define OS_GETUID_METHODDEF    \
-    {"getuid", (PyCFunction)os_getuid, METH_NOARGS, os_getuid__doc__},
+    {"getuid", os_getuid, METH_NOARGS, os_getuid__doc__},
 
 static PyObject *
 os_getuid_impl(PyObject *module);
@@ -5603,7 +5603,7 @@ PyDoc_STRVAR(os_plock__doc__,
 "Lock program segments into memory.\");");
 
 #define OS_PLOCK_METHODDEF    \
-    {"plock", (PyCFunction)os_plock, METH_O, os_plock__doc__},
+    {"plock", os_plock, METH_O, os_plock__doc__},
 
 static PyObject *
 os_plock_impl(PyObject *module, int op);
@@ -5635,7 +5635,7 @@ PyDoc_STRVAR(os_setuid__doc__,
 "Set the current process\'s user id.");
 
 #define OS_SETUID_METHODDEF    \
-    {"setuid", (PyCFunction)os_setuid, METH_O, os_setuid__doc__},
+    {"setuid", os_setuid, METH_O, os_setuid__doc__},
 
 static PyObject *
 os_setuid_impl(PyObject *module, uid_t uid);
@@ -5666,7 +5666,7 @@ PyDoc_STRVAR(os_seteuid__doc__,
 "Set the current process\'s effective user id.");
 
 #define OS_SETEUID_METHODDEF    \
-    {"seteuid", (PyCFunction)os_seteuid, METH_O, os_seteuid__doc__},
+    {"seteuid", os_seteuid, METH_O, os_seteuid__doc__},
 
 static PyObject *
 os_seteuid_impl(PyObject *module, uid_t euid);
@@ -5697,7 +5697,7 @@ PyDoc_STRVAR(os_setegid__doc__,
 "Set the current process\'s effective group id.");
 
 #define OS_SETEGID_METHODDEF    \
-    {"setegid", (PyCFunction)os_setegid, METH_O, os_setegid__doc__},
+    {"setegid", os_setegid, METH_O, os_setegid__doc__},
 
 static PyObject *
 os_setegid_impl(PyObject *module, gid_t egid);
@@ -5804,7 +5804,7 @@ PyDoc_STRVAR(os_setgid__doc__,
 "Set the current process\'s group id.");
 
 #define OS_SETGID_METHODDEF    \
-    {"setgid", (PyCFunction)os_setgid, METH_O, os_setgid__doc__},
+    {"setgid", os_setgid, METH_O, os_setgid__doc__},
 
 static PyObject *
 os_setgid_impl(PyObject *module, gid_t gid);
@@ -5835,7 +5835,7 @@ PyDoc_STRVAR(os_setgroups__doc__,
 "Set the groups of the current process to list.");
 
 #define OS_SETGROUPS_METHODDEF    \
-    {"setgroups", (PyCFunction)os_setgroups, METH_O, os_setgroups__doc__},
+    {"setgroups", os_setgroups, METH_O, os_setgroups__doc__},
 
 #endif /* defined(HAVE_SETGROUPS) */
 
@@ -6133,7 +6133,7 @@ PyDoc_STRVAR(os_wait__doc__,
 "    (pid, status)");
 
 #define OS_WAIT_METHODDEF    \
-    {"wait", (PyCFunction)os_wait, METH_NOARGS, os_wait__doc__},
+    {"wait", os_wait, METH_NOARGS, os_wait__doc__},
 
 static PyObject *
 os_wait_impl(PyObject *module);
@@ -6561,7 +6561,7 @@ PyDoc_STRVAR(os_times__doc__,
 "All fields are floating-point numbers.");
 
 #define OS_TIMES_METHODDEF    \
-    {"times", (PyCFunction)os_times, METH_NOARGS, os_times__doc__},
+    {"times", os_times, METH_NOARGS, os_times__doc__},
 
 static PyObject *
 os_times_impl(PyObject *module);
@@ -6891,7 +6891,7 @@ PyDoc_STRVAR(os_timerfd_gettime__doc__,
 "    A timer file descriptor.");
 
 #define OS_TIMERFD_GETTIME_METHODDEF    \
-    {"timerfd_gettime", (PyCFunction)os_timerfd_gettime, METH_O, os_timerfd_gettime__doc__},
+    {"timerfd_gettime", os_timerfd_gettime, METH_O, os_timerfd_gettime__doc__},
 
 static PyObject *
 os_timerfd_gettime_impl(PyObject *module, int fd);
@@ -6926,7 +6926,7 @@ PyDoc_STRVAR(os_timerfd_gettime_ns__doc__,
 "    A timer file descriptor.");
 
 #define OS_TIMERFD_GETTIME_NS_METHODDEF    \
-    {"timerfd_gettime_ns", (PyCFunction)os_timerfd_gettime_ns, METH_O, os_timerfd_gettime_ns__doc__},
+    {"timerfd_gettime_ns", os_timerfd_gettime_ns, METH_O, os_timerfd_gettime_ns__doc__},
 
 static PyObject *
 os_timerfd_gettime_ns_impl(PyObject *module, int fd);
@@ -6958,7 +6958,7 @@ PyDoc_STRVAR(os_getsid__doc__,
 "Call the system call getsid(pid) and return the result.");
 
 #define OS_GETSID_METHODDEF    \
-    {"getsid", (PyCFunction)os_getsid, METH_O, os_getsid__doc__},
+    {"getsid", os_getsid, METH_O, os_getsid__doc__},
 
 static PyObject *
 os_getsid_impl(PyObject *module, pid_t pid);
@@ -6990,7 +6990,7 @@ PyDoc_STRVAR(os_setsid__doc__,
 "Call the system call setsid().");
 
 #define OS_SETSID_METHODDEF    \
-    {"setsid", (PyCFunction)os_setsid, METH_NOARGS, os_setsid__doc__},
+    {"setsid", os_setsid, METH_NOARGS, os_setsid__doc__},
 
 static PyObject *
 os_setsid_impl(PyObject *module);
@@ -7052,7 +7052,7 @@ PyDoc_STRVAR(os_tcgetpgrp__doc__,
 "Return the process group associated with the terminal specified by fd.");
 
 #define OS_TCGETPGRP_METHODDEF    \
-    {"tcgetpgrp", (PyCFunction)os_tcgetpgrp, METH_O, os_tcgetpgrp__doc__},
+    {"tcgetpgrp", os_tcgetpgrp, METH_O, os_tcgetpgrp__doc__},
 
 static PyObject *
 os_tcgetpgrp_impl(PyObject *module, int fd);
@@ -7316,7 +7316,7 @@ PyDoc_STRVAR(os_dup__doc__,
 "Return a duplicate of a file descriptor.");
 
 #define OS_DUP_METHODDEF    \
-    {"dup", (PyCFunction)os_dup, METH_O, os_dup__doc__},
+    {"dup", os_dup, METH_O, os_dup__doc__},
 
 static int
 os_dup_impl(PyObject *module, int fd);
@@ -8269,7 +8269,7 @@ PyDoc_STRVAR(os_isatty__doc__,
 "connected to the slave end of a terminal.");
 
 #define OS_ISATTY_METHODDEF    \
-    {"isatty", (PyCFunction)os_isatty, METH_O, os_isatty__doc__},
+    {"isatty", os_isatty, METH_O, os_isatty__doc__},
 
 static int
 os_isatty_impl(PyObject *module, int fd);
@@ -8307,7 +8307,7 @@ PyDoc_STRVAR(os_pipe__doc__,
 "  (read_fd, write_fd)");
 
 #define OS_PIPE_METHODDEF    \
-    {"pipe", (PyCFunction)os_pipe, METH_NOARGS, os_pipe__doc__},
+    {"pipe", os_pipe, METH_NOARGS, os_pipe__doc__},
 
 static PyObject *
 os_pipe_impl(PyObject *module);
@@ -8335,7 +8335,7 @@ PyDoc_STRVAR(os_pipe2__doc__,
 "O_NONBLOCK, O_CLOEXEC.");
 
 #define OS_PIPE2_METHODDEF    \
-    {"pipe2", (PyCFunction)os_pipe2, METH_O, os_pipe2__doc__},
+    {"pipe2", os_pipe2, METH_O, os_pipe2__doc__},
 
 static PyObject *
 os_pipe2_impl(PyObject *module, int flags);
@@ -8978,7 +8978,7 @@ PyDoc_STRVAR(os_major__doc__,
 "Extracts a device major number from a raw device number.");
 
 #define OS_MAJOR_METHODDEF    \
-    {"major", (PyCFunction)os_major, METH_O, os_major__doc__},
+    {"major", os_major, METH_O, os_major__doc__},
 
 static PyObject *
 os_major_impl(PyObject *module, dev_t device);
@@ -9009,7 +9009,7 @@ PyDoc_STRVAR(os_minor__doc__,
 "Extracts a device minor number from a raw device number.");
 
 #define OS_MINOR_METHODDEF    \
-    {"minor", (PyCFunction)os_minor, METH_O, os_minor__doc__},
+    {"minor", os_minor, METH_O, os_minor__doc__},
 
 static PyObject *
 os_minor_impl(PyObject *module, dev_t device);
@@ -9383,7 +9383,7 @@ PyDoc_STRVAR(os_unsetenv__doc__,
 "Delete an environment variable.");
 
 #define OS_UNSETENV_METHODDEF    \
-    {"unsetenv", (PyCFunction)os_unsetenv, METH_O, os_unsetenv__doc__},
+    {"unsetenv", os_unsetenv, METH_O, os_unsetenv__doc__},
 
 static PyObject *
 os_unsetenv_impl(PyObject *module, PyObject *name);
@@ -9416,7 +9416,7 @@ PyDoc_STRVAR(os_unsetenv__doc__,
 "Delete an environment variable.");
 
 #define OS_UNSETENV_METHODDEF    \
-    {"unsetenv", (PyCFunction)os_unsetenv, METH_O, os_unsetenv__doc__},
+    {"unsetenv", os_unsetenv, METH_O, os_unsetenv__doc__},
 
 static PyObject *
 os_unsetenv_impl(PyObject *module, PyObject *name);
@@ -9448,7 +9448,7 @@ PyDoc_STRVAR(os_strerror__doc__,
 "Translate an error code to a message string.");
 
 #define OS_STRERROR_METHODDEF    \
-    {"strerror", (PyCFunction)os_strerror, METH_O, os_strerror__doc__},
+    {"strerror", os_strerror, METH_O, os_strerror__doc__},
 
 static PyObject *
 os_strerror_impl(PyObject *module, int code);
@@ -9478,7 +9478,7 @@ PyDoc_STRVAR(os_WCOREDUMP__doc__,
 "Return True if the process returning status was dumped to a core file.");
 
 #define OS_WCOREDUMP_METHODDEF    \
-    {"WCOREDUMP", (PyCFunction)os_WCOREDUMP, METH_O, os_WCOREDUMP__doc__},
+    {"WCOREDUMP", os_WCOREDUMP, METH_O, os_WCOREDUMP__doc__},
 
 static int
 os_WCOREDUMP_impl(PyObject *module, int status);
@@ -9996,7 +9996,7 @@ PyDoc_STRVAR(os_fstatvfs__doc__,
 "Equivalent to statvfs(fd).");
 
 #define OS_FSTATVFS_METHODDEF    \
-    {"fstatvfs", (PyCFunction)os_fstatvfs, METH_O, os_fstatvfs__doc__},
+    {"fstatvfs", os_fstatvfs, METH_O, os_fstatvfs__doc__},
 
 static PyObject *
 os_fstatvfs_impl(PyObject *module, int fd);
@@ -10286,7 +10286,7 @@ PyDoc_STRVAR(os_confstr__doc__,
 "Return a string-valued system configuration variable.");
 
 #define OS_CONFSTR_METHODDEF    \
-    {"confstr", (PyCFunction)os_confstr, METH_O, os_confstr__doc__},
+    {"confstr", os_confstr, METH_O, os_confstr__doc__},
 
 static PyObject *
 os_confstr_impl(PyObject *module, int name);
@@ -10317,7 +10317,7 @@ PyDoc_STRVAR(os_sysconf__doc__,
 "Return an integer-valued system configuration variable.");
 
 #define OS_SYSCONF_METHODDEF    \
-    {"sysconf", (PyCFunction)os_sysconf, METH_O, os_sysconf__doc__},
+    {"sysconf", os_sysconf, METH_O, os_sysconf__doc__},
 
 static long
 os_sysconf_impl(PyObject *module, int name);
@@ -10354,7 +10354,7 @@ PyDoc_STRVAR(os_abort__doc__,
 "on the hosting operating system.  This function never returns.");
 
 #define OS_ABORT_METHODDEF    \
-    {"abort", (PyCFunction)os_abort, METH_NOARGS, os_abort__doc__},
+    {"abort", os_abort, METH_NOARGS, os_abort__doc__},
 
 static PyObject *
 os_abort_impl(PyObject *module);
@@ -10524,7 +10524,7 @@ PyDoc_STRVAR(os_getloadavg__doc__,
 "Raises OSError if the load average was unobtainable.");
 
 #define OS_GETLOADAVG_METHODDEF    \
-    {"getloadavg", (PyCFunction)os_getloadavg, METH_NOARGS, os_getloadavg__doc__},
+    {"getloadavg", os_getloadavg, METH_NOARGS, os_getloadavg__doc__},
 
 static PyObject *
 os_getloadavg_impl(PyObject *module);
@@ -10692,7 +10692,7 @@ PyDoc_STRVAR(os_getresuid__doc__,
 "Return a tuple of the current process\'s real, effective, and saved user ids.");
 
 #define OS_GETRESUID_METHODDEF    \
-    {"getresuid", (PyCFunction)os_getresuid, METH_NOARGS, os_getresuid__doc__},
+    {"getresuid", os_getresuid, METH_NOARGS, os_getresuid__doc__},
 
 static PyObject *
 os_getresuid_impl(PyObject *module);
@@ -10714,7 +10714,7 @@ PyDoc_STRVAR(os_getresgid__doc__,
 "Return a tuple of the current process\'s real, effective, and saved group ids.");
 
 #define OS_GETRESGID_METHODDEF    \
-    {"getresgid", (PyCFunction)os_getresgid, METH_NOARGS, os_getresgid__doc__},
+    {"getresgid", os_getresgid, METH_NOARGS, os_getresgid__doc__},
 
 static PyObject *
 os_getresgid_impl(PyObject *module);
@@ -11108,7 +11108,7 @@ PyDoc_STRVAR(os_urandom__doc__,
 "Return a bytes object containing random bytes suitable for cryptographic use.");
 
 #define OS_URANDOM_METHODDEF    \
-    {"urandom", (PyCFunction)os_urandom, METH_O, os_urandom__doc__},
+    {"urandom", os_urandom, METH_O, os_urandom__doc__},
 
 static PyObject *
 os_urandom_impl(PyObject *module, Py_ssize_t size);
@@ -11473,7 +11473,7 @@ PyDoc_STRVAR(os_cpu_count__doc__,
 "Return None if indeterminable.");
 
 #define OS_CPU_COUNT_METHODDEF    \
-    {"cpu_count", (PyCFunction)os_cpu_count, METH_NOARGS, os_cpu_count__doc__},
+    {"cpu_count", os_cpu_count, METH_NOARGS, os_cpu_count__doc__},
 
 static PyObject *
 os_cpu_count_impl(PyObject *module);
@@ -11491,7 +11491,7 @@ PyDoc_STRVAR(os_get_inheritable__doc__,
 "Get the close-on-exe flag of the specified file descriptor.");
 
 #define OS_GET_INHERITABLE_METHODDEF    \
-    {"get_inheritable", (PyCFunction)os_get_inheritable, METH_O, os_get_inheritable__doc__},
+    {"get_inheritable", os_get_inheritable, METH_O, os_get_inheritable__doc__},
 
 static int
 os_get_inheritable_impl(PyObject *module, int fd);
@@ -11562,7 +11562,7 @@ PyDoc_STRVAR(os_get_handle_inheritable__doc__,
 "Get the close-on-exe flag of the specified file descriptor.");
 
 #define OS_GET_HANDLE_INHERITABLE_METHODDEF    \
-    {"get_handle_inheritable", (PyCFunction)os_get_handle_inheritable, METH_O, os_get_handle_inheritable__doc__},
+    {"get_handle_inheritable", os_get_handle_inheritable, METH_O, os_get_handle_inheritable__doc__},
 
 static int
 os_get_handle_inheritable_impl(PyObject *module, intptr_t handle);
@@ -11640,7 +11640,7 @@ PyDoc_STRVAR(os_get_blocking__doc__,
 "Return False if the O_NONBLOCK flag is set, True if the flag is cleared.");
 
 #define OS_GET_BLOCKING_METHODDEF    \
-    {"get_blocking", (PyCFunction)os_get_blocking, METH_O, os_get_blocking__doc__},
+    {"get_blocking", os_get_blocking, METH_O, os_get_blocking__doc__},
 
 static int
 os_get_blocking_impl(PyObject *module, int fd);
@@ -11744,7 +11744,7 @@ PyDoc_STRVAR(os_DirEntry_is_junction__doc__,
 "Return True if the entry is a junction; cached per entry.");
 
 #define OS_DIRENTRY_IS_JUNCTION_METHODDEF    \
-    {"is_junction", (PyCFunction)os_DirEntry_is_junction, METH_NOARGS, os_DirEntry_is_junction__doc__},
+    {"is_junction", os_DirEntry_is_junction, METH_NOARGS, os_DirEntry_is_junction__doc__},
 
 static int
 os_DirEntry_is_junction_impl(DirEntry *self);
@@ -11977,7 +11977,7 @@ PyDoc_STRVAR(os_DirEntry_inode__doc__,
 "Return inode of the entry; cached per entry.");
 
 #define OS_DIRENTRY_INODE_METHODDEF    \
-    {"inode", (PyCFunction)os_DirEntry_inode, METH_NOARGS, os_DirEntry_inode__doc__},
+    {"inode", os_DirEntry_inode, METH_NOARGS, os_DirEntry_inode__doc__},
 
 static PyObject *
 os_DirEntry_inode_impl(DirEntry *self);
@@ -11995,7 +11995,7 @@ PyDoc_STRVAR(os_DirEntry___fspath____doc__,
 "Returns the path for the entry.");
 
 #define OS_DIRENTRY___FSPATH___METHODDEF    \
-    {"__fspath__", (PyCFunction)os_DirEntry___fspath__, METH_NOARGS, os_DirEntry___fspath____doc__},
+    {"__fspath__", os_DirEntry___fspath__, METH_NOARGS, os_DirEntry___fspath____doc__},
 
 static PyObject *
 os_DirEntry___fspath___impl(DirEntry *self);
@@ -12436,7 +12436,7 @@ PyDoc_STRVAR(os__supports_virtual_terminal__doc__,
 "Checks if virtual terminal is supported in windows");
 
 #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF    \
-    {"_supports_virtual_terminal", (PyCFunction)os__supports_virtual_terminal, METH_NOARGS, os__supports_virtual_terminal__doc__},
+    {"_supports_virtual_terminal", os__supports_virtual_terminal, METH_NOARGS, os__supports_virtual_terminal__doc__},
 
 static PyObject *
 os__supports_virtual_terminal_impl(PyObject *module);
@@ -12456,7 +12456,7 @@ PyDoc_STRVAR(os__inputhook__doc__,
 "Calls PyOS_CallInputHook droppong the GIL first");
 
 #define OS__INPUTHOOK_METHODDEF    \
-    {"_inputhook", (PyCFunction)os__inputhook, METH_NOARGS, os__inputhook__doc__},
+    {"_inputhook", os__inputhook, METH_NOARGS, os__inputhook__doc__},
 
 static PyObject *
 os__inputhook_impl(PyObject *module);
@@ -12474,7 +12474,7 @@ PyDoc_STRVAR(os__is_inputhook_installed__doc__,
 "Checks if PyOS_CallInputHook is set");
 
 #define OS__IS_INPUTHOOK_INSTALLED_METHODDEF    \
-    {"_is_inputhook_installed", (PyCFunction)os__is_inputhook_installed, METH_NOARGS, os__is_inputhook_installed__doc__},
+    {"_is_inputhook_installed", os__is_inputhook_installed, METH_NOARGS, os__is_inputhook_installed__doc__},
 
 static PyObject *
 os__is_inputhook_installed_impl(PyObject *module);
@@ -12492,7 +12492,7 @@ PyDoc_STRVAR(os__create_environ__doc__,
 "Create the environment dictionary.");
 
 #define OS__CREATE_ENVIRON_METHODDEF    \
-    {"_create_environ", (PyCFunction)os__create_environ, METH_NOARGS, os__create_environ__doc__},
+    {"_create_environ", os__create_environ, METH_NOARGS, os__create_environ__doc__},
 
 static PyObject *
 os__create_environ_impl(PyObject *module);
@@ -12512,7 +12512,7 @@ PyDoc_STRVAR(os__emscripten_debugger__doc__,
 "Create a breakpoint for the JavaScript debugger. Emscripten only.");
 
 #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF    \
-    {"_emscripten_debugger", (PyCFunction)os__emscripten_debugger, METH_NOARGS, os__emscripten_debugger__doc__},
+    {"_emscripten_debugger", os__emscripten_debugger, METH_NOARGS, os__emscripten_debugger__doc__},
 
 static PyObject *
 os__emscripten_debugger_impl(PyObject *module);
@@ -13196,4 +13196,4 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_DEBUGGER_METHODDEF) */
-/*[clinic end generated code: output=8318c26fc2cd236c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4932a904020ead66 input=a9049054013a1b77]*/

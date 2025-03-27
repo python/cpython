@@ -71,7 +71,7 @@ PyDoc_STRVAR(math_ceil__doc__,
 "This is the smallest integer >= x.");
 
 #define MATH_CEIL_METHODDEF    \
-    {"ceil", (PyCFunction)math_ceil, METH_O, math_ceil__doc__},
+    {"ceil", math_ceil, METH_O, math_ceil__doc__},
 
 PyDoc_STRVAR(math_floor__doc__,
 "floor($module, x, /)\n"
@@ -82,7 +82,7 @@ PyDoc_STRVAR(math_floor__doc__,
 "This is the largest integer <= x.");
 
 #define MATH_FLOOR_METHODDEF    \
-    {"floor", (PyCFunction)math_floor, METH_O, math_floor__doc__},
+    {"floor", math_floor, METH_O, math_floor__doc__},
 
 PyDoc_STRVAR(math_fsum__doc__,
 "fsum($module, seq, /)\n"
@@ -93,7 +93,7 @@ PyDoc_STRVAR(math_fsum__doc__,
 "Assumes IEEE-754 floating-point arithmetic.");
 
 #define MATH_FSUM_METHODDEF    \
-    {"fsum", (PyCFunction)math_fsum, METH_O, math_fsum__doc__},
+    {"fsum", math_fsum, METH_O, math_fsum__doc__},
 
 PyDoc_STRVAR(math_isqrt__doc__,
 "isqrt($module, n, /)\n"
@@ -102,7 +102,7 @@ PyDoc_STRVAR(math_isqrt__doc__,
 "Return the integer part of the square root of the input.");
 
 #define MATH_ISQRT_METHODDEF    \
-    {"isqrt", (PyCFunction)math_isqrt, METH_O, math_isqrt__doc__},
+    {"isqrt", math_isqrt, METH_O, math_isqrt__doc__},
 
 PyDoc_STRVAR(math_factorial__doc__,
 "factorial($module, n, /)\n"
@@ -113,7 +113,7 @@ PyDoc_STRVAR(math_factorial__doc__,
 "Raise a ValueError if x is negative or non-integral.");
 
 #define MATH_FACTORIAL_METHODDEF    \
-    {"factorial", (PyCFunction)math_factorial, METH_O, math_factorial__doc__},
+    {"factorial", math_factorial, METH_O, math_factorial__doc__},
 
 PyDoc_STRVAR(math_trunc__doc__,
 "trunc($module, x, /)\n"
@@ -124,7 +124,7 @@ PyDoc_STRVAR(math_trunc__doc__,
 "Uses the __trunc__ magic method.");
 
 #define MATH_TRUNC_METHODDEF    \
-    {"trunc", (PyCFunction)math_trunc, METH_O, math_trunc__doc__},
+    {"trunc", math_trunc, METH_O, math_trunc__doc__},
 
 PyDoc_STRVAR(math_frexp__doc__,
 "frexp($module, x, /)\n"
@@ -136,7 +136,7 @@ PyDoc_STRVAR(math_frexp__doc__,
 "If x is 0, m and e are both 0.  Else 0.5 <= abs(m) < 1.0.");
 
 #define MATH_FREXP_METHODDEF    \
-    {"frexp", (PyCFunction)math_frexp, METH_O, math_frexp__doc__},
+    {"frexp", math_frexp, METH_O, math_frexp__doc__},
 
 static PyObject *
 math_frexp_impl(PyObject *module, double x);
@@ -213,7 +213,7 @@ PyDoc_STRVAR(math_modf__doc__,
 "Both results carry the sign of x and are floats.");
 
 #define MATH_MODF_METHODDEF    \
-    {"modf", (PyCFunction)math_modf, METH_O, math_modf__doc__},
+    {"modf", math_modf, METH_O, math_modf__doc__},
 
 static PyObject *
 math_modf_impl(PyObject *module, double x);
@@ -247,7 +247,7 @@ PyDoc_STRVAR(math_log2__doc__,
 "Return the base 2 logarithm of x.");
 
 #define MATH_LOG2_METHODDEF    \
-    {"log2", (PyCFunction)math_log2, METH_O, math_log2__doc__},
+    {"log2", math_log2, METH_O, math_log2__doc__},
 
 PyDoc_STRVAR(math_log10__doc__,
 "log10($module, x, /)\n"
@@ -256,7 +256,7 @@ PyDoc_STRVAR(math_log10__doc__,
 "Return the base 10 logarithm of x.");
 
 #define MATH_LOG10_METHODDEF    \
-    {"log10", (PyCFunction)math_log10, METH_O, math_log10__doc__},
+    {"log10", math_log10, METH_O, math_log10__doc__},
 
 PyDoc_STRVAR(math_fma__doc__,
 "fma($module, x, y, z, /)\n"
@@ -535,7 +535,7 @@ PyDoc_STRVAR(math_degrees__doc__,
 "Convert angle x from radians to degrees.");
 
 #define MATH_DEGREES_METHODDEF    \
-    {"degrees", (PyCFunction)math_degrees, METH_O, math_degrees__doc__},
+    {"degrees", math_degrees, METH_O, math_degrees__doc__},
 
 static PyObject *
 math_degrees_impl(PyObject *module, double x);
@@ -569,7 +569,7 @@ PyDoc_STRVAR(math_radians__doc__,
 "Convert angle x from degrees to radians.");
 
 #define MATH_RADIANS_METHODDEF    \
-    {"radians", (PyCFunction)math_radians, METH_O, math_radians__doc__},
+    {"radians", math_radians, METH_O, math_radians__doc__},
 
 static PyObject *
 math_radians_impl(PyObject *module, double x);
@@ -603,7 +603,7 @@ PyDoc_STRVAR(math_isfinite__doc__,
 "Return True if x is neither an infinity nor a NaN, and False otherwise.");
 
 #define MATH_ISFINITE_METHODDEF    \
-    {"isfinite", (PyCFunction)math_isfinite, METH_O, math_isfinite__doc__},
+    {"isfinite", math_isfinite, METH_O, math_isfinite__doc__},
 
 static PyObject *
 math_isfinite_impl(PyObject *module, double x);
@@ -637,7 +637,7 @@ PyDoc_STRVAR(math_isnan__doc__,
 "Return True if x is a NaN (not a number), and False otherwise.");
 
 #define MATH_ISNAN_METHODDEF    \
-    {"isnan", (PyCFunction)math_isnan, METH_O, math_isnan__doc__},
+    {"isnan", math_isnan, METH_O, math_isnan__doc__},
 
 static PyObject *
 math_isnan_impl(PyObject *module, double x);
@@ -671,7 +671,7 @@ PyDoc_STRVAR(math_isinf__doc__,
 "Return True if x is a positive or negative infinity, and False otherwise.");
 
 #define MATH_ISINF_METHODDEF    \
-    {"isinf", (PyCFunction)math_isinf, METH_O, math_isinf__doc__},
+    {"isinf", math_isinf, METH_O, math_isinf__doc__},
 
 static PyObject *
 math_isinf_impl(PyObject *module, double x);
@@ -1075,7 +1075,7 @@ PyDoc_STRVAR(math_ulp__doc__,
 "Return the value of the least significant bit of the float x.");
 
 #define MATH_ULP_METHODDEF    \
-    {"ulp", (PyCFunction)math_ulp, METH_O, math_ulp__doc__},
+    {"ulp", math_ulp, METH_O, math_ulp__doc__},
 
 static double
 math_ulp_impl(PyObject *module, double x);
@@ -1106,4 +1106,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1ccb4b9f570d6dad input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f4afeac249a582fe input=a9049054013a1b77]*/

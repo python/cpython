@@ -8,7 +8,7 @@ PyDoc_STRVAR(test_empty_function__doc__,
 "\n");
 
 #define TEST_EMPTY_FUNCTION_METHODDEF    \
-    {"test_empty_function", (PyCFunction)test_empty_function, METH_NOARGS, test_empty_function__doc__},
+    {"test_empty_function", test_empty_function, METH_NOARGS, test_empty_function__doc__},
 
 static PyObject *
 test_empty_function_impl(PyObject *module);
@@ -25,7 +25,7 @@ PyDoc_STRVAR(my_int_func__doc__,
 "\n");
 
 #define MY_INT_FUNC_METHODDEF    \
-    {"my_int_func", (PyCFunction)my_int_func, METH_O, my_int_func__doc__},
+    {"my_int_func", my_int_func, METH_O, my_int_func__doc__},
 
 static int
 my_int_func_impl(PyObject *module, int arg);
@@ -181,7 +181,7 @@ PyDoc_STRVAR(get_file_descriptor__doc__,
 "Get a file descriptor.");
 
 #define GET_FILE_DESCRIPTOR_METHODDEF    \
-    {"get_file_descriptor", (PyCFunction)get_file_descriptor, METH_O, get_file_descriptor__doc__},
+    {"get_file_descriptor", get_file_descriptor, METH_O, get_file_descriptor__doc__},
 
 static int
 get_file_descriptor_impl(PyObject *module, int fd);
@@ -206,4 +206,4 @@ get_file_descriptor(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=03fd7811c056dc74 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bc954e4e8b99154d input=a9049054013a1b77]*/

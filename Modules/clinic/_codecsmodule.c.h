@@ -19,7 +19,7 @@ PyDoc_STRVAR(_codecs_register__doc__,
 "(encoder, decoder, stream_reader, stream_writer) (or a CodecInfo object).");
 
 #define _CODECS_REGISTER_METHODDEF    \
-    {"register", (PyCFunction)_codecs_register, METH_O, _codecs_register__doc__},
+    {"register", _codecs_register, METH_O, _codecs_register__doc__},
 
 PyDoc_STRVAR(_codecs_unregister__doc__,
 "unregister($module, search_function, /)\n"
@@ -30,7 +30,7 @@ PyDoc_STRVAR(_codecs_unregister__doc__,
 "If the search function is not registered, do nothing.");
 
 #define _CODECS_UNREGISTER_METHODDEF    \
-    {"unregister", (PyCFunction)_codecs_unregister, METH_O, _codecs_unregister__doc__},
+    {"unregister", _codecs_unregister, METH_O, _codecs_unregister__doc__},
 
 PyDoc_STRVAR(_codecs_lookup__doc__,
 "lookup($module, encoding, /)\n"
@@ -39,7 +39,7 @@ PyDoc_STRVAR(_codecs_lookup__doc__,
 "Looks up a codec tuple in the Python codec registry and returns a CodecInfo object.");
 
 #define _CODECS_LOOKUP_METHODDEF    \
-    {"lookup", (PyCFunction)_codecs_lookup, METH_O, _codecs_lookup__doc__},
+    {"lookup", _codecs_lookup, METH_O, _codecs_lookup__doc__},
 
 static PyObject *
 _codecs_lookup_impl(PyObject *module, const char *encoding);
@@ -2436,7 +2436,7 @@ PyDoc_STRVAR(_codecs_charmap_build__doc__,
 "\n");
 
 #define _CODECS_CHARMAP_BUILD_METHODDEF    \
-    {"charmap_build", (PyCFunction)_codecs_charmap_build, METH_O, _codecs_charmap_build__doc__},
+    {"charmap_build", _codecs_charmap_build, METH_O, _codecs_charmap_build__doc__},
 
 static PyObject *
 _codecs_charmap_build_impl(PyObject *module, PyObject *map);
@@ -2700,7 +2700,7 @@ PyDoc_STRVAR(_codecs__unregister_error__doc__,
 "handling exists.");
 
 #define _CODECS__UNREGISTER_ERROR_METHODDEF    \
-    {"_unregister_error", (PyCFunction)_codecs__unregister_error, METH_O, _codecs__unregister_error__doc__},
+    {"_unregister_error", _codecs__unregister_error, METH_O, _codecs__unregister_error__doc__},
 
 static int
 _codecs__unregister_error_impl(PyObject *module, const char *errors);
@@ -2745,7 +2745,7 @@ PyDoc_STRVAR(_codecs_lookup_error__doc__,
 "LookupError, if no handler exists under this name.");
 
 #define _CODECS_LOOKUP_ERROR_METHODDEF    \
-    {"lookup_error", (PyCFunction)_codecs_lookup_error, METH_O, _codecs_lookup_error__doc__},
+    {"lookup_error", _codecs_lookup_error, METH_O, _codecs_lookup_error__doc__},
 
 static PyObject *
 _codecs_lookup_error_impl(PyObject *module, const char *name);
@@ -2798,4 +2798,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=f8a7fdd0b7edc0c4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6bae21e542af78dc input=a9049054013a1b77]*/

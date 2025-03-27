@@ -131,7 +131,7 @@ PyDoc_STRVAR(memoryview_release__doc__,
 "Release the underlying buffer exposed by the memoryview object.");
 
 #define MEMORYVIEW_RELEASE_METHODDEF    \
-    {"release", (PyCFunction)memoryview_release, METH_NOARGS, memoryview_release__doc__},
+    {"release", memoryview_release, METH_NOARGS, memoryview_release__doc__},
 
 static PyObject *
 memoryview_release_impl(PyMemoryViewObject *self);
@@ -217,7 +217,7 @@ PyDoc_STRVAR(memoryview_toreadonly__doc__,
 "Return a readonly version of the memoryview.");
 
 #define MEMORYVIEW_TOREADONLY_METHODDEF    \
-    {"toreadonly", (PyCFunction)memoryview_toreadonly, METH_NOARGS, memoryview_toreadonly__doc__},
+    {"toreadonly", memoryview_toreadonly, METH_NOARGS, memoryview_toreadonly__doc__},
 
 static PyObject *
 memoryview_toreadonly_impl(PyMemoryViewObject *self);
@@ -235,7 +235,7 @@ PyDoc_STRVAR(memoryview_tolist__doc__,
 "Return the data in the buffer as a list of elements.");
 
 #define MEMORYVIEW_TOLIST_METHODDEF    \
-    {"tolist", (PyCFunction)memoryview_tolist, METH_NOARGS, memoryview_tolist__doc__},
+    {"tolist", memoryview_tolist, METH_NOARGS, memoryview_tolist__doc__},
 
 static PyObject *
 memoryview_tolist_impl(PyMemoryViewObject *self);
@@ -426,7 +426,7 @@ PyDoc_STRVAR(memoryview_count__doc__,
 "Count the number of occurrences of a value.");
 
 #define MEMORYVIEW_COUNT_METHODDEF    \
-    {"count", (PyCFunction)memoryview_count, METH_O, memoryview_count__doc__},
+    {"count", memoryview_count, METH_O, memoryview_count__doc__},
 
 static PyObject *
 memoryview_count_impl(PyMemoryViewObject *self, PyObject *value);
@@ -486,4 +486,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ae3414e9311c02fb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c32614e84c83e729 input=a9049054013a1b77]*/
