@@ -1,5 +1,0 @@
-The free-threaded version of the cyclic garbage collector has been optimized to
-conditionally use CPU prefetch instructions during the collection.  This can
-reduce collection times by making it more likely that data is in the CPU cache
-when it is needed.  The prefetch instructions are enabled if the number of
-long-lived objects (objects surviving a full collection) exceeds a threshold.

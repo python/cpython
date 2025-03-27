@@ -422,7 +422,7 @@ def warn_explicit(message, category, filename, lineno,
     linecache.getlines(filename, module_globals)
 
     # Print message and context
-    msg = WarningMessage(message, category, filename, lineno, source)
+    msg = WarningMessage(message, category, filename, lineno, source=source)
     _showwarnmsg(msg)
 
 
@@ -472,9 +472,6 @@ class catch_warnings(object):
                  action=None, category=Warning, lineno=0, append=False):
         """Specify whether to record warnings and if an alternative module
         should be used other than sys.modules['warnings'].
-
-        For compatibility with Python 3.0, please consider all arguments to be
-        keyword-only.
 
         """
         self._record = record

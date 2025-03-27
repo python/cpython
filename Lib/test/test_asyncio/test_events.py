@@ -1,6 +1,7 @@
 """Tests for events.py."""
 
 import concurrent.futures
+import contextlib
 import functools
 import io
 import multiprocessing
@@ -22,7 +23,6 @@ import errno
 import unittest
 from unittest import mock
 import weakref
-import warnings
 if sys.platform not in ('win32', 'vxworks'):
     import tty
 
@@ -36,7 +36,6 @@ from test import support
 from test.support import socket_helper
 from test.support import threading_helper
 from test.support import ALWAYS_EQ, LARGEST, SMALLEST
-from test.support import warnings_helper
 
 def tearDownModule():
     asyncio._set_event_loop_policy(None)
@@ -57,9 +56,9 @@ def _test_get_event_loop_new_process__sub_proc():
     async def doit():
         return 'hello'
 
-    loop = asyncio.new_event_loop()
-    asyncio._set_event_loop(loop)
-    return loop.run_until_complete(doit())
+    with contextlib.closing(asyncio.new_event_loop()) as loop:
+        asyncio._set_event_loop(loop)
+        return loop.run_until_complete(doit())
 
 
 class CoroLike:
@@ -2930,11 +2929,16 @@ class GetEventLoopTestsMixin:
     get_running_loop_impl = None
     get_event_loop_impl = None
 
+    Task = None
+    Future = None
+
     def setUp(self):
         self._get_running_loop_saved = events._get_running_loop
         self._set_running_loop_saved = events._set_running_loop
         self.get_running_loop_saved = events.get_running_loop
         self.get_event_loop_saved = events.get_event_loop
+        self._Task_saved = asyncio.Task
+        self._Future_saved = asyncio.Future
 
         events._get_running_loop = type(self)._get_running_loop_impl
         events._set_running_loop = type(self)._set_running_loop_impl
@@ -2946,6 +2950,8 @@ class GetEventLoopTestsMixin:
         asyncio.get_running_loop = type(self).get_running_loop_impl
         asyncio.get_event_loop = type(self).get_event_loop_impl
 
+        asyncio.Task = asyncio.tasks.Task = type(self).Task
+        asyncio.Future = asyncio.futures.Future = type(self).Future
         super().setUp()
 
         self.loop = asyncio.new_event_loop()
@@ -2968,8 +2974,10 @@ class GetEventLoopTestsMixin:
             asyncio.get_running_loop = self.get_running_loop_saved
             asyncio.get_event_loop = self.get_event_loop_saved
 
-    if sys.platform != 'win32':
+            asyncio.Task = asyncio.tasks.Task = self._Task_saved
+            asyncio.Future = asyncio.futures.Future = self._Future_saved
 
+    if sys.platform != 'win32':
         def test_get_event_loop_new_process(self):
             # bpo-32126: The multiprocessing module used by
             # ProcessPoolExecutor is not functional when the
@@ -2994,6 +3002,22 @@ class GetEventLoopTestsMixin:
             self.assertEqual(
                 self.loop.run_until_complete(main()),
                 'hello')
+
+    def test_get_running_loop_already_running(self):
+        async def main():
+            running_loop = asyncio.get_running_loop()
+            with contextlib.closing(asyncio.new_event_loop()) as loop:
+                try:
+                    loop.run_forever()
+                except RuntimeError:
+                    pass
+                else:
+                    self.fail("RuntimeError not raised")
+
+            self.assertIs(asyncio.get_running_loop(), running_loop)
+
+        self.loop.run_until_complete(main())
+
 
     def test_get_event_loop_returns_running_loop(self):
         class TestError(Exception):
@@ -3088,6 +3112,8 @@ class TestPyGetEventLoop(GetEventLoopTestsMixin, unittest.TestCase):
     get_running_loop_impl = events._py_get_running_loop
     get_event_loop_impl = events._py_get_event_loop
 
+    Task = asyncio.tasks._PyTask
+    Future = asyncio.futures._PyFuture
 
 try:
     import _asyncio  # NoQA
@@ -3102,6 +3128,8 @@ else:
         get_running_loop_impl = events._c_get_running_loop
         get_event_loop_impl = events._c_get_event_loop
 
+        Task = asyncio.tasks._CTask
+        Future = asyncio.futures._CFuture
 
 class TestServer(unittest.TestCase):
 

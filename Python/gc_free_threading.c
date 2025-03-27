@@ -2,20 +2,20 @@
 #include "Python.h"
 #include "pycore_brc.h"           // struct _brc_thread_state
 #include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
-#include "pycore_context.h"
 #include "pycore_dict.h"          // _PyInlineValuesSize()
+#include "pycore_frame.h"         // FRAME_CLEARED
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
-#include "pycore_initconfig.h"
+#include "pycore_genobject.h"     // _PyGen_GetGeneratorFromFrame()
+#include "pycore_initconfig.h"    // _PyStatus_NO_MEMORY()
 #include "pycore_interp.h"        // PyInterpreterState.gc
-#include "pycore_object.h"
+#include "pycore_interpframe.h"   // _PyFrame_GetLocalsArray()
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
-#include "pycore_object_stack.h"
-#include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tstate.h"        // _PyThreadStateImpl
+#include "pycore_tuple.h"         // _PyTuple_MaybeUntrack()
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
+
 #include "pydtrace.h"
-#include "pycore_uniqueid.h"      // _PyObject_MergeThreadLocalRefcounts()
 
 
 // enable the "mark alive" pass of GC
@@ -433,6 +433,12 @@ static void
 gc_visit_thread_stacks(PyInterpreterState *interp, struct collection_state *state)
 {
     _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
+        _PyCStackRef *c_ref = ((_PyThreadStateImpl *)p)->c_stack_refs;
+        while (c_ref != NULL) {
+            gc_visit_stackref(c_ref->ref);
+            c_ref = c_ref->next;
+        }
+
         for (_PyInterpreterFrame *f = p->current_frame; f != NULL; f = f->previous) {
             if (f->owner >= FRAME_OWNED_BY_INTERPRETER) {
                 continue;
@@ -581,11 +587,13 @@ gc_mark_buffer_len(gc_mark_args_t *args)
 }
 
 // Returns number of free entry slots in buffer
+#ifndef NDEBUG
 static inline unsigned int
 gc_mark_buffer_avail(gc_mark_args_t *args)
 {
     return BUFFER_SIZE - gc_mark_buffer_len(args);
 }
+#endif
 
 static inline bool
 gc_mark_buffer_is_empty(gc_mark_args_t *args)
@@ -1074,13 +1082,13 @@ mark_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
         return true;
     }
 
-    _PyObject_ASSERT_WITH_MSG(op, gc_get_refs(op) >= 0,
-                                  "refcount is too small");
-
     if (gc_is_alive(op) || !gc_is_unreachable(op)) {
         // Object was already marked as reachable.
         return true;
     }
+
+    _PyObject_ASSERT_WITH_MSG(op, gc_get_refs(op) >= 0,
+                                  "refcount is too small");
 
     // GH-129236: If we've seen an active frame without a valid stack pointer,
     // then we can't collect objects with deferred references because we may
@@ -1178,10 +1186,10 @@ move_legacy_finalizer_reachable(struct collection_state *state);
 static void
 gc_prime_from_spans(gc_mark_args_t *args)
 {
-    Py_ssize_t space = BUFFER_HI - gc_mark_buffer_len(args);
+    unsigned int space = BUFFER_HI - gc_mark_buffer_len(args);
     // there should always be at least this amount of space
     assert(space <= gc_mark_buffer_avail(args));
-    assert(space > 0);
+    assert(space <= BUFFER_HI);
     gc_span_t entry = args->spans.stack[--args->spans.size];
     // spans on the stack should always have one or more elements
     assert(entry.start < entry.end);
@@ -1864,7 +1872,8 @@ gc_should_collect(GCState *gcstate)
 {
     int count = _Py_atomic_load_int_relaxed(&gcstate->young.count);
     int threshold = gcstate->young.threshold;
-    if (count <= threshold || threshold == 0 || !gcstate->enabled) {
+    int gc_enabled = _Py_atomic_load_int_relaxed(&gcstate->enabled);
+    if (count <= threshold || threshold == 0 || !gc_enabled) {
         return false;
     }
     // Avoid quadratic behavior by scaling threshold to the number of live
@@ -2340,25 +2349,21 @@ int
 PyGC_Enable(void)
 {
     GCState *gcstate = get_gc_state();
-    int old_state = gcstate->enabled;
-    gcstate->enabled = 1;
-    return old_state;
+    return _Py_atomic_exchange_int(&gcstate->enabled, 1);
 }
 
 int
 PyGC_Disable(void)
 {
     GCState *gcstate = get_gc_state();
-    int old_state = gcstate->enabled;
-    gcstate->enabled = 0;
-    return old_state;
+    return _Py_atomic_exchange_int(&gcstate->enabled, 0);
 }
 
 int
 PyGC_IsEnabled(void)
 {
     GCState *gcstate = get_gc_state();
-    return gcstate->enabled;
+    return _Py_atomic_load_int_relaxed(&gcstate->enabled);
 }
 
 /* Public API to invoke gc.collect() from C */
@@ -2368,7 +2373,7 @@ PyGC_Collect(void)
     PyThreadState *tstate = _PyThreadState_GET();
     GCState *gcstate = &tstate->interp->gc;
 
-    if (!gcstate->enabled) {
+    if (!_Py_atomic_load_int_relaxed(&gcstate->enabled)) {
         return 0;
     }
 
@@ -2527,8 +2532,7 @@ _PyObject_GC_Link(PyObject *op)
 void
 _Py_RunGC(PyThreadState *tstate)
 {
-    GCState *gcstate = get_gc_state();
-    if (!gcstate->enabled) {
+    if (!PyGC_IsEnabled()) {
         return;
     }
     gc_collect_main(tstate, 0, _Py_GC_REASON_HEAP);
@@ -2597,11 +2601,12 @@ PyObject *
 PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *tp, size_t extra_size)
 {
     size_t presize = _PyType_PreHeaderSize(tp);
-    PyObject *op = gc_alloc(tp, _PyObject_SIZE(tp) + extra_size, presize);
+    size_t size = _PyObject_SIZE(tp) + extra_size;
+    PyObject *op = gc_alloc(tp, size, presize);
     if (op == NULL) {
         return NULL;
     }
-    memset(op, 0, _PyObject_SIZE(tp) + extra_size);
+    memset((char *)op + sizeof(PyObject), 0, size - sizeof(PyObject));
     _PyObject_Init(op, tp);
     return op;
 }

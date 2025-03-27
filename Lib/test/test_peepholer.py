@@ -1,5 +1,6 @@
 import dis
 from itertools import combinations, product
+import opcode
 import sys
 import textwrap
 import unittest
@@ -33,6 +34,13 @@ def count_instr_recursively(f, opname):
         if hasattr(c, 'co_code'):
             count += count_instr_recursively(c, opname)
     return count
+
+
+def get_binop_argval(arg):
+    for i, nb_op in enumerate(opcode._nb_ops):
+        if arg == nb_op[0]:
+            return i
+    assert False, f"{arg} is not a valid BINARY_OP argument."
 
 
 class TestTranforms(BytecodeTestCase):
@@ -146,7 +154,7 @@ class TestTranforms(BytecodeTestCase):
         for line, elem in (
             ('a = 1,2,3', (1, 2, 3)),
             ('("a","b","c")', ('a', 'b', 'c')),
-            ('a,b,c = 1,2,3', (1, 2, 3)),
+            ('a,b,c,d = 1,2,3,4', (1, 2, 3, 4)),
             ('(None, 1, None)', (None, 1, None)),
             ('((1, 2), 3, 4)', ((1, 2), 3, 4)),
             ):
@@ -280,23 +288,23 @@ class TestTranforms(BytecodeTestCase):
         # valid code get optimized
         code = compile('"foo"[0]', '', 'single')
         self.assertInBytecode(code, 'LOAD_CONST', 'f')
-        self.assertNotInBytecode(code, 'BINARY_SUBSCR')
+        self.assertNotInBytecode(code, 'BINARY_OP')
         self.check_lnotab(code)
         code = compile('"\u0061\uffff"[1]', '', 'single')
         self.assertInBytecode(code, 'LOAD_CONST', '\uffff')
-        self.assertNotInBytecode(code,'BINARY_SUBSCR')
+        self.assertNotInBytecode(code,'BINARY_OP')
         self.check_lnotab(code)
 
         # With PEP 393, non-BMP char get optimized
         code = compile('"\U00012345"[0]', '', 'single')
         self.assertInBytecode(code, 'LOAD_CONST', '\U00012345')
-        self.assertNotInBytecode(code, 'BINARY_SUBSCR')
+        self.assertNotInBytecode(code, 'BINARY_OP')
         self.check_lnotab(code)
 
         # invalid code doesn't get optimized
         # out of range
         code = compile('"fuu"[10]', '', 'single')
-        self.assertInBytecode(code, 'BINARY_SUBSCR')
+        self.assertInBytecode(code, 'BINARY_OP')
         self.check_lnotab(code)
 
     def test_folding_of_unaryops_on_constants(self):
@@ -475,15 +483,28 @@ class TestTranforms(BytecodeTestCase):
 
     def test_constant_folding_small_int(self):
         tests = [
-            # subscript
             ('(0, )[0]', 0),
             ('(1 + 2, )[0]', 3),
             ('(2 + 2 * 2, )[0]', 6),
             ('(1, (1 + 2 + 3, ))[1][0]', 6),
+            ('1 + 2', 3),
+            ('2 + 2 * 2 // 2 - 2', 2),
             ('(255, )[0]', 255),
             ('(256, )[0]', None),
             ('(1000, )[0]', None),
             ('(1 - 2, )[0]', None),
+            ('255 + 0', 255),
+            ('255 + 1', None),
+            ('-1', None),
+            ('--1', 1),
+            ('--255', 255),
+            ('--256', None),
+            ('~1', None),
+            ('~~1', 1),
+            ('~~255', 255),
+            ('~~256', None),
+            ('++255', 255),
+            ('++256', None),
         ]
         for expr, oparg in tests:
             with self.subTest(expr=expr, oparg=oparg):
@@ -494,37 +515,175 @@ class TestTranforms(BytecodeTestCase):
                     self.assertNotInBytecode(code, 'LOAD_SMALL_INT')
                 self.check_lnotab(code)
 
-    def test_folding_subscript(self):
+    def test_folding_unaryop(self):
+        intrinsic_positive = 5
         tests = [
-            ('(1, )[0]', False),
-            ('(1, )[-1]', False),
-            ('(1 + 2, )[0]', False),
-            ('(1, (1, 2))[1][1]', False),
-            ('(1, 2)[2-1]', False),
-            ('(1, (1, 2))[1][2-1]', False),
-            ('(1, (1, 2))[1:6][0][2-1]', False),
-            ('"a"[0]', False),
-            ('("a" + "b")[1]', False),
-            ('("a" + "b", )[0][1]', False),
-            ('("a" * 10)[9]', False),
-            ('(1, )[1]', True),
-            ('(1, )[-2]', True),
-            ('"a"[1]', True),
-            ('"a"[-2]', True),
-            ('("a" + "b")[2]', True),
-            ('("a" + "b", )[0][2]', True),
-            ('("a" + "b", )[1][0]', True),
-            ('("a" * 10)[10]', True),
-            ('(1, (1, 2))[2:6][0][2-1]', True),
+            ('---1', 'UNARY_NEGATIVE', None, True),
+            ('---""', 'UNARY_NEGATIVE', None, False),
+            ('~~~1', 'UNARY_INVERT', None, True),
+            ('~~~""', 'UNARY_INVERT', None, False),
+            ('not not True', 'UNARY_NOT', None, True),
+            ('not not x', 'UNARY_NOT', None, True),  # this should be optimized regardless of constant or not
+            ('+++1', 'CALL_INTRINSIC_1', intrinsic_positive, True),
+            ('---x', 'UNARY_NEGATIVE', None, False),
+            ('~~~x', 'UNARY_INVERT', None, False),
+            ('+++x', 'CALL_INTRINSIC_1', intrinsic_positive, False),
         ]
-        for expr, has_error in tests:
+
+        for expr, opcode, oparg, optimized in tests:
+            with self.subTest(expr=expr, optimized=optimized):
+                code = compile(expr, '', 'single')
+                if optimized:
+                    self.assertNotInBytecode(code, opcode, argval=oparg)
+                else:
+                    self.assertInBytecode(code, opcode, argval=oparg)
+                self.check_lnotab(code)
+
+    def test_folding_binop(self):
+        tests = [
+            ('1 + 2', False, 'NB_ADD'),
+            ('1 + 2 + 3', False, 'NB_ADD'),
+            ('1 + ""', True, 'NB_ADD'),
+            ('1 - 2', False, 'NB_SUBTRACT'),
+            ('1 - 2 - 3', False, 'NB_SUBTRACT'),
+            ('1 - ""', True, 'NB_SUBTRACT'),
+            ('2 * 2', False, 'NB_MULTIPLY'),
+            ('2 * 2 * 2', False, 'NB_MULTIPLY'),
+            ('2 / 2', False, 'NB_TRUE_DIVIDE'),
+            ('2 / 2 / 2', False, 'NB_TRUE_DIVIDE'),
+            ('2 / ""', True, 'NB_TRUE_DIVIDE'),
+            ('2 // 2', False, 'NB_FLOOR_DIVIDE'),
+            ('2 // 2 // 2', False, 'NB_FLOOR_DIVIDE'),
+            ('2 // ""', True, 'NB_FLOOR_DIVIDE'),
+            ('2 % 2', False, 'NB_REMAINDER'),
+            ('2 % 2 % 2', False, 'NB_REMAINDER'),
+            ('2 % ()', True, 'NB_REMAINDER'),
+            ('2 ** 2', False, 'NB_POWER'),
+            ('2 ** 2 ** 2', False, 'NB_POWER'),
+            ('2 ** ""', True, 'NB_POWER'),
+            ('2 << 2', False, 'NB_LSHIFT'),
+            ('2 << 2 << 2', False, 'NB_LSHIFT'),
+            ('2 << ""', True, 'NB_LSHIFT'),
+            ('2 >> 2', False, 'NB_RSHIFT'),
+            ('2 >> 2 >> 2', False, 'NB_RSHIFT'),
+            ('2 >> ""', True, 'NB_RSHIFT'),
+            ('2 | 2', False, 'NB_OR'),
+            ('2 | 2 | 2', False, 'NB_OR'),
+            ('2 | ""', True, 'NB_OR'),
+            ('2 & 2', False, 'NB_AND'),
+            ('2 & 2 & 2', False, 'NB_AND'),
+            ('2 & ""', True, 'NB_AND'),
+            ('2 ^ 2', False, 'NB_XOR'),
+            ('2 ^ 2 ^ 2', False, 'NB_XOR'),
+            ('2 ^ ""', True, 'NB_XOR'),
+            ('(1, )[0]', False, 'NB_SUBSCR'),
+            ('(1, )[-1]', False, 'NB_SUBSCR'),
+            ('(1 + 2, )[0]', False, 'NB_SUBSCR'),
+            ('(1, (1, 2))[1][1]', False, 'NB_SUBSCR'),
+            ('(1, 2)[2-1]', False, 'NB_SUBSCR'),
+            ('(1, (1, 2))[1][2-1]', False, 'NB_SUBSCR'),
+            ('(1, (1, 2))[1:6][0][2-1]', False, 'NB_SUBSCR'),
+            ('"a"[0]', False, 'NB_SUBSCR'),
+            ('("a" + "b")[1]', False, 'NB_SUBSCR'),
+            ('("a" + "b", )[0][1]', False, 'NB_SUBSCR'),
+            ('("a" * 10)[9]', False, 'NB_SUBSCR'),
+            ('(1, )[1]', True, 'NB_SUBSCR'),
+            ('(1, )[-2]', True, 'NB_SUBSCR'),
+            ('"a"[1]', True, 'NB_SUBSCR'),
+            ('"a"[-2]', True, 'NB_SUBSCR'),
+            ('("a" + "b")[2]', True, 'NB_SUBSCR'),
+            ('("a" + "b", )[0][2]', True, 'NB_SUBSCR'),
+            ('("a" + "b", )[1][0]', True, 'NB_SUBSCR'),
+            ('("a" * 10)[10]', True, 'NB_SUBSCR'),
+            ('(1, (1, 2))[2:6][0][2-1]', True, 'NB_SUBSCR'),
+
+        ]
+        for expr, has_error, nb_op in tests:
             with self.subTest(expr=expr, has_error=has_error):
                 code = compile(expr, '', 'single')
+                nb_op_val = get_binop_argval(nb_op)
                 if not has_error:
-                    self.assertNotInBytecode(code, 'BINARY_SUBSCR')
+                    self.assertNotInBytecode(code, 'BINARY_OP', argval=nb_op_val)
                 else:
-                    self.assertInBytecode(code, 'BINARY_SUBSCR')
+                    self.assertInBytecode(code, 'BINARY_OP', argval=nb_op_val)
                 self.check_lnotab(code)
+
+    def test_constant_folding_remove_nop_location(self):
+        sources = [
+            """
+            (-
+             -
+             -
+             1)
+            """,
+
+            """
+            (1
+             +
+             2
+             +
+             3)
+            """,
+
+            """
+            (1,
+             2,
+             3)[0]
+            """,
+
+            """
+            [1,
+             2,
+             3]
+            """,
+
+            """
+            {1,
+             2,
+             3}
+            """,
+
+            """
+            1 in [
+               1,
+               2,
+               3
+            ]
+            """,
+
+            """
+            1 in {
+               1,
+               2,
+               3
+            }
+            """,
+
+            """
+            for _ in [1,
+                      2,
+                      3]:
+                pass
+            """,
+
+            """
+            for _ in [1,
+                      2,
+                      x]:
+                pass
+            """,
+
+            """
+            for _ in {1,
+                      2,
+                      3}:
+                pass
+            """
+        ]
+
+        for source in sources:
+            code = compile(textwrap.dedent(source), '', 'single')
+            self.assertNotInBytecode(code, 'NOP')
 
     def test_in_literal_list(self):
         def containtest():
@@ -1048,16 +1207,1045 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         expected_insts = [
             ('LOAD_NAME', 1, 11),
             ('POP_JUMP_IF_TRUE', lbl := self.Label(), 12),
-            ('LOAD_CONST', 1, 13),
+            ('LOAD_SMALL_INT', 2, 13),
             ('RETURN_VALUE', None, 13),
             lbl,
-            ('LOAD_CONST', 2, 14),
+            ('LOAD_SMALL_INT', 3, 14),
             ('RETURN_VALUE', None, 14),
         ]
         self.cfg_optimization_test(insts,
                                    expected_insts,
                                    consts=[0, 1, 2, 3, 4],
-                                   expected_consts=[0, 2, 3])
+                                   expected_consts=[0])
+
+    def test_list_exceeding_stack_use_guideline(self):
+        def f():
+            return [
+                0, 1, 2, 3, 4,
+                5, 6, 7, 8, 9,
+                10, 11, 12, 13, 14,
+                15, 16, 17, 18, 19,
+                20, 21, 22, 23, 24,
+                25, 26, 27, 28, 29,
+                30, 31, 32, 33, 34,
+                35, 36, 37, 38, 39
+            ]
+        self.assertEqual(f(), list(range(40)))
+
+    def test_set_exceeding_stack_use_guideline(self):
+        def f():
+            return {
+                0, 1, 2, 3, 4,
+                5, 6, 7, 8, 9,
+                10, 11, 12, 13, 14,
+                15, 16, 17, 18, 19,
+                20, 21, 22, 23, 24,
+                25, 26, 27, 28, 29,
+                30, 31, 32, 33, 34,
+                35, 36, 37, 38, 39
+            }
+        self.assertEqual(f(), frozenset(range(40)))
+
+    def test_nested_const_foldings(self):
+        # (1, (--2 + ++2 * 2 // 2 - 2, )[0], ~~3, not not True)  ==>  (1, 2, 3, True)
+        intrinsic_positive = 5
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('UNARY_NEGATIVE', None, 0),
+            ('NOP', None, 0),
+            ('UNARY_NEGATIVE', None, 0),
+            ('NOP', None, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('CALL_INTRINSIC_1', intrinsic_positive, 0),
+            ('NOP', None, 0),
+            ('CALL_INTRINSIC_1', intrinsic_positive, 0),
+            ('BINARY_OP', get_binop_argval('NB_MULTIPLY')),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('NOP', None, 0),
+            ('BINARY_OP', get_binop_argval('NB_FLOOR_DIVIDE')),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', get_binop_argval('NB_ADD')),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('NOP', None, 0),
+            ('BINARY_OP', get_binop_argval('NB_SUBTRACT')),
+            ('NOP', None, 0),
+            ('BUILD_TUPLE', 1, 0),
+            ('LOAD_SMALL_INT', 0, 0),
+            ('BINARY_OP', get_binop_argval('NB_SUBSCR'), 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('NOP', None, 0),
+            ('UNARY_INVERT', None, 0),
+            ('NOP', None, 0),
+            ('UNARY_INVERT', None, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('NOP', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('NOP', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('NOP', None, 0),
+            ('BUILD_TUPLE', 4, 0),
+            ('NOP', None, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_CONST', 1, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[-2, (1, 2, 3, True)])
+
+    def test_build_empty_tuple(self):
+        before = [
+            ('BUILD_TUPLE', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[()])
+
+    def test_fold_tuple_of_constants(self):
+        before = [
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('NOP', None, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('NOP', None, 0),
+            ('BUILD_TUPLE', 3, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[(1, 2, 3)])
+
+        # not enough consts
+        same = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BUILD_TUPLE', 3, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(same, same, consts=[])
+
+        # not all consts
+        same = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BUILD_TUPLE', 3, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(same, same, consts=[])
+
+    def test_fold_constant_intrinsic_list_to_tuple(self):
+        INTRINSIC_LIST_TO_TUPLE = 6
+
+        # long tuple
+        consts = 1000
+        before = (
+            [('BUILD_LIST', 0, 0)] +
+            [('LOAD_CONST', 0, 0), ('LIST_APPEND', 1, 0)] * consts +
+            [('CALL_INTRINSIC_1', INTRINSIC_LIST_TO_TUPLE, 0), ('RETURN_VALUE', None, 0)]
+        )
+        after = [
+            ('LOAD_CONST', 1, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        result_const = tuple(["test"] * consts)
+        self.cfg_optimization_test(before, after, consts=["test"], expected_consts=["test", result_const])
+
+        # empty list
+        before = [
+            ('BUILD_LIST', 0, 0),
+            ('CALL_INTRINSIC_1', INTRINSIC_LIST_TO_TUPLE, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[()])
+
+        # multiple BUILD_LIST 0: ([], 1, [], 2)
+        same = [
+            ('BUILD_LIST', 0, 0),
+            ('BUILD_LIST', 0, 0),
+            ('LIST_APPEND', 1, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LIST_APPEND', 1, 0),
+            ('BUILD_LIST', 0, 0),
+            ('LIST_APPEND', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LIST_APPEND', 1, 0),
+            ('CALL_INTRINSIC_1', INTRINSIC_LIST_TO_TUPLE, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(same, same, consts=[])
+
+        # nested folding: (1, 1+1, 3)
+        before = [
+            ('BUILD_LIST', 0, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LIST_APPEND', 1, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('BINARY_OP', get_binop_argval('NB_ADD'), 0),
+            ('LIST_APPEND', 1, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('LIST_APPEND', 1, 0),
+            ('CALL_INTRINSIC_1', INTRINSIC_LIST_TO_TUPLE, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[(1, 2, 3)])
+
+        # NOP's in between: (1, 2, 3)
+        before = [
+            ('BUILD_LIST', 0, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('NOP', None, 0),
+            ('NOP', None, 0),
+            ('LIST_APPEND', 1, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('NOP', None, 0),
+            ('NOP', None, 0),
+            ('LIST_APPEND', 1, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('NOP', None, 0),
+            ('LIST_APPEND', 1, 0),
+            ('NOP', None, 0),
+            ('CALL_INTRINSIC_1', INTRINSIC_LIST_TO_TUPLE, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[(1, 2, 3)])
+
+        # no sequence start
+        same = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LIST_APPEND', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LIST_APPEND', 1, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('LIST_APPEND', 1, 0),
+            ('CALL_INTRINSIC_1', INTRINSIC_LIST_TO_TUPLE, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(same, same, consts=[])
+
+    def test_optimize_if_const_list(self):
+        before = [
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('NOP', None, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('NOP', None, 0),
+            ('BUILD_LIST', 3, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('BUILD_LIST', 0, 0),
+            ('LOAD_CONST', 0, 0),
+            ('LIST_EXTEND', 1, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[(1, 2, 3)])
+
+        # need minimum 3 consts to optimize
+        same = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BUILD_LIST', 2, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(same, same, consts=[])
+
+        # not enough consts
+        same = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('BUILD_LIST', 4, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(same, same, consts=[])
+
+        # not all consts
+        same = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('BUILD_LIST', 3, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(same, same, consts=[])
+
+    def test_optimize_if_const_set(self):
+        before = [
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('NOP', None, 0),
+            ('NOP', None, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('NOP', None, 0),
+            ('BUILD_SET', 3, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('BUILD_SET', 0, 0),
+            ('LOAD_CONST', 0, 0),
+            ('SET_UPDATE', 1, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[frozenset({1, 2, 3})])
+
+        # need minimum 3 consts to optimize
+        same = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BUILD_SET', 2, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(same, same, consts=[])
+
+        # not enough consts
+        same = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('BUILD_SET', 4, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(same, same, consts=[])
+
+        # not all consts
+        same = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_SMALL_INT', 3, 0),
+            ('BUILD_SET', 3, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(same, same, consts=[])
+
+    def test_optimize_literal_list_for_iter(self):
+        # for _ in [1, 2]: pass  ==>  for _ in (1, 2): pass
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BUILD_LIST', 2, 0),
+            ('GET_ITER', None, 0),
+            start := self.Label(),
+            ('FOR_ITER', end := self.Label(), 0),
+            ('STORE_FAST', 0, 0),
+            ('JUMP', start, 0),
+            end,
+            ('END_FOR', None, 0),
+            ('POP_ITER', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_CONST', 1, 0),
+            ('GET_ITER', None, 0),
+            start := self.Label(),
+            ('FOR_ITER', end := self.Label(), 0),
+            ('STORE_FAST', 0, 0),
+            ('JUMP', start, 0),
+            end,
+            ('END_FOR', None, 0),
+            ('POP_ITER', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None, (1, 2)])
+
+        # for _ in [1, x]: pass  ==>  for _ in (1, x): pass
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 0, 0),
+            ('BUILD_LIST', 2, 0),
+            ('GET_ITER', None, 0),
+            start := self.Label(),
+            ('FOR_ITER', end := self.Label(), 0),
+            ('STORE_FAST', 0, 0),
+            ('JUMP', start, 0),
+            end,
+            ('END_FOR', None, 0),
+            ('POP_ITER', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 0, 0),
+            ('BUILD_TUPLE', 2, 0),
+            ('GET_ITER', None, 0),
+            start := self.Label(),
+            ('FOR_ITER', end := self.Label(), 0),
+            ('STORE_FAST', 0, 0),
+            ('JUMP', start, 0),
+            end,
+            ('END_FOR', None, 0),
+            ('POP_ITER', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None])
+
+    def test_optimize_literal_set_for_iter(self):
+        # for _ in {1, 2}: pass  ==>  for _ in (1, 2): pass
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BUILD_SET', 2, 0),
+            ('GET_ITER', None, 0),
+            start := self.Label(),
+            ('FOR_ITER', end := self.Label(), 0),
+            ('STORE_FAST', 0, 0),
+            ('JUMP', start, 0),
+            end,
+            ('END_FOR', None, 0),
+            ('POP_ITER', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_CONST', 1, 0),
+            ('GET_ITER', None, 0),
+            start := self.Label(),
+            ('FOR_ITER', end := self.Label(), 0),
+            ('STORE_FAST', 0, 0),
+            ('JUMP', start, 0),
+            end,
+            ('END_FOR', None, 0),
+            ('POP_ITER', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None, frozenset({1, 2})])
+
+        # non constant literal set is not changed
+        # for _ in {1, x}: pass  ==>  for _ in {1, x}: pass
+        same = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 0, 0),
+            ('BUILD_SET', 2, 0),
+            ('GET_ITER', None, 0),
+            start := self.Label(),
+            ('FOR_ITER', end := self.Label(), 0),
+            ('STORE_FAST', 0, 0),
+            ('JUMP', start, 0),
+            end,
+            ('END_FOR', None, 0),
+            ('POP_ITER', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(same, same, consts=[None], expected_consts=[None])
+
+    def test_optimize_literal_list_contains(self):
+        # x in [1, 2]  ==>  x in (1, 2)
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BUILD_LIST', 2, 0),
+            ('CONTAINS_OP', 0, 0),
+            ('POP_TOP', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_CONST', 1, 0),
+            ('CONTAINS_OP', 0, 0),
+            ('POP_TOP', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None, (1, 2)])
+
+        # x in [1, y]  ==>  x in (1, y)
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 1, 0),
+            ('BUILD_LIST', 2, 0),
+            ('CONTAINS_OP', 0, 0),
+            ('POP_TOP', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 1, 0),
+            ('BUILD_TUPLE', 2, 0),
+            ('CONTAINS_OP', 0, 0),
+            ('POP_TOP', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None])
+
+    def test_optimize_literal_set_contains(self):
+        # x in {1, 2}  ==>  x in (1, 2)
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BUILD_SET', 2, 0),
+            ('CONTAINS_OP', 0, 0),
+            ('POP_TOP', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_CONST', 1, 0),
+            ('CONTAINS_OP', 0, 0),
+            ('POP_TOP', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[None], expected_consts=[None, frozenset({1, 2})])
+
+        # non constant literal set is not changed
+        # x in {1, y}  ==>  x in {1, y}
+        same = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_NAME', 1, 0),
+            ('BUILD_SET', 2, 0),
+            ('CONTAINS_OP', 0, 0),
+            ('POP_TOP', None, 0),
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(same, same, consts=[None], expected_consts=[None])
+
+    def test_optimize_unary_not(self):
+        # test folding
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('TO_BOOL', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_CONST', 1, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[True, False])
+
+        # test cancel out
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('TO_BOOL', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('TO_BOOL', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test eliminate to bool
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('TO_BOOL', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('TO_BOOL', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test folding & cancel out
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('TO_BOOL', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[True])
+
+        # test folding & eliminate to bool
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('TO_BOOL', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_CONST', 1, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[True, False])
+
+        # test cancel out & eliminate to bool (to bool stays as we are not iterating to a fixed point)
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('TO_BOOL', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('TO_BOOL', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        is_ = in_ = 0
+        isnot = notin = 1
+
+        # test is/isnot
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('IS_OP', is_, 0),
+            ('UNARY_NOT', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('IS_OP', isnot, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test is/isnot cancel out
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('IS_OP', is_, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('IS_OP', is_, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test is/isnot eliminate to bool
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('IS_OP', is_, 0),
+            ('UNARY_NOT', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('IS_OP', isnot, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test is/isnot cancel out & eliminate to bool
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('IS_OP', is_, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('IS_OP', is_, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test in/notin
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('CONTAINS_OP', in_, 0),
+            ('UNARY_NOT', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('CONTAINS_OP', notin, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test in/notin cancel out
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('CONTAINS_OP', in_, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('CONTAINS_OP', in_, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test is/isnot & eliminate to bool
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('CONTAINS_OP', in_, 0),
+            ('UNARY_NOT', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('TO_BOOL', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('CONTAINS_OP', notin, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test in/notin cancel out & eliminate to bool
+        before = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('CONTAINS_OP', in_, 0),
+            ('UNARY_NOT', None, 0),
+            ('UNARY_NOT', None, 0),
+            ('TO_BOOL', None, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        after = [
+            ('LOAD_NAME', 0, 0),
+            ('LOAD_NAME', 1, 0),
+            ('CONTAINS_OP', in_, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+    def test_optimize_if_const_unaryop(self):
+        # test unary negative
+        before = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('UNARY_NEGATIVE', None, 0),
+            ('UNARY_NEGATIVE', None, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[-2])
+
+        # test unary invert
+        before = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('UNARY_INVERT', None, 0),
+            ('UNARY_INVERT', None, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[-3])
+
+        # test unary positive
+        before = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('CALL_INTRINSIC_1', 5, 0),
+            ('CALL_INTRINSIC_1', 5, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('RETURN_VALUE', None, 0),
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+    def test_optimize_if_const_binop(self):
+        add = get_binop_argval('NB_ADD')
+        sub = get_binop_argval('NB_SUBTRACT')
+        mul = get_binop_argval('NB_MULTIPLY')
+        div = get_binop_argval('NB_TRUE_DIVIDE')
+        floor = get_binop_argval('NB_FLOOR_DIVIDE')
+        rem = get_binop_argval('NB_REMAINDER')
+        pow = get_binop_argval('NB_POWER')
+        lshift = get_binop_argval('NB_LSHIFT')
+        rshift = get_binop_argval('NB_RSHIFT')
+        or_ = get_binop_argval('NB_OR')
+        and_ = get_binop_argval('NB_AND')
+        xor = get_binop_argval('NB_XOR')
+        subscr = get_binop_argval('NB_SUBSCR')
+
+        # test add
+        before = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', add, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', add, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 6, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test sub
+        before = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', sub, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', sub, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_CONST', 0, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[-2])
+
+        # test mul
+        before = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', mul, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', mul, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 8, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test div
+        before = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', div, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', div, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_CONST', 1, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[1.0, 0.5])
+
+        # test floor
+        before = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', floor, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', floor, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 0, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test rem
+        before = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', rem, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', rem, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 0, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test pow
+        before = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', pow, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', pow, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 16, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test lshift
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('BINARY_OP', lshift, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('BINARY_OP', lshift, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 4, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test rshift
+        before = [
+            ('LOAD_SMALL_INT', 4, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('BINARY_OP', rshift, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('BINARY_OP', rshift, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test or
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', or_, 0),
+            ('LOAD_SMALL_INT', 4, 0),
+            ('BINARY_OP', or_, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 7, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test and
+        before = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('BINARY_OP', and_, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('BINARY_OP', and_, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 1, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test xor
+        before = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', xor, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', xor, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 2, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[], expected_consts=[])
+
+        # test subscr
+        before = [
+            ('LOAD_CONST', 0, 0),
+            ('LOAD_SMALL_INT', 1, 0),
+            ('BINARY_OP', subscr, 0),
+            ('LOAD_SMALL_INT', 2, 0),
+            ('BINARY_OP', subscr, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        after = [
+            ('LOAD_SMALL_INT', 3, 0),
+            ('RETURN_VALUE', None, 0)
+        ]
+        self.cfg_optimization_test(before, after, consts=[(1, (1, 2, 3))], expected_consts=[(1, (1, 2, 3))])
+
 
     def test_conditional_jump_forward_const_condition(self):
         # The unreachable branch of the jump is removed, the jump
@@ -1074,13 +2262,13 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         expected_insts = [
             ('NOP', None, 11),
             ('NOP', None, 12),
-            ('LOAD_CONST', 1, 14),
+            ('LOAD_SMALL_INT', 3, 14),
             ('RETURN_VALUE', None, 14),
         ]
         self.cfg_optimization_test(insts,
                                    expected_insts,
                                    consts=[0, 1, 2, 3, 4],
-                                   expected_consts=[0, 3])
+                                   expected_consts=[0])
 
     def test_conditional_jump_backward_non_const_condition(self):
         insts = [
@@ -1127,10 +2315,10 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
         ]
         expected_insts = [
             ('SETUP_FINALLY', handler := self.Label(), 10),
-            ('LOAD_CONST', 1, 11),
+            ('LOAD_SMALL_INT', 1, 11),
             ('RETURN_VALUE', None, 11),
             handler,
-            ('LOAD_CONST', 2, 12),
+            ('LOAD_SMALL_INT', 2, 12),
             ('RETURN_VALUE', None, 12),
         ]
         self.cfg_optimization_test(insts, expected_insts, consts=list(range(5)))
@@ -1149,12 +2337,12 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('RETURN_VALUE', None, 5)
         ]
         expected_insts = [
-            ('LOAD_CONST', 0, 1),
-            ('LOAD_CONST', 1, 2),
+            ('LOAD_SMALL_INT', 0, 1),
+            ('LOAD_SMALL_INT', 1, 2),
             ('NOP', None, 3),
             ('STORE_FAST', 1, 4),
             ('POP_TOP', None, 4),
-            ('LOAD_CONST', 0, 5),
+            ('LOAD_SMALL_INT', 0, 5),
             ('RETURN_VALUE', None, 5)
         ]
         self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
@@ -1171,12 +2359,12 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('RETURN_VALUE', None, 5)
         ]
         expected_insts = [
-            ('LOAD_CONST', 0, 1),
-            ('LOAD_CONST', 1, 2),
+            ('LOAD_SMALL_INT', 0, 1),
+            ('LOAD_SMALL_INT', 1, 2),
             ('NOP', None, 3),
             ('POP_TOP', None, 4),
             ('STORE_FAST', 1, 4),
-            ('LOAD_CONST', 0, 5),
+            ('LOAD_SMALL_INT', 0, 5),
             ('RETURN_VALUE', None, 5)
         ]
         self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
@@ -1193,13 +2381,13 @@ class DirectCfgOptimizerTests(CfgOptimizationTestCase):
             ('RETURN_VALUE', None, 5)
         ]
         expected_insts = [
-            ('LOAD_CONST', 0, 1),
-            ('LOAD_CONST', 1, 2),
-            ('LOAD_CONST', 2, 3),
+            ('LOAD_SMALL_INT', 0, 1),
+            ('LOAD_SMALL_INT', 1, 2),
+            ('LOAD_SMALL_INT', 2, 3),
             ('STORE_FAST', 1, 4),
             ('STORE_FAST', 1, 5),
             ('STORE_FAST', 1, 6),
-            ('LOAD_CONST', 0, 5),
+            ('LOAD_SMALL_INT', 0, 5),
             ('RETURN_VALUE', None, 5)
         ]
         self.cfg_optimization_test(insts, expected_insts, consts=list(range(3)), nlocals=1)
