@@ -234,38 +234,30 @@ class Stack:
         indirect = "&" if var.is_array() else ""
         if self.variables:
             popped = self.variables.pop()
-            if var.is_array() ^ popped.is_array():
-                raise StackError(
-                    f"Array mismatch when popping '{popped.name}' from stack to assign to '{var.name}'. "
-                    f"Expected {array_or_scalar(var)} got {array_or_scalar(popped)}"
-                )
-            if popped.size != var.size:
-                raise StackError(
-                    f"Size mismatch when popping '{popped.name}' from stack to assign to '{var.name}'. "
-                    f"Expected {var_size(var)} got {var_size(popped.item)}"
-                )
-            if not var.used:
-                return popped
-            if popped.name != var.name:
-                rename = f"{var.name} = {popped.name};\n"
-                popped.item = var
-            else:
-                rename = ""
-            if not popped.in_local:
-                if popped.memory_offset is None:
-                    popped.memory_offset = self.logical_sp
-                assert popped.memory_offset == self.logical_sp, (popped, self.as_comment())
-                offset = popped.memory_offset.to_c()
-                if var.is_array():
-                    defn = f"{var.name} = &stack_pointer[{offset}];\n"
+            if var.is_array() == popped.is_array() and popped.size == var.size:
+                if not var.used:
+                    return popped
+                if popped.name != var.name:
+                    rename = f"{var.name} = {popped.name};\n"
+                    popped.item = var
                 else:
-                    defn = f"{var.name} = stack_pointer[{offset}];\n"
-                    popped.in_local = True
-            else:
-                defn = rename
-            out.emit(defn)
-            return popped
-
+                    rename = ""
+                if not popped.in_local:
+                    if popped.memory_offset is None:
+                        popped.memory_offset = self.logical_sp
+                    assert popped.memory_offset == self.logical_sp, (popped, self.as_comment())
+                    offset = popped.memory_offset.to_c()
+                    if var.is_array():
+                        defn = f"{var.name} = &stack_pointer[{offset}];\n"
+                    else:
+                        defn = f"{var.name} = stack_pointer[{offset}];\n"
+                        popped.in_local = True
+                else:
+                    defn = rename
+                out.emit(defn)
+                return popped
+            #Mismatch
+            self.clear(out)
         self.base_offset = self.logical_sp
         if var.name in UNUSED or not var.used:
             return Local.unused(var, self.base_offset)
@@ -275,6 +267,12 @@ class Stack:
         assign = f"{var.name} = {cast}{indirect}stack_pointer[{offset}]{bits};\n"
         out.emit(assign)
         return Local.from_memory(var, self.base_offset)
+
+    def clear(self, out: CWriter):
+        "Flush to memory and clear variables stack"
+        self.flush(out)
+        self.variables = []
+        self.base_offset = self.logical_sp
 
     def push(self, var: Local) -> None:
         assert(var not in self.variables)
