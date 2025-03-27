@@ -781,7 +781,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     }
 
     if (interpreter_state_addr == 0) {
-        PyErr_SetString(PyExc_RuntimeError, "No interpreter state found");
+        PyErr_SetString(PyExc_RuntimeError, "Can't find a running interpreter in the remote process");
         return -1;
     }
 
