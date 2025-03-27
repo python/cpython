@@ -5821,6 +5821,7 @@ type_assign_version_lock_held(PyTypeObject *type)
     }
 }
 
+#ifdef Py_GIL_DISABLED
 static unsigned int
 type_assign_version(PyTypeObject *type)
 {
@@ -5830,6 +5831,7 @@ type_assign_version(PyTypeObject *type)
     types_mutex_unlock();
     return version;
 }
+#endif
 
 static unsigned int
 type_lookup_ex(PyTypeObject *type, PyObject *name, _PyStackRef *out,
