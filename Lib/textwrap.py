@@ -431,9 +431,6 @@ def dedent(text):
     if not text:
         return text
 
-    if "\n" not in text:
-        return text  # Single line has no dedent
-
     lines = text.split("\n")
 
     splitting = os.path.commonprefix(tuple(filter(lambda x: x.lstrip(), lines)))
