@@ -21,6 +21,7 @@ from test.support import os_helper
 from test.support import script_helper
 from test.support import socket_helper
 from test.support import warnings_helper
+from test.support.testcase import ExtraAssertions
 
 TESTFN = os_helper.TESTFN
 
@@ -50,7 +51,7 @@ def _caplog():
         root_logger.removeHandler(handler)
 
 
-class TestSupport(unittest.TestCase):
+class TestSupport(unittest.TestCase, ExtraAssertions):
     @classmethod
     def setUpClass(cls):
         orig_filter_len = len(warnings.filters)
