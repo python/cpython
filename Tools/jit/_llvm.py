@@ -7,7 +7,6 @@ import re
 import shlex
 import subprocess
 import typing
-import weakref
 
 _LLVM_VERSION = 19
 _LLVM_VERSION_PATTERN = re.compile(rf"version\s+{_LLVM_VERSION}\.\d+\.\d+\S*\s+")
@@ -33,16 +32,14 @@ def _async_cache(f: _C[_P, _R]) -> _C[_P, _R]:
     return wrapper
 
 
-_CORES_BY_LOOP: weakref.WeakKeyDictionary[
-    asyncio.AbstractEventLoop, asyncio.BoundedSemaphore
-] = weakref.WeakKeyDictionary()
+_CORES: asyncio.BoundedSemaphore | None = None
 
 
 def _get_cores() -> asyncio.BoundedSemaphore:
-    loop = asyncio.get_running_loop()
-    if loop not in _CORES_BY_LOOP:
-        _CORES_BY_LOOP[loop] = asyncio.BoundedSemaphore(os.cpu_count())
-    return _CORES_BY_LOOP[loop]
+    global _CORES
+    if _CORES is None:
+        _CORES = asyncio.BoundedSemaphore(os.cpu_count() or 1)
+    return _CORES
 
 
 async def _run(tool: str, args: typing.Iterable[str], echo: bool = False) -> str | None:
