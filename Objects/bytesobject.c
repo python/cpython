@@ -2549,7 +2549,12 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     }
 
     /* This overestimates if there are spaces */
-    writer = _PyBytesWriter_CreateByteArray(hexlen / 2);
+    if (use_bytearray) {
+        writer = _PyBytesWriter_CreateByteArray(hexlen / 2);
+    }
+    else {
+        writer = PyBytesWriter_Create(hexlen / 2);
+    }
     if (writer == NULL) {
         goto release_buffer;
     }
@@ -3735,6 +3740,9 @@ byteswriter_data(PyBytesWriter *writer)
 {
     if (writer->obj == NULL) {
         return writer->small_buffer;
+    }
+    else if (writer->use_bytearray) {
+        return PyByteArray_AS_STRING(writer->obj);
     }
     else {
         return PyBytes_AS_STRING(writer->obj);
