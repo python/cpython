@@ -438,7 +438,7 @@ def dedent(text):
     margin_len = 0
 
     for split in splitting:
-        if ' \t' in split :
+        if split in ' \t':
             margin_len += 1
         else:
             break
