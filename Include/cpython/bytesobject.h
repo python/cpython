@@ -57,7 +57,7 @@ PyAPI_FUNC(PyObject*) PyBytesWriter_FinishWithSize(
     Py_ssize_t size);
 PyAPI_FUNC(PyObject*) PyBytesWriter_FinishWithPointer(
     PyBytesWriter *writer,
-    void *data);
+    void *buf);
 
 PyAPI_FUNC(void*) PyBytesWriter_GetData(
     PyBytesWriter *writer);
@@ -82,4 +82,4 @@ PyAPI_FUNC(int) PyBytesWriter_Grow(
 PyAPI_FUNC(void*) PyBytesWriter_GrowAndUpdatePointer(
     PyBytesWriter *writer,
     Py_ssize_t size,
-    void *data);
+    void *buf);

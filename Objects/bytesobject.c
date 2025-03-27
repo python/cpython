@@ -3920,9 +3920,9 @@ PyBytesWriter_Finish(PyBytesWriter *writer)
 
 
 PyObject*
-PyBytesWriter_FinishWithPointer(PyBytesWriter *writer, void *data)
+PyBytesWriter_FinishWithPointer(PyBytesWriter *writer, void *buf)
 {
-    Py_ssize_t size = (char*)data - byteswriter_data(writer);
+    Py_ssize_t size = (char*)buf - byteswriter_data(writer);
     if (size < 0 || size > byteswriter_allocated(writer)) {
         PyBytesWriter_Discard(writer);
         PyErr_SetString(PyExc_ValueError, "invalid end pointer");
@@ -4005,9 +4005,9 @@ PyBytesWriter_Grow(PyBytesWriter *writer, Py_ssize_t size)
 
 void*
 PyBytesWriter_GrowAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size,
-                                   void *data)
+                                   void *buf)
 {
-    Py_ssize_t pos = (char*)data - byteswriter_data(writer);
+    Py_ssize_t pos = (char*)buf - byteswriter_data(writer);
     if (PyBytesWriter_Grow(writer, size) < 0) {
         return NULL;
     }

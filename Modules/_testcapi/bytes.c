@@ -331,11 +331,33 @@ byteswriter_resize(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
 }
 
 
+static PyObject *
+byteswriter_highlevel(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    PyBytesWriter *writer = PyBytesWriter_Create(0);
+    if (writer == NULL) {
+        goto error;
+    }
+    if (PyBytesWriter_WriteBytes(writer, "Hello", -1) < 0) {
+        goto error;
+    }
+    if (PyBytesWriter_Format(writer, " %s!", "World") < 0) {
+        goto error;
+    }
+    return PyBytesWriter_Finish(writer);
+
+error:
+    PyBytesWriter_Discard(writer);
+    return NULL;
+}
+
+
 static PyMethodDef test_methods[] = {
     {"bytes_resize", bytes_resize, METH_VARARGS},
     {"bytes_join", bytes_join, METH_VARARGS},
     {"byteswriter_abc", byteswriter_abc, METH_NOARGS},
     {"byteswriter_resize", byteswriter_resize, METH_NOARGS},
+    {"byteswriter_highlevel", byteswriter_highlevel, METH_NOARGS},
     {NULL},
 };
 

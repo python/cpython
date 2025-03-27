@@ -370,6 +370,9 @@ class BytesWriterTest(unittest.TestCase):
     def test_resize(self):
         self.assertEqual(_testcapi.byteswriter_resize(), b'Hello World')
 
+    def test_highlevel(self):
+        self.assertEqual(_testcapi.byteswriter_highlevel(), b'Hello World!')
+
 
 class ByteArrayWriterTest(BytesWriterTest):
     result_type = bytearray
