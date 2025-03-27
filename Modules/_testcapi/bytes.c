@@ -286,9 +286,56 @@ static PyType_Spec Writer_spec = {
 };
 
 
+static PyObject *
+byteswriter_abc(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    PyBytesWriter *writer = PyBytesWriter_Create(3);
+    if (writer == NULL) {
+        return NULL;
+    }
+
+    char *str = PyBytesWriter_GetData(writer);
+    memcpy(str, "abc", 3);
+
+    return PyBytesWriter_Finish(writer);
+}
+
+
+static PyObject *
+byteswriter_resize(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
+{
+    // Allocate 10 bytes
+    PyBytesWriter *writer = PyBytesWriter_Create(10);
+    if (writer == NULL) {
+        return NULL;
+    }
+    char *buf = PyBytesWriter_GetData(writer);
+
+    // Write some bytes
+    memcpy(buf, "Hello ", strlen("Hello "));
+    buf += strlen("Hello ");
+
+    // Allocate 10 more bytes
+    buf = PyBytesWriter_GrowAndUpdatePointer(writer, 10, buf);
+    if (buf == NULL) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+
+    // Write more bytes
+    memcpy(buf, "World", strlen("World"));
+    buf += strlen("World");
+
+    // Truncate to the exact size and create a bytes object
+    return PyBytesWriter_FinishWithPointer(writer, buf);
+}
+
+
 static PyMethodDef test_methods[] = {
     {"bytes_resize", bytes_resize, METH_VARARGS},
     {"bytes_join", bytes_join, METH_VARARGS},
+    {"byteswriter_abc", byteswriter_abc, METH_NOARGS},
+    {"byteswriter_resize", byteswriter_resize, METH_NOARGS},
     {NULL},
 };
 

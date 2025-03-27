@@ -364,6 +364,12 @@ class BytesWriterTest(unittest.TestCase):
         writer.format_i(b'y=%i', 456)
         self.assertEqual(writer.finish(), self.result_type(b'x=123, y=456'))
 
+    def test_abc(self):
+        self.assertEqual(_testcapi.byteswriter_abc(), b'abc')
+
+    def test_resize(self):
+        self.assertEqual(_testcapi.byteswriter_resize(), b'Hello World')
+
 
 class ByteArrayWriterTest(BytesWriterTest):
     result_type = bytearray
