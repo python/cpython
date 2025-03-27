@@ -1,2 +1,2 @@
-:func: `textwrap.dedent` is now 4x faster than before for large inputs. Function now has the command argument to remove all common prefixes as well with `only_whitespaces` instead of just whitespaces.
+Optimized :func: ``textwrap.dedent``. It is now 4x faster than before for large inputs. Function now has the command argument to remove all common prefixes as well with ``only_whitespace`` instead of just whitespaces.
 Patch by Marius Juston.
