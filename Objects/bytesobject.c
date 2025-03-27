@@ -3969,6 +3969,18 @@ PyBytesWriter_Resize(PyBytesWriter *writer, Py_ssize_t size)
 }
 
 
+static void*
+_PyBytesWriter_ResizeAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size,
+                                      void *data)
+{
+    Py_ssize_t pos = (char*)data - byteswriter_data(writer);
+    if (PyBytesWriter_Resize(writer, size) < 0) {
+        return NULL;
+    }
+    return byteswriter_data(writer) + pos;
+}
+
+
 int
 PyBytesWriter_Grow(PyBytesWriter *writer, Py_ssize_t size)
 {
@@ -3988,6 +4000,18 @@ PyBytesWriter_Grow(PyBytesWriter *writer, Py_ssize_t size)
     }
     writer->size = size;
     return 0;
+}
+
+
+void*
+PyBytesWriter_GrowAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size,
+                                   void *data)
+{
+    Py_ssize_t pos = (char*)data - byteswriter_data(writer);
+    if (PyBytesWriter_Grow(writer, size) < 0) {
+        return NULL;
+    }
+    return byteswriter_data(writer) + pos;
 }
 
 
@@ -4024,28 +4048,4 @@ PyBytesWriter_Format(PyBytesWriter *writer, const char *format, ...)
 
     Py_ssize_t size = buf - byteswriter_data(writer);
     return PyBytesWriter_Resize(writer, size);
-}
-
-
-static void*
-_PyBytesWriter_ResizeAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size,
-                                      void *data)
-{
-    Py_ssize_t pos = (char*)data - byteswriter_data(writer);
-    if (PyBytesWriter_Resize(writer, size) < 0) {
-        return NULL;
-    }
-    return byteswriter_data(writer) + pos;
-}
-
-
-void*
-PyBytesWriter_GrowAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size,
-                                   void *data)
-{
-    Py_ssize_t pos = (char*)data - byteswriter_data(writer);
-    if (PyBytesWriter_Grow(writer, size) < 0) {
-        return NULL;
-    }
-    return byteswriter_data(writer) + pos;
 }
