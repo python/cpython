@@ -38,9 +38,9 @@
 
 #ifdef MS_WINDOWS
     // Windows includes and definitions
-    #include <windows.h>
-    #include <psapi.h>
-    #include <tlhelp32.h>
+#include <windows.h>
+#include <psapi.h>
+#include <tlhelp32.h>
 #endif
 
 #include <errno.h>
@@ -51,10 +51,10 @@
 #include <stdlib.h>
 #include <string.h>
 #ifndef MS_WINDOWS
-    #include <sys/param.h>
-    #include <sys/stat.h>
-    #include <sys/types.h>
-    #include <unistd.h>
+#include <sys/param.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #endif
 
 #ifndef Py_BUILD_CORE_BUILTIN
@@ -156,7 +156,7 @@ return_section_address(
             int nsects = cmd->nsects;
             struct section_64* sec = (struct section_64*)(
                 (void*)cmd + sizeof(struct segment_command_64)
-            );
+                );
             for (int j = 0; j < nsects; j++) {
                 if (strcmp(sec[j].sectname, section) == 0) {
                     return base + sec[j].addr - vmaddr;
@@ -201,19 +201,19 @@ search_section_in_file(const char* secname, char* path, uintptr_t base, mach_vm_
 
     struct mach_header_64* hdr = (struct mach_header_64*)map;
     switch (hdr->magic) {
-        case MH_MAGIC:
-        case MH_CIGAM:
-        case FAT_MAGIC:
-        case FAT_CIGAM:
-            PyErr_SetString(PyExc_RuntimeError, "32-bit Mach-O binaries are not supported");
-            break;
-        case MH_MAGIC_64:
-        case MH_CIGAM_64:
-            result = return_section_address(secname, proc_ref, base, map);
-            break;
-        default:
-            PyErr_SetString(PyExc_RuntimeError, "Unknown Mach-O magic");
-            break;
+    case MH_MAGIC:
+    case MH_CIGAM:
+    case FAT_MAGIC:
+    case FAT_CIGAM:
+        PyErr_SetString(PyExc_RuntimeError, "32-bit Mach-O binaries are not supported");
+        break;
+    case MH_MAGIC_64:
+    case MH_CIGAM_64:
+        result = return_section_address(secname, proc_ref, base, map);
+        break;
+    default:
+        PyErr_SetString(PyExc_RuntimeError, "Unknown Mach-O magic");
+        break;
     }
 
     munmap(map, fs.st_size);
@@ -254,13 +254,13 @@ search_map_for_section(proc_handle_t *handle, const char* secname, const char* s
     int match_found = 0;
     char map_filename[MAXPATHLEN + 1];
     while (mach_vm_region(
-                   proc_ref,
-                   &address,
-                   &size,
-                   VM_REGION_BASIC_INFO_64,
-                   (vm_region_info_t)&region_info,
-                   &count,
-                   &object_name) == KERN_SUCCESS)
+        proc_ref,
+        &address,
+        &size,
+        VM_REGION_BASIC_INFO_64,
+        (vm_region_info_t)&region_info,
+        &count,
+        &object_name) == KERN_SUCCESS)
     {
         if ((region_info.protection & VM_PROT_READ) == 0
             || (region_info.protection & VM_PROT_EXECUTE) == 0) {
@@ -404,7 +404,7 @@ search_map_for_section(proc_handle_t *handle, const char* secname, const char* m
 
     if (section != NULL && first_load_segment != NULL) {
         uintptr_t elf_load_addr = first_load_segment->p_vaddr
-                                  - (first_load_segment->p_vaddr % first_load_segment->p_align);
+            - (first_load_segment->p_vaddr % first_load_segment->p_align);
         result = start_address + (uintptr_t)section->sh_addr - elf_load_addr;
     }
 
@@ -543,9 +543,16 @@ static Py_ssize_t
 read_memory(proc_handle_t *handle, uint64_t remote_address, size_t len, void* dst)
 {
 #ifdef MS_WINDOWS
-    // TODO: Implement this function
-    PyErr_SetString(PyExc_RuntimeError, "Memory reading is not supported on Windows");
-        return -1;
+    SIZE_T read_bytes = 0;
+    SIZE_T result = 0;
+    do {
+        if (!ReadProcessMemory(handle->hProcess, (LPCVOID)(remote_address + result), (char*)dst + result, len - result, &read_bytes)) {
+            PyErr_SetFromWindowsErr(0);
+            return -1;
+        }
+        result += read_bytes;
+    } while (result < len);
+    return (Py_ssize_t)result;
 #elif defined(__linux__) && HAVE_PROCESS_VM_READV
     struct iovec local[1];
     struct iovec remote[1];
@@ -570,22 +577,22 @@ read_memory(proc_handle_t *handle, uint64_t remote_address, size_t len, void* ds
 #elif defined(__APPLE__) && TARGET_OS_OSX
     Py_ssize_t result = -1;
     kern_return_t kr = mach_vm_read_overwrite(
-            pid_to_task(handle->pid),
-            (mach_vm_address_t)remote_address,
-            len,
-            (mach_vm_address_t)dst,
-            (mach_vm_size_t*)&result);
+        pid_to_task(handle->pid),
+        (mach_vm_address_t)remote_address,
+        len,
+        (mach_vm_address_t)dst,
+        (mach_vm_size_t*)&result);
 
     if (kr != KERN_SUCCESS) {
         switch (kr) {
-            case KERN_PROTECTION_FAILURE:
-                PyErr_SetString(PyExc_PermissionError, "Not enough permissions to read memory");
-                break;
-            case KERN_INVALID_ARGUMENT:
-                PyErr_SetString(PyExc_PermissionError, "Invalid argument to mach_vm_read_overwrite");
-                break;
-            default:
-                PyErr_SetString(PyExc_RuntimeError, "Unknown error reading memory");
+        case KERN_PROTECTION_FAILURE:
+            PyErr_SetString(PyExc_PermissionError, "Not enough permissions to read memory");
+            break;
+        case KERN_INVALID_ARGUMENT:
+            PyErr_SetString(PyExc_PermissionError, "Invalid argument to mach_vm_read_overwrite");
+            break;
+        default:
+            PyErr_SetString(PyExc_RuntimeError, "Unknown error reading memory");
         }
         return -1;
     }
@@ -629,21 +636,21 @@ write_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const 
     return result;
 #elif defined(__APPLE__) && TARGET_OS_OSX
     kern_return_t kr = mach_vm_write(
-            pid_to_task(handle->pid),
-            (mach_vm_address_t)remote_address,
-            (vm_offset_t)src,
-            (mach_msg_type_number_t)len);
+        pid_to_task(handle->pid),
+        (mach_vm_address_t)remote_address,
+        (vm_offset_t)src,
+        (mach_msg_type_number_t)len);
 
     if (kr != KERN_SUCCESS) {
         switch (kr) {
-            case KERN_PROTECTION_FAILURE:
-                PyErr_SetString(PyExc_PermissionError, "Not enough permissions to write memory");
-                break;
-            case KERN_INVALID_ARGUMENT:
-                PyErr_SetString(PyExc_PermissionError, "Invalid argument to mach_vm_write");
-                break;
-            default:
-                PyErr_SetString(PyExc_RuntimeError, "Unknown error writing memory");
+        case KERN_PROTECTION_FAILURE:
+            PyErr_SetString(PyExc_PermissionError, "Not enough permissions to write memory");
+            break;
+        case KERN_INVALID_ARGUMENT:
+            PyErr_SetString(PyExc_PermissionError, "Invalid argument to mach_vm_write");
+            break;
+        default:
+            PyErr_SetString(PyExc_RuntimeError, "Unknown error writing memory");
         }
         return -1;
     }
@@ -702,7 +709,7 @@ _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
 
     uintptr_t runtime_start_address;
     struct _Py_DebugOffsets local_debug_offsets;
-    
+
     if (read_offsets(&handle, &runtime_start_address, &local_debug_offsets)) {
         cleanup_proc_handle(&handle);
         return -1;
@@ -712,10 +719,10 @@ _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
 
     uintptr_t address_of_interpreter_state;
     Py_ssize_t bytes = read_memory(
-            &handle,
-            runtime_start_address + interpreter_state_list_head,
-            sizeof(void*),
-            &address_of_interpreter_state);
+        &handle,
+        runtime_start_address + interpreter_state_list_head,
+        sizeof(void*),
+        &address_of_interpreter_state);
     if (bytes == -1) {
         cleanup_proc_handle(&handle);
         return -1;
@@ -729,15 +736,15 @@ _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
 
     int is_remote_debugging_enabled = 0;
     bytes = read_memory(
-            &handle,
-            address_of_interpreter_state + local_debug_offsets.debugger_support.remote_debugging_enabled,
-            sizeof(int),
-            &is_remote_debugging_enabled);
+        &handle,
+        address_of_interpreter_state + local_debug_offsets.debugger_support.remote_debugging_enabled,
+        sizeof(int),
+        &is_remote_debugging_enabled);
     if (bytes == -1) {
         cleanup_proc_handle(&handle);
         return -1;
     }
-    
+
     if (is_remote_debugging_enabled == 0) {
         PyErr_SetString(PyExc_RuntimeError, "Remote debugging is not enabled in the remote process");
         cleanup_proc_handle(&handle);
@@ -746,37 +753,37 @@ _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
 
     uintptr_t address_of_thread;
     pid_t this_tid = 0;
-    
+
     if (tid != 0) {
         bytes = read_memory(
-                &handle,
-                address_of_interpreter_state + local_debug_offsets.interpreter_state.threads_head,
-                sizeof(void*),
-                &address_of_thread);
+            &handle,
+            address_of_interpreter_state + local_debug_offsets.interpreter_state.threads_head,
+            sizeof(void*),
+            &address_of_thread);
         if (bytes == -1) {
             cleanup_proc_handle(&handle);
             return -1;
         }
         while (address_of_thread != 0) {
             bytes = read_memory(
-                    &handle,
-                    address_of_thread + local_debug_offsets.thread_state.native_thread_id,
-                    sizeof(pid_t),
-                    &this_tid);
+                &handle,
+                address_of_thread + local_debug_offsets.thread_state.native_thread_id,
+                sizeof(pid_t),
+                &this_tid);
             if (bytes == -1) {
                 cleanup_proc_handle(&handle);
                 return -1;
             }
-            
+
             if (this_tid == tid) {
                 break;
             }
-            
+
             bytes = read_memory(
-                    &handle,
-                    address_of_thread + local_debug_offsets.thread_state.next,
-                    sizeof(void*),
-                    &address_of_thread);
+                &handle,
+                address_of_thread + local_debug_offsets.thread_state.next,
+                sizeof(void*),
+                &address_of_thread);
             if (bytes == -1) {
                 cleanup_proc_handle(&handle);
                 return -1;
@@ -784,10 +791,10 @@ _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
         }
     } else {
         bytes = read_memory(
-                &handle,
-                address_of_interpreter_state + local_debug_offsets.interpreter_state.threads_main,
-                sizeof(void*),
-                &address_of_thread);
+            &handle,
+            address_of_interpreter_state + local_debug_offsets.interpreter_state.threads_main,
+            sizeof(void*),
+            &address_of_thread);
         if (bytes == -1) {
             cleanup_proc_handle(&handle);
             return -1;
@@ -802,15 +809,15 @@ _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
 
     uintptr_t eval_breaker;
     bytes = read_memory(
-            &handle,
-            address_of_thread + local_debug_offsets.debugger_support.eval_breaker,
-            sizeof(uintptr_t),
-            &eval_breaker);
+        &handle,
+        address_of_thread + local_debug_offsets.debugger_support.eval_breaker,
+        sizeof(uintptr_t),
+        &eval_breaker);
     if (bytes == -1) {
         cleanup_proc_handle(&handle);
         return -1;
     }
-    
+
     eval_breaker |= _PY_EVAL_PLEASE_STOP_BIT;
 
     // Ensure our path is not too long
@@ -822,14 +829,14 @@ _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
 
     if (debugger_script_path != NULL) {
         uintptr_t debugger_script_path_addr = (
-                address_of_thread +
-                local_debug_offsets.debugger_support.remote_debugger_support +
-                local_debug_offsets.debugger_support.debugger_script_path);
+            address_of_thread +
+            local_debug_offsets.debugger_support.remote_debugger_support +
+            local_debug_offsets.debugger_support.debugger_script_path);
         bytes = write_memory(
-                &handle,
-                debugger_script_path_addr,
-                strlen(debugger_script_path) + 1,
-                debugger_script_path);
+            &handle,
+            debugger_script_path_addr,
+            strlen(debugger_script_path) + 1,
+            debugger_script_path);
         if (bytes == -1) {
             cleanup_proc_handle(&handle);
             return -1;
@@ -838,14 +845,14 @@ _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
 
     int pending_call = 1;
     uintptr_t debugger_pending_call_addr = (
-            address_of_thread +
-            local_debug_offsets.debugger_support.remote_debugger_support +
-            local_debug_offsets.debugger_support.debugger_pending_call);
+        address_of_thread +
+        local_debug_offsets.debugger_support.remote_debugger_support +
+        local_debug_offsets.debugger_support.debugger_pending_call);
     bytes = write_memory(
-            &handle,
-            debugger_pending_call_addr,
-            sizeof(int),
-            &pending_call);
+        &handle,
+        debugger_pending_call_addr,
+        sizeof(int),
+        &pending_call);
 
     if (bytes == -1) {
         cleanup_proc_handle(&handle);
@@ -853,10 +860,10 @@ _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
     }
 
     bytes = write_memory(
-            &handle,
-            address_of_thread + local_debug_offsets.debugger_support.eval_breaker,
-            sizeof(uintptr_t),
-            &eval_breaker);
+        &handle,
+        address_of_thread + local_debug_offsets.debugger_support.eval_breaker,
+        sizeof(uintptr_t),
+        &eval_breaker);
 
     if (bytes == -1) {
         cleanup_proc_handle(&handle);
@@ -864,13 +871,13 @@ _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
     }
 
     bytes = read_memory(
-            &handle,
-            address_of_thread + local_debug_offsets.debugger_support.eval_breaker,
-            sizeof(uintptr_t),
-            &eval_breaker);
+        &handle,
+        address_of_thread + local_debug_offsets.debugger_support.eval_breaker,
+        sizeof(uintptr_t),
+        &eval_breaker);
 
     printf("Eval breaker: %p\n", (void*)eval_breaker);
 
     cleanup_proc_handle(&handle);
     return 0;
-}
+    }
