@@ -205,7 +205,7 @@ def generate_tier1_labels(
     for name, label in analysis.labels.items():
         emitter.emit(f"LABEL({name})\n")
         emitter.emit("{\n")
-        storage = Storage(Stack(), [], [], [])
+        storage = Storage(Stack(), [], [], False)
         if label.spilled:
             storage.spilled = 1
             emitter.emit("/* STACK SPILLED */\n")

@@ -1746,6 +1746,11 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         a[0] = a
         self.assertEqual(repr(a), '{0: {...}}')
 
+    def test_repr_blocked(self):
+        class C:
+            __repr__ = None
+        self.assertRaises(TypeError, repr, C())
+
     def test_round(self):
         self.assertEqual(round(0.0), 0.0)
         self.assertEqual(type(round(0.0)), int)
