@@ -241,30 +241,26 @@ def setup_sdk():
 
 # To avoid distributing compiled artifacts without corresponding source code,
 # the Gradle wrapper is not included in the CPython repository. Instead, we
-# extract it from the Gradle release.
+# extract it from the Gradle GitHub repository.
 def setup_testbed():
-    if all((TESTBED_DIR / path).exists() for path in [
-        "gradlew", "gradlew.bat", "gradle/wrapper/gradle-wrapper.jar",
-    ]):
+    # The Gradle version used for the build is specified in
+    # testbed/gradle/wrapper/gradle-wrapper.properties. This wrapper version
+    # doesn't need to match, as any version of the wrapper can download any
+    # version of Gradle.
+    version = "8.9.0"
+    paths = ["gradlew", "gradlew.bat", "gradle/wrapper/gradle-wrapper.jar"]
+
+    if all((TESTBED_DIR / path).exists() for path in paths):
         return
 
-    ver_long = "8.7.0"
-    ver_short = ver_long.removesuffix(".0")
-
-    for filename in ["gradlew", "gradlew.bat"]:
-        out_path = download(
-            f"https://raw.githubusercontent.com/gradle/gradle/v{ver_long}/{filename}",
-            TESTBED_DIR)
+    for path in paths:
+        out_path = TESTBED_DIR / path
+        out_path.parent.mkdir(exist_ok=True)
+        download(
+            f"https://raw.githubusercontent.com/gradle/gradle/v{version}/{path}",
+            out_path.parent,
+        )
         os.chmod(out_path, 0o755)
-
-    with TemporaryDirectory(prefix=SCRIPT_NAME) as temp_dir:
-        bin_zip = download(
-            f"https://services.gradle.org/distributions/gradle-{ver_short}-bin.zip",
-            temp_dir)
-        outer_jar = f"gradle-{ver_short}/lib/plugins/gradle-wrapper-{ver_short}.jar"
-        run(["unzip", "-d", temp_dir, bin_zip, outer_jar])
-        run(["unzip", "-o", "-d", f"{TESTBED_DIR}/gradle/wrapper",
-             f"{temp_dir}/{outer_jar}", "gradle-wrapper.jar"])
 
 
 # run_testbed will build the app automatically, but it's useful to have this as

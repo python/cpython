@@ -30,7 +30,6 @@ The `android.py` script also requires the following commands to be on the `PATH`
 * `curl`
 * `java` (or set the `JAVA_HOME` environment variable)
 * `tar`
-* `unzip`
 
 
 ## Building
