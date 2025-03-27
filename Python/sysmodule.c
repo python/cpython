@@ -103,11 +103,11 @@ _PySys_GetRequiredAttr(PyObject *name)
     PyObject *value;
     if (PyDict_GetItemRef(sysdict, name, &value) == 0) {
 #ifndef ABIFLAGS
-            if (_PyUnicode_EqualToASCIIString(name, "abiflags")) {
-                if (WarnIncomingSysAbiflagsChange() < 0) {
-                    return NULL;
-                }
+        if (_PyUnicode_EqualToASCIIString(name, "abiflags")) {
+            if (WarnIncomingSysAbiflagsChange() < 0) {
+                return NULL;
             }
+        }
 #endif
         PyErr_Format(PyExc_RuntimeError, "lost sys.%U", name);
     }
@@ -126,11 +126,11 @@ _PySys_GetRequiredAttrString(const char *name)
     PyObject *value;
     if (PyDict_GetItemStringRef(sysdict, name, &value) == 0) {
 #ifndef ABIFLAGS
-            if (strcmp(name, "abiflags") == 0) {
-                if (WarnIncomingSysAbiflagsChange() < 0) {
-                    return NULL;
-                }
+        if (strcmp(name, "abiflags") == 0) {
+            if (WarnIncomingSysAbiflagsChange() < 0) {
+                return NULL;
             }
+        }
 #endif
         PyErr_Format(PyExc_RuntimeError, "lost sys.%s", name);
     }
