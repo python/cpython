@@ -6379,8 +6379,6 @@ int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
 /*[clinic end generated code: output=89c801df114050a3 input=a0103d0e9ad85c2b]*/
 {
     int little_endian;
-    PyObject *bytes;
-
     if (byteorder == NULL)
         little_endian = 0;
     else if (_PyUnicode_Equal(byteorder, &_Py_ID(little)))
@@ -6399,18 +6397,19 @@ int_to_bytes_impl(PyObject *self, Py_ssize_t length, PyObject *byteorder,
         return NULL;
     }
 
-    bytes = PyBytes_FromStringAndSize(NULL, length);
-    if (bytes == NULL)
-        return NULL;
-
-    if (_PyLong_AsByteArray((PyLongObject *)self,
-                            (unsigned char *)PyBytes_AS_STRING(bytes),
-                            length, little_endian, is_signed, 1) < 0) {
-        Py_DECREF(bytes);
+    PyBytesWriter *writer = PyBytesWriter_Create(length);
+    if (writer == NULL) {
         return NULL;
     }
 
-    return bytes;
+    if (_PyLong_AsByteArray((PyLongObject *)self,
+                            PyBytesWriter_GetData(writer),
+                            length, little_endian, is_signed, 1) < 0) {
+        PyBytesWriter_Discard(writer);
+        return NULL;
+    }
+
+    return PyBytesWriter_Finish(writer);
 }
 
 /*[clinic input]

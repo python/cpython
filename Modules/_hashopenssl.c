@@ -806,15 +806,15 @@ EVPXOF_digest_impl(EVPobject *self, Py_ssize_t length)
 /*[clinic end generated code: output=ef9320c23280efad input=816a6537cea3d1db]*/
 {
     EVP_MD_CTX *temp_ctx;
-    PyObject *retval = PyBytes_FromStringAndSize(NULL, length);
 
-    if (retval == NULL) {
+    PyBytesWriter *writer = PyBytesWriter_Create(length);
+    if (writer == NULL) {
         return NULL;
     }
 
     temp_ctx = EVP_MD_CTX_new();
     if (temp_ctx == NULL) {
-        Py_DECREF(retval);
+        PyBytesWriter_Discard(writer);
         PyErr_NoMemory();
         return NULL;
     }
@@ -823,17 +823,17 @@ EVPXOF_digest_impl(EVPobject *self, Py_ssize_t length)
         goto error;
     }
     if (!EVP_DigestFinalXOF(temp_ctx,
-                            (unsigned char*)PyBytes_AS_STRING(retval),
+                            (unsigned char*)PyBytesWriter_GetData(writer),
                             length))
     {
         goto error;
     }
 
     EVP_MD_CTX_free(temp_ctx);
-    return retval;
+    return PyBytesWriter_Finish(writer);
 
 error:
-    Py_DECREF(retval);
+    PyBytesWriter_Discard(writer);
     EVP_MD_CTX_free(temp_ctx);
     notify_ssl_error_occurred();
     return NULL;

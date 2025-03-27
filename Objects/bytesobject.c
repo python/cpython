@@ -1464,11 +1464,15 @@ bytes_concat(PyObject *a, PyObject *b)
         goto done;
     }
 
-    result = PyBytes_FromStringAndSize(NULL, va.len + vb.len);
-    if (result != NULL) {
-        memcpy(PyBytes_AS_STRING(result), va.buf, va.len);
-        memcpy(PyBytes_AS_STRING(result) + va.len, vb.buf, vb.len);
+    PyBytesWriter *writer = PyBytesWriter_Create(va.len + vb.len);
+    if (writer == NULL) {
+        goto done;
     }
+
+    char *data = PyBytesWriter_GetData(writer);
+    memcpy(data, va.buf, va.len);
+    memcpy(data + va.len, vb.buf, vb.len);
+    result = PyBytesWriter_Finish(writer);
 
   done:
     if (va.len != -1)
@@ -1646,8 +1650,6 @@ bytes_subscript(PyObject *op, PyObject* item)
         Py_ssize_t start, stop, step, slicelength, i;
         size_t cur;
         const char* source_buf;
-        char* result_buf;
-        PyObject* result;
 
         if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
@@ -1670,17 +1672,18 @@ bytes_subscript(PyObject *op, PyObject* item)
         }
         else {
             source_buf = PyBytes_AS_STRING(self);
-            result = PyBytes_FromStringAndSize(NULL, slicelength);
-            if (result == NULL)
+            PyBytesWriter *writer = PyBytesWriter_Create(slicelength);
+            if (writer == NULL) {
                 return NULL;
+            }
+            char *buf = PyBytesWriter_GetData(writer);
 
-            result_buf = PyBytes_AS_STRING(result);
             for (cur = start, i = 0; i < slicelength;
                  cur += step, i++) {
-                result_buf[i] = source_buf[cur];
+                buf[i] = source_buf[cur];
             }
 
-            return result;
+            return PyBytesWriter_Finish(writer);
         }
     }
     else {
@@ -2763,7 +2766,7 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
                             "errors without a string argument");
             return NULL;
         }
-        bytes = PyBytes_FromStringAndSize(NULL, 0);
+        bytes = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
     else if (encoding != NULL) {
         /* Encode via the codec registry */
@@ -2835,23 +2838,25 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
 static PyObject*
 _PyBytes_FromBuffer(PyObject *x)
 {
-    PyObject *new;
     Py_buffer view;
-
     if (PyObject_GetBuffer(x, &view, PyBUF_FULL_RO) < 0)
         return NULL;
 
-    new = PyBytes_FromStringAndSize(NULL, view.len);
-    if (!new)
+    PyBytesWriter *writer = PyBytesWriter_Create(view.len);
+    if (writer == NULL) {
         goto fail;
-    if (PyBuffer_ToContiguous(((PyBytesObject *)new)->ob_sval,
-                &view, view.len, 'C') < 0)
+    }
+
+    if (PyBuffer_ToContiguous(PyBytesWriter_GetData(writer),
+                              &view, view.len, 'C') < 0) {
         goto fail;
+    }
+
     PyBuffer_Release(&view);
-    return new;
+    return PyBytesWriter_Finish(writer);
 
 fail:
-    Py_XDECREF(new);
+    PyBytesWriter_Discard(writer);
     PyBuffer_Release(&view);
     return NULL;
 }
@@ -2900,16 +2905,15 @@ error:
 static PyObject*
 _PyBytes_FromTuple(PyObject *x)
 {
-    PyObject *bytes;
     Py_ssize_t i, size = PyTuple_GET_SIZE(x);
     Py_ssize_t value;
-    char *str;
     PyObject *item;
 
-    bytes = PyBytes_FromStringAndSize(NULL, size);
-    if (bytes == NULL)
+    PyBytesWriter *writer = PyBytesWriter_Create(size);
+    if (writer == NULL) {
         return NULL;
-    str = ((PyBytesObject *)bytes)->ob_sval;
+    }
+    char *str = PyBytesWriter_GetData(writer);
 
     for (i = 0; i < size; i++) {
         item = PyTuple_GET_ITEM(x, i);
@@ -2924,10 +2928,10 @@ _PyBytes_FromTuple(PyObject *x)
         }
         *str++ = (char) value;
     }
-    return bytes;
+    return PyBytesWriter_Finish(writer);
 
   error:
-    Py_DECREF(bytes);
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
@@ -3652,7 +3656,7 @@ _PyBytesWriter_Finish(_PyBytesWriter *writer, void *str)
     if (size == 0 && !writer->use_bytearray) {
         Py_CLEAR(writer->buffer);
         /* Get the empty byte string singleton */
-        result = PyBytes_FromStringAndSize(NULL, 0);
+        result = Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
     }
     else if (writer->use_small_buffer) {
         if (writer->use_bytearray) {

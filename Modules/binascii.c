@@ -205,11 +205,9 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
 /*[clinic end generated code: output=e027f8e0b0598742 input=7cafeaf73df63d1c]*/
 {
     const unsigned char *ascii_data;
-    unsigned char *bin_data;
     int leftbits = 0;
     unsigned char this_ch;
     unsigned int leftchar = 0;
-    PyObject *rv;
     Py_ssize_t ascii_len, bin_len;
     binascii_state *state;
 
@@ -223,9 +221,11 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
     ascii_len--;
 
     /* Allocate the buffer */
-    if ( (rv=PyBytes_FromStringAndSize(NULL, bin_len)) == NULL )
+    PyBytesWriter *writer = PyBytesWriter_Create(bin_len);
+    if (writer == NULL) {
         return NULL;
-    bin_data = (unsigned char *)PyBytes_AS_STRING(rv);
+    }
+    unsigned char *bin_data = PyBytesWriter_GetData(writer);
 
     for( ; bin_len > 0 ; ascii_len--, ascii_data++ ) {
         /* XXX is it really best to add NULs if there's no more data */
@@ -248,8 +248,7 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
                     return NULL;
                 }
                 PyErr_SetString(state->Error, "Illegal char");
-                Py_DECREF(rv);
-                return NULL;
+                goto error;
             }
             this_ch = (this_ch - ' ') & 077;
         }
@@ -280,11 +279,14 @@ binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
                 return NULL;
             }
             PyErr_SetString(state->Error, "Trailing garbage");
-            Py_DECREF(rv);
-            return NULL;
+            goto error;
         }
     }
-    return rv;
+    return PyBytesWriter_Finish(writer);
+
+error:
+    PyBytesWriter_Discard(writer);
+    return NULL;
 }
 
 /*[clinic input]
@@ -888,8 +890,6 @@ binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
 {
     const char* argbuf;
     Py_ssize_t arglen;
-    PyObject *retval;
-    char* retbuf;
     Py_ssize_t i, j;
     binascii_state *state;
 
@@ -911,10 +911,11 @@ binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
         return NULL;
     }
 
-    retval = PyBytes_FromStringAndSize(NULL, (arglen/2));
-    if (!retval)
+    PyBytesWriter *writer = PyBytesWriter_Create(arglen/2);
+    if (writer == NULL) {
         return NULL;
-    retbuf = PyBytes_AS_STRING(retval);
+    }
+    char *retbuf = PyBytesWriter_GetData(writer);
 
     for (i=j=0; i < arglen; i += 2) {
         unsigned int top = _PyLong_DigitValue[Py_CHARMASK(argbuf[i])];
@@ -926,14 +927,14 @@ binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
             }
             PyErr_SetString(state->Error,
                             "Non-hexadecimal digit found");
-            goto finally;
+            goto error;
         }
         retbuf[j++] = (top << 4) + bot;
     }
-    return retval;
+    return PyBytesWriter_Finish(writer);
 
-  finally:
-    Py_DECREF(retval);
+error:
+    PyBytesWriter_Discard(writer);
     return NULL;
 }
 
