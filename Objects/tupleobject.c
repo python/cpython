@@ -1,14 +1,16 @@
-
 /* Tuple object implementation */
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
-#include "pycore_freelist.h"      // _Py_FREELIST_PUSH(), _Py_FREELIST_POP()
+#include "pycore_freelist.h"      // _Py_FREELIST_PUSH()
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
-#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_list.h"          // _Py_memory_repeat()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
-#include "pycore_object.h"        // _PyObject_GC_TRACK(), _Py_FatalRefcountError(), _PyDebugAllocatorStats()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_stackref.h"      // PyStackRef_AsPyObjectSteal()
+#include "pycore_tuple.h"         // _PyTupleIterObject
+
 
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"
@@ -604,8 +606,8 @@ Return number of occurrences of value.
 [clinic start generated code]*/
 
 static PyObject *
-tuple_count(PyTupleObject *self, PyObject *value)
-/*[clinic end generated code: output=aa927affc5a97605 input=531721aff65bd772]*/
+tuple_count_impl(PyTupleObject *self, PyObject *value)
+/*[clinic end generated code: output=cf02888d4bc15d7a input=531721aff65bd772]*/
 {
     Py_ssize_t count = 0;
     Py_ssize_t i;
