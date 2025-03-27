@@ -610,9 +610,16 @@ static Py_ssize_t
 write_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const void* src)
 {
 #ifdef MS_WINDOWS
-    // TODO: Implement this function
-    PyErr_SetString(PyExc_RuntimeError, "Memory writing is not supported on Windows");
+    SIZE_T written = 0;
+    SIZE_T result = 0;
+    do {
+        if (!WriteProcessMemory(handle->hProcess, (LPVOID)(remote_address + result), (const char*)src + result, len - result, &written)) {
+            PyErr_SetFromWindowsErr(0);
             return -1;
+        }
+        result += written;
+    } while (result < len);
+    return (Py_ssize_t)result;
 #elif defined(__linux__) && HAVE_PROCESS_VM_READV
     struct iovec local[1];
     struct iovec remote[1];
