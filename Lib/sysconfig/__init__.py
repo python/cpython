@@ -414,6 +414,13 @@ def _init_non_posix(vars):
     vars['BINDIR'] = os.path.dirname(_safe_realpath(sys.executable))
     vars['TZPATH'] = ''
 
+    abiflags = vars['abi_thread']
+    if vars['EXT_SUFFIX'].endswith('_d.'):
+        abiflags += 'd'
+    # Do not touch lower-cased `abiflags` here.
+    # sys.abiflags is absent on Windows. So vars['abiflags'] should be empty.
+    vars['ABIFLAGS'] = abiflags
+
 #
 # public APIs
 #
@@ -541,6 +548,9 @@ def _init_config_vars():
     except AttributeError:
         _CONFIG_VARS['py_version_nodot_plat'] = ''
 
+    # e.g., 't' for free-threaded or '' for default build
+    _CONFIG_VARS['abi_thread'] = 't' if _CONFIG_VARS.get('Py_GIL_DISABLED') else ''
+
     if os.name == 'nt':
         _init_non_posix(_CONFIG_VARS)
         _CONFIG_VARS['VPATH'] = sys._vpath
@@ -549,9 +559,6 @@ def _init_config_vars():
         # init function to enable using 'get_config_var' in
         # the init-function.
         _CONFIG_VARS['userbase'] = _getuserbase()
-
-    # e.g., 't' for free-threaded or '' for default build
-    _CONFIG_VARS['abi_thread'] = 't' if _CONFIG_VARS.get('Py_GIL_DISABLED') else ''
 
     # Always convert srcdir to an absolute path
     srcdir = _CONFIG_VARS.get('srcdir', _PROJECT_BASE)
