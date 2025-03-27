@@ -668,7 +668,7 @@ static inline int
 _Py_TryIncrefCompareStackRef(PyObject **src, PyObject *op, _PyStackRef *out)
 {
     if (_PyObject_HasDeferredRefcount(op)) {
-        *out = (_PyStackRef){ .bits = (intptr_t)op | Py_TAG_DEFERRED };
+        *out = (_PyStackRef){ .bits = (uintptr_t)op | Py_TAG_DEFERRED };
         return 1;
     }
     if (_Py_TryIncrefCompare(src, op)) {
