@@ -1,0 +1,3 @@
+Expose the crc32 function from the lzma library. It is faster than the crc32
+function from the zlib library. Update zipfile to detect and use lzma.crc32
+zlic.crc32 binascii.crc32, in order of preference.
