@@ -1,2 +1,0 @@
-Raise :exc:`sqlite3.ProgrammingError` if a user-defined SQL function with
-invalid number of parameters is created. Patch by Erlend Aasland.

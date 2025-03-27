@@ -56,8 +56,7 @@ __all__ = [
     "run_with_tz", "PGO", "missing_compiler_executable",
     "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
     "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
-    "Py_DEBUG", "exceeds_recursion_limit", "get_c_recursion_limit",
-    "skip_on_s390x",
+    "Py_DEBUG", "exceeds_recursion_limit", "skip_on_s390x",
     "requires_jit_enabled",
     "requires_jit_disabled",
     "force_not_colorized",
@@ -558,6 +557,9 @@ is_wasi = sys.platform == "wasi"
 def skip_emscripten_stack_overflow():
     return unittest.skipIf(is_emscripten, "Exhausts limited stack on Emscripten")
 
+def skip_wasi_stack_overflow():
+    return unittest.skipIf(is_wasi, "Exhausts stack on WASI")
+
 is_apple_mobile = sys.platform in {"ios", "tvos", "watchos"}
 is_apple = is_apple_mobile or sys.platform == "darwin"
 
@@ -833,7 +835,6 @@ def gc_threshold(*args):
     finally:
         gc.set_threshold(*old_threshold)
 
-
 def python_is_optimized():
     """Find if Python was built with optimizations."""
     cflags = sysconfig.get_config_var('PY_CFLAGS') or ''
@@ -841,7 +842,11 @@ def python_is_optimized():
     for opt in cflags.split():
         if opt.startswith('-O'):
             final_opt = opt
-    return final_opt not in ('', '-O0', '-Og')
+    if sysconfig.get_config_var("CC") == "gcc":
+        non_opts = ('', '-O0', '-Og')
+    else:
+        non_opts = ('', '-O0')
+    return final_opt not in non_opts
 
 
 def check_cflags_pgo():
@@ -2624,17 +2629,9 @@ def adjust_int_max_str_digits(max_digits):
         sys.set_int_max_str_digits(current)
 
 
-def get_c_recursion_limit():
-    try:
-        import _testcapi
-        return _testcapi.Py_C_RECURSION_LIMIT
-    except ImportError:
-        raise unittest.SkipTest('requires _testcapi')
-
-
 def exceeds_recursion_limit():
     """For recursion tests, easily exceeds default recursion limit."""
-    return get_c_recursion_limit() * 3
+    return 150_000
 
 
 # Windows doesn't have os.uname() but it doesn't support s390x.
@@ -2858,8 +2855,7 @@ def no_color():
         swap_attr(_colorize, "can_colorize", lambda file=None: False),
         EnvironmentVarGuard() as env,
     ):
-        for var in {"FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS"}:
-            env.unset(var)
+        env.unset("FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS")
         env.set("NO_COLOR", "1")
         yield
 
@@ -3018,3 +3014,37 @@ def is_libssl_fips_mode():
     except ImportError:
         return False  # more of a maybe, unless we add this to the _ssl module.
     return get_fips_mode() != 0
+
+
+_linked_to_musl = None
+def linked_to_musl():
+    """
+    Report if the Python executable is linked to the musl C library.
+
+    Return False if we don't think it is, or a version triple otherwise.
+    """
+    # This is can be a relatively expensive check, so we use a cache.
+    global _linked_to_musl
+    if _linked_to_musl is not None:
+        return _linked_to_musl
+
+    # emscripten (at least as far as we're concerned) and wasi use musl,
+    # but platform doesn't know how to get the version, so set it to zero.
+    if is_emscripten or is_wasi:
+        _linked_to_musl = (0, 0, 0)
+        return _linked_to_musl
+
+    # On all other non-linux platforms assume no musl.
+    if sys.platform != 'linux':
+        _linked_to_musl = False
+        return _linked_to_musl
+
+    # On linux, we'll depend on the platform module to do the check, so new
+    # musl platforms should add support in that module if possible.
+    import platform
+    lib, version = platform.libc_ver()
+    if lib != 'musl':
+        _linked_to_musl = False
+        return _linked_to_musl
+    _linked_to_musl = tuple(map(int, version.split('.')))
+    return _linked_to_musl

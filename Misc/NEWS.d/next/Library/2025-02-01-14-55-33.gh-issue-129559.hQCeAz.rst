@@ -1,2 +1,0 @@
-Add :meth:`bytearray.resize` method so :class:`bytearray` can be efficiently
-resized in place.
