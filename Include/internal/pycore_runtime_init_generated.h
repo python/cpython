@@ -596,6 +596,7 @@ extern "C" {
     INIT_ID(__bytes__), \
     INIT_ID(__call__), \
     INIT_ID(__cantrace__), \
+    INIT_ID(__ceil__), \
     INIT_ID(__class__), \
     INIT_ID(__class_getitem__), \
     INIT_ID(__classcell__), \
@@ -620,6 +621,7 @@ extern "C" {
     INIT_ID(__file__), \
     INIT_ID(__firstlineno__), \
     INIT_ID(__float__), \
+    INIT_ID(__floor__), \
     INIT_ID(__floordiv__), \
     INIT_ID(__format__), \
     INIT_ID(__fspath__), \
@@ -725,6 +727,7 @@ extern "C" {
     INIT_ID(__subclasscheck__), \
     INIT_ID(__subclasshook__), \
     INIT_ID(__truediv__), \
+    INIT_ID(__trunc__), \
     INIT_ID(__type_params__), \
     INIT_ID(__typing_is_unpacked_typevartuple__), \
     INIT_ID(__typing_prepare_subst__), \
