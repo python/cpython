@@ -562,14 +562,8 @@ dummy_func(
             BINARY_OP_EXTEND,
         };
 
-        op(_GUARD_BOTH_INT, (left, right -- left, right)) {
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            EXIT_IF(!PyLong_CheckExact(left_o));
-            EXIT_IF(!PyLong_CheckExact(right_o));
-        }
-
-        op(_GUARD_NOS_INT, (left, unused -- left, unused)) {
+        op(_GUARD_NOS_INT, (left, right -- left, right)) {
+            (void)right;
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             EXIT_IF(!PyLong_CheckExact(left_o));
         }
@@ -625,20 +619,14 @@ dummy_func(
         }
 
         macro(BINARY_OP_MULTIPLY_INT) =
-            _GUARD_BOTH_INT + unused/5 + _BINARY_OP_MULTIPLY_INT;
+            _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_MULTIPLY_INT;
         macro(BINARY_OP_ADD_INT) =
-            _GUARD_BOTH_INT + unused/5 + _BINARY_OP_ADD_INT;
+            _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_ADD_INT;
         macro(BINARY_OP_SUBTRACT_INT) =
-            _GUARD_BOTH_INT + unused/5 + _BINARY_OP_SUBTRACT_INT;
+            _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_SUBTRACT_INT;
 
-        op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-            EXIT_IF(!PyFloat_CheckExact(left_o));
-            EXIT_IF(!PyFloat_CheckExact(right_o));
-        }
-
-        op(_GUARD_NOS_FLOAT, (left, unused -- left, unused)) {
+        op(_GUARD_NOS_FLOAT, (left, right -- left, right)) {
+            (void)right;
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             EXIT_IF(!PyFloat_CheckExact(left_o));
         }
@@ -694,18 +682,21 @@ dummy_func(
         }
 
         macro(BINARY_OP_MULTIPLY_FLOAT) =
-            _GUARD_BOTH_FLOAT + unused/5 + _BINARY_OP_MULTIPLY_FLOAT;
+            _GUARD_TOS_FLOAT + _GUARD_NOS_FLOAT + unused/5 + _BINARY_OP_MULTIPLY_FLOAT;
         macro(BINARY_OP_ADD_FLOAT) =
-            _GUARD_BOTH_FLOAT + unused/5 + _BINARY_OP_ADD_FLOAT;
+            _GUARD_TOS_FLOAT + _GUARD_NOS_FLOAT + unused/5 + _BINARY_OP_ADD_FLOAT;
         macro(BINARY_OP_SUBTRACT_FLOAT) =
-            _GUARD_BOTH_FLOAT + unused/5 + _BINARY_OP_SUBTRACT_FLOAT;
+            _GUARD_TOS_FLOAT + _GUARD_NOS_FLOAT + unused/5 + _BINARY_OP_SUBTRACT_FLOAT;
 
-        op(_GUARD_BOTH_UNICODE, (left, right -- left, right)) {
-            PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-            PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
+        op(_GUARD_NOS_UNICODE, (nos, tos -- nos, tos)) {
+            (void)tos;
+            PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+            EXIT_IF(!PyUnicode_CheckExact(o));
+        }
 
-            EXIT_IF(!PyUnicode_CheckExact(left_o));
-            EXIT_IF(!PyUnicode_CheckExact(right_o));
+        op(_GUARD_TOS_UNICODE, (tos -- tos)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+            EXIT_IF(!PyUnicode_CheckExact(o));
         }
 
         pure op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
@@ -724,7 +715,7 @@ dummy_func(
         }
 
         macro(BINARY_OP_ADD_UNICODE) =
-            _GUARD_BOTH_UNICODE + unused/5 + _BINARY_OP_ADD_UNICODE;
+            _GUARD_TOS_UNICODE + _GUARD_NOS_UNICODE + unused/5 + _BINARY_OP_ADD_UNICODE;
 
         // This is a subtle one. It's a super-instruction for
         // BINARY_OP_ADD_UNICODE followed by STORE_FAST
@@ -803,7 +794,7 @@ dummy_func(
             unused/1 + _GUARD_BINARY_OP_EXTEND + rewind/-4 + _BINARY_OP_EXTEND;
 
         macro(BINARY_OP_INPLACE_ADD_UNICODE) =
-            _GUARD_BOTH_UNICODE + unused/5 + _BINARY_OP_INPLACE_ADD_UNICODE;
+            _GUARD_TOS_UNICODE + _GUARD_NOS_UNICODE + unused/5 + _BINARY_OP_INPLACE_ADD_UNICODE;
 
         specializing op(_SPECIALIZE_BINARY_SLICE, (container, start, stop -- container, start, stop)) {
             // Placeholder until we implement BINARY_SLICE specialization
@@ -2573,13 +2564,13 @@ dummy_func(
         macro(COMPARE_OP) = _SPECIALIZE_COMPARE_OP + _COMPARE_OP;
 
         macro(COMPARE_OP_FLOAT) =
-            _GUARD_BOTH_FLOAT + unused/1 + _COMPARE_OP_FLOAT;
+            _GUARD_TOS_FLOAT + _GUARD_NOS_FLOAT + unused/1 + _COMPARE_OP_FLOAT;
 
         macro(COMPARE_OP_INT) =
-            _GUARD_BOTH_INT + unused/1 + _COMPARE_OP_INT;
+            _GUARD_TOS_INT + _GUARD_NOS_INT + unused/1 + _COMPARE_OP_INT;
 
         macro(COMPARE_OP_STR) =
-            _GUARD_BOTH_UNICODE + unused/1 + _COMPARE_OP_STR;
+            _GUARD_TOS_UNICODE + _GUARD_NOS_UNICODE + unused/1 + _COMPARE_OP_STR;
 
         op(_COMPARE_OP_FLOAT, (left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
