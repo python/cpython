@@ -3192,9 +3192,7 @@ class CommandLineTest(unittest.TestCase):
         This method is used by the other utility functions so that any
         string to write or to match against can be freely indented.
         """
-        def normalize_spaces(text):
-            return re.sub(r'\s+', ' ', text).strip()
-        return normalize_spaces(dedent(string)).strip()
+        return re.sub(r'\s+', ' ', string).strip()
 
     def set_source(self, content):
         with open(self.filename, 'w') as fp:
