@@ -1,0 +1,1 @@
+Fix :mod:`readline` in :term:`free-threaded <free threading>` build.

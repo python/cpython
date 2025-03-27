@@ -321,7 +321,8 @@ process and user.
 
    .. versionadded:: 3.6
 
-   .. abstractmethod:: __fspath__()
+   .. method:: __fspath__()
+      :abstractmethod:
 
       Return the file system path representation of the object.
 

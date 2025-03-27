@@ -311,9 +311,13 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #ifdef MS_COREDLL
 #       if !defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_BUILTIN)
                 /* not building the core - must be an ext */
-#               if defined(_MSC_VER)
+#               if defined(_MSC_VER) && !defined(Py_NO_LINK_LIB)
                         /* So MSVC users need not specify the .lib
                         file in their Makefile */
+                        /* Define Py_NO_LINK_LIB to build extension disabling pragma
+                        based auto-linking.
+                        This is relevant when using build-system generator (e.g CMake) where
+                        the linking is explicitly handled */
 #                       if defined(Py_GIL_DISABLED)
 #                       if defined(_DEBUG)
 #                               pragma comment(lib,"python314t_d.lib")
@@ -331,7 +335,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #                               pragma comment(lib,"python314.lib")
 #                       endif /* _DEBUG */
 #                       endif /* Py_GIL_DISABLED */
-#               endif /* _MSC_VER */
+#               endif /* _MSC_VER && !Py_NO_LINK_LIB */
 #       endif /* Py_BUILD_CORE */
 #endif /* MS_COREDLL */
 
