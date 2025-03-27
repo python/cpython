@@ -85,10 +85,8 @@ def write_uop(
         if braces:
             emitter.out.emit(f"// {uop.name}\n")
             emitter.emit("{\n")
-        code_list, storage = Storage.for_uop(stack, uop)
+        storage = Storage.for_uop(stack, uop, emitter.out)
         emitter._print_storage(storage)
-        for code in code_list:
-            emitter.emit(code)
 
         for cache in uop.caches:
             if cache.name != "unused":

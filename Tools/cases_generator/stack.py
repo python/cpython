@@ -229,7 +229,7 @@ class Stack:
         if check_liveness:
             raise StackError(f"Dropping live value '{var.name}'")
 
-    def pop(self, var: StackItem) -> tuple[str, Local]:
+    def pop(self, var: StackItem, out: CWriter) -> Local:
         self.logical_sp = self.logical_sp.pop(var)
         indirect = "&" if var.is_array() else ""
         if self.variables:
@@ -244,9 +244,9 @@ class Stack:
                     f"Size mismatch when popping '{popped.name}' from stack to assign to '{var.name}'. "
                     f"Expected {var_size(var)} got {var_size(popped.item)}"
                 )
-                return "", popped
+                return popped
             if not var.used:
-                return "", popped
+                return popped
             if popped.name != var.name:
                 rename = f"{var.name} = {popped.name};\n"
                 popped.item = var
@@ -264,17 +264,18 @@ class Stack:
                     popped.in_local = True
             else:
                 defn = rename
-            return defn, popped
+            out.emit(defn)
+            return popped
 
         self.base_offset = self.logical_sp
         if var.name in UNUSED or not var.used:
-            return "", Local.unused(var, self.base_offset)
+            return Local.unused(var, self.base_offset)
         cast = f"({var.type})" if (not indirect and var.type) else ""
         bits = ".bits" if cast and self.extract_bits else ""
         offset = (self.base_offset - self.physical_sp).to_c()
-        assign = f"{var.name} = {cast}{indirect}stack_pointer[{offset}]{bits};"
-        assign = f"{assign}\n"
-        return assign, Local.from_memory(var, self.base_offset)
+        assign = f"{var.name} = {cast}{indirect}stack_pointer[{offset}]{bits};\n"
+        out.emit(assign)
+        return Local.from_memory(var, self.base_offset)
 
     def push(self, var: Local) -> None:
         assert(var not in self.variables)
@@ -391,8 +392,9 @@ def stacks(inst: Instruction | PseudoInstruction) -> Iterator[StackEffect]:
 
 def apply_stack_effect(stack: Stack, effect: StackEffect) -> None:
     locals: dict[str, Local] = {}
+    null = CWriter.null()
     for var in reversed(effect.inputs):
-        _, local = stack.pop(var)
+        local = stack.pop(var, null)
         if var.name != "unused":
             locals[local.name] = local
     for var in effect.outputs:
@@ -518,13 +520,11 @@ class Storage:
             out.emit_reload()
 
     @staticmethod
-    def for_uop(stack: Stack, uop: Uop, check_liveness: bool = True) -> tuple[list[str], "Storage"]:
-        code_list: list[str] = []
+    def for_uop(stack: Stack, uop: Uop, out: CWriter, check_liveness: bool = True) -> "Storage":
         inputs: list[Local] = []
         peeks: list[Local] = []
         for input in reversed(uop.stack.inputs):
-            code, local = stack.pop(input)
-            code_list.append(code)
+            local = stack.pop(input, out)
             if input.peek:
                 peeks.append(local)
             else:
@@ -537,12 +537,12 @@ class Storage:
         for ouput in uop.stack.outputs:
             if ouput.is_array() and ouput.used and not ouput.peek:
                 c_offset = offset.to_c()
-                code_list.append(f"{ouput.name} = &stack_pointer[{c_offset}];\n")
+                out.emit(f"{ouput.name} = &stack_pointer[{c_offset}];\n")
             offset = offset.push(ouput)
         for var in inputs:
             stack.push(var)
         outputs = [ Local.undefined(var) for var in uop.stack.outputs if not var.peek ]
-        return code_list, Storage(stack, inputs, outputs, check_liveness)
+        return Storage(stack, inputs, outputs, check_liveness)
 
     @staticmethod
     def copy_list(arg: list[Local]) -> list[Local]:
@@ -716,5 +716,4 @@ class Storage:
         if output_in_place:
             self.stack.flush(out)
         if output is not None:
-            code, output = self.stack.pop(output.item)
-            out.emit(code)
+            output = self.stack.pop(output.item, out)

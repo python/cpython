@@ -46,8 +46,9 @@ def declare_variable(
 
 def declare_variables(uop: Uop, out: CWriter) -> None:
     stack = Stack()
+    null = CWriter.null()
     for var in reversed(uop.stack.inputs):
-        stack.pop(var)
+        stack.pop(var, null)
     for var in uop.stack.outputs:
         stack.push(Local.undefined(var))
     seen = {"unused"}
@@ -142,9 +143,7 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
         elif uop.properties.const_oparg >= 0:
             emitter.emit(f"oparg = {uop.properties.const_oparg};\n")
             emitter.emit(f"assert(oparg == CURRENT_OPARG());\n")
-        code_list, storage = Storage.for_uop(stack, uop)
-        for code in code_list:
-            emitter.emit(code)
+        storage = Storage.for_uop(stack, uop, emitter.out)
         idx = 0
         for cache in uop.caches:
             if cache.name != "unused":

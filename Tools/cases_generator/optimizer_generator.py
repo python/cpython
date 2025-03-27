@@ -72,8 +72,9 @@ def decref_inputs(
 
 
 def emit_default(out: CWriter, uop: Uop, stack: Stack) -> None:
+    null = CWriter.null()
     for var in reversed(uop.stack.inputs):
-        stack.pop(var)
+        stack.pop(var, null)
     offset = stack.base_offset - stack.physical_sp
     for var in uop.stack.outputs:
         if var.is_array() and not var.peek and not var.name == "unused":
@@ -123,9 +124,7 @@ def write_uop(
     try:
         out.start_line()
         if override:
-            code_list, storage = Storage.for_uop(stack, prototype, check_liveness=False)
-            for code in code_list:
-                out.emit(code)
+            storage = Storage.for_uop(stack, prototype, out, check_liveness=False)
         if debug:
             args = []
             for input in prototype.stack.inputs:
