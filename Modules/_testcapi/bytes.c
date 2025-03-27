@@ -1,5 +1,10 @@
+// Use pycore_bytes.h
+#define PYTESTCAPI_NEED_INTERNAL_API
+
 #include "parts.h"
 #include "util.h"
+
+#include "pycore_bytesobject.h"   // _PyBytesWriter_CreateByteArray()
 
 
 /* Test _PyBytes_Resize() */

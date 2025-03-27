@@ -48,8 +48,6 @@ typedef struct PyBytesWriter PyBytesWriter;
 
 PyAPI_FUNC(PyBytesWriter *) PyBytesWriter_Create(
     Py_ssize_t size);
-PyAPI_FUNC(PyBytesWriter*) _PyBytesWriter_CreateByteArray(
-    Py_ssize_t size);
 PyAPI_FUNC(void) PyBytesWriter_Discard(
     PyBytesWriter *writer);
 PyAPI_FUNC(PyObject*) PyBytesWriter_Finish(
