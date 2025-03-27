@@ -592,6 +592,10 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         self.assertTrue(suffix.endswith('-darwin.so'), suffix)
 
+    def test_always_set_ABIFLAGS(self):
+        self.assertIn('ABIFLAGS', sysconfig.get_config_vars())
+        self.assertIsInstance(sysconfig.get_config_var('ABIFLAGS'), str)
+
     @requires_subprocess()
     def test_makefile_overwrites_config_vars(self):
         script = textwrap.dedent("""
