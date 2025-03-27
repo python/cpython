@@ -3933,6 +3933,7 @@
                 PyStackRef_CLOSE(tmp);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
+            stack_pointer[-1] = b;
             break;
         }
 
@@ -4116,6 +4117,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                 }
             }
+            stack_pointer[-1] = iter;
             break;
         }
 
