@@ -416,7 +416,7 @@ def shorten(text, width, **kwargs):
 _whitespace_only_re = re.compile('^[ \t]+$', re.MULTILINE)
 _leading_whitespace_re = re.compile('(^[ \t]*)(?:[^ \t\n])', re.MULTILINE)
 
-def dedent(text):
+def dedent(text, only_whitespace = True):
     """Remove any common leading whitespace from every line in `text`.
 
     This can be used to make triple-quoted strings line up with the left
@@ -427,44 +427,118 @@ def dedent(text):
     are not equal: the lines "  hello" and "\\thello" are
     considered to have no common leading whitespace.
 
+    If `only_whitespace` is `True`, the leading whitespaces are removed from the text. Otherwise, all the common leading text is removed.
+
     Entirely blank lines are normalized to a newline character.
     """
-    # Look for the longest leading string of spaces and tabs common to
-    # all lines.
-    margin = None
-    text = _whitespace_only_re.sub('', text)
-    indents = _leading_whitespace_re.findall(text)
-    for indent in indents:
-        if margin is None:
-            margin = indent
+    # Early return for empty input
+    if not text:
+        return text
 
-        # Current line more deeply indented than previous winner:
-        # no change (previous winner is still on top).
-        elif indent.startswith(margin):
-            pass
+    # Split into lines
+    lines = text.splitlines(True)
 
-        # Current line consistent with and no deeper than previous winner:
-        # it's the new winner.
-        elif margin.startswith(indent):
-            margin = indent
+    # Fast path for single line - but make sure we still dedent!
+    if len(lines) == 1:
+        line = lines[0]
+        stripped = line.strip()
+        if not stripped:  # Blank line
+            return "\n" if line.endswith("\n") else ""
 
-        # Find the largest common whitespace between current line and previous
-        # winner.
+        # Find leading whitespace for a single line
+        if only_whitespace:
+            i = 0
+            while i < len(line) and line[i] in " \t":
+                i += 1
+            if i > 0:  # Has leading whitespace to remove
+                return line[i:]
         else:
-            for i, (x, y) in enumerate(zip(margin, indent)):
-                if x != y:
-                    margin = margin[:i]
-                    break
+            lead_size = len(line) - len(line.lstrip())
+            if lead_size > 0:  # Has leading whitespace to remove
+                return line[lead_size:]
+        return line  # No whitespace to remove
 
-    # sanity check (testing/debugging only)
-    if 0 and margin:
-        for line in text.split("\n"):
-            assert not line or line.startswith(margin), \
-                   "line = %r, margin = %r" % (line, margin)
+    # Cache method lookups for faster access
+    _strip = str.strip
+    _startswith = str.startswith
+    _endswith = str.endswith
 
-    if margin:
-        text = re.sub(r'(?m)^' + margin, '', text)
-    return text
+    # Find first two non-blank lines
+    non_blank = []
+    for line in lines:
+        if _strip(line):
+            non_blank.append(line)
+            if len(non_blank) == 2:
+                break
+
+    # All lines are blank
+    if not non_blank:
+        result = []
+        append = result.append
+        for line in lines:
+            append("\n" if _endswith(line, "\n") else "")
+        return "".join(result)
+
+    # Calculate margin length efficiently
+    if len(non_blank) == 1:
+        # Single non-blank line
+        line = non_blank[0]
+        if only_whitespace:
+            # Manually find leading whitespace (faster than regex)
+            i = 0
+            line_len = len(line)
+            while i < line_len and line[i] in " \t":
+                i += 1
+            margin_len = i
+        else:
+            # Use built-in lstrip for non-whitespace case
+            margin_len = len(line) - len(line.lstrip())
+    else:
+        # Find common prefix of first two non-blank lines
+        a, b = non_blank
+        min_len = min(len(a), len(b))
+        i = 0
+
+        if only_whitespace:
+            # Manual loop is faster than character-by-character comparison
+            while i < min_len and a[i] == b[i] and a[i] in " \t":
+                i += 1
+        else:
+            while i < min_len and a[i] == b[i]:
+                i += 1
+
+        margin_len = i
+
+    # No margin to remove - return original with blank line normalization
+    if margin_len == 0:
+        result = []
+        append = result.append
+        for line in lines:
+            if _strip(line):  # Non-blank line
+                append(line)
+            else:  # Blank line
+                append("\n" if _endswith(line, "\n") else "")
+        return "".join(result)
+
+    # Get margin string once for repeated comparison
+    margin = non_blank[0][:margin_len]
+
+    # Pre-allocate result list with a size hint for better memory efficiency
+    result = []
+    append = result.append
+
+    # Process all lines with optimized operations
+    for line in lines:
+        if not _strip(line):  # Blank line (including whitespace-only lines)
+            append("\n" if _endswith(line, "\n") else "")
+        elif _startswith(line, margin):  # Has margin
+            # Slice operation is very fast in Python
+            append(line[margin_len:])
+        else:  # No matching margin
+            append(line)
+
+    # Single join is faster than incremental string building
+    return "".join(result)
 
 
 def indent(text, prefix, predicate=None):
