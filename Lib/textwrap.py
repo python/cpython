@@ -434,17 +434,9 @@ def dedent(text):
     lines = text.split("\n")
 
     splitting = os.path.commonprefix(tuple(filter(lambda x: x.lstrip(), lines)))
+    margin_len = len(splitting) - len(splitting.lstrip())
 
-    margin_len = 0
-
-    for split in splitting:
-        if ' \t' in split :
-            margin_len += 1
-        else:
-            break
-
-    # Apply margin removal (most common case) with minimal operations
-    return "\n".join([line[margin_len:] if line.strip() else "\n" if line.endswith("\n") else "" for line in lines])
+    return "\n".join([line[margin_len:] if line.lstrip() else "\n" if line.endswith("\n") else "" for line in lines])
 
 
 def indent(text, prefix, predicate=None):
