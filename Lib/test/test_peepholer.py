@@ -307,44 +307,6 @@ class TestTranforms(BytecodeTestCase):
         self.assertInBytecode(code, 'BINARY_OP')
         self.check_lnotab(code)
 
-    def test_folding_of_unaryops_on_constants(self):
-        for line, elem in (
-            ('-0.5', -0.5),                     # unary negative
-            ('-0.0', -0.0),                     # -0.0
-            ('-(1.0-1.0)', -0.0),               # -0.0 after folding
-            ('-0', 0),                          # -0
-            ('~-2', 1),                         # unary invert
-            ('+1', 1),                          # unary positive
-        ):
-            with self.subTest(line=line):
-                code = compile(line, '', 'single')
-                if isinstance(elem, int):
-                    self.assertInBytecode(code, 'LOAD_SMALL_INT', elem)
-                else:
-                    self.assertInBytecode(code, 'LOAD_CONST', elem)
-                for instr in dis.get_instructions(code):
-                    self.assertFalse(instr.opname.startswith('UNARY_'))
-                self.check_lnotab(code)
-
-        # Check that -0.0 works after marshaling
-        def negzero():
-            return -(1.0-1.0)
-
-        for instr in dis.get_instructions(negzero):
-            self.assertFalse(instr.opname.startswith('UNARY_'))
-        self.check_lnotab(negzero)
-
-        # Verify that unfoldables are skipped
-        for line, elem, opname in (
-            ('-"abc"', 'abc', 'UNARY_NEGATIVE'),
-            ('~"abc"', 'abc', 'UNARY_INVERT'),
-        ):
-            with self.subTest(line=line):
-                code = compile(line, '', 'single')
-                self.assertInBytecode(code, 'LOAD_CONST', elem)
-                self.assertInBytecode(code, opname)
-                self.check_lnotab(code)
-
     def test_elim_extra_return(self):
         # RETURN LOAD_CONST None RETURN  -->  RETURN
         def f(x):
@@ -518,26 +480,46 @@ class TestTranforms(BytecodeTestCase):
     def test_folding_unaryop(self):
         intrinsic_positive = 5
         tests = [
-            ('---1', 'UNARY_NEGATIVE', None, True),
-            ('---""', 'UNARY_NEGATIVE', None, False),
-            ('~~~1', 'UNARY_INVERT', None, True),
-            ('~~~""', 'UNARY_INVERT', None, False),
-            ('not not True', 'UNARY_NOT', None, True),
-            ('not not x', 'UNARY_NOT', None, True),  # this should be optimized regardless of constant or not
-            ('+++1', 'CALL_INTRINSIC_1', intrinsic_positive, True),
-            ('---x', 'UNARY_NEGATIVE', None, False),
-            ('~~~x', 'UNARY_INVERT', None, False),
-            ('+++x', 'CALL_INTRINSIC_1', intrinsic_positive, False),
+            ('-0', 'UNARY_NEGATIVE', None, True, 'LOAD_SMALL_INT', 0),
+            ('-0.0', 'UNARY_NEGATIVE', None, True, 'LOAD_CONST', -0.0),
+            ('-(1.0-1.0)', 'UNARY_NEGATIVE', None, True, 'LOAD_CONST', -0.0),
+            ('-0.5', 'UNARY_NEGATIVE', None, True, 'LOAD_CONST', -0.5),
+            ('---1', 'UNARY_NEGATIVE', None, True, 'LOAD_CONST', -1),
+            ('---""', 'UNARY_NEGATIVE', None, False, None, None),
+            ('~~~1', 'UNARY_INVERT', None, True, 'LOAD_CONST', -2),
+            ('~~~""', 'UNARY_INVERT', None, False, None, None),
+            ('not not True', 'UNARY_NOT', None, True, 'LOAD_CONST', True),
+            ('not not x', 'UNARY_NOT', None, True, 'LOAD_NAME', 'x'),  # this should be optimized regardless of constant or not
+            ('+++1', 'CALL_INTRINSIC_1', intrinsic_positive, True, 'LOAD_SMALL_INT', 1),
+            ('---x', 'UNARY_NEGATIVE', None, False, None, None),
+            ('~~~x', 'UNARY_INVERT', None, False, None, None),
+            ('+++x', 'CALL_INTRINSIC_1', intrinsic_positive, False, None, None),
         ]
 
-        for expr, opcode, oparg, optimized in tests:
-            with self.subTest(expr=expr, optimized=optimized):
-                code = compile(expr, '', 'single')
-                if optimized:
-                    self.assertNotInBytecode(code, opcode, argval=oparg)
+        for (
+            expr,
+            original_opcode,
+            original_argval,
+            is_optimized,
+            optimized_opcode,
+            optimized_argval,
+        ) in tests:
+            with self.subTest(expr=expr, is_optimized=is_optimized):
+                code = compile(expr, "", "single")
+                if is_optimized:
+                    self.assertNotInBytecode(code, original_opcode, argval=original_argval)
+                    self.assertInBytecode(code, optimized_opcode, argval=optimized_argval)
                 else:
-                    self.assertInBytecode(code, opcode, argval=oparg)
+                    self.assertInBytecode(code, original_opcode, argval=original_argval)
                 self.check_lnotab(code)
+
+        # Check that -0.0 works after marshaling
+        def negzero():
+            return -(1.0-1.0)
+
+        for instr in dis.get_instructions(negzero):
+            self.assertFalse(instr.opname.startswith('UNARY_'))
+        self.check_lnotab(negzero)
 
     def test_folding_binop(self):
         tests = [
