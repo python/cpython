@@ -422,26 +422,119 @@ exit:
 
 #ifdef MS_WINDOWS
 
+static void* analyze_pe(const wchar_t* mod_path, BYTE* remote_base, const char* secname) {
+    HANDLE hFile = CreateFileW(mod_path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile == INVALID_HANDLE_VALUE) {
+        PyErr_SetFromWindowsErr(0);
+        return NULL;
+    }
+    HANDLE hMap = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, 0);
+    if (!hMap) {
+        PyErr_SetFromWindowsErr(0);
+        CloseHandle(hFile);
+        return NULL;
+    }
+
+    BYTE* mapView = (BYTE*)MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
+    if (!mapView) {
+        PyErr_SetFromWindowsErr(0);
+        CloseHandle(hMap);
+        CloseHandle(hFile);
+        return NULL;
+    }
+
+    IMAGE_DOS_HEADER* pDOSHeader = (IMAGE_DOS_HEADER*)mapView;
+    if (pDOSHeader->e_magic != IMAGE_DOS_SIGNATURE) {
+        PyErr_SetString(PyExc_RuntimeError, "Invalid DOS signature.");
+        UnmapViewOfFile(mapView);
+        CloseHandle(hMap);
+        CloseHandle(hFile);
+        return NULL;
+    }
+
+    IMAGE_NT_HEADERS* pNTHeaders = (IMAGE_NT_HEADERS*)(mapView + pDOSHeader->e_lfanew);
+    if (pNTHeaders->Signature != IMAGE_NT_SIGNATURE) {
+        PyErr_SetString(PyExc_RuntimeError, "Invalid NT signature.");
+        UnmapViewOfFile(mapView);
+        CloseHandle(hMap);
+        CloseHandle(hFile);
+        return NULL;
+    }
+
+    IMAGE_SECTION_HEADER* pSection_header = (IMAGE_SECTION_HEADER*)(mapView + pDOSHeader->e_lfanew + sizeof(IMAGE_NT_HEADERS));
+    void* runtime_addr = NULL;
+
+    for (int i = 0; i < pNTHeaders->FileHeader.NumberOfSections; i++) {
+        const char* name = (const char*)pSection_header[i].Name;
+        if (strncmp(name, secname, IMAGE_SIZEOF_SHORT_NAME) == 0) {
+            runtime_addr = remote_base + pSection_header[i].VirtualAddress;
+            break;
+        }
+    }
+
+    UnmapViewOfFile(mapView);
+    CloseHandle(hMap);
+    CloseHandle(hFile);
+
+    return runtime_addr;
+}
+
+
 static uintptr_t
-search_map_for_section(proc_handle_t* handle, const char* secname, const char* substr) {
-    //TODO: Implement this function
-    PyErr_SetString(PyExc_RuntimeError, "search_map_for_section not implemented on Windows");
-    return 0;
+search_windows_map_for_section(proc_handle_t* handle, const char* secname, const wchar_t* substr) {
+    HANDLE hProcSnap;
+    do {
+        hProcSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, handle->pid);
+    } while (hProcSnap == INVALID_HANDLE_VALUE && GetLastError() == ERROR_BAD_LENGTH);
+
+    if (hProcSnap == INVALID_HANDLE_VALUE) {
+        PyErr_SetString(PyExc_PermissionError, "Unable to create module snapshot. Check permissions or PID.");
+        return 0;
+    }
+
+    MODULEENTRY32W moduleEntry;
+    moduleEntry.dwSize = sizeof(moduleEntry);
+    void* runtime_addr = NULL;
+
+    for (BOOL hasModule = Module32FirstW(hProcSnap, &moduleEntry); hasModule; hasModule = Module32NextW(hProcSnap, &moduleEntry)) {
+        // Look for either python executable or DLL
+        if (wcsstr(moduleEntry.szModule, substr)) {
+            runtime_addr = analyze_pe(moduleEntry.szExePath, moduleEntry.modBaseAddr, secname);
+            if (runtime_addr != NULL) {
+                break;
+            }
+        }
+    }
+
+    CloseHandle(hProcSnap);
+    return (uintptr_t)runtime_addr;
 }
 
 #endif // MS_WINDOWS
 
 // Get the PyRuntime section address for any platform
 static uintptr_t
-get_py_runtime(proc_handle_t *handle)
+get_py_runtime(proc_handle_t* handle)
 {
-    // Try libpython first, then fall back to python
-    uintptr_t address = search_map_for_section(handle, "PyRuntime", "libpython");
+    uintptr_t address = 0;
+
+#ifndef MS_WINDOWS
+    // On non-Windows platforms, try libpython first, then fall back to python
+    address = search_map_for_section(handle, "PyRuntime", "libpython");
     if (address == 0) {
         // TODO: Differentiate between not found and error
         PyErr_Clear();
         address = search_map_for_section(handle, "PyRuntime", "python");
     }
+#else
+    // On Windows, search for 'python' in executable or DLL
+    address = search_windows_map_for_section(handle, "PyRuntime", L"python");
+    if (address == 0) {
+        // Error out: 'python' substring covers both executable and DLL
+        PyErr_SetString(PyExc_RuntimeError, "Failed to find the PyRuntime section in the process.");
+    }
+#endif
+
     return address;
 }
 
@@ -452,7 +545,7 @@ read_memory(proc_handle_t *handle, uint64_t remote_address, size_t len, void* ds
 #ifdef MS_WINDOWS
     // TODO: Implement this function
     PyErr_SetString(PyExc_RuntimeError, "Memory reading is not supported on Windows");
-    return -1;
+        return -1;
 #elif defined(__linux__) && HAVE_PROCESS_VM_READV
     struct iovec local[1];
     struct iovec remote[1];
@@ -512,7 +605,7 @@ write_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const 
 #ifdef MS_WINDOWS
     // TODO: Implement this function
     PyErr_SetString(PyExc_RuntimeError, "Memory writing is not supported on Windows");
-    return -1;
+            return -1;
 #elif defined(__linux__) && HAVE_PROCESS_VM_READV
     struct iovec local[1];
     struct iovec remote[1];
