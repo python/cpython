@@ -1459,6 +1459,9 @@ class Manager(object):
 #   Logger classes and functions
 #---------------------------------------------------------------------------
 
+_tls = threading.local()
+_tls.in_progress = False
+
 class Logger(Filterer):
     """
     Instances of the Logger class represent a single logging channel. A
@@ -1670,14 +1673,19 @@ class Logger(Filterer):
         This method is used for unpickled records received from a socket, as
         well as those created locally. Logger-level filtering is applied.
         """
-        if self.disabled:
+        if self._is_disabled():
             return
-        maybe_record = self.filter(record)
-        if not maybe_record:
-            return
-        if isinstance(maybe_record, LogRecord):
-            record = maybe_record
-        self.callHandlers(record)
+
+        _tls.in_progress = True
+        try:
+            maybe_record = self.filter(record)
+            if not maybe_record:
+                return
+            if isinstance(maybe_record, LogRecord):
+                record = maybe_record
+            self.callHandlers(record)
+        finally:
+            _tls.in_progress = False
 
     def addHandler(self, hdlr):
         """
@@ -1765,7 +1773,7 @@ class Logger(Filterer):
         """
         Is this logger enabled for level 'level'?
         """
-        if self.disabled:
+        if self._is_disabled():
             return False
 
         try:
@@ -1814,6 +1822,9 @@ class Logger(Filterer):
             return set(item for item in d.values()
                        if isinstance(item, Logger) and item.parent is self and
                        _hierlevel(item) == 1 + _hierlevel(item.parent))
+
+    def _is_disabled(self):
+        return self.disabled or getattr(_tls, 'in_progress', False)
 
     def __repr__(self):
         level = getLevelName(self.getEffectiveLevel())
