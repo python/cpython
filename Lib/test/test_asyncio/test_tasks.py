@@ -2499,7 +2499,7 @@ class BaseTaskTests:
         initial_refcount = sys.getrefcount(obj)
 
         coro = coroutine_function()
-        with contextlib.closing(asyncio.EventLoop()) as loop:
+        with contextlib.closing(asyncio.new_event_loop()) as loop:
             task = asyncio.Task.__new__(asyncio.Task)
 
             for _ in range(5):
