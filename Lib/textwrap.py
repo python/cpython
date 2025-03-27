@@ -6,6 +6,7 @@
 # Written by Greg Ward <gward@python.net>
 
 import re
+import os
 
 __all__ = ['TextWrapper', 'wrap', 'fill', 'dedent', 'indent', 'shorten']
 
@@ -431,7 +432,7 @@ def dedent(text):
         return text  # Single line has no dedent
 
     # Split text into lines, preserving line endings
-    lines: List[str] = text.splitlines(keepends=True)
+    lines = text.splitlines(keepends=True)
 
     # Process in a single pass to find:
     # 1. Leading whitespace of non-blank lines
