@@ -1655,7 +1655,7 @@ class SizeofTest(unittest.TestCase):
         # float
         check(float(0), size('d'))
         # sys.floatinfo
-        check(sys.float_info, vsize('') + self.P * len(sys.float_info))
+        check(sys.float_info, self.P + vsize('') + self.P * len(sys.float_info))
         # frame
         def func():
             return sys._getframe()
@@ -1763,8 +1763,8 @@ class SizeofTest(unittest.TestCase):
         # super
         check(super(int), size('3P'))
         # tuple
-        check((), vsize(''))
-        check((1,2,3), vsize('') + 3*self.P)
+        check((), vsize('') + self.P)
+        check((1,2,3), vsize('') + self.P + 3*self.P)
         # type
         # static type: PyTypeObject
         fmt = 'P2nPI13Pl4Pn9Pn12PIPc'
@@ -1886,7 +1886,7 @@ class SizeofTest(unittest.TestCase):
         # XXX
         # sys.flags
         # FIXME: The +1 will not be necessary once gh-122575 is fixed
-        check(sys.flags, vsize('') + self.P * (1 + len(sys.flags)))
+        check(sys.flags, vsize('') + self.P + self.P * (1 + len(sys.flags)))
 
     def test_asyncgen_hooks(self):
         old = sys.get_asyncgen_hooks()
