@@ -833,14 +833,15 @@ remove_tools(PyCodeObject * code, int offset, int event, int tools)
     assert(PY_MONITORING_IS_INSTRUMENTED_EVENT(event));
     assert(opcode_has_event(_Py_GetBaseCodeUnit(code, offset).op.code));
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
+    assert(monitoring);
     bool should_de_instrument;
-    if (monitoring && monitoring->tools) {
+    if (monitoring->tools) {
         monitoring->tools[offset] &= ~tools;
         should_de_instrument = (monitoring->tools[offset] == 0);
     }
     else {
         /* Single tool */
-        uint8_t single_tool = code->_co_monitoring->active_monitors.tools[event];
+        uint8_t single_tool = monitoring->active_monitors.tools[event];
         assert(_Py_popcount32(single_tool) <= 1);
         should_de_instrument = ((single_tool & tools) == single_tool);
     }

@@ -186,15 +186,8 @@ releasebuffer_call_python(PyObject *self, Py_buffer *buffer);
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
-static PyObject *
-lookup_method_optional_lock(PyObject *self, PyObject *attr, int *unbound, bool lock_held);
-
-static PyObject *
-lookup_maybe_method(PyObject *self, PyObject *attr, int *unbound);
-
 static int
 slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value);
-
 
 static inline PyTypeObject *
 type_from_ref(PyObject *ref)
@@ -1214,11 +1207,35 @@ PyType_Modified(PyTypeObject *type)
     types_mutex_unlock();
 }
 
+static unsigned int type_lookup_lock_held(PyTypeObject *type, PyObject *name,
+                                          _PyStackRef *out);
+
 static int
 is_subtype_with_mro(PyObject *a_mro, PyTypeObject *a, PyTypeObject *b);
 
+// Check if the `mro` method on `type` is overridden, i.e.,
+// `type(tp).mro is not type.mro`.
+static int
+has_custom_mro(PyTypeObject *tp)
+{
+    _PyCStackRef c_ref1, c_ref2;
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyThreadState_PushCStackRef(tstate, &c_ref1);
+    _PyThreadState_PushCStackRef(tstate, &c_ref2);
+
+    type_lookup_lock_held(Py_TYPE(tp), &_Py_ID(mro), &c_ref1.ref);
+    type_lookup_lock_held(&PyType_Type, &_Py_ID(mro), &c_ref2.ref);
+
+    int custom = !PyStackRef_Is(c_ref1.ref, c_ref2.ref);
+
+    _PyThreadState_PopCStackRef(tstate, &c_ref2);
+    _PyThreadState_PopCStackRef(tstate, &c_ref1);
+    return custom;
+}
+
 static void
-type_mro_modified(PyTypeObject *type, PyObject *bases) {
+type_mro_modified(PyTypeObject *type, PyObject *bases)
+{
     /*
        Check that all base classes or elements of the MRO of type are
        able to be cached.  This function is called after the base
@@ -1232,30 +1249,10 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
        each subclass when their mro is recursively updated.
      */
     Py_ssize_t i, n;
-    int custom = !Py_IS_TYPE(type, &PyType_Type);
-    int unbound;
 
     ASSERT_TYPE_LOCK_HELD();
-    ASSERT_NEW_OR_STOPPED(type);
-    if (custom) {
-        PyObject *mro_meth, *type_mro_meth;
-        mro_meth = lookup_method_optional_lock(
-            (PyObject *)type, &_Py_ID(mro), &unbound, true);
-        if (mro_meth == NULL) {
-            goto clear;
-        }
-        type_mro_meth = lookup_method_optional_lock(
-            (PyObject *)&PyType_Type, &_Py_ID(mro), &unbound, true);
-        if (type_mro_meth == NULL) {
-            Py_DECREF(mro_meth);
-            goto clear;
-        }
-        int custom_mro = (mro_meth != type_mro_meth);
-        Py_DECREF(mro_meth);
-        Py_DECREF(type_mro_meth);
-        if (custom_mro) {
-            goto clear;
-        }
+    if (!Py_IS_TYPE(type, &PyType_Type) && has_custom_mro(type)) {
+        goto clear;
     }
     n = PyTuple_GET_SIZE(bases);
     for (i = 0; i < n; i++) {
@@ -1296,7 +1293,6 @@ This is similar to func_version_cache.
 void
 _PyType_SetVersion(PyTypeObject *tp, unsigned int version)
 {
-
     types_mutex_lock();
     set_version_unlocked(tp, version);
     types_mutex_unlock();
@@ -2890,58 +2886,60 @@ _PyObject_LookupSpecialMethod(PyObject *self, PyObject *attr, PyObject **self_or
     return res;
 }
 
-#ifdef Py_GIL_DISABLED
-static PyObject *type_lookup_lock_held(PyTypeObject *type, PyObject *name, unsigned int *version);
-#endif
-
-static PyObject *
-lookup_method_optional_lock(PyObject *self, PyObject *attr, int *unbound, bool lock_held)
+static int
+lookup_method_ex(PyObject *self, PyObject *attr, _PyStackRef *out,
+                 int raise_attribute_error, int lock_held)
 {
-    PyObject *res;
 #ifdef Py_GIL_DISABLED
     if (lock_held) {
-        // The TYPE_LOCK mutex is already held by the caller.
-        res = type_lookup_lock_held(Py_TYPE(self), attr, NULL);
+        type_lookup_lock_held(Py_TYPE(self), attr, out);
     }
     else {
-        // If the MCACHE lookup fails, this will acquire the TYPE_LOCK mutex.
-        res = _PyType_LookupRef(Py_TYPE(self), attr);
+        _PyType_LookupStackRefAndVersion(Py_TYPE(self), attr, out);
     }
 #else
-    res = _PyType_LookupRef(Py_TYPE(self), attr);
+    _PyType_LookupStackRefAndVersion(Py_TYPE(self), attr, out);
 #endif
-    if (res == NULL) {
-        return NULL;
-    }
-
-    if (_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
-        /* Avoid temporary PyMethodObject */
-        *unbound = 1;
-    }
-    else {
-        *unbound = 0;
-        descrgetfunc f = Py_TYPE(res)->tp_descr_get;
-        if (f != NULL) {
-            Py_SETREF(res, f(res, self, (PyObject *)(Py_TYPE(self))));
+    if (PyStackRef_IsNull(*out)) {
+        if (raise_attribute_error) {
+            PyErr_SetObject(PyExc_AttributeError, attr);
         }
+        return -1;
     }
-    return res;
+
+    PyObject *value = PyStackRef_AsPyObjectBorrow(*out);
+    if (_PyType_HasFeature(Py_TYPE(value), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+        /* Avoid temporary PyMethodObject */
+        return 1;
+    }
+
+    descrgetfunc f = Py_TYPE(value)->tp_descr_get;
+    if (f != NULL) {
+        value = f(value, self, (PyObject *)(Py_TYPE(self)));
+        PyStackRef_CLEAR(*out);
+        if (value == NULL) {
+            if (!raise_attribute_error &&
+                PyErr_ExceptionMatches(PyExc_AttributeError))
+            {
+                PyErr_Clear();
+            }
+            return -1;
+        }
+        *out = PyStackRef_FromPyObjectSteal(value);
+    }
+    return 0;
 }
 
-static PyObject *
-lookup_maybe_method(PyObject *self, PyObject *attr, int *unbound)
+static int
+lookup_maybe_method(PyObject *self, PyObject *attr, _PyStackRef *out)
 {
-    return lookup_method_optional_lock(self, attr, unbound, false);
+    return lookup_method_ex(self, attr, out, 0, 0);
 }
 
-static PyObject *
-lookup_method(PyObject *self, PyObject *attr, int *unbound)
+static int
+lookup_method(PyObject *self, PyObject *attr, _PyStackRef *out)
 {
-    PyObject *res = lookup_maybe_method(self, attr, unbound);
-    if (res == NULL && !PyErr_Occurred()) {
-        PyErr_SetObject(PyExc_AttributeError, attr);
-    }
-    return res;
+    return lookup_method_ex(self, attr, out, 1, 0);
 }
 
 
@@ -2971,6 +2969,45 @@ call_unbound_noarg(int unbound, PyObject *func, PyObject *self)
     }
 }
 
+// Call the method with the name `attr` on `self`. Returns NULL with an
+// exception set if the method is missing or an error occurs.
+static PyObject *
+call_method_noarg(PyObject *self, PyObject *attr)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+    PyObject *res = NULL;
+    int unbound = lookup_method(self, attr, &cref.ref);
+    if (unbound >= 0) {
+        PyObject *func = PyStackRef_AsPyObjectBorrow(cref.ref);
+        res = call_unbound_noarg(unbound, func, self);
+    }
+    _PyThreadState_PopCStackRef(tstate, &cref);
+    return res;
+}
+
+static PyObject *
+call_method(PyObject *self, PyObject *attr, PyObject *args, PyObject *kwds)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+    PyObject *res = NULL;
+    int unbound = lookup_method(self, attr, &cref.ref);
+    if (unbound >= 0) {
+        PyObject *meth = PyStackRef_AsPyObjectBorrow(cref.ref);
+        if (unbound) {
+            res = _PyObject_Call_Prepend(tstate, meth, self, args, kwds);
+        }
+        else {
+            res = _PyObject_Call(tstate, meth, args, kwds);
+        }
+    }
+    _PyThreadState_PopCStackRef(tstate, &cref);
+    return res;
+}
+
 /* A variation of PyObject_CallMethod* that uses lookup_method()
    instead of PyObject_GetAttrString().
 
@@ -2982,14 +3019,16 @@ vectorcall_method(PyObject *name, PyObject *const *args, Py_ssize_t nargs)
     assert(nargs >= 1);
 
     PyThreadState *tstate = _PyThreadState_GET();
-    int unbound;
+    PyObject *retval = NULL;
     PyObject *self = args[0];
-    PyObject *func = lookup_method(self, name, &unbound);
-    if (func == NULL) {
-        return NULL;
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+    int unbound = lookup_method(self, name, &cref.ref);
+    if (unbound >= 0) {
+        PyObject *func = PyStackRef_AsPyObjectBorrow(cref.ref);
+        retval = vectorcall_unbound(tstate, unbound, func, args, nargs);
     }
-    PyObject *retval = vectorcall_unbound(tstate, unbound, func, args, nargs);
-    Py_DECREF(func);
+    _PyThreadState_PopCStackRef(tstate, &cref);
     return retval;
 }
 
@@ -3001,17 +3040,79 @@ vectorcall_maybe(PyThreadState *tstate, PyObject *name,
 {
     assert(nargs >= 1);
 
-    int unbound;
     PyObject *self = args[0];
-    PyObject *func = lookup_maybe_method(self, name, &unbound);
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+    int unbound = lookup_maybe_method(self, name, &cref.ref);
+    PyObject *func = PyStackRef_AsPyObjectBorrow(cref.ref);
     if (func == NULL) {
-        if (!PyErr_Occurred())
+        _PyThreadState_PopCStackRef(tstate, &cref);
+        if (!PyErr_Occurred()) {
             Py_RETURN_NOTIMPLEMENTED;
+        }
         return NULL;
     }
     PyObject *retval = vectorcall_unbound(tstate, unbound, func, args, nargs);
-    Py_DECREF(func);
+    _PyThreadState_PopCStackRef(tstate, &cref);
     return retval;
+}
+
+/* Call the method with the name `attr` on `self`. Returns NULL if the
+   method is missing or an error occurs.  No exception is set if
+   the method is missing. If attr_is_none is not NULL, it is set to 1 if
+   the attribute was found and was None, or 0 if it was not found. */
+static PyObject *
+maybe_call_special_no_args(PyObject *self, PyObject *attr, int *attr_is_none)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+
+    PyObject *res = NULL;
+    int unbound = lookup_maybe_method(self, attr, &cref.ref);
+    PyObject *func = PyStackRef_AsPyObjectBorrow(cref.ref);
+    if (attr_is_none != NULL) {
+        *attr_is_none = (func == Py_None);
+    }
+    if (func != NULL && (func != Py_None || attr_is_none == NULL)) {
+        res = call_unbound_noarg(unbound, func, self);
+    }
+    _PyThreadState_PopCStackRef(tstate, &cref);
+    return res;
+}
+
+static PyObject *
+maybe_call_special_one_arg(PyObject *self, PyObject *attr, PyObject *arg,
+                           int *attr_is_none)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+
+    PyObject *res = NULL;
+    int unbound = lookup_maybe_method(self, attr, &cref.ref);
+    PyObject *func = PyStackRef_AsPyObjectBorrow(cref.ref);
+    if (attr_is_none != NULL) {
+        *attr_is_none = (func == Py_None);
+    }
+    if (func != NULL && (func != Py_None || attr_is_none == NULL)) {
+        PyObject *args[] = { self, arg };
+        res = vectorcall_unbound(tstate, unbound, func, args, 2);
+    }
+    _PyThreadState_PopCStackRef(tstate, &cref);
+    return res;
+}
+
+PyObject *
+_PyObject_MaybeCallSpecialNoArgs(PyObject *self, PyObject *attr)
+{
+    return maybe_call_special_no_args(self, attr, NULL);
+}
+
+PyObject *
+_PyObject_MaybeCallSpecialOneArg(PyObject *self, PyObject *attr, PyObject *arg)
+{
+    return maybe_call_special_one_arg(self, attr, arg, NULL);
 }
 
 /*
@@ -3235,8 +3336,7 @@ static PyObject *
 mro_implementation(PyTypeObject *type)
 {
     if (!_PyType_IsReady(type)) {
-        int res = PyType_Ready(type);
-        if (res < 0)
+        if (PyType_Ready(type) < 0)
             return NULL;
     }
 
@@ -3384,27 +3484,10 @@ mro_invoke(PyTypeObject *type)
     PyObject *mro_result;
     PyObject *new_mro;
 
-    ASSERT_TYPE_LOCK_HELD();
-    ASSERT_NEW_OR_STOPPED(type);
-
     const int custom = !Py_IS_TYPE(type, &PyType_Type);
 
     if (custom) {
-        int unbound;
-        PyObject *mro_meth = lookup_method_optional_lock(
-            (PyObject *)type, &_Py_ID(mro), &unbound, true);
-        if (mro_meth == NULL) {
-            if (!PyErr_Occurred()) {
-                PyErr_SetString(PyExc_AttributeError, "mro");
-            }
-            return NULL;
-        }
-        // FIXME: review unlock
-        types_mutex_unlock();
-        // Possible re-entrancy, we don't know what this custom mro() method might do
-        mro_result = call_unbound_noarg(unbound, mro_meth, (PyObject *)type);
-        types_mutex_lock();
-        Py_DECREF(mro_meth);
+        mro_result = call_method_noarg((PyObject *)type, &_Py_ID(mro));
     }
     else {
         mro_result = mro_implementation(type);
@@ -3412,7 +3495,6 @@ mro_invoke(PyTypeObject *type)
     if (mro_result == NULL)
         return NULL;
 
-    // FIXME: possible re-entrancy, drop lock?
     new_mro = PySequence_Tuple(mro_result);
     Py_DECREF(mro_result);
     if (new_mro == NULL) {
@@ -3467,7 +3549,9 @@ mro_internal_unlocked(PyTypeObject *type, int initial, PyObject **p_old_mro)
        Don't let old_mro be GC'ed and its address be reused for
        another object, like (suddenly!) a new tp_mro.  */
     old_mro = Py_XNewRef(lookup_tp_mro(type));
+    types_mutex_unlock();
     new_mro = mro_invoke(type);  /* might cause reentrance */
+    types_mutex_lock();
     reent = (lookup_tp_mro(type) != old_mro);
     Py_XDECREF(old_mro);
     if (new_mro == NULL) {
@@ -5722,93 +5806,39 @@ _PyTypes_AfterFork(void)
 #endif
 }
 
-static struct type_cache_entry *
-type_get_cache_entry(PyTypeObject *type, PyObject *name)
+// Try to assign a new type version tag, return it if
+// successful.  Return 0 if no version was assigned.
+static unsigned int
+type_assign_version_lock_held(PyTypeObject *type)
+{
+    ASSERT_TYPE_LOCK_HELD();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (assign_version_tag(interp, type)) {
+        return type->tp_version_tag;
+    }
+    else {
+        return 0;
+    }
+}
+
+static unsigned int
+type_assign_version(PyTypeObject *type)
+{
+    unsigned int version;
+    types_mutex_lock();
+    version = type_assign_version_lock_held(type);
+    types_mutex_unlock();
+    return version;
+}
+
+static unsigned int
+type_lookup_ex(PyTypeObject *type, PyObject *name, _PyStackRef *out,
+               unsigned int (*assign_version)(PyTypeObject *))
 {
     unsigned int h = MCACHE_HASH_METHOD(type, name);
     struct type_cache *cache = get_type_cache();
-    return &cache->hashtable[h];
-}
-
-// Implementation of _PyType_LookupRefAndVersion() for non-freethreaded build
-// or for when the TYPE_LOCK mutex is already held.
-static PyObject *
-type_lookup_lock_held(PyTypeObject *type, PyObject *name, unsigned int *version)
-{
-    ASSERT_TYPE_LOCK_HELD();
-    PyObject *res;
-    int error;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-
-    struct type_cache_entry *entry = type_get_cache_entry(type, name);
-    if (entry->version == type->tp_version_tag &&
-        entry->name == name) {
-        assert(type->tp_version_tag);
-        OBJECT_STAT_INC_COND(type_cache_hits, !is_dunder_name(name));
-        OBJECT_STAT_INC_COND(type_cache_dunder_hits, is_dunder_name(name));
-        Py_XINCREF(entry->value);
-        if (version != NULL) {
-            *version = entry->version;
-        }
-        return entry->value;
-    }
-    OBJECT_STAT_INC_COND(type_cache_misses, !is_dunder_name(name));
-    OBJECT_STAT_INC_COND(type_cache_dunder_misses, is_dunder_name(name));
-
-    /* We may end up clearing live exceptions below, so make sure it's ours. */
-    assert(!PyErr_Occurred());
-
-    unsigned int assigned_version = 0; // 0 is not a valid version
-    if (MCACHE_CACHEABLE_NAME(name)) {
-        if (assign_version_tag(interp, type)) {
-            assigned_version = type->tp_version_tag;
-        }
-    }
-    // Calling find_name_in_mro() might cause the type version to change.  For
-    // example, if a __hash__ or __eq__ method mutates the types.  Since this
-    // case is expected to be rare, it seems better to not explicitly check
-    // for it (by checking if the version changed) and to do the useless cache
-    // update anyhow.
-    res = find_name_in_mro(type, name, &error);
-
-    if (!error) {
-        /* Only put NULL results into cache if there was no error. */
-        maybe_update_cache(entry, name, assigned_version, res);
-        if (version != NULL) {
-            *version = assigned_version;
-        }
-        return res;
-    }
-    else {
-        // It's not ideal to clear the error condition, but this function is
-        // documented as not setting an exception, and I don't want to change
-        // that.  E.g., when PyType_Ready() can't proceed, it won't set the
-        // "ready" flag, so future attempts to ready the same type will call
-        // it again -- hopefully in a context that propagates the exception
-        // out.
-        if (error == -1) {
-            PyErr_Clear();
-        }
-        if (version != NULL) {
-            // 0 is not a valid version
-            *version = 0;
-        }
-        return NULL;
-    }
-}
-
+    struct type_cache_entry *entry = &cache->hashtable[h];
 #ifdef Py_GIL_DISABLED
-// Implementation of _PyType_LookupRefAndVersion() for freethreaded build for
-// when the TYPE_LOCK mutex is not already held.  Avoids acquiring the lock if
-// the lookup can be completed using the cache.
-PyObject *
-type_lookup_gil_disabled(PyTypeObject *type, PyObject *name, unsigned int *version)
-{
-    PyObject *res;
-    int error;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-
-    struct type_cache_entry *entry = type_get_cache_entry(type, name);
     // synchronize-with other writing threads by doing an acquire load on the sequence
     while (1) {
         uint32_t sequence = _PySeqLock_BeginRead(&entry->sequence);
@@ -5818,16 +5848,12 @@ type_lookup_gil_disabled(PyTypeObject *type, PyObject *name, unsigned int *versi
             _Py_atomic_load_ptr_relaxed(&entry->name) == name) {
             OBJECT_STAT_INC_COND(type_cache_hits, !is_dunder_name(name));
             OBJECT_STAT_INC_COND(type_cache_dunder_hits, is_dunder_name(name));
-            PyObject *value = _Py_atomic_load_ptr_relaxed(&entry->value);
-            // If the sequence is still valid then we're done
-            if (value == NULL || _Py_TryIncref(value)) {
+            if (_Py_TryXGetStackRef(&entry->value, out)) {
+                // If the sequence is still valid then we're done
                 if (_PySeqLock_EndRead(&entry->sequence, sequence)) {
-                    if (version != NULL) {
-                        *version = entry_version;
-                    }
-                    return value;
+                    return entry_version;
                 }
-                Py_XDECREF(value);
+                PyStackRef_XCLOSE(*out);
             }
             else {
                 // If we can't incref the object we need to fallback to locking
@@ -5839,53 +5865,71 @@ type_lookup_gil_disabled(PyTypeObject *type, PyObject *name, unsigned int *versi
             break;
         }
     }
+#else
+    if (entry->version == type->tp_version_tag && entry->name == name) {
+        assert(type->tp_version_tag);
+        OBJECT_STAT_INC_COND(type_cache_hits, !is_dunder_name(name));
+        OBJECT_STAT_INC_COND(type_cache_dunder_hits, is_dunder_name(name));
+        *out = entry->value ? PyStackRef_FromPyObjectNew(entry->value) : PyStackRef_NULL;
+        return entry->version;
+    }
+#endif
     OBJECT_STAT_INC_COND(type_cache_misses, !is_dunder_name(name));
     OBJECT_STAT_INC_COND(type_cache_dunder_misses, is_dunder_name(name));
 
     /* We may end up clearing live exceptions below, so make sure it's ours. */
     assert(!PyErr_Occurred());
 
+    PyObject *res;
     unsigned int assigned_version = 0; // 0 is not a valid version
     if (MCACHE_CACHEABLE_NAME(name)) {
-        types_mutex_lock();
-        if (assign_version_tag(interp, type)) {
-            assigned_version = type->tp_version_tag;
-        }
-        types_mutex_unlock();
+        assigned_version = assign_version(type);
     }
     // Calling find_name_in_mro() might cause the type version to change.  For
     // example, if a __hash__ or __eq__ method mutates the types.  Since this
     // case is expected to be rare, it seems better to not explicitly check
     // for it (by checking if the version changed) and to do the useless cache
     // update anyhow.
+    int error;
     res = find_name_in_mro(type, name, &error);
 
-    if (!error) {
-        /* Only put NULL results into cache if there was no error. */
-        maybe_update_cache(entry, name, assigned_version, res);
-        if (version != NULL) {
-            *version = assigned_version;
-        }
-        return res;
-    }
-    else {
-        // It's not ideal to clear the error condition, but this function is
-        // documented as not setting an exception, and I don't want to change
-        // that.  E.g., when PyType_Ready() can't proceed, it won't set the
-        // "ready" flag, so future attempts to ready the same type will call
-        // it again -- hopefully in a context that propagates the exception
-        // out.
+    /* Only put NULL results into cache if there was no error. */
+    if (error) {
+        /* It's not ideal to clear the error condition,
+           but this function is documented as not setting
+           an exception, and I don't want to change that.
+           E.g., when PyType_Ready() can't proceed, it won't
+           set the "ready" flag, so future attempts to ready
+           the same type will call it again -- hopefully
+           in a context that propagates the exception out.
+        */
         if (error == -1) {
             PyErr_Clear();
         }
-        if (version != NULL) {
-            // 0 is not a valid version
-            *version = 0;
-        }
-        return NULL;
+        *out = PyStackRef_NULL;
+        return 0;
     }
+    maybe_update_cache(entry, name, assigned_version, res);
+    *out = res ? PyStackRef_FromPyObjectSteal(res) : PyStackRef_NULL;
+    return assigned_version;
 }
+
+static unsigned int
+type_lookup_lock_held(PyTypeObject *type, PyObject *name, _PyStackRef *out)
+{
+    return type_lookup_ex(type, name, out, &type_assign_version_lock_held);
+}
+
+unsigned int
+_PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef *out)
+{
+#ifdef Py_GIL_DISABLED
+    return type_lookup_ex(type, name, out, &type_assign_version);
+#else
+    return type_lookup_ex(type, name, out, &type_assign_version_lock_held);
 #endif
+
+}
 
 /* Internal API to look for a name through the MRO.
    This returns a strong reference, and doesn't set an exception!
@@ -5895,11 +5939,15 @@ type_lookup_gil_disabled(PyTypeObject *type, PyObject *name, unsigned int *versi
 PyObject *
 _PyType_LookupRefAndVersion(PyTypeObject *type, PyObject *name, unsigned int *version)
 {
-#ifdef Py_GIL_DISABLED
-    return type_lookup_gil_disabled(type, name, version);
-#else
-    return type_lookup_lock_held(type, name, version);
-#endif
+    _PyStackRef out;
+    unsigned int ver = _PyType_LookupStackRefAndVersion(type, name, &out);
+    if (version) {
+        *version = ver;
+    }
+    if (PyStackRef_IsNull(out)) {
+        return NULL;
+    }
+    return PyStackRef_AsPyObjectSteal(out);
 }
 
 /* Internal API to look for a name through the MRO.
@@ -6181,8 +6229,8 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
         PyErr_Format(PyExc_AttributeError,
                      "type object '%.50s' has no attribute '%U'",
                      ((PyTypeObject*)type)->tp_name, name);
-        // FIXME: reentrancy possible
         types_mutex_unlock();
+        // Note: reentrancy possible
         _PyObject_SetAttributeErrorContext((PyObject *)type, name);
         types_mutex_lock();
         return -1;
@@ -10025,32 +10073,23 @@ slot_sq_ass_item(PyObject *self, Py_ssize_t index, PyObject *value)
 static int
 slot_sq_contains(PyObject *self, PyObject *value)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *func, *res;
-    int result = -1, unbound;
-
-    func = lookup_maybe_method(self, &_Py_ID(__contains__), &unbound);
-    if (func == Py_None) {
-        Py_DECREF(func);
+    int attr_is_none = 0;
+    PyObject *res = maybe_call_special_one_arg(self, &_Py_ID(__contains__), value,
+                                               &attr_is_none);
+    if (attr_is_none) {
         PyErr_Format(PyExc_TypeError,
-                     "'%.200s' object is not a container",
-                     Py_TYPE(self)->tp_name);
+            "'%.200s' object is not a container",
+            Py_TYPE(self)->tp_name);
         return -1;
     }
-    if (func != NULL) {
-        PyObject *args[2] = {self, value};
-        res = vectorcall_unbound(tstate, unbound, func, args, 2);
-        Py_DECREF(func);
-        if (res != NULL) {
-            result = PyObject_IsTrue(res);
-            Py_DECREF(res);
-        }
+    else if (res == NULL && PyErr_Occurred()) {
+        return -1;
     }
-    else if (! PyErr_Occurred()) {
-        /* Possible results: -1 and 1 */
-        result = (int)_PySequence_IterSearch(self, value,
-                                         PY_ITERSEARCH_CONTAINS);
+    else if (res == NULL) {
+        return (int)_PySequence_IterSearch(self, value, PY_ITERSEARCH_CONTAINS);
     }
+    int result = PyObject_IsTrue(res);
+    Py_DECREF(res);
     return result;
 }
 
@@ -10114,31 +10153,29 @@ SLOT0(slot_nb_absolute, __abs__)
 static int
 slot_nb_bool(PyObject *self)
 {
-    PyObject *func, *value;
-    int result, unbound;
     int using_len = 0;
-
-    func = lookup_maybe_method(self, &_Py_ID(__bool__), &unbound);
-    if (func == NULL) {
-        if (PyErr_Occurred()) {
-            return -1;
-        }
-
-        func = lookup_maybe_method(self, &_Py_ID(__len__), &unbound);
-        if (func == NULL) {
-            if (PyErr_Occurred()) {
-                return -1;
-            }
+    int attr_is_none = 0;
+    PyObject *value = maybe_call_special_no_args(self, &_Py_ID(__bool__),
+                                                 &attr_is_none);
+    if (attr_is_none) {
+        PyErr_Format(PyExc_TypeError,
+                     "'%.200s' cannot be interpreted as a boolean",
+                     Py_TYPE(self)->tp_name);
+        return -1;
+    }
+    else if (value == NULL && !PyErr_Occurred()) {
+        value = _PyObject_MaybeCallSpecialNoArgs(self, &_Py_ID(__len__));
+        if (value == NULL && !PyErr_Occurred()) {
             return 1;
         }
         using_len = 1;
     }
 
-    value = call_unbound_noarg(unbound, func, self);
     if (value == NULL) {
-        goto error;
+        return -1;
     }
 
+    int result;
     if (using_len) {
         /* bool type enforced by slot_nb_len */
         result = PyObject_IsTrue(value);
@@ -10153,14 +10190,8 @@ slot_nb_bool(PyObject *self)
                      Py_TYPE(value)->tp_name);
         result = -1;
     }
-
     Py_DECREF(value);
-    Py_DECREF(func);
     return result;
-
-error:
-    Py_DECREF(func);
-    return -1;
 }
 
 
@@ -10207,18 +10238,15 @@ SLOT1(slot_nb_inplace_true_divide, __itruediv__, PyObject *)
 static PyObject *
 slot_tp_repr(PyObject *self)
 {
-    PyObject *func, *res;
-    int unbound;
-
-    func = lookup_maybe_method(self, &_Py_ID(__repr__), &unbound);
-    if (func != NULL) {
-        res = call_unbound_noarg(unbound, func, self);
-        Py_DECREF(func);
+    PyObject *res = _PyObject_MaybeCallSpecialNoArgs(self, &_Py_ID(__repr__));
+    if (res != NULL) {
         return res;
     }
-    PyErr_Clear();
+    else if (PyErr_Occurred()) {
+        return NULL;
+    }
     return PyUnicode_FromFormat("<%s object at %p>",
-                               Py_TYPE(self)->tp_name, self);
+                                Py_TYPE(self)->tp_name, self);
 }
 
 SLOT0(slot_tp_str, __str__)
@@ -10226,25 +10254,15 @@ SLOT0(slot_tp_str, __str__)
 static Py_hash_t
 slot_tp_hash(PyObject *self)
 {
-    PyObject *func, *res;
-    Py_ssize_t h;
-    int unbound;
-
-    func = lookup_maybe_method(self, &_Py_ID(__hash__), &unbound);
-
-    if (func == Py_None) {
-        Py_SETREF(func, NULL);
-    }
-
-    if (func == NULL) {
+    PyObject *res;
+    int attr_is_none = 0;
+    res  = maybe_call_special_no_args(self, &_Py_ID(__hash__), &attr_is_none);
+    if (attr_is_none || res == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
         return PyObject_HashNotImplemented(self);
     }
-
-    res = call_unbound_noarg(unbound, func, self);
-    Py_DECREF(func);
-    if (res == NULL)
-        return -1;
-
     if (!PyLong_Check(res)) {
         PyErr_SetString(PyExc_TypeError,
                         "__hash__ method should return an integer");
@@ -10255,7 +10273,7 @@ slot_tp_hash(PyObject *self)
        Py_hash_t.  Therefore our transformation must preserve values that
        already lie within this range, to ensure that if x.__hash__() returns
        hash(y) then hash(x) == hash(y). */
-    h = PyLong_AsSsize_t(res);
+    Py_ssize_t h = PyLong_AsSsize_t(res);
     if (h == -1 && PyErr_Occurred()) {
         /* res was not within the range of a Py_hash_t, so we're free to
            use any sufficiently bit-mixing transformation;
@@ -10273,24 +10291,7 @@ slot_tp_hash(PyObject *self)
 static PyObject *
 slot_tp_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    int unbound;
-
-    PyObject *meth = lookup_method(self, &_Py_ID(__call__), &unbound);
-    if (meth == NULL) {
-        return NULL;
-    }
-
-    PyObject *res;
-    if (unbound) {
-        res = _PyObject_Call_Prepend(tstate, meth, self, args, kwds);
-    }
-    else {
-        res = _PyObject_Call(tstate, meth, args, kwds);
-    }
-
-    Py_DECREF(meth);
-    return res;
+    return call_method(self, &_Py_ID(__call__), args, kwds);
 }
 
 /* There are two slot dispatch functions for tp_getattro.
@@ -10417,51 +10418,46 @@ static PyObject *name_op[] = {
 static PyObject *
 slot_tp_richcompare(PyObject *self, PyObject *other, int op)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-
-    int unbound;
-    PyObject *func = lookup_maybe_method(self, name_op[op], &unbound);
-    if (func == NULL) {
-        PyErr_Clear();
+    PyObject *res = _PyObject_MaybeCallSpecialOneArg(self, name_op[op], other);
+    if (res == NULL) {
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
         Py_RETURN_NOTIMPLEMENTED;
     }
-
-    PyObject *stack[2] = {self, other};
-    PyObject *res = vectorcall_unbound(tstate, unbound, func, stack, 2);
-    Py_DECREF(func);
     return res;
+}
+
+static int
+has_dunder_getitem(PyObject *self)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef c_ref;
+    _PyThreadState_PushCStackRef(tstate, &c_ref);
+    lookup_maybe_method(self, &_Py_ID(__getitem__), &c_ref.ref);
+    int has_dunder_getitem = !PyStackRef_IsNull(c_ref.ref);
+    _PyThreadState_PopCStackRef(tstate, &c_ref);
+    return has_dunder_getitem;
 }
 
 static PyObject *
 slot_tp_iter(PyObject *self)
 {
-    int unbound;
-    PyObject *func, *res;
-
-    func = lookup_maybe_method(self, &_Py_ID(__iter__), &unbound);
-    if (func == Py_None) {
-        Py_DECREF(func);
-        PyErr_Format(PyExc_TypeError,
-                     "'%.200s' object is not iterable",
-                     Py_TYPE(self)->tp_name);
-        return NULL;
-    }
-
-    if (func != NULL) {
-        res = call_unbound_noarg(unbound, func, self);
-        Py_DECREF(func);
+    int attr_is_none = 0;
+    PyObject *res = maybe_call_special_no_args(self, &_Py_ID(__iter__),
+                                               &attr_is_none);
+    if (res != NULL) {
         return res;
     }
-
-    PyErr_Clear();
-    func = lookup_maybe_method(self, &_Py_ID(__getitem__), &unbound);
-    if (func == NULL) {
-        PyErr_Format(PyExc_TypeError,
-                     "'%.200s' object is not iterable",
-                     Py_TYPE(self)->tp_name);
+    else if (PyErr_Occurred()) {
         return NULL;
     }
-    Py_DECREF(func);
+    else if (attr_is_none || !has_dunder_getitem(self)) {
+        PyErr_Format(PyExc_TypeError,
+            "'%.200s' object is not iterable",
+            Py_TYPE(self)->tp_name);
+        return NULL;
+    }
     return PySeqIter_New(self);
 }
 
@@ -10519,22 +10515,7 @@ slot_tp_descr_set(PyObject *self, PyObject *target, PyObject *value)
 static int
 slot_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-
-    int unbound;
-    PyObject *meth = lookup_method(self, &_Py_ID(__init__), &unbound);
-    if (meth == NULL) {
-        return -1;
-    }
-
-    PyObject *res;
-    if (unbound) {
-        res = _PyObject_Call_Prepend(tstate, meth, self, args, kwds);
-    }
-    else {
-        res = _PyObject_Call(tstate, meth, args, kwds);
-    }
-    Py_DECREF(meth);
+    PyObject *res = call_method(self, &_Py_ID(__init__), args, kwds);
     if (res == NULL)
         return -1;
     if (res != Py_None) {
@@ -10567,16 +10548,18 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 slot_tp_finalize(PyObject *self)
 {
-    int unbound;
-    PyObject *del, *res;
-
     /* Save the current exception, if any. */
-    PyObject *exc = PyErr_GetRaisedException();
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
 
     /* Execute __del__ method, if any. */
-    del = lookup_maybe_method(self, &_Py_ID(__del__), &unbound);
-    if (del != NULL) {
-        res = call_unbound_noarg(unbound, del, self);
+    int unbound = lookup_maybe_method(self, &_Py_ID(__del__), &cref.ref);
+    if (unbound >= 0) {
+        PyObject *del = PyStackRef_AsPyObjectBorrow(cref.ref);
+        PyObject *res = call_unbound_noarg(unbound, del, self);
         if (res == NULL) {
             PyErr_FormatUnraisable("Exception ignored while "
                                    "calling deallocator %R", del);
@@ -10584,11 +10567,12 @@ slot_tp_finalize(PyObject *self)
         else {
             Py_DECREF(res);
         }
-        Py_DECREF(del);
     }
 
+    _PyThreadState_PopCStackRef(tstate, &cref);
+
     /* Restore the saved exception. */
-    PyErr_SetRaisedException(exc);
+    _PyErr_SetRaisedException(tstate, exc);
 }
 
 typedef struct _PyBufferWrapper {
@@ -10837,57 +10821,33 @@ slot_bf_releasebuffer(PyObject *self, Py_buffer *buffer)
 }
 
 static PyObject *
+slot_am_generic(PyObject *self, PyObject *name)
+{
+    PyObject *res = _PyObject_MaybeCallSpecialNoArgs(self, name);
+    if (res == NULL && !PyErr_Occurred()) {
+        PyErr_Format(PyExc_AttributeError,
+            "object %.50s does not have %U method",
+            Py_TYPE(self)->tp_name, name);
+    }
+    return res;
+}
+
+static PyObject *
 slot_am_await(PyObject *self)
 {
-    int unbound;
-    PyObject *func, *res;
-
-    func = lookup_maybe_method(self, &_Py_ID(__await__), &unbound);
-    if (func != NULL) {
-        res = call_unbound_noarg(unbound, func, self);
-        Py_DECREF(func);
-        return res;
-    }
-    PyErr_Format(PyExc_AttributeError,
-                 "object %.50s does not have __await__ method",
-                 Py_TYPE(self)->tp_name);
-    return NULL;
+    return slot_am_generic(self, &_Py_ID(__await__));
 }
 
 static PyObject *
 slot_am_aiter(PyObject *self)
 {
-    int unbound;
-    PyObject *func, *res;
-
-    func = lookup_maybe_method(self, &_Py_ID(__aiter__), &unbound);
-    if (func != NULL) {
-        res = call_unbound_noarg(unbound, func, self);
-        Py_DECREF(func);
-        return res;
-    }
-    PyErr_Format(PyExc_AttributeError,
-                 "object %.50s does not have __aiter__ method",
-                 Py_TYPE(self)->tp_name);
-    return NULL;
+    return slot_am_generic(self, &_Py_ID(__aiter__));
 }
 
 static PyObject *
 slot_am_anext(PyObject *self)
 {
-    int unbound;
-    PyObject *func, *res;
-
-    func = lookup_maybe_method(self, &_Py_ID(__anext__), &unbound);
-    if (func != NULL) {
-        res = call_unbound_noarg(unbound, func, self);
-        Py_DECREF(func);
-        return res;
-    }
-    PyErr_Format(PyExc_AttributeError,
-                 "object %.50s does not have __anext__ method",
-                 Py_TYPE(self)->tp_name);
-    return NULL;
+    return slot_am_generic(self, &_Py_ID(__anext__));
 }
 
 /*
