@@ -413,9 +413,6 @@ def shorten(text, width, **kwargs):
 
 # -- Loosely related functionality -------------------------------------
 
-_whitespace_only_re = re.compile('^[ \t]+$', re.MULTILINE)
-_leading_whitespace_re = re.compile('(^[ \t]*)(?:[^ \t\n])', re.MULTILINE)
-
 def dedent(text, only_whitespace = True):
     """Remove any common leading whitespace from every line in `text`.
 
