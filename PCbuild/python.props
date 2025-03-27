@@ -20,6 +20,16 @@
     <ICCBuild Condition="$(PlatformToolset.StartsWith(`Intel C++ Compiler`))">true</ICCBuild>
 
     <!--
+    This ensures, that in case of clang-cl bundled with VS
+    we find e.g. clang_rt.profile.lib in the correct bitness.
+    In case the user sets LLVMInstallDir and LLVMToolsVersion,
+    they are responsible to use the correct tool architecture.
+    For details please see GH-131473.
+    -->
+    <PreferredToolArchitecture Condition="$(LLVMInstallDir) == '' and $(PlatformToolset) == 'ClangCL' and $(Platform) == 'x64'">x64</PreferredToolArchitecture>
+    <PreferredToolArchitecture Condition="$(LLVMInstallDir) == '' and $(PlatformToolset) == 'ClangCL' and $(Platform) == 'Win32'">x86</PreferredToolArchitecture>
+
+    <!--
     Convincing MSVC/MSBuild to prefer our platform names is too difficult,
     so we define our own constant ArchName and use wherever we need it.
     -->

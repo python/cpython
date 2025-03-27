@@ -36,7 +36,6 @@ class PointerOffset:
         at the start of the code section, as if each code section started with
         `const PyStackRef *reference = stack_pointer`
     """
-
     numeric: int
     positive: tuple[str, ...]
     negative: tuple[str, ...]
@@ -56,7 +55,8 @@ class PointerOffset:
         if not item.size:
             return PointerOffset(1, (), ())
         txt = item.size.strip()
-        n = p = ()
+        n: tuple[str, ...] = ()
+        p: tuple[str, ...] = ()
         try:
             i = int(txt)
         except ValueError:
@@ -134,21 +134,11 @@ class PointerOffset:
     def __bool__(self) -> bool:
         return self.numeric != 0 or bool(self.positive) or bool(self.negative)
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, PointerOffset):
-            return NotImplemented
-        return (
-            self.numeric == other.numeric and
-            self.positive == other.positive and
-            self.negative == other.negative
-        )
-
     def __str__(self) -> str:
         return self.to_c()
 
     def __repr__(self) -> str:
         return f"PointerOffset({self.to_c()})"
-
 
 @dataclass
 class Local:
@@ -159,16 +149,14 @@ class Local:
     def __repr__(self) -> str:
         return f"Local('{self.item.name}', mem={self.memory_offset}, local={self.in_local}, array={self.is_array()})"
 
-    #def compact_str(self) -> str:
-        #mtag = "M" if self.memory_offset else ""
-        #dtag = "D" if self.in_local else ""
-        #atag = "A" if self.is_array() else ""
-        #return f"'{self.item.name}'{mtag}{dtag}{atag}"
-
-    compact_str = __repr__
+    def compact_str(self) -> str:
+        mtag = "M" if self.memory_offset else ""
+        dtag = "D" if self.in_local else ""
+        atag = "A" if self.is_array() else ""
+        return f"'{self.item.name}'{mtag}{dtag}{atag}"
 
     @staticmethod
-    def unused(defn: StackItem, offset: PointerOffset) -> "Local":
+    def unused(defn: StackItem, offset: PointerOffset | None) -> "Local":
         return Local(defn, offset, False)
 
     @staticmethod
@@ -383,6 +371,12 @@ class Stack:
             if other_var.memory_offset is None:
                 self_var.memory_offset = None
         self.align(other, out)
+        for self_var, other_var in zip(self.variables, other.variables):
+            if self_var.memory_offset is not None:
+                if self_var.memory_offset != other_var.memory_offset:
+                    raise StackError(f"Mismatched stack depths for {self_var.name}: {self_var.memory_offset} and {other_var.memory_offset}")
+            elif other_var.memory_offset is None:
+                self_var.memory_offset = None
 
 
 def stacks(inst: Instruction | PseudoInstruction) -> Iterator[StackEffect]:
@@ -604,6 +598,11 @@ class Storage:
         if len(self.outputs) != len(other.outputs):
             var = self.outputs[0] if len(self.outputs) > len(other.outputs) else other.outputs[0]
             raise StackError(f"'{var.name}' is set on some paths, but not all")
+        for var, other_var in zip(self.outputs, other.outputs):
+            if var.memory_offset is None:
+                other_var.memory_offset = None
+            elif other_var.memory_offset is None:
+                var.memory_offset = None
         self.stack.merge(other.stack, out)
         self.sanity_check()
 
