@@ -539,7 +539,7 @@ get_py_runtime(proc_handle_t* handle)
 }
 
 // Platform-independent memory read function
-static Py_ssize_t
+static int
 read_memory(proc_handle_t *handle, uint64_t remote_address, size_t len, void* dst)
 {
 #ifdef MS_WINDOWS
@@ -552,7 +552,7 @@ read_memory(proc_handle_t *handle, uint64_t remote_address, size_t len, void* ds
         }
         result += read_bytes;
     } while (result < len);
-    return (Py_ssize_t)result;
+    return 0;
 #elif defined(__linux__) && HAVE_PROCESS_VM_READV
     struct iovec local[1];
     struct iovec remote[1];
@@ -573,7 +573,7 @@ read_memory(proc_handle_t *handle, uint64_t remote_address, size_t len, void* ds
 
         result += read_bytes;
     } while ((size_t)read_bytes != local[0].iov_len);
-    return result;
+    return 0;
 #elif defined(__APPLE__) && TARGET_OS_OSX
     Py_ssize_t result = -1;
     kern_return_t kr = mach_vm_read_overwrite(
@@ -596,7 +596,7 @@ read_memory(proc_handle_t *handle, uint64_t remote_address, size_t len, void* ds
         }
         return -1;
     }
-    return len;
+    return 0;
 #else
     PyErr_SetString(
         PyExc_RuntimeError,
@@ -606,7 +606,7 @@ read_memory(proc_handle_t *handle, uint64_t remote_address, size_t len, void* ds
 }
 
 // Platform-independent memory write function
-static Py_ssize_t
+static int
 write_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const void* src)
 {
 #ifdef MS_WINDOWS
@@ -619,7 +619,7 @@ write_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const 
         }
         result += written;
     } while (result < len);
-    return (Py_ssize_t)result;
+    return 0;
 #elif defined(__linux__) && HAVE_PROCESS_VM_READV
     struct iovec local[1];
     struct iovec remote[1];
@@ -640,7 +640,7 @@ write_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const 
 
         result += written;
     } while ((size_t)written != local[0].iov_len);
-    return result;
+    return 0;
 #elif defined(__APPLE__) && TARGET_OS_OSX
     kern_return_t kr = mach_vm_write(
         pid_to_task(handle->pid),
@@ -661,7 +661,7 @@ write_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const 
         }
         return -1;
     }
-    return len;
+    return 0;
 #else
     PyErr_Format(PyExc_RuntimeError, "Writing memory is not supported on this platform");
     return -1;
@@ -749,9 +749,7 @@ read_offsets(
         return -1;
     }
     size_t size = sizeof(struct _Py_DebugOffsets);
-    Py_ssize_t bytes = read_memory(
-        handle, *runtime_start_address, size, debug_offsets);
-    if (bytes < 0 || (size_t)bytes != size) {
+    if (0 != read_memory(handle, *runtime_start_address, size, debug_offsets)) {
         return -1;
     }
     if (ensure_debug_offset_compatibility(debug_offsets)) {
@@ -773,12 +771,12 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     uintptr_t interpreter_state_list_head = debug_offsets.runtime_state.interpreters_head;
 
     uintptr_t interpreter_state_addr;
-    Py_ssize_t bytes = read_memory(
-        handle,
-        runtime_start_address + interpreter_state_list_head,
-        sizeof(void*),
-        &interpreter_state_addr);
-    if (bytes == -1) {
+    if (0 != read_memory(
+            handle,
+            runtime_start_address + interpreter_state_list_head,
+            sizeof(void*),
+            &interpreter_state_addr))
+    {
         return -1;
     }
 
@@ -788,12 +786,12 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     }
 
     int is_remote_debugging_enabled = 0;
-    bytes = read_memory(
-        handle,
-        interpreter_state_addr + debug_offsets.debugger_support.remote_debugging_enabled,
-        sizeof(int),
-        &is_remote_debugging_enabled);
-    if (bytes == -1) {
+    if (0 != read_memory(
+            handle,
+            interpreter_state_addr + debug_offsets.debugger_support.remote_debugging_enabled,
+            sizeof(int),
+            &is_remote_debugging_enabled))
+    {
         return -1;
     }
 
@@ -806,21 +804,21 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     pid_t this_tid = 0;
 
     if (tid != 0) {
-        bytes = read_memory(
-            handle,
-            interpreter_state_addr + debug_offsets.interpreter_state.threads_head,
-            sizeof(void*),
-            &thread_state_addr);
-        if (bytes == -1) {
+        if (0 != read_memory(
+                handle,
+                interpreter_state_addr + debug_offsets.interpreter_state.threads_head,
+                sizeof(void*),
+                &thread_state_addr))
+        {
             return -1;
         }
         while (thread_state_addr != 0) {
-            bytes = read_memory(
-                handle,
-                thread_state_addr + debug_offsets.thread_state.native_thread_id,
-                sizeof(pid_t),
-                &this_tid);
-            if (bytes == -1) {
+            if (0 != read_memory(
+                    handle,
+                    thread_state_addr + debug_offsets.thread_state.native_thread_id,
+                    sizeof(pid_t),
+                    &this_tid))
+            {
                 return -1;
             }
 
@@ -828,22 +826,22 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
                 break;
             }
 
-            bytes = read_memory(
-                handle,
-                thread_state_addr + debug_offsets.thread_state.next,
-                sizeof(void*),
-                &thread_state_addr);
-            if (bytes == -1) {
+            if (0 != read_memory(
+                    handle,
+                    thread_state_addr + debug_offsets.thread_state.next,
+                    sizeof(void*),
+                    &thread_state_addr))
+            {
                 return -1;
             }
         }
     } else {
-        bytes = read_memory(
-            handle,
-            interpreter_state_addr + debug_offsets.interpreter_state.threads_main,
-            sizeof(void*),
-            &thread_state_addr);
-        if (bytes == -1) {
+        if (0 != read_memory(
+                handle,
+                interpreter_state_addr + debug_offsets.interpreter_state.threads_main,
+                sizeof(void*),
+                &thread_state_addr))
+        {
             return -1;
         }
     }
@@ -854,12 +852,12 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     }
 
     uintptr_t eval_breaker;
-    bytes = read_memory(
-        handle,
-        thread_state_addr + debug_offsets.debugger_support.eval_breaker,
-        sizeof(uintptr_t),
-        &eval_breaker);
-    if (bytes == -1) {
+    if (0 != read_memory(
+            handle,
+            thread_state_addr + debug_offsets.debugger_support.eval_breaker,
+            sizeof(uintptr_t),
+            &eval_breaker))
+    {
         return -1;
     }
 
@@ -876,12 +874,12 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
             thread_state_addr +
             debug_offsets.debugger_support.remote_debugger_support +
             debug_offsets.debugger_support.debugger_script_path);
-        bytes = write_memory(
-            handle,
-            debugger_script_path_addr,
-            strlen(debugger_script_path) + 1,
-            debugger_script_path);
-        if (bytes == -1) {
+        if (0 != write_memory(
+                handle,
+                debugger_script_path_addr,
+                strlen(debugger_script_path) + 1,
+                debugger_script_path))
+        {
             return -1;
         }
     }
@@ -891,33 +889,34 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
         thread_state_addr +
         debug_offsets.debugger_support.remote_debugger_support +
         debug_offsets.debugger_support.debugger_pending_call);
-    bytes = write_memory(
-        handle,
-        debugger_pending_call_addr,
-        sizeof(int),
-        &pending_call);
+    if (0 != write_memory(
+            handle,
+            debugger_pending_call_addr,
+            sizeof(int),
+            &pending_call))
 
-    if (bytes == -1) {
+    {
         return -1;
     }
 
-    bytes = write_memory(
-        handle,
-        thread_state_addr + debug_offsets.debugger_support.eval_breaker,
-        sizeof(uintptr_t),
-        &eval_breaker);
+    if (0 != write_memory(
+            handle,
+            thread_state_addr + debug_offsets.debugger_support.eval_breaker,
+            sizeof(uintptr_t),
+            &eval_breaker))
 
-    if (bytes == -1) {
+    {
         return -1;
     }
 
-    bytes = read_memory(
-        handle,
-        thread_state_addr + debug_offsets.debugger_support.eval_breaker,
-        sizeof(uintptr_t),
-        &eval_breaker);
-
-    printf("Eval breaker: %p\n", (void*)eval_breaker);
+    if (0 == read_memory(
+            handle,
+            thread_state_addr + debug_offsets.debugger_support.eval_breaker,
+            sizeof(uintptr_t),
+            &eval_breaker))
+    {
+        printf("Eval breaker: %p\n", (void*)eval_breaker);
+    }
 
     return 0;
 }
