@@ -10,6 +10,7 @@ Modified for Python 2.0 by Fredrik Lundh (fredrik@pythonware.com)
 import ast
 import unittest
 import unicodedata
+import urllib.error
 
 from test import support
 from http.client import HTTPException
@@ -181,20 +182,23 @@ class UnicodeNamesTest(unittest.TestCase):
         try:
             testdata = support.open_urlresource(url, encoding="utf-8",
                                                 check=check_version)
-        except (OSError, HTTPException):
-            self.skipTest("Could not retrieve " + url)
-        self.addCleanup(testdata.close)
-        for line in testdata:
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-            seqname, codepoints = line.split(';')
-            codepoints = ''.join(chr(int(cp, 16)) for cp in codepoints.split())
-            self.assertEqual(unicodedata.lookup(seqname), codepoints)
-            with self.assertRaises(SyntaxError):
-                self.checkletter(seqname, None)
-            with self.assertRaises(KeyError):
-                unicodedata.ucd_3_2_0.lookup(seqname)
+        except urllib.error.HTTPError as e:
+            e.close()
+            self.skipTest(f"Could not retrieve {url} {e=}")
+        except (OSError, HTTPException) as e:
+            self.skipTest(f"Could not retrieve {url} {e=}")
+        with testdata:
+            for line in testdata:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                seqname, codepoints = line.split(';')
+                codepoints = ''.join(chr(int(cp, 16)) for cp in codepoints.split())
+                self.assertEqual(unicodedata.lookup(seqname), codepoints)
+                with self.assertRaises(SyntaxError):
+                    self.checkletter(seqname, None)
+                with self.assertRaises(KeyError):
+                    unicodedata.ucd_3_2_0.lookup(seqname)
 
     def test_errors(self):
         self.assertRaises(TypeError, unicodedata.name)
