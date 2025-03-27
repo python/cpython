@@ -420,7 +420,7 @@ class _WritablePath(_JoinablePath):
         with magic_open(self, mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
-    def _copy_from(self, source: _ReadablePath, follow_symlinks: bool = True) -> None:
+    def _copy_from(self, source: _ReadablePath, *, follow_symlinks: bool = True) -> None:
         """
         Recursively copy the given path to this path.
         """
