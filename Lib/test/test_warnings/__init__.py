@@ -1528,6 +1528,119 @@ a=A()
         self.assertTrue(err.startswith(expected), ascii(err))
 
 
+class AsyncTests(BaseTest):
+    """Verifies that the catch_warnings() context manager behaves
+    as expected when used inside async co-routines.  This requires
+    that the context_aware_warnings flag is enabled, so that
+    the context manager uses a context variable.
+    """
+
+    @unittest.skipIf(not sys.flags.context_aware_warnings,
+                     "requires context aware warnings")
+    def test_async_context(self):
+        import asyncio
+
+        async def run_a():
+            with self.module.catch_warnings(record=True) as w:
+                await asyncio.sleep(0)
+                # The warning emitted here should be caught be the enclosing
+                # context manager.
+                self.module.warn('run_a warning', UserWarning)
+                await asyncio.sleep(0)
+                self.assertEqual(len(w), 1)
+                self.assertEqual(w[0].message.args[0], 'run_a warning')
+
+        async def run_b():
+            with self.module.catch_warnings(record=True) as w:
+                await asyncio.sleep(0)
+                # The warning emitted here should be caught be the enclosing
+                # context manager.
+                self.module.warn('run_b warning', UserWarning)
+                await asyncio.sleep(0)
+                self.assertEqual(len(w), 1)
+                self.assertEqual(w[0].message.args[0], 'run_b warning')
+
+        async def run_tasks():
+            task_a = asyncio.create_task(run_a())
+            task_b = asyncio.create_task(run_b())
+            await asyncio.gather(task_a, task_b)
+
+        asyncio.run(run_tasks())
+
+
+class CAsyncTests(AsyncTests, unittest.TestCase):
+    module = c_warnings
+
+
+class PyAsyncTests(AsyncTests, unittest.TestCase):
+    module = py_warnings
+
+
+class ThreadTests(BaseTest):
+    """Verifies that the catch_warnings() context manager behaves as
+    expected when used within threads.  This requires that both the
+    context_aware_warnings flag and thread_inherit_context flags are enabled.
+    """
+
+    ENABLE_THREAD_TESTS = (sys.flags.context_aware_warnings and
+                           sys.flags.thread_inherit_context)
+
+    @unittest.skipIf(not ENABLE_THREAD_TESTS,
+                     "requires thread-safe warnings flags")
+    def test_threaded_context(self):
+        import threading
+
+        barrier = threading.Barrier(2)
+
+        def run_a():
+            with self.module.catch_warnings(record=True) as w:
+                barrier.wait()
+                # The warning emitted here should be caught be the enclosing
+                # context manager.
+                self.module.warn('run_a warning', UserWarning)
+                barrier.wait()
+                self.assertEqual(len(w), 1)
+                self.assertEqual(w[0].message.args[0], 'run_a warning')
+            # Should be caught be the catch_warnings() context manager of run_threads()
+            self.module.warn('main warning', UserWarning)
+
+        def run_b():
+            with self.module.catch_warnings(record=True) as w:
+                barrier.wait()
+                # The warning emitted here should be caught be the enclosing
+                # context manager.
+                barrier.wait()
+                self.module.warn('run_b warning', UserWarning)
+                self.assertEqual(len(w), 1)
+                self.assertEqual(w[0].message.args[0], 'run_b warning')
+            # Should be caught be the catch_warnings() context manager of run_threads()
+            self.module.warn('main warning', UserWarning)
+
+        def run_threads():
+            threads = [
+                threading.Thread(target=run_a),
+                threading.Thread(target=run_b),
+                ]
+            with self.module.catch_warnings(record=True) as w:
+                for thread in threads:
+                    thread.start()
+                for thread in threads:
+                    thread.join()
+                self.assertEqual(len(w), 2)
+                self.assertEqual(w[0].message.args[0], 'main warning')
+                self.assertEqual(w[1].message.args[0], 'main warning')
+
+        run_threads()
+
+
+class CThreadTests(ThreadTests, unittest.TestCase):
+    module = c_warnings
+
+
+class PyThreadTests(ThreadTests, unittest.TestCase):
+    module = py_warnings
+
+
 class DeprecatedTests(PyPublicAPITests):
     def test_dunder_deprecated(self):
         @deprecated("A will go away soon")
