@@ -433,8 +433,8 @@ def dedent(text):
 
     lines = text.split("\n")
 
-    splitting = os.path.commonprefix(tuple(filter(lambda x: x.lstrip(), lines)))
-    margin_len = len(splitting) - len(splitting.lstrip())
+    margin = os.path.commonprefix(tuple(filter(lambda x: x.lstrip(), lines)))
+    margin_len = len(margin) - len(margin.lstrip())
 
     return "\n".join([line[margin_len:] if line.lstrip() else "\n" if line.endswith("\n") else "" for line in lines])
 
