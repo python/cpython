@@ -162,6 +162,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(parse_argv, BOOL, READ_ONLY, NO_SYS),
     SPEC(pathconfig_warnings, BOOL, READ_ONLY, NO_SYS),
     SPEC(perf_profiling, UINT, READ_ONLY, NO_SYS),
+    SPEC(remote_debug, BOOL, READ_ONLY, NO_SYS),
     SPEC(program_name, WSTR, READ_ONLY, NO_SYS),
     SPEC(run_command, WSTR_OPT, READ_ONLY, NO_SYS),
     SPEC(run_filename, WSTR_OPT, READ_ONLY, NO_SYS),
@@ -317,6 +318,7 @@ The following implementation-specific options are available:\n\
 -X perf: support the Linux \"perf\" profiler; also PYTHONPERFSUPPORT=1\n\
 -X perf_jit: support the Linux \"perf\" profiler with DWARF support;\n\
          also PYTHON_PERF_JIT_SUPPORT=1\n\
+-X disable-remote-debug: disable remote debugging; also PYTHON_DISABLE_REMOTE_DEBUG\n\
 "
 #ifdef Py_DEBUG
 "-X presite=MOD: import this module before site; also PYTHON_PRESITE\n"
@@ -994,6 +996,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->faulthandler = -1;
     config->tracemalloc = -1;
     config->perf_profiling = -1;
+    config->remote_debug = -1;
     config->module_search_paths_set = 0;
     config->parse_argv = 0;
     config->site_import = -1;
@@ -1987,6 +1990,28 @@ config_init_perf_profiling(PyConfig *config)
 }
 
 static PyStatus
+config_init_remote_debug(PyConfig *config)
+{
+#ifndef Py_REMOTE_DEBUG
+    config->remote_debug = 0;
+#else
+    int active = 1;
+    const char *env = Py_GETENV("PYTHON_DISABLE_REMOTE_DEBUG");
+    if (env) {
+        active = 0;
+    }
+    const wchar_t *xoption = config_get_xoption(config, L"disable-remote-debug");
+    if (xoption) {
+        active = 0;
+    }
+
+    config->remote_debug = active;
+#endif
+    return _PyStatus_OK();
+
+}
+
+static PyStatus
 config_init_tracemalloc(PyConfig *config)
 {
     int nframe;
@@ -2165,6 +2190,13 @@ config_read_complex_options(PyConfig *config)
 
     if (config->perf_profiling < 0) {
         status = config_init_perf_profiling(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    if (config->remote_debug < 0) {
+        status = config_init_remote_debug(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -2530,6 +2562,9 @@ config_read(PyConfig *config, int compute_path_config)
     }
     if (config->perf_profiling < 0) {
         config->perf_profiling = 0;
+    }
+    if (config->remote_debug < 0) {
+        config->remote_debug = -1;
     }
     if (config->use_hash_seed < 0) {
         config->use_hash_seed = 0;

@@ -1319,5 +1319,70 @@ _Py_HandlePending(PyThreadState *tstate)
             return -1;
         }
     }
+
+#ifdef Py_REMOTE_DEBUG
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->remote_debug) {
+        if (tstate->remote_debugger_support.debugger_pending_call) {
+            tstate->remote_debugger_support.debugger_pending_call = 0;
+            const char *path = tstate->remote_debugger_support.debugger_script_path;
+            if (*path) {
+                if (0 != PySys_Audit("remote_debugger_script", "s", path)) {
+                    PyErr_FormatUnraisable("Error when auditing remote debugger script %s", path);
+                } else {
+                    // Open the debugger script with the open code hook. Unfortunately this forces us to handle
+                    // the resulting Python object, which is a file object and therefore we need to call
+                    // Python methods on it instead of the simpler C equivalents.
+                    PyObject* fileobj = PyFile_OpenCode(path);
+                    if (!fileobj) {
+                        PyErr_FormatUnraisable("Error when opening debugger script %s", path);
+                        return 0;
+                    }
+#ifdef MS_WINDOWS
+                    PyObject* path_obj = PyUnicode_FromString(path);
+                    if (!path_obj) {
+                        PyErr_FormatUnraisable("Error when converting remote debugger script path %s to Unicode", path);
+                        return 0;
+                    } 
+                    wchar_t* wpath = PyUnicode_AsWideCharString(path_obj, NULL);
+                    Py_DECREF(path_obj);
+                    if (!wpath) {
+                        PyErr_FormatUnraisable("Error when converting remote debugger script path %s to wide char", path);
+                        return 0;
+                    }
+                    FILE* f = _wfopen(wpath, L"r");
+#else
+                    int fd = PyObject_AsFileDescriptor(fileobj);
+                    if (fd == -1) {
+                        PyErr_FormatUnraisable("Error when getting file descriptor for debugger script %s", path);
+                        return 0;
+                    }
+                    FILE* f = fdopen(fd, "r");
+#endif
+                    if (!f) {
+                        PyErr_SetFromErrno(PyExc_OSError);
+                    } else {
+                        PyRun_AnyFile(f, path);
+                    }
+#ifdef MS_WINDOWS
+                    PyMem_Free(wpath);
+                    fclose(f);
+#endif
+                    if (PyErr_Occurred()) {
+                        PyErr_FormatUnraisable("Error executing debugger script %s", path);
+                    }
+                    PyObject* res = PyObject_CallMethod(fileobj, "close", "");
+                    if (!res) {
+                        PyErr_FormatUnraisable("Error when closing debugger script %s", path);
+                    } else {
+                        Py_DECREF(res);
+                    }
+                    Py_DECREF(fileobj);
+                }
+            }
+        }
+    }
+#endif
+
     return 0;
 }

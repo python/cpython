@@ -7034,6 +7034,26 @@ fi
 ],
 [AC_MSG_RESULT([no value specified])])
 
+# Check for --with-remote-debug
+AC_MSG_CHECKING([for --with-remote-debug])
+AC_ARG_WITH(
+  [remote-debug],
+  [AS_HELP_STRING(
+    [--with-remote-debug],
+    [enable remote debugging support (default is yes)])],
+  [],
+  [with_remote_debug=yes])
+
+if test "$with_remote_debug" = yes; then
+  AC_DEFINE([Py_REMOTE_DEBUG], [1],
+    [Define if you want to enable remote debugging support.])
+  AC_MSG_RESULT([yes])
+else
+  AC_DEFINE([Py_REMOTE_DEBUG], [0],
+    [Define if you want to enable remote debugging support.])
+  AC_MSG_RESULT([no])
+fi
+
 
 case $ac_sys_system in
 AIX*)

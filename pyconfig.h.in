@@ -1718,6 +1718,9 @@
 /* Define if year with century should be normalized for strftime. */
 #undef Py_NORMALIZE_CENTURY
 
+/* Define if you want to enable remote debugging support. */
+#undef Py_REMOTE_DEBUG
+
 /* Define if rl_startup_hook takes arguments */
 #undef Py_RL_STARTUP_HOOK_TAKES_ARGS
 
