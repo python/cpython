@@ -39,6 +39,9 @@ class CompilationTest(unittest.TestCase):
 
                     self.assertDictEqual(actual._catalog, expected._catalog)
 
+    def test_hash_table(self):
+        pass
+
     def test_po_with_bom(self):
         with temp_cwd():
             Path('bom.po').write_bytes(b'\xef\xbb\xbfmsgid "Python"\nmsgstr "Pioton"\n')
@@ -103,7 +106,7 @@ class CLITest(unittest.TestCase):
         for option in ('--version', '-V'):
             res = assert_python_ok(msgfmt, option)
             out = res.out.decode('utf-8').strip()
-            self.assertEqual('msgfmt.py 1.2', out)
+            self.assertEqual('msgfmt.py 1.3', out)
 
     def test_invalid_option(self):
         res = assert_python_failure(msgfmt, '--invalid-option')
