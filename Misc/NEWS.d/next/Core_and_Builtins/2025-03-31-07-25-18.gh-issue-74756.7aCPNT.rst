@@ -1,0 +1,3 @@
+Support precision field for integer formatting types.  For binary, octal and
+hexadecimal formatting types --- twos complements are used to represent
+signed values.  Patch by Sergey B Kirpichev.

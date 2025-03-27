@@ -357,8 +357,6 @@ class TypesTests(unittest.TestCase):
 
         # make sure these are errors
 
-        # precision disallowed
-        self.assertRaises(ValueError, 3 .__format__, "1.3")
         # sign not allowed with 'c'
         self.assertRaises(ValueError, 3 .__format__, "+c")
         # format spec must be string

@@ -460,8 +460,18 @@ displayed after the decimal point for presentation types
 ``'f'`` and ``'F'``, or before and after the decimal point for presentation
 types ``'g'`` or ``'G'``.  For string presentation types the field
 indicates the maximum field size - in other words, how many characters will be
-used from the field content.  The *precision* is not allowed for integer
-presentation types.
+used from the field content.
+
+For integer presentation types, the precision gives the minimal number of
+digits to appear, expanded with an appropriate number of leading zeros.  Note
+that for non-decimal presentation types --- two's complements are used to
+represent signed integers, accepting values in range ``[-m,m)``, where
+``m=2**(k*precision-1)`` and ``k=1,3,4`` for ``'b'``, ``'o'`` and
+``'x'``/``'X'`` types, respectively.  A precision of ``0`` is treated as
+equivalent to a precision of ``1`` here.
+
+.. versionchanged:: next
+   Precision specification allowed for integer presentation types.
 
 The ``'_'`` or ``','`` option after *precision* means the use of an underscore
 or a comma for a thousands separator of the fractional part for floating-point
