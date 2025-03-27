@@ -43,7 +43,7 @@ static inline PyFunctionObject *_PyFrame_GetFunction(_PyInterpreterFrame *f) {
 }
 
 static inline _PyStackRef *_PyFrame_Stackbase(_PyInterpreterFrame *f) {
-    return (f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus);
+    return (f->localsplus + _PyFrame_GetCode(f)->co_nlocalsplus + 1);
 }
 
 static inline _PyStackRef _PyFrame_StackPeek(_PyInterpreterFrame *f) {
@@ -134,7 +134,7 @@ _PyFrame_Initialize(
     frame->f_builtins = func_obj->func_builtins;
     frame->f_globals = func_obj->func_globals;
     frame->f_locals = locals;
-    frame->stackpointer = frame->localsplus + code->co_nlocalsplus;
+    frame->stackpointer = frame->localsplus + code->co_nlocalsplus + 1;
     frame->frame_obj = NULL;
 #ifdef Py_GIL_DISABLED
     _PyFrame_InitializeTLBC(tstate, frame, code);
@@ -146,6 +146,7 @@ _PyFrame_Initialize(
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->visited = 0;
 #ifdef Py_DEBUG
+    frame->localsplus[code->co_nlocalsplus] = PyStackRef_NULL;
     frame->lltrace = 0;
 #endif
 
@@ -317,7 +318,7 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
 #endif
     frame->f_locals = NULL;
     assert(stackdepth <= code->co_stacksize);
-    frame->stackpointer = frame->localsplus + code->co_nlocalsplus + stackdepth;
+    frame->stackpointer = frame->localsplus + code->co_nlocalsplus + stackdepth + 1;
     frame->frame_obj = NULL;
 #ifdef Py_GIL_DISABLED
     _PyFrame_InitializeTLBC(tstate, frame, code);

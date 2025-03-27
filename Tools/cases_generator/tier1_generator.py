@@ -9,6 +9,8 @@ from analyzer import (
     Analysis,
     Instruction,
     Uop,
+    Label,
+    CodeSection,
     Part,
     analyze_files,
     Skip,
@@ -22,9 +24,13 @@ from generators_common import (
     write_header,
     type_and_null,
     Emitter,
+    TokenIterator,
+    always_true,
+    emit_to,
 )
 from cwriter import CWriter
 from typing import TextIO
+from lexer import Token
 from stack import Local, Stack, StackError, get_stack_effect, Storage
 
 DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
@@ -62,6 +68,63 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
                 declare_variable(var, out)
 
 
+def move_tos_to_cache(stack: Stack, out: CWriter) -> None:
+    out.emit("_PyStackRef _tmp;\n")
+    tmp = StackItem("_tmp", None, "", False, True)
+    tos = stack.pop(tmp, out)
+    stack.flush(out)
+    if tos.name != "_tos":
+        out.emit(f"_tos = {tos.name};\n")
+
+
+class Tier1Emitter(Emitter):
+
+    def __init__(self, out: CWriter, labels: dict[str, Label]):
+        super().__init__(out, labels)
+        self._replacers["DISPATCH"] = self.dispatch
+        self._replacers["DISPATCH_SAME_OPARG"] = self.dispatch
+        self._replacers["DISPATCH_GOTO"] = self.dispatch
+
+    def dispatch(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        move_tos_to_cache(storage.stack, self.out)
+        self.out.emit(tkn)
+        return False
+
+    def deopt_if(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> bool:
+        self.out.start_line()
+        self.out.emit("if (")
+        lparen = next(tkn_iter)
+        assert lparen.kind == "LPAREN"
+        first_tkn = tkn_iter.peek()
+        emit_to(self.out, tkn_iter, "RPAREN")
+        self.emit(") {\n")
+        next(tkn_iter)  # Semi colon
+        assert inst is not None
+        assert inst.family is not None
+        family_name = inst.family.name
+        move_tos_to_cache(storage.stack.copy(), self.out)
+        self.emit(f"UPDATE_MISS_STATS({family_name});\n")
+        self.emit(f"assert(_PyOpcode_Deopt[opcode] == ({family_name}));\n")
+        self.emit(f"JUMP_TO_PREDICTED({family_name});\n")
+        self.emit("}\n")
+        return not always_true(first_tkn)
+
+    exit_if = deopt_if
+
 def write_uop(
     uop: Part,
     emitter: Emitter,
@@ -74,18 +137,18 @@ def write_uop(
     if isinstance(uop, Skip):
         entries = "entries" if uop.size > 1 else "entry"
         emitter.emit(f"/* Skip {uop.size} cache {entries} */\n")
-        return (offset + uop.size), stack
+        return True, (offset + uop.size), stack
     if isinstance(uop, Flush):
         emitter.emit(f"// flush\n")
         stack.flush(emitter.out)
-        return offset, stack
+        return True, offset, stack
     locals: dict[str, Local] = {}
     emitter.out.start_line()
     if braces:
         emitter.out.emit(f"// {uop.name}\n")
         emitter.emit("{\n")
+        stack._print(emitter.out)
     storage = Storage.for_uop(stack, uop, emitter.out)
-    emitter._print_storage(storage)
 
     for cache in uop.caches:
         if cache.name != "unused":
@@ -102,12 +165,12 @@ def write_uop(
                 emitter.emit(f"(void){cache.name};\n")
         offset += cache.size
 
-    storage = emitter.emit_tokens(uop, storage, inst, False)
+    reachable, storage = emitter.emit_tokens(uop, storage, inst, False)
     if braces:
         emitter.out.start_line()
         emitter.emit("}\n")
     # emitter.emit(stack.as_comment() + "\n")
-    return offset, storage.stack
+    return reachable, offset, storage.stack
 
 
 def uses_this(inst: Instruction) -> bool:
@@ -184,7 +247,7 @@ def generate_tier1(
         {LABEL_START_MARKER}
 """)
     out = CWriter(outfile, 2, lines)
-    emitter = Emitter(out, analysis.labels)
+    emitter = Tier1Emitter(out, analysis.labels)
     generate_tier1_labels(analysis, emitter)
     outfile.write(f"{LABEL_END_MARKER}\n")
     outfile.write(FOOTER)
@@ -204,16 +267,22 @@ def generate_tier1_labels(
         emitter.emit_tokens(label, storage, None)
         emitter.emit("\n\n")
 
+def get_popped(inst: Instruction, analysis: Analysis) -> str:
+    stack = get_stack_effect(inst)
+    return (-stack.base_offset).to_c()
 
 def generate_tier1_cases(
     analysis: Analysis, outfile: TextIO, lines: bool
 ) -> None:
     out = CWriter(outfile, 2, lines)
-    emitter = Emitter(out, analysis.labels)
+    emitter = Tier1Emitter(out, analysis.labels)
     out.emit("\n")
     for name, inst in sorted(analysis.instructions.items()):
         out.emit("\n")
         out.emit(f"TARGET({name}) {{\n")
+        popped = get_popped(inst, analysis)
+        if inst.name != "INTERPRETER_EXIT":
+            out.emit(f"assert(STACK_LEVEL() - {popped} >= -1);\n")
         # We need to ifdef it because this breaks platforms
         # without computed gotos/tail calling.
         out.emit(f"#if Py_TAIL_CALL_INTERP\n")
@@ -247,15 +316,16 @@ def generate_tier1_cases(
             )
         declare_variables(inst, out)
         offset = 1  # The instruction itself
+        cache = Local.register("_tos")
         stack = Stack()
+        stack.push(cache)
         for part in inst.parts:
             # Only emit braces if more than one uop
             insert_braces = len([p for p in inst.parts if isinstance(p, Uop)]) > 1
-            offset, stack = write_uop(part, emitter, offset, stack, inst, insert_braces)
+            reachable, offset, stack = write_uop(part, emitter, offset, stack, inst, insert_braces)
         out.start_line()
-
-        stack.flush(out)
-        if not inst.parts[-1].properties.always_exits:
+        if reachable:
+            move_tos_to_cache(stack, out)
             out.emit("DISPATCH();\n")
         out.start_line()
         out.emit("}")

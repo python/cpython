@@ -151,18 +151,6 @@ dump_item(_PyStackRef item)
         printf("<nil>");
         return;
     }
-    if (
-        obj == Py_None
-        || PyBool_Check(obj)
-        || PyLong_CheckExact(obj)
-        || PyFloat_CheckExact(obj)
-        || PyUnicode_CheckExact(obj)
-    ) {
-        if (PyObject_Print(obj, stdout, 0) == 0) {
-            return;
-        }
-        PyErr_Clear();
-    }
     // Don't call __repr__(), it might recurse into the interpreter.
     printf("<%s at %p>", Py_TYPE(obj)->tp_name, (void *)obj);
 }
@@ -182,14 +170,19 @@ dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
         dump_item(*ptr);
     }
     printf("]\n");
-    printf("    stack=[");
-    for (_PyStackRef *ptr = stack_base; ptr < stack_pointer; ptr++) {
-        if (ptr != stack_base) {
-            printf(", ");
-        }
-        dump_item(*ptr);
+    if (stack_pointer < stack_base) {
+        printf("    stack=%d\n", (int)(stack_pointer-stack_base));
     }
-    printf("]\n");
+    else {
+        printf("    stack=[");
+        for (_PyStackRef *ptr = stack_base; ptr < stack_pointer; ptr++) {
+            if (ptr != stack_base) {
+                printf(", ");
+            }
+            dump_item(*ptr);
+        }
+        printf("]\n");
+    }
     fflush(stdout);
     PyErr_SetRaisedException(exc);
     _PyFrame_GetStackPointer(frame);
@@ -197,18 +190,22 @@ dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
 
 static void
 lltrace_instruction(_PyInterpreterFrame *frame,
+                    _PyStackRef _tos,
                     _PyStackRef *stack_pointer,
                     _Py_CODEUNIT *next_instr,
                     int opcode,
                     int oparg)
 {
-    if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {
-        return;
+    int offset = 0;
+    if (frame->owner < FRAME_OWNED_BY_INTERPRETER) {
+        printf("_tos = ");
+        dump_item(_tos);
+        printf("; ");
+        dump_stack(frame, stack_pointer);
+        offset = (int)(next_instr - _PyFrame_GetBytecode(frame));
     }
-    dump_stack(frame, stack_pointer);
     const char *opname = _PyOpcode_OpName[opcode];
     assert(opname != NULL);
-    int offset = (int)(next_instr - _PyFrame_GetBytecode(frame));
     if (OPCODE_HAS_ARG((int)_PyOpcode_Deopt[opcode])) {
         printf("%d: %s %d\n", offset * 2, opname, oparg);
     }
@@ -950,6 +947,13 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 /* This setting is reversed below following _PyEval_EvalFrameDefault */
 #endif
 
+#ifdef Py_GIL_DISABLED
+#define Py_FREE_THREADING 1
+#else
+#define Py_FREE_THREADING 0
+#endif
+
+
 #if Py_TAIL_CALL_INTERP
 #include "opcode_targets.h"
 #include "generated_cases.c.h"
@@ -986,8 +990,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
      * These are cached values from the frame and code object.  */
     _Py_CODEUNIT *next_instr;
     _PyStackRef *stack_pointer;
-
-#if defined(Py_DEBUG) && !defined(Py_STACKREF_DEBUG)
+#ifdef Py_DEBUG
+    entry_frame.localsplus[0] = PyStackRef_NULL;
+#endif
+#ifdef Py_STACKREF_DEBUG
+    entry_frame.f_funcobj = PyStackRef_None;
+#elif defined(Py_DEBUG)
     /* Set these to invalid but identifiable values for debugging. */
     entry_frame.f_funcobj = (_PyStackRef){.bits = 0xaaa0};
     entry_frame.f_locals = (PyObject*)0xaaa1;
@@ -997,7 +1005,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
 #endif
     entry_frame.f_executable = PyStackRef_None;
     entry_frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
-    entry_frame.stackpointer = entry_frame.localsplus;
+    entry_frame.stackpointer = entry_frame.localsplus + 1;
     entry_frame.owner = FRAME_OWNED_BY_INTERPRETER;
     entry_frame.visited = 0;
     entry_frame.return_offset = 0;
@@ -1044,7 +1052,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     _PyExecutorObject *current_executor = NULL;
     const _PyUOpInstruction *next_uop = NULL;
 #endif
-
+    _PyStackRef _tos = PyStackRef_NULL;
 #if Py_TAIL_CALL_INTERP
     return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0);
 #else
