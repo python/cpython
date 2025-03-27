@@ -6009,6 +6009,7 @@
                     stack_pointer = _PyFrame_GetStackPointer(frame);
                 }
             }
+            stack_pointer[-1] = iter;
             DISPATCH();
         }
 
