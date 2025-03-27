@@ -13,6 +13,7 @@ import linecache
 import zipapp
 import zipfile
 
+from asyncio.events import _set_event_loop_policy
 from contextlib import ExitStack, redirect_stdout
 from io import StringIO
 from test import support
@@ -364,6 +365,49 @@ def test_pdb_breakpoint_commands():
     4
     """
 
+def test_pdb_breakpoint_ignore_and_condition():
+    """
+    >>> reset_Breakpoint()
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     for i in range(5):
+    ...         print(i)
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'break 4',
+    ...     'ignore 1 2',  # ignore once
+    ...     'continue',
+    ...     'condition 1 i == 4',
+    ...     'continue',
+    ...     'clear 1',
+    ...     'continue',
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_ignore_and_condition[1]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) break 4
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_ignore_and_condition[1]>:4
+    (Pdb) ignore 1 2
+    Will ignore next 2 crossings of breakpoint 1.
+    (Pdb) continue
+    0
+    1
+    > <doctest test.test_pdb.test_pdb_breakpoint_ignore_and_condition[1]>(4)test_function()
+    -> print(i)
+    (Pdb) condition 1 i == 4
+    New condition set for breakpoint 1.
+    (Pdb) continue
+    2
+    3
+    > <doctest test.test_pdb.test_pdb_breakpoint_ignore_and_condition[1]>(4)test_function()
+    -> print(i)
+    (Pdb) clear 1
+    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_ignore_and_condition[1]>:4
+    (Pdb) continue
+    4
+    """
+
 def test_pdb_breakpoint_on_annotated_function_def():
     """Test breakpoints on function definitions with annotation.
 
@@ -486,6 +530,48 @@ def test_pdb_breakpoint_with_filename():
     > ...inspect_fodder2.py(115)func114()
     -> return 115
     (Pdb) continue
+    """
+
+def test_pdb_breakpoint_on_disabled_line():
+    """New breakpoint on once disabled line should work
+
+    >>> reset_Breakpoint()
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     for i in range(3):
+    ...         j = i * 2
+    ...         print(j)
+
+    >>> with PdbTestInput([  # doctest: +NORMALIZE_WHITESPACE
+    ...     'break 5',
+    ...     'c',
+    ...     'clear 1',
+    ...     'break 4',
+    ...     'c',
+    ...     'clear 2',
+    ...     'c'
+    ... ]):
+    ...    test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) break 5
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>:5
+    (Pdb) c
+    > <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>(5)test_function()
+    -> print(j)
+    (Pdb) clear 1
+    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>:5
+    (Pdb) break 4
+    Breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>:4
+    (Pdb) c
+    0
+    > <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>(4)test_function()
+    -> j = i * 2
+    (Pdb) clear 2
+    Deleted breakpoint 2 at <doctest test.test_pdb.test_pdb_breakpoint_on_disabled_line[1]>:4
+    (Pdb) c
+    2
+    4
     """
 
 def test_pdb_breakpoints_preserved_across_interactive_sessions():
@@ -2069,7 +2155,7 @@ if not SKIP_CORO_TESTS:
             ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
 
             >>> def test_function():
-            ...     asyncio.run(test())
+            ...     asyncio.run(test(), loop_factory=asyncio.EventLoop)
 
             >>> with PdbTestInput([  # doctest: +ELLIPSIS
             ...     '$_asynctask',
@@ -4585,7 +4671,33 @@ class PdbTestReadline(unittest.TestCase):
 
 def load_tests(loader, tests, pattern):
     from test import test_pdb
-    tests.addTest(doctest.DocTestSuite(test_pdb))
+
+    def setUpPdbBackend(backend):
+        def setUp(test):
+            import pdb
+            pdb.set_default_backend(backend)
+        return setUp
+
+    def tearDown(test):
+        # Ensure that asyncio state has been cleared at the end of the test.
+        # This prevents a "test altered the execution environment" warning if
+        # asyncio features are used.
+        _set_event_loop_policy(None)
+
+    tests.addTest(
+        doctest.DocTestSuite(
+            test_pdb,
+            setUp=setUpPdbBackend('monitoring'),
+            tearDown=tearDown,
+        )
+    )
+    tests.addTest(
+        doctest.DocTestSuite(
+            test_pdb,
+            setUp=setUpPdbBackend('settrace'),
+            tearDown=tearDown,
+        )
+    )
     return tests
 
 

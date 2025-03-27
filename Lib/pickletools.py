@@ -2845,7 +2845,7 @@ def _main(args=None):
         description='disassemble one or more pickle files')
     parser.add_argument(
         'pickle_file',
-        nargs='*', help='the pickle file')
+        nargs='+', help='the pickle file')
     parser.add_argument(
         '-o', '--output',
         help='the file where the output should be written')
