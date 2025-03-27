@@ -611,10 +611,6 @@ def urljoin(base, url, allow_fragments=True):
                                           query, fragment))
 
     base_parts = bpath.split('/')
-    if base_parts[-1] != '':
-        # the last item is not a directory, so will not be taken into account
-        # in resolving the relative path
-        del base_parts[-1]
 
     # for rfc3986, ignore all base path should the first character be root.
     if path[:1] == '/':
