@@ -415,14 +415,17 @@ def shorten(text, width, **kwargs):
 # -- Loosely related functionality -------------------------------------
 
 def dedent(text):
-    """
-    Remove any common leading whitespace from every line in text.
+    """Remove any common leading whitespace from every line in `text`.
+
+    This can be used to make triple-quoted strings line up with the left
+    edge of the display, while still presenting them in the source code
+    in indented form.
+
+    Note that tabs and spaces are both treated as whitespace, but they
+    are not equal: the lines "  hello" and "\\thello" are
+    considered to have no common leading whitespace.
 
     Entirely blank lines are normalized to a newline character.
-    Tabs and spaces are treated as distinct.
-
-    This implementation uses os.path.commonprefix (implemented in C)
-    to compute the common margin of non-blank lines for maximal performance.
     """
     # Fast paths for empty or simple text
     if not text:
