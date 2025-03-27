@@ -1540,23 +1540,33 @@ class AsyncTests(BaseTest):
     def test_async_context(self):
         import asyncio
 
+        # Events to force the execution interleaving we want.
+        step_a1 = asyncio.Event()
+        step_a2 = asyncio.Event()
+        step_b1 = asyncio.Event()
+        step_b2 = asyncio.Event()
+
         async def run_a():
             with self.module.catch_warnings(record=True) as w:
-                await asyncio.sleep(0)
+                await step_a1.wait()
                 # The warning emitted here should be caught be the enclosing
                 # context manager.
                 self.module.warn('run_a warning', UserWarning)
-                await asyncio.sleep(0)
+                step_b1.set()
+                await step_a2.wait()
                 self.assertEqual(len(w), 1)
                 self.assertEqual(w[0].message.args[0], 'run_a warning')
+                step_b2.set()
 
         async def run_b():
             with self.module.catch_warnings(record=True) as w:
-                await asyncio.sleep(0)
+                step_a1.set()
+                await step_b1.wait()
                 # The warning emitted here should be caught be the enclosing
                 # context manager.
                 self.module.warn('run_b warning', UserWarning)
-                await asyncio.sleep(0)
+                step_a2.set()
+                await step_b2.wait()
                 self.assertEqual(len(w), 1)
                 self.assertEqual(w[0].message.args[0], 'run_b warning')
 
