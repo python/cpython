@@ -1489,9 +1489,10 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     result = PyObject_Call(self->func, args, kwds);
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    /* Note:  key will be released in the below function and
-       result may be relased on error, or returned as a passthrough
-       or have its reference count increased if is added to cache. */
+    /* Note:  key will be stolen in the below function, and
+       result may be stolen or sometimes re-returned as a passthrough.
+       Treat both as being stolen.
+     */
     result = bounded_lru_cache_update_lock_held(self, result, key, hash);
     Py_END_CRITICAL_SECTION();
 
