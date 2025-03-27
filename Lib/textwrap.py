@@ -434,43 +434,20 @@ def dedent(text):
     if "\n" not in text:
         return text  # Single line has no dedent
 
-    # Split text into lines, preserving line endings
-    lines = text.splitlines(keepends=True)
+    lines = text.split("\n")
 
-    # Process in a single pass to find:
-    # 1. Leading whitespace of non-blank lines
-    # 2. Whether a line has zero leading whitespace (optimization)
-    non_blank_whites = []
-    has_zero_margin = False
+    splitting = os.path.commonprefix(tuple(filter(lambda x: x.lstrip(), lines)))
 
-    for line in lines:
-        stripped = line.strip()
-        if stripped:  # Non-blank line
-            leading = line[:len(line) - len(line.lstrip())]
-            non_blank_whites.append(leading)
-            # Early detection of zero margin case
-            if not leading:
-                has_zero_margin = True
-                break  # No need to check more lines
+    margin_len = 0
 
-    # If all lines are blank, normalize them
-    if not non_blank_whites:
-        # Preallocate result list
-        return "".join(["\n" if line.endswith("\n") else "" for line in lines])
-
-    # Skip commonprefix calculation if we already know there's no margin
-    if has_zero_margin:
-        margin_len = 0
-    else:
-        common = os.path.commonprefix(non_blank_whites)
-        margin_len = len(common)
-
-    # No common margin case - just normalize blank lines
-    if margin_len == 0:
-        return "".join([line if line.strip() else "\n" if line.endswith("\n") else "" for line in lines])
+    for split in splitting:
+        if ' \t' in split :
+            margin_len += 1
+        else:
+            break
 
     # Apply margin removal (most common case) with minimal operations
-    return "".join([line[margin_len:] if line.strip() else "\n" if line.endswith("\n") else "" for line in lines])
+    return "\n".join([line[margin_len:] if line.strip() else "\n" if line.endswith("\n") else "" for line in lines])
 
 
 def indent(text, prefix, predicate=None):
