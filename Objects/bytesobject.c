@@ -36,6 +36,8 @@ class bytes "PyBytesObject *" "&PyBytes_Type"
 /* Forward declaration */
 Py_LOCAL_INLINE(Py_ssize_t) _PyBytesWriter_GetSize(_PyBytesWriter *writer,
                                                    char *str);
+static void* _PyBytesWriter_ResizeAndUpdatePointer(PyBytesWriter *writer,
+                                                   Py_ssize_t size, void *data);
 
 
 #define CHARACTERS _Py_SINGLETON(bytes_characters)
@@ -216,7 +218,6 @@ bytes_fromformat(PyBytesWriter *writer, Py_ssize_t writer_pos,
     char buffer[21];
 
     char *s = (char*)PyBytesWriter_GetData(writer) + writer_pos;
-    Py_ssize_t alloc = PyBytesWriter_GetSize(writer);
 
 #define WRITE_BYTES_LEN(str, len_expr) \
     do { \
@@ -2875,7 +2876,7 @@ _PyBytes_FromList(PyObject *x)
         }
 
         if (i >= size) {
-            str = PyBytesWriter_ResizeAndUpdatePointer(writer, size + 1, str);
+            str = _PyBytesWriter_ResizeAndUpdatePointer(writer, size + 1, str);
             if (str == NULL) {
                 goto error;
             }
@@ -2969,7 +2970,7 @@ _PyBytes_FromIterator(PyObject *it, PyObject *x)
 
         /* Append the byte */
         if (i >= size) {
-            str = PyBytesWriter_ResizeAndUpdatePointer(writer, size + 1, str);
+            str = _PyBytesWriter_ResizeAndUpdatePointer(writer, size + 1, str);
             if (str == NULL) {
                 goto error;
             }
@@ -4025,9 +4026,9 @@ PyBytesWriter_Format(PyBytesWriter *writer, const char *format, ...)
 }
 
 
-void*
-PyBytesWriter_ResizeAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size,
-                                     void *data)
+static void*
+_PyBytesWriter_ResizeAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size,
+                                      void *data)
 {
     Py_ssize_t pos = (char*)data - byteswriter_data(writer);
     if (PyBytesWriter_Resize(writer, size) < 0) {
