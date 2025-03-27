@@ -244,6 +244,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(_feature_version)
         STRUCT_FOR_ID(_field_types)
         STRUCT_FOR_ID(_fields_)
+        STRUCT_FOR_ID(_filters)
         STRUCT_FOR_ID(_finalizing)
         STRUCT_FOR_ID(_find_and_load)
         STRUCT_FOR_ID(_fix_up_module)

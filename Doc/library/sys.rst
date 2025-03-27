@@ -535,7 +535,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 .. data:: flags
 
    The :term:`named tuple` *flags* exposes the status of command line
-   flags. The attributes are read only.
+   flags.  Flags should only be accessed only by name and not by index.  The
+   attributes are read only.
 
    .. list-table::
 
@@ -594,6 +595,18 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       * - .. attribute:: flags.warn_default_encoding
         - :option:`-X warn_default_encoding <-X>`
 
+      * - .. attribute:: flags.gil
+        - :option:`-X gil <-X>` and :envvar:`PYTHON_GIL`
+
+      * - .. attribute:: flags.thread_inherit_context
+        - :option:`-X thread_inherit_context <-X>` and
+          :envvar:`PYTHON_THREAD_INHERIT_CONTEXT`
+
+      * - .. attribute:: flags.context_aware_warnings
+        - :option:`-X thread_inherit_context <-X>` and
+          :envvar:`PYTHON_CONTEXT_AWARE_WARNINGS`
+
+
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
 
@@ -619,6 +632,15 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionchanged:: 3.11
       Added the ``int_max_str_digits`` attribute.
+
+   .. versionchanged:: 3.13
+      Added the ``gil`` attribute.
+
+   .. versionchanged:: 3.14
+      Added the ``thread_inherit_context`` attribute.
+
+   .. versionchanged:: 3.14
+      Added the ``context_aware_warnings`` attribute.
 
 
 .. data:: float_info

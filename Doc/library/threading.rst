@@ -334,7 +334,7 @@ since it is impossible to detect the termination of alien threads.
 
 
 .. class:: Thread(group=None, target=None, name=None, args=(), kwargs={}, *, \
-                  daemon=None)
+                  daemon=None, context=None)
 
    This constructor should always be called with keyword arguments.  Arguments
    are:
@@ -359,6 +359,16 @@ since it is impossible to detect the termination of alien threads.
    If ``None`` (the default), the daemonic property is inherited from the
    current thread.
 
+   *context* is the :class:`~contextvars.Context` value to use when starting
+   the thread.  The default value is ``None`` which indicates that the
+   :data:`sys.flags.thread_inherit_context` flag controls the behaviour.  If
+   the flag is true, threads will start with a copy of the context of the
+   caller of :meth:`~Thread.start`.  If false, they will start with an empty
+   context.  To explicitly start with an empty context, pass a new instance of
+   :class:`~contextvars.Context()`.  To explicitly start with a copy of the
+   current context, pass the value from :func:`~contextvars.copy_context`. The
+   flag defaults true on free-threaded builds and false otherwise.
+
    If the subclass overrides the constructor, it must make sure to invoke the
    base class constructor (``Thread.__init__()``) before doing anything else to
    the thread.
@@ -368,6 +378,9 @@ since it is impossible to detect the termination of alien threads.
 
    .. versionchanged:: 3.10
       Use the *target* name if *name* argument is omitted.
+
+   .. versionchanged:: 3.14
+      Added the *context* parameter.
 
    .. method:: start()
 

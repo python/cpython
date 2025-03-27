@@ -1,6 +1,6 @@
 #include "Python.h"
 
-#include "clinic/_contextvarsmodule.c.h"
+#include "clinic/_contextvars.c.h"
 
 /*[clinic input]
 module _contextvars
