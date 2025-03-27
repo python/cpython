@@ -223,19 +223,6 @@ writer_get_size(PyObject *self_raw, PyObject *Py_UNUSED(args))
 
 
 static PyObject*
-writer_get_allocated(PyObject *self_raw, PyObject *Py_UNUSED(args))
-{
-    WriterObject *self = (WriterObject *)self_raw;
-    if (writer_check(self) < 0) {
-        return NULL;
-    }
-
-    Py_ssize_t alloc = PyBytesWriter_GetAllocated(self->writer);
-    return PyLong_FromSsize_t(alloc);
-}
-
-
-static PyObject*
 writer_finish(PyObject *self_raw, PyObject *Py_UNUSED(args))
 {
     WriterObject *self = (WriterObject *)self_raw;
@@ -273,7 +260,6 @@ static PyMethodDef writer_methods[] = {
     {"format_i", _PyCFunction_CAST(writer_format_i), METH_VARARGS},
     {"resize", _PyCFunction_CAST(writer_resize), METH_VARARGS},
     {"get_size", _PyCFunction_CAST(writer_get_size), METH_NOARGS},
-    {"get_allocated", _PyCFunction_CAST(writer_get_allocated), METH_NOARGS},
     {"finish", _PyCFunction_CAST(writer_finish), METH_NOARGS},
     {"finish_with_size", _PyCFunction_CAST(writer_finish_with_size), METH_VARARGS},
     {NULL,              NULL}           /* sentinel */

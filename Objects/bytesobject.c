@@ -38,6 +38,7 @@ Py_LOCAL_INLINE(Py_ssize_t) _PyBytesWriter_GetSize(_PyBytesWriter *writer,
                                                    char *str);
 static void* _PyBytesWriter_ResizeAndUpdatePointer(PyBytesWriter *writer,
                                                    Py_ssize_t size, void *data);
+static Py_ssize_t _PyBytesWriter_GetAllocated(PyBytesWriter *writer);
 
 
 #define CHARACTERS _Py_SINGLETON(bytes_characters)
@@ -2859,7 +2860,7 @@ _PyBytes_FromList(PyObject *x)
         return NULL;
     }
     char *str = PyBytesWriter_GetData(writer);
-    size = PyBytesWriter_GetAllocated(writer);
+    size = _PyBytesWriter_GetAllocated(writer);
 
     for (Py_ssize_t i = 0; i < PyList_GET_SIZE(x); i++) {
         PyObject *item = PyList_GET_ITEM(x, i);
@@ -2880,7 +2881,7 @@ _PyBytes_FromList(PyObject *x)
             if (str == NULL) {
                 goto error;
             }
-            size = PyBytesWriter_GetAllocated(writer);
+            size = _PyBytesWriter_GetAllocated(writer);
         }
         *str++ = (char) value;
     }
@@ -2940,7 +2941,7 @@ _PyBytes_FromIterator(PyObject *it, PyObject *x)
         return NULL;
     }
     char *str = PyBytesWriter_GetData(writer);
-    size = PyBytesWriter_GetAllocated(writer);
+    size = _PyBytesWriter_GetAllocated(writer);
 
     /* Run the iterator to exhaustion */
     for (i = 0; ; i++) {
@@ -2974,7 +2975,7 @@ _PyBytes_FromIterator(PyObject *it, PyObject *x)
             if (str == NULL) {
                 goto error;
             }
-            size = PyBytesWriter_GetAllocated(writer);
+            size = _PyBytesWriter_GetAllocated(writer);
         }
         *str++ = (char) value;
     }
@@ -3946,8 +3947,8 @@ PyBytesWriter_GetSize(PyBytesWriter *writer)
 }
 
 
-Py_ssize_t
-PyBytesWriter_GetAllocated(PyBytesWriter *writer)
+static Py_ssize_t
+_PyBytesWriter_GetAllocated(PyBytesWriter *writer)
 {
     return byteswriter_allocated(writer);
 }

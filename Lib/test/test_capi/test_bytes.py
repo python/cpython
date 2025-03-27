@@ -292,7 +292,6 @@ class CAPITest(unittest.TestCase):
 
 
 class BytesWriterTest(unittest.TestCase):
-    SMALL_BUFFER = 256  # bytes
     result_type = bytes
 
     def create_writer(self, alloc=0, string=b''):
@@ -302,17 +301,14 @@ class BytesWriterTest(unittest.TestCase):
         # Test PyBytesWriter_Create()
         writer = self.create_writer()
         self.assertEqual(writer.get_size(), 0)
-        self.assertEqual(writer.get_allocated(), self.SMALL_BUFFER)
         self.assertEqual(writer.finish(), self.result_type(b''))
 
         writer = self.create_writer(3, b'abc')
         self.assertEqual(writer.get_size(), 3)
-        self.assertEqual(writer.get_allocated(), self.SMALL_BUFFER)
         self.assertEqual(writer.finish(), self.result_type(b'abc'))
 
         writer = self.create_writer(10, b'abc')
         self.assertEqual(writer.get_size(), 10)
-        self.assertEqual(writer.get_allocated(), self.SMALL_BUFFER)
         self.assertEqual(writer.finish_with_size(3), self.result_type(b'abc'))
 
     def test_write_bytes(self):
