@@ -1291,6 +1291,7 @@ static int
 bounded_lru_cache_get_lock_held(lru_cache_object *self, PyObject *args, PyObject *kwds,
                                 PyObject **result, PyObject **key, Py_hash_t *hash)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     lru_list_elem *link;
 
     PyObject *key_ = *key = lru_cache_make_key(self->kwd_mark, args, kwds, self->typed);
@@ -1298,7 +1299,7 @@ bounded_lru_cache_get_lock_held(lru_cache_object *self, PyObject *args, PyObject
         return -1;
     Py_hash_t hash_ = *hash = PyObject_Hash(key_);
     if (hash_ == -1) {
-        Py_DECREF(key_);
+        Py_DECREF(key_);  /* dead reference left in *key, is not used */
         return -1;
     }
     int res = _PyDict_GetItemRef_KnownHash_LockHeld((PyDictObject *)self->cache, key_, hash_,
@@ -1323,8 +1324,9 @@ bounded_lru_cache_get_lock_held(lru_cache_object *self, PyObject *args, PyObject
 
 static PyObject *
 bounded_lru_cache_update_lock_held(lru_cache_object *self,
-                                              PyObject *result, PyObject *key, Py_hash_t hash)
+                                   PyObject *result, PyObject *key, Py_hash_t hash)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     lru_list_elem *link;
     PyObject *testresult;
     int res;
@@ -1487,6 +1489,9 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
     result = PyObject_Call(self->func, args, kwds);
 
     Py_BEGIN_CRITICAL_SECTION(self);
+    /* Note:  key will be released in the below function and
+       result may be relased on error, or returned as a passthrough
+       or have its reference count increased if is added to cache. */
     result = bounded_lru_cache_update_lock_held(self, result, key, hash);
     Py_END_CRITICAL_SECTION();
 
