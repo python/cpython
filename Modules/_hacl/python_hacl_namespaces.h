@@ -236,13 +236,4 @@
 #define Hacl_HMAC_compute_blake2s_32 python_hashlib_Hacl_HMAC_compute_blake2s_32
 #define Hacl_HMAC_compute_blake2b_32 python_hashlib_Hacl_HMAC_compute_blake2b_32
 
-// Small mismatch between the variable names Python defines as part of configure
-// at the ones HACL* expects to be set in order to enable those headers.
-#ifndef HACL_CAN_COMPILE_VEC128
-#define HACL_CAN_COMPILE_VEC128 HACL_CAN_COMPILE_SIMD128
-#endif
-#ifndef HACL_CAN_COMPILE_VEC256
-#define HACL_CAN_COMPILE_VEC256 HACL_CAN_COMPILE_SIMD256
-#endif
-
 #endif  // _PYTHON_HACL_NAMESPACES_H
