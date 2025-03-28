@@ -596,6 +596,20 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertIn('ABIFLAGS', sysconfig.get_config_vars())
         self.assertIsInstance(sysconfig.get_config_var('ABIFLAGS'), str)
 
+    def test_always_set_Py_DEBUG(self):
+        self.assertIn('Py_DEBUG', sysconfig.get_config_vars())
+        self.assertIn(sysconfig.get_config_var('Py_DEBUG'), (0, 1))
+
+    def test_ABIFLAGS(self):
+        if sysconfig.get_config_var('Py_DEBUG'):
+            self.assertIn('d', sysconfig.get_config_var('ABIFLAGS'))
+        else:
+            self.assertNotIn('d', sysconfig.get_config_var('ABIFLAGS'))
+        if sysconfig.get_config_var('Py_GIL_DISABLED'):
+            self.assertIn('t', sysconfig.get_config_var('ABIFLAGS'))
+        else:
+            self.assertNotIn('t', sysconfig.get_config_var('ABIFLAGS'))
+
     @requires_subprocess()
     def test_makefile_overwrites_config_vars(self):
         script = textwrap.dedent("""
