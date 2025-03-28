@@ -1,0 +1,2 @@
+Move constant folding to the peephole optimizer. Rename AST optimization
+related files/structs/functions.
