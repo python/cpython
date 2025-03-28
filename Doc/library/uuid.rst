@@ -121,8 +121,8 @@ which relays any information about the UUID's safety, using this enumeration:
      - The last 48 bits of the UUID. Only relevant to version 1.
 
    * - .. attribute:: UUID.time
-     - The 60-bit timestamp for version 1 and 6.
-     - The 48-bit timestamp for version 7.
+     - The 60-bit timestamp for version 1 and 6,
+       or the 48-bit timestamp for version 7.
 
    * - .. attribute:: UUID.clock_seq
      - The 14-bit sequence number. Only relevant to versions 1 and 6.
