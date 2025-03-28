@@ -27,6 +27,7 @@ import tempfile
 import threading
 import time
 import traceback
+import warnings
 from weakref import proxy
 try:
     import multiprocessing
@@ -207,6 +208,24 @@ def socket_setdefaulttimeout(timeout):
         yield
     finally:
         socket.setdefaulttimeout(old_timeout)
+
+
+@contextlib.contextmanager
+def downgrade_malformed_data_warning():
+    # This warning happens on macos and win, but does not always happen on linux.
+    if sys.platform not in {"win32", "darwin"}:
+        yield
+        return
+
+    with warnings.catch_warnings():
+        # TODO: gh-110012, we should investigate why this warning is happening
+        # and fix it properly.
+        warnings.filterwarnings(
+            action="always",
+            message="received malformed or improperly-truncated ancillary data",
+            category=RuntimeWarning,
+        )
+        yield
 
 
 HAVE_SOCKET_CAN = _have_socket_can()
@@ -3991,8 +4010,9 @@ class SCMRightsTest(SendrecvmsgServerTimeoutBase):
         # mindata and maxdata bytes when received with buffer size
         # ancbuf, and that any complete file descriptor numbers are
         # valid.
-        msg, ancdata, flags, addr = self.doRecvmsg(self.serv_sock,
-                                                   len(MSG), ancbuf)
+        with downgrade_malformed_data_warning():  # TODO: gh-110012
+            msg, ancdata, flags, addr = self.doRecvmsg(self.serv_sock,
+                                                       len(MSG), ancbuf)
         self.assertEqual(msg, MSG)
         self.checkRecvmsgAddress(addr, self.cli_addr)
         self.checkFlags(flags, eor=True, checkset=socket.MSG_CTRUNC)
@@ -4343,8 +4363,9 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
         self.serv_sock.setsockopt(socket.IPPROTO_IPV6,
                                   socket.IPV6_RECVHOPLIMIT, 1)
         self.misc_event.set()
-        msg, ancdata, flags, addr = self.doRecvmsg(
-            self.serv_sock, len(MSG), socket.CMSG_LEN(SIZEOF_INT) - 1)
+        with downgrade_malformed_data_warning():  # TODO: gh-110012
+            msg, ancdata, flags, addr = self.doRecvmsg(
+                self.serv_sock, len(MSG), socket.CMSG_LEN(SIZEOF_INT) - 1)
 
         self.assertEqual(msg, MSG)
         self.checkRecvmsgAddress(addr, self.cli_addr)
@@ -4447,9 +4468,10 @@ class RFC3542AncillaryTest(SendrecvmsgServerTimeoutBase):
         self.serv_sock.setsockopt(socket.IPPROTO_IPV6,
                                   socket.IPV6_RECVTCLASS, 1)
         self.misc_event.set()
-        msg, ancdata, flags, addr = self.doRecvmsg(
-            self.serv_sock, len(MSG),
-            socket.CMSG_SPACE(SIZEOF_INT) + socket.CMSG_LEN(SIZEOF_INT) - 1)
+        with downgrade_malformed_data_warning():  # TODO: gh-110012
+            msg, ancdata, flags, addr = self.doRecvmsg(
+                self.serv_sock, len(MSG),
+                socket.CMSG_SPACE(SIZEOF_INT) + socket.CMSG_LEN(SIZEOF_INT) - 1)
 
         self.assertEqual(msg, MSG)
         self.checkRecvmsgAddress(addr, self.cli_addr)

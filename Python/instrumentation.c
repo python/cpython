@@ -833,14 +833,15 @@ remove_tools(PyCodeObject * code, int offset, int event, int tools)
     assert(PY_MONITORING_IS_INSTRUMENTED_EVENT(event));
     assert(opcode_has_event(_Py_GetBaseCodeUnit(code, offset).op.code));
     _PyCoMonitoringData *monitoring = code->_co_monitoring;
+    assert(monitoring);
     bool should_de_instrument;
-    if (monitoring && monitoring->tools) {
+    if (monitoring->tools) {
         monitoring->tools[offset] &= ~tools;
         should_de_instrument = (monitoring->tools[offset] == 0);
     }
     else {
         /* Single tool */
-        uint8_t single_tool = code->_co_monitoring->active_monitors.tools[event];
+        uint8_t single_tool = monitoring->active_monitors.tools[event];
         assert(_Py_popcount32(single_tool) <= 1);
         should_de_instrument = ((single_tool & tools) == single_tool);
     }
@@ -2916,18 +2917,21 @@ typedef struct _PyLegacyBranchEventHandler {
     int tool_id;
 } _PyLegacyBranchEventHandler;
 
+#define _PyLegacyBranchEventHandler_CAST(op)    ((_PyLegacyBranchEventHandler *)(op))
+
 static void
-dealloc_branch_handler(_PyLegacyBranchEventHandler *self)
+dealloc_branch_handler(PyObject *op)
 {
+    _PyLegacyBranchEventHandler *self = _PyLegacyBranchEventHandler_CAST(op);
     Py_CLEAR(self->handler);
-    PyObject_Free((PyObject *)self);
+    PyObject_Free(self);
 }
 
 static PyTypeObject _PyLegacyBranchEventHandler_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "sys.monitoring.branch_event_handler",
     sizeof(_PyLegacyBranchEventHandler),
-    .tp_dealloc = (destructor)dealloc_branch_handler,
+    .tp_dealloc = dealloc_branch_handler,
     .tp_vectorcall_offset = offsetof(_PyLegacyBranchEventHandler, vectorcall),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
         Py_TPFLAGS_HAVE_VECTORCALL | Py_TPFLAGS_DISALLOW_INSTANTIATION,
@@ -2936,10 +2940,11 @@ static PyTypeObject _PyLegacyBranchEventHandler_Type = {
 
 
 static PyObject *
-branch_handler(
-    _PyLegacyBranchEventHandler *self, PyObject *const *args,
+branch_handler_vectorcall(
+    PyObject *op, PyObject *const *args,
     size_t nargsf, PyObject *kwnames
 ) {
+    _PyLegacyBranchEventHandler *self = _PyLegacyBranchEventHandler_CAST(op);
     // Find the other instrumented instruction and remove tool
     // The spec (PEP 669) allows spurious events after a DISABLE,
     // so a best effort is good enough.
@@ -3000,7 +3005,7 @@ static PyObject *make_branch_handler(int tool_id, PyObject *handler, bool right)
     if (callback == NULL) {
         return NULL;
     }
-    callback->vectorcall = (vectorcallfunc)branch_handler;
+    callback->vectorcall = branch_handler_vectorcall;
     callback->handler = Py_NewRef(handler);
     callback->right = right;
     callback->tool_id = tool_id;
@@ -3062,6 +3067,8 @@ typedef struct {
     int bi_offset;
 } branchesiterator;
 
+#define branchesiterator_CAST(op)   ((branchesiterator *)(op))
+
 static PyObject *
 int_triple(int a, int b, int c) {
     PyObject *obja = PyLong_FromLong(a);
@@ -3088,8 +3095,9 @@ error:
 }
 
 static PyObject *
-branchesiter_next(branchesiterator *bi)
+branchesiter_next(PyObject *op)
 {
+    branchesiterator *bi = branchesiterator_CAST(op);
     int offset = bi->bi_offset;
     int oparg = 0;
     while (offset < Py_SIZE(bi->bi_code)) {
@@ -3130,8 +3138,9 @@ branchesiter_next(branchesiterator *bi)
 }
 
 static void
-branchesiter_dealloc(branchesiterator *bi)
+branchesiter_dealloc(PyObject *op)
 {
+    branchesiterator *bi = branchesiterator_CAST(op);
     Py_DECREF(bi->bi_code);
     PyObject_Free(bi);
 }
@@ -3142,10 +3151,10 @@ static PyTypeObject _PyBranchesIterator = {
     sizeof(branchesiterator),           /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
-    .tp_dealloc = (destructor)branchesiter_dealloc,
+    .tp_dealloc = branchesiter_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
     .tp_iter = PyObject_SelfIter,
-    .tp_iternext = (iternextfunc)branchesiter_next,
+    .tp_iternext = branchesiter_next,
     .tp_free = PyObject_Del,
 };
 

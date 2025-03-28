@@ -65,6 +65,16 @@ typedef union _PyStackRef {
 #endif
 } _PyStackRef;
 
+// A stackref that can be stored in a regular C local variable and be visible
+// to the GC in the free threading build.
+// Used in combination with _PyThreadState_PushCStackRef().
+typedef struct _PyCStackRef {
+    _PyStackRef ref;
+#ifdef Py_GIL_DISABLED
+    struct _PyCStackRef *next;
+#endif
+} _PyCStackRef;
+
 
 #ifdef __cplusplus
 }
