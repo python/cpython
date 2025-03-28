@@ -2450,7 +2450,7 @@ Py_EndInterpreter(PyThreadState *tstate)
        when they attempt to take the GIL (ex: PyEval_RestoreThread()). */
     _PyInterpreterState_SetFinalizing(interp, tstate);
     _PyEval_StartTheWorldAll(runtime);
-    _PyThreadState_DeleteList(list);
+    _PyThreadState_DeleteList(list, /*is_after_fork=*/0);
 
     // XXX Call something like _PyImport_Disable() here?
 
