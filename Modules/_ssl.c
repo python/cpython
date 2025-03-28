@@ -73,13 +73,6 @@
 #  error "OPENSSL_THREADS is not defined, Python requires thread-safe OpenSSL"
 #endif
 
-#ifdef FORCE_ASSERTS
-#ifdef NDEBUG
-#undef NDEBUG
-#define _DEBUG
-#endif
-#include <assert.h>
-#endif /* FORCE_ASSERTS */
 
 
 struct py_ssl_error_code {
