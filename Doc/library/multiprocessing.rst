@@ -107,6 +107,8 @@ Contexts and start methods
 Depending on the platform, :mod:`multiprocessing` supports three ways
 to start a process.  These *start methods* are
 
+  .. _multiprocessing-start-method-spawn:
+
   *spawn*
     The parent process starts a fresh Python interpreter process.  The
     child process will only inherit those resources necessary to run
@@ -116,6 +118,8 @@ to start a process.  These *start methods* are
     rather slow compared to using *fork* or *forkserver*.
 
     Available on POSIX and Windows platforms.  The default on Windows and macOS.
+
+  .. _multiprocessing-start-method-fork:
 
   *fork*
     The parent process uses :func:`os.fork` to fork the Python
@@ -136,6 +140,8 @@ to start a process.  These *start methods* are
        :func:`os.fork` function that this start method calls internally will
        raise a :exc:`DeprecationWarning`. Use a different start method.
        See the :func:`os.fork` documentation for further explanation.
+
+  .. _multiprocessing-start-method-forkserver:
 
   *forkserver*
     When the program starts and selects the *forkserver* start method,
@@ -374,35 +380,40 @@ However, if you really do need to use some shared data then
    proxies.
 
    A manager returned by :func:`Manager` will support types
-   :class:`list`, :class:`dict`, :class:`~managers.Namespace`, :class:`Lock`,
+   :class:`list`, :class:`dict`, :class:`set`, :class:`~managers.Namespace`, :class:`Lock`,
    :class:`RLock`, :class:`Semaphore`, :class:`BoundedSemaphore`,
    :class:`Condition`, :class:`Event`, :class:`Barrier`,
    :class:`Queue`, :class:`Value` and :class:`Array`.  For example, ::
 
       from multiprocessing import Process, Manager
 
-      def f(d, l):
+      def f(d, l, s):
           d[1] = '1'
           d['2'] = 2
           d[0.25] = None
           l.reverse()
+          s.add('a')
+          s.add('b')
 
       if __name__ == '__main__':
           with Manager() as manager:
               d = manager.dict()
               l = manager.list(range(10))
+              s = manager.set()
 
-              p = Process(target=f, args=(d, l))
+              p = Process(target=f, args=(d, l, s))
               p.start()
               p.join()
 
               print(d)
               print(l)
+              print(s)
 
    will print ::
 
        {0.25: None, 1: '1', '2': 2}
        [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+       {'a', 'b'}
 
    Server process managers are more flexible than using shared memory objects
    because they can be made to support arbitrary object types.  Also, a single
@@ -1936,6 +1947,15 @@ their parent process exits.  The manager classes are defined in the
 
       Create a shared :class:`list` object and return a proxy for it.
 
+   .. method:: set()
+               set(sequence)
+               set(mapping)
+
+      Create a shared :class:`set` object and return a proxy for it.
+
+      .. versionadded:: 3.14
+         :class:`set` support was added.
+
    .. versionchanged:: 3.6
       Shared objects are capable of being nested.  For example, a shared
       container object such as a shared list can contain other shared objects
@@ -2986,6 +3006,9 @@ Beware of replacing :data:`sys.stdin` with a "file like object"
            return self._cache
 
     For more information, see :issue:`5155`, :issue:`5313` and :issue:`5331`
+
+.. _multiprocessing-programming-spawn:
+.. _multiprocessing-programming-forkserver:
 
 The *spawn* and *forkserver* start methods
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

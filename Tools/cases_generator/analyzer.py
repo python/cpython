@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import itertools
 import lexer
 import parser
@@ -33,7 +33,6 @@ class Properties:
     pure: bool
     uses_opcode: bool
     tier: int | None = None
-    oparg_and_1: bool = False
     const_oparg: int = -1
     needs_prev: bool = False
     no_save_ip: bool = False
@@ -136,16 +135,14 @@ class Flush:
 class StackItem:
     name: str
     type: str | None
-    condition: str | None
     size: str
     peek: bool = False
     used: bool = False
 
     def __str__(self) -> str:
-        cond = f" if ({self.condition})" if self.condition else ""
         size = f"[{self.size}]" if self.size else ""
         type = "" if self.type is None else f"{self.type} "
-        return f"{type}{self.name}{size}{cond} {self.peek}"
+        return f"{type}{self.name}{size} {self.peek}"
 
     def is_array(self) -> bool:
         return self.size != ""
@@ -180,7 +177,7 @@ class Uop:
     stack: StackEffect
     caches: list[CacheEntry]
     deferred_refs: dict[lexer.Token, str | None]
-    output_stores: list[lexer.Token]
+    local_stores: list[lexer.Token]
     body: list[lexer.Token]
     properties: Properties
     _size: int = -1
@@ -215,7 +212,7 @@ class Uop:
         if self.properties.needs_this:
             return "uses the 'this_instr' variable"
         if len([c for c in self.caches if c.name != "unused"]) > 2:
-            return "has unused cache entries"
+            return "has too many cache entries"
         if self.properties.error_with_pop and self.properties.error_without_pop:
             return "has both popping and not-popping errors"
         return None
@@ -239,7 +236,7 @@ class Label:
         self.properties = properties
 
     size:int = 0
-    output_stores: list[lexer.Token] = []
+    local_stores: list[lexer.Token] = []
     instruction_size = None
 
     def __str__(self) -> str:
@@ -348,10 +345,7 @@ def override_error(
 def convert_stack_item(
     item: parser.StackEffect, replace_op_arg_1: str | None
 ) -> StackItem:
-    cond = item.cond
-    if replace_op_arg_1 and OPARG_AND_1.match(item.cond):
-        cond = replace_op_arg_1
-    return StackItem(item.name, item.type, cond, item.size)
+    return StackItem(item.name, item.type, item.size)
 
 def check_unused(stack: list[StackItem], input_names: dict[str, lexer.Token]) -> None:
     "Unused items cannot be on the stack above used, non-peek items"
@@ -416,11 +410,14 @@ def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
     caches: list[parser.CacheEffect] = [
         i for i in inputs if isinstance(i, parser.CacheEffect)
     ]
-    for cache in caches:
-        if cache.name == "unused":
-            raise analysis_error(
-                "Unused cache entry in op. Move to enclosing macro.", cache.tokens[0]
-            )
+    if caches:
+        # Middle entries are allowed to be unused. Check first and last caches.
+        for index in (0, -1):
+            cache = caches[index]
+            if cache.name == "unused":
+                position = "First" if index == 0 else "Last"
+                msg = f"{position} cache entry in op is unused. Move to enclosing macro."
+                raise analysis_error(msg, cache.tokens[0])
     return [CacheEntry(i.name, int(i.size)) for i in caches]
 
 
@@ -434,7 +431,7 @@ def find_assignment_target(node: parser.InstDef, idx: int) -> list[lexer.Token]:
     return []
 
 
-def find_stores_outputs(node: parser.InstDef) -> list[lexer.Token]:
+def find_variable_stores(node: parser.InstDef) -> list[lexer.Token]:
     res: list[lexer.Token] = []
     outnames = { out.name for out in node.outputs }
     innames = { out.name for out in node.inputs }
@@ -452,9 +449,7 @@ def find_stores_outputs(node: parser.InstDef) -> list[lexer.Token]:
         if len(lhs) != 1 or lhs[0].kind != "IDENTIFIER":
             continue
         name = lhs[0]
-        if name.text in innames:
-            raise analysis_error(f"Cannot assign to input variable '{name.text}'", name)
-        if name.text in outnames:
+        if name.text in outnames or name.text in innames:
             res.append(name)
     return res
 
@@ -583,6 +578,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PySlice_New",
     "PyStackRef_AsPyObjectBorrow",
     "PyStackRef_AsPyObjectNew",
+    "PyStackRef_FromPyObjectNewMortal",
     "PyStackRef_AsPyObjectSteal",
     "PyStackRef_CLEAR",
     "PyStackRef_CLOSE_SPECIALIZED",
@@ -592,7 +588,10 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_FromPyObjectNew",
     "PyStackRef_FromPyObjectSteal",
     "PyStackRef_IsExactly",
+    "PyStackRef_FromPyObjectStealMortal",
     "PyStackRef_IsNone",
+    "PyStackRef_Is",
+    "PyStackRef_IsHeapSafe",
     "PyStackRef_IsTrue",
     "PyStackRef_IsFalse",
     "PyStackRef_IsNull",
@@ -602,7 +601,6 @@ NON_ESCAPING_FUNCTIONS = (
     "PyTuple_GET_ITEM",
     "PyTuple_GET_SIZE",
     "PyType_HasFeature",
-    "PyUnicode_Append",
     "PyUnicode_Concat",
     "PyUnicode_GET_LENGTH",
     "PyUnicode_READ_CHAR",
@@ -619,8 +617,8 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyCode_CODE",
     "_PyDictValues_AddToInsertionOrder",
     "_PyErr_Occurred",
-    "_PyEval_FrameClearAndPop",
     "_PyFloat_FromDouble_ConsumeInputs",
+    "_PyFrame_GetBytecode",
     "_PyFrame_GetCode",
     "_PyFrame_IsIncomplete",
     "_PyFrame_PushUnchecked",
@@ -630,23 +628,21 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyGen_GetGeneratorFromFrame",
     "_PyInterpreterState_GET",
     "_PyList_AppendTakeRef",
-    "_PyList_FromStackRefStealOnSuccess",
     "_PyList_ITEMS",
-    "_PyLong_Add",
     "_PyLong_CompactValue",
     "_PyLong_DigitCount",
     "_PyLong_IsCompact",
     "_PyLong_IsNegative",
     "_PyLong_IsNonNegativeCompact",
     "_PyLong_IsZero",
-    "_PyLong_Multiply",
-    "_PyLong_Subtract",
     "_PyManagedDictPointer_IsValues",
+    "_PyObject_GC_IS_SHARED",
     "_PyObject_GC_IS_TRACKED",
     "_PyObject_GC_MAY_BE_TRACKED",
     "_PyObject_GC_TRACK",
     "_PyObject_GetManagedDict",
     "_PyObject_InlineValues",
+    "_PyObject_IsUniquelyReferenced",
     "_PyObject_ManagedDictPointer",
     "_PyThreadState_HasStackSpace",
     "_PyTuple_FromStackRefStealOnSuccess",
@@ -657,9 +653,9 @@ NON_ESCAPING_FUNCTIONS = (
     "_PyUnicode_JoinArray",
     "_Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY",
     "_Py_DECREF_NO_DEALLOC",
-    "_Py_EnterRecursiveCallTstateUnchecked",
     "_Py_ID",
     "_Py_IsImmortal",
+    "_Py_IsOwnedByCurrentThread",
     "_Py_LeaveRecursiveCallPy",
     "_Py_LeaveRecursiveCallTstate",
     "_Py_NewRef",
@@ -676,8 +672,8 @@ NON_ESCAPING_FUNCTIONS = (
     "backoff_counter_triggers",
     "initial_temperature_backoff_counter",
     "JUMP_TO_LABEL",
-    "maybe_lltrace_resume_frame",
     "restart_backoff_counter",
+    "_Py_ReachedRecursionLimit",
 )
 
 def find_stmt_start(node: parser.CodeDef, idx: int) -> lexer.Token:
@@ -811,31 +807,10 @@ def stack_effect_only_peeks(instr: parser.InstDef) -> bool:
         return False
     if len(stack_inputs) == 0:
         return False
-    if any(s.cond for s in stack_inputs) or any(s.cond for s in instr.outputs):
-        return False
     return all(
         (s.name == other.name and s.type == other.type and s.size == other.size)
         for s, other in zip(stack_inputs, instr.outputs)
     )
-
-
-OPARG_AND_1 = re.compile("\\(*oparg *& *1")
-
-
-def effect_depends_on_oparg_1(op: parser.InstDef) -> bool:
-    for effect in op.inputs:
-        if isinstance(effect, parser.CacheEffect):
-            continue
-        if not effect.cond:
-            continue
-        if OPARG_AND_1.match(effect.cond):
-            return True
-    for effect in op.outputs:
-        if not effect.cond:
-            continue
-        if OPARG_AND_1.match(effect.cond):
-            return True
-    return False
 
 
 def compute_properties(op: parser.CodeDef) -> Properties:
@@ -900,33 +875,10 @@ def make_uop(
         stack=analyze_stack(op),
         caches=analyze_caches(inputs),
         deferred_refs=analyze_deferred_refs(op),
-        output_stores=find_stores_outputs(op),
+        local_stores=find_variable_stores(op),
         body=op.block.tokens,
         properties=compute_properties(op),
     )
-    if effect_depends_on_oparg_1(op) and "split" in op.annotations:
-        result.properties.oparg_and_1 = True
-        for bit in ("0", "1"):
-            name_x = name + "_" + bit
-            properties = compute_properties(op)
-            if properties.oparg:
-                # May not need oparg anymore
-                properties.oparg = any(
-                    token.text == "oparg" for token in op.block.tokens
-                )
-            rep = Uop(
-                name=name_x,
-                context=op.context,
-                annotations=op.annotations,
-                stack=analyze_stack(op, bit),
-                caches=analyze_caches(inputs),
-                deferred_refs=analyze_deferred_refs(op),
-                output_stores=find_stores_outputs(op),
-                body=op.block.tokens,
-                properties=properties,
-            )
-            rep.replicates = result
-            uops[name_x] = rep
     for anno in op.annotations:
         if anno.startswith("replicate"):
             result.replicated = int(anno[10:-1])
@@ -945,7 +897,7 @@ def make_uop(
             stack=analyze_stack(op),
             caches=analyze_caches(inputs),
             deferred_refs=analyze_deferred_refs(op),
-            output_stores=find_stores_outputs(op),
+            local_stores=find_variable_stores(op),
             body=op.block.tokens,
             properties=properties,
         )
@@ -1080,8 +1032,8 @@ def assign_opcodes(
     # This helps catch cases where we attempt to execute a cache.
     instmap["RESERVED"] = 17
 
-    # 149 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
-    instmap["RESUME"] = 149
+    # 128 is RESUME - it is hard coded as such in Tools/build/deepfreeze.py
+    instmap["RESUME"] = 128
 
     # This is an historical oddity.
     instmap["BINARY_OP_INPLACE_ADD_UNICODE"] = 3
@@ -1111,7 +1063,7 @@ def assign_opcodes(
 
     # Specialized ops appear in their own section
     # Instrumented opcodes are at the end of the valid range
-    min_internal = 150
+    min_internal = instmap["RESUME"] + 1
     min_instrumented = 254 - (len(instrumented) - 1)
     assert min_internal + len(specialized) < min_instrumented
 
