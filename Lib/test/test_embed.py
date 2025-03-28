@@ -627,8 +627,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         CONFIG_COMPAT.update({
             'legacy_windows_stdio': 0,
         })
-    if support.is_apple:
-        CONFIG_COMPAT['use_system_logger'] = False
 
     CONFIG_PYTHON = dict(CONFIG_COMPAT,
         _config_init=API_PYTHON,

@@ -2707,8 +2707,7 @@ def no_color():
         swap_attr(_colorize, "can_colorize", lambda file=None: False),
         EnvironmentVarGuard() as env,
     ):
-        for var in {"FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS"}:
-            env.unset(var)
+        env.unset("FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS")
         env.set("NO_COLOR", "1")
         yield
 
@@ -2767,3 +2766,22 @@ class BrokenIter:
         if self.iter_raises:
             1/0
         return self
+
+
+def linked_to_musl():
+    """
+    Test if the Python executable is linked to the musl C library.
+    """
+    if sys.platform != 'linux':
+        return False
+
+    import subprocess
+    exe = getattr(sys, '_base_executable', sys.executable)
+    cmd = ['ldd', exe]
+    try:
+        stdout = subprocess.check_output(cmd,
+                                         text=True,
+                                         stderr=subprocess.STDOUT)
+    except (OSError, subprocess.CalledProcessError):
+        return False
+    return ('musl' in stdout)

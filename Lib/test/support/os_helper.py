@@ -632,8 +632,7 @@ def fd_count():
     if hasattr(os, 'sysconf'):
         try:
             MAXFD = os.sysconf("SC_OPEN_MAX")
-        except (OSError, ValueError):
-            # gh-118201: ValueError is raised intermittently on iOS
+        except OSError:
             pass
 
     old_modes = None
@@ -694,9 +693,10 @@ else:
 
 
 class EnvironmentVarGuard(collections.abc.MutableMapping):
+    """Class to help protect the environment variable properly.
 
-    """Class to help protect the environment variable properly.  Can be used as
-    a context manager."""
+    Can be used as a context manager.
+    """
 
     def __init__(self):
         self._environ = os.environ
@@ -730,8 +730,10 @@ class EnvironmentVarGuard(collections.abc.MutableMapping):
     def set(self, envvar, value):
         self[envvar] = value
 
-    def unset(self, envvar):
-        del self[envvar]
+    def unset(self, envvar, /, *envvars):
+        """Unset one or more environment variables."""
+        for ev in (envvar, *envvars):
+            del self[ev]
 
     def copy(self):
         # We do what os.environ.copy() does.

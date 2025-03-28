@@ -1,0 +1,4 @@
+The ``PyConfig.use_system_logger`` attribute, introduced in Python 3.13.2, has
+been removed. The introduction of this attribute inadvertently introduced an
+ABI breakage on macOS and iOS. The use of the system logger is now enabled
+by default on iOS, and disabled by default on macOS.
