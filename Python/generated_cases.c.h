@@ -9316,19 +9316,27 @@
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_SPECIAL);
             _PyStackRef arg;
-            _PyStackRef *args;
+            _PyStackRef arg1;
+            _PyStackRef arg2;
+            _PyStackRef null;
+            _PyStackRef self;
             _PyStackRef *method_and_self;
             // _INSERT_NULL
             {
                 arg = stack_pointer[-1];
-                args = &stack_pointer[-1];
-                args[0] = PyStackRef_NULL;
-                args[1] = arg;
+                arg1 = PyStackRef_NULL;
+                arg2 = arg;
             }
             // _LOAD_SPECIAL
             {
+                self = arg2;
+                null = arg1;
                 method_and_self = &stack_pointer[-1];
+                method_and_self[0] = null;
+                method_and_self[1] = self;
                 PyObject *name = _Py_SpecialMethods[oparg].name;
+                stack_pointer[-1] = null;
+                stack_pointer[0] = self;
                 stack_pointer += 1;
                 assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -9336,11 +9344,13 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 if (err < 0) {
                     if (!_PyErr_Occurred(tstate)) {
+                        stack_pointer[-1] = self;
                         _PyFrame_SetStackPointer(frame, stack_pointer);
                         _PyErr_Format(tstate, PyExc_TypeError,
                                   _Py_SpecialMethods[oparg].error,
                                   PyStackRef_TYPE(method_and_self[1])->tp_name);
                         stack_pointer = _PyFrame_GetStackPointer(frame);
+                        JUMP_TO_LABEL(error);
                     }
                     JUMP_TO_LABEL(error);
                 }

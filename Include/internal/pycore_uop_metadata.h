@@ -194,7 +194,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_ITER_NEXT_RANGE] = HAS_ERROR_FLAG,
     [_FOR_ITER_GEN_FRAME] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
     [_INSERT_NULL] = 0,
-    [_LOAD_SPECIAL] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_LOAD_SPECIAL] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_WITH_EXCEPT_START] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_PUSH_EXC_INFO] = 0,
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = HAS_DEOPT_FLAG,
@@ -912,7 +912,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _INSERT_NULL:
             return 1;
         case _LOAD_SPECIAL:
-            return 0;
+            return 2;
         case _WITH_EXCEPT_START:
             return 0;
         case _PUSH_EXC_INFO:

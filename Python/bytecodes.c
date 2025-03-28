@@ -3345,13 +3345,15 @@ dummy_func(
             _FOR_ITER_GEN_FRAME +
             _PUSH_FRAME;
 
-        op(_INSERT_NULL, (arg -- args[2])) {
-            args[0] = PyStackRef_NULL;
-            args[1] = arg;
+        op(_INSERT_NULL, (arg -- arg1, arg2)) {
+            arg1 = PyStackRef_NULL;
+            arg2 = arg;
             DEAD(arg);
         }
 
-        op(_LOAD_SPECIAL, (method_and_self[2] -- method_and_self[2])) {
+        op(_LOAD_SPECIAL, (null, self -- method_and_self[2])) {
+            method_and_self[0] = null;
+            method_and_self[1] = self;
             PyObject *name = _Py_SpecialMethods[oparg].name;
             int err = _PyObject_LookupSpecialMethod(name, method_and_self);
             if (err < 0) {
@@ -3359,9 +3361,11 @@ dummy_func(
                     _PyErr_Format(tstate, PyExc_TypeError,
                                   _Py_SpecialMethods[oparg].error,
                                   PyStackRef_TYPE(method_and_self[1])->tp_name);
+                    ERROR_NO_POP();
                 }
-                ERROR_IF(true, error);
+                ERROR_NO_POP();
             }
+            INPUTS_DEAD();
         }
 
         macro(LOAD_SPECIAL) =

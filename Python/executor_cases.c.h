@@ -4401,20 +4401,28 @@
 
         case _INSERT_NULL: {
             _PyStackRef arg;
-            _PyStackRef *args;
+            _PyStackRef arg1;
+            _PyStackRef arg2;
             arg = stack_pointer[-1];
-            args = &stack_pointer[-1];
-            args[0] = PyStackRef_NULL;
-            args[1] = arg;
+            arg1 = PyStackRef_NULL;
+            arg2 = arg;
+            stack_pointer[-1] = arg1;
+            stack_pointer[0] = arg2;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _LOAD_SPECIAL: {
+            _PyStackRef self;
+            _PyStackRef null;
             _PyStackRef *method_and_self;
             oparg = CURRENT_OPARG();
+            self = stack_pointer[-1];
+            null = stack_pointer[-2];
             method_and_self = &stack_pointer[-2];
+            method_and_self[0] = null;
+            method_and_self[1] = self;
             PyObject *name = _Py_SpecialMethods[oparg].name;
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int err = _PyObject_LookupSpecialMethod(name, method_and_self);
@@ -4426,6 +4434,7 @@
                                   _Py_SpecialMethods[oparg].error,
                                   PyStackRef_TYPE(method_and_self[1])->tp_name);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
+                    JUMP_TO_ERROR();
                 }
                 JUMP_TO_ERROR();
             }
