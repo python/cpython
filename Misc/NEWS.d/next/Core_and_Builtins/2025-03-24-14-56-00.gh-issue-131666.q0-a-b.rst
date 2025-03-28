@@ -1,0 +1,1 @@
+Fix signature of ``anext_awaitable.close`` objects. Patch by Bénédikt Tran.

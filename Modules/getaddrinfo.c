@@ -351,7 +351,7 @@ getaddrinfo(const char*hostname, const char*servname,
             struct servent *sp;
             const char *proto;
 
-            if (ai->ai_flags & AI_NUMERICSERV) {
+            if (pai->ai_flags & AI_NUMERICSERV) {
                 ERR(EAI_NONAME);
             }
 
