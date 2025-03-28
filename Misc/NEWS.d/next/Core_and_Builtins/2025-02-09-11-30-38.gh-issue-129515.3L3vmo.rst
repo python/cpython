@@ -1,2 +1,0 @@
-Clarify syntax error messages for conditional expressions when a statement
-is specified before an :keyword:`if` or after an :keyword:`else` keyword.

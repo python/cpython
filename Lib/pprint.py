@@ -44,7 +44,8 @@ __all__ = ["pprint","pformat","isreadable","isrecursive","saferepr",
 
 
 def pprint(object, stream=None, indent=1, width=80, depth=None, *,
-           compact=False, sort_dicts=True, underscore_numbers=False, block_style=False):
+           compact=False, sort_dicts=True, underscore_numbers=False,
+           block_style=False):
     """Pretty-print a Python object to a stream [default is sys.stdout]."""
     printer = PrettyPrinter(
         stream=stream, indent=indent, width=width, depth=depth,
@@ -54,11 +55,13 @@ def pprint(object, stream=None, indent=1, width=80, depth=None, *,
 
 
 def pformat(object, indent=1, width=80, depth=None, *,
-            compact=False, sort_dicts=True, underscore_numbers=False, block_style=False):
+            compact=False, sort_dicts=True, underscore_numbers=False,
+            block_style=False):
     """Format a Python object into a pretty-printed representation."""
     return PrettyPrinter(indent=indent, width=width, depth=depth,
                          compact=compact, sort_dicts=sort_dicts,
-                         underscore_numbers=underscore_numbers, block_style=block_style).pformat(object)
+                         underscore_numbers=underscore_numbers,
+                         block_style=block_style).pformat(object)
 
 
 def pp(object, *args, sort_dicts=False, **kwargs):
@@ -111,7 +114,8 @@ def _safe_tuple(t):
 
 class PrettyPrinter:
     def __init__(self, indent=1, width=80, depth=None, stream=None, *,
-                 compact=False, sort_dicts=True, underscore_numbers=False, block_style=False):
+                 compact=False, sort_dicts=True, underscore_numbers=False,
+                 block_style=False):
         """Handle pretty printing operations onto a stream using a set of
         configured parameters.
 
@@ -215,13 +219,13 @@ class PrettyPrinter:
 
     def _format_block_start(self, start_str, indent):
         if self._block_style:
-            return start_str +'\n' + ' ' * indent
+            return f"{start_str}\n{' ' * indent}"
         else:
             return start_str
 
     def _format_block_end(self, end_str, indent):
         if self._block_style:
-            return '\n' + ' ' * indent + end_str
+            return f"\n{' ' * indent}{end_str}"
         else:
             return end_str
 

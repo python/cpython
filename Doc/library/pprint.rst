@@ -36,7 +36,8 @@ Functions
 ---------
 
 .. function:: pp(object, stream=None, indent=1, width=80, depth=None, *, \
-                     compact=False, sort_dicts=False, underscore_numbers=False, block_style=False)
+                 compact=False, sort_dicts=False, underscore_numbers=False, \
+                 block_style=False)
 
    Prints the formatted representation of *object*, followed by a newline.
    This function may be used in the interactive interpreter
@@ -106,7 +107,8 @@ Functions
 
 
 .. function:: pprint(object, stream=None, indent=1, width=80, depth=None, *, \
-                     compact=False, sort_dicts=True, underscore_numbers=False, block_style=False)
+                     compact=False, sort_dicts=True, \
+                     underscore_numbers=False, block_style=False)
 
    Alias for :func:`~pprint.pp` with *sort_dicts* set to ``True`` by default,
    which would automatically sort the dictionaries' keys,
@@ -114,7 +116,8 @@ Functions
 
 
 .. function:: pformat(object, indent=1, width=80, depth=None, *, \
-                      compact=False, sort_dicts=True, underscore_numbers=False, block_style=False)
+                      compact=False, sort_dicts=True, \
+                      underscore_numbers=False, block_style=False)
 
    Return the formatted representation of *object* as a string.  *indent*,
    *width*, *depth*, *compact*, *sort_dicts*, *underscore_numbers* and *block_style* are
@@ -161,7 +164,8 @@ PrettyPrinter Objects
 .. index:: single: ...; placeholder
 
 .. class:: PrettyPrinter(indent=1, width=80, depth=None, stream=None, *, \
-                         compact=False, sort_dicts=True, underscore_numbers=False, block_style=False)
+                         compact=False, sort_dicts=True, \
+                         underscore_numbers=False, block_style=False)
 
    Construct a :class:`PrettyPrinter` instance.
 
@@ -446,8 +450,8 @@ cannot be split, the specified width will be exceeded::
     'summary': 'A sample Python project',
     'version': '1.2.0'}
 
-Lastly, we can achieve block style formatting with the *block_style* parameter. Best results
-are achieved with a higher *indent* value::
+Lastly, we can achieve block style formatting with the *block_style* parameter.
+Best results are achieved with a higher *indent* value::
 
    >>> pprint.pp(project_info, indent=4, block_style=True)
    {

@@ -196,3 +196,15 @@ would typically correspond to a python function.
 .. c:function:: int PyMonitoring_ExitScope(void)
 
    Exit the last scope that was entered with :c:func:`!PyMonitoring_EnterScope`.
+
+
+.. c:function:: int PY_MONITORING_IS_INSTRUMENTED_EVENT(uint8_t ev)
+
+   Return true if the event corresponding to the event ID *ev* is
+   a :ref:`local event <monitoring-event-local>`.
+
+   .. versionadded:: 3.13
+
+   .. deprecated:: next
+
+      This function is :term:`soft deprecated`.

@@ -10,14 +10,6 @@ import random
 import re
 import types
 import unittest
-from collections import OrderedDict
-from collections import defaultdict
-from collections import Counter
-from collections import ChainMap
-from collections import deque
-from collections import UserDict, UserList
-from dataclasses import dataclass, field
-from types import SimpleNamespace, MappingProxyType
 
 # list, tuple and dict subclasses that do or don't overwrite __repr__
 class list2(list):
@@ -1133,13 +1125,13 @@ deque([('brown', 2),
     'lazy dog'}""")
 
     def test_block_style_dataclass(self):
-        @dataclass
+        @dataclasses.dataclass
         class DummyDataclass:
             foo: str
             bar: float
             baz: bool
-            qux: dict = field(default_factory=dict)
-            quux: list = field(default_factory=list)
+            qux: dict = dataclasses.field(default_factory=dict)
+            quux: list = dataclasses.field(default_factory=list)
             corge: int = 1
             garply: tuple = (1, 2, 3, 4)
         dummy_dataclass = DummyDataclass(
@@ -1182,7 +1174,7 @@ DummyDataclass(
 }""")
 
     def test_block_style_ordered_dict(self):
-        dummy_ordered_dict = OrderedDict(
+        dummy_ordered_dict = collections.OrderedDict(
             [
                 ("foo", 1),
                 ("bar", 12),
@@ -1302,7 +1294,7 @@ bytearray(
             "quux": ["foo", "bar", "baz"],
             "corge": 7,
         }
-        dummy_mappingproxy = MappingProxyType(dummy_dict)
+        dummy_mappingproxy = types.MappingProxyType(dummy_dict)
         self.assertEqual(pprint.pformat(dummy_mappingproxy, width=40, indent=4, block_style=True),
 """\
 mappingproxy({
@@ -1314,10 +1306,10 @@ mappingproxy({
 })""")
 
     def test_block_style_namespace(self):
-        dummy_namespace = SimpleNamespace(
+        dummy_namespace = types.SimpleNamespace(
             foo="bar",
             bar=42,
-            baz=SimpleNamespace(
+            baz=types.SimpleNamespace(
                 x=321,
                 y="string",
                 d={"foo": True, "bar": "baz"},
@@ -1337,7 +1329,7 @@ namespace(
 )""")
 
     def test_block_style_defaultdict(self):
-        dummy_defaultdict = defaultdict(list)
+        dummy_defaultdict = collections.defaultdict(list)
         dummy_defaultdict["foo"].append("bar")
         dummy_defaultdict["foo"].append("baz")
         dummy_defaultdict["foo"].append("qux")
@@ -1350,7 +1342,7 @@ defaultdict(<class 'list'>, {
 })""")
 
     def test_block_style_counter(self):
-        dummy_counter = Counter("abcdeabcdabcaba")
+        dummy_counter = collections.Counter("abcdeabcdabcaba")
         expected = """\
 Counter({
     'a': 5,
@@ -1379,7 +1371,7 @@ Counter({
             "quux": ["foo", "bar", "baz"],
             "corge": 7,
         }
-        dummy_chainmap = ChainMap(
+        dummy_chainmap = collections.ChainMap(
             {"foo": "bar"},
             {"baz": "qux"},
             {"corge": dummy_dict},
@@ -1421,7 +1413,7 @@ ChainMap(
         dummy_set = {
             (1, 2, 3),
         }
-        dummy_deque = deque(maxlen=10)
+        dummy_deque = collections.deque(maxlen=10)
         dummy_deque.append("foo")
         dummy_deque.append(123)
         dummy_deque.append(dummy_dict)
@@ -1446,21 +1438,16 @@ deque([
 ], maxlen=10)""")
 
     def test_block_style_userdict(self):
-        class DummyUserDict(UserDict):
+        class DummyUserDict(collections.UserDict):
             """A custom UserDict with some extra attributes"""
 
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.access_count = 0
-        dummy_userdict = DummyUserDict(
-            {
-                "foo": "bar",
-                "baz": 123,
-                "qux": {"foo": "bar", "baz": 123},
-                "quux": ["foo", "bar", "baz"],
-                "corge": 7,
-            }
-        )
+        dummy_userdict = DummyUserDict({ "foo": "bar", "baz": 123,
+                                        "qux": {"foo": "bar", "baz": 123},
+                                        "quux": ["foo", "bar", "baz"],
+                                        "corge": 7 })
         dummy_userdict.access_count = 5
 
         self.assertEqual(pprint.pformat(dummy_userdict, width=40, indent=4, block_style=True),
@@ -1474,13 +1461,14 @@ deque([
 }""")
 
     def test_block_style_userlist(self):
-        class DummyUserList(UserList):
+        class DummyUserList(collections.UserList):
             """A custom UserList with some extra attributes"""
 
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.description = "foo"
-        dummy_userlist = DummyUserList(["first", 2, {"key": "value"}, [4, 5, 6]])
+        dummy_userlist = DummyUserList(["first", 2, {"key": "value"},
+                                       [4, 5, 6]])
 
         self.assertEqual(pprint.pformat(dummy_userlist, width=40, indent=4, block_style=True),
 """\
