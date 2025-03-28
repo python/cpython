@@ -942,7 +942,7 @@ astfold_type_param(type_param_ty node_, PyArena *ctx_, _PyASTProcessState *state
 
 int
 _PyAST_Process(mod_ty mod, PyArena *arena, PyObject *filename, int optimize,
-                int ff_features, int syntax_check_only)
+               int ff_features, int syntax_check_only)
 {
     _PyASTProcessState state;
     memset(&state, 0, sizeof(_PyASTProcessState));
