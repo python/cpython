@@ -2071,7 +2071,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             const char *straddr;
             struct sockaddr_rc *addr = &addrbuf->bt_rc;
             _BT_RC_MEMB(addr, family) = AF_BLUETOOTH;
-            uint8_t channel = _BT_RC_MEMB(addr, channel);
+            unsigned char channel = _BT_RC_MEMB(addr, channel);
             if (!PyArg_ParseTuple(args, "sB", &straddr,
                                   &channel)) {
                 PyErr_Format(PyExc_OSError,
