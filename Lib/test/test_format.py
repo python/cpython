@@ -283,6 +283,10 @@ class FormatTest(unittest.TestCase):
                         "%x format: an integer is required, not str")
         test_exc_common('%x', 3.14, TypeError,
                         "%x format: an integer is required, not float")
+        test_exc_common('%i', '1', TypeError,
+                        "%i format: a real number is required, not str")
+        test_exc_common('%i', b'1', TypeError,
+                        "%i format: a real number is required, not bytes")
 
     def test_str_format(self):
         testformat("%r", "\u0378", "'\\u0378'")  # non printable

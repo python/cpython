@@ -19,6 +19,8 @@
 #include "pycore_warnings.h"      // _PyErr_WarnUnawaitedCoroutine()
 
 
+#include "opcode_ids.h"           // RESUME, etc
+
 // Forward declarations
 static PyObject* gen_close(PyObject *, PyObject *);
 static PyObject* async_gen_asend_new(PyAsyncGenObject *, PyObject *);
