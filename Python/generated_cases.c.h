@@ -11633,7 +11633,7 @@
             // _TO_BOOL_STR
             {
                 STAT_INC(TO_BOOL, hit);
-                PyObject* value_o = PyStackRef_AsPyObjectBorrow(value);
+                PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
                 if (value_o == &_Py_STR(empty)) {
                     assert(_Py_IsImmortal(value_o));
                     res = PyStackRef_False;

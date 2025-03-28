@@ -669,7 +669,7 @@
             _PyStackRef res;
             value = stack_pointer[-1];
             STAT_INC(TO_BOOL, hit);
-            PyObject* value_o = PyStackRef_AsPyObjectBorrow(value);
+            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             if (value_o == &_Py_STR(empty)) {
                 assert(_Py_IsImmortal(value_o));
                 res = PyStackRef_False;
