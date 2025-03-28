@@ -129,6 +129,7 @@ As a consequence of this, split keys have a maximum size of 16.
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_tuple.h"         // _PyTuple_Recycle()
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
 
 #include "stringlib/eq.h"                // unicode_eq()
@@ -5624,9 +5625,7 @@ dictiter_iternextitem(PyObject *self)
             Py_DECREF(oldvalue);
             // bpo-42536: The GC may have untracked this result tuple. Since we're
             // recycling it, make sure it's tracked again:
-            if (!_PyObject_GC_IS_TRACKED(result)) {
-                _PyObject_GC_TRACK(result);
-            }
+            _PyTuple_Recycle(result);
         }
         else {
             result = PyTuple_New(2);
@@ -5749,9 +5748,7 @@ dictreviter_iter_lock_held(PyDictObject *d, PyObject *self)
             Py_DECREF(oldvalue);
             // bpo-42536: The GC may have untracked this result tuple. Since
             // we're recycling it, make sure it's tracked again:
-            if (!_PyObject_GC_IS_TRACKED(result)) {
-                _PyObject_GC_TRACK(result);
-            }
+            _PyTuple_Recycle(result);
         }
         else {
             result = PyTuple_New(2);
