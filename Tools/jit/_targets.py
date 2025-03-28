@@ -537,14 +537,7 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
         args = ["-fms-runtime-lib=dll"]
         target = _COFF(host, args=args)
     elif re.fullmatch(r"x86_64-.*-linux-gnu", host):
-        args = [
-            # Jump tables generate R_X86_64_32S relocations, which assume a
-            # signed 32-bit address space:
-            "-fno-jump-tables",
-            "-fno-pic",
-            "-mcmodel=medium",
-            "-mlarge-data-threshold=0",
-        ]
+        args = ["-fno-pic", "-mcmodel=medium", "-mlarge-data-threshold=0"]
         target = _ELF(host, args=args)
     else:
         raise ValueError(host)
