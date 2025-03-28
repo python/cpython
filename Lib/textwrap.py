@@ -427,16 +427,15 @@ def dedent(text):
 
     Entirely blank lines are normalized to a newline character.
     """
-    # Fast paths for empty or simple text
     if not text:
         return text
 
     lines = text.split("\n")
 
-    margin = os.path.commonprefix([line for line in lines if line.lstrip()])
+    margin = os.path.commonprefix([line for line in lines if line.strip()])
     margin_len = len(margin) - len(margin.lstrip())
 
-    return "\n".join([line[margin_len:] if line.lstrip() else "\n" if line and line[-1] == "\n" else "" for line in lines])
+    return "\n".join([line[margin_len:] if line.strip() else "\n" if line and line[-1] == "\n" else "" for line in lines])
 
 
 def indent(text, prefix, predicate=None):
