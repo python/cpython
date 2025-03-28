@@ -110,7 +110,7 @@ extern "C" {
 #define FT_ATOMIC_LOAD_ULLONG_RELAXED(value) \
     _Py_atomic_load_ullong_relaxed(&value)
 #define FT_ATOMIC_ADD_SSIZE(value, new_value) \
-    _Py_atomic_add_ssize(&value, new_value)
+    (void)_Py_atomic_add_ssize(&value, new_value)
 
 #else
 #define FT_ATOMIC_LOAD_PTR(value) value
@@ -158,15 +158,7 @@ extern "C" {
 #define FT_ATOMIC_STORE_LLONG_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_ULLONG_RELAXED(value) value
 #define FT_ATOMIC_STORE_ULLONG_RELAXED(value, new_value) value = new_value
-
-static inline Py_ssize_t
-_FT_ATOMIC_ADD_SSIZE(Py_ssize_t *value, Py_ssize_t new_value)
-{
-    Py_ssize_t old_value = *value;
-    *value = old_value + new_value;
-    return old_value;
-}
-#define FT_ATOMIC_ADD_SSIZE(value, new_value) _FT_ATOMIC_ADD_SSIZE(&value, new_value)
+#define FT_ATOMIC_ADD_SSIZE(value, new_value) (void)(value += new_value)
 
 #endif
 
