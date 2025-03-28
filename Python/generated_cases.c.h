@@ -8722,7 +8722,6 @@
             INSTRUCTION_STATS(LOAD_COMMON_CONSTANT);
             _PyStackRef value;
             // Keep in sync with _common_constants in opcode.py
-            // If we ever have more than two constants, use a lookup table
             assert(oparg < NUM_COMMON_CONSTANTS);
             value = PyStackRef_FromPyObjectNew(tstate->interp->common_consts[oparg]);
             stack_pointer[0] = value;
