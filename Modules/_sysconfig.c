@@ -64,8 +64,15 @@ _sysconfig_config_vars_impl(PyObject *module)
 #  ifdef Py_GIL_DISABLED
                          "t"
 #  endif
-#  ifdef _DEBUG
+#  ifdef Py_DEBUG
+#    ifndef _DEBUG
+#      error "_DEBUG not defined while Py_DEBUG is defined on Windows"
+#    endif
                          "d"
+#  else
+#    ifdef _DEBUG
+#      error "_DEBUG defined while Py_DEBUG is not defined on Windows"
+#    endif
 #  endif
                          "")
         < 0) {
@@ -80,6 +87,16 @@ _sysconfig_config_vars_impl(PyObject *module)
     PyObject *py_gil_disabled = _PyLong_GetZero();
 #endif
     if (PyDict_SetItemString(config, "Py_GIL_DISABLED", py_gil_disabled) < 0) {
+        Py_DECREF(config);
+        return NULL;
+    }
+
+#ifdef Py_DEBUG
+    PyObject *py_debug = _PyLong_GetOne();
+#else
+    PyObject *py_debug = _PyLong_GetZero();
+#endif
+    if (PyDict_SetItemString(config, "Py_DEBUG", py_debug) < 0) {
         Py_DECREF(config);
         return NULL;
     }

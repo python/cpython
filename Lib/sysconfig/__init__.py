@@ -401,7 +401,7 @@ def _init_non_posix(vars):
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
 
-    # Add EXT_SUFFIX, SOABI, ABIFLAGS, and Py_GIL_DISABLED
+    # Add EXT_SUFFIX, SOABI, ABIFLAGS, Py_DEBUG, and Py_GIL_DISABLED
     # NOTE: ABIFLAGS is only an emulated value. It is not present during build
     #       on Windows. sys.abiflags is absent on Windows and `vars['abiflags']
     #       is already widely used to calculate paths. vars['abiflags'] should
