@@ -1,12 +1,10 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
-from test.libregrtest.utils import get_build_info
 from test.support import import_helper, os_helper, threading_helper, MS_WINDOWS
 import unittest
 
 from collections import namedtuple
 import contextlib
-import io
 import json
 import os
 import os.path
@@ -51,7 +49,7 @@ INIT_LOOPS = 4
 MAX_HASH_SEED = 4294967295
 
 ABI_THREAD = 't' if sysconfig.get_config_var('Py_GIL_DISABLED') else ''
-# PLATSTDLIB_LANDMARK copied from Modules/getpath.py
+# PLATSTDLIB_LANDMARK copied from Modules/getpath.py
 if os.name == 'nt':
     PLATSTDLIB_LANDMARK = f'{sys.platlibdir}'
 else:

@@ -739,12 +739,14 @@ class EnumType(type):
         `value` is in `cls` if:
         1) `value` is a member of `cls`, or
         2) `value` is the value of one of the `cls`'s members.
+        3) `value` is a pseudo-member (flags)
         """
         if isinstance(value, cls):
             return True
         try:
-            return value in cls._value2member_map_
-        except TypeError:
+            cls(value)
+            return True
+        except ValueError:
             return (
                     value in cls._unhashable_values_    # both structures are lists
                     or value in cls._hashable_values_
