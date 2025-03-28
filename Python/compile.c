@@ -1449,7 +1449,7 @@ _PyAST_Compile(mod_ty mod, PyObject *filename, PyCompilerFlags *pflags,
 }
 
 int
-_PyCompile_AstOptimize(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
+_PyCompile_AstProcess(mod_ty mod, PyObject *filename, PyCompilerFlags *cf,
                        int optimize, PyArena *arena, int no_const_folding)
 {
     _PyFutureFeatures future;
