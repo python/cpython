@@ -278,8 +278,7 @@ You can also access the :class:`local`-object's dictionary::
    >>> mydata.widgets
    []
 
-What's important about thread-local objects is that their data are
-local to a thread. If we access the data in a different thread::
+If we access the data in a different thread::
 
    >>> log = []
    >>> def f():
@@ -296,7 +295,7 @@ local to a thread. If we access the data in a different thread::
    [[], 11]
 
 we get different data.  Furthermore, changes made in the other thread
-don't affect data seen in this thread:
+don't affect data seen in this thread::
 
    >>> mydata.number
    42
