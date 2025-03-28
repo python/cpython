@@ -1387,13 +1387,29 @@ _Py_HandlePending(PyThreadState *tstate)
 
 #ifdef Py_REMOTE_DEBUG
     const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
-    if (config->remote_debug) {
-        if (tstate->remote_debugger_support.debugger_pending_call) {
-            tstate->remote_debugger_support.debugger_pending_call = 0;
-            const char *path = tstate->remote_debugger_support.debugger_script_path;
+    if (config->remote_debug == 1
+         && tstate->remote_debugger_support.debugger_pending_call == 1)
+    {
+        tstate->remote_debugger_support.debugger_pending_call = 0;
+
+        // Immediately make a copy in case of a race with another debugger
+        // process that's trying to write to the buffer. At least this way
+        // we'll be internally consistent: what we audit is what we run.
+        const size_t pathsz
+            = sizeof(tstate->remote_debugger_support.debugger_script_path);
+
+        char *path = PyMem_Malloc(pathsz);
+        if (path) {
+            // And don't assume the debugger correctly null terminated it.
+            memcpy(
+                path,
+                tstate->remote_debugger_support.debugger_script_path,
+                pathsz);
+            path[pathsz - 1] = '\0';
             if (*path) {
                 run_remote_debugger_script(path);
             }
+            PyMem_Free(path);
         }
     }
 #endif
