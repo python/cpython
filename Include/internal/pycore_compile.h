@@ -43,7 +43,7 @@ extern int _PyCompile_AstOptimize(
     struct _arena *arena,
     int syntax_check_only);
 
-extern int _PyAST_Optimize(
+extern int _PyAST_Process(
     struct _mod *,
     struct _arena *arena,
     PyObject *filename,
