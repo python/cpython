@@ -436,7 +436,7 @@ def dedent(text):
     margin = os.path.commonprefix([line for line in lines if line.lstrip()])
     margin_len = len(margin) - len(margin.lstrip())
 
-    return "\n".join([line[margin_len:] if line.lstrip() else "\n" if line.endswith("\n") else "" for line in lines])
+    return "\n".join([line[margin_len:] if line.lstrip() else "\n" if line and line[-1] == "\n" else "" for line in lines])
 
 
 def indent(text, prefix, predicate=None):
