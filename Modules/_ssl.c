@@ -73,6 +73,13 @@
 #  error "OPENSSL_THREADS is not defined, Python requires thread-safe OpenSSL"
 #endif
 
+#ifdef FORCE_ASSERTS
+#ifdef NDEBUG
+#undef NDEBUG
+#define _DEBUG
+#endif
+#include <assert.h>
+#endif /* FORCE_ASSERTS */
 
 
 struct py_ssl_error_code {
@@ -4426,6 +4433,12 @@ _ssl__SSLContext_load_dh_params_impl(PySSLContext *self, PyObject *filepath)
 {
     FILE *f;
     DH *dh;
+
+#if defined(MS_WINDOWS) && defined(_DEBUG)
+    PyErr_SetString(PyExc_RuntimeError,
+                    "unable to load_dh_params on Windows debug build");
+    return NULL;
+#endif
 
     f = Py_fopen(filepath, "rb");
     if (f == NULL)
