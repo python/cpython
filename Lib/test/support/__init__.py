@@ -7,9 +7,7 @@ import contextlib
 import dataclasses
 import functools
 import opcode
-import inspect
 import logging
-import _opcode
 import os
 import re
 import stat
