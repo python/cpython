@@ -9,10 +9,13 @@ from io import BytesIO, StringIO
 from textwrap import dedent
 from unittest import TestCase, mock
 from test import support
-from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
-                               INVALID_UNDERSCORE_LITERALS)
 from test.support import os_helper
 from test.support.script_helper import run_test_script, make_script, run_python_until_end
+from test.support.numbers import (
+    VALID_UNDERSCORE_LITERALS,
+    INVALID_UNDERSCORE_LITERALS,
+)
+
 
 # Converts a source string into a list of textual representation
 # of the tokens such as:
