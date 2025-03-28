@@ -182,11 +182,11 @@ class UnicodeNamesTest(unittest.TestCase):
         try:
             testdata = support.open_urlresource(url, encoding="utf-8",
                                                 check=check_version)
-        except urllib.error.HTTPError as e:
-            e.close()
-            self.skipTest(f"Could not retrieve {url} {e=}")
-        except (OSError, HTTPException) as e:
-            self.skipTest(f"Could not retrieve {url} {e=}")
+        except urllib.error.HTTPError as exc:
+            exc.close()
+            self.skipTest(f"Could not retrieve {url}: {exc!r}")
+        except (OSError, HTTPException) as exc:
+            self.skipTest(f"Could not retrieve {url}: {exc!r}")
         with testdata:
             for line in testdata:
                 line = line.strip()
