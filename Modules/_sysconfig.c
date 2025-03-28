@@ -65,14 +65,7 @@ _sysconfig_config_vars_impl(PyObject *module)
                          "t"
 #  endif
 #  ifdef Py_DEBUG
-#    ifndef _DEBUG
-#      error "_DEBUG not defined while Py_DEBUG is defined on Windows"
-#    endif
                          "d"
-#  else
-#    ifdef _DEBUG
-#      error "_DEBUG defined while Py_DEBUG is not defined on Windows"
-#    endif
 #  endif
                          "")
         < 0) {

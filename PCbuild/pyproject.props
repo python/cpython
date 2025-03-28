@@ -42,7 +42,7 @@
 
   <PropertyGroup>
     <_DebugPreprocessorDefinition>NDEBUG;</_DebugPreprocessorDefinition>
-    <_DebugPreprocessorDefinition Condition="$(Configuration) == 'Debug'">_DEBUG;</_DebugPreprocessorDefinition>
+    <_DebugPreprocessorDefinition Condition="$(Configuration) == 'Debug'">_DEBUG;Py_DEBUG;</_DebugPreprocessorDefinition>
     <_PyStatsPreprocessorDefinition>PyStats;</_PyStatsPreprocessorDefinition>
     <_PyStatsPreprocessorDefinition Condition="$(PySTATS) != ''">Py_STATS;</_PyStatsPreprocessorDefinition>
     <_PlatformPreprocessorDefinition>_WIN32;</_PlatformPreprocessorDefinition>

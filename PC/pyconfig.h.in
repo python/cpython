@@ -289,6 +289,11 @@ typedef int pid_t;
 #       include <stdio.h>
 #endif
 
+// _DEBUG implies Py_DEBUG
+#ifdef _DEBUG
+#       define Py_DEBUG
+#endif
+
 /* 64 bit ints are usually spelt __int64 unless compiler has overridden */
 #ifndef PY_LONG_LONG
 #       define PY_LONG_LONG __int64
@@ -319,21 +324,21 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
                         This is relevant when using build-system generator (e.g CMake) where
                         the linking is explicitly handled */
 #                       if defined(Py_GIL_DISABLED)
-#                       if defined(_DEBUG)
+#                       if defined(Py_DEBUG)
 #                               pragma comment(lib,"python314t_d.lib")
 #                       elif defined(Py_LIMITED_API)
 #                               pragma comment(lib,"python3t.lib")
 #                       else
 #                               pragma comment(lib,"python314t.lib")
-#                       endif /* _DEBUG */
+#                       endif /* Py_DEBUG */
 #                       else /* Py_GIL_DISABLED */
-#                       if defined(_DEBUG)
+#                       if defined(Py_DEBUG)
 #                               pragma comment(lib,"python314_d.lib")
 #                       elif defined(Py_LIMITED_API)
 #                               pragma comment(lib,"python3.lib")
 #                       else
 #                               pragma comment(lib,"python314.lib")
-#                       endif /* _DEBUG */
+#                       endif /* Py_DEBUG */
 #                       endif /* Py_GIL_DISABLED */
 #               endif /* _MSC_VER && !Py_NO_LINK_LIB */
 #       endif /* Py_BUILD_CORE */
@@ -374,10 +379,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #       define SIZEOF_TIME_T 4
 #       endif
 #       define ALIGNOF_MAX_ALIGN_T 8
-#endif
-
-#ifdef _DEBUG
-#       define Py_DEBUG
 #endif
 
 
