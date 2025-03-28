@@ -53,7 +53,7 @@ class CompilationTest(unittest.TestCase):
             trans_table_offset,
             hash_table_size,
             hash_table_offset,
-        ) = struct.unpack("Iiiiiii", mo_data[:28])
+        ) = struct.unpack("=Iiiiiii", mo_data[:28])
 
         self.assertEqual(magic, 0x950412de)
         self.assertEqual(version, 0)
