@@ -19,11 +19,12 @@
 
 from __future__ import annotations
 
-import _colorize  # type: ignore[import-not-found]
+import _colorize
 
 from abc import ABC, abstractmethod
 import ast
 import code
+import linecache
 from dataclasses import dataclass, field
 import os.path
 import sys
@@ -161,7 +162,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
         *,
         local_exit: bool = False,
     ) -> None:
-        super().__init__(locals=locals, filename=filename, local_exit=local_exit)  # type: ignore[call-arg]
+        super().__init__(locals=locals, filename=filename, local_exit=local_exit)
         self.can_colorize = _colorize.can_colorize()
 
     def showsyntaxerror(self, filename=None, **kwargs):
@@ -205,6 +206,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             item = wrapper([stmt])
             try:
                 code = self.compile.compiler(item, filename, the_symbol)
+                linecache._register_code(code, source, filename)
             except SyntaxError as e:
                 if e.args[0] == "'await' outside function":
                     python = os.path.basename(sys.executable)

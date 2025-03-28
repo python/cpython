@@ -2,13 +2,15 @@
 /* Interface to Sjoerd's portable C thread library */
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_interp.h"        // _PyInterpreterState.threads.count
 #include "pycore_lock.h"
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object_deferred.h" // _PyObject_SetDeferredRefcount()
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
-#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
 #include "pycore_time.h"          // _PyTime_FromSeconds()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
@@ -333,9 +335,6 @@ thread_run(void *boot_raw)
     // _PyRuntimeState_SetFinalizing() is called. At this point, all Python
     // threads must exit, except of the thread calling Py_Finalize() which
     // holds the GIL and must not exit.
-    //
-    // At this stage, tstate can be a dangling pointer (point to freed memory),
-    // it's ok to call _PyThreadState_MustExit() with a dangling pointer.
     if (_PyThreadState_MustExit(tstate)) {
         // Don't call PyThreadState_Clear() nor _PyThreadState_DeleteCurrent().
         // These functions are called on tstate indirectly by Py_Finalize()
@@ -385,8 +384,9 @@ exit:
 }
 
 static int
-force_done(ThreadHandle *handle)
+force_done(void *arg)
 {
+    ThreadHandle *handle = (ThreadHandle *)arg;
     assert(get_thread_handle_state(handle) == THREAD_HANDLE_STARTING);
     _PyEvent_Notify(&handle->thread_is_exiting);
     set_thread_handle_state(handle, THREAD_HANDLE_DONE);
@@ -459,13 +459,14 @@ ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
     return 0;
 
 start_failed:
-    _PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)force_done, self);
+    _PyOnceFlag_CallOnce(&self->once, force_done, self);
     return -1;
 }
 
 static int
-join_thread(ThreadHandle *handle)
+join_thread(void *arg)
 {
+    ThreadHandle *handle = (ThreadHandle*)arg;
     assert(get_thread_handle_state(handle) == THREAD_HANDLE_RUNNING);
     PyThread_handle_t os_handle;
     if (ThreadHandle_get_os_handle(handle, &os_handle)) {
@@ -539,8 +540,7 @@ ThreadHandle_join(ThreadHandle *self, PyTime_t timeout_ns)
         }
     }
 
-    if (_PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)join_thread,
-                             self) == -1) {
+    if (_PyOnceFlag_CallOnce(&self->once, join_thread, self) == -1) {
         return -1;
     }
     assert(get_thread_handle_state(self) == THREAD_HANDLE_DONE);
@@ -548,8 +548,9 @@ ThreadHandle_join(ThreadHandle *self, PyTime_t timeout_ns)
 }
 
 static int
-set_done(ThreadHandle *handle)
+set_done(void *arg)
 {
+    ThreadHandle *handle = (ThreadHandle*)arg;
     assert(get_thread_handle_state(handle) == THREAD_HANDLE_RUNNING);
     if (detach_thread(handle) < 0) {
         PyErr_SetString(ThreadError, "failed detaching handle");
@@ -567,7 +568,7 @@ ThreadHandle_set_done(ThreadHandle *self)
         return -1;
     }
 
-    if (_PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)set_done, self) ==
+    if (_PyOnceFlag_CallOnce(&self->once, set_done, self) ==
         -1) {
         return -1;
     }
@@ -2249,9 +2250,12 @@ thread_excepthook(PyObject *module, PyObject *args)
     PyObject *exc_tb = PyStructSequence_GET_ITEM(args, 2);
     PyObject *thread = PyStructSequence_GET_ITEM(args, 3);
 
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *file = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    PyObject *file;
+    if (_PySys_GetOptionalAttr( &_Py_ID(stderr), &file) < 0) {
+        return NULL;
+    }
     if (file == NULL || file == Py_None) {
+        Py_XDECREF(file);
         if (thread == Py_None) {
             /* do nothing if sys.stderr is None and thread is None */
             Py_RETURN_NONE;
@@ -2267,9 +2271,6 @@ thread_excepthook(PyObject *module, PyObject *args)
                when the thread was created */
             Py_RETURN_NONE;
         }
-    }
-    else {
-        Py_INCREF(file);
     }
 
     int res = thread_excepthook_file(file, exc_type, exc_value, exc_tb,
@@ -2393,8 +2394,16 @@ PyDoc_STRVAR(thread__get_main_thread_ident_doc,
 Internal only. Return a non-zero integer that uniquely identifies the main thread\n\
 of the main interpreter.");
 
+#if defined(__OpenBSD__)
+    /* pthread_*_np functions, especially pthread_{get,set}_name_np().
+       pthread_np.h exists on both OpenBSD and FreeBSD but the latter declares
+       pthread_getname_np() and pthread_setname_np() in pthread.h as long as
+       __BSD_VISIBLE remains set.
+     */
+#   include <pthread_np.h>
+#endif
 
-#if defined(HAVE_PTHREAD_GETNAME_NP) || defined(MS_WINDOWS)
+#if defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP) || defined(MS_WINDOWS)
 /*[clinic input]
 _thread._get_name
 
@@ -2409,7 +2418,12 @@ _thread__get_name_impl(PyObject *module)
     // Linux and macOS are limited to respectively 16 and 64 bytes
     char name[100];
     pthread_t thread = pthread_self();
+#ifdef HAVE_PTHREAD_GETNAME_NP
     int rc = pthread_getname_np(thread, name, Py_ARRAY_LENGTH(name));
+#else /* defined(HAVE_PTHREAD_GET_NAME_NP) */
+    int rc = 0; /* pthread_get_name_np() returns void */
+    pthread_get_name_np(thread, name, Py_ARRAY_LENGTH(name));
+#endif
     if (rc) {
         errno = rc;
         return PyErr_SetFromErrno(PyExc_OSError);
@@ -2436,10 +2450,10 @@ _thread__get_name_impl(PyObject *module)
     return name_obj;
 #endif
 }
-#endif  // HAVE_PTHREAD_GETNAME_NP
+#endif  // HAVE_PTHREAD_GETNAME_NP || HAVE_PTHREAD_GET_NAME_NP || MS_WINDOWS
 
 
-#if defined(HAVE_PTHREAD_SETNAME_NP) || defined(MS_WINDOWS)
+#if defined(HAVE_PTHREAD_SETNAME_NP) || defined(HAVE_PTHREAD_SET_NAME_NP) || defined(MS_WINDOWS)
 /*[clinic input]
 _thread.set_name
 
@@ -2488,9 +2502,13 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 #elif defined(__NetBSD__)
     pthread_t thread = pthread_self();
     int rc = pthread_setname_np(thread, "%s", (void *)name);
-#else
+#elif defined(HAVE_PTHREAD_SETNAME_NP)
     pthread_t thread = pthread_self();
     int rc = pthread_setname_np(thread, name);
+#else /* defined(HAVE_PTHREAD_SET_NAME_NP) */
+    pthread_t thread = pthread_self();
+    int rc = 0; /* pthread_set_name_np() returns void */
+    pthread_set_name_np(thread, name);
 #endif
     Py_DECREF(name_encoded);
     if (rc) {
@@ -2528,7 +2546,7 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
     Py_RETURN_NONE;
 #endif
 }
-#endif  // HAVE_PTHREAD_SETNAME_NP
+#endif  // HAVE_PTHREAD_SETNAME_NP || HAVE_PTHREAD_SET_NAME_NP || MS_WINDOWS
 
 
 static PyMethodDef thread_methods[] = {

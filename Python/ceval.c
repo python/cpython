@@ -10,31 +10,37 @@
 #include "pycore_cell.h"          // PyCell_GetRef()
 #include "pycore_ceval.h"
 #include "pycore_code.h"
+#include "pycore_dict.h"
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
+#include "pycore_floatobject.h"   // _PyFloat_ExactDealloc()
+#include "pycore_frame.h"
 #include "pycore_function.h"
+#include "pycore_genobject.h"     // _PyCoro_GetAwaitableIter()
+#include "pycore_import.h"        // _PyImport_IsDefaultImportFunc()
 #include "pycore_instruments.h"
+#include "pycore_interpframe.h"   // _PyFrame_SetStackPointer()
 #include "pycore_intrinsics.h"
 #include "pycore_jit.h"
+#include "pycore_list.h"          // _PyList_GetItemRef()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_opcode_metadata.h" // EXTRA_CASES
-#include "pycore_optimizer.h"     // _PyUOpExecutor_Type
 #include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
+#include "pycore_optimizer.h"     // _PyUOpExecutor_Type
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_*
+#include "pycore_pyerrors.h"
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
 #include "pycore_setobject.h"     // _PySet_Update()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
+#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttrString()
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_uop_ids.h"       // Uops
-#include "pycore_pyerrors.h"
 
-#include "pycore_dict.h"
 #include "dictobject.h"
-#include "pycore_frame.h"
 #include "frameobject.h"          // _PyInterpreterFrame_GetLine
 #include "opcode.h"
 #include "pydtrace.h"
@@ -79,6 +85,7 @@
         } \
         _Py_DECREF_STAT_INC(); \
         if (--op->ob_refcnt == 0) { \
+            _PyReftracerTrack(op, PyRefTracer_DESTROY); \
             destructor dealloc = Py_TYPE(op)->tp_dealloc; \
             (*dealloc)(op); \
         } \
@@ -133,35 +140,54 @@
 
 #ifdef Py_DEBUG
 static void
+dump_item(_PyStackRef item)
+{
+    if (PyStackRef_IsNull(item)) {
+        printf("<NULL>");
+        return;
+    }
+    PyObject *obj = PyStackRef_AsPyObjectBorrow(item);
+    if (obj == NULL) {
+        printf("<nil>");
+        return;
+    }
+    if (
+        obj == Py_None
+        || PyBool_Check(obj)
+        || PyLong_CheckExact(obj)
+        || PyFloat_CheckExact(obj)
+        || PyUnicode_CheckExact(obj)
+    ) {
+        if (PyObject_Print(obj, stdout, 0) == 0) {
+            return;
+        }
+        PyErr_Clear();
+    }
+    // Don't call __repr__(), it might recurse into the interpreter.
+    printf("<%s at %p>", Py_TYPE(obj)->tp_name, (void *)obj);
+}
+
+static void
 dump_stack(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
 {
     _PyFrame_SetStackPointer(frame, stack_pointer);
+    _PyStackRef *locals_base = _PyFrame_GetLocalsArray(frame);
     _PyStackRef *stack_base = _PyFrame_Stackbase(frame);
     PyObject *exc = PyErr_GetRaisedException();
+    printf("    locals=[");
+    for (_PyStackRef *ptr = locals_base; ptr < stack_base; ptr++) {
+        if (ptr != locals_base) {
+            printf(", ");
+        }
+        dump_item(*ptr);
+    }
+    printf("]\n");
     printf("    stack=[");
     for (_PyStackRef *ptr = stack_base; ptr < stack_pointer; ptr++) {
         if (ptr != stack_base) {
             printf(", ");
         }
-        PyObject *obj = PyStackRef_AsPyObjectBorrow(*ptr);
-        if (obj == NULL) {
-            printf("<nil>");
-            continue;
-        }
-        if (
-            obj == Py_None
-            || PyBool_Check(obj)
-            || PyLong_CheckExact(obj)
-            || PyFloat_CheckExact(obj)
-            || PyUnicode_CheckExact(obj)
-        ) {
-            if (PyObject_Print(obj, stdout, 0) == 0) {
-                continue;
-            }
-            PyErr_Clear();
-        }
-        // Don't call __repr__(), it might recurse into the interpreter.
-        printf("<%s at %p>", Py_TYPE(obj)->tp_name, PyStackRef_AsPyObjectBorrow(*ptr));
+        dump_item(*ptr);
     }
     printf("]\n");
     fflush(stdout);
@@ -345,6 +371,65 @@ _Py_EnterRecursiveCallUnchecked(PyThreadState *tstate)
 #  define Py_C_STACK_SIZE 4000000
 #endif
 
+#if defined(__EMSCRIPTEN__)
+
+// Temporary workaround to make `pthread_getattr_np` work on Emscripten.
+// Emscripten 4.0.6 will contain a fix:
+// https://github.com/emscripten-core/emscripten/pull/23887
+
+#include "emscripten/stack.h"
+
+#define pthread_attr_t workaround_pthread_attr_t
+#define pthread_getattr_np workaround_pthread_getattr_np
+#define pthread_attr_getguardsize workaround_pthread_attr_getguardsize
+#define pthread_attr_getstack workaround_pthread_attr_getstack
+#define pthread_attr_destroy workaround_pthread_attr_destroy
+
+typedef struct {
+    void *_a_stackaddr;
+    size_t _a_stacksize, _a_guardsize;
+} pthread_attr_t;
+
+extern __attribute__((__visibility__("hidden"))) unsigned __default_guardsize;
+
+// Modified version of pthread_getattr_np from the upstream PR.
+
+int pthread_getattr_np(pthread_t thread, pthread_attr_t *attr) {
+  attr->_a_stackaddr = (void*)emscripten_stack_get_base();
+  attr->_a_stacksize = emscripten_stack_get_base() - emscripten_stack_get_end();
+  attr->_a_guardsize = __default_guardsize;
+  return 0;
+}
+
+// These three functions copied without any changes from Emscripten libc.
+
+int pthread_attr_getguardsize(const pthread_attr_t *restrict a, size_t *restrict size)
+{
+	*size = a->_a_guardsize;
+	return 0;
+}
+
+int pthread_attr_getstack(const pthread_attr_t *restrict a, void **restrict addr, size_t *restrict size)
+{
+/// XXX musl is not standard-conforming? It should not report EINVAL if _a_stackaddr is zero, and it should
+///     report EINVAL if a is null: http://pubs.opengroup.org/onlinepubs/009695399/functions/pthread_attr_getstack.html
+	if (!a) return EINVAL;
+//	if (!a->_a_stackaddr)
+//		return EINVAL;
+
+	*size = a->_a_stacksize;
+	*addr = (void *)(a->_a_stackaddr - *size);
+	return 0;
+}
+
+int pthread_attr_destroy(pthread_attr_t *a)
+{
+	return 0;
+}
+
+#endif
+
+
 void
 _Py_InitializeRecursionLimits(PyThreadState *tstate)
 {
@@ -372,7 +457,12 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
     if (err == 0) {
         uintptr_t base = ((uintptr_t)stack_addr) + guard_size;
         _tstate->c_stack_top = base + stack_size;
+#ifdef _Py_THREAD_SANITIZER
+        // Thread sanitizer crashes if we use a bit more than half the stack.
+        _tstate->c_stack_soft_limit = base + (stack_size / 2);
+#else
         _tstate->c_stack_soft_limit = base + PYOS_STACK_MARGIN_BYTES * 2;
+#endif
         _tstate->c_stack_hard_limit = base + PYOS_STACK_MARGIN_BYTES;
         assert(_tstate->c_stack_soft_limit < here_addr);
         assert(here_addr < _tstate->c_stack_top);
@@ -1389,7 +1479,6 @@ initialize_locals(PyThreadState *tstate, PyFunctionObject *func,
 {
     PyCodeObject *co = (PyCodeObject*)func->func_code;
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
-
     /* Create a dictionary for keyword parameters (**kwags) */
     PyObject *kwdict;
     Py_ssize_t i;
@@ -2822,13 +2911,18 @@ _PyEval_ImportFrom(PyThreadState *tstate, PyObject *v, PyObject *name)
     }
     int is_possibly_shadowing_stdlib = 0;
     if (is_possibly_shadowing) {
-        PyObject *stdlib_modules = PySys_GetObject("stdlib_module_names");
+        PyObject *stdlib_modules;
+        if (_PySys_GetOptionalAttrString("stdlib_module_names", &stdlib_modules) < 0) {
+            goto done;
+        }
         if (stdlib_modules && PyAnySet_Check(stdlib_modules)) {
             is_possibly_shadowing_stdlib = PySet_Contains(stdlib_modules, mod_name_or_unknown);
             if (is_possibly_shadowing_stdlib < 0) {
+                Py_DECREF(stdlib_modules);
                 goto done;
             }
         }
+        Py_XDECREF(stdlib_modules);
     }
 
     if (origin == NULL && PyModule_Check(v)) {
@@ -3028,7 +3122,7 @@ _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwarg
     }
     else if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
         PyObject *exc = _PyErr_GetRaisedException(tstate);
-        PyObject *args = ((PyBaseExceptionObject *)exc)->args;
+        PyObject *args = PyException_GetArgs(exc);
         if (exc && PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1) {
             _PyErr_Clear(tstate);
             PyObject *funcstr = _PyObject_FunctionStr(func);
@@ -3045,6 +3139,7 @@ _PyEval_FormatKwargsError(PyThreadState *tstate, PyObject *func, PyObject *kwarg
         else {
             _PyErr_SetRaisedException(tstate, exc);
         }
+        Py_DECREF(args);
     }
 }
 
