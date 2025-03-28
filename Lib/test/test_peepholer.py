@@ -150,7 +150,7 @@ class TestTranforms(BytecodeTestCase):
                 self.assertNotInBytecode(code, 'UNPACK_SEQUENCE')
                 self.check_lnotab(code)
 
-    def test_folding_of_tuples_of_constants(self):
+    def test_constant_folding_tuples_of_constants(self):
         for line, elem in (
             ('a = 1,2,3', (1, 2, 3)),
             ('("a","b","c")', ('a', 'b', 'c')),
@@ -191,7 +191,7 @@ class TestTranforms(BytecodeTestCase):
             ],)
         self.check_lnotab(crater)
 
-    def test_folding_of_lists_of_constants(self):
+    def test_constant_folding_lists_of_constants(self):
         for line, elem in (
             # in/not in constants with BUILD_LIST should be folded to a tuple:
             ('a in [1,2,3]', (1, 2, 3)),
@@ -205,7 +205,7 @@ class TestTranforms(BytecodeTestCase):
                 self.assertNotInBytecode(code, 'BUILD_LIST')
                 self.check_lnotab(code)
 
-    def test_folding_of_sets_of_constants(self):
+    def test_constant_folding_sets_of_constants(self):
         for line, elem in (
             # in/not in constants with BUILD_SET should be folded to a frozenset:
             ('a in {1,2,3}', frozenset({1, 2, 3})),
@@ -383,7 +383,7 @@ class TestTranforms(BytecodeTestCase):
                     self.assertNotInBytecode(code, 'LOAD_SMALL_INT')
                 self.check_lnotab(code)
 
-    def test_folding_unaryop(self):
+    def test_constant_folding_unaryop(self):
         intrinsic_positive = 5
         tests = [
             ('-0', 'UNARY_NEGATIVE', None, True, 'LOAD_SMALL_INT', 0),
@@ -427,7 +427,7 @@ class TestTranforms(BytecodeTestCase):
             self.assertFalse(instr.opname.startswith('UNARY_'))
         self.check_lnotab(negzero)
 
-    def test_folding_binop(self):
+    def test_constant_folding_binop(self):
         tests = [
             ('1 + 2', 'NB_ADD', True, 'LOAD_SMALL_INT', 3),
             ('1 + 2 + 3', 'NB_ADD', True, 'LOAD_SMALL_INT', 6),
