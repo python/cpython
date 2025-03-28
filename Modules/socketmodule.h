@@ -18,6 +18,10 @@
  */
 #ifdef AF_BTH
 # include <ws2bth.h>
+# ifdef __clang__
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wpragma-pack"
+# endif
 # include <pshpack1.h>
 
 /*
@@ -51,7 +55,10 @@ struct SOCKADDR_BTH_REDEF {
 
 };
 # include <poppack.h>
-#endif
+# ifdef __clang__
+#  pragma clang diagnostic pop
+# endif
+#endif /* AF_BTH */
 
 /* Windows 'supports' CMSG_LEN, but does not follow the POSIX standard
  * interface at all, so there is no point including the code that
