@@ -403,9 +403,9 @@ def _init_non_posix(vars):
 
     # Add EXT_SUFFIX, SOABI, ABIFLAGS, Py_DEBUG, and Py_GIL_DISABLED
     # NOTE: ABIFLAGS is only an emulated value. It is not present during build
-    #       on Windows. sys.abiflags is absent on Windows and `vars['abiflags']
-    #       is already widely used to calculate paths. vars['abiflags'] should
-    #       remain empty string.
+    #       on Windows. sys.abiflags is absent on Windows and vars['abiflags']
+    #       is already widely used to calculate paths, so it should remain an
+    #       empty string.
     vars.update(_sysconfig.config_vars())  # defined in Modules/_sysconfig.c
 
     vars['LIBDIR'] = _safe_realpath(os.path.join(get_config_var('installed_base'), 'libs'))
