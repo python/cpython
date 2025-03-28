@@ -235,78 +235,6 @@ class TestTranforms(BytecodeTestCase):
         self.assertTrue(g(4))
         self.check_lnotab(g)
 
-
-    def test_folding_of_binops_on_constants(self):
-        for line, elem in (
-            ('a = 2+3+4', 9),                   # chained fold
-            ('"@"*4', '@@@@'),                  # check string ops
-            ('a="abc" + "def"', 'abcdef'),      # check string ops
-            ('a = 3**4', 81),                   # binary power
-            ('a = 3*4', 12),                    # binary multiply
-            ('a = 13//4', 3),                   # binary floor divide
-            ('a = 14%4', 2),                    # binary modulo
-            ('a = 2+3', 5),                     # binary add
-            ('a = 13-4', 9),                    # binary subtract
-            ('a = (12,13)[1]', 13),             # binary subscr
-            ('a = 13 << 2', 52),                # binary lshift
-            ('a = 13 >> 2', 3),                 # binary rshift
-            ('a = 13 & 7', 5),                  # binary and
-            ('a = 13 ^ 7', 10),                 # binary xor
-            ('a = 13 | 7', 15),                 # binary or
-            ):
-            with self.subTest(line=line):
-                code = compile(line, '', 'single')
-                if isinstance(elem, int):
-                    self.assertInBytecode(code, 'LOAD_SMALL_INT', elem)
-                else:
-                    self.assertInBytecode(code, 'LOAD_CONST', elem)
-                for instr in dis.get_instructions(code):
-                    self.assertFalse(instr.opname.startswith('BINARY_'))
-                self.check_lnotab(code)
-
-        # Verify that unfoldables are skipped
-        code = compile('a=2+"b"', '', 'single')
-        self.assertInBytecode(code, 'LOAD_SMALL_INT', 2)
-        self.assertInBytecode(code, 'LOAD_CONST', 'b')
-        self.check_lnotab(code)
-
-        # Verify that large sequences do not result from folding
-        code = compile('a="x"*10000', '', 'single')
-        self.assertInBytecode(code, 'LOAD_CONST', 10000)
-        self.assertNotIn("x"*10000, code.co_consts)
-        self.check_lnotab(code)
-        code = compile('a=1<<1000', '', 'single')
-        self.assertInBytecode(code, 'LOAD_CONST', 1000)
-        self.assertNotIn(1<<1000, code.co_consts)
-        self.check_lnotab(code)
-        code = compile('a=2**1000', '', 'single')
-        self.assertInBytecode(code, 'LOAD_CONST', 1000)
-        self.assertNotIn(2**1000, code.co_consts)
-        self.check_lnotab(code)
-
-    def test_binary_subscr_on_unicode(self):
-        # valid code get optimized
-        code = compile('"foo"[0]', '', 'single')
-        self.assertInBytecode(code, 'LOAD_CONST', 'f')
-        self.assertNotInBytecode(code, 'BINARY_OP')
-        self.check_lnotab(code)
-        code = compile('"\u0061\uffff"[1]', '', 'single')
-        self.assertInBytecode(code, 'LOAD_CONST', '\uffff')
-        self.assertNotInBytecode(code,'BINARY_OP')
-        self.check_lnotab(code)
-
-        # With PEP 393, non-BMP char get optimized
-        code = compile('"\U00012345"[0]', '', 'single')
-        self.assertInBytecode(code, 'LOAD_CONST', '\U00012345')
-        self.assertNotInBytecode(code, 'BINARY_OP')
-        self.check_lnotab(code)
-
-        # invalid code doesn't get optimized
-        # out of range
-        code = compile('"fuu"[10]', '', 'single')
-        self.assertInBytecode(code, 'BINARY_OP')
-        self.check_lnotab(code)
-
     def test_elim_extra_return(self):
         # RETURN LOAD_CONST None RETURN  -->  RETURN
         def f(x):
@@ -523,72 +451,116 @@ class TestTranforms(BytecodeTestCase):
 
     def test_folding_binop(self):
         tests = [
-            ('1 + 2', False, 'NB_ADD'),
-            ('1 + 2 + 3', False, 'NB_ADD'),
-            ('1 + ""', True, 'NB_ADD'),
-            ('1 - 2', False, 'NB_SUBTRACT'),
-            ('1 - 2 - 3', False, 'NB_SUBTRACT'),
-            ('1 - ""', True, 'NB_SUBTRACT'),
-            ('2 * 2', False, 'NB_MULTIPLY'),
-            ('2 * 2 * 2', False, 'NB_MULTIPLY'),
-            ('2 / 2', False, 'NB_TRUE_DIVIDE'),
-            ('2 / 2 / 2', False, 'NB_TRUE_DIVIDE'),
-            ('2 / ""', True, 'NB_TRUE_DIVIDE'),
-            ('2 // 2', False, 'NB_FLOOR_DIVIDE'),
-            ('2 // 2 // 2', False, 'NB_FLOOR_DIVIDE'),
-            ('2 // ""', True, 'NB_FLOOR_DIVIDE'),
-            ('2 % 2', False, 'NB_REMAINDER'),
-            ('2 % 2 % 2', False, 'NB_REMAINDER'),
-            ('2 % ()', True, 'NB_REMAINDER'),
-            ('2 ** 2', False, 'NB_POWER'),
-            ('2 ** 2 ** 2', False, 'NB_POWER'),
-            ('2 ** ""', True, 'NB_POWER'),
-            ('2 << 2', False, 'NB_LSHIFT'),
-            ('2 << 2 << 2', False, 'NB_LSHIFT'),
-            ('2 << ""', True, 'NB_LSHIFT'),
-            ('2 >> 2', False, 'NB_RSHIFT'),
-            ('2 >> 2 >> 2', False, 'NB_RSHIFT'),
-            ('2 >> ""', True, 'NB_RSHIFT'),
-            ('2 | 2', False, 'NB_OR'),
-            ('2 | 2 | 2', False, 'NB_OR'),
-            ('2 | ""', True, 'NB_OR'),
-            ('2 & 2', False, 'NB_AND'),
-            ('2 & 2 & 2', False, 'NB_AND'),
-            ('2 & ""', True, 'NB_AND'),
-            ('2 ^ 2', False, 'NB_XOR'),
-            ('2 ^ 2 ^ 2', False, 'NB_XOR'),
-            ('2 ^ ""', True, 'NB_XOR'),
-            ('(1, )[0]', False, 'NB_SUBSCR'),
-            ('(1, )[-1]', False, 'NB_SUBSCR'),
-            ('(1 + 2, )[0]', False, 'NB_SUBSCR'),
-            ('(1, (1, 2))[1][1]', False, 'NB_SUBSCR'),
-            ('(1, 2)[2-1]', False, 'NB_SUBSCR'),
-            ('(1, (1, 2))[1][2-1]', False, 'NB_SUBSCR'),
-            ('(1, (1, 2))[1:6][0][2-1]', False, 'NB_SUBSCR'),
-            ('"a"[0]', False, 'NB_SUBSCR'),
-            ('("a" + "b")[1]', False, 'NB_SUBSCR'),
-            ('("a" + "b", )[0][1]', False, 'NB_SUBSCR'),
-            ('("a" * 10)[9]', False, 'NB_SUBSCR'),
-            ('(1, )[1]', True, 'NB_SUBSCR'),
-            ('(1, )[-2]', True, 'NB_SUBSCR'),
-            ('"a"[1]', True, 'NB_SUBSCR'),
-            ('"a"[-2]', True, 'NB_SUBSCR'),
-            ('("a" + "b")[2]', True, 'NB_SUBSCR'),
-            ('("a" + "b", )[0][2]', True, 'NB_SUBSCR'),
-            ('("a" + "b", )[1][0]', True, 'NB_SUBSCR'),
-            ('("a" * 10)[10]', True, 'NB_SUBSCR'),
-            ('(1, (1, 2))[2:6][0][2-1]', True, 'NB_SUBSCR'),
-
+            ('1 + 2', 'NB_ADD', True, 'LOAD_SMALL_INT', 3),
+            ('1 + 2 + 3', 'NB_ADD', True, 'LOAD_SMALL_INT', 6),
+            ('1 + ""', 'NB_ADD', False, None, None),
+            ('1 - 2', 'NB_SUBTRACT', True, 'LOAD_CONST', -1),
+            ('1 - 2 - 3', 'NB_SUBTRACT', True, 'LOAD_CONST', -4),
+            ('1 - ""', 'NB_SUBTRACT', False, None, None),
+            ('2 * 2', 'NB_MULTIPLY', True, 'LOAD_SMALL_INT', 4),
+            ('2 * 2 * 2', 'NB_MULTIPLY', True, 'LOAD_SMALL_INT', 8),
+            ('2 / 2', 'NB_TRUE_DIVIDE', True, 'LOAD_CONST', 1.0),
+            ('2 / 2 / 2', 'NB_TRUE_DIVIDE', True, 'LOAD_CONST', 0.5),
+            ('2 / ""', 'NB_TRUE_DIVIDE', False, None, None),
+            ('2 // 2', 'NB_FLOOR_DIVIDE', True, 'LOAD_SMALL_INT', 1),
+            ('2 // 2 // 2', 'NB_FLOOR_DIVIDE', True, 'LOAD_SMALL_INT', 0),
+            ('2 // ""', 'NB_FLOOR_DIVIDE', False, None, None),
+            ('2 % 2', 'NB_REMAINDER', True, 'LOAD_SMALL_INT', 0),
+            ('2 % 2 % 2', 'NB_REMAINDER', True, 'LOAD_SMALL_INT', 0),
+            ('2 % ()', 'NB_REMAINDER', False, None, None),
+            ('2 ** 2', 'NB_POWER', True, 'LOAD_SMALL_INT', 4),
+            ('2 ** 2 ** 2', 'NB_POWER', True, 'LOAD_SMALL_INT', 16),
+            ('2 ** ""', 'NB_POWER', False, None, None),
+            ('2 << 2', 'NB_LSHIFT', True, 'LOAD_SMALL_INT', 8),
+            ('2 << 2 << 2', 'NB_LSHIFT', True, 'LOAD_SMALL_INT', 32),
+            ('2 << ""', 'NB_LSHIFT', False, None, None),
+            ('2 >> 2', 'NB_RSHIFT', True, 'LOAD_SMALL_INT', 0),
+            ('2 >> 2 >> 2', 'NB_RSHIFT', True, 'LOAD_SMALL_INT', 0),
+            ('2 >> ""', 'NB_RSHIFT', False, None, None),
+            ('2 | 2', 'NB_OR', True, 'LOAD_SMALL_INT', 2),
+            ('2 | 2 | 2', 'NB_OR', True, 'LOAD_SMALL_INT', 2),
+            ('2 | ""', 'NB_OR', False, None, None),
+            ('2 & 2', 'NB_AND', True, 'LOAD_SMALL_INT', 2),
+            ('2 & 2 & 2', 'NB_AND', True, 'LOAD_SMALL_INT', 2),
+            ('2 & ""', 'NB_AND', False, None, None),
+            ('2 ^ 2', 'NB_XOR', True, 'LOAD_SMALL_INT', 0),
+            ('2 ^ 2 ^ 2', 'NB_XOR', True, 'LOAD_SMALL_INT', 2),
+            ('2 ^ ""', 'NB_XOR', False, None, None),
+            ('(1, )[0]', 'NB_SUBSCR', True, 'LOAD_SMALL_INT', 1),
+            ('(1, )[-1]', 'NB_SUBSCR', True, 'LOAD_SMALL_INT', 1),
+            ('(1 + 2, )[0]', 'NB_SUBSCR', True, 'LOAD_SMALL_INT', 3),
+            ('(1, (1, 2))[1][1]', 'NB_SUBSCR', True, 'LOAD_SMALL_INT', 2),
+            ('(1, 2)[2-1]', 'NB_SUBSCR', True, 'LOAD_SMALL_INT', 2),
+            ('(1, (1, 2))[1][2-1]', 'NB_SUBSCR', True, 'LOAD_SMALL_INT', 2),
+            ('(1, (1, 2))[1:6][0][2-1]', 'NB_SUBSCR', True, 'LOAD_SMALL_INT', 2),
+            ('"a"[0]', 'NB_SUBSCR', True, 'LOAD_CONST', 'a'),
+            ('("a" + "b")[1]', 'NB_SUBSCR', True, 'LOAD_CONST', 'b'),
+            ('("a" + "b", )[0][1]', 'NB_SUBSCR', True, 'LOAD_CONST', 'b'),
+            ('("a" * 10)[9]', 'NB_SUBSCR', True, 'LOAD_CONST', 'a'),
+            ('(1, )[1]', 'NB_SUBSCR', False, None, None),
+            ('(1, )[-2]', 'NB_SUBSCR', False, None, None),
+            ('"a"[1]', 'NB_SUBSCR', False, None, None),
+            ('"a"[-2]', 'NB_SUBSCR', False, None, None),
+            ('("a" + "b")[2]', 'NB_SUBSCR', False, None, None),
+            ('("a" + "b", )[0][2]', 'NB_SUBSCR', False, None, None),
+            ('("a" + "b", )[1][0]', 'NB_SUBSCR', False, None, None),
+            ('("a" * 10)[10]', 'NB_SUBSCR', False, None, None),
+            ('(1, (1, 2))[2:6][0][2-1]', 'NB_SUBSCR', False, None, None),
         ]
-        for expr, has_error, nb_op in tests:
-            with self.subTest(expr=expr, has_error=has_error):
+        for (
+            expr,
+            nb_op,
+            is_optimized,
+            optimized_opcode,
+            optimized_argval
+        ) in tests:
+            with self.subTest(expr=expr, is_optimized=is_optimized):
                 code = compile(expr, '', 'single')
                 nb_op_val = get_binop_argval(nb_op)
-                if not has_error:
+                if is_optimized:
                     self.assertNotInBytecode(code, 'BINARY_OP', argval=nb_op_val)
+                    self.assertInBytecode(code, optimized_opcode, argval=optimized_argval)
                 else:
                     self.assertInBytecode(code, 'BINARY_OP', argval=nb_op_val)
                 self.check_lnotab(code)
+
+        # Verify that large sequences do not result from folding
+        code = compile('"x"*10000', '', 'single')
+        self.assertInBytecode(code, 'LOAD_CONST', 10000)
+        self.assertNotIn("x"*10000, code.co_consts)
+        self.check_lnotab(code)
+        code = compile('1<<1000', '', 'single')
+        self.assertInBytecode(code, 'LOAD_CONST', 1000)
+        self.assertNotIn(1<<1000, code.co_consts)
+        self.check_lnotab(code)
+        code = compile('2**1000', '', 'single')
+        self.assertInBytecode(code, 'LOAD_CONST', 1000)
+        self.assertNotIn(2**1000, code.co_consts)
+        self.check_lnotab(code)
+
+        # Test binary subscript on unicode
+        # valid code get optimized
+        code = compile('"foo"[0]', '', 'single')
+        self.assertInBytecode(code, 'LOAD_CONST', 'f')
+        self.assertNotInBytecode(code, 'BINARY_OP')
+        self.check_lnotab(code)
+        code = compile('"\u0061\uffff"[1]', '', 'single')
+        self.assertInBytecode(code, 'LOAD_CONST', '\uffff')
+        self.assertNotInBytecode(code,'BINARY_OP')
+        self.check_lnotab(code)
+
+        # With PEP 393, non-BMP char get optimized
+        code = compile('"\U00012345"[0]', '', 'single')
+        self.assertInBytecode(code, 'LOAD_CONST', '\U00012345')
+        self.assertNotInBytecode(code, 'BINARY_OP')
+        self.check_lnotab(code)
+
+        # invalid code doesn't get optimized
+        # out of range
+        code = compile('"fuu"[10]', '', 'single')
+        self.assertInBytecode(code, 'BINARY_OP')
+        self.check_lnotab(code)
+
 
     def test_constant_folding_remove_nop_location(self):
         sources = [
