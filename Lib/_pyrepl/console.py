@@ -153,8 +153,6 @@ class Console(ABC):
 
 
 class InteractiveColoredConsole(code.InteractiveConsole):
-    STATEMENT_FAILED = object()
-
     def __init__(
         self,
         locals: dict[str, object] | None = None,
@@ -175,16 +173,6 @@ class InteractiveColoredConsole(code.InteractiveConsole):
                 colorize=self.can_colorize,
                 limit=traceback.BUILTIN_EXCEPTION_LIMIT)
         self.write(''.join(lines))
-
-    def runcode(self, code):
-        try:
-            exec(code, self.locals)
-        except SystemExit:
-            raise
-        except BaseException:
-            self.showtraceback()
-            return self.STATEMENT_FAILED
-        return None
 
     def runsource(self, source, filename="<input>", symbol="single"):
         try:
@@ -223,7 +211,5 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             if code is None:
                 return True
 
-            result = self.runcode(code)
-            if result is self.STATEMENT_FAILED:
-                break
+            self.runcode(code)
         return False
