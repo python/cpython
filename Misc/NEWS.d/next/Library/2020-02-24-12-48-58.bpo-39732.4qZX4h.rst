@@ -1,0 +1,2 @@
+Add support for reading and writing :class:`plistlib.UID` tokens in XML
+plists.
