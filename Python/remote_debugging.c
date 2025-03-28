@@ -422,6 +422,28 @@ exit:
 
 #ifdef MS_WINDOWS
 
+static BOOL is_process64Bit(HANDLE hProcess) {
+    BOOL isWow64 = FALSE;
+    if (IsWow64Process(hProcess, &isWow64)) {
+        return !isWow64;
+    }
+    else {
+        PyErr_SetString(PyExc_RuntimeError, "Failed to determine the architecture of the process.");
+        return FALSE;
+    }
+}
+
+static
+BOOL is_current_process64Bit() {
+#if defined(_WIN64)
+    return TRUE;
+#elif defined(_WIN32)
+    return is_process64Bit(GetCurrentProcess());
+#else
+    return FALSE;
+#endif
+}
+
 static void* analyze_pe(const wchar_t* mod_path, BYTE* remote_base, const char* secname) {
     HANDLE hFile = CreateFileW(mod_path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
@@ -482,6 +504,16 @@ static void* analyze_pe(const wchar_t* mod_path, BYTE* remote_base, const char* 
 
 static uintptr_t
 search_windows_map_for_section(proc_handle_t* handle, const char* secname, const wchar_t* substr) {
+    // Check if the architecture of the current process matches the target process
+    BOOL currentProcess64Bit = is_current_process64Bit();
+    BOOL targetProcess64Bit = is_process64Bit(handle->hProcess);
+
+    // If the architectures of the current and target processes differ, abort
+    if (currentProcess64Bit != targetProcess64Bit) {
+        PyErr_SetString(PyExc_RuntimeError, "Bitness mismatch between current process and target process.");
+        return 0;
+    }
+
     HANDLE hProcSnap;
     do {
         hProcSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, handle->pid);
