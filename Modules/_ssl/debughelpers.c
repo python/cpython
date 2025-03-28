@@ -164,6 +164,13 @@ _PySSLContext_get_keylog_filename(PySSLContext *self, void *c) {
 static int
 _PySSLContext_set_keylog_filename(PySSLContext *self, PyObject *arg, void *c) {
     FILE *fp;
+
+#if defined(MS_WINDOWS) && defined(_DEBUG)
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "set_keylog_filename: unavailable on Windows debug build");
+    return -1;
+#endif
+
     /* Reset variables and callback first */
     SSL_CTX_set_keylog_callback(self->ctx, NULL);
     Py_CLEAR(self->keylog_filename);

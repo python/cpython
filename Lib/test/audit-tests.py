@@ -208,7 +208,15 @@ def test_open(testfn):
             if not fn:
                 continue
             with assertRaises(RuntimeError):
-                fn(*args)
+                try:
+                    fn(*args)
+                except NotImplementedError:
+                    if fn == load_dh_params:
+                        # Not callable in some builds
+                        load_dh_params = None
+                        raise RuntimeError
+                    else:
+                        raise
 
     actual_mode = [(a[0], a[1]) for e, a in hook.seen if e == "open" and a[1]]
     actual_flag = [(a[0], a[2]) for e, a in hook.seen if e == "open" and not a[1]]
