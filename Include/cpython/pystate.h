@@ -32,7 +32,7 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 /* Remote debugger support */
 # define MAX_SCRIPT_PATH_SIZE 512
 typedef struct _remote_debugger_support {
-    int debugger_pending_call;
+    int32_t debugger_pending_call;
     char debugger_script_path[MAX_SCRIPT_PATH_SIZE];
 } _PyRemoteDebuggerSupport;
 
