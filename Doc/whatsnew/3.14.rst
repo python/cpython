@@ -97,7 +97,7 @@ The :keyword:`except` and :keyword:`except*` expressions now allow
 parentheses to be omitted when there is only one exception type.
 For example the following expressions are now valid:
 
-  .. code-block:: python
+.. code-block:: python
 
       try:
           release_new_sleep_token_album()
