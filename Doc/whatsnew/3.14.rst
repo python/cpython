@@ -111,7 +111,7 @@ For example the following expressions are now valid:
 
 Check :pep:`758` for more details.
 
-(Contributed by Pablo Galindo and Brett Cannin in :issue:`131831`.)
+(Contributed by Pablo Galindo and Brett Cannon in :issue:`131831`.)
 
 .. _whatsnew314-pep649:
 
