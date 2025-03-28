@@ -615,13 +615,17 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         abiflags = sysconfig.get_config_var('abiflags')
         ABIFLAGS = sysconfig.get_config_var('ABIFLAGS')
 
+        self.assertIsInstance(abiflags, str)
+        self.assertIsInstance(ABIFLAGS, str)
         self.assertIn(abiflags, ABIFLAGS)
+        if ABIFLAGS:
+            self.assertTrue(ABIFLAGS.isalpha(), ABIFLAGS)
 
         if os.name == 'nt':
             self.assertEqual(abiflags, '')
 
         if support.Py_DEBUG:
-            self.assertIn('d', ABIFLAGS)
+            self.assertEndsWith(ABIFLAGS, 'd')
         else:
             self.assertNotIn('d', ABIFLAGS)
         if support.Py_GIL_DISABLED:
