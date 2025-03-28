@@ -595,20 +595,29 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
     def test_always_set_ABIFLAGS(self):
         self.assertIn('ABIFLAGS', sysconfig.get_config_vars())
         self.assertIsInstance(sysconfig.get_config_var('ABIFLAGS'), str)
+        self.assertIn('abiflags', sysconfig.get_config_vars())
+        self.assertIsInstance(sysconfig.get_config_var('abiflags'), str)
 
     def test_always_set_Py_DEBUG(self):
         self.assertIn('Py_DEBUG', sysconfig.get_config_vars())
         self.assertIn(sysconfig.get_config_var('Py_DEBUG'), (0, 1))
 
+    def test_always_set_Py_GIL_DISABLED(self):
+        self.assertIn('Py_GIL_DISABLED', sysconfig.get_config_vars())
+        self.assertIn(sysconfig.get_config_var('Py_GIL_DISABLED'), (0, 1))
+
     def test_ABIFLAGS(self):
+        abiflags = sysconfig.get_config_var('abiflags')
+        ABIFLAGS = sysconfig.get_config_var('ABIFLAGS')
+        self.assertIn(abiflags, ABIFLAGS)
         if sysconfig.get_config_var('Py_DEBUG'):
-            self.assertIn('d', sysconfig.get_config_var('ABIFLAGS'))
+            self.assertIn('d', ABIFLAGS)
         else:
-            self.assertNotIn('d', sysconfig.get_config_var('ABIFLAGS'))
+            self.assertNotIn('d', ABIFLAGS)
         if sysconfig.get_config_var('Py_GIL_DISABLED'):
-            self.assertIn('t', sysconfig.get_config_var('ABIFLAGS'))
+            self.assertIn('t', ABIFLAGS)
         else:
-            self.assertNotIn('t', sysconfig.get_config_var('ABIFLAGS'))
+            self.assertNotIn('t', ABIFLAGS)
 
     @requires_subprocess()
     def test_makefile_overwrites_config_vars(self):
