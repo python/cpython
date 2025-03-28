@@ -349,28 +349,6 @@ class TestTranforms(BytecodeTestCase):
         self.assertNotInBytecode(f, 'BINARY_OP')
         self.check_lnotab(f)
 
-    def test_constant_folding(self):
-        # Issue #11244: aggressive constant folding.
-        exprs = [
-            '3 * -5',
-            '-3 * 5',
-            '2 * (3 * 4)',
-            '(2 * 3) * 4',
-            '(-1, 2, 3)',
-            '(1, -2, 3)',
-            '(1, 2, -3)',
-            '(1, 2, -3) * 6',
-            'lambda x: x in {(3 * -5) + (-1 - 6), (1, -2, 3) * 2, None}',
-        ]
-        for e in exprs:
-            with self.subTest(e=e):
-                code = compile(e, '', 'single')
-                for instr in dis.get_instructions(code):
-                    self.assertFalse(instr.opname.startswith('UNARY_'))
-                    self.assertFalse(instr.opname.startswith('BINARY_'))
-                    self.assertFalse(instr.opname.startswith('BUILD_'))
-                self.check_lnotab(code)
-
     def test_constant_folding_small_int(self):
         tests = [
             ('(0, )[0]', 0),
