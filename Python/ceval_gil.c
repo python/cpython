@@ -1211,25 +1211,14 @@ static inline void run_remote_debugger_script(const char *path)
         return;
     }
 
-#ifdef MS_WINDOWS
-    PyObject* path_obj = PyUnicode_FromString(path);
-    if (!path_obj) {
-        PyErr_FormatUnraisable("Error when converting remote debugger script path %s to Unicode", path);
-        return;
-    }
-    wchar_t* wpath = PyUnicode_AsWideCharString(path_obj, NULL);
-    Py_DECREF(path_obj);
-    if (!wpath) {
-        PyErr_FormatUnraisable("Error when converting remote debugger script path %s to wide char", path);
-        return;
-    }
-    FILE* f = _wfopen(wpath, L"r");
-#else
     int fd = PyObject_AsFileDescriptor(fileobj);
     if (fd == -1) {
         PyErr_FormatUnraisable("Error when getting file descriptor for debugger script %s", path);
         return;
     }
+#ifdef MS_WINDOWS
+    FILE* f = _fdopen(fd, "r");
+#else
     FILE* f = fdopen(fd, "r");
 #endif
 
@@ -1238,11 +1227,6 @@ static inline void run_remote_debugger_script(const char *path)
     } else {
         PyRun_AnyFile(f, path);
     }
-
-#ifdef MS_WINDOWS
-    PyMem_Free(wpath);
-    fclose(f);
-#endif
 
     if (PyErr_Occurred()) {
         PyErr_FormatUnraisable("Error executing debugger script %s", path);
