@@ -1,2 +1,0 @@
-In :mod:`sqlite3`, handle out-of-memory when creating user-defined SQL
-functions.

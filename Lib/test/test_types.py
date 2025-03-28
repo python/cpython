@@ -1,8 +1,7 @@
 # Python test set -- part 6, built-in types
 
 from test.support import (
-    run_with_locale, is_apple_mobile, cpython_only, no_rerun,
-    iter_builtin_types, iter_slot_wrappers,
+    run_with_locale, cpython_only, no_rerun,
     MISSING_C_DOCSTRINGS,
 )
 import collections.abc
@@ -709,10 +708,6 @@ class UnionTests(unittest.TestCase):
         y = int | bool
         with self.assertRaises(TypeError):
             x < y
-        # Check that we don't crash if typing.Union does not have a tuple in __args__
-        y = typing.Union[str, int]
-        y.__args__ = [str, int]
-        self.assertEqual(x, y)
 
     def test_hash(self):
         self.assertEqual(hash(int | str), hash(str | int))
@@ -727,16 +722,39 @@ class UnionTests(unittest.TestCase):
 
         self.assertEqual((A | B).__args__, (A, B))
         union1 = A | B
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'UnhashableMeta'"):
             hash(union1)
 
         union2 = int | B
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'UnhashableMeta'"):
             hash(union2)
 
         union3 = A | int
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "unhashable type: 'UnhashableMeta'"):
             hash(union3)
+
+    def test_unhashable_becomes_hashable(self):
+        is_hashable = False
+        class UnhashableMeta(type):
+            def __hash__(self):
+                if is_hashable:
+                    return 1
+                else:
+                    raise TypeError("not hashable")
+
+        class A(metaclass=UnhashableMeta): ...
+        class B(metaclass=UnhashableMeta): ...
+
+        union = A | B
+        self.assertEqual(union.__args__, (A, B))
+
+        with self.assertRaisesRegex(TypeError, "not hashable"):
+            hash(union)
+
+        is_hashable = True
+
+        with self.assertRaisesRegex(TypeError, "union contains 2 unhashable elements"):
+            hash(union)
 
     def test_instancecheck_and_subclasscheck(self):
         for x in (int | str, typing.Union[int, str]):
@@ -921,7 +939,7 @@ class UnionTests(unittest.TestCase):
         self.assertEqual(typing.get_args(typing.get_type_hints(forward_after)['x']),
                          (int, Forward))
         self.assertEqual(typing.get_args(typing.get_type_hints(forward_before)['x']),
-                         (int, Forward))
+                         (Forward, int))
 
     def test_or_type_operator_with_Protocol(self):
         class Proto(typing.Protocol):
@@ -1015,9 +1033,14 @@ class UnionTests(unittest.TestCase):
                 return 1 / 0
 
         bt = BadType('bt', (), {})
+        bt2 = BadType('bt2', (), {})
         # Comparison should fail and errors should propagate out for bad types.
+        union1 = int | bt
+        union2 = int | bt2
         with self.assertRaises(ZeroDivisionError):
-            list[int] | list[bt]
+            union1 == union2
+        with self.assertRaises(ZeroDivisionError):
+            bt | bt2
 
         union_ga = (list[str] | int, collections.abc.Callable[..., str] | int,
                     d | int)
@@ -1059,6 +1082,14 @@ class UnionTests(unittest.TestCase):
         leeway = 15
         self.assertLessEqual(sys.gettotalrefcount() - before, leeway,
                              msg='Check for union reference leak.')
+
+    def test_instantiation(self):
+        with self.assertRaises(TypeError):
+            types.UnionType()
+        self.assertIs(int, types.UnionType[int])
+        self.assertIs(int, types.UnionType[int, int])
+        self.assertEqual(int | str, types.UnionType[int, str])
+        self.assertEqual(int | typing.ForwardRef("str"), types.UnionType[int, "str"])
 
 
 class MappingProxyTests(unittest.TestCase):

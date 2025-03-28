@@ -110,7 +110,7 @@ atexit_callfuncs(struct atexit_state *state)
     PyObject *copy = PyList_GetSlice(state->callbacks, 0, PyList_GET_SIZE(state->callbacks));
     if (copy == NULL)
     {
-        PyErr_FormatUnraisable("Exception ignored when "
+        PyErr_FormatUnraisable("Exception ignored while "
                                "copying atexit callbacks");
         return;
     }

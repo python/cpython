@@ -306,7 +306,7 @@ Since these types are mutable, their value can also be changed afterwards::
 Assigning a new value to instances of the pointer types :class:`c_char_p`,
 :class:`c_wchar_p`, and :class:`c_void_p` changes the *memory location* they
 point to, *not the contents* of the memory block (of course not, because Python
-bytes objects are immutable)::
+string objects are immutable)::
 
    >>> s = "Hello, World"
    >>> c_s = c_wchar_p(s)
@@ -657,12 +657,13 @@ Nested structures can also be initialized in the constructor in several ways::
    >>> r = RECT((1, 2), (3, 4))
 
 Field :term:`descriptor`\s can be retrieved from the *class*, they are useful
-for debugging because they can provide useful information::
+for debugging because they can provide useful information.
+See :class:`CField`::
 
-   >>> print(POINT.x)
-   <Field type=c_long, ofs=0, size=4>
-   >>> print(POINT.y)
-   <Field type=c_long, ofs=4, size=4>
+   >>> POINT.x
+   <ctypes.CField 'x' type=c_int, ofs=0, size=4>
+   >>> POINT.y
+   <ctypes.CField 'y' type=c_int, ofs=4, size=4>
    >>>
 
 
@@ -689,7 +690,7 @@ This matches what ``#pragma pack(n)`` does in MSVC.
 
 It is also possible to set a minimum alignment for how the subclass itself is packed in the
 same way ``#pragma align(n)`` works in MSVC.
-This can be achieved by specifying a ::attr:`~Structure._align_` class attribute
+This can be achieved by specifying a :attr:`~Structure._align_` class attribute
 in the subclass definition.
 
 :mod:`ctypes` uses the native byte order for Structures and Unions.  To build
@@ -1406,6 +1407,28 @@ the shared library name at development time, and hardcode that into the wrapper
 module instead of using :func:`~ctypes.util.find_library` to locate the library at runtime.
 
 
+.. _ctypes-listing-loaded-shared-libraries:
+
+Listing loaded shared libraries
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When writing code that relies on code loaded from shared libraries, it can be
+useful to know which shared libraries have already been loaded into the current
+process.
+
+The :mod:`!ctypes.util` module provides the :func:`~ctypes.util.dllist` function,
+which calls the different APIs provided by the various platforms to help determine
+which shared libraries have already been loaded into the current process.
+
+The exact output of this function will be system dependent. On most platforms,
+the first entry of this list represents the current process itself, which may
+be an empty string.
+For example, on glibc-based Linux, the return may look like::
+
+   >>> from ctypes.util import dllist
+   >>> dllist()
+   ['', 'linux-vdso.so.1', '/lib/x86_64-linux-gnu/libm.so.6', '/lib/x86_64-linux-gnu/libc.so.6', ... ]
+
 .. _ctypes-loading-shared-libraries:
 
 Loading shared libraries
@@ -2082,6 +2105,20 @@ Utility functions
 
    .. availability:: Windows
 
+
+.. function:: dllist()
+   :module: ctypes.util
+
+   Try to provide a list of paths of the shared libraries loaded into the current
+   process.  These paths are not normalized or processed in any way.  The function
+   can raise :exc:`OSError` if the underlying platform APIs fail.
+   The exact functionality is system dependent.
+
+   On most platforms, the first element of the list represents the current
+   executable file. It may be an empty string.
+
+   .. availability:: Windows, macOS, iOS, glibc, BSD libc, musl
+   .. versionadded:: 3.14
 
 .. function:: FormatError([code])
 
@@ -2774,6 +2811,98 @@ fields, or any other data types containing pointer type fields.
    constructor are interpreted as attribute assignments, so they will initialize
    :attr:`_fields_` with the same name, or create new attributes for names not
    present in :attr:`_fields_`.
+
+
+.. class:: CField(*args, **kw)
+
+   Descriptor for fields of a :class:`Structure` and :class:`Union`.
+   For example::
+
+      >>> class Color(Structure):
+      ...     _fields_ = (
+      ...         ('red', c_uint8),
+      ...         ('green', c_uint8),
+      ...         ('blue', c_uint8),
+      ...         ('intense', c_bool, 1),
+      ...         ('blinking', c_bool, 1),
+      ...    )
+      ...
+      >>> Color.red
+      <ctypes.CField 'red' type=c_ubyte, ofs=0, size=1>
+      >>> Color.green.type
+      <class 'ctypes.c_ubyte'>
+      >>> Color.blue.byte_offset
+      2
+      >>> Color.intense
+      <ctypes.CField 'intense' type=c_bool, ofs=3, bit_size=1, bit_offset=0>
+      >>> Color.blinking.bit_offset
+      1
+
+   All attributes are read-only.
+
+   :class:`!CField` objects are created via :attr:`~Structure._fields_`;
+   do not instantiate the class directly.
+
+   .. versionadded:: next
+
+      Previously, descriptors only had ``offset`` and ``size`` attributes
+      and a readable string representation; the :class:`!CField` class was not
+      available directly.
+
+   .. attribute:: name
+
+      Name of the field, as a string.
+
+   .. attribute:: type
+
+      Type of the field, as a :ref:`ctypes class <ctypes-data-types>`.
+
+   .. attribute:: offset
+                  byte_offset
+
+      Offset of the field, in bytes.
+
+      For bitfields, this is the offset of the underlying byte-aligned
+      *storage unit*; see :attr:`~CField.bit_offset`.
+
+   .. attribute:: byte_size
+
+      Size of the field, in bytes.
+
+      For bitfields, this is the size of the underlying *storage unit*.
+      Typically, it has the same size as the bitfield's type.
+
+   .. attribute:: size
+
+      For non-bitfields, equivalent to :attr:`~CField.byte_size`.
+
+      For bitfields, this contains a backwards-compatible bit-packed
+      value that combines :attr:`~CField.bit_size` and
+      :attr:`~CField.bit_offset`.
+      Prefer using the explicit attributes instead.
+
+   .. attribute:: is_bitfield
+
+      True if this is a bitfield.
+
+   .. attribute:: bit_offset
+                  bit_size
+
+      The location of a bitfield within its *storage unit*, that is, within
+      :attr:`~CField.byte_size` bytes of memory starting at
+      :attr:`~CField.byte_offset`.
+
+      To get the field's value, read the storage unit as an integer,
+      :ref:`shift left <shifting>` by :attr:`!bit_offset` and
+      take the :attr:`!bit_size` least significant bits.
+
+      For non-bitfields, :attr:`!bit_offset` is zero
+      and :attr:`!bit_size` is equal to ``byte_size * 8``.
+
+   .. attribute:: is_anonymous
+
+      True if this field is anonymous, that is, it contains nested sub-fields
+      that should be be merged into a containing structure or union.
 
 
 .. _ctypes-arrays-pointers:
