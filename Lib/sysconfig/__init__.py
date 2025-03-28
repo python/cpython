@@ -401,12 +401,12 @@ def _init_non_posix(vars):
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
 
-    # Add EXT_SUFFIX, SOABI, ABIFLAGS, and Py_GIL_DISABLED (defined in Modules/_sysconfig.c)
+    # Add EXT_SUFFIX, SOABI, ABIFLAGS, and Py_GIL_DISABLED
     # NOTE: ABIFLAGS is only an emulated value. It is not present during build
     #       on Windows. sys.abiflags is absent on Windows and `vars['abiflags']
     #       is already widely used to calculate paths. vars['abiflags'] should
     #       remain empty string.
-    vars.update(_sysconfig.config_vars())
+    vars.update(_sysconfig.config_vars())  # defined in Modules/_sysconfig.c
 
     vars['LIBDIR'] = _safe_realpath(os.path.join(get_config_var('installed_base'), 'libs'))
     if hasattr(sys, 'dllhandle'):
@@ -417,7 +417,6 @@ def _init_non_posix(vars):
     vars['VERSION'] = _PY_VERSION_SHORT_NO_DOT
     vars['BINDIR'] = os.path.dirname(_safe_realpath(sys.executable))
     vars['TZPATH'] = ''
-
 
 #
 # public APIs
@@ -546,9 +545,6 @@ def _init_config_vars():
     except AttributeError:
         _CONFIG_VARS['py_version_nodot_plat'] = ''
 
-    # e.g., 't' for free-threaded or '' for default build
-    _CONFIG_VARS['abi_thread'] = 't' if _CONFIG_VARS.get('Py_GIL_DISABLED') else ''
-
     if os.name == 'nt':
         _init_non_posix(_CONFIG_VARS)
         _CONFIG_VARS['VPATH'] = sys._vpath
@@ -557,6 +553,9 @@ def _init_config_vars():
         # init function to enable using 'get_config_var' in
         # the init-function.
         _CONFIG_VARS['userbase'] = _getuserbase()
+
+    # e.g., 't' for free-threaded or '' for default build
+    _CONFIG_VARS['abi_thread'] = 't' if _CONFIG_VARS.get('Py_GIL_DISABLED') else ''
 
     # Always convert srcdir to an absolute path
     srcdir = _CONFIG_VARS.get('srcdir', _PROJECT_BASE)
