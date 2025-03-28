@@ -261,7 +261,7 @@ Options (and corresponding environment variables):\n\
 -h     : print this help message and exit (also -? or --help)\n\
 -i     : inspect interactively after running script; forces a prompt even\n\
          if stdin does not appear to be a terminal; also PYTHONINSPECT=x\n\
--I     : isolate Python from the user's environment (implies -E and -s)\n\
+-I     : isolate Python from the user's environment (implies -E, -P and -s)\n\
 -m mod : run library module as a script (terminates option list)\n\
 -O     : remove assert and __debug__-dependent statements; add .opt-1 before\n\
          .pyc extension; also PYTHONOPTIMIZE=x\n\
