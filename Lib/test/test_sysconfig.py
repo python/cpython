@@ -9,6 +9,7 @@ import json
 import textwrap
 from copy import copy
 
+from test import support
 from test.support import (
     captured_stdout,
     is_android,
@@ -592,29 +593,38 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         self.assertTrue(suffix.endswith('-darwin.so'), suffix)
 
-    def test_always_set_ABIFLAGS(self):
+    def test_always_set_abiflags(self):
         self.assertIn('ABIFLAGS', sysconfig.get_config_vars())
         self.assertIsInstance(sysconfig.get_config_var('ABIFLAGS'), str)
         self.assertIn('abiflags', sysconfig.get_config_vars())
         self.assertIsInstance(sysconfig.get_config_var('abiflags'), str)
 
-    def test_always_set_Py_DEBUG(self):
+    def test_always_set_py_debug(self):
         self.assertIn('Py_DEBUG', sysconfig.get_config_vars())
-        self.assertIn(sysconfig.get_config_var('Py_DEBUG'), (0, 1))
+        Py_DEBUG = sysconfig.get_config_var('Py_DEBUG')
+        self.assertIn(Py_DEBUG, (0, 1))
+        self.assertEqual(Py_DEBUG, support.Py_DEBUG)
 
-    def test_always_set_Py_GIL_DISABLED(self):
+    def test_always_set_py_gil_disabled(self):
         self.assertIn('Py_GIL_DISABLED', sysconfig.get_config_vars())
-        self.assertIn(sysconfig.get_config_var('Py_GIL_DISABLED'), (0, 1))
+        Py_GIL_DISABLED = sysconfig.get_config_var('Py_GIL_DISABLED')
+        self.assertIn(Py_GIL_DISABLED, (0, 1))
+        self.assertEqual(Py_GIL_DISABLED, support.Py_GIL_DISABLED)
 
-    def test_ABIFLAGS(self):
+    def test_abiflags(self):
         abiflags = sysconfig.get_config_var('abiflags')
         ABIFLAGS = sysconfig.get_config_var('ABIFLAGS')
+
         self.assertIn(abiflags, ABIFLAGS)
-        if sysconfig.get_config_var('Py_DEBUG'):
+
+        if os.name == 'nt':
+            self.assertEqual(abiflags, '')
+
+        if support.Py_DEBUG:
             self.assertIn('d', ABIFLAGS)
         else:
             self.assertNotIn('d', ABIFLAGS)
-        if sysconfig.get_config_var('Py_GIL_DISABLED'):
+        if support.Py_GIL_DISABLED:
             self.assertIn('t', ABIFLAGS)
         else:
             self.assertNotIn('t', ABIFLAGS)
