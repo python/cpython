@@ -37,6 +37,7 @@ PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info)
 #ifdef Py_GIL_DISABLED
     dst_info->mutex = (PyMutex){0};
 #endif
+    dst_info->dict_final = 0;
 
     Py_XINCREF(dst_info->proto);
     Py_XINCREF(dst_info->argtypes);
@@ -264,16 +265,9 @@ PyCStructUnionType_update_stginfo(PyObject *type, PyObject *fields, int isStruct
         return -1;
     }
 
+    STGINFO_LOCK(stginfo);
     /* If this structure/union is already marked final we cannot assign
        _fields_ anymore. */
-
-    if (stginfo_get_dict_final(stginfo) == 1) {/* is final ? */
-        PyErr_SetString(PyExc_AttributeError,
-                        "_fields_ is final");
-        return -1;
-    }
-    STGINFO_LOCK(stginfo);
-    // check again after locking
     if (stginfo_get_dict_final(stginfo) == 1) {/* is final ? */
         PyErr_SetString(PyExc_AttributeError,
                         "_fields_ is final");

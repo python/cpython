@@ -406,21 +406,17 @@ typedef struct {
 } StgInfo;
 
 /*
-    In free-threading, concurrent mutations to StgInfo is not thread safe.
-    Therefore to make it thread safe, when modifying StgInfo, `STGINFO_LOCK` and
-    `STGINFO_UNLOCK` macros are used to acquire critical section of the StgInfo.
-    The critical section is write only and is acquired when modifying the
-    StgInfo fields and while setting the `dict_final` bit. Once the `dict_final`
-    is set, StgInfo is treated as read only and no further modifications are
-    allowed. This allows to avoid acquiring the critical section for most
-    read operations when `dict_final` is set (general case).
+    To ensure thread safety in the free threading build, the `STGINFO_LOCK` and
+    `STGINFO_UNLOCK` macros use critical sections to protect against concurrent
+    modifications to `StgInfo` and assignment of the `dict_final` field. Once
+    `dict_final` is set, `StgInfo` is treated as read-only, and no further
+    modifications are allowed. This approach allows most read operations to
+    proceed without acquiring the critical section lock.
 
-    It is important to set all the fields before setting the `dict_final` bit
-    in functions like `PyCStructUnionType_update_stginfo` because the store of
-    `dict_final` uses sequential consistency memory ordering. This ensures that
-    all the other fields are visible to other threads before the `dict_final` bit
-    is set thus allowing for lock free reads when `dict_final` is set.
-
+    The `dict_final` field is written only after all other modifications to
+    `StgInfo` are complete. The reads and writes of `dict_final` use the
+    sequentially consistent memory ordering to ensure that all other fields are
+    visible to other threads before the `dict_final` bit is set.
 */
 
 #define STGINFO_LOCK(stginfo)   Py_BEGIN_CRITICAL_SECTION_MUT(&(stginfo)->mutex)
