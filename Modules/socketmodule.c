@@ -2044,10 +2044,10 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             struct sockaddr_l2 *addr = &addrbuf->bt_l2;
             memset(addr, 0, sizeof(struct sockaddr_l2));
             _BT_L2_MEMB(addr, family) = AF_BLUETOOTH;
-            int psm;
-            int cid = 0;
+            unsigned short psm;
+            unsigned short cid = 0;
             unsigned char bdaddr_type = BDADDR_BREDR;
-            if (!PyArg_ParseTuple(args, "si|iB", &straddr,
+            if (!PyArg_ParseTuple(args, "sH|HB", &straddr,
                                   &psm,
                                   &cid,
                                   &bdaddr_type)) {
@@ -2071,12 +2071,15 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             const char *straddr;
             struct sockaddr_rc *addr = &addrbuf->bt_rc;
             _BT_RC_MEMB(addr, family) = AF_BLUETOOTH;
-            if (!PyArg_ParseTuple(args, "si", &straddr,
-                                  &_BT_RC_MEMB(addr, channel))) {
+            uint8_t channel = _BT_RC_MEMB(addr, channel);
+            if (!PyArg_ParseTuple(args, "sB", &straddr,
+                                  &channel)) {
                 PyErr_Format(PyExc_OSError,
                              "%s(): wrong format", caller);
                 return 0;
             }
+            _BT_RC_MEMB(addr, channel) = channel;
+
             if (setbdaddr(straddr, &_BT_RC_MEMB(addr, bdaddr)) < 0)
                 return 0;
 
@@ -2100,11 +2103,13 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 return 0;
 #else  /* __NetBSD__ || __DragonFly__ */
             _BT_HCI_MEMB(addr, family) = AF_BLUETOOTH;
-            if (!PyArg_ParseTuple(args, "i", &_BT_HCI_MEMB(addr, dev))) {
+            unsigned short dev = _BT_HCI_MEMB(addr, dev);
+            if (!PyArg_ParseTuple(args, "H", &dev)) {
                 PyErr_Format(PyExc_OSError,
                              "%s(): wrong format", caller);
                 return 0;
             }
+            _BT_HCI_MEMB(addr, dev) = dev;
 #endif /* !(__NetBSD__ || __DragonFly__) */
             *len_ret = sizeof *addr;
             return 1;
