@@ -41,13 +41,6 @@ get_functools_state(PyObject *module)
     return (_functools_state *)state;
 }
 
-#ifdef Py_GIL_DISABLED
-#define FT_ATOMIC_ADD_SSIZE(value, new_value) \
-    _Py_atomic_add_ssize(&value, new_value)
-#else
-#define FT_ATOMIC_ADD_SSIZE(value, new_value) value += new_value
-#endif
-
 /* partial object **********************************************************/
 
 
