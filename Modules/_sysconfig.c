@@ -71,7 +71,7 @@ _sysconfig_config_vars_impl(PyObject *module)
 
     // Emulate `sys.abiflags` value on Unix for Windows. ABIFLAGS here is only
     // an emulated value. It is not present during build on Windows.
-    if (add_string_value(config, "ABIFLAGS", SYSCONFIG_ABIFLAGS) < 0) {
+    if (add_string_value(config, "ABIFLAGS", _SYSCONFIG_ABIFLAGS) < 0) {
         Py_DECREF(config);
         return NULL;
     }
